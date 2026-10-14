@@ -90,6 +90,8 @@ Each vacation policy has:
 - **Company Default**: Whether this is the default for all employees
 - **Annual Days**: Base vacation days per year
 - **Accrual Type**: How vacation is accrued (annual, monthly, biweekly)
+- **Prorate in start and exit year**: Whether the allowance is prorated in a year an employee joins or leaves
+- **Statutory Minimum Days**: The floor a prorated allowance doesn't drop below
 - **Carryover Settings**: Whether unused days can carry over
 
 ### Policy Inheritance
@@ -111,9 +113,11 @@ This means an employee with a personal override will use that policy, regardless
    - **Effective From**: Start date (defaults to January 1 of next year)
    - **Valid Until**: Optional end date (leave empty for ongoing)
    - **Set as Company Default**: Check to make this the default for all employees
-   - **Annual Days**: Base vacation allowance
-   - **Accrual Type**: Annual (all at once), Monthly, or Biweekly
-   - **Accrual Start Month**: When accrual begins (for monthly/biweekly)
+   - **Default Annual Days**: Vacation allowance for a full year
+   - **Accrual Type**: Annual (all at once), Monthly, or Biweekly. See [Accrual Policies](#accrual-policies)
+   - **Accrual Start Month**: Used only by the vacation accrual projection report, as the month an annual policy's allowance is granted. It doesn't change any balance: monthly and biweekly accrual always starts in January, or in the month an employee starts
+   - **Prorate in start and exit year**: On by default. See [Prorated Allowances](#prorated-allowances)
+   - **Statutory Minimum Days**: The fewest days employees are legally owed in a full year. It starts at 20, or at Default Annual Days if that's lower, and can't be higher than Default Annual Days
    - **Allow Carryover**: Enable to allow unused days to roll over
    - **Max Carryover Days**: Limit on carried-over days (leave empty for unlimited)
    - **Carryover Expiry**: Months after which carried-over days expire
@@ -142,6 +146,8 @@ You can schedule future policy changes by setting effective dates:
 The **Assignments** tab shows:
 - **Current**: The active company default with its start date
 - **Next**: The upcoming default (if scheduled) with when it takes effect
+
+Vacation balances use one company default per calendar year: of the defaults in effect during the year, the one that started last. A new default that takes effect mid-year therefore applies to that whole year's balances, on every page.
 
 ### Policy Statuses
 
@@ -181,33 +187,114 @@ To customize vacation allowance for an individual employee:
 1. Go to **Settings** → **Vacation** → **"Employees"** tab
 2. Find the employee
 3. Click **"Edit"** next to their name
-4. Configure custom allowance:
-   - **Custom Annual Days**: Override policy default (leave blank to use policy)
+4. Configure custom allowance for the current year:
+   - **Custom Annual Days**: Replaces the policy's annual days (leave blank to use the policy). A custom allowance is final: Z8 never prorates it, so enter the days the employee should get for that year
    - **Carryover Days**: Days brought forward from previous year
    - **Adjustment Days**: Add or subtract days (can be positive or negative)
    - **Adjustment Reason**: Required explanation for adjustments
-5. **Review total allowance** displayed at top
+5. **Review the balance** displayed at top. In a year the employee joins or leaves, a line under it explains the prorated allowance
 6. Click **"Save Changes"**
 
 ### Allowance Calculations
 
 Total allowance is calculated as:
 ```
-Total = Annual Days + Carryover + Adjustments
+Total = Allowance + Carryover + Adjustments + Accrued
 ```
 
 **Example:**
-- Annual Days: 20 (from policy)
+- Allowance: 20 (from policy)
 - Carryover: 5 (from last year)
 - Adjustments: +2 (bonus days)
 - **Total Available: 27 days**
 
+Allowance is the prorated allowance in a year the employee joins or leaves. On a monthly or biweekly policy, the allowance is 0 and the total grows through accrual instead. Carryover counts only until it expires. Adjustments are the manual adjustments; accrual is counted separately. Approved and pending vacation in the year is subtracted from the total to give the days still available.
+
+The **"Employees"** tab shows the same parts for every employee: **Allowance**, **Carryover**, **Adjustments** (manual adjustments only), **Accrued** and **Total Available**. Without a company default policy for the year, these columns stay empty.
+
+### Prorated Allowances
+
+In a year an employee joins or leaves, Z8 prorates their vacation allowance. They get 1/12 of the policy's Default Annual Days for each full employment month they work in that year. Z8 works this out from the employee's start date and departure whenever it shows a balance, so you don't need an adjustment.
+
+- **Employment month**: A month counted from the start date, not from the 1st. A start on 15 October gives 15 October to 14 November and 15 November to 14 December: 2 employment months. Days left over before the end of the year or the last working day don't count
+- **Rounding**: A fraction of ½ day or more rounds up to a whole day, as the German Federal Vacation Act (BUrlG §5(2)) requires. Smaller fractions stay: 25 days and 5 employment months give 10.42 days
+
+**Example:** On a 30-day policy, an employee who starts on 1 October works 3 full employment months that year. 30 × 3 / 12 = 7.5, which rounds up to **8 days**.
+
+#### Statutory Minimum and Waiting Period
+
+The **waiting period** is the first six months of an employment. If an employee completes it within the year and doesn't leave by 30 June, their prorated allowance never drops below the policy's **Statutory Minimum Days**. This covers employees who join early in the year and employees who leave in the second half.
+
+On a 30-day policy with a statutory minimum of 20 days (the leavers joined in an earlier year):
+
+| Employee | Employment months | Days at 1/12 per month | Allowance |
+|----------|-------------------|----------------|-----------|
+| Joins 1 March | 10 | 25 | **25** |
+| Joins 1 June | 7 | 17.5, rounded to 18 | **20**, the statutory minimum |
+| Joins 1 October | 3 | 7.5, rounded to 8 | **8**, waiting period not complete |
+| Last working day 31 March | 3 | 7.5, rounded to 8 | **8**, leaves by 30 June |
+| Last working day 31 July | 7 | 17.5, rounded to 18 | **20**, the statutory minimum |
+
+#### When Z8 Keeps the Full Allowance
+
+Each policy has the switch **Prorate in start and exit year**. It's on by default, for new policies and for policies that existed before proration. Those existing policies also got a statutory minimum of 20 days, or their annual days if lower.
+
+Z8 keeps the full allowance when:
+- The policy's **Prorate in start and exit year** switch is off.
+- The employee has **Custom Annual Days** for the year. A custom allowance is final and is never prorated.
+- The policy accrues monthly or biweekly. Accrual already covers part years (see [Accrual Policies](#accrual-policies)).
+- The employee has no start date. Add one to their profile to prorate their allowance.
+- The year is before 2026. Earlier years and their carryover stay as they were.
+
+#### Employees Who Leave
+
+Z8 prorates a leaver's allowance as soon as you record their departure, even when the last working day is still in the future. It counts employment months from 1 January, or from the start date if they joined that year, up to the last working day. With **Offboard now**, the last working day is the day the offboarding takes effect. A canceled departure doesn't count.
+
+If an employee has already taken more approved vacation than their total for the year, the extra days show as **overdrawn**, for example "2 days overdrawn". Admins and managers see it on **Settings** → **Vacation** → **"Employees"**, on the employee's allowance page and on **Team Absences**. The employee's own Absences page shows 0 days remaining. Z8 never reclaims overdrawn days or deducts them automatically.
+
+Z8 doesn't calculate a payout for unused vacation when someone leaves.
+
+#### Rehired Employees
+
+If an employee leaves and is rehired in the same year, Z8 prorates each employment on its own. Each one has its own waiting period and statutory minimum check. Z8 adds the results together, up to the policy's full allowance.
+
+#### Where the Explanation Appears
+
+Wherever Z8 shows a prorated allowance, a line explains it, for example "8 of 30 days, prorated: started 1 Oct 2026, 3 full employment months". If the statutory minimum raised the allowance, the line ends with "statutory minimum applies". It appears on:
+- The employee's **Absences** page
+- **Settings** → **Vacation** → **"Employees"**, and the employee's allowance page
+- **Team Absences**, for managers
+
+#### One-Time List of Prorated 2026 Allowances
+
+Z8 prorates allowances from 2026 on. Owners and admins see a one-time list titled **2026 vacation allowances are now prorated** on **Settings** → **Vacation** and on the **"Employees"** tab. It shows every employee whose 2026 allowance is now below the full allowance, including employees who have left, with their full allowance, prorated allowance and any overdrawn days. Employees with Custom Annual Days aren't listed. Click a name to open that employee's allowance page.
+
+Click **"Dismiss for everyone"** to hide the list for every owner and admin in your organization. It doesn't come back.
+
+### Accrual Policies
+
+On a monthly or biweekly policy, the vacation balance starts each year at 0 and grows every month:
+- **Monthly**: 1/12 of the annual days per month
+- **Biweekly**: 2/26 of the annual days per month, the share of two biweekly periods
+- **Annual days**: The policy's Default Annual Days, or the employee's Custom Annual Days for the year
+
+Z8 adds each month's share on the first day of that month, in your organization's timezone, so the current month counts as soon as it starts. In the month an employee starts, they get the share for the days from their start date, and nothing accrues before that month. An employee who leaves accrues every month they were still employed: in the month of their last working day, the share for the days through that day, and nothing after. This also holds once they're no longer active, as long as their departure or end date is recorded. Each employee gets at most one accrual per month, and from 2026 on Z8 catches up any month of the current year it missed.
+
+On the employee's allowance page, **Accrued to Date** shows the accrual so far, out of the days per year, and the **"Employees"** tab shows it in the **Accrued** column. It's listed apart from **Adjustments**, and the **Adjustment History** lists manual adjustments only. Proration doesn't apply to accrual policies, because accrual already covers part years.
+
 ### Common Vacation Scenarios
 
 **New Employee Mid-Year:**
-1. Create employee profile
-2. The policy's accrual settings handle prorating automatically
-3. Or: Add a negative adjustment with reason "Pro-rated first year"
+1. Create the employee profile with their **Start Date**
+2. On an annual policy, Z8 prorates their allowance for that year. On a monthly or biweekly policy, accrual starts from their start date
+3. Check the explanation on their allowance page, for example "8 of 30 days, prorated: started 1 Oct 2026, 3 full employment months"
+
+Don't add a negative adjustment to prorate a new employee's allowance: Z8 has already prorated it.
+
+**Employee Leaving Mid-Year:**
+1. Record the departure with their last working day
+2. On an annual policy, Z8 prorates their allowance right away
+3. Check their allowance page for overdrawn days. Z8 doesn't reclaim them
 
 **Long-Service Bonus:**
 1. Go to employee's vacation settings

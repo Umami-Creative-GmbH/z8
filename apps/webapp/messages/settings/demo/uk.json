@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "Видалено записів часу: {count}",
           "title": "Очистити дані про час",
           "vacationAllowancesReset": "{count} лімітів відпусток скинуто",
+          "vehiclesDeleted": "{count, plural, one {# транспортний засіб видалено} few {# транспортні засоби видалено} other {# транспортних засобів видалено} }",
           "willDelete": "Це назавжди видалить:",
           "workCategoriesDeleted": "{count} категорій робіт видалено",
           "workCategorySetsDeleted": "{count} наборів категорій робіт видалено",
@@ -109,7 +110,7 @@
           "label": "Типи даних",
           "locations": {
             "countLabel": "Кількість локацій:",
-            "description": "Робочі локації та підзони",
+            "descriptionWithVehicles": "Робочі локації, підзони та кілька транспортних засобів",
             "title": "Локації"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Створення записів часу та робочих періодів",
           "label": "Записи часу"
+        },
+        "vehicleUse": {
+          "description": "Облік використання транспортних засобів за робочі періоди",
+          "label": "Використання транспортних засобів"
         },
         "workCategories": {
           "description": "Створення наборів категорій робіт і категорій",

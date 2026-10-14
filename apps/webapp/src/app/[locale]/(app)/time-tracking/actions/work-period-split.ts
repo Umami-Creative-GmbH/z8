@@ -9,19 +9,28 @@ import "server-only";
  * and is refused while the period has unresolved review. Organizations whose
  * append control is active run the completed-work split operation (append,
  * canonical graph, revisions, receipt); the others keep their established
- * period-only writes.
+ * legacy entry writes while dividing the canonical graph with the work.
  */
 import { randomUUID } from "node:crypto";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import * as z from "zod";
 import { db } from "@/db";
-import { timeEntry, workPeriod } from "@/db/schema";
+import {
+	timeEntry,
+	timeRecord,
+	timeRecordAllocation,
+	timeRecordWork,
+	workPeriod,
+} from "@/db/schema";
 import { carryInvoicedWorkToSplit } from "@/lib/billable-time/hand-off/invoiced-work";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
+import {
+	CompletedWorkReviewRequiredError,
+	describeAmendmentFailure,
+} from "@/lib/time-tracking/amend-completed-work";
 import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 import { workInterval } from "@/lib/time-tracking/closed-months/store";
 import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
@@ -41,6 +50,15 @@ import {
 } from "@/lib/time-tracking/time-entry-writer";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import {
+	sameWorkVehicleUse,
+	vehicleUseColumns,
+	vehicleUseFromColumns,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import {
+	resolveWorkVehicleUseSplit,
+	workVehicleUseRefusalCodeOf,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use-eligibility";
 import { WorkIntervalError } from "@/lib/time-tracking/work-duration";
 import { assertNoUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
 import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
@@ -67,6 +85,12 @@ export type SplitWorkPeriodRequest = {
 	 * generates an identity that names the operation but cannot recognize a retry.
 	 */
 	submissionId?: string;
+	/**
+	 * The one value asked at the split of work with vehicle use (#1126): the
+	 * odometer reading at the split, or the first half's km of a directly entered
+	 * distance. Omitted when skipped.
+	 */
+	vehicleSplitKm?: number;
 };
 
 const submissionIdSchema = z.uuid();
@@ -77,7 +101,10 @@ function committedResponse(result: SplitCompletedWorkResult): SplitWorkPeriodRes
 	const [retained, generated] = result.segments;
 	return {
 		success: true,
-		data: { firstPeriodId: retained.workPeriodId, secondPeriodId: generated.workPeriodId },
+		data: {
+			firstPeriodId: retained.workPeriodId,
+			secondPeriodId: generated.workPeriodId,
+		},
 	};
 }
 
@@ -88,10 +115,15 @@ async function describeSplitFailure(
 	if (error instanceof ConflictError) {
 		return { error: error.message, code: error.conflictType };
 	}
-	if (error instanceof ValidationError) return { error: error.message };
+	if (error instanceof ValidationError) {
+		const refusal = workVehicleUseRefusalCodeOf(error);
+		return refusal ? { error: error.message, code: refusal } : { error: error.message };
+	}
 	if (error instanceof NotFoundError) return { error: "Work period not found" };
 	if (error instanceof WorkIntervalError) {
-		return { error: "Split time must be between work period start and end times" };
+		return {
+			error: "Split time must be between work period start and end times",
+		};
 	}
 	const failure = await localizeMonthClosed(describeAmendmentFailure(error));
 	return failure ? { error: failure.message, code: failure.code } : null;
@@ -126,6 +158,10 @@ export async function splitOwnWorkPeriod(
 			disambiguation: request.disambiguation ?? null,
 			beforeNotes: request.beforeNotes ?? null,
 			afterNotes: request.afterNotes ?? null,
+			// Only when given: earlier commands stay byte-identical for replay (#1126).
+			...(request.vehicleSplitKm !== undefined && request.vehicleSplitKm !== null
+				? { vehicleSplitKm: request.vehicleSplitKm }
+				: {}),
 		},
 	};
 
@@ -133,7 +169,11 @@ export async function splitOwnWorkPeriod(
 		// A committed split replays before any fresh preflight: its own commit has
 		// already changed the period the preflight reads.
 		if (request.submissionId !== undefined) {
-			const committed = await replayCommittedSplit({ organizationId, actorUserId, command });
+			const committed = await replayCommittedSplit({
+				organizationId,
+				actorUserId,
+				command,
+			});
 			if (committed) return committedResponse(committed.result);
 		}
 
@@ -248,6 +288,7 @@ export async function splitOwnWorkPeriod(
 						durations: resolvedSplit,
 						beforeNotes: request.beforeNotes,
 						afterNotes: request.afterNotes,
+						vehicleSplitKm: request.vehicleSplitKm,
 						request: { ipAddress, userAgent },
 					})),
 				};
@@ -266,7 +307,10 @@ export async function splitOwnWorkPeriod(
 			);
 			return {
 				success: true,
-				data: { firstPeriodId: outcome.firstPeriodId, secondPeriodId: outcome.secondPeriodId },
+				data: {
+					firstPeriodId: outcome.firstPeriodId,
+					secondPeriodId: outcome.secondPeriodId,
+				},
 			};
 		}
 		if (outcome.receipt.disposition === "executed") {
@@ -288,7 +332,7 @@ export async function splitOwnWorkPeriod(
 }
 
 /**
- * The established period-only split of organizations that have not adopted,
+ * The legacy split of organizations that have not adopted,
  * now inside the coordinated transaction and behind the unresolved-review guard.
  */
 async function splitLegacyWorkPeriod(
@@ -303,6 +347,7 @@ async function splitLegacyWorkPeriod(
 		durations: { firstDurationMinutes: number; secondDurationMinutes: number };
 		beforeNotes?: string;
 		afterNotes?: string;
+		vehicleSplitKm?: number;
 		request: TimeEntryRequestMetadata;
 	},
 ): Promise<{ firstPeriodId: string; secondPeriodId: string }> {
@@ -340,6 +385,73 @@ async function splitLegacyWorkPeriod(
 		});
 	}
 	await assertNoUnresolvedWorkPeriodReview(tx, organizationId, locked);
+	// The vehicle carries over to both halves; the value at the split divides the km (#1126).
+	const vehicleSplit = await resolveWorkVehicleUseSplit(tx, {
+		organizationId,
+		employeeId,
+		workPeriodId: locked.id,
+		use: vehicleUseFromColumns(locked),
+		value: input.vehicleSplitKm,
+	});
+	const retainedVehicle = vehicleUseColumns(vehicleSplit.retained);
+	const generatedVehicle = vehicleUseColumns(vehicleSplit.generated);
+
+	// Keep the source graph scoped and locked before dividing its canonical work (#1205).
+	let canonical: {
+		record: typeof timeRecord.$inferSelect;
+		detail: typeof timeRecordWork.$inferSelect;
+		allocations: Array<typeof timeRecordAllocation.$inferSelect>;
+	} | null = null;
+	if (locked.canonicalRecordId) {
+		const [record] = await tx
+			.select()
+			.from(timeRecord)
+			.where(
+				and(
+					eq(timeRecord.id, locked.canonicalRecordId),
+					eq(timeRecord.organizationId, organizationId),
+					eq(timeRecord.employeeId, employeeId),
+					eq(timeRecord.recordKind, "work"),
+				),
+			)
+			.for("update");
+		const [detail] = await tx
+			.select()
+			.from(timeRecordWork)
+			.where(
+				and(
+					eq(timeRecordWork.recordId, locked.canonicalRecordId),
+					eq(timeRecordWork.organizationId, organizationId),
+					eq(timeRecordWork.recordKind, "work"),
+				),
+			)
+			.for("update");
+		const allocations = await tx
+			.select()
+			.from(timeRecordAllocation)
+			.where(
+				and(
+					eq(timeRecordAllocation.recordId, locked.canonicalRecordId),
+					eq(timeRecordAllocation.organizationId, organizationId),
+				),
+			)
+			.orderBy(asc(timeRecordAllocation.id))
+			.for("update");
+		if (
+			record &&
+			detail &&
+			record.endAt &&
+			record.startAt.getTime() === locked.startTime.getTime() &&
+			record.endAt.getTime() === locked.endTime?.getTime() &&
+			detail.workLocationType === locked.workLocationType &&
+			detail.workCategoryId === locked.workCategoryId &&
+			sameWorkVehicleUse(vehicleUseFromColumns(detail), vehicleUseFromColumns(locked))
+		) {
+			canonical = { record, detail, allocations };
+		} else {
+			throw new CompletedWorkReviewRequiredError("canonical_divergence");
+		}
+	}
 
 	const firstClockOut = await createTimeEntry(
 		{
@@ -385,6 +497,9 @@ async function splitLegacyWorkPeriod(
 			clockOutId: firstClockOut.id,
 			endTime: input.splitAtDate,
 			durationMinutes: input.durations.firstDurationMinutes,
+			odometerStartKm: retainedVehicle.odometerStartKm,
+			odometerEndKm: retainedVehicle.odometerEndKm,
+			drivenDistanceKm: retainedVehicle.drivenDistanceKm,
 			updatedAt: new Date(),
 		})
 		.where(
@@ -394,6 +509,91 @@ async function splitLegacyWorkPeriod(
 				isNull(workPeriod.deletedAt),
 			),
 		);
+	let generatedRecordId: string | null = null;
+	if (canonical) {
+		const updatedRecords = await tx
+			.update(timeRecord)
+			.set({
+				endAt: input.splitAtDate,
+				durationMinutes: input.durations.firstDurationMinutes,
+				updatedAt: new Date(),
+				updatedBy: input.actorUserId,
+			})
+			.where(
+				and(
+					eq(timeRecord.id, canonical.record.id),
+					eq(timeRecord.organizationId, organizationId),
+					eq(timeRecord.employeeId, employeeId),
+					eq(timeRecord.recordKind, "work"),
+				),
+			)
+			.returning({ id: timeRecord.id });
+		if (updatedRecords.length !== 1) {
+			throw new Error("Canonical work record update failed");
+		}
+		if (vehicleUseFromColumns(locked)) {
+			const updatedDetails = await tx
+				.update(timeRecordWork)
+				.set({
+					odometerStartKm: retainedVehicle.odometerStartKm,
+					odometerEndKm: retainedVehicle.odometerEndKm,
+					drivenDistanceKm: retainedVehicle.drivenDistanceKm,
+				})
+				.where(
+					and(
+						eq(timeRecordWork.recordId, canonical.record.id),
+						eq(timeRecordWork.organizationId, organizationId),
+						eq(timeRecordWork.recordKind, "work"),
+					),
+				)
+				.returning({ recordId: timeRecordWork.recordId });
+			if (updatedDetails.length !== 1) {
+				throw new Error("Canonical work detail update failed");
+			}
+		}
+		// The generated record keeps the originating work's origin, approval state and
+		// recording actor; no new decision is recorded for it.
+		generatedRecordId = randomUUID();
+		await tx.insert(timeRecord).values({
+			id: generatedRecordId,
+			organizationId,
+			employeeId,
+			recordKind: "work",
+			startAt: input.splitAtDate,
+			endAt: locked.endTime,
+			durationMinutes: input.durations.secondDurationMinutes,
+			approvalState: canonical.record.approvalState,
+			origin: canonical.record.origin,
+			createdBy: canonical.record.createdBy,
+			updatedAt: new Date(),
+			updatedBy: input.actorUserId,
+		});
+		await tx.insert(timeRecordWork).values({
+			recordId: generatedRecordId,
+			organizationId,
+			recordKind: "work",
+			workCategoryId: canonical.detail.workCategoryId,
+			workLocationType: canonical.detail.workLocationType,
+			computationMetadata: canonical.detail.computationMetadata,
+			vehicleKind: generatedVehicle.vehicleKind,
+			vehicleId: generatedVehicle.vehicleId,
+			odometerStartKm: generatedVehicle.odometerStartKm,
+			odometerEndKm: generatedVehicle.odometerEndKm,
+			drivenDistanceKm: generatedVehicle.drivenDistanceKm,
+		});
+		for (const allocation of canonical.allocations) {
+			await tx.insert(timeRecordAllocation).values({
+				organizationId,
+				recordId: generatedRecordId,
+				allocationKind: allocation.allocationKind,
+				projectId: allocation.projectId,
+				taskId: allocation.taskId,
+				costCenterId: allocation.costCenterId,
+				weightPercent: allocation.weightPercent,
+				isBillable: allocation.isBillable,
+			});
+		}
+	}
 	const [secondWorkPeriod] = await tx
 		.insert(workPeriod)
 		.values({
@@ -408,6 +608,16 @@ async function splitLegacyWorkPeriod(
 			// Both halves keep the source's project and billability (#900).
 			projectId: locked.projectId,
 			isBillable: locked.isBillable,
+			taskId: locked.taskId,
+			workCategoryId: locked.workCategoryId,
+			workLocationType: locked.workLocationType,
+			approvalStatus: locked.approvalStatus,
+			canonicalRecordId: generatedRecordId,
+			vehicleKind: generatedVehicle.vehicleKind,
+			vehicleId: generatedVehicle.vehicleId,
+			odometerStartKm: generatedVehicle.odometerStartKm,
+			odometerEndKm: generatedVehicle.odometerEndKm,
+			drivenDistanceKm: generatedVehicle.drivenDistanceKm,
 		})
 		.returning();
 	if (!secondWorkPeriod) throw new Error("Second work period insert failed");

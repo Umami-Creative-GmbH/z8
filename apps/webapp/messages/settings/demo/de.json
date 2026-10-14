@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "{count} Zeiteinträge gelöscht",
           "title": "Zeitdaten löschen",
           "vacationAllowancesReset": "{count} Urlaubsansprüche zurückgesetzt",
+          "vehiclesDeleted": "{count, plural, one {# Fahrzeug gelöscht} other {# Fahrzeuge gelöscht}}",
           "willDelete": "Dies löscht dauerhaft:",
           "workCategoriesDeleted": "{count} Arbeitskategorien gelöscht",
           "workCategorySetsDeleted": "{count} Arbeitskategoriensätze gelöscht",
@@ -109,7 +110,7 @@
           "label": "Datentypen",
           "locations": {
             "countLabel": "Anzahl der Standorte:",
-            "description": "Arbeitsstandorte und Unterbereiche",
+            "descriptionWithVehicles": "Arbeitsorte, Teilbereiche und einige Fahrzeuge",
             "title": "Standorte"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Zeiteinträge und Arbeitsperioden werden erstellt",
           "label": "Zeiteinträge"
+        },
+        "vehicleUse": {
+          "description": "Erfassung der Fahrzeugnutzung während Arbeitszeiten",
+          "label": "Fahrzeugnutzung"
         },
         "workCategories": {
           "description": "Arbeitskategoriensätze und Kategorien werden erstellt",

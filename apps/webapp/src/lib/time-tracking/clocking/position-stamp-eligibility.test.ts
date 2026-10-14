@@ -37,6 +37,12 @@ describe("stampablePosition", () => {
 		expect(stampablePosition(command({ channel: "api", payload: stampedPayload }))).toBe(position);
 	});
 
+	it("keeps the position of a version 4 frozen command, which may carry one (#1122)", () => {
+		expect(
+			stampablePosition(command({ channel: "api", payload: { ...stampedPayload, version: 4 } })),
+		).toBe(position);
+	});
+
 	it("is null without a position", () => {
 		expect(stampablePosition(command({ position: undefined }))).toBeNull();
 	});

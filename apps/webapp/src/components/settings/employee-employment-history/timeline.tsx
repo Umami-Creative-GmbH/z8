@@ -54,7 +54,7 @@ export function EmploymentHistoryContext({
 							})}
 						</span>
 					</div>
-					{entry.contractType === "hourly" && entry.hourlyRate && (
+					{entry.contractType === "hourly" && entry.hourlyRate !== null && (
 						<div className="text-sm">
 							{t("settings.employmentHistory.hourlyRateValue", "{rate} / hour", {
 								rate: formatCurrency(entry.hourlyRate, entry.currency),

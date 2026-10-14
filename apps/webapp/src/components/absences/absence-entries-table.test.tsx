@@ -44,6 +44,13 @@ vi.mock("./change-deputy-dialog", () => ({
 	),
 }));
 
+vi.mock("./use-own-absence-changes", () => ({
+	useOwnAbsenceChanges: () => ({ data: [], isSuccess: true, refetch: vi.fn() }),
+}));
+vi.mock("./absence-change-dialog", () => ({
+	AbsenceChangeDialog: ({ kind }: { kind: string }) => <div>{`requesting ${kind}`}</div>,
+}));
+
 vi.mock("./sick-notes/attach-sick-note-dialog", () => ({
 	AttachSickNoteDialog: ({ absence }: { absence: { id: string } }) => (
 		<div>{`attaching to ${absence.id}`}</div>
@@ -88,13 +95,34 @@ function buildAbsence(overrides: Partial<AbsenceWithDays>): AbsenceWithDays {
 }
 
 describe("AbsenceEntriesTable", () => {
+	it("lets an employee request changes to a past manager-recorded approved absence", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[
+					buildAbsence({
+						status: "approved",
+						startDate: "2026-05-11",
+						endDate: "2026-05-15",
+						approvedBy: "manager-1",
+					}),
+				]}
+			/>,
+		);
+		expect(screen.getByRole("button", { name: "Request change" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Request cancellation" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Cancel absence" })).toBeNull();
+		fireEvent.click(screen.getByRole("button", { name: "Request change" }));
+		expect(screen.getByText("requesting change")).toBeTruthy();
+	});
+
 	it("shows the absence days the server resolved (#979)", () => {
 		render(
 			<AbsenceEntriesTable
 				currentDate="2026-05-20"
 				absences={[
 					// A Monday-to-Friday range the client would have counted as 5.
-					buildAbsence({ startDate: "2026-10-12", endDate: "2026-10-16", absenceDays: 1 }),
+					buildAbsence({ startDate: "2026-10-12", endDate: "2026-10-16", absenceDays: 1, }),
 				]}
 			/>,
 		);
@@ -106,7 +134,7 @@ describe("AbsenceEntriesTable", () => {
 		render(
 			<AbsenceEntriesTable
 				currentDate="2026-05-20"
-				absences={[buildAbsence({ id: "pending", status: "pending", startDate: "2026-05-21" })]}
+				absences={[buildAbsence({ id: "pending", status: "pending", startDate: "2026-05-21", }),]}
 			/>,
 		);
 
@@ -178,18 +206,20 @@ describe("AbsenceEntriesTable", () => {
 		expect(screen.queryByText("With certificate")).toBeNull();
 	});
 
-	it("shows cancel actions for pending and future approved absences", () => {
+	it("withdraws pending requests immediately but requests approval to cancel approved absences", () => {
 		render(
 			<AbsenceEntriesTable
 				currentDate="2026-05-20"
 				absences={[
-					buildAbsence({ id: "pending", status: "pending", startDate: "2026-05-20" }),
-					buildAbsence({ id: "approved-future", status: "approved", startDate: "2026-05-21" }),
+					buildAbsence({ id: "pending", status: "pending", startDate: "2026-05-20", }),
+					buildAbsence({ id: "approved-future", status: "approved", startDate: "2026-05-21", }),
 				]}
 			/>,
 		);
 
-		expect(screen.getAllByLabelText("Cancel absence")).toHaveLength(2);
+		expect(screen.getAllByLabelText("Cancel absence")).toHaveLength(1);
+		expect(screen.getByRole("button", { name: "Request cancellation"
+	})).toBeTruthy();
 	});
 
 	it("hides cancel actions for approved absences starting today or earlier", () => {
@@ -197,9 +227,9 @@ describe("AbsenceEntriesTable", () => {
 			<AbsenceEntriesTable
 				currentDate="2026-05-20"
 				absences={[
-					buildAbsence({ id: "approved-today", status: "approved", startDate: "2026-05-20" }),
-					buildAbsence({ id: "approved-past", status: "approved", startDate: "2026-05-19" }),
-					buildAbsence({ id: "rejected-future", status: "rejected", startDate: "2026-05-21" }),
+					buildAbsence({ id: "approved-today", status: "approved", startDate: "2026-05-20", }),
+					buildAbsence({ id: "approved-past", status: "approved", startDate: "2026-05-19", }),
+					buildAbsence({ id: "rejected-future", status: "rejected", startDate: "2026-05-21", }),
 				]}
 			/>,
 		);
@@ -212,7 +242,7 @@ describe("AbsenceEntriesTable", () => {
 			<AbsenceEntriesTable
 				currentDate="2026-05-21"
 				absences={[
-					buildAbsence({ id: "approved-today", status: "approved", startDate: "2026-05-21" }),
+					buildAbsence({ id: "approved-today", status: "approved", startDate: "2026-05-21", }),
 				]}
 			/>,
 		);
@@ -283,7 +313,7 @@ describe("AbsenceEntriesTable", () => {
 				<AbsenceEntriesTable
 					currentDate="2026-05-20"
 					absences={[
-						buildAbsence({ id: "sick-pending", category: sickCategory, status: "pending" }),
+						buildAbsence({ id: "sick-pending", category: sickCategory, status: "pending", }),
 						// Approved and already started: no cancel action, but notes still go on.
 						buildAbsence({
 							id: "sick-approved",
@@ -291,7 +321,7 @@ describe("AbsenceEntriesTable", () => {
 							status: "approved",
 							startDate: "2026-05-18",
 						}),
-						buildAbsence({ id: "sick-rejected", category: sickCategory, status: "rejected" }),
+						buildAbsence({ id: "sick-rejected", category: sickCategory, status: "rejected", }),
 						buildAbsence({ id: "vacation", status: "pending" }),
 					]}
 				/>,
@@ -383,13 +413,13 @@ describe("AbsenceEntriesTable", () => {
 						id: "linked",
 						startDate: "2026-05-18",
 						endDate: "2026-05-22",
-						deputy: { id: "employee-2", name: "Ben Example", canOpenProfile: true },
+						deputy: { id: "employee-2", name: "Ben Example", canOpenProfile: true, },
 					}),
 					buildAbsence({
 						id: "plain",
 						startDate: "2026-06-18",
 						endDate: "2026-06-22",
-						deputy: { id: "employee-3", name: "Cleo Example", canOpenProfile: false },
+						deputy: { id: "employee-3", name: "Cleo Example", canOpenProfile: false, },
 					}),
 				]}
 			/>,

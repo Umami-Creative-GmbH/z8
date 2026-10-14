@@ -15,13 +15,14 @@ import type { BoundBotApprovalResult } from "@/lib/bot-platform/approval-decisio
 import {
 	type ApprovalNotice,
 	approvalAttemptNotice,
+	approvalReplyTranslate,
+	approvalUnavailableReply,
 	boundDecisionNotice,
 	discordApprovalNotice,
 	escapeDiscordMarkdown,
 } from "@/lib/bot-platform/approval-notice";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
-import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import {
 	createFollowupMessage,
 	createInteractionResponse,
@@ -57,10 +58,11 @@ export async function handleApprovalButtonClick(
 			interaction.id,
 			interaction.token,
 			InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-			{ content: "Your Discord account is not linked to Z8.", flags: EPHEMERAL },
+			{ content: await notLinkedReply(bot.organizationId), flags: EPHEMERAL },
 		);
 		return;
 	}
+	const recipient = { userId: user.user.userId, organizationId: bot.organizationId };
 	try {
 		const { attemptBotApproval } = await import(
 			"@/lib/bot-platform/approval-decision"
@@ -76,18 +78,14 @@ export async function handleApprovalButtonClick(
 		// approval-only tracking row or another recipient's message.
 		const notice =
 			result.status === "review_required" || result.status === "historical"
-				? await approvalAttemptNotice(
-						result,
-						{ userId: user.user.userId, organizationId: bot.organizationId },
-						{ kind: "compatibility", approvalRequestId: data.id },
-					)
+				? await approvalAttemptNotice(result, recipient, {
+						kind: "compatibility",
+						approvalRequestId: data.id,
+					})
 				: null;
 		const content = notice
 			? discordApprovalNotice(notice)
-			: {
-					content:
-						"This approval is unavailable. Open Z8 to review your inbox.",
-				};
+			: { content: escapeDiscordMarkdown(await approvalUnavailableReply(recipient)) };
 		await createInteractionResponse(
 			interaction.id,
 			interaction.token,
@@ -148,7 +146,7 @@ async function decideBoundInteraction(
 		? await resolveDiscordUser(discordUserId, bot.organizationId)
 		: null;
 	if (user?.status !== "found") {
-		return { content: "Your Discord account is not linked to Z8." };
+		return { content: await notLinkedReply(bot.organizationId) };
 	}
 	const recipient = { userId: user.user.userId, organizationId: bot.organizationId };
 	let result: BoundBotApprovalResult;
@@ -190,7 +188,16 @@ async function decideBoundInteraction(
 	}
 	return notice
 		? discordApprovalNotice(notice)
-		: { content: "This approval is unavailable. Open Z8 to review your inbox." };
+		: { content: escapeDiscordMarkdown(await approvalUnavailableReply(recipient)) };
+}
+
+/** Someone without a linked Z8 user is answered in the organization's default language. */
+async function notLinkedReply(organizationId: string): Promise<string> {
+	const t = await approvalReplyTranslate({ organizationId });
+	return t(
+		"bot.static.notLinkedDiscord",
+		"Your Discord account is not linked to Z8. Go to Settings > Integrations > Discord in your Z8 dashboard to generate a link code, then use `/link` here.",
+	);
 }
 
 /** The exact item a committed decision's evidence names, canonical or legacy. */
@@ -207,8 +214,8 @@ async function outcomeUnknownReply(recipient: {
 	userId: string;
 	organizationId: string;
 }): Promise<DiscordMessagePayload> {
-	const display = await resolveRecipientDisplayContext(recipient).catch(() => null);
-	const t = await getBotTranslate(display?.locale ?? "en");
+	// This reply reports an unknown outcome, so a failed lookup must not stop it.
+	const t = await approvalReplyTranslate(recipient).catch(() => getBotTranslate("en"));
 	return {
 		content: escapeDiscordMarkdown(
 			t(

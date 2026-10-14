@@ -1,16 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import {
-	APP_ROUTE_METADATA,
-	UNKNOWN_ROUTE_METADATA,
-} from "@/lib/navigation/route-metadata";
+import { APP_ROUTE_METADATA, UNKNOWN_ROUTE_METADATA } from "@/lib/navigation/route-metadata";
 import {
 	loadCatalogSlice,
 	loadCompleteServerTranslations,
 	loadShellTranslations,
 } from "./load-translations";
-import { ALL_LANGUAGES, ALL_NAMESPACES } from "./shared";
+import { ALL_LANGUAGES, APP_NAMESPACES } from "./shared";
 import { SHELL_CATALOG_KEYS } from "./shell-catalog";
 
 vi.mock("server-only", () => ({}));
@@ -48,6 +45,10 @@ const SHELL_SOURCES = [
 	"components/notifications/push-permission-modal.tsx",
 	"lib/notifications/localized-notification.ts",
 	"components/time-tracking/time-clock-popover.tsx",
+	"components/time-tracking/clock-vehicle-use.tsx",
+	"components/time-tracking/clock-vehicle-use-notice.ts",
+	"components/time-tracking/vehicle-use-fields.tsx",
+	"components/time-tracking/vehicle-use-format.ts",
 	"components/time-tracking/quick-break-popover.tsx",
 	"components/time-tracking/use-quick-break-handler.ts",
 	"components/time-tracking/project-selector.tsx",
@@ -92,16 +93,14 @@ describe("shared shell catalog", () => {
 		"covers shell consumers, metadata, aliases and dynamic families in %s",
 		async (locale) => {
 			const complete = await loadCompleteServerTranslations(locale);
-			const completeSlice = await loadCatalogSlice(locale, ALL_NAMESPACES);
+			const completeSlice = await loadCatalogSlice(locale, APP_NAMESPACES);
 			const shell = await loadShellTranslations(locale);
 			expect(shell.locale).toBe(locale);
 			// Partial projections must never make a full feature namespace look ready.
 			expect(shell.namespaces).toEqual([]);
 			for (const metadata of [...APP_ROUTE_METADATA, UNKNOWN_ROUTE_METADATA]) {
 				const path = metadata.titleKey.split(".");
-				expect(getPath(complete[locale], path), metadata.titleKey).toEqual(
-					expect.any(String),
-				);
+				expect(getPath(complete[locale], path), metadata.titleKey).toEqual(expect.any(String));
 				expect(getPath(shell.records[locale], path), metadata.titleKey).toEqual(
 					getPath(complete[locale], path),
 				);
@@ -109,9 +108,7 @@ describe("shared shell catalog", () => {
 			for (const key of consumerKeys) {
 				const expected = getPath(complete[locale], key.split("."));
 				if (expected !== undefined)
-					expect(getPath(shell.records[locale], key.split(".")), key).toEqual(
-						expected,
-					);
+					expect(getPath(shell.records[locale], key.split(".")), key).toEqual(expected);
 			}
 			for (const { namespace, path } of SHELL_CATALOG_KEYS) {
 				expect(getPath(shell.records[locale], path), path.join(".")).toEqual(
@@ -119,10 +116,9 @@ describe("shared shell catalog", () => {
 				);
 				if (namespace !== "common") {
 					const alias = [`${namespace}:${path[0]}`, ...path.slice(1)];
-					expect(
-						getPath(shell.records[locale], alias),
-						alias.join("."),
-					).toEqual(getPath(complete[locale], alias));
+					expect(getPath(shell.records[locale], alias), alias.join(".")).toEqual(
+						getPath(complete[locale], alias),
+					);
 				}
 			}
 			for (const path of [
@@ -140,19 +136,13 @@ describe("shared shell catalog", () => {
 					getPath(complete[locale], path.split(".")),
 				);
 			}
-			expect(
-				getPath(shell.records[locale], ["reports", "projects", "title"]),
-			).toEqual(getPath(complete[locale], ["reports", "projects", "title"]));
-			expect(
-				getPath(complete[locale], ["reports", "projects", "budget"]),
-			).toBeDefined();
-			expect(
-				getPath(shell.records[locale], ["reports", "projects", "budget"]),
-			).toBeUndefined();
+			expect(getPath(shell.records[locale], ["reports", "projects", "title"])).toEqual(
+				getPath(complete[locale], ["reports", "projects", "title"]),
+			);
+			expect(getPath(complete[locale], ["reports", "projects", "budget"])).toBeDefined();
+			expect(getPath(shell.records[locale], ["reports", "projects", "budget"])).toBeUndefined();
 			for (const [encoded, owner] of Object.entries(shell.keyOwners)) {
-				expect(getPath(shell.records[locale], JSON.parse(encoded))).toEqual(
-					expect.any(String),
-				);
+				expect(getPath(shell.records[locale], JSON.parse(encoded))).toEqual(expect.any(String));
 				expect(owner).toEqual(expect.any(String));
 				expect(owner).toBe(completeSlice.keyOwners[encoded]);
 			}
@@ -162,9 +152,7 @@ describe("shared shell catalog", () => {
 				namespace: "teamsBot",
 				path: ["common", "more"],
 			});
-			const serializedCompleteBytes = Buffer.byteLength(
-				JSON.stringify(complete),
-			);
+			const serializedCompleteBytes = Buffer.byteLength(JSON.stringify(complete));
 			expect(serializedShellBytes).toBeLessThan(serializedCompleteBytes);
 			process.stdout.write(
 				"CATALOG_BYTES " +

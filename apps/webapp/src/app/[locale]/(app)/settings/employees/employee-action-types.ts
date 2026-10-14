@@ -1,6 +1,7 @@
 import type { EmployeeClockStatus } from "@/components/user-avatar";
 import type { invitation, member, user } from "@/db/auth-schema";
 import type { employee, employeeInvitationDraft, team } from "@/db/schema";
+import type { ContractType } from "@/lib/validations/employee";
 
 export type EmployeeRole = (typeof employee.$inferSelect)["role"];
 export const EMPLOYEE_DRAFT_ID_PREFIX = "draft:";
@@ -29,6 +30,11 @@ export type EmployeeWithRelations = typeof employee.$inferSelect & {
 	membership: EmployeeMembershipSummary | null;
 	/** A required custom field the viewer sees has no value (#818); set by the directory list. */
 	missingRequiredCustomFields?: boolean;
+	/**
+	 * The contract type of the confirmed terms in force today in the
+	 * organization's timezone, or null without such terms; set by the detail read.
+	 */
+	contractTypeToday?: ContractType | null;
 };
 
 export type EmployeeInvitationDraftWithRelations = typeof employeeInvitationDraft.$inferSelect & {

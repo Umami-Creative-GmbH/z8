@@ -1,23 +1,31 @@
-import { compareInstants, type Instant } from "@/lib/datetime/temporal-core";
+import type { InstantRange } from "@/lib/datetime/temporal-boundaries";
+import {
+	compareInstants,
+	comparePlainDates,
+	earlierInstant,
+	earlierPlainDate,
+	type Instant,
+	laterInstant,
+	laterPlainDate,
+	parsePlainDate,
+} from "@/lib/datetime/temporal-core";
+import type { TermsSpan } from "@/lib/employment-history/terms-in-force";
+import {
+	type WageTermsRow,
+	type WageWorkPeriod,
+	wagePeriodsForWork,
+} from "@/lib/employment-history/wage-periods";
 import type { HourlyEarningsData, RatePeriodEarnings } from "./types";
 
-export type EarningsWorkPeriod = {
-	start: Instant;
-	end: Instant;
-	durationMinutes: number;
-};
-
-export type EarningsRatePeriod = {
-	id: string;
-	rate: number;
-	currency: string;
-	effectiveFrom: Instant;
-	effectiveTo: Instant | null;
-};
+/**
+ * Hourly earnings come from the confirmed employment terms in force when the
+ * work was done (Organization ADR 0002): hourly terms pay their wage, fixed
+ * terms and work no terms cover earn nothing.
+ */
 
 export class HourlyEarningsIntegrityError extends Error {
 	constructor(
-		readonly code: "missing_rate" | "overlapping_rates" | "mixed_currencies",
+		readonly code: "missing_rate" | "mixed_currencies",
 		message: string,
 	) {
 		super(message);
@@ -25,13 +33,8 @@ export class HourlyEarningsIntegrityError extends Error {
 	}
 }
 
-function later(left: Instant, right: Instant): Instant {
-	return compareInstants(left, right) >= 0 ? left : right;
-}
-
-function earlier(left: Instant, right: Instant): Instant {
-	return compareInstants(left, right) <= 0 ? left : right;
-}
+/** The report range: its instants and its first and last calendar dates. */
+export type EarningsRange = InstantRange & { startDate: string; endDate: string };
 
 function elapsedMilliseconds(start: Instant, end: Instant): number {
 	return Number(end.epochNanoseconds - start.epochNanoseconds) / 1_000_000;
@@ -45,132 +48,79 @@ function roundCurrency(value: number): number {
 	return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-export function calculateHourlyEarningsFromIntervals(input: {
-	workPeriods: EarningsWorkPeriod[];
-	ratePeriods: EarningsRatePeriod[];
-	rangeStart: Instant;
-	rangeEndExclusive: Instant;
-	timezone: string;
-}): HourlyEarningsData {
-	const rates = [...input.ratePeriods].sort((left, right) =>
-		compareInstants(left.effectiveFrom, right.effectiveFrom),
+/**
+ * Earnings for the work in `range` under the employee's confirmed terms.
+ *
+ * `spans` are the employee's confirmed terms overlapping the range, in date
+ * order and not clipped to it (`loadConfirmedTermsSpans`). Returns undefined
+ * when no hourly terms are in force during the range.
+ */
+export function calculateHourlyEarningsFromTerms<T extends WageTermsRow>(input: {
+	spans: readonly TermsSpan<T>[];
+	workPeriods: readonly WageWorkPeriod[];
+	range: EarningsRange;
+}): HourlyEarningsData | undefined {
+	const rangeStartDate = parsePlainDate(input.range.startDate);
+	const rangeEndDate = parsePlainDate(input.range.endDate);
+	const hourlySpans = input.spans.filter(
+		(span) =>
+			span.terms.contractType === "hourly" &&
+			comparePlainDates(span.from, rangeEndDate) <= 0 &&
+			(span.until === null || comparePlainDates(span.until, rangeStartDate) > 0),
 	);
-	const minutesByRate = new Map<string, number>();
-	const usedRates = new Map<string, EarningsRatePeriod>();
+	if (hourlySpans.length === 0) return undefined;
 
-	for (const workPeriod of input.workPeriods) {
-		const clippedStart = later(workPeriod.start, input.rangeStart);
-		const clippedEnd = earlier(workPeriod.end, input.rangeEndExclusive);
-		if (
-			compareInstants(clippedStart, clippedEnd) >= 0 ||
-			workPeriod.durationMinutes <= 0
-		) {
+	const millisecondsBySpan = new Map<TermsSpan<T>, number>();
+	for (const piece of wagePeriodsForWork(input.spans, input.workPeriods)) {
+		const elapsed = elapsedMilliseconds(piece.start, piece.end);
+		const clippedStart = laterInstant(piece.start, input.range.start);
+		const clippedEnd = earlierInstant(piece.end, input.range.endExclusive);
+		if (elapsed <= 0 || piece.durationMs <= 0 || compareInstants(clippedStart, clippedEnd) >= 0) {
 			continue;
 		}
-
-		const fullElapsedMilliseconds = elapsedMilliseconds(
-			workPeriod.start,
-			workPeriod.end,
-		);
-		if (fullElapsedMilliseconds <= 0) continue;
-
-		let cursor = clippedStart;
-		for (const ratePeriod of rates) {
-			const rateEnd = ratePeriod.effectiveTo ?? input.rangeEndExclusive;
-			const segmentStart = later(clippedStart, ratePeriod.effectiveFrom);
-			const segmentEnd = earlier(clippedEnd, rateEnd);
-			if (compareInstants(segmentStart, segmentEnd) >= 0) continue;
-
-			if (compareInstants(segmentStart, cursor) > 0) {
-				throw new HourlyEarningsIntegrityError(
-					"missing_rate",
-					"Hourly earnings cannot be calculated because rate history does not cover all worked time.",
-				);
-			}
-			if (compareInstants(segmentStart, cursor) < 0) {
-				throw new HourlyEarningsIntegrityError(
-					"overlapping_rates",
-					"Hourly earnings cannot be calculated because rate history contains overlapping rates.",
-				);
-			}
-
-			const segmentMinutes =
-				workPeriod.durationMinutes *
-				(elapsedMilliseconds(segmentStart, segmentEnd) /
-					fullElapsedMilliseconds);
-			minutesByRate.set(
-				ratePeriod.id,
-				(minutesByRate.get(ratePeriod.id) ?? 0) + segmentMinutes,
-			);
-			usedRates.set(ratePeriod.id, ratePeriod);
-			cursor = segmentEnd;
-		}
-
-		if (compareInstants(cursor, clippedEnd) < 0) {
+		if (piece.wage.kind === "missing_wage") {
 			throw new HourlyEarningsIntegrityError(
 				"missing_rate",
-				"Hourly earnings cannot be calculated because rate history does not cover all worked time.",
+				"Hourly earnings cannot be calculated because hourly employment terms have no wage.",
 			);
 		}
+		if (piece.wage.kind !== "hourly" || !piece.span) continue;
+
+		const share = piece.durationMs * (elapsedMilliseconds(clippedStart, clippedEnd) / elapsed);
+		millisecondsBySpan.set(piece.span, (millisecondsBySpan.get(piece.span) ?? 0) + share);
 	}
 
-	if (minutesByRate.size === 0) {
-		return {
-			totalHours: 0,
-			totalEarnings: 0,
-			currency: "EUR",
-			byRatePeriod: [],
-		};
-	}
-
-	const currencies = new Set(
-		[...usedRates.values()].map((rate) => rate.currency),
-	);
-	if (currencies.size !== 1) {
+	const workedSpans = hourlySpans.filter((span) => millisecondsBySpan.has(span));
+	const currencies = new Set(workedSpans.map((span) => span.terms.currency));
+	if (currencies.size > 1) {
 		throw new HourlyEarningsIntegrityError(
 			"mixed_currencies",
-			"Hourly earnings cannot be calculated across rate histories with different currencies.",
+			"Hourly earnings cannot be calculated across employment terms with different currencies.",
 		);
 	}
 
-	const byRatePeriod: RatePeriodEarnings[] = rates.flatMap((ratePeriod) => {
-		const minutes = minutesByRate.get(ratePeriod.id);
-		if (!minutes) return [];
-		const displayStart = later(ratePeriod.effectiveFrom, input.rangeStart);
-		const displayEndExclusive = earlier(
-			ratePeriod.effectiveTo ?? input.rangeEndExclusive,
-			input.rangeEndExclusive,
-		);
-		const displayEnd = displayEndExclusive.subtract({ milliseconds: 1 });
-		const earnings = roundCurrency((minutes / 60) * ratePeriod.rate);
-		return [
-			{
-				rate: ratePeriod.rate,
-				currency: ratePeriod.currency,
-				periodStart: displayStart
-					.toZonedDateTimeISO(input.timezone)
-					.toPlainDate()
-					.toString(),
-				periodEnd: displayEnd
-					.toZonedDateTimeISO(input.timezone)
-					.toPlainDate()
-					.toString(),
-				hours: roundHours(minutes),
-				earnings,
-			},
-		];
+	const byRatePeriod: RatePeriodEarnings[] = workedSpans.map((span) => {
+		const minutes = (millisecondsBySpan.get(span) ?? 0) / 60_000;
+		const rate = span.terms.hourlyRate ?? 0;
+		const lastDay = span.until ? span.until.subtract({ days: 1 }) : rangeEndDate;
+		return {
+			rate,
+			currency: span.terms.currency,
+			periodStart: laterPlainDate(span.from, rangeStartDate).toString(),
+			periodEnd: earlierPlainDate(lastDay, rangeEndDate).toString(),
+			hours: roundHours(minutes),
+			earnings: roundCurrency((minutes / 60) * rate),
+		};
 	});
-	const totalMinutes = [...minutesByRate.values()].reduce(
-		(sum, minutes) => sum + minutes,
+	const totalMinutes = workedSpans.reduce(
+		(sum, span) => sum + (millisecondsBySpan.get(span) ?? 0) / 60_000,
 		0,
 	);
 
 	return {
 		totalHours: roundHours(totalMinutes),
-		totalEarnings: roundCurrency(
-			byRatePeriod.reduce((sum, ratePeriod) => sum + ratePeriod.earnings, 0),
-		),
-		currency: [...currencies][0] ?? "EUR",
+		totalEarnings: roundCurrency(byRatePeriod.reduce((sum, period) => sum + period.earnings, 0)),
+		currency: [...currencies][0] ?? hourlySpans.at(-1)?.terms.currency ?? "EUR",
 		byRatePeriod,
 	};
 }

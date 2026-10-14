@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "{count} regjistrime të kohës u fshinë",
           "title": "Pastro të dhënat e kohës",
           "vacationAllowancesReset": "{count} leje pushimi u rivendosën",
+          "vehiclesDeleted": "{count, plural, one {# automjet u fshi} other {# automjete u fshinë}}",
           "willDelete": "Kjo do të fshijë përgjithmonë:",
           "workCategoriesDeleted": "{count} kategori pune u fshinë",
           "workCategorySetsDeleted": "{count} grupe të kategorive të punës u fshinë",
@@ -109,7 +110,7 @@
           "label": "Llojet e të dhënave",
           "locations": {
             "countLabel": "Numri i vendndodhjeve:",
-            "description": "Vendndodhjet e punës dhe nënzonat",
+            "descriptionWithVehicles": "Vendndodhjet e punës, nënzonat dhe disa automjete",
             "title": "Vendndodhjet"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Duke krijuar regjistrimet e kohës dhe periudhat e punës",
           "label": "Regjistrimet e kohës"
+        },
+        "vehicleUse": {
+          "description": "Regjistrimi i përdorimit të automjetit gjatë periudhave të punës",
+          "label": "Përdorimi i automjetit"
         },
         "workCategories": {
           "description": "Duke krijuar grupet e kategorive të punës dhe kategoritë",

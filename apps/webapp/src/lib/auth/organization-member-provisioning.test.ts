@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { type SQL, sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { employee, employeeInvitationDraft } from "@/db/schema";
 import {
 	ensureEmployeeForOrganizationMember,
@@ -9,9 +9,15 @@ import {
 } from "./organization-member-provisioning";
 
 const loggerWarn = vi.hoisted(() => vi.fn());
+const writeFirstEmploymentTerms = vi.hoisted(() => vi.fn(async () => null));
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ warn: loggerWarn }),
+}));
+
+// The terms themselves are covered by first-terms.integration.test.ts.
+vi.mock("@/lib/employment-history/first-terms", () => ({
+	writeFirstEmploymentTerms,
 }));
 
 type ProvisioningDb = Parameters<typeof ensureEmployeeForOrganizationMember>[0];
@@ -355,7 +361,6 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			position: "Principal",
 			employeeNumber: "E-OLD",
 			contractType: "hourly",
-			currentHourlyRate: "75.00",
 			isActive: false,
 		});
 
@@ -566,6 +571,9 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 			'lower(btrim("user"."email")) = "employee_invitation_draft"."normalized_email"',
 		);
 		expect(deleteQuery.sql).toContain('"employee"."organization_id"');
+		// PostgreSQL rejects `exists select …`; the subqueries need parentheses (#1185).
+		expect(deleteQuery.sql.match(/exists \(\s*select 1/g)).toHaveLength(2);
+		expect(deleteQuery.sql).not.toMatch(/exists\s+select/);
 		expect(deleteQuery.params).toEqual([
 			"org-1",
 			"draft-accepted",
@@ -879,7 +887,7 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 		expect(source).toContain("?? null");
 	});
 
-	it("applies invitation draft fields when creating an employee", async () => {
+	it("applies invitation draft fields, but not the wage, when creating an employee", async () => {
 		const db = createInvitationDraftDbMock({
 			draft: {
 				invitationId: "invite-1",
@@ -921,8 +929,11 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 				position: "Lead",
 				employeeNumber: "E-100",
 				contractType: "hourly",
-				currentHourlyRate: "42.50",
 			}),
+		);
+		// The wage lives only in the first employment terms (Organization ADR 0002).
+		expect(db.values).not.toHaveBeenCalledWith(
+			expect.objectContaining({ currentHourlyRate: expect.anything() }),
 		);
 	});
 
@@ -999,7 +1010,6 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 				role: "manager",
 				position: "Prepared Lead",
 				contractType: "hourly",
-				currentHourlyRate: "42.50",
 			}),
 		);
 		expect(db.delete).toHaveBeenCalledWith(employeeInvitationDraft);
@@ -1113,8 +1123,10 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 				role: "manager",
 				position: "Lead",
 				contractType: "hourly",
-				currentHourlyRate: "42.50",
 			}),
+		);
+		expect(db.set).not.toHaveBeenCalledWith(
+			expect.objectContaining({ currentHourlyRate: expect.anything() }),
 		);
 	});
 
@@ -1130,7 +1142,6 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 				position: "Principal",
 				employeeNumber: "E-OLD",
 				contractType: "hourly",
-				currentHourlyRate: "75.00",
 			},
 			draft: {
 				invitationId: "invite-1",
@@ -1218,7 +1229,6 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 			startDate,
 			endDate,
 			contractType: "hourly",
-			currentHourlyRate: "42.50",
 		});
 	});
 
@@ -1264,5 +1274,143 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 				teamId: "team-1",
 			}),
 		);
+	});
+});
+
+describe("ensureEmployeeForOrganizationMember first employment terms", () => {
+	const startDate = new Date("2026-03-01T00:00:00.000Z");
+	const hourlyDraft = {
+		invitationId: "invite-1",
+		organizationId: "org-1",
+		role: "employee",
+		startDate,
+		contractType: "hourly",
+		currentHourlyRate: "42.50",
+		updatedBy: "admin-1",
+	};
+
+	function accept(db: ReturnType<typeof createInvitationDraftDbMock>) {
+		return ensureEmployeeForOrganizationMember(db as any, {
+			mode: "membershipAccepted",
+			userId: "user-1",
+			organizationId: "org-1",
+			memberRole: "member",
+			invitationId: "invite-1",
+		});
+	}
+
+	function recordTermsWrites(db: ReturnType<typeof createInvitationDraftDbMock>) {
+		writeFirstEmploymentTerms.mockImplementation(async () => {
+			db.events.push("first-terms");
+			return null;
+		});
+	}
+
+	beforeEach(() => {
+		writeFirstEmploymentTerms.mockReset();
+		writeFirstEmploymentTerms.mockResolvedValue(null);
+	});
+
+	it("writes the draft's first terms in the transaction that creates the employee", async () => {
+		const db = createInvitationDraftDbMock({ draft: hourlyDraft });
+		recordTermsWrites(db);
+
+		await accept(db);
+
+		expect(writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(db, {
+			organizationId: "org-1",
+			employeeId: "employee-created",
+			actorUserId: "admin-1",
+			contractType: "hourly",
+			hourlyRate: 42.5,
+			startDate,
+		});
+		expect(db.events).toEqual([
+			"employee-read",
+			"employee-provisioned",
+			"first-terms",
+			"transaction-committed",
+			"cleanup-committed:true",
+			"draft-deleted",
+		]);
+	});
+
+	it("writes the draft's first terms after reactivating an employee", async () => {
+		const db = createInvitationDraftDbMock({
+			existingEmployee: { id: "employee-existing", organizationId: "org-1", isActive: false },
+			draft: hourlyDraft,
+		});
+		recordTermsWrites(db);
+
+		await accept(db);
+
+		expect(writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(
+			db,
+			expect.objectContaining({ employeeId: "employee-existing", hourlyRate: 42.5 }),
+		);
+		expect(db.events).toEqual([
+			"employee-read",
+			"employee-provisioned",
+			"first-terms",
+			"transaction-committed",
+			"cleanup-committed:true",
+			"draft-deleted",
+		]);
+	});
+
+	it("passes a draft without a wage or start date through as missing", async () => {
+		const db = createInvitationDraftDbMock({
+			draft: { ...hourlyDraft, currentHourlyRate: null, startDate: null, updatedBy: null },
+		});
+
+		await accept(db);
+
+		expect(writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(
+			db,
+			expect.objectContaining({ hourlyRate: null, startDate: null, actorUserId: "user-1" }),
+		);
+	});
+
+	it("writes no terms without a draft", async () => {
+		const db = createInvitationDraftDbMock();
+
+		await accept(db);
+
+		expect(writeFirstEmploymentTerms).not.toHaveBeenCalled();
+	});
+
+	it("writes no terms for an employee who is already active", async () => {
+		const db = createInvitationDraftDbMock({
+			existingEmployee: { id: "employee-existing", organizationId: "org-1", isActive: true },
+			draft: hourlyDraft,
+		});
+
+		await accept(db);
+
+		expect(writeFirstEmploymentTerms).not.toHaveBeenCalled();
+	});
+
+	it("writes no terms when the database keeps an ended employee inactive", async () => {
+		const db = createInvitationDraftDbMock({
+			existingEmployee: { id: "employee-existing", organizationId: "org-1", isActive: false },
+			draft: hourlyDraft,
+		});
+		db.update.mockReturnValue({
+			set: vi.fn(() => ({ where: vi.fn(() => ({ returning: vi.fn(async () => []) })) })),
+		});
+
+		await accept(db);
+
+		expect(writeFirstEmploymentTerms).not.toHaveBeenCalled();
+	});
+
+	it("fails the whole acceptance and keeps the draft when the terms write fails", async () => {
+		const db = createInvitationDraftDbMock({ draft: hourlyDraft });
+		writeFirstEmploymentTerms.mockRejectedValue(new Error("terms write failed"));
+
+		await expect(accept(db)).rejects.toThrow("terms write failed");
+
+		expect(db.transactionState.committed).toBe(false);
+		expect(db.delete).not.toHaveBeenCalled();
 	});
 });

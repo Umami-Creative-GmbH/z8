@@ -60,7 +60,7 @@ A work period that has ended and now counts in the employee's work record.
 _Avoid_: Finished entries, closed session
 
 **Work attribution**:
-What a work period is recorded against: its project, work category, work location and whether it is billable. Changing it is an amendment of completed work, under the same change policy for every part.
+What a work period is recorded against: its project, work category, work location, vehicle use and whether it is billable. Changing it is an amendment of completed work, under the same change policy for every part.
 _Avoid_: Work metadata, tags
 
 **Day total**:
@@ -74,6 +74,32 @@ _Avoid_: Locked period, payroll period, frozen month, closed balance period
 **Reopening**:
 Lifting a month's close for some or all of the employees it covers, with a stated reason, by someone permitted to reopen. It is the only way to change work inside a closed month, and the month stays open for them until it is closed again.
 _Avoid_: Unlock
+
+### Driving
+
+**Vehicle use**:
+The part of a work period's attribution saying which vehicle the employee drove during it, with its odometer readings and driven distance, in whole kilometres. A break carries the vehicle over to the resumed work, and one reading at the break ends the first work period's readings and starts the next.
+_Avoid_: Trip, drive, mileage entry
+
+**Odometer reading**:
+The kilometre count an employee reads off a vehicle's odometer and records with a work period: a start reading when it starts and an end reading when it ends.
+_Avoid_: Meter reading, km reading, mileage
+
+**Vehicle use expected**:
+An employee the organization expects to record vehicle use on every work period, as opposed to one who is only asked. It never refuses or delays a clock command.
+_Avoid_: Mandatory mileage, required vehicle
+
+**Driving details missing**:
+A work period of an employee with vehicle use expected that lacks its vehicle or a reading. It stays visible to the employee and their manager until completed.
+_Avoid_: Incomplete mileage, missing km
+
+**Driven distance**:
+The kilometres an employee drove in one vehicle during one work period: the end reading minus the start reading, or the distance they entered themselves when the start reading is missing. A work period has at most one vehicle; Z8 keeps no tax logbook of trips.
+_Avoid_: Mileage (a travel-expense item), trip, logbook, Fahrtenbuch
+
+**Own vehicle**:
+The employee's private vehicle, recorded on work without identifying it. Only distance driven in an own vehicle can pre-fill a travel-expense mileage item.
+_Avoid_: Private car, personal vehicle
 
 ### Work balance
 

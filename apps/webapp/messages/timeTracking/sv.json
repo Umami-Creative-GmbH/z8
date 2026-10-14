@@ -74,6 +74,18 @@
     },
     "currentlyClockedIn": "Du är för närvarande instämplad",
     "deadline": "Deadline",
+    "drivingDetailsMissing": {
+      "description": "Din organisation förväntar sig fordon och mätarställningar för ditt arbete. Lägg till dem i dessa arbetspass.",
+      "missing": {
+        "endReading": "Ingen slutmätarställning",
+        "readings": "Inga mätarställningar",
+        "startReading": "Ingen startmätarställning",
+        "vehicle": "Inget fordon"
+      },
+      "open": "Öppna i kalendern",
+      "title": "Körningsuppgifter saknas",
+      "truncated": "Endast de senaste arbetspassen visas. Fyll i dessa för att se resten."
+    },
     "errors": {
       "alreadyClockedIn": "Du är redan instämplad",
       "appendReviewRequired": "Instämpling kräver en granskning av din tidshistorik",
@@ -214,7 +226,10 @@
         "onBreak": "På rast sedan {time}"
       },
       "unreachableDescription": "Kiosken kan inte nå servern. Kontrollera nätverksanslutningen; stämpling fungerar endast online.",
-      "unreachableTitle": "Kiosk offline"
+      "unreachableTitle": "Kiosk offline",
+      "vehicle": {
+        "back": "Tillbaka"
+      }
     },
     "manualEntry": {
       "addButton": "Lägg till manuell registrering",
@@ -386,6 +401,7 @@
       "corrected": "Korrigerad",
       "date": "Datum",
       "description": "Beskrivning",
+      "drivingDetailsMissing": "Körningsuppgifter saknas",
       "duration": "Varaktighet",
       "emptyState": "Inga tidsregistreringar hittades för den här veckan.",
       "recordedLocalTime": "Registrerad lokal tid",
@@ -422,6 +438,58 @@
     "title": "Tidsregistrering",
     "unknownCategory": "Okänd kategori",
     "unknownProject": "Okänt projekt",
+    "vehicleUse": {
+      "archived": "arkiverad",
+      "breakReading": "Mätarställning vid rast (km)",
+      "breakReadingHint": "Valfritt. Den avslutar detta arbetes mätarställning och påbörjar nästa.",
+      "changeLive": "Ändra",
+      "derivedDistance": "Körd sträcka: {distance} km",
+      "distanceKm": "Körd sträcka (km)",
+      "distanceText": "{distance} km körda",
+      "endKm": "Slutmätarställning (km)",
+      "expectedHint": "Din organisation förväntar sig att du registrerar vilket fordon du körde och dess mätarställningar.",
+      "expenseReport": {
+        "action": "Lägg till i utläggsrapport",
+        "add": "Lägg till {distance} km",
+        "added": "I en utläggsrapport",
+        "alreadyAdded": "Det här arbetets sträcka finns redan i en utläggsrapport.",
+        "chooseReport": "Lägg till i vilken utläggsrapport?",
+        "failed": "Sträckan kunde inte läggas till i utläggsrapporten. Försök igen.",
+        "newReport": "Ny körjournal",
+        "routeHint": "Datum och sträcka fylls i från detta arbete. Du anger rutten i rapporten.",
+        "untitledTrip": "Namnlös resa"
+      },
+      "liveChanged": "Fordonsanvändning har ändrats",
+      "liveChangeFailed": "Fordonsanvändningen kunde inte ändras",
+      "notRecorded": "Fordonsanvändning registrerades inte",
+      "notSentOffline": "Det kunde inte sparas med denna offline-stämpling. Lägg till det i arbetsperioden när du är online.",
+      "noVehicle": "Inget fordon",
+      "ownVehicle": "Eget fordon",
+      "readingMissing": "–",
+      "readingsText": "{start} → {end} km",
+      "refusal": {
+        "archived": "Detta fordon är arkiverat och kan inte längre väljas.",
+        "distanceClaimed": "Denna arbetsperiods körsträcka finns på en utläggspost. Ta bort posten från utläggsrapporten innan du delar arbetsperioden.",
+        "endBeforeStart": "Slutmätarställningen kan inte vara lägre än startmätarställningen.",
+        "invalidDistance": "Ange körsträckan i hela kilometer.",
+        "invalidReading": "Ange mätarställning i hela kilometer.",
+        "invalidVehicle": "Välj ett organisationsfordon eller ditt eget fordon.",
+        "notFound": "Fordonet hittades inte.",
+        "off": "Fordonsanvändning registreras inte för denna medarbetare.",
+        "splitOutOfRange": "Kilometertalet vid delningen måste ligga inom arbetsperiodens kilometer."
+      },
+      "startKm": "Startmätarställning (km)",
+      "title": "Fordonsanvändning",
+      "unknownVehicle": "Okänt fordon (ej tillgängligt)",
+      "vehicle": "Fordon",
+      "warning": {
+        "distanceAboveLimit": "{distance} km är mer än {limit} km under en arbetsperiod.",
+        "onOtherLiveWork": "Detta fordon är redan registrerat på en annan medarbetares pågående arbete.",
+        "speedAboveLimit": "Den körda sträckan motsvarar ett snitt på {speed} km/h under denna arbetsperiod, vilket är mer än {limit} km/h.",
+        "startBelowLastEnd": "Startmätarställningen är lägre än detta fordons senast registrerade slutmätarställning ({lastEndKm} km).",
+        "title": "Kontrollera fordonsanvändningen"
+      }
+    },
     "welcomeBack": "Välkommen tillbaka, {name}",
     "workCategory": "Arbetskategori",
     "workLocation": "Arbetsplats",

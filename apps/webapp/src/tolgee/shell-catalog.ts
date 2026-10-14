@@ -2,10 +2,7 @@ import type { CatalogSlice } from "./catalog-slices";
 import type { Namespace, TreeTranslationsData } from "./shared";
 
 export type ShellCatalogKey = { namespace: Namespace; path: readonly string[] };
-function keys(
-	namespace: Namespace,
-	paths: readonly string[],
-): ShellCatalogKey[] {
+function keys(namespace: Namespace, paths: readonly string[]): ShellCatalogKey[] {
 	return paths.map((path) => ({ namespace, path: path.split(".") }));
 }
 
@@ -40,6 +37,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 	...keys("timeTracking", [
 		"timeTracking.errors",
 		"timeTracking.quickBreak",
+		// Vehicle use is asked in the header clock on every app route.
+		"timeTracking.vehicleUse",
 		"timeTracking.timezoneMismatch",
 		"timeTracking.addNotePrompt",
 		"timeTracking.billable.description",
@@ -126,7 +125,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"organization.switchTo",
 		"organization.switching",
 	]),
-	...keys("reports", ["reports.projects.title"]),
+	...keys("reports", ["reports.projects.title", "reports.vehicles.title"]),
 	...keys("settings/enterprise", [
 		"settings.apiKeys.description",
 		"settings.apiKeys.title",
@@ -192,6 +191,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.kiosks.title",
 		"settings.locations.description",
 		"settings.locations.title",
+		"settings.myData.description",
+		"settings.myData.title",
 		"settings.notifications.description",
 		"settings.notifications.title",
 		"settings.organizations.description",
@@ -265,6 +266,10 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.timezone.picker.search",
 		"settings.travelExpenses.navDescription",
 		"settings.travelExpenses.title",
+		"settings.vehicleUse.description",
+		"settings.vehicleUse.title",
+		"settings.vehicles.description",
+		"settings.vehicles.title",
 		"settings.webhooks.description",
 		"settings.webhooks.title",
 		"settings.wellness.description",
@@ -284,10 +289,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.telegram.description",
 		"settings.telegram.title",
 	]),
-	...keys("settings/demo", [
-		"settings.demoData.description",
-		"settings.demoData.title",
-	]),
+	...keys("settings/demo", ["settings.demoData.description", "settings.demoData.title"]),
 	...keys("settings/people", [
 		"settings.permissions.title",
 		"settings.employees.details",
@@ -301,10 +303,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.teams.description",
 		"settings.teams.title",
 	]),
-	...keys("settings/holidays", [
-		"settings.holidays.description",
-		"settings.holidays.title",
-	]),
+	...keys("settings/holidays", ["settings.holidays.description", "settings.holidays.title"]),
 	...keys("settings/payrollExport", [
 		"settings.payrollExport.description",
 		"settings.payrollExport.title",
@@ -329,8 +328,7 @@ function readPath(
 	path: readonly string[],
 ): TreeTranslationsData | string | undefined {
 	let value: TreeTranslationsData | string | undefined = tree;
-	for (const key of path)
-		value = typeof value === "object" ? value[key] : undefined;
+	for (const key of path) value = typeof value === "object" ? value[key] : undefined;
 	return value;
 }
 function copyPath(

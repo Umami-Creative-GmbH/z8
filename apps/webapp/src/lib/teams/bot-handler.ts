@@ -8,7 +8,7 @@
 import type { Activity, TurnContext } from "botbuilder";
 import { env } from "@/env";
 import { executeCommand, parseCommand } from "@/lib/bot-platform/command-registry";
-import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
+import { type BotTranslateFn, getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
@@ -19,8 +19,28 @@ import { handleShiftPickupAction } from "./shift-pickup-handler";
 import { resolveTenant, updateTenantServiceUrl } from "./tenant-resolver";
 import { TeamsError } from "./types";
 import { resolveTeamsUser } from "./user-resolver";
+import { parseTeamsVehicleUseInvoke } from "./vehicle-use-card";
 
 const logger = createLogger("TeamsBotHandler");
+
+/** Who a turn turned out to come from, as far as it got before a failure. */
+interface TurnRecipient {
+	organizationId?: string;
+	userId?: string;
+}
+
+/**
+ * An error reply's language: the recipient language once the tenant's
+ * organization is known (the linked user's own, else the organization's
+ * default), otherwise `en`. A failed lookup must not stop the reply.
+ */
+async function errorReplyLocale(recipient: TurnRecipient): Promise<string> {
+	if (!recipient.organizationId) return DEFAULT_LANGUAGE;
+	return getUserLocale({
+		userId: recipient.userId ?? null,
+		organizationId: recipient.organizationId,
+	}).catch(() => DEFAULT_LANGUAGE);
+}
 
 /**
  * Handle incoming bot activity
@@ -41,14 +61,15 @@ export async function handleBotActivity(context: TurnContext): Promise<void> {
 		"Received bot activity",
 	);
 
+	const recipient: TurnRecipient = {};
 	try {
 		switch (activity.type) {
 			case "message":
-				await handleMessage(context);
+				await handleMessage(context, recipient);
 				break;
 
 			case "invoke":
-				await handleInvoke(context);
+				await handleInvoke(context, recipient);
 				break;
 
 			case "conversationUpdate":
@@ -65,12 +86,11 @@ export async function handleBotActivity(context: TurnContext): Promise<void> {
 	} catch (error) {
 		logger.error({ error, activityType: activity.type }, "Error handling bot activity");
 
+		const t = await getBotTranslate(await errorReplyLocale(recipient));
 		if (error instanceof TeamsError) {
 			// Send user-friendly error message
-			const errorMessage = await getErrorMessage(error);
-			await context.sendActivity(errorMessage);
+			await context.sendActivity(getErrorMessage(error, t));
 		} else {
-			const t = await getBotTranslate(DEFAULT_LANGUAGE);
 			await context.sendActivity(
 				t(
 					"bot.static.genericError",
@@ -84,7 +104,7 @@ export async function handleBotActivity(context: TurnContext): Promise<void> {
 /**
  * Handle incoming message activity (user typed something)
  */
-async function handleMessage(context: TurnContext): Promise<void> {
+async function handleMessage(context: TurnContext, recipient: TurnRecipient): Promise<void> {
 	const activity = context.activity;
 	const tenantId = activity.conversation?.tenantId;
 
@@ -117,6 +137,7 @@ async function handleMessage(context: TurnContext): Promise<void> {
 	}
 
 	const tenant = tenantResult.tenant;
+	recipient.organizationId = tenant.organizationId;
 
 	// Update service URL if needed
 	if (activity.serviceUrl) {
@@ -146,12 +167,15 @@ async function handleMessage(context: TurnContext): Promise<void> {
 
 	// Save conversation reference for proactive messaging
 	if (userResult.status === "found") {
+		recipient.userId = userResult.user.userId;
 		await saveConversationReference(context, userResult.user.userId, tenant.organizationId);
 	}
 
-	// Get user locale
-	const locale =
-		userResult.status === "found" ? await getUserLocale(userResult.user.userId) : DEFAULT_LANGUAGE;
+	// The recipient language: the linked user's, else the organization's default
+	const locale = await getUserLocale({
+		userId: userResult.status === "found" ? userResult.user.userId : null,
+		organizationId: tenant.organizationId,
+	});
 	const t = await getBotTranslate(locale);
 
 	// Parse the message as a command
@@ -257,7 +281,7 @@ async function handleMessage(context: TurnContext): Promise<void> {
 /**
  * Handle invoke activity (card button clicks)
  */
-async function handleInvoke(context: TurnContext): Promise<void> {
+async function handleInvoke(context: TurnContext, recipient: TurnRecipient): Promise<void> {
 	const activity = context.activity;
 	const tenantId = activity.conversation?.tenantId;
 
@@ -280,6 +304,7 @@ async function handleInvoke(context: TurnContext): Promise<void> {
 	}
 
 	const tenant = tenantResult.tenant;
+	recipient.organizationId = tenant.organizationId;
 
 	// Handle card action
 	const value = activity.value;
@@ -305,12 +330,22 @@ async function handleInvoke(context: TurnContext): Promise<void> {
 		});
 		return;
 	}
+	recipient.userId = userResult.user.userId;
 
 	// Bound approval cards (#293): Universal Actions carrying a reviewed
 	// binding. The invoke response reports the outcome.
 	const bound = parseTeamsBoundApprovalInvoke(activity);
 	if (bound.kind !== "none") {
 		const response = await handleBoundApprovalInvoke(context, bound, userResult.user, tenant);
+		await context.sendActivity({ type: "invokeResponse", value: response });
+		return;
+	}
+
+	// Vehicle use cards (#1125) after a committed clock command.
+	const vehicleUse = parseTeamsVehicleUseInvoke(activity);
+	if (vehicleUse.kind !== "none") {
+		const { handleTeamsVehicleUseInvoke } = await import("./vehicle-use-prompt");
+		const response = await handleTeamsVehicleUseInvoke(vehicleUse, userResult.user, tenant);
 		await context.sendActivity({ type: "invokeResponse", value: response });
 		return;
 	}
@@ -357,7 +392,12 @@ async function handleConversationUpdate(context: TurnContext): Promise<void> {
 			if (tenantResult.status === "not_found") {
 				await sendSetupInstructions(context, tenantId);
 			} else if (tenantResult.status === "configured") {
-				const t = await getBotTranslate(DEFAULT_LANGUAGE);
+				const t = await getBotTranslate(
+					await getUserLocale({
+						userId: null,
+						organizationId: tenantResult.tenant.organizationId,
+					}),
+				);
 				await context.sendActivity(
 					t("bot.static.welcomeTeams", 'Welcome to Z8! Type "help" to see available commands.'),
 				);
@@ -484,9 +524,7 @@ function removeBotMention(text: string, activity: Activity): string {
 /**
  * Get user-friendly error message for TeamsError
  */
-async function getErrorMessage(error: TeamsError): Promise<string> {
-	const t = await getBotTranslate(DEFAULT_LANGUAGE);
-
+function getErrorMessage(error: TeamsError, t: BotTranslateFn): string {
 	switch (error.code) {
 		case "TENANT_NOT_CONFIGURED":
 			return t(

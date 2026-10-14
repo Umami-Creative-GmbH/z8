@@ -33,26 +33,23 @@ import type { VerifiedLegacyApprovalState } from "@/lib/approvals/workflow/ports
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import {
 	isBillingMutationAllowed,
-	requireBillingForMutation,
+	requireBillingForMutation
 } from "@/lib/billing/guard";
 import {
-	comparePlainDates,
 	dateFromInstant,
-	type PlainDate,
-	parsePlainDate,
-	systemClock,
+	systemClock
 } from "@/lib/datetime/temporal-core";
 import { onApprovedAbsenceCancelledByEmployee } from "@/lib/notifications/triggers";
 import { deleteSickNotesOfCancelledAbsence } from "@/lib/personnel-file/sick-note-store";
 import { deletePersonnelDocumentObject } from "@/lib/personnel-file/storage";
 import { runPersonnelFileCleanup } from "@/lib/personnel-file/upload-ledger";
 import { addCalendarSyncJob } from "@/lib/queue";
-import { removeCanonicalAbsenceRecordInTransaction } from "./actions.canonical";
-import { getCurrentEmployee } from "./current-employee";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
 import { assertAbsenceOpenById } from "@/lib/time-tracking/closed-months/store";
 import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
+import { removeCanonicalAbsenceRecordInTransaction } from "./actions.canonical";
+import { getCurrentEmployee } from "./current-employee";
 
 export interface CancelAbsenceEmployeeContext {
 	id: string;
@@ -179,7 +176,7 @@ async function deleteScopedAbsence(
 					? isNull(absenceEntry.approvalWorkflowId)
 					: eq(
 							absenceEntry.approvalWorkflowId,
-							input.expectedApprovalWorkflowId,
+							input.expectedApprovalWorkflowId
 						),
 				eq(absenceEntry.canonicalRecordId, input.expectedCanonicalRecordId),
 			),
@@ -225,7 +222,7 @@ async function deleteScopedAbsence(
 function assertExactIds(
 	rows: Array<{ id: string }>,
 	expectedIds: string[],
-	message: string,
+	message: string
 ): void {
 	const expected = new Set(expectedIds);
 	const returnedIds = rows.map((row) => row.id);
@@ -341,7 +338,7 @@ async function cancelLegacyApprovalRows(
 									? isNull(approvalChainStageInstance.approvalRequestId)
 									: eq(
 											approvalChainStageInstance.approvalRequestId,
-											stage.approvalRequestId,
+											stage.approvalRequestId
 										),
 							),
 						),
@@ -395,7 +392,7 @@ async function cancelLegacyApprovalRows(
 						...requestsToDelete.map((request) =>
 							and(
 								eq(approvalRequest.id, request.id),
-								eq(approvalRequest.status, request.status),
+								eq(approvalRequest.status, request.status)
 							),
 						),
 					),
@@ -450,7 +447,7 @@ export async function cancelAbsenceRequestForEmployee(
 				clock: systemClock,
 				finalizeAbsenceTerminal: async () => {
 					throw new Error(
-						"Absence decision finalization is unavailable in cancellation",
+						"Absence decision finalization is unavailable in cancellation"
 					);
 				},
 				deleteCancelledAbsence: async (input) => {
@@ -468,7 +465,7 @@ export async function cancelAbsenceRequestForEmployee(
 							expectedApprovalWorkflowId: input.expectedApprovalWorkflowId,
 							expectedCanonicalRecordId: input.expectedCanonicalRecordId,
 							actorUserId: currentEmployee.userId,
-						},
+						}
 					);
 				},
 			},
@@ -535,7 +532,7 @@ export async function cancelAbsenceRequestForEmployee(
 				const absence = (await transactionDb.query.absenceEntry.findFirst({
 					where: and(
 						eq(absenceEntry.id, absenceId),
-						eq(absenceEntry.organizationId, organizationId),
+						eq(absenceEntry.organizationId, organizationId)
 					),
 					with: {
 						category: true,
@@ -561,7 +558,7 @@ export async function cancelAbsenceRequestForEmployee(
 					canonicalRecord,
 					workflowRow,
 					requests,
-					chains,
+					chains
 				] = await Promise.all([
 					transactionDb.query.organization.findFirst({
 						where: eq(organization.id, organizationId),
@@ -603,7 +600,7 @@ export async function cancelAbsenceRequestForEmployee(
 						with: { stages: true },
 						limit: 2,
 					}),
-				]);
+				],);
 				if (
 					ownedOrganization?.id !== organizationId ||
 					!ownedOrganization.timezone ||
@@ -642,30 +639,16 @@ export async function cancelAbsenceRequestForEmployee(
 				) {
 					fail();
 				}
-
-				let today: PlainDate;
-				try {
-					today = systemClock
-						.nowInstant()
-						.toZonedDateTimeISO(ownedOrganization.timezone)
-						.toPlainDate();
-				} catch {
-					fail("Absence organization timezone is invalid");
-				}
 				const owner = transactionActor.id === absence.employeeId;
 				if (absence.status !== "pending" && absence.status !== "approved") {
 					fail("You do not have permission to cancel this absence");
 				}
-				const canCancel =
-					(absence.status === "pending" &&
-						(owner || transactionActor.role === "admin")) ||
-					(absence.status === "approved" &&
-						owner &&
-						comparePlainDates(parsePlainDate(absence.startDate), today) > 0);
+				const canCancel =absence.status === "pending" &&
+						(owner || transactionActor.role === "admin");
 				if (!canCancel) {
 					fail(
 						absence.status === "approved" && owner
-							? "Approved absences can only be cancelled before they start"
+							? "Approved absences require a cancellation request"
 							: "You do not have permission to cancel this absence",
 					);
 				}
@@ -791,7 +774,7 @@ export async function cancelAbsenceRequestForEmployee(
 					actorUserId: transactionActor.userId,
 				});
 				return { absence, disposition: "executed" as const, deliveryIntent };
-			},
+			}
 		);
 
 		if (committedCancellation.disposition === "replayed") {
@@ -831,7 +814,7 @@ export async function cancelAbsenceRequestForEmployee(
 		) {
 			await notifyManagersOfApprovedSelfCancellation(
 				committedAbsence,
-				organizationId,
+				organizationId
 			);
 		}
 		return { success: true };

@@ -5,8 +5,10 @@ import {
 	IconAward,
 	IconCalendarDue,
 	IconCertificate,
+	IconFileCertificate,
 	IconLanguage,
 	IconLoader2,
+	IconPencil,
 	IconPlus,
 	IconSchool,
 	IconShieldCheck,
@@ -16,8 +18,7 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
-import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -47,8 +48,22 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import type { EmployeeSkillWithDetails } from "@/lib/effect/services/skill.service";
 import { queryKeys } from "@/lib/query/keys";
-import { useEmployeeSkills, useOrganizationSkills } from "@/lib/query/use-skills";
+import {
+	SkillChangeRefusedError,
+	useEmployeeSkills,
+	useOrganizationSkills,
+	useSkillExpiryWindow,
+	useUpdateEmployeeSkillExpiry,
+} from "@/lib/query/use-skills";
+import {
+	type SkillExpiryBadge,
+	type SkillExpiryRefusal,
+	skillExpiryBadge,
+} from "@/lib/scheduling/skill-expiry";
 
 type SkillCategory = "safety" | "equipment" | "certification" | "training" | "language" | "custom";
 
@@ -71,16 +86,24 @@ function getCategoryIcon(category: SkillCategory) {
 	return CATEGORY_ICONS[category] ?? IconAward;
 }
 
-function isExpired(expiresAt: Date | null): boolean {
-	if (!expiresAt) return false;
-	return DateTime.fromJSDate(expiresAt) < DateTime.now();
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** The copy for a refused skill expiry date change, or null for any other failure. */
+function skillExpiryRefusalText(t: Translate, refusal: string | undefined): string | null {
+	switch (refusal as SkillExpiryRefusal | undefined) {
+		case "expiry_date_set_by_certificate":
+			return t(
+				"settings.skills.errors.expiryDateSetByCertificate",
+				"A skill certificate in the personnel file sets this date. Change the date on the certificate.",
+			);
+		default:
+			return null;
+	}
 }
 
-function isExpiringSoon(expiresAt: Date | null, days = 30): boolean {
-	if (!expiresAt) return false;
-	const expiry = DateTime.fromJSDate(expiresAt);
-	const threshold = DateTime.now().plus({ days });
-	return expiry > DateTime.now() && expiry <= threshold;
+/** A skill expiry date (`YYYY-MM-DD`) in the app language; never shifted by the viewer's zone. */
+function formatExpiryDate(expiresAt: string, locale: string): string {
+	return formatPlainDate(parsePlainDate(expiresAt), locale, "dateMedium");
 }
 
 export function EmployeeSkillsCard({
@@ -89,14 +112,26 @@ export function EmployeeSkillsCard({
 	canManageSkills,
 }: EmployeeSkillsCardProps) {
 	const { t } = useTranslate();
+	const locale = useTolgee().getLanguage() || "en";
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
+	const [editing, setEditing] = useState<EmployeeSkillWithDetails | null>(null);
 
 	// Fetch employee's skills
 	const { data: employeeSkills, isLoading } = useEmployeeSkills({
 		employeeId,
 		enabled: !!employeeId,
 	});
+	// Badges count from the organization's today, not the viewer's
+	const { data: expiryWindow } = useSkillExpiryWindow({ organizationId });
+	const badgeFor = (expiresAt: string | null): SkillExpiryBadge | null =>
+		expiryWindow
+			? skillExpiryBadge({
+					expiresAt,
+					today: expiryWindow.today,
+					expiringSoonDays: expiryWindow.expiringSoonDays,
+				})
+			: null;
 
 	// Remove skill mutation
 	const removeMutation = useMutation({
@@ -172,8 +207,9 @@ export function EmployeeSkillsCard({
 					<div className="space-y-3">
 						{skills.map((employeeSkill) => {
 							const CategoryIcon = getCategoryIcon(employeeSkill.skill.category as SkillCategory);
-							const expired = isExpired(employeeSkill.expiresAt);
-							const expiringSoon = isExpiringSoon(employeeSkill.expiresAt);
+							const badge = badgeFor(employeeSkill.expiresAt);
+							const expired = badge === "expired";
+							const expiringSoon = badge === "expiringSoon";
 
 							return (
 								<div
@@ -203,6 +239,12 @@ export function EmployeeSkillsCard({
 														{t("settings.skills.expiringSoon", "Expiring Soon")}
 													</Badge>
 												)}
+												{employeeSkill.certificateOnFile && (
+													<Badge variant="outline">
+														<IconFileCertificate className="mr-1 size-3" aria-hidden="true" />
+														{t("settings.skills.certificateOnFile", "Certificate on file")}
+													</Badge>
+												)}
 											</div>
 											{employeeSkill.expiresAt && (
 												<p
@@ -210,15 +252,19 @@ export function EmployeeSkillsCard({
 												>
 													{expired
 														? t("settings.skills.expiredOn", "Expired on {date}", {
-																date: DateTime.fromJSDate(employeeSkill.expiresAt).toLocaleString(
-																	DateTime.DATE_MED,
-																),
+																date: formatExpiryDate(employeeSkill.expiresAt, locale),
 															})
 														: t("settings.skills.expiresOn", "Expires {date}", {
-																date: DateTime.fromJSDate(employeeSkill.expiresAt).toLocaleString(
-																	DateTime.DATE_MED,
-																),
+																date: formatExpiryDate(employeeSkill.expiresAt, locale),
 															})}
+												</p>
+											)}
+											{employeeSkill.expiryDateFromCertificate && (
+												<p className="text-xs text-muted-foreground">
+													{t(
+														"settings.skills.expiryDateFromCertificate",
+														"A skill certificate in the personnel file sets this date.",
+													)}
 												</p>
 											)}
 											{employeeSkill.notes && (
@@ -228,23 +274,48 @@ export function EmployeeSkillsCard({
 									</div>
 									{canManageSkills && (
 										<TooltipProvider>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon"
-														className="size-8"
-														onClick={() =>
-															handleRemove(employeeSkill.skillId, employeeSkill.skill.name)
-														}
-														disabled={removeMutation.isPending}
-														aria-label={t("common.remove", "Remove")}
-													>
-														<IconTrash className="size-4" aria-hidden="true" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>{t("common.remove", "Remove")}</TooltipContent>
-											</Tooltip>
+											<div className="flex items-center gap-1">
+												{/* Skill certificates set the date: only the certificate changes it (#1145). */}
+												{!employeeSkill.expiryDateFromCertificate && (
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button
+																variant="ghost"
+																size="icon"
+																className="size-8"
+																onClick={() => setEditing(employeeSkill)}
+																aria-label={t(
+																	"settings.skills.editExpiryDateFor",
+																	"Edit expiry date of {skillName}",
+																	{ skillName: employeeSkill.skill.name },
+																)}
+															>
+																<IconPencil className="size-4" aria-hidden="true" />
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent>
+															{t("settings.skills.editExpiryDate", "Edit expiry date")}
+														</TooltipContent>
+													</Tooltip>
+												)}
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="size-8"
+															onClick={() =>
+																handleRemove(employeeSkill.skillId, employeeSkill.skill.name)
+															}
+															disabled={removeMutation.isPending}
+															aria-label={t("common.remove", "Remove")}
+														>
+															<IconTrash className="size-4" aria-hidden="true" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent>{t("common.remove", "Remove")}</TooltipContent>
+												</Tooltip>
+											</div>
 										</TooltipProvider>
 									)}
 								</div>
@@ -263,9 +334,127 @@ export function EmployeeSkillsCard({
 					open={dialogOpen}
 					onOpenChange={setDialogOpen}
 					onSuccess={handleSuccess}
+					minDate={expiryWindow?.today}
+				/>
+			) : null}
+
+			{canManageSkills && editing ? (
+				<EditSkillExpiryDialog
+					key={editing.id}
+					employeeId={employeeId}
+					employeeSkill={editing}
+					onClose={() => setEditing(null)}
 				/>
 			) : null}
 		</Card>
+	);
+}
+
+// ============================================
+// Edit Skill Expiry Date ActionPanel
+// ============================================
+
+interface EditSkillExpiryDialogProps {
+	employeeId: string;
+	employeeSkill: EmployeeSkillWithDetails;
+	onClose: () => void;
+}
+
+function EditSkillExpiryDialog({ employeeId, employeeSkill, onClose }: EditSkillExpiryDialogProps) {
+	const { t } = useTranslate();
+	const updateMutation = useUpdateEmployeeSkillExpiry();
+	const requiresExpiry = employeeSkill.skill.requiresExpiry;
+
+	const form = useForm({
+		defaultValues: { expiresAt: employeeSkill.expiresAt ?? "" },
+		onSubmit: async ({ value }) => {
+			try {
+				await updateMutation.mutateAsync({
+					employeeId,
+					skillId: employeeSkill.skillId,
+					expiresAt: value.expiresAt || null,
+				});
+				toast.success(t("settings.skills.expiryDateUpdated", "Expiry date updated"));
+				onClose();
+			} catch (error) {
+				// Server wording is never shown: a refusal gets its own copy, anything else the generic one.
+				const refusal = error instanceof SkillChangeRefusedError ? error.refusal : undefined;
+				toast.error(
+					skillExpiryRefusalText(t, refusal) ??
+						t("settings.skills.expiryDateUpdateError", "Failed to update the expiry date"),
+				);
+			}
+		},
+	});
+
+	const expiresAt = useStore(form.store, (state) => state.values.expiresAt);
+	const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
+
+	return (
+		<ActionPanel open onOpenChange={(open) => (open ? undefined : onClose())}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
+						{t("settings.skills.editExpiryDate", "Edit expiry date")}
+					</ActionPanelTitle>
+					<ActionPanelDescription>
+						{t(
+							"settings.skills.editExpiryDateDescription",
+							"The last day {skillName} is valid. Shifts after this day show it as expired.",
+							{ skillName: employeeSkill.skill.name },
+						)}
+					</ActionPanelDescription>
+				</ActionPanelHeader>
+
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						form.handleSubmit();
+					}}
+					className="flex min-h-0 flex-1 flex-col"
+				>
+					<ActionPanelBody className="grid gap-4">
+						<form.Field name="expiresAt">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor="edit-skill-expiry">
+										{t("settings.skills.expiryDate", "Expiry Date")}
+										{requiresExpiry && " *"}
+									</Label>
+									<DatePicker
+										id="edit-skill-expiry"
+										value={field.state.value}
+										onChange={field.handleChange}
+										onBlur={field.handleBlur}
+										required={requiresExpiry}
+									/>
+									{requiresExpiry && (
+										<p className="text-xs text-muted-foreground">
+											{t(
+												"settings.skills.expiryRequiredHint",
+												"This certification requires an expiry date",
+											)}
+										</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+					</ActionPanelBody>
+
+					<ActionPanelFooter>
+						<Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+							{t("common.cancel", "Cancel")}
+						</Button>
+						<Button type="submit" disabled={isSubmitting || (requiresExpiry && !expiresAt)}>
+							{isSubmitting && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+							)}
+							{t("common.save", "Save")}
+						</Button>
+					</ActionPanelFooter>
+				</form>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
 
@@ -280,6 +469,8 @@ interface AssignSkillDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSuccess: () => void;
+	/** The organization's today (`YYYY-MM-DD`), the earliest expiry date offered. */
+	minDate?: string;
 }
 
 interface AssignSkillFormValues {
@@ -295,6 +486,7 @@ function AssignSkillDialog({
 	open,
 	onOpenChange,
 	onSuccess,
+	minDate,
 }: AssignSkillDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -328,7 +520,8 @@ function AssignSkillDialog({
 			const result = await assignSkillToEmployee({
 				employeeId,
 				skillId: data.skillId,
-				expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
+				// The picked plain day is the skill expiry date, never a timestamp
+				expiresAt: data.expiresAt || null,
 				notes: data.notes || undefined,
 			});
 			if (!result.success) throw new Error(result.error);
@@ -438,7 +631,7 @@ function AssignSkillDialog({
 										value={field.state.value}
 										onChange={field.handleChange}
 										onBlur={field.handleBlur}
-										min={DateTime.now().toISODate() ?? undefined}
+										min={minDate}
 									/>
 									{selectedSkill?.requiresExpiry && (
 										<p className="text-xs text-muted-foreground">

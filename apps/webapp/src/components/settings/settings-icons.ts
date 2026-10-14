@@ -11,6 +11,7 @@ import {
 	IconCalendarClock,
 	IconCalendarEvent,
 	IconCalendarShare,
+	IconCar,
 	IconCertificate,
 	IconChartBar,
 	IconClock,
@@ -94,4 +95,5 @@ export const SETTINGS_ICON_MAP: Record<
 	"device-tablet": IconDeviceTablet,
 	forms: IconForms,
 	share: IconShare,
+	car: IconCar,
 };

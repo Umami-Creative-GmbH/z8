@@ -71,7 +71,8 @@ export type SettingsIconName =
 	| "receipt"
 	| "device-tablet"
 	| "forms"
-	| "share";
+	| "share"
+	| "car";
 
 export interface SettingsEntry {
 	id: string;
@@ -184,6 +185,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Whether your position is recorded with your clock events, and your consent",
 		href: "/settings/position-stamps",
 		icon: "map-pin",
+		minimumTier: "member",
+		group: "account",
+	},
+	{
+		id: "my-data",
+		titleKey: "settings.myData.title",
+		titleDefault: "My data",
+		descriptionKey: "settings.myData.description",
+		descriptionDefault: "Download a copy of the personal data this organization keeps about you",
+		href: "/settings/my-data",
+		icon: "database-export",
 		minimumTier: "member",
 		group: "account",
 	},
@@ -302,6 +314,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 	},
 	{
+		id: "vehicles",
+		titleKey: "settings.vehicles.title",
+		titleDefault: "Vehicles",
+		descriptionKey: "settings.vehicles.description",
+		descriptionDefault: "Vehicles your employees drive for work, and their assigned drivers",
+		href: "/settings/vehicles",
+		icon: "car",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
 		id: "holidays",
 		titleKey: "settings.holidays.title",
 		titleDefault: "Holidays",
@@ -343,6 +366,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Record positions with employees' own clock events, with their consent",
 		href: "/settings/position-capture",
 		icon: "map-pin",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
+		id: "vehicle-use",
+		titleKey: "settings.vehicleUse.title",
+		titleDefault: "Vehicle use",
+		descriptionKey: "settings.vehicleUse.description",
+		descriptionDefault: "Who is asked to record the vehicle they drove and its odometer readings",
+		href: "/settings/vehicle-use",
+		icon: "car",
 		minimumTier: "orgAdmin",
 		group: "administration",
 	},

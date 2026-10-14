@@ -4,6 +4,12 @@ Employees request time away from work, such as vacation or sick leave, and manag
 
 ## Language
 
+### Changes
+
+**Absence change request**:
+An employee's request to change the dates or half-day coverage of, or cancel, their own approved absence, including one recorded on their behalf. It keeps the absence category unchanged and takes effect only after another eligible approver approves it.
+_Avoid_: adjustment (reserved for vacation balances), direct edit, sick-day correction
+
 ### Counting
 
 **Working day**:
@@ -17,12 +23,44 @@ _Avoid_: business days, vacation hours, calendar days
 ### Vacation
 
 **Vacation allowance**:
-The absence days an employee may take as vacation in a year, before carryover and adjustments. For a part-time employee it is already reduced to their working days, because absence days count only the days they work.
+The absence days an employee may take as vacation in a year, before carryover and adjustments. For a part-time employee it is already reduced to their working days, because absence days count only the days they work. In a year the employee joins or leaves, it is their prorated allowance.
 _Avoid_: vacation entitlement, annual hours
 
+**Custom allowance**:
+A vacation allowance an admin sets for one employee and one year in place of their policy's. It is final: it is never prorated.
+_Avoid_: override, manual allowance
+
+**Prorated allowance**:
+The vacation allowance of a year the employee joins or leaves: 1/12 for each full employment month they work in that year, with a fraction of ½ day or more rounded up to a whole day. It never drops below the statutory minimum once the employee completes the waiting period in that year and does not leave by 30 June. Each employment of a rehired employee is prorated separately, and together they never exceed the full allowance.
+_Avoid_: pro-rata vacation, partial vacation, "Teilurlaub" in English copy
+
+**Employment month**:
+A month counted from the day an employment starts, such as 15 October to 14 November. Days left over at the end of the year or before the last working day do not make an employment month.
+_Avoid_: calendar month, month worked
+
+**Waiting period**:
+The first six months of an employment. Each rehire starts a new one.
+_Avoid_: probation, probationary period
+
+**Statutory minimum**:
+The fewest vacation days a policy's employees are legally owed in a full year. The prorated allowance never cuts below it once the waiting period is complete, unless the employee leaves by 30 June.
+_Avoid_: legal allowance, minimum vacation
+
+**Overdrawn vacation**:
+Vacation an employee has already taken beyond their prorated allowance. It is shown but never reclaimed.
+_Avoid_: negative balance, vacation debt
+
 **Vacation balance**:
-An employee's vacation allowance plus carryover and adjustments, minus the absence days of their approved and pending vacation in that year.
+An employee's vacation allowance plus carryover and adjustments, minus the absence days of their approved and pending vacation in that year. On an accrual policy it starts at 0 instead of the allowance, and the accrual adjustments carry the allowance. Every page reads the same balance, from the organization's company default policy for the year: of the defaults in effect during the year, the one that started last.
 _Avoid_: remaining vacation, leave account
+
+**Accrual policy**:
+A vacation policy that grants its allowance in monthly or biweekly shares instead of all at once on 1 January.
+_Avoid_: accrual type monthly (in prose)
+
+**Adjustment**:
+A signed number of vacation days added to one employee's balance for one year. A **manual adjustment** is made by an admin or manager and appears in the adjustment history. An **accrual adjustment** is one month's share of an accrual policy's allowance for the days of the month the employee is employed, leavers included, written by the system on the month's first day; an employee has at most one per month, and together they are the employee's accrual to date.
+_Avoid_: correction, bonus days
 
 ### Cover
 

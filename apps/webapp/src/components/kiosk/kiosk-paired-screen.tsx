@@ -13,6 +13,7 @@ import type {
 	KioskEmployeeListing,
 	KioskEmployeeSnapshot,
 	KioskRefusalCode,
+	KioskVehicleUse,
 } from "@/lib/time-tracking/kiosk/protocol";
 import { KioskConfirmation } from "./kiosk-confirmation";
 import {
@@ -25,6 +26,8 @@ import { KioskHome } from "./kiosk-home";
 import { useKioskLanguage } from "./kiosk-language";
 import { KIOSK_PIN_REFUSALS, useKioskRefusalMessage } from "./kiosk-messages";
 import { KioskPinPad } from "./kiosk-pin-pad";
+import { type KioskVehicleQuestion, kioskVehicleQuestion } from "./kiosk-vehicle-use";
+import { type KioskVehicleUseAnswer, KioskVehicleUseStep } from "./kiosk-vehicle-use-step";
 
 /** How often a paired kiosk checks in, so revocation shows and "last seen" stays current. */
 const KIOSK_HEARTBEAT_MS = 60_000;
@@ -40,7 +43,17 @@ interface KioskPairedScreenProps {
 	onUnpaired: () => void;
 }
 
-type Confirmation = { name: string; action: KioskPanelAction; at: string; zone: string };
+type Confirmation = {
+	name: string;
+	action: KioskPanelAction;
+	at: string;
+	zone: string;
+	/** Entered vehicle use could not be recorded; the action ran without it (#1123). */
+	vehicleUseLeftOut: boolean;
+};
+
+/** An action's vehicle question and the context it asks from (#1123). */
+type VehicleAsk = { question: KioskVehicleQuestion; context: KioskVehicleUse };
 
 type Flow =
 	| { step: "home" }
@@ -58,20 +71,41 @@ type Flow =
 			pending: KioskPanelAction | null;
 			error: KioskClockRefusal | "offline" | null;
 	  }
+	| {
+			/** Vehicle use asked between the action's button and the action (#1123). */
+			step: "vehicle";
+			pin: string;
+			snapshot: KioskEmployeeSnapshot;
+			action: KioskPanelAction;
+			ask: VehicleAsk;
+			pending: boolean;
+	  }
 	| { step: "done"; confirmation: Confirmation };
 
 /**
  * What a confirmation shows: the time the server recorded for the action (a
  * day ended on a break ends at the break's start), never the device's clock.
  */
-function confirmationOf(action: KioskPanelAction, after: KioskClockResult): Confirmation {
-	return { name: after.employee.name, action, at: after.at.instant, zone: after.at.zone };
+function confirmationOf(
+	action: KioskPanelAction,
+	after: KioskClockResult,
+	vehicleUseLeftOut: boolean,
+): Confirmation {
+	return {
+		name: after.employee.name,
+		action,
+		at: after.at.instant,
+		zone: after.at.zone,
+		vehicleUseLeftOut,
+	};
 }
 
 /** The kiosk as the server describes it now, from the heartbeat; null when unreadable. */
 async function kioskInfoOf(response: Response): Promise<KioskDeviceInfo | null> {
 	if (!response.ok) return null;
-	const body = (await response.json().catch(() => null)) as { kiosk?: KioskDeviceInfo } | null;
+	const body = (await response.json().catch(() => null)) as {
+		kiosk?: KioskDeviceInfo;
+	} | null;
 	return body?.kiosk && typeof body.kiosk.boardEnabled === "boolean" ? body.kiosk : null;
 }
 
@@ -126,7 +160,9 @@ export function KioskPairedScreen({
 	// Every screen of an employee's turn returns home on its own; a touch restarts the wait.
 	const returnHome = useEffectEvent(() => goHome());
 	const busy =
-		(flow.step === "pin" && flow.busy) || (flow.step === "employee" && flow.pending !== null);
+		(flow.step === "pin" && flow.busy) ||
+		(flow.step === "employee" && flow.pending !== null) ||
+		(flow.step === "vehicle" && flow.pending);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: `activity` restarts the idle timer
 	useEffect(() => {
 		if (flow.step === "home" || busy) return;
@@ -143,7 +179,13 @@ export function KioskPairedScreen({
 		});
 		if (result.kind === "kiosk") return kioskRefused(result.code);
 		if (result.kind === "ok") {
-			setFlow({ step: "employee", pin, snapshot: result.body, pending: null, error: null });
+			setFlow({
+				step: "employee",
+				pin,
+				snapshot: result.body,
+				pending: null,
+				error: null,
+			});
 			return;
 		}
 		setFlow({
@@ -155,25 +197,52 @@ export function KioskPairedScreen({
 		});
 	}
 
-	async function act(pin: string, snapshot: KioskEmployeeSnapshot, action: KioskPanelAction) {
-		setFlow({ step: "employee", pin, snapshot, pending: action, error: null });
+	async function act(
+		pin: string,
+		snapshot: KioskEmployeeSnapshot,
+		action: KioskPanelAction,
+		vehicle?: { ask: VehicleAsk; answer: KioskVehicleUseAnswer },
+	) {
+		setFlow(
+			vehicle
+				? {
+						step: "vehicle",
+						pin,
+						snapshot,
+						action,
+						ask: vehicle.ask,
+						pending: true,
+					}
+				: { step: "employee", pin, snapshot, pending: action, error: null },
+		);
+		const vehicleUse = vehicle?.answer.vehicleUse;
 		const result = await kioskPost<KioskClockResult>(token, "/api/kiosk/clock", {
 			employeeId: snapshot.employee.id,
 			pin,
 			action: KIOSK_ACTION_REQUEST[action],
 			operationId: crypto.randomUUID(),
+			...(vehicleUse ? { vehicleUse } : {}),
 		});
 		if (result.kind === "kiosk") return kioskRefused(result.code);
 		if (result.kind === "ok") {
 			setFlow({
 				step: "done",
-				confirmation: confirmationOf(action, result.body),
+				confirmation: confirmationOf(action, result.body, vehicle?.answer.leftOut ?? false),
 			});
 			return;
 		}
 		if (result.kind === "refused" && KIOSK_PIN_REFUSALS.has(result.refusal.code)) {
-			const employee = { id: snapshot.employee.id, name: snapshot.employee.name };
-			setFlow({ step: "pin", employee, attempt: 1, busy: false, error: result.refusal });
+			const employee = {
+				id: snapshot.employee.id,
+				name: snapshot.employee.name,
+			};
+			setFlow({
+				step: "pin",
+				employee,
+				attempt: 1,
+				busy: false,
+				error: result.refusal,
+			});
 			return;
 		}
 		const refusal = result.kind === "offline" ? "offline" : result.refusal;
@@ -181,7 +250,24 @@ export function KioskPairedScreen({
 			refusal !== "offline" && "state" in refusal && refusal.state && refusal.dayTotal
 				? { ...snapshot, state: refusal.state, dayTotal: refusal.dayTotal }
 				: snapshot;
-		setFlow({ step: "employee", pin, snapshot: after, pending: null, error: refusal });
+		setFlow({
+			step: "employee",
+			pin,
+			snapshot: after,
+			pending: null,
+			error: refusal,
+		});
+	}
+
+	/** An action's button: the vehicle step first when the action asks vehicle use (#1123). */
+	function choose(pin: string, snapshot: KioskEmployeeSnapshot, action: KioskPanelAction) {
+		const question = kioskVehicleQuestion(action, snapshot.vehicleUse);
+		if (question && snapshot.vehicleUse) {
+			const ask = { question, context: snapshot.vehicleUse };
+			setFlow({ step: "vehicle", pin, snapshot, action, ask, pending: false });
+			return;
+		}
+		void act(pin, snapshot, action);
 	}
 
 	return (
@@ -209,7 +295,13 @@ export function KioskPairedScreen({
 					locale={language.locale}
 					onChooseLanguage={language.choose}
 					onPick={(employee) =>
-						setFlow({ step: "pin", employee, attempt: 0, busy: false, error: null })
+						setFlow({
+							step: "pin",
+							employee,
+							attempt: 0,
+							busy: false,
+							error: null,
+						})
 					}
 					onKioskRefused={kioskRefused}
 				/>
@@ -233,27 +325,76 @@ export function KioskPairedScreen({
 					pending={flow.pending}
 					disabled={!online}
 					error={flow.error ? message(flow.error) : null}
-					onAction={(action) => void act(flow.pin, flow.snapshot, action)}
+					onAction={(action) => choose(flow.pin, flow.snapshot, action)}
 					onBack={goHome}
 				/>
 			) : null}
-			{flow.step === "done" ? (
-				<KioskConfirmation
-					name={flow.confirmation.name}
-					action={labels.done[flow.confirmation.action]}
-					time={formatKioskTime(flow.confirmation.at, flow.confirmation.zone, language.locale)}
-					note={
-						flow.confirmation.action === "end_day"
-							? t(
-									"timeTracking.kiosk.done.endDayNote",
-									"Your day ended at the start of your break.",
-								)
-							: null
+			{flow.step === "vehicle" ? (
+				<KioskVehicleUseStep
+					question={flow.ask.question}
+					snapshot={flow.snapshot}
+					context={flow.ask.context}
+					actionLabel={labels.buttons[flow.action]}
+					pending={flow.pending}
+					disabled={!online}
+					onConfirm={(answer) =>
+						void act(flow.pin, flow.snapshot, flow.action, {
+							ask: flow.ask,
+							answer,
+						})
 					}
-					returnsInMs={KIOSK_CONFIRMATION_MS}
+					onBack={() =>
+						setFlow({
+							step: "employee",
+							pin: flow.pin,
+							snapshot: flow.snapshot,
+							pending: null,
+							error: null,
+						})
+					}
+				/>
+			) : null}
+			{flow.step === "done" ? (
+				<KioskDoneScreen
+					confirmation={flow.confirmation}
+					locale={language.locale}
+					labels={labels}
 					onHome={goHome}
 				/>
 			) : null}
 		</div>
+	);
+}
+
+function KioskDoneScreen({
+	confirmation,
+	locale,
+	labels,
+	onHome,
+}: {
+	confirmation: Confirmation;
+	locale: string;
+	labels: ReturnType<typeof useKioskActionLabels>;
+	onHome: () => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<KioskConfirmation
+			name={confirmation.name}
+			action={labels.done[confirmation.action]}
+			time={formatKioskTime(confirmation.at, confirmation.zone, locale)}
+			note={
+				confirmation.action === "end_day"
+					? t("timeTracking.kiosk.done.endDayNote", "Your day ended at the start of your break.")
+					: null
+			}
+			warning={
+				confirmation.vehicleUseLeftOut
+					? t("timeTracking.vehicleUse.notRecorded", "Vehicle use was not recorded")
+					: null
+			}
+			returnsInMs={KIOSK_CONFIRMATION_MS}
+			onHome={onHome}
+		/>
 	);
 }

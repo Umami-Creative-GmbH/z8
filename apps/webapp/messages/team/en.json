@@ -108,6 +108,36 @@
       "noBalance": "No balance"
     },
     "description": "View and manage employees you directly supervise",
+    "driving": {
+      "columns": {
+        "calendar": "Calendar",
+        "date": "Date",
+        "employee": "Employee",
+        "missing": "Missing",
+        "time": "Recorded local time"
+      },
+      "count": "{count, plural, one {# work period is missing driving details.} other {# work periods are missing driving details.}}",
+      "descriptionAll": "Work periods that lack a vehicle or an odometer reading although vehicle use is expected. They stay listed until the details are completed.",
+      "descriptionManaged": "Work periods of the employees you manage that lack a vehicle or an odometer reading although vehicle use is expected. They stay listed until the details are completed.",
+      "empty": "No work is missing driving details.",
+      "filters": {
+        "allEmployees": "All employees",
+        "allTeams": "All teams",
+        "employee": "Employee",
+        "team": "Team"
+      },
+      "loading": "Loading driving details",
+      "missing": {
+        "endReading": "No end reading",
+        "readings": "No odometer readings",
+        "startReading": "No start reading",
+        "vehicle": "No vehicle"
+      },
+      "openCalendar": "Calendar",
+      "openCalendarOf": "Open the calendar of {name}",
+      "title": "Driving details missing",
+      "truncated": "Showing the newest {count} work periods. Filter by team or employee to see the rest."
+    },
     "empty": {
       "action": "Go to Employee Settings",
       "description": "Employees assigned to you as their manager will appear here. You can manage team assignments in the employee settings.",

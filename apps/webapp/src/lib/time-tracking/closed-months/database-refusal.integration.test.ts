@@ -6,6 +6,7 @@
  * absence writer serialize on the organization configuration guard, so the
  * close sees what the writer committed and the writer sees the close.
  */
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -135,6 +136,70 @@ describe("the closed-month database refusal", () => {
 			fixture.pool.query(
 				"update work_period set end_time = end_time + interval '1 hour' where id = $1",
 				[april.workPeriodId],
+			),
+		).resolves.toMatchObject({ rowCount: 1 });
+	});
+
+	it("refuses changing vehicle use on the canonical work record of closed work (#807)", async () => {
+		const org = await fixture.organization("UTC");
+		const person = await fixture.employee({ organizationId: org.organizationId });
+		const { pool } = fixture;
+		const vehicleId = randomUUID();
+		await pool.query(
+			`insert into organization_vehicle (id, organization_id, name, licence_plate)
+			 values ($1, $2, 'Van', 'B-CM 762')`,
+			[vehicleId, org.organizationId],
+		);
+		/** A canonical work record with its detail, seeded before the close. */
+		async function canonicalWork(start: string, end: string) {
+			const recordId = randomUUID();
+			await pool.query(
+				`insert into time_record
+				 (id, organization_id, employee_id, record_kind, start_at, end_at, duration_minutes,
+				  approval_state, origin, created_by, updated_at)
+				 values ($1, $2, $3, 'work', $4::timestamptz at time zone 'UTC',
+				  $5::timestamptz at time zone 'UTC', 480, 'approved', 'clock', $6, now())`,
+				[recordId, org.organizationId, person.employeeId, start, end, person.userId],
+			);
+			await pool.query(
+				`insert into time_record_work
+				 (record_id, organization_id, record_kind, work_location_type, vehicle_kind, vehicle_id,
+				  odometer_start_km, odometer_end_km, driven_distance_km)
+				 values ($1, $2, 'work', 'office', 'organization', $3, 12000, 12085, 85)`,
+				[recordId, org.organizationId, vehicleId],
+			);
+			return recordId;
+		}
+		const march = await canonicalWork("2026-03-10T08:00:00Z", "2026-03-10T16:00:00Z");
+		const april = await canonicalWork("2026-04-07T08:00:00Z", "2026-04-07T16:00:00Z");
+		await closeMonth(fixture.db, {
+			organizationId: org.organizationId,
+			month: "2026-03",
+			scope: { kind: "organization" },
+			actor: { kind: "user", userId: org.ownerUserId },
+			now,
+		});
+
+		for (const change of [
+			"odometer_end_km = 12090, driven_distance_km = 90",
+			"vehicle_kind = 'own', vehicle_id = null",
+			"vehicle_kind = null, vehicle_id = null, odometer_start_km = null, odometer_end_km = null, driven_distance_km = null",
+		]) {
+			await expect(
+				pool.query(`update time_record_work set ${change} where record_id = $1`, [march]),
+			).rejects.toMatchObject(monthClosed);
+		}
+		// Unchanged vehicle use and other columns pass; open months stay editable.
+		await expect(
+			pool.query(
+				"update time_record_work set odometer_end_km = 12085, computation_metadata = 'x' where record_id = $1",
+				[march],
+			),
+		).resolves.toMatchObject({ rowCount: 1 });
+		await expect(
+			pool.query(
+				"update time_record_work set odometer_end_km = 12090, driven_distance_km = 90 where record_id = $1",
+				[april],
 			),
 		).resolves.toMatchObject({ rowCount: 1 });
 	});

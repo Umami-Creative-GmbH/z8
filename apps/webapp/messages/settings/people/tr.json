@@ -28,7 +28,10 @@
         "contractHourly": "Saatlik",
         "contractHourlyDescription": "Çalışılan saate göre ödenir",
         "contractType": "Sözleşme Türü",
+        "contractTypeChangeLink": "Sözleşme ve Çalışma Modelinde Değişiklik",
         "contractTypeDescription": "Ücretin nasıl hesaplanacağını belirler",
+        "contractTypeFromTerms": "Sözleşme türü ve ücret, bugün yürürlükte olan onaylanmış istihdam koşullarından alınır.",
+        "contractTypeNoTerms": "Bugün için onaylanmış koşul yok",
         "dayFriday": "Cum",
         "dayMonday": "Pzt",
         "daySaturday": "Cmt",
@@ -339,6 +342,7 @@
           "clockPostprocess": "Mola ve ek ücret işleme",
           "clockRepair": "Zamanlayıcı onarımı",
           "dispatchDeparture": "Ayrılış planlama",
+          "notifyDataExportReminder": "Kişisel veri indirme hatırlatıcısı",
           "notifyDeputyRelease": "Vekil artık uygun değil bildirimi",
           "notifyReview": "İnceleme bildirimi",
           "sessionRevocation": "Oturum kapatma"
@@ -352,6 +356,25 @@
           "through": "{date} tarihine kadar",
           "title": "Çalışma bakiyesi"
         }
+      },
+      "personalDataExport": {
+        "availableUntil": "{date} tarihine kadar kullanılabilir",
+        "description": "Çalışanın kendi dışa aktarma işleminde yer almayan veriler de dahil olmak üzere, bu kuruluşun söz konusu çalışan hakkında tuttuğu her şeyi içeren bir ZIP dosyası. Hazır olduğunda mevcut çalışana bildirim gönderilir. Dosyalar 7 gün sonra silinir.",
+        "download": "İndir",
+        "downloadFailed": "İndirme başlatılamadı. Lütfen tekrar deneyin.",
+        "listLabel": "Geçmiş yönetici dışa aktarmaları",
+        "loadFailed": "Geçmiş dışa aktarmalar yüklenemedi.",
+        "ownRecord": "Kendi verilerinizi buradan dışa aktaramazsınız. Hesap ayarlarınızdaki Verilerim bölümünü kullanın.",
+        "refusalInProgress": "Bu çalışanın verilerinin dışa aktarımı zaten hazırlanıyor.",
+        "refusalStorage": "Bu kuruluş için dosya depolama henüz ayarlanmadı.",
+        "request": "Dışa aktarma talep et",
+        "requested": "Dışa aktarma hazırlanıyor. Hazır olduğunda bir bildirim ve e-posta alacaksınız.",
+        "requestedAt": "{date} tarihinde talep edildi",
+        "requestFailed": "Dışa aktarma başlatılamadı. Lütfen tekrar deneyin.",
+        "statusFailed": "Başarısız",
+        "statusPreparing": "Hazırlanıyor",
+        "statusReady": "Hazır",
+        "title": "Kişisel veri dışa aktarma"
       },
       "tabs": {
         "employees": "Çalışanlar",
@@ -476,6 +499,22 @@
       "cancelConfirm": "Bu istihdam değişikliğini iptal etmek istiyor musunuz? Bu işlem, planlanmış veya taslak halindeki istihdam değişikliğini kaldırır.",
       "cancelError": "İstihdam geçmişi değişikliği iptal edilemedi",
       "cancelSuccess": "İstihdam geçmişi değişikliği iptal edildi",
+      "changeWage": {
+        "currencyHint": "Yürürlükteki koşulların para biriminde",
+        "description": "Bu tarihten itibaren yeni koşullar oluşturur. Sözleşme türü, haftalık çalışma saati, çalışma modeli, çalışma politikası ve para birimi ilgili tarihte yürürlükte olan koşullardan kopyalanır.",
+        "draftSuccess": "Ücret değişikliği taslak olarak kaydedildi",
+        "error": "Ücret değiştirilemedi",
+        "newWage": "Yeni saatlik ücret",
+        "reason": "Neden",
+        "reasonRequired": "Neden zorunludur",
+        "save": "Ücret değişikliğini kaydet",
+        "saveAsDraft": "Taslak olarak kaydet",
+        "success": "Ücret değiştirildi",
+        "title": "Ücreti değiştir",
+        "validFrom": "Geçerlilik başlangıcı",
+        "validFromRequired": "Geçerlilik başlangıcı zorunludur",
+        "wageInvalid": "Saatlik ücret pozitif bir sayı olmalıdır"
+      },
       "confirmError": "İstihdam geçmişi değişikliği onaylanamadı",
       "confirmSuccess": "İstihdam geçmişi değişikliği onaylandı",
       "contractType": "Sözleşme Türü",
@@ -511,6 +550,8 @@
       },
       "timeline": "Zaman Çizelgesi",
       "title": "Sözleşme ve Çalışma Modeli",
+      "wageHistoryMergeNote": "{count, plural, other {Ücret geçmişi {date} tarihinde eski oran geçmişinden birleştirildi; # oran değişikliği düzeltildi.} }",
+      "wageHistoryMergeNoteDismiss": "Kapat",
       "weeklyHours": "Haftalık Çalışma Saati",
       "weeklyHoursValue": "{hours} / hafta",
       "workModel": "Çalışma Modeli",
@@ -829,7 +870,8 @@
         "edit": "{title} öğesini düzenle",
         "expires": "{date} tarihinde süresi doluyor",
         "open": "{title} öğesini aç",
-        "payPeriod": "Bordro dönemi {period}"
+        "payPeriod": "Bordro dönemi {period}",
+        "provesSkill": "{skill} becerisini kanıtlar"
       },
       "myDocuments": {
         "description": "Kuruluşunuzun sizinle paylaştığı özlük dosyanıza ait belgeler.",
@@ -994,6 +1036,23 @@
         "unlinkFailed": "Hastalık raporunun bağlantısı kaldırılamadı.",
         "unlinkFromAbsence": "{title} adlı belgenin hastalık izniyle olan bağlantısını kaldır"
       },
+      "skillCertificates": {
+        "description": "Bu çalışanın \"{title}\" belgesinin kanıtladığı becerisini seçin. Çizelgeleme yalnızca bir sertifikanın kayıtlı olduğunu gösterir, içeriğini asla göstermez.",
+        "edit": "{title} belgesinin kanıtladığı beceriyi seçin",
+        "errors": {
+          "notCertificate": "Yalnızca sertifikalar bir beceriyi kanıtlayabilir.",
+          "notEmployeeSkill": "Bu çalışanın becerilerinden birini seçin.",
+          "undatedRequiresExpiry": "Bu beceri bir son geçerlilik tarihi gerektirir. Yalnızca son geçerlilik tarihi olan bir sertifika bunu kanıtlayabilir."
+        },
+        "loadFailed": "Çalışanın becerileri yüklenemedi.",
+        "needsExpiry": "Son geçerlilik tarihi gerektirir. Önce bu sertifikaya bir tarih ekleyin.",
+        "none": "Yetenek yok",
+        "noSkills": "Bu çalışanın henüz bir becerisi yok. Çalışanın sayfasından beceri atayın.",
+        "save": "Kaydet",
+        "saved": "Yetenek kaydedildi",
+        "saveFailed": "Sertifikanın yeteneği kaydedilemedi.",
+        "title": "Bu sertifikanın kanıtladığı yetenek"
+      },
       "tabs": {
         "access": "Erişim",
         "reminders": "Hatırlatıcılar",
@@ -1021,23 +1080,6 @@
         "hint": "Yönettiğiniz kategorilerin belgelerini içeren ve her kategori için bir klasöre ayrılmış tek bir ZIP dosyası.",
         "sharedOnly": "Yalnızca paylaşılan belgeler"
       }
-    },
-    "rateHistory": {
-      "changeRate": "Ücreti Değiştir",
-      "currentRate": "Mevcut ücret: {rate}",
-      "description": "Saatlik ücret zamanla değişir",
-      "effectiveFrom": "Geçerlilik Başlangıcı",
-      "effectiveFromHelp": "Yeni ücretin ne zaman geçerli olacağı",
-      "empty": "Ücret geçmişi bulunamadı",
-      "newHourlyRate": "Yeni Saatlik Ücret",
-      "reasonOptional": "Neden (İsteğe bağlı)",
-      "reasonPlaceholder": "ör. Yıllık değerlendirme, Terfi vb.",
-      "title": "Ücret Geçmişi",
-      "updateDescription": "Yeni bir ücret girişi oluşturun. Mevcut ücret otomatik olarak kapatılacaktır.",
-      "updateError": "Ücret güncellenemedi",
-      "updateRate": "Ücreti Güncelle",
-      "updateSuccess": "Ücret başarıyla güncellendi",
-      "updateTitle": "Saatlik Ücreti Güncelle"
     },
     "roles": {
       "actions": {
@@ -1145,6 +1187,7 @@
       "catalog": "Yetenek Kataloğu",
       "catalogDescription": "Alt alanlar ve vardiya şablonları için gerekli olabilecek yetenekleri tanımlayın",
       "category": "Kategori",
+      "certificateOnFile": "Özlük dosyasındaki sertifika",
       "confirmDelete": "Bu yeteneği silmek istediğinizden emin misiniz?",
       "confirmRemove": "\"{skillName}\" bu çalışandan kaldırılsın mı?",
       "createError": "Yetenek oluşturulamadı",
@@ -1155,16 +1198,25 @@
       "deleteError": "Yetenek silinemedi",
       "description": "Açıklama",
       "descriptionPlaceholder": "Yetenek veya sertifikanın isteğe bağlı açıklaması",
+      "editExpiryDate": "Son geçerlilik tarihini düzenle",
+      "editExpiryDateDescription": "{skillName} yeteneğinin geçerli olduğu son gün. Bu günden sonraki vardiyalarda süresi dolmuş olarak görünür.",
+      "editExpiryDateFor": "{skillName} yeteneğinin son geçerlilik tarihini düzenle",
       "editSkill": "Yeteneği Düzenle",
       "editSkillDescription": "Yetenek detaylarını güncelleyin",
       "employeeSkills": "Yetenekler ve Nitelikler",
       "employeeSkillsDescription": "Bu çalışana atanan sertifikalar ve yetenekler",
+      "errors": {
+        "expiryDateSetByCertificate": "Bu tarihi özlük dosyasındaki bir yetenek sertifikası belirler. Sertifikanın üzerindeki tarihi değiştirin."
+      },
       "expired": "Süresi dolmuş",
       "expiredOn": "{date} tarihinde süresi doldu",
       "expiresOn": "Son kullanma tarihi: {date}",
       "expiringSoon": "Süresi Yakında Dolacak",
       "expiry": "Son Kullanma Tarihi Takibi",
       "expiryDate": "Son Kullanma Tarihi",
+      "expiryDateFromCertificate": "Bu tarihi özlük dosyasındaki bir yetenek sertifikası belirler.",
+      "expiryDateUpdated": "Son geçerlilik tarihi güncellendi",
+      "expiryDateUpdateError": "Son geçerlilik tarihi güncellenemedi",
       "expiryRequired": "Gerekli",
       "expiryRequiredHint": "Bu sertifika bir son kullanma tarihi gerektirir",
       "name": "Ad",
@@ -1176,6 +1228,16 @@
       "noSkillsHint": "Başlamak için ilk yeteneğinizi oluşturun",
       "notes": "Notlar",
       "notesPlaceholder": "ör. Sertifika numarası, eğitim tarihi…",
+      "reminders": {
+        "intro": "Son geçerlilik tarihi olan çalışan yetenekleri, ön bildirim süresi içinde ve son geçerlilik tarihinde birer hatırlatıcı gönderir. Çalışana ve yöneticilerine veya çalışanın yöneticisi yoksa hesap sahiplerine ve yöneticilere hatırlatılır. \"Süresi yakında dolacak\" rozeti de aynı ön bildirim süresini kullanır.",
+        "leadDays": "Yetenek hatırlatma ön bildirim süresi (gün)",
+        "leadDaysDescription": "Günler kuruluşun saat dilimine göre sayılır. Bir yeteneğin son geçerlilik tarihini değiştirmek, her iki hatırlatıcıyı da yeniden gönderir.",
+        "leadDaysInvalid": "{min} ile {max} gün arasında bir ön bildirim süresi girin.",
+        "save": "Ön bildirim süresini kaydet",
+        "saved": "Hatırlatıcı ön bildirim süresi kaydedildi",
+        "saveFailed": "Hatırlatıcı ön bildirim süresi kaydedilemedi.",
+        "title": "Yetenek geçerlilik süresi hatırlatıcıları"
+      },
       "removeError": "Yetenek kaldırılamadı",
       "requiresExpiry": "Son Kullanma Tarihi Gerektirir",
       "requiresExpiryHint": "Bu sertifikanın yenilenmesi gerekiyorsa etkinleştirin (ör. İlk Yardım)",

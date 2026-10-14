@@ -12,6 +12,7 @@ import {
 	isNotNull,
 	isNull,
 	notInArray,
+	sql,
 } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
@@ -32,6 +33,8 @@ import {
 	locationEmployee,
 	locationSubarea,
 	notification,
+	organizationVehicle,
+	organizationVehicleDriver,
 	project,
 	shift,
 	shiftRecurrence,
@@ -74,6 +77,12 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import {
+	absencePendingApprovalContent,
+	timeCorrectionPendingApprovalContent,
+} from "@/lib/notifications/triggers";
+import { RECORDED_VEHICLE_FOREIGN_KEYS } from "@/lib/organization/vehicles/vehicle-rules";
+import { isConstraintViolation } from "@/lib/projects/constraint-violation";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import {
@@ -95,11 +104,15 @@ import {
 	recordDemoWorkDay,
 	withDemoWorkTransaction,
 } from "./demo-work";
+import { assignDemoVehicleUseToPeriods } from "./demo-vehicle-use-generator";
 import { runWorkTransaction, type Transaction } from "@/lib/time-tracking/work-transaction";
 import { type DemoEmployee, withDemoConfigurationMutation } from "./demo-configuration";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 
 const demoLogger = createLogger("demo-data");
+
+/** The demo time correction's reason, also shown in its approver's notification. */
+const DEMO_TIME_CORRECTION_REASON = "Demo data - Pending time correction approval";
 
 class DemoCorrectionAutoCompletedError extends Error {}
 class DemoCorrectionSourceChangedError extends Error {}
@@ -249,11 +262,16 @@ export interface DemoDataResult {
 	locationsCreated: number;
 	subareasCreated: number;
 	locationSupervisorsAssigned: number;
+	// Organization vehicles, generated with the locations (#1118)
+	vehiclesCreated: number;
 	// NEW: Work category results
 	workCategorySetsCreated: number;
 	workCategoriesCreated: number;
 	workCategoryAssignmentsCreated: number;
 	workCategoriesAssignedToPeriods: number;
+	// Vehicle use on demo work, some with driving details missing (#1132)
+	vehicleUseRecorded: number;
+	drivingDetailsMissing: number;
 	// NEW: Change policy results
 	changePoliciesCreated: number;
 	changePolicyAssignmentsCreated: number;
@@ -278,6 +296,7 @@ export interface ClearDataResult {
 	// NEW: Location cleanup
 	locationsDeleted: number;
 	subareasDeleted: number;
+	vehiclesDeleted: number;
 	// NEW: Work category cleanup
 	workCategorySetsDeleted: number;
 	workCategoriesDeleted: number;
@@ -572,6 +591,8 @@ export async function generateDemoPendingAbsenceApprovals(
 					inArray(employee.id, options.employeeIds),
 				)
 			: eq(employee.organizationId, options.organizationId),
+		// The requester's name for the approver's notification.
+		with: { user: { columns: { name: true } } },
 	});
 
 	if (employees.length < 2) {
@@ -648,15 +669,23 @@ export async function generateDemoPendingAbsenceApprovals(
 			reason: "Demo data - Pending absence approval",
 		});
 
+		// The same translated copy as a real request, so it reads in the approver's language.
+		const content = absencePendingApprovalContent({
+			employeeName: requester.user?.name ?? "",
+			categoryName: category.name,
+			startDate: startDate.toISODate()!,
+			endDate: endDate.toISODate()!,
+		});
 		await db.insert(notification).values({
 			userId: approver.userId,
 			organizationId: options.organizationId,
 			type: "approval_request_submitted",
-			title: "New absence request",
-			message: "Demo data - Pending absence request needs approval.",
+			title: content.title,
+			message: content.message,
 			entityType: "absence_entry",
 			entityId: insertedAbsence.id,
 			actionUrl: "/approvals/inbox",
+			metadata: JSON.stringify({ approvalSubject: "absence", i18n: content.i18n }),
 		});
 
 		pendingAbsenceApprovalsCreated++;
@@ -748,6 +777,19 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 				.orderBy(asc(employee.id))
 				.limit(1)
 		: [];
+	// The requesters' names for the approver's notification.
+	const requesterNames = new Map(
+		(
+			await db.query.employee.findMany({
+				where: and(
+					eq(employee.organizationId, options.organizationId),
+					inArray(employee.id, requesterIds),
+				),
+				columns: { id: true },
+				with: { user: { columns: { name: true } } },
+			})
+		).map((row) => [row.id, row.user?.name ?? ""]),
+	);
 	const employeeIdSet = new Set(employees.map((candidate) => candidate.id));
 	const employeesById = new Map(
 		employees.map((candidate) => [candidate.id, candidate]),
@@ -1275,7 +1317,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 					teamId,
 					workPeriodId: period.id,
 					defaultApproverId: approverId,
-					reason: "Demo data - Pending time correction approval",
+					reason: DEMO_TIME_CORRECTION_REASON,
 					overtimeRisk: null,
 					submissionKey,
 					submissionId,
@@ -1395,20 +1437,28 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 					approver.organizationId === options.organizationId &&
 					approver.isActive
 				) {
+					// The same translated copy as a real request, without its times.
+					const content = timeCorrectionPendingApprovalContent({
+						employeeName: requesterNames.get(requester.id) ?? "",
+						reason: DEMO_TIME_CORRECTION_REASON,
+						original: null,
+						corrected: null,
+					});
 					await db
 						.insert(notification)
 						.values({
 							userId: approver.userId,
 							organizationId: options.organizationId,
 							type: "approval_request_submitted",
-							title: "New time correction request",
-							message:
-								"Demo data - Pending time correction request needs approval.",
+							title: content.title,
+							message: content.message,
 							entityType: "work_period",
 							entityId: period.id,
 							actionUrl: "/approvals/inbox",
 							metadata: JSON.stringify({
 								approvalRequestId: durableRequest.id,
+								approvalSubject: "time_correction",
+								i18n: content.i18n,
 							}),
 							idempotencyKey: notificationIdempotencyKey,
 						})
@@ -2005,6 +2055,67 @@ export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 	}
 
 	return { locationsCreated, subareasCreated, supervisorAssignmentsCreated };
+}
+
+// ============================================
+// VEHICLE GENERATORS (#1118)
+// ============================================
+
+/** Demo vehicles are named "Demo - …"; a demo reset removes exactly those. */
+const DEMO_VEHICLE_PREFIX = "Demo - ";
+
+/**
+ * Generates a few organization vehicles with the demo locations: one assigned to
+ * an employee, one to a team, one pool car. Fixed demo plates make a second run
+ * add nothing.
+ */
+export async function generateDemoVehicles(
+	options: DemoDataOptions,
+): Promise<{ vehiclesCreated: number }> {
+	if (!options.includeLocations) return { vehiclesCreated: 0 };
+
+	const [employees, teams] = await Promise.all([
+		db.query.employee.findMany({
+			where: and(eq(employee.organizationId, options.organizationId), eq(employee.isActive, true)),
+		}),
+		db.query.team.findMany({ where: eq(team.organizationId, options.organizationId) }),
+	]);
+	const driver = employees.length > 0 ? faker.helpers.arrayElement(employees) : null;
+	const driverTeam = teams.length > 0 ? faker.helpers.arrayElement(teams) : null;
+	const demoVehicles = [
+		{ name: "Service van 1", licencePlate: "Z8-DEMO 1", employeeId: driver?.id, teamId: undefined },
+		{ name: "Service van 2", licencePlate: "Z8-DEMO 2", employeeId: undefined, teamId: driverTeam?.id },
+		{ name: "Pool car", licencePlate: "Z8-DEMO 3", employeeId: undefined, teamId: undefined },
+	];
+
+	return db.transaction(async (tx) => {
+		let vehiclesCreated = 0;
+		for (const demo of demoVehicles) {
+			const [created] = await tx
+				.insert(organizationVehicle)
+				.values({
+					organizationId: options.organizationId,
+					name: `${DEMO_VEHICLE_PREFIX}${demo.name}`,
+					licencePlate: demo.licencePlate,
+					createdBy: options.createdBy,
+					updatedBy: options.createdBy,
+				})
+				.onConflictDoNothing()
+				.returning({ id: organizationVehicle.id });
+			if (!created) continue;
+			vehiclesCreated++;
+			if (demo.employeeId || demo.teamId) {
+				await tx.insert(organizationVehicleDriver).values({
+					organizationId: options.organizationId,
+					vehicleId: created.id,
+					employeeId: demo.employeeId ?? null,
+					teamId: demo.teamId ?? null,
+					createdBy: options.createdBy,
+				});
+			}
+		}
+		return { vehiclesCreated };
+	});
 }
 
 // ============================================
@@ -2706,6 +2817,7 @@ export async function generateDemoData(
 	const teamResult = await generateDemoTeams(options);
 	const projectResult = await generateDemoProjects(options);
 	const locationResult = await generateDemoLocations(options);
+	const vehicleResult = await generateDemoVehicles(options);
 
 	// Phase 2: Configuration data (categories, policies)
 	const workCategoryResult = await generateDemoWorkCategories(options);
@@ -2734,6 +2846,9 @@ export async function generateDemoData(
 	// Phase 7: Work category assignments (depends on categories + time entries)
 	const categoryAssignmentResult = await assignWorkCategoriesToPeriods(options);
 
+	// Phase 8: Vehicle use on work (depends on vehicles + time entries)
+	const vehicleUseResult = await assignDemoVehicleUseToPeriods(options);
+
 	return {
 		timeEntriesCreated: timeResult.timeEntriesCreated,
 		workPeriodsCreated: timeResult.workPeriodsCreated,
@@ -2746,12 +2861,15 @@ export async function generateDemoData(
 		locationsCreated: locationResult.locationsCreated,
 		subareasCreated: locationResult.subareasCreated,
 		locationSupervisorsAssigned: locationResult.supervisorAssignmentsCreated,
+		vehiclesCreated: vehicleResult.vehiclesCreated,
 		// NEW: Work category results
 		workCategorySetsCreated: workCategoryResult.setsCreated,
 		workCategoriesCreated: workCategoryResult.categoriesCreated,
 		workCategoryAssignmentsCreated: workCategoryResult.assignmentsCreated,
 		workCategoriesAssignedToPeriods:
 			categoryAssignmentResult.workCategoriesAssigned,
+		vehicleUseRecorded: vehicleUseResult.vehicleUseRecorded,
+		drivingDetailsMissing: vehicleUseResult.drivingDetailsMissing,
 		// NEW: Change policy results
 		changePoliciesCreated: changePolicyResult.policiesCreated,
 		changePolicyAssignmentsCreated: changePolicyResult.assignmentsCreated,
@@ -2788,6 +2906,7 @@ export async function clearOrganizationTimeData(
 		// NEW fields
 		locationsDeleted: 0,
 		subareasDeleted: 0,
+		vehiclesDeleted: 0,
 		workCategorySetsDeleted: 0,
 		workCategoriesDeleted: 0,
 		workCategoryAssignmentsRemoved: 0,
@@ -3017,6 +3136,42 @@ export async function clearOrganizationTimeData(
 			// Delete locations
 			await tx.delete(location).where(inArray(location.id, locationIdsToDelete));
 			result.locationsDeleted = locationsToDelete.length;
+		}
+
+		// ============================================
+		// VEHICLE CLEANUP (#1118)
+		// ============================================
+
+		// Demo vehicles go with their assigned drivers. The work above is gone, so
+		// nothing records them any more; one still recorded on work (outside the
+		// demo cleanup) refuses its delete, and the demo vehicles are archived instead.
+		const demoVehicles = (
+			await tx
+				.select({ id: organizationVehicle.id, name: organizationVehicle.name })
+				.from(organizationVehicle)
+				.where(eq(organizationVehicle.organizationId, organizationId))
+		).filter((vehicle) => vehicle.name.startsWith(DEMO_VEHICLE_PREFIX));
+		if (demoVehicles.length > 0) {
+			const demoVehicleIds = demoVehicles.map((vehicle) => vehicle.id);
+			const vehicleScope = and(
+				eq(organizationVehicle.organizationId, organizationId),
+				inArray(organizationVehicle.id, demoVehicleIds),
+			);
+			const deleted = await tx
+				.transaction(async (savepoint) => {
+					await savepoint.delete(organizationVehicle).where(vehicleScope);
+					return true;
+				})
+				.catch(async (error: unknown) => {
+					// Only work still recording a vehicle refuses the delete; anything else fails the reset.
+					if (!isConstraintViolation(error, "23503", RECORDED_VEHICLE_FOREIGN_KEYS)) throw error;
+					await tx
+						.update(organizationVehicle)
+						.set({ archivedAt: sql`now()`, updatedAt: sql`now()` })
+						.where(vehicleScope);
+					return false;
+				});
+			if (deleted) result.vehiclesDeleted = demoVehicles.length;
 		}
 
 		// ============================================

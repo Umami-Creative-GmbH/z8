@@ -28,7 +28,10 @@
         "contractHourly": "Timlön",
         "contractHourlyDescription": "Betalas per arbetad timme",
         "contractType": "Anställningsform",
+        "contractTypeChangeLink": "Ändring i avtal och arbetsmodell",
         "contractTypeDescription": "Avgör hur ersättningen beräknas",
+        "contractTypeFromTerms": "Avtalstyp och lön hämtas från de bekräftade anställningsvillkor som gäller idag.",
+        "contractTypeNoTerms": "Inga bekräftade villkor idag",
         "dayFriday": "Fre",
         "dayMonday": "Mån",
         "daySaturday": "Lör",
@@ -339,6 +342,7 @@
           "clockPostprocess": "Hantering av raster och tillägg",
           "clockRepair": "Reparation av tidtagare",
           "dispatchDeparture": "Schemaläggning av avslut",
+          "notifyDataExportReminder": "Påminnelse om nedladdning av personuppgifter",
           "notifyDeputyRelease": "Avisering om att ersättare inte längre är tillgänglig",
           "notifyReview": "Granskningsavisering",
           "sessionRevocation": "Sessionsutloggning"
@@ -352,6 +356,25 @@
           "through": "Till och med {date}",
           "title": "Arbetssaldo"
         }
+      },
+      "personalDataExport": {
+        "availableUntil": "Tillgänglig till {date}",
+        "description": "En ZIP-fil med allt som denna organisation har sparat om den anställde, inklusive uppgifter som den anställdes egen export utelämnar. En nuvarande anställd meddelas när den är klar. Filer raderas efter 7 dagar.",
+        "download": "Ladda ner",
+        "downloadFailed": "Nedladdningen kunde inte startas. Försök igen.",
+        "listLabel": "Tidigare administratörsexporter",
+        "loadFailed": "Tidigare exporter kunde inte läsas in.",
+        "ownRecord": "Du kan inte exportera dina egna uppgifter här. Använd Mina uppgifter i dina kontoinställningar.",
+        "refusalInProgress": "En export av den här anställdes uppgifter förbereds redan.",
+        "refusalStorage": "Fillagring har inte konfigurerats för den här organisationen än.",
+        "request": "Begär export",
+        "requested": "Exporten förbereds. Du får en avisering och ett e-postmeddelande när den är klar.",
+        "requestedAt": "Begärdes {date}",
+        "requestFailed": "Exporten kunde inte startas. Försök igen.",
+        "statusFailed": "Misslyckades",
+        "statusPreparing": "Förbereds",
+        "statusReady": "Klar",
+        "title": "Export av personuppgifter"
       },
       "tabs": {
         "employees": "Medarbetare",
@@ -476,6 +499,22 @@
       "cancelConfirm": "Vill du avbryta denna anställningsändring? Detta tar bort den schemalagda ändringen eller utkastet.",
       "cancelError": "Det gick inte att avbryta ändring i anställningshistorik",
       "cancelSuccess": "Ändring i anställningshistorik avbröts",
+      "changeWage": {
+        "currencyHint": "I valutan för gällande villkor",
+        "description": "Skapar nya villkor från det här datumet. Avtalstyp, veckoarbetstid, arbetsmodell, arbetspolicy och valuta kopieras från de villkor som gäller det datumet.",
+        "draftSuccess": "Löneändring sparad som utkast",
+        "error": "Det gick inte att ändra lönen",
+        "newWage": "Ny timlön",
+        "reason": "Anledning",
+        "reasonRequired": "Anledning måste anges",
+        "save": "Spara löneändring",
+        "saveAsDraft": "Spara som utkast",
+        "success": "Lönen har ändrats",
+        "title": "Ändra lön",
+        "validFrom": "Giltig från",
+        "validFromRequired": "Giltig från måste anges",
+        "wageInvalid": "Timlönen måste vara ett positivt tal"
+      },
       "confirmError": "Det gick inte att bekräfta ändring i anställningshistorik",
       "confirmSuccess": "Ändring i anställningshistorik bekräftades",
       "contractType": "Avtalstyp",
@@ -511,6 +550,8 @@
       },
       "timeline": "Tidslinje",
       "title": "Avtal och arbetsmodell",
+      "wageHistoryMergeNote": "{count, plural, one {Lönehistoriken slogs samman från den gamla lönesatshistoriken den {date}; # lönesatsändring justerades.} other {Lönehistoriken slogs samman från den gamla lönesatshistoriken den {date}; # lönesatsändringar justerades.}}",
+      "wageHistoryMergeNoteDismiss": "Avfärda",
       "weeklyHours": "Veckoarbetstid",
       "weeklyHoursValue": "{hours} / vecka",
       "workModel": "Arbetsmodell",
@@ -829,7 +870,8 @@
         "edit": "Redigera {title}",
         "expires": "Löper ut {date}",
         "open": "Öppna {title}",
-        "payPeriod": "Löneperiod {period}"
+        "payPeriod": "Löneperiod {period}",
+        "provesSkill": "Styrker {skill}"
       },
       "myDocuments": {
         "description": "Dokument från din personalakt som din organisation har delat med dig.",
@@ -994,6 +1036,23 @@
         "unlinkFailed": "Sjukintyget kunde inte kopplas bort.",
         "unlinkFromAbsence": "Koppla bort {title} från dess sjukfrånvaro"
       },
+      "skillCertificates": {
+        "description": "Välj den kompetens hos den anställde som \"{title}\" styrker. Schemaläggningen visar sedan att ett certifikat finns registrerat, aldrig dess innehåll.",
+        "edit": "Välj kompetensen som {title} styrker",
+        "errors": {
+          "notCertificate": "Endast certifikat kan styrka en kompetens.",
+          "notEmployeeSkill": "Välj en av den här anställdes kompetenser.",
+          "undatedRequiresExpiry": "Den här kompetensen kräver ett utgångsdatum. Endast ett certifikat med ett utgångsdatum kan styrka den."
+        },
+        "loadFailed": "Den anställdes kompetenser kunde inte läsas in.",
+        "needsExpiry": "Kräver ett utgångsdatum. Lägg till ett på det här certifikatet först.",
+        "none": "Ingen kompetens",
+        "noSkills": "Den här anställde har inga kompetenser än. Tilldela kompetenser på den anställdes sida.",
+        "save": "Spara",
+        "saved": "Kompetensen har sparats",
+        "saveFailed": "Certifikatets kompetens kunde inte sparas.",
+        "title": "Kompetens som detta certifikat intygar"
+      },
       "tabs": {
         "access": "Åtkomst",
         "reminders": "Påminnelser",
@@ -1021,23 +1080,6 @@
         "hint": "En ZIP-fil med dokumenten för de kategorier du hanterar, sorterade i en mapp per kategori.",
         "sharedOnly": "Endast delade dokument"
       }
-    },
-    "rateHistory": {
-      "changeRate": "Ändra taxa",
-      "currentRate": "Aktuell taxa: {rate}",
-      "description": "Ändringar av timtaxa över tid",
-      "effectiveFrom": "Gäller från",
-      "effectiveFromHelp": "När den nya taxan börjar gälla",
-      "empty": "Ingen taxehistorik tillgänglig",
-      "newHourlyRate": "Ny timtaxa",
-      "reasonOptional": "Anledning (valfritt)",
-      "reasonPlaceholder": "t.ex. årlig översyn, befordran osv.",
-      "title": "Taxehistorik",
-      "updateDescription": "Skapa en ny taxepost. Den aktuella taxan avslutas automatiskt.",
-      "updateError": "Kunde inte uppdatera taxan",
-      "updateRate": "Uppdatera taxa",
-      "updateSuccess": "Taxan har uppdaterats",
-      "updateTitle": "Uppdatera timtaxa"
     },
     "roles": {
       "actions": {
@@ -1145,6 +1187,7 @@
       "catalog": "Kompetenskatalog",
       "catalogDescription": "Definiera kompetenser som kan krävas för delområden och passmallar",
       "category": "Kategori",
+      "certificateOnFile": "Registrerat certifikat",
       "confirmDelete": "Är du säker på att du vill ta bort den här kompetensen?",
       "confirmRemove": "Ta bort \"{skillName}\" från den här medarbetaren?",
       "createError": "Det gick inte att skapa kompetensen",
@@ -1155,16 +1198,25 @@
       "deleteError": "Det gick inte att ta bort kompetensen",
       "description": "Beskrivning",
       "descriptionPlaceholder": "Valfri beskrivning av kompetensen eller certifieringen",
+      "editExpiryDate": "Redigera utgångsdatum",
+      "editExpiryDateDescription": "Den sista dagen då {skillName} är giltig. Pass efter denna dag visar den som utgången.",
+      "editExpiryDateFor": "Redigera utgångsdatum för {skillName}",
       "editSkill": "Redigera kompetens",
       "editSkillDescription": "Uppdatera kompetensuppgifterna",
       "employeeSkills": "Kompetenser & kvalifikationer",
       "employeeSkillsDescription": "Certifieringar och kompetenser tilldelade den här medarbetaren",
+      "errors": {
+        "expiryDateSetByCertificate": "Ett kompetenscertifikat i personalakten anger detta datum. Ändra datumet på certifikatet."
+      },
       "expired": "Utgången",
       "expiredOn": "Gick ut {date}",
       "expiresOn": "Går ut {date}",
       "expiringSoon": "Löper ut snart",
       "expiry": "Spårning av utgångsdatum",
       "expiryDate": "Utgångsdatum",
+      "expiryDateFromCertificate": "Ett kompetenscertifikat i personalakten anger detta datum.",
+      "expiryDateUpdated": "Utgångsdatumet har uppdaterats",
+      "expiryDateUpdateError": "Det gick inte att uppdatera utgångsdatumet",
       "expiryRequired": "Obligatoriskt",
       "expiryRequiredHint": "Denna certifiering kräver ett utgångsdatum",
       "name": "Namn",
@@ -1176,6 +1228,16 @@
       "noSkillsHint": "Skapa din första kompetens för att komma igång",
       "notes": "Anteckningar",
       "notesPlaceholder": "t.ex. certifikatnummer, utbildningsdatum…",
+      "reminders": {
+        "intro": "Medarbetarkompetenser med ett utgångsdatum skickar en påminnelse inom framförhållningstiden och en till på utgångsdatumet. Medarbetaren och dennes chefer påminns, eller ägare och administratörer när medarbetaren inte har någon chef. Märket \"Går snart ut\" använder samma framförhållningstid.",
+        "leadDays": "Framförhållningstid för kompetenspåminnelse (dagar)",
+        "leadDaysDescription": "Dagar räknas i organisationens tidszon. Om en kompetens utgångsdatum ändras skickas båda påminnelserna igen.",
+        "leadDaysInvalid": "Ange en framförhållningstid mellan {min} och {max} dagar.",
+        "save": "Spara framförhållningstid",
+        "saved": "Framförhållningstid för påminnelse sparad",
+        "saveFailed": "Påminnelsens framförhållningstid kunde inte sparas.",
+        "title": "Påminnelser om utgående kompetenser"
+      },
       "removeError": "Kunde inte ta bort kompetensen",
       "requiresExpiry": "Kräver utgångsdatum",
       "requiresExpiryHint": "Aktivera om denna certifiering behöver förnyas (t.ex. Första hjälpen)",

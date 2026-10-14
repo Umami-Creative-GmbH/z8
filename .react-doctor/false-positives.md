@@ -143,3 +143,65 @@ One finding is rejected:
   returns and calls it on unmount. A listener that attaches after unmount is
   removed at once through the `disposed` flag. The rule does not follow handles
   assigned inside an async setup, so the line is suppressed. **Rejected.**
+
+
+## Release PR #1193 follow-up (October 14, 2026, React Doctor 0.9.17)
+
+The release baseline reproduced 5 errors and 63 warnings against `origin/main`.
+Compiler failures were fixed in source: an Effect Event now reads the latest
+committed vehicle-warning callback from the debounce effect, export actions handle
+transport failures without unsupported finalizers, and the kiosk action is defined
+before its caller. Focused regressions cover debounce/cancellation, transport
+failure retries and refreshed organization settings. Calendar and vehicle UI
+branches were extracted, and the two expiry lead-time forms now share their
+validation and field UI. Independent pool reads overlap; repeated lookups use
+sets/maps, and number formatters are cached by locale and options with a fixed bound.
+
+The new scoped exceptions have these observed predicates:
+
+- **Transaction readers:** absence-change validation and retirement, demo vehicle
+  writes, confirmed employment-term updates, skill-certificate expiry updates,
+  position export audits, submitted-period content and vehicle form context all
+  accept or operate on transaction readers. Preserve acquisition order and
+  read-your-writes. Absence retirement publishes only after its transaction.
+- **Bounded jobs:** driving reminders visit one tenant/employee at a time, as the
+  existing reminder jobs do. The clocking job finishes one reminder family before
+  starting the next. Export collection visits one category at a time; cleanup
+  finishes one object's deletion and retry bookkeeping before taking another.
+  The export sweep counts its ledger only after draining it. These exceptions
+  preserve the current capacity and failure isolation; revisit with measured
+  provider/database capacity and an explicit concurrency decision.
+- **Server-only mailers:** billing, scheduled-export and security-alert templates
+  import `server-only`. Their subjects, copy and render helpers do not participate
+  in client Fast Refresh. Component rendering still uses JSX.
+- **Storage serialization tests:** `notification-params.test.ts` deliberately
+  round-trips JSON because `notification.metadata` stores JSON. `structuredClone`
+  would test a different representation.
+- **Client form submission and redacted snapshots:** the mileage form uses
+  TanStack Form and client mutation feedback. Vehicle review rows, like the
+  existing position review rows, are immutable redacted snapshots without editable
+  state, filtering or reordering; names can repeat and employee IDs stay withheld.
+- **Incidental JSX resemblance:** the proration table and invoice tables share
+  four-column header structure but represent different domains and copy. Vehicle
+  and position-capture assignment selectors belong to separate forms with different
+  policies and downstream fields. The canonical duplicate-tree guidance explicitly
+  rejects incidental resemblance and variants that evolve independently. The
+  genuinely shared expiry lead-time form was extracted instead.
+
+The vacation-accrual insertion loop remains an unsuppressed observation. It already
+bounds writes to one chunk at a time, and no throughput failure was established.
+Automatic approval review rejected the proposed parallel persistence change as
+outside this PR-fix scope. Only its independent reads were overlapped; write order,
+conflict handling and row totals remain unchanged.
+
+The refreshed catalogs also exposed missing vehicle-use shell coverage and redundant
+enterprise catalog loading on the nested audit-log page. The shell now projects
+`timeTracking.vehicleUse`, including the header clock and approval views, and the
+nested audit-log scope relies on its enterprise ancestor for enterprise copy.
+Translation message files are unchanged; generated source metadata is refreshed.
+
+CI's seven notification failures were reproduced using the actual Temporal formatter
+bundled for Linux Node 24: the default numeric hour produced `7:00` instead of
+`07:00`. Time presets now explicitly request two-digit hours for 24-hour display,
+while 12-hour display keeps numeric hours. The same Linux harness turns green,
+and named-zone/fixed-offset notification suites pass without changing instants.

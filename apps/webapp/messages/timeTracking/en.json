@@ -74,6 +74,18 @@
     },
     "currentlyClockedIn": "You're currently clocked in",
     "deadline": "Deadline",
+    "drivingDetailsMissing": {
+      "description": "Your organization expects the vehicle and odometer readings for your work. Add them to these work periods.",
+      "missing": {
+        "endReading": "No end reading",
+        "readings": "No odometer readings",
+        "startReading": "No start reading",
+        "vehicle": "No vehicle"
+      },
+      "open": "Open in calendar",
+      "title": "Driving details missing",
+      "truncated": "Only the newest work periods are listed. Complete these to see the rest."
+    },
     "errors": {
       "alreadyClockedIn": "You are already clocked in",
       "appendReviewRequired": "Clock-in needs a review of your time history",
@@ -214,7 +226,10 @@
         "onBreak": "On break since {time}"
       },
       "unreachableDescription": "The kiosk cannot reach the server. Check the network connection; clocking works only while online.",
-      "unreachableTitle": "Kiosk offline"
+      "unreachableTitle": "Kiosk offline",
+      "vehicle": {
+        "back": "Back"
+      }
     },
     "manualEntry": {
       "addButton": "Add Manual Entry",
@@ -386,6 +401,7 @@
       "corrected": "Corrected",
       "date": "Date",
       "description": "Description",
+      "drivingDetailsMissing": "Driving details missing",
       "duration": "Duration",
       "emptyState": "No time entries found for this week.",
       "recordedLocalTime": "Recorded local time",
@@ -422,6 +438,58 @@
     "title": "Time Tracking",
     "unknownCategory": "Unknown category",
     "unknownProject": "Unknown project",
+    "vehicleUse": {
+      "archived": "archived",
+      "breakReading": "Odometer reading at the break (km)",
+      "breakReadingHint": "Optional. It ends this work's reading and starts the next one's.",
+      "changeLive": "Change",
+      "derivedDistance": "Driven distance: {distance} km",
+      "distanceKm": "Driven distance (km)",
+      "distanceText": "{distance} km driven",
+      "endKm": "End reading (km)",
+      "expectedHint": "Your organization expects you to record the vehicle you drove and its readings.",
+      "expenseReport": {
+        "action": "Add to expense report",
+        "add": "Add {distance} km",
+        "added": "In an expense report",
+        "alreadyAdded": "This work's distance is already in an expense report.",
+        "chooseReport": "Add to which expense report?",
+        "failed": "The distance could not be added to the expense report. Please retry.",
+        "newReport": "New mileage report",
+        "routeHint": "The date and distance are filled in from this work. You enter the route in the report.",
+        "untitledTrip": "Untitled trip"
+      },
+      "liveChanged": "Vehicle use changed",
+      "liveChangeFailed": "The vehicle use could not be changed",
+      "notRecorded": "Vehicle use was not recorded",
+      "notSentOffline": "It could not be saved with this offline clock event. Add it to the work period once you are online.",
+      "noVehicle": "No vehicle",
+      "ownVehicle": "Own vehicle",
+      "readingMissing": "–",
+      "readingsText": "{start} → {end} km",
+      "refusal": {
+        "archived": "This vehicle is archived and can no longer be picked.",
+        "distanceClaimed": "This work period's distance is on an expense item. Remove the item from the expense report before splitting the work period.",
+        "endBeforeStart": "The end reading cannot be below the start reading.",
+        "invalidDistance": "Enter the driven distance in whole kilometres.",
+        "invalidReading": "Enter odometer readings in whole kilometres.",
+        "invalidVehicle": "Choose an organization vehicle or your own vehicle.",
+        "notFound": "The vehicle was not found.",
+        "off": "Vehicle use is not recorded for this employee.",
+        "splitOutOfRange": "The kilometres at the split must lie within the work period's kilometres."
+      },
+      "startKm": "Start reading (km)",
+      "title": "Vehicle use",
+      "unknownVehicle": "Unknown vehicle (unavailable)",
+      "vehicle": "Vehicle",
+      "warning": {
+        "distanceAboveLimit": "{distance} km is more than {limit} km in one work period.",
+        "onOtherLiveWork": "This vehicle is already recorded on another employee's running work.",
+        "speedAboveLimit": "The driven distance implies an average of {speed} km/h over this work period, more than {limit} km/h.",
+        "startBelowLastEnd": "The start reading is below this vehicle's last recorded end reading ({lastEndKm} km).",
+        "title": "Please check the vehicle use"
+      }
+    },
     "welcomeBack": "Welcome back, {name}",
     "workCategory": "Work Category",
     "workLocation": "Work location",

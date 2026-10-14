@@ -288,6 +288,7 @@
       "travelExpenseSettings": "Se încarcă setările cheltuielilor de deplasare",
       "twoFactorVerification": "Se încarcă verificarea în doi pași",
       "vacationSettings": "Se încarcă setările pentru concedii",
+      "vehicleDistanceReport": "Se încarcă raportul privind distanța per vehicul",
       "wellnessSettings": "Se încarcă setările de wellness",
       "workCategorySettings": "Se încarcă setările categoriilor de muncă",
       "workerQueue": "Se încarcă coada de lucru",
@@ -418,6 +419,17 @@
     "update": "Actualizează",
     "updating": "Se actualizează...",
     "uploading": "Se încarcă...",
+    "vacationAllowance": {
+      "cappedAtFullAllowance": "plafonat la dreptul integral",
+      "employmentMonths": "{months, plural, one {# lună întreagă de angajare} other {# luni întregi de angajare}}",
+      "lastWorkingDay": "ultima zi lucrătoare {date}",
+      "notEmployed": "{allowance} din {fullAllowance} zile: neangajat în {year}",
+      "overdrawn": "{days, plural, one {# zi depășită} other {# zile depășite}}",
+      "overdrawnHint": "Concediu efectuat peste dreptul cuvenit. Afișat doar în scop informativ: nu se deduce nimic.",
+      "proratedSummary": "{allowance} din {fullAllowance} zile, calculat proporțional: {details}",
+      "started": "început la {date}",
+      "statutoryMinimumApplies": "se aplică minimul legal"
+    },
     "validate": "Validează",
     "validationError": "Eroare de validare",
     "weekdays": {
@@ -493,7 +505,32 @@
       "title": "Consiliu de întreprindere",
       "to": "Până la",
       "unassignedTeam": "Echipă neatribuită",
-      "updateRange": "Actualizează intervalul"
+      "updateRange": "Actualizează intervalul",
+      "vehicleUse": {
+        "activeVehicles": "Vehicule active",
+        "archivedVehicles": "Vehicule arhivate",
+        "coveredAsked": "Solicitat pentru",
+        "coveredDescription": "{count, plural, one {# angajat activ are solicitarea sau este de așteptat să înregistreze utilizarea vehiculului în acest moment.} other {# angajați activi au solicitarea sau este de așteptat să înregistreze utilizarea vehiculului în acest moment.}}",
+        "coveredExpected": "Așteptat pentru",
+        "coveredTitle": "Angajați vizați",
+        "description": "Cei cărora organizația le solicită să înregistreze vehiculul pe care îl conduc în interes de serviciu. Consiliul de întreprindere nu vede niciodată citirile odometrului sau distanțele parcurse de un angajat.",
+        "employeeAssignmentCounts": "{asked} solicitați, {expected} așteptați, {off} dezactivați individual",
+        "employeeAssignments": "Alocări angajați",
+        "employeePseudonym": "Angajat {ref}",
+        "enabled": "Comută",
+        "modeAsked": "Solicitat",
+        "modeExpected": "Așteptat",
+        "modeOff": "Dezactivat",
+        "noEmployeeAssignments": "Nicio alocare de angajați.",
+        "notAssigned": "Nealocat",
+        "noTeamAssignments": "Nicio alocare de echipă.",
+        "off": "Dezactivat",
+        "on": "Activat",
+        "organizationAssignment": "Întreaga organizație",
+        "teamAssignments": "Alocări de echipă",
+        "title": "Utilizare vehicul",
+        "vehiclesTitle": "Vehiculele organizației"
+      }
     }
   },
   "employeeSelect": {
@@ -602,6 +639,7 @@
     "settings": "Setări",
     "team": "Echipă",
     "teamAbsences": "Absențe echipă",
+    "teamDriving": "Detalii de conducere",
     "team-label": "Echipă",
     "teamPeriodSubmissions": "Trimiteri de perioade",
     "teamPresence": "Cine este prezent",
@@ -619,7 +657,34 @@
       "settings": "Setări notificări",
       "viewAll": "Afișează toate notificările"
     },
+    "channels": {
+      "viewInZ8": "Vizualizați în Z8"
+    },
     "content": {
+      "absenceCancellation": {
+        "message": "Cerere de anulare pentru {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Cerere de modificare a absenței aprobată"
+      },
+      "absenceChangeExpired": {
+        "title": "Cerere de modificare a absenței expirată"
+      },
+      "absenceChange": {
+        "message": "Date înregistrate: {original}. Date propuse: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Cerere de modificare a absenței depășită"
+      },
+      "absenceChangePending": {
+        "title": "Modificare a absenței în așteptarea aprobării"
+      },
+      "absenceChangeRejected": {
+        "title": "Cerere de modificare a absenței respinsă"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Cerere de modificare a absenței retrasă"
+      },
       "absenceDeputyAssigned": {
         "message": "Îl/o înlocuiți pe {name} ({dateRange}).",
         "title": "Sunteți înlocuitor pe perioada absenței"
@@ -645,7 +710,12 @@
         "message": "{managerName} a înregistrat {absenceType} pentru {dateRange} în numele dvs.",
         "title": "Absență înregistrată"
       },
+      "absenceRequestApproved": {
+        "message": "Cererea dvs. de {categoryName} pentru {dateRange} a fost aprobată de {approverName}."
+      },
       "absenceRequestRejected": {
+        "message": "Cererea dvs. de {categoryName} pentru {dateRange} a fost respinsă de {approverName}.",
+        "messageWithReason": "Cererea dvs. de {categoryName} pentru {dateRange} a fost respinsă de {approverName}. Motiv: {rejectionReason}",
         "title": "Cerere de absență respinsă"
       },
       "absenceRequestSubmitted": {
@@ -659,6 +729,19 @@
       "approvalCoverStarted": {
         "message": "{count, plural, =0 {Preluați aprobările pentru {name}: nimic în așteptare deocamdată.} other {Preluați aprobările pentru {name}: # în așteptare.}}",
         "title": "Preluați aprobările"
+      },
+      "approvalEscalationAttention": {
+        "ambiguousHistory": "Istoricul de escaladare al unei aprobări este ambiguu și necesită revizuire înainte de orice transfer automat.",
+        "deliveryExhausted": "Notificările de escaladare pentru o aprobare au eșuat după toate reîncercările.",
+        "deliveryUnavailable": "Nicio destinație pentru notificarea de escaladare nu este disponibilă pentru o aprobare.",
+        "noEligibleBackup": "O aprobare restantă nu are un aprobator de rezervă eligibil. Aprobatorul actual păstrează alocarea.",
+        "replacementOverdue": "O aprobare este încă nedecisă după escaladarea automată. Nu va mai avea loc niciun alt transfer automat.",
+        "title": "Escaladarea aprobării necesită atenție",
+        "unsupportedRoute": "O aprobare nu poate fi escaladată deoarece calea de decizie nu este acceptată."
+      },
+      "approvedAbsenceCancelled": {
+        "message": "{employeeName} a anulat cererea aprobată de {categoryName} pentru {dateRange}.",
+        "title": "Absență aprobată anulată"
       },
       "automaticClockOut": {
         "breakMessage": "Ați fost pontat automat ca ieșit la începutul pauzei, la {cutoff} ({timezone}), deoarece pauza nu a fost încheiată în limita de timp de {duration} minute stabilită de organizația dvs.",
@@ -683,9 +766,56 @@
           "title": "Plată ore suplimentare înregistrată"
         }
       },
+      "birthdayReminder": {
+        "message": "Ziua de naștere a lui {name} este pe {date}.",
+        "title": "Zi de naștere apropiată"
+      },
       "breakDueReminder": {
         "message": "Pauza dvs. este programată la {breakTime} ({timezone}). Luați o pauză până atunci pentru a respecta regulamentul intern privind pauzele.",
         "title": "În curând este timpul pentru o pauză"
+      },
+      "clockOutApprovalRequired": {
+        "message": "{employeeName} a pontat ieșirea pe {date} ({startTime} – {endTime}, {duration}). Este necesară aprobarea.",
+        "messageWithoutTimes": "{employeeName} a pontat ieșirea ({duration}). Este necesară aprobarea.",
+        "title": "Este necesară aprobarea pontajului de ieșire"
+      },
+      "clockOutApproved": {
+        "message": "Pontajul dvs. de ieșire a fost aprobat de {approverName}.",
+        "title": "Pontaj de ieșire aprobat"
+      },
+      "clockOutPendingApproval": {
+        "message": "Pontajul dvs. de ieșire din {date} ({duration}) așteaptă aprobarea managerului.",
+        "messageWithoutDate": "Pontajul dvs. de ieșire ({duration}) așteaptă aprobarea managerului.",
+        "title": "Pontaj de ieșire în așteptarea aprobării"
+      },
+      "clockOutRejected": {
+        "message": "Aprobarea pontajului dvs. de ieșire a fost respinsă de {approverName}. Orele înregistrate rămân neschimbate și sunt excluse din timpul de lucru aprobat pentru salarizare.",
+        "messageWithReason": "Aprobarea pontajului dvs. de ieșire a fost respinsă de {approverName}. Orele înregistrate rămân neschimbate și sunt excluse din timpul de lucru aprobat pentru salarizare. Motiv: {rejectionReason}",
+        "title": "Pontaj de ieșire respins"
+      },
+      "complianceExceptionApproved": {
+        "message": "Excepția dvs. de {exceptionType, select, rest_period {perioadă de odihnă} overtime_daily {ore suplimentare zilnice} overtime_weekly {ore suplimentare săptămânale} overtime_monthly {ore suplimentare lunare} other {conformitate}} a fost aprobată de {approverName}. Valabilă până la {validUntil}.",
+        "title": "Excepție aprobată"
+      },
+      "complianceExceptionExpired": {
+        "message": "Preaprobarea dvs. de {exceptionType, select, rest_period {perioadă de odihnă} overtime_daily {ore suplimentare zilnice} overtime_weekly {ore suplimentare săptămânale} overtime_monthly {ore suplimentare lunare} other {conformitate}} a expirat (au trecut 24 de ore fără a fi utilizată).",
+        "title": "Excepție expirată"
+      },
+      "complianceExceptionRejected": {
+        "message": "Excepția dvs. de {exceptionType, select, rest_period {perioadă de odihnă} overtime_daily {ore suplimentare zilnice} overtime_weekly {ore suplimentare săptămânale} overtime_monthly {ore suplimentare lunare} other {conformitate}} a fost respinsă de {approverName}.",
+        "messageWithReason": "Excepția dvs. de {exceptionType, select, rest_period {perioadă de odihnă} overtime_daily {ore suplimentare zilnice} overtime_weekly {ore suplimentare săptămânale} overtime_monthly {ore suplimentare lunare} other {conformitate}} a fost respinsă de {approverName}. Motiv: \"{reason}\"",
+        "title": "Excepție respinsă"
+      },
+      "complianceExceptionRequested": {
+        "message": "{employeeName} a solicitat o excepție de {exceptionType, select, rest_period {perioadă de odihnă} overtime_daily {ore suplimentare zilnice} overtime_weekly {ore suplimentare săptămânale} overtime_monthly {ore suplimentare lunare} other {conformitate}}: \"{reason}\"",
+        "title": "Excepție de conformitate solicitată"
+      },
+      "drivingDetailsMissingReminderMany": {
+        "message": "Pentru {count} perioade de lucru din {dates} lipsește vehiculul sau citirea odometrului. Adăugați-le la perioadele de lucru."
+      },
+      "drivingDetailsMissingReminder": {
+        "message": "Pentru activitatea dvs. din {date} lipsește vehiculul sau citirea odometrului. Adăugați-le la perioada de lucru.",
+        "title": "Adăugați detaliile de conducere"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Sarcinile de aprobare necesită un înlocuitor (plecare în vigoare la {cutoff}, {timezone}).",
@@ -698,6 +828,15 @@
       "forgottenClockOutReminder": {
         "message": "Tura dvs. s-a încheiat la {endTime} ({timezone}). Înregistrați ieșirea dacă ați terminat programul de lucru.",
         "title": "Sunteți încă pontat(ă)"
+      },
+      "manualEntryApproved": {
+        "message": "Înregistrarea dvs. manuală a timpului a fost aprobată de {approverName}.",
+        "title": "Înregistrare manuală a timpului aprobată"
+      },
+      "manualEntryRejected": {
+        "message": "Înregistrarea dvs. manuală a timpului a fost respinsă de {approverName}.",
+        "messageWithReason": "Înregistrarea dvs. manuală a timpului a fost respinsă de {approverName}. Motiv: {rejectionReason}",
+        "title": "Înregistrare manuală a timpului respinsă"
       },
       "missedClockInReminder": {
         "message": "Tura dvs. a început la {startTime} ({timezone}). Înregistrați intrarea dacă lucrați.",
@@ -716,7 +855,27 @@
         "title": "Lună redeschisă"
       },
       "newAbsenceRequest": {
+        "message": "{employeeName} a solicitat {categoryName} pentru {dateRange}.",
         "title": "Cerere nouă de absență"
+      },
+      "newTimeCorrectionRequest": {
+        "message": "{employeeName} a trimis o cerere de corectare a timpului pentru {date}.",
+        "messageWithoutDate": "{employeeName} a trimis o solicitare de corectare a pontajului.",
+        "messageWithoutDateWithReason": "{employeeName} a trimis o solicitare de corectare a pontajului. Motiv: {reason}",
+        "messageWithReason": "{employeeName} a trimis o solicitare de corectare a pontajului pentru {date}. Motiv: {reason}",
+        "title": "Solicitare nouă de corectare a pontajului"
+      },
+      "openShiftAvailable": {
+        "message": "O tură deschisă este disponibilă pe {shiftDate}, de la {startTime} la {endTime}.",
+        "title": "Tură deschisă disponibilă"
+      },
+      "overtimeViolation": {
+        "message": "{description}",
+        "title": "Încălcare a orelor suplimentare înregistrată"
+      },
+      "overtimeWarning": {
+        "message": "Ați lucrat {worked} {period, select, daily {astăzi} weekly {săptămâna aceasta} other {luna aceasta}} ({percent}% din limita de {limit}).",
+        "title": "Apropiere de limita orelor suplimentare"
       },
       "passwordChanged": {
         "message": "Parola dvs. a fost schimbată cu succes. Dacă nu ați făcut această modificare, vă rugăm să contactați imediat asistența.",
@@ -745,6 +904,20 @@
       "periodSubmissionWithdrawnAfterChange": {
         "message": "Timpul dvs. pentru {startDate} – {endDate} a fost modificat după ce l-ați trimis, așadar trimiterea a fost retrasă. Revizuiți timpul și trimiteți-l din nou.",
         "title": "Trimiteți din nou timpul"
+      },
+      "personalDataExportAdminExported": {
+        "message": "Un administrator a exportat datele dvs. cu caracter personal pe {onDate}.",
+        "title": "Datele dvs. cu caracter personal au fost exportate"
+      },
+      "personalDataExportReady": {
+        "adminMessage": "Exportul datelor cu caracter personal pentru {employeeName} este gata. Descărcați-l din pagina sa de angajat cât timp sunteți conectat(ă); este șters după 7 zile.",
+        "adminTitle": "Exportul datelor cu caracter personal este gata",
+        "message": "Exportul datelor dvs. cu caracter personal este gata. Descărcați-l de la Datele mele cât timp sunteți conectat(ă); este șters după 7 zile.",
+        "title": "Exportul datelor dvs. cu caracter personal este gata"
+      },
+      "personalDataExportReminder": {
+        "message": "Descărcați datele dvs. cu caracter personal de la Datele mele înainte de {untilDate}. După această dată, doar un administrator le va mai putea exporta pentru dvs.",
+        "title": "Descărcați datele dvs. cu caracter personal înainte de a pleca"
       },
       "personnelFileDocumentShared": {
         "message": "Documentul „{title}” a fost partajat cu dvs.",
@@ -781,13 +954,94 @@
       "policyMissedClockInReminder": {
         "message": "Cea mai recentă înregistrare a intrării de astăzi a fost la {startTime} ({timezone}). Înregistrați intrarea dacă lucrați."
       },
+      "projectBudgetWarning100": {
+        "message": "„{projectName}” a depășit bugetul ({used} din {budget} bugetat). Examinați și ajustați după caz.",
+        "title": "Bugetul proiectului a fost depășit"
+      },
+      "projectBudgetWarning70": {
+        "message": "„{projectName}” a utilizat {percent}% din bugetul alocat ({used} din {budget}).",
+        "title": "Proiectul se apropie de limita de buget"
+      },
+      "projectBudgetWarning90": {
+        "message": "„{projectName}” a utilizat {percent}% din bugetul alocat ({used} din {budget}). Luați în considerare revizuirea orelor alocate.",
+        "title": "Proiect aproape de limita de buget"
+      },
+      "projectDeadlineOverdue": {
+        "message": "„{projectName}” a depășit termenul limită ({deadline}). Actualizați starea sau prelungiți termenul limită.",
+        "title": "Termenul limită al proiectului a fost depășit"
+      },
+      "projectDeadlineWarning0d": {
+        "message": "Termenul limită pentru „{projectName}” este astăzi ({deadline}). Finalizați sarcinile rămase.",
+        "title": "Termenul limită al proiectului este astăzi"
+      },
+      "projectDeadlineWarning14d": {
+        "message": "Termenul limită pentru „{projectName}” este peste 2 săptămâni ({deadline}). Planificați din timp pentru a respecta termenul.",
+        "title": "Termen limită al proiectului peste 2 săptămâni"
+      },
+      "projectDeadlineWarning1d": {
+        "message": "Termenul limită pentru „{projectName}” este mâine ({deadline}). Un ultim efort pentru finalizare!",
+        "title": "Termenul limită al proiectului este mâine"
+      },
+      "projectDeadlineWarning7d": {
+        "message": "Termenul limită pentru „{projectName}” este peste 1 săptămână ({deadline}). Asigurați-vă că sunteți în grafic.",
+        "title": "Termen limită al proiectului peste 1 săptămână"
+      },
+      "restPeriodViolation": {
+        "message": "{description}",
+        "title": "Încălcare a perioadei de odihnă înregistrată"
+      },
+      "restPeriodWarning": {
+        "message": "Mai aveți {remaining} din perioada obligatorie de odihnă. Următoarea pontare permisă: {nextAllowedClockIn}.",
+        "title": "Memento pentru perioada de odihnă"
+      },
       "scheduledExportPaused": {
         "message": "„{scheduleName}” a fost întreruptă deoarece proprietarul său, {ownerName}, nu mai este administrator al organizației. Desemnați-vă pe dvs. sau pe un alt administrator al organizației ca proprietar pentru a o relua.",
         "title": "Export programat întrerupt"
       },
+      "schedulePublished": {
+        "message": "{shiftCount, plural, one {# tură a fost publicată pentru {dateRange}.} few {# ture au fost publicate pentru {dateRange}.} other {# de ture au fost publicate pentru {dateRange}.}}",
+        "title": "Program nou publicat"
+      },
       "shiftAssigned": {
         "message": "Vi s-a atribuit o tură pe {shiftDate} între {startTime} și {endTime} de către {assignedByName}.",
         "title": "Tură atribuită"
+      },
+      "shiftPickupApproved": {
+        "message": "Solicitarea dvs. de preluare a turei din {shiftDate} a fost aprobată de {approverName}.",
+        "title": "Preluare a turei aprobată"
+      },
+      "shiftPickupRequested": {
+        "message": "{requesterName} a solicitat preluarea turei din {shiftDate} ({startTime} - {endTime}).",
+        "messageUnnamedRequester": "Un angajat a solicitat preluarea turei din {shiftDate} ({startTime} - {endTime}).",
+        "title": "Solicitare de preluare a turei"
+      },
+      "shiftSwapApproved": {
+        "message": "Solicitarea dvs. de schimb de tură pentru {shiftDate} a fost aprobată de {approverName}.",
+        "title": "Schimb de tură aprobat"
+      },
+      "shiftSwapRejected": {
+        "message": "Solicitarea dvs. de schimb de tură pentru {shiftDate} a fost respinsă de {approverName}.",
+        "messageWithReason": "Solicitarea dvs. de schimb de tură pentru {shiftDate} a fost respinsă de {approverName}. Motiv: {reason}",
+        "title": "Schimb de tură respins"
+      },
+      "shiftSwapRequestedToManager": {
+        "message": "{requesterName} a solicitat un schimb pentru tura din {shiftDate} ({startTime} - {endTime}).",
+        "messageWithTarget": "{requesterName} a solicitat să facă schimb cu {targetName} pentru tura din {shiftDate} ({startTime} - {endTime}).",
+        "title": "Cerere de schimb de tură"
+      },
+      "shiftSwapRequestedToTarget": {
+        "message": "{requesterName} dorește să facă schimb de tură cu tine pentru {shiftDate} ({startTime} - {endTime}).",
+        "title": "Cerere de schimb de tură"
+      },
+      "skillExpiredToday": {
+        "employeeMessage": "Competența ta \"{skill}\" expiră astăzi.",
+        "message": "Competența \"{skill}\" a lui {employee} expiră astăzi.",
+        "title": "O competență expiră astăzi"
+      },
+      "skillExpiryUpcoming": {
+        "employeeMessage": "Competența ta \"{skill}\" expiră pe {untilDate}.",
+        "message": "Competența \"{skill}\" a lui {employee} expiră pe {untilDate}.",
+        "title": "O competență expiră în curând"
       },
       "teamMemberAdded": {
         "message": "Ați fost adăugat în echipa {teamName} de către {performedByName}.",
@@ -797,12 +1051,30 @@
         "message": "Ați fost eliminat din echipa {teamName} de către {performedByName}.",
         "title": "Eliminat din echipă"
       },
+      "timeCorrectionApproved": {
+        "message": "Cererea ta de corecție a pontajului a fost aprobată de {approverName}.",
+        "title": "Corecție pontaj aprobată"
+      },
+      "timeCorrectionRejected": {
+        "message": "Cererea ta de corecție a pontajului a fost respinsă de {approverName}.",
+        "messageWithReason": "Cererea ta de corecție a pontajului a fost respinsă de {approverName}. Motiv: {rejectionReason}",
+        "title": "Corecție pontaj respinsă"
+      },
+      "timeCorrectionSubmitted": {
+        "message": "Cererea ta de corecție a pontajului a fost trimisă și este în așteptarea aprobării.",
+        "title": "Corecție pontaj trimisă"
+      },
       "timeOffInLieuAvailable": {
         "message": "Angajații pot folosi acum timp liber din soldul lor de lucru. Noua categorie de absență rămâne inactivă până când o activați în setările de absențe.",
         "title": "Timpul liber compensatoriu este disponibil"
       },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "O ajustare aprobată a mărit suma datorată pentru raportul de cheltuieli {report} al lui {employee}. În așteptarea rambursării: {amounts}."
+      },
+      "travelExpenseApproved": {
+        "message": "Decontul tău de cheltuieli de deplasare pentru {destination} ({amount}) a fost aprobat de {approverName}.",
+        "messageWithoutDestination": "Decontul tău de cheltuieli de deplasare pentru {amount} a fost aprobat de {approverName}.",
+        "title": "Cheltuială de deplasare aprobată"
       },
       "travelExpenseLeftOutOfPayrollRun": {
         "message": "Decontul de cheltuieli {report} al angajatului {employee} nu este rambursat printr-o rulare de salarii. În așteptarea rambursării: {amounts}."
@@ -832,6 +1104,45 @@
       },
       "travelExpenseReimbursedWithPayroll": {
         "message": "Cheltuielile tale de deplasare au fost rambursate integral prin rularea de salarii {period}: {amount} {currency}."
+      },
+      "travelExpenseRejected": {
+        "message": "Decontul tău de cheltuieli de deplasare pentru {destination} ({amount}) a fost respins de {approverName}.",
+        "messageWithoutDestination": "Decontul tău de cheltuieli de deplasare pentru {amount} a fost respins de {approverName}.",
+        "messageWithoutDestinationWithReason": "Decontul tău de cheltuieli de deplasare pentru {amount} a fost respins de {approverName}. Motiv: {reason}",
+        "messageWithReason": "Decontul tău de cheltuieli de deplasare pentru {destination} ({amount}) a fost respins de {approverName}. Motiv: {reason}",
+        "title": "Cheltuială de deplasare respinsă"
+      },
+      "travelExpenseReportApproved": {
+        "message": "Raportul tău de cheltuieli (rambursabil {amount}) a fost aprobat de {approverName}.",
+        "title": "Raport de cheltuieli aprobat"
+      },
+      "travelExpenseReportRejected": {
+        "message": "Raportul tău de cheltuieli (rambursabil {amount}) a fost respins de {approverName}.",
+        "messageWithReason": "Raportul tău de cheltuieli (rambursabil {amount}) a fost respins de {approverName}. Motiv: {reason}",
+        "title": "Raport de cheltuieli respins"
+      },
+      "travelExpenseReportReturned": {
+        "message": "{reviewerName} ți-a returnat raportul de cheltuieli pentru modificări: {note}",
+        "title": "Raport de cheltuieli returnat pentru modificări"
+      },
+      "twoFactorDisabled": {
+        "message": "Autentificarea cu doi factori a fost dezactivată pentru contul tău. Îți recomandăm să o reactivezi pentru securitate.",
+        "title": "Autentificare cu doi factori dezactivată"
+      },
+      "twoFactorEnabled": {
+        "message": "Autentificarea cu doi factori a fost activată pentru contul tău pentru un plus de securitate.",
+        "title": "Autentificare cu doi factori activată"
+      },
+      "vacationBalanceAlert": {
+        "expiringMessage": "{remainingDays, plural, one {Ai # zi de concediu care expiră pe {expiryDate}. Folosește-o înainte să expire!} other {Ai # zile de concediu care expiră pe {expiryDate}. Folosește-le înainte să expire!}}",
+        "message": "{remainingDays, plural, one {Ai # zi de concediu rămasă. Nu uita să-ți iei timp liber!} other {Ai # zile de concediu rămase. Nu uita să-ți iei timp liber!}}",
+        "title": "Memento sold concediu"
+      },
+      "waterReminder": {
+        "done": "Rezolvat!",
+        "message": "Rămâi sănătos - bea apă",
+        "snooze": "Amână pentru astăzi",
+        "title": "E timpul să te hidratezi!"
       }
     },
     "description": "Examinați actualizările, aprobările și alertele de sistem într-o singură cronologie.",
@@ -937,11 +1248,17 @@
         "approval_cover_return_summary": "Decis de înlocuitorul dvs.",
         "approval_cover_started": "Înlocuirea pe perioada absenței a început",
         "break_due_reminder": "Pauză scadentă",
+        "driving_details_missing_reminder": "Lipsesc detaliile de conducere",
         "forgotten_clock_out_reminder": "Pontare de ieșire omisă",
         "missed_clock_in_reminder": "Pontare omisă la intrare",
         "period_submission_decided": "Timp trimis aprobat sau respins",
         "period_submission_reminder": "Trimiteți timpul",
         "period_submission_sent_back": "Timp returnat după o modificare",
+        "personal_data_export_admin_exported": "Date cu caracter personal exportate de un administrator",
+        "personal_data_export_ready": "Exportul datelor cu caracter personal este gata",
+        "personal_data_export_reminder": "Descarcă-ți datele înainte de a pleca",
+        "skill_expired_today": "Competența expiră astăzi",
+        "skill_expiry_upcoming": "Competența expiră în curând",
         "work_balance_adjustment_cancelled": "Ajustare de sold anulată",
         "work_balance_adjustment_recorded": "Ajustare de sold înregistrată"
       },
@@ -1020,6 +1337,1092 @@
       "loading": "Se citesc înregistrările salvate…",
       "review": "Revizuiți înregistrările salvate",
       "title": "Înregistrări de pontare salvate"
+    }
+  },
+  "personalDataExport": {
+    "readme": {
+      "accessAdmin": "{name} (administrator)",
+      "accessExpenseExport": "exportarea acestora",
+      "accessExpenseOfficers": "Responsabili cu deconturile (rapoartele dumneavoastră aprobate de cheltuieli de deplasare și chitanțele acestora):",
+      "accessExpenseRead": "citirea rapoartelor aprobate",
+      "accessExpenseReimburse": "înregistrarea rambursărilor",
+      "accessIntro": "Pe lângă dumneavoastră, aceste persoane din {organization} vă pot accesa datele în Z8, la momentul creării acestui export:",
+      "accessManagerDirect": "{name} (managerul dumneavoastră)",
+      "accessManagers": "Manageri (orele, absențele, programele și cererile dumneavoastră, în măsura permisă de rolul lor):",
+      "accessManagerTeam": "{name} (permisiuni de echipă pentru echipa dumneavoastră)",
+      "accessNobody": "Nimeni.",
+      "accessOwner": "{name} (proprietar)",
+      "accessOwnersAdmins": "Proprietari și administratori (toate datele dumneavoastră din organizație):",
+      "accessPayrollAll": "toți angajații",
+      "accessPayrollEmployee": "dumneavoastră nominal",
+      "accessPayrollOfficers": "Acces la salarizare (timpul dumneavoastră de lucru și absențele, exportate pentru salarizare):",
+      "accessPayrollTeam": "echipa dumneavoastră",
+      "accessPersonnelFileOfficers": "Responsabili cu dosarele de personal (documentele din dosarul dumneavoastră de personal din aceste categorii):",
+      "accessTitle": "Cine vă poate accesa datele",
+      "category": {
+        "absences": "Absențele dumneavoastră, drepturile de concediu și ajustările de concediu.",
+        "account": "Contul dumneavoastră de utilizator: sesiuni, metode de conectare, setări de securitate, preferințe și dispozitive.",
+        "accountAdmin": "Numele și adresa de e-mail ale contului dumneavoastră de utilizator.",
+        "approvals": "Propriile dumneavoastră cereri și trimiteri de perioade, precum și deciziile pe care le-ați luat cu privire la cererile altor persoane.",
+        "auditLog": "Înregistrările din jurnalul de audit despre dumneavoastră și înregistrările efectuate de dumneavoastră.",
+        "employment": "Dosarul și profilul dumneavoastră de angajat, perioadele de angajare și plecarea, condițiile de angajare cu salariul orar și istoricul acestuia, echipele, managerii, locațiile, competențele, alocările pe proiecte, rolurile, grupurile, centrul de cost și fiecare politică atribuită dumneavoastră.",
+        "integrations": "Conexiunile dumneavoastră de calendar, fluxul de calendar, conturile de chat asociate și starea codului PIN pentru chioșc.",
+        "notifications": "Istoricul notificărilor dumneavoastră.",
+        "personnelFile": "Documentele din dosarul dumneavoastră de personal, ca fișiere originale.",
+        "planning": "Turele și cererile dumneavoastră de tură.",
+        "positionStamps": "Marcajele dumneavoastră de poziție, istoricul consimțământului dumneavoastră și cine v-a vizualizat pozițiile.",
+        "time": "Înregistrările dumneavoastră de timp, perioadele de lucru și corecțiile, pauzele, pontările automate la ieșire, excepțiile de conformitate, încălcările politicilor de lucru, sporurile, soldurile și ajustările de sold.",
+        "travelExpenses": "Cererile dumneavoastră de decontare a cheltuielilor de deplasare, rapoartele, articolele, decontările și chitanțele."
+      },
+      "completeCopy": "{organization} poate păstra și alte evidențe despre dumneavoastră care nu fac parte din acest export. Puteți solicita administratorilor {organization} o copie completă a datelor dumneavoastră cu caracter personal.",
+      "completeCopyTitle": "Copie completă",
+      "csvFolder": "Folderul {folder} conține aceleași tabele ca fișiere CSV.",
+      "documentCategory": {
+        "certificate": "Certificate",
+        "contract": "Contracte",
+        "other": "Alte documente",
+        "payslip": "Fluturași de salariu",
+        "sickNote": "Certificate medicale"
+      },
+      "fields": {
+        "absences": {
+          "absences": {
+            "approvedAt": "Când a fost decisă absența (UTC).",
+            "approvedBy": "Cine a decis cu privire la absență.",
+            "category": "Categoria absenței, așa cum este denumită de organizație.",
+            "categoryType": "Tipul de absență din spatele categoriei, de exemplu vacation, sick sau home_office.",
+            "deputy": "Colegul care vă înlocuiește în timpul absenței.",
+            "deputyAssignedAt": "Când a fost desemnat înlocuitorul (UTC).",
+            "endDate": "Ultima zi a absenței (YYYY-MM-DD).",
+            "endPeriod": "Partea din ultima zi în care sunteți absent: full_day, am sau pm.",
+            "notes": "Nota adăugată la absență.",
+            "rejectionReason": "Motivul pentru care a fost respinsă absența.",
+            "sickDetail": "Pentru boală: mai multe detalii, de exemplu cu sau fără certificat medical ori copil bolnav.",
+            "startDate": "Prima zi a absenței (YYYY-MM-DD).",
+            "startPeriod": "Partea din prima zi în care absentați: full_day, am (dimineață) sau pm (după-amiază).",
+            "status": "Dacă absența este în așteptare, aprobată sau respinsă.",
+            "summary": "Absențele dumneavoastră, cum ar fi concediul de odihnă, concediul medical sau telemunca, împreună cu aprobarea acestora."
+          },
+          "shared": {
+            "year": "Anul de concediu."
+          },
+          "vacationAdjustments": {
+            "accrualMonth": "Pentru o cotă acumulată: luna (de la 1 la 12) pentru care a fost acordată.",
+            "adjustedBy": "Cine a efectuat modificarea.",
+            "days": "Zilele adăugate (pozitiv) sau scăzute (negativ).",
+            "kind": "Dacă cineva a efectuat modificarea manual (manual) sau dacă aplicația a acordat o cotă acumulată (accrual).",
+            "reason": "Motivul pentru care a fost efectuată modificarea.",
+            "summary": "Fiecare modificare adusă zilelor dumneavoastră de concediu în afara alocării: corecții manuale și cote acumulate."
+          },
+          "vacationAllowances": {
+            "customAnnualDays": "Zilele dumneavoastră de concediu pentru anul respectiv; necompletat atunci când se aplică numărul din politica dumneavoastră.",
+            "customCarryoverDays": "Zilele reportate în acest an din anul precedent; necompletat dacă nu a fost setată niciuna pentru dumneavoastră.",
+            "summary": "Alocările de concediu stabilite personal pentru dumneavoastră, în locul politicii de concediu, pe an."
+          },
+          "vacationPolicies": {
+            "accrualStartMonth": "Luna (de la 1 la 12) din care începe acumularea zilelor de concediu.",
+            "accrualType": "Modul în care sunt acordate zilele: toate o dată pe an (annual), lunar sau la fiecare două săptămâni (biweekly).",
+            "allowCarryover": "Dacă zilele neutilizate se reportează în anul următor.",
+            "assignmentActive": "Dacă atribuirea este activă.",
+            "assignmentEffectiveFrom": "Când începe să se aplice atribuirea politicii (UTC).",
+            "assignmentEffectiveUntil": "Când încetează să se aplice atribuirea (UTC); necompletat cât timp se aplică.",
+            "assignmentType": "Modul în care ajunge la dumneavoastră: atribuită dumneavoastră (employee), echipei dumneavoastră (team) sau întregii organizații (organization).",
+            "carryoverExpiryMonths": "Câte luni din anul următor rămân valabile zilele reportate; necompletat dacă nu expiră.",
+            "defaultAnnualDays": "Zilele de concediu pe an conform politicii.",
+            "maxCarryoverDays": "Numărul maxim de zile care se reportează; necompletat pentru nicio limită.",
+            "policy": "Numele politicii.",
+            "prorateInStartAndExitYear": "Dacă o alocare anuală este redusă în anul în care vă angajați sau plecați, proporțional cu lunile în care sunteți angajat.",
+            "statutoryMinimumDays": "Numărul minim de zile la care poate ajunge o alocare redusă odată ce perioada dumneavoastră de așteptare s-a încheiat.",
+            "summary": "Politicile de concediu care vi se aplică: atribuite dumneavoastră, echipelor dumneavoastră sau cea prestabilită a organizației.",
+            "validFrom": "Prima zi în care se aplică politica (YYYY-MM-DD).",
+            "validUntil": "Ultima zi în care se aplică politica (YYYY-MM-DD); necompletat cât timp se aplică."
+          }
+        },
+        "account": {
+          "accessViolations": {
+            "actionTaken": "Ce s-a întâmplat: blocat, supus verificării sau înregistrat.",
+            "blockedCountry": "Țara blocată.",
+            "blockedIp": "Adresa IP blocată.",
+            "concurrentSessionCount": "Câte sesiuni erau deschise la momentul respectiv.",
+            "reason": "Motivul înregistrat.",
+            "requestMethod": "Tipul de solicitare, de ex. GET.",
+            "requestPath": "Pagina sau adresa solicitată.",
+            "requiredMfaType": "Al doilea factor solicitat de regulă.",
+            "summary": "Solicitările pe care regulile de acces ale acestei organizații le-au blocat, le-au supus verificării sau le-au marcat.",
+            "violationType": "Ce regulă a încălcat, de ex. ip_blocked."
+          },
+          "hydrationStats": {
+            "currentStreak": "Zile consecutive în care v-ați atins obiectivul, până în prezent.",
+            "lastGoalMetDate": "Ultima zi în care v-ați atins obiectivul.",
+            "longestStreak": "Cea mai lungă serie a dumneavoastră.",
+            "snoozedUntil": "Până când ați întrerupt mementourile.",
+            "summary": "Totalurile consumului de apă și seriile dumneavoastră.",
+            "totalIntakeAllTime": "Toate paharele pe care le-ați înregistrat."
+          },
+          "notificationPreferences": {
+            "channel": "Unde este livrată, de ex. e-mail sau push.",
+            "enabled": "Dacă o primiți acolo.",
+            "notificationType": "Tipul de notificare.",
+            "summary": "Ce notificări ați activat sau dezactivat, pentru fiecare canal."
+          },
+          "passkeys": {
+            "aaguid": "ID-ul modelului de autentificator.",
+            "backedUp": "Dacă există o copie de rezervă.",
+            "deviceType": "Dacă se află pe un singur dispozitiv sau se sincronizează pe mai multe dispozitive.",
+            "name": "Numele cheii de acces (passkey).",
+            "summary": "Cheile dvs. de acces (cheile nu sunt niciodată exportate).",
+            "transports": "Modul în care se conectează autentificatorul, de ex. USB sau intern."
+          },
+          "pushDevices": {
+            "deviceName": "Numele dispozitivului.",
+            "kind": "web pentru un browser, native pentru aplicația mobilă.",
+            "lastSeenAt": "Când a înregistrat aplicația dispozitivul ultima dată.",
+            "platform": "Platforma mobilă (ios sau android); necompletat pentru un browser.",
+            "summary": "Browserele și dispozitivele care primesc notificări push (cheile acestora nu sunt niciodată exportate)."
+          },
+          "sessions": {
+            "city": "Orașul acelei adrese IP.",
+            "createdAt": "Când v-ați conectat.",
+            "expiresAt": "Când se încheie sesiunea, dacă nu este reînnoită.",
+            "impersonated": "Dacă echipa de asistență a platformei a deschis această sesiune în numele dvs. Adresa IP, browserul și locația sunt omise în acest caz: aparțin asistenței, nu dvs.",
+            "lastActivityAt": "Când ați folosit ultima dată sesiunea în această organizație.",
+            "mfaMethod": "Cum ați confirmat al doilea factor de autentificare, dacă vi s-a cerut.",
+            "mfaVerifiedAt": "Când l-ați confirmat.",
+            "region": "Regiunea acelei adrese IP.",
+            "summary": "Conectările dvs. (sesiunile) care sunt încă stocate, împreună cu detaliile înregistrate de această organizație despre ele.",
+            "updatedAt": "Când a fost reînnoită ultima dată sesiunea."
+          },
+          "settings": {
+            "dashboardWidgetOrder": "Modul în care ați organizat panoul de control, în format JSON.",
+            "helpImproveProduct": "Dacă ați fost de acord să ajutați la îmbunătățirea produsului.",
+            "locale": "Limba aplicației dvs.; dacă este necompletat, se utilizează limba browserului.",
+            "onboardingComplete": "Dacă ați finalizat introducerea.",
+            "onboardingCompletedAt": "Când ați finalizat-o.",
+            "onboardingStartedAt": "Când ați început introducerea.",
+            "onboardingStep": "Pasul din introducere la care ați ajuns.",
+            "summary": "Setările dvs. personale din aplicație.",
+            "timeFormat": "Dacă orele sunt afișate în format de 12 sau 24 de ore.",
+            "timezone": "Fusul orar pe care l-ați ales pentru afișarea orelor.",
+            "waterReminderDailyGoal": "Obiectivul dvs. zilnic în pahare.",
+            "waterReminderEnabled": "Dacă mementourile pentru apă sunt activate.",
+            "waterReminderIntervalMinutes": "Minute între mementourile pentru apă.",
+            "waterReminderPreset": "Configurația prestabilită pentru mementoul de apă pe care ați ales-o.",
+            "weekStartDay": "Ziua în care începe săptămâna dvs."
+          },
+          "shared": {
+            "country": "Țara acelei adrese IP (cod ISO).",
+            "ipAddress": "Adresa IP de la care a provenit.",
+            "isActive": "Dacă este încă în uz.",
+            "lastUsedAt": "Când a fost utilizat ultima dată.",
+            "userAgent": "Browserul sau aplicația, așa cum s-a identificat."
+          },
+          "signInMethods": {
+            "accountId": "ID-ul contului dvs. la acel furnizor.",
+            "passwordSet": "Dacă este setată o parolă (parola în sine nu este niciodată exportată).",
+            "provider": "Metoda de conectare; credential înseamnă e-mail și parolă.",
+            "summary": "Modalitățile prin care vă puteți conecta: o parolă sau conturi conectate precum Google sau Microsoft."
+          },
+          "trustedDevices": {
+            "deviceName": "Numele dispozitivului.",
+            "expiresAt": "Când încetează încrederea.",
+            "lastIpAddress": "Adresa IP a ultimei utilizări.",
+            "mdmCompliant": "Dacă sistemul de gestionare a dispozitivelor l-a raportat ca fiind conform.",
+            "mdmProvider": "Sistemul de gestionare a dispozitivelor, dacă există.",
+            "platform": "Sistemul de operare.",
+            "revokedAt": "Când a fost retrasă încrederea.",
+            "revokedBy": "Cine l-a retras.",
+            "revokeReason": "De ce a fost retras.",
+            "summary": "Dispozitivele în care această organizație are încredere pentru conectările tale.",
+            "trustSource": "De ce este de încredere: o cheie de acces, un administrator, opțiunea ta de a-l reține sau gestionarea dispozitivelor (MDM)."
+          },
+          "user": {
+            "banExpires": "Când se încheie blocarea; necompletat dacă nu se încheie.",
+            "banned": "Dacă platforma ți-a blocat contul.",
+            "banReason": "De ce a fost blocat de platformă.",
+            "canCreateOrganizations": "Dacă poți crea propriile organizații.",
+            "email": "Adresa de e-mail cu care te conectezi.",
+            "emailVerified": "Dacă ai confirmat acea adresă de e-mail.",
+            "firstName": "Prenumele contului tău.",
+            "image": "Adresa imaginii tale de profil.",
+            "lastName": "Numele de familie al contului tău.",
+            "name": "Numele afișat al contului tău.",
+            "role": "Rolul tău pe platformă (nu în această organizație).",
+            "summary": "Contul tău de utilizator: datele de conectare pe care le folosești pentru această organizație.",
+            "twoFactorEnabled": "Dacă autentificarea cu doi factori este activată."
+          },
+          "waterIntake": {
+            "amount": "Câte pahare.",
+            "loggedAt": "Când ai băut.",
+            "source": "Unde ai înregistrat: o memento, manual sau din widget.",
+            "summary": "Apa pe care ai înregistrat-o."
+          }
+        },
+        "approvals": {
+          "approvalChains": {
+            "completedAt": "Când a fost luată decizia pentru ultima etapă (UTC).",
+            "policy": "Politica de aprobare care a stabilit etapele, după numele său de la acel moment.",
+            "status": "Stadiul în care se află aprobarea.",
+            "summary": "Aprobările în mai mulți pași ale cererilor tale, așa cum au fost înregistrate de o versiune anterioară a sistemului de aprobare."
+          },
+          "approvalChainStages": {
+            "approver": "Persoana căreia i s-a cerut să decidă asupra etapei.",
+            "chainId": "ID-ul aprobării din approval_chains.",
+            "decidedAt": "Când a fost luată decizia pentru etapă (UTC).",
+            "decidedBy": "Cine a decis asupra etapei.",
+            "status": "Stadiul în care se află etapa.",
+            "step": "Poziția etapei: 1 este prima etapă.",
+            "summary": "Etapele acelor aprobări în mai mulți pași."
+          },
+          "decisionsOnOthers": {
+            "actedAt": "Când ai decis (UTC).",
+            "action": "Ce ai decis: aprobat sau respins, ori reatribuit atunci când ai transferat cererea către un alt aprobator.",
+            "asDeputy": "Dacă ai decis în calitate de înlocuitor al aprobatorului.",
+            "authority": "Unde este înregistrată decizia: sistemul de aprobare actual (canonical), cel anterior (legacy) sau doar în înregistrarea propriu-zisă (record).",
+            "otherPerson": "Un ID anonim pentru persoana a cărei cerere a fost. Aceeași persoană are același ID în întregul export și unul diferit în orice alt export.",
+            "recordKind": "Ce tip de cerere ai soluționat, de exemplu o absență sau o cerere de schimb de tură.",
+            "summary": "Deciziile pe care le-ai luat cu privire la cererile altor persoane. Cealaltă persoană apare doar ca un ID anonim."
+          },
+          "deputyDecisions": {
+            "actingFor": "Aprobatorul pe care l-a înlocuit persoana delegată.",
+            "authority": "Cărui sistem de aprobare îi aparține decizia: anterior (legacy) sau actual (canonical).",
+            "decidedAt": "Când a decis persoana delegată (UTC).",
+            "decidedBy": "Persoana delegată care a decis.",
+            "decision": "Ce a decis persoana delegată: aprobat sau respins.",
+            "requestId": "ID-ul cererii din requests, pentru sistemul anterior.",
+            "summary": "Decizii luate cu privire la cererile tale de către o persoană delegată care l-a înlocuit pe aprobator.",
+            "workflowId": "ID-ul aprobării din workflows, pentru sistemul actual."
+          },
+          "periodSubmissions": {
+            "cadence": "Dacă trimiți pontajul săptămânal (weekly) sau lunar (monthly).",
+            "cadenceEndDate": "Ultima zi a întregii săptămâni sau luni (YYYY-MM-DD).",
+            "cadenceStartDate": "Prima zi a întregii săptămâni sau luni (YYYY-MM-DD).",
+            "closedAt": "Când trimiterea a fost retrasă sau aprobarea acesteia a devenit perimată după o modificare (UTC).",
+            "closedCause": "De ce a fost închisă trimiterea: ați retras-o (angajat) sau timpul dvs. s-a modificat după aceasta (modificare).",
+            "decidedAt": "Când a fost aprobată sau respinsă trimiterea (UTC).",
+            "decidedBy": "Cine a aprobat sau a respins trimiterea.",
+            "endDate": "Ultima zi pe care ați trimis-o (YYYY-MM-DD).",
+            "rangeEnd": "Sfârșitul zilelor trimise ca punct în timp (UTC), nefiind inclus.",
+            "rangeStart": "Începutul zilelor trimise ca punct în timp (UTC).",
+            "startDate": "Prima zi pe care ați trimis-o (YYYY-MM-DD).",
+            "status": "Starea trimiterii: în așteptare, aprobată, respinsă, retrasă sau perimată când o modificare ulterioară a făcut ca aprobarea să devină perimată.",
+            "submittedAt": "Când a fost trimisă perioada (UTC).",
+            "submittedBy": "Cine a trimis perioada.",
+            "summary": "Săptămânile sau lunile de timp de lucru trimise spre aprobare. Trimiterea din nou a unei perioade adaugă un rând nou.",
+            "timezone": "Fusul orar în care sunt contorizate zilele perioadei.",
+            "weekStartDay": "Pentru trimiteri săptămânale: ziua în care începe săptămâna."
+          },
+          "requests": {
+            "approvedAt": "Când a fost luată o decizie privind cererea (UTC).",
+            "approver": "Persoana solicitată să ia o decizie.",
+            "notes": "Note privind cererea.",
+            "reason": "Motivul dvs. pentru cerere.",
+            "rejectionReason": "De ce a fost respinsă cererea.",
+            "status": "Dacă cererea este în așteptare, aprobată sau respinsă.",
+            "summary": "Cererile dvs. de aprobare, așa cum au fost înregistrate de o versiune anterioară a sistemului de aprobare."
+          },
+          "shared": {
+            "decisionReason": "Motivul furnizat odată cu decizia.",
+            "recordId": "ID-ul acelei înregistrări, de exemplu al unei absențe din absences.json.",
+            "recordKind": "Despre ce fel de înregistrare este vorba în cerere, de exemplu o absență sau o corecție de timp.",
+            "stageLabel": "Numele etapei de aprobare.",
+            "workflowId": "ID-ul aprobării din fluxurile de lucru."
+          },
+          "workflowApprovers": {
+            "approver": "Persoana solicitată să ia o decizie.",
+            "assignedAt": "Când i s-a solicitat (UTC).",
+            "decidedBy": "Cine a decis de fapt: numele unei persoane sau sistemul când a fost soluționată de aplicație (legacy_unknown pentru înregistrările vechi).",
+            "reassignedBy": "Cine a redirecționat decizia către altcineva.",
+            "resolvedAt": "Când a fost soluționată partea sa (UTC).",
+            "status": "Starea părții respective: în așteptare, aprobată, respinsă, anulată sau expirată.",
+            "summary": "Persoanele solicitate să decidă la fiecare etapă a aprobărilor dvs."
+          },
+          "workflowEvents": {
+            "actor": "Cine a efectuat acțiunea: numele unei persoane sau sistemul când a fost realizată de aplicație (legacy_unknown pentru înregistrările vechi).",
+            "eventType": "Ce s-a întâmplat, de exemplu stage.activated, assignment.approved sau assignment.escalated.",
+            "occurredAt": "Când s-a întâmplat (UTC).",
+            "reason": "Motivul indicat.",
+            "summary": "Tot ce s-a întâmplat cu aprobările dvs., în ordine."
+          },
+          "workflows": {
+            "cancelledAt": "Când a fost anulată cererea (UTC).",
+            "completedAt": "Când a fost luată decizia finală (UTC).",
+            "status": "Starea aprobării: în așteptare, aprobată, respinsă, anulată sau expirată.",
+            "submittedAt": "Când a fost trimisă cererea (UTC).",
+            "summary": "Cererile dvs. de aprobare din sistemul actual de aprobare, câte una per cerere.",
+            "workflowType": "Ce se aprobă, de exemplu o absență, o corecție de pontaj sau trimiterea unei perioade."
+          },
+          "workflowStages": {
+            "activatedAt": "Când a început etapa (UTC).",
+            "decidedAt": "Când a fost luată o decizie privind etapa (UTC).",
+            "stageOrder": "Poziția etapei: 1 este prima etapă.",
+            "status": "Starea etapei: în așteptare (neîncepută), în curs, aprobată, respinsă, anulată sau expirată.",
+            "summary": "Etapele prin care a trecut fiecare dintre aprobările dvs., în ordine."
+          }
+        },
+        "auditLog": {
+          "actionsOnOthers": {
+            "actedAt": "Când ați efectuat acțiunea (UTC).",
+            "action": "Ce ați făcut.",
+            "asDeputy": "Dacă ați acționat în calitate de înlocuitor al cuiva.",
+            "authority": "Unde este înregistrată acțiunea: audit_log pentru jurnalul de audit, record pentru înregistrarea propriu-zisă.",
+            "otherPerson": "Un ID anonim pentru coleg, identic pentru același coleg pe tot parcursul acestui export; necompletat atunci când acțiunea nu a vizat nicio persoană.",
+            "recordKind": "Tipul de înregistrare asupra căreia ați acționat, de exemplu absence_entry sau time_entry.",
+            "summary": "Ce ați făcut fără legătură cu propriile înregistrări: acțiuni asupra înregistrărilor colegilor sau asupra organizației. Colegii apar doar printr-un ID anonim."
+          },
+          "entries": {
+            "action": "Ce s-a efectuat, așa cum înregistrează aplicația, de exemplu absence.requested.",
+            "changes": "Ce s-a modificat, în format JSON (de regulă, valorile de dinainte și de după).",
+            "entityId": "ID-ul acelei înregistrări în aplicație.",
+            "entityType": "Tipul de înregistrare vizată, de exemplu absence_entry sau employee.",
+            "ipAddress": "Adresa dumneavoastră IP la momentul acțiunii; necompletat când a fost efectuată de altcineva.",
+            "metadata": "Informații suplimentare de context înregistrate de aplicație, în format JSON.",
+            "performedBy": "Numele persoanei care a efectuat acțiunea.",
+            "performedByYou": "Dacă ați efectuat acțiunea dumneavoastră.",
+            "summary": "Înregistrări din jurnalul de audit despre dumneavoastră: ce s-a efectuat asupra înregistrărilor dumneavoastră, de către cine și când.",
+            "timestamp": "Când s-a produs (UTC).",
+            "userAgent": "Browserul sau aplicația dumneavoastră la momentul acțiunii; necompletat când a fost efectuată de altcineva."
+          }
+        },
+        "common": {
+          "assignedAt": "Când vi s-a atribuit.",
+          "assignedBy": "Cine vi l-a atribuit.",
+          "createdAt": "Când a fost creată înregistrarea.",
+          "createdBy": "Cine a creat înregistrarea.",
+          "effectiveFrom": "Când a intrat în vigoare.",
+          "effectiveTo": "Când a încetat să se aplice; necompletat cât timp încă se aplică.",
+          "id": "ID-ul înregistrării în aplicație, astfel încât alte fișiere să poată face referire la aceasta.",
+          "updatedAt": "Când a fost modificată ultima dată înregistrarea.",
+          "updatedBy": "Cine a modificat ultima dată înregistrarea."
+        },
+        "employment": {
+          "assignedLocations": {
+            "city": "Orașul locației.",
+            "country": "Țara locației.",
+            "location": "Numele locației.",
+            "postalCode": "Codul poștal al locației.",
+            "street": "Strada locației.",
+            "summary": "Locațiile la care sunteți alocat să lucrați."
+          },
+          "assignedVehicles": {
+            "archived": "Dacă organizația a arhivat vehiculul, astfel încât acesta nu mai poate fi selectat.",
+            "assignmentType": "Cum vă este alocat: atribuit dumneavoastră (employee) sau echipei dumneavoastră (team).",
+            "licencePlate": "Numărul de înmatriculare al vehiculului.",
+            "summary": "Vehiculele organizației atribuite dumneavoastră sau echipelor dumneavoastră, pe care aplicația le sugerează mai întâi când înregistrați un vehicul pentru activitatea dumneavoastră.",
+            "vehicle": "Numele vehiculului."
+          },
+          "billableRates": {
+            "hourlyRate": "Tariful orar facturat.",
+            "level": "Dacă tariful se aplică pentru întreaga dumneavoastră activitate sau pentru un singur proiect.",
+            "project": "Proiectul căruia i se aplică tariful; necompletat pentru întreaga dumneavoastră activitate.",
+            "summary": "Tarifele pe care organizația le facturează clienților pentru munca dumneavoastră."
+          },
+          "costCenters": {
+            "code": "Codul centrului de cost.",
+            "costCenter": "Numele centrului de cost.",
+            "summary": "Centrele de cost pe care este înregistrată activitatea dumneavoastră."
+          },
+          "costRates": {
+            "hourlyRate": "Costul pe oră.",
+            "summary": "Costul intern pe oră al muncii dumneavoastră, așa cum este calculat de organizație."
+          },
+          "customFields": {
+            "field": "Numele câmpului.",
+            "fieldArchived": "Dacă organizația a arhivat câmpul.",
+            "summary": "Valorile câmpurilor proprii ale organizației din dosarul dvs. de angajat.",
+            "tracked": "Dacă respectivul câmp păstrează un istoric al valorilor sale.",
+            "type": "Tipul câmpului, de exemplu text, număr, dată sau opțiuni.",
+            "validFrom": "Pentru câmpurile cu istoric: ziua începând cu care se aplică valoarea (AAAA-LL-ZZ).",
+            "value": "Valoarea."
+          },
+          "customRoles": {
+            "description": "Descrierea rolului.",
+            "role": "Numele rolului.",
+            "summary": "Rolurile personalizate pe care le dețineți."
+          },
+          "departureEvents": {
+            "actor": "Cine a efectuat acțiunea; necompletat când a fost realizată de sistem.",
+            "departureId": "Plecarea de care aparține acest eveniment (ID-ul său în plecări).",
+            "kind": "Ce s-a întâmplat, de exemplu departure_scheduled sau departure_effective.",
+            "occurredAt": "Când s-a întâmplat.",
+            "revision": "Versiunea plecării după acest eveniment.",
+            "summary": "Istoricul plecărilor dvs.: când a fost fiecare programată, modificată, anulată sau a intrat în vigoare și cine a efectuat acțiunea."
+          },
+          "departureReviews": {
+            "affectedEndAt": "Sfârșitul perioadei pe care o afectează înregistrarea.",
+            "affectedStartAt": "Începutul perioadei pe care o afectează înregistrarea.",
+            "departureId": "ID-ul plecării în plecări.",
+            "kind": "Ce tip de înregistrare a necesitat revizuirea.",
+            "resolution": "Cum a fost soluționată revizuirea.",
+            "resolvedAt": "Când a fost soluționată revizuirea.",
+            "resolvedBy": "Cine a soluționat revizuirea.",
+            "status": "Stadiul revizuirii.",
+            "subjectId": "ID-ul înregistrării aflate în revizuire.",
+            "summary": "Înregistrări care au necesitat o revizuire din cauza plecării dvs."
+          },
+          "departures": {
+            "blockedReason": "De ce nu a putut fi finalizată plecarea, dacă a fost cazul.",
+            "cutoffAt": "Când încetează accesul dvs. la organizație.",
+            "effectiveAt": "Când a intrat în vigoare plecarea.",
+            "lastWorkingDay": "Ultima dvs. zi lucrătoare (AAAA-LL-ZZ).",
+            "mode": "Cum a fost configurată plecarea.",
+            "replacement": "Colegul care vă preia activitatea.",
+            "status": "Stadiul plecării.",
+            "summary": "Plecările dvs. din organizație.",
+            "timezone": "Fusul orar al ultimei zile lucrătoare."
+          },
+          "departureTasks": {
+            "completedAt": "Când a fost finalizată sarcina.",
+            "departureId": "ID-ul plecării în plecări.",
+            "kind": "Ce face sarcina.",
+            "status": "Stadiul sarcinii.",
+            "summary": "Sarcinile pe care aplicația le-a rulat pentru plecarea dvs."
+          },
+          "employee": {
+            "birthday": "Data dvs. de naștere (AAAA-LL-ZZ).",
+            "contractType": "Tipul dvs. de contract.",
+            "email": "Adresa de e-mail a contului dvs. de utilizator.",
+            "endDate": "Când s-a încheiat raportul dvs. de muncă; necompletat cât timp acesta continuă.",
+            "firstName": "Prenumele dvs. din dosarul de angajat.",
+            "gender": "Genul dvs.",
+            "isActive": "Dacă dosarul dvs. de angajat este activ.",
+            "lastName": "Numele dvs. de familie din dosarul de angajat.",
+            "organization": "Numele organizației.",
+            "personnelNumber": "Numărul dvs. de personal.",
+            "position": "Postul sau funcția dvs.",
+            "primaryTeam": "Echipa dvs. principală.",
+            "pronouns": "Pronumele tale.",
+            "role": "Rolul tău în aplicație: administrator, manager sau angajat.",
+            "startDate": "Data la care a început angajarea ta.",
+            "summary": "Dosarul tău de angajat în această organizație și numele contului tău de utilizator.",
+            "userFirstName": "Prenumele contului tău de utilizator.",
+            "userId": "ID-ul contului tău de utilizator.",
+            "userLastName": "Numele de familie al contului tău de utilizator.",
+            "userName": "Numele contului tău de utilizator."
+          },
+          "employmentPeriods": {
+            "endedAt": "Data la care s-a încheiat perioada; necompletat cât timp este deschisă.",
+            "startedAt": "Când a început perioada.",
+            "startProvenance": "Originea începutului, de exemplu o angajare sau o reangajare.",
+            "status": "Dacă perioada este deschisă sau închisă.",
+            "summary": "Fiecare perioadă în care ai fost angajat în cadrul organizației."
+          },
+          "employmentTerms": {
+            "changeReason": "Motivul pentru care termenii au fost stabiliți sau modificați.",
+            "contractType": "Tipul tău de contract.",
+            "currency": "Moneda salariului orar.",
+            "hourlyRate": "Salariul tău orar conform acestor termeni.",
+            "probationEndsOn": "Ultima zi a perioadei de probă (AAAA-LL-ZZ).",
+            "probationStartsOn": "Prima zi a perioadei de probă (AAAA-LL-ZZ).",
+            "reviewState": "Dacă termenii au fost confirmați sau necesită încă revizuire.",
+            "status": "Dacă acești termeni sunt în vigoare.",
+            "summary": "Termenii tăi de angajare de-a lungul timpului, împreună cu salariul orar.",
+            "validFrom": "Când încep să se aplice acești termeni.",
+            "validUntil": "Când încetează aplicarea acestor termeni; necompletat cât timp se aplică.",
+            "weeklyContractMinutes": "Timpul tău contractual de lucru pe săptămână, în minute.",
+            "workModel": "Modelul tău de lucru.",
+            "workPolicy": "Politica de lucru utilizată de acești termeni."
+          },
+          "groups": {
+            "addedAt": "Când ai fost adăugat în grup.",
+            "addedBy": "Cine te-a adăugat în grup.",
+            "description": "Descrierea grupului.",
+            "group": "Numele grupului.",
+            "summary": "Grupurile de angajați din care faci parte."
+          },
+          "locationSupervision": {
+            "location": "Numele locației.",
+            "subarea": "Zona din cadrul locației; necompletat pentru întreaga locație.",
+            "summary": "Locațiile și zonele pe care le coordonezi."
+          },
+          "managers": {
+            "manager": "Numele managerului.",
+            "summary": "Managerii tăi."
+          },
+          "policyAssignments": {
+            "captureEnabled": "Doar pentru înregistrarea poziției: dacă poziția ta este înregistrată la pontajul de intrare sau ieșire.",
+            "effectiveFrom": "Când începe să se aplice alocarea.",
+            "effectiveUntil": "Când încetează aplicarea alocării; necompletat cât timp se aplică.",
+            "isActive": "Dacă alocarea este activă.",
+            "policy": "Numele politicii; necompletat pentru înregistrarea poziției.",
+            "policyKind": "Tipul de politică: lucru, concediu de odihnă, sărbătoare legală (o presetare de sărbătoare), alocare de sărbătoare legală (o singură sărbătoare), categorie de sărbătoare, modificare, spor, set de categorii de lucru sau înregistrare a poziției.",
+            "priority": "Care alocare are prioritate când se aplică mai multe: numărul mai mare are prioritate.",
+            "summary": "Fiecare politică ce ți se aplică: alocată ție, echipelor tale sau implicită pentru organizație."
+          },
+          "projectAssignmentHistory": {
+            "summary": "Alocările anterioare și actuale pe proiecte și perioada în care s-au aplicat."
+          },
+          "projectAssignments": {
+            "summary": "Proiectele alocate ție sau echipelor tale."
+          },
+          "projectsManaged": {
+            "summary": "Proiectele pe care le gestionezi."
+          },
+          "shared": {
+            "assignmentType": "Cum ajunge la tine: alocat ție (angajat), echipei tale (echipă) sau întregii organizații (organizație).",
+            "primary": "Dacă este cel principal.",
+            "project": "Numele proiectului.",
+            "team": "Numele echipei."
+          },
+          "skills": {
+            "category": "Categoria competenței.",
+            "expiresOn": "Data la care expiră competența (AAAA-LL-ZZ); necompletat dacă nu expiră.",
+            "notes": "Note despre competența dvs.",
+            "skill": "Numele competenței.",
+            "summary": "Competențele și calificările dvs."
+          },
+          "teamHistory": {
+            "summary": "Fiecare echipă din care ați făcut parte și perioada."
+          },
+          "teamPermissions": {
+            "canApproveTeamRequests": "Dacă aveți permisiunea de a aproba cererile echipei.",
+            "canCreateTeams": "Dacă aveți permisiunea de a crea echipe.",
+            "canManageTeamMembers": "Dacă aveți permisiunea de a gestiona membrii echipei.",
+            "canManageTeamSettings": "Dacă aveți permisiunea de a modifica setările echipei.",
+            "grantedAt": "Când au fost acordate permisiunile.",
+            "grantedBy": "Cine a acordat permisiunile.",
+            "summary": "Permisiunile de echipă pe care le dețineți.",
+            "team": "Echipa căreia i se aplică permisiunile; necompletat pentru fiecare echipă din organizație."
+          },
+          "teams": {
+            "addedBy": "Cine v-a adăugat în echipă.",
+            "memberSince": "De când sunteți în echipă.",
+            "summary": "Echipele din care faceți parte în prezent."
+          }
+        },
+        "integrations": {
+          "calendarConnections": {
+            "account": "Contul dvs. din serviciul de calendar.",
+            "calendarId": "Calendarul pe care aplicația îl folosește în acel cont.",
+            "conflictDetectionEnabled": "Dacă aplicația verifică acel calendar pentru evenimente suprapuse.",
+            "createdAt": "Când ați conectat calendarul (UTC).",
+            "lastSyncAt": "Când s-a sincronizat ultima dată aplicația cu calendarul (UTC).",
+            "provider": "Serviciul de calendar, de exemplu google, microsoft365 sau icloud.",
+            "pushEnabled": "Dacă aplicația adaugă absențele dvs. în acel calendar.",
+            "summary": "Calendarele pe care le-ați conectat la aplicație. Tokenurile de acces nu sunt incluse niciodată.",
+            "updatedAt": "Când a fost modificată ultima dată conexiunea (UTC)."
+          },
+          "chatAccounts": {
+            "accountId": "ID-ul contului dvs. în serviciul de chat.",
+            "displayName": "Numele dvs. afișat în serviciul de chat.",
+            "email": "Adresa dvs. de e-mail din serviciul de chat, dacă acesta oferă una.",
+            "isActive": "Dacă linkul este în uz.",
+            "lastSeenAt": "Când ați utilizat ultima dată aplicația prin intermediul contului (UTC).",
+            "linkedAt": "Când ați asociat contul (UTC).",
+            "platform": "Serviciul de chat: slack, teams, telegram sau discord.",
+            "summary": "Conturile dvs. de chat asociate cu aplicația, astfel încât să o puteți utiliza din Slack, Microsoft Teams, Telegram sau Discord.",
+            "username": "Numele dvs. de utilizator în serviciul de chat.",
+            "workspaceId": "ID-ul spațiului de lucru sau al instanței (tenant) căreia îi aparține contul dvs., dacă serviciul oferă unul."
+          },
+          "icsFeeds": {
+            "createdAt": "Când a fost creat linkul (UTC).",
+            "includeApproved": "Dacă fluxul afișează absențele aprobate.",
+            "includePending": "Dacă fluxul afișează absențele care așteaptă încă aprobarea.",
+            "isActive": "Dacă linkul mai funcționează.",
+            "lastUsedAt": "Când o aplicație de calendar a citit ultima dată fluxul (UTC).",
+            "revokedAt": "Când a fost dezactivat linkul (UTC).",
+            "summary": "Linkurile fluxurilor dvs. de calendar, care permit unei aplicații de calendar să se aboneze la absențele dvs. Linkul secret în sine nu este niciodată inclus."
+          },
+          "kioskPin": {
+            "pinSet": "Dacă este setat un cod PIN de chioșc pentru dvs.",
+            "setAt": "Când a fost setat ultima dată codul PIN (UTC).",
+            "setBy": "Cine a setat codul PIN.",
+            "summary": "Dacă aveți un cod PIN pentru pontaj la un terminal de tip chioșc. Codul PIN în sine nu este niciodată stocat în format lizibil și nu este inclus."
+          },
+          "shared": {
+            "isActive": "Dacă conexiunea este în uz."
+          }
+        },
+        "notifications": {
+          "notifications": {
+            "actionUrl": "Pagina din aplicație către care trimite notificarea.",
+            "createdAt": "Când ați primit notificarea (UTC).",
+            "entityId": "ID-ul acelei înregistrări.",
+            "entityType": "Tipul de înregistrare la care se referă notificarea, de exemplu o absență.",
+            "isRead": "Dacă ați citit notificarea.",
+            "message": "Textul notificării.",
+            "metadata": "Detalii suplimentare conținute de notificare, în format JSON.",
+            "readAt": "Când ați citit-o (UTC).",
+            "summary": "Notificările pe care le-ați primit în aplicație, exact așa cum le-ați primit.",
+            "title": "Titlul notificării.",
+            "type": "Despre ce este notificarea, de exemplu approval_request_submitted."
+          }
+        },
+        "personnelFile": {
+          "documents": {
+            "absenceEndDate": "Pentru un certificat medical: ultima zi a absenței (YYYY-MM-DD).",
+            "absenceId": "Pentru un certificat medical: ID-ul absenței pe care o acoperă, în absences.json.",
+            "absenceStartDate": "Pentru un certificat medical: prima zi a absenței (YYYY-MM-DD).",
+            "category": "Categoria documentului: contract, payslip, certificate, sick_note sau other.",
+            "documentDate": "Data documentului (YYYY-MM-DD).",
+            "expiryDate": "Data la care expiră documentul (YYYY-MM-DD), de exemplu a unui certificat.",
+            "file": "Unde se află fișierul original în această arhivă.",
+            "fileName": "Numele fișierului așa cum a fost încărcat.",
+            "mimeType": "Tipul de fișier, de exemplu application/pdf.",
+            "payPeriodMonth": "Pentru un fluturaș de salariu: luna (de la 1 la 12) pentru care este emis.",
+            "payPeriodYear": "Pentru un fluturaș de salariu: anul pentru care este emis.",
+            "sizeBytes": "Dimensiunea fișierului, în octeți.",
+            "summary": "Documentele din dosarul dumneavoastră personal. Fișierele propriu-zise se află în folderul personnel_file, pe categorii.",
+            "title": "Titlul documentului.",
+            "uploadedBy": "Cine a încărcat documentul.",
+            "visibility": "Cine poate vedea documentul; shared înseamnă că îl puteți vedea în dosarul dumneavoastră."
+          }
+        },
+        "planning": {
+          "shared": {
+            "approvedAt": "Când s-a luat o decizie privind cererea (UTC).",
+            "approver": "Cine a luat decizia privind cererea.",
+            "lifecycleStatus": "Stadiul cererii, inclusiv dacă a fost anulată.",
+            "requestCreatedAt": "Când a fost creată cererea (UTC).",
+            "requestId": "ID-ul cererii în aplicație.",
+            "requestStatus": "Decizia privind cererea: pending, approved sau rejected.",
+            "requestType": "Ce s-a solicitat: swap (schimb de tură), assignment (preluarea unei ture) sau pickup (preluarea unei ture libere).",
+            "shiftDate": "Ziua turei la care se referă cererea (YYYY-MM-DD).",
+            "shiftEndTime": "Când se termină acea tură, ca oră locală (HH:mm).",
+            "shiftStartTime": "Când începe acea tură, ca oră locală (HH:mm)."
+          },
+          "shiftRequests": {
+            "notes": "Nota dumneavoastră referitoare la cerere.",
+            "reason": "Motivul dumneavoastră pentru cerere.",
+            "reasonCategory": "Tipul motivului, de exemplu sick, emergency, childcare sau other.",
+            "rejectionReason": "De ce a fost respinsă cererea.",
+            "summary": "Cererile de tură pe care le-ați creat.",
+            "swapPartner": "Colegul căruia i-ați cerut să facă schimb sau să preia tura."
+          },
+          "shiftRequestsReceived": {
+            "requestedBy": "Colegul care a făcut cererea.",
+            "summary": "Cererile pe care colegii vi le-au trimis, cum ar fi solicitarea de a face schimb de ture sau de a prelua o tură. Motivele, notele și turele lor nu sunt incluse: data și orele turei apar doar atunci când tura este a dumneavoastră."
+          },
+          "shifts": {
+            "date": "Ziua turei (YYYY-MM-DD).",
+            "endTime": "Când se termină tura, ca oră locală la locul de muncă (HH:mm).",
+            "location": "Locația turei.",
+            "notes": "Nota adăugată la tură.",
+            "publishedAt": "Când a fost publicată tura (UTC).",
+            "publishedBy": "Cine a publicat tura.",
+            "startTime": "Când începe tura, ca oră locală la locul de muncă (HH:mm).",
+            "status": "Dacă tura este încă o ciornă sau v-a fost publicată.",
+            "subarea": "Zona din cadrul locației.",
+            "summary": "Turele pentru care ați fost programat.",
+            "template": "Șablonul de tură pe baza căruia a fost creată tura."
+          }
+        },
+        "positionStamps": {
+          "accessLog": {
+            "accessedAt": "Când v-au fost afișate pozițiile (UTC).",
+            "exportId": "Pentru un export: ID-ul exportului.",
+            "kind": "Modul în care au fost afișate: în detaliile unei perioade de lucru (work_period_detail) sau într-un export (data_export).",
+            "summary": "Cui altcuiva în afară de dvs. i-au fost afișate pozițiile și când: un rând pentru fiecare perioadă de lucru afișată sau un rând pentru fiecare export.",
+            "viewer": "Cui i-au fost afișate pozițiile dvs.",
+            "workPeriodId": "ID-ul perioadei de lucru afișate, în time.json > work_periods.",
+            "workPeriodStartedAt": "Când a început acea perioadă de lucru (UTC).",
+            "workPeriodUtcOffsetMinutes": "Decalajul UTC al pontării de intrare pentru acea perioadă de lucru, în minute."
+          },
+          "consents": {
+            "consentId": "ID-ul consimțământului în aplicație.",
+            "grantedAt": "Când v-ați dat consimțământul (UTC).",
+            "summary": "Fiecare consimțământ pe care l-ați acordat pentru înregistrarea poziției dvs. și când l-ați retras.",
+            "withdrawnAt": "Când v-ați retras consimțământul (UTC); necompletat dacă este încă valabil."
+          },
+          "noticeDeclines": {
+            "declinedAt": "Când ați răspuns (UTC).",
+            "summary": "Dățile când ați răspuns la notificarea privind poziția cu „nu acum”."
+          },
+          "shared": {
+            "noticeVersion": "Versiunea notificării privind poziția la care ați răspuns.",
+            "purposeStatement": "Motivul pentru care organizația înregistrează pozițiile, conform notificării.",
+            "retentionDays": "Câte zile sunt păstrate pozițiile, conform notificării."
+          },
+          "stamps": {
+            "accuracyMeters": "Acuratețea poziției, în metri, conform raportării dispozitivului dvs.",
+            "capturedAt": "Când a fost înregistrată poziția odată cu evenimentul de pontare (UTC).",
+            "clockEvent": "Dacă poziția a fost înregistrată la clock_in sau la clock_out.",
+            "consentId": "ID-ul consimțământului din consents sub care a fost înregistrată poziția.",
+            "createdAt": "Când a fost salvată poziția (UTC).",
+            "fixedAt": "Când a determinat dispozitivul dvs. poziția (UTC); poate fi puțin mai devreme decât evenimentul de pontare.",
+            "latitude": "Latitudinea, în grade zecimale.",
+            "longitude": "Longitudinea, în grade zecimale.",
+            "purgeAt": "Când va fi ștearsă poziția (UTC).",
+            "summary": "Pozițiile înregistrate la pontarea de intrare sau de ieșire. Fiecare este ștearsă automat la purge_at.",
+            "timeEntryId": "ID-ul pontării de intrare sau de ieșire din time.json > time_entries.",
+            "utcOffsetMinutes": "Decalajul UTC al evenimentului de pontare, în minute (120 înseamnă UTC+2)."
+          }
+        },
+        "time": {
+          "automaticClockOuts": {
+            "clockOutEntryId": "ID-ul pontării de ieșire înregistrate de aplicație, în time_entries.",
+            "cutoffTime": "Ora la care ați fost pontat la ieșire (UTC).",
+            "maxUninterruptedMinutes": "Durata maximă, în minute, în care puteți rămâne pontat fără pauză.",
+            "processedAt": "Când v-a pontat aplicația la ieșire (UTC).",
+            "startTime": "Când a început perioada de lucru (UTC).",
+            "summary": "Dățile când aplicația v-a pontat la ieșire deoarece ați rămas pontat mai mult decât era permis.",
+            "timezone": "Fusul orar al perioadei de lucru.",
+            "utcOffsetMinutes": "Decalajul UTC al pontării de ieșire, în minute."
+          },
+          "balanceAdjustments": {
+            "cancellationReason": "Motivul pentru care a fost anulată ajustarea.",
+            "cancelledAt": "Când a fost anulată ajustarea (UTC); necompletat dacă este încă valabilă.",
+            "cancelledBy": "Cine a anulat ajustarea.",
+            "day": "Ziua în care se aplică ajustarea (YYYY-MM-DD).",
+            "kind": "Tipul ajustării: opening_balance sau overtime_payout.",
+            "minutes": "Minutele adăugate la soldul dvs. (pozitiv) sau scăzute din acesta (negativ).",
+            "reason": "Motivul pentru care a fost efectuată ajustarea.",
+            "recordedAt": "Când a fost înregistrată ajustarea (UTC).",
+            "recordedBy": "Cine a înregistrat ajustarea.",
+            "summary": "Modificări manuale aduse soldului timpului dvs. de lucru, cum ar fi un sold inițial sau ore suplimentare plătite, inclusiv cele anulate."
+          },
+          "breakAdjustments": {
+            "adjustedAt": "Când a adăugat aplicația pauza (UTC).",
+            "adjustedDurationMinutes": "Durata perioadei după adăugarea pauzei, în minute.",
+            "breakInsertedAt": "Unde a fost plasată pauza în cadrul perioadei (UTC).",
+            "breakInsertedMinutes": "Durata pauzei adăugate, în minute.",
+            "originalDurationMinutes": "Durata perioadei dinainte de adăugarea pauzei, în minute.",
+            "originalEndTime": "Sfârșitul perioadei dinainte de adăugarea pauzei (UTC).",
+            "policy": "Regula de pauză care a impus pauza.",
+            "requiredBreakMinutes": "Pauza impusă de regulă, în minute.",
+            "summary": "Pauze adăugate de aplicație la o perioadă de lucru deoarece lipsea pauza impusă prin lege.",
+            "workingMinutesThreshold": "Timpul de lucru, în minute, după care regula impune pauza."
+          },
+          "complianceExceptions": {
+            "actualDurationMinutes": "Cât timp ați lucrat efectiv conform excepției, în minute.",
+            "approvedAt": "Când a fost aprobată excepția (UTC).",
+            "approver": "Cine a decis cu privire la excepție.",
+            "exceptionType": "Regula din care provine excepția, de exemplu rest_period sau overtime_daily.",
+            "plannedDurationMinutes": "Timpul de lucru pentru care a fost solicitată excepția, în minute.",
+            "reason": "Motivul pentru care a fost solicitată excepția.",
+            "rejectedAt": "Când a fost respinsă excepția (UTC).",
+            "rejectionReason": "Motivul pentru care a fost respinsă excepția.",
+            "status": "Dacă excepția este în așteptare, aprobată, respinsă, expirată sau utilizată.",
+            "summary": "Excepții de la regulile privind timpul de lucru solicitate pentru dvs., cum ar fi o perioadă de repaus mai scurtă sau ore suplimentare adiționale.",
+            "usedAt": "Când ați lucrat conform excepției (UTC).",
+            "validFrom": "Când începe să se aplice excepția (UTC).",
+            "validUntil": "Când încetează să se aplice excepția (UTC).",
+            "wasUsed": "Dacă ați lucrat conform excepției."
+          },
+          "historicalRepairProposals": {
+            "approvedAt": "Când a fost aprobată corecția (UTC).",
+            "approvedBy": "Cine a aprobat corecția.",
+            "kind": "Ce modifică corecția.",
+            "proposedAt": "Când a fost propusă corecția (UTC).",
+            "proposedBy": "Cine a propus corecția.",
+            "reason": "Motivul pentru care a fost propusă corecția.",
+            "resolvedAt": "Când a fost închisă propunerea (UTC).",
+            "resolvedBy": "Cine a închis propunerea.",
+            "status": "Stadiul propunerii, de exemplu propusă, aprobată, aplicată sau respinsă.",
+            "summary": "Corecții propuse pentru înregistrări de lucru mai vechi, de exemplu o pontare de ieșire lipsă, și ce s-a întâmplat cu acestea."
+          },
+          "shared": {
+            "actualMinutes": "Minutele lucrate de dvs., luate în calcul pentru sold.",
+            "balanceMinutes": "Soldul dvs. în minute: valorile pozitive reprezintă ore suplimentare, valorile negative reprezintă timp încă datorat.",
+            "computedAt": "Când a calculat aplicația ultima dată aceste valori (UTC).",
+            "requiredMinutes": "Minutele pe care trebuia să le lucrați conform politicii dvs. de lucru.",
+            "workPeriodId": "ID-ul perioadei de lucru din work_periods."
+          },
+          "surchargeCalculations": {
+            "appliedPercentage": "Rata sporului, sub formă de fracție (0.25 înseamnă 25%).",
+            "baseMinutes": "Minutele lucrate în această perioadă.",
+            "calculatedAt": "Momentul în timp la care se aplică sporul (UTC).",
+            "calculationDetails": "Modul în care a fost calculat sporul, ca JSON.",
+            "qualifyingMinutes": "Minutele eligibile pentru spor.",
+            "summary": "Sporuri calculate pentru munca dvs., de exemplu pentru munca de noapte, duminica sau în zile de sărbătoare.",
+            "surchargeMinutes": "Minutele suplimentare creditate ca spor.",
+            "surchargeModel": "Modelul de spor aplicat.",
+            "surchargeRule": "Regula modelului care s-a aplicat."
+          },
+          "timeEntries": {
+            "createdBy": "Cine a efectuat înregistrarea: tu sau persoana care a efectuat-o pentru tine.",
+            "deviceInfo": "Dispozitivul sau browserul cu care ai efectuat înregistrarea; necompletat dacă a fost efectuată de altcineva.",
+            "ipAddress": "Adresa IP a dispozitivului cu care ai efectuat înregistrarea; necompletat dacă a fost efectuată de altcineva.",
+            "isSuperseded": "Dacă o corecție ulterioară a înlocuit această înregistrare.",
+            "location": "Locația consemnată odată cu înregistrarea, ca nume de loc sau coordonate.",
+            "notes": "Nota adăugată la înregistrare.",
+            "replacesEntryId": "Pentru o corecție: ID-ul înregistrării pe care o înlocuiește.",
+            "summary": "Fiecare pontare de intrare, pontare de ieșire și corecție înregistrată pentru tine. Înregistrările nu se modifică niciodată: o corecție este o înregistrare nouă care o înlocuiește pe cea veche.",
+            "supersededById": "ID-ul corecției care a înlocuit această înregistrare.",
+            "timestamp": "Momentul pe care îl reprezintă înregistrarea, în UTC.",
+            "timezone": "Fusul orar în care a fost efectuată înregistrarea, de exemplu Europe/Berlin.",
+            "timezoneSource": "Sursa fusului orar, de exemplu dispozitivul tău sau setările organizației.",
+            "type": "Ce reprezintă înregistrarea: clock_in, clock_out sau correction.",
+            "utcOffsetMinutes": "Diferența față de UTC aplicabilă la locul înregistrării, în minute (120 înseamnă UTC+2). Adaugă valoarea la marcajul temporal pentru a obține ora locală."
+          },
+          "workBalance": {
+            "adjustmentMinutes": "Minutele adăugate sau scăzute prin ajustările soldului.",
+            "computedFromDate": "Prima zi luată în calcul pentru sold (YYYY-MM-DD).",
+            "computedThroughDate": "Ultima zi luată în calcul pentru sold (YYYY-MM-DD).",
+            "summary": "Soldul tău curent de timp de lucru: timpul lucrat raportat la timpul pe care trebuia să îl lucrezi."
+          },
+          "workBalancePeriods": {
+            "isClosed": "Dacă perioada este închisă, astfel încât valorile sale nu se mai modifică.",
+            "periodEnd": "Ultima zi a perioadei (YYYY-MM-DD).",
+            "periodStart": "Prima zi a perioadei (YYYY-MM-DD).",
+            "periodType": "Durata perioadei: lună sau an.",
+            "summary": "Soldul tău de timp de lucru pe lună și pe an."
+          },
+          "workOperations": {
+            "actor": "Persoana care a efectuat modificarea.",
+            "actorKind": "Cine a efectuat modificarea: o persoană (human), aplicația însăși (system), un chioșc (kiosk) sau necunoscut pentru înregistrările vechi.",
+            "createdAt": "Când a fost efectuată modificarea (UTC).",
+            "kind": "Ce acțiune a fost efectuată, de exemplu o pontare de intrare, o modificare sau o ștergere.",
+            "summary": "Un jurnal al fiecărei modificări aduse perioadelor tale de lucru: ce s-a făcut și de către cine.",
+            "writer": "Ce parte a aplicației a efectuat modificarea, de exemplu o pontare de ieșire în aplicația web, un import sau o modificare realizată de un administrator."
+          },
+          "workPeriods": {
+            "approvalStatus": "Dacă perioada este aprobată, respinsă sau în așteptarea aprobării.",
+            "breakStartedAt": "Când a început pauza ta curentă (UTC); necompletat când nu ești în pauză.",
+            "breakStartedZone": "Fusul orar în care a început pauza.",
+            "clockInEntryId": "ID-ul pontării de intrare din time_entries.",
+            "clockOutEntryId": "ID-ul pontării de ieșire din time_entries.",
+            "deletedAt": "Când a fost ștearsă perioada (UTC); necompletat dacă nu a fost ștearsă.",
+            "deletedBy": "Cine a șters perioada.",
+            "deletionReason": "Motivul pentru care a fost ștearsă perioada.",
+            "drivenDistanceKm": "Distanța parcursă cu vehiculul în timpul activității, în kilometri: citirea de la final minus citirea de la început sau distanța introdusă direct când nu a existat o citire inițială.",
+            "durationMinutes": "Cât timp ai lucrat, în minute.",
+            "endTime": "Când s-a încheiat activitatea (UTC); necompletat cât timp ești încă pontat.",
+            "endUtcOffsetMinutes": "Diferența față de UTC a pontării de ieșire, în minute.",
+            "isActive": "Dacă ești încă pontat pentru această perioadă.",
+            "isBillable": "Dacă activitatea poate fi facturată unui client.",
+            "licencePlate": "Numărul de înmatriculare al vehiculului organizației pe care l-ai condus; necompletat pentru vehiculul personal.",
+            "odometerEndKm": "Indexul kilometrajului vehiculului la finalul activității, în kilometri.",
+            "odometerStartKm": "Indexul kilometrajului vehiculului la începutul activității, în kilometri.",
+            "pendingDurationMinutes": "Pentru o modificare în așteptarea aprobării: durata solicitată, în minute.",
+            "pendingEndTime": "Pentru o modificare în așteptarea aprobării: ora de sfârșit solicitată (UTC).",
+            "pendingReason": "Motivul pentru care a fost solicitată modificarea.",
+            "pendingRequestedAt": "Când a fost solicitată modificarea (UTC).",
+            "pendingRequestedBy": "Cine a solicitat modificarea.",
+            "pendingStartTime": "Pentru o modificare în așteptarea aprobării: începutul solicitat (UTC).",
+            "project": "Proiectul pe care a fost înregistrată activitatea.",
+            "startTime": "Când a început activitatea (UTC).",
+            "startUtcOffsetMinutes": "Diferența de fus orar UTC a pontării de intrare, în minute (120 înseamnă UTC+2).",
+            "summary": "Perioadele dvs. de lucru, fiecare de la o pontare de intrare la una de ieșire, cu orice modificare în așteptarea aprobării.",
+            "task": "Sarcina de proiect pe care a fost înregistrată activitatea.",
+            "vehicleKind": "Vehiculul condus în timpul activității: „organization” pentru un vehicul al organizației, „own” pentru propriul vehicul; necompletat dacă nu a fost înregistrat niciunul.",
+            "vehicleName": "Numele vehiculului organizației pe care l-ați condus; necompletat pentru propriul vehicul.",
+            "workCategory": "Tipul de activitate, așa cum este denumit de organizație.",
+            "workLocationType": "Locul unde ați lucrat, de exemplu la birou, acasă sau la distanță."
+          },
+          "workPolicyViolations": {
+            "acknowledgedAt": "Când a fost confirmată încălcarea (UTC).",
+            "acknowledgedBy": "Cine a confirmat încălcarea.",
+            "acknowledgedNote": "Nota scrisă la confirmarea încălcării.",
+            "details": "Valorile asociate încălcării, în format JSON, de exemplu orele lucrate și limita.",
+            "policy": "Politica de lucru a cărei regulă a fost încălcată.",
+            "summary": "Situațiile în care activitatea dvs. a încălcat o regulă a politicii de lucru, de exemplu o pauză lipsă sau o zi prea lungă.",
+            "violatedAt": "Când a fost încălcată regula (UTC).",
+            "violationType": "Ce regulă a fost încălcată."
+          },
+          "yearlyBalances": {
+            "absenceAdjustedMinutes": "Minutele creditate pentru absențe, cum ar fi concediul de odihnă sau cel medical.",
+            "summary": "Soldul timpului dvs. de lucru pe an, așa cum a fost calculat de o versiune anterioară a aplicației.",
+            "year": "Anul."
+          }
+        },
+        "travelExpenses": {
+          "adjustments": {
+            "originalReportId": "ID-ul raportului care este corectat.",
+            "reportId": "ID-ul raportului de corecție din rapoarte.",
+            "sourceReportId": "ID-ul raportului din care a fost copiată corecția: cel inițial sau cea mai recentă corecție a acestuia.",
+            "summary": "Rapoarte care corectează un raport deja exportat sau decontat."
+          },
+          "allowanceOverrides": {
+            "amount": "Suma stabilită.",
+            "calculationBasis": "Cum a fost calculată suma.",
+            "evidence": "Baza pe care este calculată suma.",
+            "kind": "Ce indemnizație a fost stabilită: mileage sau per_diem.",
+            "revokedAt": "Când a fost retrasă suma (UTC); necompletat dacă se aplică în continuare.",
+            "revokedBy": "Cine a retras suma, după numele de la momentul respectiv.",
+            "scope": "Partea din cheltuială pe care o acoperă suma, în format JSON.",
+            "situation": "Motivul pentru care regulile nu au indicat o sumă, în format JSON.",
+            "summary": "Indemnizațiile de kilometraj sau diurnele pe care un administrator de cheltuieli le-a stabilit manual atunci când regulile nu au generat o sumă."
+          },
+          "claimDecisions": {
+            "action": "Decizia: aprobat sau respins.",
+            "actor": "Cine a luat decizia.",
+            "approver": "Aprobatorul căruia i-a fost atribuită cererea.",
+            "comment": "Comentariul scris la luarea deciziei.",
+            "createdAt": "Când a fost luată decizia (UTC).",
+            "summary": "Fiecare decizie referitoare la cererile dvs."
+          },
+          "claimReceipts": {
+            "summary": "Chitanțele atașate la cererile dvs. Fișierele propriu-zise se află în dosarul claim-receipts."
+          },
+          "claims": {
+            "approver": "Cine a decis cu privire la cerere.",
+            "calculatedAmount": "Suma de decontat, așa cum a fost calculată.",
+            "calculatedCurrency": "Moneda sumei de decontat.",
+            "destinationCity": "Orașul în care ați călătorit.",
+            "destinationCountry": "Țara în care ați călătorit.",
+            "notes": "Notele dvs. referitoare la cerere.",
+            "status": "Dacă cererea este ciornă, trimisă, aprobată sau respinsă.",
+            "summary": "Cererile dvs. de decontare a cheltuielilor de călătorie create cu formularul anterior pentru o singură cheltuială.",
+            "tripDateTimeZone": "Fusul orar în care sunt contorizate zilele călătoriei.",
+            "tripEnd": "Sfârșitul călătoriei (UTC).",
+            "tripStart": "Începutul călătoriei (UTC).",
+            "type": "Tipul de cheltuială: chitanță, kilometraj sau per_diem (diurnă)."
+          },
+          "currencyConversions": {
+            "basis": "Modul în care a fost convertită suma: ce a fost debitat efectiv de pe card (card_charge), un curs stabilit de un administrator (manual_rate) sau un curs de referință publicat (reference_rate).",
+            "chargedAmount": "Pentru card_charge: suma debitată de pe cardul dvs., în moneda țintă.",
+            "evidenceReceiptFile": "Pentru card_charge: fișierul chitanței din această arhivă care indică debitarea.",
+            "rate": "Cursul de schimb: 1 unitate din rate_base_currency este egală cu acest număr de unități din rate_quote_currency.",
+            "rateBaseCurrency": "Moneda de bază a cursului valutar.",
+            "rateDate": "Data din care provine cursul valutar (AAAA-LL-ZZ).",
+            "rateEvidence": "Unde poate fi verificat cursul, de exemplu o linie dintr-un extras de cont bancar.",
+            "rateQuoteCurrency": "Moneda de cotare a cursului valutar.",
+            "recordedBy": "Cine a înregistrat conversia.",
+            "referenceExpenseDate": "Pentru reference_rate: ziua cheltuielii pentru care a fost ales cursul (AAAA-LL-ZZ).",
+            "referenceSource": "Pentru reference_rate: cursul publicat utilizat, sub formă de JSON.",
+            "sourceCurrency": "Moneda din care se face conversia.",
+            "summary": "Modul în care cheltuielile într-o monedă străină au fost convertite în moneda dvs. de rambursare.",
+            "targetCurrency": "Moneda în care se face conversia."
+          },
+          "legacyDraftConversions": {
+            "convertedAt": "Când a fost mutată ciorna (UTC).",
+            "convertedBy": "Cine a mutat ciorna.",
+            "flags": "Tot ce nu a putut fi mutat în starea inițială, sub formă de JSON.",
+            "legacyFacts": "Conținutul ciornei de decontare în momentul în care a fost mutată, sub formă de JSON.",
+            "summary": "Ciorne de cereri din formularul anterior care au fost mutate într-un raport."
+          },
+          "payrollRunInclusions": {
+            "endedAt": "Când a fost confirmat sau exclus din includere (UTC).",
+            "endedBy": "Cine a confirmat, a eliminat sau a anulat elementul.",
+            "includedAt": "Când a fost adăugat raportul la rulare (UTC).",
+            "lines": "Sumele transmise către salarizare, cu tipurile lor de remunerație, sub formă de JSON.",
+            "state": "Starea includerii: inclus, confirmat, eliminat, anulat sau înlocuit de o rulare ulterioară.",
+            "summary": "Rapoarte de cheltuieli plătite prin salarizare."
+          },
+          "perDiemItineraries": {
+            "endDate": "Ziua în care v-ați întors (AAAA-LL-ZZ).",
+            "endTime": "Ora locală la care v-ați întors (HH:mm).",
+            "endTimeZone": "Fusul orar al întoarcerii.",
+            "meals": "Mesele asigurate pe zi, sub formă de JSON; acestea reduc valoarea diurnei.",
+            "overnight": "Dacă și unde ați înnoptat.",
+            "policy": "Tarifele utilizate pentru calculul diurnei, sub formă de JSON, stabilite la momentul trimiterii.",
+            "prolongedWorkplace": "Dacă ați lucrat în aceeași locație departe de casă pentru o perioadă îndelungată, ceea ce poate reduce valoarea diurnei.",
+            "startDate": "Ziua în care ați plecat (AAAA-LL-ZZ).",
+            "startTime": "Ora locală la care ați plecat (HH:mm).",
+            "startTimeZone": "Fusul orar al plecării.",
+            "summary": "Călătoriile pe baza cărora au fost calculate diurnele (per diem)."
+          },
+          "projectAttributionExceptions": {
+            "authorizedBy": "Cine a acordat permisiunea.",
+            "evidence": "Nota internă a administratorului de cheltuieli privind documentul justificativ.",
+            "project": "Proiectul.",
+            "reason": "Motivul intern al administratorului de cheltuieli pentru acordarea permisiunii.",
+            "summary": "Permisiuni de a înregistra cheltuielile pe un proiect pentru zilele în care aplicația nu conține înregistrări ale activității dvs. la acel proiect.",
+            "validFrom": "Prima zi de cheltuieli acoperită (AAAA-LL-ZZ).",
+            "validTo": "Ultima zi de cheltuieli acoperită (AAAA-LL-ZZ)."
+          },
+          "reportItems": {
+            "accountingReference": "O referință pentru contabilitate, cum ar fi un număr de factură.",
+            "category": "Categoria cheltuielii, de exemplu hotel, tren sau mese.",
+            "description": "Descrierea dumneavoastră a cheltuielii.",
+            "expenseDate": "Data cheltuielii (YYYY-MM-DD).",
+            "mileageDistanceKm": "Pentru kilometraj: distanța, în kilometri.",
+            "mileagePolicy": "Pentru kilometraj: tarifele utilizate pentru calcul, în format JSON, stabilite în momentul trimiterii.",
+            "mileageRoute": "Pentru kilometraj: traseul parcurs.",
+            "mileageVehicle": "Pentru kilometraj: tipul de vehicul.",
+            "paidBy": "Cine a plătit: dumneavoastră (angajat) sau organizația (companie).",
+            "position": "Poziția cheltuielii în raport.",
+            "projectInherits": "Dacă cheltuiala utilizează proiectul călătoriei în loc de cel propriu.",
+            "receiptExceptionReason": "Explicația dumneavoastră privind lipsa chitanței.",
+            "summary": "Cheltuielile din rapoartele dumneavoastră.",
+            "type": "Tipul cheltuielii: receipt, mileage sau per_diem (diurnă)."
+          },
+          "reportReceipts": {
+            "summary": "Chitanțele atașate cheltuielilor din rapoartele dumneavoastră. Fișierele propriu-zise se află în dosarul acestei categorii."
+          },
+          "reports": {
+            "kind": "Dacă raportul este pentru o călătorie (trip) sau pentru cheltuieli fără călătorie (standalone).",
+            "project": "Proiectul călătoriei, utilizat de cheltuieli dacă nu specifică unul propriu.",
+            "reimbursementCurrency": "Moneda în care vi se rambursează suma.",
+            "status": "Stadiul în care se află raportul: draft, submitted, approved, rejected sau returnat către dumneavoastră pentru modificări.",
+            "submissionCount": "De câte ori a fost trimis raportul.",
+            "summary": "Rapoartele dumneavoastră de cheltuieli de deplasare, fiecare grupând cheltuielile unei călătorii sau cheltuieli individuale.",
+            "tripDestinations": "Locurile în care ați călătorit, în format JSON.",
+            "tripPurpose": "Scopul călătoriei.",
+            "tripTimeZone": "Fusul orar în care sunt contorizate zilele călătoriei."
+          },
+          "reviewCycleClosures": {
+            "actor": "Cine a finalizat-o.",
+            "createdAt": "Când s-a încheiat (UTC).",
+            "kind": "Modul în care s-a încheiat trimiterea: returned, withdrawn sau reopened.",
+            "note": "Nota scrisă la încheiere.",
+            "submissionCycle": "A câta trimitere a raportului a fost: 1 este prima.",
+            "summary": "Trimiteri ale rapoartelor dumneavoastră încheiate fără o decizie finală: returnate către dumneavoastră, retrase sau redeschise."
+          },
+          "reviewNotes": {
+            "body": "Comentariul.",
+            "closureId": "ID-ul trimiterii returnate în review_cycle_closures.",
+            "summary": "Comentariile unui recenzent referitoare la cheltuieli individuale dintr-un raport returnat către dumneavoastră."
+          },
+          "settlementEntries": {
+            "amount": "Suma.",
+            "balanceBefore": "Suma rămasă datorată înainte de această plată.",
+            "basisSubmissionCycle": "Trimiterea aprobată a raportului pe care se bazează plata.",
+            "exportBatchId": "ID-ul exportului de cheltuieli pentru care a fost înregistrată plata.",
+            "kind": "Dacă ați fost plătit (reimbursement) sau ați returnat bani (recovery).",
+            "note": "Nota înregistrată la efectuarea plății.",
+            "occurredOn": "Data la care au fost transferați banii (YYYY-MM-DD).",
+            "recordedAt": "Când a fost înregistrată plata (UTC).",
+            "recordedBy": "Cine a înregistrat plata.",
+            "reference": "Referința plății, cum ar fi referința unui transfer bancar.",
+            "sourceType": "Destinația banilor: un raport sau o cerere din formularul anterior (legacy_claim).",
+            "summary": "Bani plătiți către dumneavoastră pentru cheltuieli aprobate sau returnați de dumneavoastră în urma unei plăți excedentare."
+          },
+          "shared": {
+            "authorizedAt": "Când a fost autorizat (UTC).",
+            "authorizedBy": "Administratorul de cheltuieli care a autorizat acțiunea, după numele său din acel moment.",
+            "claimId": "ID-ul cererii din claims.",
+            "currency": "Moneda, sub forma unui cod de trei litere, precum EUR.",
+            "decidedAt": "Când a fost aprobat, respins sau returnat ultima dată (UTC).",
+            "file": "Unde se află fișierul original al chitanței în această arhivă.",
+            "fileName": "Numele fișierului chitanței așa cum a fost încărcat.",
+            "itemId": "ID-ul cheltuielii din report_items.",
+            "mimeType": "Tipul de fișier, de exemplu application/pdf sau image/jpeg.",
+            "originalAmount": "Suma plătită, în moneda inițială.",
+            "originalCurrency": "Moneda în care a fost plătită suma.",
+            "payrollRunId": "ID-ul rulării de calcul salarial.",
+            "payrollRunPeriodEnd": "Ultima zi a perioadei rulării de calcul salarial (YYYY-MM-DD).",
+            "payrollRunPeriodStart": "Prima zi a perioadei rulării de calcul salarial (YYYY-MM-DD).",
+            "project": "Proiectul la care este alocată cheltuiala.",
+            "reason": "Motivul furnizat.",
+            "reportId": "ID-ul raportului din reports.",
+            "sizeBytes": "Dimensiunea fișierului, în octeți.",
+            "submittedAt": "Data ultimei trimiteri (UTC).",
+            "tripEndDate": "Ultima zi a deplasării (YYYY-MM-DD).",
+            "tripStartDate": "Prima zi a deplasării (YYYY-MM-DD).",
+            "uploadedBy": "Cine a încărcat chitanța."
+          }
+        }
+      },
+      "fieldsIntro": "Ce conține fiecare parte a fișierelor JSON și semnificația fiecărui câmp. Un câmp necompletat (null) nu are nicio valoare.",
+      "fieldsTitle": "Câmpuri",
+      "filesTitle": "Fișiere",
+      "formatJson": "Fișierele JSON reprezintă copia completă a datelor dvs., prelucrabilă automat. Fișierele CSV reproduc tabelele acestora pentru aplicațiile de foi de calcul.",
+      "formatOtherPeople": "Persoanele care au efectuat acțiuni asupra înregistrărilor dvs. sunt numite. Persoanele asupra cărora ați efectuat acțiuni apar doar ca ID anonim.",
+      "formatsTitle": "Formate",
+      "formatTimes": "Marcajele temporale sunt scrise în format UTC (ISO 8601, terminându-se cu Z). Înregistrările de timp includ și decalajul UTC valabil în locul în care au fost înregistrate. Zilele calendaristice sunt scrise sub forma YYYY-MM-DD.",
+      "intro": "Această arhivă conține datele cu caracter personal pe care {organization} le păstrează despre {employee}, conform stării de la data de {exportedAt} (UTC).",
+      "kindAdmin": "Un administrator al {organization} a generat acest export în numele dvs.",
+      "kindEmployee": "Ați solicitat personal acest export.",
+      "manifest": "Listează fiecare fișier din această arhivă împreună cu dimensiunea și numărul său de înregistrări.",
+      "retentionAuditLog": "Înregistrările din jurnalul de audit sunt șterse după {days} zile.",
+      "retentionCategoryNone": "{category}: nu este setată nicio perioadă de păstrare",
+      "retentionCategoryYears": "{years, plural, one {{category}: # an} few {{category}: # ani} other {{category}: # de ani}}",
+      "retentionDocuments": "Documentele din dosarul dvs. de personal sunt păstrate pe perioada stabilită de {organization} pentru categoria respectivă. Perioada se calculează de la data de 1 ianuarie de după cel mai recent dintre anul în care a încetat contractul dvs. de muncă și anul documentului. Documentele dintr-o categorie fără o perioadă definită sunt păstrate până când sunt șterse manual.",
+      "retentionOther": "Cu excepția celor menționate mai sus, celelalte date ale dvs. sunt păstrate până când {organization} le șterge sau până când înregistrarea dvs. de angajat este ștearsă.",
+      "retentionTitle": "Perioada de păstrare a datelor dvs.",
+      "rightsAccess": "să obțineți acces la datele dvs. cu caracter personal și o copie a acestora (Art. 15 GDPR)",
+      "rightsComplaint": "să depuneți o plângere la o autoritate de supraveghere a protecției datelor (Art. 77 GDPR)",
+      "rightsContact": "Pentru a vă exercita aceste drepturi, contactați {organization}. Se aplică politica de confidențialitate a {organization}, care descrie modul în care aceasta vă prelucrează datele.",
+      "rightsErasure": "să obțineți ștergerea datelor dvs. (Art. 17 GDPR)",
+      "rightsIntro": "În temeiul Regulamentului general privind protecția datelor (GDPR), aveți dreptul:",
+      "rightsNotification": "să fiți informat cu privire la rectificările, ștergerile și restricționările comunicate destinatarilor datelor dvs. (Art. 19 GDPR)",
+      "rightsObjection": "să vă opuneți prelucrării datelor dvs. (Art. 21 GDPR)",
+      "rightsPortability": "să primiți datele dvs. într-un format prelucrabil automat, cum ar fi fișierele JSON din această arhivă, și să solicitați transmiterea lor către alt operator (Art. 20 GDPR)",
+      "rightsRectification": "să solicitați rectificarea datelor inexacte și completarea datelor incomplete (Art. 16 GDPR)",
+      "rightsRestriction": "să obțineți restricționarea prelucrării datelor dvs. (Art. 18 GDPR)",
+      "rightsTitle": "Drepturile dvs.",
+      "title": "Datele dvs. cu caracter personal de la {organization}"
     }
   },
   "presence": {

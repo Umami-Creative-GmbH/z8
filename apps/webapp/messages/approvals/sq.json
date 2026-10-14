@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Kërkesa për mungesë u miratua",
+    "absenceChange": {
+      "afternoon": "Pasdite",
+      "cancelAll": "Anuloje të gjithë mungesën",
+      "cancellationTitle": "Anulimi i mungesës",
+      "category": "Kategoria e mungesës",
+      "displacedVacation": "Datat e pushimit zëvendësohen pas miratimit",
+      "exactHours": "Orët e sakta të regjistruara",
+      "fullDay": "Ditë e plotë",
+      "morning": "Mëngjes",
+      "original": "Datat e regjistruara",
+      "originalEndCoverage": "Dita e fundit e regjistruar",
+      "originalInterval": "Orët e regjistruara",
+      "originalStartCoverage": "Dita e fillimit e regjistruar",
+      "proposed": "Ndryshimi i propozuar",
+      "proposedEndCoverage": "Dita e propozuar e përfundimit",
+      "proposedInterval": "Orët e propozuara",
+      "proposedStartCoverage": "Dita e propozuar e fillimit",
+      "range": "{range}",
+      "reason": "Arsyeja",
+      "reasonValue": "{reason}",
+      "title": "Ndryshimi i mungesës"
+    },
     "absenceRejected": "Kërkesa për mungesë u refuzua",
     "absenceRequests": "Kërkesat për mungesë",
     "absenceRequestsDescription": "Shqyrtoni dhe miratoni kërkesat për leje nga anëtarët e ekipit tuaj",
@@ -304,6 +326,8 @@
       "dayTotals": "Totalet ditore",
       "difference": "Diferenca",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Mungojnë detajet e drejtimit",
+      "drivingDetailsMissingWork": "Mungon automjeti ose leximi i odometrit",
       "employee": "Punonjësi",
       "holidays": "Festat zyrtare",
       "openCalendar": "Hap kalendarin për këtë periudhë",
@@ -413,6 +437,7 @@
     "totalCount": "{totalCount} në pritje",
     "type": "Lloji",
     "types": {
+      "absence_change_request": "Ndryshimet e mungesës",
       "absence_entry": "Kërkesat për mungesë",
       "period_submission": "Dorëzimet e periudhës",
       "time_entry": "Korrigjimet e orarit",
@@ -421,6 +446,15 @@
     },
     "unifiedInboxBannerDescription": "Shikoni të gjitha llojet e miratimeve në një vend të vetëm me filtrime, veprime në grup dhe ndjekje të SLA-së.",
     "unifiedInboxBannerTitle": "Provoni kutinë e re hyrëse të unifikuar",
+    "vehicleUse": "Përdorimi i automjetit",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km është më shumë se {limit} km në një periudhë pune.",
+      "onOtherLiveWork": "Ky automjet është regjistruar tashmë në një punë aktive të një punonjësi tjetër.",
+      "speedAboveLimit": "Distanca e përshkuar nënkupton një mesatare prej {speed} km/h gjatë kësaj periudhe pune, më shumë se {limit} km/h.",
+      "startBelowLastEnd": "Leximi fillestar është më i ulët se leximi i fundit përfundimtar i regjistruar për këtë automjet ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Ju lutemi kontrolloni",
     "viewExpenseClaim": "Shiko kërkesën dhe faturat",
     "viewExpenseReport": "Shikoni raportin e dorëzuar dhe faturat",
     "workBalance": {

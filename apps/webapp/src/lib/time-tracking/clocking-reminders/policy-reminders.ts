@@ -23,6 +23,7 @@ type PolicyDayReminderType = Exclude<
 	| "period_submission_reminder"
 	| "period_submission_sent_back"
 	| "period_submission_decided"
+	| "driving_details_missing_reminder"
 >;
 
 /**

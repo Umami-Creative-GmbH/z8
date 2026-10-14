@@ -5,7 +5,6 @@ import { ChangePolicyServiceLive } from "./services/change-policy.service";
 import { CoverageServiceLive } from "./services/coverage.service";
 import { CustomRoleServiceLive } from "./services/custom-role.service";
 import { DatabaseServiceLive } from "./services/database.service";
-import { EmailServiceLive } from "./services/email.service";
 import { ManagerServiceLive } from "./services/manager.service";
 import { OnboardingServiceLive } from "./services/onboarding.service";
 import { PermissionsServiceLive } from "./services/permissions.service";
@@ -21,7 +20,6 @@ import { WorkPolicyServiceLive } from "./services/work-policy.service";
 // keeps it in the output.
 export const AppLayer = Layer.mergeAll(
 	AuthServiceLive,
-	EmailServiceLive,
 	AnalyticsService.Live.pipe(Layer.provide(WorkPolicyServiceLive)),
 	TimeEntryServiceLive,
 	PlatformAdminServiceLive,

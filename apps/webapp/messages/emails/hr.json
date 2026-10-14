@@ -1,0 +1,218 @@
+{
+  "emails": {
+    "billing": {
+      "invoiceReady": {
+        "action": "Otvori naplatu",
+        "amountLabel": "Iznos za plaćanje",
+        "body": "Račun {invoiceNumber} za {organizationName} je spreman.",
+        "dueDateLabel": "Datum dospijeća",
+        "subject": "Vaš Z8 račun {invoiceNumber} je spreman",
+        "title": "Vaš račun je spreman"
+      },
+      "paymentFailed": {
+        "action": "Ažurirajte način plaćanja",
+        "body": "Nismo uspjeli naplatiti {invoiceAmount} za {organizationName}.",
+        "retry": "Ažurirajte način plaćanja prije sljedećeg pokušaja {paymentRetryDate} kako biste izbjegli prekid usluge.",
+        "subject": "Potrebna radnja: Neuspjelo plaćanje za Z8",
+        "title": "Vaše plaćanje nije uspjelo"
+      },
+      "subscriptionPaused": {
+        "action": "Upravljanje naplatom",
+        "body": "Pretplata na plan {planName} za {organizationName} je pauzirana.",
+        "limits": "Podaci o praćenju vremena ostaju dostupni, ali značajke plaćenog plana mogu biti ograničene dok se naplata ne nastavi.",
+        "subject": "Vaša Z8 pretplata je pauzirana",
+        "title": "Vaša pretplata je pauzirana"
+      },
+      "subscriptionResumed": {
+        "action": "Prikaži pojedinosti naplate",
+        "active": "Vaše plaćene Z8 značajke ponovno su aktivne.",
+        "body": "Pretplata na plan {planName} za {organizationName} nastavljena je {resumeDate}.",
+        "subject": "Vaša Z8 pretplata je nastavljena",
+        "title": "Vaša pretplata je nastavljena"
+      },
+      "trialEnding": {
+        "action": "Pregledajte postavke naplate",
+        "body": "Vaše probno razdoblje za {planName} za {organizationName} završava {trialEndsAt}.",
+        "paymentMethod": "Kako bi Z8 nastavio raditi bez prekida, dodajte način plaćanja u postavkama naplate.",
+        "subject": "{daysRemaining, plural, one {Vaše Z8 probno razdoblje završava za # dan} other {Vaše Z8 probno razdoblje završava za # dana}}",
+        "subjectSoon": "Vaše Z8 probno razdoblje uskoro završava",
+        "title": "Vaše probno razdoblje završava"
+      },
+      "values": {
+        "noDueDate": "nije postavljeno",
+        "retrySoon": "uskoro",
+        "yourOrganization": "vaša organizacija"
+      }
+    },
+    "common": {
+      "greeting": "Pozdrav {name},"
+    },
+    "details": {
+      "category": "Kategorija",
+      "correctedTimes": "Ispravljena vremena",
+      "date": "Datum",
+      "dates": "Datumi",
+      "days": "Dani",
+      "notes": "Bilješke",
+      "originalTimes": "Izvorna vremena",
+      "range": "{start} – {end}",
+      "reason": "Razlog"
+    },
+    "export": {
+      "categories": {
+        "absences": "Odsutnosti",
+        "auditLogs": "Revizijski zapisi",
+        "balanceAdjustments": "Prilagodbe radnog salda",
+        "customers": "Klijenti",
+        "employees": "Zaposlenici",
+        "holidays": "Praznici",
+        "projects": "Projekti",
+        "schedules": "Rasporedi rada",
+        "shifts": "Smjene",
+        "teams": "Timovi",
+        "timeEntries": "Praćenje vremena",
+        "vacation": "Pravila o godišnjim odmorima",
+        "workPeriods": "Radna razdoblja"
+      },
+      "organization": "Organizacija",
+      "values": {
+        "yourOrganization": "Vaša organizacija"
+      }
+    },
+    "exportFailed": {
+      "action": "Pokušajte ponovno",
+      "body": "Nažalost, vaš izvoz podataka za {organizationName} nije mogao biti dovršen.",
+      "categories": "Zatraženi podaci",
+      "error": "Pogreška",
+      "note": "Ako se ova pogreška nastavi pojavljivati, obratite se podršci s gore navedenom porukom o pogrešci. Izvoz manje kategorija podataka odjednom također može pomoći.",
+      "title": "Izvoz podataka nije uspio",
+      "unknownError": "Nepoznata pogreška"
+    },
+    "exportReady": {
+      "action": "Otvori povijest izvoza",
+      "body": "Vaš izvoz podataka za {organizationName} je dovršen. Možete ga preuzeti iz povijesti izvoza u Z8.",
+      "categories": "Uključeni podaci",
+      "expiresAt": "Dostupno do",
+      "fileSize": "Veličina datoteke",
+      "note": "Prijavite se u Z8 kao administrator organizacije kako biste preuzeli datoteku. Svako preuzimanje započinje novom, sigurnom poveznicom. Nakon gore navedenog datuma datoteka izvoza automatski se briše.",
+      "title": "Vaš izvoz podataka je spreman"
+    },
+    "invitation": {
+      "action": "Prihvati pozivnicu",
+      "body": "{inviterName} vas je pozvao/la da se pridružite organizaciji {organizationName} u ulozi: {role}.",
+      "email": "Vaša e-pošta",
+      "greeting": "Pozdrav,",
+      "invitedBy": "Pozvao/la",
+      "note": "Ako niste očekivali ovu pozivnicu, možete zanemariti ovu poruku e-pošte.",
+      "organization": "Organizacija",
+      "role": "Uloga",
+      "roles": {
+        "admin": "Administrator",
+        "member": "Član",
+        "owner": "Vlasnik"
+      },
+      "title": "Pozvani ste u {organizationName}"
+    },
+    "layout": {
+      "actionFallback": "Ako gumb ne radi, otvorite ovu poveznicu:",
+      "footer": "Ovu poruku e-pošte poslao je Z8."
+    },
+    "notification": {
+      "openAction": "Otvori Z8"
+    },
+    "organizationDeletion": {
+      "action": "Vrati organizaciju",
+      "body": "{deletedByName} je zakazao/la brisanje organizacije {organizationName}. Možete je vratiti do {permanentDeletionDate}.",
+      "initiatedBy": "Pokrenuo/la",
+      "items": {
+        "absences": "Sve odsutnosti i dani godišnjeg odmora",
+        "employees": "Svi zaposlenici, timovi i dodjele voditelja",
+        "members": "Svi članovi i pozivnice na čekanju",
+        "projects": "Svi projekti i njihove dodjele vremena",
+        "settings": "Sve postavke, rasporedi i konfiguracije",
+        "timeEntries": "Svi unosi radnog vremena i radna razdoblja"
+      },
+      "itemsTitle": "Što će biti trajno izbrisano:",
+      "note": "Ako ste namjeravali izbrisati organizaciju, nije potrebna nikakva radnja. Ako niste, vratite je odmah i provjerite sigurnost svog računa.",
+      "organization": "Organizacija",
+      "permanentAt": "Trajno brisanje",
+      "preview": "{organizationName} bit će trajno izbrisana dana {permanentDeletionDate}.",
+      "requestedAt": "Zatraženo brisanje",
+      "title": "Organizacija zakazana za brisanje"
+    },
+    "passwordReset": {
+      "action": "Ponovno postavi lozinku",
+      "body": "Primili smo zahtjev za ponovno postavljanje vaše lozinke. Upotrijebite gumb u nastavku kako biste odabrali novu.",
+      "note": "Ako niste zatražili ponovno postavljanje lozinke, možete zanemariti ovu poruku e-pošte; vaša lozinka ostaje ista. Poveznica istječe za 1 sat.",
+      "title": "Ponovno postavite lozinku"
+    },
+    "scheduledExport": {
+      "dateRangeLabel": "Raspon datuma",
+      "empty": {
+        "body": "Vaš zakazani izvoz {scheduleName} je izvršen, ali nema ničega za preuzimanje.",
+        "noFile": "Za ovo pokretanje nije stvorena nijedna datoteka.",
+        "title": "Planirani izvoz je završen"
+      },
+      "ready": {
+        "action": "Preuzmi izvoz",
+        "body": "Vaš planirani izvoz {scheduleName} uspješno je dovršen.",
+        "linkExpiry": "Ova veza za preuzimanje vrijedi {lifetime} i istječe {expiresAt}.",
+        "title": "Planirani izvoz je spreman"
+      },
+      "recordsLabel": "Zapisi",
+      "subject": "Planirani izvoz: {scheduleName} ({dateRange})"
+    },
+    "securityAlert": {
+      "action": "Pregledajte sigurnosne postavke",
+      "device": "Uređaj",
+      "event": "Događaj",
+      "ipAddress": "IP adresa",
+      "notYou": "Ako niste unijeli ovu promjenu, odmah osigurajte svoj račun: promijenite lozinku i pregledajte sigurnosne postavke.",
+      "passwordChanged": {
+        "description": "Lozinka vašeg Z8 računa je promijenjena.",
+        "title": "Lozinka promijenjena"
+      },
+      "time": "Vrijeme",
+      "twoFactorDisabled": {
+        "description": "Dvofaktorska autentifikacija je isključena za vaš Z8 račun.",
+        "title": "Dvofaktorska autentifikacija onemogućena"
+      },
+      "twoFactorEnabled": {
+        "description": "Dvofaktorska autentifikacija je uključena za vaš Z8 račun.",
+        "title": "Dvofaktorska autentifikacija omogućena"
+      }
+    },
+    "subjects": {
+      "absenceRecordedByManager": "Odsutnost zabilježena",
+      "absenceRequestApproved": "Zahtjev za odsutnost odobren",
+      "absenceRequestRejected": "Zahtjev za odsutnost odbijen",
+      "absenceRequestSubmitted": "Zahtjev za odsutnost podnesen",
+      "approvalRequestSubmitted": "Novi zahtjev za odsutnost čeka odobrenje",
+      "exportFailed": "Izvoz podataka nije uspio - {organizationName}",
+      "exportReady": "Vaš izvoz podataka je spreman - {organizationName}",
+      "organizationDeletion": "Organizacija {organizationName} zakazana je za brisanje",
+      "organizationInvitation": "Pozvani ste da se pridružite organizaciji {organizationName}",
+      "passwordChanged": "Sigurnosno upozorenje: Lozinka promijenjena",
+      "passwordReset": "Ponovno postavite lozinku",
+      "teamMemberAdded": "Dodani ste u {teamName}",
+      "teamMemberRemoved": "Uklonjeni ste iz {teamName}",
+      "timeCorrectionApproved": "Ispravak radnog vremena odobren",
+      "timeCorrectionRejected": "Ispravak radnog vremena odbijen",
+      "timeCorrectionSubmitted": "Novi ispravak radnog vremena čeka odobrenje",
+      "twoFactorDisabled": "Sigurnosno upozorenje: Dvofaktorska autentifikacija onemogućena",
+      "twoFactorEnabled": "Sigurnosno upozorenje: Dvofaktorska autentifikacija omogućena",
+      "verifyEmail": "Potvrdite svoju adresu e-pošte"
+    },
+    "variables": {
+      "noReason": "Razlog nije naveden",
+      "noTime": "-",
+      "yourManager": "vaš voditelj"
+    },
+    "verification": {
+      "action": "Potvrdite adresu e-pošte",
+      "body": "Dobrodošli u Z8! Potvrdite svoju adresu e-pošte pomoću gumba u nastavku kako biste dovršili registraciju.",
+      "note": "Ako niste stvorili račun, možete zanemariti ovu poruku e-pošte. Veza istječe za 1 sat.",
+      "title": "Potvrdite svoju adresu e-pošte"
+    }
+  }
+}

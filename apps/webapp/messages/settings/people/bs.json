@@ -28,7 +28,10 @@
         "contractHourly": "Po satu",
         "contractHourlyDescription": "Plaćeno po odrađenim satima",
         "contractType": "Vrsta ugovora",
+        "contractTypeChangeLink": "Promjena ugovora i modela rada",
         "contractTypeDescription": "Određuje kako se obračunava naknada",
+        "contractTypeFromTerms": "Vrsta ugovora i plata preuzimaju se iz potvrđenih uslova zaposlenja koji su danas na snazi.",
+        "contractTypeNoTerms": "Danas nema potvrđenih uslova",
         "dayFriday": "Pet",
         "dayMonday": "Pon",
         "daySaturday": "Sub",
@@ -339,6 +342,7 @@
           "clockPostprocess": "Obrada pauza i doplata",
           "clockRepair": "Popravka mjerača vremena",
           "dispatchDeparture": "Zakazivanje odlaska",
+          "notifyDataExportReminder": "Podsjetnik za preuzimanje ličnih podataka",
           "notifyDeputyRelease": "Obavijest da zamjenik više nije dostupan",
           "notifyReview": "Obavještenje o pregledu",
           "sessionRevocation": "Odjava sa sesije"
@@ -352,6 +356,25 @@
           "through": "Zaključno sa {date}",
           "title": "Radni saldo"
         }
+      },
+      "personalDataExport": {
+        "availableUntil": "Dostupno do {date}",
+        "description": "ZIP datoteka sa svim podacima koje ova organizacija čuva o ovom zaposleniku, uključujući podatke koji se izostavljaju prilikom vlastitog izvoza zaposlenika. Trenutni zaposlenik se obavještava kada datoteka bude spremna. Datoteke se brišu nakon 7 dana.",
+        "download": "Preuzmi",
+        "downloadFailed": "Preuzimanje se nije moglo pokrenuti. Pokušajte ponovo.",
+        "listLabel": "Prethodni administratorski izvozi",
+        "loadFailed": "Prethodni izvozi se nisu mogli učitati.",
+        "ownRecord": "Ovdje ne možete izvesti vlastite podatke. Koristite Moji podaci u postavkama vašeg računa.",
+        "refusalInProgress": "Izvoz podataka ovog zaposlenika već se priprema.",
+        "refusalStorage": "Skladište datoteka još uvijek nije podešeno za ovu organizaciju.",
+        "request": "Zatraži izvoz",
+        "requested": "Izvoz se priprema. Dobit ćete obavijest i e-mail kada bude spreman.",
+        "requestedAt": "Zatraženo {date}",
+        "requestFailed": "Izvoz se nije mogao pokrenuti. Pokušajte ponovo.",
+        "statusFailed": "Neuspjelo",
+        "statusPreparing": "U pripremi",
+        "statusReady": "Spremno",
+        "title": "Izvoz ličnih podataka"
       },
       "tabs": {
         "employees": "Zaposlenici",
@@ -476,6 +499,22 @@
       "cancelConfirm": "Otkazati ovu promjenu zaposlenja? Ovim se uklanja zakazana promjena ili nacrt promjene zaposlenja.",
       "cancelError": "Otkazivanje promjene u historiji zaposlenja nije uspjelo",
       "cancelSuccess": "Promjena u historiji zaposlenja je otkazana",
+      "changeWage": {
+        "currencyHint": "U valuti važećih uslova",
+        "description": "Kreira nove uslove od ovog datuma. Vrsta ugovora, sedmični sati, model rada, pravila rada i valuta kopiraju se iz uslova koji su na snazi na taj datum.",
+        "draftSuccess": "Promjena plate je sačuvana kao nacrt",
+        "error": "Promjena plate nije uspjela",
+        "newWage": "Nova satnica",
+        "reason": "Razlog",
+        "reasonRequired": "Razlog je obavezan",
+        "save": "Sačuvaj promjenu plate",
+        "saveAsDraft": "Sačuvaj kao nacrt",
+        "success": "Plata je promijenjena",
+        "title": "Promijeni platu",
+        "validFrom": "Važi od",
+        "validFromRequired": "Polje \"Važi od\" je obavezno",
+        "wageInvalid": "Satnica mora biti pozitivan broj"
+      },
       "confirmError": "Potvrđivanje promjene u historiji zaposlenja nije uspjelo",
       "confirmSuccess": "Promjena u historiji zaposlenja je potvrđena",
       "contractType": "Vrsta ugovora",
@@ -511,6 +550,8 @@
       },
       "timeline": "Vremenska linija",
       "title": "Ugovor i model rada",
+      "wageHistoryMergeNote": "{count, plural, one {Historija plata spojena je sa starom historijom tarifa dana {date}; prilagođena je # promjena tarife.} few {Historija plata spojena je sa starom historijom tarifa dana {date}; prilagođene su # promjene tarife.} other {Historija plata spojena je sa starom historijom tarifa dana {date}; prilagođeno je # promjena tarife.}}",
+      "wageHistoryMergeNoteDismiss": "Odbaci",
       "weeklyHours": "Sedmični sati",
       "weeklyHoursValue": "{hours} / sedmično",
       "workModel": "Model rada",
@@ -829,7 +870,8 @@
         "edit": "Uredi {title}",
         "expires": "Ističe {date}",
         "open": "Otvori {title}",
-        "payPeriod": "Obračunski period {period}"
+        "payPeriod": "Obračunski period {period}",
+        "provesSkill": "Dokazuje {skill}"
       },
       "myDocuments": {
         "description": "Dokumenti iz vašeg personalnog dosjea koje je vaša organizacija podijelila s vama.",
@@ -994,6 +1036,23 @@
         "unlinkFailed": "Nije bilo moguće ukloniti vezu s doznakom.",
         "unlinkFromAbsence": "Uklonite vezu stavke {title} s bolovanja"
       },
+      "skillCertificates": {
+        "description": "Odaberite vještinu ovog zaposlenika koju „{title}” dokazuje. Raspored tada prikazuje da je certifikat evidentiran, ali nikada njegov sadržaj.",
+        "edit": "Odaberite vještinu koju {title} dokazuje",
+        "errors": {
+          "notCertificate": "Samo certifikati mogu dokazati vještinu.",
+          "notEmployeeSkill": "Odaberite jednu od vještina ovog zaposlenika.",
+          "undatedRequiresExpiry": "Ova vještina zahtijeva datum isteka. Samo certifikat s datumom isteka može je dokazati."
+        },
+        "loadFailed": "Vještine zaposlenika se nisu mogle učitati.",
+        "needsExpiry": "Zahtijeva datum isteka. Prvo ga dodajte ovom certifikatu.",
+        "none": "Bez vještine",
+        "noSkills": "Ovaj zaposlenik još nema vještina. Dodijelite vještine na stranici zaposlenika.",
+        "save": "Sačuvaj",
+        "saved": "Vještina sačuvana",
+        "saveFailed": "Nije bilo moguće sačuvati vještinu certifikata.",
+        "title": "Vještina koju ovaj certifikat dokazuje"
+      },
       "tabs": {
         "access": "Pristup",
         "reminders": "Podsjetnici",
@@ -1021,23 +1080,6 @@
         "hint": "Jedan ZIP s dokumentima iz kategorija kojima upravljate, sortiranim u mapu po kategoriji.",
         "sharedOnly": "Samo dijeljeni dokumenti"
       }
-    },
-    "rateHistory": {
-      "changeRate": "Promijeni tarifu",
-      "currentRate": "Trenutna tarifa: {rate}",
-      "description": "Promjene satnice tokom vremena",
-      "effectiveFrom": "Stupa na snagu od",
-      "effectiveFromHelp": "Kada nova tarifa stupa na snagu",
-      "empty": "Nema dostupne historije tarifa",
-      "newHourlyRate": "Nova satnica",
-      "reasonOptional": "Razlog (opcionalno)",
-      "reasonPlaceholder": "npr., Godišnja evaluacija, Unapređenje, itd.",
-      "title": "Historija tarifa",
-      "updateDescription": "Kreirajte novi unos tarife. Trenutna tarifa će biti automatski zatvorena.",
-      "updateError": "Ažuriranje tarife nije uspjelo",
-      "updateRate": "Ažuriraj tarifu",
-      "updateSuccess": "Tarifa je uspješno ažurirana",
-      "updateTitle": "Ažuriraj satnicu"
     },
     "roles": {
       "actions": {
@@ -1145,6 +1187,7 @@
       "catalog": "Katalog vještina",
       "catalogDescription": "Definišite vještine koje mogu biti potrebne za podoblasti i šablone smjena",
       "category": "Kategorija",
+      "certificateOnFile": "Certifikat u dosijeu",
       "confirmDelete": "Jeste li sigurni da želite obrisati ovu vještinu?",
       "confirmRemove": "Ukloniti \"{skillName}\" ovom zaposleniku?",
       "createError": "Kreiranje vještine nije uspjelo",
@@ -1155,16 +1198,25 @@
       "deleteError": "Brisanje vještine nije uspjelo",
       "description": "Opis",
       "descriptionPlaceholder": "Opcionalni opis vještine ili certifikata",
+      "editExpiryDate": "Uredi datum isteka",
+      "editExpiryDateDescription": "Posljednji dan važenja za {skillName}. Smjene nakon ovog dana prikazuju vještinu kao isteklu.",
+      "editExpiryDateFor": "Uredi datum isteka za {skillName}",
       "editSkill": "Uredi vještinu",
       "editSkillDescription": "Ažurirajte detalje vještine",
       "employeeSkills": "Vještine i kvalifikacije",
       "employeeSkillsDescription": "Certifikati i vještine dodijeljeni ovom zaposleniku",
+      "errors": {
+        "expiryDateSetByCertificate": "Certifikat o vještini u personalnom dosijeu postavlja ovaj datum. Promijenite datum na certifikatu."
+      },
       "expired": "Isteklo",
       "expiredOn": "Isteklo {date}",
       "expiresOn": "Ističe {date}",
       "expiringSoon": "Uskoro ističe",
       "expiry": "Praćenje isteka",
       "expiryDate": "Datum isteka",
+      "expiryDateFromCertificate": "Certifikat o vještini u personalnom dosijeu postavlja ovaj datum.",
+      "expiryDateUpdated": "Datum isteka je ažuriran",
+      "expiryDateUpdateError": "Ažuriranje datuma isteka nije uspjelo",
       "expiryRequired": "Obavezno",
       "expiryRequiredHint": "Za ovaj certifikat je potreban datum isteka",
       "name": "Naziv",
@@ -1176,6 +1228,16 @@
       "noSkillsHint": "Kreirajte svoju prvu vještinu da biste započeli",
       "notes": "Bilješke",
       "notesPlaceholder": "npr., Broj certifikata, datum obuke…",
+      "reminders": {
+        "intro": "Vještine uposlenika sa datumom isteka šalju podsjetnik unutar roka najave i još jedan na datum isteka. Podsjetnik se šalje uposleniku i njegovim menadžerima, ili vlasnicima i administratorima kada uposlenik nema menadžera. Oznaka \"Uskoro ističe\" koristi isti rok najave.",
+        "leadDays": "Rok najave podsjetnika za vještinu (dani)",
+        "leadDaysDescription": "Dani se računaju u vremenskoj zoni organizacije. Promjena datuma isteka vještine ponovo šalje oba podsjetnika.",
+        "leadDaysInvalid": "Unesite rok najave između {min} i {max} dana.",
+        "save": "Sačuvaj rok najave",
+        "saved": "Rok najave podsjetnika je sačuvan",
+        "saveFailed": "Nije bilo moguće sačuvati rok najave podsjetnika.",
+        "title": "Podsjetnici za istek vještine"
+      },
       "removeError": "Uklanjanje vještine nije uspjelo",
       "requiresExpiry": "Zahtijeva datum isteka",
       "requiresExpiryHint": "Omogućite ako ovaj certifikat zahtijeva obnovu (npr., Prva pomoć)",

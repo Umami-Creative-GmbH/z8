@@ -80,7 +80,7 @@ export function toClockingCommand(
 ): ClockCommand {
 	const window = CLOCK_COMMAND_ADMISSION_WINDOWS[command.admission];
 	const position =
-		input.acceptsPosition && "position" in command
+		input.acceptsPosition && "position" in command && command.position
 			? {
 					position: {
 						latitude: command.position.latitude,
@@ -107,16 +107,22 @@ export function toClockingCommand(
 		},
 		payload: command,
 		...position,
-	} satisfies Omit<ClockCommand, "body">;
+	} satisfies Omit<ClockCommand, "body" | "vehicleUse">;
+	// Version 4 vehicle use (#1122) runs beside the body for every client, bearer
+	// ones such as the desktop included. It is part of the frozen bytes as well.
+	const vehicleUse = <T extends object>(value: T | undefined) =>
+		value ? { vehicleUse: value } : {};
 	switch (command.kind) {
 		case "clock_in":
 			return {
 				...common,
+				...vehicleUse("vehicleUse" in command ? command.vehicleUse : undefined),
 				body: { kind: "clock_in", workLocationType: command.workLocationType },
 			};
 		case "clock_out":
 			return {
 				...common,
+				...vehicleUse("vehicleUse" in command ? command.vehicleUse : undefined),
 				body: {
 					kind: "clock_out",
 					target: closeTarget(command.target),
@@ -130,6 +136,7 @@ export function toClockingCommand(
 		case "break":
 			return {
 				...common,
+				...vehicleUse("vehicleUse" in command ? command.vehicleUse : undefined),
 				body: {
 					kind: "break",
 					target: closeTarget(command.target),

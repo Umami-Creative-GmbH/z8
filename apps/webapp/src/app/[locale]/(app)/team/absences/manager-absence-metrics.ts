@@ -4,34 +4,29 @@ import {
 	type IsWorkingDay,
 	mondayToFriday,
 } from "@/lib/absences/absence-days";
-import type { AbsenceWithCategory } from "@/lib/absences/types";
-import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-
-interface VacationAllowanceData {
-	defaultAnnualDays: string;
-	allowCarryover: boolean;
-	maxCarryoverDays: string | null;
-	carryoverExpiryMonths: number | null;
-}
-
-interface EmployeeAllowanceData {
-	customAnnualDays: string | null;
-	customCarryoverDays: string | null;
-}
+import type { ProratedAllowance } from "@/lib/absences/prorated-allowance";
+import type { AbsenceWithCategory, VacationBalance } from "@/lib/absences/types";
 
 export interface ManagerAbsenceMetrics {
 	vacationAllowance: number;
 	usedVacationDays: number;
 	pendingVacationDays: number;
 	remainingVacationDays: number;
+	/** Approved vacation beyond the allowance (overdrawn vacation, #1111); never deducted. */
+	overdrawnVacationDays: number;
 	sickDays: number;
+	/** The vacation allowance and why it is prorated (#1111); absent without a policy. */
+	proratedAllowance?: ProratedAllowance;
 }
 
+/**
+ * An employee's row metrics in the manager view: the vacation figures of their balance
+ * (`loadVacationBalances`, the same as on every other page) and their sick days in the year.
+ */
 export function calculateManagerAbsenceMetrics(input: {
 	year: number;
-	allowance: VacationAllowanceData | null;
-	employeeAllowance: EmployeeAllowanceData | null;
+	/** The employee's vacation balance for the year; undefined without a policy. */
+	balance: VacationBalance | undefined;
 	absences: AbsenceWithCategory[];
 	/** The employee's working days in the year; defaults to Monday to Friday. */
 	isWorkingDay?: IsWorkingDay;
@@ -43,55 +38,29 @@ export function calculateManagerAbsenceMetrics(input: {
 			return total;
 		}
 
-		return total + selectedYearAbsenceDays(absence, year, isWorkingDay);
+		const clipped = clipAbsenceDayRange(absence, year);
+		return clipped ? total + countAbsenceDays(clipped, isWorkingDay) : total;
 	}, 0);
 
-	if (!input.allowance) {
+	const { balance } = input;
+	if (!balance) {
 		return {
 			vacationAllowance: 0,
 			usedVacationDays: 0,
 			pendingVacationDays: 0,
 			remainingVacationDays: 0,
+			overdrawnVacationDays: 0,
 			sickDays,
 		};
 	}
 
-	const balance = calculateVacationBalance({
-		organizationAllowance: input.allowance,
-		employeeAllowance: input.employeeAllowance,
-		absences: [],
-		currentDate: currentTimestamp(),
-		year: input.year,
-	});
-	const usedVacationDays = input.absences.reduce((total, absence) => {
-		if (absence.status !== "approved" || !absence.category.countsAgainstVacation) {
-			return total;
-		}
-
-		return total + selectedYearAbsenceDays(absence, year, isWorkingDay);
-	}, 0);
-	const pendingVacationDays = input.absences.reduce((total, absence) => {
-		if (absence.status !== "pending" || !absence.category.countsAgainstVacation) {
-			return total;
-		}
-
-		return total + selectedYearAbsenceDays(absence, year, isWorkingDay);
-	}, 0);
-
 	return {
 		vacationAllowance: balance.totalDays,
-		usedVacationDays,
-		pendingVacationDays,
-		remainingVacationDays: Math.max(0, balance.totalDays - usedVacationDays - pendingVacationDays),
+		usedVacationDays: balance.usedDays,
+		pendingVacationDays: balance.pendingDays,
+		remainingVacationDays: balance.remainingDays,
+		overdrawnVacationDays: balance.overdrawnDays,
 		sickDays,
+		...(balance.allowance ? { proratedAllowance: balance.allowance } : {}),
 	};
-}
-
-function selectedYearAbsenceDays(
-	absence: AbsenceWithCategory,
-	year: { startDate: string; endDate: string },
-	isWorkingDay: IsWorkingDay,
-): number {
-	const clipped = clipAbsenceDayRange(absence, year);
-	return clipped ? countAbsenceDays(clipped, isWorkingDay) : 0;
 }

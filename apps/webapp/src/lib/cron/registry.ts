@@ -23,9 +23,11 @@ import type { DeputyCoverSummariesJobResult } from "@/lib/jobs/deputy-cover-summ
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
 import type { PersonnelFileRetentionRemindersJobResult } from "@/lib/jobs/personnel-file-retention-reminders";
+import type { PersonalDataExportSweepResult } from "@/lib/jobs/personal-data-export-sweep";
 import type { PersonnelFileUploadCleanupJobResult } from "@/lib/jobs/personnel-file-upload-cleanup";
 import type { PositionStampPurgeResult } from "@/lib/jobs/position-stamp-purge";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
+import type { SkillExpiryRemindersJobResult } from "@/lib/jobs/skill-expiry-reminders";
 import type { TravelExpenseReceiptCleanupJobResult } from "@/lib/jobs/travel-expense-receipt-cleanup";
 import type { TravelExpenseReferenceRatesJobResult } from "@/lib/jobs/travel-expense-reference-rates";
 import type { CleanupJobData } from "@/lib/queue";
@@ -402,6 +404,17 @@ export const CRON_JOBS = {
 		defaultJobOptions: { attempts: 2, priority: 8 },
 	},
 
+	"cron:personal-data-export-sweep": {
+		schedule: "*/15 * * * *", // Every 15 minutes
+		description:
+			"Delete personal data exports 7 days after completion, give up stuck builds, and delete the stored files of deleted exports",
+		processor: async (): Promise<PersonalDataExportSweepResult> => {
+			const { runPersonalDataExportSweep } = await import("@/lib/jobs/personal-data-export-sweep");
+			return runPersonalDataExportSweep();
+		},
+		defaultJobOptions: { attempts: 2, priority: 8 },
+	},
+
 	"cron:position-stamp-purge": {
 		schedule: "0 1 * * *", // Daily at 1 AM
 		description:
@@ -448,6 +461,17 @@ export const CRON_JOBS = {
 				"@/lib/jobs/personnel-file-expiry-reminders"
 			);
 			return runPersonnelFileExpiryRemindersJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
+	"cron:skill-expiry-reminders": {
+		schedule: "0 * * * *", // Hourly, so each organization's day starts soon after its midnight
+		description:
+			"Remind employees and their managers of employee skills expiring within the lead time or today",
+		processor: async (): Promise<SkillExpiryRemindersJobResult> => {
+			const { runSkillExpiryRemindersJob } = await import("@/lib/jobs/skill-expiry-reminders");
+			return runSkillExpiryRemindersJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
 	},

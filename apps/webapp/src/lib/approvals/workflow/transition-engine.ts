@@ -19,6 +19,8 @@ import type {
 	ApprovalWorkflowSourceLoader,
 } from "./ports";
 import {
+	ABSENCE_CHANGE_OBSOLETE_REASON,
+	ABSENCE_CHANGE_OBSOLETE_SYSTEM_ID,
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
 	isCoveringDeputyGrant,
@@ -80,13 +82,11 @@ function malformed(field: string): never {
 }
 
 function isEngineCreatedError(
-	error: unknown,
+	error: unknown
 ): error is ApprovalTransitionEngineError {
-	return (
-		typeof error === "object" &&
+	return typeof error === "object" &&
 		error !== null &&
-		engineCreatedErrors.has(error)
-	);
+		engineCreatedErrors.has(error);
 }
 
 function commandRecord(value: unknown): CommandRecord {
@@ -155,7 +155,7 @@ function canonicalizeCommand(command: unknown): Record<string, string | null> {
 				stageId: canonicalUuid(property(value, "stageId"), "stageId"),
 				assignmentId: canonicalUuid(
 					property(value, "assignmentId"),
-					"assignmentId",
+					"assignmentId"
 				),
 				reason: optionalReason(value),
 			};
@@ -166,7 +166,7 @@ function canonicalizeCommand(command: unknown): Record<string, string | null> {
 				stageId: canonicalUuid(property(value, "stageId"), "stageId"),
 				assignmentId: canonicalUuid(
 					property(value, "assignmentId"),
-					"assignmentId",
+					"assignmentId"
 				),
 				reason: requiredReason(property(value, "reason")),
 			};
@@ -182,11 +182,11 @@ function canonicalizeCommand(command: unknown): Record<string, string | null> {
 				stageId: canonicalUuid(property(value, "stageId"), "stageId"),
 				fromEmployeeId: canonicalUuid(
 					property(value, "fromEmployeeId"),
-					"fromEmployeeId",
+					"fromEmployeeId"
 				),
 				toEmployeeId: canonicalUuid(
 					property(value, "toEmployeeId"),
-					"toEmployeeId",
+					"toEmployeeId"
 				),
 			};
 		default:
@@ -196,7 +196,7 @@ function canonicalizeCommand(command: unknown): Record<string, string | null> {
 
 /** Produces a stable receipt value from every semantic state-machine command field. */
 export function fingerprintApprovalWorkflowCommand(
-	command: ApprovalWorkflowCommand,
+	command: ApprovalWorkflowCommand
 ): string {
 	try {
 		return JSON.stringify(canonicalizeCommand(command));
@@ -208,7 +208,7 @@ export function fingerprintApprovalWorkflowCommand(
 
 export interface ApprovalTransitionEngine {
 	execute(
-		request: ApprovalWorkflowCommandRequest,
+		request: ApprovalWorkflowCommandRequest
 	): Promise<ApprovalCommandResult>;
 	executeInTransactionWithDisposition(
 		context: ApprovalWorkflowTransactionContext,
@@ -259,10 +259,8 @@ function allowsAuthorization(
 ): boolean {
 	if (isOffboardingHandoverPrincipal(request.principal)) {
 		// The departure-handover capability only replaces its captured duty.
-		return (
-			authorization === "offboarding_reassignment" &&
-			request.command.type === "reassign"
-		);
+		return authorization === "offboarding_reassignment" &&
+			request.command.type === "reassign";
 	}
 	if (authorization === "offboarding_reassignment") return false;
 	if (
@@ -295,15 +293,21 @@ function allowsAuthorization(
 			(request.command.type === "approve" || request.command.type === "reject")
 		);
 	}
-	if (authorization === "requester") {
-		return (
-			request.principal.kind === "employee" && request.command.type === "cancel"
+	if (
+		request.principal.kind === "system" &&
+		request.principal.systemId === ABSENCE_CHANGE_OBSOLETE_SYSTEM_ID
+	) {
+		return (authorization === "system" &&
+			workflowType === "absence_change" &&
+			request.command.type === "cancel" &&
+			request.command.reason === ABSENCE_CHANGE_OBSOLETE_REASON
 		);
 	}
+	if (authorization === "requester") {
+		return request.principal.kind === "employee" && request.command.type === "cancel";
+	}
 	if (authorization === "manage_approval") {
-		return (
-			request.principal.kind === "employee" && request.command.type !== "expire"
-		);
+		return request.principal.kind === "employee" && request.command.type !== "expire";
 	}
 	return (
 		request.command.type === "expire" &&
@@ -313,7 +317,7 @@ function allowsAuthorization(
 }
 
 function adapterCommand(
-	command: ApprovalWorkflowCommand,
+	command: ApprovalWorkflowCommand
 ): ApprovalDomainCommand | null {
 	switch (command.type) {
 		case "approve":
@@ -328,7 +332,7 @@ function adapterCommand(
 }
 
 function proposedStatus(
-	command: ApprovalDomainCommand,
+	command: ApprovalDomainCommand
 ): "approved" | "rejected" | "cancelled" {
 	if (command.kind === "approve") return "approved";
 	if (command.kind === "reject") return "rejected";
@@ -405,7 +409,7 @@ function createMaterializedBatchBaseline(
 	if (!finalPass) invariant({ field: "result_builder" });
 	const events = materializedBatch.flatMap((pass) =>
 		pass.events.map(
-			({ persistenceMetadata: _persistenceMetadata, ...event }) => event,
+			({ persistenceMetadata: _persistenceMetadata, ...event }) => event
 		),
 	);
 	return {
@@ -427,7 +431,7 @@ function isolateForResultBuilder<T>(value: T): T {
 		return Object.fromEntries(
 			Object.entries(value).map(([key, child]) => [
 				key,
-				isolateForResultBuilder(child),
+				isolateForResultBuilder(child)
 			]),
 		) as T;
 	}
@@ -441,7 +445,7 @@ function assertResultMatchesMaterializedBatch(
 	const eventsMatch =
 		result.events.length === baseline.events.length &&
 		baseline.events.every((event, index) =>
-			semanticallyEqual(result.events[index], event),
+			semanticallyEqual(result.events[index], event)
 		);
 	const outboxMatches =
 		result.outbox.length === baseline.eventReferences.length &&
@@ -507,7 +511,7 @@ export function createApprovalTransitionEngine(
 				});
 			}
 			const offboardingPrincipal = isOffboardingHandoverPrincipal(
-				request.principal,
+				request.principal
 			)
 				? request.principal
 				: null;
@@ -523,7 +527,7 @@ export function createApprovalTransitionEngine(
 				idempotencyKey: request.idempotencyKey,
 				actorFingerprint: fingerprintApprovalCommandActor(
 					actor,
-					systemCapability,
+					systemCapability
 				),
 				commandFingerprint: fingerprintApprovalWorkflowCommand(request.command),
 			};
@@ -547,7 +551,7 @@ export function createApprovalTransitionEngine(
 						!allowsAuthorization(
 							request,
 							replayAuthorization,
-							workflow.workflowType,
+							workflow.workflowType
 						)
 					) {
 						throw engineError("forbidden", { command: request.command.type });
@@ -671,7 +675,7 @@ export function createApprovalTransitionEngine(
 							kind: "approved_cancellation" as const,
 							authorization: capabilities.canCancelAfterApproval
 								? await context.adapterRegistry.authorizeApprovedCancellation(
-										adapterContext,
+										adapterContext
 									)
 								: (() => {
 										throw engineError("forbidden", { command: "cancel" });
@@ -726,7 +730,7 @@ export function createApprovalTransitionEngine(
 						receiptActor: commandActor.kind === "system" ? actor : undefined,
 						...(systemCapability ? { systemCapability } : {}),
 						actor: commandActor,
-					},
+					}
 				);
 				const cas = await context.repository.tryAdvanceVersion({
 					organizationId: request.organizationId,
@@ -823,7 +827,7 @@ export function createApprovalTransitionEngine(
 				}
 				const activationMaterialized = await materializeAndApply(
 					activationPlan,
-					activationActor,
+					activationActor
 				);
 				materializedBatch.push(activationMaterialized);
 				materialized = activationMaterialized;
@@ -843,7 +847,7 @@ export function createApprovalTransitionEngine(
 						};
 					await adapter.preflightTerminal(activationTerminalInput);
 					finalization = await adapter.finalizeTerminal(
-						activationTerminalInput,
+						activationTerminalInput
 					);
 				}
 			}
@@ -880,18 +884,18 @@ export function createApprovalTransitionEngine(
 			}
 			await context.projectionWriter.write(result.projection);
 			await mapSequentially(result.outbox, (outbox) =>
-				context.outboxWriter.write(outbox),
+				context.outboxWriter.write(outbox)
 			);
 			await context.repository.completeCommand({ ...receipt, result });
 			return { result, disposition: "executed", finalization };
 		};
 	const executeInTransaction: ApprovalTransitionEngine["executeInTransaction"] =
-		async (context, request) =>
+		async (context, request,) =>
 			(await executeInTransactionWithDisposition(context, request)).result;
 	return {
 		execute: (request) =>
 			dependencies.repository.withTransaction((context) =>
-				executeInTransaction(context, request),
+				executeInTransaction(context, request)
 			),
 		executeInTransaction,
 		executeInTransactionWithDisposition,

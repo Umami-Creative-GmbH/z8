@@ -288,6 +288,7 @@
       "travelExpenseSettings": "Seyahat masrafı ayarları yükleniyor",
       "twoFactorVerification": "İki faktörlü doğrulama yükleniyor",
       "vacationSettings": "İzin ayarları yükleniyor",
+      "vehicleDistanceReport": "Araç başına mesafe raporu yükleniyor",
       "wellnessSettings": "Esenlik ayarları yükleniyor",
       "workCategorySettings": "Çalışma kategorisi ayarları yükleniyor",
       "workerQueue": "Çalışan kuyruğu yükleniyor",
@@ -418,6 +419,17 @@
     "update": "Güncelle",
     "updating": "Güncelleniyor...",
     "uploading": "Yükleniyor...",
+    "vacationAllowance": {
+      "cappedAtFullAllowance": "tam hak edişle sınırlandırıldı",
+      "employmentMonths": "{months, plural, other {# tam çalışma ayı} }",
+      "lastWorkingDay": "son çalışma günü: {date}",
+      "notEmployed": "{fullAllowance} gün üzerinden {allowance} gün: {year} yılında istihdam edilmedi",
+      "overdrawn": "{days, plural, other {# gün aşıldı} }",
+      "overdrawnHint": "Hak edişin ötesinde kullanılan izin. Yalnızca bilgilendirme amaçlı gösterilmektedir: herhangi bir kesinti yapılmaz.",
+      "proratedSummary": "{fullAllowance} gün üzerinden {allowance} gün, orantılı: {details}",
+      "started": "başlangıç: {date}",
+      "statutoryMinimumApplies": "yasal asgari geçerlidir"
+    },
     "validate": "Doğrula",
     "validationError": "Doğrulama hatası",
     "weekdays": {
@@ -493,7 +505,32 @@
       "title": "İş Konseyi",
       "to": "Bitiş",
       "unassignedTeam": "Atanmamış ekip",
-      "updateRange": "Aralığı Güncelle"
+      "updateRange": "Aralığı Güncelle",
+      "vehicleUse": {
+        "activeVehicles": "Aktif araçlar",
+        "archivedVehicles": "Arşivlenen araçlar",
+        "coveredAsked": "İstenen",
+        "coveredDescription": "{count, plural, other {Şu anda # aktif çalışandan araç kullanımını kaydetmesi isteniyor veya bekleniyor.} }",
+        "coveredExpected": "Beklenen",
+        "coveredTitle": "Kapsamdaki çalışanlar",
+        "description": "Kurumun iş için kullandıkları aracı kaydetmelerini istediği kişiler. İş konseyi kilometre sayacı göstergelerini veya bir çalışanın katettiği mesafeleri asla göremez.",
+        "employeeAssignmentCounts": "{asked} istendi, {expected} beklendi, {off} bireysel olarak kapalı",
+        "employeeAssignments": "Çalışan atamaları",
+        "employeePseudonym": "Çalışan {ref}",
+        "enabled": "Değiştir",
+        "modeAsked": "İstendi",
+        "modeExpected": "Beklendi",
+        "modeOff": "Kapalı",
+        "noEmployeeAssignments": "Çalışan ataması yok.",
+        "notAssigned": "Atanmadı",
+        "noTeamAssignments": "Ekip ataması yok.",
+        "off": "Kapalı",
+        "on": "Açık",
+        "organizationAssignment": "Tüm organizasyon",
+        "teamAssignments": "Ekip atamaları",
+        "title": "Araç kullanımı",
+        "vehiclesTitle": "Organizasyon araçları"
+      }
     }
   },
   "employeeSelect": {
@@ -602,6 +639,7 @@
     "settings": "Ayarlar",
     "team": "Ekip",
     "teamAbsences": "Ekip Devamsızlıkları",
+    "teamDriving": "Sürüş Ayrıntıları",
     "team-label": "Ekip",
     "teamPeriodSubmissions": "Dönem Gönderimleri",
     "teamPresence": "Kimler Burada",
@@ -619,7 +657,34 @@
       "settings": "Bildirim ayarları",
       "viewAll": "Tüm bildirimleri görüntüle"
     },
+    "channels": {
+      "viewInZ8": "Z8'de Görüntüle"
+    },
     "content": {
+      "absenceCancellation": {
+        "message": "{original} için iptal talebi. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "İzin değişikliği talebi onaylandı"
+      },
+      "absenceChangeExpired": {
+        "title": "İzin değişikliği talebinin süresi doldu"
+      },
+      "absenceChange": {
+        "message": "Kayıtlı tarihler: {original}. Önerilen tarihler: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "İzin değişikliği talebi geçerliliğini yitirdi"
+      },
+      "absenceChangePending": {
+        "title": "İzin değişikliği onay bekliyor"
+      },
+      "absenceChangeRejected": {
+        "title": "İzin değişikliği talebi reddedildi"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "İzin değişikliği talebi geri çekildi"
+      },
       "absenceDeputyAssigned": {
         "message": "{name} yerine vekillik yapıyorsunuz ({dateRange}).",
         "title": "İzin vekilisiniz"
@@ -645,7 +710,12 @@
         "message": "{managerName}, sizin adınıza {dateRange} için {absenceType} kaydetti.",
         "title": "İzin kaydedildi"
       },
+      "absenceRequestApproved": {
+        "message": "{dateRange} tarihli {categoryName} talebiniz {approverName} tarafından onaylandı."
+      },
       "absenceRequestRejected": {
+        "message": "{dateRange} tarihli {categoryName} talebiniz {approverName} tarafından reddedildi.",
+        "messageWithReason": "{dateRange} tarihli {categoryName} talebiniz {approverName} tarafından reddedildi. Neden: {rejectionReason}",
         "title": "İzin talebi reddedildi"
       },
       "absenceRequestSubmitted": {
@@ -659,6 +729,19 @@
       "approvalCoverStarted": {
         "message": "{count, plural, =0 {{name} adlı kişinin onaylarına vekillik ediyorsunuz: henüz bekleyen yok.} other {{name} adlı kişinin onaylarına vekillik ediyorsunuz: # bekleyen var.}}",
         "title": "Onaylara vekillik ediyorsunuz"
+      },
+      "approvalEscalationAttention": {
+        "ambiguousHistory": "Bir onayın eskalasyon geçmişi belirsiz ve herhangi bir otomatik aktarımdan önce incelenmesi gerekiyor.",
+        "deliveryExhausted": "Bir onaya ait eskalasyon bildirimleri tüm yeniden denemelerden sonra başarısız oldu.",
+        "deliveryUnavailable": "Bir onay için kullanılabilir eskalasyon bildirimi hedefi yok.",
+        "noEligibleBackup": "Süresi geçmiş bir onayın uygun bir yedek onaylayıcısı yok. Atama mevcut onaylayıcıda kalmaya devam ediyor.",
+        "replacementOverdue": "Bir onay, otomatik eskalasyonunun ardından hâlâ karara bağlanmadı. Başka bir otomatik aktarım yapılmayacak.",
+        "title": "Onay eskalasyonu dikkat gerektiriyor",
+        "unsupportedRoute": "Karar yolu desteklenmediği için bir onay üst makama iletilemiyor."
+      },
+      "approvedAbsenceCancelled": {
+        "message": "{employeeName}, {dateRange} için onaylanmış {categoryName} kaydını iptal etti.",
+        "title": "Onaylanmış izin iptal edildi"
       },
       "automaticClockOut": {
         "breakMessage": "Mola, kuruluşunuzun belirlediği {duration} dakikalık süre sınırı içinde sonlandırılmadığından, molanızın başlangıç saati olan {cutoff} ({timezone}) itibarıyla çıkışınız otomatik olarak yapıldı.",
@@ -683,9 +766,56 @@
           "title": "Fazla mesai ödemesi kaydedildi"
         }
       },
+      "birthdayReminder": {
+        "message": "{name} adlı kullanıcının doğum günü {date} tarihinde.",
+        "title": "Yaklaşan doğum günü"
+      },
       "breakDueReminder": {
         "message": "Molanız {breakTime} ({timezone}) saatinde planlanmıştır. Çalışma politikanızın mola kurallarına uymak için o zamana kadar mola verin.",
         "title": "Yakında mola zamanı"
+      },
+      "clockOutApprovalRequired": {
+        "message": "{employeeName}, {date} tarihinde çıkış yaptı ({startTime} – {endTime}, {duration}). Onay gerekiyor.",
+        "messageWithoutTimes": "{employeeName} çıkış yaptı ({duration}). Onay gerekiyor.",
+        "title": "Çıkış onayı gerekiyor"
+      },
+      "clockOutApproved": {
+        "message": "Çıkışınız {approverName} tarafından onaylandı.",
+        "title": "Çıkış onaylandı"
+      },
+      "clockOutPendingApproval": {
+        "message": "{date} tarihindeki çıkışınız ({duration}) yönetici onayı bekliyor.",
+        "messageWithoutDate": "Çıkışınız ({duration}) yönetici onayı bekliyor.",
+        "title": "Çıkış onay bekliyor"
+      },
+      "clockOutRejected": {
+        "message": "Çıkış onayınız {approverName} tarafından reddedildi. Kaydedilen süreler değiştirilmez ve onaylanan bordro süresinden hariç tutulur.",
+        "messageWithReason": "Çıkış onayınız {approverName} tarafından reddedildi. Kaydedilen süreler değiştirilmez ve onaylanan bordro süresinden hariç tutulur. Neden: {rejectionReason}",
+        "title": "Çıkış reddedildi"
+      },
+      "complianceExceptionApproved": {
+        "message": "{exceptionType, select, rest_period {dinlenme süresi} overtime_daily {günlük fazla mesai} overtime_weekly {haftalık fazla mesai} overtime_monthly {aylık fazla mesai} other {uyumluluk}} istisnanız {approverName} tarafından onaylandı. {validUntil} tarihine kadar geçerlidir.",
+        "title": "İstisna onaylandı"
+      },
+      "complianceExceptionExpired": {
+        "message": "{exceptionType, select, rest_period {dinlenme süresi} overtime_daily {günlük fazla mesai} overtime_weekly {haftalık fazla mesai} overtime_monthly {aylık fazla mesai} other {uyumluluk}} ön onayınızın süresi doldu (kullanılmadan 24 saat geçti).",
+        "title": "İstisnanın süresi doldu"
+      },
+      "complianceExceptionRejected": {
+        "message": "{exceptionType, select, rest_period {dinlenme süresi} overtime_daily {günlük fazla mesai} overtime_weekly {haftalık fazla mesai} overtime_monthly {aylık fazla mesai} other {uyumluluk}} istisnanız {approverName} tarafından reddedildi.",
+        "messageWithReason": "{exceptionType, select, rest_period {dinlenme süresi} overtime_daily {günlük fazla mesai} overtime_weekly {haftalık fazla mesai} overtime_monthly {aylık fazla mesai} other {uyumluluk}} istisnanız {approverName} tarafından reddedildi. Neden: \"{reason}\"",
+        "title": "İstisna reddedildi"
+      },
+      "complianceExceptionRequested": {
+        "message": "{employeeName} bir {exceptionType, select, rest_period {dinlenme süresi} overtime_daily {günlük fazla mesai} overtime_weekly {haftalık fazla mesai} overtime_monthly {aylık fazla mesai} other {uyumluluk}} istisnası talep etti: \"{reason}\"",
+        "title": "Uyumluluk istisnası talep edildi"
+      },
+      "drivingDetailsMissingReminderMany": {
+        "message": "{dates} tarihinden {count} çalışma döneminde araç veya kilometre sayacı bilgisi eksik. Bunları çalışma dönemlerine ekleyin."
+      },
+      "drivingDetailsMissingReminder": {
+        "message": "{date} tarihindeki çalışmanızda araç veya kilometre sayacı bilgisi eksik. Bunları çalışma dönemine ekleyin.",
+        "title": "Sürüş ayrıntılarınızı ekleyin"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Onay görevleri için bir vekil gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
@@ -698,6 +828,15 @@
       "forgottenClockOutReminder": {
         "message": "Vardiyanız {endTime} ({timezone}) saatinde sona erdi. Çalışmayı bitirdiyseniz çıkış yapın.",
         "title": "Hâlâ giriş yapmış durumdasınız"
+      },
+      "manualEntryApproved": {
+        "message": "Manuel zaman bildiriminiz {approverName} tarafından onaylandı.",
+        "title": "Manuel zaman bildirimi onaylandı"
+      },
+      "manualEntryRejected": {
+        "message": "Manuel zaman bildiriminiz {approverName} tarafından reddedildi.",
+        "messageWithReason": "Manuel zaman bildiriminiz {approverName} tarafından reddedildi. Neden: {rejectionReason}",
+        "title": "Manuel zaman bildirimi reddedildi"
       },
       "missedClockInReminder": {
         "message": "Vardiyanız {startTime} ({timezone}) saatinde başladı. Çalışıyorsanız giriş yapın.",
@@ -716,7 +855,27 @@
         "title": "Ay yeniden açıldı"
       },
       "newAbsenceRequest": {
+        "message": "{employeeName}, {dateRange} için {categoryName} talebinde bulundu.",
         "title": "Yeni izin talebi"
+      },
+      "newTimeCorrectionRequest": {
+        "message": "{employeeName}, {date} için bir zaman düzeltme talebi gönderdi.",
+        "messageWithoutDate": "{employeeName} bir zaman düzeltme talebinde bulundu.",
+        "messageWithoutDateWithReason": "{employeeName} bir zaman düzeltme talebinde bulundu. Neden: {reason}",
+        "messageWithReason": "{employeeName}, {date} için zaman düzeltme talebinde bulundu. Neden: {reason}",
+        "title": "Yeni zaman düzeltme talebi"
+      },
+      "openShiftAvailable": {
+        "message": "{shiftDate} tarihinde {startTime} - {endTime} saatleri arasında açık bir vardiya var.",
+        "title": "Açık vardiya mevcut"
+      },
+      "overtimeViolation": {
+        "message": "{description}",
+        "title": "Fazla mesai ihlali kaydedildi"
+      },
+      "overtimeWarning": {
+        "message": "{period, select, daily {Bugün} weekly {Bu hafta} other {Bu ay}} {worked} çalıştınız ({limit} sınırının %{percent}'i).",
+        "title": "Fazla mesai eşiğine yaklaşıldı"
       },
       "passwordChanged": {
         "message": "Parolanız başarıyla değiştirildi. Bu değişikliği siz yapmadıysanız, lütfen derhal destek ekibiyle iletişime geçin.",
@@ -745,6 +904,20 @@
       "periodSubmissionWithdrawnAfterChange": {
         "message": "{startDate} – {endDate} dönemi için girdiğiniz süre gönderildikten sonra değişti, bu nedenle gönderim geri çekildi. Çalışma sürenizi gözden geçirin ve tekrar gönderin.",
         "title": "Çalışma sürenizi tekrar gönderin"
+      },
+      "personalDataExportAdminExported": {
+        "message": "Bir yönetici {onDate} tarihinde kişisel verilerinizi dışa aktardı.",
+        "title": "Kişisel verileriniz dışa aktarıldı"
+      },
+      "personalDataExportReady": {
+        "adminMessage": "{employeeName} adlı çalışanın kişisel veri dışa aktarımı hazır. Oturum açmış durumdayken çalışanın sayfasından indirin; 7 gün sonra silinir.",
+        "adminTitle": "Kişisel veri dışa aktarımı hazır",
+        "message": "Kişisel veri dışa aktarımınız hazır. Oturum açmış durumdayken Verilerim bölümünden indirin; 7 gün sonra silinir.",
+        "title": "Kişisel veri dışa aktarımınız hazır"
+      },
+      "personalDataExportReminder": {
+        "message": "{untilDate} tarihinden önce kişisel verilerinizi Verilerim bölümünden indirin. Bu tarihten sonra verileri sizin için yalnızca bir yönetici dışa aktarabilir.",
+        "title": "Ayrılmadan önce kişisel verilerinizi indirin"
       },
       "personnelFileDocumentShared": {
         "message": "\"{title}\" adlı belge sizinle paylaşıldı.",
@@ -781,13 +954,94 @@
       "policyMissedClockInReminder": {
         "message": "Bugünkü en son giriş kaydınız: {startTime} ({timezone}). Çalışıyorsanız giriş yapın."
       },
+      "projectBudgetWarning100": {
+        "message": "\"{projectName}\" bütçesini aştı (bütçelenen {budget} üzerinden {used} kullanıldı). Gözden geçirin ve gerekirse düzenleyin.",
+        "title": "Proje bütçesi aşıldı"
+      },
+      "projectBudgetWarning70": {
+        "message": "\"{projectName}\", bütçesinin %{percent}'ini kullandı ({budget} üzerinden {used}).",
+        "title": "Proje bütçe sınırına yaklaşıyor"
+      },
+      "projectBudgetWarning90": {
+        "message": "\"{projectName}\", bütçesinin %{percent}'ini kullandı ({budget} üzerinden {used}). Zaman tahsislerini gözden geçirmeyi değerlendirin.",
+        "title": "Proje bütçe sınırına yakın"
+      },
+      "projectDeadlineOverdue": {
+        "message": "\"{projectName}\" projesinin son teslim tarihi geçti ({deadline}). Durumu güncelleyin veya son teslim tarihini uzatın.",
+        "title": "Proje teslim tarihi gecikti"
+      },
+      "projectDeadlineWarning0d": {
+        "message": "\"{projectName}\" projesinin son teslim tarihi bugün ({deadline}). Kalan işleri toparlayın.",
+        "title": "Proje teslim tarihi bugün"
+      },
+      "projectDeadlineWarning14d": {
+        "message": "\"{projectName}\" projesinin son teslim tarihine 2 hafta kaldı ({deadline}). Tarihe yetişmek için önceden plan yapın.",
+        "title": "Proje teslim tarihine 2 hafta kaldı"
+      },
+      "projectDeadlineWarning1d": {
+        "message": "\"{projectName}\" projesinin son teslim tarihi yarın ({deadline}). Tamamlamak için son bir gayret!",
+        "title": "Proje teslim tarihi yarın"
+      },
+      "projectDeadlineWarning7d": {
+        "message": "\"{projectName}\" projesinin son teslim tarihine 1 hafta kaldı ({deadline}). Planlandığı gibi ilerlediğinizden emin olun.",
+        "title": "Proje teslim tarihine 1 hafta kaldı"
+      },
+      "restPeriodViolation": {
+        "message": "{description}",
+        "title": "Dinlenme süresi ihlali kaydedildi"
+      },
+      "restPeriodWarning": {
+        "message": "Gereken dinlenme süresinden {remaining} kaldı. İzin verilen sonraki giriş saati: {nextAllowedClockIn}.",
+        "title": "Dinlenme süresi hatırlatıcısı"
+      },
       "scheduledExportPaused": {
         "message": "\"{scheduleName}\", sahibi {ownerName} artık kuruluş yöneticisi olmadığı için duraklatıldı. Sürdürmek için kendinizi veya başka bir kuruluş yöneticisini sahibi yapın.",
         "title": "Zamanlanmış dışa aktarma duraklatıldı"
       },
+      "schedulePublished": {
+        "message": "{shiftCount, plural, other {{dateRange} için # vardiya yayınlandı.} }",
+        "title": "Yeni çalışma programı yayınlandı"
+      },
       "shiftAssigned": {
         "message": "{assignedByName} tarafından {shiftDate} tarihinde {startTime} ile {endTime} saatleri arasında bir vardiya atandı.",
         "title": "Vardiya atandı"
+      },
+      "shiftPickupApproved": {
+        "message": "{shiftDate} tarihindeki vardiyayı alma talebiniz {approverName} tarafından onaylandı.",
+        "title": "Vardiya alma onaylandı"
+      },
+      "shiftPickupRequested": {
+        "message": "{requesterName}, {shiftDate} tarihindeki ({startTime} - {endTime}) vardiyayı almak için talepte bulundu.",
+        "messageUnnamedRequester": "Bir çalışan, {shiftDate} tarihindeki ({startTime} - {endTime}) vardiyayı almak için talepte bulundu.",
+        "title": "Vardiya alma talebi"
+      },
+      "shiftSwapApproved": {
+        "message": "{shiftDate} için vardiya takası talebiniz {approverName} tarafından onaylandı.",
+        "title": "Vardiya takası onaylandı"
+      },
+      "shiftSwapRejected": {
+        "message": "{shiftDate} için vardiya takası talebiniz {approverName} tarafından reddedildi.",
+        "messageWithReason": "{shiftDate} için vardiya takası talebiniz {approverName} tarafından reddedildi. Neden: {reason}",
+        "title": "Vardiya takası reddedildi"
+      },
+      "shiftSwapRequestedToManager": {
+        "message": "{requesterName}, {shiftDate} ({startTime} - {endTime}) tarihindeki vardiya için değişim talep etti.",
+        "messageWithTarget": "{requesterName}, {shiftDate} ({startTime} - {endTime}) tarihindeki vardiya için {targetName} ile değişim talep etti.",
+        "title": "Vardiya değişimi talebi"
+      },
+      "shiftSwapRequestedToTarget": {
+        "message": "{requesterName}, {shiftDate} ({startTime} - {endTime}) tarihindeki vardiyayı sizinle değiştirmek istiyor.",
+        "title": "Vardiya değişimi talebi"
+      },
+      "skillExpiredToday": {
+        "employeeMessage": "\"{skill}\" yetkinliğinizin geçerlilik süresi bugün doluyor.",
+        "message": "{employee} adlı çalışanın \"{skill}\" yetkinliğinin geçerlilik süresi bugün doluyor.",
+        "title": "Bir yetkinliğin süresi bugün doluyor"
+      },
+      "skillExpiryUpcoming": {
+        "employeeMessage": "\"{skill}\" yetkinliğinizin geçerlilik süresi {untilDate} tarihinde doluyor.",
+        "message": "{employee} adlı çalışanın \"{skill}\" yetkinliğinin geçerlilik süresi {untilDate} tarihinde doluyor.",
+        "title": "Bir yetkinliğin süresi yakında dolacak"
       },
       "teamMemberAdded": {
         "message": "{performedByName} tarafından {teamName} ekibine eklendiniz.",
@@ -797,12 +1051,30 @@
         "message": "{performedByName} tarafından {teamName} ekibinden çıkarıldınız.",
         "title": "Ekipten çıkarıldı"
       },
+      "timeCorrectionApproved": {
+        "message": "Zaman düzeltme talebiniz {approverName} tarafından onaylandı.",
+        "title": "Zaman düzeltme onaylandı"
+      },
+      "timeCorrectionRejected": {
+        "message": "Zaman düzeltme talebiniz {approverName} tarafından reddedildi.",
+        "messageWithReason": "Zaman düzeltme talebiniz {approverName} tarafından reddedildi. Neden: {rejectionReason}",
+        "title": "Zaman düzeltme reddedildi"
+      },
+      "timeCorrectionSubmitted": {
+        "message": "Zaman düzeltme talebiniz gönderildi ve onay bekliyor.",
+        "title": "Zaman düzeltme gönderildi"
+      },
       "timeOffInLieuAvailable": {
         "message": "Çalışanlar artık çalışma bakiyeleri karşılığında izin kullanabilir. Yeni izin kategorisi, siz izin ayarlarından etkinleştirene kadar devre dışı kalır.",
         "title": "Telafi izni kullanılabilir"
       },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Onaylanan bir düzeltme, {employee} adlı çalışanın {report} masraf raporunda ödenecek tutarı artırdı. Geri ödeme bekliyor: {amounts}."
+      },
+      "travelExpenseApproved": {
+        "message": "{destination} ({amount}) için seyahat masrafı talebiniz {approverName} tarafından onaylandı.",
+        "messageWithoutDestination": "{amount} tutarındaki seyahat masrafı talebiniz {approverName} tarafından onaylandı.",
+        "title": "Seyahat masrafı onaylandı"
       },
       "travelExpenseLeftOutOfPayrollRun": {
         "message": "{employee} adlı personelin {report} masraf raporu bordro çalıştırmasıyla geri ödenmedi. Geri ödeme bekleyen: {amounts}."
@@ -832,6 +1104,45 @@
       },
       "travelExpenseReimbursedWithPayroll": {
         "message": "Seyahat masrafınız {period} bordrosu ile tamamen geri ödendi: {amount} {currency}."
+      },
+      "travelExpenseRejected": {
+        "message": "{destination} ({amount}) için seyahat masrafı talebiniz {approverName} tarafından reddedildi.",
+        "messageWithoutDestination": "{amount} tutarındaki seyahat masrafı talebiniz {approverName} tarafından reddedildi.",
+        "messageWithoutDestinationWithReason": "{amount} tutarındaki seyahat masrafı talebiniz {approverName} tarafından reddedildi. Neden: {reason}",
+        "messageWithReason": "{destination} ({amount}) için seyahat masrafı talebiniz {approverName} tarafından reddedildi. Neden: {reason}",
+        "title": "Seyahat masrafı reddedildi"
+      },
+      "travelExpenseReportApproved": {
+        "message": "Masraf raporunuz (geri ödenebilir {amount}) {approverName} tarafından onaylandı.",
+        "title": "Masraf raporu onaylandı"
+      },
+      "travelExpenseReportRejected": {
+        "message": "Masraf raporunuz (geri ödenebilir {amount}) {approverName} tarafından reddedildi.",
+        "messageWithReason": "Masraf raporunuz (geri ödenebilir {amount}) {approverName} tarafından reddedildi. Neden: {reason}",
+        "title": "Masraf raporu reddedildi"
+      },
+      "travelExpenseReportReturned": {
+        "message": "{reviewerName} değişiklik yapılması için masraf raporunuzu geri gönderdi: {note}",
+        "title": "Masraf raporu değişiklik için geri gönderildi"
+      },
+      "twoFactorDisabled": {
+        "message": "Hesabınızda iki faktörlü kimlik doğrulama devre dışı bırakıldı. Güvenlik için yeniden etkinleştirmenizi öneririz.",
+        "title": "İki faktörlü kimlik doğrulama devre dışı bırakıldı"
+      },
+      "twoFactorEnabled": {
+        "message": "Ek güvenlik için hesabınızda iki faktörlü kimlik doğrulama etkinleştirildi.",
+        "title": "İki faktörlü kimlik doğrulama etkinleştirildi"
+      },
+      "vacationBalanceAlert": {
+        "expiringMessage": "{remainingDays, plural, one {{expiryDate} tarihinde süresi dolacak # izin gününüz var. Süresi dolmadan önce kullanın!} other {{expiryDate} tarihinde süresi dolacak # izin gününüz var. Süreleri dolmadan önce kullanın!}}",
+        "message": "{remainingDays, plural, other {Kalan # izin gününüz var. İzin kullanmayı unutmayın!} }",
+        "title": "İzin bakiyesi hatırlatıcısı"
+      },
+      "waterReminder": {
+        "done": "Hallettim!",
+        "message": "Sağlıklı kalın - su için",
+        "snooze": "Bugün ertele",
+        "title": "Su içme vakti!"
       }
     },
     "description": "Güncellemeleri, onayları ve sistem uyarılarını tek bir zaman çizelgesinde inceleyin.",
@@ -937,11 +1248,17 @@
         "approval_cover_return_summary": "Vekiliniz tarafından karara bağlandı",
         "approval_cover_started": "İzin vekilliği başladı",
         "break_due_reminder": "Mola vakti",
+        "driving_details_missing_reminder": "Sürüş ayrıntıları eksik",
         "forgotten_clock_out_reminder": "Unutulan çıkış",
         "missed_clock_in_reminder": "Kaçırılan giriş",
         "period_submission_decided": "Gönderilen süre onaylandı veya reddedildi",
         "period_submission_reminder": "Çalışma sürenizi gönderin",
         "period_submission_sent_back": "Bir değişiklik sonrasında geri gönderilen süre",
+        "personal_data_export_admin_exported": "Kişisel veriler bir yönetici tarafından dışa aktarıldı",
+        "personal_data_export_ready": "Kişisel veri dışa aktarımı hazır",
+        "personal_data_export_reminder": "Ayrılmadan önce verilerinizi indirin",
+        "skill_expired_today": "Yetkinliğin süresi bugün doluyor",
+        "skill_expiry_upcoming": "Yetkinliğin süresi yakında dolacak",
         "work_balance_adjustment_cancelled": "Bakiye düzeltmesi iptal edildi",
         "work_balance_adjustment_recorded": "Bakiye düzeltmesi kaydedildi"
       },
@@ -1020,6 +1337,1092 @@
       "loading": "Kaydedilen kayıtlar okunuyor…",
       "review": "Kaydedilen kayıtları incele",
       "title": "Kaydedilen giriş-çıkış kayıtları"
+    }
+  },
+  "personalDataExport": {
+    "readme": {
+      "accessAdmin": "{name} (yönetici)",
+      "accessExpenseExport": "bunları dışa aktar",
+      "accessExpenseOfficers": "Masraf sorumluları (onaylanan seyahat masrafı raporlarınız ve makbuzları):",
+      "accessExpenseRead": "onaylanan raporları görüntüle",
+      "accessExpenseReimburse": "geri ödemeleri kaydet",
+      "accessIntro": "Bu dışa aktarma oluşturulduğu an itibarıyla, {organization} bünyesinde sizin dışınızda şu kişiler Z8'deki verilerinize erişebilir:",
+      "accessManagerDirect": "{name} (yöneticiniz)",
+      "accessManagers": "Yöneticiler (rollerinin izin verdiği ölçüde çalışma süreniz, devamsızlıklarınız, çizelgeleriniz ve talepleriniz):",
+      "accessManagerTeam": "{name} (ekibiniz için ekip izinleri)",
+      "accessNobody": "Hiç kimse.",
+      "accessOwner": "{name} (sahip)",
+      "accessOwnersAdmins": "Sahipler ve yöneticiler (kuruluştaki tüm verileriniz):",
+      "accessPayrollAll": "tüm çalışanlar",
+      "accessPayrollEmployee": "ismen siz",
+      "accessPayrollOfficers": "Bordro erişimi (bordro için dışa aktarılan çalışma süreniz ve devamsızlıklarınız):",
+      "accessPayrollTeam": "ekibiniz",
+      "accessPersonnelFileOfficers": "Özlük dosyası sorumluları (özlük dosyanızda bu kategorilere ait belgeler):",
+      "accessTitle": "Verilerinize kimler erişebilir",
+      "category": {
+        "absences": "Devamsızlıklarınız, izin haklarınız ve izin düzeltmeleriniz.",
+        "account": "Kullanıcı hesabınız: oturumlar, giriş yöntemleri, güvenlik ayarları, tercihler ve cihazlar.",
+        "accountAdmin": "Kullanıcı hesabınızın adı ve e-posta adresi.",
+        "approvals": "Kendi talepleriniz ve dönem gönderimleriniz ile diğer kişilerin talepleri hakkında verdiğiniz kararlar.",
+        "auditLog": "Hakkınızdaki denetim günlüğü kayıtları ve gerçekleştirdiğiniz işlemler.",
+        "employment": "Çalışan kaydınız ve profiliniz, çalışma dönemleriniz ve ayrılışınız, saatlik ücretiniz ve geçmişiyle birlikte çalışma koşullarınız, ekipler, yöneticiler, konumlar, beceriler, proje görevlendirmeleri, roller, gruplar, masraf merkezi ve size atanan tüm politikalar.",
+        "integrations": "Takvim bağlantılarınız, takvim akışınız, bağlı sohbet hesaplarınız ve kiosk PIN durumunuz.",
+        "notifications": "Bildirim geçmişiniz.",
+        "personnelFile": "Özlük dosyanızdaki belgeler (orijinal dosyalar olarak).",
+        "planning": "Vardiyalarınız ve vardiya talepleriniz.",
+        "positionStamps": "Konum kayıtlarınız, onay geçmişiniz ve konumlarınızı kimlerin görüntülediği.",
+        "time": "Zaman girişleriniz, çalışma dönemleriniz ve düzeltmeleriniz, molalar, otomatik çıkışlar, uyumluluk istisnaları, çalışma politikası ihlalleri, ek ücretler, bakiyeler ve bakiye düzeltmeleri.",
+        "travelExpenses": "Seyahat masrafı talepleriniz, raporlar, kalemler, mahsuplaşmalar ve makbuzlar."
+      },
+      "completeCopy": "{organization}, bu dışa aktarmanın bir parçası olmayan başka kayıtlarınızı da tutuyor olabilir. Kişisel verilerinizin eksiksiz bir kopyasını {organization} yöneticilerinden talep edebilirsiniz.",
+      "completeCopyTitle": "Eksiksiz kopya",
+      "csvFolder": "{folder} klasörü aynı tabloları CSV dosyaları olarak içerir.",
+      "documentCategory": {
+        "certificate": "Sertifikalar",
+        "contract": "Sözleşmeler",
+        "other": "Diğer belgeler",
+        "payslip": "Bordrolar",
+        "sickNote": "Hastalık raporları"
+      },
+      "fields": {
+        "absences": {
+          "absences": {
+            "approvedAt": "Devamsızlığa ne zaman karar verildiği (UTC).",
+            "approvedBy": "Devamsızlığa kimin karar verdiği.",
+            "category": "Kuruluşun adlandırdığı şekliyle devamsızlık kategorisi.",
+            "categoryType": "Kategorinin arkasındaki devamsızlık türü; örneğin vacation, sick veya home_office.",
+            "deputy": "Devamsızlık süresince yerinize vekâlet eden çalışma arkadaşınız.",
+            "deputyAssignedAt": "Vekilin ne zaman atandığı (UTC).",
+            "endDate": "Devamsızlığın son günü (YYYY-MM-DD).",
+            "endPeriod": "Son günün hangi kısmında devamsız olduğunuz: full_day, am veya pm.",
+            "notes": "Devamsızlık üzerine yazılan not.",
+            "rejectionReason": "Devamsızlığın neden reddedildiği.",
+            "sickDetail": "Hastalık için: daha fazla ayrıntı; örneğin doktor raporlu veya raporsuz ya da hasta çocuk.",
+            "startDate": "Devamsızlığın ilk günü (YYYY-MM-DD).",
+            "startPeriod": "İlk günün hangi bölümünde devamsız olduğunuz: full_day (tam gün), am (sabah) veya pm (öğleden sonra).",
+            "status": "Devamsızlığın beklemede, onaylandı veya reddedildi olma durumu.",
+            "summary": "İzin, hastalık veya evden çalışma gibi devamsızlıklarınız ve bunların onay durumu."
+          },
+          "shared": {
+            "year": "İzin yılı."
+          },
+          "vacationAdjustments": {
+            "accrualMonth": "Tahakkuk eden pay için: verildiği ay (1 ila 12).",
+            "adjustedBy": "Değişikliği kimin yaptığı.",
+            "days": "Eklenen (pozitif) veya çıkarılan (negatif) günler.",
+            "kind": "Değişikliğin manuel olarak mı yapıldığı yoksa uygulamanın tahakkuk eden bir hak mı tanımladığı (accrual).",
+            "reason": "Değişikliğin neden yapıldığı.",
+            "summary": "İzin hakkınız dışındaki izin günlerinizde yapılan her değişiklik: manuel düzeltmeler ve tahakkuk eden paylar."
+          },
+          "vacationAllowances": {
+            "customAnnualDays": "Yıl içindeki izin günleriniz; poliçenizdeki sayı geçerli olduğunda boştur.",
+            "customCarryoverDays": "Önceki yıldan bu yıla devredilen günler; sizin için hiç belirlenmemişse boştur.",
+            "summary": "İzin poliçeniz yerine sizin için kişisel olarak tanımlanan yıllık izin hakları."
+          },
+          "vacationPolicies": {
+            "accrualStartMonth": "İzin günleri tahakkukunun başladığı ay (1 ila 12).",
+            "accrualType": "Günlerin nasıl tanımlandığı: yılda tek seferde (annual), aylık veya iki haftada bir (biweekly).",
+            "allowCarryover": "Kullanılmayan günlerin bir sonraki yıla devredilip devredilmeyeceği.",
+            "assignmentActive": "Atamanın etkin olup olmadığı.",
+            "assignmentEffectiveFrom": "Poliçe atamasının ne zaman geçerli olmaya başladığı (UTC).",
+            "assignmentEffectiveUntil": "Atamanın geçerliliğinin ne zaman sona erdiği (UTC); geçerli olduğu sürece boştur.",
+            "assignmentType": "Size nasıl ulaştığı: size atanmış (employee), ekibinize atanmış (team) veya tüm kuruluşa atanmış (organization).",
+            "carryoverExpiryMonths": "Devredilen günlerin sonraki yıl kaç ay boyunca geçerli kalacağı; süreleri dolmuyorsa boştur.",
+            "defaultAnnualDays": "Poliçe kapsamındaki yıllık izin günleri.",
+            "maxCarryoverDays": "Devredilebilecek en fazla gün sayısı; sınır yoksa boştur.",
+            "policy": "Poliçenin adı.",
+            "prorateInStartAndExitYear": "İşe başladığınız veya ayrıldığınız yılda, yıllık izin hakkının çalıştığınız ay oranında azaltılıp azaltılmayacağı.",
+            "statutoryMinimumDays": "Bekleme süreniz bittikten sonra azaltılmış bir izin hakkının düşebileceği en az gün sayısı.",
+            "summary": "Sizin için geçerli olan izin poliçeleri: size atanmış, ekiplerinize atanmış veya kuruluşun varsayılanı.",
+            "validFrom": "Poliçenin geçerli olduğu ilk gün (YYYY-MM-DD).",
+            "validUntil": "Poliçenin geçerli olduğu son gün (YYYY-MM-DD); geçerli olduğu sürece boştur."
+          }
+        },
+        "account": {
+          "accessViolations": {
+            "actionTaken": "Ne gerçekleştiği: engellendi (blocked), sınandı (challenged) veya günlüğe kaydedildi (logged).",
+            "blockedCountry": "Engellenen ülke.",
+            "blockedIp": "Engellenen IP adresi.",
+            "concurrentSessionCount": "O sırada kaç oturumun açık olduğu.",
+            "reason": "Kaydedilen neden.",
+            "requestMethod": "İstek türü, örn. GET.",
+            "requestPath": "İstenen sayfa veya adres.",
+            "requiredMfaType": "Kuralın gerektirdiği ikinci faktör.",
+            "summary": "Bu kuruluşun erişim kuralları tarafından engellenen, sınanan veya işaretlenen istekler.",
+            "violationType": "Hangi kuralın ihlal edildiği, örn. ip_blocked."
+          },
+          "hydrationStats": {
+            "currentStreak": "Şimdiye kadar hedefinize art arda ulaştığınız gün sayısı.",
+            "lastGoalMetDate": "Hedefinize ulaştığınız son gün.",
+            "longestStreak": "En uzun seriniz.",
+            "snoozedUntil": "Hatırlatıcıları ne zamana kadar duraklattığınız.",
+            "summary": "Toplam su tüketiminiz ve serileriniz.",
+            "totalIntakeAllTime": "Kaydettiğiniz tüm bardaklar."
+          },
+          "notificationPreferences": {
+            "channel": "Nereye teslim edildiği, örn. e-posta veya anlık bildirim.",
+            "enabled": "Bildirimi oradan alıp almadığınız.",
+            "notificationType": "Bildirim türü.",
+            "summary": "Kanal bazında açtığınız veya kapattığınız bildirimler."
+          },
+          "passkeys": {
+            "aaguid": "Kimlik doğrulayıcı modelinin kimliği.",
+            "backedUp": "Yedeklenip yedeklenmediği.",
+            "deviceType": "Tek bir cihazda mı bulunduğu yoksa cihazlar arasında senkronize mi edildiği.",
+            "name": "Geçiş anahtarının adı.",
+            "summary": "Geçiş anahtarlarınız (anahtarlar hiçbir zaman dışa aktarılmaz).",
+            "transports": "Kimlik doğrulayıcının nasıl bağlandığı, ör. usb veya dahili."
+          },
+          "pushDevices": {
+            "deviceName": "Cihazın adı.",
+            "kind": "Tarayıcı için web, mobil uygulama için yerel.",
+            "lastSeenAt": "Uygulamanın cihazı en son ne zaman kaydettiği.",
+            "platform": "Mobil platform (ios veya android); tarayıcı için boştur.",
+            "summary": "Anlık bildirim alan tarayıcılar ve cihazlar (anahtarları hiçbir zaman dışa aktarılmaz)."
+          },
+          "sessions": {
+            "city": "Bu IP adresinin bulunduğu şehir.",
+            "createdAt": "Ne zaman giriş yaptığınız.",
+            "expiresAt": "Yenilenmediği sürece oturumun ne zaman sona ereceği.",
+            "impersonated": "Platform desteğinin bu oturumu sizin adınıza açıp açmadığı. Bu durumda IP adresi, tarayıcı ve konum dahil edilmez: bunlar size değil desteğe aittir.",
+            "lastActivityAt": "Oturumu bu kuruluşta en son ne zaman kullandığınız.",
+            "mfaMethod": "Sorulduysa, ikinci faktörü nasıl onayladığınız.",
+            "mfaVerifiedAt": "Bunu ne zaman onayladığınız.",
+            "region": "Bu IP adresinin bulunduğu bölge.",
+            "summary": "Hâlâ saklanmakta olan girişleriniz (oturumlar) ve bu kuruluşun bunlar hakkında kaydettiği ayrıntılar.",
+            "updatedAt": "Oturumun en son ne zaman yenilendiği."
+          },
+          "settings": {
+            "dashboardWidgetOrder": "Kontrol panelinizi nasıl düzenlediğiniz (JSON olarak).",
+            "helpImproveProduct": "Ürünün geliştirilmesine yardımcı olmayı kabul edip etmediğiniz.",
+            "locale": "Uygulama diliniz; boş olması tarayıcınızı izlediği anlamına gelir.",
+            "onboardingComplete": "Tanıtımı tamamlayıp tamamlamadığınız.",
+            "onboardingCompletedAt": "Bunu ne zaman tamamladığınız.",
+            "onboardingStartedAt": "Tanıtıma ne zaman başladığınız.",
+            "onboardingStep": "Ulaştığınız tanıtım adımı.",
+            "summary": "Uygulamadaki kişisel ayarlarınız.",
+            "timeFormat": "Saatlerin 12 veya 24 saatlik biçimde gösterilip gösterilmediği.",
+            "timezone": "Saatleri göstermek için seçtiğiniz saat dilimi.",
+            "waterReminderDailyGoal": "Bardak cinsinden günlük hedefiniz.",
+            "waterReminderEnabled": "Su hatırlatıcılarının açık olup olmadığı.",
+            "waterReminderIntervalMinutes": "Su hatırlatıcıları arasındaki dakika süresi.",
+            "waterReminderPreset": "Seçtiğiniz su hatırlatıcısı ön ayarı.",
+            "weekStartDay": "Haftanızın başladığı gün."
+          },
+          "shared": {
+            "country": "Bu IP adresinin bulunduğu ülke (ISO kodu).",
+            "ipAddress": "Geldiği IP adresi.",
+            "isActive": "Hâlâ kullanımda olup olmadığı.",
+            "lastUsedAt": "En son ne zaman kullanıldığı.",
+            "userAgent": "Kendini tanımladığı şekliyle tarayıcı veya uygulama."
+          },
+          "signInMethods": {
+            "accountId": "Bu sağlayıcıdaki hesabınızın kimliği.",
+            "passwordSet": "Bir parolanın ayarlanıp ayarlanmadığı (parolanın kendisi asla dışa aktarılmaz).",
+            "provider": "Giriş yöntemi; kimlik bilgisi (credential), e-posta ve parola anlamına gelir.",
+            "summary": "Giriş yapabileceğiniz yollar: bir parola veya Google ya da Microsoft gibi bağlı hesaplar."
+          },
+          "trustedDevices": {
+            "deviceName": "Cihazın adı.",
+            "expiresAt": "Güven ilişkisinin ne zaman sona ereceği.",
+            "lastIpAddress": "En son kullanımın IP adresi.",
+            "mdmCompliant": "Cihaz yönetim sisteminin bunu uyumlu olarak bildirip bildirmediği.",
+            "mdmProvider": "Varsa, cihaz yönetim sistemi.",
+            "platform": "İşletim sistemi.",
+            "revokedAt": "Güvenin ne zaman geri çekildiği.",
+            "revokedBy": "Kim tarafından geri çekildiği.",
+            "revokeReason": "Neden geri çekildiği.",
+            "summary": "Bu kuruluşun oturum açma işlemleriniz için güvendiği cihazlar.",
+            "trustSource": "Neden güvenildiği: geçiş anahtarı, yönetici, cihazı hatırlama tercihiniz veya cihaz yönetimi (MDM)."
+          },
+          "user": {
+            "banExpires": "Engellemenin ne zaman biteceği; süresiz ise boş bırakılır.",
+            "banned": "Platformun hesabınızı engelleyip engellemediği.",
+            "banReason": "Platformun bunu neden engellediği.",
+            "canCreateOrganizations": "Kendi kuruluşlarınızı oluşturup oluşturamayacağınız.",
+            "email": "Giriş yaptığınız e-posta adresi.",
+            "emailVerified": "Bu e-posta adresini doğrulayıp doğrulamadığınız.",
+            "firstName": "Hesabınızın adı.",
+            "image": "Profil resminizin adresi.",
+            "lastName": "Hesabınızın soyadı.",
+            "name": "Hesabınızın görünen adı.",
+            "role": "Platformdaki rolünüz (bu kuruluştaki değil).",
+            "summary": "Kullanıcı hesabınız: Bu kuruluş için kullandığınız giriş bilgisi.",
+            "twoFactorEnabled": "İki faktörlü kimlik doğrulamanın açık olup olmadığı."
+          },
+          "waterIntake": {
+            "amount": "Kaç bardak.",
+            "loggedAt": "Ne zaman içtiğiniz.",
+            "source": "Nereden kaydettiğiniz: bir hatırlatıcı, manuel olarak veya pencere öğesi.",
+            "summary": "Kaydettiğiniz su miktarı."
+          }
+        },
+        "approvals": {
+          "approvalChains": {
+            "completedAt": "Son adım hakkında ne zaman karar verildiği (UTC).",
+            "policy": "Adımları belirleyen onay politikası (o zamanki adıyla).",
+            "status": "Onayın mevcut durumu.",
+            "summary": "Onay sisteminin önceki bir sürümü tarafından kaydedilen, taleplerinizin çok adımlı onayları."
+          },
+          "approvalChainStages": {
+            "approver": "Adım hakkında karar vermesi istenen kişi.",
+            "chainId": "approval_chains içindeki onayın kimliği (ID).",
+            "decidedAt": "Adım hakkında ne zaman karar verildiği (UTC).",
+            "decidedBy": "Adım hakkında kimin karar verdiği.",
+            "status": "Adımın mevcut durumu.",
+            "step": "Adımın sırası: 1 ilk adımdır.",
+            "summary": "Bu çok adımlı onayların adımları."
+          },
+          "decisionsOnOthers": {
+            "actedAt": "Ne zaman karar verdiğiniz (UTC).",
+            "action": "Ne karar verdiğiniz: onaylandı veya reddedildi ya da talebi başka bir onaylayıcıya ilettiğinizde yeniden atandı.",
+            "asDeputy": "Onaylayıcının yerine vekil olarak karar verip vermediğiniz.",
+            "authority": "Kararın nerede kaydedildiği: mevcut onay sistemi (canonical), önceki sistem (legacy) veya yalnızca kaydın kendisi (record).",
+            "otherPerson": "Talebi yapan kişi için anonim bir kimlik (ID). Aynı kişi bu dışa aktarma boyunca aynı kimliğe, diğer dışa aktarmalarda ise farklı bir kimliğe sahiptir.",
+            "recordKind": "Ne tür bir talep hakkında karar verdiğiniz; örneğin bir izin veya vardiya talebi.",
+            "summary": "Diğer kişilerin talepleri üzerine verdiğiniz kararlar. Diğer kişi yalnızca anonim bir kimlik olarak görünür."
+          },
+          "deputyDecisions": {
+            "actingFor": "Vekilin yerine baktığı onaylayıcı.",
+            "authority": "Kararın hangi onay sistemine ait olduğu: eski (legacy) veya geçerli (canonical).",
+            "decidedAt": "Vekilin ne zaman karar verdiği (UTC).",
+            "decidedBy": "Kararı veren vekil.",
+            "decision": "Vekilin ne karar verdiği: onaylandı veya reddedildi.",
+            "requestId": "Önceki sistem için requests içindeki talebin kimliği (ID).",
+            "summary": "Talepleriniz hakkında onaylayıcının yerine bakan bir vekil tarafından verilen kararlar.",
+            "workflowId": "Mevcut sistem için workflows içindeki onayın kimliği (ID)."
+          },
+          "periodSubmissions": {
+            "cadence": "Çalışma sürenizi haftalık (haftalık) mı yoksa aylık (aylık) mı gönderdiğiniz.",
+            "cadenceEndDate": "Tam haftanın veya ayın son günü (YYYY-MM-DD).",
+            "cadenceStartDate": "Tam haftanın veya ayın ilk günü (YYYY-MM-DD).",
+            "closedAt": "Gönderimin ne zaman geri çekildiği veya bir değişiklik sonrasında onayının ne zaman geçersiz kaldığı (UTC).",
+            "closedCause": "Gönderimin kapatılma nedeni: siz geri çektiniz (employee) veya sonrasında çalışma süreniz değişti (change).",
+            "decidedAt": "Gönderimin ne zaman onaylandığı veya reddedildiği (UTC).",
+            "decidedBy": "Gönderimi kimin onayladığı veya reddettiği.",
+            "endDate": "Gönderdiğiniz son gün (YYYY-MM-DD).",
+            "rangeEnd": "Gönderilen günlerin bitiş zaman noktası (UTC), dahil değildir.",
+            "rangeStart": "Gönderilen günlerin başlangıç zaman noktası (UTC).",
+            "startDate": "Gönderdiğiniz ilk gün (YYYY-MM-DD).",
+            "status": "Gönderimin durumu: pending, approved, rejected, withdrawn veya daha sonraki bir değişiklik onayı geçersiz kıldığında outdated.",
+            "submittedAt": "Dönemin ne zaman gönderildiği (UTC).",
+            "submittedBy": "Dönemi kimin gönderdiği.",
+            "summary": "Onaya gönderdiğiniz çalışma süresi haftaları veya ayları. Bir dönemi tekrar göndermek yeni bir satır ekler.",
+            "timezone": "Dönem günlerinin sayıldığı saat dilimi.",
+            "weekStartDay": "Haftalık gönderimler için: haftanın başladığı gün."
+          },
+          "requests": {
+            "approvedAt": "Talep hakkında ne zaman karar verildiği (UTC).",
+            "approver": "Karar vermesi istenen kişi.",
+            "notes": "Taleple ilgili notlar.",
+            "reason": "Talebinizin nedeni.",
+            "rejectionReason": "Talebin reddedilme nedeni.",
+            "status": "Talebin beklemede, onaylanmış veya reddedilmiş olma durumu.",
+            "summary": "Onay sisteminin önceki bir sürümü tarafından kaydedilen onay talepleriniz."
+          },
+          "shared": {
+            "decisionReason": "Kararla birlikte belirtilen gerekçe.",
+            "recordId": "Bu kaydın kimliği (örneğin absences.json içindeki bir izin/devamsızlık kaydı).",
+            "recordKind": "Talebin ne tür bir kayıtla ilgili olduğu (örneğin bir izin veya çalışma süresi düzeltmesi).",
+            "stageLabel": "Onay adımının adı.",
+            "workflowId": "İş akışlarındaki onayın kimliği (ID)."
+          },
+          "workflowApprovers": {
+            "approver": "Karar vermesi istenen kişi.",
+            "assignedAt": "Kendilerinden ne zaman karar istendiği (UTC).",
+            "decidedBy": "Kararı asıl veren: bir kişinin adı veya uygulama sonuçlandırdığında system (eski kayıtlar için legacy_unknown).",
+            "reassignedBy": "Kararı başka birine kimin devrettiği.",
+            "resolvedAt": "Kendi bölümlerinin ne zaman sonuçlandırıldığı (UTC).",
+            "status": "Kendi bölümlerinin durumu: pending, approved, rejected, cancelled veya expired.",
+            "summary": "Onaylarınızın her bir adımında karar vermesi istenen kişiler."
+          },
+          "workflowEvents": {
+            "actor": "İşlemi kimin yaptığı: bir kişinin adı veya uygulama yaptığında system (eski kayıtlar için legacy_unknown).",
+            "eventType": "Ne gerçekleştiği (örneğin stage.activated, assignment.approved veya assignment.escalated).",
+            "occurredAt": "Ne zaman gerçekleştiği (UTC).",
+            "reason": "Belirtilen gerekçe.",
+            "summary": "Onaylarınızla ilgili gerçekleşen her şey, sırasıyla."
+          },
+          "workflows": {
+            "cancelledAt": "Talebin ne zaman iptal edildiği (UTC).",
+            "completedAt": "Nihai kararın ne zaman verildiği (UTC).",
+            "status": "Onayın durumu: pending, approved, rejected, cancelled veya expired.",
+            "submittedAt": "Talebin ne zaman gönderildiği (UTC).",
+            "summary": "Mevcut onay sistemindeki onay talepleriniz (her talep için bir adet).",
+            "workflowType": "Neyin onaylandığı; örneğin bir devamsızlık, bir zaman düzeltmesi veya bir dönem gönderimi."
+          },
+          "workflowStages": {
+            "activatedAt": "Adımın ne zaman başladığı (UTC).",
+            "decidedAt": "Adım hakkında ne zaman karar verildiği (UTC).",
+            "stageOrder": "Adımın sırası: 1 ilk adımdır.",
+            "status": "Adımın durumu: waiting (başlamadı), pending, approved, rejected, cancelled veya expired.",
+            "summary": "Onaylarınızın her birinin sırasıyla geçtiği adımlar."
+          }
+        },
+        "auditLog": {
+          "actionsOnOthers": {
+            "actedAt": "İşlemi yaptığınız zaman (UTC).",
+            "action": "Ne yaptığınız.",
+            "asDeputy": "Başkasının vekili olarak hareket edip etmediğiniz.",
+            "authority": "Eylemin kaydedildiği yer: Denetim günlüğü için audit_log, kaydın kendisi için record.",
+            "otherPerson": "İş arkadaşı için anonim bir kimlik; bu dışa aktarma boyunca tek bir iş arkadaşı için aynıdır, eylem herhangi bir kişiyle ilgili olmadığında boştur.",
+            "recordKind": "Üzerinde işlem yaptığınız kayıt türü; ör. absence_entry veya time_entry.",
+            "summary": "Kendi kayıtlarınızla ilgili olmayan yaptıklarınız: İş arkadaşlarınızın kayıtları veya kuruluş üzerinde gerçekleştirilen eylemler. İş arkadaşları yalnızca anonim bir kimlikle görünür."
+          },
+          "entries": {
+            "action": "Uygulamanın kaydettiği şekliyle ne yapıldığı; ör. absence.requested.",
+            "changes": "JSON olarak neyin değiştiği (genellikle önceki ve sonraki değerler).",
+            "entityId": "Bu kaydın uygulamadaki kimliği (ID).",
+            "entityType": "İşlemin yapıldığı kayıt türü; ör. absence_entry veya employee.",
+            "ipAddress": "İşlemi yaptığınız zamanki IP adresiniz; işlemi başkası yaptığında boştur.",
+            "metadata": "Uygulama tarafından kaydedilen ek bağlam (JSON olarak).",
+            "performedBy": "İşlemi yapan kişinin adı.",
+            "performedByYou": "Bunu kendinizin yapıp yapmadığı.",
+            "summary": "Sizinle ilgili denetim günlüğü girişleri: Kayıtlarınıza kim tarafından, ne zaman ve ne yapıldığı.",
+            "timestamp": "Ne zaman gerçekleştiği (UTC).",
+            "userAgent": "İşlemi yaptığınız zamanki tarayıcınız veya uygulamanız; işlemi başkası yaptığında boştur."
+          }
+        },
+        "common": {
+          "assignedAt": "Size ne zaman atandığı.",
+          "assignedBy": "Bunu size kimin atadığı.",
+          "createdAt": "Kaydın ne zaman oluşturulduğu.",
+          "createdBy": "Kaydı kimin oluşturduğu.",
+          "effectiveFrom": "Ne zaman yürürlüğe girdiği.",
+          "effectiveTo": "Geçerliliğinin ne zaman sona erdiği; hâlâ geçerliyken boştur.",
+          "id": "Diğer dosyaların başvurabilmesi için kaydın uygulamadaki kimliği (ID).",
+          "updatedAt": "Kaydın en son ne zaman değiştirildiği.",
+          "updatedBy": "Kaydı en son kimin değiştirdiği."
+        },
+        "employment": {
+          "assignedLocations": {
+            "city": "Konumun şehri.",
+            "country": "Konumun ülkesi.",
+            "location": "Konumun adı.",
+            "postalCode": "Konumun posta kodu.",
+            "street": "Konumun cadde/sokak bilgisi.",
+            "summary": "Çalışmak üzere atandığınız konumlar."
+          },
+          "assignedVehicles": {
+            "archived": "Kuruluşun aracı artık seçilemeyecek şekilde arşivleyip arşivlemediği.",
+            "assignmentType": "Size nasıl ulaştığı: Size atanmış (employee) veya ekibinize atanmış (team).",
+            "licencePlate": "Aracın plakası.",
+            "summary": "Çalışmanızda bir araç kaydettiğinizde uygulamanın ilk olarak önerdiği, size veya ekiplerinize atanmış kuruluş araçları.",
+            "vehicle": "Aracın adı."
+          },
+          "billableRates": {
+            "hourlyRate": "Faturalandırılan saatlik ücret.",
+            "level": "Ücretin tüm çalışmalarınız için mi yoksa tek bir proje için mi geçerli olduğu.",
+            "project": "Ücretin geçerli olduğu proje; tüm çalışmalarınız için geçerliyse boştur.",
+            "summary": "Kuruluşun çalışmalarınız için müşterilere fatura ettiği ücretler."
+          },
+          "costCenters": {
+            "code": "Masraf merkezinin kodu.",
+            "costCenter": "Masraf merkezinin adı.",
+            "summary": "Çalışmanızın kaydedildiği masraf merkezleri."
+          },
+          "costRates": {
+            "hourlyRate": "Saatlik maliyet.",
+            "summary": "Kuruluşun hesapladığı şekliyle çalışmanızın saatlik dahili maliyeti."
+          },
+          "customFields": {
+            "field": "Alanın adı.",
+            "fieldArchived": "Kuruluşun alanı arşivleyip arşivlemediği.",
+            "summary": "Çalışan kaydınızdaki kuruluşa ait özel alanların değerleri.",
+            "tracked": "Alanın değer geçmişini tutup tutmadığı.",
+            "type": "Alanın türü (örneğin metin, sayı, tarih veya seçenek).",
+            "validFrom": "Geçmişi tutulan alanlar için: Değerin geçerli olmaya başladığı gün (YYYY-AA-GG).",
+            "value": "Değer."
+          },
+          "customRoles": {
+            "description": "Rolün açıklaması.",
+            "role": "Rolün adı.",
+            "summary": "Sahip olduğunuz özel roller."
+          },
+          "departureEvents": {
+            "actor": "İşlemi kimin yaptığı; sistem tarafından yapıldığında boştur.",
+            "departureId": "Bu olayın ait olduğu ayrılış (ayrılışlar listesindeki kimliği).",
+            "kind": "Ne olduğu (örneğin departure_scheduled veya departure_effective).",
+            "occurredAt": "Ne zaman gerçekleştiği.",
+            "revision": "Bu olaydan sonraki ayrılış sürümü.",
+            "summary": "Ayrılışlarınızın geçmişi: Her birinin ne zaman planlandığı, değiştirildiği, iptal edildiği veya yürürlüğe girdiği ve işlemi kimin yaptığı."
+          },
+          "departureReviews": {
+            "affectedEndAt": "Kaydın etkilediği dönemin sonu.",
+            "affectedStartAt": "Kaydın etkilediği dönemin başlangıcı.",
+            "departureId": "Ayrılışlar listesindeki ayrılış kimliği.",
+            "kind": "İnceleme gerektiren kaydın türü.",
+            "resolution": "İncelemenin nasıl sonuçlandırıldığı.",
+            "resolvedAt": "İncelemenin ne zaman sonuçlandırıldığı.",
+            "resolvedBy": "İncelemeyi kimin sonuçlandırdığı.",
+            "status": "İncelemenin mevcut durumu.",
+            "subjectId": "İncelenen kaydın kimliği.",
+            "summary": "Ayrılışınız nedeniyle inceleme gerektiren kayıtlar."
+          },
+          "departures": {
+            "blockedReason": "Ayrılış tamamlanamadıysa, tamamlanamama nedeni.",
+            "cutoffAt": "Kuruluşa erişiminizin ne zaman sona ereceği.",
+            "effectiveAt": "Ayrılışın ne zaman yürürlüğe girdiği.",
+            "lastWorkingDay": "Son çalışma gününüz (YYYY-AA-GG).",
+            "mode": "Ayrılışın nasıl ayarlandığı.",
+            "replacement": "Görevinizi devralan iş arkadaşı.",
+            "status": "Ayrılışın mevcut durumu.",
+            "summary": "Kuruluştan ayrılışlarınız.",
+            "timezone": "Son çalışma gününün saat dilimi."
+          },
+          "departureTasks": {
+            "completedAt": "Görevin ne zaman tamamlandığı.",
+            "departureId": "Ayrılışlar listesindeki ayrılış kimliği.",
+            "kind": "Görevin ne yaptığı.",
+            "status": "Görevin mevcut durumu.",
+            "summary": "Uygulamanın ayrılışınız için yürüttüğü görevler."
+          },
+          "employee": {
+            "birthday": "Doğum gününüz (YYYY-AA-GG).",
+            "contractType": "Sözleşme türünüz.",
+            "email": "Kullanıcı hesabınızın e-posta adresi.",
+            "endDate": "İstihdamınızın ne zaman sona erdiği; devam ettiği sürece boştur.",
+            "firstName": "Çalışan kaydınızdaki adınız.",
+            "gender": "Cinsiyetiniz.",
+            "isActive": "Çalışan kaydınızın etkin olup olmadığı.",
+            "lastName": "Çalışan kaydınızdaki soyadınız.",
+            "organization": "Kuruluşun adı.",
+            "personnelNumber": "Personel numaranız.",
+            "position": "Pozisyonunuz veya unvanınız.",
+            "primaryTeam": "Birincil ekibiniz.",
+            "pronouns": "Zamirleriniz.",
+            "role": "Uygulamadaki rolünüz: yönetici, müdür veya çalışan.",
+            "startDate": "İşe başlama tarihiniz.",
+            "summary": "Bu kuruluştaki çalışan kaydınız ve kullanıcı hesabınızın adı.",
+            "userFirstName": "Kullanıcı hesabınızın adı.",
+            "userId": "Kullanıcı hesabınızın kimliği.",
+            "userLastName": "Kullanıcı hesabınızın soyadı.",
+            "userName": "Kullanıcı hesabınızın adı."
+          },
+          "employmentPeriods": {
+            "endedAt": "Dönemin bittiği tarih; açık olduğu sürece boştur.",
+            "startedAt": "Dönemin başladığı tarih.",
+            "startProvenance": "Başlangıcın kaynağı; örneğin işe alım veya yeniden işe alım.",
+            "status": "Dönemin açık mı yoksa kapalı mı olduğu.",
+            "summary": "Kuruluşta çalıştığınız her bir dönem."
+          },
+          "employmentTerms": {
+            "changeReason": "Koşulların neden belirlendiği veya değiştirildiği.",
+            "contractType": "Sözleşme türünüz.",
+            "currency": "Saatlik ücretin para birimi.",
+            "hourlyRate": "Bu koşullar altındaki saatlik ücretiniz.",
+            "probationEndsOn": "Deneme sürenizin son günü (YYYY-MM-DD).",
+            "probationStartsOn": "Deneme sürenizin ilk günü (YYYY-MM-DD).",
+            "reviewState": "Koşulların onaylanıp onaylanmadığı veya incelenmesi gerekip gerekmediği.",
+            "status": "Bu koşulların yürürlükte olup olmadığı.",
+            "summary": "Saatlik ücretinizle birlikte zaman içindeki çalışma koşullarınız.",
+            "validFrom": "Bu koşulların geçerli olmaya başladığı tarih.",
+            "validUntil": "Bu koşulların geçerliliğinin bittiği tarih; geçerli oldukları sürece boştur.",
+            "weeklyContractMinutes": "Dakika cinsinden haftalık sözleşmeli çalışma süreniz.",
+            "workModel": "Çalışma modeliniz.",
+            "workPolicy": "Bu koşulların kullandığı çalışma politikası."
+          },
+          "groups": {
+            "addedAt": "Gruba eklendiğiniz tarih.",
+            "addedBy": "Sizi gruba ekleyen kişi.",
+            "description": "Grubun açıklaması.",
+            "group": "Grubun adı.",
+            "summary": "Dahil olduğunuz çalışan grupları."
+          },
+          "locationSupervision": {
+            "location": "Konumun adı.",
+            "subarea": "Konum içindeki alan; tüm konum için boştur.",
+            "summary": "Gözetimini yaptığınız konumlar ve alanlar."
+          },
+          "managers": {
+            "manager": "Yöneticinin adı.",
+            "summary": "Yöneticileriniz."
+          },
+          "policyAssignments": {
+            "captureEnabled": "Yalnızca konum kaydı için: giriş veya çıkış yaptığınızda konumunuzun alınıp alınmayacağı.",
+            "effectiveFrom": "Atamanın geçerli olmaya başladığı tarih.",
+            "effectiveUntil": "Atamanın geçerliliğinin bittiği tarih; geçerli olduğu sürece boştur.",
+            "isActive": "Atamanın etkin olup olmadığı.",
+            "policy": "Politikanın adı; konum kaydı için boştur.",
+            "policyKind": "Politika türü: çalışma, izin, tatil (tatil ön ayarı), tatil ataması (tek bir tatil), tatil kategorisi, değişiklik, ek ücret, çalışma kategorisi seti veya konum kaydı.",
+            "priority": "Birden fazlası geçerli olduğunda hangi atamanın öncelikli olduğu: daha yüksek sayı kazanır.",
+            "summary": "Sizin için geçerli olan tüm politikalar: size atanan, ekiplerinize atanan veya kuruluşun varsayılanı."
+          },
+          "projectAssignmentHistory": {
+            "summary": "Geçmiş ve mevcut proje atamaları ve bunların geçerli olduğu tarihler."
+          },
+          "projectAssignments": {
+            "summary": "Size veya ekiplerinize atanan projeler."
+          },
+          "projectsManaged": {
+            "summary": "Yönettiğiniz projeler."
+          },
+          "shared": {
+            "assignmentType": "Size nasıl ulaştığı: size atanmış (çalışan), ekibinize atanmış (ekip) veya tüm kuruluşa atanmış (kuruluş).",
+            "primary": "Birincil olup olmadığı.",
+            "project": "Projenin adı.",
+            "team": "Takımın adı."
+          },
+          "skills": {
+            "category": "Yeteneğin kategorisi.",
+            "expiresOn": "Yeteneğin geçerlilik süresinin dolduğu gün (YYYY-AA-GG); süresi dolmuyorsa boştur.",
+            "notes": "Yeteneğinizle ilgili notlar.",
+            "skill": "Yeteneğin adı.",
+            "summary": "Yetenekleriniz ve nitelikleriniz."
+          },
+          "teamHistory": {
+            "summary": "Bulunduğunuz her takım ve hangi tarihlerde bulunduğu."
+          },
+          "teamPermissions": {
+            "canApproveTeamRequests": "Takımın taleplerini onaylama yetkinizin olup olmadığı.",
+            "canCreateTeams": "Takım oluşturma yetkinizin olup olmadığı.",
+            "canManageTeamMembers": "Takımın üyelerini yönetme yetkinizin olup olmadığı.",
+            "canManageTeamSettings": "Takımın ayarlarını değiştirme yetkinizin olup olmadığı.",
+            "grantedAt": "İzinlerin verildiği zaman.",
+            "grantedBy": "İzinleri veren kişi.",
+            "summary": "Sahip olduğunuz takım izinleri.",
+            "team": "İzinlerin geçerli olduğu takım; kuruluşun tüm takımları için boştur."
+          },
+          "teams": {
+            "addedBy": "Sizi takıma ekleyen kişi.",
+            "memberSince": "Ne zamandan beri takımda olduğunuz.",
+            "summary": "Şu anda içinde bulunduğunuz takımlar."
+          }
+        },
+        "integrations": {
+          "calendarConnections": {
+            "account": "Takvim hizmetindeki hesabınız.",
+            "calendarId": "Uygulamanın bu hesapta kullandığı takvim.",
+            "conflictDetectionEnabled": "Uygulamanın çakışan randevular için bu takvimi kontrol edip etmediği.",
+            "createdAt": "Takvimi bağladığınız zaman (UTC).",
+            "lastSyncAt": "Uygulamanın takvimle en son ne zaman senkronize olduğu (UTC).",
+            "provider": "Takvim hizmeti; örneğin Google, Microsoft 365 veya iCloud.",
+            "pushEnabled": "Uygulamanın devamsızlıklarınızı bu takvime ekleyip eklemediği.",
+            "summary": "Uygulamaya bağladığınız takvimler. Erişim belirteçleri asla dahil edilmez.",
+            "updatedAt": "Bağlantının en son ne zaman değiştirildiği (UTC)."
+          },
+          "chatAccounts": {
+            "accountId": "Sohbet hizmetindeki hesap kimliğiniz.",
+            "displayName": "Sohbet hizmetindeki görünen adınız.",
+            "email": "Sohbet hizmetinde mevcutsa e-posta adresiniz.",
+            "isActive": "Bağlantının kullanımda olup olmadığı.",
+            "lastSeenAt": "Uygulamayı bu hesap üzerinden en son ne zaman kullandığınız (UTC).",
+            "linkedAt": "Hesabı bağladığınız zaman (UTC).",
+            "platform": "Sohbet hizmeti: Slack, Teams, Telegram veya Discord.",
+            "summary": "Slack, Microsoft Teams, Telegram veya Discord üzerinden kullanabilmeniz için uygulamaya bağlanan sohbet hesaplarınız.",
+            "username": "Sohbet hizmetindeki kullanıcı adınız.",
+            "workspaceId": "Hizmette mevcutsa, hesabınızın ait olduğu çalışma alanının veya kiracının kimliği."
+          },
+          "icsFeeds": {
+            "createdAt": "Bağlantının oluşturulduğu zaman (UTC).",
+            "includeApproved": "Akışın onaylanan devamsızlıkları gösterip göstermediği.",
+            "includePending": "Akışın hâlâ onay bekleyen devamsızlıkları gösterip göstermediği.",
+            "isActive": "Bağlantının hâlâ çalışıp çalışmadığı.",
+            "lastUsedAt": "Bir takvim uygulamasının akışı en son ne zaman okuduğu (UTC).",
+            "revokedAt": "Bağlantının kapatıldığı zaman (UTC).",
+            "summary": "Bir takvim uygulamasının devamsızlıklarınıza abone olmasını sağlayan takvim akışı bağlantılarınız. Gizli bağlantının kendisi asla dahil edilmez."
+          },
+          "kioskPin": {
+            "pinSet": "Sizin için bir bilgi noktası PIN kodunun ayarlanıp ayarlanmadığı.",
+            "setAt": "PIN kodunun en son ne zaman ayarlandığı (UTC).",
+            "setBy": "PIN kodunu ayarlayan kişi.",
+            "summary": "Bir bilgi noktası terminalinde giriş yapmak için bir PIN kodunuzun olup olmadığı. PIN kodunun kendisi asla okunabilir şekilde saklanmaz ve dahil edilmez."
+          },
+          "shared": {
+            "isActive": "Bağlantının kullanımda olup olmadığı."
+          }
+        },
+        "notifications": {
+          "notifications": {
+            "actionUrl": "Bildirimin bağlantı verdiği uygulama sayfası.",
+            "createdAt": "Bildirimi aldığınız zaman (UTC).",
+            "entityId": "Bu kaydın kimliği.",
+            "entityType": "Bildirimin atıfta bulunduğu kayıt türü (örneğin bir devamsızlık).",
+            "isRead": "Bildirimi okuyup okumadığınız.",
+            "message": "Bildirim metni.",
+            "metadata": "Bildirimin içerdiği diğer ayrıntılar (JSON olarak).",
+            "readAt": "Bildirimi okuduğunuz zaman (UTC).",
+            "summary": "Uygulamada aldığınız bildirimler (tam olarak aldığınız şekliyle).",
+            "title": "Bildirim başlığı.",
+            "type": "Bildirimin konusu (örneğin approval_request_submitted)."
+          }
+        },
+        "personnelFile": {
+          "documents": {
+            "absenceEndDate": "Hastalık raporu için: devamsızlığın son günü (YYYY-MM-DD).",
+            "absenceId": "Hastalık raporu için: absences.json dosyasında kapsadığı devamsızlığın kimliği.",
+            "absenceStartDate": "Hastalık raporu için: devamsızlığın ilk günü (YYYY-MM-DD).",
+            "category": "Belge kategorisi: contract, payslip, certificate, sick_note veya other.",
+            "documentDate": "Belgenin tarihi (YYYY-MM-DD).",
+            "expiryDate": "Belgenin geçerlilik süresinin bittiği gün (YYYY-MM-DD), örneğin bir sertifikanın.",
+            "file": "Orijinal dosyanın bu arşiv içindeki konumu.",
+            "fileName": "Yüklenen dosya adı.",
+            "mimeType": "Dosya türü (örneğin application/pdf).",
+            "payPeriodMonth": "Maaş bordrosu için: ait olduğu ay (1 - 12).",
+            "payPeriodYear": "Maaş bordrosu için: ait olduğu yıl.",
+            "sizeBytes": "Bayt cinsinden dosya boyutu.",
+            "summary": "Özlük dosyanızdaki belgeler. Dosyaların kendisi kategoriye göre personnel_file klasöründedir.",
+            "title": "Belge başlığı.",
+            "uploadedBy": "Belgeyi yükleyen kişi.",
+            "visibility": "Belgeyi kimlerin görebileceği; shared, dosyayı kendi dosyanızda görebileceğiniz anlamına gelir."
+          }
+        },
+        "planning": {
+          "shared": {
+            "approvedAt": "Talebin karara bağlandığı zaman (UTC).",
+            "approver": "Talep hakkında karar veren kişi.",
+            "lifecycleStatus": "İptal edilip edilmediği dahil olmak üzere talebin güncel durumu.",
+            "requestCreatedAt": "Talebin yapıldığı zaman (UTC).",
+            "requestId": "Talebin uygulamadaki kimliği.",
+            "requestStatus": "Talep hakkındaki karar: pending, approved veya rejected.",
+            "requestType": "Talep edilen işlem: swap (vardiya değişimi), assignment (vardiyayı devralma) veya pickup (açık vardiyayı alma).",
+            "shiftDate": "Talebin ilgili olduğu vardiya günü (YYYY-MM-DD).",
+            "shiftEndTime": "Bu vardiyanın bittiği yerel saat (HH:mm).",
+            "shiftStartTime": "Bu vardiyanın başladığı yerel saat (HH:mm)."
+          },
+          "shiftRequests": {
+            "notes": "Taleple ilgili notunuz.",
+            "reason": "Talep gerekçeniz.",
+            "reasonCategory": "Gerekçe türü (örneğin sick, emergency, childcare veya other).",
+            "rejectionReason": "Talebin reddedilme nedeni.",
+            "summary": "Yaptığınız vardiya talepleri.",
+            "swapPartner": "Vardiya değişimi yapmak veya vardiyayı devralmasını istediğiniz iş arkadaşınız."
+          },
+          "shiftRequestsReceived": {
+            "requestedBy": "Talebi oluşturan iş arkadaşınız.",
+            "summary": "İş arkadaşlarınızın sizden vardiya değişimi veya vardiyayı devralma gibi talepleri. Gerekçeleri, notları ve vardiyaları dahil edilmez: vardiya tarihi ve saatleri yalnızca vardiya size ait olduğunda görünür."
+          },
+          "shifts": {
+            "date": "Vardiya günü (YYYY-MM-DD).",
+            "endTime": "Vardiyanın iş yerindeki yerel saatle bittiği zaman (HH:mm).",
+            "location": "Vardiyanın konumu.",
+            "notes": "Vardiyaya eklenen not.",
+            "publishedAt": "Vardiyanın yayınlandığı zaman (UTC).",
+            "publishedBy": "Vardiyayı kimin yayınladığı.",
+            "startTime": "Vardiyanın başladığı zaman, iş yerindeki yerel saat olarak (SS:dd).",
+            "status": "Vardiyanın hâlâ taslak mı olduğu yoksa size yayınlanmış mı olduğu.",
+            "subarea": "Konum içindeki alan.",
+            "summary": "Planlandığınız vardiyalar.",
+            "template": "Vardiyanın oluşturulduğu vardiya şablonu."
+          }
+        },
+        "positionStamps": {
+          "accessLog": {
+            "accessedAt": "Konumlarınızın gösterildiği zaman (UTC).",
+            "exportId": "Dışa aktarma için: Dışa aktarmanın kimliği.",
+            "kind": "Nasıl gösterildikleri: Bir çalışma döneminin ayrıntılarında (work_period_detail) veya bir dışa aktarmada (data_export).",
+            "summary": "Sizden başka kimlere konumlarınızın gösterildiği ve ne zaman gösterildiği: Gösterilen çalışma dönemi başına bir satır veya dışa aktarma başına bir satır.",
+            "viewer": "Konumlarınızın kime gösterildiği.",
+            "workPeriodId": "time.json > work_periods içinde gösterilen çalışma döneminin kimliği.",
+            "workPeriodStartedAt": "O çalışma döneminin başladığı zaman (UTC).",
+            "workPeriodUtcOffsetMinutes": "O çalışma döneminin giriş kaydının dakika cinsinden UTC farkı."
+          },
+          "consents": {
+            "consentId": "Onayın uygulamadaki kimliği.",
+            "grantedAt": "Onayı verdiğiniz zaman (UTC).",
+            "summary": "Konumunuzun kaydedilmesine verdiğiniz her onay ve bu onayı ne zaman geri çektiğiniz.",
+            "withdrawnAt": "Onayınızı geri çektiğiniz zaman (UTC); geçerli olduğu sürece boştur."
+          },
+          "noticeDeclines": {
+            "declinedAt": "Yanıt verdiğiniz zaman (UTC).",
+            "summary": "Konum bildirimini \"şimdi değil\" olarak yanıtladığınız zamanlar."
+          },
+          "shared": {
+            "noticeVersion": "Yanıtladığınız konum bildiriminin sürümü.",
+            "purposeStatement": "Bildirimde belirtildiği şekliyle kuruluşun konumları neden kaydettiği.",
+            "retentionDays": "Bildirimde belirtildiği şekliyle konumların kaç gün saklandığı."
+          },
+          "stamps": {
+            "accuracyMeters": "Cihazınızın bildirdiği şekliyle konumun metre cinsinden ne kadar doğru olduğu.",
+            "capturedAt": "Giriş/çıkış işlemiyle birlikte konumun kaydedildiği zaman (UTC).",
+            "clockEvent": "Konumun clock_in (giriş) sırasında mı yoksa clock_out (çıkış) sırasında mı kaydedildiği.",
+            "consentId": "Konumun kaydedildiği consents (onaylar) içindeki onayın kimliği.",
+            "createdAt": "Konumun kaydedildiği zaman (UTC).",
+            "fixedAt": "Cihazınızın konumu belirlediği zaman (UTC); giriş/çıkış işleminden biraz daha erken olabilir.",
+            "latitude": "Ondalık derece cinsinden enlem.",
+            "longitude": "Ondalık derece cinsinden boylam.",
+            "purgeAt": "Konumun silineceği zaman (UTC).",
+            "summary": "Giriş veya çıkış yaptığınızda kaydedilen konumlar. Her biri purge_at zamanında otomatik olarak silinir.",
+            "timeEntryId": "time.json > time_entries içindeki giriş veya çıkış kaydının kimliği.",
+            "utcOffsetMinutes": "Giriş/çıkış işleminin dakika cinsinden UTC farkı (120, UTC+2 anlamına gelir)."
+          }
+        },
+        "time": {
+          "automaticClockOuts": {
+            "clockOutEntryId": "Uygulamanın time_entries içine kaydettiği çıkış işleminin kimliği.",
+            "cutoffTime": "Çıkışınızın yapıldığı zaman (UTC).",
+            "maxUninterruptedMinutes": "Mola vermeden giriş yapmış olarak kalabileceğiniz dakika cinsinden en uzun süre.",
+            "processedAt": "Uygulamanın çıkışınızı yaptığı zaman (UTC).",
+            "startTime": "Çalışma döneminin başladığı zaman (UTC).",
+            "summary": "İzin verilenden daha uzun süre giriş yapmış durumda kaldığınız için uygulamanın çıkışınızı yaptığı zamanlar.",
+            "timezone": "Çalışma döneminin saat dilimi.",
+            "utcOffsetMinutes": "Çıkış kaydının dakika cinsinden UTC farkı."
+          },
+          "balanceAdjustments": {
+            "cancellationReason": "Düzeltmenin neden iptal edildiği.",
+            "cancelledAt": "Düzeltmenin iptal edildiği zaman (UTC); hâlâ geçerliyse boştur.",
+            "cancelledBy": "Düzeltmeyi kimin iptal ettiği.",
+            "day": "Düzeltmenin geçerli sayıldığı gün (YYYY-AA-GG).",
+            "kind": "Düzeltme türü: opening_balance veya overtime_payout.",
+            "minutes": "Bakiyenize eklenen (pozitif) veya bakiyenizden düşülen (negatif) dakikalar.",
+            "reason": "Düzeltmenin neden yapıldığı.",
+            "recordedAt": "Düzeltmenin ne zaman kaydedildiği (UTC).",
+            "recordedBy": "Düzeltmeyi kimin kaydettiği.",
+            "summary": "Açılış bakiyesi veya ödenmiş fazla mesai gibi çalışma süresi bakiyenizde yapılan manuel değişiklikler (iptal edilenler dahil)."
+          },
+          "breakAdjustments": {
+            "adjustedAt": "Uygulamanın molayı ne zaman eklediği (UTC).",
+            "adjustedDurationMinutes": "Mola eklendikten sonraki dönemin dakika cinsinden süresi.",
+            "breakInsertedAt": "Dönem içinde molanın nereye yerleştirildiği (UTC).",
+            "breakInsertedMinutes": "Eklenen molanın dakika cinsinden ne kadar sürdüğü.",
+            "originalDurationMinutes": "Mola eklenmeden önceki dönemin dakika cinsinden süresi.",
+            "originalEndTime": "Mola eklenmeden önceki dönemin bitişi (UTC).",
+            "policy": "Molayı zorunlu kılan mola kuralı.",
+            "requiredBreakMinutes": "Kuralın gerektirdiği mola süresi (dakika cinsinden).",
+            "summary": "Yasal olarak zorunlu molanın eksik olması nedeniyle uygulamanın bir çalışma dönemine eklediği molalar.",
+            "workingMinutesThreshold": "Kuralın molayı zorunlu kıldığı çalışma süresi eşiği (dakika cinsinden)."
+          },
+          "complianceExceptions": {
+            "actualDurationMinutes": "İstisna kapsamında fiilen ne kadar çalıştığınız (dakika cinsinden).",
+            "approvedAt": "İstisnanın ne zaman onaylandığı (UTC).",
+            "approver": "İstisna hakkında kimin karar verdiği.",
+            "exceptionType": "İstisnanın hangi kurala ait olduğu; örneğin rest_period veya overtime_daily.",
+            "plannedDurationMinutes": "İstisnanın talep edildiği çalışma süresi (dakika cinsinden).",
+            "reason": "İstisnanın neden talep edildiği.",
+            "rejectedAt": "İstisnanın ne zaman reddedildiği (UTC).",
+            "rejectionReason": "İstisnanın neden reddedildiği.",
+            "status": "İstisnanın beklemede, onaylandı, reddedildi, süresi doldu veya kullanıldı durumlarından hangisinde olduğu.",
+            "summary": "Daha kısa dinlenme süresi veya ekstra fazla mesai gibi sizin için talep edilen çalışma süresi kuralı istisnaları.",
+            "usedAt": "İstisna kapsamında ne zaman çalıştığınız (UTC).",
+            "validFrom": "İstisnanın ne zaman geçerli olmaya başladığı (UTC).",
+            "validUntil": "İstisnanın ne zaman geçerliliğini yitirdiği (UTC).",
+            "wasUsed": "İstisna kapsamında çalışıp çalışmadığınız."
+          },
+          "historicalRepairProposals": {
+            "approvedAt": "Düzeltmenin ne zaman onaylandığı (UTC).",
+            "approvedBy": "Düzeltmeyi kimin onayladığı.",
+            "kind": "Düzeltmenin neleri değiştirdiği.",
+            "proposedAt": "Düzeltmenin ne zaman önerildiği (UTC).",
+            "proposedBy": "Düzeltmeyi kimin önerdiği.",
+            "reason": "Düzeltmenin neden önerildiği.",
+            "resolvedAt": "Önerinin ne zaman kapatıldığı (UTC).",
+            "resolvedBy": "Öneriyi kimin kapattığı.",
+            "status": "Önerinin hangi aşamada olduğu; örneğin proposed, approved, applied veya rejected.",
+            "summary": "Eski çalışma kayıtları için önerilen düzeltmeler (örneğin eksik çıkış kaydı) ve bunların akıbeti."
+          },
+          "shared": {
+            "actualMinutes": "Bakiye için sayılan, çalıştığınız dakika sayısı.",
+            "balanceMinutes": "Dakika cinsinden bakiyeniz: Pozitif değer fazla mesaiyi, negatif değer ise eksik çalışılan süreyi gösterir.",
+            "computedAt": "Uygulamanın bu rakamları en son ne zaman hesapladığı (UTC).",
+            "requiredMinutes": "Çalışma politikanıza göre çalışmanız gereken dakika sayısı.",
+            "workPeriodId": "work_periods içindeki çalışma döneminin kimliği (ID)."
+          },
+          "surchargeCalculations": {
+            "appliedPercentage": "Kesir olarak ek ödeme oranı (0.25, %25 anlamına gelir).",
+            "baseMinutes": "Dönem içinde çalışılan dakika sayısı.",
+            "calculatedAt": "Ek ödemenin geçerli olduğu zaman noktası (UTC).",
+            "calculationDetails": "Ek ödemenin nasıl hesaplandığı (JSON olarak).",
+            "qualifyingMinutes": "Ek ödemeye hak kazanan dakika sayısı.",
+            "summary": "Çalışmanız için hesaplanan ek ödemeler; örneğin gece, pazar veya tatil çalışması.",
+            "surchargeMinutes": "Ek ödeme olarak yansıtılan ekstra dakika sayısı.",
+            "surchargeModel": "Uygulanan ek ödeme modeli.",
+            "surchargeRule": "Modelin uygulanan kuralı."
+          },
+          "timeEntries": {
+            "createdBy": "Kaydı kimin oluşturduğu: siz veya sizin adınıza oluşturan kişi.",
+            "deviceInfo": "Kaydı oluştururken kullandığınız cihaz veya tarayıcı; kaydı başka biri oluşturduğunda boştur.",
+            "ipAddress": "Kaydı oluştururken kullandığınız cihazın IP adresi; kaydı başka biri oluşturduğunda boştur.",
+            "isSuperseded": "Daha sonraki bir düzeltmenin bu kaydın yerine geçip geçmediği.",
+            "location": "Kayıtla birlikte kaydedilen konum (yer adı veya koordinat olarak).",
+            "notes": "Kayda yazılan not.",
+            "replacesEntryId": "Düzeltme için: yerine geçtiği kaydın kimliği (ID).",
+            "summary": "Sizin için kaydedilen her giriş, çıkış ve düzeltme. Kayıtlar asla değiştirilmez: düzeltme, eskisinin yerini alan yeni bir kayıttır.",
+            "supersededById": "Bu kaydın yerine geçen düzeltmenin kimliği (ID).",
+            "timestamp": "Kaydın temsil ettiği an (UTC olarak).",
+            "timezone": "Kaydın oluşturulduğu saat dilimi (örneğin Europe/Berlin).",
+            "timezoneSource": "Saat diliminin kaynağı (örneğin cihazınız veya kuruluş ayarı).",
+            "type": "Kaydın neyi belirttiği: clock_in, clock_out veya correction.",
+            "utcOffsetMinutes": "Kaydın yapıldığı yerde geçerli olan dakika cinsinden UTC farkı (120, UTC+2 anlamına gelir). Yerel saat için zaman damgasına ekleyin."
+          },
+          "workBalance": {
+            "adjustmentMinutes": "Bakiye ayarlamalarıyla eklenen veya çıkarılan dakika.",
+            "computedFromDate": "Bakiyenin sayıldığı ilk gün (YYYY-MM-DD).",
+            "computedThroughDate": "Bakiyenin sayıldığı son gün (YYYY-MM-DD).",
+            "summary": "Mevcut çalışma süresi bakiyeniz: çalışmanız gereken süreye karşılık çalıştığınız süre."
+          },
+          "workBalancePeriods": {
+            "isClosed": "Dönemin kapalı olup olmadığı; kapalıysa rakamları artık değişmez.",
+            "periodEnd": "Dönemin son günü (YYYY-MM-DD).",
+            "periodStart": "Dönemin ilk günü (YYYY-MM-DD).",
+            "periodType": "Dönemin uzunluğu: ay veya yıl.",
+            "summary": "Aylık ve yıllık çalışma süresi bakiyeniz."
+          },
+          "workOperations": {
+            "actor": "Değişikliği yapan kişi.",
+            "actorKind": "Değişikliği kimin yaptığı: bir kişi (insan), uygulamanın kendisi (sistem), bir bilgi noktası (kiosk) veya eski kayıtlar için bilinmeyen.",
+            "createdAt": "Değişikliğin yapıldığı zaman (UTC).",
+            "kind": "Ne yapıldığı; örneğin bir giriş, düzenleme veya silme.",
+            "summary": "Çalışma dönemlerinizdeki her değişikliğin kaydı: ne yapıldığı ve kimin yaptığı.",
+            "writer": "Değişikliği uygulamanın hangi bölümünün yaptığı; örneğin web uygulamasında bir çıkış, bir içe aktarma veya bir yönetici düzenlemesi."
+          },
+          "workPeriods": {
+            "approvalStatus": "Dönemin onaylandığı, reddedildiği veya onay beklediği.",
+            "breakStartedAt": "Mevcut molanızın başladığı zaman (UTC); molada olmadığınızda boştur.",
+            "breakStartedZone": "Molanın başlatıldığı saat dilimi.",
+            "clockInEntryId": "time_entries içindeki giriş kimliği (ID).",
+            "clockOutEntryId": "time_entries içindeki çıkış kimliği (ID).",
+            "deletedAt": "Dönemin silindiği zaman (UTC); silinmediyse boştur.",
+            "deletedBy": "Dönemi kimin sildiği.",
+            "deletionReason": "Dönemin neden silindiği.",
+            "drivenDistanceKm": "Çalışma sırasında katettiğiniz mesafe (kilometre cinsinden): bitiş değerinden başlangıç değerinin çıkarılması veya bir başlangıç değeri olmadığında doğrudan girilen mesafe.",
+            "durationMinutes": "Dakika cinsinden ne kadar süre çalıştığınız.",
+            "endTime": "Çalışmanın ne zaman bittiği (UTC); hâlâ çalışıyor durumdayken boştur.",
+            "endUtcOffsetMinutes": "Çıkışın dakika cinsinden UTC farkı.",
+            "isActive": "Bu dönem için girişinizin devam edip etmediği.",
+            "isBillable": "Çalışmanın bir müşteriye fatura edilip edilemeyeceği.",
+            "licencePlate": "Kullandığınız kurum aracının plakası; kendi aracınız için boştur.",
+            "odometerEndKm": "Çalışma bittiğinde aracın kilometre sayacı değeri (kilometre cinsinden).",
+            "odometerStartKm": "Çalışma başladığında aracın kilometre sayacı değeri (kilometre cinsinden).",
+            "pendingDurationMinutes": "Onay bekleyen bir değişiklik için: dakika cinsinden talep edilen süre.",
+            "pendingEndTime": "Onay bekleyen bir değişiklik için: talep edilen bitiş (UTC).",
+            "pendingReason": "Değişikliğin neden talep edildiği.",
+            "pendingRequestedAt": "Değişikliğin talep edildiği zaman (UTC).",
+            "pendingRequestedBy": "Değişikliği talep eden kişi.",
+            "pendingStartTime": "Onay bekleyen bir değişiklik için: talep edilen başlangıç (UTC).",
+            "project": "Çalışmanın kaydedildiği proje.",
+            "startTime": "Çalışmanın başladığı zaman (UTC).",
+            "startUtcOffsetMinutes": "Giriş kaydının dakika cinsinden UTC farkı (120, UTC+2 anlamına gelir).",
+            "summary": "Her biri bir girişten bir çıkışa kadar olan ve onay bekleyen değişiklikleri de içeren çalışma süreleriniz.",
+            "task": "Çalışmanın kaydedildiği proje görevi.",
+            "vehicleKind": "Çalışma sırasında kullandığınız araç: kurum aracı için organization, kendi aracınız için own; hiçbir şey kaydedilmemişse boş.",
+            "vehicleName": "Kullandığınız kurum aracının adı; kendi aracınız için boş.",
+            "workCategory": "Kurumun adlandırdığı şekliyle çalışma türü.",
+            "workLocationType": "Çalıştığınız yer; örneğin ofis, ev veya uzaktan."
+          },
+          "workPolicyViolations": {
+            "acknowledgedAt": "İhlalin onaylandığı zaman (UTC).",
+            "acknowledgedBy": "İhlali onaylayan kişi.",
+            "acknowledgedNote": "İhlal onaylandığında yazılan not.",
+            "details": "İhlalin ardındaki rakamlar (JSON olarak); örneğin çalışılan saatler ve sınır.",
+            "policy": "Kuralı ihlal edilen çalışma politikası.",
+            "summary": "Çalışmanızın çalışma politikanızın bir kuralını ihlal ettiği zamanlar; örneğin eksik bir mola veya aşırı uzun bir gün.",
+            "violatedAt": "Kuralın ihlal edildiği zaman (UTC).",
+            "violationType": "Hangi kuralın ihlal edildiği."
+          },
+          "yearlyBalances": {
+            "absenceAdjustedMinutes": "Tatil veya hastalık gibi devamsızlıklar için hesaba katılan dakikalar.",
+            "summary": "Uygulamanın daha önceki bir sürümü tarafından hesaplanan yıllık çalışma süresi bakiyeniz.",
+            "year": "Yıl."
+          }
+        },
+        "travelExpenses": {
+          "adjustments": {
+            "originalReportId": "Düzeltilen raporun kimliği.",
+            "reportId": "Raporlar içindeki düzeltme raporunun kimliği.",
+            "sourceReportId": "Düzeltmenin kopyalandığı raporun kimliği: orijinal veya en son düzeltmesi.",
+            "summary": "Daha önce dışa aktarılmış veya geri ödenmiş bir raporu düzelten raporlar."
+          },
+          "allowanceOverrides": {
+            "amount": "Belirlenen tutar.",
+            "calculationBasis": "Tutarın nasıl hesaplandığı.",
+            "evidence": "Tutarın neye dayandığı.",
+            "kind": "Hangi ödeneğin belirlendiği: mileage veya per_diem.",
+            "revokedAt": "Tutarın geri çekildiği zaman (UTC); hâlâ geçerliyse boş.",
+            "revokedBy": "Tutarı geri çeken kişi (o zamanki adıyla).",
+            "scope": "Tutarın masrafın hangi kısmını karşıladığı (JSON olarak).",
+            "situation": "Kuralların neden bir tutar vermediği (JSON olarak).",
+            "summary": "Kuralların bir tutar vermediği durumlarda bir masraf yöneticisinin manuel olarak belirlediği kilometre veya günlük harcırah ödenekleri."
+          },
+          "claimDecisions": {
+            "action": "Karar: onaylandı veya reddedildi.",
+            "actor": "Kararı veren kişi.",
+            "approver": "Talebin atandığı onaylayıcı.",
+            "comment": "Kararla birlikte yazılan yorum.",
+            "createdAt": "Kararın verildiği zaman (UTC).",
+            "summary": "Taleplerinizle ilgili tüm kararlar."
+          },
+          "claimReceipts": {
+            "summary": "Taleplerinize eklenen makbuzlar. Dosyaların kendisi claim-receipts klasöründedir."
+          },
+          "claims": {
+            "approver": "Talep hakkında karar veren kişi.",
+            "calculatedAmount": "Hesaplanan geri ödenecek tutar.",
+            "calculatedCurrency": "Geri ödenecek tutarın para birimi.",
+            "destinationCity": "Seyahat ettiğiniz şehir.",
+            "destinationCountry": "Seyahat ettiğiniz ülke.",
+            "notes": "Taleple ilgili notlarınız.",
+            "status": "Talebin taslak, gönderilmiş, onaylanmış veya reddedilmiş olup olmadığı.",
+            "summary": "Daha önceki, tek masraflı talep formu ile yapılan seyahat masrafı talepleriniz.",
+            "tripDateTimeZone": "Seyahat günlerinin hesaplandığı saat dilimi.",
+            "tripEnd": "Seyahatin bitişi (UTC).",
+            "tripStart": "Seyahatin başlangıcı (UTC).",
+            "type": "Masraf türü: fiş (receipt), kilometre (mileage) veya per_diem (günlük harcırah)."
+          },
+          "currencyConversions": {
+            "basis": "Tutarın nasıl dönüştürüldüğü: kartınızdan fiilen çekilen tutar (card_charge), bir yöneticinin belirlediği kur (manual_rate) veya yayımlanmış bir referans kur (reference_rate).",
+            "chargedAmount": "card_charge için: kartınızdan hedef para biriminde çekilen tutar.",
+            "evidenceReceiptFile": "card_charge için: bu arşivin içinde çekilen tutarı gösteren fiş dosyası.",
+            "rate": "Döviz kuru: 1 birim rate_base_currency, bu kadar birim rate_quote_currency değerindedir.",
+            "rateBaseCurrency": "Kurun temel para birimi.",
+            "rateDate": "Kurun ait olduğu gün (YYYY-MM-DD).",
+            "rateEvidence": "Kurun kontrol edilebileceği yer, örneğin bir banka ekstresi satırı.",
+            "rateQuoteCurrency": "Kurun karşıt para birimi.",
+            "recordedBy": "Dönüştürmeyi kimin kaydettiği.",
+            "referenceExpenseDate": "reference_rate için: kurun seçildiği masraf günü (YYYY-MM-DD).",
+            "referenceSource": "reference_rate için: kullanılan yayımlanmış kur, JSON olarak.",
+            "sourceCurrency": "Dönüştürülen kaynak para birimi.",
+            "summary": "Yabancı para birimindeki masrafların geri ödeme para biriminize nasıl dönüştürüldüğü.",
+            "targetCurrency": "Dönüştürülen hedef para birimi."
+          },
+          "legacyDraftConversions": {
+            "convertedAt": "Taslağın taşındığı zaman (UTC).",
+            "convertedBy": "Taslağı kimin taşıdığı.",
+            "flags": "Olduğu gibi taşınamayan her şey, JSON olarak.",
+            "legacyFacts": "Taşındığında taslak talebin içerdiği veriler, JSON olarak.",
+            "summary": "Daha önceki talep formundan bir rapora taşınan taslak talepler."
+          },
+          "payrollRunInclusions": {
+            "endedAt": "Onaylandığı veya dahil edilmesinin durdurulduğu zaman (UTC).",
+            "endedBy": "Bunu kimin onayladığı, kaldırdığı veya sildiği.",
+            "includedAt": "Raporun çalıştırmaya eklendiği zaman (UTC).",
+            "lines": "Ücret türleriyle birlikte bordroya aktarılan tutarlar, JSON olarak.",
+            "state": "Dahil edilme durumu: dahil edildi (included), onaylandı (confirmed), kaldırıldı (removed), atıldı (discarded) veya sonraki bir çalıştırmayla geçersiz kılındı (superseded).",
+            "summary": "Bordro aracılığıyla tarafınıza ödenen raporlar."
+          },
+          "perDiemItineraries": {
+            "endDate": "Döndüğünüz gün (YYYY-MM-DD).",
+            "endTime": "Döndüğünüz yerel saat (HH:mm).",
+            "endTimeZone": "Dönüşün saat dilimi.",
+            "meals": "Günlük olarak tarafınıza sağlanan öğünler, JSON olarak; harcırahı azaltır.",
+            "overnight": "Gece konaklayıp konaklamadığınız ve nasıl konakladığınız.",
+            "policy": "Gönderdiğinizde sabitlenen ve harcırahı belirleyen oranlar, JSON olarak.",
+            "prolongedWorkplace": "Evinizden uzakta aynı yerde uzun süre çalışıp çalışmadığınız; bu durum harcırahı azaltabilir.",
+            "startDate": "Yola çıktığınız gün (YYYY-MM-DD).",
+            "startTime": "Yola çıktığınız yerel saat (HH:mm).",
+            "startTimeZone": "Ayrılışın saat dilimi.",
+            "summary": "Günlük harcırahlarınızın (per diem) hesaplanmasında esas alınan seyahatler."
+          },
+          "projectAttributionExceptions": {
+            "authorizedBy": "İzni kimin verdiği.",
+            "evidence": "Masraf yöneticisinin kanıta ilişkin dahili notu.",
+            "project": "Proje.",
+            "reason": "Masraf yöneticisinin izin için belirlediği dahili gerekçe.",
+            "summary": "Uygulamada üzerinde çalıştığınıza dair kayıt bulunmayan günler için masraflarınızı bir projeye işleme izinleri.",
+            "validFrom": "Kapsanan ilk masraf günü (YYYY-MM-DD).",
+            "validTo": "Kapsanan son masraf günü (YYYY-MM-DD)."
+          },
+          "reportItems": {
+            "accountingReference": "Muhasebe için bir referans, örneğin fatura numarası.",
+            "category": "Masraf kategorisi, örneğin otel, tren veya yemek.",
+            "description": "Masraf açıklamanız.",
+            "expenseDate": "Masraf günü (YYYY-AA-GG).",
+            "mileageDistanceKm": "Kilometre için: kilometre cinsinden mesafe.",
+            "mileagePolicy": "Kilometre için: gönderdiğinizde sabitlenen ve JSON olarak fiyatlandırılan oranlar.",
+            "mileageRoute": "Kilometre için: katettiğiniz rota.",
+            "mileageVehicle": "Kilometre için: araç türü.",
+            "paidBy": "Ödeyen: siz (çalışan) veya kuruluş (şirket).",
+            "position": "Masrafın rapordaki konumu.",
+            "projectInherits": "Masrafın kendi projesi yerine seyahat projesini kullanıp kullanmadığı.",
+            "receiptExceptionReason": "Fişin neden eksik olduğuna dair açıklamanız.",
+            "summary": "Raporlarınızdaki masraflar.",
+            "type": "Masraf türü: fiş (receipt), kilometre (mileage) veya harcırah (per_diem)."
+          },
+          "reportReceipts": {
+            "summary": "Raporlarınızdaki masraflara eklenen fişler. Dosyaların kendisi bu kategorinin klasöründedir."
+          },
+          "reports": {
+            "kind": "Raporun bir seyahat için mi (trip) yoksa seyahatsiz masraflar için mi (standalone) olduğu.",
+            "project": "Kendi projesini belirtmedikçe masrafların kullandığı seyahat projesi.",
+            "reimbursementCurrency": "Geri ödemenizin yapıldığı para birimi.",
+            "status": "Raporun mevcut durumu: taslak, gönderildi, onaylandı, reddedildi veya değişiklik için size iade edildi.",
+            "submissionCount": "Raporun kaç kez gönderildiği.",
+            "summary": "Her biri bir seyahatin masraflarını veya bağımsız masrafları gruplayan seyahat masrafı raporlarınız.",
+            "tripDestinations": "Seyahat ettiğiniz yerler (JSON olarak).",
+            "tripPurpose": "Seyahatin amacı.",
+            "tripTimeZone": "Seyahat günlerinin hesaplandığı saat dilimi."
+          },
+          "reviewCycleClosures": {
+            "actor": "Kim tarafından sonlandırıldığı.",
+            "createdAt": "Ne zaman sonlandırıldığı (UTC).",
+            "kind": "Gönderimin nasıl sonlandığı: iade edildi, geri çekildi veya yeniden açıldı.",
+            "note": "Sonlandırıldığında yazılan not.",
+            "submissionCycle": "Raporun kaçıncı gönderimi olduğu: 1 ilk gönderimdir.",
+            "summary": "Raporlarınızın kesin bir karar olmadan sonlanan gönderimleri: size iade edildi, geri çekildi veya yeniden açıldı."
+          },
+          "reviewNotes": {
+            "body": "Yorum.",
+            "closureId": "review_cycle_closures içindeki iade edilen gönderimin kimliği (ID).",
+            "summary": "Size iade edilen bir rapordaki tekil masraflara yönelik incelemeci yorumları."
+          },
+          "settlementEntries": {
+            "amount": "Tutar.",
+            "balanceBefore": "Bu ödemeden önce kalan borç tutarı.",
+            "basisSubmissionCycle": "Ödemenin raporun hangi onaylanmış gönderimine dayandığı.",
+            "exportBatchId": "Ödemenin kaydedildiği masraf dışa aktarımının kimliği (ID).",
+            "kind": "Size ödeme mi yapıldığı (reimbursement) yoksa geri ödeme mi yaptığınız (recovery).",
+            "note": "Ödemeyle birlikte yazılan not.",
+            "occurredOn": "Paranın aktarıldığı gün (YYYY-AA-GG).",
+            "recordedAt": "Ödemenin ne zaman kaydedildiği (UTC).",
+            "recordedBy": "Ödemeyi kimin kaydettiği.",
+            "reference": "Banka havalesi referansı gibi ödeme referansı.",
+            "sourceType": "Paranın ne için olduğu: bir rapor veya önceki formdan bir talep (legacy_claim).",
+            "summary": "Onaylanan masraflar için size ödenen para veya fazla ödeme sonrasında tarafınızca geri ödenen para."
+          },
+          "shared": {
+            "authorizedAt": "Ne zaman yetkilendirildiği (UTC).",
+            "authorizedBy": "O tarihteki adıyla yetkilendiren masraf yöneticisi.",
+            "claimId": "claims içindeki talebin kimliği (ID).",
+            "currency": "EUR gibi üç harfli bir kod olarak para birimi.",
+            "decidedAt": "En son ne zaman onaylandığı, reddedildiği veya iade edildiği (UTC).",
+            "file": "Orijinal fiş dosyasının bu arşivin içindeki konumu.",
+            "fileName": "Fişin yüklendiği haliyle dosya adı.",
+            "itemId": "report_items içindeki masrafın kimliği.",
+            "mimeType": "Dosya türü, örneğin application/pdf veya image/jpeg.",
+            "originalAmount": "Ödenen tutar, orijinal para biriminde.",
+            "originalCurrency": "Tutarın ödendiği para birimi.",
+            "payrollRunId": "Bordro çalıştırmasının kimliği.",
+            "payrollRunPeriodEnd": "Bordro dönemi için son gün (YYYY-MM-DD).",
+            "payrollRunPeriodStart": "Bordro dönemi için ilk gün (YYYY-MM-DD).",
+            "project": "Masrafın kaydedildiği proje.",
+            "reason": "Belirtilen neden.",
+            "reportId": "reports içindeki raporun kimliği.",
+            "sizeBytes": "Bayt cinsinden dosya boyutu.",
+            "submittedAt": "En son ne zaman gönderildiği (UTC).",
+            "tripEndDate": "Seyahatin son günü (YYYY-MM-DD).",
+            "tripStartDate": "Seyahatin ilk günü (YYYY-MM-DD).",
+            "uploadedBy": "Fişi yükleyen kişi."
+          }
+        }
+      },
+      "fieldsIntro": "JSON dosyalarının her bir bölümünün neleri içerdiği ve her bir alanın ne anlama geldiği. Boş bir alanın (null) değeri yoktur.",
+      "fieldsTitle": "Alanlar",
+      "filesTitle": "Dosyalar",
+      "formatJson": "JSON dosyaları, verilerinizin makine tarafından okunabilen eksiksiz kopyasıdır. CSV dosyaları ise elektronik tablolar için bu tabloları yineler.",
+      "formatOtherPeople": "Kayıtlarınız üzerinde işlem yapan kişilerin adları belirtilir. İşlem yaptığınız kişiler ise yalnızca anonim bir kimlik olarak görünür.",
+      "formatsTitle": "Biçimler",
+      "formatTimes": "Zaman noktaları UTC (ISO 8601, Z ile biten) olarak yazılır. Saat girişleri ayrıca kaydedildikleri yerde geçerli olan UTC farkını da taşır. Takvim günleri YYYY-MM-DD olarak yazılır.",
+      "intro": "Bu arşiv, {organization} tarafından {employee} hakkında tutulan kişisel verileri {exportedAt} (UTC) tarihindeki haliyle içerir.",
+      "kindAdmin": "{organization} yöneticilerinden biri bu dışa aktarımı sizin adınıza oluşturdu.",
+      "kindEmployee": "Bu dışa aktarımı bizzat talep ettiniz.",
+      "manifest": "Bu arşivdeki her dosyayı boyutu ve kayıt sayısıyla listeler.",
+      "retentionAuditLog": "Denetim günlüğü kayıtları {days} gün sonra silinir.",
+      "retentionCategoryNone": "{category}: saklama süresi belirlenmedi",
+      "retentionCategoryYears": "{years, plural, other {{category}: # yıl} }",
+      "retentionDocuments": "Özlük dosyanızdaki belgeler, {organization} tarafından kategorileri için belirlenen süre boyunca saklanır. Bu süre, iş akdinizin sona erdiği yıl ile belgenin yılından daha sonra olanını takip eden 1 Ocak tarihinden itibaren işlemeye başlar. Süresi belirlenmemiş bir kategoriye ait belgeler, birisi onları silene kadar saklanır.",
+      "retentionOther": "Yukarıda aksi belirtilmedikçe diğer verileriniz, {organization} tarafından silinene veya çalışan kaydınız silinene kadar saklanır.",
+      "retentionTitle": "Verilerinizin saklanma süresi",
+      "rightsAccess": "kişisel verilerinize erişme ve bunların bir kopyasını alma (GDPR Madde 15)",
+      "rightsComplaint": "bir veri koruma denetim makamına şikayette bulunma (GDPR Madde 77)",
+      "rightsContact": "Bu hakları kullanmak için {organization} ile iletişime geçin. {organization} gizlilik bildirimi geçerlidir ve verilerinizi nasıl işlediğini açıklar.",
+      "rightsErasure": "verilerinizin silinmesini isteme (GDPR Madde 17)",
+      "rightsIntro": "Genel Veri Koruma Yönetmeliği (GDPR) uyarınca şu haklara sahipsiniz:",
+      "rightsNotification": "verilerinizin aktarıldığı alıcılara iletilen düzeltmeler, silmeler ve kısıtlamalar hakkında bilgilendirilme (GDPR Madde 19)",
+      "rightsObjection": "verilerinizin işlenmesine itiraz etme (GDPR Madde 21)",
+      "rightsPortability": "verilerinizi bu arşivdeki JSON dosyaları gibi makine tarafından okunabilir bir biçimde alma ve başka birine iletilmesini sağlama (GDPR Madde 20)",
+      "rightsRectification": "yanlış verilerin düzeltilmesini ve eksik verilerin tamamlanmasını sağlama (GDPR Madde 16)",
+      "rightsRestriction": "verilerinizin işlenmesinin kısıtlanmasını talep etme (GDPR Madde 18)",
+      "rightsTitle": "Haklarınız",
+      "title": "{organization} bünyesindeki kişisel verileriniz"
     }
   },
   "presence": {

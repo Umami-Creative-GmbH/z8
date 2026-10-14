@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Hvem som helst kan ta den",
       "assignTo": "Tildel til",
+      "certificateOnFileFor": "Sertifikat registrert: {skills}",
       "confirmDelete": "Bekreft sletting",
       "created": "Vakt opprettet",
       "createDescription": "Fyll ut detaljene for den nye vakten",
@@ -118,6 +119,7 @@
       "updateShift": "Oppdater vakt"
     },
     "skills": {
+      "certificateOnFile": "Sertifikat registrert",
       "expiredCertifications": "Utløpte sertifiseringer:",
       "expiredOn": "(Utløpt {date})",
       "missingPreferred": "Mangler foretrukne ferdigheter:",

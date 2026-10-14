@@ -1,6 +1,8 @@
-import { createApprovalDomainAdapterRegistry } from "./registry";
+import type { Clock } from "@/lib/datetime/temporal-core";
+import { createAbsenceChangeApprovalAdapter } from "./absence-change.adapter";
 import { createPeriodSubmissionApprovalAdapter } from "./period-submission.adapter";
 import type { PeriodSubmissionApprovalSource } from "./period-submission-contract";
+import { createApprovalDomainAdapterRegistry } from "./registry";
 import type { ApprovalDomainAdapter } from "./types";
 import type { OrdinaryWorkPeriodApprovalSource } from "./work-period-contract";
 
@@ -10,7 +12,7 @@ export class ApprovalDomainNotMigratedError extends Error {
 
 	constructor(workflowType: string, sourceType: string) {
 		super(
-			`Approval domain adapter is not migrated: ${workflowType}/${sourceType}`,
+			`Approval domain adapter is not migrated: ${workflowType}/${sourceType}`
 		);
 		this.name = "ApprovalDomainNotMigratedError";
 		this.workflowType = workflowType;
@@ -39,6 +41,7 @@ function notMigratedAdapter<TSource>(
 }
 
 export function createProductionApprovalDomainAdapterRegistry(input: {
+	clock?: Clock;
 	absence: ApprovalDomainAdapter<unknown>;
 	timeCorrection: ApprovalDomainAdapter<unknown>;
 	manualTimeSubmission: ApprovalDomainAdapter<OrdinaryWorkPeriodApprovalSource>;
@@ -64,7 +67,7 @@ export function createProductionApprovalDomainAdapterRegistry(input: {
 		input.timeCorrection.sourceType !== "time_entry"
 	) {
 		throw new Error(
-			"Adapter registration mismatch for time_correction/time_entry",
+			"Adapter registration mismatch for time_correction/time_entry"
 		);
 	}
 	if (
@@ -72,7 +75,7 @@ export function createProductionApprovalDomainAdapterRegistry(input: {
 		input.manualTimeSubmission.sourceType !== "time_entry"
 	) {
 		throw new Error(
-			"Adapter registration mismatch for manual_time_submission/time_entry",
+			"Adapter registration mismatch for manual_time_submission/time_entry"
 		);
 	}
 	if (
@@ -80,22 +83,23 @@ export function createProductionApprovalDomainAdapterRegistry(input: {
 		input.policyClockOut.sourceType !== "time_entry"
 	) {
 		throw new Error(
-			"Adapter registration mismatch for policy_clock_out/time_entry",
+			"Adapter registration mismatch for policy_clock_out/time_entry"
 		);
 	}
 	return createApprovalDomainAdapterRegistry({
 		absence: input.absence,
+		absence_change: createAbsenceChangeApprovalAdapter(input.clock),
 		time_correction: input.timeCorrection,
 		manual_time_submission: input.manualTimeSubmission,
 		policy_clock_out: input.policyClockOut,
 		travel_expense: notMigratedAdapter(
 			"travel_expense",
-			"travel_expense_claim",
+			"travel_expense_claim"
 		),
 		shift_request: notMigratedAdapter("shift_request", "shift_request"),
 		compliance_exception: notMigratedAdapter(
 			"compliance_exception",
-			"compliance_exception",
+			"compliance_exception"
 		),
 		period_submission: periodSubmission,
 	});

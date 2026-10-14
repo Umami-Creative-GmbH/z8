@@ -49,6 +49,7 @@ vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
 vi.mock("@/tolgee/server", () => ({ getTranslate: vi.fn() }));
 vi.mock("./read-queries", () => ({ readActiveWorkPeriod: vi.fn() }));
 vi.mock("./region-data", () => ({
+	readDrivingRegion: vi.fn(),
 	readHistoryRegion: vi.fn(),
 	readPeriodsRegion: vi.fn(),
 	readSummaryRegion: vi.fn(),
@@ -56,6 +57,7 @@ vi.mock("./region-data", () => ({
 vi.mock("./workday-timeline-data", () => ({ getWorkdayTimelineData: vi.fn() }));
 vi.mock("./region-fallbacks", () => ({
 	ClockLoading: () => null,
+	DrivingLoading: () => null,
 	HistoryLoading: () => null,
 	PeriodsLoading: () => null,
 	RegionLoadError: () => null,
@@ -67,6 +69,9 @@ vi.mock("@/components/errors/no-employee-error", () => ({
 }));
 vi.mock("@/components/time-tracking/clock-in-out-widget", () => ({
 	ClockInOutWidget: () => null,
+}));
+vi.mock("@/components/time-tracking/driving-details-missing-notice", () => ({
+	DrivingDetailsMissingNotice: () => null,
 }));
 vi.mock("@/components/time-tracking/personal-workday-timeline", () => ({
 	PersonalWorkdayTimeline: () => null,

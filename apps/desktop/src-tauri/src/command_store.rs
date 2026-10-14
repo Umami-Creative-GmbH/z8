@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::path::Path;
 
-use crate::frozen_command::{CommandContext, CommandKind, FrozenCommand, CLOCK_COMMAND_VERSION};
+use crate::frozen_command::{CommandContext, CommandKind, FrozenCommand};
 
 /// `PRAGMA user_version` of the database. Version 0 is the legacy queue alone.
 pub const COMMAND_STORE_VERSION: i64 = 1;
@@ -174,6 +174,11 @@ pub struct StoredCommand {
     /// Local recovery identity. Never the business operation identity.
     pub recovery_id: i64,
     pub operation_id: String,
+    /// The frozen command's version as stored at capture: the one source of
+    /// truth for whether the server still accepts it (#1124), even when the
+    /// body cannot be read.
+    #[serde(skip_serializing)]
+    pub command_version: u32,
     pub kind: CommandKind,
     pub endpoint: String,
     pub context: CommandContext,
@@ -211,7 +216,7 @@ pub fn token_fingerprint(token: &str) -> String {
 const COLUMNS: &str = "recovery_id, operation_id, kind, endpoint, context_user_id,
     context_organization_id, context_employee_id, context_server, occurred_at, timezone,
     depends_on_operation_id, command, captured_at_ms, state, attempts, transient_failures,
-    last_attempt_at_ms, failure, receipt, resolved_at_ms";
+    last_attempt_at_ms, failure, receipt, resolved_at_ms, command_version";
 
 fn conversion_error(column: usize, error: impl Into<anyhow::Error>) -> rusqlite::Error {
     rusqlite::Error::FromSqlConversionFailure(
@@ -228,6 +233,7 @@ fn stored_command(row: &Row<'_>) -> rusqlite::Result<StoredCommand> {
     Ok(StoredCommand {
         recovery_id: row.get(0)?,
         operation_id: row.get(1)?,
+        command_version: row.get(20)?,
         kind: CommandKind::parse(&kind)
             .ok_or_else(|| conversion_error(2, anyhow!("Unknown clock command kind {kind}")))?,
         endpoint: row.get(3)?,
@@ -308,7 +314,7 @@ impl CommandStore {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
                 command.operation_id,
-                CLOCK_COMMAND_VERSION,
+                command.version,
                 command.kind.as_str(),
                 endpoint,
                 command.context.user_id,

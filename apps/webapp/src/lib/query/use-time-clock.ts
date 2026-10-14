@@ -23,6 +23,10 @@ import { useClockPosition } from "@/lib/time-tracking/position-capture/use-clock
 import { namedTaskId } from "@/lib/time-tracking/task-attribution";
 import { postClockIn, postClockOut } from "@/lib/time-tracking/time-clock-client";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
+import type {
+	BreakVehicleUse,
+	ClockVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { queryKeys } from "./keys";
 
@@ -98,6 +102,8 @@ type FrozenCommandParams = {
 	taskId?: string | null;
 	workCategoryId?: string;
 	billable?: boolean;
+	/** Vehicle use at this event (#1122). */
+	vehicleUse?: ClockVehicleUse;
 };
 
 interface UseTimeClockOptions {
@@ -138,6 +144,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		isSyncing,
 		queueClockEvent,
 		commandCapabilities,
+		workerCommandVersions,
 		submitClockCommand,
 	} = useOfflineClock();
 	// Null on the server and during hydration, so both render the same capture mode.
@@ -204,23 +211,46 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		event: { now: Instant; position: ClockCommandPosition | null },
 	) {
 		if (!canFreeze || !pageSession) return null;
-		const prepared = prepareBrowserClockCommand({
-			kind,
-			operationId: crypto.randomUUID(),
-			capabilities: commandCapabilities,
-			session: pageSession,
-			now: event.now,
-			position: event.position,
-			timezone: resolveBrowserTimezone(params),
-			workLocationType: params?.workLocationType,
-			knownWorkPeriodId: statusQuery.data?.activeWorkPeriod?.id ?? null,
-			projectId: params?.projectId,
-			// Frozen only when named, so a clock-out without a task keeps its bytes (#875).
-			...namedTaskId(params?.taskId),
-			workCategoryId: params?.workCategoryId,
-			billable: params?.billable,
-		});
-		return prepared.ok ? prepared.request : null;
+		const session = pageSession;
+		const operationId = crypto.randomUUID();
+		const prepare = (vehicleUse: ClockVehicleUse | undefined) =>
+			prepareBrowserClockCommand({
+				kind,
+				operationId,
+				capabilities: commandCapabilities,
+				session,
+				now: event.now,
+				position: event.position,
+				timezone: resolveBrowserTimezone(params),
+				workLocationType: params?.workLocationType,
+				knownWorkPeriodId: statusQuery.data?.activeWorkPeriod?.id ?? null,
+				projectId: params?.projectId,
+				// Frozen only when named, so a clock-out without a task keeps its bytes (#875).
+				...namedTaskId(params?.taskId),
+				workCategoryId: params?.workCategoryId,
+				billable: params?.billable,
+				vehicleUse,
+				workerCommandVersions,
+			});
+		let prepared = prepare(params?.vehicleUse);
+		let vehicleUseLeftOut = false;
+		if (!prepared.ok && prepared.reason === "vehicle_use_unsupported") {
+			// Online, the route carries vehicle use, so the request keeps it (#1122).
+			if (!isOffline) return null;
+			// Offline the event never waits: it is frozen without vehicle use, which the
+			// employee can still add to the work period later; the clock says so.
+			prepared = prepare(undefined);
+			vehicleUseLeftOut = true;
+		}
+		return prepared.ok ? { request: prepared.request, vehicleUseLeftOut } : null;
+	}
+
+	/** An accepted event that could not carry the entered vehicle use says so (#1122). */
+	function withVehicleUseLeftOut<T extends { success: boolean }>(
+		result: T,
+		leftOut: boolean,
+	): T & { vehicleUseLeftOut?: true } {
+		return leftOut && result.success ? { ...result, vehicleUseLeftOut: true as const } : result;
 	}
 
 	// Query for time clock status
@@ -242,12 +272,17 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			workLocationType?: WorkLocationType;
 			browserTimezone?: string | null;
 			submissionId?: string;
+			/** Vehicle and start reading (#1122); never held for or refused over. */
+			vehicleUse?: ClockVehicleUse;
 		}) => {
 			const refused = refuseWithoutConnection();
 			if (refused) return refused;
 			const event = await captureClockEvent(canFreeze || !isOffline);
 			const frozen = prepareFrozenCommand("clock_in", params, event);
-			if (frozen) return afterClockEvent(await submitClockCommand(frozen), event);
+			if (frozen) {
+				const submitted = await submitClockCommand(frozen.request);
+				return afterClockEvent(withVehicleUseLeftOut(submitted, frozen.vehicleUseLeftOut), event);
+			}
 
 			// When offline, queue the event for later sync
 			if (isOffline) {
@@ -281,6 +316,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				// Named here if the connection returned after the request was prepared.
 				submissionId: params?.submissionId ?? crypto.randomUUID(),
 				...(event.position ? { position: event.position } : {}),
+				...(params?.vehicleUse ? { vehicleUse: params.vehicleUse } : {}),
 			});
 			return afterClockEvent(result, event);
 		},
@@ -321,12 +357,17 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			billable?: boolean;
 			browserTimezone?: string | null;
 			submissionId?: string;
+			/** End reading or distance (#1122); never held for or refused over. */
+			vehicleUse?: ClockVehicleUse;
 		}) => {
 			const refused = refuseWithoutConnection();
 			if (refused) return refused;
 			const event = await captureClockEvent(canFreeze || !isOffline);
 			const frozen = prepareFrozenCommand("clock_out", params, event);
-			if (frozen) return afterClockEvent(await submitClockCommand(frozen), event);
+			if (frozen) {
+				const submitted = await submitClockCommand(frozen.request);
+				return afterClockEvent(withVehicleUseLeftOut(submitted, frozen.vehicleUseLeftOut), event);
+			}
 
 			// When offline, queue the event for later sync
 			if (isOffline) {
@@ -362,6 +403,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				browserTimezone: resolveBrowserTimezone(params),
 				submissionId: params?.submissionId as string,
 				...(event.position ? { position: event.position } : {}),
+				...(params?.vehicleUse ? { vehicleUse: params.vehicleUse } : {}),
 			});
 			return afterClockEvent(result, event);
 		},
@@ -405,9 +447,12 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		mutationFn: async ({
 			breakMinutes,
 			submissionId,
+			vehicleUse,
 		}: {
 			breakMinutes: number;
 			submissionId: string;
+			/** The break's one odometer reading (#1122). */
+			vehicleUse?: BreakVehicleUse;
 		}) => {
 			const refused = refuseWithoutConnection();
 			if (refused) return refused;
@@ -424,6 +469,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				submissionId,
 				browserTimezone: getBrowserTimezone(),
 				...(event.position ? { position: event.position } : {}),
+				...(vehicleUse ? { vehicleUse } : {}),
 			});
 			return afterClockEvent(result, event);
 		},
@@ -471,7 +517,11 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		isSyncing,
 
 		// Mutations
-		clockIn: (params?: { workLocationType?: WorkLocationType; browserTimezone?: string | null }) =>
+		clockIn: (params?: {
+			workLocationType?: WorkLocationType;
+			browserTimezone?: string | null;
+			vehicleUse?: ClockVehicleUse;
+		}) =>
 			// One identity per request, as for clock-out; the server replays a committed identity.
 			clockInMutation.mutateAsync({
 				...(params ?? {}),
@@ -483,13 +533,14 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			workCategoryId?: string;
 			billable?: boolean;
 			browserTimezone?: string | null;
+			vehicleUse?: ClockVehicleUse;
 		}) =>
 			clockOutMutation.mutateAsync({
 				...(params ?? {}),
 				...(!isOffline ? { submissionId: crypto.randomUUID() } : {}),
 			}),
 		// One identity per request, as for clock-out; the server replays a committed identity.
-		addBreak: (params: { breakMinutes: number }) =>
+		addBreak: (params: { breakMinutes: number; vehicleUse?: BreakVehicleUse }) =>
 			addBreakMutation.mutateAsync({ ...params, submissionId: crypto.randomUUID() }),
 		updateNotes: updateNotesMutation.mutateAsync,
 		isClockingIn: clockInMutation.isPending,

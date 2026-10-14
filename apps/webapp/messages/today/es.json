@@ -21,6 +21,12 @@
     "briefing": {
       "badge": "Hoy",
       "description": "Revise los elementos que requieren acción hoy y luego diríjase directamente al flujo de trabajo correcto.",
+      "items": {
+        "drivingDetailsMissing": {
+          "description": "Períodos de trabajo de sus empleados a los que les falta un vehículo o una lectura del odómetro.",
+          "title": "Faltan detalles de conducción ({count})"
+        }
+      },
       "needsAction": {
         "description": "Comience aquí para el seguimiento operativo más urgente.",
         "empty": "Todo despejado. No se requiere ninguna acción del gerente en este momento.",

@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCircleCheck } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCircleCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ interface KioskConfirmationProps {
 	action: string;
 	time: string;
 	note: string | null;
+	/** Something the employee should know went wrong, e.g. vehicle use not recorded (#1123). */
+	warning?: string | null;
 	/** When the kiosk returns home on its own, in milliseconds from now. */
 	returnsInMs: number;
 	onHome: () => void;
@@ -25,6 +27,7 @@ export function KioskConfirmation({
 	action,
 	time,
 	note,
+	warning = null,
 	returnsInMs,
 	onHome,
 }: KioskConfirmationProps) {
@@ -58,6 +61,15 @@ export function KioskConfirmation({
 				<span className="text-2xl">{action}</span>
 				<span className="text-5xl font-semibold tabular-nums">{time}</span>
 				{note ? <span className="text-lg text-muted-foreground">{note}</span> : null}
+				{warning ? (
+					<span
+						role="status"
+						className="flex items-center gap-2 text-lg text-amber-900 dark:text-amber-200"
+					>
+						<IconAlertTriangle className="size-6 shrink-0" aria-hidden="true" />
+						{warning}
+					</span>
+				) : null}
 				<Button size="lg" className="mt-4 h-16 min-w-48 text-xl" onClick={onHome}>
 					{t("timeTracking.kiosk.done.button", "Done")}
 				</Button>

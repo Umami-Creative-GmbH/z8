@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Abwesenheitsantrag genehmigt",
+    "absenceChange": {
+      "afternoon": "Nachmittag",
+      "cancelAll": "Gesamte Abwesenheit annullieren",
+      "cancellationTitle": "Abwesenheitsannullierung",
+      "category": "Abwesenheitskategorie",
+      "displacedVacation": "Feriendaten werden bei Genehmigung ersetzt",
+      "exactHours": "Exakt erfasste Stunden",
+      "fullDay": "Ganzer Tag",
+      "morning": "Vormittag",
+      "original": "Erfasste Daten",
+      "originalEndCoverage": "Erfasster Endtag",
+      "originalInterval": "Erfasste Stunden",
+      "originalStartCoverage": "Erfasster Starttag",
+      "proposed": "Vorgeschlagene Änderung",
+      "proposedEndCoverage": "Vorgeschlagener Endtag",
+      "proposedInterval": "Vorgeschlagene Stunden",
+      "proposedStartCoverage": "Vorgeschlagener Starttag",
+      "range": "{range}",
+      "reason": "Grund",
+      "reasonValue": "{reason}",
+      "title": "Abwesenheitsänderung"
+    },
     "absenceRejected": "Abwesenheitsantrag abglehnt",
     "absenceRequests": "Abwesenheitsanträg",
     "absenceRequestsDescription": "Prüfe und genehmige Abwesenheitsanträg vo dim Team",
@@ -304,6 +326,8 @@
       "dayTotals": "Tagestotale",
       "difference": "Differenz",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Fahrtdetails fähled",
+      "drivingDetailsMissingWork": "Fahrzüüg oder Kilometerstand fählt",
       "employee": "Mitarbeitende",
       "holidays": "Feiertage",
       "openCalendar": "Kalender für diesen Zeitraum öffnen",
@@ -413,6 +437,7 @@
     "totalCount": "{totalCount} usstehend",
     "type": "Typ",
     "types": {
+      "absence_change_request": "Abwesenheitsänderungen",
       "absence_entry": "Abwäseheitsaaträg",
       "period_submission": "Periode-Iigabe",
       "time_entry": "Ziitkorrekture",
@@ -421,6 +446,15 @@
     },
     "unifiedInboxBannerDescription": "Gseh alli Genehmigungsarte uf eim Blick mit Filter, Sammelaktione und SLA-Tracking.",
     "unifiedInboxBannerTitle": "Probier de neu zentrali Postig us",
+    "vehicleUse": "Fahrzüügnutzig",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km isch meh als {limit} km in einere Arbetsperiode.",
+      "onOtherLiveWork": "Das Fahrzüüg isch scho binere laufende Arbet vome andere Mitarbeiter erfasst.",
+      "speedAboveLimit": "Die gfahreti Distanz ergit en Schnitt vo {speed} km/h über die Arbetsperiode, meh als {limit} km/h.",
+      "startBelowLastEnd": "De Startstand isch tüüfer als de letschti erfassti Endstand vo dem Fahrzüüg ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Bitte überprüefe",
     "viewExpenseClaim": "Abrechnung und Belege anzeigen",
     "viewExpenseReport": "Iigreichte Bricht und Beleg aaluege",
     "workBalance": {

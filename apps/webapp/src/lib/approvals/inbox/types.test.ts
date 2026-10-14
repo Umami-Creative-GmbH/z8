@@ -8,6 +8,7 @@ describe("approval inbox contract types", () => {
 	it("exposes only current live approval sources", () => {
 		expect(SUPPORTED_APPROVAL_INBOX_TYPES).toEqual([
 			"absence_entry",
+			"absence_change_request",
 			"time_entry",
 			"travel_expense_claim",
 			"travel_expense_report",

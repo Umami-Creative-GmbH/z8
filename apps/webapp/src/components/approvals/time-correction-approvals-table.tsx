@@ -28,6 +28,8 @@ import { UserAvatar } from "@/components/user-avatar";
 import type { WorkCategoryReviewValue } from "@/lib/approvals/server/time-correction-review-metadata";
 import { queryKeys } from "@/lib/query";
 import { dispatchApprovalDecision } from "@/lib/query/use-approval-inbox";
+import { VehicleUseWarnings } from "@/components/time-tracking/vehicle-use-fields";
+import { vehicleUseText } from "@/components/time-tracking/vehicle-use-format";
 import { ApprovalActionDialog } from "./approval-action-dialog";
 import {
 	formatCorrectionApprovalDate,
@@ -266,6 +268,7 @@ export function TimeCorrectionApprovalsTable() {
 		handleReject,
 		isMutating: approveMutation.isPending || rejectMutation.isPending,
 		t,
+		locale,
 	});
 
 	if (isLoading) {
@@ -360,11 +363,14 @@ function buildTimeCorrectionColumns({
 	handleReject,
 	isMutating,
 	t,
+	locale,
 }: {
 	handleApprove: (approval: ApprovalWithTimeCorrection) => void;
 	handleReject: (approval: ApprovalWithTimeCorrection) => void;
 	isMutating: boolean;
 	t: Translate;
+	/** The app locale, for kilometres. */
+	locale: string;
 }): ColumnDef<DataTableFeatures, ApprovalWithTimeCorrection>[] {
 	return [
 		{
@@ -456,6 +462,18 @@ function buildTimeCorrectionColumns({
 								},
 							]
 						: []),
+					...(row.original.workPeriod.metadataChanges?.vehicleUse
+						? [
+								{
+									label: t("approvals:approvals.vehicleUse", "Vehicle use"),
+									value: vehicleUseText(
+										t,
+										row.original.workPeriod.metadataChanges.vehicleUse.original,
+										locale,
+									),
+								},
+							]
+						: []),
 				];
 				return values.length > 0 ? (
 					<dl className="grid gap-1 text-sm">
@@ -529,29 +547,48 @@ function buildTimeCorrectionColumns({
 								},
 							]
 						: []),
+					...(row.original.workPeriod.metadataChanges?.vehicleUse
+						? [
+								{
+									label: t("approvals:approvals.vehicleUse", "Vehicle use"),
+									value: vehicleUseText(
+										t,
+										row.original.workPeriod.metadataChanges.vehicleUse.requested,
+										locale,
+									),
+								},
+							]
+						: []),
 				];
 				const metadataChanges = row.original.workPeriod.metadataChanges;
 				const hasChanges = values.length > 0 || Boolean(metadataChanges);
+				const vehicleUseWarnings = metadataChanges?.vehicleUse?.warnings ?? [];
 
 				return hasChanges ? (
 					<div className="flex items-start gap-2">
-						<dl className="grid gap-2 text-sm">
-							{values.map((value) => (
-								<div key={value.label} className="grid gap-0.5">
-									<dt className="text-xs text-muted-foreground">
-										{value.label}
-									</dt>
-									<dd>
-										<span className="sr-only">
-											{t("approvals:approvals.requested", "Requested")}:{" "}
-										</span>
-										<span className="font-mono font-medium text-foreground">
-											{value.value}
-										</span>
-									</dd>
-								</div>
-							))}
-						</dl>
+						<div className="grid gap-2">
+							<dl className="grid gap-2 text-sm">
+								{values.map((value) => (
+									<div key={value.label} className="grid gap-0.5">
+										<dt className="text-xs text-muted-foreground">
+											{value.label}
+										</dt>
+										<dd>
+											<span className="sr-only">
+												{t("approvals:approvals.requested", "Requested")}:{" "}
+											</span>
+											<span className="font-mono font-medium text-foreground">
+												{value.value}
+											</span>
+										</dd>
+									</div>
+								))}
+							</dl>
+							{/* Plausibility warnings of the requested vehicle use (#1121). */}
+							{vehicleUseWarnings.length > 0 ? (
+								<VehicleUseWarnings warnings={vehicleUseWarnings} t={t} />
+							) : null}
+						</div>
 						{hasChanges && (
 							<Badge variant="outline" className="text-xs">
 								{t("approvals:approvals.changed", "Changed")}

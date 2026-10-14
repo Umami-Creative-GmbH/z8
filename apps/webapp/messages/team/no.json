@@ -108,6 +108,36 @@
       "noBalance": "Ingen saldo"
     },
     "description": "Se og administrer ansatte du leder direkte",
+    "driving": {
+      "columns": {
+        "calendar": "Kalender",
+        "date": "Dato",
+        "employee": "Ansatt",
+        "missing": "Mangler",
+        "time": "Registrert lokal tid"
+      },
+      "count": "{count, plural, one {# arbeidsperiode mangler kjøredetaljer.} other {# arbeidsperioder mangler kjøredetaljer.}}",
+      "descriptionAll": "Arbeidsperioder som mangler kjøretøy eller kilometerstand selv om bruk av kjøretøy er forventet. De blir stående i listen til detaljene er fullført.",
+      "descriptionManaged": "Arbeidsperioder for de ansatte du administrerer som mangler kjøretøy eller kilometerstand selv om bruk av kjøretøy er forventet. De blir stående i listen til detaljene er fullført.",
+      "empty": "Ingen arbeid mangler kjøredetaljer.",
+      "filters": {
+        "allEmployees": "Alle ansatte",
+        "allTeams": "Alle team",
+        "employee": "Ansatt",
+        "team": "Team"
+      },
+      "loading": "Laster inn kjøredetaljer",
+      "missing": {
+        "endReading": "Ingen sluttstand",
+        "readings": "Ingen kilometerstander",
+        "startReading": "Ingen startstand",
+        "vehicle": "Ingen kjøretøy"
+      },
+      "openCalendar": "Kalender",
+      "openCalendarOf": "Åpne kalenderen til {name}",
+      "title": "Kjøredetaljer mangler",
+      "truncated": "Viser de nyeste {count} arbeidsperiodene. Filtrer etter team eller ansatt for å se resten."
+    },
     "empty": {
       "action": "Gå til ansattinnstillinger",
       "description": "Ansatte som har deg som leder, vil vises her. Du kan administrere teamtilknytninger i ansattinnstillingene.",

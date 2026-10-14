@@ -21,6 +21,12 @@
     "briefing": {
       "badge": "Danas",
       "description": "Pregledajte stavke koje danas zahtijevaju radnju, a zatim prijeđite izravno na odgovarajući radni tijek.",
+      "items": {
+        "drivingDetailsMissing": {
+          "description": "Radna razdoblja vaših zaposlenika u kojima nedostaje vozilo ili stanje kilometraže.",
+          "title": "Nedostaju podaci o vožnji ({count})"
+        }
+      },
       "needsAction": {
         "description": "Započnite ovdje za najhitnije operativno praćenje.",
         "empty": "Sve je u redu. Trenutačno nije potrebna radnja voditelja.",

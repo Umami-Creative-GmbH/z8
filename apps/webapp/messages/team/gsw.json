@@ -108,6 +108,36 @@
       "noBalance": "Keis Guthabe"
     },
     "description": "Mitarbeiter, wo du direkt füersch, aaluege und verwalte",
+    "driving": {
+      "columns": {
+        "calendar": "Kalender",
+        "date": "Datum",
+        "employee": "Mitarbeiter",
+        "missing": "Fählt",
+        "time": "Ufzeichneti Lokalziit"
+      },
+      "count": "{count, plural, one {# Arbetsperiode fählt Fahrtdetails.} other {# Arbetsperiode fähled Fahrtdetails.}}",
+      "descriptionAll": "Arbetsperiode, wo kes Fahrzüg oder kei Kilometerstand händ, obwohl e Fahrzügnutzig erwartet wird. Si bliibid ufgfüehrt, bis d Details ergänzt sind.",
+      "descriptionManaged": "Arbetsperiode vo de Mitarbeiter, wo du verwaltisch, wo kes Fahrzüg oder kei Kilometerstand händ, obwohl e Fahrzügnutzig erwartet wird. Si bliibid ufgfüehrt, bis d Details ergänzt sind.",
+      "empty": "Bi keinere Arbet fähled Fahrtdetails.",
+      "filters": {
+        "allEmployees": "Alli Mitarbeiter",
+        "allTeams": "Alli Teams",
+        "employee": "Mitarbeiter",
+        "team": "Team"
+      },
+      "loading": "Fahrtdetails wärded glade",
+      "missing": {
+        "endReading": "Kei Endstand",
+        "readings": "Kei Kilometerständ",
+        "startReading": "Kei Startstand",
+        "vehicle": "Keis Fahrzüg"
+      },
+      "openCalendar": "Kaländer",
+      "openCalendarOf": "De Kaländer vo {name} öffne",
+      "title": "Fahrtdetails fähled",
+      "truncated": "Es wärded die neuste {count} Arbetsperiode aazeigt. Filtrier nach Team oder Mitarbeiter, zum de Rest gseh."
+    },
     "empty": {
       "action": "Zu de Mitarbeiter-Iistellige",
       "description": "Mitarbeiter, wo dir als Manager zuegwise sind, erschined do. Du chasch d'Team-Zueordnige i de Mitarbeiter-Iistellige verwalte.",

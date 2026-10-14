@@ -288,6 +288,7 @@
       "travelExpenseSettings": "Laster inn innstillinger for reiseutgifter",
       "twoFactorVerification": "Laster inn totrinnsverifisering",
       "vacationSettings": "Laster inn ferieinnstillinger",
+      "vehicleDistanceReport": "Laster inn rapporten for distanse per kjøretøy",
       "wellnessSettings": "Laster inn velværeinnstillinger",
       "workCategorySettings": "Laster inn innstillinger for arbeidskategorier",
       "workerQueue": "Laster inn arbeiderkø",
@@ -418,6 +419,17 @@
     "update": "Oppdater",
     "updating": "Oppdaterer...",
     "uploading": "Laster opp...",
+    "vacationAllowance": {
+      "cappedAtFullAllowance": "begrenset til full kvote",
+      "employmentMonths": "{months, plural, one {# hel ansettelsesmåned} other {# hele ansettelsesmåneder}}",
+      "lastWorkingDay": "siste arbeidsdag {date}",
+      "notEmployed": "{allowance} av {fullAllowance} dager: ikke ansatt i {year}",
+      "overdrawn": "{days, plural, one {# dag overskredet} other {# dager overskredet}}",
+      "overdrawnHint": "Ferie tatt ut utover kvoten. Vises kun til informasjon: ingenting trekkes.",
+      "proratedSummary": "{allowance} av {fullAllowance} dager, forholdsmessig beregnet: {details}",
+      "started": "startet {date}",
+      "statutoryMinimumApplies": "lovfestet minimum gjelder"
+    },
     "validate": "Valider",
     "validationError": "Valideringsfeil",
     "weekdays": {
@@ -493,7 +505,32 @@
       "title": "Bedriftsråd",
       "to": "Til",
       "unassignedTeam": "Ikke-tildelt team",
-      "updateRange": "Oppdater intervall"
+      "updateRange": "Oppdater intervall",
+      "vehicleUse": {
+        "activeVehicles": "Aktive kjøretøy",
+        "archivedVehicles": "Arkiverte kjøretøy",
+        "coveredAsked": "Forespurt for",
+        "coveredDescription": "{count, plural, one {# aktiv ansatt blir bedt om eller forventet å registrere kjøretøybruk akkurat nå.} other {# aktive ansatte blir bedt om eller forventet å registrere kjøretøybruk akkurat nå.}}",
+        "coveredExpected": "Forventet for",
+        "coveredTitle": "Omfattede ansatte",
+        "description": "Hvem organisasjonen ber om å registrere kjøretøyet de kjører i arbeidet. Bedriftsutvalget ser aldri kilometertellerstander eller en ansatts kjørte distanser.",
+        "employeeAssignmentCounts": "{asked} forespurt, {expected} forventet, {off} av individuelt",
+        "employeeAssignments": "Ansattildelinger",
+        "employeePseudonym": "Ansatt {ref}",
+        "enabled": "Bytt",
+        "modeAsked": "Forespurt",
+        "modeExpected": "Forventet",
+        "modeOff": "Av",
+        "noEmployeeAssignments": "Ingen ansattildelinger.",
+        "notAssigned": "Ikke tilordnet",
+        "noTeamAssignments": "Ingen teamtildelinger.",
+        "off": "Av",
+        "on": "På",
+        "organizationAssignment": "Hele organisasjonen",
+        "teamAssignments": "Teamtildelinger",
+        "title": "Kjøretøybruk",
+        "vehiclesTitle": "Organisasjonskjøretøy"
+      }
     }
   },
   "employeeSelect": {
@@ -602,6 +639,7 @@
     "settings": "Innstillinger",
     "team": "Team",
     "teamAbsences": "Teamfravær",
+    "teamDriving": "Kjøredetaljer",
     "team-label": "Team",
     "teamPeriodSubmissions": "Periodeinnsendinger",
     "teamPresence": "Hvem er på jobb",
@@ -619,7 +657,34 @@
       "settings": "Varslingsinnstillinger",
       "viewAll": "Vis alle varsler"
     },
+    "channels": {
+      "viewInZ8": "Vis i Z8"
+    },
     "content": {
+      "absenceCancellation": {
+        "message": "Forespørsel om kansellering for {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Forespørsel om fraværsendring godkjent"
+      },
+      "absenceChangeExpired": {
+        "title": "Forespørsel om fraværsendring utløpt"
+      },
+      "absenceChange": {
+        "message": "Registrerte datoer: {original}. Foreslåtte datoer: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Forespørsel om fraværsendring foreldet"
+      },
+      "absenceChangePending": {
+        "title": "Fraværsendring venter på godkjenning"
+      },
+      "absenceChangeRejected": {
+        "title": "Forespørsel om fraværsendring avslått"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Forespørsel om fraværsendring trukket tilbake"
+      },
       "absenceDeputyAssigned": {
         "message": "Du er stedfortreder for {name} ({dateRange}).",
         "title": "Du er fraværsstedfortreder"
@@ -645,7 +710,12 @@
         "message": "{managerName} registrerte {absenceType} for {dateRange} på dine vegne.",
         "title": "Fravær registrert"
       },
+      "absenceRequestApproved": {
+        "message": "Forespørselen din om {categoryName} for {dateRange} ble godkjent av {approverName}."
+      },
       "absenceRequestRejected": {
+        "message": "Forespørselen din om {categoryName} for {dateRange} ble avvist av {approverName}.",
+        "messageWithReason": "Forespørselen din om {categoryName} for {dateRange} ble avvist av {approverName}. Årsak: {rejectionReason}",
         "title": "Fraværsforespørsel avslått"
       },
       "absenceRequestSubmitted": {
@@ -659,6 +729,19 @@
       "approvalCoverStarted": {
         "message": "{count, plural, =0 {Du dekker {name}s godkjenninger: ingenting venter ennå.} other {Du dekker {name}s godkjenninger: # venter.}}",
         "title": "Du dekker godkjenninger"
+      },
+      "approvalEscalationAttention": {
+        "ambiguousHistory": "Eskaleringshistorikken for en godkjenning er tvetydig og må gjennomgås før automatisk overføring.",
+        "deliveryExhausted": "Eskaleringsvarsler for en godkjenning mislyktes etter alle forsøk.",
+        "deliveryUnavailable": "Ingen mottaker for eskaleringsvarsel er tilgjengelig for en godkjenning.",
+        "noEligibleBackup": "En forfalt godkjenning har ingen kvalifisert reservegodkjenner. Nåværende godkjenner beholder oppgaven.",
+        "replacementOverdue": "En godkjenning er fortsatt uavklart etter automatisk eskalering. Ingen videre automatisk overføring vil finne sted.",
+        "title": "Eskalering av godkjenning krever oppmerksomhet",
+        "unsupportedRoute": "En godkjenning kan ikke eskaleres fordi beslutningsbanen ikke støttes."
+      },
+      "approvedAbsenceCancelled": {
+        "message": "{employeeName} kansellerte godkjent {categoryName} for {dateRange}.",
+        "title": "Godkjent fravær kansellert"
       },
       "automaticClockOut": {
         "breakMessage": "Du ble automatisk stemplet ut ved starten av pausen din kl. {cutoff} ({timezone}) fordi pausen ikke ble avsluttet innen organisasjonens tidsfrist på {duration} minutter.",
@@ -683,9 +766,56 @@
           "title": "Overtidsutbetaling registrert"
         }
       },
+      "birthdayReminder": {
+        "message": "{name} har bursdag {date}.",
+        "title": "Kommende bursdag"
+      },
       "breakDueReminder": {
         "message": "Pausen din skal tas innen {breakTime} ({timezone}). Ta en pause innen det for å følge retningslinjene for pauser.",
         "title": "Snart tid for en pause"
+      },
+      "clockOutApprovalRequired": {
+        "message": "{employeeName} stemplet ut {date} ({startTime} – {endTime}, {duration}). Godkjenning kreves.",
+        "messageWithoutTimes": "{employeeName} stemplet ut ({duration}). Godkjenning kreves.",
+        "title": "Godkjenning av utstempling kreves"
+      },
+      "clockOutApproved": {
+        "message": "Utstemplingen din ble godkjent av {approverName}.",
+        "title": "Utstempling godkjent"
+      },
+      "clockOutPendingApproval": {
+        "message": "Utstemplingen din {date} ({duration}) venter på godkjenning fra leder.",
+        "messageWithoutDate": "Utstemplingen din ({duration}) venter på godkjenning fra leder.",
+        "title": "Utstempling venter på godkjenning"
+      },
+      "clockOutRejected": {
+        "message": "Godkjenning av utstemplingen din ble avvist av {approverName}. De registrerte tidene forblir uendret og er ekskludert fra godkjent lønnstid.",
+        "messageWithReason": "Godkjenning av utstemplingen din ble avvist av {approverName}. De registrerte tidene forblir uendret og er ekskludert fra godkjent lønnstid. Årsak: {rejectionReason}",
+        "title": "Utstempling avvist"
+      },
+      "complianceExceptionApproved": {
+        "message": "Unntaket ditt for {exceptionType, select, rest_period {hvileperiode} overtime_daily {daglig overtid} overtime_weekly {ukentlig overtid} overtime_monthly {månedlig overtid} other {samsvar}} ble godkjent av {approverName}. Gyldig til {validUntil}.",
+        "title": "Unntak godkjent"
+      },
+      "complianceExceptionExpired": {
+        "message": "Forhåndsgodkjenningen din for {exceptionType, select, rest_period {hvileperiode} overtime_daily {daglig overtid} overtime_weekly {ukentlig overtid} overtime_monthly {månedlig overtid} other {samsvar}} er utløpt (24 timer har gått uten bruk).",
+        "title": "Unntak utløpt"
+      },
+      "complianceExceptionRejected": {
+        "message": "Unntaket ditt for {exceptionType, select, rest_period {hvileperiode} overtime_daily {daglig overtid} overtime_weekly {ukentlig overtid} overtime_monthly {månedlig overtid} other {samsvar}} ble avvist av {approverName}.",
+        "messageWithReason": "Unntaket ditt for {exceptionType, select, rest_period {hvileperiode} overtime_daily {daglig overtid} overtime_weekly {ukentlig overtid} overtime_monthly {månedlig overtid} other {samsvar}} ble avvist av {approverName}. Årsak: \"{reason}\"",
+        "title": "Unntak avvist"
+      },
+      "complianceExceptionRequested": {
+        "message": "{employeeName} ba om et unntak for {exceptionType, select, rest_period {hvileperiode} overtime_daily {daglig overtid} overtime_weekly {ukentlig overtid} overtime_monthly {månedlig overtid} other {samsvar}}: \"{reason}\"",
+        "title": "Samsvarsunntak forespurt"
+      },
+      "drivingDetailsMissingReminderMany": {
+        "message": "{count} arbeidsperioder fra {dates} mangler kjøretøy eller kilometerstand. Legg dem til i arbeidsperiodene."
+      },
+      "drivingDetailsMissingReminder": {
+        "message": "Arbeidet ditt {date} mangler kjøretøy eller kilometerstand. Legg dem til i arbeidsperioden.",
+        "title": "Legg til kjøredetaljer"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Godkjenningsoppgaver trenger en stedfortreder (fratredelse gjelder fra {cutoff}, {timezone}).",
@@ -698,6 +828,15 @@
       "forgottenClockOutReminder": {
         "message": "Vakten din var ferdig kl. {endTime} ({timezone}). Stemple ut hvis du er ferdig med å jobbe.",
         "title": "Du er fortsatt stemplet inn"
+      },
+      "manualEntryApproved": {
+        "message": "Den manuelle tidsregistreringen din ble godkjent av {approverName}.",
+        "title": "Manuell tidsregistrering godkjent"
+      },
+      "manualEntryRejected": {
+        "message": "Den manuelle tidsregistreringen din ble avvist av {approverName}.",
+        "messageWithReason": "Den manuelle tidsregistreringen din ble avvist av {approverName}. Årsak: {rejectionReason}",
+        "title": "Manuell tidsregistrering avvist"
       },
       "missedClockInReminder": {
         "message": "Vakten din startet kl. {startTime} ({timezone}). Stemple inn hvis du jobber.",
@@ -716,7 +855,27 @@
         "title": "Måned gjenåpnet"
       },
       "newAbsenceRequest": {
+        "message": "{employeeName} ba om {categoryName} for {dateRange}.",
         "title": "Ny fraværsforespørsel"
+      },
+      "newTimeCorrectionRequest": {
+        "message": "{employeeName} sendte inn en forespørsel om tidskorreksjon for {date}.",
+        "messageWithoutDate": "{employeeName} sendte inn en forespørsel om tidskorrigering.",
+        "messageWithoutDateWithReason": "{employeeName} sendte inn en forespørsel om tidskorrigering. Årsak: {reason}",
+        "messageWithReason": "{employeeName} sendte inn en forespørsel om tidskorrigering for {date}. Årsak: {reason}",
+        "title": "Ny forespørsel om tidskorrigering"
+      },
+      "openShiftAvailable": {
+        "message": "En ledig vakt er tilgjengelig {shiftDate} fra {startTime} til {endTime}.",
+        "title": "Ledig vakt tilgjengelig"
+      },
+      "overtimeViolation": {
+        "message": "{description}",
+        "title": "Overtidsbrudd loggført"
+      },
+      "overtimeWarning": {
+        "message": "Du har jobbet {worked} {period, select, daily {i dag} weekly {denne uken} other {denne måneden}} ({percent}% av grensen på {limit}).",
+        "title": "Overtidsgrensen nærmer seg"
       },
       "passwordChanged": {
         "message": "Passordet ditt ble endret. Hvis du ikke har gjort denne endringen, må du kontakte brukerstøtte umiddelbart.",
@@ -745,6 +904,20 @@
       "periodSubmissionWithdrawnAfterChange": {
         "message": "Timene dine for {startDate} – {endDate} ble endret etter at du sendte dem inn, så innsendingen ble trukket tilbake. Se over timene dine og send dem inn på nytt.",
         "title": "Send inn timene dine på nytt"
+      },
+      "personalDataExportAdminExported": {
+        "message": "En administrator eksporterte personopplysningene dine {onDate}.",
+        "title": "Personopplysningene dine ble eksportert"
+      },
+      "personalDataExportReady": {
+        "adminMessage": "Eksporten av personopplysninger for {employeeName} er klar. Last den ned fra medarbeidersiden mens du er logget inn. Den slettes etter 7 dager.",
+        "adminTitle": "Eksport av personopplysninger er klar",
+        "message": "Eksporten av personopplysningene dine er klar. Last den ned under Mine data mens du er logget inn. Den slettes etter 7 dager.",
+        "title": "Eksporten av personopplysningene dine er klar"
+      },
+      "personalDataExportReminder": {
+        "message": "Last ned personopplysningene dine under Mine data før {untilDate}. Etter det kan bare en administrator eksportere dem for deg.",
+        "title": "Last ned personopplysningene dine før du slutter"
       },
       "personnelFileDocumentShared": {
         "message": "Dokumentet \"{title}\" ble delt med deg.",
@@ -781,13 +954,94 @@
       "policyMissedClockInReminder": {
         "message": "Din siste innstempling i dag var kl. {startTime} ({timezone}). Stemple inn hvis du jobber."
       },
+      "projectBudgetWarning100": {
+        "message": "\"{projectName}\" har overskredet budsjettet ({used} av {budget} budsjettert). Se over og juster etter behov.",
+        "title": "Prosjektbudsjett overskredet"
+      },
+      "projectBudgetWarning70": {
+        "message": "\"{projectName}\" har brukt {percent}% av budsjettet sitt ({used} av {budget}).",
+        "title": "Prosjektet nærmer seg budsjettgrensen"
+      },
+      "projectBudgetWarning90": {
+        "message": "\"{projectName}\" har brukt {percent}% av budsjettet sitt ({used} av {budget}). Vurder å se over tidsallokeringene.",
+        "title": "Prosjektet er nær budsjettgrensen"
+      },
+      "projectDeadlineOverdue": {
+        "message": "\"{projectName}\" har passert tidsfristen ({deadline}). Oppdater status eller forleng fristen.",
+        "title": "Prosjektfristen har utløpt"
+      },
+      "projectDeadlineWarning0d": {
+        "message": "\"{projectName}\" har frist i dag ({deadline}). Fullfør gjenstående arbeid.",
+        "title": "Prosjektfrist i dag"
+      },
+      "projectDeadlineWarning14d": {
+        "message": "\"{projectName}\" har frist om 2 uker ({deadline}). Planlegg fremover for å overholde fristen.",
+        "title": "Prosjektfrist om 2 uker"
+      },
+      "projectDeadlineWarning1d": {
+        "message": "\"{projectName}\" har frist i morgen ({deadline}). Siste innspurt for å fullføre!",
+        "title": "Prosjektfrist i morgen"
+      },
+      "projectDeadlineWarning7d": {
+        "message": "\"{projectName}\" har frist om 1 uke ({deadline}). Sørg for at du er i rute.",
+        "title": "Prosjektfrist om 1 uke"
+      },
+      "restPeriodViolation": {
+        "message": "{description}",
+        "title": "Brudd på hviletid loggført"
+      },
+      "restPeriodWarning": {
+        "message": "Du har {remaining} av påkrevd hvile igjen. Neste tillatte innstempling: {nextAllowedClockIn}.",
+        "title": "Påminnelse om hviletid"
+      },
       "scheduledExportPaused": {
         "message": "\"{scheduleName}\" ble satt på pause fordi eieren, {ownerName}, ikke lenger er en organisasjonsadministrator. Gjør deg selv eller en annen organisasjonsadministrator til eier for å gjenoppta den.",
         "title": "Planlagt eksport satt på pause"
       },
+      "schedulePublished": {
+        "message": "{shiftCount, plural, one {# vakt er publisert for {dateRange}.} other {# vakter er publisert for {dateRange}.}}",
+        "title": "Ny vaktplan publisert"
+      },
       "shiftAssigned": {
         "message": "Du har blitt tildelt en vakt den {shiftDate} fra {startTime} til {endTime} av {assignedByName}.",
         "title": "Vakt tildelt"
+      },
+      "shiftPickupApproved": {
+        "message": "Forespørselen din om å ta vakten {shiftDate} ble godkjent av {approverName}.",
+        "title": "Vaktovertakelse godkjent"
+      },
+      "shiftPickupRequested": {
+        "message": "{requesterName} ba om å ta vakten {shiftDate} ({startTime} - {endTime}).",
+        "messageUnnamedRequester": "En ansatt ba om å ta vakten {shiftDate} ({startTime} - {endTime}).",
+        "title": "Forespørsel om å ta vakt"
+      },
+      "shiftSwapApproved": {
+        "message": "Forespørselen din om vaktbytte for {shiftDate} ble godkjent av {approverName}.",
+        "title": "Vaktbytte godkjent"
+      },
+      "shiftSwapRejected": {
+        "message": "Forespørselen din om vaktbytte for {shiftDate} ble avslått av {approverName}.",
+        "messageWithReason": "Forespørselen din om vaktbytte for {shiftDate} ble avslått av {approverName}. Årsak: {reason}",
+        "title": "Vaktbytte avslått"
+      },
+      "shiftSwapRequestedToManager": {
+        "message": "{requesterName} ba om vaktbytte for vakten den {shiftDate} ({startTime} - {endTime}).",
+        "messageWithTarget": "{requesterName} ba om å bytte med {targetName} for vakten den {shiftDate} ({startTime} - {endTime}).",
+        "title": "Forespørsel om vaktbytte"
+      },
+      "shiftSwapRequestedToTarget": {
+        "message": "{requesterName} ønsker å bytte vakt med deg den {shiftDate} ({startTime} - {endTime}).",
+        "title": "Forespørsel om vaktbytte"
+      },
+      "skillExpiredToday": {
+        "employeeMessage": "Kompetansen din \"{skill}\" utløper i dag.",
+        "message": "Kompetansen \"{skill}\" til {employee} utløper i dag.",
+        "title": "En kompetanse utløper i dag"
+      },
+      "skillExpiryUpcoming": {
+        "employeeMessage": "Kompetansen din \"{skill}\" utløper den {untilDate}.",
+        "message": "Kompetansen \"{skill}\" til {employee} utløper den {untilDate}.",
+        "title": "En kompetanse utløper snart"
       },
       "teamMemberAdded": {
         "message": "Du har blitt lagt til i teamet {teamName} av {performedByName}.",
@@ -797,12 +1051,30 @@
         "message": "Du har blitt fjernet fra teamet {teamName} av {performedByName}.",
         "title": "Fjernet fra team"
       },
+      "timeCorrectionApproved": {
+        "message": "Forespørselen din om tidskorrigering ble godkjent av {approverName}.",
+        "title": "Tidskorrigering godkjent"
+      },
+      "timeCorrectionRejected": {
+        "message": "Forespørselen din om tidskorrigering ble avvist av {approverName}.",
+        "messageWithReason": "Forespørselen din om tidskorrigering ble avvist av {approverName}. Årsak: {rejectionReason}",
+        "title": "Tidskorrigering avvist"
+      },
+      "timeCorrectionSubmitted": {
+        "message": "Forespørselen din om tidskorrigering er sendt inn og venter på godkjenning.",
+        "title": "Tidskorrigering sendt inn"
+      },
       "timeOffInLieuAvailable": {
         "message": "Ansatte kan nå ta avspasering mot arbeidssaldoen sin. Den nye fraværskategorien forblir inaktiv til du aktiverer den i fraværsinnstillingene.",
         "title": "Avspasering er tilgjengelig"
       },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "En godkjent justering økte skyldig beløp på {employee}s utgiftsrapport {report}. Venter på refusjon: {amounts}."
+      },
+      "travelExpenseApproved": {
+        "message": "Reiseregningen din for {destination} ({amount}) ble godkjent av {approverName}.",
+        "messageWithoutDestination": "Reiseregningen din for {amount} ble godkjent av {approverName}.",
+        "title": "Reiseregning godkjent"
       },
       "travelExpenseLeftOutOfPayrollRun": {
         "message": "{employee}s utgiftsrapport {report} refunderes ikke via en lønnskjøring. Venter på refusjon: {amounts}."
@@ -832,6 +1104,45 @@
       },
       "travelExpenseReimbursedWithPayroll": {
         "message": "Reiseutgiftene dine har blitt fullt refundert med lønnen for {period}: {amount} {currency}."
+      },
+      "travelExpenseRejected": {
+        "message": "Reiseregningen din for {destination} ({amount}) ble avvist av {approverName}.",
+        "messageWithoutDestination": "Reiseregningen din for {amount} ble avvist av {approverName}.",
+        "messageWithoutDestinationWithReason": "Reiseregningen din for {amount} ble avvist av {approverName}. Årsak: {reason}",
+        "messageWithReason": "Reiseregningen din for {destination} ({amount}) ble avvist av {approverName}. Årsak: {reason}",
+        "title": "Reiseregning avvist"
+      },
+      "travelExpenseReportApproved": {
+        "message": "Utgiftsrapporten din (refunderbart {amount}) ble godkjent av {approverName}.",
+        "title": "Utgiftsrapport godkjent"
+      },
+      "travelExpenseReportRejected": {
+        "message": "Utgiftsrapporten din (refunderbart {amount}) ble avvist av {approverName}.",
+        "messageWithReason": "Utgiftsrapporten din (refunderbart {amount}) ble avvist av {approverName}. Årsak: {reason}",
+        "title": "Utgiftsrapport avvist"
+      },
+      "travelExpenseReportReturned": {
+        "message": "{reviewerName} returnerte utgiftsrapporten din for endringer: {note}",
+        "title": "Utgiftsrapport returnert for endringer"
+      },
+      "twoFactorDisabled": {
+        "message": "Tofaktorautentisering er deaktivert på kontoen din. Vi anbefaler at du aktiverer det på nytt av sikkerhetshensyn.",
+        "title": "Tofaktorautentisering deaktivert"
+      },
+      "twoFactorEnabled": {
+        "message": "Tofaktorautentisering er aktivert på kontoen din for ekstra sikkerhet.",
+        "title": "Tofaktorautentisering aktivert"
+      },
+      "vacationBalanceAlert": {
+        "expiringMessage": "{remainingDays, plural, one {Du har # feriedag som utløper den {expiryDate}. Bruk den før den utløper!} other {Du har # feriedager som utløper den {expiryDate}. Bruk dem før de utløper!}}",
+        "message": "{remainingDays, plural, one {Du har # feriedag igjen. Ikke glem å ta litt fri!} other {Du har # feriedager igjen. Ikke glem å ta litt fri!}}",
+        "title": "Påminnelse om feriesaldo"
+      },
+      "waterReminder": {
+        "done": "Gjort!",
+        "message": "Hold deg sunn – drikk litt vann",
+        "snooze": "Slumre for i dag",
+        "title": "På tide å drikke vann!"
       }
     },
     "description": "Gjennomgå oppdateringer, godkjenninger og systemvarsler på én tidslinje.",
@@ -937,11 +1248,17 @@
         "approval_cover_return_summary": "Avgjort av din stedfortreder",
         "approval_cover_started": "Fraværsdekning startet",
         "break_due_reminder": "Tid for pause",
+        "driving_details_missing_reminder": "Kjøredetaljer mangler",
         "forgotten_clock_out_reminder": "Glemt utstempling",
         "missed_clock_in_reminder": "Manglende innstempling",
         "period_submission_decided": "Innsendte timer godkjent eller avvist",
         "period_submission_reminder": "Send inn timene dine",
         "period_submission_sent_back": "Timer sendt i retur etter en endring",
+        "personal_data_export_admin_exported": "Personopplysninger eksportert av en administrator",
+        "personal_data_export_ready": "Eksport av personopplysninger er klar",
+        "personal_data_export_reminder": "Last ned dataene dine før du slutter",
+        "skill_expired_today": "Kompetanse utløper i dag",
+        "skill_expiry_upcoming": "Kompetanse utløper snart",
         "work_balance_adjustment_cancelled": "Saldojustering kansellert",
         "work_balance_adjustment_recorded": "Saldojustering registrert"
       },
@@ -1020,6 +1337,1092 @@
       "loading": "Leser lagrede oppføringer…",
       "review": "Se gjennom lagrede oppføringer",
       "title": "Lagrede stemplingsoppføringer"
+    }
+  },
+  "personalDataExport": {
+    "readme": {
+      "accessAdmin": "{name} (administrator)",
+      "accessExpenseExport": "eksporter dem",
+      "accessExpenseOfficers": "Utgiftsansvarlige (dine godkjente reiseoppgjør og kvitteringer):",
+      "accessExpenseRead": "lese godkjente rapporter",
+      "accessExpenseReimburse": "registrere refusjoner",
+      "accessIntro": "I tillegg til deg har disse personene i {organization} tilgang til dataene dine i Z8, per da denne eksporten ble opprettet:",
+      "accessManagerDirect": "{name} (din leder)",
+      "accessManagers": "Ledere (din tid, fravær, vaktplaner og forespørsler, slik rollen deres tillater):",
+      "accessManagerTeam": "{name} (teamtillatelser for teamet ditt)",
+      "accessNobody": "Ingen.",
+      "accessOwner": "{name} (eier)",
+      "accessOwnersAdmins": "Eiere og administratorer (alle dine data i organisasjonen):",
+      "accessPayrollAll": "alle ansatte",
+      "accessPayrollEmployee": "deg ved navn",
+      "accessPayrollOfficers": "Lønnstilgang (din arbeidstid og fravær, eksportert for lønn):",
+      "accessPayrollTeam": "teamet ditt",
+      "accessPersonnelFileOfficers": "Personalansvarlige (dokumentene i personalmappen din i disse kategoriene):",
+      "accessTitle": "Hvem som har tilgang til dataene dine",
+      "category": {
+        "absences": "Dine fravær, feriekvoter og feriejusteringer.",
+        "account": "Brukerkontoen din: økter, innloggingsmetoder, sikkerhetsinnstillinger, preferanser og enheter.",
+        "accountAdmin": "Navnet og e-postadressen til brukerkontoen din.",
+        "approvals": "Dine egne forespørsler og periodeinnsendinger, og beslutningene du har tatt om andres forespørsler.",
+        "auditLog": "Revisjonsloggoppføringer om deg og oppføringer du har utført.",
+        "employment": "Din ansattpost og profil, ansettelsesperioder og fratredelse, ansettelsesvilkår med timelønn og historikk, team, ledere, lokasjoner, ferdigheter, prosjekttildelinger, roller, grupper, kostnadssted og alle retningslinjer tildelt deg.",
+        "integrations": "Dine kalendertilkoblinger, kalenderfeed, tilknyttede chat-kontoer og kiosk-PIN-status.",
+        "notifications": "Varslingshistorikken din.",
+        "personnelFile": "Dokumentene i personalmappen din, som originalfiler.",
+        "planning": "Dine skift og skiftforespørsler.",
+        "positionStamps": "Dine posisjonsstemplinger, samtykkehistorikk og hvem som har sett posisjonene dine.",
+        "time": "Dine timeregistreringer, arbeidsperioder og korrigeringer, pauser, automatiske utstemplinger, samsvarsavvik, brudd på arbeidsregler, tillegg, saldoer og saldojusteringer.",
+        "travelExpenses": "Dine reiseregninger, rapporter, utgiftsposter, oppgjør og kvitteringer."
+      },
+      "completeCopy": "{organization} kan oppbevare ytterligere opplysninger om deg som ikke er en del av denne eksporten. Du kan be administratorene for {organization} om en fullstendig kopi av personopplysningene dine.",
+      "completeCopyTitle": "Fullstendig kopi",
+      "csvFolder": "Mappen {folder} inneholder de samme tabellene som CSV-filer.",
+      "documentCategory": {
+        "certificate": "Sertifikater",
+        "contract": "Kontrakter",
+        "other": "Andre dokumenter",
+        "payslip": "Lønnsslipper",
+        "sickNote": "Sykmeldinger"
+      },
+      "fields": {
+        "absences": {
+          "absences": {
+            "approvedAt": "Når fraværet ble avgjort (UTC).",
+            "approvedBy": "Hvem som avgjorde fraværet.",
+            "category": "Fraværkategorien, slik organisasjonen navngir den.",
+            "categoryType": "Typen fravær bak kategorien, for eksempel vacation, sick eller home_office.",
+            "deputy": "Kollegaen som er stedfortreder for deg under fraværet.",
+            "deputyAssignedAt": "Når stedfortrederen ble tildelt (UTC).",
+            "endDate": "Siste dag av fraværet (YYYY-MM-DD).",
+            "endPeriod": "Hvilken del av den siste dagen du er borte: full_day, am eller pm.",
+            "notes": "Notatet som er skrevet på fraværet.",
+            "rejectionReason": "Hvorfor fraværet ble avvist.",
+            "sickDetail": "For sykdom: flere detaljer, for eksempel med eller uten legeerklæring, eller sykt barn.",
+            "startDate": "Første fraværsdag (YYYY-MM-DD).",
+            "startPeriod": "Hvilken del av den første dagen du er fraværende: full_day, am (formiddag) eller pm (ettermiddag).",
+            "status": "Hvorvidt fraværet er ventende, godkjent eller avvist.",
+            "summary": "Dine fravær, for eksempel ferie, sykdom eller hjemmekontor, med godkjenning."
+          },
+          "shared": {
+            "year": "Ferieåret."
+          },
+          "vacationAdjustments": {
+            "accrualMonth": "For en opptjent andel: måneden (1 til 12) den ble tildelt for.",
+            "adjustedBy": "Hvem som gjorde endringen.",
+            "days": "Dagene som er lagt til (positiv) eller trukket fra (negativ).",
+            "kind": "Hvorvidt noen gjorde endringen manuelt (manual) eller om appen tildelte en opptjent andel (accrual).",
+            "reason": "Hvorfor endringen ble gjort.",
+            "summary": "Hver endring av feriedagene dine utover kvoten: manuelle korrigeringer og opptjente andeler."
+          },
+          "vacationAllowances": {
+            "customAnnualDays": "Feriedagene dine for året; tomt når reglementets antall gjelder.",
+            "customCarryoverDays": "Dagene som er overført til dette året fra året før; tomt når ingen ble angitt for deg.",
+            "summary": "Feriekvoter fastsatt for deg personlig, i stedet for feriereglementet, per år."
+          },
+          "vacationPolicies": {
+            "accrualStartMonth": "Måneden (1 til 12) opptjeningen av feriedager starter fra.",
+            "accrualType": "Hvordan dagene tildeles: alt på én gang per år (annual), månedlig eller annenhver uke (biweekly).",
+            "allowCarryover": "Hvorvidt ubrukte dager overføres til neste år.",
+            "assignmentActive": "Hvorvidt tildelingen er aktiv.",
+            "assignmentEffectiveFrom": "Når tildelingen av reglementet trer i kraft (UTC).",
+            "assignmentEffectiveUntil": "Når tildelingen opphører (UTC); tomt så lenge den gjelder.",
+            "assignmentType": "Hvordan den når deg: tildelt deg (employee), teamet ditt (team) eller hele organisasjonen (organization).",
+            "carryoverExpiryMonths": "Hvor mange måneder inn i neste år overførte dager forblir gyldige; tomt hvis de ikke utløper.",
+            "defaultAnnualDays": "Feriedager per år i henhold til reglementet.",
+            "maxCarryoverDays": "Maksimalt antall dager som kan overføres; tomt for ingen grense.",
+            "policy": "Reglementets navn.",
+            "prorateInStartAndExitYear": "Hvorvidt en årlig kvote reduseres i året du begynner eller slutter, basert på månedene du er ansatt.",
+            "statutoryMinimumDays": "Det laveste antall dager en redusert kvote kan falle til når ventetiden din er over.",
+            "summary": "Feriereglementene som gjelder for deg: tildelt deg, teamene dine eller organisasjonens standard.",
+            "validFrom": "Første dag reglementet gjelder (YYYY-MM-DD).",
+            "validUntil": "Siste dag reglementet gjelder (YYYY-MM-DD); tomt så lenge det gjelder."
+          }
+        },
+        "account": {
+          "accessViolations": {
+            "actionTaken": "Hva som skjedde: blokkert, utfordret eller logget.",
+            "blockedCountry": "Det blokkerte landet.",
+            "blockedIp": "Den blokkerte IP-adressen.",
+            "concurrentSessionCount": "Hvor mange økter som var åpne på det tidspunktet.",
+            "reason": "Den registrerte årsaken.",
+            "requestMethod": "Type forespørsel, f.eks. GET.",
+            "requestPath": "Siden eller adressen som ble forespurt.",
+            "requiredMfaType": "Den andre faktoren regelen krevde.",
+            "summary": "Forespørsler som denne organisasjonens tilgangsregler blokkerte, utfordret eller flagget.",
+            "violationType": "Hvilken regel som ble brutt, f.eks. ip_blocked."
+          },
+          "hydrationStats": {
+            "currentStreak": "Dager på rad du har nådd målet ditt, frem til nå.",
+            "lastGoalMetDate": "Siste dag du nådde målet ditt.",
+            "longestStreak": "Din lengste rekke.",
+            "snoozedUntil": "Hvor lenge du har satt påminnelser på pause.",
+            "summary": "Dine totaler for vanninntak og rekker.",
+            "totalIntakeAllTime": "Alle glass du har logget."
+          },
+          "notificationPreferences": {
+            "channel": "Hvor det leveres, f.eks. e-post eller push.",
+            "enabled": "Hvorvidt du mottar det der.",
+            "notificationType": "Type varsel.",
+            "summary": "Hvilke varsler du har slått på eller av, per kanal."
+          },
+          "passkeys": {
+            "aaguid": "Autentiseringsmodellens ID.",
+            "backedUp": "Hvorvidt den er sikkerhetskopiert.",
+            "deviceType": "Hvorvidt den finnes på én enhet eller synkroniseres på tvers av enheter.",
+            "name": "Passnøkkelens navn.",
+            "summary": "Passnøklene dine (nøkler eksporteres aldri).",
+            "transports": "Hvordan autentiseringsenheten kobler til, f.eks. usb eller intern."
+          },
+          "pushDevices": {
+            "deviceName": "Enhetens navn.",
+            "kind": "web for en nettleser, native for mobilappen.",
+            "lastSeenAt": "Når appen sist registrerte enheten.",
+            "platform": "Mobilplattformen (ios eller android); tom for en nettleser.",
+            "summary": "Nettlesere og enheter som mottar push-varsler (nøklene deres eksporteres aldri)."
+          },
+          "sessions": {
+            "city": "Byen til den IP-adressen.",
+            "createdAt": "Når du logget på.",
+            "expiresAt": "Når økten avsluttes med mindre den fornyes.",
+            "impersonated": "Hvorvidt brukerstøtte for plattformen åpnet denne økten som deg. IP-adresse, nettleser og plassering er da utelatt: de tilhører brukerstøtte, ikke deg.",
+            "lastActivityAt": "Når du sist brukte økten i denne organisasjonen.",
+            "mfaMethod": "Hvordan du bekreftet den andre faktoren, hvis du ble spurt.",
+            "mfaVerifiedAt": "Når du bekreftet den.",
+            "region": "Regionen til den IP-adressen.",
+            "summary": "Dine pålogginger (økter) som fortsatt er lagret, med detaljer denne organisasjonen har registrert om dem.",
+            "updatedAt": "Når økten sist ble fornyet."
+          },
+          "settings": {
+            "dashboardWidgetOrder": "Hvordan du organiserte instrumentpanelet ditt, som JSON.",
+            "helpImproveProduct": "Hvorvidt du samtykket til å hjelpe med å forbedre produktet.",
+            "locale": "Appspråket ditt; tomt betyr at det følger nettleseren din.",
+            "onboardingComplete": "Hvorvidt du fullførte introduksjonen.",
+            "onboardingCompletedAt": "Når du fullførte den.",
+            "onboardingStartedAt": "Når du startet introduksjonen.",
+            "onboardingStep": "Introduksjonstrinnet du nådde.",
+            "summary": "Dine personlige innstillinger i appen.",
+            "timeFormat": "Hvorvidt klokkeslett vises i 12- eller 24-timers format.",
+            "timezone": "Tidssonen du valgte for visning av klokkeslett.",
+            "waterReminderDailyGoal": "Ditt daglige mål i antall glass.",
+            "waterReminderEnabled": "Hvorvidt vannpåminnelser er på.",
+            "waterReminderIntervalMinutes": "Minutter mellom vannpåminnelser.",
+            "waterReminderPreset": "Forhåndsinnstillingen for vannpåminnelser som du valgte.",
+            "weekStartDay": "Dagen uken din starter på."
+          },
+          "shared": {
+            "country": "Landet til den IP-adressen (ISO-kode).",
+            "ipAddress": "IP-adressen den kom fra.",
+            "isActive": "Hvorvidt den fortsatt er i bruk.",
+            "lastUsedAt": "Når den sist ble brukt.",
+            "userAgent": "Nettleseren eller appen, slik den identifiserte seg."
+          },
+          "signInMethods": {
+            "accountId": "Kontoens ID hos den leverandøren.",
+            "passwordSet": "Hvorvidt et passord er angitt (selve passordet blir aldri eksportert).",
+            "provider": "Påloggingsmetoden; credential betyr e-post og passord.",
+            "summary": "Måtene du kan logge på: et passord eller tilknyttede kontoer som Google eller Microsoft."
+          },
+          "trustedDevices": {
+            "deviceName": "Enhetens navn.",
+            "expiresAt": "Når tillitsforholdet opphører.",
+            "lastIpAddress": "IP-adressen for forrige bruk.",
+            "mdmCompliant": "Hvorvidt enhetsadministrasjonssystemet rapporterte den som i samsvar.",
+            "mdmProvider": "Enhetsadministrasjonssystemet, hvis aktuelt.",
+            "platform": "Operativsystemet.",
+            "revokedAt": "Når tilliten ble trukket tilbake.",
+            "revokedBy": "Hvem som trakk den tilbake.",
+            "revokeReason": "Hvorfor den ble trukket tilbake.",
+            "summary": "Enheter denne organisasjonen stoler på for dine innlogginger.",
+            "trustSource": "Hvorfor den er klarert: en adgangsnøkkel, en administrator, ditt valg om å huske den, eller enhetsadministrasjon (MDM)."
+          },
+          "user": {
+            "banExpires": "Når blokkeringen opphører; tomt hvis den ikke opphører.",
+            "banned": "Hvorvidt plattformen blokkerte kontoen din.",
+            "banReason": "Hvorfor plattformen blokkerte det.",
+            "canCreateOrganizations": "Hvorvidt du kan opprette egne organisasjoner.",
+            "email": "E-postadressen du logger inn med.",
+            "emailVerified": "Hvorvidt du bekreftet den e-postadressen.",
+            "firstName": "Kontoens fornavn.",
+            "image": "Adressen til profilbildet ditt.",
+            "lastName": "Kontoens etternavn.",
+            "name": "Kontoens visningsnavn.",
+            "role": "Rollen din på plattformen (ikke i denne organisasjonen).",
+            "summary": "Brukerkontoen din: innloggingen du bruker for denne organisasjonen.",
+            "twoFactorEnabled": "Hvorvidt tofaktorautentisering er på."
+          },
+          "waterIntake": {
+            "amount": "Hvor mange glass.",
+            "loggedAt": "Når du drakk det.",
+            "source": "Hvor du registrerte det: en påminnelse, manuelt eller widgeten.",
+            "summary": "Vannet du registrerte."
+          }
+        },
+        "approvals": {
+          "approvalChains": {
+            "completedAt": "Når det siste trinnet ble avgjort (UTC).",
+            "policy": "Godkjenningspolicyen som fastsatte trinnene, etter navnet den hadde på det tidspunktet.",
+            "status": "Hvor godkjenningen står.",
+            "summary": "Flertrinnsgodkjenninger av forespørslene dine, registrert av en tidligere versjon av godkjenningssystemet."
+          },
+          "approvalChainStages": {
+            "approver": "Personen som ble bedt om å avgjøre trinnet.",
+            "chainId": "ID-en til godkjenningen i approval_chains.",
+            "decidedAt": "Når trinnet ble avgjort (UTC).",
+            "decidedBy": "Hvem som avgjorde trinnet.",
+            "status": "Hvor trinnet står.",
+            "step": "Trinnets plassering: 1 er det første trinnet.",
+            "summary": "Trinnene for disse flertrinnsgodkjenningene."
+          },
+          "decisionsOnOthers": {
+            "actedAt": "Når du tok avgjørelsen (UTC).",
+            "action": "Hva du avgjorde: godkjent eller avvist, eller videretildelt da du sendte forespørselen videre til en annen godkjenner.",
+            "asDeputy": "Hvorvidt du tok avgjørelsen som stedfortreder for godkjenneren.",
+            "authority": "Hvor avgjørelsen er registrert: det nåværende godkjenningssystemet (canonical), det tidligere (legacy) eller bare på selve oppføringen (record).",
+            "otherPerson": "En anonym ID for personen forespørselen tilhørte. Den samme personen har samme ID gjennom hele denne eksporten, og en annen i alle andre eksporter.",
+            "recordKind": "Hva slags forespørsel du tok en avgjørelse om, for eksempel fravær eller en vaktforespørsel.",
+            "summary": "Avgjørelsene du tok på andres forespørsler. Den andre personen vises bare som en anonym ID."
+          },
+          "deputyDecisions": {
+            "actingFor": "Godkjenneren stedfortrederen vikarierte for.",
+            "authority": "Hvilket godkjenningssystem avgjørelsen tilhører: legacy (tidligere) eller canonical (nåværende).",
+            "decidedAt": "Når stedfortrederen tok avgjørelsen (UTC).",
+            "decidedBy": "Stedfortrederen som tok avgjørelsen.",
+            "decision": "Hva stedfortrederen avgjorde: godkjent eller avvist.",
+            "requestId": "ID-en til forespørselen i requests, for det tidligere systemet.",
+            "summary": "Avgjørelser om forespørslene dine tatt av en stedfortreder for godkjenneren.",
+            "workflowId": "ID-en til godkjenningen i workflows, for det nåværende systemet."
+          },
+          "periodSubmissions": {
+            "cadence": "Hvorvidt du leverer timene dine per uke (ukentlig) eller per måned (månedlig).",
+            "cadenceEndDate": "Den siste dagen i hele uken eller måneden (ÅÅÅÅ-MM-DD).",
+            "cadenceStartDate": "Den første dagen i hele uken eller måneden (ÅÅÅÅ-MM-DD).",
+            "closedAt": "Når innsendingen ble trukket tilbake, eller godkjenningen ble utdatert etter en endring (UTC).",
+            "closedCause": "Hvorfor innsendingen ble lukket: du trakk den tilbake (ansatt), eller tiden din ble endret etterpå (endring).",
+            "decidedAt": "Når innsendingen ble godkjent eller avvist (UTC).",
+            "decidedBy": "Hvem som godkjente eller avviste innsendingen.",
+            "endDate": "Den siste dagen du sendte inn (ÅÅÅÅ-MM-DD).",
+            "rangeEnd": "Slutten på de innsendte dagene som et tidspunkt (UTC), ikke inkludert.",
+            "rangeStart": "Starten på de innsendte dagene som et tidspunkt (UTC).",
+            "startDate": "Den første dagen du sendte inn (ÅÅÅÅ-MM-DD).",
+            "status": "Status for innsendingen: venter, godkjent, avvist, trukket tilbake eller utdatert når en senere endring gjorde en godkjenning utdatert.",
+            "submittedAt": "Når perioden ble sendt inn (UTC).",
+            "submittedBy": "Hvem som sendte inn perioden.",
+            "summary": "Ukene eller månedene med arbeidstid du sendte inn til godkjenning. Å sende inn en periode på nytt legger til en ny rad.",
+            "timezone": "Tidssonen periodens dager telles i.",
+            "weekStartDay": "For ukentlige innsendinger: ukedagen en uke starter på."
+          },
+          "requests": {
+            "approvedAt": "Når forespørselen ble avgjort (UTC).",
+            "approver": "Personen som ble bedt om å avgjøre.",
+            "notes": "Notater om forespørselen.",
+            "reason": "Begrunnelsen din for forespørselen.",
+            "rejectionReason": "Hvorfor forespørselen ble avvist.",
+            "status": "Om forespørselen venter, er godkjent eller avvist.",
+            "summary": "Forespørslene dine om godkjenning, registrert av en tidligere versjon av godkjenningssystemet."
+          },
+          "shared": {
+            "decisionReason": "Begrunnelsen som ble gitt med avgjørelsen.",
+            "recordId": "ID-en til den oppføringen, for eksempel for et fravær i absences.json.",
+            "recordKind": "Hva slags oppføring forespørselen gjelder, for eksempel et fravær eller en tidskorreksjon.",
+            "stageLabel": "Navnet på godkjenningstrinnet.",
+            "workflowId": "ID-en til godkjenningen i arbeidsflyter."
+          },
+          "workflowApprovers": {
+            "approver": "Personen som ble bedt om å avgjøre.",
+            "assignedAt": "Når de ble spurt (UTC).",
+            "decidedBy": "Hvem som faktisk avgjorde: navnet på en person, eller system når appen avgjorde det (legacy_unknown for eldre oppføringer).",
+            "reassignedBy": "Hvem som sendte avgjørelsen videre til noen andre.",
+            "resolvedAt": "Når deres del ble avgjort (UTC).",
+            "status": "Status for deres del: venter, godkjent, avvist, kansellert eller utløpt.",
+            "summary": "Personene som ble bedt om å avgjøre for hvert trinn i godkjenningene dine."
+          },
+          "workflowEvents": {
+            "actor": "Hvem som gjorde det: navnet på en person, eller system når appen gjorde det (legacy_unknown for eldre oppføringer).",
+            "eventType": "Hva som skjedde, for eksempel stage.activated, assignment.approved eller assignment.escalated.",
+            "occurredAt": "Når det skjedde (UTC).",
+            "reason": "Begrunnelsen som ble oppgitt.",
+            "summary": "Alt som skjedde med godkjenningene dine, i rekkefølge."
+          },
+          "workflows": {
+            "cancelledAt": "Når forespørselen ble kansellert (UTC).",
+            "completedAt": "Når den endelige avgjørelsen ble tatt (UTC).",
+            "status": "Status for godkjenningen: venter, godkjent, avvist, kansellert eller utløpt.",
+            "submittedAt": "Når forespørselen ble sendt inn (UTC).",
+            "summary": "Forespørslene dine om godkjenning i det gjeldende godkjenningssystemet, én per forespørsel.",
+            "workflowType": "Hva som godkjennes, for eksempel et fravær, en tidskorrigering eller en periodeinnsending."
+          },
+          "workflowStages": {
+            "activatedAt": "Når trinnet startet (UTC).",
+            "decidedAt": "Når trinnet ble avgjort (UTC).",
+            "stageOrder": "Trinnets posisjon: 1 er det første trinnet.",
+            "status": "Status for trinnet: venter (ikke startet), til behandling, godkjent, avvist, kansellert eller utløpt.",
+            "summary": "Trinnene hver av godkjenningene dine gikk gjennom, i rekkefølge."
+          }
+        },
+        "auditLog": {
+          "actionsOnOthers": {
+            "actedAt": "Når du gjorde det (UTC).",
+            "action": "Hva du gjorde.",
+            "asDeputy": "Om du handlet som noens stedfortreder.",
+            "authority": "Hvor handlingen registreres: audit_log for revisjonsloggen, record for selve oppføringen.",
+            "otherPerson": "En anonym ID for kollegaen, den samme for én kollega gjennom hele denne eksporten; tom når handlingen ikke gjaldt noen person.",
+            "recordKind": "Typen oppføring du utførte handlingen på, f.eks. absence_entry eller time_entry.",
+            "summary": "Hva du gjorde som ikke gjelder dine egne oppføringer: handlinger på kollegers oppføringer eller på organisasjonen. Kolleger vises kun med en anonym ID."
+          },
+          "entries": {
+            "action": "Hva som ble gjort, slik appen registrerer det, f.eks. absence.requested.",
+            "changes": "Hva som ble endret, som JSON (vanligvis verdiene før og etter).",
+            "entityId": "ID-en til den oppføringen i appen.",
+            "entityType": "Typen oppføring handlingen ble utført på, f.eks. absence_entry eller employee.",
+            "ipAddress": "IP-adressen din da du gjorde det; tom når noen andre gjorde det.",
+            "metadata": "Mer kontekst appen registrerte, som JSON.",
+            "performedBy": "Navnet på personen som gjorde det.",
+            "performedByYou": "Om du gjorde det selv.",
+            "summary": "Revisjonsloggoppføringer om deg: hva som ble gjort med oppføringene dine, av hvem og når.",
+            "timestamp": "Når det skjedde (UTC).",
+            "userAgent": "Nettleseren eller appen din da du gjorde det; tom når noen andre gjorde det."
+          }
+        },
+        "common": {
+          "assignedAt": "Når det ble tildelt deg.",
+          "assignedBy": "Hvem som tildelte det til deg.",
+          "createdAt": "Når oppføringen ble opprettet.",
+          "createdBy": "Hvem som opprettet oppføringen.",
+          "effectiveFrom": "Når det trådte i kraft.",
+          "effectiveTo": "Når det sluttet å gjelde; tom så lenge det fortsatt gjelder.",
+          "id": "Oppføringens ID i appen, slik at andre filer kan referere til den.",
+          "updatedAt": "Når oppføringen sist ble endret.",
+          "updatedBy": "Hvem som sist endret oppføringen."
+        },
+        "employment": {
+          "assignedLocations": {
+            "city": "Lokasjonens by.",
+            "country": "Lokasjonens land.",
+            "location": "Lokasjonens navn.",
+            "postalCode": "Lokasjonens postnummer.",
+            "street": "Lokasjonens gateadresse.",
+            "summary": "Lokasjonene du er tildelt å jobbe ved."
+          },
+          "assignedVehicles": {
+            "archived": "Om organisasjonen har arkivert kjøretøyet, slik at det ikke lenger kan velges.",
+            "assignmentType": "Hvordan det når deg: tildelt deg (employee) eller teamet ditt (team).",
+            "licencePlate": "Kjøretøyets registreringsnummer.",
+            "summary": "Organisasjonens kjøretøy tildelt deg eller teamene dine, som appen foreslår først når du registrerer et kjøretøy på arbeidet ditt.",
+            "vehicle": "Kjøretøyets navn."
+          },
+          "billableRates": {
+            "hourlyRate": "Fakturert timesats.",
+            "level": "Om satsen gjelder for alt arbeidet ditt eller for ett prosjekt.",
+            "project": "Prosjektet satsen gjelder for; tom for alt arbeidet ditt.",
+            "summary": "Satsene organisasjonen fakturerer kunder for arbeidet ditt."
+          },
+          "costCenters": {
+            "code": "Kostnadsstedets kode.",
+            "costCenter": "Kostnadsstedets navn.",
+            "summary": "Kostnadsstedene arbeidet ditt føres mot."
+          },
+          "costRates": {
+            "hourlyRate": "Kostnad per time.",
+            "summary": "Den interne kostnaden for arbeidet ditt per time, slik organisasjonen beregner den."
+          },
+          "customFields": {
+            "field": "Feltets navn.",
+            "fieldArchived": "Om organisasjonen har arkivert feltet.",
+            "summary": "Verdiene for organisasjonens egne felt i ansattoppføringen din.",
+            "tracked": "Om feltet beholder en historikk over verdiene sine.",
+            "type": "Feltets type, for eksempel tekst, tall, dato eller valg.",
+            "validFrom": "For felt med historikk: dagen verdien gjelder fra (YYYY-MM-DD).",
+            "value": "Verdien."
+          },
+          "customRoles": {
+            "description": "Beskrivelsen av rollen.",
+            "role": "Navnet på rollen.",
+            "summary": "De egendefinerte rollene du innehar."
+          },
+          "departureEvents": {
+            "actor": "Hvem som utførte det; tomt når systemet gjorde det.",
+            "departureId": "Fratredelsen denne hendelsen tilhører (dens ID under fratredelser).",
+            "kind": "Hva som skjedde, for eksempel departure_scheduled eller departure_effective.",
+            "occurredAt": "Når det skjedde.",
+            "revision": "Versjonen av fratredelsen etter denne hendelsen.",
+            "summary": "Historikken over fratredelsene dine: når hver enkelt ble planlagt, endret, kansellert eller trådte i kraft, og hvem som gjorde det."
+          },
+          "departureReviews": {
+            "affectedEndAt": "Slutten på tidsrommet oppføringen påvirker.",
+            "affectedStartAt": "Starten på tidsrommet oppføringen påvirker.",
+            "departureId": "ID-en til fratredelsen under fratredelser.",
+            "kind": "Hva slags oppføring som krevde gjennomgangen.",
+            "resolution": "Hvordan gjennomgangen ble løst.",
+            "resolvedAt": "Når gjennomgangen ble løst.",
+            "resolvedBy": "Hvem som løste gjennomgangen.",
+            "status": "Statusen for gjennomgangen.",
+            "subjectId": "ID-en til oppføringen som vurderes.",
+            "summary": "Oppføringer som krevde en gjennomgang på grunn av din fratredelse."
+          },
+          "departures": {
+            "blockedReason": "Hvorfor fratredelsen ikke kunne fullføres, hvis den ikke kunne det.",
+            "cutoffAt": "Når tilgangen din til organisasjonen opphører.",
+            "effectiveAt": "Når fratredelsen trådte i kraft.",
+            "lastWorkingDay": "Din siste arbeidsdag (YYYY-MM-DD).",
+            "mode": "Hvordan fratredelsen ble satt opp.",
+            "replacement": "Kollegaen som overtar arbeidet ditt.",
+            "status": "Statusen for fratredelsen.",
+            "summary": "Fratredelsene dine fra organisasjonen.",
+            "timezone": "Tidssonen for den siste arbeidsdagen."
+          },
+          "departureTasks": {
+            "completedAt": "Når oppgaven ble fullført.",
+            "departureId": "ID-en til fratredelsen under fratredelser.",
+            "kind": "Hva oppgaven gjør.",
+            "status": "Statusen for oppgaven.",
+            "summary": "Oppgavene appen kjørte for din fratredelse."
+          },
+          "employee": {
+            "birthday": "Fødselsdagen din (YYYY-MM-DD).",
+            "contractType": "Kontraktstypen din.",
+            "email": "E-postadressen til brukerkontoen din.",
+            "endDate": "Når ansettelsesforholdet ditt opphørte; tomt så lenge det pågår.",
+            "firstName": "Fornavnet ditt i ansattoppføringen din.",
+            "gender": "Kjønnet ditt.",
+            "isActive": "Hvorvidt ansattoppføringen din er aktiv.",
+            "lastName": "Etternavnet ditt i ansattoppføringen din.",
+            "organization": "Organisasjonens navn.",
+            "personnelNumber": "Personalnummeret ditt.",
+            "position": "Stillingen eller stillingstittelen din.",
+            "primaryTeam": "Hovedteamet ditt.",
+            "pronouns": "Pronomenene dine.",
+            "role": "Rollen din i appen: administrator, leder eller ansatt.",
+            "startDate": "Når ansettelsesforholdet ditt startet.",
+            "summary": "Ansattposten din i denne organisasjonen og navnet på brukerkontoen din.",
+            "userFirstName": "Fornavnet på brukerkontoen din.",
+            "userId": "ID-en til brukerkontoen din.",
+            "userLastName": "Etternavnet på brukerkontoen din.",
+            "userName": "Navnet på brukerkontoen din."
+          },
+          "employmentPeriods": {
+            "endedAt": "Når perioden ble avsluttet; tomt mens den er åpen.",
+            "startedAt": "Når perioden startet.",
+            "startProvenance": "Hvor starten stammer fra, for eksempel en nyansettelse eller gjenansettelse.",
+            "status": "Hvorvidt perioden er åpen eller lukket.",
+            "summary": "Hver periode du var ansatt i organisasjonen."
+          },
+          "employmentTerms": {
+            "changeReason": "Hvorfor vilkårene ble fastsatt eller endret.",
+            "contractType": "Kontraktstypen din.",
+            "currency": "Valutaen for timelønnen.",
+            "hourlyRate": "Timelønnen din under disse vilkårene.",
+            "probationEndsOn": "Siste dag i prøvetiden din (ÅÅÅÅ-MM-DD).",
+            "probationStartsOn": "Første dag i prøvetiden din (ÅÅÅÅ-MM-DD).",
+            "reviewState": "Hvorvidt vilkårene ble bekreftet eller fortsatt må gjennomgås.",
+            "status": "Hvorvidt disse vilkårene er gjeldende.",
+            "summary": "Ansettelsesvilkårene dine over tid, med timelønnen din.",
+            "validFrom": "Når disse vilkårene begynner å gjelde.",
+            "validUntil": "Når disse vilkårene slutter å gjelde; tomt mens de gjelder.",
+            "weeklyContractMinutes": "Avtalt arbeidstid per uke, i minutter.",
+            "workModel": "Arbeidsmodellen din.",
+            "workPolicy": "Arbeidsretningslinjen disse vilkårene bruker."
+          },
+          "groups": {
+            "addedAt": "Når du ble lagt til i gruppen.",
+            "addedBy": "Hvem som la deg til i gruppen.",
+            "description": "Gruppens beskrivelse.",
+            "group": "Gruppens navn.",
+            "summary": "Ansattgruppene du tilhører."
+          },
+          "locationSupervision": {
+            "location": "Lokasjonens navn.",
+            "subarea": "Området innenfor lokasjonen; tomt for hele lokasjonen.",
+            "summary": "Lokasjonene og områdene du har oppsyn med."
+          },
+          "managers": {
+            "manager": "Lederens navn.",
+            "summary": "Lederne dine."
+          },
+          "policyAssignments": {
+            "captureEnabled": "Kun for posisjonsregistrering: hvorvidt posisjonen din registreres når du stempler inn eller ut.",
+            "effectiveFrom": "Når tildelingen begynner å gjelde.",
+            "effectiveUntil": "Når tildelingen slutter å gjelde; tomt mens den gjelder.",
+            "isActive": "Hvorvidt tildelingen er aktiv.",
+            "policy": "Retningslinjens navn; tomt for posisjonsregistrering.",
+            "policyKind": "Typen retningslinje: arbeid, ferie, helligdag (et forhåndsvalg for helligdag), helligdagstildeling (en enkelt helligdag), helligdagskategori, endring, tillegg, arbeidskategorisett eller posisjonsregistrering.",
+            "priority": "Hvilken tildeling som vinner når flere gjelder: det høyeste tallet vinner.",
+            "summary": "Alle retningslinjer som gjelder for deg: tildelt deg, teamene dine eller organisasjonens standard."
+          },
+          "projectAssignmentHistory": {
+            "summary": "Tidligere og nåværende prosjekttildelinger, og når de gjaldt."
+          },
+          "projectAssignments": {
+            "summary": "Prosjektene som er tildelt deg eller teamene dine."
+          },
+          "projectsManaged": {
+            "summary": "Prosjektene du administrerer."
+          },
+          "shared": {
+            "assignmentType": "Hvordan den når deg: tildelt deg (ansatt), teamet ditt (team) eller hele organisasjonen (organisasjon).",
+            "primary": "Hvorvidt det er din primære.",
+            "project": "Prosjektets navn.",
+            "team": "Teamets navn."
+          },
+          "skills": {
+            "category": "Ferdighetens kategori.",
+            "expiresOn": "Dagen ferdigheten utløper (YYYY-MM-DD); tomt hvis den ikke utløper.",
+            "notes": "Notater om ferdigheten din.",
+            "skill": "Ferdighetens navn.",
+            "summary": "Ferdighetene og kvalifikasjonene dine."
+          },
+          "teamHistory": {
+            "summary": "Hvert team du var med i, og når."
+          },
+          "teamPermissions": {
+            "canApproveTeamRequests": "Hvorvidt du kan godkjenne teamets forespørsler.",
+            "canCreateTeams": "Hvorvidt du kan opprette team.",
+            "canManageTeamMembers": "Hvorvidt du kan administrere teamets medlemmer.",
+            "canManageTeamSettings": "Hvorvidt du kan endre teamets innstillinger.",
+            "grantedAt": "Når tillatelsene ble tildelt.",
+            "grantedBy": "Hvem som tildelte tillatelsene.",
+            "summary": "Teamtillatelsene du har.",
+            "team": "Teamet tillatelsene gjelder for; tomt for alle team i organisasjonen."
+          },
+          "teams": {
+            "addedBy": "Hvem som la deg til i teamet.",
+            "memberSince": "Fra når du har vært med i teamet.",
+            "summary": "Teamene du er med i nå."
+          }
+        },
+        "integrations": {
+          "calendarConnections": {
+            "account": "Kontoen din hos kalendertjenesten.",
+            "calendarId": "Kalenderen appen bruker i den kontoen.",
+            "conflictDetectionEnabled": "Hvorvidt appen sjekker den kalenderen for overlappende avtaler.",
+            "createdAt": "Når du koblet til kalenderen (UTC).",
+            "lastSyncAt": "Når appen sist synkroniserte med kalenderen (UTC).",
+            "provider": "Kalendertjenesten, for eksempel google, microsoft365 eller icloud.",
+            "pushEnabled": "Hvorvidt appen legger til fraværet ditt i den kalenderen.",
+            "summary": "Kalenderne du har koblet til appen. Tilgangstokener er aldri inkludert.",
+            "updatedAt": "Når tilkoblingen sist ble endret (UTC)."
+          },
+          "chatAccounts": {
+            "accountId": "Konto-ID-en din hos chattjenesten.",
+            "displayName": "Visningsnavnet ditt hos chattjenesten.",
+            "email": "E-postadressen din hos chattjenesten, der den tilbyr det.",
+            "isActive": "Hvorvidt lenken er i bruk.",
+            "lastSeenAt": "Når du sist brukte appen via kontoen (UTC).",
+            "linkedAt": "Når du koblet til kontoen (UTC).",
+            "platform": "Chattjenesten: slack, teams, telegram eller discord.",
+            "summary": "Chattekontoene dine som er koblet til appen, slik at du kan bruke den fra Slack, Microsoft Teams, Telegram eller Discord.",
+            "username": "Brukernavnet ditt hos chattjenesten.",
+            "workspaceId": "ID-en til arbeidsområdet eller leieren kontoen din tilhører, der tjenesten har dette."
+          },
+          "icsFeeds": {
+            "createdAt": "Når lenken ble opprettet (UTC).",
+            "includeApproved": "Hvorvidt feeden viser godkjent fravær.",
+            "includePending": "Hvorvidt feeden viser fravær som fortsatt venter på godkjenning.",
+            "isActive": "Hvorvidt lenken fortsatt fungerer.",
+            "lastUsedAt": "Når en kalenderapp sist leste feeden (UTC).",
+            "revokedAt": "Når lenken ble slått av (UTC).",
+            "summary": "Lenkene til kalenderfeeden din, som lar en kalenderapp abonnere på fraværet ditt. Selve den hemmelige lenken er aldri inkludert."
+          },
+          "kioskPin": {
+            "pinSet": "Hvorvidt en kiosk-PIN er angitt for deg.",
+            "setAt": "Når PIN-koden sist ble angitt (UTC).",
+            "setBy": "Hvem som angav PIN-koden.",
+            "summary": "Hvorvidt du har en PIN-kode for innstempling ved en kioskterminal. Selve PIN-koden lagres aldri i lesbar form og er ikke inkludert."
+          },
+          "shared": {
+            "isActive": "Hvorvidt tilkoblingen er i bruk."
+          }
+        },
+        "notifications": {
+          "notifications": {
+            "actionUrl": "Siden i appen som varselet lenker til.",
+            "createdAt": "Når du mottok varselet (UTC).",
+            "entityId": "ID-en til denne oppføringen.",
+            "entityType": "Hvilken type oppføring varselet refererer til, for eksempel et fravær.",
+            "isRead": "Hvorvidt du har lest varselet.",
+            "message": "Teksten i varselet.",
+            "metadata": "Ytterligere detaljer varselet inneholdt, som JSON.",
+            "readAt": "Når du leste det (UTC).",
+            "summary": "Varslene du mottok i appen, nøyaktig slik du mottok dem.",
+            "title": "Tittelen på varselet.",
+            "type": "Hva varselet gjelder, for eksempel approval_request_submitted."
+          }
+        },
+        "personnelFile": {
+          "documents": {
+            "absenceEndDate": "For en sykemelding: den siste dagen av fraværet (YYYY-MM-DD).",
+            "absenceId": "For en sykemelding: ID-en til fraværet den dekker, i absences.json.",
+            "absenceStartDate": "For en sykemelding: den første dagen av fraværet (YYYY-MM-DD).",
+            "category": "Dokumentkategorien: contract, payslip, certificate, sick_note eller other.",
+            "documentDate": "Datoen på dokumentet (YYYY-MM-DD).",
+            "expiryDate": "Dagen dokumentet utløper (YYYY-MM-DD), for eksempel et sertifikat.",
+            "file": "Hvor den opprinnelige filen ligger i dette arkivet.",
+            "fileName": "Filnavnet slik det ble lastet opp.",
+            "mimeType": "Filtypen, for eksempel application/pdf.",
+            "payPeriodMonth": "For en lønnsslipp: måneden (1 til 12) den gjelder for.",
+            "payPeriodYear": "For en lønnsslipp: året den gjelder for.",
+            "sizeBytes": "Filstørrelsen, i byte.",
+            "summary": "Dokumentene i personalmappen din. Selve filene ligger i mappen personnel_file, etter kategori.",
+            "title": "Dokumentets tittel.",
+            "uploadedBy": "Hvem som lastet opp dokumentet.",
+            "visibility": "Hvem som kan se dokumentet; shared betyr at du kan se det i mappen din."
+          }
+        },
+        "planning": {
+          "shared": {
+            "approvedAt": "Når forespørselen ble avgjort (UTC).",
+            "approver": "Hvem som avgjorde forespørselen.",
+            "lifecycleStatus": "Status for forespørselen, inkludert om den ble kansellert.",
+            "requestCreatedAt": "Når forespørselen ble opprettet (UTC).",
+            "requestId": "Forespørselens ID i appen.",
+            "requestStatus": "Avgjørelsen på forespørselen: pending, approved eller rejected.",
+            "requestType": "Hva det ble bedt om: swap (bytte vakter), assignment (overta en vakt) eller pickup (ta en ledig vakt).",
+            "shiftDate": "Dagen for vakten forespørselen gjelder (YYYY-MM-DD).",
+            "shiftEndTime": "Når vakten slutter, som lokal tid på dagen (HH:mm).",
+            "shiftStartTime": "Når vakten starter, som lokal tid på dagen (HH:mm)."
+          },
+          "shiftRequests": {
+            "notes": "Ditt notat på forespørselen.",
+            "reason": "Begrunnelsen din for forespørselen.",
+            "reasonCategory": "Hvilken type begrunnelse, for eksempel sick, emergency, childcare eller other.",
+            "rejectionReason": "Hvorfor forespørselen ble avvist.",
+            "summary": "Vaktforespørslene du sendte inn.",
+            "swapPartner": "Kollegaen du ba om å bytte med eller overta vakten."
+          },
+          "shiftRequestsReceived": {
+            "requestedBy": "Kollegaen som opprettet forespørselen.",
+            "summary": "Forespørsler kolleger har sendt til deg, som for eksempel å bytte eller overta en vakt. Deres begrunnelser, notater og vakter er ikke inkludert: vaktdato og -klokkeslett vises kun når vakten er din."
+          },
+          "shifts": {
+            "date": "Dagen for vakten (YYYY-MM-DD).",
+            "endTime": "Når vakten slutter, som lokal tid på arbeidsplassen (HH:mm).",
+            "location": "Vaktens plassering.",
+            "notes": "Notatet som er skrevet på vakten.",
+            "publishedAt": "Når vakten ble publisert (UTC).",
+            "publishedBy": "Hvem som publiserte vakten.",
+            "startTime": "Når vakten starter, som lokal tid på arbeidsplassen (HH:mm).",
+            "status": "Hvorvidt vakten fortsatt er et utkast eller publisert for deg.",
+            "subarea": "Området innenfor lokasjonen.",
+            "summary": "Vaktene du var satt opp på.",
+            "template": "Vaktmalen vakten ble opprettet fra."
+          }
+        },
+        "positionStamps": {
+          "accessLog": {
+            "accessedAt": "Når posisjonene dine ble vist (UTC).",
+            "exportId": "For en eksport: eksportens ID.",
+            "kind": "Hvordan de ble vist: i detaljene for en arbeidsperiode (work_period_detail) eller i en eksport (data_export).",
+            "summary": "Hvem andre enn deg som ble vist posisjonene dine, og når: én rad per viste arbeidsperiode, eller én rad per eksport.",
+            "viewer": "Hvem som ble vist posisjonene dine.",
+            "workPeriodId": "ID-en til arbeidsperioden som ble vist, i time.json > work_periods.",
+            "workPeriodStartedAt": "Når den arbeidsperioden startet (UTC).",
+            "workPeriodUtcOffsetMinutes": "UTC-forskyvningen for innstemplingen til den arbeidsperioden, i minutter."
+          },
+          "consents": {
+            "consentId": "Samtykkets ID i appen.",
+            "grantedAt": "Når du ga samtykket ditt (UTC).",
+            "summary": "Hvert samtykke du ga til registrering av posisjonen din, og når du trakk det tilbake.",
+            "withdrawnAt": "Når du trakk samtykket tilbake (UTC); tomt så lenge det gjelder."
+          },
+          "noticeDeclines": {
+            "declinedAt": "Når du svarte (UTC).",
+            "summary": "Tidspunktene du svarte \"ikke nå\" på posisjonsvarselet."
+          },
+          "shared": {
+            "noticeVersion": "Versjonen av posisjonsvarselet du svarte på.",
+            "purposeStatement": "Hvorfor organisasjonen registrerer posisjoner, slik det var oppgitt i varselet.",
+            "retentionDays": "Hvor mange dager posisjoner lagres, slik det var oppgitt i varselet."
+          },
+          "stamps": {
+            "accuracyMeters": "Hvor nøyaktig posisjonen er, i meter, slik enheten din rapporterte den.",
+            "capturedAt": "Når posisjonen ble registrert med stemplingshendelsen (UTC).",
+            "clockEvent": "Hvorvidt posisjonen ble registrert ved en clock_in eller en clock_out.",
+            "consentId": "ID-en til samtykket i consents som posisjonen ble registrert under.",
+            "createdAt": "Når posisjonen ble lagret (UTC).",
+            "fixedAt": "Når enheten din fastslo posisjonen (UTC); det kan være litt tidligere enn stemplingshendelsen.",
+            "latitude": "Breddegraden, i desimalgrader.",
+            "longitude": "Lengdegraden, i desimalgrader.",
+            "purgeAt": "Når posisjonen vil bli slettet (UTC).",
+            "summary": "Posisjonene som ble registrert da du stemplet inn eller ut. Hver av dem slettes automatisk ved purge_at.",
+            "timeEntryId": "ID-en til innstemplingen eller utstemplingen i time.json > time_entries.",
+            "utcOffsetMinutes": "UTC-forskyvningen for stemplingshendelsen, i minutter (120 betyr UTC+2)."
+          }
+        },
+        "time": {
+          "automaticClockOuts": {
+            "clockOutEntryId": "ID-en til utstemplingen appen registrerte, i time_entries.",
+            "cutoffTime": "Tidspunktet du ble stemplet ut (UTC).",
+            "maxUninterruptedMinutes": "Den lengste tiden, i minutter, du kan være innstemplet uten pause.",
+            "processedAt": "Når appen stemplet deg ut (UTC).",
+            "startTime": "Når arbeidsperioden startet (UTC).",
+            "summary": "Ganger appen stemplet deg ut fordi du var innstemplet lenger enn tillatt.",
+            "timezone": "Tidssonen for arbeidsperioden.",
+            "utcOffsetMinutes": "UTC-forskyvningen for utstemplingen, i minutter."
+          },
+          "balanceAdjustments": {
+            "cancellationReason": "Hvorfor justeringen ble kansellert.",
+            "cancelledAt": "Når justeringen ble kansellert (UTC); tomt hvis den fortsatt gjelder.",
+            "cancelledBy": "Hvem som kansellerte justeringen.",
+            "day": "Dagen justeringen gjelder for (ÅÅÅÅ-MM-DD).",
+            "kind": "Typen justering: opening_balance eller overtime_payout.",
+            "minutes": "Minuttene som er lagt til (positivt) eller trukket fra (negativt) saldoen din.",
+            "reason": "Hvorfor justeringen ble gjort.",
+            "recordedAt": "Når justeringen ble registrert (UTC).",
+            "recordedBy": "Hvem som registrerte justeringen.",
+            "summary": "Manuelle endringer i arbeidstidssaldoen din, for eksempel en åpningssaldo eller utbetalt overtid, inkludert kansellerte."
+          },
+          "breakAdjustments": {
+            "adjustedAt": "Når appen la til pausen (UTC).",
+            "adjustedDurationMinutes": "Varigheten av perioden etter at pausen ble lagt til, i minutter.",
+            "breakInsertedAt": "Hvor i perioden pausen ble plassert (UTC).",
+            "breakInsertedMinutes": "Hvor lang den tillagte pausen er, i minutter.",
+            "originalDurationMinutes": "Varigheten av perioden før pausen ble lagt til, i minutter.",
+            "originalEndTime": "Slutten på perioden før pausen ble lagt til (UTC).",
+            "policy": "Pauseregelen som krevde pausen.",
+            "requiredBreakMinutes": "Pausen regelen krever, i minutter.",
+            "summary": "Pauser appen la til i en arbeidsperiode fordi den lovpålagte pausen manglet.",
+            "workingMinutesThreshold": "Arbeidstiden, i minutter, som regelen krever pause etter."
+          },
+          "complianceExceptions": {
+            "actualDurationMinutes": "Hvor lenge du faktisk jobbet under unntaket, i minutter.",
+            "approvedAt": "Når unntaket ble godkjent (UTC).",
+            "approver": "Hvem som besluttet unntaket.",
+            "exceptionType": "Hvilken regel unntaket gjelder for, for eksempel rest_period eller overtime_daily.",
+            "plannedDurationMinutes": "Arbeidstiden unntaket ble forespurt for, i minutter.",
+            "reason": "Hvorfor unntaket ble forespurt.",
+            "rejectedAt": "Når unntaket ble avvist (UTC).",
+            "rejectionReason": "Hvorfor unntaket ble avvist.",
+            "status": "Hvorvidt unntaket er ventende, godkjent, avvist, utløpt eller brukt.",
+            "summary": "Unntak fra arbeidstidsregler forespurt for deg, for eksempel kortere hviletid eller ekstra overtid.",
+            "usedAt": "Når du jobbet under unntaket (UTC).",
+            "validFrom": "Når unntaket begynner å gjelde (UTC).",
+            "validUntil": "Når unntaket slutter å gjelde (UTC).",
+            "wasUsed": "Hvorvidt du jobbet under unntaket."
+          },
+          "historicalRepairProposals": {
+            "approvedAt": "Når korrigeringen ble godkjent (UTC).",
+            "approvedBy": "Hvem som godkjente korrigeringen.",
+            "kind": "Hva korrigeringen endrer.",
+            "proposedAt": "Når korrigeringen ble foreslått (UTC).",
+            "proposedBy": "Hvem som foreslo korrigeringen.",
+            "reason": "Hvorfor korrigeringen ble foreslått.",
+            "resolvedAt": "Når forslaget ble lukket (UTC).",
+            "resolvedBy": "Hvem som lukket forslaget.",
+            "status": "Status for forslaget, for eksempel foreslått, godkjent, iverksatt eller avvist.",
+            "summary": "Foreslåtte korrigeringer av eldre arbeidsposter, for eksempel en manglende utstempling, og hva utfallet ble."
+          },
+          "shared": {
+            "actualMinutes": "Minuttene du jobbet, regnet med i saldoen.",
+            "balanceMinutes": "Saldoen din i minutter: positivt er overtid, negativt er tid som gjenstår.",
+            "computedAt": "Når appen sist beregnet disse tallene (UTC).",
+            "requiredMinutes": "Minuttene du skulle jobbe i henhold til arbeidsretningslinjene dine.",
+            "workPeriodId": "ID-en til arbeidsperioden i work_periods."
+          },
+          "surchargeCalculations": {
+            "appliedPercentage": "Tilleggssatsen, som en brøk (0,25 betyr 25 %).",
+            "baseMinutes": "Minuttene arbeidet i perioden.",
+            "calculatedAt": "Tidspunktet tillegget gjelder for (UTC).",
+            "calculationDetails": "Hvordan tillegget ble beregnet, som JSON.",
+            "qualifyingMinutes": "Minuttene som kvalifiserer for tillegget.",
+            "summary": "Tillegg beregnet for arbeidet ditt, for eksempel for natt-, søndags- eller helligdagsarbeid.",
+            "surchargeMinutes": "Ekstraminuttene godskrevet som tillegg.",
+            "surchargeModel": "Tilleggsmodellen som gjaldt.",
+            "surchargeRule": "Regelen for modellen som ble brukt."
+          },
+          "timeEntries": {
+            "createdBy": "Hvem som registrerte oppføringen: deg, eller personen som registrerte den for deg.",
+            "deviceInfo": "Enheten eller nettleseren du registrerte oppføringen med; tomt når noen andre har registrert den.",
+            "ipAddress": "IP-adressen til enheten du registrerte oppføringen med; tomt når noen andre har registrert den.",
+            "isSuperseded": "Hvorvidt en senere korrigering erstattet denne oppføringen.",
+            "location": "Posisjonen registrert med oppføringen, som et stedsnavn eller koordinater.",
+            "notes": "Notatet skrevet på oppføringen.",
+            "replacesEntryId": "For en korrigering: ID-en til oppføringen den erstatter.",
+            "summary": "Hver innstempling, utstempling og korrigering registrert for deg. Oppføringer endres aldri: en korrigering er en ny oppføring som erstatter den gamle.",
+            "supersededById": "ID-en til korrigeringen som erstattet denne oppføringen.",
+            "timestamp": "Tidspunktet oppføringen gjelder for, i UTC.",
+            "timezone": "Tidssonen oppføringen ble registrert i, for eksempel Europe/Berlin.",
+            "timezoneSource": "Hvor tidssonen kom fra, for eksempel enheten din eller organisasjonens innstilling.",
+            "type": "Hva oppføringen registrerer: clock_in, clock_out eller correction.",
+            "utcOffsetMinutes": "Gjeldende UTC-forskyvning der oppføringen ble registrert, i minutter (120 betyr UTC+2). Legg den til tidsstempelet for lokal tid."
+          },
+          "workBalance": {
+            "adjustmentMinutes": "Minuttene som er lagt til eller trukket fra gjennom saldojusteringer.",
+            "computedFromDate": "Den første dagen saldoen teller (ÅÅÅÅ-MM-DD).",
+            "computedThroughDate": "Den siste dagen saldoen teller (ÅÅÅÅ-MM-DD).",
+            "summary": "Din nåværende arbeidstidssaldo: tiden du jobbet mot tiden du var forventet å jobbe."
+          },
+          "workBalancePeriods": {
+            "isClosed": "Hvorvidt perioden er lukket, slik at tallene ikke lenger endres.",
+            "periodEnd": "Den siste dagen i perioden (ÅÅÅÅ-MM-DD).",
+            "periodStart": "Den første dagen i perioden (ÅÅÅÅ-MM-DD).",
+            "periodType": "Lengden på perioden: måned eller år.",
+            "summary": "Arbeidstidssaldoen din per måned og per år."
+          },
+          "workOperations": {
+            "actor": "Personen som utførte endringen.",
+            "actorKind": "Hvem som utførte endringen: en person (human), selve appen (system), en kiosk, eller unknown for gamle oppføringer.",
+            "createdAt": "Når endringen ble utført (UTC).",
+            "kind": "Hva som ble gjort, for eksempel en innstempling, en redigering eller en sletting.",
+            "summary": "En logg over hver endring i arbeidsperiodene dine: hva som ble gjort, og av hvem.",
+            "writer": "Hvilken del av appen som utførte endringen, for eksempel en utstempling i webappen, en import eller en administrators redigering."
+          },
+          "workPeriods": {
+            "approvalStatus": "Hvorvidt perioden er godkjent, avvist eller venter på godkjenning.",
+            "breakStartedAt": "Når din nåværende pause startet (UTC); tomt når du ikke har pause.",
+            "breakStartedZone": "Tidssonen pausen ble startet i.",
+            "clockInEntryId": "ID-en til innstemplingen i time_entries.",
+            "clockOutEntryId": "ID-en til utstemplingen i time_entries.",
+            "deletedAt": "Når perioden ble slettet (UTC); tomt hvis den ikke ble slettet.",
+            "deletedBy": "Hvem som slettet perioden.",
+            "deletionReason": "Hvorfor perioden ble slettet.",
+            "drivenDistanceKm": "Avstanden du kjørte under arbeidet, i kilometer: sluttavlesningen minus startavlesningen, eller avstanden angitt direkte dersom det ikke var noen startavlesning.",
+            "durationMinutes": "Hvor lenge du jobbet, i minutter.",
+            "endTime": "Når arbeidet ble avsluttet (UTC); tomt så lenge du fortsatt er stemplet inn.",
+            "endUtcOffsetMinutes": "UTC-forskyvningen for utstemplingen, i minutter.",
+            "isActive": "Hvorvidt du fortsatt er stemplet inn for denne perioden.",
+            "isBillable": "Hvorvidt arbeidet kan faktureres til en kunde.",
+            "licencePlate": "Registreringsnummeret til organisasjonskjøretøyet du kjørte; tomt for ditt eget kjøretøy.",
+            "odometerEndKm": "Kjøretøyets kilometerteller da arbeidet ble avsluttet, i kilometer.",
+            "odometerStartKm": "Kjøretøyets kilometerteller da arbeidet startet, i kilometer.",
+            "pendingDurationMinutes": "For en endring som venter på godkjenning: den forespurte varigheten, i minutter.",
+            "pendingEndTime": "For en endring som venter på godkjenning: det forespurte sluttidspunktet (UTC).",
+            "pendingReason": "Hvorfor endringen ble forespurt.",
+            "pendingRequestedAt": "Når endringen ble forespurt (UTC).",
+            "pendingRequestedBy": "Hvem som ba om endringen.",
+            "pendingStartTime": "For en endring som venter på godkjenning: den forespurte starten (UTC).",
+            "project": "Prosjektet arbeidet ble ført på.",
+            "startTime": "Når arbeidet startet (UTC).",
+            "startUtcOffsetMinutes": "UTC-forskyvningen for innstemplingen, i minutter (120 betyr UTC+2).",
+            "summary": "Arbeidsperiodene dine, hver fra en innstempling til en utstempling, med eventuelle endringer som venter på godkjenning.",
+            "task": "Prosjektoppgaven arbeidet ble ført på.",
+            "vehicleKind": "Kjøretøyet du kjørte under arbeidet: organization for organisasjonens kjøretøy, own for eget kjøretøy; tomt hvis ingenting ble registrert.",
+            "vehicleName": "Navnet på organisasjonens kjøretøy du kjørte; tomt for eget kjøretøy.",
+            "workCategory": "Typen arbeid, slik organisasjonen kaller det.",
+            "workLocationType": "Hvor du jobbet, for eksempel kontor, hjemme eller eksternt."
+          },
+          "workPolicyViolations": {
+            "acknowledgedAt": "Når overtredelsen ble bekreftet (UTC).",
+            "acknowledgedBy": "Hvem som bekreftet overtredelsen.",
+            "acknowledgedNote": "Notatet som ble skrevet da overtredelsen ble bekreftet.",
+            "details": "Tallene bak overtredelsen, som JSON, for eksempel arbeidstimer og grensen.",
+            "policy": "Arbeidsreglementet hvis regel ble brutt.",
+            "summary": "Ganger arbeidet ditt brøt en regel i arbeidsreglementet, for eksempel en manglende pause eller en for lang arbeidsdag.",
+            "violatedAt": "Når regelen ble brutt (UTC).",
+            "violationType": "Hvilken regel som ble brutt."
+          },
+          "yearlyBalances": {
+            "absenceAdjustedMinutes": "Minuttene godskrevet for fravær som ferie eller sykdom.",
+            "summary": "Arbeidstidssaldoen din per år, beregnet av en tidligere versjon av appen.",
+            "year": "Året."
+          }
+        },
+        "travelExpenses": {
+          "adjustments": {
+            "originalReportId": "ID-en til rapporten som korrigeres.",
+            "reportId": "ID-en til den korrigerende rapporten i reports.",
+            "sourceReportId": "ID-en til rapporten korrigeringen ble kopiert fra: originalen eller den nyeste korrigeringen.",
+            "summary": "Rapporter som korrigerer en allerede eksportert eller refundert rapport."
+          },
+          "allowanceOverrides": {
+            "amount": "Beløpet som er fastsatt.",
+            "calculationBasis": "Hvordan beløpet ble beregnet.",
+            "evidence": "Hva beløpet er basert på.",
+            "kind": "Hvilken godtgjørelse som ble fastsatt: mileage eller per_diem.",
+            "revokedAt": "Når beløpet ble trukket tilbake (UTC); tomt hvis det fortsatt gjelder.",
+            "revokedBy": "Hvem som trakk tilbake beløpet, med navnet vedkommende hadde på det tidspunktet.",
+            "scope": "Hvilken del av utgiften beløpet dekker, som JSON.",
+            "situation": "Hvorfor reglene ikke ga noe beløp, som JSON.",
+            "summary": "Kjøregodtgjørelse eller diettgodtgjørelse som en utgiftsadministrator fastsatte manuelt der reglene ikke ga noe beløp."
+          },
+          "claimDecisions": {
+            "action": "Beslutningen: godkjent eller avvist.",
+            "actor": "Hvem som tok beslutningen.",
+            "approver": "Godkjenneren kravet ble tildelt.",
+            "comment": "Kommentaren som ble skrevet til beslutningen.",
+            "createdAt": "Når beslutningen ble tatt (UTC).",
+            "summary": "Hver beslutning om kravene dine."
+          },
+          "claimReceipts": {
+            "summary": "Kvitteringene som er lagt ved kravene dine. Selve filene ligger i mappen claim-receipts."
+          },
+          "claims": {
+            "approver": "Hvem som avgjorde kravet.",
+            "calculatedAmount": "Beløpet som skal refunderes, som beregnet.",
+            "calculatedCurrency": "Valutaen for beløpet som skal refunderes.",
+            "destinationCity": "Byen du reiste til.",
+            "destinationCountry": "Landet du reiste til.",
+            "notes": "Notatene dine om kravet.",
+            "status": "Hvorvidt kravet er et utkast, innsendt, godkjent eller avvist.",
+            "summary": "Reiseutgiftskravene dine opprettet med det tidligere skjemaet for enkeltutgifter.",
+            "tripDateTimeZone": "Tidssonen reisedagene telles i.",
+            "tripEnd": "Slutten på reisen (UTC).",
+            "tripStart": "Starten på reisen (UTC).",
+            "type": "Typen utgift: kvittering, kjøregodtgjørelse eller per_diem (diett)."
+          },
+          "currencyConversions": {
+            "basis": "Hvordan beløpet ble omregnet: hva kortet ditt faktisk ble belastet (card_charge), en kurs satt av en administrator (manual_rate), eller en publisert referansekurs (reference_rate).",
+            "chargedAmount": "For card_charge: beløpet kortet ditt ble belastet med, i målvalutaen.",
+            "evidenceReceiptFile": "For card_charge: kvitteringsfilen i dette arkivet som viser belastningen.",
+            "rate": "Valutakursen: 1 enhet av rate_base_currency tilsvarer så mange enheter av rate_quote_currency.",
+            "rateBaseCurrency": "Basisvalutaen for kursen.",
+            "rateDate": "Dagen kursen er fra (ÅÅÅÅ-MM-DD).",
+            "rateEvidence": "Hvor kursen kan kontrolleres, for eksempel en kontoutskriftslinje.",
+            "rateQuoteCurrency": "Kvotert valuta for kursen.",
+            "recordedBy": "Hvem som registrerte omregningen.",
+            "referenceExpenseDate": "For reference_rate: utgiftsdagen kursen ble valgt for (ÅÅÅÅ-MM-DD).",
+            "referenceSource": "For reference_rate: den publiserte kursen som ble brukt, som JSON.",
+            "sourceCurrency": "Valutaen det ble regnet om fra.",
+            "summary": "Hvordan utgifter i utenlandsk valuta ble regnet om til refusjonsvalutaen din.",
+            "targetCurrency": "Valutaen det ble regnet om til."
+          },
+          "legacyDraftConversions": {
+            "convertedAt": "Når utkastet ble flyttet (UTC).",
+            "convertedBy": "Hvem som flyttet utkastet.",
+            "flags": "Alt som ikke kunne flyttes slik det var, som JSON.",
+            "legacyFacts": "Hva kravutkastet inneholdt da det ble flyttet, som JSON.",
+            "summary": "Kravutkast fra det tidligere kravskjemaet som ble flyttet til en rapport."
+          },
+          "payrollRunInclusions": {
+            "endedAt": "Når det ble bekreftet eller ikke lenger ble inkludert (UTC).",
+            "endedBy": "Hvem som bekreftet, fjernet eller forkastet det.",
+            "includedAt": "Når rapporten ble lagt til i kjøringen (UTC).",
+            "lines": "Beløpene overført til lønn, med lønnsarter, som JSON.",
+            "state": "Status for inkludering: inkludert, bekreftet, fjernet, forkastet eller erstattet av en senere kjøring.",
+            "summary": "Rapporter utbetalt til deg via lønn."
+          },
+          "perDiemItineraries": {
+            "endDate": "Dagen du kom tilbake (ÅÅÅÅ-MM-DD).",
+            "endTime": "Lokal tid da du kom tilbake (TT:mm).",
+            "endTimeZone": "Tidssonen for hjemkomsten.",
+            "meals": "Måltidene du fikk per dag, som JSON; de reduserer dietten.",
+            "overnight": "Om og hvordan du overnattet.",
+            "policy": "Satsene som fastsatte dietten, som JSON, fastsatt da du sendte inn.",
+            "prolongedWorkplace": "Om du jobbet på samme sted borte fra hjemmet over lengre tid, noe som kan redusere dietten.",
+            "startDate": "Dagen du reiste (ÅÅÅÅ-MM-DD).",
+            "startTime": "Lokal tid da du reiste (TT:mm).",
+            "startTimeZone": "Tidssonen for avreisen.",
+            "summary": "Reisene dagdietten din (per diem) ble beregnet ut fra."
+          },
+          "projectAttributionExceptions": {
+            "authorizedBy": "Hvem som ga tillatelsen.",
+            "evidence": "Utgiftsbehandlerens interne notat om dokumentasjonen.",
+            "project": "Prosjektet.",
+            "reason": "Utgiftsbehandlerens interne begrunnelse for tillatelsen.",
+            "summary": "Tillatelser til å føre utgifter mot et prosjekt for dager appen ikke har registrert at du jobbet på det.",
+            "validFrom": "Første utgiftsdag som dekkes (ÅÅÅÅ-MM-DD).",
+            "validTo": "Siste utgiftsdag som dekkes (ÅÅÅÅ-MM-DD)."
+          },
+          "reportItems": {
+            "accountingReference": "En referanse for bokføring, for eksempel et fakturanummer.",
+            "category": "Utgiftskategorien, for eksempel hotell, tog eller måltider.",
+            "description": "Din beskrivelse av utgiften.",
+            "expenseDate": "Datoen for utgiften (YYYY-MM-DD).",
+            "mileageDistanceKm": "For kjøregodtgjørelse: avstanden, i kilometer.",
+            "mileagePolicy": "For kjøregodtgjørelse: satsene som fastsatte beløpet, som JSON, fastsatt da du sendte inn.",
+            "mileageRoute": "For kjøregodtgjørelse: ruten du kjørte.",
+            "mileageVehicle": "For kjøregodtgjørelse: type kjøretøy.",
+            "paidBy": "Hvem som betalte: deg (ansatt) eller organisasjonen (selskap).",
+            "position": "Utgiftens plassering i rapporten.",
+            "projectInherits": "Hvorvidt utgiften bruker reisens prosjekt fremfor sitt eget.",
+            "receiptExceptionReason": "Din forklaring på hvorfor en kvittering mangler.",
+            "summary": "Utgiftene i rapportene dine.",
+            "type": "Typen utgift: kvittering, kjøregodtgjørelse eller diett (per_diem)."
+          },
+          "reportReceipts": {
+            "summary": "Kvitteringene som er lagt ved utgiftene i rapportene dine. Selve filene ligger i denne kategoriens mappe."
+          },
+          "reports": {
+            "kind": "Hvorvidt rapporten gjelder en reise (trip) eller enkeltstående utgifter (standalone).",
+            "project": "Reisens prosjekt, som utgiftene bruker med mindre de angir sitt eget.",
+            "reimbursementCurrency": "Valutaen du blir refundert i.",
+            "status": "Hvor rapporten står: utkast, innsendt, godkjent, avvist eller returnert til deg for endringer.",
+            "submissionCount": "Hvor mange ganger rapporten ble sendt inn.",
+            "summary": "Reiseregningene dine, som hver grupperer utgiftene for én reise eller frittstående utgifter.",
+            "tripDestinations": "Stedene du reiste til, som JSON.",
+            "tripPurpose": "Formålet med reisen.",
+            "tripTimeZone": "Tidssonen reisedagene telles i."
+          },
+          "reviewCycleClosures": {
+            "actor": "Hvem som avsluttet den.",
+            "createdAt": "Når den ble avsluttet (UTC).",
+            "kind": "Hvordan innsendingen ble avsluttet: returnert, trukket tilbake eller gjenåpnet.",
+            "note": "Notatet som ble skrevet da den ble avsluttet.",
+            "submissionCycle": "Hvilken innsending av rapporten det var: 1 er den første.",
+            "summary": "Innsendinger av rapportene dine som ble avsluttet uten en endelig beslutning: returnert til deg, trukket tilbake eller gjenåpnet."
+          },
+          "reviewNotes": {
+            "body": "Kommentaren.",
+            "closureId": "ID-en til den returnerte innsendingen i review_cycle_closures.",
+            "summary": "En kontrollørs kommentarer til enkeltutgifter i en rapport som er returnert til deg."
+          },
+          "settlementEntries": {
+            "amount": "Beløpet.",
+            "balanceBefore": "Hva som fortsatt var utestående før denne utbetalingen.",
+            "basisSubmissionCycle": "Hvilken godkjente innsending av rapporten utbetalingen er basert på.",
+            "exportBatchId": "ID-en til utgiftseksporten utbetalingen ble registrert for.",
+            "kind": "Hvorvidt du fikk utbetalt (refusjon) eller betalte penger tilbake (innkreving).",
+            "note": "Notatet som ble skrevet i forbindelse med utbetalingen.",
+            "occurredOn": "Datoen pengene ble overført (YYYY-MM-DD).",
+            "recordedAt": "Når utbetalingen ble registrert (UTC).",
+            "recordedBy": "Hvem som registrerte utbetalingen.",
+            "reference": "Betalingsreferansen, for eksempel en bankoverføringsreferanse.",
+            "sourceType": "Hva pengene gjelder: en rapport eller et krav fra det tidligere skjemaet (legacy_claim).",
+            "summary": "Penger utbetalt til deg for godkjente utgifter, eller betalt tilbake av deg etter for mye utbetalt."
+          },
+          "shared": {
+            "authorizedAt": "Når den ble autorisert (UTC).",
+            "authorizedBy": "Utgiftsadministratoren som autoriserte den, angitt med navnet vedkommende hadde på det tidspunktet.",
+            "claimId": "ID-en til kravet i claims.",
+            "currency": "Valutaen, som en trebokstavers kode som EUR.",
+            "decidedAt": "Når den sist ble godkjent, avvist eller returnert (UTC).",
+            "file": "Hvor den originale kvitteringsfilen befinner seg i dette arkivet.",
+            "fileName": "Kvitteringens opprinnelige filnavn ved opplasting.",
+            "itemId": "ID-en til utgiften i report_items.",
+            "mimeType": "Filtypen, for eksempel application/pdf eller image/jpeg.",
+            "originalAmount": "Beløpet som ble betalt, i den opprinnelige valutaen.",
+            "originalCurrency": "Valutaen beløpet ble betalt i.",
+            "payrollRunId": "ID-en til lønnskjøringen.",
+            "payrollRunPeriodEnd": "Siste dag i lønnskjøringsperioden (YYYY-MM-DD).",
+            "payrollRunPeriodStart": "Første dag i lønnskjøringsperioden (YYYY-MM-DD).",
+            "project": "Prosjektet utgiften er ført på.",
+            "reason": "Oppgitt årsak.",
+            "reportId": "ID-en til rapporten i reports.",
+            "sizeBytes": "Filstørrelsen, i byte.",
+            "submittedAt": "Når den sist ble sendt inn (UTC).",
+            "tripEndDate": "Siste dag av reisen (YYYY-MM-DD).",
+            "tripStartDate": "Første dag av reisen (YYYY-MM-DD).",
+            "uploadedBy": "Hvem som lastet opp kvitteringen."
+          }
+        }
+      },
+      "fieldsIntro": "Hva hver del av JSON-filene inneholder og hva hvert felt betyr. Et tomt felt (null) har ingen verdi.",
+      "fieldsTitle": "Felt",
+      "filesTitle": "Filer",
+      "formatJson": "JSON-filene er den fullstendige, maskinlesbare kopien av dataene dine. CSV-filene gjentar tabellene for regneark.",
+      "formatOtherPeople": "Personer som har utført handlinger på oppføringene dine, er navngitt. Personer du har utført handlinger på, vises bare som en anonym ID.",
+      "formatsTitle": "Formater",
+      "formatTimes": "Tidspunkter er angitt i UTC (ISO 8601, slutter på Z). Tidsføringer inneholder også UTC-avviket som gjaldt der de ble registrert. Kalenderdager er skrevet som YYYY-MM-DD.",
+      "intro": "Dette arkivet inneholder personopplysningene {organization} har om {employee}, per {exportedAt} (UTC).",
+      "kindAdmin": "En administrator for {organization} opprettet denne eksporten på dine vegne.",
+      "kindEmployee": "Du ba om denne eksporten selv.",
+      "manifest": "Viser alle filer i dette arkivet med filstørrelse og antall oppføringer.",
+      "retentionAuditLog": "Oppføringer i revisjonsloggen slettes etter {days} dager.",
+      "retentionCategoryNone": "{category}: ingen oppbevaringstid angitt",
+      "retentionCategoryYears": "{years, plural, other {{category}: # år} }",
+      "retentionDocuments": "Dokumenter i personalmappen din oppbevares i perioden {organization} har fastsatt for deres kategori. Perioden regnes fra 1. januar etter det seneste av året ansettelsesforholdet ditt opphørte og dokumentets år. Dokumenter i en kategori uten periode oppbevares til noen sletter dem.",
+      "retentionOther": "Med mindre annet er oppgitt ovenfor, oppbevares de andre dataene dine til {organization} sletter dem eller ansattoppføringen din slettes.",
+      "retentionTitle": "Hvor lenge dataene dine oppbevares",
+      "rightsAccess": "få innsyn i personopplysningene dine og en kopi av dem (Art. 15 GDPR)",
+      "rightsComplaint": "klage til en tilsynsmyndighet for personvern (Art. 77 GDPR)",
+      "rightsContact": "Ta kontakt med {organization} for å benytte deg av disse rettighetene. Personvernerklæringen til {organization} gjelder og beskriver hvordan organisasjonen behandler dataene dine.",
+      "rightsErasure": "få slettet opplysningene dine (Art. 17 GDPR)",
+      "rightsIntro": "I henhold til personvernforordningen (GDPR) har du rett til å:",
+      "rightsNotification": "bli informert om retting, sletting og begrensning som er formidlet til mottakere av opplysningene dine (Art. 19 GDPR)",
+      "rightsObjection": "protestere mot behandlingen av opplysningene dine (Art. 21 GDPR)",
+      "rightsPortability": "motta opplysningene dine i et maskinlesbart format, slik som JSON-filene i dette arkivet, og få dem overført til noen andre (Art. 20 GDPR)",
+      "rightsRectification": "få feilaktige opplysninger rettet og ufullstendige opplysninger supplert (Art. 16 GDPR)",
+      "rightsRestriction": "få behandlingen av opplysningene dine begrenset (Art. 18 GDPR)",
+      "rightsTitle": "Dine rettigheter",
+      "title": "Dine personopplysninger fra {organization}"
     }
   },
   "presence": {

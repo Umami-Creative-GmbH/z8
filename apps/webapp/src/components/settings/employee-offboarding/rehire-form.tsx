@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { useRequestIdentity } from "@/lib/query/use-employee-offboarding";
 import type { RehireEmployeeInput } from "@/lib/validations/employee-offboarding";
+import { hourlyWageFromForm } from "@/lib/validations/employment-history";
 
 const NONE = "__none__";
 
@@ -107,7 +108,7 @@ export function RehireForm(props: RehireFormProps) {
 				weeklyContractMinutes: toContractMinutes(value.weeklyHours),
 				contractType: value.contractType,
 				workModel: value.workModel,
-				hourlyRate: value.contractType === "hourly" ? value.hourlyRate.trim() || null : null,
+				hourlyRate: hourlyWageFromForm(value.contractType, value.hourlyRate),
 				currency: value.currency.trim().toUpperCase(),
 				probationStartsOn: value.probationStartsOn || null,
 				probationEndsOn: value.probationEndsOn || null,

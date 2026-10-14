@@ -77,8 +77,11 @@ import {
 	getConfiguredMainOrigins,
 	resolvePlatformOrganization,
 } from "./domain/platform-domain";
-import { sendEmail } from "./email/email-service";
-import { renderOrganizationEmailTemplate } from "./email/template-renderer";
+import {
+	sendOrganizationInvitationEmail,
+	sendPasswordResetEmail,
+	sendVerificationEmail,
+} from "./email/auth-emails";
 import { createLogger } from "./logger";
 import { secondaryStorage } from "./redis";
 
@@ -162,37 +165,6 @@ export async function getSSOTrustedOrigins(
 	}
 
 	return [...origins];
-}
-
-/**
- * Get the primary organization ID for a user (for auth emails)
- * Returns the first organization the user is a member of
- */
-async function getUserPrimaryOrganizationId(
-	userId: string,
-): Promise<string | undefined> {
-	try {
-		const membership = await db.query.member.findFirst({
-			where: eq(schema.member.userId, userId),
-			columns: { organizationId: true },
-		});
-		return membership?.organizationId;
-	} catch (error) {
-		logger.warn({ error, userId }, "Failed to get user organization for email");
-		return undefined;
-	}
-}
-
-async function getOrganizationEmailContext(userId: string, url: string) {
-	const organizationId = await getUserPrimaryOrganizationId(userId);
-	const appUrl = await getOrganizationBaseUrl(organizationId);
-	const urlObj = new URL(url);
-
-	return {
-		organizationId,
-		appUrl,
-		correctedUrl: `${appUrl}${urlObj.pathname}${urlObj.search}`,
-	};
 }
 
 async function syncBillingSeats({
@@ -407,53 +379,16 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: true,
-		sendResetPassword: async ({ user, url }, _request) => {
-			const { organizationId, correctedUrl } =
-				await getOrganizationEmailContext(user.id, url);
-
-			const rendered = await renderOrganizationEmailTemplate({
-				organizationId,
-				templateKey: "password-reset",
-				data: {
-					userName: user.name,
-					resetUrl: correctedUrl,
-				},
-				subjectOverride: "Reset your password",
-			});
-
-			await sendEmail({
-				to: user.email,
-				subject: rendered.subject,
-				html: rendered.html,
-				actionUrl: correctedUrl,
-				organizationId,
-			});
+		// Recipient language: saved, then the request's page language, then the
+		// primary organization's default, then en (#812).
+		sendResetPassword: async ({ user, url }, request) => {
+			await sendPasswordResetEmail({ user, url, request });
 		},
 	},
 	emailVerification: {
 		sendOnSignUp: true,
-		sendVerificationEmail: async ({ user, url }, _request) => {
-			const { organizationId, appUrl, correctedUrl } =
-				await getOrganizationEmailContext(user.id, url);
-
-			const rendered = await renderOrganizationEmailTemplate({
-				organizationId,
-				templateKey: "email-verification",
-				data: {
-					userName: user.name,
-					verificationUrl: correctedUrl,
-					appUrl,
-				},
-				subjectOverride: "Verify your email address",
-			});
-
-			await sendEmail({
-				to: user.email,
-				subject: rendered.subject,
-				html: rendered.html,
-				actionUrl: correctedUrl,
-				organizationId,
-			});
+		sendVerificationEmail: async ({ user, url }, request) => {
+			await sendVerificationEmail({ user, url, request });
 		},
 	},
 	session: {
@@ -651,25 +586,14 @@ export const auth = betterAuth({
 				const appUrl = await getOrganizationBaseUrl(data.organization.id);
 				const invitationUrl = `${appUrl}/accept-invitation/${data.invitation.id}`;
 
-				const rendered = await renderOrganizationEmailTemplate({
+				// In the organization's default language; the inviter's is ignored (#812).
+				await sendOrganizationInvitationEmail({
 					organizationId: data.organization.id,
-					templateKey: "organization-invitation",
-					data: {
-						email: data.email,
-						organizationName: data.organization.name,
-						inviterName: data.inviter.user.name,
-						role: data.role,
-						invitationUrl,
-					},
-					subjectOverride: `You've been invited to join ${data.organization.name}`,
-				});
-
-				await sendEmail({
-					to: data.email,
-					subject: rendered.subject,
-					html: rendered.html,
-					actionUrl: invitationUrl,
-					organizationId: data.organization.id, // Use org-specific email config
+					organizationName: data.organization.name,
+					email: data.email,
+					inviterName: data.inviter.user.name,
+					role: data.role,
+					invitationUrl,
 				});
 			},
 			// Membership, role and removal writers take their configuration/access

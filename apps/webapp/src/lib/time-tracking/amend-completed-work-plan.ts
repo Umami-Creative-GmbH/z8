@@ -21,6 +21,12 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { AttributionIntent } from "./close-active-work";
 import { attributionAfter, taskIdFollowingProject } from "./task-attribution";
 import { validateTimeCorrectionRange } from "./time-correction-temporal";
+import {
+	sameWorkVehicleUse,
+	type VehicleUseIntent,
+	vehicleUseAfter,
+	type WorkVehicleUse,
+} from "./vehicle-use/work-vehicle-use";
 import { deriveWorkDurationMinutes } from "./work-duration";
 import { getRecordedWorkLocationType, isWorkLocationType } from "./work-location";
 
@@ -52,6 +58,8 @@ export interface AmendmentIntent {
 	workLocation: AttributionIntent;
 	/** Absent preserves (intents recorded before #900). */
 	billable?: BillableIntent;
+	/** Vehicle use (#1120). Absent preserves (intents recorded before it). */
+	vehicleUse?: VehicleUseIntent;
 }
 
 export interface AmendmentSource {
@@ -64,6 +72,8 @@ export interface AmendmentSource {
 	workCategoryId: string | null;
 	workLocationType: string | null;
 	isBillable: boolean;
+	/** Absent for sources read before vehicle use existed; treated as none. */
+	vehicleUse?: WorkVehicleUse | null;
 }
 
 export interface AmendmentPlan {
@@ -76,6 +86,8 @@ export interface AmendmentPlan {
 		workLocation: boolean;
 		/** The explicitly requested billability differs from the source's. */
 		billable: boolean;
+		/** Vehicle, readings or driven distance differ (#1120). */
+		vehicleUse: boolean;
 	};
 	result: {
 		startAt: Instant;
@@ -85,6 +97,7 @@ export interface AmendmentPlan {
 		taskId: string | null;
 		workCategoryId: string | null;
 		workLocationType: string | null;
+		vehicleUse: WorkVehicleUse | null;
 	};
 }
 
@@ -122,17 +135,17 @@ function resolveAttribution(
 
 export type AttributionSource = Pick<
 	AmendmentSource,
-	"projectId" | "taskId" | "workCategoryId" | "workLocationType" | "isBillable"
+	"projectId" | "taskId" | "workCategoryId" | "workLocationType" | "isBillable" | "vehicleUse"
 >;
-/** The resulting project, task, category and location; billability is resolved under locks. */
+/** The resulting project, task, category, location and vehicle use; billability is resolved under locks. */
 export type AttributionResult = Required<Omit<AttributionSource, "isBillable">>;
 type AttributionChanges = Pick<
 	AmendmentPlan["changes"],
-	"project" | "task" | "workCategory" | "workLocation" | "billable"
+	"project" | "task" | "workCategory" | "workLocation" | "billable" | "vehicleUse"
 >;
 type AttributionIntents = Pick<
 	AmendmentIntent,
-	"project" | "task" | "workCategory" | "workLocation" | "billable"
+	"project" | "task" | "workCategory" | "workLocation" | "billable" | "vehicleUse"
 >;
 
 function changesSomething(changes: AttributionChanges): boolean {
@@ -141,7 +154,8 @@ function changesSomething(changes: AttributionChanges): boolean {
 		changes.task ||
 		changes.workCategory ||
 		changes.workLocation ||
-		changes.billable
+		changes.billable ||
+		changes.vehicleUse
 	);
 }
 
@@ -164,6 +178,9 @@ function resolveAttributions(source: AttributionSource, intent: AttributionInten
 		(value, current) =>
 			value === current || (value !== null && value === getRecordedWorkLocationType(current)),
 	);
+	const currentVehicleUse = source.vehicleUse ?? null;
+	const vehicleUse = vehicleUseAfter(intent.vehicleUse, currentVehicleUse);
+	const vehicleUseChanged = !sameWorkVehicleUse(vehicleUse, currentVehicleUse);
 	return {
 		changes: {
 			project: project.changed,
@@ -171,12 +188,14 @@ function resolveAttributions(source: AttributionSource, intent: AttributionInten
 			workCategory: workCategory.changed,
 			workLocation: workLocation.changed,
 			billable: intent.billable?.kind === "set" && intent.billable.billable !== source.isBillable,
+			vehicleUse: vehicleUseChanged,
 		} satisfies AttributionChanges,
 		result: {
 			projectId: project.value,
 			taskId,
 			workCategoryId: workCategory.value,
 			workLocationType: workLocation.value,
+			vehicleUse: vehicleUseChanged ? vehicleUse : currentVehicleUse,
 		} satisfies AttributionResult,
 	};
 }

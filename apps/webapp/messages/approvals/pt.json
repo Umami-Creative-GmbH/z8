@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Solicitação de ausência aprovada",
+    "absenceChange": {
+      "afternoon": "Tarde",
+      "cancelAll": "Cancelar toda a ausência",
+      "cancellationTitle": "Cancelamento de ausência",
+      "category": "Categoria de ausência",
+      "displacedVacation": "Datas de férias substituídas após aprovação",
+      "exactHours": "Horas exatas registradas",
+      "fullDay": "Dia inteiro",
+      "morning": "Manhã",
+      "original": "Datas registradas",
+      "originalEndCoverage": "Dia de término registrado",
+      "originalInterval": "Horas registradas",
+      "originalStartCoverage": "Dia de início registrado",
+      "proposed": "Alteração proposta",
+      "proposedEndCoverage": "Dia de término proposto",
+      "proposedInterval": "Horas propostas",
+      "proposedStartCoverage": "Dia de início proposto",
+      "range": "{range}",
+      "reason": "Motivo",
+      "reasonValue": "{reason}",
+      "title": "Alteração de ausência"
+    },
     "absenceRejected": "Solicitação de ausência rejeitada",
     "absenceRequests": "Solicitações de Ausência",
     "absenceRequestsDescription": "Revise e aprove as solicitações de folga dos membros da sua equipe",
@@ -304,6 +326,8 @@
       "dayTotals": "Totais do dia",
       "difference": "Diferença",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Detalhes de condução em falta",
+      "drivingDetailsMissingWork": "Veículo ou leitura do odómetro em falta",
       "employee": "Funcionário",
       "holidays": "Feriados públicos",
       "openCalendar": "Abrir o calendário para este período",
@@ -413,6 +437,7 @@
     "totalCount": "{totalCount} pendente(s)",
     "type": "Tipo",
     "types": {
+      "absence_change_request": "Alterações de ausência",
       "absence_entry": "Solicitações de ausência",
       "period_submission": "Envios de Período",
       "time_entry": "Correções de ponto",
@@ -421,6 +446,15 @@
     },
     "unifiedInboxBannerDescription": "Visualize todos os tipos de aprovação em um só lugar com filtragem, ações em massa e rastreamento de SLA.",
     "unifiedInboxBannerTitle": "Experimente a nova Caixa de Entrada Unificada",
+    "vehicleUse": "Uso do veículo",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km é superior a {limit} km num único período de trabalho.",
+      "onOtherLiveWork": "Este veículo já se encontra registado no trabalho em curso de outro colaborador.",
+      "speedAboveLimit": "A distância percorrida implica uma média de {speed} km/h durante este período de trabalho, superior a {limit} km/h.",
+      "startBelowLastEnd": "A leitura inicial é inferior à última leitura final registada para este veículo ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Por favor, verifique",
     "viewExpenseClaim": "Ver solicitação e recibos",
     "viewExpenseReport": "Visualizar relatório enviado e comprovantes",
     "workBalance": {

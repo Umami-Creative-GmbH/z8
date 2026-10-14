@@ -19,6 +19,7 @@ const { createPublicApiDependencies } = await import("../dependencies");
 const { handlePublicApiRequest } = await import("../pipeline");
 const { PUBLIC_API_ENDPOINTS } = await import("../endpoints");
 const { createMcpEndpoint } = await import("./server");
+const { changeCustomFields } = await import("@/lib/organization/custom-fields/definitions");
 
 const ids = {
 	organization: "t795-org",
@@ -135,6 +136,7 @@ function problemOf(result: Awaited<ReturnType<Client["callTool"]>>) {
 describe("the MCP server on PostgreSQL", () => {
 	const admin = integrationAdminPool();
 	const employees: Record<string, string> = {};
+	const customFields: Record<string, string> = {};
 	let sickAbsence: string;
 
 	async function cleanup() {
@@ -241,6 +243,16 @@ describe("the MCP server on PostgreSQL", () => {
 		await workPeriod("2026-10-02T06:00:00Z", "2026-10-02T14:00:00Z");
 		await workPeriod("2026-10-05T06:00:00Z", "2026-10-05T14:00:00Z");
 		await workPeriod("2026-10-31T07:00:00Z", null);
+		await admin.query(
+			`with vehicle as (
+			   insert into organization_vehicle (organization_id, name, licence_plate, updated_at)
+			   values ($1, 'T795 van', 'B MC 795', now()) returning id
+			 )
+			 update work_period set vehicle_kind = 'organization', vehicle_id = (select id from vehicle),
+			   odometer_start_km = 500, odometer_end_km = 540, driven_distance_km = 40
+			 where organization_id = $1 and start_time = '2026-10-02T06:00:00'`,
+			[ids.organization],
+		);
 
 		const { rows: categories } = await admin.query<{ id: string; type: string }>(
 			`insert into absence_category (organization_id, type, name, updated_at) values
@@ -264,10 +276,56 @@ describe("the MCP server on PostgreSQL", () => {
 			 values ($1, 'Acme', true, $2, now()) returning id`,
 			[ids.organization, ids.admin],
 		);
-		await admin.query(
+		const { rows: projects } = await admin.query<{ id: string }>(
 			`insert into project (organization_id, name, status, customer_id, created_by, updated_at)
-			 values ($1, 'Website', 'active', $2, $3, now())`,
+			 values ($1, 'Website', 'active', $2, $3, now()) returning id`,
 			[ids.organization, customers[0].id, ids.admin],
+		);
+
+		const define = async (entity: string, name: string, visibility: string, type = "text") => {
+			const outcome = await changeCustomFields(db, {
+				organizationId: ids.organization,
+				actorUserId: ids.admin,
+				change: {
+					kind: "create",
+					entity,
+					name,
+					type,
+					required: false,
+					tracked: false,
+					visibility,
+					editLevel: "admin",
+					options: type === "select" ? ["Blue", "Green"] : undefined,
+				},
+			});
+			if (!outcome.ok) throw new Error(outcome.reason);
+			const field = outcome.fields.find((candidate) => candidate.name === name);
+			if (!field) throw new Error(name);
+			customFields[name] = field.id;
+			return field;
+		};
+		const team = await define("employee", "Team colour", "employee", "select");
+		await define("employee", "Salary band", "admin");
+		await define("project", "Billing code", "employee");
+		await define("customer", "Segment", "employee");
+		await admin.query(
+			`insert into custom_field_value (organization_id, definition_id, employee_id, project_id, customer_id,
+			   text_value, select_option_id) values
+			 ($1, $2, $6, null, null, null, $9),
+			 ($1, $3, $6, null, null, 'B2', null),
+			 ($1, $4, null, $7, null, 'WEB-1', null),
+			 ($1, $5, null, null, $8, 'SMB', null)`,
+			[
+				ids.organization,
+				customFields["Team colour"],
+				customFields["Salary band"],
+				customFields["Billing code"],
+				customFields.Segment,
+				employees.ana,
+				projects[0].id,
+				customers[0].id,
+				team.options[0].id,
+			],
 		);
 	});
 	beforeEach(async () => {
@@ -298,8 +356,11 @@ describe("the MCP server on PostgreSQL", () => {
 			const { tools } = await client.listTools();
 			expect(tools.map((tool) => tool.name).sort(), mode).toEqual([
 				"list_absences",
+				"list_customer_custom_fields",
 				"list_customers",
+				"list_employee_custom_fields",
 				"list_employees",
+				"list_project_custom_fields",
 				"list_projects",
 				"list_work_periods",
 			]);
@@ -312,7 +373,10 @@ describe("the MCP server on PostgreSQL", () => {
 	it("lists only the tools the key's scopes allow and refuses the others as scope_missing", async () => {
 		const { key: presented } = await key(["employees:read"]);
 		const client = await connect(presented);
-		expect((await client.listTools()).tools.map((tool) => tool.name)).toEqual(["list_employees"]);
+		expect((await client.listTools()).tools.map((tool) => tool.name)).toEqual([
+			"list_employees",
+			"list_employee_custom_fields",
+		]);
 
 		const refused = await client.callTool({ name: "list_projects", arguments: {} });
 		expect(problemOf(refused)).toMatchObject({
@@ -325,7 +389,11 @@ describe("the MCP server on PostgreSQL", () => {
 	});
 
 	it("returns the same rows and fields as /api/v1 for every tool", async () => {
-		const { key: presented } = await key([...ALL_SCOPES, "absences:read-health"]);
+		const { key: presented } = await key([
+			...ALL_SCOPES,
+			"absences:read-health",
+			"custom-fields:read-restricted",
+		]);
 		const client = await connect(presented);
 		const cases = [
 			["list_work_periods", "/api/v1/work-periods", octoberInstants],
@@ -333,6 +401,9 @@ describe("the MCP server on PostgreSQL", () => {
 			["list_employees", "/api/v1/employees", {}],
 			["list_projects", "/api/v1/projects", {}],
 			["list_customers", "/api/v1/customers", {}],
+			["list_employee_custom_fields", "/api/v1/employees/custom-fields", {}],
+			["list_project_custom_fields", "/api/v1/projects/custom-fields", {}],
+			["list_customer_custom_fields", "/api/v1/customers/custom-fields", {}],
 		] as const;
 		for (const [tool, path, args] of cases) {
 			const viaMcp = await client.callTool({ name: tool, arguments: args });
@@ -360,7 +431,13 @@ describe("the MCP server on PostgreSQL", () => {
 			["list_customers", {}],
 		] as const) {
 			const page = await client.callTool({ name, arguments: args });
-			expect(page.structuredContent, name).toEqual({ data: [], nextCursor: null });
+			expect(page.structuredContent, name).toEqual({
+				data: [],
+				nextCursor: null,
+				...(name === "list_projects" || name === "list_customers"
+					? { asOf: expect.any(String) }
+					: {}),
+			});
 		}
 	});
 
@@ -384,6 +461,58 @@ describe("the MCP server on PostgreSQL", () => {
 		});
 	});
 
+	it("returns the same customFields as /api/v1, restricted fields only with the restricted scope (#822)", async () => {
+		const anaOf = (body: unknown) =>
+			(body as { data: { id: string; customFields: Record<string, unknown> }[] }).data.find(
+				(row) => row.id === employees.ana,
+			)?.customFields;
+		for (const scopes of [
+			["employees:read"],
+			["employees:read", "custom-fields:read-restricted"],
+		]) {
+			const { key: presented } = await key(scopes);
+			const client = await connect(presented);
+			const viaMcp = await client.callTool({
+				name: "list_employees",
+				arguments: { asOf: "2026-10-01" },
+			});
+			const viaApi = await callV1("/api/v1/employees", presented, "?asOf=2026-10-01");
+			expect(viaMcp.structuredContent, scopes.join()).toEqual(viaApi.body);
+			expect(anaOf(viaMcp.structuredContent), scopes.join()).toEqual({
+				[customFields["Team colour"]]: { id: expect.any(String), label: "Blue" },
+				...(scopes.length > 1 ? { [customFields["Salary band"]]: "B2" } : {}),
+			});
+			expect(viaMcp.structuredContent).toMatchObject({ asOf: "2026-10-01" });
+		}
+	});
+
+	it("offers the custom field definition tools only with the entity scope (#822)", async () => {
+		const restrictedOnly = await connect((await key(["custom-fields:read-restricted"])).key);
+		expect((await restrictedOnly.listTools()).tools).toEqual([]);
+		const refused = await restrictedOnly.callTool({
+			name: "list_employee_custom_fields",
+			arguments: {},
+		});
+		expect(problemOf(refused)).toMatchObject({
+			type: "scope_missing",
+			requiredScope: "employees:read",
+		});
+
+		const projectsKey = await connect((await key(["projects:read"])).key);
+		expect((await projectsKey.listTools()).tools.map((tool) => tool.name)).toEqual([
+			"list_projects",
+			"list_project_custom_fields",
+		]);
+		const definitions = await projectsKey.callTool({
+			name: "list_project_custom_fields",
+			arguments: {},
+		});
+		expect(definitions.structuredContent).toEqual({
+			data: [expect.objectContaining({ id: customFields["Billing code"], name: "Billing code" })],
+			nextCursor: null,
+		});
+	});
+
 	it("returns work periods as UTC instants with the recorded offset", async () => {
 		const client = await connect((await key(["time-entries:read"])).key);
 		const page = await client.callTool({
@@ -396,6 +525,31 @@ describe("the MCP server on PostgreSQL", () => {
 					start: { at: "2026-10-01T06:00:00.000Z", utcOffset: "+02:00" },
 					end: { at: "2026-10-01T14:00:00.000Z", utcOffset: "+02:00" },
 					durationMinutes: 480,
+					vehicleUse: null,
+				}),
+			],
+			nextCursor: null,
+		});
+	});
+
+	it("returns the vehicle use of a work period (#1128)", async () => {
+		const client = await connect((await key(["time-entries:read"])).key);
+		const page = await client.callTool({
+			name: "list_work_periods",
+			arguments: { from: "2026-10-02T00:00:00Z", to: "2026-10-03T00:00:00Z" },
+		});
+		expect(page.structuredContent).toEqual({
+			data: [
+				expect.objectContaining({
+					vehicleUse: {
+						kind: "organization",
+						vehicleId: expect.any(String),
+						vehicleName: "T795 van",
+						licencePlate: "B MC 795",
+						odometerStartKm: 500,
+						odometerEndKm: 540,
+						drivenDistanceKm: 40,
+					},
 				}),
 			],
 			nextCursor: null,

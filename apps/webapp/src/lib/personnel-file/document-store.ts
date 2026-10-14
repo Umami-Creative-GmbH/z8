@@ -1,6 +1,13 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { db as appDb } from "@/db";
-import { absenceEntry, employeeDocument, personnelFileUpload } from "@/db/schema";
+import {
+	absenceEntry,
+	employee,
+	employeeDocument,
+	employeeSkill,
+	personnelFileUpload,
+	skill,
+} from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import {
 	dateFromInstant,
@@ -19,6 +26,8 @@ import {
 	type SickNoteAbsence,
 	type SickNoteAttachAuthority,
 } from "./sick-note-attach";
+import { recomputeCertificateSkillExpiry } from "./skill-certificate-expiry";
+import { loadCertificateSkill } from "./skill-certificate-store";
 import type { StagedPersonnelFileUpload, StoredPersonnelFileObject } from "./upload-ledger";
 
 /**
@@ -61,6 +70,8 @@ export interface EmployeeDocumentView {
 	createdAt: string;
 	/** The sick-leave absence a sick note covers (#982), with its plain days. */
 	absence: { id: string; startDate: string; endDate: string } | null;
+	/** The employee skill a skill certificate proves (#1144), with the skill's name. */
+	skill: { employeeSkillId: string; name: string } | null;
 }
 
 type AbsenceDays = { startDate: string; endDate: string };
@@ -68,8 +79,10 @@ type AbsenceDays = { startDate: string; endDate: string };
 export function toDocumentView(
 	row: DocumentRow,
 	absences: ReadonlyMap<string, AbsenceDays> = new Map(),
+	skillNames: ReadonlyMap<string, string> = new Map(),
 ): EmployeeDocumentView {
 	const absenceDays = row.absenceEntryId ? absences.get(row.absenceEntryId) : undefined;
+	const skillName = row.employeeSkillId ? skillNames.get(row.employeeSkillId) : undefined;
 	return {
 		id: row.id,
 		employeeId: row.employeeId,
@@ -87,7 +100,41 @@ export function toDocumentView(
 		sizeBytes: row.sizeBytes,
 		createdAt: row.createdAt.toISOString(),
 		absence: row.absenceEntryId && absenceDays ? { id: row.absenceEntryId, ...absenceDays } : null,
+		skill:
+			row.employeeSkillId && skillName !== undefined
+				? { employeeSkillId: row.employeeSkillId, name: skillName }
+				: null,
 	};
+}
+
+/**
+ * The skill names of the employee skills the documents prove (#1144), in one
+ * query. Only skills of the organization, held by an employee of it.
+ */
+export async function loadLinkedSkillNames(
+	database: Reader,
+	input: { organizationId: string; rows: readonly DocumentRow[] },
+): Promise<Map<string, string>> {
+	const ids = [
+		...new Set(input.rows.flatMap((row) => (row.employeeSkillId ? [row.employeeSkillId] : []))),
+	];
+	if (ids.length === 0) return new Map();
+	const linked = await database
+		.select({ id: employeeSkill.id, name: skill.name })
+		.from(employeeSkill)
+		.innerJoin(
+			employee,
+			and(
+				eq(employee.id, employeeSkill.employeeId),
+				eq(employee.organizationId, input.organizationId),
+			),
+		)
+		.innerJoin(
+			skill,
+			and(eq(skill.id, employeeSkill.skillId), eq(skill.organizationId, input.organizationId)),
+		)
+		.where(inArray(employeeSkill.id, ids));
+	return new Map(linked.map((row) => [row.id, row.name]));
 }
 
 /** The plain days of the absences the documents are linked to, in one query. */
@@ -117,13 +164,16 @@ export async function loadLinkedAbsenceDays(
 	);
 }
 
-async function toDocumentViews(
+export async function toDocumentViews(
 	database: Reader,
 	organizationId: string,
 	rows: readonly DocumentRow[],
 ): Promise<EmployeeDocumentView[]> {
-	const absences = await loadLinkedAbsenceDays(database, { organizationId, rows });
-	return rows.map((row) => toDocumentView(row, absences));
+	const [absences, skillNames] = await Promise.all([
+		loadLinkedAbsenceDays(database, { organizationId, rows }),
+		loadLinkedSkillNames(database, { organizationId, rows }),
+	]);
+	return rows.map((row) => toDocumentView(row, absences, skillNames));
 }
 
 function metadataColumns(metadata: DocumentMetadata) {
@@ -347,6 +397,26 @@ export async function updateDocumentMetadata(
 		// category removes its link, recorded with the other changes.
 		const unlinksAbsence = current.absenceEntryId !== null && next.category !== "sick_note";
 		if (unlinksAbsence) changes.absenceEntryId = { from: current.absenceEntryId, to: null };
+		// Only a certificate proves an employee skill (#1144): moving it to another
+		// category removes its link, and a skill that requires an expiry date keeps
+		// its certificate dated.
+		const unlinksSkill = current.employeeSkillId !== null && next.category !== "certificate";
+		if (unlinksSkill) changes.employeeSkillId = { from: current.employeeSkillId, to: null };
+		if (current.employeeSkillId !== null && !unlinksSkill && next.expiryDate === null) {
+			const proven = await loadCertificateSkill(tx, {
+				organizationId: access.organizationId,
+				employeeId: current.employeeId,
+				employeeSkillId: current.employeeSkillId,
+			});
+			if (proven?.requiresExpiry) {
+				return {
+					kind: "invalid",
+					field: "expiryDate",
+					message:
+						"This certificate proves a skill that requires an expiry date. Keep a date, or stop naming the skill first.",
+				};
+			}
+		}
 		const visibilityChanged = current.visibility !== next.visibility;
 		if (Object.keys(changes).length === 0 && !visibilityChanged) {
 			return {
@@ -361,6 +431,7 @@ export async function updateDocumentMetadata(
 			.set({
 				...next,
 				...(unlinksAbsence ? { absenceEntryId: null } : {}),
+				...(unlinksSkill ? { employeeSkillId: null } : {}),
 				updatedBy: access.userId,
 				updatedAt: at,
 			})
@@ -378,7 +449,21 @@ export async function updateDocumentMetadata(
 				actorUserId: access.userId,
 				document: row,
 				changes,
-				...(unlinksAbsence ? { metadata: { absenceId: current.absenceEntryId } } : {}),
+				...(unlinksAbsence || unlinksSkill
+					? {
+							metadata: {
+								...(unlinksAbsence ? { absenceId: current.absenceEntryId } : {}),
+								...(unlinksSkill ? { employeeSkillId: current.employeeSkillId } : {}),
+							},
+						}
+					: {}),
+			});
+		}
+		// Re-dating or unlinking a skill certificate moves the skill expiry date (#1145).
+		if (current.employeeSkillId !== null && (unlinksSkill || "expiryDate" in changes)) {
+			await recomputeCertificateSkillExpiry(tx, {
+				organizationId: access.organizationId,
+				employeeSkillIds: [current.employeeSkillId],
 			});
 		}
 		let shareEventId: string | null = null;
@@ -458,6 +543,11 @@ export async function deleteDocument(
 				...(current.absenceEntryId ? { absenceId: current.absenceEntryId } : {}),
 				...(ownSickNote ? { source: "employee" } : {}),
 			},
+		});
+		// A deleted skill certificate no longer sets the skill expiry date (#1145).
+		await recomputeCertificateSkillExpiry(tx, {
+			organizationId: access.organizationId,
+			employeeSkillIds: [current.employeeSkillId],
 		});
 		return { kind: "deleted", documentId: current.id };
 	});

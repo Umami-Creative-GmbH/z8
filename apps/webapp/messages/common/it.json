@@ -288,6 +288,7 @@
       "travelExpenseSettings": "Caricamento impostazioni spese di trasferta",
       "twoFactorVerification": "Caricamento verifica a due fattori",
       "vacationSettings": "Caricamento impostazioni ferie",
+      "vehicleDistanceReport": "Caricamento del report sulla distanza per veicolo",
       "wellnessSettings": "Caricamento impostazioni benessere",
       "workCategorySettings": "Caricamento impostazioni categorie di lavoro",
       "workerQueue": "Caricamento coda lavoratori",
@@ -418,6 +419,17 @@
     "update": "Aggiorna",
     "updating": "Aggiornamento in corso...",
     "uploading": "Caricamento...",
+    "vacationAllowance": {
+      "cappedAtFullAllowance": "limitato all'indennità massima",
+      "employmentMonths": "{months, plural, one {# mese intero di impiego} other {# mesi interi di impiego}}",
+      "lastWorkingDay": "ultimo giorno lavorativo {date}",
+      "notEmployed": "{allowance} su {fullAllowance} giorni: non impiegato nel {year}",
+      "overdrawn": "{days, plural, one {# giorno in eccesso} other {# giorni in eccesso}}",
+      "overdrawnHint": "Ferie usufruite oltre i giorni spettanti. Mostrato solo a scopo informativo: non viene detratto nulla.",
+      "proratedSummary": "{allowance} su {fullAllowance} giorni, riproporzionati: {details}",
+      "started": "iniziato il {date}",
+      "statutoryMinimumApplies": "si applica il minimo di legge"
+    },
     "validate": "Convalida",
     "validationError": "Errore di convalida",
     "weekdays": {
@@ -493,7 +505,32 @@
       "title": "Comitato aziendale",
       "to": "A",
       "unassignedTeam": "Team non assegnato",
-      "updateRange": "Aggiorna intervallo"
+      "updateRange": "Aggiorna intervallo",
+      "vehicleUse": {
+        "activeVehicles": "Veicoli attivi",
+        "archivedVehicles": "Veicoli archiviati",
+        "coveredAsked": "Richiesto a",
+        "coveredDescription": "{count, plural, one {Per # dipendente attivo è attualmente richiesta o prevista la registrazione dell'uso del veicolo.} other {Per # dipendenti attivi è attualmente richiesta o prevista la registrazione dell'uso del veicolo.}}",
+        "coveredExpected": "Previsto per",
+        "coveredTitle": "Dipendenti interessati",
+        "description": "A chi l'organizzazione richiede di registrare il veicolo guidato per lavoro. Il comitato aziendale non vede mai le letture del contachilometri o le distanze percorse da un dipendente.",
+        "employeeAssignmentCounts": "{asked} richiesti, {expected} previsti, {off} disattivati singolarmente",
+        "employeeAssignments": "Assegnazioni dipendenti",
+        "employeePseudonym": "Dipendente {ref}",
+        "enabled": "Cambia",
+        "modeAsked": "Richiesto",
+        "modeExpected": "Previsto",
+        "modeOff": "Disattivato",
+        "noEmployeeAssignments": "Nessuna assegnazione di dipendenti.",
+        "notAssigned": "Non assegnato",
+        "noTeamAssignments": "Nessuna assegnazione di team.",
+        "off": "Disattivato",
+        "on": "Attivato",
+        "organizationAssignment": "Intera organizzazione",
+        "teamAssignments": "Assegnazioni del team",
+        "title": "Uso del veicolo",
+        "vehiclesTitle": "Veicoli dell'organizzazione"
+      }
     }
   },
   "employeeSelect": {
@@ -602,6 +639,7 @@
     "settings": "Impostazioni",
     "team": "Team",
     "teamAbsences": "Assenze del team",
+    "teamDriving": "Dettagli di guida",
     "team-label": "Team",
     "teamPeriodSubmissions": "Invii del periodo",
     "teamPresence": "Chi è presente",
@@ -619,7 +657,34 @@
       "settings": "Impostazioni notifiche",
       "viewAll": "Visualizza tutte le notifiche"
     },
+    "channels": {
+      "viewInZ8": "Visualizza in Z8"
+    },
     "content": {
+      "absenceCancellation": {
+        "message": "Richiesta di annullamento per {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Richiesta di modifica assenza approvata"
+      },
+      "absenceChangeExpired": {
+        "title": "Richiesta di modifica assenza scaduta"
+      },
+      "absenceChange": {
+        "message": "Date registrate: {original}. Date proposte: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Richiesta di modifica assenza obsoleta"
+      },
+      "absenceChangePending": {
+        "title": "Modifica assenza in attesa di approvazione"
+      },
+      "absenceChangeRejected": {
+        "title": "Richiesta di modifica assenza rifiutata"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Richiesta di modifica assenza ritirata"
+      },
       "absenceDeputyAssigned": {
         "message": "Stai sostituendo {name} ({dateRange}).",
         "title": "Sei un sostituto per assenza"
@@ -645,7 +710,12 @@
         "message": "{managerName} ha registrato {absenceType} per {dateRange} per tuo conto.",
         "title": "Assenza registrata"
       },
+      "absenceRequestApproved": {
+        "message": "La tua richiesta di {categoryName} per {dateRange} è stata approvata da {approverName}."
+      },
       "absenceRequestRejected": {
+        "message": "La tua richiesta di {categoryName} per {dateRange} è stata rifiutata da {approverName}.",
+        "messageWithReason": "La tua richiesta di {categoryName} per {dateRange} è stata rifiutata da {approverName}. Motivo: {rejectionReason}",
         "title": "Richiesta di assenza rifiutata"
       },
       "absenceRequestSubmitted": {
@@ -659,6 +729,19 @@
       "approvalCoverStarted": {
         "message": "{count, plural, =0 {Stai sostituendo {name} per le approvazioni: nessuna in attesa al momento.} other {Stai sostituendo {name} per le approvazioni: # in attesa.}}",
         "title": "Stai gestendo le approvazioni"
+      },
+      "approvalEscalationAttention": {
+        "ambiguousHistory": "La cronologia di escalation di un'approvazione è ambigua e richiede una revisione prima di qualsiasi trasferimento automatico.",
+        "deliveryExhausted": "Le notifiche di escalation per un'approvazione non sono andate a buon fine dopo tutti i tentativi.",
+        "deliveryUnavailable": "Nessuna destinazione di notifica di escalation disponibile per un'approvazione.",
+        "noEligibleBackup": "Un'approvazione scaduta non ha un approvatore di riserva idoneo. L'approvatore corrente mantiene l'assegnazione.",
+        "replacementOverdue": "Un'approvazione è ancora in sospeso dopo l'escalation automatica. Non verrà effettuato alcun ulteriore trasferimento automatico.",
+        "title": "L'escalation dell'approvazione richiede attenzione",
+        "unsupportedRoute": "Un'approvazione non può essere inoltrata tramite escalation perché il suo percorso decisionale non è supportato."
+      },
+      "approvedAbsenceCancelled": {
+        "message": "{employeeName} ha annullato la richiesta approvata di {categoryName} per {dateRange}.",
+        "title": "Assenza approvata annullata"
       },
       "automaticClockOut": {
         "breakMessage": "L'uscita è stata registrata automaticamente all'inizio della pausa alle {cutoff} ({timezone}) perché la pausa non è stata terminata entro il limite di tempo di {duration} minuti stabilito dalla tua organizzazione.",
@@ -683,9 +766,56 @@
           "title": "Liquidazione straordinari registrata"
         }
       },
+      "birthdayReminder": {
+        "message": "Il compleanno di {name} è il {date}.",
+        "title": "Prossimo compleanno"
+      },
       "breakDueReminder": {
         "message": "La tua pausa è prevista per le {breakTime} ({timezone}). Fai una pausa entro tale orario per rispettare le regole aziendali sulle pause.",
         "title": "È quasi ora di una pausa"
+      },
+      "clockOutApprovalRequired": {
+        "message": "{employeeName} ha registrato l'uscita il {date} ({startTime} – {endTime}, {duration}). Approvazione richiesta.",
+        "messageWithoutTimes": "{employeeName} ha registrato l'uscita ({duration}). Approvazione richiesta.",
+        "title": "Approvazione uscita richiesta"
+      },
+      "clockOutApproved": {
+        "message": "La tua uscita è stata approvata da {approverName}.",
+        "title": "Uscita approvata"
+      },
+      "clockOutPendingApproval": {
+        "message": "La tua uscita del {date} ({duration}) è in attesa dell'approvazione del responsabile.",
+        "messageWithoutDate": "La tua uscita ({duration}) è in attesa dell'approvazione del responsabile.",
+        "title": "Uscita in attesa di approvazione"
+      },
+      "clockOutRejected": {
+        "message": "L'approvazione della tua uscita è stata rifiutata da {approverName}. Gli orari registrati rimangono invariati e sono esclusi dalle ore retribuite approvate.",
+        "messageWithReason": "L'approvazione della tua uscita è stata rifiutata da {approverName}. Gli orari registrati rimangono invariati e sono esclusi dalle ore retribuite approvate. Motivo: {rejectionReason}",
+        "title": "Uscita rifiutata"
+      },
+      "complianceExceptionApproved": {
+        "message": "La tua eccezione per {exceptionType, select, rest_period {periodo di riposo} overtime_daily {straordinario giornaliero} overtime_weekly {straordinario settimanale} overtime_monthly {straordinario mensile} other {conformità}} è stata approvata da {approverName}. Valida fino al {validUntil}.",
+        "title": "Eccezione approvata"
+      },
+      "complianceExceptionExpired": {
+        "message": "La tua pre-approvazione dell'eccezione per {exceptionType, select, rest_period {periodo di riposo} overtime_daily {straordinario giornaliero} overtime_weekly {straordinario settimanale} overtime_monthly {straordinario mensile} other {conformità}} è scaduta (trascorse 24 ore senza utilizzo).",
+        "title": "Eccezione scaduta"
+      },
+      "complianceExceptionRejected": {
+        "message": "La tua eccezione per {exceptionType, select, rest_period {periodo di riposo} overtime_daily {straordinario giornaliero} overtime_weekly {straordinario settimanale} overtime_monthly {straordinario mensile} other {conformità}} è stata rifiutata da {approverName}.",
+        "messageWithReason": "La tua eccezione per {exceptionType, select, rest_period {periodo di riposo} overtime_daily {straordinario giornaliero} overtime_weekly {straordinario settimanale} overtime_monthly {straordinario mensile} other {conformità}} è stata rifiutata da {approverName}. Motivo: \"{reason}\"",
+        "title": "Eccezione rifiutata"
+      },
+      "complianceExceptionRequested": {
+        "message": "{employeeName} ha richiesto un'eccezione per {exceptionType, select, rest_period {periodo di riposo} overtime_daily {straordinario giornaliero} overtime_weekly {straordinario settimanale} overtime_monthly {straordinario mensile} other {conformità}}: \"{reason}\"",
+        "title": "Richiesta eccezione di conformità"
+      },
+      "drivingDetailsMissingReminderMany": {
+        "message": "In {count} periodi di lavoro in data {dates} manca il veicolo o la lettura del contachilometri. Aggiungili ai periodi di lavoro."
+      },
+      "drivingDetailsMissingReminder": {
+        "message": "Nel tuo lavoro del {date} manca il veicolo o la lettura del contachilometri. Aggiungili al periodo di lavoro.",
+        "title": "Aggiungi i dettagli di guida"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Le mansioni di approvazione richiedono un sostituto (uscita effettiva il {cutoff}, {timezone}).",
@@ -698,6 +828,15 @@
       "forgottenClockOutReminder": {
         "message": "Il tuo turno è terminato alle {endTime} ({timezone}). Timbra l'uscita se hai finito di lavorare.",
         "title": "Risulti ancora al lavoro"
+      },
+      "manualEntryApproved": {
+        "message": "La tua registrazione manuale dell'orario è stata approvata da {approverName}.",
+        "title": "Registrazione manuale dell'orario approvata"
+      },
+      "manualEntryRejected": {
+        "message": "La tua registrazione manuale dell'orario è stata rifiutata da {approverName}.",
+        "messageWithReason": "La tua registrazione manuale dell'orario è stata rifiutata da {approverName}. Motivo: {rejectionReason}",
+        "title": "Registrazione manuale dell'orario rifiutata"
       },
       "missedClockInReminder": {
         "message": "Il tuo turno è iniziato alle {startTime} ({timezone}). Timbra l'entrata se stai lavorando.",
@@ -716,7 +855,27 @@
         "title": "Mese riaperto"
       },
       "newAbsenceRequest": {
+        "message": "{employeeName} ha richiesto {categoryName} per {dateRange}.",
         "title": "Nuova richiesta di assenza"
+      },
+      "newTimeCorrectionRequest": {
+        "message": "{employeeName} ha inviato una richiesta di rettifica dell'orario per il {date}.",
+        "messageWithoutDate": "{employeeName} ha inviato una richiesta di correzione dell'orario.",
+        "messageWithoutDateWithReason": "{employeeName} ha inviato una richiesta di correzione dell'orario. Motivo: {reason}",
+        "messageWithReason": "{employeeName} ha inviato una richiesta di correzione dell'orario per il {date}. Motivo: {reason}",
+        "title": "Nuova richiesta di correzione dell'orario"
+      },
+      "openShiftAvailable": {
+        "message": "È disponibile un turno aperto il {shiftDate} dalle {startTime} alle {endTime}.",
+        "title": "Turno aperto disponibile"
+      },
+      "overtimeViolation": {
+        "message": "{description}",
+        "title": "Violazione degli straordinari registrata"
+      },
+      "overtimeWarning": {
+        "message": "Hai lavorato {worked} {period, select, daily {oggi} weekly {questa settimana} other {questo mese}} ({percent}% del limite di {limit}).",
+        "title": "Soglia di straordinario in avvicinamento"
       },
       "passwordChanged": {
         "message": "La tua password è stata modificata correttamente. Se non hai effettuato questa modifica, contatta immediatamente l'assistenza.",
@@ -745,6 +904,20 @@
       "periodSubmissionWithdrawnAfterChange": {
         "message": "Le tue ore per {startDate} – {endDate} sono cambiate dopo l'invio, pertanto l'invio è stato ritirato. Rivedi le tue ore e inviale di nuovo.",
         "title": "Invia di nuovo le tue ore"
+      },
+      "personalDataExportAdminExported": {
+        "message": "Un amministratore ha esportato i tuoi dati personali in data {onDate}.",
+        "title": "I tuoi dati personali sono stati esportati"
+      },
+      "personalDataExportReady": {
+        "adminMessage": "L'esportazione dei dati personali di {employeeName} è pronta. Scaricala dalla sua pagina dipendente dopo aver effettuato l'accesso; verrà eliminata dopo 7 giorni.",
+        "adminTitle": "Esportazione dei dati personali pronta",
+        "message": "L'esportazione dei tuoi dati personali è pronta. Scaricala da I miei dati dopo aver effettuato l'accesso; verrà eliminata dopo 7 giorni.",
+        "title": "L'esportazione dei tuoi dati personali è pronta"
+      },
+      "personalDataExportReminder": {
+        "message": "Scarica i tuoi dati personali da I miei dati prima del {untilDate}. Successivamente, solo un amministratore potrà esportarli per te.",
+        "title": "Scarica i tuoi dati personali prima di andartene"
       },
       "personnelFileDocumentShared": {
         "message": "Il documento \"{title}\" è stato condiviso con te.",
@@ -781,13 +954,94 @@
       "policyMissedClockInReminder": {
         "message": "La tua ultima timbratura di entrata oggi è stata alle {startTime} ({timezone}). Timbra l'entrata se stai lavorando."
       },
+      "projectBudgetWarning100": {
+        "message": "\"{projectName}\" ha superato il budget ({used} su {budget} preventivati). Controlla e apporta le modifiche necessarie.",
+        "title": "Budget del progetto superato"
+      },
+      "projectBudgetWarning70": {
+        "message": "\"{projectName}\" ha utilizzato il {percent}% del suo budget ({used} su {budget}).",
+        "title": "Progetto vicino al limite di budget"
+      },
+      "projectBudgetWarning90": {
+        "message": "\"{projectName}\" ha utilizzato il {percent}% del suo budget ({used} su {budget}). Valuta la possibilità di verificare l'allocazione delle ore.",
+        "title": "Progetto quasi al limite di budget"
+      },
+      "projectDeadlineOverdue": {
+        "message": "\"{projectName}\" ha superato la scadenza ({deadline}). Aggiorna lo stato o proroga la scadenza.",
+        "title": "Scadenza del progetto superata"
+      },
+      "projectDeadlineWarning0d": {
+        "message": "La scadenza di \"{projectName}\" è oggi ({deadline}). Completa il lavoro rimanente.",
+        "title": "Scadenza del progetto oggi"
+      },
+      "projectDeadlineWarning14d": {
+        "message": "La scadenza di \"{projectName}\" è tra 2 settimane ({deadline}). Pianifica per tempo per rispettare la scadenza.",
+        "title": "Scadenza del progetto tra 2 settimane"
+      },
+      "projectDeadlineWarning1d": {
+        "message": "La scadenza di \"{projectName}\" è domani ({deadline}). Ultimo sforzo per completare!",
+        "title": "Scadenza del progetto domani"
+      },
+      "projectDeadlineWarning7d": {
+        "message": "La scadenza di \"{projectName}\" è tra 1 settimana ({deadline}). Assicurati di essere in linea con i tempi.",
+        "title": "Scadenza del progetto tra 1 settimana"
+      },
+      "restPeriodViolation": {
+        "message": "{description}",
+        "title": "Violazione del periodo di riposo registrata"
+      },
+      "restPeriodWarning": {
+        "message": "Ti restano {remaining} di riposo obbligatorio. Prossima timbratura consentita: {nextAllowedClockIn}.",
+        "title": "Promemoria periodo di riposo"
+      },
       "scheduledExportPaused": {
         "message": "\"{scheduleName}\" è stato sospeso perché il suo proprietario, {ownerName}, non è più un amministratore dell'organizzazione. Per riattivarlo, assegna la proprietà a te o a un altro amministratore dell'organizzazione.",
         "title": "Esportazione pianificata in pausa"
       },
+      "schedulePublished": {
+        "message": "{shiftCount, plural, one {È stato pubblicato # turno per {dateRange}.} other {Sono stati pubblicati # turni per {dateRange}.}}",
+        "title": "Nuova pianificazione pubblicata"
+      },
       "shiftAssigned": {
         "message": "Ti è stato assegnato un turno il {shiftDate} dalle {startTime} alle {endTime} da {assignedByName}.",
         "title": "Turno assegnato"
+      },
+      "shiftPickupApproved": {
+        "message": "La tua richiesta di prendere in carico il turno del {shiftDate} è stata approvata da {approverName}.",
+        "title": "Presa in carico del turno approvata"
+      },
+      "shiftPickupRequested": {
+        "message": "{requesterName} ha richiesto di prendere in carico il turno del {shiftDate} ({startTime} - {endTime}).",
+        "messageUnnamedRequester": "Un dipendente ha richiesto di prendere in carico il turno del {shiftDate} ({startTime} - {endTime}).",
+        "title": "Richiesta di presa in carico del turno"
+      },
+      "shiftSwapApproved": {
+        "message": "La tua richiesta di scambio turno per il {shiftDate} è stata approvata da {approverName}.",
+        "title": "Scambio turno approvato"
+      },
+      "shiftSwapRejected": {
+        "message": "La tua richiesta di scambio turno per il {shiftDate} è stata rifiutata da {approverName}.",
+        "messageWithReason": "La tua richiesta di scambio turno per il {shiftDate} è stata rifiutata da {approverName}. Motivo: {reason}",
+        "title": "Scambio turno rifiutato"
+      },
+      "shiftSwapRequestedToManager": {
+        "message": "{requesterName} ha richiesto uno scambio per il turno del {shiftDate} ({startTime} - {endTime}).",
+        "messageWithTarget": "{requesterName} ha richiesto di effettuare uno scambio con {targetName} per il turno del {shiftDate} ({startTime} - {endTime}).",
+        "title": "Richiesta di scambio turno"
+      },
+      "shiftSwapRequestedToTarget": {
+        "message": "{requesterName} vorrebbe scambiare il turno con te per il {shiftDate} ({startTime} - {endTime}).",
+        "title": "Richiesta di scambio turno"
+      },
+      "skillExpiredToday": {
+        "employeeMessage": "La tua competenza \"{skill}\" scade oggi.",
+        "message": "La competenza \"{skill}\" di {employee} scade oggi.",
+        "title": "Una competenza scade oggi"
+      },
+      "skillExpiryUpcoming": {
+        "employeeMessage": "La tua competenza \"{skill}\" scade il {untilDate}.",
+        "message": "La competenza \"{skill}\" di {employee} scade il {untilDate}.",
+        "title": "Una competenza scade a breve"
       },
       "teamMemberAdded": {
         "message": "Sei stato aggiunto al team {teamName} da {performedByName}.",
@@ -797,12 +1051,30 @@
         "message": "Sei stato rimosso dal team {teamName} da {performedByName}.",
         "title": "Rimosso dal team"
       },
+      "timeCorrectionApproved": {
+        "message": "La tua richiesta di correzione dell'orario è stata approvata da {approverName}.",
+        "title": "Correzione orario approvata"
+      },
+      "timeCorrectionRejected": {
+        "message": "La tua richiesta di correzione dell'orario è stata rifiutata da {approverName}.",
+        "messageWithReason": "La tua richiesta di correzione dell'orario è stata rifiutata da {approverName}. Motivo: {rejectionReason}",
+        "title": "Correzione orario rifiutata"
+      },
+      "timeCorrectionSubmitted": {
+        "message": "La tua richiesta di correzione dell'orario è stata inviata ed è in attesa di approvazione.",
+        "title": "Correzione orario inviata"
+      },
       "timeOffInLieuAvailable": {
         "message": "I dipendenti possono ora usufruire di permessi a valere sul proprio saldo ore. La nuova categoria di assenza rimarrà inattiva finché non la attivi nelle impostazioni delle assenze.",
         "title": "Il recupero ore è disponibile"
       },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Una rettifica approvata ha aumentato l'importo dovuto sulla nota spese {report} di {employee}. In attesa di rimborso: {amounts}."
+      },
+      "travelExpenseApproved": {
+        "message": "La tua richiesta di rimborso spese di viaggio per {destination} ({amount}) è stata approvata da {approverName}.",
+        "messageWithoutDestination": "La tua richiesta di rimborso spese di viaggio di {amount} è stata approvata da {approverName}.",
+        "title": "Spesa di viaggio approvata"
       },
       "travelExpenseLeftOutOfPayrollRun": {
         "message": "La nota spese {report} di {employee} non viene rimborsata tramite busta paga. In attesa di rimborso: {amounts}."
@@ -832,6 +1104,45 @@
       },
       "travelExpenseReimbursedWithPayroll": {
         "message": "Le tue spese di viaggio sono state interamente rimborsate con la busta paga {period}: {amount} {currency}."
+      },
+      "travelExpenseRejected": {
+        "message": "La tua richiesta di rimborso spese di viaggio per {destination} ({amount}) è stata rifiutata da {approverName}.",
+        "messageWithoutDestination": "La tua richiesta di rimborso spese di viaggio di {amount} è stata rifiutata da {approverName}.",
+        "messageWithoutDestinationWithReason": "La tua richiesta di rimborso spese di viaggio di {amount} è stata rifiutata da {approverName}. Motivo: {reason}",
+        "messageWithReason": "La tua richiesta di rimborso spese di viaggio per {destination} ({amount}) è stata rifiutata da {approverName}. Motivo: {reason}",
+        "title": "Spesa di viaggio rifiutata"
+      },
+      "travelExpenseReportApproved": {
+        "message": "La tua nota spese (rimborsabile {amount}) è stata approvata da {approverName}.",
+        "title": "Nota spese approvata"
+      },
+      "travelExpenseReportRejected": {
+        "message": "La tua nota spese (rimborsabile {amount}) è stata rifiutata da {approverName}.",
+        "messageWithReason": "La tua nota spese (rimborsabile {amount}) è stata rifiutata da {approverName}. Motivo: {reason}",
+        "title": "Nota spese rifiutata"
+      },
+      "travelExpenseReportReturned": {
+        "message": "{reviewerName} ha restituito la tua nota spese per modifiche: {note}",
+        "title": "Nota spese restituita per modifiche"
+      },
+      "twoFactorDisabled": {
+        "message": "L'autenticazione a due fattori è stata disattivata per il tuo account. Ti consigliamo di riattivarla per motivi di sicurezza.",
+        "title": "Autenticazione a due fattori disattivata"
+      },
+      "twoFactorEnabled": {
+        "message": "L'autenticazione a due fattori è stata attivata sul tuo account per una maggiore sicurezza.",
+        "title": "Autenticazione a due fattori attivata"
+      },
+      "vacationBalanceAlert": {
+        "expiringMessage": "{remainingDays, plural, one {Hai # giorno di ferie in scadenza il {expiryDate}. Utilizzalo prima che scada!} other {Hai # giorni di ferie in scadenza il {expiryDate}. Utilizzali prima che scadano!}}",
+        "message": "{remainingDays, plural, one {Hai # giorno di ferie rimanente. Non dimenticare di prenderti una pausa!} other {Hai # giorni di ferie rimanenti. Non dimenticare di prenderti una pausa!}}",
+        "title": "Promemoria saldo ferie"
+      },
+      "waterReminder": {
+        "done": "Fatto!",
+        "message": "Rimani in salute: bevi un po' d'acqua",
+        "snooze": "Posticipa per oggi",
+        "title": "È ora di idratarsi!"
       }
     },
     "description": "Controlla aggiornamenti, approvazioni e avvisi di sistema in un'unica timeline.",
@@ -937,11 +1248,17 @@
         "approval_cover_return_summary": "Deciso dal tuo sostituto",
         "approval_cover_started": "Copertura dell'assenza iniziata",
         "break_due_reminder": "Pausa prevista",
+        "driving_details_missing_reminder": "Dettagli di guida mancanti",
         "forgotten_clock_out_reminder": "Timbratura di uscita dimenticata",
         "missed_clock_in_reminder": "Mancata timbratura di entrata",
         "period_submission_decided": "Ore inviate approvate o rifiutate",
         "period_submission_reminder": "Invia le tue ore",
         "period_submission_sent_back": "Ore rimandate indietro dopo una modifica",
+        "personal_data_export_admin_exported": "Dati personali esportati da un amministratore",
+        "personal_data_export_ready": "Esportazione dei dati personali pronta",
+        "personal_data_export_reminder": "Scarica i tuoi dati prima di andartene",
+        "skill_expired_today": "Competenza in scadenza oggi",
+        "skill_expiry_upcoming": "Competenza in scadenza a breve",
         "work_balance_adjustment_cancelled": "Rettifica del saldo annullata",
         "work_balance_adjustment_recorded": "Rettifica del saldo registrata"
       },
@@ -1020,6 +1337,1092 @@
       "loading": "Lettura dei record salvati in corso…",
       "review": "Rivedi i record salvati",
       "title": "Record di timbratura salvati"
+    }
+  },
+  "personalDataExport": {
+    "readme": {
+      "accessAdmin": "{name} (amministratore)",
+      "accessExpenseExport": "esportarli",
+      "accessExpenseOfficers": "Addetti alle note spese (le tue note spese approvate e le relative ricevute):",
+      "accessExpenseRead": "leggere i report approvati",
+      "accessExpenseReimburse": "registrare i rimborsi",
+      "accessIntro": "Oltre a te, queste persone in {organization} possono accedere ai tuoi dati in Z8 al momento della creazione di questa esportazione:",
+      "accessManagerDirect": "{name} (il tuo responsabile)",
+      "accessManagers": "Responsabili (orari, assenze, pianificazioni e richieste, secondo quanto consentito dal loro ruolo):",
+      "accessManagerTeam": "{name} (autorizzazioni per il tuo team)",
+      "accessNobody": "Nessuno.",
+      "accessOwner": "{name} (proprietario)",
+      "accessOwnersAdmins": "Proprietari e amministratori (tutti i tuoi dati nell'organizzazione):",
+      "accessPayrollAll": "tutti i dipendenti",
+      "accessPayrollEmployee": "tu per nome",
+      "accessPayrollOfficers": "Accesso buste paga (orario di lavoro e assenze, esportati per l'elaborazione delle paghe):",
+      "accessPayrollTeam": "il tuo team",
+      "accessPersonnelFileOfficers": "Addetti al fascicolo personale (i documenti del tuo fascicolo personale appartenenti a queste categorie):",
+      "accessTitle": "Chi può accedere ai tuoi dati",
+      "category": {
+        "absences": "Le tue assenze, ferie spettanti e rettifiche delle ferie.",
+        "account": "Il tuo account utente: sessioni, metodi di accesso, impostazioni di sicurezza, preferenze e dispositivi.",
+        "accountAdmin": "Il nome e l'indirizzo email del tuo account utente.",
+        "approvals": "Le tue richieste e l'invio dei periodi, nonché le decisioni che hai preso sulle richieste di altre persone.",
+        "auditLog": "Voci del registro di controllo relative a te e operazioni eseguite da te.",
+        "employment": "La tua scheda dipendente e il tuo profilo, i periodi di impiego e la cessazione, le condizioni contrattuali con la retribuzione oraria e la relativa cronologia, i team, i responsabili, le sedi, le competenze, le assegnazioni ai progetti, i ruoli, i gruppi, il centro di costo e tutte le policy a te assegnate.",
+        "integrations": "I tuoi collegamenti al calendario, il feed del calendario, gli account di chat collegati e lo stato del PIN del chiosco.",
+        "notifications": "La cronologia delle tue notifiche.",
+        "personnelFile": "I documenti presenti nel tuo fascicolo personale, come file originali.",
+        "planning": "I tuoi turni e le tue richieste di turno.",
+        "positionStamps": "Le tue timbrature di posizione, la cronologia dei tuoi consensi e chi ha visualizzato le tue posizioni.",
+        "time": "Le tue registrazioni orarie, i periodi di lavoro e le correzioni, le pause, le timbrature di uscita automatiche, le eccezioni di conformità, le violazioni delle politiche di lavoro, le maggiorazioni, i saldi e le rettifiche dei saldi.",
+        "travelExpenses": "Le tue richieste di rimborso spese di viaggio, le note spese, le singole voci, i conguagli e le ricevute."
+      },
+      "completeCopy": "{organization} potrebbe conservare ulteriori dati che ti riguardano che non fanno parte di questa esportazione. Puoi richiedere agli amministratori di {organization} una copia completa dei tuoi dati personali.",
+      "completeCopyTitle": "Copia completa",
+      "csvFolder": "La cartella {folder} contiene le stesse tabelle sotto forma di file CSV.",
+      "documentCategory": {
+        "certificate": "Certificati",
+        "contract": "Contratti",
+        "other": "Altri documenti",
+        "payslip": "Buste paga",
+        "sickNote": "Certificati di malattia"
+      },
+      "fields": {
+        "absences": {
+          "absences": {
+            "approvedAt": "Quando è stata decisa l'assenza (UTC).",
+            "approvedBy": "Chi ha deciso in merito all'assenza.",
+            "category": "La categoria di assenza, secondo la denominazione usata dall'organizzazione.",
+            "categoryType": "Il tipo di assenza associato alla categoria, ad esempio vacation, sick o home_office.",
+            "deputy": "Il collega che ti sostituisce durante l'assenza.",
+            "deputyAssignedAt": "Quando è stato assegnato il sostituto (UTC).",
+            "endDate": "L'ultimo giorno dell'assenza (YYYY-MM-DD).",
+            "endPeriod": "La parte dell'ultimo giorno in cui sei assente: full_day, am o pm.",
+            "notes": "La nota inserita per l'assenza.",
+            "rejectionReason": "Il motivo per cui l'assenza è stata rifiutata.",
+            "sickDetail": "In caso di malattia: maggiori dettagli, ad esempio con o senza certificato medico oppure figlio malato.",
+            "startDate": "Il primo giorno dell'assenza (AAAA-MM-GG).",
+            "startPeriod": "In quale parte del primo giorno sei assente: full_day (giornata intera), am (mattina) o pm (pomeriggio).",
+            "status": "Indica se l'assenza è in attesa, approvata o rifiutata.",
+            "summary": "Le tue assenze, come ferie, malattia o smart working, con la relativa approvazione."
+          },
+          "shared": {
+            "year": "L'anno di riferimento delle ferie."
+          },
+          "vacationAdjustments": {
+            "accrualMonth": "Per una quota maturata: il mese (da 1 a 12) per cui è stata concessa.",
+            "adjustedBy": "Chi ha apportato la modifica.",
+            "days": "I giorni aggiunti (positivo) o sottratti (negativo).",
+            "kind": "Indica se la modifica è stata apportata a mano (manual) o se l'app ha concesso una quota maturata (accrual).",
+            "reason": "Il motivo per cui è stata apportata la modifica.",
+            "summary": "Ogni modifica ai tuoi giorni di ferie oltre all'assegnazione: correzioni manuali e quote maturate."
+          },
+          "vacationAllowances": {
+            "customAnnualDays": "I tuoi giorni di ferie per l'anno; vuoto quando si applica il numero previsto dal piano.",
+            "customCarryoverDays": "I giorni riportati a quest'anno dall'anno precedente; vuoto se non ne è stato impostato alcuno per te.",
+            "summary": "Assegnazioni di ferie stabilite per te personalmente, al posto del piano ferie, per anno."
+          },
+          "vacationPolicies": {
+            "accrualStartMonth": "Il mese (da 1 a 12) a partire dal quale inizia la maturazione dei giorni di ferie.",
+            "accrualType": "Come vengono concessi i giorni: tutti in una volta all'anno (annual), mensilmente o ogni due settimane (biweekly).",
+            "allowCarryover": "Indica se i giorni non utilizzati vengono riportati all'anno successivo.",
+            "assignmentActive": "Indica se l'assegnazione è attiva.",
+            "assignmentEffectiveFrom": "Quando l'assegnazione del piano inizia ad applicarsi (UTC).",
+            "assignmentEffectiveUntil": "Quando l'assegnazione cessa di applicarsi (UTC); vuoto finché è attiva.",
+            "assignmentType": "Come ti viene applicata: assegnata a te (employee), al tuo team (team) o all'intera organizzazione (organization).",
+            "carryoverExpiryMonths": "Per quanti mesi dell'anno successivo rimangono validi i giorni riportati; vuoto se non scadono.",
+            "defaultAnnualDays": "I giorni di ferie all'anno previsti dal piano.",
+            "maxCarryoverDays": "Il numero massimo di giorni riportabili; vuoto per nessun limite.",
+            "policy": "Il nome del piano.",
+            "prorateInStartAndExitYear": "Indica se l'assegnazione annuale viene ridotta nell'anno di assunzione o dimissioni, in base ai mesi lavorati.",
+            "statutoryMinimumDays": "Il numero minimo di giorni a cui può scendere un'assegnazione ridotta una volta terminato il periodo di attesa.",
+            "summary": "I piani ferie a te applicabili: assegnati a te, ai tuoi team o predefiniti dell'organizzazione.",
+            "validFrom": "Il primo giorno di applicazione del piano (AAAA-MM-GG).",
+            "validUntil": "L'ultimo giorno di applicazione del piano (AAAA-MM-GG); vuoto finché è applicabile."
+          }
+        },
+        "account": {
+          "accessViolations": {
+            "actionTaken": "Cosa è accaduto: bloccato (blocked), contestato (challenged) o registrato (logged).",
+            "blockedCountry": "Il paese bloccato.",
+            "blockedIp": "L'indirizzo IP bloccato.",
+            "concurrentSessionCount": "Quante sessioni erano aperte in quel momento.",
+            "reason": "Il motivo registrato.",
+            "requestMethod": "Il tipo di richiesta, ad es. GET.",
+            "requestPath": "La pagina o l'indirizzo richiesto.",
+            "requiredMfaType": "Il secondo fattore richiesto dalla regola.",
+            "summary": "Richieste che le regole di accesso di questa organizzazione hanno bloccato, contestato o contrassegnato.",
+            "violationType": "Quale regola è stata violata, ad es. ip_blocked."
+          },
+          "hydrationStats": {
+            "currentStreak": "Giorni consecutivi in cui hai raggiunto il tuo obiettivo, fino a oggi.",
+            "lastGoalMetDate": "L'ultimo giorno in cui hai raggiunto il tuo obiettivo.",
+            "longestStreak": "La tua serie più lunga.",
+            "snoozedUntil": "Fino a quando hai posticipato i promemoria.",
+            "summary": "I tuoi totali di assunzione d'acqua e le tue serie.",
+            "totalIntakeAllTime": "Tutti i bicchieri che hai registrato."
+          },
+          "notificationPreferences": {
+            "channel": "Dove viene recapitata, ad es. email o push.",
+            "enabled": "Indica se la ricevi su questo canale.",
+            "notificationType": "Il tipo di notifica.",
+            "summary": "Quali notifiche hai attivato o disattivato, per canale."
+          },
+          "passkeys": {
+            "aaguid": "L'ID del modello dell'autenticatore.",
+            "backedUp": "Indica se è stato eseguito il backup.",
+            "deviceType": "Indica se risiede su un solo dispositivo o se si sincronizza tra più dispositivi.",
+            "name": "Il nome della passkey.",
+            "summary": "Le tue passkey (le chiavi non vengono mai esportate).",
+            "transports": "La modalità di connessione dell'autenticatore, ad es. USB o interna."
+          },
+          "pushDevices": {
+            "deviceName": "Il nome del dispositivo.",
+            "kind": "web per un browser, nativo per l'app mobile.",
+            "lastSeenAt": "La data e l'ora dell'ultima registrazione del dispositivo da parte dell'app.",
+            "platform": "La piattaforma mobile (iOS o Android); vuoto per un browser.",
+            "summary": "Browser e dispositivi che ricevono notifiche push (le relative chiavi non vengono mai esportate)."
+          },
+          "sessions": {
+            "city": "La città di tale indirizzo IP.",
+            "createdAt": "Quando hai effettuato l'accesso.",
+            "expiresAt": "La data e l'ora di fine della sessione, a meno che non venga rinnovata.",
+            "impersonated": "Indica se l'assistenza della piattaforma ha aperto questa sessione a tuo nome. L'indirizzo IP, il browser e la posizione vengono quindi esclusi: appartengono all'assistenza, non a te.",
+            "lastActivityAt": "Quando hai utilizzato l'ultima volta la sessione in questa organizzazione.",
+            "mfaMethod": "La modalità con cui hai confermato il secondo fattore, se richiesto.",
+            "mfaVerifiedAt": "Quando lo hai confermato.",
+            "region": "La regione di tale indirizzo IP.",
+            "summary": "I tuoi accessi (sessioni) ancora memorizzati, con i dettagli registrati da questa organizzazione.",
+            "updatedAt": "Quando la sessione è stata rinnovata l'ultima volta."
+          },
+          "settings": {
+            "dashboardWidgetOrder": "La disposizione della tua dashboard, in formato JSON.",
+            "helpImproveProduct": "Indica se hai accettato di contribuire a migliorare il prodotto.",
+            "locale": "La lingua della tua app; se vuoto, segue quella del tuo browser.",
+            "onboardingComplete": "Indica se hai completato l'introduzione.",
+            "onboardingCompletedAt": "Quando l'hai completata.",
+            "onboardingStartedAt": "Quando hai iniziato l'introduzione.",
+            "onboardingStep": "Il passaggio dell'introduzione a cui sei arrivato.",
+            "summary": "Le tue impostazioni personali nell'app.",
+            "timeFormat": "Indica se gli orari vengono visualizzati nel formato a 12 o 24 ore.",
+            "timezone": "Il fuso orario scelto per visualizzare gli orari.",
+            "waterReminderDailyGoal": "Il tuo obiettivo giornaliero in bicchieri.",
+            "waterReminderEnabled": "Indica se i promemoria per l'acqua sono attivi.",
+            "waterReminderIntervalMinutes": "Minuti di intervallo tra i promemoria per l'acqua.",
+            "waterReminderPreset": "La preimpostazione del promemoria per l'acqua che hai scelto.",
+            "weekStartDay": "Il giorno in cui inizia la tua settimana."
+          },
+          "shared": {
+            "country": "Il paese di tale indirizzo IP (codice ISO).",
+            "ipAddress": "L'indirizzo IP di provenienza.",
+            "isActive": "Indica se è ancora in uso.",
+            "lastUsedAt": "Quando è stato utilizzato l'ultima volta.",
+            "userAgent": "Il browser o l'app, come identificato/a."
+          },
+          "signInMethods": {
+            "accountId": "L'ID del tuo account presso quel provider.",
+            "passwordSet": "Indica se è impostata una password (la password stessa non viene mai esportata).",
+            "provider": "Il metodo di accesso; credenziale indica email e password.",
+            "summary": "Le modalità con cui puoi accedere: una password o account collegati come Google o Microsoft."
+          },
+          "trustedDevices": {
+            "deviceName": "Il nome del dispositivo.",
+            "expiresAt": "Quando scade l'attendibilità.",
+            "lastIpAddress": "L'indirizzo IP del suo ultimo utilizzo.",
+            "mdmCompliant": "Indica se il sistema di gestione dei dispositivi lo ha segnalato come conforme.",
+            "mdmProvider": "Il sistema di gestione dei dispositivi, se presente.",
+            "platform": "Il sistema operativo.",
+            "revokedAt": "Quando l'attendibilità è stata revocata.",
+            "revokedBy": "Chi l'ha revocato.",
+            "revokeReason": "Il motivo per cui è stato revocato.",
+            "summary": "Dispositivi considerati attendibili da questa organizzazione per i tuoi accessi.",
+            "trustSource": "Il motivo per cui è attendibile: una passkey, un amministratore, la scelta di ricordarlo o la gestione dei dispositivi (MDM)."
+          },
+          "user": {
+            "banExpires": "Quando termina il blocco; vuoto se non termina.",
+            "banned": "Indica se la piattaforma ha bloccato il tuo account.",
+            "banReason": "Il motivo per cui la piattaforma lo ha bloccato.",
+            "canCreateOrganizations": "Indica se puoi creare organizzazioni tue.",
+            "email": "L'indirizzo email con cui accedi.",
+            "emailVerified": "Indica se hai confermato tale indirizzo email.",
+            "firstName": "Il nome associato al tuo account.",
+            "image": "L'indirizzo dell'immagine del tuo profilo.",
+            "lastName": "Il cognome associato al tuo account.",
+            "name": "Il nome visualizzato del tuo account.",
+            "role": "Il tuo ruolo sulla piattaforma (non in questa organizzazione).",
+            "summary": "Il tuo account utente: il login che usi per questa organizzazione.",
+            "twoFactorEnabled": "Indica se l'autenticazione a due fattori è attiva."
+          },
+          "waterIntake": {
+            "amount": "Quanti bicchieri.",
+            "loggedAt": "Quando l'hai bevuto.",
+            "source": "Dove l'hai registrato: un promemoria, manualmente o il widget.",
+            "summary": "L'acqua che hai registrato."
+          }
+        },
+        "approvals": {
+          "approvalChains": {
+            "completedAt": "Quando è stato deciso l'ultimo passaggio (UTC).",
+            "policy": "La policy di approvazione che ha stabilito i passaggi, in base al nome dell'epoca.",
+            "status": "A che punto si trova l'approvazione.",
+            "summary": "Approvazioni a più fasi delle tue richieste, come registrate da una versione precedente del sistema di approvazione."
+          },
+          "approvalChainStages": {
+            "approver": "La persona incaricata di decidere sul passaggio.",
+            "chainId": "L'ID dell'approvazione in approval_chains.",
+            "decidedAt": "Quando è stato deciso il passaggio (UTC).",
+            "decidedBy": "Chi ha deciso sul passaggio.",
+            "status": "A che punto si trova il passaggio.",
+            "step": "La posizione del passaggio: 1 è il primo passaggio.",
+            "summary": "I passaggi di tali approvazioni a più fasi."
+          },
+          "decisionsOnOthers": {
+            "actedAt": "Quando hai deciso (UTC).",
+            "action": "Cosa hai deciso: approvato o rifiutato, oppure riassegnato se hai passato la richiesta a un altro approvatore.",
+            "asDeputy": "Indica se hai deciso in qualità di sostituto dell'approvatore.",
+            "authority": "Dove è registrata la decisione: nel sistema di approvazione attuale (canonical), in quello precedente (legacy) o solo sul record stesso (record).",
+            "otherPerson": "Un ID anonimo per la persona a cui apparteneva la richiesta. La stessa persona ha lo stesso ID in tutta questa esportazione e uno diverso in qualsiasi altra esportazione.",
+            "recordKind": "Il tipo di richiesta su cui hai deciso, ad esempio un'assenza o una richiesta di turno.",
+            "summary": "Le decisioni che hai preso sulle richieste di altre persone. L'altra persona compare solo come ID anonimo."
+          },
+          "deputyDecisions": {
+            "actingFor": "L'approvatore sostituito.",
+            "authority": "A quale sistema di approvazione appartiene la decisione: legacy (precedente) o canonical (attuale).",
+            "decidedAt": "Quando ha deciso il sostituto (UTC).",
+            "decidedBy": "Il sostituto che ha deciso.",
+            "decision": "Cosa ha deciso il sostituto: approvato o rifiutato.",
+            "requestId": "L'ID della richiesta in requests, per il sistema precedente.",
+            "summary": "Decisioni sulle tue richieste prese da un sostituto al posto dell'approvatore.",
+            "workflowId": "L'ID dell'approvazione in workflows, per il sistema attuale."
+          },
+          "periodSubmissions": {
+            "cadence": "Indica se invii le tue ore su base settimanale (weekly) o mensile (monthly).",
+            "cadenceEndDate": "L'ultimo giorno dell'intera settimana o mese (AAAA-MM-GG).",
+            "cadenceStartDate": "Il primo giorno dell'intera settimana o mese (AAAA-MM-GG).",
+            "closedAt": "Quando la trasmissione è stata ritirata o la relativa approvazione è diventata obsoleta in seguito a una modifica (UTC).",
+            "closedCause": "Il motivo per cui la trasmissione è stata chiusa: ritirata dall'utente (dipendente) o orario modificato successivamente (modifica).",
+            "decidedAt": "Quando la trasmissione è stata approvata o rifiutata (UTC).",
+            "decidedBy": "Chi ha approvato o rifiutato la trasmissione.",
+            "endDate": "L'ultimo giorno trasmesso (AAAA-MM-GG).",
+            "rangeEnd": "La fine dei giorni trasmessi come data e ora (UTC), esclusa.",
+            "rangeStart": "L'inizio dei giorni trasmessi come data e ora (UTC).",
+            "startDate": "Il primo giorno trasmesso (AAAA-MM-GG).",
+            "status": "Stato della trasmissione: in sospeso, approvata, rifiutata, ritirata o obsoleta se una modifica successiva ha reso non valida un'approvazione.",
+            "submittedAt": "Quando il periodo è stato trasmesso (UTC).",
+            "submittedBy": "Chi ha trasmesso il periodo.",
+            "summary": "Le settimane o i mesi di orario di lavoro trasmessi per l'approvazione. Se si trasmette nuovamente un periodo, viene aggiunta una nuova riga.",
+            "timezone": "Il fuso orario in base al quale vengono conteggiati i giorni del periodo.",
+            "weekStartDay": "Per le trasmissioni settimanali: il giorno in cui inizia la settimana."
+          },
+          "requests": {
+            "approvedAt": "Quando è stata decisa la richiesta (UTC).",
+            "approver": "La persona a cui è stato chiesto di prendere una decisione.",
+            "notes": "Note sulla richiesta.",
+            "reason": "Il motivo della richiesta.",
+            "rejectionReason": "Il motivo per cui la richiesta è stata rifiutata.",
+            "status": "Indica se la richiesta è in sospeso, approvata o rifiutata.",
+            "summary": "Le richieste di approvazione registrate da una versione precedente del sistema di approvazione."
+          },
+          "shared": {
+            "decisionReason": "Il motivo fornito con la decisione.",
+            "recordId": "L'ID di quel record, ad esempio di un'assenza in absences.json.",
+            "recordKind": "Il tipo di record a cui si riferisce la richiesta, ad esempio un'assenza o una rettifica dell'orario.",
+            "stageLabel": "Il nome del passaggio di approvazione.",
+            "workflowId": "L'ID dell'approvazione nei flussi di lavoro."
+          },
+          "workflowApprovers": {
+            "approver": "La persona a cui è stato chiesto di prendere una decisione.",
+            "assignedAt": "Quando è stata richiesta la decisione (UTC).",
+            "decidedBy": "Chi ha effettivamente deciso: il nome di una persona o system quando è stata definita dall'app (legacy_unknown per i vecchi record).",
+            "reassignedBy": "Chi ha inoltrato la decisione a qualcun altro.",
+            "resolvedAt": "Quando la relativa parte è stata definita (UTC).",
+            "status": "Stato della relativa parte: in sospeso, approvata, rifiutata, annullata o scaduta.",
+            "summary": "Le persone a cui è stato chiesto di decidere in ciascun passaggio delle approvazioni."
+          },
+          "workflowEvents": {
+            "actor": "Chi ha eseguito l'azione: il nome di una persona o system quando è stata eseguita dall'app (legacy_unknown per i vecchi record).",
+            "eventType": "Cosa è successo, ad esempio stage.activated, assignment.approved o assignment.escalated.",
+            "occurredAt": "Quando è successo (UTC).",
+            "reason": "Il motivo fornito.",
+            "summary": "Tutto ciò che è accaduto alle tue approvazioni, in ordine."
+          },
+          "workflows": {
+            "cancelledAt": "Quando la richiesta è stata annullata (UTC).",
+            "completedAt": "Quando è stata presa la decisione finale (UTC).",
+            "status": "Stato dell'approvazione: in sospeso, approvata, rifiutata, annullata o scaduta.",
+            "submittedAt": "Quando la richiesta è stata inviata (UTC).",
+            "summary": "Le tue richieste di approvazione nel sistema di approvazione attuale, una per richiesta.",
+            "workflowType": "Cosa viene approvato, ad esempio un'assenza, una correzione dell'orario o l'invio di un periodo."
+          },
+          "workflowStages": {
+            "activatedAt": "Quando è iniziato il passaggio (UTC).",
+            "decidedAt": "Quando è stato deciso il passaggio (UTC).",
+            "stageOrder": "La posizione del passaggio: 1 corrisponde al primo passaggio.",
+            "status": "Stato del passaggio: in attesa (non iniziato), in sospeso, approvato, rifiutato, annullato o scaduto.",
+            "summary": "I passaggi previsti per ciascuna delle tue approvazioni, in ordine."
+          }
+        },
+        "auditLog": {
+          "actionsOnOthers": {
+            "actedAt": "Quando l'hai eseguito (UTC).",
+            "action": "Cosa hai fatto.",
+            "asDeputy": "Se hai agito come sostituto di qualcuno.",
+            "authority": "Dove viene registrata l'azione: audit_log per il registro di controllo, record per il record stesso.",
+            "otherPerson": "Un ID anonimo per il collega, lo stesso per un determinato collega in tutta questa esportazione; vuoto quando l'azione non riguarda alcuna persona.",
+            "recordKind": "Il tipo di record su cui hai agito, ad es. absence_entry o time_entry.",
+            "summary": "Le azioni eseguite non riguardanti i tuoi record: azioni sui record dei colleghi o sull'organizzazione. I colleghi compaiono solo tramite un ID anonimo."
+          },
+          "entries": {
+            "action": "Cosa è stato fatto, come registrato dall'app, ad es. absence.requested.",
+            "changes": "Cosa è cambiato, in formato JSON (di solito i valori prima e dopo).",
+            "entityId": "L'ID di quel record nell'app.",
+            "entityType": "Il tipo di record interessato, ad es. absence_entry o employee.",
+            "ipAddress": "Il tuo indirizzo IP al momento dell'azione; vuoto se l'azione è stata eseguita da qualcun altro.",
+            "metadata": "Ulteriore contesto registrato dall'app, in formato JSON.",
+            "performedBy": "Il nome della persona che ha eseguito l'azione.",
+            "performedByYou": "Se l'hai eseguito tu stesso.",
+            "summary": "Voci del registro di controllo che ti riguardano: cosa è stato fatto ai tuoi record, da chi e quando.",
+            "timestamp": "Quando si è verificato (UTC).",
+            "userAgent": "Il tuo browser o la tua app al momento dell'azione; vuoto se l'azione è stata eseguita da qualcun altro."
+          }
+        },
+        "common": {
+          "assignedAt": "Quando ti è stato assegnato.",
+          "assignedBy": "Chi te l'ha assegnato.",
+          "createdAt": "Quando è stato creato il record.",
+          "createdBy": "Chi ha creato il record.",
+          "effectiveFrom": "Quando è entrato in vigore.",
+          "effectiveTo": "Quando ha cessato di essere applicato; vuoto finché è ancora applicabile.",
+          "id": "L'ID del record nell'app, in modo che altri file possano farvi riferimento.",
+          "updatedAt": "Quando il record è stato modificato l'ultima volta.",
+          "updatedBy": "Chi ha modificato il record l'ultima volta."
+        },
+        "employment": {
+          "assignedLocations": {
+            "city": "La città della sede.",
+            "country": "Il paese della sede.",
+            "location": "Il nome della sede.",
+            "postalCode": "Il codice postale della sede.",
+            "street": "La via della sede.",
+            "summary": "Le sedi in cui sei assegnato a lavorare."
+          },
+          "assignedVehicles": {
+            "archived": "Se l'organizzazione ha archiviato il veicolo, così da non poter più essere selezionato.",
+            "assignmentType": "Come ti viene attribuito: assegnato a te (employee) o al tuo team (team).",
+            "licencePlate": "La targa del veicolo.",
+            "summary": "I veicoli dell'organizzazione assegnati a te o ai tuoi team, che l'app suggerisce per primi quando registri un veicolo per il tuo lavoro.",
+            "vehicle": "Il nome del veicolo."
+          },
+          "billableRates": {
+            "hourlyRate": "La tariffa oraria fatturata.",
+            "level": "Se la tariffa si applica a tutto il tuo lavoro o a un singolo progetto.",
+            "project": "Il progetto a cui si applica la tariffa; vuoto se si applica a tutto il tuo lavoro.",
+            "summary": "Le tariffe che l'organizzazione fattura ai clienti per il tuo lavoro."
+          },
+          "costCenters": {
+            "code": "Il codice del centro di costo.",
+            "costCenter": "Il nome del centro di costo.",
+            "summary": "I centri di costo a cui è imputato il tuo lavoro."
+          },
+          "costRates": {
+            "hourlyRate": "Il costo orario.",
+            "summary": "Il costo interno orario del tuo lavoro, calcolato dall'organizzazione."
+          },
+          "customFields": {
+            "field": "Il nome del campo.",
+            "fieldArchived": "Se l'organizzazione ha archiviato il campo.",
+            "summary": "I valori dei campi personalizzati dell'organizzazione nella tua scheda dipendente.",
+            "tracked": "Indica se il campo conserva una cronologia dei suoi valori.",
+            "type": "Il tipo di campo, ad esempio testo, numero, data o scelta.",
+            "validFrom": "Per i campi con cronologia: il giorno a partire dal quale si applica il valore (AAAA-MM-GG).",
+            "value": "Il valore."
+          },
+          "customRoles": {
+            "description": "La descrizione del ruolo.",
+            "role": "Il nome del ruolo.",
+            "summary": "I ruoli personalizzati assegnati a te."
+          },
+          "departureEvents": {
+            "actor": "Chi ha eseguito l'azione; vuoto se è stata eseguita dal sistema.",
+            "departureId": "L'uscita a cui appartiene questo evento (il relativo ID in uscite).",
+            "kind": "Cosa è successo, ad esempio departure_scheduled o departure_effective.",
+            "occurredAt": "Quando è successo.",
+            "revision": "La versione dell'uscita dopo questo evento.",
+            "summary": "La cronologia delle tue uscite: quando ciascuna è stata programmata, modificata, annullata o è diventata effettiva, e chi ha eseguito l'azione."
+          },
+          "departureReviews": {
+            "affectedEndAt": "La fine del periodo su cui influisce il record.",
+            "affectedStartAt": "L'inizio del periodo su cui influisce il record.",
+            "departureId": "L'ID dell'uscita in uscite.",
+            "kind": "Il tipo di record che richiedeva la revisione.",
+            "resolution": "Come è stata risolta la revisione.",
+            "resolvedAt": "Quando è stata risolta la revisione.",
+            "resolvedBy": "Chi ha risolto la revisione.",
+            "status": "Lo stato della revisione.",
+            "subjectId": "L'ID del record in revisione.",
+            "summary": "Record che richiedevano una revisione a causa della tua uscita."
+          },
+          "departures": {
+            "blockedReason": "Il motivo per cui non è stato possibile completare l'uscita, in caso di esito negativo.",
+            "cutoffAt": "Quando termina il tuo accesso all'organizzazione.",
+            "effectiveAt": "Quando è diventata effettiva l'uscita.",
+            "lastWorkingDay": "Il tuo ultimo giorno lavorativo (AAAA-MM-GG).",
+            "mode": "Come è stata configurata l'uscita.",
+            "replacement": "Il collega che subentra alle tue mansioni.",
+            "status": "Lo stato dell'uscita.",
+            "summary": "Le tue uscite dall'organizzazione.",
+            "timezone": "Il fuso orario dell'ultimo giorno lavorativo."
+          },
+          "departureTasks": {
+            "completedAt": "Quando è stata completata l'attività.",
+            "departureId": "L'ID dell'uscita in uscite.",
+            "kind": "Cosa fa l'attività.",
+            "status": "Lo stato dell'attività.",
+            "summary": "Le attività eseguite dall'app per la tua uscita."
+          },
+          "employee": {
+            "birthday": "La tua data di nascita (AAAA-MM-GG).",
+            "contractType": "Il tuo tipo di contratto.",
+            "email": "L'indirizzo email del tuo account utente.",
+            "endDate": "Quando si è concluso il tuo rapporto di lavoro; vuoto finché è ancora in corso.",
+            "firstName": "Il tuo nome nella tua scheda dipendente.",
+            "gender": "Il tuo genere.",
+            "isActive": "Indica se la tua scheda dipendente è attiva.",
+            "lastName": "Il tuo cognome nella tua scheda dipendente.",
+            "organization": "Il nome dell'organizzazione.",
+            "personnelNumber": "Il tuo numero di matricola.",
+            "position": "La tua posizione o qualifica lavorativa.",
+            "primaryTeam": "Il tuo team principale.",
+            "pronouns": "I tuoi pronomi.",
+            "role": "Il tuo ruolo nell'app: amministratore, responsabile o dipendente.",
+            "startDate": "Quando è iniziato il tuo rapporto di lavoro.",
+            "summary": "La tua scheda dipendente in questa organizzazione e il nome del tuo account utente.",
+            "userFirstName": "Il nome del tuo account utente.",
+            "userId": "L'ID del tuo account utente.",
+            "userLastName": "Il cognome del tuo account utente.",
+            "userName": "Il nome del tuo account utente."
+          },
+          "employmentPeriods": {
+            "endedAt": "Quando è terminato il periodo; vuoto finché rimane aperto.",
+            "startedAt": "Quando è iniziato il periodo.",
+            "startProvenance": "L'origine dell'inizio, ad esempio un'assunzione o una riassunzione.",
+            "status": "Indica se il periodo è aperto o chiuso.",
+            "summary": "Ciascun periodo in cui hai lavorato per l'organizzazione."
+          },
+          "employmentTerms": {
+            "changeReason": "Il motivo per cui i termini sono stati stabiliti o modificati.",
+            "contractType": "Il tuo tipo di contratto.",
+            "currency": "La valuta della tariffa oraria.",
+            "hourlyRate": "La tua tariffa oraria in base a questi termini.",
+            "probationEndsOn": "L'ultimo giorno del periodo di prova (AAAA-MM-GG).",
+            "probationStartsOn": "Il primo giorno del periodo di prova (AAAA-MM-GG).",
+            "reviewState": "Indica se i termini sono stati confermati o necessitano ancora di revisione.",
+            "status": "Indica se questi termini sono in vigore.",
+            "summary": "I tuoi termini contrattuali nel tempo, con la relativa tariffa oraria.",
+            "validFrom": "Quando questi termini iniziano a essere applicati.",
+            "validUntil": "Quando questi termini cessano di essere applicati; vuoto finché sono applicabili.",
+            "weeklyContractMinutes": "Il tuo orario di lavoro settimanale contrattuale, in minuti.",
+            "workModel": "Il tuo modello di lavoro.",
+            "workPolicy": "La policy di lavoro utilizzata da questi termini."
+          },
+          "groups": {
+            "addedAt": "Quando sei stato aggiunto al gruppo.",
+            "addedBy": "Chi ti ha aggiunto al gruppo.",
+            "description": "La descrizione del gruppo.",
+            "group": "Il nome del gruppo.",
+            "summary": "I gruppi di dipendenti a cui appartieni."
+          },
+          "locationSupervision": {
+            "location": "Il nome della sede.",
+            "subarea": "L'area all'interno della sede; vuoto per l'intera sede.",
+            "summary": "Le sedi e le aree che supervisioni."
+          },
+          "managers": {
+            "manager": "Il nome del responsabile.",
+            "summary": "I tuoi responsabili."
+          },
+          "policyAssignments": {
+            "captureEnabled": "Solo per il rilevamento della posizione: indica se la tua posizione viene rilevata all'entrata o all'uscita.",
+            "effectiveFrom": "Quando l'assegnazione inizia a essere applicata.",
+            "effectiveUntil": "Quando l'assegnazione cessa di essere applicata; vuoto finché è applicabile.",
+            "isActive": "Indica se l'assegnazione è attiva.",
+            "policy": "Il nome della policy; vuoto per il rilevamento della posizione.",
+            "policyKind": "Il tipo di policy: lavoro, ferie, festività (un set di festività predefinito), assegnazione festività (una singola festività), categoria festività, modifica, maggiorazione, set di categorie di lavoro o rilevamento della posizione.",
+            "priority": "Quale assegnazione prevale quando se ne applicano diverse: il numero più alto ha la priorità.",
+            "summary": "Ogni policy che ti riguarda: assegnata a te, ai tuoi team o predefinita per l'organizzazione."
+          },
+          "projectAssignmentHistory": {
+            "summary": "Assegnazioni di progetto precedenti e correnti, e quando sono state applicate."
+          },
+          "projectAssignments": {
+            "summary": "I progetti assegnati a te o ai tuoi team."
+          },
+          "projectsManaged": {
+            "summary": "I progetti che gestisci."
+          },
+          "shared": {
+            "assignmentType": "In che modo ti viene applicato: assegnato a te (dipendente), al tuo team (team) o all'intera organizzazione (organizzazione).",
+            "primary": "Indica se è il tuo elemento principale.",
+            "project": "Il nome del progetto.",
+            "team": "Il nome del team."
+          },
+          "skills": {
+            "category": "La categoria della competenza.",
+            "expiresOn": "Il giorno in cui la competenza scade (AAAA-MM-GG); vuoto se non scade.",
+            "notes": "Note sulla tua competenza.",
+            "skill": "Il nome della competenza.",
+            "summary": "Le tue competenze e qualifiche."
+          },
+          "teamHistory": {
+            "summary": "Tutti i team di cui hai fatto parte e quando."
+          },
+          "teamPermissions": {
+            "canApproveTeamRequests": "Se puoi approvare le richieste del team.",
+            "canCreateTeams": "Se puoi creare team.",
+            "canManageTeamMembers": "Se puoi gestire i membri del team.",
+            "canManageTeamSettings": "Se puoi modificare le impostazioni del team.",
+            "grantedAt": "Quando sono stati concessi i permessi.",
+            "grantedBy": "Chi ha concesso i permessi.",
+            "summary": "I permessi del team di cui disponi.",
+            "team": "Il team a cui si applicano i permessi; vuoto per tutti i team dell'organizzazione."
+          },
+          "teams": {
+            "addedBy": "Chi ti ha aggiunto al team.",
+            "memberSince": "Da quando fai parte del team.",
+            "summary": "I team di cui fai parte attualmente."
+          }
+        },
+        "integrations": {
+          "calendarConnections": {
+            "account": "Il tuo account sul servizio di calendario.",
+            "calendarId": "Il calendario utilizzato dall'app in quell'account.",
+            "conflictDetectionEnabled": "Se l'app controlla quel calendario per verificare la presenza di appuntamenti in conflitto.",
+            "createdAt": "Quando hai collegato il calendario (UTC).",
+            "lastSyncAt": "Quando l'app si è sincronizzata l'ultima volta con il calendario (UTC).",
+            "provider": "Il servizio di calendario, ad esempio google, microsoft365 o icloud.",
+            "pushEnabled": "Se l'app aggiunge le tue assenze a quel calendario.",
+            "summary": "I calendari che hai collegato all'app. I token di accesso non sono mai inclusi.",
+            "updatedAt": "Quando la connessione è stata modificata l'ultima volta (UTC)."
+          },
+          "chatAccounts": {
+            "accountId": "L'ID del tuo account sul servizio di chat.",
+            "displayName": "Il tuo nome visualizzato sul servizio di chat.",
+            "email": "Il tuo indirizzo email sul servizio di chat, se fornito.",
+            "isActive": "Se il collegamento è in uso.",
+            "lastSeenAt": "Quando hai usato l'app l'ultima volta tramite l'account (UTC).",
+            "linkedAt": "Quando hai collegato l'account (UTC).",
+            "platform": "Il servizio di chat: slack, teams, telegram o discord.",
+            "summary": "I tuoi account di chat collegati all'app, per poterla utilizzare da Slack, Microsoft Teams, Telegram o Discord.",
+            "username": "Il tuo nome utente sul servizio di chat.",
+            "workspaceId": "L'ID dell'area di lavoro o del tenant a cui appartiene il tuo account, se previsto dal servizio."
+          },
+          "icsFeeds": {
+            "createdAt": "Quando è stato creato il collegamento (UTC).",
+            "includeApproved": "Se il feed mostra le assenze approvate.",
+            "includePending": "Se il feed mostra le assenze ancora in attesa di approvazione.",
+            "isActive": "Se il collegamento è ancora funzionante.",
+            "lastUsedAt": "Quando un'app di calendario ha letto l'ultima volta il feed (UTC).",
+            "revokedAt": "Quando il collegamento è stato disattivato (UTC).",
+            "summary": "I link ai tuoi feed di calendario, che consentono a un'app di calendario di iscriversi alle tue assenze. Il link segreto non è mai incluso."
+          },
+          "kioskPin": {
+            "pinSet": "Se è stato impostato un PIN kiosk per te.",
+            "setAt": "Quando il PIN è stato impostato l'ultima volta (UTC).",
+            "setBy": "Chi ha impostato il PIN.",
+            "summary": "Se disponi di un PIN per timbrare presso un terminale kiosk. Il PIN non viene mai memorizzato in forma leggibile e non è incluso."
+          },
+          "shared": {
+            "isActive": "Se la connessione è in uso."
+          }
+        },
+        "notifications": {
+          "notifications": {
+            "actionUrl": "La pagina dell'app a cui rimanda la notifica.",
+            "createdAt": "Data e ora di ricezione della notifica (UTC).",
+            "entityId": "L'ID del record in questione.",
+            "entityType": "Il tipo di record a cui si riferisce la notifica, ad esempio un'assenza.",
+            "isRead": "Indica se hai letto la notifica.",
+            "message": "Il testo della notifica.",
+            "metadata": "Ulteriori dettagli inclusi nella notifica, in formato JSON.",
+            "readAt": "Data e ora di lettura (UTC).",
+            "summary": "Le notifiche che hai ricevuto nell'app, esattamente come le hai ricevute.",
+            "title": "Il titolo della notifica.",
+            "type": "L'oggetto della notifica, ad esempio approval_request_submitted."
+          }
+        },
+        "personnelFile": {
+          "documents": {
+            "absenceEndDate": "Per un certificato di malattia: l'ultimo giorno di assenza (YYYY-MM-DD).",
+            "absenceId": "Per un certificato di malattia: l'ID dell'assenza a cui si riferisce, in absences.json.",
+            "absenceStartDate": "Per un certificato di malattia: il primo giorno di assenza (YYYY-MM-DD).",
+            "category": "La categoria del documento: contract, payslip, certificate, sick_note o other.",
+            "documentDate": "La data del documento (YYYY-MM-DD).",
+            "expiryDate": "Il giorno di scadenza del documento (YYYY-MM-DD), ad esempio per un certificato.",
+            "file": "La posizione del file originale all'interno di questo archivio.",
+            "fileName": "Il nome del file al momento del caricamento.",
+            "mimeType": "Il tipo di file, ad esempio application/pdf.",
+            "payPeriodMonth": "Per un cedolino paga: il mese (da 1 a 12) a cui si riferisce.",
+            "payPeriodYear": "Per un cedolino paga: l'anno a cui si riferisce.",
+            "sizeBytes": "La dimensione del file, in byte.",
+            "summary": "I documenti presenti nel tuo fascicolo personale. I file veri e propri si trovano nella cartella personnel_file, suddivisi per categoria.",
+            "title": "Il titolo del documento.",
+            "uploadedBy": "Chi ha caricato il documento.",
+            "visibility": "Chi può visualizzare il documento; shared significa che puoi vederlo nel tuo fascicolo."
+          }
+        },
+        "planning": {
+          "shared": {
+            "approvedAt": "Data e ora della decisione sulla richiesta (UTC).",
+            "approver": "Chi ha preso una decisione sulla richiesta.",
+            "lifecycleStatus": "Lo stato della richiesta, compreso se è stata annullata.",
+            "requestCreatedAt": "Data e ora di creazione della richiesta (UTC).",
+            "requestId": "L'ID della richiesta nell'app.",
+            "requestStatus": "La decisione sulla richiesta: pending, approved o rejected.",
+            "requestType": "Cosa è stato richiesto: swap (scambio di turni), assignment (subentro in un turno) o pickup (presa in carico di un turno scoperto).",
+            "shiftDate": "Il giorno del turno a cui si riferisce la richiesta (YYYY-MM-DD).",
+            "shiftEndTime": "L'ora di fine del turno, in ora locale (HH:mm).",
+            "shiftStartTime": "L'ora di inizio del turno, in ora locale (HH:mm)."
+          },
+          "shiftRequests": {
+            "notes": "La tua nota sulla richiesta.",
+            "reason": "Il tuo motivo per la richiesta.",
+            "reasonCategory": "Il tipo di motivo, ad esempio sick, emergency, childcare o other.",
+            "rejectionReason": "Il motivo per cui la richiesta è stata rifiutata.",
+            "summary": "Le richieste di turno inviate da te.",
+            "swapPartner": "Il collega a cui hai chiesto di scambiare o di coprire il turno."
+          },
+          "shiftRequestsReceived": {
+            "requestedBy": "Il collega che ha effettuato la richiesta.",
+            "summary": "Le richieste che i colleghi hanno rivolto a te, ad esempio per scambiare o coprire un turno. I loro motivi, note e turni non sono inclusi: la data e gli orari del turno vengono mostrati solo se il turno è tuo."
+          },
+          "shifts": {
+            "date": "Il giorno del turno (YYYY-MM-DD).",
+            "endTime": "L'ora di fine del turno, espressa come ora locale sul luogo di lavoro (HH:mm).",
+            "location": "La sede del turno.",
+            "notes": "La nota inserita per il turno.",
+            "publishedAt": "Data e ora di pubblicazione del turno (UTC).",
+            "publishedBy": "Chi ha pubblicato il turno.",
+            "startTime": "Quando inizia il turno, espresso come ora locale della sede di lavoro (HH:mm).",
+            "status": "Indica se il turno è ancora una bozza o se è stato pubblicato per te.",
+            "subarea": "L'area all'interno della sede.",
+            "summary": "I turni a cui eri assegnato.",
+            "template": "Il modello di turno da cui è stato generato il turno."
+          }
+        },
+        "positionStamps": {
+          "accessLog": {
+            "accessedAt": "Quando sono state visualizzate le tue posizioni (UTC).",
+            "exportId": "Per un'esportazione: l'ID dell'esportazione.",
+            "kind": "Come sono state visualizzate: nei dettagli di un periodo di lavoro (work_period_detail) o in un'esportazione (data_export).",
+            "summary": "A chi, oltre a te, sono state mostrate le tue posizioni e quando: una riga per periodo di lavoro mostrato o una riga per esportazione.",
+            "viewer": "A chi sono state mostrate le tue posizioni.",
+            "workPeriodId": "L'ID del periodo di lavoro mostrato, in time.json > work_periods.",
+            "workPeriodStartedAt": "Quando è iniziato quel periodo di lavoro (UTC).",
+            "workPeriodUtcOffsetMinutes": "L'offset UTC della timbratura di entrata di quel periodo di lavoro, in minuti."
+          },
+          "consents": {
+            "consentId": "L'ID del consenso nell'app.",
+            "grantedAt": "Quando hai fornito il tuo consenso (UTC).",
+            "summary": "Ogni consenso fornito alla registrazione della tua posizione e la data di eventuale revoca.",
+            "withdrawnAt": "Quando hai revocato il consenso (UTC); vuoto se ancora valido."
+          },
+          "noticeDeclines": {
+            "declinedAt": "Quando hai risposto (UTC).",
+            "summary": "Le volte in cui hai risposto all'informativa sulla posizione con \"non ora\"."
+          },
+          "shared": {
+            "noticeVersion": "La versione dell'informativa sulla posizione a cui hai risposto.",
+            "purposeStatement": "Il motivo per cui l'organizzazione registra le posizioni, come riportato nell'informativa.",
+            "retentionDays": "Per quanti giorni vengono conservate le posizioni, come riportato nell'informativa."
+          },
+          "stamps": {
+            "accuracyMeters": "Il livello di accuratezza della posizione, in metri, come rilevato dal tuo dispositivo.",
+            "capturedAt": "Quando è stata registrata la posizione con l'evento di timbratura (UTC).",
+            "clockEvent": "Indica se la posizione è stata registrata in corrispondenza di un clock_in o di un clock_out.",
+            "consentId": "L'ID del consenso in consents in base al quale è stata registrata la posizione.",
+            "createdAt": "Quando è stata salvata la posizione (UTC).",
+            "fixedAt": "Quando il dispositivo ha determinato la posizione (UTC); può essere leggermente antecedente all'evento di timbratura.",
+            "latitude": "La latitudine, in gradi decimali.",
+            "longitude": "La longitudine, in gradi decimali.",
+            "purgeAt": "Quando verrà eliminata la posizione (UTC).",
+            "summary": "Le posizioni registrate al momento della timbratura di entrata o di uscita. Ognuna viene eliminata automaticamente a purge_at.",
+            "timeEntryId": "L'ID della timbratura di entrata o di uscita in time.json > time_entries.",
+            "utcOffsetMinutes": "L'offset UTC dell'evento di timbratura, in minuti (120 corrisponde a UTC+2)."
+          }
+        },
+        "time": {
+          "automaticClockOuts": {
+            "clockOutEntryId": "L'ID della timbratura di uscita registrata dall'app, in time_entries.",
+            "cutoffTime": "L'ora in cui è stata registrata l'uscita (UTC).",
+            "maxUninterruptedMinutes": "Il tempo massimo, in minuti, durante il quale puoi risultare in servizio senza effettuare una pausa.",
+            "processedAt": "Quando l'app ha registrato la tua timbratura di uscita (UTC).",
+            "startTime": "Quando è iniziato il periodo di lavoro (UTC).",
+            "summary": "Le volte in cui l'app ha registrato la tua uscita per aver superato il tempo massimo consentito in servizio.",
+            "timezone": "Il fuso orario del periodo di lavoro.",
+            "utcOffsetMinutes": "L'offset UTC della timbratura di uscita, in minuti."
+          },
+          "balanceAdjustments": {
+            "cancellationReason": "Il motivo per cui la rettifica è stata annullata.",
+            "cancelledAt": "Quando la rettifica è stata annullata (UTC); vuoto se è ancora considerata valida.",
+            "cancelledBy": "Chi ha annullato la rettifica.",
+            "day": "Il giorno su cui incide la rettifica (YYYY-MM-DD).",
+            "kind": "Il tipo di rettifica: opening_balance o overtime_payout.",
+            "minutes": "I minuti aggiunti (positivi) o sottratti (negativi) al tuo saldo.",
+            "reason": "Il motivo per cui è stata effettuata la rettifica.",
+            "recordedAt": "Quando è stata registrata la rettifica (UTC).",
+            "recordedBy": "Chi ha registrato la rettifica.",
+            "summary": "Modifiche manuali al saldo dell'orario di lavoro, come un saldo iniziale o straordinari liquidati, comprese quelle annullate."
+          },
+          "breakAdjustments": {
+            "adjustedAt": "Quando l'app ha aggiunto la pausa (UTC).",
+            "adjustedDurationMinutes": "La durata del periodo dopo l'aggiunta della pausa, in minuti.",
+            "breakInsertedAt": "In quale punto del periodo è stata inserita la pausa (UTC).",
+            "breakInsertedMinutes": "La durata della pausa aggiunta, in minuti.",
+            "originalDurationMinutes": "La durata del periodo prima dell'aggiunta della pausa, in minuti.",
+            "originalEndTime": "La fine del periodo prima dell'aggiunta della pausa (UTC).",
+            "policy": "La regola sulle pause che ha richiesto la pausa.",
+            "requiredBreakMinutes": "La pausa richiesta dalla regola, in minuti.",
+            "summary": "Pause aggiunte dall'app a un periodo di lavoro a causa della mancanza della pausa obbligatoria per legge.",
+            "workingMinutesThreshold": "Il tempo di lavoro, in minuti, oltre il quale la regola richiede la pausa."
+          },
+          "complianceExceptions": {
+            "actualDurationMinutes": "Il tempo effettivamente lavorato in deroga, in minuti.",
+            "approvedAt": "Quando la deroga è stata approvata (UTC).",
+            "approver": "Chi ha deciso in merito alla deroga.",
+            "exceptionType": "La regola a cui si applica la deroga, ad esempio rest_period o overtime_daily.",
+            "plannedDurationMinutes": "Il tempo di lavoro per cui è stata richiesta la deroga, in minuti.",
+            "reason": "Il motivo per cui è stata richiesta la deroga.",
+            "rejectedAt": "Quando la deroga è stata rifiutata (UTC).",
+            "rejectionReason": "Il motivo per cui la deroga è stata rifiutata.",
+            "status": "Se la deroga è in attesa, approvata, rifiutata, scaduta o utilizzata.",
+            "summary": "Deroghe alle regole sull'orario di lavoro richieste per te, come un periodo di riposo più breve o straordinari supplementari.",
+            "usedAt": "Quando hai lavorato in deroga (UTC).",
+            "validFrom": "Quando la deroga inizia ad applicarsi (UTC).",
+            "validUntil": "Quando termina l'applicazione della deroga (UTC).",
+            "wasUsed": "Se hai lavorato in regime di deroga."
+          },
+          "historicalRepairProposals": {
+            "approvedAt": "Quando la correzione è stata approvata (UTC).",
+            "approvedBy": "Chi ha approvato la correzione.",
+            "kind": "Cosa modifica la correzione.",
+            "proposedAt": "Quando la correzione è stata proposta (UTC).",
+            "proposedBy": "Chi ha proposto la correzione.",
+            "reason": "Il motivo per cui la correzione è stata proposta.",
+            "resolvedAt": "Quando la proposta è stata chiusa (UTC).",
+            "resolvedBy": "Chi ha chiuso la proposta.",
+            "status": "Lo stato della proposta, ad esempio proposta, approvata, applicata o rifiutata.",
+            "summary": "Proposte di correzione di registrazioni di lavoro precedenti, ad esempio una timbratura di uscita mancante, e il loro esito."
+          },
+          "shared": {
+            "actualMinutes": "I minuti lavorati, conteggiati ai fini del saldo.",
+            "balanceMinutes": "Il tuo saldo in minuti: un valore positivo indica ore di straordinario, uno negativo ore ancora da recuperare.",
+            "computedAt": "Quando l'app ha calcolato l'ultima volta questi dati (UTC).",
+            "requiredMinutes": "I minuti che dovevi lavorare secondo il tuo piano orario.",
+            "workPeriodId": "L'ID del periodo di lavoro in work_periods."
+          },
+          "surchargeCalculations": {
+            "appliedPercentage": "La percentuale di maggiorazione, come frazione decimale (0,25 corrisponde al 25%).",
+            "baseMinutes": "I minuti lavorati nel periodo.",
+            "calculatedAt": "Il momento temporale a cui si applica la maggiorazione (UTC).",
+            "calculationDetails": "Come è stata calcolata la maggiorazione, in formato JSON.",
+            "qualifyingMinutes": "I minuti che danno diritto alla maggiorazione.",
+            "summary": "Maggiorazioni calcolate per il tuo lavoro, ad esempio per lavoro notturno, domenicale o festivo.",
+            "surchargeMinutes": "I minuti supplementari accreditati come maggiorazione.",
+            "surchargeModel": "Il modello di maggiorazione applicato.",
+            "surchargeRule": "La regola del modello applicata."
+          },
+          "timeEntries": {
+            "createdBy": "Chi ha registrato la voce: tu o la persona che l'ha registrata per te.",
+            "deviceInfo": "Il dispositivo o browser con cui hai registrato la voce; vuoto se è stata registrata da qualcun altro.",
+            "ipAddress": "L'indirizzo IP del dispositivo con cui hai registrato la voce; vuoto se è stata registrata da qualcun altro.",
+            "isSuperseded": "Indica se una correzione successiva ha sostituito questa voce.",
+            "location": "La posizione registrata con la voce, come nome del luogo o coordinate.",
+            "notes": "La nota inserita nella voce.",
+            "replacesEntryId": "Per una correzione: l'ID della voce che sostituisce.",
+            "summary": "Ogni timbratura in entrata, timbratura in uscita e correzione registrata per te. Le voci non vengono mai modificate: una correzione è una nuova voce che sostituisce quella precedente.",
+            "supersededById": "L'ID della correzione che ha sostituito questa voce.",
+            "timestamp": "Il momento a cui si riferisce la voce, in UTC.",
+            "timezone": "Il fuso orario in cui è stata registrata la voce, ad esempio Europe/Berlin.",
+            "timezoneSource": "L'origine del fuso orario, ad esempio il tuo dispositivo o l'impostazione dell'organizzazione.",
+            "type": "Cosa registra la voce: clock_in, clock_out o correction.",
+            "utcOffsetMinutes": "L'offset UTC applicato dove è stata registrata la voce, in minuti (120 indica UTC+2). Aggiungilo al timestamp per ottenere l'ora locale."
+          },
+          "workBalance": {
+            "adjustmentMinutes": "I minuti aggiunti o sottratti tramite rettifiche del saldo.",
+            "computedFromDate": "Il primo giorno conteggiato nel saldo (YYYY-MM-DD).",
+            "computedThroughDate": "L'ultimo giorno conteggiato nel saldo (YYYY-MM-DD).",
+            "summary": "Il tuo saldo attuale dell'orario di lavoro: il tempo lavorato rispetto al tempo previsto."
+          },
+          "workBalancePeriods": {
+            "isClosed": "Indica se il periodo è chiuso, per cui i relativi valori non cambiano più.",
+            "periodEnd": "L'ultimo giorno del periodo (YYYY-MM-DD).",
+            "periodStart": "Il primo giorno del periodo (YYYY-MM-DD).",
+            "periodType": "La durata del periodo: mese o anno.",
+            "summary": "Il tuo saldo dell'orario di lavoro per mese e per anno."
+          },
+          "workOperations": {
+            "actor": "La persona che ha apportato la modifica.",
+            "actorKind": "Chi ha apportato la modifica: una persona (human), l'app stessa (system), un totem (kiosk) o sconosciuto per i record precedenti.",
+            "createdAt": "Quando è stata apportata la modifica (UTC).",
+            "kind": "L'azione eseguita, ad esempio una timbratura in entrata, una modifica o un'eliminazione.",
+            "summary": "Un registro di ogni modifica ai tuoi periodi di lavoro: cosa è stato fatto e da chi.",
+            "writer": "Quale parte dell'app ha apportato la modifica, ad esempio una timbratura in uscita nell'app web, un'importazione o la modifica di un amministratore."
+          },
+          "workPeriods": {
+            "approvalStatus": "Indica se il periodo è approvato, rifiutato o in attesa di approvazione.",
+            "breakStartedAt": "Quando è iniziata la pausa corrente (UTC); vuoto se non sei in pausa.",
+            "breakStartedZone": "Il fuso orario in cui è iniziata la pausa.",
+            "clockInEntryId": "L'ID della timbratura in entrata in time_entries.",
+            "clockOutEntryId": "L'ID della timbratura in uscita in time_entries.",
+            "deletedAt": "Quando è stato eliminato il periodo (UTC); vuoto se non è stato eliminato.",
+            "deletedBy": "Chi ha eliminato il periodo.",
+            "deletionReason": "Il motivo per cui il periodo è stato eliminato.",
+            "drivenDistanceKm": "La distanza percorsa durante il lavoro, in chilometri: la lettura finale meno la lettura iniziale, oppure la distanza inserita direttamente se non era presente una lettura iniziale.",
+            "durationMinutes": "La durata del lavoro svolto, in minuti.",
+            "endTime": "Quando è terminato il lavoro (UTC); vuoto se la timbratura in entrata è ancora attiva.",
+            "endUtcOffsetMinutes": "L'offset UTC della timbratura in uscita, in minuti.",
+            "isActive": "Indica se la timbratura in entrata è ancora attiva per questo periodo.",
+            "isBillable": "Indica se il lavoro può essere fatturato a un cliente.",
+            "licencePlate": "La targa del veicolo aziendale che hai guidato; vuoto se hai usato il tuo veicolo.",
+            "odometerEndKm": "La lettura del contachilometri del veicolo al termine del lavoro, in chilometri.",
+            "odometerStartKm": "La lettura del contachilometri del veicolo all'inizio del lavoro, in chilometri.",
+            "pendingDurationMinutes": "Per una modifica in attesa di approvazione: la durata richiesta, in minuti.",
+            "pendingEndTime": "Per una modifica in attesa di approvazione: il termine richiesto (UTC).",
+            "pendingReason": "Il motivo per cui è stata richiesta la modifica.",
+            "pendingRequestedAt": "Quando è stata richiesta la modifica (UTC).",
+            "pendingRequestedBy": "Chi ha richiesto la modifica.",
+            "pendingStartTime": "Per una modifica in attesa di approvazione: l'inizio richiesto (UTC).",
+            "project": "Il progetto a cui è stato registrato il lavoro.",
+            "startTime": "Quando è iniziato il lavoro (UTC).",
+            "startUtcOffsetMinutes": "L'offset UTC della timbratura di entrata, in minuti (120 indica UTC+2).",
+            "summary": "I tuoi periodi di lavoro, ciascuno da una timbratura di entrata a una di uscita, con eventuali modifiche in attesa di approvazione.",
+            "task": "L'attività di progetto a cui è stato registrato il lavoro.",
+            "vehicleKind": "Il veicolo guidato durante il lavoro: organization per un veicolo dell'organizzazione, own per il tuo veicolo personale; vuoto se non ne è stato registrato alcuno.",
+            "vehicleName": "Il nome del veicolo dell'organizzazione che hai guidato; vuoto per il tuo veicolo personale.",
+            "workCategory": "Il tipo di lavoro, come denominato dall'organizzazione.",
+            "workLocationType": "Dove hai lavorato, ad esempio ufficio, casa o da remoto."
+          },
+          "workPolicyViolations": {
+            "acknowledgedAt": "Quando è stata confermata la violazione (UTC).",
+            "acknowledgedBy": "Chi ha confermato la violazione.",
+            "acknowledgedNote": "La nota scritta al momento della conferma della violazione.",
+            "details": "I dati numerici alla base della violazione, in formato JSON, ad esempio le ore lavorate e il limite.",
+            "policy": "La politica di lavoro la cui regola è stata violata.",
+            "summary": "Le volte in cui il tuo lavoro ha violato una regola della tua politica di lavoro, ad esempio una pausa saltata o una giornata troppo lunga.",
+            "violatedAt": "Quando è stata violata la regola (UTC).",
+            "violationType": "Quale regola è stata violata."
+          },
+          "yearlyBalances": {
+            "absenceAdjustedMinutes": "I minuti accreditati per assenze quali ferie o malattia.",
+            "summary": "Il tuo saldo dell'orario di lavoro per anno, calcolato da una versione precedente dell'app.",
+            "year": "L'anno."
+          }
+        },
+        "travelExpenses": {
+          "adjustments": {
+            "originalReportId": "L'ID della nota spese in fase di correzione.",
+            "reportId": "L'ID della nota spese correttiva in reports.",
+            "sourceReportId": "L'ID della nota spese da cui è stata copiata la correzione: l'originale o la sua correzione più recente.",
+            "summary": "Note spese che correggono una nota spese già esportata o rimborsata."
+          },
+          "allowanceOverrides": {
+            "amount": "L'importo impostato.",
+            "calculationBasis": "Come è stato calcolato l'importo.",
+            "evidence": "Su cosa si basa l'importo.",
+            "kind": "Quale indennità è stata impostata: mileage o per_diem.",
+            "revokedAt": "Quando l'importo è stato revocato (UTC); vuoto se è ancora applicabile.",
+            "revokedBy": "Chi ha revocato l'importo, in base al nome dell'epoca.",
+            "scope": "Quale parte della spesa copre l'importo, in formato JSON.",
+            "situation": "Perché le regole non hanno fornito alcun importo, in formato JSON.",
+            "summary": "Indennità chilometriche o giornaliere impostate manualmente da un amministratore delle spese laddove le regole non fornivano alcun importo."
+          },
+          "claimDecisions": {
+            "action": "La decisione: approved o rejected.",
+            "actor": "Chi ha preso la decisione.",
+            "approver": "L'approvatore a cui è stata assegnata la richiesta.",
+            "comment": "Il commento inserito con la decisione.",
+            "createdAt": "Quando è stata presa la decisione (UTC).",
+            "summary": "Tutte le decisioni sulle tue richieste."
+          },
+          "claimReceipts": {
+            "summary": "Le ricevute allegate alle tue richieste. I file stessi si trovano nella cartella claim-receipts."
+          },
+          "claims": {
+            "approver": "Chi ha deciso in merito alla richiesta.",
+            "calculatedAmount": "L'importo da rimborsare, come calcolato.",
+            "calculatedCurrency": "La valuta dell'importo da rimborsare.",
+            "destinationCity": "La città verso cui hai viaggiato.",
+            "destinationCountry": "Il paese verso cui hai viaggiato.",
+            "notes": "Le tue note sulla richiesta.",
+            "status": "Indica se la richiesta è in bozza, inviata, approvata o respinta.",
+            "summary": "Le tue richieste di rimborso spese di viaggio create con il modulo di richiesta a spesa singola precedente.",
+            "tripDateTimeZone": "Il fuso orario in base al quale vengono conteggiati i giorni del viaggio.",
+            "tripEnd": "La fine del viaggio (UTC).",
+            "tripStart": "L'inizio del viaggio (UTC).",
+            "type": "Il tipo di spesa: ricevuta, chilometraggio o per_diem (indennità giornaliera)."
+          },
+          "currencyConversions": {
+            "basis": "Modalità di conversione dell'importo: addebito effettivo sulla carta (card_charge), tasso impostato da un amministratore (manual_rate) o tasso di riferimento pubblicato (reference_rate).",
+            "chargedAmount": "Per card_charge: l'importo addebitato sulla carta, nella valuta di destinazione.",
+            "evidenceReceiptFile": "Per card_charge: il file della ricevuta all'interno di questo archivio che mostra l'addebito.",
+            "rate": "Il tasso di cambio: 1 unità di rate_base_currency equivale a questo numero di unità di rate_quote_currency.",
+            "rateBaseCurrency": "La valuta di base del tasso.",
+            "rateDate": "Il giorno di riferimento del tasso (YYYY-MM-DD).",
+            "rateEvidence": "Dove verificare il tasso, ad esempio una voce dell'estratto conto.",
+            "rateQuoteCurrency": "La valuta quotata del tasso.",
+            "recordedBy": "Chi ha registrato la conversione.",
+            "referenceExpenseDate": "Per reference_rate: il giorno della spesa per cui è stato scelto il tasso (YYYY-MM-DD).",
+            "referenceSource": "Per reference_rate: il tasso pubblicato utilizzato, in formato JSON.",
+            "sourceCurrency": "La valuta di partenza della conversione.",
+            "summary": "Modalità con cui le spese in valuta estera sono state convertite nella tua valuta di rimborso.",
+            "targetCurrency": "La valuta di destinazione della conversione."
+          },
+          "legacyDraftConversions": {
+            "convertedAt": "Quando la bozza è stata spostata (UTC).",
+            "convertedBy": "Chi ha spostato la bozza.",
+            "flags": "Tutto ciò che non è stato possibile spostare così com'era, in formato JSON.",
+            "legacyFacts": "Il contenuto della richiesta in bozza al momento dello spostamento, in formato JSON.",
+            "summary": "Bozze di richieste dal modulo precedente spostate in una nota spese."
+          },
+          "payrollRunInclusions": {
+            "endedAt": "Quando è stato confermato o escluso (UTC).",
+            "endedBy": "Chi lo ha confermato, rimosso o scartato.",
+            "includedAt": "Quando la nota spese è stata aggiunta all'elaborazione (UTC).",
+            "lines": "Gli importi trasmessi al libro paga con le relative voci retributive, in formato JSON.",
+            "state": "Stato dell'inclusione: inclusa, confermata, rimossa, scartata o sostituita da un'elaborazione successiva.",
+            "summary": "Note spese liquidate tramite busta paga."
+          },
+          "perDiemItineraries": {
+            "endDate": "Il giorno del rientro (YYYY-MM-DD).",
+            "endTime": "L'ora locale del rientro (HH:mm).",
+            "endTimeZone": "Il fuso orario del rientro.",
+            "meals": "I pasti forniti al giorno, in formato JSON; riducono l'indennità.",
+            "overnight": "Se e come hai pernottato.",
+            "policy": "I tassi con cui è stata calcolata l'indennità, in formato JSON, fissati al momento dell'invio.",
+            "prolongedWorkplace": "Se hai lavorato nello stesso luogo fuori sede per un lungo periodo, circostanza che può ridurre l'indennità.",
+            "startDate": "Il giorno della partenza (YYYY-MM-DD).",
+            "startTime": "L'ora locale della partenza (HH:mm).",
+            "startTimeZone": "Il fuso orario della partenza.",
+            "summary": "I viaggi in base ai quali sono state calcolate le indennità giornaliere (diarie)."
+          },
+          "projectAttributionExceptions": {
+            "authorizedBy": "Chi ha concesso l'autorizzazione.",
+            "evidence": "La nota interna dell'amministratore delle spese sui giustificativi.",
+            "project": "Il progetto.",
+            "reason": "La motivazione interna dell'amministratore delle spese per l'autorizzazione.",
+            "summary": "Autorizzazioni a imputare le spese a un progetto per i giorni in cui l'app non rileva attività lavorativa su di esso.",
+            "validFrom": "Il primo giorno di spesa coperto (YYYY-MM-DD).",
+            "validTo": "L'ultimo giorno di spesa coperto (YYYY-MM-DD)."
+          },
+          "reportItems": {
+            "accountingReference": "Un riferimento per la contabilità, ad esempio il numero di fattura.",
+            "category": "La categoria di spesa, ad esempio hotel, treno o pasti.",
+            "description": "La tua descrizione della spesa.",
+            "expenseDate": "La data della spesa (YYYY-MM-DD).",
+            "mileageDistanceKm": "Per il chilometraggio: la distanza, in chilometri.",
+            "mileagePolicy": "Per il chilometraggio: le tariffe applicate per il calcolo, in formato JSON, fissate al momento dell'invio.",
+            "mileageRoute": "Per il chilometraggio: l'itinerario percorso.",
+            "mileageVehicle": "Per il chilometraggio: il tipo di veicolo.",
+            "paidBy": "Chi ha pagato: tu (dipendente) o l'organizzazione (azienda).",
+            "position": "La posizione della spesa nella nota spese.",
+            "projectInherits": "Indica se la spesa utilizza il progetto della trasferta anziché il proprio.",
+            "receiptExceptionReason": "La tua spiegazione del motivo per cui manca una ricevuta.",
+            "summary": "Le spese nelle tue note spese.",
+            "type": "Il tipo di spesa: receipt, mileage o per_diem (indennità giornaliera)."
+          },
+          "reportReceipts": {
+            "summary": "Le ricevute allegate alle spese nelle tue note spese. I file effettivi si trovano nella cartella di questa categoria."
+          },
+          "reports": {
+            "kind": "Indica se la nota spese è per una trasferta (trip) o per spese non associate a una trasferta (standalone).",
+            "project": "Il progetto della trasferta, utilizzato dalle relative spese a meno che non ne specifichino uno proprio.",
+            "reimbursementCurrency": "La valuta in cui ricevi il rimborso.",
+            "status": "Lo stato della nota spese: draft, submitted, approved, rejected o restituita per modifiche.",
+            "submissionCount": "Quante volte la nota spese è stata inviata.",
+            "summary": "Le tue note spese di viaggio, ognuna delle quali raggruppa le spese di una singola trasferta o spese isolate.",
+            "tripDestinations": "I luoghi in cui hai viaggiato, in formato JSON.",
+            "tripPurpose": "Lo scopo della trasferta.",
+            "tripTimeZone": "Il fuso orario in base al quale vengono conteggiati i giorni della trasferta."
+          },
+          "reviewCycleClosures": {
+            "actor": "Chi lo ha concluso.",
+            "createdAt": "Quando si è concluso (UTC).",
+            "kind": "Come si è concluso l'invio: returned, withdrawn o reopened.",
+            "note": "La nota inserita al momento della conclusione.",
+            "submissionCycle": "Quale invio della nota spese rappresenta: 1 indica il primo.",
+            "summary": "Invii delle tue note spese che si sono conclusi senza una decisione finale: restituiti, ritirati o riaperti."
+          },
+          "reviewNotes": {
+            "body": "Il commento.",
+            "closureId": "L'ID dell'invio restituito in review_cycle_closures.",
+            "summary": "I commenti di un revisore sulle singole spese di una nota spese che ti è stata restituita."
+          },
+          "settlementEntries": {
+            "amount": "L'importo.",
+            "balanceBefore": "L'importo ancora dovuto prima di questo pagamento.",
+            "basisSubmissionCycle": "A quale invio approvato della nota spese si riferisce il pagamento.",
+            "exportBatchId": "L'ID dell'esportazione delle spese per cui è stato registrato il pagamento.",
+            "kind": "Indica se hai ricevuto un pagamento (reimbursement) o hai restituito del denaro (recovery).",
+            "note": "La nota inserita con il pagamento.",
+            "occurredOn": "Il giorno in cui è avvenuto il trasferimento di denaro (YYYY-MM-DD).",
+            "recordedAt": "Quando è stato registrato il pagamento (UTC).",
+            "recordedBy": "Chi ha registrato il pagamento.",
+            "reference": "Il riferimento del pagamento, ad esempio quello di un bonifico bancario.",
+            "sourceType": "A cosa si riferisce il denaro: una nota spese o una richiesta dal modulo precedente (legacy_claim).",
+            "summary": "Denaro erogato a tuo favore per spese approvate o da te restituito a seguito di un pagamento in eccesso."
+          },
+          "shared": {
+            "authorizedAt": "Quando è stato autorizzato (UTC).",
+            "authorizedBy": "L'amministratore delle spese che lo ha autorizzato, con il nome utilizzato all'epoca.",
+            "claimId": "L'ID della richiesta in claims.",
+            "currency": "La valuta, indicata come codice a tre lettere (ad esempio EUR).",
+            "decidedAt": "Quando è stato approvato, rifiutato o restituito l'ultima volta (UTC).",
+            "file": "La posizione del file originale della ricevuta all'interno di questo archivio.",
+            "fileName": "Il nome del file della ricevuta così come è stato caricato.",
+            "itemId": "L'ID della spesa in report_items.",
+            "mimeType": "Il tipo di file, ad esempio application/pdf o image/jpeg.",
+            "originalAmount": "L'importo pagato, nella valuta originale.",
+            "originalCurrency": "La valuta in cui è stato pagato l'importo.",
+            "payrollRunId": "L'ID dell'elaborazione paghe.",
+            "payrollRunPeriodEnd": "L'ultimo giorno del periodo dell'elaborazione paghe (YYYY-MM-DD).",
+            "payrollRunPeriodStart": "Il primo giorno del periodo dell'elaborazione paghe (YYYY-MM-DD).",
+            "project": "Il progetto a cui è imputata la spesa.",
+            "reason": "Il motivo indicato.",
+            "reportId": "L'ID del report in reports.",
+            "sizeBytes": "La dimensione del file, in byte.",
+            "submittedAt": "Data e ora dell'ultimo invio (UTC).",
+            "tripEndDate": "L'ultimo giorno del viaggio (YYYY-MM-DD).",
+            "tripStartDate": "Il primo giorno del viaggio (YYYY-MM-DD).",
+            "uploadedBy": "Chi ha caricato la ricevuta."
+          }
+        }
+      },
+      "fieldsIntro": "Cosa contiene ciascuna parte dei file JSON e cosa significa ogni campo. Un campo vuoto (null) non ha alcun valore.",
+      "fieldsTitle": "Campi",
+      "filesTitle": "File",
+      "formatJson": "I file JSON costituiscono la copia completa e leggibile da dispositivo automatico dei tuoi dati. I file CSV ne ripetono le tabelle per i fogli di calcolo.",
+      "formatOtherPeople": "Le persone che hanno interagito con i tuoi record sono indicate per nome. Le persone con cui hai interagito tu compaiono solo come ID anonimo.",
+      "formatsTitle": "Formati",
+      "formatTimes": "I riferimenti temporali sono indicati in UTC (ISO 8601, con finale in Z). Le registrazioni dell'orario riportano anche il fuso orario UTC vigente nel luogo in cui sono state effettuate. I giorni di calendario sono espressi nel formato YYYY-MM-DD.",
+      "intro": "Questo archivio contiene i dati personali conservati da {organization} relativi a {employee}, rilevati il {exportedAt} (UTC).",
+      "kindAdmin": "Un amministratore di {organization} ha creato questa esportazione per tuo conto.",
+      "kindEmployee": "Hai richiesto personalmente questa esportazione.",
+      "manifest": "Elenca tutti i file di questo archivio con le relative dimensioni e il numero di record.",
+      "retentionAuditLog": "Le voci del registro di controllo vengono eliminate dopo {days} giorni.",
+      "retentionCategoryNone": "{category}: nessun periodo di conservazione impostato",
+      "retentionCategoryYears": "{years, plural, one {{category}: # anno} other {{category}: # anni}}",
+      "retentionDocuments": "I documenti presenti nel tuo fascicolo personale sono conservati per il periodo stabilito da {organization} per la rispettiva categoria. Il periodo decorre dal 1° gennaio successivo alla data più recente tra l'anno di cessazione del rapporto di lavoro e l'anno del documento. I documenti appartenenti a una categoria senza un periodo definito vengono conservati fino a quando non vengono eliminati.",
+      "retentionOther": "Salvo quanto sopra indicato, gli altri dati vengono conservati fino a quando {organization} non li elimina o fino alla cancellazione del tuo profilo dipendente.",
+      "retentionTitle": "Periodo di conservazione dei tuoi dati",
+      "rightsAccess": "accedere ai tuoi dati personali e riceverne una copia (art. 15 GDPR)",
+      "rightsComplaint": "proporre reclamo a un'autorità di controllo della protezione dei dati (art. 77 GDPR)",
+      "rightsContact": "Per esercitare questi diritti, contatta {organization}. Si applica l'informativa sulla privacy di {organization}, che descrive le modalità di trattamento dei tuoi dati.",
+      "rightsErasure": "ottenere la cancellazione dei tuoi dati (art. 17 GDPR)",
+      "rightsIntro": "Ai sensi del Regolamento generale sulla protezione dei dati (GDPR) hai il diritto di:",
+      "rightsNotification": "essere informato delle rettifiche, delle cancellazioni e delle limitazioni comunicate ai destinatari dei tuoi dati (art. 19 GDPR)",
+      "rightsObjection": "opporti al trattamento dei tuoi dati (art. 21 GDPR)",
+      "rightsPortability": "ricevere i tuoi dati in un formato leggibile da dispositivo automatico, come i file JSON di questo archivio, e richiederne la trasmissione a terzi (art. 20 GDPR)",
+      "rightsRectification": "ottenere la rettifica dei dati inesatti e l'integrazione di quelli incompleti (art. 16 GDPR)",
+      "rightsRestriction": "ottenere la limitazione del trattamento dei tuoi dati (art. 18 GDPR)",
+      "rightsTitle": "I tuoi diritti",
+      "title": "I tuoi dati personali da {organization}"
     }
   },
   "presence": {

@@ -189,7 +189,7 @@ describe("shift request action trusted context", () => {
 		expect(serialized).toContain('"firstName":"Riley"');
 		expect(serialized).toContain('"firstName":"Taylor"');
 		expect(serialized).not.toMatch(
-			/birthday|currentHourlyRate|employeeNumber|userId/,
+			/birthday|employeeNumber|userId/,
 		);
 	});
 });

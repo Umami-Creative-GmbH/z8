@@ -108,6 +108,36 @@
       "noBalance": "Inget saldo"
     },
     "description": "Visa och hantera medarbetare som du är direkt chef för",
+    "driving": {
+      "columns": {
+        "calendar": "Kalender",
+        "date": "Datum",
+        "employee": "Medarbetare",
+        "missing": "Saknas",
+        "time": "Registrerad lokal tid"
+      },
+      "count": "{count, plural, other {# arbetspass saknar körningsuppgifter.} }",
+      "descriptionAll": "Arbetspass som saknar fordon eller mätarställning trots att fordonsanvändning förväntas. De visas tills uppgifterna har fyllts i.",
+      "descriptionManaged": "Arbetspass för de medarbetare du hanterar som saknar fordon eller mätarställning trots att fordonsanvändning förväntas. De visas tills uppgifterna har fyllts i.",
+      "empty": "Inget arbete saknar körningsuppgifter.",
+      "filters": {
+        "allEmployees": "Alla medarbetare",
+        "allTeams": "Alla team",
+        "employee": "Medarbetare",
+        "team": "Team"
+      },
+      "loading": "Läser in körningsuppgifter",
+      "missing": {
+        "endReading": "Ingen slutmätarställning",
+        "readings": "Inga mätarställningar",
+        "startReading": "Ingen startmätarställning",
+        "vehicle": "Inget fordon"
+      },
+      "openCalendar": "Kalender",
+      "openCalendarOf": "Öppna kalendern för {name}",
+      "title": "Körningsuppgifter saknas",
+      "truncated": "Visar de {count} senaste arbetspassen. Filtrera efter team eller medarbetare för att se resten."
+    },
     "empty": {
       "action": "Gå till medarbetarinställningar",
       "description": "Medarbetare som har tilldelats dig som chef visas här. Du kan hantera teamtilldelningar i medarbetarinställningarna.",

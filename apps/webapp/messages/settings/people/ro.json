@@ -28,7 +28,10 @@
         "contractHourly": "Pe oră",
         "contractHourlyDescription": "Plătit în funcție de orele lucrate",
         "contractType": "Tip de contract",
+        "contractTypeChangeLink": "Modificare în contract și modelul de lucru",
         "contractTypeDescription": "Determină modul în care este calculată remunerația",
+        "contractTypeFromTerms": "Tipul de contract și salariul provin din termenii de angajare confirmați, aflați în vigoare astăzi.",
+        "contractTypeNoTerms": "Niciun termen confirmat astăzi",
         "dayFriday": "Vin",
         "dayMonday": "Lun",
         "daySaturday": "Sâm",
@@ -339,6 +342,7 @@
           "clockPostprocess": "Procesare pauze și suprataxe",
           "clockRepair": "Reparare cronometru",
           "dispatchDeparture": "Programare a plecării",
+          "notifyDataExportReminder": "Memento pentru descărcarea datelor cu caracter personal",
           "notifyDeputyRelease": "Notificare privind indisponibilitatea înlocuitorului",
           "notifyReview": "Notificare de revizuire",
           "sessionRevocation": "Deconectare din sesiune"
@@ -352,6 +356,25 @@
           "through": "Până la {date}",
           "title": "Sold de lucru"
         }
+      },
+      "personalDataExport": {
+        "availableUntil": "Disponibil până la {date}",
+        "description": "Un fișier ZIP cu tot ce deține această organizație despre acest angajat, inclusiv datele omise de propriul export al angajatului. Un angajat curent este notificat când fișierul este gata. Fișierele sunt șterse după 7 zile.",
+        "download": "Descarcă",
+        "downloadFailed": "Descărcarea nu a putut fi pornită. Vă rugăm să încercați din nou.",
+        "listLabel": "Exporturi administrative anterioare",
+        "loadFailed": "Exporturile anterioare nu au putut fi încărcate.",
+        "ownRecord": "Nu vă puteți exporta propriile date de aici. Utilizați Datele mele din setările contului dvs.",
+        "refusalInProgress": "Un export al datelor acestui angajat este deja în curs de pregătire.",
+        "refusalStorage": "Stocarea fișierelor nu este încă configurată pentru această organizație.",
+        "request": "Solicită exportul",
+        "requested": "Exportul este în curs de pregătire. Veți primi o notificare și un e-mail când este gata.",
+        "requestedAt": "Solicitat la {date}",
+        "requestFailed": "Exportul nu a putut fi pornit. Vă rugăm să încercați din nou.",
+        "statusFailed": "Eșuat",
+        "statusPreparing": "În curs de pregătire",
+        "statusReady": "Gata",
+        "title": "Export de date cu caracter personal"
       },
       "tabs": {
         "employees": "Angajați",
@@ -476,6 +499,22 @@
       "cancelConfirm": "Anulezi această modificare de angajare? Aceasta va elimina modificarea de angajare programată sau ciornă.",
       "cancelError": "Nu s-a putut anula modificarea istoricului de angajare",
       "cancelSuccess": "Modificarea istoricului de angajare a fost anulată",
+      "changeWage": {
+        "currencyHint": "În moneda termenilor în vigoare",
+        "description": "Creează termeni noi începând cu această dată. Tipul de contract, orele săptămânale, modelul de lucru, politica de lucru și moneda sunt preluate din termenii în vigoare la acea dată.",
+        "draftSuccess": "Modificarea salariului a fost salvată ca ciornă",
+        "error": "Modificarea salariului nu a reușit",
+        "newWage": "Salariu orar nou",
+        "reason": "Motiv",
+        "reasonRequired": "Motivul este obligatoriu",
+        "save": "Salvează modificarea salariului",
+        "saveAsDraft": "Salvează ca ciornă",
+        "success": "Salariu modificat",
+        "title": "Modifică salariul",
+        "validFrom": "Valabil de la",
+        "validFromRequired": "Câmpul „Valabil de la” este obligatoriu",
+        "wageInvalid": "Tariful orar trebuie să fie un număr pozitiv"
+      },
       "confirmError": "Nu s-a putut confirma modificarea istoricului de angajare",
       "confirmSuccess": "Modificarea istoricului de angajare a fost confirmată",
       "contractType": "Tip de contract",
@@ -511,6 +550,8 @@
       },
       "timeline": "Cronologie",
       "title": "Contract și model de lucru",
+      "wageHistoryMergeNote": "{count, plural, one {Istoricul salariilor a fost comasat din vechiul istoric al tarifelor la data de {date}; # modificare de tarif a fost ajustată.} few {Istoricul salariilor a fost comasat din vechiul istoric al tarifelor la data de {date}; # modificări de tarif au fost ajustate.} other {Istoricul salariilor a fost comasat din vechiul istoric al tarifelor la data de {date}; # de modificări de tarif au fost ajustate.}}",
+      "wageHistoryMergeNoteDismiss": "Închide",
       "weeklyHours": "Ore săptămânale",
       "weeklyHoursValue": "{hours} / săptămână",
       "workModel": "Model de lucru",
@@ -829,7 +870,8 @@
         "edit": "Editează {title}",
         "expires": "Expiră la {date}",
         "open": "Deschide {title}",
-        "payPeriod": "Perioadă de plată {period}"
+        "payPeriod": "Perioadă de plată {period}",
+        "provesSkill": "Atestă {skill}"
       },
       "myDocuments": {
         "description": "Documente din dosarul dvs. de personal pe care organizația le-a partajat cu dvs.",
@@ -994,6 +1036,23 @@
         "unlinkFailed": "Certificatul medical nu a putut fi dezasociat.",
         "unlinkFromAbsence": "Dezasociază {title} de concediul medical aferent"
       },
+      "skillCertificates": {
+        "description": "Alegeți competența acestui angajat pe care o atestă „{title}”. Planificarea va afișa faptul că există un certificat în dosar, dar niciodată conținutul acestuia.",
+        "edit": "Alegeți competența pe care o atestă {title}",
+        "errors": {
+          "notCertificate": "Doar certificatele pot atesta o competență.",
+          "notEmployeeSkill": "Alegeți una dintre competențele acestui angajat.",
+          "undatedRequiresExpiry": "Această competență necesită o dată de expirare. Doar un certificat cu o dată de expirare o poate atesta."
+        },
+        "loadFailed": "Competențele angajatului nu au putut fi încărcate.",
+        "needsExpiry": "Necesită o dată de expirare. Adăugați mai întâi una la acest certificat.",
+        "none": "Fără competență",
+        "noSkills": "Acest angajat nu are încă nicio competență. Atribuiți competențe din pagina angajatului.",
+        "save": "Salvează",
+        "saved": "Competență salvată",
+        "saveFailed": "Competența certificatului nu a putut fi salvată.",
+        "title": "Competența pe care o atestă acest certificat"
+      },
       "tabs": {
         "access": "Acces",
         "reminders": "Mementouri",
@@ -1021,23 +1080,6 @@
         "hint": "O arhivă ZIP cu documentele categoriilor pe care le gestionați, sortate într-un folder pentru fiecare categorie.",
         "sharedOnly": "Doar documentele partajate"
       }
-    },
-    "rateHistory": {
-      "changeRate": "Schimbă tariful",
-      "currentRate": "Tarif curent: {rate}",
-      "description": "Modificările tarifului orar în timp",
-      "effectiveFrom": "În vigoare de la",
-      "effectiveFromHelp": "Când intră în vigoare noul tarif",
-      "empty": "Nu există un istoric al tarifelor disponibil",
-      "newHourlyRate": "Tarif orar nou",
-      "reasonOptional": "Motiv (opțional)",
-      "reasonPlaceholder": "de ex., Evaluare anuală, Promovare etc.",
-      "title": "Istoric tarife",
-      "updateDescription": "Creați o nouă înregistrare de tarif. Tariful actual va fi închis automat.",
-      "updateError": "Nu s-a putut actualiza tariful",
-      "updateRate": "Actualizare tarif",
-      "updateSuccess": "Tariful a fost actualizat cu succes",
-      "updateTitle": "Actualizare tarif orar"
     },
     "roles": {
       "actions": {
@@ -1145,6 +1187,7 @@
       "catalog": "Catalog de competențe",
       "catalogDescription": "Definiți competențele care pot fi necesare pentru subzone și șabloane de ture",
       "category": "Categorie",
+      "certificateOnFile": "Certificat la dosar",
       "confirmDelete": "Sigur doriți să ștergeți această competență?",
       "confirmRemove": "Eliminați \"{skillName}\" de la acest angajat?",
       "createError": "Nu s-a putut crea competența",
@@ -1155,16 +1198,25 @@
       "deleteError": "Nu s-a putut șterge competența",
       "description": "Descriere",
       "descriptionPlaceholder": "Descriere opțională a competenței sau a certificării",
+      "editExpiryDate": "Editează data de expirare",
+      "editExpiryDateDescription": "Ultima zi în care {skillName} este valabilă. Turele de după această zi o vor afișa ca expirată.",
+      "editExpiryDateFor": "Editează data de expirare pentru {skillName}",
       "editSkill": "Editare competență",
       "editSkillDescription": "Actualizați detaliile competenței",
       "employeeSkills": "Competențe și calificări",
       "employeeSkillsDescription": "Certificări și competențe atribuite acestui angajat",
+      "errors": {
+        "expiryDateSetByCertificate": "Un certificat de competență din dosarul de personal stabilește această dată. Modificați data de pe certificat."
+      },
       "expired": "Expirat",
       "expiredOn": "Expirat la data de {date}",
       "expiresOn": "Expiră la {date}",
       "expiringSoon": "Expiră în curând",
       "expiry": "Urmărire expirare",
       "expiryDate": "Dată de expirare",
+      "expiryDateFromCertificate": "Un certificat de competență din dosarul de personal stabilește această dată.",
+      "expiryDateUpdated": "Data de expirare a fost actualizată",
+      "expiryDateUpdateError": "Actualizarea datei de expirare a eșuat",
       "expiryRequired": "Obligatoriu",
       "expiryRequiredHint": "Această certificare necesită o dată de expirare",
       "name": "Nume",
@@ -1176,6 +1228,16 @@
       "noSkillsHint": "Creați prima competență pentru a începe",
       "notes": "Note",
       "notesPlaceholder": "de ex., Număr certificat, data instruirii…",
+      "reminders": {
+        "intro": "Competențele angajaților cu o dată de expirare trimit un memento în intervalul de notificare prealabilă și un altul la data expirării. Angajatul și managerii săi sunt notificați, sau proprietarii și administratorii când angajatul nu are manager. Insigna „Expiră curând” folosește același interval de notificare.",
+        "leadDays": "Interval de notificare în avans pentru competențe (zile)",
+        "leadDaysDescription": "Zilele sunt contorizate în fusul orar al organizației. Modificarea datei de expirare a unei competențe retrimite ambele mementouri.",
+        "leadDaysInvalid": "Introduceți un interval de notificare între {min} și {max} zile.",
+        "save": "Salvează intervalul de notificare",
+        "saved": "Intervalul de notificare al mementoului a fost salvat",
+        "saveFailed": "Intervalul de notificare al mementoului nu a putut fi salvat.",
+        "title": "Mementouri de expirare a competențelor"
+      },
       "removeError": "Nu s-a putut elimina competența",
       "requiresExpiry": "Necesită dată de expirare",
       "requiresExpiryHint": "Activați dacă această certificare necesită reînnoire (de ex., Prim ajutor)",

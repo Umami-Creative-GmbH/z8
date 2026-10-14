@@ -565,6 +565,74 @@ describe("historical gap repair on PostgreSQL", () => {
 		]);
 	});
 
+	it("keeps vehicle use as recorded and mirrors it into a canonical detail it creates (#1126)", async () => {
+		const van = "e3200000-0000-4000-8000-0000000000a1";
+		await admin.query(
+			`insert into organization_vehicle (id, organization_id, name, licence_plate)
+			 values ($1, $2, 'Van', 'B-VN 320')`,
+			[van, ids.organization],
+		);
+		const created = await missingRecord("2026-07-02");
+		const incomplete = await incompleteRecord("2026-07-03");
+		// A metadata gap: the period names a category its canonical detail lacks.
+		const metadata = await legacyManual({
+			date: "2026-07-06",
+			clockInTime: "08:00",
+			clockOutTime: "10:00",
+		});
+		await admin.query("update work_period set work_category_id = $2 where id = $1", [
+			metadata,
+			ids.category,
+		]);
+		const drive = async (
+			table: "work_period" | "time_record_work",
+			id: string,
+			use: [string, string | null, number | null, number | null, number | null],
+		) =>
+			admin.query(
+				`update ${table} set vehicle_kind = $2, vehicle_id = $3, odometer_start_km = $4,
+				   odometer_end_km = $5, driven_distance_km = $6
+				 where ${table === "work_period" ? "id" : "record_id"} = $1`,
+				[id, ...use],
+			);
+		const vanUse = ["organization", van, 12_000, 12_085, 85] as const;
+		const ownUse = ["own", null, null, null, 40] as const;
+		const startOnly = ["organization", van, 13_000, null, null] as const;
+		await drive("work_period", created, [...vanUse]);
+		await drive("work_period", incomplete.periodId, [...ownUse]);
+		await drive("work_period", metadata, [...startOnly]);
+		const metadataRecord = (await periodRow(metadata)).canonical_record_id;
+		await drive("time_record_work", metadataRecord, [...startOnly]);
+		const vehicleOf = async (table: "work_period" | "time_record_work", id: string) => {
+			const { rows } = await admin.query(
+				`select vehicle_kind, vehicle_id, odometer_start_km, odometer_end_km, driven_distance_km
+				 from ${table} where ${table === "work_period" ? "id" : "record_id"} = $1`,
+				[id],
+			);
+			return rows[0] ? Object.values(rows[0]) : null;
+		};
+		await authorizeRepair();
+
+		const applied = await apply(await readPlan());
+
+		expect(applied.status).toBe(200);
+		expect(applied.body.outcomes).toMatchObject([{ employeeId: ids.worker, status: "applied" }]);
+		// Periods keep their vehicle use exactly; no reading is invented.
+		expect(await vehicleOf("work_period", created)).toEqual([...vanUse]);
+		expect(await vehicleOf("work_period", incomplete.periodId)).toEqual([...ownUse]);
+		expect(await vehicleOf("work_period", metadata)).toEqual([...startOnly]);
+		// Created canonical details mirror the period's vehicle use.
+		expect(await vehicleOf("time_record_work", created)).toEqual([...vanUse]);
+		expect(await vehicleOf("time_record_work", incomplete.recordId)).toEqual([...ownUse]);
+		// A metadata fill leaves the detail's vehicle use untouched.
+		expect(await vehicleOf("time_record_work", metadataRecord)).toEqual([...startOnly]);
+		const { rows: filled } = await admin.query(
+			"select work_category_id from time_record_work where record_id = $1",
+			[metadataRecord],
+		);
+		expect(filled).toEqual([{ work_category_id: ids.category }]);
+	});
+
 	it("restores a project allocation with the period's task, so period and allocation agree", async () => {
 		const task = "d3200000-0000-4000-8000-0000000000a3";
 		await admin.query(

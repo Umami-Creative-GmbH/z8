@@ -21,6 +21,12 @@
     "briefing": {
       "badge": "Astăzi",
       "description": "Examinați elementele care necesită acțiune astăzi, apoi treceți direct la fluxul de lucru potrivit.",
+      "items": {
+        "drivingDetailsMissing": {
+          "description": "Perioadele de lucru ale angajaților dvs. fără vehicul sau fără index de kilometraj.",
+          "title": "Detalii de deplasare lipsă ({count})"
+        }
+      },
       "needsAction": {
         "description": "Începeți de aici pentru cele mai urgente acțiuni operaționale.",
         "empty": "Totul este în regulă. Nu este necesară nicio acțiune a managerului în acest moment.",

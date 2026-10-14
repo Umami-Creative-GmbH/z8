@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const resolveLocaleMock = vi.fn();
+const recipientTimeFormatMock = vi.fn((): "12h" | "24h" | undefined => undefined);
 const loadNamespacesMock = vi.fn();
 const tolgeeTMock = vi.fn();
 const tolgeeRunMock = vi.fn();
@@ -8,6 +9,11 @@ const loggerWarnMock = vi.fn();
 
 vi.mock("./recipient-locale", () => ({
 	resolveRecipientNotificationLocale: resolveLocaleMock,
+	resolveRecipientNotificationPreferences: async (input: unknown) => {
+		const locale = await resolveLocaleMock(input);
+		const timeFormat = recipientTimeFormatMock();
+		return timeFormat ? { locale, timeFormat } : { locale };
+	},
 }));
 
 vi.mock("@/tolgee/shared", () => ({
@@ -32,7 +38,7 @@ vi.mock("@/tolgee/shared", () => ({
 		"ru",
 	],
 	DEFAULT_LANGUAGE: "en",
-	ALL_NAMESPACES: ["common", "admin"],
+	APP_NAMESPACES: ["common", "admin"],
 	loadNamespaces: loadNamespacesMock,
 	TolgeeBase: () => ({
 		init: () => ({
@@ -227,9 +233,96 @@ describe("localizeOutboundNotification", () => {
 				performedByName: "Mina Manager",
 				count: 2,
 				largeCount: 2n,
-				createdAt,
+				// ICU would format a raw Date in the server's zone (#1149).
+				createdAt: "2026-06-01T00:00:00.000Z",
 			},
 		});
+	});
+
+	it("formats typed params in the recipient language before translating (#1149)", async () => {
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		await localizeOutboundNotification({
+			userId: "user-1",
+			organizationId: "org-1",
+			title: "Automatically clocked out",
+			message: "Stored message",
+			metadata: JSON.stringify({
+				i18n: {
+					messageKey: "common:notifications.content.automaticClockOut.message",
+					params: {
+						duration: "720",
+						cutoff: { kind: "entryInstant", at: "2026-10-25T06:00:00Z", utcOffsetMinutes: 60 },
+						timezone: "Europe/Berlin",
+					},
+				},
+			}),
+		});
+
+		expect(tolgeeTMock).toHaveBeenCalledWith({
+			key: "common:notifications.content.automaticClockOut.message",
+			defaultValue: "Stored message",
+			params: { duration: "720", cutoff: "25. Okt. 2026, 07:00", timezone: "Europe/Berlin" },
+		});
+	});
+
+	it("formats typed params with the given hour cycle", async () => {
+		resolveLocaleMock.mockResolvedValue("en");
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		await localizeOutboundNotification({
+			userId: "user-1",
+			organizationId: "org-1",
+			timeFormat: "24h",
+			title: "Title",
+			message: "Message",
+			metadata: {
+				i18n: {
+					messageKey: "common:notifications.content.automaticClockOut.message",
+					params: {
+						cutoff: {
+							kind: "entryInstant",
+							at: "2026-10-25T06:00:00Z",
+							utcOffsetMinutes: 60,
+							preset: "time",
+						},
+					},
+				},
+			},
+		});
+
+		expect(tolgeeTMock).toHaveBeenCalledWith(
+			expect.objectContaining({ params: { cutoff: "07:00" } }),
+		);
+	});
+
+	it("formats typed params with the recipient's own hour cycle", async () => {
+		resolveLocaleMock.mockResolvedValue("de");
+		recipientTimeFormatMock.mockReturnValueOnce("12h");
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		await localizeOutboundNotification({
+			userId: "user-1",
+			organizationId: "org-1",
+			title: "Title",
+			message: "Message",
+			metadata: {
+				i18n: {
+					messageKey: "common:notifications.content.automaticClockOut.message",
+					params: {
+						cutoff: {
+							kind: "entryInstant",
+							at: "2026-10-25T13:00:00Z",
+							utcOffsetMinutes: 60,
+							preset: "time",
+						},
+					},
+				},
+			},
+		});
+
+		const [{ params }] = tolgeeTMock.mock.calls.at(-1) as [{ params: { cutoff: string } }];
+		expect(params.cutoff).toMatch(/^2:00\s?PM$/i);
 	});
 
 	it("falls back to stored text when translation loading fails", async () => {
@@ -256,6 +349,93 @@ describe("localizeOutboundNotification", () => {
 			{ err: error, userId: "user-1", organizationId: "org-1", locale: "de" },
 			"Failed to localize outbound notification",
 		);
+	});
+
+	it("translates the action link label in the recipient language (#1155)", async () => {
+		tolgeeTMock.mockImplementation(({ key, defaultValue }) =>
+			key === "notifications.channels.viewInZ8" ? "In Z8 ansehen" : defaultValue,
+		);
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		await expect(
+			localizeOutboundNotification({
+				userId: "user-1",
+				organizationId: "org-1",
+				title: "Stored title",
+				message: "Stored message",
+				withActionLabel: true,
+			}),
+		).resolves.toEqual({
+			locale: "de",
+			title: "Stored title",
+			message: "Stored message",
+			actionLabel: "In Z8 ansehen",
+		});
+		expect(loadNamespacesMock).toHaveBeenCalledWith("de", ["common"]);
+	});
+
+	it("loads the catalog once for the title, message and action link label", async () => {
+		tolgeeTMock.mockImplementation(({ key, defaultValue }) =>
+			key === "notifications.channels.viewInZ8" ? "In Z8 ansehen" : defaultValue,
+		);
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		const localized = await localizeOutboundNotification({
+			userId: "user-1",
+			organizationId: "org-1",
+			title: "Added to team",
+			message: "Stored message",
+			metadata: {
+				i18n: {
+					titleKey: "common:notifications.content.teamMemberAdded.title",
+					messageKey: "common:notifications.content.teamMemberAdded.message",
+				},
+			},
+			withActionLabel: true,
+		});
+
+		expect(localized.actionLabel).toBe("In Z8 ansehen");
+		expect(loadNamespacesMock).toHaveBeenCalledOnce();
+	});
+
+	it("keeps the English action link label when the catalog cannot be loaded", async () => {
+		loadNamespacesMock.mockRejectedValue(new Error("load failed"));
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		await expect(
+			localizeOutboundNotification({
+				userId: "user-1",
+				organizationId: "org-1",
+				title: "Stored title",
+				message: "Stored message",
+				withActionLabel: true,
+			}),
+		).resolves.toEqual({
+			locale: "de",
+			title: "Stored title",
+			message: "Stored message",
+			actionLabel: "View in Z8",
+		});
+	});
+
+	it("keeps the English action link label when the recipient locale cannot be resolved", async () => {
+		resolveLocaleMock.mockRejectedValue(new Error("locale lookup failed"));
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		await expect(
+			localizeOutboundNotification({
+				userId: "user-1",
+				organizationId: "org-1",
+				title: "Stored title",
+				message: "Stored message",
+				withActionLabel: true,
+			}),
+		).resolves.toEqual({
+			locale: "en",
+			title: "Stored title",
+			message: "Stored message",
+			actionLabel: "View in Z8",
+		});
 	});
 
 	it("falls back to English stored text when recipient locale resolution fails", async () => {

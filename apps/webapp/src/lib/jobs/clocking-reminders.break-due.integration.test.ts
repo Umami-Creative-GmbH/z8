@@ -6,6 +6,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { formatNotificationParams } from "@/lib/notifications/notification-params";
 import {
 	createClockingService,
 	createDatabaseClockingStore,
@@ -206,8 +207,12 @@ describe("break-due reminders for live work on PostgreSQL", () => {
 		expect(metadata.i18n).toMatchObject({
 			titleKey: "common:notifications.content.breakDueReminder.title",
 			messageKey: "common:notifications.content.breakDueReminder.message",
-			params: { breakTime: "14:00", timezone: "Europe/Berlin" },
+			params: { timezone: "Europe/Berlin" },
 		});
+		// A typed time, formatted in the reader's language when delivered (#1149).
+		expect(formatNotificationParams(metadata.i18n.params, { locale: "de" }).breakTime).toBe(
+			"14:00",
+		);
 		expect(metadata.expectedAt).toBe("2026-04-28T12:00:00Z");
 
 		// The first run inside the other employee's window comes when the break is already due.

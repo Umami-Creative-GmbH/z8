@@ -434,6 +434,45 @@
       "reportGenerated": "Rapor başarıyla oluşturuldu",
       "unexpectedError": "Beklenmedik bir hata oluştu",
       "unknownError": "Bilinmeyen bir hata oluştu"
+    },
+    "vehicles": {
+      "archived": "arşivlendi",
+      "archivedBadge": "Arşivlendi",
+      "empty": {
+        "description": "Bu dönemde sürüş mesafesi kaydedilen tamamlanmış bir çalışma bulunmuyor.",
+        "title": "Bu dönemde sürüş yok"
+      },
+      "error": "Hata",
+      "export": {
+        "footer": "Z8 tarafından oluşturuldu",
+        "generatedAt": "Oluşturulma tarihi",
+        "note": "Tamamlanan işin tam kilometreleri, işin başladığı aya göre sayılır (kaydedildiği yerel saat).",
+        "period": "Dönem",
+        "table": "Kilometre"
+      },
+      "failed": "Araç başına mesafe raporu oluşturulamadı",
+      "filter": {
+        "period": "Dönem"
+      },
+      "generate": "Rapor oluştur",
+      "generating": "Rapor oluşturuluyor…",
+      "kilometres": "{distance} km",
+      "noReportYet": "Henüz rapor oluşturulmadı",
+      "ownVehicle": "Kendi aracı",
+      "page": {
+        "description": "Aylık bazda araç ve çalışan başına iş için katedilen kilometre",
+        "feature": "araç başına mesafe raporunu görüntüleyin"
+      },
+      "selectPeriod": "Bir dönem seçin ve raporu oluşturun.",
+      "table": {
+        "employee": "Çalışan",
+        "licencePlate": "Plaka",
+        "total": "Toplam",
+        "vehicle": "Araç",
+        "vehicleAndEmployee": "Araç / çalışan"
+      },
+      "title": "Araç Başına Mesafe",
+      "totalDriven": "{distance} katedildi"
     }
   }
 }

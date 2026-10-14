@@ -21,6 +21,12 @@
     "briefing": {
       "badge": "Heute",
       "description": "Überprüfen Sie die Elemente, die heute Aufmerksamkeit erfordern, und wechseln Sie dann direkt in den richtigen Workflow.",
+      "items": {
+        "drivingDetailsMissing": {
+          "description": "Arbeitszeiträume Ihrer Mitarbeiter ohne Fahrzeug oder Kilometerstand.",
+          "title": "Fahrtdetails fehlen ({count})"
+        }
+      },
       "needsAction": {
         "description": "Starten Sie hier für die dringendsten operativen Nachverfolgungen.",
         "empty": "Alles in Ordnung. Derzeit ist kein Eingreifen des Managers erforderlich.",

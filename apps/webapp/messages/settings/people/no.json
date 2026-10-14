@@ -28,7 +28,10 @@
         "contractHourly": "Timebasert",
         "contractHourlyDescription": "Betalt etter arbeidede timer",
         "contractType": "Kontraktstype",
+        "contractTypeChangeLink": "Endring i kontrakt og arbeidsmodell",
         "contractTypeDescription": "Bestemmer hvordan lønnen beregnes",
+        "contractTypeFromTerms": "Kontraktstype og lønn hentes fra de bekreftede ansettelsesvilkårene som gjelder i dag.",
+        "contractTypeNoTerms": "Ingen bekreftede vilkår i dag",
         "dayFriday": "Fre",
         "dayMonday": "Man",
         "daySaturday": "Lør",
@@ -339,6 +342,7 @@
           "clockPostprocess": "Behandling av pauser og tillegg",
           "clockRepair": "Reparasjon av tidtaker",
           "dispatchDeparture": "Planlegging av fratredelse",
+          "notifyDataExportReminder": "Påminnelse om nedlasting av personopplysninger",
           "notifyDeputyRelease": "Varsel om at stedfortreder ikke lenger er tilgjengelig",
           "notifyReview": "Varsel om gjennomgang",
           "sessionRevocation": "Avlogging av økt"
@@ -352,6 +356,25 @@
           "through": "Til og med {date}",
           "title": "Arbeidssaldo"
         }
+      },
+      "personalDataExport": {
+        "availableUntil": "Tilgjengelig til {date}",
+        "description": "En ZIP-fil med alt denne organisasjonen har lagret om denne ansatte, inkludert data som den ansattes egen eksport utelater. En nåværende ansatt varsles når den er klar. Filer slettes etter 7 dager.",
+        "download": "Last ned",
+        "downloadFailed": "Nedlastingen kunne ikke startes. Vennligst prøv igjen.",
+        "listLabel": "Tidligere administrator-eksporter",
+        "loadFailed": "Kunne ikke laste inn tidligere eksporter.",
+        "ownRecord": "Du kan ikke eksportere dine egne data her. Bruk Mine data i kontoinnstillingene dine.",
+        "refusalInProgress": "En eksport av denne ansattes data blir allerede klargjort.",
+        "refusalStorage": "Fillagring er ikke konfigurert for denne organisasjonen ennå.",
+        "request": "Be om eksport",
+        "requested": "Eksporten klargjøres. Du vil motta et varsel og en e-post når den er klar.",
+        "requestedAt": "Forespurt {date}",
+        "requestFailed": "Eksporten kunne ikke startes. Vennligst prøv igjen.",
+        "statusFailed": "Mislyktes",
+        "statusPreparing": "Klargjøres",
+        "statusReady": "Klar",
+        "title": "Eksport av personopplysninger"
       },
       "tabs": {
         "employees": "Ansatte",
@@ -476,6 +499,22 @@
       "cancelConfirm": "Vil du avbryte denne ansettelsesendringen? Dette fjerner den planlagte eller utkastede ansettelsesendringen.",
       "cancelError": "Kunne ikke avbryte endring i ansettelseshistorikk",
       "cancelSuccess": "Endring i ansettelseshistorikk avbrutt",
+      "changeWage": {
+        "currencyHint": "I valutaen for de gjeldende vilkårene",
+        "description": "Oppretter nye vilkår fra denne datoen. Kontraktstype, ukentlige timer, arbeidsmodell, arbeidspolicy og valuta kopieres fra vilkårene som gjelder på den datoen.",
+        "draftSuccess": "Lønnsendring lagret som utkast",
+        "error": "Kunne ikke endre lønnen",
+        "newWage": "Ny timelønn",
+        "reason": "Årsak",
+        "reasonRequired": "Årsak er obligatorisk",
+        "save": "Lagre lønnsendring",
+        "saveAsDraft": "Lagre som utkast",
+        "success": "Lønn endret",
+        "title": "Endre lønn",
+        "validFrom": "Gyldig fra",
+        "validFromRequired": "Gyldig fra er obligatorisk",
+        "wageInvalid": "Timesats må være et positivt tall"
+      },
       "confirmError": "Kunne ikke bekrefte endring i ansettelseshistorikk",
       "confirmSuccess": "Endring i ansettelseshistorikk bekreftet",
       "contractType": "Kontraktstype",
@@ -511,6 +550,8 @@
       },
       "timeline": "Tidslinje",
       "title": "Kontrakt og arbeidsmodell",
+      "wageHistoryMergeNote": "{count, plural, one {Lønnshistorikk ble slått sammen fra den gamle satshistorikken den {date}; # satsendring ble justert.} other {Lønnshistorikk ble slått sammen fra den gamle satshistorikken den {date}; # satsendringer ble justert.}}",
+      "wageHistoryMergeNoteDismiss": "Avvis",
       "weeklyHours": "Ukentlige timer",
       "weeklyHoursValue": "{hours} / uke",
       "workModel": "Arbeidsmodell",
@@ -829,7 +870,8 @@
         "edit": "Rediger {title}",
         "expires": "Utløper {date}",
         "open": "Åpne {title}",
-        "payPeriod": "Lønnsperiode {period}"
+        "payPeriod": "Lønnsperiode {period}",
+        "provesSkill": "Dokumenterer {skill}"
       },
       "myDocuments": {
         "description": "Dokumenter fra personalmappen din som organisasjonen har delt med deg.",
@@ -994,6 +1036,23 @@
         "unlinkFailed": "Sykmeldingen kunne ikke kobles fra.",
         "unlinkFromAbsence": "Koble {title} fra sykefraværet"
       },
+      "skillCertificates": {
+        "description": "Velg ferdigheten til denne ansatte som «{title}» dokumenterer. Vaktplanleggingen viser da at et sertifikat er registrert, aldri innholdet i det.",
+        "edit": "Velg ferdigheten {title} dokumenterer",
+        "errors": {
+          "notCertificate": "Bare sertifikater kan dokumentere en ferdighet.",
+          "notEmployeeSkill": "Velg en av denne ansattes ferdigheter.",
+          "undatedRequiresExpiry": "Denne ferdigheten krever en utløpsdato. Bare et sertifikat med utløpsdato kan dokumentere den."
+        },
+        "loadFailed": "Kunne ikke laste inn den ansattes ferdigheter.",
+        "needsExpiry": "Krever en utløpsdato. Legg til en på dette sertifikatet først.",
+        "none": "Ingen ferdighet",
+        "noSkills": "Denne ansatte har ingen ferdigheter ennå. Tildel ferdigheter på den ansattes side.",
+        "save": "Lagre",
+        "saved": "Ferdighet lagret",
+        "saveFailed": "Kunne ikke lagre sertifikatets ferdighet.",
+        "title": "Ferdighet dette sertifikatet bekrefter"
+      },
       "tabs": {
         "access": "Tilgang",
         "reminders": "Påminnelser",
@@ -1021,23 +1080,6 @@
         "hint": "Én ZIP-fil med dokumentene fra kategoriene du administrerer, sortert i én mappe per kategori.",
         "sharedOnly": "Kun delte dokumenter"
       }
-    },
-    "rateHistory": {
-      "changeRate": "Endre sats",
-      "currentRate": "Gjeldende sats: {rate}",
-      "description": "Endringer i timesats over tid",
-      "effectiveFrom": "Gyldig fra",
-      "effectiveFromHelp": "Når den nye satsen trer i kraft",
-      "empty": "Ingen satshistorikk tilgjengelig",
-      "newHourlyRate": "Ny timesats",
-      "reasonOptional": "Årsak (valgfritt)",
-      "reasonPlaceholder": "f.eks. årlig vurdering, forfremmelse osv.",
-      "title": "Satshistorikk",
-      "updateDescription": "Opprett en ny satsføring. Den gjeldende satsen avsluttes automatisk.",
-      "updateError": "Kunne ikke oppdatere sats",
-      "updateRate": "Oppdater sats",
-      "updateSuccess": "Satsen ble oppdatert",
-      "updateTitle": "Oppdater timesats"
     },
     "roles": {
       "actions": {
@@ -1145,6 +1187,7 @@
       "catalog": "Ferdighetskatalog",
       "catalogDescription": "Definer ferdigheter som kan kreves for delområder og skiftmaler",
       "category": "Kategori",
+      "certificateOnFile": "Registrert sertifikat",
       "confirmDelete": "Er du sikker på at du vil slette denne ferdigheten?",
       "confirmRemove": "Fjerne \"{skillName}\" fra denne ansatte?",
       "createError": "Kunne ikke opprette ferdighet",
@@ -1155,16 +1198,25 @@
       "deleteError": "Kunne ikke slette ferdighet",
       "description": "Beskrivelse",
       "descriptionPlaceholder": "Valgfri beskrivelse av ferdigheten eller sertifiseringen",
+      "editExpiryDate": "Rediger utløpsdato",
+      "editExpiryDateDescription": "Den siste dagen {skillName} er gyldig. Vakter etter denne dagen viser den som utløpt.",
+      "editExpiryDateFor": "Rediger utløpsdato for {skillName}",
       "editSkill": "Rediger ferdighet",
       "editSkillDescription": "Oppdater ferdighetsdetaljene",
       "employeeSkills": "Ferdigheter og kvalifikasjoner",
       "employeeSkillsDescription": "Sertifiseringer og ferdigheter tildelt denne ansatte",
+      "errors": {
+        "expiryDateSetByCertificate": "Et ferdighetssertifikat i personalmappen angir denne datoen. Endre datoen på sertifikatet."
+      },
       "expired": "Utløpt",
       "expiredOn": "Utløp {date}",
       "expiresOn": "Utløper {date}",
       "expiringSoon": "Utløper snart",
       "expiry": "Utløpssporing",
       "expiryDate": "Utløpsdato",
+      "expiryDateFromCertificate": "Et ferdighetssertifikat i personalmappen angir denne datoen.",
+      "expiryDateUpdated": "Utløpsdato oppdatert",
+      "expiryDateUpdateError": "Kunne ikke oppdatere utløpsdatoen",
       "expiryRequired": "Påkrevd",
       "expiryRequiredHint": "Denne sertifiseringen krever en utløpsdato",
       "name": "Navn",
@@ -1176,6 +1228,16 @@
       "noSkillsHint": "Opprett din første ferdighet for å komme i gang",
       "notes": "Notater",
       "notesPlaceholder": "f.eks. sertifikatnummer, opplæringsdato …",
+      "reminders": {
+        "intro": "Ansattferdigheter med en utløpsdato sender en påminnelse innen varseltiden og en ny på utløpsdatoen. Den ansatte og dennes ledere varsles, eller eiere og administratorer når den ansatte ikke har noen leder. Merket «Utløper snart» bruker den samme varseltiden.",
+        "leadDays": "Varseltid for ferdighetspåminnelse (dager)",
+        "leadDaysDescription": "Dager telles i organisasjonens tidssone. Hvis utløpsdatoen for en ferdighet endres, sendes begge påminnelsene på nytt.",
+        "leadDaysInvalid": "Angi en varseltid mellom {min} og {max} dager.",
+        "save": "Lagre varseltid",
+        "saved": "Varseltid for påminnelse lagret",
+        "saveFailed": "Kunne ikke lagre påminnelsens varseltid.",
+        "title": "Påminnelser om utløpte ferdigheter"
+      },
       "removeError": "Kunne ikke fjerne ferdighet",
       "requiresExpiry": "Krever utløpsdato",
       "requiresExpiryHint": "Aktiver hvis denne sertifiseringen må fornyes (f.eks. førstehjelp)",

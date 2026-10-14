@@ -8,7 +8,10 @@ import {
 	teamPermissions,
 } from "@/db/schema";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { ValidationError } from "@/lib/effect/errors";
+import { writeFirstEmploymentTerms } from "@/lib/employment-history/first-terms";
 import { createLogger } from "@/lib/logger";
+import { hourlyWageSchema } from "@/lib/validations/employment-history";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import { acquireEmployeeIdentityLock } from "./employee-identity-lock";
 import { normalizeInvitationEmail } from "./employee-invitation-draft";
@@ -90,7 +93,6 @@ function draftEmployeeCreationValues(
 		startDate: draft.startDate,
 		endDate: draft.endDate,
 		contractType: draft.contractType,
-		currentHourlyRate: draft.currentHourlyRate,
 	};
 }
 
@@ -114,10 +116,46 @@ function draftEmployeeReactivationValues(
 		...(draft.startDate != null ? { startDate: draft.startDate } : {}),
 		...(draft.endDate != null ? { endDate: draft.endDate } : {}),
 		...(draft.contractType != null ? { contractType: draft.contractType } : {}),
-		...(draft.currentHourlyRate != null
-			? { currentHourlyRate: draft.currentHourlyRate }
-			: {}),
 	};
+}
+
+/**
+ * The draft's contract becomes the employee's first employment terms, in the
+ * provisioning transaction: when the terms cannot be written, no employee is
+ * created or reactivated. Only hourly drafts with a wage get terms.
+ */
+function writeDraftFirstTerms(
+	tx: EmployeeProvisioningTransaction,
+	input: {
+		organizationId: string;
+		userId: string;
+		employeeId: string;
+		draft: typeof employeeInvitationDraft.$inferSelect;
+	},
+) {
+	const { draft } = input;
+	return writeFirstEmploymentTerms(tx, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		// The org admin who prepared the draft set the wage.
+		actorUserId: draft.updatedBy ?? input.userId,
+		contractType: draft.contractType,
+		hourlyRate: draftHourlyWage(draft.currentHourlyRate),
+		startDate: draft.startDate ?? null,
+	});
+}
+
+/** The draft's stored decimal-string wage, as employment terms hold it. */
+function draftHourlyWage(stored: string | null): number | null {
+	if (stored == null) return null;
+	const parsed = hourlyWageSchema.safeParse(stored);
+	if (!parsed.success) {
+		throw new ValidationError({
+			message: parsed.error.issues[0]?.message ?? "Invalid hourly rate",
+			field: "hourlyRate",
+		});
+	}
+	return parsed.data;
 }
 
 async function consumeEmployeeInvitationDraft(
@@ -146,20 +184,22 @@ async function consumeEmployeeInvitationDraft(
 				input.draftId
 					? eq(employeeInvitationDraft.id, input.draftId)
 					: undefined,
-				exists(sql`
+				// Drizzle renders a raw `sql` argument to exists() without parentheses,
+				// so each subquery carries its own; `exists select` is a syntax error (#1185).
+				exists(sql`(
 						select 1
 						from ${invitation}
 						where ${invitation.id} = ${employeeInvitationDraft.invitationId}
 						and ${invitation.organizationId} = ${input.organizationId}
 						and ${linkedInvitationStatus}
-					`),
-				exists(sql`
+					)`),
+				exists(sql`(
 						select 1
 						from ${employee}
 						inner join ${user} on ${employee.userId} = ${user.id}
 						where ${employee.organizationId} = ${input.organizationId}
 						and lower(btrim(${user.email})) = ${employeeInvitationDraft.normalizedEmail}
-					`),
+					)`),
 			),
 		);
 	} catch {
@@ -252,6 +292,18 @@ export async function ensureEmployeeForOrganizationMember(
 
 				const updatedEmployee = reactivatedEmployee ?? existingEmployee;
 
+				// The database keeps an employee whose employment ended inactive
+				// (only a rehire starts a new one), so only a reactivated employee
+				// gets the draft's terms.
+				if (draft && reactivatedEmployee?.isActive) {
+					await writeDraftFirstTerms(tx, {
+						organizationId: input.organizationId,
+						userId: input.userId,
+						employeeId: reactivatedEmployee.id,
+						draft,
+					});
+				}
+
 				if (isAdminRole) {
 					const existingPermissions = await tx.query.teamPermissions.findFirst({
 						where: and(
@@ -291,6 +343,15 @@ export async function ensureEmployeeForOrganizationMember(
 			const [newEmployee] = insertResult.returning
 				? await insertResult.returning()
 				: [];
+
+			if (newEmployee && draft) {
+				await writeDraftFirstTerms(tx, {
+					organizationId: input.organizationId,
+					userId: input.userId,
+					employeeId: newEmployee.id,
+					draft,
+				});
+			}
 
 			if (newEmployee && isAdminRole) {
 				await tx.insert(teamPermissions).values({

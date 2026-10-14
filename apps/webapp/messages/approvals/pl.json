@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Wniosek o nieobecność zatwierdzony",
+    "absenceChange": {
+      "afternoon": "Popołudnie",
+      "cancelAll": "Anuluj całą nieobecność",
+      "cancellationTitle": "Anulowanie nieobecności",
+      "category": "Kategoria nieobecności",
+      "displacedVacation": "Daty urlopu zostaną zastąpione po zatwierdzeniu",
+      "exactHours": "Dokładne zarejestrowane godziny",
+      "fullDay": "Cały dzień",
+      "morning": "Przedpołudnie",
+      "original": "Zarejestrowane daty",
+      "originalEndCoverage": "Zarejestrowany dzień zakończenia",
+      "originalInterval": "Zarejestrowane godziny",
+      "originalStartCoverage": "Zarejestrowany dzień rozpoczęcia",
+      "proposed": "Proponowana zmiana",
+      "proposedEndCoverage": "Proponowany dzień zakończenia",
+      "proposedInterval": "Proponowane godziny",
+      "proposedStartCoverage": "Proponowany dzień rozpoczęcia",
+      "range": "{range}",
+      "reason": "Powód",
+      "reasonValue": "{reason}",
+      "title": "Zmiana nieobecności"
+    },
     "absenceRejected": "Wniosek o nieobecność odrzucony",
     "absenceRequests": "Wnioski o urlop",
     "absenceRequestsDescription": "Przeglądaj i zatwierdzaj wnioski urlopowe członków swojego zespołu",
@@ -304,6 +326,8 @@
       "dayTotals": "Sumy dzienne",
       "difference": "Różnica",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Brak szczegółów przejazdu",
+      "drivingDetailsMissingWork": "Brak pojazdu lub stanu licznika",
       "employee": "Pracownik",
       "holidays": "Dni ustawowo wolne od pracy",
       "openCalendar": "Otwórz kalendarz dla tego okresu",
@@ -413,6 +437,7 @@
     "totalCount": "{totalCount} oczekujących",
     "type": "Typ",
     "types": {
+      "absence_change_request": "Zmiany nieobecności",
       "absence_entry": "Wnioski o nieobecność",
       "period_submission": "Zgłoszenia okresów",
       "time_entry": "Korekty czasu pracy",
@@ -421,6 +446,15 @@
     },
     "unifiedInboxBannerDescription": "Przeglądaj wszystkie typy zatwierdzeń w jednym miejscu dzięki filtrowaniu, akcjom masowym i śledzeniu SLA.",
     "unifiedInboxBannerTitle": "Wypróbuj nową ujednoliconą skrzynkę odbiorczą",
+    "vehicleUse": "Użycie pojazdu",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km to więcej niż {limit} km w jednym okresie pracy.",
+      "onOtherLiveWork": "Ten pojazd jest już przypisany do trwającej pracy innego pracownika.",
+      "speedAboveLimit": "Przejechany dystans wskazuje na średnią prędkość {speed} km/h w tym okresie pracy, czyli ponad {limit} km/h.",
+      "startBelowLastEnd": "Początkowy stan licznika jest niższy niż ostatni zarejestrowany stan końcowy tego pojazdu ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Proszę sprawdzić",
     "viewExpenseClaim": "Wyświetl wniosek i rachunki",
     "viewExpenseReport": "Wyświetl przesłany raport i rachunki",
     "workBalance": {

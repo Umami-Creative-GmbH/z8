@@ -195,13 +195,17 @@ export const queryKeys = {
 		organization: (orgId: string) => ["employees", orgId] as const,
 		list: <T extends object>(orgId: string, params?: T) => ["employees", orgId, params] as const,
 		detail: (employeeId: string) => ["employees", "detail", employeeId] as const,
-		rateHistory: (employeeId: string) =>
-			["employees", "detail", employeeId, "rate-history"] as const,
 		employmentHistory: (employeeId: string) =>
 			["employees", "detail", employeeId, "employment-history"] as const,
+		/** The one-time wage history merge note (#1176). */
+		wageHistoryMergeNote: (employeeId: string) =>
+			["employees", "detail", employeeId, "wage-history-merge-note"] as const,
 		/** Lifecycle view; under the organization key so directory changes refresh it. */
 		offboarding: (orgId: string, employeeId: string) =>
 			["employees", orgId, "offboarding", employeeId] as const,
+		/** The employee's admin exports of their personal data (#1166). */
+		personalDataExports: (orgId: string, employeeId: string) =>
+			["employees", orgId, "personal-data-exports", employeeId] as const,
 		offboardingPreview: (
 			orgId: string,
 			employeeId: string,
@@ -246,6 +250,9 @@ export const queryKeys = {
 		/** An employee's sick leave in the officer area (#984). */
 		employeeSickLeave: (employeeId: string) =>
 			["personnel-file", "sick-notes", "sick-leave", employeeId] as const,
+		/** The employee skills a certificate may name (#1144). */
+		certificateSkills: (employeeId: string) =>
+			["personnel-file", "certificate-skills", employeeId] as const,
 	},
 
 	// Employee clock statuses
@@ -291,6 +298,12 @@ export const queryKeys = {
 		breakStatus: () => ["time-clock", "break-status"] as const,
 		/** The signed-in employee's own position capture and consent (#826). */
 		positionCapture: () => ["time-clock", "position-capture"] as const,
+		/**
+		 * The signed-in employee's vehicle use for clocking (#1122): mode, vehicles,
+		 * pre-fill and the live work's vehicle use. Under `status`, so every clock
+		 * status refresh also refreshes it.
+		 */
+		vehicleUse: () => ["time-clock", "status", "vehicle-use"] as const,
 	},
 
 	// Position stamps on a work period's detail (#831); never the positions themselves
@@ -557,6 +570,9 @@ export const queryKeys = {
 		/** Whether and how the current user may edit a work period's times */
 		workPeriodTimeEdit: (workPeriodId: string) =>
 			["calendar", "work-period-time-edit", workPeriodId] as const,
+		/** Whether the work's own-vehicle distance can be added to an expense report (#1131) */
+		workPeriodMileage: (workPeriodId: string) =>
+			["calendar", "work-period-mileage", workPeriodId] as const,
 	},
 
 	// Hydration / Water reminders
@@ -689,11 +705,14 @@ export const queryKeys = {
 		subarea: (subareaId: string) => ["skills", "subarea", subareaId] as const,
 		// Template skill requirements
 		template: (templateId: string) => ["skills", "template", templateId] as const,
-		// Skill validation for shift assignment
-		validation: (employeeId: string, subareaId: string, templateId?: string) =>
-			["skills", "validation", employeeId, subareaId, templateId] as const,
-		// Qualified employees for a set of skills
-		qualified: (skillIds: string[]) => ["skills", "qualified", skillIds] as const,
+		// Skill validation for shift assignment on the shift date
+		validation: (employeeId: string, subareaId: string, date: string, templateId?: string) =>
+			["skills", "validation", employeeId, subareaId, date, templateId] as const,
+		// Qualified employees for a set of skills on the shift date
+		qualified: (skillIds: string[], date: string) =>
+			["skills", "qualified", skillIds, date] as const,
+		// The organization's today and the "Expiring soon" window of skill badges
+		expiryWindow: (orgId: string) => ["skills", "expiry-window", orgId] as const,
 	},
 	// Telegram integration
 	telegram: {

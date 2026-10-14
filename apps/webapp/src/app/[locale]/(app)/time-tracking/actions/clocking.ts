@@ -47,6 +47,17 @@ import {
 	resolveWorkBillabilityInTransaction,
 } from "@/lib/time-tracking/work-billability";
 import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/work-location";
+import {
+	assertWorkVehicleUseChangeAllowed,
+	workVehicleUseRefusal,
+	workVehicleUseRefusalCodeOf,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use-eligibility";
+import {
+	buildWorkVehicleUse,
+	vehicleUseFromColumns,
+	vehicleUseIdentity,
+	type WorkVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { APPEND_REVIEW_REQUIRED_CODE } from "@/lib/time-tracking/time-clock-client";
 import {
 	approvalDbServiceForTransaction,
@@ -76,6 +87,11 @@ import {
 	type OperationIdentity,
 } from "@/lib/time-tracking/clocking";
 import { readClockPosition } from "@/lib/time-tracking/position-capture/clock-position";
+import {
+	type ClockVehicleUse,
+	readBreakVehicleUse,
+	readClockVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
 import { workCategoryIneligibility } from "@/lib/time-tracking/work-category-eligibility";
 import { acquireAdoptionGate, readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
@@ -146,6 +162,8 @@ type ManualSubmissionRequestEvidence = {
 	billable?: boolean;
 	/** Omitted when the entry names no task, so earlier evidence keeps matching (#873). */
 	taskId?: string;
+	/** Vehicle use by identity (#1120); omitted when the entry names none. */
+	vehicleUse?: string;
 };
 
 type ManualSubmissionResultEvidence = {
@@ -157,6 +175,7 @@ type ManualSubmissionResultEvidence = {
 
 function manualRequestEvidence(
 	data: ManualTimeEntryInput,
+	vehicleUse: WorkVehicleUse | undefined,
 ): ManualSubmissionRequestEvidence {
 	return {
 		date: data.date,
@@ -171,6 +190,7 @@ function manualRequestEvidence(
 		// Present only when chosen (#900), so earlier submissions keep their evidence.
 		...(typeof data.billable === "boolean" ? { billable: data.billable } : {}),
 		...recordedTaskId(data.taskId),
+		...(vehicleUse ? { vehicleUse: vehicleUseIdentity(vehicleUse) } : {}),
 	};
 }
 
@@ -228,6 +248,7 @@ function parseManualSubmissionMetadata(input: {
 		...(input.request.workLocationType !== undefined ? ["workLocationType"] : []),
 		...(input.request.billable !== undefined ? ["billable"] : []),
 		...(input.request.taskId !== undefined ? ["taskId"] : []),
+		...(input.request.vehicleUse !== undefined ? ["vehicleUse"] : []),
 	]);
 	for (const [key, expected] of Object.entries(input.request)) {
 		if (request[key] !== expected) throw new Error("Submission collision");
@@ -314,6 +335,8 @@ async function findManualSubmissionEvidence(input: {
 		(period.taskId ?? null) !== (input.request.taskId ?? null) ||
 		period.workCategoryId !== input.request.workCategoryId ||
 		(period.workLocationType ?? null) !== (input.request.workLocationType ?? null) ||
+		vehicleUseIdentity(vehicleUseFromColumns(period)) !==
+			(input.request.vehicleUse ?? vehicleUseIdentity(null)) ||
 		period.clockIn?.notes !== `Manual entry: ${input.request.reason}` ||
 		period.clockOut?.notes !== input.request.reason ||
 		(marker !== null &&
@@ -432,16 +455,27 @@ export type ClockActionContext = BrowserTimezoneContext & {
 	identityOrigin?: OperationIdentity["origin"];
 	instant?: Instant;
 	deviceInfo?: ClockChannel;
+	/** Vehicle use beside the clock-in (#1122); the module records what it may. */
+	vehicleUse?: ClockVehicleUse;
 };
 
 /**
  * The web's own clock request: it may carry the position taken at the clock
- * event (#826). Mobile and bots reach `clockInAs`/`clockOutAs` without one.
+ * event (#826) and vehicle use (#1122). Mobile and bots reach
+ * `clockInAs`/`clockOutAs` without a position.
  */
 export type WebClockPositionContext = {
 	/** Unvalidated wire value; a malformed position is dropped, never refused. */
 	position?: unknown;
+	/** Unvalidated wire value; malformed vehicle use is dropped, never refused. */
+	vehicleUse?: unknown;
 };
+
+/** The vehicle use a web clock request carried, as a spreadable fragment. */
+function webVehicleUse(value: unknown): { vehicleUse?: ClockVehicleUse } {
+	const vehicleUse = readClockVehicleUse(value);
+	return vehicleUse ? { vehicleUse } : {};
+}
 
 export type ClockInCommandResult =
 	| { success: true; data: ClockInResult }
@@ -489,7 +523,7 @@ export async function validateWorkCategoryAssignment(
  */
 export async function clockIn(
 	workLocationType?: WorkLocationType,
-	webContext: ClockActionContext & WebClockPositionContext = {},
+	webContext: Omit<ClockActionContext, "vehicleUse"> & WebClockPositionContext = {},
 ): Promise<ServerActionResult<ClockInResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -501,11 +535,11 @@ export async function clockIn(
 		return { success: false, error: await clockInFailureMessage("employee_not_found") };
 	}
 
-	const { position, ...actionContext } = webContext;
+	const { position, vehicleUse, ...actionContext } = webContext;
 	const result = await clockInAs(
 		webClockActor(session.user.id, currentEmployee),
 		workLocationType,
-		actionContext,
+		{ ...actionContext, ...webVehicleUse(vehicleUse) },
 		readClockPosition(position),
 	);
 	if (result.success) return { success: true, data: result.data };
@@ -588,6 +622,7 @@ export async function clockInAs(
 ): Promise<ClockInCommandResult> {
 	const outcome = await clocking.run({
 		...(position ? { position } : {}),
+		...(actionContext.vehicleUse ? { vehicleUse: actionContext.vehicleUse } : {}),
 		organizationId: actor.employee.organizationId,
 		principal: { kind: "user", userId: actor.userId },
 		subject: { employeeId: actor.employee.id },
@@ -628,7 +663,7 @@ export async function revalidateAfterClockOut(context: Record<string, unknown>) 
 export async function clockOut(
 	projectId: string | null | undefined,
 	workCategoryId: string | null | undefined,
-	webContext: ClockOutActionContext & WebClockPositionContext,
+	webContext: Omit<ClockOutActionContext, "vehicleUse"> & WebClockPositionContext,
 ): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -639,12 +674,12 @@ export async function clockOut(
 	if (!currentEmployee) {
 		return { success: false, error: await clockOutFailureMessage("employee_not_found") };
 	}
-	const { position, ...actionContext } = webContext;
+	const { position, vehicleUse, ...actionContext } = webContext;
 	const result = await clockOutAs(
 		webClockActor(session.user.id, currentEmployee),
 		projectId,
 		workCategoryId,
-		actionContext,
+		{ ...actionContext, ...webVehicleUse(vehicleUse) },
 		readClockPosition(position),
 	);
 	if (result.success) return { success: true, data: result.data };
@@ -704,6 +739,7 @@ export async function clockOutAs(
 ): Promise<ClockOutCommandResult> {
 	const outcome = await clocking.run({
 		...(position ? { position } : {}),
+		...(actionContext.vehicleUse ? { vehicleUse: actionContext.vehicleUse } : {}),
 		organizationId: actor.employee.organizationId,
 		principal: { kind: "user", userId: actor.userId },
 		subject: { employeeId: actor.employee.id },
@@ -794,8 +830,11 @@ export async function addBreakToActiveSession(
 
 	// The break's one fix is taken at its end: it stamps only the resumed work (#826 D1).
 	const position = readClockPosition(actionContext.position);
+	// One optional reading: the closed work's end and the resumed work's start (#1122).
+	const vehicleUse = readBreakVehicleUse(actionContext.vehicleUse);
 	const outcome = await clocking.run({
 		...(position ? { position } : {}),
+		...(vehicleUse ? { vehicleUse } : {}),
 		organizationId: currentEmployee.organizationId,
 		principal: { kind: "user", userId: session.user.id },
 		subject: { employeeId: currentEmployee.id },
@@ -933,7 +972,20 @@ export async function createManualTimeEntry(
 	if (data.workLocationType !== undefined && !isWorkLocationType(data.workLocationType)) {
 		return { success: false, error: "Invalid work location type" };
 	}
-	const requestEvidence = manualRequestEvidence(data);
+	// Vehicle use (#1120) is validated and its distance derived before anything else.
+	let vehicleUse: WorkVehicleUse | undefined;
+	if (data.vehicleUse) {
+		const built = buildWorkVehicleUse(data.vehicleUse);
+		if (!built.ok) {
+			return {
+				success: false,
+				error: workVehicleUseRefusal(built.code).message,
+				code: built.code,
+			};
+		}
+		vehicleUse = built.use;
+	}
+	const requestEvidence = manualRequestEvidence(data, vehicleUse);
 	try {
 		const runtime = createOrdinaryApprovalRuntime();
 		const replay = await runtime.repository.withTransaction((context) =>
@@ -1220,6 +1272,20 @@ export async function createManualTimeEntry(
 				});
 				if (reason) return { disposition: "task_refused" as const, reason };
 			}
+			if (vehicleUse) {
+				try {
+					await assertWorkVehicleUseChangeAllowed(tx, {
+						organizationId: targetEmployee.organizationId,
+						employeeId: targetEmployee.id,
+						previous: null,
+						resulting: vehicleUse,
+					});
+				} catch (error) {
+					const code = workVehicleUseRefusalCodeOf(error);
+					if (!code) throw error;
+					return { disposition: "vehicle_refused" as const, code };
+				}
+			}
 			const clockInEntry = await createTimeEntry(
 				{
 					employeeId: targetEmployee.id,
@@ -1272,6 +1338,7 @@ export async function createManualTimeEntry(
 						projectId: data.projectId || null,
 						isBillable,
 						taskId: data.taskId || null,
+						vehicleUse: vehicleUse ?? null,
 						computationMetadata: manualSubmissionMetadata({
 							submissionId,
 							request: requestEvidence,
@@ -1297,6 +1364,7 @@ export async function createManualTimeEntry(
 				taskId: data.taskId || null,
 				workCategoryId: data.workCategoryId || null,
 				workLocationType: data.workLocationType ?? null,
+				vehicleUse: vehicleUse ?? null,
 				canonicalRecordId: canonicalRecord.id,
 				approvalStatus: requiresApproval ? "pending" : "approved",
 				pendingChanges: requiresApproval
@@ -1355,6 +1423,13 @@ export async function createManualTimeEntry(
 			};
 		}
 		if (committed.disposition === "task_refused") return taskRefusal(committed.reason);
+		if (committed.disposition === "vehicle_refused") {
+			return {
+				success: false,
+				error: workVehicleUseRefusal(committed.code).message,
+				code: committed.code,
+			};
+		}
 		const {
 			period: createdWorkPeriod,
 			approvalSubmission,

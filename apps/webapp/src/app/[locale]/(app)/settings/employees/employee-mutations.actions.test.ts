@@ -23,6 +23,12 @@ const mocks = vi.hoisted(() => ({
 	validateInput: vi.fn(),
 	markEmployeeWorkBalanceDirty: vi.fn(),
 	requestEmployeeWorkBalanceFullRebuild: vi.fn(),
+	writeFirstEmploymentTerms: vi.fn(),
+}));
+
+// The terms themselves are covered by first-terms.integration.test.ts.
+vi.mock("@/lib/employment-history/first-terms", () => ({
+	writeFirstEmploymentTerms: mocks.writeFirstEmploymentTerms,
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -68,6 +74,11 @@ vi.mock("@/lib/organization/custom-fields/form-values", () => ({
 	saveFormCustomFieldValues: vi.fn(async () => undefined),
 }));
 
+// The work balance is marked from the terms' calendar date in the organization's timezone.
+vi.mock("@/lib/timezone/load-organization-timezone", () => ({
+	loadOrganizationTimezone: vi.fn(async () => "Europe/Berlin"),
+}));
+
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mocks.markEmployeeWorkBalanceDirty,
 	requestEmployeeWorkBalanceFullRebuild:
@@ -77,6 +88,7 @@ vi.mock("@/lib/work-balance/service", () => ({
 import {
 	createEmployeeSchema,
 	personalInformationSchema,
+	updateEmployeeInvitationDraftSchema,
 	updateEmployeeSchema,
 } from "@/lib/validations/employee";
 import {
@@ -332,6 +344,151 @@ describe("createEmployeeAction", () => {
 		});
 		expect(JSON.stringify(result)).not.toContain("private-row-detail");
 	});
+
+	describe("first employment terms", () => {
+		const startDate = new Date("2026-03-01T00:00:00.000Z");
+		const createdEmployee = {
+			id: "employee-1",
+			userId: validUserId,
+			organizationId: "org-1",
+		};
+
+		/** A database whose queries fail the way DatabaseService wraps them. */
+		function arrange(validated: Record<string, unknown>) {
+			const returning = vi.fn().mockResolvedValue([createdEmployee]);
+			const values = vi.fn(() => ({ returning }));
+			const insert = vi.fn(() => ({ values }));
+			const db = {
+				insert,
+				query: { employee: { findFirst: vi.fn().mockResolvedValue(null) } },
+			};
+			const dbService = {
+				db,
+				query: vi.fn((name: string, run: () => Promise<unknown>) =>
+					Effect.tryPromise({
+						try: run,
+						catch: (cause) =>
+							new DatabaseError({
+								message: `Database query failed: ${name}`,
+								operation: name,
+								cause,
+							}),
+					}),
+				),
+			};
+			mocks.runTracedEmployeeAction.mockImplementation((options) =>
+				Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })).then(
+					toServerActionResult,
+				),
+			);
+			mocks.getEmployeeSettingsActorContext.mockReturnValue(
+				Effect.succeed({
+					accessTier: "orgAdmin",
+					organizationId: "org-1",
+					session: { user: { id: "user-admin-1" } },
+					currentEmployee: null,
+					dbService,
+				}),
+			);
+			mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
+			mocks.getTargetUser.mockReturnValue(Effect.succeed({ id: validUserId }));
+			mocks.validateInput.mockReturnValue(
+				Effect.succeed({
+					userId: validUserId,
+					organizationId: "org-1",
+					role: "employee",
+					...validated,
+				}),
+			);
+			return { db, insert, values };
+		}
+
+		const create = () =>
+			createEmployeeAction({
+				userId: validUserId,
+				organizationId: "org-1",
+				role: "employee",
+			} as Parameters<typeof createEmployeeAction>[0]);
+
+		it("writes an hourly employee's first terms in the employee transaction, and no rate history", async () => {
+			const { db, insert } = arrange({
+				contractType: "hourly",
+				hourlyRate: "25.50",
+				startDate,
+			});
+			mocks.writeFirstEmploymentTerms.mockResolvedValue({
+				validFrom: startDate,
+				reviewState: "confirmed",
+			});
+
+			const result = await create();
+
+			expect(result).toMatchObject({ success: true, data: createdEmployee });
+			// The fake protection runs the mutation on the database itself.
+			expect(mocks.writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(db, {
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				actorUserId: "user-admin-1",
+				contractType: "hourly",
+				hourlyRate: 25.5,
+				startDate,
+			});
+			expect(insert).toHaveBeenCalledOnce();
+			expect(mocks.markEmployeeWorkBalanceDirty).toHaveBeenCalledExactlyOnceWith({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				dirtyFromDate: "2026-03-01",
+			});
+		});
+
+		it("writes no terms and marks no balance for a fixed employee", async () => {
+			arrange({ contractType: "fixed" });
+			mocks.writeFirstEmploymentTerms.mockResolvedValue(null);
+
+			const result = await create();
+
+			expect(result).toMatchObject({ success: true });
+			expect(mocks.writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(
+				expect.anything(),
+				expect.objectContaining({ contractType: "fixed", hourlyRate: null }),
+			);
+			expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		});
+
+		it("fails the creation with the terms refusal when the terms write fails", async () => {
+			arrange({ contractType: "hourly", hourlyRate: "25.50", startDate });
+			mocks.writeFirstEmploymentTerms.mockRejectedValue(
+				new ValidationError({
+					message: "Employment terms cannot start before the current employment period.",
+					field: "validFrom",
+				}),
+			);
+
+			const result = await create();
+
+			expect(result).toEqual({
+				success: false,
+				code: "ValidationError",
+				error: "Employment terms cannot start before the current employment period.",
+			});
+			expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
+			expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		});
+
+		it("refuses an hourly wage that employment terms cannot hold", async () => {
+			const { insert } = arrange({
+				contractType: "hourly",
+				hourlyRate: "25.555",
+				startDate,
+			});
+
+			const result = await create();
+
+			expect(result).toMatchObject({ success: false, code: "ValidationError" });
+			expect(insert).not.toHaveBeenCalled();
+			expect(mocks.writeFirstEmploymentTerms).not.toHaveBeenCalled();
+		});
+	});
 });
 
 describe("updateEmployeeAction", () => {
@@ -373,7 +530,6 @@ describe("updateEmployeeAction", () => {
 				id: "employee-1",
 				userId: validUserId,
 				organizationId: "org-1",
-				currentHourlyRate: null,
 				contractType: "fixed",
 				user: {
 					firstName: "Old",
@@ -448,7 +604,6 @@ describe("updateEmployeeAction", () => {
 				id: "employee-1",
 				userId: validUserId,
 				organizationId: "org-1",
-				currentHourlyRate: null,
 				contractType: "fixed",
 				user: {
 					firstName: "ExistingFirst",
@@ -524,7 +679,6 @@ describe("updateEmployeeAction", () => {
 				id: "employee-1",
 				userId: validUserId,
 				organizationId: "org-1",
-				currentHourlyRate: null,
 				contractType: "fixed",
 			}),
 		);
@@ -543,12 +697,35 @@ describe("updateEmployeeAction", () => {
 			lastName: "Lovelace",
 		} as Parameters<typeof updateEmployeeAction>[1]);
 
+		// A manager's save never touches the wage or contract type (#1177).
 		expect(employeeSet).toHaveBeenCalledWith({
 			position: "Engineer",
-			currentHourlyRate: null,
 			updatedAt: expect.anything(),
 		});
 		expect(userSet).not.toHaveBeenCalled();
+	});
+
+	it("strips contract type and wage from the employee update input", () => {
+		const result = updateEmployeeSchema.safeParse({
+			position: "Engineer",
+			contractType: "hourly",
+			hourlyRate: "42.50",
+		});
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data).toEqual({ position: "Engineer" });
+	});
+
+	it("keeps contract type and wage editable on invitation drafts", () => {
+		const result = updateEmployeeInvitationDraftSchema.safeParse({
+			contractType: "hourly",
+			hourlyRate: "42.50",
+		});
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data).toEqual({ contractType: "hourly", hourlyRate: "42.50" });
 	});
 
 	it("marks the employee work balance dirty when the start date changes", async () => {
@@ -578,7 +755,6 @@ describe("updateEmployeeAction", () => {
 				id: "employee-1",
 				userId: validUserId,
 				organizationId: "org-1",
-				currentHourlyRate: null,
 				contractType: "fixed",
 				startDate: new Date("2026-05-10T00:00:00.000Z"),
 			}),
@@ -634,7 +810,6 @@ describe("updateEmployeeAction", () => {
 				id: "employee-1",
 				userId: validUserId,
 				organizationId: "org-1",
-				currentHourlyRate: null,
 				contractType: "fixed",
 				startDate: new Date("2026-05-10T00:00:00.000Z"),
 			}),

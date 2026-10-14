@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "{count} înregistrări de timp șterse",
           "title": "Șterge datele de timp",
           "vacationAllowancesReset": "{count} alocări de concediu resetate",
+          "vehiclesDeleted": "{count, plural, one {# vehicul șters} few {# vehicule șterse} other {# de vehicule șterse}}",
           "willDelete": "Această acțiune va șterge definitiv:",
           "workCategoriesDeleted": "{count} categorii de lucru șterse",
           "workCategorySetsDeleted": "{count} seturi de categorii de lucru șterse",
@@ -109,7 +110,7 @@
           "label": "Tipuri de date",
           "locations": {
             "countLabel": "Număr de locații:",
-            "description": "Locații de muncă și subzone",
+            "descriptionWithVehicles": "Locații de muncă, subzone și câteva vehicule",
             "title": "Locații"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Se creează înregistrările de timp și perioadele de lucru",
           "label": "Înregistrări de timp"
+        },
+        "vehicleUse": {
+          "description": "Înregistrarea utilizării vehiculelor în perioadele de lucru",
+          "label": "Utilizare vehicul"
         },
         "workCategories": {
           "description": "Se creează seturile de categorii de lucru și categoriile",

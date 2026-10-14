@@ -7,7 +7,6 @@
  *
  * This file has no I/O; `position-capture-review-data.ts` loads the source.
  */
-import type { WorksCouncilIdentityVisibility } from "@/db/schema/works-council";
 import { type Instant, instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import {
 	captureAssignedTo,
@@ -17,6 +16,13 @@ import {
 	type PositionNoticeDeclineRecord,
 	positionConsentDecision,
 } from "@/lib/time-tracking/position-capture/policy";
+import {
+	csvReviewIdentity,
+	reviewIdentities,
+	reviewIdentitySortKey,
+	type WorksCouncilReviewIdentity,
+	type WorksCouncilReviewVisibility,
+} from "./review-identity";
 
 export type PositionCaptureReviewNotice = {
 	id: string;
@@ -60,10 +66,7 @@ export type PositionCaptureReviewSource = {
 	}>;
 };
 
-export type PositionCaptureReviewVisibility = {
-	identityVisibility: WorksCouncilIdentityVisibility;
-	minimumAggregationThreshold: number;
-};
+export type PositionCaptureReviewVisibility = WorksCouncilReviewVisibility;
 
 /**
  * Consent counts among the employees capture is switched on for right now:
@@ -89,15 +92,8 @@ export type PositionConsentCounts =
 	  }
 	| { state: "insufficient_data"; switchedOnEmployees: number };
 
-/**
- * How a person appears in the section. `named` only under "named" identity
- * visibility; `pseudonym` refs are letters stable within one rendering,
- * assigned in id order so they reveal nothing about names.
- */
-export type PositionCaptureReviewIdentity =
-	| { kind: "named"; name: string }
-	| { kind: "pseudonym"; ref: string }
-	| { kind: "hidden" };
+/** How a person appears in the section (see `WorksCouncilReviewIdentity`). */
+export type PositionCaptureReviewIdentity = WorksCouncilReviewIdentity;
 
 export type PositionCaptureReviewNoticeView = {
 	version: number;
@@ -146,7 +142,7 @@ export function buildPositionCaptureReview(
 	source: PositionCaptureReviewSource,
 	visibility: PositionCaptureReviewVisibility,
 ): PositionCaptureReview {
-	const employeeIdentity = identities(
+	const employeeIdentity = reviewIdentities(
 		visibility.identityVisibility,
 		[
 			...source.assignments.flatMap((row) => (row.employeeId ? [row.employeeId] : [])),
@@ -159,7 +155,7 @@ export function buildPositionCaptureReview(
 			entry.viewer ? [[entry.viewer.userId, entry.viewer.name] as const] : [],
 		),
 	);
-	const viewerIdentity = identities(
+	const viewerIdentity = reviewIdentities(
 		visibility.identityVisibility,
 		[...viewerNames.keys()],
 		(userId) => viewerNames.get(userId),
@@ -196,7 +192,9 @@ export function buildPositionCaptureReview(
 								captureEnabled: row.captureEnabled,
 							}))
 							.sort((left, right) =>
-								identitySortKey(left.employee).localeCompare(identitySortKey(right.employee)),
+								reviewIdentitySortKey(left.employee).localeCompare(
+									reviewIdentitySortKey(right.employee),
+								),
 							),
 					},
 		consentCounts: countConsents(source, visibility),
@@ -217,7 +215,9 @@ export function buildPositionCaptureReview(
 							state: "listed",
 							identities: entry.subjectEmployeeIds
 								.map(employeeIdentity)
-								.sort((left, right) => identitySortKey(left).localeCompare(identitySortKey(right))),
+								.sort((left, right) =>
+									reviewIdentitySortKey(left).localeCompare(reviewIdentitySortKey(right)),
+								),
 						},
 			workPeriodCount: entry.workPeriods.length,
 		})),
@@ -254,7 +254,7 @@ export function positionCaptureReviewCsvRows(review: PositionCaptureReview): unk
 		for (const row of review.employeeAssignments.rows) {
 			rows.push([
 				"Employee assignment",
-				csvIdentity(row.employee, "Employee"),
+				csvReviewIdentity(row.employee, "Employee"),
 				onOff(row.captureEnabled),
 			]);
 		}
@@ -285,22 +285,16 @@ export function positionCaptureReviewCsvRows(review: PositionCaptureReview): unk
 		...review.accessLog.map((entry) => [
 			entry.accessedAt,
 			entry.kind,
-			entry.viewer.kind === "deleted" ? "deleted user" : csvIdentity(entry.viewer, "Viewer"),
+			entry.viewer.kind === "deleted" ? "deleted user" : csvReviewIdentity(entry.viewer, "Viewer"),
 			entry.employees.state === "counted"
 				? `${entry.employees.count} employee(s)`
 				: entry.employees.identities
-						.map((identity) => csvIdentity(identity, "Employee"))
+						.map((identity) => csvReviewIdentity(identity, "Employee"))
 						.join("; "),
 			entry.workPeriodCount,
 		]),
 	);
 	return rows;
-}
-
-function csvIdentity(identity: PositionCaptureReviewIdentity, prefix: string): string {
-	if (identity.kind === "named") return identity.name;
-	if (identity.kind === "pseudonym") return `${prefix} ${identity.ref}`;
-	return "hidden";
 }
 
 function toNoticeView(notice: PositionCaptureReviewNotice): PositionCaptureReviewNoticeView {
@@ -311,48 +305,6 @@ function toNoticeView(notice: PositionCaptureReviewNotice): PositionCaptureRevie
 		templateRevision: notice.templateRevision,
 		publishedAt: instantToCanonicalString(notice.createdAt),
 	};
-}
-
-/**
- * Maps ids to identities under the visibility: names, pseudonym letters given
- * out in sorted id order, or nothing at all.
- */
-function identities(
-	visibility: WorksCouncilIdentityVisibility,
-	ids: readonly string[],
-	nameOf: (id: string) => string | undefined,
-): (id: string) => PositionCaptureReviewIdentity {
-	if (visibility === "aggregated") return () => ({ kind: "hidden" });
-	if (visibility === "named") {
-		return (id) => {
-			const name = nameOf(id)?.trim();
-			return name ? { kind: "named", name } : { kind: "hidden" };
-		};
-	}
-	const refs = new Map(
-		[...new Set(ids)].sort().map((id, index) => [id, pseudonymRef(index)] as const),
-	);
-	return (id) => {
-		const ref = refs.get(id);
-		return ref ? { kind: "pseudonym", ref } : { kind: "hidden" };
-	};
-}
-
-/** A, B, …, Z, AA, AB, … */
-function pseudonymRef(index: number): string {
-	let ref = "";
-	let rest = index;
-	do {
-		ref = String.fromCharCode(65 + (rest % 26)) + ref;
-		rest = Math.floor(rest / 26) - 1;
-	} while (rest >= 0);
-	return ref;
-}
-
-function identitySortKey(identity: PositionCaptureReviewIdentity): string {
-	if (identity.kind === "named") return identity.name;
-	if (identity.kind === "pseudonym") return identity.ref.padStart(4, " ");
-	return "";
 }
 
 function countConsents(

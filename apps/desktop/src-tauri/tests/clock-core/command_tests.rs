@@ -32,7 +32,7 @@ async fn every_committed_command_survives_status_failure_without_queueing() {
     let unadopted = capabilities("org-1", "unavailable");
     for (command, responses, expected_entries) in [
         (
-            ClockCommand::ClockIn(WorkLocationType::Remote),
+            ClockCommand::ClockIn(WorkLocationType::Remote, None),
             vec![
                 Some((200, unadopted.clone())),
                 Some((200, OPEN_ENTRY.to_string())),
@@ -54,6 +54,7 @@ async fn every_committed_command_survives_status_failure_without_queueing() {
             ClockCommand::Break {
                 evidence: legacy_break(),
                 location: WorkLocationType::Remote,
+                vehicle_use: None,
             },
             vec![
                 // Breaks negotiate too; this server has no version 2 commands.
@@ -125,6 +126,7 @@ async fn partial_break_is_retained_with_acknowledged_close_and_blocks_resubmissi
     let command = ClockCommand::Break {
         evidence: legacy_break(),
         location: WorkLocationType::Remote,
+        vehicle_use: None,
     };
     let outcome = device.act(&url, command).await.unwrap();
     let ClockCommandOutcome::RetainedForReview { recovery_id } = outcome else {
@@ -173,7 +175,7 @@ async fn legacy_record_does_not_use_current_context_or_failure_timestamp_for_sub
         .unwrap();
     let error = execute(
         &device.at("http://127.0.0.1:1", "other-session"),
-        ClockCommand::ClockIn(WorkLocationType::Office),
+        ClockCommand::ClockIn(WorkLocationType::Office, None),
         evidence(),
     )
     .await

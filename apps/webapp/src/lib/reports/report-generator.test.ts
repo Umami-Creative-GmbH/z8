@@ -69,7 +69,8 @@ vi.mock("@/db/schema", () => ({
 		status: "status",
 	},
 	employee: { id: "id" },
-	employeeRateHistory: {},
+	employeeEmploymentHistory: {},
+	timeEntry: {},
 	workPeriod: {},
 }));
 
@@ -78,6 +79,10 @@ vi.mock("@/lib/absences/absence-days-resolver", () => ({
 }));
 
 vi.mock("@/lib/effect/runtime", () => ({ runtime: { runPromise: vi.fn() } }));
+
+vi.mock("@/lib/employment-history/load-terms-in-force", () => ({
+	loadConfirmedTermsSpans: vi.fn(async () => []),
+}));
 
 vi.mock("@/lib/time-tracking/calculations", () => ({
 	calculateExpectedWorkHoursForEmployee: vi.fn(),

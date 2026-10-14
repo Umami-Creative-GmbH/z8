@@ -74,6 +74,18 @@
     },
     "currentlyClockedIn": "Sie sind derzeit eingestempelt",
     "deadline": "Deadline",
+    "drivingDetailsMissing": {
+      "description": "Ihre Organisation erwartet Fahrzeug- und Kilometerstandangaben für Ihre Arbeit. Fügen Sie diese zu diesen Arbeitszeiträumen hinzu.",
+      "missing": {
+        "endReading": "Kein Endkilometerstand",
+        "readings": "Keine Kilometerstände",
+        "startReading": "Kein Startkilometerstand",
+        "vehicle": "Kein Fahrzeug"
+      },
+      "open": "Im Kalender öffnen",
+      "title": "Fahrtdetails fehlen",
+      "truncated": "Es werden nur die neuesten Arbeitszeiträume aufgeführt. Vervollständigen Sie diese, um den Rest zu sehen."
+    },
     "errors": {
       "alreadyClockedIn": "Sie sind bereits eingestempelt",
       "appendReviewRequired": "Für das Einstempeln ist eine Überprüfung Ihres Zeitverlaufs erforderlich",
@@ -214,7 +226,10 @@
         "onBreak": "In Pause seit {time}"
       },
       "unreachableDescription": "Der Kiosk kann den Server nicht erreichen. Überprüfen Sie die Netzwerkverbindung; Stempeln funktioniert nur im Online-Modus.",
-      "unreachableTitle": "Kiosk offline"
+      "unreachableTitle": "Kiosk offline",
+      "vehicle": {
+        "back": "Zurück"
+      }
     },
     "manualEntry": {
       "addButton": "Manuellen Eintrag hinzufügen",
@@ -386,6 +401,7 @@
       "corrected": "Korrigiert",
       "date": "Datum",
       "description": "Beschreibung",
+      "drivingDetailsMissing": "Fahrtdetails fehlen",
       "duration": "Dauer",
       "emptyState": "Keine Zeiteinträge für diese Woche gefunden.",
       "recordedLocalTime": "Erfasste Ortszeit",
@@ -422,6 +438,58 @@
     "title": "Zeiterfassung",
     "unknownCategory": "Unbekannte Kategorie",
     "unknownProject": "Unbekanntes Projekt",
+    "vehicleUse": {
+      "archived": "archiviert",
+      "breakReading": "Kilometerstand bei der Pause (km)",
+      "breakReadingHint": "Optional. Beendet den Kilometerstand dieser Arbeit und beginnt den der nächsten.",
+      "changeLive": "Ändern",
+      "derivedDistance": "Gefahrene Strecke: {distance} km",
+      "distanceKm": "Gefahrene Strecke (km)",
+      "distanceText": "{distance} km gefahren",
+      "endKm": "Endkilometerstand (km)",
+      "expectedHint": "Ihre Organisation erwartet, dass Sie das gefahrene Fahrzeug und dessen Kilometerstände erfassen.",
+      "expenseReport": {
+        "action": "Zu Spesenabrechnung hinzufügen",
+        "add": "{distance} km hinzufügen",
+        "added": "In einer Spesenabrechnung",
+        "alreadyAdded": "Die Strecke dieser Arbeit ist bereits in einer Spesenabrechnung enthalten.",
+        "chooseReport": "Zu welcher Spesenabrechnung hinzufügen?",
+        "failed": "Die Strecke konnte der Spesenabrechnung nicht hinzugefügt werden. Bitte versuchen Sie es erneut.",
+        "newReport": "Neue Kilometerabrechnung",
+        "routeHint": "Datum und Strecke werden aus dieser Arbeit übernommen. Sie tragen die Route im Bericht ein.",
+        "untitledTrip": "Unbenannte Fahrt"
+      },
+      "liveChanged": "Fahrzeugnutzung geändert",
+      "liveChangeFailed": "Die Fahrzeugnutzung konnte nicht geändert werden",
+      "notRecorded": "Fahrzeugnutzung wurde nicht erfasst",
+      "notSentOffline": "Es konnte nicht mit diesem Offline-Stempelereignis gespeichert werden. Fügen Sie es dem Arbeitszeitraum hinzu, sobald Sie online sind.",
+      "noVehicle": "Kein Fahrzeug",
+      "ownVehicle": "Eigenes Fahrzeug",
+      "readingMissing": "–",
+      "readingsText": "{start} → {end} km",
+      "refusal": {
+        "archived": "Dieses Fahrzeug ist archiviert und kann nicht mehr ausgewählt werden.",
+        "distanceClaimed": "Die Distanz dieses Arbeitszeitraums ist in einer Spesenposition enthalten. Entfernen Sie den Eintrag aus der Spesenabrechnung, bevor Sie den Arbeitszeitraum teilen.",
+        "endBeforeStart": "Der Endstand kann nicht unter dem Anfangsstand liegen.",
+        "invalidDistance": "Geben Sie die gefahrene Strecke in ganzen Kilometern ein.",
+        "invalidReading": "Geben Sie Kilometerstände in ganzen Kilometern ein.",
+        "invalidVehicle": "Wählen Sie ein Fahrzeug der Organisation oder Ihr eigenes Fahrzeug.",
+        "notFound": "Das Fahrzeug wurde nicht gefunden.",
+        "off": "Für diesen Mitarbeiter wird keine Fahrzeugnutzung erfasst.",
+        "splitOutOfRange": "Der Kilometerstand bei der Teilung muss innerhalb der Kilometer des Arbeitszeitraums liegen."
+      },
+      "startKm": "Anfangsstand (km)",
+      "title": "Fahrzeugnutzung",
+      "unknownVehicle": "Unbekanntes Fahrzeug (nicht verfügbar)",
+      "vehicle": "Fahrzeug",
+      "warning": {
+        "distanceAboveLimit": "{distance} km sind mehr als {limit} km in einem Arbeitszeitraum.",
+        "onOtherLiveWork": "Dieses Fahrzeug ist bereits bei der laufenden Arbeit eines anderen Mitarbeiters erfasst.",
+        "speedAboveLimit": "Die gefahrene Distanz ergibt einen Durchschnitt von {speed} km/h über diesen Arbeitszeitraum, mehr als {limit} km/h.",
+        "startBelowLastEnd": "Der Anfangsstand liegt unter dem zuletzt erfassten Endstand dieses Fahrzeugs ({lastEndKm} km).",
+        "title": "Bitte überprüfen Sie die Fahrzeugnutzung"
+      }
+    },
     "welcomeBack": "Willkommen zurück, {name}",
     "workCategory": "Arbeitskategorie",
     "workLocation": "Arbeitsort",

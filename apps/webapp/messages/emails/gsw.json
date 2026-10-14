@@ -1,0 +1,218 @@
+{
+  "emails": {
+    "billing": {
+      "invoiceReady": {
+        "action": "Abrechnig öffne",
+        "amountLabel": "Fällige Betrag",
+        "body": "D Rächnig {invoiceNumber} für {organizationName} isch parat.",
+        "dueDateLabel": "Fälligkeitsdatum",
+        "subject": "Dini Z8-Rächnig {invoiceNumber} isch parat",
+        "title": "Dini Rächnig isch parat"
+      },
+      "paymentFailed": {
+        "action": "Zahlungsmethode aktualisieren",
+        "body": "Wir konnten {invoiceAmount} für {organizationName} nicht einziehen.",
+        "retry": "Bitte aktualisieren Sie Ihre Zahlungsmethode vor dem nächsten Versuch am {paymentRetryDate}, um einen Unterbruch des Dienstes zu vermeiden.",
+        "subject": "Handlungsbedarf: Z8-Zahlung fehlgeschlagen",
+        "title": "Ihre Zahlung ist fehlgeschlagen"
+      },
+      "subscriptionPaused": {
+        "action": "Abrechnung verwalten",
+        "body": "Das {planName}-Abonnement für {organizationName} ist pausiert.",
+        "limits": "Zeiterfassungsdaten bleiben verfügbar, aber kostenpflichtige Planfunktionen sind möglicherweise eingeschränkt, bis die Abrechnung wieder aufgenommen wird.",
+        "subject": "Ihr Z8-Abonnement ist pausiert",
+        "title": "Ihr Abonnement ist pausiert"
+      },
+      "subscriptionResumed": {
+        "action": "Abrechnungsdetails anzeigen",
+        "active": "Ihre kostenpflichtigen Z8-Funktionen sind wieder aktiv.",
+        "body": "Das {planName}-Abonnement für {organizationName} wurde am {resumeDate} wieder aufgenommen.",
+        "subject": "Ihr Z8-Abonnement wurde wieder aktiviert",
+        "title": "Ihr Abonnement wurde wieder aktiviert"
+      },
+      "trialEnding": {
+        "action": "Abrechnungseinstellungen überprüfen",
+        "body": "Ihre {planName}-Testversion für {organizationName} endet am {trialEndsAt}.",
+        "paymentMethod": "Um Z8 ohne Unterbruch weiterzunutzen, fügen Sie in den Abrechnungseinstellungen eine Zahlungsmethode hinzu.",
+        "subject": "{daysRemaining, plural, one {Ihre Z8-Testversion endet in # Tag} other {Ihre Z8-Testversion endet in # Tagen}}",
+        "subjectSoon": "Ihre Z8-Testversion endet bald",
+        "title": "Ihre Testversion läuft ab"
+      },
+      "values": {
+        "noDueDate": "nicht festgelegt",
+        "retrySoon": "bald",
+        "yourOrganization": "Ihre Organisation"
+      }
+    },
+    "common": {
+      "greeting": "Hallo {name},"
+    },
+    "details": {
+      "category": "Kategorie",
+      "correctedTimes": "Korrigierte Zeiten",
+      "date": "Datum",
+      "dates": "Daten",
+      "days": "Tage",
+      "notes": "Notizen",
+      "originalTimes": "Ursprüngliche Zeiten",
+      "range": "{start} – {end}",
+      "reason": "Grund"
+    },
+    "export": {
+      "categories": {
+        "absences": "Absenzen",
+        "auditLogs": "Audit-Logs",
+        "balanceAdjustments": "Arbeitszeitsaldo-Anpassungen",
+        "customers": "Kunden",
+        "employees": "Mitarbeitende",
+        "holidays": "Feiertage",
+        "projects": "Projekte",
+        "schedules": "Arbeitspläne",
+        "shifts": "Schichten",
+        "teams": "Teams",
+        "timeEntries": "Zeiterfassung",
+        "vacation": "Ferienregelungen",
+        "workPeriods": "Arbeitsperioden"
+      },
+      "organization": "Organisation",
+      "values": {
+        "yourOrganization": "Ihre Organisation"
+      }
+    },
+    "exportFailed": {
+      "action": "Erneut versuchen",
+      "body": "Leider hät din Dateexport für {organizationName} nöd chönne abgschlosse werde.",
+      "categories": "Aagfordereti Date",
+      "error": "Fähler",
+      "note": "Wänn dä Fähler witerhin uftritt, kontaktier de Support mit de Fählermäldig obedra. Es cha au hälfe, wänn weniger Datekategorie ufsmal exportiersch.",
+      "title": "Dateexport fählgschlage",
+      "unknownError": "Unbekannte Fähler"
+    },
+    "exportReady": {
+      "action": "Export-Verlauf öffne",
+      "body": "Din Dateexport für {organizationName} isch abgschlosse. Du chasch en us em Export-Verlauf in Z8 abelade.",
+      "categories": "Enthalteni Date",
+      "expiresAt": "Verfüegbar bis",
+      "fileSize": "Dateigrösse",
+      "note": "Mäld di als Organisations-Admin bi Z8 aa, zum d Datei abezlade. Jede Download startet mit eme neue, sichere Link. Nach em Datum obedra wird d Exportdatei automatisch glöscht.",
+      "title": "Din Dateexport isch parat"
+    },
+    "invitation": {
+      "action": "Iilaadig aanee",
+      "body": "{inviterName} hät di iiglade, {organizationName} als {role} biizträte.",
+      "email": "Dini E-Mail",
+      "greeting": "Hallo,",
+      "invitedBy": "Iiglade vo",
+      "note": "Wänn du die Iilaadig nöd erwartet häsch, chasch die E-Mail ignoriere.",
+      "organization": "Organisation",
+      "role": "Rolle",
+      "roles": {
+        "admin": "Admin",
+        "member": "Mitgliid",
+        "owner": "Inhaber"
+      },
+      "title": "Du bisch zu {organizationName} iiglade worde"
+    },
+    "layout": {
+      "actionFallback": "Wänn de Button nöd funktioniert, mach dä Link uf:",
+      "footer": "Die E-Mail isch vo Z8 gschickt worde."
+    },
+    "notification": {
+      "openAction": "Z8 öffne"
+    },
+    "organizationDeletion": {
+      "action": "Organisation widerherstelle",
+      "body": "{deletedByName} hät d Organisation {organizationName} zum Lösche vorgmerkt. Du chasch si bis zum {permanentDeletionDate} widerherstelle.",
+      "initiatedBy": "Initiiert vo",
+      "items": {
+        "absences": "Alli Abweseheite und Ferieguthabe",
+        "employees": "Alli Mitarbeiter, Teams und Manager-Zueordnige",
+        "members": "Alli Mitgliider und uusstehendi Iilaadige",
+        "projects": "Alli Projekt und iri Ziitzueordnige",
+        "settings": "Alli Iistellige, Ziitplän und Konfiguratione",
+        "timeEntries": "Alli Ziitiiträg und Arbetsziite"
+      },
+      "itemsTitle": "Was ändgültig glöscht wird:",
+      "note": "Wänn d Organisation wükli häsch wele lösche, muesch nüüt mache. Wänn nöd, stell si jetzt wider her und überprüef dini Kontosicherheit.",
+      "organization": "Organisation",
+      "permanentAt": "Ändgültigs Lösche",
+      "preview": "{organizationName} wird am {permanentDeletionDate} ändgültig glöscht.",
+      "requestedAt": "Löschig beaatrait",
+      "title": "Organisation zum Lösche vorgmerkt"
+    },
+    "passwordReset": {
+      "action": "Passwort zruggsetze",
+      "body": "Mir händ en Aafraag übercho, dis Passwort zruggzsetze. Bruuch de Button unte, zum es neus uswähle.",
+      "note": "Wänn du nöd drum bätte häsch, dis Passwort zruggzsetze, chasch die E-Mail ignoriere; dis Passwort bliibt s gliiche. De Link lauft in 1 Stund ab.",
+      "title": "Dis Passwort zruggsetze"
+    },
+    "scheduledExport": {
+      "dateRangeLabel": "Datumsberiich",
+      "empty": {
+        "body": "Din plante Export {scheduleName} isch usgfüehrt worde, aber es git nüüt zum Abelade.",
+        "noFile": "Für dä Durchlauf isch kei Datei erstellt worde.",
+        "title": "Plante Export abgschlosse"
+      },
+      "ready": {
+        "action": "Export abelade",
+        "body": "Din plante Export {scheduleName} isch erfolgriich abgschlosse worde.",
+        "linkExpiry": "Dä Download-Link isch für {lifetime} gültig und lauft am {expiresAt} ab.",
+        "title": "Plante Export parat"
+      },
+      "recordsLabel": "Iiträg",
+      "subject": "Plante Export: {scheduleName} ({dateRange})"
+    },
+    "securityAlert": {
+      "action": "Sicherheitsiistellige überprüefe",
+      "device": "Grät",
+      "event": "Ereignis",
+      "ipAddress": "IP-Adrässe",
+      "notYou": "Wenn du die Änderig nöd gmacht häsch, sichere jetzt dis Konto: ändere dis Passwort und überprüef dini Sicherheitsiistellige.",
+      "passwordChanged": {
+        "description": "S Passwort vo dim Z8-Konto isch gänderet worde.",
+        "title": "Passwort gänderet"
+      },
+      "time": "Ziit",
+      "twoFactorDisabled": {
+        "description": "Zwei-Faktor-Authentifizierig isch für dis Z8-Konto deaktiviert worde.",
+        "title": "Zwei-Faktor-Authentifizierig deaktiviert"
+      },
+      "twoFactorEnabled": {
+        "description": "Zwei-Faktor-Authentifizierig isch für dis Z8-Konto aktiviert worde.",
+        "title": "Zwei-Faktor-Authentifizierig aktiviert"
+      }
+    },
+    "subjects": {
+      "absenceRecordedByManager": "Absänz erfasst",
+      "absenceRequestApproved": "Absänzaatrag gnähmigt",
+      "absenceRequestRejected": "Absänzaatrag abglehnt",
+      "absenceRequestSubmitted": "Absänzaatrag iigreicht",
+      "approvalRequestSubmitted": "Neue Absänzaatrag wartet uf Gnähmigung",
+      "exportFailed": "Date-Export fählgschlage – {organizationName}",
+      "exportReady": "Din Date-Export isch parat – {organizationName}",
+      "organizationDeletion": "Organisation {organizationName} zum Lösche vorgmerkt",
+      "organizationInvitation": "Du bisch iiglade worde, {organizationName} biizträte",
+      "passwordChanged": "Sicherheitswarnig: Passwort gänderet",
+      "passwordReset": "Setz dis Passwort zrugg",
+      "teamMemberAdded": "Du bisch zu {teamName} hinzuegfüegt worde",
+      "teamMemberRemoved": "Du bisch us {teamName} entfernt worde",
+      "timeCorrectionApproved": "Ziitkorrektur gnähmigt",
+      "timeCorrectionRejected": "Ziitkorrektur abglehnt",
+      "timeCorrectionSubmitted": "Neui Ziitkorrektur wartet uf Gnähmigung",
+      "twoFactorDisabled": "Sicherheitswarnig: Zwei-Faktor-Authentifizierig deaktiviert",
+      "twoFactorEnabled": "Sicherheitswarnig: Zwei-Faktor-Authentifizierig aktiviert",
+      "verifyEmail": "Bestätig dini E-Mail-Adrässe"
+    },
+    "variables": {
+      "noReason": "Kei Grund aagee",
+      "noTime": "-",
+      "yourManager": "din Vorgesetzte"
+    },
+    "verification": {
+      "action": "E-Mail-Adrässe bestätige",
+      "body": "Willkomme bi Z8! Bitte bestätig dini E-Mail-Adrässe mit em Button unte, um dini Registrierig abzschlüsse.",
+      "note": "Wenn du kei Konto erstellt häsch, chasch die E-Mail ignoriere. De Link lauft in 1 Stund ab.",
+      "title": "Bestätig dini E-Mail-Adrässe"
+    }
+  }
+}

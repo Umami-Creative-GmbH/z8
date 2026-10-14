@@ -21,6 +21,12 @@
     "briefing": {
       "badge": "Dzisiaj",
       "description": "Przejrzyj elementy wymagające dzisiaj działania, a następnie przejdź bezpośrednio do odpowiedniego przepływu pracy.",
+      "items": {
+        "drivingDetailsMissing": {
+          "description": "Okresy pracy Twoich pracowników, w których brakuje pojazdu lub stanu licznika.",
+          "title": "Brakujące szczegóły przejazdu ({count})"
+        }
+      },
       "needsAction": {
         "description": "Zacznij tutaj, aby uzyskać najpilniejsze działania operacyjne.",
         "empty": "Wszystko w porządku. W tej chwili nie jest wymagane żadne działanie menedżera.",

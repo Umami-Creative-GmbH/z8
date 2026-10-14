@@ -134,6 +134,11 @@ export enum AuditAction {
 	POSITION_CAPTURE_ASSIGNMENT_SET = "position_capture.assignment_set",
 	POSITION_CAPTURE_ASSIGNMENT_REMOVED = "position_capture.assignment_removed",
 
+	// Vehicle Use Enablement Operations (#1119)
+	VEHICLE_USE_SETTINGS_CHANGED = "vehicle_use.settings_changed",
+	VEHICLE_USE_ASSIGNMENT_SET = "vehicle_use.assignment_set",
+	VEHICLE_USE_ASSIGNMENT_REMOVED = "vehicle_use.assignment_removed",
+
 	// Expense Officer Grant Operations
 	EXPENSE_OFFICER_GRANT_CREATED = "expense_officer.grant_created",
 	EXPENSE_OFFICER_GRANT_CHANGED = "expense_officer.grant_changed",
@@ -174,6 +179,9 @@ export enum AuditAction {
 	// Sick notes linked to or unlinked from an absence by an officer (#984)
 	PERSONNEL_FILE_SICK_NOTE_LINKED = "personnel_file.sick_note_linked",
 	PERSONNEL_FILE_SICK_NOTE_UNLINKED = "personnel_file.sick_note_unlinked",
+	// A certificate naming (or changing) the employee skill it proves, or no longer naming one (#1144)
+	PERSONNEL_FILE_SKILL_CERTIFICATE_LINKED = "personnel_file.skill_certificate_linked",
+	PERSONNEL_FILE_SKILL_CERTIFICATE_UNLINKED = "personnel_file.skill_certificate_unlinked",
 
 	// ICS Feed Operations (#991)
 	ICS_FEED_CREATED = "ics_feed.created",
@@ -189,6 +197,10 @@ export enum AuditAction {
 	REPORT_SHARE_LINK_CREATED = "report_share_link.created",
 	REPORT_SHARE_LINK_REVOKED = "report_share_link.revoked",
 	REPORT_SHARE_LINK_AUTO_REVOKED = "report_share_link.auto_revoked",
+
+	// Personal data exports (#811): who started or downloaded whose export, and which kind
+	PERSONAL_DATA_EXPORT_REQUESTED = "personal_data_export.requested",
+	PERSONAL_DATA_EXPORT_DOWNLOADED = "personal_data_export.downloaded",
 
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
@@ -303,6 +315,13 @@ export enum AuditAction {
 	KIOSK_TOKEN_ROTATED = "kiosk.token_rotated",
 	KIOSK_REVOKED = "kiosk.revoked",
 
+	// Organization vehicles (#1118); assigned driver changes are part of an update
+	VEHICLE_CREATED = "vehicle.created",
+	VEHICLE_UPDATED = "vehicle.updated",
+	VEHICLE_ARCHIVED = "vehicle.archived",
+	VEHICLE_RESTORED = "vehicle.restored",
+	VEHICLE_DELETED = "vehicle.deleted",
+
 	// Scheduled exports (#988): the schedule lifecycle and one entry per run. Automatic
 	// actions are attributed to the schedule owner.
 	SCHEDULED_EXPORT_CREATED = "scheduled_export.created",
@@ -388,6 +407,7 @@ export interface AuditLogEntry {
 		| "location_employee"
 		| "subarea_employee"
 		| "kiosk"
+		| "vehicle"
 		| "employee_assigned_location"
 		| "user"
 		| "kiosk_pin"
@@ -399,7 +419,8 @@ export interface AuditLogEntry {
 		| "ics_feed"
 		| "api_key"
 		| "report_share_link"
-		| "scheduled_export";
+		| "scheduled_export"
+		| "personal_data_export";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

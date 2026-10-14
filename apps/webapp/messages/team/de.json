@@ -108,6 +108,36 @@
       "noBalance": "Kein Guthaben"
     },
     "description": "Anzeigen und Verwalten der Mitarbeiter, die Sie direkt betreuen",
+    "driving": {
+      "columns": {
+        "calendar": "Kalender",
+        "date": "Datum",
+        "employee": "Mitarbeiter",
+        "missing": "Fehlend",
+        "time": "Erfasste Ortszeit"
+      },
+      "count": "{count, plural, one {Für # Arbeitszeitraum fehlen Fahrtdetails.} other {Für # Arbeitszeiträume fehlen Fahrtdetails.}}",
+      "descriptionAll": "Arbeitszeiträume, bei denen ein Fahrzeug oder ein Kilometerstand fehlt, obwohl eine Fahrzeugnutzung erwartet wird. Sie bleiben aufgeführt, bis die Angaben vervollständigt wurden.",
+      "descriptionManaged": "Arbeitszeiträume der von Ihnen verwalteten Mitarbeiter, bei denen ein Fahrzeug oder ein Kilometerstand fehlt, obwohl eine Fahrzeugnutzung erwartet wird. Sie bleiben aufgeführt, bis die Angaben vervollständigt wurden.",
+      "empty": "Bei keiner Arbeit fehlen Fahrtdetails.",
+      "filters": {
+        "allEmployees": "Alle Mitarbeiter",
+        "allTeams": "Alle Teams",
+        "employee": "Mitarbeiter",
+        "team": "Team"
+      },
+      "loading": "Fahrtdetails werden geladen",
+      "missing": {
+        "endReading": "Kein Endkilometerstand",
+        "readings": "Keine Kilometerstände",
+        "startReading": "Kein Startkilometerstand",
+        "vehicle": "Kein Fahrzeug"
+      },
+      "openCalendar": "Kalender",
+      "openCalendarOf": "Kalender von {name} öffnen",
+      "title": "Fahrtdetails fehlen",
+      "truncated": "Die neuesten {count} Arbeitszeiträume werden angezeigt. Filtern Sie nach Team oder Mitarbeiter, um den Rest zu sehen."
+    },
     "empty": {
       "action": "Zu den Mitarbeitereinstellungen gehen",
       "description": "Mitarbeiter, die Ihnen als Manager zugewiesen sind, erscheinen hier. Sie können Teamzuweisungen in den Mitarbeitereinstellungen verwalten.",

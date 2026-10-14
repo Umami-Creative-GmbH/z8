@@ -490,6 +490,15 @@ const SHELL_WORK_QUEUE = [
 		requiresSynchronousDefaultExport: true,
 	},
 	{
+		file: "src/app/[locale]/(app)/reports/vehicles/page.tsx",
+		fallbackComponent: "VehicleDistanceReportPageLoading",
+		contentComponent: "VehicleDistanceReportPageContent",
+		fallbackFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+		fallbackAriaLabel: "Loading the distance per vehicle report",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
 		file: "src/app/[locale]/(admin)/platform-admin/page.tsx",
 		fallbackComponent: "AdminDashboardLoading",
 		contentComponent: "AdminDashboardContent",
@@ -1455,7 +1464,7 @@ describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(67);
+		expect(workQueueFiles).toHaveLength(68);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 

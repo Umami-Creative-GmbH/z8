@@ -74,6 +74,18 @@
     },
     "currentlyClockedIn": "Vous êtes actuellement pointé à l'entrée",
     "deadline": "Échéance",
+    "drivingDetailsMissing": {
+      "description": "Votre organisation demande le véhicule et les relevés de compteur kilométrique pour votre travail. Ajoutez-les à ces périodes de travail.",
+      "missing": {
+        "endReading": "Aucun relevé de fin",
+        "readings": "Aucun relevé de compteur kilométrique",
+        "startReading": "Aucun relevé de début",
+        "vehicle": "Aucun véhicule"
+      },
+      "open": "Ouvrir dans le calendrier",
+      "title": "Détails de conduite manquants",
+      "truncated": "Seules les périodes de travail les plus récentes sont affichées. Complétez-les pour voir les autres."
+    },
     "errors": {
       "alreadyClockedIn": "Vous avez déjà pointé votre arrivée",
       "appendReviewRequired": "Le pointage d'arrivée nécessite une vérification de votre historique des heures",
@@ -214,7 +226,10 @@
         "onBreak": "En pause depuis {time}"
       },
       "unreachableDescription": "La borne ne parvient pas à joindre le serveur. Vérifiez la connexion réseau ; le pointage fonctionne uniquement en ligne.",
-      "unreachableTitle": "Borne hors ligne"
+      "unreachableTitle": "Borne hors ligne",
+      "vehicle": {
+        "back": "Retour"
+      }
     },
     "manualEntry": {
       "addButton": "Ajouter une saisie manuelle",
@@ -386,6 +401,7 @@
       "corrected": "Corrigé",
       "date": "Date",
       "description": "Description",
+      "drivingDetailsMissing": "Détails de conduite manquants",
       "duration": "Durée",
       "emptyState": "Aucune entrée de temps trouvée pour cette semaine.",
       "recordedLocalTime": "Heure locale enregistrée",
@@ -422,6 +438,58 @@
     "title": "Suivi du temps",
     "unknownCategory": "Catégorie inconnue",
     "unknownProject": "Projet inconnu",
+    "vehicleUse": {
+      "archived": "archivé",
+      "breakReading": "Relevé du compteur kilométrique à la pause (km)",
+      "breakReadingHint": "Facultatif. Termine le relevé de ce travail et commence celui du suivant.",
+      "changeLive": "Modifier",
+      "derivedDistance": "Distance parcourue : {distance} km",
+      "distanceKm": "Distance parcourue (km)",
+      "distanceText": "{distance} km parcourus",
+      "endKm": "Relevé de fin (km)",
+      "expectedHint": "Votre organisation vous demande d'enregistrer le véhicule conduit et ses relevés de compteur.",
+      "expenseReport": {
+        "action": "Ajouter à la note de frais",
+        "add": "Ajouter {distance} km",
+        "added": "Dans une note de frais",
+        "alreadyAdded": "La distance de ce travail figure déjà dans une note de frais.",
+        "chooseReport": "À quelle note de frais ajouter ?",
+        "failed": "Impossible d'ajouter la distance à la note de frais. Veuillez réessayer.",
+        "newReport": "Nouvelle note de frais kilométriques",
+        "routeHint": "La date et la distance sont renseignées à partir de ce travail. Vous saisissez l'itinéraire dans le rapport.",
+        "untitledTrip": "Trajet sans titre"
+      },
+      "liveChanged": "Utilisation du véhicule modifiée",
+      "liveChangeFailed": "Impossible de modifier l'utilisation du véhicule",
+      "notRecorded": "L'utilisation du véhicule n'a pas été enregistrée",
+      "notSentOffline": "Impossible de l'enregistrer avec ce pointage hors ligne. Ajoutez-le à la période de travail dès que vous serez en ligne.",
+      "noVehicle": "Aucun véhicule",
+      "ownVehicle": "Véhicule personnel",
+      "readingMissing": "–",
+      "readingsText": "{start} → {end} km",
+      "refusal": {
+        "archived": "Ce véhicule est archivé et ne peut plus être sélectionné.",
+        "distanceClaimed": "La distance de cette période de travail est associée à une note de frais. Supprimez cet élément de la note de frais avant de scinder la période de travail.",
+        "endBeforeStart": "Le relevé de fin ne peut pas être inférieur au relevé de début.",
+        "invalidDistance": "Saisissez la distance parcourue en kilomètres entiers.",
+        "invalidReading": "Saisissez les relevés du compteur kilométrique en kilomètres entiers.",
+        "invalidVehicle": "Choisissez un véhicule de l'organisation ou votre propre véhicule.",
+        "notFound": "Le véhicule est introuvable.",
+        "off": "L'utilisation d'un véhicule n'est pas enregistrée pour cet employé.",
+        "splitOutOfRange": "Les kilomètres au moment de la scission doivent être compris dans les kilomètres de la période de travail."
+      },
+      "startKm": "Relevé de début (km)",
+      "title": "Utilisation du véhicule",
+      "unknownVehicle": "Véhicule inconnu (indisponible)",
+      "vehicle": "Véhicule",
+      "warning": {
+        "distanceAboveLimit": "{distance} km est supérieur à {limit} km sur une seule période de travail.",
+        "onOtherLiveWork": "Ce véhicule est déjà enregistré sur la période de travail en cours d'un autre employé.",
+        "speedAboveLimit": "La distance parcourue implique une vitesse moyenne de {speed} km/h sur cette période de travail, ce qui dépasse {limit} km/h.",
+        "startBelowLastEnd": "Le relevé de début est inférieur au dernier relevé de fin enregistré pour ce véhicule ({lastEndKm} km).",
+        "title": "Veuillez vérifier l'utilisation du véhicule"
+      }
+    },
     "welcomeBack": "Ravi de vous revoir, {name}",
     "workCategory": "Catégorie de travail",
     "workLocation": "Lieu de travail",

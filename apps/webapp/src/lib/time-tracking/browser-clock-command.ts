@@ -1,8 +1,9 @@
 /**
  * Browser adoption of frozen clock commands (#279 / T15, resolution #263 §1–§3, §7).
  *
- * The page prepares one command request per clock action: version 2, or version 3
- * when it carries the position taken at the event (#826). The service
+ * The page prepares one command request per clock action: version 2, version 3
+ * when it carries the position taken at the event (#826), or version 4 when it
+ * carries vehicle use (#1122). The service
  * worker persists it in IndexedDB, resolves the clock-out target inside that same
  * transaction, and only then sends it. This module is the pure page half: when a
  * command may be frozen at all, and how a stored record reads back to the caller.
@@ -15,7 +16,9 @@ import {
 	type ClockCommandPosition,
 	type ClockOutCommand,
 	UNSTAMPED_CLOCK_COMMAND_VERSION,
+	VEHICLE_CLOCK_COMMAND_VERSION,
 } from "./clock-command";
+import type { ClockVehicleUse } from "./vehicle-use/clock-vehicle-use";
 import { isValidIanaTimezone } from "./timezone-capture";
 import { normalizeWorkLocationType, type WorkLocationType } from "./work-location";
 
@@ -45,6 +48,11 @@ export type ClockCommandCaptureRequest = {
 	 * command. Absent, it freezes version 2.
 	 */
 	position?: ClockCommandPosition;
+	/**
+	 * Vehicle use at the event (#1122): the worker then freezes a version 4
+	 * command, with the position (if any) before it.
+	 */
+	vehicleUse?: ClockVehicleUse;
 } & (
 	| { kind: "clock_in"; workLocationType: WorkLocationType }
 	| {
@@ -64,7 +72,13 @@ export type PreparedBrowserClockCommand =
 	| { ok: true; request: ClockCommandCaptureRequest }
 	| {
 			ok: false;
-			reason: "unavailable" | "context_changed" | "timezone_unknown" | "attribution_unsupported";
+			reason:
+				| "unavailable"
+				| "context_changed"
+				| "timezone_unknown"
+				| "attribution_unsupported"
+				/** Vehicle use cannot be frozen: the server or the worker lacks version 4. */
+				| "vehicle_use_unsupported";
 	  };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -157,6 +171,13 @@ export function prepareBrowserClockCommand(input: {
 	taskId?: string | null;
 	/** The position taken at this event, if the employee's capture is on and consented (#826). */
 	position?: ClockCommandPosition | null;
+	/** Vehicle use the employee entered for this event (#1122). */
+	vehicleUse?: ClockVehicleUse | null;
+	/**
+	 * The frozen versions the controlling service worker can build. Workers from
+	 * before #1122 name none and build only versions 2 and 3.
+	 */
+	workerCommandVersions?: readonly number[];
 }): PreparedBrowserClockCommand {
 	const { capabilities } = input;
 	if (
@@ -176,6 +197,19 @@ export function prepareBrowserClockCommand(input: {
 	if (!isValidIanaTimezone(input.timezone)) {
 		return { ok: false, reason: "timezone_unknown" };
 	}
+	// Typed readings are never dropped silently: a server or worker that cannot
+	// freeze version 4 leaves the choice of transport to the page.
+	const { vehicleUse } = input;
+	if (
+		vehicleUse &&
+		!(
+			capabilities.commandVersions.includes(VEHICLE_CLOCK_COMMAND_VERSION) &&
+			(input.workerCommandVersions ?? []).includes(VEHICLE_CLOCK_COMMAND_VERSION)
+		)
+	) {
+		return { ok: false, reason: "vehicle_use_unsupported" };
+	}
+	const positionVersion = vehicleUse ? VEHICLE_CLOCK_COMMAND_VERSION : CLOCK_COMMAND_VERSION;
 	const common = {
 		operationId: input.operationId,
 		admission: "delayed" as const,
@@ -184,9 +218,10 @@ export function prepareBrowserClockCommand(input: {
 		// Checked equal to the page origin above; typed here as a string.
 		context: { ...capabilities.context, server: input.session.origin },
 		// A server without version 3 gets the unstamped command; the event never waits.
-		...(input.position && capabilities.commandVersions.includes(CLOCK_COMMAND_VERSION)
+		...(input.position && capabilities.commandVersions.includes(positionVersion)
 			? { position: input.position }
 			: {}),
+		...(vehicleUse ? { vehicleUse } : {}),
 	};
 	if (input.kind === "clock_in") {
 		return {

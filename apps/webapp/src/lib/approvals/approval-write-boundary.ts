@@ -207,9 +207,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -407,6 +412,12 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record",
 		},
 		{
+			columns: ["driven_distance_km", "odometer_end_km", "odometer_start_km"],
+			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			operation: "update",
+			table: "time_record_work",
+		},
+		{
 			columns: [
 				"approval_state",
 				"duration_minutes",
@@ -423,9 +434,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -647,9 +663,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -700,9 +721,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -817,9 +843,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -921,9 +952,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -1004,9 +1040,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -1122,6 +1163,62 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 	],
 	"src/app/[locale]/(app)/time-tracking/actions/work-period-split.ts": [
 		{
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
+			functionName: "splitLegacyWorkPeriod",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: ["duration_minutes", "end_at"],
+			functionName: "splitLegacyWorkPeriod",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"allocation_kind",
+				"cost_center_id",
+				"is_billable",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"task_id",
+				"weight_percent",
+			],
+			functionName: "splitLegacyWorkPeriod",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "splitLegacyWorkPeriod",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+		},
+		{
 			columns: ["is_superseded", "superseded_by_id"],
 			functionName: "splitLegacyWorkPeriod",
 			operation: "update",
@@ -1136,6 +1233,8 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 		},
 		{
 			columns: [
+				"approval_status",
+				"canonical_record_id",
 				"clock_in_id",
 				"clock_out_id",
 				"duration_minutes",
@@ -1281,9 +1380,14 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],

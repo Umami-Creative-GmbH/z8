@@ -4,6 +4,12 @@ import {
 	instantFromDate,
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
+import {
+	sameWorkVehicleUse,
+	vehicleUseFromColumns,
+	type WorkVehicleUse,
+	type WorkVehicleUseColumns,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { canonicalJson } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
 import type { WorkPeriodEndpointFacts } from "./work-period-facts";
@@ -60,6 +66,11 @@ export interface TimeCorrectionSubmittedFacts {
 			projectId: string | null;
 			workCategoryId: string | null;
 			workLocationType: string | null;
+			/**
+			 * Vehicle use (#1120), present only when the period records some, so
+			 * facts of periods without it keep their exact shape and fingerprint.
+			 */
+			vehicleUse?: WorkVehicleUse;
 		};
 	};
 	requested: {
@@ -67,12 +78,16 @@ export interface TimeCorrectionSubmittedFacts {
 		clockOut: TimeCorrectionRequestedEndpoint | null;
 		workLocationType: TimeCorrectionRequestedValue;
 		workCategoryId: TimeCorrectionRequestedValue;
+		/** Present only when the proposal names vehicle use (#1120); null clears it. */
+		vehicleUse?: { kind: "set"; value: WorkVehicleUse | null };
 	};
 	changeMask: {
 		clockIn: boolean;
 		clockOut: boolean;
 		workLocation: boolean;
 		workCategory: boolean;
+		/** Present only when the proposal names vehicle use (#1120). */
+		vehicleUse?: boolean;
 	};
 }
 
@@ -104,7 +119,7 @@ export interface TimeCorrectionFactsInput {
 		projectId: string | null;
 		workCategoryId: string | null;
 		workLocationType: string | null;
-	};
+	} & Partial<WorkVehicleUseColumns>;
 	clockIn: TimeCorrectionEntryRow | null;
 	clockOut: TimeCorrectionEntryRow | null;
 	correction: {
@@ -112,6 +127,8 @@ export interface TimeCorrectionFactsInput {
 		/** Present only for the current contract. */
 		workLocationType?: string;
 		workCategoryId?: string | null;
+		/** Present only when the proposal names vehicle use (#1120). */
+		vehicleUse?: WorkVehicleUse | null;
 	};
 	/** The pending correction entries the submission appended or verified. */
 	corrections: {
@@ -193,6 +210,18 @@ function changes(requested: TimeCorrectionRequestedValue, current: string | null
 	return requested.kind === "set" && requested.value !== current;
 }
 
+/** The period's recorded vehicle use; periods read without the columns have none. */
+function periodVehicleUse(period: TimeCorrectionFactsInput["period"]): WorkVehicleUse | null {
+	if (period.vehicleKind === undefined || period.vehicleKind === null) return null;
+	return vehicleUseFromColumns({
+		vehicleKind: period.vehicleKind,
+		vehicleId: period.vehicleId ?? null,
+		odometerStartKm: period.odometerStartKm ?? null,
+		odometerEndKm: period.odometerEndKm ?? null,
+		drivenDistanceKm: period.drivenDistanceKm ?? null,
+	});
+}
+
 /**
  * Builds the submitted facts from the locked, requester-owned period and the
  * pending correction entries. Anything unverifiable throws `evidence_incomplete`
@@ -210,11 +239,18 @@ export function buildTimeCorrectionSubmittedFacts(
 			? null
 			: endpoint(period, "clock_out", input.clockOut, period.clockOutId, period.endTime);
 	if ((clockOut === null) !== (period.endTime === null)) return incomplete("interval");
+	const vehicleUseRequested =
+		Object.hasOwn(input.correction, "vehicleUse") && input.correction.vehicleUse !== undefined;
+	const requestedVehicleUse = input.correction.vehicleUse ?? null;
+	const recordedVehicleUse = periodVehicleUse(period);
 	const requested = {
 		clockIn: requestedEndpoint(period, "clock_in", input.corrections.clockIn, period.clockInId),
 		clockOut: requestedEndpoint(period, "clock_out", input.corrections.clockOut, period.clockOutId),
 		workLocationType: requestedValue(input.correction, "workLocationType"),
 		workCategoryId: requestedValue(input.correction, "workCategoryId"),
+		...(vehicleUseRequested
+			? { vehicleUse: { kind: "set" as const, value: requestedVehicleUse } }
+			: {}),
 	};
 	const intent: TimeCorrectionEvidenceIntent =
 		input.correction.action === "delete"
@@ -245,6 +281,7 @@ export function buildTimeCorrectionSubmittedFacts(
 				projectId: period.projectId,
 				workCategoryId: period.workCategoryId,
 				workLocationType: period.workLocationType,
+				...(recordedVehicleUse ? { vehicleUse: recordedVehicleUse } : {}),
 			},
 		},
 		requested,
@@ -253,6 +290,9 @@ export function buildTimeCorrectionSubmittedFacts(
 			clockOut: requested.clockOut !== null,
 			workLocation: changes(requested.workLocationType, period.workLocationType),
 			workCategory: changes(requested.workCategoryId, period.workCategoryId),
+			...(vehicleUseRequested
+				? { vehicleUse: !sameWorkVehicleUse(requestedVehicleUse, recordedVehicleUse) }
+				: {}),
 		},
 	};
 }

@@ -91,6 +91,23 @@ describe("formatInstant", () => {
 		expect(numericParts(timeWithSeconds)).toEqual([8, 30, 45]);
 	});
 
+	it.each(["de", "fr", "en-GB"])("pads morning hours in every 24-hour preset in %s", (locale) => {
+		const morning = parseInstant("2026-10-25T06:00:05Z");
+		const context = { locale, timezone: "+01:00", timeFormat: "24h" } as const;
+		expect(formatInstant(morning, context, "time")).toBe("07:00");
+		expect(formatInstant(morning, context, "timeWithSeconds")).toBe("07:00:05");
+		expect(formatInstant(morning, context, "dateTimeMedium")).toContain("07:00");
+	});
+
+	it("keeps numeric morning hours for 12-hour preferences", () => {
+		const morning = parseInstant("2026-10-25T06:00:00Z");
+		expect(
+			normalizeWhitespace(
+				formatInstant(morning, { locale: "en-US", timezone: "+01:00", timeFormat: "12h" }, "time"),
+			),
+		).toBe("7:00 AM");
+	});
+
 	it("rejects invalid timezones instead of falling back to the host timezone", () => {
 		expect(() =>
 			formatInstant(
@@ -192,21 +209,20 @@ describe("fixed-offset formatting", () => {
 		expect(normalizeWhitespace(berlinRules)).toContain("13:30");
 	});
 
-	it.each([
-		1.5,
-		Number.NaN,
-		Number.POSITIVE_INFINITY,
-	])("rejects non-integer offset %s", (offsetMinutes) => {
-		expect(() => formatUtcOffset(offsetMinutes)).toThrow(RangeError);
-		expect(() => offsetMinutesToTimeZoneId(offsetMinutes)).toThrow(RangeError);
-		expect(() =>
-			formatCapturedOffsetInstant(instant, {
-				locale: "en-US",
-				timeFormat: "24h",
-				offsetMinutes,
-			}),
-		).toThrow(RangeError);
-	});
+	it.each([1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+		"rejects non-integer offset %s",
+		(offsetMinutes) => {
+			expect(() => formatUtcOffset(offsetMinutes)).toThrow(RangeError);
+			expect(() => offsetMinutesToTimeZoneId(offsetMinutes)).toThrow(RangeError);
+			expect(() =>
+				formatCapturedOffsetInstant(instant, {
+					locale: "en-US",
+					timeFormat: "24h",
+					offsetMinutes,
+				}),
+			).toThrow(RangeError);
+		},
+	);
 
 	it.each([-1440, 1440])("rejects out-of-range offset %s", (offsetMinutes) => {
 		expect(() => formatUtcOffset(offsetMinutes)).toThrow(RangeError);

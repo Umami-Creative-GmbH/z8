@@ -41,6 +41,7 @@ import {
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { type WorkPeriodEntryTimes, workPeriodEntryTimesOf } from "@/lib/notifications/entry-times";
 import {
 	onTimeCorrectionApproved,
 	onTimeCorrectionRejected,
@@ -72,6 +73,13 @@ import {
 	validateTimeCorrectionTimezoneEvidence,
 } from "@/lib/time-tracking/time-correction-temporal";
 import type { TimeEntryTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
+import {
+	sameWorkVehicleUse,
+	vehicleUseColumns,
+	vehicleUseFromColumns,
+	type WorkVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import { vehicleColumnsMatch } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-sql";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import { assertWorkOccupancyFree } from "@/lib/time-tracking/work-occupancy";
 import type {
@@ -87,8 +95,10 @@ import {
 } from "../domain-adapters/legacy-write-coordinator";
 import {
 	type CurrentTimeCorrectionWorkflowContract,
+	namedVehicleUse,
 	normalizeTimeCorrectionOriginalWorkMetadata,
 	normalizeTimeCorrectionWorkflowPayload,
+	sameNamedVehicleUse,
 	type TimeCorrectionOriginalWorkMetadata,
 	type TimeCorrectionWorkflowPayload,
 } from "../domain-adapters/time-correction-contract";
@@ -269,10 +279,16 @@ type AutoCompletedApprovalResult = Extract<
 	{ kind: "auto_completed" }
 >;
 
-type TimeCorrectionAutoCompletionResult = TimeCorrectionApprovalResult & {
+type TimeCorrectionAutoCompletionResult = TimeCorrectionApprovalResult &
+	TimeCorrectionNotificationTimes;
+
+/** What the requester's decision notification (and its email) shows. */
+interface TimeCorrectionNotificationTimes {
 	originalNotificationTime: Date;
 	correctedNotificationTime: Date;
-};
+	/** The period as corrected, each endpoint at its own entry's offset (#1137). */
+	correctedNotificationTimes: WorkPeriodEntryTimes | null;
+}
 
 export type TimeCorrectionApprovalWorkflowResult =
 	| Exclude<ResolvePolicyAndCreateApprovalResult, AutoCompletedApprovalResult>
@@ -605,7 +621,8 @@ function sameOriginalWorkMetadata(
 ): boolean {
 	return (
 		left?.workLocationType === right?.workLocationType &&
-		left?.workCategoryId === right?.workCategoryId
+		left?.workCategoryId === right?.workCategoryId &&
+		sameNamedVehicleUse(left ?? {}, right ?? {})
 	);
 }
 
@@ -1416,6 +1433,12 @@ interface LockedTimeCorrectionPeriod {
 		| null;
 	workCategoryId: string | null;
 	deletedAt: Date | null;
+	/** Vehicle use columns (#1120); absent on rows read without them. */
+	vehicleKind?: "organization" | "own" | null;
+	vehicleId?: string | null;
+	odometerStartKm?: number | null;
+	odometerEndKm?: number | null;
+	drivenDistanceKm?: number | null;
 }
 
 interface LockedTimeCorrectionEntry {
@@ -1451,6 +1474,11 @@ interface LockedCanonicalWorkMetadata {
 		| CurrentTimeCorrectionWorkflowContract["workLocationType"]
 		| null;
 	workCategoryId: string | null;
+	vehicleKind?: "organization" | "own" | null;
+	vehicleId?: string | null;
+	odometerStartKm?: number | null;
+	odometerEndKm?: number | null;
+	drivenDistanceKm?: number | null;
 }
 
 interface PersistedLegacyTimeCorrectionApproval {
@@ -1492,10 +1520,9 @@ interface FinalizerEmployee {
 }
 
 interface TimeCorrectionTerminalDetailedResult
-	extends TimeCorrectionTerminalResult {
+	extends TimeCorrectionTerminalResult,
+		TimeCorrectionNotificationTimes {
 	period: WorkPeriodRecord;
-	originalNotificationTime: Date;
-	correctedNotificationTime: Date;
 }
 
 const TIME_CORRECTION_TIMEZONE_SOURCES = new Set([
@@ -1583,7 +1610,8 @@ function sameCorrectionPayload(
 					(expected as CurrentTimeCorrectionWorkflowContract)
 						.workLocationType &&
 					(actual as CurrentTimeCorrectionWorkflowContract).workCategoryId ===
-						(expected as CurrentTimeCorrectionWorkflowContract).workCategoryId))
+						(expected as CurrentTimeCorrectionWorkflowContract).workCategoryId &&
+						sameNamedVehicleUse(actual, expected)))
 		);
 	} catch {
 		return false;
@@ -2075,6 +2103,7 @@ function correctionSegment(input: {
 		projectId: string | null;
 		workCategoryId: string | null;
 		workLocationType: string | null;
+		vehicleUse?: WorkVehicleUse | null;
 	};
 }): TimeCorrectionSegment {
 	return {
@@ -2095,6 +2124,8 @@ function correctionSegment(input: {
 			projectId: input.attribution.projectId,
 			workCategoryId: input.attribution.workCategoryId,
 			workLocationType: input.attribution.workLocationType,
+			// Present only with vehicle use (#1120), keeping earlier receipts' shape.
+			...(input.attribution.vehicleUse ? { vehicleUse: input.attribution.vehicleUse } : {}),
 		},
 	};
 }
@@ -2234,6 +2265,11 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			pendingChanges: workPeriod.pendingChanges,
 			workLocationType: workPeriod.workLocationType,
 			workCategoryId: workPeriod.workCategoryId,
+			vehicleKind: workPeriod.vehicleKind,
+			vehicleId: workPeriod.vehicleId,
+			odometerStartKm: workPeriod.odometerStartKm,
+			odometerEndKm: workPeriod.odometerEndKm,
+			drivenDistanceKm: workPeriod.drivenDistanceKm,
 			deletedAt: workPeriod.deletedAt,
 			graphRevision: workPeriod.graphRevision,
 			projectId: workPeriod.projectId,
@@ -2292,11 +2328,19 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	) {
 		throw timeCorrectionFinalizationConflict("work_period_source_mismatch");
 	}
+	// Vehicle use (#1120): the requested change and the vehicle use it was made against.
+	const periodVehicleUse = vehicleUseFromColumns(period);
+	const requestedVehicleUse = currentCorrection ? namedVehicleUse(currentCorrection) : undefined;
+	const originalVehicleUse = expectedOriginalWorkMetadata
+		? namedVehicleUse(expectedOriginalWorkMetadata)
+		: undefined;
 	if (
 		expectedOriginalWorkMetadata &&
 		(normalizeWorkLocationType(period.workLocationType) !==
 			expectedOriginalWorkMetadata.workLocationType ||
-			period.workCategoryId !== expectedOriginalWorkMetadata.workCategoryId)
+			period.workCategoryId !== expectedOriginalWorkMetadata.workCategoryId ||
+			(originalVehicleUse !== undefined &&
+				!sameWorkVehicleUse(originalVehicleUse, periodVehicleUse)))
 	) {
 		throw timeCorrectionFinalizationConflict("original_work_metadata_mismatch");
 	}
@@ -2627,6 +2671,11 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 					recordKind: timeRecordWork.recordKind,
 					workLocationType: timeRecordWork.workLocationType,
 					workCategoryId: timeRecordWork.workCategoryId,
+					vehicleKind: timeRecordWork.vehicleKind,
+					vehicleId: timeRecordWork.vehicleId,
+					odometerStartKm: timeRecordWork.odometerStartKm,
+					odometerEndKm: timeRecordWork.odometerEndKm,
+					drivenDistanceKm: timeRecordWork.drivenDistanceKm,
 				})
 				.from(timeRecordWork)
 				.where(
@@ -2646,6 +2695,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				canonicalWork.recordKind !== "work" ||
 				canonicalWork.workLocationType !== period.workLocationType ||
 				canonicalWork.workCategoryId !== period.workCategoryId ||
+				!sameWorkVehicleUse(vehicleUseFromColumns(canonicalWork), periodVehicleUse) ||
 				(expectedOriginalWorkMetadata !== undefined &&
 					(normalizeWorkLocationType(canonicalWork.workLocationType) !==
 						expectedOriginalWorkMetadata.workLocationType ||
@@ -2704,7 +2754,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			currentCorrection !== null &&
 			currentCorrection.workLocationType ===
 				normalizeWorkLocationType(period.workLocationType) &&
-			currentCorrection.workCategoryId === period.workCategoryId;
+			currentCorrection.workCategoryId === period.workCategoryId &&
+			(requestedVehicleUse === undefined ||
+				sameWorkVehicleUse(requestedVehicleUse, periodVehicleUse));
 		if (
 			(currentCorrection || expectedApprovalWorkflowId !== null) &&
 			(input.transition.kind !== "approve" || !isUnmaterializedActivePeriod) &&
@@ -2809,6 +2861,11 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		clockInCorrection?.timestamp ??
 		clockOutCorrection?.timestamp ??
 		originalNotificationTime;
+	// The corrected period's endpoints: the correction entry when there is one, else the original.
+	const correctedNotificationTimes = workPeriodEntryTimesOf(
+		clockInCorrection ?? originalClockIn,
+		clockOutCorrection ?? originalClockOut,
+	);
 	const hasEndpointCorrection = correctionEntries.length > 0;
 	const adopted = adoptedScope
 		? {
@@ -2876,6 +2933,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				period: periodForResult,
 				originalNotificationTime,
 				correctedNotificationTime,
+				correctedNotificationTimes,
 			};
 		}
 		if (
@@ -2958,6 +3016,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			period: periodForResult,
 			originalNotificationTime,
 			correctedNotificationTime,
+			correctedNotificationTimes,
 		};
 	}
 
@@ -3057,6 +3116,13 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	);
 
 	const finalizedAt = instantToTimeCorrectionDate(input.finalizedAt);
+	// Requested vehicle use (#1120) is applied to the period and its canonical
+	// detail, guarded on the vehicle use the decision was made against.
+	const appliedVehicle =
+		requestedVehicleUse !== undefined && !correctedPeriod.isDeletion
+			? vehicleUseColumns(requestedVehicleUse)
+			: null;
+	const lockedVehicle = vehicleUseColumns(periodVehicleUse);
 	const updatedPeriods = await input.dbService.db
 		.update(workPeriod)
 		.set({
@@ -3081,6 +3147,15 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				? {
 						workLocationType: currentCorrection.workLocationType,
 						workCategoryId: currentCorrection.workCategoryId,
+					}
+				: {}),
+			...(appliedVehicle
+				? {
+						vehicleKind: appliedVehicle.vehicleKind,
+						vehicleId: appliedVehicle.vehicleId,
+						odometerStartKm: appliedVehicle.odometerStartKm,
+						odometerEndKm: appliedVehicle.odometerEndKm,
+						drivenDistanceKm: appliedVehicle.drivenDistanceKm,
 					}
 				: {}),
 			updatedAt: finalizedAt,
@@ -3120,6 +3195,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 								: eq(workPeriod.workCategoryId, period.workCategoryId),
 						]
 					: []),
+				...(appliedVehicle ? vehicleColumnsMatch(workPeriod, lockedVehicle) : []),
 				...(expectedApprovalWorkflowId
 					? [eq(workPeriod.approvalWorkflowId, expectedApprovalWorkflowId)]
 					: [isNull(workPeriod.approvalWorkflowId)]),
@@ -3190,6 +3266,15 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			.set({
 				workLocationType: currentCorrection.workLocationType,
 				workCategoryId: currentCorrection.workCategoryId,
+				...(appliedVehicle
+					? {
+							vehicleKind: appliedVehicle.vehicleKind,
+							vehicleId: appliedVehicle.vehicleId,
+							odometerStartKm: appliedVehicle.odometerStartKm,
+							odometerEndKm: appliedVehicle.odometerEndKm,
+							drivenDistanceKm: appliedVehicle.drivenDistanceKm,
+						}
+					: {}),
 			})
 			.where(
 				and(
@@ -3209,6 +3294,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 						: [
 								eq(timeRecordWork.workCategoryId, canonicalWork.workCategoryId),
 							]),
+					...(appliedVehicle ? vehicleColumnsMatch(timeRecordWork, lockedVehicle) : []),
 				),
 			)
 			.returning({ recordId: timeRecordWork.recordId });
@@ -3247,6 +3333,8 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			workLocationType: currentCorrection
 				? currentCorrection.workLocationType
 				: period.workLocationType,
+			vehicleUse:
+				requestedVehicleUse !== undefined ? requestedVehicleUse : periodVehicleUse,
 		};
 		const resultClockIn = clockInCorrection ?? originalClockIn;
 		const resultClockOut = clockOutCorrection ?? originalClockOut;
@@ -3287,6 +3375,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		period: periodForResult,
 		originalNotificationTime,
 		correctedNotificationTime,
+		correctedNotificationTimes,
 	};
 }
 
@@ -3525,6 +3614,8 @@ export async function lockTimeCorrectionSubmissionSourceInTransaction(input: {
 		| CurrentTimeCorrectionWorkflowContract["workLocationType"]
 		| null;
 	workCategoryId: string | null;
+	/** Recorded vehicle use (#1120). */
+	vehicleUse: WorkVehicleUse | null;
 	requesterUserId: string;
 }> {
 	const employeeRows = await input.dbService.db
@@ -3568,6 +3659,11 @@ export async function lockTimeCorrectionSubmissionSourceInTransaction(input: {
 			approvalWorkflowId: workPeriod.approvalWorkflowId,
 			workLocationType: workPeriod.workLocationType,
 			workCategoryId: workPeriod.workCategoryId,
+			vehicleKind: workPeriod.vehicleKind,
+			vehicleId: workPeriod.vehicleId,
+			odometerStartKm: workPeriod.odometerStartKm,
+			odometerEndKm: workPeriod.odometerEndKm,
+			drivenDistanceKm: workPeriod.drivenDistanceKm,
 		})
 		.from(workPeriod)
 		.where(
@@ -3598,7 +3694,16 @@ export async function lockTimeCorrectionSubmissionSourceInTransaction(input: {
 	) {
 		throw new Error("Time correction submission source is unavailable");
 	}
-	return { ...period, requesterUserId: requester.userId };
+	return {
+		id: period.id,
+		organizationId: period.organizationId,
+		employeeId: period.employeeId,
+		approvalWorkflowId: period.approvalWorkflowId,
+		workLocationType: period.workLocationType,
+		workCategoryId: period.workCategoryId,
+		vehicleUse: vehicleUseFromColumns(period),
+		requesterUserId: requester.userId,
+	};
 }
 
 type TimeCorrectionSubmissionResult = TimeCorrectionApprovalWorkflowResult & {
@@ -3812,6 +3917,7 @@ async function loadCanonicalAutoCompletionReplay(input: {
 			period,
 			originalNotificationTime: period.startTime,
 			correctedNotificationTime: period.startTime,
+			correctedNotificationTimes: await loadReplayCorrectedTimes(input, period, {}),
 		};
 	}
 	const corrections = (await input.dbService.db.query.timeEntry.findMany({
@@ -3890,12 +3996,50 @@ async function loadCanonicalAutoCompletionReplay(input: {
 		period,
 		originalNotificationTime,
 		correctedNotificationTime,
+		correctedNotificationTimes: await loadReplayCorrectedTimes(input, period, {
+			clockIn: clockInCorrection,
+			clockOut: clockOutCorrection,
+		}),
 		workBalanceDirtyMark: {
 			employeeId: input.requesterEmployeeId,
 			organizationId: input.organizationId,
 			dirtyFromDate,
 		},
 	};
+}
+
+/**
+ * The corrected period of a replayed decision for its notification: each corrected
+ * endpoint's correction entry, else the period's own entry for that endpoint.
+ */
+async function loadReplayCorrectedTimes(
+	input: { dbService: ApprovalDbService; organizationId: string; requesterEmployeeId: string },
+	period: WorkPeriodRecord,
+	corrections: {
+		clockIn?: LockedTimeCorrectionEntry | null;
+		clockOut?: LockedTimeCorrectionEntry | null;
+	},
+): Promise<WorkPeriodEntryTimes | null> {
+	const missingIds = [
+		corrections.clockIn ? null : period.clockInId,
+		corrections.clockOut ? null : period.clockOutId,
+	].filter((id): id is string => Boolean(id));
+	const endpoints =
+		missingIds.length === 0
+			? []
+			: await input.dbService.db.query.timeEntry.findMany({
+					where: and(
+						eq(timeEntry.organizationId, input.organizationId),
+						eq(timeEntry.employeeId, input.requesterEmployeeId),
+						inArray(timeEntry.id, missingIds),
+					),
+					columns: { id: true, timestamp: true, utcOffsetMinutes: true },
+				});
+	const periodEntry = (id: string | null) =>
+		id ? endpoints.find((entry) => entry.id === id) : undefined;
+	const clockIn = corrections.clockIn ?? periodEntry(period.clockInId);
+	if (!clockIn) return null;
+	return workPeriodEntryTimesOf(clockIn, corrections.clockOut ?? periodEntry(period.clockOutId));
 }
 
 export async function executeTimeCorrectionSubmissionInTransaction(
@@ -3932,6 +4076,10 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 					lockedSource.workLocationType,
 				),
 				workCategoryId: lockedSource.workCategoryId,
+				// The vehicle use the request was made against (#1120), only when it names one.
+				...(namedVehicleUse(correction) !== undefined
+					? { vehicleUse: lockedSource.vehicleUse }
+					: {}),
 			})
 		: undefined;
 	const { authority, context: transactionContext } =
@@ -4161,6 +4309,9 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 										workCategoryId: (
 											correction as CurrentTimeCorrectionWorkflowContract
 										).workCategoryId,
+										...(namedVehicleUse(correction) !== undefined
+											? { vehicleUse: namedVehicleUse(correction) }
+											: {}),
 									},
 								}
 							: {}),
@@ -4653,13 +4804,7 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 				dirtyFromDate: effects.terminal.dirtyFromDate,
 			});
 		}
-		notifyApprovedCorrection(
-			result.period,
-			request.entityId,
-			actor,
-			result.originalNotificationTime,
-			result.correctedNotificationTime,
-		);
+		notifyApprovedCorrection(result.period, request.entityId, actor, result);
 		return;
 	}
 	notifyRejectedCorrection(
@@ -4667,8 +4812,7 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 		request.entityId,
 		actor,
 		input.reason ?? request.rejectionReason ?? "",
-		result.originalNotificationTime,
-		result.correctedNotificationTime,
+		result,
 	);
 }
 
@@ -5746,7 +5890,7 @@ export function createTimeCorrectionApprovalWorkflow(
 		};
 		workMetadata?: Pick<
 			CurrentTimeCorrectionWorkflowContract,
-			"workLocationType" | "workCategoryId"
+			"workLocationType" | "workCategoryId" | "vehicleUse"
 		>;
 		originalWorkMetadata?: TimeCorrectionOriginalWorkMetadata;
 	},
@@ -6125,17 +6269,17 @@ function notifyApprovedCorrection(
 	period: WorkPeriodRecord,
 	entityId: string,
 	currentEmployee: CurrentApprover,
-	originalTime: Date,
-	correctedTime: Date,
+	times: TimeCorrectionNotificationTimes,
 ) {
 	void onTimeCorrectionApproved({
 		workPeriodId: entityId,
 		employeeUserId: period.employee.userId,
 		employeeName: period.employee.user.name,
 		organizationId: period.employee.organizationId,
-		originalTime,
-		correctedTime,
+		originalTime: times.originalNotificationTime,
+		correctedTime: times.correctedNotificationTime,
 		approverName: currentEmployee.user.name,
+		corrected: times.correctedNotificationTimes,
 	});
 }
 
@@ -6144,17 +6288,17 @@ function notifyRejectedCorrection(
 	entityId: string,
 	currentEmployee: CurrentApprover,
 	reason: string,
-	originalTime: Date,
-	correctedTime: Date,
+	times: TimeCorrectionNotificationTimes,
 ) {
 	void onTimeCorrectionRejected({
 		workPeriodId: entityId,
 		employeeUserId: period.employee.userId,
 		employeeName: period.employee.user.name,
 		organizationId: period.employee.organizationId,
-		originalTime,
-		correctedTime,
+		originalTime: times.originalNotificationTime,
+		correctedTime: times.correctedNotificationTime,
 		approverName: currentEmployee.user.name,
+		corrected: times.correctedNotificationTimes,
 		rejectionReason: reason,
 	});
 }
@@ -6214,6 +6358,7 @@ function persistApprovedTimeCorrection(
 					: undefined,
 				originalNotificationTime: result.originalNotificationTime,
 				correctedNotificationTime: result.correctedNotificationTime,
+				correctedNotificationTimes: result.correctedNotificationTimes,
 			};
 		},
 		catch: (error) => error as AnyAppError,
@@ -6263,27 +6408,15 @@ function completeApprovedTimeCorrectionAfterCommit(
 function notifyApprovedTimeCorrectionAfterCommit(
 	entityId: string,
 	currentEmployee: CurrentApprover,
-	result: {
-		period: WorkPeriodRecord;
-		originalNotificationTime: Date;
-		correctedNotificationTime: Date;
-	},
+	result: { period: WorkPeriodRecord } & TimeCorrectionNotificationTimes,
 ) {
 	return Effect.sync(() =>
-		notifyApprovedCorrection(
-			result.period,
-			entityId,
-			currentEmployee,
-			result.originalNotificationTime,
-			result.correctedNotificationTime,
-		),
+		notifyApprovedCorrection(result.period, entityId, currentEmployee, result),
 	);
 }
 
-type RejectedTimeCorrectionResult = TimeCorrectionApprovalResult & {
-	originalNotificationTime: Date;
-	correctedNotificationTime: Date;
-};
+type RejectedTimeCorrectionResult = TimeCorrectionApprovalResult &
+	TimeCorrectionNotificationTimes;
 
 function persistRejectedTimeCorrection(
 	dbService: ApprovalDbService,
@@ -6366,6 +6499,7 @@ function persistRejectedTimeCorrection(
 			period: result.period,
 			originalNotificationTime: result.originalNotificationTime,
 			correctedNotificationTime: result.correctedNotificationTime,
+			correctedNotificationTimes: result.correctedNotificationTimes,
 		} satisfies RejectedTimeCorrectionResult;
 	});
 }
@@ -6382,8 +6516,7 @@ function notifyRejectedTimeCorrectionAfterCommit(
 			entityId,
 			currentEmployee,
 			reason,
-			result.originalNotificationTime,
-			result.correctedNotificationTime,
+			result,
 		),
 	);
 }

@@ -15,6 +15,7 @@ import {
 	workPolicyScheduleDay,
 } from "@/db/schema";
 import { env } from "@/env";
+import { defaultStatutoryMinimumDays } from "@/lib/absences/vacation-policy-settings";
 import { auth, runAuthMutation } from "@/lib/auth";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import {
@@ -562,6 +563,9 @@ export const OnboardingServiceLive = Layer.effect(
 							allowCarryover: data.allowCarryover,
 							maxCarryoverDays: data.maxCarryoverDays?.toString() || null,
 							carryoverExpiryMonths: data.allowCarryover ? 3 : null,
+							// Proration defaults of every new policy (#1109)
+							prorateInStartAndExitYear: true,
+							statutoryMinimumDays: defaultStatutoryMinimumDays(data.defaultAnnualDays.toString()),
 							createdBy: session.user.id,
 						});
 

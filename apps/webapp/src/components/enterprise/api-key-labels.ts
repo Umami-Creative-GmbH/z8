@@ -16,6 +16,25 @@ export function useApiKeyScopeLabels(): Record<ApiKeyScope, string> {
 		"employees:read": t("settings.apiKeys.scopeLabel.employeesRead", "Read employees"),
 		"projects:read": t("settings.apiKeys.scopeLabel.projectsRead", "Read projects"),
 		"customers:read": t("settings.apiKeys.scopeLabel.customersRead", "Read customers"),
+		"custom-fields:read-restricted": t(
+			"settings.apiKeys.scopeLabel.customFieldsReadRestricted",
+			"Read restricted custom fields",
+		),
+	};
+}
+
+/** What a sensitive key scope exposes, shown with its checkbox. Other scopes have none. */
+export function useApiKeyScopeWarnings(): Partial<Record<ApiKeyScope, string>> {
+	const { t } = useTranslate();
+	return {
+		"absences:read-health": t(
+			"settings.apiKeys.scopeWarning.absencesReadHealth",
+			"Shows sick absences with their category and sick detail. Grant it only to integrations that need health data.",
+		),
+		"custom-fields:read-restricted": t(
+			"settings.apiKeys.scopeWarning.customFieldsReadRestricted",
+			"Adds the custom fields only managers or admins see, such as salary bands, to employees, projects and customers. Without it, a key reads only fields every member sees.",
+		),
 	};
 }
 

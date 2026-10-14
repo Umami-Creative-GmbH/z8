@@ -1492,6 +1492,139 @@
       "when": 1802620800000,
       "tag": "0212_scheduled_export_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 213,
+      "version": "7",
+      "when": 1802707200000,
+      "tag": "0213_vacation_policy_proration_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 214,
+      "version": "7",
+      "when": 1802793600000,
+      "tag": "0214_vacation_adjustment_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 215,
+      "version": "7",
+      "when": 1802880000000,
+      "tag": "0215_absence_setting_proration_notice",
+      "breakpoints": true
+    },
+    {
+      "idx": 216,
+      "version": "7",
+      "when": 1803398400000,
+      "tag": "0216_personal_data_export",
+      "breakpoints": true
+    },
+    {
+      "idx": 217,
+      "version": "7",
+      "when": 1803484800000,
+      "tag": "0217_personal_data_export_admin_notice",
+      "breakpoints": true
+    },
+    {
+      "idx": 218,
+      "version": "7",
+      "when": 1803571200000,
+      "tag": "0218_personal_data_export_reminder",
+      "breakpoints": true
+    },
+    {
+      "idx": 219,
+      "version": "7",
+      "when": 1803657600000,
+      "tag": "0219_skill_certificate_link",
+      "breakpoints": true
+    },
+    {
+      "idx": 220,
+      "version": "7",
+      "when": 1803744000000,
+      "tag": "0220_employee_skill_expiry_date",
+      "breakpoints": true
+    },
+    {
+      "idx": 221,
+      "version": "7",
+      "when": 1803830400000,
+      "tag": "0221_skill_expiry_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 222,
+      "version": "7",
+      "when": 1803916800000,
+      "tag": "0222_organization_vehicles",
+      "breakpoints": true
+    },
+    {
+      "idx": 223,
+      "version": "7",
+      "when": 1804003200000,
+      "tag": "0223_vehicle_use_enablement",
+      "breakpoints": true
+    },
+    {
+      "idx": 224,
+      "version": "7",
+      "when": 1804089600000,
+      "tag": "0224_work_vehicle_use",
+      "breakpoints": true
+    },
+    {
+      "idx": 225,
+      "version": "7",
+      "when": 1804176000000,
+      "tag": "0225_mileage_item_source_work_period",
+      "breakpoints": true
+    },
+    {
+      "idx": 226,
+      "version": "7",
+      "when": 1804262400000,
+      "tag": "0226_driving_details_missing_reminder",
+      "breakpoints": true
+    },
+    {
+      "idx": 227,
+      "version": "7",
+      "when": 1804348800000,
+      "tag": "0227_closed_month_canonical_vehicle_use",
+      "breakpoints": true
+    },
+    {
+      "idx": 228,
+      "version": "7",
+      "when": 1804435200000,
+      "tag": "0228_employment_terms_numeric_wage",
+      "breakpoints": true
+    },
+    {
+      "idx": 229,
+      "version": "7",
+      "when": 1804521600000,
+      "tag": "0229_rate_history_merge_into_terms",
+      "breakpoints": true
+    },
+    {
+      "idx": 230,
+      "version": "7",
+      "when": 1804608000000,
+      "tag": "0230_drop_employee_current_hourly_rate",
+      "breakpoints": true
+    },
+    {
+      "idx": 231,
+      "version": "7",
+      "when": 1804694400000,
+      "tag": "0231_absence_change_requests",
+      "breakpoints": true
     }
   ]
 }

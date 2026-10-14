@@ -51,6 +51,11 @@ vi.mock("@/lib/time-tracking/timezone-capture", () => ({
 	getBrowserTimezone: mocks.getBrowserTimezone,
 }));
 
+// Vehicle use off; clock-vehicle-use.test.tsx covers the vehicle use the clock asks (#1122).
+vi.mock("@/components/time-tracking/clock-vehicle-use", async () =>
+	(await import("./clock-vehicle-use.test-stub")).vehicleUseOffModule(),
+);
+
 vi.mock("@/app/[locale]/(app)/settings/profile/actions", () => ({
 	updateTimezone: mocks.updateTimezone,
 }));

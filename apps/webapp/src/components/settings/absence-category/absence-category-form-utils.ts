@@ -1,4 +1,5 @@
 import type { AbsenceCategoryType } from "@/app/[locale]/(app)/settings/vacation/actions";
+import { getBuiltInAbsenceCategoryTranslations } from "@/lib/absences/built-in-category-translations";
 import { canRequireDeputy } from "@/lib/absences/deputy";
 
 export interface AbsenceCategoryForSettings {
@@ -62,6 +63,31 @@ function normalizeTranslationMap(value: Record<string, string>) {
 	return Object.fromEntries(entries);
 }
 
+export function getAbsenceCategoryTranslationValues(
+	type: AbsenceCategoryType,
+	nameTranslations: Record<string, string> | null = null,
+	descriptionTranslations: Record<string, string> | null = null,
+) {
+	if (type === "custom") {
+		return {
+			nameTranslations: { ...nameTranslations },
+			descriptionTranslations: { ...descriptionTranslations },
+		};
+	}
+
+	const defaults = getBuiltInAbsenceCategoryTranslations(type);
+	return {
+		nameTranslations: {
+			...defaults.nameTranslations,
+			...normalizeTranslationMap(nameTranslations ?? {}),
+		},
+		descriptionTranslations: {
+			...defaults.descriptionTranslations,
+			...normalizeTranslationMap(descriptionTranslations ?? {}),
+		},
+	};
+}
+
 export function getAbsenceCategoryFormValues(
 	existingCategory?: AbsenceCategoryForSettings,
 ): AbsenceCategoryFormValues {
@@ -77,8 +103,11 @@ export function getAbsenceCategoryFormValues(
 		name: existingCategory.name,
 		type: existingCategory.type,
 		description: existingCategory.description ?? "",
-		nameTranslations: { ...(existingCategory.nameTranslations ?? {}) },
-		descriptionTranslations: { ...(existingCategory.descriptionTranslations ?? {}) },
+		...getAbsenceCategoryTranslationValues(
+			existingCategory.type,
+			existingCategory.nameTranslations,
+			existingCategory.descriptionTranslations,
+		),
 		requiresWorkTime: existingCategory.requiresWorkTime,
 		requiresApproval: existingCategory.requiresApproval,
 		countsAgainstVacation: existingCategory.countsAgainstVacation,

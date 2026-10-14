@@ -1,11 +1,13 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { canonicalizeNamespaces } from "./catalog-slices";
 import { loadRouteTranslations } from "./load-translations";
 import {
 	ALL_LANGUAGES,
-	ALL_NAMESPACES,
+	CATALOG_NAMESPACES,
 	loadNamespaceImport,
+	loadNamespaces,
 	mergeTreeTranslations,
 } from "./shared";
 
@@ -47,7 +49,7 @@ describe("Tolgee route translations", () => {
 	});
 
 	it("keeps a namespace file for every supported locale", () => {
-		for (const namespace of ALL_NAMESPACES) {
+		for (const namespace of CATALOG_NAMESPACES) {
 			for (const locale of ALL_LANGUAGES) {
 				expect(
 					existsSync(
@@ -123,6 +125,22 @@ describe("Tolgee route translations", () => {
 				},
 			},
 		});
+	});
+
+	it("leaves the mailer's emails namespace out of the complete server catalog", async () => {
+		const translations = await loadRouteTranslations("en");
+
+		expect(translations.en).not.toHaveProperty("emails");
+		expect(translations.en).not.toHaveProperty(["emails:emails"]);
+	});
+
+	it("loads the emails namespace only when the mailer asks for it", async () => {
+		const translations = await loadNamespaces("en", ["emails"], { strict: true });
+
+		expect(translations.en).toMatchObject({ emails: { common: { greeting: "Hi {name}," } } });
+		expect(() => canonicalizeNamespaces(["common", "emails"])).toThrow(
+			"Unsupported translation namespace: emails",
+		);
 	});
 
 	it("caches bundled translations with the max cache profile", async () => {

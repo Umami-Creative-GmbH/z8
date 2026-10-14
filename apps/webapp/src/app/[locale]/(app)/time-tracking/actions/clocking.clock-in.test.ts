@@ -77,6 +77,22 @@ describe("web clock-in adapter", () => {
 		expect(state.run.mock.calls[1]?.[0]).not.toHaveProperty("position");
 	});
 
+	it("carries the web's vehicle use beside the body, and drops a malformed one (#1122)", async () => {
+		const vehicleUse = {
+			vehicle: { kind: "organization", vehicleId: "f1122000-0000-4000-8000-0000000000a1" },
+			startKm: 12_000,
+		};
+
+		await clockIn("office", { submissionId, vehicleUse });
+		await clockIn("office", { submissionId, vehicleUse: { vehicle: { kind: "lorry" } } });
+
+		expect(state.run.mock.calls[0]?.[0]).toMatchObject({
+			vehicleUse,
+			body: { kind: "clock_in" },
+		});
+		expect(state.run.mock.calls[1]?.[0]).not.toHaveProperty("vehicleUse");
+	});
+
 	it("defaults to the office and names an unkeyed request with a server identity", async () => {
 		await clockIn();
 

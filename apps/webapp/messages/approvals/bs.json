@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Zahtjev za odsustvo je odobren",
+    "absenceChange": {
+      "afternoon": "Poslijepodne",
+      "cancelAll": "Otkaži cjelokupno odsustvo",
+      "cancellationTitle": "Otkazivanje odsustva",
+      "category": "Kategorija odsustva",
+      "displacedVacation": "Datumi godišnjeg odmora zamjenjuju se po odobrenju",
+      "exactHours": "Tačni evidentirani sati",
+      "fullDay": "Cijeli dan",
+      "morning": "Prijepodne",
+      "original": "Evidentirani datumi",
+      "originalEndCoverage": "Evidentirani dan završetka",
+      "originalInterval": "Evidentirani sati",
+      "originalStartCoverage": "Evidentirani dan početka",
+      "proposed": "Predložena promjena",
+      "proposedEndCoverage": "Predloženi dan završetka",
+      "proposedInterval": "Predloženi sati",
+      "proposedStartCoverage": "Predloženi dan početka",
+      "range": "{range}",
+      "reason": "Razlog",
+      "reasonValue": "{reason}",
+      "title": "Promjena odsustva"
+    },
     "absenceRejected": "Zahtjev za odsustvo je odbijen",
     "absenceRequests": "Zahtjevi za odsustvo",
     "absenceRequestsDescription": "Pregledajte i odobrite zahtjeve za odsustvo članova vašeg tima",
@@ -304,6 +326,8 @@
       "dayTotals": "Ukupno po danu",
       "difference": "Razlika",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Nedostaju detalji o vožnji",
+      "drivingDetailsMissingWork": "Nedostaje vozilo ili stanje kilometraže",
       "employee": "Zaposlenik",
       "holidays": "Državni praznici",
       "openCalendar": "Otvori kalendar za ovaj period",
@@ -413,6 +437,7 @@
     "totalCount": "{totalCount} na čekanju",
     "type": "Vrsta",
     "types": {
+      "absence_change_request": "Promjene odsustva",
       "absence_entry": "Zahtjevi za odsustvo",
       "period_submission": "Podnošenja perioda",
       "time_entry": "Ispravke radnog vremena",
@@ -421,6 +446,15 @@
     },
     "unifiedInboxBannerDescription": "Pregledajte sve vrste odobrenja na jednom mjestu uz filtriranje, grupne radnje i praćenje SLA.",
     "unifiedInboxBannerTitle": "Isprobajte novo objedinjeno sanduče",
+    "vehicleUse": "Korištenje vozila",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km je više od {limit} km u jednom radnom periodu.",
+      "onOtherLiveWork": "Ovo vozilo je već evidentirano u aktivnom radu drugog zaposlenika.",
+      "speedAboveLimit": "Pređena udaljenost implicira prosjek od {speed} km/h tokom ovog radnog perioda, što je više od {limit} km/h.",
+      "startBelowLastEnd": "Početno stanje je manje od zadnjeg zabilježenog završnog stanja ovog vozila ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Molimo provjerite",
     "viewExpenseClaim": "Pregledaj zahtjev i račune",
     "viewExpenseReport": "Pregledaj podneseni izvještaj i račune",
     "workBalance": {

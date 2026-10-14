@@ -18,16 +18,32 @@ import {
 import type { LocaleTranslationMap } from "@/db/schema/absence";
 import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
+import type { VacationBalance } from "@/lib/absences/types";
+import {
+	loadManualVacationAdjustments,
+	loadVacationAdjustmentSums,
+	type ManualVacationAdjustment,
+	type VacationAdjustmentSums,
+} from "@/lib/absences/vacation-adjustments";
+import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
+import {
+	checkStatutoryMinimumDays,
+	defaultStatutoryMinimumDays,
+	isAccrualPolicy,
+} from "@/lib/absences/vacation-policy-settings";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
+import { calendarYearAt, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
 	ConflictError,
 	DatabaseError,
 	NotFoundError,
+	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeSettingsActorContext,
@@ -106,6 +122,27 @@ function normalizeAbsenceCategoryData(data: AbsenceCategoryWriteData) {
 			? { deputyRequired: canRequireDeputy(data.type) && data.deputyRequired === true }
 			: {}),
 	};
+}
+
+const STATUTORY_MINIMUM_DAYS_MESSAGES = {
+	not_a_number: "The statutory minimum must be a number",
+	negative: "The statutory minimum cannot be negative",
+	above_annual_days: "The statutory minimum cannot exceed the policy's annual days",
+} as const;
+
+function rejectInvalidStatutoryMinimumDays(
+	statutoryMinimumDays: string,
+	defaultAnnualDays: string,
+) {
+	const problem = checkStatutoryMinimumDays(statutoryMinimumDays, defaultAnnualDays);
+	if (!problem) return Effect.void;
+	return Effect.fail(
+		new ValidationError({
+			message: STATUTORY_MINIMUM_DAYS_MESSAGES[problem],
+			field: "statutoryMinimumDays",
+			value: statutoryMinimumDays,
+		}),
+	);
 }
 
 function rejectBlankAbsenceCategoryName() {
@@ -280,6 +317,10 @@ export async function createVacationPolicy(data: {
 	allowCarryover: boolean;
 	maxCarryoverDays?: string;
 	carryoverExpiryMonths?: number;
+	/** Prorate in start and exit year (#1109); on when omitted. */
+	prorateInStartAndExitYear?: boolean;
+	/** Floor of the prorated allowance (#1109); min(20, defaultAnnualDays) when omitted. */
+	statutoryMinimumDays?: string;
 }): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect>> {
 	const effect = Effect.gen(function* () {
 		const actor = yield* getEmployeeSettingsActorContext({
@@ -291,6 +332,10 @@ export async function createVacationPolicy(data: {
 			resource: "vacation_policy",
 			action: "create",
 		});
+
+		const statutoryMinimumDays =
+			data.statutoryMinimumDays ?? defaultStatutoryMinimumDays(data.defaultAnnualDays);
+		yield* rejectInvalidStatutoryMinimumDays(statutoryMinimumDays, data.defaultAnnualDays);
 
 		const dbService = yield* DatabaseService;
 
@@ -342,6 +387,8 @@ export async function createVacationPolicy(data: {
 						allowCarryover: data.allowCarryover,
 						maxCarryoverDays: data.maxCarryoverDays,
 						carryoverExpiryMonths: data.carryoverExpiryMonths,
+						prorateInStartAndExitYear: data.prorateInStartAndExitYear ?? true,
+						statutoryMinimumDays,
 						createdBy: actor.session.user.id,
 					})
 					.returning();
@@ -382,6 +429,10 @@ export async function updateVacationPolicy(
 		allowCarryover: boolean;
 		maxCarryoverDays?: string;
 		carryoverExpiryMonths?: number;
+		/** Prorate in start and exit year (#1109); unchanged when omitted. */
+		prorateInStartAndExitYear?: boolean;
+		/** Floor of the prorated allowance (#1109); unchanged when omitted. */
+		statutoryMinimumDays?: string;
 	},
 ): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect>> {
 	const effect = Effect.gen(function* () {
@@ -390,35 +441,37 @@ export async function updateVacationPolicy(
 		});
 		const dbService = yield* DatabaseService;
 
-		// Step 3: Get the policy to check permissions
-		const policy = yield* dbService
-			.query("getPolicy", async () => {
-				const p = await dbService.db.query.vacationAllowance.findFirst({
-					where: eq(vacationAllowance.id, policyId),
-				});
-
-				if (!p) {
-					throw new Error("Policy not found");
-				}
-
-				return p;
-			})
-			.pipe(
-				Effect.mapError(
-					() =>
-						new NotFoundError({
-							message: "Policy not found",
-							entityType: "vacation_policy",
-							entityId: policyId,
-						}),
+		// Step 3: Get the policy in the actor's organization to check permissions
+		const policy = yield* dbService.query("getPolicy", async () => {
+			return await dbService.db.query.vacationAllowance.findFirst({
+				where: and(
+					eq(vacationAllowance.id, policyId),
+					eq(vacationAllowance.organizationId, actor.organizationId),
 				),
+			});
+		});
+
+		if (!policy) {
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Policy not found",
+					entityType: "vacation_policy",
+					entityId: policyId,
+				}),
 			);
+		}
 
 		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
 			message: "Insufficient permissions",
 			resource: "vacation_policy",
 			action: "update",
 		});
+
+		// The stored statutory minimum must still fit when only the annual days change.
+		yield* rejectInvalidStatutoryMinimumDays(
+			data.statutoryMinimumDays ?? policy.statutoryMinimumDays,
+			data.defaultAnnualDays,
+		);
 
 		// Step 5: If setting as company default, unset previous default
 		if (data.isCompanyDefault && !policy.isCompanyDefault) {
@@ -452,8 +505,15 @@ export async function updateVacationPolicy(
 						allowCarryover: data.allowCarryover,
 						maxCarryoverDays: data.maxCarryoverDays,
 						carryoverExpiryMonths: data.carryoverExpiryMonths,
+						prorateInStartAndExitYear: data.prorateInStartAndExitYear,
+						statutoryMinimumDays: data.statutoryMinimumDays,
 					})
-					.where(eq(vacationAllowance.id, policyId))
+					.where(
+						and(
+							eq(vacationAllowance.id, policyId),
+							eq(vacationAllowance.organizationId, policy.organizationId),
+						),
+					)
 					.returning();
 			})
 			.pipe(
@@ -491,7 +551,7 @@ export async function getEmployeesWithAllowances(
 		const dbService = yield* DatabaseService;
 		const managedEmployeeIds = yield* getManagedEmployeeIdsForSettingsActor(actor);
 		const employees = yield* dbService.query("getEmployeesWithAllowances", async () => {
-			return await dbService.db.query.employee.findMany({
+			const records = await dbService.db.query.employee.findMany({
 				where: eq(employee.organizationId, organizationId),
 				with: {
 					user: true,
@@ -501,13 +561,25 @@ export async function getEmployeesWithAllowances(
 					},
 				},
 			});
+			const visible = managedEmployeeIds
+				? records.filter((employeeRecord) => managedEmployeeIds.has(employeeRecord.id))
+				: records;
+			// The same server-side balance as the employee's Absences page (#1111).
+			const { balances, adjustments } = await loadVacationBalances(dbService.db, {
+				organizationId,
+				employeeIds: visible.map((employeeRecord) => employeeRecord.id),
+				year,
+				timezone: await loadOrganizationTimezone(dbService.db, organizationId),
+			});
+			return visible.map((employeeRecord) => ({
+				...employeeRecord,
+				vacationBalance: balances.get(employeeRecord.id) ?? null,
+				// The balance's manual and accrual adjustments for the year (#1105, #1106).
+				vacationAdjustments: adjustments.get(employeeRecord.id) ?? null,
+			}));
 		});
 
-		if (!managedEmployeeIds) {
-			return employees;
-		}
-
-		return employees.filter((employeeRecord) => managedEmployeeIds.has(employeeRecord.id));
+		return employees;
 	});
 
 	return runServerActionSafe(effect);
@@ -691,6 +763,7 @@ export async function createVacationAdjustmentAction(
 						year,
 						days: data.days,
 						reason: data.reason,
+						kind: "manual",
 						adjustedBy: actorEmployee.id,
 					})
 					.returning();
@@ -1234,29 +1307,25 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 		});
 		const dbService = yield* DatabaseService;
 
-		// Step 3: Get the policy to check permissions
-		const policy = yield* dbService
-			.query("getPolicy", async () => {
-				const p = await dbService.db.query.vacationAllowance.findFirst({
-					where: eq(vacationAllowance.id, policyId),
-				});
-
-				if (!p) {
-					throw new Error("Policy not found");
-				}
-
-				return p;
-			})
-			.pipe(
-				Effect.mapError(
-					() =>
-						new NotFoundError({
-							message: "Policy not found",
-							entityType: "vacation_policy",
-							entityId: policyId,
-						}),
+		// Step 3: Get the policy in the actor's organization to check permissions
+		const policy = yield* dbService.query("getPolicy", async () => {
+			return await dbService.db.query.vacationAllowance.findFirst({
+				where: and(
+					eq(vacationAllowance.id, policyId),
+					eq(vacationAllowance.organizationId, actor.organizationId),
 				),
+			});
+		});
+
+		if (!policy) {
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Policy not found",
+					entityType: "vacation_policy",
+					entityId: policyId,
+				}),
 			);
+		}
 
 		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
 			message: "Insufficient permissions",
@@ -1295,7 +1364,12 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 				await dbService.db
 					.update(vacationAllowance)
 					.set({ isActive: false })
-					.where(eq(vacationAllowance.id, policyId));
+					.where(
+						and(
+							eq(vacationAllowance.id, policyId),
+							eq(vacationAllowance.organizationId, policy.organizationId),
+						),
+					);
 			})
 			.pipe(
 				Effect.mapError(
@@ -1315,22 +1389,28 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 	return runServerActionSafe(effect);
 }
 
+export type EmployeeAdjustmentSummary = VacationAdjustmentSums & {
+	/** Manual adjustments only, newest first; accrual rows are summed in `accrual` (#1106). */
+	manualAdjustments: Array<Omit<ManualVacationAdjustment, "createdAt"> & { createdAt: string }>;
+};
+
 /**
- * Get the sum of vacation adjustments for an employee in a specific year
+ * An employee's vacation adjustments for a year: the manual and accrual sums every balance
+ * reader adds (#1105, #1106) and the history of manual adjustments.
  */
-export async function getEmployeeAdjustmentTotal(
+export async function getEmployeeAdjustmentSummary(
 	employeeId: string,
 	year: number,
-): Promise<ServerActionResult<number>> {
+): Promise<ServerActionResult<EmployeeAdjustmentSummary>> {
 	const effect = Effect.gen(function* () {
 		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "getEmployeeAdjustmentTotal:actor",
+			queryName: "getEmployeeAdjustmentSummary:actor",
 		});
 		const dbService = yield* DatabaseService;
 
 		const emp = yield* getTargetEmployee(
 			employeeId,
-			"getEmployeeAdjustmentTotal:getTargetEmployee",
+			"getEmployeeAdjustmentSummary:getTargetEmployee",
 		);
 		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
 			message: "Insufficient permissions",
@@ -1338,19 +1418,71 @@ export async function getEmployeeAdjustmentTotal(
 			action: "read",
 		});
 
-		// Step 5: Get adjustment total
-		const result = yield* dbService.query("getAdjustmentTotal", async () => {
-			const rows = await dbService.db
-				.select()
-				.from(vacationAdjustment)
-				.where(
-					and(eq(vacationAdjustment.employeeId, employeeId), eq(vacationAdjustment.year, year)),
-				);
+		const scope = { organizationId: emp.organizationId, employeeId, year };
+		return yield* dbService.query("getEmployeeAdjustmentSummary", async () => {
+			const [sums, manualAdjustments] = await Promise.all([
+				loadVacationAdjustmentSums(dbService.db, { ...scope, employeeIds: [employeeId] }),
+				loadManualVacationAdjustments(dbService.db, scope),
+			]);
+			return {
+				...(sums.get(employeeId) ?? { manual: 0, accrual: 0 }),
+				manualAdjustments: manualAdjustments.map((adjustment) => ({
+					...adjustment,
+					createdAt: adjustment.createdAt.toISOString(),
+				})),
+			};
+		});
+	});
 
-			return rows.reduce((sum, row) => sum + parseFloat(row.days), 0);
+	return runServerActionSafe(effect);
+}
+
+export type EmployeeVacationBalanceView = {
+	/** The organization's current calendar year, the year the admin page edits. */
+	year: number;
+	/** Null without a company default policy for the year. */
+	balance: VacationBalance | null;
+	/** The policy grants its allowance monthly or biweekly through accrual (#1106). */
+	accrualPolicy: boolean;
+};
+
+/**
+ * An employee's vacation balance for the organization's current year, for the admin vacation
+ * page (#1111): the same server-side balance as the employee's Absences page, with the prorated
+ * allowance's explanation and overdrawn vacation. Admins see any employee of the organization,
+ * managers only the employees they manage.
+ */
+export async function getEmployeeVacationBalance(
+	employeeId: string,
+): Promise<ServerActionResult<EmployeeVacationBalanceView>> {
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "getEmployeeVacationBalance:actor",
+		});
+		const dbService = yield* DatabaseService;
+
+		const emp = yield* getTargetEmployee(employeeId, "getEmployeeVacationBalance:getTargetEmployee");
+		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
+			message: "Insufficient permissions",
+			resource: "employee_allowance",
+			action: "read",
 		});
 
-		return result;
+		return yield* dbService.query("getEmployeeVacationBalance", async () => {
+			const timezone = await loadOrganizationTimezone(dbService.db, emp.organizationId);
+			const year = calendarYearAt(systemClock.nowInstant(), timezone);
+			const { policy, balances } = await loadVacationBalances(dbService.db, {
+				organizationId: emp.organizationId,
+				employeeIds: [employeeId],
+				year,
+				timezone,
+			});
+			return {
+				year,
+				balance: balances.get(employeeId) ?? null,
+				accrualPolicy: policy ? isAccrualPolicy(policy) : false,
+			};
+		});
 	});
 
 	return runServerActionSafe(effect);

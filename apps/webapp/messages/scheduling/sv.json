@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Vem som helst kan ta passet",
       "assignTo": "Tilldela till",
+      "certificateOnFileFor": "Certifikat registrerat: {skills}",
       "confirmDelete": "Bekräfta borttagning",
       "created": "Passet har skapats",
       "createDescription": "Fyll i uppgifterna för det nya passet",
@@ -118,6 +119,7 @@
       "updateShift": "Uppdatera pass"
     },
     "skills": {
+      "certificateOnFile": "Certifikat registrerat",
       "expiredCertifications": "Utgångna certifieringar:",
       "expiredOn": "(Utgick {date})",
       "missingPreferred": "Saknade önskade kompetenser:",

@@ -100,6 +100,80 @@ describe("useTimeClock frozen commands (#279)", () => {
 		});
 	});
 
+	describe("vehicle use (#1122)", () => {
+		const vehicleUse = { vehicle: { kind: "own" as const }, startKm: 12_000 };
+		const v4 = { commandVersions: [2, 3, 4], submit: "available", context };
+
+		it("freezes vehicle use when the server and the worker both build version 4", async () => {
+			const clock = offlineClock({ commandCapabilities: v4, workerCommandVersions: [2, 3, 4] });
+			mocks.useOfflineClock.mockReturnValue(clock);
+			const { result } = render();
+			await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+
+			await result.current.clockIn({ browserTimezone: "Europe/Berlin", vehicleUse });
+
+			expect(clock.submitClockCommand).toHaveBeenCalledWith(
+				expect.objectContaining({ kind: "clock_in", vehicleUse }),
+			);
+			expect(mocks.postClockIn).not.toHaveBeenCalled();
+		});
+
+		it("sends vehicle use through the route online when the worker cannot freeze it", async () => {
+			mocks.postClockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+			const clock = offlineClock({ commandCapabilities: v4, workerCommandVersions: [2, 3] });
+			mocks.useOfflineClock.mockReturnValue(clock);
+			const { result } = render();
+			await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+
+			await result.current.clockIn({ browserTimezone: "Europe/Berlin", vehicleUse });
+
+			expect(clock.submitClockCommand).not.toHaveBeenCalled();
+			expect(mocks.postClockIn).toHaveBeenCalledWith(expect.objectContaining({ vehicleUse }));
+		});
+
+		it("never holds an offline clock-in for vehicle use the worker cannot freeze", async () => {
+			const clock = offlineClock({
+				isOnline: false,
+				isOffline: true,
+				commandCapabilities: v4,
+				workerCommandVersions: [2, 3],
+			});
+			mocks.useOfflineClock.mockReturnValue(clock);
+			const { result } = render();
+			await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+
+			const outcome = await result.current.clockIn({
+				browserTimezone: "Europe/Berlin",
+				vehicleUse,
+			});
+
+			expect(clock.submitClockCommand).toHaveBeenCalledWith(
+				expect.not.objectContaining({ vehicleUse }),
+			);
+			// The clock tells the employee their vehicle use was not recorded.
+			expect(outcome).toMatchObject({ success: true, vehicleUseLeftOut: true });
+		});
+
+		it("says nothing was left out when vehicle use is frozen with the event", async () => {
+			const clock = offlineClock({
+				isOnline: false,
+				isOffline: true,
+				commandCapabilities: v4,
+				workerCommandVersions: [2, 3, 4],
+			});
+			mocks.useOfflineClock.mockReturnValue(clock);
+			const { result } = render();
+			await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+
+			const outcome = await result.current.clockIn({
+				browserTimezone: "Europe/Berlin",
+				vehicleUse,
+			});
+
+			expect(outcome).not.toHaveProperty("vehicleUseLeftOut");
+		});
+	});
+
 	it("binds a clock-out to the period the page knows, with explicit attribution intent", async () => {
 		const clock = offlineClock();
 		mocks.useOfflineClock.mockReturnValue(clock);

@@ -30,6 +30,14 @@ import { BreakInProgressNotice } from "./break-in-progress-notice";
 import { toastClockCommandError } from "./clock-command-error-toast";
 import { ClockConnectionNotice } from "./clock-connection-notice";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
+import {
+	BreakVehicleReading,
+	ClockInVehicleUse,
+	ClockOutVehicleUse,
+	type ClockVehicleUseState,
+	useClockVehicleUse,
+} from "./clock-vehicle-use";
+import { warnVehicleUseLeftOut } from "./clock-vehicle-use-notice";
 import { ProjectSelectorView } from "./project-selector";
 import { QuickBreakPopover } from "./quick-break-popover";
 import { showSavedClockToast } from "./saved-clock-toast";
@@ -129,6 +137,8 @@ interface ClockControlsViewProps {
 	workCategoriesIsError: boolean;
 	workCategoriesIsLoading: boolean;
 	workLocationType: WorkLocationType;
+	/** Vehicle use asked at this clock event (#1122). */
+	vehicleUse: ClockVehicleUseState;
 }
 
 function ClockControlsView({
@@ -164,6 +174,7 @@ function ClockControlsView({
 	workCategoriesIsError,
 	workCategoriesIsLoading,
 	workLocationType,
+	vehicleUse,
 }: ClockControlsViewProps) {
 	// Offline controls cannot trust the last server status, so both ends stay open.
 	const isLocalCapture = captureMode !== "server";
@@ -241,6 +252,12 @@ function ClockControlsView({
 			{(!isClockedIn || isLocalCapture) && (
 				<WorkLocationSelector value={workLocationType} onChange={onWorkLocationChange} t={t} />
 			)}
+			{/* The legacy review queue keeps no vehicle use; it carries no attribution beyond a project. */}
+			{captureMode === "local-review" ? null : isClockedIn ? (
+				<ClockOutVehicleUse state={vehicleUse} disabled={isMutating} t={t} />
+			) : (
+				<ClockInVehicleUse state={vehicleUse} disabled={isMutating} t={t} />
+			)}
 			<ClockConnectionNotice show={connectionRequired} />
 			<ClockActionButtons
 				captureMode={captureMode}
@@ -286,7 +303,8 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 	const { uiState, dispatch, assignedProjects, availableWorkCategories } = useTimeClockPopoverState(
 		{ employeeId, isClockedIn },
 	);
-	const handleAddBreak = useQuickBreakHandler(addBreak, t);
+	const vehicleUse = useClockVehicleUse({ enabled: hasEmployee });
+	const handleAddBreak = useQuickBreakHandler(addBreak, t, vehicleUse);
 
 	// The running work's task shows while its project is chosen and no other choice
 	// was made; the clock-out then keeps it (#874).
@@ -301,14 +319,19 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 	const elapsedSeconds = useElapsedTimer(activeWorkPeriod?.startTime ?? null);
 
 	const handleClockIn = async () => {
+		// Vehicle use never holds the clock-in: what cannot be sent is left out (#1122).
+		const vehicle = vehicleUse.clockIn;
 		const result = await clockIn({
 			workLocationType: uiState.workLocationType,
+			...(vehicle.ok && vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
 		});
 
 		if (result.success) {
 			if (typeof window !== "undefined") {
 				localStorage.setItem("z8-work-location-type", uiState.workLocationType);
 			}
+			warnVehicleUseLeftOut(vehicle, t, result);
+			vehicleUse.reset();
 
 			// Saved on this device, not confirmed on the server
 			if (!showSavedClockToast(result, "clock_in", t)) {
@@ -343,17 +366,24 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 				: taskIdToSend({
 						projectId: uiState.selectedProjectId,
 						taskId: uiState.selectedTaskId,
-						current: { projectId: currentTask?.projectId, taskId: currentTask?.id },
+						current: {
+							projectId: currentTask?.projectId,
+							taskId: currentTask?.id,
+						},
 					});
+		const vehicle = vehicleUse.clockOut;
 		const result = await clockOut({
 			projectId: uiState.selectedProjectId,
 			workCategoryId: uiState.selectedWorkCategoryId,
 			// The legacy review queue carries no task (#874), so it shows no task picker.
 			...(captureMode !== "local-review" ? namedTaskId(taskId) : {}),
 			...(uiState.billable === undefined ? {} : { billable: uiState.billable }),
+			...(vehicle.ok && vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
 		});
 
 		if (result.success) {
+			warnVehicleUseLeftOut(vehicle, t, result);
+			vehicleUse.reset();
 			// Saved on this device, not confirmed on the server
 			if (showSavedClockToast(result, "clock_out", t)) {
 				dispatch({ type: "resetClockOutSelections" });
@@ -452,6 +482,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 		availableWorkCategories,
 		handleAddBreak,
 		isAddingBreak,
+		vehicleUse,
 	};
 }
 
@@ -484,6 +515,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 		availableWorkCategories,
 		handleAddBreak,
 		isAddingBreak,
+		vehicleUse,
 	} = useTimeClockPopoverController({ timeFormat });
 	if (isLoading) {
 		return (
@@ -578,6 +610,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 								workCategoriesIsError={availableWorkCategories.isError}
 								workCategoriesIsLoading={availableWorkCategories.isLoading}
 								workLocationType={uiState.workLocationType}
+								vehicleUse={vehicleUse}
 							/>
 						)}
 					</div>
@@ -592,7 +625,9 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 					t={t}
 					buttonClassName="-ml-2 h-8 rounded-l-none border-l-0 px-2.5"
 					iconOnly
-				/>
+				>
+					<BreakVehicleReading state={vehicleUse} disabled={isAddingBreak} t={t} />
+				</QuickBreakPopover>
 			) : null}
 		</div>
 	);

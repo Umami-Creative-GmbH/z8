@@ -244,10 +244,10 @@ export async function exportToPDF(
 					</>
 				)}
 
-				{/* Earnings Summary - Only for hourly employees */}
-				{reportData.employee.contractType === "hourly" && reportData.hourlyEarnings && (
+				{/* Earnings Summary - only when hourly terms were in force during the period */}
+				{reportData.hourlyEarnings && (
 					<View style={styles.earningsSection}>
-						<Text style={styles.earningsTitle}>EARNINGS SUMMARY (HOURLY EMPLOYEE)</Text>
+						<Text style={styles.earningsTitle}>EARNINGS SUMMARY (HOURLY TERMS)</Text>
 						<View style={styles.row}>
 							<Text style={styles.label}>Total Hours:</Text>
 							<Text style={styles.value}>{reportData.hourlyEarnings.totalHours}h</Text>

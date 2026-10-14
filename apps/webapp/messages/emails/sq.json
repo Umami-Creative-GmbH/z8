@@ -1,0 +1,218 @@
+{
+  "emails": {
+    "billing": {
+      "invoiceReady": {
+        "action": "Hap faturimin",
+        "amountLabel": "Shuma për pagesë",
+        "body": "Fatura {invoiceNumber} për {organizationName} është gati.",
+        "dueDateLabel": "Afati i pagesës",
+        "subject": "Fatura juaj Z8 {invoiceNumber} është gati",
+        "title": "Fatura juaj është gati"
+      },
+      "paymentFailed": {
+        "action": "Përditësoni metodën e pagesës",
+        "body": "Nuk mundëm të mblidhnim {invoiceAmount} për {organizationName}.",
+        "retry": "Ju lutemi përditësoni metodën tuaj të pagesës përpara riprovimit të radhës më {paymentRetryDate} për të shmangur ndërprerjen e shërbimit.",
+        "subject": "Kërkohet veprim: Pagesa e Z8 dështoi",
+        "title": "Pagesa juaj dështoi"
+      },
+      "subscriptionPaused": {
+        "action": "Menaxhoni faturimin",
+        "body": "Abonimi {planName} për {organizationName} është pezulluar.",
+        "limits": "Të dhënat e regjistrimit të kohës mbeten të disponueshme, por veçoritë e planit me pagesë mund të jenë të kufizuara derisa të rifillojë faturimi.",
+        "subject": "Abonimi juaj në Z8 është pezulluar",
+        "title": "Abonimi juaj është pezulluar"
+      },
+      "subscriptionResumed": {
+        "action": "Shikoni detajet e faturimit",
+        "active": "Veçoritë tuaja me pagesë në Z8 janë sërish aktive.",
+        "body": "Abonimi {planName} për {organizationName} rifilloi më {resumeDate}.",
+        "subject": "Abonimi juaj në Z8 ka rifilluar",
+        "title": "Abonimi juaj ka rifilluar"
+      },
+      "trialEnding": {
+        "action": "Rishikoni cilësimet e faturimit",
+        "body": "Periudha juaj provuese {planName} për {organizationName} përfundon më {trialEndsAt}.",
+        "paymentMethod": "Për ta mbajtur Z8 në punë pa ndërprerje, shtoni një metodë pagese te cilësimet e faturimit.",
+        "subject": "{daysRemaining, plural, other {Periudha juaj provuese e Z8 përfundon për # ditë} }",
+        "subjectSoon": "Periudha juaj provuese e Z8 përfundon së shpejti",
+        "title": "Periudha juaj provuese po përfundon"
+      },
+      "values": {
+        "noDueDate": "e papërcaktuar",
+        "retrySoon": "së shpejti",
+        "yourOrganization": "organizata juaj"
+      }
+    },
+    "common": {
+      "greeting": "Përshëndetje {name},"
+    },
+    "details": {
+      "category": "Kategoria",
+      "correctedTimes": "Orët e korrigjuara",
+      "date": "Data",
+      "dates": "Datat",
+      "days": "Ditët",
+      "notes": "Shënime",
+      "originalTimes": "Orët origjinale",
+      "range": "{start} – {end}",
+      "reason": "Arsyeja"
+    },
+    "export": {
+      "categories": {
+        "absences": "Mungesat",
+        "auditLogs": "Regjistrat e auditimit",
+        "balanceAdjustments": "Rregullimet e bilancit të punës",
+        "customers": "Klientët",
+        "employees": "Punonjësit",
+        "holidays": "Pushimet",
+        "projects": "Projektet",
+        "schedules": "Orarët e punës",
+        "shifts": "Turnet",
+        "teams": "Ekipet",
+        "timeEntries": "Regjistrimi i kohës",
+        "vacation": "Politikat e pushimeve",
+        "workPeriods": "Periudhat e punës"
+      },
+      "organization": "Organizata",
+      "values": {
+        "yourOrganization": "Organizata juaj"
+      }
+    },
+    "exportFailed": {
+      "action": "Provo përsëri",
+      "body": "Fatkeqësisht, eksportimi i të dhënave tuaja për {organizationName} nuk mund të përfundonte.",
+      "categories": "Të dhënat e kërkuara",
+      "error": "Gabim",
+      "note": "Nëse ky gabim vazhdon, kontaktoni mbështetjen me mesazhin e gabimit më lart. Eksportimi i më pak kategorive të të dhënave në të njëjtën kohë mund të ndihmojë gjithashtu.",
+      "title": "Eksportimi i të dhënave dështoi",
+      "unknownError": "Gabim i panjohur"
+    },
+    "exportReady": {
+      "action": "Hap historikun e eksportimeve",
+      "body": "Eksportimi i të dhënave tuaja për {organizationName} ka përfunduar. Mund ta shkarkoni nga historiku i eksportimeve në Z8.",
+      "categories": "Të dhënat e përfshira",
+      "expiresAt": "E disponueshme deri më",
+      "fileSize": "Madhësia e skedarit",
+      "note": "Identifikohuni në Z8 si administrator i organizatës për të shkarkuar skedarin. Çdo shkarkim fillon me një lidhje të re dhe të sigurt. Pas datës së mësipërme, skedari i eksportit fshihet automatikisht.",
+      "title": "Eksportimi i të dhënave tuaja është gati"
+    },
+    "invitation": {
+      "action": "Prano ftesën",
+      "body": "{inviterName} ju ka ftuar t'i bashkoheni {organizationName} si {role}.",
+      "email": "Email-i juaj",
+      "greeting": "Përshëndetje,",
+      "invitedBy": "Ftuar nga",
+      "note": "Nëse nuk e prisnit këtë ftesë, mund ta shpërfillni këtë email.",
+      "organization": "Organizata",
+      "role": "Roli",
+      "roles": {
+        "admin": "Administrator",
+        "member": "Anëtar",
+        "owner": "Pronar"
+      },
+      "title": "Ju jeni ftuar te {organizationName}"
+    },
+    "layout": {
+      "actionFallback": "Nëse butoni nuk funksionon, hapni këtë lidhje:",
+      "footer": "Ky email u dërgua nga Z8."
+    },
+    "notification": {
+      "openAction": "Hap Z8"
+    },
+    "organizationDeletion": {
+      "action": "Rikthe organizatën",
+      "body": "{deletedByName} e ka planifikuar organizatën {organizationName} për fshirje. Mund ta riktheni atë deri më {permanentDeletionDate}.",
+      "initiatedBy": "Iniciuar nga",
+      "items": {
+        "absences": "Të gjitha mungesat dhe pushimet e lejuara",
+        "employees": "Të gjithë punonjësit, ekipet dhe caktimet e menaxherëve",
+        "members": "Të gjithë anëtarët dhe ftesat në pritje",
+        "projects": "Të gjitha projektet dhe caktimet e tyre kohore",
+        "settings": "Të gjitha cilësimet, oraret dhe konfigurimet",
+        "timeEntries": "Të gjitha regjistrimet e orëve dhe periudhat e punës"
+      },
+      "itemsTitle": "Çfarë do të fshihet përgjithmonë:",
+      "note": "Nëse kishit ndërmend ta fshinit organizatën, nuk kërkohet asnjë veprim. Nëse jo, rikthejeni tani dhe rishikoni sigurinë e llogarisë suaj.",
+      "organization": "Organizata",
+      "permanentAt": "Fshirje e përhershme",
+      "preview": "{organizationName} do të fshihet përgjithmonë më {permanentDeletionDate}.",
+      "requestedAt": "Fshirja u kërkua",
+      "title": "Organizata u planifikua për fshirje"
+    },
+    "passwordReset": {
+      "action": "Rivendos fjalëkalimin",
+      "body": "Kemi marrë një kërkesë për rivendosjen e fjalëkalimit tuaj. Përdorni butonin më poshtë për të zgjedhur një të ri.",
+      "note": "Nëse nuk keni kërkuar të rivendosni fjalëkalimin tuaj, mund ta shpërfillni këtë email; fjalëkalimi juaj mbetet i njëjtë. Lidhja skadon pas 1 ore.",
+      "title": "Rivendosni fjalëkalimin tuaj"
+    },
+    "scheduledExport": {
+      "dateRangeLabel": "Intervali i datave",
+      "empty": {
+        "body": "Eksportimi juaj i planifikuar {scheduleName} u ekzekutua, por nuk ka asgjë për të shkarkuar.",
+        "noFile": "Nuk u krijua asnjë skedar për këtë ekzekutim.",
+        "title": "Eksporti i planifikuar përfundoi"
+      },
+      "ready": {
+        "action": "Shkarko eksportin",
+        "body": "Eksporti juaj i planifikuar {scheduleName} ka përfunduar me sukses.",
+        "linkExpiry": "Kjo lidhje shkarkimi është e vlefshme për {lifetime} dhe skadon më {expiresAt}.",
+        "title": "Eksporti i planifikuar është gati"
+      },
+      "recordsLabel": "Regjistrime",
+      "subject": "Eksporti i planifikuar: {scheduleName} ({dateRange})"
+    },
+    "securityAlert": {
+      "action": "Shqyrtoni cilësimet e sigurisë",
+      "device": "Pajisja",
+      "event": "Ngjarja",
+      "ipAddress": "Adresa IP",
+      "notYou": "Nëse nuk e keni bërë ju këtë ndryshim, siguroni llogarinë tuaj tani: ndryshoni fjalëkalimin dhe shqyrtoni cilësimet e sigurisë.",
+      "passwordChanged": {
+        "description": "Fjalëkalimi i llogarisë suaj Z8 u ndryshua.",
+        "title": "Fjalëkalimi u ndryshua"
+      },
+      "time": "Koha",
+      "twoFactorDisabled": {
+        "description": "Autentifikimi me dy faktorë u çaktivizua për llogarinë tuaj Z8.",
+        "title": "Autentifikimi me dy faktorë u çaktivizua"
+      },
+      "twoFactorEnabled": {
+        "description": "Autentifikimi me dy faktorë u aktivizua për llogarinë tuaj Z8.",
+        "title": "Autentifikimi me dy faktorë u aktivizua"
+      }
+    },
+    "subjects": {
+      "absenceRecordedByManager": "Mungesa u regjistrua",
+      "absenceRequestApproved": "Kërkesa për mungesë u miratua",
+      "absenceRequestRejected": "Kërkesa për mungesë u refuzua",
+      "absenceRequestSubmitted": "Kërkesa për mungesë u dërgua",
+      "approvalRequestSubmitted": "Kërkesë e re për mungesë në pritje të miratimit",
+      "exportFailed": "Eksportimi i të dhënave dështoi - {organizationName}",
+      "exportReady": "Eksportimi i të dhënave tuaja është gati - {organizationName}",
+      "organizationDeletion": "Organizata {organizationName} është planifikuar për fshirje",
+      "organizationInvitation": "Jeni ftuar t'i bashkoheni {organizationName}",
+      "passwordChanged": "Sinjalizim sigurie: Fjalëkalimi u ndryshua",
+      "passwordReset": "Rivendosni fjalëkalimin tuaj",
+      "teamMemberAdded": "Jeni shtuar në {teamName}",
+      "teamMemberRemoved": "Jeni hequr nga {teamName}",
+      "timeCorrectionApproved": "Korrigjimi i kohës u miratua",
+      "timeCorrectionRejected": "Korrigjimi i kohës u refuzua",
+      "timeCorrectionSubmitted": "Korrigjim i ri i kohës në pritje të miratimit",
+      "twoFactorDisabled": "Sinjalizim sigurie: Autentifikimi me dy faktorë u çaktivizua",
+      "twoFactorEnabled": "Sinjalizim sigurie: Autentifikimi me dy faktorë u aktivizua",
+      "verifyEmail": "Verifikoni adresën tuaj të email-it"
+    },
+    "variables": {
+      "noReason": "Nuk është dhënë asnjë arsye",
+      "noTime": "-",
+      "yourManager": "menaxheri juaj"
+    },
+    "verification": {
+      "action": "Verifiko adresën e email-it",
+      "body": "Mirë se vini në Z8! Ju lutemi verifikoni adresën tuaj të email-it me butonin më poshtë për të përfunduar regjistrimin tuaj.",
+      "note": "Nëse nuk keni krijuar një llogari, mund ta shpërfillni këtë email. Lidhja skadon për 1 orë.",
+      "title": "Verifikoni adresën tuaj të email-it"
+    }
+  }
+}

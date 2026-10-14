@@ -43,18 +43,26 @@ export const EXPORT_CATEGORIES: ExportCategory[] = [
 	"customers",
 ];
 
-export const CATEGORY_LABELS: Record<ExportCategory, string> = {
-	employees: "Employees",
-	teams: "Teams",
-	time_entries: "Time Tracking",
-	work_periods: "Work Periods",
-	absences: "Absences",
-	balance_adjustments: "Work Balance Adjustments",
-	holidays: "Holidays",
-	vacation: "Vacation Policies",
-	schedules: "Work Schedules",
-	shifts: "Shifts",
-	audit_logs: "Audit Logs",
-	projects: "Projects",
-	customers: "Customers",
+/** Each category's name: its English default and its key in the export emails' catalog. */
+export const CATEGORY_LABELS: Record<ExportCategory, { labelKey: string; label: string }> = {
+	employees: { labelKey: "emails.export.categories.employees", label: "Employees" },
+	teams: { labelKey: "emails.export.categories.teams", label: "Teams" },
+	time_entries: { labelKey: "emails.export.categories.timeEntries", label: "Time Tracking" },
+	work_periods: { labelKey: "emails.export.categories.workPeriods", label: "Work Periods" },
+	absences: { labelKey: "emails.export.categories.absences", label: "Absences" },
+	balance_adjustments: {
+		labelKey: "emails.export.categories.balanceAdjustments",
+		label: "Work Balance Adjustments",
+	},
+	holidays: { labelKey: "emails.export.categories.holidays", label: "Holidays" },
+	vacation: { labelKey: "emails.export.categories.vacation", label: "Vacation Policies" },
+	schedules: { labelKey: "emails.export.categories.schedules", label: "Work Schedules" },
+	shifts: { labelKey: "emails.export.categories.shifts", label: "Shifts" },
+	audit_logs: { labelKey: "emails.export.categories.auditLogs", label: "Audit Logs" },
+	projects: { labelKey: "emails.export.categories.projects", label: "Projects" },
+	customers: { labelKey: "emails.export.categories.customers", label: "Customers" },
 };
+
+export function isExportCategory(value: string): value is ExportCategory {
+	return Object.hasOwn(CATEGORY_LABELS, value);
+}

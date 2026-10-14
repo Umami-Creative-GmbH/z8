@@ -108,6 +108,36 @@
       "noBalance": "Nema stanja"
     },
     "description": "Pregledajte i upravljajte uposlenicima koje direktno nadgledate",
+    "driving": {
+      "columns": {
+        "calendar": "Kalendar",
+        "date": "Datum",
+        "employee": "Zaposlenik",
+        "missing": "Nedostaje",
+        "time": "Zabilježeno lokalno vrijeme"
+      },
+      "count": "{count, plural, one {Za # radni period nedostaju detalji o vožnji.} few {Za # radna perioda nedostaju detalji o vožnji.} other {Za # radnih perioda nedostaju detalji o vožnji.}}",
+      "descriptionAll": "Radni periodi kojima nedostaje vozilo ili očitanje kilometraže iako se očekuje korištenje vozila. Ostaju na listi dok se detalji ne popune.",
+      "descriptionManaged": "Radni periodi zaposlenika kojima upravljate a kojima nedostaje vozilo ili očitanje kilometraže iako se očekuje korištenje vozila. Ostaju na listi dok se detalji ne popune.",
+      "empty": "Nijednom radu ne nedostaju detalji o vožnji.",
+      "filters": {
+        "allEmployees": "Svi zaposlenici",
+        "allTeams": "Svi timovi",
+        "employee": "Zaposlenik",
+        "team": "Tim"
+      },
+      "loading": "Učitavanje detalja o vožnji",
+      "missing": {
+        "endReading": "Nema završnog očitanja",
+        "readings": "Nema očitanja kilometraže",
+        "startReading": "Nema početnog očitanja",
+        "vehicle": "Nema vozila"
+      },
+      "openCalendar": "Kalendar",
+      "openCalendarOf": "Otvori kalendar za {name}",
+      "title": "Nedostaju detalji o vožnji",
+      "truncated": "Prikazuje se najnovijih {count} radnih perioda. Filtrirajte po timu ili zaposleniku da biste vidjeli ostale."
+    },
     "empty": {
       "action": "Idi na postavke uposlenika",
       "description": "Uposlenici kojima ste dodijeljeni kao menadžer pojavit će se ovdje. Dodjelama tima možete upravljati u postavkama uposlenika.",

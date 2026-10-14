@@ -108,6 +108,36 @@
       "noBalance": "Nessun saldo"
     },
     "description": "Visualizza e gestisci i dipendenti che supervisioni direttamente",
+    "driving": {
+      "columns": {
+        "calendar": "Calendario",
+        "date": "Data",
+        "employee": "Dipendente",
+        "missing": "Mancante",
+        "time": "Ora locale registrata"
+      },
+      "count": "{count, plural, one {Mancano i dettagli di guida per # periodo di lavoro.} other {Mancano i dettagli di guida per # periodi di lavoro.}}",
+      "descriptionAll": "Periodi di lavoro privi di un veicolo o di una lettura del contachilometri, sebbene l'uso del veicolo sia previsto. Rimangono in elenco fino al completamento dei dettagli.",
+      "descriptionManaged": "Periodi di lavoro dei dipendenti che gestisci privi di un veicolo o di una lettura del contachilometri, sebbene l'uso del veicolo sia previsto. Rimangono in elenco fino al completamento dei dettagli.",
+      "empty": "Nessun lavoro privo di dettagli di guida.",
+      "filters": {
+        "allEmployees": "Tutti i dipendenti",
+        "allTeams": "Tutti i team",
+        "employee": "Dipendente",
+        "team": "Team"
+      },
+      "loading": "Caricamento dei dettagli di guida",
+      "missing": {
+        "endReading": "Nessuna lettura finale",
+        "readings": "Nessuna lettura del contachilometri",
+        "startReading": "Nessuna lettura iniziale",
+        "vehicle": "Nessun veicolo"
+      },
+      "openCalendar": "Calendario",
+      "openCalendarOf": "Apri il calendario di {name}",
+      "title": "Dettagli di guida mancanti",
+      "truncated": "Visualizzazione dei {count} periodi di lavoro più recenti. Filtra per team o dipendente per vedere i restanti."
+    },
     "empty": {
       "action": "Vai alle impostazioni dipendenti",
       "description": "I dipendenti assegnati a te come manager appariranno qui. Puoi gestire le assegnazioni del team nelle impostazioni dipendenti.",

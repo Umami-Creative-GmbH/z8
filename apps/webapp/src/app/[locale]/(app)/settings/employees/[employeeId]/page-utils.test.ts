@@ -67,7 +67,6 @@ describe("syncEmployeeForm", () => {
 			startDate: new Date("2026-05-01T22:30:00.000Z"),
 			role: "employee",
 			contractType: "fixed",
-			currentHourlyRate: null,
 			user: {
 				firstName: "Ada",
 				lastName: "Lovelace",
@@ -80,6 +79,19 @@ describe("syncEmployeeForm", () => {
 		expect(form.setFieldValue).toHaveBeenCalledWith("firstName", "Ada");
 		expect(form.setFieldValue).toHaveBeenCalledWith("lastName", "Lovelace");
 		expect(form.setFieldValue).toHaveBeenCalledWith("startDate", "2026-05-01");
+	});
+
+	it("never loads an employee's wage or contract type into the detail form", () => {
+		const form = createFormMock();
+		syncEmployeeForm(form as never, {
+			kind: "employee",
+			contractType: "hourly",
+			user: { firstName: "Ada", lastName: "Lovelace" },
+		} as EmployeeDetail);
+
+		const fields = form.setFieldValue.mock.calls.map(([name]) => name);
+		expect(fields).not.toContain("hourlyRate");
+		expect(fields).not.toContain("contractType");
 	});
 
 	it("syncs invitation draft identity fields into the employee detail form", () => {

@@ -20,6 +20,8 @@ interface UseShiftDialogDataOptions {
 	employeeId: string | null;
 	subareaId: string;
 	templateId: string | null;
+	/** The shift date, `YYYY-MM-DD`: skills are checked on it. */
+	date: string;
 }
 
 export function useShiftDialogData({
@@ -29,6 +31,7 @@ export function useShiftDialogData({
 	employeeId,
 	subareaId,
 	templateId,
+	date,
 }: UseShiftDialogDataOptions) {
 	const { data: employeesResult } = useQuery({
 		queryKey: queryKeys.employees.list(organizationId),
@@ -54,6 +57,7 @@ export function useShiftDialogData({
 		employeeId: employeeId || "",
 		subareaId,
 		templateId,
+		date,
 		enabled: open && !!employeeId && !!subareaId,
 	});
 

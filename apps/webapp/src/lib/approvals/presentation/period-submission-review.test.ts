@@ -181,3 +181,29 @@ describe("buildPeriodSubmissionReviewSections", () => {
 		]);
 	});
 });
+
+describe("driving details missing in a period submission (#1127)", () => {
+	it("lists each submitted work period lacking its vehicle or a reading as a warning", () => {
+		expect(
+			build({
+				drivingDetailsMissing: [
+					{ workPeriodId: "work-1", date: "2026-03-02" },
+					{ workPeriodId: "work-2", date: "2026-03-03" },
+				],
+			}).slice(2),
+		).toEqual([
+			{
+				title: "Driving details missing",
+				rows: [
+					["2026-03-02", "Vehicle or odometer reading missing", { tone: "warning" }],
+					["2026-03-03", "Vehicle or odometer reading missing", { tone: "warning" }],
+				],
+			},
+		]);
+	});
+
+	it("shows no section for submissions without any, including those submitted before #1127", () => {
+		expect(build({ drivingDetailsMissing: [] })).toEqual(build());
+		expect(build().map((section) => section.title)).not.toContain("Driving details missing");
+	});
+});

@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Будь-хто може взяти",
       "assignTo": "Призначити",
+      "certificateOnFileFor": "Наявний сертифікат: {skills}",
       "confirmDelete": "Підтвердити видалення",
       "created": "Зміну створено",
       "createDescription": "Заповніть відомості про нову зміну",
@@ -118,6 +119,7 @@
       "updateShift": "Оновити зміну"
     },
     "skills": {
+      "certificateOnFile": "Наявний сертифікат",
       "expiredCertifications": "Прострочені сертифікати:",
       "expiredOn": "(Термін дії минув {date})",
       "missingPreferred": "Відсутні бажані навички:",

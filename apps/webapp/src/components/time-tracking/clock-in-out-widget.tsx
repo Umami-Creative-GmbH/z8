@@ -15,6 +15,11 @@ import {
 	RestPeriodWarnBanner,
 	WorkLocationSelector,
 } from "@/components/time-tracking/clock-in-out-widget-parts";
+import {
+	BreakVehicleReading,
+	ClockInVehicleUse,
+	ClockOutVehicleUse,
+} from "@/components/time-tracking/clock-vehicle-use";
 import { QuickBreakPopover } from "@/components/time-tracking/quick-break-popover";
 import { SessionReminderPanel } from "@/components/time-tracking/session-reminder-panel";
 import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
@@ -79,6 +84,7 @@ export function ClockInOutWidget({
 }: Props) {
 	const widget = useClockInOutWidget(activeWorkPeriod);
 	const onBreak = widget.isClockedIn && !!widget.activeWorkPeriod?.breakStartedAt;
+	const asksVehicleUse = !widget.uiState.showNotesInput && widget.captureMode !== "local-review";
 
 	return (
 		<Card className="@container/widget">
@@ -130,6 +136,14 @@ export function ClockInOutWidget({
 					/>
 				) : null}
 
+				{/* Vehicle use per the employee's mode (#1122); the legacy review queue keeps none. */}
+				{asksVehicleUse && widget.isClockedIn ? (
+					<ClockOutVehicleUse state={widget.vehicleUse} disabled={widget.isMutating} t={widget.t} />
+				) : null}
+				{asksVehicleUse && !widget.isClockedIn ? (
+					<ClockInVehicleUse state={widget.vehicleUse} disabled={widget.isMutating} t={widget.t} />
+				) : null}
+
 				<ClockConnectionNotice show={widget.connectionRequired} />
 
 				<ClockCaptureControls
@@ -163,7 +177,13 @@ export function ClockInOutWidget({
 									isDisabled={widget.isMutating}
 									t={widget.t}
 									buttonClassName="min-w-0 basis-1/3 px-3"
-								/>
+								>
+									<BreakVehicleReading
+										state={widget.vehicleUse}
+										disabled={widget.isAddingBreak}
+										t={widget.t}
+									/>
+								</QuickBreakPopover>
 							) : null}
 						</div>
 					) : (

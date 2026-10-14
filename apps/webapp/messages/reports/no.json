@@ -434,6 +434,45 @@
       "reportGenerated": "Rapporten ble generert",
       "unexpectedError": "Det oppsto en uventet feil",
       "unknownError": "Det oppsto en ukjent feil"
+    },
+    "vehicles": {
+      "archived": "arkivert",
+      "archivedBadge": "Arkivert",
+      "empty": {
+        "description": "Ingen fullført arbeid med kjøreavstand ble registrert i denne perioden.",
+        "title": "Ingen kjøring i denne perioden"
+      },
+      "error": "Feil",
+      "export": {
+        "footer": "Generert av Z8",
+        "generatedAt": "Generert den",
+        "note": "Hele kilometer med fullført arbeid, talt i måneden arbeidet startet i (lokal tid der det ble registrert).",
+        "period": "Periode",
+        "table": "Kilometer"
+      },
+      "failed": "Rapporten over distanse per kjøretøy kunne ikke genereres",
+      "filter": {
+        "period": "Periode"
+      },
+      "generate": "Generer rapport",
+      "generating": "Genererer rapport…",
+      "kilometres": "{distance} km",
+      "noReportYet": "Ingen rapport er generert ennå",
+      "ownVehicle": "Eget kjøretøy",
+      "page": {
+        "description": "Kilometer kjørt i arbeid per kjøretøy og ansatt, etter måned",
+        "feature": "se rapporten over distanse per kjøretøy"
+      },
+      "selectPeriod": "Velg en periode og generer rapporten.",
+      "table": {
+        "employee": "Ansatt",
+        "licencePlate": "Registreringsnummer",
+        "total": "Totalt",
+        "vehicle": "Kjøretøy",
+        "vehicleAndEmployee": "Kjøretøy / ansatt"
+      },
+      "title": "Distanse per kjøretøy",
+      "totalDriven": "{distance} kjørt"
     }
   }
 }

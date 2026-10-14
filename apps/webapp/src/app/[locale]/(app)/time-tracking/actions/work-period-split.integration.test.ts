@@ -59,13 +59,25 @@ vi.mock("./shared", async (importOriginal) => {
 	};
 	return {
 		...original,
-		logger: { ...original.logger, error: record, warn: record, info: () => {}, debug: () => {} },
+		logger: {
+			...original.logger,
+			error: record,
+			warn: record,
+			info: () => {},
+			debug: () => {},
+		},
 	};
 });
 
 const { clockIn, clockOut } = await import("./clocking");
 const { splitWorkPeriod: splitFromCalendarActions } = await import("../actions");
 const { splitWorkPeriod: splitFromMutations } = await import("./mutations");
+const { editSameDayTimeEntry } = await import("./corrections");
+const { applyAdminWorkPeriodTimeEdit } = await import(
+	"@/lib/time-tracking/admin-work-period-time-edit"
+);
+const { addWorkPeriodMileage } = await import("@/lib/travel-expenses/work-period-mileage");
+const { db } = await import("@/db");
 
 const ids = {
 	organization: "t304-split-org",
@@ -139,7 +151,13 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 
 	function split(
 		workPeriodId: string,
-		values: { date?: string; time: string; before?: string; after?: string },
+		values: {
+			date?: string;
+			time: string;
+			before?: string;
+			after?: string;
+			vehicleKm?: number;
+		},
 		submissionId?: string,
 		via: Split = splitFromCalendarActions,
 	) {
@@ -152,6 +170,7 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 			values.after,
 			undefined,
 			submissionId,
+			values.vehicleKm,
 		);
 	}
 
@@ -297,10 +316,12 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 			[ids.organization, period.canonical_record_id, ids.manager],
 		);
 		const submissionId = randomUUID();
-		const { rows: tipBefore } = await admin.query<{ tip_entry_id: string; version: number }>(
-			"select tip_entry_id, version from time_entry_append_position where employee_id = $1",
-			[ids.requester],
-		);
+		const { rows: tipBefore } = await admin.query<{
+			tip_entry_id: string;
+			version: number;
+		}>("select tip_entry_id, version from time_entry_append_position where employee_id = $1", [
+			ids.requester,
+		]);
 		await admin.query(
 			"update employee_work_balance set is_dirty = false, dirty_from_date = null where employee_id = $1",
 			[ids.requester],
@@ -397,7 +418,10 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 			"select is_dirty, dirty_from_date::text from employee_work_balance where employee_id = $1",
 			[ids.requester],
 		);
-		expect(only(balance)).toEqual({ is_dirty: true, dirty_from_date: "2026-07-22" });
+		expect(only(balance)).toEqual({
+			is_dirty: true,
+			dirty_from_date: "2026-07-22",
+		});
 
 		const { rows: receipts } = await admin.query<{
 			kind: string;
@@ -428,6 +452,13 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 				},
 			},
 		});
+		// Work without vehicle use keeps the receipt's earlier shape (#1126).
+		expect(Object.keys(receipt.command.request as object)).not.toContain("vehicleSplitKm");
+		const resultSegments = receipt.result.segments as { attribution: object }[];
+		expect(resultSegments.map(({ attribution }) => "vehicleUse" in attribution)).toEqual([
+			false,
+			false,
+		]);
 		expect(receipt.result).toMatchObject({
 			split: {
 				at: "2026-07-22T12:00:00Z",
@@ -443,14 +474,21 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 				approvalState: "approved",
 			},
 			segments: [
-				{ role: "retained", durationMinutes: 239, clockOutEntryId: splitClockOut?.id },
+				{
+					role: "retained",
+					durationMinutes: 239,
+					clockOutEntryId: splitClockOut?.id,
+				},
 				{
 					role: "generated",
 					workPeriodId: generated?.id,
 					durationMinutes: 301,
 					clockInEntryId: splitClockIn?.id,
 					clockOutEntryId: period.clock_out_id,
-					origin: { workPeriodId: period.id, canonicalRecordId: period.canonical_record_id },
+					origin: {
+						workPeriodId: period.id,
+						canonicalRecordId: period.canonical_record_id,
+					},
 					approval: {
 						state: "approved",
 						basis: "split_source",
@@ -464,7 +502,10 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 				clockIn: { previousEntryId: splitClockOut?.id },
 			},
 			revisions: {
-				source: { source: period.graph_revision, result: period.graph_revision + 1 },
+				source: {
+					source: period.graph_revision,
+					result: period.graph_revision + 1,
+				},
 				generated: { source: null, result: 1 },
 			},
 		});
@@ -680,7 +721,112 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 		},
 	);
 
-	it("keeps the established period-only split in a legacy organization", async () => {
+	it.each([
+		["active", "self"],
+		["inactive", "self"],
+		["active", "admin"],
+		["inactive", "admin"],
+	] as const)(
+		"allows changing either split segment's location under %s admission via %s edit",
+		async (admission, route) => {
+			await setAdmission(admission);
+			const period = await recordWork(
+				parseInstant("2026-07-22T08:00:00Z"),
+				parseInstant("2026-07-22T16:00:00Z"),
+			);
+			await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toMatchObject({
+				success: true,
+			});
+			const parts = await segments();
+			expect(parts).toHaveLength(2);
+			if (route === "admin") {
+				await admin.query(
+					"update member set role = 'admin' where organization_id = $1 and user_id = $2",
+					[ids.organization, ids.requesterUser],
+				);
+			}
+			for (const [index, part] of [...parts.entries()].reverse()) {
+				if (route === "admin") {
+					await expect(
+						applyAdminWorkPeriodTimeEdit({
+							organizationId: ids.organization,
+							actorUserId: ids.requesterUser,
+							workPeriodId: part.id,
+							submissionId: randomUUID(),
+							submitted: {
+								clockInDate: "2026-07-22",
+								clockInTime: index === 0 ? "10:00" : "14:00",
+								clockOutDate: "2026-07-22",
+								clockOutTime: index === 0 ? "14:00" : "18:00",
+								workLocationType: "remote",
+							},
+							expected: {
+								employeeId: ids.requester,
+								clockInId: part.clock_in_id,
+								clockOutId: part.clock_out_id,
+								startTime: part.start_time,
+								endTime: part.end_time,
+							},
+							clockIn: part.start_time,
+							clockOut: part.end_time,
+							timezone: "Europe/Berlin",
+							timezoneSource: "user_setting",
+							notes: "Mobil",
+							ipAddress: "",
+							deviceInfo: "",
+						}),
+					).resolves.toMatchObject({ workPeriodId: part.id });
+					continue;
+				}
+				await expect(
+					editSameDayTimeEntry({
+						workPeriodId: part.id,
+						newClockInDate: "2026-07-22",
+						newClockInTime: index === 0 ? "10:00" : "14:00",
+						newClockOutDate: "2026-07-22",
+						newClockOutTime: index === 0 ? "14:00" : "18:00",
+						workLocationType: "remote",
+						workCategoryId: null,
+					}),
+				).resolves.toEqual({ success: true, data: { workPeriodId: part.id } });
+			}
+			expect(
+				(await segments()).map(({ detail_location, record_duration }) => ({
+					detail_location,
+					record_duration,
+				})),
+			).toEqual([
+				{ detail_location: "remote", record_duration: 240 },
+				{ detail_location: "remote", record_duration: 240 },
+			]);
+		},
+	);
+	it.each([
+		["time_record", "update"],
+		["time_record", "insert"],
+		["time_record_work", "insert"],
+		["time_record_allocation", "insert"],
+	] as const)("rolls back a legacy split when %s %s fails", async (table, event) => {
+		await setAdmission("inactive");
+		const period = await recordWork();
+		const before = await snapshot();
+		await admin.query(
+			`create function t304_split_fail() returns trigger language plpgsql as $$ begin raise exception 'split canonical write failure'; end $$`,
+		);
+		await admin.query(
+			`create trigger t304_split_fail before ${event} on ${table} for each row execute function t304_split_fail()`,
+		);
+		try {
+			await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toMatchObject({
+				success: false,
+				error: failed,
+			});
+		} finally {
+			await admin.query("drop function t304_split_fail() cascade");
+		}
+		expect(await snapshot()).toEqual(before);
+	});
+	it("divides the canonical record and preserves attribution in a legacy organization", async () => {
 		await setAdmission("inactive");
 		const period = await recordWork();
 
@@ -694,14 +840,331 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 			// The legacy resolver floors each segment.
 			duration_minutes: 239,
 			graph_revision: period.graph_revision,
-			// Legacy writes leave the canonical record untouched.
-			record_end: new Date("2026-07-22T17:00:31Z"),
+			// The canonical record follows the retained segment.
+			record_end: new Date("2026-07-22T12:00:00Z"),
+			record_duration: 239,
 		});
-		expect(generated).toMatchObject({ duration_minutes: 300, canonical_record_id: null });
+		expect(generated).toMatchObject({
+			duration_minutes: 300,
+			record_duration: 300,
+			record_start: new Date("2026-07-22T12:00:00Z"),
+			record_end: new Date("2026-07-22T17:00:31Z"),
+			detail_location: "office",
+			allocations: [`project:${ids.project}`],
+		});
+		expect(generated?.canonical_record_id).toBeTruthy();
+		expect(generated?.canonical_record_id).not.toBe(period.canonical_record_id);
 		const { rows } = await admin.query(
 			"select count(*)::int as receipts from completed_work_operation where organization_id = $1 and kind = 'split_completed_work'",
 			[ids.organization],
 		);
 		expect(only(rows)).toEqual({ receipts: 0 });
+	});
+
+	describe("vehicle use (#1126)", () => {
+		const van = "e3041000-0000-4000-8000-000000000061";
+		type Km = {
+			start: number | null;
+			end: number | null;
+			distance: number | null;
+		};
+
+		async function enableVehicleUse(mode: "off" | "asked" | "expected") {
+			await admin.query(
+				`insert into vehicle_use_setting (organization_id, enabled) values ($1, $2)
+				 on conflict (organization_id) do update set enabled = excluded.enabled`,
+				[ids.organization, mode !== "off"],
+			);
+			await admin.query(
+				`insert into vehicle_use_assignment (organization_id, assignment_type, priority, mode, created_by)
+				 values ($1, 'organization', 0, $2, $3)`,
+				[ids.organization, mode, ids.managerUser],
+			);
+		}
+
+		/** Records vehicle use the way #1120 stores it: on the period and its canonical detail. */
+		async function driveVan(period: { id: string; canonical_record_id: string | null }, km: Km) {
+			await admin.query(
+				`insert into organization_vehicle (id, organization_id, name, licence_plate)
+				 values ($1, $2, 'Van', 'B-VN 100') on conflict do nothing`,
+				[van, ids.organization],
+			);
+			for (const [table, key] of [
+				["work_period", "id"],
+				["time_record_work", "record_id"],
+			] as const) {
+				await admin.query(
+					`update ${table} set vehicle_kind = 'organization', vehicle_id = $2,
+					   odometer_start_km = $3, odometer_end_km = $4, driven_distance_km = $5
+					 where ${key} = $1`,
+					[
+						table === "work_period" ? period.id : period.canonical_record_id,
+						van,
+						km.start,
+						km.end,
+						km.distance,
+					],
+				);
+			}
+		}
+
+		async function vehicleSegments() {
+			const { rows } = await admin.query<{
+				id: string;
+				period: Km & { vehicle: string | null };
+				detail: (Km & { vehicle: string | null }) | null;
+			}>(
+				`select wp.id,
+				   json_build_object('vehicle', wp.vehicle_id, 'start', wp.odometer_start_km,
+				     'end', wp.odometer_end_km, 'distance', wp.driven_distance_km) as period,
+				   case when w.record_id is null then null else json_build_object('vehicle', w.vehicle_id,
+				     'start', w.odometer_start_km, 'end', w.odometer_end_km, 'distance', w.driven_distance_km) end as detail
+				 from work_period wp
+				 left join time_record_work w on w.record_id = wp.canonical_record_id
+				 where wp.organization_id = $1 and wp.deleted_at is null
+				 order by wp.start_time`,
+				[ids.organization],
+			);
+			return rows;
+		}
+
+		const km = (start: number | null, end: number | null, distance: number | null) => ({
+			vehicle: van,
+			start,
+			end,
+			distance,
+		});
+
+		it("copies the vehicle to both halves and applies the reading at the split as end and start", async () => {
+			await enableVehicleUse("asked");
+			const period = await recordWork();
+			await driveVan(period, { start: 12_000, end: 12_085, distance: 85 });
+			const submissionId = randomUUID();
+
+			const result = await split(period.id, { time: "14:00", vehicleKm: 12_040 }, submissionId);
+
+			expect(result).toMatchObject({ success: true });
+			const [retained, generated] = await vehicleSegments();
+			expect(retained).toEqual({
+				id: period.id,
+				period: km(12_000, 12_040, 40),
+				detail: km(12_000, 12_040, 40),
+			});
+			expect(generated).toMatchObject({
+				period: km(12_040, 12_085, 45),
+				detail: km(12_040, 12_085, 45),
+			});
+			const { rows } = await admin.query<{
+				command: { request: Record<string, unknown> };
+				result: {
+					source: { attribution: object };
+					segments: { attribution: object }[];
+				};
+			}>("select command, result from completed_work_operation where id = $1", [submissionId]);
+			const receipt = only(rows);
+			expect(receipt.command.request).toMatchObject({ vehicleSplitKm: 12_040 });
+			const vanUse = (startKm: number, endKm: number) => ({
+				vehicle: { kind: "organization", vehicleId: van },
+				startKm,
+				endKm,
+				distanceKm: endKm - startKm,
+			});
+			expect(receipt.result.source.attribution).toMatchObject({
+				vehicleUse: vanUse(12_000, 12_085),
+			});
+			expect(receipt.result.segments.map(({ attribution }) => attribution)).toMatchObject([
+				{ vehicleUse: vanUse(12_000, 12_040) },
+				{ vehicleUse: vanUse(12_040, 12_085) },
+			]);
+
+			// The committed split replays exactly, and a different reading is a collision.
+			const after = await snapshot();
+			await expect(
+				split(period.id, { time: "14:00", vehicleKm: 12_040 }, submissionId, splitFromMutations),
+			).resolves.toEqual(result);
+			await expect(
+				split(period.id, { time: "14:00", vehicleKm: 12_041 }, submissionId),
+			).resolves.toMatchObject({ success: false, error: collision });
+			expect(await snapshot()).toEqual(after);
+		});
+
+		it("leaves both cut readings missing when the split reading is skipped", async () => {
+			await enableVehicleUse("expected");
+			const period = await recordWork();
+			await driveVan(period, { start: 12_000, end: 12_085, distance: 85 });
+
+			await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toMatchObject({
+				success: true,
+			});
+
+			expect((await vehicleSegments()).map(({ period, detail }) => [period, detail])).toEqual([
+				[km(12_000, null, null), km(12_000, null, null)],
+				[km(null, 12_085, null), km(null, 12_085, null)],
+			]);
+		});
+
+		it("divides a directly entered distance by the first half's kilometres", async () => {
+			await enableVehicleUse("asked");
+			const period = await recordWork();
+			await driveVan(period, { start: null, end: null, distance: 120 });
+
+			await expect(
+				split(period.id, { time: "14:00", vehicleKm: 70 }, randomUUID()),
+			).resolves.toMatchObject({ success: true });
+
+			expect((await vehicleSegments()).map(({ period }) => period)).toEqual([
+				km(null, null, 70),
+				km(null, null, 50),
+			]);
+		});
+
+		it("keeps the whole directly entered distance on the first half when skipped", async () => {
+			await enableVehicleUse("asked");
+			const period = await recordWork();
+			await driveVan(period, { start: null, end: null, distance: 120 });
+
+			await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toMatchObject({
+				success: true,
+			});
+
+			expect((await vehicleSegments()).map(({ period }) => period)).toEqual([
+				km(null, null, 120),
+				km(null, null, null),
+			]);
+		});
+
+		it("refuses a reading outside the work's readings without writing", async () => {
+			await enableVehicleUse("asked");
+			const period = await recordWork();
+			await driveVan(period, { start: 12_000, end: 12_085, distance: 85 });
+			const before = await snapshot();
+
+			await expect(
+				split(period.id, { time: "14:00", vehicleKm: 12_100 }, randomUUID()),
+			).resolves.toMatchObject({
+				success: false,
+				code: "split_value_out_of_range",
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("still splits read-only vehicle use while vehicle use is off, but refuses a reading", async () => {
+			await enableVehicleUse("off");
+			const period = await recordWork();
+			await driveVan(period, { start: 12_000, end: 12_085, distance: 85 });
+			const before = await snapshot();
+
+			await expect(
+				split(period.id, { time: "14:00", vehicleKm: 12_040 }, randomUUID()),
+			).resolves.toMatchObject({ success: false, code: "vehicle_use_off" });
+			expect(await snapshot()).toEqual(before);
+
+			await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toMatchObject({
+				success: true,
+			});
+			expect((await vehicleSegments()).map(({ period }) => period)).toEqual([
+				km(12_000, null, null),
+				km(null, 12_085, null),
+			]);
+		});
+
+		it("holds a split for review when the period and its canonical record disagree on vehicle use", async () => {
+			await enableVehicleUse("asked");
+			const period = await recordWork();
+			await driveVan(period, { start: 12_000, end: 12_085, distance: 85 });
+			await admin.query(
+				"update time_record_work set odometer_end_km = 12_090, driven_distance_km = 90 where record_id = $1",
+				[period.canonical_record_id],
+			);
+			const before = await snapshot();
+
+			await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toMatchObject({
+				success: false,
+				code: "completed_work_review_required",
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("divides the vehicle in both legacy work representations", async () => {
+			await setAdmission("inactive");
+			await enableVehicleUse("asked");
+			const period = await recordWork();
+			await driveVan(period, { start: 12_000, end: 12_085, distance: 85 });
+
+			await expect(
+				split(period.id, { time: "14:00", vehicleKm: 12_040 }, randomUUID()),
+			).resolves.toMatchObject({ success: true });
+
+			const [retained, generated] = await vehicleSegments();
+			expect(retained?.period).toEqual(km(12_000, 12_040, 40));
+			expect(generated?.period).toEqual(km(12_040, 12_085, 45));
+			// The canonical record follows the retained segment.
+			expect(retained?.detail).toEqual(km(12_000, 12_040, 40));
+			expect(generated?.detail).toEqual(km(12_040, 12_085, 45));
+		});
+
+		describe("work whose distance is claimed on an expense item (#1131)", () => {
+			/** Own-vehicle work with 120 km, added as a mileage item to a new report. */
+			async function claimOwnVehicleWork(period: {
+				id: string;
+				canonical_record_id: string | null;
+			}) {
+				for (const [table, key, id] of [
+					["work_period", "id", period.id],
+					["time_record_work", "record_id", period.canonical_record_id],
+				] as const) {
+					await admin.query(
+						`update ${table} set vehicle_kind = 'own', vehicle_id = null, odometer_start_km = null,
+						   odometer_end_km = null, driven_distance_km = 120
+						 where ${key} = $1`,
+						[id],
+					);
+				}
+				const added = await addWorkPeriodMileage(
+					db,
+					{
+						organizationId: ids.organization,
+						employeeId: ids.requester,
+						userId: ids.requesterUser,
+					},
+					{ workPeriodId: period.id, reportId: null },
+				);
+				expect(added).toMatchObject({ kind: "added" });
+				return added.kind === "added" ? added.itemId : "";
+			}
+
+			it.each([
+				["an adopted", "active"],
+				["a legacy", "inactive"],
+			] as const)(
+				"refuses splitting %s organization's claimed work until the item is removed",
+				async (_label, admission) => {
+					await setAdmission(admission);
+					await enableVehicleUse("asked");
+					const period = await recordWork();
+					const itemId = await claimOwnVehicleWork(period);
+					const before = await snapshot();
+
+					await expect(
+						split(period.id, { time: "14:00", vehicleKm: 70 }, randomUUID()),
+					).resolves.toMatchObject({
+						success: false,
+						code: "work_period_distance_claimed",
+					});
+					await expect(
+						split(period.id, { time: "14:00" }, randomUUID(), splitFromMutations),
+					).resolves.toMatchObject({
+						success: false,
+						code: "work_period_distance_claimed",
+					});
+					expect(await snapshot()).toEqual(before);
+
+					await admin.query("delete from travel_expense_report_item where id = $1", [itemId]);
+					await expect(
+						split(period.id, { time: "14:00", vehicleKm: 70 }, randomUUID()),
+					).resolves.toMatchObject({ success: true });
+				},
+			);
+		});
 	});
 });

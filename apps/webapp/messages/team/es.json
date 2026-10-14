@@ -108,6 +108,36 @@
       "noBalance": "Sin saldo"
     },
     "description": "Ver y gestionar los empleados que supervisas directamente",
+    "driving": {
+      "columns": {
+        "calendar": "Calendario",
+        "date": "Fecha",
+        "employee": "Empleado",
+        "missing": "Faltante",
+        "time": "Hora local registrada"
+      },
+      "count": "{count, plural, one {Faltan detalles de conducción en # período de trabajo.} other {Faltan detalles de conducción en # períodos de trabajo.}}",
+      "descriptionAll": "Períodos de trabajo en los que falta un vehículo o una lectura del odómetro a pesar de que se prevé el uso de vehículo. Permanecen en la lista hasta que se completen los detalles.",
+      "descriptionManaged": "Períodos de trabajo de los empleados que administra en los que falta un vehículo o una lectura del odómetro a pesar de que se prevé el uso de vehículo. Permanecen en la lista hasta que se completen los detalles.",
+      "empty": "Ningún trabajo tiene detalles de conducción pendientes.",
+      "filters": {
+        "allEmployees": "Todos los empleados",
+        "allTeams": "Todos los equipos",
+        "employee": "Empleado",
+        "team": "Equipo"
+      },
+      "loading": "Cargando detalles de conducción",
+      "missing": {
+        "endReading": "Sin lectura final",
+        "readings": "Sin lecturas del odómetro",
+        "startReading": "Sin lectura inicial",
+        "vehicle": "Sin vehículo"
+      },
+      "openCalendar": "Calendario",
+      "openCalendarOf": "Abrir el calendario de {name}",
+      "title": "Faltan detalles de conducción",
+      "truncated": "Mostrando los {count} períodos de trabajo más recientes. Filtre por equipo o empleado para ver el resto."
+    },
     "empty": {
       "action": "Ir a Configuración de empleados",
       "description": "Los empleados asignados a ti como su gerente aparecerán aquí. Puedes gestionar las asignaciones de equipo en la configuración de empleados.",

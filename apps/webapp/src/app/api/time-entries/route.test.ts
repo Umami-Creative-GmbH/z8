@@ -235,6 +235,29 @@ describe("POST /api/time-entries", () => {
 			});
 		});
 
+		it("carries the desktop's online vehicle use beside the body (#1124)", async () => {
+			const vehicleUse = {
+				vehicle: { kind: "organization", vehicleId: "0c1d2e3f-4a5b-4c6d-8e7f-8091a2b3c4d5" },
+				startKm: 12_000,
+			};
+			await post({ type: "clock_in", workLocationType: "remote", vehicleUse });
+			await post({ type: "clock_out", vehicleUse: { endKm: 12_085 } });
+
+			expect(command()).toMatchObject({ vehicleUse, body: { kind: "clock_in" } });
+			expect(state.run.mock.calls[1]?.[0]).toMatchObject({
+				vehicleUse: { endKm: 12_085 },
+				body: { kind: "clock_out" },
+			});
+		});
+
+		it("drops malformed vehicle use and still runs the clock event (#1124)", async () => {
+			await post({ type: "clock_out", vehicleUse: { endKm: -1 } });
+			await post({ type: "clock_in", vehicleUse: null });
+
+			expect(command()).not.toHaveProperty("vehicleUse");
+			expect(state.run.mock.calls[1]?.[0]).not.toHaveProperty("vehicleUse");
+		});
+
 		it("samples an instant-less clock-in at the server in the office", async () => {
 			await post({ type: "clock_in" });
 

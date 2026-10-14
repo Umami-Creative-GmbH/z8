@@ -27,7 +27,7 @@ const expiredSkill: StaffingWarning = {
 	type: "expiredRequiredSkill",
 	skillId: "first-aid",
 	skillName: "First aid",
-	expiresAt: "2026-10-01T00:00:00Z",
+	expiresAt: "2026-10-01",
 };
 const compliance: StaffingWarning = {
 	type: "compliance",

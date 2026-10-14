@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Absence request approved",
+    "absenceChange": {
+      "afternoon": "Afternoon",
+      "cancelAll": "Cancel the entire absence",
+      "cancellationTitle": "Absence cancellation",
+      "category": "Absence category",
+      "displacedVacation": "Vacation dates replaced on approval",
+      "exactHours": "Exact recorded hours",
+      "fullDay": "Full day",
+      "morning": "Morning",
+      "original": "Recorded dates",
+      "originalEndCoverage": "Recorded end day",
+      "originalInterval": "Recorded hours",
+      "originalStartCoverage": "Recorded start day",
+      "proposed": "Proposed change",
+      "proposedEndCoverage": "Proposed end day",
+      "proposedInterval": "Proposed hours",
+      "proposedStartCoverage": "Proposed start day",
+      "range": "{range}",
+      "reason": "Reason",
+      "reasonValue": "{reason}",
+      "title": "Absence change"
+    },
     "absenceRejected": "Absence request rejected",
     "absenceRequests": "Absence Requests",
     "absenceRequestsDescription": "Review and approve time-off requests from your team members",
@@ -304,6 +326,8 @@
       "dayTotals": "Day totals",
       "difference": "Difference",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Driving details missing",
+      "drivingDetailsMissingWork": "Vehicle or odometer reading missing",
       "employee": "Employee",
       "holidays": "Public holidays",
       "openCalendar": "Open the calendar for this period",
@@ -413,6 +437,7 @@
     "totalCount": "{totalCount} pending",
     "type": "Type",
     "types": {
+      "absence_change_request": "Absence Changes",
       "absence_entry": "Absence Requests",
       "period_submission": "Period Submissions",
       "time_entry": "Time Corrections",
@@ -421,6 +446,15 @@
     },
     "unifiedInboxBannerDescription": "View all approval types in one place with filtering, bulk actions, and SLA tracking.",
     "unifiedInboxBannerTitle": "Try the new Unified Inbox",
+    "vehicleUse": "Vehicle use",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km is more than {limit} km in one work period.",
+      "onOtherLiveWork": "This vehicle is already recorded on another employee's running work.",
+      "speedAboveLimit": "The driven distance implies an average of {speed} km/h over this work period, more than {limit} km/h.",
+      "startBelowLastEnd": "The start reading is below this vehicle's last recorded end reading ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Please check",
     "viewExpenseClaim": "View claim and receipts",
     "viewExpenseReport": "View submitted report and receipts",
     "workBalance": {

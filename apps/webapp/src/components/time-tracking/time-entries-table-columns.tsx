@@ -46,6 +46,7 @@ export function getTimeEntriesColumns({
 	renderEditAction,
 	renderAdminAction,
 	showBillable = false,
+	isDrivingDetailsMissing,
 }: {
 	t: TFnType;
 	locale: string;
@@ -56,6 +57,8 @@ export function getTimeEntriesColumns({
 	renderAdminAction?: (period: WorkPeriodData) => ReactNode;
 	/** Mark billable work (#900); only while Billable Time is on. */
 	showBillable?: boolean;
+	/** Whether a work period shows driving details missing (#1127). */
+	isDrivingDetailsMissing?: (workPeriodId: string) => boolean;
 }): ColumnDef<DataTableFeatures, WorkPeriodData>[] {
 	return [
 		{
@@ -158,13 +161,25 @@ export function getTimeEntriesColumns({
 				) : (
 					<span className="text-muted-foreground">-</span>
 				);
-				if (!showBillable || !row.original.isBillable) return description;
+				const billable = showBillable && row.original.isBillable;
+				const drivingDetailsMissing = isDrivingDetailsMissing?.(row.original.id) ?? false;
+				if (!billable && !drivingDetailsMissing) return description;
 				return (
 					<div className="flex flex-col gap-1">
 						{description}
-						<Badge variant="outline" className="w-fit text-xs">
-							{t("timeTracking.table.billable", "Billable")}
-						</Badge>
+						{billable ? (
+							<Badge variant="outline" className="w-fit text-xs">
+								{t("timeTracking.table.billable", "Billable")}
+							</Badge>
+						) : null}
+						{drivingDetailsMissing ? (
+							<Badge
+								variant="outline"
+								className="w-fit border-amber-500/50 text-amber-700 text-xs dark:text-amber-300"
+							>
+								{t("timeTracking.table.drivingDetailsMissing", "Driving details missing")}
+							</Badge>
+						) : null}
 					</div>
 				);
 			},

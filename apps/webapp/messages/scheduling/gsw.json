@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Cha vo jede überno werde",
       "assignTo": "Zuegwise a",
+      "certificateOnFileFor": "Zertifikat hinterleit: {skills}",
       "confirmDelete": "Lösche bestätige",
       "created": "Schicht erstellt",
       "createDescription": "Gib d Details für die neui Schicht ii",
@@ -118,6 +119,7 @@
       "updateShift": "Schicht aktualisiere"
     },
     "skills": {
+      "certificateOnFile": "Zertifikat hinterleit",
       "expiredCertifications": "Abglaufeni Zertifizierige:",
       "expiredOn": "(Abglaufe am {date})",
       "missingPreferred": "Fehlendi bevorzugti Fähigkeite:",

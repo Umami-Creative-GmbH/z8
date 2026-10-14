@@ -46,7 +46,9 @@ export function actingForFromEventMetadata(metadata: unknown): ActingFor | null 
 		: null;
 }
 
-export type DeputyDecisionEntityType = "absence_entry" | "time_entry" | "travel_expense_report";
+export type DeputyDecisionEntityType =
+	| "absence_entry" | "absence_change_request"
+	| "time_entry" | "travel_expense_report";
 
 /**
  * The approval kinds a covering deputy may list and decide (spec #802):
@@ -55,6 +57,7 @@ export type DeputyDecisionEntityType = "absence_entry" | "time_entry" | "travel_
  */
 export const DEPUTY_DECISION_ENTITY_TYPES: readonly DeputyDecisionEntityType[] = [
 	"absence_entry",
+	"absence_change_request",
 	"time_entry",
 	"travel_expense_report",
 ];
@@ -88,7 +91,7 @@ export function decideDeputyRight(input: {
 	if (input.actorDecidedEarlierStage) return { kind: "refused", reason: "four_eyes" };
 	return {
 		kind: "deputy",
-		actingFor: { approverEmployeeId: input.approverEmployeeId, absenceId: input.cover.absenceId },
+		actingFor: { approverEmployeeId: input.approverEmployeeId, absenceId: input.cover.absenceId, },
 	};
 }
 

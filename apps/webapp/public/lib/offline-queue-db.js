@@ -274,6 +274,31 @@ function validPosition(position) {
 	);
 }
 
+function wholeKilometres(value) {
+	return Number.isInteger(value) && value >= 0;
+}
+
+/**
+ * Vehicle use beside the event (#1122): absent, or the fields its kind may name. The queue
+ * holds clock-ins and clock-outs only: a clock-in names its vehicle, a clock-out at least one
+ * field.
+ */
+function validVehicleUse(kind, vehicleUse) {
+	if (vehicleUse === undefined) return true;
+	if (vehicleUse === null || typeof vehicleUse !== "object") return false;
+	const vehicle = vehicleUse.vehicle;
+	const validVehicle =
+		vehicle === undefined ||
+		(vehicle !== null &&
+			typeof vehicle === "object" &&
+			(vehicle.kind === "own" ||
+				(vehicle.kind === "organization" && typeof vehicle.vehicleId === "string")));
+	const fields = ["startKm", "endKm", "distanceKm"].filter((field) => field in vehicleUse);
+	if (!validVehicle || !fields.every((field) => wholeKilometres(vehicleUse[field]))) return false;
+	if (kind !== "clock_in") return vehicle !== undefined || fields.length > 0;
+	return vehicle !== undefined && !("endKm" in vehicleUse) && !("distanceKm" in vehicleUse);
+}
+
 function validCaptureRequest(request) {
 	const context = request?.context;
 	return (
@@ -285,7 +310,8 @@ function validCaptureRequest(request) {
 		typeof request.timezone === "string" &&
 		context &&
 		COMMAND_CONTEXT_FIELDS.every((field) => typeof context[field] === "string" && context[field]) &&
-		validPosition(request.position)
+		validPosition(request.position) &&
+		validVehicleUse(request.kind, request.vehicleUse)
 	);
 }
 

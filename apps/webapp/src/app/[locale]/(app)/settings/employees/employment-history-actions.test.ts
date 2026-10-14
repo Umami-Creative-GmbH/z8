@@ -38,9 +38,11 @@ import {
 	buildEmploymentAssignmentWindowUpdates,
 	buildEmploymentCancellationRestorationPlan,
 	canCancelEmploymentHistoryRow,
+} from "./employment-history-actions";
+import {
 	shouldConfirmEmploymentHistoryRow,
 	shouldUpdateCurrentEmployeeFields,
-} from "./employment-history-actions";
+} from "@/lib/employment-history/write-terms";
 
 const d = (value: string) => new Date(`${value}T00:00:00.000Z`);
 

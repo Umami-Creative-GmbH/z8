@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "{count} timeføringer slettet",
           "title": "Tøm tidsdata",
           "vacationAllowancesReset": "{count} feriekvoter tilbakestilt",
+          "vehiclesDeleted": "{count, plural, other {# kjøretøy slettet} }",
           "willDelete": "Dette vil slette permanent:",
           "workCategoriesDeleted": "{count} arbeidskategorier slettet",
           "workCategorySetsDeleted": "{count} arbeidskategorisett slettet",
@@ -109,7 +110,7 @@
           "label": "Datatyper",
           "locations": {
             "countLabel": "Antall lokasjoner:",
-            "description": "Arbeidslokasjoner og delområder",
+            "descriptionWithVehicles": "Arbeidssteder, delområder og noen få kjøretøy",
             "title": "Lokasjoner"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Oppretter timeregistreringer og arbeidsperioder",
           "label": "Timeregistreringer"
+        },
+        "vehicleUse": {
+          "description": "Registrering av kjøretøybruk i arbeidsperioder",
+          "label": "Kjøretøybruk"
         },
         "workCategories": {
           "description": "Oppretter arbeidskategorisett og kategorier",

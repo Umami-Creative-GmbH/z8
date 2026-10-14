@@ -37,6 +37,15 @@ import {
 } from "@/lib/time-tracking/work-billability";
 import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
 import { closedRangeTouchedByWork } from "@/lib/time-tracking/closed-months/rules";
+import {
+	assertWorkVehicleUseChangeAllowed,
+	workVehicleUseRefusalCodeOf,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use-eligibility";
+import type { WorkVehicleUseChangeRefusalCode } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-refusals";
+import {
+	buildWorkVehicleUse,
+	type WorkVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import { validateWorkCategoryAssignment } from "./clocking";
 import { validateProjectAssignment } from "./entry-helpers";
@@ -70,7 +79,9 @@ export type ManualPreparationRejection =
 	| { reason: "billable_not_allowed"; detail: BillableWorkRefusal }
 	| { reason: "policy_ambiguous"; level: ManualPolicyLevel }
 	/** The work touches a closed month (#762), named as `YYYY-MM`. */
-	| { reason: "month_closed"; month: string };
+	| { reason: "month_closed"; month: string }
+	/** The entered vehicle use cannot be recorded (#1120). */
+	| { reason: "vehicle_use_refused"; code: WorkVehicleUseChangeRefusalCode };
 
 /** Normalized authoritative facts; the submitted command stays separate. */
 export type PreparedManualWork = {
@@ -90,6 +101,8 @@ export type PreparedManualWork = {
 	taskId: string | null;
 	workCategoryId: string | null;
 	workLocationType: ManualTimeEntryCommand["workLocationType"];
+	/** Validated vehicle use with its derived distance (#1120); absent records none. */
+	vehicleUse?: WorkVehicleUse;
 	daysBack: number;
 	policy: ManualPolicyEvidence | null;
 	approval: ManualApprovalIntent;
@@ -333,6 +346,28 @@ export async function prepareManualWork(
 		}
 	}
 
+	// Vehicle use (#1120): asked or expected for the target, with a pickable vehicle.
+	let vehicleUse: WorkVehicleUse | undefined;
+	if (command.vehicleUse) {
+		const built = buildWorkVehicleUse(command.vehicleUse);
+		if (!built.ok) {
+			return { ok: false, rejection: { reason: "vehicle_use_refused", code: built.code } };
+		}
+		try {
+			await assertWorkVehicleUseChangeAllowed(tx, {
+				organizationId: target.organizationId,
+				employeeId: target.id,
+				previous: null,
+				resulting: built.use,
+			});
+		} catch (error) {
+			const code = workVehicleUseRefusalCodeOf(error);
+			if (!code) throw error;
+			return { ok: false, rejection: { reason: "vehicle_use_refused", code } };
+		}
+		vehicleUse = built.use;
+	}
+
 	let isBillable: boolean;
 	try {
 		isBillable = await resolveWorkBillabilityInTransaction(tx, target.organizationId, {
@@ -382,6 +417,7 @@ export async function prepareManualWork(
 			taskId: command.taskId ?? null,
 			workCategoryId: command.workCategoryId,
 			workLocationType: command.workLocationType,
+			...(vehicleUse ? { vehicleUse } : {}),
 			daysBack,
 			policy,
 			approval: evaluateManualApprovalIntent({ exemption, policy, daysBack }),

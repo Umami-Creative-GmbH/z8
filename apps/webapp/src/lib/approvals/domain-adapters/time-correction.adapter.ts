@@ -39,6 +39,7 @@ import {
 	type CurrentTimeCorrectionWorkflowContract,
 	normalizeTimeCorrectionOriginalWorkMetadata,
 	normalizeTimeCorrectionWorkflowPayload,
+	sameNamedVehicleUse,
 	type TimeCorrectionEndpointEvidence,
 	type TimeCorrectionOriginalWorkMetadata,
 	type TimeCorrectionWorkflowPayload,
@@ -248,7 +249,8 @@ function sameOriginalWorkMetadata(
 ): boolean {
 	return (
 		left?.workLocationType === right?.workLocationType &&
-		left?.workCategoryId === right?.workCategoryId
+		left?.workCategoryId === right?.workCategoryId &&
+		sameNamedVehicleUse(left ?? {}, right ?? {})
 	);
 }
 
@@ -267,7 +269,8 @@ function sameCorrection(
 			((left as CurrentTimeCorrectionWorkflowContract).workLocationType ===
 				(right as CurrentTimeCorrectionWorkflowContract).workLocationType &&
 				(left as CurrentTimeCorrectionWorkflowContract).workCategoryId ===
-					(right as CurrentTimeCorrectionWorkflowContract).workCategoryId))
+					(right as CurrentTimeCorrectionWorkflowContract).workCategoryId &&
+				sameNamedVehicleUse(left, right)))
 	);
 }
 

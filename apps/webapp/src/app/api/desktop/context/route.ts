@@ -15,6 +15,8 @@ import {
 	clockingService,
 } from "@/lib/time-tracking/clocking-service";
 import { listEligibleProjects } from "@/lib/time-tracking/project-eligibility";
+import { loadWorkVehicleUseFormContext } from "@/lib/time-tracking/vehicle-use/form-context";
+import { vehicleUseFromColumns } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { getUserTimezone } from "@/lib/user-preferences/timezone-server";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 
@@ -87,12 +89,17 @@ export async function GET() {
 					projectId: true,
 					workCategoryId: true,
 					workLocationType: true,
+					vehicleKind: true,
+					vehicleId: true,
+					odometerStartKm: true,
+					odometerEndKm: true,
+					drivenDistanceKm: true,
 				},
 				// The task foreign key confines it to this work's project and organization.
 				with: { task: { columns: { id: true, name: true } } },
 			}),
 		]);
-		const [summary, projects] = await Promise.all([
+		const [summary, projects, vehicles] = await Promise.all([
 			readTimeSummary(
 				{ employeeId: emp.id, organizationId },
 				timezone,
@@ -105,6 +112,14 @@ export async function GET() {
 						organizationId,
 					})
 				: Promise.resolve([]),
+			// Vehicle use (#1124): the employee's mode, the active vehicles with the
+			// assigned one first and each vehicle's last end reading, which pre-fills
+			// the start reading. Older clients ignore the field.
+			loadWorkVehicleUseFormContext(db, {
+				organizationId,
+				employeeId: emp.id,
+				...(liveWork ? { excludeWorkPeriodId: liveWork.id } : {}),
+			}),
 		]);
 		// Each listed project's open tasks (#875); older clients ignore the field.
 		const projectsWithTasks = await withOpenTasks(
@@ -125,6 +140,18 @@ export async function GET() {
 				projectsEnabled: organizationSettings?.projectsEnabled ?? false,
 				projects: projectsWithTasks,
 				categories: categories.map(({ id, name }) => ({ id, name })),
+				vehicleUse: {
+					mode: vehicles.mode,
+					// Only active vehicles: no recorded vehicle is passed in.
+					vehicles: vehicles.vehicles.map(({ id, name, licencePlate }) => ({
+						id,
+						name,
+						licencePlate,
+					})),
+					suggestedVehicleIds: vehicles.suggestedVehicleIds ?? [],
+					lastEndKmByVehicleId: vehicles.lastEndKmByVehicleId ?? {},
+					live: liveWork ? vehicleUseFromColumns(liveWork) : null,
+				},
 				liveWork: liveWork
 					? {
 							id: liveWork.id,

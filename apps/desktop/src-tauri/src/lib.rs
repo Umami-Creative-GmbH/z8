@@ -163,6 +163,7 @@ pub fn run() {
             updates::check_for_updates,
             updates::install_update,
             desktop_api::get_desktop_context,
+            desktop_api::check_vehicle_use_warnings,
             desktop_api::open_webapp,
             desktop_api::get_organizations,
             desktop_api::switch_organization,

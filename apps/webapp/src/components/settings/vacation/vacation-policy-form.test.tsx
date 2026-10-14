@@ -107,9 +107,127 @@ describe("VacationPolicyForm", () => {
 			),
 		);
 	});
+
+	describe("proration settings (#1109)", () => {
+		it("creates a policy that prorates, with a statutory minimum of min(20, annual days)", async () => {
+			const user = userEvent.setup();
+			vi.mocked(createVacationPolicy).mockResolvedValue({ success: true } as never);
+			render(<VacationPolicyForm open onOpenChange={vi.fn()} organizationId="org_1" />);
+
+			expect(
+				screen
+					.getByRole("switch", { name: "Prorate in start and exit year" })
+					.getAttribute("aria-checked"),
+			).toBe("true");
+			expect(screen.getByLabelText<HTMLInputElement>("Statutory Minimum Days").value).toBe("20");
+
+			await user.type(screen.getByLabelText("Policy Name"), "Part-time");
+			await user.clear(screen.getByLabelText("Default Annual Days"));
+			await user.type(screen.getByLabelText("Default Annual Days"), "15");
+			expect(screen.getByLabelText<HTMLInputElement>("Statutory Minimum Days").value).toBe("15");
+			await user.click(screen.getByRole("button", { name: "Create Policy" }));
+
+			await waitFor(() =>
+				expect(createVacationPolicy).toHaveBeenCalledWith(
+					expect.objectContaining({
+						defaultAnnualDays: "15",
+						prorateInStartAndExitYear: true,
+						statutoryMinimumDays: "15",
+					}),
+				),
+			);
+		});
+
+		it("edits both settings of an existing policy", async () => {
+			const user = userEvent.setup();
+			vi.mocked(updateVacationPolicy).mockResolvedValue({ success: true } as never);
+			render(
+				<VacationPolicyForm
+					open
+					onOpenChange={vi.fn()}
+					organizationId="org_1"
+					existingPolicy={buildPolicy(
+						{ startDate: "2027-01-01", validUntil: null },
+						{ defaultAnnualDays: "30", statutoryMinimumDays: "20" },
+					)}
+				/>,
+			);
+
+			await user.click(screen.getByRole("switch", { name: "Prorate in start and exit year" }));
+			await user.clear(screen.getByLabelText("Statutory Minimum Days"));
+			await user.type(screen.getByLabelText("Statutory Minimum Days"), "24");
+			await user.click(screen.getByRole("button", { name: "Update Policy" }));
+
+			await waitFor(() =>
+				expect(updateVacationPolicy).toHaveBeenCalledWith(
+					"policy_1",
+					expect.objectContaining({ prorateInStartAndExitYear: false, statutoryMinimumDays: "24" }),
+				),
+			);
+		});
+
+		it.each([
+			{ value: "31", message: "Cannot exceed the default annual days" },
+			{ value: "-1", message: "Must be 0 or more" },
+		])("refuses a statutory minimum of $value on 30 annual days", async ({ value, message }) => {
+			const user = userEvent.setup();
+			render(
+				<VacationPolicyForm
+					open
+					onOpenChange={vi.fn()}
+					organizationId="org_1"
+					existingPolicy={buildPolicy(
+						{ startDate: "2027-01-01", validUntil: null },
+						{ defaultAnnualDays: "30", statutoryMinimumDays: "20" },
+					)}
+				/>,
+			);
+
+			// The panel focuses its first field on an animation frame; wait before typing elsewhere.
+			await waitFor(() =>
+				expect(document.activeElement).toBe(screen.getByLabelText("Policy Name")),
+			);
+
+			await user.clear(screen.getByLabelText("Statutory Minimum Days"));
+			await user.type(screen.getByLabelText("Statutory Minimum Days"), value);
+			await user.click(screen.getByRole("button", { name: "Update Policy" }));
+
+			expect(await screen.findByText(message)).toBeTruthy();
+			expect(updateVacationPolicy).not.toHaveBeenCalled();
+		});
+
+		it("says the switch does not apply to a policy that accrues monthly", () => {
+			render(
+				<VacationPolicyForm
+					open
+					onOpenChange={vi.fn()}
+					organizationId="org_1"
+					existingPolicy={buildPolicy(
+						{ startDate: "2027-01-01", validUntil: null },
+						{ accrualType: "monthly" },
+					)}
+				/>,
+			);
+
+			expect(screen.getByRole("switch", { name: "Prorate in start and exit year" })).toBeTruthy();
+			expect(
+				screen.getByText(
+					"This policy accrues monthly or biweekly, so it already accrues in part years. The switch doesn't apply to it.",
+				),
+			).toBeTruthy();
+		});
+	});
 });
 
-function buildPolicy(dates: { startDate: string; validUntil: string | null }) {
+function buildPolicy(
+	dates: { startDate: string; validUntil: string | null },
+	overrides: Partial<{
+		defaultAnnualDays: string;
+		accrualType: string;
+		prorateInStartAndExitYear: boolean;
+		statutoryMinimumDays: string;
+	}> = {},
+) {
 	return {
 		id: "policy_1",
 		name: "Standard",
@@ -121,5 +239,8 @@ function buildPolicy(dates: { startDate: string; validUntil: string | null }) {
 		allowCarryover: false,
 		maxCarryoverDays: null,
 		carryoverExpiryMonths: null,
+		prorateInStartAndExitYear: true,
+		statutoryMinimumDays: "20",
+		...overrides,
 	};
 }

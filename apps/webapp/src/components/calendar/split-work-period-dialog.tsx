@@ -2,9 +2,11 @@
 
 import { IconLoader2, IconScissors, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { splitWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions";
+import { parseKm } from "@/components/time-tracking/vehicle-use-draft";
+import { formatKm, vehicleUseRefusalText } from "@/components/time-tracking/vehicle-use-format";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -15,6 +17,7 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +33,12 @@ import {
 	getWorkPeriodSplitDates,
 	resolveWorkPeriodSplit,
 } from "@/lib/time-tracking/split-work-period";
+import {
+	type VehicleUseSplitAsk,
+	vehicleUseSplitAsks,
+} from "@/lib/time-tracking/vehicle-use/split-vehicle-use";
+import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import { workVehicleUseRefusalOfResult } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-refusals";
 import { formatDuration, getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
 
 interface SplitWorkPeriodDialogProps {
@@ -58,6 +67,12 @@ export function SplitWorkPeriodDialog({
 	const [afterNotes, setAfterNotes] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [disambiguation, setDisambiguation] = useState<"earlier" | "later" | undefined>();
+	// One optional value divides the kilometres of work with vehicle use (#1126).
+	const vehicleUse = metadata.vehicleUse ?? null;
+	const vehicleAsk = vehicleUseSplitAsks(vehicleUse);
+	const [vehicleSplitKm, setVehicleSplitKm] = useState("");
+	// Whole kilometres, or nothing when skipped; anything else holds the split.
+	const vehicleSplitValue = vehicleAsk ? parseKm(vehicleSplitKm) : null;
 	// One identity per split: a retry after a lost or refused response reuses it, so
 	// the server replays a committed split instead of splitting twice.
 	const submissionIdRef = useRef<string | null>(null);
@@ -71,14 +86,20 @@ export function SplitWorkPeriodDialog({
 	const [splitDate, setSplitDate] = useState(() => splitDates[0] ?? "");
 
 	const { splitResolution, previewDurations, formattedSplitTime, hasAmbiguousSplitTime } =
-		resolveSplitPreview({ event, splitDate, splitTime, disambiguation, displayContext });
+		resolveSplitPreview({
+			event,
+			splitDate,
+			splitTime,
+			disambiguation,
+			displayContext,
+		});
 
 	// Check if split time is valid
 	const isValidSplitTime =
 		previewDurations !== null && previewDurations.first > 0 && previewDurations.second > 0;
 
 	const handleSplit = async () => {
-		if (!isValidSplitTime) return;
+		if (!isValidSplitTime || vehicleSplitValue === "invalid") return;
 
 		const submissionId = submissionIdRef.current ?? crypto.randomUUID();
 		submissionIdRef.current = submissionId;
@@ -91,6 +112,7 @@ export function SplitWorkPeriodDialog({
 			afterNotes.trim() || undefined,
 			disambiguation,
 			submissionId,
+			vehicleSplitValue ?? undefined,
 		).catch(() => null);
 
 		if (!result) {
@@ -98,10 +120,16 @@ export function SplitWorkPeriodDialog({
 		} else if (result.success) {
 			toast.success(t("calendar.split.success", "Work period split successfully"));
 			submissionIdRef.current = null;
+			setVehicleSplitKm("");
 			onSplitComplete?.();
 			onOpenChange(false);
 		} else {
-			toast.error(result.error || t("calendar.split.failed", "Failed to split work period"));
+			const refusal = workVehicleUseRefusalOfResult(result);
+			toast.error(
+				refusal
+					? vehicleUseRefusalText(t, refusal)
+					: result.error || t("calendar.split.failed", "Failed to split work period"),
+			);
 		}
 
 		setIsSaving(false);
@@ -112,6 +140,7 @@ export function SplitWorkPeriodDialog({
 		setSplitDate(splitDates[0] ?? "");
 		setBeforeNotes(metadata.notes || "");
 		setAfterNotes("");
+		setVehicleSplitKm("");
 		submissionIdRef.current = null;
 		onOpenChange(false);
 	};
@@ -136,41 +165,18 @@ export function SplitWorkPeriodDialog({
 						displayContext={displayContext}
 					/>
 
-					{/* Split time input */}
-					<div className="space-y-2">
-						<Label htmlFor="splitDate">{t("calendar.split.splitDate", "Split date")}</Label>
-						<select
-							id="splitDate"
-							aria-label={t("calendar.split.splitDate", "Split date")}
-							value={splitDate}
-							onChange={(event) => {
-								setSplitDate(event.target.value);
-								setDisambiguation(undefined);
-							}}
-							className="flex h-9 w-full rounded-md border border-input bg-card px-3 text-sm shadow-xs"
-						>
-							{splitDates.map((date) => (
-								<option key={date} value={date}>
-									{formatPlainDate(parsePlainDate(date), displayContext.locale, "dateMedium")}
-								</option>
-							))}
-						</select>
-						<Label htmlFor="splitTime">{t("calendar.split.splitAt", "Split at")}</Label>
-						<TimeInput
-							id="splitTime"
-							value={splitTime}
-							onChange={(e) => setSplitTime(e.target.value)}
-							className="w-full"
-						/>
-						{splitResolution && !splitResolution.success && (
-							<p className="text-sm text-destructive">
-								{splitErrorMessage(splitResolution.code, t)}
-							</p>
-						)}
-						{hasAmbiguousSplitTime && (
-							<OccurrencePicker value={disambiguation} onChange={setDisambiguation} />
-						)}
-					</div>
+					<SplitTimeFields
+						splitDate={splitDate}
+						splitDates={splitDates}
+						splitTime={splitTime}
+						setSplitDate={setSplitDate}
+						setSplitTime={setSplitTime}
+						setDisambiguation={setDisambiguation}
+						disambiguation={disambiguation}
+						displayContext={displayContext}
+						splitResolution={splitResolution}
+						hasAmbiguousSplitTime={hasAmbiguousSplitTime}
+					/>
 
 					{isValidSplitTime && previewDurations && (
 						<div className="space-y-3 rounded-lg border p-3">
@@ -193,6 +199,15 @@ export function SplitWorkPeriodDialog({
 								notes={afterNotes}
 								onNotesChange={setAfterNotes}
 							/>
+							{vehicleUse && vehicleAsk && (
+								<VehicleSplitField
+									ask={vehicleAsk}
+									use={vehicleUse}
+									value={vehicleSplitKm}
+									onChange={setVehicleSplitKm}
+									locale={displayContext.locale}
+								/>
+							)}
 						</div>
 					)}
 				</ActionPanelBody>
@@ -202,7 +217,10 @@ export function SplitWorkPeriodDialog({
 						<IconX className="size-4 mr-1" />
 						{t("common.cancel", "Cancel")}
 					</Button>
-					<Button onClick={handleSplit} disabled={!isValidSplitTime || isSaving}>
+					<Button
+						onClick={handleSplit}
+						disabled={!isValidSplitTime || vehicleSplitValue === "invalid" || isSaving}
+					>
 						{isSaving ? (
 							<IconLoader2 className="size-4 animate-spin mr-1" />
 						) : (
@@ -246,7 +264,10 @@ function resolveSplitPreview({
 		splitTime,
 		timezone: displayContext.timezone,
 	};
-	const splitResolution = resolveWorkPeriodSplit({ ...request, disambiguation });
+	const splitResolution = resolveWorkPeriodSplit({
+		...request,
+		disambiguation,
+	});
 	// Without a chosen occurrence, an ambiguous wall time stays ambiguous.
 	const unresolved = resolveWorkPeriodSplit(request);
 	return {
@@ -334,6 +355,65 @@ function OccurrencePicker({
 	);
 }
 
+/** The one optional value of a split of work with vehicle use (#1126). */
+function VehicleSplitField({
+	ask,
+	use,
+	value,
+	onChange,
+	locale,
+}: {
+	ask: VehicleUseSplitAsk;
+	use: WorkVehicleUse;
+	value: string;
+	onChange: (value: string) => void;
+	locale: string;
+}) {
+	const { t } = useTranslate();
+	const id = useId();
+	const km = (value: number) => formatKm(value, locale);
+	const label =
+		ask === "reading"
+			? t("calendar.split.vehicleReading", "Odometer reading at the split (optional)")
+			: t("calendar.split.vehicleFirstDistance", "Kilometres in the first period (optional)");
+	const hint =
+		ask === "reading"
+			? t(
+					"calendar.split.vehicleReadingHint",
+					"It ends the first period's readings and starts the second's ({start} to {end} km). Leave it empty if you did not read it.",
+					{
+						start: use.startKm === null ? "–" : km(use.startKm),
+						end: use.endKm === null ? "–" : km(use.endKm),
+					},
+				)
+			: t(
+					"calendar.split.vehicleFirstDistanceHint",
+					"Of {distance} km driven; the rest goes to the second period. Left empty, all of it stays on the first period.",
+					{ distance: km(use.distanceKm ?? 0) },
+				);
+	return (
+		<div className="space-y-2">
+			<Label htmlFor={`${id}-km`}>{label}</Label>
+			<Input
+				id={`${id}-km`}
+				inputMode="numeric"
+				autoComplete="off"
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+				aria-describedby={`${id}-hint`}
+			/>
+			<p id={`${id}-hint`} className="text-sm text-muted-foreground">
+				{hint}
+			</p>
+			{parseKm(value) === "invalid" ? (
+				<p className="text-sm text-destructive" role="alert">
+					{vehicleUseRefusalText(t, ask === "reading" ? "invalid_reading" : "invalid_distance")}
+				</p>
+			) : null}
+		</div>
+	);
+}
+
 function SplitPeriodPreview({
 	label,
 	from,
@@ -367,6 +447,64 @@ function SplitPeriodPreview({
 				rows={2}
 				className="resize-none"
 			/>
+		</div>
+	);
+}
+
+function SplitTimeFields({
+	splitDate,
+	splitDates,
+	splitTime,
+	setSplitDate,
+	setSplitTime,
+	setDisambiguation,
+	disambiguation,
+	displayContext,
+	splitResolution,
+	hasAmbiguousSplitTime,
+}: {
+	splitDate: string;
+	splitDates: string[];
+	splitTime: string;
+	setSplitDate: (value: string) => void;
+	setSplitTime: (value: string) => void;
+	setDisambiguation: (value: "earlier" | "later" | undefined) => void;
+	disambiguation: "earlier" | "later" | undefined;
+	displayContext: DisplayContext;
+} & Pick<ReturnType<typeof resolveSplitPreview>, "splitResolution" | "hasAmbiguousSplitTime">) {
+	const { t } = useTranslate();
+	return (
+		<div className="space-y-2">
+			<Label htmlFor="splitDate">{t("calendar.split.splitDate", "Split date")}</Label>
+			<select
+				id="splitDate"
+				aria-label={t("calendar.split.splitDate", "Split date")}
+				value={splitDate}
+				onChange={(event) => {
+					setSplitDate(event.target.value);
+					setDisambiguation(undefined);
+				}}
+				className="flex h-9 w-full rounded-md border border-input bg-card px-3 text-sm shadow-xs"
+			>
+				{splitDates.map((date) => (
+					<option key={date} value={date}>
+						{formatPlainDate(parsePlainDate(date), displayContext.locale, "dateMedium")}
+					</option>
+				))}
+			</select>
+			<Label htmlFor="splitTime">{t("calendar.split.splitAt", "Split at")}</Label>
+			<TimeInput
+				id="splitTime"
+				value={splitTime}
+				onChange={(e) => setSplitTime(e.target.value)}
+				className="w-full"
+			/>
+			{splitResolution && !splitResolution.success && (
+				<p className="text-sm text-destructive">{splitErrorMessage(splitResolution.code, t)}</p>
+			)}
+			{hasAmbiguousSplitTime && (
+				<OccurrencePicker value={disambiguation} onChange={setDisambiguation} />
+			)}
 		</div>
 	);
 }

@@ -41,7 +41,11 @@ import {
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { AllocationEvidence } from "./allocation-evidence";
-import { CompletedWorkReviewRequiredError, lockAuthority } from "./amend-completed-work";
+import {
+	CompletedWorkReviewRequiredError,
+	lockAuthority,
+	sameVehicleColumns,
+} from "./amend-completed-work";
 import { calculateHash } from "./blockchain";
 import { canonicalJson } from "./canonical-json";
 import { assertWorkOpen } from "./closed-months/store";
@@ -57,6 +61,12 @@ import { planCompletedWorkSplit } from "./split-work-period";
 import { recordedTaskId } from "./task-attribution";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneCapture } from "./timezone-capture";
+import {
+	vehicleUseColumns,
+	vehicleUseFromColumns,
+	type WorkVehicleUse,
+} from "./vehicle-use/work-vehicle-use";
+import { resolveWorkVehicleUseSplit } from "./vehicle-use/work-vehicle-use-eligibility";
 import { projectAllocationAgrees } from "./work-billability";
 import { WorkIntervalError } from "./work-duration";
 import { assertWorkOccupancyFree } from "./work-occupancy";
@@ -82,6 +92,12 @@ export type SplitCompletedWorkCommand = {
 		disambiguation: "earlier" | "later" | null;
 		beforeNotes: string | null;
 		afterNotes: string | null;
+		/**
+		 * The one value asked at the split of work with vehicle use (#1126): the
+		 * odometer reading at the split, or the first half's km of a directly entered
+		 * distance. Present only when given, keeping earlier commands' bytes.
+		 */
+		vehicleSplitKm?: number;
 	};
 };
 
@@ -105,6 +121,8 @@ export type SplitSegment = {
 		workCategoryId: string | null;
 		workLocationType: string | null;
 		allocations: AllocationEvidence[];
+		/** The segment's own vehicle use (#1126); present only when it has one. */
+		vehicleUse?: WorkVehicleUse;
 	};
 };
 
@@ -437,6 +455,7 @@ export async function splitCompletedWork(
 		!sameInstant(record.endAt, sourceEnd) ||
 		detail.workCategoryId !== period.workCategoryId ||
 		detail.workLocationType !== period.workLocationType ||
+		!sameVehicleColumns(detail, period) ||
 		!allocationAgrees
 	) {
 		throw new CompletedWorkReviewRequiredError("canonical_divergence");
@@ -461,6 +480,17 @@ export async function splitCompletedWork(
 		}
 		throw error;
 	}
+	// The vehicle carries over to both halves; the value at the split divides the km (#1126).
+	const sourceVehicleUse = vehicleUseFromColumns(period);
+	const vehicleSplit = await resolveWorkVehicleUseSplit(tx, {
+		organizationId,
+		employeeId,
+		workPeriodId: period.id,
+		use: sourceVehicleUse,
+		value: command.request.vehicleSplitKm,
+	});
+	const retainedVehicle = vehicleUseColumns(vehicleSplit.retained);
+	const generatedVehicle = vehicleUseColumns(vehicleSplit.generated);
 	// Symmetric occupancy: both resulting segments, which together cover the
 	// source interval, against every other work of the owner.
 	await assertWorkOccupancyFree(tx, {
@@ -578,6 +608,9 @@ export async function splitCompletedWork(
 			clockOutId: splitClockOut.id,
 			endTime: splitAtDate,
 			durationMinutes: plan.first.durationMinutes,
+			odometerStartKm: retainedVehicle.odometerStartKm,
+			odometerEndKm: retainedVehicle.odometerEndKm,
+			drivenDistanceKm: retainedVehicle.drivenDistanceKm,
 			graphRevision: sourceRevision,
 			updatedAt,
 		})
@@ -616,6 +649,27 @@ export async function splitCompletedWork(
 	if (updatedRecords.length !== 1) {
 		throw new CompletedWorkIntegrityError("Canonical work record update failed");
 	}
+	// The canonical detail mirrors the retained half's kilometres (#1126).
+	if (sourceVehicleUse) {
+		const updatedDetails = await tx
+			.update(timeRecordWork)
+			.set({
+				odometerStartKm: retainedVehicle.odometerStartKm,
+				odometerEndKm: retainedVehicle.odometerEndKm,
+				drivenDistanceKm: retainedVehicle.drivenDistanceKm,
+			})
+			.where(
+				and(
+					eq(timeRecordWork.recordId, record.id),
+					eq(timeRecordWork.organizationId, organizationId),
+					eq(timeRecordWork.recordKind, "work"),
+				),
+			)
+			.returning({ recordId: timeRecordWork.recordId });
+		if (updatedDetails.length !== 1) {
+			throw new CompletedWorkIntegrityError("Canonical work detail update failed");
+		}
+	}
 
 	// The generated record keeps the source's origin, approval state and
 	// recording actor; the splitting human is its updater.
@@ -641,6 +695,11 @@ export async function splitCompletedWork(
 		workCategoryId: detail.workCategoryId,
 		workLocationType: detail.workLocationType,
 		computationMetadata: detail.computationMetadata,
+		vehicleKind: generatedVehicle.vehicleKind,
+		vehicleId: generatedVehicle.vehicleId,
+		odometerStartKm: generatedVehicle.odometerStartKm,
+		odometerEndKm: generatedVehicle.odometerEndKm,
+		drivenDistanceKm: generatedVehicle.drivenDistanceKm,
 	});
 	for (const allocation of allocations) {
 		await tx.insert(timeRecordAllocation).values({
@@ -667,6 +726,11 @@ export async function splitCompletedWork(
 			taskId: period.taskId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
+			vehicleKind: generatedVehicle.vehicleKind,
+			vehicleId: generatedVehicle.vehicleId,
+			odometerStartKm: generatedVehicle.odometerStartKm,
+			odometerEndKm: generatedVehicle.odometerEndKm,
+			drivenDistanceKm: generatedVehicle.drivenDistanceKm,
 			startTime: splitAtDate,
 			endTime: period.endTime,
 			durationMinutes: plan.second.durationMinutes,
@@ -721,6 +785,7 @@ export async function splitCompletedWork(
 		startAt: Instant;
 		endAt: Instant;
 		durationMinutes: number;
+		vehicleUse: WorkVehicleUse | null;
 	}): SplitSegment => ({
 		workPeriodId: values.workPeriodId,
 		canonicalRecordId: values.canonicalRecordId,
@@ -731,7 +796,10 @@ export async function splitCompletedWork(
 		durationMinutes: values.durationMinutes,
 		startUtcOffsetMinutes: values.clockIn.utcOffsetMinutes ?? null,
 		endUtcOffsetMinutes: values.clockOut.utcOffsetMinutes ?? null,
-		attribution,
+		// Vehicle use only when there is one, keeping earlier receipts' shape (#1126).
+		attribution: values.vehicleUse
+			? { ...attribution, vehicleUse: values.vehicleUse }
+			: attribution,
 	});
 	const result: SplitCompletedWorkResult = {
 		version: SPLIT_COMPLETED_WORK_RESULT_VERSION,
@@ -749,6 +817,7 @@ export async function splitCompletedWork(
 				startAt: sourceStart,
 				endAt: sourceEnd,
 				durationMinutes: period.durationMinutes,
+				vehicleUse: sourceVehicleUse,
 			}),
 			approvalState: period.approvalStatus,
 			recordCreatedBy: record.createdBy,
@@ -762,6 +831,7 @@ export async function splitCompletedWork(
 					clockIn: sourceClockIn,
 					clockOut: splitClockOut,
 					...plan.first,
+					vehicleUse: vehicleSplit.retained,
 				}),
 			},
 			{
@@ -772,6 +842,7 @@ export async function splitCompletedWork(
 					clockIn: splitClockIn,
 					clockOut: sourceClockOut,
 					...plan.second,
+					vehicleUse: vehicleSplit.generated,
 				}),
 				origin: { workPeriodId: period.id, canonicalRecordId: record.id },
 				approval: {

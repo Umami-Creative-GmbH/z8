@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Запрос на отсутствие одобрен",
+    "absenceChange": {
+      "afternoon": "Вторая половина дня",
+      "cancelAll": "Отменить отсутствие полностью",
+      "cancellationTitle": "Отмена отсутствия",
+      "category": "Категория отсутствия",
+      "displacedVacation": "Даты отпуска будут заменены после утверждения",
+      "exactHours": "Точные учтенные часы",
+      "fullDay": "Полный день",
+      "morning": "Первая половина дня",
+      "original": "Учтенные даты",
+      "originalEndCoverage": "Учтенный день окончания",
+      "originalInterval": "Учтенные часы",
+      "originalStartCoverage": "Учтенный день начала",
+      "proposed": "Предлагаемое изменение",
+      "proposedEndCoverage": "Предлагаемый день окончания",
+      "proposedInterval": "Предлагаемые часы",
+      "proposedStartCoverage": "Предлагаемый день начала",
+      "range": "{range}",
+      "reason": "Причина",
+      "reasonValue": "{reason}",
+      "title": "Изменение отсутствия"
+    },
     "absenceRejected": "Запрос на отсутствие отклонен",
     "absenceRequests": "Заявки на отсутствие",
     "absenceRequestsDescription": "Просматривайте и утверждайте заявки на отсутствие от участников вашей команды",
@@ -304,6 +326,8 @@
       "dayTotals": "Итоги за день",
       "difference": "Разница",
       "differenceHours": "{difference} ч",
+      "drivingDetailsMissing": "Отсутствуют данные о поездке",
+      "drivingDetailsMissingWork": "Отсутствует транспортное средство или показания одометра",
       "employee": "Сотрудник",
       "holidays": "Государственные праздники",
       "openCalendar": "Открыть календарь за этот период",
@@ -413,6 +437,7 @@
     "totalCount": "Ожидают решения: {totalCount}",
     "type": "Тип",
     "types": {
+      "absence_change_request": "Изменения отсутствия",
       "absence_entry": "Запросы на отсутствие",
       "period_submission": "Отправки за период",
       "time_entry": "Корректировки времени",
@@ -421,6 +446,15 @@
     },
     "unifiedInboxBannerDescription": "Просматривайте все типы согласований в одном месте с фильтрацией, массовыми действиями и отслеживанием SLA.",
     "unifiedInboxBannerTitle": "Попробуйте новую единую папку «Входящие»",
+    "vehicleUse": "Использование транспорта",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} км превышает {limit} км за один рабочий период.",
+      "onOtherLiveWork": "Это транспортное средство уже указано в текущей работе другого сотрудника.",
+      "speedAboveLimit": "Пройденное расстояние предполагает среднюю скорость {speed} км/ч за этот рабочий период, что превышает {limit} км/ч.",
+      "startBelowLastEnd": "Начальные показания меньше последних зафиксированных конечных показаний для этого транспортного средства ({lastEndKm} км)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Пожалуйста, проверьте",
     "viewExpenseClaim": "Просмотреть заявку и квитанции",
     "viewExpenseReport": "Просмотреть отправленный отчет и чеки",
     "workBalance": {

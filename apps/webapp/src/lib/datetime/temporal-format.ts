@@ -18,6 +18,7 @@ export type PlainDateFormatPreset =
 	| "monthYear"
 	| "weekdayShort"
 	| "weekdayMonthDay"
+	| "weekdayMonthDayLong"
 	| "weekdayDateLong";
 
 export interface DisplayContext {
@@ -72,6 +73,7 @@ const PLAIN_DATE_FORMAT_OPTIONS: Readonly<
 	monthYear: { year: "numeric", month: "long" },
 	weekdayShort: { weekday: "short" },
 	weekdayMonthDay: { weekday: "short", month: "short", day: "numeric" },
+	weekdayMonthDayLong: { weekday: "long", month: "long", day: "numeric" },
 	weekdayDateLong: { weekday: "long", year: "numeric", month: "long", day: "numeric" },
 };
 
@@ -82,6 +84,17 @@ const TIME_PRESETS: ReadonlySet<DateTimeFormatPreset> = new Set([
 ]);
 const MAX_FIXED_OFFSET_MINUTES = 23 * 60 + 59;
 
+/** The hour cycle a locale uses by default, for readers without a time-format preference. */
+export function localeDefaultTimeFormat(locale: string): "12h" | "24h" {
+	try {
+		return new Intl.DateTimeFormat(locale, { hour: "numeric" }).resolvedOptions().hour12
+			? "12h"
+			: "24h";
+	} catch {
+		return "24h";
+	}
+}
+
 export function formatInstant(
 	instant: Instant,
 	context: DisplayContext,
@@ -91,16 +104,19 @@ export function formatInstant(
 	const options: Intl.DateTimeFormatOptions = {
 		...DATE_TIME_FORMAT_OPTIONS[preset],
 		timeZone: timezone,
-		...(TIME_PRESETS.has(preset) ? { hour12: context.timeFormat === "12h" } : {}),
+		...(TIME_PRESETS.has(preset)
+			? {
+					// ICU versions differ on numeric 24-hour padding; make the display contract explicit.
+					hour: context.timeFormat === "24h" ? "2-digit" : "numeric",
+					hour12: context.timeFormat === "12h",
+				}
+			: {}),
 	};
 
 	return new TemporalDateTimeFormat(context.locale, options).format(instant);
 }
 
-export function getInstantLocalMinuteFields(
-	instant: Instant,
-	timezone: string,
-): LocalMinuteFields {
+export function getInstantLocalMinuteFields(instant: Instant, timezone: string): LocalMinuteFields {
 	const local = instant.toZonedDateTimeISO(parseTimeZone(timezone));
 	return {
 		date: local.toPlainDate().toString(),
@@ -144,6 +160,14 @@ export function offsetMinutesToTimeZoneId(offsetMinutes: number): string {
 
 	parseTimeZone(timezone);
 	return timezone;
+}
+
+/**
+ * The work-local day an instant falls on, at the UTC offset captured with the
+ * work (never the viewer's time zone; `docs/refs/timekeeping.md`).
+ */
+export function workDayOf(instant: Instant, offsetMinutes: number): PlainDate {
+	return instant.toZonedDateTimeISO(offsetMinutesToTimeZoneId(offsetMinutes)).toPlainDate();
 }
 
 export function formatCapturedOffsetInstant(

@@ -92,7 +92,10 @@ import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
     2. Check: Annual days + Carryover + Adjustments = Total
     3. Verify usage (approved absences) is subtracted correctly
     4. Check if custom allowance overrides org default
-    5. Confirm work schedule (part-time may have prorated vacation)
+    5. In a year the employee joins or leaves, read the line under their allowance. It explains the [prorated allowance](/docs/guide/admin-guide/holidays-and-vacation#prorated-allowances), for example "8 of 30 days, prorated: started 1 Oct 2026, 3 full employment months"
+    6. On a monthly or biweekly policy, the balance starts at 0 and grows each month. Compare **Accrued to Date** with the months so far
+    7. For part-time employees, absence days count only the days they're scheduled to work, so their allowance is lower than a full-time one. Z8 doesn't reduce it from the work schedule: set it with a policy or Custom Annual Days. A reduced part-time allowance isn't a prorated one
+    8. If the employee shows 0 days remaining, check for overdrawn days. Z8 shows them to admins and managers but never reclaims them
   </Accordion>
 
   <Accordion title="Clockin import preview or results look incomplete">

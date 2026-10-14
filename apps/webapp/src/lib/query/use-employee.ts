@@ -12,23 +12,22 @@ import {
 } from "@/app/[locale]/(app)/settings/employees/actions";
 import {
 	cancelEmployeeEmploymentHistoryAction,
+	changeEmployeeWageAction,
 	confirmEmployeeEmploymentHistoryAction,
 	createEmployeeEmploymentHistoryAction,
 	listEmployeeEmploymentHistoryAction,
 } from "@/app/[locale]/(app)/settings/employees/employment-history-client-actions";
-import {
-	createRateHistoryEntry,
-	getEmployeeRateHistory,
-	type RateHistoryEntry,
-} from "@/app/[locale]/(app)/settings/employees/rate-actions";
 import {
 	getEmployeeEffectiveScheduleDetails,
 	getWorkPolicies,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import type { SettingsAccessTier } from "@/lib/settings-access";
-import type { CreateRateHistory, UpdateEmployee } from "@/lib/validations/employee";
-import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
+import type { UpdateEmployee, UpdateEmployeeInvitationDraft } from "@/lib/validations/employee";
+import type {
+	ChangeHourlyWage,
+	UpsertEmploymentHistory,
+} from "@/lib/validations/employment-history";
 import { queryKeys } from "./keys";
 
 type Manager = {
@@ -53,8 +52,15 @@ export type EmployeeDetail = EmployeeDetailRecord & {
 	managers?: ManagerRelation[];
 };
 
-/** An employee detail save: the form's fields plus its custom field values (#818, real employees only). */
-type EmployeeDetailUpdate = UpdateEmployee & { customFieldValues?: CustomFieldValuesInput };
+/**
+ * An employee detail save: the form's fields plus its custom field values (#818,
+ * real employees only). Contract type and wage are saved for invitation drafts
+ * only; an employee's change through employment terms.
+ */
+type EmployeeDetailUpdate = UpdateEmployee &
+	Pick<UpdateEmployeeInvitationDraft, "contractType" | "hourlyRate"> & {
+		customFieldValues?: CustomFieldValuesInput;
+	};
 
 interface UseEmployeeOptions {
 	employeeId: string;
@@ -141,20 +147,6 @@ export function useEmployee(options: UseEmployeeOptions) {
 		},
 		enabled: canLoadEmployeeDetails && accessTier === "orgAdmin",
 		staleTime: 60 * 1000, // 1 minute
-	});
-
-	// Query for rate history (only for hourly employees)
-	const rateHistoryQuery = useQuery({
-		queryKey: queryKeys.employees.rateHistory(employeeId),
-		queryFn: async () => {
-			const result = await getEmployeeRateHistory(employeeId);
-			if (!result.success) {
-				return [];
-			}
-			return result.data;
-		},
-		enabled: canLoadEmployeeDetails && employeeQuery.data?.contractType === "hourly",
-		staleTime: 30 * 1000, // 30 seconds
 	});
 
 	const employmentHistoryQuery = useQuery({
@@ -249,15 +241,13 @@ export function useEmployee(options: UseEmployeeOptions) {
 		},
 	});
 
-	// Update rate mutation
-	const updateRateMutation = useMutation({
-		mutationFn: async (data: CreateRateHistory) =>
-			isDraft ? draftActionResult : createRateHistoryEntry(employeeId, data),
+	const changeWageMutation = useMutation({
+		mutationFn: async (data: ChangeHourlyWage) =>
+			isDraft ? draftActionResult : changeEmployeeWageAction(employeeId, data),
 		onSuccess: (result) => {
 			if (result.success) {
-				// Invalidate rate history and employee queries
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.employees.rateHistory(employeeId),
+					queryKey: queryKeys.employees.employmentHistory(employeeId),
 				});
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.employees.detail(employeeId),
@@ -269,7 +259,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 	// Update employee mutation
 	const updateMutation = useMutation({
 		mutationFn: async (input: EmployeeDetailUpdate) => {
-			const { customFieldValues, ...data } = input;
+			const { customFieldValues, contractType, hourlyRate, ...data } = input;
 			const isAcceptedDraft =
 				employeeQuery.data?.kind === "invitationDraft" &&
 				Boolean(employeeQuery.data.realEmployeeId);
@@ -283,7 +273,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 			}
 
 			return employeeQuery.data?.kind === "invitationDraft"
-				? updateEmployeeInvitationDraft(employeeId, data)
+				? updateEmployeeInvitationDraft(employeeId, { ...data, contractType, hourlyRate })
 				: updateEmployee(employeeId, data, customFieldValues);
 		},
 		onSuccess: (result) => {
@@ -312,7 +302,6 @@ export function useEmployee(options: UseEmployeeOptions) {
 		employee: employeeQuery.data ?? null,
 		schedule: scheduleQuery.data ?? null,
 		availableManagers: managersQuery.data ?? [],
-		rateHistory: (rateHistoryQuery.data ?? []) as RateHistoryEntry[],
 		employmentHistory: employmentHistoryQuery.data ?? [],
 		workPolicies: workPoliciesQuery.data ?? [],
 
@@ -321,7 +310,6 @@ export function useEmployee(options: UseEmployeeOptions) {
 			(query) => query.isLoading,
 		),
 		isFetching: employeeQuery.isFetching,
-		isLoadingRateHistory: rateHistoryQuery.isLoading,
 		isLoadingEmploymentHistory: employmentHistoryQuery.isLoading,
 		isError: employeeQuery.isError,
 		error: employeeQuery.error,
@@ -333,8 +321,8 @@ export function useEmployee(options: UseEmployeeOptions) {
 		// Mutations
 		updateEmployee: updateMutation.mutateAsync,
 		isUpdating: updateMutation.isPending,
-		updateRate: updateRateMutation.mutateAsync,
-		isUpdatingRate: updateRateMutation.isPending,
+		changeWage: changeWageMutation.mutateAsync,
+		isChangingWage: changeWageMutation.isPending,
 		createEmploymentHistory: createEmploymentHistoryMutation.mutateAsync,
 		isCreatingEmploymentHistory: createEmploymentHistoryMutation.isPending,
 		confirmEmploymentHistory: confirmEmploymentHistoryMutation.mutateAsync,

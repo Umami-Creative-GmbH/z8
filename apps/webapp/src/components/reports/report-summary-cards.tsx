@@ -28,10 +28,13 @@ function formatCurrency(amount: number, currency: string): string {
 
 export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 	const { t } = useTranslate();
-	const isHourly = reportData.employee.contractType === "hourly";
+	// Earnings come from the hourly terms in force during the period, whatever the contract is now.
+	const hasEarnings = reportData.hourlyEarnings !== undefined;
 
 	return (
-		<div className={`grid gap-4 md:grid-cols-2 ${isHourly ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
+		<div
+			className={`grid gap-4 md:grid-cols-2 ${hasEarnings ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}
+		>
 			{/* Total Work Hours */}
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
@@ -117,8 +120,8 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 				</CardContent>
 			</Card>
 
-			{/* Earnings - Only for hourly employees */}
-			{isHourly && reportData.hourlyEarnings && (
+			{/* Earnings - only when hourly terms were in force during the period */}
+			{reportData.hourlyEarnings && (
 				<Card className="border-green-500">
 					<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">

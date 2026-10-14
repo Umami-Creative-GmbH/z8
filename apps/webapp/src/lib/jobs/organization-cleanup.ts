@@ -11,11 +11,11 @@ import * as authSchema from "@/db/auth-schema";
 import { employee, pushDeviceToken, pushSubscription } from "@/db/schema";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { createLogger } from "@/lib/logger";
+import { ORGANIZATION_RECOVERY_WINDOW_HOURS } from "./organization-recovery-window";
 
 const logger = createLogger("organization-cleanup");
 
-// 5 days in milliseconds
-const DELETION_GRACE_PERIOD_MS = 5 * 24 * 60 * 60 * 1000;
+const DELETION_GRACE_PERIOD_MS = ORGANIZATION_RECOVERY_WINDOW_HOURS * 60 * 60 * 1000;
 
 export interface OrganizationCleanupResult {
 	success: boolean;

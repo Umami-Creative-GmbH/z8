@@ -4,6 +4,7 @@ import type { ComplianceWarning } from "@/lib/effect/services/work-policy.servic
 import type { AttributionIntent, ClockChannel, CloseActiveWorkResult } from "../close-active-work";
 import type { ProjectTaskIneligibility } from "../project-eligibility";
 import type { TimeEntryRequestMetadata } from "../time-entry-writer";
+import type { BreakVehicleUse, ClockVehicleUse } from "../vehicle-use/clock-vehicle-use";
 import type { WorkLocationType } from "../work-location";
 
 /** An authenticated human clocking their own employee record. */
@@ -172,6 +173,17 @@ export type ClockPosition = {
 	fixedAt: Instant;
 };
 
+/**
+ * Vehicle use beside a clock command's body (#1122, ADR 0009): a clock-in or
+ * clock-out names vehicle and readings, a break its one reading. Only the
+ * employee's own commands (the user or a kiosk with their PIN) record it, and
+ * only while vehicle use is asked or expected for them; the module never
+ * refuses a clock command for it and drops what it cannot record.
+ */
+export type ClockCommandVehicleUse<Body extends ClockBody> = Body extends BreakBody
+	? BreakVehicleUse
+	: ClockVehicleUse;
+
 type ClockCommandOf<Body extends ClockBody> = {
 	organizationId: string;
 	principal: ClockPrincipal;
@@ -190,6 +202,8 @@ type ClockCommandOf<Body extends ClockBody> = {
 	legacy?: true;
 	/** The position taken at the event; see `ClockPosition`. Never part of a web receipt. */
 	position?: ClockPosition;
+	/** Vehicle use at the event; see `ClockCommandVehicleUse`. Never part of a web receipt. */
+	vehicleUse?: ClockCommandVehicleUse<Body>;
 	body: Body;
 };
 

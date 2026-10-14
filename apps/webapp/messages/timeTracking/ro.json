@@ -74,6 +74,18 @@
     },
     "currentlyClockedIn": "Sunteți pontat în prezent",
     "deadline": "Termen limită",
+    "drivingDetailsMissing": {
+      "description": "Organizația dvs. solicită vehiculul și citirile kilometrajului pentru activitatea dvs. Adăugați-le la aceste perioade de lucru.",
+      "missing": {
+        "endReading": "Fără citire finală",
+        "readings": "Fără citiri ale kilometrajului",
+        "startReading": "Fără citire inițială",
+        "vehicle": "Niciun vehicul"
+      },
+      "open": "Deschideți în calendar",
+      "title": "Lipsesc detalii despre deplasare",
+      "truncated": "Sunt afișate doar cele mai recente perioade de lucru. Completați-le pe acestea pentru a le vedea pe restul."
+    },
     "errors": {
       "alreadyClockedIn": "Sunteți deja pontat la intrare",
       "appendReviewRequired": "Pontarea de intrare necesită o revizuire a istoricului dvs. de pontaj",
@@ -214,7 +226,10 @@
         "onBreak": "În pauză de la {time}"
       },
       "unreachableDescription": "Kiosk-ul nu poate contacta serverul. Verificați conexiunea la rețea; pontarea funcționează doar online.",
-      "unreachableTitle": "Kiosk offline"
+      "unreachableTitle": "Kiosk offline",
+      "vehicle": {
+        "back": "Înapoi"
+      }
     },
     "manualEntry": {
       "addButton": "Adaugă o înregistrare manuală",
@@ -386,6 +401,7 @@
       "corrected": "Corectat",
       "date": "Dată",
       "description": "Descriere",
+      "drivingDetailsMissing": "Lipsesc detalii despre deplasare",
       "duration": "Durată",
       "emptyState": "Nu s-au găsit înregistrări de timp pentru această săptămână.",
       "recordedLocalTime": "Ora locală înregistrată",
@@ -422,6 +438,58 @@
     "title": "Pontaj",
     "unknownCategory": "Categorie necunoscută",
     "unknownProject": "Proiect necunoscut",
+    "vehicleUse": {
+      "archived": "arhivat",
+      "breakReading": "Citirea kilometrajului la pauză (km)",
+      "breakReadingHint": "Opțional. Încheie citirea acestei activități și o începe pe a următoarei.",
+      "changeLive": "Modificare",
+      "derivedDistance": "Distanță parcursă: {distance} km",
+      "distanceKm": "Distanță parcursă (km)",
+      "distanceText": "{distance} km parcurși",
+      "endKm": "Citire finală (km)",
+      "expectedHint": "Organizația dvs. solicită să înregistrați vehiculul condus și citirile acestuia.",
+      "expenseReport": {
+        "action": "Adăugați la decontul de cheltuieli",
+        "add": "Adăugați {distance} km",
+        "added": "Într-un decont de cheltuieli",
+        "alreadyAdded": "Distanța pentru această activitate este deja într-un decont de cheltuieli.",
+        "chooseReport": "La ce decont de cheltuieli doriți să adăugați?",
+        "failed": "Distanța nu a putut fi adăugată la decontul de cheltuieli. Vă rugăm să reîncercați.",
+        "newReport": "Raport nou de kilometraj",
+        "routeHint": "Data și distanța sunt completate din această activitate. Dvs. introduceți traseul în raport.",
+        "untitledTrip": "Cursă fără titlu"
+      },
+      "liveChanged": "Utilizarea vehiculului a fost modificată",
+      "liveChangeFailed": "Utilizarea vehiculului nu a putut fi modificată",
+      "notRecorded": "Utilizarea vehiculului nu a fost înregistrată",
+      "notSentOffline": "Nu a putut fi salvată cu această pontare offline. Adăugați-o la perioada de lucru după ce sunteți online.",
+      "noVehicle": "Niciun vehicul",
+      "ownVehicle": "Vehicul propriu",
+      "readingMissing": "–",
+      "readingsText": "{start} → {end} km",
+      "refusal": {
+        "archived": "Acest vehicul este arhivat și nu mai poate fi selectat.",
+        "distanceClaimed": "Distanța acestei perioade de lucru este inclusă într-o cheltuială. Eliminați elementul din raportul de cheltuieli înainte de a împărți perioada de lucru.",
+        "endBeforeStart": "Indexul final nu poate fi mai mic decât indexul inițial.",
+        "invalidDistance": "Introduceți distanța parcursă în kilometri întregi.",
+        "invalidReading": "Introduceți indexul kilometrajului în kilometri întregi.",
+        "invalidVehicle": "Alegeți un vehicul al organizației sau propriul vehicul.",
+        "notFound": "Vehiculul nu a fost găsit.",
+        "off": "Utilizarea vehiculului nu este înregistrată pentru acest angajat.",
+        "splitOutOfRange": "Numărul de kilometri la împărțire trebuie să se încadreze în kilometrii perioadei de lucru."
+      },
+      "startKm": "Index inițial (km)",
+      "title": "Utilizare vehicul",
+      "unknownVehicle": "Vehicul necunoscut (indisponibil)",
+      "vehicle": "Vehicul",
+      "warning": {
+        "distanceAboveLimit": "{distance} km este mai mult decât {limit} km într-o singură perioadă de lucru.",
+        "onOtherLiveWork": "Acest vehicul este deja înregistrat pentru activitatea în curs a altui angajat.",
+        "speedAboveLimit": "Distanța parcursă implică o medie de {speed} km/h pe parcursul acestei perioade de lucru, mai mult decât {limit} km/h.",
+        "startBelowLastEnd": "Indexul inițial este mai mic decât ultimul index final înregistrat pentru acest vehicul ({lastEndKm} km).",
+        "title": "Vă rugăm să verificați utilizarea vehiculului"
+      }
+    },
     "welcomeBack": "Bine ați revenit, {name}",
     "workCategory": "Categorie de lucru",
     "workLocation": "Locație de desfășurare a activității",

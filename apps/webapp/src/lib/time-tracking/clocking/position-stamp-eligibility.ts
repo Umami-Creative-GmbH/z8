@@ -1,4 +1,4 @@
-import { CLOCK_COMMAND_VERSION } from "../clock-command";
+import { POSITION_CLOCK_COMMAND_VERSIONS } from "../clock-command";
 import type { ClockCommand, ClockPosition } from "./types";
 
 /**
@@ -16,7 +16,11 @@ export function stampablePosition(command: ClockCommand): ClockPosition | null {
 		return null;
 	}
 	if (command.channel === "web") return position;
-	if (command.channel === "api" && command.payload?.version === CLOCK_COMMAND_VERSION) {
+	if (
+		command.channel === "api" &&
+		command.payload !== undefined &&
+		POSITION_CLOCK_COMMAND_VERSIONS.includes(command.payload.version)
+	) {
 		return position;
 	}
 	return null;

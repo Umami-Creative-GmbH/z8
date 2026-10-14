@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Το αίτημα απουσίας εγκρίθηκε",
+    "absenceChange": {
+      "afternoon": "Απόγευμα",
+      "cancelAll": "Ακύρωση ολόκληρης της απουσίας",
+      "cancellationTitle": "Ακύρωση απουσίας",
+      "category": "Κατηγορία απουσίας",
+      "displacedVacation": "Οι ημερομηνίες άδειας αντικαθίστανται κατά την έγκριση",
+      "exactHours": "Ακριβείς καταγεγραμμένες ώρες",
+      "fullDay": "Ολόκληρη ημέρα",
+      "morning": "Πρωί",
+      "original": "Καταγεγραμμένες ημερομηνίες",
+      "originalEndCoverage": "Καταγεγραμμένη ημέρα λήξης",
+      "originalInterval": "Καταγεγραμμένες ώρες",
+      "originalStartCoverage": "Καταγεγραμμένη ημέρα έναρξης",
+      "proposed": "Προτεινόμενη αλλαγή",
+      "proposedEndCoverage": "Προτεινόμενη ημέρα λήξης",
+      "proposedInterval": "Προτεινόμενες ώρες",
+      "proposedStartCoverage": "Προτεινόμενη ημέρα έναρξης",
+      "range": "{range}",
+      "reason": "Αιτιολογία",
+      "reasonValue": "{reason}",
+      "title": "Αλλαγή απουσίας"
+    },
     "absenceRejected": "Το αίτημα απουσίας απορρίφθηκε",
     "absenceRequests": "Αιτήματα απουσίας",
     "absenceRequestsDescription": "Ελέγξτε και εγκρίνετε αιτήματα άδειας από τα μέλη της ομάδας σας",
@@ -304,6 +326,8 @@
       "dayTotals": "Σύνολα ημέρας",
       "difference": "Διαφορά",
       "differenceHours": "{difference} ώ.",
+      "drivingDetailsMissing": "Λείπουν στοιχεία οδήγησης",
+      "drivingDetailsMissingWork": "Λείπει το όχημα ή η ένδειξη οδομέτρου",
       "employee": "Εργαζόμενος",
       "holidays": "Επίσημες αργίες",
       "openCalendar": "Άνοιγμα του ημερολογίου για αυτήν την περίοδο",
@@ -413,6 +437,7 @@
     "totalCount": "{totalCount} σε εκκρεμότητα",
     "type": "Τύπος",
     "types": {
+      "absence_change_request": "Αλλαγές απουσιών",
       "absence_entry": "Αιτήματα απουσίας",
       "period_submission": "Υποβολές περιόδου",
       "time_entry": "Διορθώσεις χρόνου",
@@ -421,6 +446,15 @@
     },
     "unifiedInboxBannerDescription": "Δείτε όλους τους τύπους εγκρίσεων σε ένα μέρος με φιλτράρισμα, μαζικές ενέργειες και παρακολούθηση SLA.",
     "unifiedInboxBannerTitle": "Δοκιμάστε τα νέα Ενοποιημένα Εισερχόμενα",
+    "vehicleUse": "Χρήση οχήματος",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} χλμ. είναι περισσότερα από {limit} χλμ. σε μία περίοδο εργασίας.",
+      "onOtherLiveWork": "Αυτό το όχημα έχει ήδη καταχωριστεί στην τρέχουσα εργασία άλλου εργαζομένου.",
+      "speedAboveLimit": "Η διανυθείσα απόσταση υποδηλώνει μέση ταχύτητα {speed} χλμ./ώρα σε αυτήν την περίοδο εργασίας, μεγαλύτερη από {limit} χλμ./ώρα.",
+      "startBelowLastEnd": "Η αρχική ένδειξη είναι μικρότερη από την τελευταία καταγεγραμμένη τελική ένδειξη του οχήματος ({lastEndKm} χλμ.)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Παρακαλώ ελέγξτε",
     "viewExpenseClaim": "Προβολή αίτησης και αποδείξεων",
     "viewExpenseReport": "Προβολή υποβληθείσας αναφοράς και αποδείξεων",
     "workBalance": {

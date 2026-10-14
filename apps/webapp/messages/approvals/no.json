@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Fraværsforespørsel godkjent",
+    "absenceChange": {
+      "afternoon": "Ettermiddag",
+      "cancelAll": "Kanseller hele fraværet",
+      "cancellationTitle": "Fraværskansellering",
+      "category": "Fraværskategori",
+      "displacedVacation": "Feriedatoer erstattes ved godkjenning",
+      "exactHours": "Nøyaktig registrerte timer",
+      "fullDay": "Hel dag",
+      "morning": "Formiddag",
+      "original": "Registrerte datoer",
+      "originalEndCoverage": "Registrert sluttdag",
+      "originalInterval": "Registrerte timer",
+      "originalStartCoverage": "Registrert startdag",
+      "proposed": "Foreslått endring",
+      "proposedEndCoverage": "Foreslått sluttdag",
+      "proposedInterval": "Foreslåtte timer",
+      "proposedStartCoverage": "Foreslått startdag",
+      "range": "{range}",
+      "reason": "Begrunnelse",
+      "reasonValue": "{reason}",
+      "title": "Fraværsendring"
+    },
     "absenceRejected": "Fraværsforespørsel avvist",
     "absenceRequests": "Fraværsforespørsler",
     "absenceRequestsDescription": "Gå gjennom og godkjenn fraværsforespørsler fra teammedlemmene dine",
@@ -304,6 +326,8 @@
       "dayTotals": "Dagstotaler",
       "difference": "Differanse",
       "differenceHours": "{difference} t",
+      "drivingDetailsMissing": "Kjøredetaljer mangler",
+      "drivingDetailsMissingWork": "Kjøretøy eller kilometerstand mangler",
       "employee": "Ansatt",
       "holidays": "Helligdager",
       "openCalendar": "Åpne kalenderen for denne perioden",
@@ -413,6 +437,7 @@
     "totalCount": "{totalCount} venter",
     "type": "Type",
     "types": {
+      "absence_change_request": "Fraværsendringer",
       "absence_entry": "Fraværsforespørsler",
       "period_submission": "Periodeinnsendinger",
       "time_entry": "Tidskorrigeringer",
@@ -421,6 +446,15 @@
     },
     "unifiedInboxBannerDescription": "Se alle godkjenningstyper på ett sted med filtrering, massehandlinger og SLA-sporing.",
     "unifiedInboxBannerTitle": "Prøv den nye samlede innboksen",
+    "vehicleUse": "Kjøretøybruk",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km er mer enn {limit} km i én arbeidsperiode.",
+      "onOtherLiveWork": "Dette kjøretøyet er allerede registrert på en annen ansatts pågående arbeid.",
+      "speedAboveLimit": "Den kjørte distansen tilsier et gjennomsnitt på {speed} km/t over denne arbeidsperioden, mer enn {limit} km/t.",
+      "startBelowLastEnd": "Startavlesningen er lavere enn kjøretøyets sist registrerte sluttavlesning ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Vennligst sjekk",
     "viewExpenseClaim": "Vis krav og kvitteringer",
     "viewExpenseReport": "Vis innsendt rapport og kvitteringer",
     "workBalance": {

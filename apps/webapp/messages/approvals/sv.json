@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Frånvaroansökan godkänd",
+    "absenceChange": {
+      "afternoon": "Eftermiddag",
+      "cancelAll": "Avbryt hela frånvaron",
+      "cancellationTitle": "Avbokning av frånvaro",
+      "category": "Frånvarokategori",
+      "displacedVacation": "Semesterdatum ersätts vid godkännande",
+      "exactHours": "Exakta registrerade timmar",
+      "fullDay": "Heldag",
+      "morning": "Förmiddag",
+      "original": "Registrerade datum",
+      "originalEndCoverage": "Registrerad slutdag",
+      "originalInterval": "Registrerade timmar",
+      "originalStartCoverage": "Registrerad startdag",
+      "proposed": "Föreslagen ändring",
+      "proposedEndCoverage": "Föreslagen slutdag",
+      "proposedInterval": "Föreslagna timmar",
+      "proposedStartCoverage": "Föreslagen startdag",
+      "range": "{range}",
+      "reason": "Anledning",
+      "reasonValue": "{reason}",
+      "title": "Frånvaroändring"
+    },
     "absenceRejected": "Frånvaroansökan avvisad",
     "absenceRequests": "Frånvaroansökningar",
     "absenceRequestsDescription": "Granska och godkänn ledighetsansökningar från dina teammedlemmar",
@@ -304,6 +326,8 @@
       "dayTotals": "Dagssummor",
       "difference": "Differens",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Körinformation saknas",
+      "drivingDetailsMissingWork": "Fordon eller mätarställning saknas",
       "employee": "Medarbetare",
       "holidays": "Helgdagar",
       "openCalendar": "Öppna kalendern för denna period",
@@ -413,6 +437,7 @@
     "totalCount": "{totalCount} väntande",
     "type": "Typ",
     "types": {
+      "absence_change_request": "Frånvaroändringar",
       "absence_entry": "Frånvaroansökningar",
       "period_submission": "Periodinlämningar",
       "time_entry": "Tidskorrigeringar",
@@ -421,6 +446,15 @@
     },
     "unifiedInboxBannerDescription": "Visa alla typer av godkännanden på ett ställe med filtrering, massåtgärder och SLA-uppföljning.",
     "unifiedInboxBannerTitle": "Prova den nya enhetliga inkorgen",
+    "vehicleUse": "Fordonsanvändning",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km är mer än {limit} km under ett arbetspass.",
+      "onOtherLiveWork": "Detta fordon är redan registrerat på en annan medarbetares pågående arbete.",
+      "speedAboveLimit": "Den körda sträckan innebär ett genomsnitt på {speed} km/h under detta arbetspass, vilket är mer än {limit} km/h.",
+      "startBelowLastEnd": "Startmätarställningen är lägre än fordonets senast registrerade slutmätarställning ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Vänligen kontrollera",
     "viewExpenseClaim": "Visa reseräkning och kvitton",
     "viewExpenseReport": "Visa inskickad rapport och kvitton",
     "workBalance": {

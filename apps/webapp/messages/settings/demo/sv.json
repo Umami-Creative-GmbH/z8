@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "{count} tidregistreringar raderade",
           "title": "Rensa tidsdata",
           "vacationAllowancesReset": "{count} semestersaldon återställda",
+          "vehiclesDeleted": "{count, plural, one {# fordon raderat} other {# fordon raderade}}",
           "willDelete": "Detta raderar permanent:",
           "workCategoriesDeleted": "{count} arbetskategorier raderade",
           "workCategorySetsDeleted": "{count} uppsättningar av arbetskategorier raderade",
@@ -109,7 +110,7 @@
           "label": "Datatyper",
           "locations": {
             "countLabel": "Antal platser:",
-            "description": "Arbetsplatser och underområden",
+            "descriptionWithVehicles": "Arbetsplatser, delområden och några fordon",
             "title": "Platser"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Skapar tidsregistreringar och arbetsperioder",
           "label": "Tidsregistreringar"
+        },
+        "vehicleUse": {
+          "description": "Registrering av fordonsanvändning under arbetspass",
+          "label": "Fordonsanvändning"
         },
         "workCategories": {
           "description": "Skapar arbetskategoriuppsättningar och kategorier",

@@ -1,0 +1,218 @@
+{
+  "emails": {
+    "billing": {
+      "invoiceReady": {
+        "action": "Åpne fakturering",
+        "amountLabel": "Beløp å betale",
+        "body": "Faktura {invoiceNumber} for {organizationName} er klar.",
+        "dueDateLabel": "Forfallsdato",
+        "subject": "Din Z8-faktura {invoiceNumber} er klar",
+        "title": "Fakturaen din er klar"
+      },
+      "paymentFailed": {
+        "action": "Oppdater betalingsmåte",
+        "body": "Vi kunne ikke belaste {invoiceAmount} for {organizationName}.",
+        "retry": "Oppdater betalingsmåten din før neste forsøk den {paymentRetryDate} for å unngå avbrudd i tjenesten.",
+        "subject": "Handling kreves: Z8-betaling mislyktes",
+        "title": "Betalingen din mislyktes"
+      },
+      "subscriptionPaused": {
+        "action": "Administrer fakturering",
+        "body": "{planName}-abonnementet for {organizationName} er satt på pause.",
+        "limits": "Tidsregistreringsdata forblir tilgjengelig, men funksjoner i betalte abonnementer kan være begrenset inntil faktureringen gjenopptas.",
+        "subject": "Z8-abonnementet ditt er satt på pause",
+        "title": "Abonnementet ditt er satt på pause"
+      },
+      "subscriptionResumed": {
+        "action": "Se faktureringsdetaljer",
+        "active": "Dine betalte Z8-funksjoner er aktive igjen.",
+        "body": "{planName}-abonnementet for {organizationName} ble gjenopptatt {resumeDate}.",
+        "subject": "Z8-abonnementet ditt har blitt gjenopptatt",
+        "title": "Abonnementet ditt har blitt gjenopptatt"
+      },
+      "trialEnding": {
+        "action": "Gå gjennom faktureringsinnstillinger",
+        "body": "Prøveperioden din for {planName} for {organizationName} utløper {trialEndsAt}.",
+        "paymentMethod": "Legg til en betalingsmåte i faktureringsinnstillingene for å fortsette å bruke Z8 uten avbrudd.",
+        "subject": "{daysRemaining, plural, one {Z8-prøveperioden din utløper om # dag} other {Z8-prøveperioden din utløper om # dager}}",
+        "subjectSoon": "Z8-prøveperioden din utløper snart",
+        "title": "Prøveperioden din utløper"
+      },
+      "values": {
+        "noDueDate": "ikke angitt",
+        "retrySoon": "snart",
+        "yourOrganization": "organisasjonen din"
+      }
+    },
+    "common": {
+      "greeting": "Hei {name},"
+    },
+    "details": {
+      "category": "Kategori",
+      "correctedTimes": "Korrigerte tider",
+      "date": "Dato",
+      "dates": "Datoer",
+      "days": "Dager",
+      "notes": "Notater",
+      "originalTimes": "Opprinnelige tider",
+      "range": "{start} – {end}",
+      "reason": "Årsak"
+    },
+    "export": {
+      "categories": {
+        "absences": "Fravær",
+        "auditLogs": "Revisjonslogger",
+        "balanceAdjustments": "Arbeidssaldojusteringer",
+        "customers": "Kunder",
+        "employees": "Ansatte",
+        "holidays": "Helligdager",
+        "projects": "Prosjekter",
+        "schedules": "Arbeidsplaner",
+        "shifts": "Skift",
+        "teams": "Team",
+        "timeEntries": "Tidsregistrering",
+        "vacation": "Ferieregler",
+        "workPeriods": "Arbeidsperioder"
+      },
+      "organization": "Organisasjon",
+      "values": {
+        "yourOrganization": "Din organisasjon"
+      }
+    },
+    "exportFailed": {
+      "action": "Prøv igjen",
+      "body": "Dataeksporten din for {organizationName} kunne dessverre ikke fullføres.",
+      "categories": "Forespurte data",
+      "error": "Feil",
+      "note": "Hvis denne feilen vedvarer, ta kontakt med brukerstøtte og oppgi feilmeldingen ovenfor. Det kan også hjelpe å eksportere færre datakategorier samtidig.",
+      "title": "Dataeksport mislyktes",
+      "unknownError": "Ukjent feil"
+    },
+    "exportReady": {
+      "action": "Åpne eksporthistorikk",
+      "body": "Dataeksporten din for {organizationName} er fullført. Du kan laste den ned fra eksporthistorikken i Z8.",
+      "categories": "Inkluderte data",
+      "expiresAt": "Tilgjengelig til",
+      "fileSize": "Filstørrelse",
+      "note": "Logg inn på Z8 som organisasjonsadministrator for å laste ned filen. Hver nedlasting starter med en ny, sikker lenke. Etter datoen ovenfor slettes eksportfilen automatisk.",
+      "title": "Dataeksporten din er klar"
+    },
+    "invitation": {
+      "action": "Godta invitasjon",
+      "body": "{inviterName} har invitert deg til å bli med i {organizationName} som {role}.",
+      "email": "Din e-post",
+      "greeting": "Hei,",
+      "invitedBy": "Invitert av",
+      "note": "Hvis du ikke forventet denne invitasjonen, kan du ignorere denne e-posten.",
+      "organization": "Organisasjon",
+      "role": "Rolle",
+      "roles": {
+        "admin": "Administrator",
+        "member": "Medlem",
+        "owner": "Eier"
+      },
+      "title": "Du er invitert til {organizationName}"
+    },
+    "layout": {
+      "actionFallback": "Hvis knappen ikke fungerer, åpne denne lenken:",
+      "footer": "Denne e-posten ble sendt av Z8."
+    },
+    "notification": {
+      "openAction": "Åpne Z8"
+    },
+    "organizationDeletion": {
+      "action": "Gjenopprett organisasjon",
+      "body": "{deletedByName} har planlagt sletting av organisasjonen {organizationName}. Du kan gjenopprette den frem til {permanentDeletionDate}.",
+      "initiatedBy": "Igangsatt av",
+      "items": {
+        "absences": "Alt fravær og alle feriekvoter",
+        "employees": "Alle ansatte, team og ledertildelinger",
+        "members": "Alle medlemmer og ventende invitasjoner",
+        "projects": "Alle prosjekter og deres timetildelinger",
+        "settings": "Alle innstillinger, tidsplaner og konfigurasjoner",
+        "timeEntries": "Alle timeregistreringer og arbeidsperioder"
+      },
+      "itemsTitle": "Dette slettes permanent:",
+      "note": "Hvis det var meningen å slette organisasjonen, trenger du ikke å gjøre noe. Hvis ikke, bør du gjenopprette den nå og gå gjennom kontosikkerheten din.",
+      "organization": "Organisasjon",
+      "permanentAt": "Permanent sletting",
+      "preview": "{organizationName} blir slettet permanent den {permanentDeletionDate}.",
+      "requestedAt": "Sletting forespurt",
+      "title": "Organisasjon planlagt for sletting"
+    },
+    "passwordReset": {
+      "action": "Tilbakestill passord",
+      "body": "Vi har mottatt en forespørsel om å tilbakestille passordet ditt. Bruk knappen nedenfor for å velge et nytt.",
+      "note": "Hvis du ikke ba om å tilbakestille passordet ditt, kan du ignorere denne e-posten; passordet ditt forblir uendret. Lenken utløper om 1 time.",
+      "title": "Tilbakestill passordet ditt"
+    },
+    "scheduledExport": {
+      "dateRangeLabel": "Datoperiode",
+      "empty": {
+        "body": "Den planlagte eksporten din {scheduleName} ble kjørt, men det er ingenting å laste ned.",
+        "noFile": "Ingen fil ble generert for denne kjøringen.",
+        "title": "Planlagt eksport fullført"
+      },
+      "ready": {
+        "action": "Last ned eksport",
+        "body": "Den planlagte eksporten {scheduleName} er fullført.",
+        "linkExpiry": "Denne nedlastingslenken er gyldig i {lifetime} og utløper {expiresAt}.",
+        "title": "Planlagt eksport er klar"
+      },
+      "recordsLabel": "Oppføringer",
+      "subject": "Planlagt eksport: {scheduleName} ({dateRange})"
+    },
+    "securityAlert": {
+      "action": "Gå gjennom sikkerhetsinnstillinger",
+      "device": "Enhet",
+      "event": "Hendelse",
+      "ipAddress": "IP-adresse",
+      "notYou": "Hvis du ikke har gjort denne endringen, bør du sikre kontoen din nå: endre passordet ditt og se over sikkerhetsinnstillingene dine.",
+      "passwordChanged": {
+        "description": "Passordet for Z8-kontoen din ble endret.",
+        "title": "Passord endret"
+      },
+      "time": "Tidspunkt",
+      "twoFactorDisabled": {
+        "description": "Tofaktorautentisering ble slått av for Z8-kontoen din.",
+        "title": "Tofaktorautentisering deaktivert"
+      },
+      "twoFactorEnabled": {
+        "description": "Tofaktorautentisering ble slått på for Z8-kontoen din.",
+        "title": "Tofaktorautentisering aktivert"
+      }
+    },
+    "subjects": {
+      "absenceRecordedByManager": "Fravær registrert",
+      "absenceRequestApproved": "Fraværsforespørsel godkjent",
+      "absenceRequestRejected": "Fraværsforespørsel avslått",
+      "absenceRequestSubmitted": "Fraværsforespørsel sendt inn",
+      "approvalRequestSubmitted": "Ny fraværsforespørsel venter på godkjenning",
+      "exportFailed": "Dataeksport mislyktes - {organizationName}",
+      "exportReady": "Dataeksporten din er klar - {organizationName}",
+      "organizationDeletion": "Organisasjonen {organizationName} er planlagt slettet",
+      "organizationInvitation": "Du har blitt invitert til å bli med i {organizationName}",
+      "passwordChanged": "Sikkerhetsvarsel: Passord endret",
+      "passwordReset": "Tilbakestill passordet ditt",
+      "teamMemberAdded": "Du har blitt lagt til i {teamName}",
+      "teamMemberRemoved": "Du har blitt fjernet fra {teamName}",
+      "timeCorrectionApproved": "Tidskorreksjon godkjent",
+      "timeCorrectionRejected": "Tidskorreksjon avslått",
+      "timeCorrectionSubmitted": "Ny tidskorreksjon venter på godkjenning",
+      "twoFactorDisabled": "Sikkerhetsvarsel: Tofaktorautentisering deaktivert",
+      "twoFactorEnabled": "Sikkerhetsvarsel: Tofaktorautentisering aktivert",
+      "verifyEmail": "Bekreft e-postadressen din"
+    },
+    "variables": {
+      "noReason": "Ingen grunn oppgitt",
+      "noTime": "-",
+      "yourManager": "lederen din"
+    },
+    "verification": {
+      "action": "Bekreft e-postadresse",
+      "body": "Velkommen til Z8! Bekreft e-postadressen din med knappen nedenfor for å fullføre registreringen.",
+      "note": "Hvis du ikke opprettet en konto, kan du ignorere denne e-posten. Lenken utløper om 1 time.",
+      "title": "Bekreft e-postadressen din"
+    }
+  }
+}

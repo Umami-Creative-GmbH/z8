@@ -108,6 +108,36 @@
       "noBalance": "Sem saldo"
     },
     "description": "Veja e gerencie os funcionários que você supervisiona diretamente",
+    "driving": {
+      "columns": {
+        "calendar": "Calendário",
+        "date": "Data",
+        "employee": "Funcionário",
+        "missing": "Ausente",
+        "time": "Horário local registrado"
+      },
+      "count": "{count, plural, one {# período de trabalho está sem detalhes de condução.} other {# períodos de trabalho estão sem detalhes de condução.}}",
+      "descriptionAll": "Períodos de trabalho sem veículo ou leitura do odômetro, embora o uso do veículo seja esperado. Eles permanecem listados até que os detalhes sejam preenchidos.",
+      "descriptionManaged": "Períodos de trabalho dos funcionários que você gerencia sem veículo ou leitura do odômetro, embora o uso do veículo seja esperado. Eles permanecem listados até que os detalhes sejam preenchidos.",
+      "empty": "Nenhum trabalho está sem detalhes de condução.",
+      "filters": {
+        "allEmployees": "Todos os funcionários",
+        "allTeams": "Todas as equipes",
+        "employee": "Funcionário",
+        "team": "Equipe"
+      },
+      "loading": "Carregando detalhes de condução",
+      "missing": {
+        "endReading": "Sem leitura final",
+        "readings": "Sem leituras do odômetro",
+        "startReading": "Sem leitura inicial",
+        "vehicle": "Sem veículo"
+      },
+      "openCalendar": "Calendário",
+      "openCalendarOf": "Abrir o calendário de {name}",
+      "title": "Detalhes de condução ausentes",
+      "truncated": "Mostrando os {count} períodos de trabalho mais recentes. Filtre por equipe ou funcionário para ver os demais."
+    },
     "empty": {
       "action": "Ir para Configurações de Funcionários",
       "description": "Funcionários atribuídos a você como gerente aparecerão aqui. Você pode gerenciar atribuições de equipe nas configurações de funcionários.",

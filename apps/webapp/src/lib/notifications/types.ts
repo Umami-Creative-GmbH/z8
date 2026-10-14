@@ -105,6 +105,17 @@ export const NOTIFICATION_TYPES = [
 	"period_submission_decided",
 	// A scheduled export paused because its owner is no longer an org admin, to every org admin (#988)
 	"scheduled_export_paused",
+	// The requester's personal data export is ready to download, with no file link (#811)
+	"personal_data_export_ready",
+	// To a current employee when an org admin's export of their personal data completes (#1166)
+	"personal_data_export_admin_exported",
+	// Download your personal data on My data before your departure cutoff (#1173)
+	"personal_data_export_reminder",
+	// Skill expiry reminders to the employee and their managers (#1143)
+	"skill_expiry_upcoming",
+	"skill_expired_today",
+	// The morning-after reminder about work lacking its vehicle or a reading (#1127)
+	"driving_details_missing_reminder",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -134,6 +145,7 @@ const IN_APP_AND_PUSH_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"period_submission_reminder",
 	"period_submission_sent_back",
 	"period_submission_decided",
+	"driving_details_missing_reminder",
 ]);
 
 /** Whether a channel is on for a type the user stored no preference for. */

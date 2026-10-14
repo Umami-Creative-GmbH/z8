@@ -227,6 +227,103 @@
 															"pending"
 														],
 														"description": "`pending` while the work waits for approval."
+													},
+													"vehicleUse": {
+														"anyOf": [
+															{
+																"type": "object",
+																"properties": {
+																	"kind": {
+																		"type": "string",
+																		"enum": [
+																			"organization",
+																			"own"
+																		],
+																		"description": "`organization` for an organization vehicle; `own` for the employee's own vehicle, which identifies no vehicle."
+																	},
+																	"vehicleId": {
+																		"anyOf": [
+																			{
+																				"type": "string",
+																				"format": "uuid"
+																			},
+																			{
+																				"type": "null"
+																			}
+																		],
+																		"description": "The organization vehicle; null for an own vehicle."
+																	},
+																	"vehicleName": {
+																		"description": "The organization vehicle's name, also once archived; null for an own vehicle.",
+																		"type": [
+																			"string",
+																			"null"
+																		]
+																	},
+																	"licencePlate": {
+																		"description": "The organization vehicle's licence plate; null for an own vehicle.",
+																		"type": [
+																			"string",
+																			"null"
+																		]
+																	},
+																	"odometerStartKm": {
+																		"anyOf": [
+																			{
+																				"type": "integer",
+																				"minimum": 0,
+																				"maximum": 9007199254740991
+																			},
+																			{
+																				"type": "null"
+																			}
+																		],
+																		"description": "The odometer reading at the start, in whole kilometres; null when not recorded."
+																	},
+																	"odometerEndKm": {
+																		"anyOf": [
+																			{
+																				"type": "integer",
+																				"minimum": 0,
+																				"maximum": 9007199254740991
+																			},
+																			{
+																				"type": "null"
+																			}
+																		],
+																		"description": "The odometer reading at the end, in whole kilometres; null when not recorded."
+																	},
+																	"drivenDistanceKm": {
+																		"anyOf": [
+																			{
+																				"type": "integer",
+																				"minimum": 0,
+																				"maximum": 9007199254740991
+																			},
+																			{
+																				"type": "null"
+																			}
+																		],
+																		"description": "The driven distance in whole kilometres: end minus start reading, or entered directly when there is no start reading. Null when not known yet."
+																	}
+																},
+																"required": [
+																	"kind",
+																	"vehicleId",
+																	"vehicleName",
+																	"licencePlate",
+																	"odometerStartKm",
+																	"odometerEndKm",
+																	"drivenDistanceKm"
+																],
+																"additionalProperties": false,
+																"title": "WorkPeriodVehicleUse"
+															},
+															{
+																"type": "null"
+															}
+														],
+														"description": "The vehicle driven during the work, with its readings; null when none was recorded."
 													}
 												},
 												"required": [
@@ -236,7 +333,8 @@
 													"start",
 													"end",
 													"durationMinutes",
-													"approvalStatus"
+													"approvalStatus",
+													"vehicleUse"
 												],
 												"additionalProperties": false,
 												"title": "WorkPeriod"
@@ -840,7 +938,7 @@
 					"Employees"
 				],
 				"summary": "List employees",
-				"description": "The organization's employees, including departed ones. Contract, salary, address and birthday are never returned.\n\nRequires the key scope `employees:read`.",
+				"description": "The organization's employees, including departed ones. Contract, salary, address and birthday are never returned.\n\nEach employee carries its custom field values as of `asOf` in `customFields`, keyed by field id; `GET /api/v1/employees/custom-fields` describes the fields.\n\nRequires the key scope `employees:read`.",
 				"security": [
 					{
 						"apiKey": []
@@ -881,6 +979,17 @@
 								"active",
 								"departed"
 							]
+						}
+					},
+					{
+						"name": "asOf",
+						"in": "query",
+						"required": false,
+						"description": "The date custom field values are read as of, YYYY-MM-DD. Today in the organization's timezone by default. A tracked field returns the value valid on this date; an untracked field its only value.",
+						"schema": {
+							"type": "string",
+							"format": "date",
+							"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
 						}
 					}
 				],
@@ -996,6 +1105,44 @@
 															}
 														],
 														"description": "The last working day of a scheduled or completed departure."
+													},
+													"customFields": {
+														"type": "object",
+														"propertyNames": {
+															"type": "string"
+														},
+														"additionalProperties": {
+															"anyOf": [
+																{
+																	"type": "string"
+																},
+																{
+																	"type": "boolean"
+																},
+																{
+																	"type": "object",
+																	"properties": {
+																		"id": {
+																			"type": "string",
+																			"format": "uuid"
+																		},
+																		"label": {
+																			"type": "string"
+																		}
+																	},
+																	"required": [
+																		"id",
+																		"label"
+																	],
+																	"additionalProperties": false
+																},
+																{
+																	"type": "null"
+																}
+															],
+															"description": "Text as written, a number as a decimal string, a date as YYYY-MM-DD, a boolean as is, a select value as its option's id and label. Null without a value."
+														},
+														"description": "Every active custom field the key may read, keyed by field id, with its value as of `asOf`. Without the key scope `custom-fields:read-restricted`, only fields every member sees."
 													}
 												},
 												"required": [
@@ -1008,10 +1155,387 @@
 													"managerId",
 													"status",
 													"startDate",
-													"departureDate"
+													"departureDate",
+													"customFields"
 												],
 												"additionalProperties": false,
 												"title": "Employee"
+											}
+										},
+										"nextCursor": {
+											"description": "Pass as `cursor` to read the next page; null on the last page.",
+											"type": [
+												"string",
+												"null"
+											]
+										},
+										"asOf": {
+											"type": "string",
+											"format": "date",
+											"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+											"description": "The date the `customFields` values were read as of."
+										}
+									},
+									"required": [
+										"data",
+										"nextCursor",
+										"asOf"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`validation_failed`: a query parameter is invalid.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`invalid_key`: the API key is missing, unknown, revoked or expired.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"402": {
+						"description": "`billing_required`: the organization has no billing access.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`scope_missing`: the key lacks the endpoint's key scope.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "`rate_limited`: the key's or the organization's request limit is used up.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"Retry-After": {
+								"description": "Seconds until a request may be retried.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"x-z8-scope": "employees:read"
+			}
+		},
+		"/api/v1/employees/custom-fields": {
+			"get": {
+				"operationId": "listEmployeeCustomFields",
+				"tags": [
+					"Employees"
+				],
+				"summary": "List employee custom fields",
+				"description": "The organization's custom fields for employees, active and archived, ordered by position. Each of its employees carries their values in `customFields`, keyed by field id.\n\nWithout the key scope `custom-fields:read-restricted`, fields only managers or admins see are left out, names included.\n\nRequires the key scope `employees:read`.",
+				"security": [
+					{
+						"apiKey": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"description": "Rows per page, 1 to 200.",
+						"schema": {
+							"default": 50,
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 200
+						}
+					},
+					{
+						"name": "cursor",
+						"in": "query",
+						"required": false,
+						"description": "The `nextCursor` of the previous page. Omit it for the first page.",
+						"schema": {
+							"type": "string",
+							"minLength": 1,
+							"maxLength": 1024
+						}
+					},
+					{
+						"name": "status",
+						"in": "query",
+						"required": false,
+						"description": "Only fields with this status. Both by default.",
+						"schema": {
+							"type": "string",
+							"enum": [
+								"active",
+								"archived"
+							]
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"data": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"id": {
+														"type": "string",
+														"format": "uuid"
+													},
+													"name": {
+														"type": "string"
+													},
+													"type": {
+														"type": "string",
+														"enum": [
+															"text",
+															"number",
+															"date",
+															"select",
+															"boolean"
+														]
+													},
+													"tracked": {
+														"type": "boolean",
+														"description": "A tracked field has dated values; `asOf` picks the one valid on a date."
+													},
+													"required": {
+														"type": "boolean"
+													},
+													"visibility": {
+														"type": "string",
+														"enum": [
+															"admin",
+															"manager",
+															"employee"
+														],
+														"description": "The lowest base role that sees the field. `manager` and `admin` fields need `custom-fields:read-restricted`."
+													},
+													"archived": {
+														"type": "boolean",
+														"description": "Archived fields are left out of `customFields`."
+													},
+													"position": {
+														"type": "integer",
+														"minimum": -9007199254740991,
+														"maximum": 9007199254740991,
+														"description": "The field's place in the order fields are shown in."
+													},
+													"integerOnly": {
+														"description": "Number fields only, else null.",
+														"type": [
+															"boolean",
+															"null"
+														]
+													},
+													"min": {
+														"description": "A number field's lower bound as a decimal string, else null.",
+														"type": [
+															"string",
+															"null"
+														]
+													},
+													"max": {
+														"description": "A number field's upper bound as a decimal string, else null.",
+														"type": [
+															"string",
+															"null"
+														]
+													},
+													"options": {
+														"type": "array",
+														"items": {
+															"type": "object",
+															"properties": {
+																"id": {
+																	"type": "string",
+																	"format": "uuid"
+																},
+																"label": {
+																	"type": "string"
+																},
+																"archived": {
+																	"type": "boolean"
+																}
+															},
+															"required": [
+																"id",
+																"label",
+																"archived"
+															],
+															"additionalProperties": false
+														},
+														"description": "A select field's options, active ones first; empty for other types."
+													}
+												},
+												"required": [
+													"id",
+													"name",
+													"type",
+													"tracked",
+													"required",
+													"visibility",
+													"archived",
+													"position",
+													"integerOnly",
+													"min",
+													"max",
+													"options"
+												],
+												"additionalProperties": false,
+												"title": "CustomFieldDefinition"
 											}
 										},
 										"nextCursor": {
@@ -1198,7 +1722,7 @@
 					"Projects"
 				],
 				"summary": "List projects",
-				"description": "The organization's projects with their status and customer. Budgets, rates and members are never returned.\n\nRequires the key scope `projects:read`.",
+				"description": "The organization's projects with their status and customer. Budgets, rates and members are never returned.\n\nEach project carries its custom field values as of `asOf` in `customFields`, keyed by field id; `GET /api/v1/projects/custom-fields` describes the fields.\n\nRequires the key scope `projects:read`.",
 				"security": [
 					{
 						"apiKey": []
@@ -1253,6 +1777,17 @@
 							"type": "string",
 							"format": "uuid",
 							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+						}
+					},
+					{
+						"name": "asOf",
+						"in": "query",
+						"required": false,
+						"description": "The date custom field values are read as of, YYYY-MM-DD. Today in the organization's timezone by default. A tracked field returns the value valid on this date; an untracked field its only value.",
+						"schema": {
+							"type": "string",
+							"format": "date",
+							"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
 						}
 					}
 				],
@@ -1316,16 +1851,431 @@
 																"type": "null"
 															}
 														]
+													},
+													"customFields": {
+														"type": "object",
+														"propertyNames": {
+															"type": "string"
+														},
+														"additionalProperties": {
+															"anyOf": [
+																{
+																	"type": "string"
+																},
+																{
+																	"type": "boolean"
+																},
+																{
+																	"type": "object",
+																	"properties": {
+																		"id": {
+																			"type": "string",
+																			"format": "uuid"
+																		},
+																		"label": {
+																			"type": "string"
+																		}
+																	},
+																	"required": [
+																		"id",
+																		"label"
+																	],
+																	"additionalProperties": false
+																},
+																{
+																	"type": "null"
+																}
+															],
+															"description": "Text as written, a number as a decimal string, a date as YYYY-MM-DD, a boolean as is, a select value as its option's id and label. Null without a value."
+														},
+														"description": "Every active custom field the key may read, keyed by field id, with its value as of `asOf`. Without the key scope `custom-fields:read-restricted`, only fields every member sees."
 													}
 												},
 												"required": [
 													"id",
 													"name",
 													"status",
-													"customerId"
+													"customerId",
+													"customFields"
 												],
 												"additionalProperties": false,
 												"title": "Project"
+											}
+										},
+										"nextCursor": {
+											"description": "Pass as `cursor` to read the next page; null on the last page.",
+											"type": [
+												"string",
+												"null"
+											]
+										},
+										"asOf": {
+											"type": "string",
+											"format": "date",
+											"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+											"description": "The date the `customFields` values were read as of."
+										}
+									},
+									"required": [
+										"data",
+										"nextCursor",
+										"asOf"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`validation_failed`: a query parameter is invalid.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`invalid_key`: the API key is missing, unknown, revoked or expired.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"402": {
+						"description": "`billing_required`: the organization has no billing access.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`scope_missing`: the key lacks the endpoint's key scope.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "`rate_limited`: the key's or the organization's request limit is used up.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"Retry-After": {
+								"description": "Seconds until a request may be retried.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"x-z8-scope": "projects:read"
+			}
+		},
+		"/api/v1/projects/custom-fields": {
+			"get": {
+				"operationId": "listProjectCustomFields",
+				"tags": [
+					"Projects"
+				],
+				"summary": "List project custom fields",
+				"description": "The organization's custom fields for projects, active and archived, ordered by position. Each of its projects carries their values in `customFields`, keyed by field id.\n\nWithout the key scope `custom-fields:read-restricted`, fields only managers or admins see are left out, names included.\n\nRequires the key scope `projects:read`.",
+				"security": [
+					{
+						"apiKey": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"description": "Rows per page, 1 to 200.",
+						"schema": {
+							"default": 50,
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 200
+						}
+					},
+					{
+						"name": "cursor",
+						"in": "query",
+						"required": false,
+						"description": "The `nextCursor` of the previous page. Omit it for the first page.",
+						"schema": {
+							"type": "string",
+							"minLength": 1,
+							"maxLength": 1024
+						}
+					},
+					{
+						"name": "status",
+						"in": "query",
+						"required": false,
+						"description": "Only fields with this status. Both by default.",
+						"schema": {
+							"type": "string",
+							"enum": [
+								"active",
+								"archived"
+							]
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"data": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"id": {
+														"type": "string",
+														"format": "uuid"
+													},
+													"name": {
+														"type": "string"
+													},
+													"type": {
+														"type": "string",
+														"enum": [
+															"text",
+															"number",
+															"date",
+															"select",
+															"boolean"
+														]
+													},
+													"tracked": {
+														"type": "boolean",
+														"description": "A tracked field has dated values; `asOf` picks the one valid on a date."
+													},
+													"required": {
+														"type": "boolean"
+													},
+													"visibility": {
+														"type": "string",
+														"enum": [
+															"admin",
+															"manager",
+															"employee"
+														],
+														"description": "The lowest base role that sees the field. `manager` and `admin` fields need `custom-fields:read-restricted`."
+													},
+													"archived": {
+														"type": "boolean",
+														"description": "Archived fields are left out of `customFields`."
+													},
+													"position": {
+														"type": "integer",
+														"minimum": -9007199254740991,
+														"maximum": 9007199254740991,
+														"description": "The field's place in the order fields are shown in."
+													},
+													"integerOnly": {
+														"description": "Number fields only, else null.",
+														"type": [
+															"boolean",
+															"null"
+														]
+													},
+													"min": {
+														"description": "A number field's lower bound as a decimal string, else null.",
+														"type": [
+															"string",
+															"null"
+														]
+													},
+													"max": {
+														"description": "A number field's upper bound as a decimal string, else null.",
+														"type": [
+															"string",
+															"null"
+														]
+													},
+													"options": {
+														"type": "array",
+														"items": {
+															"type": "object",
+															"properties": {
+																"id": {
+																	"type": "string",
+																	"format": "uuid"
+																},
+																"label": {
+																	"type": "string"
+																},
+																"archived": {
+																	"type": "boolean"
+																}
+															},
+															"required": [
+																"id",
+																"label",
+																"archived"
+															],
+															"additionalProperties": false
+														},
+														"description": "A select field's options, active ones first; empty for other types."
+													}
+												},
+												"required": [
+													"id",
+													"name",
+													"type",
+													"tracked",
+													"required",
+													"visibility",
+													"archived",
+													"position",
+													"integerOnly",
+													"min",
+													"max",
+													"options"
+												],
+												"additionalProperties": false,
+												"title": "CustomFieldDefinition"
 											}
 										},
 										"nextCursor": {
@@ -1512,7 +2462,7 @@
 					"Customers"
 				],
 				"summary": "List customers",
-				"description": "The organization's customers, active and inactive. Contact details and tax data are never returned.\n\nRequires the key scope `customers:read`.",
+				"description": "The organization's customers, active and inactive. Contact details and tax data are never returned.\n\nEach customer carries its custom field values as of `asOf` in `customFields`, keyed by field id; `GET /api/v1/customers/custom-fields` describes the fields.\n\nRequires the key scope `customers:read`.",
 				"security": [
 					{
 						"apiKey": []
@@ -1553,6 +2503,17 @@
 								"active",
 								"inactive"
 							]
+						}
+					},
+					{
+						"name": "asOf",
+						"in": "query",
+						"required": false,
+						"description": "The date custom field values are read as of, YYYY-MM-DD. Today in the organization's timezone by default. A tracked field returns the value valid on this date; an untracked field its only value.",
+						"schema": {
+							"type": "string",
+							"format": "date",
+							"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
 						}
 					}
 				],
@@ -1603,15 +2564,430 @@
 															"inactive"
 														],
 														"description": "`inactive` once the customer was removed in Z8; its projects and work keep it."
+													},
+													"customFields": {
+														"type": "object",
+														"propertyNames": {
+															"type": "string"
+														},
+														"additionalProperties": {
+															"anyOf": [
+																{
+																	"type": "string"
+																},
+																{
+																	"type": "boolean"
+																},
+																{
+																	"type": "object",
+																	"properties": {
+																		"id": {
+																			"type": "string",
+																			"format": "uuid"
+																		},
+																		"label": {
+																			"type": "string"
+																		}
+																	},
+																	"required": [
+																		"id",
+																		"label"
+																	],
+																	"additionalProperties": false
+																},
+																{
+																	"type": "null"
+																}
+															],
+															"description": "Text as written, a number as a decimal string, a date as YYYY-MM-DD, a boolean as is, a select value as its option's id and label. Null without a value."
+														},
+														"description": "Every active custom field the key may read, keyed by field id, with its value as of `asOf`. Without the key scope `custom-fields:read-restricted`, only fields every member sees."
 													}
 												},
 												"required": [
 													"id",
 													"name",
-													"status"
+													"status",
+													"customFields"
 												],
 												"additionalProperties": false,
 												"title": "Customer"
+											}
+										},
+										"nextCursor": {
+											"description": "Pass as `cursor` to read the next page; null on the last page.",
+											"type": [
+												"string",
+												"null"
+											]
+										},
+										"asOf": {
+											"type": "string",
+											"format": "date",
+											"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+											"description": "The date the `customFields` values were read as of."
+										}
+									},
+									"required": [
+										"data",
+										"nextCursor",
+										"asOf"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`validation_failed`: a query parameter is invalid.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`invalid_key`: the API key is missing, unknown, revoked or expired.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"402": {
+						"description": "`billing_required`: the organization has no billing access.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`scope_missing`: the key lacks the endpoint's key scope.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "`rate_limited`: the key's or the organization's request limit is used up.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"Retry-After": {
+								"description": "Seconds until a request may be retried.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"x-z8-scope": "customers:read"
+			}
+		},
+		"/api/v1/customers/custom-fields": {
+			"get": {
+				"operationId": "listCustomerCustomFields",
+				"tags": [
+					"Customers"
+				],
+				"summary": "List customer custom fields",
+				"description": "The organization's custom fields for customers, active and archived, ordered by position. Each of its customers carries their values in `customFields`, keyed by field id.\n\nWithout the key scope `custom-fields:read-restricted`, fields only managers or admins see are left out, names included.\n\nRequires the key scope `customers:read`.",
+				"security": [
+					{
+						"apiKey": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"description": "Rows per page, 1 to 200.",
+						"schema": {
+							"default": 50,
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 200
+						}
+					},
+					{
+						"name": "cursor",
+						"in": "query",
+						"required": false,
+						"description": "The `nextCursor` of the previous page. Omit it for the first page.",
+						"schema": {
+							"type": "string",
+							"minLength": 1,
+							"maxLength": 1024
+						}
+					},
+					{
+						"name": "status",
+						"in": "query",
+						"required": false,
+						"description": "Only fields with this status. Both by default.",
+						"schema": {
+							"type": "string",
+							"enum": [
+								"active",
+								"archived"
+							]
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"data": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"id": {
+														"type": "string",
+														"format": "uuid"
+													},
+													"name": {
+														"type": "string"
+													},
+													"type": {
+														"type": "string",
+														"enum": [
+															"text",
+															"number",
+															"date",
+															"select",
+															"boolean"
+														]
+													},
+													"tracked": {
+														"type": "boolean",
+														"description": "A tracked field has dated values; `asOf` picks the one valid on a date."
+													},
+													"required": {
+														"type": "boolean"
+													},
+													"visibility": {
+														"type": "string",
+														"enum": [
+															"admin",
+															"manager",
+															"employee"
+														],
+														"description": "The lowest base role that sees the field. `manager` and `admin` fields need `custom-fields:read-restricted`."
+													},
+													"archived": {
+														"type": "boolean",
+														"description": "Archived fields are left out of `customFields`."
+													},
+													"position": {
+														"type": "integer",
+														"minimum": -9007199254740991,
+														"maximum": 9007199254740991,
+														"description": "The field's place in the order fields are shown in."
+													},
+													"integerOnly": {
+														"description": "Number fields only, else null.",
+														"type": [
+															"boolean",
+															"null"
+														]
+													},
+													"min": {
+														"description": "A number field's lower bound as a decimal string, else null.",
+														"type": [
+															"string",
+															"null"
+														]
+													},
+													"max": {
+														"description": "A number field's upper bound as a decimal string, else null.",
+														"type": [
+															"string",
+															"null"
+														]
+													},
+													"options": {
+														"type": "array",
+														"items": {
+															"type": "object",
+															"properties": {
+																"id": {
+																	"type": "string",
+																	"format": "uuid"
+																},
+																"label": {
+																	"type": "string"
+																},
+																"archived": {
+																	"type": "boolean"
+																}
+															},
+															"required": [
+																"id",
+																"label",
+																"archived"
+															],
+															"additionalProperties": false
+														},
+														"description": "A select field's options, active ones first; empty for other types."
+													}
+												},
+												"required": [
+													"id",
+													"name",
+													"type",
+													"tracked",
+													"required",
+													"visibility",
+													"archived",
+													"position",
+													"integerOnly",
+													"min",
+													"max",
+													"options"
+												],
+												"additionalProperties": false,
+												"title": "CustomFieldDefinition"
 											}
 										},
 										"nextCursor": {
@@ -1856,7 +3232,8 @@
 							"absences:read-health",
 							"employees:read",
 							"projects:read",
-							"customers:read"
+							"customers:read",
+							"custom-fields:read-restricted"
 						]
 					}
 				},

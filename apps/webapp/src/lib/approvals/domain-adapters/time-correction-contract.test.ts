@@ -384,6 +384,65 @@ describe("time correction workflow contract", () => {
 		}
 	});
 
+	describe("vehicle use (#1120)", () => {
+		const vehicleUse = {
+			vehicle: { kind: "organization" as const, vehicleId: workCategoryId },
+			startKm: 100,
+			endKm: 180,
+			distanceKm: 80,
+		};
+		const identity: TimeCorrectionSubmissionIdentityInput = {
+			organizationId: "org-1",
+			workPeriodId,
+			action: "edit",
+			workLocationType: "home",
+			workCategoryId: null,
+		};
+
+		it("keeps submission keys without vehicle use unchanged and separates every vehicle use", () => {
+			const plain = deriveTimeCorrectionSubmissionKey(identity);
+			expect(deriveTimeCorrectionSubmissionKey({ ...identity, vehicleUse: undefined })).toBe(plain);
+			const withVehicle = deriveTimeCorrectionSubmissionKey({ ...identity, vehicleUse });
+			const cleared = deriveTimeCorrectionSubmissionKey({ ...identity, vehicleUse: null });
+			const otherReading = deriveTimeCorrectionSubmissionKey({
+				...identity,
+				vehicleUse: { ...vehicleUse, endKm: 181, distanceKm: 81 },
+			});
+			expect(new Set([plain, withVehicle, cleared, otherReading]).size).toBe(4);
+			expect(() =>
+				deriveTimeCorrectionSubmissionKey({
+					...identity,
+					vehicleUse: { ...vehicleUse, distanceKm: 5 },
+				}),
+			).toThrow();
+		});
+
+		it("carries requested and original vehicle use only beside the work metadata", () => {
+			expect(
+				normalizeTimeCorrectionWorkflowPayload({
+					timeCorrection: {
+						action: "edit",
+						workLocationType: "home",
+						workCategoryId: null,
+						vehicleUse,
+					},
+				}).timeCorrection,
+			).toEqual({ action: "edit", workLocationType: "home", workCategoryId: null, vehicleUse });
+			expect(() =>
+				normalizeTimeCorrectionWorkflowPayload({
+					timeCorrection: { action: "edit", clockInCorrectionId, vehicleUse },
+				}),
+			).toThrow();
+			expect(
+				normalizeTimeCorrectionOriginalWorkMetadata({
+					workLocationType: "home",
+					workCategoryId: null,
+					vehicleUse: null,
+				}),
+			).toEqual({ workLocationType: "home", workCategoryId: null, vehicleUse: null });
+		});
+	});
+
 	it("derives a stable organization-scoped submission key from business evidence", () => {
 		const input = {
 			organizationId: " org-1 ",

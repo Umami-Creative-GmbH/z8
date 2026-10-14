@@ -434,6 +434,45 @@
       "reportGenerated": "Raport wygenerowano pomyślnie",
       "unexpectedError": "Wystąpił nieoczekiwany błąd",
       "unknownError": "Wystąpił nieznany błąd"
+    },
+    "vehicles": {
+      "archived": "zarchiwizowane",
+      "archivedBadge": "Zarchiwizowane",
+      "empty": {
+        "description": "W tym okresie nie zarejestrowano żadnej zakończonej pracy z przebytym dystansem.",
+        "title": "Brak przejazdów w tym okresie"
+      },
+      "error": "Błąd",
+      "export": {
+        "footer": "Wygenerowano przez Z8",
+        "generatedAt": "Wygenerowano",
+        "note": "Pełne kilometry wykonanej pracy, liczone w miesiącu jej rozpoczęcia (czas lokalny miejsca zarejestrowania).",
+        "period": "Okres",
+        "table": "Kilometry"
+      },
+      "failed": "Nie udało się wygenerować raportu przebiegu według pojazdów",
+      "filter": {
+        "period": "Okres"
+      },
+      "generate": "Wygeneruj raport",
+      "generating": "Generowanie raportu…",
+      "kilometres": "{distance} km",
+      "noReportYet": "Nie wygenerowano jeszcze żadnego raportu",
+      "ownVehicle": "Własny pojazd",
+      "page": {
+        "description": "Kilometry przejechane w celach służbowych według pojazdu i pracownika, w ujęciu miesięcznym",
+        "feature": "wyświetl raport przebiegu według pojazdów"
+      },
+      "selectPeriod": "Wybierz okres i wygeneruj raport.",
+      "table": {
+        "employee": "Pracownik",
+        "licencePlate": "Numer rejestracyjny",
+        "total": "Łącznie",
+        "vehicle": "Pojazd",
+        "vehicleAndEmployee": "Pojazd / pracownik"
+      },
+      "title": "Przebieg według pojazdu",
+      "totalDriven": "Przejechano {distance}"
     }
   }
 }

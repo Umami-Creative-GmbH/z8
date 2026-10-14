@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Richiesta di assenza approvata",
+    "absenceChange": {
+      "afternoon": "Pomeriggio",
+      "cancelAll": "Annulla l'intera assenza",
+      "cancellationTitle": "Annullamento assenza",
+      "category": "Categoria assenza",
+      "displacedVacation": "Date di ferie sostituite all'approvazione",
+      "exactHours": "Ore registrate esatte",
+      "fullDay": "Giornata intera",
+      "morning": "Mattina",
+      "original": "Date registrate",
+      "originalEndCoverage": "Giorno di fine registrato",
+      "originalInterval": "Ore registrate",
+      "originalStartCoverage": "Giorno di inizio registrato",
+      "proposed": "Modifica proposta",
+      "proposedEndCoverage": "Giorno di fine proposto",
+      "proposedInterval": "Ore proposte",
+      "proposedStartCoverage": "Giorno di inizio proposto",
+      "range": "{range}",
+      "reason": "Motivo",
+      "reasonValue": "{reason}",
+      "title": "Modifica assenza"
+    },
     "absenceRejected": "Richiesta di assenza respinta",
     "absenceRequests": "Richieste di assenza",
     "absenceRequestsDescription": "Esamina e approva le richieste di ferie dei membri del tuo team",
@@ -304,6 +326,8 @@
       "dayTotals": "Totali giornalieri",
       "difference": "Differenza",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Dettagli di guida mancanti",
+      "drivingDetailsMissingWork": "Veicolo o lettura del contachilometri mancante",
       "employee": "Dipendente",
       "holidays": "Festività",
       "openCalendar": "Apri il calendario per questo periodo",
@@ -413,6 +437,7 @@
     "totalCount": "{totalCount} in sospeso",
     "type": "Tipo",
     "types": {
+      "absence_change_request": "Modifiche assenza",
       "absence_entry": "Richieste di assenza",
       "period_submission": "Invii del periodo",
       "time_entry": "Correzioni orario",
@@ -421,6 +446,15 @@
     },
     "unifiedInboxBannerDescription": "Visualizza tutti i tipi di approvazione in un unico posto con filtri, azioni collettive e monitoraggio SLA.",
     "unifiedInboxBannerTitle": "Prova la nuova Posta in arrivo unificata",
+    "vehicleUse": "Uso del veicolo",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km è superiore a {limit} km in un solo periodo di lavoro.",
+      "onOtherLiveWork": "Questo veicolo è già registrato nell'attività in corso di un altro dipendente.",
+      "speedAboveLimit": "La distanza percorsa implica una media di {speed} km/h in questo periodo di lavoro, superiore a {limit} km/h.",
+      "startBelowLastEnd": "La lettura iniziale è inferiore all'ultima lettura finale registrata per questo veicolo ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Verifica",
     "viewExpenseClaim": "Visualizza richiesta e ricevute",
     "viewExpenseReport": "Visualizza nota spese inviata e ricevute",
     "workBalance": {

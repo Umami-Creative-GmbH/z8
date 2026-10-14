@@ -108,6 +108,36 @@
       "noBalance": "Nema stanja"
     },
     "description": "Pregledajte i upravljajte zaposlenicima kojima ste izravno nadređeni",
+    "driving": {
+      "columns": {
+        "calendar": "Kalendar",
+        "date": "Datum",
+        "employee": "Zaposlenik",
+        "missing": "Nedostaje",
+        "time": "Zabilježeno lokalno vrijeme"
+      },
+      "count": "{count, plural, one {Za # radno razdoblje nedostaju podaci o vožnji.} few {Za # radna razdoblja nedostaju podaci o vožnji.} other {Za # radnih razdoblja nedostaju podaci o vožnji.}}",
+      "descriptionAll": "Radna razdoblja u kojima nedostaje vozilo ili stanje brojača kilometara iako se očekuje korištenje vozila. Ostaju na popisu dok se podaci ne popune.",
+      "descriptionManaged": "Radna razdoblja zaposlenika kojima upravljate u kojima nedostaje vozilo ili stanje brojača kilometara iako se očekuje korištenje vozila. Ostaju na popisu dok se podaci ne popune.",
+      "empty": "Nijednom radu ne nedostaju podaci o vožnji.",
+      "filters": {
+        "allEmployees": "Svi zaposlenici",
+        "allTeams": "Svi timovi",
+        "employee": "Zaposlenik",
+        "team": "Tim"
+      },
+      "loading": "Učitavanje podataka o vožnji",
+      "missing": {
+        "endReading": "Nema završnog stanja",
+        "readings": "Nema stanja brojača kilometara",
+        "startReading": "Nema početnog stanja",
+        "vehicle": "Nema vozila"
+      },
+      "openCalendar": "Kalendar",
+      "openCalendarOf": "Otvori kalendar korisnika {name}",
+      "title": "Nedostaju podaci o vožnji",
+      "truncated": "Prikazuje se najnovijih {count} radnih razdoblja. Filtrirajte po timu ili zaposleniku da biste vidjeli ostala."
+    },
     "empty": {
       "action": "Idi na postavke zaposlenika",
       "description": "Zaposlenici kojima ste dodijeljeni kao voditelj prikazat će se ovdje. Dodjelama timova možete upravljati u postavkama zaposlenika.",

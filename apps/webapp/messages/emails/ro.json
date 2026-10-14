@@ -1,0 +1,218 @@
+{
+  "emails": {
+    "billing": {
+      "invoiceReady": {
+        "action": "Deschideți facturarea",
+        "amountLabel": "Sumă datorată",
+        "body": "Factura {invoiceNumber} pentru {organizationName} este pregătită.",
+        "dueDateLabel": "Data scadenței",
+        "subject": "Factura dvs. Z8 {invoiceNumber} este gata",
+        "title": "Factura dvs. este gata"
+      },
+      "paymentFailed": {
+        "action": "Actualizați metoda de plată",
+        "body": "Nu am putut încasa {invoiceAmount} pentru {organizationName}.",
+        "retry": "Vă rugăm să vă actualizați metoda de plată înainte de următoarea reîncercare din {paymentRetryDate} pentru a evita întreruperea serviciului.",
+        "subject": "Acțiune necesară: Plata pentru Z8 a eșuat",
+        "title": "Plata dumneavoastră a eșuat"
+      },
+      "subscriptionPaused": {
+        "action": "Gestionați facturarea",
+        "body": "Abonamentul {planName} pentru {organizationName} este suspendat.",
+        "limits": "Datele de pontaj rămân disponibile, dar funcționalitățile planului cu plată pot fi limitate până la reluarea facturării.",
+        "subject": "Abonamentul dumneavoastră Z8 este suspendat",
+        "title": "Abonamentul dumneavoastră este suspendat"
+      },
+      "subscriptionResumed": {
+        "action": "Vizualizați detaliile de facturare",
+        "active": "Funcționalitățile Z8 cu plată sunt din nou active.",
+        "body": "Abonamentul {planName} pentru {organizationName} a fost reluat la data de {resumeDate}.",
+        "subject": "Abonamentul dumneavoastră Z8 a fost reluat",
+        "title": "Abonamentul dumneavoastră a fost reluat"
+      },
+      "trialEnding": {
+        "action": "Verificați setările de facturare",
+        "body": "Perioada dumneavoastră de probă {planName} pentru {organizationName} se încheie la {trialEndsAt}.",
+        "paymentMethod": "Pentru a continua să utilizați Z8 fără întreruperi, adăugați o metodă de plată în setările de facturare.",
+        "subject": "{daysRemaining, plural, one {Perioada dumneavoastră de probă Z8 se încheie în # zi} other {Perioada dumneavoastră de probă Z8 se încheie în # zile}}",
+        "subjectSoon": "Perioada dumneavoastră de probă Z8 se încheie în curând",
+        "title": "Perioada dumneavoastră de probă se încheie"
+      },
+      "values": {
+        "noDueDate": "nesetat",
+        "retrySoon": "în curând",
+        "yourOrganization": "organizația dumneavoastră"
+      }
+    },
+    "common": {
+      "greeting": "Bună {name},"
+    },
+    "details": {
+      "category": "Categorie",
+      "correctedTimes": "Ore corectate",
+      "date": "Dată",
+      "dates": "Date",
+      "days": "Zile",
+      "notes": "Note",
+      "originalTimes": "Ore inițiale",
+      "range": "{start} – {end}",
+      "reason": "Motiv"
+    },
+    "export": {
+      "categories": {
+        "absences": "Absențe",
+        "auditLogs": "Jurnale de audit",
+        "balanceAdjustments": "Ajustări ale soldului de lucru",
+        "customers": "Clienți",
+        "employees": "Angajați",
+        "holidays": "Sărbători legale",
+        "projects": "Proiecte",
+        "schedules": "Programe de lucru",
+        "shifts": "Ture",
+        "teams": "Echipe",
+        "timeEntries": "Pontaj",
+        "vacation": "Politici de concediu",
+        "workPeriods": "Perioade de lucru"
+      },
+      "organization": "Organizație",
+      "values": {
+        "yourOrganization": "Organizația dumneavoastră"
+      }
+    },
+    "exportFailed": {
+      "action": "Încercați din nou",
+      "body": "Din păcate, exportul de date pentru {organizationName} nu a putut fi finalizat.",
+      "categories": "Date solicitate",
+      "error": "Eroare",
+      "note": "Dacă această eroare persistă, contactați serviciul de asistență menționând mesajul de eroare de mai sus. De asemenea, poate ajuta exportarea a mai puține categorii de date simultan.",
+      "title": "Exportul de date a eșuat",
+      "unknownError": "Eroare necunoscută"
+    },
+    "exportReady": {
+      "action": "Deschideți istoricul exporturilor",
+      "body": "Exportul de date pentru {organizationName} este finalizat. Îl puteți descărca din istoricul exporturilor din Z8.",
+      "categories": "Date incluse",
+      "expiresAt": "Disponibil până la",
+      "fileSize": "Dimensiunea fișierului",
+      "note": "Conectați-vă la Z8 ca administrator al organizației pentru a descărca fișierul. Fiecare descărcare începe cu un link nou și securizat. După data de mai sus, fișierul de export este șters automat.",
+      "title": "Exportul dvs. de date este gata"
+    },
+    "invitation": {
+      "action": "Acceptați invitația",
+      "body": "{inviterName} v-a invitat să vă alăturați {organizationName} în rolul de {role}.",
+      "email": "Adresa dvs. de e-mail",
+      "greeting": "Bună ziua,",
+      "invitedBy": "Invitat de",
+      "note": "Dacă nu vă așteptați la această invitație, puteți ignora acest e-mail.",
+      "organization": "Organizație",
+      "role": "Rol",
+      "roles": {
+        "admin": "Administrator",
+        "member": "Membru",
+        "owner": "Proprietar"
+      },
+      "title": "Ați fost invitat în {organizationName}"
+    },
+    "layout": {
+      "actionFallback": "Dacă butonul nu funcționează, accesați acest link:",
+      "footer": "Acest e-mail a fost trimis de Z8."
+    },
+    "notification": {
+      "openAction": "Deschideți Z8"
+    },
+    "organizationDeletion": {
+      "action": "Recuperați organizația",
+      "body": "{deletedByName} a programat organizația {organizationName} pentru ștergere. O puteți recupera până la {permanentDeletionDate}.",
+      "initiatedBy": "Inițiat de",
+      "items": {
+        "absences": "Toate absențele și drepturile de concediu",
+        "employees": "Toți angajații, echipele și alocările de manageri",
+        "members": "Toți membrii și invitațiile în așteptare",
+        "projects": "Toate proiectele și alocările lor de timp",
+        "settings": "Toate setările, programele și configurările",
+        "timeEntries": "Toate înregistrările de timp și perioadele de lucru"
+      },
+      "itemsTitle": "Ce se va șterge definitiv:",
+      "note": "Dacă ați intenționat să ștergeți organizația, nu este necesară nicio acțiune. În caz contrar, recuperați-o acum și verificați securitatea contului dvs.",
+      "organization": "Organizație",
+      "permanentAt": "Ștergere definitivă",
+      "preview": "{organizationName} va fi ștearsă definitiv la data de {permanentDeletionDate}.",
+      "requestedAt": "Ștergere solicitată",
+      "title": "Organizație programată pentru ștergere"
+    },
+    "passwordReset": {
+      "action": "Resetați parola",
+      "body": "Am primit o solicitare de resetare a parolei dvs. Folosiți butonul de mai jos pentru a alege una nouă.",
+      "note": "Dacă nu ați solicitat resetarea parolei, puteți ignora acest e-mail; parola dvs. rămâne neschimbată. Linkul expiră într-o oră.",
+      "title": "Resetați-vă parola"
+    },
+    "scheduledExport": {
+      "dateRangeLabel": "Interval de date",
+      "empty": {
+        "body": "Exportul dvs. programat {scheduleName} a fost executat, dar nu există nimic de descărcat.",
+        "noFile": "Nu a fost generat niciun fișier pentru această execuție.",
+        "title": "Export programat finalizat"
+      },
+      "ready": {
+        "action": "Descarcă exportul",
+        "body": "Exportul dumneavoastră programat {scheduleName} s-a finalizat cu succes.",
+        "linkExpiry": "Acest link de descărcare este valabil timp de {lifetime} și expiră la {expiresAt}.",
+        "title": "Export programat gata"
+      },
+      "recordsLabel": "Înregistrări",
+      "subject": "Export programat: {scheduleName} ({dateRange})"
+    },
+    "securityAlert": {
+      "action": "Verificați setările de securitate",
+      "device": "Dispozitiv",
+      "event": "Eveniment",
+      "ipAddress": "Adresă IP",
+      "notYou": "Dacă nu ați efectuat această modificare, securizați-vă contul acum: schimbați parola și verificați setările de securitate.",
+      "passwordChanged": {
+        "description": "Parola contului dumneavoastră Z8 a fost modificată.",
+        "title": "Parolă modificată"
+      },
+      "time": "Oră",
+      "twoFactorDisabled": {
+        "description": "Autentificarea cu doi factori a fost dezactivată pentru contul dumneavoastră Z8.",
+        "title": "Autentificare cu doi factori dezactivată"
+      },
+      "twoFactorEnabled": {
+        "description": "Autentificarea cu doi factori a fost activată pentru contul dumneavoastră Z8.",
+        "title": "Autentificare cu doi factori activată"
+      }
+    },
+    "subjects": {
+      "absenceRecordedByManager": "Absență înregistrată",
+      "absenceRequestApproved": "Cerere de absență aprobată",
+      "absenceRequestRejected": "Cerere de absență respinsă",
+      "absenceRequestSubmitted": "Cerere de absență trimisă",
+      "approvalRequestSubmitted": "Cerere nouă de absență în așteptarea aprobării",
+      "exportFailed": "Exportul de date a eșuat - {organizationName}",
+      "exportReady": "Exportul dumneavoastră de date este gata - {organizationName}",
+      "organizationDeletion": "Organizația {organizationName} este programată pentru ștergere",
+      "organizationInvitation": "Ați fost invitat să vă alăturați organizației {organizationName}",
+      "passwordChanged": "Alertă de securitate: Parolă modificată",
+      "passwordReset": "Resetați-vă parola",
+      "teamMemberAdded": "Ați fost adăugat în {teamName}",
+      "teamMemberRemoved": "Ați fost eliminat din {teamName}",
+      "timeCorrectionApproved": "Corecție de timp aprobată",
+      "timeCorrectionRejected": "Corecție de timp respinsă",
+      "timeCorrectionSubmitted": "Corecție nouă de timp în așteptarea aprobării",
+      "twoFactorDisabled": "Alertă de securitate: Autentificare cu doi factori dezactivată",
+      "twoFactorEnabled": "Alertă de securitate: Autentificare cu doi factori activată",
+      "verifyEmail": "Verificați-vă adresa de e-mail"
+    },
+    "variables": {
+      "noReason": "Niciun motiv furnizat",
+      "noTime": "-",
+      "yourManager": "managerul dumneavoastră"
+    },
+    "verification": {
+      "action": "Verificați adresa de e-mail",
+      "body": "Bun venit la Z8! Vă rugăm să vă verificați adresa de e-mail folosind butonul de mai jos pentru a finaliza înregistrarea.",
+      "note": "Dacă nu ați creat un cont, puteți ignora acest e-mail. Linkul expiră într-o oră.",
+      "title": "Verificați-vă adresa de e-mail"
+    }
+  }
+}

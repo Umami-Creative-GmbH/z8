@@ -21,6 +21,12 @@
     "briefing": {
       "badge": "Today",
       "description": "Review the items that need action today, then move directly into the right workflow.",
+      "items": {
+        "drivingDetailsMissing": {
+          "description": "Work periods of your employees lacking a vehicle or an odometer reading.",
+          "title": "Driving details missing ({count})"
+        }
+      },
       "needsAction": {
         "description": "Start here for the most urgent operational follow-up.",
         "empty": "All clear. No manager action is needed right now.",

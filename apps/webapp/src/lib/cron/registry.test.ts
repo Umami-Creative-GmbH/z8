@@ -33,6 +33,21 @@ vi.mock("@/lib/jobs/report-share-links", () => {
 	reportShareLinks.imported();
 	return { runReportShareLinkSweep: reportShareLinks.sweep };
 });
+const personalDataExports = vi.hoisted(() => ({
+	imported: vi.fn(),
+	sweep: vi.fn(async () => ({
+		expired: 2,
+		timedOut: 0,
+		filesDeleted: 2,
+		filesFailed: 0,
+		filesDropped: 0,
+		outstanding: 0,
+	})),
+}));
+vi.mock("@/lib/jobs/personal-data-export-sweep", () => {
+	personalDataExports.imported();
+	return { runPersonalDataExportSweep: personalDataExports.sweep };
+});
 const clockingReminders = vi.hoisted(() => ({
 	imported: vi.fn(),
 	run: vi.fn(async () => ({ sent: 2 })),
@@ -48,6 +63,14 @@ const absenceDeputyReminders = vi.hoisted(() => ({
 vi.mock("@/lib/jobs/absence-deputy-reminders", () => {
 	absenceDeputyReminders.imported();
 	return { runAbsenceDeputyRemindersJob: absenceDeputyReminders.run };
+});
+const skillExpiryReminders = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({ organizationsChecked: 2, remindersSent: 1 })),
+}));
+vi.mock("@/lib/jobs/skill-expiry-reminders", () => {
+	skillExpiryReminders.imported();
+	return { runSkillExpiryRemindersJob: skillExpiryReminders.run };
 });
 const deputyCoverSummaries = vi.hoisted(() => ({
 	imported: vi.fn(),
@@ -340,6 +363,23 @@ describe("report share link sweep cron", () => {
 	});
 });
 
+describe("personal data export sweep cron", () => {
+	it("loads the sweep lazily and expires exports and their files every 15 minutes", async () => {
+		expect(personalDataExports.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:personal-data-export-sweep"]).toMatchObject({
+			schedule: "*/15 * * * *",
+			defaultJobOptions: { attempts: 2, priority: 8 },
+		});
+
+		expect(
+			await CRON_JOBS["cron:personal-data-export-sweep"].processor({
+				triggeredAt: "2026-10-13T09:15:00Z",
+			}),
+		).toEqual({ expired: 2, timedOut: 0, filesDeleted: 2, filesFailed: 0, filesDropped: 0, outstanding: 0 });
+		expect(personalDataExports.sweep).toHaveBeenCalledOnce();
+	});
+});
+
 describe("automatic clock-out cron", () => {
 	it("loads maintenance lazily and observes overdue work every five minutes", async () => {
 		expect(autoClockOut.imported).not.toHaveBeenCalled();
@@ -372,6 +412,19 @@ describe("absence deputy reminders cron (#1013)", () => {
 			}),
 		).toEqual({ candidates: 3, sent: 1 });
 		expect(absenceDeputyReminders.run).toHaveBeenCalledOnce();
+	});
+});
+
+describe("skill expiry reminders cron (#1143)", () => {
+	it("loads the reminder job lazily and runs hourly, so each organization's day starts soon after midnight", async () => {
+		expect(skillExpiryReminders.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:skill-expiry-reminders"].schedule).toBe("0 * * * *");
+		expect(
+			await CRON_JOBS["cron:skill-expiry-reminders"].processor({
+				triggeredAt: "2026-10-25T06:00:00Z",
+			}),
+		).toEqual({ organizationsChecked: 2, remindersSent: 1 });
+		expect(skillExpiryReminders.run).toHaveBeenCalledOnce();
 	});
 });
 

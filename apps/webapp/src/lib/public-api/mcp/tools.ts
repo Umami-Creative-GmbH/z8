@@ -7,7 +7,15 @@ import type { Tool } from "@modelcontextprotocol/server";
 import type { PublicApiEndpoint } from "../endpoint";
 import { PUBLIC_API_ENDPOINTS } from "../endpoints";
 import { jsonSchema } from "../openapi";
+import {
+	listCustomerCustomFields,
+	listEmployeeCustomFields,
+	listProjectCustomFields,
+} from "../resources/custom-fields";
+import { listCustomers } from "../resources/customers";
 import { MAX_RANGE_DAYS } from "../resources/date-range";
+import { listEmployees } from "../resources/employees";
+import { listProjects } from "../resources/projects";
 import type { ApiKeyScope } from "../scopes";
 
 /** A tool as `tools/list` returns it. */
@@ -24,6 +32,26 @@ export interface McpTool {
 	definition: McpToolDefinition;
 }
 
+/** `listWorkPeriods` → `list_work_periods`. */
+const toolNameOf = (operationId: string) =>
+	operationId.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+
+/** The custom field rules of one record kind's list tool and definitions tool (#822). */
+function customFieldRules(
+	list: PublicApiEndpoint,
+	definitions: PublicApiEndpoint,
+): Record<string, string[]> {
+	return {
+		[list.operationId]: [
+			`\`customFields\` is keyed by field id: call \`${toolNameOf(definitions.operationId)}\` for each field's name and type. A select value carries its option's label inline.`,
+			"Custom field values are read as of `asOf`, today in the organization's timezone unless you pass one; a tracked field can hold another value on another date.",
+		],
+		[definitions.operationId]: [
+			`Use the field ids to read \`customFields\` in \`${toolNameOf(list.operationId)}\`. Fields only managers or admins see are listed only with the key scope \`custom-fields:read-restricted\`.`,
+		],
+	};
+}
+
 /**
  * Data rules the endpoint description leaves to the client, which an agent
  * would otherwise get wrong.
@@ -32,11 +60,10 @@ const AGENT_RULES: Record<string, string[]> = {
 	listWorkPeriods: [
 		"Show each time in the UTC offset recorded with it; never convert it to another timezone.",
 	],
+	...customFieldRules(listEmployees, listEmployeeCustomFields),
+	...customFieldRules(listProjects, listProjectCustomFields),
+	...customFieldRules(listCustomers, listCustomerCustomFields),
 };
-
-/** `listWorkPeriods` → `list_work_periods`. */
-const toolNameOf = (operationId: string) =>
-	operationId.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 
 function descriptionOf(endpoint: PublicApiEndpoint): string {
 	const hasRange = "from" in endpoint.query.shape && "to" in endpoint.query.shape;

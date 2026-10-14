@@ -27,16 +27,16 @@ The month a payslip settles. Only payslips have one.
 _Avoid_: payroll month, billing period
 
 **Expiry date**:
-The last day a certificate or other document is valid. Officers and, for shared documents, the employee are reminded before it and on it.
+The last day a certificate or other document is valid. Officers and, for shared documents, the employee are reminded before it and on it. When a shared skill certificate expires with its employee skill, the employee is reminded only by the skill reminder.
 _Avoid_: valid until, due date
+
+**Skill certificate**:
+A certificate that names the one employee skill it proves. Scheduling learns only that a skill certificate is on file, never its content.
+_Avoid_: skill attachment, linked document
 
 **Payslip batch**:
 Many payslips for one pay period uploaded at once and matched to employees by personnel number, saved only after an officer confirms the matches.
 _Avoid_: bulk upload, payslip import
-
-**Personnel number**:
-The organization's own identifier for an employee, also used by payroll exports. It is not guaranteed to be unique.
-_Avoid_: employee ID, payroll ID
 
 **Sick note**:
 An employee document of the sick note category: a doctor's note that an employee was unfit for work, usually linked to the sick-leave absence it covers. The approver of that absence learns only that a sick note is attached, never its content.

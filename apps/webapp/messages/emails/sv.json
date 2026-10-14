@@ -1,0 +1,218 @@
+{
+  "emails": {
+    "billing": {
+      "invoiceReady": {
+        "action": "Öppna fakturering",
+        "amountLabel": "Belopp att betala",
+        "body": "Faktura {invoiceNumber} för {organizationName} är klar.",
+        "dueDateLabel": "Förfallodatum",
+        "subject": "Din Z8-faktura {invoiceNumber} är klar",
+        "title": "Din faktura är klar"
+      },
+      "paymentFailed": {
+        "action": "Uppdatera betalningsmetod",
+        "body": "Vi kunde inte debitera {invoiceAmount} för {organizationName}.",
+        "retry": "Uppdatera din betalningsmetod före nästa försök den {paymentRetryDate} för att undvika avbrott i tjänsten.",
+        "subject": "Åtgärd krävs: Betalning för Z8 misslyckades",
+        "title": "Din betalning misslyckades"
+      },
+      "subscriptionPaused": {
+        "action": "Hantera fakturering",
+        "body": "Prenumerationen på {planName} för {organizationName} är pausad.",
+        "limits": "Tidsregistreringsdata är fortfarande tillgänglig, men funktioner i betalda planer kan vara begränsade tills faktureringen återupptas.",
+        "subject": "Din Z8-prenumeration är pausad",
+        "title": "Din prenumeration är pausad"
+      },
+      "subscriptionResumed": {
+        "action": "Visa faktureringsuppgifter",
+        "active": "Dina betalda Z8-funktioner är aktiva igen.",
+        "body": "Prenumerationen på {planName} för {organizationName} återupptogs den {resumeDate}.",
+        "subject": "Din Z8-prenumeration har återupptagits",
+        "title": "Din prenumeration har återupptagits"
+      },
+      "trialEnding": {
+        "action": "Granska faktureringsinställningar",
+        "body": "Din provperiod för {planName} för {organizationName} slutar den {trialEndsAt}.",
+        "paymentMethod": "För att fortsätta använda Z8 utan avbrott lägger du till en betalningsmetod i faktureringsinställningarna.",
+        "subject": "{daysRemaining, plural, one {Din Z8-provperiod slutar om # dag} other {Din Z8-provperiod slutar om # dagar}}",
+        "subjectSoon": "Din Z8-provperiod slutar snart",
+        "title": "Din provperiod går snart ut"
+      },
+      "values": {
+        "noDueDate": "inte angivet",
+        "retrySoon": "snart",
+        "yourOrganization": "din organisation"
+      }
+    },
+    "common": {
+      "greeting": "Hej {name},"
+    },
+    "details": {
+      "category": "Kategori",
+      "correctedTimes": "Korrigerade tider",
+      "date": "Datum",
+      "dates": "Datum",
+      "days": "Dagar",
+      "notes": "Anteckningar",
+      "originalTimes": "Ursprungliga tider",
+      "range": "{start} – {end}",
+      "reason": "Anledning"
+    },
+    "export": {
+      "categories": {
+        "absences": "Frånvaro",
+        "auditLogs": "Granskningsloggar",
+        "balanceAdjustments": "Justeringar av arbetssaldo",
+        "customers": "Kunder",
+        "employees": "Medarbetare",
+        "holidays": "Helgdagar",
+        "projects": "Projekt",
+        "schedules": "Arbetsscheman",
+        "shifts": "Arbetspass",
+        "teams": "Team",
+        "timeEntries": "Tidsregistrering",
+        "vacation": "Semesterpolicyer",
+        "workPeriods": "Arbetsperioder"
+      },
+      "organization": "Organisation",
+      "values": {
+        "yourOrganization": "Din organisation"
+      }
+    },
+    "exportFailed": {
+      "action": "Försök igen",
+      "body": "Tyvärr kunde inte din dataexport för {organizationName} slutföras.",
+      "categories": "Begärd data",
+      "error": "Fel",
+      "note": "Om felet kvarstår kontaktar du supporten med felmeddelandet ovan. Att exportera färre datakategorier samtidigt kan också hjälpa.",
+      "title": "Dataexporten misslyckades",
+      "unknownError": "Okänt fel"
+    },
+    "exportReady": {
+      "action": "Öppna exporthistorik",
+      "body": "Din dataexport för {organizationName} är klar. Du kan ladda ned den från exporthistoriken i Z8.",
+      "categories": "Inkluderad data",
+      "expiresAt": "Tillgänglig till",
+      "fileSize": "Filstorlek",
+      "note": "Logga in på Z8 som organisationsadministratör för att ladda ned filen. Varje nedladdning startar med en ny, säker länk. Efter ovanstående datum raderas exportfilen automatiskt.",
+      "title": "Din dataexport är klar"
+    },
+    "invitation": {
+      "action": "Acceptera inbjudan",
+      "body": "{inviterName} har bjudit in dig till {organizationName} som {role}.",
+      "email": "Din e-postadress",
+      "greeting": "Hej,",
+      "invitedBy": "Inbjuden av",
+      "note": "Om du inte förväntade dig denna inbjudan kan du ignorera detta e-postmeddelande.",
+      "organization": "Organisation",
+      "role": "Roll",
+      "roles": {
+        "admin": "Administratör",
+        "member": "Medlem",
+        "owner": "Ägare"
+      },
+      "title": "Du har blivit inbjuden till {organizationName}"
+    },
+    "layout": {
+      "actionFallback": "Om knappen inte fungerar, öppna denna länk:",
+      "footer": "Detta e-postmeddelande skickades av Z8."
+    },
+    "notification": {
+      "openAction": "Öppna Z8"
+    },
+    "organizationDeletion": {
+      "action": "Återställ organisation",
+      "body": "{deletedByName} schemalade organisationen {organizationName} för radering. Du kan återställa den fram till {permanentDeletionDate}.",
+      "initiatedBy": "Initierad av",
+      "items": {
+        "absences": "All frånvaro och semestersaldon",
+        "employees": "Alla anställda, team och chefstilldelningar",
+        "members": "Alla medlemmar och väntande inbjudningar",
+        "projects": "Alla projekt och deras tidstilldelningar",
+        "settings": "Alla inställningar, scheman och konfigurationer",
+        "timeEntries": "Alla tidsregistreringar och arbetsperioder"
+      },
+      "itemsTitle": "Vad som kommer att raderas permanent:",
+      "note": "Om du hade för avsikt att radera organisationen krävs ingen åtgärd. Om inte, återställ den nu och se över ditt kontos säkerhet.",
+      "organization": "Organisation",
+      "permanentAt": "Permanent radering",
+      "preview": "{organizationName} kommer att raderas permanent den {permanentDeletionDate}.",
+      "requestedAt": "Radering begärd",
+      "title": "Organisation schemalagd för radering"
+    },
+    "passwordReset": {
+      "action": "Återställ lösenord",
+      "body": "Vi har tagit emot en begäran om att återställa ditt lösenord. Använd knappen nedan för att välja ett nytt.",
+      "note": "Om du inte bad om att få återställa ditt lösenord kan du ignorera detta e-postmeddelande; ditt lösenord förblir detsamma. Länken går ut om 1 timme.",
+      "title": "Återställ ditt lösenord"
+    },
+    "scheduledExport": {
+      "dateRangeLabel": "Datumintervall",
+      "empty": {
+        "body": "Din schemalagda export {scheduleName} kördes, men det finns inget att ladda ned.",
+        "noFile": "Ingen fil genererades för denna körning.",
+        "title": "Schemalagd export slutförd"
+      },
+      "ready": {
+        "action": "Ladda ner export",
+        "body": "Din schemalagda export {scheduleName} har slutförts.",
+        "linkExpiry": "Denna nedladdningslänk är giltig i {lifetime} och upphör att gälla {expiresAt}.",
+        "title": "Schemalagd export är klar"
+      },
+      "recordsLabel": "Poster",
+      "subject": "Schemalagd export: {scheduleName} ({dateRange})"
+    },
+    "securityAlert": {
+      "action": "Granska säkerhetsinställningar",
+      "device": "Enhet",
+      "event": "Händelse",
+      "ipAddress": "IP-adress",
+      "notYou": "Om du inte har gjort den här ändringen bör du skydda ditt konto nu: byt lösenord och granska dina säkerhetsinställningar.",
+      "passwordChanged": {
+        "description": "Lösenordet för ditt Z8-konto har ändrats.",
+        "title": "Lösenordet har ändrats"
+      },
+      "time": "Tid",
+      "twoFactorDisabled": {
+        "description": "Tvåfaktorsautentisering inaktiverades för ditt Z8-konto.",
+        "title": "Tvåfaktorsautentisering inaktiverad"
+      },
+      "twoFactorEnabled": {
+        "description": "Tvåfaktorsautentisering aktiverades för ditt Z8-konto.",
+        "title": "Tvåfaktorsautentisering aktiverad"
+      }
+    },
+    "subjects": {
+      "absenceRecordedByManager": "Frånvaro registrerad",
+      "absenceRequestApproved": "Frånvaroansökan godkänd",
+      "absenceRequestRejected": "Frånvaroansökan avvisad",
+      "absenceRequestSubmitted": "Frånvaroansökan inskickad",
+      "approvalRequestSubmitted": "Ny frånvaroansökan väntar på godkännande",
+      "exportFailed": "Dataexport misslyckades – {organizationName}",
+      "exportReady": "Din dataexport är klar – {organizationName}",
+      "organizationDeletion": "Organisationen {organizationName} har schemalagts för radering",
+      "organizationInvitation": "Du har bjudits in till {organizationName}",
+      "passwordChanged": "Säkerhetsvarning: Lösenordet har ändrats",
+      "passwordReset": "Återställ ditt lösenord",
+      "teamMemberAdded": "Du har lagts till i {teamName}",
+      "teamMemberRemoved": "Du har tagits bort från {teamName}",
+      "timeCorrectionApproved": "Tidskorrigering godkänd",
+      "timeCorrectionRejected": "Tidskorrigering avvisad",
+      "timeCorrectionSubmitted": "Ny tidskorrigering väntar på godkännande",
+      "twoFactorDisabled": "Säkerhetsvarning: Tvåfaktorsautentisering inaktiverad",
+      "twoFactorEnabled": "Säkerhetsvarning: Tvåfaktorsautentisering aktiverad",
+      "verifyEmail": "Verifiera din e-postadress"
+    },
+    "variables": {
+      "noReason": "Ingen orsak angiven",
+      "noTime": "-",
+      "yourManager": "din chef"
+    },
+    "verification": {
+      "action": "Verifiera e-postadress",
+      "body": "Välkommen till Z8! Vänligen verifiera din e-postadress med knappen nedan för att slutföra din registrering.",
+      "note": "Om du inte skapade något konto kan du ignorera detta e-postmeddelande. Länken upphör att gälla om 1 timme.",
+      "title": "Verifiera din e-postadress"
+    }
+  }
+}

@@ -8,11 +8,25 @@ import { type ReactNode, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import {
+	checkWorkPeriodVehicleUseWarnings,
 	getWorkPeriodTimeEditContext,
 	updateWorkPeriodTimes,
 	type WorkPeriodTimeEditContext,
 } from "@/app/[locale]/(app)/time-tracking/actions/work-period-time-edit";
 import { WorkLocationSelector } from "@/components/time-tracking/clock-in-out-widget-parts";
+import {
+	type VehicleUseDraft,
+	vehicleUseDraftOf,
+	vehicleUseFromDraft,
+} from "@/components/time-tracking/vehicle-use-draft";
+import {
+	CheckedVehicleUseFields,
+	VehicleUseSummary,
+} from "@/components/time-tracking/vehicle-use-fields";
+import {
+	vehicleOptionLabel,
+	vehicleUseRefusalText,
+} from "@/components/time-tracking/vehicle-use-format";
 import { WorkLocationIndicator } from "@/components/time-tracking/work-location-indicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +37,8 @@ import type { CalendarEvent } from "@/lib/calendar/types";
 import type { DisplayContext } from "@/lib/datetime/temporal-format";
 import { queryKeys } from "@/lib/query/keys";
 import { getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
+import { sameWorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import { workVehicleUseRefusalOfResult } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-refusals";
 import {
 	haveWorkPeriodDatesChanged,
 	haveWorkPeriodEditValuesChanged,
@@ -33,8 +49,13 @@ import {
 	type WorkPeriodTimeEditValues,
 } from "@/lib/time-tracking/work-period-time-edit-policy";
 import { formatEventTimeRange } from "./work-period-dialog-utils";
+import { WorkPeriodMileageAction } from "./work-period-mileage-action";
 
-type TimeEditFormValues = WorkPeriodTimeEditValues & { reason: string };
+type TimeEditFormValues = WorkPeriodTimeEditValues & {
+	reason: string;
+	/** Vehicle use as edited (#1120); submitted only when it differs from the recorded one. */
+	vehicleUseDraft: VehicleUseDraft;
+};
 
 /** Routes that submit a time correction, which always carries a reason. */
 function routeNeedsReason(route: WorkPeriodTimeEditRoute | null): boolean {
@@ -43,25 +64,15 @@ function routeNeedsReason(route: WorkPeriodTimeEditRoute | null): boolean {
 
 function isChronological(values: WorkPeriodTimeEditValues): boolean {
 	try {
-		const clockIn = Temporal.PlainDateTime.from(
-			`${values.clockInDate}T${values.clockInTime}`,
-		);
-		const clockOut = Temporal.PlainDateTime.from(
-			`${values.clockOutDate}T${values.clockOutTime}`,
-		);
+		const clockIn = Temporal.PlainDateTime.from(`${values.clockInDate}T${values.clockInTime}`);
+		const clockOut = Temporal.PlainDateTime.from(`${values.clockOutDate}T${values.clockOutTime}`);
 		return Temporal.PlainDateTime.compare(clockIn, clockOut) < 0;
 	} catch {
 		return false;
 	}
 }
 
-function BlockedHint({
-	access,
-	t,
-}: {
-	access: WorkPeriodTimeEditAccess;
-	t: TFnType;
-}) {
+function BlockedHint({ access, t }: { access: WorkPeriodTimeEditAccess; t: TFnType }) {
 	if (access.kind !== "blocked") return null;
 
 	let message: string | null = null;
@@ -78,18 +89,10 @@ function BlockedHint({
 		);
 	}
 
-	return message ? (
-		<p className="mt-1 text-xs text-muted-foreground">{message}</p>
-	) : null;
+	return message ? <p className="mt-1 text-xs text-muted-foreground">{message}</p> : null;
 }
 
-function RouteHint({
-	route,
-	t,
-}: {
-	route: WorkPeriodTimeEditRoute | null;
-	t: TFnType;
-}) {
+function RouteHint({ route, t }: { route: WorkPeriodTimeEditRoute | null; t: TFnType }) {
 	if (route === "approval_request") {
 		return (
 			<p className="text-xs text-amber-600 dark:text-amber-400">
@@ -138,10 +141,61 @@ function EndpointFields({
 	);
 }
 
-function WorkPeriodTimeEditForm({
+function vehicleLabelOf(
+	context: WorkPeriodTimeEditContext,
+	use: NonNullable<WorkPeriodTimeEditValues["vehicleUse"]>,
+): string | null {
+	if (use.vehicle.kind !== "organization") return null;
+	const vehicleId = use.vehicle.vehicleId;
+	const vehicle = context.vehicleUse?.vehicles.find((option) => option.id === vehicleId);
+	return vehicle ? vehicleOptionLabel(vehicle) : null;
+}
+
+/**
+ * The vehicle use fields with their plausibility warnings (#1121), checked on
+ * the server over the times as edited. Warnings never block saving.
+ */
+function EditedVehicleUseFields({
 	workPeriodId,
 	context,
-	onCancel,
+	values,
+	onChange,
+	t,
+}: {
+	workPeriodId: string;
+	context: WorkPeriodTimeEditContext;
+	values: Pick<
+		TimeEditFormValues,
+		"clockInDate" | "clockInTime" | "clockOutDate" | "clockOutTime"
+	> & { draft: VehicleUseDraft };
+	onChange: (draft: VehicleUseDraft) => void;
+	t: TFnType;
+}) {
+	const { draft, ...times } = values;
+	return (
+		<CheckedVehicleUseFields
+			value={draft}
+			onChange={onChange}
+			context={context.vehicleUse}
+			checkFor={(input) => ({
+				key: JSON.stringify({ input, times }),
+				run: async () => {
+					const result = await checkWorkPeriodVehicleUseWarnings({
+						workPeriodId,
+						vehicleUse: input,
+						...times,
+					});
+					return result.success ? result.data.warnings : [];
+				},
+			})}
+			t={t}
+		/>
+	);
+}
+
+function useWorkPeriodTimeEditForm({
+	workPeriodId,
+	context,
 	onSaved,
 	t,
 }: {
@@ -158,59 +212,73 @@ function WorkPeriodTimeEditForm({
 			datesChanged: haveWorkPeriodDatesChanged(context.values, values),
 		});
 
+	// Vehicle use (#1120) is edited while it is asked or expected; otherwise read-only.
+	const vehicleUseMode = context.vehicleUse?.mode ?? "off";
+	const editsVehicleUse = vehicleUseMode !== "off";
+	const recordedVehicleUse = context.values.vehicleUse ?? null;
 	const form = useForm({
-		defaultValues: { ...context.values, reason: "" } as TimeEditFormValues,
-		onSubmit: async ({ value }) => {
-			if (!value.workLocationType) {
+		defaultValues: {
+			...context.values,
+			reason: "",
+			vehicleUseDraft: vehicleUseDraftOf(recordedVehicleUse),
+		} as TimeEditFormValues,
+		onSubmit: async ({ value: submitted }) => {
+			if (!submitted.workLocationType) {
 				toast.error(t("calendar.edit.locationRequired", "Choose a work location."));
 				return;
 			}
+			const vehicle = editsVehicleUse ? vehicleUseFromDraft(submitted.vehicleUseDraft) : null;
+			if (vehicle && !vehicle.ok) {
+				toast.error(vehicleUseRefusalText(t, vehicle.code));
+				return;
+			}
+			const vehicleUseChanged =
+				vehicle?.ok === true && !sameWorkVehicleUse(vehicle.use, recordedVehicleUse);
+			const value: TimeEditFormValues = {
+				...submitted,
+				vehicleUse: vehicleUseChanged ? vehicle.use : undefined,
+			};
 			if (!haveWorkPeriodEditValuesChanged(context.values, value)) {
 				toast.error(
 					t(
-						"calendar.edit.time.noChanges",
-						"Change the date, time, or work location first.",
+						"calendar.edit.time.noChangesWithVehicle",
+						"Change the date, time, work location or vehicle use first.",
 					),
 				);
 				return;
 			}
-			if (
-				haveWorkPeriodTimesChanged(context.values, value) &&
-				!isChronological(value)
-			) {
-				toast.error(
-					t(
-						"calendar.edit.time.invalidRange",
-						"Clock out must be after clock in.",
-					),
-				);
+			if (haveWorkPeriodTimesChanged(context.values, value) && !isChronological(value)) {
+				toast.error(t("calendar.edit.time.invalidRange", "Clock out must be after clock in."));
 				return;
 			}
 			const route = routeFor(value);
 			if (routeNeedsReason(route) && !value.reason.trim()) {
 				toast.error(
-					t(
-						"calendar.edit.time.reasonRequired",
-						"Please add a reason for your manager.",
-					),
+					t("calendar.edit.time.reasonRequired", "Please add a reason for your manager."),
 				);
 				return;
 			}
 
-			const submissionId =
-				submissionIdRef.current ?? globalThis.crypto.randomUUID();
+			const submissionId = submissionIdRef.current ?? globalThis.crypto.randomUUID();
 			submissionIdRef.current = submissionId;
 			const result = await updateWorkPeriodTimes({
 				workPeriodId,
 				submissionId,
-				...value,
+				clockInDate: value.clockInDate,
+				clockInTime: value.clockInTime,
+				clockOutDate: value.clockOutDate,
+				clockOutTime: value.clockOutTime,
+				reason: value.reason,
 				workLocationType: value.workLocationType ?? undefined,
+				...(vehicleUseChanged ? { vehicleUse: vehicle.input } : {}),
 			}).catch(() => null);
 
 			if (!result?.success) {
+				const vehicleRefusal = result ? workVehicleUseRefusalOfResult(result) : null;
 				toast.error(
-					result?.error ||
-						t("calendar.edit.time.saveFailed", "Failed to update time entry"),
+					vehicleRefusal
+						? vehicleUseRefusalText(t, vehicleRefusal)
+						: result?.error || t("calendar.edit.time.saveFailed", "Failed to update time entry"),
 				);
 				return;
 			}
@@ -224,15 +292,31 @@ function WorkPeriodTimeEditForm({
 								"calendar.edit.time.submittedOnBehalf",
 								"Change submitted to the employee's approver",
 							)
-						: t(
-								"calendar.edit.time.submitted",
-								"Change submitted for manager approval",
-							);
+						: t("calendar.edit.time.submitted", "Change submitted for manager approval");
 			}
 			toast.success(message);
 			onSaved();
 		},
 	});
+
+	return { reasonId, form, routeFor, editsVehicleUse, recordedVehicleUse };
+}
+
+function WorkPeriodTimeEditForm({
+	workPeriodId,
+	context,
+	onCancel,
+	onSaved,
+	t,
+}: {
+	workPeriodId: string;
+	context: WorkPeriodTimeEditContext;
+	onCancel: () => void;
+	onSaved: () => void;
+	t: TFnType;
+}) {
+	const { reasonId, form, routeFor, editsVehicleUse, recordedVehicleUse } =
+		useWorkPeriodTimeEditForm({ workPeriodId, context, onCancel, onSaved, t });
 
 	return (
 		<form
@@ -243,11 +327,9 @@ function WorkPeriodTimeEditForm({
 			}}
 		>
 			<p className="text-xs text-muted-foreground">
-				{t(
-					"calendar.edit.time.timezoneNote",
-					"Times are in the employee's timezone ({timezone})",
-					{ timezone: getTimezoneAbbreviation(context.timezone) },
-				)}
+				{t("calendar.edit.time.timezoneNote", "Times are in the employee's timezone ({timezone})", {
+					timezone: getTimezoneAbbreviation(context.timezone),
+				})}
 			</p>
 			<EndpointFields
 				legend={t("calendar.edit.time.clockIn", "Clock in")}
@@ -258,10 +340,7 @@ function WorkPeriodTimeEditForm({
 								type="date"
 								name={field.name}
 								autoComplete="off"
-								aria-label={t(
-									"calendar.edit.time.clockInDate",
-									"Clock in date",
-								)}
+								aria-label={t("calendar.edit.time.clockInDate", "Clock in date")}
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
 								onBlur={field.handleBlur}
@@ -276,10 +355,7 @@ function WorkPeriodTimeEditForm({
 							<TimeInput
 								name={field.name}
 								autoComplete="off"
-								aria-label={t(
-									"calendar.edit.time.clockInTime",
-									"Clock in time",
-								)}
+								aria-label={t("calendar.edit.time.clockInTime", "Clock in time")}
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
 								onBlur={field.handleBlur}
@@ -298,10 +374,7 @@ function WorkPeriodTimeEditForm({
 								type="date"
 								name={field.name}
 								autoComplete="off"
-								aria-label={t(
-									"calendar.edit.time.clockOutDate",
-									"Clock out date",
-								)}
+								aria-label={t("calendar.edit.time.clockOutDate", "Clock out date")}
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
 								onBlur={field.handleBlur}
@@ -316,10 +389,7 @@ function WorkPeriodTimeEditForm({
 							<TimeInput
 								name={field.name}
 								autoComplete="off"
-								aria-label={t(
-									"calendar.edit.time.clockOutTime",
-									"Clock out time",
-								)}
+								aria-label={t("calendar.edit.time.clockOutTime", "Clock out time")}
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
 								onBlur={field.handleBlur}
@@ -349,6 +419,33 @@ function WorkPeriodTimeEditForm({
 					</fieldset>
 				)}
 			</form.Field>
+			{editsVehicleUse ? (
+				<form.Subscribe
+					selector={(state) => ({
+						draft: state.values.vehicleUseDraft,
+						clockInDate: state.values.clockInDate,
+						clockInTime: state.values.clockInTime,
+						clockOutDate: state.values.clockOutDate,
+						clockOutTime: state.values.clockOutTime,
+					})}
+				>
+					{(values) => (
+						<EditedVehicleUseFields
+							workPeriodId={workPeriodId}
+							context={context}
+							values={values}
+							onChange={(draft) => form.setFieldValue("vehicleUseDraft", draft)}
+							t={t}
+						/>
+					)}
+				</form.Subscribe>
+			) : recordedVehicleUse ? (
+				<VehicleUseSummary
+					use={recordedVehicleUse}
+					vehicleLabel={vehicleLabelOf(context, recordedVehicleUse)}
+					t={t}
+				/>
+			) : null}
 			<form.Subscribe
 				selector={(state) => ({
 					route: routeFor(state.values),
@@ -378,10 +475,7 @@ function WorkPeriodTimeEditForm({
 														"calendar.edit.time.reasonPlaceholder",
 														"Explain why this correction is needed…",
 													)
-												: t(
-														"calendar.edit.time.notePlaceholder",
-														"Add a note about this change…",
-													)
+												: t("calendar.edit.time.notePlaceholder", "Add a note about this change…")
 										}
 										required={routeNeedsReason(route)}
 										rows={2}
@@ -392,25 +486,14 @@ function WorkPeriodTimeEditForm({
 						</form.Field>
 						<RouteHint route={route} t={t} />
 						<div className="flex gap-2">
-							<Button
-								type="submit"
-								size="sm"
-								disabled={isSubmitting}
-								className="flex-1"
-							>
+							<Button type="submit" size="sm" disabled={isSubmitting} className="flex-1">
 								{isSubmitting ? (
-									<IconLoader2
-										className="mr-1 size-4 animate-spin"
-										aria-hidden="true"
-									/>
+									<IconLoader2 className="mr-1 size-4 animate-spin" aria-hidden="true" />
 								) : (
 									<IconCheck className="mr-1 size-4" aria-hidden="true" />
 								)}
 								{route === "approval_request"
-									? t(
-											"calendar.edit.time.submitForApproval",
-											"Submit for approval",
-										)
+									? t("calendar.edit.time.submitForApproval", "Submit for approval")
 									: route === "on_behalf_request"
 										? t("calendar.edit.time.submitOnBehalf", "Submit change")
 										: t("common.save", "Save")}
@@ -464,16 +547,9 @@ export function WorkPeriodTimeSection({
 	return (
 		<div>
 			<div className="mb-1 flex items-center justify-between">
-				<span className="text-sm text-muted-foreground">
-					{t("calendar.details.time", "Time")}
-				</span>
+				<span className="text-sm text-muted-foreground">{t("calendar.details.time", "Time")}</span>
 				{canEdit && !isEditing ? (
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => setIsEditing(true)}
-						className="h-7 px-2"
-					>
+					<Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="h-7 px-2">
 						<IconPencil className="mr-1 size-4" aria-hidden="true" />
 						{t("calendar.edit.time.edit", "Edit entry")}
 					</Button>
@@ -494,9 +570,7 @@ export function WorkPeriodTimeSection({
 				/>
 			) : (
 				<>
-					<p className="font-medium">
-						{formatEventTimeRange(event, displayContext)}
-					</p>
+					<p className="font-medium">{formatEventTimeRange(event, displayContext)}</p>
 					<div className="mt-2 space-y-1">
 						<p className="text-sm text-muted-foreground">
 							{t("calendar.details.workLocation", "Work location")}
@@ -508,6 +582,25 @@ export function WorkPeriodTimeSection({
 							missingLabel={t("calendar.workLocation.notRecorded", "Not recorded")}
 						/>
 					</div>
+					{event.metadata.vehicleUse ? (
+						<div className="mt-2">
+							<VehicleUseSummary
+								use={event.metadata.vehicleUse}
+								vehicleLabel={event.metadata.vehicleLabel ?? null}
+								t={t}
+							/>
+							{/* Own-vehicle distance can become a mileage item (#1131); the server decides. */}
+							{event.metadata.vehicleUse.vehicle.kind === "own" &&
+							(event.metadata.vehicleUse.distanceKm ?? 0) > 0 &&
+							event.metadata.isRunning !== true ? (
+								<WorkPeriodMileageAction
+									workPeriodId={event.id}
+									locale={displayContext.locale}
+									t={t}
+								/>
+							) : null}
+						</div>
+					) : null}
 					{context ? <BlockedHint access={context.access} t={t} /> : null}
 				</>
 			)}

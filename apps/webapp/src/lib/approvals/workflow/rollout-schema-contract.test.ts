@@ -430,11 +430,11 @@ const EXPECTED_FULL_COLUMN_INVENTORY = {
 const EXPECTED_SOURCE_COLUMN_INVENTORY = {
 	absence_entry: [
 		"organization_id|text|nullable|none",
-		"approval_workflow_id|uuid|nullable|none",
+		"approval_workflow_id|uuid|nullable|none"
 	],
 	work_period: [
 		"organization_id|text|required|none",
-		"approval_workflow_id|uuid|nullable|none",
+		"approval_workflow_id|uuid|nullable|none"
 	],
 	travel_expense_claim: [
 		"organization_id|text|required|none",
@@ -452,11 +452,11 @@ const EXPECTED_SOURCE_COLUMN_INVENTORY = {
 	],
 	notification: [
 		"organization_id|text|required|none",
-		"idempotency_key|text|nullable|none",
+		"idempotency_key|text|nullable|none"
 	],
 	shift: [
 		"organization_id|text|required|none",
-		"id|uuid|required|gen_random_uuid()",
+		"id|uuid|required|gen_random_uuid()"
 	],
 } as const;
 
@@ -467,7 +467,7 @@ const EXPECTED_ENUM_INVENTORY = {
 		"approved",
 		"rejected",
 		"cancelled",
-		"expired",
+		"expired"
 	],
 	approval_command_state: ["reserved", "completed"],
 	approval_outbox_channel: [
@@ -487,7 +487,7 @@ const EXPECTED_ENUM_INVENTORY = {
 		"processing",
 		"delivered",
 		"failed",
-		"suppressed",
+		"suppressed"
 	],
 	approval_side_effect_mode: ["legacy", "canonical"],
 	approval_stage_status: [
@@ -496,21 +496,21 @@ const EXPECTED_ENUM_INVENTORY = {
 		"approved",
 		"rejected",
 		"cancelled",
-		"expired",
+		"expired"
 	],
 	approval_workflow_lifecycle_mode: [
 		"legacy",
 		"shadow",
 		"ready",
 		"canonical",
-		"complete",
+		"complete"
 	],
 	approval_workflow_status: [
 		"pending",
 		"approved",
 		"rejected",
 		"cancelled",
-		"expired",
+		"expired"
 	],
 	approval_workflow_type: [
 		"absence",
@@ -521,6 +521,7 @@ const EXPECTED_ENUM_INVENTORY = {
 		"shift_request",
 		"compliance_exception",
 		"period_submission",
+		"absence_change",
 	],
 	shift_request_status: ["pending", "approved", "rejected", "cancelled"],
 } as const;
@@ -662,7 +663,8 @@ function validCatalog(): ApprovalExpansionCatalog {
 		sourceTables: Object.keys(EXPECTED_SOURCE_COLUMN_INVENTORY),
 		enums: Object.fromEntries(
 			Object.entries(APPROVAL_EXPANSION_CONTRACT.enums).map(
-				([name, values]) => [name, [...values]],
+				([name, values]) => [name, [...values],
+			]
 			),
 		),
 		columns: [
@@ -693,13 +695,13 @@ describe("approval workflow expansion physical contract", () => {
 				relations: readonly { name: string; mode: string }[];
 			};
 		expect(
-			contract.relations.map((relation) => `${relation.name}|${relation.mode}`),
-		).toEqual(EXPECTED_RELATION_INVENTORY);
+			contract.relations.map((relation) => `${relation.name}|${relation.mode}`)
+		).toEqual(EXPECTED_RELATION_INVENTORY,);
 	});
 
 	it("declares the complete independent canonical and audit column inventory", () => {
 		for (const [table, expectedColumns] of Object.entries(
-			EXPECTED_COLUMN_INVENTORY,
+			EXPECTED_COLUMN_INVENTORY
 		)) {
 			const declared = APPROVAL_EXPANSION_CONTRACT.columns
 				.filter((column) => column.table === table)
@@ -708,13 +710,13 @@ describe("approval workflow expansion physical contract", () => {
 		}
 		expect(APPROVAL_EXPANSION_CONTRACT.tables).toHaveLength(11);
 		expect(APPROVAL_EXPANSION_CONTRACT.operationalTables).toEqual([
-			"audit_log",
+			"audit_log"
 		]);
 	});
 
 	it("declares exact canonical and audit column shapes independently", () => {
 		for (const [table, expectedColumns] of Object.entries(
-			EXPECTED_FULL_COLUMN_INVENTORY,
+			EXPECTED_FULL_COLUMN_INVENTORY
 		)) {
 			const declared = APPROVAL_EXPANSION_CONTRACT.columns
 				.filter((column) => column.table === table)
@@ -725,7 +727,7 @@ describe("approval workflow expansion physical contract", () => {
 
 	it("declares every required source relation column independently", () => {
 		for (const [table, expectedColumns] of Object.entries(
-			EXPECTED_SOURCE_COLUMN_INVENTORY,
+			EXPECTED_SOURCE_COLUMN_INVENTORY
 		)) {
 			const declared = APPROVAL_EXPANSION_CONTRACT.columns
 				.filter((column) => column.table === table)
@@ -744,7 +746,7 @@ describe("approval workflow expansion physical contract", () => {
 				const separator = signature.indexOf("|");
 				const logicalName = signature.slice(0, separator);
 				return `${expectedPhysicalIdentifier(logicalName)}${signature.slice(separator)}|public|public`;
-			},
+			}
 		);
 		expect(
 			APPROVAL_EXPANSION_CONTRACT.foreignKeys.map(
@@ -772,7 +774,7 @@ describe("approval workflow expansion physical contract", () => {
 		expect(encoder.encode(logicalName)).toHaveLength(expectedBytes);
 		const physicalName = expectedPhysicalIdentifier(logicalName);
 		expect(encoder.encode(physicalName)).toHaveLength(
-			POSTGRES_IDENTIFIER_MAX_BYTES,
+			POSTGRES_IDENTIFIER_MAX_BYTES
 		);
 
 		const catalog = validCatalog();
@@ -783,7 +785,7 @@ describe("approval workflow expansion physical contract", () => {
 		if (!foreignKey) throw new Error(`fixture missing FK ${logicalName}`);
 		foreignKey.name = physicalName;
 		expect(() => validateApprovalExpansionCatalog(catalog)).not.toThrow();
-	});
+	},);
 
 	it("truncates PostgreSQL identifiers by UTF-8 bytes without splitting code points", () => {
 		const truncate = (
@@ -798,8 +800,8 @@ describe("approval workflow expansion physical contract", () => {
 		expect(truncate(`${"a".repeat(62)}é`)).toBe("a".repeat(62));
 		expect(truncate("é".repeat(40))).toBe("é".repeat(31));
 		expect(
-			new TextEncoder().encode(truncate("é".repeat(40))).length,
-		).toBeLessThanOrEqual(POSTGRES_IDENTIFIER_MAX_BYTES);
+			new TextEncoder().encode(truncate("é".repeat(40))).length
+		).toBeLessThanOrEqual(POSTGRES_IDENTIFIER_MAX_BYTES,);
 	});
 
 	it("exports only collision-free PostgreSQL physical FK names", () => {
@@ -808,8 +810,8 @@ describe("approval workflow expansion physical contract", () => {
 		for (const foreignKey of APPROVAL_EXPANSION_CONTRACT.foreignKeys) {
 			expect(
 				encoder.encode(foreignKey.name).length,
-				foreignKey.name,
-			).toBeLessThanOrEqual(POSTGRES_IDENTIFIER_MAX_BYTES);
+				foreignKey.name
+			).toBeLessThanOrEqual(POSTGRES_IDENTIFIER_MAX_BYTES,);
 			const identity = `${foreignKey.table}\0${foreignKey.name}`;
 			expect(identities.has(identity), identity).toBe(false);
 			identities.add(identity);
@@ -834,7 +836,7 @@ describe("approval workflow expansion physical contract", () => {
 			]),
 		).toThrow(/collision/i);
 		expect(() =>
-			assertNames([{ table: "source", name: "x".repeat(64) }]),
+			assertNames([{ table: "source", name: "x".repeat(64) }])
 		).toThrow(/63 bytes/i);
 		expect(() =>
 			assertNames([
@@ -863,7 +865,7 @@ describe("approval workflow expansion physical contract", () => {
 
 	it("accepts the complete Phase 1 catalog", () => {
 		expect(() =>
-			validateApprovalExpansionCatalog(validCatalog()),
+			validateApprovalExpansionCatalog(validCatalog())
 		).not.toThrow();
 	});
 
@@ -925,7 +927,7 @@ describe("approval workflow expansion physical contract", () => {
 	it.each([
 		"foreignKey",
 		"index",
-		"check",
+		"check"
 	] as const)("rejects an unexpected %s on a full relation", (kind) => {
 		const catalog = validCatalog();
 		if (kind === "foreignKey") {
@@ -961,7 +963,7 @@ describe("approval workflow expansion physical contract", () => {
 		expect(() => validateApprovalExpansionCatalog(catalog)).toThrow(
 			new RegExp(`unexpected.*${kind}|exact.*${kind}`, "i"),
 		);
-	});
+	},);
 
 	it("rejects an unexpected cross-schema FK on a full relation", () => {
 		const catalog = validCatalog();
@@ -1021,22 +1023,22 @@ describe("approval workflow expansion physical contract", () => {
 
 	it.each([
 		"approval_outbox_delivery",
-		"approval_workflow_migration_issue",
+		"approval_workflow_migration_issue"
 	])("rejects a missing canonical table: %s", (table) => {
 		const catalog = validCatalog();
 		catalog.tables = catalog.tables.filter((candidate) => candidate !== table);
 		expect(() => validateApprovalExpansionCatalog(catalog)).toThrow(
 			new RegExp(`table.*${table}`, "i"),
 		);
-	});
+	},);
 
 	it("rejects a missing required-subset source relation", () => {
 		const catalog = validCatalog();
 		catalog.sourceTables = catalog.sourceTables.filter(
-			(table) => table !== "notification",
+			(table) => table !== "notification"
 		);
 		expect(() => validateApprovalExpansionCatalog(catalog)).toThrow(
-			/table.*notification/i,
+			/table.*notification/i
 		);
 	});
 
@@ -1054,8 +1056,8 @@ describe("approval workflow expansion physical contract", () => {
 			);
 			expect(
 				() => validateApprovalExpansionCatalog(catalog),
-				`${table}.${column}`,
-			).toThrow(new RegExp(`column.*${table}.${column}`, "i"));
+				`${table}.${column}`
+			).toThrow(new RegExp(`column.*${table}.${column}`, "i"),);
 		}
 	});
 
@@ -1115,7 +1117,7 @@ describe("approval workflow expansion physical contract", () => {
 			"legacy",
 			"shadow",
 			"ready",
-			"canonical",
+			"canonical"
 		];
 		expect(() => validateApprovalExpansionCatalog(catalog)).toThrow(
 			/enum.*approval_workflow_lifecycle_mode.*complete/i,
@@ -1126,7 +1128,7 @@ describe("approval workflow expansion physical contract", () => {
 		const extra = validCatalog();
 		extra.enums.approval_actor_kind.push("unexpected");
 		expect(() => validateApprovalExpansionCatalog(extra)).toThrow(
-			/enum.*approval_actor_kind/i,
+			/enum.*approval_actor_kind/i
 		);
 
 		const reordered = validCatalog();
@@ -1146,7 +1148,7 @@ describe("approval workflow expansion physical contract", () => {
 		Object.entries(EXPECTED_SOURCE_COLUMN_INVENTORY).flatMap(
 			([table, signatures]) =>
 				signatures.map(
-					(signature) => [table, signature.split("|")[0]] as const,
+					(signature) => [table, signature.split("|")[0]] as const
 				),
 		),
 	)("rejects changed source-column shape %s.%s", (table, column) => {
@@ -1167,7 +1169,7 @@ describe("approval workflow expansion physical contract", () => {
 			).toThrow(
 				new RegExp(
 					`${mutation === "default" ? "default" : "column"}.*${table}.${column}`,
-					"i",
+					"i"
 				),
 			);
 		}
@@ -1219,7 +1221,7 @@ describe("approval workflow expansion physical contract", () => {
 		const missingTable = validCatalog();
 		missingTable.operationalTables = [];
 		expect(() => validateApprovalExpansionCatalog(missingTable)).toThrow(
-			/table.*audit_log/i,
+			/table.*audit_log/i
 		);
 
 		for (const foreignTable of ["organization", "user"] as const) {
@@ -1248,7 +1250,7 @@ describe("approval workflow expansion physical contract", () => {
 	it("rejects a primary index reported as secondary", () => {
 		const catalog = validCatalog();
 		const primary = catalog.indexes.find(
-			(index) => index.name === "approval_workflow_pkey",
+			(index) => index.name === "approval_workflow_pkey"
 		);
 		if (!primary) throw new Error("fixture missing workflow primary index");
 		primary.primary = false;
@@ -1281,7 +1283,7 @@ describe("approval workflow expansion physical contract", () => {
 			"organization_id",
 			"workflow_type",
 			"source_type",
-			"source_id",
+			"source_id"
 		]);
 		expect(index.predicate).toBe("status = 'pending'");
 	});

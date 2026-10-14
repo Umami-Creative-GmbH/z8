@@ -109,6 +109,14 @@ const translations = new Map([
 		"settings.employees.detailView.contractHourlyDescription",
 		"Bezahlung nach geleisteten Stunden",
 	],
+	[
+		"settings.employees.detailView.contractTypeFromTerms",
+		"Vertragsart und Lohn kommen aus den heute gültigen bestätigten Vertragsbedingungen.",
+	],
+	[
+		"settings.employees.detailView.contractTypeChangeLink",
+		"Unter Vertrag & Arbeitsmodell ändern",
+	],
 	["settings.employees.detailView.cancel", "Abbrechen"],
 	["settings.employees.detailView.saveChanges", "Änderungen speichern"],
 ]);
@@ -449,6 +457,7 @@ describe("employee detail page sections", () => {
 				form={createForm() as never}
 				canEditManagerFields={true}
 				canEditOrgAdminFields={true}
+				contract={{ kind: "terms", contractTypeToday: "fixed" }}
 				isUpdating={false}
 				onCancel={vi.fn()}
 				t={t}
@@ -468,9 +477,67 @@ describe("employee detail page sections", () => {
 		expect(screen.getByText("Vertragsart")).toBeTruthy();
 		expect(screen.getByText("Festgehalt")).toBeTruthy();
 		expect(screen.getByText("Änderungen speichern")).toBeTruthy();
+		expect(screen.queryByText("Change in Contract & Work Model")).toBeNull();
 		expect(screen.queryByText("Edit Employee")).toBeNull();
 		expect(screen.queryByText("System Role")).toBeNull();
 		expect(screen.queryByText("Contract Type")).toBeNull();
+	});
+
+	it("shows today's contract type read-only for an employee, with no wage field", () => {
+		render(
+			<EmployeeEditFormCard
+				form={createForm({ contractType: "hourly", hourlyRate: "42.50" }) as never}
+				canEditManagerFields={true}
+				canEditOrgAdminFields={true}
+				contract={{ kind: "terms", contractTypeToday: "hourly" }}
+				isUpdating={false}
+				onCancel={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText("Contract Type")).toBeTruthy();
+		expect(screen.getByText("Hourly")).toBeTruthy();
+		expect(screen.queryByText("Fixed")).toBeNull();
+		expect(screen.queryByText("Hourly Rate")).toBeNull();
+		expect(screen.queryByDisplayValue("42.50")).toBeNull();
+		expect(
+			screen
+				.getByRole("link", { name: "Change in Contract & Work Model" })
+				.getAttribute("href"),
+		).toBe("#employment-history");
+	});
+
+	it("says when no confirmed terms are in force today", () => {
+		render(
+			<EmployeeEditFormCard
+				form={createForm() as never}
+				canEditManagerFields={true}
+				canEditOrgAdminFields={true}
+				contract={{ kind: "terms", contractTypeToday: null }}
+				isUpdating={false}
+				onCancel={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText("No confirmed terms today")).toBeTruthy();
+	});
+
+	it("keeps contract type and wage editable on an invitation draft", () => {
+		render(
+			<EmployeeEditFormCard
+				form={createForm({ contractType: "hourly", hourlyRate: "42.50" }) as never}
+				canEditManagerFields={true}
+				canEditOrgAdminFields={true}
+				contract={{ kind: "draft" }}
+				isUpdating={false}
+				onCancel={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText("Fixed")).toBeTruthy();
+		expect(screen.getByText("Hourly Rate")).toBeTruthy();
+		expect(screen.getByDisplayValue("42.50")).toBeTruthy();
+		expect(screen.queryByRole("link", { name: "Change in Contract & Work Model" })).toBeNull();
 	});
 
 	it("renders the start date field in the edit form", () => {
@@ -479,6 +546,7 @@ describe("employee detail page sections", () => {
 				form={createForm() as never}
 				canEditManagerFields={true}
 				canEditOrgAdminFields={true}
+				contract={{ kind: "terms", contractTypeToday: "fixed" }}
 				isUpdating={false}
 				onCancel={vi.fn()}
 				t={t}
@@ -502,6 +570,7 @@ describe("employee detail page sections", () => {
 				form={createForm({ pronouns: "x".repeat(51) }) as never}
 				canEditManagerFields={true}
 				canEditOrgAdminFields={true}
+				contract={{ kind: "terms", contractTypeToday: "fixed" }}
 				isUpdating={false}
 				onCancel={vi.fn()}
 				t={t}
@@ -519,6 +588,7 @@ describe("employee detail page sections", () => {
 				form={createForm({ pronouns: "xe/xem" }) as never}
 				canEditManagerFields={true}
 				canEditOrgAdminFields={true}
+				contract={{ kind: "terms", contractTypeToday: "fixed" }}
 				isUpdating={false}
 				onCancel={vi.fn()}
 			/>,

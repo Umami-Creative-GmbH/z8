@@ -42,8 +42,9 @@ import {
 	DEFAULT_RATE_LIMIT_WINDOW,
 	EXPIRATION_OPTIONS,
 } from "@/lib/validations/api-key";
-import { useApiKeyScopeLabels } from "./api-key-labels";
+import { useApiKeyScopeLabels, useApiKeyScopeWarnings } from "./api-key-labels";
 import { RateLimitWindowField } from "./api-key-rate-limit-window-field";
+import { ApiKeyScopeOption } from "./api-key-scope-option";
 
 export interface ApiKeyCreateDialogProps {
 	organizationId: string;
@@ -198,6 +199,7 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 		t,
 	} = useApiKeyCreateController(props);
 	const scopeLabels = useApiKeyScopeLabels();
+	const scopeWarnings = useApiKeyScopeWarnings();
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
@@ -320,27 +322,22 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 									</legend>
 									<div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-muted/30">
 										{API_KEY_SCOPES.map((scope) => (
-											<div key={scope} className="flex items-center gap-x-2">
-												<Checkbox
-													id={scope}
-													checked={field.state.value.includes(scope)}
-													onCheckedChange={() =>
-														field.handleChange(
-															field.state.value.includes(scope)
-																? field.state.value.filter(
-																		(selectedScope) => selectedScope !== scope,
-																	)
-																: [...field.state.value, scope],
-														)
-													}
-												/>
-												<Label
-													htmlFor={scope}
-													className="text-sm font-normal cursor-pointer"
-												>
-													{scopeLabels[scope]}
-												</Label>
-											</div>
+											<ApiKeyScopeOption
+												key={scope}
+												id={scope}
+												label={scopeLabels[scope]}
+												warning={scopeWarnings[scope]}
+												checked={field.state.value.includes(scope)}
+												onCheckedChange={() =>
+													field.handleChange(
+														field.state.value.includes(scope)
+															? field.state.value.filter(
+																	(selectedScope) => selectedScope !== scope,
+																)
+															: [...field.state.value, scope],
+													)
+												}
+											/>
 										))}
 									</div>
 									{fieldHasError(field) && (

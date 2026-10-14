@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "Usunięto {count, plural, one {# wpis czasu} few {# wpisy czasu} other {# wpisów czasu}}",
           "title": "Wyczyść dane czasu",
           "vacationAllowancesReset": "Zresetowano {count, plural, one {# limit urlopowy} few {# limity urlopowe} other {# limitów urlopowych}}",
+          "vehiclesDeleted": "{count, plural, one {Usunięto # pojazd} few {Usunięto # pojazdy} other {Usunięto # pojazdów} }",
           "willDelete": "To spowoduje trwałe usunięcie:",
           "workCategoriesDeleted": "Usunięto {count, plural, one {# kategorię pracy} few {# kategorie pracy} other {# kategorii pracy}}",
           "workCategorySetsDeleted": "Usunięto {count, plural, one {# zestaw kategorii pracy} few {# zestawy kategorii pracy} other {# zestawów kategorii pracy}}",
@@ -109,7 +110,7 @@
           "label": "Typy danych",
           "locations": {
             "countLabel": "Liczba lokalizacji:",
-            "description": "Lokalizacje pracy i podobszary",
+            "descriptionWithVehicles": "Lokalizacje pracy, podobszary i kilka pojazdów",
             "title": "Lokalizacje"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Tworzenie wpisów czasu pracy i okresów pracy",
           "label": "Wpisy czasu pracy"
+        },
+        "vehicleUse": {
+          "description": "Rejestrowanie korzystania z pojazdów w okresach pracy",
+          "label": "Użycie pojazdu"
         },
         "workCategories": {
           "description": "Tworzenie zestawów kategorii pracy i kategorii",

@@ -23,6 +23,8 @@ import {
 	instantToCanonicalString,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
+import { lacksDrivingDetails } from "@/lib/time-tracking/vehicle-use/driving-details-missing";
+import { vehicleUseFromColumns } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -1289,4 +1291,170 @@ describe("automatic break adjustment on PostgreSQL", () => {
 			expect(rows).toEqual([segment, segment]);
 		},
 	);
+
+	describe("vehicle use (#1126)", () => {
+		const van = "f3053000-0000-4000-8000-000000000001";
+		type Km = { start: number | null; end: number | null; distance: number | null };
+		const km = (start: number | null, end: number | null, distance: number | null) => ({
+			vehicle: van,
+			start,
+			end,
+			distance,
+		});
+
+		/** Records vehicle use the way #1120 stores it: on the period and its canonical detail. */
+		async function driveVan(periodId: string, value: Km) {
+			await admin.query(
+				`insert into organization_vehicle (id, organization_id, name, licence_plate)
+				 values ($1, $2, 'Van', 'B-VN 305') on conflict do nothing`,
+				[van, ids.organization],
+			);
+			const set = `vehicle_kind = 'organization', vehicle_id = $2, odometer_start_km = $3,
+			  odometer_end_km = $4, driven_distance_km = $5`;
+			const values = [periodId, van, value.start, value.end, value.distance];
+			await admin.query(`update work_period set ${set} where id = $1`, values);
+			await admin.query(
+				`update time_record_work set ${set}
+				 where record_id = (select canonical_record_id from work_period where id = $1)`,
+				values,
+			);
+		}
+
+		async function vehicleGraph() {
+			const { rows } = await admin.query<{ period: Km; detail: Km | null }>(
+				`select json_build_object('vehicle', wp.vehicle_id, 'start', wp.odometer_start_km,
+				   'end', wp.odometer_end_km, 'distance', wp.driven_distance_km) as period,
+				 case when w.record_id is null then null else json_build_object('vehicle', w.vehicle_id,
+				   'start', w.odometer_start_km, 'end', w.odometer_end_km, 'distance', w.driven_distance_km) end as detail
+				 from work_period wp
+				 left join time_record_work w on w.record_id = wp.canonical_record_id
+				 where wp.organization_id = $1 and wp.deleted_at is null
+				 order by wp.start_time`,
+				[ids.organization],
+			);
+			return rows;
+		}
+
+		/** Whether each half shows "driving details missing" (vehicle use expected). */
+		async function drivingDetailsFlags() {
+			return (await vehicleGraph()).map(({ period }) =>
+				lacksDrivingDetails(
+					vehicleUseFromColumns({
+						vehicleKind: "organization",
+						vehicleId: van,
+						odometerStartKm: period.start,
+						odometerEndKm: period.end,
+						drivenDistanceKm: period.distance,
+					}),
+				),
+			);
+		}
+
+		it("keeps complete readings on the retained work and gives the generated work 0 km", async () => {
+			const { id: periodId } = await workWithLostAdjustment();
+			await driveVan(periodId, { start: 12_000, end: 12_085, distance: 85 });
+
+			await expect(recover(laterRunDate)).resolves.toMatchObject({ adjustedCount: 1, errors: [] });
+
+			expect(await vehicleGraph()).toEqual([
+				{ period: km(12_000, 12_085, 85), detail: km(12_000, 12_085, 85) },
+				{ period: km(null, null, 0), detail: km(null, null, 0) },
+			]);
+			expect(await drivingDetailsFlags()).toEqual([false, false]);
+			const receipt = only(await receipts()).result as {
+				originatingWork: { attribution: object };
+				segments: { attribution: object }[];
+			};
+			const vehicle = { kind: "organization", vehicleId: van };
+			expect(receipt.originatingWork.attribution).toMatchObject({
+				vehicleUse: { vehicle, startKm: 12_000, endKm: 12_085, distanceKm: 85 },
+			});
+			expect(receipt.segments.map(({ attribution }) => attribution)).toMatchObject([
+				{ vehicleUse: { vehicle, startKm: 12_000, endKm: 12_085, distanceKm: 85 } },
+				{ vehicleUse: { vehicle, startKm: null, endKm: null, distanceKm: 0 } },
+			]);
+		});
+
+		it("keeps a directly entered distance on the retained work", async () => {
+			const { id: periodId } = await workWithLostAdjustment();
+			await driveVan(periodId, { start: null, end: null, distance: 120 });
+
+			await expect(recover(laterRunDate)).resolves.toMatchObject({ adjustedCount: 1, errors: [] });
+
+			expect(await vehicleGraph()).toEqual([
+				{ period: km(null, null, 120), detail: km(null, null, 120) },
+				{ period: km(null, null, 0), detail: km(null, null, 0) },
+			]);
+			expect(await drivingDetailsFlags()).toEqual([false, false]);
+		});
+
+		it("leaves vehicle use awaiting its end reading on the work that ends at the clock-out", async () => {
+			const { id: periodId } = await workWithLostAdjustment();
+			await driveVan(periodId, { start: 12_000, end: null, distance: null });
+
+			await expect(recover(laterRunDate)).resolves.toMatchObject({ adjustedCount: 1, errors: [] });
+
+			expect(await vehicleGraph()).toEqual([
+				{ period: km(null, null, 0), detail: km(null, null, 0) },
+				{ period: km(12_000, null, null), detail: km(12_000, null, null) },
+			]);
+			expect(await drivingDetailsFlags()).toEqual([false, true]);
+		});
+
+		it("defers for review when the period and its canonical record disagree on vehicle use", async () => {
+			const { id: periodId } = await workWithLostAdjustment();
+			await driveVan(periodId, { start: 12_000, end: 12_085, distance: 85 });
+			await admin.query(
+				`update time_record_work set odometer_end_km = 12_090, driven_distance_km = 90
+				 where record_id = (select canonical_record_id from work_period where id = $1)`,
+				[periodId],
+			);
+
+			await expect(recover(laterRunDate)).resolves.toMatchObject({
+				adjustedCount: 0,
+				deferredCount: 1,
+			});
+			expect(only(await intents())).toMatchObject({
+				status: "deferred",
+				blocker: "completed_work_review_required",
+			});
+		});
+
+		it("carries the vehicle over a legacy organization's established break writes", async () => {
+			await setAdmission("inactive");
+			actAs(ids.requesterUser);
+			await expect(
+				clockIn("office", { instant: clockInAt, browserTimezone: "UTC" }),
+			).resolves.toMatchObject({ success: true });
+			// The established adjustment at clock-out is lost: its generated work cannot be written.
+			await admin.query(
+				`create function t305_fail() returns trigger language plpgsql as $$
+				 begin raise exception 't305 injected write failure'; end $$`,
+			);
+			await admin.query(
+				"create trigger t305_fail before insert on work_period for each row execute function t305_fail()",
+			);
+			await expect(
+				clockOut(undefined, undefined, {
+					submissionId: randomUUID(),
+					instant: clockOutAt,
+					browserTimezone: "UTC",
+				}),
+			).resolves.toMatchObject({ success: true });
+			await admin.query("drop function t305_fail() cascade");
+			const [period] = await periods();
+			await driveVan(period?.id ?? "", { start: 12_000, end: 12_085, distance: 85 });
+
+			await expect(recover(new Date("2026-07-22T12:00:00Z"))).resolves.toMatchObject({
+				adjustedCount: 1,
+				errors: [],
+			});
+
+			expect(await vehicleGraph()).toEqual([
+				{ period: km(12_000, 12_085, 85), detail: km(12_000, 12_085, 85) },
+				{ period: km(null, null, 0), detail: km(null, null, 0) },
+			]);
+			expect(await drivingDetailsFlags()).toEqual([false, false]);
+		});
+	});
 });

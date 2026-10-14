@@ -21,6 +21,12 @@
     "briefing": {
       "badge": "Hüt",
       "description": "Prüef d'Pünkt, wo hüt en Iigriff bruched, und gang denn direkt in richtige Workflow.",
+      "items": {
+        "drivingDetailsMissing": {
+          "description": "Arbeitsperioden Ihrer Mitarbeitenden, bei denen ein Fahrzeug oder ein Kilometerstand fehlt.",
+          "title": "Fahrtdetails fehlen ({count})"
+        }
+      },
       "needsAction": {
         "description": "Fang do aa für die dringendschte operative Nachbearbeitige.",
         "empty": "Alles im grüene Bereich. Es isch im Moment kei Handlig vom Vorgesetzte nötig.",

@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Oricine poate prelua",
       "assignTo": "Atribuie către",
+      "certificateOnFileFor": "Certificat la dosar: {skills}",
       "confirmDelete": "Confirmă ștergerea",
       "created": "Tură creată",
       "createDescription": "Completați detaliile pentru noua tură",
@@ -118,6 +119,7 @@
       "updateShift": "Actualizează tura"
     },
     "skills": {
+      "certificateOnFile": "Certificat la dosar",
       "expiredCertifications": "Certificări expirate:",
       "expiredOn": "(Expirat la {date})",
       "missingPreferred": "Competențe preferate lipsă:",

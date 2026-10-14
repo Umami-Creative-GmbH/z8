@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Anyone can pick up",
       "assignTo": "Assign To",
+      "certificateOnFileFor": "Certificate on file: {skills}",
       "confirmDelete": "Confirm Delete",
       "created": "Shift created",
       "createDescription": "Fill in the details for the new shift",
@@ -118,6 +119,7 @@
       "updateShift": "Update Shift"
     },
     "skills": {
+      "certificateOnFile": "Certificate on file",
       "expiredCertifications": "Expired Certifications:",
       "expiredOn": "(Expired {date})",
       "missingPreferred": "Missing Preferred Skills:",

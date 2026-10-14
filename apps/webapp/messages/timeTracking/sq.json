@@ -74,6 +74,18 @@
     },
     "currentlyClockedIn": "Aktualisht keni regjistruar hyrjen",
     "deadline": "Afati përfundimtar",
+    "drivingDetailsMissing": {
+      "description": "Organizata juaj pret automjetin dhe leximet e odometrit për punën tuaj. Shtojini ato në këto periudha pune.",
+      "missing": {
+        "endReading": "Nuk ka lexim përfundimtar",
+        "readings": "Nuk ka lexime të odometrit",
+        "startReading": "Nuk ka lexim fillestar",
+        "vehicle": "Nuk ka automjet"
+      },
+      "open": "Hap në kalendar",
+      "title": "Mungojnë detajet e drejtimit",
+      "truncated": "Janë të listuara vetëm periudhat më të reja të punës. Plotësojini këto për të parë pjesën tjetër."
+    },
     "errors": {
       "alreadyClockedIn": "Keni hyrë tashmë në punë",
       "appendReviewRequired": "Hyrja në punë kërkon një shqyrtim të historikut të kohës suaj",
@@ -214,7 +226,10 @@
         "onBreak": "Në pushim që nga {time}"
       },
       "unreachableDescription": "Kiosku nuk mund të lidhet me serverin. Kontrolloni lidhjen me rrjetin; regjistrimi i orarit funksionon vetëm kur jeni në linjë.",
-      "unreachableTitle": "Kiosku jashtë linje"
+      "unreachableTitle": "Kiosku jashtë linje",
+      "vehicle": {
+        "back": "Kthehu"
+      }
     },
     "manualEntry": {
       "addButton": "Shto regjistrim manual",
@@ -386,6 +401,7 @@
       "corrected": "E korrigjuar",
       "date": "Data",
       "description": "Përshkrimi",
+      "drivingDetailsMissing": "Mungojnë detajet e drejtimit",
       "duration": "Kohëzgjatja",
       "emptyState": "Nuk u gjet asnjë regjistrim kohe për këtë javë.",
       "recordedLocalTime": "Ora lokale e regjistruar",
@@ -422,6 +438,58 @@
     "title": "Gjurmimi i kohës",
     "unknownCategory": "Kategori e panjohur",
     "unknownProject": "Projekt i panjohur",
+    "vehicleUse": {
+      "archived": "arkivuar",
+      "breakReading": "Leximi i odometrit në pushim (km)",
+      "breakReadingHint": "Opsionale. Përfundon leximin e kësaj pune dhe fillon leximin e radhës.",
+      "changeLive": "Ndrysho",
+      "derivedDistance": "Distanca e përshkuar: {distance} km",
+      "distanceKm": "Distanca e përshkuar (km)",
+      "distanceText": "{distance} km të përshkuara",
+      "endKm": "Leximi përfundimtar (km)",
+      "expectedHint": "Organizata juaj pret që të regjistroni automjetin që keni drejtuar dhe leximet e tij.",
+      "expenseReport": {
+        "action": "Shto në raportin e shpenzimeve",
+        "add": "Shto {distance} km",
+        "added": "Në një raport shpenzimesh",
+        "alreadyAdded": "Distanca e kësaj pune është tashmë në një raport shpenzimesh.",
+        "chooseReport": "Në cilin raport shpenzimesh të shtohet?",
+        "failed": "Distanca nuk mund të shtohej në raportin e shpenzimeve. Ju lutemi provoni përsëri.",
+        "newReport": "Raport i ri i kilometrazhit",
+        "routeHint": "Data dhe distanca plotësohen nga kjo punë. Ju vendosni itinerarin në raport.",
+        "untitledTrip": "Udhëtim pa titull"
+      },
+      "liveChanged": "Përdorimi i automjetit ndryshoi",
+      "liveChangeFailed": "Përdorimi i automjetit nuk mund të ndryshohej",
+      "notRecorded": "Përdorimi i automjetit nuk u regjistrua",
+      "notSentOffline": "Nuk mund të ruhej me këtë regjistrim ore jashtë linje. Shtojeni te periudha e punës sapo të jeni në linjë.",
+      "noVehicle": "Pa automjet",
+      "ownVehicle": "Automjet personal",
+      "readingMissing": "–",
+      "readingsText": "{start} → {end} km",
+      "refusal": {
+        "archived": "Ky automjet është arkivuar dhe nuk mund të zgjidhet më.",
+        "distanceClaimed": "Distanca e kësaj periudhe pune është në një zë shpenzimi. Hiqni zërin nga raporti i shpenzimeve përpara se të ndani periudhën e punës.",
+        "endBeforeStart": "Leximi përfundimtar nuk mund të jetë më i ulët se leximi fillestar.",
+        "invalidDistance": "Vendosni distancën e përshkuar në kilometra të plotë.",
+        "invalidReading": "Vendosni leximet e odometrit në kilometra të plotë.",
+        "invalidVehicle": "Zgjidhni një automjet të organizatës ose automjetin tuaj personal.",
+        "notFound": "Automjeti nuk u gjet.",
+        "off": "Përdorimi i automjetit nuk regjistrohet për këtë punonjës.",
+        "splitOutOfRange": "Kilometrat në ndarje duhet të jenë brenda kilometrave të periudhës së punës."
+      },
+      "startKm": "Leximi fillestar (km)",
+      "title": "Përdorimi i automjetit",
+      "unknownVehicle": "Automjet i panjohur (i padisponueshëm)",
+      "vehicle": "Automjeti",
+      "warning": {
+        "distanceAboveLimit": "{distance} km është më shumë se {limit} km në një periudhë pune.",
+        "onOtherLiveWork": "Ky automjet është regjistruar tashmë në punën aktive të një punonjësi tjetër.",
+        "speedAboveLimit": "Distanca e përshkuar nënkupton një mesatare prej {speed} km/h gjatë kësaj periudhe pune, më shumë se {limit} km/h.",
+        "startBelowLastEnd": "Leximi fillestar është më i ulët se leximi i fundit përfundimtar i regjistruar për këtë automjet ({lastEndKm} km).",
+        "title": "Ju lutemi kontrolloni përdorimin e automjetit"
+      }
+    },
     "welcomeBack": "Mirë se u kthyet, {name}",
     "workCategory": "Kategoria e punës",
     "workLocation": "Vendndodhja e punës",

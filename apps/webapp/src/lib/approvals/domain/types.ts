@@ -124,6 +124,7 @@ export interface UnifiedApprovalItem {
  */
 export type ApprovalType =
 	| "absence_entry"
+	| "absence_change_request"
 	| "time_entry"
 	| "shift_request"
 	| "travel_expense_claim"
@@ -420,8 +421,7 @@ export interface BulkDecisionSuccess {
 
 export interface BulkDecisionFailure {
 	id: string;
-	code:
-		| "forbidden"
+	code: "forbidden"
 		| "stale"
 		| "validation_failed"
 		| "not_found"

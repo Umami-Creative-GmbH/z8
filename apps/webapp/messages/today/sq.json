@@ -21,6 +21,12 @@
     "briefing": {
       "badge": "Sot",
       "description": "Rishikoni artikujt që kërkojnë veprim sot, pastaj kaloni drejtpërdrejt te procesi i duhur i punës.",
+      "items": {
+        "drivingDetailsMissing": {
+          "description": "Periudhat e punës së punonjësve tuaj që nuk kanë një automjet ose një lexim të odometrit.",
+          "title": "Mungojnë detajet e drejtimit ({count})"
+        }
+      },
       "needsAction": {
         "description": "Filloni këtu për ndjekjen më urgjente operacionale.",
         "empty": "Çdo gjë në rregull. Nuk kërkohet asnjë veprim nga menaxheri për momentin.",

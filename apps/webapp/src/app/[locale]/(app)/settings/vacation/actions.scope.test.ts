@@ -31,7 +31,21 @@ const mockState = vi.hoisted(() => {
 			role: "employee" as const,
 		},
 		managedEmployeeIds: new Set<string>(["employee-1"]),
-		policyRows: [{ id: "policy-1", organizationId: "org-1", name: "Standard" }],
+		policyRows: [{ id: "policy-1", organizationId: "org-1", name: "Standard" }] as Array<
+			Record<string, unknown>
+		>,
+		policyFindFirst: vi.fn(async (options?: any) => {
+			const id = getEqValue(options?.where, "id");
+			const organizationId = getEqValue(options?.where, "organizationId");
+
+			return (
+				mockState.policyRows.find((row) => {
+					return (
+						(!id || row.id === id) && (!organizationId || row.organizationId === organizationId)
+					);
+				}) ?? null
+			);
+		}),
 		absenceCategoryRows: [
 			{
 				id: "absence-category-1",
@@ -77,7 +91,10 @@ const mockState = vi.hoisted(() => {
 			returning: vi.fn(async () => mockState.insertQueue.shift() ?? []),
 		})),
 		updateSet: vi.fn(() => ({
-			where: vi.fn(() => ({ returning: vi.fn(async () => mockState.insertQueue.shift() ?? []) })),
+			where: vi.fn((where: any) => {
+				mockState.updateWhere(where);
+				return { returning: vi.fn(async () => mockState.insertQueue.shift() ?? []) };
+			}),
 		})),
 		db: null as any,
 		logAudit: vi.fn(async () => undefined),
@@ -147,6 +164,7 @@ vi.mock("@/db/schema", () => ({
 	},
 	vacationPolicyAssignment: {
 		id: "id",
+		organizationId: "organizationId",
 		employeeId: "employeeId",
 		assignmentType: "assignmentType",
 		isActive: "isActive",
@@ -308,7 +326,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 			},
 			vacationAllowance: {
 				findMany: vi.fn(async () => mockState.policyRows),
-				findFirst: vi.fn(async () => mockState.policyRows[0] ?? null),
+				findFirst: mockState.policyFindFirst,
 			},
 			absenceCategory: {
 				findMany: vi.fn(async () => mockState.absenceCategoryRows),
@@ -393,14 +411,19 @@ const { getEmployeeSettingsActorContext, requireOrgAdminEmployeeSettingsAccess }
 );
 const {
 	getVacationPolicies,
+	createVacationPolicy,
+	updateVacationPolicy,
 	createVacationAdjustmentAction,
 	getAbsenceCategoriesForSettings,
 	createAbsenceCategory,
 	updateAbsenceCategory,
 	setAbsenceCategoryActive,
 	deleteAbsenceCategory,
+	deleteVacationPolicy,
 } = await import("./actions");
-const { createVacationPolicyAssignment } = await import("./assignment-actions");
+const { createVacationPolicyAssignment, deleteVacationPolicyAssignment } = await import(
+	"./assignment-actions"
+);
 
 describe("vacation settings scope actions", () => {
 	beforeEach(() => {
@@ -435,6 +458,7 @@ describe("vacation settings scope actions", () => {
 		mockState.selectWhereCalls = [];
 		mockState.teamQueue = [];
 		mockState.insertQueue = [];
+		mockState.policyFindFirst.mockClear();
 		mockState.selectFor.mockClear();
 		mockState.deleteWhere.mockClear();
 		mockState.transaction.mockClear();
@@ -451,6 +475,123 @@ describe("vacation settings scope actions", () => {
 		const result = await getVacationPolicies("org-1");
 
 		expect(result).toEqual({ success: true, data: mockState.policyRows });
+	});
+
+	describe("vacation policy proration settings (#1109)", () => {
+		const policyInput = {
+			organizationId: "org-1",
+			name: "Standard",
+			startDate: "2027-01-01",
+			defaultAnnualDays: "30",
+			accrualType: "annual" as const,
+			allowCarryover: false,
+		};
+		const storedPolicy = {
+			id: "policy-1",
+			organizationId: "org-1",
+			name: "Standard",
+			isCompanyDefault: false,
+			defaultAnnualDays: "30",
+			prorateInStartAndExitYear: true,
+			statutoryMinimumDays: "20",
+		};
+
+		beforeEach(() => {
+			mockState.actor.accessTier = "orgAdmin";
+			mockState.policyRows = [storedPolicy];
+		});
+
+		it("gives a new policy the proration switch and a statutory minimum of min(20, annual days)", async () => {
+			mockState.insertQueue = [[{ id: "policy-2" }], [{ id: "policy-3" }]];
+
+			await createVacationPolicy(policyInput);
+			await createVacationPolicy({ ...policyInput, name: "Part-time", defaultAnnualDays: "15" });
+
+			expect(mockState.insertValues).toHaveBeenNthCalledWith(
+				1,
+				expect.objectContaining({ prorateInStartAndExitYear: true, statutoryMinimumDays: "20" }),
+			);
+			expect(mockState.insertValues).toHaveBeenNthCalledWith(
+				2,
+				expect.objectContaining({ prorateInStartAndExitYear: true, statutoryMinimumDays: "15" }),
+			);
+		});
+
+		it("creates a policy with the settings an admin chose", async () => {
+			mockState.insertQueue = [[{ id: "policy-2" }]];
+
+			const result = await createVacationPolicy({
+				...policyInput,
+				prorateInStartAndExitYear: false,
+				statutoryMinimumDays: "24",
+			});
+
+			expect(result).toMatchObject({ success: true });
+			expect(mockState.insertValues).toHaveBeenCalledWith(
+				expect.objectContaining({ prorateInStartAndExitYear: false, statutoryMinimumDays: "24" }),
+			);
+		});
+
+		it.each(["-1", "31"])(
+			"refuses to create a policy with a statutory minimum of %s on 30 annual days",
+			async (statutoryMinimumDays) => {
+				const result = await createVacationPolicy({ ...policyInput, statutoryMinimumDays });
+
+				expect(result).toMatchObject({ success: false, code: "ValidationError" });
+				expect(mockState.insertValues).not.toHaveBeenCalled();
+			},
+		);
+
+		it("updates both settings", async () => {
+			mockState.insertQueue = [[{ id: "policy-1" }]];
+
+			const result = await updateVacationPolicy("policy-1", {
+				...policyInput,
+				prorateInStartAndExitYear: false,
+				statutoryMinimumDays: "25",
+			});
+
+			expect(result).toMatchObject({ success: true });
+			expect(mockState.updateSet).toHaveBeenCalledWith(
+				expect.objectContaining({ prorateInStartAndExitYear: false, statutoryMinimumDays: "25" }),
+			);
+		});
+
+		it.each([
+			{ statutoryMinimumDays: "-0.5", defaultAnnualDays: "30" },
+			{ statutoryMinimumDays: "30.5", defaultAnnualDays: "30" },
+			// Lowering the annual days below the stored statutory minimum of 20.
+			{ statutoryMinimumDays: undefined, defaultAnnualDays: "18" },
+		])("refuses to update a policy to %o", async (input) => {
+			const result = await updateVacationPolicy("policy-1", { ...policyInput, ...input });
+
+			expect(result).toMatchObject({ success: false, code: "ValidationError" });
+			expect(mockState.updateSet).not.toHaveBeenCalled();
+		});
+
+		it("does not let an admin update another organization's policy", async () => {
+			mockState.policyRows = [{ ...storedPolicy, organizationId: "org-2" }];
+
+			const result = await updateVacationPolicy("policy-1", {
+				...policyInput,
+				statutoryMinimumDays: "10",
+			});
+
+			expect(result).toMatchObject({ success: false, code: "NotFoundError" });
+			expect(mockState.updateSet).not.toHaveBeenCalled();
+		});
+
+		it("keeps policy writes for org admins", async () => {
+			mockState.actor.accessTier = "manager";
+
+			const created = await createVacationPolicy(policyInput);
+			const updated = await updateVacationPolicy("policy-1", policyInput);
+
+			expect(created).toMatchObject({ success: false, code: "AuthorizationError" });
+			expect(updated).toMatchObject({ success: false, code: "AuthorizationError" });
+			expect(mockState.insertValues).not.toHaveBeenCalled();
+			expect(mockState.updateSet).not.toHaveBeenCalled();
+		});
 	});
 
 	it("lets actors read absence categories only for their organization", async () => {
@@ -1074,5 +1215,52 @@ describe("vacation settings scope actions", () => {
 			code: "AuthorizationError",
 		});
 		expect(mockState.logAudit).not.toHaveBeenCalled();
+	});
+
+	describe("vacation policy deletion scope (#1114)", () => {
+		beforeEach(() => {
+			mockState.actor.accessTier = "orgAdmin";
+			mockState.revalidateTag.mockClear();
+		});
+
+		it("deletes a policy only within the actor's organization", async () => {
+			const result = await deleteVacationPolicy("policy-1");
+
+			expect(result).toMatchObject({ success: true });
+			expect(mockState.updateSet).toHaveBeenCalledWith({ isActive: false });
+			expect(mockState.updateWhere).toHaveBeenCalledWith({
+				and: [{ eq: ["id", "policy-1"] }, { eq: ["organizationId", "org-1"] }],
+			});
+		});
+
+		it("does not let an admin delete another organization's policy", async () => {
+			mockState.policyRows = [{ id: "policy-1", organizationId: "org-2", name: "Standard" }];
+
+			const result = await deleteVacationPolicy("policy-1");
+
+			expect(result).toMatchObject({ success: false, code: "NotFoundError" });
+			expect(mockState.updateSet).not.toHaveBeenCalled();
+			expect(mockState.revalidateTag).not.toHaveBeenCalledWith("vacation:org-2", "max");
+		});
+
+		it("soft-deletes a policy assignment only within the actor's organization", async () => {
+			mockState.selectQueue = [
+				[
+					{
+						id: "assignment-1",
+						organizationId: "org-1",
+						assignmentType: "organization",
+						employeeId: null,
+					},
+				],
+			];
+
+			const result = await deleteVacationPolicyAssignment("assignment-1");
+
+			expect(result).toMatchObject({ success: true });
+			expect(mockState.updateWhere).toHaveBeenCalledWith({
+				and: [{ eq: ["id", "assignment-1"] }, { eq: ["organizationId", "org-1"] }],
+			});
+		});
 	});
 });

@@ -1,9 +1,13 @@
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import type { PerDiemDayLocation } from "@/lib/travel-expenses/per-diem";
-import type { WorkCategoryReviewValue } from "../server/time-correction-review-metadata";
+import type {
+	VehicleUseReviewValue,
+	WorkCategoryReviewValue,
+} from "../server/time-correction-review-metadata";
 
 export const SUPPORTED_APPROVAL_INBOX_TYPES = [
 	"absence_entry",
+	"absence_change_request",
 	"time_entry",
 	"travel_expense_claim",
 	"travel_expense_report",
@@ -140,7 +144,9 @@ export interface ApprovalInboxLocalizedText {
 
 export type ApprovalInboxDetailChangeValue =
 	| { kind: "work_location"; value: WorkLocationType }
-	| { kind: "work_category"; value: WorkCategoryReviewValue };
+	| { kind: "work_category"; value: WorkCategoryReviewValue }
+	/** Vehicle use with its readings (#1120). */
+	| { kind: "vehicle_use"; value: VehicleUseReviewValue };
 
 export interface ApprovalInboxDetailChange {
 	kind: "change";
@@ -203,7 +209,7 @@ export type ApprovalInboxDetailSection =
 	| {
 			type: "receipt_exception_acceptance";
 			title: string | ApprovalInboxLocalizedText;
-			items: Array<{ itemId: string; label: string | ApprovalInboxLocalizedText; reason: string }>;
+			items: Array<{ itemId: string; label: string | ApprovalInboxLocalizedText; reason: string; }>;
 	  };
 
 export interface ApprovalInboxDetailResult {
@@ -249,8 +255,7 @@ export interface ApprovalInboxDecisionSuccess {
 
 export interface ApprovalInboxDecisionFailure {
 	id: string;
-	code:
-		| "stale"
+	code: "stale"
 		| "forbidden"
 		| "not_found"
 		| "unsupported"

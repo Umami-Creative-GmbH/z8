@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "{count} time entries deleted",
           "title": "Clear Time Data",
           "vacationAllowancesReset": "{count} vacation allowances reset",
+          "vehiclesDeleted": "{count, plural, one {# vehicle deleted} other {# vehicles deleted}}",
           "willDelete": "This will permanently delete:",
           "workCategoriesDeleted": "{count} work categories deleted",
           "workCategorySetsDeleted": "{count} work category sets deleted",
@@ -109,7 +110,7 @@
           "label": "Data Types",
           "locations": {
             "countLabel": "Number of locations:",
-            "description": "Work locations and subareas",
+            "descriptionWithVehicles": "Work locations, subareas and a few vehicles",
             "title": "Locations"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Creating time entries and work periods",
           "label": "Time Entries"
+        },
+        "vehicleUse": {
+          "description": "Recording vehicle use on work periods",
+          "label": "Vehicle Use"
         },
         "workCategories": {
           "description": "Creating work category sets and categories",

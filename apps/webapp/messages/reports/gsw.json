@@ -434,6 +434,45 @@
       "reportGenerated": "Bericht erfolgrich erstellt",
       "unexpectedError": "Es isch en unerwartete Fehler ufträtte",
       "unknownError": "Es isch en unbekannte Fehler ufträtte"
+    },
+    "vehicles": {
+      "archived": "archiviert",
+      "archivedBadge": "Archiviert",
+      "empty": {
+        "description": "In däre Periode isch kei abgschlosseni Arbet mit gfahrener Strecki erfasst worde.",
+        "title": "Kei Fahrte in däre Periode"
+      },
+      "error": "Fähler",
+      "export": {
+        "footer": "Generiert vo Z8",
+        "generatedAt": "Generiert am",
+        "note": "Ganzzahligi Kilometer vo abgschlossnener Arbet, zellt im Monet, wo d Arbet aagfange het (Lokalzit am Ufzeichnugsort).",
+        "period": "Zitruum",
+        "table": "Kilometer"
+      },
+      "failed": "De Bricht über d Distanz pro Fahrzüüg het nöd chönne generiert wärde",
+      "filter": {
+        "period": "Zitruum"
+      },
+      "generate": "Bricht generiere",
+      "generating": "Bricht wird generiert…",
+      "kilometres": "{distance} km",
+      "noReportYet": "No kein Bricht generiert",
+      "ownVehicle": "Eignigs Fahrzüüg",
+      "page": {
+        "description": "Gfahreni gschäftlichi Kilometer pro Fahrzüüg und Mitarbeiter, nach Monet",
+        "feature": "de Bricht über d Distanz pro Fahrzüüg aaluege"
+      },
+      "selectPeriod": "Wähl en Zitruum und generier de Bricht.",
+      "table": {
+        "employee": "Mitarbeiter",
+        "licencePlate": "Kontrollschild",
+        "total": "Total",
+        "vehicle": "Fahrzüüg",
+        "vehicleAndEmployee": "Fahrzüüg / Mitarbeiter"
+      },
+      "title": "Distanz pro Fahrzüüg",
+      "totalDriven": "{distance} gfahre"
     }
   }
 }

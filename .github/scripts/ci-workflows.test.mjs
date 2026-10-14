@@ -13,11 +13,11 @@ test("actual PostgreSQL condition requires successful combined shards except exp
   const expression = block.split("    if: >-\n")[1].trim().replace(/needs\.unit-tests/g, 'needs["unit-tests"]');
   // Evaluate the trusted workflow expression itself so its behavior, not a duplicate
   // policy function, is exercised across failure/selection/override combinations.
-  const evaluate = new Function("needs", "github", "inputs", "cancelled", `return (${expression})`);
-  for (const webapp of ["true", "false"]) for (const unit of ["success", "failure", "cancelled", "skipped", undefined]) for (const changes of ["success", "failure"]) for (const event of ["pull_request", "workflow_dispatch"]) for (const override of [false, true]) for (const cancelled of [false, true]) for (const draft of [false, true]) {
+  const evaluate = new Function("needs", "github", "inputs", "cancelled", "vars", `return (${expression})`);
+  for (const enabled of [undefined, "", "false", "true"]) for (const webapp of ["true", "false"]) for (const unit of ["success", "failure", "cancelled", "skipped", undefined]) for (const changes of ["success", "failure"]) for (const event of ["pull_request", "workflow_dispatch"]) for (const override of [false, true]) for (const cancelled of [false, true]) for (const draft of [false, true]) {
     const needs = { changes: { result: changes, outputs: { webapp } }, "unit-tests": { result: unit } };
-    const expected = (event !== "pull_request" || !draft) && !cancelled && changes === "success" && webapp === "true" && (unit === "success" || (event === "workflow_dispatch" && override));
-    assert.equal(Boolean(evaluate(needs, { event_name: event, event: { pull_request: { draft } } }, { diagnose_integration: override }, () => cancelled)), expected, JSON.stringify({ webapp, unit, changes, event, override, cancelled, draft }));
+    const expected = enabled === "true" && (event !== "pull_request" || !draft) && !cancelled && changes === "success" && webapp === "true" && (unit === "success" || (event === "workflow_dispatch" && override));
+    assert.equal(Boolean(evaluate(needs, { event_name: event, event: { pull_request: { draft } } }, { diagnose_integration: override }, () => cancelled, { POSTGRES_INTEGRATION_TESTS_ENABLED: enabled })), expected, JSON.stringify({ enabled, webapp, unit, changes, event, override, cancelled, draft }));
   }
 });
 test("expensive PR jobs wait on shared Linux debounce once, with independent cancellation", () => {
@@ -78,11 +78,16 @@ test("draft PRs skip every validation job, including setup, summary and reusable
       assert.ok(line, name + "/" + id + " must guard draft PRs");
       const condition = line === ">-" ? block.match(/^    if: >-\n((?:      .+\n)+)/m)[1].trim() : line;
       const expression = condition.replace(/^\$\{\{\s*|\s*\}\}$/g, "").replace(/needs\.unit-tests/g, 'needs["unit-tests"]');
-      const evaluate = new Function("needs", "github", "inputs", "always", "cancelled", "return (" + expression + ")");
+      const evaluate = new Function("needs", "github", "inputs", "always", "cancelled", "vars", "return (" + expression + ")");
       const needs = {changes:{result:"success",outputs:{webapp:"true",workspace:"true",docker:"true"}},"unit-tests":{result:"success"}};
-      assert.equal(Boolean(evaluate(needs, {event_name:"pull_request",event:{pull_request:{draft:true}}}, {}, ()=>true, ()=>false)), false, name + "/" + id + " draft");
-      assert.equal(Boolean(evaluate(needs, {event_name:"pull_request",event:{pull_request:{draft:false}}}, {}, ()=>true, ()=>false)), true, name + "/" + id + " ready");
-      assert.equal(Boolean(evaluate(needs, {event_name:"workflow_dispatch",event:{}}, {}, ()=>true, ()=>false)), true, name + "/" + id + " manual");
+      assert.equal(Boolean(evaluate(needs, {event_name:"pull_request",event:{pull_request:{draft:true}}}, {}, ()=>true, ()=>false, {POSTGRES_INTEGRATION_TESTS_ENABLED:"true"})), false, name + "/" + id + " draft");
+      assert.equal(Boolean(evaluate(needs, {event_name:"pull_request",event:{pull_request:{draft:false}}}, {}, ()=>true, ()=>false, {POSTGRES_INTEGRATION_TESTS_ENABLED:"true"})), true, name + "/" + id + " ready");
+      assert.equal(Boolean(evaluate(needs, {event_name:"workflow_dispatch",event:{}}, {}, ()=>true, ()=>false, {POSTGRES_INTEGRATION_TESTS_ENABLED:"true"})), true, name + "/" + id + " manual");
     }
   }
+});
+
+test("PostgreSQL enablement is shared by runner scheduling and the required summary", () => {
+  assert.match(tests, /POSTGRES_INTEGRATION_TESTS_ENABLED: \$\{\{ vars\.POSTGRES_INTEGRATION_TESTS_ENABLED == 'true' \}\}/);
+  assert.match(tests, /integrationEnabled: process\.env\.POSTGRES_INTEGRATION_TESTS_ENABLED === 'true'/);
 });

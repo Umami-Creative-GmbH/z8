@@ -68,7 +68,10 @@ vi.mock("@/lib/bot-platform/temporal-context", () => ({
 	resolveBotTemporalContext: async () => ({ locale: "en", effectiveTimezone: "Europe/Berlin" }),
 }));
 vi.mock("./outbound-localization", () => ({
-	localizeOutboundNotification: async (input: { title: string; message: string }) => input,
+	localizeOutboundNotification: async (input: { title: string; message: string }) => ({
+		...input,
+		actionLabel: "View in Z8",
+	}),
 }));
 
 describe("automatic clock-out external work links", () => {
@@ -87,7 +90,7 @@ describe("automatic clock-out external work links", () => {
 		const params = buildAutoClockOutNotification({
 			decision: facts,
 			recipientUserId: "recipient",
-			locale: "en",
+			endUtcOffsetMinutes: 60,
 		});
 		const relative = `/calendar/${facts.employeeId}?date=2026-10-24`;
 		for (const channel of ["slack", "teams", "telegram", "discord"] as const) {

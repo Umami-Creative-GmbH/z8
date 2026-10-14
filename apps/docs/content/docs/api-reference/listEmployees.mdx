@@ -15,6 +15,11 @@ _openapi:
           salary, address and birthday are never returned.
 
 
+          Each employee carries its custom field values as of `asOf` in
+          `customFields`, keyed by field id; `GET
+          /api/v1/employees/custom-fields` describes the fields.
+
+
           Requires the key scope `employees:read`.
 ---
 
