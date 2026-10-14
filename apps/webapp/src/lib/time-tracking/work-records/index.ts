@@ -12,8 +12,9 @@ import "server-only";
  *   `orRefuse` turns a refusal into the error interactive callers throw.
  *
  * Both run only on a sealed work-transaction scope; the Approvals finalizer's
- * database handle becomes one through `workRecordScopeForFinalizer`. Work records never opens a
- * transaction and never takes guards (ADR 0001); it takes row locks only, in
+ * database handle becomes one through `workRecordScopeForFinalizer`. Work
+ * records never opens a transaction and never takes guards (ADR 0001); it
+ * takes row locks only, in
  * `WORK_RECORD_LOCK_ORDER`.
  */
 import type { SealedWorkTransactionScope } from "../work-transaction";
