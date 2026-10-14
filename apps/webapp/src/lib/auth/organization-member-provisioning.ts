@@ -8,8 +8,10 @@ import {
 	teamPermissions,
 } from "@/db/schema";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { ValidationError } from "@/lib/effect/errors";
 import { writeFirstEmploymentTerms } from "@/lib/employment-history/first-terms";
 import { createLogger } from "@/lib/logger";
+import { hourlyWageSchema } from "@/lib/validations/employment-history";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import { acquireEmployeeIdentityLock } from "./employee-identity-lock";
 import { normalizeInvitationEmail } from "./employee-invitation-draft";
@@ -138,10 +140,22 @@ function writeDraftFirstTerms(
 		// The org admin who prepared the draft set the wage.
 		actorUserId: draft.updatedBy ?? input.userId,
 		contractType: draft.contractType,
-		hourlyRate:
-			draft.currentHourlyRate == null ? null : Number(draft.currentHourlyRate),
+		hourlyRate: draftHourlyWage(draft.currentHourlyRate),
 		startDate: draft.startDate ?? null,
 	});
+}
+
+/** The draft's stored decimal-string wage, as employment terms hold it. */
+function draftHourlyWage(stored: string | null): number | null {
+	if (stored == null) return null;
+	const parsed = hourlyWageSchema.safeParse(stored);
+	if (!parsed.success) {
+		throw new ValidationError({
+			message: parsed.error.issues[0]?.message ?? "Invalid hourly rate",
+			field: "hourlyRate",
+		});
+	}
+	return parsed.data;
 }
 
 async function consumeEmployeeInvitationDraft(
