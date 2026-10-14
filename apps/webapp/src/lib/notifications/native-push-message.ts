@@ -100,6 +100,9 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	period_submission_sent_back: "request_update",
 	period_submission_decided: "request_update",
 	scheduled_export_paused: "attention",
+	personal_data_export_ready: "attention",
+	personal_data_export_admin_exported: "attention",
+	personal_data_export_reminder: "attention",
 	skill_expiry_upcoming: "reminder",
 	skill_expired_today: "reminder",
 };

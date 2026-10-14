@@ -23,6 +23,7 @@ import type { DeputyCoverSummariesJobResult } from "@/lib/jobs/deputy-cover-summ
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
 import type { PersonnelFileRetentionRemindersJobResult } from "@/lib/jobs/personnel-file-retention-reminders";
+import type { PersonalDataExportSweepResult } from "@/lib/jobs/personal-data-export-sweep";
 import type { PersonnelFileUploadCleanupJobResult } from "@/lib/jobs/personnel-file-upload-cleanup";
 import type { PositionStampPurgeResult } from "@/lib/jobs/position-stamp-purge";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
@@ -399,6 +400,17 @@ export const CRON_JOBS = {
 		processor: async (): Promise<{ expired: number; creatorLostAccess: number }> => {
 			const { runReportShareLinkSweep } = await import("@/lib/jobs/report-share-links");
 			return runReportShareLinkSweep();
+		},
+		defaultJobOptions: { attempts: 2, priority: 8 },
+	},
+
+	"cron:personal-data-export-sweep": {
+		schedule: "*/15 * * * *", // Every 15 minutes
+		description:
+			"Delete personal data exports 7 days after completion, give up stuck builds, and delete the stored files of deleted exports",
+		processor: async (): Promise<PersonalDataExportSweepResult> => {
+			const { runPersonalDataExportSweep } = await import("@/lib/jobs/personal-data-export-sweep");
+			return runPersonalDataExportSweep();
 		},
 		defaultJobOptions: { attempts: 2, priority: 8 },
 	},

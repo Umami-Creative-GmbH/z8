@@ -1,5 +1,8 @@
 import {
+	AbortMultipartUploadCommand,
+	CompleteMultipartUploadCommand,
 	CopyObjectCommand,
+	CreateMultipartUploadCommand,
 	DeleteObjectCommand,
 	GetObjectCommand,
 	HeadObjectCommand,
@@ -7,6 +10,7 @@ import {
 	ListObjectVersionsCommand,
 	PutObjectCommand,
 	S3Client,
+	UploadPartCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { eq } from "drizzle-orm";
@@ -15,6 +19,7 @@ import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
 import { isMissingObjectError } from "./missing-object";
+import { type MultipartUploadPort, uploadStreamInParts } from "./multipart-upload";
 
 const logger = createLogger("ExportS3Client");
 
@@ -235,6 +240,70 @@ export async function uploadPrivateObject(
 
 	// Versioned buckets report the immutable version of the stored object.
 	return { bucket: config.bucket, versionId: response?.VersionId ?? null };
+}
+
+/**
+ * Stores a stream of unknown length privately without buffering it whole
+ * (#1169): a multipart upload of fixed-size parts, or one put for a stream
+ * smaller than a part. A failing stream aborts the upload and rethrows.
+ */
+export async function uploadPrivateObjectStream(
+	organizationId: string,
+	key: string,
+	body: ReadableStream<Uint8Array>,
+	contentType: string,
+): Promise<{ bucket: string; versionId: string | null }> {
+	const config = await getStorageConfig(organizationId);
+	if (!config) {
+		throw new Error("S3 storage is not configured for this organization");
+	}
+	const client = createS3Client(config);
+	const target = { Bucket: config.bucket, Key: key };
+	const port: MultipartUploadPort = {
+		async putObject(data) {
+			const response = await client.send(
+				new PutObjectCommand({ ...target, Body: data, ContentType: contentType }),
+			);
+			return { versionId: response.VersionId ?? null };
+		},
+		async create() {
+			const response = await client.send(
+				new CreateMultipartUploadCommand({ ...target, ContentType: contentType }),
+			);
+			if (!response.UploadId) throw new Error("Storage returned no multipart upload id");
+			return response.UploadId;
+		},
+		async uploadPart(uploadId, partNumber, data) {
+			const response = await client.send(
+				new UploadPartCommand({
+					...target,
+					UploadId: uploadId,
+					PartNumber: partNumber,
+					Body: data,
+				}),
+			);
+			if (!response.ETag) throw new Error("Storage returned no part ETag");
+			return response.ETag;
+		},
+		async complete(uploadId, parts) {
+			const response = await client.send(
+				new CompleteMultipartUploadCommand({
+					...target,
+					UploadId: uploadId,
+					MultipartUpload: {
+						Parts: parts.map((part) => ({ PartNumber: part.partNumber, ETag: part.etag })),
+					},
+				}),
+			);
+			return { versionId: response.VersionId ?? null };
+		},
+		async abort(uploadId) {
+			await client.send(new AbortMultipartUploadCommand({ ...target, UploadId: uploadId }));
+		},
+	};
+	const { versionId } = await uploadStreamInParts(port, body);
+	logger.info({ organizationId, key }, "Streamed private object stored");
+	return { bucket: config.bucket, versionId };
 }
 
 /**
@@ -491,6 +560,35 @@ export async function getPresignedUrl(
 	const url = await getSignedUrl(client, command, { expiresIn });
 
 	return url;
+}
+
+/**
+ * A short-lived download URL for one recorded private object/version, saved
+ * under `fileName`. A recorded bucket that no longer matches the
+ * organization's storage configuration is refused.
+ */
+export async function getPrivateObjectPresignedUrl(input: {
+	organizationId: string;
+	key: string;
+	bucket: string | null;
+	versionId: string | null;
+	fileName: string;
+	expiresInSeconds: number;
+}): Promise<string> {
+	const config = await getStorageConfig(input.organizationId);
+	if (!config) {
+		throw new Error("S3 storage is not configured for this organization");
+	}
+	if (input.bucket && input.bucket !== config.bucket) {
+		throw new Error("Recorded private object bucket is unavailable");
+	}
+	const command = new GetObjectCommand({
+		Bucket: config.bucket,
+		Key: input.key,
+		...(input.versionId ? { VersionId: input.versionId } : {}),
+		ResponseContentDisposition: `attachment; filename="${input.fileName.replace(/["\\]/g, "")}"`,
+	});
+	return getSignedUrl(createS3Client(config), command, { expiresIn: input.expiresInSeconds });
 }
 
 /**

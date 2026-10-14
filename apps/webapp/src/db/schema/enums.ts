@@ -303,6 +303,12 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"period_submission_decided",
 	// A scheduled export paused because its owner is no longer an org admin, to every org admin (#988)
 	"scheduled_export_paused",
+	// The requester's personal data export is ready to download, with no file link (#811)
+	"personal_data_export_ready",
+	// To a current employee when an org admin's export of their personal data completes (#1166)
+	"personal_data_export_admin_exported",
+	// Download your personal data on My data before your departure cutoff (#1173)
+	"personal_data_export_reminder",
 	// Skill expiry reminders to the employee and their managers (#1143)
 	"skill_expiry_upcoming",
 	"skill_expired_today",

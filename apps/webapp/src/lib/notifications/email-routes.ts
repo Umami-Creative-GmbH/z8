@@ -1,4 +1,5 @@
 import type { SecurityEventType } from "@/lib/email/templates/security-alert";
+import { EMPLOYEE_PAGES_PATH, MY_DATA_PATH } from "@/lib/personal-data-export/paths";
 import type { NotificationType } from "./types";
 
 /**
@@ -99,6 +100,12 @@ const NOTIFICATION_EMAIL_ROUTES: { readonly [Type in NotificationType]: Notifica
 	work_balance_adjustment_recorded: layout("/time-tracking"),
 	work_balance_adjustment_cancelled: layout("/time-tracking"),
 	scheduled_export_paused: layout("/settings/scheduled-exports"),
+	// The page the export was started from; never a file link (#811).
+	personal_data_export_ready: layout(MY_DATA_PATH, EMPLOYEE_PAGES_PATH),
+	// Where the employee can request their own copy (#1166).
+	personal_data_export_admin_exported: layout(MY_DATA_PATH),
+	// Download your personal data before your departure cutoff (#1173).
+	personal_data_export_reminder: layout(MY_DATA_PATH),
 	// Managers, owners and admins get the employee's skills, the employee their profile (#1143).
 	skill_expiry_upcoming: layout("/settings/employees/", "/settings/profile"),
 	skill_expired_today: layout("/settings/employees/", "/settings/profile"),

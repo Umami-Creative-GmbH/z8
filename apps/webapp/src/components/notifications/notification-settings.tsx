@@ -164,6 +164,8 @@ const NOTIFICATION_CATEGORIES = [
 			"password_changed",
 			"two_factor_enabled",
 			"two_factor_disabled",
+			"personal_data_export_ready",
+			"personal_data_export_admin_exported",
 		] as NotificationType[],
 	},
 	{
@@ -182,6 +184,7 @@ const NOTIFICATION_CATEGORIES = [
 			"break_due_reminder",
 			"period_submission_reminder",
 			"period_submission_sent_back",
+			"personal_data_export_reminder",
 			"skill_expiry_upcoming",
 			"skill_expired_today",
 		] as NotificationType[],
@@ -216,6 +219,9 @@ type StaticallyLabelledType =
 	| "absence_deputy_unavailable"
 	| "approval_cover_started"
 	| "approval_cover_return_summary"
+	| "personal_data_export_reminder"
+	| "personal_data_export_ready"
+	| "personal_data_export_admin_exported"
 	| "skill_expiry_upcoming"
 	| "skill_expired_today";
 
@@ -494,6 +500,24 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.approval_cover_return_summary",
 					"Decided by your deputy",
+				);
+			// Download your personal data before your departure cutoff (#1173).
+			case "personal_data_export_reminder":
+				return t(
+					"common:notifications.preferences.types.personal_data_export_reminder",
+					"Download your data before you leave",
+				);
+			// The requester's personal data export is ready on My data (#811).
+			case "personal_data_export_ready":
+				return t(
+					"common:notifications.preferences.types.personal_data_export_ready",
+					"Personal data export ready",
+				);
+			// An org admin exported the employee's personal data (#1166).
+			case "personal_data_export_admin_exported":
+				return t(
+					"common:notifications.preferences.types.personal_data_export_admin_exported",
+					"Personal data exported by an administrator",
 				);
 			default:
 				return t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);

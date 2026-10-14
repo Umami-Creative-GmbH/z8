@@ -68,6 +68,7 @@ const HIGH_RISK_CRON_JOBS = new Set<CronJobName>([
 	"cron:organization-cleanup",
 	"cron:position-stamp-purge",
 	"cron:report-share-link-sweep",
+	"cron:personal-data-export-sweep",
 	"cron:travel-expense-receipt-cleanup",
 	"cron:personnel-file-upload-cleanup",
 	"cron:break-enforcement",

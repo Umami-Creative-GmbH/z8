@@ -49,6 +49,15 @@ vi.mock("@/components/settings/employee-offboarding/employee-offboarding-section
 	),
 }));
 
+vi.mock(
+	"@/components/settings/personal-data-export/employee-personal-data-export-card",
+	() => ({
+		EmployeePersonalDataExportCard: ({ isOwnRecord }: { isOwnRecord: boolean }) => (
+			<section aria-label="Personal data export">{isOwnRecord ? "own record" : "colleague"}</section>
+		),
+	}),
+);
+
 vi.mock("./employee-draft-actions", () => ({
 	EmployeeDraftActions: () => <div>Draft actions</div>,
 }));
@@ -371,6 +380,24 @@ describe("employee detail lifecycle integration", () => {
 		expect(
 			await screen.findByRole("region", { name: "Employment and departure" }),
 		).toBeTruthy();
+	});
+
+	it("offers the admin export to org admins only, marked on their own record (#1166)", async () => {
+		const { unmount } = renderDetail({ accessTier: "orgAdmin" });
+		expect(
+			(await screen.findByRole("region", { name: "Personal data export" })).textContent,
+		).toBe("colleague");
+		unmount();
+
+		const own = renderDetail({ accessTier: "orgAdmin", currentUserId: "user-2" });
+		expect(
+			(await screen.findByRole("region", { name: "Personal data export" })).textContent,
+		).toBe("own record");
+		own.unmount();
+
+		renderDetail({ accessTier: "manager" });
+		await screen.findByRole("region", { name: "Employment and departure" });
+		expect(screen.queryByRole("region", { name: "Personal data export" })).toBeNull();
 	});
 
 	it("never offers departure controls on an invitation draft", async () => {
