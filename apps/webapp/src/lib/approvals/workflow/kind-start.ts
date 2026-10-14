@@ -17,6 +17,7 @@ export type ApprovalKindStart = "legacy" | "canonical_only";
  */
 export const APPROVAL_KIND_START: Readonly<Record<ApprovalWorkflowType, ApprovalKindStart>> = {
 	absence: "legacy",
+	absence_change: "canonical_only",
 	time_correction: "legacy",
 	manual_time_submission: "legacy",
 	policy_clock_out: "legacy",

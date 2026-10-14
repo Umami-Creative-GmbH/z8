@@ -14,6 +14,7 @@ describe("admitted escalation kinds (#326)", () => {
 	it("admits absences, the three time kinds and period submissions canonically, never expenses or shifts", () => {
 		for (const kind of [
 			"absence",
+			"absence_change",
 			"manual_time_submission",
 			"policy_clock_out",
 			"time_correction",
@@ -47,6 +48,7 @@ describe("admitted escalation kinds (#326)", () => {
 	it("offers management transfers for every transferred kind, never on untransferable holds", () => {
 		expect([...ESCALATION_WORKFLOW_TYPES].sort()).toEqual([
 			"absence",
+			"absence_change",
 			"manual_time_submission",
 			"period_submission",
 			"policy_clock_out",

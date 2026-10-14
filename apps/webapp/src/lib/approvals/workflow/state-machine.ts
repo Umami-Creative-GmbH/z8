@@ -1,7 +1,7 @@
 import {
 	compareInstants,
 	type Instant,
-	isInstant,
+	isInstant
 } from "@/lib/datetime/temporal-core";
 import {
 	type ApprovedCancellationAuthorization,
@@ -9,7 +9,6 @@ import {
 } from "../domain-adapters/registry";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
-	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
 	type ApprovalAssignmentActorIdentity,
 	type ApprovalAssignmentChange,
 	type ApprovalAssignmentSnapshot,
@@ -35,6 +34,7 @@ import {
 	type ApprovalWorkflowEventType,
 	type ApprovalWorkflowRootState,
 	type ApprovalWorkflowSnapshot,
+	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
 	type JsonObject,
 	type JsonValue,
 	type ResolvedStage,
@@ -115,20 +115,20 @@ const TERMINAL_WORKFLOW_STATUSES = new Set([
 	"approved",
 	"rejected",
 	"cancelled",
-	"expired",
+	"expired"
 ]);
 const TERMINAL_STAGE_STATUSES = new Set([
 	"approved",
 	"rejected",
 	"cancelled",
-	"expired",
+	"expired"
 ]);
 const WORKFLOW_STATUSES = new Set([
 	"pending",
 	"approved",
 	"rejected",
 	"cancelled",
-	"expired",
+	"expired"
 ]);
 const WORKFLOW_TYPES = new Set([
 	"absence",
@@ -139,6 +139,7 @@ const WORKFLOW_TYPES = new Set([
 	"shift_request",
 	"compliance_exception",
 	"period_submission",
+	"absence_change",
 ]);
 const STAGE_STATUSES = new Set([
 	"waiting",
@@ -153,11 +154,11 @@ const ASSIGNMENT_STATUSES = new Set([
 	"approved",
 	"rejected",
 	"cancelled",
-	"expired",
+	"expired"
 ]);
 const ACTIVATION_MODES = new Set(["human", "requester_auto_approve"]);
 const EVENT_TYPES = new Set<ApprovalWorkflowEventType>(
-	APPROVAL_WORKFLOW_EVENT_TYPES,
+	APPROVAL_WORKFLOW_EVENT_TYPES
 );
 /** Workflow boundaries accept canonical lowercase, hyphenated UUID text only. */
 const CANONICAL_UUID =
@@ -165,7 +166,7 @@ const CANONICAL_UUID =
 
 function fail(
 	code: ApprovalStateMachineErrorCode,
-	details: JsonObject = {},
+	details: JsonObject = {}
 ): never {
 	throw new ApprovalStateMachineError(code, details);
 }
@@ -175,12 +176,10 @@ function nonEmpty(value: unknown): value is string {
 }
 
 function isWorkflowEventType(
-	value: unknown,
+	value: unknown
 ): value is ApprovalWorkflowEventType {
-	return (
-		typeof value === "string" &&
-		EVENT_TYPES.has(value as ApprovalWorkflowEventType)
-	);
+	return typeof value === "string" &&
+		EVENT_TYPES.has(value as ApprovalWorkflowEventType);
 }
 
 function isRecord(value: unknown): value is Record<PropertyKey, unknown> {
@@ -203,7 +202,7 @@ function assertReason(
 }
 
 function validateCommandIdentities(
-	command: unknown,
+	command: unknown
 ): asserts command is ApprovalWorkflowCommand {
 	if (!isRecord(command) || typeof command.type !== "string") {
 		fail("INVALID_COMMAND", { field: "command" });
@@ -229,7 +228,7 @@ function validateCommandIdentities(
 }
 
 function validatePolicy(
-	policy: unknown,
+	policy: unknown
 ): asserts policy is ApprovalWorkflowPolicy {
 	if (!isRecord(policy) || typeof policy.kind !== "string") {
 		fail("INVALID_POLICY", { field: "policy" });
@@ -252,7 +251,7 @@ function validateNow(now: unknown): asserts now is Instant {
 function assertNotBefore(
 	now: Instant,
 	boundary: Instant,
-	boundaryName: string,
+	boundaryName: string
 ): void {
 	if (compareInstants(now, boundary) < 0) {
 		fail("INVALID_TIME", { boundary: boundaryName });
@@ -261,7 +260,7 @@ function assertNotBefore(
 
 function assertPendingClosureChronology(
 	stages: ApprovalStageSnapshot[],
-	now: Instant,
+	now: Instant
 ): void {
 	for (const stage of stages) {
 		if (stage.status === "pending" && stage.activatedAt) {
@@ -279,7 +278,7 @@ const INVALID_JSON_VALUE = Symbol("invalidJsonValue");
 
 function cloneJsonTraversal(
 	value: unknown,
-	seen = new Set<object>(),
+	seen = new Set<object>()
 ): JsonValue {
 	if (value === null || typeof value === "string" || typeof value === "boolean")
 		return value;
@@ -366,7 +365,7 @@ function cloneActor(
 }
 
 function clonePersistedAssignment(
-	value: ApprovalAssignmentSnapshot,
+	value: ApprovalAssignmentSnapshot
 ): ApprovalAssignmentSnapshot {
 	return {
 		...value,
@@ -378,7 +377,7 @@ function clonePersistedAssignment(
 }
 
 function clonePersistedStage(
-	value: ApprovalStageSnapshot,
+	value: ApprovalStageSnapshot
 ): ApprovalStageSnapshot {
 	return {
 		...value,
@@ -388,7 +387,7 @@ function clonePersistedStage(
 }
 
 function clonePersistedSnapshot(
-	value: ApprovalWorkflowSnapshot,
+	value: ApprovalWorkflowSnapshot
 ): ApprovalWorkflowSnapshot {
 	return {
 		...value,
@@ -405,13 +404,13 @@ function cloneEventReferences(
 	return Object.fromEntries(
 		Object.entries(references).map(([key, reference]) => [
 			key,
-			cloneReference(reference),
+			cloneReference(reference)
 		]),
 	) as ApprovalWorkflowEventReferenceIntents;
 }
 
 function cloneNextAction(
-	nextAction: ApprovalTransitionNextAction,
+	nextAction: ApprovalTransitionNextAction
 ): ApprovalTransitionNextAction {
 	if (nextAction.kind === "none") return { kind: "none" };
 	if (nextAction.kind === "needs_activation") return { ...nextAction };
@@ -434,7 +433,7 @@ function allocationReference(
 }
 
 function cloneReference(
-	reference: ApprovalPlannedEntityReference,
+	reference: ApprovalPlannedEntityReference
 ): ApprovalPlannedEntityReference {
 	return { ...reference };
 }
@@ -493,7 +492,7 @@ function clonePlannedAssignment(
 }
 
 function planPersistedStage(
-	value: ApprovalStageSnapshot,
+	value: ApprovalStageSnapshot
 ): ApprovalPlannedStageSnapshot {
 	return {
 		...value,
@@ -503,7 +502,7 @@ function planPersistedStage(
 }
 
 function clonePlannedStage(
-	value: ApprovalPlannedStageSnapshot,
+	value: ApprovalPlannedStageSnapshot
 ): ApprovalPlannedStageSnapshot {
 	return {
 		...value,
@@ -513,7 +512,7 @@ function clonePlannedStage(
 }
 
 function planPersistedSnapshot(
-	value: ApprovalWorkflowSnapshot,
+	value: ApprovalWorkflowSnapshot
 ): ApprovalPlannedWorkflowSnapshot {
 	return {
 		...value,
@@ -567,7 +566,7 @@ function validateEventActor(
 
 function validatePendingHumanStage(stage: ApprovalStageSnapshot): void {
 	const pending = stage.assignments.filter(
-		(child) => child.status === "pending",
+		(child) => child.status === "pending"
 	);
 	if (pending.length === 0) {
 		invalidSnapshot("pending_human_stage_without_active_assignment", {
@@ -639,7 +638,7 @@ function validatePendingHumanStage(stage: ApprovalStageSnapshot): void {
 }
 
 function validateSnapshot(
-	input: unknown,
+	input: unknown
 ): asserts input is ApprovalWorkflowSnapshot {
 	if (!isRecord(input)) invalidSnapshot("snapshot_object");
 	const snapshot = input as unknown as ApprovalWorkflowSnapshot;
@@ -804,7 +803,7 @@ function validateSnapshot(
 			invalidSnapshot("pending_workflow_timestamps");
 		}
 		const current = snapshot.stages.find(
-			(item) => item.sequence === snapshot.currentStageOrder,
+			(item) => item.sequence === snapshot.currentStageOrder
 		);
 		if (
 			!current ||
@@ -876,13 +875,11 @@ export function assertValidApprovalWorkflowSnapshot(
 function snapshotsEqual(
 	left: unknown,
 	right: unknown,
-	seen = new Map<object, object>(),
+	seen = new Map<object, object>()
 ): boolean {
 	if (Object.is(left, right)) return true;
 	if (isInstant(left) || isInstant(right)) {
-		return (
-			isInstant(left) && isInstant(right) && compareInstants(left, right) === 0
-		);
+		return isInstant(left) && isInstant(right) && compareInstants(left, right) === 0;
 	}
 	if (
 		typeof left !== "object" ||
@@ -898,10 +895,10 @@ function snapshotsEqual(
 	seen.set(left, right);
 	try {
 		const leftKeys = Reflect.ownKeys(left).sort((a, b) =>
-			String(a).localeCompare(String(b)),
+			String(a).localeCompare(String(b))
 		);
 		const rightKeys = Reflect.ownKeys(right).sort((a, b) =>
-			String(a).localeCompare(String(b)),
+			String(a).localeCompare(String(b))
 		);
 		if (
 			leftKeys.length !== rightKeys.length ||
@@ -938,11 +935,11 @@ function buildChanges(
 	resulting: ApprovalPlannedWorkflowSnapshot,
 ) {
 	const previousStages = new Map(
-		previous.stages.map((item) => [item.id, item]),
+		previous.stages.map((item) => [item.id, item])
 	);
 	const previousAssignments = new Map(
 		previous.stages.flatMap((item) =>
-			item.assignments.map((child) => [child.id, child] as const),
+			item.assignments.map((child) => [child.id, child] as const)
 		),
 	);
 	const assignments: ApprovalAssignmentChange[] = [];
@@ -1053,7 +1050,7 @@ function assertImmutableTransitionStructure(
 		materializationConflict("stage_identity_set");
 	}
 	const resultingStages = new Map(
-		resulting.stages.map((stage) => [stage.id, stage]),
+		resulting.stages.map((stage) => [stage.id, stage])
 	);
 	for (const previousStage of previous.stages) {
 		const resultingStage = resultingStages.get(previousStage.id);
@@ -1074,7 +1071,7 @@ function assertImmutableTransitionStructure(
 			persistedAssignmentIds.length !== previousAssignmentIds.size ||
 			uniquePersistedAssignmentIds.size !== persistedAssignmentIds.length ||
 			persistedAssignmentIds.some(
-				(assignmentId) => !previousAssignmentIds.has(assignmentId),
+				(assignmentId) => !previousAssignmentIds.has(assignmentId)
 			)
 		) {
 			materializationConflict("persisted_assignment_identity_set", {
@@ -1095,7 +1092,7 @@ function buildPlan(
 	const events: ApprovalWorkflowEventIntent[] = drafts.map(
 		(draft, eventIndex) => ({
 			reference: allocationReference(
-				`${previous.id}:event:${resulting.version}:${eventIndex}`,
+				`${previous.id}:event:${resulting.version}:${eventIndex}`
 			),
 			organizationId: previous.organizationId,
 			workflowId: previous.id,
@@ -1111,7 +1108,7 @@ function buildPlan(
 			metadata: draft.metadata ? cloneJson(draft.metadata) : null,
 			references: cloneEventReferences(draft.references),
 			occurredAt: now,
-		}),
+		})
 	);
 	const identityAllocations = [
 		...resulting.stages.flatMap((stage) =>
@@ -1145,10 +1142,10 @@ function buildPlan(
 }
 
 function currentStage(
-	snapshot: ApprovalWorkflowSnapshot,
+	snapshot: ApprovalWorkflowSnapshot
 ): ApprovalStageSnapshot {
 	const current = snapshot.stages.find(
-		(item) => item.sequence === snapshot.currentStageOrder,
+		(item) => item.sequence === snapshot.currentStageOrder
 	);
 	if (!current) invalidSnapshot("current_stage");
 	return current;
@@ -1312,7 +1309,7 @@ function planDecision(
 	const { stage, assignment } = decisionContext(
 		snapshot,
 		command.stageId,
-		command.assignmentId,
+		command.assignmentId
 	);
 	assertPendingClosureChronology([stage], now);
 	const resulting = planPersistedSnapshot(snapshot);
@@ -1348,7 +1345,7 @@ function planDecision(
 	}
 	closeStage(resultingStage, status, reason, now);
 	drafts.push(
-		stageEvent(resultingStage, "pending", status, actorIntent, reason),
+		stageEvent(resultingStage, "pending", status, actorIntent, reason)
 	);
 
 	let nextAction: ApprovalTransitionNextAction;
@@ -1367,7 +1364,7 @@ function planDecision(
 			.sort((left, right) => left.sequence - right.sequence)) {
 			closeStage(future, "cancelled", reason, now);
 			drafts.push(
-				stageEvent(future, "waiting", "cancelled", actorIntent, reason),
+				stageEvent(future, "waiting", "cancelled", actorIntent, reason)
 			);
 		}
 		resulting.status = "rejected";
@@ -1403,7 +1400,7 @@ function planPendingClosure(
 	const actor: ApprovalEventActorIntent = { kind: "command_actor" };
 	const drafts: EventDraft[] = [];
 	for (const item of [...resulting.stages].sort(
-		(left, right) => left.sequence - right.sequence,
+		(left, right) => left.sequence - right.sequence
 	)) {
 		if (item.status === "approved") continue;
 		if (item.status !== "waiting" && item.status !== "pending") {
@@ -1414,12 +1411,12 @@ function planPendingClosure(
 			if (child.status !== "pending") continue;
 			closeAssignment(child, targetStatus, now, actor);
 			drafts.push(
-				eventForAssignment(child, targetStatus, actor, command.reason),
+				eventForAssignment(child, targetStatus, actor, command.reason)
 			);
 		}
 		closeStage(item, targetStatus, command.reason, now);
 		drafts.push(
-			stageEvent(item, previousStatus, targetStatus, actor, command.reason),
+			stageEvent(item, previousStatus, targetStatus, actor, command.reason)
 		);
 	}
 	resulting.status = targetStatus;
@@ -1462,7 +1459,7 @@ function planApprovedCancellation(
 	const resulting = planPersistedSnapshot(snapshot);
 	const drafts: EventDraft[] = [];
 	for (const stage of [...resulting.stages].sort(
-		(left, right) => left.sequence - right.sequence,
+		(left, right) => left.sequence - right.sequence
 	)) {
 		if (stage.status !== "waiting") continue;
 		closeStage(stage, "cancelled", command.reason, now);
@@ -1472,7 +1469,7 @@ function planApprovedCancellation(
 				"waiting",
 				"cancelled",
 				{ kind: "command_actor" },
-				command.reason,
+				command.reason
 			),
 		);
 	}
@@ -1619,7 +1616,7 @@ function planReassignment(
 
 function materializationConflict(
 	conflict: string,
-	details: JsonObject = {},
+	details: JsonObject = {}
 ): never {
 	return fail("MATERIALIZATION_CONFLICT", { conflict, ...details });
 }
@@ -1637,7 +1634,7 @@ function validatePlannedReference(
 	reference: unknown,
 	allowedKinds: ReadonlySet<"persisted" | "allocate"> = new Set([
 		"persisted",
-		"allocate",
+		"allocate"
 	]),
 ): asserts reference is ApprovalPlannedEntityReference {
 	if (!isRecord(reference) || !allowedKinds.has(reference.kind as never)) {
@@ -2001,7 +1998,7 @@ function validateNextAction(
 }
 
 function validateTransitionPlanCoherence(
-	plan: unknown,
+	plan: unknown
 ): asserts plan is ApprovalTransitionPlan {
 	if (
 		!isRecord(plan) ||
@@ -2047,11 +2044,11 @@ function validateTransitionPlanCoherence(
 	}
 	assertImmutableTransitionStructure(
 		plan.previousSnapshot,
-		plan.plannedSnapshot,
+		plan.plannedSnapshot
 	);
 	const expectedChanges = buildChanges(
 		plan.previousSnapshot,
-		plan.plannedSnapshot,
+		plan.plannedSnapshot
 	);
 	if (!snapshotsEqual(plan.changes, expectedChanges)) {
 		materializationConflict("plan_changes_incomplete");
@@ -2072,7 +2069,7 @@ function validateTransitionPlanCoherence(
 	}
 
 	const plannedStages = new Map(
-		plan.plannedSnapshot.stages.map((stage) => [stage.id, stage]),
+		plan.plannedSnapshot.stages.map((stage) => [stage.id, stage])
 	);
 	const stageChangeIds = new Set<string>();
 	for (const change of plan.changes.stages) {
@@ -2127,7 +2124,7 @@ function validateTransitionPlanCoherence(
 		validatePlannedAssignmentShape(
 			change.resulting,
 			stage,
-			plan.plannedSnapshot,
+			plan.plannedSnapshot
 		);
 		if (!snapshotsEqual(change.resulting, planned)) {
 			materializationConflict("assignment_change_result");
@@ -2216,12 +2213,12 @@ function validateTransitionPlanCoherence(
 	validateNextAction(
 		plan.nextAction,
 		plan.previousSnapshot,
-		plan.plannedSnapshot,
+		plan.plannedSnapshot
 	);
 }
 
 function validateCommandActor(
-	actor: unknown,
+	actor: unknown
 ): asserts actor is ApprovalCommandActor {
 	validateEventActor(actor, (field) =>
 		materializationConflict("command_actor_identity", { field }),
@@ -2321,7 +2318,7 @@ function materializeEventReferences(
 					assignmentId: resolveEntityReference(
 						references.assignment,
 						resolutions,
-						"assignment",
+						"assignment"
 					),
 				}
 			: {}),
@@ -2392,7 +2389,7 @@ export function serializeApprovalWorkflowEventMetadata(
 }
 
 export function deserializeApprovalWorkflowEventMetadata(
-	persistenceMetadata: JsonObject | null,
+	persistenceMetadata: JsonObject | null
 ): {
 	metadata: JsonObject | null;
 	references: ApprovalWorkflowEventReferences;
@@ -2460,13 +2457,13 @@ function materializeAssignment(
 			: null,
 		reassignedByEmployeeId: materializeReassignmentActor(
 			assignment.reassignedBy,
-			commandActor,
+			commandActor
 		),
 		reassignedFromAssignmentId: assignment.reassignedFrom
 			? resolveEntityReference(
 					assignment.reassignedFrom,
 					resolutions,
-					"assignment",
+					"assignment"
 				)
 			: null,
 		reassignmentMetadata: assignment.reassignmentMetadata
@@ -2538,7 +2535,7 @@ function validateMaterializedEvents(
 					typeof key !== "string" ||
 					!APPROVAL_EVENT_REFERENCE_KEYS.has(key) ||
 					!isCanonicalUuid(
-						(event.references as unknown as Record<PropertyKey, unknown>)[key],
+						(event.references as unknown as Record<PropertyKey, unknown>)[key]
 					),
 			)
 		) {
@@ -2607,7 +2604,7 @@ function validateExactPersistedSnapshot(
 }
 
 function validateExactPersistedAssignmentShape(
-	assignment: ApprovalAssignmentSnapshot,
+	assignment: ApprovalAssignmentSnapshot
 ): void {
 	if (
 		!hasExactKeys(assignment, [
@@ -2737,7 +2734,7 @@ export function validateMaterializedApprovalTransitionPlan(
 	const assignmentsById = new Map(
 		snapshot.stages.flatMap((stage) =>
 			stage.assignments.map(
-				(assignment) => [assignment.id, assignment] as const,
+				(assignment) => [assignment.id, assignment] as const
 			),
 		),
 	);
@@ -2762,23 +2759,23 @@ export function validateMaterializedApprovalTransitionPlan(
 			materializationConflict("materialized_assignment_change_result");
 		}
 		validateExactPersistedAssignmentShape(
-			change.resulting as ApprovalAssignmentSnapshot,
+			change.resulting as ApprovalAssignmentSnapshot
 		);
 		const stage = stagesById.get(authoritative.stageId);
 		if (!stage) materializationConflict("materialized_assignment_stage");
 		validatePersistedAssignmentChangeShape(
 			change.resulting,
 			stage.id,
-			snapshot,
+			snapshot
 		);
 		if (change.kind === "update") {
 			validateExactPersistedAssignmentShape(
-				change.previous as ApprovalAssignmentSnapshot,
+				change.previous as ApprovalAssignmentSnapshot
 			);
 			validatePersistedAssignmentChangeShape(
 				change.previous,
 				stage.id,
-				snapshot,
+				snapshot
 			);
 		}
 		assignmentIds.add(change.assignmentId);
@@ -2952,7 +2949,7 @@ function materializeApprovalTransitionPlanUnchecked(
 			const metadata = event.metadata ? cloneJson(event.metadata) : null;
 			const references = materializeEventReferences(
 				event.references,
-				resolutions,
+				resolutions
 			);
 			return {
 				id: resolveEntityReference(event.reference, resolutions, "event"),
@@ -2974,12 +2971,12 @@ function materializeApprovalTransitionPlanUnchecked(
 				references,
 				persistenceMetadata: serializeApprovalWorkflowEventMetadata(
 					metadata,
-					references,
+					references
 				),
 				idempotencyKey: null,
 				occurredAt: event.occurredAt,
 			};
-		},
+		}
 	);
 	const changes: ApprovalMaterializedTransitionPlan["changes"] = {
 		root: {
@@ -2995,12 +2992,12 @@ function materializeApprovalTransitionPlanUnchecked(
 			const assignmentId = resolveEntityReference(
 				change.reference,
 				resolutions,
-				"assignment",
+				"assignment"
 			);
 			const resulting = materializeAssignment(
 				change.resulting,
 				resolutions,
-				commandActor,
+				commandActor
 			);
 			return change.kind === "update"
 				? {
@@ -3032,7 +3029,7 @@ export function materializeApprovalTransitionPlan(
 		return materializeApprovalTransitionPlanUnchecked(
 			plan,
 			identityResolutions,
-			binding,
+			binding
 		);
 	} catch (error) {
 		if (
@@ -3092,7 +3089,7 @@ export function planWorkflowTransition(
 				snapshot,
 				command,
 				policy.authorization,
-				now,
+				now
 			);
 		}
 		fail("TERMINAL_TRANSITION", {
@@ -3129,7 +3126,7 @@ export function planWorkflowTransition(
 				snapshot,
 				command,
 				now,
-				options.offboardingLineage,
+				options.offboardingLineage
 			);
 		default:
 			return fail("INVALID_COMMAND", { field: "type" });
@@ -3218,7 +3215,7 @@ export function planStageActivation(
 			const allocationKey = assignmentAllocationKey(
 				snapshot,
 				stage.id,
-				sequence,
+				sequence
 			);
 			const created: ApprovalPlannedAssignmentSnapshot = {
 				reference: allocationReference(allocationKey),

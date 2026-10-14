@@ -24,7 +24,8 @@ function expectChildCompleted(result: ReturnType<typeof spawnSync>): void {
 	if (result.error) {
 		throw new Error(
 			`Approval rollout subprocess did not complete: ${result.error.message}`,
-			{ cause: result.error },
+			{ cause: result.error,
+		}
 		);
 	}
 }
@@ -50,7 +51,7 @@ function cli(args: readonly string[]) {
 
 function validCatalog(): ApprovalExpansionCatalog {
 	return structuredClone(
-		APPROVAL_EXPANSION_CONTRACT,
+		APPROVAL_EXPANSION_CONTRACT
 	) as ApprovalExpansionCatalog;
 }
 
@@ -64,10 +65,10 @@ describe("approval workflow rollout CLI", () => {
 
 	it("wires the dedicated workflow contract check into the webapp typecheck", () => {
 		const packageJson = JSON.parse(
-			readFileSync(resolve(webappRoot, "package.json"), "utf8"),
-		) as { scripts?: Record<string, string> };
+			readFileSync(resolve(webappRoot, "package.json"), "utf8")
+		) as { scripts?: Record<string, string>; };
 		expect(packageJson.scripts?.typecheck).toContain(
-			"tsconfig.workflow-contracts.json",
+			"tsconfig.workflow-contracts.json"
 		);
 	});
 
@@ -90,7 +91,7 @@ describe("approval workflow rollout CLI", () => {
 			expect(result.status).not.toBe(0);
 			expect(result.stderr).toMatch(/unknown approval rollout command/i);
 			expect(result.stderr).not.toMatch(
-				/temporal-polyfill|package_path_not_exported/i,
+				/temporal-polyfill|package_path_not_exported/i
 			);
 			expect(result.stderr).not.toMatch(/missing required environment/i);
 		},
@@ -102,10 +103,10 @@ describe("approval workflow rollout CLI", () => {
 		expectChildCompleted(result);
 		expect(result.status).not.toBe(0);
 		expect(result.stderr).toMatch(
-			/missing required environment variable postgres_host/i,
+			/missing required environment variable postgres_host/i
 		);
 		expect(result.stderr).not.toMatch(
-			/temporal-polyfill|package_path_not_exported/i,
+			/temporal-polyfill|package_path_not_exported/i
 		);
 	});
 
@@ -134,7 +135,7 @@ describe("approval workflow rollout CLI", () => {
 			async () => ({
 				db: {
 					transaction: async (
-						callback: (tx: ApprovalTransactionClient) => Promise<void>,
+						callback: (tx: ApprovalTransactionClient) => Promise<void>
 					) => {
 						timeline.push("transaction");
 						await callback({ execute: async () => ({ rows: [] }) });
@@ -226,7 +227,7 @@ describe("approval workflow rollout CLI", () => {
 
 			expect(rejection).not.toBe(notRejected);
 			expect(rejection).toBeUndefined();
-		},
+		}
 	);
 
 	it("rejects with the close error when the command succeeds", async () => {
@@ -243,7 +244,7 @@ describe("approval workflow rollout CLI", () => {
 				async () => ({
 					db: {
 						transaction: async (
-							callback: (tx: ApprovalTransactionClient) => Promise<void>,
+							callback: (tx: ApprovalTransactionClient) => Promise<void>
 						) => callback({ execute: async () => ({ rows: [] }) }),
 					},
 					pool: { end: async () => Promise.reject(new Error("close failed")) },
@@ -276,13 +277,13 @@ describe("approval workflow rollout CLI", () => {
 			evidence: "change-approval-42",
 		});
 		expect(() => parseApprovalWorkflowRolloutCommand(["canonical"])).toThrow(
-			/unknown .*command/i,
+			/unknown .*command/i
 		);
 		expect(() =>
 			parseApprovalWorkflowRolloutCommand([
 				"enter-shadow",
 				"--organization-id",
-				"org-1",
+				"org-1"
 			]),
 		).toThrow(/workflow-type|operator|evidence/i);
 	});
@@ -306,9 +307,9 @@ describe("approval workflow rollout CLI", () => {
 		expect(rendered.sql).toContain("insert into approval_workflow_rollout");
 		expect(rendered.sql).toContain("updated_at");
 		expect(rendered.sql).toContain("cross join");
-		expect(rendered.sql.match(/::approval_workflow_type/g)).toHaveLength(8);
+		expect(rendered.sql.match(/::approval_workflow_type/g)).toHaveLength(9);
 		expect(rendered.sql).toContain(
-			"on conflict (organization_id, workflow_type) do nothing",
+			"on conflict (organization_id, workflow_type) do nothing"
 		);
 		expect(rendered.params).toEqual(
 			expect.arrayContaining([
@@ -404,7 +405,7 @@ describe("approval workflow rollout CLI", () => {
 			query.sql.includes("pg_catalog.pg_class"),
 		);
 		const update = rendered.find((query) =>
-			query.sql.includes("update approval_workflow_rollout"),
+			query.sql.includes("update approval_workflow_rollout")
 		);
 		const updateIndex = rendered.indexOf(update as (typeof rendered)[number]);
 		expect(rolloutReadIndex).toBeGreaterThan(0);
@@ -426,15 +427,15 @@ describe("approval workflow rollout CLI", () => {
 			expect.arrayContaining(["shadow", "legacy", "org-1", "absence"]),
 		);
 		const audit = rendered.find((query) =>
-			query.sql.includes("insert into audit_log"),
+			query.sql.includes("insert into audit_log")
 		);
 		const auditIndex = rendered.indexOf(audit as (typeof rendered)[number]);
 		expect(auditIndex).toBeGreaterThan(updateIndex);
 		expect(
 			rendered.some((query) =>
-				query.sql.includes("approval_workflow_migration_issue"),
-			),
-		).toBe(false);
+				query.sql.includes("approval_workflow_migration_issue")
+			)
+		).toBe(false,);
 		expect(audit?.params).toEqual(
 			expect.arrayContaining([
 				"org-1",

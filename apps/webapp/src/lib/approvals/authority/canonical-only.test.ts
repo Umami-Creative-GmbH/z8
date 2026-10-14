@@ -81,7 +81,7 @@ describe("a canonical-only approval kind", () => {
 
 	it("still inserts an ordinary kind in legacy mode", async () => {
 		const { service, inserts } = gateService("legacy");
-		await acquireApprovalWriteGate(service, { organizationId: "org-1", workflowType: "absence" });
+		await acquireApprovalWriteGate(service, { organizationId: "org-1", workflowType: "absence", });
 		expect(inserts).toEqual([["org-1", "absence", "legacy", "legacy", expect.any(Date)]]);
 	});
 
@@ -111,7 +111,7 @@ describe("a canonical-only approval kind", () => {
 		await createOrganizationApprovalRollouts(database as never, "org-1");
 		const modes = Object.fromEntries(
 			(
-				values as Array<{ workflowType: string; lifecycleMode: string; sideEffectMode: string }>
+				values as Array<{ workflowType: string; lifecycleMode: string; sideEffectMode: string; }>
 			).map((row) => [row.workflowType, [row.lifecycleMode, row.sideEffectMode]]),
 		);
 		expect(modes.compliance_exception).toEqual(["complete", "canonical"]);
@@ -143,7 +143,8 @@ describe("a canonical-only approval kind", () => {
 		}
 		expect(modes.get("compliance_exception")).toEqual(["complete", "canonical"]);
 		expect(modes.get("absence")).toEqual(["legacy", "legacy"]);
-		expect(modes.size).toBe(8);
+		expect(modes.get("absence_change")).toEqual(["complete", "canonical"]);
+		expect(modes.size).toBe(9);
 	});
 
 	it("refuses to enter shadow before touching the database", async () => {
@@ -182,7 +183,7 @@ describe("a canonical-only approval kind", () => {
 					userId: "operator-1",
 					fingerprint: "operator:operator-1",
 				},
-				evidence: { reason: "rollout", recordedAt: parseInstant("2026-10-10T08:00:00Z") },
+				evidence: { reason: "rollout", recordedAt: parseInstant("2026-10-10T08:00:00Z"), },
 			}),
 		).toThrow(/canonical-only/i);
 	});

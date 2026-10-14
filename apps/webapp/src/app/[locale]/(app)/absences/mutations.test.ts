@@ -53,7 +53,7 @@ const mockState = vi.hoisted(() => ({
 // Sick notes go with a cancelled absence (#982): sick-notes.integration.test.ts.
 // The period submission seam (#1062) has its own PostgreSQL suites; here nothing is submitted.
 vi.mock("@/lib/time-tracking/period-submissions/submission-send-back", () => ({
-	sendBackChangedPeriodSubmissions: vi.fn(async () => ({ withdrawn: [], outdated: [] })),
+	sendBackChangedPeriodSubmissions: vi.fn(async () => ({ withdrawn: [], outdated: [], })),
 }));
 // The closed-month check (#762) has its own PostgreSQL suites; here it never refuses.
 vi.mock("@/lib/time-tracking/closed-months/store", async (importOriginal) => ({
@@ -254,33 +254,6 @@ function capture(status: "pending" | "cancelled" = "pending") {
 	};
 }
 
-function approvedChainCapture(chainStatus: "approved" | "cancelled") {
-	return {
-		...capture("pending"),
-		approvalRequest: {
-			id: requestId,
-			status: "approved",
-		},
-		chain: { id: chainId, status: chainStatus },
-		chainRows: [
-			{ id: "stage-1", status: "approved", approvalRequestId: requestId },
-		],
-		sourceSnapshot: { id: absenceId, status: "approved" },
-	};
-}
-
-function approvedDirectCapture(requestPresent: boolean) {
-	return {
-		...capture("pending"),
-		approvalRequest: requestPresent
-			? { id: requestId, status: "approved" }
-			: null,
-		chain: null,
-		chainRows: [],
-		sourceSnapshot: { id: absenceId, status: "approved" },
-	};
-}
-
 function harness(
 	input: {
 		mode?: Mode;
@@ -379,7 +352,7 @@ function harness(
 	];
 	const expectedStageIds = chains.flatMap((chain) =>
 		((chain.stages as Record<string, unknown>[] | undefined) ?? []).flatMap(
-			(stage) => (stage.status === "pending" ? [stage.id as string] : []),
+			(stage) =>stage.status === "pending" ? [stage.id as string] : [],
 		),
 	);
 	const expectedChainIds = chains.map((chain) => chain.id as string);
@@ -434,7 +407,7 @@ function harness(
 							"organization_id",
 							"entity_type",
 							"entity_id",
-							"status",
+							"status"
 						];
 						if (!requiredColumns.every((column) => columns.includes(column))) {
 							return [];
@@ -504,7 +477,7 @@ function harness(
 				findMany: vi
 					.fn()
 					.mockImplementation(async () =>
-						requestRows.map((request) => ({ ...request })),
+						requestRows.map((request) => ({ ...request }))
 					),
 			},
 			approvalChainInstance: { findMany: vi.fn().mockResolvedValue(chains) },
@@ -545,13 +518,12 @@ function harness(
 			loadSnapshot: vi
 				.fn()
 				.mockResolvedValue(
-					workflow(absence.status === "approved" ? "approved" : "pending"),
+					workflow(absence.status === "approved" ? "approved" : "pending")
 				),
 		},
 		compatibilityWriter,
 	};
-	let adapterDelete:
-		| ((input: Record<string, unknown>) => Promise<void>)
+	let adapterDelete: ((input: Record<string, unknown>) => Promise<void>)
 		| undefined;
 	const executeInTransaction = vi.fn().mockImplementation(async (txContext) => {
 		events.push("workflow-cancel");
@@ -664,7 +636,7 @@ describe("absence cancellation", () => {
 		"shadow",
 		"ready",
 		"canonical",
-		"complete",
+		"complete"
 	] as const)("deletes the absence's sick notes before the absence in the %s lifecycle path", async (mode) => {
 		const test = harness({ mode });
 		mockState.deleteSickNotes.mockImplementation(async () => {
@@ -692,14 +664,14 @@ describe("absence cancellation", () => {
 			{ documentId: "note-1", organizationId },
 			{ documentId: "note-2", organizationId },
 		]);
-	});
+	},);
 
 	it.each([
 		"legacy",
 		"shadow",
 		"ready",
 		"canonical",
-		"complete",
+		"complete"
 	] as const)("uses one transaction and the %s lifecycle path", async (mode) => {
 		const test = harness({ mode });
 
@@ -715,7 +687,7 @@ describe("absence cancellation", () => {
 			expect(mockState.captureLegacyState).toHaveBeenCalledTimes(2);
 			expect(test.mirrorLegacyToCanonical).toHaveBeenCalledOnce();
 			expect(test.events.indexOf("mirror")).toBeLessThan(
-				test.events.indexOf("canonical-delete"),
+				test.events.indexOf("canonical-delete")
 			);
 		} else {
 			expect(test.mirrorLegacyToCanonical).not.toHaveBeenCalled();
@@ -727,7 +699,7 @@ describe("absence cancellation", () => {
 			expect(mockState.removeCanonicalInTransaction).toHaveBeenCalledOnce();
 		}
 		expect(test.events.at(-1)).toBe("calendar");
-	});
+	},);
 
 	it.each([
 		[
@@ -826,171 +798,30 @@ describe("absence cancellation", () => {
 		});
 	});
 
-	it.each([
+	it.each(["legacy",
 		"shadow",
-		"ready",
-	] as const)("cancels a chain-backed approved owner absence in the exact %s timeline", async (mode) => {
+		"ready", "canonical", "complete"
+	] as const)(
+		"requires a cancellation request for approved absences in %s mode", async (mode) => {
 		const test = harness({
 			mode,
 			absence: source({ status: "approved", startDate: "2026-07-21" }),
 			requests: [
-				{
-					id: requestId,
-					organizationId,
-					entityType: "absence_entry",
-					entityId: absenceId,
-					status: "approved",
-				},
 			],
 			chains: [
-				{
-					id: chainId,
-					organizationId,
-					entityType: "absence_entry",
-					entityId: absenceId,
-					requesterEmployeeId: employeeId,
-					status: "approved",
-					stages: [
-						{
-							id: "stage-1",
-							organizationId,
-							chainInstanceId: chainId,
-							approvalRequestId: requestId,
-							status: "approved",
-						},
 					],
-				},
-			],
-		});
-		mockState.captureLegacyState
-			.mockReset()
-			.mockImplementationOnce(async () => {
-				test.events.push("capture-before");
-				return approvedChainCapture("approved");
-			})
-			.mockImplementationOnce(async () => {
-				test.events.push("capture-after");
-				return approvedChainCapture("cancelled");
-			});
-
-		expect(
+				}); const result =
 			await mutations.cancelAbsenceRequestForEmployee(absenceId, {
 				id: employeeId,
 				organizationId,
-			}),
-		).toEqual({ success: true });
-		expect(test.events).toEqual([
-			"begin",
-			"gate",
-			"capture-before",
-			"legacy-mutation",
-			`chain-update:${chainId}`,
-			"capture-after",
-			"mirror",
-			"source-delete",
-			"canonical-delete",
-			"commit",
-			"calendar",
-		]);
-		expect(test.requestDeleteReturning).not.toHaveBeenCalled();
-	});
-
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("mirrors an approved direct owner cancellation before deleting source and canonical rows in %s", async (mode) => {
-		const test = harness({
-			mode,
-			absence: source({ status: "approved", startDate: "2026-07-21" }),
-			requests: [
-				{
-					id: requestId,
-					organizationId,
-					entityType: "absence_entry",
-					entityId: absenceId,
-					status: "approved",
-				},
-			],
-			chains: [],
-		});
-		mockState.captureLegacyState
-			.mockReset()
-			.mockImplementationOnce(async () => {
-				test.events.push("capture-before");
-				return approvedDirectCapture(true);
-			})
-			.mockImplementationOnce(async () => {
-				test.events.push("capture-after");
-				return approvedDirectCapture(false);
 			});
-
-		expect(
-			await mutations.cancelAbsenceRequestForEmployee(absenceId, {
-				id: employeeId,
-				organizationId,
-			}),
-		).toEqual({ success: true });
-		expect(test.events).toEqual([
-			"begin",
-			"gate",
-			"capture-before",
-			`request-delete:${requestId}`,
-			"capture-after",
-			"mirror",
-			"source-delete",
-			"canonical-delete",
-			"commit",
-			"calendar",
-		]);
-		expect(test.requestDeleteReturning).toHaveBeenCalledOnce();
-		expect(test.requestRows()).toEqual([]);
-		expect(test.snapshot()).toMatchObject({
-			absencePresent: false,
-			canonicalPresent: false,
-			workflowStatus: "cancelled",
-		});
-	});
-
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("rolls back an approved direct owner cancellation when the %s mirror fails", async (mode) => {
-		const test = harness({
-			mode,
-			absence: source({ status: "approved", startDate: "2026-07-21" }),
-			requests: [
-				{
-					id: requestId,
-					organizationId,
-					entityType: "absence_entry",
-					entityId: absenceId,
-					status: "approved",
-				},
-			],
-			chains: [],
-		});
-		mockState.captureLegacyState
-			.mockReset()
-			.mockResolvedValueOnce(approvedDirectCapture(true))
-			.mockResolvedValueOnce(approvedDirectCapture(false));
-		test.mirrorLegacyToCanonical.mockRejectedValueOnce(
-			new Error("mirror failed"),
-		);
-
-		await expect(
-			mutations.cancelAbsenceRequestForEmployee(absenceId, {
-				id: employeeId,
-				organizationId,
-			}),
-		).resolves.toMatchObject({ success: false });
-		expect(test.committed()).toBe(false);
-		expect(test.snapshot()).toMatchObject({
-			absencePresent: true,
-			canonicalPresent: true,
-			workflowStatus: "pending",
-		});
+		expect(result).toEqual({
+				success: false,
+				error: "Approved absences require a cancellation request",
+		}); expect(test.committed()).toBe(false);
+		expect(test.deleteReturning).not.toHaveBeenCalled();
 		expect(mockState.addCalendarSyncJob).not.toHaveBeenCalled();
-	});
+	},);
 
 	it("allows an organization admin to cancel another employee's pending absence", async () => {
 		const test = harness({
@@ -1056,7 +887,7 @@ describe("absence cancellation", () => {
 				canonicalRecordId,
 				expectedEmployeeId: employeeId,
 				expectedApprovalState: "pending",
-			},
+			}
 		);
 	});
 
@@ -1076,13 +907,13 @@ describe("absence cancellation", () => {
 		const chainEvent = `chain-update:${chainId}`;
 		const requestEvent = `request-delete:${requestId},${secondRequestId}`;
 		expect(test.events).toEqual(
-			expect.arrayContaining([stageEvent, chainEvent, requestEvent]),
+			expect.arrayContaining([stageEvent, chainEvent, requestEvent])
 		);
 		expect(test.events.indexOf(stageEvent)).toBeLessThan(
-			test.events.indexOf(chainEvent),
+			test.events.indexOf(chainEvent)
 		);
 		expect(test.events.indexOf(chainEvent)).toBeLessThan(
-			test.events.indexOf(requestEvent),
+			test.events.indexOf(requestEvent)
 		);
 		expect(test.requestRows()).toEqual([]);
 	});
@@ -1284,7 +1115,7 @@ describe("absence cancellation", () => {
 		]);
 		expect(test.requestRows()).not.toEqual(
 			expect.arrayContaining([
-				expect.objectContaining({ id: activeRequestId }),
+				expect.objectContaining({ id: activeRequestId })
 			]),
 		);
 	});
@@ -1294,7 +1125,7 @@ describe("absence cancellation", () => {
 			instant: "2026-03-29T00:30:00Z",
 			timezone: "Europe/Berlin",
 			startDate: "2026-03-30",
-			expected: true,
+			expected: false,
 		},
 		{
 			instant: "2026-03-29T22:30:00Z",
@@ -1306,13 +1137,13 @@ describe("absence cancellation", () => {
 			instant: "2026-11-01T05:30:00Z",
 			timezone: "America/New_York",
 			startDate: "2026-11-02",
-			expected: true,
+			expected: false,
 		},
 	])("uses organization-local PlainDate at $instant ($timezone)", async ({
 		instant,
 		timezone,
 		startDate,
-		expected,
+		expected
 	}) => {
 		mockState.nowInstant.mockReturnValue(parseInstant(instant));
 		harness({
@@ -1331,16 +1162,16 @@ describe("absence cancellation", () => {
 		expect(result.error).toBe(
 			expected
 				? undefined
-				: "Approved absences can only be cancelled before they start",
+				: "Approved absences require a cancellation request",
 		);
-	});
+	},);
 
 	it.each([
 		{ status: "rejected", owner: true },
 		{ status: "approved", owner: false },
 	])("denies $status cancellation when owner=$owner", async ({
 		status,
-		owner,
+		owner
 	}) => {
 		const actor = owner
 			? undefined
@@ -1392,7 +1223,7 @@ describe("absence cancellation", () => {
 		],
 		[
 			"workflow link",
-			{ workflowRow: { ...workflow(), sourceId: "foreign-absence" } },
+			{ workflowRow: { ...workflow(), sourceId: "foreign-absence" } }
 		],
 		[
 			"canonical record",
@@ -1446,7 +1277,7 @@ describe("absence cancellation", () => {
 
 	it.each([
 		"shadow",
-		"ready",
+		"ready"
 	] as const)("rejects a missing source workflow link in %s before legacy mutation", async (mode) => {
 		const test = harness({
 			mode,
@@ -1463,11 +1294,11 @@ describe("absence cancellation", () => {
 		expect(test.committed()).toBe(false);
 		expect(mockState.captureLegacyState).not.toHaveBeenCalled();
 		expect(test.transactionDb.update).not.toHaveBeenCalled();
-	});
+	},);
 
 	it.each([
 		"shadow",
-		"ready",
+		"ready"
 	] as const)("rolls back %s when observed cancellation workflow mismatches the source link", async (mode) => {
 		const test = harness({ mode });
 		test.mirrorLegacyToCanonical.mockResolvedValueOnce({
@@ -1490,14 +1321,14 @@ describe("absence cancellation", () => {
 		expect(test.committed()).toBe(false);
 		expect(test.deleteReturning).not.toHaveBeenCalled();
 		expect(mockState.removeCanonicalInTransaction).not.toHaveBeenCalled();
-	});
+	},);
 
 	it.each([
 		"capture",
 		"capture-after",
 		"mirror",
 		"source-delete",
-		"canonical-delete",
+		"canonical-delete"
 	] as const)("rolls back and emits no side effects when %s fails", async (failure) => {
 		const test = harness({ mode: "shadow" });
 		if (failure === "capture") {
@@ -1519,7 +1350,7 @@ describe("absence cancellation", () => {
 		}
 		if (failure === "canonical-delete") {
 			mockState.removeCanonicalInTransaction.mockRejectedValue(
-				new Error("canonical"),
+				new Error("canonical")
 			);
 		}
 
@@ -1538,17 +1369,17 @@ describe("absence cancellation", () => {
 		});
 		expect(mockState.addCalendarSyncJob).not.toHaveBeenCalled();
 		expect(mockState.notifyManager).not.toHaveBeenCalled();
-	});
+	},);
 
 	it.each([
 		"transition",
 		"source-delete",
-		"canonical-delete",
+		"canonical-delete"
 	] as const)("rolls back all canonical state when %s fails", async (failure) => {
 		const test = harness({ mode: "canonical" });
 		if (failure === "transition") {
 			test.executeInTransaction.mockRejectedValueOnce(
-				new Error("transition failed"),
+				new Error("transition failed")
 			);
 		}
 		if (failure === "source-delete") {
@@ -1574,7 +1405,7 @@ describe("absence cancellation", () => {
 			workflowStatus: "pending",
 		});
 		expect(mockState.addCalendarSyncJob).not.toHaveBeenCalled();
-	});
+	},);
 
 	it("publishes postcommit effects once for controlled concurrent canonical receipt replay", async () => {
 		const test = harness({ mode: "canonical" });
@@ -1617,33 +1448,6 @@ describe("absence cancellation", () => {
 		expect(mockState.notifyManager).not.toHaveBeenCalled();
 	});
 
-	it("runs approved-self post-commit effects once and treats delivery failures as best effort", async () => {
-		const test = harness({
-			absence: source({ status: "approved", startDate: "2026-07-21" }),
-			requests: [],
-			chains: [],
-		});
-		mockState.findManagerLinks.mockResolvedValue([
-			{ manager: { userId: "manager-user", organizationId } },
-		]);
-		mockState.addCalendarSyncJob.mockRejectedValue(
-			new Error("queue unavailable"),
-		);
-		mockState.notifyManager.mockRejectedValue(
-			new Error("notification unavailable"),
-		);
-
-		const result = await mutations.cancelAbsenceRequestForEmployee(absenceId, {
-			id: employeeId,
-			organizationId,
-		});
-
-		expect(result).toEqual({ success: true });
-		expect(test.committed()).toBe(true);
-		expect(mockState.addCalendarSyncJob).toHaveBeenCalledOnce();
-		expect(mockState.notifyManager).toHaveBeenCalledOnce();
-	});
-
 	it("does not notify managers for pending cancellation", async () => {
 		harness();
 		mockState.findManagerLinks.mockResolvedValue([
@@ -1667,7 +1471,7 @@ describe("absence cancellation", () => {
 
 		expect(mockState.getCurrentEmployee).toHaveBeenCalledOnce();
 		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith(
-			organizationId,
+			organizationId
 		);
 		expect(result).toEqual({ success: false, error: "billing_required" });
 		expect(test.withTransaction).not.toHaveBeenCalled();
@@ -1682,7 +1486,7 @@ describe("absence cancellation", () => {
 
 		const result = await mutations.cancelAbsenceRequestForEmployee(
 			absenceId,
-			expectedEmployee,
+			expectedEmployee
 		);
 
 		expect(mockState.getCurrentEmployee).toHaveBeenCalledOnce();
@@ -1692,7 +1496,7 @@ describe("absence cancellation", () => {
 		});
 		expect(mockState.requireBillingForMutation).not.toHaveBeenCalled();
 		expect(test.withTransaction).not.toHaveBeenCalled();
-	});
+	},);
 
 	it("keeps the public response contract and contains no Luxon cancellation dependency", async () => {
 		harness();
@@ -1702,7 +1506,7 @@ describe("absence cancellation", () => {
 		});
 		const sourceText = await readFile(
 			new URL("./mutations.ts", import.meta.url),
-			"utf8",
+			"utf8"
 		);
 
 		expect(result).toEqual({ success: true });

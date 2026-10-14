@@ -45,6 +45,7 @@ vi.mock("@/lib/approvals/inbox/period-submission-read", () => ({
 
 vi.mock("@/db", () => ({
 	db: {
+		execute: vi.fn(async () => ({ rows: [] })),
 		query: {
 			approvalRequest: {
 				findFirst: approvalRequestFindFirstMock,
@@ -171,7 +172,8 @@ describe("approval inbox decision service", () => {
 		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
 			"period-1",
 			"manager-1",
-			{ approvalRequestId: "assignment-1" },
+			{ approvalRequestId: "assignment-1",
+		}
 		);
 		expect(loadOrdinaryCanonicalApprovalsMock).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -255,7 +257,8 @@ describe("approval inbox decision service", () => {
 		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
 			"period-1",
 			"manager-1",
-			{ approvalRequestId: "assignment-1" },
+			{ approvalRequestId: "assignment-1",
+		}
 		);
 	});
 
@@ -446,7 +449,8 @@ describe("approval inbox decision service", () => {
 		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
 			"period-1",
 			"manager-1",
-			{ approvalRequestId: "assignment-1" },
+			{ approvalRequestId: "assignment-1",
+		}
 		);
 	});
 	it("returns the same generic not-found error for missing and inaccessible single IDs", async () => {
@@ -470,7 +474,7 @@ describe("approval inbox decision service", () => {
 
 		const missing = await decide("approval-missing").catch((error) => error);
 		const inaccessible = await decide("approval-inaccessible").catch(
-			(error) => error,
+			(error) => error
 		);
 
 		expect(missing).toBeInstanceOf(NotFoundError);
@@ -677,7 +681,7 @@ describe("approval inbox decision service", () => {
 			"Missing documentation",
 			{
 				approvalRequestId: "approval-1",
-			},
+			}
 		);
 	});
 
@@ -711,7 +715,7 @@ describe("approval inbox decision service", () => {
 			{
 				approvalRequestId: "approval-1",
 				allowAnyApprover: true,
-			},
+			}
 		);
 	});
 
@@ -963,7 +967,7 @@ describe("approval inbox decision service", () => {
 			const result = await bulkDecideApprovalInboxItemsFromRequests({
 				requests: [
 					absentApproversRequest,
-					{ ...absentApproversRequest, id: "claim-1", entityType: "travel_expense_claim" },
+					{ ...absentApproversRequest, id: "claim-1", entityType: "travel_expense_claim", },
 				],
 				actorEmployeeId: "deputy-1",
 				action: "approve",
@@ -1047,7 +1051,7 @@ describe("approval inbox decision service", () => {
 			{
 				approvalRequestId: "approval-1",
 				allowOrganizationWideApprover: true,
-			},
+			}
 		);
 	});
 
@@ -1394,7 +1398,7 @@ describe("approval inbox decision service", () => {
 					type: "absence_entry",
 					approve: vi.fn(() =>
 						Effect.fail(
-							new Error("database password connection string leaked"),
+							new Error("database password connection string leaked")
 						),
 					),
 					reject: vi.fn(),
@@ -1451,7 +1455,7 @@ describe("approval inbox decision service", () => {
 	])("maps translated canonical $code errors to a specific bulk failure", async ({
 		error,
 		expectedCode,
-		expectedMessage,
+		expectedMessage
 	}) => {
 		const result = await bulkDecideApprovalInboxItemsFromRequests({
 			requests: [
@@ -1484,5 +1488,5 @@ describe("approval inbox decision service", () => {
 				},
 			],
 		});
-	});
+	},);
 });

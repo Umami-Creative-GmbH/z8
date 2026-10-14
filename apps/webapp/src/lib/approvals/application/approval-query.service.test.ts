@@ -363,6 +363,7 @@ describe("ApprovalQueryService", () => {
 
 		expect(counts).toEqual({
 			absence_entry: 3,
+			absence_change_request: 0,
 			time_entry: 1,
 			shift_request: 0,
 			travel_expense_claim: 0,
@@ -458,7 +459,7 @@ describe("ApprovalQueryService", () => {
 					organizationId: "org-1",
 					status: "pending",
 					eligibleApprovalScopes: [
-						{ requesterEmployeeId: "eligible-requester", eligibleApproverIds: ["manager-2"] },
+						{ requesterEmployeeId: "eligible-requester", eligibleApproverIds: ["manager-2"], },
 					],
 					limit: 10,
 				});

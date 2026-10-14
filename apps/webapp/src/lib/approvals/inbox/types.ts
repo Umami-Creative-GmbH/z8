@@ -7,6 +7,7 @@ import type {
 
 export const SUPPORTED_APPROVAL_INBOX_TYPES = [
 	"absence_entry",
+	"absence_change_request",
 	"time_entry",
 	"travel_expense_claim",
 	"travel_expense_report",
@@ -208,7 +209,7 @@ export type ApprovalInboxDetailSection =
 	| {
 			type: "receipt_exception_acceptance";
 			title: string | ApprovalInboxLocalizedText;
-			items: Array<{ itemId: string; label: string | ApprovalInboxLocalizedText; reason: string }>;
+			items: Array<{ itemId: string; label: string | ApprovalInboxLocalizedText; reason: string; }>;
 	  };
 
 export interface ApprovalInboxDetailResult {
@@ -254,8 +255,7 @@ export interface ApprovalInboxDecisionSuccess {
 
 export interface ApprovalInboxDecisionFailure {
 	id: string;
-	code:
-		| "stale"
+	code: "stale"
 		| "forbidden"
 		| "not_found"
 		| "unsupported"
