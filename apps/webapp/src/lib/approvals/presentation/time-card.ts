@@ -38,7 +38,7 @@ import {
 import { compareTimeCorrectionWithSubmittedRevision } from "../evidence/time-correction-evidence";
 import { compareWorkPeriodWithSubmittedRevision } from "../evidence/work-period-evidence";
 import type { WorkPeriodEndpointFacts } from "../evidence/work-period-facts";
-import { submittedVehicleUseWarnings } from "../server/time-correction-vehicle-use-warnings";
+import type { submittedVehicleUseWarnings as SubmittedVehicleUseWarnings } from "../server/time-correction-vehicle-use-warnings";
 import type { ApprovalDatabase } from "../server/types";
 import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
 import type {
@@ -50,6 +50,20 @@ import type {
 } from "./bound-card";
 import { approvalReviewUrl } from "./review-navigation";
 import { vehicleUseWarningBotText } from "./vehicle-use-warning-text";
+
+/**
+ * The vehicle use plausibility reads are `server-only`. Loading them on first
+ * use keeps the approval cards, and so the escalation processors, importable in
+ * a plain Node worker (#1188).
+ */
+export async function submittedVehicleUseWarnings(
+	...args: Parameters<typeof SubmittedVehicleUseWarnings>
+): ReturnType<typeof SubmittedVehicleUseWarnings> {
+	const { submittedVehicleUseWarnings: load } = await import(
+		"../server/time-correction-vehicle-use-warnings"
+	);
+	return load(...args);
+}
 
 /**
  * An endpoint's full local date and time in the offset captured with that
