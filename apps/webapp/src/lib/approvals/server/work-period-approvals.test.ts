@@ -72,6 +72,27 @@ vi.mock("../escalation/legacy-transfer-store", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/notifications/triggers", () => notificationMocks);
+// Work records decides the approval state on both records (#1227). These
+// mock-database harnesses see the change the finalizer asks for, and the fake
+// writes its outline (both approval states) through the harness database; a
+// write that misses its row comes back as a stale outcome. The real writes,
+// record agreement and effects are verified against PostgreSQL
+// (work-records/amend.integration.test.ts, clocking.policy-break-split).
+const workRecordChanges = vi.hoisted(() => [] as Array<Record<string, unknown>>);
+vi.mock("@/lib/time-tracking/finalizer-employee-locks", () => ({
+	holdFinalizerEmployeeLocks: async () => undefined,
+}));
+vi.mock("@/lib/time-tracking/work-records", async (importOriginal) => {
+	const fake = await import("./__tests__/fake-work-records");
+	return {
+		...(await importOriginal<typeof import("@/lib/time-tracking/work-records")>()),
+		workRecordScopeForFinalizer: fake.fakeFinalizerScope,
+		applyWorkRecordChange: async (scope: { db: object }, change: never) => {
+			workRecordChanges.push(change);
+			return fake.fakeApprovalDecision(scope.db, change);
+		},
+	};
+});
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
 	applyPolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.enforce,
 }));
@@ -153,6 +174,7 @@ vi.mock("../workflow/transition-engine", async (importOriginal) => ({
 beforeEach(() => {
 	decisionRouting.kind = "manual_time_submission";
 	decisionRouting.ownerEmployeeId = "employee-1";
+	workRecordChanges.length = 0;
 });
 
 const workPeriodApprovals = await import("./work-period-approvals");
@@ -1634,7 +1656,7 @@ describe("stable ordinary work-period decisions", () => {
 });
 
 describe("ordinary stable-target production composition", () => {
-	it("reconciles surcharge and marks work balance once from the exact local date", async () => {
+	it("reconciles surcharges once after commit; the decision marked the balance in its transaction", async () => {
 		const reconcileSurcharges = vi.fn().mockResolvedValue(undefined);
 		const markWorkBalanceDirty = vi.fn().mockResolvedValue(undefined);
 		const reconcile =
@@ -1655,12 +1677,32 @@ describe("ordinary stable-target production composition", () => {
 
 		expect(reconcileSurcharges).toHaveBeenCalledOnce();
 		expect(reconcileSurcharges).toHaveBeenCalledWith(maintenance);
-		expect(markWorkBalanceDirty).toHaveBeenCalledOnce();
-		expect(markWorkBalanceDirty).toHaveBeenCalledWith({
-			organizationId: "org-1",
-			employeeId: "employee-1",
-			dirtyFromDate: "2026-07-13",
-		});
+		// Work records marks the balance inside the decision's transaction (#1227).
+		expect(markWorkBalanceDirty).not.toHaveBeenCalled();
+	});
+
+	it("decides both records' approval state through work records", async () => {
+		const dbService = createFinalizerDbService();
+
+		await finalize(dbService);
+
+		expect(workRecordChanges).toEqual([
+			{
+				kind: "amend",
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				expected: {
+					workPeriodId: "period-1",
+					revision: period.graphRevision,
+					clockInId: period.clockInId,
+					clockOutId: period.clockOutId,
+					startAt: parseInstant(period.startTime.toISOString()),
+					endAt: parseInstant(period.endTime.toISOString()),
+				},
+				approval: "approved",
+				actorUserId: "manager-user-1",
+			},
+		]);
 	});
 
 	it.each([
@@ -3384,17 +3426,18 @@ describe("ordinary work-period approval finalizer", () => {
 		expect(dbService.insertedValues).toHaveLength(0);
 	});
 
-	it("keeps every source and canonical mutation organization and employee scoped", () => {
+	it("keeps every source read organization and employee scoped and writes completed work only through work records", () => {
 		expect(source).toContain(
 			"eq(workPeriod.organizationId, approval.organizationId)",
 		);
 		expect(source).toContain("eq(workPeriod.employeeId, requestedBy)");
-		expect(source).toContain("eq(workPeriod.isActive, false)");
 		expect(source).toContain(
 			"eq(timeRecord.organizationId, input.organizationId)",
 		);
-		expect(source).toContain("eq(timeRecord.employeeId, record.employeeId)");
 		expect(source).toContain('eq(timeRecord.recordKind, "work")');
+		// #1227: the decision is an amendment of both records' approval state.
+		expect(source).not.toContain(".update(timeRecord)");
+		expect(source).toContain("approval: terminalStatus");
 	});
 
 	it("never locates or mutates correction entries", () => {

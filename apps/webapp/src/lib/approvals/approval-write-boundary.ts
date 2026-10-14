@@ -277,16 +277,19 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			semantic: "inactive_correction",
 			table: "time_entry",
 		},
+		// Completed work is decided through work records (#1227); a correction of live
+		// work (Clocking's, ADR 0002) keeps these writes, the open canonical record some
+		// history gave live work included.
 		{
-			columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
-			functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
+			columns: ["is_superseded", "superseded_by_id"],
+			functionName: "applyLiveWorkCorrection",
 			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
+			semantic: "correction_lifecycle",
+			table: "time_entry",
 		},
 		{
-			columns: ["duration_minutes", "end_at", "start_at"],
-			functionName: "syncCanonicalWorkCorrection",
+			columns: ["start_at"],
+			functionName: "applyLiveWorkCorrection",
 			operation: "update",
 			semantic: "ordinary_finalization",
 			table: "time_record",
@@ -374,19 +377,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			functionName: "bindPreCanonicalOrdinaryWorkflow",
 			operation: "update",
 			table: "work_period",
-		},
-		{
-			columns: ["approval_status", "pending_changes"],
-			functionName: "finalizeOrdinaryWorkPeriodTerminal",
-			operation: "update",
-			table: "work_period",
-		},
-		{
-			columns: ["approval_state"],
-			functionName: "finalizeOrdinaryWorkPeriodTerminal",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
 		},
 	],
 	"src/lib/time-tracking/record-imported-work.ts": [
@@ -513,13 +503,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "work_period",
 		},
 	],
-	// Work records (ADR 0010, #1225) amends the times and work attribution of one completed
-	// period and its canonical work record together, compare-and-set against the locked
-	// pair, in both admissions. Direct amendments, attribution changes, vehicle-use
-	// completion, the admin time edit and the direct corrections amend through it (#1226).
+	// Work records (ADR 0010, #1225) amends the times, work attribution and approval state
+	// of one completed period and its canonical work record together, compare-and-set
+	// against the locked pair, in both admissions. Direct amendments, attribution changes,
+	// vehicle-use completion, the admin time edit and the direct corrections amend through
+	// it (#1226), and so do the Approvals finalizers' decisions (#1227).
 	"src/lib/time-tracking/work-records/amend.ts": [
 		{
-			columns: ["duration_minutes", "end_at", "start_at"],
+			columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
 			functionName: "writeAmendedPair",
 			operation: "update",
 			semantic: "ordinary_finalization",
@@ -543,10 +534,12 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		},
 		{
 			columns: [
+				"approval_status",
 				"clock_in_id",
 				"clock_out_id",
 				"duration_minutes",
 				"end_time",
+				"pending_changes",
 				"start_time",
 			],
 			functionName: "writeAmendedPair",
@@ -561,6 +554,30 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			operation: "update",
 			semantic: "correction_lifecycle",
 			table: "time_entry",
+		},
+	],
+	// Work records (ADR 0010, #1227) soft-deletes completed work for an approved business
+	// deletion: both records shrink to the adopted markers' zero-length sentinel and the
+	// work period is marked deleted, compare-and-set against the locked pair.
+	"src/lib/time-tracking/work-records/delete.ts": [
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "deleteWorkRecord",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "deleteWorkRecord",
+			operation: "update",
+			table: "work_period",
 		},
 	],
 	// Work records (ADR 0010, #1226) attaches a missing canonical work record and repairs
@@ -1015,17 +1032,11 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			uncertainty: "dynamic_payload",
 		},
 	],
+	// A correction of live work (#1227: completed work goes through work records).
 	"src/lib/approvals/server/time-correction-approvals.ts": [
 		{
-			columns: [
-				"approval_status",
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
-			],
-			functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
+			columns: ["clock_in_id", "start_time"],
+			functionName: "applyLiveWorkCorrection",
 			operation: "update",
 			table: "work_period",
 		},

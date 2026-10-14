@@ -146,6 +146,9 @@ const { cancelMyTimeCorrectionRequest } = await import("../../my-requests/action
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { db } = await import("@/db");
+const { expectRecordAgreement } = await import(
+	"@/lib/time-tracking/work-records/__tests__/expect-record-agreement"
+);
 
 const ids = {
 	organization: "t301-correction-org",
@@ -889,6 +892,150 @@ describe("approval-based correction lifecycles on PostgreSQL", () => {
 
 		// Deleted work no longer occupies its interval.
 		await recordWork(at("2026-07-22T08:30:00Z"), at("2026-07-22T09:30:00Z"));
+	});
+
+	// #1227: the finalizer decides through work records in both admissions.
+	describe.each([
+		["append", "active"],
+		["legacy", "inactive"],
+	] as const)("finalization through work records in %s admission (#1227)", (_admission, mode) => {
+		async function workPair(periodId: string) {
+			const { rows } = await admin.query(
+				`select wp.start_time, wp.end_time, wp.duration_minutes, wp.work_location_type,
+				        wp.approval_status, wp.graph_revision, wp.deleted_at,
+				        tr.start_at as record_start, tr.end_at as record_end,
+				        tr.duration_minutes as record_duration, tr.approval_state,
+				        trw.work_location_type as record_location
+				 from work_period wp
+				 join time_record tr on tr.id = wp.canonical_record_id
+				 join time_record_work trw on trw.record_id = tr.id
+				 where wp.id = $1`,
+				[periodId],
+			);
+			return only(rows);
+		}
+
+		async function requestTimesAndLocation(workPeriodId: string) {
+			actAs(ids.requesterUser);
+			return requestTimeCorrection({
+				workPeriodId,
+				submissionId: randomUUID(),
+				newClockInDate: "2026-07-22",
+				newClockInTime: "08:30",
+				newClockOutDate: "2026-07-22",
+				newClockOutTime: "10:00",
+				reason: "Worked from home after the dentist",
+				workLocationType: "home",
+				workCategoryId: null,
+			});
+		}
+
+		beforeEach(async () => {
+			await setAdmission(mode);
+		});
+
+		it("approves corrected times and work location on both records, in agreement", async () => {
+			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+			await expect(requestTimesAndLocation(work.id)).resolves.toMatchObject({ success: true });
+			const submitted = await workPair(work.id);
+			await admin.query(
+				"delete from employee_work_balance where organization_id = $1 and employee_id = $2",
+				[ids.organization, ids.requester],
+			);
+
+			await expect(approve(await pendingApprovalId(work.id))).resolves.toBeDefined();
+
+			await expectRecordAgreement({ organizationId: ids.organization });
+			expect(await workPair(work.id)).toEqual({
+				start_time: new Date("2026-07-22T08:30:00Z"),
+				end_time: new Date("2026-07-22T10:00:00Z"),
+				duration_minutes: 90,
+				work_location_type: "home",
+				approval_status: "approved",
+				// Legacy work advances its revision too (ADR 0010).
+				graph_revision: submitted.graph_revision + 1,
+				deleted_at: null,
+				record_start: new Date("2026-07-22T08:30:00Z"),
+				record_end: new Date("2026-07-22T10:00:00Z"),
+				record_duration: 90,
+				approval_state: "approved",
+				record_location: "home",
+			});
+			// The balance is marked inside the decision's transaction.
+			const { rows: balances } = await admin.query(
+				`select is_dirty, dirty_from_date::text from employee_work_balance
+				 where organization_id = $1 and employee_id = $2`,
+				[ids.organization, ids.requester],
+			);
+			expect(only(balances)).toEqual({ is_dirty: true, dirty_from_date: "2026-07-22" });
+		});
+
+		it("rejects leaving both records as they were, in agreement", async () => {
+			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+			await expect(requestTimesAndLocation(work.id)).resolves.toMatchObject({ success: true });
+			const submitted = await workPair(work.id);
+
+			await expect(reject(await pendingApprovalId(work.id))).resolves.toBeDefined();
+
+			await expectRecordAgreement({ organizationId: ids.organization });
+			expect(await workPair(work.id)).toMatchObject({
+				start_time: submitted.start_time,
+				work_location_type: submitted.work_location_type,
+				record_start: submitted.record_start,
+				record_location: submitted.record_location,
+			});
+		});
+
+		it("approves a business deletion as a soft delete of both records", async () => {
+			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+			actAs(ids.requesterUser);
+			await expect(
+				requestTimeEntryDeletion({
+					workPeriodId: work.id,
+					submissionId: randomUUID(),
+					reason: "Recorded by mistake",
+				}),
+			).resolves.toMatchObject({ success: true });
+			const submitted = await workPair(work.id);
+
+			await expect(approve(await pendingApprovalId(work.id))).resolves.toBeDefined();
+
+			const deleted = await workPair(work.id);
+			expect(deleted.deleted_at).not.toBeNull();
+			expect(deleted).toMatchObject({
+				duration_minutes: 0,
+				record_duration: 0,
+				graph_revision: submitted.graph_revision + 1,
+				approval_status: "approved",
+				approval_state: "approved",
+			});
+			expect(deleted.record_start).toEqual(deleted.start_time);
+			expect(deleted.record_end).toEqual(deleted.end_time);
+			expect(deleted.start_time).toEqual(deleted.end_time);
+			await expectRecordAgreement({ organizationId: ids.organization });
+		});
+
+		it("refuses to finalize over a pair that disagrees beyond the tolerated drift, changing nothing", async () => {
+			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+			await expect(requestTimesAndLocation(work.id)).resolves.toMatchObject({ success: true });
+			// Only the canonical record books a project: the full agreement rule refuses it.
+			const projectId = randomUUID();
+			await admin.query(
+				`insert into project (id, organization_id, name, status, is_active, created_by, updated_at)
+				 values ($1, $2, 'Stray project', 'active', true, $3, now())`,
+				[projectId, ids.organization, ids.adminUser],
+			);
+			await admin.query(
+				`insert into time_record_allocation (organization_id, record_id, allocation_kind, project_id, weight_percent)
+				 select organization_id, canonical_record_id, 'project', $2, 100 from work_period where id = $1`,
+				[work.id, projectId],
+			);
+			const approvalId = await pendingApprovalId(work.id);
+			const committed = await snapshot();
+
+			await expect(approve(approvalId)).rejects.toBeDefined();
+			expect(await snapshot()).toEqual(committed);
+		});
 	});
 
 	it("refuses an approval whose interval became occupied, changing nothing", async () => {

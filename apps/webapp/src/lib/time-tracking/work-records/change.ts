@@ -17,6 +17,7 @@ import type { WorkVehicleUseChangeRefusalCode } from "../vehicle-use/work-vehicl
 import type { WorkOccupant } from "../work-occupancy";
 import type { AmendWorkRecord } from "./amend-change";
 import type { CreateWorkRecord } from "./create-plan";
+import type { DeleteWorkRecord } from "./delete-change";
 import type { DivideByOwedBreak } from "./owed-break";
 import type { RecordAgreementFacet } from "./record-agreement";
 import type { AttachWorkRecord, RepairWorkRecord } from "./repair-change";
@@ -103,7 +104,8 @@ export type WorkRecordChange =
 	| AmendWorkRecord
 	| CreateWorkRecord
 	| AttachWorkRecord
-	| RepairWorkRecord;
+	| RepairWorkRecord
+	| DeleteWorkRecord;
 
 /** Why a change was not made. Nothing is written for any of them. */
 export type WorkRecordRefusal =
