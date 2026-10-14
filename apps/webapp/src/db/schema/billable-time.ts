@@ -131,7 +131,7 @@ export const billableRate = pgTable(
 /**
  * Cost rates (#899): an employee's fully loaded internal cost per hour, in the
  * organization's billable currency, for margin. Any contract type may have
- * one. Separate from the wage (`employee_rate_history`, employment terms):
+ * one. Separate from the wage (employment terms, Organization ADR 0002):
  * neither ever changes the other.
  *
  * Periods are half-open calendar-date ranges `[effective_from, effective_to)`

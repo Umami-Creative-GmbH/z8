@@ -480,12 +480,6 @@ describe("org-admin settings route access", () => {
 				"utf8",
 			),
 		);
-		const rateMutationsSource = stripComments(
-			readTestText(
-				join(SETTINGS_ROOT, "employees/rate-mutations.actions.ts"),
-				"utf8",
-			),
-		);
 		const skillsActionsSource = stripComments(
 			readTestText(join(SETTINGS_ROOT, "skills/actions.ts"), "utf8"),
 		);
@@ -495,14 +489,6 @@ describe("org-admin settings route access", () => {
 		).toBe(false);
 		expect(
 			employeeMutationsSource.includes(
-				"ensureSettingsActorCanAccessEmployeeTarget(",
-			),
-		).toBe(true);
-		expect(rateMutationsSource.includes("requireAdmin(currentEmployee")).toBe(
-			false,
-		);
-		expect(
-			rateMutationsSource.includes(
 				"ensureSettingsActorCanAccessEmployeeTarget(",
 			),
 		).toBe(true);

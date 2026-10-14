@@ -1,4 +1,13 @@
-import { foreignKey, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	foreignKey,
+	index,
+	integer,
+	numeric,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { currentTimestamp } from "./timestamp";
 
 import { organization, user } from "../auth-schema";
@@ -33,7 +42,8 @@ export const employeeEmploymentHistory = pgTable(
 		probationEndsOn: timestamp("probation_ends_on", { mode: "date" }),
 		workModel: workModelEnum("work_model").default("onsite").notNull(),
 		workPolicyId: uuid("work_policy_id").references(() => workPolicy.id, { onDelete: "set null" }),
-		hourlyRate: text("hourly_rate"),
+		/** The hourly wage of hourly terms; fixed terms carry none. */
+		hourlyRate: numeric("hourly_rate", { precision: 10, scale: 2, mode: "number" }),
 		currency: text("currency").default("EUR").notNull(),
 		changeReason: text("change_reason"),
 		reviewState: employmentReviewStateEnum("review_state").default("draft").notNull(),

@@ -1,16 +1,11 @@
 "use server";
 
-import { and, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { z } from "zod";
 import { invitation, user } from "@/db/auth-schema";
-import {
-	employee,
-	employeeInvitationDraft,
-	employeeRateHistory,
-	team,
-} from "@/db/schema";
+import { employee, employeeInvitationDraft, team } from "@/db/schema";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import {
 	acquireEmployeeIdentityLock,
@@ -23,6 +18,7 @@ import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { ManagerService } from "@/lib/effect/services/manager.service";
+import { writeFirstEmploymentTerms } from "@/lib/employment-history/first-terms";
 import { createLogger } from "@/lib/logger";
 import {
 	keepCustomFieldRefusal,
@@ -34,6 +30,7 @@ import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/ap
 import {
 	type AssignManagers,
 	assignManagersSchema,
+	type ContractType,
 	type CreateEmployee,
 	createEmployeeSchema,
 	type PersonalInformation,
@@ -43,6 +40,7 @@ import {
 	updateEmployeeInvitationDraftSchema,
 	updateEmployeeSchema,
 } from "@/lib/validations/employee";
+import { hourlyWageSchema } from "@/lib/validations/employment-history";
 import {
 	markEmployeeWorkBalanceDirty,
 	requestEmployeeWorkBalanceFullRebuild,
@@ -62,11 +60,29 @@ import {
 } from "./employee-action-utils";
 import { buildEligibleInvitationDraftPredicate } from "./employee-invitation-draft-eligibility";
 import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
+import { keepTermsRefusal, markContractWorkBalanceDirty } from "./employment-history-actions";
 
 const logger = createLogger("EmployeeActions");
 const employeeIdSchema = z.uuid("Invalid employee ID");
 const invitationCancellationFailureMessage =
 	"The pending invitation could not be canceled. The employee draft was kept.";
+
+/** An hourly employee's wage, as employment terms hold it; null otherwise. */
+function parseFirstTermsWage(
+	contractType: ContractType,
+	hourlyRate: string | null | undefined,
+): Effect.Effect<number | null, ValidationError> {
+	if (contractType !== "hourly" || !hourlyRate) return Effect.succeed(null);
+	const parsed = hourlyWageSchema.safeParse(hourlyRate);
+	return parsed.success
+		? Effect.succeed(parsed.data)
+		: Effect.fail(
+				new ValidationError({
+					message: parsed.error.issues[0]?.message ?? "Invalid hourly rate",
+					field: "hourlyRate",
+				}),
+			);
+}
 
 export async function createEmployeeAction(
 	data: CreateEmployee,
@@ -120,9 +136,13 @@ export async function createEmployeeAction(
 					);
 				}
 
-				const hourlyRateValue = parseHourlyRate(validatedData.hourlyRate);
+				const contractType = validatedData.contractType || "fixed";
+				const hourlyRate = yield* parseFirstTermsWage(
+					contractType,
+					validatedData.hourlyRate,
+				);
 
-				const [newEmployee] = yield* dbService
+				const { newEmployee, firstTerms } = yield* dbService
 					.query("createEmployee", () =>
 						// A new employee row gives the user an employee role and team in
 						// the organization: an absent-row insertion under their protection.
@@ -131,8 +151,8 @@ export async function createEmployeeAction(
 								organizationId: validatedData.organizationId,
 								userIds: [validatedData.userId],
 							},
-							(tx) =>
-								tx
+							async (tx) => {
+								const [inserted] = await tx
 									.insert(employee)
 									.values({
 										userId: validatedData.userId,
@@ -146,42 +166,47 @@ export async function createEmployeeAction(
 										startDate: validatedData.startDate || null,
 										endDate: validatedData.endDate || null,
 										isActive: true,
-										contractType: validatedData.contractType || "fixed",
-										currentHourlyRate: hourlyRateValue?.toString() || null,
+										contractType,
 									})
-									.returning(),
+									.returning();
+								// The wage lives in employment terms (Organization ADR 0002):
+								// an hourly employee starts with confirmed terms, and
+								// without them no employee is created.
+								const terms = await writeFirstEmploymentTerms(tx, {
+									organizationId: validatedData.organizationId,
+									employeeId: inserted.id,
+									actorUserId: session.user.id,
+									contractType,
+									hourlyRate,
+									startDate: validatedData.startDate ?? null,
+								});
+								return { newEmployee: inserted, firstTerms: terms };
+							},
 							dbService.db,
 						),
 					)
 					.pipe(
-						Effect.mapError((error) =>
-							isEmployeeIdentityConflict(error)
-								? new ValidationError({
-										message:
-											"Employee already exists for this user in this organization",
-										field: "userId",
-									})
-								: error,
-						),
+						Effect.mapError((error) => {
+							if (isEmployeeIdentityConflict(error)) {
+								return new ValidationError({
+									message:
+										"Employee already exists for this user in this organization",
+									field: "userId",
+								});
+							}
+							// Keep the terms refusal for the user (D8).
+							return keepTermsRefusal(error);
+						}),
 					);
 
-				if (
-					validatedData.contractType === "hourly" &&
-					validatedData.hourlyRate &&
-					hourlyRateValue
-				) {
-					yield* dbService.query("createInitialRateHistory", async () => {
-						await dbService.db.insert(employeeRateHistory).values({
+				if (firstTerms) {
+					yield* Effect.promise(() =>
+						markContractWorkBalanceDirty(dbService.db, {
 							employeeId: newEmployee.id,
-							organizationId: validatedData.organizationId,
-							hourlyRate: hourlyRateValue.toString(),
-							currency: "EUR",
-							effectiveFrom: new Date(),
-							effectiveTo: null,
-							reason: "Initial rate",
-							createdBy: session.user.id,
-						});
-					});
+							organizationId: newEmployee.organizationId,
+							validFrom: firstTerms.validFrom,
+						}),
+					);
 				}
 
 				logger.info(
@@ -240,17 +265,10 @@ export async function updateEmployeeAction(
 
 				const scopedData: UpdateEmployee = validatedData;
 
-				const newHourlyRate = parseHourlyRate(
-					"hourlyRate" in scopedData
-						? (scopedData.hourlyRate as string | null | undefined)
-						: undefined,
-				);
-				const currentRate = parseHourlyRate(targetEmployee.currentHourlyRate);
-
-				const { hourlyRate: _hourlyRate, ...updateData } = scopedData;
+				// Contract type and wage change only through employment terms
+				// (Organization ADR 0002); the schema carries neither.
 				const updatePayload = {
-					...updateData,
-					currentHourlyRate: newHourlyRate?.toString() || null,
+					...scopedData,
 					updatedAt: currentTimestamp(),
 				};
 
@@ -367,50 +385,6 @@ export async function updateEmployeeAction(
 							}),
 						);
 					}
-				}
-
-				const effectiveContractType =
-					("contractType" in scopedData
-						? scopedData.contractType
-						: undefined) ?? targetEmployee.contractType;
-				if (
-					effectiveContractType === "hourly" &&
-					newHourlyRate !== null &&
-					newHourlyRate !== currentRate
-				) {
-					yield* dbService.query("closeActiveRateHistory", async () => {
-						await dbService.db
-							.update(employeeRateHistory)
-							.set({ effectiveTo: new Date() })
-							.where(
-								and(
-									eq(employeeRateHistory.employeeId, employeeId),
-									isNull(employeeRateHistory.effectiveTo),
-								),
-							);
-					});
-
-					yield* dbService.query("createRateHistoryEntry", async () => {
-						await dbService.db.insert(employeeRateHistory).values({
-							employeeId,
-							organizationId: targetEmployee.organizationId,
-							hourlyRate: newHourlyRate.toString(),
-							currency: "EUR",
-							effectiveFrom: new Date(),
-							effectiveTo: null,
-							reason: "Rate updated",
-							createdBy: session.user.id,
-						});
-					});
-
-					logger.info(
-						{
-							employeeId,
-							previousRate: currentRate,
-							newRate: newHourlyRate,
-						},
-						"Employee rate history created",
-					);
 				}
 
 				logger.info({ employeeId }, "Employee updated successfully");

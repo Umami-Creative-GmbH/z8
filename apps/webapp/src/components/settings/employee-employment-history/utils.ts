@@ -1,5 +1,8 @@
 import { DateTime } from "luxon";
-import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
+import {
+	hourlyWageFromForm,
+	type UpsertEmploymentHistory,
+} from "@/lib/validations/employment-history";
 import type { EmploymentHistoryEntry, EmploymentHistoryPeriod, FormValues } from "./types";
 
 export const defaultFormValues: FormValues = {
@@ -37,7 +40,7 @@ export function toEmploymentHistoryPayload(value: FormValues): UpsertEmploymentH
 		probationEndsOn: value.probationEndsOn ? dateInputToDate(value.probationEndsOn) : null,
 		workModel: value.workModel,
 		workPolicyId: value.workPolicyId === "__inherit__" ? null : value.workPolicyId,
-		hourlyRate: value.contractType === "hourly" ? value.hourlyRate : null,
+		hourlyRate: hourlyWageFromForm(value.contractType, value.hourlyRate),
 		currency: "EUR",
 		changeReason: value.changeReason.trim() || null,
 		reviewState: value.reviewState,
@@ -59,8 +62,8 @@ export function formatDate(value: Date | string | null | undefined) {
 	return date?.isValid ? date.toLocaleString(DateTime.DATE_MED) : null;
 }
 
-export function formatCurrency(amount: string | null, currency: string) {
-	return amount ? getCurrencyFormatter(currency).format(Number(amount)) : null;
+export function formatCurrency(amount: number | null, currency: string) {
+	return amount === null ? null : getCurrencyFormatter(currency).format(amount);
 }
 
 export function formatWeeklyHours(minutes: number) {
@@ -128,4 +131,3 @@ export function groupHistoryByEmployment(
 	}
 	return ordered;
 }
-

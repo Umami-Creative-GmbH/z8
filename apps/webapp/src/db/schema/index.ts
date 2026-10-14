@@ -140,6 +140,8 @@ export * from "./types";
 export * from "./user-settings";
 export * from "./vacation";
 export * from "./vehicle-use";
+// One-time wage history merge note (#1176)
+export * from "./wage-history-merge-note";
 export * from "./webhook";
 export * from "./wellness";
 export * from "./work-category";

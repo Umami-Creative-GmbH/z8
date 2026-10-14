@@ -156,12 +156,9 @@ export const employee = pgTable(
 		endDate: timestamp("end_date"),
 		isActive: boolean("is_active").default(true).notNull(),
 
-		// Contract type and hourly rate
+		// Contract type in force today, projected from the employment terms. The wage lives
+		// only in the terms (Organization ADR 0002).
 		contractType: contractTypeEnum("contract_type").default("fixed").notNull(),
-		currentHourlyRate: decimal("current_hourly_rate", {
-			precision: 10,
-			scale: 2,
-		}),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")

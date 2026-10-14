@@ -1,8 +1,12 @@
 "use server";
 
-import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
+import type {
+	ChangeHourlyWage,
+	UpsertEmploymentHistory,
+} from "@/lib/validations/employment-history";
 import {
 	cancelEmployeeEmploymentHistoryAction as cancelEmployeeEmploymentHistory,
+	changeEmployeeWageAction as changeEmployeeWage,
 	confirmEmployeeEmploymentHistoryAction as confirmEmployeeEmploymentHistory,
 	createEmployeeEmploymentHistoryAction as createEmployeeEmploymentHistory,
 	listEmployeeEmploymentHistoryAction as listEmployeeEmploymentHistory,
@@ -28,4 +32,8 @@ export async function confirmEmployeeEmploymentHistoryAction(
 
 export async function cancelEmployeeEmploymentHistoryAction(employeeId: string, historyId: string) {
 	return cancelEmployeeEmploymentHistory(employeeId, historyId);
+}
+
+export async function changeEmployeeWageAction(employeeId: string, data: ChangeHourlyWage) {
+	return changeEmployeeWage(employeeId, data);
 }

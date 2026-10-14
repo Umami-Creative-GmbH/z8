@@ -66,6 +66,17 @@ describe("rehireEmployeeSchema", () => {
 		).toBe(true);
 	});
 
+	it("reads the hourly wage as a number and stores none on fixed terms", () => {
+		expect(
+			rehireEmployeeSchema.parse({ ...valid, contractType: "hourly", hourlyRate: "25.00" })
+				.hourlyRate,
+		).toBe(25);
+		expect(rehireEmployeeSchema.parse({ ...valid, hourlyRate: 25 }).hourlyRate).toBeNull();
+		expect(
+			rehireEmployeeSchema.safeParse({ ...valid, contractType: "hourly", hourlyRate: "" }).success,
+		).toBe(false);
+	});
+
 	it("rejects a probation end before its start", () => {
 		expect(
 			rehireEmployeeSchema.safeParse({

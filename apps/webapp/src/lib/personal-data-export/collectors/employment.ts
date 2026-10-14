@@ -3,7 +3,7 @@
  *
  * The employee record and profile, employment periods, departures and their
  * history, employment terms with the hourly wage (the employee's own pay,
- * never withheld) and the legacy wage history, teams, managers, team
+ * never withheld; the terms are the only wage history, #814), teams, managers, team
  * permissions, locations, skills, project assignments, assigned organization
  * vehicles (#807, archived ones too), custom roles, groups,
  * cost centres, every policy assignment that reaches the employee (holiday
@@ -42,7 +42,6 @@ import {
 	employeeGroup,
 	employeeGroupMember,
 	employeeManagers,
-	employeeRateHistory,
 	employeeSkill,
 	employeeTeamHistory,
 	holiday,
@@ -150,7 +149,6 @@ async function collectEmployment(
 			endDate: person.endDate,
 			isActive: person.isActive,
 			contractType: person.contractType,
-			currentHourlyRate: person.currentHourlyRate,
 			createdAt: person.createdAt,
 			updatedAt: person.updatedAt,
 			userName: user.name,
@@ -233,7 +231,6 @@ async function collectEmployment(
 		periods,
 		departures,
 		terms,
-		rateHistory,
 		managers,
 		permissions,
 		assignedLocations,
@@ -287,16 +284,6 @@ async function collectEmployment(
 				),
 			)
 			.orderBy(asc(employeeEmploymentHistory.validFrom)),
-		database
-			.select()
-			.from(employeeRateHistory)
-			.where(
-				and(
-					eq(employeeRateHistory.organizationId, organizationId),
-					eq(employeeRateHistory.employeeId, employeeId),
-				),
-			)
-			.orderBy(asc(employeeRateHistory.effectiveFrom)),
 		// `employee_managers` has no organization: the manager must be of this one.
 		database
 			.select({
@@ -659,7 +646,6 @@ async function collectEmployment(
 		...periods.map((row) => row.createdBy),
 		...departures.map((row) => row.createdBy),
 		...terms.flatMap((row) => [row.terms.createdBy, row.terms.updatedBy]),
-		...rateHistory.map((row) => row.createdBy),
 		...managers.map((row) => row.assignedBy),
 		...assignedLocations.map((row) => row.createdBy),
 		...supervisedLocations.map((row) => row.createdBy),
@@ -698,7 +684,6 @@ async function collectEmployment(
 		position: subject.position,
 		primary_team: teamName(subject.teamId),
 		contract_type: subject.contractType,
-		current_hourly_rate: subject.currentHourlyRate,
 		start_date: instantText(subject.startDate),
 		end_date: instantText(subject.endDate),
 		is_active: subject.isActive,
@@ -801,7 +786,8 @@ async function collectEmployment(
 					probation_ends_on: plainDateText(row.probationEndsOn),
 					work_model: row.workModel,
 					work_policy: workPolicyName,
-					hourly_rate: row.hourlyRate,
+					// A number since #814; exported like the other money amounts, with two decimals.
+					hourly_rate: row.hourlyRate === null ? null : row.hourlyRate.toFixed(2),
 					currency: row.currency,
 					change_reason: row.changeReason,
 					review_state: row.reviewState,
@@ -809,27 +795,6 @@ async function collectEmployment(
 					created_by: byUser(row.createdBy),
 					updated_at: instantText(row.updatedAt),
 					updated_by: byUser(row.updatedBy),
-				})),
-			),
-			tablePart(
-				"wage_history",
-				[
-					"hourly_rate",
-					"currency",
-					"effective_from",
-					"effective_to",
-					"reason",
-					"created_at",
-					"created_by",
-				],
-				rateHistory.map((row) => ({
-					hourly_rate: row.hourlyRate,
-					currency: row.currency,
-					effective_from: instantText(row.effectiveFrom),
-					effective_to: instantText(row.effectiveTo),
-					reason: row.reason,
-					created_at: instantText(row.createdAt),
-					created_by: byUser(row.createdBy),
 				})),
 			),
 			tablePart(

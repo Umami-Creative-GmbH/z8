@@ -254,7 +254,7 @@ describe("personal data export pipeline (#1165)", () => {
 
 		await admin.query(
 			`update employee set first_name = 'Ada', last_name = 'Lovelace', pronouns = 'she/her',
-			   birthday = '1990-02-28 00:00:00', employee_number = 'P-0042', current_hourly_rate = '23.00',
+			   birthday = '1990-02-28 00:00:00', employee_number = 'P-0042',
 			   gender = 'female' where id = $1`,
 			[ids.ada],
 		);
@@ -269,16 +269,15 @@ describe("personal data export pipeline (#1165)", () => {
 			"insert into team_membership (organization_id, team_id, employee_id, created_by) values ($1, $2, $3, 't1165-owner')",
 			[ORG, ids.teamAda, ids.ada],
 		);
-		// Employment terms with the hourly wage, and the legacy rate history.
+		// Employment terms with the hourly wage: the terms are the only wage history (#814).
 		await admin.query(
-			`insert into employee_employment_history (employee_id, organization_id, valid_from, weekly_contract_minutes,
-			   hourly_rate, currency, change_reason, review_state, created_by, updated_at)
-			 values ($1, $2, '2026-01-01 00:00:00', 2400, '21.50', 'EUR', 'Hired', 'confirmed', 't1165-owner', now())`,
-			[ids.ada, ORG],
-		);
-		await admin.query(
-			`insert into employee_rate_history (employee_id, organization_id, hourly_rate, effective_from, created_by)
-			 values ($1, $2, '23.00', '2026-07-01 00:00:00', 't1165-owner')`,
+			`insert into employee_employment_history (employee_id, organization_id, valid_from, valid_until,
+			   contract_type, weekly_contract_minutes, hourly_rate, currency, change_reason, review_state,
+			   created_by, updated_at)
+			 values ($1, $2, '2026-01-01 00:00:00', '2026-07-01 00:00:00', 'hourly', 2400, '21.50', 'EUR',
+			           'Hired', 'confirmed', 't1165-owner', now()),
+			        ($1, $2, '2026-07-01 00:00:00', null, 'hourly', 2400, '23.00', 'EUR',
+			           'Raise', 'confirmed', 't1165-owner', now())`,
 			[ids.ada, ORG],
 		);
 		// Skills in both organizations.
@@ -357,7 +356,6 @@ describe("personal data export pipeline (#1165)", () => {
 				"_manifest.json",
 				"employment.json",
 				"employment/employment_terms.csv",
-				"employment/wage_history.csv",
 				"employment/skills.csv",
 				"employment/policy_assignments.csv",
 			]),
@@ -372,22 +370,31 @@ describe("personal data export pipeline (#1165)", () => {
 			birthday: "1990-02-28",
 			gender: "female",
 			personnel_number: "P-0042",
-			current_hourly_rate: "23.00",
 			position: "Engineer",
 			primary_team: "Platform",
 			organization: "Acme GmbH",
 		});
+		// The wage lives on the terms only (#814): no current rate, no separate wage history.
+		expect(employment.employee).not.toHaveProperty("current_hourly_rate");
+		expect(employment).not.toHaveProperty("wage_history");
+		expect(Object.keys(files)).not.toContain("employment/wage_history.csv");
 		// The hourly wage and its history are the employee's own pay.
 		expect(employment.employment_terms).toEqual([
 			expect.objectContaining({
 				valid_from: "2026-01-01T00:00:00Z",
+				valid_until: "2026-07-01T00:00:00Z",
 				hourly_rate: "21.50",
+				currency: "EUR",
 				change_reason: "Hired",
 				created_by: "Olga Owner",
 			}),
-		]);
-		expect(employment.wage_history).toEqual([
-			expect.objectContaining({ hourly_rate: "23.00", effective_from: "2026-07-01T00:00:00Z" }),
+			expect.objectContaining({
+				valid_from: "2026-07-01T00:00:00Z",
+				valid_until: null,
+				hourly_rate: "23.00",
+				currency: "EUR",
+				change_reason: "Raise",
+			}),
 		]);
 		expect(employment.skills).toEqual([
 			expect.objectContaining({ skill: "Forklift licence", expires_on: "2027-03-31" }),
@@ -422,8 +429,8 @@ describe("personal data export pipeline (#1165)", () => {
 			expect(everything, leaked).not.toContain(leaked);
 		}
 
-		expect(files["employment/wage_history.csv"]?.split("\n")[0]).toBe(
-			"hourly_rate,currency,effective_from,effective_to,reason,created_at,created_by",
+		expect(files["employment/employment_terms.csv"]?.split("\n")[0]).toContain(
+			"work_policy,hourly_rate,currency,change_reason",
 		);
 		const manifest = JSON.parse(files["_manifest.json"] as string);
 		expect(manifest).toMatchObject({

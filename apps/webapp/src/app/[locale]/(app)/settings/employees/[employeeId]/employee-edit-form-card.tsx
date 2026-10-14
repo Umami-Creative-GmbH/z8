@@ -23,15 +23,26 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import type { ContractType } from "@/lib/validations/employee";
 import { defaultTranslate, type Translate } from "./employee-section-shared";
 import { PronounsEditField } from "./pronouns-edit-field";
 import { TextField } from "./text-field";
 import type { EmployeeDetailFormApi, EmployeeDetailFormValues } from "./page-utils";
 
+/**
+ * How the form shows the contract: an invitation draft edits contract type and
+ * wage (they become the first terms); an employee shows the contract type of
+ * today's confirmed terms read-only, changed through employment terms.
+ */
+export type EmployeeEditFormContract =
+	| { kind: "draft" }
+	| { kind: "terms"; contractTypeToday: ContractType | null };
+
 export function EmployeeEditFormCard({
 	form,
 	canEditManagerFields,
 	canEditOrgAdminFields,
+	contract,
 	isUpdating,
 	onCancel,
 	t = defaultTranslate,
@@ -41,6 +52,7 @@ export function EmployeeEditFormCard({
 	form: EmployeeDetailFormApi;
 	canEditManagerFields: boolean;
 	canEditOrgAdminFields: boolean;
+	contract: EmployeeEditFormContract;
 	isUpdating: boolean;
 	onCancel: () => void;
 	t?: Translate;
@@ -231,75 +243,66 @@ export function EmployeeEditFormCard({
 						)}
 					</form.Field>
 
-					<form.Field name="contractType">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>
-									{t("settings.employees.detailView.contractType", "Contract Type")}
-								</TFormLabel>
-								<ContractTypeSelector
-									value={field.state.value}
-									onChange={field.handleChange}
-									disabled={!canEditOrgAdminFields || isUpdating}
-									labels={{
-										fixed: {
-											label: t("settings.employees.detailView.contractFixed", "Fixed"),
-											description: t(
-												"settings.employees.detailView.contractFixedDescription",
-												"Salary-based compensation",
-											),
-										},
-										hourly: {
-											label: t("settings.employees.detailView.contractHourly", "Hourly"),
-											description: t(
-												"settings.employees.detailView.contractHourlyDescription",
-												"Paid by hours worked",
-											),
-										},
-									}}
-								/>
-								<TFormDescription>
-									{t(
-										"settings.employees.detailView.contractTypeDescription",
-										"Determines how compensation is calculated",
-									)}
-								</TFormDescription>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
+					{contract.kind === "draft" ? (
+						<>
+							<form.Field name="contractType">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("settings.employees.detailView.contractType", "Contract Type")}
+										</TFormLabel>
+										<ContractTypeSelector
+											value={field.state.value}
+											onChange={field.handleChange}
+											disabled={!canEditOrgAdminFields || isUpdating}
+											labels={contractTypeLabels(t)}
+										/>
+										<TFormDescription>
+											{t(
+												"settings.employees.detailView.contractTypeDescription",
+												"Determines how compensation is calculated",
+											)}
+										</TFormDescription>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
 
-					<form.Subscribe<EmployeeDetailFormValues["contractType"]> selector={(state) => state.values.contractType}>
-						{(contractType: EmployeeDetailFormValues["contractType"]) =>
-							contractType === "hourly" && (
-								<form.Field name="hourlyRate">
-									{(field) => (
-										<TFormItem>
-											<TFormLabel hasError={fieldHasError(field)}>
-												{t("settings.employees.detailView.hourlyRate", "Hourly Rate")}
-											</TFormLabel>
-											<TFormControl hasError={fieldHasError(field)}>
-												<HourlyRateInput
-													value={field.state.value}
-													onChange={field.handleChange}
-													onBlur={field.handleBlur}
-													disabled={!canEditOrgAdminFields || isUpdating}
-													hasError={fieldHasError(field)}
-												/>
-											</TFormControl>
-											<TFormDescription>
-												{t(
-													"settings.employees.detailView.hourlyRateDescription",
-													"Current hourly rate for this employee",
-												)}
-											</TFormDescription>
-											<TFormMessage field={field} />
-										</TFormItem>
-									)}
-								</form.Field>
-							)
-						}
-					</form.Subscribe>
+							<form.Subscribe<EmployeeDetailFormValues["contractType"]> selector={(state) => state.values.contractType}>
+								{(contractType: EmployeeDetailFormValues["contractType"]) =>
+									contractType === "hourly" && (
+										<form.Field name="hourlyRate">
+											{(field) => (
+												<TFormItem>
+													<TFormLabel hasError={fieldHasError(field)}>
+														{t("settings.employees.detailView.hourlyRate", "Hourly Rate")}
+													</TFormLabel>
+													<TFormControl hasError={fieldHasError(field)}>
+														<HourlyRateInput
+															value={field.state.value}
+															onChange={field.handleChange}
+															onBlur={field.handleBlur}
+															disabled={!canEditOrgAdminFields || isUpdating}
+															hasError={fieldHasError(field)}
+														/>
+													</TFormControl>
+													<TFormDescription>
+														{t(
+															"settings.employees.detailView.hourlyRateDescription",
+															"Current hourly rate for this employee",
+														)}
+													</TFormDescription>
+													<TFormMessage field={field} />
+												</TFormItem>
+											)}
+										</form.Field>
+									)
+								}
+							</form.Subscribe>
+						</>
+					) : (
+						<TermsContractType contractTypeToday={contract.contractTypeToday} t={t} />
+					)}
 
 					{customFields}
 
@@ -315,6 +318,61 @@ export function EmployeeEditFormCard({
 				</form>
 			</CardContent>
 		</Card>
+	);
+}
+
+/** The contract type labels the selector and the read-only terms view share. */
+function contractTypeLabels(
+	t: Translate,
+): Record<ContractType, { label: string; description: string }> {
+	return {
+		fixed: {
+			label: t("settings.employees.detailView.contractFixed", "Fixed"),
+			description: t(
+				"settings.employees.detailView.contractFixedDescription",
+				"Salary-based compensation",
+			),
+		},
+		hourly: {
+			label: t("settings.employees.detailView.contractHourly", "Hourly"),
+			description: t(
+				"settings.employees.detailView.contractHourlyDescription",
+				"Paid by hours worked",
+			),
+		},
+	};
+}
+
+function TermsContractType({
+	contractTypeToday,
+	t,
+}: {
+	contractTypeToday: ContractType | null;
+	t: Translate;
+}) {
+	const value = contractTypeToday
+		? contractTypeLabels(t)[contractTypeToday].label
+		: t("settings.employees.detailView.contractTypeNoTerms", "No confirmed terms today");
+
+	return (
+		<div className="grid gap-2">
+			<p className="text-sm font-medium">
+				{t("settings.employees.detailView.contractType", "Contract Type")}
+			</p>
+			<p className="text-sm">{value}</p>
+			<p className="text-sm text-muted-foreground">
+				{t(
+					"settings.employees.detailView.contractTypeFromTerms",
+					"Contract type and wage come from the confirmed employment terms in force today.",
+				)}{" "}
+				<a href="#employment-history" className="font-medium text-foreground underline">
+					{t(
+						"settings.employees.detailView.contractTypeChangeLink",
+						"Change in Contract & Work Model",
+					)}
+				</a>
+			</p>
+		</div>
 	);
 }
 

@@ -1597,6 +1597,27 @@
       "when": 1804348800000,
       "tag": "0227_closed_month_canonical_vehicle_use",
       "breakpoints": true
+    },
+    {
+      "idx": 228,
+      "version": "7",
+      "when": 1804435200000,
+      "tag": "0228_employment_terms_numeric_wage",
+      "breakpoints": true
+    },
+    {
+      "idx": 229,
+      "version": "7",
+      "when": 1804521600000,
+      "tag": "0229_rate_history_merge_into_terms",
+      "breakpoints": true
+    },
+    {
+      "idx": 230,
+      "version": "7",
+      "when": 1804608000000,
+      "tag": "0230_drop_employee_current_hourly_rate",
+      "breakpoints": true
     }
   ]
 }

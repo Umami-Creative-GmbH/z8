@@ -2,12 +2,7 @@ import { createHash } from "node:crypto";
 import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { organization } from "@/db/auth-schema";
-import {
-	employee,
-	employeeEmploymentHistory,
-	employeeManagers,
-	workPolicyAssignment,
-} from "@/db/schema";
+import { employee, employeeManagers, workPolicyAssignment } from "@/db/schema";
 import {
 	employeeDeparture,
 	employeeDepartureEvent,
@@ -21,6 +16,7 @@ import {
 	instantFromDate,
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
+import { writeEmploymentTerms } from "@/lib/employment-history/write-terms";
 import { departureCutoff } from "./cutoff";
 import { queueDataExportReminder } from "./data-export-reminder";
 import { runDepartureTransaction } from "./departure-transaction";
@@ -647,27 +643,27 @@ async function rehireEmployee(
 			.returning({ id: employeeEmploymentPeriod.id });
 		if (!period) throw new Error("employment_period_not_created");
 
-		await tx.insert(employeeEmploymentHistory).values({
-			employeeId: target.id,
+		// The new stint's terms start at the rehire instant, which is also the
+		// recorded period start (#1162 tracks moving rehire to calendar dates).
+		await writeEmploymentTerms(tx, {
 			organizationId: actor.organizationId,
-			employmentPeriodId: period.id,
-			validFrom: nowDate,
-			validUntil: null,
-			status: "active",
-			contractType: input.contractType,
-			weeklyContractMinutes: input.weeklyContractMinutes,
-			probationStartsOn: localDateStart(input.probationStartsOn, timezone),
-			probationEndsOn: localDateStart(input.probationEndsOn, timezone),
-			workModel: input.workModel,
-			workPolicyId: input.workPolicyId,
-			hourlyRate: input.hourlyRate ?? null,
-			currency: input.currency,
-			changeReason: input.changeReason,
-			reviewState: "confirmed",
-			createdBy: actor.userId,
-			createdAt: nowDate,
-			updatedBy: actor.userId,
-			updatedAt: nowDate,
+			employeeId: target.id,
+			actorUserId: actor.userId,
+			now: nowDate,
+			terms: {
+				validFrom: nowDate,
+				status: "active",
+				contractType: input.contractType,
+				weeklyContractMinutes: input.weeklyContractMinutes,
+				probationStartsOn: localDateStart(input.probationStartsOn, timezone),
+				probationEndsOn: localDateStart(input.probationEndsOn, timezone),
+				workModel: input.workModel,
+				workPolicyId: input.workPolicyId,
+				hourlyRate: input.hourlyRate ?? null,
+				currency: input.currency,
+				changeReason: input.changeReason,
+				reviewState: "confirmed",
+			},
 		});
 		await tx.insert(workPolicyAssignment).values({
 			policyId: input.workPolicyId,
@@ -701,7 +697,6 @@ async function rehireEmployee(
 				role: input.role,
 				teamId: input.teamId,
 				contractType: input.contractType,
-				currentHourlyRate: input.hourlyRate ?? null,
 				endDate: null,
 				updatedAt: nowDate,
 			})

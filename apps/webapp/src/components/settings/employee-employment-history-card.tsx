@@ -1,6 +1,6 @@
 "use client";
 
-import { IconPlus } from "@tabler/icons-react";
+import { IconCash, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
@@ -8,6 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChangeWageForm } from "./employee-employment-history/change-wage-form";
 import { EmploymentHistoryForm } from "./employee-employment-history/form";
 import {
 	EmploymentHistoryContext,
@@ -42,9 +43,12 @@ export function EmployeeEmploymentHistoryCard({
 	isCreating,
 	isMutating,
 	workPolicies = EMPTY_WORK_POLICIES,
+	notice,
+	changeWage,
 }: EmployeeEmploymentHistoryCardProps) {
 	const { t } = useTranslate();
 	const [isAdding, setIsAdding] = useState(false);
+	const [isChangingWage, setIsChangingWage] = useState(false);
 	const now = DateTime.utc();
 	const sortedHistory = history.toSorted(
 		(a, b) =>
@@ -127,18 +131,38 @@ export function EmployeeEmploymentHistoryCard({
 						)}
 					</CardDescription>
 				</div>
-				{canManage && (
-					<Button
-						size="sm"
-						variant={isAdding ? "outline" : "default"}
-						onClick={() => setIsAdding(!isAdding)}
-					>
-						<IconPlus className="mr-2 size-4" aria-hidden="true" />
-						{t("settings.employmentHistory.addChange", "Add Change")}
-					</Button>
-				)}
+				<div className="flex flex-wrap justify-end gap-2">
+					{canManage && changeWage && (
+						<Button
+							size="sm"
+							variant="outline"
+							aria-expanded={isChangingWage}
+							onClick={() => {
+								setIsChangingWage(!isChangingWage);
+								setIsAdding(false);
+							}}
+						>
+							<IconCash className="mr-2 size-4" aria-hidden="true" />
+							{t("settings.employmentHistory.changeWage.title", "Change wage")}
+						</Button>
+					)}
+					{canManage && (
+						<Button
+							size="sm"
+							variant={isAdding ? "outline" : "default"}
+							onClick={() => {
+								setIsAdding(!isAdding);
+								setIsChangingWage(false);
+							}}
+						>
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
+							{t("settings.employmentHistory.addChange", "Add Change")}
+						</Button>
+					)}
+				</div>
 			</CardHeader>
 			<CardContent className="space-y-6">
+				{canManage && notice}
 				<div className="grid gap-3 md:grid-cols-2">
 					<EmploymentHistoryContext
 						label={t("settings.employmentHistory.currentConfirmed", "Current confirmed")}
@@ -164,6 +188,13 @@ export function EmployeeEmploymentHistoryCard({
 						policyNameById={policyNameById}
 					/>
 				</div>
+				{canManage && changeWage && isChangingWage && (
+					<ChangeWageForm
+						onSubmit={changeWage.onSubmit}
+						isPending={changeWage.isPending}
+						onClose={() => setIsChangingWage(false)}
+					/>
+				)}
 				{canManage && isAdding && (
 					<EmploymentHistoryForm
 						form={form}
