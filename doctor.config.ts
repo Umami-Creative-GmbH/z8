@@ -41,7 +41,7 @@ export default {
 			{
 				// Job delivery is intentionally bounded to one tenant/reminder at a time. Retention recipient lookups
 				// populate a shared cache; a claim precedes each delivery and the result records who was notified.
-				files: ["**/src/lib/jobs/clocking-reminders.ts", "**/src/lib/personnel-file/expiry-reminders.ts", "**/src/lib/personnel-file/retention-reminders.ts"],
+				files: ["**/src/lib/jobs/clocking-reminders.ts", "**/src/lib/personnel-file/expiry-reminders.ts", "**/src/lib/personnel-file/retention-reminders.ts", "**/src/lib/scheduling/skill-expiry-reminders.ts"],
 				rules: ["react-doctor/async-await-in-loop"],
 			},
 

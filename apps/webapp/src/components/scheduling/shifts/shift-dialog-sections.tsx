@@ -37,7 +37,6 @@ interface ShiftDialogSectionsProps {
 	isValidatingSkills: boolean;
 	isEditing: boolean;
 	shift: ShiftWithRelations | null;
-	organizationTimezone: string;
 	/** Staffing suggestions while the shift is open with its subarea, date and times set. */
 	staffing: {
 		suggestions: StaffingSuggestion[] | undefined;
@@ -113,7 +112,6 @@ export function ShiftDialogSections({
 	isValidatingSkills,
 	isEditing,
 	shift,
-	organizationTimezone,
 	staffing,
 }: ShiftDialogSectionsProps) {
 	const { t } = useTranslate();
@@ -338,7 +336,6 @@ export function ShiftDialogSections({
 					suggestions={staffing.suggestions}
 					isLoading={staffing.isLoading}
 					isError={staffing.isError}
-					organizationTimezone={organizationTimezone}
 					onPick={(employeeId) => form.setFieldValue("employeeId", employeeId)}
 				/>
 			)}

@@ -1,16 +1,12 @@
-import { and, desc, eq, gt, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	employee,
-	employeeSkill,
 	locationSubarea,
 	type shift as ShiftTable,
 	type shiftTemplate as ShiftTemplateTable,
 	shift,
 	shiftTemplate,
-	shiftTemplateSkillRequirement,
-	type skill,
-	subareaSkillRequirement,
 } from "@/db/schema";
 import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
@@ -21,6 +17,8 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
+import { loadSkillValidation, type SkillValidationResult } from "@/lib/scheduling/skill-validation";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -83,20 +81,9 @@ export interface DateRange {
 	endExclusive: Date;
 }
 
-export interface SkillWarning {
+/** The shift save warning: the skill check (`loadSkillValidation`) of the assigned employee. */
+export interface SkillWarning extends SkillValidationResult {
 	employeeId: string;
-	isQualified: boolean;
-	missingSkills: Array<{
-		id: string;
-		name: string;
-		category: string;
-		isRequired: boolean;
-	}>;
-	expiredSkills: Array<{
-		id: string;
-		name: string;
-		expiresAt: Date;
-	}>;
 }
 
 export interface ShiftMetadata {
@@ -476,129 +463,19 @@ export const ShiftServiceLive = Layer.effect(
 					let skillWarning: SkillWarning | undefined;
 					if (input.employeeId) {
 						const empId = input.employeeId;
-						const now = new Date();
-
-						// Get employee's current valid skills
-						const validEmployeeSkills = yield* dbService.query("getEmployeeValidSkills", async () => {
-							return await dbService.db.query.employeeSkill.findMany({
-								where: and(
-									eq(employeeSkill.employeeId, empId),
-									or(
-										isNull(employeeSkill.expiresAt),
-										gt(employeeSkill.expiresAt, now),
-									),
-								),
-								with: { skill: true },
-							});
-						});
-
-						// Get expired skills for warning
-						const expiredEmployeeSkills = yield* dbService.query("getExpiredSkills", async () => {
-							return await dbService.db.query.employeeSkill.findMany({
-								where: and(
-									eq(employeeSkill.employeeId, empId),
-									lte(employeeSkill.expiresAt, now),
-								),
-								with: { skill: true },
-							});
-						});
-
-						const validSkillIds = new Set(
-							validEmployeeSkills.map((es) => es.skillId),
+						const validation = yield* dbService.query("getSkillValidationOnShiftDate", () =>
+							loadSkillValidation(dbService.db, {
+								organizationId: input.organizationId,
+								employeeId: empId,
+								subareaId: input.subareaId,
+								templateId: input.templateId,
+								// Skills count on the shift date, not today (#1142).
+								shiftDate: shiftCalendarDate(input.date, input.timezone).toString(),
+							}),
 						);
 
-						// Get subarea requirements
-						const subareaReqs = yield* dbService.query("getSubareaSkillRequirements", async () => {
-							return await dbService.db.query.subareaSkillRequirement.findMany(
-								{
-									where: eq(
-										subareaSkillRequirement.subareaId,
-										input.subareaId,
-									),
-									with: { skill: true },
-								},
-							);
-						});
-
-						// Get template requirements if applicable
-						let templateReqs: Array<{
-							skillId: string;
-							isRequired: boolean;
-							skill: typeof skill.$inferSelect;
-						}> = [];
-						if (input.templateId) {
-							const templateId = input.templateId;
-							templateReqs = yield* dbService.query("getTemplateSkillRequirements", async () => {
-								return await dbService.db.query.shiftTemplateSkillRequirement.findMany(
-									{
-										where: eq(
-											shiftTemplateSkillRequirement.templateId,
-											templateId,
-										),
-										with: { skill: true },
-									},
-								);
-							});
-						}
-
-						// Combine all requirements (deduped by skillId)
-						const allRequirements = new Map<
-							string,
-							{ skill: typeof skill.$inferSelect; isRequired: boolean }
-						>();
-						for (const req of [...subareaReqs, ...templateReqs]) {
-							const existing = allRequirements.get(req.skillId);
-							if (!existing || (req.isRequired && !existing.isRequired)) {
-								allRequirements.set(req.skillId, {
-									skill: req.skill,
-									isRequired: req.isRequired,
-								});
-							}
-						}
-
-						// Find missing skills
-						const missingSkills: SkillWarning["missingSkills"] = [];
-						for (const [
-							skillId,
-							{ skill: skillData, isRequired },
-						] of allRequirements) {
-							if (!validSkillIds.has(skillId)) {
-								missingSkills.push({
-									id: skillId,
-									name: skillData.name,
-									category: skillData.category,
-									isRequired,
-								});
-							}
-						}
-
-						// Map expired skills (only those that are required)
-						const expiredSkills: SkillWarning["expiredSkills"] = [];
-						for (const es of expiredEmployeeSkills) {
-							const expiresAt = es.expiresAt;
-							if (
-								!allRequirements.has(es.skillId) ||
-								!(expiresAt instanceof Date)
-							) {
-								continue;
-							}
-
-							const normalizedExpiresAt: Date = new Date(expiresAt.getTime());
-
-							expiredSkills.push({
-								id: es.skillId,
-								name: es.skill.name,
-								expiresAt: normalizedExpiresAt,
-							});
-						}
-
-						if (missingSkills.length > 0 || expiredSkills.length > 0) {
-							skillWarning = {
-								employeeId: empId,
-								isQualified: false,
-								missingSkills,
-								expiredSkills,
-							};
+						if (validation.missingSkills.length > 0 || validation.expiredSkills.length > 0) {
+							skillWarning = { employeeId: empId, ...validation };
 						}
 					}
 

@@ -4,15 +4,15 @@ import { user } from "@/db/auth-schema";
 import { employee, employeeDocument, personnelFileReminderSetting } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
-import type { PersonnelFileAccess } from "./access";
-import { managedDocumentsCondition } from "./access-store";
-import { type DocumentCategory, EXPIRY_DATE_CATEGORIES } from "./document.types";
 import {
 	DEFAULT_EXPIRY_REMINDER_LEAD_DAYS,
 	describeExpiry,
 	type ExpiryDescription,
 	expiryWindowEnd,
-} from "./expiry";
+} from "@/lib/expiry-reminders/expiry";
+import type { PersonnelFileAccess } from "./access";
+import { managedDocumentsCondition } from "./access-store";
+import { type DocumentCategory, EXPIRY_DATE_CATEGORIES } from "./document.types";
 import { loadOrganizationDay } from "./organization-day";
 
 /**

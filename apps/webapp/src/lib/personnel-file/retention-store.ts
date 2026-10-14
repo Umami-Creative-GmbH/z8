@@ -29,6 +29,7 @@ import {
 	retentionDueDate,
 	retentionStart,
 } from "./retention";
+import { recomputeCertificateSkillExpiry } from "./skill-certificate-expiry";
 
 /**
  * Retention periods, the due-for-deletion list and confirmed purges (#870).
@@ -406,6 +407,7 @@ export async function purgeDueDocuments(
 			[...documents, ...unknownStart].map((document) => [document.id, document]),
 		);
 		const purged: string[] = [];
+		const unlinkedSkillIds: string[] = [];
 		for (const documentId of requested) {
 			const document = due.get(documentId);
 			if (!document) continue;
@@ -456,7 +458,13 @@ export async function purgeDueDocuments(
 							},
 			});
 			purged.push(documentId);
+			if (row.employeeSkillId) unlinkedSkillIds.push(row.employeeSkillId);
 		}
+		// Purged skill certificates no longer set the skill expiry date (#1145).
+		await recomputeCertificateSkillExpiry(tx, {
+			organizationId: access.organizationId,
+			employeeSkillIds: unlinkedSkillIds,
+		});
 		const purgedSet = new Set(purged);
 		return { purged, skipped: requested.filter((id) => !purgedSet.has(id)) };
 	});
