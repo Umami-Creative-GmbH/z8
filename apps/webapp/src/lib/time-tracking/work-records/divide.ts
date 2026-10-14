@@ -530,7 +530,7 @@ export async function writeGeneratedHalf(
 	return { period: written, record, detail, allocations };
 }
 
-async function insertAllocations(
+export async function insertAllocations(
 	tx: WorkTransactionClient,
 	organizationId: string,
 	recordId: string,

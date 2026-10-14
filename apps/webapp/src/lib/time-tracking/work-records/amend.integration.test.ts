@@ -71,6 +71,7 @@ const { submitPeriodSubmission } = await import("../period-submissions/submissio
 const { closeMonth } = await import("../closed-months/store");
 const { applyWorkRecordChange, readWorkRecord } = await import(".");
 const { expectRecordAgreement } = await import("./__tests__/expect-record-agreement");
+const { calculateHash } = await import("../blockchain");
 type AmendWorkRecord = import(".").AmendWorkRecord;
 type DivideWorkRecord = import(".").DivideWorkRecord;
 type WorkRecordExpected = import(".").WorkRecordExpected;
@@ -343,6 +344,56 @@ async function submitWeek() {
 	};
 }
 
+/**
+ * A correction entry recorded while its change waits for approval, as a time
+ * correction submission records it: chained after the latest entry, superseded
+ * (inactive) and replacing the endpoint.
+ */
+async function recordPendingCorrection(
+	period: { clock_in_id: string; clock_out_id: string },
+	at: string,
+	endpoint: "clock_in" | "clock_out" = "clock_in",
+): Promise<string> {
+	const id = randomUUID();
+	const { rows } = await admin.query<{ hash: string }>(
+		"select hash from time_entry where id = $1",
+		[period.clock_out_id],
+	);
+	const previousHash = only(rows).hash;
+	const hash = calculateHash({
+		employeeId: ids.requester,
+		type: "correction",
+		timestamp: new Date(at).toISOString(),
+		previousHash,
+	});
+	await admin.query(
+		`insert into time_entry (id, employee_id, organization_id, type, timestamp, hash, previous_hash,
+		   previous_entry_id, replaces_entry_id, is_superseded, notes, created_by, utc_offset_minutes,
+		   timezone, timezone_source)
+		 values ($1, $2, $3, 'correction', $4, $5, $6, $7, $8, true, 'Pending correction', $9, 120,
+		         'Europe/Berlin', 'user_setting')`,
+		[
+			id,
+			ids.requester,
+			ORG,
+			new Date(at),
+			hash,
+			previousHash,
+			period.clock_out_id,
+			endpoint === "clock_in" ? period.clock_in_id : period.clock_out_id,
+			userOf("requester"),
+		],
+	);
+	// The submission records it on the append position, where there is one.
+	await admin.query(
+		`update time_entry_append_position
+		 set tip_entry_id = $3, tip_hash = $4, entry_count = entry_count + 1, version = version + 1
+		 where organization_id = $1 and employee_id = $2`,
+		[ORG, ids.requester, id, hash],
+	);
+	return id;
+}
+
 async function driveVan(period: { id: string; canonical_record_id: string }) {
 	await admin.query(
 		`insert into vehicle_use_setting (organization_id, enabled) values ($1, true)
@@ -460,6 +511,102 @@ function amendContract({
 				],
 			},
 		});
+	});
+
+	it("adopts a recorded correction entry by reference instead of appending it again (#1226)", async () => {
+		const source = await recordWork();
+		const pending = await recordPendingCorrection(source, "2026-07-22T07:30:20Z");
+		const expected = await expectedOf(source.id);
+		const before = await snapshot();
+
+		const result = await apply(
+			amend(expected, { times: { ...CORRECTION, clockIn: { adopt: pending } } }),
+		);
+
+		await expectRecordAgreement({ organizationId: ORG });
+		if (result.kind !== "amended") throw new Error(`refused: ${result.kind}`);
+		expect(await workOf(source.id)).toMatchObject({
+			clock_in_id: pending,
+			start_time: new Date("2026-07-22T07:30:20Z"),
+			duration_minutes: retimed,
+			graph_revision: source.graph_revision + 1,
+			record_start: new Date("2026-07-22T07:30:20Z"),
+			record_duration: retimed,
+		});
+		const { rows: entries } = await admin.query(
+			`select id, is_superseded, superseded_by_id from time_entry where id = any($1::uuid[]) order by created_at, id`,
+			[[source.clock_in_id, pending]],
+		);
+		expect(entries).toEqual([
+			{ id: source.clock_in_id, is_superseded: true, superseded_by_id: pending },
+			{ id: pending, is_superseded: false, superseded_by_id: null },
+		]);
+		// Nothing is appended: the entry count and the append position stay.
+		const after = await snapshot();
+		expect(after.entries).toHaveLength(before.entries.length);
+		expect(after.positions).toEqual(before.positions);
+		expect(result).toMatchObject({
+			changes: { clockIn: true, clockOut: false },
+			appended: {
+				admission,
+				corrections: [
+					{
+						endpoint: "clock_in",
+						entryId: pending,
+						replacesEntryId: source.clock_in_id,
+						adopted: true,
+					},
+				],
+				entries: [{ id: pending }],
+			},
+		});
+	});
+
+	it("adopts one endpoint and appends the other in one change (#1226)", async () => {
+		const source = await recordWork();
+		const pending = await recordPendingCorrection(source, "2026-07-22T07:30:20Z");
+
+		const result = await apply(
+			amend(await expectedOf(source.id), {
+				times: {
+					...CORRECTION,
+					clockIn: { adopt: pending },
+					clockOut: { at: parseInstant("2026-07-22T16:30:50Z"), capture: BERLIN_SUMMER },
+				},
+			}),
+		);
+
+		await expectRecordAgreement({ organizationId: ORG });
+		if (result.kind !== "amended") throw new Error(`refused: ${result.kind}`);
+		expect(result.appended.corrections).toEqual([
+			expect.objectContaining({ endpoint: "clock_in", entryId: pending, adopted: true }),
+			expect.objectContaining({
+				endpoint: "clock_out",
+				replacesEntryId: source.clock_out_id,
+				adopted: false,
+			}),
+		]);
+		const work = await workOf(source.id);
+		expect(work).toMatchObject({
+			clock_in_id: pending,
+			end_time: new Date("2026-07-22T16:30:50Z"),
+		});
+		expect(work.clock_out_id).toBe(result.appended.corrections[1]?.entryId);
+	});
+
+	it("refuses to adopt an entry that is not a pending correction of the endpoint (#1226)", async () => {
+		const source = await recordWork();
+		const ofClockOut = await recordPendingCorrection(source, "2026-07-22T16:00:00Z", "clock_out");
+		const expected = await expectedOf(source.id);
+		const before = await snapshot();
+
+		await expect(
+			apply(amend(expected, { times: { ...CORRECTION, clockIn: { adopt: ofClockOut } } })),
+		).resolves.toEqual({ kind: "adopted_entry_mismatch" });
+		await expect(
+			apply(amend(expected, { times: { ...CORRECTION, clockIn: { adopt: source.clock_out_id } } })),
+		).resolves.toEqual({ kind: "adopted_entry_mismatch" });
+		expect(await snapshot()).toEqual(before);
 	});
 
 	it("rounds new times in the admission's arithmetic", async () => {

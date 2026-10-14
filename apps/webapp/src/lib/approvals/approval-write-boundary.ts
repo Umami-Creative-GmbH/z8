@@ -486,172 +486,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "work_period",
 		},
 	],
-	"src/lib/effect/services/time-entry.service.ts": [
-		{
-			columns: ["is_superseded", "replaces_entry_id", "type"],
-			functionName: "applyCorrectionWritesInTransaction",
-			operation: "insert",
-			semantic: "correction",
-			table: "time_entry",
-		},
-		{
-			columns: ["is_superseded", "superseded_by_id"],
-			functionName: "applyCorrectionWritesInTransaction",
-			operation: "update",
-			semantic: "correction_lifecycle",
-			table: "time_entry",
-		},
-		{
-			columns: ["clock_in_id", "duration_minutes", "start_time"],
-			functionName: "applyCorrectionWritesInTransaction",
-			operation: "update",
-			table: "work_period",
-		},
-		{
-			columns: ["clock_out_id", "duration_minutes", "end_time"],
-			functionName: "applyCorrectionWritesInTransaction",
-			operation: "update",
-			table: "work_period",
-		},
-		{
-			columns: ["duration_minutes"],
-			functionName: "applyCorrectionWritesInTransaction",
-			operation: "update",
-			table: "work_period",
-		},
-		{
-			columns: ["duration_minutes", "end_at", "start_at"],
-			functionName: "applyCorrectionWritesInTransaction",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-	],
-	// Owner/admin direct edits in legacy organizations (append ones amend below).
-	"src/lib/time-tracking/admin-work-period-time-edit.ts": [
-		{
-			columns: ["replaces_entry_id", "type"],
-			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
-			operation: "insert",
-			semantic: "correction",
-			table: "time_entry",
-		},
-		{
-			columns: ["is_superseded", "superseded_by_id"],
-			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
-			operation: "update",
-			semantic: "correction_lifecycle",
-			table: "time_entry",
-		},
-		{
-			columns: ["duration_minutes", "end_at", "start_at"],
-			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-		{
-			columns: [
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
-			],
-			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
-			operation: "update",
-			table: "work_period",
-		},
-	],
-	// Evidence-only historical gap repair (#320) fills absent facts inside the outer
-	// completed-work transaction, guarded against the planned state.
-	"src/lib/time-tracking/historical-gap-repair-executor.ts": [
-		{
-			columns: [
-				"approval_state",
-				"duration_minutes",
-				"employee_id",
-				"end_at",
-				"organization_id",
-				"start_at",
-			],
-			functionName: "applyUnit",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-		{
-			columns: ["duration_minutes"],
-			functionName: "applyUnit",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-		{
-			columns: ["duration_minutes", "end_at"],
-			functionName: "applyUnit",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "insertProject",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
-				"computation_metadata",
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"organization_id",
-				"record_id",
-				"record_kind",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "insertDetail",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_work",
-		},
-		{
-			columns: ["canonical_record_id", "duration_minutes", "end_time"],
-			functionName: "applyUnit",
-			operation: "update",
-			table: "work_period",
-		},
-	],
-	// Separately authorized explicit repair proposals (#323) change the reviewed
-	// fields inside the outer completed-work transaction, guarded by their before values.
-	"src/lib/time-tracking/historical-work-proposals.ts": [
-		{
-			columns: ["duration_minutes", "end_at", "start_at"],
-			functionName: "applyFieldRepair",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-		{
-			columns: ["duration_minutes"],
-			functionName: "applyFieldRepair",
-			operation: "update",
-			table: "work_period",
-		},
-	],
 	"src/lib/time-tracking/close-active-work.ts": [
 		{
 			columns: [
@@ -841,8 +675,8 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 	],
 	// Work records (ADR 0010, #1225) amends the times and work attribution of one completed
 	// period and its canonical work record together, compare-and-set against the locked
-	// pair, in both admissions. Direct amendments, attribution changes and vehicle-use
-	// completion amend through it.
+	// pair, in both admissions. Direct amendments, attribution changes, vehicle-use
+	// completion, the admin time edit and the direct corrections amend through it (#1226).
 	"src/lib/time-tracking/work-records/amend.ts": [
 		{
 			columns: ["duration_minutes", "end_at", "start_at"],
@@ -876,6 +710,86 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"start_time",
 			],
 			functionName: "writeAmendedPair",
+			operation: "update",
+			table: "work_period",
+		},
+		// An endpoint already recorded as a pending correction is adopted (#1226): it
+		// becomes current and supersedes the endpoint it replaces.
+		{
+			columns: ["is_superseded", "superseded_by_id"],
+			functionName: "adoptRecordedEntry",
+			operation: "update",
+			semantic: "correction_lifecycle",
+			table: "time_entry",
+		},
+	],
+	// Work records (ADR 0010, #1226) attaches a missing canonical work record and repairs
+	// a historical pair to one resolution, compare-and-set against the locked pair, in both
+	// admissions. The historical repairs (field repair proposals, evidence-only gap repair)
+	// write through it.
+	"src/lib/time-tracking/work-records/repair.ts": [
+		{
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
+			functionName: "attachWorkRecord",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "repairWorkRecord",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "attachWorkRecord",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "insertDetail",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+		},
+		{
+			columns: ["canonical_record_id", "duration_minutes", "end_time"],
+			functionName: "writeRepairedPeriod",
 			operation: "update",
 			table: "work_period",
 		},

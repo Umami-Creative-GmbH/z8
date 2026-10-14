@@ -24,7 +24,6 @@ const state = vi.hoisted(() => ({
 	requestCorrection: vi.fn(),
 	applyAdminEdit: vi.fn(),
 	validateRange: vi.fn(),
-	markDirty: vi.fn(),
 }));
 
 // Vehicle use (#1120) is off unless a test says otherwise.
@@ -81,9 +80,6 @@ vi.mock("@/lib/time-tracking/admin-work-period-time-edit", () => ({
 }));
 vi.mock("@/lib/time-tracking/validation", () => ({
 	validateTimeEntryRange: state.validateRange,
-}));
-vi.mock("@/lib/work-balance/service", () => ({
-	markEmployeeWorkBalanceDirty: state.markDirty,
 }));
 
 const { getWorkPeriodTimeEditContext, updateWorkPeriodTimes } = await import(
@@ -182,8 +178,6 @@ describe("work period time edit actions", () => {
 		state.applyAdminEdit.mockResolvedValue({
 			workPeriodId: ids.period,
 			employeeId: ids.otherEmployee,
-			dirtyFromDate: "2026-08-03",
-			balanceRefresh: "caller",
 		});
 	});
 

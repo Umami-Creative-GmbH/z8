@@ -569,7 +569,8 @@
           "noRestorableEvidence": "No evidence establishes the missing value",
           "originalActorUnrepresentable": "No entry names who completed the work",
           "originalRuleUnknown": "No representation holds the minutes; the original rounding is unknown",
-          "referenceOutsideOrganization": "A referenced project or category is not this organization's"
+          "referenceOutsideOrganization": "A referenced project or category is not this organization's",
+          "repairLeavesDivergence": "The filled work would still disagree with its canonical record; needs review"
         },
         "inactive": "Not authorized",
         "inactiveDescription": "Repair needs separate authorization for this organization. The plan stays readable.",

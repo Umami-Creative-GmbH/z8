@@ -75,6 +75,9 @@ const { POST: diagnosticsRoute } = await import("@/app/api/time-entries/diagnost
 const { createManualTimeEntry, splitWorkPeriod } = await import(
 	"@/app/[locale]/(app)/time-tracking/actions"
 );
+const { expectRecordAgreement } = await import(
+	"@/lib/time-tracking/work-records/__tests__/expect-record-agreement"
+);
 
 const ids = {
 	organization: "t320-repair-org",
@@ -631,6 +634,74 @@ describe("historical gap repair on PostgreSQL", () => {
 			[metadataRecord],
 		);
 		expect(filled).toEqual([{ work_category_id: ids.category }]);
+	});
+
+	it("attaches a missing canonical work record through work records: it agrees and the effects apply (#1226)", async () => {
+		const created = await missingRecord("2026-07-02");
+		const incomplete = await incompleteRecord("2026-07-03");
+		const van = "e3200000-0000-4000-8000-0000000000a1";
+		await admin.query(
+			`insert into organization_vehicle (id, organization_id, name, licence_plate)
+			 values ($1, $2, 'Van', 'B-VN 320')`,
+			[van, ids.organization],
+		);
+		await admin.query(
+			`update work_period set vehicle_kind = 'organization', vehicle_id = $2,
+			   odometer_start_km = 12000, odometer_end_km = 12085, driven_distance_km = 85
+			 where id = $1`,
+			[created, van],
+		);
+		await admin.query(
+			"update employee_work_balance set is_dirty = false, dirty_from_date = null where employee_id = $1",
+			[ids.worker],
+		);
+		await authorizeRepair();
+		const before = await periodRow(created);
+
+		const applied = await apply(await readPlan());
+
+		expect(applied.body.outcomes).toMatchObject([{ employeeId: ids.worker, status: "applied" }]);
+		await expectRecordAgreement({
+			organizationId: ids.organization,
+			workPeriodIds: [created, incomplete.periodId],
+		});
+		expect(await periodRow(created)).toMatchObject({
+			canonical_record_id: created,
+			graph_revision: before.graph_revision + 1,
+		});
+		const { rows: receipts } = await admin.query(
+			"select result from completed_work_operation where work_period_id = $1",
+			[created],
+		);
+		expect(receipts).toEqual([
+			{
+				result: expect.objectContaining({
+					revisions: {
+						workPeriod: { source: before.graph_revision, result: before.graph_revision + 1 },
+					},
+					effects: { workBalanceDirtyFromDate: "2026-07-02" },
+				}),
+			},
+		]);
+		const { rows: balances } = await admin.query(
+			"select is_dirty, dirty_from_date::text from employee_work_balance where employee_id = $1",
+			[ids.worker],
+		);
+		expect(balances).toEqual([{ is_dirty: true, dirty_from_date: "2026-07-02" }]);
+	});
+
+	it("holds a gap whose fill would leave the work disagreeing (#1226)", async () => {
+		const { periodId } = await incompleteRecord("2026-07-03");
+		// No representation holds the minutes: that gap is held, so the record's
+		// completion alone would leave a disagreement and is held with it.
+		await admin.query("update work_period set duration_minutes = null where id = $1", [periodId]);
+
+		const plan = await readPlan();
+
+		expect(plan.plan.employees).toEqual([]);
+		expect(plan.plan.held.map(({ reason }) => reason).toSorted()).toEqual(
+			expect.arrayContaining(["repair_leaves_divergence"]),
+		);
 	});
 
 	it("restores a project allocation with the period's task, so period and allocation agree", async () => {

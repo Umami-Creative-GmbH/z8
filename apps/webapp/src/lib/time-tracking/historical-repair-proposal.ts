@@ -17,6 +17,11 @@
  * endpoints (they mirror hashed entries), approval state, deletion, links, ownership
  * and record creation. Work with a pending approval or correction is refused: that
  * review must resolve first. Nothing here writes.
+ *
+ * Application writes through work records (#1226), so a repair changes both records:
+ * each changed value is what the repaired work holds, whichever representation it was
+ * found wrong in. A proposal whose repaired work would still disagree is refused
+ * (`repair_leaves_divergence`): repairs cannot leave or create divergence.
  */
 import { createHash } from "node:crypto";
 import { Temporal } from "temporal-polyfill";
@@ -33,6 +38,7 @@ import {
 	type RepairChangeTarget,
 	type RequestedRepairChange,
 } from "./historical-repair-fields";
+import { fieldRepairResolution, repairedWorkAgrees } from "./historical-repair-resolution";
 import {
 	assessHistoricalWork,
 	type HistoricalPeriodEvidence,
@@ -79,7 +85,9 @@ export type HistoricalRepairRefusal =
 	| "no_change"
 	| "interval_invalid"
 	| "minutes_exceed_interval"
-	| "reference_outside_organization";
+	| "reference_outside_organization"
+	/** The repaired work would still disagree with its canonical record (#1226). */
+	| "repair_leaves_divergence";
 
 export interface ProposalFinding {
 	id: string;
@@ -212,7 +220,10 @@ export function proposeHistoricalRepair(
 			reasons.add("record_detail_missing");
 			continue;
 		}
-		if (before === after) reasons.add("no_change");
+		// A repair changes both records: it changes nothing only when both hold the value.
+		if (before === after && otherValue(requested, period, record) === after) {
+			reasons.add("no_change");
+		}
 		changes.push({
 			target: requested.target,
 			id: requested.target === "time_record" ? (record as HistoricalRecordEvidence).id : period.id,
@@ -223,6 +234,10 @@ export function proposeHistoricalRepair(
 	}
 	if (reasons.size === 0) {
 		for (const refusal of resultingIntervalRefusals(period, record, changes)) reasons.add(refusal);
+	}
+	if (reasons.size === 0 && !record) reasons.add("record_missing");
+	if (reasons.size === 0 && record && !repairAgrees(period, record, changes)) {
+		reasons.add("repair_leaves_divergence");
 	}
 	if (reasons.size > 0) return { kind: "refused", reasons: [...reasons] };
 
@@ -317,6 +332,41 @@ function currentValue(
 	return undefined;
 }
 
+/** The value the other representation holds for the requested field. */
+function otherValue(
+	change: RequestedRepairChange,
+	period: HistoricalPeriodEvidence,
+	record: HistoricalRecordEvidence | null,
+): string | number | null | undefined {
+	if (change.target === "time_record") {
+		switch (change.field) {
+			case "start_at":
+				return instantToCanonicalString(period.startTime);
+			case "end_at":
+				return period.endTime ? instantToCanonicalString(period.endTime) : null;
+			case "duration_minutes":
+				return period.durationMinutes;
+			case "work_category_id":
+				return period.workCategoryId;
+			case "work_location_type":
+				return period.workLocationType;
+		}
+		return undefined;
+	}
+	if (!record) return undefined;
+	switch (change.field) {
+		case "duration_minutes":
+			return record.durationMinutes;
+		case "work_category_id":
+			return record.detail?.workCategoryId;
+		case "work_location_type":
+			return record.detail?.workLocationType;
+		case "project_id":
+			return recordProjectIds(record)[0] ?? null;
+	}
+	return undefined;
+}
+
 /**
  * A changed representation must keep a valid interval: start before end, and no
  * more stored minutes than its elapsed time (rounded up). Zero minutes stay valid.
@@ -364,6 +414,18 @@ function resultingIntervalRefusals(
 	return refusals;
 }
 
+/**
+ * Whether work records would write the repaired pair: every value the records
+ * disagree on is repaired, and a repaired record endpoint is the period's own.
+ */
+function repairAgrees(
+	period: HistoricalPeriodEvidence,
+	record: HistoricalRecordEvidence,
+	changes: readonly RepairChange[],
+): boolean {
+	return repairedWorkAgrees(period, record, fieldRepairResolution(changes, record));
+}
+
 /** The evidence as it would read after the changes; used only to show what remains. */
 function applyToEvidence(
 	evidence: HistoricalWorkEvidence,
@@ -371,31 +433,65 @@ function applyToEvidence(
 	record: HistoricalRecordEvidence | null,
 	changes: readonly RepairChange[],
 ): HistoricalWorkEvidence {
+	// A repair changes both records: each value lands in the period and its record.
 	const changedPeriod: HistoricalPeriodEvidence = { ...period };
 	const changedRecord: HistoricalRecordEvidence | null = record
 		? { ...record, detail: record.detail ? { ...record.detail } : null }
 		: null;
+	const resolution = fieldRepairResolution(changes, record);
 	for (const change of changes) {
-		if (change.target === "work_period") {
-			if (change.field === "duration_minutes")
+		switch (change.field) {
+			case "start_at":
+				if (changedRecord) changedRecord.startAt = parseInstant(change.after as string);
+				break;
+			case "end_at":
+				if (changedRecord) changedRecord.endAt = parseInstant(change.after as string);
+				break;
+			case "duration_minutes":
 				changedPeriod.durationMinutes = change.after as number;
-			if (change.field === "work_category_id")
+				if (changedRecord) changedRecord.durationMinutes = change.after as number;
+				break;
+			case "work_category_id":
 				changedPeriod.workCategoryId = change.after as string;
-			if (change.field === "work_location_type") {
+				if (changedRecord?.detail) changedRecord.detail.workCategoryId = change.after as string;
+				break;
+			case "work_location_type":
 				changedPeriod.workLocationType = change.after as WorkLocationType | null;
+				if (changedRecord?.detail) {
+					changedRecord.detail.workLocationType = change.after as WorkLocationType | null;
+				}
+				break;
+			case "project_id": {
+				const projectId = change.after as string;
+				const sameProject = projectId === period.projectId;
+				const task =
+					resolution.attribution?.task !== undefined
+						? resolution.attribution.task
+						: sameProject
+							? period.taskId
+							: null;
+				const billable =
+					resolution.attribution?.billable ?? (sameProject ? (period.isBillable ?? false) : false);
+				changedPeriod.projectId = projectId;
+				changedPeriod.taskId = task;
+				changedPeriod.isBillable = billable;
+				if (changedRecord) {
+					changedRecord.allocations = [
+						...changedRecord.allocations.filter(
+							(allocation) => allocation.allocationKind !== "project",
+						),
+						{
+							allocationKind: "project",
+							projectId,
+							taskId: task,
+							costCenterId: null,
+							weightPercent: 100,
+							isBillable: billable,
+						},
+					];
+				}
+				break;
 			}
-			if (change.field === "project_id") changedPeriod.projectId = change.after as string;
-			continue;
-		}
-		if (!changedRecord) continue;
-		if (change.field === "start_at") changedRecord.startAt = parseInstant(change.after as string);
-		if (change.field === "end_at") changedRecord.endAt = parseInstant(change.after as string);
-		if (change.field === "duration_minutes") changedRecord.durationMinutes = change.after as number;
-		if (changedRecord.detail && change.field === "work_category_id") {
-			changedRecord.detail.workCategoryId = change.after as string;
-		}
-		if (changedRecord.detail && change.field === "work_location_type") {
-			changedRecord.detail.workLocationType = change.after as WorkLocationType | null;
 		}
 	}
 	return {
@@ -432,12 +528,6 @@ function consequencesOf(
 	const projectIds = (record ? recordProjectIds(record) : []).toSorted();
 	const allocation: HistoricalRepairProposal["consequences"]["allocation"]["effects"] = [];
 	if (recordInterval && projectIds.length > 0) allocation.push("allocation_weights_unchanged");
-	const periodProject = changes.find(
-		(change) => change.target === "work_period" && change.field === "project_id",
-	);
-	if (record && periodProject && !projectIds.includes(periodProject.after as string)) {
-		allocation.push("period_project_differs_from_record_allocation");
-	}
 
 	const payroll: HistoricalRepairProposal["consequences"]["payroll"]["effects"] = [];
 	if (recordInterval && record?.approvalState === "approved")
