@@ -78,8 +78,8 @@ export function createEmployeeColumns({
 			accessorKey: "employeeNumber",
 			header: () => (
 				<TranslatedColumnHeader
-					nameKey="settings.employees.directory.table.employeeNumber"
-					fallback="Employee Number"
+					nameKey="settings.employees.directory.table.personnelNumber"
+					fallback="Personnel number"
 				/>
 			),
 			cell: ({ row }) => row.original.employeeNumber || "—",

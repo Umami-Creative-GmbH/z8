@@ -131,7 +131,7 @@ export function EmployeeOverviewCard({
 				{employee.employeeNumber && (
 					<div className="space-y-2">
 						<div className="text-sm text-muted-foreground">
-							{t("settings.employees.detailView.employeeNumber", "Employee Number")}
+							{t("settings.employees.detailView.personnelNumber", "Personnel number")}
 						</div>
 						<div className="font-mono text-sm">{employee.employeeNumber}</div>
 					</div>

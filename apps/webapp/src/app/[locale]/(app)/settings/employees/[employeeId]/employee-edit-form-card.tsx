@@ -158,14 +158,14 @@ export function EmployeeEditFormCard({
 						<TextField
 							form={form}
 							name="employeeNumber"
-							label={t("settings.employees.detailView.employeeNumber", "Employee Number")}
+							label={t("settings.employees.detailView.personnelNumber", "Personnel number")}
 							placeholder={t(
 								"settings.employees.detailView.employeeNumberPlaceholder",
 								"e.g., EMP-001",
 							)}
 							description={t(
-								"settings.employees.detailView.employeeNumberDescription",
-								"External payroll system ID",
+								"settings.employees.detailView.personnelNumberDescription",
+								"Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.",
 							)}
 							disabled={!canEditOrgAdminFields || isUpdating}
 						/>
