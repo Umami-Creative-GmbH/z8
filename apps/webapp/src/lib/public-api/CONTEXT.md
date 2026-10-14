@@ -31,3 +31,7 @@ _Avoid_: API audit log, access log
 **Health detail**:
 What an absence reveals about an employee's health, such as being sick or the kind of sick leave. Only a key granted the health scope sees it; every other key sees the absence as plain absent.
 _Avoid_: sick details, medical data
+
+**Restricted custom field**:
+A custom field whose visibility is manager or admin. Only a key granted the restricted custom field scope reads it, its definition included; every other key reads only the custom fields every member can see.
+_Avoid_: private field, hidden field, sensitive field
