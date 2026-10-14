@@ -4,6 +4,7 @@ import { selectWorkRecordsSuites, trackedWebAppFiles } from "./work-records-suit
 
 const actions = "apps/webapp/src/app/[locale]/(app)/time-tracking/actions";
 const callerSuites = [
+  "apps/webapp/src/lib/time-tracking/work-records/work-records.integration.test.ts",
   `${actions}/work-period-amendment.integration.test.ts`,
   `${actions}/work-billability-amendment.integration.test.ts`,
   `${actions}/work-period-split.integration.test.ts`,
@@ -14,7 +15,7 @@ const callerSuites = [
 ];
 const relative = file => file.replace(/^apps\/webapp\//, "");
 
-test("selects the completed-work caller suites as paths the web-app runner accepts", () => {
+test("selects the work records and completed-work caller suites as paths the web-app runner accepts", () => {
   const files = [...callerSuites, "apps/webapp/src/lib/absences/deputy.integration.test.ts"];
   assert.deepEqual(selectWorkRecordsSuites(files), callerSuites.map(relative).sort());
 });
@@ -42,7 +43,7 @@ test("a renamed or moved caller suite fails the selection instead of silently dr
   }
 });
 
-test("every pattern matches a suite in this repository, except work records before its first suite", () => {
+test("every pattern matches a suite in this repository", () => {
   const selected = selectWorkRecordsSuites(trackedWebAppFiles());
   for (const suite of callerSuites) assert.ok(selected.includes(relative(suite)), suite);
 });

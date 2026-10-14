@@ -102,6 +102,7 @@ import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { assertWorkOccupancyFree, WorkOccupancyConflictError } from "./work-occupancy";
 import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
 import type { SealedWorkTransactionScope } from "./work-transaction";
+import { CompletedWorkReviewRequiredError } from "./work-records/refusals";
 
 export const AMEND_COMPLETED_WORK_COMMAND_VERSION = 1;
 export const AMEND_COMPLETED_WORK_RESULT_VERSION = 1;
@@ -248,15 +249,8 @@ export type AmendCompletedWorkReceipt = {
 	correctionEntries: Array<typeof timeEntry.$inferSelect>;
 };
 
-/** Evidence the work graph needs review before this operation may change it. */
-export class CompletedWorkReviewRequiredError extends Error {
-	constructor(
-		readonly reason: "canonical_record_missing" | "canonical_divergence" | "endpoint_entry_missing",
-	) {
-		super("This work needs review before it can be changed");
-		this.name = "CompletedWorkReviewRequiredError";
-	}
-}
+// Work records owns the review refusal (ADR 0010); re-exported for existing callers.
+export { CompletedWorkReviewRequiredError };
 
 export type AmendCompletedWorkInput = {
 	organizationId: string;
