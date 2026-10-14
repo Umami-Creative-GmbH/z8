@@ -258,14 +258,33 @@ describe("proposeHistoricalRepair", () => {
 		expect(proposal.uncertainty.remainingFindings.map((finding) => finding.kind)).not.toContain(
 			"endpoint_conflict",
 		);
-		expect(proposal.consequences.allocation.effects).toContain(
+		// A repair changes both records (#1226): the record takes the period's new project.
+		expect(proposal.consequences.allocation.effects).not.toContain(
 			"period_project_differs_from_record_allocation",
 		);
+		expect(proposal.uncertainty.remainingFindings).toEqual([]);
+	});
+
+	it("refuses a repair that leaves a disagreement it does not name (#1226)", () => {
+		const fixture = work({ recordMinutes: 45, period: { workCategoryId: category } });
+		expect(
+			propose(evidence([fixture]), fixture.period.id, [
+				{ target: "time_record", field: "duration_minutes", after: 60 },
+			]),
+		).toEqual({ kind: "refused", reasons: ["repair_leaves_divergence"] });
+		expect(
+			propose(evidence([fixture]), fixture.period.id, [
+				{ target: "time_record", field: "duration_minutes", after: 60 },
+				{ target: "time_record", field: "start_at", after: "2026-07-06T06:30:00Z" },
+				{ target: "time_record", field: "work_category_id", after: category },
+			]),
+		).toEqual({ kind: "refused", reasons: ["repair_leaves_divergence"] });
 	});
 
 	it("discloses that record allocations keep their weights when minutes change", () => {
 		const fixture = work({
 			recordMinutes: 45,
+			period: { projectId: project },
 			record: {
 				allocations: [
 					{

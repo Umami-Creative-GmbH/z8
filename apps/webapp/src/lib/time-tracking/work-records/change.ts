@@ -20,6 +20,7 @@ import type { CreateNewWork } from "./create-new-plan";
 import type { CreateWorkRecord } from "./create-plan";
 import type { DivideByOwedBreak } from "./owed-break";
 import type { RecordAgreementFacet } from "./record-agreement";
+import type { AttachWorkRecord, RepairWorkRecord } from "./repair-change";
 import type {
 	UnrepresentableWorkAttribution,
 	WorkAttribution,
@@ -102,7 +103,9 @@ export type WorkRecordChange =
 	| DivideByOwedBreak
 	| AmendWorkRecord
 	| CreateWorkRecord
-	| CreateNewWork;
+	| CreateNewWork
+	| AttachWorkRecord
+	| RepairWorkRecord;
 
 /** Why a change was not made. Nothing is written for any of them. */
 export type WorkRecordRefusal =
@@ -118,8 +121,11 @@ export type WorkRecordRefusal =
 	| { kind: "canonical_record_missing" }
 	| {
 			kind: "canonical_divergence";
-			/** Whether the locked pair disagreed, or a planned half (or amended pair) would have. */
-			found: "locked_pair" | "planned_half" | "planned_amendment";
+			/**
+			 * Whether the locked pair disagreed, or a planned half (or amended,
+			 * attached or repaired pair) would have.
+			 */
+			found: "locked_pair" | "planned_half" | "planned_amendment" | "planned_repair";
 			disagreements: RecordAgreementFacet[];
 	  }
 	| { kind: "endpoint_entry_missing" }
@@ -133,6 +139,13 @@ export type WorkRecordRefusal =
 	/** Amend (#1225): the change names nothing that differs from the stored work. */
 	| { kind: "unchanged" }
 	/** Amend (#1225), create new (#1223): the times do not end after they start. */
-	| { kind: "interval_invalid" };
+	| { kind: "interval_invalid" }
+	/**
+	 * Amend (#1226): an adopted endpoint is not a pending correction of this
+	 * employee replacing the current endpoint.
+	 */
+	| { kind: "adopted_entry_mismatch" }
+	/** Attach (#1226): the work already has a canonical work record, linked or of its id. */
+	| { kind: "canonical_record_present" };
 
 export type WorkRecordRefusalKind = WorkRecordRefusal["kind"];

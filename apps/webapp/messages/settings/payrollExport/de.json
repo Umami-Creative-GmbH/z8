@@ -569,7 +569,8 @@
           "noRestorableEvidence": "Kein Nachweis belegt den fehlenden Wert",
           "originalActorUnrepresentable": "Kein Eintrag gibt an, wer die Arbeit abgeschlossen hat",
           "originalRuleUnknown": "Keine Darstellung enthält die Minuten; die ursprüngliche Rundung ist unbekannt",
-          "referenceOutsideOrganization": "Ein referenziertes Projekt oder eine Kategorie gehört nicht zu dieser Organisation"
+          "referenceOutsideOrganization": "Ein referenziertes Projekt oder eine Kategorie gehört nicht zu dieser Organisation",
+          "repairLeavesDivergence": "Die ergänzte Arbeit würde weiter von ihrem kanonischen Datensatz abweichen; Prüfung nötig"
         },
         "inactive": "Nicht autorisiert",
         "inactiveDescription": "Die Reparatur erfordert eine separate Autorisierung für diese Organisation. Der Plan bleibt lesbar.",

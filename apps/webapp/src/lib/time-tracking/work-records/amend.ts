@@ -11,9 +11,15 @@ import "server-only";
  * writes nothing. A pair that still disagrees after the writes is a defect in
  * work records, not in the data: it throws and the transaction rolls back.
  */
-import { and, eq, isNull } from "drizzle-orm";
-import { timeRecord, timeRecordAllocation, timeRecordWork, workPeriod } from "@/db/schema";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { and, eq, inArray, isNull } from "drizzle-orm";
+import {
+	timeEntry,
+	timeRecord,
+	timeRecordAllocation,
+	timeRecordWork,
+	workPeriod,
+} from "@/db/schema";
+import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { CompletedWorkIntegrityError } from "../close-active-work";
 import { closedRangeTouchedByWork } from "../closed-months/rules";
 import { closedRangesForEmployee } from "../closed-months/store";
@@ -24,7 +30,13 @@ import {
 } from "../work-billability";
 import { loadWorkOccupants } from "../work-occupancy";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "../work-transaction";
-import type { AmendedEndpoint, AmendmentChanges, AmendWorkRecord } from "./amend-change";
+import {
+	type AmendedEndpoint,
+	type AmendmentChanges,
+	type AmendWorkRecord,
+	isAdoptedEndpoint,
+	type NewAmendedEndpoint,
+} from "./amend-change";
 import type { AmendmentPlan } from "./amend-plan";
 import type { WorkRecordExpected, WorkRecordRefusal } from "./change";
 import type { AppendedEntryEvidence } from "./divide";
@@ -47,10 +59,12 @@ import {
 	type WorkAttributionPatch,
 } from "./work-attribution";
 
-/** One correction entry an amendment appended, with the endpoint it replaces. */
+/** One correction entry an amendment appended or adopted, with the endpoint it replaces. */
 export type AmendedEntryEvidence = AppendedEntryEvidence & {
 	endpoint: "clock_in" | "clock_out";
 	replacesEntryId: string;
+	/** Whether the entry was already recorded and adopted by reference (#1226). */
+	adopted: boolean;
 };
 
 export type WorkAmendment = {
@@ -71,6 +85,7 @@ export type WorkAmendment = {
 		admission: "append" | "legacy";
 		/** Clock-in first; empty when the times stayed. */
 		corrections: AmendedEntryEvidence[];
+		/** The rows of `corrections`, in the same order. */
 		entries: TimeEntryRow[];
 	};
 	effects: { workBalanceDirtyFromDate: string };
@@ -108,10 +123,19 @@ export async function amendWorkRecord(
 	if (writer.admission === "append" && (clockIn.isSuperseded || clockOut.isSuperseded)) {
 		return { kind: "endpoint_superseded" };
 	}
+	const endpoints = await resolvedEndpoints(tx, change, { clockIn, clockOut });
+	if (endpoints === "adopted_entry_mismatch") return { kind: "adopted_entry_mismatch" };
 	const patch = await resolvedPatch(tx, change, WorkAttribution.fromWorkPeriod(period));
 	const plan = planChange(
 		pairOf(locked),
-		{ kind: "amend", times: change.times, attribution: patch },
+		{
+			kind: "amend",
+			times: {
+				...(endpoints.clockIn ? { clockIn: { at: endpoints.clockIn.at } } : {}),
+				...(endpoints.clockOut ? { clockOut: { at: endpoints.clockOut.at } } : {}),
+			},
+			attribution: patch,
+		},
 		writer.durationArithmetic,
 	);
 	if (plan.kind !== "amend") return plan;
@@ -142,7 +166,10 @@ export async function amendWorkRecord(
 		await closedRangesForEmployee(tx, { organizationId, employeeId }),
 	);
 	if (closed) return { kind: "month_closed", month: closed.month };
-	const admission = timesChanged ? await writer.admit() : null;
+	const moved = movedEndpoints(change, plan, endpoints, { clockIn, clockOut });
+	const drafts = moved.flatMap((endpoint) => (endpoint.draft ? [endpoint.draft] : []));
+	// Adopted entries are already recorded; only new ones need the admission.
+	const admission = drafts.length > 0 ? await writer.admit() : null;
 	if (admission?.kind === "review_required") {
 		return { kind: "append_review_required", requirement: admission.requirement };
 	}
@@ -155,16 +182,22 @@ export async function amendWorkRecord(
 		before: [{ start: before.startAt, end: before.endAt }],
 		after: [{ start: after.startAt, end: after.endAt }],
 	});
-	const drafts = correctionDrafts(change, plan, { clockIn, clockOut });
-	const corrections = admission
-		? await admission.entries.append(drafts.map(({ draft }) => draft))
-		: [];
-	if (corrections.length !== drafts.length)
+	const appended = admission ? await admission.entries.append(drafts) : [];
+	if (appended.length !== drafts.length) {
 		throw new Error("Work records corrections were not appended");
-	const appendedOf = (endpoint: AmendedEntryEvidence["endpoint"]) =>
-		corrections[drafts.findIndex((draft) => draft.endpoint === endpoint)];
-	const newClockIn = plan.changes.clockIn ? appendedOf("clock_in") : clockIn;
-	const newClockOut = plan.changes.clockOut ? appendedOf("clock_out") : clockOut;
+	}
+	const corrections: { endpoint: AmendedEntryEvidence["endpoint"]; entry: TimeEntryRow }[] = [];
+	for (const endpoint of moved) {
+		const entry = endpoint.adopted
+			? await adoptRecordedEntry(tx, endpoint.adopted, endpoint.replaces)
+			: appended[drafts.indexOf(endpoint.draft as EntryDraft)];
+		if (!entry) throw new Error("Work records corrections were not appended");
+		corrections.push({ endpoint: endpoint.endpoint, entry });
+	}
+	const correctionOf = (endpoint: AmendedEntryEvidence["endpoint"]) =>
+		corrections.find((candidate) => candidate.endpoint === endpoint)?.entry;
+	const newClockIn = plan.changes.clockIn ? correctionOf("clock_in") : clockIn;
+	const newClockOut = plan.changes.clockOut ? correctionOf("clock_out") : clockOut;
 	if (!newClockIn || !newClockOut) throw new Error("Work records corrections were not appended");
 	const written = await writeAmendedPair(tx, {
 		locked: { ...locked, canonical },
@@ -218,15 +251,16 @@ export async function amendWorkRecord(
 		changes: plan.changes,
 		appended: {
 			admission: writer.admission,
-			corrections: corrections.map((entry, index) => ({
-				endpoint: drafts[index]?.endpoint ?? "clock_out",
-				replacesEntryId: drafts[index]?.draft.replaces?.id ?? "",
+			corrections: corrections.map(({ endpoint, entry }, index) => ({
+				endpoint,
+				replacesEntryId: moved[index]?.replaces.id ?? "",
+				adopted: moved[index]?.adopted !== undefined,
 				entryId: entry.id,
 				hash: entry.hash,
 				previousEntryId: entry.previousEntryId,
 				previousHash: entry.previousHash,
 			})),
-			entries: corrections,
+			entries: corrections.map(({ entry }) => entry),
 		},
 		effects,
 	};
@@ -237,9 +271,9 @@ export async function amendWorkRecord(
  * project takes it unless `billable` is named, and billable work needs a
  * project with a customer to bill.
  */
-async function resolvedPatch(
+export async function resolvedPatch(
 	tx: WorkTransactionClient,
-	change: AmendWorkRecord,
+	change: Pick<AmendWorkRecord, "organizationId" | "attribution">,
 	source: WorkAttribution,
 ): Promise<WorkAttributionPatch | undefined> {
 	if (!change.attribution) return undefined;
@@ -261,29 +295,153 @@ async function resolvedPatch(
 	};
 }
 
-/** The correction entries for the endpoints that move, clock-in first. */
-function correctionDrafts(
+/** A named endpoint with its instant: new, or an adopted entry as recorded. */
+type ResolvedEndpoint =
+	| { at: Instant; endpoint: NewAmendedEndpoint; adopted?: undefined }
+	| { at: Instant; adopted: TimeEntryRow };
+
+/**
+ * The named endpoints with their instants. An adopted entry must be a pending
+ * correction of this employee replacing the current endpoint: recorded,
+ * inactive and superseded by nothing (#1226). It is read without a row lock:
+ * the coordinator's employee guard serializes the employee's writers, and its
+ * activation is guarded on exactly that state.
+ */
+async function resolvedEndpoints(
+	tx: WorkTransactionClient,
+	change: AmendWorkRecord,
+	current: { clockIn: TimeEntryRow; clockOut: TimeEntryRow },
+): Promise<{ clockIn?: ResolvedEndpoint; clockOut?: ResolvedEndpoint } | "adopted_entry_mismatch"> {
+	const times = change.times;
+	if (!times) return {};
+	const adoptedIds = [times.clockIn, times.clockOut].flatMap((endpoint) =>
+		endpoint && isAdoptedEndpoint(endpoint) ? [endpoint.adopt] : [],
+	);
+	const recorded = adoptedIds.length
+		? await tx
+				.select()
+				.from(timeEntry)
+				.where(
+					and(
+						eq(timeEntry.organizationId, change.organizationId),
+						eq(timeEntry.employeeId, change.employeeId),
+						inArray(timeEntry.id, adoptedIds),
+					),
+				)
+		: [];
+	const resolve = (
+		endpoint: AmendedEndpoint | undefined,
+		replaces: TimeEntryRow,
+	): ResolvedEndpoint | "mismatch" | undefined => {
+		if (!endpoint) return undefined;
+		if (!isAdoptedEndpoint(endpoint)) return { at: endpoint.at, endpoint };
+		const entry = recorded.find(({ id }) => id === endpoint.adopt);
+		if (
+			entry?.type !== "correction" ||
+			entry.replacesEntryId !== replaces.id ||
+			!entry.isSuperseded ||
+			entry.supersededById !== null
+		) {
+			return "mismatch";
+		}
+		return { at: instantFromDate(entry.timestamp), adopted: entry };
+	};
+	const clockIn = resolve(times.clockIn, current.clockIn);
+	const clockOut = resolve(times.clockOut, current.clockOut);
+	if (clockIn === "mismatch" || clockOut === "mismatch") return "adopted_entry_mismatch";
+	return { ...(clockIn ? { clockIn } : {}), ...(clockOut ? { clockOut } : {}) };
+}
+
+type MovedEndpoint = {
+	endpoint: AmendedEntryEvidence["endpoint"];
+	replaces: TimeEntryRow;
+	/** The correction entry appended for a new endpoint. */
+	draft?: EntryDraft;
+	/** The recorded entry adopted for it. */
+	adopted?: TimeEntryRow;
+};
+
+/** The endpoints that move, clock-in first: each appended as a correction, or adopted. */
+function movedEndpoints(
 	change: AmendWorkRecord,
 	plan: AmendmentPlan,
-	endpoints: { clockIn: TimeEntryRow; clockOut: TimeEntryRow },
-): { endpoint: AmendedEntryEvidence["endpoint"]; draft: EntryDraft }[] {
+	resolved: { clockIn?: ResolvedEndpoint; clockOut?: ResolvedEndpoint },
+	current: { clockIn: TimeEntryRow; clockOut: TimeEntryRow },
+): MovedEndpoint[] {
 	const times = change.times;
 	if (!times) return [];
-	const draft = (endpoint: AmendedEndpoint, replaces: TimeEntryRow): EntryDraft => ({
-		type: "correction",
-		at: endpoint.at,
-		notes: times.notes,
-		provenance: { ...times.entries, capture: endpoint.capture },
-		replaces,
-	});
+	const moved = (
+		endpoint: AmendedEntryEvidence["endpoint"],
+		named: ResolvedEndpoint,
+		replaces: TimeEntryRow,
+	): MovedEndpoint =>
+		named.adopted
+			? { endpoint, replaces, adopted: named.adopted }
+			: {
+					endpoint,
+					replaces,
+					draft: {
+						type: "correction",
+						at: named.at,
+						notes: times.notes,
+						provenance: { ...times.entries, capture: named.endpoint.capture },
+						replaces,
+					},
+				};
 	return [
-		...(plan.changes.clockIn && times.clockIn
-			? [{ endpoint: "clock_in" as const, draft: draft(times.clockIn, endpoints.clockIn) }]
+		...(plan.changes.clockIn && resolved.clockIn
+			? [moved("clock_in", resolved.clockIn, current.clockIn)]
 			: []),
-		...(plan.changes.clockOut && times.clockOut
-			? [{ endpoint: "clock_out" as const, draft: draft(times.clockOut, endpoints.clockOut) }]
+		...(plan.changes.clockOut && resolved.clockOut
+			? [moved("clock_out", resolved.clockOut, current.clockOut)]
 			: []),
 	];
+}
+
+/**
+ * Activates a recorded correction in place of the endpoint it replaces: the
+ * entry becomes current and supersedes the endpoint, unless that one already
+ * is superseded (a legacy split's generated half keeps a superseded clock-out).
+ */
+async function adoptRecordedEntry(
+	tx: WorkTransactionClient,
+	entry: TimeEntryRow,
+	replaces: TimeEntryRow,
+): Promise<TimeEntryRow> {
+	const [activated] = await tx
+		.update(timeEntry)
+		.set({ isSuperseded: false, supersededById: null })
+		.where(
+			and(
+				eq(timeEntry.id, entry.id),
+				eq(timeEntry.organizationId, entry.organizationId),
+				eq(timeEntry.employeeId, entry.employeeId),
+				eq(timeEntry.type, "correction"),
+				eq(timeEntry.replacesEntryId, replaces.id),
+				eq(timeEntry.isSuperseded, true),
+				isNull(timeEntry.supersededById),
+			),
+		)
+		.returning();
+	if (!activated) throw new CompletedWorkIntegrityError("Adopted entry changed under its lock");
+	if (!replaces.isSuperseded) {
+		const superseded = await tx
+			.update(timeEntry)
+			.set({ isSuperseded: true, supersededById: activated.id })
+			.where(
+				and(
+					eq(timeEntry.id, replaces.id),
+					eq(timeEntry.organizationId, replaces.organizationId),
+					eq(timeEntry.employeeId, replaces.employeeId),
+					eq(timeEntry.isSuperseded, false),
+				),
+			)
+			.returning({ id: timeEntry.id });
+		if (superseded.length !== 1) {
+			throw new CompletedWorkIntegrityError("Endpoint changed under its lock");
+		}
+	}
+	return activated;
 }
 
 type WrittenPair = { period: WorkPeriodRow } & CanonicalWorkRows;
