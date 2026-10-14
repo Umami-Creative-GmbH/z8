@@ -4,6 +4,7 @@ import { employee, employeeManagers } from "@/db/schema";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { WorkTransactionClient } from "@/lib/time-tracking/web-clock-out-transaction";
+import { withoutRecipientOnlyMetadata } from "./recipient-only-metadata";
 import type { CreateNotificationParams } from "./types";
 
 /**
@@ -94,7 +95,7 @@ export function forwardedNotification(
 		userId: recipientUserId,
 		title: `${forwardedFor.name}: ${params.title}`,
 		actionUrl: undefined,
-		metadata: { ...params.metadata, forwardedFor },
+		metadata: { ...withoutRecipientOnlyMetadata(params.metadata), forwardedFor },
 		idempotencyKey: params.idempotencyKey
 			? `${params.idempotencyKey}:kiosk-only:${recipientUserId}`
 			: undefined,

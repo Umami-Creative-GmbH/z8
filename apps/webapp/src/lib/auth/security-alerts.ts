@@ -23,8 +23,8 @@ interface PendingSecurityWrites {
 	passwordSubject?: string;
 	/** The account update being written replaces a password. */
 	passwordWritten?: boolean;
-	/** The two-factor state the user update being written sets. */
-	twoFactorEnabled?: boolean;
+	/** The two-factor state the user update being written sets, and the signed-in user's before it. */
+	twoFactorWrite?: { enabled: boolean; sessionUser?: { id: string; enabled: boolean } };
 }
 
 const pendingWrites = defineRequestState<PendingSecurityWrites>(() => ({}));
@@ -40,7 +40,10 @@ type HookContext = Parameters<Parameters<typeof createAuthMiddleware>[0]>[0];
 type WriteContext = {
 	request?: Request;
 	headers?: Headers;
-	context: { options: BetterAuthOptions };
+	context: {
+		options: BetterAuthOptions;
+		session?: { user: { id: string; twoFactorEnabled?: boolean | null } } | null;
+	};
 } | null;
 
 function field(source: unknown, name: string): string | undefined {
@@ -112,21 +115,34 @@ export function securityAlerts(notify: SecurityAlertNotifier) {
 			return {
 				options: {
 					databaseHooks: {
-						// Better Auth writes the flag only when it changes: on the first verified
-						// code after enabling, and on disabling.
+						// Better Auth writes the flag on the first verified code after enabling and
+						// on every disable, even of two-factor that was never on. The signed-in
+						// user's state before the write tells a change from a rewrite.
 						user: {
 							update: {
-								async before(user) {
+								async before(user, ctx: WriteContext) {
 									const writes = await pending();
-									if (writes && typeof user.twoFactorEnabled === "boolean") {
-										writes.twoFactorEnabled = user.twoFactorEnabled;
-									}
+									if (!writes || typeof user.twoFactorEnabled !== "boolean") return;
+									const sessionUser = ctx?.context.session?.user;
+									writes.twoFactorWrite = {
+										enabled: user.twoFactorEnabled,
+										...(sessionUser
+											? {
+													sessionUser: {
+														id: sessionUser.id,
+														enabled: Boolean(sessionUser.twoFactorEnabled),
+													},
+												}
+											: {}),
+									};
 								},
-								async after(user, ctx) {
+								async after(user, ctx: WriteContext) {
 									const writes = await pending();
-									const enabled = writes?.twoFactorEnabled;
-									if (!writes || enabled === undefined) return;
-									writes.twoFactorEnabled = undefined;
+									const write = writes?.twoFactorWrite;
+									if (!writes || !write) return;
+									writes.twoFactorWrite = undefined;
+									const { enabled, sessionUser } = write;
+									if (sessionUser?.id === user.id && sessionUser.enabled === enabled) return;
 									await alert(enabled ? "two_factor_enabled" : "two_factor_disabled", user.id, ctx);
 								},
 							},

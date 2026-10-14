@@ -197,6 +197,15 @@ describe("security alerts (#1180)", () => {
 		expect(alerts).toEqual([]);
 	});
 
+	it("does not alert when two-factor authentication that was never on is turned off", async () => {
+		const { auth, alerts, signedInUser } = await setup();
+		const { headers } = await signedInUser();
+
+		await auth.api.disableTwoFactor({ body: { password }, headers });
+
+		expect(alerts).toEqual([]);
+	});
+
 	it("alerts the user when two-factor authentication is turned off", async () => {
 		const { auth, alerts, signedInUser, enableTwoFactor } = await setup();
 		const { user, headers } = await signedInUser();
