@@ -202,6 +202,9 @@ export const queryKeys = {
 		/** Lifecycle view; under the organization key so directory changes refresh it. */
 		offboarding: (orgId: string, employeeId: string) =>
 			["employees", orgId, "offboarding", employeeId] as const,
+		/** The employee's admin exports of their personal data (#1166). */
+		personalDataExports: (orgId: string, employeeId: string) =>
+			["employees", orgId, "personal-data-exports", employeeId] as const,
 		offboardingPreview: (
 			orgId: string,
 			employeeId: string,

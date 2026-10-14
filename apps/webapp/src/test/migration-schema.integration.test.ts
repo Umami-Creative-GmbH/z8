@@ -145,7 +145,7 @@ it("the SQL migration chain supplies every declared table, column, enum, index a
 
 it("supplies what the schema cannot declare for vehicle use (#807)", async () => {
 	const pool = integrationAdminPool();
-	// Closed months guard vehicle use on both representations of work (0218, 0221).
+	// Closed months guard vehicle use on both representations of work (0218, 0224).
 	const triggers = (
 		await pool.query<{ table_name: string; name: string; columns: string[] }>(`
  select c.relname as table_name, t.tgname as name,

@@ -84,6 +84,8 @@ export * from "./organization-time-tracking-settings";
 export * from "./payroll-access";
 export * from "./payroll-blocker";
 export * from "./payroll-export";
+// Personal data exports: one employee's data as a ZIP (#811)
+export * from "./personal-data-export";
 // Personnel file (employee documents)
 export * from "./personnel-file";
 // Platform admin (audit log, org suspension)

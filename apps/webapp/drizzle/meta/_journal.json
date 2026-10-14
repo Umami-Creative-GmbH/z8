@@ -1553,7 +1553,28 @@
       "idx": 221,
       "version": "7",
       "when": 1803398400000,
-      "tag": "0221_closed_month_canonical_vehicle_use",
+      "tag": "0221_personal_data_export",
+      "breakpoints": true
+    },
+    {
+      "idx": 222,
+      "version": "7",
+      "when": 1803484800000,
+      "tag": "0222_personal_data_export_admin_notice",
+      "breakpoints": true
+    },
+    {
+      "idx": 223,
+      "version": "7",
+      "when": 1803571200000,
+      "tag": "0223_personal_data_export_reminder",
+      "breakpoints": true
+    },
+    {
+      "idx": 224,
+      "version": "7",
+      "when": 1803657600000,
+      "tag": "0224_closed_month_canonical_vehicle_use",
       "breakpoints": true
     }
   ]

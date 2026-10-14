@@ -192,6 +192,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.kiosks.title",
 		"settings.locations.description",
 		"settings.locations.title",
+		"settings.myData.description",
+		"settings.myData.title",
 		"settings.notifications.description",
 		"settings.notifications.title",
 		"settings.organizations.description",

@@ -107,6 +107,12 @@ export const NOTIFICATION_TYPES = [
 	"scheduled_export_paused",
 	// The morning-after reminder about work lacking its vehicle or a reading (#1127)
 	"driving_details_missing_reminder",
+	// The requester's personal data export is ready to download, with no file link (#811)
+	"personal_data_export_ready",
+	// To a current employee when an org admin's export of their personal data completes (#1166)
+	"personal_data_export_admin_exported",
+	// Download your personal data on My data before your departure cutoff (#1173)
+	"personal_data_export_reminder",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

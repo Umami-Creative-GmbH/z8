@@ -54,6 +54,7 @@ export type JobType =
 	| "audit-pack"
 	| "payroll-export"
 	| "travel-expense-export"
+	| "personal-data-export"
 	| "import-review-scan"
 	| "import-review-commit";
 
@@ -85,6 +86,13 @@ export interface TravelExpenseExportJobData {
 	organizationId: string;
 	batchId: string;
 	attempt: number;
+}
+
+/** Builds one personal data export (#811): the ZIP of one employee's data. */
+export interface PersonalDataExportJobData {
+	type: "personal-data-export";
+	organizationId: string;
+	exportId: string;
 }
 
 export interface EmailJobData {
@@ -156,6 +164,7 @@ export type JobData =
 	| ExportJobData
 	| PayrollExportJobData
 	| TravelExpenseExportJobData
+	| PersonalDataExportJobData
 	| EmailJobData
 	| CleanupJobData
 	| CronJobData

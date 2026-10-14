@@ -249,6 +249,30 @@ describe("getLocalizedNotificationContent", () => {
 		);
 	});
 
+	it("shows the day an administrator exported the reader's data in the reader's locale (#1166)", () => {
+		const localized = getLocalizedNotificationContent(
+			buildNotification({
+				title: "Your personal data was exported",
+				message: "An administrator exported your personal data on 14 Oct 2026.",
+				metadata: JSON.stringify({
+					onDay: "2026-10-14",
+					i18n: {
+						messageKey: "common:notifications.content.personalDataExportAdminExported.message",
+						messageDefault:
+							"Ein Administrator hat Ihre personenbezogenen Daten am {onDate} exportiert.",
+						params: { onDate: "14 Oct 2026" },
+					},
+				}),
+			}),
+			t,
+			"de",
+		);
+
+		expect(localized.message).toBe(
+			"Ein Administrator hat Ihre personenbezogenen Daten am 14. Okt. 2026 exportiert.",
+		);
+	});
+
 	it("formats typed params in the reader's locale at the time's own offset (#1149)", () => {
 		const localized = getLocalizedNotificationContent(
 			buildNotification({

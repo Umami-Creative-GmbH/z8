@@ -22,6 +22,7 @@ describe("settings visibility tiers", () => {
 			"notifications",
 			"wellness",
 			"position-stamps",
+			"my-data",
 		]);
 	});
 

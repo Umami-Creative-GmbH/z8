@@ -195,6 +195,10 @@ export enum AuditAction {
 	REPORT_SHARE_LINK_REVOKED = "report_share_link.revoked",
 	REPORT_SHARE_LINK_AUTO_REVOKED = "report_share_link.auto_revoked",
 
+	// Personal data exports (#811): who started or downloaded whose export, and which kind
+	PERSONAL_DATA_EXPORT_REQUESTED = "personal_data_export.requested",
+	PERSONAL_DATA_EXPORT_DOWNLOADED = "personal_data_export.downloaded",
+
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
 	APP_ACCESS_REVOKED = "app_access.revoked",
@@ -412,7 +416,8 @@ export interface AuditLogEntry {
 		| "ics_feed"
 		| "api_key"
 		| "report_share_link"
-		| "scheduled_export";
+		| "scheduled_export"
+		| "personal_data_export";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates
