@@ -2096,7 +2096,9 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		input.transition.kind === "approve" &&
 		!historicalPolicyClockOut
 	) {
-		if (!sourceBreakPolicySnapshot || !sourceSurchargeSnapshot) throw fail();
+		if (!sourceBreakPolicySnapshot || !sourceSurchargeSnapshot || !maintenance) throw fail();
+		// Work records applies the division's effects inside this transaction, the
+		// work balance mark included; maintenance keeps the surcharges of both halves.
 		const breakResult = await applyPolicyClockOutTerminalBreakInTransaction({
 			dbService: input.dbService,
 			organizationId: input.organizationId,
@@ -2116,31 +2118,23 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			decisionRecordId: decision.id,
 			period: {
 				id: period.id,
-				organizationId: period.organizationId,
-				employeeId: period.employeeId,
 				clockInId: period.clockInId,
 				clockOutId: period.clockOutId,
-				canonicalRecordId: period.canonicalRecordId,
-				approvalWorkflowId: period.approvalWorkflowId,
 				startTime: period.startTime,
 				endTime: period.endTime,
-				durationMinutes: period.durationMinutes,
-				projectId: period.projectId,
-				taskId: period.taskId,
-				workCategoryId: period.workCategoryId,
-				workLocationType: period.workLocationType,
 			},
-			adjustedAt: input.finalizedAt,
 			breakPolicySnapshot: sourceBreakPolicySnapshot,
-			surchargeSnapshot: sourceSurchargeSnapshot,
 		});
-		maintenance = breakResult.maintenance;
 		if (breakResult.kind === "adjusted") {
 			adjustment = {
 				kind: "break_enforced",
 				breakMinutes: breakResult.breakMinutes,
 			};
 			resultPeriodIds.push(breakResult.secondPeriodId);
+			maintenance = {
+				...maintenance,
+				surchargePeriodIds: [period.id, breakResult.secondPeriodId],
+			};
 		} else {
 			adjustment = { kind: "break_not_required" };
 		}
@@ -2169,7 +2163,13 @@ export async function finalizeOrdinaryWorkPeriodTerminalInTransaction(
 	try {
 		return await finalizeOrdinaryWorkPeriodTerminal(input);
 	} catch (error) {
-		throw unresolvedWorkPeriodReviewFrom(error) ?? ordinaryWorkPeriodFinalizationConflict();
+		// A closed month is refused as such, whether the terminal break's pre-check or
+		// the database (Z8M01, ADR 0004) found it: never a finalization conflict.
+		throw (
+			monthClosedRefusalOf(error) ??
+			unresolvedWorkPeriodReviewFrom(error) ??
+			ordinaryWorkPeriodFinalizationConflict()
+		);
 	}
 }
 
@@ -2265,6 +2265,7 @@ function finalizeCurrentWorkPeriodDecision(
 					finalizedAt: systemClock.nowInstant(),
 				}),
 			catch: (error) =>
+				monthClosedRefusalOf(error) ??
 				unresolvedWorkPeriodReviewFrom(error) ??
 				conflict("Ordinary work-period finalization conflict"),
 		});

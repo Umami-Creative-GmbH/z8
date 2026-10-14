@@ -1,5 +1,19 @@
 # Policy clock-out terminal break splits (#303 / T39)
 
+> **Since #1221 (spec #1212):** the terminal break divides the work through work records
+> (`lib/time-tracking/work-records`, ADR 0010) in both admissions, as a divide by an owed
+> break counting "approved work of the local day". Its raw SQL, hand-decoded rows and
+> SQL-text unit tests are gone. Work records accepts the finalizer's database handle
+> (`workRecordScopeForFinalizer`): inside a registered work transaction, or in a legacy
+> organization whose caller already holds the employee locks; otherwise it throws.
+> Legacy admission now floors each half, advances the revision and refuses a pair that
+> disagrees (the project allocation included). The division sends period submissions back,
+> carries invoiced work and marks the work balance dirty inside the transaction; the break
+> no longer returns maintenance facts of its own. Any other outcome is a
+> `PolicyClockOutTerminalBreakError`; a closed month (pre-check or the database's `Z8M01`)
+> reaches the approver as a `MonthClosedError`, not a finalization conflict. The sections
+> below describe #303 as delivered.
+
 ## Delivery and activation status
 
 A final policy clock-out approval that owes a required break splits the

@@ -2304,18 +2304,7 @@ function createDecisionDbService(options?: {
 describe("ordinary work-period approval finalizer", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		terminalBreakMocks.enforce.mockResolvedValue({
-			kind: "not_required",
-			maintenance: {
-				organizationId: "org-1",
-				employeeId: "employee-1",
-				dirtyFromDate: "2026-07-14",
-				decision: "approved",
-				surchargePeriodIds: ["period-1"],
-				staleSurchargePeriodIds: [],
-				surchargeSnapshot,
-			},
-		});
+		terminalBreakMocks.enforce.mockResolvedValue({ kind: "not_required" });
 	});
 
 	it.each([
@@ -2726,12 +2715,15 @@ describe("ordinary work-period approval finalizer", () => {
 					observedWorkflowId: "workflow-1",
 				},
 				decisionRecordId: "decision-1",
-				period: expect.objectContaining({
+				// The work exactly as the finalizer verified it, named as work records' expected state.
+				period: {
 					id: "period-1",
+					clockInId: "clock-in-1",
 					clockOutId: "clock-out-1",
-					canonicalRecordId: "record-1",
-					projectId: "project-1",
-				}),
+					startTime: period.startTime,
+					endTime: period.endTime,
+				},
+				breakPolicySnapshot,
 			}),
 		);
 		expect(result.period).toMatchObject({
@@ -2755,6 +2747,57 @@ describe("ordinary work-period approval finalizer", () => {
 		expect(vi.mocked(dbService.db.insert).mock.invocationCallOrder[0]).toBeLessThan(
 			terminalBreakMocks.enforce.mock.invocationCallOrder[0],
 		);
+	});
+
+	it("keeps the surcharges of both halves when the terminal break divides the work", async () => {
+		terminalBreakMocks.enforce.mockResolvedValueOnce({
+			kind: "adjusted",
+			breakMinutes: 30,
+			secondPeriodId: "period-2",
+		});
+		const dbService = createFinalizerDbService({
+			request: {
+				metadata: {
+					timeRequest: { kind: "policy_clock_out" },
+					breakPolicySnapshot,
+					surchargeSnapshot,
+					workflow: { id: "workflow-1", organizationId: "org-1" },
+					stage: { id: "stage-1", sequence: 1 },
+				},
+			},
+		});
+
+		const result = await finalize(dbService, { kind: "policy_clock_out" });
+
+		expect(result.outcome).toEqual({
+			status: "approved",
+			adjustment: { kind: "break_enforced", breakMinutes: 30 },
+			resultPeriodIds: ["period-1", "period-2"],
+		});
+		expect(result.maintenance).toMatchObject({ surchargePeriodIds: ["period-1", "period-2"] });
+	});
+
+	it("refuses a terminal break in a closed month as such, not as a finalization conflict", async () => {
+		// The database refusal (Z8M01, ADR 0004) behind a write of the division.
+		terminalBreakMocks.enforce.mockRejectedValueOnce(
+			Object.assign(new Error("month closed"), { code: "Z8M01", detail: "2026-07" }),
+		);
+		const dbService = createFinalizerDbService({
+			request: {
+				metadata: {
+					timeRequest: { kind: "policy_clock_out" },
+					breakPolicySnapshot,
+					surchargeSnapshot,
+					workflow: { id: "workflow-1", organizationId: "org-1" },
+					stage: { id: "stage-1", sequence: 1 },
+				},
+			},
+		});
+
+		await expect(finalize(dbService, { kind: "policy_clock_out" })).rejects.toMatchObject({
+			_tag: "MonthClosedError",
+			month: "2026-07",
+		});
 	});
 
 	it("rejects terminal approval when transactional break enforcement fails", async () => {

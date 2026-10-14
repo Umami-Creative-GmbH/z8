@@ -162,6 +162,35 @@ export function sealWorkTransactionScope<T extends object>(
 	return sealed;
 }
 
+/**
+ * A legacy scope for one employee on a transaction no coordinator opened: the
+ * Approvals finalizer's handle in a legacy organization (#1221). It is sealed
+ * only when the transaction's ledger already holds that employee's
+ * coordination guard, which the caller took; it never takes one. It is not
+ * registered for the client, because one approval transaction may finalize the
+ * work of several employees. Callers check the admission first.
+ */
+export function uncoordinatedLegacyScope(
+	client: WorkTransactionClient,
+	key: { organizationId: string; employeeId: string },
+): SealedWorkTransactionScope {
+	if (!ledgerHolds(client, employeeCoordinationGuard(key.employeeId))) {
+		throw new WorkTransactionProtocolViolation(
+			`a change of employee ${key.employeeId}'s work without the employee locks`,
+		);
+	}
+	return Object.freeze({
+		[protectedTransaction]: true as const,
+		db: client,
+		admission: "legacy" as const,
+		assertEmployee(organizationId: string, employeeId: string) {
+			if (organizationId !== key.organizationId || employeeId !== key.employeeId) {
+				throw new Error("Employee scope is outside the work transaction");
+			}
+		},
+	});
+}
+
 function isSealedScope(value: object): value is SealedWorkTransactionScope {
 	const candidate = value as Partial<SealedWorkTransactionScope>;
 	return (
