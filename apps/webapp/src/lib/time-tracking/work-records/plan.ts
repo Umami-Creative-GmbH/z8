@@ -16,6 +16,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { splitWorkVehicleUse } from "../vehicle-use/split-vehicle-use";
 import { deriveWorkDurationMinutes, WorkIntervalError } from "../work-duration";
+import { type AmendmentPlan, type PlannableAmendment, planAmendment } from "./amend-plan";
 import type { DivideWorkRecord, WorkRecordRefusal } from "./change";
 import {
 	type AgreementCanonicalRecord,
@@ -51,10 +52,16 @@ export type DivisionPlan = {
 	generated: PlannedHalf;
 };
 
-export type WorkRecordPlan = DivisionPlan;
+export type WorkRecordPlan = DivisionPlan | AmendmentPlan;
+
+/** The policy part of a division: everything the plan needs besides the locked pair. */
+export type PlannableDivision = Pick<
+	DivideWorkRecord,
+	"kind" | "at" | "odometerKm" | "attribution"
+>;
 
 /** The policy part of a change: everything the plan needs besides the locked pair. */
-export type PlannableChange = Pick<DivideWorkRecord, "kind" | "at" | "odometerKm" | "attribution">;
+export type PlannableChange = PlannableDivision | PlannableAmendment;
 
 /**
  * How the admission's writer rounds the minutes of written work: append
@@ -76,18 +83,30 @@ export function workDurationMinutes(
 
 export function planChange(
 	pair: WorkRecordPair,
+	change: PlannableDivision,
+	arithmetic: WorkDurationArithmetic,
+): DivisionPlan | WorkRecordRefusal;
+export function planChange(
+	pair: WorkRecordPair,
+	change: PlannableAmendment,
+	arithmetic: WorkDurationArithmetic,
+): AmendmentPlan | WorkRecordRefusal;
+export function planChange(
+	pair: WorkRecordPair,
 	change: PlannableChange,
 	arithmetic: WorkDurationArithmetic,
 ): WorkRecordPlan | WorkRecordRefusal {
 	switch (change.kind) {
 		case "divide":
 			return planDivision(pair, change, arithmetic);
+		case "amend":
+			return planAmendment(pair, change, arithmetic);
 	}
 }
 
 function planDivision(
 	pair: WorkRecordPair,
-	change: PlannableChange,
+	change: PlannableDivision,
 	arithmetic: WorkDurationArithmetic,
 ): DivisionPlan | WorkRecordRefusal {
 	const { period, canonical } = pair;

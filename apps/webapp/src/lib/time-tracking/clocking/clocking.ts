@@ -628,7 +628,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						entryIdOf: (executed) => executed.entry.id,
 					});
 					// The end reading belongs to the closed work, also when it ends at a break's start.
-					return recordClockOutVehicleUse(coordination.db, command, stampedClosure);
+					return recordClockOutVehicleUse(coordination, command, stampedClosure);
 				},
 			);
 		} catch (error) {
@@ -822,7 +822,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						entryIdOf: (executed) => executed.resumeEntryId,
 					});
 					// The vehicle carries over; the one reading ends and resumes the work (#1122).
-					return recordBreakVehicleUse(coordination.db, command, stampedBreak);
+					return recordBreakVehicleUse(coordination, command, stampedBreak);
 				},
 			);
 		} catch (error) {

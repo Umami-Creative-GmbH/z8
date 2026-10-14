@@ -30,7 +30,7 @@ import type { TimeEntryRow } from "./rows";
 
 /** One entry a change appends. */
 export type EntryDraft = {
-	type: "clock_in" | "clock_out";
+	type: "clock_in" | "clock_out" | "correction";
 	at: Instant;
 	notes: string | null;
 	provenance: NewEntryProvenance;
@@ -41,6 +41,14 @@ export type EntryDraft = {
 	 * generated half. Only legacy admission acts on it (see `legacyEntryWriter`).
 	 */
 	takesOverFrom?: TimeEntryRow;
+	/**
+	 * The endpoint this correction replaces (#1225), in both admissions: the
+	 * entry names it as `replaces_entry_id` and supersedes it. Its hash stays
+	 * predecessor evidence. An endpoint already superseded (legacy only: the
+	 * source clock-out a legacy split's generated half keeps) stays superseded
+	 * by what superseded it first.
+	 */
+	replaces?: TimeEntryRow;
 };
 
 /** An admitted change: appends its entries, in order, each after the previous. */
@@ -103,6 +111,7 @@ function appendEntryWriter(tx: WorkTransactionClient, input: EntryScope): WorkRe
 						const written: TimeEntryRow[] = [];
 						for (const draft of drafts) {
 							const entry = await insertAppendedEntry(tx, input, draft, previous);
+							if (draft.replaces) await supersedeReplacedEntry(tx, draft.replaces, entry);
 							await append.record({
 								id: entry.id,
 								hash: entry.hash,
@@ -142,6 +151,7 @@ async function insertAppendedEntry(
 			}),
 			previousHash: previous.hash,
 			previousEntryId: previous.id,
+			replacesEntryId: draft.replaces?.id ?? null,
 			notes: draft.notes,
 			ipAddress: draft.provenance.ipAddress,
 			deviceInfo: draft.provenance.deviceInfo,
@@ -195,6 +205,7 @@ function legacyEntryWriter(tx: WorkTransactionClient, input: EntryScope): WorkRe
 							if (draft.takesOverFrom && draft.notes) {
 								await supersedeTakenOverEntry(tx, draft.takesOverFrom, entry);
 							}
+							if (draft.replaces) await supersedeReplacedEntry(tx, draft.replaces, entry);
 							previous = { id: entry.id, hash: entry.hash };
 							written.push(entry);
 						}
@@ -226,4 +237,14 @@ async function supersedeTakenOverEntry(
 	if (superseded.length !== 1) {
 		throw new CompletedWorkIntegrityError("Endpoint changed under its lock");
 	}
+}
+
+/** A correction supersedes the endpoint it replaces, unless that one already is. */
+async function supersedeReplacedEntry(
+	tx: WorkTransactionClient,
+	endpoint: TimeEntryRow,
+	by: TimeEntryRow,
+): Promise<void> {
+	if (endpoint.isSuperseded) return;
+	await supersedeTakenOverEntry(tx, endpoint, by);
 }

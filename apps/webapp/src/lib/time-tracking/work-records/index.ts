@@ -7,7 +7,7 @@ import "server-only";
  * - `readWorkRecord`: a completed work period with its entries and canonical
  *   work record, its expected state and its record agreement, optionally
  *   locked so a caller can check its own preconditions first.
- * - `applyWorkRecordChange`: one change (today: divide) against a named
+ * - `applyWorkRecordChange`: one change (divide, amend) against a named
  *   expected state. It returns the applied result or a refusal, never both;
  *   `orRefuse` turns a refusal into the error interactive callers throw.
  *
@@ -18,9 +18,20 @@ import "server-only";
  */
 import type { SealedWorkTransactionScope } from "../work-transaction";
 import type { DivideWorkRecord, WorkRecordChange, WorkRecordRefusal } from "./change";
+import type { AmendWorkRecord } from "./amend-change";
+import { amendWorkRecord, type WorkAmendment } from "./amend";
 import { divideWorkRecord, type WorkDivision } from "./divide";
 import { divideByOwedBreak, type OwedBreakDivision } from "./divide-owed-break";
 import type { DivideByOwedBreak, OwedBreakNotRequired } from "./owed-break";
+
+export type {
+	AmendAttributionPatch,
+	AmendedEndpoint,
+	AmendedTimes,
+	AmendmentChanges,
+	AmendWorkRecord,
+} from "./amend-change";
+export type { AmendedEntryEvidence, WorkAmendment } from "./amend";
 
 export type {
 	DivideWorkRecord,
@@ -57,7 +68,9 @@ export type WorkRecordResult<C extends WorkRecordChange> = C extends DivideWorkR
 	? WorkDivision
 	: C extends DivideByOwedBreak
 		? OwedBreakDivision | OwedBreakNotRequired
-		: never;
+		: C extends AmendWorkRecord
+			? WorkAmendment
+			: never;
 
 export async function applyWorkRecordChange<C extends WorkRecordChange>(
 	scope: SealedWorkTransactionScope,
@@ -68,5 +81,7 @@ export async function applyWorkRecordChange<C extends WorkRecordChange>(
 			return (await divideWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 		case "divide_owed_break":
 			return (await divideByOwedBreak(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
+		case "amend":
+			return (await amendWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 	}
 }
