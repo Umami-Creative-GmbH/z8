@@ -326,7 +326,7 @@ export const travelExpenseReportItem = pgTable(
 				AND (${table.mileageDistanceKm} IS NULL OR ${table.mileageDistanceKm} > 0)
 				AND (${table.mileageVehicle} IS NULL OR ${table.mileageVehicle} IN ('car', 'other_motor_vehicle'))))`,
 		),
-		// migration 0219 deletes with SET NULL ("source_work_period_id") only, keeping the organization.
+		// migration 0225 deletes with SET NULL ("source_work_period_id") only, keeping the organization.
 		// Drizzle cannot declare the column list: a generated plain SET NULL would also null the
 		// NOT NULL organization_id. Migrations are hand-written; migration-schema.integration checks it.
 		foreignKey({

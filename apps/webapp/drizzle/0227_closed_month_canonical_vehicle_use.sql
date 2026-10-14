@@ -1,5 +1,5 @@
 -- Closed months cover vehicle use on the canonical work record (#807 review, #1120): vehicle use
--- is stored with the work's attribution on work_period (guarded since 0218) and on its canonical
+-- is stored with the work's attribution on work_period (guarded since 0224) and on its canonical
 -- time_record_work, which the time_record guard (0191) cannot see. An update of a canonical work
 -- record's vehicle, readings or driven distance is refused while its work touches a closed range,
 -- as the same change on work_period is. The record's times come from its time_record. Inserts and

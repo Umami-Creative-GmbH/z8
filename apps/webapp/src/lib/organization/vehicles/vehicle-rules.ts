@@ -50,7 +50,7 @@ export type VehicleRefusal =
 
 /**
  * The foreign keys of work that records an organization vehicle, on the period
- * and its canonical record (0218): they refuse deleting a recorded vehicle (the
+ * and its canonical record (0224): they refuse deleting a recorded vehicle (the
  * demo reset archives such a vehicle instead).
  */
 export const RECORDED_VEHICLE_FOREIGN_KEYS = [

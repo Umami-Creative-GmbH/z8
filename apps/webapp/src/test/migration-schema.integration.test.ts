@@ -145,7 +145,7 @@ it("the SQL migration chain supplies every declared table, column, enum, index a
 
 it("supplies what the schema cannot declare for vehicle use (#807)", async () => {
 	const pool = integrationAdminPool();
-	// Closed months guard vehicle use on both representations of work (0218, 0227).
+	// Closed months guard vehicle use on both representations of work (0224, 0227).
 	const triggers = (
 		await pool.query<{ table_name: string; name: string; columns: string[] }>(`
  select c.relname as table_name, t.tgname as name,
@@ -184,7 +184,7 @@ it("supplies what the schema cannot declare for vehicle use (#807)", async () =>
 	]) {
 		expect(guard).toContain(`NEW.${column}`);
 	}
-	// A deleted work period clears only a mileage item's link, never its organization (0219):
+	// A deleted work period clears only a mileage item's link, never its organization (0225):
 	// Drizzle declares the action, not the column list.
 	const setNull = (
 		await pool.query<{ columns: string[] }>(`
