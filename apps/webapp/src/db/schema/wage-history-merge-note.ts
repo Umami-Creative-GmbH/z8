@@ -16,7 +16,7 @@ import { employee } from "./organization";
 /**
  * The one-time note on an employee's Contract & Work Model card that their wage history was
  * merged from the old rate history (#1176, Organization ADR 0002). Written once by migration
- * 0217 for every affected employee and shown to org admins until one dismisses it. It outlives
+ * 0223 for every affected employee and shown to org admins until one dismisses it. It outlives
  * the operator report table, which #1164 drops.
  */
 export const employeeWageHistoryMergeNote = pgTable(

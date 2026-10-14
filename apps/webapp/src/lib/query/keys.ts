@@ -203,6 +203,9 @@ export const queryKeys = {
 		/** Lifecycle view; under the organization key so directory changes refresh it. */
 		offboarding: (orgId: string, employeeId: string) =>
 			["employees", orgId, "offboarding", employeeId] as const,
+		/** The employee's admin exports of their personal data (#1166). */
+		personalDataExports: (orgId: string, employeeId: string) =>
+			["employees", orgId, "personal-data-exports", employeeId] as const,
 		offboardingPreview: (
 			orgId: string,
 			employeeId: string,
@@ -247,6 +250,9 @@ export const queryKeys = {
 		/** An employee's sick leave in the officer area (#984). */
 		employeeSickLeave: (employeeId: string) =>
 			["personnel-file", "sick-notes", "sick-leave", employeeId] as const,
+		/** The employee skills a certificate may name (#1144). */
+		certificateSkills: (employeeId: string) =>
+			["personnel-file", "certificate-skills", employeeId] as const,
 	},
 
 	// Employee clock statuses
@@ -690,11 +696,14 @@ export const queryKeys = {
 		subarea: (subareaId: string) => ["skills", "subarea", subareaId] as const,
 		// Template skill requirements
 		template: (templateId: string) => ["skills", "template", templateId] as const,
-		// Skill validation for shift assignment
-		validation: (employeeId: string, subareaId: string, templateId?: string) =>
-			["skills", "validation", employeeId, subareaId, templateId] as const,
-		// Qualified employees for a set of skills
-		qualified: (skillIds: string[]) => ["skills", "qualified", skillIds] as const,
+		// Skill validation for shift assignment on the shift date
+		validation: (employeeId: string, subareaId: string, date: string, templateId?: string) =>
+			["skills", "validation", employeeId, subareaId, date, templateId] as const,
+		// Qualified employees for a set of skills on the shift date
+		qualified: (skillIds: string[], date: string) =>
+			["skills", "qualified", skillIds, date] as const,
+		// The organization's today and the "Expiring soon" window of skill badges
+		expiryWindow: (orgId: string) => ["skills", "expiry-window", orgId] as const,
 	},
 	// Telegram integration
 	telegram: {

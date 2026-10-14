@@ -5,7 +5,12 @@
  */
 
 import { DateTime } from "luxon";
-import { fmtFullDate, fmtShortDate, fmtShortDateTime } from "@/lib/bot-platform/i18n";
+import {
+	type BotTranslateFn,
+	fmtFullDate,
+	fmtShortDate,
+	fmtShortDateTime,
+} from "@/lib/bot-platform/i18n";
 import type {
 	ApprovalCardData,
 	ApprovalResolvedData,
@@ -151,38 +156,43 @@ export function buildResolvedApprovalBlocks(
 // ============================================
 
 /**
- * Build Block Kit blocks for a daily digest message.
+ * Build Block Kit blocks for a daily digest message, in the recipient language.
  */
 export function buildDailyDigestBlocks(
 	data: DailyDigestData,
 	appUrl: string,
-	locale: string = DEFAULT_LANGUAGE,
+	locale: string,
+	t: BotTranslateFn,
 ): {
 	blocks: unknown[];
 	text: string;
 } {
-	const text = "Daily Digest";
+	const text = t("teamsBot:digest.title", "Daily Digest");
 	const dateFormatted = fmtFullDate(DateTime.fromJSDate(data.date).setZone(data.timezone), locale);
 
 	const blocks: unknown[] = [
 		{
 			type: "header",
-			text: { type: "plain_text", text: `Daily Digest - ${dateFormatted}`, emoji: true },
+			text: {
+				type: "plain_text",
+				text: t("bot.digest.title", "Daily Digest - {date}", { date: dateFormatted }),
+				emoji: true,
+			},
 		},
 	];
 
 	// Pending approvals
-	if (data.pendingApprovals === 0) {
-		blocks.push({
-			type: "section",
-			text: { type: "mrkdwn", text: "*Pending Approvals:* None" },
-		});
-	} else {
-		blocks.push({
-			type: "section",
-			text: { type: "mrkdwn", text: `*Pending Approvals:* ${data.pendingApprovals}` },
-		});
-	}
+	const pendingLabel = `*${t("bot.digest.pendingApprovals", "Pending Approvals:")}*`;
+	blocks.push({
+		type: "section",
+		text: {
+			type: "mrkdwn",
+			text:
+				data.pendingApprovals === 0
+					? `${pendingLabel} ${t("bot.digest.none", "None")}`
+					: `${pendingLabel} ${data.pendingApprovals}`,
+		},
+	});
 
 	// Who's out
 	if (data.employeesOut.length > 0) {
@@ -190,12 +200,19 @@ export function buildDailyDigestBlocks(
 			.slice(0, 5)
 			.map(
 				(e) =>
-					`  ${e.name} - ${e.category} (returns ${e.returnDate})${e.deputyName ? ` · Deputy: ${e.deputyName}` : ""}`,
+					t("teamsBot:digest.textEmployeeOut", "• {name} - {category} (returns {returnDate})", {
+						name: e.name,
+						category: e.category,
+						returnDate: e.returnDate,
+					}) +
+					(e.deputyName
+						? ` · ${t("teamsBot:digest.deputy", "Deputy: {name}", { name: e.deputyName })}`
+						: ""),
 			)
 			.join("\n");
-		let outText = `*Who's Out:*\n${outList}`;
+		let outText = `*${t("bot.digest.whosOut", "Who's Out:")}*\n${outList}`;
 		if (data.employeesOut.length > 5) {
-			outText += `\n  +${data.employeesOut.length - 5} more`;
+			outText += `\n${t("teamsBot:common.moreBullet", "• +{count} more", { count: data.employeesOut.length - 5 })}`;
 		}
 		blocks.push({
 			type: "section",
@@ -207,11 +224,17 @@ export function buildDailyDigestBlocks(
 	if (data.employeesClockedIn.length > 0) {
 		const clockedList = data.employeesClockedIn
 			.slice(0, 5)
-			.map((e) => `  ${e.name} - since ${e.clockedInAt} (${e.durationSoFar})`)
+			.map((e) =>
+				t("teamsBot:digest.textClockedInEmployee", "• {name} - since {clockedInAt} ({duration})", {
+					name: e.name,
+					clockedInAt: e.clockedInAt,
+					duration: e.durationSoFar,
+				}),
+			)
 			.join("\n");
-		let clockedText = `*Currently Clocked In:*\n${clockedList}`;
+		let clockedText = `*${t("bot.digest.clockedIn", "Currently Clocked In:")}*\n${clockedList}`;
 		if (data.employeesClockedIn.length > 5) {
-			clockedText += `\n  +${data.employeesClockedIn.length - 5} more`;
+			clockedText += `\n${t("teamsBot:common.moreBullet", "• +{count} more", { count: data.employeesClockedIn.length - 5 })}`;
 		}
 		blocks.push({
 			type: "section",
@@ -229,7 +252,10 @@ export function buildDailyDigestBlocks(
 			.join("\n");
 		blocks.push({
 			type: "section",
-			text: { type: "mrkdwn", text: `*Coverage Gaps:*\n${gapList}` },
+			text: {
+				type: "mrkdwn",
+				text: `*${t("bot.digest.coverageGaps", "Coverage Gaps:")}*\n${gapList}`,
+			},
 		});
 	}
 
@@ -239,7 +265,11 @@ export function buildDailyDigestBlocks(
 			type: "section",
 			text: {
 				type: "mrkdwn",
-				text: `*Open Shifts:* Today: ${data.openShiftsToday || 0} | Tomorrow: ${data.openShiftsTomorrow || 0}`,
+				text: `*${t("bot.digest.openShifts", "Open Shifts:")}* ${t(
+					"teamsBot:digest.todayTomorrow",
+					"Today: {today} | Tomorrow: {tomorrow}",
+					{ today: data.openShiftsToday || 0, tomorrow: data.openShiftsTomorrow || 0 },
+				)}`,
 			},
 		});
 	}
@@ -250,7 +280,11 @@ export function buildDailyDigestBlocks(
 			type: "section",
 			text: {
 				type: "mrkdwn",
-				text: `*Compliance:* ${data.compliancePending} pending exception request${data.compliancePending > 1 ? "s" : ""}`,
+				text: `*${t("bot.digest.compliance", "Compliance:")}* ${t(
+					"teamsBot:digest.pendingExceptionRequests",
+					"{count, plural, one {# pending exception request awaiting review} other {# pending exception requests awaiting review}}",
+					{ count: data.compliancePending },
+				)}`,
 			},
 		});
 	}
@@ -261,7 +295,11 @@ export function buildDailyDigestBlocks(
 		elements: [
 			{
 				type: "button",
-				text: { type: "plain_text", text: "Open Z8 Dashboard", emoji: true },
+				text: {
+					type: "plain_text",
+					text: t("bot.digest.openDashboard", "Open Z8 Dashboard"),
+					emoji: true,
+				},
 				url: `${appUrl}/dashboard`,
 			},
 		],

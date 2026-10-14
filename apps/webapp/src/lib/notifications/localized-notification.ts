@@ -3,6 +3,7 @@ import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
 import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
+import { formatNotificationParam, isTypedNotificationParam } from "./notification-params";
 import type { NotificationWithMeta } from "./types";
 
 type TranslationParam = string | number | bigint | boolean | Date | null | undefined;
@@ -23,6 +24,8 @@ type NotificationMetadata = {
 	dateRangeDays?: { startDate: string; endDate: string };
 	/** The plain day the `untilDate` param stands for, in the reader's locale (#1013). */
 	untilDay?: string;
+	/** The plain day the `onDate` param stands for, in the reader's locale (#1166). */
+	onDay?: string;
 	/** A closed month (`YYYY-MM`) the `month` param stands for, in the reader's locale (#762). */
 	closedMonth?: string;
 	i18n?: {
@@ -114,7 +117,14 @@ function localizedParams(
 	if (!params) return params;
 	const days = metadata.dateRangeDays;
 	const untilDay = metadata.untilDay;
-	const localized = { ...params };
+	const localized: Record<string, TranslationParam> = {};
+	for (const [key, value] of Object.entries(params)) {
+		if (isTypedNotificationParam(value))
+			localized[key] = formatNotificationParam(value, { locale });
+		else if (value === null || typeof value !== "object" || value instanceof Date)
+			localized[key] = value as TranslationParam;
+	}
+	const unchanged = { ...localized };
 	try {
 		if (days) {
 			localized.dateRange = formatAbsenceDateRange(days.startDate, days.endDate, locale);
@@ -122,11 +132,14 @@ function localizedParams(
 		if (untilDay) {
 			localized.untilDate = formatPlainDate(parsePlainDate(untilDay), locale, "dateMedium");
 		}
+		if (metadata.onDay) {
+			localized.onDate = formatPlainDate(parsePlainDate(metadata.onDay), locale, "dateMedium");
+		}
 		if (metadata.closedMonth) {
 			localized.month = formatClosedMonthLabel(metadata.closedMonth, locale);
 		}
 	} catch {
-		return params;
+		return unchanged;
 	}
 	return localized;
 }
@@ -151,7 +164,8 @@ export function getLocalizedNotificationContent(
 			)
 		: notification.message;
 
-	if (metadata.managerRecorded) {
+	// Rows from before #1153 carry no message key: their dates are top-level metadata.
+	if (metadata.managerRecorded && !metadata.i18n?.messageKey) {
 		message = t(
 			"common:notifications.content.absenceRecorded.message",
 			"{managerName} recorded {absenceType} for {dateRange} on your behalf.",

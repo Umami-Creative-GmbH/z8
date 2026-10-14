@@ -10,7 +10,7 @@ import {
 	loadCompleteServerTranslations,
 	loadShellTranslations,
 } from "./load-translations";
-import { ALL_LANGUAGES, ALL_NAMESPACES } from "./shared";
+import { ALL_LANGUAGES, APP_NAMESPACES } from "./shared";
 import { SHELL_CATALOG_KEYS } from "./shell-catalog";
 
 vi.mock("server-only", () => ({}));
@@ -92,7 +92,7 @@ describe("shared shell catalog", () => {
 		"covers shell consumers, metadata, aliases and dynamic families in %s",
 		async (locale) => {
 			const complete = await loadCompleteServerTranslations(locale);
-			const completeSlice = await loadCatalogSlice(locale, ALL_NAMESPACES);
+			const completeSlice = await loadCatalogSlice(locale, APP_NAMESPACES);
 			const shell = await loadShellTranslations(locale);
 			expect(shell.locale).toBe(locale);
 			// Partial projections must never make a full feature namespace look ready.

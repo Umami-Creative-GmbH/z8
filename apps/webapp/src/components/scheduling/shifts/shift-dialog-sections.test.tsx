@@ -56,7 +56,6 @@ function Sections({
 				isValidatingSkills={false}
 				isEditing={false}
 				shift={null}
-				organizationTimezone="Europe/Berlin"
 				staffing={staffing}
 			/>
 			<output data-testid="date-value">{formValues.date}</output>

@@ -184,20 +184,22 @@ async function consumeEmployeeInvitationDraft(
 				input.draftId
 					? eq(employeeInvitationDraft.id, input.draftId)
 					: undefined,
-				exists(sql`
+				// Drizzle renders a raw `sql` argument to exists() without parentheses,
+				// so each subquery carries its own; `exists select` is a syntax error (#1185).
+				exists(sql`(
 						select 1
 						from ${invitation}
 						where ${invitation.id} = ${employeeInvitationDraft.invitationId}
 						and ${invitation.organizationId} = ${input.organizationId}
 						and ${linkedInvitationStatus}
-					`),
-				exists(sql`
+					)`),
+				exists(sql`(
 						select 1
 						from ${employee}
 						inner join ${user} on ${employee.userId} = ${user.id}
 						where ${employee.organizationId} = ${input.organizationId}
 						and lower(btrim(${user.email})) = ${employeeInvitationDraft.normalizedEmail}
-					`),
+					)`),
 			),
 		);
 	} catch {

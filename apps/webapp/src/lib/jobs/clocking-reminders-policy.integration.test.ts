@@ -6,6 +6,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { formatNotificationParams } from "@/lib/notifications/notification-params";
 import {
 	createClockingService,
 	createDatabaseClockingStore,
@@ -277,9 +278,12 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 			i18n: {
 				titleKey: "common:notifications.content.missedClockInReminder.title",
 				messageKey: "common:notifications.content.policyMissedClockInReminder.message",
-				params: { startTime: "09:00", timezone: "Europe/Berlin" },
+				params: { timezone: "Europe/Berlin" },
 			},
 		});
+		expect(
+			formatNotificationParams(sent[0].metadata.i18n.params, { locale: "de" }).startTime,
+		).toMatch(/^0?9:00$/);
 	});
 
 	it("skips the policy lookups of a reminder already sent, with one occasion lookup per page", async () => {
@@ -408,9 +412,11 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 			day: MONDAY,
 			i18n: {
 				messageKey: "common:notifications.content.policyForgottenClockOutReminder.message",
-				params: { endTime: "16:30" },
 			},
 		});
+		expect(formatNotificationParams(sent[0].metadata.i18n.params, { locale: "de" }).endTime).toBe(
+			"16:30",
+		);
 	});
 
 	it("keeps a forgotten clock-out's occasion past retention while the work is live, so a later run does not re-send it", async () => {
@@ -502,10 +508,9 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 			["forgotten_clock_out_reminder", MONDAY],
 		]);
 		// Sent on Tuesday, the message names Monday rather than "today".
-		expect(sent[0].metadata.i18n.params).toMatchObject({
-			day: "Montag, 27. April",
-			endTime: "06:00",
-		});
+		const params = formatNotificationParams(sent[0].metadata.i18n.params, { locale: "de" });
+		expect(params.day).toBe("Montag, 27. April");
+		expect(params.endTime).toMatch(/^0?6:00$/);
 	});
 
 	it("evaluates an employee in another timezone in their own local day", async () => {
@@ -518,8 +523,16 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 		// 09:15 EDT.
 		await run("2026-04-27T13:15:00Z");
 		const sent = await notifications(person);
-		expect(sent.map((row) => [row.type, row.metadata.i18n.params])).toEqual([
-			["missed_clock_in_reminder", { startTime: "09:00", timezone: "America/New_York" }],
+		expect(
+			sent.map((row) => [
+				row.type,
+				formatNotificationParams(row.metadata.i18n.params, { locale: "de" }),
+			]),
+		).toEqual([
+			[
+				"missed_clock_in_reminder",
+				{ startTime: expect.stringMatching(/^0?9:00$/), timezone: "America/New_York" },
+			],
 		]);
 	});
 });

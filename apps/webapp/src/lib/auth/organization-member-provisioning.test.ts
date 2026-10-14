@@ -571,6 +571,9 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 			'lower(btrim("user"."email")) = "employee_invitation_draft"."normalized_email"',
 		);
 		expect(deleteQuery.sql).toContain('"employee"."organization_id"');
+		// PostgreSQL rejects `exists select …`; the subqueries need parentheses (#1185).
+		expect(deleteQuery.sql.match(/exists \(\s*select 1/g)).toHaveLength(2);
+		expect(deleteQuery.sql).not.toMatch(/exists\s+select/);
 		expect(deleteQuery.params).toEqual([
 			"org-1",
 			"draft-accepted",

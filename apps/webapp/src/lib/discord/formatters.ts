@@ -5,7 +5,12 @@
  */
 
 import { DateTime } from "luxon";
-import { fmtFullDate, fmtShortDate, fmtShortDateTime } from "@/lib/bot-platform/i18n";
+import {
+	type BotTranslateFn,
+	fmtFullDate,
+	fmtShortDate,
+	fmtShortDateTime,
+} from "@/lib/bot-platform/i18n";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import type {
 	ApprovalButtonData,
@@ -169,12 +174,13 @@ export function buildResolvedApprovalEmbed(
 // ============================================
 
 /**
- * Build daily digest embed for Discord.
+ * Build daily digest embed for Discord, in the recipient language.
  */
 export function buildDailyDigestEmbed(
 	data: DailyDigestData,
 	appUrl: string,
-	locale: string = DEFAULT_LANGUAGE,
+	locale: string,
+	t: BotTranslateFn,
 ): DiscordEmbed[] {
 	const dateFormatted = fmtFullDate(DateTime.fromJSDate(data.date).setZone(data.timezone), locale);
 
@@ -182,37 +188,62 @@ export function buildDailyDigestEmbed(
 
 	// Pending approvals
 	fields.push({
-		name: "Pending Approvals",
-		value: data.pendingApprovals === 0 ? "None" : String(data.pendingApprovals),
+		name: t("teamsBot:digest.pendingApprovals", "Pending Approvals"),
+		value:
+			data.pendingApprovals === 0 ? t("bot.digest.none", "None") : String(data.pendingApprovals),
 		inline: true,
 	});
 
 	// Who's out
+	const whosOut = t("teamsBot:digest.whosOutToday", "Who's Out Today");
 	if (data.employeesOut.length === 0) {
-		fields.push({ name: "Who's Out", value: "Everyone is available", inline: true });
+		fields.push({
+			name: whosOut,
+			value: t("bot.digest.everyoneAvailable", "Everyone is available"),
+			inline: true,
+		});
 	} else {
 		const outList = data.employeesOut
 			.slice(0, 5)
 			.map(
 				(emp) =>
-					`${emp.name} - ${emp.category} (returns ${emp.returnDate})${emp.deputyName ? ` · Deputy: ${emp.deputyName}` : ""}`,
+					t("teamsBot:digest.textEmployeeOut", "• {name} - {category} (returns {returnDate})", {
+						name: emp.name,
+						category: emp.category,
+						returnDate: emp.returnDate,
+					}) +
+					(emp.deputyName
+						? ` · ${t("teamsBot:digest.deputy", "Deputy: {name}", { name: emp.deputyName })}`
+						: ""),
 			)
 			.join("\n");
-		const suffix = data.employeesOut.length > 5 ? `\n+${data.employeesOut.length - 5} more` : "";
-		fields.push({ name: "Who's Out", value: outList + suffix, inline: false });
+		const suffix =
+			data.employeesOut.length > 5
+				? `\n${t("teamsBot:common.moreBullet", "• +{count} more", { count: data.employeesOut.length - 5 })}`
+				: "";
+		fields.push({ name: whosOut, value: outList + suffix, inline: false });
 	}
 
 	// Clocked in
+	const clockedIn = t("teamsBot:digest.currentlyClockedIn", "Currently Clocked In");
 	if (data.employeesClockedIn.length === 0) {
-		fields.push({ name: "Currently Clocked In", value: "No one yet", inline: true });
+		fields.push({ name: clockedIn, value: t("bot.digest.noOneYet", "No one yet"), inline: true });
 	} else {
 		const clockedList = data.employeesClockedIn
 			.slice(0, 5)
-			.map((emp) => `${emp.name} - since ${emp.clockedInAt} (${emp.durationSoFar})`)
+			.map((emp) =>
+				t("teamsBot:digest.textClockedInEmployee", "• {name} - since {clockedInAt} ({duration})", {
+					name: emp.name,
+					clockedInAt: emp.clockedInAt,
+					duration: emp.durationSoFar,
+				}),
+			)
 			.join("\n");
 		const suffix =
-			data.employeesClockedIn.length > 5 ? `\n+${data.employeesClockedIn.length - 5} more` : "";
-		fields.push({ name: "Currently Clocked In", value: clockedList + suffix, inline: false });
+			data.employeesClockedIn.length > 5
+				? `\n${t("teamsBot:common.moreBullet", "• +{count} more", { count: data.employeesClockedIn.length - 5 })}`
+				: "";
+		fields.push({ name: clockedIn, value: clockedList + suffix, inline: false });
 	}
 
 	// Coverage gaps
@@ -223,14 +254,21 @@ export function buildDailyDigestEmbed(
 					`${gap.locationName} - ${gap.subareaName}: ${gap.actual}/${gap.scheduled} (-${gap.shortage})`,
 			)
 			.join("\n");
-		fields.push({ name: "Coverage Gaps", value: gapList, inline: false });
+		fields.push({
+			name: t("bot.digest.coverageGapsTitle", "Coverage Gaps"),
+			value: gapList,
+			inline: false,
+		});
 	}
 
 	// Open shifts
 	if (data.openShiftsToday || data.openShiftsTomorrow) {
 		fields.push({
-			name: "Open Shifts",
-			value: `Today: ${data.openShiftsToday || 0} | Tomorrow: ${data.openShiftsTomorrow || 0}`,
+			name: t("teamsBot:digest.openShifts", "Open Shifts"),
+			value: t("teamsBot:digest.todayTomorrow", "Today: {today} | Tomorrow: {tomorrow}", {
+				today: data.openShiftsToday || 0,
+				tomorrow: data.openShiftsTomorrow || 0,
+			}),
 			inline: true,
 		});
 	}
@@ -238,8 +276,12 @@ export function buildDailyDigestEmbed(
 	// Compliance
 	if (data.compliancePending && data.compliancePending > 0) {
 		fields.push({
-			name: "Compliance",
-			value: `${data.compliancePending} pending exception request${data.compliancePending > 1 ? "s" : ""}`,
+			name: t("bot.digest.complianceTitle", "Compliance"),
+			value: t(
+				"teamsBot:digest.pendingExceptionRequests",
+				"{count, plural, one {# pending exception request awaiting review} other {# pending exception requests awaiting review}}",
+				{ count: data.compliancePending },
+			),
 			inline: true,
 		});
 	}
@@ -248,10 +290,14 @@ export function buildDailyDigestEmbed(
 
 	return [
 		{
-			title: `Daily Digest - ${dateFormatted}`,
+			title: t("bot.digest.title", "Daily Digest - {date}", { date: dateFormatted }),
 			color: Colors.BLUE,
 			fields,
-			footer: { text: `View full dashboard at ${dashboardUrl}` },
+			footer: {
+				text: t("bot.digest.viewDashboardAt", "View full dashboard at {url}", {
+					url: dashboardUrl,
+				}),
+			},
 			timestamp: data.date.toISOString(),
 		},
 	];
@@ -291,17 +337,18 @@ export function buildEscalationEmbed(
 }
 
 /**
- * Build a simple notification embed.
+ * Build a simple notification embed. The caller passes the link text already
+ * in the recipient language.
  */
 export function buildNotificationEmbed(
 	title: string,
 	message: string,
-	actionUrl?: string,
+	action?: { url: string; label: string },
 ): DiscordEmbed[] {
 	return [
 		{
 			title,
-			description: message + (actionUrl ? `\n\n[View in Z8](${actionUrl})` : ""),
+			description: message + (action ? `\n\n[${action.label}](${action.url})` : ""),
 			color: Colors.BLUE,
 			timestamp: new Date().toISOString(),
 		},

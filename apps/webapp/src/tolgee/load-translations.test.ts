@@ -21,7 +21,7 @@ vi.mock("next/cache", () => ({
 
 vi.mock("./shared", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./shared")>()),
-	ALL_NAMESPACES: ["common", "dashboard"],
+	APP_NAMESPACES: ["common", "dashboard"],
 	loadNamespaces: mockState.loadNamespaces,
 }));
 

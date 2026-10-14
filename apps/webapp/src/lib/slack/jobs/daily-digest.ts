@@ -10,6 +10,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { env } from "@/env";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
@@ -141,7 +142,8 @@ async function processBotDigest(bot: {
 				);
 
 				// Build Block Kit message
-				const { blocks, text } = buildDailyDigestBlocks(digestData, appUrl, temporal.locale);
+				const t = await getBotTranslate(temporal.locale);
+				const { blocks, text } = buildDailyDigestBlocks(digestData, appUrl, temporal.locale, t);
 
 				await postMessage(bot.botAccessToken, {
 					channel: conv.channelId,

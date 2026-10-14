@@ -174,6 +174,9 @@ export enum AuditAction {
 	// Sick notes linked to or unlinked from an absence by an officer (#984)
 	PERSONNEL_FILE_SICK_NOTE_LINKED = "personnel_file.sick_note_linked",
 	PERSONNEL_FILE_SICK_NOTE_UNLINKED = "personnel_file.sick_note_unlinked",
+	// A certificate naming (or changing) the employee skill it proves, or no longer naming one (#1144)
+	PERSONNEL_FILE_SKILL_CERTIFICATE_LINKED = "personnel_file.skill_certificate_linked",
+	PERSONNEL_FILE_SKILL_CERTIFICATE_UNLINKED = "personnel_file.skill_certificate_unlinked",
 
 	// ICS Feed Operations (#991)
 	ICS_FEED_CREATED = "ics_feed.created",
@@ -189,6 +192,10 @@ export enum AuditAction {
 	REPORT_SHARE_LINK_CREATED = "report_share_link.created",
 	REPORT_SHARE_LINK_REVOKED = "report_share_link.revoked",
 	REPORT_SHARE_LINK_AUTO_REVOKED = "report_share_link.auto_revoked",
+
+	// Personal data exports (#811): who started or downloaded whose export, and which kind
+	PERSONAL_DATA_EXPORT_REQUESTED = "personal_data_export.requested",
+	PERSONAL_DATA_EXPORT_DOWNLOADED = "personal_data_export.downloaded",
 
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
@@ -399,7 +406,8 @@ export interface AuditLogEntry {
 		| "ics_feed"
 		| "api_key"
 		| "report_share_link"
-		| "scheduled_export";
+		| "scheduled_export"
+		| "personal_data_export";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

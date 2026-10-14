@@ -23,6 +23,7 @@ import {
 	deleteSkill,
 	updateSkill,
 } from "@/app/[locale]/(app)/settings/skills/actions";
+import { SkillReminderSettingsCard } from "@/components/settings/skill-reminder-settings-card";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -63,6 +64,8 @@ type SkillCategory = "safety" | "equipment" | "certification" | "training" | "la
 interface SkillCatalogManagementProps {
 	organizationId: string;
 	canManageCatalog?: boolean;
+	/** The organization's skill reminder lead time; owners and admins edit it next to the catalog (#1143). */
+	reminderLeadDays?: number;
 }
 
 const SKILL_CATEGORIES: Array<{
@@ -91,6 +94,7 @@ function getCategoryLabel(category: SkillCategory) {
 export function SkillCatalogManagement({
 	organizationId,
 	canManageCatalog = true,
+	reminderLeadDays,
 }: SkillCatalogManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -332,6 +336,10 @@ export function SkillCatalogManagement({
 					)}
 				</CardContent>
 			</Card>
+
+			{canManageCatalog && reminderLeadDays !== undefined ? (
+				<SkillReminderSettingsCard leadDays={reminderLeadDays} />
+			) : null}
 
 			{/* Create/Edit ActionPanel */}
 			{canManageCatalog ? (

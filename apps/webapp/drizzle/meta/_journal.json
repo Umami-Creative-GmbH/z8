@@ -1517,22 +1517,64 @@
     {
       "idx": 216,
       "version": "7",
-      "when": 1805040000000,
-      "tag": "0216_employment_terms_numeric_wage",
+      "when": 1803398400000,
+      "tag": "0216_personal_data_export",
       "breakpoints": true
     },
     {
       "idx": 217,
       "version": "7",
-      "when": 1805126400000,
-      "tag": "0217_rate_history_merge_into_terms",
+      "when": 1803484800000,
+      "tag": "0217_personal_data_export_admin_notice",
       "breakpoints": true
     },
     {
       "idx": 218,
       "version": "7",
-      "when": 1805212800000,
-      "tag": "0218_drop_employee_current_hourly_rate",
+      "when": 1803571200000,
+      "tag": "0218_personal_data_export_reminder",
+      "breakpoints": true
+    },
+    {
+      "idx": 219,
+      "version": "7",
+      "when": 1803657600000,
+      "tag": "0219_skill_certificate_link",
+      "breakpoints": true
+    },
+    {
+      "idx": 220,
+      "version": "7",
+      "when": 1803744000000,
+      "tag": "0220_employee_skill_expiry_date",
+      "breakpoints": true
+    },
+    {
+      "idx": 221,
+      "version": "7",
+      "when": 1803830400000,
+      "tag": "0221_skill_expiry_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 222,
+      "version": "7",
+      "when": 1803916800000,
+      "tag": "0222_employment_terms_numeric_wage",
+      "breakpoints": true
+    },
+    {
+      "idx": 223,
+      "version": "7",
+      "when": 1804003200000,
+      "tag": "0223_rate_history_merge_into_terms",
+      "breakpoints": true
+    },
+    {
+      "idx": 224,
+      "version": "7",
+      "when": 1804089600000,
+      "tag": "0224_drop_employee_current_hourly_rate",
       "breakpoints": true
     }
   ]

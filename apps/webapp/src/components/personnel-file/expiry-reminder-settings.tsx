@@ -21,7 +21,7 @@ import {
 	MAX_EXPIRY_REMINDER_LEAD_DAYS,
 	MIN_EXPIRY_REMINDER_LEAD_DAYS,
 	validateExpiryReminderLeadDays,
-} from "@/lib/personnel-file/expiry";
+} from "@/lib/expiry-reminders/expiry";
 
 /**
  * Settings → Personnel files → Reminders (#869): how many days before an

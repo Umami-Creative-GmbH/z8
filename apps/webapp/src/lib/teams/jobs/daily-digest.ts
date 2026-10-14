@@ -26,7 +26,13 @@ import {
 import { env } from "@/env";
 import { fmtTime, fmtWeekdayShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
-import { type Instant, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	type Instant,
+	instantFromDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
 import { shiftDateBounds } from "@/lib/scheduling/shift-date";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -332,7 +338,9 @@ async function processTenantDigest(tenant: {
 				await sendAdaptiveCard(
 					conv.conversationReference,
 					card,
-					`Daily Digest - ${digestData.date.toLocaleDateString()}`,
+					t("bot.digest.title", "Daily Digest - {date}", {
+						date: digestTitleDate(digestData.date, digestData.timezone, temporal.locale),
+					}),
 				);
 
 				return true;
@@ -351,6 +359,11 @@ async function processTenantDigest(tenant: {
 	);
 
 	return sent;
+}
+
+/** The digest's day for its title: the calendar day in the recipient's zone, written out. */
+export function digestTitleDate(date: Date, timezone: string, locale: string): string {
+	return formatPlainDate(plainDateAt(instantFromDate(date), timezone), locale, "weekdayDateLong");
 }
 
 /**

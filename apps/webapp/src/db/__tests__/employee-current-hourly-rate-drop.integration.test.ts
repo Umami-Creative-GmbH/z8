@@ -15,7 +15,7 @@ async function columnsNamed(table: string, column: string) {
 	return result.rows.map((row) => row.column_name);
 }
 
-describe("0218 drop employee current hourly rate", () => {
+describe("0224 drop employee current hourly rate", () => {
 	it("leaves the employee without a stored wage", async () => {
 		expect(await columnsNamed("employee", "current_hourly_rate")).toEqual([]);
 	});

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { loadClientCatalogSlice } from "./client-catalog-loader";
 import {
 	ALL_LANGUAGES,
-	ALL_NAMESPACES,
+	APP_NAMESPACES,
 	loadNamespaces,
 	type Namespace,
 } from "./shared";
@@ -17,7 +17,7 @@ describe("selective client acquisition", () => {
 		vi.resetModules();
 		vi.doUnmock("./shared");
 		const imported: string[] = [];
-		const paths = ALL_NAMESPACES.flatMap((namespace) =>
+		const paths = APP_NAMESPACES.flatMap((namespace) =>
 			ALL_LANGUAGES.map(
 				(locale) => `../../messages/${namespace}/${locale}.json`,
 			),

@@ -9,10 +9,17 @@ import { and, eq, notInArray } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, project, projectManager, projectNotificationState } from "@/db/schema";
-import { type Clock, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	type Clock,
+	instantFromDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { daysUntilProjectDeadline } from "@/lib/projects/project-deadline-days";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { type NotificationCopy, translatedContent } from "./notification-copy";
+import { notificationParam } from "./notification-params";
 import { createNotification } from "./notification-service";
 import type { NotificationType } from "./types";
 
@@ -96,16 +103,17 @@ export async function checkProjectBudgetWarnings(
 			return;
 		}
 
+		const i18nParams = {
+			projectName: params.projectName,
+			percent: Math.round(percentUsed),
+			used: notificationParam.duration(Math.round(params.usedHours * 60)),
+			budget: notificationParam.duration(Math.round(params.budgetHours * 60)),
+		};
+
 		await Promise.all(
 			newThresholds.map(async (threshold) => {
 				const notificationType = BUDGET_NOTIFICATION_TYPES[threshold];
-				const title = getBudgetWarningTitle(threshold);
-				const message = getBudgetWarningMessage(
-					threshold,
-					params.projectName,
-					params.usedHours,
-					params.budgetHours,
-				);
+				const content = translatedContent(BUDGET_WARNING_COPY[threshold], i18nParams);
 
 				await Promise.all(
 					managers.map((manager) =>
@@ -114,8 +122,8 @@ export async function checkProjectBudgetWarnings(
 								userId: manager.userId,
 								organizationId: params.organizationId,
 								type: notificationType,
-								title,
-								message,
+								title: content.title,
+								message: content.message,
 								entityType: "project",
 								entityId: params.projectId,
 								actionUrl: "/settings/projects",
@@ -125,6 +133,7 @@ export async function checkProjectBudgetWarnings(
 									usedHours: params.usedHours,
 									budgetHours: params.budgetHours,
 									percentUsed: Math.round(percentUsed),
+									i18n: content.i18n,
 								},
 							},
 							options,
@@ -154,34 +163,29 @@ export async function checkProjectBudgetWarnings(
 	}
 }
 
-function getBudgetWarningTitle(threshold: BudgetThreshold): string {
-	switch (threshold) {
-		case 70:
-			return "Project approaching budget limit";
-		case 90:
-			return "Project near budget limit";
-		case 100:
-			return "Project budget exceeded";
-	}
-}
-
-function getBudgetWarningMessage(
-	threshold: BudgetThreshold,
-	projectName: string,
-	usedHours: number,
-	budgetHours: number,
-): string {
-	const percentUsed = Math.round((usedHours / budgetHours) * 100);
-
-	switch (threshold) {
-		case 70:
-			return `"${projectName}" has used ${percentUsed}% of its budget (${usedHours.toFixed(1)}h of ${budgetHours}h).`;
-		case 90:
-			return `"${projectName}" has used ${percentUsed}% of its budget (${usedHours.toFixed(1)}h of ${budgetHours}h). Consider reviewing time allocations.`;
-		case 100:
-			return `"${projectName}" has exceeded its budget (${usedHours.toFixed(1)}h of ${budgetHours}h budgeted). Review and adjust as needed.`;
-	}
-}
+/** Hours are typed durations, so every channel formats them in the recipient's language. */
+const BUDGET_WARNING_COPY: Record<BudgetThreshold, NotificationCopy> = {
+	70: {
+		titleKey: "common:notifications.content.projectBudgetWarning70.title",
+		titleDefault: "Project approaching budget limit",
+		messageKey: "common:notifications.content.projectBudgetWarning70.message",
+		messageDefault: '"{projectName}" has used {percent}% of its budget ({used} of {budget}).',
+	},
+	90: {
+		titleKey: "common:notifications.content.projectBudgetWarning90.title",
+		titleDefault: "Project near budget limit",
+		messageKey: "common:notifications.content.projectBudgetWarning90.message",
+		messageDefault:
+			'"{projectName}" has used {percent}% of its budget ({used} of {budget}). Consider reviewing time allocations.',
+	},
+	100: {
+		titleKey: "common:notifications.content.projectBudgetWarning100.title",
+		titleDefault: "Project budget exceeded",
+		messageKey: "common:notifications.content.projectBudgetWarning100.message",
+		messageDefault:
+			'"{projectName}" has exceeded its budget ({used} of {budget} budgeted). Review and adjust as needed.',
+	},
+};
 
 // =============================================================================
 // Deadline Warning Notifications
@@ -269,12 +273,14 @@ export async function checkProjectDeadlineWarnings(params: DeadlineWarningParams
 
 		// Send notifications
 		const notificationType = DEADLINE_NOTIFICATION_TYPES[matchedThreshold];
-		const title = getDeadlineWarningTitle(matchedThreshold);
-		const message = getDeadlineWarningMessage(
-			matchedThreshold,
-			params.projectName,
-			params.deadline,
-		);
+		const content = translatedContent(DEADLINE_WARNING_COPY[matchedThreshold], {
+			projectName: params.projectName,
+			// The deadline day is stored as its UTC midnight.
+			deadline: notificationParam.plainDate(
+				plainDateAt(instantFromDate(params.deadline), "UTC"),
+				"dateMedium",
+			),
+		});
 
 		await Promise.all(
 			managers.map((manager) =>
@@ -282,8 +288,8 @@ export async function checkProjectDeadlineWarnings(params: DeadlineWarningParams
 					userId: manager.userId,
 					organizationId: params.organizationId,
 					type: notificationType,
-					title,
-					message,
+					title: content.title,
+					message: content.message,
 					entityType: "project",
 					entityId: params.projectId,
 					actionUrl: "/settings/projects",
@@ -292,6 +298,7 @@ export async function checkProjectDeadlineWarnings(params: DeadlineWarningParams
 						deadline: params.deadline.toISOString(),
 						daysUntilDeadline: params.daysUntilDeadline,
 						threshold: matchedThreshold,
+						i18n: content.i18n,
 					},
 				}),
 			),
@@ -320,47 +327,41 @@ export async function checkProjectDeadlineWarnings(params: DeadlineWarningParams
 	}
 }
 
-function getDeadlineWarningTitle(threshold: DeadlineThreshold): string {
-	switch (threshold) {
-		case 14:
-			return "Project deadline in 2 weeks";
-		case 7:
-			return "Project deadline in 1 week";
-		case 1:
-			return "Project deadline tomorrow";
-		case 0:
-			return "Project deadline today";
-		case -1:
-			return "Project deadline overdue";
-	}
-}
-
-function getDeadlineWarningMessage(
-	threshold: DeadlineThreshold,
-	projectName: string,
-	deadline: Date,
-): string {
-	// The deadline day is stored as its UTC midnight.
-	const dateStr = deadline.toLocaleDateString("en-US", {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-		timeZone: "UTC",
-	});
-
-	switch (threshold) {
-		case 14:
-			return `"${projectName}" deadline is in 2 weeks (${dateStr}). Plan ahead to meet the deadline.`;
-		case 7:
-			return `"${projectName}" deadline is in 1 week (${dateStr}). Make sure you're on track.`;
-		case 1:
-			return `"${projectName}" deadline is tomorrow (${dateStr}). Final push to complete!`;
-		case 0:
-			return `"${projectName}" deadline is today (${dateStr}). Wrap up remaining work.`;
-		case -1:
-			return `"${projectName}" is past its deadline (${dateStr}). Update status or extend the deadline.`;
-	}
-}
+const DEADLINE_WARNING_COPY: Record<DeadlineThreshold, NotificationCopy> = {
+	14: {
+		titleKey: "common:notifications.content.projectDeadlineWarning14d.title",
+		titleDefault: "Project deadline in 2 weeks",
+		messageKey: "common:notifications.content.projectDeadlineWarning14d.message",
+		messageDefault:
+			'"{projectName}" deadline is in 2 weeks ({deadline}). Plan ahead to meet the deadline.',
+	},
+	7: {
+		titleKey: "common:notifications.content.projectDeadlineWarning7d.title",
+		titleDefault: "Project deadline in 1 week",
+		messageKey: "common:notifications.content.projectDeadlineWarning7d.message",
+		messageDefault:
+			"\"{projectName}\" deadline is in 1 week ({deadline}). Make sure you're on track.",
+	},
+	1: {
+		titleKey: "common:notifications.content.projectDeadlineWarning1d.title",
+		titleDefault: "Project deadline tomorrow",
+		messageKey: "common:notifications.content.projectDeadlineWarning1d.message",
+		messageDefault: '"{projectName}" deadline is tomorrow ({deadline}). Final push to complete!',
+	},
+	0: {
+		titleKey: "common:notifications.content.projectDeadlineWarning0d.title",
+		titleDefault: "Project deadline today",
+		messageKey: "common:notifications.content.projectDeadlineWarning0d.message",
+		messageDefault: '"{projectName}" deadline is today ({deadline}). Wrap up remaining work.',
+	},
+	"-1": {
+		titleKey: "common:notifications.content.projectDeadlineOverdue.title",
+		titleDefault: "Project deadline overdue",
+		messageKey: "common:notifications.content.projectDeadlineOverdue.message",
+		messageDefault:
+			'"{projectName}" is past its deadline ({deadline}). Update status or extend the deadline.',
+	},
+};
 
 // =============================================================================
 // Helper Functions

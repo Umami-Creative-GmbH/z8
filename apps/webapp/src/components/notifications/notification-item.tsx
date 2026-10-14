@@ -4,9 +4,11 @@ import {
 	IconBeach,
 	IconCake,
 	IconCalendarEvent,
+	IconCertificate,
 	IconCheck,
 	IconCircleFilled,
 	IconClock,
+	IconDatabaseExport,
 	IconShield,
 	IconUserMinus,
 	IconUserShare,
@@ -49,6 +51,15 @@ function getNotificationStyle(type: NotificationType): {
 				icon: <IconClock className="size-4" />,
 				bgColor: "bg-sky-100 dark:bg-sky-900/30",
 				iconColor: "text-sky-600 dark:text-sky-400",
+			};
+
+		// Skill expiry reminders (#1143)
+		case "skill_expiry_upcoming":
+		case "skill_expired_today":
+			return {
+				icon: <IconCertificate className="size-4" />,
+				bgColor: "bg-amber-100 dark:bg-amber-900/30",
+				iconColor: "text-amber-600 dark:text-amber-400",
 			};
 
 		// Approval notifications
@@ -152,6 +163,18 @@ function getNotificationStyle(type: NotificationType): {
 		case "two_factor_disabled":
 			return {
 				icon: <IconShield className="size-4" />,
+				bgColor: "bg-slate-100 dark:bg-slate-900/30",
+				iconColor: "text-slate-600 dark:text-slate-400",
+			};
+
+		// A personal data export is ready on My data (#811)
+		case "personal_data_export_ready":
+		// An org admin exported the employee's personal data (#1166)
+		case "personal_data_export_admin_exported":
+		// Download your personal data before your departure cutoff (#1173)
+		case "personal_data_export_reminder":
+			return {
+				icon: <IconDatabaseExport className="size-4" />,
 				bgColor: "bg-slate-100 dark:bg-slate-900/30",
 				iconColor: "text-slate-600 dark:text-slate-400",
 			};

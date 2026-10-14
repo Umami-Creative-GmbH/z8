@@ -239,6 +239,7 @@ describe("departure crash recovery", () => {
 	}): Partial<Record<DepartureTaskClaim["kind"], DepartureTaskHandler>> {
 		return {
 			dispatch_departure: async () => {},
+			notify_data_export_reminder: async () => {},
 			clock_postprocess: async () => {},
 			clock_repair: async () => {},
 			session_revocation: createSessionRevocationHandler(async (token) => {
@@ -324,7 +325,10 @@ describe("departure crash recovery", () => {
 			periods: [{ end_time: null, clock_out_id: null }],
 			clockOuts: 0,
 			orphans: 0,
-			tasks: [{ kind: "dispatch_departure", status: "pending" }],
+			tasks: [
+				{ kind: "dispatch_departure", status: "pending" },
+				{ kind: "notify_data_export_reminder", status: "pending" },
+			],
 			sessions: [token],
 			reviews: [],
 		});
@@ -349,6 +353,7 @@ describe("departure crash recovery", () => {
 			"billing_sync",
 			"clock_postprocess",
 			"dispatch_departure",
+			"notify_data_export_reminder",
 			"notify_review",
 			"session_revocation",
 		]);
@@ -361,7 +366,10 @@ describe("departure crash recovery", () => {
 
 		expect(await state(s, identity)).toMatchObject({
 			departure: "pending",
-			tasks: [{ kind: "dispatch_departure", status: "pending" }],
+			tasks: [
+				{ kind: "dispatch_departure", status: "pending" },
+				{ kind: "notify_data_export_reminder", status: "pending" },
+			],
 		});
 		expect(await findDueDepartures(fixture.db, SCHEDULED_AT)).not.toContainEqual(identity);
 		expect(await findDueDepartures(fixture.db, AFTER_CUTOFF)).toContainEqual(identity);
@@ -377,10 +385,11 @@ describe("departure crash recovery", () => {
 				handlers: handlers({ organizationId: s.organizationId }),
 				now: AFTER_CUTOFF,
 			}),
-		).resolves.toMatchObject({ completed: 2, deferred: 0, failed: 0 });
+		).resolves.toMatchObject({ completed: 3, deferred: 0, failed: 0 });
 		expect((await state(s, identity)).tasks).toEqual([
 			{ kind: "billing_sync", status: "completed" },
 			{ kind: "dispatch_departure", status: "completed" },
+			{ kind: "notify_data_export_reminder", status: "completed" },
 		]);
 	});
 
@@ -505,7 +514,11 @@ describe("departure crash recovery", () => {
 		const identity = await depart(s);
 		const outbox = outboxFor(s.organizationId);
 		const dying = await outbox.claimDue(AFTER_CUTOFF);
-		expect(dying.map((claim) => claim.kind).sort()).toEqual(["billing_sync", "dispatch_departure"]);
+		expect(dying.map((claim) => claim.kind).sort()).toEqual([
+			"billing_sync",
+			"dispatch_departure",
+			"notify_data_export_reminder",
+		]);
 
 		await expect(
 			runDepartureTaskDelivery({
@@ -521,7 +534,7 @@ describe("departure crash recovery", () => {
 				handlers: handlers({ organizationId: s.organizationId }),
 				now: LEASE_EXPIRED,
 			}),
-		).resolves.toMatchObject({ claimed: 2, completed: 2 });
+		).resolves.toMatchObject({ claimed: 3, completed: 3 });
 		const [task] = (
 			await fixture.pool.query(
 				`select status, attempt_count from employee_departure_task

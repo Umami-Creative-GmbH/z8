@@ -1,50 +1,68 @@
 import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { DateTime } from "luxon";
 import type Stripe from "stripe";
+import { organization } from "@/db/auth-schema";
 import { stripeEvent, subscription } from "@/db/schema";
 import { env } from "@/env";
 import { sendBillingSystemEmail } from "@/lib/billing/billing-system-email";
-import { createLogger } from "@/lib/logger";
+import {
+	type Instant,
+	instantFromDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import type { DatabaseError, StripeError } from "@/lib/effect/errors";
 import { withStripeSubscriptionMutation } from "@/lib/effect/services/billing/billing-configuration";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { createLogger } from "@/lib/logger";
+import {
+	notificationParam,
+	type TypedNotificationParam,
+} from "@/lib/notifications/notification-params";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { SeatSyncService } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
 import { SubscriptionService } from "./subscription.service";
 
 const logger = createLogger("BillingEventsService");
 const DEFAULT_APP_URL = "https://app.z8-time.app";
-const stripeAmountFormatters = new Map<string, Intl.NumberFormat>();
 
 const getBillingUrl = () => {
 	const appUrl = env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || DEFAULT_APP_URL;
 	return `${appUrl}/settings/billing`;
 };
 
-const formatStripeTimestamp = (timestamp?: number | null) =>
-	timestamp ? DateTime.fromSeconds(timestamp, { zone: "utc" }).toFormat("LLLL d, yyyy") : undefined;
+/** The organization a billing email is about: its name and calendar. */
+interface BillingOrganization {
+	id: string;
+	name: string;
+	timezone: string;
+}
 
-const formatStripeAmount = (amount?: number | null, currency?: string | null) => {
-	if (amount == null) return undefined;
-	const normalizedCurrency = (currency ?? "eur").toUpperCase();
+/**
+ * The calendar day of `instant` in the organization's timezone (UTC when the
+ * organization is unknown), formatted in the email's language by the sender.
+ */
+const billingDateParam = (
+	instant: Instant | undefined,
+	billingOrganization: BillingOrganization | undefined,
+): TypedNotificationParam | undefined =>
+	instant
+		? notificationParam.plainDate(plainDateAt(instant, billingOrganization?.timezone ?? "UTC"))
+		: undefined;
 
-	try {
-		const cachedFormatter = stripeAmountFormatters.get(normalizedCurrency);
-		if (cachedFormatter) {
-			return cachedFormatter.format(amount / 100);
-		}
+/** A Stripe timestamp (seconds) as an instant. */
+const stripeInstant = (timestamp?: number | null): Instant | undefined =>
+	timestamp ? instantFromDate(new Date(timestamp * 1000)) : undefined;
 
-		const formatter = Intl.NumberFormat("en", {
-			style: "currency",
-			currency: normalizedCurrency,
-		});
-		stripeAmountFormatters.set(normalizedCurrency, formatter);
-		return formatter.format(amount / 100);
-	} catch {
-		return `${normalizedCurrency} ${(amount / 100).toFixed(2)}`;
-	}
-};
+/** A Stripe amount (minor units) with its currency, formatted in the email's language. */
+const stripeAmountParam = (
+	amount?: number | null,
+	currency?: string | null,
+): TypedNotificationParam | undefined =>
+	amount == null
+		? undefined
+		: notificationParam.money((amount / 100).toFixed(2), (currency ?? "eur").toUpperCase());
 
 const getCustomerId = (
 	customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined,
@@ -173,10 +191,59 @@ export const BillingEventsServiceLive = Layer.effect(
 				}),
 			);
 
-		const baseBillingEmailData = (customerEmail?: string) => {
+		/**
+		 * The organization billed, found through its `subscription` row (or the Stripe
+		 * object's `organizationId` metadata). Best-effort: without it the email goes out
+		 * in English with fallback copy, and the webhook still succeeds.
+		 */
+		const resolveBillingOrganization = (lookup: {
+			stripeSubscriptionId?: string;
+			metadata?: Stripe.Metadata | null;
+		}): Effect.Effect<BillingOrganization | undefined, never> =>
+			dbService
+				.query("billingEvents.resolveBillingOrganization", async () => {
+					const subscriptionRow = lookup.stripeSubscriptionId
+						? await dbService.db.query.subscription.findFirst({
+								where: eq(subscription.stripeSubscriptionId, lookup.stripeSubscriptionId),
+								columns: { organizationId: true },
+							})
+						: undefined;
+					const organizationId =
+						subscriptionRow?.organizationId ?? lookup.metadata?.organizationId ?? undefined;
+					if (!organizationId) return undefined;
+
+					const row = await dbService.db.query.organization.findFirst({
+						where: eq(organization.id, organizationId),
+						columns: { id: true, name: true, timezone: true },
+					});
+					if (!row) return undefined;
+
+					return {
+						id: row.id,
+						name: row.name,
+						timezone: resolveOrganizationTimezone(row.timezone).timezone,
+					};
+				})
+				.pipe(
+					Effect.match({
+						onFailure: (error) => {
+							logger.warn(
+								{ stripeSubscriptionId: lookup.stripeSubscriptionId, error },
+								"Failed to resolve the organization of a billing email",
+							);
+							return undefined;
+						},
+						onSuccess: (billingOrganization) => billingOrganization,
+					}),
+				);
+
+		const baseBillingEmailData = (
+			customerEmail: string | undefined,
+			billingOrganization: BillingOrganization | undefined,
+		) => {
 			const billingUrl = getBillingUrl();
 			return {
-				organizationName: "your organization",
+				organizationName: billingOrganization?.name,
 				customerEmail,
 				billingUrl,
 				billingPortalUrl: billingUrl,
@@ -345,9 +412,21 @@ export const BillingEventsServiceLive = Layer.effect(
 		): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
 				const customerEmail = yield* resolveCustomerEmail(stripeSub.customer);
-				const trialEndsAt = formatStripeTimestamp(stripeSub.trial_end);
+				const billingOrganization = yield* resolveBillingOrganization({
+					stripeSubscriptionId: stripeSub.id,
+					metadata: stripeSub.metadata,
+				});
+				const trialEndsAt = billingDateParam(
+					stripeInstant(stripeSub.trial_end),
+					billingOrganization,
+				);
 				const daysRemaining = stripeSub.trial_end
-					? Math.max(0, Math.ceil((stripeSub.trial_end - DateTime.utc().toSeconds()) / 86_400))
+					? Math.max(
+							0,
+							Math.ceil(
+								(stripeSub.trial_end - systemClock.nowInstant().epochMilliseconds / 1000) / 86_400,
+							),
+						)
 					: undefined;
 
 				// This is for sending notifications - could trigger email here
@@ -363,8 +442,9 @@ export const BillingEventsServiceLive = Layer.effect(
 				yield* sendBillingEmail({
 					templateKey: "billing-trial-ending",
 					to: customerEmail,
+					organizationId: billingOrganization?.id,
 					data: {
-						...baseBillingEmailData(customerEmail),
+						...baseBillingEmailData(customerEmail, billingOrganization),
 						daysRemaining,
 						trialEnd: trialEndsAt,
 						trialEndsAt,
@@ -407,11 +487,16 @@ export const BillingEventsServiceLive = Layer.effect(
 					},
 					"Subscription paused",
 				);
+				const billingOrganization = yield* resolveBillingOrganization({
+					stripeSubscriptionId: stripeSub.id,
+					metadata: stripeSub.metadata,
+				});
 				yield* sendBillingEmail({
 					templateKey: "billing-subscription-paused",
 					to: customerEmail,
+					organizationId: billingOrganization?.id,
 					data: {
-						...baseBillingEmailData(customerEmail),
+						...baseBillingEmailData(customerEmail, billingOrganization),
 						subscriptionStatus: "paused",
 					},
 				});
@@ -452,12 +537,17 @@ export const BillingEventsServiceLive = Layer.effect(
 					{ subscriptionId: stripeSub.id, status: stripeSub.status },
 					"Subscription resumed",
 				);
+				const billingOrganization = yield* resolveBillingOrganization({
+					stripeSubscriptionId: stripeSub.id,
+					metadata: stripeSub.metadata,
+				});
 				yield* sendBillingEmail({
 					templateKey: "billing-subscription-resumed",
 					to: customerEmail,
+					organizationId: billingOrganization?.id,
 					data: {
-						...baseBillingEmailData(customerEmail),
-						resumeDate: DateTime.utc().toFormat("LLLL d, yyyy"),
+						...baseBillingEmailData(customerEmail, billingOrganization),
+						resumeDate: billingDateParam(systemClock.nowInstant(), billingOrganization),
 					},
 				});
 			});
@@ -511,15 +601,21 @@ export const BillingEventsServiceLive = Layer.effect(
 					},
 					"Invoice finalized",
 				);
+				const billingOrganization = yield* resolveBillingOrganization({
+					stripeSubscriptionId: subscriptionId,
+					metadata: invoice.metadata,
+				});
 				yield* sendBillingEmail({
 					templateKey: "billing-invoice-ready",
 					to: customerEmail,
+					organizationId: billingOrganization?.id,
 					data: {
-						...baseBillingEmailData(customerEmail),
+						...baseBillingEmailData(customerEmail, billingOrganization),
 						invoiceNumber: invoice.number ?? invoice.id,
-						invoiceAmount: formatStripeAmount(invoice.amount_due, invoice.currency),
-						amountDue: formatStripeAmount(invoice.amount_due, invoice.currency),
-						dueDate: formatStripeTimestamp(invoice.due_date) ?? "not set",
+						invoiceAmount: stripeAmountParam(invoice.amount_due, invoice.currency),
+						amountDue: stripeAmountParam(invoice.amount_due, invoice.currency),
+						// Unset: the sender writes "not set" in the email's language.
+						dueDate: billingDateParam(stripeInstant(invoice.due_date), billingOrganization),
 						invoiceUrl: invoice.hosted_invoice_url,
 						invoicePdfUrl: invoice.invoice_pdf,
 					},
@@ -595,15 +691,24 @@ export const BillingEventsServiceLive = Layer.effect(
 					});
 				}
 
+				const billingOrganization = yield* resolveBillingOrganization({
+					stripeSubscriptionId: subscriptionId,
+					metadata: paymentIntent.metadata,
+				});
 				yield* sendBillingEmail({
 					templateKey: "billing-payment-failed",
 					to: customerEmail,
+					organizationId: billingOrganization?.id,
 					data: {
-						...baseBillingEmailData(customerEmail),
-						invoiceAmount: formatStripeAmount(paymentIntent.amount, paymentIntent.currency),
-						amountDue: formatStripeAmount(paymentIntent.amount, paymentIntent.currency),
+						...baseBillingEmailData(customerEmail, billingOrganization),
+						invoiceAmount: stripeAmountParam(paymentIntent.amount, paymentIntent.currency),
+						amountDue: stripeAmountParam(paymentIntent.amount, paymentIntent.currency),
 						failureReason: failureMessage,
-						paymentRetryDate: "soon",
+						// Unset without a scheduled retry: the sender writes "soon" in the email's language.
+						paymentRetryDate: billingDateParam(
+							stripeInstant(invoice?.next_payment_attempt),
+							billingOrganization,
+						),
 						invoiceUrl: invoiceId ? getBillingUrl() : undefined,
 					},
 				});

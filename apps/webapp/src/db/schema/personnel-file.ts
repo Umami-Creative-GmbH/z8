@@ -13,13 +13,13 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { ExpiryReminderKind } from "@/lib/expiry-reminders/expiry.types";
 import type {
 	DocumentCategory,
 	DocumentVisibility,
 	PersonnelFileCleanupReason,
 	PersonnelFileUploadStatus,
 } from "@/lib/personnel-file/document.types";
-import type { ExpiryReminderKind } from "@/lib/personnel-file/expiry.types";
 import type {
 	PayslipBatchStatus,
 	PayslipFileFailure,
@@ -28,6 +28,7 @@ import type {
 import { organization, user } from "../auth-schema";
 import { absenceEntry } from "./absence";
 import { employee, team } from "./organization";
+import { employeeSkill } from "./skill";
 import { currentTimestamp } from "./timestamp";
 
 /**
@@ -56,6 +57,8 @@ export const employeeDocument = pgTable(
 		expiryDate: date("expiry_date", { mode: "string" }),
 		/** The sick-leave absence a sick note covers (#982, ADR 0002); only for sick notes. */
 		absenceEntryId: uuid("absence_entry_id"),
+		/** The employee skill a certificate proves (#1144, Scheduling ADR 0001); only for certificates. */
+		employeeSkillId: uuid("employee_skill_id"),
 		storageProvider: text("storage_provider").notNull(),
 		storageBucket: text("storage_bucket"),
 		storageKey: text("storage_key").notNull(),
@@ -121,6 +124,22 @@ export const employeeDocument = pgTable(
 		check(
 			"employee_document_absence_entry_check",
 			sql`${table.absenceEntryId} IS NULL OR ${table.category} = 'sick_note'`,
+		),
+		// employee_skill has no organization_id: the link goes through the
+		// document's employee, whose own reference ties it to the organization.
+		// Migration 0219 deletes with SET NULL ("employee_skill_id") only, keeping
+		// the employee and the document.
+		foreignKey({
+			name: "employee_document_employee_skill_fk",
+			columns: [table.employeeSkillId, table.employeeId],
+			foreignColumns: [employeeSkill.id, employeeSkill.employeeId],
+		}).onDelete("set null"),
+		index("employeeDocument_employeeSkill_idx")
+			.on(table.employeeSkillId)
+			.where(sql`employee_skill_id IS NOT NULL`),
+		check(
+			"employee_document_employee_skill_check",
+			sql`${table.employeeSkillId} IS NULL OR ${table.category} = 'certificate'`,
 		),
 	],
 );

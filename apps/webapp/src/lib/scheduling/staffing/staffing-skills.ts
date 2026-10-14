@@ -1,9 +1,5 @@
-import {
-	compareInstants,
-	type Instant,
-	instantFromDate,
-	instantToCanonicalString,
-} from "@/lib/datetime/temporal-core";
+import type { PlainDate } from "@/lib/datetime/temporal-core";
+import { isExpiredSkillOn } from "@/lib/scheduling/skill-expiry";
 import type { StaffingNote, StaffingReason, StaffingWarning } from "./types";
 
 export interface StaffingSkillRequirement {
@@ -15,8 +11,10 @@ export interface StaffingSkillRequirement {
 
 export interface HeldSkill {
 	skillId: string;
-	/** Null never expires. */
-	expiresAt: Date | null;
+	/** Skill expiry date (`YYYY-MM-DD`, last valid day); null never expires. */
+	expiresAt: string | null;
+	/** A skill certificate in the personnel file names this employee skill (#1144); never its content. */
+	certificateOnFile?: boolean;
 }
 
 /**
@@ -37,14 +35,14 @@ export function resolveSkillRequirements(
 }
 
 /**
- * Judges the employee's skills against the shift's requirements as of the shift: a certificate must
- * stay valid until the shift ends, so one valid today but expiring by then counts as expired. A missing or expired preferred
- * skill is only a note.
+ * Judges the employee's skills against the shift's requirements on the shift date: an expired skill
+ * (`isExpiredSkillOn`) for that date counts as missing, even when it is valid today. A missing or
+ * expired preferred skill is only a note.
  */
 export function assessStaffingSkills(input: {
 	requirements: readonly StaffingSkillRequirement[];
 	held: readonly HeldSkill[];
-	shiftEnd: Instant;
+	shiftDate: PlainDate;
 }): { warnings: StaffingWarning[]; notes: StaffingNote[]; reasons: StaffingReason[] } {
 	const heldBySkill = new Map(input.held.map((skill) => [skill.skillId, skill]));
 	const warnings: StaffingWarning[] = [];
@@ -53,8 +51,8 @@ export function assessStaffingSkills(input: {
 
 	for (const requirement of input.requirements) {
 		const held = heldBySkill.get(requirement.skillId);
-		const expiresAt = held?.expiresAt ? instantFromDate(held.expiresAt) : null;
-		const isExpired = expiresAt !== null && compareInstants(expiresAt, input.shiftEnd) < 0;
+		const expiresAt = held?.expiresAt ?? null;
+		const isExpired = isExpiredSkillOn(expiresAt, input.shiftDate);
 
 		if (held && !isExpired) {
 			skillNamesHeld.push(requirement.skillName);
@@ -69,7 +67,8 @@ export function assessStaffingSkills(input: {
 				type: "expiredRequiredSkill",
 				skillId: requirement.skillId,
 				skillName: requirement.skillName,
-				expiresAt: instantToCanonicalString(expiresAt),
+				expiresAt,
+				certificateOnFile: held?.certificateOnFile ?? false,
 			});
 		} else {
 			warnings.push({

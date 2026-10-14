@@ -13,10 +13,12 @@ import {
 	type Clock,
 	dateFromInstant,
 	type Instant,
+	instantFromDate,
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import { writeEmploymentTerms } from "@/lib/employment-history/write-terms";
 import { departureCutoff } from "./cutoff";
+import { queueDataExportReminder } from "./data-export-reminder";
 import { runDepartureTransaction } from "./departure-transaction";
 import { resolveCurrentEmploymentPeriod } from "./employment-periods";
 import { assertReadCommitted, lockLifecycleScope } from "./locks";
@@ -170,7 +172,7 @@ async function scheduleDeparture(
 				input,
 				cutoff,
 				fingerprint,
-				nowDate,
+				now,
 			});
 		}
 
@@ -220,6 +222,16 @@ async function scheduleDeparture(
 			departureId: created.id,
 			revision: created.revision,
 		});
+		await queueDataExportReminder(tx, {
+			organizationId: actor.organizationId,
+			employeeId: target.id,
+			employmentPeriodId: periodId,
+			departureId: created.id,
+			revision: created.revision,
+			cutoff: cutoff.cutoff,
+			previousCutoff: null,
+			now,
+		});
 		await writeReceipt(tx, {
 			actor,
 			employeeId: target.id,
@@ -250,10 +262,23 @@ async function reviseDeparture(
 		input: ScheduleDeparture;
 		cutoff: { lastWorkingDay: string; timezone: string; cutoff: Instant };
 		fingerprint: string;
-		nowDate: Date;
+		now: Instant;
 	},
 ): Promise<ScheduleResult> {
 	const { actor } = input;
+	const nowDate = dateFromInstant(input.now);
+	const revisable = and(
+		eq(employeeDeparture.organizationId, actor.organizationId),
+		eq(employeeDeparture.employeeId, input.targetId),
+		eq(employeeDeparture.employmentPeriodId, input.periodId),
+		eq(employeeDeparture.revision, input.input.expectedRevision ?? 0),
+		inArray(employeeDeparture.status, ["pending", "blocked"]),
+	);
+	// Read under the lifecycle locks: the reminder is queued only for a new cutoff.
+	const [previous] = await tx
+		.select({ cutoffAt: employeeDeparture.cutoffAt })
+		.from(employeeDeparture)
+		.where(revisable);
 	const [departure] = await tx
 		.update(employeeDeparture)
 		.set({
@@ -268,17 +293,9 @@ async function reviseDeparture(
 			createdBy: actor.userId,
 			blockedReason: null,
 			processedAt: null,
-			updatedAt: input.nowDate,
+			updatedAt: nowDate,
 		})
-		.where(
-			and(
-				eq(employeeDeparture.organizationId, actor.organizationId),
-				eq(employeeDeparture.employeeId, input.targetId),
-				eq(employeeDeparture.employmentPeriodId, input.periodId),
-				eq(employeeDeparture.revision, input.input.expectedRevision ?? 0),
-				inArray(employeeDeparture.status, ["pending", "blocked"]),
-			),
-		)
+		.where(revisable)
 		.returning({
 			id: employeeDeparture.id,
 			revision: employeeDeparture.revision,
@@ -293,6 +310,16 @@ async function reviseDeparture(
 		departureId: departure.id,
 		revision: departure.revision,
 	});
+	await queueDataExportReminder(tx, {
+		organizationId: actor.organizationId,
+		employeeId: input.targetId,
+		employmentPeriodId: input.periodId,
+		departureId: departure.id,
+		revision: departure.revision,
+		cutoff: input.cutoff.cutoff,
+		previousCutoff: previous ? instantFromDate(previous.cutoffAt) : null,
+		now: input.now,
+	});
 	await writeReceipt(tx, {
 		actor,
 		employeeId: input.targetId,
@@ -302,7 +329,7 @@ async function reviseDeparture(
 		requestId: input.input.requestId,
 		fingerprint: input.fingerprint,
 		kind: "departure_rescheduled",
-		occurredAt: input.nowDate,
+		occurredAt: nowDate,
 		result,
 	});
 	return result;

@@ -5,23 +5,35 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 
-const { deleteShiftMock, upsertShiftMock, toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
+const {
+	deleteShiftMock,
+	upsertShiftMock,
+	toastSuccessMock,
+	toastErrorMock,
+	toastWarningMock,
+	submitted,
+} = vi.hoisted(() => ({
 	deleteShiftMock: vi.fn(),
 	upsertShiftMock: vi.fn(),
 	toastSuccessMock: vi.fn(),
 	toastErrorMock: vi.fn(),
+	toastWarningMock: vi.fn(),
+	submitted: { onSubmit: null as ((values: unknown) => void) | null },
 }));
 
 vi.mock("sonner", () => ({
 	toast: {
 		success: toastSuccessMock,
 		error: toastErrorMock,
-		warning: vi.fn(),
+		warning: toastWarningMock,
 	},
 }));
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
+			fallback.replace(/\{(\w+)\}/g, (match, name: string) => String(params?.[name] ?? match)),
+	}),
 }));
 
 vi.mock("@/app/[locale]/(app)/scheduling/actions", () => ({
@@ -39,16 +51,19 @@ vi.mock("./use-shift-dialog-data", () => ({
 }));
 
 vi.mock("./use-shift-dialog-form", () => ({
-	useShiftDialogForm: () => ({
-		form: {
-			handleSubmit: vi.fn(),
-		},
-		formValues: {
-			employeeId: "",
-			templateId: "",
-			subareaId: "",
-		},
-	}),
+	useShiftDialogForm: ({ onSubmit }: { onSubmit: (values: unknown) => void }) => {
+		submitted.onSubmit = onSubmit;
+		return {
+			form: {
+				handleSubmit: vi.fn(),
+			},
+			formValues: {
+				employeeId: "",
+				templateId: "",
+				subareaId: "",
+			},
+		};
+	},
 }));
 
 vi.mock("./shift-dialog-sections", async () => {
@@ -223,6 +238,45 @@ describe("ShiftDialog", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 		expect(deleteShiftMock).toHaveBeenCalledTimes(1);
 		expect(screen.getByRole("button", { name: "Confirm Delete" })).toBeTruthy();
+	});
+
+	it("says a certificate is on file for an expired skill in the save warning", async () => {
+		upsertShiftMock.mockResolvedValue({
+			success: true,
+			data: {
+				metadata: {
+					hasOverlap: false,
+					overlappingShifts: [],
+					skillWarning: {
+						employeeId: "employee-1",
+						isQualified: false,
+						missingSkills: [],
+						expiredSkills: [
+							{
+								id: "skill-forklift",
+								name: "Forklift licence",
+								expiresAt: "2026-01-31",
+								certificateOnFile: true,
+							},
+							{
+								id: "skill-first-aid",
+								name: "First aid",
+								expiresAt: "2026-01-31",
+								certificateOnFile: false,
+							},
+						],
+					},
+				},
+			},
+		});
+		renderShiftDialogWithLocalOpenState();
+
+		submitted.onSubmit?.({ employeeId: "employee-1", subareaId: "subarea-1", date: "2026-02-01" });
+
+		await waitFor(() => expect(toastWarningMock).toHaveBeenCalledTimes(1));
+		const [, options] = toastWarningMock.mock.calls[0] as [string, { description: string }];
+		expect(options.description).toContain("Certificate on file: Forklift licence");
+		expect(options.description).not.toContain("First aid");
 	});
 });
 

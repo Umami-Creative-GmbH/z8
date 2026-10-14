@@ -15,7 +15,7 @@ import {
 import { TolgeeNextProvider, useNamespaces } from "./client";
 import { loadClientCatalogSlice } from "./client-catalog-loader";
 import { loadCatalogSlice } from "./load-translations";
-import { ALL_NAMESPACES, type Namespace } from "./shared";
+import { APP_NAMESPACES, type Namespace } from "./shared";
 
 const { refresh } = vi.hoisted(() => ({ refresh: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
@@ -126,7 +126,7 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 		);
 	});
 	it("preserves complete-root collision ownership after a smaller lazy slice", async () => {
-		const slice = await loadCatalogSlice("el", ALL_NAMESPACES);
+		const slice = await loadCatalogSlice("el", APP_NAMESPACES);
 		const common = await loadCatalogSlice("el", ["common"]);
 		render(
 			<TolgeeNextProvider slice={slice}>

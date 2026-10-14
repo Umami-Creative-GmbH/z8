@@ -1,6 +1,5 @@
-import { createHash } from "node:crypto";
 import type { employeeDocument } from "@/db/schema";
-import { readPrivateObject } from "@/lib/storage/export-s3-client";
+import { readVerifiedPrivateObject } from "@/lib/storage/verified-private-object";
 import { PERSONNEL_DOCUMENT_STORAGE_PROVIDER } from "./document-store";
 
 type StoredDocument = Pick<
@@ -23,17 +22,15 @@ export async function readVerifiedDocumentObject(document: StoredDocument): Prom
 	if (document.storageProvider !== PERSONNEL_DOCUMENT_STORAGE_PROVIDER) {
 		throw new Error("Unsupported recorded document storage provider");
 	}
-	const bytes = await readPrivateObject({
-		organizationId: document.organizationId,
-		key: document.storageKey,
-		bucket: document.storageBucket,
-		versionId: document.storageVersionId,
-	});
-	if (
-		bytes.byteLength !== document.sizeBytes ||
-		createHash("sha256").update(bytes).digest("hex") !== document.checksumSha256
-	) {
-		throw new Error("Stored document content does not match its recorded identity");
-	}
-	return bytes;
+	return readVerifiedPrivateObject(
+		{
+			organizationId: document.organizationId,
+			key: document.storageKey,
+			bucket: document.storageBucket,
+			versionId: document.storageVersionId,
+			sizeBytes: document.sizeBytes,
+			checksumSha256: document.checksumSha256,
+		},
+		"Stored document",
+	);
 }

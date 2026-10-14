@@ -78,6 +78,11 @@ export function useOffboardingLabels() {
 					"settings.employees.offboarding.tasks.notifyDeputyRelease",
 					"Deputy no longer available notification",
 				);
+			case "notify_data_export_reminder":
+				return t(
+					"settings.employees.offboarding.tasks.notifyDataExportReminder",
+					"Personal data download reminder",
+				);
 		}
 	};
 

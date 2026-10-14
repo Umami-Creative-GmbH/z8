@@ -7,7 +7,7 @@ import {
 	canonicalizeNamespaces,
 	normalizeCatalogLocale,
 } from "./catalog-slices";
-import { ALL_NAMESPACES, loadNamespaces, type Namespace } from "./shared";
+import { APP_NAMESPACES, loadNamespaces, type Namespace } from "./shared";
 import { projectShellCatalog } from "./shell-catalog";
 
 export async function loadCompleteServerTranslations(
@@ -19,7 +19,7 @@ export async function loadCompleteServerTranslations(
 async function loadCompleteCatalog(locale: string): Promise<TolgeeStaticData> {
 	"use cache";
 	cacheLife("max");
-	return loadNamespaces(locale, ALL_NAMESPACES, { strict: true });
+	return loadNamespaces(locale, APP_NAMESPACES, { strict: true });
 }
 
 /** Compatibility for server/bot callers; the root is migrated separately. */
@@ -66,5 +66,5 @@ export async function loadShellTranslations(
 async function loadShellCatalog(locale: string): Promise<CatalogSlice> {
 	"use cache";
 	cacheLife("max");
-	return projectShellCatalog(await loadCanonicalSlice(locale, ALL_NAMESPACES));
+	return projectShellCatalog(await loadCanonicalSlice(locale, APP_NAMESPACES));
 }

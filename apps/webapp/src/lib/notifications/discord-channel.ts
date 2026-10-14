@@ -10,6 +10,7 @@ import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
 import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
 import { createLogger } from "@/lib/logger";
+import { localizeOutboundNotification } from "./outbound-localization";
 import type { NotificationType } from "./types";
 
 const logger = createLogger("DiscordChannel");
@@ -123,10 +124,18 @@ export async function sendDiscordNotification(
 			return options.durable ? "unavailable" : undefined;
 		}
 
+		const localized = await localizeOutboundNotification({
+			userId: params.userId,
+			organizationId: params.organizationId,
+			title: params.title,
+			message: params.message,
+			metadata: params.metadata,
+			withActionLabel: true,
+		});
 		const embeds = buildNotificationEmbed(
-			params.title,
-			params.message,
-			params.actionUrl,
+			localized.title,
+			localized.message,
+			params.actionUrl ? { url: params.actionUrl, label: localized.actionLabel } : undefined,
 		);
 
 		const acknowledgement = await sendMessage(botConfig.botToken, channelId, { embeds });

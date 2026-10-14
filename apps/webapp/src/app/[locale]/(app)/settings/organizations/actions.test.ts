@@ -197,7 +197,7 @@ describe("organization action authorization inventory", () => {
 		],
 		["updateOrganizationDefaultNotificationLanguage", "deleteOrganization"],
 		["deleteOrganization", "recoverOrganization"],
-		["recoverOrganization", "sendOrganizationDeletionNotifications"],
+		["recoverOrganization", null],
 	] as const)("routes %s through the central active-organization gate", (action, next) => {
 		const source = readFileSync(
 			new URL("./actions.ts", import.meta.url),
@@ -205,9 +205,7 @@ describe("organization action authorization inventory", () => {
 		);
 		const section = source.slice(
 			source.indexOf(`export async function ${action}(`),
-			source.indexOf(
-				`${next === "sendOrganizationDeletionNotifications" ? "async" : "export async"} function ${next}(`,
-			),
+			next === null ? undefined : source.indexOf(`export async function ${next}(`),
 		);
 
 		expect(section).toContain("requireActiveOrganizationActionActor({");

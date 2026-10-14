@@ -12,7 +12,6 @@ import {
 	organizationNotificationSettings,
 	team,
 } from "@/db/schema";
-import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth, runAuthMutation } from "@/lib/auth";
 import {
 	isInvitationActionable,
@@ -75,10 +74,6 @@ const updateInvitationTargetTeamSchema = z.object({
 type UpdateInvitationTargetTeamData = z.infer<
 	typeof updateInvitationTargetTeamSchema
 >;
-
-type MemberWithUser = typeof authSchema.member.$inferSelect & {
-	user: Pick<typeof authSchema.user.$inferSelect, "name" | "email"> | null;
-};
 
 // =============================================================================
 // Invitation Management Actions
@@ -1582,12 +1577,15 @@ export async function deleteOrganization(
 				// Send notification emails to all admins and owners
 				yield* Effect.tryPromise({
 					try: async () => {
-						await sendOrganizationDeletionNotifications(
-							organizationId,
-							organization.name,
-							session.user.name || session.user.email,
-							deletionDate,
+						const { sendOrganizationDeletionNotifications } = await import(
+							"@/lib/jobs/organization-deletion-notification"
 						);
+						await sendOrganizationDeletionNotifications({
+							organizationId,
+							organizationName: organization.name,
+							deletedByName: session.user.name || session.user.email,
+							deletionDate: deletionDate.toISOString(),
+						});
 					},
 					catch: (error) => {
 						// Log but don't fail the action if email sending fails
@@ -1746,82 +1744,4 @@ export async function recoverOrganization(
 	);
 
 	return runServerActionSafe(effect);
-}
-
-/**
- * Helper function to send deletion notification emails to all admins and owners
- */
-async function sendOrganizationDeletionNotifications(
-	organizationId: string,
-	organizationName: string,
-	deletedByName: string,
-	deletionDate: Date,
-): Promise<void> {
-	const [
-		{ render },
-		{ OrganizationDeletion },
-		{ sendEmail },
-		adminMembers,
-		appUrl,
-	] = await Promise.all([
-		import("react-email"),
-		import("@/lib/email/templates/organization-deletion"),
-		import("@/lib/email/email-service"),
-		db.query.member.findMany({
-			where: and(
-				eq(authSchema.member.organizationId, organizationId),
-				// Include both admin and owner roles
-			),
-			with: {
-				user: true,
-			},
-		}),
-		getOrganizationBaseUrl(organizationId),
-	]);
-
-	// Filter to only admins and owners
-	const typedAdminMembers = adminMembers as unknown as MemberWithUser[];
-	const adminsAndOwners = typedAdminMembers.filter(
-		(m) => m.role === "admin" || m.role === "owner",
-	);
-
-	const recoveryUrl = `${appUrl}/settings/organizations`;
-	const permanentDeletionDate = new Date(deletionDate);
-	permanentDeletionDate.setDate(permanentDeletionDate.getDate() + 5);
-
-	// Send email to each admin/owner
-	await Promise.all(
-		adminsAndOwners.map(async (member) => {
-			const user = member.user;
-			const userEmail = user?.email;
-			if (!userEmail) return;
-
-			try {
-				const html = await render(
-					OrganizationDeletion({
-						userName: user.name || userEmail,
-						organizationName,
-						deletedByName,
-						deletionDate: deletionDate.toLocaleString(),
-						permanentDeletionDate: permanentDeletionDate.toLocaleString(),
-						recoveryUrl,
-						appUrl,
-					}),
-				);
-
-				await sendEmail({
-					to: userEmail,
-					subject: `Organization "${organizationName}" scheduled for deletion`,
-					html,
-					actionUrl: recoveryUrl,
-					organizationId,
-				});
-			} catch (error) {
-				logger.warn(
-					{ error, email: userEmail, organizationId },
-					"Failed to send deletion notification to user",
-				);
-			}
-		}),
-	);
 }

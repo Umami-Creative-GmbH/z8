@@ -3,7 +3,7 @@ import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import { employeeEmploymentHistory } from "../employment-history";
 
-const TAG = "0216_employment_terms_numeric_wage";
+const TAG = "0222_employment_terms_numeric_wage";
 
 describe("employment terms wage column (#1174)", () => {
 	it("stores the hourly wage as numeric(10,2), read as a number", () => {

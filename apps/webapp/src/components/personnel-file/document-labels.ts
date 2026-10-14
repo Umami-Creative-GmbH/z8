@@ -52,16 +52,7 @@ export function formatPayPeriod(payPeriod: PayPeriod, locale: string): string {
 	);
 }
 
-export function formatFileSize(bytes: number, locale: string): string {
-	const units = ["B", "KB", "MB"] as const;
-	let value = bytes;
-	let unit = 0;
-	while (value >= 1024 && unit < units.length - 1) {
-		value /= 1024;
-		unit += 1;
-	}
-	return `${new Intl.NumberFormat(locale, { maximumFractionDigits: unit === 0 ? 0 : 1 }).format(value)} ${units[unit]}`;
-}
+export { formatFileSize } from "@/lib/format-file-size";
 
 export function personnelDocumentUrl(
 	documentId: string,

@@ -7,7 +7,7 @@ import {
 	getPendingExports,
 	processExport,
 } from "@/lib/export/export-service";
-import { resolveOrganizationNotificationLocale } from "@/lib/notifications/recipient-locale";
+import { resolveRecipientNotificationLocale } from "@/lib/notifications/recipient-locale";
 import { runExportProcessor } from "./export-processor";
 
 const { infoMock, warnMock, errorMock } = vi.hoisted(() => ({
@@ -17,12 +17,13 @@ const { infoMock, warnMock, errorMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("drizzle-orm", () => ({
+	and: vi.fn((...conditions) => ({ and: conditions })),
 	eq: vi.fn((field, value) => ({ field, value })),
 }));
 
 vi.mock("@/db", () => ({
 	dataExport: { id: "dataExport.id" },
-	employee: { id: "employee.id" },
+	employee: { id: "employee.id", organizationId: "employee.organizationId" },
 	organization: { id: "organization.id" },
 	db: {
 		query: {
@@ -53,7 +54,29 @@ vi.mock("@/lib/export/export-service", () => ({
 }));
 
 vi.mock("@/lib/notifications/recipient-locale", () => ({
-	resolveOrganizationNotificationLocale: vi.fn(),
+	resolveRecipientNotificationLocale: vi.fn(),
+}));
+
+/** A stand-in for the German `emails` catalog (until Tolgee sync fills it). */
+const { GERMAN } = vi.hoisted(() => ({
+	GERMAN: {
+		"emails.subjects.exportReady": "Dein Datenexport ist fertig - {organizationName}",
+		"emails.subjects.exportFailed": "Datenexport fehlgeschlagen - {organizationName}",
+		"emails.export.categories.absences": "Abwesenheiten",
+		"emails.exportReady.title": "Dein Datenexport ist fertig",
+		"emails.export.values.yourOrganization": "Deine Organisation",
+	} as Record<string, string>,
+}));
+
+vi.mock("@/lib/email/email-i18n", () => ({
+	loadEmailTranslator: async (locale: string) => ({
+		locale,
+		t: (key: string, defaultValue: string, params?: Record<string, unknown>) =>
+			((locale === "de" ? GERMAN[key] : undefined) ?? defaultValue).replace(
+				/\{(\w+)\}/g,
+				(match, name: string) => (params && name in params ? String(params[name]) : match),
+			),
+	}),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -73,7 +96,7 @@ const cleanupExpiredExportsMock = vi.mocked(cleanupExpiredExports);
 const findDataExportMock = vi.mocked(db.query.dataExport.findFirst);
 const findEmployeeMock = vi.mocked(db.query.employee.findFirst);
 const findOrganizationMock = vi.mocked(db.query.organization.findFirst);
-const resolveOrganizationLocaleMock = vi.mocked(resolveOrganizationNotificationLocale);
+const resolveRecipientLocaleMock = vi.mocked(resolveRecipientNotificationLocale);
 
 describe("runExportProcessor", () => {
 	beforeEach(() => {
@@ -88,15 +111,15 @@ describe("runExportProcessor", () => {
 		findDataExportMock.mockReset();
 		findEmployeeMock.mockReset();
 		findOrganizationMock.mockReset();
-		resolveOrganizationLocaleMock.mockReset();
+		resolveRecipientLocaleMock.mockReset();
 
 		cleanupExpiredExportsMock.mockResolvedValue(0);
 		findEmployeeMock.mockResolvedValue({
 			firstName: "Alex",
-			user: { email: "alex@example.com", name: "Alex Morgan" },
+			user: { id: "user_alex", email: "alex@example.com", name: "Alex Morgan" },
 		});
 		findOrganizationMock.mockResolvedValue({ name: "Acme Operations" });
-		resolveOrganizationLocaleMock.mockResolvedValue("en");
+		resolveRecipientLocaleMock.mockResolvedValue("en");
 		sendEmailMock.mockResolvedValue({ success: true, messageId: "msg_123" });
 	});
 
@@ -141,6 +164,7 @@ describe("runExportProcessor", () => {
 				downloadUrl: "https://app.example.com/en/settings/export/history/org_123",
 			}),
 			subjectOverride: "Your data export is ready - Acme Operations",
+			renderDefaultHtml: expect.any(Function),
 		});
 		expect(sendEmailMock).toHaveBeenCalledWith({
 			to: "alex@example.com",
@@ -180,7 +204,7 @@ describe("runExportProcessor", () => {
 			name: "Acme Operations",
 			timezone: "Europe/Berlin",
 		});
-		resolveOrganizationLocaleMock.mockResolvedValue("de");
+		resolveRecipientLocaleMock.mockResolvedValue("de");
 		renderOrganizationEmailTemplateMock.mockResolvedValue({
 			subject: "Export ready",
 			html: "<p>Ready</p>",
@@ -189,15 +213,27 @@ describe("runExportProcessor", () => {
 
 		await runExportProcessor();
 
+		expect(resolveRecipientLocaleMock).toHaveBeenCalledWith({
+			userId: "user_alex",
+			organizationId: "org_789",
+		});
 		expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
 			expect.objectContaining({
 				templateKey: "export-ready",
 				data: expect.objectContaining({
+					categories: ["Abwesenheiten"],
 					downloadUrl: "https://app.example.com/de/settings/export/history/org_789",
-					expiresAt: "May 30, 2026, 10:05 (Europe/Berlin)",
+					expiresAt: "30. Mai 2026, 10:05 (Europe/Berlin)",
 				}),
+				subjectOverride: "Dein Datenexport ist fertig - Acme Operations",
 			}),
 		);
+		// Without an override, the dedicated template is sent in the recipient language.
+		const input = renderOrganizationEmailTemplateMock.mock.calls[0]?.[0];
+		const html = await input?.renderDefaultHtml?.();
+		expect(html).toContain('lang="de"');
+		expect(html).toContain("Dein Datenexport ist fertig");
+		expect(html).toContain("30. Mai 2026, 10:05 (Europe/Berlin)");
 	});
 
 	it("states the file's expiry in UTC when the organization has no timezone", async () => {
@@ -230,8 +266,53 @@ describe("runExportProcessor", () => {
 			expect.objectContaining({
 				data: expect.objectContaining({
 					downloadUrl: "https://app.example.com/en/settings/export/history/org_790",
-					expiresAt: "May 30, 2026, 08:05 (UTC)",
+					expiresAt: "May 30, 2026, 8:05 AM (UTC)",
 				}),
+			}),
+		);
+	});
+
+	it("names a nameless organization in the recipient language", async () => {
+		const failedRecord = {
+			id: "export_791",
+			organizationId: "org_791",
+			requestedById: "employee_791",
+			categories: ["absences", "legacy_category"],
+			status: "failed" as const,
+			errorMessage: "Source timeout",
+			s3Key: null,
+			fileSizeBytes: null,
+			createdAt: new Date("2026-04-30T08:00:00.000Z"),
+			completedAt: null,
+			expiresAt: null,
+		};
+
+		getPendingExportsMock.mockResolvedValue([{ ...failedRecord, status: "pending" as const }]);
+		processExportMock.mockRejectedValue(new Error("Processing failed"));
+		findDataExportMock.mockResolvedValue(failedRecord);
+		findEmployeeMock.mockResolvedValue({
+			user: { id: "user_alex", email: "alex@example.com", name: "" },
+		});
+		findOrganizationMock.mockResolvedValue({ name: "", timezone: null });
+		resolveRecipientLocaleMock.mockResolvedValue("de");
+		renderOrganizationEmailTemplateMock.mockResolvedValue({
+			subject: "Export failed",
+			html: "<p>Failed</p>",
+			usedOverride: false,
+		});
+
+		await runExportProcessor();
+
+		expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				data: expect.objectContaining({
+					// The name falls back to the requester's email address.
+					recipientName: "alex@example.com",
+					organizationName: "Deine Organisation",
+					// A category the export no longer offers keeps its stored name.
+					categories: ["Abwesenheiten", "legacy_category"],
+				}),
+				subjectOverride: "Datenexport fehlgeschlagen - Deine Organisation",
 			}),
 		);
 	});
@@ -278,6 +359,7 @@ describe("runExportProcessor", () => {
 				retryUrl: "https://app.example.com/settings/export",
 			},
 			subjectOverride: "Data export failed - Acme Operations",
+			renderDefaultHtml: expect.any(Function),
 		});
 		expect(sendEmailMock).toHaveBeenCalledWith({
 			to: "alex@example.com",
