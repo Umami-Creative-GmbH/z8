@@ -20,6 +20,13 @@ vi.mock("@/lib/employment-history/first-terms", () => ({
 	writeFirstEmploymentTerms,
 }));
 
+// Draft personnel numbers here are free; a taken one is covered by
+// organization-member-provisioning.personnel-number.integration.test.ts.
+vi.mock("@/lib/organization/personnel-number-uniqueness", () => ({
+	findPersonnelNumberHolder: vi.fn(async () => null),
+	isPersonnelNumberConflict: () => false,
+}));
+
 type ProvisioningDb = Parameters<typeof ensureEmployeeForOrganizationMember>[0];
 
 describe("ensureEmployeeForOrganizationMember", () => {
