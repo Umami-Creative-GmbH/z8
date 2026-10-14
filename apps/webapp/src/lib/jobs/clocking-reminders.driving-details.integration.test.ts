@@ -15,6 +15,7 @@ import {
 	createDatabaseClockingStore,
 } from "@/lib/time-tracking/clocking-core";
 import { runClockingReminders } from "./clocking-reminders";
+import { completeLiveWork } from "@/lib/time-tracking/work-records/__tests__/complete-live-work";
 
 const channels = vi.hoisted(() => ({
 	push: vi.fn(async () => ({ sent: 1, failed: 0, expired: [] })),
@@ -111,7 +112,13 @@ describe("driving details missing reminders on PostgreSQL", () => {
 			source: { deviceInfo: "test", ipAddress: null },
 		};
 		await clocking().clockIn({ ...command, action: action(start), workLocationType: "office" });
-		await clocking().clockOut({ ...command, action: action(end) });
+		await completeLiveWork({
+			organizationId: command.organizationId,
+			employeeId: command.employeeId,
+			actorUserId: command.createdBy,
+			at: action(end).instant,
+			capture: action(end),
+		});
 		const { rows } = await fixture.pool.query<{ id: string }>(
 			"select id from work_period where employee_id = $1 and start_time = $2",
 			[person.employeeId, new Date(start)],

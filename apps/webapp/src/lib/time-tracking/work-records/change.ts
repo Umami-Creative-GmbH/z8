@@ -16,6 +16,7 @@ import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { WorkVehicleUseChangeRefusalCode } from "../vehicle-use/work-vehicle-use-refusals";
 import type { WorkOccupant } from "../work-occupancy";
 import type { AmendWorkRecord } from "./amend-change";
+import type { CreateWorkRecord } from "./create-plan";
 import type { DivideByOwedBreak } from "./owed-break";
 import type { RecordAgreementFacet } from "./record-agreement";
 import type {
@@ -95,7 +96,11 @@ export type DivideWorkRecord = {
 	appendOperation: TimeEntryAppendOperation;
 };
 
-export type WorkRecordChange = DivideWorkRecord | DivideByOwedBreak | AmendWorkRecord;
+export type WorkRecordChange =
+	| DivideWorkRecord
+	| DivideByOwedBreak
+	| AmendWorkRecord
+	| CreateWorkRecord;
 
 /** Why a change was not made. Nothing is written for any of them. */
 export type WorkRecordRefusal =
@@ -106,6 +111,8 @@ export type WorkRecordRefusal =
 			current: { revision: number };
 	  }
 	| { kind: "work_running" }
+	/** A creation's live work is no longer live: completed, deleted or already ending. */
+	| { kind: "work_not_live" }
 	| { kind: "canonical_record_missing" }
 	| {
 			kind: "canonical_divergence";

@@ -22,6 +22,7 @@ import {
 import { saveClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings";
 import type { ClockingReminderRole } from "@/lib/time-tracking/clocking-reminders/settings-policy";
 import { runClockingReminders } from "./clocking-reminders";
+import { completeLiveWork } from "@/lib/time-tracking/work-records/__tests__/complete-live-work";
 
 const channels = vi.hoisted(() => ({
 	push: vi.fn(async () => ({ sent: 1, failed: 0, expired: [] })),
@@ -192,12 +193,12 @@ describe("clocking reminders for published shifts on PostgreSQL", () => {
 		if (!("period" in opened)) throw new Error("Expected live work");
 	}
 	async function clockOut(org: Org, person: SeededEmployee, instant: string) {
-		await clocking().clockOut({
+		await completeLiveWork({
 			organizationId: org.organizationId,
 			employeeId: person.employeeId,
-			createdBy: person.userId,
-			action: action(instant),
-			source: { deviceInfo: "test", ipAddress: null },
+			actorUserId: person.userId,
+			at: action(instant).instant,
+			capture: action(instant),
 		});
 	}
 

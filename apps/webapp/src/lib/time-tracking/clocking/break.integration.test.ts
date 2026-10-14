@@ -34,9 +34,6 @@ vi.mock("@/lib/billing/guard", () => ({
 const { createClocking } = await import("./clocking");
 const { recordingFollowUps } = await import("./follow-ups");
 const { coordinatedTransactions } = await import("./transactions");
-const { canonicalWorkRecordClient } = await import(
-	"@/lib/time-tracking/canonical-work-record"
-);
 type BreakCommand = import("./types").BreakCommand;
 type ClockTransactions = import("./transactions").ClockTransactions;
 
@@ -189,6 +186,7 @@ describe("Clocking break through run on PostgreSQL", () => {
 	}
 
 	async function cleanup() {
+		await admin.query("drop function if exists t480_refuse() cascade");
 		await admin.query("delete from organization where id = $1", [ids.organization]);
 		await admin.query('delete from "user" where id in ($1, $2)', [ids.user, ids.otherUser]);
 	}
@@ -300,8 +298,8 @@ describe("Clocking break through run on PostgreSQL", () => {
 					durationMinutes: 105,
 					projectId: ids.project,
 					surchargeSnapshot: expect.objectContaining({ version: expect.anything() }),
-					// The append operation commits its own balance refresh intent.
-					balanceRefreshCommitted: admission === "append",
+					// Both admissions mark the balance dirty with the work (#1222).
+					balanceRefreshCommitted: true,
 					timezone: "UTC",
 				},
 			]);
@@ -578,14 +576,14 @@ describe("Clocking break through run on PostgreSQL", () => {
 		await setAdmission("inactive");
 		await startWork();
 		const { clocking, followUps } = newClocking();
-		const create = canonicalWorkRecordClient.createForCompletedPeriod;
-		// The record's rows are written, then the write fails.
-		const failing = vi
-			.spyOn(canonicalWorkRecordClient, "createForCompletedPeriod")
-			.mockImplementationOnce(async (input, client) => {
-				await create(input, client);
-				throw new Error("canonical record write failed");
-			});
+		// The record's base row is written, then its detail fails to write.
+		await admin.query(
+			`create function t480_refuse() returns trigger language plpgsql as $$
+			 begin raise exception 'canonical record write failed'; end $$`,
+		);
+		await admin.query(
+			"create trigger t480_refuse before insert on time_record_work for each row execute function t480_refuse()",
+		);
 		const before = await snapshot();
 
 		try {
@@ -593,9 +591,8 @@ describe("Clocking break through run on PostgreSQL", () => {
 				outcome: "refused",
 				failure: { code: "unconfirmed" },
 			});
-			expect(failing).toHaveBeenCalledOnce();
 		} finally {
-			failing.mockRestore();
+			await admin.query("drop function t480_refuse() cascade");
 		}
 		expect(await snapshot()).toEqual(before);
 		expect(followUps.closures).toEqual([]);

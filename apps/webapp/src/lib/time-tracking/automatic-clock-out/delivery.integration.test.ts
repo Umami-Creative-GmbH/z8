@@ -202,7 +202,8 @@ describe("automatic clock-out durable delivery", () => {
 			clock: { nowInstant: () => NOW },
 		}).close({ organizationId, employeeId: person.employeeId, workPeriodId: opened.period.id });
 		expect(outcome.status).toBe("closed");
-		effects.markBalanceDirty.mockRejectedValueOnce(new Error("balance unavailable"));
+		// The balance mark commits with the work (#1222); compliance stands for a failing follow-up.
+		effects.checkCompliance.mockRejectedValueOnce(new Error("compliance unavailable"));
 		expect(await runner()(100)).toMatchObject({ completed: 3, deferred: 1 });
 		const period = (
 			await fixture.pool.query(

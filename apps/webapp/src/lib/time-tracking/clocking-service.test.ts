@@ -1,10 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	ClockingAppendAdoptedError,
 	ClockingConflictError,
 	createClockingService,
 } from "./clocking-service";
+
+// Clocking core only starts live work: every clock-out hands its live work to
+// work records, which creates the completed work (#1222).
 
 function createHarness(options?: {
 	member?: boolean;
@@ -15,14 +18,6 @@ function createHarness(options?: {
 	let active = false;
 	let entries = 0;
 	const actions = new Map<string, { id: string; [key: string]: unknown }>();
-	let completedPeriod: {
-		id: string;
-		startTime: Date;
-		endTime: Date;
-		durationMinutes: number;
-		projectId: string | null;
-		workCategoryId: string | null;
-	} | null = null;
 	let previous = Promise.resolve();
 	const service = createClockingService({
 		transaction: async (callback) => {
@@ -49,16 +44,6 @@ function createHarness(options?: {
 						active
 							? { id: "period-1", startTime: new Date("2026-07-10T08:00:00Z") }
 							: null,
-					getCompletedPeriodByClockOutActionId: async (
-						_employeeId,
-						_organizationId,
-						_actionId,
-						workPeriodId,
-					) =>
-						completedPeriod &&
-						(!workPeriodId || completedPeriod.id === workPeriodId)
-							? completedPeriod
-							: null,
 					getLatestHash: async () => null,
 					insertEntry: async (entry) => {
 						const inserted = { id: `entry-${++entries}`, ...entry };
@@ -69,23 +54,6 @@ function createHarness(options?: {
 						if (options?.failPeriodInsert)
 							throw new Error("period insert failed");
 						active = true;
-						return { id: "period-1" };
-					},
-					closeActivePeriod: async (
-						_id,
-						_employeeId,
-						_organizationId,
-						patch,
-					) => {
-						active = false;
-						completedPeriod = {
-							id: "period-1",
-							startTime: new Date("2026-07-10T08:00:00Z"),
-							endTime: patch.endTime as Date,
-							durationMinutes: patch.durationMinutes as number,
-							projectId: (patch.projectId as string | null) ?? null,
-							workCategoryId: (patch.workCategoryId as string | null) ?? null,
-						};
 						return { id: "period-1" };
 					},
 				});
@@ -108,122 +76,10 @@ const clockIn = {
 		timezoneSource: "user_setting" as const,
 	},
 	source: { ipAddress: "bot", deviceInfo: "telegram-bot" },
+	workLocationType: "office" as const,
 };
 
 describe("clocking service", () => {
-	it("uses a caller-owned transaction for the complete clock-out boundary", async () => {
-		const transaction = { id: "approval-transaction" };
-		const hooks: unknown[] = [];
-		let openedTransactions = 0;
-		const store = {
-			transaction,
-			acquireAdoptionGate: async () => undefined,
-			readAppendAdmission: async () => "legacy" as const,
-			hasCompletedWorkEndingAfter: async () => false,
-			lockEmployee: async () => undefined,
-			isOrganizationMember: async () => true,
-			getEntryByActionId: async () => null,
-			getActivePeriod: async () => ({
-				id: "period-1",
-				startTime: new Date("2026-07-10T08:00:00Z"),
-			}),
-			getLatestHash: async () => null,
-			insertEntry: async () => ({ id: "entry-1" }),
-			insertActivePeriod: async () => ({ id: "period-1" }),
-			closeActivePeriod: async () => ({ id: "period-1" }),
-		};
-		const service = createClockingService({
-			transaction: async (callback) => {
-				openedTransactions += 1;
-				return callback(store);
-			},
-			storeForTransaction: (candidate) => {
-				expect(candidate).toBe(transaction);
-				return store;
-			},
-		});
-
-		await service.clockOut({
-			...clockIn,
-			transaction,
-			beforePeriodClose: async (context) => {
-				hooks.push(context.transaction);
-				return undefined;
-			},
-			afterPeriodClose: async (context) => {
-				hooks.push(context.transaction);
-			},
-		});
-
-		expect(openedTransactions).toBe(0);
-		expect(hooks).toEqual([transaction, transaction]);
-	});
-
-	it("scopes period closure to the employee and organization", async () => {
-		const closeActivePeriod = vi.fn(async () => ({ id: "period-1" }));
-		const service = createClockingService({
-			transaction: async (callback) =>
-				callback({
-					acquireAdoptionGate: async () => undefined,
-					readAppendAdmission: async () => "legacy" as const,
-					hasCompletedWorkEndingAfter: async () => false,
-					lockEmployee: async () => undefined,
-					isOrganizationMember: async () => true,
-					getEntryByActionId: async () => null,
-					getActivePeriod: async () => ({
-						id: "period-1",
-						startTime: new Date("2026-07-10T08:00:00Z"),
-					}),
-					getLatestHash: async () => null,
-					insertEntry: async () => ({ id: "entry-1" }),
-					insertActivePeriod: async () => ({ id: "period-1" }),
-					closeActivePeriod,
-				}),
-		});
-
-		await service.clockOut(clockIn);
-
-		expect(closeActivePeriod).toHaveBeenCalledWith(
-			"period-1",
-			"employee-1",
-			"organization-1",
-			expect.objectContaining({ isActive: false }),
-		);
-	});
-
-	it("rejects a clock-out that precedes the clock-in before writing anything", async () => {
-		const insertEntry = vi.fn(async () => ({ id: "entry-1" }));
-		const closeActivePeriod = vi.fn(async () => ({ id: "period-1" }));
-		const service = createClockingService({
-			transaction: async (callback) =>
-				callback({
-					acquireAdoptionGate: async () => undefined,
-					readAppendAdmission: async () => "legacy" as const,
-					hasCompletedWorkEndingAfter: async () => false,
-					lockEmployee: async () => undefined,
-					isOrganizationMember: async () => true,
-					getEntryByActionId: async () => null,
-					getActivePeriod: async () => ({
-						id: "period-1",
-						startTime: new Date("2026-07-10T08:00:00Z"),
-					}),
-					getLatestHash: async () => null,
-					insertEntry,
-					insertActivePeriod: async () => ({ id: "period-1" }),
-					closeActivePeriod,
-				}),
-		});
-
-		await expect(
-			service.clockOut({
-				...clockIn,
-				action: { ...clockIn.action, instant: parseInstant("2026-07-10T07:59:00Z") },
-			}),
-		).rejects.toThrow(ClockingConflictError);
-		expect(insertEntry).not.toHaveBeenCalled();
-		expect(closeActivePeriod).not.toHaveBeenCalled();
-	});
-
 	it("serializes simultaneous clock-ins so exactly one creates an active period", async () => {
 		const { service, entries } = createHarness();
 		const results = await Promise.allSettled([
@@ -258,38 +114,6 @@ describe("clocking service", () => {
 		expect(entries()).toBe(1);
 	});
 
-	it("returns a complete replay result for a repeated clock-out action id", async () => {
-		const { service, entries } = createHarness();
-		await service.clockIn(clockIn);
-		const action = {
-			...clockIn,
-			actionId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-			workPeriodId: "period-1",
-		};
-
-		const first = await service.clockOut(action);
-		const duplicate = await service.clockOut(action);
-
-		expect(first.disposition).toBe("executed");
-		expect(duplicate).toMatchObject({
-			entry: first.entry,
-			period: { id: "period-1" },
-			durationMinutes: 60,
-			disposition: "replayed",
-		});
-		expect(entries()).toBe(2);
-	});
-
-	it("rejects a clock-out action id that belongs to a clock-in entry", async () => {
-		const { service } = createHarness();
-		const actionId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
-		await service.clockIn({ ...clockIn, actionId });
-
-		await expect(
-			service.clockOut({ ...clockIn, actionId, workPeriodId: "period-1" }),
-		).rejects.toThrow(ClockingConflictError);
-	});
-
 	it("rejects an employee outside the requested organization before writing", async () => {
 		const { service, entries } = createHarness({ member: false });
 
@@ -321,7 +145,6 @@ describe("clocking service", () => {
 						insertActivePeriod: async () => {
 							throw new Error("period insert failed");
 						},
-						closeActivePeriod: async () => ({ id: "period-1" }),
 					});
 				} catch (error) {
 					inserted.splice(0, inserted.length, ...snapshot);
@@ -338,8 +161,8 @@ describe("clocking service", () => {
 });
 
 // #327: a writer outside a work-transaction coordinator (the legacy direct
-// route, the departure clock-out) cannot write fresh entries into an employee
-// graph whose organization has adopted appends.
+// route) cannot write fresh entries into an employee graph whose organization
+// has adopted appends.
 describe("uncoordinated writers in an adopted organization", () => {
 	const actionId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
 
@@ -361,35 +184,15 @@ describe("uncoordinated writers in an adopted organization", () => {
 		expect(entries()).toBe(0);
 	});
 
-	it("refuses a fresh clock-out before writing anything", async () => {
+	it("still answers a committed clock-in replay after adoption", async () => {
 		const { service, entries, organization } = createHarness();
-		await service.clockIn(clockIn);
-		organization.admission = "append";
-
-		await expect(
-			service.clockOut({ ...clockIn, actionId, workPeriodId: "period-1" }),
-		).rejects.toThrow(ClockingAppendAdoptedError);
-		expect(entries()).toBe(1);
-	});
-
-	it("still answers committed clock-in and clock-out replays after adoption", async () => {
-		const { service, entries, organization } = createHarness();
-		const clockOutId = "0b7e1c52-3a4f-4d8e-9b1a-2c3d4e5f6a7b";
 		const first = await service.clockIn({ ...clockIn, actionId });
-		const closed = await service.clockOut({
-			...clockIn,
-			actionId: clockOutId,
-			workPeriodId: "period-1",
-		});
 		organization.admission = "append";
 
 		await expect(service.clockIn({ ...clockIn, actionId })).resolves.toMatchObject({
 			entry: first.entry,
 		});
-		await expect(
-			service.clockOut({ ...clockIn, actionId: clockOutId, workPeriodId: "period-1" }),
-		).resolves.toMatchObject({ entry: closed.entry, disposition: "replayed" });
-		expect(entries()).toBe(2);
+		expect(entries()).toBe(1);
 	});
 
 	it("leaves coordinated writers to their coordinator's admission", async () => {
@@ -415,7 +218,6 @@ describe("uncoordinated writers in an adopted organization", () => {
 				getLatestHash: async () => null,
 				insertEntry: async () => ({ id: "entry-1" }),
 				insertActivePeriod: async () => ({ id: "period-1" }),
-				closeActivePeriod: async () => ({ id: "period-1" }),
 			}),
 		});
 

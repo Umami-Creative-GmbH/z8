@@ -30,6 +30,8 @@ import type { TimeEntryRow } from "./rows";
 
 /** One entry a change appends. */
 export type EntryDraft = {
+	/** An operation identity the entry takes (a clock command's); generated when omitted. */
+	id?: string;
 	type: "clock_in" | "clock_out" | "correction";
 	at: Instant;
 	notes: string | null;
@@ -139,6 +141,7 @@ async function insertAppendedEntry(
 	const [entry] = await tx
 		.insert(timeEntry)
 		.values({
+			...(draft.id === undefined ? {} : { id: draft.id }),
 			employeeId: scope.employeeId,
 			organizationId: scope.organizationId,
 			type: draft.type,

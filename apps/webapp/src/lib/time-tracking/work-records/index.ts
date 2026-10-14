@@ -7,7 +7,7 @@ import "server-only";
  * - `readWorkRecord`: a completed work period with its entries and canonical
  *   work record, its expected state and its record agreement, optionally
  *   locked so a caller can check its own preconditions first.
- * - `applyWorkRecordChange`: one change (divide, amend) against a named
+ * - `applyWorkRecordChange`: one change (divide, amend, create) against a named
  *   expected state. It returns the applied result or a refusal, never both;
  *   `orRefuse` turns a refusal into the error interactive callers throw.
  *
@@ -21,6 +21,8 @@ import type { SealedWorkTransactionScope } from "../work-transaction";
 import type { DivideWorkRecord, WorkRecordChange, WorkRecordRefusal } from "./change";
 import type { AmendWorkRecord } from "./amend-change";
 import { amendWorkRecord, type WorkAmendment } from "./amend";
+import { createWorkRecord, type WorkCreation } from "./create";
+import type { CreateWorkRecord } from "./create-plan";
 import { divideWorkRecord, type WorkDivision } from "./divide";
 import { divideByOwedBreak, type OwedBreakDivision } from "./divide-owed-break";
 import type { DivideByOwedBreak, OwedBreakNotRequired } from "./owed-break";
@@ -44,6 +46,8 @@ export type {
 	WorkRecordRefusal,
 	WorkRecordRefusalKind,
 } from "./change";
+export type { WorkCreation } from "./create";
+export type { CompletingLiveWork, CreateWorkRecord } from "./create-plan";
 export type { AppendedEntryEvidence, DividedHalf, WorkDivision } from "./divide";
 export type { OwedBreakDivision } from "./divide-owed-break";
 export { workRecordScopeForFinalizer } from "./finalizer-scope";
@@ -71,7 +75,9 @@ export type WorkRecordResult<C extends WorkRecordChange> = C extends DivideWorkR
 		? OwedBreakDivision | OwedBreakNotRequired
 		: C extends AmendWorkRecord
 			? WorkAmendment
-			: never;
+			: C extends CreateWorkRecord
+				? WorkCreation
+				: never;
 
 export async function applyWorkRecordChange<C extends WorkRecordChange>(
 	scope: SealedWorkTransactionScope,
@@ -84,5 +90,7 @@ export async function applyWorkRecordChange<C extends WorkRecordChange>(
 			return (await divideByOwedBreak(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 		case "amend":
 			return (await amendWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
+		case "create":
+			return (await createWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 	}
 }

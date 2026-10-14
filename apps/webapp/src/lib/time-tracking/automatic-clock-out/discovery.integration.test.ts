@@ -58,19 +58,14 @@ describe("automatic clock-out discovery", () => {
 				"update work_period set deleted_at = now() where organization_id = $1 and id = $2",
 				[organizationId, opened.period.id],
 			);
+		// Discovery reads only whether the work is still live; how it ended is not its concern.
 		if (options.completed)
-			await service.clockOut({
-				organizationId,
-				employeeId: employee.employeeId,
-				createdBy: employee.userId,
-				action: {
-					instant: now.add({ minutes: 10 }),
-					timezone: "UTC",
-					utcOffsetMinutes: 0,
-					timezoneSource: "user_setting",
-				},
-				source: { deviceInfo: "test", ipAddress: null },
-			});
+			await fixture.pool.query(
+				`update work_period set is_active = false, end_time = $3,
+				   duration_minutes = floor(extract(epoch from ($3::timestamp - start_time)) / 60)
+				 where organization_id = $1 and id = $2`,
+				[organizationId, opened.period.id, new Date(now.add({ minutes: 10 }).epochMilliseconds)],
+			);
 		return { organizationId, employeeId: employee.employeeId, workPeriodId: opened.period.id };
 	}
 	it("includes previous-day default work at equality and custom durations, omitting nonlive/deleted/disabled work", async () => {

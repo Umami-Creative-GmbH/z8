@@ -635,7 +635,8 @@ describe("web clock-out through the completed-work operation on PostgreSQL", () 
 
 		expect(await snapshot()).toEqual(committed);
 		expect(committed.receipts).toBeNull();
-		expect(await closedGraph(period.id)).toMatchObject({ graph_revision: 0 });
+		// Work records advanced the revision when it closed the work (#1222).
+		expect(await closedGraph(period.id)).toMatchObject({ graph_revision: 1 });
 	});
 
 	it("keeps replaying committed receipts after the organization returns to legacy", async () => {
