@@ -1,15 +1,10 @@
 import type { EmployeeEmploymentHistory } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { todayInOrganization } from "@/lib/personnel-file/organization-day";
-import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import { termsCalendarDate } from "./terms-in-force";
-import {
-	type TermsWriteClient,
-	type TermsWriteScope,
-	utcMidnight,
-	writeEmploymentTerms,
-} from "./write-terms";
+import { loadOrganizationDay } from "@/lib/personnel-file/organization-day";
+import type { ContractType } from "@/lib/validations/employee";
+import { termsCalendarDate, utcMidnight } from "./terms-in-force";
+import { type TermsWriteClient, type TermsWriteScope, writeEmploymentTerms } from "./write-terms";
 
 /**
  * An employee who starts on an hourly contract with a wage starts with
@@ -36,7 +31,7 @@ const FIRST_TERMS_DEFAULTS = {
 } as const;
 
 export type FirstEmploymentTermsInput = TermsWriteScope & {
-	contractType: "fixed" | "hourly" | null | undefined;
+	contractType: ContractType | null | undefined;
 	hourlyRate: number | null;
 	/** The employee's start date; a stored calendar date or an instant (D1). */
 	startDate: Date | null | undefined;
@@ -50,10 +45,11 @@ export async function writeFirstEmploymentTerms(
 	if (input.contractType !== "hourly" || input.hourlyRate == null) return null;
 
 	const now = input.now ?? currentTimestamp();
-	const timezone = await loadOrganizationTimezone(tx, input.organizationId);
-	const firstDay = input.startDate
-		? termsCalendarDate(input.startDate, timezone)
-		: todayInOrganization(instantFromDate(now), timezone);
+	const { timezone, today } = await loadOrganizationDay(tx, {
+		organizationId: input.organizationId,
+		now: instantFromDate(now),
+	});
+	const firstDay = input.startDate ? termsCalendarDate(input.startDate, timezone) : today;
 
 	return writeEmploymentTerms(tx, {
 		organizationId: input.organizationId,

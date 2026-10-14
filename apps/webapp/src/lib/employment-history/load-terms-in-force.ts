@@ -1,13 +1,14 @@
 import { and, asc, eq, gt, isNull, lt, or } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { type EmployeeEmploymentHistory, employeeEmploymentHistory } from "@/db/schema";
-import { dateFromInstant, type PlainDate } from "@/lib/datetime/temporal-core";
+import type { PlainDate } from "@/lib/datetime/temporal-core";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
 	type CalendarDateRange,
 	confirmedTermsSpans,
 	type TermsSpan,
 	termsSpansOverlapping,
+	utcMidnight,
 } from "./terms-in-force";
 
 type Database = typeof appDb;
@@ -20,10 +21,6 @@ type Reader = Database | Pick<Transaction, "select">;
  * margin and the calendar decides in TypeScript.
  */
 const STORED_DATE_MARGIN_DAYS = 2;
-
-function utcMidnight(date: PlainDate): Date {
-	return dateFromInstant(date.toZonedDateTime({ timeZone: "UTC" }).toInstant());
-}
 
 /**
  * The employee's confirmed terms overlapping `range`, in date order, read for

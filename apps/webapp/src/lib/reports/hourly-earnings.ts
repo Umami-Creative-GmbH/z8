@@ -2,8 +2,11 @@ import type { InstantRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	compareInstants,
 	comparePlainDates,
+	earlierInstant,
+	earlierPlainDate,
 	type Instant,
-	type PlainDate,
+	laterInstant,
+	laterPlainDate,
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import type { TermsSpan } from "@/lib/employment-history/terms-in-force";
@@ -32,22 +35,6 @@ export class HourlyEarningsIntegrityError extends Error {
 
 /** The report range: its instants and its first and last calendar dates. */
 export type EarningsRange = InstantRange & { startDate: string; endDate: string };
-
-function later(left: Instant, right: Instant): Instant {
-	return compareInstants(left, right) >= 0 ? left : right;
-}
-
-function earlier(left: Instant, right: Instant): Instant {
-	return compareInstants(left, right) <= 0 ? left : right;
-}
-
-function laterDate(left: PlainDate, right: PlainDate): PlainDate {
-	return comparePlainDates(left, right) >= 0 ? left : right;
-}
-
-function earlierDate(left: PlainDate, right: PlainDate): PlainDate {
-	return comparePlainDates(left, right) <= 0 ? left : right;
-}
 
 function elapsedMilliseconds(start: Instant, end: Instant): number {
 	return Number(end.epochNanoseconds - start.epochNanoseconds) / 1_000_000;
@@ -86,8 +73,8 @@ export function calculateHourlyEarningsFromTerms<T extends WageTermsRow>(input: 
 	const millisecondsBySpan = new Map<TermsSpan<T>, number>();
 	for (const piece of wagePeriodsForWork(input.spans, input.workPeriods)) {
 		const elapsed = elapsedMilliseconds(piece.start, piece.end);
-		const clippedStart = later(piece.start, input.range.start);
-		const clippedEnd = earlier(piece.end, input.range.endExclusive);
+		const clippedStart = laterInstant(piece.start, input.range.start);
+		const clippedEnd = earlierInstant(piece.end, input.range.endExclusive);
 		if (elapsed <= 0 || piece.durationMs <= 0 || compareInstants(clippedStart, clippedEnd) >= 0) {
 			continue;
 		}
@@ -119,8 +106,8 @@ export function calculateHourlyEarningsFromTerms<T extends WageTermsRow>(input: 
 		return {
 			rate,
 			currency: span.terms.currency,
-			periodStart: laterDate(span.from, rangeStartDate).toString(),
-			periodEnd: earlierDate(lastDay, rangeEndDate).toString(),
+			periodStart: laterPlainDate(span.from, rangeStartDate).toString(),
+			periodEnd: earlierPlainDate(lastDay, rangeEndDate).toString(),
 			hours: roundHours(minutes),
 			earnings: roundCurrency((minutes / 60) * rate),
 		};

@@ -7,13 +7,14 @@ import {
 	workPolicy,
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { dateFromInstant, type PlainDate } from "@/lib/datetime/temporal-core";
+import { compareInstants, instantFromDate, type PlainDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import {
 	EmploymentPeriodError,
 	resolveTermsEmploymentPeriod,
 } from "@/lib/employee-lifecycle/employment-periods";
 import type { LifecycleClient } from "@/lib/employee-lifecycle/types";
+import type { ContractType } from "@/lib/validations/employee";
 import {
 	type EmploymentReviewState,
 	type EmploymentStatus,
@@ -21,6 +22,7 @@ import {
 	wageForContract,
 } from "@/lib/validations/employment-history";
 import { loadTermsInForceOn } from "./load-terms-in-force";
+import { utcMidnight } from "./terms-in-force";
 import { adjustConfirmedTimeline } from "./timeline";
 
 /**
@@ -56,7 +58,7 @@ export type TermsWriteScope = {
 export type EmploymentTermsInput = {
 	validFrom: Date;
 	status: EmploymentStatus;
-	contractType: "fixed" | "hourly";
+	contractType: ContractType;
 	weeklyContractMinutes: number;
 	probationStartsOn?: Date | null;
 	probationEndsOn?: Date | null;
@@ -130,14 +132,27 @@ async function requireOrganizationWorkPolicy(
 	}
 }
 
+/** Hourly terms carry a wage; refuses them without one. */
+function requireHourlyWage(terms: { contractType: ContractType; hourlyRate: number | null }) {
+	if (terms.contractType === "hourly" && terms.hourlyRate == null) {
+		throw new ValidationError({
+			message: "Hourly rate is required for hourly contracts",
+			field: "hourlyRate",
+		});
+	}
+}
+
 /** Confirmed terms in force at `now` (UTC), for the legacy employee projection. */
 export function shouldUpdateCurrentEmployeeFields(
 	row: Pick<EmployeeEmploymentHistory, "reviewState" | "validFrom" | "validUntil">,
 	now: Date = currentTimestamp(),
 ) {
 	if (row.reviewState !== "confirmed") return false;
-	const at = now.getTime();
-	return row.validFrom.getTime() <= at && (!row.validUntil || row.validUntil.getTime() > at);
+	const at = instantFromDate(now);
+	return (
+		compareInstants(instantFromDate(row.validFrom), at) <= 0 &&
+		(!row.validUntil || compareInstants(instantFromDate(row.validUntil), at) > 0)
+	);
 }
 
 export function shouldConfirmEmploymentHistoryRow(
@@ -189,12 +204,7 @@ async function insertTerms(
 	scope: TermsWriteScope & { now: Date },
 	terms: EmploymentTermsInput,
 ): Promise<EmployeeEmploymentHistory> {
-	if (terms.contractType === "hourly" && terms.hourlyRate == null) {
-		throw new ValidationError({
-			message: "Hourly rate is required for hourly contracts",
-			field: "hourlyRate",
-		});
-	}
+	requireHourlyWage(terms);
 	if (terms.workPolicyId) {
 		await requireOrganizationWorkPolicy(tx, scope.organizationId, terms.workPolicyId);
 	}
@@ -288,12 +298,7 @@ export async function confirmEmploymentTerms(
 			field: "reviewState",
 		});
 	}
-	if (target.contractType === "hourly" && target.hourlyRate == null) {
-		throw new ValidationError({
-			message: "Hourly rate is required for hourly contracts",
-			field: "hourlyRate",
-		});
-	}
+	requireHourlyWage(target);
 
 	const employmentPeriodId = await requireTermsEmploymentPeriod(tx, {
 		organizationId: scope.organizationId,
@@ -335,11 +340,6 @@ export async function confirmEmploymentTerms(
 
 	await projectCurrentTerms(tx, scope, updated);
 	return updated;
-}
-
-/** A terms calendar date as stored: UTC midnight of that date (D1). */
-export function utcMidnight(date: PlainDate): Date {
-	return dateFromInstant(date.toZonedDateTime({ timeZone: "UTC" }).toInstant());
 }
 
 /**

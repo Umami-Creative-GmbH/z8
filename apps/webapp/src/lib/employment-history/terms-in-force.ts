@@ -1,5 +1,7 @@
 import {
 	comparePlainDates,
+	dateFromInstant,
+	earlierPlainDate,
 	instantFromDate,
 	type PlainDate,
 	plainDateAt,
@@ -60,10 +62,16 @@ function isBefore(left: PlainDate, right: PlainDate | null): boolean {
 	return right === null || comparePlainDates(left, right) < 0;
 }
 
-function earlierDate(left: PlainDate | null, right: PlainDate | null): PlainDate | null {
+/** A terms calendar date as stored: UTC midnight of that date (D1). */
+export function utcMidnight(date: PlainDate): Date {
+	return dateFromInstant(date.toZonedDateTime({ timeZone: "UTC" }).toInstant());
+}
+
+/** The earlier of two exclusive ends, where null is open-ended. */
+function earlierUntil(left: PlainDate | null, right: PlainDate | null): PlainDate | null {
 	if (left === null) return right;
 	if (right === null) return left;
-	return comparePlainDates(left, right) <= 0 ? left : right;
+	return earlierPlainDate(left, right);
 }
 
 /**
@@ -95,7 +103,7 @@ export function confirmedTermsSpans<T extends TermsDatesRow>(
 
 	return dated.flatMap((span, index) => {
 		const next = dated[index + 1];
-		const until = earlierDate(span.until, next ? next.from : null);
+		const until = earlierUntil(span.until, next ? next.from : null);
 		return isBefore(span.from, until) ? [{ ...span, until }] : [];
 	});
 }
@@ -139,7 +147,7 @@ export function clipTermsSpans<T>(
 ): TermsSpan<T>[] {
 	return spans.flatMap((span) => {
 		const from = comparePlainDates(span.from, range.from) >= 0 ? span.from : range.from;
-		const until = earlierDate(span.until, range.toExclusive) ?? range.toExclusive;
+		const until = earlierUntil(span.until, range.toExclusive) ?? range.toExclusive;
 		return comparePlainDates(from, until) < 0 ? [{ ...span, from, until }] : [];
 	});
 }

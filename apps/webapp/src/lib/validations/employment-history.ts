@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { contractTypeSchema } from "./employee";
+import { type ContractType, contractTypeSchema } from "./employee";
 
 export const employmentStatusSchema = z.enum(["active", "inactive", "terminated", "leave"]);
 export const workModelSchema = z.enum(["onsite", "hybrid", "remote", "flexible"]);
@@ -34,8 +34,14 @@ export const hourlyWageSchema = z
 	);
 
 /** Fixed terms carry no wage, whatever the client sent. */
-export function wageForContract(contractType: "fixed" | "hourly", hourlyRate: number | null) {
+export function wageForContract(contractType: ContractType, hourlyRate: number | null) {
 	return contractType === "hourly" ? hourlyRate : null;
+}
+
+/** A form's wage text as a terms payload carries it; the server schema validates the number. */
+export function hourlyWageFromForm(contractType: ContractType, value: string) {
+	const trimmed = value.trim();
+	return wageForContract(contractType, trimmed ? Number(trimmed) : null);
 }
 
 export const upsertEmploymentHistorySchema = z

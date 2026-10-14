@@ -1,6 +1,12 @@
 import { type ElapsedInterval, splitElapsedTime } from "@/lib/billable-time/elapsed-split";
-import { compareInstants, type Instant, type PlainDate } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	earlierInstant,
+	type Instant,
+	type PlainDate,
+} from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
+import type { ContractType } from "@/lib/validations/employee";
 import type { TermsDatesRow, TermsSpan } from "./terms-in-force";
 
 /**
@@ -17,7 +23,7 @@ import type { TermsDatesRow, TermsSpan } from "./terms-in-force";
 
 /** The columns of a terms row the wage depends on. */
 export type WageTermsRow = TermsDatesRow & {
-	contractType: "fixed" | "hourly";
+	contractType: ContractType;
 	hourlyRate: number | null;
 	currency: string;
 };
@@ -56,10 +62,6 @@ export type WagePeriod<W extends WageWorkPeriod, T extends WageTermsRow> = {
 
 function localMidnight(date: PlainDate, offsetMinutes: number): Instant {
 	return date.toZonedDateTime({ timeZone: offsetMinutesToTimeZoneId(offsetMinutes) }).toInstant();
-}
-
-function earlierInstant(left: Instant, right: Instant): Instant {
-	return compareInstants(left, right) <= 0 ? left : right;
 }
 
 function wageOf(terms: WageTermsRow | null): WageInForce {

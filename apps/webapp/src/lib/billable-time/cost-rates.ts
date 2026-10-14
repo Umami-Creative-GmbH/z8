@@ -7,15 +7,10 @@ import { user } from "@/db/auth-schema";
 import { costRate, employee } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import {
-	type Instant,
-	type PlainDate,
-	plainDateAt,
-	systemClock,
-} from "@/lib/datetime/temporal-core";
+import { type Instant, type PlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { loadTermsInForceOn } from "@/lib/employment-history/load-terms-in-force";
+import { loadOrganizationDay } from "@/lib/personnel-file/organization-day";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
-import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
 	type CostRate,
 	type CostRatePeriod,
@@ -277,11 +272,11 @@ export async function getSuggestedWage(
 	currency: BillableCurrency,
 	at: Instant = systemClock.nowInstant(),
 ): Promise<SuggestedWage | null> {
-	const timezone = await loadOrganizationTimezone(reader, organizationId);
+	const { timezone, today } = await loadOrganizationDay(reader, { organizationId, now: at });
 	const terms = await loadTermsInForceOn(reader, {
 		organizationId,
 		employeeId,
-		date: plainDateAt(at, timezone),
+		date: today,
 		timezone,
 	});
 	if (
