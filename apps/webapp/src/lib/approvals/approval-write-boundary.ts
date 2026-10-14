@@ -909,9 +909,10 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record_allocation",
 		},
 	],
-	// Calendar splits (#304) divide one completed period inside the outer completed-work
-	// transaction, guarded against the locked source and its canonical graph.
-	"src/lib/time-tracking/split-completed-work.ts": [
+	// Work records (ADR 0010, #1218) divides one completed period and its canonical work
+	// record inside a work transaction, compare-and-set against the locked pair. Calendar
+	// splits (#304) divide through it.
+	"src/lib/time-tracking/work-records/divide.ts": [
 		{
 			columns: [
 				"approval_state",
@@ -921,14 +922,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"organization_id",
 				"start_at",
 			],
-			functionName: "splitCompletedWork",
+			functionName: "writeGeneratedHalf",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record",
 		},
 		{
 			columns: ["duration_minutes", "end_at"],
-			functionName: "splitCompletedWork",
+			functionName: "writeRetainedHalf",
 			operation: "update",
 			semantic: "ordinary_finalization",
 			table: "time_record",
@@ -944,7 +945,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"task_id",
 				"weight_percent",
 			],
-			functionName: "splitCompletedWork",
+			functionName: "insertAllocations",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record_allocation",
@@ -963,7 +964,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"work_category_id",
 				"work_location_type",
 			],
-			functionName: "splitCompletedWork",
+			functionName: "writeGeneratedHalf",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record_work",
@@ -978,13 +979,13 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"end_time",
 				"start_time",
 			],
-			functionName: "splitCompletedWork",
+			functionName: "writeGeneratedHalf",
 			operation: "insert",
 			table: "work_period",
 		},
 		{
 			columns: ["clock_out_id", "duration_minutes", "end_time"],
-			functionName: "splitCompletedWork",
+			functionName: "writeRetainedHalf",
 			operation: "update",
 			table: "work_period",
 		},

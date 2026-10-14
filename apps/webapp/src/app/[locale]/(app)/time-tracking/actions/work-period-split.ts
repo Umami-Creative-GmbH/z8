@@ -7,9 +7,10 @@ import "server-only";
  *
  * Every organization splits inside the coordinated completed-work transaction
  * and is refused while the period has unresolved review. Organizations whose
- * append control is active run the completed-work split operation (append,
- * canonical graph, revisions, receipt); the others keep their established
- * legacy entry writes while dividing the canonical graph with the work.
+ * append control is active run the completed-work split operation, which
+ * divides the work through work records (ADR 0010) and commits the receipt;
+ * the others keep their established legacy entry writes while dividing the
+ * canonical graph with the work, until work records' legacy writer (#1219).
  */
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, isNull } from "drizzle-orm";
@@ -268,7 +269,10 @@ export async function splitOwnWorkPeriod(
 							command,
 							splitAt: instantFromDate(splitAtDate),
 							capture: splitTimezoneCapture,
-							expectedSource: {
+							// The work as shown; any change since is a stale source.
+							expected: {
+								workPeriodId: selectedWorkPeriod.id,
+								revision: selectedWorkPeriod.graphRevision,
 								clockInId: selectedWorkPeriod.clockInId,
 								clockOutId,
 								startAt: instantFromDate(selectedWorkPeriod.startTime),
