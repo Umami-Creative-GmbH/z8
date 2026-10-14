@@ -25,7 +25,7 @@ const mockState = vi.hoisted(() => {
 	return {
 		canApproveFor: vi.fn(),
 		connection: vi.fn(),
-		amendLegacy: vi.fn(),
+		amend: vi.fn(),
 		dispatchCommittedSubmission: vi.fn(),
 		createTimeCorrectionApprovalWorkflow: vi.fn(),
 		createTimeEntry: vi.fn(),
@@ -152,7 +152,10 @@ vi.mock("@/lib/time-tracking/completed-work-transaction", () => ({
 		operation: (scope: unknown) => Promise<unknown>,
 	) =>
 		operation({
-			admission: "legacy",
+			// The route never chooses by admission (#1231).
+			get admission(): never {
+				throw new Error("The correction route read the admission");
+			},
 			db: { coordinated: true },
 			assertEmployee: () => {},
 		}),
@@ -162,8 +165,7 @@ vi.mock("@/lib/time-tracking/amend-completed-work", () => ({
 	AMEND_COMPLETED_WORK_COMMAND_VERSION: 1,
 	describeAmendmentFailure: () => null,
 	replayCommittedAmendment: async () => null,
-	replayOrAmendCompletedWork: vi.fn(),
-	amendLegacyCompletedWork: mockState.amendLegacy,
+	replayOrAmendCompletedWork: mockState.amend,
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -437,7 +439,7 @@ describe("POST /api/time-entries/corrections", () => {
 				approvalRequestId: "approval-1",
 			}),
 		);
-		mockState.amendLegacy.mockResolvedValue({
+		mockState.amend.mockResolvedValue({
 			disposition: "executed",
 			result: { workPeriodId: "period-1" },
 			correctionEntries: [{ id: "entry-direct-correction" }],
@@ -863,7 +865,7 @@ describe("POST /api/time-entries/corrections", () => {
 		expect(
 			mockState.createTimeCorrectionApprovalWorkflow,
 		).not.toHaveBeenCalled();
-		expect(mockState.amendLegacy).not.toHaveBeenCalled();
+		expect(mockState.amend).not.toHaveBeenCalled();
 		expectAndPredicateIncludes(mockState.where.mock.calls[2]?.[0], [
 			{ column: "employee.id", value: "employee-1" },
 			{ column: "employee.organizationId", value: "org-1" },
@@ -923,7 +925,7 @@ describe("POST /api/time-entries/corrections", () => {
 			timezone: "Europe/Berlin",
 		});
 		expect(mockState.submitCorrection).not.toHaveBeenCalled();
-		expect(mockState.amendLegacy).not.toHaveBeenCalled();
+		expect(mockState.amend).not.toHaveBeenCalled();
 	});
 
 	it("fails closed when the self correction change policy cannot be resolved", async () => {
@@ -1198,8 +1200,8 @@ describe("POST /api/time-entries/corrections", () => {
 			message: "Correction applied successfully.",
 		});
 		expect(mockState.getUserTimezone).toHaveBeenCalledWith("target-user");
-		expect(mockState.amendLegacy).toHaveBeenCalledWith(
-			expect.objectContaining({ admission: "legacy" }),
+		expect(mockState.amend).toHaveBeenCalledWith(
+			expect.objectContaining({ db: { coordinated: true } }),
 			expect.objectContaining({
 				employeeId: "employee-target",
 				organizationId: "org-1",
@@ -1237,7 +1239,7 @@ describe("POST /api/time-entries/corrections", () => {
 			targetUserId: "target-user",
 		});
 		mockState.canApproveFor.mockResolvedValueOnce(true);
-		mockState.amendLegacy.mockResolvedValueOnce({
+		mockState.amend.mockResolvedValueOnce({
 			disposition: "executed",
 			result: { workPeriodId: "period-1" },
 			correctionEntries: [],
@@ -1257,7 +1259,7 @@ describe("POST /api/time-entries/corrections", () => {
 			entry: null,
 			message: "Correction applied successfully.",
 		});
-		expect(mockState.amendLegacy).toHaveBeenCalledWith(
+		expect(mockState.amend).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({
 				intent: expect.objectContaining({
@@ -1290,7 +1292,7 @@ describe("POST /api/time-entries/corrections", () => {
 		);
 
 		expect(response.status).toBe(201);
-		expect(mockState.amendLegacy).toHaveBeenCalledWith(
+		expect(mockState.amend).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({
 				intent: expect.objectContaining({ workCategory: { kind: "clear" } }),
@@ -1307,7 +1309,7 @@ describe("POST /api/time-entries/corrections", () => {
 			targetUserId: "target-user",
 		});
 		mockState.canApproveFor.mockResolvedValueOnce(true);
-		mockState.amendLegacy.mockRejectedValueOnce(
+		mockState.amend.mockRejectedValueOnce(
 			new ValidationError({
 				message: "At least one correction value must change",
 				field: "correction",
@@ -1347,7 +1349,7 @@ describe("POST /api/time-entries/corrections", () => {
 			error: "Work period cannot exceed 24 hours",
 		});
 		expect(mockState.submitCorrection).not.toHaveBeenCalled();
-		expect(mockState.amendLegacy).not.toHaveBeenCalled();
+		expect(mockState.amend).not.toHaveBeenCalled();
 		expect(mockState.validateTimeEntryRange).not.toHaveBeenCalled();
 	});
 
@@ -1395,7 +1397,7 @@ describe("POST /api/time-entries/corrections", () => {
 
 		expect(response.status).toBe(201);
 		expect(mockState.validateTimeEntryRange.mock.invocationCallOrder[0]).toBeLessThan(
-			mockState.amendLegacy.mock.invocationCallOrder[0] ?? 0,
+			mockState.amend.mock.invocationCallOrder[0] ?? 0,
 		);
 		expect(mockState.validateTimeEntryRange).toHaveBeenCalledWith(
 			"org-1",
@@ -1471,7 +1473,7 @@ describe("POST /api/time-entries/corrections", () => {
 			new Date("2026-07-01T20:00:00.000Z"),
 			"America/Los_Angeles",
 		);
-		expect(mockState.amendLegacy).not.toHaveBeenCalled();
+		expect(mockState.amend).not.toHaveBeenCalled();
 	});
 
 	it("returns a bounded conflict when an immediate manager correction loses the race", async () => {
@@ -1481,7 +1483,7 @@ describe("POST /api/time-entries/corrections", () => {
 			targetUserId: "target-user",
 		});
 		mockState.canApproveFor.mockResolvedValueOnce(true);
-		mockState.amendLegacy.mockRejectedValueOnce(
+		mockState.amend.mockRejectedValueOnce(
 			new ConflictError({
 				message: "Time entry was already corrected by another process",
 				conflictType: "time_entry_already_corrected",
@@ -1510,7 +1512,7 @@ describe("POST /api/time-entries/corrections", () => {
 			targetUserId: "target-user",
 		});
 		mockState.canApproveFor.mockResolvedValueOnce(true);
-		mockState.amendLegacy.mockRejectedValueOnce(
+		mockState.amend.mockRejectedValueOnce(
 			new AuthorizationError({
 				message: "Not authorized to correct this time entry",
 				action: "correct",

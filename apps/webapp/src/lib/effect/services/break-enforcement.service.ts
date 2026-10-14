@@ -6,6 +6,7 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import {
 	type AutomaticBreakAdjustmentOutcome,
+	recoveredByIntent,
 	runAutomaticBreakAdjustment,
 } from "@/lib/time-tracking/automatic-break-adjustment";
 import { calculateBreakDeficit } from "@/lib/time-tracking/break-policy-calculation";
@@ -261,9 +262,8 @@ export const BreakEnforcementServiceLive = Layer.effect(
 							where: (period) =>
 								and(
 									...conditions,
-									// Adopted organizations commit a durable intent with every
-									// ordinary closure; `processAutomaticBreakIntents` owns them.
-									sql`not exists (select 1 from time_entry_append_control control where control.organization_id = ${period.organizationId} and control.mode = 'active')`,
+									// Work recovered by its committed intent is `processAutomaticBreakIntents`'s.
+									sql`not ${recoveredByIntent(period.organizationId)}`,
 								),
 							with: {
 								employee: {

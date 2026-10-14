@@ -7,8 +7,7 @@ import { compareInstants, type Instant, instantFromDate } from "@/lib/datetime/t
 import { ConflictError, NotFoundError } from "@/lib/effect/errors";
 import {
 	AMEND_COMPLETED_WORK_COMMAND_VERSION,
-	amendCompletedWork,
-	amendLegacyCompletedWork,
+	replayOrAmendCompletedWork,
 } from "../amend-completed-work";
 import { withCompletedWorkTransaction } from "../completed-work-transaction";
 import { clockOutCompletionVehicleUse } from "./clock-out-completion";
@@ -55,8 +54,8 @@ function completionClosed() {
  * a client that asks only after the clock command commits (the Teams bot) adds
  * to the work the clock-out closed, within `CLOCK_OUT_COMPLETION_HOURS`. It only
  * fills what the work is missing (`clockOutCompletionVehicleUse`), so it is an
- * attribution change of the owner: the completed-work amendment runs in both
- * admissions (eligibility under its locks, a receipt in adopted organizations),
+ * attribution change of the owner: the completed-work amendment runs, admission
+ * hidden (eligibility under its locks, a receipt where work records appended),
  * and work records changes the work period and its canonical work record with
  * the effects (#1225). Vehicle use must be asked or expected, a newly picked
  * vehicle must be pickable, a closed month and work under review refuse, and a
@@ -116,8 +115,7 @@ export async function completeClockOutVehicleUse(input: {
 			const use = result.use;
 
 			// The amendment re-reads the work under its locks: a change since is stale.
-			const amend = scope.admission === "append" ? amendCompletedWork : amendLegacyCompletedWork;
-			await amend(scope, {
+			await replayOrAmendCompletedWork(scope, {
 				organizationId,
 				employeeId,
 				actorUserId: input.actorUserId,

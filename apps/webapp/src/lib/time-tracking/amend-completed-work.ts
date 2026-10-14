@@ -16,8 +16,9 @@ import "server-only";
  * Replaced entries are superseded, never removed: their hashes stay predecessor
  * evidence. Exact replay of a committed receipt writes nothing, and a receipt
  * whose work has since changed or been deleted is a collision, never new work.
- * In legacy admission the same policy and change run without a receipt
- * (`amendLegacyCompletedWork`).
+ * Callers never choose by admission (#1231): `replayOrAmendCompletedWork` runs
+ * the same policy and change in either admission, and commits the receipt only
+ * when work records' outcome says the entries were appended.
  */
 import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 import { db } from "@/db";
@@ -447,12 +448,27 @@ export async function replayCommittedAmendment(
 	);
 }
 
-/** In one coordinated scope: exact replay first, otherwise the fresh operation. */
+/**
+ * The amendment every caller runs, in either admission (#1231): in one
+ * coordinated scope, exact replay of a committed receipt first, otherwise the
+ * fresh amendment. Admission stays hidden: work records amends with the writer
+ * of the organization's admission, and the receipt is committed only when its
+ * outcome says the entries were appended (append admission). A legacy
+ * amendment returns the same receipt shape without committing it, so a retry
+ * is not recognized there.
+ */
 export async function replayOrAmendCompletedWork(
 	scope: SealedWorkTransactionScope,
 	input: AmendCompletedWorkInput,
 ): Promise<AmendCompletedWorkReceipt> {
-	return (await replayAmendCompletedWork(scope, input)) ?? (await amendCompletedWork(scope, input));
+	scope.assertEmployee(input.organizationId, input.employeeId);
+	const replayed = await replayAmendCompletedWork(scope, input);
+	if (replayed) return replayed;
+	const amended = await amendWork(scope, input);
+	if (amended.result.append.admission === "append") {
+		await insertReceipt(scope.db, input, amended.result.workPeriodId, amended.result);
+	}
+	return { disposition: "executed", ...amended };
 }
 
 /**
@@ -737,7 +753,8 @@ function receiptChanges(
 /**
  * Fresh amendment in append admission, with its receipt. The caller has already
  * ruled out committed replay under the same transaction, so an existing receipt
- * with this identity is a collision.
+ * with this identity is a collision. Kept for the callers that still choose by
+ * admission; new callers use `replayOrAmendCompletedWork` (#1231).
  */
 export async function amendCompletedWork(
 	scope: SealedWorkTransactionScope,
@@ -763,8 +780,9 @@ export async function amendCompletedWork(
  * The amendment of an organization in legacy admission (#1225): the same
  * caller policy and the same change through work records, whose legacy writer
  * appends any correction entries. Legacy admission commits no receipt, so a
- * retry is not recognized; callers choose by admission until admission is
- * hidden (#1231).
+ * retry is not recognized. Kept for the callers that still choose by
+ * admission; new callers use `replayOrAmendCompletedWork`, which hides it
+ * (#1231).
  */
 export async function amendLegacyCompletedWork(
 	scope: SealedWorkTransactionScope,
