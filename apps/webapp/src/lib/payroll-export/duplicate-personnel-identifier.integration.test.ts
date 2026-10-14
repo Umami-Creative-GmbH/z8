@@ -1,11 +1,14 @@
 /**
  * #1198: DATEV Lohn, Lexware and Sage exports refuse two employees that resolve
  * to one personnel identifier, against a disposable PostgreSQL database, and
- * payroll readiness lists the clash as a blocker.
+ * payroll readiness lists the clash as a blocker. #1199: the Personio, Workday
+ * and SuccessFactors exports refuse two employees that would match one external
+ * worker, before any call to the external system.
  *
  * Work is written by the real legacy `createManualTimeEntry` action and exported
- * through the real export service, formatters and payroll server action. Only
- * the session, notifications, the queue and object storage are replaced.
+ * through the real export service, formatters, connectors and payroll server
+ * action. Only the session, notifications, the queue, object storage, the vault
+ * and the Personio HTTP client are replaced.
  *
  * Employee numbers are unique per organization in the database (#1196), so an
  * employee-number clash is set up the one way it can still happen: an employee
@@ -22,6 +25,7 @@ import { integrationAdminPool } from "@/test/integration-database";
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
+	personioAttendances: [] as Array<{ employee: string | number }>,
 }));
 
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
@@ -70,10 +74,22 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	getPresignedUrl: async (_organizationId: string, key: string) => `https://exports.test/${key}`,
 }));
 vi.mock("@/lib/queue", () => ({ addJob: async () => ({ id: "queued" }) }));
+vi.mock("@/lib/vault/secrets", () => ({ getOrgSecret: async () => "t1199-secret" }));
+vi.mock("@/lib/payroll-export/exporters/personio/api-client", () => ({
+	PersonioApiClient: class {
+		async createAttendances(requests: Array<{ employee: string | number }>) {
+			harness.personioAttendances.push(...requests);
+			return requests.map((_, index) => ({ success: true, externalId: index + 1 }));
+		}
+		async createAbsences() {
+			return [];
+		}
+	},
+}));
 
 const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
 const { startScopedPayrollExportAction } = await import("@/app/[locale]/(app)/payroll/actions");
-const { createExportJob, processExportJob } = await import("./export-service");
+const { createExportJob, getExporter, processExportJob } = await import("./export-service");
 const { PayrollIdentifierDuplicateError } = await import("./personnel-identifier");
 const { getPayrollReadiness } = await import("@/lib/payroll-readiness/get-payroll-readiness");
 
@@ -180,7 +196,11 @@ describe("duplicate personnel identifiers in payroll file exports on PostgreSQL"
 			`insert into payroll_export_format (id, name, version, updated_at) values
 			 ('datev_lohn', 'DATEV Lohn & Gehalt', '2024.1', now()),
 			 ('lexware_lohn', 'Lexware lohn+gehalt', '2024.1', now()),
-			 ('sage_lohn', 'Sage Lohn', '2024.1', now())
+			 ('sage_lohn', 'Sage Lohn', '2024.1', now()),
+			 ('personio', 'Personio', '1.0', now()),
+			 ('workday_api', 'Workday', '1.0', now()),
+			 ('successfactors_api', 'SAP SuccessFactors (API)', '1.0', now()),
+			 ('successfactors_csv', 'SAP SuccessFactors (CSV)', '1.0', now())
 			 on conflict (id) do nothing`,
 		);
 		await admin.query(
@@ -227,10 +247,14 @@ describe("duplicate personnel identifiers in payroll file exports on PostgreSQL"
 		]);
 	}
 
-	beforeEach(seed);
+	beforeEach(async () => {
+		harness.personioAttendances.length = 0;
+		vi.restoreAllMocks();
+		await seed();
+	});
 	afterAll(cleanup);
 
-	async function exportJuly(formatId: FileFormat) {
+	async function exportJuly(formatId: string) {
 		const { jobId } = await createExportJob({
 			organizationId: ORG,
 			formatId,
@@ -353,6 +377,107 @@ describe("duplicate personnel identifiers in payroll file exports on PostgreSQL"
 		expect(job?.status).toBe("completed");
 	});
 
+	describe("API connectors (#1199)", () => {
+		const connections = {
+			personio: {},
+			workday_api: { instanceUrl: "https://workday.t1199.test", tenantId: "t1199" },
+			successfactors_api: { instanceUrl: "https://sf.t1199.test", companyId: "T1199" },
+		} as const;
+		type ApiFormat = keyof typeof connections;
+		const apiFormats = Object.keys(connections) as ApiFormat[];
+		const byPayrollId = { employeeMatchStrategy: "customField", employeeMatchCustomFieldId: "" };
+
+		/** Spies on the connector's export, the first step that reaches the external system. */
+		function connectorExport(formatId: ApiFormat) {
+			const connector = getExporter(formatId);
+			if (!connector) throw new Error(`no connector for ${formatId}`);
+			return vi.spyOn(connector, "export");
+		}
+
+		it.each(apiFormats)(
+			"refuses a %s export where two employees share the custom field match value, without calling it",
+			async (formatId) => {
+				await configure(formatId, {
+					...connections[formatId],
+					...byPayrollId,
+					employeeMatchCustomFieldId: ids.payrollId,
+				});
+				await textValue(ids.worker, "LG-7");
+				await textValue(ids.peer, " lg-7");
+				await approvedWork(ids.worker, "2026-07-10");
+				await approvedWork(ids.peer, "2026-07-11");
+				const external = connectorExport(formatId);
+
+				const { outcome, job } = await exportJuly(formatId);
+
+				expect(clashingEmployees(outcome)).toEqual([
+					[
+						[ids.worker, "Anna Worker"],
+						[ids.peer, "Ben Peer"],
+					],
+				]);
+				// The shared value as the connector sends it (Workday trims it).
+				expect((outcome as Error).message).toMatch(/Anna Worker \(LG-7\), Ben Peer \( ?lg-7\)/);
+				expect(external).not.toHaveBeenCalled();
+				expect(job?.status).toBe("failed");
+			},
+		);
+
+		it("refuses a SuccessFactors user ID that equals another employee's fallback ID", async () => {
+			await configure("successfactors_api", {
+				...connections.successfactors_api,
+				employeeMatchStrategy: "userId",
+			});
+			await numberClash();
+			await approvedWork(ids.worker, "2026-07-10");
+			await approvedWork(ids.peer, "2026-07-11");
+			const external = connectorExport("successfactors_api");
+
+			const { outcome } = await exportJuly("successfactors_api");
+
+			expect(clashingEmployees(outcome)).toEqual([
+				[
+					[ids.worker, "Anna Worker"],
+					[ids.peer, "Ben Peer"],
+				],
+			]);
+			expect(external).not.toHaveBeenCalled();
+		});
+
+		it("refuses a SuccessFactors CSV file where two employees share the custom field user ID", async () => {
+			await configure("successfactors_csv", {
+				...byPayrollId,
+				employeeMatchCustomFieldId: ids.payrollId,
+			});
+			await textValue(ids.worker, "LG-7");
+			await textValue(ids.peer, "LG-7");
+			await approvedWork(ids.worker, "2026-07-10");
+			await approvedWork(ids.peer, "2026-07-11");
+
+			const { outcome, job } = await exportJuly("successfactors_csv");
+
+			expect(clashingEmployees(outcome)).toHaveLength(1);
+			expect(job).toEqual({ status: "failed", file_name: null });
+		});
+
+		it("exports two employees with unique match values to Personio as before", async () => {
+			await configure("personio", { ...byPayrollId, employeeMatchCustomFieldId: ids.payrollId });
+			await textValue(ids.worker, "LG-7");
+			await textValue(ids.peer, "LG-8");
+			await approvedWork(ids.worker, "2026-07-10");
+			await approvedWork(ids.peer, "2026-07-11");
+
+			const { outcome, job } = await exportJuly("personio");
+
+			expect(outcome).toMatchObject({ apiResult: { success: true, syncedRecords: 2 } });
+			expect(harness.personioAttendances.map((request) => request.employee).toSorted()).toEqual([
+				"LG-7",
+				"LG-8",
+			]);
+			expect(job?.status).toBe("completed");
+		});
+	});
+
 	describe("payroll readiness", () => {
 		const readinessOfJuly = () =>
 			getPayrollReadiness({
@@ -404,6 +529,41 @@ describe("duplicate personnel identifiers in payroll file exports on PostgreSQL"
 			const check = duplicateCheck(await readinessOfJuly());
 
 			expect(check?.status).toBe("fail");
+			expect(check?.affectedEmployees.map((employee) => employee.id)).toEqual([
+				ids.worker,
+				ids.peer,
+			]);
+		});
+
+		it("lists two employees one Workday worker would match as a blocker", async () => {
+			await configure("workday_api", {
+				instanceUrl: "https://workday.t1199.test",
+				tenantId: "t1199",
+				employeeMatchStrategy: "customField",
+				employeeMatchCustomFieldId: ids.payrollId,
+			});
+			await textValue(ids.worker, "WD-1");
+			await textValue(ids.peer, "wd-1");
+			await approvedWork(ids.worker, "2026-07-10");
+			await approvedWork(ids.peer, "2026-07-11");
+
+			const check = duplicateCheck(await readinessOfJuly());
+
+			expect(check).toMatchObject({ status: "fail", severity: "blocker", count: 2 });
+		});
+
+		it("lists a SuccessFactors user ID clashing with a fallback ID as a blocker", async () => {
+			await configure("successfactors_api", {
+				instanceUrl: "https://sf.t1199.test",
+				companyId: "T1199",
+				employeeMatchStrategy: "userId",
+			});
+			await numberClash();
+			await approvedWork(ids.worker, "2026-07-10");
+			await approvedWork(ids.peer, "2026-07-11");
+
+			const check = duplicateCheck(await readinessOfJuly());
+
 			expect(check?.affectedEmployees.map((employee) => employee.id)).toEqual([
 				ids.worker,
 				ids.peer,
