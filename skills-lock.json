@@ -263,7 +263,7 @@
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/upgrade-stripe/SKILL.md",
-      "computedHash": "658735c4cd1cf7b06d4de672741b14a69b7f2cfde8ea05f7068ab450bcc86e24"
+      "computedHash": "3247d3130714389f9cb92c4f7c48e418761a5361155eb2e73bba822beace3e1d"
     },
     "vercel-composition-patterns": {
       "source": "vercel-labs/agent-skills",
