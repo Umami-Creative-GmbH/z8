@@ -2,6 +2,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { FieldApi, FormApi } from "@tanstack/react-form";
 import { render, screen } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,7 +12,11 @@ import {
 	EmployeeEditFormCard,
 	EmployeeOverviewCard,
 } from "./page-sections";
-import { focusFirstInvalidEmployeeDetailField } from "./page-utils";
+import {
+	defaultFormValues,
+	focusFirstInvalidEmployeeDetailField,
+	showEmployeeSaveRefusal,
+} from "./page-utils";
 
 const userAvatarMock = vi.hoisted(() =>
 	vi.fn(({ name }: { name?: string | null }) => (
@@ -616,5 +621,20 @@ describe("employee detail page sections", () => {
 		} as never);
 
 		expect(document.activeElement).toBe(pronounsInput);
+	});
+
+	it("focuses the personnel number when the save refused it as taken", () => {
+		render(<input aria-label="Personnel number" name="employeeNumber" />);
+		const form = new FormApi({ defaultValues: defaultFormValues });
+		form.mount();
+		new FieldApi({ form, name: "employeeNumber" }).mount();
+
+		showEmployeeSaveRefusal(form as never, {
+			error: "This personnel number belongs to Ada Holder.",
+			refusal: "personnel_number_taken",
+		});
+		focusFirstInvalidEmployeeDetailField(form);
+
+		expect(document.activeElement).toBe(screen.getByLabelText("Personnel number"));
 	});
 });

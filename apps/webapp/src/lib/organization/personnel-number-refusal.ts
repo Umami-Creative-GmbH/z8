@@ -4,22 +4,17 @@
  * the message on the personnel number field) and its message. Client-safe.
  */
 
+import type { MessageTranslate } from "@/lib/i18n/message-translate";
+
 /** `refusal` of a save whose personnel number is taken. */
 export const PERSONNEL_NUMBER_TAKEN = "personnel_number_taken";
-
-/** A Tolgee `t` (client `useTranslate` or server `getTranslate`). */
-export type PersonnelNumberMessageTranslate = (
-	key: string,
-	defaultValue: string,
-	params?: Record<string, string>,
-) => string;
 
 /**
  * Why the number can't be saved, naming the employee who holds it (`null` when
  * the holder can no longer be found, e.g. after a concurrent change).
  */
 export function personnelNumberTakenMessage(
-	t: PersonnelNumberMessageTranslate,
+	t: MessageTranslate,
 	holderName: string | null,
 ): string {
 	if (holderName === null) {

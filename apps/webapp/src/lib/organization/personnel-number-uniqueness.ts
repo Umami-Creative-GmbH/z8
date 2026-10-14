@@ -6,7 +6,7 @@ import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { ValidationError } from "@/lib/effect/errors";
+import { DatabaseError, ValidationError } from "@/lib/effect/errors";
 import { isConstraintViolation } from "@/lib/projects/constraint-violation";
 import { PERSONNEL_NUMBER_WHITESPACE_SQL } from "./personnel-number";
 import { PERSONNEL_NUMBER_TAKEN, personnelNumberTakenMessage } from "./personnel-number-refusal";
@@ -103,13 +103,35 @@ export function isPersonnelNumberConflict(error: unknown): boolean {
 	return isConstraintViolation(error, "23505", PERSONNEL_NUMBER_UNIQUE_INDEX);
 }
 
-function takenCause(error: unknown): PersonnelNumberTaken | null {
+/** Whether a serializable transaction was rolled back because a concurrent one conflicted. */
+function isSerializationFailure(error: unknown): boolean {
 	let candidate: unknown = error;
 	for (let depth = 0; depth < 5 && candidate && typeof candidate === "object"; depth += 1) {
-		if (candidate instanceof PersonnelNumberTaken) return candidate;
+		if ((candidate as { code?: unknown }).code === "40001") return true;
 		candidate = (candidate as { cause?: unknown }).cause;
 	}
-	return null;
+	return false;
+}
+
+type HolderLookup<E, R> = () => Effect.Effect<Pick<PersonnelNumberHolder, "name"> | null, E, R>;
+
+function refusalNaming(
+	holder: Pick<PersonnelNumberHolder, "name"> | null,
+): Effect.Effect<never, ValidationError> {
+	return Effect.promise(async () => {
+		const { getTranslate } = await import("@/tolgee/server");
+		return getTranslate();
+	}).pipe(
+		Effect.flatMap((t) =>
+			Effect.fail(
+				new ValidationError({
+					message: personnelNumberTakenMessage(t, holder?.name ?? null),
+					field: "employeeNumber",
+					refusal: PERSONNEL_NUMBER_TAKEN,
+				}),
+			),
+		),
+	);
 }
 
 /**
@@ -118,26 +140,32 @@ function takenCause(error: unknown): PersonnelNumberTaken | null {
  * `personnel_number_taken` and a message in the user's language naming the
  * holder: a `PersonnelNumberTaken` from the check, or a unique index violation
  * from a concurrent save, whose holder `findHolder` looks up after the
- * rollback. Other errors pass through.
+ * rollback. A serializable save rolled back by a concurrent one (40001) is
+ * refused the same way when `findHolder` then finds a holder, and fails as it
+ * was otherwise. `findHolder` is a `DatabaseService.query`, so its own failure
+ * stays a typed `DatabaseError`. Other errors pass through.
  */
-export function keepPersonnelNumberRefusal(
-	findHolder: () => Promise<Pick<PersonnelNumberHolder, "name"> | null>,
-) {
-	return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E | ValidationError, R> =>
+export function keepPersonnelNumberRefusal<E2, R2>(findHolder: HolderLookup<E2, R2>) {
+	return <A, E, R>(
+		effect: Effect.Effect<A, E, R>,
+	): Effect.Effect<A, E | E2 | ValidationError, R | R2> =>
 		effect.pipe(
-			Effect.catch((error: E): Effect.Effect<never, E | ValidationError> => {
-				const taken = takenCause(error);
-				if (!taken && !isPersonnelNumberConflict(error)) return Effect.fail(error);
-				return Effect.promise(async () => {
-					const holder = taken?.holder ?? (await findHolder());
-					const { getTranslate } = await import("@/tolgee/server");
-					const t = await getTranslate();
-					return new ValidationError({
-						message: personnelNumberTakenMessage(t, holder?.name ?? null),
-						field: "employeeNumber",
-						refusal: PERSONNEL_NUMBER_TAKEN,
-					});
-				}).pipe(Effect.flatMap((refusal) => Effect.fail(refusal)));
+			Effect.catch((error: E): Effect.Effect<never, E | E2 | ValidationError, R2> => {
+				// The check throws inside the query, which wraps it once in a `DatabaseError`.
+				const cause = error instanceof DatabaseError ? error.cause : error;
+				if (cause instanceof PersonnelNumberTaken) return refusalNaming(cause.holder);
+				if (isPersonnelNumberConflict(error)) {
+					return findHolder().pipe(Effect.flatMap(refusalNaming));
+				}
+				if (isSerializationFailure(error)) {
+					return findHolder().pipe(
+						Effect.flatMap(
+							(holder): Effect.Effect<never, E | ValidationError> =>
+								holder ? refusalNaming(holder) : Effect.fail(error),
+						),
+					);
+				}
+				return Effect.fail(error);
 			}),
 		);
 }

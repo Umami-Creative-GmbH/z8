@@ -164,7 +164,7 @@ export function EmployeeDetailPageClient({
 				customFields.reset();
 				push("/settings/employees");
 			} else if (showEmployeeSaveRefusal(form, result)) {
-				document.querySelector<HTMLInputElement>('input[name="employeeNumber"]')?.focus();
+				focusFirstInvalidEmployeeDetailField(form);
 			} else {
 				toast.error(
 					result.error ||

@@ -84,8 +84,13 @@ export function buildEmployeeUpdatePayload(value: EmployeeDetailFormValues) {
 	};
 }
 
+/**
+ * Focuses the first field, in form order, that holds an error: a client
+ * validation error or a save refusal the server put on the field (a taken
+ * personnel number, `showEmployeeSaveRefusal`).
+ */
 export function focusFirstInvalidEmployeeDetailField(formApi: EmployeeDetailFormMetaApi) {
-	for (const fieldName of ["firstName", "lastName", "pronouns"] as const) {
+	for (const fieldName of ["firstName", "lastName", "pronouns", "employeeNumber"] as const) {
 		if (formApi.getFieldMeta(fieldName)?.errors.length) {
 			document.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)?.focus();
 			break;

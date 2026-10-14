@@ -15,6 +15,7 @@ import {
 } from "./exporters/successfactors/types";
 import { isWorkdayMatchStrategy, workdayMatchValue } from "./exporters/workday/match-value";
 import { DEFAULT_WORKDAY_CONFIG } from "./exporters/workday/types";
+import type { PayrollExportFormatId } from "./format-registry";
 import { germanPersonnelNumber } from "./formatters/expense-lines";
 import {
 	CUSTOM_FIELD_IDENTIFIER,
@@ -25,54 +26,53 @@ import {
 /** What a target writes for a row, or null when the row has no identifier yet. */
 export type ExportedPersonnelIdentifier = (row: PayrollIdentityRow) => string | null;
 
-/** The formats that group their lines by the German personnel number. */
-const GERMAN_PERSONNEL_NUMBER_FORMATS: ReadonlySet<string> = new Set([
-	"datev_lohn",
-	"lexware_lohn",
-	"sage_lohn",
-]);
-
-/** SAP SuccessFactors matches by one rule through its API and in its CSV file. */
-const SUCCESSFACTORS_FORMATS: ReadonlySet<string> = new Set([
-	"successfactors_api",
-	"successfactors_csv",
-]);
-
 function configRecord(config: unknown): Record<string, unknown> {
 	return typeof config === "object" && config !== null ? (config as Record<string, unknown>) : {};
 }
 
 /**
- * The identifier rule of a format's configuration, or null for a format the
- * duplicate check does not cover. A row without its custom field value yields
- * null: the missing-identifier check refuses it, not this one.
+ * The identifier rule of a format's configuration, or null when the format
+ * has none to check (an unknown Workday strategy). A row without its custom
+ * field value yields null: the missing-identifier check refuses it, not this one.
  */
 export function exportedPersonnelIdentifier(
-	formatId: string,
+	formatId: PayrollExportFormatId,
 	config: unknown,
 ): ExportedPersonnelIdentifier | null {
 	const record = configRecord(config);
-	if (formatId === "personio") {
-		const { employeeMatchStrategy } = { ...DEFAULT_PERSONIO_CONFIG, ...record } as PersonioConfig;
-		return (row) => personioMatchValue(row, employeeMatchStrategy);
+	switch (formatId) {
+		case "personio": {
+			const { employeeMatchStrategy } = { ...DEFAULT_PERSONIO_CONFIG, ...record } as PersonioConfig;
+			return (row) => personioMatchValue(row, employeeMatchStrategy);
+		}
+		case "workday_api": {
+			const { employeeMatchStrategy } = { ...DEFAULT_WORKDAY_CONFIG, ...record };
+			// An unknown strategy fails the connector's own configuration check instead.
+			if (!isWorkdayMatchStrategy(employeeMatchStrategy)) return null;
+			return (row) => workdayMatchValue(row, employeeMatchStrategy);
+		}
+		// SAP SuccessFactors matches by one rule through its API and in its CSV file.
+		case "successfactors_api":
+		case "successfactors_csv": {
+			const { employeeMatchStrategy } = {
+				...DEFAULT_SUCCESSFACTORS_CONFIG,
+				...record,
+			} as SuccessFactorsConfig;
+			return (row) => successFactorsMatchValue(row, employeeMatchStrategy);
+		}
+		// The German formats group their lines by the personnel number.
+		case "datev_lohn":
+		case "lexware_lohn":
+		case "sage_lohn": {
+			const germanConfig = record as { personnelNumberType: PersonnelNumberType };
+			return (row) =>
+				germanConfig.personnelNumberType === CUSTOM_FIELD_IDENTIFIER && !row.personnelIdentifier
+					? null
+					: germanPersonnelNumber(row, germanConfig);
+		}
+		default: {
+			const unhandled: never = formatId;
+			return unhandled;
+		}
 	}
-	if (formatId === "workday_api") {
-		const { employeeMatchStrategy } = { ...DEFAULT_WORKDAY_CONFIG, ...record };
-		// An unknown strategy fails the connector's own configuration check instead.
-		if (!isWorkdayMatchStrategy(employeeMatchStrategy)) return null;
-		return (row) => workdayMatchValue(row, employeeMatchStrategy);
-	}
-	if (SUCCESSFACTORS_FORMATS.has(formatId)) {
-		const { employeeMatchStrategy } = {
-			...DEFAULT_SUCCESSFACTORS_CONFIG,
-			...record,
-		} as SuccessFactorsConfig;
-		return (row) => successFactorsMatchValue(row, employeeMatchStrategy);
-	}
-	if (!GERMAN_PERSONNEL_NUMBER_FORMATS.has(formatId)) return null;
-	const germanConfig = record as { personnelNumberType: PersonnelNumberType };
-	return (row) =>
-		germanConfig.personnelNumberType === CUSTOM_FIELD_IDENTIFIER && !row.personnelIdentifier
-			? null
-			: germanPersonnelNumber(row, germanConfig);
 }

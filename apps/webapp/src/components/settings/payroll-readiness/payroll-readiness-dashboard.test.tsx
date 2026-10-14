@@ -144,6 +144,7 @@ describe("PayrollReadinessDashboard", () => {
 		const row = screen.getByRole("row", { name: /Ada Lovelace.*E-1001/ });
 		expect(within(row).getByText("Ada Lovelace")).toBeTruthy();
 		expect(within(row).getByText("E-1001")).toBeTruthy();
+		expect(screen.getByRole("columnheader", { name: "Personnel number" })).toBeTruthy();
 		expect(screen.getByRole("link", { name: "Review approval inbox" }).getAttribute("href")).toBe(
 			"/approvals/inbox",
 		);
@@ -186,7 +187,7 @@ describe("PayrollReadinessDashboard", () => {
 
 		render(<PayrollReadinessDashboard t={t} data={clashData} />);
 
-		expect(screen.getByRole("columnheader", { name: "Payroll identifier" })).toBeTruthy();
+		expect(screen.getByRole("columnheader", { name: "Personnel identifier" })).toBeTruthy();
 		expect(within(screen.getByRole("row", { name: /Anna/ })).getByText("LG-7")).toBeTruthy();
 		expect(within(screen.getByRole("row", { name: /Ben/ })).getByText("lg-7")).toBeTruthy();
 		expect(screen.getByRole("link", { name: "Review employees" }).getAttribute("href")).toBe(
@@ -194,7 +195,7 @@ describe("PayrollReadinessDashboard", () => {
 		);
 	});
 
-	it("shows no payroll identifier column for checks about other things", async () => {
+	it("shows no personnel identifier column for checks about other things", async () => {
 		const { PayrollReadinessDashboard } = await import("./payroll-readiness-dashboard");
 		const data: PayrollReadinessResult = {
 			...readyData,
@@ -213,6 +214,6 @@ describe("PayrollReadinessDashboard", () => {
 
 		render(<PayrollReadinessDashboard t={t} data={data} />);
 
-		expect(screen.queryByRole("columnheader", { name: "Payroll identifier" })).toBeNull();
+		expect(screen.queryByRole("columnheader", { name: "Personnel identifier" })).toBeNull();
 	});
 });

@@ -14,6 +14,16 @@ const mockState = vi.hoisted(() => ({
 	findOpenDepartureClockRepairs: vi.fn(),
 	loadPeriodSubmissionGaps: vi.fn(),
 	loadPersonnelIdentifierClashes: vi.fn(),
+	logError: vi.fn(),
+}));
+
+vi.mock("@/lib/logger", () => ({
+	createLogger: () => ({
+		error: mockState.logError,
+		warn: vi.fn(),
+		info: vi.fn(),
+		debug: vi.fn(),
+	}),
 }));
 
 vi.mock("./personnel-identifier-clashes", () => ({
@@ -245,19 +255,29 @@ describe("getPayrollReadiness", () => {
 		});
 		const [request] = mockState.loadPersonnelIdentifierClashes.mock.calls[0];
 		expect(request).toMatchObject({ organizationId: "org-1", configs: [{ id: "config-1" }] });
-		expect(request.asOf.toString()).toBe("2026-04-30");
+		expect([request.from.toString(), request.asOf.toString()]).toEqual([
+			"2026-04-01",
+			"2026-04-30",
+		]);
 	});
 
 	it("passes the personnel identifier check without clashes and is unavailable when it fails", async () => {
 		expect(
 			getCheck(await getPayrollReadiness(defaultInput()), "duplicate-personnel-identifiers"),
 		).toMatchObject({ status: "pass", count: 0, affectedEmployees: [] });
+		expect(mockState.logError).not.toHaveBeenCalled();
 
-		mockState.loadPersonnelIdentifierClashes.mockRejectedValue(new Error("db down"));
+		const failure = new Error("db down");
+		mockState.loadPersonnelIdentifierClashes.mockRejectedValue(failure);
 		const result = await getPayrollReadiness(defaultInput());
 
 		expect(result.status).toBe("unavailable");
 		expect(getCheck(result, "duplicate-personnel-identifiers").status).toBe("unavailable");
+		// Logged before degrading, so the cause of "unavailable" is findable.
+		expect(mockState.logError).toHaveBeenCalledExactlyOnceWith(
+			{ organizationId: "org-1", error: failure },
+			expect.any(String),
+		);
 	});
 
 	it("has no period submission check while the organization collects no submissions", async () => {

@@ -22,7 +22,7 @@ export const pronounsSchema = z.preprocess(
  */
 export const personnelNumberSchema = z.preprocess(
 	(value) => (typeof value === "string" ? normalizePersonnelNumber(value) : value),
-	z.string().max(50, "Employee number is too long").optional().nullable(),
+	z.string().max(50, "Personnel number is too long").optional().nullable(),
 );
 
 // Employee role enum

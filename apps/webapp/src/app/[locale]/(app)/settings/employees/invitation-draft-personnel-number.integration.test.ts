@@ -223,6 +223,46 @@ describe("personnel number uniqueness of invitation drafts on PostgreSQL", () =>
 		expect(await draftNumberOf(draftId)).toBe("S-1");
 	});
 
+	it("saves other fields of a draft whose unchanged number an employee took since", async () => {
+		await fixture.pool.query(
+			"update employee_invitation_draft set employee_number = 'S-3' where id = $1",
+			[draftId],
+		);
+		await fixture.pool.query("update employee set employee_number = 'S-3' where id = $1", [
+			holderId,
+		]);
+
+		await expect(
+			updateEmployeeInvitationDraftAction(`draft:${draftId}`, {
+				employeeNumber: " s-3",
+				position: "Lead",
+			}),
+		).resolves.toMatchObject({ success: true });
+	});
+
+	it("lets exactly one of two concurrent draft saves of one number succeed", async () => {
+		const otherDraftId = await seedDraft({
+			organizationId: fixture.organizationId,
+			firstName: "Grace",
+			lastName: "Hopper",
+		});
+
+		for (let round = 1; round <= 5; round += 1) {
+			const number = `C-${round}`;
+			const results = await Promise.all([
+				updateEmployeeInvitationDraftAction(`draft:${draftId}`, { employeeNumber: number }),
+				updateEmployeeInvitationDraftAction(`draft:${otherDraftId}`, {
+					employeeNumber: number.toLowerCase(),
+				}),
+			]);
+
+			expect(results.filter((result) => result.success)).toHaveLength(1);
+			expect(results.filter((result) => !result.success)).toEqual([
+				expect.objectContaining({ code: "ValidationError", refusal: "personnel_number_taken" }),
+			]);
+		}
+	});
+
 	it("stores an empty number as none", async () => {
 		await fixture.pool.query(
 			"update employee_invitation_draft set employee_number = 'S-2' where id = $1",

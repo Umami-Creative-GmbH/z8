@@ -60,3 +60,15 @@ ORDER BY n.organization_id, personnel_number_key;
 
 For each row, give all but one of the listed employees their own personnel number (or clear it
 when the employee has none) in the employee settings, then run the query again.
+
+## Known edge: lowercase in JavaScript and in PostgreSQL
+
+The unique index, the migration check and the uniqueness lookups lowercase with PostgreSQL's
+`lower()`, which follows the database collation. `personnelNumberKey`, which the payroll export
+guard and readiness compare with, lowercases with JavaScript's Unicode rules. Both agree for
+ASCII. For some other characters they can differ: under the `C` collation `lower()` changes
+only `A`-`Z`, and JavaScript lowercases a Greek final sigma by context. Then JavaScript may treat
+two numbers as one that the index allowed as two, and the export guard refuses the export
+conservatively until one of them changes. Under the `C` and English/ICU-root collations it never
+goes the other way. (A Turkish database collation would, because its `lower('I')` is the
+dotless `ı`.) Matching behaviour is unchanged.

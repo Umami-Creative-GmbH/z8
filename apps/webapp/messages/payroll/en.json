@@ -60,7 +60,7 @@
       "employeeIdsMustContainOnlyStrings": "employeeIds must contain only strings",
       "endDateAfterStart": "End date must be on or after start date",
       "exportBlockedByDuplicateIdentifier": "Export blocked: several employees share a personnel identifier. Give each employee their own: {employees}",
-      "exportBlockedByMissingIdentifier":"Export blocked: some employees have no value for the custom field used as payroll identifier",
+      "exportBlockedByMissingIdentifier": "Export blocked: some employees have no value for the custom field used as payroll identifier",
       "exportBlockedByOffboardingClockRepair": "Export blocked: repair the offboarding clock-out first",
       "exportBlockedByUncertainWork": "Export blocked: resolve the uncertain work in the selected scope first",
       "exportBlockedByUnresolvedWorkMinutes": "Export blocked: resolve the work minutes that need review first",

@@ -183,13 +183,13 @@ function AffectedEmployeesTable({
 				<TableRow>
 					<TableHead>{t("settings.payrollReadiness.affectedEmployees.name", "Employee")}</TableHead>
 					<TableHead>
-						{t("settings.payrollReadiness.affectedEmployees.number", "Employee number")}
+						{t("settings.payrollReadiness.affectedEmployees.personnelNumber", "Personnel number")}
 					</TableHead>
 					{showsPersonnelIdentifier ? (
 						<TableHead>
 							{t(
 								"settings.payrollReadiness.affectedEmployees.personnelIdentifier",
-								"Payroll identifier",
+								"Personnel identifier",
 							)}
 						</TableHead>
 					) : null}
