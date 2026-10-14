@@ -22,6 +22,32 @@ interface MatchableEmployee extends PayrollIdentityRow {
 }
 
 /**
+ * The value SAP SuccessFactors matches an employee by, or null when the row
+ * has none. Shared by the API exporter, the CSV formatter and the
+ * duplicate-identifier check (#1199), so the check compares exactly what is
+ * sent. Pure: a missing custom field value yields null here.
+ */
+export function successFactorsMatchValue(
+	employee: PayrollIdentityRow,
+	strategy: SuccessFactorsEmployeeMatchStrategy,
+): string | null {
+	switch (strategy) {
+		case "userId":
+			// The employee number is the userId; without one, the employee ID.
+			return employee.employeeNumber || employee.employeeId;
+		case "personIdExternal":
+		// Email matching is not supported; email matches by employee number too.
+		case "email":
+			return employee.employeeNumber || null;
+		case CUSTOM_FIELD_IDENTIFIER:
+			// The frozen custom field value is the userId (#821); it never falls back.
+			return employee.personnelIdentifier || null;
+		default:
+			return null;
+	}
+}
+
+/**
  * Get employee identifier for SAP SuccessFactors based on matching strategy
  *
  * @param employee - Work period or absence data containing employee info
@@ -32,45 +58,38 @@ export function getEmployeeIdentifier(
 	employee: MatchableEmployee,
 	strategy: SuccessFactorsEmployeeMatchStrategy,
 ): string | null {
+	if (strategy === CUSTOM_FIELD_IDENTIFIER) return requirePersonnelIdentifier(employee);
+	warnAboutWeakMatch(employee, strategy);
+	return successFactorsMatchValue(employee, strategy);
+}
+
+function warnAboutWeakMatch(
+	employee: MatchableEmployee,
+	strategy: SuccessFactorsEmployeeMatchStrategy,
+): void {
+	const context = { employeeId: employee.employeeId };
 	switch (strategy) {
 		case "userId":
-			// Use employee number as SAP SuccessFactors userId
-			if (employee.employeeNumber) {
-				return employee.employeeNumber;
+			if (!employee.employeeNumber) {
+				logger.warn(
+					context,
+					"Employee number not set for userId matching strategy, falling back to employeeId",
+				);
 			}
-			logger.warn(
-				{ employeeId: employee.employeeId },
-				"Employee number not set for userId matching strategy, falling back to employeeId",
-			);
-			return employee.employeeId;
-
+			return;
 		case "personIdExternal":
-			// Use employee number as personIdExternal (external HR system ID)
-			if (employee.employeeNumber) {
-				return employee.employeeNumber;
+			if (!employee.employeeNumber) {
+				logger.warn(context, "Employee number not set for personIdExternal matching, cannot match");
 			}
-			logger.warn(
-				{ employeeId: employee.employeeId },
-				"Employee number not set for personIdExternal matching, cannot match",
-			);
-			return null;
-
+			return;
 		case "email":
-			// Email matching requires email field which is not in current data types
-			// Fall back to employee number with warning
 			logger.warn(
-				{ employeeId: employee.employeeId },
+				context,
 				"Email matching not available in current data, falling back to employeeNumber",
 			);
-			return employee.employeeNumber || null;
-
-		case CUSTOM_FIELD_IDENTIFIER:
-			// The frozen custom field value is the userId (#821); it never falls back.
-			return requirePersonnelIdentifier(employee);
-
+			return;
 		default:
 			logger.error({ strategy }, "Unknown employee matching strategy");
-			return null;
 	}
 }
 

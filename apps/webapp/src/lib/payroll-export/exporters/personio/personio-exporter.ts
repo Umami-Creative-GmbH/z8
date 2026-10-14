@@ -5,12 +5,7 @@
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault/secrets";
-import {
-	CUSTOM_FIELD_IDENTIFIER,
-	customFieldMatchError,
-	type PayrollIdentityRow,
-	requirePersonnelIdentifier,
-} from "../../personnel-identifier";
+import { CUSTOM_FIELD_IDENTIFIER, customFieldMatchError } from "../../personnel-identifier";
 import type {
 	AbsenceData,
 	ApiExportResult,
@@ -20,6 +15,7 @@ import type {
 } from "../../types";
 import { legacyOnlyWageTypeCode } from "../../wage-type-code";
 import { PersonioApiClient } from "./api-client";
+import { selectPersonioEmployeeIdentifier } from "./employee-identifier";
 import type {
 	PersonioAbsenceRequest,
 	PersonioAttendanceRequest,
@@ -32,23 +28,6 @@ import { DEFAULT_PERSONIO_CONFIG } from "./types";
 const logger = createLogger("PersonioExporter");
 
 const SYNC_THRESHOLD = 500; // Max records for sync export
-
-export function selectPersonioEmployeeIdentifier(
-	record: Partial<PayrollIdentityRow> & { employeeNumber: string | null; email?: string | null },
-	strategy: PersonioConfig["employeeMatchStrategy"],
-): string | null {
-	// The frozen custom field value, matched against the Personio personnel number (#821).
-	if (strategy === CUSTOM_FIELD_IDENTIFIER) {
-		return requirePersonnelIdentifier({
-			employeeId: record.employeeId ?? "",
-			employeeNumber: record.employeeNumber,
-			personnelIdentifier: record.personnelIdentifier,
-		});
-	}
-	const identifier =
-		strategy === "email" ? record.email : record.employeeNumber;
-	return identifier || null;
-}
 
 /**
  * Vault keys for Personio credentials

@@ -173,24 +173,29 @@ export async function savePayrollExportConfig(
 	});
 }
 
-/** The employees of the organization among `employeeIds`, with number and name. */
+interface IdentityEmployee {
+	employeeId: string;
+	employeeNumber: string | null;
+	/** API connectors may match employees by email (#1199). */
+	email: string;
+	name: string | null;
+}
+
+/** The employees of the organization among `employeeIds`, with number, email and name. */
 async function readIdentityEmployees(
 	reader: CustomFieldReader,
 	organizationId: string,
 	employeeIds: readonly string[],
-): Promise<Array<{ employeeId: string; employeeNumber: string | null; name: string | null }>> {
+): Promise<IdentityEmployee[]> {
 	const unique = [...new Set(employeeIds)];
-	const employees: Array<{
-		employeeId: string;
-		employeeNumber: string | null;
-		name: string | null;
-	}> = [];
+	const employees: IdentityEmployee[] = [];
 	for (let index = 0; index < unique.length; index += ID_CHUNK) {
 		employees.push(
 			...(await reader
 				.select({
 					employeeId: employee.id,
 					employeeNumber: employee.employeeNumber,
+					email: user.email,
 					name: user.name,
 				})
 				.from(employee)

@@ -28,6 +28,8 @@ export const PAYROLL_IDENTIFIER_FIELD_TYPES = ["text", "number"] as const;
 export interface PayrollIdentityRow {
 	employeeId: string;
 	employeeNumber: string | null;
+	/** The employee's email, which API connectors may match employees by (#1199). */
+	email?: string | null;
 	/** The frozen custom field value, when the configuration names a custom field. */
 	personnelIdentifier?: string | null;
 }

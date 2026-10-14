@@ -378,6 +378,14 @@ export async function processExportJob(
 
 		// BRANCH: API-based exporter (Personio, etc.)
 		if (exporter) {
+			// Two employees matching one external worker would be merged there (#1199);
+			// refused before any call to the external system.
+			await refuseDuplicatePersonnelIdentifiersOfFormat(db, {
+				organizationId: job.organizationId,
+				formatId: job.config.formatId,
+				config: job.config.config,
+				rows: [...workPeriods, ...absences],
+			});
 			const apiResult = await exporter.export(
 				job.organizationId,
 				workPeriods,
@@ -529,9 +537,9 @@ export async function processExportJob(
 type ExportDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
- * The duplicate-identifier check of a format (#1198): refuses the rows when two
- * employees would be written under one personnel identifier, naming them. A
- * format the check doesn't cover passes.
+ * The duplicate-identifier check of a format (#1198, #1199): refuses the rows
+ * when two employees would be written under, or matched by, one personnel
+ * identifier, naming them. A format the check doesn't cover passes.
  */
 async function refuseDuplicatePersonnelIdentifiersOfFormat(
 	database: ExportDatabase,
