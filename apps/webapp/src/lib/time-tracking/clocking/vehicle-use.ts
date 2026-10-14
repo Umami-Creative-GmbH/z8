@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, eq } from "drizzle-orm";
-import { timeRecordWork, workPeriod } from "@/db/schema";
+import { workPeriod } from "@/db/schema";
 import {
 	breakVehicleUse,
 	clockInVehicleUse,
@@ -20,19 +20,26 @@ import {
 	workVehicleUseRefusalCodeOf,
 } from "../vehicle-use/work-vehicle-use-eligibility";
 import { vehicleUseSelectColumns } from "../vehicle-use/work-vehicle-use-sql";
-import type { WorkTransactionClient } from "../work-transaction";
+import type { SealedWorkTransactionScope, WorkTransactionClient } from "../work-transaction";
+import { applyWorkRecordChange, readWorkRecord } from "../work-records";
 import type { BreakClosure } from "./break";
 import type { ClockOutClosure } from "./clock-out";
-import type { BreakCommand, ClockInCommand, ClockOutCommand } from "./types";
+import {
+	type BreakCommand,
+	type ClockInCommand,
+	type ClockOutCommand,
+	principalCausingUserId,
+} from "./types";
 import { acceptsClockVehicleUse } from "./vehicle-use-eligibility";
 
 /**
  * Vehicle use of executed clock events (#1122, Time Tracking ADR 0009). Runs
  * inside the command's work transaction, after its writes, and only for an
- * executed event: a replay writes nothing. Vehicle use is work attribution, so it
- * lands on the work period and, once the work is closed, on its canonical work
- * record in the same columns. The configuration and a newly picked vehicle are
- * read `FOR SHARE`, so a concurrent change waits for this commit.
+ * executed event: a replay writes nothing. Vehicle use is work attribution: live
+ * work takes it on its work period (Clocking's live work, ADR 0002); work the
+ * command closed takes it through work records' amend, on the work period and
+ * its canonical work record together (ADR 0010). The configuration and a newly
+ * picked vehicle are read `FOR SHARE`, so a concurrent change waits for this commit.
  *
  * Nothing here refuses the clock event: an ineligible command, vehicle use off
  * for the employee, an archived or unknown vehicle, or readings that cannot be
@@ -88,8 +95,8 @@ async function pickable(
 	}
 }
 
-/** Writes vehicle use to the period and its canonical record, when it changes. */
-async function write(
+/** Live work (ADR 0002): writes vehicle use to the live work period, when it changes. */
+async function writeLive(
 	db: WorkTransactionClient,
 	scope: Scope,
 	period: Period,
@@ -112,24 +119,34 @@ async function write(
 				eq(workPeriod.id, period.id),
 				eq(workPeriod.organizationId, scope.organizationId),
 				eq(workPeriod.employeeId, scope.employeeId),
+				eq(workPeriod.isActive, true),
 			),
 		);
-	if (!period.canonicalRecordId) return;
-	await db
-		.update(timeRecordWork)
-		.set({
-			vehicleKind: columns.vehicleKind,
-			vehicleId: columns.vehicleId,
-			odometerStartKm: columns.odometerStartKm,
-			odometerEndKm: columns.odometerEndKm,
-			drivenDistanceKm: columns.drivenDistanceKm,
-		})
-		.where(
-			and(
-				eq(timeRecordWork.recordId, period.canonicalRecordId),
-				eq(timeRecordWork.organizationId, scope.organizationId),
-			),
-		);
+}
+
+/**
+ * Completed work the clock command just closed takes its vehicle use through
+ * work records (ADR 0010, #1225), which amends the work period and its
+ * canonical work record together with the effects. A refusal drops the
+ * supplied vehicle use, as every other refusal here does.
+ */
+async function amendClosed(
+	work: SealedWorkTransactionScope,
+	scope: Scope,
+	period: Period,
+	use: WorkVehicleUse | null,
+	actorUserId: string | null,
+) {
+	if (sameWorkVehicleUse(period.use, use)) return;
+	const current = await readWorkRecord(work, { ...scope, workPeriodId: period.id }, { lock: true });
+	if (!current) return;
+	await applyWorkRecordChange(work, {
+		kind: "amend",
+		...scope,
+		expected: current.expected,
+		attribution: { vehicleUse: use },
+		actorUserId,
+	});
 }
 
 function scopeOf(command: { organizationId: string; subject: { employeeId: string } }): Scope {
@@ -153,25 +170,26 @@ export async function recordClockInVehicleUse<Result extends { disposition: stri
 		clockInId: entryIdOf(result as Result & { disposition: "executed" }),
 	});
 	if (!period || !(await pickable(db, scope, null, use))) return result;
-	await write(db, scope, period, use);
+	await writeLive(db, scope, period, use);
 	return result;
 }
 
 /** The closed work takes the clock-out's readings over what it records. */
 export async function recordClockOutVehicleUse(
-	db: WorkTransactionClient,
+	work: SealedWorkTransactionScope,
 	command: ClockOutCommand,
 	closure: ClockOutClosure,
 ): Promise<ClockOutClosure> {
 	if (closure.disposition !== "executed" || !command.vehicleUse) return closure;
 	if (!acceptsClockVehicleUse(command)) return closure;
+	const db = work.db;
 	const scope = scopeOf(command);
 	if (!(await vehicleUseOn(db, scope))) return closure;
 	const period = await readPeriod(db, scope, { id: closure.closed.workPeriodId });
 	if (!period) return closure;
 	const use = clockOutVehicleUse(period.use, command.vehicleUse);
 	if (!(await pickable(db, scope, period.use, use))) return closure;
-	await write(db, scope, period, use);
+	await amendClosed(work, scope, period, use, principalCausingUserId(command.principal));
 	return closure;
 }
 
@@ -182,11 +200,12 @@ export async function recordClockOutVehicleUse(
  * one that named no reading or whose principal may not record one.
  */
 export async function recordBreakVehicleUse(
-	db: WorkTransactionClient,
+	work: SealedWorkTransactionScope,
 	command: BreakCommand,
 	closure: BreakClosure,
 ): Promise<BreakClosure> {
 	if (closure.disposition !== "executed") return closure;
+	const db = work.db;
 	const scope = scopeOf(command);
 	const closed = await readPeriod(db, scope, { id: closure.closed.workPeriodId });
 	if (!closed?.use) return closure;
@@ -197,7 +216,7 @@ export async function recordBreakVehicleUse(
 		closed.use,
 		acceptsClockVehicleUse(command) ? command.vehicleUse : undefined,
 	);
-	await write(db, scope, closed, planned.closed);
-	await write(db, scope, resumed, planned.resumed);
+	await amendClosed(work, scope, closed, planned.closed, principalCausingUserId(command.principal));
+	await writeLive(db, scope, resumed, planned.resumed);
 	return closure;
 }

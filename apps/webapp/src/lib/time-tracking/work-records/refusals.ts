@@ -38,6 +38,8 @@ const REFUSAL_KINDS = new Set<WorkRecordRefusalKind>([
 	"month_closed",
 	"work_occupied",
 	"append_review_required",
+	"unchanged",
+	"interval_invalid",
 ] satisfies WorkRecordRefusalKind[]);
 
 export function isWorkRecordRefusal(outcome: { kind: string }): outcome is WorkRecordRefusal {
@@ -92,5 +94,15 @@ export function refusalError(refusal: WorkRecordRefusal): Error {
 			return new WorkOccupancyConflictError(refusal.occupants);
 		case "append_review_required":
 			return new TimeEntryAppendReviewRequiredError(refusal.requirement);
+		case "unchanged":
+			return new ValidationError({
+				message: "At least one correction value must change",
+				field: "correction",
+			});
+		case "interval_invalid":
+			return new ValidationError({
+				message: "Clock out time must be after clock in time",
+				field: "timestamp",
+			});
 	}
 }

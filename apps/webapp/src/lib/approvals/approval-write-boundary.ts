@@ -563,57 +563,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "work_period",
 		},
 	],
-	// Completed-work operations (#264) write sources inside the outer work transaction.
-	"src/lib/time-tracking/amend-completed-work.ts": [
-		{
-			columns: ["replaces_entry_id", "type"],
-			functionName: "amendCompletedWork",
-			operation: "insert",
-			semantic: "correction",
-			table: "time_entry",
-		},
-		{
-			columns: ["is_superseded", "superseded_by_id"],
-			functionName: "amendCompletedWork",
-			operation: "update",
-			semantic: "correction_lifecycle",
-			table: "time_entry",
-		},
-		{
-			columns: ["duration_minutes", "end_at", "start_at"],
-			functionName: "amendCompletedWork",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "amendCompletedWork",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
-			],
-			functionName: "amendCompletedWork",
-			operation: "update",
-			table: "work_period",
-		},
-	],
 	// Evidence-only historical gap repair (#320) fills absent facts inside the outer
 	// completed-work transaction, guarded against the planned state.
 	"src/lib/time-tracking/historical-gap-repair-executor.ts": [
@@ -890,12 +839,22 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "work_period",
 		},
 	],
-	// The legacy project change (#900) moves the canonical project allocation with the
-	// period inside the coordinated completed-work transaction, so both agree.
-	"src/lib/time-tracking/work-period-attribution.ts": [
+	// Work records (ADR 0010, #1225) amends the times and work attribution of one completed
+	// period and its canonical work record together, compare-and-set against the locked
+	// pair, in both admissions. Direct amendments, attribution changes and vehicle-use
+	// completion amend through it.
+	"src/lib/time-tracking/work-records/amend.ts": [
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "writeAmendedPair",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
 		{
 			columns: [
 				"allocation_kind",
+				"cost_center_id",
 				"is_billable",
 				"organization_id",
 				"project_id",
@@ -903,15 +862,37 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"task_id",
 				"weight_percent",
 			],
-			functionName: "changeLegacyWorkPeriodProject",
+			functionName: "writeAmendedPair",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record_allocation",
 		},
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "writeAmendedPair",
+			operation: "update",
+			table: "work_period",
+		},
 	],
-	// Work records' legacy writer (#1219) supersedes the endpoint a new entry with notes
-	// takes over from, as the legacy split did, under the pair's lock.
+	// Work records' entry writers append a change's entries in either admission; an
+	// amendment's correction names the endpoint it replaces (#1225). The legacy writer
+	// (#1219) supersedes the endpoint a new entry with notes takes over from, as the
+	// legacy split did, and a correction supersedes the endpoint it replaces, under the
+	// pair's lock.
 	"src/lib/time-tracking/work-records/entry-writer.ts": [
+		{
+			columns: ["replaces_entry_id", "type"],
+			functionName: "insertAppendedEntry",
+			operation: "insert",
+			semantic: "correction_lifecycle",
+			table: "time_entry",
+		},
 		{
 			columns: ["is_superseded", "superseded_by_id"],
 			functionName: "supersedeTakenOverEntry",

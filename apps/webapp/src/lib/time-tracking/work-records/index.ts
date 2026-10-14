@@ -7,7 +7,7 @@ import "server-only";
  * - `readWorkRecord`: a completed work period with its entries and canonical
  *   work record, its expected state and its record agreement, optionally
  *   locked so a caller can check its own preconditions first.
- * - `applyWorkRecordChange`: one change (today: divide) against a named
+ * - `applyWorkRecordChange`: one change (divide, amend) against a named
  *   expected state. It returns the applied result or a refusal, never both;
  *   `orRefuse` turns a refusal into the error interactive callers throw.
  *
@@ -17,7 +17,18 @@ import "server-only";
  */
 import type { SealedWorkTransactionScope } from "../work-transaction";
 import type { DivideWorkRecord, WorkRecordChange, WorkRecordRefusal } from "./change";
+import type { AmendWorkRecord } from "./amend-change";
+import { amendWorkRecord, type WorkAmendment } from "./amend";
 import { divideWorkRecord, type WorkDivision } from "./divide";
+
+export type {
+	AmendAttributionPatch,
+	AmendedEndpoint,
+	AmendedTimes,
+	AmendmentChanges,
+	AmendWorkRecord,
+} from "./amend-change";
+export type { AmendedEntryEvidence, WorkAmendment } from "./amend";
 
 export type {
 	DivideWorkRecord,
@@ -38,7 +49,9 @@ export type { WorkSegment } from "./segment";
 /** The applied result of each change. */
 export type WorkRecordResult<C extends WorkRecordChange> = C extends DivideWorkRecord
 	? WorkDivision
-	: never;
+	: C extends AmendWorkRecord
+		? WorkAmendment
+		: never;
 
 export async function applyWorkRecordChange<C extends WorkRecordChange>(
 	scope: SealedWorkTransactionScope,
@@ -47,5 +60,7 @@ export async function applyWorkRecordChange<C extends WorkRecordChange>(
 	switch (change.kind) {
 		case "divide":
 			return (await divideWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
+		case "amend":
+			return (await amendWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 	}
 }
