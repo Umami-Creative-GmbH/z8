@@ -63,6 +63,14 @@ _Avoid_: Finished entries, closed session
 What a work period is recorded against: its project, work category, work location, vehicle use and whether it is billable. Changing it is an amendment of completed work, under the same change policy for every part.
 _Avoid_: Work metadata, tags
 
+**Canonical work record**:
+The record of a completed work period that payroll reads, kept beside the work period in both admissions. Every completed work period has exactly one.
+_Avoid_: Canonical record (alone; Approvals has canonical workflows), time record, shadow record, mirror
+
+**Record agreement**:
+A completed work period and its canonical work record matching on interval, duration, approval state and work attribution. Every writer of completed work keeps it, and work whose records disagree is not changed until it has been reviewed.
+_Avoid_: Sync, consistency, drift
+
 **Day total**:
 An employee's work within one local day in their timezone: their completed work plus the part of any live work elapsed so far, split at local midnight. It differs from the compliance check's day, which counts each work period whole on the day it started.
 _Avoid_: Daily sum, actual hours, today's minutes
