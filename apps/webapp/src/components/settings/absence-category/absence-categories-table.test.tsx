@@ -123,7 +123,7 @@ describe("AbsenceCategoriesTable", () => {
 
 		renderTable(false);
 
-		expect(await screen.findByText("Sick leave")).toBeTruthy();
+		expect(await screen.findByText("Krankheit")).toBeTruthy();
 		expect(screen.queryByText("Add category")).toBeNull();
 		expect(screen.queryByText("Edit")).toBeNull();
 		expect(screen.queryByText("Delete")).toBeNull();
@@ -138,7 +138,7 @@ describe("AbsenceCategoriesTable", () => {
 
 		renderTable(true);
 
-		fireEvent.pointerDown(await screen.findByLabelText("Open menu Sick leave"));
+		fireEvent.pointerDown(await screen.findByLabelText("Open menu Krankheit"));
 		fireEvent.click(await screen.findByText("Deactivate"));
 
 		await waitFor(() => expect(mocks.setAbsenceCategoryActive).toHaveBeenCalled());
@@ -194,7 +194,7 @@ describe("AbsenceCategoriesTable", () => {
 		});
 
 		expect(await screen.findByText("Schulung")).toBeTruthy();
-		expect(screen.queryByText("Sick leave")).toBeNull();
+		expect(screen.queryByText("Krankheit")).toBeNull();
 	});
 
 	it("shows the server conflict message when delete is rejected", async () => {
@@ -206,7 +206,7 @@ describe("AbsenceCategoriesTable", () => {
 
 		renderTable(true);
 
-		fireEvent.pointerDown(await screen.findByLabelText("Open menu Sick leave"));
+		fireEvent.pointerDown(await screen.findByLabelText("Open menu Krankheit"));
 		fireEvent.click(await screen.findByText("Delete"));
 		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 

@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import type { AbsenceCategoryType } from "@/app/[locale]/(app)/settings/vacation/actions";
@@ -41,6 +41,7 @@ import {
 	type AbsenceCategoryForSettings,
 	buildAbsenceCategoryPayload,
 	getAbsenceCategoryFormValues,
+	getAbsenceCategoryTranslationValues,
 } from "./absence-category-form-utils";
 
 export interface AbsenceCategoryFormProps {
@@ -137,6 +138,9 @@ export function AbsenceCategoryForm({
 }: AbsenceCategoryFormProps) {
 	const { t } = useTranslate();
 	const [loading, setLoading] = useState(false);
+	const translationDrafts = useRef(
+		new Map<AbsenceCategoryType, ReturnType<typeof getAbsenceCategoryTranslationValues>>(),
+	);
 
 	const form = useForm({
 		defaultValues: getAbsenceCategoryFormValues(existingCategory),
@@ -277,7 +281,25 @@ export function AbsenceCategoryForm({
 										</Label>
 										<Select
 											value={field.state.value}
-											onValueChange={(value) => field.handleChange(value as AbsenceCategoryType)}
+											onValueChange={(value) => {
+												if (!value || value === field.state.value) return;
+												const type = value as AbsenceCategoryType;
+												translationDrafts.current.set(field.state.value, {
+													nameTranslations: { ...form.getFieldValue("nameTranslations") },
+													descriptionTranslations: {
+														...form.getFieldValue("descriptionTranslations"),
+													},
+												});
+												const translations =
+													translationDrafts.current.get(type) ??
+													getAbsenceCategoryTranslationValues(type);
+												field.handleChange(type);
+												form.setFieldValue("nameTranslations", translations.nameTranslations);
+												form.setFieldValue(
+													"descriptionTranslations",
+													translations.descriptionTranslations,
+												);
+											}}
 										>
 											<SelectTrigger id="absenceCategoryType" className="w-full">
 												<SelectValue
@@ -578,7 +600,10 @@ export function AbsenceCategoryForm({
 															htmlFor="absenceCategoryDeputyRequired"
 															className={allowed ? "cursor-pointer" : undefined}
 														>
-															{t("settings.absenceCategories.form.deputyRequired", "Deputy required")}
+															{t(
+																"settings.absenceCategories.form.deputyRequired",
+																"Deputy required",
+															)}
 														</Label>
 														<p className="text-sm text-muted-foreground">
 															{allowed

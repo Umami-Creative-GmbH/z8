@@ -86,8 +86,11 @@ describe("absence category form helpers", () => {
 			name: "Sick leave",
 			type: "sick",
 			description: "",
-			nameTranslations: {},
-			descriptionTranslations: {},
+			nameTranslations: expect.objectContaining({ de: "Krankheit", fr: "Congé maladie" }),
+			descriptionTranslations: expect.objectContaining({
+				de: "Krankheitstag",
+				fr: "Journée de maladie",
+			}),
 			requiresWorkTime: false,
 			requiresApproval: false,
 			countsAgainstVacation: false,
@@ -218,6 +221,25 @@ describe("absence category form helpers", () => {
 			expect(createAbsenceCategory).not.toHaveBeenCalled();
 		},
 	);
+
+	it("keeps customer translations when switching between custom and predefined types", async () => {
+		render(<AbsenceCategoryForm open={true} onOpenChange={vi.fn()} organizationId="org_1" />);
+		const germanName = document.getElementById(
+			"absenceCategoryNameTranslation-de",
+		) as HTMLInputElement;
+		const frenchName = document.getElementById(
+			"absenceCategoryNameTranslation-fr",
+		) as HTMLInputElement;
+		fireEvent.change(germanName, { target: { value: "Urlaub" } });
+		fireEvent.click(screen.getByLabelText("Type"));
+		fireEvent.click(await screen.findByRole("option", { name: "Vacation" }));
+		expect(germanName.value).toBe("Urlaub");
+		expect(frenchName.value).toBe("Vacances");
+		fireEvent.click(screen.getByLabelText("Type"));
+		fireEvent.click(await screen.findByRole("option", { name: "Custom" }));
+		expect(germanName.value).toBe("Urlaub");
+		expect(frenchName.value).toBe("");
+	});
 
 	it("saves a category that draws on the work balance", async () => {
 		const { createAbsenceCategory } = await import(
