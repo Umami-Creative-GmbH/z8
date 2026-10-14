@@ -203,6 +203,23 @@ describe("legacy break enforcement judges the work by its own day and policy on 
 		);
 		const id = rows[0]?.id;
 		if (!id) throw new Error("work period insert failed");
+		// Completed work has its canonical work record, in agreement (#1212).
+		await admin.query(
+			`with record as (
+			   insert into time_record
+			     (organization_id, employee_id, record_kind, start_at, end_at, duration_minutes,
+			      approval_state, origin, created_by, updated_at)
+			   select organization_id, employee_id, 'work', start_time, end_time, duration_minutes,
+			          approval_status::text::time_record_approval_state, 'clock', $2, now()
+			     from work_period where id = $1
+			   returning id, organization_id
+			 ), detail as (
+			   insert into time_record_work (record_id, organization_id, record_kind)
+			   select id, organization_id, 'work' from record
+			 )
+			 update work_period set canonical_record_id = (select id from record) where id = $1`,
+			[id, ids.user],
+		);
 		return { id, durationMinutes };
 	}
 

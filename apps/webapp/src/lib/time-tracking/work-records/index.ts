@@ -18,6 +18,8 @@ import "server-only";
 import type { SealedWorkTransactionScope } from "../work-transaction";
 import type { DivideWorkRecord, WorkRecordChange, WorkRecordRefusal } from "./change";
 import { divideWorkRecord, type WorkDivision } from "./divide";
+import { divideByOwedBreak, type OwedBreakDivision } from "./divide-owed-break";
+import type { DivideByOwedBreak, OwedBreakNotRequired } from "./owed-break";
 
 export type {
 	DivideWorkRecord,
@@ -30,6 +32,14 @@ export type {
 	WorkRecordRefusalKind,
 } from "./change";
 export type { AppendedEntryEvidence, DividedHalf, WorkDivision } from "./divide";
+export type { OwedBreakDivision } from "./divide-owed-break";
+export type {
+	DivideByOwedBreak,
+	OwedBreak,
+	OwedBreakEntryProvenance,
+	OwedBreakNotRequired,
+	OwedBreakTakenBefore,
+} from "./owed-break";
 export { readWorkRecord, type WorkRecord } from "./read";
 export { CompletedWorkReviewRequiredError, isWorkRecordRefusal, orRefuse } from "./refusals";
 export { WORK_RECORD_LOCK_ORDER, type WorkRecordKey } from "./rows";
@@ -38,7 +48,9 @@ export type { WorkSegment } from "./segment";
 /** The applied result of each change. */
 export type WorkRecordResult<C extends WorkRecordChange> = C extends DivideWorkRecord
 	? WorkDivision
-	: never;
+	: C extends DivideByOwedBreak
+		? OwedBreakDivision | OwedBreakNotRequired
+		: never;
 
 export async function applyWorkRecordChange<C extends WorkRecordChange>(
 	scope: SealedWorkTransactionScope,
@@ -47,5 +59,7 @@ export async function applyWorkRecordChange<C extends WorkRecordChange>(
 	switch (change.kind) {
 		case "divide":
 			return (await divideWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
+		case "divide_owed_break":
+			return (await divideByOwedBreak(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 	}
 }

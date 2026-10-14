@@ -15,6 +15,7 @@ import type { AppendReviewRequirement } from "../time-entry-append";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { WorkVehicleUseChangeRefusalCode } from "../vehicle-use/work-vehicle-use-refusals";
 import type { WorkOccupant } from "../work-occupancy";
+import type { DivideByOwedBreak } from "./owed-break";
 import type { RecordAgreementFacet } from "./record-agreement";
 import type {
 	UnrepresentableWorkAttribution,
@@ -93,7 +94,7 @@ export type DivideWorkRecord = {
 	appendOperation: TimeEntryAppendOperation;
 };
 
-export type WorkRecordChange = DivideWorkRecord;
+export type WorkRecordChange = DivideWorkRecord | DivideByOwedBreak;
 
 /** Why a change was not made. Nothing is written for any of them. */
 export type WorkRecordRefusal =

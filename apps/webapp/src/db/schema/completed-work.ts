@@ -165,6 +165,11 @@ export const WORK_BREAK_ADJUSTMENT_BLOCKERS = [
 	"completed_work_review_required",
 	"work_occupancy_conflict",
 	"append_review_required",
+	// Work records' outcomes (#1220): the pair disagrees, the work touches a closed
+	// month, or it changed under the adjustment.
+	"canonical_divergence",
+	"month_closed",
+	"work_period_stale",
 ] as const;
 export type WorkBreakAdjustmentBlocker = (typeof WORK_BREAK_ADJUSTMENT_BLOCKERS)[number];
 
@@ -220,7 +225,7 @@ export const workBreakAdjustmentIntent = pgTable(
 		),
 		check(
 			"work_break_adjustment_intent_blocker_check",
-			sql`(${table.status} = 'deferred') = (${table.blocker} IS NOT NULL AND ${table.observedGraphRevision} IS NOT NULL AND ${table.deferredAt} IS NOT NULL) AND (${table.blocker} IS NULL OR ${table.blocker} IN ('work_period_pending_approval', 'pending_time_correction_approval', 'completed_work_review_required', 'work_occupancy_conflict', 'append_review_required'))`,
+			sql`(${table.status} = 'deferred') = (${table.blocker} IS NOT NULL AND ${table.observedGraphRevision} IS NOT NULL AND ${table.deferredAt} IS NOT NULL) AND (${table.blocker} IS NULL OR ${table.blocker} IN ('work_period_pending_approval', 'pending_time_correction_approval', 'completed_work_review_required', 'work_occupancy_conflict', 'append_review_required', 'canonical_divergence', 'month_closed', 'work_period_stale'))`,
 		),
 		check("work_break_adjustment_intent_attempts_check", sql`${table.attempts} >= 0`),
 	],

@@ -168,7 +168,7 @@ function planDivision(
  * (a division never decides approval), and the attribution in both
  * representations. Cost-centre allocations carry over unchanged.
  */
-function plannedHalf(
+export function plannedHalf(
 	segment: { startAt: Instant; endAt: Instant; durationMinutes: number },
 	attribution: WorkAttribution,
 	sourceAllocations: readonly CanonicalAllocationShape[],
