@@ -4,11 +4,12 @@ import { organization, user } from "@/db/auth-schema";
 import { employee, employeeDocument, personnelFileExpiryReminder } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { dueExpiryReminder, type ExpiryReminderKind } from "@/lib/expiry-reminders/expiry";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
+import { loadEmployeeSkillReminderDates } from "@/lib/scheduling/skill-expiry-reminders";
 import { EXPIRY_DATE_CATEGORIES } from "./document.types";
-import { dueExpiryReminder, type ExpiryReminderKind } from "./expiry";
 import { buildExpiryReminderNotification, type ExpiringDocumentRef } from "./expiry-notifications";
 import { loadExpiryReminderWindow } from "./expiry-store";
 import { listPersonnelFileNotificationRecipients } from "./notification-recipients";
@@ -22,6 +23,11 @@ import { listPersonnelFileNotificationRecipients } from "./notification-recipien
  *
  * Recipients: the employee if the document is shared, plus the officers
  * covering the employee and the category (owners and admins when none does).
+ * A shared skill certificate expiring with its employee skill is the
+ * exception (#1146): the skill reminder already tells the employee, so this
+ * one goes to the officers only. Where no skill reminder reaches the employee
+ * for that date (inactive skill, other date, kiosk-only employee), this one
+ * still does, so the employee is reminded exactly once.
  * Former employees' documents are skipped; deleted documents no longer exist.
  *
  * At most once: a reminder is claimed in `personnel_file_expiry_reminder`
@@ -44,6 +50,12 @@ export interface PersonnelFileExpiryReminderResult {
 interface DueReminder {
 	kind: ExpiryReminderKind;
 	document: ExpiringDocumentRef & { visibility: "shared" | "hr_only"; employeeUserId: string };
+	/**
+	 * A skill certificate whose employee skill has the same expiry date and
+	 * whose skill reminder reaches the employee (#1146): the employee gets that
+	 * one only, the officers still get this one.
+	 */
+	employeeRemindedBySkill: boolean;
 }
 
 export async function runPersonnelFileExpiryReminders(
@@ -109,6 +121,7 @@ async function remindOrganization(
 			category: employeeDocument.category,
 			visibility: employeeDocument.visibility,
 			expiryDate: employeeDocument.expiryDate,
+			employeeSkillId: employeeDocument.employeeSkillId,
 		})
 		.from(employeeDocument)
 		.innerJoin(
@@ -130,12 +143,24 @@ async function remindOrganization(
 			),
 		);
 
+	// Read at send time: unlinking a certificate before a reminder is due gives the employee it back.
+	const skillReminderDates = await loadEmployeeSkillReminderDates(database, {
+		organizationId,
+		now,
+		employeeSkillIds: candidates.flatMap((row) =>
+			row.visibility === "shared" && row.employeeSkillId ? [row.employeeSkillId] : [],
+		),
+	});
+
 	const due: DueReminder[] = [];
 	for (const row of candidates) {
 		if (!row.expiryDate) continue;
 		const kind = dueExpiryReminder({ today, expiryDate: row.expiryDate, leadDays });
 		if (!kind) continue;
 		due.push({
+			employeeRemindedBySkill:
+				row.employeeSkillId !== null &&
+				skillReminderDates.get(row.employeeSkillId) === row.expiryDate,
 			kind,
 			document: {
 				id: row.id,
@@ -214,8 +239,8 @@ async function buildReminderMessages(
 			document,
 		}),
 	);
-	// HR-only documents never reach the employee.
-	if (document.visibility === "shared") {
+	// HR-only documents never reach the employee; a skill certificate reaches them as its skill reminder.
+	if (document.visibility === "shared" && !reminder.employeeRemindedBySkill) {
 		messages.push(
 			buildExpiryReminderNotification({
 				organizationId,

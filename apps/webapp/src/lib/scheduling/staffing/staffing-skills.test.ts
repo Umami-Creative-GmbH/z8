@@ -2,8 +2,8 @@ import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import { assessStaffingSkills, resolveSkillRequirements } from "./staffing-skills";
 
-// The shift runs 2026-10-20 06:00-14:00 UTC.
-const shiftEnd = Temporal.Instant.from("2026-10-20T14:00:00Z");
+// The shift is dated 2026-10-20.
+const shiftDate = Temporal.PlainDate.from("2026-10-20");
 
 describe("resolveSkillRequirements", () => {
 	it("unites subarea and template requirements, with required winning", () => {
@@ -35,10 +35,10 @@ describe("assessStaffingSkills", () => {
 			requirements,
 			held: [
 				{ skillId: "forklift", expiresAt: null },
-				{ skillId: "first-aid", expiresAt: new Date("2027-01-01T00:00:00Z") },
+				{ skillId: "first-aid", expiresAt: "2027-01-01" },
 				{ skillId: "french", expiresAt: null },
 			],
-			shiftEnd,
+			shiftDate,
 		});
 
 		expect(result).toEqual({
@@ -52,7 +52,7 @@ describe("assessStaffingSkills", () => {
 		const result = assessStaffingSkills({
 			requirements,
 			held: [{ skillId: "first-aid", expiresAt: null }],
-			shiftEnd,
+			shiftDate,
 		});
 
 		expect(result.warnings).toEqual([
@@ -70,10 +70,10 @@ describe("assessStaffingSkills", () => {
 			held: [
 				{ skillId: "forklift", expiresAt: null },
 				// Valid until 2026-10-15, after today (2026-10-10) and before the shift (2026-10-20).
-				{ skillId: "first-aid", expiresAt: new Date("2026-10-15T00:00:00Z") },
+				{ skillId: "first-aid", expiresAt: "2026-10-15" },
 				{ skillId: "french", expiresAt: null },
 			],
-			shiftEnd,
+			shiftDate,
 		});
 
 		expect(result.warnings).toEqual([
@@ -81,36 +81,56 @@ describe("assessStaffingSkills", () => {
 				type: "expiredRequiredSkill",
 				skillId: "first-aid",
 				skillName: "First aid",
-				expiresAt: "2026-10-15T00:00:00Z",
+				expiresAt: "2026-10-15",
+				certificateOnFile: false,
 			},
 		]);
 	});
 
-	it("counts a certificate expiring during the shift as expired", () => {
+	it("tells that a skill certificate is on file for an expired required skill", () => {
 		const result = assessStaffingSkills({
 			requirements: [requirements[1]],
-			held: [{ skillId: "first-aid", expiresAt: new Date("2026-10-20T10:00:00Z") }],
-			shiftEnd,
+			held: [{ skillId: "first-aid", expiresAt: "2026-10-15", certificateOnFile: true }],
+			shiftDate,
+		});
+
+		expect(result.warnings).toEqual([
+			{
+				type: "expiredRequiredSkill",
+				skillId: "first-aid",
+				skillName: "First aid",
+				expiresAt: "2026-10-15",
+				certificateOnFile: true,
+			},
+		]);
+	});
+
+	it("counts a skill whose expiry date is the day before the shift as expired", () => {
+		const result = assessStaffingSkills({
+			requirements: [requirements[1]],
+			held: [{ skillId: "first-aid", expiresAt: "2026-10-19" }],
+			shiftDate,
 		});
 
 		expect(result.warnings.map((warning) => warning.type)).toEqual(["expiredRequiredSkill"]);
 	});
 
-	it("keeps a certificate valid until the shift ends", () => {
+	it("keeps a skill valid on its expiry date for a shift on that day", () => {
 		const result = assessStaffingSkills({
 			requirements: [requirements[1]],
-			held: [{ skillId: "first-aid", expiresAt: new Date("2026-10-20T14:00:00Z") }],
-			shiftEnd,
+			held: [{ skillId: "first-aid", expiresAt: "2026-10-20" }],
+			shiftDate,
 		});
 
 		expect(result.warnings).toEqual([]);
+		expect(result.reasons).toEqual([{ type: "skillsHeld", skillNames: ["First aid"] }]);
 	});
 
 	it("only notes an expired preferred skill", () => {
 		const result = assessStaffingSkills({
 			requirements: [requirements[2]],
-			held: [{ skillId: "french", expiresAt: new Date("2026-10-01T00:00:00Z") }],
-			shiftEnd,
+			held: [{ skillId: "french", expiresAt: "2026-10-01" }],
+			shiftDate,
 		});
 
 		expect(result).toEqual({
@@ -121,7 +141,7 @@ describe("assessStaffingSkills", () => {
 	});
 
 	it("gives no skill reason when nothing is required", () => {
-		expect(assessStaffingSkills({ requirements: [], held: [], shiftEnd })).toEqual({
+		expect(assessStaffingSkills({ requirements: [], held: [], shiftDate })).toEqual({
 			warnings: [],
 			notes: [],
 			reasons: [],

@@ -292,7 +292,7 @@ export const StaffingSuggestionServiceLive = Layer.effect(
 										skills: assessStaffingSkills({
 											requirements: context.requirements,
 											held: facts.heldSkills,
-											shiftEnd: shift.interval.end,
+											shiftDate: shift.date,
 										}),
 										complianceFindings: addedComplianceFindings({
 											employeeId: candidate.employeeId,

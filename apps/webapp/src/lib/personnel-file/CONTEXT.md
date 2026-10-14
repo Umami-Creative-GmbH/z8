@@ -27,7 +27,7 @@ The month a payslip settles. Only payslips have one.
 _Avoid_: payroll month, billing period
 
 **Expiry date**:
-The last day a certificate or other document is valid. Officers and, for shared documents, the employee are reminded before it and on it.
+The last day a certificate or other document is valid. Officers and, for shared documents, the employee are reminded before it and on it. When a shared skill certificate expires with its employee skill, the employee is reminded only by the skill reminder.
 _Avoid_: valid until, due date
 
 **Skill certificate**:

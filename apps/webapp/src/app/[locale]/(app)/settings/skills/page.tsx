@@ -2,8 +2,10 @@ import { Suspense } from "react";
 import { SkillCatalogManagement } from "@/components/settings/skill-catalog-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { db } from "@/db";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { loadSkillReminderLeadDays } from "@/lib/scheduling/skill-reminder-store";
 
 async function SkillsSettingsPageContent() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
@@ -19,10 +21,17 @@ async function SkillsSettingsPageContent() {
 		return redirectWithLocale("/settings");
 	}
 
+	const canManageCatalog = settingsRouteContext.accessTier === "orgAdmin";
+	// Owners and admins edit the skill reminder lead time next to the catalog (#1143).
+	const reminderLeadDays = canManageCatalog
+		? await loadSkillReminderLeadDays(db, organizationId)
+		: undefined;
+
 	return (
 		<SkillCatalogManagement
 			organizationId={organizationId}
-			canManageCatalog={settingsRouteContext.accessTier === "orgAdmin"}
+			canManageCatalog={canManageCatalog}
+			reminderLeadDays={reminderLeadDays}
 		/>
 	);
 }

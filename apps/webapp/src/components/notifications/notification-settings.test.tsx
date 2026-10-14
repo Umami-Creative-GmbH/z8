@@ -163,6 +163,16 @@ describe("NotificationSettings", () => {
 		}
 	});
 
+	it("lets employees and managers switch the channels of skill expiry reminders (#1143)", () => {
+		render(<NotificationSettings />);
+
+		for (const label of ["Skill expires soon", "Skill expires today"]) {
+			expect(screen.getByLabelText(`In-App notifications for ${label}`)).toBeTruthy();
+			expect(screen.getByLabelText(`Push notifications for ${label}`)).toBeTruthy();
+			expect(screen.getByLabelText(`Email notifications for ${label}`)).toBeTruthy();
+		}
+	});
+
 	it("keeps push switch enabled when browser push is supported but not subscribed", () => {
 		usePushNotificationsMock.mockReturnValue({
 			isSupported: true,

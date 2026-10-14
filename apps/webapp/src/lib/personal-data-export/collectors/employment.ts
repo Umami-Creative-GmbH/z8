@@ -915,7 +915,8 @@ async function collectEmployment(
 				skills.map((row) => ({
 					skill: row.name,
 					category: row.customCategoryName ?? row.category,
-					expires_on: plainDateText(row.expiresAt),
+					// Already the plain last valid day (#1142).
+					expires_on: row.expiresAt,
 					notes: row.notes,
 					assigned_at: instantText(row.assignedAt),
 					assigned_by: byUser(row.assignedBy),
