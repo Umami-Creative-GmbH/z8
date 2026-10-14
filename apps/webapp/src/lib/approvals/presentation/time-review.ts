@@ -35,10 +35,9 @@ import type {
 	VehicleUseReviewValue,
 	WorkCategoryReviewValue,
 } from "../server/time-correction-review-metadata";
-import { submittedVehicleUseWarnings } from "../server/time-correction-vehicle-use-warnings";
 import type { ApprovalDatabase } from "../server/types";
 import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
-import { loadTimeCorrectionCategoryNames } from "./time-card";
+import { loadTimeCorrectionCategoryNames, submittedVehicleUseWarnings } from "./time-card";
 import { vehicleUseWarningReviewText } from "./vehicle-use-warning-text";
 
 type TimeDecisionEvidence = DecisionEvidenceRecord | LegacyDecisionEvidenceRecord;
