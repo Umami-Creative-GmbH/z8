@@ -22,6 +22,7 @@ import { assertAbsenceDaysOpen, workInterval } from "@/lib/time-tracking/closed-
 import type { ImportedWorkHold } from "@/lib/time-tracking/imported-work-interval";
 import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 import {
+	createImportedCompletedWork,
 	type ImportedWorkAttribution,
 	type ImportedWorkCommand,
 	recordImportedWork,
@@ -30,7 +31,6 @@ import {
 } from "@/lib/time-tracking/record-imported-work";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { type CustomerImportHold, commitCustomerRow } from "./customer-committer";
 import { reviewedImportRowMapping, withReviewedImportTransaction } from "./import-work-transaction";
 import { importedWorkProviderEvidence } from "./imported-work-evidence";
@@ -361,22 +361,24 @@ function isActiveValue(payload: SetupReferencePayload) {
 	return payload.isActive ?? payload.active ?? true;
 }
 
+function parseUtcInstant(value: string, fieldName: string) {
+	return instantFromDate(parseUtcDateTime(value, fieldName).toJSDate());
+}
+
 /**
- * Legacy work import for organizations that have not adopted appends. It runs
- * under the reviewed-import transaction, which holds the shared employee key, and
- * keeps its established unique-leaf head selection and period-only graph.
+ * Legacy import of open work, which is live work, for organizations that have not
+ * adopted appends. It runs under the reviewed-import transaction, which holds the
+ * shared employee key, and keeps its established unique-leaf head selection.
+ * Completed work goes through work records instead (`createImportedCompletedWork`).
  */
-async function commitWorkPeriod(
+async function commitLegacyOpenWorkPeriod(
 	database: CommitDb,
 	row: typeof importStagedRow.$inferSelect,
 	job: ImportCommitJobData,
 	attribution: { projectId: string; isBillable: boolean } | null,
 ) {
 	const payload = row.normalizedPayload as unknown as WorkPeriodPayload;
-	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
-
 	const startAt = parseUtcDateTime(payload.startsAt, "startsAt");
-	const endAt = payload.endsAt ? parseUtcDateTime(payload.endsAt, "endsAt") : null;
 	const clockInTimezoneCapture = resolveFallbackTimezoneCapture({
 		timestamp: startAt.toJSDate(),
 		timezone: "UTC",
@@ -404,77 +406,26 @@ async function commitWorkPeriod(
 		})
 		.returning({ id: timeEntry.id, hash: timeEntry.hash });
 
-	let clockOutId: string | null = null;
-	let latestEntry = { id: clockIn.id, hash: clockIn.hash };
-	if (endAt) {
-		const clockOutTimezoneCapture = resolveFallbackTimezoneCapture({
-			timestamp: endAt.toJSDate(),
-			timezone: "UTC",
-			timezoneSource: "backfill",
-		});
-		const clockOutHash = calculateHash({
-			employeeId: payload.employeeId,
-			type: "clock_out",
-			timestamp: endAt.toISO()!,
-			previousHash: latestEntry.hash,
-		});
-		const [clockOut] = await database
-			.insert(timeEntry)
-			.values({
-				employeeId: payload.employeeId,
-				organizationId: job.organizationId,
-				type: "clock_out",
-				timestamp: endAt.toJSDate(),
-				previousEntryId: latestEntry.id,
-				previousHash: latestEntry.hash,
-				hash: clockOutHash,
-				createdBy: job.committedBy,
-				...clockOutTimezoneCapture,
-			})
-			.returning({ id: timeEntry.id, hash: timeEntry.hash });
-		clockOutId = clockOut.id;
-		latestEntry = { id: clockOut.id, hash: clockOut.hash };
-	}
-
 	const [period] = await database
 		.insert(workPeriod)
 		.values({
 			employeeId: payload.employeeId,
 			organizationId: job.organizationId,
 			clockInId: clockIn.id,
-			clockOutId,
 			startTime: startAt.toJSDate(),
-			endTime: endAt?.toJSDate() ?? null,
-			durationMinutes: endAt ? Math.round(endAt.diff(startAt, "minutes").minutes) : null,
-			isActive: !endAt,
+			isActive: true,
 			projectId: attribution?.projectId ?? null,
 			isBillable: attribution?.isBillable ?? false,
 		})
 		.returning({ id: workPeriod.id });
-	// Imported work in a submitted period sends it back to the employee (#805); live work
+	// Imported live work in a submitted period sends it back to the employee (#805): it
 	// counts at its start.
 	await sendBackChangedPeriodSubmissions(database, {
 		organizationId: job.organizationId,
 		employeeId: payload.employeeId,
 		causedByUserId: job.committedBy,
-		work: [
-			workInterval(startAt.toJSDate(), endAt?.toJSDate() ?? startAt.toJSDate()),
-		],
+		work: [workInterval(startAt.toJSDate(), startAt.toJSDate())],
 	});
-	// Completed work changes the balance: the refresh commits with it, as in the adopted
-	// import (#1214). Endpoints are captured in UTC; the employee's local day may start on
-	// the previous UTC date, so the refresh covers it too.
-	if (endAt) {
-		const dirtyFromDate = instantFromDate(startAt.toJSDate())
-			.toZonedDateTimeISO("UTC")
-			.toPlainDate()
-			.subtract({ days: 1 })
-			.toString();
-		await markEmployeeWorkBalanceDirty(
-			{ employeeId: payload.employeeId, organizationId: job.organizationId, dirtyFromDate },
-			database,
-		);
-	}
 
 	await markCommitted(database, row.id, job, "work_period", period.id);
 }
@@ -717,8 +668,9 @@ function importedWorkCommand(
  * protection the claimed row must still route there, otherwise a reviewer
  * remapped it after routing and the attempt restarts. Receipt replay runs first
  * in every mode. Adopted organizations then use the completed-work operation,
- * which commits the whole graph or holds the row with its evidence; the others
- * keep the legacy writer.
+ * which commits the whole graph or holds the row with its evidence. The others
+ * create completed work through work records without a receipt (#1223), and keep
+ * the legacy writer for open work.
  */
 function commitReviewedWorkRow(
 	rowId: string,
@@ -768,7 +720,29 @@ function commitReviewedWorkRow(
 				if (attribution.kind === "held") {
 					return markHeld(database, claimed.id, job, attribution.hold);
 				}
-				await commitWorkPeriod(database, claimed, job, attribution.recorded);
+				const payload = claimed.normalizedPayload as unknown as WorkPeriodPayload;
+				await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
+				if (!payload.endsAt) {
+					await commitLegacyOpenWorkPeriod(database, claimed, job, attribution.recorded);
+					return { status: "committed" };
+				}
+				// Completed work is created through work records with its canonical work record
+				// and its effects, as in adopted organizations (#1223).
+				const created = await createImportedCompletedWork(scope, {
+					...scoped,
+					importerUserId: job.committedBy,
+					start: parseUtcInstant(payload.startsAt, "startsAt"),
+					end: parseUtcInstant(payload.endsAt, "endsAt"),
+					recorded: attribution.recorded,
+				});
+				if (created.kind === "held") return markHeld(database, claimed.id, job, created.hold);
+				await markCommitted(
+					database,
+					claimed.id,
+					job,
+					"work_period",
+					created.creation.segment.workPeriodId,
+				);
 				return { status: "committed" };
 			}
 			if (outcome.kind === "held") return markHeld(database, claimed.id, job, outcome.hold);

@@ -452,6 +452,8 @@ describe("scoped payroll work collection on PostgreSQL", () => {
 			[ids.organization, pending.period_id, ids.worker, ids.owner],
 		);
 		const open = await approvedWork(ids.worker, "2026-07-20");
+		// Created before the work above loses its end: open-ended work occupies everything after it.
+		const corrected = await approvedWork(ids.worker, "2026-07-22", "08:00", "09:00");
 		// Work whose end was never recorded, as a live clock-in leaves it.
 		await admin.query(
 			`update work_period set end_time = null, clock_out_id = null, duration_minutes = null,
@@ -463,7 +465,6 @@ describe("scoped payroll work collection on PostgreSQL", () => {
 			[open.record_id],
 		);
 		// Approved work whose correction still awaits a decision.
-		const corrected = await approvedWork(ids.worker, "2026-07-22", "08:00", "09:00");
 		await admin.query(
 			`insert into approval_request (organization_id, entity_type, entity_id, canonical_record_id,
 			   requested_by, approver_id, status, updated_at)
