@@ -1,0 +1,30 @@
+---
+title: Custom Fields
+description: Add your own fields to employees, projects and customers
+icon: ClipboardList
+---
+
+Custom fields let you record what Z8 has no built-in field for, such as a cost center, a shirt size or a salary band. Owners and admins manage them under **Settings → Custom fields**.
+
+## Fields
+
+Each field belongs to one record kind: employees, projects or customers. A record kind can have up to 25 active fields.
+
+- **Type:** text, number, date, select or yes/no. The type can't be changed after the field is created.
+- **Visibility:** the lowest role that sees the field's values: **Employee**, **Manager** or **Admin**.
+- **Edit level:** the lowest role that may change the values. It can't reach further than the visibility.
+- **Required:** forms ask for a value before they save.
+- **Tracked:** the field keeps dated values, each valid from a date, instead of a single value. Choose this when it is created; it can't be changed later.
+
+Archiving a field hides it from forms, reports and exports. Its values are kept, and restoring the field brings them back. Archived select options work the same way: they can't be chosen for new values, and records that use one keep it.
+
+## Custom fields in the API
+
+The [Public API](/docs/api-reference) and the [MCP server](/docs/api-reference/mcp) return custom fields with each employee, project and customer, keyed by field id. Each record kind also has an endpoint that lists its fields.
+
+- A key with a record kind's read scope, such as `employees:read`, reads only the fields with visibility **Employee**.
+- The scope `custom-fields:read-restricted` adds the **Manager** and **Admin** fields.
+- Values are read as of a date: today by default, or the date the integration passes.
+- The API is read-only: integrations can't change custom field values.
+
+See [API Keys](/docs/guide/admin-guide/api-keys#key-scopes) for the scopes.

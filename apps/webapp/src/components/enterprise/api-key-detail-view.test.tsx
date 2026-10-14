@@ -34,7 +34,7 @@ const detail: ApiKeyDetail = {
 		expiresAt: null,
 		lastRequest: "2026-10-10T08:00:00.000Z",
 		enabled: true,
-		scopes: ["employees:read", "absences:read-health"],
+		scopes: ["employees:read", "absences:read-health", "custom-fields:read-restricted"],
 		rateLimitEnabled: true,
 		rateLimitMax: 10,
 		rateLimitTimeWindow: 60_000,
@@ -71,6 +71,7 @@ describe("ApiKeyDetailView", () => {
 		expect(screen.getByRole("heading", { name: "Payroll sync" })).toBeTruthy();
 		expect(screen.getByText("Ada Admin (departed)")).toBeTruthy();
 		expect(screen.getByText("Read absence health detail")).toBeTruthy();
+		expect(screen.getByText("Read restricted custom fields")).toBeTruthy();
 		expect(screen.getByText("10 per minute")).toBeTruthy();
 		expect(screen.getByRole("link", { name: /All API keys/ }).getAttribute("href")).toBe(
 			"/settings/enterprise/api-keys",

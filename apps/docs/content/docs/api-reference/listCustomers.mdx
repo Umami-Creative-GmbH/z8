@@ -15,6 +15,11 @@ _openapi:
           tax data are never returned.
 
 
+          Each customer carries its custom field values as of `asOf` in
+          `customFields`, keyed by field id; `GET
+          /api/v1/customers/custom-fields` describes the fields.
+
+
           Requires the key scope `customers:read`.
 ---
 

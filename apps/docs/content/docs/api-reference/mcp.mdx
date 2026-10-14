@@ -13,7 +13,7 @@ Z8 offers the Public API as an [MCP](https://modelcontextprotocol.io) server, so
 - **Authentication:** an organization API key, sent as `Authorization: Bearer z8_org…`. Create one under **Settings → Enterprise → API Keys** (see [API Keys](/docs/guide/admin-guide/api-keys)).
 
 <Callout type="warn" title="Use a dedicated key for MCP">
-  Whatever a tool returns is sent to your MCP client's LLM provider. Create a separate key for MCP with only the scopes the assistant needs, and **without** `absences:read-health`, so health detail never leaves Z8.
+  Whatever a tool returns is sent to your MCP client's LLM provider. Create a separate key for MCP with only the scopes the assistant needs, and **without** `absences:read-health` and `custom-fields:read-restricted`, so health detail and the custom fields only managers or admins see never leave Z8.
 </Callout>
 
 ## Tools
@@ -25,8 +25,13 @@ The assistant sees only the tools its key's scopes allow. Calling a tool without
 | `list_work_periods` | [`GET /api/v1/work-periods`](/docs/api-reference/listWorkPeriods) | `time-entries:read` |
 | `list_absences` | [`GET /api/v1/absences`](/docs/api-reference/listAbsences) | `absences:read` |
 | `list_employees` | [`GET /api/v1/employees`](/docs/api-reference/listEmployees) | `employees:read` |
+| `list_employee_custom_fields` | [`GET /api/v1/employees/custom-fields`](/docs/api-reference/listEmployeeCustomFields) | `employees:read` |
 | `list_projects` | [`GET /api/v1/projects`](/docs/api-reference/listProjects) | `projects:read` |
+| `list_project_custom_fields` | [`GET /api/v1/projects/custom-fields`](/docs/api-reference/listProjectCustomFields) | `projects:read` |
 | `list_customers` | [`GET /api/v1/customers`](/docs/api-reference/listCustomers) | `customers:read` |
+| `list_customer_custom_fields` | [`GET /api/v1/customers/custom-fields`](/docs/api-reference/listCustomerCustomFields) | `customers:read` |
+
+`custom-fields:read-restricted` adds no tool of its own: it only widens which custom fields the employee, project and customer tools return.
 
 Each tool takes its endpoint's query parameters as arguments and returns the same page as structured content: `{ "data": [...], "nextCursor": "..." }`. To read the next page, the assistant passes `nextCursor` back as `cursor`.
 
@@ -35,6 +40,9 @@ The data rules are the same as for the API, and each tool's description repeats 
 - Work periods are UTC instants, each with the UTC offset where it was recorded. Running work has no end.
 - Absences are local calendar dates with an optional half day. Without `absences:read-health`, a sick absence is plain `absent`.
 - `list_work_periods` and `list_absences` require a `from`/`to` range of at most 366 days.
+- Employees, projects and customers carry `customFields`, keyed by field id. The `list_*_custom_fields` tools name each field; a select value carries its option's label inline.
+- Custom field values are read as of `asOf`, today in your organization's timezone unless the assistant passes a date. A tracked field can hold another value on another date.
+- Without `custom-fields:read-restricted`, only the custom fields every member sees are returned, in the values and in the field lists.
 
 ## Set up a client
 

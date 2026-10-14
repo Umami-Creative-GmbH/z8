@@ -24,6 +24,23 @@ export interface McpTool {
 	definition: McpToolDefinition;
 }
 
+/** `listWorkPeriods` → `list_work_periods`. */
+const toolNameOf = (operationId: string) =>
+	operationId.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+
+/** The custom field rules of one record kind's list tool and definitions tool (#822). */
+function customFieldRules(list: string, definitions: string): Record<string, string[]> {
+	return {
+		[list]: [
+			`\`customFields\` is keyed by field id: call \`${toolNameOf(definitions)}\` for each field's name and type. A select value carries its option's label inline.`,
+			"Custom field values are read as of `asOf`, today in the organization's timezone unless you pass one; a tracked field can hold another value on another date.",
+		],
+		[definitions]: [
+			`Use the field ids to read \`customFields\` in \`${toolNameOf(list)}\`. Fields only managers or admins see are listed only with the key scope \`custom-fields:read-restricted\`.`,
+		],
+	};
+}
+
 /**
  * Data rules the endpoint description leaves to the client, which an agent
  * would otherwise get wrong.
@@ -32,11 +49,10 @@ const AGENT_RULES: Record<string, string[]> = {
 	listWorkPeriods: [
 		"Show each time in the UTC offset recorded with it; never convert it to another timezone.",
 	],
+	...customFieldRules("listEmployees", "listEmployeeCustomFields"),
+	...customFieldRules("listProjects", "listProjectCustomFields"),
+	...customFieldRules("listCustomers", "listCustomerCustomFields"),
 };
-
-/** `listWorkPeriods` → `list_work_periods`. */
-const toolNameOf = (operationId: string) =>
-	operationId.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 
 function descriptionOf(endpoint: PublicApiEndpoint): string {
 	const hasRange = "from" in endpoint.query.shape && "to" in endpoint.query.shape;
