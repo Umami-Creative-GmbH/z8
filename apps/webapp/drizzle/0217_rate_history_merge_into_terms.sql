@@ -16,9 +16,14 @@
 --   gets their legacy period (0071 backfill), as every period reader does.
 -- - The open-ended rate row of an employee who is fixed today and has no terms is skipped and
 --   reported: nothing says when it ended.
--- Every conflict and skipped or ignored row goes to employee_rate_history_merge_report
--- (operator-only). Each affected employee gets one employee_wage_history_merge_note for the org
--- admins, and a dirty contract work balance from the earliest changed date.
+-- - An hourly employee whose wage lives only on employee.current_hourly_rate (no confirmed terms,
+--   no rate rows) gets confirmed hourly terms carrying it from the start of their latest
+--   employment period (or their start date), linked to that period. Without a known start the
+--   employee is reported instead. This runs here because 0218 drops the column.
+-- Every conflict (once per rate row and terms), every skipped or ignored row and every stored
+-- wage goes to employee_rate_history_merge_report (operator-only). Each affected employee gets one
+-- employee_wage_history_merge_note for the org admins, counting every rate row the merge acted on
+-- (a stored wage counts as one), and a dirty contract work balance from the earliest changed date.
 --
 -- The merge is idempotent: running it again changes nothing. #1164 drops the report table,
 -- employee_rate_history and these functions after verification; the note table stays.
@@ -26,13 +31,15 @@ CREATE TABLE "employee_rate_history_merge_report" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organization_id" text NOT NULL,
 	"employee_id" uuid NOT NULL,
-	"rate_history_id" uuid NOT NULL,
+	-- Null for a stored employee wage.
+	"rate_history_id" uuid,
 	"terms_id" uuid,
 	"reason" text NOT NULL,
 	"winning_value" numeric(10, 2),
 	"evidence" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "employeeRateHistoryMergeReport_rate_reason_unique" UNIQUE("organization_id","rate_history_id","reason"),
+	CONSTRAINT "employeeRateHistoryMergeReport_entry_unique" UNIQUE NULLS NOT DISTINCT
+		("organization_id","employee_id","rate_history_id","terms_id","reason"),
 	CONSTRAINT "employeeRateHistoryMergeReport_reason_check" CHECK ("reason" IN (
 		'terms_wage_kept',
 		'rate_wage_applied',
@@ -40,7 +47,8 @@ CREATE TABLE "employee_rate_history_merge_report" (
 		'fixed_without_terms_open_row',
 		'no_employment_period',
 		'superseded',
-		'empty_after_rounding'
+		'empty_after_rounding',
+		'employee_wage_migrated'
 	))
 );
 --> statement-breakpoint
@@ -138,7 +146,53 @@ AS $$
 		 "winning_value", "evidence")
 	VALUES (p_organization_id, p_employee_id, p_rate_history_id, p_terms_id, p_reason,
 		p_winning_value, p_evidence)
-	ON CONFLICT ("organization_id", "rate_history_id", "reason") DO NOTHING
+	ON CONFLICT ON CONSTRAINT "employeeRateHistoryMergeReport_entry_unique" DO NOTHING
+$$;
+--> statement-breakpoint
+-- Marks the employee's contract work balance dirty from p_from.
+CREATE OR REPLACE FUNCTION "employee_rate_history_merge_mark_dirty"(
+	p_organization_id text,
+	p_employee_id uuid,
+	p_from date
+)
+RETURNS void
+LANGUAGE sql
+AS $$
+	INSERT INTO public."employee_work_balance" AS w (
+		"employee_id", "organization_id", "actual_minutes", "required_minutes", "balance_minutes",
+		"computed_from_date", "computed_through_date", "computed_at", "is_dirty",
+		"dirty_from_date", "refresh_requested_at", "updated_at"
+	)
+	VALUES (
+		p_employee_id, p_organization_id, 0, 0, 0, p_from, p_from, now(), true,
+		p_from, now(), now()
+	)
+	ON CONFLICT ("organization_id", "employee_id") DO UPDATE SET
+		"is_dirty" = true,
+		"dirty_from_date" = CASE
+			WHEN w."is_dirty" AND w."dirty_from_date" IS NULL THEN NULL
+			WHEN w."dirty_from_date" IS NULL OR w."dirty_from_date" > EXCLUDED."dirty_from_date"
+				THEN EXCLUDED."dirty_from_date"
+			ELSE w."dirty_from_date"
+		END,
+		"refresh_requested_at" = now(),
+		"updated_at" = now()
+$$;
+--> statement-breakpoint
+-- The admin note for an employee the merge affected; the first run's count stays.
+CREATE OR REPLACE FUNCTION "employee_rate_history_merge_note"(
+	p_organization_id text,
+	p_employee_id uuid,
+	p_timezone text,
+	p_adjusted_count integer
+)
+RETURNS void
+LANGUAGE sql
+AS $$
+	INSERT INTO public."employee_wage_history_merge_note"
+		("organization_id", "employee_id", "merged_on", "adjusted_count")
+	VALUES (p_organization_id, p_employee_id, (now() AT TIME ZONE p_timezone)::date, p_adjusted_count)
+	ON CONFLICT ("organization_id", "employee_id") DO NOTHING
 $$;
 --> statement-breakpoint
 -- Merges one employee's rate history; returns the number of terms rows created or split.
@@ -160,6 +214,9 @@ DECLARE
 	v_wages numeric(10, 2)[];
 	v_original_until timestamp;
 	v_piece_count integer;
+	v_piece_ids uuid[];
+	v_piece_id uuid;
+	v_acted uuid[] := '{}';
 	v_changed integer := 0;
 	v_dirty_from date;
 	v_terms record;
@@ -372,21 +429,6 @@ BEGIN
 			)
 		ORDER BY lower(t."span")
 	LOOP
-		PERFORM "employee_rate_history_merge_report_row"(
-			p_organization_id, p_employee_id, rate_id, v_terms."id",
-			CASE WHEN v_terms."updated_at" >= s."created_at" THEN 'terms_wage_kept' ELSE 'rate_wage_applied' END,
-			CASE WHEN v_terms."updated_at" >= s."created_at" THEN v_terms."rate" ELSE s."rate" END,
-			jsonb_build_object('rateWage', s."rate", 'rateCurrency', s."currency",
-				'rateCreatedAt', s."created_at", 'termsWage', v_terms."rate",
-				'termsUpdatedAt', v_terms."updated_at",
-				'from', lower(s."span" * v_terms."span"), 'until', upper(s."span" * v_terms."span"))
-		)
-		FROM pg_temp."rate_history_merge_segment" AS s
-		CROSS JOIN LATERAL unnest(s."rate_ids") AS rate_id
-		WHERE s."span" && v_terms."span"
-			AND v_terms."rate" IS NOT NULL
-			AND s."rate" <> v_terms."rate";
-
 		WITH parts AS (
 			SELECT s."span" * v_terms."span" AS span,
 				CASE
@@ -427,42 +469,78 @@ BEGIN
 		FROM pieces AS pc;
 
 		v_piece_count := coalesce(array_length(v_spans, 1), 0);
-		CONTINUE WHEN v_piece_count = 0
-			OR (v_piece_count = 1 AND v_wages[1] IS NOT DISTINCT FROM v_terms."rate");
+		v_piece_ids := ARRAY[v_terms."id"];
+		IF v_piece_count = 0
+			OR (v_piece_count = 1 AND v_wages[1] IS NOT DISTINCT FROM v_terms."rate") THEN
+			-- Nothing to change: the terms keep their span and wage.
+			v_spans := ARRAY[v_terms."span"];
+		ELSE
+			SELECT h."valid_until" INTO v_original_until
+			FROM public."employee_employment_history" AS h
+			WHERE h."id" = v_terms."id" AND h."organization_id" = p_organization_id;
 
-		SELECT h."valid_until" INTO v_original_until
-		FROM public."employee_employment_history" AS h
-		WHERE h."id" = v_terms."id" AND h."organization_id" = p_organization_id;
+			FOR i IN 1..v_piece_count LOOP
+				IF v_wages[i] IS DISTINCT FROM v_terms."rate" THEN
+					v_dirty_from := LEAST(v_dirty_from, lower(v_spans[i]));
+				END IF;
+				IF i = 1 THEN
+					UPDATE public."employee_employment_history" AS h
+					SET "valid_until" = CASE WHEN v_piece_count = 1 THEN v_original_until ELSE upper(v_spans[1])::timestamp END,
+						"hourly_rate" = v_wages[1],
+						"updated_at" = v_now
+					WHERE h."id" = v_terms."id" AND h."organization_id" = p_organization_id;
+				ELSE
+					INSERT INTO public."employee_employment_history" (
+						"employee_id", "organization_id", "employment_period_id", "valid_from", "valid_until",
+						"status", "contract_type", "weekly_contract_minutes", "probation_starts_on",
+						"probation_ends_on", "work_model", "work_policy_id", "hourly_rate", "currency",
+						"change_reason", "review_state", "created_by", "created_at", "updated_by", "updated_at"
+					)
+					SELECT
+						h."employee_id", h."organization_id", h."employment_period_id",
+						lower(v_spans[i])::timestamp,
+						CASE WHEN i = v_piece_count THEN v_original_until ELSE upper(v_spans[i])::timestamp END,
+						h."status", h."contract_type", h."weekly_contract_minutes", h."probation_starts_on",
+						h."probation_ends_on", h."work_model", h."work_policy_id", v_wages[i], h."currency",
+						h."change_reason", h."review_state", h."created_by", v_now, h."updated_by", v_now
+					FROM public."employee_employment_history" AS h
+					WHERE h."id" = v_terms."id" AND h."organization_id" = p_organization_id
+					RETURNING "id" INTO v_piece_id;
+					v_piece_ids := v_piece_ids || v_piece_id;
+				END IF;
+				v_changed := v_changed + 1;
+			END LOOP;
+		END IF;
 
-		FOR i IN 1..v_piece_count LOOP
-			IF v_wages[i] IS DISTINCT FROM v_terms."rate" THEN
-				v_dirty_from := LEAST(v_dirty_from, lower(v_spans[i]));
-			END IF;
-			IF i = 1 THEN
-				UPDATE public."employee_employment_history" AS h
-				SET "valid_until" = CASE WHEN v_piece_count = 1 THEN v_original_until ELSE upper(v_spans[1])::timestamp END,
-					"hourly_rate" = v_wages[1],
-					"updated_at" = v_now
-				WHERE h."id" = v_terms."id" AND h."organization_id" = p_organization_id;
-			ELSE
-				INSERT INTO public."employee_employment_history" (
-					"employee_id", "organization_id", "employment_period_id", "valid_from", "valid_until",
-					"status", "contract_type", "weekly_contract_minutes", "probation_starts_on",
-					"probation_ends_on", "work_model", "work_policy_id", "hourly_rate", "currency",
-					"change_reason", "review_state", "created_by", "created_at", "updated_by", "updated_at"
-				)
-				SELECT
-					h."employee_id", h."organization_id", h."employment_period_id",
-					lower(v_spans[i])::timestamp,
-					CASE WHEN i = v_piece_count THEN v_original_until ELSE upper(v_spans[i])::timestamp END,
-					h."status", h."contract_type", h."weekly_contract_minutes", h."probation_starts_on",
-					h."probation_ends_on", h."work_model", h."work_policy_id", v_wages[i], h."currency",
-					h."change_reason", h."review_state", h."created_by", v_now, h."updated_by", v_now
-				FROM public."employee_employment_history" AS h
-				WHERE h."id" = v_terms."id" AND h."organization_id" = p_organization_id;
-			END IF;
-			v_changed := v_changed + 1;
-		END LOOP;
+		-- Every rate row whose wage differs from the terms: applied, kept, or filling in a missing
+		-- wage.
+		v_acted := v_acted || ARRAY(
+			SELECT rate_id
+			FROM pg_temp."rate_history_merge_segment" AS s
+			CROSS JOIN LATERAL unnest(s."rate_ids") AS rate_id
+			WHERE s."span" && v_terms."span" AND s."rate" IS DISTINCT FROM v_terms."rate"
+		);
+
+		-- Each conflict once per rate row and terms, naming the terms that carry its dates after
+		-- the split, so a re-run finds every conflict it would report already recorded.
+		PERFORM "employee_rate_history_merge_report_row"(
+			p_organization_id, p_employee_id, rate_id,
+			(
+				SELECT v_piece_ids[k] FROM generate_subscripts(v_spans, 1) AS k
+				WHERE v_spans[k] @> lower(s."span" * v_terms."span")
+			),
+			CASE WHEN v_terms."updated_at" >= s."created_at" THEN 'terms_wage_kept' ELSE 'rate_wage_applied' END,
+			CASE WHEN v_terms."updated_at" >= s."created_at" THEN v_terms."rate" ELSE s."rate" END,
+			jsonb_build_object('rateWage', s."rate", 'rateCurrency', s."currency",
+				'rateCreatedAt', s."created_at", 'termsWage', v_terms."rate",
+				'termsUpdatedAt', v_terms."updated_at",
+				'from', lower(s."span" * v_terms."span"), 'until', upper(s."span" * v_terms."span"))
+		)
+		FROM pg_temp."rate_history_merge_segment" AS s
+		CROSS JOIN LATERAL unnest(s."rate_ids") AS rate_id
+		WHERE s."span" && v_terms."span"
+			AND v_terms."rate" IS NOT NULL
+			AND s."rate" <> v_terms."rate";
 	END LOOP;
 
 	-- Fixed terms: the rate rows under them are ignored.
@@ -507,6 +585,7 @@ BEGIN
 				);
 				v_changed := v_changed + 1;
 				v_dirty_from := LEAST(v_dirty_from, lower(v_piece));
+				v_acted := v_acted || v_segment."rate_ids";
 			END LOOP;
 			v_gap := v_gap - datemultirange(v_period.dates);
 		END LOOP;
@@ -522,46 +601,125 @@ BEGIN
 	END LOOP;
 
 	IF v_dirty_from IS NOT NULL THEN
-		INSERT INTO public."employee_work_balance" AS w (
-			"employee_id", "organization_id", "actual_minutes", "required_minutes", "balance_minutes",
-			"computed_from_date", "computed_through_date", "computed_at", "is_dirty",
-			"dirty_from_date", "refresh_requested_at", "updated_at"
-		)
-		VALUES (
-			p_employee_id, p_organization_id, 0, 0, 0, v_dirty_from, v_dirty_from, now(), true,
-			v_dirty_from, now(), now()
-		)
-		ON CONFLICT ("organization_id", "employee_id") DO UPDATE SET
-			"is_dirty" = true,
-			"dirty_from_date" = CASE
-				WHEN w."is_dirty" AND w."dirty_from_date" IS NULL THEN NULL
-				WHEN w."dirty_from_date" IS NULL OR w."dirty_from_date" > EXCLUDED."dirty_from_date"
-					THEN EXCLUDED."dirty_from_date"
-				ELSE w."dirty_from_date"
-			END,
-			"refresh_requested_at" = now(),
-			"updated_at" = now();
+		PERFORM "employee_rate_history_merge_mark_dirty"(p_organization_id, p_employee_id, v_dirty_from);
 	END IF;
 
-	IF v_changed > 0 OR EXISTS (
-		SELECT 1 FROM public."employee_rate_history_merge_report" AS rp
-		WHERE rp."organization_id" = p_organization_id AND rp."employee_id" = p_employee_id
-	) THEN
-		INSERT INTO public."employee_wage_history_merge_note"
-			("organization_id", "employee_id", "merged_on", "adjusted_count")
-		SELECT p_organization_id, p_employee_id, (now() AT TIME ZONE p_timezone)::date,
-			count(DISTINCT rp."rate_history_id")::integer
+	-- The note counts every rate row the merge acted on: rows that created or split terms,
+	-- conflicted, or were skipped or ignored (all of the latter are reported).
+	v_acted := v_acted || ARRAY(
+		SELECT rp."rate_history_id"
 		FROM public."employee_rate_history_merge_report" AS rp
 		WHERE rp."organization_id" = p_organization_id AND rp."employee_id" = p_employee_id
-		ON CONFLICT ("organization_id", "employee_id") DO NOTHING;
+			AND rp."rate_history_id" IS NOT NULL
+	);
+	IF cardinality(v_acted) > 0 THEN
+		PERFORM "employee_rate_history_merge_note"(
+			p_organization_id, p_employee_id, p_timezone,
+			(SELECT count(DISTINCT acted)::integer FROM unnest(v_acted) AS acted)
+		);
 	END IF;
 
 	RETURN v_changed;
 END;
 $$;
 --> statement-breakpoint
--- Merges the rate history of one organization, or of every organization when called with NULL.
--- Returns the number of terms rows created or split. Idempotent.
+-- D9: an hourly employee whose wage lives only on employee.current_hourly_rate (no confirmed terms
+-- and no rate rows) gets confirmed hourly terms with that wage from the start of their latest
+-- employment period, or their start date, and the terms form's defaults. Without a known start the
+-- employee is reported instead. Returns the number of terms rows created. The column is read
+-- through to_jsonb, so once 0218 has dropped it this finds no wage and does nothing.
+CREATE OR REPLACE FUNCTION "employee_rate_history_merge_employee_wage"(
+	p_organization_id text,
+	p_employee_id uuid,
+	p_timezone text
+)
+RETURNS integer
+LANGUAGE plpgsql
+AS $$
+DECLARE
+	v_now timestamp := now() AT TIME ZONE 'UTC';
+	v_wage numeric(10, 2);
+	v_user_id text;
+	v_start_date timestamp;
+	v_period record;
+	v_valid_from timestamp;
+	v_valid_until timestamp;
+	v_terms_id uuid;
+	v_evidence jsonb;
+BEGIN
+	-- The same row lock the terms actions take before changing an employee's terms.
+	SELECT (to_jsonb(e) ->> 'current_hourly_rate')::numeric(10, 2), e."user_id", e."start_date"
+	INTO v_wage, v_user_id, v_start_date
+	FROM public."employee" AS e
+	WHERE e."id" = p_employee_id
+		AND e."organization_id" = p_organization_id
+		AND e."contract_type" = 'hourly'
+	FOR UPDATE;
+	IF NOT FOUND OR v_wage IS NULL
+		OR EXISTS (
+			SELECT 1 FROM public."employee_employment_history" AS h
+			WHERE h."organization_id" = p_organization_id
+				AND h."employee_id" = p_employee_id
+				AND h."review_state" = 'confirmed'
+		)
+		OR EXISTS (
+			SELECT 1 FROM public."employee_rate_history" AS r
+			WHERE r."organization_id" = p_organization_id AND r."employee_id" = p_employee_id
+		)
+	THEN
+		RETURN 0;
+	END IF;
+
+	PERFORM "employee_employment_period_backfill_legacy"(p_organization_id, p_employee_id);
+
+	SELECT p."id", p."started_at", p."ended_at" INTO v_period
+	FROM public."employee_employment_period" AS p
+	WHERE p."organization_id" = p_organization_id AND p."employee_id" = p_employee_id
+	ORDER BY (p."status" = 'open') DESC, p."started_at" DESC NULLS LAST, p."created_at" DESC, p."id"
+	LIMIT 1;
+
+	v_valid_from := coalesce(v_period."started_at" AT TIME ZONE 'UTC', v_start_date);
+	v_valid_until := v_period."ended_at" AT TIME ZONE 'UTC';
+	v_evidence := jsonb_build_object('hourlyRate', v_wage, 'source', 'employee.current_hourly_rate',
+		'from', v_valid_from, 'until', v_valid_until);
+
+	IF v_period."id" IS NULL OR v_valid_from IS NULL OR v_valid_until <= v_valid_from THEN
+		PERFORM "employee_rate_history_merge_report_row"(
+			p_organization_id, p_employee_id, NULL, NULL, 'no_employment_period', NULL, v_evidence
+		);
+		PERFORM "employee_rate_history_merge_note"(p_organization_id, p_employee_id, p_timezone, 1);
+		RETURN 0;
+	END IF;
+
+	-- Nobody recorded who set the stored wage: the terms name the employee's own user.
+	INSERT INTO public."employee_employment_history" (
+		"employee_id", "organization_id", "employment_period_id", "valid_from", "valid_until",
+		"status", "contract_type", "weekly_contract_minutes", "work_model", "work_policy_id",
+		"hourly_rate", "currency", "change_reason", "review_state", "created_by",
+		"created_at", "updated_at"
+	)
+	VALUES (
+		p_employee_id, p_organization_id, v_period."id", v_valid_from, v_valid_until,
+		'active', 'hourly', 2400, 'onsite', NULL, v_wage, 'EUR', 'Migrated from employee wage',
+		'confirmed', v_user_id, v_now, v_now
+	)
+	RETURNING "id" INTO v_terms_id;
+
+	PERFORM "employee_rate_history_merge_report_row"(
+		p_organization_id, p_employee_id, NULL, v_terms_id, 'employee_wage_migrated', v_wage, v_evidence
+	);
+	PERFORM "employee_rate_history_merge_mark_dirty"(
+		p_organization_id, p_employee_id,
+		"employee_rate_history_merge_calendar_date"(v_valid_from AT TIME ZONE 'UTC', p_timezone)
+	);
+	PERFORM "employee_rate_history_merge_note"(p_organization_id, p_employee_id, p_timezone, 1);
+	RETURN 1;
+END;
+$$;
+--> statement-breakpoint
+-- Merges the rate history and the stored employee wages of one organization, or of every
+-- organization when called with NULL. Returns the number of terms rows created or split.
+-- Idempotent.
 CREATE OR REPLACE FUNCTION "employee_rate_history_merge_into_terms"(
 	p_organization_id text DEFAULT NULL
 )
@@ -581,10 +739,7 @@ BEGIN
 				ELSE 'UTC'
 			END AS timezone
 		FROM public."organization" AS o
-		WHERE (p_organization_id IS NULL OR o."id" = p_organization_id)
-			AND EXISTS (
-				SELECT 1 FROM public."employee_rate_history" AS r WHERE r."organization_id" = o."id"
-			)
+		WHERE p_organization_id IS NULL OR o."id" = p_organization_id
 		ORDER BY o."id"
 	LOOP
 		FOR v_employee IN
@@ -594,6 +749,19 @@ BEGIN
 			ORDER BY r."employee_id"
 		LOOP
 			v_changed := v_changed + "employee_rate_history_merge_employee"(
+				v_organization."id", v_employee."employee_id", v_organization.timezone
+			);
+		END LOOP;
+
+		FOR v_employee IN
+			SELECT e."id" AS "employee_id"
+			FROM public."employee" AS e
+			WHERE e."organization_id" = v_organization."id"
+				AND e."contract_type" = 'hourly'
+				AND to_jsonb(e) ->> 'current_hourly_rate' IS NOT NULL
+			ORDER BY e."id"
+		LOOP
+			v_changed := v_changed + "employee_rate_history_merge_employee_wage"(
 				v_organization."id", v_employee."employee_id", v_organization.timezone
 			);
 		END LOOP;
@@ -608,7 +776,7 @@ DECLARE
 BEGIN
 	v_changed := "employee_rate_history_merge_into_terms"(NULL);
 	IF v_changed > 0 THEN
-		RAISE WARNING 'Rate history merge (#1176): % employment terms rows created or split; see employee_rate_history_merge_report', v_changed;
+		RAISE WARNING 'Rate history merge (#1176): % employment terms rows created or split from rate history and stored employee wages; see employee_rate_history_merge_report', v_changed;
 	END IF;
 END;
 $$;
