@@ -183,6 +183,9 @@ describe("VacationPolicyForm", () => {
 				/>,
 			);
 
+			// The panel focuses its first field on an animation frame; wait before typing elsewhere.
+			await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText("Policy Name")));
+
 			await user.clear(screen.getByLabelText("Statutory Minimum Days"));
 			await user.type(screen.getByLabelText("Statutory Minimum Days"), value);
 			await user.click(screen.getByRole("button", { name: "Update Policy" }));
