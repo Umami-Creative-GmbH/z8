@@ -7,8 +7,7 @@ import { pathToFileURL } from "node:url";
 // A pattern that matches nothing fails the job, so a renamed suite cannot drop out unnoticed.
 const actions = "apps/webapp/src/app/[locale]/(app)/time-tracking/actions";
 export const workRecordsSuitePatterns = [
-  // Optional only until the work records module's first PostgreSQL suite lands.
-  { pattern: "apps/webapp/src/lib/time-tracking/work-records/**/*.integration.test.ts", optional: true },
+  { pattern: "apps/webapp/src/lib/time-tracking/work-records/**/*.integration.test.ts" },
   { pattern: `${actions}/work-period-amendment*.integration.test.ts` },
   { pattern: `${actions}/work-billability-amendment*.integration.test.ts` },
   { pattern: `${actions}/work-period-split*.integration.test.ts` },
@@ -30,10 +29,10 @@ function patternExpression(pattern) {
 /** Returns the matching suites relative to apps/webapp, where the runner resolves them. */
 export function selectWorkRecordsSuites(files) {
   const selected = new Set();
-  for (const { pattern, optional } of workRecordsSuitePatterns) {
+  for (const { pattern } of workRecordsSuitePatterns) {
     const expression = patternExpression(pattern);
     const matches = files.filter(file => expression.test(file));
-    if (!matches.length && !optional) throw new Error(`No PostgreSQL suite matches ${pattern}`);
+    if (!matches.length) throw new Error(`No PostgreSQL suite matches ${pattern}`);
     for (const file of matches) selected.add(file.slice("apps/webapp/".length));
   }
   return [...selected].sort();
