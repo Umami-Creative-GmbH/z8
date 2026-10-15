@@ -80,7 +80,6 @@ import {
 	type WorkVehicleUse,
 } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { vehicleColumnsMatch } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-sql";
-import { holdFinalizerEmployeeLocks } from "@/lib/time-tracking/finalizer-employee-locks";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import { assertWorkOccupancyFree } from "@/lib/time-tracking/work-occupancy";
 import {
@@ -96,10 +95,11 @@ import {
 	type WorkRecordRefusal,
 	workRecordScopeForFinalizer,
 } from "@/lib/time-tracking/work-records";
-import type {
-	SealedWorkTransactionScope,
-	WorkTransactionClient,
-	WorkTransactionDatabase,
+import {
+	holdFinalizerEmployeeLocks,
+	type SealedWorkTransactionScope,
+	type WorkTransactionClient,
+	type WorkTransactionDatabase,
 } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";

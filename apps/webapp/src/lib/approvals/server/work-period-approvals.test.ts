@@ -79,7 +79,8 @@ vi.mock("@/lib/notifications/triggers", () => notificationMocks);
 // record agreement and effects are verified against PostgreSQL
 // (work-records/amend.integration.test.ts, clocking.policy-break-split).
 const workRecordChanges = vi.hoisted(() => [] as Array<Record<string, unknown>>);
-vi.mock("@/lib/time-tracking/finalizer-employee-locks", () => ({
+vi.mock("@/lib/time-tracking/work-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/work-transaction")>()),
 	holdFinalizerEmployeeLocks: async () => undefined,
 }));
 vi.mock("@/lib/time-tracking/work-records", async (importOriginal) => {

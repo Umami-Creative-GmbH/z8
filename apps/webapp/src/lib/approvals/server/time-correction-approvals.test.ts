@@ -177,7 +177,8 @@ const workRecords = vi.hoisted(() => ({
 	refusal: null as null | ({ kind: string } & Record<string, unknown>),
 	throws: null as Error | null,
 }));
-vi.mock("@/lib/time-tracking/finalizer-employee-locks", () => ({
+vi.mock("@/lib/time-tracking/work-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/work-transaction")>()),
 	holdFinalizerEmployeeLocks: async () => undefined,
 }));
 vi.mock("@/lib/time-tracking/work-records", async (importOriginal) => {
