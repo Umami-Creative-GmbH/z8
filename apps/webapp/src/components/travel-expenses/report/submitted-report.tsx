@@ -6,7 +6,12 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { getTravelExpenseReportSubmission } from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Timeline, TimelineItem } from "@/components/ui/timeline";
 import { queryKeys } from "@/lib/query/keys";
@@ -18,8 +23,13 @@ import { formatRecordedInstant } from "./format";
 import { AdjustmentNotice, ReportAdjustmentsPanel } from "./report-adjustments";
 import { ReportHeader } from "./report-header";
 import { ReopenedNotice, ReopenReportPanel } from "./report-reopen";
-import { ReturnedNotice, SubmissionCycleLinks, WithdrawReportButton } from "./report-review-cycle";
+import {
+	ReturnedNotice,
+	SubmissionCycleLinks,
+	WithdrawReportButton,
+} from "./report-review-cycle";
 import { ReportTotals } from "./report-summary";
+import { SubmittedReportReceipts } from "./submitted-report-receipts";
 
 const formatInstant = formatRecordedInstant;
 
@@ -35,17 +45,34 @@ function historyTitle(t: Translate, label: HistoryEvent["label"]): string {
 			"Approval recorded",
 		),
 		approved: t("travelExpenses.report.history.step.approved", "Approved"),
-		self_approved: t("travelExpenses.report.history.step.selfApproved", "Approved automatically"),
+		self_approved: t(
+			"travelExpenses.report.history.step.selfApproved",
+			"Approved automatically",
+		),
 		rejected: t("travelExpenses.report.history.step.rejected", "Rejected"),
-		returned: t("travelExpenses.report.history.step.returned", "Returned for changes"),
+		returned: t(
+			"travelExpenses.report.history.step.returned",
+			"Returned for changes",
+		),
 		withdrawn: t("travelExpenses.report.history.step.withdrawn", "Withdrawn"),
-		reopened: t("travelExpenses.report.history.step.reopened", "Reopened for correction"),
+		reopened: t(
+			"travelExpenses.report.history.step.reopened",
+			"Reopened for correction",
+		),
+		receipt_added: t(
+			"travelExpenses.report.history.step.receiptAdded",
+			"Receipt added after submission",
+		),
 	};
 	return titles[label];
 }
 
 /** Who acted (and, across several submissions, in which one) under a timeline title. */
-function historyDetail(t: Translate, event: HistoryEvent, showCycle: boolean): string {
+function historyDetail(
+	t: Translate,
+	event: HistoryEvent,
+	showCycle: boolean,
+): string {
 	const actor =
 		event.label === "self_approved"
 			? t(
@@ -57,7 +84,10 @@ function historyDetail(t: Translate, event: HistoryEvent, showCycle: boolean): s
 					? t(
 							"travelExpenses.report.history.detail.approvalRecordedByDeputy",
 							"By {name} (deputy for {actingForName}); awaiting further approval.",
-							{ name: event.actorName ?? "—", actingForName: event.actingForName },
+							{
+								name: event.actorName ?? "—",
+								actingForName: event.actingForName,
+							},
 						)
 					: t(
 							"travelExpenses.report.history.detail.approvalRecorded",
@@ -65,18 +95,26 @@ function historyDetail(t: Translate, event: HistoryEvent, showCycle: boolean): s
 							{ name: event.actorName ?? "—" },
 						)
 				: event.actingForName
-					? t("travelExpenses.report.history.detail.byDeputy", "By {name} (deputy for {actingForName})", {
-							name: event.actorName ?? "—",
-							actingForName: event.actingForName,
-						})
+					? t(
+							"travelExpenses.report.history.detail.byDeputy",
+							"By {name} (deputy for {actingForName})",
+							{
+								name: event.actorName ?? "—",
+								actingForName: event.actingForName,
+							},
+						)
 					: t("travelExpenses.report.history.detail.by", "By {name}", {
 							name: event.actorName ?? "—",
 						});
 	return showCycle
-		? t("travelExpenses.report.history.detail.inCycle", "Submission {number} · {detail}", {
-				number: event.cycle,
-				detail: actor,
-			})
+		? t(
+				"travelExpenses.report.history.detail.inCycle",
+				"Submission {number} · {detail}",
+				{
+					number: event.cycle,
+					detail: actor,
+				},
+			)
 		: actor;
 }
 
@@ -88,10 +126,12 @@ function historyDetail(t: Translate, event: HistoryEvent, showCycle: boolean): s
 export function SubmittedTravelExpenseReport({
 	reportId,
 	cycle,
+	maxReceiptBytes,
 }: {
 	reportId: string;
 	/** An earlier submission cycle to show (#603); the latest when omitted. */
 	cycle?: number;
+	maxReceiptBytes?: number;
 }) {
 	const { t } = useTranslate();
 	const { data, isLoading, isFetching, isError, refetch } = useQuery({
@@ -120,7 +160,9 @@ export function SubmittedTravelExpenseReport({
 	if (isLoading || !data) {
 		return (
 			<div>
-				<p className="sr-only">{t("travelExpenses.report.loading", "Loading expense…")}</p>
+				<p className="sr-only">
+					{t("travelExpenses.report.loading", "Loading expense…")}
+				</p>
 				<Skeleton aria-hidden="true" className="h-96 w-full" />
 			</div>
 		);
@@ -133,8 +175,11 @@ export function SubmittedTravelExpenseReport({
 			<ReportHeader
 				source={{
 					kind: data.facts.reportKind,
-					itemType: data.facts.reportKind === "trip" ? null : (firstItem?.type ?? null),
-					title: data.facts.trip ? data.facts.trip.purpose : (firstItem?.description ?? null),
+					itemType:
+						data.facts.reportKind === "trip" ? null : (firstItem?.type ?? null),
+					title: data.facts.trip
+						? data.facts.trip.purpose
+						: (firstItem?.description ?? null),
 				}}
 				status={data.status}
 			/>
@@ -143,7 +188,14 @@ export function SubmittedTravelExpenseReport({
 			<DecisionNotice decision={data.decision} />
 
 			{data.facts.trip && <SubmittedTrip trip={data.facts.trip} />}
-			<SubmittedExpenses reportId={reportId} data={data} />
+			<SubmittedExpenses
+				maxReceiptBytes={maxReceiptBytes}
+				reportId={reportId}
+				data={data}
+				onChanged={() => {
+					void refetch();
+				}}
+			/>
 			<ReportTotals
 				id={`${reportId}-submitted`}
 				totals={{ ...data.facts.totals, excludedItemCount: 0 }}
@@ -179,17 +231,24 @@ function SubmissionHeading({
 		<div className="flex flex-wrap items-center gap-2">
 			<p className="text-sm text-muted-foreground">
 				{data.latestCycle > 1
-					? t("travelExpenses.report.submissionNumberAt", "Submission {number}, submitted {date}", {
-							number: data.submissionCycle,
-							date: formatInstant(locale, data.submittedAt),
-						})
+					? t(
+							"travelExpenses.report.submissionNumberAt",
+							"Submission {number}, submitted {date}",
+							{
+								number: data.submissionCycle,
+								date: formatInstant(locale, data.submittedAt),
+							},
+						)
 					: t("travelExpenses.report.submittedAt", "Submitted {date}", {
 							date: formatInstant(locale, data.submittedAt),
 						})}
 			</p>
 			{data.access === "owner" && latest && data.status === "submitted" && (
 				<div className="ml-auto">
-					<WithdrawReportButton reportId={reportId} submissionCycle={data.submissionCycle} />
+					<WithdrawReportButton
+						reportId={reportId}
+						submissionCycle={data.submissionCycle}
+					/>
 				</div>
 			)}
 		</div>
@@ -228,7 +287,9 @@ function SubmissionNotices({
 					)}
 				</p>
 			)}
-			{latest && data.status === "submitted" && <AwaitingReviewNotice data={data} />}
+			{latest && data.status === "submitted" && (
+				<AwaitingReviewNotice data={data} />
+			)}
 		</>
 	);
 }
@@ -239,22 +300,33 @@ function AwaitingReviewNotice({ data }: { data: SubmittedReportView }) {
 	return (
 		<p className="text-sm">
 			{data.reviewerName
-				? t("travelExpenses.report.awaitingReviewer", "Waiting for review by {name}.", {
-						name: data.reviewerName,
-					})
+				? t(
+						"travelExpenses.report.awaitingReviewer",
+						"Waiting for review by {name}.",
+						{
+							name: data.reviewerName,
+						},
+					)
 				: t("travelExpenses.report.awaitingReview", "Waiting for review.")}{" "}
 			{data.access === "reviewer"
 				? t(
 						"travelExpenses.report.decideInInbox",
 						"Approve, return or reject the whole report in the Approvals inbox.",
 					)
-				: t("travelExpenses.report.frozenNotice", "The submitted report can no longer be edited.")}
+				: t(
+						"travelExpenses.report.frozenNotice",
+						"The submitted report can no longer be edited.",
+					)}
 		</p>
 	);
 }
 
 /** The final decision on this submission, if any. */
-function DecisionNotice({ decision }: { decision: SubmittedReportView["decision"] }) {
+function DecisionNotice({
+	decision,
+}: {
+	decision: SubmittedReportView["decision"];
+}) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	if (decision?.outcome === "rejected") {
@@ -266,17 +338,25 @@ function DecisionNotice({ decision }: { decision: SubmittedReportView["decision"
 						? t(
 								"travelExpenses.report.rejectedByDeputy",
 								"Rejected by {name} (deputy for {actingForName})",
-								{ name: decision.deciderName ?? "—", actingForName: decision.actingForName },
+								{
+									name: decision.deciderName ?? "—",
+									actingForName: decision.actingForName,
+								},
 							)
 						: t("travelExpenses.report.rejectedBy", "Rejected by {name}", {
 								name: decision.deciderName ?? "—",
 							})}
 				</AlertTitle>
-				{decision.reason && <AlertDescription>{decision.reason}</AlertDescription>}
+				{decision.reason && (
+					<AlertDescription>{decision.reason}</AlertDescription>
+				)}
 			</Alert>
 		);
 	}
-	if (decision?.outcome === "approved" && decision.basis === "owner_no_other_reviewer") {
+	if (
+		decision?.outcome === "approved" &&
+		decision.basis === "owner_no_other_reviewer"
+	) {
 		return (
 			<p className="text-sm">
 				{t(
@@ -300,10 +380,14 @@ function DecisionNotice({ decision }: { decision: SubmittedReportView["decision"
 								date: formatInstant(locale, decision.decidedAt),
 							},
 						)
-					: t("travelExpenses.report.approvedBy", "Approved by {name} on {date}.", {
-							name: decision.deciderName ?? "—",
-							date: formatInstant(locale, decision.decidedAt),
-						})}
+					: t(
+							"travelExpenses.report.approvedBy",
+							"Approved by {name} on {date}.",
+							{
+								name: decision.deciderName ?? "—",
+								date: formatInstant(locale, decision.decidedAt),
+							},
+						)}
 			</p>
 		);
 	}
@@ -311,7 +395,11 @@ function DecisionNotice({ decision }: { decision: SubmittedReportView["decision"
 }
 
 /** The submitted trip details. */
-function SubmittedTrip({ trip }: { trip: NonNullable<SubmittedReportView["facts"]["trip"]> }) {
+function SubmittedTrip({
+	trip,
+}: {
+	trip: NonNullable<SubmittedReportView["facts"]["trip"]>;
+}) {
 	const { t } = useTranslate();
 	return (
 		<Card>
@@ -328,13 +416,26 @@ function SubmittedTrip({ trip }: { trip: NonNullable<SubmittedReportView["facts"
 }
 
 /** The submitted expenses with their receipts of this submission cycle. */
-function SubmittedExpenses({ reportId, data }: { reportId: string; data: SubmittedReportView }) {
+function SubmittedExpenses({
+	reportId,
+	data,
+	onChanged,
+	maxReceiptBytes,
+}: {
+	reportId: string;
+	data: SubmittedReportView;
+	onChanged: () => void;
+	maxReceiptBytes?: number;
+}) {
 	const { t } = useTranslate();
 	return (
 		<section aria-labelledby={`${reportId}-submitted-expenses`}>
 			<Card>
 				<CardHeader>
-					<h2 id={`${reportId}-submitted-expenses`} className="font-semibold leading-none">
+					<h2
+						id={`${reportId}-submitted-expenses`}
+						className="font-semibold leading-none"
+					>
 						{t("travelExpenses.report.items.title", "Expenses")}
 					</h2>
 				</CardHeader>
@@ -357,6 +458,18 @@ function SubmittedExpenses({ reportId, data }: { reportId: string; data: Submitt
 								fileName: receipt.fileName,
 								href: `/api/travel-expenses/reports/${reportId}/receipts/${receipt.receiptId}?cycle=${data.submissionCycle}`,
 							})),
+							receiptSupplement: (
+								<SubmittedReportReceipts
+									reportId={reportId}
+									itemId={item.itemId}
+									itemType={item.type}
+									submissionCycle={data.submissionCycle}
+									canAddReceipt={data.canAddReceipt}
+									receipts={item.receipts}
+									onChanged={onChanged}
+									maxReceiptBytes={maxReceiptBytes}
+								/>
+							),
 							mileage: item.mileage ?? null,
 							perDiem: item.perDiem ?? null,
 							receiptException: item.receiptException ?? null,
@@ -393,7 +506,13 @@ function ApprovedReportPanels({
  * latest submission waits for review, that review is the current step;
  * otherwise the latest event is.
  */
-function SubmissionHistory({ reportId, data }: { reportId: string; data: SubmittedReportView }) {
+function SubmissionHistory({
+	reportId,
+	data,
+}: {
+	reportId: string;
+	data: SubmittedReportView;
+}) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const awaitingReview = data.status === "submitted";
@@ -416,7 +535,9 @@ function SubmissionHistory({ reportId, data }: { reportId: string; data: Submitt
 					{data.history.map((event, index) => (
 						<TimelineItem
 							key={event.id}
-							state={index === lastIndex && !awaitingReview ? "current" : "done"}
+							state={
+								index === lastIndex && !awaitingReview ? "current" : "done"
+							}
 							title={historyTitle(t, event.label)}
 							time={formatInstant(locale, event.at)}
 							dateTime={event.at}
@@ -430,10 +551,17 @@ function SubmissionHistory({ reportId, data }: { reportId: string; data: Submitt
 							title={t("travelExpenses.report.history.inReview", "In review")}
 						>
 							{data.reviewerName
-								? t("travelExpenses.report.awaitingReviewer", "Waiting for review by {name}.", {
-										name: data.reviewerName,
-									})
-								: t("travelExpenses.report.awaitingReview", "Waiting for review.")}
+								? t(
+										"travelExpenses.report.awaitingReviewer",
+										"Waiting for review by {name}.",
+										{
+											name: data.reviewerName,
+										},
+									)
+								: t(
+										"travelExpenses.report.awaitingReview",
+										"Waiting for review.",
+									)}
 						</TimelineItem>
 					)}
 				</Timeline>

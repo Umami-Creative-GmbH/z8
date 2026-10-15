@@ -46,7 +46,10 @@ interface StoredReceipt {
 }
 
 /** The recorded object, refused when its content no longer matches the recorded identity. */
-async function readVerifiedReceipt(organizationId: string, stored: StoredReceipt) {
+async function readVerifiedReceipt(
+	organizationId: string,
+	stored: StoredReceipt,
+) {
 	const bytes = await readPrivateObject({
 		organizationId,
 		key: stored.key,
@@ -57,7 +60,9 @@ async function readVerifiedReceipt(organizationId: string, stored: StoredReceipt
 		bytes.byteLength !== stored.sizeBytes ||
 		createHash("sha256").update(bytes).digest("hex") !== stored.checksumSha256
 	) {
-		throw new Error("Stored receipt content does not match its recorded identity");
+		throw new Error(
+			"Stored receipt content does not match its recorded identity",
+		);
 	}
 	return bytes;
 }
@@ -75,12 +80,18 @@ export async function GET(
 	await connection();
 	try {
 		const { reportId, receiptId } = await params;
-		if (!z.uuid().safeParse(reportId).success || !z.uuid().safeParse(receiptId).success) {
+		if (
+			!z.uuid().safeParse(reportId).success ||
+			!z.uuid().safeParse(receiptId).success
+		) {
 			return notFound();
 		}
 		const authorized = await loadAuthorizedTravelExpenseReport(reportId);
 		if (authorized.status === "unauthorized") {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: privateHeaders });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401, headers: privateHeaders },
+			);
 		}
 		if (authorized.status !== "found") return notFound();
 		const { report } = authorized;
@@ -91,7 +102,8 @@ export async function GET(
 		// the owner corrected or removed it in a returned or withdrawn report.
 		const cycleParam = searchParams.get("cycle");
 		const cycle = cycleParam === null ? undefined : Number(cycleParam);
-		if (cycle !== undefined && (!Number.isInteger(cycle) || cycle < 1)) return notFound();
+		if (cycle !== undefined && (!Number.isInteger(cycle) || cycle < 1))
+			return notFound();
 		let stored: StoredReceipt | null = null;
 		// Finance (#612) is authorized for the approved current submission only.
 		const otherCycle = cycle !== undefined && cycle !== report.submissionCount;
@@ -101,9 +113,18 @@ export async function GET(
 			? authorizedReportCycle(authorized, cycle ?? report.submissionCount)
 			: cycle;
 		if (readableCycle === null) return notFound();
-		if (authorized.access !== "owner" || cycle !== undefined) {
+		if (
+			report.status === "submitted" ||
+			report.status === "approved" ||
+			authorized.access !== "owner" ||
+			cycle !== undefined
+		) {
 			// Reviewers and finance only ever receive the frozen evidence.
-			const frozen = await loadSubmittedReportReceipt(report, receiptId, readableCycle);
+			const frozen = await loadSubmittedReportReceipt(
+				report,
+				receiptId,
+				readableCycle,
+			);
 			stored = frozen && {
 				...frozen.object,
 				fileName: frozen.fileName,
@@ -119,7 +140,10 @@ export async function GET(
 					and(
 						eq(travelExpenseReportReceipt.id, receiptId),
 						eq(travelExpenseReportReceipt.reportId, report.id),
-						eq(travelExpenseReportReceipt.organizationId, report.organizationId),
+						eq(
+							travelExpenseReportReceipt.organizationId,
+							report.organizationId,
+						),
 					),
 				)
 				.limit(1);
@@ -142,7 +166,8 @@ export async function GET(
 		}
 		// A closure loses the narrowing of the reassignable `stored`.
 		const found = stored;
-		const readOriginal = () => readVerifiedReceipt(report.organizationId, found);
+		const readOriginal = () =>
+			readVerifiedReceipt(report.organizationId, found);
 		const mimeType = isAllowedTravelExpenseMime(stored.mimeType)
 			? stored.mimeType
 			: "application/octet-stream";
@@ -171,7 +196,8 @@ export async function GET(
 		}
 		const bytes = await readOriginal();
 		const disposition =
-			searchParams.get("download") === "1" || mimeType === "application/octet-stream"
+			searchParams.get("download") === "1" ||
+			mimeType === "application/octet-stream"
 				? "attachment"
 				: "inline";
 		const encodedName = encodeURIComponent(stored.fileName).replace(

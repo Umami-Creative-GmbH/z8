@@ -32,7 +32,12 @@ export interface FinanceActor {
  * in their grant's scope, with its capabilities. Custom roles never grant
  * finance access (#748). Reviewing expenses never grants it either.
  */
-export async function loadFinanceActor(): Promise<FinanceActor | null> {
+export async function loadFinanceActor(
+	options: {
+		database?: Parameters<typeof loadActiveExpenseOfficerGrant>[0];
+		lockGrant?: boolean;
+	} = {},
+): Promise<FinanceActor | null> {
 	const [actor, ability] = await Promise.all([getAuthContext(), getAbility()]);
 	if (!actor?.employee || !ability) return null;
 	const organizationId = actor.employee.organizationId;
@@ -40,16 +45,32 @@ export async function loadFinanceActor(): Promise<FinanceActor | null> {
 	// A grant applies only in the organization the session is working in.
 	const grant =
 		organizationId === activeOrganizationId
-			? await loadActiveExpenseOfficerGrant(db, {
-					organizationId,
-					officerEmployeeId: actor.employee.id,
-				})
+			? await loadActiveExpenseOfficerGrant(
+					options.database ?? db,
+					{
+						organizationId,
+						officerEmployeeId: actor.employee.id,
+					},
+					{ lock: options.lockGrant },
+				)
 			: null;
 	const scopes = resolveFinanceScopes({
 		organizationWide: {
-			read: canReadTravelExpenseFinance(ability, organizationId, activeOrganizationId),
-			settle: canSettleTravelExpenses(ability, organizationId, activeOrganizationId),
-			export: canExportTravelExpenses(ability, organizationId, activeOrganizationId),
+			read: canReadTravelExpenseFinance(
+				ability,
+				organizationId,
+				activeOrganizationId,
+			),
+			settle: canSettleTravelExpenses(
+				ability,
+				organizationId,
+				activeOrganizationId,
+			),
+			export: canExportTravelExpenses(
+				ability,
+				organizationId,
+				activeOrganizationId,
+			),
 		},
 		grant: grant
 			? {

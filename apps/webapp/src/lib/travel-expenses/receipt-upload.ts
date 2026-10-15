@@ -6,8 +6,13 @@ import {
 	travelExpenseClaim,
 	travelExpenseReceiptUpload,
 	travelExpenseReportReceipt,
+	travelExpenseReportSupplementalReceipt,
 } from "@/db/schema";
-import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	dateFromInstant,
+	type Instant,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "./attachment-validation";
 import { isLegacyDraftConverted } from "./legacy-draft-conversion-read";
 
@@ -265,13 +270,20 @@ type CleanupRow = typeof travelExpenseReceiptUpload.$inferSelect;
 
 async function claimCleanupWork(
 	database: Database,
-	input: { now: Instant; limit: number; attachmentId?: string; organizationId?: string },
+	input: {
+		now: Instant;
+		limit: number;
+		attachmentId?: string;
+		organizationId?: string;
+	},
 ): Promise<CleanupRow[]> {
 	const at = dateFromInstant(input.now);
 	const abandonedBefore = dateFromInstant(
 		input.now.subtract({ milliseconds: ABANDONED_RECEIPT_UPLOAD_AFTER_MS }),
 	);
-	const leaseUntil = dateFromInstant(input.now.add({ milliseconds: CLEANUP_LEASE_MS }));
+	const leaseUntil = dateFromInstant(
+		input.now.add({ milliseconds: CLEANUP_LEASE_MS }),
+	);
 	return database.transaction(async (tx) => {
 		const due = or(
 			and(
@@ -291,11 +303,17 @@ async function claimCleanupWork(
 					? and(
 							due,
 							eq(travelExpenseReceiptUpload.id, input.attachmentId),
-							eq(travelExpenseReceiptUpload.organizationId, input.organizationId),
+							eq(
+								travelExpenseReceiptUpload.organizationId,
+								input.organizationId,
+							),
 						)
 					: due,
 			)
-			.orderBy(asc(travelExpenseReceiptUpload.createdAt), asc(travelExpenseReceiptUpload.id))
+			.orderBy(
+				asc(travelExpenseReceiptUpload.createdAt),
+				asc(travelExpenseReceiptUpload.id),
+			)
 			.limit(input.limit)
 			.for("update", { skipLocked: true });
 		const claimed: CleanupRow[] = [];
@@ -354,6 +372,20 @@ async function cleanupOne(
 					),
 				),
 		)
+		.unionAll(
+			database
+				.select({ id: travelExpenseReportSupplementalReceipt.id })
+				.from(travelExpenseReportSupplementalReceipt)
+				.where(
+					and(
+						eq(
+							travelExpenseReportSupplementalReceipt.organizationId,
+							row.organizationId,
+						),
+						sql`${travelExpenseReportSupplementalReceipt.receipt}->'object'->>'key' = ${row.storageKey}`,
+					),
+				),
+		)
 		.limit(1);
 	if (attached.length === 0) {
 		try {
@@ -365,12 +397,16 @@ async function cleanupOne(
 			});
 		} catch (error) {
 			const attempts = row.attempts + 1;
-			const delay = CLEANUP_RETRY_DELAYS_MS[attempts - 1] ?? MAX_CLEANUP_RETRY_DELAY_MS;
+			const delay =
+				CLEANUP_RETRY_DELAYS_MS[attempts - 1] ?? MAX_CLEANUP_RETRY_DELAY_MS;
 			await database
 				.update(travelExpenseReceiptUpload)
 				.set({
 					attempts,
-					lastError: error instanceof Error ? error.message.slice(0, 500) : "Unknown error",
+					lastError:
+						error instanceof Error
+							? error.message.slice(0, 500)
+							: "Unknown error",
 					// Retries back off but never stop; exhausted work stays visible.
 					nextAttemptAt: dateFromInstant(now.add({ milliseconds: delay })),
 					updatedAt: dateFromInstant(now),

@@ -7,7 +7,10 @@ import { getAuthContext } from "@/lib/auth-helpers";
 import { createLogger } from "@/lib/logger";
 import { uploadPrivateObject } from "@/lib/storage/export-s3-client";
 import { deleteTravelExpenseReceiptObject } from "@/lib/travel-expenses/receipt-preview";
-import { deleteTusUpload, readUploadedReceipt } from "@/lib/travel-expenses/receipt-processing";
+import {
+	deleteTusUpload,
+	readUploadedReceipt,
+} from "@/lib/travel-expenses/receipt-processing";
 import {
 	runTravelExpenseReceiptCleanup,
 	type StoredReceiptObject,
@@ -19,6 +22,10 @@ import {
 	travelExpenseReportReceiptStorageKey,
 } from "@/lib/travel-expenses/report-receipt-upload";
 import { isOwnDraftReportItem } from "@/lib/travel-expenses/report-store";
+import {
+	finalizeSupplementalReceipt,
+	missingSubmittedReceiptEligible,
+} from "@/lib/travel-expenses/supplemental-receipt";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
 const logger = createLogger("TravelExpenseReportReceiptUpload");
@@ -28,10 +35,11 @@ const requestSchema = z.object({
 	tusFileKey: z.string().min(1),
 	reportId: z.uuid(),
 	itemId: z.uuid(),
+	submissionCycle: z.number().int().positive().optional(),
 	fileName: z.string().max(255).optional(),
 });
 
-/** Attaches a finished TUS upload to an item of the caller's draft report (#600). */
+/** Attaches a finished TUS upload to an owned draft, or supplies missing evidence during current review. */
 export async function POST(request: NextRequest) {
 	await connection();
 
@@ -41,11 +49,17 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 		}
 
-		const parsed = requestSchema.safeParse(await request.json().catch(() => null));
+		const parsed = requestSchema.safeParse(
+			await request.json().catch(() => null),
+		);
 		if (!parsed.success) {
-			return NextResponse.json({ error: "Invalid upload request" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Invalid upload request" },
+				{ status: 400 },
+			);
 		}
-		const { tusFileKey, reportId, itemId, fileName } = parsed.data;
+		const { tusFileKey, reportId, itemId, fileName, submissionCycle } =
+			parsed.data;
 
 		const safeTusFileKey = sanitizeTusFileKey(tusFileKey, authContext.user.id);
 		if (!safeTusFileKey) {
@@ -56,8 +70,20 @@ export async function POST(request: NextRequest) {
 			organizationId: authContext.employee.organizationId,
 			employeeId: authContext.employee.id,
 		};
-		if (!(await isOwnDraftReportItem(db, owner, { reportId, itemId }))) {
-			return NextResponse.json({ error: "Expense report not found" }, { status: 404 });
+		if (
+			!(submissionCycle === undefined
+				? await isOwnDraftReportItem(db, owner, { reportId, itemId })
+				: await missingSubmittedReceiptEligible(db, {
+						...owner,
+						reportId,
+						itemId,
+						submissionCycle,
+					}))
+		) {
+			return NextResponse.json(
+				{ error: "Expense report not found" },
+				{ status: 404 },
+			);
 		}
 
 		const upload = await readUploadedReceipt({
@@ -66,7 +92,10 @@ export async function POST(request: NextRequest) {
 			maxBytes: MAX_FILE_SIZE_BYTES,
 		});
 		if (!upload.ok) {
-			return NextResponse.json({ error: upload.error }, { status: upload.status });
+			return NextResponse.json(
+				{ error: upload.error },
+				{ status: upload.status },
+			);
 		}
 
 		const receiptId = randomUUID();
@@ -90,7 +119,9 @@ export async function POST(request: NextRequest) {
 		await stageReportReceiptUpload(db, staged);
 
 		let stored: StoredReceiptObject | null = null;
-		let finalized: Awaited<ReturnType<typeof finalizeReportReceiptUpload>>;
+		let finalized:
+			| Awaited<ReturnType<typeof finalizeReportReceiptUpload>>
+			| Awaited<ReturnType<typeof finalizeSupplementalReceipt>>;
 		try {
 			stored = await uploadPrivateObject(
 				owner.organizationId,
@@ -104,41 +135,64 @@ export async function POST(request: NextRequest) {
 					"content-sha256": upload.checksumSha256,
 				},
 			);
-			finalized = await finalizeReportReceiptUpload(db, {
+			const finalization = {
 				...staged,
 				stored,
 				fileName: upload.fileName,
 				mimeType: upload.mimeType,
 				sizeBytes: upload.buffer.length,
 				checksumSha256: upload.checksumSha256,
-			});
+			};
+			finalized =
+				submissionCycle === undefined
+					? await finalizeReportReceiptUpload(db, finalization)
+					: await finalizeSupplementalReceipt(db, {
+							...finalization,
+							submissionCycle,
+						});
 		} catch (error) {
 			await markReportReceiptUploadFailed(db, {
 				...staged,
 				stored,
 				reason: "finalization_failed",
 			}).catch((markError) =>
-				logger.error({ error: markError }, "Failed to record report receipt upload cleanup"),
+				logger.error(
+					{ error: markError },
+					"Failed to record report receipt upload cleanup",
+				),
 			);
 			throw error;
 		}
 
 		await deleteTusUpload(safeTusFileKey);
 
-		if (finalized.kind === "report_not_draft") {
+		if (finalized.kind !== "attached") {
+			await markReportReceiptUploadFailed(db, {
+				...staged,
+				stored,
+				reason: "finalization_failed",
+			});
 			// The report changed while this file was uploading. The stored object
 			// stays recorded for cleanup; try to remove it right away.
 			await runTravelExpenseReceiptCleanup(db, {
 				deleteObject: deleteTravelExpenseReceiptObject,
 				only: { attachmentId: receiptId, organizationId: owner.organizationId },
-			}).catch((error) => logger.error({ error }, "Deferred report receipt upload cleanup"));
+			}).catch((error) =>
+				logger.error({ error }, "Deferred report receipt upload cleanup"),
+			);
 			return NextResponse.json(
-				{ error: "This expense can no longer be edited, so the file was not attached." },
+				{
+					error:
+						"This expense can no longer be edited, so the file was not attached.",
+				},
 				{ status: 409 },
 			);
 		}
 
-		return NextResponse.json({ success: true, receipt: finalized.receipt });
+		return NextResponse.json(
+			{ success: true, receipt: finalized.receipt },
+			{ status: submissionCycle === undefined ? 200 : 201 },
+		);
 	} catch (error) {
 		logger.error({ error }, "Report receipt upload processing failed");
 		return NextResponse.json({ error: "Processing failed" }, { status: 500 });

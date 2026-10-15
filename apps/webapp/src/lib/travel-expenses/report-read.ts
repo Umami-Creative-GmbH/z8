@@ -13,11 +13,11 @@ import {
 	travelExpenseReportReviewNote,
 } from "@/db/schema";
 import type { TravelExpenseReportItemType } from "@/db/schema/travel-expense";
+import { loadDeputyDecisionsForEntities } from "@/lib/approvals/deputy/deputy-decision-store";
 import {
 	type LegacyDecisionEvidenceRecord,
 	listLegacyDecisionEvidence,
 } from "@/lib/approvals/evidence/store";
-import { loadDeputyDecisionsForEntities } from "@/lib/approvals/deputy/deputy-decision-store";
 import type {
 	TravelExpenseReportReceiptManifestItem,
 	TravelExpenseReportSubmittedFacts,
@@ -33,14 +33,21 @@ import { loadAuthorizedApprovalDetail } from "@/lib/approvals/inbox/authorized-d
 import { getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import { financeActorReads, loadFinanceActor } from "./finance-access";
-import { isOwnerSelfApprovalDecision, OWNER_SELF_APPROVAL_REASON } from "./owner-self-approval";
+import {
+	isOwnerSelfApprovalDecision,
+	OWNER_SELF_APPROVAL_REASON,
+} from "./owner-self-approval";
 import { sortHistoryByInstant } from "./report-history";
+import {
+	canSupplyReportReceipt,
+	listSupplementalReceipts,
+} from "./supplemental-receipt";
 
 /**
  * Reads of a submitted travel expense report (#602): its owner, or a reviewer
  * the Approvals inbox already authorizes for one of the report's requests.
  * Reading never creates a binding or changes authority, and every view shows
- * the frozen submission, never the live rows.
+ * the frozen submission alongside explicitly marked supplemental documents, never live expense facts.
  */
 
 type ReportRow = typeof travelExpenseReport.$inferSelect;
@@ -70,7 +77,10 @@ export type AuthorizedReportResult =
  * refused any other (null).
  */
 export function authorizedReportCycle(
-	authorized: { report: Pick<ReportRow, "submissionCount">; reviewerCycles?: number[] },
+	authorized: {
+		report: Pick<ReportRow, "submissionCount">;
+		reviewerCycles?: number[];
+	},
 	cycle: number | undefined,
 ): number | undefined | null {
 	const allowed = authorized.reviewerCycles;
@@ -97,11 +107,30 @@ export async function loadAuthorizedTravelExpenseReport(
 		)
 		.limit(1);
 	if (!report) return { status: "not_found" };
-	if (report.employeeId === actor.employee.id) return { status: "found", report, access: "owner" };
+	if (report.employeeId === actor.employee.id)
+		return { status: "found", report, access: "owner" };
 	const reviewer = { userId: actor.user.id, organizationId };
 	const reviewerCycles = await reviewedCyclesOf(reviewer, report.id);
 	if (reviewerCycles.length > 0) {
-		return { status: "found", report, access: "reviewer", reviewerCycles };
+		// A historical reviewer may also handle the approved current submission as
+		// an expense officer. Preserve both rights without opening unrelated cycles.
+		if (
+			report.status === "approved" &&
+			(await financeActorReads(await loadFinanceActor(), {
+				source: { type: "report", id: report.id },
+				employeeId: report.employeeId,
+			}))
+		) {
+			reviewerCycles.push(report.submissionCount);
+		}
+		return {
+			status: "found",
+			report,
+			access: "reviewer",
+			reviewerCycles: [...new Set(reviewerCycles)].sort(
+				(left, right) => left - right,
+			),
+		};
 	}
 	// The reviewer of an adjustment (#615) reads the report it corrects (#617):
 	// the adjustment's own facts are a copy of it, so this reveals no other expense.
@@ -191,14 +220,23 @@ async function reviewedCyclesOf(
 		organizationId: actor.organizationId,
 		approvalRequestIds: requestIds,
 	});
-	return [...new Set([...revisions.values()].map((revision) => revision.submissionCycle))].sort(
-		(left, right) => left - right,
-	);
+	return [
+		...new Set(
+			[...revisions.values()].map((revision) => revision.submissionCycle),
+		),
+	].sort((left, right) => left - right);
 }
 
 export interface SubmittedReportItemView
 	extends Omit<TravelExpenseReportSubmittedItem, "receipts"> {
-	receipts: Array<Pick<TravelExpenseReportReceiptManifestItem, "receiptId"> & { fileName: string }>;
+	receipts: Array<
+		Pick<TravelExpenseReportReceiptManifestItem, "receiptId"> & {
+			fileName: string;
+			addedAfterSubmission?: true;
+			uploadedByName?: string;
+			uploadedAt?: string;
+		}
+	>;
 }
 
 /**
@@ -214,6 +252,7 @@ export type SubmittedCycleOutcome =
 	| "reopened";
 
 export type SubmittedReportHistoryLabel =
+	| "receipt_added"
 	| "submitted"
 	| "approval_recorded"
 	| "approved"
@@ -225,6 +264,7 @@ export type SubmittedReportHistoryLabel =
 	| "reopened";
 
 export interface SubmittedReportView {
+	canAddReceipt: boolean;
 	reportId: string;
 	status: ReportRow["status"];
 	access: ReportAccess;
@@ -261,8 +301,16 @@ export interface SubmittedReportView {
 		}>;
 	} | null;
 	/** Why and by whom this approved cycle was reopened for correction (#614). */
-	reopened?: { reason: string; reopenedAt: string; actorName: string | null } | null;
-	cycles: Array<{ cycle: number; submittedAt: string; outcome: SubmittedCycleOutcome }>;
+	reopened?: {
+		reason: string;
+		reopenedAt: string;
+		actorName: string | null;
+	} | null;
+	cycles: Array<{
+		cycle: number;
+		submittedAt: string;
+		outcome: SubmittedCycleOutcome;
+	}>;
 	/** Every cycle's events, oldest first. */
 	history: Array<{
 		id: string;
@@ -288,7 +336,9 @@ function itemView(
 		...facts,
 		receipts: receipts.map((receipt) => ({
 			receiptId: receipt.receiptId,
-			fileName: revision.labels.receiptFileNames[receipt.receiptId] ?? receipt.receiptId,
+			fileName:
+				revision.labels.receiptFileNames[receipt.receiptId] ??
+				receipt.receiptId,
 		})),
 	};
 }
@@ -302,7 +352,10 @@ function isReturnEvidence(decision: LegacyDecisionEvidenceRecord): boolean {
 async function loadSubmittedRevisions(
 	report: ReportRow,
 ): Promise<TravelExpenseReportSubmittedRevisionRecord[]> {
-	const cycles = Array.from({ length: report.submissionCount }, (_, index) => index + 1);
+	const cycles = Array.from(
+		{ length: report.submissionCount },
+		(_, index) => index + 1,
+	);
 	const revisions = await Promise.all(
 		cycles.map((submissionCycle) =>
 			loadTravelExpenseReportSubmittedRevision(db, {
@@ -325,11 +378,14 @@ export async function loadSubmittedReportView(
 	access: ReportAccess,
 	cycle: number = report.submissionCount,
 ): Promise<SubmittedReportView | null> {
-	if (!Number.isInteger(cycle) || cycle < 1 || cycle > report.submissionCount) return null;
+	if (!Number.isInteger(cycle) || cycle < 1 || cycle > report.submissionCount)
+		return null;
 	// Finance (#612) is authorized for the approved current submission only.
 	if (access === "finance" && cycle !== report.submissionCount) return null;
 	const revisions = await loadSubmittedRevisions(report);
-	const revision = revisions.find((candidate) => candidate.submissionCycle === cycle);
+	const revision = revisions.find(
+		(candidate) => candidate.submissionCycle === cycle,
+	);
 	if (!revision) return null;
 	const [requests, decisionsByRevision, closures] = await Promise.all([
 		db
@@ -369,7 +425,10 @@ export async function loadSubmittedReportView(
 			.from(travelExpenseReportCycleClosure)
 			.where(
 				and(
-					eq(travelExpenseReportCycleClosure.organizationId, report.organizationId),
+					eq(
+						travelExpenseReportCycleClosure.organizationId,
+						report.organizationId,
+					),
 					eq(travelExpenseReportCycleClosure.reportId, report.id),
 				),
 			),
@@ -377,19 +436,22 @@ export async function loadSubmittedReportView(
 	const closureOf = (submissionCycle: number) =>
 		closures.find((closure) => closure.submissionCycle === submissionCycle);
 	const decisionsOf = (submissionCycle: number) =>
-		decisionsByRevision[revisions.findIndex((rev) => rev.submissionCycle === submissionCycle)] ??
-		[];
+		decisionsByRevision[
+			revisions.findIndex((rev) => rev.submissionCycle === submissionCycle)
+		] ?? [];
 	const finalOf = (submissionCycle: number) =>
 		decisionsOf(submissionCycle).find(
 			(decision) =>
 				!isReturnEvidence(decision) &&
-				(decision.requestOutcome === "approved" || decision.requestOutcome === "rejected"),
+				(decision.requestOutcome === "approved" ||
+					decision.requestOutcome === "rejected"),
 		);
 	const outcomeOf = (submissionCycle: number): SubmittedCycleOutcome => {
 		const closure = closureOf(submissionCycle);
 		if (closure) return closure.kind;
 		const final = finalOf(submissionCycle);
-		return final?.requestOutcome === "approved" || final?.requestOutcome === "rejected"
+		return final?.requestOutcome === "approved" ||
+			final?.requestOutcome === "rejected"
 			? final.requestOutcome
 			: "pending";
 	};
@@ -402,7 +464,9 @@ export async function loadSubmittedReportView(
 	const closure = closureOf(cycle);
 	const returnEvidence =
 		closure?.kind === "returned"
-			? decisionsOf(cycle).find((decision) => decision.id === closure.decisionEvidenceId)
+			? decisionsOf(cycle).find(
+					(decision) => decision.id === closure.decisionEvidenceId,
+				)
 			: undefined;
 	const notes =
 		closure?.kind === "returned"
@@ -414,13 +478,19 @@ export async function loadSubmittedReportView(
 					.from(travelExpenseReportReviewNote)
 					.where(
 						and(
-							eq(travelExpenseReportReviewNote.organizationId, report.organizationId),
+							eq(
+								travelExpenseReportReviewNote.organizationId,
+								report.organizationId,
+							),
 							eq(travelExpenseReportReviewNote.closureId, closure.id),
 						),
 					)
 			: [];
 
-	const closureActorNames = await loadReopenActorNames(report.organizationId, closures);
+	const closureActorNames = await loadReopenActorNames(
+		report.organizationId,
+		closures,
+	);
 	// Decisions a covering deputy made, by legacy request (#1016).
 	const deputyDecisions = new Map(
 		(
@@ -429,60 +499,81 @@ export async function loadSubmittedReportView(
 				entityIds: [report.id],
 			})
 		).flatMap((decision) =>
-			decision.approvalRequestId ? [[decision.approvalRequestId, decision.actingFor.name] as const] : [],
+			decision.approvalRequestId
+				? [[decision.approvalRequestId, decision.actingFor.name] as const]
+				: [],
 		),
 	);
 	const actingForOf = (approvalRequestId: string | null | undefined) =>
 		approvalRequestId ? (deputyDecisions.get(approvalRequestId) ?? null) : null;
 
-	const history: SubmittedReportView["history"] = revisions.flatMap((candidate) => {
-		const submissionCycle = candidate.submissionCycle;
-		const cycleClosure = closureOf(submissionCycle);
-		const events: SubmittedReportView["history"] = [
-			{
-				id: `submitted-${candidate.id}`,
-				cycle: submissionCycle,
-				label: "submitted",
-				at: instantToCanonicalString(candidate.submittedAt),
-				actorName: candidate.labels.submitterName,
-			},
-			...decisionsOf(submissionCycle).map((decision) => ({
-				id: decision.id,
-				cycle: submissionCycle,
-				label: isReturnEvidence(decision)
-					? ("returned" as const)
-					: isOwnerSelfApprovalDecision(decision)
-						? ("self_approved" as const)
-						: decision.requestOutcome === "approved" || decision.requestOutcome === "rejected"
-							? decision.requestOutcome
-							: ("approval_recorded" as const),
-				at: instantToCanonicalString(decision.decidedAt),
-				actorName: decision.labels.actorName,
-				actingForName: actingForOf(decision.legacy.approvalRequestId),
-			})),
-		];
-		if (cycleClosure?.kind === "withdrawn") {
-			events.push({
-				id: cycleClosure.id,
-				cycle: submissionCycle,
-				label: "withdrawn",
-				at: cycleClosure.createdAt.toISOString(),
-				actorName: candidate.labels.submitterName,
-			});
-		}
-		if (cycleClosure?.kind === "reopened") {
-			events.push({
-				id: cycleClosure.id,
-				cycle: submissionCycle,
-				label: "reopened",
-				at: cycleClosure.createdAt.toISOString(),
-				actorName: closureActorNames.get(cycleClosure.actorEmployeeId ?? "") ?? null,
-			});
-		}
-		return events;
+	const supplemental = await listSupplementalReceipts(db, {
+		organizationId: report.organizationId,
+		reportId: report.id,
+		submissionCycle: cycle,
 	});
+	const history: SubmittedReportView["history"] = revisions.flatMap(
+		(candidate) => {
+			const submissionCycle = candidate.submissionCycle;
+			const cycleClosure = closureOf(submissionCycle);
+			const events: SubmittedReportView["history"] = [
+				{
+					id: `submitted-${candidate.id}`,
+					cycle: submissionCycle,
+					label: "submitted",
+					at: instantToCanonicalString(candidate.submittedAt),
+					actorName: candidate.labels.submitterName,
+				},
+				...decisionsOf(submissionCycle).map((decision) => ({
+					id: decision.id,
+					cycle: submissionCycle,
+					label: isReturnEvidence(decision)
+						? ("returned" as const)
+						: isOwnerSelfApprovalDecision(decision)
+							? ("self_approved" as const)
+							: decision.requestOutcome === "approved" ||
+									decision.requestOutcome === "rejected"
+								? decision.requestOutcome
+								: ("approval_recorded" as const),
+					at: instantToCanonicalString(decision.decidedAt),
+					actorName: decision.labels.actorName,
+					actingForName: actingForOf(decision.legacy.approvalRequestId),
+				})),
+			];
+			if (cycleClosure?.kind === "withdrawn") {
+				events.push({
+					id: cycleClosure.id,
+					cycle: submissionCycle,
+					label: "withdrawn",
+					at: cycleClosure.createdAt.toISOString(),
+					actorName: candidate.labels.submitterName,
+				});
+			}
+			if (cycleClosure?.kind === "reopened") {
+				events.push({
+					id: cycleClosure.id,
+					cycle: submissionCycle,
+					label: "reopened",
+					at: cycleClosure.createdAt.toISOString(),
+					actorName:
+						closureActorNames.get(cycleClosure.actorEmployeeId ?? "") ?? null,
+				});
+			}
+			return events;
+		},
+	);
 
+	history.push(
+		...supplemental.map((document) => ({
+			id: document.id,
+			cycle: document.submissionCycle,
+			label: "receipt_added" as const,
+			at: document.createdAt.toISOString(),
+			actorName: document.uploadedByName,
+		})),
+	);
 	return {
+		canAddReceipt: await canSupplyReportReceipt(report, cycle),
 		reportId: report.id,
 		status: report.status,
 		access,
@@ -495,15 +586,21 @@ export async function loadSubmittedReportView(
 				? (pending?.approverName ?? null)
 				: null,
 		decision:
-			final && (final.requestOutcome === "approved" || final.requestOutcome === "rejected")
+			final &&
+			(final.requestOutcome === "approved" ||
+				final.requestOutcome === "rejected")
 				? {
 						outcome: final.requestOutcome,
 						decidedAt: instantToCanonicalString(final.decidedAt),
 						deciderName: final.labels.actorName,
 						actingForName: actingForOf(final.legacy.approvalRequestId),
 						reason:
-							final.requestOutcome === "rejected" ? (finalRequest?.rejectionReason ?? null) : null,
-						basis: isOwnerSelfApprovalDecision(final) ? OWNER_SELF_APPROVAL_REASON : null,
+							final.requestOutcome === "rejected"
+								? (finalRequest?.rejectionReason ?? null)
+								: null,
+						basis: isOwnerSelfApprovalDecision(final)
+							? OWNER_SELF_APPROVAL_REASON
+							: null,
 					}
 				: null,
 		returned:
@@ -513,7 +610,9 @@ export async function loadSubmittedReportView(
 						returnedAt: closure.createdAt.toISOString(),
 						reviewerName: returnEvidence?.labels.actorName ?? null,
 						itemComments: revision.facts.items.flatMap((item, index) => {
-							const note = notes.find((candidate) => candidate.itemId === item.itemId);
+							const note = notes.find(
+								(candidate) => candidate.itemId === item.itemId,
+							);
 							return note
 								? [
 										{
@@ -533,7 +632,8 @@ export async function loadSubmittedReportView(
 				? {
 						reason: closure.note,
 						reopenedAt: closure.createdAt.toISOString(),
-						actorName: closureActorNames.get(closure.actorEmployeeId ?? "") ?? null,
+						actorName:
+							closureActorNames.get(closure.actorEmployeeId ?? "") ?? null,
 					}
 				: null,
 		cycles: revisions.map((candidate) => ({
@@ -547,7 +647,24 @@ export async function loadSubmittedReportView(
 			reimbursementCurrency: revision.facts.reimbursementCurrency,
 			trip: revision.facts.trip,
 			totals: revision.facts.totals,
-			items: revision.facts.items.map((item) => itemView(item, revision)),
+			items: revision.facts.items.map((item) => {
+				const frozen = itemView(item, revision);
+				return {
+					...frozen,
+					receipts: [
+						...frozen.receipts,
+						...supplemental
+							.filter((document) => document.itemId === item.itemId)
+							.map((document) => ({
+								receiptId: document.id,
+								fileName: document.fileName,
+								addedAfterSubmission: true as const,
+								uploadedByName: document.uploadedByName,
+								uploadedAt: document.createdAt.toISOString(),
+							})),
+					],
+				};
+			}),
 		},
 	};
 }
@@ -562,7 +679,9 @@ async function loadReopenActorNames(
 			closures
 				.filter((closure) => closure.kind === "reopened")
 				// A deleted reopener leaves no name behind (0130).
-				.flatMap((closure) => (closure.actorEmployeeId ? [closure.actorEmployeeId] : [])),
+				.flatMap((closure) =>
+					closure.actorEmployeeId ? [closure.actorEmployeeId] : [],
+				),
 		),
 	];
 	if (actorIds.length === 0) return new Map();
@@ -570,7 +689,12 @@ async function loadReopenActorNames(
 		.select({ id: employee.id, name: user.name })
 		.from(employee)
 		.leftJoin(user, eq(user.id, employee.userId))
-		.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, actorIds)));
+		.where(
+			and(
+				eq(employee.organizationId, organizationId),
+				inArray(employee.id, actorIds),
+			),
+		);
 	return new Map(rows.map((row) => [row.id, row.name]));
 }
 
@@ -583,8 +707,11 @@ export async function loadSubmittedReportReceipt(
 	report: ReportRow,
 	receiptId: string,
 	cycle: number = report.submissionCount,
-): Promise<(TravelExpenseReportReceiptManifestItem & { fileName: string }) | null> {
-	if (!Number.isInteger(cycle) || cycle < 1 || cycle > report.submissionCount) return null;
+): Promise<
+	(TravelExpenseReportReceiptManifestItem & { fileName: string }) | null
+> {
+	if (!Number.isInteger(cycle) || cycle < 1 || cycle > report.submissionCount)
+		return null;
 	const revision = await loadTravelExpenseReportSubmittedRevision(db, {
 		organizationId: report.organizationId,
 		reportId: report.id,
@@ -593,6 +720,25 @@ export async function loadSubmittedReportReceipt(
 	const receipt = revision?.facts.items
 		.flatMap((item) => item.receipts)
 		.find((candidate) => candidate.receiptId === receiptId);
-	if (!revision || !receipt) return null;
-	return { ...receipt, fileName: revision.labels.receiptFileNames[receiptId] ?? "receipt" };
+	if (!revision) return null;
+	if (!receipt) {
+		const supplemental = (
+			await listSupplementalReceipts(db, {
+				organizationId: report.organizationId,
+				reportId: report.id,
+				submissionCycle: cycle,
+			})
+		).find(
+			(document) =>
+				document.id === receiptId &&
+				revision.facts.items.some((item) => item.itemId === document.itemId),
+		);
+		return supplemental
+			? { ...supplemental.receipt, fileName: supplemental.fileName }
+			: null;
+	}
+	return {
+		...receipt,
+		fileName: revision.labels.receiptFileNames[receiptId] ?? "receipt",
+	};
 }
