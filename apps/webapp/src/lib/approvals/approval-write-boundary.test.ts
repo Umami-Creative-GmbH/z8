@@ -4443,7 +4443,7 @@ db.delete(approvalOutbox);`,
 			"src/lib/time-record/migration/backfill.ts": {
 				approval_request: ["update"],
 			},
-			"src/lib/time-record/migration/attach-missing-work-records.ts": {
+			"src/lib/time-tracking/work-records/repair.ts": {
 				approval_request: ["update"],
 			},
 		});
@@ -4488,7 +4488,7 @@ db.delete(approvalOutbox);`,
 			"src/lib/time-tracking/work-records/divide.ts#writeGeneratedHalf",
 			"src/lib/time-tracking/work-records/divide.ts#writeRetainedHalf",
 			"src/lib/time-tracking/work-records/entry-writer.ts#insertAppendedEntry",
-			"src/lib/time-tracking/work-records/entry-writer.ts#supersedeTakenOverEntry",
+			"src/lib/time-tracking/work-records/entry-writer.ts#supersedeEndpoint",
 			"src/lib/time-tracking/work-records/erase-history.ts#eraseEmployeeWorkHistory",
 			"src/lib/time-tracking/work-records/open-record.ts#correctOpenWorkRecord",
 			"src/lib/time-tracking/work-records/repair.ts#attachWorkRecord",

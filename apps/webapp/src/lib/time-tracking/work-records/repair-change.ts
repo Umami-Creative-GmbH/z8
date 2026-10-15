@@ -34,6 +34,14 @@ export type AttachWorkRecord = {
 		/** The computation metadata the record carries; null when none is known. */
 		computationMetadata: string | null;
 	};
+	/**
+	 * What the attached work holds where the period cannot be represented as it
+	 * stands (spec-2 M1): no minutes, or billable or task work without a project.
+	 * Both records take it, as a repair writes its resolution; work whose minutes
+	 * or attribution change this way has the effects of a change. Without one,
+	 * attaching changes no work.
+	 */
+	resolution?: WorkRecordResolution;
 	/** The user making the change (the record's updater); null for a job or the system. */
 	actorUserId: string | null;
 };

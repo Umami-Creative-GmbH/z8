@@ -221,6 +221,12 @@ describe("the canonical backfill with closed months", () => {
 			organizationId: org.organizationId,
 			workPeriodIds: [april.workPeriodId],
 		});
+		// The refused period is reported for its repair and does not hold payroll back.
+		await expect(assertCanonicalCutoverReady(other.organizationId)).resolves.toBeUndefined();
+		expect(await reconcileLegacyToCanonical(other.organizationId)).toMatchObject({
+			unattachableWorkRecords: 1,
+			blockingMismatchCount: 0,
+		});
 		// A second run finds nothing left to attach.
 		const again = await attachMissingWorkRecordsInEveryOrganization({
 			organizationIds: [org.organizationId],

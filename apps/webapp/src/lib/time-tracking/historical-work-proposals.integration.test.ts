@@ -607,6 +607,52 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 		expect(await findingKinds()).toEqual([]);
 	});
 
+	// spec-2 M1: work the backfill cannot attach is attached by the repair that names its minutes.
+	it("attaches work without minutes or a canonical work record through a repair naming the minutes", async () => {
+		await authorizeRepair();
+		const { periodId, recordId } = await conflictingWork("2026-07-17", 240);
+		await asHistory(admin, async (client) => {
+			await client.query(
+				"update work_period set canonical_record_id = null, duration_minutes = null where id = $1",
+				[periodId],
+			);
+			await client.query("delete from time_record where id = $1", [recordId]);
+		});
+		// The period's legacy approval, decided before canonical records existed.
+		await admin.query(
+			`insert into approval_request
+			 (organization_id, entity_type, entity_id, requested_by, approver_id, status, updated_at)
+			 values ($1, 'time_entry', $2, $3, $4, 'approved', now())`,
+			[ids.organization, periodId, ids.worker, ids.manager],
+		);
+
+		const created = await proposeRepair(periodId, [
+			{ target: "work_period", field: "duration_minutes", after: 240 },
+		]);
+		expect(created.status).toBe(200);
+		await approve(created.body.proposal);
+		expect((await applyProposal(created.body.proposal.id)).body).toMatchObject({
+			status: "applied",
+		});
+
+		await expectRecordAgreement({ organizationId: ids.organization, workPeriodIds: [periodId] });
+		expect(await periodRow(periodId)).toMatchObject({
+			canonical_record_id: periodId,
+			duration_minutes: 240,
+		});
+		// The period's legacy approval history links to the attached record (spec-2 L5).
+		const { rows: requests } = await admin.query(
+			"select canonical_record_id from approval_request where entity_id = $1",
+			[periodId],
+		);
+		expect(requests).toEqual([{ canonical_record_id: periodId }]);
+		const { rows: decisions } = await admin.query(
+			"select action from time_record_approval_decision where record_id = $1",
+			[periodId],
+		);
+		expect(decisions).toEqual([{ action: "approved" }]);
+	});
+
 	it("refuses a proposal whose repaired work would still disagree (#1226)", async () => {
 		const { periodId } = await conflictingWork("2026-07-16", 200);
 		// The record's start is evidence of nothing: the period's start mirrors its entry.

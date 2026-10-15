@@ -60,9 +60,17 @@ export type RepairPlan = {
 
 type StoredPeriod = AgreementWorkPeriod;
 
-/** Attach: the canonical work record the completed work period describes. */
-export function planAttachment(period: StoredPeriod): RepairPlan | WorkRecordRefusal {
-	return planned(period, null, {});
+/**
+ * Attach: the canonical work record the completed work period describes, with
+ * the resolution's minutes and attribution where the period cannot be
+ * represented as it stands (no minutes, billable or task work without a
+ * project). Both records then hold what the resolution names.
+ */
+export function planAttachment(
+	period: StoredPeriod,
+	resolution: PlannableRepair = {},
+): RepairPlan | WorkRecordRefusal {
+	return planned(period, null, resolution);
 }
 
 /**

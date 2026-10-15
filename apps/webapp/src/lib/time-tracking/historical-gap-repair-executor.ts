@@ -338,6 +338,8 @@ async function applyUnit(work: SealedWorkTransactionScope, context: UnitContext)
 						createdBy: originalActor.userId,
 						computationMetadata: null,
 					},
+					// Whatever the other fills establish, as the plan checked it.
+					resolution: gapRepairResolution(unit.fills),
 					actorUserId: context.actorUserId,
 				})
 			: await applyWorkRecordChange(work, {
@@ -398,8 +400,8 @@ async function applyUnit(work: SealedWorkTransactionScope, context: UnitContext)
 				sources: unit.fills.map((fill) => ({ fill: fill.kind, source: FILL_SOURCES[fill.kind] })),
 			},
 			revisions: { workPeriod: { source: sourceRevision, result: written.after.revision } },
-			// Attaching changes no work, so it has no effects.
-			effects: written.kind === "attached" ? null : written.effects,
+			// Attaching changes no work, so it has no effects unless a fill named a change.
+			effects: written.effects ?? null,
 		},
 	});
 	return {

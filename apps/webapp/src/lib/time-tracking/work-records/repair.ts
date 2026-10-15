@@ -11,9 +11,17 @@ import "server-only";
  * Every refusal is decided before the first write. A pair that still disagrees
  * after the writes is a defect in work records: it throws and rolls back.
  */
-import { and, asc, eq, isNull } from "drizzle-orm";
-import { timeRecord, timeRecordAllocation, timeRecordWork, workPeriod } from "@/db/schema";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import {
+	approvalRequest,
+	timeRecord,
+	timeRecordAllocation,
+	timeRecordApprovalDecision,
+	timeRecordWork,
+	workPeriod,
+} from "@/db/schema";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { legacyApprovalDecision } from "@/lib/time-record/legacy-approval-decision";
 import { CompletedWorkIntegrityError } from "../close-active-work";
 import { closedRangeTouchedByWork, type WorkInterval } from "../closed-months/rules";
 import { closedRangesForEmployee } from "../closed-months/store";
@@ -34,12 +42,14 @@ import {
 	type WorkRecordRows,
 } from "./rows";
 import { type WorkSegment, workSegment } from "./segment";
-import { WorkAttribution } from "./work-attribution";
+import { UnrepresentableWorkAttributionError, WorkAttribution } from "./work-attribution";
 
 /**
  * Attaching changes no work: the period's interval, minutes and attribution
  * stay as they are, so nothing is sent back and no balance is marked (user,
- * 2026-10-15). Only the record and the revision step are written.
+ * 2026-10-15). Only the record and the revision step are written. A resolution
+ * that changes the period's minutes or attribution is a change of work, with
+ * its effects.
  */
 export type WorkAttachment = {
 	kind: "attached";
@@ -47,6 +57,8 @@ export type WorkAttachment = {
 	segment: WorkSegment;
 	/** The new expected state: name it to chain a further change. */
 	after: WorkRecordExpected;
+	/** Present only when a resolution changed the work. */
+	effects?: { workBalanceDirtyFromDate: string };
 };
 
 export type WorkRepair = {
@@ -169,13 +181,34 @@ export async function attachWorkRecord(
 		.where(and(eq(timeRecord.id, recordId), eq(timeRecord.organizationId, organizationId)))
 		.for("update");
 	if (existing) return { kind: "canonical_record_present" };
-	const plan = planAttachment(period);
+	const resolution = change.resolution ?? {};
+	const plan = planAttachment(period, {
+		...resolution,
+		attribution: resolution.attribution
+			? await resolvedPatch(
+					tx,
+					{ organizationId, attribution: resolution.attribution },
+					period.projectId,
+				)
+			: undefined,
+	});
 	if ("kind" in plan) return plan;
 	const interval = { start: plan.result.startAt, end: plan.result.endAt };
 	const closed = await closedMonthOf(tx, change, [interval]);
 	if (closed) return closed;
+	// Only a resolution that changes the period's minutes or attribution changes work.
+	const changesWork = !periodStays(period, plan);
 
-	// Writes: nothing below refuses. No effects: attaching changes no work.
+	// Writes: nothing below refuses.
+	if (changesWork) {
+		await sendBackChangedWork(tx, {
+			organizationId,
+			employeeId,
+			causedByUserId: change.actorUserId,
+			before: [interval],
+			after: [interval],
+		});
+	}
 	const now = new Date();
 	const planned = plan.result.canonical;
 	const [record] = await tx
@@ -222,11 +255,74 @@ export async function attachWorkRecord(
 	});
 	const pair = { period: written, record, detail, allocations };
 	assertWrittenAgreement(pair);
+	await linkLegacyApprovalHistory(tx, { organizationId, workPeriodId: period.id, recordId });
+	const effects = changesWork
+		? await applyWrittenWorkEffects(tx, {
+				organizationId,
+				employeeId,
+				writtenStarts: [{ at: plan.result.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes }],
+			})
+		: null;
 	return {
 		kind: "attached",
 		segment: segmentOf(written, pair, plan, { clockIn, clockOut }),
 		after: expectedOf(written),
+		...(effects ? { effects } : {}),
 	};
+}
+
+/**
+ * The work period's legacy approval requests: each becomes a decision on the
+ * attached canonical work record and links to it, for every caller of attach
+ * (the deploy and lazy backfills, reopening a month, gap and field repairs).
+ */
+async function linkLegacyApprovalHistory(
+	tx: WorkTransactionClient,
+	input: { organizationId: string; workPeriodId: string; recordId: string },
+): Promise<void> {
+	const requests = await tx
+		.select()
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.organizationId, input.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.entityId, input.workPeriodId),
+			),
+		)
+		.orderBy(asc(approvalRequest.createdAt), asc(approvalRequest.id));
+	if (requests.length === 0) return;
+	await tx.insert(timeRecordApprovalDecision).values(
+		requests.map((request) => ({
+			organizationId: input.organizationId,
+			recordId: input.recordId,
+			...legacyApprovalDecision(request),
+		})),
+	);
+	await tx
+		.update(approvalRequest)
+		.set({ canonicalRecordId: input.recordId })
+		.where(
+			and(
+				eq(approvalRequest.organizationId, input.organizationId),
+				inArray(
+					approvalRequest.id,
+					requests.map(({ id }) => id),
+				),
+			),
+		);
+}
+
+/** Whether the planned work keeps the period's minutes and attribution as stored. */
+function periodStays(period: WorkPeriodRow, plan: RepairPlan): boolean {
+	if (period.durationMinutes !== plan.result.durationMinutes) return false;
+	try {
+		return WorkAttribution.fromWorkPeriod(period).equals(plan.result.attribution);
+	} catch (error) {
+		// A period the resolution made representable changed.
+		if (error instanceof UnrepresentableWorkAttributionError) return false;
+		throw error;
+	}
 }
 
 export async function repairWorkRecord(
@@ -252,7 +348,7 @@ export async function repairWorkRecord(
 	const patch = await resolvedPatch(
 		tx,
 		{ organizationId, attribution: change.resolution.attribution },
-		WorkAttribution.fromWorkPeriod(period),
+		period.projectId,
 	);
 	const plan = planRepair(
 		period,

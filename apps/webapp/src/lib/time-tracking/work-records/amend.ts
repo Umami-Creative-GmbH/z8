@@ -128,7 +128,7 @@ export async function amendWorkRecord(
 		clockOut,
 	});
 	if (endpoints === "adopted_entry_mismatch") return { kind: "adopted_entry_mismatch" };
-	const patch = await resolvedPatch(tx, change, WorkAttribution.fromWorkPeriod(period));
+	const patch = await resolvedPatch(tx, change, period.projectId);
 	const plannable = (endpoint: ResolvedEndpoint) => ({
 		at: endpoint.at,
 		adopted: endpoint.adopted !== undefined,
@@ -283,12 +283,13 @@ export async function amendWorkRecord(
 export async function resolvedPatch(
 	tx: WorkTransactionClient,
 	change: Pick<AmendWorkRecord, "organizationId" | "attribution">,
-	source: WorkAttribution,
+	/** The work's stored project, which the patch keeps or replaces. */
+	sourceProjectId: string | null,
 ): Promise<WorkAttributionPatch | undefined> {
 	if (!change.attribution) return undefined;
 	const { project, ...rest } = change.attribution;
-	const projectId = project === undefined ? (source.project?.projectId ?? null) : project;
-	const projectChanged = projectId !== (source.project?.projectId ?? null);
+	const projectId = project === undefined ? sourceProjectId : project;
+	const projectChanged = projectId !== sourceProjectId;
 	const needsProject = (projectChanged && rest.billable === undefined) || rest.billable === true;
 	const facts = needsProject
 		? await readProjectBillability(tx, change.organizationId, projectId)

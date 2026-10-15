@@ -68,8 +68,12 @@ import {
 	type HistoricalWorkEvidenceReader,
 	readHistoricalWorkEvidence,
 } from "./historical-work-diagnostics-reader";
-import { applyWorkRecordChange, isWorkRecordRefusal } from "./work-records";
-import { refusalError } from "./work-records/refusals";
+import {
+	applyWorkRecordChange,
+	isWorkRecordRefusal,
+	readWorkRecord,
+	refusalError,
+} from "./work-records";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "./work-transaction";
 
 type Database = typeof database;
@@ -739,14 +743,24 @@ async function applyFieldRepair(
 		await reviewedAllocations(scope.db, organizationId, proposal.work.timeRecordId, recordProjects),
 	);
 	const sourceRevision = proposal.expected.period.graphRevision;
-	const repaired = await applyWorkRecordChange(scope, {
-		kind: "repair",
-		organizationId,
-		employeeId,
-		expected: { workPeriodId: proposal.work.workPeriodId, revision: sourceRevision },
-		resolution,
-		actorUserId: executorUserId,
-	});
+	const expected = { workPeriodId: proposal.work.workPeriodId, revision: sourceRevision };
+	const repaired =
+		proposal.work.timeRecordId === null
+			? await attachRepaired(scope, {
+					organizationId,
+					employeeId,
+					expected,
+					resolution,
+					actorUserId: executorUserId,
+				})
+			: await applyWorkRecordChange(scope, {
+					kind: "repair",
+					organizationId,
+					employeeId,
+					expected,
+					resolution,
+					actorUserId: executorUserId,
+				});
 	if (isWorkRecordRefusal(repaired)) {
 		// A closed month is a refusal of its own; anything else means the reviewed
 		// work moved, so the proposal is stale and nothing was written.
@@ -760,9 +774,9 @@ async function applyFieldRepair(
 		executedAt: executedAt.toString(),
 	};
 	const revisions = {
-		workPeriod: { source: repaired.source.revision, result: repaired.after.revision },
+		workPeriod: { source: sourceRevision, result: repaired.after.revision },
 	};
-	const recordId = proposal.work.timeRecordId;
+	const recordId = repaired.segment.canonicalRecordId;
 	// The receipt's identity is the proposal's: one application per approved proposal.
 	await scope.db.insert(completedWorkOperation).values({
 		id: row.id,
@@ -802,10 +816,47 @@ async function applyFieldRepair(
 			consequences: proposal.consequences,
 			expected: proposal.expected,
 			revisions,
-			effects: repaired.effects,
+			effects: repaired.effects ?? null,
 		},
 	});
 	return { operationId: row.id, executor, revisions };
+}
+
+/**
+ * Work without a canonical work record gets one with the repaired values
+ * (spec-2 M1): work records' attach with the resolution. The record is created
+ * by the user who recorded the work's clock-out, as every attach creates it.
+ */
+async function attachRepaired(
+	scope: SealedWorkTransactionScope,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		expected: { workPeriodId: string; revision: number };
+		resolution: ReturnType<typeof fieldRepairResolution>;
+		actorUserId: string;
+	},
+) {
+	const work = await readWorkRecord(
+		scope,
+		{
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			workPeriodId: input.expected.workPeriodId,
+		},
+		{ lock: true },
+	);
+	const recordedBy = work?.clockOut?.createdBy ?? work?.clockIn?.createdBy;
+	if (!recordedBy) throw new StaleHistoricalProposalError();
+	return applyWorkRecordChange(scope, {
+		kind: "attach",
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		expected: input.expected,
+		record: { origin: "system", createdBy: recordedBy, computationMetadata: null },
+		resolution: input.resolution,
+		actorUserId: input.actorUserId,
+	});
 }
 
 /** The reviewed record's project allocations, as the resolution of a project repair reads them. */

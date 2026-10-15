@@ -17,14 +17,14 @@ import "server-only";
  *
  * The record is the work period's own id, origin `system`, created by the user
  * who recorded the work's clock-out (the original actor, never the executor).
- * The work period stores no computation metadata, so none is known to copy. The
- * period's legacy approval history is linked to the new record in the same
- * transaction.
+ * The work period stores no computation metadata, so none is known to copy. Work
+ * records' attach links the period's legacy approval history to the new record in
+ * the same transaction.
  */
 import { and, asc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { approvalRequest, timeRecordApprovalDecision, workPeriod } from "@/db/schema";
+import { workPeriod } from "@/db/schema";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
 import {
@@ -34,7 +34,6 @@ import {
 	type WorkRecordRefusal,
 	type WorkRecordRefusalKind,
 } from "@/lib/time-tracking/work-records";
-import type { WorkTransactionClient } from "@/lib/time-tracking/work-transaction";
 
 /** A work period attach refused, with why, for the operator to list. */
 export type RefusedWorkRecordAttachment = {
@@ -111,7 +110,7 @@ export async function attachMissingWorkRecords(input: {
 					if (!work || work.period.canonicalRecordId !== null) return null;
 					const recordedBy = work.clockOut?.createdBy ?? work.clockIn?.createdBy;
 					if (!recordedBy) return { kind: "endpoint_entry_missing" as const };
-					const attached = await applyWorkRecordChange(scope, {
+					return applyWorkRecordChange(scope, {
 						kind: "attach",
 						organizationId,
 						employeeId,
@@ -119,13 +118,6 @@ export async function attachMissingWorkRecords(input: {
 						record: { origin: "system", createdBy: recordedBy, computationMetadata: null },
 						actorUserId,
 					});
-					if (isWorkRecordRefusal(attached)) return attached;
-					await linkApprovalHistory(scope.db, {
-						organizationId,
-						workPeriodId,
-						recordId: attached.segment.canonicalRecordId,
-					});
-					return attached;
 				},
 			);
 			if (result === null) continue;
@@ -194,53 +186,4 @@ export async function attachMissingWorkRecordsInEveryOrganization(
 		});
 	}
 	return reports;
-}
-
-/**
- * The work period's legacy approval requests: each becomes a decision on the
- * new canonical work record and links to it.
- */
-async function linkApprovalHistory(
-	tx: WorkTransactionClient,
-	input: { organizationId: string; workPeriodId: string; recordId: string },
-): Promise<void> {
-	const requests = await tx
-		.select()
-		.from(approvalRequest)
-		.where(
-			and(
-				eq(approvalRequest.organizationId, input.organizationId),
-				eq(approvalRequest.entityType, "time_entry"),
-				eq(approvalRequest.entityId, input.workPeriodId),
-			),
-		)
-		.orderBy(asc(approvalRequest.createdAt), asc(approvalRequest.id));
-	if (requests.length === 0) return;
-	await tx.insert(timeRecordApprovalDecision).values(
-		requests.map((request) => ({
-			organizationId: input.organizationId,
-			recordId: input.recordId,
-			actorEmployeeId: request.status === "pending" ? request.requestedBy : request.approverId,
-			action:
-				request.status === "pending"
-					? ("submitted" as const)
-					: request.status === "approved"
-						? ("approved" as const)
-						: ("rejected" as const),
-			reason: request.rejectionReason ?? request.reason,
-			createdAt: request.approvedAt ?? request.createdAt,
-		})),
-	);
-	await tx
-		.update(approvalRequest)
-		.set({ canonicalRecordId: input.recordId })
-		.where(
-			and(
-				eq(approvalRequest.organizationId, input.organizationId),
-				inArray(
-					approvalRequest.id,
-					requests.map(({ id }) => id),
-				),
-			),
-		);
 }

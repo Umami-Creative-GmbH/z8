@@ -122,7 +122,8 @@ export function gapRepairResolution(fills: readonly GapRepairFill[]): Historical
 
 /**
  * Whether work records would write the repaired pair: the plan step's own
- * answer, on the evidence. Without a record, the repair is an attachment.
+ * answer, on the evidence. Without a record, the repair is an attachment with
+ * the resolution (spec-2 M1).
  */
 export function repairedWorkAgrees(
 	period: HistoricalPeriodEvidence,
@@ -130,17 +131,14 @@ export function repairedWorkAgrees(
 	resolution: HistoricalRepairResolution,
 ): boolean {
 	const workPeriod = agreementPeriodOf(period);
-	if (!record) return !("kind" in planAttachment(workPeriod));
-	const plan = planRepair(
-		workPeriod,
-		{ ...agreementRecordOf(record), linked: true },
-		{
-			durationMinutes: resolution.durationMinutes,
-			startAt: resolution.startAt,
-			endAt: resolution.endAt,
-			attribution: resolution.attribution && plannablePatch(resolution.attribution),
-		},
-	);
+	const plannable = {
+		durationMinutes: resolution.durationMinutes,
+		startAt: resolution.startAt,
+		endAt: resolution.endAt,
+		attribution: resolution.attribution && plannablePatch(resolution.attribution),
+	};
+	if (!record) return !("kind" in planAttachment(workPeriod, plannable));
+	const plan = planRepair(workPeriod, { ...agreementRecordOf(record), linked: true }, plannable);
 	return !("kind" in plan) || plan.kind === "unchanged";
 }
 

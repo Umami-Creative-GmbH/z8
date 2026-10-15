@@ -179,7 +179,7 @@ export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 		approval_request: ["update"],
 	},
 	// A work period's legacy approval requests link to its attached record (#1224).
-	"src/lib/time-record/migration/attach-missing-work-records.ts": {
+	"src/lib/time-tracking/work-records/repair.ts": {
 		approval_request: ["update"],
 	},
 } as const satisfies ApprovalWriteOwners;
@@ -883,7 +883,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		},
 		{
 			columns: ["is_superseded", "superseded_by_id"],
-			functionName: "supersedeTakenOverEntry",
+			functionName: "supersedeEndpoint",
 			operation: "update",
 			semantic: "correction_lifecycle",
 			table: "time_entry",
