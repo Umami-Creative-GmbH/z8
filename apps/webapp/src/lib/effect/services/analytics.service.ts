@@ -46,6 +46,10 @@ import { loadTravelExpenseReportRequestClosures } from "@/lib/approvals/travel-e
 import { differenceInDays, format } from "@/lib/datetime/luxon-utils";
 import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { resolveReportDateRange } from "@/lib/reports/report-date-range";
+import {
+	sumWorkMinutesWithinTracking,
+	readTrackedDailyWorkMinutes,
+} from "@/lib/work-balance/tracked-work";
 import { computeOvertimeDelta } from "@/lib/time-record/overtime";
 import {
 	calculateExpectedWorkHours,
@@ -405,7 +409,7 @@ export class AnalyticsService extends Context.Service<
 								return await dbService.db.query.workPeriod.findMany({
 									where: and(
 										eq(workPeriod.organizationId, organizationId),
-										sql`${workPeriod.employeeId} = ANY(${employeeIds})`,
+										inArray(workPeriod.employeeId, employeeIds),
 										lt(workPeriod.startTime, new Date(dateRange.end.getTime() + 1)),
 										gt(workPeriod.endTime, dateRange.start),
 									),
@@ -417,22 +421,39 @@ export class AnalyticsService extends Context.Service<
 							yield* Effect.forEach(
 								employees,
 								(employee) =>
-									calculateExpectedWorkHoursForEmployee(
-										employee.id,
-										organizationId,
-										dateRange.start,
-										dateRange.end,
-										calendarRange.timezone,
-									).pipe(
-										Effect.map((expectedHours) => [employee.id, expectedHours] as const),
-										withWorkPolicy,
-									),
+									Effect.gen(function* () {
+										const [expectedHours, trackedMinutes] = yield* Effect.all(
+											[
+												calculateExpectedWorkHoursForEmployee(
+													employee.id,
+													organizationId,
+													dateRange.start,
+													dateRange.end,
+													calendarRange.timezone,
+												),
+												dbService.query("analytics.teamTrackedMinutes", () =>
+													sumWorkMinutesWithinTracking(dbService.db, {
+														employeeId: employee.id,
+														organizationId,
+														startDate: dateRange.start,
+														endDate: dateRange.end,
+													}),
+												),
+											],
+											{ concurrency: "unbounded" },
+										);
+										return [employee.id, { expectedHours, trackedMinutes }] as const;
+									}).pipe(withWorkPolicy),
 								{ concurrency: "unbounded" },
 							),
 						);
+
 						const employeeHours = employees.map((emp) => {
 							const totalHours = (allocation.minutesByEmployee.get(emp.id) ?? 0) / 60;
-							const employeeExpected = expectedByEmployee.get(emp.id) ?? expected;
+							const tracked = expectedByEmployee.get(emp.id);
+							const employeeExpected = tracked?.expectedHours ?? expected;
+							const trackedHours =
+								tracked?.trackedMinutes != null ? tracked.trackedMinutes / 60 : totalHours;
 							return {
 								employeeId: emp.id,
 								employeeName: emp.user.name || "Unknown",
@@ -440,10 +461,10 @@ export class AnalyticsService extends Context.Service<
 								teamName: emp.team?.name || "No Team",
 								totalHours,
 								expectedHours: employeeExpected.totalHours,
-								variance: totalHours - employeeExpected.totalHours,
+								variance: trackedHours - employeeExpected.totalHours,
 								percentageOfExpected:
 									employeeExpected.totalHours > 0
-										? (totalHours / employeeExpected.totalHours) * 100
+										? (trackedHours / employeeExpected.totalHours) * 100
 										: 0,
 							};
 						});
@@ -705,7 +726,7 @@ export class AnalyticsService extends Context.Service<
 								return await dbService.db.query.workPeriod.findMany({
 									where: and(
 										eq(workPeriod.organizationId, organizationId),
-										sql`${workPeriod.employeeId} = ANY(${employeeIds})`,
+										inArray(workPeriod.employeeId, employeeIds),
 										isNull(workPeriod.deletedAt),
 										lt(workPeriod.startTime, rangeEndExclusive),
 										gt(workPeriod.endTime, dateRange.start),
@@ -716,6 +737,7 @@ export class AnalyticsService extends Context.Service<
 
 						const minutesByEmployee = new Map<string, number>();
 						const dailyHoursMap = new Map<string, number>();
+						const dailyMinutesByEmployee = new Map<string, Map<string, number>>();
 						for (const wp of workPeriods) {
 							const startTime = wp.startTime;
 							const endTime = wp.endTime;
@@ -728,6 +750,10 @@ export class AnalyticsService extends Context.Service<
 									piece.date,
 									(dailyHoursMap.get(piece.date) || 0) + piece.minutes / 60,
 								);
+								const dailyMinutes =
+									dailyMinutesByEmployee.get(wp.employeeId) ?? new Map<string, number>();
+								dailyMinutes.set(piece.date, (dailyMinutes.get(piece.date) ?? 0) + piece.minutes);
+								dailyMinutesByEmployee.set(wp.employeeId, dailyMinutes);
 								minutesByEmployee.set(
 									wp.employeeId,
 									(minutesByEmployee.get(wp.employeeId) ?? 0) + piece.minutes,
@@ -735,52 +761,110 @@ export class AnalyticsService extends Context.Service<
 							}
 						}
 
+						const trackedByEmployee = new Map(
+							yield* Effect.forEach(
+								employees,
+								(emp) =>
+									Effect.gen(function* () {
+										const actual = yield* dbService.query("analytics.dailyTrackedMinutes", () =>
+											readTrackedDailyWorkMinutes(dbService.db, {
+												employeeId: emp.id,
+												organizationId,
+												startDate: dateRange.start,
+												endDate: dateRange.end,
+											}),
+										);
+										if (!actual) return [emp.id, null] as const;
+										const { loadDailyWorkRequirementsForEmployee } = yield* Effect.promise(
+											() => import("@/lib/calendar/work-policy-requirements"),
+										);
+										const requirements = yield* loadDailyWorkRequirementsForEmployee({
+											employeeId: emp.id,
+											organizationId,
+											startDate: dateRange.start,
+											endDate: dateRange.end,
+											timezone: actual.timezone,
+										}).pipe(withWorkPolicy);
+										const requiredMinutes = Object.values(requirements).reduce(
+											(total, day) => total + day.requiredMinutes,
+											0,
+										);
+										const actualMinutes = Object.values(actual.minutesByDate).reduce(
+											(total, minutes) => total + minutes,
+											0,
+										);
+										return [
+											emp.id,
+											{ ...actual, requirements, requiredMinutes, actualMinutes },
+										] as const;
+									}),
+								{ concurrency: "unbounded" },
+							),
+						);
+
 						const employeeData = employees.map((emp) => {
 							const totalMinutes = minutesByEmployee.get(emp.id) ?? 0;
 							const totalHours = totalMinutes / 60;
+							const tracked = trackedByEmployee.get(emp.id);
+							const balanceActualMinutes = tracked?.actualMinutes ?? totalMinutes;
+							const requiredMinutes = tracked?.requiredMinutes ?? expected.totalMinutes;
 							const overtimeMinutes = computeOvertimeDelta({
-								actualMinutes: totalMinutes,
-								expectedMinutes: expected.totalMinutes,
+								actualMinutes: balanceActualMinutes,
+								expectedMinutes: requiredMinutes,
 							});
 							return {
 								employeeId: emp.id,
 								employeeName: emp.user.name || "Unknown",
 								totalHours,
 								totalMinutes,
-								expectedHours: expected.totalHours,
-								expectedMinutes: expected.totalMinutes,
+								balanceActualMinutes,
+								expectedHours: requiredMinutes / 60,
+								expectedMinutes: requiredMinutes,
 								overtimeMinutes,
-								undertimeHours: Math.max(0, expected.totalHours - totalHours),
+								undertimeHours: Math.max(0, (requiredMinutes - balanceActualMinutes) / 60),
 								avgHoursPerWeek: expected.workDays > 0 ? (totalHours / expected.workDays) * 5 : 0,
 							};
 						});
 						const totalHours = employeeData.reduce((sum, item) => sum + item.totalHours, 0);
-						const totalMinutes = employeeData.reduce((sum, item) => sum + item.totalMinutes, 0);
 						const totalExpected = employeeData.reduce((sum, item) => sum + item.expectedHours, 0);
 						const totalExpectedMinutes = employeeData.reduce(
 							(sum, item) => sum + item.expectedMinutes,
 							0,
 						);
+						const balanceActualMinutes = employeeData.reduce(
+							(sum, item) => sum + item.balanceActualMinutes,
+							0,
+						);
 						const overtimeMinutes = computeOvertimeDelta({
-							actualMinutes: totalMinutes,
+							actualMinutes: balanceActualMinutes,
 							expectedMinutes: totalExpectedMinutes,
 						});
-						const undertimeHours = Math.max(0, totalExpected - totalHours);
+						const undertimeHours = Math.max(0, totalExpected - balanceActualMinutes / 60);
 						const avgHoursPerWeek =
 							employeeData.length > 0 ? totalHours / employeeData.length / 4 : 0;
 
-						// Calculate expected hours per work day (assuming 8 hours standard)
-						const expectedPerDay = 8 * employees.length;
-
 						const distribution = Array.from(dailyHoursMap.entries())
 							.sort((a, b) => a[0].localeCompare(b[0]))
-							.map(([date, hours]) => ({
-								date,
-								hours: Math.round(hours * 100) / 100,
-								expectedHours: expectedPerDay,
-								isOvertime: hours > expectedPerDay,
-								isUndertime: hours < expectedPerDay * 0.9, // 10% tolerance
-							}));
+							.map(([date, hours]) => {
+								let actualMinutes = 0;
+								let requiredMinutes = 0;
+								for (const emp of employees) {
+									const tracked = trackedByEmployee.get(emp.id);
+									actualMinutes += tracked
+										? (tracked.minutesByDate[date] ?? 0)
+										: (dailyMinutesByEmployee.get(emp.id)?.get(date) ?? 0);
+									requiredMinutes += tracked
+										? (tracked.requirements[date]?.requiredMinutes ?? 0)
+										: 8 * 60;
+								}
+								return {
+									date,
+									hours: Math.round(hours * 100) / 100,
+									expectedHours: requiredMinutes / 60,
+									isOvertime: actualMinutes > requiredMinutes,
+									isUndertime: actualMinutes < requiredMinutes * 0.9,
+								};
+							});
 
 						return {
 							summary: {
@@ -1324,7 +1408,7 @@ export class AnalyticsService extends Context.Service<
 								return await dbService.db.query.employeeCostCenterAssignment.findMany({
 									where: and(
 										eq(employeeCostCenterAssignment.organizationId, organizationId),
-										sql`${employeeCostCenterAssignment.employeeId} = ANY(${employeeIds})`,
+										inArray(employeeCostCenterAssignment.employeeId, employeeIds),
 										lte(employeeCostCenterAssignment.effectiveFrom, rangeEnd.toJSDate()),
 										or(
 											isNull(employeeCostCenterAssignment.effectiveTo),
@@ -1364,9 +1448,10 @@ export class AnalyticsService extends Context.Service<
 							),
 						);
 
-						const nestedRecords = yield* Effect.promise(async () => {
-							return await Promise.all(
-								scopedEmployees.map(async (emp) => {
+						const nestedRecords = yield* Effect.forEach(
+							scopedEmployees,
+							(emp) =>
+								Effect.gen(function* () {
 									const primaryManager =
 										emp.managers.find((managerRow) => managerRow.isPrimary) || emp.managers[0];
 									const managerId = primaryManager?.managerId || UNASSIGNED_GROUP.id;
@@ -1375,63 +1460,91 @@ export class AnalyticsService extends Context.Service<
 
 									const employeeAssignments = assignmentByEmployee.get(emp.id) || [];
 
-									const weeklyRecords = await Promise.all(
-										weekBuckets.map(async ({ weekStart, weekStartIso, weekEnd }) => {
-											const [actual, expected] = await Promise.all([
-												calculateWorkHours(
-													emp.id,
-													organizationId,
-													weekStart.toJSDate(),
-													weekEnd.toJSDate(),
-												),
-												calculateExpectedWorkHoursForPolicy(
-													policyByEmployee.get(emp.id) ?? null,
-													organizationId,
-													weekStart.toJSDate(),
-													weekEnd.toJSDate(),
-													calendarRange.timezone,
-												),
-											]);
-
-											const weekStartDate = weekStart.toJSDate();
-											const activeAssignment = employeeAssignments.find((assignment) => {
-												const effectiveFrom = new Date(assignment.effectiveFrom);
-												const effectiveTo = assignment.effectiveTo
-													? new Date(assignment.effectiveTo)
-													: null;
-												return (
-													effectiveFrom.getTime() <= weekStartDate.getTime() &&
-													(!effectiveTo || effectiveTo.getTime() >= weekStartDate.getTime())
+									const weeklyRecords = yield* Effect.forEach(
+										weekBuckets,
+										({ weekStart, weekStartIso, weekEnd }) =>
+											Effect.gen(function* () {
+												const trackedMinutes = yield* dbService.query(
+													"analytics.weekTrackedMinutes",
+													() =>
+														sumWorkMinutesWithinTracking(dbService.db, {
+															employeeId: emp.id,
+															organizationId,
+															startDate: weekStart.toJSDate(),
+															endDate: weekEnd.toJSDate(),
+														}),
 												);
-											});
+												const [actual, expected] = yield* Effect.all(
+													[
+														trackedMinutes === null
+															? Effect.promise(() =>
+																	calculateWorkHours(
+																		emp.id,
+																		organizationId,
+																		weekStart.toJSDate(),
+																		weekEnd.toJSDate(),
+																	),
+																)
+															: Effect.succeed({ totalHours: trackedMinutes / 60 }),
+														trackedMinutes === null
+															? Effect.promise(() =>
+																	calculateExpectedWorkHoursForPolicy(
+																		policyByEmployee.get(emp.id) ?? null,
+																		organizationId,
+																		weekStart.toJSDate(),
+																		weekEnd.toJSDate(),
+																		calendarRange.timezone,
+																	),
+																)
+															: calculateExpectedWorkHoursForEmployee(
+																	emp.id,
+																	organizationId,
+																	weekStart.toJSDate(),
+																	weekEnd.toJSDate(),
+																	calendarRange.timezone,
+																).pipe(withWorkPolicy),
+													],
+													{ concurrency: "unbounded" },
+												);
+												const weekStartDate = weekStart.toJSDate();
+												const activeAssignment = employeeAssignments.find((assignment) => {
+													const effectiveFrom = new Date(assignment.effectiveFrom);
+													const effectiveTo = assignment.effectiveTo
+														? new Date(assignment.effectiveTo)
+														: null;
+													return (
+														effectiveFrom.getTime() <= weekStartDate.getTime() &&
+														(!effectiveTo || effectiveTo.getTime() >= weekStartDate.getTime())
+													);
+												});
 
-											const costCenterId = activeAssignment?.costCenterId || UNASSIGNED_GROUP.id;
-											const costCenterLabel =
-												activeAssignment?.costCenter?.name || UNASSIGNED_GROUP.label;
+												const costCenterId = activeAssignment?.costCenterId || UNASSIGNED_GROUP.id;
+												const costCenterLabel =
+													activeAssignment?.costCenter?.name || UNASSIGNED_GROUP.label;
 
-											if (filters?.costCenterId && costCenterId !== filters.costCenterId) {
-												return null;
-											}
+												if (filters?.costCenterId && costCenterId !== filters.costCenterId) {
+													return null;
+												}
 
-											return {
-												weekStart: weekStartIso,
-												overtimeHours: clampOvertime(actual.totalHours - expected.totalHours),
-												teamId: emp.teamId || UNASSIGNED_GROUP.id,
-												teamLabel: emp.team?.name || UNASSIGNED_GROUP.label,
-												costCenterId,
-												costCenterLabel,
-												managerId,
-												managerLabel,
-											} satisfies OvertimeBurnDownWeeklyRecord;
-										}),
+												return {
+													weekStart: weekStartIso,
+													overtimeHours: clampOvertime(actual.totalHours - expected.totalHours),
+													teamId: emp.teamId || UNASSIGNED_GROUP.id,
+													teamLabel: emp.team?.name || UNASSIGNED_GROUP.label,
+													costCenterId,
+													costCenterLabel,
+													managerId,
+													managerLabel,
+												} satisfies OvertimeBurnDownWeeklyRecord;
+											}),
+										{ concurrency: "unbounded" },
 									);
-
 									return weeklyRecords.filter((record): record is OvertimeBurnDownWeeklyRecord =>
 										Boolean(record),
 									);
 								}),
-							);
-						});
+							{ concurrency: "unbounded" },
+						);
 
 						return buildOvertimeBurnDownDataForTesting(
 							nestedRecords.flat(),

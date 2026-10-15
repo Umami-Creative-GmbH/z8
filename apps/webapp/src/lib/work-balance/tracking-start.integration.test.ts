@@ -386,4 +386,51 @@ describe("explicit tracking start across public balance readers", () => {
 			}),
 		).rejects.toThrow("rollback preview fixture");
 	});
+	it("keeps historical analytics work readable while tracking team variance and weekly overtime from rollout", async () => {
+		const { AnalyticsService } = await import("@/lib/effect/services/analytics.service");
+		const analytics = await runtime.runPromise(AnalyticsService);
+		const dateRange = {
+			start: new Date("2026-04-30T22:00:00Z"),
+			end: new Date("2026-05-31T21:59:59.999Z"),
+			startDate: "2026-05-01",
+			endDate: "2026-05-31",
+			timezone: "Europe/Berlin",
+		};
+		const performance = await runtime.runPromise(
+			analytics.getTeamPerformance({ organizationId, dateRange }),
+		);
+		const subject = performance.teams
+			.flatMap((team) => team.employees)
+			.find((person) => person.employeeId === employeeId);
+		expect(subject).toMatchObject({
+			totalHours: 12,
+			expectedHours: 1,
+			variance: 0,
+			percentageOfExpected: 100,
+		});
+		const burndown = await runtime.runPromise(
+			analytics.getOvertimeBurnDown({ organizationId, dateRange, scope: { role: "admin" } }),
+		);
+		expect(
+			burndown.weeklySeries.find((week) => week.weekStart === "2026-04-27")?.overtimeHours,
+		).toBe(0);
+		expect(
+			burndown.weeklySeries.find((week) => week.weekStart === "2026-05-18")?.overtimeHours,
+		).toBe(1);
+		const hours = await runtime.runPromise(
+			analytics.getWorkHoursAnalytics({ organizationId, dateRange, employeeId }),
+		);
+		expect(hours.summary).toMatchObject({ totalHours: 12, overtimeHours: 0, undertimeHours: 0 });
+		expect(hours.distribution.find((day) => day.date === "2026-05-01")).toMatchObject({
+			hours: 10,
+			expectedHours: 0,
+			isOvertime: false,
+			isUndertime: false,
+		});
+		expect(hours.byEmployee.find((person) => person.employeeId === employeeId)).toMatchObject({
+			totalHours: 12,
+			overtimeHours: 0,
+			undertimeHours: 0,
+		});
+	});
 });
