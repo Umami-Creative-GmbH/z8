@@ -477,7 +477,7 @@ export const workBalanceRebuildIntent = pgTable(
 		),
 		check(
 			"work_balance_rebuild_intent_reason_check",
-			sql`${table.reason} IN ('organization_timezone', 'user_timezone')`,
+			sql`${table.reason} IN ('organization_timezone', 'user_timezone', 'tracking_dates')`,
 		),
 		check(
 			"work_balance_rebuild_intent_scope_check",

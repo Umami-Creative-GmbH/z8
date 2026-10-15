@@ -527,6 +527,7 @@ type DailyWorkRequirementsParams = {
 	endDate: Date;
 	timezone?: string | null;
 	trackingStartDateOverride?: string | null;
+	employeeTimezoneOverride?: string;
 };
 
 /**

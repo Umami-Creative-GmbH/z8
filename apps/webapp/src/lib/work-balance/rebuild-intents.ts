@@ -12,7 +12,7 @@ type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
  * timezone change (#312).
  */
 export type WorkBalanceRebuildScope =
-	| { reason: "organization_timezone" }
+	| { reason: "organization_timezone" | "tracking_dates" }
 	| { reason: "user_timezone"; userId: string };
 
 export type WorkBalanceRebuildReason = WorkBalanceRebuildScope["reason"];

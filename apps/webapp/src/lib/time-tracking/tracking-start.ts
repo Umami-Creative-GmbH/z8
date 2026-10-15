@@ -8,7 +8,7 @@ import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 /** Null keeps legacy organizations on their existing calculation rules. */
 export async function loadEmployeeTrackingContext(
 	client: Pick<WorkBalanceDbClient, "select">,
-	input: { organizationId: string; employeeId: string; trackingStartDateOverride?: string | null },
+	input: { organizationId: string; employeeId: string; trackingStartDateOverride?: string | null; employeeTimezoneOverride?: string },
 ): Promise<{ startDate: string; timezone: string } | null> {
 	const [row] = await client
 		.select({
@@ -33,7 +33,7 @@ export async function loadEmployeeTrackingContext(
 	const selectedStart =
 		input.trackingStartDateOverride ?? (row.activatedAt ? row.trackingStartDate : null);
 	if (!selectedStart) return null;
-	const timezone = resolveEffectiveTimezone(row.userTimezone, row.organizationTimezone);
+	const timezone = input.employeeTimezoneOverride ?? resolveEffectiveTimezone(row.userTimezone, row.organizationTimezone);
 	const organizationStart = parsePlainDate(selectedStart);
 	// Employee start is a persisted calendar date, represented at UTC midnight at the DB boundary.
 	const employmentStart = row.employmentStart
@@ -48,7 +48,7 @@ export async function loadEmployeeTrackingContext(
 
 export async function loadEmployeeTrackingStart(
 	client: Pick<WorkBalanceDbClient, "select">,
-	input: { organizationId: string; employeeId: string; trackingStartDateOverride?: string | null },
+	input: { organizationId: string; employeeId: string; trackingStartDateOverride?: string | null; employeeTimezoneOverride?: string },
 ): Promise<string | null> {
 	return (await loadEmployeeTrackingContext(client, input))?.startDate ?? null;
 }

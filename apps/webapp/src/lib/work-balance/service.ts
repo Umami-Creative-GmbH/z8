@@ -690,20 +690,32 @@ export async function loadWorkBalanceEmployee(
  * the day after it. One dated after `day` is left out, so the result is the
  * full calculation as it stood before it.
  */
-export async function computeEmployeeWorkBalanceAtEndOfDay(
+export interface WorkBalanceSnapshot {
+	actualMinutes: number;
+	requiredMinutes: number;
+	adjustmentMinutes: number;
+	balanceMinutes: number;
+	calculationStartDate: string | null;
+}
+
+/** The same command/readback projection, including its explainable components for impact reviews. */
+export async function computeEmployeeWorkBalanceSnapshotAtEndOfDay(
 	input: {
 		organizationId: string;
 		employee: { id: string; startDate: Date | null; timezone: string };
 		day: string;
 		/** Server-side proposed organization date for reviewed impact calculations; never persisted here. */
 		trackingStartDateOverride?: string | null;
+		/** A closed month retains the timezone captured by its close. */
+		employeeTimezoneOverride?: string;
 	},
 	dbClient: WorkBalanceDbClient = db,
-): Promise<number> {
+): Promise<WorkBalanceSnapshot> {
 	const scope = {
 		employeeId: input.employee.id,
 		organizationId: input.organizationId,
 		trackingStartDateOverride: input.trackingStartDateOverride,
+		employeeTimezoneOverride: input.employeeTimezoneOverride,
 	};
 	const [firstRelevantDate, { countFrom, adjustmentMinutes }] = await Promise.all([
 		getFirstRelevantDate(scope, dbClient, input.employee, input.employee.timezone),
@@ -714,7 +726,9 @@ export async function computeEmployeeWorkBalanceAtEndOfDay(
 		}),
 	]);
 	const calculationStartDate = laterIsoDate(firstRelevantDate, countFrom);
-	if (!calculationStartDate || calculationStartDate > input.day) return adjustmentMinutes;
+	if (!calculationStartDate || calculationStartDate > input.day) {
+		return { actualMinutes: 0, requiredMinutes: 0, adjustmentMinutes, balanceMinutes: adjustmentMinutes, calculationStartDate };
+	}
 
 	const work = await computeEmployeePeriodBalance({
 		...scope,
@@ -726,7 +740,15 @@ export async function computeEmployeeWorkBalanceAtEndOfDay(
 		...(input.employee.timezone === "UTC" ? {} : { timezone: input.employee.timezone }),
 		isClosed: false,
 	});
-	return work.actualMinutes - work.requiredMinutes + adjustmentMinutes;
+	return { actualMinutes: work.actualMinutes, requiredMinutes: work.requiredMinutes, adjustmentMinutes,
+		balanceMinutes: work.actualMinutes - work.requiredMinutes + adjustmentMinutes, calculationStartDate };
+}
+
+export async function computeEmployeeWorkBalanceAtEndOfDay(
+	input: Parameters<typeof computeEmployeeWorkBalanceSnapshotAtEndOfDay>[0],
+	dbClient: WorkBalanceDbClient = db,
+): Promise<number> {
+	return (await computeEmployeeWorkBalanceSnapshotAtEndOfDay(input, dbClient)).balanceMinutes;
 }
 
 export async function upsertEmployeeWorkBalance(

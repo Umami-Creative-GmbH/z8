@@ -45,6 +45,7 @@ import {
 } from "./hydration-team-streak-leaders";
 import { createHydrationTeamStreakLeadersCacheConfig } from "./hydration-team-streak-leaders-query";
 import { calculateAdjustedExpectedHoursForRange } from "./quick-stats-calculations";
+import { loadTrackedQuickStats, type QuickStats } from "./quick-stats-tracking";
 import { mapRecentlyApprovedRequestRows } from "./recently-approved-requests";
 import { type AbsenceRange, getNextAvailableReturnDate } from "./return-date-calculations";
 
@@ -477,17 +478,28 @@ export async function getRecentlyApprovedRequests(
 /**
  * Get quick stats (weekly and monthly hours)
  */
-export async function getQuickStats(): Promise<ServerActionResult<any>> {
+export async function getQuickStats(): Promise<ServerActionResult<QuickStats>> {
 	const effect = Effect.gen(function* () {
 		const authService = yield* AuthService;
 		const session = yield* authService.getSession();
 		const dbService = yield* DatabaseService;
 
+		const organizationId = session.session.activeOrganizationId;
+		if (!organizationId) {
+			return yield* Effect.fail(
+				new NotFoundError({ message: "Employee profile not found", entityType: "employee" }),
+			);
+		}
+
 		// Get current employee
 		const currentEmployee = yield* dbService
 			.query("getCurrentEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
+					where: and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, organizationId),
+						eq(employee.isActive, true),
+					),
 					with: {
 						workPolicyAssignments: {
 							where: eq(workPolicyAssignment.isActive, true),
@@ -518,8 +530,15 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 			);
 
 		const now = currentTimestamp();
-		const nowDT = DateTime.fromJSDate(now);
 		const weekStartDay = yield* Effect.promise(() => getUserWeekStartDay(session.user.id));
+		const trackedStats = yield* loadTrackedQuickStats({
+			organizationId,
+			employeeId: currentEmployee.id,
+			now,
+			weekStartDay,
+		});
+		if (trackedStats) return trackedStats;
+		const nowDT = DateTime.fromJSDate(now);
 		const { start: weekStartDateTime, end: weekEndDateTime } = getWeekBounds(nowDT, weekStartDay);
 		const weekStart = weekStartDateTime.toJSDate();
 		const weekEnd = weekEndDateTime.toJSDate();
