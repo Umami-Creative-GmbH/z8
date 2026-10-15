@@ -12,6 +12,7 @@ import {
 	employee,
 	importStagedRow,
 	vacationAdjustment,
+	vacationReconciliation,
 } from "@/db/schema";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -26,6 +27,7 @@ import {
 	loadWorkingDaysForEmployees,
 	type AbsenceDaysDatabase,
 } from "./absence-days-resolver";
+import { reconciliationInputSchema } from "./vacation-reconciliation-types";
 import { loadVacationBalances } from "./vacation-balance-store";
 
 export class HistoricalVacationError extends Error {
@@ -96,6 +98,7 @@ export const historicalVacationInputSchema = z.object({
 	year: z.number().int().min(1900).max(9998),
 	days: z.number().finite().min(0).max(366).multipleOf(0.5),
 	reason: z.string().trim().min(1).max(2000),
+	excludesListedDatedHistory: z.boolean().default(false),
 });
 export type HistoricalVacationInput = z.infer<
 	typeof historicalVacationInputSchema
@@ -218,6 +221,7 @@ async function review(
 			categoryId: absenceCategory.id,
 			category: absenceCategory.name,
 			countsAgainstVacation: absenceCategory.countsAgainstVacation,
+			categoryType: absenceCategory.type,
 		})
 		.from(absenceEntry)
 		.innerJoin(
@@ -248,6 +252,8 @@ async function review(
 			? []
 			: await database
 					.select({
+						id: importStagedRow.id,
+						batchId: importStagedRow.batchId,
 						targetId: importStagedRow.commitTargetId,
 						sourceId: importStagedRow.providerSourceId,
 						sourceHash: importStagedRow.sourcePayloadHash,
@@ -267,11 +273,71 @@ async function review(
 						),
 					)
 					.orderBy(asc(importStagedRow.id));
+
+	const batchIds = [...new Set(importedEvidence.map((row) => row.batchId))];
+	const mappingReceipts = batchIds.length
+		? await database
+				.select({
+					id: vacationReconciliation.id,
+					plan: vacationReconciliation.plan,
+					result: vacationReconciliation.result,
+				})
+				.from(vacationReconciliation)
+				.where(
+					and(
+						eq(vacationReconciliation.organizationId, input.organizationId),
+						eq(vacationReconciliation.status, "committed"),
+						eq(sql<string>`${vacationReconciliation.plan}->>'kind'`, "import"),
+						inArray(
+							sql<string>`${vacationReconciliation.plan}->>'batchId'`,
+							batchIds,
+						),
+					),
+				)
+		: [];
+
+	const explicitlyMappedRows = new Set<string>();
+	const sourceById = new Map(importedEvidence.map((row) => [row.id, row]));
+	const recordById = new Map(records.map((record) => [record.id, record]));
+	for (const receipt of mappingReceipts) {
+		const parsed = reconciliationInputSchema.safeParse(receipt.plan);
+		const targets = z
+			.array(z.object({ rowId: z.uuid(), absenceId: z.uuid() }))
+			.safeParse(receipt.result?.targets);
+		if (!parsed.success || parsed.data.kind !== "import" || !targets.success)
+			continue;
+		const plan = parsed.data,
+			targetByRow = new Map(
+				targets.data.map((target) => [target.rowId, target.absenceId]),
+			);
+		for (const mapped of plan.mappings) {
+			const source = sourceById.get(mapped.rowId);
+			if (!source || source.batchId !== plan.batchId || !source.targetId)
+				continue;
+			const current = recordById.get(source.targetId);
+			// Later approved date corrections retain the reviewed category classification.
+			if (
+				current &&
+				targetByRow.get(source.id) === current.id &&
+				current.categoryId === mapped.categoryId
+			)
+				explicitlyMappedRows.add(source.id);
+		}
+	}
 	const unresolvedImportedAbsences = new Set(
 		importedEvidence
-			.filter((row) => typeof row.payload.categoryName !== "string")
+			.filter((row) => {
+				if (explicitlyMappedRows.has(row.id)) return false;
+				const current = row.targetId ? recordById.get(row.targetId) : undefined;
+				return (
+					typeof row.payload.categoryName !== "string" ||
+					!row.payload.categoryName.trim() ||
+					(current?.categoryType === "custom" && !current.countsAgainstVacation)
+				);
+			})
 			.map((row) => row.targetId),
 	);
+
 	const historicalRecords = records.filter(
 		(row) =>
 			(row.countsAgainstVacation || unresolvedImportedAbsences.has(row.id)) &&
@@ -299,9 +365,20 @@ async function review(
 			"Configure a company vacation policy for the selected year first.",
 		);
 	const blockers: string[] = [];
-	if (input.days > 0 && historicalRecords.length)
+	const unresolvedHistoricalImportIds = historicalRecords
+		.filter((record) => unresolvedImportedAbsences.has(record.id))
+		.map((record) => record.id);
+	if (input.days > 0 && unresolvedHistoricalImportIds.length)
 		blockers.push(
-			"Recorded historical vacation may already be included in this total. Resolve the dated history before saving a positive total.",
+			"Imported historical absence categories are unresolved. Confirm their explicit import mapping before excluding dated history from a positive total.",
+		);
+	if (
+		input.days > 0 &&
+		historicalRecords.length &&
+		!input.excludesListedDatedHistory
+	)
+		blockers.push(
+			"Recorded historical vacation may already be included in this total. Explicitly confirm that the supplied remaining total excludes every listed dated record before saving.",
 		);
 	try {
 		await assertAbsenceDaysOpen(database, {
@@ -339,6 +416,7 @@ async function review(
 				coverageEnd,
 				records,
 				importedEvidence,
+				mappingReceipts,
 				before,
 				after,
 				policy: beforeResult.policy,
@@ -358,6 +436,7 @@ async function review(
 		after,
 		blockers,
 		historicalRecords,
+		unresolvedHistoricalImportIds,
 		fingerprint,
 	};
 }
@@ -440,6 +519,10 @@ export async function reviewPreviouslyTakenVacation(
 				coverageStart: reviewed.coverageStart,
 				coverageEnd: reviewed.coverageEnd,
 				reason: input.reason,
+				excludesListedDatedHistory: input.excludesListedDatedHistory,
+				excludedDatedHistory: input.excludesListedDatedHistory
+					? reviewed.historicalRecords
+					: [],
 				fingerprint,
 			}),
 			timestamp: currentTimestamp(),
@@ -452,6 +535,8 @@ export async function reviewPreviouslyTakenVacation(
 		year: input.year,
 		days: input.days,
 		reason: input.reason,
+		excludesListedDatedHistory: input.excludesListedDatedHistory,
+		unresolvedHistoricalImportIds: reviewed.unresolvedHistoricalImportIds,
 		coverageStart: reviewed.coverageStart,
 		coverageEnd: reviewed.coverageEnd,
 		trackingStart:

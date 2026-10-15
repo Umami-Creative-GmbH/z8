@@ -1,5 +1,5 @@
 "use client";
-import { IconCheck, IconLoader2 } from "@tabler/icons-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -19,6 +19,10 @@ import {
 	CardDescription,
 	CardContent,
 } from "@/components/ui/card";
+import {
+	HistoricalDatedHistoryAcknowledgement,
+	HistoricalVacationReviewPanel,
+} from "./historical-vacation-review";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -48,12 +52,6 @@ export function HistoricalVacationUsageCard({
 	const locale = useTolgee(["language"]).getLanguage() || "en";
 	const dateLabel = (date: string) =>
 		formatPlainDate(parsePlainDate(date), locale, "dateMedium");
-	const periodLabel = (period: string) =>
-		period === "am"
-			? t("settings.vacation.historical.morning", "Morning")
-			: period === "pm"
-				? t("settings.vacation.historical.afternoon", "Afternoon")
-				: t("settings.vacation.historical.fullDay", "Full day");
 	const [year, setYear] = useState(initialYear);
 	const queryClient = useQueryClient();
 	const queryKey = [
@@ -81,8 +79,16 @@ export function HistoricalVacationUsageCard({
 	const [review, setReview] = useState<HistoricalVacationReview | null>(null);
 	const [message, setMessage] = useState("");
 	const [busy, setBusy] = useState(false);
+	const [acknowledgedContext, setAcknowledgedContext] = useState<string | null>(
+		null,
+	);
 	const form = useForm({
-		defaultValues: { year: String(initialYear), days: "", reason: "" },
+		defaultValues: {
+			year: String(initialYear),
+			days: "",
+			reason: "",
+			excludesListedDatedHistory: false,
+		},
 		onSubmit: async ({ value }) => {
 			setBusy(true);
 			setMessage("");
@@ -94,9 +100,29 @@ export function HistoricalVacationUsageCard({
 					year: Number(value.year),
 					days: Number(value.days),
 					reason: value.reason,
+					excludesListedDatedHistory:
+						value.excludesListedDatedHistory &&
+						acknowledgedContext === context?.fingerprint,
 				});
 				if (!result.success) {
 					setMessage(result.error);
+					clearBusy(setBusy);
+					return;
+				}
+				if (
+					value.excludesListedDatedHistory &&
+					context &&
+					JSON.stringify(context.historicalRecords) !==
+						JSON.stringify(result.data.historicalRecords)
+				) {
+					setAcknowledgedContext(null);
+					queryClient.setQueryData(queryKey, result.data);
+					setMessage(
+						t(
+							"settings.vacation.historical.historyChanged",
+							"The dated history changed. Read the updated list and confirm its exclusion again.",
+						),
+					);
 					clearBusy(setBusy);
 					return;
 				}
@@ -124,6 +150,7 @@ export function HistoricalVacationUsageCard({
 				year: review.year,
 				days: review.days,
 				reason: review.reason,
+				excludesListedDatedHistory: review.excludesListedDatedHistory,
 				fingerprint: review.fingerprint,
 			});
 			if (!result.success) {
@@ -208,6 +235,8 @@ export function HistoricalVacationUsageCard({
 										onChange={(event) => {
 											field.handleChange(event.target.value);
 											setYear(Number(event.target.value));
+											form.setFieldValue("excludesListedDatedHistory", false);
+											setAcknowledgedContext(null);
 											setReview(null);
 										}}
 										disabled={busy}
@@ -343,6 +372,31 @@ export function HistoricalVacationUsageCard({
 							)}
 						</p>
 					)}
+
+					{context && context.historicalRecords.length > 0 ? (
+						<form.Field name="excludesListedDatedHistory">
+							{(field) => (
+								<HistoricalDatedHistoryAcknowledgement
+									context={context}
+									busy={busy}
+									checked={
+										field.state.value &&
+										acknowledgedContext === context.fingerprint
+									}
+									name={field.name}
+									onBlur={field.handleBlur}
+									onCheckedChange={(checked) => {
+										field.handleChange(checked);
+										setAcknowledgedContext(
+											checked ? context.fingerprint : null,
+										);
+										setReview(null);
+									}}
+								/>
+							)}
+						</form.Field>
+					) : null}
+
 					<Button type="submit" disabled={busy || !context} className="w-fit">
 						{busy && (
 							<IconLoader2
@@ -358,65 +412,13 @@ export function HistoricalVacationUsageCard({
 						{message || contextQuery.error?.message}
 					</p>
 				)}
-				{review && (
-					<section
-						aria-label={t(
-							"settings.vacation.historical.reviewTitle",
-							"Historical vacation review",
-						)}
-						className="space-y-3 rounded-md border p-4"
-					>
-						<p>
-							{t(
-								"settings.vacation.historical.impact",
-								"Allowance: {allowance} days. Vacation balance: {before} → {after} days. Proposed previously taken total: {days} days.",
-								{
-									allowance: review.after.allowanceDays,
-									before: review.before.remainingDays,
-									after: review.after.remainingDays,
-									days: review.days,
-								},
-							)}
-						</p>
-						{review.historicalRecords.length > 0 && (
-							<div>
-								<p className="font-medium">
-									{t(
-										"settings.vacation.historical.existing",
-										"Already recorded historical vacation",
-									)}
-								</p>
-								<ul className="list-disc pl-5">
-									{review.historicalRecords.map((record) => (
-										<li key={record.id}>
-											{dateLabel(record.startDate)} –{" "}
-											{dateLabel(record.endDate)} (
-											{periodLabel(record.startPeriod)} /{" "}
-											{periodLabel(record.endPeriod)})
-										</li>
-									))}
-								</ul>
-							</div>
-						)}
-						{review.blockers.map((blocker) => (
-							<p
-								role="alert"
-								key={blocker}
-								className="text-sm text-destructive"
-							>
-								{blocker}
-							</p>
-						))}
-						<Button
-							type="button"
-							onClick={() => void commit()}
-							disabled={busy || review.blockers.length > 0}
-						>
-							<IconCheck className="size-4" aria-hidden="true" />
-							{t("settings.vacation.historical.confirm", "Save reviewed total")}
-						</Button>
-					</section>
-				)}
+				{review ? (
+					<HistoricalVacationReviewPanel
+						review={review}
+						busy={busy}
+						onCommit={() => void commit()}
+					/>
+				) : null}
 			</CardContent>
 		</Card>
 	);
