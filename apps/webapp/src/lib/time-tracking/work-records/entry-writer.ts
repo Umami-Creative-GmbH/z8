@@ -21,10 +21,10 @@ import { timeEntry } from "@/db/schema";
 import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "../blockchain";
-import { CompletedWorkIntegrityError } from "../close-active-work";
 import { type AppendReviewRequirement, admitTimeEntryAppend } from "../time-entry-append";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "../work-transaction";
 import type { NewEntryProvenance } from "./change";
+import { CompletedWorkIntegrityError } from "./integrity";
 import type { WorkDurationArithmetic } from "./plan";
 import type { TimeEntryRow } from "./rows";
 

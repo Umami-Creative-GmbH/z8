@@ -11,12 +11,9 @@
  */
 import { compareInstants, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { WorkRecordRefusal } from "./change";
+import { plannedPairsRefusal } from "./pair-agreement";
 import { type PlannedHalf, plannedHalf } from "./plan";
-import {
-	type AgreementWorkPeriod,
-	type RecordAgreementFacet,
-	recordAgreement,
-} from "./record-agreement";
+import type { AgreementWorkPeriod, RecordAgreementFacet } from "./record-agreement";
 import { diagnoseRecordAgreement, type StoredCanonicalRecord } from "./record-agreement-diagnosis";
 import {
 	type CanonicalAllocationShape,
@@ -148,13 +145,5 @@ function planned(
 		// An attached record takes the period's approval state; a repair never decides one.
 		record: canonical?.record.approvalState ?? period.approvalStatus,
 	});
-	const after = recordAgreement(result.period, result.canonical);
-	if (!after.agrees) {
-		return {
-			kind: "canonical_divergence",
-			found: "planned_repair",
-			disagreements: after.disagreements,
-		};
-	}
-	return { result, disagreements: [] };
+	return plannedPairsRefusal([result], "planned_repair") ?? { result, disagreements: [] };
 }

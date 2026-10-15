@@ -12,19 +12,23 @@ import "server-only";
  * it throws and the transaction rolls back.
  */
 import { and, eq, isNull } from "drizzle-orm";
-import { timeRecord, timeRecordAllocation, timeRecordWork, workPeriod } from "@/db/schema";
-import { CompletedWorkIntegrityError } from "../close-active-work";
+import { timeRecord, timeRecordWork, workPeriod } from "@/db/schema";
 import { closedRangeTouchedByWork } from "../closed-months/rules";
 import { closedRangesForEmployee } from "../closed-months/store";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "../work-transaction";
 import type { WorkRecordExpected, WorkRecordRefusal } from "./change";
 import { type CreateWorkRecord, planCreation } from "./create-plan";
-import type { AppendedEntryEvidence } from "./divide";
 import { applyWrittenWorkEffects, sendBackChangedWork } from "./effects";
 import { entryWriterFor } from "./entry-writer";
+import { CompletedWorkIntegrityError } from "./integrity";
+import {
+	type AppendedEntryEvidence,
+	appendedEvidence,
+	assertWrittenAgreement,
+	insertAllocations,
+} from "./pair-writer";
 import type { PlannedHalf } from "./plan";
 import { expectedOf, matchesExpected } from "./read";
-import { recordAgreement } from "./record-agreement";
 import type { CanonicalWorkRows, TimeEntryRow, WorkPeriodRow } from "./rows";
 import { type WorkSegment, workSegment } from "./segment";
 import type { WorkAttribution } from "./work-attribution";
@@ -126,17 +130,12 @@ export async function createWorkRecord(
 		clockOut,
 		canonicalRecordId: canonical.record.id,
 	});
-	const agreement = recordAgreement(written, canonical);
-	if (!agreement.agrees) {
-		throw new CompletedWorkIntegrityError(
-			`Work records wrote a pair that disagrees on ${agreement.disagreements.join(", ")}`,
-		);
-	}
+	assertWrittenAgreement({ period: written, ...canonical });
 
 	const effects = await applyWrittenWorkEffects(tx, {
 		organizationId,
 		employeeId,
-		writtenStarts: [{ at: completed.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0 }],
+		writtenStarts: [{ at: completed.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes }],
 	});
 	return {
 		kind: "created",
@@ -157,12 +156,7 @@ export async function createWorkRecord(
 		clockIn,
 		appended: {
 			admission: writer.admission,
-			clockOut: {
-				entryId: clockOut.id,
-				hash: clockOut.hash,
-				previousEntryId: clockOut.previousEntryId,
-				previousHash: clockOut.previousHash,
-			},
+			clockOut: appendedEvidence(clockOut),
 			entry: clockOut,
 		},
 		effects,
@@ -219,24 +213,12 @@ export async function insertCanonicalRecord(
 		})
 		.returning();
 	if (!detail) throw new CompletedWorkIntegrityError("Canonical work detail insert failed");
-	const allocations: CanonicalWorkRows["allocations"] = [];
-	for (const allocation of half.canonical.allocations) {
-		const [row] = await tx
-			.insert(timeRecordAllocation)
-			.values({
-				organizationId,
-				recordId: record.id,
-				allocationKind: allocation.allocationKind,
-				projectId: allocation.projectId,
-				taskId: allocation.taskId,
-				costCenterId: allocation.costCenterId,
-				weightPercent: allocation.weightPercent,
-				isBillable: allocation.isBillable,
-			})
-			.returning();
-		if (!row) throw new CompletedWorkIntegrityError("Canonical allocation insert failed");
-		allocations.push(row);
-	}
+	const allocations = await insertAllocations(
+		tx,
+		organizationId,
+		record.id,
+		half.canonical.allocations,
+	);
 	return { record, detail, allocations };
 }
 

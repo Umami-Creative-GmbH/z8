@@ -22,25 +22,25 @@ import {
 } from "@/db/schema";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { legacyApprovalDecision } from "@/lib/time-record/legacy-approval-decision";
-import { CompletedWorkIntegrityError } from "../close-active-work";
 import { closedRangeTouchedByWork, type WorkInterval } from "../closed-months/rules";
 import { closedRangesForEmployee } from "../closed-months/store";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "../work-transaction";
 import { resolvedPatch } from "./amend";
 import type { WorkRecordExpected, WorkRecordRefusal } from "./change";
-import { assertWrittenAgreement, insertAllocations } from "./divide";
 import { applyWrittenWorkEffects, sendBackChangedWork } from "./effects";
-import { expectedOf, matchesExpected } from "./read";
+import { CompletedWorkIntegrityError } from "./integrity";
+import {
+	assertWrittenAgreement,
+	insertAllocations,
+	lockedWork,
+	replaceProjectAllocation,
+	writeCanonicalDetail,
+} from "./pair-writer";
+import { expectedOf } from "./read";
 import type { RecordAgreementFacet } from "./record-agreement";
 import type { AttachWorkRecord, RepairWorkRecord } from "./repair-change";
 import { planAttachment, planRepair, type RepairPlan } from "./repair-plan";
-import {
-	type CanonicalWorkRows,
-	selectWorkRecordRows,
-	type TimeEntryRow,
-	type WorkPeriodRow,
-	type WorkRecordRows,
-} from "./rows";
+import type { CanonicalWorkRows, TimeEntryRow, WorkPeriodRow } from "./rows";
 import { type WorkSegment, workSegment } from "./segment";
 import { UnrepresentableWorkAttributionError, WorkAttribution } from "./work-attribution";
 
@@ -78,35 +78,6 @@ export type WorkRepair = {
 	after: WorkRecordExpected;
 	effects: { workBalanceDirtyFromDate: string };
 };
-
-type LockedWork = WorkRecordRows & {
-	period: WorkPeriodRow;
-	clockIn: TimeEntryRow;
-	clockOut: TimeEntryRow;
-};
-
-/** The locked work period with its endpoints, or the refusal that stops the change first. */
-async function lockedWork(
-	scope: SealedWorkTransactionScope,
-	change: { organizationId: string; employeeId: string; expected: WorkRecordExpected },
-): Promise<LockedWork | WorkRecordRefusal> {
-	const { organizationId, employeeId } = change;
-	scope.assertEmployee(organizationId, employeeId);
-	const workPeriodId = change.expected.workPeriodId;
-	const locked = await selectWorkRecordRows(
-		scope.db,
-		{ organizationId, employeeId, workPeriodId },
-		{ lock: true },
-	);
-	if (!locked) return { kind: "not_found", workPeriodId };
-	const { period, clockIn, clockOut } = locked;
-	if (!matchesExpected(change.expected, period)) {
-		return { kind: "stale", current: { revision: period.graphRevision } };
-	}
-	if (period.isActive || !period.clockOutId) return { kind: "work_running" };
-	if (!clockIn || !clockOut) return { kind: "endpoint_entry_missing" };
-	return { ...locked, clockIn, clockOut };
-}
 
 /** The canonical work record of the work, linked or of the work period's own id, locked. */
 async function lockedCanonical(
@@ -395,12 +366,13 @@ export async function repairWorkRecord(
 		)
 		.returning();
 	if (!record) throw new CompletedWorkIntegrityError("Canonical work record update failed");
+	const key = { organizationId: record.organizationId, recordId: record.id };
 	const detail = canonical.detail
-		? await updateDetail(tx, canonical.detail, planned.detail)
+		? await writeCanonicalDetail(tx, key, canonical.detail, planned.detail)
 		: await insertDetail(tx, record, planned.detail);
-	const allocations = await replaceProjectAllocations(
+	const allocations = await replaceProjectAllocation(
 		tx,
-		record,
+		key,
 		canonical.allocations,
 		planned.allocations,
 	);
@@ -418,9 +390,9 @@ export async function repairWorkRecord(
 		writtenStarts: [
 			{
 				at: instantFromDate(canonical.record.startAt),
-				utcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0,
+				utcOffsetMinutes: clockIn.utcOffsetMinutes,
 			},
-			{ at: plan.result.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0 },
+			{ at: plan.result.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes },
 		],
 	});
 	return {
@@ -439,39 +411,6 @@ export async function repairWorkRecord(
 
 function interval(start: Date, end: Date): { start: Instant; end: Instant } {
 	return { start: instantFromDate(start), end: instantFromDate(end) };
-}
-
-async function updateDetail(
-	tx: WorkTransactionClient,
-	stored: CanonicalWorkRows["detail"],
-	planned: RepairPlan["result"]["canonical"]["detail"],
-): Promise<CanonicalWorkRows["detail"]> {
-	if (
-		WorkAttribution.fromCanonical(stored, []).equals(WorkAttribution.fromCanonical(planned, []))
-	) {
-		return stored;
-	}
-	const [written] = await tx
-		.update(timeRecordWork)
-		.set({
-			workCategoryId: planned.workCategoryId,
-			workLocationType: planned.workLocationType,
-			vehicleKind: planned.vehicleKind,
-			vehicleId: planned.vehicleId,
-			odometerStartKm: planned.odometerStartKm,
-			odometerEndKm: planned.odometerEndKm,
-			drivenDistanceKm: planned.drivenDistanceKm,
-		})
-		.where(
-			and(
-				eq(timeRecordWork.recordId, stored.recordId),
-				eq(timeRecordWork.organizationId, stored.organizationId),
-				eq(timeRecordWork.recordKind, "work"),
-			),
-		)
-		.returning();
-	if (!written) throw new CompletedWorkIntegrityError("Canonical work detail update failed");
-	return written;
 }
 
 /** A record history left without its work detail gets it; no computation metadata is known. */
@@ -498,42 +437,6 @@ async function insertDetail(
 		.returning();
 	if (!written) throw new CompletedWorkIntegrityError("Canonical work detail insert failed");
 	return written;
-}
-
-/** Only the project allocation is attribution; cost-centre rows stay as they are. */
-async function replaceProjectAllocations(
-	tx: WorkTransactionClient,
-	record: CanonicalWorkRows["record"],
-	stored: CanonicalWorkRows["allocations"],
-	planned: RepairPlan["result"]["canonical"]["allocations"],
-): Promise<CanonicalWorkRows["allocations"]> {
-	const key = (allocation: (typeof planned)[number]) =>
-		[
-			allocation.allocationKind,
-			allocation.projectId,
-			allocation.taskId,
-			allocation.costCenterId,
-			allocation.weightPercent,
-			allocation.isBillable,
-		].join("|");
-	const storedKeys = stored.map(key).sort().join(",");
-	if (storedKeys === planned.map(key).sort().join(",")) return stored;
-	await tx
-		.delete(timeRecordAllocation)
-		.where(
-			and(
-				eq(timeRecordAllocation.recordId, record.id),
-				eq(timeRecordAllocation.organizationId, record.organizationId),
-				eq(timeRecordAllocation.allocationKind, "project"),
-			),
-		);
-	const inserted = await insertAllocations(
-		tx,
-		record.organizationId,
-		record.id,
-		planned.filter(({ allocationKind }) => allocationKind === "project"),
-	);
-	return [...stored.filter(({ allocationKind }) => allocationKind !== "project"), ...inserted];
 }
 
 /**

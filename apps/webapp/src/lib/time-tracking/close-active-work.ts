@@ -26,7 +26,7 @@ import {
 } from "@/db/schema";
 import type { WorkPeriodPostCommitDescriptor } from "@/lib/approvals/server/work-period-submission";
 import type { BotPlatform } from "@/lib/bot-platform/types";
-import { comparePlainDates, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
 import {
 	commitAutomaticBreakIntent,
@@ -68,11 +68,15 @@ import {
 import { WorkIntervalError } from "./work-duration";
 import {
 	applyWorkRecordChange,
+	CompletedWorkIntegrityError,
 	isWorkRecordRefusal,
 	orRefuse,
 	readWorkRecord,
 } from "./work-records";
 import type { SealedWorkTransactionScope, WorkTransactionAdmission } from "./work-transaction";
+
+// Work records' invariants, which Clocking's receipts share (moved there to break the cycle).
+export { CompletedWorkIntegrityError, earliestStartDate } from "./work-records";
 
 export const CLOSE_ACTIVE_WORK_COMMAND_VERSION = 1;
 export const CLOSE_ACTIVE_WORK_RESULT_VERSION = 1;
@@ -102,7 +106,6 @@ export function clockSource(channel: ClockChannel) {
 		deviceInfo: channel,
 	};
 }
-
 
 /** Omission preserves the period's attribution; clearing and replacement are explicit. */
 export type AttributionIntent =
@@ -176,8 +179,16 @@ export function liveClockOutWriter(channel: ClockChannel): CloseActiveWorkWriter
 		};
 	}
 	return channel.endsWith("-bot")
-		? { writer: "bot_clock_out", writerVersion: BOT_CLOCK_OUT_WRITER_VERSION, ...clockSource(channel) }
-		: { writer: "web_clock_out", writerVersion: WEB_CLOCK_OUT_WRITER_VERSION, ...clockSource(channel) };
+		? {
+				writer: "bot_clock_out",
+				writerVersion: BOT_CLOCK_OUT_WRITER_VERSION,
+				...clockSource(channel),
+			}
+		: {
+				writer: "web_clock_out",
+				writerVersion: WEB_CLOCK_OUT_WRITER_VERSION,
+				...clockSource(channel),
+			};
 }
 
 /** The receipt writer of an on-behalf clock-out of another employee's work (#276). */
@@ -318,13 +329,6 @@ export class CompletedWorkCollisionError extends Error {
 	}
 }
 
-export class CompletedWorkIntegrityError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "CompletedWorkIntegrityError";
-	}
-}
-
 export class CompletedWorkAttributionError extends Error {
 	constructor(
 		readonly field: "projectId" | "workCategoryId" | "taskId",
@@ -450,7 +454,9 @@ export async function findStandingClosure(
 		.limit(1);
 	if (!entry || entry.isSuperseded || !period || period.deletedAt !== null) return null;
 	if (period.clockOutId === entry.id) return entry;
-	return (await isClosureCarriedByAutomaticBreak(tx, scope, result.workPeriodId, entry.id)) ? entry : null;
+	return (await isClosureCarriedByAutomaticBreak(tx, scope, result.workPeriodId, entry.id))
+		? entry
+		: null;
 }
 
 export type CloseActiveWorkInput = {
@@ -753,19 +759,4 @@ async function resolveWorkCategory(
 	return row.id;
 }
 
-/** The earlier of the UTC and captured-offset local date of an instant. */
-export function earliestStartDate(start: Instant, utcOffsetMinutes: number): string {
-	const utcDate = start.toZonedDateTimeISO("UTC").toPlainDate();
-	const localDate = start.toZonedDateTimeISO(fixedOffsetZone(utcOffsetMinutes)).toPlainDate();
-	return (comparePlainDates(localDate, utcDate) < 0 ? localDate : utcDate).toString();
-}
-
 export type { WorkPeriodPostCommitDescriptor };
-
-/** The captured event offset as an explicit fixed-offset zone, e.g. `-05:30`. */
-function fixedOffsetZone(utcOffsetMinutes: number): string {
-	const sign = utcOffsetMinutes < 0 ? "-" : "+";
-	const minutes = Math.abs(utcOffsetMinutes);
-	const pad = (value: number) => String(value).padStart(2, "0");
-	return `${sign}${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
-}

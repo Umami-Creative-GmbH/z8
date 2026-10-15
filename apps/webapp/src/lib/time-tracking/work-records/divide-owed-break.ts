@@ -27,9 +27,6 @@ import { loadWorkOccupants } from "../work-occupancy";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "../work-transaction";
 import type { NewEntryProvenance, WorkRecordRefusal } from "./change";
 import {
-	type AppendedEntryEvidence,
-	appendedEvidence,
-	assertWrittenAgreement,
 	type DividedHalf,
 	dividedHalf,
 	divisionSource,
@@ -46,9 +43,16 @@ import type {
 	OwedBreakNotRequired,
 	OwedBreakTakenBefore,
 } from "./owed-break";
-import { lockedPairRefusal, type OwedBreakPlan, planOwedBreakDivision } from "./plan-owed-break";
-import { matchesExpected, pairOf } from "./read";
-import { selectWorkRecordRows, type TimeEntryRow, type WorkPeriodRow } from "./rows";
+import { agreeingPair } from "./pair-agreement";
+import {
+	type AppendedEntryEvidence,
+	appendedEvidence,
+	assertWrittenAgreement,
+	lockedCompletedWork,
+} from "./pair-writer";
+import { type OwedBreakPlan, planOwedBreakDivision } from "./plan-owed-break";
+import { pairOf } from "./read";
+import type { TimeEntryRow, WorkPeriodRow } from "./rows";
 
 export type OwedBreakDivision = {
 	kind: "owed_break_divided";
@@ -70,35 +74,20 @@ export async function divideByOwedBreak(
 	change: DivideByOwedBreak,
 ): Promise<OwedBreakDivision | OwedBreakNotRequired | WorkRecordRefusal> {
 	const { organizationId, employeeId } = change;
-	scope.assertEmployee(organizationId, employeeId);
+	const locked = await lockedCompletedWork(scope, change);
+	if ("kind" in locked) return locked;
 	const tx = scope.db;
-	const workPeriodId = change.expected.workPeriodId;
-	const locked = await selectWorkRecordRows(
-		tx,
-		{ organizationId, employeeId, workPeriodId },
-		{ lock: true },
-	);
-	if (!locked) return { kind: "not_found", workPeriodId };
 	const { period, clockIn, clockOut, canonical } = locked;
-	if (!matchesExpected(change.expected, period)) {
-		return { kind: "stale", current: { revision: period.graphRevision } };
-	}
-	if (period.isActive || !period.endTime || !period.clockOutId) return { kind: "work_running" };
-	if (!clockIn || !clockOut) return { kind: "endpoint_entry_missing" };
 
 	const writer = entryWriterFor(scope, {
 		organizationId,
 		employeeId,
 		operation: change.appendOperation,
 	});
-	// A legacy split's generated half keeps a superseded clock-out; it still ends that half.
-	if (writer.admission === "append" && (clockIn.isSuperseded || clockOut.isSuperseded)) {
-		return { kind: "endpoint_superseded" };
-	}
 	const pair = pairOf(locked);
 	// A pair that disagrees is reported before anything is counted or owed.
-	const refused = lockedPairRefusal(pair);
-	if (refused) return refused;
+	const agreeing = agreeingPair(pair);
+	if ("kind" in agreeing) return agreeing;
 	const startAt = instantFromDate(period.startTime);
 	const endAt = instantFromDate(period.endTime);
 	const plan = planOwedBreakDivision(
@@ -189,8 +178,8 @@ export async function divideByOwedBreak(
 		organizationId,
 		employeeId,
 		writtenStarts: [
-			{ at: startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0 },
-			{ at: plan.owedBreak.endAt, utcOffsetMinutes: breakClockIn.utcOffsetMinutes ?? 0 },
+			{ at: startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes },
+			{ at: plan.owedBreak.endAt, utcOffsetMinutes: breakClockIn.utcOffsetMinutes },
 		],
 		dividedOff: [{ sourceWorkPeriodId: period.id, newWorkPeriodId: generated.period.id }],
 	});

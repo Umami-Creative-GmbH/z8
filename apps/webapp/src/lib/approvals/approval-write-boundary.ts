@@ -534,42 +534,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			semantic: "ordinary_finalization",
 			table: "time_record",
 		},
-		{
-			columns: [
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "writeAmendedPair",
-			operation: "update",
-			table: "time_record_work",
-		},
-		{
-			columns: [],
-			functionName: "writeAmendedPair",
-			operation: "delete",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"cost_center_id",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "writeAmendedPair",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
 	],
 	// Work records (ADR 0010, #1223) creates new completed work: manual, imported and demo work.
 	"src/lib/time-tracking/work-records/create-new.ts": [
@@ -642,22 +606,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record_work",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"cost_center_id",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "insertCanonicalRecord",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
 		},
 		{
 			columns: [
@@ -752,26 +700,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		},
 		{
 			columns: [
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "writeRetainedHalf",
-			operation: "update",
-			table: "time_record_work",
-		},
-		{
-			columns: [],
-			functionName: "writeRetainedHalf",
-			operation: "delete",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
 				"approval_state",
 				"created_by",
 				"duration_minutes",
@@ -837,22 +765,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			functionName: "writeGeneratedHalf",
 			operation: "insert",
 			table: "work_period",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"cost_center_id",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "insertAllocations",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
 		},
 	],
 	// Work records' entry writers append a change's entries in either admission (#1219, #1225).
@@ -934,6 +846,46 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record_work",
 		},
 	],
+	// Work records' one pair writer (ADR 0010): the canonical detail and project allocation
+	// every operation writes as planned.
+	"src/lib/time-tracking/work-records/pair-writer.ts": [
+		{
+			columns: [
+				"allocation_kind",
+				"cost_center_id",
+				"is_billable",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"task_id",
+				"weight_percent",
+			],
+			functionName: "insertAllocations",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+		},
+		{
+			columns: [
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "writeCanonicalDetail",
+			operation: "update",
+			table: "time_record_work",
+		},
+		{
+			columns: [],
+			functionName: "replaceProjectAllocation",
+			operation: "delete",
+			table: "time_record_allocation",
+		},
+	],
 	// Work records (ADR 0010, #1224, #1226) attaches a missing canonical work record and repairs a pair.
 	"src/lib/time-tracking/work-records/repair.ts": [
 		{
@@ -982,20 +934,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		},
 		{
 			columns: [
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "updateDetail",
-			operation: "update",
-			table: "time_record_work",
-		},
-		{
-			columns: [
 				"computation_metadata",
 				"driven_distance_km",
 				"odometer_end_km",
@@ -1012,12 +950,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record_work",
-		},
-		{
-			columns: [],
-			functionName: "replaceProjectAllocations",
-			operation: "delete",
-			table: "time_record_allocation",
 		},
 		{
 			columns: [

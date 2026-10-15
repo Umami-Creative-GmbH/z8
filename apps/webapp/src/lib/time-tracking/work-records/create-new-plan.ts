@@ -11,13 +11,13 @@ import { compareInstants, type Instant } from "@/lib/datetime/temporal-core";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import { vehicleUseColumns } from "../vehicle-use/work-vehicle-use";
 import type { NewEntryProvenance, WorkRecordRefusal } from "./change";
+import { plannedPairsRefusal } from "./pair-agreement";
 import {
 	type PlannedHalf,
 	plannedHalf,
 	type WorkDurationArithmetic,
 	workDurationMinutes,
 } from "./plan";
-import { recordAgreement } from "./record-agreement";
 import {
 	UnrepresentableWorkAttributionError,
 	WorkAttribution,
@@ -115,13 +115,5 @@ export function planNewWork(
 		[],
 		{ period: state, record: state },
 	);
-	const agreement = recordAgreement(completed.period, completed.canonical);
-	if (!agreement.agrees) {
-		return {
-			kind: "canonical_divergence",
-			found: "planned_half",
-			disagreements: agreement.disagreements,
-		};
-	}
-	return { kind: "create_new", completed };
+	return plannedPairsRefusal([completed], "planned_half") ?? { kind: "create_new", completed };
 }
