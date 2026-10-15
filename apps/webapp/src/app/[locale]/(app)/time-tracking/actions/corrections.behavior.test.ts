@@ -126,10 +126,6 @@ vi.mock("@/lib/approvals/server/time-correction-approvals", () => ({
 			.returning();
 		return created ?? null;
 	}),
-	runAutoCompletedTimeCorrectionMaintenance: async (input: unknown) => {
-		state.events.push("maintenance");
-		return state.maintenance(input);
-	},
 }));
 
 vi.mock("@/lib/approvals/workflow/runtime", () => ({
@@ -1321,9 +1317,9 @@ describe("time correction submission actions", () => {
 		);
 	});
 
-	it("dispatches legacy maintenance after commit and preserves success on failure", async () => {
+	// The auto-completed correction's balance refresh committed with the work (#1212).
+	it("runs no legacy maintenance after an auto-completed correction", async () => {
 		configure({ kind: "auto_completed", authority: "legacy" });
-		state.maintenance.mockRejectedValue(new Error("maintenance unavailable"));
 
 		const result = await modular.requestTimeCorrectionEffect({
 			workPeriodId: ids.period,
@@ -1334,7 +1330,7 @@ describe("time correction submission actions", () => {
 		});
 
 		expect(result.success).toBe(true);
-		expect(state.events).toEqual(["transaction", "boundary", "maintenance"]);
+		expect(state.events).toEqual(["transaction", "boundary"]);
 	});
 
 	it("notifies the legacy manager after commit, with times at the entries' offsets, and preserves success on failure", async () => {

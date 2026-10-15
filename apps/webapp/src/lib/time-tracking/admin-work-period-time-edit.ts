@@ -92,8 +92,7 @@ function adminEditCommand(input: AdminEditIdentity): AmendCompletedWorkCommand {
  * preflight. Null when nothing was committed with this submission identity.
  */
 export async function replayAdminWorkPeriodTimeEdit(
-	input: AdminEditIdentity &
-		Pick<AdminWorkPeriodTimeEditInput, "organizationId" | "actorUserId">,
+	input: AdminEditIdentity & Pick<AdminWorkPeriodTimeEditInput, "organizationId" | "actorUserId">,
 ): Promise<AdminWorkPeriodTimeEditResult | null> {
 	const receipt = await replayCommittedAmendment({
 		organizationId: input.organizationId,
@@ -109,9 +108,7 @@ export async function replayAdminWorkPeriodTimeEdit(
 		: null;
 }
 
-function adminEditIntent(
-	input: AdminWorkPeriodTimeEditInput,
-): AmendCompletedWorkIntent {
+function adminEditIntent(input: AdminWorkPeriodTimeEditInput): AmendCompletedWorkIntent {
 	const endpoint = (timestamp: Date, original: Date) =>
 		timestamp.getTime() === original.getTime()
 			? { kind: "preserve" as const }
@@ -162,8 +159,7 @@ export async function applyAdminWorkPeriodTimeEdit(
 		);
 	} catch (error) {
 		throw new ValidationError({
-			message:
-				error instanceof Error ? error.message : "Invalid work period range",
+			message: error instanceof Error ? error.message : "Invalid work period range",
 			field: "timestamp",
 		});
 	}

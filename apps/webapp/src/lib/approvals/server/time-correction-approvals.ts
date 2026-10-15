@@ -3107,28 +3107,30 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				approval: rejectedLegacyResubmission ? "approved" : undefined,
 				toleratedDrift,
 			});
+	// The refresh intent commits with the work that needs it, in either admission:
+	// work records marked completed work; a corrected start of live work is marked here.
+	const liveWorkDirtyFromDate =
+		!applied.workBalanceDirtyFromDate && period.isActive && hasEndpointCorrection
+			? dirtyFromDate
+			: null;
+	if (liveWorkDirtyFromDate) {
+		await markEmployeeWorkBalanceDirty(
+			{
+				employeeId: period.employeeId,
+				organizationId: input.organizationId,
+				dirtyFromDate: liveWorkDirtyFromDate,
+			},
+			adopted?.scope.db ?? input.dbService.db,
+		);
+	}
 	if (adopted) {
 		const followUps: CompletedWorkFollowUp[] = [];
-		if (applied.workBalanceDirtyFromDate) {
+		const committedDirtyFromDate = applied.workBalanceDirtyFromDate ?? liveWorkDirtyFromDate;
+		if (committedDirtyFromDate) {
 			followUps.push({
 				kind: "work_balance_refresh",
 				delivery: "committed_intent",
-				dirtyFromDate: applied.workBalanceDirtyFromDate,
-			});
-		} else if (period.isActive && dirtyFromDate && hasEndpointCorrection) {
-			// The refresh intent commits with the work that needs it.
-			await markEmployeeWorkBalanceDirty(
-				{
-					employeeId: period.employeeId,
-					organizationId: input.organizationId,
-					dirtyFromDate,
-				},
-				adopted.scope.db,
-			);
-			followUps.push({
-				kind: "work_balance_refresh",
-				delivery: "committed_intent",
-				dirtyFromDate,
+				dirtyFromDate: committedDirtyFromDate,
 			});
 		}
 		const resultRevision =
@@ -5042,14 +5044,8 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 			approvalRequestId: request.id,
 		}),
 	);
+	// The balance refresh committed with the corrected work (work records, ADR 0010).
 	if (effects.terminal.kind === "approved") {
-		if (effects.terminal.dirtyFromDate) {
-			await markEmployeeWorkBalanceDirtyIfNeeded({
-				employeeId: effects.terminal.requesterEmployeeId,
-				organizationId: input.actor.organizationId,
-				dirtyFromDate: effects.terminal.dirtyFromDate,
-			});
-		}
 		notifyApprovedCorrection(result.period, request.entityId, actor, result);
 		return;
 	}
@@ -6301,12 +6297,6 @@ export function createTimeCorrectionApprovalWorkflow(
 	);
 }
 
-export async function runAutoCompletedTimeCorrectionMaintenance(
-	result: TimeCorrectionApprovalResult,
-) {
-	await markEmployeeWorkBalanceDirtyIfNeeded(result.workBalanceDirtyMark);
-}
-
 function loadAutoApprovalRequester(
 	dbService: ApprovalDbService,
 	requesterEmployeeId: string,
@@ -6461,23 +6451,6 @@ export function rejectTimeCorrectionWithCurrentApproverEffect(
 	);
 }
 
-function markWorkBalanceDirtyAfterCommit(mark?: WorkBalanceDirtyMark) {
-	return mark
-		? Effect.promise(() => markEmployeeWorkBalanceDirtyIfNeeded(mark))
-		: Effect.void;
-}
-
-async function markEmployeeWorkBalanceDirtyIfNeeded(
-	mark?: WorkBalanceDirtyMark,
-) {
-	if (!mark) return;
-	try {
-		await markEmployeeWorkBalanceDirty(mark);
-	} catch (error) {
-		logger.error({ error, ...mark }, "Failed to mark work balance dirty");
-	}
-}
-
 function notifyApprovedCorrection(
 	period: WorkPeriodRecord,
 	entityId: string,
@@ -6605,17 +6578,10 @@ function completeApprovedTimeCorrectionAfterCommit(
 	currentEmployee: CurrentApprover,
 	result: TimeCorrectionAutoCompletionResult,
 ) {
-	return Effect.all(
-		[
-			markWorkBalanceDirtyAfterCommit(result.workBalanceDirtyMark),
-			notifyApprovedTimeCorrectionAfterCommit(
-				entityId,
-				currentEmployee,
-				result,
-			),
-		],
-		{ concurrency: 2 },
-	).pipe(Effect.map(() => undefined));
+	// The balance refresh committed with the corrected work (work records, ADR 0010).
+	return notifyApprovedTimeCorrectionAfterCommit(entityId, currentEmployee, result).pipe(
+		Effect.map(() => undefined),
+	);
 }
 
 function notifyApprovedTimeCorrectionAfterCommit(

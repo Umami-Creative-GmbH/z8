@@ -40,7 +40,7 @@ import {
 	executeTimeCorrectionSubmissionInTransaction,
 	finalizeTimeCorrectionTerminalInTransaction,
 	insertTimeCorrectionSourceEntry,
-	runAutoCompletedTimeCorrectionMaintenance,
+	type TimeCorrectionApprovalResult,
 	type TimeCorrectionPostCommitEffects,
 } from "@/lib/approvals/server/time-correction-approvals";
 import {
@@ -616,7 +616,7 @@ export type ApprovalResult = {
 	postCommit: TimeCorrectionPostCommitEffects;
 	correctionEntryIds: string[];
 	correctionEntries?: (typeof timeEntry.$inferSelect)[];
-	autoCompletion?: Parameters<typeof runAutoCompletedTimeCorrectionMaintenance>[0];
+	autoCompletion?: TimeCorrectionApprovalResult;
 };
 
 type SubmissionEndpoint = {
@@ -1798,10 +1798,8 @@ async function dispatchSubmissionPostCommit(input: {
 	const effects = input.result.postCommit;
 	if (effects.authority !== "legacy") return;
 	try {
-		if (effects.terminal?.kind === "approved" && input.result.autoCompletion) {
-			await runAutoCompletedTimeCorrectionMaintenance(input.result.autoCompletion);
-			return;
-		}
+		// An auto-completed correction's balance refresh committed with the work (ADR 0010).
+		if (effects.terminal?.kind === "approved" && input.result.autoCompletion) return;
 		if (!effects.submittedToEmployeeId || effects.submittedToEmployeeId === input.actorEmployeeId) {
 			return;
 		}

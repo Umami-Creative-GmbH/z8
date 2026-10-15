@@ -25,6 +25,14 @@ const source = readFileSync(
 	"utf8",
 );
 
+/**
+ * Balance marks made outside a transaction. Every mark of corrected work commits
+ * with it (#1212): an in-transaction mark names its transaction handle.
+ */
+function markedAfterCommit() {
+	return markEmployeeWorkBalanceDirty.mock.calls.filter((call) => call[1] === undefined);
+}
+
 const {
 	markEmployeeWorkBalanceDirty,
 	onTimeCorrectionApproved,
@@ -546,7 +554,7 @@ describe("time correction transaction boundaries", () => {
 		});
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 	});
 
 	function canonicalSubmissionHarness(input: {
@@ -675,7 +683,7 @@ describe("time correction transaction boundaries", () => {
 					canonicalWork,
 					terminalFinalizations,
 					effects: {
-						dirty: markEmployeeWorkBalanceDirty.mock.calls,
+						dirty: markedAfterCommit(),
 						approved: onTimeCorrectionApproved.mock.calls,
 						rejected: onTimeCorrectionRejected.mock.calls,
 					},
@@ -1654,7 +1662,7 @@ describe("time correction transaction boundaries", () => {
 					canonicalWork,
 					terminalFinalizations,
 					effects: {
-						dirty: markEmployeeWorkBalanceDirty.mock.calls,
+						dirty: markedAfterCommit(),
 						approved: onTimeCorrectionApproved.mock.calls,
 						rejected: onTimeCorrectionRejected.mock.calls,
 					},
@@ -3429,7 +3437,7 @@ describe("time correction transaction boundaries", () => {
 		);
 
 		expect(transactionCommitted).toHaveBeenCalledOnce();
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -3474,7 +3482,7 @@ describe("time correction transaction boundaries", () => {
 		expect(fixture.legacyWrites).toHaveLength(durable.legacy);
 		expect(fixture.terminalFinalizations()).toBe(0);
 		expect(fixture.repository.completeCommand).not.toHaveBeenCalled();
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -3639,7 +3647,7 @@ describe("time correction transaction boundaries", () => {
 		expect(evidence[evidenceKey]).toBeTruthy();
 		expect(evidence.state).not.toEqual(before);
 		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -3664,7 +3672,7 @@ describe("time correction transaction boundaries", () => {
 		});
 		expect(evidence.state).not.toEqual(before);
 		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -3689,7 +3697,7 @@ describe("time correction transaction boundaries", () => {
 		});
 		expect(evidence.state).not.toEqual(before);
 		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -3720,7 +3728,7 @@ describe("time correction transaction boundaries", () => {
 			expect(evidence[evidenceKey]).toBeTruthy();
 			expect(evidence.state).not.toEqual(before);
 			expect(fixture.durableSnapshot()).toEqual(before);
-			expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+			expect(markedAfterCommit()).toEqual([]);
 			expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 			expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 		},
@@ -4216,7 +4224,7 @@ describe("time correction transaction boundaries", () => {
 				projections: fixture.projections.length,
 				outbox: fixture.outbox.length,
 				finalizers: fixture.terminalFinalizations(),
-				dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
+				dirty: markedAfterCommit().length,
 				approved: onTimeCorrectionApproved.mock.calls.length,
 				rejected: onTimeCorrectionRejected.mock.calls.length,
 			};
@@ -4230,7 +4238,7 @@ describe("time correction transaction boundaries", () => {
 				projections: fixture.projections.length,
 				outbox: fixture.outbox.length,
 				finalizers: fixture.terminalFinalizations(),
-				dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
+				dirty: markedAfterCommit().length,
 				approved: onTimeCorrectionApproved.mock.calls.length,
 				rejected: onTimeCorrectionRejected.mock.calls.length,
 			}).toEqual(before);
@@ -4280,7 +4288,7 @@ describe("time correction transaction boundaries", () => {
 				outbox: fixture.outbox.length,
 				legacy: fixture.legacyWrites.length,
 				finalizers: fixture.terminalFinalizations(),
-				dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
+				dirty: markedAfterCommit().length,
 				approved: onTimeCorrectionApproved.mock.calls.length,
 				rejected: onTimeCorrectionRejected.mock.calls.length,
 			};
@@ -4296,7 +4304,7 @@ describe("time correction transaction boundaries", () => {
 				outbox: fixture.outbox.length,
 				legacy: fixture.legacyWrites.length,
 				finalizers: fixture.terminalFinalizations(),
-				dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
+				dirty: markedAfterCommit().length,
 				approved: onTimeCorrectionApproved.mock.calls.length,
 				rejected: onTimeCorrectionRejected.mock.calls.length,
 			}).toEqual(before);
@@ -4652,7 +4660,7 @@ describe("time correction transaction boundaries", () => {
 			expect(evidence[evidenceKey]).toBeTruthy();
 			expect(evidence.state).not.toEqual(before);
 			expect(fixture.durableSnapshot()).toEqual(before);
-			expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+			expect(markedAfterCommit()).toEqual([]);
 			expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 			expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 		},
@@ -4677,7 +4685,7 @@ describe("time correction transaction boundaries", () => {
 			});
 			expect(evidence.state).not.toEqual(before);
 			expect(fixture.durableSnapshot()).toEqual(before);
-			expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+			expect(markedAfterCommit()).toEqual([]);
 			expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 			expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 		},
@@ -4717,7 +4725,7 @@ describe("time correction transaction boundaries", () => {
 		expect(evidence[evidenceKey]).toBeTruthy();
 		expect(evidence.state).not.toEqual(before);
 		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -4738,7 +4746,7 @@ describe("time correction transaction boundaries", () => {
 		expect(evidence.chainStageStatus).toBe("approved");
 		expect(evidence.state).not.toEqual(before);
 		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -4978,7 +4986,7 @@ describe("time correction transaction boundaries", () => {
 			currentStageOrder: 2,
 		});
 		expect(fixture.terminalFinalizations()).toBe(0);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 
 		const terminal = await fixture.decide(
@@ -10290,12 +10298,9 @@ describe("time correction requester decision notifications", () => {
 		).not.toHaveBeenCalled();
 	});
 
-	it("swallows production-wrapper notification and maintenance delivery failures after commit", async () => {
+	it("swallows production-wrapper notification delivery failures after commit", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 		dbService.enableBoundaryMode("legacy");
-		markEmployeeWorkBalanceDirty.mockRejectedValueOnce(
-			new Error("maintenance unavailable"),
-		);
 		onTimeCorrectionApproved.mockRejectedValueOnce(
 			new Error("notification unavailable"),
 		);
@@ -10311,7 +10316,8 @@ describe("time correction requester decision notifications", () => {
 			),
 		).resolves.toBeUndefined();
 		expect(dbService.transactionCommitted).toHaveBeenCalledOnce();
-		expect(markEmployeeWorkBalanceDirty).toHaveBeenCalledOnce();
+		// The balance refresh committed with the work; nothing is marked after commit.
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).toHaveBeenCalledOnce();
 	});
 
@@ -10331,7 +10337,7 @@ describe("time correction requester decision notifications", () => {
 			),
 		).rejects.toThrow(/changed during finalization/i);
 		expect(dbService.transactionCommitted).not.toHaveBeenCalled();
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -10361,12 +10367,14 @@ describe("time correction requester decision notifications", () => {
 		} else {
 			await expect(decision).rejects.toThrow(/not authorized/i);
 			expect(dbService.transactionCommitted).not.toHaveBeenCalled();
-			expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+			expect(markedAfterCommit()).toEqual([]);
 			expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		}
 	});
 
-	it("marks work balances dirty after approving a time correction request", async () => {
+	// Work records marks the balance with the amended work, inside the transaction
+	// (verified against PostgreSQL); the decision marks nothing after commit (#1212).
+	it("leaves the balance mark of approved completed work to work records", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 
 		await runTimeCorrectionDecisionEffect(
@@ -10377,32 +10385,7 @@ describe("time correction requester decision notifications", () => {
 			),
 		);
 
-		expect(markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
-			employeeId: "emp-requester",
-			organizationId: "org-1",
-			dirtyFromDate: "2026-05-11",
-		});
-		expect(dbService.db.transaction).toHaveBeenCalled();
-		expect(
-			vi.mocked(dbService.db.transaction).mock.invocationCallOrder[0],
-		).toBeLessThan(markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0]);
-	});
-
-	it("keeps approval successful when dirty marking fails", async () => {
-		const dbService = createTimeCorrectionDecisionDbService();
-		markEmployeeWorkBalanceDirty.mockRejectedValueOnce(
-			new Error("dirty marker failed"),
-		);
-
-		await expect(
-			runTimeCorrectionDecisionEffect(
-				approveTimeCorrectionWithCurrentApproverEffect(
-					dbService,
-					timeCorrectionCurrentApprover,
-					"period-1",
-				),
-			),
-		).resolves.toBeDefined();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).toHaveBeenCalled();
 	});
 
