@@ -209,7 +209,11 @@ type EntryLink =
 	| { kind: "legacy"; previousHash: string | null }
 	| { kind: "admitted"; predecessor: AppendPredecessor | null };
 
-function entryValues(input: ClockingInput, type: "clock_in" | "clock_out", link: EntryLink) {
+/**
+ * A live-work entry: always a clock-in. A clock-out ends live work, which only work
+ * records writes as completed work (Time Tracking ADR 0010).
+ */
+function entryValues(input: ClockingInput, type: "clock_in", link: EntryLink) {
 	const timestamp = dateFromInstant(input.action.instant);
 	const previousHash =
 		link.kind === "admitted" ? (link.predecessor?.hash ?? null) : link.previousHash;
@@ -268,7 +272,7 @@ export type AppendedClockEntry = {
 export async function appendClockEntry(
 	store: ClockingStore,
 	input: ClockingInput,
-	type: "clock_in" | "clock_out",
+	type: "clock_in",
 	admission: WorkTransactionAdmission,
 ): Promise<AppendedClockEntry> {
 	if (admission === "append") {
@@ -277,7 +281,7 @@ export async function appendClockEntry(
 		}
 		const appendAdmission = await store.admitAppend(
 			{ organizationId: input.organizationId, employeeId: input.employeeId },
-			type === "clock_in" ? "live_clock_in" : "live_clock_out",
+			"live_clock_in",
 		);
 		if (appendAdmission.kind === "review_required") {
 			throw new TimeEntryAppendReviewRequiredError(appendAdmission.requirement);
@@ -316,7 +320,7 @@ export async function appendClockEntry(
 export async function appendAdmittedClockEntries(
 	store: ClockingStore,
 	operation: TimeEntryAppendOperation,
-	entries: ReadonlyArray<{ input: ClockingInput; type: "clock_in" | "clock_out" }>,
+	entries: ReadonlyArray<{ input: ClockingInput; type: "clock_in" }>,
 ): Promise<AppendedClockEntry[]> {
 	const [first] = entries;
 	if (!first || !store.admitAppend) {

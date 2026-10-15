@@ -1120,6 +1120,43 @@ export const ABSENCE_RECORD_WRITERS = {
 	"src/lib/time-record/migration/backfill.ts": ["upsertCanonicalAbsenceRecords"],
 } as const satisfies NamedSourceWriters;
 
+/** The base record columns an absence's range or decision changes. */
+const ABSENCE_RECORD_UPDATE_COLUMNS = new Set([
+	"approval_state",
+	"duration_minutes",
+	"end_at",
+	"start_at",
+]);
+
+/**
+ * A named absence writer is allowed by what it writes, not by its name alone
+ * (spec-3 L2): an insert names its record kind (or is a dynamic absence
+ * payload), an update changes only an absence's range or approval state, a
+ * delete removes its record. Anything else could change a work record.
+ */
+function absenceRecordViolation(
+	path: string,
+	writer: string,
+	write: {
+		columns?: readonly string[];
+		operation: ApprovalWriteOperation;
+		uncertainty?: ApprovalSourceMutationUncertainty;
+	},
+): string | null {
+	const columns = write.columns ?? [];
+	if (write.operation === "delete") return null;
+	if (write.operation === "insert") {
+		return write.uncertainty !== undefined || columns.includes("record_kind")
+			? null
+			: `${SEAM}: absence writer ${writer} in ${path} must name the record_kind it inserts.`;
+	}
+	return write.uncertainty === undefined &&
+		columns.length > 0 &&
+		columns.every((column) => ABSENCE_RECORD_UPDATE_COLUMNS.has(column))
+		? null
+		: `${SEAM}: absence writer ${writer} in ${path} may change only an absence record's range and approval state.`;
+}
+
 /** Columns that end a work period, which live work never sets. */
 const WORK_PERIOD_END_COLUMNS = new Set([
 	"clock_out_id",
@@ -1172,7 +1209,7 @@ export function workRecordsSeamViolation(
 	}
 	if (table === "time_record") {
 		return namedIn(ABSENCE_RECORD_WRITERS, path, functionName)
-			? null
+			? absenceRecordViolation(path, writer, write)
 			: `${SEAM}: only work records may write the canonical work record (time_record); ${writer} in ${path} must go through work records.`;
 	}
 	const columns = write.columns ?? [];

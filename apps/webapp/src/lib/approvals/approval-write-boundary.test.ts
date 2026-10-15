@@ -5240,6 +5240,38 @@ export async function writeLive(id: string) {
 		}
 	});
 
+	// spec-3 L2: an absence writer is allowed by what it writes, not by its name alone.
+	it("allows a named absence writer only an absence record's base columns", () => {
+		const path = "src/lib/absences/sick-vacation-override.ts";
+		const update = (columns: string[]) =>
+			workRecordsSeamViolation(path, {
+				columns,
+				functionName: "rejectCanonicalAbsenceInTransaction",
+				operation: "update",
+				table: "time_record",
+			});
+
+		expect(update(["approval_state"])).toBeNull();
+		expect(update(["duration_minutes", "end_at", "start_at"])).toBeNull();
+		expect(update(["approval_state", "updated_by"])).toMatch(/ADR 0010.*absence record/);
+		expect(
+			workRecordsSeamViolation(path, {
+				functionName: "rejectCanonicalAbsenceInTransaction",
+				operation: "update",
+				table: "time_record",
+				uncertainty: "dynamic_payload",
+			}),
+		).toMatch(/ADR 0010.*absence record/);
+		expect(
+			workRecordsSeamViolation(path, {
+				columns: ["employee_id", "organization_id", "start_at"],
+				functionName: "createCanonicalAbsenceInTransaction",
+				operation: "insert",
+				table: "time_record",
+			}),
+		).toMatch(/ADR 0010.*record_kind/);
+	});
+
 	it("registers only writes the seam allows", () => {
 		const declared = [
 			...Object.entries(CANONICAL_SOURCE_WRITE_OWNERS),
