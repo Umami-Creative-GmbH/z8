@@ -115,7 +115,7 @@ function useVacationPolicyForm({
 								"Vacation policy created!",
 							),
 						);
-						push("/onboarding/holiday-setup");
+						push("/onboarding/work-templates");
 						return true;
 					}
 					toast.error(
@@ -274,7 +274,7 @@ function VacationPolicyForm({
 									value={field.state.value}
 									disabled={loading}
 								>
-									<SelectTrigger>
+									<SelectTrigger className="w-full">
 										<SelectValue
 											placeholder={t(
 												"onboarding.vacationPolicy.selectAccrualType",
@@ -315,8 +315,8 @@ function VacationPolicyForm({
 
 					<form.Field name="allowCarryover">
 						{(field) => (
-							<div className="flex flex-row items-center justify-between rounded-lg border p-4">
-								<div className="space-y-0.5">
+							<div className="flex flex-row items-center justify-between gap-4 rounded-lg border p-4">
+								<div className="min-w-0 space-y-0.5">
 									<Label className="text-base">
 										{t(
 											"onboarding.vacationPolicy.allowCarryover",
@@ -446,7 +446,7 @@ export default function VacationPolicyPage() {
 			action: skipVacationPolicySetup,
 			onResult: (result) => {
 				if (result.success) {
-					push("/onboarding/holiday-setup");
+					push("/onboarding/work-templates");
 					return true;
 				} else {
 					toast.error(

@@ -274,7 +274,7 @@ export default function WorkSchedulePage() {
 											value={field.state.value}
 											disabled={loading}
 										>
-											<SelectTrigger>
+											<SelectTrigger className="w-full">
 												<SelectValue
 													placeholder={t(
 														"onboarding.workSchedule.selectClassification",

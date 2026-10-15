@@ -74,7 +74,7 @@ describe("VacationPolicyPage load effect", () => {
 		fireEvent.click(continueButton);
 
 		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/onboarding/holiday-setup"),
+			expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"),
 		);
 		expect(mocks.push).toHaveBeenCalledOnce();
 		expect(continueButton).toHaveProperty("disabled", true);
@@ -115,7 +115,7 @@ describe("VacationPolicyPage load effect", () => {
 
 		request.resolve({ success: true });
 		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/onboarding/holiday-setup"),
+			expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"),
 		);
 	});
 
@@ -134,7 +134,7 @@ describe("VacationPolicyPage load effect", () => {
 		expect(await screen.findByText("Policy name is required")).toBeTruthy();
 		expect(nameInput).toHaveProperty("value", "");
 		expect(mocks.createVacationPolicyOnboarding).not.toHaveBeenCalled();
-		expect(mocks.push).not.toHaveBeenCalledWith("/onboarding/holiday-setup");
+		expect(mocks.push).not.toHaveBeenCalledWith("/onboarding/work-templates");
 	});
 
 	it("keeps skip disabled after successful skip navigation", async () => {
@@ -148,7 +148,7 @@ describe("VacationPolicyPage load effect", () => {
 		fireEvent.click(skipButton);
 
 		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/onboarding/holiday-setup"),
+			expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"),
 		);
 		expect(mocks.push).toHaveBeenCalledOnce();
 		expect(skipButton).toHaveProperty("disabled", true);

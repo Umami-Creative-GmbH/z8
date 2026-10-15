@@ -5,7 +5,6 @@ import { member, user } from "@/db/auth-schema";
 import {
 	employee,
 	holidayPreset,
-	holidayPresetAssignment,
 	notificationPreference,
 	userSettings,
 	vacationAllowance,
@@ -27,7 +26,6 @@ import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracki
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { isWeekStartDay } from "@/lib/user-preferences/week-start";
 import type {
-	OnboardingHolidaySetupFormValues,
 	OnboardingNotificationsFormValues,
 	OnboardingProfileFormValues,
 	OnboardingStep,
@@ -106,12 +104,6 @@ export class OnboardingService extends Context.Service<
 			void,
 			AuthenticationError | DatabaseError
 		>;
-
-		// Admin setup - Holiday Setup
-		readonly createHolidayPreset: (
-			data: OnboardingHolidaySetupFormValues,
-		) => Effect.Effect<void, AuthenticationError | DatabaseError>;
-		readonly skipHolidaySetup: () => Effect.Effect<void, AuthenticationError | DatabaseError>;
 
 		// Admin setup - Work Schedule Templates
 		readonly createWorkTemplate: (
@@ -541,7 +533,7 @@ export const OnboardingServiceLive = Layer.effect(
 						if (!activeOrgId) {
 							// Skip if no active organization
 							await writeUserSettings(dbService.db, session.user.id, {
-								onboardingStep: "holiday_setup",
+								onboardingStep: "work_templates",
 							});
 							return;
 						}
@@ -571,7 +563,7 @@ export const OnboardingServiceLive = Layer.effect(
 
 						// Update onboarding step in userSettings
 						await writeUserSettings(dbService.db, session.user.id, {
-							onboardingStep: "holiday_setup",
+							onboardingStep: "work_templates",
 						});
 					});
 				}),
@@ -582,64 +574,6 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 
 					yield* dbService.query("skipVacationPolicySetup", async () => {
-						await writeUserSettings(dbService.db, session.user.id, {
-							onboardingStep: "holiday_setup",
-						});
-					});
-				}),
-
-			// Admin setup - Create holiday preset
-			createHolidayPreset: (data: OnboardingHolidaySetupFormValues) =>
-				Effect.gen(function* () {
-					const session = yield* authService.getSession();
-					const activeOrgId = session.session.activeOrganizationId;
-
-					yield* dbService.query("createHolidayPreset", async () => {
-						if (!activeOrgId) {
-							await writeUserSettings(dbService.db, session.user.id, {
-								onboardingStep: "work_templates",
-							});
-							return;
-						}
-
-						// Create holiday preset
-						const [preset] = await dbService.db
-							.insert(holidayPreset)
-							.values({
-								organizationId: activeOrgId,
-								name: data.presetName,
-								description: `Holidays for ${data.countryCode}${data.stateCode ? ` - ${data.stateCode}` : ""}`,
-								countryCode: data.countryCode,
-								stateCode: data.stateCode || null,
-								color: "#4F46E5",
-								isActive: true,
-								createdBy: session.user.id,
-							})
-							.returning();
-
-						// Assign preset to organization if setAsDefault
-						if (preset && data.setAsDefault) {
-							await dbService.db.insert(holidayPresetAssignment).values({
-								presetId: preset.id,
-								organizationId: activeOrgId,
-								assignmentType: "organization",
-								isActive: true,
-								createdBy: session.user.id,
-							});
-						}
-
-						await writeUserSettings(dbService.db, session.user.id, {
-							onboardingStep: "work_templates",
-						});
-					});
-				}),
-
-			// Skip holiday setup
-			skipHolidaySetup: () =>
-				Effect.gen(function* () {
-					const session = yield* authService.getSession();
-
-					yield* dbService.query("skipHolidaySetup", async () => {
 						await writeUserSettings(dbService.db, session.user.id, {
 							onboardingStep: "work_templates",
 						});

@@ -4,6 +4,7 @@ import { IconClock, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -36,14 +37,21 @@ import {
 } from "./actions";
 
 const DAYS_OF_WEEK = [
-	{ value: "monday", label: "Monday", shortLabel: "Mon" },
-	{ value: "tuesday", label: "Tuesday", shortLabel: "Tue" },
-	{ value: "wednesday", label: "Wednesday", shortLabel: "Wed" },
-	{ value: "thursday", label: "Thursday", shortLabel: "Thu" },
-	{ value: "friday", label: "Friday", shortLabel: "Fri" },
-	{ value: "saturday", label: "Saturday", shortLabel: "Sat" },
-	{ value: "sunday", label: "Sunday", shortLabel: "Sun" },
+	"monday",
+	"tuesday",
+	"wednesday",
+	"thursday",
+	"friday",
+	"saturday",
+	"sunday",
 ] as const;
+
+// 2024-01-01 is a Monday, so index i in DAYS_OF_WEEK falls on January 1 + i.
+function getShortWeekdayLabel(locale: string, dayIndex: number) {
+	return new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(
+		Date.UTC(2024, 0, 1 + dayIndex),
+	);
+}
 
 type DayOfWeek =
 	| "monday"
@@ -170,33 +178,34 @@ function WorkingDaysSelector({
 	t: Translate;
 	value: DayOfWeek[];
 }) {
+	const locale = useLocale();
 	return (
 		<fieldset className="grid gap-2" aria-describedby="work-template-working-days-description">
-			<legend className="font-medium text-sm leading-none">
+			<legend className="mb-3 font-medium text-sm leading-none">
 				{t("onboarding.workTemplates.workingDays", "Working Days")}
 			</legend>
 			<div className="grid grid-cols-7 gap-2">
-				{DAYS_OF_WEEK.map((day) => {
-					const id = `work-template-day-${day.value}`;
+				{DAYS_OF_WEEK.map((day, dayIndex) => {
+					const id = `work-template-day-${day}`;
 					return (
-					<div key={day.value} className="flex flex-col items-center gap-y-2">
+					<div key={day} className="flex flex-col items-center gap-y-2">
 						<Checkbox
 							id={id}
 							aria-describedby="work-template-working-days-description"
 							aria-labelledby={`${id}-label`}
-							checked={value.includes(day.value)}
+							checked={value.includes(day)}
 							onCheckedChange={(checked) => {
 								onChange(
 									checked
-										? [...value, day.value]
-										: value.filter((currentDay) => currentDay !== day.value),
+										? [...value, day]
+										: value.filter((currentDay) => currentDay !== day),
 								);
 							}}
 							disabled={disabled}
-							className="size-6"
+							className="size-6 [&_svg]:size-4"
 						/>
-						<Label id={`${id}-label`} className="text-xs font-normal">
-							{day.shortLabel}
+						<Label id={`${id}-label`} htmlFor={id} className="text-xs font-normal">
+							{getShortWeekdayLabel(locale, dayIndex)}
 						</Label>
 					</div>
 					);
@@ -253,8 +262,8 @@ function DefaultTemplateToggle({
 	t: Translate;
 }) {
 	return (
-		<div className="flex flex-row items-center justify-between rounded-lg border p-4">
-			<div className="space-y-0.5">
+		<div className="flex flex-row items-center justify-between gap-4 rounded-lg border p-4">
+			<div className="min-w-0 space-y-0.5">
 				<Label htmlFor="work-template-default" className="text-base">
 					{t(
 						"onboarding.workTemplates.setAsDefault",
