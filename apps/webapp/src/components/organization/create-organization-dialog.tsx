@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { createOrganizationWithTracking } from "@/app/[locale]/(app)/create-organization-action";
 import { checkSlugAvailability } from "@/app/[locale]/(app)/organization-actions";
 import {
 	ActionPanel,
@@ -21,18 +22,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getAuthErrorMessage } from "@/lib/auth/error-message";
-import { authClient } from "@/lib/auth-client";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
-import { generateSlug } from "@/lib/validations/organization";
+import {
+	generateSlug,
+	organizationSchema,
+} from "@/lib/validations/organization";
+
+import { OrganizationTrackingSetupFields } from "./organization-tracking-setup-fields";
 
 interface CreateOrganizationDialogProps {
+	trackingSuggestedAt?: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSuccess?: () => void;
 }
 
 export function CreateOrganizationDialog({
+	trackingSuggestedAt,
 	open,
 	onOpenChange,
 	onSuccess,
@@ -46,6 +52,8 @@ export function CreateOrganizationDialog({
 
 	const form = useForm({
 		defaultValues: {
+			timezone: "UTC",
+			trackingStartDate: "",
 			name: "",
 			slug: "",
 		},
@@ -56,52 +64,36 @@ export function CreateOrganizationDialog({
 			}
 
 			setLoading(true);
-			await runWithCleanup(async () => {
-				// Create organization using Better Auth
-				const result = await authClient.organization
-					.create({
-						name: value.name,
-						slug: value.slug,
-					})
-					.catch((error: unknown) => {
-						console.error("Error creating organization:", error);
-						const message =
-							error instanceof Error
-								? error.message
-								: t("organization.createError", "Failed to create organization");
-						toast.error(message);
-						return null;
-					});
+			await runWithCleanup(
+				async () => {
+					const result = await createOrganizationWithTracking(value);
+					if (!result.success) {
+						toast.error(result.error);
+						return;
+					}
 
-				if (!result) {
-					return;
-				}
-
-				if (result.error) {
-					toast.error(
-						getAuthErrorMessage(
-							result.error,
-							t("organization.createError", "Failed to create organization"),
+					toast.success(
+						t(
+							"organization.createSuccess",
+							"Organization created successfully!",
 						),
 					);
-					return;
-				}
 
-				toast.success(t("organization.createSuccess", "Organization created successfully!"));
+					// Reset form
+					form.reset();
+					slugManuallyEdited.current = false;
 
-				// Reset form
-				form.reset();
-				slugManuallyEdited.current = false;
+					// Close dialog
+					onOpenChange(false);
 
-				// Close dialog
-				onOpenChange(false);
+					// Call success callback
+					onSuccess?.();
 
-				// Call success callback
-				onSuccess?.();
-
-				// Refresh the page to update organization context
-				router.refresh();
-			}, () => setLoading(false));
+					// Refresh the page to update organization context
+					router.refresh();
+				},
+				() => setLoading(false),
+			);
 		},
 	});
 
@@ -183,7 +175,9 @@ export function CreateOrganizationDialog({
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label>{t("organization.nameLabel", "Organization Name")}</Label>
+									<Label>
+										{t("organization.nameLabel", "Organization Name")}
+									</Label>
 									<Input
 										value={field.state.value}
 										onChange={(e) => {
@@ -220,14 +214,19 @@ export function CreateOrganizationDialog({
 										/^[a-z0-9-]+$/,
 										"Slug must contain only lowercase letters, numbers, and hyphens",
 									)
-									.refine((slug) => !slug.startsWith("-") && !slug.endsWith("-"), {
-										message: "Slug cannot start or end with a hyphen",
-									}),
+									.refine(
+										(slug) => !slug.startsWith("-") && !slug.endsWith("-"),
+										{
+											message: "Slug cannot start or end with a hyphen",
+										},
+									),
 							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label>{t("organization.slugLabel", "Organization Slug")}</Label>
+									<Label>
+										{t("organization.slugLabel", "Organization Slug")}
+									</Label>
 									<div className="relative">
 										<Input
 											value={field.state.value}
@@ -237,7 +236,10 @@ export function CreateOrganizationDialog({
 												field.handleChange(e.target.value);
 											}}
 											onBlur={field.handleBlur}
-											placeholder={t("organization.slugPlaceholder", "acme-inc")}
+											placeholder={t(
+												"organization.slugPlaceholder",
+												"acme-inc",
+											)}
 											disabled={loading}
 										/>
 										{checkingSlug && (
@@ -247,9 +249,16 @@ export function CreateOrganizationDialog({
 										)}
 									</div>
 									<p className="text-sm text-muted-foreground">
-										{t("organization.slugDescription", "Used in URLs. Auto-generated from name.")}
+										{t(
+											"organization.slugDescription",
+											"Used in URLs. Auto-generated from name.",
+										)}
 									</p>
-									{slugError && <p className="text-sm font-medium text-destructive">{slugError}</p>}
+									{slugError && (
+										<p className="text-sm font-medium text-destructive">
+											{slugError}
+										</p>
+									)}
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm font-medium text-destructive">
 											{typeof field.state.meta.errors[0] === "string"
@@ -258,6 +267,32 @@ export function CreateOrganizationDialog({
 										</p>
 									)}
 								</div>
+							)}
+						</form.Field>
+						<form.Field name="timezone">
+							{(timezoneField) => (
+								<form.Field
+									name="trackingStartDate"
+									validators={{
+										onChange: organizationSchema.shape.trackingStartDate.unwrap(),
+									}}
+								>
+									{(dateField) => (
+										<OrganizationTrackingSetupFields
+											timezone={timezoneField.state.value}
+											trackingStartDate={dateField.state.value}
+											suggestedAt={trackingSuggestedAt}
+											disabled={loading}
+											onTimezoneChange={timezoneField.handleChange}
+											onDateChange={dateField.handleChange}
+											error={
+												dateField.state.meta.errors.length > 0
+													? t("organization.tracking.invalid-date", "Choose a valid calendar date.")
+													: undefined
+											}
+										/>
+									)}
+								</form.Field>
 							)}
 						</form.Field>
 					</ActionPanelBody>
@@ -271,7 +306,10 @@ export function CreateOrganizationDialog({
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button type="submit" disabled={loading || checkingSlug || !!slugError}>
+						<Button
+							type="submit"
+							disabled={loading || checkingSlug || !!slugError}
+						>
 							{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("common.create", "Create")}
 						</Button>

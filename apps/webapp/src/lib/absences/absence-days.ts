@@ -41,7 +41,10 @@ export function holidayDateKeys(holidays: readonly Holiday[]): Set<string> {
  * The absence days of a range: each working day counts 1, and a morning or afternoon half on
  * the start or end day counts ½. Non-working days count nothing, halves included.
  */
-export function countAbsenceDays(range: AbsenceDayRange, isWorkingDay: IsWorkingDay): number {
+export function countAbsenceDays(
+	range: AbsenceDayRange,
+	isWorkingDay: IsWorkingDay,
+): number {
 	const { startPeriod, endPeriod } = range;
 	const start = Temporal.PlainDate.from(range.startDate);
 	const end = Temporal.PlainDate.from(range.endDate);
@@ -49,11 +52,17 @@ export function countAbsenceDays(range: AbsenceDayRange, isWorkingDay: IsWorking
 		throw new Error("Start date must be before or equal to end date");
 	}
 	let total = 0;
-	for (let day = start; Temporal.PlainDate.compare(day, end) <= 0; day = day.add({ days: 1 })) {
+	for (
+		let day = start;
+		Temporal.PlainDate.compare(day, end) <= 0;
+		day = day.add({ days: 1 })
+	) {
 		if (!isWorkingDay(day)) continue;
 		if (start.equals(end)) {
 			total +=
-				startPeriod === "full_day" || endPeriod === "full_day" || startPeriod !== endPeriod
+				startPeriod === "full_day" ||
+				endPeriod === "full_day" ||
+				startPeriod !== endPeriod
 					? 1
 					: 0.5;
 		} else if (day.equals(start) && startPeriod === "pm") {
@@ -82,9 +91,17 @@ export function clipAbsenceDayRange(
 	if (startDate > endDate) return null;
 	return {
 		startDate,
-		startPeriod: startsInside ? range.startPeriod : "full_day",
+		startPeriod: startsInside
+			? range.startPeriod
+			: startDate === endDate && endsInside && range.endPeriod === "am"
+				? "am"
+				: "full_day",
 		endDate,
-		endPeriod: endsInside ? range.endPeriod : "full_day",
+		endPeriod: endsInside
+			? range.endPeriod
+			: startDate === endDate && startsInside && range.startPeriod === "pm"
+				? "pm"
+				: "full_day",
 	};
 }
 
@@ -101,5 +118,7 @@ export function refusalForAbsenceDays(input: {
 	countsAgainstVacation: boolean;
 	absenceDays: number;
 }): AbsenceDaysRefusal | null {
-	return input.countsAgainstVacation && input.absenceDays <= 0 ? "no_working_days" : null;
+	return input.countsAgainstVacation && input.absenceDays <= 0
+		? "no_working_days"
+		: null;
 }

@@ -3,7 +3,9 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { HistoricalVacationReconciliationPanel } from "@/components/absences/historical-vacation-reconciliation-panel";
+import type { ReconciliationProof } from "@/lib/absences/vacation-reconciliation-types";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	failedSickNoteNames,
@@ -45,7 +47,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { sickDetailOptions } from "@/lib/absences/sick-details";
 import type { AbsenceDurationKind, SickDetail } from "@/lib/absences/types";
 import { useRouter } from "@/navigation";
-import { recordAbsenceForEmployee, recordAbsenceWithSickNotes } from "./actions";
+import {
+	recordAbsenceForEmployee,
+	recordAbsenceWithSickNotes,
+} from "./actions";
 import {
 	buildRecordAbsenceForEmployeeInput,
 	getDefaultRecordAbsenceFormValues,
@@ -89,6 +94,10 @@ function useRecordAbsenceDialogForm({
 	const { refresh } = useRouter();
 	const [dateRangeError, setDateRangeError] = useState<string | null>(null);
 	const formDefaultValues = getDefaultRecordAbsenceFormValues();
+	const reconciliation = useRef<{
+		signature: string;
+		proof: ReconciliationProof;
+	} | null>(null);
 	const requiredMessage = (label: string) =>
 		t("team.absences.recordDialog.required", "{label} is required", { label });
 	const form = useForm({
@@ -117,6 +126,11 @@ function useRecordAbsenceDialogForm({
 				(category) => category.id === value.categoryId,
 			);
 			const input = buildRecordAbsenceForEmployeeInput(employee.id, value);
+			if (
+				reconciliation.current?.signature ===
+				JSON.stringify({ kind: "manual", absence: input })
+			)
+				input.historicalReconciliation = reconciliation.current.proof;
 			const failureMessage = t(
 				"team.absences.recordDialog.failure",
 				"Failed to record absence",
@@ -183,6 +197,7 @@ function useRecordAbsenceDialogForm({
 	}
 
 	return {
+		reconciliation,
 		dateRangeError,
 		form,
 		handleOpenChange,
@@ -205,6 +220,7 @@ export function RecordAbsenceDialog({
 }: RecordAbsenceDialogProps) {
 	const { t } = useTranslate();
 	const {
+		reconciliation,
 		dateRangeError,
 		form,
 		handleOpenChange,
@@ -467,6 +483,38 @@ export function RecordAbsenceDialog({
 								{dateRangeError}
 							</p>
 						) : null}
+						<form.Subscribe selector={(state) => state.values}>
+							{(values) => {
+								if (
+									!employee ||
+									!categories.find(
+										(category) => category.id === values.categoryId,
+									)?.countsAgainstVacation ||
+									!values.startDate ||
+									!values.endDate
+								)
+									return null;
+								const source = {
+									kind: "manual" as const,
+									absence: buildRecordAbsenceForEmployeeInput(
+										employee.id,
+										values,
+									),
+								};
+								const signature = JSON.stringify(source);
+								return (
+									<HistoricalVacationReconciliationPanel
+										key={signature}
+										source={source}
+										onReviewed={(proof) => {
+											reconciliation.current = proof
+												? { signature, proof }
+												: null;
+										}}
+									/>
+								);
+							}}
+						</form.Subscribe>
 					</ActionPanelBody>
 
 					<ActionPanelFooter>

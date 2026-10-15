@@ -102,7 +102,8 @@ const mockState = vi.hoisted(() => {
 	};
 });
 
-vi.mock("drizzle-orm", () => ({
+vi.mock("drizzle-orm", async (importOriginal) => ({
+	...(await importOriginal<typeof import("drizzle-orm")>()),
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 	desc: vi.fn((value: unknown) => value),
@@ -186,9 +187,8 @@ vi.mock("@/lib/audit-logger", () => ({
 
 vi.mock("../employees/employee-action-utils", async () => {
 	const { Effect } = await import("effect");
-	const { AuthorizationError, NotFoundError, ValidationError } = await import(
-		"@/lib/effect/errors"
-	);
+	const { AuthorizationError, NotFoundError, ValidationError } =
+		await import("@/lib/effect/errors");
 
 	return {
 		getEmployeeSettingsActorContext: vi.fn(() => Effect.succeed(mockState.actor)),
@@ -365,6 +365,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 		delete: vi.fn(() => ({
 			where: mockState.deleteWhere,
 		})),
+		execute: async () => [],
 		transaction: mockState.transaction,
 	};
 	mockState.db = db;
@@ -406,9 +407,8 @@ vi.mock("@/lib/effect/result", async () => {
 	};
 });
 
-const { getEmployeeSettingsActorContext, requireOrgAdminEmployeeSettingsAccess } = await import(
-	"../employees/employee-action-utils"
-);
+const { getEmployeeSettingsActorContext, requireOrgAdminEmployeeSettingsAccess } =
+	await import("../employees/employee-action-utils");
 const {
 	getVacationPolicies,
 	createVacationPolicy,
@@ -421,9 +421,8 @@ const {
 	deleteAbsenceCategory,
 	deleteVacationPolicy,
 } = await import("./actions");
-const { createVacationPolicyAssignment, deleteVacationPolicyAssignment } = await import(
-	"./assignment-actions"
-);
+const { createVacationPolicyAssignment, deleteVacationPolicyAssignment } =
+	await import("./assignment-actions");
 
 describe("vacation settings scope actions", () => {
 	beforeEach(() => {

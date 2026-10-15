@@ -1,5 +1,6 @@
 "use server";
 
+import { historicalVacationRefusalOf } from "@/lib/absences/historical-vacation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
@@ -14,7 +15,10 @@ import {
 } from "@/lib/absences/change-request-types";
 import { parseAbsenceChangeInput } from "@/lib/absences/change-request-validation";
 import { getRequestSession } from "@/lib/auth/request-session";
-import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
+import {
+	isBillingMutationAllowed,
+	requireBillingForMutation,
+} from "@/lib/billing/guard";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { resolveEmployeeOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
@@ -31,10 +35,20 @@ async function actor() {
 		userId: session.user.id,
 	});
 	if (!access.allowed || !access.employeeId)
-		throw new AbsenceChangeError("unauthorized", "Employee organization access is required");
+		throw new AbsenceChangeError(
+			"unauthorized",
+			"Employee organization access is required",
+		);
 	return { organizationId, userId: session.user.id };
 }
 async function failure(error: unknown): Promise<ServerActionResult<never>> {
+	const historical = historicalVacationRefusalOf(error);
+	if (historical)
+		return {
+			success: false,
+			error: historical.message,
+			refusal: historical.refusal,
+		};
 	const closed = await monthClosedActionResult(error);
 	if (closed) return closed;
 	if (error instanceof AbsenceChangeError)
@@ -50,8 +64,15 @@ async function failure(error: unknown): Promise<ServerActionResult<never>> {
 }
 async function mutationActor() {
 	const current = await actor();
-	if (!isBillingMutationAllowed(await requireBillingForMutation(current.organizationId)))
-		throw new AbsenceChangeError("billing_required", "Organization billing access is required");
+	if (
+		!isBillingMutationAllowed(
+			await requireBillingForMutation(current.organizationId),
+		)
+	)
+		throw new AbsenceChangeError(
+			"billing_required",
+			"Organization billing access is required",
+		);
 	return current;
 }
 export async function submitAbsenceChangeAction(

@@ -545,7 +545,7 @@ describe("employee detail page sections", () => {
 		expect(screen.queryByRole("link", { name: "Change in Contract & Work Model" })).toBeNull();
 	});
 
-	it("renders the start date field in the edit form", () => {
+	it("shows actual employment start as read-only with the reviewed correction explanation", () => {
 		render(
 			<EmployeeEditFormCard
 				form={createForm() as never}
@@ -558,14 +558,15 @@ describe("employee detail page sections", () => {
 			/>,
 		);
 
-		const startDateInput = screen.getByLabelText("Startdatum");
+		const startDateInput = screen.getByLabelText("Actual employment start");
 
+		expect(startDateInput.hasAttribute("disabled")).toBe(true);
 		expect(startDateInput.getAttribute("type")).toBe("date");
 		expect(startDateInput.getAttribute("name")).toBe("startDate");
 		expect(startDateInput.getAttribute("autocomplete")).toBe("off");
 		expect((startDateInput as HTMLInputElement).value).toBe("2024-05-01");
 		expect(
-			screen.getByText("Arbeitszeitsaldo wird ab diesem Datum verfolgt"),
+			screen.getByText("The actual joining date determines employment-based vacation allowance. Correct it in the reviewed employment correction below; time tracking has its own start date."),
 		).toBeTruthy();
 	});
 

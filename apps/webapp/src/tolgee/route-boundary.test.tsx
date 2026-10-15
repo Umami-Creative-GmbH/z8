@@ -29,8 +29,9 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ cacheLife: vi.fn() }));
 vi.mock("@/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock("@/lib/auth-client", () => ({
-	authClient: { organization: { create: vi.fn() } },
+// Keep the real dialog and translations; organization persistence is a server action boundary.
+vi.mock("@/app/[locale]/(app)/create-organization-action", () => ({
+ createOrganizationWithTracking: vi.fn(),
 }));
 vi.mock("@/app/[locale]/(app)/organization-actions", () => ({
 	checkSlugAvailability: vi.fn(),

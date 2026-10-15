@@ -34,12 +34,16 @@
 import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
 import { createAuthMiddleware } from "better-auth/api";
 import { admin } from "better-auth/plugins/admin";
-import { type OrganizationOptions, organization } from "better-auth/plugins/organization";
+import {
+	type OrganizationOptions,
+	organization,
+} from "better-auth/plugins/organization";
 import { createOrganizationApprovalRollouts } from "@/lib/approvals/workflow/organization-rollout";
 import {
 	type AuthorizationMutationScope,
 	protectAuthorizationMutation,
 } from "@/lib/authorization/authorization-mutation";
+import { createOrganizationTrackingSettings } from "@/lib/organization/tracking-setup";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type CoordinatedAuthContext,
@@ -52,7 +56,10 @@ import {
 	completeRemovedMemberCleanupPostCommit,
 	revokeRemovedMemberAccessInTransaction,
 } from "./member-removal-cleanup";
-import { type BeforeHookContext, requestingSession } from "./requesting-session";
+import {
+	type BeforeHookContext,
+	requestingSession,
+} from "./requesting-session";
 
 type OrganizationHooks = NonNullable<OrganizationOptions["organizationHooks"]>;
 
@@ -114,7 +121,10 @@ const removalActors = new WeakMap<object, string>();
  * this coordinated transaction, so its side effects are audited under them
  * (#1014 default 5). Better Auth's removal hooks only name the removed user.
  */
-export function recordMemberRemovalActor(transaction: object, actorUserId: string) {
+export function recordMemberRemovalActor(
+	transaction: object,
+	actorUserId: string,
+) {
 	removalActors.set(transaction, actorUserId);
 }
 
@@ -130,7 +140,9 @@ async function cleanUpRemovedMember(input: {
 	actorUserId?: string;
 }) {
 	assertProtected("organization member removal", input.userId);
-	const transaction = requireAuthTransaction("organization member removal cleanup");
+	const transaction = requireAuthTransaction(
+		"organization member removal cleanup",
+	);
 	const actorUserId = input.actorUserId ?? removalActors.get(transaction);
 	const outcome = await revokeRemovedMemberAccessInTransaction(
 		transaction,
@@ -164,9 +176,14 @@ export function createCoordinatedOrganizationHooks(
 		beforeCreateOrganization: async () => {
 			requireAuthTransaction("organization creation");
 		},
-		afterCreateOrganization: async ({ organization }) => {
+		afterCreateOrganization: async ({ organization, user }) => {
 			const transaction = requireAuthTransaction("organization creation");
 			await createOrganizationApprovalRollouts(transaction, organization.id);
+			await createOrganizationTrackingSettings(transaction, {
+				organizationId: organization.id,
+				createdAt: organization.createdAt,
+				actorUserId: user.id,
+			});
 		},
 		beforeUpdateOrganization: hooks.beforeUpdateOrganization,
 		beforeCreateInvitation: hooks.beforeCreateInvitation,
@@ -183,7 +200,10 @@ export function createCoordinatedOrganizationHooks(
 			});
 		},
 		afterRemoveMember: async ({ member, organization }) => {
-			await cleanUpRemovedMember({ organizationId: organization.id, userId: member.userId });
+			await cleanUpRemovedMember({
+				organizationId: organization.id,
+				userId: member.userId,
+			});
 		},
 		beforeAddMember: async ({ member, organization }) => {
 			await protectAuthMutation("organization member addition", {
@@ -201,7 +221,9 @@ export function createCoordinatedOrganizationHooks(
 			});
 		},
 		afterAcceptInvitation: async (data) => {
-			await queueAfterAuthTransactionCommit(() => hooks.afterAcceptInvitation(data));
+			await queueAfterAuthTransactionCommit(() =>
+				hooks.afterAcceptInvitation(data),
+			);
 		},
 		beforeDeleteOrganization: async ({ organization }) => {
 			await protectAuthMutation("organization deletion", {
@@ -218,7 +240,9 @@ function stringField(body: unknown, field: string): string | null {
 	return typeof value === "string" && value ? value : null;
 }
 
-async function requestingUserId(ctx: BeforeHookContext): Promise<string | null> {
+async function requestingUserId(
+	ctx: BeforeHookContext,
+): Promise<string | null> {
 	return (await requestingSession(ctx))?.userId ?? null;
 }
 
@@ -242,13 +266,18 @@ export function authMutationCoordinationPlugin() {
 						const userId = await requestingUserId(ctx);
 						// Unresolved here, the removal cleanup refuses the unguarded leave.
 						if (!organizationId || !userId) return;
-						await protectAuthMutation("organization leave", { organizationId, userIds: [userId] });
+						await protectAuthMutation("organization leave", {
+							organizationId,
+							userIds: [userId],
+						});
 					}),
 				},
 				{
 					matcher: (context) => context.path === MEMBER_REMOVAL_PATH,
 					handler: createAuthMiddleware(async (ctx) => {
-						const transaction = requireAuthTransaction("organization member removal");
+						const transaction = requireAuthTransaction(
+							"organization member removal",
+						);
 						const actorUserId = await requestingUserId(ctx);
 						if (actorUserId) recordMemberRemovalActor(transaction, actorUserId);
 					}),
@@ -256,11 +285,15 @@ export function authMutationCoordinationPlugin() {
 				{
 					matcher: (context) => GLOBAL_ACCESS_PATHS.has(context.path ?? ""),
 					handler: createAuthMiddleware(async (ctx) => {
-						const transaction = requireAuthTransaction("global user access change");
+						const transaction = requireAuthTransaction(
+							"global user access change",
+						);
 						const userId = stringField(ctx.body, "userId");
 						// An anonymous request is refused by the endpoint and locks nothing.
 						if (!userId || !(await requestingUserId(ctx))) return;
-						await acquireExclusiveUserConfigurationAccessGuards(transaction, [userId]);
+						await acquireExclusiveUserConfigurationAccessGuards(transaction, [
+							userId,
+						]);
 						recordProtectedUsers(transaction, [userId]);
 					}),
 				},
@@ -272,9 +305,14 @@ export function authMutationCoordinationPlugin() {
 						const leaveResult = ctx.context.returned;
 						const userId = stringField(leaveResult, "userId");
 						const organizationId = stringField(leaveResult, "organizationId");
-						if (leaveResult instanceof Error || !userId || !organizationId) return;
+						if (leaveResult instanceof Error || !userId || !organizationId)
+							return;
 						// Leaving is the member's own act.
-						await cleanUpRemovedMember({ organizationId, userId, actorUserId: userId });
+						await cleanUpRemovedMember({
+							organizationId,
+							userId,
+							actorUserId: userId,
+						});
 					}),
 				},
 				{
@@ -309,14 +347,20 @@ class RolledBackAuthResponse extends Error {
  * Runs a coordinated `/api/auth` mutation request in one transaction; a
  * response with an error status rolls the transaction back.
  */
-export async function handleCoordinatedAuthRequest<Options extends BetterAuthOptions>(
+export async function handleCoordinatedAuthRequest<
+	Options extends BetterAuthOptions,
+>(
 	authContext: CoordinatedAuthContext<Options>,
 	request: Request,
 	handle: (request: Request) => Promise<Response>,
 	basePath = "/api/auth",
 ): Promise<Response> {
 	const path = authPath(request, basePath);
-	if (request.method !== "POST" || !path || !isCoordinatedAuthMutationPath(path)) {
+	if (
+		request.method !== "POST" ||
+		!path ||
+		!isCoordinatedAuthMutationPath(path)
+	) {
 		return handle(request);
 	}
 	try {

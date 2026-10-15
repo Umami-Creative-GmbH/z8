@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import type { DateTime } from "luxon";
 import type { VacationAccrualType } from "@/db/schema/vacation";
 import { fromJSDate } from "@/lib/datetime/luxon-utils";
 import {
@@ -67,6 +67,7 @@ export function calculateVacationBalance({
 	currentDate,
 	year,
 	adjustmentTotal = 0,
+	previouslyTakenDays = 0,
 	timezone = "UTC",
 }: {
 	organizationAllowance: VacationAllowanceData;
@@ -81,6 +82,7 @@ export function calculateVacationBalance({
 	isWorkingDay?: IsWorkingDay;
 	currentDate: Date | DateTime;
 	year: number;
+	previouslyTakenDays?: number;
 	adjustmentTotal?: number; // Sum of all vacation adjustment events
 	timezone?: string;
 }): VacationBalance {
@@ -135,7 +137,7 @@ export function calculateVacationBalance({
 			const clipped = clipAbsenceDayRange(absence, calendarYear);
 			return clipped ? sum + countAbsenceDays(clipped, isWorkingDay) : sum;
 		}, 0);
-	const usedDays = vacationDaysInYear("approved");
+	const usedDays = vacationDaysInYear("approved") + previouslyTakenDays;
 
 	// 5. Calculate pending days (pending requests that count against vacation)
 	const pendingDays = vacationDaysInYear("pending");
@@ -151,6 +153,7 @@ export function calculateVacationBalance({
 		totalDays,
 		allowanceDays,
 		usedDays,
+		...(previouslyTakenDays !== 0 ? { previouslyTakenDays } : {}),
 		pendingDays,
 		remainingDays,
 		overdrawnDays,
@@ -169,4 +172,16 @@ export function calculateVacationBalance({
  */
 export function hasSufficientBalance(balance: VacationBalance, requestedDays: number): boolean {
 	return balance.remainingDays >= requestedDays;
+}
+
+/** Annual carryover excludes approved and explicitly recorded historical usage; pending requests do not settle usage. */
+export function calculateCarryoverDays(input: {
+	totalAllowance: number;
+	usedDays: number;
+	previouslyTakenDays: number;
+	maxCarryoverDays: string | null;
+}) {
+	const remaining = Math.max(0, input.totalAllowance - input.usedDays - input.previouslyTakenDays);
+	const cap = input.maxCarryoverDays === null ? remaining : Number(input.maxCarryoverDays);
+	return { remaining, applied: Math.min(remaining, cap), capped: remaining > cap };
 }

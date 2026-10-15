@@ -1,5 +1,9 @@
+import { reconciliationProofSchema } from "./vacation-reconciliation-types";
 import { z } from "zod";
-import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	comparePlainDates,
+	parsePlainDate,
+} from "@/lib/datetime/temporal-core";
 import { AbsenceChangeError } from "./change-request-types";
 
 const dayPeriod = z.enum(["full_day", "am", "pm"]);
@@ -12,7 +16,12 @@ const range = z
 	})
 	.superRefine((value, context) => {
 		try {
-			if (comparePlainDates(parsePlainDate(value.startDate), parsePlainDate(value.endDate)) > 0)
+			if (
+				comparePlainDates(
+					parsePlainDate(value.startDate),
+					parsePlainDate(value.endDate),
+				) > 0
+			)
 				context.addIssue({
 					code: "custom",
 					message: "End date must be on or after start date",
@@ -41,6 +50,7 @@ export const absenceChangeInputSchema = z.discriminatedUnion("kind", [
 	z.strictObject({
 		...common,
 		kind: z.literal("change"),
+		historicalReconciliation: reconciliationProofSchema.optional(),
 		proposed: range,
 		coverage: z.enum(["keep", "choose"]).default("keep"),
 	}),

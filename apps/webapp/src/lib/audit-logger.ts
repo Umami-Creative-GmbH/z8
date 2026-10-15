@@ -44,6 +44,9 @@ export enum AuditAction {
 
 	// Organization Operations
 	ORGANIZATION_CREATED = "organization.created",
+	EMPLOYEE_EMPLOYMENT_START_CORRECTED = "employee.employment_start_corrected",
+	EMPLOYEE_TRACKING_DATE_CHANGED = "employee.tracking_date_changed",
+	ORGANIZATION_TRACKING_DATES_CHANGED = "organization.tracking_dates_changed",
 	INVITATION_SENT = "invitation.sent",
 	INVITATION_ACCEPTED = "invitation.accepted",
 

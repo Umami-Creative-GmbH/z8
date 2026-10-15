@@ -1,7 +1,12 @@
+import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import { and, eq } from "drizzle-orm";
 import type { db } from "@/db";
 import { absenceChangeRequest, type absenceEntry, auditLog } from "@/db/schema";
-import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import {
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+} from "@/lib/datetime/temporal-core";
 import type { AbsenceChangeOriginal } from "./change-request-types";
 export type AbsenceChangeDatabase = typeof db;
 export type AbsenceChangeRow = typeof absenceChangeRequest.$inferSelect;
@@ -27,11 +32,18 @@ export async function loadChangeRequest(
 	organizationId: string,
 	id: string,
 ) {
+	await acquireExclusiveOrganizationConfigurationGuard(
+		database,
+		organizationId,
+	);
 	const [row] = await database
 		.select()
 		.from(absenceChangeRequest)
 		.where(
-			and(eq(absenceChangeRequest.organizationId, organizationId), eq(absenceChangeRequest.id, id)),
+			and(
+				eq(absenceChangeRequest.organizationId, organizationId),
+				eq(absenceChangeRequest.id, id),
+			),
 		)
 		.for("update");
 	return row;
