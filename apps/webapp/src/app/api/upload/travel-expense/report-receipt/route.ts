@@ -18,6 +18,7 @@ import {
 	stageReportReceiptUpload,
 	travelExpenseReportReceiptStorageKey,
 } from "@/lib/travel-expenses/report-receipt-upload";
+import { finalizeSupplementalReceipt, missingSubmittedReceiptEligible } from "@/lib/travel-expenses/supplemental-receipt";
 import { isOwnDraftReportItem } from "@/lib/travel-expenses/report-store";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
@@ -28,6 +29,7 @@ const requestSchema = z.object({
 	tusFileKey: z.string().min(1),
 	reportId: z.uuid(),
 	itemId: z.uuid(),
+ submissionCycle: z.number().int().positive().optional(),
 	fileName: z.string().max(255).optional(),
 });
 
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
 		if (!parsed.success) {
 			return NextResponse.json({ error: "Invalid upload request" }, { status: 400 });
 		}
-		const { tusFileKey, reportId, itemId, fileName } = parsed.data;
+		const { tusFileKey, reportId, itemId, fileName, submissionCycle } = parsed.data;
 
 		const safeTusFileKey = sanitizeTusFileKey(tusFileKey, authContext.user.id);
 		if (!safeTusFileKey) {
@@ -56,7 +58,9 @@ export async function POST(request: NextRequest) {
 			organizationId: authContext.employee.organizationId,
 			employeeId: authContext.employee.id,
 		};
-		if (!(await isOwnDraftReportItem(db, owner, { reportId, itemId }))) {
+		if (!(submissionCycle === undefined
+ ? await isOwnDraftReportItem(db, owner, { reportId, itemId })
+ : await missingSubmittedReceiptEligible(db, {...owner, reportId, itemId, submissionCycle}))) {
 			return NextResponse.json({ error: "Expense report not found" }, { status: 404 });
 		}
 
@@ -90,7 +94,7 @@ export async function POST(request: NextRequest) {
 		await stageReportReceiptUpload(db, staged);
 
 		let stored: StoredReceiptObject | null = null;
-		let finalized: Awaited<ReturnType<typeof finalizeReportReceiptUpload>>;
+		let finalized: Awaited<ReturnType<typeof finalizeReportReceiptUpload>> | Awaited<ReturnType<typeof finalizeSupplementalReceipt>>;
 		try {
 			stored = await uploadPrivateObject(
 				owner.organizationId,
@@ -104,14 +108,17 @@ export async function POST(request: NextRequest) {
 					"content-sha256": upload.checksumSha256,
 				},
 			);
-			finalized = await finalizeReportReceiptUpload(db, {
+			const finalization = {
 				...staged,
 				stored,
 				fileName: upload.fileName,
 				mimeType: upload.mimeType,
 				sizeBytes: upload.buffer.length,
 				checksumSha256: upload.checksumSha256,
-			});
+			};
+ finalized = submissionCycle === undefined
+ ? await finalizeReportReceiptUpload(db, finalization)
+ : await finalizeSupplementalReceipt(db, {...finalization,submissionCycle});
 		} catch (error) {
 			await markReportReceiptUploadFailed(db, {
 				...staged,
@@ -125,7 +132,8 @@ export async function POST(request: NextRequest) {
 
 		await deleteTusUpload(safeTusFileKey);
 
-		if (finalized.kind === "report_not_draft") {
+		if (finalized.kind !== "attached") {
+ await markReportReceiptUploadFailed(db, {...staged,stored,reason:"finalization_failed"});
 			// The report changed while this file was uploading. The stored object
 			// stays recorded for cleanup; try to remove it right away.
 			await runTravelExpenseReceiptCleanup(db, {
@@ -138,7 +146,7 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		return NextResponse.json({ success: true, receipt: finalized.receipt });
+		return NextResponse.json({ success: true, receipt: finalized.receipt }, {status:submissionCycle === undefined ? 200 : 201});
 	} catch (error) {
 		logger.error({ error }, "Report receipt upload processing failed");
 		return NextResponse.json({ error: "Processing failed" }, { status: 500 });

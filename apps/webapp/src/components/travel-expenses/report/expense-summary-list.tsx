@@ -3,11 +3,18 @@
 import { IconFileText } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
+import type { ReactNode } from "react";
 import type { TravelExpenseReportItemType } from "@/db/schema/travel-expense";
 import type { ConversionResult } from "@/lib/travel-expenses/currency-conversion";
-import { type AllowanceOverrideSummary, AllowanceOverrideNotice } from "./allowance-override-notice";
+import {
+	AllowanceOverrideNotice,
+	type AllowanceOverrideSummary,
+} from "./allowance-override-notice";
 import { ConversionSummary } from "./conversion-summary";
-import { type ExpenseProjectSummary, ExpenseProjectLine } from "./expense-project-line";
+import {
+	ExpenseProjectLine,
+	type ExpenseProjectSummary,
+} from "./expense-project-line";
 import {
 	categoryLabel,
 	formatCountry,
@@ -16,8 +23,14 @@ import {
 	formatPlainDateRange,
 } from "./format";
 import { itemTitle } from "./item-title";
-import { MileageBreakdown, type MileageBreakdownFacts } from "./mileage-breakdown";
-import { PerDiemBreakdown, type PerDiemBreakdownFacts } from "./per-diem-breakdown";
+import {
+	MileageBreakdown,
+	type MileageBreakdownFacts,
+} from "./mileage-breakdown";
+import {
+	PerDiemBreakdown,
+	type PerDiemBreakdownFacts,
+} from "./per-diem-breakdown";
 import { ReceiptExceptionNotice } from "./receipt-exception-notice";
 
 export interface ExpenseSummary {
@@ -31,6 +44,8 @@ export interface ExpenseSummary {
 	currency: string | null;
 	paidBy: "employee" | "company" | null;
 	receipts: { id: string; fileName: string; href?: string }[];
+	/** Additional receipt evidence or actions for this item. */
+	receiptSupplement?: ReactNode;
 	/** A mileage expense's calculation (#606). */
 	mileage?: MileageBreakdownFacts | null;
 	/** A per diem's daily breakdown (#609). */
@@ -70,9 +85,13 @@ export function TripSummaryList({ trip }: { trip: TripSummary }) {
 			<dd>
 				{dates}{" "}
 				<span className="text-muted-foreground">
-					{t("travelExpenses.report.trip.datesZone", "(calendar days in {timeZone})", {
-						timeZone: trip.timeZone,
-					})}
+					{t(
+						"travelExpenses.report.trip.datesZone",
+						"(calendar days in {timeZone})",
+						{
+							timeZone: trip.timeZone,
+						},
+					)}
 				</span>
 			</dd>
 			<dt className="text-muted-foreground">
@@ -83,7 +102,8 @@ export function TripSummaryList({ trip }: { trip: TripSummary }) {
 					.map((destination) =>
 						[
 							destination.place,
-							destination.countryCode && formatCountry(locale, destination.countryCode),
+							destination.countryCode &&
+								formatCountry(locale, destination.countryCode),
 						]
 							.filter(Boolean)
 							.join(", "),
@@ -128,9 +148,15 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 							item.expenseDate && formatPlainDate(locale, item.expenseDate),
 							item.category && categoryLabel(t, item.category),
 							item.paidBy === "company"
-								? t("travelExpenses.report.summary.paidByCompany", "Paid by the company")
+								? t(
+										"travelExpenses.report.summary.paidByCompany",
+										"Paid by the company",
+									)
 								: item.paidBy === "employee"
-									? t("travelExpenses.report.summary.paidByEmployee", "Paid by you")
+									? t(
+											"travelExpenses.report.summary.paidByEmployee",
+											"Paid by you",
+										)
 									: null,
 						]
 							.filter(Boolean)
@@ -158,7 +184,10 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 						<ul className="mt-2 flex flex-wrap gap-2 text-sm">
 							{item.receipts.map((receipt) => (
 								<li key={receipt.id} className="flex items-center gap-1">
-									<IconFileText aria-hidden="true" className="size-4 text-muted-foreground" />
+									<IconFileText
+										aria-hidden="true"
+										className="size-4 text-muted-foreground"
+									/>
 									{receipt.href ? (
 										<a
 											href={receipt.href}
@@ -175,7 +204,10 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 							))}
 						</ul>
 					)}
-					{item.receiptException && <ReceiptExceptionNotice exception={item.receiptException} />}
+					{item.receiptException && (
+						<ReceiptExceptionNotice exception={item.receiptException} />
+					)}
+					{item.receiptSupplement}
 				</li>
 			))}
 		</ol>

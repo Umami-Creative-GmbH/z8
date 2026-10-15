@@ -32,6 +32,7 @@ import {
 import { loadAuthorizedApprovalDetail } from "@/lib/approvals/inbox/authorized-detail";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
+import { canSupplySubmittedReceipt, listSupplementalReceipts } from "./supplemental-receipt";
 import { financeActorReads, loadFinanceActor } from "./finance-access";
 import { isOwnerSelfApprovalDecision, OWNER_SELF_APPROVAL_REASON } from "./owner-self-approval";
 import { sortHistoryByInstant } from "./report-history";
@@ -198,7 +199,7 @@ async function reviewedCyclesOf(
 
 export interface SubmittedReportItemView
 	extends Omit<TravelExpenseReportSubmittedItem, "receipts"> {
-	receipts: Array<Pick<TravelExpenseReportReceiptManifestItem, "receiptId"> & { fileName: string }>;
+	receipts: Array<Pick<TravelExpenseReportReceiptManifestItem, "receiptId"> & { fileName: string; addedAfterSubmission?: true; uploadedByName?: string; uploadedAt?: string }>;
 }
 
 /**
@@ -214,6 +215,7 @@ export type SubmittedCycleOutcome =
 	| "reopened";
 
 export type SubmittedReportHistoryLabel =
+ | "receipt_added"
 	| "submitted"
 	| "approval_recorded"
 	| "approved"
@@ -225,6 +227,7 @@ export type SubmittedReportHistoryLabel =
 	| "reopened";
 
 export interface SubmittedReportView {
+ canAddReceipt: boolean;
 	reportId: string;
 	status: ReportRow["status"];
 	access: ReportAccess;
@@ -435,7 +438,8 @@ export async function loadSubmittedReportView(
 	const actingForOf = (approvalRequestId: string | null | undefined) =>
 		approvalRequestId ? (deputyDecisions.get(approvalRequestId) ?? null) : null;
 
-	const history: SubmittedReportView["history"] = revisions.flatMap((candidate) => {
+	const supplemental = await listSupplementalReceipts(db,{organizationId:report.organizationId,reportId:report.id,submissionCycle:cycle});
+ const history: SubmittedReportView["history"] = revisions.flatMap((candidate) => {
 		const submissionCycle = candidate.submissionCycle;
 		const cycleClosure = closureOf(submissionCycle);
 		const events: SubmittedReportView["history"] = [
@@ -482,7 +486,9 @@ export async function loadSubmittedReportView(
 		return events;
 	});
 
+ history.push(...supplemental.map(document => ({id:document.id,cycle:document.submissionCycle,label:"receipt_added" as const,at:document.createdAt.toISOString(),actorName:document.uploadedByName})));
 	return {
+		canAddReceipt: await canSupplySubmittedReceipt(report,cycle),
 		reportId: report.id,
 		status: report.status,
 		access,
@@ -547,7 +553,10 @@ export async function loadSubmittedReportView(
 			reimbursementCurrency: revision.facts.reimbursementCurrency,
 			trip: revision.facts.trip,
 			totals: revision.facts.totals,
-			items: revision.facts.items.map((item) => itemView(item, revision)),
+			items: revision.facts.items.map((item) => {
+ const frozen = itemView(item,revision);
+ return {...frozen,receipts:[...frozen.receipts,...supplemental.filter(document => document.itemId === item.itemId).map(document => ({receiptId:document.id,fileName:document.fileName,addedAfterSubmission:true as const,uploadedByName:document.uploadedByName,uploadedAt:document.createdAt.toISOString()}))]};
+ }),
 		},
 	};
 }
@@ -593,6 +602,10 @@ export async function loadSubmittedReportReceipt(
 	const receipt = revision?.facts.items
 		.flatMap((item) => item.receipts)
 		.find((candidate) => candidate.receiptId === receiptId);
-	if (!revision || !receipt) return null;
+	if (!revision) return null;
+ if (!receipt) {
+ const supplemental = (await listSupplementalReceipts(db,{organizationId:report.organizationId,reportId:report.id,submissionCycle:cycle})).find(document => document.id === receiptId && revision.facts.items.some(item => item.itemId === document.itemId));
+ return supplemental ? {...supplemental.receipt,fileName:supplemental.fileName} : null;
+ }
 	return { ...receipt, fileName: revision.labels.receiptFileNames[receiptId] ?? "receipt" };
 }

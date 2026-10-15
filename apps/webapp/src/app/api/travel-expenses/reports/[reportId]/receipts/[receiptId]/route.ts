@@ -101,7 +101,7 @@ export async function GET(
 			? authorizedReportCycle(authorized, cycle ?? report.submissionCount)
 			: cycle;
 		if (readableCycle === null) return notFound();
-		if (authorized.access !== "owner" || cycle !== undefined) {
+		if (report.status === "submitted" || report.status === "approved" || authorized.access !== "owner" || cycle !== undefined) {
 			// Reviewers and finance only ever receive the frozen evidence.
 			const frozen = await loadSubmittedReportReceipt(report, receiptId, readableCycle);
 			stored = frozen && {

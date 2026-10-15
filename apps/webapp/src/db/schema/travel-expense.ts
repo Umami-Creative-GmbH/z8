@@ -410,6 +410,32 @@ export const travelExpenseReportReceipt = pgTable(
 	],
 );
 
+// Supporting evidence supplied after submission; original revision facts remain immutable.
+export const travelExpenseReportSupplementalReceipt = pgTable(
+ "travel_expense_report_supplemental_receipt",
+ {
+  id: uuid("id").primaryKey(),
+  organizationId: text("organization_id").notNull(),
+  reportId: uuid("report_id").notNull(),
+  itemId: uuid("item_id").notNull(),
+  submissionCycle: integer("submission_cycle").notNull(),
+  receipt: jsonb("receipt").$type<{
+   receiptId: string; itemId: string;
+   object: {provider: string; bucket: string | null; key: string; versionId: string | null};
+   checksumSha256: string; sizeBytes: number; mimeType: string;
+  }>().notNull(),
+  fileName: text("file_name").notNull(),
+  uploadedBy: uuid("uploaded_by").notNull(),
+  uploadedByName: text("uploaded_by_name").notNull(),
+  createdAt: timestamp("created_at", {withTimezone:true}).defaultNow().notNull(),
+ },
+ (table) => [
+  foreignKey({name:"travel_expense_supplemental_receipt_report_fk",columns:[table.reportId,table.organizationId],foreignColumns:[travelExpenseReport.id,travelExpenseReport.organizationId]}).onDelete("cascade"),
+  uniqueIndex("travelExpenseSupplementalReceipt_item_cycle_idx").on(table.organizationId,table.reportId,table.itemId,table.submissionCycle),
+  check("travel_expense_supplemental_receipt_cycle_check",sql`${table.submissionCycle} > 0`),
+ ],
+);
+
 export const TRAVEL_EXPENSE_RECEIPT_UPLOAD_STATUSES = ["pending", "cleanup_required"] as const;
 export type TravelExpenseReceiptUploadStatus =
 	(typeof TRAVEL_EXPENSE_RECEIPT_UPLOAD_STATUSES)[number];

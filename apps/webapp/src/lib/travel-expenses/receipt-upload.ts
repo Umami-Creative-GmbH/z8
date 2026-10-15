@@ -6,6 +6,7 @@ import {
 	travelExpenseClaim,
 	travelExpenseReceiptUpload,
 	travelExpenseReportReceipt,
+ travelExpenseReportSupplementalReceipt,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "./attachment-validation";
@@ -354,6 +355,7 @@ async function cleanupOne(
 					),
 				),
 		)
+  .unionAll(database.select({id:travelExpenseReportSupplementalReceipt.id}).from(travelExpenseReportSupplementalReceipt).where(and(eq(travelExpenseReportSupplementalReceipt.organizationId,row.organizationId),sql`${travelExpenseReportSupplementalReceipt.receipt}->'object'->>'key' = ${row.storageKey}`)))
 		.limit(1);
 	if (attached.length === 0) {
 		try {
