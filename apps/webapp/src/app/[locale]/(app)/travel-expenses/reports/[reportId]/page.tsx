@@ -58,7 +58,7 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 						{t("travelExpenses.report.backToApprovals", "Back to approvals")}
 					</BackLink>
 				)}
-				<SubmittedTravelExpenseReport reportId={reportId} cycle={cycle} />
+				<SubmittedTravelExpenseReport reportId={reportId} cycle={cycle} maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)} />
 			</div>
 		);
 	}
@@ -80,7 +80,7 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 					<BackLink href={`/travel-expenses/reports/${reportId}`}>
 						{t("travelExpenses.report.backToCurrent", "Back to the current report")}
 					</BackLink>
-					<SubmittedTravelExpenseReport reportId={reportId} cycle={cycle} />
+					<SubmittedTravelExpenseReport reportId={reportId} cycle={cycle} maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)} />
 				</>
 			)}
 		</div>

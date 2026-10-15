@@ -1,5 +1,16 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray, isNull, not, notExists, or, type SQL } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	inArray,
+	isNull,
+	not,
+	notExists,
+	or,
+	type SQL,
+} from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -28,10 +39,22 @@ import {
 	travelExpenseExportSelectionFingerprint,
 } from "./export-manifest";
 import { listAllFinanceQueueAccounts } from "./finance-queue-store";
-import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
+import {
+	formatUnits,
+	parseUnits,
+	STORED_AMOUNT_SCALE,
+	sumUnits,
+} from "./money";
 import type { OfficerScope } from "./officer-scope";
-import { isSourceInOfficerScope, reportInOfficerScope } from "./officer-scope-read";
-import { loadSettlementAccount, type SettlementAccount } from "./settlement-store";
+import {
+	isSourceInOfficerScope,
+	reportInOfficerScope,
+} from "./officer-scope-read";
+import {
+	loadSettlementAccount,
+	type SettlementAccount,
+} from "./settlement-store";
+import { listSupplementalReceipts } from "./supplemental-receipt";
 
 /**
  * Tracked export batches of approved travel expense report revisions (#613).
@@ -78,7 +101,9 @@ export interface TravelExpenseExportSelection {
 	revisionId: string;
 }
 
-export type TravelExpenseExportCancelReason = "cancelled_by_finance" | "report_reopened";
+export type TravelExpenseExportCancelReason =
+	| "cancelled_by_finance"
+	| "report_reopened";
 
 export interface TravelExpenseExportBatchReport {
 	reportId: string;
@@ -131,26 +156,42 @@ function isStaleSince(since: Date, now: Instant): boolean {
 }
 
 function isStaleProcessing(row: BatchRow, now: Instant): boolean {
-	return row.status === "processing" && row.startedAt !== null && isStaleSince(row.startedAt, now);
+	return (
+		row.status === "processing" &&
+		row.startedAt !== null &&
+		isStaleSince(row.startedAt, now)
+	);
 }
 
 /** Queued, but its job never claimed it within the stale limit (lost job, failed claim). */
 function isStaleQueued(row: BatchRow, now: Instant): boolean {
-	return row.status === "queued" && isStaleSince(row.queuedAt ?? row.requestedAt, now);
+	return (
+		row.status === "queued" &&
+		isStaleSince(row.queuedAt ?? row.requestedAt, now)
+	);
 }
 
 function isRetryable(row: BatchRow, now: Instant): boolean {
-	return row.status === "failed" || isStaleProcessing(row, now) || isStaleQueued(row, now);
+	return (
+		row.status === "failed" ||
+		isStaleProcessing(row, now) ||
+		isStaleQueued(row, now)
+	);
 }
 
-function batchReports(manifest: TravelExpenseExportManifest): TravelExpenseExportBatchReport[] {
+function batchReports(
+	manifest: TravelExpenseExportManifest,
+): TravelExpenseExportBatchReport[] {
 	return manifest.revisions.map((revision) => ({
 		reportId: revision.reportId,
 		revisionId: revision.revisionId,
 		submissionCycle: revision.submissionCycle,
 		employeeName: revision.employeeName,
 		reportKind: revision.facts.reportKind,
-		title: revision.facts.trip?.purpose ?? revision.facts.items[0]?.description ?? null,
+		title:
+			revision.facts.trip?.purpose ??
+			revision.facts.items[0]?.description ??
+			null,
 		currency: revision.facts.totals.currency,
 		reimbursable: revision.facts.totals.reimbursable,
 		companyPaid: revision.facts.totals.companyPaid,
@@ -230,28 +271,46 @@ async function lockBatch(
 function batchTotals(
 	revisions: readonly TravelExpenseExportManifestRevision[],
 ): TravelExpenseExportBatchTotal[] {
-	const byCurrency = new Map<string, { reimbursable: bigint[]; companyPaid: bigint[] }>();
+	const byCurrency = new Map<
+		string,
+		{ reimbursable: bigint[]; companyPaid: bigint[] }
+	>();
 	for (const { facts } of revisions) {
-		const line = byCurrency.get(facts.totals.currency) ?? { reimbursable: [], companyPaid: [] };
+		const line = byCurrency.get(facts.totals.currency) ?? {
+			reimbursable: [],
+			companyPaid: [],
+		};
 		// An adjustment (#615) adds its signed delta, never its corrected total
 		// (the same rule as the CSV's summable columns, export-adjustment.ts).
-		const reimbursable = facts.adjustment?.delta.amount ?? facts.totals.reimbursable;
+		const reimbursable =
+			facts.adjustment?.delta.amount ?? facts.totals.reimbursable;
 		const companyPaid = facts.adjustment ? "0.00" : facts.totals.companyPaid;
-		line.reimbursable.push(parseUnits(reimbursable, STORED_AMOUNT_SCALE) ?? BigInt(0));
-		line.companyPaid.push(parseUnits(companyPaid, STORED_AMOUNT_SCALE) ?? BigInt(0));
+		line.reimbursable.push(
+			parseUnits(reimbursable, STORED_AMOUNT_SCALE) ?? BigInt(0),
+		);
+		line.companyPaid.push(
+			parseUnits(companyPaid, STORED_AMOUNT_SCALE) ?? BigInt(0),
+		);
 		byCurrency.set(facts.totals.currency, line);
 	}
 	return [...byCurrency.entries()]
 		.toSorted(([left], [right]) => (left < right ? -1 : 1))
 		.map(([currency, line]) => ({
 			currency,
-			reimbursable: formatUnits(sumUnits(line.reimbursable), STORED_AMOUNT_SCALE),
+			reimbursable: formatUnits(
+				sumUnits(line.reimbursable),
+				STORED_AMOUNT_SCALE,
+			),
 			companyPaid: formatUnits(sumUnits(line.companyPaid), STORED_AMOUNT_SCALE),
 		}));
 }
 
 export type CreateTravelExpenseExportBatchResult =
-	| { status: "created"; replayed: boolean; batch: TravelExpenseExportBatchView }
+	| {
+			status: "created";
+			replayed: boolean;
+			batch: TravelExpenseExportBatchView;
+	  }
 	/** Empty, too large or with duplicate reports. */
 	| { status: "invalid_selection" }
 	/** The key was used for another selection. */
@@ -261,7 +320,11 @@ export type CreateTravelExpenseExportBatchResult =
 	/** Already part of a batch that is not cancelled. */
 	| { status: "already_exported"; reportIds: string[] };
 
-async function findBatchByKey(tx: Transaction, organizationId: string, key: string) {
+async function findBatchByKey(
+	tx: Transaction,
+	organizationId: string,
+	key: string,
+) {
 	const [row] = await tx
 		.select({
 			id: travelExpenseExportBatch.id,
@@ -305,10 +368,20 @@ export async function createTravelExpenseExportBatch(
 	}
 	const fingerprint = travelExpenseExportSelectionFingerprint(selection);
 	return database.transaction(async (tx) => {
-		const existing = await findBatchByKey(tx, actor.organizationId, input.idempotencyKey);
+		const existing = await findBatchByKey(
+			tx,
+			actor.organizationId,
+			input.idempotencyKey,
+		);
 		if (existing) {
-			if (existing.fingerprint !== fingerprint) return { status: "idempotency_conflict" } as const;
-			const batch = await loadBatchView(tx, actor.organizationId, existing.id, now);
+			if (existing.fingerprint !== fingerprint)
+				return { status: "idempotency_conflict" } as const;
+			const batch = await loadBatchView(
+				tx,
+				actor.organizationId,
+				existing.id,
+				now,
+			);
 			if (!batch) throw new Error("Export batch vanished");
 			return { status: "created", replayed: true, batch } as const;
 		}
@@ -324,7 +397,10 @@ export async function createTravelExpenseExportBatch(
 			// react-doctor-disable-next-line react-doctor/async-await-in-loop
 			const account = await loadSettlementAccount(
 				tx,
-				{ organizationId: actor.organizationId, source: { type: "report", id: entry.reportId } },
+				{
+					organizationId: actor.organizationId,
+					source: { type: "report", id: entry.reportId },
+				},
 				{ lock: true },
 			);
 			const basis = account?.approved ? account.basis : null;
@@ -356,6 +432,23 @@ export async function createTravelExpenseExportBatch(
 				stale.push(entry.reportId);
 				continue;
 			}
+
+			const supplemental = await listSupplementalReceipts(tx, {
+				organizationId: actor.organizationId,
+				reportId: revision.reportId,
+				submissionCycle: revision.submissionCycle,
+			});
+			const supplementalReceipts = supplemental
+				.filter((document) =>
+					revision.facts.items.some((item) => item.itemId === document.itemId),
+				)
+				.map((document) => ({
+					receipt: document.receipt,
+					fileName: document.fileName,
+					uploadedBy: document.uploadedBy,
+					uploadedByName: document.uploadedByName,
+					uploadedAt: document.createdAt.toISOString(),
+				}));
 			revisions.push({
 				reportId: revision.reportId,
 				revisionId: revision.id,
@@ -366,17 +459,30 @@ export async function createTravelExpenseExportBatch(
 				employeeId: account.employeeId,
 				employeeName: account.employeeName,
 				facts: revision.facts,
-				receiptFileNames: revision.labels.receiptFileNames,
+				receiptFileNames: {
+					...revision.labels.receiptFileNames,
+					...Object.fromEntries(
+						supplementalReceipts.map((document) => [
+							document.receipt.receiptId,
+							document.fileName,
+						]),
+					),
+				},
+				...(supplementalReceipts.length > 0 ? { supplementalReceipts } : {}),
 			});
 		}
-		if (stale.length > 0) return { status: "stale_selection", reportIds: stale } as const;
+		if (stale.length > 0)
+			return { status: "stale_selection", reportIds: stale } as const;
 
 		const claimed = await tx
 			.select({ reportId: travelExpenseExportBatchRevision.reportId })
 			.from(travelExpenseExportBatchRevision)
 			.where(
 				and(
-					eq(travelExpenseExportBatchRevision.organizationId, actor.organizationId),
+					eq(
+						travelExpenseExportBatchRevision.organizationId,
+						actor.organizationId,
+					),
 					inArray(
 						travelExpenseExportBatchRevision.submittedRevisionId,
 						selection.map((entry) => entry.revisionId),
@@ -412,10 +518,18 @@ export async function createTravelExpenseExportBatch(
 				manifest,
 				manifestDigest: travelExpenseExportManifestDigest(manifest),
 				revisionCount: revisions.length,
-				itemCount: revisions.reduce((count, { facts }) => count + facts.items.length, 0),
+				itemCount: revisions.reduce(
+					(count, { facts }) => count + facts.items.length,
+					0,
+				),
 				receiptCount: revisions.reduce(
-					(count, { facts }) =>
-						count + facts.items.reduce((sum, item) => sum + item.receipts.length, 0),
+					(count, revision) =>
+						count +
+						revision.facts.items.reduce(
+							(sum, item) => sum + item.receipts.length,
+							0,
+						) +
+						(revision.supplementalReceipts?.length ?? 0),
 					0,
 				),
 				totals: batchTotals(revisions),
@@ -426,16 +540,28 @@ export async function createTravelExpenseExportBatch(
 				queuedAt: dateFromInstant(now),
 			})
 			.onConflictDoNothing({
-				target: [travelExpenseExportBatch.organizationId, travelExpenseExportBatch.idempotencyKey],
+				target: [
+					travelExpenseExportBatch.organizationId,
+					travelExpenseExportBatch.idempotencyKey,
+				],
 			})
 			.returning({ id: travelExpenseExportBatch.id });
 		if (inserted.length === 0) {
 			// The same key committed concurrently (for other reports).
-			const raced = await findBatchByKey(tx, actor.organizationId, input.idempotencyKey);
+			const raced = await findBatchByKey(
+				tx,
+				actor.organizationId,
+				input.idempotencyKey,
+			);
 			if (!raced || raced.fingerprint !== fingerprint) {
 				return { status: "idempotency_conflict" } as const;
 			}
-			const batch = await loadBatchView(tx, actor.organizationId, raced.id, now);
+			const batch = await loadBatchView(
+				tx,
+				actor.organizationId,
+				raced.id,
+				now,
+			);
 			if (!batch) throw new Error("Export batch vanished");
 			return { status: "created", replayed: true, batch } as const;
 		}
@@ -467,7 +593,10 @@ const batchReport = alias(travelExpenseReport, "batch_report");
  * every batch with the all scope, otherwise the batches they requested and
  * those whose every report is in their scope. Undefined for the all scope.
  */
-function batchVisibleTo(database: Executor, viewer: TravelExpenseExportViewer): SQL | undefined {
+function batchVisibleTo(
+	database: Executor,
+	viewer: TravelExpenseExportViewer,
+): SQL | undefined {
 	const inScope = reportInOfficerScope(viewer.scope, batchReport);
 	if (!inScope) return undefined;
 	return or(
@@ -480,12 +609,18 @@ function batchVisibleTo(database: Executor, viewer: TravelExpenseExportViewer): 
 					batchReport,
 					and(
 						eq(batchReport.id, travelExpenseExportBatchRevision.reportId),
-						eq(batchReport.organizationId, travelExpenseExportBatchRevision.organizationId),
+						eq(
+							batchReport.organizationId,
+							travelExpenseExportBatchRevision.organizationId,
+						),
 					),
 				)
 				.where(
 					and(
-						eq(travelExpenseExportBatchRevision.batchId, travelExpenseExportBatch.id),
+						eq(
+							travelExpenseExportBatchRevision.batchId,
+							travelExpenseExportBatch.id,
+						),
 						eq(
 							travelExpenseExportBatchRevision.organizationId,
 							travelExpenseExportBatch.organizationId,
@@ -500,7 +635,11 @@ function batchVisibleTo(database: Executor, viewer: TravelExpenseExportViewer): 
 /** Whether the viewer sees the batch of the organization (#747); false when there is none. */
 export async function isTravelExpenseExportBatchVisible(
 	database: Executor,
-	input: { organizationId: string; batchId: string; viewer: TravelExpenseExportViewer },
+	input: {
+		organizationId: string;
+		batchId: string;
+		viewer: TravelExpenseExportViewer;
+	},
 ): Promise<boolean> {
 	const [row] = await database
 		.select({ id: travelExpenseExportBatch.id })
@@ -519,7 +658,11 @@ export async function isTravelExpenseExportBatchVisible(
 /** The organization's batches, newest first; with a viewer, only those they see. */
 export async function listTravelExpenseExportBatches(
 	database: Executor,
-	input: { organizationId: string; viewer?: TravelExpenseExportViewer; limit?: number },
+	input: {
+		organizationId: string;
+		viewer?: TravelExpenseExportViewer;
+		limit?: number;
+	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<TravelExpenseExportBatchView[]> {
 	const rows = await database
@@ -532,9 +675,14 @@ export async function listTravelExpenseExportBatches(
 				input.viewer ? batchVisibleTo(database, input.viewer) : undefined,
 			),
 		)
-		.orderBy(desc(travelExpenseExportBatch.requestedAt), desc(travelExpenseExportBatch.id))
+		.orderBy(
+			desc(travelExpenseExportBatch.requestedAt),
+			desc(travelExpenseExportBatch.id),
+		)
 		.limit(input.limit ?? 25);
-	return rows.map(({ row, requestedByName }) => toView(row, requestedByName, now));
+	return rows.map(({ row, requestedByName }) =>
+		toView(row, requestedByName, now),
+	);
 }
 
 export interface ExportableTravelExpenseRevision {
@@ -568,11 +716,16 @@ export async function listExportableTravelExpenseRevisions(
 	);
 	if (candidates.length === 0) return [];
 	const claimed = await database
-		.select({ revisionId: travelExpenseExportBatchRevision.submittedRevisionId })
+		.select({
+			revisionId: travelExpenseExportBatchRevision.submittedRevisionId,
+		})
 		.from(travelExpenseExportBatchRevision)
 		.where(
 			and(
-				eq(travelExpenseExportBatchRevision.organizationId, input.organizationId),
+				eq(
+					travelExpenseExportBatchRevision.organizationId,
+					input.organizationId,
+				),
 				inArray(
 					travelExpenseExportBatchRevision.reportId,
 					candidates.map((account) => account.source.id),
@@ -636,7 +789,10 @@ export async function retryTravelExpenseExportBatch(
 async function cancelLockedBatch(
 	tx: Transaction,
 	row: BatchRow,
-	input: { reason: TravelExpenseExportCancelReason; cancelledByUserId: string | null },
+	input: {
+		reason: TravelExpenseExportCancelReason;
+		cancelledByUserId: string | null;
+	},
 	now: Instant,
 ): Promise<void> {
 	const at = dateFromInstant(now);
@@ -662,7 +818,11 @@ async function cancelLockedBatch(
 }
 
 export type CancelTravelExpenseExportBatchResult =
-	| { status: "cancelled"; replayed: boolean; batch: TravelExpenseExportBatchView }
+	| {
+			status: "cancelled";
+			replayed: boolean;
+			batch: TravelExpenseExportBatchView;
+	  }
 	/** A completed batch is history and cannot be cancelled. */
 	| { status: "completed"; batch: TravelExpenseExportBatchView }
 	| { status: "not_found" };
@@ -685,7 +845,8 @@ export async function cancelTravelExpenseExportBatch(
 		const row = await lockBatch(tx, input.organizationId, input.batchId);
 		if (!row) return { status: "not_found" } as const;
 		const replayed = row.status === "cancelled";
-		if (row.status !== "completed" && !replayed) await cancelLockedBatch(tx, row, input, now);
+		if (row.status !== "completed" && !replayed)
+			await cancelLockedBatch(tx, row, input, now);
 		const batch = await loadBatchView(tx, input.organizationId, row.id, now);
 		if (!batch) throw new Error("Export batch vanished");
 		return row.status === "completed"
@@ -728,7 +889,10 @@ export async function loadTravelExpenseReportExportState(
 		.innerJoin(
 			travelExpenseExportBatch,
 			and(
-				eq(travelExpenseExportBatch.id, travelExpenseExportBatchRevision.batchId),
+				eq(
+					travelExpenseExportBatch.id,
+					travelExpenseExportBatchRevision.batchId,
+				),
 				eq(
 					travelExpenseExportBatch.organizationId,
 					travelExpenseExportBatchRevision.organizationId,
@@ -737,11 +901,19 @@ export async function loadTravelExpenseReportExportState(
 		)
 		.where(
 			and(
-				eq(travelExpenseExportBatchRevision.organizationId, input.organizationId),
+				eq(
+					travelExpenseExportBatchRevision.organizationId,
+					input.organizationId,
+				),
 				eq(travelExpenseExportBatchRevision.reportId, input.reportId),
 				isNull(travelExpenseExportBatchRevision.releasedAt),
 				...(input.revisionId
-					? [eq(travelExpenseExportBatchRevision.submittedRevisionId, input.revisionId)]
+					? [
+							eq(
+								travelExpenseExportBatchRevision.submittedRevisionId,
+								input.revisionId,
+							),
+						]
 					: []),
 			),
 		)
@@ -769,7 +941,11 @@ export type CancelReportExportsResult =
  */
 export async function cancelUncompletedTravelExpenseExportsForReport(
 	tx: Transaction,
-	input: { organizationId: string; reportId: string; cancelledByUserId: string | null },
+	input: {
+		organizationId: string;
+		reportId: string;
+		cancelledByUserId: string | null;
+	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<CancelReportExportsResult> {
 	const held = await tx
@@ -777,7 +953,10 @@ export async function cancelUncompletedTravelExpenseExportsForReport(
 		.from(travelExpenseExportBatchRevision)
 		.where(
 			and(
-				eq(travelExpenseExportBatchRevision.organizationId, input.organizationId),
+				eq(
+					travelExpenseExportBatchRevision.organizationId,
+					input.organizationId,
+				),
 				eq(travelExpenseExportBatchRevision.reportId, input.reportId),
 				isNull(travelExpenseExportBatchRevision.releasedAt),
 			),
@@ -812,7 +991,11 @@ export async function cancelUncompletedTravelExpenseExportsForReport(
 // ---------------------------------------------------------------------------
 
 export type ClaimTravelExpenseExportResult =
-	| { status: "claimed"; manifest: TravelExpenseExportManifest; manifestDigest: string }
+	| {
+			status: "claimed";
+			manifest: TravelExpenseExportManifest;
+			manifestDigest: string;
+	  }
 	| { status: "skipped" };
 
 /** Moves the queued `attempt` to processing; any other state skips the run. */
@@ -858,7 +1041,8 @@ export async function completeTravelExpenseExportAttempt(
 ): Promise<boolean> {
 	return database.transaction(async (tx) => {
 		const row = await lockBatch(tx, input.organizationId, input.batchId);
-		if (!row || row.status !== "processing" || row.attempt !== input.attempt) return false;
+		if (!row || row.status !== "processing" || row.attempt !== input.attempt)
+			return false;
 		await tx
 			.update(travelExpenseExportBatch)
 			.set({
@@ -913,7 +1097,11 @@ export async function failTravelExpenseExportAttempt(
 /** The stored file of a completed batch the viewer sees, for a permission-checked download. */
 export async function loadCompletedTravelExpenseExportFile(
 	database: Executor,
-	input: { organizationId: string; batchId: string; viewer: TravelExpenseExportViewer },
+	input: {
+		organizationId: string;
+		batchId: string;
+		viewer: TravelExpenseExportViewer;
+	},
 ): Promise<{
 	fileName: string;
 	bucket: string | null;
@@ -935,7 +1123,12 @@ export async function loadCompletedTravelExpenseExportFile(
 			),
 		)
 		.limit(1);
-	if (!row?.storageKey || !row.fileName || row.sizeBytes === null || !row.checksumSha256) {
+	if (
+		!row?.storageKey ||
+		!row.fileName ||
+		row.sizeBytes === null ||
+		!row.checksumSha256
+	) {
 		return null;
 	}
 	return {

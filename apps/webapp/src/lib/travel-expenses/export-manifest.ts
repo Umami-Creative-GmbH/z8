@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
 import { canonicalJson } from "@/lib/approvals/evidence/absence-facts";
-import type { TravelExpenseReportSubmittedFacts } from "@/lib/approvals/evidence/travel-expense-report-facts";
+import type {
+	TravelExpenseReportSubmittedFacts,
+	TravelExpenseReportSubmittedItem,
+} from "@/lib/approvals/evidence/travel-expense-report-facts";
 import type {
 	TravelExpenseExportManifestRecord,
 	TravelExpenseExportManifestRevisionRecord,
@@ -37,12 +40,18 @@ export function sortManifestRevisions(
 	revisions: readonly TravelExpenseExportManifestRevision[],
 ): TravelExpenseExportManifestRevision[] {
 	return revisions.toSorted((left, right) =>
-		left.reportId < right.reportId ? -1 : left.reportId > right.reportId ? 1 : 0,
+		left.reportId < right.reportId
+			? -1
+			: left.reportId > right.reportId
+				? 1
+				: 0,
 	);
 }
 
 /** Stable content identity of a manifest; survives a jsonb round trip. */
-export function travelExpenseExportManifestDigest(manifest: TravelExpenseExportManifest): string {
+export function travelExpenseExportManifestDigest(
+	manifest: TravelExpenseExportManifest,
+): string {
 	return `travel_expense_export:v${manifest.version}:${createHash("sha256")
 		.update(canonicalJson(manifest))
 		.digest("hex")}`;
@@ -62,7 +71,10 @@ export function travelExpenseExportSelectionFingerprint(
 const UNSAFE_FILE_NAME_CHARACTERS = /[^\p{L}\p{N}._ -]+/gu;
 
 /** A receipt's file name inside the bundle: path-safe, never empty. */
-export function bundleReceiptFileName(fileName: string | undefined, mimeType: string): string {
+export function bundleReceiptFileName(
+	fileName: string | undefined,
+	mimeType: string,
+): string {
 	const cleaned = (fileName ?? "")
 		.normalize("NFC")
 		.replace(UNSAFE_FILE_NAME_CHARACTERS, "_")
@@ -97,6 +109,21 @@ export function bundleReceiptPath(input: {
 }
 
 /** The ZIP's file name: creation date (UTC) and the batch id prefix. */
-export function travelExpenseExportFileName(manifest: TravelExpenseExportManifest): string {
+export function travelExpenseExportFileName(
+	manifest: TravelExpenseExportManifest,
+): string {
 	return `travel-expenses-${manifest.createdAt.slice(0, 10)}-${manifest.batchId.slice(0, 8)}.zip`;
+}
+
+/** Receipts frozen at batch creation, without rewriting originally approved facts. */
+export function exportItemReceipts(
+	revision: TravelExpenseExportManifestRevision,
+	item: TravelExpenseReportSubmittedItem,
+) {
+	return [
+		...item.receipts,
+		...(revision.supplementalReceipts ?? [])
+			.filter((document) => document.receipt.itemId === item.itemId)
+			.map((document) => document.receipt),
+	];
 }

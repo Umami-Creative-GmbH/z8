@@ -1681,6 +1681,13 @@
       "when": 1805385600000,
       "tag": "0239_vacation_reconciliation",
       "breakpoints": true
+    },
+    {
+      "idx": 240,
+      "version": "7",
+      "when": 1805472000000,
+      "tag": "0240_supplemental_report_receipts",
+      "breakpoints": true
     }
   ]
 }
