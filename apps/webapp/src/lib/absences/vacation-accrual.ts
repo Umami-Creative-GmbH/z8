@@ -62,7 +62,7 @@ const NOTHING_ACCRUED: VacationAccrualResult = {
  * hire month only the days from the start count, in the exit month only the days through the last
  * working day; a month without an employed day accrues nothing (null).
  */
-function monthlyAccrualDays(input: {
+export function monthlyAccrualDays(input: {
 	accrualType: VacationAccrualType;
 	annualDays: number;
 	year: number;
@@ -100,7 +100,7 @@ function earliest(left: PlainDate, right: PlainDate): PlainDate {
  * employments with a known last working day of one who is no longer active, so a leaver accrues
  * the months they were still employed. An inactive employee without a recorded end accrues nothing.
  */
-function accruingEmployments(employee: EmployeeEmployments): EmploymentStint[] {
+export function accruingEmployments(employee: EmployeeEmployments): EmploymentStint[] {
 	return employee.isActive
 		? employee.employments
 		: employee.employments.filter((employment) => employment.lastWorkingDay !== null);

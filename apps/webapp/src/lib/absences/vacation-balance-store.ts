@@ -46,6 +46,9 @@ export async function loadVacationBalances(
 		year: number;
 		timezone: string;
 		currentDate?: Date;
+ employeeEmploymentStartDateOverrides?: ReadonlyMap<string,string>;
+ accrualDaysOverrides?: ReadonlyMap<string,number>;
+ carryoverDaysOverrides?: ReadonlyMap<string,string>;
 	},
 ): Promise<VacationBalances> {
 	const { organizationId, year } = input;
@@ -62,6 +65,9 @@ export async function loadVacationBalances(
 		employeeIds,
 		year,
 	});
+	for (const [employeeId, days] of input.carryoverDaysOverrides ?? []) {
+  overrides.set(employeeId,{customAnnualDays:null,...overrides.get(employeeId),customCarryoverDays:days});
+ }
 	const [allowances, absences, workingDays, adjustmentSums] = await Promise.all([
 		// Only employees of the organization get an allowance, and so a balance.
 		loadProratedVacationAllowances(database, {
@@ -70,6 +76,7 @@ export async function loadVacationBalances(
 			year,
 			policy,
 			overrides,
+   employeeEmploymentStartDateOverrides: input.employeeEmploymentStartDateOverrides,
 		}),
 		database.query.absenceEntry.findMany({
 			where: and(
@@ -99,6 +106,7 @@ export async function loadVacationBalances(
 	const adjustments = new Map<string, VacationAdjustmentSums>();
 	for (const [employeeId, allowance] of allowances) {
 		const sums = adjustmentSums.get(employeeId) ?? { manual: 0, accrual: 0 };
+		if(input.accrualDaysOverrides?.has(employeeId)) sums.accrual=input.accrualDaysOverrides.get(employeeId) ?? sums.accrual;
 		adjustments.set(employeeId, sums);
 		balances.set(
 			employeeId,
