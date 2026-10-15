@@ -50,7 +50,6 @@
       "description": "Configurați-vă organizația pentru a începe",
       "title": "Creează organizație"
     },
-    "createError": "Crearea organizației a eșuat",
     "createNew": "Creează o organizație nouă",
     "createSuccess": "Organizația a fost creată cu succes!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Proprietar"
     },
     "slugDescription": "Utilizat în adrese URL. Generat automat din nume.",
-    "slugErrors": {
-      "format": "Slug-ul trebuie să conțină doar litere mici, cifre și cratime",
-      "hyphen": "Slug-ul nu poate începe sau se termina cu o cratimă",
-      "max": "Slug-ul trebuie să aibă mai puțin de 50 de caractere",
-      "min": "Slug-ul trebuie să aibă cel puțin 2 caractere"
-    },
     "slugLabel": "Slug organizație",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "Acest slug este deja utilizat. Te rugăm să alegi altul.",
@@ -372,6 +365,56 @@
       "updated": "Fusul orar al organizației a fost actualizat la {timezone}",
       "update-failed": "Nu s-a putut actualiza fusul orar al organizației"
     },
-    "title": "Explorator organizație"
+    "title": "Explorator organizație",
+    "tracking": {
+      "activate-reviewed": "Activează data revizuită",
+      "activation-description": "Alegeți data reală de lansare și examinați impactul acesteia înainte de a salva. Sugestia inițială folosește data creării organizației dvs. în fusul său orar. Acest lucru modifică pontajul, fără a corecta data de angajare a cuiva.",
+      "actual": "Muncă finalizată",
+      "affected-periods": "Luni afectate",
+      "after": "După",
+      "balance": "Sold de lucru",
+      "before": "Înainte",
+      "blocked-save": "Redeschideți lunile închise afectate și generați o nouă previzualizare.",
+      "change-date": "Modifică data de pontaj",
+      "closed": "Închis",
+      "closed-blockers": "Rezolvați problemele de mai jos înainte de a genera o nouă previzualizare și de a salva.",
+      "closed-settings": "Deschide setările lunilor închise",
+      "commit-failed": "Nu s-a putut salva modificarea revizuită. Generați o nouă previzualizare și încercați din nou.",
+      "day-unit": "zile",
+      "description": "Această dată controlează timpul necesar și soldurile de lucru acumulate. Datele reale de angajare ale angajaților stabilesc dreptul la concediu.",
+      "employee-impacts": "Impact asupra soldurilor angajaților",
+      "employee-zone": "Fusul orar al angajatului",
+      "ending-balance": "Sold la sfârșitul lunii",
+      "exception-conflict": "Excepția angajatului {exception} precede noul minim {minimum}. Eliminați sau modificați mai întâi excepția angajatului.",
+      "hours": "Ore",
+      "hours-caption": "Ore înainte și după",
+      "hour-unit": "ore",
+      "invalid-date": "Alegeți o dată calendaristică validă.",
+      "legacy": "Calculul actual al soldului de lucru este încă în uz. Nu a fost activată nicio dată de începere a pontajului.",
+      "no-boundary": "Fără dată de începere a calculului",
+      "no-changed-periods": "Nu se modifică rezultatele din lunile încheiate.",
+      "no-employees": "Nu este afectat niciun sold al angajaților.",
+      "old-boundary": "Data curentă de începere a calculului",
+      "opening-preserved": "Sold inițial păstrat:",
+      "preview": "Previzualizează impactul",
+      "preview-failed": "Nu s-a putut genera previzualizarea. Încercați din nou.",
+      "proposed-boundary": "Început propus pentru pontaj",
+      "reason": "Motivul acestei modificări",
+      "reason-required": "Introduceți un motiv înainte de a salva.",
+      "required": "Timp obligatoriu",
+      "review-explanation": "Examinați mai jos datele efective, orele obligatorii și soldurile de lucru. Datele de angajare și alocările de concediu rămân neschimbate. Soldurile sunt calculate până la ultima zi încheiată în fusul orar al fiecărui angajat.",
+      "review-title": "Examinare a impactului datei de pontaj",
+      "saved": "Data de pontaj a fost salvată, iar soldurile au fost actualizate.",
+      "saved-date": "Data curentă de pontaj a organizației:",
+      "saved-pending": "Data de pontaj a fost salvată. Soldurile de lucru se recalculează.",
+      "save-reviewed": "Salvați data examinată",
+      "setup-description": "Timpul obligatoriu și soldurile de lucru încep la această dată sau la data reală de începere a angajării angajatului, dacă aceasta este ulterioară. Datele de angajare determină în continuare alocarea de concediu. Sugestia utilizează data creării organizației în fusul său orar.",
+      "setup-timezone": "Fusul orar al organizației",
+      "stale-preview": "Datele introduse examinate s-au modificat. Generați o nouă previzualizare înainte de a salva.",
+      "start-date": "Data de începere a pontajului",
+      "through-date": "Solduri până la",
+      "title": "Începutul pontajului",
+      "vacation-unchanged": "Alocarea și soldul de concediu neschimbate:"
+    }
   }
 }

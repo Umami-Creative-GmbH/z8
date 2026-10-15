@@ -9,6 +9,7 @@
       "displacedVacation": "Feriedatoer erstattes ved godkjenning",
       "exactHours": "Nøyaktig registrerte timer",
       "fullDay": "Hel dag",
+      "historicalRemaining": "Gjenværende tidligere avviklet ferie",
       "morning": "Formiddag",
       "original": "Registrerte datoer",
       "originalEndCoverage": "Registrert sluttdag",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Begrunnelse",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Tilgjengelig ferie etter avstemming",
+      "reconciliationReason": "Kilde for avstemming av historisk ferie",
       "title": "Fraværsendring"
     },
     "absenceRejected": "Fraværsforespørsel avvist",

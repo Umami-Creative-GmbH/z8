@@ -9,6 +9,7 @@
       "displacedVacation": "Vacation dates replaced on approval",
       "exactHours": "Exact recorded hours",
       "fullDay": "Full day",
+      "historicalRemaining": "Previously taken vacation remaining",
       "morning": "Morning",
       "original": "Recorded dates",
       "originalEndCoverage": "Recorded end day",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Reason",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Available vacation after reconciliation",
+      "reconciliationReason": "Historical vacation reconciliation source",
       "title": "Absence change"
     },
     "absenceRejected": "Absence request rejected",

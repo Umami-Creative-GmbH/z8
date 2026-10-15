@@ -416,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Väntande arbete utan godkännandebegäran",
         "approvalStateConflict": "Godkännandestatusar stämmer inte överens",
+        "attributionUnrepresentable": "Fakturerbar markering eller aktivitet utan projekt",
         "canonicalDetailMissing": "Arbetsinformation saknas för tidsregistrering",
         "canonicalLinkMissing": "Länk till tidsregistrering saknas",
         "canonicalLinkShared": "Flera arbetsperioder länkar till samma tidsregistrering",
         "canonicalLinkUnresolved": "Länkad tidsregistrering hittades inte",
         "canonicalMissing": "Tidsregistrering saknas",
+        "canonicalMissingClosedMonth": "Tidregistrering saknas i en stängd månad",
         "captureInferred": "Tidszonsregistrering härleddes i efterhand",
         "deletedWorkPayable": "Borttaget arbete har fortfarande en lönegrundande tidsregistrering",
         "durationConflict": "Sparade varaktigheter stämmer inte överens",
@@ -568,7 +570,8 @@
           "noRestorableEvidence": "Inget underlag fastställer det saknade värdet",
           "originalActorUnrepresentable": "Ingen post anger vem som utförde arbetet",
           "originalRuleUnknown": "Ingen representation anger minuterna; den ursprungliga avrundningen är okänd",
-          "referenceOutsideOrganization": "Ett refererat projekt eller en kategori tillhör inte denna organisation"
+          "referenceOutsideOrganization": "Ett refererat projekt eller en kategori tillhör inte denna organisation",
+          "repairLeavesDivergence": "Det ifyllda arbetet skulle fortfarande avvika från dess kanoniska post; behöver granskas"
         },
         "inactive": "Inte behörig",
         "inactiveDescription": "Reparationen kräver separat behörighet för denna organisation. Planen förblir läsbar.",

@@ -2531,6 +2531,9 @@
     "theme-time-info": "Tidsbaserat använder läget {currentMode}. Växlar till {nextMode} kl. {time}.",
     "theme-toggle": "Växla tema"
   },
+  "vacationBalance": {
+    "previouslyTaken": "Inkluderar {days} dagar som tidigare tagits ut före spårning"
+  },
   "validation": {
     "first-name-required": "Förnamn är obligatoriskt",
     "invalid-email": "Ogiltig e-postadress",

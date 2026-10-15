@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Godkännande registrerat",
           "approved": "Godkänd",
+          "receiptAdded": "Kvitto tillagt efter inskickning",
           "rejected": "Avvisad",
           "reopened": "Återöppnad för korrigering",
           "returned": "Returnerad för ändringar",
@@ -851,6 +852,9 @@
         "withdraw": "Ta bort förklaring"
       },
       "receipts": {
+        "add": "Lägg till kvitto",
+        "addedAfterSubmission": "{fileName}: Tillagt efter inskickning av {name} den {date}.",
+        "choose": "Välj kvitto",
         "chooseFile": "Välj fil",
         "description": "Ta ett foto eller bifoga en PDF eller bild på kvittot.",
         "downloadNamed": "Ladda ner {fileName}",
@@ -862,10 +866,13 @@
         },
         "none": "Inget kvitto har bifogats än.",
         "previewNamed": "Förhandsgranska {fileName}",
+        "processing": "Bifogar kvitto…",
         "progress": "Uppladdningsförlopp",
         "remove": "Ta bort",
         "removeFailed": "Kvittot kunde inte tas bort.",
         "removeNamed": "Ta bort {fileName}",
+        "supplementConflict": "Ett kvitto har redan angetts eller så har rapporten ändrats. Ladda om rapporten innan du försöker igen.",
+        "supplementFailed": "Kvittot bifogades inte. Ladda om rapporten och försök igen.",
         "takePhoto": "Ta foto",
         "title": "Kvitto",
         "uploadFailed": "Kvittot bifogades inte.",

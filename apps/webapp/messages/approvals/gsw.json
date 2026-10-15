@@ -9,6 +9,7 @@
       "displacedVacation": "Feriendaten werden bei Genehmigung ersetzt",
       "exactHours": "Exakt erfasste Stunden",
       "fullDay": "Ganzer Tag",
+      "historicalRemaining": "Verblibendi vorhär bezogeni Ferie",
       "morning": "Vormittag",
       "original": "Erfasste Daten",
       "originalEndCoverage": "Erfasster Endtag",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Grund",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Verfüegbari Ferie nach em Abgliich",
+      "reconciliationReason": "Quelle für d'Abgliichig vo historische Ferie",
       "title": "Abwesenheitsänderung"
     },
     "absenceRejected": "Abwesenheitsantrag abglehnt",

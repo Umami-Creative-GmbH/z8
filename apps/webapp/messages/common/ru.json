@@ -2531,6 +2531,9 @@
     "theme-time-info": "В режиме по времени используется тема «{currentMode}». Переключение на «{nextMode}» в {time}.",
     "theme-toggle": "Переключить тему"
   },
+  "vacationBalance": {
+    "previouslyTaken": "Включает {days} дн., использованных до начала учета"
+  },
   "validation": {
     "first-name-required": "Имя обязательно для заполнения",
     "invalid-email": "Неверный адрес электронной почты",

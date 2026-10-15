@@ -2531,6 +2531,9 @@
     "theme-time-info": "Time based is using {currentMode} mode. Switches to {nextMode} at {time}.",
     "theme-toggle": "Toggle theme"
   },
+  "vacationBalance": {
+    "previouslyTaken": "Includes {days} days previously taken before tracking"
+  },
   "validation": {
     "first-name-required": "First Name is required",
     "invalid-email": "Invalid email address",

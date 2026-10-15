@@ -416,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Punë në pritje pa kërkesë miratimi",
         "approvalStateConflict": "Gjendjet e miratimit nuk përputhen",
+        "attributionUnrepresentable": "Tregues i faturueshëm ose detyrë pa projekt",
         "canonicalDetailMissing": "Mungojnë detajet e punës në regjistrimin e kohës",
         "canonicalLinkMissing": "Mungon lidhja e regjistrimit të kohës",
         "canonicalLinkShared": "Disa periudha pune lidhen me një regjistrim kohe",
         "canonicalLinkUnresolved": "Regjistrimi i lidhur i kohës nuk u gjet",
         "canonicalMissing": "Mungon regjistrimi i kohës",
+        "canonicalMissingClosedMonth": "Mungon regjistrimi i kohës në një muaj të mbyllur",
         "captureInferred": "Përcaktimi i zonës kohore u nxor pas ngjarjes",
         "deletedWorkPayable": "Puna e fshirë ka ende një regjistrim kohe të pagueshëm",
         "durationConflict": "Kohëzgjatjet e ruajtura nuk përputhen",
@@ -568,7 +570,8 @@
           "noRestorableEvidence": "Asnjë dëshmi nuk e përcakton vlerën që mungon",
           "originalActorUnrepresentable": "Asnjë regjistrim nuk tregon se kush e përfundoi punën",
           "originalRuleUnknown": "Asnjë paraqitje nuk përmban minutat; rrumbullakimi fillestar nuk dihet",
-          "referenceOutsideOrganization": "Një projekt ose kategori e referuar nuk i përket kësaj organizate"
+          "referenceOutsideOrganization": "Një projekt ose kategori e referuar nuk i përket kësaj organizate",
+          "repairLeavesDivergence": "Puna e plotësuar përsëri nuk do të përputhej me regjistrimin e saj kanonik; kërkon shqyrtim"
         },
         "inactive": "I paautorizuar",
         "inactiveDescription": "Riparimi kërkon autorizim të veçantë për këtë organizatë. Plani mbetet i lexueshëm.",

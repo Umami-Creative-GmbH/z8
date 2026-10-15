@@ -48,13 +48,31 @@
     "organization": {
       "create": "Utwórz organizację",
       "createDescription": "Skonfiguruj własną organizację i zaproś swój zespół",
+      "createError": "Nie udało się utworzyć organizacji",
+      "createSuccess": "Organizacja została pomyślnie utworzona!",
       "createTitle": "Utwórz organizację",
       "disabledSkipDescription": "Możesz kontynuować, pomijając ten krok, czekając na zaproszenie do istniejącej organizacji.",
       "disabledSubtitle": "Tworzenie organizacji jest wyłączone dla tego wdrożenia.",
+      "nameErrors": {
+        "max": "Nazwa organizacji musi zawierać mniej niż 100 znaków",
+        "min": "Nazwa organizacji musi mieć co najmniej 2 znaki"
+      },
+      "nameLabel": "Nazwa organizacji",
+      "namePlaceholder": "Acme Inc.",
       "skip": "Pomiń na razie",
       "skipDescription": "Jeśli administrator zaprosi Cię do organizacji, możesz na razie pominąć ten krok.",
       "skipError": "Nie udało się pominąć konfiguracji organizacji",
       "skipTitle": "Czekasz na zaproszenie?",
+      "slugDescription": "Używany w adresach URL. Generowany automatycznie na podstawie nazwy.",
+      "slugErrors": {
+        "format": "Slug może zawierać tylko małe litery, cyfry i łączniki",
+        "hyphen": "Slug nie może zaczynać się ani kończyć łącznikiem",
+        "max": "Slug musi zawierać mniej niż 50 znaków",
+        "min": "Slug musi mieć co najmniej 2 znaki"
+      },
+      "slugLabel": "Slug organizacji",
+      "slugPlaceholder": "acme-inc",
+      "slugTaken": "Ten slug jest już zajęty. Proszę wybrać inny.",
       "subtitle": "Utwórz swoją organizację, aby odblokować wszystkie funkcje, lub pomiń, jeśli czekasz na zaproszenie.",
       "title": "Skonfiguruj swoją organizację"
     },
@@ -83,13 +101,21 @@
       "timeFormat24h": "24-godzinny (08:00)",
       "timeFormatDesc": "To ustawienie kontroluje sposób wyświetlania czasu.",
       "title": "Uzupełnij swój profil",
+      "validation": {
+        "firstNameRequired": "Imię jest wymagane",
+        "firstNameTooLong": "Imię może mieć maksymalnie 50 znaków",
+        "lastNameRequired": "Nazwisko jest wymagane",
+        "lastNameTooLong": "Nazwisko może mieć maksymalnie 50 znaków"
+      },
       "weekStartDay": "Pierwszy dzień tygodnia",
       "weekStartDayDesc": "To ustawienie kontroluje sposób wyświetlania kalendarzy i podsumowań tygodniowych."
     },
     "steps": {
       "complete": "Zakończ",
+      "label": "Postęp wdrożenia",
       "notifications": "Powiadomienia",
       "organization": "Organizacja",
+      "position": "Krok {current} z {total}",
       "profile": "Profil",
       "vacationPolicy": "Urlop",
       "welcome": "Witamy",
@@ -124,7 +150,13 @@
       "skipError": "Nie udało się pominąć konfiguracji polityki urlopowej",
       "subtitle": "Utwórz politykę urlopową dla swojej organizacji. Określa ona, ile dni wolnych otrzymują pracownicy.",
       "success": "Polityka urlopowa utworzona!",
-      "title": "Skonfiguruj politykę urlopową"
+      "title": "Skonfiguruj politykę urlopową",
+      "validation": {
+        "daysNegative": "Liczba dni nie może być ujemna",
+        "daysTooMany": "Liczba dni nie może przekraczać 365",
+        "nameRequired": "Nazwa zasad jest wymagana",
+        "nameTooLong": "Nazwa zasad może zawierać maksymalnie 100 znaków"
+      }
     },
     "welcome": {
       "continueSetup": "Kontynuuj konfigurację",
@@ -157,6 +189,24 @@
       "features": "Co otrzymasz",
       "glass": "szklanka",
       "glasses": "szklanki",
+      "presets": {
+        "active": {
+          "description": "Co 30 minut — wysoka aktywność lub wysoka temperatura",
+          "label": "Aktywny"
+        },
+        "custom": {
+          "description": "Ustaw własny interwał (15–120 minut)",
+          "label": "Niestandardowy"
+        },
+        "light": {
+          "description": "Co 60 minut — niska aktywność",
+          "label": "Lekki"
+        },
+        "moderate": {
+          "description": "Co 45 minut — zalecane dla większości osób",
+          "label": "Umiarkowany"
+        }
+      },
       "recommended": "(Zalecane)",
       "reminderFrequency": "Częstotliwość przypomnień",
       "skip": "Pomiń na razie",
@@ -183,6 +233,10 @@
       "subtitle": "Zdefiniuj swoje godziny pracy, aby ułatwić śledzenie czasu i dokładne zarządzanie nieobecnościami.",
       "success": "Harmonogram pracy został pomyślnie ustawiony!",
       "title": "Ustaw swój harmonogram pracy",
+      "validation": {
+        "hoursNegative": "Liczba godzin nie może być ujemna",
+        "hoursTooMany": "Tydzień ma maksymalnie 168 godzin"
+      },
       "weekly": "Tygodniowo"
     },
     "workTemplates": {
@@ -206,6 +260,12 @@
       "subtitle": "Skonfiguruj szablon harmonogramu pracy dla swojej organizacji. Określa on godziny pracy Twojego zespołu.",
       "success": "Szablon harmonogramu pracy został utworzony!",
       "title": "Utwórz szablon harmonogramu pracy",
+      "validation": {
+        "hoursNegative": "Liczba godzin nie może być ujemna",
+        "hoursTooMany": "Tydzień ma maksymalnie 168 godzin",
+        "nameRequired": "Nazwa szablonu jest wymagana",
+        "nameTooLong": "Nazwa szablonu może zawierać maksymalnie 100 znaków"
+      },
       "workingDays": "Dni robocze",
       "workingDaysDesc": "Wybierz dni robocze. Godziny zostaną rozdzielone równomiernie."
     }

@@ -50,7 +50,6 @@
       "description": "Configure su organización para comenzar",
       "title": "Crear organización"
     },
-    "createError": "Error al crear la organización",
     "createNew": "Crear nueva organización",
     "createSuccess": "¡Organización creada con éxito!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Propietario"
     },
     "slugDescription": "Usado en URL. Generado automáticamente a partir del nombre.",
-    "slugErrors": {
-      "format": "El slug solo debe contener letras minúsculas, números y guiones",
-      "hyphen": "El slug no puede comenzar ni terminar con un guión",
-      "max": "El slug debe tener menos de 50 caracteres",
-      "min": "El slug debe tener al menos 2 caracteres"
-    },
     "slugLabel": "Slug de la organización",
     "slugPlaceholder": "acme-sa",
     "slugTaken": "Este slug ya está en uso. Por favor elija uno diferente.",
@@ -372,6 +365,56 @@
       "updated": "Zona horaria de la organización actualizada a {timezone}",
       "update-failed": "Error al actualizar la zona horaria de la organización"
     },
-    "title": "Explorador de organización"
+    "title": "Explorador de organización",
+    "tracking": {
+      "activate-reviewed": "Activar fecha revisada",
+      "activation-description": "Elige la fecha real de lanzamiento y revisa su impacto antes de guardar. La sugerencia inicial utiliza la fecha de creación de tu organización en su zona horaria. Esto modifica el seguimiento sin corregir la fecha de contratación de nadie.",
+      "actual": "Trabajo completado",
+      "affected-periods": "Meses afectados",
+      "after": "Después",
+      "balance": "Saldo de trabajo",
+      "before": "Antes",
+      "blocked-save": "Vuelve a abrir los meses cerrados afectados y genera una nueva vista previa.",
+      "change-date": "Cambiar fecha de seguimiento",
+      "closed": "Cerrado",
+      "closed-blockers": "Resuelve los siguientes problemas antes de generar una nueva vista previa y guardar.",
+      "closed-settings": "Abrir configuración de meses cerrados",
+      "commit-failed": "No se pudo guardar el cambio revisado. Genera una nueva vista previa e inténtalo de nuevo.",
+      "day-unit": "días",
+      "description": "Esta fecha controla el tiempo requerido y los saldos de trabajo acumulados. Las fechas reales de contratación de los empleados determinan su asignación de vacaciones.",
+      "employee-impacts": "Impacto en los saldos de los empleados",
+      "employee-zone": "Zona horaria del empleado",
+      "ending-balance": "Saldo a fin de mes",
+      "exception-conflict": "La excepción del empleado {exception} es anterior al nuevo mínimo {minimum}. Elimina o modifica primero la excepción del empleado.",
+      "hours": "Horas",
+      "hours-caption": "Horas antes y después",
+      "hour-unit": "horas",
+      "invalid-date": "Elige una fecha de calendario válida.",
+      "legacy": "Tu cálculo actual del saldo de trabajo sigue en uso. No se ha activado ninguna fecha de inicio del seguimiento de tiempo.",
+      "no-boundary": "Sin inicio de cálculo",
+      "no-changed-periods": "No cambian los resultados de los meses completados.",
+      "no-employees": "Ningún saldo de empleado se ve afectado.",
+      "old-boundary": "Inicio del cálculo actual",
+      "opening-preserved": "Saldo inicial conservado:",
+      "preview": "Previsualizar impacto",
+      "preview-failed": "No se pudo generar la vista previa. Inténtelo de nuevo.",
+      "proposed-boundary": "Inicio propuesto del seguimiento",
+      "reason": "Motivo de este cambio",
+      "reason-required": "Introduzca un motivo antes de guardar.",
+      "required": "Tiempo requerido",
+      "review-explanation": "Revise las fechas de entrada en vigor, las horas requeridas y los saldos de trabajo a continuación. Las fechas de contratación y las asignaciones de vacaciones no cambian. Los saldos se calculan hasta el último día completado en la zona horaria de cada empleado.",
+      "review-title": "Revisión del impacto de la fecha de seguimiento",
+      "saved": "Fecha de seguimiento guardada y saldos actualizados.",
+      "saved-date": "Fecha actual de seguimiento de la organización:",
+      "saved-pending": "Fecha de seguimiento guardada. Se están recalculando los saldos de trabajo.",
+      "save-reviewed": "Guardar fecha revisada",
+      "setup-description": "El tiempo requerido y los saldos de trabajo comienzan en esta fecha, o en el inicio real del empleo del empleado si es posterior. Las fechas de empleo siguen determinando la asignación de vacaciones. La sugerencia utiliza la fecha de creación de la organización en su zona horaria.",
+      "setup-timezone": "Zona horaria de la organización",
+      "stale-preview": "Los datos revisados han cambiado. Genere una nueva vista previa antes de guardar.",
+      "start-date": "Fecha de inicio del seguimiento de tiempo",
+      "through-date": "Saldos hasta",
+      "title": "Inicio del seguimiento de tiempo",
+      "vacation-unchanged": "Asignación y saldo de vacaciones sin cambios:"
+    }
   }
 }

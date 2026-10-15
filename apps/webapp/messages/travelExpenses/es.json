@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Aprobación registrada",
           "approved": "Aprobado",
+          "receiptAdded": "Recibo añadido tras el envío",
           "rejected": "Rechazado",
           "reopened": "Reabierto para corrección",
           "returned": "Devuelto para cambios",
@@ -851,6 +852,9 @@
         "withdraw": "Eliminar explicación"
       },
       "receipts": {
+        "add": "Añadir recibo",
+        "addedAfterSubmission": "{fileName}: añadido tras el envío por {name} el {date}.",
+        "choose": "Seleccionar recibo",
         "chooseFile": "Seleccionar archivo",
         "description": "Tome una foto o adjunte un PDF o imagen del recibo.",
         "downloadNamed": "Descargar {fileName}",
@@ -862,10 +866,13 @@
         },
         "none": "Aún no se ha adjuntado ningún recibo.",
         "previewNamed": "Vista previa de {fileName}",
+        "processing": "Adjuntando recibo…",
         "progress": "Progreso de subida",
         "remove": "Eliminar",
         "removeFailed": "No se pudo eliminar el recibo.",
         "removeNamed": "Eliminar {fileName}",
+        "supplementConflict": "Ya se ha proporcionado un recibo o el informe ha cambiado. Vuelve a cargar el informe antes de intentarlo de nuevo.",
+        "supplementFailed": "El recibo no se adjuntó. Vuelve a cargar el informe e inténtalo de nuevo.",
         "takePhoto": "Tomar foto",
         "title": "Recibo",
         "uploadFailed": "No se adjuntó el recibo.",

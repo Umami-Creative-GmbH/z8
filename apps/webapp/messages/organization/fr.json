@@ -50,7 +50,6 @@
       "description": "Configurez votre organisation pour commencer",
       "title": "Créer une organisation"
     },
-    "createError": "Échec de la création de l'organisation",
     "createNew": "Créer une nouvelle organisation",
     "createSuccess": "Organisation créée avec succès !",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Propriétaire"
     },
     "slugDescription": "Utilisé dans les URL. Généré automatiquement à partir du nom.",
-    "slugErrors": {
-      "format": "Le slug ne doit contenir que des lettres minuscules, des chiffres et des traits d'union",
-      "hyphen": "Le slug ne peut pas commencer ou se terminer par un trait d'union",
-      "max": "Le slug doit comporter moins de 50 caractères",
-      "min": "Le slug doit comporter au moins 2 caractères"
-    },
     "slugLabel": "Slug de l'organisation",
     "slugPlaceholder": "acme-sarl",
     "slugTaken": "Ce slug est déjà pris. Veuillez en choisir un autre.",
@@ -372,6 +365,56 @@
       "updated": "Fuseau horaire de l'organisation mis à jour vers {timezone}",
       "update-failed": "Échec de la mise à jour du fuseau horaire de l'organisation"
     },
-    "title": "Explorateur d'organisation"
+    "title": "Explorateur d'organisation",
+    "tracking": {
+      "activate-reviewed": "Activer la date vérifiée",
+      "activation-description": "Choisissez la date de déploiement réelle et examinez son impact avant d'enregistrer. La suggestion initiale utilise la date de création de votre organisation dans son fuseau horaire. Cela modifie le suivi sans modifier la date d'embauche de quiconque.",
+      "actual": "Travail effectué",
+      "affected-periods": "Mois concernés",
+      "after": "Après",
+      "balance": "Solde de travail",
+      "before": "Avant",
+      "blocked-save": "Rouvrez les mois clôturés concernés et générez un nouvel aperçu.",
+      "change-date": "Modifier la date de suivi",
+      "closed": "Clôturé",
+      "closed-blockers": "Résolvez les problèmes ci-dessous avant de générer un nouvel aperçu et d'enregistrer.",
+      "closed-settings": "Ouvrir les paramètres des mois clôturés",
+      "commit-failed": "Impossible d'enregistrer la modification vérifiée. Générez un nouvel aperçu et réessayez.",
+      "day-unit": "jours",
+      "description": "Cette date contrôle le temps requis et les soldes de travail cumulés. Les dates d'embauche réelles des employés déterminent leurs droits aux congés.",
+      "employee-impacts": "Impacts sur les soldes des employés",
+      "employee-zone": "Fuseau horaire de l'employé",
+      "ending-balance": "Solde à la fin du mois",
+      "exception-conflict": "L'exception de l'employé {exception} est antérieure au nouveau minimum {minimum}. Supprimez ou modifiez d'abord l'exception de l'employé.",
+      "hours": "Heures",
+      "hours-caption": "Heures avant et après",
+      "hour-unit": "heures",
+      "invalid-date": "Choisissez une date valide du calendrier.",
+      "legacy": "Votre calcul de solde de travail actuel est toujours appliqué. Aucune date de début de suivi du temps n'a été activée.",
+      "no-boundary": "Aucun début de calcul",
+      "no-changed-periods": "Aucun résultat des mois terminés n'est modifié.",
+      "no-employees": "Aucun solde d'employé n'est affecté.",
+      "old-boundary": "Début du calcul actuel",
+      "opening-preserved": "Solde initial conservé :",
+      "preview": "Aperçu de l'impact",
+      "preview-failed": "Impossible de générer l'aperçu. Réessayez.",
+      "proposed-boundary": "Début du suivi proposé",
+      "reason": "Motif de cette modification",
+      "reason-required": "Saisissez un motif avant d'enregistrer.",
+      "required": "Temps requis",
+      "review-explanation": "Vérifiez les dates de prise d'effet, les heures requises et les soldes d'heures ci-dessous. Les dates d'embauche et les droits à congés restent inchangés. Les soldes s'étendent jusqu'au dernier jour écoulé dans le fuseau horaire de chaque employé.",
+      "review-title": "Examen de l'impact de la date de suivi",
+      "saved": "Date de suivi enregistrée et soldes mis à jour.",
+      "saved-date": "Date de suivi actuelle de l'organisation :",
+      "saved-pending": "Date de suivi enregistrée. Les soldes d'heures sont en cours de recalcul.",
+      "save-reviewed": "Enregistrer la date vérifiée",
+      "setup-description": "Le temps requis et les soldes d'heures commencent à cette date, ou à la date réelle d'embauche de l'employé si celle-ci est ultérieure. Les dates d'embauche déterminent toujours les droits à congés. La suggestion utilise la date de création de l'organisation dans son fuseau horaire.",
+      "setup-timezone": "Fuseau horaire de l'organisation",
+      "stale-preview": "Les données vérifiées ont changé. Générez un nouvel aperçu avant d'enregistrer.",
+      "start-date": "Date de début du suivi du temps",
+      "through-date": "Soldes jusqu'au",
+      "title": "Début du suivi du temps",
+      "vacation-unchanged": "Droit à congés et solde inchangés :"
+    }
   }
 }

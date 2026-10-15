@@ -48,13 +48,31 @@
     "organization": {
       "create": "Opprett organisasjon",
       "createDescription": "Sett opp din egen organisasjon og inviter teamet ditt",
+      "createError": "Kunne ikke opprette organisasjon",
+      "createSuccess": "Organisasjonen ble opprettet!",
       "createTitle": "Opprett organisasjon",
       "disabledSkipDescription": "Du kan fortsette ved å hoppe over dette trinnet mens du venter på en invitasjon til en eksisterende organisasjon.",
       "disabledSubtitle": "Oppretting av organisasjon er deaktivert for denne distribusjonen.",
+      "nameErrors": {
+        "max": "Organisasjonsnavnet må ha færre enn 100 tegn",
+        "min": "Organisasjonsnavnet må bestå av minst 2 tegn"
+      },
+      "nameLabel": "Organisasjonsnavn",
+      "namePlaceholder": "Acme Inc.",
       "skip": "Hopp over nå",
       "skipDescription": "Hvis administratoren din vil invitere deg til en organisasjon, kan du hoppe over dette trinnet nå.",
       "skipError": "Kunne ikke hoppe over organisasjonsoppsett",
       "skipTitle": "Venter du på en invitasjon?",
+      "slugDescription": "Brukes i nettadresser. Genereres automatisk fra navnet.",
+      "slugErrors": {
+        "format": "Slug kan bare inneholde små bokstaver, tall og bindestreker",
+        "hyphen": "Slug kan ikke starte eller slutte med bindestrek",
+        "max": "Slug må ha færre enn 50 tegn",
+        "min": "Slug må bestå av minst 2 tegn"
+      },
+      "slugLabel": "Organisasjons-slug",
+      "slugPlaceholder": "acme-inc",
+      "slugTaken": "Denne slug-en er allerede i bruk. Velg en annen.",
       "subtitle": "Opprett organisasjonen din for å låse opp alle funksjoner, eller hopp over hvis du venter på en invitasjon.",
       "title": "Sett opp organisasjonen din"
     },
@@ -83,13 +101,21 @@
       "timeFormat24h": "24-timers (08:00)",
       "timeFormatDesc": "Dette styrer hvordan klokkeslett vises.",
       "title": "Fullfør profilen din",
+      "validation": {
+        "firstNameRequired": "Fornavn er påkrevd",
+        "firstNameTooLong": "Fornavn må være 50 tegn eller færre",
+        "lastNameRequired": "Etternavn er påkrevd",
+        "lastNameTooLong": "Etternavn må være 50 tegn eller færre"
+      },
       "weekStartDay": "Ukens første dag",
       "weekStartDayDesc": "Dette styrer hvordan kalendere og ukesammendrag vises."
     },
     "steps": {
       "complete": "Fullfør",
+      "label": "Onboarding-fremdrift",
       "notifications": "Varsler",
       "organization": "Organisasjon",
+      "position": "Trinn {current} av {total}",
       "profile": "Profil",
       "vacationPolicy": "Ferie",
       "welcome": "Velkommen",
@@ -124,7 +150,13 @@
       "skipError": "Kunne ikke hoppe over oppsett av ferieretningslinjer",
       "subtitle": "Opprett en feriepolicy for organisasjonen din. Dette bestemmer hvor mange fridager de ansatte får.",
       "success": "Feriepolicy opprettet!",
-      "title": "Konfigurer feriepolicy"
+      "title": "Konfigurer feriepolicy",
+      "validation": {
+        "daysNegative": "Dager kan ikke være negative",
+        "daysTooMany": "Dager kan ikke overskride 365",
+        "nameRequired": "Retningslinjenavn er obligatorisk",
+        "nameTooLong": "Retningslinjenavn må være 100 tegn eller færre"
+      }
     },
     "welcome": {
       "continueSetup": "Fortsett oppsett",
@@ -157,6 +189,24 @@
       "features": "Dette får du",
       "glass": "glass",
       "glasses": "glass",
+      "presets": {
+        "active": {
+          "description": "Hvert 30. minutt – for høy aktivitet eller varme omgivelser",
+          "label": "Aktiv"
+        },
+        "custom": {
+          "description": "Angi eget intervall (15–120 minutter)",
+          "label": "Egendefinert"
+        },
+        "light": {
+          "description": "Hvert 60. minutt – for lav aktivitet",
+          "label": "Lett"
+        },
+        "moderate": {
+          "description": "Hvert 45. minutt – anbefales for de fleste",
+          "label": "Moderat"
+        }
+      },
       "recommended": "(Anbefalt)",
       "reminderFrequency": "Påminnelsesfrekvens",
       "skip": "Hopp over nå",
@@ -183,6 +233,10 @@
       "subtitle": "Definer arbeidstiden din for å registrere tid og administrere fravær nøyaktig.",
       "success": "Arbeidsplanen er angitt!",
       "title": "Angi arbeidsplanen din",
+      "validation": {
+        "hoursNegative": "Timer kan ikke være negative",
+        "hoursTooMany": "En uke har maksimalt 168 timer"
+      },
       "weekly": "Ukentlig"
     },
     "workTemplates": {
@@ -206,6 +260,12 @@
       "subtitle": "Opprett en arbeidsplanmal for organisasjonen din. Dette definerer arbeidstiden for teamet ditt.",
       "success": "Mal for arbeidsplan opprettet!",
       "title": "Opprett mal for arbeidsplan",
+      "validation": {
+        "hoursNegative": "Timer kan ikke være negative",
+        "hoursTooMany": "En uke har maksimalt 168 timer",
+        "nameRequired": "Malnavn er obligatorisk",
+        "nameTooLong": "Malnavn må være 100 tegn eller færre"
+      },
       "workingDays": "Arbeidsdager",
       "workingDaysDesc": "Velg hvilke dager som er arbeidsdager. Timene blir fordelt likt."
     }

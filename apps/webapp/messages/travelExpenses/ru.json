@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Одобрение зафиксировано",
           "approved": "Одобрено",
+          "receiptAdded": "Чек добавлен после отправки",
           "rejected": "Отклонено",
           "reopened": "Возвращено на исправление",
           "returned": "Возвращено на доработку",
@@ -851,6 +852,9 @@
         "withdraw": "Удалить пояснение"
       },
       "receipts": {
+        "add": "Добавить чек",
+        "addedAfterSubmission": "{fileName}: добавлен после отправки пользователем {name} {date}.",
+        "choose": "Выбрать чек",
         "chooseFile": "Выбрать файл",
         "description": "Сделайте фото или прикрепите PDF либо изображение чека.",
         "downloadNamed": "Скачать {fileName}",
@@ -862,10 +866,13 @@
         },
         "none": "Чек пока не прикреплен.",
         "previewNamed": "Предпросмотр {fileName}",
+        "processing": "Прикрепление чека…",
         "progress": "Ход загрузки",
         "remove": "Удалить",
         "removeFailed": "Не удалось удалить чек.",
         "removeNamed": "Удалить {fileName}",
+        "supplementConflict": "Чек уже предоставлен или отчет изменился. Обновите отчет перед повторной попыткой.",
+        "supplementFailed": "Чек не прикреплен. Обновите отчет и попробуйте еще раз.",
         "takePhoto": "Сделать фото",
         "title": "Чек",
         "uploadFailed": "Чек не был прикреплен.",

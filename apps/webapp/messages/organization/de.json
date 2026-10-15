@@ -50,7 +50,6 @@
       "description": "Richten Sie Ihre Organisation ein, um zu beginnen",
       "title": "Organisation erstellen"
     },
-    "createError": "Fehler beim Erstellen der Organisation",
     "createNew": "Neue Organisation erstellen",
     "createSuccess": "Organisation erfolgreich erstellt!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Inhaber"
     },
     "slugDescription": "Wird in URLs verwendet. Automatisch aus dem Namen generiert.",
-    "slugErrors": {
-      "format": "Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten",
-      "hyphen": "Slug darf nicht mit einem Bindestrich beginnen oder enden",
-      "max": "Slug muss weniger als 50 Zeichen lang sein",
-      "min": "Slug muss mindestens 2 Zeichen lang sein"
-    },
     "slugLabel": "Organisations-Slug",
     "slugPlaceholder": "acme-gmbh",
     "slugTaken": "Dieser Slug ist bereits vergeben. Bitte wählen Sie einen anderen.",
@@ -372,6 +365,56 @@
       "updated": "Organisationszeitzone aktualisiert auf {timezone}",
       "update-failed": "Aktualisieren der Organisationszeitzone fehlgeschlagen"
     },
-    "title": "Organisations-Explorer"
+    "title": "Organisations-Explorer",
+    "tracking": {
+      "activate-reviewed": "Überprüftes Datum aktivieren",
+      "activation-description": "Wählen Sie das tatsächliche Rollout-Datum und überprüfen Sie vor dem Speichern die Auswirkungen. Der ursprüngliche Vorschlag verwendet das Erstellungsdatum Ihrer Organisation in deren Zeitzone. Dies ändert die Erfassung, ohne das Anstellungsdatum von Personen zu korrigieren.",
+      "actual": "Geleistete Arbeit",
+      "affected-periods": "Betroffene Monate",
+      "after": "Nachher",
+      "balance": "Arbeitszeitsaldo",
+      "before": "Vorher",
+      "blocked-save": "Öffnen Sie die betroffenen abgeschlossenen Monate wieder und erstellen Sie eine neue Vorschau.",
+      "change-date": "Zeiterfassungsdatum ändern",
+      "closed": "Abgeschlossen",
+      "closed-blockers": "Beheben Sie die unten aufgeführten Probleme, bevor Sie eine neue Vorschau erstellen und speichern.",
+      "closed-settings": "Einstellungen für abgeschlossene Monate öffnen",
+      "commit-failed": "Die überprüfte Änderung konnte nicht gespeichert werden. Erstellen Sie eine neue Vorschau und versuchen Sie es erneut.",
+      "day-unit": "Tage",
+      "description": "Dieses Datum steuert die Sollzeit und die kumulierten Arbeitszeitsalden. Das tatsächliche Anstellungsdatum der Mitarbeitenden bestimmt deren Urlaubsanspruch.",
+      "employee-impacts": "Auswirkungen auf Mitarbeitersalden",
+      "employee-zone": "Zeitzone des Mitarbeiters",
+      "ending-balance": "Saldo zum Monatsende",
+      "exception-conflict": "Die Mitarbeiter-Ausnahme {exception} liegt vor dem neuen Minimum {minimum}. Entfernen oder ändern Sie zuerst die Mitarbeiter-Ausnahme.",
+      "hours": "Stunden",
+      "hours-caption": "Stunden vorher und nachher",
+      "hour-unit": "Stunden",
+      "invalid-date": "Wählen Sie ein gültiges Kalenderdatum.",
+      "legacy": "Ihre aktuelle Berechnung des Arbeitszeitsaldos wird weiterhin verwendet. Es wurde kein Startdatum für die Zeiterfassung aktiviert.",
+      "no-boundary": "Kein Berechnungsstart",
+      "no-changed-periods": "Keine Änderungen an den Ergebnissen abgeschlossener Monate.",
+      "no-employees": "Es sind keine Mitarbeitersalden betroffen.",
+      "old-boundary": "Aktueller Berechnungsstart",
+      "opening-preserved": "Anfangssaldo beibehalten:",
+      "preview": "Vorschau der Auswirkungen",
+      "preview-failed": "Vorschau konnte nicht erstellt werden. Versuchen Sie es erneut.",
+      "proposed-boundary": "Vorgeschlagener Zeiterfassungsbeginn",
+      "reason": "Grund für diese Änderung",
+      "reason-required": "Geben Sie vor dem Speichern einen Grund ein.",
+      "required": "Sollzeit",
+      "review-explanation": "Überprüfen Sie unten die Gültigkeitsdaten, Sollstunden und Arbeitszeitsalden. Anstellungsdaten und Urlaubsansprüche bleiben unverändert. Die Salden gelten bis zum letzten abgeschlossenen Tag in der Zeitzone des jeweiligen Mitarbeiters.",
+      "review-title": "Überprüfung der Auswirkungen des Erfassungsdatums",
+      "saved": "Erfassungsdatum gespeichert und Salden aktualisiert.",
+      "saved-date": "Aktuelles Zeiterfassungsdatum der Organisation:",
+      "saved-pending": "Erfassungsdatum gespeichert. Arbeitszeitsalden werden neu berechnet.",
+      "save-reviewed": "Überprüftes Datum speichern",
+      "setup-description": "Sollzeit und Arbeitszeitsalden beginnen an diesem Datum oder – falls später – mit dem tatsächlichen Beschäftigungsbeginn des Mitarbeiters. Anstellungsdaten bestimmen weiterhin den Urlaubsanspruch. Der Vorschlag verwendet das Erstellungsdatum der Organisation in deren Zeitzone.",
+      "setup-timezone": "Zeitzone der Organisation",
+      "stale-preview": "Die überprüften Eingaben haben sich geändert. Erstellen Sie vor dem Speichern eine neue Vorschau.",
+      "start-date": "Startdatum der Zeiterfassung",
+      "through-date": "Salden bis",
+      "title": "Zeiterfassungsbeginn",
+      "vacation-unchanged": "Urlaubsanspruch und -saldo unverändert:"
+    }
   }
 }

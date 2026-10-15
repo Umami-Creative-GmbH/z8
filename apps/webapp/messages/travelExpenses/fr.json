@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Approbation enregistrée",
           "approved": "Approuvé",
+          "receiptAdded": "Justificatif ajouté après soumission",
           "rejected": "Rejeté",
           "reopened": "Rouvert pour correction",
           "returned": "Renvoyé pour modifications",
@@ -851,6 +852,9 @@
         "withdraw": "Supprimer l'explication"
       },
       "receipts": {
+        "add": "Ajouter un justificatif",
+        "addedAfterSubmission": "{fileName} : ajouté après soumission par {name} le {date}.",
+        "choose": "Choisir un justificatif",
         "chooseFile": "Choisir un fichier",
         "description": "Prenez une photo ou joignez un PDF ou une image du reçu.",
         "downloadNamed": "Télécharger {fileName}",
@@ -862,10 +866,13 @@
         },
         "none": "Aucun reçu joint pour le moment.",
         "previewNamed": "Aperçu de {fileName}",
+        "processing": "Ajout du justificatif en cours…",
         "progress": "Progression du téléversement",
         "remove": "Supprimer",
         "removeFailed": "Impossible de supprimer le reçu.",
         "removeNamed": "Supprimer {fileName}",
+        "supplementConflict": "Un justificatif a déjà été fourni ou le rapport a été modifié. Rechargez le rapport avant de réessayer.",
+        "supplementFailed": "Le justificatif n'a pas été joint. Rechargez le rapport et réessayez.",
         "takePhoto": "Prendre une photo",
         "title": "Reçu",
         "uploadFailed": "Le reçu n'a pas été joint.",

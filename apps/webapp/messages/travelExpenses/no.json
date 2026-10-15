@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Godkjenning registrert",
           "approved": "Godkjent",
+          "receiptAdded": "Kvittering lagt til etter innsending",
           "rejected": "Avvist",
           "reopened": "Gjenåpnet for korrigering",
           "returned": "Returnert for endringer",
@@ -851,6 +852,9 @@
         "withdraw": "Fjern forklaring"
       },
       "receipts": {
+        "add": "Legg til kvittering",
+        "addedAfterSubmission": "{fileName}: Lagt til etter innsending av {name} den {date}.",
+        "choose": "Velg kvittering",
         "chooseFile": "Velg fil",
         "description": "Ta et bilde eller legg ved en PDF eller et bilde av kvitteringen.",
         "downloadNamed": "Last ned {fileName}",
@@ -862,10 +866,13 @@
         },
         "none": "Ingen kvittering er lagt ved ennå.",
         "previewNamed": "Forhåndsvis {fileName}",
+        "processing": "Legger ved kvittering…",
         "progress": "Opplastingsfremdrift",
         "remove": "Fjern",
         "removeFailed": "Kvitteringen kunne ikke fjernes.",
         "removeNamed": "Fjern {fileName}",
+        "supplementConflict": "En kvittering er allerede lagt ved, eller rapporten er endret. Last inn rapporten på nytt før du prøver igjen.",
+        "supplementFailed": "Kvitteringen ble ikke lagt ved. Last inn rapporten på nytt og prøv igjen.",
         "takePhoto": "Ta bilde",
         "title": "Kvittering",
         "uploadFailed": "Kvitteringen ble ikke lagt ved.",

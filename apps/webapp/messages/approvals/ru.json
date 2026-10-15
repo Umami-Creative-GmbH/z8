@@ -9,6 +9,7 @@
       "displacedVacation": "Даты отпуска будут заменены после утверждения",
       "exactHours": "Точные учтенные часы",
       "fullDay": "Полный день",
+      "historicalRemaining": "Остаток ранее использованного отпуска",
       "morning": "Первая половина дня",
       "original": "Учтенные даты",
       "originalEndCoverage": "Учтенный день окончания",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Причина",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Доступный отпуск после сверки",
+      "reconciliationReason": "Источник сверки архивного отпуска",
       "title": "Изменение отсутствия"
     },
     "absenceRejected": "Запрос на отсутствие отклонен",

@@ -50,7 +50,6 @@
       "description": "Set up your organization to get started",
       "title": "Create Organization"
     },
-    "createError": "Failed to create organization",
     "createNew": "Create New Organization",
     "createSuccess": "Organization created successfully!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Owner"
     },
     "slugDescription": "Used in URLs. Auto-generated from name.",
-    "slugErrors": {
-      "format": "Slug must contain only lowercase letters, numbers, and hyphens",
-      "hyphen": "Slug cannot start or end with a hyphen",
-      "max": "Slug must be less than 50 characters",
-      "min": "Slug must be at least 2 characters"
-    },
     "slugLabel": "Organization Slug",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "This slug is already taken. Please choose a different one.",
@@ -372,6 +365,56 @@
       "updated": "Organization timezone updated to {timezone}",
       "update-failed": "Failed to update organization timezone"
     },
-    "title": "Org Explorer"
+    "title": "Org Explorer",
+    "tracking": {
+      "activate-reviewed": "Activate reviewed date",
+      "activation-description": "Choose the real rollout date and review its impact before saving. The initial suggestion uses your organization’s creation date in its timezone. This changes tracking, without correcting anyone’s employment date.",
+      "actual": "Completed work",
+      "affected-periods": "Affected months",
+      "after": "After",
+      "balance": "Work balance",
+      "before": "Before",
+      "blocked-save": "Reopen the affected closed months and generate a new preview.",
+      "change-date": "Change tracking date",
+      "closed": "Closed",
+      "closed-blockers": "Resolve the issues below before generating a new preview and saving.",
+      "closed-settings": "Open closed-month settings",
+      "commit-failed": "Could not save the reviewed change. Generate a new preview and try again.",
+      "day-unit": "days",
+      "description": "This date controls required time and accumulated work balances. Employees’ actual employment dates determine their vacation allowance.",
+      "employee-impacts": "Employee balance impacts",
+      "employee-zone": "Employee timezone",
+      "ending-balance": "Balance at month end",
+      "exception-conflict": "Employee exception {exception} precedes the new minimum {minimum}. Remove or change the employee exception first.",
+      "hours": "Hours",
+      "hours-caption": "Before and after hours",
+      "hour-unit": "hours",
+      "invalid-date": "Choose a valid calendar date.",
+      "legacy": "Your current work-balance calculation is still in use. No time tracking start date has been activated.",
+      "no-boundary": "No calculation start",
+      "no-changed-periods": "No completed-month results change.",
+      "no-employees": "No employee balances are affected.",
+      "old-boundary": "Current calculation start",
+      "opening-preserved": "Opening balance preserved:",
+      "preview": "Preview impact",
+      "preview-failed": "Could not generate the preview. Try again.",
+      "proposed-boundary": "Proposed tracking start",
+      "reason": "Reason for this change",
+      "reason-required": "Enter a reason before saving.",
+      "required": "Required time",
+      "review-explanation": "Review the effective dates, required hours and work balances below. Employment dates and vacation allowances stay unchanged. Balances run through the last completed day in each employee’s timezone.",
+      "review-title": "Tracking date impact review",
+      "saved": "Tracking date saved and balances updated.",
+      "saved-date": "Current organization tracking date:",
+      "saved-pending": "Tracking date saved. Work balances are being recalculated.",
+      "save-reviewed": "Save reviewed date",
+      "setup-description": "Required time and work balances start on this date, or the employee’s actual employment start if later. Employment dates still determine vacation allowance. The suggestion uses the organization’s creation date in its timezone.",
+      "setup-timezone": "Organization timezone",
+      "stale-preview": "The reviewed inputs changed. Generate a new preview before saving.",
+      "start-date": "Time tracking start date",
+      "through-date": "Balances through",
+      "title": "Time tracking start",
+      "vacation-unchanged": "Vacation allowance and balance unchanged:"
+    }
   }
 }

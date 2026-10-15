@@ -9,6 +9,7 @@
       "displacedVacation": "Дати відпустки замінюються після схвалення",
       "exactHours": "Точні зареєстровані години",
       "fullDay": "Повний день",
+      "historicalRemaining": "Залишок раніше використаної відпустки",
       "morning": "Перша половина дня",
       "original": "Зареєстровані дати",
       "originalEndCoverage": "Зареєстрований день завершення",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Причина",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Доступна відпустка після узгодження",
+      "reconciliationReason": "Джерело узгодження історичної відпустки",
       "title": "Зміна відсутності"
     },
     "absenceRejected": "Запит на відсутність відхилено",

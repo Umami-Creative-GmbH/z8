@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Bewilligung erfasst",
           "approved": "Bewilligt",
+          "receiptAdded": "Beleg nach em Iireiche hinzuegfüegt",
           "rejected": "Abglehnt",
           "reopened": "Für Korrekture wider eröffnet",
           "returned": "Für Änderige zrugggschickt",
@@ -851,6 +852,9 @@
         "withdraw": "Erchlärig entferne"
       },
       "receipts": {
+        "add": "Beleg hinzuefüege",
+        "addedAfterSubmission": "{fileName}: Nach em Iireiche vo {name} am {date} hinzuegfüegt.",
+        "choose": "Beleg uswähle",
         "chooseFile": "Datei uswähle",
         "description": "Mach es Foti oder häng es PDF oder Bild vo de Quittig a.",
         "downloadNamed": "{fileName} abelade",
@@ -862,10 +866,13 @@
         },
         "none": "No kei Quittig aghänkt.",
         "previewNamed": "Vorschau vo {fileName}",
+        "processing": "Beleg wird aaghänkt…",
         "progress": "Upload-Fortschritt",
         "remove": "Entferne",
         "removeFailed": "D Quittig hät nöd chönne entfernt wärde.",
         "removeNamed": "{fileName} entferne",
+        "supplementConflict": "Es isch scho en Beleg iigreicht worde oder de Bricht het sich gänderet. Lad de Bricht neu, bevor du's nomol probiersch.",
+        "supplementFailed": "De Beleg isch nöd aaghängt worde. Lad de Bricht neu und probier's nomal.",
         "takePhoto": "Foti mache",
         "title": "Quittig",
         "uploadFailed": "D Quittig isch nöd aghänkt worde.",

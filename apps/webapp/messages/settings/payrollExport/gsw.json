@@ -416,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Pendanti Arbet ohni Freigaab-Aafraag",
         "approvalStateConflict": "Freigaab-Status stimmed nöd überii",
+        "attributionUnrepresentable": "Verrechebari Markierig oder Ufgab ohni Projekt",
         "canonicalDetailMissing": "Arbetsdetail vom Zitiitrag fähled",
         "canonicalLinkMissing": "Verchnüpfig vom Zitiitrag fählt",
         "canonicalLinkShared": "Mehreri Arbetsperiode verchnüpffed de gliich Zitiitrag",
         "canonicalLinkUnresolved": "Verchnüpfte Zitiitrag nöd gfunde",
         "canonicalMissing": "Zitiitrag fählt",
+        "canonicalMissingClosedMonth": "Ziterfassigs-Iitrag fählt imene abgschlossene Monet",
         "captureInferred": "Zitzone-Erfassig nachträglich abgleitet",
         "deletedWorkPayable": "Glöschti Arbet hät immer no en zaalbare Zitiitrag",
         "durationConflict": "Gspychereti Duure stimmed nöd überii",
@@ -568,7 +570,8 @@
           "noRestorableEvidence": "Kei Nachwiis beleit de fählend Wert",
           "originalActorUnrepresentable": "Kein Iitrag git aa, wer d'Arbet abgschlosse hät",
           "originalRuleUnknown": "Kei Darstellig enthaltet d'Minute; s'ursprüngliche Runde isch unbekannt",
-          "referenceOutsideOrganization": "Es referänzierts Projekt oder e Kategori ghört nid zu dere Organisation"
+          "referenceOutsideOrganization": "Es referänzierts Projekt oder e Kategori ghört nid zu dere Organisation",
+          "repairLeavesDivergence": "Di iträiti Arbet würd immer no vom kanonische Iitrag abwyche; muess überprüft wärde"
         },
         "inactive": "Nid autorisiert",
         "inactiveDescription": "D'Reparatur brucht e separati Autorisierig für die Organisation. De Plan bliibt lesbar.",

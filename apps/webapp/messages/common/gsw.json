@@ -2531,6 +2531,9 @@
     "theme-time-info": "Zeitbasiert verwendet den {currentMode}-Modus. Wechselt um {time} zu {nextMode}.",
     "theme-toggle": "Theme wächsle"
   },
+  "vacationBalance": {
+    "previouslyTaken": "Enthaltet {days} Täg, wo vor em Tracking bezoge worde sind"
+  },
   "validation": {
     "first-name-required": "Vorname isch erforderlich",
     "invalid-email": "Ungültigi E-Mail-Adress",

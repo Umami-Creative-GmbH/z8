@@ -9,6 +9,7 @@
       "displacedVacation": "Daty urlopu zostaną zastąpione po zatwierdzeniu",
       "exactHours": "Dokładne zarejestrowane godziny",
       "fullDay": "Cały dzień",
+      "historicalRemaining": "Pozostały wcześniej wykorzystany urlop",
       "morning": "Przedpołudnie",
       "original": "Zarejestrowane daty",
       "originalEndCoverage": "Zarejestrowany dzień zakończenia",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Powód",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Dostępny urlop po uzgodnieniu",
+      "reconciliationReason": "Źródło uzgodnienia urlopu historycznego",
       "title": "Zmiana nieobecności"
     },
     "absenceRejected": "Wniosek o nieobecność odrzucony",

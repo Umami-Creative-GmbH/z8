@@ -416,7 +416,7 @@
       "kind": {
         "approvalRelationshipMissing": "Ausstehende Arbeit ohne Genehmigungsanfrage",
         "approvalStateConflict": "Genehmigungsstatus stimmen nicht überein",
-        "attributionUnrepresentable": "Abrechenbar oder Aufgabe ohne Projekt",
+        "attributionUnrepresentable": "Abrechenbar-Kennzeichnung oder Aufgabe ohne Projekt",
         "canonicalDetailMissing": "Arbeitsdetails im Zeiteintrag fehlen",
         "canonicalLinkMissing": "Verknüpfung zum Zeiteintrag fehlt",
         "canonicalLinkShared": "Mehrere Arbeitszeiträume verknüpfen denselben Zeiteintrag",
@@ -571,7 +571,7 @@
           "originalActorUnrepresentable": "Kein Eintrag gibt an, wer die Arbeit abgeschlossen hat",
           "originalRuleUnknown": "Keine Darstellung enthält die Minuten; die ursprüngliche Rundung ist unbekannt",
           "referenceOutsideOrganization": "Ein referenziertes Projekt oder eine Kategorie gehört nicht zu dieser Organisation",
-          "repairLeavesDivergence": "Die ergänzte Arbeit würde weiter von ihrem kanonischen Datensatz abweichen; Prüfung nötig"
+          "repairLeavesDivergence": "Die eingetragene Arbeitszeit würde immer noch von ihrem kanonischen Datensatz abweichen; Überprüfung erforderlich"
         },
         "inactive": "Nicht autorisiert",
         "inactiveDescription": "Die Reparatur erfordert eine separate Autorisierung für diese Organisation. Der Plan bleibt lesbar.",

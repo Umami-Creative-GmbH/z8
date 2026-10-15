@@ -2531,6 +2531,9 @@
     "theme-time-info": "Zeitbasiert verwendet den Modus {currentMode}. Wechselt um {time} zu {nextMode}.",
     "theme-toggle": "Design umschalten"
   },
+  "vacationBalance": {
+    "previouslyTaken": "Enthält {days} bereits vor der Erfassung genommene Tage"
+  },
   "validation": {
     "first-name-required": "Vorname ist erforderlich",
     "invalid-email": "Ungültige E-Mail-Adresse",

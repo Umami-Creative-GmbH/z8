@@ -2531,6 +2531,9 @@
     "theme-time-info": "Bazirano na vremenu koristi način {currentMode}. Prelazi na {nextMode} u {time}.",
     "theme-toggle": "Promijeni temu"
   },
+  "vacationBalance": {
+    "previouslyTaken": "Uključuje {days} dana prethodno iskorištenih prije praćenja"
+  },
   "validation": {
     "first-name-required": "Ime je obavezno",
     "invalid-email": "Nevažeća email adresa",

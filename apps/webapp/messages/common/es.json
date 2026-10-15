@@ -2531,6 +2531,9 @@
     "theme-time-info": "El modo basado en el tiempo está usando el modo {currentMode}. Cambiará a {nextMode} a las {time}.",
     "theme-toggle": "Cambiar tema"
   },
+  "vacationBalance": {
+    "previouslyTaken": "Incluye {days} días disfrutados previamente antes del seguimiento"
+  },
   "validation": {
     "first-name-required": "El nombre es obligatorio",
     "invalid-email": "Dirección de correo electrónico inválida",

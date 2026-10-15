@@ -9,6 +9,7 @@
       "displacedVacation": "Date di ferie sostituite all'approvazione",
       "exactHours": "Ore registrate esatte",
       "fullDay": "Giornata intera",
+      "historicalRemaining": "Ferie residue già fruite",
       "morning": "Mattina",
       "original": "Date registrate",
       "originalEndCoverage": "Giorno di fine registrato",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Motivo",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Ferie disponibili dopo la riconciliazione",
+      "reconciliationReason": "Origine della riconciliazione delle ferie pregresse",
       "title": "Modifica assenza"
     },
     "absenceRejected": "Richiesta di assenza respinta",

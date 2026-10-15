@@ -416,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Rad na čekanju bez zahtjeva za odobrenje",
         "approvalStateConflict": "Statusi odobrenja se ne podudaraju",
+        "attributionUnrepresentable": "Oznaka naplativosti ili zadatak bez projekta",
         "canonicalDetailMissing": "Nedostaju pojedinosti o radu u evidenciji radnog vremena",
         "canonicalLinkMissing": "Nedostaje veza s evidencijom radnog vremena",
         "canonicalLinkShared": "Nekoliko radnih razdoblja povezano je s jednom evidencijom radnog vremena",
         "canonicalLinkUnresolved": "Povezana evidencija radnog vremena nije pronađena",
         "canonicalMissing": "Nedostaje evidencija radnog vremena",
+        "canonicalMissingClosedMonth": "Nedostaje evidencija radnog vremena u zaključenom mjesecu",
         "captureInferred": "Vremenska zona izvedena je naknadno nakon događaja",
         "deletedWorkPayable": "Izbrisani rad i dalje ima evidenciju radnog vremena za isplatu",
         "durationConflict": "Pohranjena trajanja se ne podudaraju",
@@ -568,7 +570,8 @@
           "noRestorableEvidence": "Nema dokaza koji utvrđuju nedostajuću vrijednost",
           "originalActorUnrepresentable": "Nijedan unos ne navodi tko je dovršio rad",
           "originalRuleUnknown": "Nijedan prikaz ne sadrži minute; izvorno zaokruživanje nije poznato",
-          "referenceOutsideOrganization": "Referencirani projekt ili kategorija ne pripada ovoj organizaciji"
+          "referenceOutsideOrganization": "Referencirani projekt ili kategorija ne pripada ovoj organizaciji",
+          "repairLeavesDivergence": "Uneseni rad i dalje ne bi odgovarao svom kanonskom zapisu; potreban je pregled"
         },
         "inactive": "Nije autorizirano",
         "inactiveDescription": "Za ispravak je potrebna zasebna autorizacija za ovu organizaciju. Plan ostaje čitljiv.",

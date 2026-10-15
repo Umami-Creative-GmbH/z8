@@ -50,7 +50,6 @@
       "description": "Konfiguroni organizatën tuaj për të filluar",
       "title": "Krijo organizatë"
     },
-    "createError": "Krijimi i organizatës dështoi",
     "createNew": "Krijo një organizatë të re",
     "createSuccess": "Organizzata u krijua me sukses!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Pronar"
     },
     "slugDescription": "Përdoret në URL. Gjenerohet automatikisht nga emri.",
-    "slugErrors": {
-      "format": "Slug-u duhet të përmbajë vetëm shkronja të vogla, numra dhe viza lidhëse",
-      "hyphen": "Slug-u nuk mund të fillojë ose përfundojë me vizë lidhëse",
-      "max": "Slug-u duhet të ketë më pak se 50 karaktere",
-      "min": "Slug-u duhet të ketë të paktën 2 karaktere"
-    },
     "slugLabel": "Slug-u i organizatës",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "Ky slug është i zënë tashmë. Ju lutemi zgjidhni një tjetër.",
@@ -372,6 +365,56 @@
       "updated": "Zona kohore e organizatës u përditësua në {timezone}",
       "update-failed": "Përditësimi i zonës kohore të organizatës dështoi"
     },
-    "title": "Eksploruesi i organizatës"
+    "title": "Eksploruesi i organizatës",
+    "tracking": {
+      "activate-reviewed": "Aktivizo datën e shqyrtuar",
+      "activation-description": "Zgjidhni datën reale të zbatimit dhe shqyrtoni ndikimin e saj përpara se ta ruani. Sugjerimi fillestar përdor datën e krijimit të organizatës suaj në zonën e saj kohore. Kjo ndryshon gjurmimin, pa korrigjuar datën e punësimit të askujt.",
+      "actual": "Puna e përfunduar",
+      "affected-periods": "Muajt e prekur",
+      "after": "Pas",
+      "balance": "Bilanci i punës",
+      "before": "Para",
+      "blocked-save": "Rihapni muajt e mbyllur të prekur dhe gjeneroni një pamje paraprake të re.",
+      "change-date": "Ndrysho datën e gjurmimit",
+      "closed": "Mbyllur",
+      "closed-blockers": "Zgjidhni problemet e mëposhtme përpara se të gjeneroni një pamje paraprake të re dhe të ruani.",
+      "closed-settings": "Hap cilësimet e muajve të mbyllur",
+      "commit-failed": "Nuk mund të ruhej ndryshimi i shqyrtuar. Gjeneroni një pamje paraprake të re dhe provoni përsëri.",
+      "day-unit": "ditë",
+      "description": "Kjo datë kontrollon kohën e kërkuar dhe bilancet e akumuluara të punës. Datat reale të punësimit të punonjësve përcaktojnë lejen e tyre të pushimeve.",
+      "employee-impacts": "Ndikimet në bilancin e punonjësve",
+      "employee-zone": "Zona kohore e punonjësit",
+      "ending-balance": "Bilanci në fund të muajit",
+      "exception-conflict": "Përjashtimi i punonjësit {exception} paraprin minimumin e ri {minimum}. Fillimisht hiqni ose ndryshoni përjashtimin e punonjësit.",
+      "hours": "Orë",
+      "hours-caption": "Orët para dhe pas",
+      "hour-unit": "orë",
+      "invalid-date": "Zgjidhni një datë të vlefshme kalendari.",
+      "legacy": "Llogaritja juaj aktuale e bilancit të punës është ende në përdorim. Nuk është aktivizuar asnjë datë fillimi e gjurmimit të kohës.",
+      "no-boundary": "Pa fillim llogaritjeje",
+      "no-changed-periods": "Nuk ndryshon asnjë rezultat i muajve të përfunduar.",
+      "no-employees": "Nuk preket asnjë bilanc i punonjësve.",
+      "old-boundary": "Fillimi aktual i llogaritjes",
+      "opening-preserved": "Bilanci fillestar i ruajtur:",
+      "preview": "Shiko paraprakisht ndikimin",
+      "preview-failed": "Nuk mund të gjenerohej parashikimi. Provoni përsëri.",
+      "proposed-boundary": "Fillimi i propozuar i gjurmimit",
+      "reason": "Arsyeja për këtë ndryshim",
+      "reason-required": "Vendosni një arsye përpara se të ruani.",
+      "required": "Koha e kërkuar",
+      "review-explanation": "Rishikoni datat efektive, orët e kërkuara dhe balancat e punës më poshtë. Datat e punësimit dhe kuotat e pushimeve mbeten të pandryshuara. Balancat vlejnë deri në ditën e fundit të përfunduar në zonën kohore të secilit punonjës.",
+      "review-title": "Rishikimi i ndikimit të datës së gjurmimit",
+      "saved": "Data e gjurmimit u ruajt dhe balancat u përditësuan.",
+      "saved-date": "Data aktuale e gjurmimit të organizatës:",
+      "saved-pending": "Data e gjurmimit u ruajt. Balancat e punës po rillogariten.",
+      "save-reviewed": "Ruaj datën e rishikuar",
+      "setup-description": "Koha e kërkuar dhe balancat e punës fillojnë në këtë datë, ose në fillimin aktual të punësimit të punonjësit nëse është më vonë. Datat e punësimit përcaktojnë sërish kuotën e pushimeve. Sugjerimi përdor datën e krijimit të organizatës në zonën e saj kohore.",
+      "setup-timezone": "Zona kohore e organizatës",
+      "stale-preview": "Të dhënat e rishikuara ndryshuan. Gjeneroni një parashikim të ri përpara se të ruani.",
+      "start-date": "Data e fillimit të gjurmimit të kohës",
+      "through-date": "Balancat deri më",
+      "title": "Fillimi i gjurmimit të kohës",
+      "vacation-unchanged": "Kuota e pushimeve dhe balanca të pandryshuara:"
+    }
   }
 }

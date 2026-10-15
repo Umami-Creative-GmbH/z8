@@ -9,6 +9,7 @@
       "displacedVacation": "Datumi godišnjeg odmora zamjenjuju se nakon odobrenja",
       "exactHours": "Točni evidentirani sati",
       "fullDay": "Cijeli dan",
+      "historicalRemaining": "Preostali prethodno iskorišteni godišnji odmor",
       "morning": "Prijepodne",
       "original": "Evidentirani datumi",
       "originalEndCoverage": "Evidentirani završni dan",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Razlog",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Dostupan godišnji odmor nakon usklađivanja",
+      "reconciliationReason": "Izvor usklađivanja povijesnog godišnjeg odmora",
       "title": "Promjena odsutnosti"
     },
     "absenceRejected": "Zahtjev za odsutnost je odbijen",

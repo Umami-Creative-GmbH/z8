@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Aprobare înregistrată",
           "approved": "Aprobat",
+          "receiptAdded": "Chitanță adăugată după trimitere",
           "rejected": "Respins",
           "reopened": "Redeschis pentru corectare",
           "returned": "Returnat pentru modificări",
@@ -851,6 +852,9 @@
         "withdraw": "Eliminați explicația"
       },
       "receipts": {
+        "add": "Adăugați chitanța",
+        "addedAfterSubmission": "{fileName}: Adăugată după trimitere de {name} la {date}.",
+        "choose": "Selectați chitanța",
         "chooseFile": "Alegeți fișierul",
         "description": "Faceți o fotografie sau atașați un PDF ori o imagine a chitanței.",
         "downloadNamed": "Descărcați {fileName}",
@@ -862,10 +866,13 @@
         },
         "none": "Nicio chitanță atașată încă.",
         "previewNamed": "Previzualizați {fileName}",
+        "processing": "Se atașează chitanța…",
         "progress": "Progres încărcare",
         "remove": "Eliminare",
         "removeFailed": "Chitanța nu a putut fi eliminată.",
         "removeNamed": "Eliminați {fileName}",
+        "supplementConflict": "O chitanță a fost deja furnizată sau raportul s-a modificat. Reîncărcați raportul înainte de a încerca din nou.",
+        "supplementFailed": "Chitanța nu a fost atașată. Reîncărcați raportul și încercați din nou.",
         "takePhoto": "Faceți o fotografie",
         "title": "Chitanță",
         "uploadFailed": "Chitanța nu a fost atașată.",

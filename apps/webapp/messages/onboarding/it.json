@@ -48,13 +48,31 @@
     "organization": {
       "create": "Crea Organizzazione",
       "createDescription": "Imposta la tua organizzazione e invita il tuo team",
+      "createError": "Impossibile creare l'organizzazione",
+      "createSuccess": "Organizzazione creata con successo!",
       "createTitle": "Crea Organizzazione",
       "disabledSkipDescription": "Puoi continuare saltando questo passaggio mentre attendi un invito per un'organizzazione esistente.",
       "disabledSubtitle": "La creazione di organizzazioni è disabilitata per questa distribuzione.",
+      "nameErrors": {
+        "max": "Il nome dell'organizzazione deve contenere meno di 100 caratteri",
+        "min": "Il nome dell'organizzazione deve contenere almeno 2 caratteri"
+      },
+      "nameLabel": "Nome dell'organizzazione",
+      "namePlaceholder": "Acme Inc.",
       "skip": "Salta per ora",
       "skipDescription": "Se il tuo amministratore ti inviterà a un'organizzazione, puoi saltare questo passaggio per ora.",
       "skipError": "Impossibile saltare la configurazione dell'organizzazione",
       "skipTitle": "In Attesa di un Invito?",
+      "slugDescription": "Utilizzato negli URL. Generato automaticamente dal nome.",
+      "slugErrors": {
+        "format": "Lo slug deve contenere solo lettere minuscole, numeri e trattini",
+        "hyphen": "Lo slug non può iniziare o terminare con un trattino",
+        "max": "Lo slug deve contenere meno di 50 caratteri",
+        "min": "Lo slug deve contenere almeno 2 caratteri"
+      },
+      "slugLabel": "Slug dell'organizzazione",
+      "slugPlaceholder": "acme-inc",
+      "slugTaken": "Questo slug è già in uso. Scegline uno diverso.",
       "subtitle": "Crea la tua organizzazione per sbloccare tutte le funzionalità, o salta se stai aspettando un invito.",
       "title": "Imposta la tua organizzazione"
     },
@@ -83,13 +101,21 @@
       "timeFormat24h": "24 ore (08:00)",
       "timeFormatDesc": "Controlla come vengono visualizzati gli orari.",
       "title": "Completa il tuo profilo",
+      "validation": {
+        "firstNameRequired": "Il nome è obbligatorio",
+        "firstNameTooLong": "Il nome deve contenere al massimo 50 caratteri",
+        "lastNameRequired": "Il cognome è obbligatorio",
+        "lastNameTooLong": "Il cognome deve contenere al massimo 50 caratteri"
+      },
       "weekStartDay": "Primo giorno della settimana",
       "weekStartDayDesc": "Controlla come vengono visualizzati i calendari e i riepiloghi settimanali."
     },
     "steps": {
       "complete": "Completato",
+      "label": "Avanzamento dell'onboarding",
       "notifications": "Notifiche",
       "organization": "Organizzazione",
+      "position": "Passaggio {current} di {total}",
       "profile": "Profilo",
       "vacationPolicy": "Ferie",
       "welcome": "Benvenuto",
@@ -124,7 +150,13 @@
       "skipError": "Impossibile saltare la configurazione della politica ferie",
       "subtitle": "Crea una politica ferie per la tua organizzazione. Questo determina quanti giorni liberi ottengono i dipendenti.",
       "success": "Politica ferie creata!",
-      "title": "Imposta politica ferie"
+      "title": "Imposta politica ferie",
+      "validation": {
+        "daysNegative": "I giorni non possono essere negativi",
+        "daysTooMany": "I giorni non possono superare 365",
+        "nameRequired": "Il nome della policy è obbligatorio",
+        "nameTooLong": "Il nome della policy deve contenere al massimo 100 caratteri"
+      }
     },
     "welcome": {
       "continueSetup": "Continua configurazione",
@@ -157,6 +189,24 @@
       "features": "Cosa otterrai",
       "glass": "bicchiere",
       "glasses": "bicchieri",
+      "presets": {
+        "active": {
+          "description": "Ogni 30 minuti - per attività intensa o ambienti caldi",
+          "label": "Attivo"
+        },
+        "custom": {
+          "description": "Imposta un intervallo personalizzato (15-120 minuti)",
+          "label": "Personalizzato"
+        },
+        "light": {
+          "description": "Ogni 60 minuti - per attività ridotta",
+          "label": "Leggero"
+        },
+        "moderate": {
+          "description": "Ogni 45 minuti - consigliato per la maggior parte delle persone",
+          "label": "Moderato"
+        }
+      },
       "recommended": "(Consigliato)",
       "reminderFrequency": "Frequenza promemoria",
       "skip": "Salta per ora",
@@ -183,6 +233,10 @@
       "subtitle": "Definisci i tuoi orari di lavoro per aiutare a tracciare il tempo e gestire le assenze con precisione.",
       "success": "Orario di lavoro impostato con successo!",
       "title": "Imposta il tuo orario di lavoro",
+      "validation": {
+        "hoursNegative": "Le ore non possono essere negative",
+        "hoursTooMany": "Una settimana ha al massimo 168 ore"
+      },
       "weekly": "Settimanale"
     },
     "workTemplates": {
@@ -206,6 +260,12 @@
       "subtitle": "Imposta un modello di orario di lavoro per la tua organizzazione. Questo definisce gli orari di lavoro per il tuo team.",
       "success": "Modello orario di lavoro creato!",
       "title": "Crea modello orario di lavoro",
+      "validation": {
+        "hoursNegative": "Le ore non possono essere negative",
+        "hoursTooMany": "Una settimana ha al massimo 168 ore",
+        "nameRequired": "Il nome del modello è obbligatorio",
+        "nameTooLong": "Il nome del modello deve contenere al massimo 100 caratteri"
+      },
       "workingDays": "Giorni Lavorativi",
       "workingDaysDesc": "Seleziona quali giorni sono lavorativi. Le ore saranno distribuite uniformemente."
     }

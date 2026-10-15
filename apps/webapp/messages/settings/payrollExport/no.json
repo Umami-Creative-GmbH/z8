@@ -416,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Ventende arbeid uten godkjenningsforespørsel",
         "approvalStateConflict": "Godkjenningsstatuser samsvarer ikke",
+        "attributionUnrepresentable": "Fakturerbar-flagg eller oppgave uten prosjekt",
         "canonicalDetailMissing": "Arbeidsdetaljer for timeregistrering mangler",
         "canonicalLinkMissing": "Kobling til timeregistrering mangler",
         "canonicalLinkShared": "Flere arbeidsperioder er koblet til én timeregistrering",
         "canonicalLinkUnresolved": "Fant ikke tilknyttet timeregistrering",
         "canonicalMissing": "Timeregistrering mangler",
+        "canonicalMissingClosedMonth": "Tidsregistrering mangler i en lukket måned",
         "captureInferred": "Tidssone utledet i etterkant av hendelsen",
         "deletedWorkPayable": "Slettet arbeid har fortsatt en betalbar timeregistrering",
         "durationConflict": "Lagrede varigheter samsvarer ikke",
@@ -568,7 +570,8 @@
           "noRestorableEvidence": "Ingen dokumentasjon fastslår den manglende verdien",
           "originalActorUnrepresentable": "Ingen oppføring angir hvem som utførte arbeidet",
           "originalRuleUnknown": "Ingen representasjon inneholder minuttene; den opprinnelige avrundingen er ukjent",
-          "referenceOutsideOrganization": "Et referert prosjekt eller en kategori tilhører ikke denne organisasjonen"
+          "referenceOutsideOrganization": "Et referert prosjekt eller en kategori tilhører ikke denne organisasjonen",
+          "repairLeavesDivergence": "Det utfylte arbeidet vil fortsatt avvike fra den kanoniske oppføringen; må gjennomgås"
         },
         "inactive": "Ikke autorisert",
         "inactiveDescription": "Reparasjon krever egen autorisasjon for denne organisasjonen. Planen forblir lesbar.",

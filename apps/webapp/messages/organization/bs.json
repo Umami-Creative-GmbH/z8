@@ -50,7 +50,6 @@
       "description": "Postavite svoju organizaciju da biste započeli",
       "title": "Kreirajte organizaciju"
     },
-    "createError": "Kreiranje organizacije nije uspjelo",
     "createNew": "Kreirajte novu organizaciju",
     "createSuccess": "Organizacija je uspješno kreirana!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Vlasnik"
     },
     "slugDescription": "Koristi se u URL-ovima. Automatski generisano iz naziva.",
-    "slugErrors": {
-      "format": "Slug smije sadržavati samo mala slova, brojeve i crtice",
-      "hyphen": "Slug ne smije počinjati niti završavati crticom",
-      "max": "Slug mora imati manje od 50 znakova",
-      "min": "Slug mora imati najmanje 2 znaka"
-    },
     "slugLabel": "Slug organizacije",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "Ovaj slug je već zauzet. Molimo odaberite drugi.",
@@ -372,6 +365,56 @@
       "updated": "Vremenska zona organizacije je ažurirana na {timezone}",
       "update-failed": "Ažuriranje vremenske zone organizacije nije uspjelo"
     },
-    "title": "Preglednik organizacije"
+    "title": "Preglednik organizacije",
+    "tracking": {
+      "activate-reviewed": "Aktiviraj pregledani datum",
+      "activation-description": "Odaberite stvarni datum uvođenja i pregledajte njegov utjecaj prije spremanja. Početni prijedlog koristi datum kreiranja vaše organizacije u njenoj vremenskoj zoni. Ovo mijenja praćenje, bez ispravljanja datuma zaposlenja zaposlenika.",
+      "actual": "Odrađeni rad",
+      "affected-periods": "Pogođeni mjeseci",
+      "after": "Nakon",
+      "balance": "Radni saldo",
+      "before": "Prije",
+      "blocked-save": "Ponovo otvorite pogođene zatvorene mjesece i generišite novi pregled.",
+      "change-date": "Promijeni datum praćenja",
+      "closed": "Zatvoreno",
+      "closed-blockers": "Riješite probleme u nastavku prije generisanja novog pregleda i spremanja.",
+      "closed-settings": "Otvori postavke zatvorenih mjeseci",
+      "commit-failed": "Nije moguće spremiti pregledanu promjenu. Generišite novi pregled i pokušajte ponovo.",
+      "day-unit": "dani",
+      "description": "Ovaj datum kontroliše obavezno vrijeme i akumulirani radni saldo. Stvarni datumi zaposlenja zaposlenika određuju njihov fond godišnjeg odmora.",
+      "employee-impacts": "Utjecaji na saldo zaposlenika",
+      "employee-zone": "Vremenska zona zaposlenika",
+      "ending-balance": "Saldo na kraju mjeseca",
+      "exception-conflict": "Izuzetak za zaposlenika {exception} prethodi novom minimumu {minimum}. Prvo uklonite ili promijenite izuzetak za zaposlenika.",
+      "hours": "Sati",
+      "hours-caption": "Sati prije i poslije",
+      "hour-unit": "sati",
+      "invalid-date": "Odaberite važeći kalendarski datum.",
+      "legacy": "Vaš trenutni obračun radnog salda je još uvijek u upotrebi. Nije aktiviran datum početka praćenja radnog vremena.",
+      "no-boundary": "Nema početka obračuna",
+      "no-changed-periods": "Nema promjene u rezultatima za završene mjesece.",
+      "no-employees": "Nijedan saldo zaposlenika nije pogođen.",
+      "old-boundary": "Trenutni početak obračuna",
+      "opening-preserved": "Početni saldo zadržan:",
+      "preview": "Pregledaj utjecaj",
+      "preview-failed": "Nije moguće generisati pregled. Pokušajte ponovo.",
+      "proposed-boundary": "Predloženi početak praćenja",
+      "reason": "Razlog za ovu promjenu",
+      "reason-required": "Unesite razlog prije spremanja.",
+      "required": "Potrebno vrijeme",
+      "review-explanation": "Pregledajte datume stupanja na snagu, potrebne sate i radna salda u nastavku. Datumi zaposlenja i prava na godišnji odmor ostaju nepromijenjeni. Salda se računaju do posljednjeg završenog dana u vremenskoj zoni svakog zaposlenika.",
+      "review-title": "Pregled utjecaja datuma praćenja",
+      "saved": "Datum praćenja je spremljen, a salda ažurirana.",
+      "saved-date": "Trenutni datum praćenja organizacije:",
+      "saved-pending": "Datum praćenja je spremljen. Radna salda se ponovo preračunavaju.",
+      "save-reviewed": "Spremi pregledani datum",
+      "setup-description": "Potrebno vrijeme i radna salda počinju na ovaj datum ili od stvarnog početka zaposlenja zaposlenika ako je kasniji. Datumi zaposlenja i dalje određuju pravo na godišnji odmor. Prijedlog koristi datum kreiranja organizacije u njenoj vremenskoj zoni.",
+      "setup-timezone": "Vremenska zona organizacije",
+      "stale-preview": "Pregledani unosi su promijenjeni. Generišite novi pregled prije spremanja.",
+      "start-date": "Datum početka praćenja vremena",
+      "through-date": "Salda zaključno sa",
+      "title": "Početak praćenja vremena",
+      "vacation-unchanged": "Pravo na godišnji odmor i saldo nepromijenjeni:"
+    }
   }
 }

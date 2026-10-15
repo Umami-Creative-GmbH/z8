@@ -2531,6 +2531,9 @@
     "theme-time-info": "Modaliteti i bazuar në kohë po përdor {currentMode}. Ndryshon në {nextMode} në orën {time}.",
     "theme-toggle": "Ndrysho temën"
   },
+  "vacationBalance": {
+    "previouslyTaken": "Përfshin {days} ditë të marra më parë përpara gjurmimit"
+  },
   "validation": {
     "first-name-required": "Emri është i detyrueshëm",
     "invalid-email": "Adresë emaili e pavlefshme",

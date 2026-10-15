@@ -48,13 +48,31 @@
     "organization": {
       "create": "Organisation erstelle",
       "createDescription": "Richt dini eigeni Organisation ii und lad dis Team ii",
+      "createError": "Organisation hät nöd chönne erstellt werde",
+      "createSuccess": "Organisation isch erfolgriich erstellt worde!",
       "createTitle": "Organisation erstelle",
       "disabledSkipDescription": "Du kannst fortfahren, indem du diesen Schritt überspringst, während du auf eine Einladung zu einer bestehenden Organisation wartest.",
       "disabledSubtitle": "Die Erstellung von Organisationen ist für diese Bereitstellung deaktiviert.",
+      "nameErrors": {
+        "max": "Organisationsname mues weniger als 100 Zeiche lang si",
+        "min": "Organisationsname mues mindestens 2 Zeiche lang si"
+      },
+      "nameLabel": "Organisationsname",
+      "namePlaceholder": "Acme Inc.",
       "skip": "Für de Moment überspringe",
       "skipDescription": "Wenn di en Administrator zuere Organisation iiladet, chasch de Schritt für de Moment überspringe.",
       "skipError": "Organisations-Iirichtig hät nöd chönne übersprunge werde",
       "skipTitle": "Wartisch uf en Iiladig?",
+      "slugDescription": "Wird i URLs verwändet. Automatisch us em Name generiert.",
+      "slugErrors": {
+        "format": "Slug dörf nume Chliibuechstabe, Zahle und Bindestrich enthalte",
+        "hyphen": "Slug dörf nöd mit eme Bindestrich aafange oder ufhöre",
+        "max": "Slug mues weniger als 50 Zeiche lang si",
+        "min": "Slug mues mindestens 2 Zeiche lang si"
+      },
+      "slugLabel": "Organisations-Slug",
+      "slugPlaceholder": "acme-inc",
+      "slugTaken": "Dä Slug isch scho vergee. Bitte wähl en andere.",
       "subtitle": "Erstell dini Organisation zum alli Funktione z'nutze, oder überspring es, wenn du uf en Iiladig wartisch.",
       "title": "Richt dini Organisation ii"
     },
@@ -83,13 +101,21 @@
       "timeFormat24h": "24-Stunde (08:00)",
       "timeFormatDesc": "Das bestimmt, wie d'Ziit aazeigt wird.",
       "title": "Profil vervollständigen",
+      "validation": {
+        "firstNameRequired": "Vornahme isch erforderlich",
+        "firstNameTooLong": "Vornahme dörf maximal 50 Zeiche lang si",
+        "lastNameRequired": "Nachnahme isch erforderlich",
+        "lastNameTooLong": "Nachnahme dörf maximal 50 Zeiche lang si"
+      },
       "weekStartDay": "Erschte Tag vo de Wuche",
       "weekStartDayDesc": "Das bestimmt, wie Kaländer und Wuchezämefassige aazeigt wärded."
     },
     "steps": {
       "complete": "Abschliessen",
+      "label": "Onboarding-Fortschritt",
       "notifications": "Benachrichtigungen",
       "organization": "Organisation",
+      "position": "Schritt {current} vo {total}",
       "profile": "Profil",
       "vacationPolicy": "Ferien",
       "welcome": "Willkommen",
@@ -124,7 +150,13 @@
       "skipError": "Ferierichtlinie-Iirichtig hät nöd chönne übersprunge werde",
       "subtitle": "Erstelle eine Ferienregelung für deine Organisation. Dies bestimmt, wie viele freie Tage Mitarbeiter erhalten.",
       "success": "Ferienregelung erstellt!",
-      "title": "Ferienregelung einrichten"
+      "title": "Ferienregelung einrichten",
+      "validation": {
+        "daysNegative": "Täg chönd nöd negativ sii",
+        "daysTooMany": "Täg dörfed nöd meh als 365 sii",
+        "nameRequired": "Richtlinie-Name isch erforderlich",
+        "nameTooLong": "Richtlinie-Name dörf höchschtens 100 Zeiche lang sii"
+      }
     },
     "welcome": {
       "continueSetup": "Iirichtig witerfüehre",
@@ -157,6 +189,24 @@
       "features": "Was du überchunsch",
       "glass": "Glas",
       "glasses": "Gläser",
+      "presets": {
+        "active": {
+          "description": "All 30 Minute – für hochi Aktivität oder heissi Umgebige",
+          "label": "Aktiv"
+        },
+        "custom": {
+          "description": "Eigenes Intervall festlege (15–120 Minute)",
+          "label": "Benutzerdefiniert"
+        },
+        "light": {
+          "description": "All 60 Minute – für gringi Aktivität",
+          "label": "Lycht"
+        },
+        "moderate": {
+          "description": "All 45 Minute – für die meischte Lüüt empfole",
+          "label": "Mässig"
+        }
+      },
       "recommended": "(Empfohle)",
       "reminderFrequency": "Erinnerigs-Hüfigkeit",
       "skip": "Für jetzt überspringe",
@@ -183,6 +233,10 @@
       "subtitle": "Definier dini Arbetsziite, zum Ziite besser z'verfolge und Abweseheite gnau z'verwalte.",
       "success": "Arbetsplan erfolgriich gsetzt!",
       "title": "Leg dine Arbetsplan fest",
+      "validation": {
+        "hoursNegative": "Stunde chönd nöd negativ sii",
+        "hoursTooMany": "E Wuche hät maximal 168 Stunde"
+      },
       "weekly": "Wöchentlich"
     },
     "workTemplates": {
@@ -206,6 +260,12 @@
       "subtitle": "Erstelle e Vorlag für de Arbetziitplan vo dinere Organisation. Das legt d'Arbetziite für dis Team fescht.",
       "success": "Arbetziitplan-Vorlag erstellt!",
       "title": "Arbetziitplan-Vorlag erstelle",
+      "validation": {
+        "hoursNegative": "Stunde chönd nöd negativ sii",
+        "hoursTooMany": "E Wuche hät maximal 168 Stunde",
+        "nameRequired": "Vorlag-Name isch erforderlich",
+        "nameTooLong": "Vorlag-Name dörf höchschtens 100 Zeiche lang sii"
+      },
       "workingDays": "Arbetstääg",
       "workingDaysDesc": "Wähl us, weli Tääg Arbetstääg sind. D'Stunde wärded gliichmässig verteilt."
     }

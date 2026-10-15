@@ -48,13 +48,31 @@
     "organization": {
       "create": "Krijo organizatë",
       "createDescription": "Konfiguroni organizatën tuaj dhe ftoni ekipin tuaj",
+      "createError": "Krijimi i organizatës dështoi",
+      "createSuccess": "Organizata u krijua me sukses!",
       "createTitle": "Krijo organizatë",
       "disabledSkipDescription": "Mund të vazhdoni duke e kapërcyer këtë hap ndërsa prisni një ftesë për një organizatë ekzistuese.",
       "disabledSubtitle": "Krijimi i organizatave është i çaktivizuar për këtë instalim.",
+      "nameErrors": {
+        "max": "Emri i organizatës duhet të ketë më pak se 100 karaktere",
+        "min": "Emri i organizatës duhet të ketë të paktën 2 karaktere"
+      },
+      "nameLabel": "Emri i organizatës",
+      "namePlaceholder": "Acme Inc.",
       "skip": "Kaloje tani për tani",
       "skipDescription": "Nëse administratori juaj do t'ju ftojë në një organizatë, mund ta kaloni këtë hap tani për tani.",
       "skipError": "Kapërcimi i konfigurimit të organizatës dështoi",
       "skipTitle": "Po prisni një ftesë?",
+      "slugDescription": "Përdoret në URL. Gjenerohet automatikisht nga emri.",
+      "slugErrors": {
+        "format": "Slug-u duhet të përmbajë vetëm shkronja të vogla, numra dhe viza ndarëse",
+        "hyphen": "Slug-u nuk mund të fillojë ose të mbarojë me vizë ndarëse",
+        "max": "Slug-u duhet të ketë më pak se 50 karaktere",
+        "min": "Slug-u duhet të ketë të paktën 2 karaktere"
+      },
+      "slugLabel": "Slug-u i organizatës",
+      "slugPlaceholder": "acme-inc",
+      "slugTaken": "Ky slug është i zënë tashmë. Ju lutemi zgjidhni një tjetër.",
       "subtitle": "Krijoni organizatën tuaj për të zhbllokuar të gjitha veçoritë, ose kalojeni nëse po prisni një ftesë.",
       "title": "Konfiguroni organizatën tuaj"
     },
@@ -83,13 +101,21 @@
       "timeFormat24h": "24-orësh (08:00)",
       "timeFormatDesc": "Kjo kontrollon mënyrën se si shfaqet ora.",
       "title": "Plotësoni profilin tuaj",
+      "validation": {
+        "firstNameRequired": "Emri është i detyrueshëm",
+        "firstNameTooLong": "Emri duhet të ketë 50 ose më pak karaktere",
+        "lastNameRequired": "Mbiemri është i detyrueshëm",
+        "lastNameTooLong": "Mbiemri duhet të ketë 50 ose më pak karaktere"
+      },
       "weekStartDay": "Dita e parë e javës",
       "weekStartDayDesc": "Kjo kontrollon mënyrën se si shfaqen kalendarët dhe përmbledhjet javore."
     },
     "steps": {
       "complete": "Përfundo",
+      "label": "Progresi i regjistrimit",
       "notifications": "Njoftimet",
       "organization": "Organizata",
+      "position": "Hapi {current} nga {total}",
       "profile": "Profili",
       "vacationPolicy": "Pushimet",
       "welcome": "Mirë se vini",
@@ -124,7 +150,13 @@
       "skipError": "Kapërcimi i konfigurimit të politikës së pushimeve dështoi",
       "subtitle": "Krijoni një politikë pushimesh për organizatën tuaj. Kjo përcakton se sa ditë pushimi marrin punonjësit.",
       "success": "Politika e pushimeve u krijua!",
-      "title": "Konfiguro politikën e pushimeve"
+      "title": "Konfiguro politikën e pushimeve",
+      "validation": {
+        "daysNegative": "Ditët nuk mund të jenë negative",
+        "daysTooMany": "Ditët nuk mund të kalojnë 365",
+        "nameRequired": "Emri i politikës është i detyrueshëm",
+        "nameTooLong": "Emri i politikës duhet të ketë 100 ose më pak karaktere"
+      }
     },
     "welcome": {
       "continueSetup": "Vazhdo konfigurimin",
@@ -157,6 +189,24 @@
       "features": "Çfarë do të përfitoni",
       "glass": "gotë",
       "glasses": "gota",
+      "presets": {
+        "active": {
+          "description": "Çdo 30 minuta - për aktivitet të lartë ose mjedise të nxehta",
+          "label": "Aktiv"
+        },
+        "custom": {
+          "description": "Caktoni intervalin tuaj (15-120 minuta)",
+          "label": "E personalizuar"
+        },
+        "light": {
+          "description": "Çdo 60 minuta - për aktivitet të ulët",
+          "label": "I lehtë"
+        },
+        "moderate": {
+          "description": "Çdo 45 minuta - rekomandohet për shumicën e njerëzve",
+          "label": "Mesatar"
+        }
+      },
       "recommended": "(E rekomanduar)",
       "reminderFrequency": "Shpeshtësia e kujtuesve",
       "skip": "Kaloje për momentin",
@@ -183,6 +233,10 @@
       "subtitle": "Përcaktoni orët tuaja të punës për të ndihmuar në gjurmimin e saktë të kohës dhe menaxhimin e mungesave.",
       "success": "Orari i punës u caktua me sukses!",
       "title": "Caktoni orarin tuaj të punës",
+      "validation": {
+        "hoursNegative": "Orët nuk mund të jenë negative",
+        "hoursTooMany": "Një javë ka më së shumti 168 orë"
+      },
       "weekly": "Javore"
     },
     "workTemplates": {
@@ -206,6 +260,12 @@
       "subtitle": "Konfiguroni një shabllon të orarit të punës për organizatën tuaj. Kjo përcakton orët e punës për ekipin tuaj.",
       "success": "Shablloni i orarit të punës u krijua!",
       "title": "Krijo shabllon të orarit të punës",
+      "validation": {
+        "hoursNegative": "Orët nuk mund të jenë negative",
+        "hoursTooMany": "Një javë ka më së shumti 168 orë",
+        "nameRequired": "Emri i shabllonit është i detyrueshëm",
+        "nameTooLong": "Emri i shabllonit duhet të ketë 100 ose më pak karaktere"
+      },
       "workingDays": "Ditët e punës",
       "workingDaysDesc": "Zgjidhni cilat ditë janë ditë pune. Orët do të shpërndahen në mënyrë të barabartë."
     }

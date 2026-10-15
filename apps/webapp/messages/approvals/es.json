@@ -9,6 +9,7 @@
       "displacedVacation": "Fechas de vacaciones sustituidas tras la aprobación",
       "exactHours": "Horas registradas exactas",
       "fullDay": "Día completo",
+      "historicalRemaining": "Vacaciones disfrutadas previamente restantes",
       "morning": "Mañana",
       "original": "Fechas registradas",
       "originalEndCoverage": "Día de finalización registrado",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Motivo",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Vacaciones disponibles tras la conciliación",
+      "reconciliationReason": "Origen de la conciliación de vacaciones históricas",
       "title": "Cambio de ausencia"
     },
     "absenceRejected": "Solicitud de ausencia rechazada",

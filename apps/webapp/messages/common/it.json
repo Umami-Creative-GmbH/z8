@@ -2531,6 +2531,9 @@
     "theme-time-info": "La modalità basata sull'orario sta utilizzando {currentMode}. Passerà a {nextMode} alle {time}.",
     "theme-toggle": "Cambia tema"
   },
+  "vacationBalance": {
+    "previouslyTaken": "Include {days} giorni già fruiti prima del tracciamento"
+  },
   "validation": {
     "first-name-required": "Il nome è obbligatorio",
     "invalid-email": "Indirizzo email non valido",

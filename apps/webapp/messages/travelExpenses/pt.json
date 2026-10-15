@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Aprovação registrada",
           "approved": "Aprovado",
+          "receiptAdded": "Recibo adicionado após o envio",
           "rejected": "Rejeitado",
           "reopened": "Reaberto para correção",
           "returned": "Devolvido para alterações",
@@ -851,6 +852,9 @@
         "withdraw": "Remover justificativa"
       },
       "receipts": {
+        "add": "Adicionar recibo",
+        "addedAfterSubmission": "{fileName}: Adicionado após o envio por {name} em {date}.",
+        "choose": "Escolher recibo",
         "chooseFile": "Escolher arquivo",
         "description": "Tire uma foto ou anexe um PDF ou imagem do comprovante.",
         "downloadNamed": "Baixar {fileName}",
@@ -862,10 +866,13 @@
         },
         "none": "Nenhum comprovante anexado ainda.",
         "previewNamed": "Visualizar {fileName}",
+        "processing": "Anexando recibo…",
         "progress": "Progresso do envio",
         "remove": "Remover",
         "removeFailed": "Não foi possível remover o comprovante.",
         "removeNamed": "Remover {fileName}",
+        "supplementConflict": "Um recibo já foi fornecido ou o relatório foi alterado. Recarregue o relatório antes de tentar novamente.",
+        "supplementFailed": "O recibo não foi anexado. Recarregue o relatório e tente novamente.",
         "takePhoto": "Tirar foto",
         "title": "Comprovante",
         "uploadFailed": "O comprovante não foi anexado.",

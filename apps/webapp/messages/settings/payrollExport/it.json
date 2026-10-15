@@ -416,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Lavoro in sospeso senza richiesta di approvazione",
         "approvalStateConflict": "Stati di approvazione discordanti",
+        "attributionUnrepresentable": "Contrassegno fatturabile o attività senza progetto",
         "canonicalDetailMissing": "Dettaglio lavoro della registrazione oraria mancante",
         "canonicalLinkMissing": "Collegamento della registrazione oraria mancante",
         "canonicalLinkShared": "Diversi periodi di lavoro collegati a un'unica registrazione oraria",
         "canonicalLinkUnresolved": "Registrazione oraria collegata non trovata",
         "canonicalMissing": "Registrazione oraria mancante",
+        "canonicalMissingClosedMonth": "Registrazione oraria mancante in un mese chiuso",
         "captureInferred": "Rilevamento del fuso orario dedotto dopo l'evento",
         "deletedWorkPayable": "Il lavoro eliminato presenta ancora una registrazione oraria retribuibile",
         "durationConflict": "Durate salvate discordanti",
@@ -568,7 +570,8 @@
           "noRestorableEvidence": "Nessuna evidenza determina il valore mancante",
           "originalActorUnrepresentable": "Nessuna voce indica chi ha completato il lavoro",
           "originalRuleUnknown": "Nessuna rappresentazione contiene i minuti; l'arrotondamento originale è sconosciuto",
-          "referenceOutsideOrganization": "Un progetto o una categoria di riferimento non appartiene a questa organizzazione"
+          "referenceOutsideOrganization": "Un progetto o una categoria di riferimento non appartiene a questa organizzazione",
+          "repairLeavesDivergence": "Le ore di lavoro compilate non corrisponderebbero comunque al record canonico; è richiesta una verifica"
         },
         "inactive": "Non autorizzato",
         "inactiveDescription": "La riparazione richiede un'autorizzazione separata per questa organizzazione. Il piano rimane consultabile.",

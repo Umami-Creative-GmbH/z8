@@ -416,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Muncă în așteptare fără cerere de aprobare",
         "approvalStateConflict": "Stările de aprobare nu coincid",
+        "attributionUnrepresentable": "Marcaj facturabil sau sarcină fără proiect",
         "canonicalDetailMissing": "Detaliul de activitate din fișa de pontaj lipsește",
         "canonicalLinkMissing": "Legătura fișei de pontaj lipsește",
         "canonicalLinkShared": "Mai multe perioade de lucru sunt asociate aceleiași fișe de pontaj",
         "canonicalLinkUnresolved": "Fișa de pontaj asociată nu a fost găsită",
         "canonicalMissing": "Fișa de pontaj lipsește",
+        "canonicalMissingClosedMonth": "Înregistrare de timp lipsă într-o lună închisă",
         "captureInferred": "Fusul orar a fost dedus după eveniment",
         "deletedWorkPayable": "Activitatea ștearsă are în continuare o fișă de pontaj plătibilă",
         "durationConflict": "Duratele stocate nu coincid",
@@ -568,7 +570,8 @@
           "noRestorableEvidence": "Nicio dovadă nu stabilește valoarea lipsă",
           "originalActorUnrepresentable": "Nicio înregistrare nu menționează cine a finalizat activitatea",
           "originalRuleUnknown": "Nicio reprezentare nu conține minutele; rotunjirea inițială este necunoscută",
-          "referenceOutsideOrganization": "Un proiect sau o categorie de referință nu aparține acestei organizații"
+          "referenceOutsideOrganization": "Un proiect sau o categorie de referință nu aparține acestei organizații",
+          "repairLeavesDivergence": "Munca completată ar fi în continuare în neconcordanță cu înregistrarea sa canonică; necesită examinare"
         },
         "inactive": "Neautorizat",
         "inactiveDescription": "Remedierea necesită o autorizare separată pentru această organizație. Planul rămâne lizibil.",

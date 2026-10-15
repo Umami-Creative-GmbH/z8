@@ -2531,6 +2531,9 @@
     "theme-time-info": "Zamana dayalı mod {currentMode} modunu kullanıyor. {time} saatinde {nextMode} moduna geçiş yapar.",
     "theme-toggle": "Temayı değiştir"
   },
+  "vacationBalance": {
+    "previouslyTaken": "Takip öncesinde kullanılan {days} günü içerir"
+  },
   "validation": {
     "first-name-required": "Ad gerekli",
     "invalid-email": "Geçersiz e-posta adresi",

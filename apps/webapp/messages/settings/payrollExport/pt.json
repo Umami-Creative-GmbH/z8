@@ -416,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Trabalho pendente sem solicitação de aprovação",
         "approvalStateConflict": "Status de aprovação divergentes",
+        "attributionUnrepresentable": "Marcação de faturável ou tarefa sem projeto",
         "canonicalDetailMissing": "Detalhes de trabalho do registro de horas ausentes",
         "canonicalLinkMissing": "Vínculo do registro de horas ausente",
         "canonicalLinkShared": "Vários períodos de trabalho vinculam um mesmo registro de horas",
         "canonicalLinkUnresolved": "Registro de horas vinculado não encontrado",
         "canonicalMissing": "Registro de horas ausente",
+        "canonicalMissingClosedMonth": "Registro de horas ausente em um mês encerrado",
         "captureInferred": "Captura de fuso horário inferida após o evento",
         "deletedWorkPayable": "Trabalho excluído ainda possui um registro de horas remunerável",
         "durationConflict": "Durações armazenadas divergentes",
@@ -568,7 +570,8 @@
           "noRestorableEvidence": "Nenhuma evidência estabelece o valor ausente",
           "originalActorUnrepresentable": "Nenhum registro indica quem concluiu o trabalho",
           "originalRuleUnknown": "Nenhuma representação contém os minutos; o arredondamento original é desconhecido",
-          "referenceOutsideOrganization": "Um projeto ou categoria referenciada não pertence a esta organização"
+          "referenceOutsideOrganization": "Um projeto ou categoria referenciada não pertence a esta organização",
+          "repairLeavesDivergence": "O trabalho preenchido ainda divergiria do seu registro canônico; precisa de revisão"
         },
         "inactive": "Não autorizado",
         "inactiveDescription": "O reparo precisa de autorização separada para esta organização. O plano permanece legível.",
