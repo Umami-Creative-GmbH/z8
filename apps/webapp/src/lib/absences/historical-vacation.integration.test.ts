@@ -1,12 +1,22 @@
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 
 const session = vi.hoisted(() => ({ userId: "", organizationId: "" }));
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -17,7 +27,11 @@ vi.mock("@/lib/auth", () => ({
 	auth: {
 		api: {
 			getSession: async () => ({
-				user: { id: session.userId, role: "user", email: "vacation@test.invalid" },
+				user: {
+					id: session.userId,
+					role: "user",
+					email: "vacation@test.invalid",
+				},
 				session: {
 					id: session.userId,
 					userId: session.userId,
@@ -40,8 +54,12 @@ vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
 const { previewPreviouslyTakenVacation, commitPreviouslyTakenVacation } =
-	await import("@/app/[locale]/(app)/settings/vacation/historical-usage-actions");
-const { getVacationBalance } = await import("@/app/[locale]/(app)/absences/queries");
+	await import(
+		"@/app/[locale]/(app)/settings/vacation/historical-usage-actions"
+	);
+const { getVacationBalance } = await import(
+	"@/app/[locale]/(app)/absences/queries"
+);
 const { getEnhancedVacationBalance } = await import("./vacation.service");
 
 describe("reviewed previously taken vacation", () => {
@@ -127,30 +145,38 @@ describe("reviewed previously taken vacation", () => {
 			usedDays: 13,
 			remainingDays: 17,
 		});
-		expect(await getEnhancedVacationBalance({ employeeId, year: 2026 })).toMatchObject({
+		expect(
+			await getEnhancedVacationBalance({ employeeId, year: 2026 }),
+		).toMatchObject({
 			allowanceDays: 30,
 			previouslyTakenDays: 8,
 			usedDays: 13,
 			remainingDays: 17,
 		});
-		const { getEmployeeVacationBalance } =
-			await import("@/app/[locale]/(app)/settings/vacation/actions");
+		const { getEmployeeVacationBalance } = await import(
+			"@/app/[locale]/(app)/settings/vacation/actions"
+		);
 		const admin = await getEmployeeVacationBalance(employeeId);
 		expect(admin.success && admin.data.balance).toMatchObject({
 			allowanceDays: 30,
 			previouslyTakenDays: 8,
 			remainingDays: 17,
 		});
-		const { getManagerAbsenceEmployees } =
-			await import("@/app/[locale]/(app)/team/absences/actions");
+		const { getManagerAbsenceEmployees } = await import(
+			"@/app/[locale]/(app)/team/absences/actions"
+		);
 		const team = await getManagerAbsenceEmployees({ year: 2026 });
-		expect(team.success && team.data.rows.find((row) => row.id === employeeId)).toMatchObject({
+		expect(
+			team.success && team.data.rows.find((row) => row.id === employeeId),
+		).toMatchObject({
 			previouslyTakenVacationDays: 8,
 			usedVacationDays: 13,
 			remainingVacationDays: 17,
 		});
 		session.userId = targetUserId;
-		const { getVacationBalance: dashboardAction } = await import("@/components/dashboard/actions");
+		const { getVacationBalance: dashboardAction } = await import(
+			"@/components/dashboard/actions"
+		);
 		const dashboard = await dashboardAction();
 		expect(dashboard.success && dashboard.data).toMatchObject({
 			previouslyTakenDays: 8,
@@ -169,10 +195,16 @@ describe("reviewed previously taken vacation", () => {
 		const review = await previewPreviouslyTakenVacation(input);
 		if (!review.success) throw new Error(review.error);
 		expect(
-			(await commitPreviouslyTakenVacation({ ...input, fingerprint: review.data.fingerprint }))
-				.success,
+			(
+				await commitPreviouslyTakenVacation({
+					...input,
+					fingerprint: review.data.fingerprint,
+				})
+			).success,
 		).toBe(true);
-		const { recordAbsenceForEmployee } = await import("@/app/[locale]/(app)/team/absences/actions");
+		const { recordAbsenceForEmployee } = await import(
+			"@/app/[locale]/(app)/team/absences/actions"
+		);
 		const blocked = await recordAbsenceForEmployee({
 			employeeId,
 			categoryId,
@@ -182,7 +214,8 @@ describe("reviewed previously taken vacation", () => {
 			endPeriod: "full_day",
 		});
 		expect(blocked).toMatchObject({ success: false });
-		if (!blocked.success) expect(blocked.error).toContain("previously taken vacation");
+		if (!blocked.success)
+			expect(blocked.error).toContain("previously taken vacation");
 		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({
 			usedDays: 13,
 			remainingDays: 17,
@@ -219,7 +252,12 @@ describe("reviewed previously taken vacation", () => {
 		expect(review.historicalRecords).toHaveLength(1);
 		expect(review.blockers.join(" ")).toContain("Recorded historical vacation");
 		expect(
-			(await commitPreviouslyTakenVacation({ ...input, fingerprint: review.fingerprint })).success,
+			(
+				await commitPreviouslyTakenVacation({
+					...input,
+					fingerprint: review.fingerprint,
+				})
+			).success,
 		).toBe(false);
 		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({
 			allowanceDays: 30,
@@ -267,8 +305,14 @@ describe("reviewed previously taken vacation", () => {
 	it("makes simultaneous commits from the same review succeed only once", async () => {
 		const { input, review } = await reviewedTotal();
 		const results = await Promise.all([
-			commitPreviouslyTakenVacation({ ...input, fingerprint: review.fingerprint }),
-			commitPreviouslyTakenVacation({ ...input, fingerprint: review.fingerprint }),
+			commitPreviouslyTakenVacation({
+				...input,
+				fingerprint: review.fingerprint,
+			}),
+			commitPreviouslyTakenVacation({
+				...input,
+				fingerprint: review.fingerprint,
+			}),
 		]);
 		expect(results.filter((result) => result.success)).toHaveLength(1);
 		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({
@@ -278,9 +322,14 @@ describe("reviewed previously taken vacation", () => {
 	});
 	it("serializes aggregate creation and manual historical recording when no total exists", async () => {
 		const { input, review } = await reviewedTotal();
-		const { recordAbsenceForEmployee } = await import("@/app/[locale]/(app)/team/absences/actions");
+		const { recordAbsenceForEmployee } = await import(
+			"@/app/[locale]/(app)/team/absences/actions"
+		);
 		const results = await Promise.all([
-			commitPreviouslyTakenVacation({ ...input, fingerprint: review.fingerprint }),
+			commitPreviouslyTakenVacation({
+				...input,
+				fingerprint: review.fingerprint,
+			}),
 			recordAbsenceForEmployee({
 				employeeId,
 				categoryId,
@@ -307,7 +356,12 @@ describe("reviewed previously taken vacation", () => {
 			trackingStart: "2026-05-21",
 		});
 		expect(
-			(await commitPreviouslyTakenVacation({ ...input, fingerprint: review.fingerprint })).success,
+			(
+				await commitPreviouslyTakenVacation({
+					...input,
+					fingerprint: review.fingerprint,
+				})
+			).success,
 		).toBe(true);
 		await saveTotal(employeeId, 0);
 		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({
@@ -319,22 +373,26 @@ describe("reviewed previously taken vacation", () => {
 			[fixture.organizationId],
 		);
 	});
-	it.each([-1, 0.25, Number.NaN, 367])("rejects invalid vacation-day amount %s", async (days) => {
-		expect(
-			(
-				await previewPreviouslyTakenVacation({
-					organizationId: fixture.organizationId,
-					employeeId,
-					year: 2026,
-					days,
-					reason: "Invalid",
-				})
-			).success,
-		).toBe(false);
-	});
+	it.each([-1, 0.25, Number.NaN, 367])(
+		"rejects invalid vacation-day amount %s",
+		async (days) => {
+			expect(
+				(
+					await previewPreviouslyTakenVacation({
+						organizationId: fixture.organizationId,
+						employeeId,
+						year: 2026,
+						days,
+						reason: "Invalid",
+					})
+				).success,
+			).toBe(false);
+		},
+	);
 	it("refuses foreign targets and non-admins at preview and after a reviewed permission change", async () => {
 		const foreignOrg = await fixture.createOrganization();
-		const foreign = (await fixture.seedEmployee({ organizationId: foreignOrg })).employeeId;
+		const foreign = (await fixture.seedEmployee({ organizationId: foreignOrg }))
+			.employeeId;
 		expect(
 			(
 				await previewPreviouslyTakenVacation({
@@ -351,7 +409,12 @@ describe("reviewed previously taken vacation", () => {
 		session.userId = targetUserId;
 		expect((await previewPreviouslyTakenVacation(input)).success).toBe(false);
 		expect(
-			(await commitPreviouslyTakenVacation({ ...input, fingerprint: review.fingerprint })).success,
+			(
+				await commitPreviouslyTakenVacation({
+					...input,
+					fingerprint: review.fingerprint,
+				})
+			).success,
 		).toBe(false);
 		session.userId = fixture.ownerUserId;
 		await fixture.pool.query(
@@ -359,7 +422,12 @@ describe("reviewed previously taken vacation", () => {
 			[fixture.ownerUserId, fixture.organizationId],
 		);
 		expect(
-			(await commitPreviouslyTakenVacation({ ...input, fingerprint: review.fingerprint })).success,
+			(
+				await commitPreviouslyTakenVacation({
+					...input,
+					fingerprint: review.fingerprint,
+				})
+			).success,
 		).toBe(false);
 		await fixture.pool.query(
 			`update member set role='owner' where user_id=$1 and organization_id=$2`,
@@ -373,8 +441,9 @@ describe("reviewed previously taken vacation", () => {
 	it("guards self recording and historical date changes while leaving ordinary post-coverage recording usable", async () => {
 		await saveTotal();
 		session.userId = targetUserId;
-		const { requestAbsenceEffect } =
-			await import("@/app/[locale]/(app)/absences/request-absence-effect");
+		const { requestAbsenceEffect } = await import(
+			"@/app/[locale]/(app)/absences/request-absence-effect"
+		);
 		const self = await requestAbsenceEffect({
 			categoryId,
 			startDate: "2026-04-08",
@@ -383,7 +452,8 @@ describe("reviewed previously taken vacation", () => {
 			endPeriod: "full_day",
 		});
 		expect(self.success).toBe(false);
-		if (!self.success) expect(self.error).toContain("previously taken vacation");
+		if (!self.success)
+			expect(self.error).toContain("previously taken vacation");
 		const { requestAbsenceChange } = await import("./change-request-service");
 		const existing = await fixture.pool.query(
 			`select id from absence_entry where employee_id=$1 and start_date='2026-06-01'`,
@@ -405,7 +475,9 @@ describe("reviewed previously taken vacation", () => {
 			}),
 		).rejects.toThrow("previously taken vacation");
 		session.userId = fixture.ownerUserId;
-		const { recordAbsenceForEmployee } = await import("@/app/[locale]/(app)/team/absences/actions");
+		const { recordAbsenceForEmployee } = await import(
+			"@/app/[locale]/(app)/team/absences/actions"
+		);
 		const future = await recordAbsenceForEmployee({
 			employeeId,
 			categoryId,
@@ -450,26 +522,36 @@ describe("reviewed previously taken vacation", () => {
 			previouslyTakenDays: 8,
 			remainingDays: 20,
 		});
-		const { updateEmployeeAllowance } =
-			await import("@/app/[locale]/(app)/settings/vacation/actions");
+		const { updateEmployeeAllowance } = await import(
+			"@/app/[locale]/(app)/settings/vacation/actions"
+		);
 		expect(
-			(await updateEmployeeAllowance(employeeId, 2026, { customAnnualDays: "35" })).success,
+			(
+				await updateEmployeeAllowance(employeeId, 2026, {
+					customAnnualDays: "35",
+				})
+			).success,
 		).toBe(true);
 		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({
 			allowanceDays: 35,
 			previouslyTakenDays: 8,
 			remainingDays: 25,
 		});
-		await fixture.pool.query(`delete from employee_vacation_allowance where employee_id=$1`, [
-			employeeId,
-		]);
+		await fixture.pool.query(
+			`delete from employee_vacation_allowance where employee_id=$1`,
+			[employeeId],
+		);
 	});
 	it.each([true, false])(
 		"guards unknown imported historical vacation in both write orders (total first: %s)",
 		async (totalFirst) => {
 			if (totalFirst) await saveTotal();
-			const { importBatch, importBatchJob, importStagedRow } = await import("@/db/schema");
-			const { processImportReviewJob } = await import("@/lib/import-review/worker");
+			const { importBatch, importBatchJob, importStagedRow } = await import(
+				"@/db/schema"
+			);
+			const { processImportReviewJob } = await import(
+				"@/lib/import-review/worker"
+			);
 			const batchId = randomUUID(),
 				jobId = randomUUID();
 			await fixture.db.insert(importBatch).values({
@@ -518,7 +600,9 @@ describe("reviewed previously taken vacation", () => {
 				opts: { attempts: 1 },
 			} as Parameters<typeof processImportReviewJob>[0];
 			if (totalFirst) {
-				await expect(processImportReviewJob(job)).rejects.toThrow("previously taken vacation");
+				await expect(processImportReviewJob(job)).rejects.toThrow(
+					"previously taken vacation",
+				);
 				expect(await getVacationBalance(employeeId, 2026)).toMatchObject({
 					usedDays: 13,
 					remainingDays: 17,
@@ -528,9 +612,28 @@ describe("reviewed previously taken vacation", () => {
 				const { input, review } = await reviewedTotal();
 				expect(review.historicalRecords).toHaveLength(1);
 				expect(review.blockers.length).toBeGreaterThan(0);
+				const acknowledged = await previewPreviouslyTakenVacation({
+					...input,
+					excludesListedDatedHistory: true,
+				});
+				if (!acknowledged.success) throw new Error(acknowledged.error);
+				expect(acknowledged.data.blockers.length).toBeGreaterThan(0);
 				expect(
-					(await commitPreviouslyTakenVacation({ ...input, fingerprint: review.fingerprint }))
-						.success,
+					(
+						await commitPreviouslyTakenVacation({
+							...input,
+							excludesListedDatedHistory: true,
+							fingerprint: acknowledged.data.fingerprint,
+						})
+					).success,
+				).toBe(false);
+				expect(
+					(
+						await commitPreviouslyTakenVacation({
+							...input,
+							fingerprint: review.fingerprint,
+						})
+					).success,
 				).toBe(false);
 			}
 			const category = await fixture.pool.query(
@@ -538,7 +641,9 @@ describe("reviewed previously taken vacation", () => {
 				[fixture.organizationId],
 			);
 			expect(category.rows).toHaveLength(totalFirst ? 0 : 1);
-			await fixture.pool.query(`delete from import_batch where id=$1`, [batchId]);
+			await fixture.pool.query(`delete from import_batch where id=$1`, [
+				batchId,
+			]);
 		},
 	);
 	it("keeps manual/accrual adjustments distinct and carries forward a balance reduced by historical usage", async () => {
@@ -553,7 +658,9 @@ describe("reviewed previously taken vacation", () => {
 			2026,
 			fixture.ownerUserId,
 		);
-		expect(result.results.find((row) => row.employeeId === employeeId)).toMatchObject({
+		expect(
+			result.results.find((row) => row.employeeId === employeeId),
+		).toMatchObject({
 			carryoverApplied: 17,
 		});
 		await fixture.pool.query(
@@ -568,7 +675,9 @@ describe("reviewed previously taken vacation", () => {
 			`insert into absence_category (id,organization_id,name,type,counts_against_vacation,requires_approval,updated_at) values ($1,$2,'Historical custom leave','custom',false,false,now())`,
 			[otherCategory, fixture.organizationId],
 		);
-		const { recordAbsenceForEmployee } = await import("@/app/[locale]/(app)/team/absences/actions");
+		const { recordAbsenceForEmployee } = await import(
+			"@/app/[locale]/(app)/team/absences/actions"
+		);
 		expect(
 			(
 				await recordAbsenceForEmployee({
@@ -581,8 +690,9 @@ describe("reviewed previously taken vacation", () => {
 				})
 			).success,
 		).toBe(true);
-		const { updateAbsenceCategory } =
-			await import("@/app/[locale]/(app)/settings/vacation/actions");
+		const { updateAbsenceCategory } = await import(
+			"@/app/[locale]/(app)/settings/vacation/actions"
+		);
 		expect(
 			(
 				await updateAbsenceCategory(otherCategory, {
@@ -602,7 +712,9 @@ describe("reviewed previously taken vacation", () => {
 
 	it("refuses a newly closed historical month at commit without changing the total", async () => {
 		const { input, review } = await reviewedTotal();
-		const { closeMonth } = await import("@/lib/time-tracking/closed-months/store");
+		const { closeMonth } = await import(
+			"@/lib/time-tracking/closed-months/store"
+		);
 		const { parseInstant } = await import("@/lib/datetime/temporal-core");
 		const closed = await closeMonth(fixture.db, {
 			organizationId: fixture.organizationId,
@@ -613,12 +725,21 @@ describe("reviewed previously taken vacation", () => {
 		});
 		expect(closed.kind).toBe("closed");
 		expect(
-			(await commitPreviouslyTakenVacation({ ...input, fingerprint: review.fingerprint })).success,
+			(
+				await commitPreviouslyTakenVacation({
+					...input,
+					fingerprint: review.fingerprint,
+				})
+			).success,
 		).toBe(false);
 		const next = await reviewedTotal();
 		expect(next.review.blockers.join(" ")).toContain("closed");
-		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({ remainingDays: 25 });
-		const { reopenMonth } = await import("@/lib/time-tracking/closed-months/store");
+		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({
+			remainingDays: 25,
+		});
+		const { reopenMonth } = await import(
+			"@/lib/time-tracking/closed-months/store"
+		);
 		await reopenMonth(fixture.db, {
 			organizationId: fixture.organizationId,
 			month: "2026-01",
@@ -627,6 +748,8 @@ describe("reviewed previously taken vacation", () => {
 			actorUserId: fixture.ownerUserId,
 		});
 		await saveTotal();
-		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({ remainingDays: 17 });
+		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({
+			remainingDays: 17,
+		});
 	});
 });

@@ -213,6 +213,7 @@ function ImportMappingForm({
 						const signature = JSON.stringify(source);
 						return (
 							<HistoricalVacationReconciliationPanel
+								headingLevel={2}
 								key={signature}
 								source={source}
 								onReviewed={(proof) =>

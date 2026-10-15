@@ -930,4 +930,223 @@ describe("reviewed historical vacation reconciliation", () => {
 			remainingDays: 29.5,
 		});
 	});
+	it("creates a positive remaining total after dated history only with explicit reviewed exclusion", async () => {
+		const person = await fixture.seedEmployee({
+			withPeriod: false,
+			startDate: new Date("2020-01-01T00:00:00Z"),
+		});
+		const dated = await recordAbsenceForEmployee({
+			employeeId: person.employeeId,
+			categoryId,
+			startDate: "2026-05-18",
+			endDate: "2026-05-20",
+			startPeriod: "full_day",
+			endPeriod: "full_day",
+		});
+		if (!dated.success) throw new Error(dated.error);
+		const input = {
+			organizationId: fixture.organizationId,
+			employeeId: person.employeeId,
+			year: 2026,
+			days: 5,
+			reason: "Five other payroll days exclude the three listed dates",
+		};
+		const refused = await previewPreviouslyTakenVacation(input);
+		if (!refused.success) throw new Error(refused.error);
+		expect(refused.data.blockers.length).toBeGreaterThan(0);
+		const reviewed = await previewPreviouslyTakenVacation({
+			...input,
+			excludesListedDatedHistory: true,
+		});
+		if (!reviewed.success) throw new Error(reviewed.error);
+		expect(reviewed.data.blockers).toEqual([]);
+		expect(reviewed.data.historicalRecords).toHaveLength(1);
+		expect(
+			(
+				await commitPreviouslyTakenVacation({
+					...input,
+					excludesListedDatedHistory: true,
+					fingerprint: reviewed.data.fingerprint,
+				})
+			).success,
+		).toBe(true);
+		expect(await getVacationBalance(person.employeeId, 2026)).toMatchObject({
+			previouslyTakenDays: 5,
+			usedDays: 8,
+			remainingDays: 22,
+		});
+	});
+	it("corrects a positive remainder after partial reconciliation without deleting its dated history", async () => {
+		const input = {
+			organizationId: fixture.organizationId,
+			employeeId,
+			year: 2026,
+			days: 1.5,
+			reason:
+				"Correct the remaining payroll total; all listed dates are excluded",
+			excludesListedDatedHistory: true,
+		};
+		const reviewed = await previewPreviouslyTakenVacation(input);
+		if (!reviewed.success) throw new Error(reviewed.error);
+		expect(reviewed.data.blockers).toEqual([]);
+		const before = await getAbsenceEntries(
+			employeeId,
+			"2026-01-01",
+			"2026-12-31",
+		);
+		expect(
+			(
+				await commitPreviouslyTakenVacation({
+					...input,
+					fingerprint: reviewed.data.fingerprint,
+				})
+			).success,
+		).toBe(true);
+		expect(
+			await getAbsenceEntries(employeeId, "2026-01-01", "2026-12-31"),
+		).toEqual(before);
+		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({
+			previouslyTakenDays: 1.5,
+			usedDays: 11,
+			remainingDays: 19,
+		});
+		const audit = await fixture.pool.query(
+			`select changes from audit_log where organization_id=$1 and action='vacation.historical_usage_reviewed' order by timestamp desc`,
+			[fixture.organizationId],
+		);
+		expect(
+			audit.rows.some(
+				(row) => JSON.parse(row.changes).excludesListedDatedHistory === true,
+			),
+		).toBe(true);
+	});
+	it("invalidates an exclusion acknowledgement when another dated record is added after review", async () => {
+		const person = await fixture.seedEmployee({
+			withPeriod: false,
+			startDate: new Date("2020-01-01T00:00:00Z"),
+		});
+		const absence = {
+			employeeId: person.employeeId,
+			categoryId,
+			startDate: "2026-05-18",
+			endDate: "2026-05-20",
+			startPeriod: "full_day" as const,
+			endPeriod: "full_day" as const,
+		};
+		expect((await recordAbsenceForEmployee(absence)).success).toBe(true);
+		const input = {
+			organizationId: fixture.organizationId,
+			employeeId: person.employeeId,
+			year: 2026,
+			days: 5,
+			reason: "Reviewed exclusions before a second record",
+			excludesListedDatedHistory: true,
+		};
+		const reviewed = await previewPreviouslyTakenVacation(input);
+		if (!reviewed.success) throw new Error(reviewed.error);
+		expect(
+			(
+				await recordAbsenceForEmployee({
+					...absence,
+					startDate: "2026-05-11",
+					endDate: "2026-05-12",
+				})
+			).success,
+		).toBe(true);
+		expect(
+			(
+				await commitPreviouslyTakenVacation({
+					...input,
+					fingerprint: reviewed.data.fingerprint,
+				})
+			).success,
+		).toBe(false);
+		expect(await getVacationBalance(person.employeeId, 2026)).toMatchObject({
+			usedDays: 5,
+			remainingDays: 25,
+		});
+	});
+
+	it("refuses a reviewer banned after preview when the queued worker runs, without applying any part", async () => {
+		const batchId = randomUUID(),
+			jobId = randomUUID(),
+			rowId = randomUUID();
+		await fixture.pool.query(
+			`insert into import_batch(id,organization_id,provider,status,selected_scope,date_range,started_by) values($1,$2,'clockodo','needs_review','{}','{}',$3)`,
+			[batchId, fixture.organizationId, fixture.ownerUserId],
+		);
+		await fixture.pool.query(
+			`insert into import_batch_job(id,batch_id,organization_id,kind,entity_type,partition_key) values($1,$2,$3,'commit','absence','commit:absence')`,
+			[jobId, batchId, fixture.organizationId],
+		);
+		await fixture.pool.query(
+			`insert into import_staged_row(id,batch_id,organization_id,entity_type,provider_source_id,source_payload_hash,source_payload,normalized_payload,row_status) values($1,$2,$3,'absence','ban-source','ban-hash','{}',$4,'accepted')`,
+			[
+				rowId,
+				batchId,
+				fixture.organizationId,
+				JSON.stringify({
+					employeeId,
+					startsAt: "2026-02-02T00:00:00Z",
+					endsAt: "2026-02-02T23:59:59Z",
+				}),
+			],
+		);
+		const preview = await previewHistoricalVacationReconciliation({
+			kind: "import",
+			batchId,
+			mappings: [{ rowId, categoryId, startPeriod: "am", endPeriod: "am" }],
+			decisions: [{ employeeId, year: 2026, remainingDays: 1 }],
+			reason: "Reviewed before access was banned",
+		});
+		if (!preview.success) throw new Error(preview.error);
+		expect(preview.data.blockers).toEqual([]);
+		const { processImportReviewJob } = await import(
+			"@/lib/import-review/worker"
+		);
+		const job = {
+			data: {
+				type: "import-review-commit",
+				batchId,
+				jobId,
+				organizationId: fixture.organizationId,
+				entityType: "absence",
+				committedBy: fixture.ownerUserId,
+				historicalReconciliation: {
+					operationId: preview.data.operationId,
+					fingerprint: preview.data.fingerprint,
+				},
+			},
+			opts: { attempts: 1 },
+			attemptsMade: 0,
+		} as Job<ImportCommitJobData>;
+		await fixture.pool.query(`update "user" set banned=true where id=$1`, [
+			fixture.ownerUserId,
+		]);
+		try {
+			await expect(processImportReviewJob(job)).rejects.toThrow(
+				"Active approved organization access",
+			);
+		} finally {
+			await fixture.pool.query(`update "user" set banned=false where id=$1`, [
+				fixture.ownerUserId,
+			]);
+		}
+		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({
+			previouslyTakenDays: 1.5,
+			usedDays: 11,
+			remainingDays: 19,
+		});
+		expect(
+			await getAbsenceEntries(employeeId, "2026-02-02", "2026-02-02"),
+		).toEqual([]);
+		expect(
+			(
+				await fixture.pool.query(
+					`select row_status,commit_target_id from import_staged_row where id=$1`,
+					[rowId],
+				)
+			).rows[0],
+		).toMatchObject({ row_status: "accepted", commit_target_id: null });
+	});
 });

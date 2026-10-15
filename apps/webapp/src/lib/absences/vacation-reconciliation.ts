@@ -88,9 +88,10 @@ async function actorInOrganization(
 	organizationId: string,
 	userId: string,
 ) {
-	const [actor] = await database
-		.select()
+	const [actorRow] = await database
+		.select({ actor: employee, banned: user.banned })
 		.from(employee)
+		.innerJoin(user, eq(user.id, employee.userId))
 		.where(
 			and(
 				eq(employee.organizationId, organizationId),
@@ -98,7 +99,8 @@ async function actorInOrganization(
 				eq(employee.isActive, true),
 			),
 		)
-		.limit(1);
+		.limit(1)
+		.for("share", { of: user });
 	const [membership] = await database
 		.select()
 		.from(member)
@@ -110,7 +112,8 @@ async function actorInOrganization(
 			),
 		)
 		.limit(1);
-	if (!actor || !membership)
+	const actor = actorRow?.actor;
+	if (!actor || !membership || actorRow.banned === true)
 		throw new HistoricalVacationError(
 			"forbidden",
 			"Active approved organization access is required.",

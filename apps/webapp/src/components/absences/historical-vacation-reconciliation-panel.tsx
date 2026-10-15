@@ -23,11 +23,14 @@ import {
 export function HistoricalVacationReconciliationPanel({
 	source,
 	onReviewed,
+	headingLevel = 3,
 }: {
 	source: ReconciliationSource;
+	headingLevel?: 2 | 3;
 	onReviewed: (proof: ReconciliationProof | null) => void;
 }) {
 	const { t } = useTranslate();
+	const Heading = headingLevel === 2 ? "h2" : "h3";
 	const [review, setReview] = useState<VacationReconciliationReview | null>(
 		null,
 	);
@@ -92,12 +95,12 @@ export function HistoricalVacationReconciliationPanel({
 				"Reconcile previously taken vacation",
 			)}
 		>
-			<h3 className="font-medium">
+			<Heading className="font-medium">
 				{t(
 					"absences.reconciliation.title",
 					"Reconcile previously taken vacation",
 				)}
-			</h3>
+			</Heading>
 			<p className="text-sm text-muted-foreground">
 				{t(
 					"absences.reconciliation.help",
