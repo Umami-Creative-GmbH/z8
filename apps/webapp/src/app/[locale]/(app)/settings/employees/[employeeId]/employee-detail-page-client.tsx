@@ -1,5 +1,6 @@
 "use client";
 
+import { EmployeeTrackingDateCard } from "@/components/settings/employee-tracking-date-card";
 import { IconCoin, IconLoader2, IconReceipt2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -384,7 +385,17 @@ function EmployeeRecordSections({
 				/>
 			)}
 
-			{isOrgAdmin && employee.kind === "employee" ? <EmploymentDateCorrectionCard key={employeeId} employeeId={employeeId} employmentStartDate={employee.startDate ? new Date(employee.startDate).toISOString().slice(0,10) : null} onSaved={data.refetch}/> : null}
+			{isOrgAdminOrManager && <EmployeeTrackingDateCard employeeId={employeeId} />}
+
+			{isOrgAdmin && employee.kind === "employee" ? (
+    <EmploymentDateCorrectionCard
+     key={employeeId}
+     employeeId={employeeId}
+     employmentStartDate={employee.startDate ? new Date(employee.startDate).toISOString().slice(0,10) : null}
+     onSaved={data.refetch}
+    />
+   ) : null}
+
 			<EmployeeEmploymentHistoryCard
 				history={data.employmentHistory}
 				canManage={isOrgAdmin}
