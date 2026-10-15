@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds doit être un tableau",
       "employeeIdsMustContainOnlyStrings": "employeeIds ne doit contenir que des chaînes de caractères",
       "endDateAfterStart": "La date de fin doit être postérieure ou égale à la date de début",
+      "exportBlockedByDuplicateIdentifier": "Exportation bloquée : plusieurs employés partagent le même identifiant de personnel. Attribuez un identifiant propre à chaque employé : {employees}",
       "exportBlockedByMissingIdentifier": "Exportation bloquée : certains employés n'ont pas de valeur pour le champ personnalisé utilisé comme identifiant de paie",
       "exportBlockedByOffboardingClockRepair": "Exportation bloquée : corrigez d'abord le dépointage de départ",
       "exportBlockedByUncertainWork": "Exportation bloquée : résolvez d'abord le travail incertain dans le périmètre sélectionné",

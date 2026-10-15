@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds duhet të jetë një varg",
       "employeeIdsMustContainOnlyStrings": "employeeIds duhet të përmbajë vetëm vargje teksti",
       "endDateAfterStart": "Data e përfundimit duhet të jetë në ose pas datës së fillimit",
+      "exportBlockedByDuplicateIdentifier": "Eksportimi u bllokua: disa punonjës kanë të njëjtin identifikues personeli. Caktojini secilit punonjës identifikuesin e vet: {employees}",
       "exportBlockedByMissingIdentifier": "Eksporti u bllokua: disa punonjës nuk kanë vlerë për fushën e personalizuar që përdoret si identifikues i listëpagesës",
       "exportBlockedByOffboardingClockRepair": "Eksporti u bllokua: rregulloni më parë daljen e çregjistrimit",
       "exportBlockedByUncertainWork": "Eksporti u bllokua: zgjidhni më parë punën e pasigurt në fushëveprimin e zgjedhur",

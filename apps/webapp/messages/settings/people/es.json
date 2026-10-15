@@ -43,8 +43,6 @@
         "editRealEmployee": "Editar empleado activo",
         "editTitle": "Editar empleado",
         "employeeInformation": "Información del empleado",
-        "employeeNumber": "Número de empleado",
-        "employeeNumberDescription": "ID del sistema de nómina externo",
         "employeeNumberPlaceholder": "p. ej., EMP-001",
         "firstName": "Nombre",
         "firstNameDescription": "Se muestra en toda la cuenta del empleado",
@@ -64,6 +62,8 @@
         "manageEmployees": "gestionar empleados",
         "managers": "Responsables",
         "noScheduleAssigned": "Sin horario asignado",
+        "personnelNumber": "Número de personal",
+        "personnelNumberDescription": "El número asignado por tu organización a este empleado, utilizado en las exportaciones de nómina. Debe ser único, incluso entre antiguos empleados.",
         "position": "Puesto",
         "positionDescription": "Título del puesto o rol",
         "positionPlaceholder": "Introducir puesto",
@@ -136,7 +136,7 @@
           "actions": "Acciones",
           "contract": "Contrato",
           "employee": "Empleado",
-          "employeeNumber": "Número de empleado",
+          "personnelNumber": "Número de personal",
           "position": "Puesto",
           "role": "Rol",
           "status": "Estado",
@@ -375,6 +375,10 @@
         "statusPreparing": "En preparación",
         "statusReady": "Listo",
         "title": "Exportación de datos personales"
+      },
+      "personnelNumber": {
+        "taken": "Este número de personal pertenece a {name}. Cada empleado, actual o anterior, debe tener su propio número.",
+        "takenByAnother": "Otro empleado ya tiene este número de personal. Cada empleado, actual o anterior, debe tener su propio número."
       },
       "tabs": {
         "employees": "Empleados",

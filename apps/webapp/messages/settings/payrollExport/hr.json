@@ -156,6 +156,7 @@
         "deleteTitle": "Izbriši mapiranje",
         "description": "Opis",
         "formatSpecificHint": "Konfigurirajte kodove vrsta plaće za svaki format obračuna plaća. Potreban je barem jedan.",
+        "loadFailed": "Nije uspjelo učitavanje mapiranja vrsta plaća",
         "noMappings": "Još nema konfiguriranih mapiranja",
         "saveError": "Spremanje mapiranja nije uspjelo",
         "saveSuccess": "Mapiranje je spremljeno",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Pregledaj sandučić za odobrenja",
+        "employees": "Pregledajte zaposlenike",
         "payrollExport": "Otvori postavke izvoza obračuna plaća",
         "timeTracking": "Pregledaj evidenciju radnog vremena",
         "travelExpenses": "Pregledaj putne troškove"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Zaposlenik",
         "noNumber": "Nije postavljeno",
-        "number": "Broj zaposlenika"
+        "personnelIdentifier": "Identifikator osoblja",
+        "personnelNumber": "Broj zaposlenika"
       },
       "checks": {
         "count": "Broj",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Zaposlenici koje bi izvoz obračuna plaća zabilježio pod istim identifikatorom osoblja. Sustav za obračun plaća bi ih spojio, stoga se izvoz odbija dok svaki zaposlenik ne dobije vlastiti.",
+          "title": "Zajednički identifikatori osoblja"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Svi aktivni zaposlenici imaju potvrđenu povijest zaposlenja za ovo obračunsko razdoblje.",
           "descriptionWarning": "Neki aktivni zaposlenici nemaju potvrđenu povijest zaposlenja za ovo obračunsko razdoblje."

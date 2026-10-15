@@ -43,8 +43,6 @@
         "editRealEmployee": "Uredi aktivnog zaposlenika",
         "editTitle": "Uredi zaposlenika",
         "employeeInformation": "Informacije o zaposleniku",
-        "employeeNumber": "Broj zaposlenika",
-        "employeeNumberDescription": "ID eksternog sistema za obračun plata",
         "employeeNumberPlaceholder": "npr., EMP-001",
         "firstName": "Ime",
         "firstNameDescription": "Prikazuje se na računu zaposlenika",
@@ -64,6 +62,8 @@
         "manageEmployees": "upravljanje zaposlenicima",
         "managers": "Menadžeri",
         "noScheduleAssigned": "Nema dodijeljenog rasporeda",
+        "personnelNumber": "Kadrovski broj",
+        "personnelNumberDescription": "Interni broj vaše organizacije za ovog zaposlenika, koji se koristi pri izvozu obračuna plata. Mora biti jedinstven, uključujući i među bivšim zaposlenicima.",
         "position": "Pozicija",
         "positionDescription": "Naziv radnog mjesta ili uloga",
         "positionPlaceholder": "Unesite poziciju",
@@ -136,7 +136,7 @@
           "actions": "Radnje",
           "contract": "Ugovor",
           "employee": "Zaposlenik",
-          "employeeNumber": "Broj zaposlenika",
+          "personnelNumber": "Kadrovski broj",
           "position": "Pozicija",
           "role": "Uloga",
           "status": "Status",
@@ -375,6 +375,10 @@
         "statusPreparing": "U pripremi",
         "statusReady": "Spremno",
         "title": "Izvoz ličnih podataka"
+      },
+      "personnelNumber": {
+        "taken": "Ovaj kadrovski broj pripada {name}. Svaki zaposlenik, trenutni ili bivši, mora imati vlastiti broj.",
+        "takenByAnother": "Drugi zaposlenik već ima ovaj kadrovski broj. Svaki zaposlenik, trenutni ili bivši, mora imati vlastiti broj."
       },
       "tabs": {
         "employees": "Zaposlenici",

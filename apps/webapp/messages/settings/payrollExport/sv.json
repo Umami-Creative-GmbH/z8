@@ -156,6 +156,7 @@
         "deleteTitle": "Ta bort mappning",
         "description": "Beskrivning",
         "formatSpecificHint": "Konfigurera löneartskoder för varje löneformat. Minst en krävs.",
+        "loadFailed": "Det gick inte att läsa in löneartskopplingar",
         "noMappings": "Inga mappningar har konfigurerats ännu",
         "saveError": "Kunde inte spara mappningen",
         "saveSuccess": "Mappningen sparades",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Granska inkorg för godkännande",
+        "employees": "Granska anställda",
         "payrollExport": "Öppna inställningar för löneexport",
         "timeTracking": "Granska tidrapportering",
         "travelExpenses": "Granska reseutlägg"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Anställd",
         "noNumber": "Ej angivet",
-        "number": "Anställningsnummer"
+        "personnelIdentifier": "Personalidentifierare",
+        "personnelNumber": "Anställningsnummer"
       },
       "checks": {
         "count": "Antal",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Anställda som en löneexport skulle registrera under samma personalidentifierare. Lönesystemet skulle slå ihop dem, så exporten nekas tills varje anställd har en egen.",
+          "title": "Delade personalidentifierare"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Alla aktiva anställda har bekräftad anställningshistorik för den här löneperioden.",
           "descriptionWarning": "Vissa aktiva anställda har inte bekräftad anställningshistorik för den här löneperioden."

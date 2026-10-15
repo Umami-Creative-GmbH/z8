@@ -156,6 +156,7 @@
         "deleteTitle": "Eliminar asignación",
         "description": "Descripción",
         "formatSpecificHint": "Configure los códigos de tipo de salario para cada formato de nómina. Se requiere al menos uno.",
+        "loadFailed": "Error al cargar las asignaciones de tipos de salario",
         "noMappings": "Aún no hay asignaciones configuradas",
         "saveError": "Error al guardar la asignación",
         "saveSuccess": "Asignación guardada",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Revisar bandeja de aprobaciones",
+        "employees": "Revisar empleados",
         "payrollExport": "Abrir configuración de exportación de nómina",
         "timeTracking": "Revisar registro de horas",
         "travelExpenses": "Revisar gastos de viaje"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Empleado",
         "noNumber": "No establecido",
-        "number": "Número de empleado"
+        "personnelIdentifier": "Identificador de personal",
+        "personnelNumber": "Número de personal"
       },
       "checks": {
         "count": "Cantidad",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Empleados a los que una exportación de nómina registraría con el mismo identificador de personal. El sistema de nómina los combinaría, por lo que la exportación se rechaza hasta que cada empleado tenga el suyo.",
+          "title": "Identificadores de personal compartidos"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Todos los empleados activos tienen confirmado el historial laboral para este periodo de nómina.",
           "descriptionWarning": "Algunos empleados activos no tienen confirmado el historial laboral para este periodo de nómina."

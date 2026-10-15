@@ -43,8 +43,6 @@
         "editRealEmployee": "Rediger aktiv ansatt",
         "editTitle": "Rediger ansatt",
         "employeeInformation": "Ansattinformasjon",
-        "employeeNumber": "Ansattnummer",
-        "employeeNumberDescription": "ID i eksternt lønnssystem",
         "employeeNumberPlaceholder": "f.eks. EMP-001",
         "firstName": "Fornavn",
         "firstNameDescription": "Vises på tvers av ansattkontoen",
@@ -64,6 +62,8 @@
         "manageEmployees": "administrere ansatte",
         "managers": "Ledere",
         "noScheduleAssigned": "Ingen tidsplan tilordnet",
+        "personnelNumber": "Ansattnummer",
+        "personnelNumberDescription": "Organisasjonens eget nummer for denne ansatte, brukt i lønnseksporter. Det må være unikt, også blant tidligere ansatte.",
         "position": "Stilling",
         "positionDescription": "Stillingstittel eller rolle",
         "positionPlaceholder": "Angi stilling",
@@ -136,7 +136,7 @@
           "actions": "Handlinger",
           "contract": "Kontrakt",
           "employee": "Ansatt",
-          "employeeNumber": "Ansattnummer",
+          "personnelNumber": "Ansattnummer",
           "position": "Stilling",
           "role": "Rolle",
           "status": "Status",
@@ -375,6 +375,10 @@
         "statusPreparing": "Klargjøres",
         "statusReady": "Klar",
         "title": "Eksport av personopplysninger"
+      },
+      "personnelNumber": {
+        "taken": "Dette ansattnummeret tilhører {name}. Hver ansatt, nåværende eller tidligere, må ha sitt eget nummer.",
+        "takenByAnother": "En annen ansatt har allerede dette ansattnummeret. Hver ansatt, nåværende eller tidligere, må ha sitt eget nummer."
       },
       "tabs": {
         "employees": "Ansatte",

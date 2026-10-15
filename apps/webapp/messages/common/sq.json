@@ -373,6 +373,8 @@
     "previous": "Mëparshme",
     "recovering": "Po rikuperohet...",
     "refresh": "Rifresko",
+    "refreshData": "Rifresko të dhënat",
+    "refreshDataFailed": "Nuk mund të rifreskoheshin të dhënat. Ju lutemi provoni përsëri.",
     "refreshing": "Po rifreskohet...",
     "reject": "Refuzo",
     "rejecting": "Po refuzohet…",

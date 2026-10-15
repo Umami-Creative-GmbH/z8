@@ -156,6 +156,7 @@
         "deleteTitle": "Supprimer le mappage",
         "description": "Description",
         "formatSpecificHint": "Configurez les codes de type de salaire pour chaque format de paie. Au moins un est requis.",
+        "loadFailed": "Échec du chargement des correspondances de types de salaire",
         "noMappings": "Aucun mappage configuré pour le moment",
         "saveError": "Échec de l'enregistrement du mappage",
         "saveSuccess": "Mappage enregistré",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Consulter la boîte de réception des approbations",
+        "employees": "Vérifier les employés",
         "payrollExport": "Ouvrir les paramètres d'exportation de la paie",
         "timeTracking": "Vérifier le suivi du temps",
         "travelExpenses": "Vérifier les frais de déplacement"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Employé",
         "noNumber": "Non défini",
-        "number": "Numéro d'employé"
+        "personnelIdentifier": "Identifiant de personnel",
+        "personnelNumber": "Numéro de personnel"
       },
       "checks": {
         "count": "Nombre",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Employés qu'une exportation de paie enregistrerait sous le même identifiant de personnel. Le système de paie les fusionnerait, l'exportation est donc refusée tant que chaque employé n'a pas son propre identifiant.",
+          "title": "Identifiants de personnel partagés"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Tous les employés actifs ont un historique d'emploi confirmé pour cette période de paie.",
           "descriptionWarning": "Certains employés actifs n'ont pas d'historique d'emploi confirmé pour cette période de paie."

@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds має бути масивом",
       "employeeIdsMustContainOnlyStrings": "employeeIds має містити лише рядки",
       "endDateAfterStart": "Дата завершення має бути пізнішою за дату початку або збігатися з нею",
+      "exportBlockedByDuplicateIdentifier": "Експорт заблоковано: кілька працівників мають однаковий ідентифікатор персоналу. Призначте кожному унікальний: {employees}",
       "exportBlockedByMissingIdentifier": "Експорт заблоковано: у деяких працівників відсутнє значення спеціального поля, що використовується як зарплатний ідентифікатор",
       "exportBlockedByOffboardingClockRepair": "Експорт заблоковано: спершу виправте відмітку про завершення зміни під час офбордингу",
       "exportBlockedByUncertainWork": "Експорт заблоковано: спершу врегулюйте невизначений робочий час у вибраному діапазоні",

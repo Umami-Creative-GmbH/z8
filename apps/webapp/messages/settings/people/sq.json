@@ -43,8 +43,6 @@
         "editRealEmployee": "Redakto punonjësin aktiv",
         "editTitle": "Redakto punonjësin",
         "employeeInformation": "Informacioni i punonjësit",
-        "employeeNumber": "Numri i punonjësit",
-        "employeeNumberDescription": "ID-ja e sistemit të jashtëm të pagave",
         "employeeNumberPlaceholder": "p.sh., EMP-001",
         "firstName": "Emri",
         "firstNameDescription": "Shfaqet në të gjithë llogarinë e punonjësit",
@@ -64,6 +62,8 @@
         "manageEmployees": "menaxhoni punonjësit",
         "managers": "Menaxherët",
         "noScheduleAssigned": "Nuk është caktuar orar",
+        "personnelNumber": "Numri i personelit",
+        "personnelNumberDescription": "Numri i caktuar nga organizata juaj për këtë punonjës, i cili përdoret në eksportimet e listëpagesave. Ai duhet të jetë unik, duke përfshirë edhe ish-punonjësit.",
         "position": "Pozicioni",
         "positionDescription": "Titulli i punës ose roli",
         "positionPlaceholder": "Futni pozicionin",
@@ -136,7 +136,7 @@
           "actions": "Veprimet",
           "contract": "Kontrata",
           "employee": "Punonjës",
-          "employeeNumber": "Numri i punonjësit",
+          "personnelNumber": "Numri i personelit",
           "position": "Pozicioni",
           "role": "Roli",
           "status": "Statusi",
@@ -375,6 +375,10 @@
         "statusPreparing": "Po përgatitet",
         "statusReady": "Gati",
         "title": "Eksporti i të dhënave personale"
+      },
+      "personnelNumber": {
+        "taken": "Ky numër personeli i përket {name}. Çdo punonjës, aktual apo i mëparshëm, ka nevojë për numrin e vet.",
+        "takenByAnother": "Një punonjës tjetër e ka tashmë këtë numër personeli. Çdo punonjës, aktual apo i mëparshëm, ka nevojë për numrin e vet."
       },
       "tabs": {
         "employees": "Punonjësit",

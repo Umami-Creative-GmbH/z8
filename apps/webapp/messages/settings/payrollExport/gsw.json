@@ -156,6 +156,7 @@
         "deleteTitle": "Zuordnig lösche",
         "description": "Beschrybig",
         "formatSpecificHint": "Konfiguriered Sie d'Lohnart-Codes für jedes Lohnformat. Mindestens eis isch erforderlich.",
+        "loadFailed": "Lohnart-Zueordnige händ nöd chönne glade werde",
         "noMappings": "Es sind no kei Zuordnige konfiguriert",
         "saveError": "Zuordnig hät nöd chönne gspycheret werde",
         "saveSuccess": "Zuordnig gspycheret",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Freigaab-Iigang überprüefe",
+        "employees": "Mitarbeiter überprüefe",
         "payrollExport": "Iistellige für Lohnexport öffne",
         "timeTracking": "Ziterfassig überprüefe",
         "travelExpenses": "Reisespäse überprüefe"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Mitarbeiter",
         "noNumber": "Nöd gsetzt",
-        "number": "Mitarbeiternummere"
+        "personnelIdentifier": "Personal-Kennig",
+        "personnelNumber": "Personalnummere"
       },
       "checks": {
         "count": "Aazahl",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Mitarbeiter, wo bimene Lohnexport under de gliche Personal-Kennig gschribe würde. S Lohnsystem wür si zämefüere, drum wird de Export verweigeret, bis jede Mitarbeiter en eigeni hät.",
+          "title": "Geteilti Personal-Kennige"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Alle aktiven Mitarbeitenden haben einen bestätigten Anstellungsverlauf für diese Lohnabrechnungsperiode.",
           "descriptionWarning": "Einige aktive Mitarbeitende haben keinen bestätigten Anstellungsverlauf für diese Lohnabrechnungsperiode."

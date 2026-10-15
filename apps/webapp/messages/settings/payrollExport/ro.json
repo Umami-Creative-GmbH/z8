@@ -156,6 +156,7 @@
         "deleteTitle": "Șterge maparea",
         "description": "Descriere",
         "formatSpecificHint": "Configurați codurile tipurilor de salarizare pentru fiecare format de salarii. Cel puțin unul este obligatoriu.",
+        "loadFailed": "Asocierile tipurilor de salariu nu au putut fi încărcate",
         "noMappings": "Nu există încă mapări configurate",
         "saveError": "Nu s-a putut salva maparea",
         "saveSuccess": "Mapare salvată",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Verifică aprobările primite",
+        "employees": "Verificați angajații",
         "payrollExport": "Deschide setările de export pentru salarii",
         "timeTracking": "Verifică pontajul",
         "travelExpenses": "Verifică cheltuielile de deplasare"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Angajat",
         "noNumber": "Nesetat",
-        "number": "Număr angajat"
+        "personnelIdentifier": "Identificator de personal",
+        "personnelNumber": "Număr de personal"
       },
       "checks": {
         "count": "Număr",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Angajați pe care un export de salarii i-ar include sub același identificator de personal. Sistemul de salarizare i-ar îmbina, astfel că exportul este refuzat până când fiecare angajat are propriul număr.",
+          "title": "Identificatori de personal partajați"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Toți angajații activi au un istoric de angajare confirmat pentru această perioadă de salarizare.",
           "descriptionWarning": "Unii angajați activi nu au un istoric de angajare confirmat pentru această perioadă de salarizare."

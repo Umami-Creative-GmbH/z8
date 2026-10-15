@@ -156,6 +156,7 @@
         "deleteTitle": "Usuń mapowanie",
         "description": "Opis",
         "formatSpecificHint": "Skonfiguruj kody typów płac dla każdego formatu płacowego. Wymagany jest co najmniej jeden.",
+        "loadFailed": "Nie udało się załadować mapowania składników wynagrodzeń",
         "noMappings": "Brak skonfigurowanych mapowań",
         "saveError": "Nie udało się zapisać mapowania",
         "saveSuccess": "Mapowanie zapisane",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Przejrzyj skrzynkę zatwierdzeń",
+        "employees": "Sprawdź pracowników",
         "payrollExport": "Otwórz ustawienia eksportu listy płac",
         "timeTracking": "Przejrzyj ewidencję czasu pracy",
         "travelExpenses": "Przejrzyj koszty podróży"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Pracownik",
         "noNumber": "Nie ustawiono",
-        "number": "Numer pracownika"
+        "personnelIdentifier": "Identyfikator kadrowy",
+        "personnelNumber": "Numer kadrowy"
       },
       "checks": {
         "count": "Liczba",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Pracownicy, których eksport płacowy zapisałby pod tym samym identyfikatorem kadrowym. System płacowy połączyłby ich dane, dlatego eksport jest odrzucany, dopóki każdy pracownik nie będzie miał własnego identyfikatora.",
+          "title": "Współdzielone identyfikatory kadrowe"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Wszyscy aktywni pracownicy mają potwierdzoną historię zatrudnienia dla tego okresu rozliczeniowego.",
           "descriptionWarning": "Niektórzy aktywni pracownicy nie mają potwierdzonej historii zatrudnienia dla tego okresu rozliczeniowego."

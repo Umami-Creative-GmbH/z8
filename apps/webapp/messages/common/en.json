@@ -373,6 +373,8 @@
     "previous": "Previous",
     "recovering": "Recovering...",
     "refresh": "Refresh",
+    "refreshData": "Refresh data",
+    "refreshDataFailed": "Could not refresh data. Please try again.",
     "refreshing": "Refreshing...",
     "reject": "Reject",
     "rejecting": "Rejecting…",

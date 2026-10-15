@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds mora biti niz",
       "employeeIdsMustContainOnlyStrings": "employeeIds mora sadržavati samo tekstualne vrijednosti",
       "endDateAfterStart": "Datum završetka mora biti na dan ili nakon datuma početka",
+      "exportBlockedByDuplicateIdentifier": "Izvoz je blokiran: više zaposlenika dijeli isti identifikator osoblja. Dodijelite svakom zaposleniku vlastiti: {employees}",
       "exportBlockedByMissingIdentifier": "Izvoz je blokiran: neki zaposlenici nemaju vrijednost za prilagođeno polje koje se koristi kao identifikator obračuna plaća",
       "exportBlockedByOffboardingClockRepair": "Izvoz blokiran: prvo ispravite odjavu pri prestanku radnog odnosa",
       "exportBlockedByUncertainWork": "Izvoz blokiran: prvo riješite nesigurno radno vrijeme u odabranom opsegu",

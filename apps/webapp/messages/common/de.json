@@ -373,6 +373,8 @@
     "previous": "Zurück",
     "recovering": "Wiederherstellung läuft...",
     "refresh": "Aktualisieren",
+    "refreshData": "Daten aktualisieren",
+    "refreshDataFailed": "Daten konnten nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
     "refreshing": "Aktualisiere...",
     "reject": "Ablehnen",
     "rejecting": "Wird abgelehnt…",

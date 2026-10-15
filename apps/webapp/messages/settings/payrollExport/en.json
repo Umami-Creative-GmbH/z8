@@ -156,6 +156,7 @@
         "deleteTitle": "Delete Mapping",
         "description": "Description",
         "formatSpecificHint": "Configure wage type codes for each payroll format. At least one is required.",
+        "loadFailed": "Failed to load wage type mappings",
         "noMappings": "No mappings configured yet",
         "saveError": "Failed to save mapping",
         "saveSuccess": "Mapping saved",

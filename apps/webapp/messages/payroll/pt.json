@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds deve ser uma matriz",
       "employeeIdsMustContainOnlyStrings": "employeeIds deve conter apenas strings",
       "endDateAfterStart": "A data de término deve ser igual ou posterior à data de início",
+      "exportBlockedByDuplicateIdentifier": "Exportação bloqueada: vários colaboradores compartilham o mesmo identificador de pessoal. Atribua um exclusivo a cada colaborador: {employees}",
       "exportBlockedByMissingIdentifier": "Exportação bloqueada: alguns colaboradores não têm valor para o campo personalizado usado como identificador da folha de pagamento",
       "exportBlockedByOffboardingClockRepair": "Exportação bloqueada: corrija primeiro o registro de saída do desligamento",
       "exportBlockedByUncertainWork": "Exportação bloqueada: resolva primeiro o trabalho incerto no escopo selecionado",

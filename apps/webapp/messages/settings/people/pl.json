@@ -43,8 +43,6 @@
         "editRealEmployee": "Edytuj aktywnego pracownika",
         "editTitle": "Edytuj pracownika",
         "employeeInformation": "Informacje o pracowniku",
-        "employeeNumber": "Numer pracownika",
-        "employeeNumberDescription": "Identyfikator w zewnętrznym systemie płacowym",
         "employeeNumberPlaceholder": "np. EMP-001",
         "firstName": "Imię",
         "firstNameDescription": "Wyświetlane na całym koncie pracownika",
@@ -64,6 +62,8 @@
         "manageEmployees": "zarządzaj pracownikami",
         "managers": "Menedżerowie",
         "noScheduleAssigned": "Brak przypisanego harmonogramu",
+        "personnelNumber": "Numer kadrowy",
+        "personnelNumberDescription": "Wewnętrzny numer pracownika w Twojej organizacji, używany w eksportach płacowych. Musi być unikalny, także w odniesieniu do byłych pracowników.",
         "position": "Stanowisko",
         "positionDescription": "Stanowisko lub rola",
         "positionPlaceholder": "Wprowadź stanowisko",
@@ -136,7 +136,7 @@
           "actions": "Akcje",
           "contract": "Umowa",
           "employee": "Pracownik",
-          "employeeNumber": "Numer pracownika",
+          "personnelNumber": "Numer kadrowy",
           "position": "Stanowisko",
           "role": "Rola",
           "status": "Status",
@@ -375,6 +375,10 @@
         "statusPreparing": "W trakcie przygotowywania",
         "statusReady": "Gotowe",
         "title": "Eksport danych osobowych"
+      },
+      "personnelNumber": {
+        "taken": "Ten numer kadrowy należy do: {name}. Każdy pracownik, obecny lub były, musi mieć własny numer.",
+        "takenByAnother": "Inny pracownik ma już ten numer kadrowy. Każdy pracownik, obecny lub były, musi mieć własny numer."
       },
       "tabs": {
         "employees": "Pracownicy",

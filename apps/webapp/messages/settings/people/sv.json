@@ -43,8 +43,6 @@
         "editRealEmployee": "Redigera aktiv medarbetare",
         "editTitle": "Redigera medarbetare",
         "employeeInformation": "Medarbetarinformation",
-        "employeeNumber": "Anställningsnummer",
-        "employeeNumberDescription": "ID i externt lönesystem",
         "employeeNumberPlaceholder": "t.ex. EMP-001",
         "firstName": "Förnamn",
         "firstNameDescription": "Visas på hela medarbetarkontot",
@@ -64,6 +62,8 @@
         "manageEmployees": "hantera medarbetare",
         "managers": "Chefer",
         "noScheduleAssigned": "Inget schema tilldelat",
+        "personnelNumber": "Anställningsnummer",
+        "personnelNumberDescription": "Din organisations eget nummer för den anställde, som används vid löneexporter. Det måste vara unikt, även bland tidigare anställda.",
         "position": "Befattning",
         "positionDescription": "Jobbtitel eller roll",
         "positionPlaceholder": "Ange befattning",
@@ -136,7 +136,7 @@
           "actions": "Åtgärder",
           "contract": "Avtal",
           "employee": "Anställd",
-          "employeeNumber": "Anställningsnummer",
+          "personnelNumber": "Anställningsnummer",
           "position": "Befattning",
           "role": "Roll",
           "status": "Status",
@@ -375,6 +375,10 @@
         "statusPreparing": "Förbereds",
         "statusReady": "Klar",
         "title": "Export av personuppgifter"
+      },
+      "personnelNumber": {
+        "taken": "Detta anställningsnummer tillhör {name}. Varje anställd, nuvarande eller tidigare, behöver ett eget nummer.",
+        "takenByAnother": "En annan anställd har redan detta anställningsnummer. Varje anställd, nuvarande eller tidigare, behöver ett eget nummer."
       },
       "tabs": {
         "employees": "Medarbetare",

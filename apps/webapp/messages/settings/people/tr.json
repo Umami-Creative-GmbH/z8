@@ -43,8 +43,6 @@
         "editRealEmployee": "Aktif çalışanı düzenle",
         "editTitle": "Çalışanı Düzenle",
         "employeeInformation": "Çalışan Bilgileri",
-        "employeeNumber": "Çalışan Numarası",
-        "employeeNumberDescription": "Harici bordro sistemi kimliği",
         "employeeNumberPlaceholder": "ör. EMP-001",
         "firstName": "Ad",
         "firstNameDescription": "Çalışan hesabı genelinde gösterilir",
@@ -64,6 +62,8 @@
         "manageEmployees": "çalışanları yönet",
         "managers": "Yöneticiler",
         "noScheduleAssigned": "Atanmış program yok",
+        "personnelNumber": "Personel numarası",
+        "personnelNumberDescription": "Kuruluşunuzun bordro dışa aktarımlarında kullanılan, bu çalışana özel numarası. Eski çalışanlar da dahil olmak üzere benzersiz olmalıdır.",
         "position": "Pozisyon",
         "positionDescription": "İş unvanı veya rol",
         "positionPlaceholder": "Pozisyon girin",
@@ -136,7 +136,7 @@
           "actions": "İşlemler",
           "contract": "Sözleşme",
           "employee": "Çalışan",
-          "employeeNumber": "Çalışan Numarası",
+          "personnelNumber": "Personel numarası",
           "position": "Pozisyon",
           "role": "Rol",
           "status": "Durum",
@@ -375,6 +375,10 @@
         "statusPreparing": "Hazırlanıyor",
         "statusReady": "Hazır",
         "title": "Kişisel veri dışa aktarma"
+      },
+      "personnelNumber": {
+        "taken": "Bu personel numarası {name} adlı kişiye ait. Mevcut veya eski tüm çalışanların kendilerine ait bir numarası olmalıdır.",
+        "takenByAnother": "Başka bir çalışan zaten bu personel numarasına sahip. Mevcut veya eski tüm çalışanların kendilerine ait bir numarası olmalıdır."
       },
       "tabs": {
         "employees": "Çalışanlar",

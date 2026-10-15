@@ -43,8 +43,6 @@
         "editRealEmployee": "Editar funcionário ativo",
         "editTitle": "Editar funcionário",
         "employeeInformation": "Informações do funcionário",
-        "employeeNumber": "Número do funcionário",
-        "employeeNumberDescription": "ID externo do sistema de folha de pagamento",
         "employeeNumberPlaceholder": "ex.: EMP-001",
         "firstName": "Primeiro nome",
         "firstNameDescription": "Exibido em toda a conta do funcionário",
@@ -64,6 +62,8 @@
         "manageEmployees": "gerenciar funcionários",
         "managers": "Gerentes",
         "noScheduleAssigned": "Nenhum horário atribuído",
+        "personnelNumber": "Número de pessoal",
+        "personnelNumberDescription": "O número próprio da sua organização para este colaborador, usado em exportações da folha de pagamento. Ele deve ser exclusivo, inclusive entre ex-colaboradores.",
         "position": "Cargo",
         "positionDescription": "Título do cargo ou função",
         "positionPlaceholder": "Inserir cargo",
@@ -136,7 +136,7 @@
           "actions": "Ações",
           "contract": "Contrato",
           "employee": "Funcionário",
-          "employeeNumber": "Número do colaborador",
+          "personnelNumber": "Número de pessoal",
           "position": "Cargo",
           "role": "Função",
           "status": "Status",
@@ -375,6 +375,10 @@
         "statusPreparing": "Em preparação",
         "statusReady": "Pronto",
         "title": "Exportação de dados pessoais"
+      },
+      "personnelNumber": {
+        "taken": "Este número de pessoal pertence a {name}. Todos os colaboradores, atuais ou antigos, precisam ter seu próprio número.",
+        "takenByAnother": "Outro colaborador já possui este número de pessoal. Todos os colaboradores, atuais ou antigos, precisam ter seu próprio número."
       },
       "tabs": {
         "employees": "Funcionários",

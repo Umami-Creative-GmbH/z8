@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds deve essere un array",
       "employeeIdsMustContainOnlyStrings": "employeeIds deve contenere solo stringhe",
       "endDateAfterStart": "La data di fine deve essere uguale o successiva alla data di inizio",
+      "exportBlockedByDuplicateIdentifier": "Esportazione bloccata: diversi dipendenti condividono lo stesso identificativo del personale. Assegna a ciascun dipendente un identificativo univoco: {employees}",
       "exportBlockedByMissingIdentifier": "Esportazione bloccata: alcuni dipendenti non hanno alcun valore per il campo personalizzato utilizzato come identificativo paghe",
       "exportBlockedByOffboardingClockRepair": "Esportazione bloccata: correggi prima la timbratura di uscita per l'offboarding",
       "exportBlockedByUncertainWork": "Esportazione bloccata: risolvi prima le ore lavorate incerte nell'ambito selezionato",

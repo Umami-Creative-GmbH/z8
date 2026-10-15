@@ -373,6 +373,8 @@
     "previous": "Prethodno",
     "recovering": "Oporavljanje...",
     "refresh": "Osvježi",
+    "refreshData": "Osvježi podatke",
+    "refreshDataFailed": "Nije uspjelo osvježavanje podataka. Pokušajte ponovno.",
     "refreshing": "Osvježavanje...",
     "reject": "Odbij",
     "rejecting": "Odbijanje…",

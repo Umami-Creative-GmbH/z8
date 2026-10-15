@@ -373,6 +373,8 @@
     "previous": "Önceki",
     "recovering": "Kurtarılıyor...",
     "refresh": "Yenile",
+    "refreshData": "Verileri yenile",
+    "refreshDataFailed": "Veriler yenilenemedi. Lütfen tekrar deneyin.",
     "refreshing": "Yenileniyor...",
     "reject": "Reddet",
     "rejecting": "Reddediliyor…",
