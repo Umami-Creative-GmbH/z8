@@ -1586,7 +1586,12 @@ function sameDatabaseInstant(left: Date | null, right: Date | null): boolean {
 	);
 }
 
-/** Field names only, so the conflict log carries no work data. */
+/**
+ * Field names only, so the conflict log carries no work data. The record must be
+ * the period's; whether live work's open record agrees with it is checked here.
+ * Completed work's record agreement is work records' one rule (ADR 0010): the
+ * amendment or deletion refuses a divergent pair itself.
+ */
 function canonicalRecordSourceMismatches(
 	canonical: LockedCanonicalWorkRecord,
 	period: LockedTimeCorrectionPeriod,
@@ -1597,10 +1602,14 @@ function canonicalRecordSourceMismatches(
 		["organizationId", canonical.organizationId === organizationId],
 		["employeeId", canonical.employeeId === period.employeeId],
 		["recordKind", canonical.recordKind === "work"],
-		["approvalState", canonical.approvalState === period.approvalStatus],
-		["startAt", sameDatabaseInstant(canonical.startAt, period.startTime)],
-		["endAt", sameDatabaseInstant(canonical.endAt, period.endTime)],
-		["durationMinutes", canonical.durationMinutes === period.durationMinutes],
+		...(period.isActive
+			? ([
+					["approvalState", canonical.approvalState === period.approvalStatus],
+					["startAt", sameDatabaseInstant(canonical.startAt, period.startTime)],
+					["endAt", sameDatabaseInstant(canonical.endAt, period.endTime)],
+					["durationMinutes", canonical.durationMinutes === period.durationMinutes],
+				] as Array<[string, boolean]>)
+			: []),
 	];
 	return checks.filter(([, matches]) => !matches).map(([field]) => field);
 }
@@ -2635,8 +2644,10 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	// record's, so a legacy decision may meet a stale canonical interval too.
 	// The period's endpoints were checked against the ledger above, and work
 	// records rewrites the canonical interval and minutes from the work period,
-	// so only a cancellation snapshot still pins them. #1229 removes this once
-	// production shows no divergence.
+	// so only a cancellation snapshot still pins them. Completed work's record
+	// agreement is checked by work records alone (`toleratedDrift`); the field
+	// names tolerate the same drift in live work's open record. #1229 removes
+	// this once production shows no divergence.
 	const toleratedCanonicalDrift: ReadonlySet<string> =
 		expectedSource !== undefined
 			? new Set()
@@ -2721,9 +2732,11 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				canonicalWork.recordId !== period.canonicalRecordId ||
 				canonicalWork.organizationId !== input.organizationId ||
 				canonicalWork.recordKind !== "work" ||
-				canonicalWork.workLocationType !== period.workLocationType ||
-				canonicalWork.workCategoryId !== period.workCategoryId ||
-				!sameWorkVehicleUse(vehicleUseFromColumns(canonicalWork), periodVehicleUse) ||
+				// Live work's open record; completed work's agreement is work records'.
+				(period.isActive &&
+					(canonicalWork.workLocationType !== period.workLocationType ||
+						canonicalWork.workCategoryId !== period.workCategoryId ||
+						!sameWorkVehicleUse(vehicleUseFromColumns(canonicalWork), periodVehicleUse))) ||
 				(expectedOriginalWorkMetadata !== undefined &&
 					(normalizeWorkLocationType(canonicalWork.workLocationType) !==
 						expectedOriginalWorkMetadata.workLocationType ||

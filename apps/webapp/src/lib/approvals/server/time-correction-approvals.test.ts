@@ -9298,42 +9298,31 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			expect(mutations).toEqual([]);
 		});
 
-		it("still refuses a canonical approval-state drift and names every field", async () => {
-			testEnv.NODE_ENV = "production";
-			const { dbService, mutations } = legacyDriftDb({
+		// Record agreement is work records' one rule (standards-C 3): an approval-state
+		// drift reaches it untolerated, and its refusal is the conflict (mapped above).
+		it("leaves a canonical approval-state drift to work records, tolerating only interval and minutes", async () => {
+			const { dbService } = legacyDriftDb({
 				...staleCanonicalInterval,
 				approvalState: "pending",
 			});
 
-			await expect(
-				finalizeTimeCorrectionTerminalInTransaction(
-					approveInput(dbService, legacyDecision),
-				),
-			).rejects.toMatchObject({
-				details: { reason: "canonical_record_source_mismatch" },
-			});
-			expect(loggerWarn).toHaveBeenCalledExactlyOnceWith(
-				{
-					reason: "canonical_record_source_mismatch",
-					canonicalRowCount: 1,
-					mismatchedFields: ["approvalState", "endAt", "durationMinutes"],
-				},
-				"Time correction finalization conflict",
-			);
-			expect(mutations).toEqual([]);
+			await finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService, legacyDecision));
+
+			expect(workRecordChanges()).toEqual([
+				expect.objectContaining({ kind: "amend", toleratedDrift: ["interval", "duration"] }),
+			]);
 		});
 
-		it("still refuses a canonical interval drift under a canonical workflow", async () => {
-			const { dbService, mutations } = createFinalizerDb({
+		it("tolerates only the minutes under a canonical workflow, so work records refuses an interval drift", async () => {
+			const { dbService } = createFinalizerDb({
 				canonical: { ...canonicalRecord, ...staleCanonicalInterval },
 			});
 
-			await expect(
-				finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService)),
-			).rejects.toMatchObject({
-				details: { reason: "canonical_record_source_mismatch" },
-			});
-			expect(mutations).toEqual([]);
+			await finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService));
+
+			expect(workRecordChanges()).toEqual([
+				expect.objectContaining({ kind: "amend", toleratedDrift: ["duration"] }),
+			]);
 		});
 	});
 
@@ -9749,20 +9738,6 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			expect(mutations).toEqual([]);
 		},
 	);
-
-	it("rejects stale canonical current-value parity before writing", async () => {
-		const { dbService, mutations } = createFinalizerDb({
-			canonical: {
-				...canonicalRecord,
-				startAt: new Date("2026-07-18T22:31:00.000Z"),
-			},
-		});
-
-		await expect(
-			finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService)),
-		).rejects.toThrow(/changed|finaliz/i);
-		expect(mutations).toEqual([]);
-	});
 
 	it("rejects mismatched endpoint offset evidence before writing", async () => {
 		const { dbService, mutations } = createFinalizerDb({
