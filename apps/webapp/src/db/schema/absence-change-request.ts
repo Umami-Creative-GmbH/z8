@@ -62,17 +62,18 @@ export const absenceChangeRequest = pgTable(
 			table.employeeId,
 			table.createdAt,
 		),
-		check("absenceChangeRequest_kind_check", sql`${table.kind} in ('change', 'cancel')`),
+		// Keep the names PostgreSQL assigned to the unnamed checks in migration 0231.
+		check("absence_change_request_kind_check", sql`${table.kind} in ('change', 'cancel')`),
 		check(
-			"absenceChangeRequest_status_check",
+			"absence_change_request_status_check",
 			sql`${table.status} in ('pending', 'approved', 'rejected', 'withdrawn', 'obsolete', 'expired')`,
 		),
 		check(
-			"absenceChangeRequest_reason_check",
+			"absence_change_request_reason_check",
 			sql`length(trim(${table.reason})) between 1 and 2000`,
 		),
 		check(
-			"absenceChangeRequest_proposal_check",
+			"absence_change_request_check",
 			sql`(${table.kind} = 'cancel' and ${table.proposed} is null) or (${table.kind} = 'change' and ${table.proposed} is not null)`,
 		),
 	],
