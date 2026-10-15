@@ -271,6 +271,8 @@ async function getFirstRelevantDate(
 		employeeId: string;
 		organizationId: string;
 		trackingStartDateOverride?: string | null;
+ employeeTrackingStartDateOverride?: string | null;
+ employeeEmploymentStartDateOverride?: string;
 	},
 	dbClient: WorkBalanceDbClient = db,
 	knownEmployee?: { id: string; startDate: Date | string | null },
@@ -289,7 +291,7 @@ async function getFirstRelevantDate(
 
 	const trackingStartDate = await loadEmployeeTrackingStart(dbClient, input);
 	if (trackingStartDate) return trackingStartDate;
-	const employeeStartDate = toUtcIsoDate(scopedEmployee.startDate);
+	const employeeStartDate = input.employeeEmploymentStartDateOverride ?? toUtcIsoDate(scopedEmployee.startDate);
 	if (employeeStartDate) return employeeStartDate;
 
 	const [firstWorkPeriod] = await dbClient
@@ -706,6 +708,8 @@ export async function computeEmployeeWorkBalanceSnapshotAtEndOfDay(
 		day: string;
 		/** Server-side proposed organization date for reviewed impact calculations; never persisted here. */
 		trackingStartDateOverride?: string | null;
+ employeeTrackingStartDateOverride?: string | null;
+ employeeEmploymentStartDateOverride?: string;
 		/** A closed month retains the timezone captured by its close. */
 		employeeTimezoneOverride?: string;
 	},
@@ -715,6 +719,8 @@ export async function computeEmployeeWorkBalanceSnapshotAtEndOfDay(
 		employeeId: input.employee.id,
 		organizationId: input.organizationId,
 		trackingStartDateOverride: input.trackingStartDateOverride,
+ employeeTrackingStartDateOverride: input.employeeTrackingStartDateOverride,
+ employeeEmploymentStartDateOverride: input.employeeEmploymentStartDateOverride,
 		employeeTimezoneOverride: input.employeeTimezoneOverride,
 	};
 	const [firstRelevantDate, { countFrom, adjustmentMinutes }] = await Promise.all([

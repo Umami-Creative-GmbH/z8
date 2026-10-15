@@ -527,6 +527,8 @@ type DailyWorkRequirementsParams = {
 	endDate: Date;
 	timezone?: string | null;
 	trackingStartDateOverride?: string | null;
+ employeeTrackingStartDateOverride?: string | null;
+ employeeEmploymentStartDateOverride?: string;
 	employeeTimezoneOverride?: string;
 };
 
@@ -571,7 +573,9 @@ export function loadDailyWorkRequirementsForEmployee(params: DailyWorkRequiremen
 						accountCreatedAt: scopedEmployee.user.createdAt,
 					}),
 				);
-		const employeeStartDate = scopedEmployee.startDate
+		const employeeStartDate = params.employeeEmploymentStartDateOverride
+ ? DateTime.fromISO(params.employeeEmploymentStartDateOverride, {zone: "utc"})
+ : scopedEmployee.startDate
 			? DateTime.fromJSDate(scopedEmployee.startDate, { zone: "utc" })
 			: accountCreatedDate;
 		const normalStartDate = DateTime.max(accountCreatedDate, employeeStartDate);
