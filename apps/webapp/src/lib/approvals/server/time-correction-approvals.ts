@@ -87,6 +87,7 @@ import {
 	advanceWorkRevision,
 	applyWorkRecordChange,
 	correctOpenWorkRecord,
+	orRefuse,
 	refusalError,
 	type ToleratedDrift,
 	type WorkApprovalDecision,
@@ -1357,12 +1358,12 @@ export async function deleteCancelledTimeCorrectionsInTransaction(input: {
 			stage: "cancel",
 			key: lifecycleKey,
 		});
-		const resultRevision = await advanceWorkRevision(adoptedScope, {
+		const resultRevision = orRefuse(await advanceWorkRevision(adoptedScope, {
 			organizationId: input.organizationId,
 			employeeId: expected.employeeId,
 			workPeriodId: period.id,
 			expectedRevision: period.graphRevision,
-		});
+		})).revision;
 		const retained: TimeCorrectionEntryEvidence[] = correctionEntries.map(
 			(entry) => ({
 				endpoint:
@@ -2958,12 +2959,12 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 					result: { kind: "unchanged" },
 					corrections: correctionEvidence("rejected_inactive"),
 					sourceRevision: period.graphRevision,
-					resultRevision: await advanceWorkRevision(adopted.scope, {
+					resultRevision: orRefuse(await advanceWorkRevision(adopted.scope, {
 						organizationId: input.organizationId,
 						employeeId: period.employeeId,
 						workPeriodId: period.id,
 						expectedRevision: period.graphRevision,
-					}),
+					})).revision,
 					followUps: [],
 				});
 			}
@@ -3015,12 +3016,12 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				result: { kind: "unchanged" },
 				corrections: correctionEvidence("rejected_inactive"),
 				sourceRevision: period.graphRevision,
-				resultRevision: await advanceWorkRevision(adopted.scope, {
+				resultRevision: orRefuse(await advanceWorkRevision(adopted.scope, {
 					organizationId: input.organizationId,
 					employeeId: period.employeeId,
 					workPeriodId: period.id,
 					expectedRevision: period.graphRevision,
-				}),
+				})).revision,
 				followUps: [],
 			});
 		}
@@ -3132,12 +3133,12 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		}
 		const resultRevision =
 			applied.resultRevision ??
-			(await advanceWorkRevision(adopted.scope, {
+			(orRefuse(await advanceWorkRevision(adopted.scope, {
 				organizationId: input.organizationId,
 				employeeId: period.employeeId,
 				workPeriodId: period.id,
 				expectedRevision: period.graphRevision,
-			}));
+			})).revision);
 		const resulting = correctionSegment({
 			clockIn: clockInCorrection ?? originalClockIn,
 			clockOut: clockOutCorrection ?? originalClockOut,
