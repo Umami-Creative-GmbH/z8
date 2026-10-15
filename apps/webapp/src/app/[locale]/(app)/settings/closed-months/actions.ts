@@ -23,6 +23,7 @@ import {
 import { notifyReopening } from "@/lib/time-tracking/closed-months/notifications";
 import { canCloseMonths, canReopenMonths } from "@/lib/time-tracking/closed-months/permissions";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
+import { reopenMonthAttachingWork } from "@/lib/time-tracking/closed-months/reopen-month";
 import { parseClosedMonth } from "@/lib/time-tracking/closed-months/rules";
 import {
 	type ClosedMonthHistoryEntry,
@@ -34,7 +35,6 @@ import {
 	monthClosureStatuses,
 	type ReopenMonthResult,
 	type ReopenMonthScope,
-	reopenMonth,
 } from "@/lib/time-tracking/closed-months/store";
 
 const SETTINGS_PATH = "/settings/closed-months";
@@ -243,8 +243,9 @@ export async function reopenMonthAction(input: {
 			const actor = yield* closedMonthsActor("reopen");
 			const month = yield* parseMonth(input.month);
 			const dbService = yield* DatabaseService;
+			// Attaches the reopened employees' missing canonical work records after the commit (#1224).
 			const result = yield* dbService.query("closedMonths.reopen", () =>
-				reopenMonth(dbService.db, {
+				reopenMonthAttachingWork(dbService.db, {
 					organizationId: actor.organizationId,
 					month,
 					scope: input.scope,

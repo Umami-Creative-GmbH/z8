@@ -26,6 +26,9 @@ export const workRecordsSuitePatterns = [
   { pattern: "apps/webapp/src/lib/time-tracking/historical-gap-repair*.integration.test.ts" },
   // Vehicle-use completion amends with admission hidden (#1231).
   { pattern: "apps/webapp/src/lib/time-tracking/vehicle-use/clock-out-completion*.integration.test.ts" },
+  // The canonical backfill and reopening attach through work records; diagnostics after it (#1224).
+  { pattern: "apps/webapp/src/lib/time-record/migration/backfill-closed-months*.integration.test.ts" },
+  { pattern: "apps/webapp/src/lib/time-tracking/historical-work-record-agreement*.integration.test.ts" },
 ];
 
 function patternExpression(pattern) {

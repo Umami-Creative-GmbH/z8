@@ -7,6 +7,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { createDepartureCommands } from "./commands";
 import {
 	createLifecycleDatabaseFixture,
@@ -175,12 +176,14 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 				],
 			);
 		}
-		await fixture.pool.query(
-			`insert into work_period
-			 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
-			  duration_minutes, is_active, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, 360, false, now())`,
-			[employeeId, fixture.organizationId, clockInId, clockOutId, start, end],
+		await withCanonicalRecords(fixture.pool, (client) =>
+			client.query(
+				`insert into work_period
+				 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
+				  duration_minutes, is_active, updated_at)
+				 values ($1, $2, $3, $4, $5, $6, 360, false, now())`,
+				[employeeId, fixture.organizationId, clockInId, clockOutId, start, end],
+			),
 		);
 	}
 

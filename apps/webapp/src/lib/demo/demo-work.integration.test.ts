@@ -15,6 +15,7 @@
 
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -227,14 +228,16 @@ describe("runtime demo work on PostgreSQL", () => {
 	}
 
 	async function seedPeriod(employeeId: string, clockInId: string, clockOutId: string) {
-		await admin.query(
-			`insert into work_period
-			 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
-			  duration_minutes, is_active, updated_at)
-			 select $1, $2, i.id, o.id, i.timestamp, o.timestamp,
-			        extract(epoch from o.timestamp - i.timestamp)::int / 60, false, now()
-			 from time_entry i, time_entry o where i.id = $3 and o.id = $4`,
-			[employeeId, ids.organization, clockInId, clockOutId],
+		await asHistory(admin, (client) =>
+			client.query(
+				`insert into work_period
+				 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
+				  duration_minutes, is_active, updated_at)
+				 select $1, $2, i.id, o.id, i.timestamp, o.timestamp,
+				        extract(epoch from o.timestamp - i.timestamp)::int / 60, false, now()
+				 from time_entry i, time_entry o where i.id = $3 and o.id = $4`,
+				[employeeId, ids.organization, clockInId, clockOutId],
+			),
 		);
 	}
 

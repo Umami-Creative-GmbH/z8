@@ -15,6 +15,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -913,10 +914,13 @@ describe("billable work across the work writers on PostgreSQL", () => {
 		it("backfills a billable legacy period's canonical record with its billability", async () => {
 			await setAdmission("inactive");
 			const period = await recordWork(ids.billableProject);
-			await admin.query("update work_period set canonical_record_id = null where id = $1", [
-				period.id,
-			]);
-			await admin.query("delete from time_record where id = $1", [period.canonical_record_id]);
+			// History before every completed work period had its record (#1224).
+			await asHistory(admin, async (client) => {
+				await client.query("update work_period set canonical_record_id = null where id = $1", [
+					period.id,
+				]);
+				await client.query("delete from time_record where id = $1", [period.canonical_record_id]);
+			});
 
 			await runCanonicalBackfill({ organizationId: ids.organization, actorId: ids.ownerUser });
 

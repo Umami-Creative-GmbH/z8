@@ -5,18 +5,15 @@ const mockState = vi.hoisted(() => ({
 		id: "time-record-id",
 		organizationId: "time-record-organization-id",
 	},
-	workInsertReturning: vi.fn(),
-	updateReturning: vi.fn(),
+	attachMissingWorkRecords: vi.fn(),
 	timeRecordInsertValues: vi.fn(),
 	detailInsertValues: vi.fn(),
-	timeRecordOnConflictDoNothing: vi.fn(),
 	onConflictDoNothing: vi.fn(),
 	onConflictDoUpdate: vi.fn(),
 	updateSet: vi.fn(),
 	updateWhere: vi.fn(),
 	deleteWhere: vi.fn(),
 	transaction: vi.fn(),
-	savepoint: vi.fn(),
 	dbInsert: vi.fn(),
 	dbUpdate: vi.fn(),
 	dbDelete: vi.fn(),
@@ -24,7 +21,6 @@ const mockState = vi.hoisted(() => ({
 	absenceEntryFindMany: vi.fn(),
 	approvalRequestFindMany: vi.fn(),
 	employeeFindMany: vi.fn(),
-	workPeriodFindMany: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -34,7 +30,6 @@ vi.mock("@/db", () => ({
 			absenceEntry: { findMany: mockState.absenceEntryFindMany },
 			approvalRequest: { findMany: mockState.approvalRequestFindMany },
 			employee: { findMany: mockState.employeeFindMany },
-			workPeriod: { findMany: mockState.workPeriodFindMany },
 		},
 		delete: mockState.dbDelete,
 		insert: mockState.dbInsert,
@@ -57,25 +52,13 @@ vi.mock("@/db", () => ({
 	timeRecordApprovalDecision: {
 		recordId: "time-record-approval-decision-record-id",
 	},
-	timeRecordAllocation: {
-		allocationKind: "time-record-allocation-kind",
-		recordId: "time-record-allocation-record-id",
-	},
-	timeRecordWork: {
-		recordId: "time-record-work-record-id",
-	},
 	employee: {
 		organizationId: "employee-organization-id",
 	},
-	workPeriod: {
-		id: "work-period-id",
-		organizationId: "work-period-organization-id",
-		canonicalRecordId: "work-period-canonical-id",
-		isActive: "work-period-active",
-		startTime: "work-period-start",
-		endTime: "work-period-end",
-		updatedAt: "work-period-updated-at",
-	},
+}));
+
+vi.mock("@/lib/time-record/migration/attach-missing-work-records", () => ({
+	attachMissingWorkRecords: mockState.attachMissingWorkRecords,
 }));
 
 import {
@@ -83,201 +66,36 @@ import {
 	runCanonicalBackfill,
 } from "@/lib/time-record/migration/backfill";
 
-/** The transaction and each per-period savepoint share the same mocked writers. */
 const transactionClient = {
 	delete: mockState.dbDelete,
 	insert: mockState.dbInsert,
 	update: mockState.dbUpdate,
-	transaction: mockState.savepoint,
 };
 
-describe("canonical backfill period normalization", () => {
-	const closedWork = {
-		id: "work-1",
-		organizationId: "org-1",
-		employeeId: "employee-1",
-		startTime: new Date("2026-01-15T08:00:00Z"),
-		endTime: new Date("2026-01-15T16:00:00Z"),
-		isActive: false,
-		canonicalRecordId: null,
-		durationMinutes: 480,
-		approvalStatus: "approved" as const,
-		projectId: "project-1",
-		workCategoryId: null,
-		workLocationType: "office" as const,
-		createdAt: new Date("2026-01-15T16:00:00Z"),
-		updatedAt: new Date("2026-01-15T16:00:00Z"),
-	};
+const absence = {
+	id: "absence-1",
+	organizationId: "org-1",
+	employeeId: "employee-1",
+	categoryId: "category-1",
+	startDate: "2026-01-15",
+	startPeriod: "full_day" as const,
+	endDate: "2026-01-15",
+	endPeriod: "full_day" as const,
+	status: "approved" as const,
+	createdAt: new Date("2026-01-10T00:00:00.000Z"),
+	updatedAt: new Date("2026-01-10T00:00:00.000Z"),
+};
 
-	it.each([
-		{ isActive: true, endTime: null },
-		{ isActive: false, endTime: null },
-		{ isActive: true, endTime: closedWork.endTime },
-	])("does not create canonical work from unfinished or active periods: %j", (state) => {
-		const payload = buildCanonicalBackfillPayload({
-			organizationId: "org-1",
-			actorId: "actor-1",
-			legacy: {
-				workPeriods: [{ ...closedWork, ...state }],
-				absenceEntries: [],
-				approvalRequests: [],
-				absenceCategories: [],
-			},
-		});
-		expect(payload.timeRecords).toEqual([]);
-		expect(payload.timeRecordWork).toEqual([]);
-		expect(payload.timeRecordAllocation).toEqual([]);
-		expect(payload.legacyLinks.workPeriod).toEqual([]);
-	});
+const noWork = { attached: [], closedMonthSkips: [], refused: [] };
 
-	it.each(["clock-out-record", "work-1"])(
-		"leaves established canonical link %s untouched on repeat backfill",
-		async (canonicalRecordId) => {
-			const payload = await runCanonicalBackfill({
-				organizationId: "org-1",
-				actorId: "actor-1",
-				legacy: {
-					workPeriods: [{ ...closedWork, canonicalRecordId }],
-					absenceEntries: [],
-					approvalRequests: [],
-					absenceCategories: [],
-				},
-			});
-			expect(payload.timeRecords).toEqual([]);
-			expect(payload.timeRecordWork).toEqual([]);
-			expect(payload.timeRecordAllocation).toEqual([]);
-			expect(payload.legacyLinks.workPeriod).toEqual([]);
-			expect(mockState.dbInsert).not.toHaveBeenCalled();
-			expect(mockState.dbUpdate).not.toHaveBeenCalled();
-			expect(mockState.dbDelete).not.toHaveBeenCalled();
-		},
-	);
-	it("rejects an existing same-ID work record without rewriting its fields or details", async () => {
-		mockState.workInsertReturning.mockResolvedValue([]);
-		await expect(
-			runCanonicalBackfill({
-				organizationId: "org-1",
-				actorId: "actor-1",
-				legacy: {
-					workPeriods: [closedWork],
-					absenceEntries: [],
-					approvalRequests: [],
-					absenceCategories: [],
-				},
-			}),
-		).rejects.toThrow("Canonical work backfill conflict");
-		expect(mockState.onConflictDoUpdate).not.toHaveBeenCalled();
-		expect(mockState.detailInsertValues).not.toHaveBeenCalled();
-		expect(mockState.dbUpdate).not.toHaveBeenCalled();
-	});
-
-	it("aborts the transaction if the source work changes or is linked after it was read", async () => {
-		mockState.updateReturning.mockResolvedValue([]);
-		await expect(
-			runCanonicalBackfill({
-				organizationId: "org-1",
-				actorId: "actor-1",
-				legacy: {
-					workPeriods: [closedWork],
-					absenceEntries: [],
-					approvalRequests: [],
-					absenceCategories: [],
-				},
-			}),
-		).rejects.toThrow("Work changed during canonical backfill");
-	});
-
-	it("skips a period the closed-month refusal rolls back and attaches the rest (#1213)", async () => {
-		const march = { ...closedWork, id: "work-march" };
-		const april = { ...closedWork, id: "work-april" };
-		mockState.savepoint.mockImplementationOnce(async () => {
-			throw Object.assign(new Error("Failed query"), {
-				cause: Object.assign(new Error("month closed"), { code: "Z8M01", detail: "2026-03" }),
-			});
-		});
-		mockState.workInsertReturning.mockResolvedValue([{ id: "work-april" }]);
-
-		const result = await runCanonicalBackfill({
-			organizationId: "org-1",
-			actorId: "actor-1",
-			legacy: {
-				workPeriods: [march, april],
-				absenceEntries: [],
-				approvalRequests: [],
-				absenceCategories: [],
-			},
-		});
-
-		expect(result.closedMonthSkips).toEqual([{ workPeriodId: "work-march", month: "2026-03" }]);
-		expect(mockState.savepoint).toHaveBeenCalledTimes(2);
-		expect(mockState.updateSet).toHaveBeenCalledExactlyOnceWith({
-			canonicalRecordId: "work-april",
-		});
-	});
-
-	it("aborts the whole backfill on any other failure in a period's savepoint", async () => {
-		mockState.savepoint.mockRejectedValueOnce(
-			Object.assign(new Error("deadlock detected"), { code: "40P01" }),
-		);
-
-		await expect(
-			runCanonicalBackfill({
-				organizationId: "org-1",
-				actorId: "actor-1",
-				legacy: {
-					workPeriods: [closedWork, { ...closedWork, id: "work-2" }],
-					absenceEntries: [],
-					approvalRequests: [],
-					absenceCategories: [],
-				},
-			}),
-		).rejects.toThrow("deadlock detected");
-		expect(mockState.savepoint).toHaveBeenCalledTimes(1);
-	});
-
-	it("copies the period's vehicle use onto its canonical work detail", () => {
-		const payload = buildCanonicalBackfillPayload({
-			organizationId: "org-1",
-			actorId: "actor-1",
-			legacy: {
-				workPeriods: [
-					{
-						...closedWork,
-						vehicleKind: "own",
-						vehicleId: null,
-						odometerStartKm: 100,
-						odometerEndKm: 130,
-						drivenDistanceKm: 30,
-					},
-				],
-				absenceEntries: [],
-				approvalRequests: [],
-				absenceCategories: [],
-			},
-		});
-
-		expect(payload.timeRecordWork).toEqual([
-			expect.objectContaining({
-				vehicleKind: "own",
-				vehicleId: null,
-				odometerStartKm: 100,
-				odometerEndKm: 130,
-				drivenDistanceKm: 30,
-			}),
-		]);
-	});
-
+describe("the canonical backfill", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 
-		mockState.workInsertReturning.mockResolvedValue([{ id: "work-1" }]);
-		mockState.timeRecordOnConflictDoNothing.mockReturnValue({
-			returning: mockState.workInsertReturning,
-		});
+		mockState.attachMissingWorkRecords.mockResolvedValue(noWork);
 		mockState.onConflictDoNothing.mockResolvedValue(undefined);
 		mockState.onConflictDoUpdate.mockResolvedValue(undefined);
 		mockState.timeRecordInsertValues.mockReturnValue({
-			onConflictDoNothing: mockState.timeRecordOnConflictDoNothing,
 			onConflictDoUpdate: mockState.onConflictDoUpdate,
 		});
 		mockState.detailInsertValues.mockReturnValue({
@@ -290,19 +108,13 @@ describe("canonical backfill period normalization", () => {
 					: mockState.detailInsertValues,
 		}));
 
-		mockState.updateReturning.mockResolvedValue([{ id: "work-1" }]);
-		mockState.updateWhere.mockReturnValue({
-			returning: mockState.updateReturning,
-		});
+		mockState.updateWhere.mockResolvedValue(undefined);
 		mockState.updateSet.mockReturnValue({ where: mockState.updateWhere });
 		mockState.dbUpdate.mockReturnValue({ set: mockState.updateSet });
 
 		mockState.deleteWhere.mockResolvedValue(undefined);
 		mockState.dbDelete.mockReturnValue({ where: mockState.deleteWhere });
 
-		mockState.savepoint.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
-			callback(transactionClient),
-		);
 		mockState.transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
 			callback(transactionClient),
 		);
@@ -311,7 +123,32 @@ describe("canonical backfill period normalization", () => {
 		mockState.absenceEntryFindMany.mockResolvedValue([]);
 		mockState.approvalRequestFindMany.mockResolvedValue([]);
 		mockState.employeeFindMany.mockResolvedValue([]);
-		mockState.workPeriodFindMany.mockResolvedValue([]);
+	});
+
+	it("attaches completed work through work records as the system and returns what it did (#1224)", async () => {
+		const work = {
+			attached: ["work-april"],
+			closedMonthSkips: [{ workPeriodId: "work-march", month: "2026-03" }],
+			refused: [],
+		};
+		mockState.attachMissingWorkRecords.mockResolvedValue(work);
+
+		const result = await runCanonicalBackfill({ organizationId: "org-1", actorId: "actor-1" });
+
+		expect(mockState.attachMissingWorkRecords).toHaveBeenCalledExactlyOnceWith({
+			organizationId: "org-1",
+			actorUserId: null,
+		});
+		expect(result.work).toBe(work);
+	});
+
+	it("stops before the absences when attaching work fails", async () => {
+		mockState.attachMissingWorkRecords.mockRejectedValue(new Error("deadlock detected"));
+
+		await expect(
+			runCanonicalBackfill({ organizationId: "org-1", actorId: "actor-1" }),
+		).rejects.toThrow("deadlock detected");
+		expect(mockState.transaction).not.toHaveBeenCalled();
 	});
 
 	it("normalizes legacy morning/afternoon periods to am/pm", () => {
@@ -319,22 +156,7 @@ describe("canonical backfill period normalization", () => {
 			organizationId: "org-1",
 			actorId: "actor-1",
 			legacy: {
-				workPeriods: [],
-				absenceEntries: [
-					{
-						id: "absence-1",
-						organizationId: "org-1",
-						employeeId: "employee-1",
-						categoryId: "category-1",
-						startDate: "2026-01-15",
-						startPeriod: "morning",
-						endDate: "2026-01-15",
-						endPeriod: "morning",
-						status: "approved",
-						createdAt: new Date("2026-01-10T00:00:00.000Z"),
-						updatedAt: new Date("2026-01-10T00:00:00.000Z"),
-					},
-				],
+				absenceEntries: [{ ...absence, startPeriod: "morning", endPeriod: "morning" }],
 				approvalRequests: [],
 				absenceCategories: [{ id: "category-1", countsAgainstVacation: true }],
 			},
@@ -360,22 +182,7 @@ describe("canonical backfill period normalization", () => {
 			organizationId: "org-1",
 			actorId: "actor-1",
 			legacy: {
-				workPeriods: [],
-				absenceEntries: [
-					{
-						id: "absence-2",
-						organizationId: "org-1",
-						employeeId: "employee-1",
-						categoryId: "category-1",
-						startDate: "2026-01-15",
-						startPeriod: "pm",
-						endDate: "2026-01-15",
-						endPeriod: "pm",
-						status: "approved",
-						createdAt: new Date("2026-01-10T00:00:00.000Z"),
-						updatedAt: new Date("2026-01-10T00:00:00.000Z"),
-					},
-				],
+				absenceEntries: [{ ...absence, id: "absence-2", startPeriod: "pm", endPeriod: "pm" }],
 				approvalRequests: [],
 				absenceCategories: [{ id: "category-1", countsAgainstVacation: true }],
 			},
@@ -386,91 +193,12 @@ describe("canonical backfill period normalization", () => {
 		expect(payload.timeRecords[0]?.durationMinutes).toBe(720);
 	});
 
-	it("maps legacy project assignment to canonical work allocation", () => {
-		const payload = buildCanonicalBackfillPayload({
-			organizationId: "org-1",
-			actorId: "actor-1",
-			legacy: {
-				workPeriods: [
-					{
-						id: "work-1",
-						isActive: false,
-						canonicalRecordId: null,
-						organizationId: "org-1",
-						employeeId: "employee-1",
-						startTime: new Date("2026-01-15T08:00:00.000Z"),
-						endTime: new Date("2026-01-15T16:00:00.000Z"),
-						durationMinutes: 480,
-						approvalStatus: "approved",
-						projectId: "project-1",
-						workCategoryId: null,
-						workLocationType: "office",
-						createdAt: new Date("2026-01-10T00:00:00.000Z"),
-						updatedAt: new Date("2026-01-10T00:00:00.000Z"),
-					},
-				],
-				absenceEntries: [],
-				approvalRequests: [],
-				absenceCategories: [],
-			},
-		});
-
-		expect(payload.timeRecordAllocation).toEqual([
-			{
-				organizationId: "org-1",
-				recordId: "work-1",
-				allocationKind: "project",
-				projectId: "project-1",
-				weightPercent: 100,
-			},
-		]);
-	});
-
-	it("keeps the task of a legacy period on its project allocation", () => {
-		const payload = buildCanonicalBackfillPayload({
-			organizationId: "org-1",
-			actorId: "actor-1",
-			legacy: {
-				workPeriods: [{ ...closedWork, taskId: "task-1" }],
-				absenceEntries: [],
-				approvalRequests: [],
-				absenceCategories: [],
-			},
-		});
-
-		expect(payload.timeRecordAllocation).toEqual([
-			{
-				organizationId: "org-1",
-				recordId: "work-1",
-				allocationKind: "project",
-				projectId: "project-1",
-				taskId: "task-1",
-				weightPercent: 100,
-			},
-		]);
-	});
-
 	it("builds updates that populate absence_entry.organization_id linkage during cutover", () => {
 		const payload = buildCanonicalBackfillPayload({
 			organizationId: "org-1",
 			actorId: "actor-1",
 			legacy: {
-				workPeriods: [],
-				absenceEntries: [
-					{
-						id: "absence-1",
-						organizationId: "org-1",
-						employeeId: "employee-1",
-						categoryId: "category-1",
-						startDate: "2026-01-15",
-						startPeriod: "full_day",
-						endDate: "2026-01-15",
-						endPeriod: "full_day",
-						status: "approved",
-						createdAt: new Date("2026-01-10T00:00:00.000Z"),
-						updatedAt: new Date("2026-01-10T00:00:00.000Z"),
-					},
-				],
+				absenceEntries: [absence],
 				approvalRequests: [],
 				absenceCategories: [{ id: "category-1", countsAgainstVacation: true }],
 			},
@@ -481,163 +209,82 @@ describe("canonical backfill period normalization", () => {
 		]);
 	});
 
-	it("runs canonical inserts and legacy linkage updates inside one transaction", async () => {
+	it("records an absence's legacy approval as a decision and links the request; work requests are attach's", () => {
+		const request = {
+			organizationId: "org-1",
+			requestedBy: "employee-1",
+			approverId: "manager-1",
+			status: "approved" as const,
+			reason: null,
+			rejectionReason: null,
+			approvedAt: new Date("2026-01-11T00:00:00.000Z"),
+			createdAt: new Date("2026-01-10T00:00:00.000Z"),
+		};
+		const payload = buildCanonicalBackfillPayload({
+			organizationId: "org-1",
+			actorId: "actor-1",
+			legacy: {
+				absenceEntries: [absence],
+				approvalRequests: [
+					{ ...request, id: "request-1", entityType: "absence_entry", entityId: "absence-1" },
+					{ ...request, id: "request-2", entityType: "time_entry", entityId: "work-1" },
+				],
+				absenceCategories: [{ id: "category-1", countsAgainstVacation: true }],
+			},
+		});
+
+		expect(payload.timeRecordApprovalDecision).toEqual([
+			{
+				organizationId: "org-1",
+				recordId: "absence-1",
+				actorEmployeeId: "manager-1",
+				action: "approved",
+				reason: null,
+				createdAt: request.approvedAt,
+			},
+		]);
+		expect(payload.legacyLinks.approvalRequest).toEqual([
+			{ id: "request-1", canonicalRecordId: "absence-1" },
+		]);
+	});
+
+	it("runs the absences' inserts and linkage updates inside one transaction", async () => {
 		await runCanonicalBackfill({
 			organizationId: "org-1",
 			actorId: "actor-1",
 			legacy: {
-				workPeriods: [
-					{
-						id: "work-1",
-						isActive: false,
-						canonicalRecordId: null,
-						organizationId: "org-1",
-						employeeId: "employee-1",
-						startTime: new Date("2026-01-15T08:00:00.000Z"),
-						endTime: new Date("2026-01-15T16:00:00.000Z"),
-						durationMinutes: 480,
-						approvalStatus: "approved",
-						projectId: "project-1",
-						workCategoryId: null,
-						workLocationType: "office",
-						createdAt: new Date("2026-01-10T00:00:00.000Z"),
-						updatedAt: new Date("2026-01-10T00:00:00.000Z"),
-					},
-				],
-				absenceEntries: [
-					{
-						id: "absence-1",
-						organizationId: "org-1",
-						employeeId: "employee-1",
-						categoryId: "category-1",
-						startDate: "2026-01-15",
-						startPeriod: "full_day",
-						endDate: "2026-01-15",
-						endPeriod: "full_day",
-						status: "approved",
-						createdAt: new Date("2026-01-10T00:00:00.000Z"),
-						updatedAt: new Date("2026-01-10T00:00:00.000Z"),
-					},
-				],
+				absenceEntries: [absence],
 				approvalRequests: [],
 				absenceCategories: [{ id: "category-1", countsAgainstVacation: true }],
 			},
 		});
 
 		expect(mockState.transaction).toHaveBeenCalledTimes(1);
-		expect(mockState.dbInsert).toHaveBeenCalledTimes(5);
-		expect(mockState.dbUpdate).toHaveBeenCalledTimes(2);
-		expect(mockState.dbDelete).toHaveBeenCalledTimes(1);
-		expect(mockState.updateSet).toHaveBeenNthCalledWith(
-			2,
+		expect(mockState.dbInsert).toHaveBeenCalledTimes(2);
+		expect(mockState.dbUpdate).toHaveBeenCalledTimes(1);
+		expect(mockState.updateSet).toHaveBeenCalledWith(
 			expect.objectContaining({ canonicalRecordId: "absence-1", organizationId: "org-1" }),
 		);
-		expect(mockState.onConflictDoNothing).toHaveBeenCalledTimes(2);
+		expect(mockState.onConflictDoNothing).toHaveBeenCalledTimes(1);
 		expect(mockState.onConflictDoUpdate).toHaveBeenCalledTimes(1);
-	});
-
-	it("inserts new canonical work without overwriting existing work", async () => {
-		await runCanonicalBackfill({
-			organizationId: "org-1",
-			actorId: "actor-1",
-			legacy: {
-				workPeriods: [
-					{
-						id: "work-1",
-						isActive: false,
-						canonicalRecordId: null,
-						organizationId: "org-1",
-						employeeId: "employee-1",
-						startTime: new Date("2026-01-15T08:00:00.000Z"),
-						endTime: new Date("2026-01-15T16:00:00.000Z"),
-						durationMinutes: 480,
-						approvalStatus: "approved",
-						projectId: null,
-						workCategoryId: null,
-						workLocationType: "office",
-						createdAt: new Date("2026-01-10T00:00:00.000Z"),
-						updatedAt: new Date("2026-01-10T00:00:00.000Z"),
-					},
-				],
-				absenceEntries: [],
-				approvalRequests: [],
-				absenceCategories: [],
-			},
-		});
-
-		expect(mockState.onConflictDoUpdate).not.toHaveBeenCalled();
-		expect(mockState.timeRecordOnConflictDoNothing).toHaveBeenCalledWith({
-			target: ["time-record-id", "time-record-organization-id"],
-		});
 	});
 
 	it("skips canonical inserts and conflict updates for an empty payload", async () => {
 		await runCanonicalBackfill({
 			organizationId: "org-1",
 			actorId: "actor-1",
-			legacy: {
-				workPeriods: [],
-				absenceEntries: [],
-				approvalRequests: [],
-				absenceCategories: [],
-			},
+			legacy: { absenceEntries: [], approvalRequests: [], absenceCategories: [] },
 		});
 
 		expect(mockState.onConflictDoUpdate).not.toHaveBeenCalled();
 		expect(mockState.dbInsert).not.toHaveBeenCalled();
 	});
 
-	it("returns the generated payload after executing idempotent writes", async () => {
-		const result = await runCanonicalBackfill({
-			organizationId: "org-1",
-			actorId: "actor-1",
-			legacy: {
-				workPeriods: [],
-				absenceEntries: [
-					{
-						id: "absence-1",
-						organizationId: "org-1",
-						employeeId: "employee-1",
-						categoryId: "category-1",
-						startDate: "2026-01-15",
-						startPeriod: "full_day",
-						endDate: "2026-01-15",
-						endPeriod: "full_day",
-						status: "approved",
-						createdAt: new Date("2026-01-10T00:00:00.000Z"),
-						updatedAt: new Date("2026-01-10T00:00:00.000Z"),
-					},
-				],
-				approvalRequests: [],
-				absenceCategories: [{ id: "category-1", countsAgainstVacation: true }],
-			},
-		});
-
-		expect(result.legacyLinks.absenceEntry).toEqual([
-			{ id: "absence-1", canonicalRecordId: "absence-1", organizationId: "org-1" },
-		]);
-		expect(mockState.dbInsert).toHaveBeenCalledTimes(2);
-	});
-
 	it("loads legacy rows from db and repairs null-org absences attributable by employee org", async () => {
 		mockState.employeeFindMany.mockResolvedValue([{ id: "employee-1" }]);
-		mockState.workPeriodFindMany.mockResolvedValue([]);
-		mockState.absenceEntryFindMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
-			{
-				id: "absence-1",
-				organizationId: null,
-				employeeId: "employee-1",
-				categoryId: "category-1",
-				startDate: "2026-01-15",
-				startPeriod: "full_day",
-				endDate: "2026-01-15",
-				endPeriod: "full_day",
-				status: "approved",
-				createdAt: new Date("2026-01-10T00:00:00.000Z"),
-				updatedAt: new Date("2026-01-10T00:00:00.000Z"),
-			},
-		]);
-		mockState.approvalRequestFindMany.mockResolvedValue([]);
+		mockState.absenceEntryFindMany
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([{ ...absence, organizationId: null }]);
 		mockState.absenceCategoryFindMany.mockResolvedValue([
 			{ id: "category-1", countsAgainstVacation: true },
 		]);

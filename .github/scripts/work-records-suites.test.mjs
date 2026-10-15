@@ -18,6 +18,8 @@ const callerSuites = [
   "apps/webapp/src/lib/time-tracking/historical-work-proposals.integration.test.ts",
   "apps/webapp/src/lib/time-tracking/historical-gap-repair.integration.test.ts",
   "apps/webapp/src/lib/time-tracking/vehicle-use/clock-out-completion.integration.test.ts",
+  "apps/webapp/src/lib/time-record/migration/backfill-closed-months.integration.test.ts",
+  "apps/webapp/src/lib/time-tracking/historical-work-record-agreement.integration.test.ts",
 ];
 const relative = file => file.replace(/^apps\/webapp\//, "");
 

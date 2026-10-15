@@ -5,6 +5,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 import type { CollectedCategory, PersonalDataExportScope, PersonalDataRow } from "../collector";
 
@@ -210,45 +211,50 @@ describe("personal data export: Time category (#1167)", () => {
 			`insert into work_category (id, organization_id, name, factor, created_by, updated_at) values ($1, $2, 'Passive travel', '0.50', 't1167-owner', now())`,
 			[ids.category, ORG],
 		);
-		await admin.query(
-			`insert into work_period (id, employee_id, organization_id, clock_in_id, clock_out_id, project_id, task_id,
-			   work_category_id, work_location_type, start_time, end_time, duration_minutes, is_active, approval_status,
-			   pending_changes, was_auto_adjusted, auto_adjustment_reason, auto_adjusted_at, original_end_time,
-			   original_duration_minutes, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, $8, 'remote', '2026-07-01 06:00:00', '2026-07-01 15:30:00', 540, false,
-			   'pending', $9, true, $10, '2026-07-01 15:31:00+00', '2026-07-01 15:00:00+00', 570, now())`,
-			[
-				ids.period,
-				ids.ada,
-				ORG,
-				ids.clockIn,
-				ids.clockOut,
-				ids.project,
-				ids.task,
-				ids.category,
-				JSON.stringify({
-					originalStartTime: "2026-07-01T06:00:00.000Z",
-					originalEndTime: "2026-07-01T15:30:00.000Z",
-					originalDurationMinutes: 540,
-					requestedStartTime: "2026-07-01T05:45:00.000Z",
-					requestedEndTime: "2026-07-01T15:30:00.000Z",
-					requestedDurationMinutes: 555,
-					requestedAt: "2026-07-02T08:00:00.000Z",
-					requestedBy: "t1167-ada",
-					reason: "Forgot the taxi ride",
-					ordinarySubmission: { submissionId: "secret-submission", kind: "manual_time_submission" },
-				}),
-				JSON.stringify({
-					type: "break_enforcement",
-					regulationId: "regulation-id",
-					regulationName: "German working time act",
-					breakInsertedMinutes: 30,
-					breakInsertedAt: "2026-07-01T12:00:00.000Z",
-					originalDurationMinutes: 570,
-					adjustedDurationMinutes: 540,
-					ruleApplied: { workingMinutesThreshold: 540, requiredBreakMinutes: 45 },
-				}),
-			],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`insert into work_period (id, employee_id, organization_id, clock_in_id, clock_out_id, project_id, task_id,
+				   work_category_id, work_location_type, start_time, end_time, duration_minutes, is_active, approval_status,
+				   pending_changes, was_auto_adjusted, auto_adjustment_reason, auto_adjusted_at, original_end_time,
+				   original_duration_minutes, updated_at)
+				 values ($1, $2, $3, $4, $5, $6, $7, $8, 'remote', '2026-07-01 06:00:00', '2026-07-01 15:30:00', 540, false,
+				   'pending', $9, true, $10, '2026-07-01 15:31:00+00', '2026-07-01 15:00:00+00', 570, now())`,
+				[
+					ids.period,
+					ids.ada,
+					ORG,
+					ids.clockIn,
+					ids.clockOut,
+					ids.project,
+					ids.task,
+					ids.category,
+					JSON.stringify({
+						originalStartTime: "2026-07-01T06:00:00.000Z",
+						originalEndTime: "2026-07-01T15:30:00.000Z",
+						originalDurationMinutes: 540,
+						requestedStartTime: "2026-07-01T05:45:00.000Z",
+						requestedEndTime: "2026-07-01T15:30:00.000Z",
+						requestedDurationMinutes: 555,
+						requestedAt: "2026-07-02T08:00:00.000Z",
+						requestedBy: "t1167-ada",
+						reason: "Forgot the taxi ride",
+						ordinarySubmission: {
+							submissionId: "secret-submission",
+							kind: "manual_time_submission",
+						},
+					}),
+					JSON.stringify({
+						type: "break_enforcement",
+						regulationId: "regulation-id",
+						regulationName: "German working time act",
+						breakInsertedMinutes: 30,
+						breakInsertedAt: "2026-07-01T12:00:00.000Z",
+						originalDurationMinutes: 570,
+						adjustedDurationMinutes: 540,
+						ruleApplied: { workingMinutesThreshold: 540, requiredBreakMinutes: 45 },
+					}),
+				],
+			),
 		);
 		// A period the owner deleted on the next day.
 		await admin.query(

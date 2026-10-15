@@ -19,6 +19,7 @@ import { randomUUID } from "node:crypto";
 import { DateTime } from "luxon";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -578,9 +579,11 @@ describe("scoped payroll work collection on PostgreSQL", () => {
 	it("repairs eligible historical gaps before the final snapshot, only when authorized", async () => {
 		const work = await approvedWork(ids.worker, "2026-07-10");
 		// A pre-adoption gap: the record carries the period's ID but was never linked.
-		await admin.query("update work_period set canonical_record_id = null where id = $1", [
-			work.period_id,
-		]);
+		await asHistory(admin, (client) =>
+			client.query("update work_period set canonical_record_id = null where id = $1", [
+				work.period_id,
+			]),
+		);
 		await admin.query(
 			`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at,
 			   duration_minutes, approval_state, origin, created_at, created_by, updated_at, updated_by)

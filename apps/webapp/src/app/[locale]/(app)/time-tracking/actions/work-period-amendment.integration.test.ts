@@ -19,6 +19,7 @@ import { randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -967,9 +968,11 @@ describe(
 
 		it("holds work without a canonical record for review instead of rebuilding it", async () => {
 			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), undefined, adminOwner);
-			await admin.query("update work_period set canonical_record_id = null where id = $1", [
-				period.id
-			]);
+			await asHistory(admin, (client) =>
+				client.query("update work_period set canonical_record_id = null where id = $1", [
+					period.id,
+				]),
+			);
 			const before = await snapshot();
 			await expect(adminEdit(period.id, { clockOutTime: "09:30" })).resolves.toEqual({
 				success: false,

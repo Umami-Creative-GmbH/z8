@@ -16,6 +16,7 @@ import type { PoolClient } from "pg";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -316,11 +317,13 @@ describe("web clock-in append admission on PostgreSQL", () => {
 	 * ends before the fixed clock-in instant, which adopted starts refuse to overlap (#327).
 	 */
 	async function closePeriodOutsideAppend(employeeId: string = ids.requester) {
-		await admin.query(
-			`update work_period set start_time = start_time - interval '2 hours',
-			        end_time = start_time - interval '1 hour', duration_minutes = 60, is_active = false
-			 where employee_id = $1 and end_time is null`,
-			[employeeId],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`update work_period set start_time = start_time - interval '2 hours',
+				        end_time = start_time - interval '1 hour', duration_minutes = 60, is_active = false
+				 where employee_id = $1 and end_time is null`,
+				[employeeId],
+			),
 		);
 	}
 
@@ -663,11 +666,13 @@ describe("web clock-in append admission on PostgreSQL", () => {
 					organizationId: ids.otherOrganization,
 				};
 				await insertEntries([foreign]);
-				await admin.query(
-					`insert into work_period (employee_id, organization_id, clock_in_id, start_time,
-					  end_time, duration_minutes, is_active, updated_at)
-					 values ($1, $2, $3, $4, $4, 0, false, $4)`,
-					[ids.requester, ids.organization, foreign.id, new Date(foreign.timestamp)],
+				await withCanonicalRecords(admin, (client) =>
+					client.query(
+						`insert into work_period (employee_id, organization_id, clock_in_id, start_time,
+						  end_time, duration_minutes, is_active, updated_at)
+						 values ($1, $2, $3, $4, $4, 0, false, $4)`,
+						[ids.requester, ids.organization, foreign.id, new Date(foreign.timestamp)],
+					),
 				);
 			},
 			reasons: ["history_without_entries"],

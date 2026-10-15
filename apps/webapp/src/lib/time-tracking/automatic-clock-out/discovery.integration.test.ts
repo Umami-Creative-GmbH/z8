@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { createLifecycleDatabaseFixture } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { createClockingService, createDatabaseClockingStore } from "../clocking-core";
 import { listDueAutoClockOutCandidates } from "./discovery";
 import type { AutoClockOutCandidate } from "./types";
@@ -60,11 +61,13 @@ describe("automatic clock-out discovery", () => {
 			);
 		// Discovery reads only whether the work is still live; how it ended is not its concern.
 		if (options.completed)
-			await fixture.pool.query(
-				`update work_period set is_active = false, end_time = $3,
-				   duration_minutes = floor(extract(epoch from ($3::timestamp - start_time)) / 60)
-				 where organization_id = $1 and id = $2`,
-				[organizationId, opened.period.id, new Date(now.add({ minutes: 10 }).epochMilliseconds)],
+			await withCanonicalRecords(fixture.pool, (client) =>
+				client.query(
+					`update work_period set is_active = false, end_time = $3,
+					   duration_minutes = floor(extract(epoch from ($3::timestamp - start_time)) / 60)
+					 where organization_id = $1 and id = $2`,
+					[organizationId, opened.period.id, new Date(now.add({ minutes: 10 }).epochMilliseconds)],
+				),
 			);
 		return { organizationId, employeeId: employee.employeeId, workPeriodId: opened.period.id };
 	}

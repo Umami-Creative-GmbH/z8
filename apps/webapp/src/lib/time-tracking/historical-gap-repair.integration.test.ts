@@ -19,6 +19,7 @@ import type { NextRequest } from "next/server";
 import type { PoolClient } from "pg";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -118,6 +119,9 @@ type Plan = {
 describe("historical gap repair on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 	const admin = integrationAdminPool();
+	/** Changes history the canonical record check (#1224) refuses to new writes. */
+	const history = (text: string, values: unknown[]) =>
+		asHistory(admin, (client) => client.query(text, values));
 
 	function actAs(userId: string, organizationId: string = ids.organization) {
 		harness.userId = userId;
@@ -337,12 +341,15 @@ describe("historical gap repair on PostgreSQL", () => {
 	async function missingRecord(date: string) {
 		const periodId = await legacyManual({ date, clockInTime: "08:00", clockOutTime: "12:00" });
 		const { canonical_record_id: recordId } = await periodRow(periodId);
-		await admin.query(
-			`update work_period set canonical_record_id = null, project_id = $2, work_category_id = $3
-			 where id = $1`,
-			[periodId, ids.project, ids.category],
-		);
-		await admin.query("delete from time_record where id = $1", [recordId]);
+		// History before every completed work period had its record (#1224).
+		await asHistory(admin, async (client) => {
+			await client.query(
+				`update work_period set canonical_record_id = null, project_id = $2, work_category_id = $3
+				 where id = $1`,
+				[periodId, ids.project, ids.category],
+			);
+			await client.query("delete from time_record where id = $1", [recordId]);
+		});
 		return periodId;
 	}
 
@@ -350,9 +357,9 @@ describe("historical gap repair on PostgreSQL", () => {
 	async function missingLink(date: string) {
 		const periodId = await legacyManual({ date, clockInTime: "13:00", clockOutTime: "15:00" });
 		const { canonical_record_id: recordId } = await periodRow(periodId);
-		await admin.query("update work_period set canonical_record_id = null where id = $1", [
-			periodId,
-		]);
+		await asHistory(admin, (client) =>
+			client.query("update work_period set canonical_record_id = null where id = $1", [periodId]),
+		);
 		// Re-key the record (and its detail) to the period's ID, as the backfill convention did.
 		await admin.query(
 			`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at,
@@ -394,12 +401,12 @@ describe("historical gap repair on PostgreSQL", () => {
 		const incomplete = await incompleteRecord("2026-07-03");
 		const beforeCreated = await periodRow(created);
 		// Established historical minutes differ from today's rounding of the endpoints.
-		await admin.query("update work_period set duration_minutes = 239 where id = $1", [created]);
+		await history("update work_period set duration_minutes = 239 where id = $1", [created]);
 		// Agreeing established minutes of the linked work stay as stored (not 120).
-		await admin.query("update work_period set duration_minutes = 125 where id = $1", [linked]);
+		await history("update work_period set duration_minutes = 125 where id = $1", [linked]);
 		await admin.query("update time_record set duration_minutes = 125 where id = $1", [linked]);
 		// Pending work with a legacy approval request whose history must survive.
-		await admin.query("update work_period set approval_status = 'pending' where id = $1", [
+		await history("update work_period set approval_status = 'pending' where id = $1", [
 			created,
 		]);
 		await admin.query(
@@ -547,7 +554,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "10:00",
 		});
-		await admin.query(
+		await history(
 			"update work_period set project_id = $2, is_billable = true where id = any($1::uuid[])",
 			[[created, metadata], ids.project],
 		);
@@ -583,7 +590,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "10:00",
 		});
-		await admin.query("update work_period set work_category_id = $2 where id = $1", [
+		await history("update work_period set work_category_id = $2 where id = $1", [
 			metadata,
 			ids.category,
 		]);
@@ -592,7 +599,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			id: string,
 			use: [string, string | null, number | null, number | null, number | null],
 		) =>
-			admin.query(
+			history(
 				`update ${table} set vehicle_kind = $2, vehicle_id = $3, odometer_start_km = $4,
 				   odometer_end_km = $5, driven_distance_km = $6
 				 where ${table === "work_period" ? "id" : "record_id"} = $1`,
@@ -645,7 +652,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			 values ($1, $2, 'Van', 'B-VN 320')`,
 			[van, ids.organization],
 		);
-		await admin.query(
+		await history(
 			`update work_period set vehicle_kind = 'organization', vehicle_id = $2,
 			   odometer_start_km = 12000, odometer_end_km = 12085, driven_distance_km = 85
 			 where id = $1`,
@@ -694,7 +701,7 @@ describe("historical gap repair on PostgreSQL", () => {
 		const { periodId } = await incompleteRecord("2026-07-03");
 		// No representation holds the minutes: that gap is held, so the record's
 		// completion alone would leave a disagreement and is held with it.
-		await admin.query("update work_period set duration_minutes = null where id = $1", [periodId]);
+		await history("update work_period set duration_minutes = null where id = $1", [periodId]);
 
 		const plan = await readPlan();
 
@@ -712,10 +719,10 @@ describe("historical gap repair on PostgreSQL", () => {
 			[task, ids.organization, ids.project, ids.ownerUser],
 		);
 		const created = await missingRecord("2026-07-02");
-		await admin.query("update work_period set task_id = $2 where id = $1", [created, task]);
+		await history("update work_period set task_id = $2 where id = $1", [created, task]);
 		// An existing record that lost its allocation gets it back with the task too.
 		const { periodId: detailed, recordId } = await incompleteRecord("2026-07-03");
-		await admin.query("update work_period set project_id = $2, task_id = $3 where id = $1", [
+		await history("update work_period set project_id = $2, task_id = $3 where id = $1", [
 			detailed,
 			ids.project,
 			task,
@@ -746,7 +753,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "12:00",
 		});
-		await admin.query("update work_period set project_id = $2 where id = $1", [
+		await history("update work_period set project_id = $2 where id = $1", [
 			conflicted,
 			ids.project,
 		]);
@@ -760,7 +767,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "12:00",
 		});
-		await admin.query("update work_period set duration_minutes = null where id = $1", [unmeasured]);
+		await history("update work_period set duration_minutes = null where id = $1", [unmeasured]);
 		await admin.query(
 			"update time_record set duration_minutes = null where id = (select canonical_record_id from work_period where id = $1)",
 			[unmeasured],
@@ -771,7 +778,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "12:00",
 		});
-		await admin.query("update work_period set approval_status = 'pending' where id = $1", [
+		await history("update work_period set approval_status = 'pending' where id = $1", [
 			orphaned,
 		]);
 		await admin.query(
@@ -780,17 +787,17 @@ describe("historical gap repair on PostgreSQL", () => {
 		);
 		// A missing record without a completing entry: its creator cannot be named.
 		const unattributed = await missingRecord("2026-07-09");
-		await admin.query("update work_period set clock_out_id = null where id = $1", [unattributed]);
+		await history("update work_period set clock_out_id = null where id = $1", [unattributed]);
 		// Deleted work without a record stays deleted and unrepresented.
 		const deleted = await missingRecord("2026-07-10");
-		await admin.query(
+		await history(
 			"update work_period set deleted_at = now(), deletion_reason = 'duplicate' where id = $1",
 			[deleted],
 		);
 		// Overlapping duplicates are never resolved by repair.
 		await missingRecord("2026-07-13");
 		await legacyManual({ date: "2026-07-13", clockInTime: "11:00", clockOutTime: "13:00" });
-		await admin.query(
+		await history(
 			`update work_period set start_time = start_time - interval '2 hours'
 			 where employee_id = $1 and start_time::date = '2026-07-13' and canonical_record_id is not null`,
 			[ids.worker],
@@ -872,7 +879,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			expect(after.receipts, name).toEqual(before.receipts);
 			expect(after.details, name).toEqual(before.details);
 			// Leave no gap behind for the next scenario.
-			await admin.query("update work_period set deleted_at = now() where id = $1", [periodId]);
+			await history("update work_period set deleted_at = now() where id = $1", [periodId]);
 		}
 	});
 
@@ -1011,7 +1018,7 @@ describe("historical gap repair on PostgreSQL", () => {
 		await authorizeRepair();
 		const historical = await missingLink("2026-07-23");
 		// Pending without a relationship: a gap repair cannot fill, which stays historical.
-		await admin.query("update work_period set approval_status = 'pending' where id = $1", [
+		await history("update work_period set approval_status = 'pending' where id = $1", [
 			historical,
 		]);
 		await admin.query("update time_record set approval_state = 'pending' where id = $1", [

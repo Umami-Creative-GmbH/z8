@@ -21,6 +21,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -544,17 +545,19 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 
 	it("refuses a split when other work overlaps the resulting segments", async () => {
 		const period = await recordWork();
-		await admin.query(
-			`insert into work_period (organization_id, employee_id, clock_in_id, start_time, end_time,
-			  duration_minutes, is_active, approval_status, updated_at)
-			 values ($1, $2, $3, $4, $5, 60, false, 'approved', now())`,
-			[
-				ids.organization,
-				ids.requester,
-				period.clock_in_id,
-				new Date("2026-07-22T16:30:00Z"),
-				new Date("2026-07-22T17:30:00Z"),
-			],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`insert into work_period (organization_id, employee_id, clock_in_id, start_time, end_time,
+				  duration_minutes, is_active, approval_status, updated_at)
+				 values ($1, $2, $3, $4, $5, 60, false, 'approved', now())`,
+				[
+					ids.organization,
+					ids.requester,
+					period.clock_in_id,
+					new Date("2026-07-22T16:30:00Z"),
+					new Date("2026-07-22T17:30:00Z"),
+				],
+			),
 		);
 		const before = await snapshot();
 
