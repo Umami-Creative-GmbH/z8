@@ -17,6 +17,40 @@ import { formatRecordedInstant } from "./format";
 
 const MAX_RECEIPT_SIZE = 10 * 1024 * 1024;
 
+type Translate = ReturnType<typeof useTranslate>["t"];
+class ReceiptUploadError extends Error {
+	constructor(readonly status: number) {
+		super("Receipt upload refused");
+	}
+}
+function uploadFailureMessage(
+	t: Translate,
+	error: Error,
+	maxReceiptBytes: number,
+): string {
+	const status = error instanceof ReceiptUploadError ? error.status : null;
+	if (status === 409)
+		return t(
+			"travelExpenses.report.receipts.supplementConflict",
+			"A receipt was already supplied or the report changed. Reload the report before trying again.",
+		);
+	if (status === 400)
+		return t(
+			"travelExpenses.report.receipts.errors.unsupportedType",
+			"Attach a PDF or an image (JPEG, PNG, WebP, GIF, BMP or TIFF).",
+		);
+	if (status === 413)
+		return t(
+			"travelExpenses.report.receipts.errors.tooLarge",
+			"The file is too large. Attach a file of at most {size} MB.",
+			{ size: maxReceiptBytes / (1024 * 1024) },
+		);
+	return t(
+		"travelExpenses.report.receipts.supplementFailed",
+		"The receipt was not attached. Reload the report and try again.",
+	);
+}
+
 type Props = {
 	reportId: string;
 	itemId: string;
@@ -25,6 +59,7 @@ type Props = {
 	canAddReceipt: boolean;
 	receipts: SubmittedReportItemView["receipts"];
 	onChanged: () => void;
+	maxReceiptBytes?: number;
 };
 
 /** Supplemental evidence is visibly separate from the frozen submission facts. */
@@ -36,7 +71,10 @@ export function SubmittedReportReceipts(props: Props) {
 			{props.receipts
 				.filter((receipt) => receipt.addedAfterSubmission)
 				.map((receipt) => (
-					<p key={receipt.receiptId} className="text-sm text-muted-foreground">
+					<p
+						key={receipt.receiptId}
+						className="break-words text-sm text-muted-foreground"
+					>
 						{t(
 							"travelExpenses.report.receipts.addedAfterSubmission",
 							"{fileName}: Added after submission by {name} on {date}.",
@@ -58,6 +96,7 @@ export function SubmittedReportReceipts(props: Props) {
 					itemId={props.itemId}
 					submissionCycle={props.submissionCycle}
 					onChanged={props.onChanged}
+					maxReceiptBytes={props.maxReceiptBytes}
 				/>
 			) : null}
 		</div>
@@ -69,7 +108,11 @@ function MissingReceiptUpload({
 	itemId,
 	submissionCycle,
 	onChanged,
-}: Pick<Props, "reportId" | "itemId" | "submissionCycle" | "onChanged">) {
+	maxReceiptBytes = MAX_RECEIPT_SIZE,
+}: Pick<
+	Props,
+	"reportId" | "itemId" | "submissionCycle" | "onChanged" | "maxReceiptBytes"
+>) {
 	const { t } = useTranslate();
 	const fileInput = useRef<HTMLInputElement>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -89,27 +132,23 @@ function MissingReceiptUpload({
 					}),
 				},
 			);
-			if (!response.ok) throw new Error("Receipt upload refused");
+			if (!response.ok) throw new ReceiptUploadError(response.status);
 		},
 		onSuccess: onChanged,
-		onError: () =>
-			setError(
-				t(
-					"travelExpenses.report.receipts.supplementFailed",
-					"The receipt was not attached. Reload the report and try again.",
-				),
-			),
+		onError: (error) =>
+			setError(uploadFailureMessage(t, error, maxReceiptBytes)),
+		maxFileSize: maxReceiptBytes,
 	});
 	function chooseFile(event: React.ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.[0];
 		event.target.value = "";
 		if (!file) return;
-		if (file.size > MAX_RECEIPT_SIZE) {
+		if (file.size > maxReceiptBytes) {
 			setError(
 				t(
 					"travelExpenses.report.receipts.errors.tooLarge",
 					"The file is too large. Attach a file of at most {size} MB.",
-					{ size: 10 },
+					{ size: maxReceiptBytes / (1024 * 1024) },
 				),
 			);
 			return;
@@ -131,6 +170,7 @@ function MissingReceiptUpload({
 			<input
 				ref={fileInput}
 				type="file"
+				name="receipt"
 				className="sr-only"
 				tabIndex={-1}
 				aria-label={t(
@@ -149,7 +189,10 @@ function MissingReceiptUpload({
 				onClick={() => fileInput.current?.click()}
 			>
 				{upload.isUploading ? (
-					<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+					<IconLoader2
+						aria-hidden="true"
+						className="size-4 animate-spin motion-reduce:animate-none"
+					/>
 				) : (
 					<IconPaperclip aria-hidden="true" className="size-4" />
 				)}
@@ -170,7 +213,7 @@ function MissingReceiptUpload({
 						value={upload.progress}
 						aria-label={t(
 							"travelExpenses.report.receipts.progress",
-							"Receipt upload progress",
+							"Upload progress",
 						)}
 					/>
 				</div>

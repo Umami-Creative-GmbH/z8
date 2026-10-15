@@ -1,8 +1,15 @@
 import { createHash } from "node:crypto";
 import JSZip from "jszip";
 import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "./attachment-validation";
-import { buildTravelExpenseExportFiles, TravelExpenseExportContentError } from "./export-csv";
-import { bundleReceiptPath, type TravelExpenseExportManifest } from "./export-manifest";
+import {
+	buildTravelExpenseExportFiles,
+	TravelExpenseExportContentError,
+} from "./export-csv";
+import {
+	bundleReceiptPath,
+	exportItemReceipts,
+	type TravelExpenseExportManifest,
+} from "./export-manifest";
 
 /**
  * Assembles the ZIP of one export batch (#613) from its manifest: the CSV
@@ -28,9 +35,14 @@ export async function assembleTravelExpenseExportZip(
 		buildTravelExpenseExportFiles(manifest);
 	for (const revision of manifest.revisions) {
 		for (const item of revision.facts.items) {
-			for (const receipt of item.receipts) {
-				if (receipt.object.provider !== TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER) {
-					throw new TravelExpenseExportContentError("receipt_unavailable", "Unsupported provider");
+			for (const receipt of exportItemReceipts(revision, item)) {
+				if (
+					receipt.object.provider !== TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER
+				) {
+					throw new TravelExpenseExportContentError(
+						"receipt_unavailable",
+						"Unsupported provider",
+					);
 				}
 				let content: Uint8Array;
 				try {
@@ -49,7 +61,8 @@ export async function assembleTravelExpenseExportZip(
 				}
 				if (
 					content.byteLength !== receipt.sizeBytes ||
-					createHash("sha256").update(content).digest("hex") !== receipt.checksumSha256
+					createHash("sha256").update(content).digest("hex") !==
+						receipt.checksumSha256
 				) {
 					throw new TravelExpenseExportContentError(
 						"receipt_mismatch",
@@ -70,7 +83,9 @@ export async function assembleTravelExpenseExportZip(
 		}
 	}
 	const zip = new JSZip();
-	for (const entry of entries.toSorted((left, right) => (left.path < right.path ? -1 : 1))) {
+	for (const entry of entries.toSorted((left, right) =>
+		left.path < right.path ? -1 : 1,
+	)) {
 		zip.file(entry.path, entry.content, {
 			createFolders: false,
 			date: ZIP_ENTRY_DATE,

@@ -303,7 +303,7 @@ export function TravelExpenseReportEditor({
 			)}
 			{data && !isEditableReportStatus(data.status) ? (
 				// Submitted reports are frozen; only their submission is shown.
-				<SubmittedTravelExpenseReport reportId={reportId} />
+				<SubmittedTravelExpenseReport reportId={reportId} maxReceiptBytes={maxReceiptBytes} />
 			) : data?.kind === "trip" && data.trip ? (
 				<TripReportBody
 					report={data}

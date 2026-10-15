@@ -126,10 +126,12 @@ function historyDetail(
 export function SubmittedTravelExpenseReport({
 	reportId,
 	cycle,
+	maxReceiptBytes,
 }: {
 	reportId: string;
 	/** An earlier submission cycle to show (#603); the latest when omitted. */
 	cycle?: number;
+	maxReceiptBytes?: number;
 }) {
 	const { t } = useTranslate();
 	const { data, isLoading, isFetching, isError, refetch } = useQuery({
@@ -187,6 +189,7 @@ export function SubmittedTravelExpenseReport({
 
 			{data.facts.trip && <SubmittedTrip trip={data.facts.trip} />}
 			<SubmittedExpenses
+				maxReceiptBytes={maxReceiptBytes}
 				reportId={reportId}
 				data={data}
 				onChanged={() => {
@@ -417,10 +420,12 @@ function SubmittedExpenses({
 	reportId,
 	data,
 	onChanged,
+	maxReceiptBytes,
 }: {
 	reportId: string;
 	data: SubmittedReportView;
 	onChanged: () => void;
+	maxReceiptBytes?: number;
 }) {
 	const { t } = useTranslate();
 	return (
@@ -462,6 +467,7 @@ function SubmittedExpenses({
 									canAddReceipt={data.canAddReceipt}
 									receipts={item.receipts}
 									onChanged={onChanged}
+									maxReceiptBytes={maxReceiptBytes}
 								/>
 							),
 							mileage: item.mileage ?? null,

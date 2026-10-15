@@ -14,7 +14,10 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import type { MileageVehicle, StampedMileagePolicy } from "@/lib/travel-expenses/mileage.types";
+import type {
+	MileageVehicle,
+	StampedMileagePolicy,
+} from "@/lib/travel-expenses/mileage.types";
 import type {
 	ExpensePayer,
 	ReceiptExpenseCategory,
@@ -43,7 +46,9 @@ export const travelExpenseClaim = pgTable(
 		employeeId: uuid("employee_id")
 			.notNull()
 			.references(() => employee.id, { onDelete: "cascade" }),
-		approverId: uuid("approver_id").references(() => employee.id, { onDelete: "set null" }),
+		approverId: uuid("approver_id").references(() => employee.id, {
+			onDelete: "set null",
+		}),
 		approvalWorkflowId: uuid("approval_workflow_id"),
 		type: travelExpenseTypeEnum("type").notNull(),
 		status: travelExpenseClaimStatusEnum("status").notNull().default("draft"),
@@ -56,11 +61,19 @@ export const travelExpenseClaim = pgTable(
 		tripDateTimeZone: text("trip_date_time_zone"),
 		destinationCity: text("destination_city"),
 		destinationCountry: text("destination_country"),
-		projectId: uuid("project_id").references(() => project.id, { onDelete: "set null" }),
+		projectId: uuid("project_id").references(() => project.id, {
+			onDelete: "set null",
+		}),
 		originalCurrency: text("original_currency").notNull(),
-		originalAmount: decimal("original_amount", { precision: 12, scale: 2 }).notNull(),
+		originalAmount: decimal("original_amount", {
+			precision: 12,
+			scale: 2,
+		}).notNull(),
 		calculatedCurrency: text("calculated_currency").notNull(),
-		calculatedAmount: decimal("calculated_amount", { precision: 12, scale: 2 }).notNull(),
+		calculatedAmount: decimal("calculated_amount", {
+			precision: 12,
+			scale: 2,
+		}).notNull(),
 		notes: text("notes"),
 		submittedAt: timestamp("submitted_at"),
 		decidedAt: timestamp("decided_at"),
@@ -79,7 +92,10 @@ export const travelExpenseClaim = pgTable(
 	},
 	(table) => [
 		index("travelExpenseClaim_organizationId_idx").on(table.organizationId),
-		uniqueIndex("travelExpenseClaim_id_org_idx").on(table.id, table.organizationId),
+		uniqueIndex("travelExpenseClaim_id_org_idx").on(
+			table.id,
+			table.organizationId,
+		),
 		index("travelExpenseClaim_employeeId_idx").on(table.employeeId),
 		index("travelExpenseClaim_approverId_idx").on(table.approverId),
 		index("travelExpenseClaim_projectId_idx").on(table.projectId),
@@ -133,14 +149,20 @@ export const travelExpenseAttachment = pgTable(
 	},
 	(table) => [
 		index("travelExpenseAttachment_claimId_idx").on(table.claimId),
-		index("travelExpenseAttachment_organizationId_idx").on(table.organizationId),
+		index("travelExpenseAttachment_organizationId_idx").on(
+			table.organizationId,
+		),
 		index("travelExpenseAttachment_uploadedBy_idx").on(table.uploadedBy),
-		uniqueIndex("travelExpenseAttachment_claim_storageKey_idx").on(table.claimId, table.storageKey),
+		uniqueIndex("travelExpenseAttachment_claim_storageKey_idx").on(
+			table.claimId,
+			table.storageKey,
+		),
 	],
 );
 
 export const TRAVEL_EXPENSE_REPORT_KINDS = ["standalone", "trip"] as const;
-export type TravelExpenseReportKind = (typeof TRAVEL_EXPENSE_REPORT_KINDS)[number];
+export type TravelExpenseReportKind =
+	(typeof TRAVEL_EXPENSE_REPORT_KINDS)[number];
 // `returned` (#603): a reviewer sent the submission back; it is editable again.
 export const TRAVEL_EXPENSE_REPORT_STATUSES = [
 	"draft",
@@ -149,7 +171,8 @@ export const TRAVEL_EXPENSE_REPORT_STATUSES = [
 	"rejected",
 	"returned",
 ] as const;
-export type TravelExpenseReportStatus = (typeof TRAVEL_EXPENSE_REPORT_STATUSES)[number];
+export type TravelExpenseReportStatus =
+	(typeof TRAVEL_EXPENSE_REPORT_STATUSES)[number];
 
 // Travel expense report (#600): groups expense items beside the legacy claim
 // model, which keeps its submitted and decided claims untouched. A trip report
@@ -171,7 +194,10 @@ export const travelExpenseReport = pgTable(
 			.notNull()
 			.references(() => employee.id, { onDelete: "cascade" }),
 		kind: text("kind").$type<TravelExpenseReportKind>().notNull(),
-		status: text("status").$type<TravelExpenseReportStatus>().default("draft").notNull(),
+		status: text("status")
+			.$type<TravelExpenseReportStatus>()
+			.default("draft")
+			.notNull(),
 		reimbursementCurrency: text("reimbursement_currency").notNull(),
 		tripPurpose: text("trip_purpose"),
 		tripStartDate: date("trip_start_date"),
@@ -192,22 +218,34 @@ export const travelExpenseReport = pgTable(
 		// Null until the first approval, and always null on an adjustment report,
 		// which belongs to its original report's teams (`approval-teams.ts`).
 		approvalTeamIds: uuid("approval_team_ids").array(),
-		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
 		createdBy: text("created_by")
 			.notNull()
 			.references(() => user.id),
-		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
 		// A reviewer who returned, decided or reopened the report may be deleted (0130).
-		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+		updatedBy: text("updated_by").references(() => user.id, {
+			onDelete: "set null",
+		}),
 	},
 	(table) => [
-		uniqueIndex("travelExpenseReport_id_org_idx").on(table.id, table.organizationId),
+		uniqueIndex("travelExpenseReport_id_org_idx").on(
+			table.id,
+			table.organizationId,
+		),
 		index("travelExpenseReport_org_employee_status_idx").on(
 			table.organizationId,
 			table.employeeId,
 			table.status,
 		),
-		check("travel_expense_report_kind_check", sql`${table.kind} IN ('standalone', 'trip')`),
+		check(
+			"travel_expense_report_kind_check",
+			sql`${table.kind} IN ('standalone', 'trip')`,
+		),
 		check(
 			"travel_expense_report_status_check",
 			sql`${table.status} IN ('draft', 'submitted', 'approved', 'rejected', 'returned')`,
@@ -244,8 +282,13 @@ export const travelExpenseReport = pgTable(
 	],
 );
 
-export const TRAVEL_EXPENSE_REPORT_ITEM_TYPES = ["receipt", "mileage", "per_diem"] as const;
-export type TravelExpenseReportItemType = (typeof TRAVEL_EXPENSE_REPORT_ITEM_TYPES)[number];
+export const TRAVEL_EXPENSE_REPORT_ITEM_TYPES = [
+	"receipt",
+	"mileage",
+	"per_diem",
+] as const;
+export type TravelExpenseReportItemType =
+	(typeof TRAVEL_EXPENSE_REPORT_ITEM_TYPES)[number];
 
 // One expense of a report. Draft facts may be missing but are never malformed.
 // `version` advances on every saved edit; a save based on an older version is
@@ -268,7 +311,10 @@ export const travelExpenseReportItem = pgTable(
 		// Mileage items (#606): entered facts, priced by the effective policy;
 		// the applied policy is stamped at submission (`mileage-item-store.ts`).
 		mileageRoute: text("mileage_route"),
-		mileageDistanceKm: decimal("mileage_distance_km", { precision: 8, scale: 2 }),
+		mileageDistanceKm: decimal("mileage_distance_km", {
+			precision: 8,
+			scale: 2,
+		}),
 		mileageVehicle: text("mileage_vehicle").$type<MileageVehicle>(),
 		mileagePolicy: jsonb("mileage_policy").$type<StampedMileagePolicy>(),
 		// Source work period (#1131, spec #807): the own-vehicle work a mileage item
@@ -279,20 +325,31 @@ export const travelExpenseReportItem = pgTable(
 		// Missing-receipt exception (#604): the employee's explanation; null when none is requested.
 		// It is never a receipt row, and has its own version so it saves independently.
 		receiptExceptionReason: text("receipt_exception_reason"),
-		receiptExceptionVersion: integer("receipt_exception_version").default(0).notNull(),
+		receiptExceptionVersion: integer("receipt_exception_version")
+			.default(0)
+			.notNull(),
 		// Project attribution (#605): inherit the trip's project, or own `project_id` (null = none).
 		projectId: uuid("project_id"),
 		projectInherits: boolean("project_inherits").default(true).notNull(),
 		version: integer("version").default(1).notNull(),
-		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedBy: text("updated_by").references(() => user.id, {
+			onDelete: "set null",
+		}),
 	},
 	(table) => [
 		foreignKey({
 			name: "travel_expense_report_item_report_fk",
 			columns: [table.reportId, table.organizationId],
-			foreignColumns: [travelExpenseReport.id, travelExpenseReport.organizationId],
+			foreignColumns: [
+				travelExpenseReport.id,
+				travelExpenseReport.organizationId,
+			],
 		}).onDelete("cascade"),
 		// migration 0120 deletes with SET NULL ("project_id") only, keeping the organization.
 		foreignKey({
@@ -304,8 +361,14 @@ export const travelExpenseReportItem = pgTable(
 			"travel_expense_report_item_project_check",
 			sql`NOT (${table.projectInherits} AND ${table.projectId} IS NOT NULL)`,
 		),
-		uniqueIndex("travelExpenseReportItem_id_org_idx").on(table.id, table.organizationId),
-		uniqueIndex("travelExpenseReportItem_report_position_idx").on(table.reportId, table.position),
+		uniqueIndex("travelExpenseReportItem_id_org_idx").on(
+			table.id,
+			table.organizationId,
+		),
+		uniqueIndex("travelExpenseReportItem_report_position_idx").on(
+			table.reportId,
+			table.position,
+		),
 		check(
 			"travel_expense_report_item_type_check",
 			sql`${table.type} IN ('receipt', 'mileage', 'per_diem')`,
@@ -382,18 +445,26 @@ export const travelExpenseReportReceipt = pgTable(
 		uploadedBy: uuid("uploaded_by")
 			.notNull()
 			.references(() => employee.id, { onDelete: "cascade" }),
-		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
 	},
 	(table) => [
 		foreignKey({
 			name: "travel_expense_report_receipt_report_fk",
 			columns: [table.reportId, table.organizationId],
-			foreignColumns: [travelExpenseReport.id, travelExpenseReport.organizationId],
+			foreignColumns: [
+				travelExpenseReport.id,
+				travelExpenseReport.organizationId,
+			],
 		}).onDelete("cascade"),
 		foreignKey({
 			name: "travel_expense_report_receipt_item_fk",
 			columns: [table.itemId, table.organizationId],
-			foreignColumns: [travelExpenseReportItem.id, travelExpenseReportItem.organizationId],
+			foreignColumns: [
+				travelExpenseReportItem.id,
+				travelExpenseReportItem.organizationId,
+			],
 		}).onDelete("cascade"),
 		index("travelExpenseReportReceipt_item_idx").on(table.itemId),
 		index("travelExpenseReportReceipt_report_idx").on(table.reportId),
@@ -412,31 +483,61 @@ export const travelExpenseReportReceipt = pgTable(
 
 // Supporting evidence supplied after submission; original revision facts remain immutable.
 export const travelExpenseReportSupplementalReceipt = pgTable(
- "travel_expense_report_supplemental_receipt",
- {
-  id: uuid("id").primaryKey(),
-  organizationId: text("organization_id").notNull(),
-  reportId: uuid("report_id").notNull(),
-  itemId: uuid("item_id").notNull(),
-  submissionCycle: integer("submission_cycle").notNull(),
-  receipt: jsonb("receipt").$type<{
-   receiptId: string; itemId: string;
-   object: {provider: string; bucket: string | null; key: string; versionId: string | null};
-   checksumSha256: string; sizeBytes: number; mimeType: string;
-  }>().notNull(),
-  fileName: text("file_name").notNull(),
-  uploadedBy: uuid("uploaded_by").notNull(),
-  uploadedByName: text("uploaded_by_name").notNull(),
-  createdAt: timestamp("created_at", {withTimezone:true}).defaultNow().notNull(),
- },
- (table) => [
-  foreignKey({name:"travel_expense_supplemental_receipt_report_fk",columns:[table.reportId,table.organizationId],foreignColumns:[travelExpenseReport.id,travelExpenseReport.organizationId]}).onDelete("cascade"),
-  uniqueIndex("travelExpenseSupplementalReceipt_item_cycle_idx").on(table.organizationId,table.reportId,table.itemId,table.submissionCycle),
-  check("travel_expense_supplemental_receipt_cycle_check",sql`${table.submissionCycle} > 0`),
- ],
+	"travel_expense_report_supplemental_receipt",
+	{
+		id: uuid("id").primaryKey(),
+		organizationId: text("organization_id").notNull(),
+		reportId: uuid("report_id").notNull(),
+		itemId: uuid("item_id").notNull(),
+		submissionCycle: integer("submission_cycle").notNull(),
+		receipt: jsonb("receipt")
+			.$type<{
+				receiptId: string;
+				itemId: string;
+				object: {
+					provider: string;
+					bucket: string | null;
+					key: string;
+					versionId: string | null;
+				};
+				checksumSha256: string;
+				sizeBytes: number;
+				mimeType: string;
+			}>()
+			.notNull(),
+		fileName: text("file_name").notNull(),
+		uploadedBy: uuid("uploaded_by").notNull(),
+		uploadedByName: text("uploaded_by_name").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [
+		foreignKey({
+			name: "travel_expense_supplemental_receipt_report_fk",
+			columns: [table.reportId, table.organizationId],
+			foreignColumns: [
+				travelExpenseReport.id,
+				travelExpenseReport.organizationId,
+			],
+		}).onDelete("cascade"),
+		uniqueIndex("travelExpenseSupplementalReceipt_item_cycle_idx").on(
+			table.organizationId,
+			table.reportId,
+			table.itemId,
+			table.submissionCycle,
+		),
+		check(
+			"travel_expense_supplemental_receipt_cycle_check",
+			sql`${table.submissionCycle} > 0`,
+		),
+	],
 );
 
-export const TRAVEL_EXPENSE_RECEIPT_UPLOAD_STATUSES = ["pending", "cleanup_required"] as const;
+export const TRAVEL_EXPENSE_RECEIPT_UPLOAD_STATUSES = [
+	"pending",
+	"cleanup_required",
+] as const;
 export type TravelExpenseReceiptUploadStatus =
 	(typeof TRAVEL_EXPENSE_RECEIPT_UPLOAD_STATUSES)[number];
 
@@ -469,13 +570,20 @@ export const travelExpenseReceiptUpload = pgTable(
 		storageKey: text("storage_key").notNull(),
 		storageBucket: text("storage_bucket"),
 		storageVersionId: text("storage_version_id"),
-		status: text("status").$type<TravelExpenseReceiptUploadStatus>().default("pending").notNull(),
+		status: text("status")
+			.$type<TravelExpenseReceiptUploadStatus>()
+			.default("pending")
+			.notNull(),
 		reason: text("reason").$type<TravelExpenseReceiptCleanupReason>(),
 		attempts: integer("attempts").default(0).notNull(),
 		lastError: text("last_error"),
 		nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }),
-		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
 	},
 	(table) => [
 		uniqueIndex("travelExpenseReceiptUpload_org_storageKey_idx").on(
@@ -514,8 +622,14 @@ export const travelExpensePolicy = pgTable(
 		effectiveFrom: timestamp("effective_from").notNull(),
 		effectiveTo: timestamp("effective_to"),
 		currency: text("currency").notNull(),
-		mileageRatePerKm: decimal("mileage_rate_per_km", { precision: 10, scale: 4 }),
-		perDiemRatePerDay: decimal("per_diem_rate_per_day", { precision: 10, scale: 2 }),
+		mileageRatePerKm: decimal("mileage_rate_per_km", {
+			precision: 10,
+			scale: 4,
+		}),
+		perDiemRatePerDay: decimal("per_diem_rate_per_day", {
+			precision: 10,
+			scale: 2,
+		}),
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		createdBy: text("created_by")
@@ -546,22 +660,33 @@ export const travelExpenseSettings = pgTable(
 		organizationId: text("organization_id")
 			.primaryKey()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		expenseApproverEmployeeId: uuid("expense_approver_employee_id").references(() => employee.id, {
-			onDelete: "set null",
-		}),
+		expenseApproverEmployeeId: uuid("expense_approver_employee_id").references(
+			() => employee.id,
+			{
+				onDelete: "set null",
+			},
+		),
 		// Whether employees may submit an explained missing-receipt exception (#604).
-		missingReceiptExceptionsAllowed: boolean("missing_receipt_exceptions_allowed")
+		missingReceiptExceptionsAllowed: boolean(
+			"missing_receipt_exceptions_allowed",
+		)
 			.default(false)
 			.notNull(),
 		// #607: currency of new reports; existing reports keep theirs.
-		reimbursementCurrency: text("reimbursement_currency").default("EUR").notNull(),
+		reimbursementCurrency: text("reimbursement_currency")
+			.default("EUR")
+			.notNull(),
 		// #849: bank transfer or payroll run; read through getReimbursementChannel.
 		reimbursementChannel: text("reimbursement_channel")
 			.$type<ReimbursementChannel>()
 			.default("bank_transfer")
 			.notNull(),
-		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedBy: text("updated_by").references(() => user.id, {
+			onDelete: "set null",
+		}),
 	},
 	(table) => [
 		check(
@@ -584,8 +709,13 @@ export const travelExpensePayrollRunPreviewControl = pgTable(
 		organizationId: text("organization_id")
 			.primaryKey()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		mode: text("mode").$type<PayrollRunPreviewMode>().default("inactive").notNull(),
-		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		mode: text("mode")
+			.$type<PayrollRunPreviewMode>()
+			.default("inactive")
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
 	},
 	(table) => [
 		check(
@@ -608,7 +738,9 @@ export const travelExpenseDecisionLog = pgTable(
 		actorEmployeeId: uuid("actor_employee_id")
 			.notNull()
 			.references(() => employee.id, { onDelete: "cascade" }),
-		approverId: uuid("approver_id").references(() => employee.id, { onDelete: "set null" }),
+		approverId: uuid("approver_id").references(() => employee.id, {
+			onDelete: "set null",
+		}),
 		action: travelExpenseDecisionActionEnum("action").notNull(),
 		reason: text("reason"),
 		comment: text("comment"),
@@ -616,8 +748,12 @@ export const travelExpenseDecisionLog = pgTable(
 	},
 	(table) => [
 		index("travelExpenseDecisionLog_claimId_idx").on(table.claimId),
-		index("travelExpenseDecisionLog_organizationId_idx").on(table.organizationId),
-		index("travelExpenseDecisionLog_actorEmployeeId_idx").on(table.actorEmployeeId),
+		index("travelExpenseDecisionLog_organizationId_idx").on(
+			table.organizationId,
+		),
+		index("travelExpenseDecisionLog_actorEmployeeId_idx").on(
+			table.actorEmployeeId,
+		),
 		index("travelExpenseDecisionLog_approverId_idx").on(table.approverId),
 		index("travelExpenseDecisionLog_createdAt_idx").on(table.createdAt),
 	],

@@ -26,6 +26,7 @@ import {
 } from "./export-allowance-override";
 import {
 	bundleReceiptPath,
+	exportItemReceipts,
 	type TravelExpenseExportManifest,
 	type TravelExpenseExportManifestRevision,
 } from "./export-manifest";
@@ -34,8 +35,16 @@ import {
 	perDiemLocationCells,
 	perDiemLocationManifestProblem,
 } from "./export-per-diem-locations";
-import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
-import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
+import {
+	itemReimbursementAmount,
+	type ReimbursementItemInput,
+} from "./item-amount";
+import {
+	formatUnits,
+	parseUnits,
+	STORED_AMOUNT_SCALE,
+	sumUnits,
+} from "./money";
 
 /**
  * The expense-specific CSV contract of a travel expense export batch (#613).
@@ -100,7 +109,10 @@ export function csvText(value: string | number | null | undefined): string {
 /** An unquoted money cell: a signed decimal at the stored scale, nothing else. */
 export function csvDecimal(value: string): string {
 	if (!SIGNED_DECIMAL.test(value)) {
-		throw new TravelExpenseExportContentError("invalid_amount", `Not a stored amount: ${value}`);
+		throw new TravelExpenseExportContentError(
+			"invalid_amount",
+			`Not a stored amount: ${value}`,
+		);
 	}
 	return value;
 }
@@ -115,7 +127,10 @@ const PLAIN_DECIMAL = /^\d{1,12}(?:\.\d{1,10})?$/;
 function csvPlainDecimal(value: string | null | undefined): string {
 	if (value == null) return "";
 	if (!PLAIN_DECIMAL.test(value)) {
-		throw new TravelExpenseExportContentError("invalid_amount", `Not a plain decimal: ${value}`);
+		throw new TravelExpenseExportContentError(
+			"invalid_amount",
+			`Not a plain decimal: ${value}`,
+		);
 	}
 	return value;
 }
@@ -123,13 +138,22 @@ function csvPlainDecimal(value: string | null | undefined): string {
 /** An unquoted non-negative integer cell (counts, positions, sizes, cycles). */
 function csvInteger(value: number): string {
 	if (!Number.isSafeInteger(value) || value < 0) {
-		throw new TravelExpenseExportContentError("manifest_invalid", "Not a count");
+		throw new TravelExpenseExportContentError(
+			"manifest_invalid",
+			"Not a count",
+		);
 	}
 	return String(value);
 }
 
-function csvFile(header: readonly string[], rows: readonly (readonly string[])[]): string {
-	const lines = [header.map(csvText).join(","), ...rows.map((row) => row.join(","))];
+function csvFile(
+	header: readonly string[],
+	rows: readonly (readonly string[])[],
+): string {
+	const lines = [
+		header.map(csvText).join(","),
+		...rows.map((row) => row.join(",")),
+	];
 	return `${BOM}${lines.join("\r\n")}\r\n`;
 }
 
@@ -146,7 +170,10 @@ function frozenItemConversion(
 ): ItemConversion | null {
 	const { conversion } = item;
 	if (!conversion || !item.original.currency) return null;
-	const pair = { sourceCurrency: item.original.currency, targetCurrency: reimbursementCurrency };
+	const pair = {
+		sourceCurrency: item.original.currency,
+		targetCurrency: reimbursementCurrency,
+	};
 	if (conversion.basis === "card_charge") {
 		return {
 			...pair,
@@ -156,10 +183,18 @@ function frozenItemConversion(
 		};
 	}
 	if (conversion.basis === "reference_rate") {
-		const { rounding: _rounding, reimbursement: _reimbursement, ...reference } = conversion;
+		const {
+			rounding: _rounding,
+			reimbursement: _reimbursement,
+			...reference
+		} = conversion;
 		return { ...pair, ...reference };
 	}
-	const { rounding: _rounding, reimbursement: _reimbursement, ...manual } = conversion;
+	const {
+		rounding: _rounding,
+		reimbursement: _reimbursement,
+		...manual
+	} = conversion;
 	// The evidence reference (v11+) documents the rate; it never prices the item.
 	return { ...pair, ...manual, evidence: manual.evidence ?? "" };
 }
@@ -170,7 +205,9 @@ const PLAIN_DATE = /^\d{4}-\d{2}-\d{2}$/;
  * A reference rate (#608) was chosen for the item's own expense date and is
  * the publication of that date or an earlier fallback, never a later one.
  */
-function referenceRateMatchesItem(item: TravelExpenseReportSubmittedItem): boolean {
+function referenceRateMatchesItem(
+	item: TravelExpenseReportSubmittedItem,
+): boolean {
 	const { conversion } = item;
 	if (conversion?.basis !== "reference_rate") return true;
 	return (
@@ -194,7 +231,9 @@ function reimbursementInput(
 			currency: null,
 			paidBy: item.paidBy,
 			type: override.kind,
-			...(override.kind === "mileage" ? { mileage: money } : { perDiem: money }),
+			...(override.kind === "mileage"
+				? { mileage: money }
+				: { perDiem: money }),
 		};
 	}
 	return {
@@ -206,21 +245,29 @@ function reimbursementInput(
 		...(item.mileage
 			? {
 					type: "mileage",
-					mileage: { amount: item.mileage.amount, currency: item.mileage.currency },
+					mileage: {
+						amount: item.mileage.amount,
+						currency: item.mileage.currency,
+					},
 				}
 			: {}),
 		// A per diem (#609, v7+) counts its calculated allowance, zero included.
 		...(item.perDiem
 			? {
 					type: "per_diem",
-					perDiem: { amount: item.perDiem.amount, currency: item.perDiem.currency },
+					perDiem: {
+						amount: item.perDiem.amount,
+						currency: item.perDiem.currency,
+					},
 				}
 			: {}),
 	};
 }
 
 /** What the item's frozen pricing facts say it counts with, if it has any. */
-function frozenPricedAmount(item: TravelExpenseReportSubmittedItem): string | null {
+function frozenPricedAmount(
+	item: TravelExpenseReportSubmittedItem,
+): string | null {
 	if (item.allowanceOverride) return item.allowanceOverride.amount;
 	if (item.mileage) return item.mileage.amount;
 	if (item.perDiem) return item.perDiem.amount;
@@ -242,7 +289,9 @@ function itemCalculationBasis(item: TravelExpenseReportSubmittedItem): string {
 
 function exceptionBasis(item: TravelExpenseReportSubmittedItem): string {
 	// A receipt exception (#604, v2+) was accepted by the approving reviewer.
-	return item.receiptException ? `missing_receipt_exception: ${item.receiptException.reason}` : "";
+	return item.receiptException
+		? `missing_receipt_exception: ${item.receiptException.reason}`
+		: "";
 }
 
 interface PricedItem {
@@ -255,7 +304,10 @@ interface PricedItem {
 function priceRevision(facts: TravelExpenseReportSubmittedFacts): PricedItem[] {
 	const currency = facts.totals.currency;
 	const priced = facts.items.map((item): PricedItem => {
-		const amount = itemReimbursementAmount(reimbursementInput(item, currency), currency);
+		const amount = itemReimbursementAmount(
+			reimbursementInput(item, currency),
+			currency,
+		);
 		if (!amount.counted) {
 			throw new TravelExpenseExportContentError(
 				"totals_mismatch",
@@ -270,8 +322,10 @@ function priceRevision(facts: TravelExpenseReportSubmittedFacts): PricedItem[] {
 			(frozen !== null && frozen !== amount.amount) ||
 			(item.mileage && item.original.amount !== amount.amount) ||
 			(item.perDiem &&
-				(item.original.amount !== amount.amount || !perDiemDaysReconcile(item.perDiem))) ||
-			(item.conversion && item.conversion.reimbursement.currency !== currency) ||
+				(item.original.amount !== amount.amount ||
+					!perDiemDaysReconcile(item.perDiem))) ||
+			(item.conversion &&
+				item.conversion.reimbursement.currency !== currency) ||
 			!referenceRateMatchesItem(item) ||
 			!allowanceOverrideMatchesItem(item, currency)
 		) {
@@ -287,7 +341,10 @@ function priceRevision(facts: TravelExpenseReportSubmittedFacts): PricedItem[] {
 			companyPaid: amount.paidBy === "company" ? amount.units : zero,
 		};
 	});
-	const reimbursable = parseUnits(facts.totals.reimbursable, STORED_AMOUNT_SCALE);
+	const reimbursable = parseUnits(
+		facts.totals.reimbursable,
+		STORED_AMOUNT_SCALE,
+	);
 	const companyPaid = parseUnits(facts.totals.companyPaid, STORED_AMOUNT_SCALE);
 	if (
 		reimbursable === null ||
@@ -317,7 +374,12 @@ function perDiemDaysReconcile(
 		const deductions = parse(day.deductions);
 		const amount = parse(day.amount);
 		if (rate === null || deductions === null || amount === null) return false;
-		if (deductions < BigInt(0) || deductions > rate || amount !== rate - deductions) return false;
+		if (
+			deductions < BigInt(0) ||
+			deductions > rate ||
+			amount !== rate - deductions
+		)
+			return false;
 		amounts.push(amount);
 	}
 	return sumUnits(amounts) === parse(perDiem.amount);
@@ -432,7 +494,11 @@ function cellsOf<const Column extends string>(
 	return columns.map((column) => values[column] ?? "");
 }
 
-const ITEM_PROJECT_COLUMNS = ["project_id", "project_name", ...PROJECT_COLUMNS] as const;
+const ITEM_PROJECT_COLUMNS = [
+	"project_id",
+	"project_name",
+	...PROJECT_COLUMNS,
+] as const;
 
 /** The approved project attribution (#605, v4+); empty when not attributed. */
 function projectCells(item: TravelExpenseReportSubmittedItem): string[] {
@@ -471,7 +537,9 @@ function conversionCells(
 		return cellsOf(CONVERSION_COLUMNS, {
 			...result,
 			conversion_evidence_receipt_id: csvText(conversion.evidenceReceiptId),
-			conversion_evidence_file: csvText(evidence ? receiptPath(revision, item, evidence) : null),
+			conversion_evidence_file: csvText(
+				evidence ? receiptPath(revision, item, evidence) : null,
+			),
 		});
 	}
 	const rate = {
@@ -490,7 +558,9 @@ function conversionCells(
 			conversion_reference_provider: csvText(source.provider),
 			conversion_reference_publication_date: csvText(conversion.rateDate),
 			conversion_reference_publication_id: csvText(source.publicationId),
-			conversion_reference_publication_version: csvInteger(source.publicationVersion),
+			conversion_reference_publication_version: csvInteger(
+				source.publicationVersion,
+			),
 			conversion_reference_content_sha256: csvText(source.contentSha256),
 			conversion_reference_retrieved_at: csvText(source.retrievedAt),
 			conversion_reference_policy_approved_at: csvText(source.policyApprovedAt),
@@ -498,7 +568,9 @@ function conversionCells(
 	}
 	return cellsOf(CONVERSION_COLUMNS, {
 		...rate,
-		conversion_authorized_by_employee_id: csvText(conversion.authorizedBy.employeeId),
+		conversion_authorized_by_employee_id: csvText(
+			conversion.authorizedBy.employeeId,
+		),
 		conversion_authorized_by_name: csvText(conversion.authorizedBy.name),
 		conversion_authorized_at: csvText(conversion.authorizedAt),
 		conversion_reason: csvText(conversion.reason),
@@ -514,7 +586,9 @@ function rateEvidenceCells(item: TravelExpenseReportSubmittedItem): string[] {
 	if (conversion?.basis !== "manual_rate" || !conversion.evidence) {
 		return cellsOf(RATE_EVIDENCE_COLUMNS, {});
 	}
-	return cellsOf(RATE_EVIDENCE_COLUMNS, { conversion_rate_evidence: csvText(conversion.evidence) });
+	return cellsOf(RATE_EVIDENCE_COLUMNS, {
+		conversion_rate_evidence: csvText(conversion.evidence),
+	});
 }
 
 /** The frozen mileage calculation (#606, v5+); empty for any other expense. */
@@ -544,7 +618,11 @@ function perDiemCells(item: TravelExpenseReportSubmittedItem): string[] {
 	if (!perDiem) return cellsOf(PER_DIEM_COLUMNS, {});
 	const { days } = perDiem;
 	const total = (pick: (day: (typeof days)[number]) => string) =>
-		units(sumUnits(days.map((day) => parseUnits(pick(day), STORED_AMOUNT_SCALE) ?? ZERO)));
+		units(
+			sumUnits(
+				days.map((day) => parseUnits(pick(day), STORED_AMOUNT_SCALE) ?? ZERO),
+			),
+		);
 	const count = (allowance: string) =>
 		csvInteger(days.filter((day) => day.allowance === allowance).length);
 	return cellsOf(PER_DIEM_COLUMNS, {
@@ -572,7 +650,11 @@ function perDiemCells(item: TravelExpenseReportSubmittedItem): string[] {
 		),
 		per_diem_policy_sources: csvText(
 			perDiem.policies
-				.map((policy) => [policy.source.kind, policy.source.reference].filter(Boolean).join(": "))
+				.map((policy) =>
+					[policy.source.kind, policy.source.reference]
+						.filter(Boolean)
+						.join(": "),
+				)
 				.join("; "),
 		),
 		// One entry per calendar day: date, allowance, rate - deductions = amount; a day another
@@ -582,7 +664,9 @@ function perDiemCells(item: TravelExpenseReportSubmittedItem): string[] {
 				.map(
 					(day) =>
 						`${day.date} ${day.allowance} ${day.rate}-${day.deductions}=${day.amount}${
-							day.basis === "claimed_in_other_report" ? " claimed_in_other_report" : ""
+							day.basis === "claimed_in_other_report"
+								? " claimed_in_other_report"
+								: ""
 						}`,
 				)
 				.join("; "),
@@ -761,15 +845,24 @@ function assertManifest(manifest: TravelExpenseExportManifest): void {
 		}
 		const adjustmentProblem = adjustmentManifestProblem(facts);
 		if (adjustmentProblem) {
-			throw new TravelExpenseExportContentError("manifest_invalid", adjustmentProblem);
+			throw new TravelExpenseExportContentError(
+				"manifest_invalid",
+				adjustmentProblem,
+			);
 		}
 		const locationProblem = perDiemLocationManifestProblem(facts);
 		if (locationProblem) {
-			throw new TravelExpenseExportContentError("manifest_invalid", locationProblem);
+			throw new TravelExpenseExportContentError(
+				"manifest_invalid",
+				locationProblem,
+			);
 		}
 		const overrideProblem = allowanceOverrideManifestProblem(facts);
 		if (overrideProblem) {
-			throw new TravelExpenseExportContentError("manifest_invalid", overrideProblem);
+			throw new TravelExpenseExportContentError(
+				"manifest_invalid",
+				overrideProblem,
+			);
 		}
 	}
 }
@@ -793,12 +886,22 @@ export function buildTravelExpenseExportFiles(
 		const shared = revisionColumns(manifest, revision);
 		let receiptCount = 0;
 		for (const { item, reimbursement, companyPaid } of priced) {
-			const paths = item.receipts.map((receipt) => receiptPath(revision, item, receipt));
-			receiptCount += item.receipts.length;
-			const money = { reimbursement: units(reimbursement), companyPaid: units(companyPaid) };
+			const receipts = exportItemReceipts(revision, item);
+			const paths = receipts.map((receipt) =>
+				receiptPath(revision, item, receipt),
+			);
+			receiptCount += receipts.length;
+			const money = {
+				reimbursement: units(reimbursement),
+				companyPaid: units(companyPaid),
+			};
 			expenseRows.push([
 				...shared,
-				csvText(facts.trip?.destinations.map((d) => `${d.place} (${d.countryCode})`).join("; ")),
+				csvText(
+					facts.trip?.destinations
+						.map((d) => `${d.place} (${d.countryCode})`)
+						.join("; "),
+				),
 				csvText(item.itemId),
 				csvInteger(item.position),
 				csvText(item.type),
@@ -818,9 +921,13 @@ export function buildTravelExpenseExportFiles(
 				...conversionCells(revision, item),
 				...mileageCells(item),
 				...perDiemCells(item),
-				csvInteger(item.receipts.length),
+				csvInteger(receipts.length),
 				csvText(paths.join("; ")),
-				...adjustmentExpenseCells(facts, { text: csvText, decimal: csvDecimal }, money),
+				...adjustmentExpenseCells(
+					facts,
+					{ text: csvText, decimal: csvDecimal },
+					money,
+				),
 				...allowanceOverrideCells(item, {
 					text: csvText,
 					decimal: csvDecimal,
@@ -830,7 +937,7 @@ export function buildTravelExpenseExportFiles(
 				...rateEvidenceCells(item),
 				csvText(revision.approvalBasis),
 			]);
-			item.receipts.forEach((receipt, index) => {
+			receipts.forEach((receipt, index) => {
 				receiptRows.push([
 					csvText(revision.reportId),
 					csvText(revision.revisionId),
@@ -848,7 +955,10 @@ export function buildTravelExpenseExportFiles(
 			...shared,
 			csvText(facts.totals.currency),
 			// An adjustment's signed delta, never its corrected total (export-adjustment.ts).
-			...summableReportTotalCells(facts, { text: csvText, decimal: csvDecimal }),
+			...summableReportTotalCells(facts, {
+				text: csvText,
+				decimal: csvDecimal,
+			}),
 			csvInteger(facts.items.length),
 			csvInteger(receiptCount),
 			...adjustmentReportCells(facts, { text: csvText, decimal: csvDecimal }),
@@ -856,9 +966,15 @@ export function buildTravelExpenseExportFiles(
 		]);
 	}
 	return [
-		{ path: "expenses.csv", content: csvFile(TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS, expenseRows) },
+		{
+			path: "expenses.csv",
+			content: csvFile(TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS, expenseRows),
+		},
 		{ path: "reports.csv", content: csvFile(REPORT_COLUMNS, reportRows) },
 		{ path: "receipts.csv", content: csvFile(RECEIPT_COLUMNS, receiptRows) },
-		{ path: "manifest.json", content: `${JSON.stringify(manifest, null, 2)}\n` },
+		{
+			path: "manifest.json",
+			content: `${JSON.stringify(manifest, null, 2)}\n`,
+		},
 	];
 }

@@ -123,7 +123,7 @@ describe("adding a missing receipt during review (#1255)", () => {
 			},
 		});
 		expect((await screen.findByRole("alert")).textContent).toBe(
-			"The receipt was not attached. Reload the report and try again.",
+			"A receipt was already supplied or the report changed. Reload the report before trying again.",
 		);
 		expect(onChanged).not.toHaveBeenCalled();
 		expect(screen.getByRole("button", { name: "Add receipt" })).toBeTruthy();
@@ -161,5 +161,55 @@ describe("adding a missing receipt during review (#1255)", () => {
 			),
 		).toBeTruthy();
 		expect(screen.queryByRole("button")).toBeNull();
+	});
+	it("validates against the configured receipt limit", () => {
+		vi.stubGlobal("fetch", fetchMock);
+		mount({ maxReceiptBytes: 2 * 1024 * 1024 });
+		fireEvent.change(screen.getByLabelText("Choose receipt"), {
+			target: {
+				files: [
+					new File([new Uint8Array(3 * 1024 * 1024)], "hotel.pdf", {
+						type: "application/pdf",
+					}),
+				],
+			},
+		});
+		expect(screen.getByRole("alert").textContent).toBe(
+			"The file is too large. Attach a file of at most 2 MB.",
+		);
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+	it("accepts files over the default limit when the configured limit permits them", async () => {
+		vi.stubGlobal("fetch", fetchMock);
+		fetchMock.mockResolvedValue({ ok: true });
+		const { onChanged } = mount({ maxReceiptBytes: 20 * 1024 * 1024 });
+		fireEvent.change(screen.getByLabelText("Choose receipt"), {
+			target: {
+				files: [
+					new File([new Uint8Array(11 * 1024 * 1024)], "hotel.pdf", {
+						type: "application/pdf",
+					}),
+				],
+			},
+		});
+		await waitFor(() => expect(onChanged).toHaveBeenCalledOnce());
+		expect(screen.queryByRole("alert")).toBeNull();
+	});
+	it.each([
+		[400, "Attach a PDF or an image (JPEG, PNG, WebP, GIF, BMP or TIFF)."],
+		[413, "The file is too large. Attach a file of at most 2 MB."],
+	])("explains a server rejection with HTTP %s", async (status, message) => {
+		vi.stubGlobal("fetch", fetchMock);
+		fetchMock.mockResolvedValue({ ok: false, status });
+		const { onChanged } = mount({ maxReceiptBytes: 2 * 1024 * 1024 });
+		fireEvent.change(screen.getByLabelText("Choose receipt"), {
+			target: {
+				files: [
+					new File(["receipt"], "hotel.pdf", { type: "application/pdf" }),
+				],
+			},
+		});
+		expect((await screen.findByRole("alert")).textContent).toBe(message);
+		expect(onChanged).not.toHaveBeenCalled();
 	});
 });
