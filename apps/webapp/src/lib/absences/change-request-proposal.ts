@@ -5,6 +5,10 @@ import { absenceCategory, absenceEntry, timeRecord } from "@/db/schema";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
 import { type AbsenceDayRange, clipAbsenceDayRange, refusalForAbsenceDays } from "./absence-days";
+import {
+	assertHistoricalVacationNotOverlapping,
+	historicalVacationRefusalOf,
+} from "./historical-vacation";
 import { getAbsenceDays } from "./absence-days-resolver";
 import { hasExactAbsenceHours } from "./change-request-coverage";
 import type { AbsenceChangeDatabase } from "./change-request-store";
@@ -162,6 +166,18 @@ export async function validateAbsenceProposal(
 	if (!category?.isActive)
 		throw new AbsenceChangeError("category_unavailable", "This absence category is unavailable.");
 	const proposed = input.proposed;
+	try {
+		await assertHistoricalVacationNotOverlapping(database, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			categoryId: category.id,
+			...coverageDays(proposed),
+		});
+	} catch (error) {
+		const historical = historicalVacationRefusalOf(error);
+		if (!historical) throw error;
+		throw new AbsenceChangeError("historical_overlap", historical.message);
+	}
 	const overlaps = await database
 		.select({
 			absence: absenceEntry,

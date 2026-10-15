@@ -1,4 +1,5 @@
 "use client";
+import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 
 import {
 	IconArrowDown,
@@ -67,8 +68,7 @@ function TeamAbsencesTableContent({
 }: TeamAbsencesTableProps) {
 	const { push } = useRouter();
 	const searchParams = useSearchParams();
-	const [selectedEmployee, setSelectedEmployee] =
-		useState<ManagerAbsenceEmployeeRow | null>(null);
+	const [selectedEmployee, setSelectedEmployee] = useState<ManagerAbsenceEmployeeRow | null>(null);
 	const [isPending, startTransition] = useTransition();
 	const hasRows = data.rows.length > 0;
 	const firstItem = data.total === 0 ? 0 : (data.page - 1) * data.pageSize + 1;
@@ -111,8 +111,7 @@ function TeamAbsencesTableContent({
 	}
 
 	function handleSort(sort: ManagerAbsenceSortKey) {
-		const nextDirection =
-			data.sort === sort && data.direction === "asc" ? "desc" : "asc";
+		const nextDirection = data.sort === sort && data.direction === "asc" ? "desc" : "asc";
 
 		pushParams({ sort, direction: nextDirection, page: 1 });
 	}
@@ -125,9 +124,7 @@ function TeamAbsencesTableContent({
 				years={years}
 				isPending={isPending}
 				onSearchSubmit={handleSearchSubmit}
-				onTeamChange={(teamId) =>
-					pushParams({ teamId: teamId === "all" ? null : teamId, page: 1 })
-				}
+				onTeamChange={(teamId) => pushParams({ teamId: teamId === "all" ? null : teamId, page: 1 })}
 				onYearChange={(year) => pushParams({ year, page: 1 })}
 			/>
 
@@ -166,9 +163,7 @@ function TeamAbsencesTableContent({
 					}
 				}}
 				employee={
-					selectedEmployee
-						? { id: selectedEmployee.id, name: selectedEmployee.name }
-						: null
+					selectedEmployee ? { id: selectedEmployee.id, name: selectedEmployee.name } : null
 				}
 				categories={categories}
 				sickNotesEnabled={sickNotesEnabled}
@@ -208,14 +203,8 @@ function TeamAbsencesFilters({
 						type="search"
 						name="search"
 						defaultValue={search}
-						placeholder={t(
-							"team.absences.filters.searchPlaceholder",
-							"Search employees…",
-						)}
-						aria-label={t(
-							"team.absences.filters.searchLabel",
-							"Search employees",
-						)}
+						placeholder={t("team.absences.filters.searchPlaceholder", "Search employees…")}
+						aria-label={t("team.absences.filters.searchLabel", "Search employees")}
 						autoComplete="off"
 						className="pl-9"
 						disabled={isPending}
@@ -227,23 +216,15 @@ function TeamAbsencesFilters({
 			</form>
 
 			<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-				<Select
-					value={data.teamId ?? "all"}
-					onValueChange={onTeamChange}
-					disabled={isPending}
-				>
+				<Select value={data.teamId ?? "all"} onValueChange={onTeamChange} disabled={isPending}>
 					<SelectTrigger
 						className="w-full sm:w-44"
 						aria-label={t("team.absences.filters.teamLabel", "Filter by team")}
 					>
-						<SelectValue
-							placeholder={t("team.absences.filters.teamPlaceholder", "Team")}
-						/>
+						<SelectValue placeholder={t("team.absences.filters.teamPlaceholder", "Team")} />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="all">
-							{t("team.absences.filters.allTeams", "All teams")}
-						</SelectItem>
+						<SelectItem value="all">{t("team.absences.filters.allTeams", "All teams")}</SelectItem>
 						{data.teams.map((team) => (
 							<SelectItem key={team.id} value={team.id}>
 								{team.name}
@@ -252,18 +233,12 @@ function TeamAbsencesFilters({
 					</SelectContent>
 				</Select>
 
-				<Select
-					value={String(data.year)}
-					onValueChange={onYearChange}
-					disabled={isPending}
-				>
+				<Select value={String(data.year)} onValueChange={onYearChange} disabled={isPending}>
 					<SelectTrigger
 						className="w-full sm:w-36"
 						aria-label={t("team.absences.filters.yearLabel", "Filter by year")}
 					>
-						<SelectValue
-							placeholder={t("team.absences.filters.yearPlaceholder", "Year")}
-						/>
+						<SelectValue placeholder={t("team.absences.filters.yearPlaceholder", "Year")} />
 					</SelectTrigger>
 					<SelectContent>
 						{years.map((year) => (
@@ -308,17 +283,10 @@ function SortableAbsenceTableHead({
 				direction: directionLabel,
 			})
 		: t("team.absences.sort.by", "Sort by {label}", { label });
-	const SortIcon = !isActive
-		? IconArrowsSort
-		: direction === "asc"
-			? IconArrowUp
-			: IconArrowDown;
+	const SortIcon = !isActive ? IconArrowsSort : direction === "asc" ? IconArrowUp : IconArrowDown;
 
 	return (
-		<TableHead
-			className={className}
-			aria-sort={isActive ? ariaSort : undefined}
-		>
+		<TableHead className={className} aria-sort={isActive ? ariaSort : undefined}>
 			<Button
 				type="button"
 				variant="ghost"
@@ -370,10 +338,7 @@ function TeamAbsencesRowsTable({
 								onSort={onSort}
 							/>
 							<SortableAbsenceTableHead
-								label={t(
-									"team.absences.table.teamOrPosition",
-									"Team or Position",
-								)}
+								label={t("team.absences.table.teamOrPosition", "Team or Position")}
 								sort="team"
 								activeSort={sort}
 								direction={direction}
@@ -443,9 +408,7 @@ function TeamAbsencesRowsTable({
 										/>
 										<div className="min-w-0">
 											<p className="truncate font-medium">{employee.name}</p>
-											<p className="truncate text-muted-foreground text-sm">
-												{employee.email}
-											</p>
+											<p className="truncate text-muted-foreground text-sm">{employee.email}</p>
 										</div>
 									</div>
 								</TableCell>
@@ -462,6 +425,7 @@ function TeamAbsencesRowsTable({
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
 									{employee.usedVacationDays}
+									<PreviouslyTakenVacationExplanation days={employee.previouslyTakenVacationDays} />
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
 									{employee.pendingVacationDays}
@@ -470,15 +434,11 @@ function TeamAbsencesRowsTable({
 									{employee.remainingVacationDays}
 									{employee.overdrawnVacationDays > 0 && (
 										<div className="mt-1">
-											<OverdrawnVacationBadge
-												overdrawnDays={employee.overdrawnVacationDays}
-											/>
+											<OverdrawnVacationBadge overdrawnDays={employee.overdrawnVacationDays} />
 										</div>
 									)}
 								</TableCell>
-								<TableCell className="text-right tabular-nums">
-									{employee.sickDays}
-								</TableCell>
+								<TableCell className="text-right tabular-nums">{employee.sickDays}</TableCell>
 								<TableCell className="text-right">
 									<Button
 										type="button"
@@ -511,9 +471,7 @@ function TeamAbsencesEmptyState() {
 			aria-label={t("team.absences.empty.label", "No employees found")}
 			className="rounded-lg border bg-card p-6 text-center"
 		>
-			<p className="font-medium">
-				{t("team.absences.empty.title", "No employees found")}
-			</p>
+			<p className="font-medium">{t("team.absences.empty.title", "No employees found")}</p>
 			<p className="mt-1 text-muted-foreground text-sm">
 				{t(
 					"team.absences.empty.description",
@@ -552,15 +510,11 @@ function TeamAbsencesPagination({
 	return (
 		<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<p className="text-muted-foreground text-sm">
-				{t(
-					"team.absences.pagination.showing",
-					"Showing {firstItem} to {lastItem} of {total}",
-					{
-						firstItem,
-						lastItem,
-						total,
-					},
-				)}
+				{t("team.absences.pagination.showing", "Showing {firstItem} to {lastItem} of {total}", {
+					firstItem,
+					lastItem,
+					total,
+				})}
 			</p>
 			<div className="flex items-center gap-2">
 				<Button
@@ -569,10 +523,7 @@ function TeamAbsencesPagination({
 					size="sm"
 					onClick={onPrevious}
 					disabled={!canGoPrevious || isPending}
-					aria-label={t(
-						"team.absences.pagination.previousLabel",
-						"Previous page",
-					)}
+					aria-label={t("team.absences.pagination.previousLabel", "Previous page")}
 				>
 					{t("team.absences.pagination.previous", "Previous")}
 				</Button>

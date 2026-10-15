@@ -1639,6 +1639,13 @@
       "when": 1804867200000,
       "tag": "0233_organization_tracking_dates",
       "breakpoints": true
+    },
+    {
+      "idx": 235,
+      "version": "7",
+      "when": 1805040000000,
+      "tag": "0235_historical_vacation_usage",
+      "breakpoints": true
     }
   ]
 }

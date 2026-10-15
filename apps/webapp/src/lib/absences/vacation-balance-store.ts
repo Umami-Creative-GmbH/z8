@@ -46,6 +46,8 @@ export async function loadVacationBalances(
 		year: number;
 		timezone: string;
 		currentDate?: Date;
+		/** Reviewed aggregate proposed by an authorized historical-usage preview. */
+		previouslyTakenOverride?: { employeeId: string; days: number };
 	},
 ): Promise<VacationBalances> {
 	const { organizationId, year } = input;
@@ -111,6 +113,10 @@ export async function loadVacationBalances(
 				currentDate,
 				year,
 				adjustmentTotal: vacationAdjustmentTotal(sums),
+				previouslyTakenDays:
+					input.previouslyTakenOverride?.employeeId === employeeId
+						? input.previouslyTakenOverride.days
+						: (sums.previouslyTaken ?? 0),
 				timezone: input.timezone,
 			}),
 		);

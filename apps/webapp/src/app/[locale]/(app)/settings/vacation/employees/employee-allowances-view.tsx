@@ -1,3 +1,4 @@
+import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 import { IconEdit, IconUser } from "@tabler/icons-react";
 import {
 	OverdrawnVacationBadge,
@@ -5,13 +6,7 @@ import {
 } from "@/components/absences/vacation-allowance-explanation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -165,11 +160,9 @@ function EmployeeAllowancesCard({
 						</CardDescription>
 					</div>
 					<Badge variant="secondary">
-						{t(
-							"settings.vacation.employees.employeeCount",
-							"{count} employees",
-							{ count: employees.length },
-						)}
+						{t("settings.vacation.employees.employeeCount", "{count} employees", {
+							count: employees.length,
+						})}
 					</Badge>
 				</div>
 			</CardHeader>
@@ -227,33 +220,13 @@ function EmployeeAllowancesTable({
 		["settings.vacation.employees.table.policy", "Policy", ""],
 		["settings.vacation.employees.table.team", "Team", ""],
 		["settings.vacation.employees.table.managers", "Managers", ""],
-		[
-			"settings.vacation.employees.table.defaultDays",
-			"Default Days",
-			"text-right",
-		],
-		[
-			"settings.vacation.employees.table.customDays",
-			"Custom Days",
-			"text-right",
-		],
-		[
-			"settings.vacation.employees.table.allowance",
-			"Allowance",
-			"text-right",
-		],
+		["settings.vacation.employees.table.defaultDays", "Default Days", "text-right"],
+		["settings.vacation.employees.table.customDays", "Custom Days", "text-right"],
+		["settings.vacation.employees.table.allowance", "Allowance", "text-right"],
 		["settings.vacation.employees.table.carryover", "Carryover", "text-right"],
-		[
-			"settings.vacation.employees.table.adjustments",
-			"Adjustments",
-			"text-right",
-		],
+		["settings.vacation.employees.table.adjustments", "Adjustments", "text-right"],
 		["settings.vacation.employees.table.accrued", "Accrued", "text-right"],
-		[
-			"settings.vacation.employees.table.totalAvailable",
-			"Total Available",
-			"text-right",
-		],
+		["settings.vacation.employees.table.totalAvailable", "Total Available", "text-right"],
 		["settings.vacation.employees.table.actions", "Actions", "text-right"],
 	] as const;
 
@@ -323,9 +296,7 @@ function EmployeeAllowanceRow({
 					/>
 					<div>
 						<div className="font-medium">{employee.user.name}</div>
-						<div className="text-xs text-muted-foreground">
-							{employee.user.email}
-						</div>
+						<div className="text-xs text-muted-foreground">{employee.user.email}</div>
 					</div>
 				</div>
 			</TableCell>
@@ -343,9 +314,7 @@ function EmployeeAllowanceRow({
 				<EmployeeManagers managers={employee.managers} t={t} />
 			</TableCell>
 			<TableCell className="text-right tabular-nums">
-				<span
-					className={`text-muted-foreground${customDays === null ? "" : " line-through"}`}
-				>
+				<span className={`text-muted-foreground${customDays === null ? "" : " line-through"}`}>
 					{defaultDays}
 				</span>
 			</TableCell>
@@ -385,6 +354,7 @@ function EmployeeAllowanceRow({
 			</TableCell>
 			<TableCell className="text-right font-semibold tabular-nums">
 				{balance ? balance.totalDays : <EmptyCell />}
+				<PreviouslyTakenVacationExplanation days={balance?.previouslyTakenDays} />
 				{balance && balance.overdrawnDays > 0 && (
 					<div className="mt-1 font-normal">
 						<OverdrawnVacationBadge overdrawnDays={balance.overdrawnDays} />
@@ -418,13 +388,7 @@ function SignedDays({ days }: { days: number }) {
 	);
 }
 
-function EmployeeManagers({
-	managers,
-	t,
-}: {
-	managers?: EmployeeManager[];
-	t: Translate;
-}) {
+function EmployeeManagers({ managers, t }: { managers?: EmployeeManager[]; t: Translate }) {
 	if (!managers || managers.length === 0) {
 		return <span className="text-muted-foreground">—</span>;
 	}

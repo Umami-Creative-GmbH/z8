@@ -11,9 +11,7 @@ import {
 import { isInstant, parseInstant } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 
-const markEmployeeWorkBalanceDirtyMock = vi.hoisted(() =>
-	vi.fn().mockResolvedValue(undefined),
-);
+const markEmployeeWorkBalanceDirtyMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const loggerErrorMock = vi.hoisted(() => vi.fn());
 const addCalendarSyncJobMock = vi.hoisted(() => vi.fn());
 const callerMocks = vi.hoisted(() => ({
@@ -71,20 +69,16 @@ vi.mock("@/lib/absences/absence-days-resolver", () => ({
 
 // Legacy submission intents (#384): legacy-bound-approval.integration.test.ts.
 vi.mock("@/lib/approvals/delivery/intents", async (importOriginal) => ({
-	...(await importOriginal<
-		typeof import("@/lib/approvals/delivery/intents")
-	>()),
+	...(await importOriginal<typeof import("@/lib/approvals/delivery/intents")>()),
 	recordLegacyDeliveryIntent: async () => false,
 }));
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
-	getPrimaryEligibleManagerIdForRequester:
-		callerMocks.getPrimaryEligibleManagerIdForRequester,
+	getPrimaryEligibleManagerIdForRequester: callerMocks.getPrimaryEligibleManagerIdForRequester,
 }));
 
 vi.mock("@/lib/approvals/server/absence-approvals", () => ({
 	createAbsenceApprovalWorkflow: callerMocks.createAbsenceApprovalWorkflow,
-	runAutoCompletedAbsenceMaintenance:
-		callerMocks.runAutoCompletedAbsenceMaintenance,
+	runAutoCompletedAbsenceMaintenance: callerMocks.runAutoCompletedAbsenceMaintenance,
 }));
 
 vi.mock("@/lib/app-url", () => ({
@@ -133,8 +127,7 @@ vi.mock("./actions.canonical", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("./actions.canonical")>();
 	return {
 		...actual,
-		syncCanonicalAbsenceApprovalState:
-			callerMocks.syncCanonicalAbsenceApprovalState,
+		syncCanonicalAbsenceApprovalState: callerMocks.syncCanonicalAbsenceApprovalState,
 	};
 });
 
@@ -205,23 +198,17 @@ function createCompatibilityWriterFixture(input?: {
 }
 
 function createLegacyApprovalLifecycle(
-	transaction: (
-		callback: (tx: unknown) => Promise<unknown>,
-	) => Promise<unknown>,
+	transaction: (callback: (tx: unknown) => Promise<unknown>) => Promise<unknown>,
 ) {
 	return {
 		withApprovalTransaction: (
-			operation: (
-				context: ApprovalWorkflowTransactionContext,
-			) => Promise<unknown>,
+			operation: (context: ApprovalWorkflowTransactionContext) => Promise<unknown>,
 		) =>
 			transaction((tx) =>
 				operation({
 					dbService: { db: tx },
 					writeGate: {
-						acquire: vi
-							.fn()
-							.mockResolvedValue(approvalWriteGateResult("legacy")),
+						acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("legacy")),
 					},
 					compatibilityWriter: createCompatibilityWriterFixture(),
 				} as unknown as ApprovalWorkflowTransactionContext),
@@ -271,9 +258,7 @@ beforeEach(() => {
 			returning: vi.fn().mockResolvedValue([{ id: "notification-1" }]),
 		})),
 	});
-	callerMocks.getPrimaryEligibleManagerIdForRequester.mockResolvedValue(
-		"manager-1",
-	);
+	callerMocks.getPrimaryEligibleManagerIdForRequester.mockResolvedValue("manager-1");
 	callerMocks.sendEmail.mockResolvedValue({
 		success: true,
 		messageId: "message-1",
@@ -304,7 +289,11 @@ function configureAbsenceCallerTransaction() {
 			)
 			.mockReturnValueOnce(createInsertBuilder([{ id: "canonical-1" }]))
 			.mockReturnValueOnce(createVoidInsertBuilder());
-		return callback({ insert, update: vi.fn(() => createUpdateBuilder()) });
+		return callback({
+			execute: async () => [],
+			insert,
+			update: vi.fn(() => createUpdateBuilder()),
+		});
 	});
 	return createLegacyApprovalLifecycle(callerMocks.transaction);
 }
@@ -363,12 +352,8 @@ describe("requestAbsenceForEmployeeEffect approval presentation", () => {
 		expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
 		expect(callerMocks.sendEmail).not.toHaveBeenCalled();
 		expect(callerMocks.onAbsenceRequestPendingApproval).not.toHaveBeenCalled();
-		expect(
-			callerMocks.syncCanonicalAbsenceApprovalState,
-		).not.toHaveBeenCalled();
-		expect(
-			callerMocks.runAutoCompletedAbsenceMaintenance,
-		).toHaveBeenCalledOnce();
+		expect(callerMocks.syncCanonicalAbsenceApprovalState).not.toHaveBeenCalled();
+		expect(callerMocks.runAutoCompletedAbsenceMaintenance).toHaveBeenCalledOnce();
 	});
 
 	it.each([true, false])(
@@ -378,9 +363,9 @@ describe("requestAbsenceForEmployeeEffect approval presentation", () => {
 			callerMocks.notificationPreferenceFindMany.mockResolvedValue([
 				{ channel: "email", enabled: emailEnabled },
 			]);
-			const triggers = await vi.importActual<
-				typeof import("@/lib/notifications/triggers")
-			>("@/lib/notifications/triggers");
+			const triggers = await vi.importActual<typeof import("@/lib/notifications/triggers")>(
+				"@/lib/notifications/triggers",
+			);
 			callerMocks.onAbsenceRequestSubmitted.mockImplementationOnce(
 				triggers.onAbsenceRequestSubmitted,
 			);
@@ -437,9 +422,7 @@ describe("requestAbsenceForEmployeeEffect approval presentation", () => {
 					notes: "Vacation",
 				}),
 			);
-			expect(
-				callerMocks.runAutoCompletedAbsenceMaintenance,
-			).not.toHaveBeenCalled();
+			expect(callerMocks.runAutoCompletedAbsenceMaintenance).not.toHaveBeenCalled();
 		},
 	);
 });
@@ -553,9 +536,7 @@ describe("validateAbsenceSickDetail", () => {
 
 describe("createSickDetailValidationError", () => {
 	it("does not expose the submitted sick detail as the validation value", () => {
-		const error = createSickDetailValidationError(
-			"Sick detail can only be used for sick absences",
-		);
+		const error = createSickDetailValidationError("Sick detail can only be used for sick absences");
 
 		expect(error.field).toBe("sickDetail");
 		expect(error.value).toBe("[redacted]");
@@ -653,21 +634,16 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		};
 	}
 
-	function cloneTransactionalState(
-		state: TransactionalState,
-	): TransactionalState {
+	function cloneTransactionalState(state: TransactionalState): TransactionalState {
 		return structuredClone(state);
 	}
 
 	function expectTransactionalStateEmpty(state: TransactionalState) {
-		for (const collection of Object.values(state))
-			expect(collection).toEqual([]);
+		for (const collection of Object.values(state)) expect(collection).toEqual([]);
 	}
 
 	function expectPostCommitCallbacksZero() {
-		expect(
-			callerMocks.runAutoCompletedAbsenceMaintenance,
-		).not.toHaveBeenCalled();
+		expect(callerMocks.runAutoCompletedAbsenceMaintenance).not.toHaveBeenCalled();
 		expect(callerMocks.sendEmail).not.toHaveBeenCalled();
 		expect(callerMocks.onAbsenceRequestSubmitted).not.toHaveBeenCalled();
 		expect(callerMocks.onAbsenceRequestPendingApproval).not.toHaveBeenCalled();
@@ -698,6 +674,8 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			},
 		];
 		const tx = {
+			// The real historical-overlap read is empty in these existing submission fixtures.
+			execute: async () => [],
 			insert: vi.fn(() => {
 				insertIndex += 1;
 				if (insertIndex === 1) {
@@ -754,9 +732,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 										});
 										Object.assign(currentState().absences[0] ?? {}, values);
 									}
-									return currentUpdateIndex === 2
-										? bindRows
-										: [{ id: "absence-1" }];
+									return currentUpdateIndex === 2 ? bindRows : [{ id: "absence-1" }];
 								}),
 							};
 						}),
@@ -826,60 +802,56 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		};
 		let captureCount = 0;
 		const transactionState = { committed: false };
-		const startCanonicalWorkflow = vi.fn(
-			async (input: StartApprovalWorkflowInput) => {
-				calls.push("start");
-				await input.context.writeGate.acquire({
-					organizationId: input.organizationId,
-					workflowType: input.workflowType,
-				});
-				currentState().workflows.push({
+		const startCanonicalWorkflow = vi.fn(async (input: StartApprovalWorkflowInput) => {
+			calls.push("start");
+			await input.context.writeGate.acquire({
+				organizationId: input.organizationId,
+				workflowType: input.workflowType,
+			});
+			currentState().workflows.push({
+				id: "workflow-1",
+				status: allAuto ? "approved" : "pending",
+			});
+			currentState().stages.push({
+				id: "stage-1",
+				status: allAuto ? "approved" : "pending",
+			});
+			currentState().events.push({
+				id: "event-1",
+				type: "workflow.submitted",
+			});
+			await input.bindSourceWorkflow("workflow-1");
+			currentState().projections.push({ workflowId: "workflow-1" });
+			currentState().outbox.push({ workflowId: "workflow-1" });
+			return {
+				kind: "created",
+				status: allAuto ? "approved" : "pending",
+				terminal: allAuto,
+				snapshot: {
 					id: "workflow-1",
 					status: allAuto ? "approved" : "pending",
-				});
-				currentState().stages.push({
-					id: "stage-1",
-					status: allAuto ? "approved" : "pending",
-				});
-				currentState().events.push({
-					id: "event-1",
-					type: "workflow.submitted",
-				});
-				await input.bindSourceWorkflow("workflow-1");
-				currentState().projections.push({ workflowId: "workflow-1" });
-				currentState().outbox.push({ workflowId: "workflow-1" });
-				return {
-					kind: "created",
-					status: allAuto ? "approved" : "pending",
-					terminal: allAuto,
-					snapshot: {
-						id: "workflow-1",
-						status: allAuto ? "approved" : "pending",
-						completedAt: allAuto ? parseInstant("2026-07-19T10:00:00Z") : null,
-						stages: [],
-					},
-					events: [],
-					projection: {},
-					outbox: [],
-					outboxResults: [],
-				};
-			},
-		);
-		const approvalLifecycle = {
-			withApprovalTransaction: vi.fn(
-				async (operation: (value: unknown) => Promise<unknown>) => {
-					calls.push("transaction");
-					activeState = cloneTransactionalState(committedState);
-					try {
-						const result = await operation(context);
-						committedState = cloneTransactionalState(currentState());
-						transactionState.committed = true;
-						return result;
-					} finally {
-						activeState = null;
-					}
+					completedAt: allAuto ? parseInstant("2026-07-19T10:00:00Z") : null,
+					stages: [],
 				},
-			),
+				events: [],
+				projection: {},
+				outbox: [],
+				outboxResults: [],
+			};
+		});
+		const approvalLifecycle = {
+			withApprovalTransaction: vi.fn(async (operation: (value: unknown) => Promise<unknown>) => {
+				calls.push("transaction");
+				activeState = cloneTransactionalState(committedState);
+				try {
+					const result = await operation(context);
+					committedState = cloneTransactionalState(currentState());
+					transactionState.committed = true;
+					return result;
+				} finally {
+					activeState = null;
+				}
+			}),
 			captureLegacyState: vi.fn(async () => {
 				captureCount += 1;
 				calls.push(captureCount === 1 ? "capture-before" : "capture-after");
@@ -917,9 +889,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 				calls.push("evidence-capture");
 				return null;
 			}),
-			captureLegacyEvidence: vi.fn(
-				async (_tx: unknown, _input: Record<string, unknown>) => null,
-			),
+			captureLegacyEvidence: vi.fn(async (_tx: unknown, _input: Record<string, unknown>) => null),
 			nowInstant: vi.fn(() => parseInstant("2026-07-19T10:00:00Z")),
 		};
 		const create = vi.fn(() => {
@@ -964,9 +934,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		});
 		const dbService = {
 			db: { transaction: plainTransaction },
-			query: vi.fn((_name, run) =>
-				Effect.tryPromise({ try: run, catch: (error) => error }),
-			),
+			query: vi.fn((_name, run) => Effect.tryPromise({ try: run, catch: (error) => error })),
 		};
 
 		return {
@@ -1075,15 +1043,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		],
 		[
 			"complete",
-			[
-				"transaction",
-				"source",
-				"canonical",
-				"gate",
-				"start",
-				"bind",
-				"evidence-capture",
-			],
+			["transaction", "source", "canonical", "gate", "start", "bind", "evidence-capture"],
 		],
 	] as const)("routes %s submissions in one approval-owned transaction", async (mode, expected) => {
 		const harness = createModeRoutingHarness(mode);
@@ -1128,9 +1088,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			canonicalRecordId: "canonical-1",
 		});
 		expect(harness.calls).toEqual(expected);
-		expect(
-			harness.approvalLifecycle.withApprovalTransaction,
-		).toHaveBeenCalledOnce();
+		expect(harness.approvalLifecycle.withApprovalTransaction).toHaveBeenCalledOnce();
 		expect(harness.plainTransaction).not.toHaveBeenCalled();
 		expect(harness.create).toHaveBeenCalledTimes(
 			mode === "legacy" || mode === "shadow" || mode === "ready" ? 1 : 0,
@@ -1140,89 +1098,75 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		);
 	});
 
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-		"canonical",
-		"complete",
-	] as const)("routes a managerless policy submission in %s without notifying a default manager", async (mode) => {
-		const harness = createModeRoutingHarness(mode);
-		callerMocks.getPrimaryEligibleManagerIdForRequester.mockResolvedValueOnce(
-			null,
-		);
-		callerMocks.createAbsenceApprovalWorkflow.mockReturnValue(
-			Effect.succeed({
-				kind: "chain_created",
-				chainInstanceId: "chain-1",
-				approvalRequestId: "approval-1",
-			}),
-		);
-
-		const result = await requestAbsenceForEmployeeEffect(
-			absenceRequest,
-			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
-			"user-1",
-			harness.approvalLifecycle as never,
-		);
-
-		expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
-		expect(harness.transactionState.committed).toBe(true);
-		expect(callerMocks.sendEmail).not.toHaveBeenCalled();
-		expect(callerMocks.onAbsenceRequestPendingApproval).not.toHaveBeenCalled();
-		if (mode === "legacy" || mode === "shadow" || mode === "ready") {
-			expect(callerMocks.createAbsenceApprovalWorkflow).toHaveBeenCalledWith(
-				expect.anything(),
-				expect.objectContaining({ defaultApproverId: null }),
+	it.each(["legacy", "shadow", "ready", "canonical", "complete"] as const)(
+		"routes a managerless policy submission in %s without notifying a default manager",
+		async (mode) => {
+			const harness = createModeRoutingHarness(mode);
+			callerMocks.getPrimaryEligibleManagerIdForRequester.mockResolvedValueOnce(null);
+			callerMocks.createAbsenceApprovalWorkflow.mockReturnValue(
+				Effect.succeed({
+					kind: "chain_created",
+					chainInstanceId: "chain-1",
+					approvalRequestId: "approval-1",
+				}),
 			);
-		} else {
-			expect(harness.startCanonicalWorkflow).toHaveBeenCalledWith(
-				expect.objectContaining({ defaultApproverEmployeeId: null }),
+
+			const result = await requestAbsenceForEmployeeEffect(
+				absenceRequest,
+				{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
+				"user-1",
+				harness.approvalLifecycle as never,
 			);
-		}
-	});
 
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-		"canonical",
-		"complete",
-	] as const)("rolls back a managerless %s submission when no policy matches", async (mode) => {
-		const harness = createModeRoutingHarness(mode);
-		const failure = new ValidationError({
-			message: "No manager assigned to approve absence requests",
-			field: "managerId",
-		});
-		callerMocks.getPrimaryEligibleManagerIdForRequester.mockResolvedValueOnce(
-			null,
-		);
-		callerMocks.createAbsenceApprovalWorkflow.mockReturnValue(
-			Effect.fail(failure),
-		);
-		harness.startCanonicalWorkflow.mockRejectedValueOnce(
-			new ApprovalWorkflowStartError("NO_DEFAULT_APPROVER"),
-		);
+			expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
+			expect(harness.transactionState.committed).toBe(true);
+			expect(callerMocks.sendEmail).not.toHaveBeenCalled();
+			expect(callerMocks.onAbsenceRequestPendingApproval).not.toHaveBeenCalled();
+			if (mode === "legacy" || mode === "shadow" || mode === "ready") {
+				expect(callerMocks.createAbsenceApprovalWorkflow).toHaveBeenCalledWith(
+					expect.anything(),
+					expect.objectContaining({ defaultApproverId: null }),
+				);
+			} else {
+				expect(harness.startCanonicalWorkflow).toHaveBeenCalledWith(
+					expect.objectContaining({ defaultApproverEmployeeId: null }),
+				);
+			}
+		},
+	);
 
-		const result = await requestAbsenceForEmployeeEffect(
-			absenceRequest,
-			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
-			"user-1",
-			harness.approvalLifecycle as never,
-		);
+	it.each(["legacy", "shadow", "ready", "canonical", "complete"] as const)(
+		"rolls back a managerless %s submission when no policy matches",
+		async (mode) => {
+			const harness = createModeRoutingHarness(mode);
+			const failure = new ValidationError({
+				message: "No manager assigned to approve absence requests",
+				field: "managerId",
+			});
+			callerMocks.getPrimaryEligibleManagerIdForRequester.mockResolvedValueOnce(null);
+			callerMocks.createAbsenceApprovalWorkflow.mockReturnValue(Effect.fail(failure));
+			harness.startCanonicalWorkflow.mockRejectedValueOnce(
+				new ApprovalWorkflowStartError("NO_DEFAULT_APPROVER"),
+			);
 
-		expect(result).toEqual({
-			success: false,
-			error: "No manager assigned to approve absence requests",
-			code: "ValidationError",
-		});
-		expect(
-			harness.approvalLifecycle.withApprovalTransaction,
-		).toHaveBeenCalledOnce();
-		expect(harness.transactionState.committed).toBe(false);
-		expectTransactionalStateEmpty(harness.snapshot());
-		expectPostCommitCallbacksZero();
-	});
+			const result = await requestAbsenceForEmployeeEffect(
+				absenceRequest,
+				{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
+				"user-1",
+				harness.approvalLifecycle as never,
+			);
+
+			expect(result).toEqual({
+				success: false,
+				error: "No manager assigned to approve absence requests",
+				code: "ValidationError",
+			});
+			expect(harness.approvalLifecycle.withApprovalTransaction).toHaveBeenCalledOnce();
+			expect(harness.transactionState.committed).toBe(false);
+			expectTransactionalStateEmpty(harness.snapshot());
+			expectPostCommitCallbacksZero();
+		},
+	);
 
 	it("passes exact trusted absence identity and a non-sensitive projection to canonical start", async () => {
 		const harness = createModeRoutingHarness("canonical");
@@ -1301,253 +1245,233 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			}),
 		);
 		const startInput = harness.startCanonicalWorkflow.mock.calls[0]?.[0];
-		expect(startInput.displayProjection.displayPayload).not.toHaveProperty(
-			"notes",
-		);
-		expect(startInput.displayProjection.displayPayload).not.toHaveProperty(
-			"sickDetail",
-		);
+		expect(startInput.displayProjection.displayPayload).not.toHaveProperty("notes");
+		expect(startInput.displayProjection.displayPayload).not.toHaveProperty("sickDetail");
 	});
 
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("captures exact transaction-scoped evidence and mirror identity in %s mode", async (mode) => {
-		const harness = createModeRoutingHarness(mode);
+	it.each(["shadow", "ready"] as const)(
+		"captures exact transaction-scoped evidence and mirror identity in %s mode",
+		async (mode) => {
+			const harness = createModeRoutingHarness(mode);
 
-		await submitModeRoutingHarness(harness);
+			await submitModeRoutingHarness(harness);
 
-		expect(harness.approvalLifecycle.captureLegacyState).toHaveBeenCalledTimes(
-			2,
-		);
-		for (const [captureInput] of harness.approvalLifecycle.captureLegacyState
-			.mock.calls) {
-			expect(captureInput).toEqual({
-				dbService: harness.context.dbService,
-				organizationId: "org-1",
-				absenceId: "absence-1",
-				capturedAt: captureInput.capturedAt,
-			});
-			expect(isInstant(captureInput.capturedAt)).toBe(true);
-		}
-		expect(
-			harness.approvalLifecycle.captureLegacyState.mock.calls[0]?.[0].dbService,
-		).toBe(harness.context.dbService);
-		expect(
-			harness.approvalLifecycle.captureLegacyState.mock.calls[1]?.[0].dbService,
-		).toBe(harness.context.dbService);
-		expect(
-			harness.context.compatibilityWriter.mirrorLegacyToCanonical,
-		).toHaveBeenCalledWith(
-			expect.objectContaining({
-				actor: {
-					kind: "employee",
-					employeeId: "employee-1",
-					userId: "user-1",
-				},
-				idempotencyKey: "absence:absence-1:submission",
-				expectedVersion: null,
-				before: expect.any(Object),
-				after: expect.any(Object),
-			}),
-		);
-	});
-
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("rebinds the compatibility writer to one exact-scope fixed gate in %s mode", async (mode) => {
-		const harness = createModeRoutingHarness(mode);
-
-		await submitModeRoutingHarness(harness);
-
-		const withWriteGate = (
-			harness.context.compatibilityWriter as {
-				withWriteGate: ReturnType<typeof vi.fn>;
+			expect(harness.approvalLifecycle.captureLegacyState).toHaveBeenCalledTimes(2);
+			for (const [captureInput] of harness.approvalLifecycle.captureLegacyState.mock.calls) {
+				expect(captureInput).toEqual({
+					dbService: harness.context.dbService,
+					organizationId: "org-1",
+					absenceId: "absence-1",
+					capturedAt: captureInput.capturedAt,
+				});
+				expect(isInstant(captureInput.capturedAt)).toBe(true);
 			}
-		).withWriteGate;
-		expect(withWriteGate).toHaveBeenCalledOnce();
-		const fixedGate = withWriteGate.mock.calls[0]?.[0] as ApprovalWriteGate;
-		await expect(
-			fixedGate.acquire({ organizationId: "org-1", workflowType: "absence" }),
-		).resolves.toMatchObject({ mode });
-		await expect(
-			fixedGate.acquire({ organizationId: "org-2", workflowType: "absence" }),
-		).rejects.toMatchObject({ code: "invalid_source_identity" });
-		expect(harness.context.writeGate.acquire).toHaveBeenCalledOnce();
-	});
+			expect(harness.approvalLifecycle.captureLegacyState.mock.calls[0]?.[0].dbService).toBe(
+				harness.context.dbService,
+			);
+			expect(harness.approvalLifecycle.captureLegacyState.mock.calls[1]?.[0].dbService).toBe(
+				harness.context.dbService,
+			);
+			expect(harness.context.compatibilityWriter.mirrorLegacyToCanonical).toHaveBeenCalledWith(
+				expect.objectContaining({
+					actor: {
+						kind: "employee",
+						employeeId: "employee-1",
+						userId: "user-1",
+					},
+					idempotencyKey: "absence:absence-1:submission",
+					expectedVersion: null,
+					before: expect.any(Object),
+					after: expect.any(Object),
+				}),
+			);
+		},
+	);
 
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("binds the exact observed workflow before committing %s submission", async (mode) => {
-		const harness = createModeRoutingHarness(mode);
+	it.each(["shadow", "ready"] as const)(
+		"rebinds the compatibility writer to one exact-scope fixed gate in %s mode",
+		async (mode) => {
+			const harness = createModeRoutingHarness(mode);
 
-		await submitModeRoutingHarness(harness);
+			await submitModeRoutingHarness(harness);
 
-		expect(harness.calls.indexOf("mirror")).toBeLessThan(
-			harness.calls.indexOf("bind"),
-		);
-		expect(harness.snapshot().absences[0]).toMatchObject({
-			id: "absence-1",
-			organizationId: "org-1",
-			approvalWorkflowId: "workflow-1",
-		});
-		expect(harness.snapshot().sourceLinks).toEqual([
-			{
-				absenceId: "absence-1",
+			const withWriteGate = (
+				harness.context.compatibilityWriter as {
+					withWriteGate: ReturnType<typeof vi.fn>;
+				}
+			).withWriteGate;
+			expect(withWriteGate).toHaveBeenCalledOnce();
+			const fixedGate = withWriteGate.mock.calls[0]?.[0] as ApprovalWriteGate;
+			await expect(
+				fixedGate.acquire({ organizationId: "org-1", workflowType: "absence" }),
+			).resolves.toMatchObject({ mode });
+			await expect(
+				fixedGate.acquire({ organizationId: "org-2", workflowType: "absence" }),
+			).rejects.toMatchObject({ code: "invalid_source_identity" });
+			expect(harness.context.writeGate.acquire).toHaveBeenCalledOnce();
+		},
+	);
+
+	it.each(["shadow", "ready"] as const)(
+		"binds the exact observed workflow before committing %s submission",
+		async (mode) => {
+			const harness = createModeRoutingHarness(mode);
+
+			await submitModeRoutingHarness(harness);
+
+			expect(harness.calls.indexOf("mirror")).toBeLessThan(harness.calls.indexOf("bind"));
+			expect(harness.snapshot().absences[0]).toMatchObject({
+				id: "absence-1",
 				organizationId: "org-1",
 				approvalWorkflowId: "workflow-1",
-			},
-		]);
-	});
+			});
+			expect(harness.snapshot().sourceLinks).toEqual([
+				{
+					absenceId: "absence-1",
+					organizationId: "org-1",
+					approvalWorkflowId: "workflow-1",
+				},
+			]);
+		},
+	);
 
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-	] as const)("captures legacy evidence in the %s submission transaction after the legacy rows and observation", async (mode) => {
-		const harness = createModeRoutingHarness(mode);
-		const capture = harness.approvalLifecycle.captureLegacyEvidence;
-		capture.mockImplementationOnce(async () => {
-			harness.calls.push("legacy-evidence");
-			return null;
-		});
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"captures legacy evidence in the %s submission transaction after the legacy rows and observation",
+		async (mode) => {
+			const harness = createModeRoutingHarness(mode);
+			const capture = harness.approvalLifecycle.captureLegacyEvidence;
+			capture.mockImplementationOnce(async () => {
+				harness.calls.push("legacy-evidence");
+				return null;
+			});
 
-		await submitModeRoutingHarness(harness);
+			await submitModeRoutingHarness(harness);
 
-		expect(capture).toHaveBeenCalledOnce();
-		const [tx, input] = capture.mock.calls[0] ?? [];
-		expect(tx).toBe(harness.context.dbService.db);
-		expect(input).toMatchObject({
-			organizationId: "org-1",
-			absenceId: "absence-1",
-			submissionKey: "absence:absence-1:submission",
-			routing: { kind: "default_created", approvalRequestId: "approval-1" },
-			submitterUserId: "user-1",
-			category: { id: "category-1" },
-		});
-		expect(harness.calls.indexOf("legacy-create")).toBeLessThan(
-			harness.calls.indexOf("legacy-evidence"),
-		);
-		if (mode === "legacy") {
-			expect(input?.observed).toBeNull();
-		} else {
-			expect(harness.calls.indexOf("bind")).toBeLessThan(
+			expect(capture).toHaveBeenCalledOnce();
+			const [tx, input] = capture.mock.calls[0] ?? [];
+			expect(tx).toBe(harness.context.dbService.db);
+			expect(input).toMatchObject({
+				organizationId: "org-1",
+				absenceId: "absence-1",
+				submissionKey: "absence:absence-1:submission",
+				routing: { kind: "default_created", approvalRequestId: "approval-1" },
+				submitterUserId: "user-1",
+				category: { id: "category-1" },
+			});
+			expect(harness.calls.indexOf("legacy-create")).toBeLessThan(
 				harness.calls.indexOf("legacy-evidence"),
 			);
-			expect(input?.observed).toMatchObject({ snapshot: { id: "workflow-1" } });
-		}
-		expect(harness.approvalLifecycle.captureCanonicalEvidence).not.toHaveBeenCalled();
-	});
+			if (mode === "legacy") {
+				expect(input?.observed).toBeNull();
+			} else {
+				expect(harness.calls.indexOf("bind")).toBeLessThan(
+					harness.calls.indexOf("legacy-evidence"),
+				);
+				expect(input?.observed).toMatchObject({ snapshot: { id: "workflow-1" } });
+			}
+			expect(harness.approvalLifecycle.captureCanonicalEvidence).not.toHaveBeenCalled();
+		},
+	);
 
-	it.each([
-		"legacy",
-		"shadow",
-	] as const)("rolls back the whole %s submission when legacy evidence capture fails", async (mode) => {
-		const harness = createModeRoutingHarness(mode);
-		harness.approvalLifecycle.captureLegacyEvidence.mockRejectedValueOnce(
-			new Error("legacy evidence capture failed"),
-		);
-
-		await expect(submitModeRoutingHarness(harness)).rejects.toThrow(
-			/legacy evidence capture failed/,
-		);
-		expect(harness.transactionState.committed).toBe(false);
-		expectTransactionalStateEmpty(harness.snapshot());
-		expectPostCommitCallbacksZero();
-	});
-
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("rolls back %s submission when observed workflow binding loses its CAS", async (mode) => {
-		const harness = createModeRoutingHarness(mode);
-		harness.setBindRows([]);
-
-		await expect(submitModeRoutingHarness(harness)).rejects.toThrow(
-			/ workflow binding affected an unexpected row count/i,
-		);
-		expect(harness.transactionState.committed).toBe(false);
-		expectTransactionalStateEmpty(harness.snapshot());
-		expectPostCommitCallbacksZero();
-	});
-
-	it.each([
-		"shadow",
-		"ready",
-		"canonical",
-		"complete",
-	] as const)("finalizes all-auto %s submission parity exactly once before commit", async (mode) => {
-		const harness = createModeRoutingHarness(mode);
-		harness.setAllAuto(true);
-
-		const result = await submitModeRoutingHarness(harness, "employee-1");
-		const state = harness.snapshot();
-
-		expect(result).toMatchObject({ id: "absence-1", status: "approved" });
-		expect(state.absences).toHaveLength(1);
-		expect(state.absences[0]).toMatchObject({
-			id: "absence-1",
-			status: "approved",
-			approvedBy: "employee-1",
-		});
-		expect(state.timeRecords).toHaveLength(1);
-		expect(state.timeRecords[0]).toMatchObject({
-			id: "canonical-1",
-			approvalState: "approved",
-		});
-		expect(harness.sourceFinalizationCount()).toBe(1);
-		if (mode === "shadow" || mode === "ready") {
-			expect(harness.calls.indexOf("legacy-finalize")).toBeLessThan(
-				harness.calls.indexOf("mirror"),
+	it.each(["legacy", "shadow"] as const)(
+		"rolls back the whole %s submission when legacy evidence capture fails",
+		async (mode) => {
+			const harness = createModeRoutingHarness(mode);
+			harness.approvalLifecycle.captureLegacyEvidence.mockRejectedValueOnce(
+				new Error("legacy evidence capture failed"),
 			);
-			expect(state.workflows).toHaveLength(1);
-		}
-		if (mode === "canonical") {
-			expect(harness.calls.indexOf("auto-finalizer")).toBeLessThan(
-				harness.calls.indexOf("canonical-mirror"),
-			);
-			expect(state.legacyRequests).toHaveLength(1);
-		}
-		if (mode === "complete") {
-			expect(
-				harness.context.compatibilityWriter.mirrorCanonicalToLegacy,
-			).not.toHaveBeenCalled();
-			expect(state.legacyRequests).toEqual([]);
-			expect(state.legacyChains).toEqual([]);
-		}
-	});
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("returns the stable public result and runs all-auto maintenance once after %s commit", async (mode) => {
-		const harness = createModeRoutingHarness(mode);
-		harness.setAllAuto(true);
-		callerMocks.runAutoCompletedAbsenceMaintenance.mockImplementationOnce(
-			async () => {
+			await expect(submitModeRoutingHarness(harness)).rejects.toThrow(
+				/legacy evidence capture failed/,
+			);
+			expect(harness.transactionState.committed).toBe(false);
+			expectTransactionalStateEmpty(harness.snapshot());
+			expectPostCommitCallbacksZero();
+		},
+	);
+
+	it.each(["shadow", "ready"] as const)(
+		"rolls back %s submission when observed workflow binding loses its CAS",
+		async (mode) => {
+			const harness = createModeRoutingHarness(mode);
+			harness.setBindRows([]);
+
+			await expect(submitModeRoutingHarness(harness)).rejects.toThrow(
+				/ workflow binding affected an unexpected row count/i,
+			);
+			expect(harness.transactionState.committed).toBe(false);
+			expectTransactionalStateEmpty(harness.snapshot());
+			expectPostCommitCallbacksZero();
+		},
+	);
+
+	it.each(["shadow", "ready", "canonical", "complete"] as const)(
+		"finalizes all-auto %s submission parity exactly once before commit",
+		async (mode) => {
+			const harness = createModeRoutingHarness(mode);
+			harness.setAllAuto(true);
+
+			const result = await submitModeRoutingHarness(harness, "employee-1");
+			const state = harness.snapshot();
+
+			expect(result).toMatchObject({ id: "absence-1", status: "approved" });
+			expect(state.absences).toHaveLength(1);
+			expect(state.absences[0]).toMatchObject({
+				id: "absence-1",
+				status: "approved",
+				approvedBy: "employee-1",
+			});
+			expect(state.timeRecords).toHaveLength(1);
+			expect(state.timeRecords[0]).toMatchObject({
+				id: "canonical-1",
+				approvalState: "approved",
+			});
+			expect(harness.sourceFinalizationCount()).toBe(1);
+			if (mode === "shadow" || mode === "ready") {
+				expect(harness.calls.indexOf("legacy-finalize")).toBeLessThan(
+					harness.calls.indexOf("mirror"),
+				);
+				expect(state.workflows).toHaveLength(1);
+			}
+			if (mode === "canonical") {
+				expect(harness.calls.indexOf("auto-finalizer")).toBeLessThan(
+					harness.calls.indexOf("canonical-mirror"),
+				);
+				expect(state.legacyRequests).toHaveLength(1);
+			}
+			if (mode === "complete") {
+				expect(harness.context.compatibilityWriter.mirrorCanonicalToLegacy).not.toHaveBeenCalled();
+				expect(state.legacyRequests).toEqual([]);
+				expect(state.legacyChains).toEqual([]);
+			}
+		},
+	);
+
+	it.each(["canonical", "complete"] as const)(
+		"returns the stable public result and runs all-auto maintenance once after %s commit",
+		async (mode) => {
+			const harness = createModeRoutingHarness(mode);
+			harness.setAllAuto(true);
+			callerMocks.runAutoCompletedAbsenceMaintenance.mockImplementationOnce(async () => {
 				expect(harness.transactionState.committed).toBe(true);
 				expect(harness.snapshot().absences[0]).toMatchObject({
 					status: "approved",
 				});
-			},
-		);
+			});
 
-		const result = await requestAbsenceForEmployeeEffect(
-			absenceRequest,
-			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
-			"user-1",
-			harness.approvalLifecycle as never,
-		);
+			const result = await requestAbsenceForEmployeeEffect(
+				absenceRequest,
+				{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
+				"user-1",
+				harness.approvalLifecycle as never,
+			);
 
-		expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
-		expect(
-			callerMocks.runAutoCompletedAbsenceMaintenance,
-		).toHaveBeenCalledOnce();
-		expect(callerMocks.sendEmail).not.toHaveBeenCalled();
-		expect(addCalendarSyncJobMock).not.toHaveBeenCalled();
-	});
+			expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
+			expect(callerMocks.runAutoCompletedAbsenceMaintenance).toHaveBeenCalledOnce();
+			expect(callerMocks.sendEmail).not.toHaveBeenCalled();
+			expect(addCalendarSyncJobMock).not.toHaveBeenCalled();
+		},
+	);
 
 	it.each([
 		["legacy", true],
@@ -1555,105 +1479,104 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		["ready", true],
 		["canonical", false],
 		["complete", false],
-	] as const)("routes direct pending submission delivery in %s mode", async (mode, expectsLegacyDelivery) => {
-		const harness = createModeRoutingHarness(mode);
-		callerMocks.employeeFindFirst
-			.mockResolvedValueOnce({
-				id: "manager-1",
-				userId: "manager-user-1",
-				organizationId: "org-1",
-				user: { name: "Default Manager", email: "manager@example.com" },
-			})
-			.mockResolvedValueOnce({
-				id: "employee-1",
-				userId: "user-1",
-				organizationId: "org-1",
-				user: { name: "Avery Employee", email: "avery@example.com" },
+	] as const)(
+		"routes direct pending submission delivery in %s mode",
+		async (mode, expectsLegacyDelivery) => {
+			const harness = createModeRoutingHarness(mode);
+			callerMocks.employeeFindFirst
+				.mockResolvedValueOnce({
+					id: "manager-1",
+					userId: "manager-user-1",
+					organizationId: "org-1",
+					user: { name: "Default Manager", email: "manager@example.com" },
+				})
+				.mockResolvedValueOnce({
+					id: "employee-1",
+					userId: "user-1",
+					organizationId: "org-1",
+					user: { name: "Avery Employee", email: "avery@example.com" },
+				});
+
+			const result = await requestAbsenceForEmployeeEffect(
+				absenceRequest,
+				{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
+				"user-1",
+				harness.approvalLifecycle as never,
+			);
+
+			expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
+			// Both emails go out with these notifications, never directly (#1152).
+			expect(callerMocks.sendEmail).not.toHaveBeenCalled();
+			expect(callerMocks.onAbsenceRequestSubmitted).toHaveBeenCalledTimes(
+				expectsLegacyDelivery ? 1 : 0,
+			);
+			expect(callerMocks.onAbsenceRequestPendingApproval).toHaveBeenCalledTimes(
+				expectsLegacyDelivery ? 1 : 0,
+			);
+			if (!expectsLegacyDelivery) {
+				expect(callerMocks.employeeFindFirst).not.toHaveBeenCalled();
+			}
+		},
+	);
+
+	it.each(["employee", "manager"] as const)(
+		"keeps committed legacy submission successful when the post-commit %s notification fails",
+		async (failure) => {
+			const harness = createModeRoutingHarness("legacy");
+			callerMocks.employeeFindFirst
+				.mockResolvedValueOnce({
+					id: "manager-1",
+					userId: "manager-user-1",
+					organizationId: "org-1",
+					user: { name: "Default Manager", email: "manager@example.com" },
+				})
+				.mockResolvedValueOnce({
+					id: "employee-1",
+					userId: "user-1",
+					organizationId: "org-1",
+					user: { name: "Avery Employee", email: "avery@example.com" },
+				});
+			const failingTrigger =
+				failure === "employee"
+					? callerMocks.onAbsenceRequestSubmitted
+					: callerMocks.onAbsenceRequestPendingApproval;
+			failingTrigger.mockImplementationOnce(() => {
+				throw new Error("notification failed");
 			});
 
-		const result = await requestAbsenceForEmployeeEffect(
-			absenceRequest,
-			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
-			"user-1",
-			harness.approvalLifecycle as never,
-		);
+			const result = await requestAbsenceForEmployeeEffect(
+				absenceRequest,
+				{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
+				"user-1",
+				harness.approvalLifecycle as never,
+			);
+			const committed = harness.snapshot();
 
-		expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
-		// Both emails go out with these notifications, never directly (#1152).
-		expect(callerMocks.sendEmail).not.toHaveBeenCalled();
-		expect(callerMocks.onAbsenceRequestSubmitted).toHaveBeenCalledTimes(
-			expectsLegacyDelivery ? 1 : 0,
-		);
-		expect(callerMocks.onAbsenceRequestPendingApproval).toHaveBeenCalledTimes(
-			expectsLegacyDelivery ? 1 : 0,
-		);
-		if (!expectsLegacyDelivery) {
-			expect(callerMocks.employeeFindFirst).not.toHaveBeenCalled();
-		}
-	});
+			expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
+			expect(harness.approvalLifecycle.withApprovalTransaction).toHaveBeenCalledOnce();
+			expect(committed.absences).toHaveLength(1);
+			expect(committed.timeRecords).toHaveLength(1);
+			expect(committed.absenceDetails).toHaveLength(1);
+			expect(harness.calls.filter((call) => call === "source")).toHaveLength(1);
+			if (failure === "manager") {
+				expect(callerMocks.onAbsenceRequestSubmitted).toHaveBeenCalledOnce();
+			}
+			expect(loggerErrorMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					absenceId: "absence-1",
+					error: expect.anything(),
+				}),
+				"Failed to deliver absence submission notifications after commit",
+			);
+		},
+	);
 
-	it.each([
-		"employee",
-		"manager",
-	] as const)("keeps committed legacy submission successful when the post-commit %s notification fails", async (failure) => {
-		const harness = createModeRoutingHarness("legacy");
-		callerMocks.employeeFindFirst
-			.mockResolvedValueOnce({
-				id: "manager-1",
-				userId: "manager-user-1",
-				organizationId: "org-1",
-				user: { name: "Default Manager", email: "manager@example.com" },
-			})
-			.mockResolvedValueOnce({
-				id: "employee-1",
-				userId: "user-1",
-				organizationId: "org-1",
-				user: { name: "Avery Employee", email: "avery@example.com" },
-			});
-		const failingTrigger =
-			failure === "employee"
-				? callerMocks.onAbsenceRequestSubmitted
-				: callerMocks.onAbsenceRequestPendingApproval;
-		failingTrigger.mockImplementationOnce(() => {
-			throw new Error("notification failed");
-		});
-
-		const result = await requestAbsenceForEmployeeEffect(
-			absenceRequest,
-			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
-			"user-1",
-			harness.approvalLifecycle as never,
-		);
-		const committed = harness.snapshot();
-
-		expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
-		expect(
-			harness.approvalLifecycle.withApprovalTransaction,
-		).toHaveBeenCalledOnce();
-		expect(committed.absences).toHaveLength(1);
-		expect(committed.timeRecords).toHaveLength(1);
-		expect(committed.absenceDetails).toHaveLength(1);
-		expect(harness.calls.filter((call) => call === "source")).toHaveLength(1);
-		if (failure === "manager") {
-			expect(callerMocks.onAbsenceRequestSubmitted).toHaveBeenCalledOnce();
-		}
-		expect(loggerErrorMock).toHaveBeenCalledWith(
-			expect.objectContaining({
-				absenceId: "absence-1",
-				error: expect.anything(),
-			}),
-			"Failed to deliver absence submission notifications after commit",
-		);
-	});
-
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("suppresses post-commit work and rolls back public %s auto-finalizer failure", async (mode) => {
-		const harness = createModeRoutingHarness(mode);
-		harness.setAllAuto(true);
-		harness.approvalLifecycle.finalizeCanonicalAutoCompletion.mockImplementationOnce(
-			async () => {
+	it.each(["canonical", "complete"] as const)(
+		"suppresses post-commit work and rolls back public %s auto-finalizer failure",
+		async (mode) => {
+			const harness = createModeRoutingHarness(mode);
+			harness.setAllAuto(true);
+			harness.approvalLifecycle.finalizeCanonicalAutoCompletion.mockImplementationOnce(async () => {
 				Object.assign(harness.currentState().absences[0] ?? {}, {
 					status: "approved",
 				});
@@ -1661,26 +1584,24 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					approvalState: "approved",
 				});
 				throw new Error("auto-finalizer failed");
-			},
-		);
+			});
 
-		const result = await requestAbsenceForEmployeeEffect(
-			absenceRequest,
-			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
-			"user-1",
-			harness.approvalLifecycle as never,
-		);
+			const result = await requestAbsenceForEmployeeEffect(
+				absenceRequest,
+				{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
+				"user-1",
+				harness.approvalLifecycle as never,
+			);
 
-		expect(result).toMatchObject({ success: false });
-		expect(harness.transactionState.committed).toBe(false);
-		expectTransactionalStateEmpty(harness.snapshot());
-		expect(
-			callerMocks.runAutoCompletedAbsenceMaintenance,
-		).not.toHaveBeenCalled();
-		expect(callerMocks.sendEmail).not.toHaveBeenCalled();
-		expect(addCalendarSyncJobMock).not.toHaveBeenCalled();
-		expectPostCommitCallbacksZero();
-	});
+			expect(result).toMatchObject({ success: false });
+			expect(harness.transactionState.committed).toBe(false);
+			expectTransactionalStateEmpty(harness.snapshot());
+			expect(callerMocks.runAutoCompletedAbsenceMaintenance).not.toHaveBeenCalled();
+			expect(callerMocks.sendEmail).not.toHaveBeenCalled();
+			expect(addCalendarSyncJobMock).not.toHaveBeenCalled();
+			expectPostCommitCallbacksZero();
+		},
+	);
 
 	it("finalizes a canonical all-auto workflow once before its compatibility mirror", async () => {
 		const harness = createModeRoutingHarness("canonical");
@@ -1757,12 +1678,8 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			"evidence-capture",
 			"canonical-mirror",
 		]);
-		expect(
-			harness.approvalLifecycle.finalizeCanonicalAutoCompletion,
-		).toHaveBeenCalledOnce();
-		expect(
-			harness.approvalLifecycle.finalizeCanonicalAutoCompletion,
-		).toHaveBeenCalledWith({
+		expect(harness.approvalLifecycle.finalizeCanonicalAutoCompletion).toHaveBeenCalledOnce();
+		expect(harness.approvalLifecycle.finalizeCanonicalAutoCompletion).toHaveBeenCalledWith({
 			dbService: expect.objectContaining({ db: harness.context.dbService.db }),
 			organizationId: "org-1",
 			absenceId: "absence-1",
@@ -1779,46 +1696,44 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		});
 	});
 
-	it.each([
-		"capture-after",
-		"legacy-mirror",
-	] as const)("does not commit or run post-commit work when shadow %s fails", async (failure) => {
-		const harness = createModeRoutingHarness("shadow");
-		if (failure === "capture-after") {
-			harness.approvalLifecycle.captureLegacyState
-				.mockResolvedValueOnce({
-					organizationId: "org-1",
-					source: {
+	it.each(["capture-after", "legacy-mirror"] as const)(
+		"does not commit or run post-commit work when shadow %s fails",
+		async (failure) => {
+			const harness = createModeRoutingHarness("shadow");
+			if (failure === "capture-after") {
+				harness.approvalLifecycle.captureLegacyState
+					.mockResolvedValueOnce({
 						organizationId: "org-1",
-						workflowType: "absence",
-						sourceType: "absence_entry",
-						sourceId: "absence-1",
+						source: {
+							organizationId: "org-1",
+							workflowType: "absence",
+							sourceType: "absence_entry",
+							sourceId: "absence-1",
+						},
+					} as never)
+					.mockRejectedValueOnce(new Error("capture-after failed"));
+			} else {
+				harness.context.compatibilityWriter.mirrorLegacyToCanonical.mockImplementationOnce(
+					async () => {
+						harness.currentState().workflows.push({ id: "workflow-1" });
+						harness.currentState().stages.push({ id: "stage-1" });
+						harness.currentState().events.push({ id: "event-1" });
+						harness.currentState().projections.push({ workflowId: "workflow-1" });
+						harness.currentState().outbox.push({ workflowId: "workflow-1" });
+						throw new Error("legacy mirror failed");
 					},
-				} as never)
-				.mockRejectedValueOnce(new Error("capture-after failed"));
-		} else {
-			harness.context.compatibilityWriter.mirrorLegacyToCanonical.mockImplementationOnce(
-				async () => {
-					harness.currentState().workflows.push({ id: "workflow-1" });
-					harness.currentState().stages.push({ id: "stage-1" });
-					harness.currentState().events.push({ id: "event-1" });
-					harness.currentState().projections.push({ workflowId: "workflow-1" });
-					harness.currentState().outbox.push({ workflowId: "workflow-1" });
-					throw new Error("legacy mirror failed");
-				},
-			);
-		}
+				);
+			}
 
-		await expect(submitModeRoutingHarness(harness)).rejects.toThrow(/failed/);
-		expect(harness.transactionState.committed).toBe(false);
-		expectTransactionalStateEmpty(harness.snapshot());
-		expect(
-			callerMocks.runAutoCompletedAbsenceMaintenance,
-		).not.toHaveBeenCalled();
-		expect(addCalendarSyncJobMock).not.toHaveBeenCalled();
-		expect(callerMocks.sendEmail).not.toHaveBeenCalled();
-		expectPostCommitCallbacksZero();
-	});
+			await expect(submitModeRoutingHarness(harness)).rejects.toThrow(/failed/);
+			expect(harness.transactionState.committed).toBe(false);
+			expectTransactionalStateEmpty(harness.snapshot());
+			expect(callerMocks.runAutoCompletedAbsenceMaintenance).not.toHaveBeenCalled();
+			expect(addCalendarSyncJobMock).not.toHaveBeenCalled();
+			expect(callerMocks.sendEmail).not.toHaveBeenCalled();
+			expectPostCommitCallbacksZero();
+		},
+	);
 
 	it("rolls back source and canonical rows when capture-before fails", async () => {
 		const harness = createModeRoutingHarness("shadow");
@@ -1826,73 +1741,56 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			new Error("capture-before failed"),
 		);
 
-		await expect(submitModeRoutingHarness(harness)).rejects.toThrow(
-			"capture-before failed",
-		);
+		await expect(submitModeRoutingHarness(harness)).rejects.toThrow("capture-before failed");
 		expect(harness.create).not.toHaveBeenCalled();
 		expect(harness.transactionState.committed).toBe(false);
 		expectTransactionalStateEmpty(harness.snapshot());
-		expect(
-			callerMocks.runAutoCompletedAbsenceMaintenance,
-		).not.toHaveBeenCalled();
+		expect(callerMocks.runAutoCompletedAbsenceMaintenance).not.toHaveBeenCalled();
 		expect(addCalendarSyncJobMock).not.toHaveBeenCalled();
 		expectPostCommitCallbacksZero();
 	});
 
-	it.each([
-		"start persistence",
-		"projection",
-		"outbox",
-	] as const)("does not commit when canonical %s fails", async (failure) => {
-		const harness = createModeRoutingHarness("canonical");
-		harness.startCanonicalWorkflow.mockImplementationOnce(async (input) => {
-			harness.calls.push("start");
-			harness.currentState().workflows.push({ id: "workflow-1" });
-			harness.currentState().stages.push({ id: "stage-1" });
-			harness.currentState().events.push({ id: "event-1" });
-			if (failure !== "start persistence") {
-				await input.bindSourceWorkflow("workflow-1");
-				harness.currentState().projections.push({ workflowId: "workflow-1" });
-			}
-			if (failure === "outbox") {
-				harness.currentState().outbox.push({ workflowId: "workflow-1" });
-			}
-			throw new Error(`${failure} failed`);
-		});
+	it.each(["start persistence", "projection", "outbox"] as const)(
+		"does not commit when canonical %s fails",
+		async (failure) => {
+			const harness = createModeRoutingHarness("canonical");
+			harness.startCanonicalWorkflow.mockImplementationOnce(async (input) => {
+				harness.calls.push("start");
+				harness.currentState().workflows.push({ id: "workflow-1" });
+				harness.currentState().stages.push({ id: "stage-1" });
+				harness.currentState().events.push({ id: "event-1" });
+				if (failure !== "start persistence") {
+					await input.bindSourceWorkflow("workflow-1");
+					harness.currentState().projections.push({ workflowId: "workflow-1" });
+				}
+				if (failure === "outbox") {
+					harness.currentState().outbox.push({ workflowId: "workflow-1" });
+				}
+				throw new Error(`${failure} failed`);
+			});
 
-		await expect(submitModeRoutingHarness(harness)).rejects.toThrow(
-			`${failure} failed`,
-		);
-		expect(harness.transactionState.committed).toBe(false);
-		expectTransactionalStateEmpty(harness.snapshot());
-		expect(
-			harness.context.compatibilityWriter.mirrorCanonicalToLegacy,
-		).not.toHaveBeenCalled();
-		expect(
-			callerMocks.runAutoCompletedAbsenceMaintenance,
-		).not.toHaveBeenCalled();
-		expectPostCommitCallbacksZero();
-	});
+			await expect(submitModeRoutingHarness(harness)).rejects.toThrow(`${failure} failed`);
+			expect(harness.transactionState.committed).toBe(false);
+			expectTransactionalStateEmpty(harness.snapshot());
+			expect(harness.context.compatibilityWriter.mirrorCanonicalToLegacy).not.toHaveBeenCalled();
+			expect(callerMocks.runAutoCompletedAbsenceMaintenance).not.toHaveBeenCalled();
+			expectPostCommitCallbacksZero();
+		},
+	);
 
 	it("does not commit when canonical compatibility mirroring fails", async () => {
 		const harness = createModeRoutingHarness("canonical");
-		harness.context.compatibilityWriter.mirrorCanonicalToLegacy.mockImplementationOnce(
-			async () => {
-				harness.calls.push("canonical-mirror");
-				harness.currentState().legacyRequests.push({ id: "approval-1" });
-				harness.currentState().legacyChains.push({ id: "chain-1" });
-				throw new Error("canonical mirror failed");
-			},
-		);
+		harness.context.compatibilityWriter.mirrorCanonicalToLegacy.mockImplementationOnce(async () => {
+			harness.calls.push("canonical-mirror");
+			harness.currentState().legacyRequests.push({ id: "approval-1" });
+			harness.currentState().legacyChains.push({ id: "chain-1" });
+			throw new Error("canonical mirror failed");
+		});
 
-		await expect(submitModeRoutingHarness(harness)).rejects.toThrow(
-			"canonical mirror failed",
-		);
+		await expect(submitModeRoutingHarness(harness)).rejects.toThrow("canonical mirror failed");
 		expect(harness.transactionState.committed).toBe(false);
 		expectTransactionalStateEmpty(harness.snapshot());
-		expect(
-			callerMocks.runAutoCompletedAbsenceMaintenance,
-		).not.toHaveBeenCalled();
+		expect(callerMocks.runAutoCompletedAbsenceMaintenance).not.toHaveBeenCalled();
 		expect(addCalendarSyncJobMock).not.toHaveBeenCalled();
 		expectPostCommitCallbacksZero();
 	});
@@ -1946,12 +1844,8 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		);
 
 		expect(harness.transactionState.committed).toBe(true);
-		expect(
-			harness.approvalLifecycle.captureCanonicalEvidence,
-		).toHaveBeenCalledOnce();
-		expect(
-			harness.approvalLifecycle.captureCanonicalEvidence,
-		).toHaveBeenCalledWith(
+		expect(harness.approvalLifecycle.captureCanonicalEvidence).toHaveBeenCalledOnce();
+		expect(harness.approvalLifecycle.captureCanonicalEvidence).toHaveBeenCalledWith(
 			harness.context.dbService.db,
 			expect.objectContaining({
 				organizationId: "org-1",
@@ -1980,23 +1874,15 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 
 	it("does not commit when canonical submission evidence capture fails", async () => {
 		const harness = createModeRoutingHarness("canonical");
-		harness.approvalLifecycle.captureCanonicalEvidence.mockImplementationOnce(
-			async () => {
-				throw new Error("evidence capture failed");
-			},
-		);
+		harness.approvalLifecycle.captureCanonicalEvidence.mockImplementationOnce(async () => {
+			throw new Error("evidence capture failed");
+		});
 
-		await expect(submitModeRoutingHarness(harness)).rejects.toThrow(
-			"evidence capture failed",
-		);
+		await expect(submitModeRoutingHarness(harness)).rejects.toThrow("evidence capture failed");
 		expect(harness.transactionState.committed).toBe(false);
 		expectTransactionalStateEmpty(harness.snapshot());
-		expect(
-			harness.context.compatibilityWriter.mirrorCanonicalToLegacy,
-		).not.toHaveBeenCalled();
-		expect(
-			callerMocks.runAutoCompletedAbsenceMaintenance,
-		).not.toHaveBeenCalled();
+		expect(harness.context.compatibilityWriter.mirrorCanonicalToLegacy).not.toHaveBeenCalled();
+		expect(callerMocks.runAutoCompletedAbsenceMaintenance).not.toHaveBeenCalled();
 		expectPostCommitCallbacksZero();
 	});
 
@@ -2004,47 +1890,35 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		const harness = createModeRoutingHarness("canonical");
 		harness.setBindRows([]);
 
-		await expect(submitModeRoutingHarness(harness)).rejects.toThrow(
-			/binding.*row count/i,
-		);
+		await expect(submitModeRoutingHarness(harness)).rejects.toThrow(/binding.*row count/i);
 		expect(harness.transactionState.committed).toBe(false);
 		expectTransactionalStateEmpty(harness.snapshot());
-		expect(
-			harness.context.compatibilityWriter.mirrorCanonicalToLegacy,
-		).not.toHaveBeenCalled();
-		expect(
-			callerMocks.runAutoCompletedAbsenceMaintenance,
-		).not.toHaveBeenCalled();
+		expect(harness.context.compatibilityWriter.mirrorCanonicalToLegacy).not.toHaveBeenCalled();
+		expect(callerMocks.runAutoCompletedAbsenceMaintenance).not.toHaveBeenCalled();
 		expectPostCommitCallbacksZero();
 	});
 
 	it("does not commit or mirror when canonical auto-finalization fails", async () => {
 		const harness = createModeRoutingHarness("canonical");
 		harness.setAllAuto(true);
-		harness.approvalLifecycle.finalizeCanonicalAutoCompletion.mockImplementationOnce(
-			async () => {
-				harness.calls.push("auto-finalizer");
-				Object.assign(harness.currentState().absences[0] ?? {}, {
-					status: "approved",
-				});
-				Object.assign(harness.currentState().timeRecords[0] ?? {}, {
-					approvalState: "approved",
-				});
-				throw new Error("auto-finalizer failed");
-			},
-		);
+		harness.approvalLifecycle.finalizeCanonicalAutoCompletion.mockImplementationOnce(async () => {
+			harness.calls.push("auto-finalizer");
+			Object.assign(harness.currentState().absences[0] ?? {}, {
+				status: "approved",
+			});
+			Object.assign(harness.currentState().timeRecords[0] ?? {}, {
+				approvalState: "approved",
+			});
+			throw new Error("auto-finalizer failed");
+		});
 
-		await expect(
-			submitModeRoutingHarness(harness, "employee-1"),
-		).rejects.toThrow("auto-finalizer failed");
+		await expect(submitModeRoutingHarness(harness, "employee-1")).rejects.toThrow(
+			"auto-finalizer failed",
+		);
 		expect(harness.transactionState.committed).toBe(false);
 		expectTransactionalStateEmpty(harness.snapshot());
-		expect(
-			harness.context.compatibilityWriter.mirrorCanonicalToLegacy,
-		).not.toHaveBeenCalled();
-		expect(
-			callerMocks.runAutoCompletedAbsenceMaintenance,
-		).not.toHaveBeenCalled();
+		expect(harness.context.compatibilityWriter.mirrorCanonicalToLegacy).not.toHaveBeenCalled();
+		expect(callerMocks.runAutoCompletedAbsenceMaintenance).not.toHaveBeenCalled();
 		expect(addCalendarSyncJobMock).not.toHaveBeenCalled();
 		expectPostCommitCallbacksZero();
 	});
@@ -2057,18 +1931,16 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			.mockReturnValueOnce(createInsertBuilder([{ id: "canonical-1" }]))
 			.mockReturnValueOnce(createVoidInsertBuilder());
 		const tx = {
+			// The real historical-overlap read is empty in these existing submission fixtures.
+			execute: async () => [],
 			insert,
 			update: vi.fn(() => createUpdateBuilder()),
 		};
 		const dbService = {
 			db: { transaction },
-			query: vi.fn((_name, run) =>
-				Effect.tryPromise({ try: run, catch: (error) => error }),
-			),
+			query: vi.fn((_name, run) => Effect.tryPromise({ try: run, catch: (error) => error })),
 		};
-		const createApprovalWorkflow = vi.fn(() =>
-			Effect.fail(new Error("approval failed")),
-		);
+		const createApprovalWorkflow = vi.fn(() => Effect.fail(new Error("approval failed")));
 		const approvalLifecycle = createLegacyApprovalLifecycle(transaction);
 
 		await expect(
@@ -2126,20 +1998,18 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		const transaction = vi.fn(async (callback) => callback(tx));
 		const insert = vi
 			.fn()
-			.mockReturnValueOnce(
-				createInsertBuilder([{ id: "absence-1", status: "pending" }]),
-			)
+			.mockReturnValueOnce(createInsertBuilder([{ id: "absence-1", status: "pending" }]))
 			.mockReturnValueOnce(createInsertBuilder([{ id: "canonical-1" }]))
 			.mockReturnValueOnce(createVoidInsertBuilder());
 		const tx = {
+			// The real historical-overlap read is empty in these existing submission fixtures.
+			execute: async () => [],
 			insert,
 			update: vi.fn(() => createUpdateBuilder()),
 		};
 		const dbService = {
 			db: { transaction },
-			query: vi.fn((_name, run) =>
-				Effect.tryPromise({ try: run, catch: (error) => error }),
-			),
+			query: vi.fn((_name, run) => Effect.tryPromise({ try: run, catch: (error) => error })),
 		};
 		const autoCompletion = {
 			absence: { id: "absence-1", status: "approved" },

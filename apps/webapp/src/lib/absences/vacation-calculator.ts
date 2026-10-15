@@ -67,6 +67,7 @@ export function calculateVacationBalance({
 	currentDate,
 	year,
 	adjustmentTotal = 0,
+	previouslyTakenDays = 0,
 	timezone = "UTC",
 }: {
 	organizationAllowance: VacationAllowanceData;
@@ -81,6 +82,7 @@ export function calculateVacationBalance({
 	isWorkingDay?: IsWorkingDay;
 	currentDate: Date | DateTime;
 	year: number;
+	previouslyTakenDays?: number;
 	adjustmentTotal?: number; // Sum of all vacation adjustment events
 	timezone?: string;
 }): VacationBalance {
@@ -135,7 +137,7 @@ export function calculateVacationBalance({
 			const clipped = clipAbsenceDayRange(absence, calendarYear);
 			return clipped ? sum + countAbsenceDays(clipped, isWorkingDay) : sum;
 		}, 0);
-	const usedDays = vacationDaysInYear("approved");
+	const usedDays = vacationDaysInYear("approved") + previouslyTakenDays;
 
 	// 5. Calculate pending days (pending requests that count against vacation)
 	const pendingDays = vacationDaysInYear("pending");
@@ -151,6 +153,7 @@ export function calculateVacationBalance({
 		totalDays,
 		allowanceDays,
 		usedDays,
+		...(previouslyTakenDays !== 0 ? { previouslyTakenDays } : {}),
 		pendingDays,
 		remainingDays,
 		overdrawnDays,

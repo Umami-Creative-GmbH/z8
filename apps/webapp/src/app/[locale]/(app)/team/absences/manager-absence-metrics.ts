@@ -10,6 +10,7 @@ import type { AbsenceWithCategory, VacationBalance } from "@/lib/absences/types"
 export interface ManagerAbsenceMetrics {
 	vacationAllowance: number;
 	usedVacationDays: number;
+	previouslyTakenVacationDays?: number;
 	pendingVacationDays: number;
 	remainingVacationDays: number;
 	/** Approved vacation beyond the allowance (overdrawn vacation, #1111); never deducted. */
@@ -57,6 +58,9 @@ export function calculateManagerAbsenceMetrics(input: {
 	return {
 		vacationAllowance: balance.totalDays,
 		usedVacationDays: balance.usedDays,
+		...(balance.previouslyTakenDays
+			? { previouslyTakenVacationDays: balance.previouslyTakenDays }
+			: {}),
 		pendingVacationDays: balance.pendingDays,
 		remainingVacationDays: balance.remainingDays,
 		overdrawnVacationDays: balance.overdrawnDays,

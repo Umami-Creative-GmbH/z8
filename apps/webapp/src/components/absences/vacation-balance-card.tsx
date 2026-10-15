@@ -1,4 +1,5 @@
 "use client";
+import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 
 import { IconAlertTriangle, IconBeach, IconCalendarCheck, IconClock } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -71,6 +72,7 @@ export function VacationBalanceCard({ balance, now, timezone }: VacationBalanceC
 						</div>
 						<div className="mt-2">
 							<div className="text-2xl font-bold tabular-nums">{balance.usedDays}</div>
+							<PreviouslyTakenVacationExplanation days={balance.previouslyTakenDays} />
 							<div className="text-xs text-muted-foreground">{t("common.days.label", "days")}</div>
 						</div>
 					</div>

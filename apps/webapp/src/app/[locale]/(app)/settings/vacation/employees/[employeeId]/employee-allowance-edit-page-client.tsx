@@ -1,4 +1,6 @@
 "use client";
+import { HistoricalVacationUsageCard } from "@/components/absences/historical-vacation-usage-card";
+import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 
 import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
@@ -13,13 +15,7 @@ import {
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -103,15 +99,17 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
+	const [revision, setRevision] = useState(0);
+	const [historicalAdminOrganizationId, setHistoricalAdminOrganizationId] = useState<string | null>(
+		null,
+	);
 	const [employee, setEmployee] = useState<EmployeeAllowanceView | null>(null);
 	const [orgPolicy, setOrgPolicy] = useState<VacationPolicyOption | null>(null);
 	const [policies, setPolicies] = useState<VacationPolicyOption[]>([]);
-	const [currentAssignment, setCurrentAssignment] =
-		useState<EmployeePolicyAssignment | null>(null);
+	const [currentAssignment, setCurrentAssignment] = useState<EmployeePolicyAssignment | null>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
 	// The balance and its year come from the server, in the organization's timezone (#1111).
-	const [balanceView, setBalanceView] =
-		useState<EmployeeVacationBalanceView | null>(null);
+	const [balanceView, setBalanceView] = useState<EmployeeVacationBalanceView | null>(null);
 	const currentYear = balanceView?.year ?? null;
 	const [adjustmentSummary, setAdjustmentSummary] =
 		useState<EmployeeAdjustmentSummary>(EMPTY_ADJUSTMENT_SUMMARY);
@@ -124,10 +122,7 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				async () => {
 					try {
 						const currentPolicyId = currentAssignment?.policyId || "";
-						const newPolicyId =
-							value.policyId === DEFAULT_POLICY_VALUE
-								? ""
-								: value.policyId || "";
+						const newPolicyId = value.policyId === DEFAULT_POLICY_VALUE ? "" : value.policyId || "";
 
 						if (currentPolicyId !== newPolicyId) {
 							const assignmentResult = await setEmployeePolicyAssignment(
@@ -147,14 +142,10 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 						}
 
 						if (value.customAnnualDays || value.customCarryoverDays) {
-							const result = await updateEmployeeAllowance(
-								employeeId,
-								currentYear,
-								{
-									customAnnualDays: value.customAnnualDays || undefined,
-									customCarryoverDays: value.customCarryoverDays || undefined,
-								},
-							);
+							const result = await updateEmployeeAllowance(employeeId, currentYear, {
+								customAnnualDays: value.customAnnualDays || undefined,
+								customCarryoverDays: value.customCarryoverDays || undefined,
+							});
 							if (!result.success) {
 								toast.error(
 									result.error ||
@@ -220,23 +211,19 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				return;
 			}
 
+			setHistoricalAdminOrganizationId(current.role === "admin" ? current.organizationId : null);
 			const balanceResult = await getEmployeeVacationBalance(employeeId);
 			if (cancelled || !balanceResult.success) return;
 			const { year } = balanceResult.data;
 
-			const [
-				empResult,
-				policyResult,
-				policiesResult,
-				assignmentResult,
-				adjustmentSummaryResult,
-			] = await Promise.all([
-				getEmployeeAllowance(employeeId, year),
-				getVacationPolicies(current.organizationId),
-				getAssignmentPolicies(current.organizationId),
-				getEmployeePolicyAssignment(employeeId),
-				getEmployeeAdjustmentSummary(employeeId, year),
-			]);
+			const [empResult, policyResult, policiesResult, assignmentResult, adjustmentSummaryResult] =
+				await Promise.all([
+					getEmployeeAllowance(employeeId, year),
+					getVacationPolicies(current.organizationId),
+					getAssignmentPolicies(current.organizationId),
+					getEmployeePolicyAssignment(employeeId),
+					getEmployeeAdjustmentSummary(employeeId, year),
+				]);
 			if (cancelled) return;
 
 			setBalanceView(balanceResult.data);
@@ -247,14 +234,8 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 					? assignmentResult.data?.policyId || DEFAULT_POLICY_VALUE
 					: DEFAULT_POLICY_VALUE;
 				form.setFieldValue("policyId", policyId);
-				form.setFieldValue(
-					"customAnnualDays",
-					allowance?.customAnnualDays || "",
-				);
-				form.setFieldValue(
-					"customCarryoverDays",
-					allowance?.customCarryoverDays || "",
-				);
+				form.setFieldValue("customAnnualDays", allowance?.customAnnualDays || "");
+				form.setFieldValue("customCarryoverDays", allowance?.customCarryoverDays || "");
 				form.setFieldValue("adjustmentDays", "");
 				form.setFieldValue("adjustmentReason", "");
 			}
@@ -267,27 +248,24 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 			}
 			if (policiesResult.success && policiesResult.data) {
 				setPolicies(
-					policiesResult.data.filter(
-						(policy) => policy.isActive,
-					) as VacationPolicyOption[],
+					policiesResult.data.filter((policy) => policy.isActive) as VacationPolicyOption[],
 				);
 			}
 			if (assignmentResult.success) {
-				setCurrentAssignment(
-					assignmentResult.data as EmployeePolicyAssignment | null,
-				);
+				setCurrentAssignment(assignmentResult.data as EmployeePolicyAssignment | null);
 			}
-			if (adjustmentSummaryResult.success)
-				setAdjustmentSummary(adjustmentSummaryResult.data);
+			if (adjustmentSummaryResult.success) setAdjustmentSummary(adjustmentSummaryResult.data);
 		}
 
 		void loadData();
 		return () => {
 			cancelled = true;
 		};
-	}, [employeeId, form]);
+	}, [employeeId, form, revision]);
 
 	return {
+		historicalAdminOrganizationId,
+		reload: () => setRevision((value) => value + 1),
 		adjustmentSummary,
 		balanceView,
 		currentAssignment,
@@ -301,9 +279,7 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 	};
 }
 
-type EmployeeAllowanceEditorState = ReturnType<
-	typeof useEmployeeAllowanceEditor
->;
+type EmployeeAllowanceEditorState = ReturnType<typeof useEmployeeAllowanceEditor>;
 type EmployeeAllowanceFormApi = EmployeeAllowanceEditorState["form"];
 
 export function EmployeeAllowanceEditPageClient({
@@ -328,6 +304,8 @@ export function EmployeeAllowanceEditPageClient({
 		noEmployee,
 		orgPolicy,
 		policies,
+		historicalAdminOrganizationId,
+		reload,
 	} = useEmployeeAllowanceEditor(employeeId);
 
 	if (noEmployee) {
@@ -363,10 +341,7 @@ export function EmployeeAllowanceEditPageClient({
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-semibold tracking-tight">
-						{t(
-							"settings.vacation.employees.edit.title",
-							"Edit Vacation Allowance",
-						)}
+						{t("settings.vacation.employees.edit.title", "Edit Vacation Allowance")}
 					</h1>
 					<p className="text-sm text-muted-foreground">
 						{t(
@@ -379,6 +354,14 @@ export function EmployeeAllowanceEditPageClient({
 			</div>
 
 			<div className="grid gap-4 lg:grid-cols-3">
+				{historicalAdminOrganizationId && (
+					<HistoricalVacationUsageCard
+						organizationId={historicalAdminOrganizationId}
+						employeeId={employeeId}
+						initialYear={currentYear}
+						onSaved={reload}
+					/>
+				)}
 				<EmployeeInformationCard employee={employee} employeeId={employeeId} />
 
 				<Card className="lg:col-span-2">
@@ -411,13 +394,8 @@ export function EmployeeAllowanceEditPageClient({
 									adjustments={adjustmentSummary.manual}
 								/>
 								<div className="-mt-4 mb-6 flex flex-wrap items-center gap-2">
-									<VacationAllowanceExplanation
-										allowance={balance.allowance}
-										year={currentYear}
-									/>
-									<OverdrawnVacationBadge
-										overdrawnDays={balance.overdrawnDays}
-									/>
+									<VacationAllowanceExplanation allowance={balance.allowance} year={currentYear} />
+									<OverdrawnVacationBadge overdrawnDays={balance.overdrawnDays} />
 								</div>
 							</>
 						) : (
@@ -430,6 +408,10 @@ export function EmployeeAllowanceEditPageClient({
 							</p>
 						)}
 
+						<PreviouslyTakenVacationExplanation
+							days={balance?.previouslyTakenDays}
+							className="mb-4 text-sm text-muted-foreground"
+						/>
 						<ManualAdjustmentHistory
 							adjustments={adjustmentSummary.manualAdjustments}
 							year={currentYear}
@@ -445,15 +427,9 @@ export function EmployeeAllowanceEditPageClient({
 								{(field) => (
 									<div className="space-y-2">
 										<Label htmlFor={assignedPolicyId}>
-											{t(
-												"settings.vacation.employees.detail.assignedPolicy",
-												"Assigned Policy",
-											)}
+											{t("settings.vacation.employees.detail.assignedPolicy", "Assigned Policy")}
 										</Label>
-										<Select
-											onValueChange={field.handleChange}
-											value={field.state.value}
-										>
+										<Select onValueChange={field.handleChange} value={field.state.value}>
 											<SelectTrigger id={assignedPolicyId}>
 												<SelectValue
 													placeholder={t(
@@ -464,10 +440,7 @@ export function EmployeeAllowanceEditPageClient({
 											</SelectTrigger>
 											<SelectContent>
 												<SelectItem value={DEFAULT_POLICY_VALUE}>
-													{t(
-														"settings.vacation.employees.detail.useDefault",
-														"Use default",
-													)}
+													{t("settings.vacation.employees.detail.useDefault", "Use default")}
 												</SelectItem>
 												{policies.map((policy) => (
 													<SelectItem key={policy.id} value={policy.id}>
@@ -533,9 +506,7 @@ export function EmployeeAllowanceEditPageClient({
 											)}
 										</p>
 										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">
-												{field.state.meta.errors[0]}
-											</p>
+											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 										)}
 									</div>
 								)}
@@ -566,9 +537,7 @@ export function EmployeeAllowanceEditPageClient({
 											)}
 										</p>
 										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">
-												{field.state.meta.errors[0]}
-											</p>
+											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 										)}
 									</div>
 								)}
@@ -588,14 +557,9 @@ export function EmployeeAllowanceEditPageClient({
 									{t("settings.vacation.employees.detail.cancel", "Cancel")}
 								</Button>
 								<Button type="submit" disabled={loading}>
-									{loading && (
-										<IconLoader2 className="mr-2 size-4 animate-spin" />
-									)}
+									{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 									<IconDeviceFloppy className="mr-2 size-4" />
-									{t(
-										"settings.vacation.employees.detail.saveChanges",
-										"Save Changes",
-									)}
+									{t("settings.vacation.employees.detail.saveChanges", "Save Changes")}
 								</Button>
 							</div>
 						</form>
@@ -618,10 +582,7 @@ function EmployeeInformationCard({
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{t(
-						"settings.vacation.employees.detail.employeeInformation",
-						"Employee Information",
-					)}
+					{t("settings.vacation.employees.detail.employeeInformation", "Employee Information")}
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-4">
@@ -635,9 +596,7 @@ function EmployeeInformationCard({
 					/>
 					<div>
 						<div className="font-medium">{employee.user.name}</div>
-						<div className="text-sm text-muted-foreground">
-							{employee.user.email}
-						</div>
+						<div className="text-sm text-muted-foreground">{employee.user.email}</div>
 					</div>
 				</div>
 
@@ -675,10 +634,7 @@ function EmployeeInformationCard({
 										<span className="text-sm">{manager.manager.user.name}</span>
 										{manager.isPrimary && (
 											<Badge variant="secondary" className="text-xs">
-												{t(
-													"settings.vacation.employees.detail.primary",
-													"Primary",
-												)}
+												{t("settings.vacation.employees.detail.primary", "Primary")}
 											</Badge>
 										)}
 									</div>
@@ -730,10 +686,7 @@ function AllowanceBalanceSummary({
 			{showAccrued && (
 				<div className="space-y-1">
 					<div className="text-sm text-muted-foreground">
-						{t(
-							"settings.vacation.employees.detail.accruedToDate",
-							"Accrued to Date",
-						)}
+						{t("settings.vacation.employees.detail.accruedToDate", "Accrued to Date")}
 					</div>
 					<div className="text-2xl font-bold">{accrued}</div>
 					{accrualPolicy && balance.allowance && (
@@ -759,11 +712,7 @@ function AllowanceBalanceSummary({
 				</div>
 				<div
 					className={`text-2xl font-bold ${
-						adjustments > 0
-							? "text-green-600"
-							: adjustments < 0
-								? "text-red-600"
-								: ""
+						adjustments > 0 ? "text-green-600" : adjustments < 0 ? "text-red-600" : ""
 					}`}
 				>
 					{adjustments > 0 ? "+" : ""}
@@ -772,10 +721,7 @@ function AllowanceBalanceSummary({
 			</div>
 			<div className="space-y-1">
 				<div className="text-sm text-muted-foreground">
-					{t(
-						"settings.vacation.employees.detail.totalAvailable",
-						"Total Available",
-					)}
+					{t("settings.vacation.employees.detail.totalAvailable", "Total Available")}
 				</div>
 				<div className="text-2xl font-bold">{balance.totalDays}</div>
 			</div>
@@ -796,10 +742,7 @@ function ManualAdjustmentHistory({
 	return (
 		<div className="mb-6 space-y-2">
 			<h3 className="text-sm font-medium">
-				{t(
-					"settings.vacation.employees.detail.adjustmentHistory",
-					"Adjustment History",
-				)}
+				{t("settings.vacation.employees.detail.adjustmentHistory", "Adjustment History")}
 			</h3>
 			{adjustments.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
@@ -856,10 +799,7 @@ function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
 	return (
 		<div className="space-y-4">
 			<h3 className="text-lg font-semibold">
-				{t(
-					"settings.vacation.employees.detail.addManualAdjustment",
-					"Add Manual Adjustment",
-				)}
+				{t("settings.vacation.employees.detail.addManualAdjustment", "Add Manual Adjustment")}
 			</h3>
 			<p className="text-sm text-muted-foreground">
 				{t(
@@ -872,10 +812,7 @@ function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
 				{(field) => (
 					<div className="space-y-2">
 						<Label htmlFor={adjustmentDaysId}>
-							{t(
-								"settings.vacation.employees.detail.adjustmentDays",
-								"Adjustment Days",
-							)}
+							{t("settings.vacation.employees.detail.adjustmentDays", "Adjustment Days")}
 						</Label>
 						<Input
 							id={adjustmentDaysId}
@@ -896,9 +833,7 @@ function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
 							)}
 						</p>
 						{field.state.meta.errors.length > 0 && (
-							<p className="text-sm text-destructive">
-								{field.state.meta.errors[0]}
-							</p>
+							<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 						)}
 					</div>
 				)}
@@ -908,10 +843,7 @@ function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
 				{(field) => (
 					<div className="space-y-2">
 						<Label htmlFor={adjustmentReasonId}>
-							{t(
-								"settings.vacation.employees.detail.reasonForAdjustment",
-								"Reason for Adjustment",
-							)}
+							{t("settings.vacation.employees.detail.reasonForAdjustment", "Reason for Adjustment")}
 						</Label>
 						<Textarea
 							id={adjustmentReasonId}
@@ -930,9 +862,7 @@ function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
 							)}
 						</p>
 						{field.state.meta.errors.length > 0 && (
-							<p className="text-sm text-destructive">
-								{field.state.meta.errors[0]}
-							</p>
+							<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 						)}
 					</div>
 				)}

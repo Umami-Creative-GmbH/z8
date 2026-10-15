@@ -121,7 +121,7 @@ export const employeeVacationAllowance = pgTable(
  * `manual`: an admin's or manager's adjustment. `accrual`: one period's share written by the
  * monthly/biweekly accrual job, the only source of an accrual policy's allowance (#1106).
  */
-export type VacationAdjustmentKind = "manual" | "accrual";
+export type VacationAdjustmentKind = "manual" | "accrual" | "historical_usage";
 
 // Individual vacation adjustment events (manual adjustments and accrual shares, with full history)
 export const vacationAdjustment = pgTable(
@@ -139,16 +139,33 @@ export const vacationAdjustment = pgTable(
 		// employee and year, so the accrual job can retry and catch up without duplicates. Null
 		// only on a legacy duplicate accrual row the 0214 backfill could not give a month.
 		accrualMonth: integer("accrual_month"),
+		// Frozen reviewed coverage: tracking changes never reinterpret historical usage.
+		historicalCoverageStart: date("historical_coverage_start"),
+		historicalCoverageEnd: date("historical_coverage_end"),
+		historicalTrackingStart: date("historical_tracking_start"),
+		historicalTimezone: text("historical_timezone"),
+		revision: integer("revision").default(0).notNull(),
+		updatedAt: timestamp("updated_at").defaultNow().notNull(),
 		// The adjusting employee; null only on accrual rows, which the system writes.
 		adjustedBy: uuid("adjusted_by").references(() => employee.id),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [
+		uniqueIndex("vacationAdjustment_historical_year_idx")
+			.on(table.employeeId, table.year)
+			.where(sql`${table.kind} = 'historical_usage'`),
+		check(
+			"vacation_adjustment_historical_check",
+			sql`${table.kind} <> 'historical_usage' OR (${table.days} <= 0 AND mod(${table.days}, 0.5) = 0 AND ${table.historicalCoverageStart} IS NOT NULL AND ${table.historicalCoverageEnd} IS NOT NULL AND ${table.historicalTrackingStart} IS NOT NULL AND ${table.historicalTimezone} IS NOT NULL AND ${table.historicalCoverageStart} <= ${table.historicalCoverageEnd} AND ${table.historicalCoverageEnd} < ${table.historicalTrackingStart} AND extract(year from ${table.historicalCoverageStart}) = ${table.year} AND extract(year from ${table.historicalCoverageEnd}) = ${table.year})`,
+		),
 		index("vacationAdjustment_employee_year_idx").on(table.employeeId, table.year),
 		uniqueIndex("vacationAdjustment_accrual_period_idx")
 			.on(table.employeeId, table.year, table.accrualMonth)
 			.where(sql`${table.kind} = 'accrual'`),
-		check("vacation_adjustment_kind_check", sql`${table.kind} IN ('manual', 'accrual')`),
+		check(
+			"vacation_adjustment_kind_check",
+			sql`${table.kind} IN ('manual', 'accrual', 'historical_usage')`,
+		),
 		check(
 			"vacation_adjustment_manual_adjuster_check",
 			sql`${table.kind} = 'accrual' OR ${table.adjustedBy} IS NOT NULL`,

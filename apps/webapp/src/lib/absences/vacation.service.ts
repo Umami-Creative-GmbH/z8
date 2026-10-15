@@ -231,7 +231,12 @@ export async function calculateAnnualCarryover(
 			const adjustments = vacationAdjustmentTotal(adjustmentSums.get(emp.id));
 
 			const totalAllowance = baseAllowance + previousCarryover + adjustments;
-			const remaining = Math.max(0, totalAllowance - vacationTaken.totalDays);
+			const remaining = Math.max(
+				0,
+				totalAllowance -
+					vacationTaken.totalDays -
+					(adjustmentSums.get(emp.id)?.previouslyTaken ?? 0),
+			);
 
 			// Apply carryover cap
 			const maxCarryover = fromYearPolicy.maxCarryoverDays
