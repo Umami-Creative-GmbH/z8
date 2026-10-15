@@ -85,13 +85,16 @@ export async function divideByOwedBreak(
 	}
 	if (period.isActive || !period.endTime || !period.clockOutId) return { kind: "work_running" };
 	if (!clockIn || !clockOut) return { kind: "endpoint_entry_missing" };
-	if (clockIn.isSuperseded || clockOut.isSuperseded) return { kind: "endpoint_superseded" };
 
 	const writer = entryWriterFor(scope, {
 		organizationId,
 		employeeId,
 		operation: change.appendOperation,
 	});
+	// A legacy split's generated half keeps a superseded clock-out; it still ends that half.
+	if (writer.admission === "append" && (clockIn.isSuperseded || clockOut.isSuperseded)) {
+		return { kind: "endpoint_superseded" };
+	}
 	const pair = pairOf(locked);
 	// A pair that disagrees is reported before anything is counted or owed.
 	const refused = lockedPairRefusal(pair);

@@ -104,13 +104,18 @@ export async function divideWorkRecord(
 	}
 	if (period.isActive || !period.endTime || !period.clockOutId) return { kind: "work_running" };
 	if (!clockIn || !clockOut) return { kind: "endpoint_entry_missing" };
-	if (clockIn.isSuperseded || clockOut.isSuperseded) return { kind: "endpoint_superseded" };
 
 	const writer = entryWriterFor(scope, {
 		organizationId,
 		employeeId,
 		operation: change.appendOperation,
 	});
+	// In append admission a superseded endpoint was corrected by someone else. In
+	// legacy admission a split's generated half keeps the source clock-out its new
+	// clock-out superseded (#1219): it still ends that half, so it divides again.
+	if (writer.admission === "append" && (clockIn.isSuperseded || clockOut.isSuperseded)) {
+		return { kind: "endpoint_superseded" };
+	}
 	const plan = planChange(pairOf(locked), change, writer.durationArithmetic);
 	if (plan.kind !== "divide") return plan;
 	if (!canonical) return { kind: "canonical_record_missing" };
@@ -274,6 +279,10 @@ async function assertOverrideBillable(
 	);
 }
 
+/**
+ * The source clock-out's notes, compare-and-set on its supersession as locked: a
+ * legacy split's generated half keeps a clock-out an earlier split superseded.
+ */
 async function replaceClockOutNotes(
 	tx: WorkTransactionClient,
 	entry: TimeEntryRow,
@@ -287,7 +296,7 @@ async function replaceClockOutNotes(
 				eq(timeEntry.id, entry.id),
 				eq(timeEntry.organizationId, entry.organizationId),
 				eq(timeEntry.employeeId, entry.employeeId),
-				eq(timeEntry.isSuperseded, false),
+				eq(timeEntry.isSuperseded, entry.isSuperseded),
 			),
 		)
 		.returning({ id: timeEntry.id });

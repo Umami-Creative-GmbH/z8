@@ -460,6 +460,49 @@ function divideContract({
 		expect(await snapshot()).toEqual(before);
 	});
 
+	// spec-1 HIGH: in legacy admission the first split's new clock-out supersedes the source
+	// clock-out, which still ends the generated half; that half must divide again.
+	it("divides a generated half again after a division with notes on both sides", async () => {
+		const source = await recordWork();
+		const first = await apply(
+			divide(await expectedOf(source.id), parseInstant("2026-07-22T12:00:00Z"), {
+				notes: { before: "Morning", after: "Afternoon" },
+			}),
+		);
+		if (first.kind !== "divided") throw new Error(`refused: ${first.kind}`);
+
+		const second = await apply(
+			divide(first.generated.after, parseInstant("2026-07-22T15:00:00Z"), {
+				notes: { before: "Early afternoon", after: "Late afternoon" },
+			}),
+		);
+
+		expect(second).toMatchObject({ kind: "divided" });
+		await expectRecordAgreement({ organizationId: ORG });
+		const halves = await segments();
+		expect(halves.map(({ duration_minutes }) => duration_minutes)).toEqual([
+			239,
+			180,
+			divided[1] - 180,
+		]);
+		expect(halves.map(({ clock_out_notes }) => clock_out_notes)).toEqual([
+			"Morning",
+			"Early afternoon",
+			"Late afternoon",
+		]);
+		// The source clock-out keeps ending the last half; legacy superseded it once, by the first split.
+		expect(halves[2]?.clock_out_id).toBe(source.clock_out_id);
+		const { rows: sourceClockOut } = await admin.query(
+			"select is_superseded, superseded_by_id from time_entry where id = $1",
+			[source.clock_out_id],
+		);
+		expect(only(sourceClockOut)).toEqual(
+			admission === "legacy"
+				? { is_superseded: true, superseded_by_id: halves[0]?.clock_out_id }
+				: { is_superseded: false, superseded_by_id: null },
+		);
+	});
+
 	it.each([
 		["another revision", (expected: WorkRecordExpected) => ({ revision: expected.revision + 1 })],
 		["another end", () => ({ endAt: parseInstant("2026-07-22T17:00:00Z") })],
