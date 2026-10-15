@@ -19,6 +19,7 @@ import { getAbility } from "@/lib/auth-helpers";
 import {
 	compareInstants,
 	type Instant,
+	instantFromDate,
 	isInstant,
 	parseInstant,
 	systemClock,
@@ -3558,17 +3559,24 @@ async function applyLiveWorkCorrection(change: {
 		],
 	});
 	// The open canonical work record some history gave live work is work records' (ADR 0010).
-	const correctedOpenRecord = await correctOpenWorkRecord(input.dbService.db, {
+	const workScope = await workRecordScopeForFinalizer(
+		input.dbService.db as WorkTransactionClient,
+		{ organizationId: input.organizationId, employeeId: period.employeeId },
+	);
+	const correctedOpenRecord = await correctOpenWorkRecord(workScope, {
 		organizationId: input.organizationId,
 		employeeId: period.employeeId,
 		actorUserId: input.actorUserId,
-		at: finalizedAt,
+		at: input.finalizedAt,
 		...(canonical && hasEndpointCorrection
 			? {
 					start: {
 						recordId: canonical.id,
-						expected: { startAt: canonical.startAt, approvalState: canonical.approvalState },
-						startAt: instantToTimeCorrectionDate(correctedPeriod.clockIn.instant),
+						expected: {
+							startAt: instantFromDate(canonical.startAt),
+							approvalState: canonical.approvalState,
+						},
+						startAt: correctedPeriod.clockIn.instant,
 					},
 				}
 			: {}),

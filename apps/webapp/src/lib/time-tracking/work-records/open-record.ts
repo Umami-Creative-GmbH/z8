@@ -11,9 +11,10 @@ import "server-only";
  */
 import { and, eq, isNull } from "drizzle-orm";
 import { timeRecord, timeRecordWork } from "@/db/schema";
+import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import type { WorkVehicleUseColumns } from "../vehicle-use/work-vehicle-use";
 import { vehicleColumnsMatch } from "../vehicle-use/work-vehicle-use-sql";
-import type { WorkTransactionClient } from "../work-transaction";
+import type { SealedWorkTransactionScope } from "../work-transaction";
 
 type WorkLocation = (typeof timeRecordWork.$inferSelect)["workLocationType"];
 
@@ -21,12 +22,15 @@ export type OpenWorkRecordCorrection = {
 	organizationId: string;
 	employeeId: string;
 	actorUserId: string;
-	at: Date;
+	at: Instant;
 	/** The corrected start of the open record, read with its start and approval state. */
 	start?: {
 		recordId: string;
-		expected: { startAt: Date; approvalState: (typeof timeRecord.$inferSelect)["approvalState"] };
-		startAt: Date;
+		expected: {
+			startAt: Instant;
+			approvalState: (typeof timeRecord.$inferSelect)["approvalState"];
+		};
+		startAt: Instant;
 	};
 	/** The corrected detail, read with its category and location (and vehicle use when it changes). */
 	detail?: {
@@ -38,19 +42,25 @@ export type OpenWorkRecordCorrection = {
 	};
 };
 
-/** Which named parts matched exactly their one row; nothing else is written. */
+/**
+ * Which named parts matched exactly their one row; nothing else is written.
+ * Runs on a sealed work-transaction scope only; the Approvals finalizer's
+ * handle becomes one through `workRecordScopeForFinalizer`.
+ */
 export async function correctOpenWorkRecord(
-	tx: Pick<WorkTransactionClient, "update">,
+	scope: SealedWorkTransactionScope,
 	correction: OpenWorkRecordCorrection,
 ): Promise<{ start: boolean; detail: boolean }> {
 	const { organizationId, employeeId, start, detail } = correction;
+	scope.assertEmployee(organizationId, employeeId);
+	const tx = scope.db;
 	let startMatched = true;
 	if (start) {
 		const updated = await tx
 			.update(timeRecord)
 			.set({
-				startAt: start.startAt,
-				updatedAt: correction.at,
+				startAt: dateFromInstant(start.startAt),
+				updatedAt: dateFromInstant(correction.at),
 				updatedBy: correction.actorUserId,
 			})
 			.where(
@@ -59,7 +69,7 @@ export async function correctOpenWorkRecord(
 					eq(timeRecord.organizationId, organizationId),
 					eq(timeRecord.employeeId, employeeId),
 					eq(timeRecord.recordKind, "work"),
-					eq(timeRecord.startAt, start.expected.startAt),
+					eq(timeRecord.startAt, dateFromInstant(start.expected.startAt)),
 					isNull(timeRecord.endAt),
 					eq(timeRecord.approvalState, start.expected.approvalState),
 				),
