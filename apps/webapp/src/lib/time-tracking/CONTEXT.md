@@ -83,6 +83,14 @@ _Avoid_: Locked period, payroll period, frozen month, closed balance period
 Lifting a month's close for some or all of the employees it covers, with a stated reason, by someone permitted to reopen. It is the only way to change work inside a closed month, and the month stays open for them until it is closed again.
 _Avoid_: Unlock
 
+### Feature assignments
+
+**Global feature switch**:
+The organization's control that switches vehicle use or position capture off for everyone, regardless of their feature assignments. Switching it on allows the assignments to decide who the feature applies to.
+
+**Feature assignment**:
+The vehicle-use mode or position-capture setting for an organization, primary team or employee. An employee's own assignment overrides their primary team's, which overrides the organization default; an explicit off assignment excludes its scope, and removing an override restores inheritance.
+
 ### Driving
 
 **Vehicle use**:
