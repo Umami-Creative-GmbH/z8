@@ -22,6 +22,10 @@ _Avoid_: receipt report, single expense
 One receipt, mileage or per diem entry of an expense report.
 _Avoid_: line, position, expense (unqualified)
 
+**Receipt document**:
+The supporting document for a receipt expense item, whether supplied with the submission or added afterwards. It is evidence of the expenditure, separate from the expense item's reported details.
+_Avoid_: expense item (for the document), replacement receipt (for a later document)
+
 **Project attribution**:
 The project an expense item is charged to, either taken from its trip report or chosen for the item itself. A receipt or mileage item may name its own project; a per diem always takes its trip's.
 _Avoid_: project assignment (that is employee membership in a project), cost allocation
