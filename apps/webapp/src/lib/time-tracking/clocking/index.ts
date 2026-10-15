@@ -50,8 +50,9 @@ export * from "./types";
  */
 export const clockOutFollowUpEffects: ClockOutFollowUpEffects = {
 	checkCompliance: checkComplianceAfterClockOut,
-	enforceBreaks: ({ durationMinutes, ...input }) =>
-		enforceBreaksAfterClockOut({ ...input, sessionDurationMinutes: durationMinutes }),
+	// The adjustment reads the work's own minutes and the zone of its clock-out (#1220).
+	enforceBreaks: ({ employeeId, organizationId, workPeriodId, createdBy }) =>
+		enforceBreaksAfterClockOut({ employeeId, organizationId, workPeriodId, createdBy }),
 	reconcileSurcharges: reconcileImmediateSurcharges,
 	markBalanceDirty: markEmployeeWorkBalanceDirty,
 	checkProjectBudget: checkProjectBudgetAfterClockOut,

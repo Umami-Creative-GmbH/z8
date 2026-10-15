@@ -51,8 +51,12 @@ import {
 	type HistoricalWorkEvidenceReader,
 	readHistoricalWorkEvidence,
 } from "./historical-work-diagnostics-reader";
-import { applyWorkRecordChange, isWorkRecordRefusal, type WorkRecordRefusal } from "./work-records";
-import { refusalError } from "./work-records/refusals";
+import {
+	applyWorkRecordChange,
+	isWorkRecordRefusal,
+	refusalError,
+	type WorkRecordRefusal,
+} from "./work-records";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "./work-transaction";
 
 type Database = typeof database;

@@ -49,7 +49,10 @@ import {
 import type { BreakPolicyRegulation } from "./break-policy-calculation";
 import { type CompletedWorkFollowUp, CompletedWorkIntegrityError } from "./close-active-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
-import { resolvePolicyClockOutBreakSnapshotInTransaction } from "./policy-clock-out-break-snapshot";
+import {
+	regulationFromSnapshot,
+	resolvePolicyClockOutBreakSnapshotInTransaction,
+} from "./policy-clock-out-break-snapshot";
 import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
@@ -184,27 +187,12 @@ type PolicyBreakSnapshot = Awaited<
 function regulationFrom(
 	snapshot: PolicyBreakSnapshot,
 ): (BreakPolicyRegulation & { policyId: string }) | null {
-	if (
-		snapshot.resolution === "none" ||
-		!snapshot.regulationEnabled ||
-		snapshot.breakRules.length === 0
-	) {
-		return null;
-	}
-	const { id, name, maxUninterruptedMinutes } = snapshot.regulation;
-	if (id === null || name === null) {
+	const regulation = regulationFromSnapshot(snapshot);
+	if (regulation === "incomplete") {
 		throw new CompletedWorkIntegrityError("Break regulation evidence is incomplete");
 	}
-	return {
-		policyId: snapshot.policy.id,
-		id,
-		name,
-		maxUninterruptedMinutes,
-		breakRules: snapshot.breakRules.map((rule) => ({
-			workingMinutesThreshold: rule.workingMinutesThreshold,
-			requiredBreakMinutes: rule.requiredBreakMinutes,
-		})),
-	};
+	if (!regulation || snapshot.resolution === "none") return null;
+	return { policyId: snapshot.policy.id, ...regulation };
 }
 
 /**

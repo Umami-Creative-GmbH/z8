@@ -31,7 +31,10 @@ import { completedWorkOperation, employee, userSettings } from "@/db/schema";
 import type { OrdinaryWorkPeriodFinalizerDbService } from "@/lib/approvals/domain-adapters/work-period-contract";
 import { instantFromDate, instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import type { BreakPolicyRegulation } from "./break-policy-calculation";
-import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot";
+import {
+	type PolicyClockOutBreakSnapshot,
+	regulationFromSnapshot,
+} from "./policy-clock-out-break-snapshot";
 import { isValidIanaTimezone } from "./timezone-capture";
 import { assertNoUnrelatedWorkPeriodReview } from "./work-period-review";
 import {
@@ -194,24 +197,8 @@ export function derivePolicyClockOutBreakOperationId(input: {
 
 /** The regulation the captured policy snapshot names, or null when none applies. */
 function regulationFrom(snapshot: PolicyClockOutBreakSnapshot): BreakPolicyRegulation | null {
-	if (
-		snapshot.resolution === "none" ||
-		!snapshot.regulationEnabled ||
-		snapshot.breakRules.length === 0
-	) {
-		return null;
-	}
-	const { id, name, maxUninterruptedMinutes } = snapshot.regulation;
-	if (id === null || name === null) return refuse({ kind: "regulation_incomplete" });
-	return {
-		id,
-		name,
-		maxUninterruptedMinutes,
-		breakRules: snapshot.breakRules.map((rule) => ({
-			workingMinutesThreshold: rule.workingMinutesThreshold,
-			requiredBreakMinutes: rule.requiredBreakMinutes,
-		})),
-	};
+	const regulation = regulationFromSnapshot(snapshot);
+	return regulation === "incomplete" ? refuse({ kind: "regulation_incomplete" }) : regulation;
 }
 
 /** The break entries' zone: the clock-out's, else the employee's own setting. */

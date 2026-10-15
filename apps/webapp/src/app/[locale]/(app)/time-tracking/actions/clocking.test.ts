@@ -36,7 +36,6 @@ const mockState = vi.hoisted(() => ({
 	checkComplianceAfterClockOut: vi.fn(),
 	enforceBreaksAfterClockOut: vi.fn(),
 	checkProjectBudgetAfterClockOut: vi.fn(),
-	markEmployeeWorkBalanceDirty: vi.fn(),
 	reconcileOrdinaryMaintenance: vi.fn(),
 	isBillingMutationAllowed: vi.fn(),
 	requireBillingForMutation: vi.fn(),
@@ -239,10 +238,6 @@ vi.mock("@/lib/query/work-category.queries", () => ({
 vi.mock("@/lib/billing/guard", () => ({
 	isBillingMutationAllowed: mockState.isBillingMutationAllowed,
 	requireBillingForMutation: mockState.requireBillingForMutation,
-}));
-
-vi.mock("@/lib/work-balance/service", () => ({
-	markEmployeeWorkBalanceDirty: mockState.markEmployeeWorkBalanceDirty,
 }));
 
 vi.mock("@/lib/time-tracking/work-transaction", async (importOriginal) => ({
@@ -943,7 +938,6 @@ describe("createManualTimeEntry", () => {
 			type: "approval_required",
 			reason: "outside_direct_edit_window",
 		});
-		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.findWorkPeriods.mockResolvedValue([]);
 		mockState.findExistingPeriod.mockResolvedValue(null);
 		mockState.findCanonicalRecord.mockResolvedValue(null);
@@ -1204,7 +1198,6 @@ describe("createManualTimeEntry", () => {
 		expect(change.start.at.toString()).toBe("2026-05-04T08:00:00Z");
 		expect(change.end.at.toString()).toBe("2026-05-04T09:00:00Z");
 		// The work balance refresh commits with the work; nothing marks it after commit.
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.resolveSurchargeSnapshot).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-1",
@@ -1768,7 +1761,6 @@ describe("createManualTimeEntry", () => {
 		mockState.sendManualEntryApprovalNotifications.mockResolvedValue(undefined);
 		mockState.sendManualEntryApprovedNotification.mockResolvedValue(undefined);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
-		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.reconcileOrdinaryMaintenance.mockResolvedValue(undefined);
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
@@ -2023,7 +2015,6 @@ describe("createManualTimeEntry", () => {
 			mockState.sendManualEntryApprovalNotifications,
 		).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 	});
 
 	it("replays committed manual evidence before changed mutable guards", async () => {
@@ -2080,7 +2071,6 @@ describe("createManualTimeEntry", () => {
 		});
 		expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 		expect(mockState.executeOrdinarySubmission).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 
@@ -2157,7 +2147,6 @@ describe("createManualTimeEntry", () => {
 			mockState.sendManualEntryApprovalNotifications,
 		).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 
@@ -2298,7 +2287,6 @@ describe("createManualTimeEntry", () => {
 		expect(second).toEqual(first);
 		expect(mockState.applyWorkRecordChange).toHaveBeenCalledOnce();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).toHaveBeenCalledOnce();
 		expect(order.slice(0, 2)).toEqual(["lock", "lookup"]);
 	});
@@ -2514,7 +2502,6 @@ describe("createManualTimeEntry", () => {
 			mockState.sendManualEntryApprovalNotifications,
 		).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 
@@ -2555,7 +2542,6 @@ describe("createManualTimeEntry", () => {
 			mockState.sendManualEntryApprovalNotifications,
 		).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 
@@ -2669,7 +2655,6 @@ describe("createManualTimeEntry", () => {
 			mockState.sendManualEntryApprovalNotifications,
 		).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 

@@ -15,7 +15,9 @@
  * source is recorded once per organization, so a re-import cannot recreate work.
  * Fresh minutes come from the exact UTC endpoints; provider-stated durations are
  * kept as evidence, and an interpretation that would change the worked interval
- * is held instead of guessed. Completed work is created through work records\r\n * (#1223), which the legacy import-review committer uses as well; the import\r\n * worker loads its `server-only` modules through the worker preload.
+ * is held instead of guessed. Completed work is created through work records
+ * (#1223), which the legacy import-review committer uses as well; the import
+ * worker loads its `server-only` modules through the worker preload.
  */
 import { and, asc, eq, gt, isNull, lt, notExists, or, type SQL } from "drizzle-orm";
 import { completedWorkOperation, employee, timeRecord, workPeriod } from "@/db/schema";
@@ -23,12 +25,10 @@ import type { CompletedWorkOperationKind } from "@/db/schema/completed-work";
 import {
 	dateFromInstant,
 	type Instant,
+	instantFromDate,
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
 import type { ImportProvider } from "@/lib/import-review/types";
-import { closedRangeTouchedByWork } from "./closed-months/rules";
-import { closedRangesForEmployee } from "./closed-months/store";
-import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import { canonicalJson } from "./canonical-json";
 import {
 	type AppendedClockEntry,
@@ -37,12 +37,15 @@ import {
 	createDatabaseClockingStore,
 	TimeEntryAppendReviewRequiredError,
 } from "./clocking-core";
+import { closedRangeTouchedByWork } from "./closed-months/rules";
+import { closedRangesForEmployee } from "./closed-months/store";
 import {
 	type ImportedWorkHold,
 	type ImportedWorkOccupant,
 	type ImportedWorkProviderEvidence,
 	interpretImportedWorkInterval,
 } from "./imported-work-interval";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import { resolveFallbackTimezoneCapture, type TimeEntryTimezoneCapture } from "./timezone-capture";
 import {
 	BillableWorkRefusedError,
@@ -409,8 +412,8 @@ export async function createImportedCompletedWork(
 					occupants: created.occupants.map((occupant) => ({
 						kind: occupant.kind,
 						id: occupant.id,
-						startAt: dateFromInstant(occupant.startAt).toISOString(),
-						endAt: occupant.endAt ? dateFromInstant(occupant.endAt).toISOString() : null,
+						startAt: instantToCanonicalString(occupant.startAt),
+						endAt: occupant.endAt ? instantToCanonicalString(occupant.endAt) : null,
 					})),
 				},
 			};
@@ -648,7 +651,7 @@ async function findOccupants(
 function occupantInterval(row: { id: string; startAt: Date; endAt: Date | null }) {
 	return {
 		id: row.id,
-		startAt: row.startAt.toISOString(),
-		endAt: row.endAt?.toISOString() ?? null,
+		startAt: instantToCanonicalString(instantFromDate(row.startAt)),
+		endAt: row.endAt ? instantToCanonicalString(instantFromDate(row.endAt)) : null,
 	};
 }

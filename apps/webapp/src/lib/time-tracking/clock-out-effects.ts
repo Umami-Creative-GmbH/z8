@@ -138,8 +138,6 @@ export async function enforceBreaksAfterClockOut(input: {
 	employeeId: string;
 	organizationId: string;
 	workPeriodId: string;
-	sessionDurationMinutes: number;
-	timezone: string;
 	createdBy: string;
 }): Promise<BreakEnforcementResult> {
 	// Failures propagate: the after-commit follow-ups run this best-effort, and a
