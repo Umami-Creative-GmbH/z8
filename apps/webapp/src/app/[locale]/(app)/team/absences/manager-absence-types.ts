@@ -1,6 +1,10 @@
 import type { DeputyDisplay } from "@/lib/absences/deputy-visibility";
 import type { ProratedAllowance } from "@/lib/absences/prorated-allowance";
-import type { AbsenceDurationKind, DayPeriod, SickDetail } from "@/lib/absences/types";
+import type {
+	AbsenceDurationKind,
+	DayPeriod,
+	SickDetail,
+} from "@/lib/absences/types";
 
 export type ManagerAbsenceRole = "admin" | "manager" | "employee";
 
@@ -131,6 +135,7 @@ export interface ManagerAbsenceCalendarResult {
 }
 
 export interface RecordAbsenceForEmployeeInput {
+	historicalReconciliation?: import("@/lib/absences/vacation-reconciliation-types").ReconciliationProof;
 	employeeId: string;
 	categoryId: string;
 	startDate: string;

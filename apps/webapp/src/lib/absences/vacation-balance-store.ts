@@ -4,7 +4,10 @@ import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { absenceEntry } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { type AbsenceDaysDatabase, loadWorkingDaysForEmployees } from "./absence-days-resolver";
+import {
+	type AbsenceDaysDatabase,
+	loadWorkingDaysForEmployees,
+} from "./absence-days-resolver";
 import {
 	loadEmployeeVacationOverrides,
 	loadProratedVacationAllowances,
@@ -16,7 +19,10 @@ import {
 	vacationAdjustmentTotal,
 } from "./vacation-adjustments";
 import { calculateVacationBalance } from "./vacation-calculator";
-import { loadCompanyDefaultVacationPolicy, type VacationPolicy } from "./vacation-policy-store";
+import {
+	loadCompanyDefaultVacationPolicy,
+	type VacationPolicy,
+} from "./vacation-policy-store";
 
 export interface VacationBalances {
 	/** The organization's company default policy for the year; undefined when there is none. */
@@ -51,17 +57,33 @@ export async function loadVacationBalances(
 		carryoverDaysOverrides?: ReadonlyMap<string, string>;
 		/** Reviewed aggregate proposed by an authorized historical-usage preview. */
 		previouslyTakenOverride?: { employeeId: string; days: number };
+		/** Proposed dated history uses the production calculator during reconciliation review. */
+		absenceChanges?: readonly {
+			existingAbsenceId?: string;
+			absence: AbsenceWithCategory;
+		}[];
 	},
 ): Promise<VacationBalances> {
 	const { organizationId, year } = input;
-	const policy = await loadCompanyDefaultVacationPolicy(database, { organizationId, year });
+	const policy = await loadCompanyDefaultVacationPolicy(database, {
+		organizationId,
+		year,
+	});
 	const employeeIds = [...new Set(input.employeeIds)];
 	if (!policy || employeeIds.length === 0) {
 		return { policy, balances: new Map(), adjustments: new Map() };
 	}
 
-	const startOfYear = Temporal.PlainDate.from({ year, month: 1, day: 1 }).toString();
-	const endOfYear = Temporal.PlainDate.from({ year, month: 12, day: 31 }).toString();
+	const startOfYear = Temporal.PlainDate.from({
+		year,
+		month: 1,
+		day: 1,
+	}).toString();
+	const endOfYear = Temporal.PlainDate.from({
+		year,
+		month: 12,
+		day: 31,
+	}).toString();
 	const overrides = await loadEmployeeVacationOverrides(database, {
 		organizationId,
 		employeeIds,
@@ -102,8 +124,19 @@ export async function loadVacationBalances(
 		loadVacationAdjustmentSums(database, { organizationId, employeeIds, year }),
 	]);
 
+	const effectiveAbsences: AbsenceWithCategory[] = (
+		absences as unknown as AbsenceWithCategory[]
+	).filter(
+		(row) =>
+			!input.absenceChanges?.some(
+				(change) => change.existingAbsenceId === row.id,
+			),
+	);
+	effectiveAbsences.push(
+		...(input.absenceChanges?.map((change) => change.absence) ?? []),
+	);
 	const absencesByEmployee = Map.groupBy(
-		absences as unknown as AbsenceWithCategory[],
+		effectiveAbsences,
 		(absence) => absence.employeeId,
 	);
 	const currentDate = input.currentDate ?? currentTimestamp();

@@ -1,4 +1,5 @@
 import "server-only";
+import { isAuthorizedReconciledAbsence } from "./vacation-reconciliation-authorization";
 import { createHash } from "node:crypto";
 import { and, asc, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
@@ -21,7 +22,10 @@ import {
 	acquireExclusiveOrganizationConfigurationGuard,
 } from "@/lib/time-tracking/work-transaction";
 import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
-import { loadWorkingDaysForEmployees, type AbsenceDaysDatabase } from "./absence-days-resolver";
+import {
+	loadWorkingDaysForEmployees,
+	type AbsenceDaysDatabase,
+} from "./absence-days-resolver";
 import { loadVacationBalances } from "./vacation-balance-store";
 
 export class HistoricalVacationError extends Error {
@@ -33,7 +37,9 @@ export class HistoricalVacationError extends Error {
 		this.name = "HistoricalVacationError";
 	}
 }
-export function historicalVacationRefusalOf(error: unknown): HistoricalVacationError | null {
+export function historicalVacationRefusalOf(
+	error: unknown,
+): HistoricalVacationError | null {
 	let candidate = error;
 	for (let i = 0; i < 8 && candidate && typeof candidate === "object"; i++) {
 		if (candidate instanceof HistoricalVacationError) return candidate;
@@ -60,6 +66,7 @@ export async function assertHistoricalVacationNotOverlapping(
 		unresolvedImport?: boolean;
 	},
 ) {
+	if (isAuthorizedReconciledAbsence(database, input)) return;
 	const result = await database.execute<{ id: string }>(sql`
         select historical.id
         from vacation_adjustment as historical
@@ -79,7 +86,8 @@ export async function assertHistoricalVacationNotOverlapping(
         limit 1
     `);
 	const rows = Array.isArray(result) ? result : result.rows;
-	if (rows.length) throw new HistoricalVacationError("overlap", OVERLAP_MESSAGE);
+	if (rows.length)
+		throw new HistoricalVacationError("overlap", OVERLAP_MESSAGE);
 }
 
 export const historicalVacationInputSchema = z.object({
@@ -89,7 +97,9 @@ export const historicalVacationInputSchema = z.object({
 	days: z.number().finite().min(0).max(366).multipleOf(0.5),
 	reason: z.string().trim().min(1).max(2000),
 });
-export type HistoricalVacationInput = z.infer<typeof historicalVacationInputSchema>;
+export type HistoricalVacationInput = z.infer<
+	typeof historicalVacationInputSchema
+>;
 
 /** Recheck current approved membership and target scope under the mutation's configuration guard. */
 async function requireHistoricalAdmin(
@@ -123,13 +133,17 @@ async function requireHistoricalAdmin(
 		.select()
 		.from(employee)
 		.where(
-			and(eq(employee.organizationId, input.organizationId), eq(employee.id, input.employeeId)),
+			and(
+				eq(employee.organizationId, input.organizationId),
+				eq(employee.id, input.employeeId),
+			),
 		)
 		.limit(1);
 	if (
 		!membership ||
 		!(
-			hasOrganizationRole(membership.role, "owner") || hasOrganizationRole(membership.role, "admin")
+			hasOrganizationRole(membership.role, "owner") ||
+			hasOrganizationRole(membership.role, "admin")
 		) ||
 		!actor ||
 		!target
@@ -146,7 +160,11 @@ async function review(
 	input: HistoricalVacationInput,
 	actorUserId: string,
 ) {
-	const { actor, target } = await requireHistoricalAdmin(database, input, actorUserId);
+	const { actor, target } = await requireHistoricalAdmin(
+		database,
+		input,
+		actorUserId,
+	);
 	const [existing] = await database
 		.select()
 		.from(vacationAdjustment)
@@ -159,19 +177,30 @@ async function review(
 		)
 		.limit(1);
 	const tracking = await loadEmployeeTrackingContext(database, input);
-	const yearStart = Temporal.PlainDate.from({ year: input.year, month: 1, day: 1 });
-	const yearEnd = Temporal.PlainDate.from({ year: input.year, month: 12, day: 31 });
+	const yearStart = Temporal.PlainDate.from({
+		year: input.year,
+		month: 1,
+		day: 1,
+	});
+	const yearEnd = Temporal.PlainDate.from({
+		year: input.year,
+		month: 12,
+		day: 31,
+	});
 	if (!existing && (!tracking || tracking.startDate <= yearStart.toString()))
 		throw new HistoricalVacationError(
 			"invalid",
 			"Activate reviewed tracking dates first, and choose a year with vacation before tracking began.",
 		);
-	const coverageStart = existing?.historicalCoverageStart ?? yearStart.toString();
+	const coverageStart =
+		existing?.historicalCoverageStart ?? yearStart.toString();
 	const coverageEnd =
 		existing?.historicalCoverageEnd ??
 		(tracking!.startDate > yearEnd.toString()
 			? yearEnd.toString()
-			: Temporal.PlainDate.from(tracking!.startDate).subtract({ days: 1 }).toString());
+			: Temporal.PlainDate.from(tracking!.startDate)
+					.subtract({ days: 1 })
+					.toString());
 	const [org] = await database
 		.select({ timezone: organization.timezone })
 		.from(organization)
@@ -207,7 +236,10 @@ async function review(
 				eq(absenceEntry.employeeId, input.employeeId),
 				lte(absenceEntry.startDate, yearEnd.toString()),
 				gte(absenceEntry.endDate, yearStart.toString()),
-				or(eq(absenceEntry.status, "approved"), eq(absenceEntry.status, "pending")),
+				or(
+					eq(absenceEntry.status, "approved"),
+					eq(absenceEntry.status, "pending"),
+				),
 			),
 		)
 		.orderBy(asc(absenceEntry.id));
@@ -339,7 +371,11 @@ export async function reviewPreviouslyTakenVacation(
 ) {
 	if (fingerprint === undefined)
 		await acquireOrganizationConfigurationGuard(database, input.organizationId);
-	else await acquireExclusiveOrganizationConfigurationGuard(database, input.organizationId);
+	else
+		await acquireExclusiveOrganizationConfigurationGuard(
+			database,
+			input.organizationId,
+		);
 	const reviewed = await review(database, input, actorUserId);
 	if (fingerprint !== undefined) {
 		if (reviewed.fingerprint !== fingerprint)
@@ -368,7 +404,10 @@ export async function reviewPreviouslyTakenVacation(
 				)
 				.returning({ id: vacationAdjustment.id });
 			if (!updated)
-				throw new HistoricalVacationError("stale", "This total changed. Review it again.");
+				throw new HistoricalVacationError(
+					"stale",
+					"This total changed. Review it again.",
+				);
 			adjustmentId = updated.id;
 		} else {
 			const [created] = await database
@@ -415,12 +454,18 @@ export async function reviewPreviouslyTakenVacation(
 		reason: input.reason,
 		coverageStart: reviewed.coverageStart,
 		coverageEnd: reviewed.coverageEnd,
-		trackingStart: reviewed.existing?.historicalTrackingStart ?? reviewed.tracking?.startDate,
+		trackingStart:
+			reviewed.existing?.historicalTrackingStart ??
+			reviewed.tracking?.startDate,
 		before: reviewed.before,
 		after: reviewed.after,
 		blockers: reviewed.blockers,
-		historicalRecords: reviewed.historicalRecords.map(({ updatedAt, ...row }) => row),
+		historicalRecords: reviewed.historicalRecords.map(
+			({ updatedAt, ...row }) => row,
+		),
 		fingerprint: reviewed.fingerprint,
 	};
 }
-export type HistoricalVacationReview = Awaited<ReturnType<typeof reviewPreviouslyTakenVacation>>;
+export type HistoricalVacationReview = Awaited<
+	ReturnType<typeof reviewPreviouslyTakenVacation>
+>;

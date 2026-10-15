@@ -3,14 +3,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 interface TransactionContext {
 	inserts: Array<Record<string, unknown>>;
-	insertResults: Array<{ values: Record<string, unknown>; id: string; hash: string }>;
+	insertResults: Array<{
+		values: Record<string, unknown>;
+		id: string;
+		hash: string;
+	}>;
 	pendingInsert?: Record<string, unknown>;
 	predicateUpdates: Array<{
 		values: Record<string, unknown>;
 		predicate: Record<string, unknown>;
 	}>;
 	releaseLocks: Array<() => void>;
-	rowChanges: Map<string, { before: Record<string, unknown>; after: Record<string, unknown> }>;
+	rowChanges: Map<
+		string,
+		{ before: Record<string, unknown>; after: Record<string, unknown> }
+	>;
 	updates: Array<Record<string, unknown>>;
 }
 
@@ -22,7 +29,10 @@ const dbMock = vi.hoisted(() => ({
 	latestEntries: new Map<string, { id: string; hash: string }>(),
 	timeEntries: [] as Array<Record<string, unknown>>,
 	employees: new Map<string, { id: string; organizationId: string }>(),
-	categories: new Map<string, { id: string; organizationId: string; name: string }>(),
+	categories: new Map<
+		string,
+		{ id: string; organizationId: string; name: string }
+	>(),
 	transaction: vi.fn(),
 	execute: vi.fn(),
 	select: vi.fn(),
@@ -41,7 +51,9 @@ const dbMock = vi.hoisted(() => ({
 		values: Record<string, unknown>;
 		predicate: Record<string, unknown>;
 	}>,
-	beforeUpdate: undefined as ((values: Record<string, unknown>) => Promise<void>) | undefined,
+	beforeUpdate: undefined as
+		| ((values: Record<string, unknown>) => Promise<void>)
+		| undefined,
 	afterUpdate: undefined as
 		| ((
 				values: Record<string, unknown>,
@@ -51,7 +63,9 @@ const dbMock = vi.hoisted(() => ({
 	beforeStatusRead: undefined as (() => Promise<void>) | undefined,
 	afterRollback: undefined as (() => Promise<void>) | undefined,
 	beforeRollbackRestore: undefined as (() => Promise<void>) | undefined,
-	afterLockAcquired: undefined as ((acquisition: number) => Promise<void>) | undefined,
+	afterLockAcquired: undefined as
+		| ((acquisition: number) => Promise<void>)
+		| undefined,
 	candidateBarrier: undefined as (() => Promise<void>) | undefined,
 	advisoryLocks: new Map<string, Promise<void>>(),
 	nextCreatedId: 1,
@@ -69,14 +83,22 @@ const workHarness = vi.hoisted(() => ({
 	admission: "legacy" as "legacy" | "append",
 	/** The confirmed route of every attempt that reached the operation. */
 	coordinated: [] as Array<Record<string, unknown>>,
-	guards: [] as Array<{ rank: number; key: string; mode: string; attempt: number }>,
+	guards: [] as Array<{
+		rank: number;
+		key: string;
+		mode: string;
+		attempt: number;
+	}>,
 	replay: vi.fn(),
 	record: vi.fn(),
 }));
 
 // The period submission seam (#1062) has its own PostgreSQL suites; here nothing is submitted.
 vi.mock("@/lib/time-tracking/period-submissions/submission-send-back", () => ({
-	sendBackChangedPeriodSubmissions: vi.fn(async () => ({ withdrawn: [], outdated: [] })),
+	sendBackChangedPeriodSubmissions: vi.fn(async () => ({
+		withdrawn: [],
+		outdated: [],
+	})),
 }));
 // The balance refresh (#1214) has its own PostgreSQL suites; here it is only recorded.
 vi.mock("@/lib/work-balance/service", () => ({
@@ -84,7 +106,9 @@ vi.mock("@/lib/work-balance/service", () => ({
 }));
 // The closed-month check (#762) has its own PostgreSQL suites; here it never refuses.
 vi.mock("@/lib/time-tracking/closed-months/store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/time-tracking/closed-months/store")>()),
+	...(await importOriginal<
+		typeof import("@/lib/time-tracking/closed-months/store")
+	>()),
 	assertAbsenceDaysOpen: vi.fn(async () => {}),
 	assertAbsenceOpenById: vi.fn(async () => {}),
 }));
@@ -111,8 +135,11 @@ vi.mock("@/lib/time-tracking/blockchain", () => ({
 // reviewed-import-operation.integration.test.ts. Only the employee key is taken
 // on the mocked client, so concurrent workers serialize per employee.
 vi.mock("./import-work-transaction", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("./import-work-transaction")>();
-	const { fakeWorkTransaction } = await import("@/lib/time-tracking/work-transaction/testing");
+	const actual =
+		await importOriginal<typeof import("./import-work-transaction")>();
+	const { fakeWorkTransaction } = await import(
+		"@/lib/time-tracking/work-transaction/testing"
+	);
 	const { Rank } = await import("@/lib/time-tracking/work-transaction/ranks");
 	const { sql } = await import("drizzle-orm");
 	return {
@@ -126,7 +153,9 @@ vi.mock("./import-work-transaction", async (importOriginal) => {
 				transaction: (body) => dbMock.transaction(body),
 				lock: async (client, guard) => {
 					if (guard.rank !== Rank.employeeCoordination) return;
-					await (client as { execute: (statement: unknown) => Promise<unknown> }).execute(
+					await (
+						client as { execute: (statement: unknown) => Promise<unknown> }
+					).execute(
 						sql`select pg_advisory_xact_lock(hashtextextended(${guard.key}, 0))`,
 					);
 				},
@@ -144,14 +173,18 @@ vi.mock("./import-work-transaction", async (importOriginal) => {
 });
 
 vi.mock("@/lib/time-tracking/record-imported-work", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/time-tracking/record-imported-work")>()),
+	...(await importOriginal<
+		typeof import("@/lib/time-tracking/record-imported-work")
+	>()),
 	replayImportedWork: workHarness.replay,
 	recordImportedWork: workHarness.record,
 }));
 
 const { commitAcceptedRowsForEntity } = await import("./committers");
 const { calculateHash } = await import("@/lib/time-tracking/blockchain");
-const { markEmployeeWorkBalanceDirty } = await import("@/lib/work-balance/service");
+const { markEmployeeWorkBalanceDirty } = await import(
+	"@/lib/work-balance/service"
+);
 
 function commitJob(entityType: "work_period" | "absence") {
 	return {
@@ -266,7 +299,9 @@ beforeEach(() => {
 	dbMock.persistedRows = new Map();
 	dbMock.latestEntries = new Map();
 	dbMock.timeEntries = [];
-	dbMock.employees = new Map([["emp_1", { id: "emp_1", organizationId: "org_1" }]]);
+	dbMock.employees = new Map([
+		["emp_1", { id: "emp_1", organizationId: "org_1" }],
+	]);
 	dbMock.categories = new Map();
 	dbMock.insertCalls = [];
 	dbMock.updates = [];
@@ -301,7 +336,8 @@ beforeEach(() => {
 				});
 				for (const insert of context.insertResults) {
 					if (
-						(insert.values.type === "clock_in" || insert.values.type === "clock_out") &&
+						(insert.values.type === "clock_in" ||
+							insert.values.type === "clock_out") &&
 						typeof insert.values.employeeId === "string"
 					) {
 						dbMock.latestEntries.set(insert.values.employeeId, {
@@ -320,7 +356,9 @@ beforeEach(() => {
 				dbMock.insertCalls = dbMock.insertCalls.filter(
 					(insert) => !context.inserts.includes(insert),
 				);
-				dbMock.updates = dbMock.updates.filter((update) => !context.updates.includes(update));
+				dbMock.updates = dbMock.updates.filter(
+					(update) => !context.updates.includes(update),
+				);
 				dbMock.updatePredicates = dbMock.updatePredicates.filter(
 					(update) => !context.predicateUpdates.includes(update),
 				);
@@ -338,26 +376,54 @@ beforeEach(() => {
 		});
 	});
 	dbMock.execute.mockImplementation(async (statement) => {
+		// PostgreSQL shared configuration readers coexist; exclusive employee keys
+		// below still serialize. The real configuration fence is covered by PostgreSQL suites.
+		const chunks = (statement as { queryChunks?: unknown[] }).queryChunks ?? [];
+		if (
+			chunks.some(
+				(chunk) =>
+					chunk &&
+					typeof chunk === "object" &&
+					"value" in chunk &&
+					Array.isArray(chunk.value) &&
+					chunk.value.some(
+						(part) =>
+							typeof part === "string" &&
+							part.includes("pg_advisory_xact_lock_shared"),
+					),
+			)
+		)
+			return [];
+
 		const parameters = sqlParameterValues(statement);
 		if (parameters.length > 1) {
 			const [employeeId, organizationId] = parameters;
 			const candidates = dbMock.timeEntries.filter(
-				(entry) => entry.employeeId === employeeId && entry.organizationId === organizationId,
+				(entry) =>
+					entry.employeeId === employeeId &&
+					entry.organizationId === organizationId,
 			);
 			const leaves = candidates.filter(
-				(candidate) => !candidates.some((child) => child.previousEntryId === candidate.id),
+				(candidate) =>
+					!candidates.some((child) => child.previousEntryId === candidate.id),
 			);
 			if (leaves.length > 0) {
-				return leaves.slice(0, 2).map((leaf) => ({ id: leaf.id, hash: leaf.hash }));
+				return leaves
+					.slice(0, 2)
+					.map((leaf) => ({ id: leaf.id, hash: leaf.hash }));
 			}
 			const latest =
-				typeof employeeId === "string" ? dbMock.latestEntries.get(employeeId) : undefined;
+				typeof employeeId === "string"
+					? dbMock.latestEntries.get(employeeId)
+					: undefined;
 			return latest ? [latest] : [];
 		}
 		const [lockKey] = parameters;
-		if (typeof lockKey !== "string") throw new Error("Expected parameterized advisory lock key");
+		if (typeof lockKey !== "string")
+			throw new Error("Expected parameterized advisory lock key");
 		const context = transactionStorage.getStore();
-		if (!context) throw new Error("Advisory lock must run inside a transaction");
+		if (!context)
+			throw new Error("Advisory lock must run inside a transaction");
 		const previous = dbMock.advisoryLocks.get(lockKey) ?? Promise.resolve();
 		let release!: () => void;
 		const held = new Promise<void>((resolve) => {
@@ -387,10 +453,15 @@ beforeEach(() => {
 		const persisted = async () => {
 			const predicate = predicateValues(condition);
 			return [...dbMock.persistedRows.values()]
-				.filter((row) => Object.entries(predicate).every(([key, value]) => row[key] === value))
+				.filter((row) =>
+					Object.entries(predicate).every(([key, value]) => row[key] === value),
+				)
 				.map((row) => ({ ...row }));
 		};
-		return Object.assign(candidates, { orderBy: () => candidates, limit: persisted });
+		return Object.assign(candidates, {
+			orderBy: () => candidates,
+			limit: persisted,
+		});
 	});
 	dbMock.select.mockReturnValue({ from: dbMock.from });
 	dbMock.update.mockReturnValue({ set: dbMock.set });
@@ -409,7 +480,11 @@ beforeEach(() => {
 						await dbMock.beforeUpdate?.(values);
 						const matched: Array<Record<string, unknown>> = [];
 						for (const [id, row] of dbMock.persistedRows) {
-							if (Object.entries(predicate).every(([key, value]) => row[key] === value)) {
+							if (
+								Object.entries(predicate).every(
+									([key, value]) => row[key] === value,
+								)
+							) {
 								const updated = { ...row, ...values };
 								dbMock.persistedRows.set(id, updated);
 								const context = transactionStorage.getStore();
@@ -447,8 +522,12 @@ beforeEach(() => {
 		context?.insertResults.push({ values, id, hash });
 		return Promise.resolve([{ id, hash }]);
 	});
-	dbMock.query.employee.findFirst.mockResolvedValue(dbMock.employees.get("emp_1") ?? null);
-	dbMock.query.importBatch.findFirst.mockResolvedValue({ provider: "clockodo" });
+	dbMock.query.employee.findFirst.mockResolvedValue(
+		dbMock.employees.get("emp_1") ?? null,
+	);
+	dbMock.query.importBatch.findFirst.mockResolvedValue({
+		provider: "clockodo",
+	});
 	workHarness.admission = "legacy";
 	workHarness.coordinated = [];
 	workHarness.guards = [];
@@ -461,20 +540,24 @@ beforeEach(() => {
 	dbMock.query.timeEntry.findFirst.mockImplementation(() => {
 		return Promise.resolve(dbMock.latestEntries.get("emp_1") ?? null);
 	});
-	dbMock.query.importStagedRow.findFirst.mockImplementation(async ({ where }) => {
-		await dbMock.beforeStatusRead?.();
-		const predicate = predicateValues(where);
-		return (
-			[...dbMock.persistedRows.values()].find((row) =>
-				Object.entries(predicate).every(([key, value]) => row[key] === value),
-			) ?? null
-		);
-	});
+	dbMock.query.importStagedRow.findFirst.mockImplementation(
+		async ({ where }) => {
+			await dbMock.beforeStatusRead?.();
+			const predicate = predicateValues(where);
+			return (
+				[...dbMock.persistedRows.values()].find((row) =>
+					Object.entries(predicate).every(([key, value]) => row[key] === value),
+				) ?? null
+			);
+		},
+	);
 	dbMock.query.importStagedRow.findMany.mockImplementation(({ where }) => {
 		const predicate = predicateValues(where);
 		return Promise.resolve(
 			[...dbMock.persistedRows.values()]
-				.filter((row) => Object.entries(predicate).every(([key, value]) => row[key] === value))
+				.filter((row) =>
+					Object.entries(predicate).every(([key, value]) => row[key] === value),
+				)
 				.map((row) => ({ rowStatus: row.rowStatus })),
 		);
 	});
@@ -495,7 +578,11 @@ describe("commitAcceptedRowsForEntity", () => {
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 
-		expect(result).toMatchObject({ committedRows: 1, failedRows: 0, errors: [] });
+		expect(result).toMatchObject({
+			committedRows: 1,
+			failedRows: 0,
+			errors: [],
+		});
 		expect(calculateHash).toHaveBeenNthCalledWith(1, {
 			employeeId: "emp_1",
 			type: "clock_in",
@@ -537,13 +624,20 @@ describe("commitAcceptedRowsForEntity", () => {
 		);
 		// From the day before the UTC start date, inside the row's transaction (#1214).
 		expect(markEmployeeWorkBalanceDirty).toHaveBeenCalledWith(
-			{ employeeId: "emp_1", organizationId: "org_1", dirtyFromDate: "2025-12-31" },
+			{
+				employeeId: "emp_1",
+				organizationId: "org_1",
+				dirtyFromDate: "2025-12-31",
+			},
 			expect.anything(),
 		);
 		expect(dbMock.updatePredicates).toEqual(
 			expect.arrayContaining([
 				{
-					values: expect.objectContaining({ rowStatus: "committing", commitError: null }),
+					values: expect.objectContaining({
+						rowStatus: "committing",
+						commitError: null,
+					}),
 					predicate: {
 						id: "row_1",
 						batchId: "batch_1",
@@ -579,11 +673,19 @@ describe("commitAcceptedRowsForEntity", () => {
 				},
 			}),
 		];
-		dbMock.categories.set("Vacation", { id: "cat_1", organizationId: "org_1", name: "Vacation" });
+		dbMock.categories.set("Vacation", {
+			id: "cat_1",
+			organizationId: "org_1",
+			name: "Vacation",
+		});
 
 		const result = await commitAcceptedRowsForEntity(commitJob("absence"));
 
-		expect(result).toMatchObject({ committedRows: 1, failedRows: 0, errors: [] });
+		expect(result).toMatchObject({
+			committedRows: 1,
+			failedRows: 0,
+			errors: [],
+		});
 		expect(dbMock.insertCalls).toContainEqual(
 			expect.objectContaining({
 				employeeId: "emp_1",
@@ -619,7 +721,11 @@ describe("commitAcceptedRowsForEntity", () => {
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 
-		expect(result).toMatchObject({ committedRows: 0, failedRows: 0, errors: [] });
+		expect(result).toMatchObject({
+			committedRows: 0,
+			failedRows: 0,
+			errors: [],
+		});
 		expect(dbMock.where).toHaveBeenCalledWith(
 			expect.objectContaining({ queryChunks: expect.any(Array) }),
 		);
@@ -644,7 +750,12 @@ describe("commitAcceptedRowsForEntity", () => {
 		expect(result).toMatchObject({
 			committedRows: 0,
 			failedRows: 1,
-			errors: [{ rowId: "row_1", message: "Employee emp_2 does not belong to organization org_1" }],
+			errors: [
+				{
+					rowId: "row_1",
+					message: "Employee emp_2 does not belong to organization org_1",
+				},
+			],
 		});
 		expect(dbMock.insert).not.toHaveBeenCalled();
 		expect(dbMock.updates).toContainEqual(
@@ -674,7 +785,12 @@ describe("commitAcceptedRowsForEntity", () => {
 		expect(result).toMatchObject({
 			committedRows: 0,
 			failedRows: 1,
-			errors: [{ rowId: "row_1", message: "Employee emp_2 does not belong to organization org_1" }],
+			errors: [
+				{
+					rowId: "row_1",
+					message: "Employee emp_2 does not belong to organization org_1",
+				},
+			],
 		});
 		expect(dbMock.insert).not.toHaveBeenCalled();
 		expect(dbMock.updates).toEqual([]);
@@ -728,7 +844,11 @@ describe("commitAcceptedRowsForEntity", () => {
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 
-		expect(result).toMatchObject({ committedRows: 2, failedRows: 0, errors: [] });
+		expect(result).toMatchObject({
+			committedRows: 2,
+			failedRows: 0,
+			errors: [],
+		});
 		expect(executeCallsWithParameterCount(1)).toHaveLength(2);
 		expect(executeCallsWithParameterCount(4)).toHaveLength(2);
 		expect(dbMock.insertCalls[3]).toEqual(
@@ -769,12 +889,20 @@ describe("commitAcceptedRowsForEntity", () => {
 			commitAcceptedRowsForEntity(commitJob("work_period")),
 		]);
 
-		expect(results.reduce((total, result) => total + result.committedRows, 0)).toBe(2);
-		const clockIns = dbMock.insertCalls.filter((insert) => insert.type === "clock_in");
-		const clockOuts = dbMock.insertCalls.filter((insert) => insert.type === "clock_out");
+		expect(
+			results.reduce((total, result) => total + result.committedRows, 0),
+		).toBe(2);
+		const clockIns = dbMock.insertCalls.filter(
+			(insert) => insert.type === "clock_in",
+		);
+		const clockOuts = dbMock.insertCalls.filter(
+			(insert) => insert.type === "clock_out",
+		);
 		expect(clockIns).toHaveLength(2);
 		expect(clockOuts).toHaveLength(2);
-		expect(clockIns.filter((entry) => entry.previousEntryId === "entry_prev")).toHaveLength(1);
+		expect(
+			clockIns.filter((entry) => entry.previousEntryId === "entry_prev"),
+		).toHaveLength(1);
 		expect(
 			clockIns.filter((entry) =>
 				clockOuts.some((clockOut) => entry.previousHash === clockOut.hash),
@@ -836,12 +964,9 @@ describe("commitAcceptedRowsForEntity", () => {
 				previousHash: "hash_clock_out",
 			}),
 		);
-		expect(sqlParameterValues(executeCallsWithParameterCount(4)[0][0])).toEqual([
-			"emp_1",
-			"org_1",
-			"emp_1",
-			"org_1",
-		]);
+		expect(sqlParameterValues(executeCallsWithParameterCount(4)[0][0])).toEqual(
+			["emp_1", "org_1", "emp_1", "org_1"],
+		);
 	});
 
 	it("fails closed when legacy data has multiple chain leaves", async () => {
@@ -942,16 +1067,25 @@ describe("commitAcceptedRowsForEntity", () => {
 		];
 		dbMock.returning.mockRejectedValueOnce(new Error("clock in insert failed"));
 
-		const firstResult = await commitAcceptedRowsForEntity(commitJob("work_period"), {
-			finalAttempt: false,
-		});
+		const firstResult = await commitAcceptedRowsForEntity(
+			commitJob("work_period"),
+			{
+				finalAttempt: false,
+			},
+		);
 
 		expect(firstResult.failedRows).toBe(1);
 		expect(dbMock.persistedRows.get("row_1")?.rowStatus).toBe("accepted");
 
-		const retryResult = await commitAcceptedRowsForEntity(commitJob("work_period"));
+		const retryResult = await commitAcceptedRowsForEntity(
+			commitJob("work_period"),
+		);
 
-		expect(retryResult).toMatchObject({ committedRows: 1, failedRows: 0, errors: [] });
+		expect(retryResult).toMatchObject({
+			committedRows: 1,
+			failedRows: 0,
+			errors: [],
+		});
 		expect(dbMock.persistedRows.get("row_1")?.rowStatus).toBe("committed");
 	});
 
@@ -983,14 +1117,27 @@ describe("commitAcceptedRowsForEntity", () => {
 
 		const failingCommit = commitAcceptedRowsForEntity(commitJob("absence"));
 		await failedUpdateReached.promise;
-		const successfulResult = await commitAcceptedRowsForEntity(commitJob("absence"));
+		const successfulResult = await commitAcceptedRowsForEntity(
+			commitJob("absence"),
+		);
 		releaseFailedUpdate.resolve();
 		const failedResult = await failingCommit;
 
-		expect(successfulResult).toMatchObject({ committedRows: 1, failedRows: 0, errors: [] });
-		expect(failedResult).toMatchObject({ committedRows: 0, failedRows: 0, errors: [] });
+		expect(successfulResult).toMatchObject({
+			committedRows: 1,
+			failedRows: 0,
+			errors: [],
+		});
+		expect(failedResult).toMatchObject({
+			committedRows: 0,
+			failedRows: 0,
+			errors: [],
+		});
 		expect(dbMock.persistedRows.get("row_1")).toEqual(
-			expect.objectContaining({ rowStatus: "committed", commitTargetTable: "absence_entry" }),
+			expect.objectContaining({
+				rowStatus: "committed",
+				commitTargetTable: "absence_entry",
+			}),
 		);
 		expect(dbMock.insertCalls).toHaveLength(1);
 	});
@@ -1013,18 +1160,33 @@ describe("commitAcceptedRowsForEntity", () => {
 			name: "Vacation",
 		});
 		dbMock.returning.mockRejectedValueOnce(new Error("absence insert failed"));
-		let concurrentResult: Awaited<ReturnType<typeof commitAcceptedRowsForEntity>> | undefined;
+		let concurrentResult:
+			| Awaited<ReturnType<typeof commitAcceptedRowsForEntity>>
+			| undefined;
 		dbMock.afterRollback = async () => {
 			dbMock.afterRollback = undefined;
-			concurrentResult = await commitAcceptedRowsForEntity(commitJob("absence"));
+			concurrentResult = await commitAcceptedRowsForEntity(
+				commitJob("absence"),
+			);
 		};
 
-		const staleResult = await commitAcceptedRowsForEntity(commitJob("absence"), {
-			finalAttempt: false,
-		});
+		const staleResult = await commitAcceptedRowsForEntity(
+			commitJob("absence"),
+			{
+				finalAttempt: false,
+			},
+		);
 
-		expect(concurrentResult).toMatchObject({ committedRows: 1, failedRows: 0, errors: [] });
-		expect(staleResult).toMatchObject({ committedRows: 0, failedRows: 0, errors: [] });
+		expect(concurrentResult).toMatchObject({
+			committedRows: 1,
+			failedRows: 0,
+			errors: [],
+		});
+		expect(staleResult).toMatchObject({
+			committedRows: 0,
+			failedRows: 0,
+			errors: [],
+		});
 		expect(dbMock.persistedRows.get("row_1")?.rowStatus).toBe("committed");
 	});
 
@@ -1058,19 +1220,30 @@ describe("commitAcceptedRowsForEntity", () => {
 			name: "Vacation",
 		});
 		dbMock.returning.mockRejectedValueOnce(new Error("absence insert failed"));
-		let concurrentResult: Awaited<ReturnType<typeof commitAcceptedRowsForEntity>> | undefined;
+		let concurrentResult:
+			| Awaited<ReturnType<typeof commitAcceptedRowsForEntity>>
+			| undefined;
 		dbMock.beforeRollbackRestore = async () => {
 			dbMock.beforeRollbackRestore = undefined;
 			dbMock.rows = [successfulRow];
-			concurrentResult = await commitAcceptedRowsForEntity(commitJob("absence"));
+			concurrentResult = await commitAcceptedRowsForEntity(
+				commitJob("absence"),
+			);
 		};
 
-		const failingResult = await commitAcceptedRowsForEntity(commitJob("absence"), {
-			finalAttempt: false,
-		});
+		const failingResult = await commitAcceptedRowsForEntity(
+			commitJob("absence"),
+			{
+				finalAttempt: false,
+			},
+		);
 
 		expect(failingResult.failedRows).toBe(1);
-		expect(concurrentResult).toMatchObject({ committedRows: 1, failedRows: 0, errors: [] });
+		expect(concurrentResult).toMatchObject({
+			committedRows: 1,
+			failedRows: 0,
+			errors: [],
+		});
 		expect(dbMock.persistedRows.get("row_1")?.rowStatus).toBe("accepted");
 		expect(dbMock.persistedRows.get("row_2")?.rowStatus).toBe("committed");
 	});
@@ -1104,7 +1277,9 @@ describe("reviewed work rows (#284)", () => {
 				snapshot: { employeeId: "emp_1", sourceKey },
 			},
 		]);
-		expect(workHarness.guards.map(({ rank, mode, key }) => `${rank} ${mode} ${key}`)).toEqual([
+		expect(
+			workHarness.guards.map(({ rank, mode, key }) => `${rank} ${mode} ${key}`),
+		).toEqual([
 			`1 shared ${JSON.stringify(["completed-work-adoption", "org_1"])}`,
 			`3 shared ${JSON.stringify(["work-organization-configuration", "org_1"])}`,
 			`4 shared ${JSON.stringify(["work-user-configuration-access", "user_1"])}`,
@@ -1123,7 +1298,12 @@ describe("reviewed work rows (#284)", () => {
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 
-		expect(result).toMatchObject({ committedRows: 1, failedRows: 0, heldRows: 0, errors: [] });
+		expect(result).toMatchObject({
+			committedRows: 1,
+			failedRows: 0,
+			heldRows: 0,
+			errors: [],
+		});
 		expect(workHarness.record).toHaveBeenCalledTimes(1);
 		expect(workHarness.record.mock.calls[0][1]).toMatchObject({
 			organizationId: "org_1",
@@ -1172,8 +1352,14 @@ describe("reviewed work rows (#284)", () => {
 			committedRows: 0,
 			failedRows: 0,
 			heldRows: 1,
-			errors: [{ rowId: "row_1", message: "Held for review: occupancy_conflict" }],
-			summary: { remainingRows: 0, totalCommittedRows: 0, terminalFailedRows: 1 },
+			errors: [
+				{ rowId: "row_1", message: "Held for review: occupancy_conflict" },
+			],
+			summary: {
+				remainingRows: 0,
+				totalCommittedRows: 0,
+				terminalFailedRows: 1,
+			},
 		});
 		expect(dbMock.persistedRows.get("row_1")).toMatchObject({
 			rowStatus: "blocked",
@@ -1220,15 +1406,22 @@ describe("reviewed work rows (#284)", () => {
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 
 		expect(result).toMatchObject({ committedRows: 1, failedRows: 0 });
-		expect(workHarness.coordinated.map((route) => route.employees)).toEqual([["emp_1"], ["emp_2"]]);
+		expect(workHarness.coordinated.map((route) => route.employees)).toEqual([
+			["emp_1"],
+			["emp_2"],
+		]);
 		expect(dbMock.insertCalls).toContainEqual(
 			expect.objectContaining({ type: "clock_in", employeeId: "emp_2" }),
 		);
-		expect(dbMock.insertCalls).not.toContainEqual(expect.objectContaining({ employeeId: "emp_1" }));
+		expect(dbMock.insertCalls).not.toContainEqual(
+			expect.objectContaining({ employeeId: "emp_1" }),
+		);
 	});
 
 	it("fails a row without a mapped employee while routing, before any guard", async () => {
-		dbMock.rows = [workRow({ normalizedPayload: { employeeId: null, startsAt: "x" } })];
+		dbMock.rows = [
+			workRow({ normalizedPayload: { employeeId: null, startsAt: "x" } }),
+		];
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 

@@ -1660,6 +1660,13 @@
       "when": 1805126400000,
       "tag": "0236_employee_tracking_dates",
       "breakpoints": true
+    },
+    {
+      "idx": 237,
+      "version": "7",
+      "when": 1805212800000,
+      "tag": "0237_vacation_reconciliation",
+      "breakpoints": true
     }
   ]
 }

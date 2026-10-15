@@ -15,10 +15,24 @@ export interface AbsenceChangeOriginal extends AbsenceDayRange {
 	canonical: { startAt: string; endAt: string } | null;
 }
 export interface AbsenceChangeProposal extends AbsenceDayRange {
+	historicalReconciliation?: import("./vacation-reconciliation-types").ReconciliationProof;
+	historicalReconciliationReview?: {
+		reason: string;
+		totals: {
+			year: number;
+			currentDays: number;
+			remainingDays: number | undefined;
+			datedDays: number;
+		}[];
+		balances: { year: number; before: number | null; after: number | null }[];
+	};
 	canonical: { startAt: string; endAt: string };
-	displacedVacations: Array<AbsenceDayRange & { id: string; updatedAt: string; status: string }>;
+	displacedVacations: Array<
+		AbsenceDayRange & { id: string; updatedAt: string; status: string }
+	>;
 }
 export interface AbsenceChangeRequestInput {
+	historicalReconciliation?: import("./vacation-reconciliation-types").ReconciliationProof;
 	absenceId: string;
 	kind: AbsenceChangeKind;
 	proposed?: AbsenceDayRange;
