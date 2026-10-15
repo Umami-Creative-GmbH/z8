@@ -503,6 +503,35 @@ function divideContract({
 		);
 	});
 
+	// spec-1 LOW: an override names a project only; work records reads its billable default.
+	it("gives a half moved to another project that project's billable default", async () => {
+		const billableProject = randomUUID();
+		await admin.query(
+			`insert into project (id, organization_id, name, status, is_active, customer_id, billable_default, created_by, updated_at)
+			 values ($1, $2, 'Billable', 'active', true, $3, true, $4, $5)`,
+			[billableProject, ORG, ids.customer, userOf("owner"), SEEDED_AT],
+		);
+		const source = await recordWork();
+
+		const result = await apply(
+			divide(await expectedOf(source.id), parseInstant("2026-07-22T12:00:00Z"), {
+				attribution: { half: "generated", patch: { project: billableProject } },
+			}),
+		);
+
+		expect(result).toMatchObject({ kind: "divided" });
+		await expectRecordAgreement({ organizationId: ORG });
+		const { rows } = await admin.query(
+			`select project_id, is_billable from work_period
+			 where organization_id = $1 and deleted_at is null order by start_time`,
+			[ORG],
+		);
+		expect(rows).toEqual([
+			{ project_id: ids.project, is_billable: false },
+			{ project_id: billableProject, is_billable: true },
+		]);
+	});
+
 	it.each([
 		["another revision", (expected: WorkRecordExpected) => ({ revision: expected.revision + 1 })],
 		["another end", () => ({ endAt: parseInstant("2026-07-22T17:00:00Z") })],

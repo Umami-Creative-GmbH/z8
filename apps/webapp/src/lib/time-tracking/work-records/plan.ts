@@ -17,13 +17,14 @@ import {
 import { splitWorkVehicleUse } from "../vehicle-use/split-vehicle-use";
 import { deriveWorkDurationMinutes, WorkIntervalError } from "../work-duration";
 import { type AmendmentPlan, type PlannableAmendment, planAmendment } from "./amend-plan";
-import type { DivideWorkRecord, WorkRecordRefusal } from "./change";
+import type { DivideWorkRecord, DivisionHalf, WorkRecordRefusal } from "./change";
 import { agreeingPair, plannedPairsRefusal } from "./pair-agreement";
 import type { AgreementCanonicalRecord, AgreementWorkPeriod } from "./record-agreement";
 import {
 	type CanonicalAllocationShape,
 	UnrepresentableWorkAttributionError,
 	WorkAttribution,
+	type WorkAttributionPatch,
 } from "./work-attribution";
 
 /** A completed work period and its canonical work record, as the rule compares them. */
@@ -51,11 +52,13 @@ export type DivisionPlan = {
 
 export type WorkRecordPlan = DivisionPlan | AmendmentPlan;
 
-/** The policy part of a division: everything the plan needs besides the locked pair. */
-export type PlannableDivision = Pick<
-	DivideWorkRecord,
-	"kind" | "at" | "odometerKm" | "attribution"
->;
+/**
+ * The policy part of a division: everything the plan needs besides the locked
+ * pair, with an override's project billable default already read.
+ */
+export type PlannableDivision = Pick<DivideWorkRecord, "kind" | "at" | "odometerKm"> & {
+	attribution?: { half: DivisionHalf; patch: WorkAttributionPatch };
+};
 
 /** The policy part of a change: everything the plan needs besides the locked pair. */
 export type PlannableChange = PlannableDivision | PlannableAmendment;

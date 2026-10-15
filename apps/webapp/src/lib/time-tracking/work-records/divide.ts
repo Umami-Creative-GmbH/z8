@@ -25,9 +25,9 @@ import { closedRangeTouchedByWork } from "../closed-months/rules";
 import { closedRangesForEmployee } from "../closed-months/store";
 import { vehicleUseFromColumns } from "../vehicle-use/work-vehicle-use";
 import { workVehicleUseSplitRefusal } from "../vehicle-use/work-vehicle-use-eligibility";
-import { assertBillableAllowed, readProjectBillability } from "../work-billability";
 import { loadWorkOccupants } from "../work-occupancy";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "../work-transaction";
+import { resolvedPatch } from "./amend";
 import type { DivideWorkRecord, WorkRecordExpected, WorkRecordRefusal } from "./change";
 import { applyWrittenWorkEffects, sendBackChangedWork } from "./effects";
 import { entryWriterFor } from "./entry-writer";
@@ -41,7 +41,7 @@ import {
 	type WrittenPair,
 	writeCanonicalAttribution,
 } from "./pair-writer";
-import { type DivisionPlan, type PlannedHalf, planChange } from "./plan";
+import { type PlannedHalf, planChange } from "./plan";
 import { expectedOf, pairOf } from "./read";
 import type { CanonicalWorkRows, TimeEntryRow, WorkPeriodRow } from "./rows";
 import { type WorkSegment, workSegment } from "./segment";
@@ -94,7 +94,30 @@ export async function divideWorkRecord(
 		employeeId,
 		operation: change.appendOperation,
 	});
-	const plan = planChange(pairOf(locked), change, writer.durationArithmetic);
+	// An override's project takes its billable default, read here as an amendment reads it.
+	const override = change.attribution;
+	const plan = planChange(
+		pairOf(locked),
+		{
+			kind: "divide",
+			at: change.at,
+			odometerKm: change.odometerKm,
+			...(override
+				? {
+						attribution: {
+							half: override.half,
+							patch:
+								(await resolvedPatch(
+									tx,
+									{ organizationId, attribution: override.patch },
+									period.projectId,
+								)) ?? {},
+						},
+					}
+				: {}),
+		},
+		writer.durationArithmetic,
+	);
 	if (plan.kind !== "divide") return plan;
 	if (!canonical) return { kind: "canonical_record_missing" };
 
@@ -107,7 +130,6 @@ export async function divideWorkRecord(
 		value: change.odometerKm,
 	});
 	if (vehicleRefusal) return { kind: "vehicle_use_refused", code: vehicleRefusal };
-	await assertOverrideBillable(tx, change, plan);
 	const startAt = instantFromDate(period.startTime);
 	const endAt = instantFromDate(period.endTime);
 	// Symmetric occupancy: the halves cover the source, against every other work.
@@ -241,20 +263,6 @@ export async function divisionSource(
 		clockOutNotes: clockOut.notes ?? null,
 		decisionIds: decisions.map(({ id }) => id),
 	};
-}
-
-/** A billable override must name a project that has a customer to bill. */
-async function assertOverrideBillable(
-	tx: WorkTransactionClient,
-	change: DivideWorkRecord,
-	plan: DivisionPlan,
-): Promise<void> {
-	const override = change.attribution;
-	if (override?.patch.billable !== true) return;
-	const project = plan[override.half].attribution.project;
-	assertBillableAllowed(
-		await readProjectBillability(tx, change.organizationId, project?.projectId ?? null),
-	);
 }
 
 /**

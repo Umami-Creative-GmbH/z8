@@ -15,18 +15,14 @@ import type { AppendReviewRequirement } from "../time-entry-append";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { WorkVehicleUseChangeRefusalCode } from "../vehicle-use/work-vehicle-use-refusals";
 import type { WorkOccupant } from "../work-occupancy";
-import type { AmendWorkRecord } from "./amend-change";
+import type { AmendAttributionPatch, AmendWorkRecord } from "./amend-change";
 import type { CreateNewWork } from "./create-new-plan";
 import type { CreateWorkRecord } from "./create-plan";
 import type { DeleteWorkRecord } from "./delete-change";
 import type { DivideByOwedBreak } from "./owed-break";
 import type { RecordAgreementFacet } from "./record-agreement";
 import type { AttachWorkRecord, RepairWorkRecord } from "./repair-change";
-import type {
-	UnrepresentableWorkAttribution,
-	WorkAttribution,
-	WorkAttributionPatch,
-} from "./work-attribution";
+import type { UnrepresentableWorkAttribution, WorkAttribution } from "./work-attribution";
 
 /**
  * The state of a completed work period a change was decided against. Every
@@ -57,10 +53,14 @@ export type NewEntryProvenance = {
 /** One half of a division: `retained` keeps the work period's id, `generated` is new. */
 export type DivisionHalf = "retained" | "generated";
 
-/** A change of one half's work attribution, on top of what the division carries. */
+/**
+ * A change of one half's work attribution, on top of what the division carries.
+ * A project is named by its id: work records reads its billable default, and
+ * billable work needs a project with a customer to bill, as for an amendment.
+ */
 export type HalfAttributionOverride = {
 	half: DivisionHalf;
-	patch: WorkAttributionPatch;
+	patch: AmendAttributionPatch;
 };
 
 /**
