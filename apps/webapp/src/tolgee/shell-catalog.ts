@@ -124,6 +124,10 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"organization.switchFailed",
 		"organization.switchTo",
 		"organization.switching",
+		"organization.tracking.invalid-date",
+		"organization.tracking.setup-description",
+		"organization.tracking.setup-timezone",
+		"organization.tracking.start-date",
 	]),
 	...keys("reports", ["reports.projects.title", "reports.vehicles.title"]),
 	...keys("settings/enterprise", [
