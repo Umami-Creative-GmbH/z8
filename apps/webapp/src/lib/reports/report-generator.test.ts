@@ -27,7 +27,8 @@ const mockState = vi.hoisted(() => ({
 	loadWorkingDays: vi.fn(),
 }));
 
-vi.mock("drizzle-orm", () => ({
+vi.mock("drizzle-orm", async (importOriginal) => ({
+ ...(await importOriginal<typeof import("drizzle-orm")>()),
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 	gt: vi.fn((left: unknown, right: unknown) => ({ gt: [left, right] })),
