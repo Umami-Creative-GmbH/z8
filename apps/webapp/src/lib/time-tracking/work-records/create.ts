@@ -242,8 +242,8 @@ export async function insertCanonicalRecord(
 
 /**
  * Closes the live work period at the new clock-out, linked to its canonical work
- * record. Compare-and-set on the revision and on the work still being live; the
- * revision advances in both admissions.
+ * record, and clears any break in progress. Compare-and-set on the revision and on
+ * the work still being live; the revision advances in both admissions.
  */
 async function closeLiveWorkPeriod(
 	tx: WorkTransactionClient,
@@ -276,6 +276,10 @@ async function closeLiveWorkPeriod(
 			canonicalRecordId: input.canonicalRecordId,
 			approvalStatus: columns.approvalStatus,
 			pendingChanges: null,
+			// Completed work has no break in progress: a closure ends the work at an open
+			// break's start (#861), and its start operation stays for the break's replay.
+			breakStartedAt: null,
+			breakStartedZone: null,
 			graphRevision: period.graphRevision + 1,
 			updatedAt: new Date(),
 		})

@@ -105,10 +105,6 @@ vi.mock("@/lib/approvals/server/time-correction-submission", () => ({
 	submitCorrection: mockState.submitCorrection,
 }));
 
-vi.mock("@/lib/time-tracking/time-entry-writer", () => ({
-	createTimeEntry: mockState.createTimeEntry,
-}));
-
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/shared", () => ({
 	logger: { error: mockState.loggerError },
 }));

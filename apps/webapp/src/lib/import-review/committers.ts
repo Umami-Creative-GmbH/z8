@@ -13,10 +13,13 @@ import {
 	team,
 	timeEntry,
 	workCategory,
-	workPeriod,
 } from "@/db/schema";
 import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
-import { calculateHash } from "@/lib/time-tracking/blockchain";
+import {
+	type ClockingStore,
+	createDatabaseClockingStore,
+	insertChainedClockIn,
+} from "@/lib/time-tracking/clocking-core";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { assertAbsenceDaysOpen, workInterval } from "@/lib/time-tracking/closed-months/store";
 import type { ImportedWorkHold } from "@/lib/time-tracking/imported-work-interval";
@@ -369,55 +372,44 @@ function parseUtcInstant(value: string, fieldName: string) {
  * Legacy import of open work, which is live work, for organizations that have not
  * adopted appends. It runs under the reviewed-import transaction, which holds the
  * shared employee key, and keeps its established unique-leaf head selection.
- * Completed work goes through work records instead (`createImportedCompletedWork`).
+ * Clocking's store writes the live work (Time Tracking ADR 0010). Completed work
+ * goes through work records instead (`createImportedCompletedWork`).
  */
 async function commitLegacyOpenWorkPeriod(
 	database: CommitDb,
+	store: ClockingStore,
 	row: typeof importStagedRow.$inferSelect,
 	job: ImportCommitJobData,
 	attribution: { projectId: string; isBillable: boolean } | null,
 ) {
 	const payload = row.normalizedPayload as unknown as WorkPeriodPayload;
 	const startAt = parseUtcDateTime(payload.startsAt, "startsAt");
-	const clockInTimezoneCapture = resolveFallbackTimezoneCapture({
+	const start = instantFromDate(startAt.toJSDate());
+	const capture = resolveFallbackTimezoneCapture({
 		timestamp: startAt.toJSDate(),
 		timezone: "UTC",
 		timezoneSource: "backfill",
 	});
 	const previous = await getChainHead(database, payload.employeeId, job.organizationId);
-	const clockInHash = calculateHash({
-		employeeId: payload.employeeId,
-		type: "clock_in",
-		timestamp: startAt.toISO()!,
-		previousHash: previous?.hash ?? null,
-	});
-	const [clockIn] = await database
-		.insert(timeEntry)
-		.values({
+	const clockIn = await insertChainedClockIn(
+		store,
+		{
 			employeeId: payload.employeeId,
 			organizationId: job.organizationId,
-			type: "clock_in",
-			timestamp: startAt.toJSDate(),
-			previousEntryId: previous?.id ?? null,
-			previousHash: previous?.hash ?? null,
-			hash: clockInHash,
 			createdBy: job.committedBy,
-			...clockInTimezoneCapture,
-		})
-		.returning({ id: timeEntry.id, hash: timeEntry.hash });
-
-	const [period] = await database
-		.insert(workPeriod)
-		.values({
-			employeeId: payload.employeeId,
-			organizationId: job.organizationId,
-			clockInId: clockIn.id,
-			startTime: startAt.toJSDate(),
-			isActive: true,
-			projectId: attribution?.projectId ?? null,
-			isBillable: attribution?.isBillable ?? false,
-		})
-		.returning({ id: workPeriod.id });
+			action: { instant: start, ...capture },
+			source: { ipAddress: null, deviceInfo: null },
+		},
+		previous,
+	);
+	const period = await store.insertActivePeriod({
+		employeeId: payload.employeeId,
+		organizationId: job.organizationId,
+		clockInId: clockIn.id,
+		startTime: startAt.toJSDate(),
+		projectId: attribution?.projectId ?? null,
+		isBillable: attribution?.isBillable ?? false,
+	});
 	// Imported live work in a submitted period sends it back to the employee (#805): it
 	// counts at its start.
 	await sendBackChangedPeriodSubmissions(database, {
@@ -723,7 +715,13 @@ function commitReviewedWorkRow(
 				const payload = claimed.normalizedPayload as unknown as WorkPeriodPayload;
 				await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
 				if (!payload.endsAt) {
-					await commitLegacyOpenWorkPeriod(database, claimed, job, attribution.recorded);
+					await commitLegacyOpenWorkPeriod(
+						database,
+						createDatabaseClockingStore(scope.db),
+						claimed,
+						job,
+						attribution.recorded,
+					);
 					return { status: "committed" };
 				}
 				// Completed work is created through work records with its canonical work record

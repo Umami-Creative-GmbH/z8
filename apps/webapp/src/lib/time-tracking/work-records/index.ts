@@ -15,7 +15,10 @@ import "server-only";
  *   `orRefuse` turns a refusal into the error interactive callers throw.
  *
  * Besides them, `eraseEmployeeWorkHistory` removes an employee's whole work
- * history (demo cleanup, #1223).
+ * history (demo cleanup, #1223), `advanceWorkRevision` advances a period's
+ * revision for a pending correction's transition, and `correctOpenWorkRecord`
+ * moves the start of an open canonical work record some history gave live
+ * work (#1230).
  *
  * All run only on a sealed work-transaction scope; the Approvals finalizer's
  * database handle becomes one through `workRecordScopeForFinalizer`. Work
@@ -94,6 +97,8 @@ export type {
 	OwedBreakTakenBefore,
 } from "./owed-break";
 export { readWorkRecord, type WorkRecord } from "./read";
+export { advanceWorkRevision } from "./revision";
+export { correctOpenWorkRecord, type OpenWorkRecordCorrection } from "./open-record";
 export {
 	CompletedWorkReviewRequiredError,
 	isWorkRecordRefusal,

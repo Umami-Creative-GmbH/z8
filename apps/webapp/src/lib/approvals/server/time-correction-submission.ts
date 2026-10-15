@@ -99,9 +99,9 @@ import { CompletedWorkCollisionError } from "@/lib/time-tracking/close-active-wo
 import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 import { assertWorkOpen } from "@/lib/time-tracking/closed-months/store";
 import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
+import { advanceWorkRevision } from "@/lib/time-tracking/work-records";
 import {
 	admitTimeCorrectionAppend,
-	advanceCorrectionWorkRevision,
 	deriveTimeCorrectionOperationId,
 	insertTimeCorrectionReceipt,
 	loadTimeCorrectionReceipt,
@@ -1578,7 +1578,7 @@ function submitCorrectionInTransaction(
 		// routing, so an auto-completing finalization advances from there.
 		const submittedRevision =
 			freshAdopted && adopted
-				? await advanceCorrectionWorkRevision(adopted.db, {
+				? await advanceWorkRevision(adopted, {
 						organizationId: input.organizationId,
 						employeeId: input.employeeId,
 						workPeriodId: lockedPeriod.id,

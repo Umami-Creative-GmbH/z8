@@ -199,10 +199,13 @@ describe("time correction PostgreSQL non-live contracts", () => {
 		// #1227: work records is the only writer of completed work and its
 		// canonical work record (compare-and-set on the revision it advances).
 		// Live work stays Clocking's (ADR 0002), with its own CAS writes.
-		for (const body of [finalizer, completed]) {
+		// The open canonical work record some history gave live work is work
+		// records' too (#1230).
+		for (const body of [finalizer, completed, live]) {
 			expect(body).not.toContain(".update(timeRecord)");
 			expect(body).not.toContain(".update(timeRecordWork)");
 		}
+		expect(live).toContain("correctOpenWorkRecord(input.dbService.db, {");
 		expect(completed).not.toContain(".update(");
 		expect(completed).toContain("applyWorkRecordChange(scope, workChange)");
 		expect(completed).toContain('kind: "amend"');
@@ -221,11 +224,10 @@ describe("time correction PostgreSQL non-live contracts", () => {
 				?.length ?? 0;
 		const affectedRowCheckCount =
 			live.match(/requireSingleMutation\(/g)?.length ?? 0;
-		expect(returningCount).toBe(4);
+		expect(returningCount).toBe(3);
 		expect(affectedRowCheckCount).toBe(returningCount);
-		expect(live).toContain(
-			"updatedCanonicalWork[0]?.recordId !== canonicalWork.recordId",
-		);
+		expect(live).toContain("if (!correctedOpenRecord.start)");
+		expect(live).toContain("if (!correctedOpenRecord.detail)");
 		expect(binding).toContain("source.approvalWorkflowId === null");
 		expect(binding).toContain(
 			"eq(workPeriod.approvalWorkflowId, source.approvalWorkflowId)",

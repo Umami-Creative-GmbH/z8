@@ -1,30 +1,13 @@
 import { and, desc, eq, gte, lte, type SQL } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { employee, timeEntry } from "@/db/schema";
+import { timeEntry } from "@/db/schema";
 import type { AppendAssuranceReport } from "@/lib/time-tracking/append-assurance";
 import { readEmployeeAppendAssurance } from "@/lib/time-tracking/append-assurance-reader";
-import { calculateHash, getChainHash, verifyHash } from "@/lib/time-tracking/blockchain";
-import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
-import { type DatabaseError, NotFoundError, type ValidationError } from "@/lib/effect/errors";
+import { getChainHash, verifyHash } from "@/lib/time-tracking/blockchain";
+import { type DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 
 type TimeEntry = typeof timeEntry.$inferSelect;
-type TimeEntryType = "clock_in" | "clock_out" | "correction";
-
-export interface CreateTimeEntryInput {
-	employeeId: string;
-	organizationId: string;
-	type: TimeEntryType;
-	timestamp: Date;
-	createdBy: string;
-	notes?: string;
-	location?: string;
-	ipAddress?: string;
-	deviceInfo?: string;
-	utcOffsetMinutes: number;
-	timezone: string;
-	timezoneSource: TimeEntryTimezoneSource;
-}
 
 export interface GetTimeEntriesInput {
 	employeeId: string;
@@ -38,13 +21,6 @@ export interface GetTimeEntriesInput {
 export class TimeEntryService extends Context.Service<
 	TimeEntryService,
 	{
-		readonly createTimeEntry: (
-			input: CreateTimeEntryInput,
-		) => Effect.Effect<
-			TimeEntry,
-			NotFoundError | ValidationError | DatabaseError
-		>;
-
 		readonly getTimeEntries: (
 			input: GetTimeEntriesInput,
 		) => Effect.Effect<TimeEntry[], DatabaseError>;
@@ -81,80 +57,6 @@ export const TimeEntryServiceLive = Layer.effect(
 		const dbService = yield* DatabaseService;
 
 		return TimeEntryService.of({
-			createTimeEntry: (input) =>
-				Effect.gen(function* () {
-					// Verify employee exists in the specified organization
-					const employeeRecord = yield* dbService.query("verifyEmployeeExists", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: and(
-								eq(employee.id, input.employeeId),
-								eq(employee.organizationId, input.organizationId),
-							),
-						});
-					});
-
-					if (!employeeRecord) {
-						yield* Effect.fail(
-							new NotFoundError({
-								message: "Employee not found in organization",
-								entityType: "employee",
-								entityId: input.employeeId,
-							}),
-						);
-					}
-
-					// Get previous entry for blockchain linking (per employee-per-org)
-					const previousEntry = yield* dbService.query("getPreviousEntry", async () => {
-						const [entry] = await dbService.db
-							.select()
-							.from(timeEntry)
-							.where(
-								and(
-									eq(timeEntry.employeeId, input.employeeId),
-									eq(timeEntry.organizationId, input.organizationId),
-								),
-							)
-							.orderBy(desc(timeEntry.createdAt))
-							.limit(1);
-						return entry ?? null;
-					});
-
-					// Calculate hash for blockchain integrity
-					const hash = calculateHash({
-						employeeId: input.employeeId,
-						type: input.type,
-						timestamp: input.timestamp.toISOString(),
-						previousHash: previousEntry?.hash ?? null,
-					});
-
-					// Create the time entry with organizationId
-					const createdEntry = yield* dbService.query("createTimeEntry", async () => {
-						const [entry] = await dbService.db
-							.insert(timeEntry)
-							.values({
-								employeeId: input.employeeId,
-								organizationId: input.organizationId,
-								type: input.type,
-								timestamp: input.timestamp,
-								hash,
-								previousHash: previousEntry?.hash ?? null,
-								previousEntryId: previousEntry?.id ?? null,
-								notes: input.notes,
-								location: input.location,
-								ipAddress: input.ipAddress,
-								deviceInfo: input.deviceInfo,
-								createdBy: input.createdBy,
-								utcOffsetMinutes: input.utcOffsetMinutes,
-								timezone: input.timezone,
-								timezoneSource: input.timezoneSource,
-							})
-							.returning();
-						return entry;
-					});
-
-					return createdEntry;
-				}),
-
 			getTimeEntries: (input) =>
 				Effect.gen(function* () {
 					const entries = yield* dbService.query("getTimeEntries", async () => {

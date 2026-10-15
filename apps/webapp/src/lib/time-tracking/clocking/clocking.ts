@@ -57,6 +57,7 @@ import {
 	type BreakInProgressCommand,
 	BreakStartCollisionError,
 	type BreakStartWrite,
+	breakInProgressChanged,
 	closureEnd,
 	committedResumeStart,
 	findLiveWork,
@@ -67,7 +68,6 @@ import {
 	resumesBreak,
 	type StartBreakOutcome,
 	type StartBreakRefusal,
-	settleBreakInProgress,
 	startFreshnessRefusal,
 } from "./break-in-progress";
 import {
@@ -613,6 +613,11 @@ export function createClocking(ports: ClockingPorts): Clocking {
 					workCategoryId: attributionValue(command.body.workCategory),
 				},
 				async (coordination) => {
+					const breakChanged = await breakInProgressChanged(
+						coordination.db,
+						periodScope,
+						target.breakInProgress,
+					);
 					const closed = await closeClockOut(coordination, {
 						plan,
 						replayable: isReplayable(command.identity),
@@ -622,8 +627,8 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						// The end reading belongs to the closed work, also when it ends at a break's start.
 						closingVehicleUse: clockOutClosingVehicleUse(coordination.db, command),
 					});
-					if (closed.disposition === "executed") {
-						await settleBreakInProgress(coordination.db, periodScope, target.breakInProgress);
+					if (closed.disposition === "executed" && breakChanged) {
+						throw new BreakInProgressChangedError();
 					}
 					return stampExecutedClockEvent(coordination.db, stamped, closed, {
 						eventInstant,
@@ -791,6 +796,15 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			closure = await transactions.run(
 				{ ...transactionScope(plan), workPeriodId: target.workPeriodId, endTime: breakStart },
 				async (coordination) => {
+					const breakChanged = await breakInProgressChanged(
+						coordination.db,
+						{
+							organizationId: subject.organizationId,
+							employeeId: subject.id,
+							workPeriodId: target.workPeriodId,
+						},
+						open,
+					);
 					// The vehicle carries over; the one reading ends and resumes the work (#1122).
 					const vehicle = breakVehicleUseCarry(coordination.db, command);
 					const taken = await takeBreak(coordination, {
@@ -807,16 +821,8 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						},
 						closingVehicleUse: vehicle.closing,
 					});
-					if (taken.disposition === "executed") {
-						await settleBreakInProgress(
-							coordination.db,
-							{
-								organizationId: subject.organizationId,
-								employeeId: subject.id,
-								workPeriodId: target.workPeriodId,
-							},
-							open,
-						);
+					if (taken.disposition === "executed" && breakChanged) {
+						throw new BreakInProgressChangedError();
 					}
 					// The device fixed its position when the break ended: only the resumed
 					// clock-in carries it, never the earlier break start (#826 D1).

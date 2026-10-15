@@ -161,28 +161,20 @@ export function resumesBreak(command: BreakCommand, open: BreakStart) {
 }
 
 /**
- * Inside a closure's work transaction, after the closure wrote: the closed
- * period's break in progress must still be the one the closure was planned
- * against (a start committed in between re-plans it), and is then cleared.
+ * Read inside a closure's work transaction, before the closure writes: whether
+ * the live work's break in progress is no longer the one the closure was planned
+ * against (a start committed in between). An executed closure then re-plans by
+ * throwing `BreakInProgressChangedError`. The work transaction holds the
+ * employee's coordination, so no break starts or ends until it commits. Work
+ * records clears the break in progress when it completes the work (#1230): the
+ * completed work has none.
  */
-export async function settleBreakInProgress(
+export async function breakInProgressChanged(
 	tx: WorkTransactionClient,
 	scope: PeriodScope,
 	planned: BreakStart | null,
-) {
-	const current = await readBreakInProgress(tx, scope);
-	if (!sameBreak(current, planned)) throw new BreakInProgressChangedError();
-	if (!planned) return;
-	await tx
-		.update(workPeriod)
-		.set({ breakStartedAt: null, breakStartedZone: null })
-		.where(
-			and(
-				eq(workPeriod.id, scope.workPeriodId),
-				eq(workPeriod.organizationId, scope.organizationId),
-				eq(workPeriod.employeeId, scope.employeeId),
-			),
-		);
+): Promise<boolean> {
+	return !sameBreak(await readBreakInProgress(tx, scope), planned);
 }
 
 /**
