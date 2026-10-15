@@ -643,7 +643,7 @@ describe("historical gap repair on PostgreSQL", () => {
 		expect(filled).toEqual([{ work_category_id: ids.category }]);
 	});
 
-	it("attaches a missing canonical work record through work records: it agrees and the effects apply (#1226)", async () => {
+	it("attaches a missing canonical work record through work records: it agrees and changes no work (#1226)", async () => {
 		const created = await missingRecord("2026-07-02");
 		const incomplete = await incompleteRecord("2026-07-03");
 		const van = "e3200000-0000-4000-8000-0000000000a1";
@@ -686,15 +686,16 @@ describe("historical gap repair on PostgreSQL", () => {
 					revisions: {
 						workPeriod: { source: before.graph_revision, result: before.graph_revision + 1 },
 					},
-					effects: { workBalanceDirtyFromDate: "2026-07-02" },
+					effects: null,
 				}),
 			},
 		]);
+		// Only the repair of the incomplete record changes work and marks the balance.
 		const { rows: balances } = await admin.query(
 			"select is_dirty, dirty_from_date::text from employee_work_balance where employee_id = $1",
 			[ids.worker],
 		);
-		expect(balances).toEqual([{ is_dirty: true, dirty_from_date: "2026-07-02" }]);
+		expect(balances).toEqual([{ is_dirty: true, dirty_from_date: "2026-07-03" }]);
 	});
 
 	it("holds a gap whose fill would leave the work disagreeing (#1226)", async () => {

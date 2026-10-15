@@ -3236,11 +3236,12 @@ async function applyCompletedWorkCorrection(change: {
 		});
 		if (attached.kind !== "attached") throw correctionWorkRefusal(attached);
 		expected = attached.after;
+		// Attaching changes no work; the change that follows marks the balance.
 		applied = {
 			resultRevision: attached.after.revision,
 			durationMinutes: attached.segment.durationMinutes,
 			canonicalRecordId: attached.segment.canonicalRecordId,
-			workBalanceDirtyFromDate: attached.effects.workBalanceDirtyFromDate,
+			workBalanceDirtyFromDate: null,
 		};
 	}
 	if (change.isDeletion) {

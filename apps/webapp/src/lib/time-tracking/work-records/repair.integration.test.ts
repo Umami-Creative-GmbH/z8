@@ -396,11 +396,12 @@ function repairContract({ appendControl }: (typeof ADMISSIONS)[number]) {
 		await cleanup();
 	});
 
-	it("attaches a canonical work record that copies the work, vehicle use and computation metadata", async () => {
+	it("attaches a canonical work record that copies the work, vehicle use and computation metadata, and changes no work", async () => {
 		const source = await recordWork();
 		await driveVan(source);
 		await loseCanonicalRecord(source);
 		const submission = await submitWeek();
+		const submitted = await submission();
 		await cleanBalance();
 
 		const result = await apply(attach(await expectedOf(source.id)));
@@ -426,10 +427,11 @@ function repairContract({ appendControl }: (typeof ADMISSIONS)[number]) {
 		expect(result).toMatchObject({
 			after: { workPeriodId: source.id, revision: source.graph_revision + 1 },
 			segment: { canonicalRecordId: source.id, durationMinutes: 540 },
-			effects: { workBalanceDirtyFromDate: "2026-07-22" },
 		});
-		expect(await balance()).toEqual({ is_dirty: true, dirty_from_date: "2026-07-22" });
-		expect(await submission()).toEqual({ status: "withdrawn", closed_cause: "change" });
+		expect(result).not.toHaveProperty("effects");
+		// Attaching changes no work: nothing is sent back and no balance is marked.
+		expect(await balance()).toEqual({ is_dirty: false, dirty_from_date: null });
+		expect(await submission()).toEqual(submitted);
 	});
 
 	it("refuses to attach where a canonical work record exists, and a stale expected state, without writing", async () => {

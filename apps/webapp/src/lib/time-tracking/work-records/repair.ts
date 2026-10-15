@@ -36,13 +36,17 @@ import {
 import { type WorkSegment, workSegment } from "./segment";
 import { WorkAttribution } from "./work-attribution";
 
+/**
+ * Attaching changes no work: the period's interval, minutes and attribution
+ * stay as they are, so nothing is sent back and no balance is marked (user,
+ * 2026-10-15). Only the record and the revision step are written.
+ */
 export type WorkAttachment = {
 	kind: "attached";
 	/** The work with its new canonical work record. */
 	segment: WorkSegment;
 	/** The new expected state: name it to chain a further change. */
 	after: WorkRecordExpected;
-	effects: { workBalanceDirtyFromDate: string };
 };
 
 export type WorkRepair = {
@@ -171,14 +175,7 @@ export async function attachWorkRecord(
 	const closed = await closedMonthOf(tx, change, [interval]);
 	if (closed) return closed;
 
-	// Writes: nothing below refuses.
-	await sendBackChangedWork(tx, {
-		organizationId,
-		employeeId,
-		causedByUserId: change.actorUserId,
-		before: [interval],
-		after: [interval],
-	});
+	// Writes: nothing below refuses. No effects: attaching changes no work.
 	const now = new Date();
 	const planned = plan.result.canonical;
 	const [record] = await tx
@@ -225,16 +222,10 @@ export async function attachWorkRecord(
 	});
 	const pair = { period: written, record, detail, allocations };
 	assertWrittenAgreement(pair);
-	const effects = await applyWrittenWorkEffects(tx, {
-		organizationId,
-		employeeId,
-		writtenStarts: [{ at: plan.result.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0 }],
-	});
 	return {
 		kind: "attached",
 		segment: segmentOf(written, pair, plan, { clockIn, clockOut }),
 		after: expectedOf(written),
-		effects,
 	};
 }
 
