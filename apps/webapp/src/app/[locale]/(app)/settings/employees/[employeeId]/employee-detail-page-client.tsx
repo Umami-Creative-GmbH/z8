@@ -25,6 +25,7 @@ import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { EmployeeKioskCard } from "@/components/settings/kiosk/employee-kiosk-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
+import { EMPLOYEE_WORK_BALANCE_QUERY_KEY } from "@/components/settings/work-balance/use-employee-work-balance";
 import { EmployeeWorkBalanceSection } from "@/components/settings/work-balance/employee-work-balance-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
@@ -313,6 +314,7 @@ function EmployeeRecordSections({
 }) {
 	const { t } = useTranslate();
 	const isOrgAdmin = accessTier === "orgAdmin";
+ const queryClient = useQueryClient();
 	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
 	const billableTimeEnabled = useBillableTimeEnabled();
 	const { availableManagers, workPolicies } = data;
@@ -392,7 +394,9 @@ function EmployeeRecordSections({
      key={employeeId}
      employeeId={employeeId}
      employmentStartDate={employee.startDate ? new Date(employee.startDate).toISOString().slice(0,10) : null}
-     onSaved={data.refetch}
+     onSaved={async () => {
+      await Promise.all([data.refetch(),queryClient.invalidateQueries({queryKey:["employee-tracking-date",employeeId]}),queryClient.invalidateQueries({queryKey:[...EMPLOYEE_WORK_BALANCE_QUERY_KEY,employeeId]})]);
+     }}
     />
    ) : null}
 
