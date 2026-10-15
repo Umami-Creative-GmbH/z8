@@ -108,7 +108,7 @@ export function OrganizationTab({
 				currentMemberRole={currentMemberRole}
 			/>
 
-			<OrganizationTrackingCard settings={trackingSettings} />
+			<OrganizationTrackingCard key={`tracking-${organization.id}`} settings={trackingSettings} createdAt={organization.createdAt.toISOString()} timezone={organization.timezone ?? "UTC"} />
 
 			{/* Organization Timezone Card */}
 			<OrganizationTimezoneCard
