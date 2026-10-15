@@ -11,6 +11,13 @@ import "server-only";
  * The effects follow as for any change of work: submitted periods the erased
  * work touched are sent back, and the work balance refreshes from the earliest
  * erased start in its own entry's offset.
+ *
+ * Its order departs from `WORK_RECORD_LOCK_ORDER` on purpose: the append
+ * position goes after the send-back and work periods before their canonical
+ * records and entries, because deletes must follow the foreign keys (the
+ * position references its tip entry, work periods their entries and records).
+ * Only demo cleanup runs it, under the employee's guard, so nothing else waits
+ * on these rows (standards-A L1).
  */
 import { and, asc, eq, inArray, notExists } from "drizzle-orm";
 import {
@@ -23,6 +30,7 @@ import {
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import type { SealedWorkTransactionScope } from "../work-transaction";
 import { applyWrittenWorkEffects, sendBackChangedWork } from "./effects";
+import { CompletedWorkIntegrityError } from "./integrity";
 
 export type EmployeeWorkHistoryErasure = {
 	workPeriodsDeleted: number;
@@ -122,10 +130,16 @@ export async function eraseEmployeeWorkHistory(
 			: await applyWrittenWorkEffects(tx, {
 					organizationId,
 					employeeId,
-					writtenStarts: periods.map((period) => ({
-						at: instantFromDate(period.startTime),
-						utcOffsetMinutes: period.clockInOffset ?? 0,
-					})),
+					writtenStarts: periods.map((period) => {
+						// The refresh date needs the start's own offset; inventing one could start too late.
+						if (period.clockInOffset === null) {
+							throw new CompletedWorkIntegrityError("Erased work has no clock-in entry");
+						}
+						return {
+							at: instantFromDate(period.startTime),
+							utcOffsetMinutes: period.clockInOffset,
+						};
+					}),
 				});
 	return {
 		workPeriodsDeleted: deleted.length,

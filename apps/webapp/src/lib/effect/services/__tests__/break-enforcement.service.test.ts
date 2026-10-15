@@ -685,8 +685,6 @@ describe("break enforcement failures", () => {
 					employeeId: "emp-123",
 					organizationId: "org-123",
 					workPeriodId: "period-123",
-					sessionDurationMinutes: 420,
-					timezone: "Europe/Berlin",
 					createdBy: "user-123",
 				});
 			}).pipe(

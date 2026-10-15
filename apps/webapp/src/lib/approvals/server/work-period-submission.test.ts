@@ -38,7 +38,8 @@ vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
 // A requester auto-approval decides through work records (#1227); its writes
 // are verified against PostgreSQL. The fake writes both approval states
 // through the harness database.
-vi.mock("@/lib/time-tracking/finalizer-employee-locks", () => ({
+vi.mock("@/lib/time-tracking/work-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/work-transaction")>()),
 	holdFinalizerEmployeeLocks: async () => undefined,
 }));
 vi.mock("@/lib/time-tracking/work-records", async (importOriginal) => {

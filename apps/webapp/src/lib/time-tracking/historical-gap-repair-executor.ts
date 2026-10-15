@@ -51,8 +51,12 @@ import {
 	type HistoricalWorkEvidenceReader,
 	readHistoricalWorkEvidence,
 } from "./historical-work-diagnostics-reader";
-import { applyWorkRecordChange, isWorkRecordRefusal, type WorkRecordRefusal } from "./work-records";
-import { refusalError } from "./work-records/refusals";
+import {
+	applyWorkRecordChange,
+	isWorkRecordRefusal,
+	refusalError,
+	type WorkRecordRefusal,
+} from "./work-records";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "./work-transaction";
 
 type Database = typeof database;
@@ -338,6 +342,8 @@ async function applyUnit(work: SealedWorkTransactionScope, context: UnitContext)
 						createdBy: originalActor.userId,
 						computationMetadata: null,
 					},
+					// Whatever the other fills establish, as the plan checked it.
+					resolution: gapRepairResolution(unit.fills),
 					actorUserId: context.actorUserId,
 				})
 			: await applyWorkRecordChange(work, {
@@ -398,7 +404,8 @@ async function applyUnit(work: SealedWorkTransactionScope, context: UnitContext)
 				sources: unit.fills.map((fill) => ({ fill: fill.kind, source: FILL_SOURCES[fill.kind] })),
 			},
 			revisions: { workPeriod: { source: sourceRevision, result: written.after.revision } },
-			effects: written.effects,
+			// Attaching changes no work, so it has no effects unless a fill named a change.
+			effects: written.effects ?? null,
 		},
 	});
 	return {

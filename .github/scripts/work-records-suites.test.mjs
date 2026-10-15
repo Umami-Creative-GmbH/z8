@@ -12,6 +12,10 @@ const callerSuites = [
   `${actions}/clocking.policy-break-split.integration.test.ts`,
   `${actions}/correction-lifecycle.integration.test.ts`,
   "apps/webapp/src/lib/approvals/server/time-correction-approvals.integration.test.ts",
+  "apps/webapp/src/lib/approvals/server/work-period-approvals.integration.test.ts",
+  "apps/webapp/src/lib/time-tracking/clocking/clock-out.integration.test.ts",
+  "apps/webapp/src/lib/employee-lifecycle/clock-out.integration.test.ts",
+  "apps/webapp/src/lib/time-tracking/automatic-clock-out/commands.integration.test.ts",
   "apps/webapp/src/lib/effect/services/break-enforcement.integration.test.ts",
   "apps/webapp/src/lib/import-review/reviewed-import-operation.integration.test.ts",
   "apps/webapp/src/lib/demo/demo-work.integration.test.ts",
@@ -33,6 +37,8 @@ test("later work records suites and split caller suites are picked up without li
     "apps/webapp/src/lib/time-tracking/work-records/divide.integration.test.ts",
     "apps/webapp/src/lib/time-tracking/work-records/contract/amend.append.integration.test.ts",
     `${actions}/work-period-split.legacy.integration.test.ts`,
+    "apps/webapp/src/lib/time-tracking/clocking/break.integration.test.ts",
+    "apps/webapp/src/lib/time-tracking/automatic-clock-out/delivery.integration.test.ts",
   ];
   const ignored = [
     "apps/webapp/src/lib/time-tracking/work-records/plan.test.ts",
@@ -40,14 +46,21 @@ test("later work records suites and split caller suites are picked up without li
     `${actions}/work-period-split.test.ts`,
     `${actions}/nested/work-period-split.integration.test.ts`,
     `apps/webapp/src/app/x/(app)/time-tracking/actions/work-period-split.integration.test.ts`,
+    "apps/webapp/src/lib/time-tracking/clocking/nested/clock-out.integration.test.ts",
+    "apps/webapp/src/lib/time-tracking/automatic-clock-out/delivery.test.ts",
   ];
   assert.deepEqual(selectWorkRecordsSuites([...callerSuites, ...ignored, ...later]), [...callerSuites, ...later].map(relative).sort());
 });
 
 test("a renamed or moved caller suite fails the selection instead of silently dropping coverage", () => {
   for (const missing of callerSuites) {
-    const name = missing.split("/").pop().replace(".integration.test.ts", "");
-    assert.throws(() => selectWorkRecordsSuites(callerSuites.filter(file => file !== missing)), new RegExp(name.replace(/\./g, "\\.")));
+    // The failure names the pattern that lost its only suite, which lives in the suite's directory.
+    const directory = missing.slice(0, missing.lastIndexOf("/") + 1);
+    assert.throws(
+      () => selectWorkRecordsSuites(callerSuites.filter(file => file !== missing)),
+      error => error.message.startsWith("No PostgreSQL suite matches ") && error.message.includes(directory),
+      missing,
+    );
   }
 });
 

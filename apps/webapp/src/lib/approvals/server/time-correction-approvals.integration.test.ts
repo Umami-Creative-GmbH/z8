@@ -188,53 +188,6 @@ describe("time correction PostgreSQL non-live contracts", () => {
 		);
 	});
 
-	it("writes completed work only through work records and live work with affected-row CAS", () => {
-		const finalizer = functionSource(
-			"finalizeTimeCorrectionTerminalDetailedInTransaction",
-		);
-		const completed = functionSource("applyCompletedWorkCorrection");
-		const live = functionSource("applyLiveWorkCorrection");
-		const binding = functionSource("bindTimeCorrectionWorkflowToWorkPeriod");
-
-		// #1227: work records is the only writer of completed work and its
-		// canonical work record (compare-and-set on the revision it advances).
-		// Live work stays Clocking's (ADR 0002), with its own CAS writes.
-		// The open canonical work record some history gave live work is work
-		// records' too (#1230).
-		for (const body of [finalizer, completed, live]) {
-			expect(body).not.toContain(".update(timeRecord)");
-			expect(body).not.toContain(".update(timeRecordWork)");
-		}
-		expect(live).toContain("correctOpenWorkRecord(input.dbService.db, {");
-		expect(completed).not.toContain(".update(");
-		expect(completed).toContain("applyWorkRecordChange(scope, workChange)");
-		expect(completed).toContain('kind: "amend"');
-		expect(completed).toContain('kind: "delete"');
-		for (const predicate of [
-			"eq(timeEntry.isSuperseded, true)",
-			"eq(timeEntry.isSuperseded, false)",
-			"eq(workPeriod.clockInId, period.clockInId)",
-			"eq(workPeriod.approvalWorkflowId, change.expectedApprovalWorkflowId)",
-			"eq(workPeriod.isActive, true)",
-		]) {
-			expect(live).toContain(predicate);
-		}
-		const returningCount =
-			live.match(/\.returning\(\{ id: (?:timeEntry|workPeriod|timeRecord)\.id \}\)/g)
-				?.length ?? 0;
-		const affectedRowCheckCount =
-			live.match(/requireSingleMutation\(/g)?.length ?? 0;
-		expect(returningCount).toBe(3);
-		expect(affectedRowCheckCount).toBe(returningCount);
-		expect(live).toContain("if (!correctedOpenRecord.start)");
-		expect(live).toContain("if (!correctedOpenRecord.detail)");
-		expect(binding).toContain("source.approvalWorkflowId === null");
-		expect(binding).toContain(
-			"eq(workPeriod.approvalWorkflowId, source.approvalWorkflowId)",
-		);
-		expect(binding).toContain("updated.length !== 1");
-	});
-
 	// The integration project includes this suite by its suffix and sets
 	// PGOPTIONS itself (src/test/vitest-projects.test.ts); the shared suite
 	// runner exports the database URL (repository-integration-runner.test.ts).

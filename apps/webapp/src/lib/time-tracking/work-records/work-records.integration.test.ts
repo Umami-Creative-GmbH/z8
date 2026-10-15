@@ -460,6 +460,78 @@ function divideContract({
 		expect(await snapshot()).toEqual(before);
 	});
 
+	// spec-1 HIGH: in legacy admission the first split's new clock-out supersedes the source
+	// clock-out, which still ends the generated half; that half must divide again.
+	it("divides a generated half again after a division with notes on both sides", async () => {
+		const source = await recordWork();
+		const first = await apply(
+			divide(await expectedOf(source.id), parseInstant("2026-07-22T12:00:00Z"), {
+				notes: { before: "Morning", after: "Afternoon" },
+			}),
+		);
+		if (first.kind !== "divided") throw new Error(`refused: ${first.kind}`);
+
+		const second = await apply(
+			divide(first.generated.after, parseInstant("2026-07-22T15:00:00Z"), {
+				notes: { before: "Early afternoon", after: "Late afternoon" },
+			}),
+		);
+
+		expect(second).toMatchObject({ kind: "divided" });
+		await expectRecordAgreement({ organizationId: ORG });
+		const halves = await segments();
+		expect(halves.map(({ duration_minutes }) => duration_minutes)).toEqual([
+			239,
+			180,
+			divided[1] - 180,
+		]);
+		expect(halves.map(({ clock_out_notes }) => clock_out_notes)).toEqual([
+			"Morning",
+			"Early afternoon",
+			"Late afternoon",
+		]);
+		// The source clock-out keeps ending the last half; legacy superseded it once, by the first split.
+		expect(halves[2]?.clock_out_id).toBe(source.clock_out_id);
+		const { rows: sourceClockOut } = await admin.query(
+			"select is_superseded, superseded_by_id from time_entry where id = $1",
+			[source.clock_out_id],
+		);
+		expect(only(sourceClockOut)).toEqual(
+			admission === "legacy"
+				? { is_superseded: true, superseded_by_id: halves[0]?.clock_out_id }
+				: { is_superseded: false, superseded_by_id: null },
+		);
+	});
+
+	// spec-1 LOW: an override names a project only; work records reads its billable default.
+	it("gives a half moved to another project that project's billable default", async () => {
+		const billableProject = randomUUID();
+		await admin.query(
+			`insert into project (id, organization_id, name, status, is_active, customer_id, billable_default, created_by, updated_at)
+			 values ($1, $2, 'Billable', 'active', true, $3, true, $4, $5)`,
+			[billableProject, ORG, ids.customer, userOf("owner"), SEEDED_AT],
+		);
+		const source = await recordWork();
+
+		const result = await apply(
+			divide(await expectedOf(source.id), parseInstant("2026-07-22T12:00:00Z"), {
+				attribution: { half: "generated", patch: { project: billableProject } },
+			}),
+		);
+
+		expect(result).toMatchObject({ kind: "divided" });
+		await expectRecordAgreement({ organizationId: ORG });
+		const { rows } = await admin.query(
+			`select project_id, is_billable from work_period
+			 where organization_id = $1 and deleted_at is null order by start_time`,
+			[ORG],
+		);
+		expect(rows).toEqual([
+			{ project_id: ids.project, is_billable: false },
+			{ project_id: billableProject, is_billable: true },
+		]);
+	});
+
 	it.each([
 		["another revision", (expected: WorkRecordExpected) => ({ revision: expected.revision + 1 })],
 		["another end", () => ({ endAt: parseInstant("2026-07-22T17:00:00Z") })],

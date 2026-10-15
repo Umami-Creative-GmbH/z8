@@ -24,29 +24,30 @@ export class CompletedWorkReviewRequiredError extends Error {
 	}
 }
 
-const REFUSAL_KINDS = new Set<WorkRecordRefusalKind>([
-	"not_found",
-	"stale",
-	"work_running",
-	"work_not_live",
-	"canonical_record_missing",
-	"canonical_divergence",
-	"endpoint_entry_missing",
-	"endpoint_superseded",
-	"instant_outside_work",
-	"vehicle_use_refused",
-	"attribution_unrepresentable",
-	"month_closed",
-	"work_occupied",
-	"append_review_required",
-	"unchanged",
-	"interval_invalid",
-	"adopted_entry_mismatch",
-	"canonical_record_present",
-] satisfies WorkRecordRefusalKind[]);
+/** Every refusal kind: a kind missing here fails to compile instead of passing as a result. */
+const REFUSAL_KINDS: Record<WorkRecordRefusalKind, true> = {
+	not_found: true,
+	stale: true,
+	work_running: true,
+	work_not_live: true,
+	canonical_record_missing: true,
+	canonical_divergence: true,
+	endpoint_entry_missing: true,
+	endpoint_superseded: true,
+	instant_outside_work: true,
+	vehicle_use_refused: true,
+	attribution_unrepresentable: true,
+	month_closed: true,
+	work_occupied: true,
+	append_review_required: true,
+	unchanged: true,
+	interval_invalid: true,
+	adopted_entry_mismatch: true,
+	canonical_record_present: true,
+};
 
 export function isWorkRecordRefusal(outcome: { kind: string }): outcome is WorkRecordRefusal {
-	return REFUSAL_KINDS.has(outcome.kind as WorkRecordRefusalKind);
+	return Object.hasOwn(REFUSAL_KINDS, outcome.kind);
 }
 
 /** The applied result, or today's error for the refusal. */

@@ -7,16 +7,11 @@
  * Types and a pure plan step only: no I/O, no server-only imports.
  */
 import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
-import {
-	compareInstants,
-	dateFromInstant,
-	type Instant,
-	instantFromDate,
-} from "@/lib/datetime/temporal-core";
+import { compareInstants, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { deriveWorkDurationMinutes } from "../work-duration";
 import type { NewEntryProvenance, WorkRecordExpected, WorkRecordRefusal } from "./change";
-import type { PlannedHalf } from "./plan";
-import { recordAgreement } from "./record-agreement";
+import { plannedPairsRefusal } from "./pair-agreement";
+import { type PlannedHalf, plannedHalf } from "./plan";
 import type { TimeEntryRow, WorkPeriodRow } from "./rows";
 import {
 	UnrepresentableWorkAttributionError,
@@ -93,33 +88,9 @@ export function planCreation(
 		throw error;
 	}
 	const durationMinutes = elapsed === 0 ? 0 : deriveWorkDurationMinutes(startAt, change.at);
-	const startTime = live.period.startTime;
-	const endTime = dateFromInstant(change.at);
-	const completed: PlannedHalf = {
-		startAt,
-		endAt: change.at,
-		durationMinutes,
-		attribution,
-		period: {
-			startTime,
-			endTime,
-			durationMinutes,
-			approvalStatus: "approved",
-			...attribution.workPeriodColumns(),
-		},
-		canonical: {
-			record: { startAt: startTime, endAt: endTime, durationMinutes, approvalState: "approved" },
-			detail: attribution.canonicalDetail(),
-			allocations: attribution.canonicalAllocations([]),
-		},
-	};
-	const agreement = recordAgreement(completed.period, completed.canonical);
-	if (!agreement.agrees) {
-		return {
-			kind: "canonical_divergence",
-			found: "planned_half",
-			disagreements: agreement.disagreements,
-		};
-	}
-	return { kind: "create", completed };
+	const completed = plannedHalf({ startAt, endAt: change.at, durationMinutes }, attribution, [], {
+		period: "approved",
+		record: "approved",
+	});
+	return plannedPairsRefusal([completed], "planned_half") ?? { kind: "create", completed };
 }

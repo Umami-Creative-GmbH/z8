@@ -214,6 +214,39 @@ describe("proposeHistoricalRepair", () => {
 		expect(fingerprint).toMatch(/^[0-9a-f]{64}$/);
 	});
 
+	// spec-2 M1: work attach refuses (no minutes) is repairable: the repair attaches its
+	// canonical work record with the named minutes.
+	it("proposes the minutes that let work without a canonical work record be attached", () => {
+		const fixture = work({ periodMinutes: null, record: null });
+
+		const { proposal } = proposalOf(
+			propose(evidence([fixture]), fixture.period.id, [
+				{ target: "work_period", field: "duration_minutes", after: 60 },
+			]),
+		);
+
+		expect(proposal.work).toEqual({ workPeriodId: fixture.period.id, timeRecordId: null });
+		expect(proposal.changes).toEqual([
+			{
+				target: "work_period",
+				id: fixture.period.id,
+				field: "duration_minutes",
+				before: null,
+				after: 60,
+			},
+		]);
+	});
+
+	it("refuses a change to work without a canonical work record that attach would still refuse", () => {
+		const fixture = work({ periodMinutes: null, record: null });
+
+		expect(
+			propose(evidence([fixture]), fixture.period.id, [
+				{ target: "work_period", field: "work_category_id", after: category },
+			]),
+		).toEqual({ kind: "refused", reasons: ["repair_leaves_divergence"] });
+	});
+
 	it("accepts operator minutes where no representation holds them", () => {
 		const fixture = work({ periodMinutes: null, recordMinutes: null });
 		const { proposal } = proposalOf(

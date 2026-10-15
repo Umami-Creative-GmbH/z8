@@ -17,22 +17,34 @@ import "server-only";
  *
  * The record is the work period's own id, origin `system`, created by the user
  * who recorded the work's clock-out (the original actor, never the executor).
- * The work period stores no computation metadata, so none is known to copy. The
- * period's legacy approval history is linked to the new record in the same
- * transaction.
+ * The work period stores no computation metadata, so none is known to copy. Work
+ * records' attach links the period's legacy approval history to the new record in
+ * the same transaction.
  */
-import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { approvalRequest, timeRecordApprovalDecision, workPeriod } from "@/db/schema";
+import { organization } from "@/db/auth-schema";
+import { workPeriod } from "@/db/schema";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
 import {
 	applyWorkRecordChange,
 	isWorkRecordRefusal,
 	readWorkRecord,
+	type WorkRecordRefusal,
 	type WorkRecordRefusalKind,
 } from "@/lib/time-tracking/work-records";
-import type { WorkTransactionClient } from "@/lib/time-tracking/work-transaction";
+
+/** A work period attach refused, with why, for the operator to list. */
+export type RefusedWorkRecordAttachment = {
+	workPeriodId: string;
+	employeeId: string;
+	startAt: string;
+	endAt: string;
+	refusal: WorkRecordRefusalKind;
+	/** The refusal's reason in words a run report lists. */
+	reason: string;
+};
 
 export type MissingWorkRecordAttachment = {
 	/** The work periods that got their canonical work record. */
@@ -45,7 +57,7 @@ export type MissingWorkRecordAttachment = {
 	 * repair), an endpoint entry is missing, or the work cannot be represented.
 	 * They stay for work diagnostics and its repairs.
 	 */
-	refused: Array<{ workPeriodId: string; refusal: WorkRecordRefusalKind }>;
+	refused: RefusedWorkRecordAttachment[];
 };
 
 export async function attachMissingWorkRecords(input: {
@@ -59,7 +71,16 @@ export async function attachMissingWorkRecords(input: {
 	const outcome: MissingWorkRecordAttachment = { attached: [], closedMonthSkips: [], refused: [] };
 	if (input.employeeIds?.length === 0) return outcome;
 	const candidates = await db
-		.select({ id: workPeriod.id, employeeId: workPeriod.employeeId })
+		.select({
+			id: workPeriod.id,
+			employeeId: workPeriod.employeeId,
+			startTime: workPeriod.startTime,
+			endTime: workPeriod.endTime,
+			// A closed month's half pair is skipped here, without a work transaction (#762).
+			closedMonth: sql<
+				string | null
+			>`to_char(public.closed_month_touching_work(${workPeriod.employeeId}, ${workPeriod.startTime}, ${workPeriod.endTime}), 'YYYY-MM')`,
+		})
 		.from(workPeriod)
 		.where(
 			and(
@@ -73,7 +94,12 @@ export async function attachMissingWorkRecords(input: {
 		)
 		.orderBy(asc(workPeriod.employeeId), asc(workPeriod.startTime), asc(workPeriod.id));
 
-	for (const { id: workPeriodId, employeeId } of candidates) {
+	for (const candidate of candidates) {
+		const { id: workPeriodId, employeeId } = candidate;
+		if (candidate.closedMonth !== null) {
+			outcome.closedMonthSkips.push({ workPeriodId, month: candidate.closedMonth });
+			continue;
+		}
 		try {
 			const result = await withCompletedWorkTransaction(
 				{ organizationId, employeeId, actorUserId },
@@ -84,7 +110,7 @@ export async function attachMissingWorkRecords(input: {
 					if (!work || work.period.canonicalRecordId !== null) return null;
 					const recordedBy = work.clockOut?.createdBy ?? work.clockIn?.createdBy;
 					if (!recordedBy) return { kind: "endpoint_entry_missing" as const };
-					const attached = await applyWorkRecordChange(scope, {
+					return applyWorkRecordChange(scope, {
 						kind: "attach",
 						organizationId,
 						employeeId,
@@ -92,20 +118,22 @@ export async function attachMissingWorkRecords(input: {
 						record: { origin: "system", createdBy: recordedBy, computationMetadata: null },
 						actorUserId,
 					});
-					if (isWorkRecordRefusal(attached)) return attached;
-					await linkApprovalHistory(scope.db, {
-						organizationId,
-						workPeriodId,
-						recordId: attached.segment.canonicalRecordId,
-					});
-					return attached;
 				},
 			);
 			if (result === null) continue;
 			if (!isWorkRecordRefusal(result)) outcome.attached.push(workPeriodId);
 			else if (result.kind === "month_closed") {
 				outcome.closedMonthSkips.push({ workPeriodId, month: result.month });
-			} else outcome.refused.push({ workPeriodId, refusal: result.kind });
+			} else {
+				outcome.refused.push({
+					workPeriodId,
+					employeeId,
+					startAt: candidate.startTime.toISOString(),
+					endAt: (candidate.endTime ?? candidate.startTime).toISOString(),
+					refusal: result.kind,
+					reason: refusalReason(result),
+				});
+			}
 		} catch (error) {
 			const refusal = monthClosedRefusalOf(error);
 			if (!refusal) throw error;
@@ -115,51 +143,47 @@ export async function attachMissingWorkRecords(input: {
 	return outcome;
 }
 
+/** Why attach refused, as a run report lists it. */
+function refusalReason(refusal: WorkRecordRefusal): string {
+	switch (refusal.kind) {
+		case "attribution_unrepresentable":
+			return refusal.reason;
+		case "canonical_divergence":
+			return refusal.disagreements.includes("duration")
+				? "duration_missing"
+				: `disagrees_on_${refusal.disagreements.join("_and_")}`;
+		// Every candidate has an end, so a running refusal is an end without its clock-out.
+		case "work_running":
+			return "end_without_clock_out";
+		default:
+			return refusal.kind;
+	}
+}
+
+export type OrganizationWorkRecordAttachment = MissingWorkRecordAttachment & {
+	organizationId: string;
+};
+
 /**
- * The work period's legacy approval requests: each becomes a decision on the
- * new canonical work record and links to it.
+ * The deploy backfill of migration 0234 (`pnpm work-records:attach-missing`):
+ * every organization's missing canonical work records, one organization after
+ * another, closed months skipped. A system process, so the records are created
+ * by each work's original actor.
  */
-async function linkApprovalHistory(
-	tx: WorkTransactionClient,
-	input: { organizationId: string; workPeriodId: string; recordId: string },
-): Promise<void> {
-	const requests = await tx
-		.select()
-		.from(approvalRequest)
-		.where(
-			and(
-				eq(approvalRequest.organizationId, input.organizationId),
-				eq(approvalRequest.entityType, "time_entry"),
-				eq(approvalRequest.entityId, input.workPeriodId),
-			),
-		)
-		.orderBy(asc(approvalRequest.createdAt), asc(approvalRequest.id));
-	if (requests.length === 0) return;
-	await tx.insert(timeRecordApprovalDecision).values(
-		requests.map((request) => ({
-			organizationId: input.organizationId,
-			recordId: input.recordId,
-			actorEmployeeId: request.status === "pending" ? request.requestedBy : request.approverId,
-			action:
-				request.status === "pending"
-					? ("submitted" as const)
-					: request.status === "approved"
-						? ("approved" as const)
-						: ("rejected" as const),
-			reason: request.rejectionReason ?? request.reason,
-			createdAt: request.approvedAt ?? request.createdAt,
-		})),
-	);
-	await tx
-		.update(approvalRequest)
-		.set({ canonicalRecordId: input.recordId })
-		.where(
-			and(
-				eq(approvalRequest.organizationId, input.organizationId),
-				inArray(
-					approvalRequest.id,
-					requests.map(({ id }) => id),
-				),
-			),
+export async function attachMissingWorkRecordsInEveryOrganization(
+	options: { organizationIds?: readonly string[] } = {},
+): Promise<OrganizationWorkRecordAttachment[]> {
+	const organizationIds =
+		options.organizationIds ??
+		(await db.select({ id: organization.id }).from(organization).orderBy(asc(organization.id))).map(
+			({ id }) => id,
 		);
+	const reports: OrganizationWorkRecordAttachment[] = [];
+	for (const organizationId of organizationIds) {
+		reports.push({
+			organizationId,
+			...(await attachMissingWorkRecords({ organizationId, actorUserId: null })),
+		});
+	}
+	return reports;
 }

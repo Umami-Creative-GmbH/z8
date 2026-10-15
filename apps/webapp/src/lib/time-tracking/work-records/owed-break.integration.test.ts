@@ -495,6 +495,52 @@ function owedBreakContract({
 		expect(only(sourceClockOut)).toEqual({ is_superseded: false });
 	});
 
+	// spec-1 HIGH: a legacy split with notes leaves the generated half ending on a
+	// superseded clock-out; the automatic break still divides that half.
+	it("inserts the owed break into a split's generated half", async () => {
+		const source = await recordWork(parseInstant("2026-07-22T06:00:40Z"), WORK_END);
+		const expected = await expectedOf(source.id);
+		const split = await withCompletedWorkTransaction(
+			{ organizationId: ORG, employeeId: ids.requester, actorUserId: userOf("requester") },
+			(scope) =>
+				applyWorkRecordChange(scope, {
+					kind: "divide",
+					organizationId: ORG,
+					employeeId: ids.requester,
+					expected,
+					at: parseInstant("2026-07-22T07:00:40Z"),
+					notes: { before: "Early start", after: "Main shift" },
+					actorUserId: userOf("requester"),
+					entries: {
+						createdBy: userOf("requester"),
+						ipAddress: null,
+						deviceInfo: null,
+						capture: {
+							utcOffsetMinutes: 120,
+							timezone: "Europe/Berlin",
+							timezoneSource: "user_setting",
+						},
+					},
+					appendOperation: "completed_work_split",
+				}),
+		);
+		if (split.kind !== "divided") throw new Error(`not split: ${split.kind}`);
+
+		// 07:00:40-15:00:31 owes 30 minutes after 6h: the break starts at 13:00:40.
+		const result = await apply(owedBreak(split.generated.after));
+
+		expect(result).toMatchObject({
+			kind: "owed_break_divided",
+			owedBreak: { startAt: parseInstant("2026-07-22T13:00:40Z"), breakMinutes: 30 },
+		});
+		await expectRecordAgreement({ organizationId: ORG });
+		expect((await segments()).map(({ end_time }) => end_time)).toEqual([
+			new Date("2026-07-22T07:00:40Z"),
+			new Date("2026-07-22T13:00:40Z"),
+			new Date("2026-07-22T15:00:31Z"),
+		]);
+	});
+
 	it("returns not_required and writes nothing when no break is owed", async () => {
 		const source = await recordWork();
 		const expected = await expectedOf(source.id);

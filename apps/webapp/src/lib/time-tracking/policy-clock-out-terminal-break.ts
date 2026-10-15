@@ -31,8 +31,10 @@ import { completedWorkOperation, employee, userSettings } from "@/db/schema";
 import type { OrdinaryWorkPeriodFinalizerDbService } from "@/lib/approvals/domain-adapters/work-period-contract";
 import { instantFromDate, instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import type { BreakPolicyRegulation } from "./break-policy-calculation";
-import { holdFinalizerEmployeeLocks } from "./finalizer-employee-locks";
-import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot";
+import {
+	type PolicyClockOutBreakSnapshot,
+	regulationFromSnapshot,
+} from "./policy-clock-out-break-snapshot";
 import { isValidIanaTimezone } from "./timezone-capture";
 import { assertNoUnrelatedWorkPeriodReview } from "./work-period-review";
 import {
@@ -44,7 +46,7 @@ import {
 	type WorkSegment,
 	workRecordScopeForFinalizer,
 } from "./work-records";
-import type { WorkTransactionClient } from "./work-transaction";
+import { holdFinalizerEmployeeLocks, type WorkTransactionClient } from "./work-transaction";
 
 /** The approved work as the finalizer verified it; work that differs is stale. */
 export interface PolicyClockOutTerminalPeriodSnapshot {
@@ -193,34 +195,10 @@ export function derivePolicyClockOutBreakOperationId(input: {
 	return uuidFromDigest(`${OPERATION_NAMESPACE}\0${input.organizationId}\0${key}`);
 }
 
-/**
- * The established employee guards of a legacy split outside the coordinators:
- * the employee key, recorded in the transaction's ledger, then the
- * terminal-break/work-balance ownership key (a source identity with the same
- * key text as web clock-out's). The ownership key is not recorded, so an
- * approval transaction that finalizes several employees' work is never
- * refused for taking the next employee key after it.
- */
 /** The regulation the captured policy snapshot names, or null when none applies. */
 function regulationFrom(snapshot: PolicyClockOutBreakSnapshot): BreakPolicyRegulation | null {
-	if (
-		snapshot.resolution === "none" ||
-		!snapshot.regulationEnabled ||
-		snapshot.breakRules.length === 0
-	) {
-		return null;
-	}
-	const { id, name, maxUninterruptedMinutes } = snapshot.regulation;
-	if (id === null || name === null) return refuse({ kind: "regulation_incomplete" });
-	return {
-		id,
-		name,
-		maxUninterruptedMinutes,
-		breakRules: snapshot.breakRules.map((rule) => ({
-			workingMinutesThreshold: rule.workingMinutesThreshold,
-			requiredBreakMinutes: rule.requiredBreakMinutes,
-		})),
-	};
+	const regulation = regulationFromSnapshot(snapshot);
+	return regulation === "incomplete" ? refuse({ kind: "regulation_incomplete" }) : regulation;
 }
 
 /** The break entries' zone: the clock-out's, else the employee's own setting. */

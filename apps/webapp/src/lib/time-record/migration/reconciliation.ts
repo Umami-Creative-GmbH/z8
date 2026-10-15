@@ -12,6 +12,7 @@ import {
 	workPeriod,
 } from "@/db";
 import { diagnoseRecordAgreement } from "@/lib/time-tracking/work-records/record-agreement-diagnosis";
+import { planAttachment } from "@/lib/time-tracking/work-records/repair-plan";
 import type { CanonicalAllocationShape } from "@/lib/time-tracking/work-records/work-attribution";
 
 export type LegacyCanonicalReconciliation = {
@@ -33,6 +34,14 @@ export type LegacyCanonicalReconciliation = {
 	 * it does not block until production shows no divergence (#1228).
 	 */
 	divergentWorkRecords: number;
+	/**
+	 * Completed work without a canonical work record that work records' attach
+	 * refuses as it stands (spec-2 M1): no minutes, an end without its clock-out,
+	 * or work that cannot be represented. Only work diagnostics can repair it (an
+	 * attach with a resolution), so it is reported without blocking and left out
+	 * of the blocking counts.
+	 */
+	unattachableWorkRecords: number;
 	/** The sum of the blocking counts (`BLOCKING_RECONCILIATION_KEYS`). */
 	blockingMismatchCount: number;
 };
@@ -88,6 +97,7 @@ export async function reconcileLegacyToCanonical(
 			columns: {
 				id: true,
 				canonicalRecordId: true,
+				clockOutId: true,
 				isActive: true,
 				deletedAt: true,
 				startTime: true,
@@ -195,11 +205,24 @@ export async function reconcileLegacyToCanonical(
 	// period without a canonical work record in a closed month is a half pair the database
 	// keeps from changing (Time Tracking ADR-0004), so it can't diverge and doesn't count
 	// against readiness; reopening the month lets the backfill attach it (#1213).
-	const legacyWork = allLegacyWork.filter(
+	const halfPairs = allLegacyWork.filter(
 		(row) =>
 			!(row.isActive && row.endTime === null) &&
 			!(row.unlinkedClosedMonth && !canonicalWorkIds.has(row.id)),
 	);
+	// Work the backfill's attach refuses waits for a repair in work diagnostics (spec-2 M1).
+	const unattachable = new Set(
+		halfPairs
+			.filter(
+				(row) =>
+					row.canonicalRecordId === null &&
+					row.deletedAt === null &&
+					!canonicalWorkIds.has(row.id) &&
+					(row.clockOutId === null || "kind" in planAttachment(row)),
+			)
+			.map((row) => row.id),
+	);
+	const legacyWork = halfPairs.filter((row) => !unattachable.has(row.id));
 	const expectedWorkCanonicalIds = new Set(legacyWork.map(resolveExpectedCanonicalId));
 	const expectedAbsenceCanonicalIds = new Set(legacyAbsence.map(resolveExpectedCanonicalId));
 	const canonicalAbsenceIds = new Set(canonicalAbsence.map((row) => row.id));
@@ -257,7 +280,9 @@ export async function reconcileLegacyToCanonical(
 	const expectedProjectAllocations = new Set(
 		legacyWork
 			.filter((row) => row.projectId)
-			.map((row) => `${resolveExpectedCanonicalId(row)}:${row.projectId}:${row.isBillable ?? false}`),
+			.map(
+				(row) => `${resolveExpectedCanonicalId(row)}:${row.projectId}:${row.isBillable ?? false}`,
+			),
 	);
 	const canonicalProjectAllocationKeys = new Set(
 		canonicalWorkAllocations
@@ -287,12 +312,16 @@ export async function reconcileLegacyToCanonical(
 		),
 		approvalStateMismatchRecords:
 			countWorkApprovalStateMismatches(legacyWorkByCanonicalId, canonicalWorkById) +
-			countAbsenceApprovalStateMismatches(effectiveLegacyAbsenceByCanonicalId, canonicalAbsenceById),
+			countAbsenceApprovalStateMismatches(
+				effectiveLegacyAbsenceByCanonicalId,
+				canonicalAbsenceById,
+			),
 		missingAbsenceCanonicalLinks:
 			linkedAbsenceEntries.filter((row) => !row.canonicalRecordId).length +
 			attributedNullOrgAbsenceEntries.filter((row) => !row.canonicalRecordId).length,
 		missingAbsenceOrganizationIds: attributedNullOrgAbsenceEntries.length,
 		divergentWorkRecords,
+		unattachableWorkRecords: unattachable.size,
 	};
 	return {
 		...counts,

@@ -46,7 +46,6 @@ import {
 	policyClockOutSurchargeSnapshotFromPendingChanges,
 	policyClockOutSurchargeSnapshotsEqual,
 } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
-import { holdFinalizerEmployeeLocks } from "@/lib/time-tracking/finalizer-employee-locks";
 import { applyPolicyClockOutTerminalBreakInTransaction } from "@/lib/time-tracking/policy-clock-out-terminal-break";
 import { isUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
 import {
@@ -54,7 +53,10 @@ import {
 	refusalError,
 	workRecordScopeForFinalizer,
 } from "@/lib/time-tracking/work-records";
-import type { WorkTransactionClient } from "@/lib/time-tracking/work-transaction";
+import {
+	holdFinalizerEmployeeLocks,
+	type WorkTransactionClient,
+} from "@/lib/time-tracking/work-transaction";
 import { decodeApprovalDatabaseJsonText } from "../approval-database-row";
 import { recordLegacyTimeDecisionIntent } from "../delivery/intents";
 import { kickApprovalDelivery } from "../delivery/kick";

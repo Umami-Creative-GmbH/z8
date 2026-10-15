@@ -64,7 +64,7 @@ What a work period is recorded against: its project, work category, work locatio
 _Avoid_: Work metadata, tags
 
 **Canonical work record**:
-The record of a completed work period that payroll reads, kept beside the work period in both admissions. Every completed work period has exactly one.
+The record of a completed work period that payroll reads, kept beside the work period in both admissions. Every completed work period has exactly one, except history written before that rule in a closed month, which gets its record when the month is reopened.
 _Avoid_: Canonical record (alone; Approvals has canonical workflows), time record, shadow record, mirror
 
 **Record agreement**:
@@ -154,7 +154,7 @@ An organization's choice of week or calendar month as its submission period, wit
 _Avoid_: Submission frequency, timesheet interval
 
 **Sent back after a change**:
-A submitted period whose work, work attribution or absences changed afterwards, by any writer, even in part; notes do not count. A pending period submission is withdrawn automatically (its approval is cancelled); an approved one goes out of date, and its approval stays as history. Either way the period awaits submission again, and the employee is told once.
+A submitted period whose work, work attribution or absences changed afterwards, or whose work's approval state was decided again, by any writer, even in part; notes do not count. A pending period submission is withdrawn automatically (its approval is cancelled); an approved one goes out of date, and its approval stays as history. Either way the period awaits submission again, and the employee is told once.
 _Avoid_: Rejected (an approver's decision), reopened (a closed month's term), invalidated
 
 ### Clocking

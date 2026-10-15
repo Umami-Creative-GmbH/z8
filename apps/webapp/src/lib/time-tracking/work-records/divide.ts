@@ -15,43 +15,37 @@ import { and, asc, eq, isNull } from "drizzle-orm";
 import {
 	timeEntry,
 	timeRecord,
-	timeRecordAllocation,
 	timeRecordApprovalDecision,
 	timeRecordWork,
 	type WorkPeriodAutoAdjustmentReason,
 	workPeriod,
 } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { CompletedWorkIntegrityError } from "../close-active-work";
 import { closedRangeTouchedByWork } from "../closed-months/rules";
 import { closedRangesForEmployee } from "../closed-months/store";
 import { vehicleUseFromColumns } from "../vehicle-use/work-vehicle-use";
 import { workVehicleUseSplitRefusal } from "../vehicle-use/work-vehicle-use-eligibility";
-import { assertBillableAllowed, readProjectBillability } from "../work-billability";
 import { loadWorkOccupants } from "../work-occupancy";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "../work-transaction";
+import { resolvedPatch } from "./amend";
 import type { DivideWorkRecord, WorkRecordExpected, WorkRecordRefusal } from "./change";
 import { applyWrittenWorkEffects, sendBackChangedWork } from "./effects";
 import { entryWriterFor } from "./entry-writer";
-import { type DivisionPlan, type PlannedHalf, planChange } from "./plan";
-import { expectedOf, matchesExpected, pairOf } from "./read";
-import { recordAgreement } from "./record-agreement";
+import { CompletedWorkIntegrityError } from "./integrity";
 import {
-	type CanonicalWorkRows,
-	selectWorkRecordRows,
-	type TimeEntryRow,
-	type WorkPeriodRow,
-} from "./rows";
+	type AppendedEntryEvidence,
+	appendedEvidence,
+	assertWrittenAgreement,
+	insertAllocations,
+	lockedCompletedWork,
+	type WrittenPair,
+	writeCanonicalAttribution,
+} from "./pair-writer";
+import { type PlannedHalf, planChange } from "./plan";
+import { expectedOf, pairOf } from "./read";
+import type { CanonicalWorkRows, TimeEntryRow, WorkPeriodRow } from "./rows";
 import { type WorkSegment, workSegment } from "./segment";
-import { type CanonicalAllocationShape, WorkAttribution } from "./work-attribution";
-
-/** One appended entry with its exact predecessor, as receipts record it. */
-export type AppendedEntryEvidence = {
-	entryId: string;
-	hash: string;
-	previousEntryId: string | null;
-	previousHash: string | null;
-};
+import { WorkAttribution } from "./work-attribution";
 
 export type DividedHalf = {
 	segment: WorkSegment;
@@ -89,29 +83,41 @@ export async function divideWorkRecord(
 	change: DivideWorkRecord,
 ): Promise<WorkDivision | WorkRecordRefusal> {
 	const { organizationId, employeeId } = change;
-	scope.assertEmployee(organizationId, employeeId);
+	const locked = await lockedCompletedWork(scope, change);
+	if ("kind" in locked) return locked;
 	const tx = scope.db;
 	const workPeriodId = change.expected.workPeriodId;
-	const locked = await selectWorkRecordRows(
-		tx,
-		{ organizationId, employeeId, workPeriodId },
-		{ lock: true },
-	);
-	if (!locked) return { kind: "not_found", workPeriodId };
 	const { period, clockIn, clockOut, canonical } = locked;
-	if (!matchesExpected(change.expected, period)) {
-		return { kind: "stale", current: { revision: period.graphRevision } };
-	}
-	if (period.isActive || !period.endTime || !period.clockOutId) return { kind: "work_running" };
-	if (!clockIn || !clockOut) return { kind: "endpoint_entry_missing" };
-	if (clockIn.isSuperseded || clockOut.isSuperseded) return { kind: "endpoint_superseded" };
 
 	const writer = entryWriterFor(scope, {
 		organizationId,
 		employeeId,
 		operation: change.appendOperation,
 	});
-	const plan = planChange(pairOf(locked), change, writer.durationArithmetic);
+	// An override's project takes its billable default, read here as an amendment reads it.
+	const override = change.attribution;
+	const plan = planChange(
+		pairOf(locked),
+		{
+			kind: "divide",
+			at: change.at,
+			odometerKm: change.odometerKm,
+			...(override
+				? {
+						attribution: {
+							half: override.half,
+							patch:
+								(await resolvedPatch(
+									tx,
+									{ organizationId, attribution: override.patch },
+									period.projectId,
+								)) ?? {},
+						},
+					}
+				: {}),
+		},
+		writer.durationArithmetic,
+	);
 	if (plan.kind !== "divide") return plan;
 	if (!canonical) return { kind: "canonical_record_missing" };
 
@@ -124,7 +130,6 @@ export async function divideWorkRecord(
 		value: change.odometerKm,
 	});
 	if (vehicleRefusal) return { kind: "vehicle_use_refused", code: vehicleRefusal };
-	await assertOverrideBillable(tx, change, plan);
 	const startAt = instantFromDate(period.startTime);
 	const endAt = instantFromDate(period.endTime);
 	// Symmetric occupancy: the halves cover the source, against every other work.
@@ -196,8 +201,8 @@ export async function divideWorkRecord(
 		organizationId,
 		employeeId,
 		writtenStarts: [
-			{ at: startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0 },
-			{ at: change.at, utcOffsetMinutes: newClockIn.utcOffsetMinutes ?? 0 },
+			{ at: startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes },
+			{ at: change.at, utcOffsetMinutes: newClockIn.utcOffsetMinutes },
 		],
 		dividedOff: [{ sourceWorkPeriodId: period.id, newWorkPeriodId: generated.period.id }],
 	});
@@ -260,20 +265,10 @@ export async function divisionSource(
 	};
 }
 
-/** A billable override must name a project that has a customer to bill. */
-async function assertOverrideBillable(
-	tx: WorkTransactionClient,
-	change: DivideWorkRecord,
-	plan: DivisionPlan,
-): Promise<void> {
-	const override = change.attribution;
-	if (override?.patch.billable !== true) return;
-	const project = plan[override.half].attribution.project;
-	assertBillableAllowed(
-		await readProjectBillability(tx, change.organizationId, project?.projectId ?? null),
-	);
-}
-
+/**
+ * The source clock-out's notes, compare-and-set on its supersession as locked: a
+ * legacy split's generated half keeps a clock-out an earlier split superseded.
+ */
 async function replaceClockOutNotes(
 	tx: WorkTransactionClient,
 	entry: TimeEntryRow,
@@ -287,14 +282,12 @@ async function replaceClockOutNotes(
 				eq(timeEntry.id, entry.id),
 				eq(timeEntry.organizationId, entry.organizationId),
 				eq(timeEntry.employeeId, entry.employeeId),
-				eq(timeEntry.isSuperseded, false),
+				eq(timeEntry.isSuperseded, entry.isSuperseded),
 			),
 		)
 		.returning({ id: timeEntry.id });
 	if (updated.length !== 1) throw new CompletedWorkIntegrityError("Source clock-out changed");
 }
-
-export type WrittenPair = { period: WorkPeriodRow } & CanonicalWorkRows;
 
 /**
  * The retained half keeps the work period, its clock-in and its canonical work
@@ -374,61 +367,12 @@ export async function writeRetainedHalf(
 		.returning();
 	if (!writtenRecord) throw new CompletedWorkIntegrityError("Canonical work record update failed");
 
-	let detail = canonical.detail;
-	const plannedDetail = half.canonical.detail;
-	if (
-		!WorkAttribution.fromCanonical(detail, []).equals(
-			WorkAttribution.fromCanonical(plannedDetail, []),
-		)
-	) {
-		const [writtenDetail] = await tx
-			.update(timeRecordWork)
-			.set({
-				workCategoryId: plannedDetail.workCategoryId,
-				workLocationType: plannedDetail.workLocationType,
-				vehicleKind: plannedDetail.vehicleKind,
-				vehicleId: plannedDetail.vehicleId,
-				odometerStartKm: plannedDetail.odometerStartKm,
-				odometerEndKm: plannedDetail.odometerEndKm,
-				drivenDistanceKm: plannedDetail.drivenDistanceKm,
-			})
-			.where(
-				and(
-					eq(timeRecordWork.recordId, canonical.record.id),
-					eq(timeRecordWork.organizationId, period.organizationId),
-					eq(timeRecordWork.recordKind, "work"),
-				),
-			)
-			.returning();
-		if (!writtenDetail) {
-			throw new CompletedWorkIntegrityError("Canonical work detail update failed");
-		}
-		detail = writtenDetail;
-	}
-
-	let allocations = canonical.allocations;
-	if (!sameAllocations(allocations, half.canonical.allocations)) {
-		// Only the project allocation is attribution; cost-centre rows stay as they are.
-		await tx
-			.delete(timeRecordAllocation)
-			.where(
-				and(
-					eq(timeRecordAllocation.recordId, canonical.record.id),
-					eq(timeRecordAllocation.organizationId, period.organizationId),
-					eq(timeRecordAllocation.allocationKind, "project"),
-				),
-			);
-		const inserted = await insertAllocations(
-			tx,
-			period.organizationId,
-			canonical.record.id,
-			half.canonical.allocations.filter(({ allocationKind }) => allocationKind === "project"),
-		);
-		allocations = [
-			...allocations.filter(({ allocationKind }) => allocationKind !== "project"),
-			...inserted,
-		];
-	}
+	const { detail, allocations } = await writeCanonicalAttribution(tx, {
+		organizationId: period.organizationId,
+		recordId: canonical.record.id,
+		stored: canonical,
+		planned: half.canonical,
+	});
 	return { period: written, record: writtenRecord, detail, allocations };
 }
 
@@ -530,61 +474,6 @@ export async function writeGeneratedHalf(
 	return { period: written, record, detail, allocations };
 }
 
-export async function insertAllocations(
-	tx: WorkTransactionClient,
-	organizationId: string,
-	recordId: string,
-	allocations: readonly CanonicalAllocationShape[],
-): Promise<CanonicalWorkRows["allocations"]> {
-	const written: CanonicalWorkRows["allocations"] = [];
-	for (const allocation of allocations) {
-		const [row] = await tx
-			.insert(timeRecordAllocation)
-			.values({
-				organizationId,
-				recordId,
-				allocationKind: allocation.allocationKind,
-				projectId: allocation.projectId,
-				taskId: allocation.taskId,
-				costCenterId: allocation.costCenterId,
-				weightPercent: allocation.weightPercent,
-				isBillable: allocation.isBillable,
-			})
-			.returning();
-		if (!row) throw new CompletedWorkIntegrityError("Canonical allocation insert failed");
-		written.push(row);
-	}
-	return written;
-}
-
-/** The written rows must agree; anything else is a defect of work records. */
-export function assertWrittenAgreement(written: WrittenPair): void {
-	const agreement = recordAgreement(written.period, written);
-	if (!agreement.agrees) {
-		throw new CompletedWorkIntegrityError(
-			`Work records wrote a pair that disagrees on ${agreement.disagreements.join(", ")}`,
-		);
-	}
-}
-
-function sameAllocations(
-	stored: readonly CanonicalAllocationShape[],
-	planned: readonly CanonicalAllocationShape[],
-): boolean {
-	const key = (allocation: CanonicalAllocationShape) =>
-		[
-			allocation.allocationKind,
-			allocation.projectId,
-			allocation.taskId,
-			allocation.costCenterId,
-			allocation.weightPercent,
-			allocation.isBillable,
-		].join("|");
-	const left = stored.map(key).sort();
-	const right = planned.map(key).sort();
-	return left.length === right.length && left.every((value, index) => value === right[index]);
-}
-
 export function dividedHalf(
 	written: WrittenPair,
 	half: PlannedHalf,
@@ -603,14 +492,5 @@ export function dividedHalf(
 			allocations: written.allocations,
 		}),
 		after: expectedOf(written.period),
-	};
-}
-
-export function appendedEvidence(entry: TimeEntryRow): AppendedEntryEvidence {
-	return {
-		entryId: entry.id,
-		hash: entry.hash,
-		previousEntryId: entry.previousEntryId,
-		previousHash: entry.previousHash,
 	};
 }

@@ -4443,7 +4443,7 @@ db.delete(approvalOutbox);`,
 			"src/lib/time-record/migration/backfill.ts": {
 				approval_request: ["update"],
 			},
-			"src/lib/time-record/migration/attach-missing-work-records.ts": {
+			"src/lib/time-tracking/work-records/repair.ts": {
 				approval_request: ["update"],
 			},
 		});
@@ -4484,18 +4484,18 @@ db.delete(approvalOutbox);`,
 			"src/lib/time-tracking/work-records/create.ts#closeLiveWorkPeriod",
 			"src/lib/time-tracking/work-records/create.ts#insertCanonicalRecord",
 			"src/lib/time-tracking/work-records/delete.ts#deleteWorkRecord",
-			"src/lib/time-tracking/work-records/divide.ts#insertAllocations",
 			"src/lib/time-tracking/work-records/divide.ts#writeGeneratedHalf",
 			"src/lib/time-tracking/work-records/divide.ts#writeRetainedHalf",
 			"src/lib/time-tracking/work-records/entry-writer.ts#insertAppendedEntry",
-			"src/lib/time-tracking/work-records/entry-writer.ts#supersedeTakenOverEntry",
+			"src/lib/time-tracking/work-records/entry-writer.ts#supersedeEndpoint",
 			"src/lib/time-tracking/work-records/erase-history.ts#eraseEmployeeWorkHistory",
 			"src/lib/time-tracking/work-records/open-record.ts#correctOpenWorkRecord",
+			"src/lib/time-tracking/work-records/pair-writer.ts#insertAllocations",
+			"src/lib/time-tracking/work-records/pair-writer.ts#replaceProjectAllocation",
+			"src/lib/time-tracking/work-records/pair-writer.ts#writeCanonicalDetail",
 			"src/lib/time-tracking/work-records/repair.ts#attachWorkRecord",
 			"src/lib/time-tracking/work-records/repair.ts#insertDetail",
-			"src/lib/time-tracking/work-records/repair.ts#replaceProjectAllocations",
 			"src/lib/time-tracking/work-records/repair.ts#repairWorkRecord",
-			"src/lib/time-tracking/work-records/repair.ts#updateDetail",
 			"src/lib/time-tracking/work-records/repair.ts#writeRepairedPeriod",
 			"src/lib/time-tracking/work-records/revision.ts#advanceWorkRevision",
 		].sort());
@@ -4901,8 +4901,8 @@ export async function hiddenImport(rows: object[]) {
 				operation: "insert",
 			},
 			{
-				path: "src/lib/time-tracking/work-records/create.ts",
-				functionName: "insertCanonicalRecord",
+				path: "src/lib/time-tracking/work-records/pair-writer.ts",
+				functionName: "insertAllocations",
 				table: "time_record_allocation",
 				operation: "insert",
 			},
@@ -5238,6 +5238,38 @@ export async function writeLive(id: string) {
 				);
 			});
 		}
+	});
+
+	// spec-3 L2: an absence writer is allowed by what it writes, not by its name alone.
+	it("allows a named absence writer only an absence record's base columns", () => {
+		const path = "src/lib/absences/sick-vacation-override.ts";
+		const update = (columns: string[]) =>
+			workRecordsSeamViolation(path, {
+				columns,
+				functionName: "rejectCanonicalAbsenceInTransaction",
+				operation: "update",
+				table: "time_record",
+			});
+
+		expect(update(["approval_state"])).toBeNull();
+		expect(update(["duration_minutes", "end_at", "start_at"])).toBeNull();
+		expect(update(["approval_state", "updated_by"])).toMatch(/ADR 0010.*absence record/);
+		expect(
+			workRecordsSeamViolation(path, {
+				functionName: "rejectCanonicalAbsenceInTransaction",
+				operation: "update",
+				table: "time_record",
+				uncertainty: "dynamic_payload",
+			}),
+		).toMatch(/ADR 0010.*absence record/);
+		expect(
+			workRecordsSeamViolation(path, {
+				columns: ["employee_id", "organization_id", "start_at"],
+				functionName: "createCanonicalAbsenceInTransaction",
+				operation: "insert",
+				table: "time_record",
+			}),
+		).toMatch(/ADR 0010.*record_kind/);
 	});
 
 	it("registers only writes the seam allows", () => {

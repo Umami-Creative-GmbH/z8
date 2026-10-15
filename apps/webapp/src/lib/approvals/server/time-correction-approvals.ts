@@ -19,6 +19,7 @@ import { getAbility } from "@/lib/auth-helpers";
 import {
 	compareInstants,
 	type Instant,
+	instantFromDate,
 	isInstant,
 	parseInstant,
 	systemClock,
@@ -79,7 +80,6 @@ import {
 	type WorkVehicleUse,
 } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { vehicleColumnsMatch } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-sql";
-import { holdFinalizerEmployeeLocks } from "@/lib/time-tracking/finalizer-employee-locks";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import { assertWorkOccupancyFree } from "@/lib/time-tracking/work-occupancy";
 import {
@@ -87,6 +87,7 @@ import {
 	advanceWorkRevision,
 	applyWorkRecordChange,
 	correctOpenWorkRecord,
+	orRefuse,
 	refusalError,
 	type ToleratedDrift,
 	type WorkApprovalDecision,
@@ -95,10 +96,11 @@ import {
 	type WorkRecordRefusal,
 	workRecordScopeForFinalizer,
 } from "@/lib/time-tracking/work-records";
-import type {
-	SealedWorkTransactionScope,
-	WorkTransactionClient,
-	WorkTransactionDatabase,
+import {
+	holdFinalizerEmployeeLocks,
+	type SealedWorkTransactionScope,
+	type WorkTransactionClient,
+	type WorkTransactionDatabase,
 } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
@@ -1356,12 +1358,12 @@ export async function deleteCancelledTimeCorrectionsInTransaction(input: {
 			stage: "cancel",
 			key: lifecycleKey,
 		});
-		const resultRevision = await advanceWorkRevision(adoptedScope, {
+		const resultRevision = orRefuse(await advanceWorkRevision(adoptedScope, {
 			organizationId: input.organizationId,
 			employeeId: expected.employeeId,
 			workPeriodId: period.id,
 			expectedRevision: period.graphRevision,
-		});
+		})).revision;
 		const retained: TimeCorrectionEntryEvidence[] = correctionEntries.map(
 			(entry) => ({
 				endpoint:
@@ -1585,7 +1587,12 @@ function sameDatabaseInstant(left: Date | null, right: Date | null): boolean {
 	);
 }
 
-/** Field names only, so the conflict log carries no work data. */
+/**
+ * Field names only, so the conflict log carries no work data. The record must be
+ * the period's; whether live work's open record agrees with it is checked here.
+ * Completed work's record agreement is work records' one rule (ADR 0010): the
+ * amendment or deletion refuses a divergent pair itself.
+ */
 function canonicalRecordSourceMismatches(
 	canonical: LockedCanonicalWorkRecord,
 	period: LockedTimeCorrectionPeriod,
@@ -1596,10 +1603,14 @@ function canonicalRecordSourceMismatches(
 		["organizationId", canonical.organizationId === organizationId],
 		["employeeId", canonical.employeeId === period.employeeId],
 		["recordKind", canonical.recordKind === "work"],
-		["approvalState", canonical.approvalState === period.approvalStatus],
-		["startAt", sameDatabaseInstant(canonical.startAt, period.startTime)],
-		["endAt", sameDatabaseInstant(canonical.endAt, period.endTime)],
-		["durationMinutes", canonical.durationMinutes === period.durationMinutes],
+		...(period.isActive
+			? ([
+					["approvalState", canonical.approvalState === period.approvalStatus],
+					["startAt", sameDatabaseInstant(canonical.startAt, period.startTime)],
+					["endAt", sameDatabaseInstant(canonical.endAt, period.endTime)],
+					["durationMinutes", canonical.durationMinutes === period.durationMinutes],
+				] as Array<[string, boolean]>)
+			: []),
 	];
 	return checks.filter(([, matches]) => !matches).map(([field]) => field);
 }
@@ -2634,8 +2645,10 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	// record's, so a legacy decision may meet a stale canonical interval too.
 	// The period's endpoints were checked against the ledger above, and work
 	// records rewrites the canonical interval and minutes from the work period,
-	// so only a cancellation snapshot still pins them. #1229 removes this once
-	// production shows no divergence.
+	// so only a cancellation snapshot still pins them. Completed work's record
+	// agreement is checked by work records alone (`toleratedDrift`); the field
+	// names tolerate the same drift in live work's open record. #1229 removes
+	// this once production shows no divergence.
 	const toleratedCanonicalDrift: ReadonlySet<string> =
 		expectedSource !== undefined
 			? new Set()
@@ -2720,9 +2733,11 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				canonicalWork.recordId !== period.canonicalRecordId ||
 				canonicalWork.organizationId !== input.organizationId ||
 				canonicalWork.recordKind !== "work" ||
-				canonicalWork.workLocationType !== period.workLocationType ||
-				canonicalWork.workCategoryId !== period.workCategoryId ||
-				!sameWorkVehicleUse(vehicleUseFromColumns(canonicalWork), periodVehicleUse) ||
+				// Live work's open record; completed work's agreement is work records'.
+				(period.isActive &&
+					(canonicalWork.workLocationType !== period.workLocationType ||
+						canonicalWork.workCategoryId !== period.workCategoryId ||
+						!sameWorkVehicleUse(vehicleUseFromColumns(canonicalWork), periodVehicleUse))) ||
 				(expectedOriginalWorkMetadata !== undefined &&
 					(normalizeWorkLocationType(canonicalWork.workLocationType) !==
 						expectedOriginalWorkMetadata.workLocationType ||
@@ -2944,12 +2959,12 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 					result: { kind: "unchanged" },
 					corrections: correctionEvidence("rejected_inactive"),
 					sourceRevision: period.graphRevision,
-					resultRevision: await advanceWorkRevision(adopted.scope, {
+					resultRevision: orRefuse(await advanceWorkRevision(adopted.scope, {
 						organizationId: input.organizationId,
 						employeeId: period.employeeId,
 						workPeriodId: period.id,
 						expectedRevision: period.graphRevision,
-					}),
+					})).revision,
 					followUps: [],
 				});
 			}
@@ -3001,12 +3016,12 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				result: { kind: "unchanged" },
 				corrections: correctionEvidence("rejected_inactive"),
 				sourceRevision: period.graphRevision,
-				resultRevision: await advanceWorkRevision(adopted.scope, {
+				resultRevision: orRefuse(await advanceWorkRevision(adopted.scope, {
 					organizationId: input.organizationId,
 					employeeId: period.employeeId,
 					workPeriodId: period.id,
 					expectedRevision: period.graphRevision,
-				}),
+				})).revision,
 				followUps: [],
 			});
 		}
@@ -3092,38 +3107,40 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				approval: rejectedLegacyResubmission ? "approved" : undefined,
 				toleratedDrift,
 			});
+	// The refresh intent commits with the work that needs it, in either admission:
+	// work records marked completed work; a corrected start of live work is marked here.
+	const liveWorkDirtyFromDate =
+		!applied.workBalanceDirtyFromDate && period.isActive && hasEndpointCorrection
+			? dirtyFromDate
+			: null;
+	if (liveWorkDirtyFromDate) {
+		await markEmployeeWorkBalanceDirty(
+			{
+				employeeId: period.employeeId,
+				organizationId: input.organizationId,
+				dirtyFromDate: liveWorkDirtyFromDate,
+			},
+			adopted?.scope.db ?? input.dbService.db,
+		);
+	}
 	if (adopted) {
 		const followUps: CompletedWorkFollowUp[] = [];
-		if (applied.workBalanceDirtyFromDate) {
+		const committedDirtyFromDate = applied.workBalanceDirtyFromDate ?? liveWorkDirtyFromDate;
+		if (committedDirtyFromDate) {
 			followUps.push({
 				kind: "work_balance_refresh",
 				delivery: "committed_intent",
-				dirtyFromDate: applied.workBalanceDirtyFromDate,
-			});
-		} else if (period.isActive && dirtyFromDate && hasEndpointCorrection) {
-			// The refresh intent commits with the work that needs it.
-			await markEmployeeWorkBalanceDirty(
-				{
-					employeeId: period.employeeId,
-					organizationId: input.organizationId,
-					dirtyFromDate,
-				},
-				adopted.scope.db,
-			);
-			followUps.push({
-				kind: "work_balance_refresh",
-				delivery: "committed_intent",
-				dirtyFromDate,
+				dirtyFromDate: committedDirtyFromDate,
 			});
 		}
 		const resultRevision =
 			applied.resultRevision ??
-			(await advanceWorkRevision(adopted.scope, {
+			(orRefuse(await advanceWorkRevision(adopted.scope, {
 				organizationId: input.organizationId,
 				employeeId: period.employeeId,
 				workPeriodId: period.id,
 				expectedRevision: period.graphRevision,
-			}));
+			})).revision);
 		const resulting = correctionSegment({
 			clockIn: clockInCorrection ?? originalClockIn,
 			clockOut: clockOutCorrection ?? originalClockOut,
@@ -3236,11 +3253,12 @@ async function applyCompletedWorkCorrection(change: {
 		});
 		if (attached.kind !== "attached") throw correctionWorkRefusal(attached);
 		expected = attached.after;
+		// Attaching changes no work; the change that follows marks the balance.
 		applied = {
 			resultRevision: attached.after.revision,
 			durationMinutes: attached.segment.durationMinutes,
 			canonicalRecordId: attached.segment.canonicalRecordId,
-			workBalanceDirtyFromDate: attached.effects.workBalanceDirtyFromDate,
+			workBalanceDirtyFromDate: null,
 		};
 	}
 	if (change.isDeletion) {
@@ -3557,17 +3575,24 @@ async function applyLiveWorkCorrection(change: {
 		],
 	});
 	// The open canonical work record some history gave live work is work records' (ADR 0010).
-	const correctedOpenRecord = await correctOpenWorkRecord(input.dbService.db, {
+	const workScope = await workRecordScopeForFinalizer(
+		input.dbService.db as WorkTransactionClient,
+		{ organizationId: input.organizationId, employeeId: period.employeeId },
+	);
+	const correctedOpenRecord = await correctOpenWorkRecord(workScope, {
 		organizationId: input.organizationId,
 		employeeId: period.employeeId,
 		actorUserId: input.actorUserId,
-		at: finalizedAt,
+		at: input.finalizedAt,
 		...(canonical && hasEndpointCorrection
 			? {
 					start: {
 						recordId: canonical.id,
-						expected: { startAt: canonical.startAt, approvalState: canonical.approvalState },
-						startAt: instantToTimeCorrectionDate(correctedPeriod.clockIn.instant),
+						expected: {
+							startAt: instantFromDate(canonical.startAt),
+							approvalState: canonical.approvalState,
+						},
+						startAt: correctedPeriod.clockIn.instant,
 					},
 				}
 			: {}),
@@ -5019,14 +5044,8 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 			approvalRequestId: request.id,
 		}),
 	);
+	// The balance refresh committed with the corrected work (work records, ADR 0010).
 	if (effects.terminal.kind === "approved") {
-		if (effects.terminal.dirtyFromDate) {
-			await markEmployeeWorkBalanceDirtyIfNeeded({
-				employeeId: effects.terminal.requesterEmployeeId,
-				organizationId: input.actor.organizationId,
-				dirtyFromDate: effects.terminal.dirtyFromDate,
-			});
-		}
 		notifyApprovedCorrection(result.period, request.entityId, actor, result);
 		return;
 	}
@@ -6278,12 +6297,6 @@ export function createTimeCorrectionApprovalWorkflow(
 	);
 }
 
-export async function runAutoCompletedTimeCorrectionMaintenance(
-	result: TimeCorrectionApprovalResult,
-) {
-	await markEmployeeWorkBalanceDirtyIfNeeded(result.workBalanceDirtyMark);
-}
-
 function loadAutoApprovalRequester(
 	dbService: ApprovalDbService,
 	requesterEmployeeId: string,
@@ -6438,23 +6451,6 @@ export function rejectTimeCorrectionWithCurrentApproverEffect(
 	);
 }
 
-function markWorkBalanceDirtyAfterCommit(mark?: WorkBalanceDirtyMark) {
-	return mark
-		? Effect.promise(() => markEmployeeWorkBalanceDirtyIfNeeded(mark))
-		: Effect.void;
-}
-
-async function markEmployeeWorkBalanceDirtyIfNeeded(
-	mark?: WorkBalanceDirtyMark,
-) {
-	if (!mark) return;
-	try {
-		await markEmployeeWorkBalanceDirty(mark);
-	} catch (error) {
-		logger.error({ error, ...mark }, "Failed to mark work balance dirty");
-	}
-}
-
 function notifyApprovedCorrection(
 	period: WorkPeriodRecord,
 	entityId: string,
@@ -6582,17 +6578,10 @@ function completeApprovedTimeCorrectionAfterCommit(
 	currentEmployee: CurrentApprover,
 	result: TimeCorrectionAutoCompletionResult,
 ) {
-	return Effect.all(
-		[
-			markWorkBalanceDirtyAfterCommit(result.workBalanceDirtyMark),
-			notifyApprovedTimeCorrectionAfterCommit(
-				entityId,
-				currentEmployee,
-				result,
-			),
-		],
-		{ concurrency: 2 },
-	).pipe(Effect.map(() => undefined));
+	// The balance refresh committed with the corrected work (work records, ADR 0010).
+	return notifyApprovedTimeCorrectionAfterCommit(entityId, currentEmployee, result).pipe(
+		Effect.map(() => undefined),
+	);
 }
 
 function notifyApprovedTimeCorrectionAfterCommit(

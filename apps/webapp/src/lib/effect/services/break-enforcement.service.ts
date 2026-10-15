@@ -21,13 +21,6 @@ export interface EnforceBreaksInput {
 	employeeId: string;
 	organizationId: string;
 	workPeriodId: string;
-	/**
-	 * Unused since #1220: the adjustment reads the work's own minutes and captures
-	 * the break entries in the zone of its clock-out. Kept for the clocking callers.
-	 */
-	sessionDurationMinutes: number;
-	/** Unused since #1220, as `sessionDurationMinutes`. */
-	timezone: string;
 	createdBy: string;
 }
 
@@ -235,8 +228,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 		return BreakEnforcementService.of({
 			calculateBreakDeficit: (params) => calculateBreakDeficitInternal(params),
 
-			enforceBreaksAfterClockOut: (input) =>
-				enforceBreaksAfterClockOutInternal(input),
+			enforceBreaksAfterClockOut: (input) => enforceBreaksAfterClockOutInternal(input),
 
 			processUnprocessedPeriods: (input) =>
 				Effect.gen(function* () {
@@ -291,10 +283,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 
 					for (const period of periods) {
 						// Filter by organization if specified
-						if (
-							input.organizationId &&
-							period.organizationId !== input.organizationId
-						) {
+						if (input.organizationId && period.organizationId !== input.organizationId) {
 							continue;
 						}
 
@@ -304,8 +293,6 @@ export const BreakEnforcementServiceLive = Layer.effect(
 							employeeId: period.employeeId,
 							organizationId: period.organizationId,
 							workPeriodId: period.id,
-							sessionDurationMinutes: period.durationMinutes || 0,
-							timezone: period.employee?.userSettings?.timezone || "UTC",
 							createdBy: SYSTEM_CRON_ACTOR,
 						});
 

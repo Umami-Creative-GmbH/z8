@@ -1,5 +1,6 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import {
 	absenceCategory,
@@ -14,7 +15,7 @@ import {
 	timeEntry,
 	workCategory,
 } from "@/db/schema";
-import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	type ClockingStore,
 	createDatabaseClockingStore,
@@ -364,8 +365,20 @@ function isActiveValue(payload: SetupReferencePayload) {
 	return payload.isActive ?? payload.active ?? true;
 }
 
-function parseUtcInstant(value: string, fieldName: string) {
-	return instantFromDate(parseUtcDateTime(value, fieldName).toJSDate());
+/**
+ * A provider instant with Temporal (dates.md): its own offset, or UTC when it
+ * names none, as `parseUtcDateTime` reads it.
+ */
+function parseUtcInstant(value: string, fieldName: string): Instant {
+	try {
+		const instant = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)
+			? Temporal.Instant.from(value)
+			: Temporal.PlainDateTime.from(value).toZonedDateTime("UTC").toInstant();
+		// Millisecond precision, as the stored timestamps keep it.
+		return instant.round({ smallestUnit: "millisecond", roundingMode: "trunc" });
+	} catch {
+		throw new Error(`Invalid ${fieldName}: ${value}`);
+	}
 }
 
 /**

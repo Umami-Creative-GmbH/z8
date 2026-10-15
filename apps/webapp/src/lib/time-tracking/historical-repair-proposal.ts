@@ -235,8 +235,8 @@ export function proposeHistoricalRepair(
 	if (reasons.size === 0) {
 		for (const refusal of resultingIntervalRefusals(period, record, changes)) reasons.add(refusal);
 	}
-	if (reasons.size === 0 && !record) reasons.add("record_missing");
-	if (reasons.size === 0 && record && !repairAgrees(period, record, changes)) {
+	// Without a record the repair attaches one with the repaired values (spec-2 M1).
+	if (reasons.size === 0 && !repairAgrees(period, record, changes)) {
 		reasons.add("repair_leaves_divergence");
 	}
 	if (reasons.size > 0) return { kind: "refused", reasons: [...reasons] };
@@ -417,10 +417,11 @@ function resultingIntervalRefusals(
 /**
  * Whether work records would write the repaired pair: every value the records
  * disagree on is repaired, and a repaired record endpoint is the period's own.
+ * Without a record, whether attach writes one with the repaired values.
  */
 function repairAgrees(
 	period: HistoricalPeriodEvidence,
-	record: HistoricalRecordEvidence,
+	record: HistoricalRecordEvidence | null,
 	changes: readonly RepairChange[],
 ): boolean {
 	return repairedWorkAgrees(period, record, fieldRepairResolution(changes, record));

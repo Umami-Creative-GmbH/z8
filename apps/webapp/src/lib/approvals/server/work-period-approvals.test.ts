@@ -79,7 +79,8 @@ vi.mock("@/lib/notifications/triggers", () => notificationMocks);
 // record agreement and effects are verified against PostgreSQL
 // (work-records/amend.integration.test.ts, clocking.policy-break-split).
 const workRecordChanges = vi.hoisted(() => [] as Array<Record<string, unknown>>);
-vi.mock("@/lib/time-tracking/finalizer-employee-locks", () => ({
+vi.mock("@/lib/time-tracking/work-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/work-transaction")>()),
 	holdFinalizerEmployeeLocks: async () => undefined,
 }));
 vi.mock("@/lib/time-tracking/work-records", async (importOriginal) => {
@@ -3426,7 +3427,7 @@ describe("ordinary work-period approval finalizer", () => {
 		expect(dbService.insertedValues).toHaveLength(0);
 	});
 
-	it("keeps every source read organization and employee scoped and writes completed work only through work records", () => {
+	it("keeps every source read organization and employee scoped", () => {
 		expect(source).toContain(
 			"eq(workPeriod.organizationId, approval.organizationId)",
 		);
@@ -3435,9 +3436,6 @@ describe("ordinary work-period approval finalizer", () => {
 			"eq(timeRecord.organizationId, input.organizationId)",
 		);
 		expect(source).toContain('eq(timeRecord.recordKind, "work")');
-		// #1227: the decision is an amendment of both records' approval state.
-		expect(source).not.toContain(".update(timeRecord)");
-		expect(source).toContain("approval: terminalStatus");
 	});
 
 	it("never locates or mutates correction entries", () => {

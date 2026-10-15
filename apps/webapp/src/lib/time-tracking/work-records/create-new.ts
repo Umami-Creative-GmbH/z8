@@ -11,7 +11,6 @@ import "server-only";
  * it throws and the transaction rolls back.
  */
 import { workPeriod } from "@/db/schema";
-import { CompletedWorkIntegrityError } from "../close-active-work";
 import { closedRangeTouchedByWork } from "../closed-months/rules";
 import { closedRangesForEmployee } from "../closed-months/store";
 import { loadWorkOccupants } from "../work-occupancy";
@@ -19,12 +18,16 @@ import type { SealedWorkTransactionScope, WorkTransactionClient } from "../work-
 import type { WorkRecordExpected, WorkRecordRefusal } from "./change";
 import { insertCanonicalRecord } from "./create";
 import { type CreateNewWork, planNewWork } from "./create-new-plan";
-import type { AppendedEntryEvidence } from "./divide";
 import { applyWrittenWorkEffects, sendBackChangedWork } from "./effects";
 import { entryWriterFor } from "./entry-writer";
+import { CompletedWorkIntegrityError } from "./integrity";
+import {
+	type AppendedEntryEvidence,
+	appendedEvidence,
+	assertWrittenAgreement,
+} from "./pair-writer";
 import type { PlannedHalf } from "./plan";
 import { expectedOf } from "./read";
-import { recordAgreement } from "./record-agreement";
 import type { TimeEntryRow, WorkPeriodRow } from "./rows";
 import { type WorkSegment, workSegment } from "./segment";
 import type { WorkAttribution } from "./work-attribution";
@@ -112,17 +115,12 @@ export async function createNewWorkRecord(
 		clockOut,
 		canonicalRecordId: canonical.record.id,
 	});
-	const agreement = recordAgreement(written, canonical);
-	if (!agreement.agrees) {
-		throw new CompletedWorkIntegrityError(
-			`Work records wrote a pair that disagrees on ${agreement.disagreements.join(", ")}`,
-		);
-	}
+	assertWrittenAgreement({ period: written, ...canonical });
 
 	const effects = await applyWrittenWorkEffects(tx, {
 		organizationId,
 		employeeId,
-		writtenStarts: [{ at: completed.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0 }],
+		writtenStarts: [{ at: completed.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes }],
 	});
 	return {
 		kind: "created",
@@ -141,20 +139,11 @@ export async function createNewWorkRecord(
 		after: expectedOf(written),
 		appended: {
 			admission: writer.admission,
-			clockIn: evidenceOf(clockIn),
-			clockOut: evidenceOf(clockOut),
+			clockIn: appendedEvidence(clockIn),
+			clockOut: appendedEvidence(clockOut),
 			entries: [clockIn, clockOut],
 		},
 		effects,
-	};
-}
-
-function evidenceOf(entry: TimeEntryRow): AppendedEntryEvidence {
-	return {
-		entryId: entry.id,
-		hash: entry.hash,
-		previousEntryId: entry.previousEntryId,
-		previousHash: entry.previousHash,
 	};
 }
 

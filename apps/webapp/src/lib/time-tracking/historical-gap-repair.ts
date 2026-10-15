@@ -203,7 +203,8 @@ export function planHistoricalGapRepair(input: HistoricalGapRepairInput): Histor
 	// A gap belongs to the one period it names; native-record gaps have no evidence.
 	const gapsByPeriod = new Map<string, WorkFinding[]>();
 	for (const gap of gaps) {
-		const period = gap.workPeriodIds.length === 1 ? periodsById.get(gap.workPeriodIds[0]) : undefined;
+		const period =
+			gap.workPeriodIds.length === 1 ? periodsById.get(gap.workPeriodIds[0]) : undefined;
 		if (!period) {
 			hold(gap, "no_restorable_evidence");
 			continue;
@@ -239,9 +240,12 @@ export function planHistoricalGapRepair(input: HistoricalGapRepairInput): Histor
 		if (fills.length === 0) continue;
 		// Work records writes a repair only when the repaired pair agrees (#1226):
 		// work whose fills leave a disagreement, such as a gap held on its own, is held whole.
-		const agrees = fills.some((fill) => fill.kind === "canonical_record")
-			? repairedWorkAgrees(period, null, {})
-			: repairedWorkAgrees(period, record, gapRepairResolution(fills));
+		// A missing record is attached with what the other fills establish (spec-2 M1).
+		const agrees = repairedWorkAgrees(
+			period,
+			fills.some((fill) => fill.kind === "canonical_record") ? null : record,
+			gapRepairResolution(fills),
+		);
 		if (!agrees) {
 			const filled = new Set(fills.map((fill) => fill.findingId));
 			for (const gap of periodGaps) {
@@ -436,18 +440,24 @@ function fillFor(
 			if (field === "project") {
 				if (recordProjectIds(record).length > 0) return { hold: "no_restorable_evidence" };
 				if (!references.projectIds.has(value)) return { hold: "reference_outside_organization" };
-				return { fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value } };
+				return {
+					fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value },
+				};
 			}
 			if (field === "work_category") {
 				if (record.detail.workCategoryId !== null) return { hold: "no_restorable_evidence" };
 				if (!references.workCategoryIds.has(value)) {
 					return { hold: "reference_outside_organization" };
 				}
-				return { fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value } };
+				return {
+					fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value },
+				};
 			}
 			if (field === "work_location_type") {
 				if (record.detail.workLocationType !== null) return { hold: "no_restorable_evidence" };
-				return { fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value } };
+				return {
+					fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value },
+				};
 			}
 			return { hold: "no_restorable_evidence" };
 		}

@@ -11,38 +11,54 @@ import "server-only";
  * Every refusal is decided before the first write. A pair that still disagrees
  * after the writes is a defect in work records: it throws and rolls back.
  */
-import { and, asc, eq, isNull } from "drizzle-orm";
-import { timeRecord, timeRecordAllocation, timeRecordWork, workPeriod } from "@/db/schema";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import {
+	approvalRequest,
+	timeRecord,
+	timeRecordAllocation,
+	timeRecordApprovalDecision,
+	timeRecordWork,
+	workPeriod,
+} from "@/db/schema";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
-import { CompletedWorkIntegrityError } from "../close-active-work";
+import { legacyApprovalDecision } from "@/lib/time-record/legacy-approval-decision";
 import { closedRangeTouchedByWork, type WorkInterval } from "../closed-months/rules";
 import { closedRangesForEmployee } from "../closed-months/store";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "../work-transaction";
 import { resolvedPatch } from "./amend";
 import type { WorkRecordExpected, WorkRecordRefusal } from "./change";
-import { assertWrittenAgreement, insertAllocations } from "./divide";
 import { applyWrittenWorkEffects, sendBackChangedWork } from "./effects";
-import { expectedOf, matchesExpected } from "./read";
+import { CompletedWorkIntegrityError } from "./integrity";
+import {
+	assertWrittenAgreement,
+	insertAllocations,
+	lockedWork,
+	replaceProjectAllocation,
+	writeCanonicalDetail,
+} from "./pair-writer";
+import { expectedOf } from "./read";
 import type { RecordAgreementFacet } from "./record-agreement";
 import type { AttachWorkRecord, RepairWorkRecord } from "./repair-change";
 import { planAttachment, planRepair, type RepairPlan } from "./repair-plan";
-import {
-	type CanonicalWorkRows,
-	selectWorkRecordRows,
-	type TimeEntryRow,
-	type WorkPeriodRow,
-	type WorkRecordRows,
-} from "./rows";
+import type { CanonicalWorkRows, TimeEntryRow, WorkPeriodRow } from "./rows";
 import { type WorkSegment, workSegment } from "./segment";
-import { WorkAttribution } from "./work-attribution";
+import { UnrepresentableWorkAttributionError, WorkAttribution } from "./work-attribution";
 
+/**
+ * Attaching changes no work: the period's interval, minutes and attribution
+ * stay as they are, so nothing is sent back and no balance is marked (user,
+ * 2026-10-15). Only the record and the revision step are written. A resolution
+ * that changes the period's minutes or attribution is a change of work, with
+ * its effects.
+ */
 export type WorkAttachment = {
 	kind: "attached";
 	/** The work with its new canonical work record. */
 	segment: WorkSegment;
 	/** The new expected state: name it to chain a further change. */
 	after: WorkRecordExpected;
-	effects: { workBalanceDirtyFromDate: string };
+	/** Present only when a resolution changed the work. */
+	effects?: { workBalanceDirtyFromDate: string };
 };
 
 export type WorkRepair = {
@@ -62,35 +78,6 @@ export type WorkRepair = {
 	after: WorkRecordExpected;
 	effects: { workBalanceDirtyFromDate: string };
 };
-
-type LockedWork = WorkRecordRows & {
-	period: WorkPeriodRow;
-	clockIn: TimeEntryRow;
-	clockOut: TimeEntryRow;
-};
-
-/** The locked work period with its endpoints, or the refusal that stops the change first. */
-async function lockedWork(
-	scope: SealedWorkTransactionScope,
-	change: { organizationId: string; employeeId: string; expected: WorkRecordExpected },
-): Promise<LockedWork | WorkRecordRefusal> {
-	const { organizationId, employeeId } = change;
-	scope.assertEmployee(organizationId, employeeId);
-	const workPeriodId = change.expected.workPeriodId;
-	const locked = await selectWorkRecordRows(
-		scope.db,
-		{ organizationId, employeeId, workPeriodId },
-		{ lock: true },
-	);
-	if (!locked) return { kind: "not_found", workPeriodId };
-	const { period, clockIn, clockOut } = locked;
-	if (!matchesExpected(change.expected, period)) {
-		return { kind: "stale", current: { revision: period.graphRevision } };
-	}
-	if (period.isActive || !period.clockOutId) return { kind: "work_running" };
-	if (!clockIn || !clockOut) return { kind: "endpoint_entry_missing" };
-	return { ...locked, clockIn, clockOut };
-}
 
 /** The canonical work record of the work, linked or of the work period's own id, locked. */
 async function lockedCanonical(
@@ -165,20 +152,34 @@ export async function attachWorkRecord(
 		.where(and(eq(timeRecord.id, recordId), eq(timeRecord.organizationId, organizationId)))
 		.for("update");
 	if (existing) return { kind: "canonical_record_present" };
-	const plan = planAttachment(period);
+	const resolution = change.resolution ?? {};
+	const plan = planAttachment(period, {
+		...resolution,
+		attribution: resolution.attribution
+			? await resolvedPatch(
+					tx,
+					{ organizationId, attribution: resolution.attribution },
+					period.projectId,
+				)
+			: undefined,
+	});
 	if ("kind" in plan) return plan;
 	const interval = { start: plan.result.startAt, end: plan.result.endAt };
 	const closed = await closedMonthOf(tx, change, [interval]);
 	if (closed) return closed;
+	// Only a resolution that changes the period's minutes or attribution changes work.
+	const changesWork = !periodStays(period, plan);
 
 	// Writes: nothing below refuses.
-	await sendBackChangedWork(tx, {
-		organizationId,
-		employeeId,
-		causedByUserId: change.actorUserId,
-		before: [interval],
-		after: [interval],
-	});
+	if (changesWork) {
+		await sendBackChangedWork(tx, {
+			organizationId,
+			employeeId,
+			causedByUserId: change.actorUserId,
+			before: [interval],
+			after: [interval],
+		});
+	}
 	const now = new Date();
 	const planned = plan.result.canonical;
 	const [record] = await tx
@@ -225,17 +226,74 @@ export async function attachWorkRecord(
 	});
 	const pair = { period: written, record, detail, allocations };
 	assertWrittenAgreement(pair);
-	const effects = await applyWrittenWorkEffects(tx, {
-		organizationId,
-		employeeId,
-		writtenStarts: [{ at: plan.result.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0 }],
-	});
+	await linkLegacyApprovalHistory(tx, { organizationId, workPeriodId: period.id, recordId });
+	const effects = changesWork
+		? await applyWrittenWorkEffects(tx, {
+				organizationId,
+				employeeId,
+				writtenStarts: [{ at: plan.result.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes }],
+			})
+		: null;
 	return {
 		kind: "attached",
 		segment: segmentOf(written, pair, plan, { clockIn, clockOut }),
 		after: expectedOf(written),
-		effects,
+		...(effects ? { effects } : {}),
 	};
+}
+
+/**
+ * The work period's legacy approval requests: each becomes a decision on the
+ * attached canonical work record and links to it, for every caller of attach
+ * (the deploy and lazy backfills, reopening a month, gap and field repairs).
+ */
+async function linkLegacyApprovalHistory(
+	tx: WorkTransactionClient,
+	input: { organizationId: string; workPeriodId: string; recordId: string },
+): Promise<void> {
+	const requests = await tx
+		.select()
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.organizationId, input.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.entityId, input.workPeriodId),
+			),
+		)
+		.orderBy(asc(approvalRequest.createdAt), asc(approvalRequest.id));
+	if (requests.length === 0) return;
+	await tx.insert(timeRecordApprovalDecision).values(
+		requests.map((request) => ({
+			organizationId: input.organizationId,
+			recordId: input.recordId,
+			...legacyApprovalDecision(request),
+		})),
+	);
+	await tx
+		.update(approvalRequest)
+		.set({ canonicalRecordId: input.recordId })
+		.where(
+			and(
+				eq(approvalRequest.organizationId, input.organizationId),
+				inArray(
+					approvalRequest.id,
+					requests.map(({ id }) => id),
+				),
+			),
+		);
+}
+
+/** Whether the planned work keeps the period's minutes and attribution as stored. */
+function periodStays(period: WorkPeriodRow, plan: RepairPlan): boolean {
+	if (period.durationMinutes !== plan.result.durationMinutes) return false;
+	try {
+		return WorkAttribution.fromWorkPeriod(period).equals(plan.result.attribution);
+	} catch (error) {
+		// A period the resolution made representable changed.
+		if (error instanceof UnrepresentableWorkAttributionError) return false;
+		throw error;
+	}
 }
 
 export async function repairWorkRecord(
@@ -261,7 +319,7 @@ export async function repairWorkRecord(
 	const patch = await resolvedPatch(
 		tx,
 		{ organizationId, attribution: change.resolution.attribution },
-		WorkAttribution.fromWorkPeriod(period),
+		period.projectId,
 	);
 	const plan = planRepair(
 		period,
@@ -308,12 +366,13 @@ export async function repairWorkRecord(
 		)
 		.returning();
 	if (!record) throw new CompletedWorkIntegrityError("Canonical work record update failed");
+	const key = { organizationId: record.organizationId, recordId: record.id };
 	const detail = canonical.detail
-		? await updateDetail(tx, canonical.detail, planned.detail)
+		? await writeCanonicalDetail(tx, key, canonical.detail, planned.detail)
 		: await insertDetail(tx, record, planned.detail);
-	const allocations = await replaceProjectAllocations(
+	const allocations = await replaceProjectAllocation(
 		tx,
-		record,
+		key,
 		canonical.allocations,
 		planned.allocations,
 	);
@@ -331,9 +390,9 @@ export async function repairWorkRecord(
 		writtenStarts: [
 			{
 				at: instantFromDate(canonical.record.startAt),
-				utcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0,
+				utcOffsetMinutes: clockIn.utcOffsetMinutes,
 			},
-			{ at: plan.result.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0 },
+			{ at: plan.result.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes },
 		],
 	});
 	return {
@@ -352,39 +411,6 @@ export async function repairWorkRecord(
 
 function interval(start: Date, end: Date): { start: Instant; end: Instant } {
 	return { start: instantFromDate(start), end: instantFromDate(end) };
-}
-
-async function updateDetail(
-	tx: WorkTransactionClient,
-	stored: CanonicalWorkRows["detail"],
-	planned: RepairPlan["result"]["canonical"]["detail"],
-): Promise<CanonicalWorkRows["detail"]> {
-	if (
-		WorkAttribution.fromCanonical(stored, []).equals(WorkAttribution.fromCanonical(planned, []))
-	) {
-		return stored;
-	}
-	const [written] = await tx
-		.update(timeRecordWork)
-		.set({
-			workCategoryId: planned.workCategoryId,
-			workLocationType: planned.workLocationType,
-			vehicleKind: planned.vehicleKind,
-			vehicleId: planned.vehicleId,
-			odometerStartKm: planned.odometerStartKm,
-			odometerEndKm: planned.odometerEndKm,
-			drivenDistanceKm: planned.drivenDistanceKm,
-		})
-		.where(
-			and(
-				eq(timeRecordWork.recordId, stored.recordId),
-				eq(timeRecordWork.organizationId, stored.organizationId),
-				eq(timeRecordWork.recordKind, "work"),
-			),
-		)
-		.returning();
-	if (!written) throw new CompletedWorkIntegrityError("Canonical work detail update failed");
-	return written;
 }
 
 /** A record history left without its work detail gets it; no computation metadata is known. */
@@ -411,42 +437,6 @@ async function insertDetail(
 		.returning();
 	if (!written) throw new CompletedWorkIntegrityError("Canonical work detail insert failed");
 	return written;
-}
-
-/** Only the project allocation is attribution; cost-centre rows stay as they are. */
-async function replaceProjectAllocations(
-	tx: WorkTransactionClient,
-	record: CanonicalWorkRows["record"],
-	stored: CanonicalWorkRows["allocations"],
-	planned: RepairPlan["result"]["canonical"]["allocations"],
-): Promise<CanonicalWorkRows["allocations"]> {
-	const key = (allocation: (typeof planned)[number]) =>
-		[
-			allocation.allocationKind,
-			allocation.projectId,
-			allocation.taskId,
-			allocation.costCenterId,
-			allocation.weightPercent,
-			allocation.isBillable,
-		].join("|");
-	const storedKeys = stored.map(key).sort().join(",");
-	if (storedKeys === planned.map(key).sort().join(",")) return stored;
-	await tx
-		.delete(timeRecordAllocation)
-		.where(
-			and(
-				eq(timeRecordAllocation.recordId, record.id),
-				eq(timeRecordAllocation.organizationId, record.organizationId),
-				eq(timeRecordAllocation.allocationKind, "project"),
-			),
-		);
-	const inserted = await insertAllocations(
-		tx,
-		record.organizationId,
-		record.id,
-		planned.filter(({ allocationKind }) => allocationKind === "project"),
-	);
-	return [...stored.filter(({ allocationKind }) => allocationKind !== "project"), ...inserted];
 }
 
 /**

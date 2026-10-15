@@ -1,6 +1,5 @@
-import { eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
-
 import {
 	absenceCategory,
 	absenceEntry,
@@ -11,6 +10,7 @@ import {
 	timeRecordAbsence,
 	timeRecordApprovalDecision,
 } from "@/db";
+import { legacyApprovalDecision } from "@/lib/time-record/legacy-approval-decision";
 import {
 	attachMissingWorkRecords,
 	type MissingWorkRecordAttachment,
@@ -192,13 +192,7 @@ export function buildCanonicalBackfillPayload(
 		timeRecordApprovalDecision.push({
 			organizationId: input.organizationId,
 			recordId,
-			actorEmployeeId:
-				approvalRequest.status === "pending"
-					? approvalRequest.requestedBy
-					: approvalRequest.approverId,
-			action: mapApprovalStatusToAction(approvalRequest.status),
-			reason: approvalRequest.rejectionReason ?? approvalRequest.reason,
-			createdAt: approvalRequest.approvedAt ?? approvalRequest.createdAt,
+			...legacyApprovalDecision(approvalRequest),
 		});
 		approvalLinks.push({ id: approvalRequest.id, canonicalRecordId: recordId });
 	}
@@ -256,9 +250,12 @@ export async function runCanonicalBackfill(
 		const decisions = payload.timeRecordApprovalDecision;
 		if (decisions.length > 0) {
 			await tx.delete(timeRecordApprovalDecision).where(
-				inArray(
-					timeRecordApprovalDecision.recordId,
-					decisions.map((decision) => decision.recordId),
+				and(
+					eq(timeRecordApprovalDecision.organizationId, input.organizationId),
+					inArray(
+						timeRecordApprovalDecision.recordId,
+						decisions.map((decision) => decision.recordId),
+					),
 				),
 			);
 			await tx.insert(timeRecordApprovalDecision).values(decisions);
@@ -278,7 +275,12 @@ export async function runCanonicalBackfill(
 			await tx
 				.update(approvalRequest)
 				.set({ canonicalRecordId: link.canonicalRecordId })
-				.where(eq(approvalRequest.id, link.id));
+				.where(
+					and(
+						eq(approvalRequest.id, link.id),
+						eq(approvalRequest.organizationId, input.organizationId),
+					),
+				);
 		}
 	});
 
@@ -379,16 +381,6 @@ async function insertIfPresent<TTable, TValue>(
 	}
 
 	await tx.insert(table).values(values).onConflictDoNothing();
-}
-
-function mapApprovalStatusToAction(
-	status: LegacyApprovalStatus,
-): "submitted" | "approved" | "rejected" {
-	if (status === "pending") {
-		return "submitted";
-	}
-
-	return status;
 }
 
 function mapAbsenceToInterval(

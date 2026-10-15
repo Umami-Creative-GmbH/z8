@@ -27,9 +27,9 @@ import "server-only";
  * `WORK_RECORD_LOCK_ORDER`.
  */
 import type { SealedWorkTransactionScope } from "../work-transaction";
-import type { DivideWorkRecord, WorkRecordChange, WorkRecordRefusal } from "./change";
-import type { AmendWorkRecord } from "./amend-change";
 import { amendWorkRecord, type WorkAmendment } from "./amend";
+import type { AmendWorkRecord } from "./amend-change";
+import type { DivideWorkRecord, WorkRecordChange, WorkRecordRefusal } from "./change";
 import { createWorkRecord, type WorkCreation } from "./create";
 import { createNewWorkRecord, type NewWorkCreation } from "./create-new";
 import type { CreateNewWork } from "./create-new-plan";
@@ -39,14 +39,10 @@ import type { DeleteWorkRecord } from "./delete-change";
 import { divideWorkRecord, type WorkDivision } from "./divide";
 import { divideByOwedBreak, type OwedBreakDivision } from "./divide-owed-break";
 import type { DivideByOwedBreak, OwedBreakNotRequired } from "./owed-break";
-import {
-	attachWorkRecord,
-	repairWorkRecord,
-	type WorkAttachment,
-	type WorkRepair,
-} from "./repair";
+import { attachWorkRecord, repairWorkRecord, type WorkAttachment, type WorkRepair } from "./repair";
 import type { AttachWorkRecord, RepairWorkRecord } from "./repair-change";
 
+export type { AmendedEntryEvidence, WorkAmendment } from "./amend";
 export {
 	type AdoptedEndpoint,
 	type AmendAttributionPatch,
@@ -59,10 +55,6 @@ export {
 	type ToleratedDrift,
 	type WorkApprovalDecision,
 } from "./amend-change";
-export type { AmendedEntryEvidence, WorkAmendment } from "./amend";
-export type { WorkDeletion } from "./delete";
-export type { DeleteWorkRecord } from "./delete-change";
-
 export type {
 	DivideWorkRecord,
 	DivisionHalf,
@@ -82,13 +74,17 @@ export type {
 	NewWorkOrigin,
 } from "./create-new-plan";
 export type { CompletingLiveWork, CreateWorkRecord } from "./create-plan";
-export type { AppendedEntryEvidence, DividedHalf, WorkDivision } from "./divide";
+export type { WorkDeletion } from "./delete";
+export type { DeleteWorkRecord } from "./delete-change";
+export type { DividedHalf, WorkDivision } from "./divide";
 export type { OwedBreakDivision } from "./divide-owed-break";
 export {
 	type EmployeeWorkHistoryErasure,
 	eraseEmployeeWorkHistory,
 } from "./erase-history";
 export { workRecordScopeForFinalizer } from "./finalizer-scope";
+export { CompletedWorkIntegrityError, earliestStartDate } from "./integrity";
+export { correctOpenWorkRecord, type OpenWorkRecordCorrection } from "./open-record";
 export type {
 	DivideByOwedBreak,
 	OwedBreak,
@@ -96,25 +92,24 @@ export type {
 	OwedBreakNotRequired,
 	OwedBreakTakenBefore,
 } from "./owed-break";
+export type { AppendedEntryEvidence } from "./pair-writer";
 export { readWorkRecord, type WorkRecord } from "./read";
-export { advanceWorkRevision } from "./revision";
-export { correctOpenWorkRecord, type OpenWorkRecordCorrection } from "./open-record";
 export {
 	CompletedWorkReviewRequiredError,
 	isWorkRecordRefusal,
 	orRefuse,
 	refusalError,
 } from "./refusals";
-export { WORK_RECORD_LOCK_ORDER, type WorkRecordKey } from "./rows";
-export type { WorkSegment } from "./segment";
-export type { WorkAttributionPatch } from "./work-attribution";
-
 export type { WorkAttachment, WorkRepair } from "./repair";
 export type {
 	AttachWorkRecord,
 	RepairWorkRecord,
 	WorkRecordResolution,
 } from "./repair-change";
+export { advanceWorkRevision } from "./revision";
+export { WORK_RECORD_LOCK_ORDER, type WorkRecordKey } from "./rows";
+export type { WorkSegment } from "./segment";
+export type { WorkAttributionPatch } from "./work-attribution";
 
 /** The applied result of each change. */
 export type WorkRecordResult<C extends WorkRecordChange> = C extends DivideWorkRecord

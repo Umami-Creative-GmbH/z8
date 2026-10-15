@@ -1,5 +1,6 @@
 import "server-only";
 
+import { auditLog } from "@/db/schema";
 import { instantToCanonicalString, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import {
@@ -7,6 +8,7 @@ import {
 	type AmendCompletedWorkCommand,
 	type AmendCompletedWorkInput,
 	type AmendCompletedWorkIntent,
+	type AmendCompletedWorkResult,
 	replayCommittedAmendment,
 	replayOrAmendCompletedWork,
 } from "@/lib/time-tracking/amend-completed-work";
@@ -22,6 +24,7 @@ import {
 	workVehicleUseRequestValue,
 } from "./vehicle-use/work-vehicle-use";
 import type { WorkLocationType } from "./work-location";
+import type { WorkTransactionClient } from "./work-transaction";
 
 export interface AdminWorkPeriodTimeEditInput {
 	organizationId: string;
@@ -89,8 +92,7 @@ function adminEditCommand(input: AdminEditIdentity): AmendCompletedWorkCommand {
  * preflight. Null when nothing was committed with this submission identity.
  */
 export async function replayAdminWorkPeriodTimeEdit(
-	input: AdminEditIdentity &
-		Pick<AdminWorkPeriodTimeEditInput, "organizationId" | "actorUserId">,
+	input: AdminEditIdentity & Pick<AdminWorkPeriodTimeEditInput, "organizationId" | "actorUserId">,
 ): Promise<AdminWorkPeriodTimeEditResult | null> {
 	const receipt = await replayCommittedAmendment({
 		organizationId: input.organizationId,
@@ -106,9 +108,7 @@ export async function replayAdminWorkPeriodTimeEdit(
 		: null;
 }
 
-function adminEditIntent(
-	input: AdminWorkPeriodTimeEditInput,
-): AmendCompletedWorkIntent {
+function adminEditIntent(input: AdminWorkPeriodTimeEditInput): AmendCompletedWorkIntent {
 	const endpoint = (timestamp: Date, original: Date) =>
 		timestamp.getTime() === original.getTime()
 			? { kind: "preserve" as const }
@@ -159,8 +159,7 @@ export async function applyAdminWorkPeriodTimeEdit(
 		);
 	} catch (error) {
 		throw new ValidationError({
-			message:
-				error instanceof Error ? error.message : "Invalid work period range",
+			message: error instanceof Error ? error.message : "Invalid work period range",
 			field: "timestamp",
 		});
 	}
@@ -190,10 +189,56 @@ export async function applyAdminWorkPeriodTimeEdit(
 				request: { ipAddress: input.ipAddress, deviceInfo: input.deviceInfo },
 			};
 			const receipt = await replayOrAmendCompletedWork(scope, amendment);
+			// A replay recorded its audit row when it was executed.
+			if (receipt.disposition === "executed") {
+				await recordAttributionAudit(scope.db, input, receipt.result);
+			}
 			return {
 				workPeriodId: receipt.result.workPeriodId,
 				employeeId: input.expected.employeeId,
 			};
 		},
 	);
+}
+
+/**
+ * The audit row of a location or vehicle-use change, in either admission
+ * (#1226): what the work held before and after, the reason and the request.
+ */
+async function recordAttributionAudit(
+	tx: WorkTransactionClient,
+	input: AdminWorkPeriodTimeEditInput,
+	result: AmendCompletedWorkResult,
+): Promise<void> {
+	const { changes, source, segment } = result;
+	if (!changes.workLocation && !changes.vehicleUse) return;
+	await tx.insert(auditLog).values({
+		organizationId: input.organizationId,
+		entityType: "work_period",
+		entityId: result.workPeriodId,
+		action: "update",
+		performedBy: input.actorUserId,
+		employeeId: result.owner.employeeId,
+		changes: JSON.stringify({
+			...(changes.workLocation
+				? {
+						workLocationType: {
+							before: source.attribution.workLocationType,
+							after: segment.attribution.workLocationType,
+						},
+					}
+				: {}),
+			...(changes.vehicleUse
+				? {
+						vehicleUse: {
+							before: source.attribution.vehicleUse ?? null,
+							after: segment.attribution.vehicleUse ?? null,
+						},
+					}
+				: {}),
+		}),
+		metadata: JSON.stringify({ reason: input.notes }),
+		ipAddress: input.ipAddress,
+		userAgent: input.deviceInfo,
+	});
 }

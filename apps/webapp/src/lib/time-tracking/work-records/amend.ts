@@ -12,15 +12,8 @@ import "server-only";
  * work records, not in the data: it throws and the transaction rolls back.
  */
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import {
-	timeEntry,
-	timeRecord,
-	timeRecordAllocation,
-	timeRecordWork,
-	workPeriod,
-} from "@/db/schema";
+import { timeEntry, timeRecord, workPeriod } from "@/db/schema";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
-import { CompletedWorkIntegrityError } from "../close-active-work";
 import { closedRangeTouchedByWork } from "../closed-months/rules";
 import { closedRangesForEmployee } from "../closed-months/store";
 import {
@@ -39,25 +32,22 @@ import {
 } from "./amend-change";
 import type { AmendmentPlan } from "./amend-plan";
 import type { WorkRecordExpected, WorkRecordRefusal } from "./change";
-import type { AppendedEntryEvidence } from "./divide";
 import { applyWrittenWorkEffects, sendBackChangedWork } from "./effects";
 import { type EntryDraft, entryWriterFor } from "./entry-writer";
+import { CompletedWorkIntegrityError } from "./integrity";
+import {
+	type AppendedEntryEvidence,
+	appendedEvidence,
+	assertWrittenAgreement,
+	lockedCompletedWork,
+	type WrittenPair,
+	writeCanonicalAttribution,
+} from "./pair-writer";
 import { planChange } from "./plan";
-import { expectedOf, matchesExpected, pairOf } from "./read";
-import { recordAgreement } from "./record-agreement";
-import {
-	type CanonicalWorkRows,
-	selectWorkRecordRows,
-	type TimeEntryRow,
-	type WorkPeriodRow,
-	type WorkRecordRows,
-} from "./rows";
+import { expectedOf, pairOf } from "./read";
+import type { CanonicalWorkRows, TimeEntryRow, WorkPeriodRow, WorkRecordRows } from "./rows";
 import { type WorkSegment, workSegment } from "./segment";
-import {
-	type CanonicalAllocationShape,
-	WorkAttribution,
-	type WorkAttributionPatch,
-} from "./work-attribution";
+import { WorkAttribution, type WorkAttributionPatch } from "./work-attribution";
 
 /** One correction entry an amendment appended or adopted, with the endpoint it replaces. */
 export type AmendedEntryEvidence = AppendedEntryEvidence & {
@@ -96,39 +86,22 @@ export async function amendWorkRecord(
 	change: AmendWorkRecord,
 ): Promise<WorkAmendment | WorkRecordRefusal> {
 	const { organizationId, employeeId } = change;
-	scope.assertEmployee(organizationId, employeeId);
+	const locked = await lockedCompletedWork(scope, change);
+	if ("kind" in locked) return locked;
 	const tx = scope.db;
-	const workPeriodId = change.expected.workPeriodId;
-	const locked = await selectWorkRecordRows(
-		tx,
-		{ organizationId, employeeId, workPeriodId },
-		{ lock: true },
-	);
-	if (!locked) return { kind: "not_found", workPeriodId };
 	const { period, clockIn, clockOut, canonical } = locked;
-	if (!matchesExpected(change.expected, period)) {
-		return { kind: "stale", current: { revision: period.graphRevision } };
-	}
-	if (period.isActive || !period.endTime || !period.clockOutId) return { kind: "work_running" };
-	if (!clockIn || !clockOut) return { kind: "endpoint_entry_missing" };
 
 	const writer = entryWriterFor(scope, {
 		organizationId,
 		employeeId,
 		operation: change.times?.appendOperation ?? "completed_work_correction",
 	});
-	// In append admission a superseded endpoint was corrected by someone else. In
-	// legacy admission a split's generated half keeps the source clock-out its
-	// new clock-out superseded (#1219): it still ends that half, so it is amendable.
-	if (writer.admission === "append" && (clockIn.isSuperseded || clockOut.isSuperseded)) {
-		return { kind: "endpoint_superseded" };
-	}
 	const endpoints = await resolvedEndpoints(tx, change, change.times ?? {}, {
 		clockIn,
 		clockOut,
 	});
 	if (endpoints === "adopted_entry_mismatch") return { kind: "adopted_entry_mismatch" };
-	const patch = await resolvedPatch(tx, change, WorkAttribution.fromWorkPeriod(period));
+	const patch = await resolvedPatch(tx, change, period.projectId);
 	const plannable = (endpoint: ResolvedEndpoint) => ({
 		at: endpoint.at,
 		adopted: endpoint.adopted !== undefined,
@@ -222,8 +195,8 @@ export async function amendWorkRecord(
 		organizationId,
 		employeeId,
 		writtenStarts: [
-			{ at: before.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0 },
-			{ at: after.startAt, utcOffsetMinutes: newClockIn.utcOffsetMinutes ?? 0 },
+			{ at: before.startAt, utcOffsetMinutes: clockIn.utcOffsetMinutes },
+			{ at: after.startAt, utcOffsetMinutes: newClockIn.utcOffsetMinutes },
 		],
 	});
 
@@ -264,10 +237,7 @@ export async function amendWorkRecord(
 				endpoint,
 				replacesEntryId: moved[index]?.replaces.id ?? "",
 				adopted: moved[index]?.adopted !== undefined,
-				entryId: entry.id,
-				hash: entry.hash,
-				previousEntryId: entry.previousEntryId,
-				previousHash: entry.previousHash,
+				...appendedEvidence(entry),
 			})),
 			entries: corrections.map(({ entry }) => entry),
 		},
@@ -283,12 +253,13 @@ export async function amendWorkRecord(
 export async function resolvedPatch(
 	tx: WorkTransactionClient,
 	change: Pick<AmendWorkRecord, "organizationId" | "attribution">,
-	source: WorkAttribution,
+	/** The work's stored project, which the patch keeps or replaces. */
+	sourceProjectId: string | null,
 ): Promise<WorkAttributionPatch | undefined> {
 	if (!change.attribution) return undefined;
 	const { project, ...rest } = change.attribution;
-	const projectId = project === undefined ? (source.project?.projectId ?? null) : project;
-	const projectChanged = projectId !== (source.project?.projectId ?? null);
+	const projectId = project === undefined ? sourceProjectId : project;
+	const projectChanged = projectId !== sourceProjectId;
 	const needsProject = (projectChanged && rest.billable === undefined) || rest.billable === true;
 	const facts = needsProject
 		? await readProjectBillability(tx, change.organizationId, projectId)
@@ -452,8 +423,6 @@ export async function adoptRecordedEntry(
 	return activated;
 }
 
-export type WrittenPair = { period: WorkPeriodRow } & CanonicalWorkRows;
-
 /**
  * The amended pair: compare-and-set on the work period's revision, which
  * advances; the canonical work record takes the same interval and minutes,
@@ -532,102 +501,11 @@ async function writeAmendedPair(
 		.returning();
 	if (!writtenRecord) throw new CompletedWorkIntegrityError("Canonical work record update failed");
 
-	let detail = canonical.detail;
-	const plannedDetail = half.canonical.detail;
-	if (
-		!WorkAttribution.fromCanonical(detail, []).equals(
-			WorkAttribution.fromCanonical(plannedDetail, []),
-		)
-	) {
-		const [writtenDetail] = await tx
-			.update(timeRecordWork)
-			.set({
-				workCategoryId: plannedDetail.workCategoryId,
-				workLocationType: plannedDetail.workLocationType,
-				vehicleKind: plannedDetail.vehicleKind,
-				vehicleId: plannedDetail.vehicleId,
-				odometerStartKm: plannedDetail.odometerStartKm,
-				odometerEndKm: plannedDetail.odometerEndKm,
-				drivenDistanceKm: plannedDetail.drivenDistanceKm,
-			})
-			.where(
-				and(
-					eq(timeRecordWork.recordId, canonical.record.id),
-					eq(timeRecordWork.organizationId, period.organizationId),
-					eq(timeRecordWork.recordKind, "work"),
-				),
-			)
-			.returning();
-		if (!writtenDetail)
-			throw new CompletedWorkIntegrityError("Canonical work detail update failed");
-		detail = writtenDetail;
-	}
-
-	let allocations = canonical.allocations;
-	const plannedProject = half.canonical.allocations.filter(
-		({ allocationKind }) => allocationKind === "project",
-	);
-	if (!sameAllocations(allocations, half.canonical.allocations)) {
-		// Only the project allocation is attribution; cost-centre rows stay as they are.
-		await tx
-			.delete(timeRecordAllocation)
-			.where(
-				and(
-					eq(timeRecordAllocation.recordId, canonical.record.id),
-					eq(timeRecordAllocation.organizationId, period.organizationId),
-					eq(timeRecordAllocation.allocationKind, "project"),
-				),
-			);
-		const inserted: CanonicalWorkRows["allocations"] = [];
-		for (const allocation of plannedProject) {
-			const [row] = await tx
-				.insert(timeRecordAllocation)
-				.values({
-					organizationId: period.organizationId,
-					recordId: canonical.record.id,
-					allocationKind: allocation.allocationKind,
-					projectId: allocation.projectId,
-					taskId: allocation.taskId,
-					costCenterId: allocation.costCenterId,
-					weightPercent: allocation.weightPercent,
-					isBillable: allocation.isBillable,
-				})
-				.returning();
-			if (!row) throw new CompletedWorkIntegrityError("Canonical allocation insert failed");
-			inserted.push(row);
-		}
-		allocations = [
-			...allocations.filter(({ allocationKind }) => allocationKind !== "project"),
-			...inserted,
-		];
-	}
+	const { detail, allocations } = await writeCanonicalAttribution(tx, {
+		organizationId: period.organizationId,
+		recordId: canonical.record.id,
+		stored: canonical,
+		planned: half.canonical,
+	});
 	return { period: written, record: writtenRecord, detail, allocations };
-}
-
-/** The written rows must agree; anything else is a defect of work records. */
-export function assertWrittenAgreement(written: WrittenPair): void {
-	const agreement = recordAgreement(written.period, written);
-	if (!agreement.agrees) {
-		throw new CompletedWorkIntegrityError(
-			`Work records wrote a pair that disagrees on ${agreement.disagreements.join(", ")}`,
-		);
-	}
-}
-
-function sameAllocations(
-	stored: readonly CanonicalAllocationShape[],
-	planned: readonly CanonicalAllocationShape[],
-): boolean {
-	const key = (allocation: CanonicalAllocationShape) =>
-		[
-			allocation.allocationKind,
-			allocation.projectId,
-			allocation.taskId,
-			allocation.costCenterId,
-			allocation.weightPercent,
-			allocation.isBillable,
-		].join("|");
-	const left = stored.map(key).sort();
-	const right = planned.map(key).sort();
-	return left.length === right.length && left.every((value, index) => value === right[index]);
 }

@@ -9,10 +9,10 @@ import "server-only";
 import { carryInvoicedWorkToSplit } from "@/lib/billable-time/hand-off/invoiced-work";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import { earliestStartDate } from "../close-active-work";
 import type { WorkInterval } from "../closed-months/rules";
 import { sendBackChangedPeriodSubmissions } from "../period-submissions/submission-send-back";
 import type { WorkTransactionClient } from "../work-transaction";
+import { earliestStartDate } from "./integrity";
 
 type EffectScope = { organizationId: string; employeeId: string };
 

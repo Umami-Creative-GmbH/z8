@@ -17,16 +17,14 @@ import {
 import { splitWorkVehicleUse } from "../vehicle-use/split-vehicle-use";
 import { deriveWorkDurationMinutes, WorkIntervalError } from "../work-duration";
 import { type AmendmentPlan, type PlannableAmendment, planAmendment } from "./amend-plan";
-import type { DivideWorkRecord, WorkRecordRefusal } from "./change";
-import {
-	type AgreementCanonicalRecord,
-	type AgreementWorkPeriod,
-	recordAgreement,
-} from "./record-agreement";
+import type { DivideWorkRecord, DivisionHalf, WorkRecordRefusal } from "./change";
+import { agreeingPair, plannedPairsRefusal } from "./pair-agreement";
+import type { AgreementCanonicalRecord, AgreementWorkPeriod } from "./record-agreement";
 import {
 	type CanonicalAllocationShape,
 	UnrepresentableWorkAttributionError,
 	WorkAttribution,
+	type WorkAttributionPatch,
 } from "./work-attribution";
 
 /** A completed work period and its canonical work record, as the rule compares them. */
@@ -54,11 +52,13 @@ export type DivisionPlan = {
 
 export type WorkRecordPlan = DivisionPlan | AmendmentPlan;
 
-/** The policy part of a division: everything the plan needs besides the locked pair. */
-export type PlannableDivision = Pick<
-	DivideWorkRecord,
-	"kind" | "at" | "odometerKm" | "attribution"
->;
+/**
+ * The policy part of a division: everything the plan needs besides the locked
+ * pair, with an override's project billable default already read.
+ */
+export type PlannableDivision = Pick<DivideWorkRecord, "kind" | "at" | "odometerKm"> & {
+	attribution?: { half: DivisionHalf; patch: WorkAttributionPatch };
+};
 
 /** The policy part of a change: everything the plan needs besides the locked pair. */
 export type PlannableChange = PlannableDivision | PlannableAmendment;
@@ -109,21 +109,9 @@ function planDivision(
 	change: PlannableDivision,
 	arithmetic: WorkDurationArithmetic,
 ): DivisionPlan | WorkRecordRefusal {
-	const { period, canonical } = pair;
-	if (period.endTime === null) return { kind: "work_running" };
-	if (!canonical) return { kind: "canonical_record_missing" };
-	// Completed work without minutes on either side is not a pair that can be divided.
-	if (period.durationMinutes === null) {
-		return { kind: "canonical_divergence", found: "locked_pair", disagreements: ["duration"] };
-	}
-	const before = recordAgreement(period, canonical);
-	if (!before.agrees) {
-		return {
-			kind: "canonical_divergence",
-			found: "locked_pair",
-			disagreements: before.disagreements,
-		};
-	}
+	const locked = agreeingPair(pair);
+	if ("kind" in locked) return locked;
+	const { period, canonical } = locked;
 	const startAt = instantFromDate(period.startTime);
 	const endAt = instantFromDate(period.endTime);
 	if (compareInstants(change.at, startAt) <= 0 || compareInstants(change.at, endAt) >= 0) {
@@ -169,17 +157,7 @@ function planDivision(
 		retained: plannedHalf(segments.first, retained, canonical.allocations, approval),
 		generated: plannedHalf(segments.second, generated, canonical.allocations, approval),
 	};
-	for (const half of [plan.retained, plan.generated]) {
-		const after = recordAgreement(half.period, half.canonical);
-		if (!after.agrees) {
-			return {
-				kind: "canonical_divergence",
-				found: "planned_half",
-				disagreements: after.disagreements,
-			};
-		}
-	}
-	return plan;
+	return plannedPairsRefusal([plan.retained, plan.generated], "planned_half") ?? plan;
 }
 
 /**

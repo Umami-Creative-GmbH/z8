@@ -14,6 +14,7 @@ import type { BreakPolicyRegulation } from "../break-policy-calculation";
 import { vehicleUseAcrossAutomaticBreak } from "../vehicle-use/split-vehicle-use";
 import type { WorkRecordRefusal } from "./change";
 import type { OwedBreak, OwedBreakNotRequired } from "./owed-break";
+import { agreeingPair, plannedPairsRefusal } from "./pair-agreement";
 import {
 	type PlannedHalf,
 	plannedHalf,
@@ -21,7 +22,6 @@ import {
 	type WorkRecordPair,
 	workDurationMinutes,
 } from "./plan";
-import { recordAgreement } from "./record-agreement";
 import { WorkAttribution } from "./work-attribution";
 
 export type OwedBreakPlan = {
@@ -31,35 +31,14 @@ export type OwedBreakPlan = {
 	generated: PlannedHalf;
 };
 
-/**
- * Why the locked pair cannot be divided at all, or null: running work, a
- * missing canonical work record, or a pair that is not in record agreement.
- */
-export function lockedPairRefusal(pair: WorkRecordPair): WorkRecordRefusal | null {
-	const { period, canonical } = pair;
-	if (period.endTime === null) return { kind: "work_running" };
-	if (!canonical) return { kind: "canonical_record_missing" };
-	// Completed work without minutes on either side is not a pair that can be divided.
-	if (period.durationMinutes === null) {
-		return { kind: "canonical_divergence", found: "locked_pair", disagreements: ["duration"] };
-	}
-	const before = recordAgreement(period, canonical);
-	return before.agrees
-		? null
-		: { kind: "canonical_divergence", found: "locked_pair", disagreements: before.disagreements };
-}
-
 export function planOwedBreakDivision(
 	pair: WorkRecordPair,
 	input: { regulation: BreakPolicyRegulation | null; alreadyTakenBreakMinutes: number },
 	arithmetic: WorkDurationArithmetic,
 ): OwedBreakPlan | OwedBreakNotRequired | WorkRecordRefusal {
-	const refused = lockedPairRefusal(pair);
-	if (refused) return refused;
-	const { period, canonical } = pair;
-	if (period.endTime === null || period.durationMinutes === null || !canonical) {
-		throw new Error("A checked pair is completed and has its canonical work record");
-	}
+	const locked = agreeingPair(pair);
+	if ("kind" in locked) return locked;
+	const { period, canonical } = locked;
 
 	const startAt = instantFromDate(period.startTime);
 	const endAt = instantFromDate(period.endTime);
@@ -107,15 +86,5 @@ export function planOwedBreakDivision(
 			approval,
 		),
 	};
-	for (const half of [plan.retained, plan.generated]) {
-		const after = recordAgreement(half.period, half.canonical);
-		if (!after.agrees) {
-			return {
-				kind: "canonical_divergence",
-				found: "planned_half",
-				disagreements: after.disagreements,
-			};
-		}
-	}
-	return plan;
+	return plannedPairsRefusal([plan.retained, plan.generated], "planned_half") ?? plan;
 }

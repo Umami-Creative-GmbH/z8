@@ -112,7 +112,6 @@ export async function fakeWorkRecordChange(
 			kind: "attached",
 			after,
 			segment: { canonicalRecordId: FAKE_CANONICAL_RECORD_ID, durationMinutes: 0 },
-			effects,
 		};
 	}
 	const [period] = await rowsOf(db, workPeriod, eq(workPeriod.id, change.expected.workPeriodId));

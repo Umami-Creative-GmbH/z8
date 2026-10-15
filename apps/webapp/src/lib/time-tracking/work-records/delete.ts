@@ -15,22 +15,18 @@ import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
 import { timeRecord, workPeriod } from "@/db/schema";
 import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
-import { CompletedWorkIntegrityError } from "../close-active-work";
 import { closedRangeTouchedByWork } from "../closed-months/rules";
 import { closedRangesForEmployee } from "../closed-months/store";
 import type { SealedWorkTransactionScope } from "../work-transaction";
-import {
-	type AmendedEntryEvidence,
-	adoptRecordedEntry,
-	assertWrittenAgreement,
-	resolvedEndpoints,
-} from "./amend";
+import { type AmendedEntryEvidence, adoptRecordedEntry, resolvedEndpoints } from "./amend";
 import type { WorkRecordRefusal } from "./change";
 import type { DeleteWorkRecord } from "./delete-change";
 import { planDeletion } from "./delete-plan";
 import { applyWrittenWorkEffects, sendBackChangedWork } from "./effects";
-import { matchesExpected, pairOf } from "./read";
-import { type CanonicalWorkRows, selectWorkRecordRows, type WorkPeriodRow } from "./rows";
+import { CompletedWorkIntegrityError } from "./integrity";
+import { appendedEvidence, assertWrittenAgreement, lockedCompletedWork } from "./pair-writer";
+import { pairOf } from "./read";
+import type { CanonicalWorkRows, WorkPeriodRow } from "./rows";
 import { type WorkSegment, workSegment } from "./segment";
 import { WorkAttribution } from "./work-attribution";
 
@@ -60,27 +56,13 @@ export async function deleteWorkRecord(
 	change: DeleteWorkRecord,
 ): Promise<WorkDeletion | WorkRecordRefusal> {
 	const { organizationId, employeeId } = change;
-	scope.assertEmployee(organizationId, employeeId);
-	const tx = scope.db;
-	const workPeriodId = change.expected.workPeriodId;
-	const locked = await selectWorkRecordRows(
-		tx,
-		{ organizationId, employeeId, workPeriodId },
-		{ lock: true },
-	);
-	if (!locked) return { kind: "not_found", workPeriodId };
-	const { period, clockIn, clockOut, canonical } = locked;
-	if (!matchesExpected(change.expected, period)) {
-		return { kind: "stale", current: { revision: period.graphRevision } };
-	}
-	if (period.isActive || !period.endTime || !period.clockOutId) return { kind: "work_running" };
-	if (!clockIn || !clockOut) return { kind: "endpoint_entry_missing" };
 	// Nothing is appended; the admission decides only how a superseded endpoint
 	// reads, as for an amendment.
+	const locked = await lockedCompletedWork(scope, change);
+	if ("kind" in locked) return locked;
+	const tx = scope.db;
 	const admission = scope.admission;
-	if (admission === "append" && (clockIn.isSuperseded || clockOut.isSuperseded)) {
-		return { kind: "endpoint_superseded" };
-	}
+	const { period, clockIn, clockOut, canonical } = locked;
 	const markers = await resolvedEndpoints(tx, change, change.markers, { clockIn, clockOut });
 	if (markers === "adopted_entry_mismatch") return { kind: "adopted_entry_mismatch" };
 	const markedIn = markers.clockIn?.adopted;
@@ -170,8 +152,8 @@ export async function deleteWorkRecord(
 		organizationId,
 		employeeId,
 		writtenStarts: [
-			{ at: before.start, utcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0 },
-			{ at: sentinel.startAt, utcOffsetMinutes: adoptedIn.utcOffsetMinutes ?? 0 },
+			{ at: before.start, utcOffsetMinutes: clockIn.utcOffsetMinutes },
+			{ at: sentinel.startAt, utcOffsetMinutes: adoptedIn.utcOffsetMinutes },
 		],
 	});
 
@@ -184,10 +166,7 @@ export async function deleteWorkRecord(
 		endpoint,
 		replacesEntryId: replaces.id,
 		adopted: true,
-		entryId: entry.id,
-		hash: entry.hash,
-		previousEntryId: entry.previousEntryId,
-		previousHash: entry.previousHash,
+		...appendedEvidence(entry),
 	});
 	return {
 		kind: "deleted",

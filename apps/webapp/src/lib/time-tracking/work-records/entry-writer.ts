@@ -21,10 +21,10 @@ import { timeEntry } from "@/db/schema";
 import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "../blockchain";
-import { CompletedWorkIntegrityError } from "../close-active-work";
 import { type AppendReviewRequirement, admitTimeEntryAppend } from "../time-entry-append";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "../work-transaction";
 import type { NewEntryProvenance } from "./change";
+import { CompletedWorkIntegrityError } from "./integrity";
 import type { WorkDurationArithmetic } from "./plan";
 import type { TimeEntryRow } from "./rows";
 
@@ -113,7 +113,7 @@ function appendEntryWriter(tx: WorkTransactionClient, input: EntryScope): WorkRe
 						const written: TimeEntryRow[] = [];
 						for (const draft of drafts) {
 							const entry = await insertAppendedEntry(tx, input, draft, previous);
-							if (draft.replaces) await supersedeReplacedEntry(tx, draft.replaces, entry);
+							if (draft.replaces) await supersedeEndpoint(tx, draft.replaces, entry);
 							await append.record({
 								id: entry.id,
 								hash: entry.hash,
@@ -220,9 +220,9 @@ function legacyEntryWriter(tx: WorkTransactionClient, input: EntryScope): WorkRe
 						for (const draft of drafts) {
 							const entry = await insertAppendedEntry(tx, input, draft, previous);
 							if (draft.takesOverFrom && draft.notes) {
-								await supersedeTakenOverEntry(tx, draft.takesOverFrom, entry);
+								await supersedeEndpoint(tx, draft.takesOverFrom, entry);
 							}
-							if (draft.replaces) await supersedeReplacedEntry(tx, draft.replaces, entry);
+							if (draft.replaces) await supersedeEndpoint(tx, draft.replaces, entry);
 							previous = { id: entry.id, hash: entry.hash };
 							written.push(entry);
 						}
@@ -234,11 +234,17 @@ function legacyEntryWriter(tx: WorkTransactionClient, input: EntryScope): WorkRe
 	};
 }
 
-async function supersedeTakenOverEntry(
+/**
+ * Supersedes an endpoint, unless that one already is: a legacy split's generated
+ * half keeps the source clock-out an earlier split superseded, and it stays
+ * superseded by what superseded it first.
+ */
+async function supersedeEndpoint(
 	tx: WorkTransactionClient,
 	endpoint: TimeEntryRow,
 	by: TimeEntryRow,
 ): Promise<void> {
+	if (endpoint.isSuperseded) return;
 	const superseded = await tx
 		.update(timeEntry)
 		.set({ isSuperseded: true, supersededById: by.id })
@@ -254,14 +260,4 @@ async function supersedeTakenOverEntry(
 	if (superseded.length !== 1) {
 		throw new CompletedWorkIntegrityError("Endpoint changed under its lock");
 	}
-}
-
-/** A correction supersedes the endpoint it replaces, unless that one already is. */
-async function supersedeReplacedEntry(
-	tx: WorkTransactionClient,
-	endpoint: TimeEntryRow,
-	by: TimeEntryRow,
-): Promise<void> {
-	if (endpoint.isSuperseded) return;
-	await supersedeTakenOverEntry(tx, endpoint, by);
 }

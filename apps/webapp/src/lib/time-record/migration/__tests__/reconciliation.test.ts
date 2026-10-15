@@ -68,6 +68,7 @@ function legacyWork(id: string, overrides: Record<string, unknown> = {}) {
 	return {
 		id,
 		canonicalRecordId: id,
+		clockOutId: `out-${id}`,
 		isActive: false,
 		deletedAt: null,
 		startTime: new Date("2026-01-15T08:00:00Z"),
@@ -127,6 +128,7 @@ const reconciled = {
 	missingProjectAllocationRows: 0,
 	missingWorkDetailRows: 0,
 	divergentWorkRecords: 0,
+	unattachableWorkRecords: 0,
 	blockingMismatchCount: 0,
 };
 
@@ -189,6 +191,31 @@ describe("reconcileLegacyToCanonical", () => {
 			missingWorkDetailRows: 1,
 			missingProjectAllocationRows: 1,
 			divergentWorkRecords: 0,
+		});
+	});
+
+	// spec-2 M1: work attach refuses can only be repaired through work diagnostics, so
+	// it is reported without holding payroll back.
+	it("reports unlinked work attach would refuse without blocking", async () => {
+		const unlinked = { canonicalRecordId: null, projectId: "project-1" };
+
+		const result = await reconcileWork({
+			legacy: [
+				legacyWork("no-minutes", { ...unlinked, durationMinutes: null }),
+				legacyWork("no-clock-out", { ...unlinked, clockOutId: null }),
+				legacyWork("attachable", unlinked),
+			],
+			canonical: [],
+		});
+
+		expect(result).toEqual({
+			...reconciled,
+			workCountMismatch: 1,
+			missingWorkCanonicalRecords: 1,
+			missingWorkDetailRows: 1,
+			missingProjectAllocationRows: 1,
+			unattachableWorkRecords: 2,
+			blockingMismatchCount: 4,
 		});
 	});
 

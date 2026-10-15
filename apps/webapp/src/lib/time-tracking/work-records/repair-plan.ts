@@ -11,12 +11,9 @@
  */
 import { compareInstants, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { WorkRecordRefusal } from "./change";
+import { plannedPairsRefusal } from "./pair-agreement";
 import { type PlannedHalf, plannedHalf } from "./plan";
-import {
-	type AgreementWorkPeriod,
-	type RecordAgreementFacet,
-	recordAgreement,
-} from "./record-agreement";
+import type { AgreementWorkPeriod, RecordAgreementFacet } from "./record-agreement";
 import { diagnoseRecordAgreement, type StoredCanonicalRecord } from "./record-agreement-diagnosis";
 import {
 	type CanonicalAllocationShape,
@@ -60,9 +57,17 @@ export type RepairPlan = {
 
 type StoredPeriod = AgreementWorkPeriod;
 
-/** Attach: the canonical work record the completed work period describes. */
-export function planAttachment(period: StoredPeriod): RepairPlan | WorkRecordRefusal {
-	return planned(period, null, {});
+/**
+ * Attach: the canonical work record the completed work period describes, with
+ * the resolution's minutes and attribution where the period cannot be
+ * represented as it stands (no minutes, billable or task work without a
+ * project). Both records then hold what the resolution names.
+ */
+export function planAttachment(
+	period: StoredPeriod,
+	resolution: PlannableRepair = {},
+): RepairPlan | WorkRecordRefusal {
+	return planned(period, null, resolution);
 }
 
 /**
@@ -140,13 +145,5 @@ function planned(
 		// An attached record takes the period's approval state; a repair never decides one.
 		record: canonical?.record.approvalState ?? period.approvalStatus,
 	});
-	const after = recordAgreement(result.period, result.canonical);
-	if (!after.agrees) {
-		return {
-			kind: "canonical_divergence",
-			found: "planned_repair",
-			disagreements: after.disagreements,
-		};
-	}
-	return { result, disagreements: [] };
+	return plannedPairsRefusal([result], "planned_repair") ?? { result, disagreements: [] };
 }

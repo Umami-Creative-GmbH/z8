@@ -14,8 +14,14 @@ export const workRecordsSuitePatterns = [
   { pattern: `${actions}/clocking.automatic-break*.integration.test.ts` },
   { pattern: `${actions}/clocking.policy-break-split*.integration.test.ts` },
   { pattern: `${actions}/correction-lifecycle*.integration.test.ts` },
-  // Time-correction finalization.
+  // Time-correction finalization, and the ordinary work-period approval on both records (#1227).
   { pattern: "apps/webapp/src/lib/approvals/server/time-correction-approvals*.integration.test.ts" },
+  { pattern: "apps/webapp/src/lib/approvals/server/work-period-approvals*.integration.test.ts" },
+  // Creating completed work from live work: clocking (with the clock-out query budget, #1222),
+  // departures and automatic clock-outs.
+  { pattern: "apps/webapp/src/lib/time-tracking/clocking/*.integration.test.ts" },
+  { pattern: "apps/webapp/src/lib/employee-lifecycle/clock-out*.integration.test.ts" },
+  { pattern: "apps/webapp/src/lib/time-tracking/automatic-clock-out/*.integration.test.ts" },
   // Automatic break enforcement divides by the owed break (#1220).
   { pattern: "apps/webapp/src/lib/effect/services/break-enforcement*.integration.test.ts" },
   // New completed work: import review in both admissions and demo data (#1223).

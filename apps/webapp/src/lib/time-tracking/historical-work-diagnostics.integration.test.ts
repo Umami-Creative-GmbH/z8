@@ -376,7 +376,13 @@ describe("historical work diagnostics on PostgreSQL", () => {
 		expect(result.work).toEqual({
 			attached: [first],
 			closedMonthSkips: [],
-			refused: [{ workPeriodId: second, refusal: "canonical_record_present" }],
+			refused: [
+				expect.objectContaining({
+					workPeriodId: second,
+					refusal: "canonical_record_present",
+					reason: "canonical_record_present",
+				}),
+			],
 		});
 		expect((await admin.query("select * from time_record where id = $1", [second])).rows).toEqual(
 			copy.rows,

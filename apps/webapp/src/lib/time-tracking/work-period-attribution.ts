@@ -9,8 +9,7 @@ import {
 	AMEND_COMPLETED_WORK_COMMAND_VERSION,
 	type AmendCompletedWorkInput,
 	type AmendmentAuthority,
-	amendCompletedWork,
-	amendLegacyCompletedWork,
+	replayAmendCompletedWork,
 	replayOrAmendCompletedWork,
 } from "./amend-completed-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
@@ -80,11 +79,6 @@ export async function changeWorkPeriodBillability(
 	await changeWorkPeriodAttribution(input, "owner_manager_or_project_manager");
 }
 
-/** The amendment of the scope's admission: with a receipt in append admission. */
-function amendmentOf(scope: SealedWorkTransactionScope) {
-	return scope.admission === "append" ? amendCompletedWork : amendLegacyCompletedWork;
-}
-
 function expectedSourceOf(period: PeriodSource): AmendCompletedWorkInput["expectedSource"] {
 	return {
 		clockInId: period.clockInId,
@@ -105,7 +99,7 @@ async function changeWorkPeriodAttribution(
 			actorUserId: input.actorUserId,
 		},
 		async (scope) => {
-			await amendmentOf(scope)(scope, {
+			await replayOrAmendCompletedWork(scope, {
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 				actorUserId: input.actorUserId,
@@ -155,8 +149,7 @@ async function changeWorkPeriodAttribution(
  * single billability change: the `work_period_attribution_edit` writer through
  * work records in both admissions, with a receipt in adopted organizations, under
  * the `organization_admin` authority. Work with an unresolved review is refused in
- * both admissions. `unchanged` means the work already had this billability
- * (legacy; adopted organizations refuse a no-change amendment).
+ * both admissions. `unchanged` means the work already had this billability.
  */
 export async function setWorkPeriodBillabilityAsAdmin(
 	scope: SealedWorkTransactionScope,
@@ -200,10 +193,10 @@ export async function setWorkPeriodBillabilityAsAdmin(
 		evaluatedAt: systemClock.nowInstant(),
 		request: { ipAddress: null, deviceInfo: null },
 	};
-	if (scope.admission === "append") {
-		return (await replayOrAmendCompletedWork(scope, amendment)).disposition;
-	}
-	// Legacy admission has no receipt to replay: work already at the billability is unchanged.
+	// A retry replays its committed receipt (append admission commits one).
+	const replayed = await replayAmendCompletedWork(scope, amendment);
+	if (replayed) return replayed.disposition;
+	// Work already at the billability is unchanged, in either admission.
 	const [period] = await scope.db
 		.select({ isBillable: workPeriod.isBillable })
 		.from(workPeriod)
@@ -224,6 +217,5 @@ export async function setWorkPeriodBillabilityAsAdmin(
 		});
 	}
 	if (period.isBillable === input.billable) return "unchanged";
-	await amendLegacyCompletedWork(scope, amendment);
-	return "executed";
+	return (await replayOrAmendCompletedWork(scope, amendment)).disposition;
 }

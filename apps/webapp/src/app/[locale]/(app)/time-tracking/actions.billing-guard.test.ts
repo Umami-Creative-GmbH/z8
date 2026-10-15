@@ -174,7 +174,7 @@ describe("legacy time-tracking action billing guards", () => {
 			"editSameDayTimeEntry",
 			correctionSubmissionSource,
 		);
-		expect(body).toContain("amendLegacyCompletedWork(scope, amendment)");
+		expect(body).toContain("replayOrAmendCompletedWork(scope, amendment)");
 		expect(body).not.toContain("markEmployeeWorkBalanceDirty");
 	});
 

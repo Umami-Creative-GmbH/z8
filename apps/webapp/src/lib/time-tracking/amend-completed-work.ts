@@ -37,13 +37,6 @@ import {
 	authorizeTimeCorrectionCategoryChange,
 	lockTrustedTimeCorrectionEmployeeTeamId,
 } from "@/lib/approvals/server/time-correction-category-authorization";
-import {
-	BOOKABLE_PROJECT_STATUSES,
-	PROJECT_TASK_INELIGIBILITY_MESSAGES,
-	type ProjectTaskIneligibility,
-	taskBookingIneligibility,
-} from "./project-eligibility";
-import { recordedTaskId } from "./task-attribution";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	compareInstants,
@@ -67,31 +60,37 @@ import {
 	planAttributionChange,
 	planCompletedWorkAmendment,
 } from "./amend-completed-work-plan";
+import { canonicalJson } from "./canonical-json";
 import {
 	type AttributionIntent,
 	CompletedWorkCollisionError,
-	CompletedWorkIntegrityError,
 	type CompletedWorkFollowUp,
+	CompletedWorkIntegrityError,
 } from "./close-active-work";
-import { canonicalJson } from "./canonical-json";
 import { monthClosedRefusalOf } from "./closed-months/refusal";
+import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
+import {
+	BOOKABLE_PROJECT_STATUSES,
+	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	type ProjectTaskIneligibility,
+	taskBookingIneligibility,
+} from "./project-eligibility";
+import { recordedTaskId } from "./task-attribution";
 import { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
-import { BillableWorkRefusedError, resolveWorkBillabilityInTransaction } from "./work-billability";
-import { WorkIntervalError } from "./work-duration";
-import { assertWorkVehicleUseChangeAllowed } from "./vehicle-use/work-vehicle-use-eligibility";
 import {
 	type VehicleUseIntent,
 	vehicleUseColumns,
 	vehicleUseFromColumns,
 	type WorkVehicleUse,
 } from "./vehicle-use/work-vehicle-use";
+import { assertWorkVehicleUseChangeAllowed } from "./vehicle-use/work-vehicle-use-eligibility";
+import { BillableWorkRefusedError, resolveWorkBillabilityInTransaction } from "./work-billability";
+import { WorkIntervalError } from "./work-duration";
 import type { WorkLocationType } from "./work-location";
-import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { WorkOccupancyConflictError } from "./work-occupancy";
 import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
-import type { SealedWorkTransactionScope } from "./work-transaction";
 import {
 	type AmendAttributionPatch,
 	type AmendedEndpoint,
@@ -101,6 +100,7 @@ import {
 	readWorkRecord,
 	type WorkSegment,
 } from "./work-records";
+import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const AMEND_COMPLETED_WORK_COMMAND_VERSION = 1;
 export const AMEND_COMPLETED_WORK_RESULT_VERSION = 1;
@@ -753,8 +753,9 @@ function receiptChanges(
 /**
  * Fresh amendment in append admission, with its receipt. The caller has already
  * ruled out committed replay under the same transaction, so an existing receipt
- * with this identity is a collision. Kept for the callers that still choose by
- * admission; new callers use `replayOrAmendCompletedWork` (#1231).
+ * with this identity is a collision. Only the live vehicle-use change runs it
+ * directly (live work, an adopted-only receipt); every completed-work caller uses
+ * `replayOrAmendCompletedWork`, which hides admission (#1231).
  */
 export async function amendCompletedWork(
 	scope: SealedWorkTransactionScope,
@@ -774,25 +775,6 @@ export async function amendCompletedWork(
 	const amended = await amendWork(scope, input);
 	await insertReceipt(scope.db, input, amended.result.workPeriodId, amended.result);
 	return { disposition: "executed", ...amended };
-}
-
-/**
- * The amendment of an organization in legacy admission (#1225): the same
- * caller policy and the same change through work records, whose legacy writer
- * appends any correction entries. Legacy admission commits no receipt, so a
- * retry is not recognized. Kept for the callers that still choose by
- * admission; new callers use `replayOrAmendCompletedWork`, which hides it
- * (#1231).
- */
-export async function amendLegacyCompletedWork(
-	scope: SealedWorkTransactionScope,
-	input: AmendCompletedWorkInput,
-): Promise<AmendCompletedWorkReceipt> {
-	scope.assertEmployee(input.organizationId, input.employeeId);
-	if (scope.admission !== "legacy") {
-		throw new Error("Legacy completed-work amendment requires the legacy work transaction");
-	}
-	return { disposition: "executed", ...(await amendWork(scope, input)) };
 }
 
 /**

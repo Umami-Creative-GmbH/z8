@@ -22,7 +22,7 @@ const state = vi.hoisted(() => ({
 	pendingApproval: vi.fn(),
 	editCapability: vi.fn(),
 	directTransaction: vi.fn(),
-	amendLegacy: vi.fn(),
+	amendWork: vi.fn(),
 	markWorkBalanceDirty: vi.fn(),
 	txCategoryFindFirst: vi.fn(),
 	txAssignmentsFindMany: vi.fn(),
@@ -126,10 +126,6 @@ vi.mock("@/lib/approvals/server/time-correction-approvals", () => ({
 			.returning();
 		return created ?? null;
 	}),
-	runAutoCompletedTimeCorrectionMaintenance: async (input: unknown) => {
-		state.events.push("maintenance");
-		return state.maintenance(input);
-	},
 }));
 
 vi.mock("@/lib/approvals/workflow/runtime", () => ({
@@ -148,11 +144,11 @@ vi.mock("./policy-helpers", () => ({
 	getEditCapabilityForPeriod: state.editCapability,
 }));
 
-// Legacy same-day edits amend through work records (#1226); its PostgreSQL
+// Same-day edits amend through work records in either admission (#1226, #1231); its PostgreSQL
 // suites prove the writes, this suite the caller policy around them.
 vi.mock("@/lib/time-tracking/amend-completed-work", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/time-tracking/amend-completed-work")>()),
-	amendLegacyCompletedWork: state.amendLegacy,
+	replayOrAmendCompletedWork: state.amendWork,
 }));
 
 vi.mock("@/lib/work-balance/service", () => ({
@@ -419,7 +415,7 @@ function configureDirectEdit(selectedPeriod = period) {
 	configure({ kind: "default_created" });
 	state.selectLimit.mockResolvedValue([selectedPeriod]);
 	state.directTransaction.mockImplementation(async (operation) => operation({}));
-	state.amendLegacy.mockReset().mockResolvedValue({
+	state.amendWork.mockReset().mockResolvedValue({
 		disposition: "executed",
 		result: {
 			operationId: submissionId,
@@ -432,8 +428,8 @@ function configureDirectEdit(selectedPeriod = period) {
 
 /** The amendment the legacy same-day edit asked for. */
 function amendment() {
-	expect(state.amendLegacy).toHaveBeenCalledOnce();
-	return state.amendLegacy.mock.calls[0]?.[1];
+	expect(state.amendWork).toHaveBeenCalledOnce();
+	return state.amendWork.mock.calls[0]?.[1];
 }
 
 // Legacy organizations: the coordinated scope borrows the mocked transaction.
@@ -1321,9 +1317,9 @@ describe("time correction submission actions", () => {
 		);
 	});
 
-	it("dispatches legacy maintenance after commit and preserves success on failure", async () => {
+	// The auto-completed correction's balance refresh committed with the work (#1212).
+	it("runs no legacy maintenance after an auto-completed correction", async () => {
 		configure({ kind: "auto_completed", authority: "legacy" });
-		state.maintenance.mockRejectedValue(new Error("maintenance unavailable"));
 
 		const result = await modular.requestTimeCorrectionEffect({
 			workPeriodId: ids.period,
@@ -1334,7 +1330,7 @@ describe("time correction submission actions", () => {
 		});
 
 		expect(result.success).toBe(true);
-		expect(state.events).toEqual(["transaction", "boundary", "maintenance"]);
+		expect(state.events).toEqual(["transaction", "boundary"]);
 	});
 
 	it("notifies the legacy manager after commit, with times at the entries' offsets, and preserves success on failure", async () => {
@@ -1836,7 +1832,7 @@ describe("time correction submission actions", () => {
 
 	it("returns the amendment's refusal of an unchanged edit", async () => {
 		configureDirectEdit();
-		state.amendLegacy.mockRejectedValueOnce(
+		state.amendWork.mockRejectedValueOnce(
 			new ValidationError({
 				message: "At least one correction value must change",
 				field: "correction",
@@ -1861,7 +1857,7 @@ describe("time correction submission actions", () => {
 
 	it("returns the conflict code when the work changed after the form loaded", async () => {
 		configureDirectEdit();
-		state.amendLegacy.mockRejectedValueOnce(
+		state.amendWork.mockRejectedValueOnce(
 			new ConflictError({
 				message: "Work period changed while editing",
 				conflictType: "time_correction_work_period_stale",

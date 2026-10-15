@@ -179,7 +179,7 @@ export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 		approval_request: ["update"],
 	},
 	// A work period's legacy approval requests link to its attached record (#1224).
-	"src/lib/time-record/migration/attach-missing-work-records.ts": {
+	"src/lib/time-tracking/work-records/repair.ts": {
 		approval_request: ["update"],
 	},
 } as const satisfies ApprovalWriteOwners;
@@ -534,42 +534,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			semantic: "ordinary_finalization",
 			table: "time_record",
 		},
-		{
-			columns: [
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "writeAmendedPair",
-			operation: "update",
-			table: "time_record_work",
-		},
-		{
-			columns: [],
-			functionName: "writeAmendedPair",
-			operation: "delete",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"cost_center_id",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "writeAmendedPair",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
 	],
 	// Work records (ADR 0010, #1223) creates new completed work: manual, imported and demo work.
 	"src/lib/time-tracking/work-records/create-new.ts": [
@@ -642,22 +606,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record_work",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"cost_center_id",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "insertCanonicalRecord",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
 		},
 		{
 			columns: [
@@ -752,26 +700,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		},
 		{
 			columns: [
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "writeRetainedHalf",
-			operation: "update",
-			table: "time_record_work",
-		},
-		{
-			columns: [],
-			functionName: "writeRetainedHalf",
-			operation: "delete",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
 				"approval_state",
 				"created_by",
 				"duration_minutes",
@@ -838,22 +766,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			operation: "insert",
 			table: "work_period",
 		},
-		{
-			columns: [
-				"allocation_kind",
-				"cost_center_id",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "insertAllocations",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
 	],
 	// Work records' entry writers append a change's entries in either admission (#1219, #1225).
 	"src/lib/time-tracking/work-records/entry-writer.ts": [
@@ -883,7 +795,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		},
 		{
 			columns: ["is_superseded", "superseded_by_id"],
-			functionName: "supersedeTakenOverEntry",
+			functionName: "supersedeEndpoint",
 			operation: "update",
 			semantic: "correction_lifecycle",
 			table: "time_entry",
@@ -934,6 +846,46 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record_work",
 		},
 	],
+	// Work records' one pair writer (ADR 0010): the canonical detail and project allocation
+	// every operation writes as planned.
+	"src/lib/time-tracking/work-records/pair-writer.ts": [
+		{
+			columns: [
+				"allocation_kind",
+				"cost_center_id",
+				"is_billable",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"task_id",
+				"weight_percent",
+			],
+			functionName: "insertAllocations",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+		},
+		{
+			columns: [
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "writeCanonicalDetail",
+			operation: "update",
+			table: "time_record_work",
+		},
+		{
+			columns: [],
+			functionName: "replaceProjectAllocation",
+			operation: "delete",
+			table: "time_record_allocation",
+		},
+	],
 	// Work records (ADR 0010, #1224, #1226) attaches a missing canonical work record and repairs a pair.
 	"src/lib/time-tracking/work-records/repair.ts": [
 		{
@@ -982,20 +934,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		},
 		{
 			columns: [
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "updateDetail",
-			operation: "update",
-			table: "time_record_work",
-		},
-		{
-			columns: [
 				"computation_metadata",
 				"driven_distance_km",
 				"odometer_end_km",
@@ -1012,12 +950,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record_work",
-		},
-		{
-			columns: [],
-			functionName: "replaceProjectAllocations",
-			operation: "delete",
-			table: "time_record_allocation",
 		},
 		{
 			columns: [
@@ -1188,6 +1120,43 @@ export const ABSENCE_RECORD_WRITERS = {
 	"src/lib/time-record/migration/backfill.ts": ["upsertCanonicalAbsenceRecords"],
 } as const satisfies NamedSourceWriters;
 
+/** The base record columns an absence's range or decision changes. */
+const ABSENCE_RECORD_UPDATE_COLUMNS = new Set([
+	"approval_state",
+	"duration_minutes",
+	"end_at",
+	"start_at",
+]);
+
+/**
+ * A named absence writer is allowed by what it writes, not by its name alone
+ * (spec-3 L2): an insert names its record kind (or is a dynamic absence
+ * payload), an update changes only an absence's range or approval state, a
+ * delete removes its record. Anything else could change a work record.
+ */
+function absenceRecordViolation(
+	path: string,
+	writer: string,
+	write: {
+		columns?: readonly string[];
+		operation: ApprovalWriteOperation;
+		uncertainty?: ApprovalSourceMutationUncertainty;
+	},
+): string | null {
+	const columns = write.columns ?? [];
+	if (write.operation === "delete") return null;
+	if (write.operation === "insert") {
+		return write.uncertainty !== undefined || columns.includes("record_kind")
+			? null
+			: `${SEAM}: absence writer ${writer} in ${path} must name the record_kind it inserts.`;
+	}
+	return write.uncertainty === undefined &&
+		columns.length > 0 &&
+		columns.every((column) => ABSENCE_RECORD_UPDATE_COLUMNS.has(column))
+		? null
+		: `${SEAM}: absence writer ${writer} in ${path} may change only an absence record's range and approval state.`;
+}
+
 /** Columns that end a work period, which live work never sets. */
 const WORK_PERIOD_END_COLUMNS = new Set([
 	"clock_out_id",
@@ -1240,7 +1209,7 @@ export function workRecordsSeamViolation(
 	}
 	if (table === "time_record") {
 		return namedIn(ABSENCE_RECORD_WRITERS, path, functionName)
-			? null
+			? absenceRecordViolation(path, writer, write)
 			: `${SEAM}: only work records may write the canonical work record (time_record); ${writer} in ${path} must go through work records.`;
 	}
 	const columns = write.columns ?? [];

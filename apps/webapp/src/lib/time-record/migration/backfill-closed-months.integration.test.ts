@@ -18,6 +18,7 @@ import {
 } from "@/lib/time-tracking/closed-months/testing/closed-month-database.test.fixture";
 import { expectRecordAgreement } from "@/lib/time-tracking/work-records/__tests__/expect-record-agreement";
 import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
+import { attachMissingWorkRecordsInEveryOrganization } from "./attach-missing-work-records";
 import { assertCanonicalCutoverReady } from "./cutover-state";
 import { reconcileLegacyToCanonical } from "./reconciliation";
 
@@ -168,6 +169,71 @@ describe("the canonical backfill with closed months", () => {
 		expect(
 			Object.values(await reconcileLegacyToCanonical(org.organizationId)).every((n) => n === 0),
 		).toBe(true);
+	});
+
+	it("the deploy backfill attaches every organization's half pairs, skips closed months and lists refused periods with their reason", async () => {
+		const { org, march, april, colleagueMarch } = await halfPairsAcrossAClose();
+		const other = await fixture.organization("UTC");
+		const otherPerson = await fixture.employee({ organizationId: other.organizationId });
+		const minutesLost = await fixture.work({
+			organizationId: other.organizationId,
+			employeeId: otherPerson.employeeId,
+			userId: otherPerson.userId,
+			start: "2026-04-08T08:00:00Z",
+			end: "2026-04-08T16:00:00Z",
+			canonical: "history",
+		});
+		await asHistory(fixture.pool, (client) =>
+			client.query("update work_period set duration_minutes = null where id = $1", [
+				minutesLost.workPeriodId,
+			]),
+		);
+
+		const reports = await attachMissingWorkRecordsInEveryOrganization();
+
+		const reportOf = (organizationId: string) =>
+			reports.find((report) => report.organizationId === organizationId);
+		expect(reportOf(org.organizationId)).toEqual({
+			organizationId: org.organizationId,
+			attached: [april.workPeriodId],
+			closedMonthSkips: expect.arrayContaining([
+				{ workPeriodId: march.workPeriodId, month: "2026-03" },
+				{ workPeriodId: colleagueMarch.workPeriodId, month: "2026-03" },
+			]),
+			refused: [],
+		});
+		expect(reportOf(other.organizationId)).toEqual({
+			organizationId: other.organizationId,
+			attached: [],
+			closedMonthSkips: [],
+			refused: [
+				{
+					workPeriodId: minutesLost.workPeriodId,
+					employeeId: otherPerson.employeeId,
+					startAt: "2026-04-08T08:00:00.000Z",
+					endAt: "2026-04-08T16:00:00.000Z",
+					refusal: "canonical_divergence",
+					reason: "duration_missing",
+				},
+			],
+		});
+		await expectRecordAgreement({
+			organizationId: org.organizationId,
+			workPeriodIds: [april.workPeriodId],
+		});
+		// The refused period is reported for its repair and does not hold payroll back.
+		await expect(assertCanonicalCutoverReady(other.organizationId)).resolves.toBeUndefined();
+		expect(await reconcileLegacyToCanonical(other.organizationId)).toMatchObject({
+			unattachableWorkRecords: 1,
+			blockingMismatchCount: 0,
+		});
+		// A second run finds nothing left to attach.
+		const again = await attachMissingWorkRecordsInEveryOrganization({
+			organizationIds: [org.organizationId],
+		});
+		expect(again).toEqual([
+			expect.objectContaining({ organizationId: org.organizationId, attached: [], refused: [] }),
+		]);
 	});
 
 	it("attaches the reopened employees' half pairs on reopening; closing again leaves them", async () => {

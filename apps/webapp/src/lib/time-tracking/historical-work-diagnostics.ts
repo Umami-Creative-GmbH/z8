@@ -1006,13 +1006,6 @@ type PairDraft = {
 	discriminator?: string;
 };
 
-/**
- * A completed period and its canonical record judged by the record agreement
- * rule every writer uses. Each disagreeing facet keeps the finding kind repairs
- * already know (an omitted, replaced or canonical-only assignment stays distinct)
- * and names its facet in `details.facet`. A disagreement that is a missing end or
- * duration is reported where that value is missing, not twice.
- */
 /** A period's evidence as the record agreement rule reads a work period. */
 export function agreementPeriodOf(period: HistoricalPeriodEvidence): AgreementWorkPeriod {
 	return {
@@ -1047,6 +1040,13 @@ export function agreementRecordOf(record: HistoricalRecordEvidence): StoredCanon
 	};
 }
 
+/**
+ * A completed period and its canonical record judged by the record agreement
+ * rule every writer uses. Each disagreeing facet keeps the finding kind repairs
+ * already know (an omitted, replaced or canonical-only assignment stays distinct)
+ * and names its facet in `details.facet`. A disagreement that is a missing end or
+ * duration is reported where that value is missing, not twice.
+ */
 function recordAgreementFindings(
 	period: HistoricalPeriodEvidence,
 	record: HistoricalRecordEvidence,

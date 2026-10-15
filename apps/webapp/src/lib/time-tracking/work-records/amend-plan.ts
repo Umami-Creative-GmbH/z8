@@ -9,6 +9,7 @@
 import { compareInstants, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { AmendmentChanges, ToleratedDrift, WorkApprovalDecision } from "./amend-change";
 import type { WorkRecordRefusal } from "./change";
+import { agreeingPair, plannedPairsRefusal } from "./pair-agreement";
 import {
 	type PlannedHalf,
 	plannedHalf,
@@ -16,7 +17,6 @@ import {
 	type WorkRecordPair,
 	workDurationMinutes,
 } from "./plan";
-import { recordAgreement } from "./record-agreement";
 import {
 	UnrepresentableWorkAttributionError,
 	WorkAttribution,
@@ -47,14 +47,9 @@ export function planAmendment(
 	change: PlannableAmendment,
 	arithmetic: WorkDurationArithmetic,
 ): AmendmentPlan | WorkRecordRefusal {
-	const { period, canonical } = pair;
-	if (period.endTime === null) return { kind: "work_running" };
-	if (!canonical) return { kind: "canonical_record_missing" };
-	if (period.durationMinutes === null) {
-		return { kind: "canonical_divergence", found: "locked_pair", disagreements: ["duration"] };
-	}
-	const before = lockedPairDivergence(pair, change.toleratedDrift);
-	if (before) return before;
+	const locked = agreeingPair(pair, change.toleratedDrift);
+	if ("kind" in locked) return locked;
+	const { period, canonical } = locked;
 
 	const sourceStart = instantFromDate(period.startTime);
 	const sourceEnd = instantFromDate(period.endTime);
@@ -94,31 +89,11 @@ export function planAmendment(
 			? { period: period.approvalStatus, record: canonical.record.approvalState }
 			: { period: decided, record: decided },
 	);
-	const after = recordAgreement(result.period, result.canonical);
-	if (!after.agrees) {
-		return {
-			kind: "canonical_divergence",
-			found: "planned_amendment",
-			disagreements: after.disagreements,
-		};
-	}
-	return { kind: "amend", changes: { clockIn, clockOut, attribution: parts, approval }, result };
-}
-
-/**
- * The locked pair's disagreement as a refusal, or null when it agrees apart
- * from the drift the change tolerates (which it rewrites from the work period).
- */
-export function lockedPairDivergence(
-	pair: WorkRecordPair,
-	toleratedDrift: readonly ToleratedDrift[] = [],
-): WorkRecordRefusal | null {
-	if (!pair.canonical) return { kind: "canonical_record_missing" };
-	const before = recordAgreement(pair.period, pair.canonical);
-	const disagreements = before.disagreements.filter(
-		(facet) => !(toleratedDrift as readonly string[]).includes(facet),
+	return (
+		plannedPairsRefusal([result], "planned_amendment") ?? {
+			kind: "amend",
+			changes: { clockIn, clockOut, attribution: parts, approval },
+			result,
+		}
 	);
-	return disagreements.length === 0
-		? null
-		: { kind: "canonical_divergence", found: "locked_pair", disagreements };
 }

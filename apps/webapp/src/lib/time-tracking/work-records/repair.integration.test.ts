@@ -396,11 +396,12 @@ function repairContract({ appendControl }: (typeof ADMISSIONS)[number]) {
 		await cleanup();
 	});
 
-	it("attaches a canonical work record that copies the work, vehicle use and computation metadata", async () => {
+	it("attaches a canonical work record that copies the work, vehicle use and computation metadata, and changes no work", async () => {
 		const source = await recordWork();
 		await driveVan(source);
 		await loseCanonicalRecord(source);
 		const submission = await submitWeek();
+		const submitted = await submission();
 		await cleanBalance();
 
 		const result = await apply(attach(await expectedOf(source.id)));
@@ -426,8 +427,45 @@ function repairContract({ appendControl }: (typeof ADMISSIONS)[number]) {
 		expect(result).toMatchObject({
 			after: { workPeriodId: source.id, revision: source.graph_revision + 1 },
 			segment: { canonicalRecordId: source.id, durationMinutes: 540 },
+		});
+		expect(result).not.toHaveProperty("effects");
+		// Attaching changes no work: nothing is sent back and no balance is marked.
+		expect(await balance()).toEqual({ is_dirty: false, dirty_from_date: null });
+		expect(await submission()).toEqual(submitted);
+	});
+
+	// spec-2 M1: work attach refuses as it stands is attached with a resolution.
+	it("attaches work without minutes only with the minutes a resolution names, with the effects of that change", async () => {
+		const source = await recordWork();
+		await loseCanonicalRecord(source);
+		await asHistory(admin, (client) =>
+			client.query("update work_period set duration_minutes = null where id = $1", [source.id]),
+		);
+		const expected = await expectedOf(source.id);
+		const before = await snapshot();
+		await expect(apply(attach(expected))).resolves.toEqual({
+			kind: "canonical_divergence",
+			found: "planned_repair",
+			disagreements: ["duration"],
+		});
+		expect(await snapshot()).toEqual(before);
+		const submission = await submitWeek();
+		await cleanBalance();
+
+		const result = await apply(attach(expected, { resolution: { durationMinutes: 540 } }));
+
+		await expectRecordAgreement({ organizationId: ORG });
+		expect(result).toMatchObject({
+			kind: "attached",
+			segment: { canonicalRecordId: source.id, durationMinutes: 540 },
 			effects: { workBalanceDirtyFromDate: "2026-07-22" },
 		});
+		expect(await workOf(source.id)).toMatchObject({
+			canonical_record_id: source.id,
+			duration_minutes: 540,
+			record_duration: 540,
+		});
+		// Naming the minutes changes the work: it is sent back and the balance refreshes.
 		expect(await balance()).toEqual({ is_dirty: true, dirty_from_date: "2026-07-22" });
 		expect(await submission()).toEqual({ status: "withdrawn", closed_cause: "change" });
 	});
