@@ -87,6 +87,9 @@ const nextConfig: NextConfig = {
 	experimental: {
 		agentUpgrade: "latest",
 		useTypeScriptCli: true,
+		// CI does not restore this cache between runners. Avoid retaining the
+		// compilation graph while persisting a cache that will not be reused.
+		turbopackFileSystemCacheForBuild: false,
 		optimizePackageImports: ["@tabler/icons-react", "recharts"],
 	},
 	turbopack: {
