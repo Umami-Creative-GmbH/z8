@@ -7,11 +7,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { TimeCorrectionComparison } from "@/components/approvals/time-correction-comparison";
 import { TravelExpenseReportReturnButton } from "@/components/approvals/travel-expense-report-return";
-import { vehicleUseText } from "@/components/time-tracking/vehicle-use-format";
 import {
 	summaryField,
 	useApprovalInboxText,
 } from "@/components/approvals/use-approval-inbox-text";
+import { vehicleUseText } from "@/components/time-tracking/vehicle-use-format";
 import { formatRecordedInstant } from "@/components/travel-expenses/report/format";
 import { ReopenReportPanel } from "@/components/travel-expenses/report/report-reopen";
 import { Badge } from "@/components/ui/badge";
@@ -27,12 +27,12 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
+import { isApprovalInboxDetailChange } from "@/lib/approvals/inbox/localized-text";
 import type {
 	ApprovalInboxDetailChangeValue,
 	ApprovalInboxDetailSection,
 	ApprovalInboxItem,
 } from "@/lib/approvals/inbox/types";
-import { isApprovalInboxDetailChange } from "@/lib/approvals/inbox/localized-text";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import {
 	useApprovalDetail,
@@ -41,7 +41,10 @@ import {
 } from "@/lib/query/use-approval-inbox";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
-import { getCoveringForTitle, getDecidedEarlierStageNote } from "./covering-notes";
+import {
+	getCoveringForTitle,
+	getDecidedEarlierStageNote,
+} from "./covering-notes";
 import { getOwnRequestNote } from "./own-request-note";
 import { ReceiptExceptionAcceptance } from "./receipt-exception-acceptance";
 import {
@@ -92,7 +95,11 @@ function workLocationText(t: Translate, value: string) {
 	return label ? t(label[0], label[1]) : value;
 }
 
-function changeValueText(t: Translate, value: ApprovalInboxDetailChangeValue, locale: string) {
+function changeValueText(
+	t: Translate,
+	value: ApprovalInboxDetailChangeValue,
+	locale: string,
+) {
 	if (value.kind === "work_location") {
 		return workLocationText(t, value.value);
 	}
@@ -208,7 +215,10 @@ function renderDetailSection(
 											? t(
 													"approvals:approvals.timelineActor",
 													"{at} by {actorName}",
-													{ at: formatRecordedInstant(locale, event.at), actorName: event.actorName },
+													{
+														at: formatRecordedInstant(locale, event.at),
+														actorName: event.actorName,
+													},
 												)
 											: formatRecordedInstant(locale, event.at)}
 								</p>
@@ -240,23 +250,205 @@ function renderDetailSection(
 	}
 }
 
-function TravelExpenseClaimLink({ item }: { item: ApprovalInboxItem }) {
+function TravelExpenseDetails({ item }: { item: ApprovalInboxItem }) {
 	const { t } = useTranslate();
-	if (item.type !== "travel_expense_claim" && item.type !== "travel_expense_report") return null;
+	if (
+		item.type !== "travel_expense_claim" &&
+		item.type !== "travel_expense_report"
+	)
+		return null;
 
 	return (
-		<Link
-			className="inline-block rounded-sm text-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
-			href={
-				item.type === "travel_expense_report"
-					? `/travel-expenses/reports/${item.entityId}`
-					: `/travel-expenses/${item.entityId}`
-			}
-		>
-			{item.type === "travel_expense_report"
-				? t("approvals:approvals.viewExpenseReport", "View submitted report and receipts")
-				: t("approvals:approvals.viewExpenseClaim", "View claim and receipts")}
-		</Link>
+		<>
+			<Link
+				className="inline-block rounded-sm text-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
+				href={
+					item.type === "travel_expense_report"
+						? `/travel-expenses/reports/${item.entityId}`
+						: `/travel-expenses/${item.entityId}`
+				}
+			>
+				{item.type === "travel_expense_report"
+					? t(
+							"approvals:approvals.viewExpenseReport",
+							"View submitted report and receipts",
+						)
+					: t(
+							"approvals:approvals.viewExpenseClaim",
+							"View claim and receipts",
+						)}
+			</Link>
+			{/* An approved report not yet exported or paid can be reopened from here too (#614). */}
+			{item.type === "travel_expense_report" && item.status === "approved" && (
+				<ReopenReportPanel reportId={item.entityId} />
+			)}
+		</>
+	);
+}
+
+function ApprovalDetailHeader({ item }: { item: ApprovalInboxItem }) {
+	const { t } = useTranslate();
+	const text = useApprovalInboxText();
+	return (
+		<SheetHeader className="border-b px-5 py-5 pr-12 sm:px-6">
+			<div className="flex items-start gap-3">
+				<div className="min-w-0 flex-1">
+					<SheetTitle>
+						{t("approvals:approvals.detailTitle", "Approval details")}
+					</SheetTitle>
+					<SheetDescription className="mt-1 line-clamp-2">
+						{text(summaryField(item.summary, "detail"))}
+					</SheetDescription>
+				</div>
+				{item.summary.badge && (
+					<Badge
+						className="mt-0.5 max-w-[10rem] shrink-0 truncate sm:max-w-[13rem]"
+						variant="secondary"
+						title={item.summary.badge.label}
+						style={
+							item.summary.badge.color
+								? { backgroundColor: item.summary.badge.color }
+								: undefined
+						}
+					>
+						{item.summary.badge.label}
+					</Badge>
+				)}
+			</div>
+		</SheetHeader>
+	);
+}
+
+function ApprovalRejectionForm({
+	reason,
+	onReasonChange,
+	onCancel,
+	onConfirm,
+	canReject,
+	isPending,
+	isRejectPending,
+}: {
+	reason: string;
+	onReasonChange: (reason: string) => void;
+	onCancel: () => void;
+	onConfirm: () => void;
+	canReject: boolean;
+	isPending: boolean;
+	isRejectPending: boolean;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="w-full space-y-4">
+			<div>
+				<label className="text-sm font-medium" htmlFor="rejection-reason">
+					{t("approvals:approvals.rejectionReason", "Reason for rejection")}
+				</label>
+				<Textarea
+					id="rejection-reason"
+					value={reason}
+					onChange={(e) => onReasonChange(e.target.value)}
+					placeholder={t(
+						"approvals:approvals.rejectionReasonPlaceholder",
+						"Please provide a reason for rejecting this request…",
+					)}
+					className="mt-2"
+					rows={3}
+				/>
+			</div>
+			<div className="flex flex-wrap gap-2">
+				<Button variant="outline" onClick={onCancel} disabled={isPending}>
+					{t("common.cancel", "Cancel")}
+				</Button>
+				<Button
+					variant="destructive"
+					onClick={onConfirm}
+					disabled={!canReject || !reason.trim() || isPending}
+				>
+					{isRejectPending && (
+						<IconLoader2
+							className="mr-2 size-4 animate-spin"
+							aria-hidden="true"
+						/>
+					)}
+					<IconX className="mr-2 size-4" aria-hidden="true" />
+					{t("approvals:approvals.confirmReject", "Confirm Rejection")}
+				</Button>
+			</div>
+		</div>
+	);
+}
+
+function ApprovalDecisionFooter({
+	item,
+	approvalId,
+	actions,
+	rejectionForm,
+	isPending,
+	isApproving,
+	exceptionsAccepted,
+	onReject,
+	onApprove,
+	onReturned,
+}: {
+	item: ApprovalInboxItem;
+	approvalId: string;
+	actions: ApprovalInboxItem["capabilities"];
+	rejectionForm: React.ReactNode;
+	isPending: boolean;
+	isApproving: boolean;
+	exceptionsAccepted: boolean;
+	onReject: () => void;
+	onApprove: () => void;
+	onReturned: () => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<SheetFooter className="border-t bg-muted/95 px-5 py-4 sm:px-6">
+			{actions.ownRequest ? (
+				<p className="text-muted-foreground text-sm">{getOwnRequestNote(t)}</p>
+			) : actions.decidedEarlierStage ? (
+				<p className="text-muted-foreground text-sm">
+					{getDecidedEarlierStageNote(t)}
+				</p>
+			) : rejectionForm ? (
+				rejectionForm
+			) : (
+				// Wraps on phones, where German labels need more than one row (#846).
+				<div className="flex w-full flex-wrap gap-2">
+					{item.type === "travel_expense_report" && (
+						<TravelExpenseReportReturnButton
+							approvalId={approvalId}
+							reportId={item.entityId}
+							disabled={!actions.canReject || isPending}
+							onReturned={onReturned}
+						/>
+					)}
+					<Button
+						variant="outline"
+						className="flex-1"
+						onClick={onReject}
+						disabled={!actions.canReject || isPending}
+					>
+						<IconX className="mr-2 size-4" aria-hidden="true" />
+						{t("approvals:approvals.reject", "Reject")}
+					</Button>
+					<Button
+						className="flex-1"
+						onClick={onApprove}
+						disabled={!actions.canApprove || isPending || !exceptionsAccepted}
+					>
+						{isApproving && (
+							<IconLoader2
+								className="mr-2 size-4 animate-spin"
+								aria-hidden="true"
+							/>
+						)}
+						<IconCheck className="mr-2 size-4" aria-hidden="true" />
+						{t("approvals:approvals.approve", "Approve")}
+					</Button>
+				</div>
+			)}
+		</SheetFooter>
 	);
 }
 
@@ -292,15 +484,24 @@ export function ApprovalDetailPanel({
 	// Expense report missing-receipt exceptions to accept before approving (#604).
 	const receiptExceptions = findReceiptExceptionAcceptance(sections);
 	const acceptedExceptionIds =
-		acceptedExceptions.approvalId === approval?.id ? acceptedExceptions.itemIds : [];
-	const exceptionsAccepted = allReceiptExceptionsAccepted(receiptExceptions, acceptedExceptionIds);
+		acceptedExceptions.approvalId === approval?.id
+			? acceptedExceptions.itemIds
+			: [];
+	const exceptionsAccepted = allReceiptExceptionsAccepted(
+		receiptExceptions,
+		acceptedExceptionIds,
+	);
 
 	const handleApprove = async () => {
-		if (!approval || !actions?.canApprove || isPending || !exceptionsAccepted) return;
+		if (!approval || !actions?.canApprove || isPending || !exceptionsAccepted)
+			return;
 
 		const result = await approveMutation.mutateAsync(
 			receiptExceptions
-				? { approvalId: approval.id, acceptedReceiptExceptionItemIds: acceptedExceptionIds }
+				? {
+						approvalId: approval.id,
+						acceptedReceiptExceptionItemIds: acceptedExceptionIds,
+					}
 				: approval.id,
 		);
 		if (result.success) {
@@ -356,32 +557,7 @@ export function ApprovalDetailPanel({
 	return (
 		<Sheet open={open} onOpenChange={handleClose}>
 			<SheetContent className="w-[min(100vw,560px)] gap-0 overflow-hidden p-0 sm:max-w-[560px]">
-				<SheetHeader className="border-b px-5 py-5 pr-12 sm:px-6">
-					<div className="flex items-start gap-3">
-						<div className="min-w-0 flex-1">
-							<SheetTitle>
-								{t("approvals:approvals.detailTitle", "Approval details")}
-							</SheetTitle>
-							<SheetDescription className="mt-1 line-clamp-2">
-								{text(summaryField(panelItem.summary, "detail"))}
-							</SheetDescription>
-						</div>
-						{panelItem.summary.badge && (
-							<Badge
-								className="mt-0.5 max-w-[10rem] shrink-0 truncate sm:max-w-[13rem]"
-								variant="secondary"
-								title={panelItem.summary.badge.label}
-								style={
-									panelItem.summary.badge.color
-										? { backgroundColor: panelItem.summary.badge.color }
-										: undefined
-								}
-							>
-								{panelItem.summary.badge.label}
-							</Badge>
-						)}
-					</div>
-				</SheetHeader>
+				<ApprovalDetailHeader item={panelItem} />
 
 				<div
 					data-slot="approval-detail-body"
@@ -416,11 +592,7 @@ export function ApprovalDetailPanel({
 						</p>
 					)}
 
-					<TravelExpenseClaimLink item={panelItem} />
-					{/* An approved report not yet exported or paid can be reopened from here too (#614). */}
-					{panelItem.type === "travel_expense_report" && panelItem.status === "approved" && (
-						<ReopenReportPanel reportId={panelItem.entityId} />
-					)}
+					<TravelExpenseDetails item={panelItem} />
 					{sections.length > 0 && <Separator />}
 
 					{sections.map((section) =>
@@ -440,104 +612,36 @@ export function ApprovalDetailPanel({
 					)}
 				</div>
 
-				<SheetFooter className="border-t bg-muted/95 px-5 py-4 sm:px-6">
-					{panelActions.ownRequest ? (
-						<p className="text-muted-foreground text-sm">{getOwnRequestNote(t)}</p>
-					) : panelActions.decidedEarlierStage ? (
-						<p className="text-muted-foreground text-sm">{getDecidedEarlierStageNote(t)}</p>
-					) : isRejecting ? (
-						<div className="w-full space-y-4">
-							<div>
-								<label
-									className="text-sm font-medium"
-									htmlFor="rejection-reason"
-								>
-									{t(
-										"approvals:approvals.rejectionReason",
-										"Reason for rejection",
-									)}
-								</label>
-								<Textarea
-									id="rejection-reason"
-									value={rejectionReason}
-									onChange={(e) => setRejectionReason(e.target.value)}
-									placeholder={t(
-										"approvals:approvals.rejectionReasonPlaceholder",
-										"Please provide a reason for rejecting this request…",
-									)}
-									className="mt-2"
-									rows={3}
-								/>
-							</div>
-							<div className="flex flex-wrap gap-2">
-								<Button
-									variant="outline"
-									onClick={() => {
-										setIsRejecting(false);
-										setRejectionReason("");
-									}}
-									disabled={isPending}
-								>
-									{t("common.cancel", "Cancel")}
-								</Button>
-								<Button
-									variant="destructive"
-									onClick={handleReject}
-									disabled={
-										!actions?.canReject || !rejectionReason.trim() || isPending
-									}
-								>
-									{rejectMutation.isPending && (
-										<IconLoader2
-											className="mr-2 size-4 animate-spin"
-											aria-hidden="true"
-										/>
-									)}
-									<IconX className="mr-2 size-4" aria-hidden="true" />
-									{t("approvals:approvals.confirmReject", "Confirm Rejection")}
-								</Button>
-							</div>
-						</div>
-					) : (
-						// Wraps on phones, where German labels need more than one row (#846).
-						<div className="flex w-full flex-wrap gap-2">
-							{panelItem.type === "travel_expense_report" && (
-								<TravelExpenseReportReturnButton
-									approvalId={approval.id}
-									reportId={panelItem.entityId}
-									disabled={!panelActions.canReject || isPending}
-									onReturned={() => {
-										onOpenChange(false);
-										onActioned();
-									}}
-								/>
-							)}
-							<Button
-								variant="outline"
-								className="flex-1"
-								onClick={() => setIsRejecting(true)}
-								disabled={!panelActions.canReject || isPending}
-							>
-								<IconX className="mr-2 size-4" aria-hidden="true" />
-								{t("approvals:approvals.reject", "Reject")}
-							</Button>
-							<Button
-								className="flex-1"
-								onClick={handleApprove}
-								disabled={!panelActions.canApprove || isPending || !exceptionsAccepted}
-							>
-								{approveMutation.isPending && (
-									<IconLoader2
-										className="mr-2 size-4 animate-spin"
-										aria-hidden="true"
-									/>
-								)}
-								<IconCheck className="mr-2 size-4" aria-hidden="true" />
-								{t("approvals:approvals.approve", "Approve")}
-							</Button>
-						</div>
-					)}
-				</SheetFooter>
+				<ApprovalDecisionFooter
+					item={panelItem}
+					approvalId={approval.id}
+					actions={panelActions}
+					rejectionForm={
+						isRejecting ? (
+							<ApprovalRejectionForm
+								reason={rejectionReason}
+								onReasonChange={setRejectionReason}
+								onCancel={() => {
+									setIsRejecting(false);
+									setRejectionReason("");
+								}}
+								onConfirm={handleReject}
+								canReject={!!actions?.canReject}
+								isPending={isPending}
+								isRejectPending={rejectMutation.isPending}
+							/>
+						) : null
+					}
+					isPending={isPending}
+					isApproving={approveMutation.isPending}
+					exceptionsAccepted={exceptionsAccepted}
+					onReject={() => setIsRejecting(true)}
+					onApprove={handleApprove}
+					onReturned={() => {
+						onOpenChange(false);
+						onActioned();
+					}}
+				/>
 			</SheetContent>
 		</Sheet>
 	);

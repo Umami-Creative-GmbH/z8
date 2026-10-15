@@ -1,9 +1,8 @@
-import { IconArrowLeft, IconChevronRight } from "@tabler/icons-react";
+import { IconArrowLeft } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { EmployeeDirectoryCard } from "@/components/employees/employee-directory-card";
 import { OpeningBalanceUploadDialog } from "@/components/settings/work-balance/opening-balance-upload-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@/navigation";
@@ -17,7 +16,10 @@ import { loadPayrollWorkBalanceEmployees } from "./coverage";
  * grant; owners and admins record payouts on the employee settings page.
  */
 async function PayrollWorkBalancesContent() {
-	const [t, employees] = await Promise.all([getTranslate(), loadPayrollWorkBalanceEmployees()]);
+	const [t, employees] = await Promise.all([
+		getTranslate(),
+		loadPayrollWorkBalanceEmployees(),
+	]);
 	if (!employees) notFound();
 
 	return (
@@ -47,41 +49,20 @@ async function PayrollWorkBalancesContent() {
 			</header>
 			{employees.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
-					{t("payroll.workBalances.empty", "No employees are in your payroll access scope yet.")}
+					{t(
+						"payroll.workBalances.empty",
+						"No employees are in your payroll access scope yet.",
+					)}
 				</p>
 			) : (
-				<Card className="py-0">
-					<CardContent className="px-0">
-						<ul className="divide-y">
-							{employees.map((employee) => (
-								<li key={employee.id}>
-									<Link
-										href={`/payroll/work-balances/${employee.id}`}
-										className="flex min-w-0 items-center gap-3 px-4 py-3 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
-									>
-										<span className="min-w-0 flex-1">
-											<span className="block truncate font-medium">{employee.name}</span>
-											{employee.employeeNumber ? (
-												<span className="block text-sm text-muted-foreground tabular-nums">
-													{employee.employeeNumber}
-												</span>
-											) : null}
-										</span>
-										{employee.isActive ? null : (
-											<Badge variant="secondary">
-												{t("payroll.workBalances.former", "Former employee")}
-											</Badge>
-										)}
-										<IconChevronRight
-											aria-hidden="true"
-											className="size-4 shrink-0 text-muted-foreground"
-										/>
-									</Link>
-								</li>
-							))}
-						</ul>
-					</CardContent>
-				</Card>
+				<EmployeeDirectoryCard
+					employees={employees}
+					basePath="/payroll/work-balances"
+					formerEmployeeLabel={t(
+						"payroll.workBalances.former",
+						"Former employee",
+					)}
+				/>
 			)}
 		</div>
 	);

@@ -386,8 +386,9 @@ export async function getScopedPayrollRunsAction(): Promise<
 	return runPayrollWorkspaceAction(async (t) => {
 		const { authContext, allowedEmployeeIds } = await resolvePayrollScopeOnly(t);
 		const runs = await listUnconfirmedPayrollRuns(db, authContext.employee.organizationId);
+		const allowedEmployeeIdSet = new Set(allowedEmployeeIds);
 		return runs
-			.filter((run) => run.employeeIds.every((id) => allowedEmployeeIds.includes(id)))
+			.filter((run) => run.employeeIds.every((id) => allowedEmployeeIdSet.has(id)))
 			.map(({ employeeIds: _employeeIds, ...run }) => run);
 	});
 }

@@ -225,8 +225,16 @@ describe("ApprovalDetailPanel", () => {
 		mockState.sections = [
 			{
 				type: "callout",
-				title: { key: "x.title", fallback: "Submission {cycle}", params: { cycle: 2 } },
-				body: { key: "x.body", fallback: "Changed: {fields}", params: { fields: "items" } },
+				title: {
+					key: "x.title",
+					fallback: "Submission {cycle}",
+					params: { cycle: 2 },
+				},
+				body: {
+					key: "x.body",
+					fallback: "Changed: {fields}",
+					params: { fields: "items" },
+				},
 				tone: "info",
 			},
 			{
@@ -235,7 +243,10 @@ describe("ApprovalDetailPanel", () => {
 				events: [
 					{
 						id: "e-1",
-						label: { key: "x.returned", fallback: "Report returned for changes" },
+						label: {
+							key: "x.returned",
+							fallback: "Report returned for changes",
+						},
 						at: "2026-05-01T00:00:00Z",
 						actorName: null,
 					},
@@ -276,7 +287,11 @@ describe("ApprovalDetailPanel", () => {
 						key: "x.detail",
 						fallback: "reimbursable {reimbursable}",
 						params: {
-							reimbursable: { kind: "money", amount: "440.61", currency: "EUR" },
+							reimbursable: {
+								kind: "money",
+								amount: "440.61",
+								currency: "EUR",
+							},
 						},
 					},
 				},
@@ -371,14 +386,26 @@ describe("ApprovalDetailPanel", () => {
 		};
 		mockState.detailItem = report;
 		const { rerender } = render(
-			<ApprovalDetailPanel approval={report} open={true} onOpenChange={vi.fn()} onActioned={vi.fn()} />,
+			<ApprovalDetailPanel
+				approval={report}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
 		);
-		expect((await screen.findByTestId("reopen-report-panel")).textContent).toBe("report-1");
+		expect((await screen.findByTestId("reopen-report-panel")).textContent).toBe(
+			"report-1",
+		);
 
 		const pending = { ...report, status: "pending" as const };
 		mockState.detailItem = pending;
 		rerender(
-			<ApprovalDetailPanel approval={pending} open={true} onOpenChange={vi.fn()} onActioned={vi.fn()} />,
+			<ApprovalDetailPanel
+				approval={pending}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
 		);
 		expect(screen.queryByTestId("reopen-report-panel")).toBeNull();
 	});
@@ -545,8 +572,63 @@ describe("ApprovalDetailPanel", () => {
 			/>,
 		);
 
-		expect(screen.queryAllByRole("button", { name: /Approve|Reject|Return/ })).toHaveLength(0);
-		expect(screen.getByText("Your own request: another approver decides it.")).toBeTruthy();
+		expect(
+			screen.queryAllByRole("button", { name: /Approve|Reject|Return/ }),
+		).toHaveLength(0);
+		expect(
+			screen.getByText("Your own request: another approver decides it."),
+		).toBeTruthy();
+	});
+
+	it("offers no decision buttons after the viewer decided an earlier stage", () => {
+		const actions = {
+			...approvalItem.capabilities,
+			canApprove: false,
+			canReject: false,
+			decidedEarlierStage: true,
+		};
+		mockState.actions = actions;
+		render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		expect(
+			screen.queryAllByRole("button", { name: /Approve|Reject|Return/ }),
+		).toHaveLength(0);
+		expect(mockState.approveMutateAsync).not.toHaveBeenCalled();
+		expect(mockState.rejectMutateAsync).not.toHaveBeenCalled();
+	});
+
+	it("clears the rejection reason when cancelling without closing the panel", () => {
+		const onOpenChange = vi.fn();
+		render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open
+				onOpenChange={onOpenChange}
+				onActioned={vi.fn()}
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+		fireEvent.change(screen.getByLabelText("Reason for rejection"), {
+			target: { value: "Needs correction" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		expect(screen.queryByLabelText("Reason for rejection")).toBeNull();
+		expect(onOpenChange).not.toHaveBeenCalled();
+		fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+		expect(
+			screen.getByLabelText<HTMLTextAreaElement>("Reason for rejection").value,
+		).toBe("");
+		expectButtonDisabled(
+			screen.getByRole("button", { name: "Confirm Rejection" }),
+		);
+		expect(mockState.rejectMutateAsync).not.toHaveBeenCalled();
 	});
 
 	it("does not approve when approval is disabled", () => {

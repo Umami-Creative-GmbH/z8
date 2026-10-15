@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PAYROLL_EXPORT_FORMATS } from "@/lib/payroll-export/format-registry";
+import type { UnconfirmedPayrollRun } from "@/lib/travel-expenses/payroll-run";
 
 const mockState = vi.hoisted(() => ({
 	getAuthContext: vi.fn(async () => ({
@@ -12,6 +13,7 @@ const mockState = vi.hoisted(() => ({
 	createExportJob: vi.fn(async () => ({ jobId: "job-1", isAsync: true })),
 	enqueuePayrollExportJob: vi.fn(async () => undefined),
 	processExportJob: vi.fn(),
+	listUnconfirmedPayrollRuns: vi.fn<() => Promise<UnconfirmedPayrollRun[]>>(),
 }));
 
 vi.mock("@/db", () => ({
@@ -26,7 +28,8 @@ vi.mock("@/lib/auth-helpers", () => ({
 }));
 
 vi.mock("@/lib/payroll-access/permissions", () => ({
-	resolvePayrollAccessibleEmployeeIds: mockState.resolvePayrollAccessibleEmployeeIds,
+	resolvePayrollAccessibleEmployeeIds:
+		mockState.resolvePayrollAccessibleEmployeeIds,
 	hasActivePayrollAccessGrant: vi.fn(async () => true),
 	intersectPayrollScope: ({
 		allowedEmployeeIds,
@@ -61,6 +64,11 @@ vi.mock("@/lib/payroll-workspace/summary", () => ({
 	getPayrollWorkspaceSummary: vi.fn(),
 }));
 
+vi.mock("@/lib/travel-expenses/payroll-run", () => ({
+	listUnconfirmedPayrollRuns: mockState.listUnconfirmedPayrollRuns,
+	discardPayrollRun: vi.fn(),
+}));
+
 vi.mock("@/tolgee/server", () => ({
 	getTranslate: vi.fn(async () => (_key: string, fallback: string) => fallback),
 }));
@@ -69,14 +77,17 @@ vi.mock("@/lib/effect/result", async () => {
 	const { Effect } = await import("effect");
 
 	return {
-		runServerActionSafe: async <T>(effect: Parameters<typeof Effect.runPromise<T>>[0]) => ({
+		runServerActionSafe: async <T>(
+			effect: Parameters<typeof Effect.runPromise<T>>[0],
+		) => ({
 			success: true as const,
 			data: await Effect.runPromise(effect),
 		}),
 	};
 });
 
-const { startScopedPayrollExportAction } = await import("./actions");
+const { getScopedPayrollRunsAction, startScopedPayrollExportAction } =
+	await import("./actions");
 
 const request = {
 	formatId: "datev_lohn",
@@ -89,7 +100,10 @@ const request = {
 describe("startScopedPayrollExportAction", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.createExportJob.mockResolvedValue({ jobId: "job-1", isAsync: true });
+		mockState.createExportJob.mockResolvedValue({
+			jobId: "job-1",
+			isAsync: true,
+		});
 	});
 
 	it("queues async exports with the trusted organization scope", async () => {
@@ -107,13 +121,21 @@ describe("startScopedPayrollExportAction", () => {
 	});
 
 	it("processes synchronous exports inline with the trusted organization scope", async () => {
-		mockState.createExportJob.mockResolvedValueOnce({ jobId: "job-sync", isAsync: false });
+		mockState.createExportJob.mockResolvedValueOnce({
+			jobId: "job-sync",
+			isAsync: false,
+		});
 		mockState.processExportJob.mockResolvedValueOnce({
 			result: {
 				content: "sync-content",
 				metadata: {
 					unmappedOvertimePayouts: [
-						{ id: "payout-1", employeeId: "employee-1", day: "2026-01-15", minutes: 300 },
+						{
+							id: "payout-1",
+							employeeId: "employee-1",
+							day: "2026-01-15",
+							minutes: 300,
+						},
 					],
 				},
 			},
@@ -144,11 +166,16 @@ describe("payroll workspace export formats", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.createExportJob.mockResolvedValue({ jobId: "job-1", isAsync: true });
+		mockState.createExportJob.mockResolvedValue({
+			jobId: "job-1",
+			isAsync: true,
+		});
 	});
 
 	afterEach(() => {
-		const fake = registered.findIndex((format) => "id" in format && format.id === "fake_lohn");
+		const fake = registered.findIndex(
+			(format) => "id" in format && format.id === "fake_lohn",
+		);
 		if (fake >= 0) registered.splice(fake, 1);
 	});
 
@@ -165,10 +192,101 @@ describe("payroll workspace export formats", () => {
 	it.each(["successfactors_csv", "personio", "unknown_lohn"])(
 		"refuses %s, which the workspace does not offer",
 		async (formatId) => {
-			registered.push({ id: "fake_lohn", kind: "file", payrollWorkspace: true });
+			registered.push({
+				id: "fake_lohn",
+				kind: "file",
+				payrollWorkspace: true,
+			});
 
-			await expect(startScopedPayrollExportAction({ ...request, formatId })).rejects.toBeDefined();
+			await expect(
+				startScopedPayrollExportAction({ ...request, formatId }),
+			).rejects.toBeDefined();
 			expect(mockState.createExportJob).not.toHaveBeenCalled();
 		},
 	);
+});
+
+describe("getScopedPayrollRunsAction", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.resolvePayrollAccessibleEmployeeIds.mockResolvedValue([
+			"employee-1",
+			"employee-2",
+		]);
+		mockState.listUnconfirmedPayrollRuns.mockResolvedValue([]);
+	});
+
+	afterEach(() => {
+		mockState.resolvePayrollAccessibleEmployeeIds.mockResolvedValue([
+			"employee-1",
+		]);
+	});
+
+	function run(jobId: string, employeeIds: string[]): UnconfirmedPayrollRun {
+		return {
+			jobId,
+			formatId: "datev_lohn",
+			periodStart: "2026-01-01",
+			periodEnd: "2026-01-31",
+			exportedAt: "2026-02-01T12:00:00Z",
+			includedReports: employeeIds.length,
+			employeeIds,
+			partlyConfirmed: false,
+		};
+	}
+
+	it("keeps only fully authorized runs, in source order, without exposing employee IDs", async () => {
+		const first = run("first", ["employee-2", "employee-1", "employee-2"]);
+		const mixed = run("mixed", ["employee-1", "outside-scope"]);
+		const last = run("last", ["employee-1"]);
+		mockState.listUnconfirmedPayrollRuns.mockResolvedValue([
+			first,
+			mixed,
+			last,
+		]);
+
+		const result = await getScopedPayrollRunsAction();
+
+		const { employeeIds: _firstIds, ...expectedFirst } = first;
+		const { employeeIds: _lastIds, ...expectedLast } = last;
+		expect(result).toEqual({
+			success: true,
+			data: [expectedFirst, expectedLast],
+		});
+		expect(
+			mockState.resolvePayrollAccessibleEmployeeIds,
+		).toHaveBeenCalledExactlyOnceWith({
+			organizationId: "org-1",
+			payrollEmployeeId: "employee-1",
+		});
+		expect(
+			mockState.listUnconfirmedPayrollRuns,
+		).toHaveBeenCalledExactlyOnceWith({}, "org-1");
+		expect(first.employeeIds).toEqual([
+			"employee-2",
+			"employee-1",
+			"employee-2",
+		]);
+	});
+
+	it("returns no runs when every run contains an unauthorized employee", async () => {
+		mockState.listUnconfirmedPayrollRuns.mockResolvedValue([
+			run("outside", ["outside-scope"]),
+			run("mixed", ["employee-1", "outside-scope"]),
+		]);
+
+		expect(await getScopedPayrollRunsAction()).toEqual({
+			success: true,
+			data: [],
+		});
+	});
+
+	it("refuses an empty payroll access scope before loading runs", async () => {
+		mockState.resolvePayrollAccessibleEmployeeIds.mockResolvedValue([]);
+
+		await expect(getScopedPayrollRunsAction()).rejects.toMatchObject({
+			_tag: "AuthorizationError",
+		});
+		expect(mockState.listUnconfirmedPayrollRuns).not.toHaveBeenCalled();
+	});
 });

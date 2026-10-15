@@ -20,6 +20,24 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
 	return <thead className={cn("[&_tr]:border-b", className)} data-slot="table-header" {...props} />;
 }
 
+function TableHeaderRow({
+	columns,
+}: {
+	columns: readonly { id: string; label: React.ReactNode; className?: string }[];
+}) {
+	return (
+		<TableHeader>
+			<TableRow>
+				{columns.map((column) => (
+					<TableHead key={column.id} className={column.className}>
+						{column.label}
+					</TableHead>
+				))}
+			</TableRow>
+		</TableHeader>
+	);
+}
+
 function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
 	return (
 		<tbody
@@ -89,4 +107,4 @@ function TableCaption({ className, ...props }: React.ComponentProps<"caption">) 
 	);
 }
 
-export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow };
+export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableHeaderRow, TableRow };

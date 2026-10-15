@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 
@@ -20,6 +20,7 @@ const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: 
 
 import { AnalyticsDateRangePicker } from "@/components/analytics/date-range-picker";
 import { ExportButton } from "@/components/analytics/export-button";
+import { MetricsTableHeader } from "@/components/analytics/metrics-table-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -27,8 +28,6 @@ import {
 	Table,
 	TableBody,
 	TableCell,
-	TableHead,
-	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
 import { getAnalyticsDateRangeForPreset } from "@/lib/analytics/date-ranges";
@@ -256,21 +255,21 @@ export default function TeamPerformancePage() {
 								</div>
 							) : (
 								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>{t("analytics.common.team", "Team")}</TableHead>
-											<TableHead className="text-right">
-												{t("analytics.common.totalHours", "Total Hours")}
-											</TableHead>
-											<TableHead className="text-right">
-												{t("analytics.teamPerformance.avgPerEmployee", "Avg per Employee")}
-											</TableHead>
-											<TableHead className="text-right">
-												{t("analytics.teamPerformance.employeeCount", "Employee Count")}
-											</TableHead>
-											<TableHead>{t("common.status", "Status")}</TableHead>
-										</TableRow>
-									</TableHeader>
+									<MetricsTableHeader
+										name={t("analytics.common.team", "Team")}
+										metrics={[
+											t("analytics.common.totalHours", "Total Hours"),
+											t(
+												"analytics.teamPerformance.avgPerEmployee",
+												"Avg per Employee",
+											),
+											t(
+												"analytics.teamPerformance.employeeCount",
+												"Employee Count",
+											),
+										]}
+										summary={t("common.status", "Status")}
+									/>
 									<TableBody>
 										{teams.map((team) => (
 											<TableRow key={team.teamId}>

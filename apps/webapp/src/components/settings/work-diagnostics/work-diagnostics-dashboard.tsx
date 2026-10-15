@@ -5,8 +5,7 @@ import {
 	Table,
 	TableBody,
 	TableCell,
-	TableHead,
-	TableHeader,
+	TableHeaderRow,
 	TableRow,
 } from "@/components/ui/table";
 import { parseInstant } from "@/lib/datetime/temporal-core";
@@ -132,23 +131,15 @@ export function WorkDiagnosticsDashboard({
 						</p>
 					) : (
 						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>{t("settings.workDiagnostics.findings.finding", "Finding")}</TableHead>
-									<TableHead>
-										{t("settings.workDiagnostics.findings.treatment", "Treatment")}
-									</TableHead>
-									<TableHead>
-										{t("settings.workDiagnostics.findings.provenance", "Provenance")}
-									</TableHead>
-									<TableHead>
-										{t("settings.workDiagnostics.findings.employees", "Employees")}
-									</TableHead>
-									<TableHead>
-										{t("settings.workDiagnostics.findings.evidence", "Evidence")}
-									</TableHead>
-								</TableRow>
-							</TableHeader>
+							<TableHeaderRow
+								columns={[
+									{ id: "finding", label: t("settings.workDiagnostics.findings.finding", "Finding") },
+									{ id: "treatment", label: t("settings.workDiagnostics.findings.treatment", "Treatment") },
+									{ id: "provenance", label: t("settings.workDiagnostics.findings.provenance", "Provenance") },
+									{ id: "employees", label: t("settings.workDiagnostics.findings.employees", "Employees") },
+									{ id: "evidence", label: t("settings.workDiagnostics.findings.evidence", "Evidence") },
+								]}
+							/>
 							<TableBody>
 								{report.findings.map((finding) => (
 									<FindingRow

@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 
@@ -22,6 +22,7 @@ const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: 
 
 import { AnalyticsDateRangePicker } from "@/components/analytics/date-range-picker";
 import { ExportButton } from "@/components/analytics/export-button";
+import { MetricsTableHeader } from "@/components/analytics/metrics-table-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Progress } from "@/components/ui/progress";
@@ -29,8 +30,6 @@ import {
 	Table,
 	TableBody,
 	TableCell,
-	TableHead,
-	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
 import { getAnalyticsDateRangeForPreset } from "@/lib/analytics/date-ranges";
@@ -171,23 +170,18 @@ function VacationBalanceCard({
 					</div>
 				) : (
 					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>{t("analytics.common.employee", "Employee")}</TableHead>
-								<TableHead className="text-right">
-									{t("analytics.vacationTrends.allocated", "Allocated")}
-								</TableHead>
-								<TableHead className="text-right">
-									{t("analytics.vacationTrends.taken", "Taken")}
-								</TableHead>
-								<TableHead className="text-right">
-									{t("analytics.vacationTrends.remaining", "Remaining")}
-								</TableHead>
-								<TableHead>
-									{t("analytics.vacationTrends.utilizationLabel", "Utilization")}
-								</TableHead>
-							</TableRow>
-						</TableHeader>
+						<MetricsTableHeader
+							name={t("analytics.common.employee", "Employee")}
+							metrics={[
+								t("analytics.vacationTrends.allocated", "Allocated"),
+								t("analytics.vacationTrends.taken", "Taken"),
+								t("analytics.vacationTrends.remaining", "Remaining"),
+							]}
+							summary={t(
+								"analytics.vacationTrends.utilizationLabel",
+								"Utilization",
+							)}
+						/>
 						<TableBody>
 							{employees.map((employee) => (
 								<TableRow key={employee.employeeId}>
