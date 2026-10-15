@@ -28,23 +28,34 @@ export function OrganizationTrackingImpact({ impact }: { impact: TrackingDateImp
 					<p>
 						{t(
 							"organization.tracking.closed-blockers",
-							"Some affected months are closed. Reopen them before generating a new preview.",
+							"Resolve the issues below before generating a new preview and saving.",
 						)}
 					</p>
 					<ul className="mt-2 list-disc pl-5">
 						{impact.blockers.map((blocker) => (
-							<li key={`${blocker.employeeId}:${blocker.month}`}>
+							<li
+								key={`${blocker.employeeId}:${blocker.kind}:${blocker.kind === "month_closed" ? blocker.month : blocker.exceptionDate}`}
+							>
 								{
 									impact.employees.find((row) => row.employeeId === blocker.employeeId)
 										?.employeeName
 								}{" "}
-								— {blocker.month}
+								—{" "}
+								{blocker.kind === "month_closed"
+									? blocker.month
+									: t(
+											"organization.tracking.exception-conflict",
+											"Employee exception {exception} precedes the new minimum {minimum}. Remove or change the employee exception first.",
+											{ exception: blocker.exceptionDate, minimum: blocker.minimumDate },
+										)}
 							</li>
 						))}
 					</ul>
-					<Link href="/settings/closed-months" className="mt-2 inline-block underline">
-						{t("organization.tracking.closed-settings", "Open closed-month settings")}
-					</Link>
+					{impact.blockers.some((blocker) => blocker.kind === "month_closed") ? (
+						<Link href="/settings/closed-months" className="mt-2 inline-block underline">
+							{t("organization.tracking.closed-settings", "Open closed-month settings")}
+						</Link>
+					) : null}
 				</div>
 			) : null}
 			{impact.employees.length === 0 ? (

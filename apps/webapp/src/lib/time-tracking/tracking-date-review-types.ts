@@ -15,7 +15,14 @@ export class TrackingDateRefusal extends Error {
 		this.name = "TrackingDateRefusal";
 	}
 }
-export type TrackingDateBlocker = { employeeId: string; kind: "month_closed"; month: string };
+export type TrackingDateBlocker =
+	| { employeeId: string; kind: "month_closed"; month: string }
+	| {
+			employeeId: string;
+			kind: "employee_exception_conflict";
+			exceptionDate: string;
+			minimumDate: string;
+	  };
 export interface TrackingEmployeeImpact {
 	employeeId: string;
 	employeeName: string;

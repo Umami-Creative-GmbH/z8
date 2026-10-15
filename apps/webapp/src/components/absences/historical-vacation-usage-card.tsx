@@ -1,0 +1,379 @@
+"use client";
+import { IconCheck, IconLoader2 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
+import { useTolgee, useTranslate } from "@tolgee/react";
+import { useEffect, useState } from "react";
+import {
+	previewPreviouslyTakenVacation,
+	commitPreviouslyTakenVacation,
+} from "@/app/[locale]/(app)/settings/vacation/historical-usage-actions";
+import type { HistoricalVacationReview } from "@/lib/absences/historical-vacation";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+	TFormItem,
+	TFormLabel,
+	TFormControl,
+	TFormDescription,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
+
+export function HistoricalVacationUsageCard({
+	organizationId,
+	employeeId,
+	initialYear,
+	onSaved,
+}: {
+	organizationId: string;
+	employeeId: string;
+	initialYear: number;
+	onSaved: () => void;
+}) {
+	const { t } = useTranslate();
+	const locale = useTolgee(["language"]).getLanguage() || "en";
+	const dateLabel = (date: string) => formatPlainDate(parsePlainDate(date), locale, "dateMedium");
+	const periodLabel = (period: string) =>
+		period === "am"
+			? t("settings.vacation.historical.morning", "Morning")
+			: period === "pm"
+				? t("settings.vacation.historical.afternoon", "Afternoon")
+				: t("settings.vacation.historical.fullDay", "Full day");
+	const [year, setYear] = useState(initialYear);
+	const [context, setContext] = useState<HistoricalVacationReview | null>(null);
+	const [review, setReview] = useState<HistoricalVacationReview | null>(null);
+	const [message, setMessage] = useState("");
+	const [busy, setBusy] = useState(false);
+	const form = useForm({
+		defaultValues: { year: String(initialYear), days: "", reason: "" },
+		onSubmit: async ({ value }) => {
+			setBusy(true);
+			setMessage("");
+			setReview(null);
+			try {
+				const result = await previewPreviouslyTakenVacation({
+					organizationId,
+					employeeId,
+					year: Number(value.year),
+					days: Number(value.days),
+					reason: value.reason,
+				});
+				if (!result.success) {
+					setMessage(result.error);
+					return;
+				}
+				setReview(result.data);
+			} catch {
+				setMessage(
+					t("settings.vacation.historical.reviewFailed", "Could not review the total. Try again."),
+				);
+			} finally {
+				setBusy(false);
+			}
+		},
+	});
+	useEffect(() => {
+		let cancelled = false;
+		setContext(null);
+		setReview(null);
+		setMessage("");
+		if (!Number.isInteger(year) || year < 1900 || year > 9998) return;
+		void previewPreviouslyTakenVacation({
+			organizationId,
+			employeeId,
+			year,
+			days: 0,
+			reason: "Review recorded historical usage",
+		})
+			.then((result) => {
+				if (cancelled) return;
+				if (result.success) {
+					setContext(result.data);
+					form.setFieldValue("days", String(result.data.recordedDays));
+					form.setFieldValue("reason", "");
+				} else setMessage(result.error);
+			})
+			.catch(() => {
+				if (!cancelled)
+					setMessage(
+						t(
+							"settings.vacation.historical.loadFailed",
+							"Could not load historical usage. Reopen this page to try again.",
+						),
+					);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [organizationId, employeeId, year, form, t]);
+	async function commit() {
+		if (!review) return;
+		setBusy(true);
+		setMessage("");
+		try {
+			const result = await commitPreviouslyTakenVacation({
+				organizationId,
+				employeeId,
+				year: review.year,
+				days: review.days,
+				reason: review.reason,
+				fingerprint: review.fingerprint,
+			});
+			if (!result.success) {
+				setMessage(result.error);
+				setReview(null);
+				return;
+			}
+			setMessage(t("settings.vacation.historical.saved", "Previously taken vacation saved."));
+			setReview(null);
+			setContext({
+				...result.data,
+				recordedDays: result.data.days,
+				lastReason: result.data.reason,
+			});
+			onSaved();
+		} catch {
+			setReview(null);
+			setMessage(
+				t(
+					"settings.vacation.historical.saveUnconfirmed",
+					"Could not confirm the result. Review the total again before retrying.",
+				),
+			);
+		} finally {
+			setBusy(false);
+		}
+	}
+	return (
+		<Card className="lg:col-span-3" aria-busy={busy}>
+			<CardHeader>
+				<CardTitle>
+					{t("settings.vacation.historical.title", "Previously taken vacation")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.vacation.historical.description",
+						"Record the employee's vacation used before tracking as a separate annual total. This replaces the previous total; it does not reduce their allowance.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<form
+					className="grid gap-4 md:grid-cols-2"
+					onSubmit={(event) => {
+						event.preventDefault();
+						void form.handleSubmit();
+					}}
+				>
+					<form.Field
+						name="year"
+						validators={{
+							onChange: ({ value }) =>
+								Number.isInteger(Number(value)) && Number(value) >= 1900 && Number(value) <= 9998
+									? undefined
+									: t("settings.vacation.historical.invalidYear", "Choose a valid calendar year."),
+						}}
+					>
+						{(field) => (
+							<TFormItem>
+								<TFormLabel>{t("settings.vacation.historical.year", "Calendar year")}</TFormLabel>
+								<TFormControl>
+									<Input
+										type="number"
+										name={field.name}
+										autoComplete="off"
+										min="1900"
+										max="9998"
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(event) => {
+											field.handleChange(event.target.value);
+											setYear(Number(event.target.value));
+											setReview(null);
+										}}
+										disabled={busy}
+									/>
+								</TFormControl>
+								<TFormMessage field={field} />
+							</TFormItem>
+						)}
+					</form.Field>
+					<form.Field
+						name="days"
+						validators={{
+							onChange: ({ value }) =>
+								value !== "" &&
+								Number(value) >= 0 &&
+								Number(value) <= 366 &&
+								Number(value) % 0.5 === 0
+									? undefined
+									: t(
+											"settings.vacation.historical.invalidDays",
+											"Use a nonnegative amount in half-day steps.",
+										),
+						}}
+					>
+						{(field) => (
+							<TFormItem>
+								<TFormLabel>
+									{t(
+										"settings.vacation.historical.days",
+										"Replacement total of previously taken days",
+									)}
+								</TFormLabel>
+								<TFormControl>
+									<Input
+										type="number"
+										name={field.name}
+										autoComplete="off"
+										min="0"
+										max="366"
+										step="0.5"
+										required
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(event) => {
+											field.handleChange(event.target.value);
+											setReview(null);
+										}}
+										disabled={busy || !context}
+									/>
+								</TFormControl>
+								<TFormDescription>
+									{t(
+										"settings.vacation.historical.zero",
+										"Enter zero to clear the total while keeping its review history.",
+									)}
+								</TFormDescription>
+								<TFormMessage field={field} />
+							</TFormItem>
+						)}
+					</form.Field>
+					<form.Field
+						name="reason"
+						validators={{
+							onChange: ({ value }) =>
+								value.trim()
+									? undefined
+									: t(
+											"settings.vacation.historical.reasonRequired",
+											"Explain the source and reason for this total.",
+										),
+						}}
+					>
+						{(field) => (
+							<TFormItem className="md:col-span-2">
+								<TFormLabel>
+									{t("settings.vacation.historical.reason", "Source and review reason")}
+								</TFormLabel>
+								<TFormControl>
+									<Textarea
+										name={field.name}
+										autoComplete="off"
+										required
+										maxLength={2000}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(event) => {
+											field.handleChange(event.target.value);
+											setReview(null);
+										}}
+										disabled={busy || !context}
+									/>
+								</TFormControl>
+								<TFormMessage field={field} />
+							</TFormItem>
+						)}
+					</form.Field>
+					{context && (
+						<p className="break-words text-sm text-muted-foreground md:col-span-2">
+							{t(
+								"settings.vacation.historical.coverage",
+								"Recorded total: {days} days. Historical coverage: {start} to {end}. Coverage stays fixed if tracking dates change.",
+								{
+									days: context.recordedDays,
+									start: dateLabel(context.coverageStart),
+									end: dateLabel(context.coverageEnd),
+								},
+							)}
+						</p>
+					)}
+					{context?.lastReason && (
+						<p className="break-words text-sm text-muted-foreground md:col-span-2">
+							{t("settings.vacation.historical.lastReview", "Last review: {reason}", {
+								reason: context.lastReason,
+							})}
+						</p>
+					)}
+					<Button type="submit" disabled={busy || !context} className="w-fit">
+						{busy && (
+							<IconLoader2
+								className="size-4 animate-spin motion-reduce:animate-none"
+								aria-hidden="true"
+							/>
+						)}
+						{t("settings.vacation.historical.review", "Review balance impact")}
+					</Button>
+				</form>
+				{message && (
+					<p role="status" className="text-sm">
+						{message}
+					</p>
+				)}
+				{review && (
+					<section
+						aria-label={t("settings.vacation.historical.reviewTitle", "Historical vacation review")}
+						className="space-y-3 rounded-md border p-4"
+					>
+						<p>
+							{t(
+								"settings.vacation.historical.impact",
+								"Allowance: {allowance} days. Vacation balance: {before} → {after} days. Proposed previously taken total: {days} days.",
+								{
+									allowance: review.after.allowanceDays,
+									before: review.before.remainingDays,
+									after: review.after.remainingDays,
+									days: review.days,
+								},
+							)}
+						</p>
+						{review.historicalRecords.length > 0 && (
+							<div>
+								<p className="font-medium">
+									{t(
+										"settings.vacation.historical.existing",
+										"Already recorded historical vacation",
+									)}
+								</p>
+								<ul className="list-disc pl-5">
+									{review.historicalRecords.map((record) => (
+										<li key={record.id}>
+											{dateLabel(record.startDate)} – {dateLabel(record.endDate)} (
+											{periodLabel(record.startPeriod)} / {periodLabel(record.endPeriod)})
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
+						{review.blockers.map((blocker) => (
+							<p role="alert" key={blocker} className="text-sm text-destructive">
+								{blocker}
+							</p>
+						))}
+						<Button
+							type="button"
+							onClick={() => void commit()}
+							disabled={busy || review.blockers.length > 0}
+						>
+							<IconCheck className="size-4" aria-hidden="true" />
+							{t("settings.vacation.historical.confirm", "Save reviewed total")}
+						</Button>
+					</section>
+				)}
+			</CardContent>
+		</Card>
+	);
+}

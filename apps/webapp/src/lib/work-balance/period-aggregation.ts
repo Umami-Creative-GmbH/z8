@@ -51,6 +51,8 @@ export async function computeEmployeePeriodBalance(input: {
 	periodEnd: string;
 	calculationStartDate?: string | null;
 	trackingStartDateOverride?: string | null;
+ employeeTrackingStartDateOverride?: string | null;
+ employeeEmploymentStartDateOverride?: string;
 	employeeTimezoneOverride?: string;
 	timezone?: string;
 	isClosed: boolean;
@@ -121,6 +123,8 @@ export async function computeEmployeePeriodBalance(input: {
 				endDate,
 				timezone,
 				trackingStartDateOverride: input.trackingStartDateOverride,
+ employeeTrackingStartDateOverride: input.employeeTrackingStartDateOverride,
+ employeeEmploymentStartDateOverride: input.employeeEmploymentStartDateOverride,
 				employeeTimezoneOverride: input.employeeTimezoneOverride,
 			},
 			...(input.dbClient ? ([input.dbClient] as const) : []),

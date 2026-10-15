@@ -1195,6 +1195,7 @@ export async function getVacationBalance(): Promise<
 	ServerActionResult<{
 		totalDays: number;
 		usedDays: number;
+		previouslyTakenDays?: number;
 		pendingDays: number;
 		remainingDays: number;
 		carryoverDays: number;
@@ -1296,6 +1297,7 @@ export async function getVacationBalance(): Promise<
 		return {
 			totalDays: balance.totalDays,
 			usedDays: balance.usedDays,
+			previouslyTakenDays: balance.previouslyTakenDays,
 			pendingDays: balance.pendingDays,
 			remainingDays: balance.remainingDays,
 			carryoverDays: balance.carryoverDays || 0,

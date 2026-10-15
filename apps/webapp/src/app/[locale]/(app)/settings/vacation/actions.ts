@@ -2,6 +2,7 @@
 
 import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import { revalidateTag } from "next/cache";
 import type { db } from "@/db";
 import {
@@ -170,8 +171,7 @@ function rejectConflictingAbsenceCategoryRules(
 }
 
 type AbsenceCategoryReferenceQueryable =
-	| typeof db
-	| Parameters<Parameters<typeof db.transaction>[0]>[0];
+	typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 async function hasAbsenceCategoryAbsenceReferences(
 	dbClient: AbsenceCategoryReferenceQueryable,
@@ -983,6 +983,7 @@ export async function updateAbsenceCategory(
 		const updateResult = yield* dbService
 			.query("updateAbsenceCategory", async () => {
 				return await dbService.db.transaction(async (tx) => {
+					await acquireExclusiveOrganizationConfigurationGuard(tx, actor.organizationId);
 					const [category] = await tx
 						.select()
 						.from(absenceCategory)
@@ -1461,7 +1462,10 @@ export async function getEmployeeVacationBalance(
 		});
 		const dbService = yield* DatabaseService;
 
-		const emp = yield* getTargetEmployee(employeeId, "getEmployeeVacationBalance:getTargetEmployee");
+		const emp = yield* getTargetEmployee(
+			employeeId,
+			"getEmployeeVacationBalance:getTargetEmployee",
+		);
 		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
 			message: "Insufficient permissions",
 			resource: "employee_allowance",

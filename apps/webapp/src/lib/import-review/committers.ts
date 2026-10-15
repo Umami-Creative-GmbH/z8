@@ -15,6 +15,10 @@ import {
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
+import {
+	assertHistoricalVacationNotOverlapping,
+	historicalVacationRefusalOf,
+} from "@/lib/absences/historical-vacation";
 import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
@@ -457,9 +461,7 @@ async function commitWorkPeriod(
 		organizationId: job.organizationId,
 		employeeId: payload.employeeId,
 		causedByUserId: job.committedBy,
-		work: [
-			workInterval(startAt.toJSDate(), endAt?.toJSDate() ?? startAt.toJSDate()),
-		],
+		work: [workInterval(startAt.toJSDate(), endAt?.toJSDate() ?? startAt.toJSDate())],
 	});
 	// Completed work changes the balance: the refresh commits with it, as in the adopted
 	// import (#1214). Endpoints are captured in UTC; the employee's local day may start on
@@ -517,6 +519,15 @@ async function commitAbsence(
 	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
 	const startDate = parseUtcDateTime(payload.startsAt, "startsAt").toISODate()!;
 	const endDate = parseUtcDateTime(payload.endsAt, "endsAt").toISODate()!;
+	// Unknown provider category mappings must never bypass historical-vacation safety.
+	const knownCategory = payload.categoryName
+		? await database.query.absenceCategory.findFirst({
+				where: and(
+					eq(absenceCategory.organizationId, job.organizationId),
+					eq(absenceCategory.name, payload.categoryName),
+				),
+			})
+		: null;
 	// An absence touching a closed month is blocked, never written (#762).
 	try {
 		await assertAbsenceDaysOpen(database, {
@@ -524,7 +535,17 @@ async function commitAbsence(
 			employeeId: payload.employeeId,
 			days: [{ startDate, endDate }],
 		});
+		await assertHistoricalVacationNotOverlapping(database, {
+			organizationId: job.organizationId,
+			employeeId: payload.employeeId,
+			startDate,
+			endDate,
+			categoryId: knownCategory?.id,
+			unresolvedImport: !knownCategory,
+		});
 	} catch (error) {
+		const historical = historicalVacationRefusalOf(error);
+		if (historical) return blockRow(database, row.id, job, historical.message, options);
 		const closed = monthClosedRefusalOf(error);
 		if (!closed) throw error;
 		return blockRow(database, row.id, job, closed.message, options);

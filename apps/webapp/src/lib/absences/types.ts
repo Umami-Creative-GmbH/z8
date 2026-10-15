@@ -15,7 +15,9 @@ export interface VacationBalance {
 	 * (#1106).
 	 */
 	allowanceDays: number;
-	usedDays: number; // Approved absences taken
+	/** Historical usage included in usedDays; never changes allowanceDays. */
+	previouslyTakenDays?: number;
+	usedDays: number; // Approved absences and historical usage taken
 	pendingDays: number; // Pending requests
 	remainingDays: number; // Available to request; never below 0
 	/**

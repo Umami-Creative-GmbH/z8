@@ -12,6 +12,8 @@ export type VacationAdjustmentSums = {
 	manual: number;
 	/** The accrual job's shares: an accrual policy's allowance to date. */
 	accrual: number;
+	/** Previously taken usage, positive days; separate from allowance adjustments. */
+	previouslyTaken?: number;
 };
 
 /** All of an employee's adjustments for the year, manual and accrual alike; 0 without any. */
@@ -35,6 +37,7 @@ export async function loadVacationAdjustmentSums(
 		.select({
 			employeeId: employee.id,
 			manual: sql<string>`COALESCE(SUM(${vacationAdjustment.days}) FILTER (WHERE ${vacationAdjustment.kind} = 'manual'), 0)`,
+			previouslyTaken: sql<string>`COALESCE(-SUM(${vacationAdjustment.days}) FILTER (WHERE ${vacationAdjustment.kind} = 'historical_usage'), 0)`,
 			accrual: sql<string>`COALESCE(SUM(${vacationAdjustment.days}) FILTER (WHERE ${vacationAdjustment.kind} = 'accrual'), 0)`,
 		})
 		.from(employee)
@@ -50,7 +53,13 @@ export async function loadVacationAdjustmentSums(
 	return new Map(
 		rows.map((row) => [
 			row.employeeId,
-			{ manual: Number.parseFloat(row.manual), accrual: Number.parseFloat(row.accrual) },
+			{
+				manual: Number.parseFloat(row.manual),
+				accrual: Number.parseFloat(row.accrual),
+				...(Number(row.previouslyTaken ?? 0) !== 0
+					? { previouslyTaken: Number(row.previouslyTaken ?? 0) }
+					: {}),
+			},
 		]),
 	);
 }

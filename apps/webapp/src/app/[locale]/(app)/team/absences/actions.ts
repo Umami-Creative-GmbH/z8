@@ -12,10 +12,11 @@ import {
 	timeRecord,
 	timeRecordAbsence,
 } from "@/db/schema";
+import { getAbsenceDays, loadWorkingDaysForEmployees } from "@/lib/absences/absence-days-resolver";
 import {
-	getAbsenceDays,
-	loadWorkingDaysForEmployees,
-} from "@/lib/absences/absence-days-resolver";
+	assertHistoricalVacationNotOverlapping,
+	historicalVacationRefusalOf,
+} from "@/lib/absences/historical-vacation";
 import { dateRangesOverlap } from "@/lib/absences/date-utils";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
 import { loadDeputyDisplays, loadDeputyViewer } from "@/lib/absences/deputy-display-store";
@@ -435,6 +436,13 @@ export async function recordAbsenceForEmployee(
 				days: [{ startDate: normalizedInput.startDate, endDate: normalizedInput.endDate }],
 			});
 
+			await assertHistoricalVacationNotOverlapping(tx, {
+				organizationId: actor.organizationId,
+				employeeId: target.id,
+				categoryId: normalizedInput.categoryId,
+				startDate: normalizedInput.startDate,
+				endDate: normalizedInput.endDate,
+			});
 			const existingAbsences = await tx.query.absenceEntry.findMany({
 				where: and(
 					eq(absenceEntry.employeeId, target.id),
@@ -642,6 +650,8 @@ export async function recordAbsenceForEmployee(
 	} catch (error) {
 		const closed = await monthClosedActionResult(error);
 		if (closed) return closed;
+		const historical = historicalVacationRefusalOf(error);
+		if (historical) return { success: false, error: historical.message, code: "ConflictError" };
 		logger.error({ error }, "Failed to record absence for employee");
 		return {
 			success: false,

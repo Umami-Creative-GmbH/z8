@@ -56,6 +56,7 @@ export interface ManagerAbsenceEmployeeRow {
 	teamName: string | null;
 	vacationAllowance: number;
 	usedVacationDays: number;
+	previouslyTakenVacationDays?: number;
 	pendingVacationDays: number;
 	remainingVacationDays: number;
 	/** Approved vacation beyond the allowance (overdrawn vacation, #1111); never deducted. */
