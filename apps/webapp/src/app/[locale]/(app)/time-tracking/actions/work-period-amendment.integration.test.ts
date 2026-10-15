@@ -436,6 +436,23 @@ describe(
 				// Both admissions amend through work records, which advances the revision (#1226).
 				graph_revision: before.graph_revision + 1,
 			});
+			// The admin edit records the location change in the audit log in both admissions.
+			const { rows: audits } = await admin.query(
+				`select action, performed_by, employee_id, changes, metadata from audit_log
+				 where organization_id = $1 and entity_type = 'work_period' and entity_id = $2`,
+				[ids.organization, period.id],
+			);
+			expect(audits).toEqual([
+				{
+					action: "update",
+					performed_by: ids.adminUser,
+					employee_id: expect.any(String),
+					changes: JSON.stringify({
+						workLocationType: { before: before.work_location_type, after: "home" },
+					}),
+					metadata: JSON.stringify({ reason: "Forgot to clock out" }),
+				},
+			]);
 		},
 	);
 
