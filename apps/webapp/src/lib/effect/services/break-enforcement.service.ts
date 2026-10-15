@@ -1,19 +1,15 @@
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import { timeEntry, workPeriod } from "@/db/schema";
-import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { workPeriod } from "@/db/schema";
+import type { Instant } from "@/lib/datetime/temporal-core";
+import type { DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import {
 	type AutomaticBreakAdjustmentOutcome,
-	type LegacyBreakPlan,
+	recoveredByIntent,
 	runAutomaticBreakAdjustment,
 } from "@/lib/time-tracking/automatic-break-adjustment";
 import { calculateBreakDeficit } from "@/lib/time-tracking/break-policy-calculation";
-import { readBreakMinutesTakenBefore } from "@/lib/time-tracking/breaks-taken";
-import { capturedZone } from "@/lib/time-tracking/timezone-capture";
-import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { tryPromiseWithRunner } from "@/lib/effect/promise-callback";
 import { DatabaseService } from "./database.service";
 import { WorkPolicyService } from "./work-policy.service";
 
@@ -25,9 +21,6 @@ export interface EnforceBreaksInput {
 	employeeId: string;
 	organizationId: string;
 	workPeriodId: string;
-	sessionDurationMinutes: number;
-	/** The zone a legacy adjustment's break entries are captured in; not the day counted. */
-	timezone: string;
 	createdBy: string;
 }
 
@@ -209,209 +202,33 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			});
 
 		/**
-		 * The established legacy plan from plain reads: the period, the breaks already
-		 * taken on its own day and the policy in force when it ended, with the established
-		 * placement and arithmetic. Only a legacy organization's adjustment uses it; its writes run
-		 * in the coordinated owner.
-		 */
-		const planLegacyBreakEnforcement = (
-			input: EnforceBreaksInput,
-		): Effect.Effect<LegacyBreakPlan | null, NotFoundError | DatabaseError> =>
-			Effect.gen(function* () {
-				const period = yield* dbService.query("getWorkPeriodForEnforcement", async () => {
-					return await dbService.db.query.workPeriod.findFirst({
-						where: and(
-							eq(workPeriod.id, input.workPeriodId),
-							eq(workPeriod.organizationId, input.organizationId),
-							eq(workPeriod.employeeId, input.employeeId),
-						),
-					});
-				});
-
-				if (!period) {
-					return yield* Effect.fail(
-						new NotFoundError({
-							message: "Work period not found",
-							entityType: "workPeriod",
-							entityId: input.workPeriodId,
-						}),
-					);
-				}
-
-				// Skip if already auto-adjusted
-				if (period.wasAutoAdjusted || !period.endTime || !period.clockOutId) {
-					return null;
-				}
-
-				// Breaks already taken on the work's own local start day, counted as the
-				// adopted adjustment counts them (#547): never the day enforcement runs,
-				// and never `input.timezone`, which only captures the break entries.
-				const clockIn = yield* dbService.query("getClockInCaptureForEnforcement", async () => {
-					const [entry] = await dbService.db
-						.select({
-							timezone: timeEntry.timezone,
-							utcOffsetMinutes: timeEntry.utcOffsetMinutes,
-						})
-						.from(timeEntry)
-						.where(
-							and(
-								eq(timeEntry.id, period.clockInId),
-								eq(timeEntry.organizationId, input.organizationId),
-								eq(timeEntry.employeeId, input.employeeId),
-							),
-						)
-						.limit(1);
-					return entry;
-				});
-				if (!clockIn) {
-					return yield* Effect.fail(
-						new NotFoundError({
-							message: "Clock-in entry not found",
-							entityType: "timeEntry",
-							entityId: period.clockInId,
-						}),
-					);
-				}
-				const endTime = period.endTime;
-				const breaksTaken = yield* dbService.query("getBreaksTakenBeforeWork", () =>
-					readBreakMinutesTakenBefore(dbService.db, {
-						organizationId: input.organizationId,
-						employeeId: input.employeeId,
-						workPeriodId: period.id,
-						startAt: instantFromDate(period.startTime),
-						endAt: instantFromDate(endTime),
-						startZone: capturedZone(clockIn),
-					}),
-				);
-
-				// The rule in force when the work ended, as the adopted break snapshot
-				// looks it up (#549): never the rule on the day enforcement runs.
-				const deficitResult = yield* calculateBreakDeficitInternal({
-					employeeId: input.employeeId,
-					organizationId: input.organizationId,
-					policyAt: instantFromDate(endTime),
-					sessionDurationMinutes: input.sessionDurationMinutes,
-					breaksTakenMinutes: breaksTaken,
-				});
-
-				// No enforcement needed if no deficit or no applicable rule
-				if (
-					deficitResult.deficit <= 0 ||
-					!deficitResult.applicableRule ||
-					!deficitResult.regulationId ||
-					!deficitResult.regulationName
-				) {
-					return null;
-				}
-
-				// Determine where to insert the break
-				// Insert after maxUninterruptedMinutes from start, or after the threshold
-				const maxUninterrupted = deficitResult.maxUninterruptedMinutes;
-				const insertAfterMinutes = maxUninterrupted
-					? Math.min(
-							maxUninterrupted,
-							deficitResult.applicableRule.workingMinutesThreshold,
-						)
-					: deficitResult.applicableRule.workingMinutesThreshold;
-
-				// Calculate break insertion point
-				const startDT = dateFromDB(period.startTime);
-				if (!startDT) return null;
-
-				const breakStartDT = startDT.plus({ minutes: insertAfterMinutes });
-				const breakEndDT = breakStartDT.plus({
-					minutes: deficitResult.deficit,
-				});
-				const breakStartDate = dateToDB(breakStartDT);
-				const breakEndDate = dateToDB(breakEndDT);
-
-				if (!breakStartDate || !breakEndDate) return null;
-
-				// Validate break times are within the work period
-				if (
-					breakStartDate <= period.startTime ||
-					breakEndDate >= period.endTime
-				) {
-					return null;
-				}
-
-				const originalDurationMinutes =
-					period.durationMinutes || input.sessionDurationMinutes;
-
-				// Calculate new durations
-				const firstDurationMinutes = Math.floor(
-					(breakStartDate.getTime() - period.startTime.getTime()) / 60000,
-				);
-				const secondDurationMinutes = Math.floor(
-					(period.endTime.getTime() - breakEndDate.getTime()) / 60000,
-				);
-
-				return {
-					expected: {
-						clockInId: period.clockInId,
-						clockOutId: period.clockOutId,
-						startTime: period.startTime,
-						endTime: period.endTime,
-						durationMinutes: period.durationMinutes,
-					},
-					breakStart: breakStartDate,
-					breakEnd: breakEndDate,
-					timezone: input.timezone,
-					firstDurationMinutes,
-					secondDurationMinutes,
-					reason: {
-						type: "break_enforcement",
-						regulationId: deficitResult.regulationId,
-						regulationName: deficitResult.regulationName,
-						breakInsertedMinutes: deficitResult.deficit,
-						breakInsertedAt: breakStartDate.toISOString(),
-						originalDurationMinutes,
-						adjustedDurationMinutes: firstDurationMinutes + secondDurationMinutes,
-						ruleApplied: deficitResult.applicableRule,
-					},
-				} satisfies LegacyBreakPlan;
-			});
-
-		/**
 		 * Enforces breaks after a clock-out through the one automatic adjustment owner
-		 * (#305): adopted organizations run the completed-work operation and keep a
-		 * durable intent while review blocks it; legacy organizations run the established
-		 * plan with atomic, coordinated writes. A committed closure is never undone.
+		 * (#305, #1220), which divides the work by the owed break through work records
+		 * in either admission; adopted organizations keep a durable intent while it is
+		 * blocked. A committed closure is never undone.
 		 */
 		const enforceBreaksAfterClockOutInternal = (
 			input: EnforceBreaksInput,
 		): Effect.Effect<BreakEnforcementResult, NotFoundError | DatabaseError> =>
 			Effect.gen(function* () {
-				const outcome = yield* tryPromiseWithRunner({
-					try: (run) =>
-						runAutomaticBreakAdjustment({
-							organizationId: input.organizationId,
-							employeeId: input.employeeId,
-							workPeriodId: input.workPeriodId,
-							trigger: {
-								userId:
-									input.createdBy === SYSTEM_CRON_ACTOR ? null : input.createdBy,
-								closureEntryId: null,
-							},
-							planLegacy: () => run(planLegacyBreakEnforcement(input)),
-						}),
-					catch: (cause) =>
-						cause instanceof NotFoundError
-							? cause
-							: new DatabaseError({
-									message: "Automatic break adjustment failed",
-									operation: "adjustAutomaticBreak",
-									cause,
-								}),
-				});
+				const outcome = yield* dbService.query("timeTracking.adjustAutomaticBreak", () =>
+					runAutomaticBreakAdjustment({
+						organizationId: input.organizationId,
+						employeeId: input.employeeId,
+						workPeriodId: input.workPeriodId,
+						trigger: {
+							userId: input.createdBy === SYSTEM_CRON_ACTOR ? null : input.createdBy,
+							closureEntryId: null,
+						},
+					}),
+				);
 				return breakEnforcementResultOf(input.workPeriodId, outcome);
 			});
 
 		return BreakEnforcementService.of({
 			calculateBreakDeficit: (params) => calculateBreakDeficitInternal(params),
 
-			enforceBreaksAfterClockOut: (input) =>
-				enforceBreaksAfterClockOutInternal(input),
+			enforceBreaksAfterClockOut: (input) => enforceBreaksAfterClockOutInternal(input),
 
 			processUnprocessedPeriods: (input) =>
 				Effect.gen(function* () {
@@ -437,9 +254,8 @@ export const BreakEnforcementServiceLive = Layer.effect(
 							where: (period) =>
 								and(
 									...conditions,
-									// Adopted organizations commit a durable intent with every
-									// ordinary closure; `processAutomaticBreakIntents` owns them.
-									sql`not exists (select 1 from time_entry_append_control control where control.organization_id = ${period.organizationId} and control.mode = 'active')`,
+									// Work recovered by its committed intent is `processAutomaticBreakIntents`'s.
+									sql`not ${recoveredByIntent(period.organizationId)}`,
 								),
 							with: {
 								employee: {
@@ -467,10 +283,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 
 					for (const period of periods) {
 						// Filter by organization if specified
-						if (
-							input.organizationId &&
-							period.organizationId !== input.organizationId
-						) {
+						if (input.organizationId && period.organizationId !== input.organizationId) {
 							continue;
 						}
 
@@ -480,8 +293,6 @@ export const BreakEnforcementServiceLive = Layer.effect(
 							employeeId: period.employeeId,
 							organizationId: period.organizationId,
 							workPeriodId: period.id,
-							sessionDurationMinutes: period.durationMinutes || 0,
-							timezone: period.employee?.userSettings?.timezone || "UTC",
 							createdBy: SYSTEM_CRON_ACTOR,
 						});
 

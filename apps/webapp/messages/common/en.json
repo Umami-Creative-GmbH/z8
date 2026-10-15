@@ -373,6 +373,8 @@
     "previous": "Previous",
     "recovering": "Recovering...",
     "refresh": "Refresh",
+    "refreshData": "Refresh data",
+    "refreshDataFailed": "Could not refresh data. Please try again.",
     "refreshing": "Refreshing...",
     "reject": "Reject",
     "rejecting": "Rejecting…",
@@ -2528,6 +2530,9 @@
     "theme-time": "Time based",
     "theme-time-info": "Time based is using {currentMode} mode. Switches to {nextMode} at {time}.",
     "theme-toggle": "Toggle theme"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Includes {days} days previously taken before tracking"
   },
   "validation": {
     "first-name-required": "First Name is required",

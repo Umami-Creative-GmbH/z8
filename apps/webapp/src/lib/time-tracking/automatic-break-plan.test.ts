@@ -75,7 +75,7 @@ describe("planAutomaticBreak", () => {
 		expect(planAutomaticBreak({ ...source, alreadyTakenBreakMinutes: 30, regulation })).toBe(null);
 	});
 
-	it("inserts the owed break after the threshold and rounds each segment on its own", () => {
+	it("inserts the owed break after the threshold", () => {
 		const plan = planAutomaticBreak({ ...source, alreadyTakenBreakMinutes: 10, regulation });
 		expect(plan).not.toBe(null);
 		if (!plan) return;
@@ -84,9 +84,6 @@ describe("planAutomaticBreak", () => {
 		expect(plan.regulation).toEqual({ id: regulation.id, name: "ArbZG" });
 		expect(iso(plan.breakStartAt)).toBe("2026-07-22T12:00:40Z");
 		expect(iso(plan.breakEndAt)).toBe("2026-07-22T12:20:40Z");
-		// 06:00:40-12:00:40 is 360 min; 12:20:40-13:00:31 is 39m51s, half up 40.
-		expect(plan.retainedMinutes).toBe(360);
-		expect(plan.generatedMinutes).toBe(40);
 	});
 
 	it("places the break after the maximum uninterrupted time when that comes first", () => {
@@ -99,7 +96,7 @@ describe("planAutomaticBreak", () => {
 		expect(plan && iso(plan.breakEndAt)).toBe("2026-07-22T11:30:40Z");
 	});
 
-	it("keeps a positive segment that rounds to zero minutes", () => {
+	it("places a break that leaves a positive segment shorter than a minute", () => {
 		const plan = planAutomaticBreak({
 			sourceStart: at("2026-07-22T06:00:00Z"),
 			sourceEnd: at("2026-07-22T12:30:20Z"),
@@ -107,8 +104,7 @@ describe("planAutomaticBreak", () => {
 			alreadyTakenBreakMinutes: 0,
 			regulation,
 		});
-		expect(plan?.retainedMinutes).toBe(360);
-		expect(plan?.generatedMinutes).toBe(0);
+		expect(plan && iso(plan.breakEndAt)).toBe("2026-07-22T12:30:00Z");
 	});
 
 	it("returns null when the break does not end strictly inside the work", () => {

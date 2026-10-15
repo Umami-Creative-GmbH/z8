@@ -25,6 +25,12 @@ import {
 	saveFormCustomFieldValues,
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
+import { personnelNumberKey } from "@/lib/organization/personnel-number";
+import {
+	assertPersonnelNumberFree,
+	findPersonnelNumberHolder,
+	keepPersonnelNumberRefusal,
+} from "@/lib/organization/personnel-number-uniqueness";
 import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
 import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
 import {
@@ -60,6 +66,10 @@ import {
 } from "./employee-action-utils";
 import { buildEligibleInvitationDraftPredicate } from "./employee-invitation-draft-eligibility";
 import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
+import {
+	assertDraftPersonnelNumberFree,
+	findDraftPersonnelNumberHolder,
+} from "./invitation-draft-personnel-number";
 import { keepTermsRefusal, markContractWorkBalanceDirty } from "./employment-history-actions";
 
 const logger = createLogger("EmployeeActions");
@@ -281,6 +291,17 @@ export async function updateEmployeeAction(
 					lastName?: string;
 				};
 
+				// A personnel number is unique per organization among current and former
+				// employees (#881); a blank one is no number.
+				const personnelNumber =
+					typeof employeeUpdateData.employeeNumber === "string"
+						? employeeUpdateData.employeeNumber
+						: null;
+				const personnelNumberScope = {
+					organizationId: targetEmployee.organizationId,
+					exceptEmployeeId: employeeId,
+				};
+
 				// Role, team and active state feed creation authority and target checks.
 				yield* dbService
 					.query("updateEmployee", () =>
@@ -290,6 +311,20 @@ export async function updateEmployeeAction(
 								employeeIds: [employeeId],
 							},
 							async (tx) => {
+        // Actual joining dates require a reviewed correction. Recheck under the employee guard,
+        // including stale full-form payloads that would otherwise undo a reviewed save.
+        if (Object.hasOwn(scopedData, "startDate") && scopedData.startDate !== undefined) {
+         const [current] = await tx.select({startDate:employee.startDate}).from(employee).where(and(eq(employee.id,employeeId),eq(employee.organizationId,targetEmployee.organizationId)));
+         if (!current || dateToUtcIsoDate(scopedData.startDate) !== dateToUtcIsoDate(current.startDate)) {
+          throw new ValidationError({message:"Review the actual employment start correction before saving it.",field:"startDate"});
+         }
+        }
+								if (personnelNumber !== null) {
+									await assertPersonnelNumberFree(tx, {
+										...personnelNumberScope,
+										personnelNumber,
+									});
+								}
 								await tx
 									.update(employee)
 									.set(employeeUpdateData)
@@ -310,7 +345,20 @@ export async function updateEmployeeAction(
 							dbService.db,
 						),
 					)
-					.pipe(keepCustomFieldRefusal);
+					.pipe(
+						keepCustomFieldRefusal,
+						// A concurrent save that took the number first hits the unique index.
+						keepPersonnelNumberRefusal(() =>
+							personnelNumber === null
+								? Effect.succeed(null)
+								: dbService.query("updateEmployee:personnelNumberHolder", () =>
+										findPersonnelNumberHolder(dbService.db, {
+											...personnelNumberScope,
+											personnelNumber,
+										}),
+									),
+						),
+					);
 
 				// A lower role or a deactivation can take projects away from the employee's share links (#806).
 				if ("role" in employeeUpdateData || "isActive" in employeeUpdateData) {
@@ -484,6 +532,16 @@ export async function updateEmployeeInvitationDraftAction(
 					? parseHourlyRate(validatedData.hourlyRate)
 					: null;
 				const { hourlyRate: _hourlyRate, ...draftUpdate } = validatedData;
+				// A draft's personnel number follows the employee rule (#1197): not one an
+				// employee of the organization or another pending draft holds.
+				const draftPersonnelNumber =
+					typeof draftUpdate.employeeNumber === "string" ? draftUpdate.employeeNumber : null;
+				const draftPersonnelNumberScope = (personnelNumber: string) => ({
+					organizationId: actor.organizationId,
+					personnelNumber,
+					draftId,
+					now: dateFromInstant(systemClock.nowInstant()),
+				});
 				const updatedDrafts = yield* actor.dbService.query("updateEmployeeInvitationDraft", async () => {
 					return await actor.dbService.db.transaction(
 						async (tx) => {
@@ -496,6 +554,7 @@ export async function updateEmployeeInvitationDraftAction(
 								.select({
 									id: employeeInvitationDraft.id,
 									invitationId: employeeInvitationDraft.invitationId,
+									employeeNumber: employeeInvitationDraft.employeeNumber,
 								})
 								.from(employeeInvitationDraft)
 								.where(
@@ -550,6 +609,19 @@ export async function updateEmployeeInvitationDraftAction(
 
 							if (!eligibleDraft) return [];
 
+							// Like an employee, a draft saved with its unchanged number keeps it; a
+							// clash is dropped and audited when the invitation is accepted.
+							if (
+								draftPersonnelNumber !== null &&
+								personnelNumberKey(draftPersonnelNumber) !==
+									personnelNumberKey(lockedDraft.employeeNumber)
+							) {
+								await assertDraftPersonnelNumberFree(
+									tx,
+									draftPersonnelNumberScope(draftPersonnelNumber),
+								);
+							}
+
 							const updatedDrafts = await tx
 								.update(employeeInvitationDraft)
 								.set({
@@ -589,7 +661,20 @@ export async function updateEmployeeInvitationDraftAction(
 						},
 						{ isolationLevel: "serializable" },
 					);
-				});
+				}).pipe(
+					// Serializable: a concurrent draft save of the same number rolls one back (40001),
+					// which is refused like a taken number once the other holds it.
+					keepPersonnelNumberRefusal(() =>
+						draftPersonnelNumber === null
+							? Effect.succeed(null)
+							: actor.dbService.query("updateEmployeeInvitationDraft:personnelNumberHolder", () =>
+									findDraftPersonnelNumberHolder(
+										actor.dbService.db,
+										draftPersonnelNumberScope(draftPersonnelNumber),
+									),
+								),
+					),
+				);
 
 				if (updatedDrafts.length === 0) {
 					return yield* Effect.fail(

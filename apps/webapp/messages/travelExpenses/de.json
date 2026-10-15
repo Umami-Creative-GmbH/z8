@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Genehmigung erfasst",
           "approved": "Genehmigt",
+          "receiptAdded": "Beleg nach Einreichung hinzugefügt",
           "rejected": "Abgelehnt",
           "reopened": "Zur Korrektur wiedereröffnet",
           "returned": "Für Änderungen zurückgegeben",
@@ -851,6 +852,9 @@
         "withdraw": "Begründung entfernen"
       },
       "receipts": {
+        "add": "Beleg hinzufügen",
+        "addedAfterSubmission": "{fileName}: Nach Einreichung hinzugefügt von {name} am {date}.",
+        "choose": "Beleg auswählen",
         "chooseFile": "Datei auswählen",
         "description": "Machen Sie ein Foto oder hängen Sie ein PDF oder Bild des Belegs an.",
         "downloadNamed": "{fileName} herunterladen",
@@ -862,10 +866,13 @@
         },
         "none": "Noch kein Beleg angehängt.",
         "previewNamed": "Vorschau für {fileName}",
+        "processing": "Beleg wird angehängt…",
         "progress": "Upload-Fortschritt",
         "remove": "Entfernen",
         "removeFailed": "Der Beleg konnte nicht entfernt werden.",
         "removeNamed": "{fileName} entfernen",
+        "supplementConflict": "Ein Beleg wurde bereits hinterlegt oder der Bericht wurde geändert. Laden Sie den Bericht neu, bevor Sie es erneut versuchen.",
+        "supplementFailed": "Der Beleg wurde nicht angehängt. Laden Sie den Bericht neu und versuchen Sie es erneut.",
         "takePhoto": "Foto aufnehmen",
         "title": "Beleg",
         "uploadFailed": "Der Beleg wurde nicht angehängt.",

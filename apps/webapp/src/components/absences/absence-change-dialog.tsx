@@ -1,5 +1,10 @@
 "use client";
 
+import { HistoricalVacationReconciliationPanel } from "./historical-vacation-reconciliation-panel";
+import type {
+	ReconciliationProof,
+	ReconciliationSource,
+} from "@/lib/absences/vacation-reconciliation-types";
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -17,7 +22,12 @@ import {
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import {
+	TFormControl,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import type { AbsenceChangeKind } from "@/lib/absences/change-request-types";
 import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
@@ -40,6 +50,9 @@ function useAbsenceChangeForm(
 	input: Omit<AbsenceChangeDialogProps, "open"> & {
 		onError: (message: string | null) => void;
 		focusInvalid: () => void;
+		reconciliation: {
+			current: { signature: string; proof: ReconciliationProof } | null;
+		};
 	},
 ) {
 	const { t } = useTranslate();
@@ -73,6 +86,21 @@ function useAbsenceChangeForm(
 									endPeriod: value.endPeriod,
 								},
 								coverage: value.coverage,
+								historicalReconciliation:
+									input.reconciliation.current?.signature ===
+									JSON.stringify({
+										kind: "change",
+										absenceId: input.absence.id,
+										proposed: {
+											startDate: value.startDate,
+											endDate: value.endDate,
+											startPeriod: value.startPeriod,
+											endPeriod: value.endPeriod,
+										},
+										coverage: value.coverage,
+									})
+										? input.reconciliation.current.proof
+										: undefined,
 								reason: value.reason.trim(),
 							},
 				);
@@ -80,12 +108,17 @@ function useAbsenceChangeForm(
 					input.onError(result.error);
 					return;
 				}
-				toast.success(t("absences.change.submitted", "Request sent for approval"));
+				toast.success(
+					t("absences.change.submitted", "Request sent for approval"),
+				);
 				input.onChanged?.();
 				input.onOpenChange(false);
 			} catch {
 				input.onError(
-					t("absences.change.failed", "Could not submit the request. Please try again."),
+					t(
+						"absences.change.failed",
+						"Could not submit the request. Please try again.",
+					),
 				);
 			}
 		},
@@ -103,7 +136,9 @@ function DateFields({ form }: { form: ChangeForm }) {
 					name={name}
 					validators={{
 						onSubmit: ({ value }) =>
-							!value ? t("absences.change.dateRequired", "A date is required") : undefined,
+							!value
+								? t("absences.change.dateRequired", "A date is required")
+								: undefined,
 					}}
 				>
 					{(field) => {
@@ -141,7 +176,9 @@ function CoverageFields({ form }: { form: ChangeForm }) {
 	const { t } = useTranslate();
 	const periodOptions = (
 		<>
-			<option value="full_day">{t("absences.change.fullDay", "Full day")}</option>
+			<option value="full_day">
+				{t("absences.change.fullDay", "Full day")}
+			</option>
 			<option value="am">{t("absences.change.morning", "Morning")}</option>
 			<option value="pm">{t("absences.change.afternoon", "Afternoon")}</option>
 		</>
@@ -160,14 +197,22 @@ function CoverageFields({ form }: { form: ChangeForm }) {
 								className={SELECT_CLASS}
 								value={field.state.value}
 								onChange={(event) =>
-									field.handleChange(event.target.value === "choose" ? "choose" : "keep")
+									field.handleChange(
+										event.target.value === "choose" ? "choose" : "keep",
+									)
 								}
 							>
 								<option value="keep">
-									{t("absences.change.keepHours", "Keep recorded hours and coverage")}
+									{t(
+										"absences.change.keepHours",
+										"Keep recorded hours and coverage",
+									)}
 								</option>
 								<option value="choose">
-									{t("absences.change.chooseCoverage", "Choose full-day or half-day coverage")}
+									{t(
+										"absences.change.chooseCoverage",
+										"Choose full-day or half-day coverage",
+									)}
 								</option>
 							</select>
 						</TFormControl>
@@ -183,7 +228,10 @@ function CoverageFields({ form }: { form: ChangeForm }) {
 									{(field) => {
 										const label =
 											name === "startPeriod"
-												? t("absences.change.startCoverage", "Start day coverage")
+												? t(
+														"absences.change.startCoverage",
+														"Start day coverage",
+													)
 												: t("absences.change.endCoverage", "End day coverage");
 										return (
 											<TFormItem>
@@ -196,7 +244,9 @@ function CoverageFields({ form }: { form: ChangeForm }) {
 														className={SELECT_CLASS}
 														value={field.state.value}
 														onChange={(event) =>
-															field.handleChange(event.target.value as DayPeriod)
+															field.handleChange(
+																event.target.value as DayPeriod,
+															)
 														}
 													>
 														{periodOptions}
@@ -221,12 +271,20 @@ export function AbsenceChangeDialog(props: AbsenceChangeDialogProps) {
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
 	const [error, setError] = useState<string | null>(null);
 	const formElement = useRef<HTMLFormElement>(null);
+	const reconciliation = useRef<{
+		signature: string;
+		proof: ReconciliationProof;
+	} | null>(null);
 	const form = useAbsenceChangeForm({
 		...props,
+		reconciliation,
 		onError: setError,
 		focusInvalid: () => {
 			setTimeout(
-				() => formElement.current?.querySelector<HTMLElement>("[aria-invalid='true']")?.focus(),
+				() =>
+					formElement.current
+						?.querySelector<HTMLElement>("[aria-invalid='true']")
+						?.focus(),
 				0,
 			);
 		},
@@ -246,7 +304,10 @@ export function AbsenceChangeDialog(props: AbsenceChangeDialogProps) {
 					<ActionPanelHeader>
 						<ActionPanelTitle>
 							{kind === "cancel"
-								? t("absences.change.cancelTitle", "Request absence cancellation")
+								? t(
+										"absences.change.cancelTitle",
+										"Request absence cancellation",
+									)
 								: t("absences.change.title", "Request absence change")}
 						</ActionPanelTitle>
 						<ActionPanelDescription>
@@ -292,13 +353,19 @@ export function AbsenceChangeDialog(props: AbsenceChangeDialogProps) {
 							validators={{
 								onSubmit: ({ value }) =>
 									!value.trim()
-										? t("absences.change.reasonRequired", "A reason is required")
+										? t(
+												"absences.change.reasonRequired",
+												"A reason is required",
+											)
 										: undefined,
 							}}
 						>
 							{(field) => (
 								<TFormItem>
-									<TFormLabel required hasError={field.state.meta.errors.length > 0}>
+									<TFormLabel
+										required
+										hasError={field.state.meta.errors.length > 0}
+									>
 										{t("absences.change.reason", "Reason")}
 									</TFormLabel>
 									<TFormControl hasError={field.state.meta.errors.length > 0}>
@@ -307,7 +374,9 @@ export function AbsenceChangeDialog(props: AbsenceChangeDialogProps) {
 											autoComplete="off"
 											value={field.state.value}
 											maxLength={2000}
-											onChange={(event) => field.handleChange(event.target.value)}
+											onChange={(event) =>
+												field.handleChange(event.target.value)
+											}
 											onBlur={field.handleBlur}
 										/>
 									</TFormControl>
@@ -320,9 +389,42 @@ export function AbsenceChangeDialog(props: AbsenceChangeDialogProps) {
 								{error}
 							</p>
 						) : null}
+						{kind === "change" ? (
+							<form.Subscribe selector={(state) => state.values}>
+								{(value) => {
+									const source: ReconciliationSource = {
+										kind: "change",
+										absenceId: absence.id,
+										proposed: {
+											startDate: value.startDate,
+											endDate: value.endDate,
+											startPeriod: value.startPeriod,
+											endPeriod: value.endPeriod,
+										},
+										coverage: value.coverage,
+									};
+									const signature = JSON.stringify(source);
+									return (
+										<HistoricalVacationReconciliationPanel
+											key={signature}
+											source={source}
+											onReviewed={(proof) => {
+												reconciliation.current = proof
+													? { signature, proof }
+													: null;
+											}}
+										/>
+									);
+								}}
+							</form.Subscribe>
+						) : null}
 					</ActionPanelBody>
 					<ActionPanelFooter>
-						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+						>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<form.Subscribe selector={(state) => state.isSubmitting}>

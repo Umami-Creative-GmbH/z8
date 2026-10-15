@@ -37,6 +37,9 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/navigation", () => ({
+	Link: ({ href, ...props }: { href: string } & Record<string, unknown>) => (
+		<a href={href} {...props} />
+	),
 	useRouter: () => ({ push: pushMock }),
 }));
 
@@ -92,6 +95,41 @@ describe("CompletePage", () => {
 		expect(screen.queryByText("Holidays skipped")).toBeNull();
 		expect(screen.queryByText("Work template skipped")).toBeNull();
 		expect(screen.getByText("Next Steps")).toBeTruthy();
+	});
+
+	it("points admins without a holiday preset to the holiday settings", async () => {
+		completeOnboardingMock.mockResolvedValue({ success: true });
+		getOnboardingSummaryMock.mockResolvedValue({
+			success: true,
+			data: { hasOrganization: true, isAdmin: true, holidayPresetCreated: false },
+		});
+
+		render(<CompletePage />);
+
+		const link = await screen.findByRole("link", { name: "Set up public holidays" });
+		expect(link.getAttribute("href")).toBe("/settings/holidays");
+	});
+
+	it("omits the holiday pointer once a preset exists or for non-admins", async () => {
+		completeOnboardingMock.mockResolvedValue({ success: true });
+		getOnboardingSummaryMock.mockResolvedValue({
+			success: true,
+			data: { hasOrganization: true, isAdmin: true, holidayPresetCreated: true },
+		});
+
+		const { unmount } = render(<CompletePage />);
+		expect(await screen.findByText("Invite your team members")).toBeTruthy();
+		expect(screen.queryByText("Set up public holidays")).toBeNull();
+		unmount();
+
+		getOnboardingSummaryMock.mockResolvedValue({
+			success: true,
+			data: { hasOrganization: true, isAdmin: false },
+		});
+
+		render(<CompletePage />);
+		expect(await screen.findByText("Invite your team members")).toBeTruthy();
+		expect(screen.queryByText("Set up public holidays")).toBeNull();
 	});
 
 	it("does not report a completion failure after unmount", async () => {

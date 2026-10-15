@@ -84,11 +84,16 @@
         "absencesRead": "Read absences",
         "absencesReadHealth": "Read absence health detail",
         "customersRead": "Read customers",
+        "customFieldsReadRestricted": "Read restricted custom fields",
         "employeesRead": "Read employees",
         "projectsRead": "Read projects",
         "timeEntriesRead": "Read time entries"
       },
       "scopes": "Permissions",
+      "scopeWarning": {
+        "absencesReadHealth": "Shows sick absences with their category and sick detail. Grant it only to integrations that need health data.",
+        "customFieldsReadRestricted": "Adds the custom fields only managers or admins see, such as salary bands, to employees, projects and customers. Without it, a key reads only fields every member sees."
+      },
       "security": {
         "description": "API keys provide full access to your organization data within their permission scope. Keep them secure and never share them in public repositories or client-side code.",
         "title": "Security Notice"

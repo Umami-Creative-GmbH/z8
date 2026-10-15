@@ -84,11 +84,16 @@
         "absencesRead": "Consulter les absences",
         "absencesReadHealth": "Consulter les détails de santé des absences",
         "customersRead": "Consulter les clients",
+        "customFieldsReadRestricted": "Lire les champs personnalisés restreints",
         "employeesRead": "Consulter les employés",
         "projectsRead": "Consulter les projets",
         "timeEntriesRead": "Consulter les saisies de temps"
       },
       "scopes": "Autorisations",
+      "scopeWarning": {
+        "absencesReadHealth": "Affiche les absences pour maladie avec leur catégorie et les détails de la maladie. Ne l'accordez qu'aux intégrations nécessitant des données de santé.",
+        "customFieldsReadRestricted": "Ajoute aux employés, projets et clients les champs personnalisés visibles uniquement par les gestionnaires ou administrateurs, tels que les grilles salariales. Sans cela, une clé lit uniquement les champs visibles par tous les membres."
+      },
       "security": {
         "description": "Les clés API offrent un accès complet aux données de votre organisation dans la limite de leurs autorisations. Gardez-les en sécurité et ne les partagez jamais dans des dépôts publics ou du code côté client.",
         "title": "Avis de sécurité"

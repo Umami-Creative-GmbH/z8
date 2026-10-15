@@ -1,6 +1,12 @@
 import { z } from "zod";
+import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 
 export const organizationSchema = z.object({
+	timezone: z
+		.string()
+		.refine(isValidIanaTimeZone, "Choose a valid organization timezone")
+		.optional(),
+	trackingStartDate: z.union([z.iso.date(), z.literal("")]).optional(),
 	name: z
 		.string()
 		.min(2, "Organization name must be at least 2 characters")
@@ -9,7 +15,10 @@ export const organizationSchema = z.object({
 		.string()
 		.min(2, "Slug must be at least 2 characters")
 		.max(50, "Slug must be less than 50 characters")
-		.regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens")
+		.regex(
+			/^[a-z0-9-]+$/,
+			"Slug must contain only lowercase letters, numbers, and hyphens",
+		)
 		.refine((slug) => !slug.startsWith("-") && !slug.endsWith("-"), {
 			message: "Slug cannot start or end with a hyphen",
 		}),

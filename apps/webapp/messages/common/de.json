@@ -373,6 +373,8 @@
     "previous": "Zurück",
     "recovering": "Wiederherstellung läuft...",
     "refresh": "Aktualisieren",
+    "refreshData": "Daten aktualisieren",
+    "refreshDataFailed": "Daten konnten nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
     "refreshing": "Aktualisiere...",
     "reject": "Ablehnen",
     "rejecting": "Wird abgelehnt…",
@@ -2528,6 +2530,9 @@
     "theme-time": "Zeitbasiert",
     "theme-time-info": "Zeitbasiert verwendet den Modus {currentMode}. Wechselt um {time} zu {nextMode}.",
     "theme-toggle": "Design umschalten"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Enthält {days} bereits vor der Erfassung genommene Tage"
   },
   "validation": {
     "first-name-required": "Vorname ist erforderlich",

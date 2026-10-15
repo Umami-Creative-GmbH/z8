@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Onay kaydedildi",
           "approved": "Onaylandı",
+          "receiptAdded": "Gönderimden sonra eklenen makbuz",
           "rejected": "Reddedildi",
           "reopened": "Düzeltme için yeniden açıldı",
           "returned": "Değişiklikler için geri gönderildi",
@@ -851,6 +852,9 @@
         "withdraw": "Açıklamayı kaldır"
       },
       "receipts": {
+        "add": "Makbuz ekle",
+        "addedAfterSubmission": "{fileName}: {date} tarihinde {name} tarafından gönderim sonrasında eklendi.",
+        "choose": "Makbuz seç",
         "chooseFile": "Dosya seç",
         "description": "Fişin bir fotoğrafını çekin ya da bir PDF veya görsel ekleyin.",
         "downloadNamed": "{fileName} dosyasını indir",
@@ -862,10 +866,13 @@
         },
         "none": "Henüz fiş eklenmedi.",
         "previewNamed": "{fileName} dosyasını önizle",
+        "processing": "Makbuz ekleniyor…",
         "progress": "Yükleme ilerlemesi",
         "remove": "Kaldır",
         "removeFailed": "Fiş kaldırılamadı.",
         "removeNamed": "{fileName} dosyasını kaldır",
+        "supplementConflict": "Zaten bir makbuz sağlandı veya rapor değişti. Tekrar denemeden önce raporu yeniden yükleyin.",
+        "supplementFailed": "Makbuz eklenemedi. Raporu yeniden yükleyip tekrar deneyin.",
         "takePhoto": "Fotoğraf çek",
         "title": "Fiş",
         "uploadFailed": "Fiş eklenmedi.",

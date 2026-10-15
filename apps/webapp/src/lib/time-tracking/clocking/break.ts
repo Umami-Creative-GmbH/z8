@@ -1,5 +1,6 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { type employee, timeEntry, workPeriod } from "@/db/schema";
 import {
@@ -10,9 +11,18 @@ import {
 	instantToCanonicalString,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
-import { canonicalWorkRecordClient } from "../canonical-work-record";
-import { ClockingConflictError, LiveWorkOccupiedError } from "../clocking-core";
-import { type CloseActiveWorkWriter, CompletedWorkCollisionError } from "../close-active-work";
+import {
+	ClockingConflictError,
+	createDatabaseClockingStore,
+	insertChainedClockIn,
+	LiveWorkOccupiedError,
+} from "../clocking-core";
+import {
+	type CloseActiveWorkWriter,
+	type ClosingVehicleUse,
+	CompletedWorkCollisionError,
+	closeActiveWorkGraph,
+} from "../close-active-work";
 import {
 	type CloseResumeWorkOperationCommand,
 	type CloseResumeWorkResult,
@@ -20,16 +30,9 @@ import {
 	replayCloseResumeWork,
 } from "../close-resume-work";
 import { sendBackChangedPeriodSubmissions } from "../period-submissions/submission-send-back";
-import {
-	type PolicyClockOutSurchargeSnapshot,
-	resolvePolicyClockOutSurchargeSnapshotInTransaction,
-} from "../policy-clock-out-surcharge-snapshot";
 import { findLiveWorkOccupant } from "../start-live-work";
-import { createTimeEntry, type TimeEntryRequestMetadata } from "../time-entry-writer";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
-import { vehicleUseFromColumns } from "../vehicle-use/work-vehicle-use";
 import type { WorkTransactionContext } from "../web-clock-out-transaction";
-import { deriveWorkDurationMinutes } from "../work-duration";
 import type { WorkLocationType } from "../work-location";
 import { assertNoUnresolvedWorkPeriodReview } from "../work-period-review";
 import type { ClockOutTarget } from "./clock-out";
@@ -42,7 +45,12 @@ import {
 } from "./frozen";
 import { clockWriterOf, kioskReceiptEvidence } from "./kiosk";
 import { assertLegacyAccepted } from "./legacy-command";
-import { type BreakCommand, type BreakResult, principalCausingUserId } from "./types";
+import {
+	type BreakCommand,
+	type BreakResult,
+	principalCausingUserId,
+	type TimeEntryRequestMetadata,
+} from "./types";
 
 type Employee = typeof employee.$inferSelect;
 
@@ -222,6 +230,8 @@ export async function takeBreak(
 		replayable: boolean;
 		target: ClockOutTarget;
 		endpoints: BreakEndpoints;
+		/** The closed work's vehicle use, decided from the live work's (#1122). */
+		closingVehicleUse?: ClosingVehicleUse;
 	},
 ): Promise<BreakClosure> {
 	const { plan, target, endpoints } = input;
@@ -245,6 +255,7 @@ export async function takeBreak(
 		writer,
 		close: endpoints.close,
 		resume: endpoints.resume,
+		...(input.closingVehicleUse ? { closingVehicleUse: input.closingVehicleUse } : {}),
 	});
 	const { close } = executed.result;
 	return {
@@ -272,16 +283,21 @@ function writerRequestMetadata(writer: CloseActiveWorkWriter): TimeEntryRequestM
 }
 
 /**
- * The established break writes of organizations that have not adopted: the
- * hash-chained clock-out and clock-in entries, the closed target with its
- * canonical work record, and a resumed period in the target's location. The
- * record, the surcharge snapshot and the closed period all derive from the
- * locked start and duration, so both representations agree (#388). The resumed
- * clock-in entry takes the operation ID, which is what the legacy replay matches.
+ * The established break of organizations that have not adopted: work records
+ * creates the completed work up to the break start from the live work (#1222),
+ * then the resumed clock-in entry, chained right after the break's clock-out,
+ * and a resumed period in the target's location start live work again. The
+ * resumed clock-in entry takes the operation ID, which is what the legacy replay
+ * matches; both entries record the request's source evidence.
  */
 async function takeLegacyBreak(
 	coordination: WorkTransactionContext,
-	input: { plan: BreakPlan; target: ClockOutTarget; endpoints: BreakEndpoints },
+	input: {
+		plan: BreakPlan;
+		target: ClockOutTarget;
+		endpoints: BreakEndpoints;
+		closingVehicleUse?: ClosingVehicleUse;
+	},
 ): Promise<BreakClosure> {
 	const { plan, target, endpoints } = input;
 	const { command, employee } = plan;
@@ -294,17 +310,7 @@ async function takeLegacyBreak(
 		.select({
 			id: workPeriod.id,
 			approvalStatus: workPeriod.approvalStatus,
-			startTime: workPeriod.startTime,
-			projectId: workPeriod.projectId,
-			isBillable: workPeriod.isBillable,
-			taskId: workPeriod.taskId,
-			workCategoryId: workPeriod.workCategoryId,
 			workLocationType: workPeriod.workLocationType,
-			vehicleKind: workPeriod.vehicleKind,
-			vehicleId: workPeriod.vehicleId,
-			odometerStartKm: workPeriod.odometerStartKm,
-			odometerEndKm: workPeriod.odometerEndKm,
-			drivenDistanceKm: workPeriod.drivenDistanceKm,
 		})
 		.from(workPeriod)
 		.where(
@@ -320,74 +326,32 @@ async function takeLegacyBreak(
 	await assertNoUnresolvedWorkPeriodReview(tx, organizationId, period);
 	const request = command.request ?? writerRequestMetadata(plan.writer);
 
-	// The locked row, not the target resolved before the transaction, is the source.
-	const start = instantFromDate(period.startTime);
-	const { workLocationType } = period;
-	const breakStart = dateFromInstant(endpoints.close.instant);
-	const durationMinutes = deriveWorkDurationMinutes(start, endpoints.close.instant);
-	const surchargeSnapshot: PolicyClockOutSurchargeSnapshot =
-		await resolvePolicyClockOutSurchargeSnapshotInTransaction({
-			dbService: { db: tx },
-			organizationId,
-			employeeId,
-			startTime: start,
-			endTime: endpoints.close.instant,
-		});
-	const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod(
+	const closed = await closeActiveWorkGraph(
+		coordination,
 		{
 			organizationId,
 			employeeId,
-			startAt: period.startTime,
-			endAt: breakStart,
-			durationMinutes,
-			approvalState: "approved",
-			createdBy: actorUserId,
-			workCategoryId: period.workCategoryId,
-			workLocationType,
-			projectId: period.projectId,
-			// The closed period keeps its billability; both representations agree (#900).
-			isBillable: period.isBillable,
-			taskId: period.taskId,
-			// The closed work's vehicle use, mirrored into its record (#1122).
-			vehicleUse: vehicleUseFromColumns(period),
-			origin: "clock",
+			teamId: employee.teamId,
+			actorUserId,
+			workPeriodId: target.workPeriodId,
+			// A break changes no attribution of the work it closes.
+			command: {
+				version: BREAK_COMMAND_VERSION,
+				operationId: command.identity.id,
+				project: { kind: "preserve" },
+				workCategory: { kind: "preserve" },
+			},
+			writer: plan.writer,
+			eventInstant: endpoints.close.instant,
+			capture: endpoints.close.capture,
+			entrySource: { ipAddress: request.ipAddress, deviceInfo: request.userAgent },
+			...(input.closingVehicleUse ? { closingVehicleUse: input.closingVehicleUse } : {}),
 		},
-		tx,
+		// The break's clock-out gets a fresh server identity.
+		randomUUID(),
+		{ identityChecked: true },
 	);
-	const clockOutEntry = await createTimeEntry(
-		{
-			employeeId,
-			organizationId,
-			type: "clock_out",
-			timestamp: breakStart,
-			createdBy: actorUserId,
-			...endpoints.close.capture,
-			request,
-		},
-		tx,
-	);
-	const [closedPeriod] = await tx
-		.update(workPeriod)
-		.set({
-			clockOutId: clockOutEntry.id,
-			endTime: breakStart,
-			durationMinutes,
-			isActive: false,
-			approvalStatus: "approved",
-			canonicalRecordId: canonicalRecord.id,
-			pendingChanges: null,
-			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(workPeriod.id, target.workPeriodId),
-				eq(workPeriod.employeeId, employeeId),
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.isActive, true),
-			),
-		)
-		.returning({ id: workPeriod.id });
-	if (!closedPeriod) throw new ClockingConflictError("Active work period changed");
+	const { segment, attribution } = closed.result;
 
 	// Occupancy of the resumed interval, after the closure so the closed target no
 	// longer occupies it and any other work still does. Throwing rolls back.
@@ -398,39 +362,34 @@ async function takeLegacyBreak(
 	);
 	if (occupant) throw new LiveWorkOccupiedError(occupant);
 
-	const clockInEntry = await createTimeEntry(
+	// The resumed work is live work, which Clocking starts (Time Tracking ADR 0010).
+	const store = createDatabaseClockingStore(tx);
+	const clockInEntry = await insertChainedClockIn(
+		store,
 		{
-			id: command.identity.id,
 			employeeId,
 			organizationId,
-			type: "clock_in",
-			timestamp: dateFromInstant(endpoints.resume.instant),
 			createdBy: actorUserId,
-			...endpoints.resume.capture,
-			request,
+			actionId: command.identity.id,
+			action: { instant: endpoints.resume.instant, ...endpoints.resume.capture },
+			source: { ipAddress: request.ipAddress, deviceInfo: request.userAgent },
 		},
-		tx,
+		// Entries written in one transaction share their creation time: chain explicitly.
+		{ id: closed.entry.id, hash: (closed.entry as typeof timeEntry.$inferSelect).hash },
 	);
-	const [resumedPeriod] = await tx
-		.insert(workPeriod)
-		.values({
-			employeeId,
-			organizationId,
-			clockInId: clockInEntry.id,
-			startTime: dateFromInstant(endpoints.resume.instant),
-			workLocationType: workLocationType ?? ("office" satisfies WorkLocationType),
-		})
-		.returning({ id: workPeriod.id });
-	if (!resumedPeriod) throw new Error("New work period was not inserted");
-	// The closed work and the resumed start send a submitted period back (#805).
+	const resumedPeriod = await store.insertActivePeriod({
+		employeeId,
+		organizationId,
+		clockInId: clockInEntry.id,
+		startTime: dateFromInstant(endpoints.resume.instant),
+		workLocationType: period.workLocationType ?? ("office" satisfies WorkLocationType),
+	});
+	// The resumed start sends a submitted period back (#805); the closed work did already.
 	await sendBackChangedPeriodSubmissions(tx, {
 		organizationId,
 		employeeId,
 		causedByUserId: principalCausingUserId(command.principal),
-		work: [
-			{ start, end: endpoints.close.instant },
-			{ start: endpoints.resume.instant, end: endpoints.resume.instant },
-		],
+		work: [{ start: endpoints.resume.instant, end: endpoints.resume.instant }],
 	});
 
 	return {
@@ -442,12 +401,12 @@ async function takeLegacyBreak(
 			employeeId,
 			actorUserId,
 			workPeriodId: target.workPeriodId,
-			start,
-			end: endpoints.close.instant,
-			durationMinutes,
-			projectId: period.projectId,
-			surchargeSnapshot,
-			balanceRefreshCommitted: false,
+			start: parseInstant(segment.startAt),
+			end: parseInstant(segment.endAt),
+			durationMinutes: segment.durationMinutes,
+			projectId: attribution.projectId,
+			surchargeSnapshot: closed.surchargeSnapshot,
+			balanceRefreshCommitted: true,
 		},
 	};
 }

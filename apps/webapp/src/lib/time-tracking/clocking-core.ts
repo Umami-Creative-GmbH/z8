@@ -9,7 +9,7 @@ import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
-import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
 import type { AppendScope } from "./append-lineage";
 import { calculateHash } from "./blockchain";
@@ -20,7 +20,6 @@ import {
 	TimeEntryAppendReviewRequiredError,
 } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
-import { deriveWorkDurationMinutes } from "./work-duration";
 import {
 	acquireAdoptionGate,
 	readAppendAdmission,
@@ -106,43 +105,8 @@ export type ClockingInput = {
 type ClockInInput = ClockingInput & {
 	workLocationType: "office" | "remote" | "home" | "other";
 };
-type ClockOutInput = ClockingInput & {
-	workPeriodId?: string;
-	projectId?: string | null;
-	/** The closure's resolved billability (#900); absent leaves the period's value. */
-	isBillable?: boolean;
-	/** A task of the project (#873), mirrored from the canonical allocation. */
-	taskId?: string | null;
-	workCategoryId?: string | null;
-	canonicalRecordId?: string | null;
-	approvalStatus?: "approved" | "pending";
-	pendingChanges?: Record<string, unknown> | null;
-	beforePeriodClose?: (context: {
-		transaction: unknown;
-		activePeriod: ActivePeriod;
-		durationMinutes: number;
-	}) => Promise<Record<string, unknown> | undefined>;
-	afterPeriodClose?: (context: {
-		transaction: unknown;
-		activePeriod: ActivePeriod;
-		durationMinutes: number;
-		entry: Entry;
-		period: { id: string };
-	}) => Promise<unknown>;
-};
-
 type ActivePeriod = { id: string; startTime: Date };
 export type Entry = { id: string; [key: string]: unknown };
-type CompletedPeriod = {
-	id: string;
-	startTime: Date;
-	endTime: Date;
-	durationMinutes: number;
-	projectId: string | null;
-	taskId?: string | null;
-	workCategoryId: string | null;
-};
-
 export type ClockingStore = {
 	transaction?: unknown;
 	/** The shared organization adoption gate (#264 step 1); uncoordinated writers only. */
@@ -164,12 +128,6 @@ export type ClockingStore = {
 		organizationId: string,
 		workPeriodId?: string,
 	): Promise<ActivePeriod | null>;
-	getCompletedPeriodByClockOutActionId?(
-		employeeId: string,
-		organizationId: string,
-		actionId: string,
-		workPeriodId?: string,
-	): Promise<CompletedPeriod | null>;
 	/**
 	 * Whether undeleted completed work of the employee ends after the instant. An
 	 * adopted live start is refused over it: active work occupies its start onward.
@@ -188,14 +146,30 @@ export type ClockingStore = {
 		scope: AppendScope,
 		operation: TimeEntryAppendOperation,
 	): Promise<TimeEntryAppendAdmissionResult>;
-	insertEntry(entry: Record<string, unknown>): Promise<Entry>;
-	insertActivePeriod(period: Record<string, unknown>): Promise<{ id: string }>;
-	closeActivePeriod(
-		periodId: string,
-		employeeId: string,
-		organizationId: string,
-		patch: Record<string, unknown>,
-	): Promise<{ id: string } | null>;
+	/** A live clock-in entry (Time Tracking ADR 0010: live work is Clocking's). */
+	insertEntry(entry: ClockEntryValues): Promise<Entry>;
+	/** Starts live work: an active period with no end. */
+	insertActivePeriod(period: LiveWorkPeriodValues): Promise<{ id: string; graphRevision: number }>;
+};
+
+export type ClockEntryValues = ReturnType<typeof entryValues>;
+
+/**
+ * Live work as it starts (ADR 0002): its clock-in and attribution, never an end,
+ * which only work records writes when it completes the work (ADR 0010).
+ */
+export type LiveWorkPeriodValues = {
+	employeeId: string;
+	organizationId: string;
+	clockInId: string;
+	startTime: Date;
+	workLocationType?: (typeof workPeriod.$inferInsert)["workLocationType"];
+	projectId?: string | null;
+	isBillable?: boolean;
+	taskId?: string | null;
+	workCategoryId?: string | null;
+	approvalStatus?: "approved";
+	graphRevision?: number;
 };
 
 export type ClockingDependencies = {
@@ -235,7 +209,11 @@ type EntryLink =
 	| { kind: "legacy"; previousHash: string | null }
 	| { kind: "admitted"; predecessor: AppendPredecessor | null };
 
-function entryValues(input: ClockingInput, type: "clock_in" | "clock_out", link: EntryLink) {
+/**
+ * A live-work entry: always a clock-in. A clock-out ends live work, which only work
+ * records writes as completed work (Time Tracking ADR 0010).
+ */
+function entryValues(input: ClockingInput, type: "clock_in", link: EntryLink) {
 	const timestamp = dateFromInstant(input.action.instant);
 	const previousHash =
 		link.kind === "admitted" ? (link.predecessor?.hash ?? null) : link.previousHash;
@@ -264,6 +242,20 @@ function entryValues(input: ClockingInput, type: "clock_in" | "clock_out", link:
 	};
 }
 
+/**
+ * A live clock-in entry chained right after a predecessor its caller already
+ * holds (the legacy break's clock-out, the legacy import's chain head): the exact
+ * link an admitted append records, without an admission. Live work's entry, so
+ * Clocking writes it (Time Tracking ADR 0010).
+ */
+export function insertChainedClockIn(
+	store: Pick<ClockingStore, "insertEntry">,
+	input: ClockingInput,
+	predecessor: AppendPredecessor | null,
+): Promise<Entry> {
+	return store.insertEntry(entryValues(input, "clock_in", { kind: "admitted", predecessor }));
+}
+
 /** How a clock entry was linked: the admission mode and the exact predecessor it follows. */
 export type AppendedClockEntry = {
 	entry: Entry;
@@ -280,7 +272,7 @@ export type AppendedClockEntry = {
 export async function appendClockEntry(
 	store: ClockingStore,
 	input: ClockingInput,
-	type: "clock_in" | "clock_out",
+	type: "clock_in",
 	admission: WorkTransactionAdmission,
 ): Promise<AppendedClockEntry> {
 	if (admission === "append") {
@@ -289,7 +281,7 @@ export async function appendClockEntry(
 		}
 		const appendAdmission = await store.admitAppend(
 			{ organizationId: input.organizationId, employeeId: input.employeeId },
-			type === "clock_in" ? "live_clock_in" : "live_clock_out",
+			"live_clock_in",
 		);
 		if (appendAdmission.kind === "review_required") {
 			throw new TimeEntryAppendReviewRequiredError(appendAdmission.requirement);
@@ -328,7 +320,7 @@ export async function appendClockEntry(
 export async function appendAdmittedClockEntries(
 	store: ClockingStore,
 	operation: TimeEntryAppendOperation,
-	entries: ReadonlyArray<{ input: ClockingInput; type: "clock_in" | "clock_out" }>,
+	entries: ReadonlyArray<{ input: ClockingInput; type: "clock_in" }>,
 ): Promise<AppendedClockEntry[]> {
 	const [first] = entries;
 	if (!first || !store.admitAppend) {
@@ -504,131 +496,9 @@ export function createClockingService(deps: ClockingDependencies) {
 					organizationId: input.organizationId,
 					clockInId: entry.id,
 					startTime: dateFromInstant(input.action.instant),
-					isActive: true,
 					workLocationType: input.workLocationType,
 				});
 				return { entry, period };
-			}),
-		clockOut: async (input: ClockOutInput) =>
-			withinEmployeeTransaction(input, async (store) => {
-				const existingEntry = await store.getEntryByActionId(
-					input.employeeId,
-					input.organizationId,
-					input.actionId,
-				);
-				if (existingEntry) {
-					if (
-						existingEntry.type !== "clock_out" ||
-						!input.actionId ||
-						!store.getCompletedPeriodByClockOutActionId
-					) {
-						throw new ClockingConflictError("Clock-out action id collision");
-					}
-					const period = await store.getCompletedPeriodByClockOutActionId(
-						input.employeeId,
-						input.organizationId,
-						input.actionId,
-						input.workPeriodId,
-					);
-					if (
-						!period ||
-						period.projectId !== (input.projectId ?? null) ||
-						(period.taskId ?? null) !== (input.taskId ?? null) ||
-						period.workCategoryId !== (input.workCategoryId ?? null)
-					) {
-						throw new ClockingConflictError("Clock-out action id collision");
-					}
-					return {
-						entry: existingEntry,
-						period,
-						activePeriod: { id: period.id, startTime: period.startTime },
-						durationMinutes: period.durationMinutes,
-						transactionResult: undefined,
-						disposition: "replayed" as const,
-					};
-				}
-				const activePeriod = await store.getActivePeriod(
-					input.employeeId,
-					input.organizationId,
-					input.workPeriodId,
-				);
-				if (!activePeriod)
-					throw new ClockingConflictError("No active work period found");
-				const timestamp = dateFromInstant(input.action.instant);
-				const elapsedMinutes = input.action.instant
-					.since(instantFromDate(activePeriod.startTime))
-					.total({ unit: "minutes" });
-				if (elapsedMinutes < 0) {
-					throw new ClockingConflictError("Clock-out precedes clock-in");
-				}
-				// Positive intervals use the shared half-up rule (#252, #388). Equal
-				// endpoints keep this closer's legacy zero-minute result for its other
-				// callers until their own adoption (#275, #276). Bots left it in #277.
-				const durationMinutes =
-					elapsedMinutes === 0
-						? 0
-						: deriveWorkDurationMinutes(
-								instantFromDate(activePeriod.startTime),
-								input.action.instant,
-							);
-				if (
-					(input.beforePeriodClose || input.afterPeriodClose) &&
-					!store.transaction
-				) {
-					throw new Error("Clock-out transaction context is unavailable");
-				}
-				const additionalPeriodPatch = input.beforePeriodClose
-					? await input.beforePeriodClose({
-							transaction: store.transaction,
-							activePeriod,
-							durationMinutes,
-						})
-					: undefined;
-				const entry = await store.insertEntry(
-					entryValues(input, "clock_out", {
-						kind: "legacy",
-						previousHash: await store.getLatestHash(input.employeeId, input.organizationId),
-					}),
-				);
-				const period = await store.closeActivePeriod(
-					activePeriod.id,
-					input.employeeId,
-					input.organizationId,
-					{
-						clockOutId: entry.id,
-						endTime: timestamp,
-						durationMinutes,
-						isActive: false,
-						projectId: input.projectId ?? null,
-						...(input.isBillable === undefined ? {} : { isBillable: input.isBillable }),
-						taskId: input.taskId ?? null,
-						workCategoryId: input.workCategoryId ?? null,
-						canonicalRecordId: input.canonicalRecordId ?? null,
-						approvalStatus: input.approvalStatus ?? "approved",
-						pendingChanges: input.pendingChanges ?? null,
-						updatedAt: new Date(),
-						...additionalPeriodPatch,
-					},
-				);
-				if (!period)
-					throw new ClockingConflictError("Active work period changed");
-				const transactionResult = input.afterPeriodClose
-					? await input.afterPeriodClose({
-							transaction: store.transaction,
-							activePeriod,
-							durationMinutes,
-							entry,
-							period,
-						})
-					: undefined;
-				return {
-					entry,
-					period,
-					activePeriod,
-					durationMinutes,
-					transactionResult,
-					disposition: "executed" as const,
-				};
 			}),
 	};
 }
@@ -692,46 +562,6 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 				.limit(1);
 			return period ?? null;
 		},
-		getCompletedPeriodByClockOutActionId: async (
-			employeeId,
-			organizationId,
-			actionId,
-			workPeriodId,
-		) => {
-			const [period] = await tx
-				.select({
-					id: workPeriod.id,
-					startTime: workPeriod.startTime,
-					endTime: workPeriod.endTime,
-					durationMinutes: workPeriod.durationMinutes,
-					projectId: workPeriod.projectId,
-					taskId: workPeriod.taskId,
-					workCategoryId: workPeriod.workCategoryId,
-				})
-				.from(workPeriod)
-				.where(
-					and(
-						eq(workPeriod.employeeId, employeeId),
-						eq(workPeriod.organizationId, organizationId),
-						eq(workPeriod.clockOutId, actionId),
-						eq(workPeriod.isActive, false),
-						...(workPeriodId ? [eq(workPeriod.id, workPeriodId)] : []),
-					),
-				)
-				.limit(1);
-			if (
-				!period ||
-				!(period.endTime instanceof Date) ||
-				period.durationMinutes === null
-			) {
-				return null;
-			}
-			return {
-				...period,
-				endTime: period.endTime,
-				durationMinutes: period.durationMinutes,
-			};
-		},
 		hasCompletedWorkEndingAfter: async (employeeId, organizationId, instant) => {
 			const [occupant] = await tx
 				.select({ id: workPeriod.id })
@@ -762,10 +592,28 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 			return latest?.hash ?? null;
 		},
 		admitAppend: (scope, operation) => admitTimeEntryAppend(tx, scope, operation),
+		// Explicit columns: the approval write-boundary scanner checks live work's writes.
 		insertEntry: async (values) => {
 			const [entry] = await tx
 				.insert(timeEntry)
-				.values(values as never)
+				.values({
+					id: values.id,
+					previousEntryId: values.previousEntryId,
+					employeeId: values.employeeId,
+					organizationId: values.organizationId,
+					type: values.type,
+					timestamp: values.timestamp,
+					hash: values.hash,
+					previousHash: values.previousHash,
+					createdBy: values.createdBy,
+					ipAddress: values.ipAddress,
+					deviceInfo: values.deviceInfo,
+					notes: values.notes,
+					location: values.location,
+					utcOffsetMinutes: values.utcOffsetMinutes,
+					timezone: values.timezone,
+					timezoneSource: values.timezoneSource,
+				})
 				.returning();
 			if (!entry) throw new Error("Failed to create time entry");
 			return entry;
@@ -773,26 +621,23 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 		insertActivePeriod: async (values) => {
 			const [period] = await tx
 				.insert(workPeriod)
-				.values(values as never)
-				.returning({ id: workPeriod.id });
+				.values({
+					employeeId: values.employeeId,
+					organizationId: values.organizationId,
+					clockInId: values.clockInId,
+					startTime: values.startTime,
+					isActive: true,
+					workLocationType: values.workLocationType,
+					projectId: values.projectId,
+					isBillable: values.isBillable,
+					taskId: values.taskId,
+					workCategoryId: values.workCategoryId,
+					approvalStatus: values.approvalStatus,
+					graphRevision: values.graphRevision,
+				})
+				.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
 			if (!period) throw new Error("Failed to create work period");
 			return period;
-		},
-		closeActivePeriod: async (periodId, employeeId, organizationId, patch) => {
-			const [period] = await tx
-				.update(workPeriod)
-				.set(patch as never)
-				.where(
-					and(
-						eq(workPeriod.id, periodId),
-						eq(workPeriod.employeeId, employeeId),
-						eq(workPeriod.organizationId, organizationId),
-						eq(workPeriod.isActive, true),
-						isNull(workPeriod.endTime),
-					),
-				)
-				.returning({ id: workPeriod.id });
-			return period ?? null;
 		},
 	};
 }

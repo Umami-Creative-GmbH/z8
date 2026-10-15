@@ -2,10 +2,8 @@ import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PayrollIdentifierMissingError } from "../../personnel-identifier";
 import type { AbsenceData, WageTypeMapping, WorkPeriodData } from "../../types";
-import {
-	PersonioExporter,
-	selectPersonioEmployeeIdentifier,
-} from "./personio-exporter";
+import { selectPersonioEmployeeIdentifier } from "./employee-identifier";
+import { PersonioExporter } from "./personio-exporter";
 import type {
 	PersonioAbsenceRequest,
 	PersonioAttendanceRequest,

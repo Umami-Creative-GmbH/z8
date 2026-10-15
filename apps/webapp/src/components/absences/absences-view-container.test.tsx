@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AbsenceYearCalendar } from "./absence-year-calendar";
@@ -56,6 +56,12 @@ const categories: ComponentProps<typeof AbsencesViewContainer>["categories"] = [
 		countsAgainstVacation: true,
 	},
 ];
+
+function getCalendarDay(monthName: string, day: string) {
+	const month = screen.getByRole("heading", { name: monthName }).parentElement;
+	if (!month) throw new Error(`Calendar month ${monthName} is missing`);
+	return within(month).getByRole("button", { name: day });
+}
 
 describe("AbsencesViewContainer", () => {
 	beforeEach(() => {
@@ -117,8 +123,41 @@ describe("AbsencesViewContainer", () => {
 			expect(mockGetAbsenceCalendarYearData).toHaveBeenCalledWith(2027);
 		});
 		await waitFor(() => {
-			expect(screen.getAllByRole("button", { name: "6" })[0].className).toContain("bg-amber-100");
+			expect(getCalendarDay("January", "6").className).toContain("bg-amber-100");
 		});
+	});
+
+	it("keeps the selected year's data and open request when fresh server props arrive", async () => {
+		mockGetAbsenceCalendarYearData.mockResolvedValue({
+			absences: [],
+			holidays: [
+				{
+					id: "holiday-2027",
+					name: "Selected year holiday",
+					startDate: new Date(2027, 0, 6),
+					endDate: new Date(2027, 0, 6),
+					categoryId: "public",
+				},
+			],
+		});
+		const props = {
+			absences: [],
+			holidays: [],
+			categories,
+			currentYear: 2026,
+			currentDate: "2026-05-20",
+			organizationId: "org-1",
+			remainingDays: 10,
+		};
+		const { rerender } = render(<AbsencesViewContainer {...props} />);
+		fireEvent.click(screen.getByRole("button", { name: "Next year" }));
+		await waitFor(() =>
+			expect(getCalendarDay("January", "6").className).toContain("bg-amber-100"),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Add absence" }));
+		rerender(<AbsencesViewContainer {...props} absences={[]} holidays={[]} />);
+		expect(getCalendarDay("January", "6").className).toContain("bg-amber-100");
+		expect(screen.getByTestId("request-absence-dialog").getAttribute("data-open")).toBe("true");
 	});
 
 	it("reloads absence data after a request succeeds", async () => {
@@ -147,11 +186,7 @@ describe("AbsencesViewContainer", () => {
 			/>,
 		);
 
-		expect(
-			screen
-				.getAllByRole("button", { name: "20" })
-				.some((button) => button.className.includes("bg-yellow-100")),
-		).toBe(false);
+		expect(getCalendarDay("May", "20").className).not.toContain("bg-yellow-100");
 
 		fireEvent.click(screen.getByRole("button", { name: "Simulate request success" }));
 
@@ -159,11 +194,7 @@ describe("AbsencesViewContainer", () => {
 			expect(mockGetAbsenceCalendarYearData).toHaveBeenCalledWith(2026);
 		});
 		await waitFor(() => {
-			expect(
-				screen
-					.getAllByRole("button", { name: "20" })
-					.some((button) => button.className.includes("bg-yellow-100")),
-			).toBe(true);
+			expect(getCalendarDay("May", "20").className).toContain("bg-yellow-100");
 		});
 	});
 });

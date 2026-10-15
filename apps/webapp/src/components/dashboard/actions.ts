@@ -45,6 +45,7 @@ import {
 } from "./hydration-team-streak-leaders";
 import { createHydrationTeamStreakLeadersCacheConfig } from "./hydration-team-streak-leaders-query";
 import { calculateAdjustedExpectedHoursForRange } from "./quick-stats-calculations";
+import { loadTrackedQuickStats, type QuickStats } from "./quick-stats-tracking";
 import { mapRecentlyApprovedRequestRows } from "./recently-approved-requests";
 import { type AbsenceRange, getNextAvailableReturnDate } from "./return-date-calculations";
 
@@ -477,17 +478,28 @@ export async function getRecentlyApprovedRequests(
 /**
  * Get quick stats (weekly and monthly hours)
  */
-export async function getQuickStats(): Promise<ServerActionResult<any>> {
+export async function getQuickStats(): Promise<ServerActionResult<QuickStats>> {
 	const effect = Effect.gen(function* () {
 		const authService = yield* AuthService;
 		const session = yield* authService.getSession();
 		const dbService = yield* DatabaseService;
 
+		const organizationId = session.session.activeOrganizationId;
+		if (!organizationId) {
+			return yield* Effect.fail(
+				new NotFoundError({ message: "Employee profile not found", entityType: "employee" }),
+			);
+		}
+
 		// Get current employee
 		const currentEmployee = yield* dbService
 			.query("getCurrentEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
+					where: and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, organizationId),
+						eq(employee.isActive, true),
+					),
 					with: {
 						workPolicyAssignments: {
 							where: eq(workPolicyAssignment.isActive, true),
@@ -518,8 +530,15 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 			);
 
 		const now = currentTimestamp();
-		const nowDT = DateTime.fromJSDate(now);
 		const weekStartDay = yield* Effect.promise(() => getUserWeekStartDay(session.user.id));
+		const trackedStats = yield* loadTrackedQuickStats({
+			organizationId,
+			employeeId: currentEmployee.id,
+			now,
+			weekStartDay,
+		});
+		if (trackedStats) return trackedStats;
+		const nowDT = DateTime.fromJSDate(now);
 		const { start: weekStartDateTime, end: weekEndDateTime } = getWeekBounds(nowDT, weekStartDay);
 		const weekStart = weekStartDateTime.toJSDate();
 		const weekEnd = weekEndDateTime.toJSDate();
@@ -1176,6 +1195,7 @@ export async function getVacationBalance(): Promise<
 	ServerActionResult<{
 		totalDays: number;
 		usedDays: number;
+		previouslyTakenDays?: number;
 		pendingDays: number;
 		remainingDays: number;
 		carryoverDays: number;
@@ -1277,6 +1297,7 @@ export async function getVacationBalance(): Promise<
 		return {
 			totalDays: balance.totalDays,
 			usedDays: balance.usedDays,
+			previouslyTakenDays: balance.previouslyTakenDays,
 			pendingDays: balance.pendingDays,
 			remainingDays: balance.remainingDays,
 			carryoverDays: balance.carryoverDays || 0,
@@ -1292,7 +1313,7 @@ export async function getVacationBalance(): Promise<
 /**
  * Get hydration widget data for dashboard
  */
-export async function getHydrationWidgetData(): Promise<
+export async function getHydrationWidgetData(options?: { fresh?: boolean }): Promise<
 	ServerActionResult<{
 		enabled: boolean;
 		currentStreak: number;
@@ -1407,45 +1428,47 @@ export async function getHydrationWidgetData(): Promise<
 				});
 				const sortedTeamIds = teamIds.toSorted();
 
-				return unstable_cache(
-					async () => {
-						const candidates = await dbService.db
-							.select({
-								employeeId: employee.id,
-								userId: employee.userId,
-								userName: user.name,
-								currentStreak: hydrationStats.currentStreak,
-							})
-							.from(employee)
-							.innerJoin(user, eq(employee.userId, user.id))
-							.leftJoin(hydrationStats, eq(hydrationStats.userId, employee.userId))
-							.leftJoin(
-								teamMembership,
-								and(
-									eq(teamMembership.employeeId, employee.id),
-									eq(teamMembership.organizationId, activeOrganizationId),
-									inArray(teamMembership.teamId, sortedTeamIds),
-								),
-							)
-							.where(
-								and(
-									eq(employee.organizationId, activeOrganizationId),
-									eq(employee.isActive, true),
-									or(inArray(employee.teamId, sortedTeamIds), isNotNull(teamMembership.id)),
-								),
-							);
-
-						return buildTeamStreakLeaders(
-							candidates.map((candidate) => ({
-								employeeId: candidate.employeeId,
-								userId: candidate.userId,
-								displayName: candidate.userName || "Team member",
-								currentStreak: candidate.currentStreak,
-							})),
-							session.user.id,
-							{ limit: 5, minimumParticipants: 2 },
+				const load = async () => {
+					const candidates = await dbService.db
+						.select({
+							employeeId: employee.id,
+							userId: employee.userId,
+							userName: user.name,
+							currentStreak: hydrationStats.currentStreak,
+						})
+						.from(employee)
+						.innerJoin(user, eq(employee.userId, user.id))
+						.leftJoin(hydrationStats, eq(hydrationStats.userId, employee.userId))
+						.leftJoin(
+							teamMembership,
+							and(
+								eq(teamMembership.employeeId, employee.id),
+								eq(teamMembership.organizationId, activeOrganizationId),
+								inArray(teamMembership.teamId, sortedTeamIds),
+							),
+						)
+						.where(
+							and(
+								eq(employee.organizationId, activeOrganizationId),
+								eq(employee.isActive, true),
+								or(inArray(employee.teamId, sortedTeamIds), isNotNull(teamMembership.id)),
+							),
 						);
-					},
+
+					return buildTeamStreakLeaders(
+						candidates.map((candidate) => ({
+							employeeId: candidate.employeeId,
+							userId: candidate.userId,
+							displayName: candidate.userName || "Team member",
+							currentStreak: candidate.currentStreak,
+						})),
+						session.user.id,
+						{ limit: 5, minimumParticipants: 2 },
+					);
+				};
+				if (options?.fresh === true) return load();
+				return unstable_cache(
+					load,
 					cacheConfig.keyParts,
 					cacheConfig.options,
 				)();

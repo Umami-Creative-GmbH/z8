@@ -84,11 +84,16 @@
         "absencesRead": "Lese fravær",
         "absencesReadHealth": "Lese helsedetaljer for fravær",
         "customersRead": "Lese kunder",
+        "customFieldsReadRestricted": "Les begrensede egendefinerte felt",
         "employeesRead": "Lese ansatte",
         "projectsRead": "Lese prosjekter",
         "timeEntriesRead": "Lese timeføringer"
       },
       "scopes": "Tillatelser",
+      "scopeWarning": {
+        "absencesReadHealth": "Viser sykefravær med kategori og sykedetaljer. Gi den kun til integrasjoner som trenger helsedata.",
+        "customFieldsReadRestricted": "Legger til de egendefinerte feltene som bare ledere eller administratorer ser, for eksempel lønnstrinn, på ansatte, prosjekter og kunder. Uten denne leser en nøkkel kun feltene alle medlemmer ser."
+      },
       "security": {
         "description": "API-nøkler gir full tilgang til organisasjonsdataene dine innenfor tillatelsesomfanget sitt. Hold dem sikre og del dem aldri i offentlige kodelagre eller klientsidekode.",
         "title": "Sikkerhetsvarsel"

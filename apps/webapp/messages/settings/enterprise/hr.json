@@ -84,11 +84,16 @@
         "absencesRead": "Čitanje odsutnosti",
         "absencesReadHealth": "Čitanje zdravstvenih pojedinosti odsutnosti",
         "customersRead": "Čitanje klijenata",
+        "customFieldsReadRestricted": "Čitanje ograničenih prilagođenih polja",
         "employeesRead": "Čitanje zaposlenika",
         "projectsRead": "Čitanje projekata",
         "timeEntriesRead": "Čitanje unosa radnog vremena"
       },
       "scopes": "Dozvole",
+      "scopeWarning": {
+        "absencesReadHealth": "Prikazuje izostanke zbog bolovanja s njihovom kategorijom i pojedinostima o bolovanju. Dodijelite to samo integracijama kojima su potrebni zdravstveni podaci.",
+        "customFieldsReadRestricted": "Dodaje prilagođena polja koja vide samo voditelji ili administratori, kao što su platni razredi, zaposlenicima, projektima i klijentima. Bez toga ključ čita samo polja koja vidi svaki član."
+      },
       "security": {
         "description": "API ključevi pružaju potpuni pristup podacima vaše organizacije unutar opsega njihovih dozvola. Čuvajte ih na sigurnom i nikada ih nemojte dijeliti u javnim repozitorijima ili kodu na strani klijenta.",
         "title": "Sigurnosna obavijest"

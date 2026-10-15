@@ -169,6 +169,37 @@ describe("OrganizationPageClient", () => {
 		).toBeTruthy();
 	});
 
+	it("shows the tracking suggestion separately from employment and submits the chosen rollout date", async () => {
+		getOnboardingSummaryMock.mockResolvedValue({
+			success: true,
+			data: { hasOrganization: false },
+		});
+		createOrganizationOnboardingMock.mockResolvedValue({ success: true });
+		render(
+			<OrganizationPageClient
+				canCreateOrganizations
+				trackingSuggestedAt="2026-05-20T23:30:00Z"
+			/>,
+		);
+		const date = await screen.findByLabelText("Time tracking start date");
+		expect(date).toHaveProperty("value", "2026-05-20");
+		fireEvent.change(date, { target: { value: "2026-05-21" } });
+		fireEvent.change(screen.getByLabelText("Organization Name"), {
+			target: { value: "Acme Inc" },
+		});
+		fireEvent.click(
+			screen.getByRole("button", { name: "Create Organization" }),
+		);
+		await waitFor(() =>
+			expect(createOrganizationOnboardingMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					trackingStartDate: "2026-05-21",
+					timezone: "UTC",
+				}),
+			),
+		);
+	});
+
 	it("keeps submit disabled after successful creation navigation", async () => {
 		getOnboardingSummaryMock.mockResolvedValue({
 			success: true,

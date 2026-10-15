@@ -39,9 +39,14 @@ export enum AuditAction {
 	EMPLOYEE_UPDATED = "employee.updated",
 	EMPLOYEE_DEACTIVATED = "employee.deactivated",
 	EMPLOYEE_REACTIVATED = "employee.reactivated",
+	/** Accepting an invitation did not copy the draft's personnel number another employee held (#1197). */
+	EMPLOYEE_PERSONNEL_NUMBER_DROPPED = "employee.personnel_number_dropped",
 
 	// Organization Operations
 	ORGANIZATION_CREATED = "organization.created",
+	EMPLOYEE_EMPLOYMENT_START_CORRECTED = "employee.employment_start_corrected",
+	EMPLOYEE_TRACKING_DATE_CHANGED = "employee.tracking_date_changed",
+	ORGANIZATION_TRACKING_DATES_CHANGED = "organization.tracking_dates_changed",
 	INVITATION_SENT = "invitation.sent",
 	INVITATION_ACCEPTED = "invitation.accepted",
 

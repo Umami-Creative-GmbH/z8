@@ -9,6 +9,7 @@
       "displacedVacation": "Urlaubsdaten werden bei Genehmigung ersetzt",
       "exactHours": "Exakt erfasste Stunden",
       "fullDay": "Ganztägig",
+      "historicalRemaining": "Verbleibender bereits genommener Urlaub",
       "morning": "Vormittag",
       "original": "Erfasste Daten",
       "originalEndCoverage": "Erfasster Endtag",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Grund",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Verfügbarer Urlaub nach Abgleich",
+      "reconciliationReason": "Quelle für Abgleich des historischen Urlaubs",
       "title": "Abwesenheitsänderung"
     },
     "absenceRejected": "Abwesenheitsantrag abgelehnt",

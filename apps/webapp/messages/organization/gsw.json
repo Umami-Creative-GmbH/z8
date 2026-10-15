@@ -50,7 +50,6 @@
       "description": "Richte dini Organisation ii, zum aafange",
       "title": "Organisation erstelle"
     },
-    "createError": "Organisation hät nöd chönne erstellt wärde",
     "createNew": "Neui Organisation erstelle",
     "createSuccess": "Organisation erfolgreich erstellt!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Inhaber"
     },
     "slugDescription": "Wird für URLs verwendet. Automatisch aus dem Namen generiert.",
-    "slugErrors": {
-      "format": "Der Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten",
-      "hyphen": "Der Slug darf nicht mit einem Bindestrich beginnen oder enden",
-      "max": "Der Slug muss weniger als 50 Zeichen lang sein",
-      "min": "Der Slug muss mindestens 2 Zeichen lang sein"
-    },
     "slugLabel": "Organisations-Slug",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "Dieser Slug ist bereits vergeben. Bitte wähle einen anderen.",
@@ -372,6 +365,56 @@
       "updated": "Organisations-Zytzone uf {timezone} aktualisiert",
       "update-failed": "Organisations-Zytzone het nöd chönne aktualisiert werde"
     },
-    "title": "Org-Explorer"
+    "title": "Org-Explorer",
+    "tracking": {
+      "activate-reviewed": "Überprüefts Datum aktiviere",
+      "activation-description": "Wähl s'tatsächliche Rollout-Datum und überprüef d'Uuswirkige vorem Speichere. De ersti Vorschlag nutzt s'Erstelldatum vo dinere Organisation i ihrere Zitzone. Das änderet d'Erfassig, ohni s'Aastelligsdatum vo öpperem z'korrigiere.",
+      "actual": "Gleischti Arbet",
+      "affected-periods": "Betroffeni Mönet",
+      "after": "Nachher",
+      "balance": "Arbetssaldo",
+      "before": "Vorher",
+      "blocked-save": "Öffne die betroffene abgschlossene Mönet wieder und erstelle e neui Vorschau.",
+      "change-date": "Erfassigsdatum ändere",
+      "closed": "Gschlosse",
+      "closed-blockers": "Beheb d'Problem unte, bevor e neui Vorschau erstellt und gspeicheret wird.",
+      "closed-settings": "Istellige für abgschlosseni Mönet öffne",
+      "commit-failed": "D'überprüefti Änderig hät nöd chönne gspeicheret werde. Erstell e neui Vorschau und probier's nomal.",
+      "day-unit": "Täg",
+      "description": "Das Datum stüürt die erforderlichi Zit und aagsammleti Arbetssaldi. S'tatsächliche Aastelligsdatum vo de Mitarbeiter bestimmt ihre Ferieaaspruch.",
+      "employee-impacts": "Uuswirkige uf d'Mitarbeitersaldi",
+      "employee-zone": "Mitarbeiter-Zitzone",
+      "ending-balance": "Saldo am Monetsendi",
+      "exception-conflict": "D'Mitarbeiter-Uusnahm {exception} liit vor em neue Minimum {minimum}. Entfern oder änder zersch d'Mitarbeiter-Uusnahm.",
+      "hours": "Stunde",
+      "hours-caption": "Vorher- und Nachher-Stunde",
+      "hour-unit": "Stunde",
+      "invalid-date": "Wähl es gültigs Kalenderdatum.",
+      "legacy": "Dini aktuelli Arbetssaldo-Berechnig wird immer no verwändet. Es isch no kes Startdatum für d'Ziterfassig aktiviert worde.",
+      "no-boundary": "Ke Berechnigsstart",
+      "no-changed-periods": "Kener Ergebnis vo abgschlossene Mönet änderet sich.",
+      "no-employees": "Es sind keni Mitarbeitersaldi betroffe.",
+      "old-boundary": "Aktuelle Berechnigsstart",
+      "opening-preserved": "Eröffnigssaldo bibhalte:",
+      "preview": "Uuswirkigsvorschau",
+      "preview-failed": "Vorschou hät nöd chöne generiert werde. Bitte nomal probiere.",
+      "proposed-boundary": "Vorgschlaagne Erfassigsstart",
+      "reason": "Grund für die Änderig",
+      "reason-required": "Vor em Spychere en Grund aagee.",
+      "required": "Sollzyt",
+      "review-explanation": "Überprüefed Si d Wirkigsdate, d Sollstunde und d Arbetszeitsaldi une. Aastelligsdate und Ferienaasprüch bliibid unveränderet. D Saldi laufid bis zum letschte abgschlossene Tag i de Zytzone vom jewiilige Mitarbeiter.",
+      "review-title": "Uuswirkige vom Erfassigsdatum überprüefe",
+      "saved": "Erfassigsdatum gspycheret und Saldi aktualisiert.",
+      "saved-date": "Aktuells Erfassigsdatum vo de Organisation:",
+      "saved-pending": "Erfassigsdatum gspycheret. Arbetszeitsaldi werded neu berächnet.",
+      "save-reviewed": "Überprüefts Datum spychere",
+      "setup-description": "Sollzyt und Arbetszeitsaldi started a däm Datum, oder bim tatsächliche Aastelligsstart vom Mitarbeiter, falls dä spöter isch. Aastelligsdate bestimmid wyterhin de Ferienaaspruch. De Vorschlag basiert uf em Erstelligsdatum vo de Organisation i ihrere Zytzone.",
+      "setup-timezone": "Zytzone vo de Organisation",
+      "stale-preview": "Di überprüefte Iigaabe händ sich gänderet. Erstellid Si e neui Vorschou vor em Spychere.",
+      "start-date": "Startdatum Zyterfassig",
+      "through-date": "Saldi per",
+      "title": "Start Zyterfassig",
+      "vacation-unchanged": "Ferienaaspruch und -saldo unveränderet:"
+    }
   }
 }

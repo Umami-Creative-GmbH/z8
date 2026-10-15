@@ -9,30 +9,11 @@
       "inviteTeamDesc": "Birlikte çalışmak ve zamanı yönetmek için iş arkadaşlarınızı ekleyin",
       "loading": "Kurulumunuz tamamlanıyor...",
       "nextStepsTitle": "Sonraki Adımlar",
+      "setUpHolidays": "Resmi tatilleri ayarlayın",
+      "setUpHolidaysDesc": "Tatil ayarlarında ülkenizi ve bölgenizi seçin",
       "subtitle": "Hesabınız kullanıma hazır. Ekibe hoş geldiniz!",
       "summaryError": "İşe alım özeti alınamadı",
       "title": "Her şey hazır!"
-    },
-    "holidaySetup": {
-      "cardDesc": "Resmi tatilleri içe aktarmak için ülkenizi seçin. Tatilleri daha sonra ayarlardan özelleştirebilirsiniz.",
-      "cardTitle": "Tatil Ön Ayarı",
-      "continue": "Devam Et",
-      "country": "Ülke",
-      "countryDesc": "Resmi tatiller seçiminize göre içe aktarılacaktır.",
-      "error": "Tatil ön ayarı oluşturulamadı",
-      "noCountry": "Ülke bulunamadı.",
-      "presetName": "Hazır Ayar Adı",
-      "presetNameDesc": "Bu tatil hazır ayarını tanımlamak için bir ad.",
-      "presetNamePlaceholder": "ör. Almanya Tatilleri",
-      "searchCountry": "Ülke ara...",
-      "selectCountry": "Bir ülke seçin",
-      "setAsDefault": "Kuruluş Varsayılanı Olarak Ayarla",
-      "setAsDefaultDesc": "Bu tatil hazır ayarını tüm çalışanlara uygula.",
-      "skip": "Şimdilik atla",
-      "skipError": "Tatil kurulumu atlanamadı",
-      "subtitle": "Resmi tatilleri içe aktarmak için ülkenizi seçin. Bu, izin takibini doğru bir şekilde yapmanıza yardımcı olur.",
-      "success": "Tatil hazır ayarı oluşturuldu!",
-      "title": "Tatilleri ayarla"
     },
     "notifications": {
       "approvals": "Onay talepleri",
@@ -67,13 +48,31 @@
     "organization": {
       "create": "Kuruluş Oluştur",
       "createDescription": "Kendi kuruluşunuzu kurun ve ekibinizi davet edin",
+      "createError": "Organizasyon oluşturulamadı",
+      "createSuccess": "Organizasyon başarıyla oluşturuldu!",
       "createTitle": "Kuruluş Oluştur",
       "disabledSkipDescription": "Mevcut bir organizasyona davet beklerken bu adımı atlayarak devam edebilirsiniz.",
       "disabledSubtitle": "Bu dağıtım için organizasyon oluşturma devre dışı bırakılmıştır.",
+      "nameErrors": {
+        "max": "Organizasyon adı 100 karakterden az olmalıdır",
+        "min": "Organizasyon adı en az 2 karakter olmalıdır"
+      },
+      "nameLabel": "Organizasyon Adı",
+      "namePlaceholder": "Acme Inc.",
       "skip": "Şimdilik atla",
       "skipDescription": "Yöneticiniz sizi bir kuruluşa davet edecekse, bu adımı şimdilik atlayabilirsiniz.",
       "skipError": "Kuruluş kurulumu atlanamadı",
       "skipTitle": "Davetiye mi Bekliyorsunuz?",
+      "slugDescription": "URL'lerde kullanılır. Addan otomatik oluşturulur.",
+      "slugErrors": {
+        "format": "Slug yalnızca küçük harfler, sayılar ve kısa çizgiler içerebilir",
+        "hyphen": "Slug kısa çizgi ile başlayamaz veya bitemez",
+        "max": "Slug 50 karakterden az olmalıdır",
+        "min": "Slug en az 2 karakter olmalıdır"
+      },
+      "slugLabel": "Organizasyon Slug'ı",
+      "slugPlaceholder": "acme-inc",
+      "slugTaken": "Bu slug zaten alınmış. Lütfen farklı bir tane seçin.",
       "subtitle": "Tüm özelliklerin kilidini açmak için kuruluşunuzu oluşturun veya bir davetiye bekliyorsanız atlayın.",
       "title": "Kuruluşunuzu kurun"
     },
@@ -102,14 +101,21 @@
       "timeFormat24h": "24 saatlik (08:00)",
       "timeFormatDesc": "Bu, saatlerin nasıl görüntüleneceğini kontrol eder.",
       "title": "Profilinizi tamamlayın",
+      "validation": {
+        "firstNameRequired": "Ad alanı zorunludur",
+        "firstNameTooLong": "Ad 50 karakter veya daha kısa olmalıdır",
+        "lastNameRequired": "Soyad alanı zorunludur",
+        "lastNameTooLong": "Soyad 50 karakter veya daha kısa olmalıdır"
+      },
       "weekStartDay": "Haftanın ilk günü",
       "weekStartDayDesc": "Bu, takvimlerin ve haftalık özetlerin nasıl görüntüleneceğini kontrol eder."
     },
     "steps": {
       "complete": "Tamamla",
-      "holidaySetup": "Tatiller",
+      "label": "İlk katılım ilerlemesi",
       "notifications": "Bildirimler",
       "organization": "Organizasyon",
+      "position": "Adım {current} / {total}",
       "profile": "Profil",
       "vacationPolicy": "İzin",
       "welcome": "Hoş geldiniz",
@@ -144,7 +150,13 @@
       "skipError": "İzin politikası kurulumu atlanamadı",
       "subtitle": "Organizasyonunuz için bir izin politikası oluşturun. Bu, çalışanların kaç gün izin alacağını belirler.",
       "success": "İzin politikası oluşturuldu!",
-      "title": "İzin politikasını ayarla"
+      "title": "İzin politikasını ayarla",
+      "validation": {
+        "daysNegative": "Gün sayısı negatif olamaz",
+        "daysTooMany": "Gün sayısı 365'i aşamaz",
+        "nameRequired": "Politika adı zorunludur",
+        "nameTooLong": "Politika adı 100 karakter veya daha az olmalıdır"
+      }
     },
     "welcome": {
       "continueSetup": "Kuruluma Devam Et",
@@ -177,6 +189,24 @@
       "features": "Neler elde edeceksiniz",
       "glass": "bardak",
       "glasses": "bardak",
+      "presets": {
+        "active": {
+          "description": "30 dakikada bir - yüksek aktivite veya sıcak ortamlar için",
+          "label": "Aktif"
+        },
+        "custom": {
+          "description": "Kendi aralığınızı belirleyin (15-120 dakika)",
+          "label": "Özel"
+        },
+        "light": {
+          "description": "60 dakikada bir - düşük aktivite için",
+          "label": "Hafif"
+        },
+        "moderate": {
+          "description": "45 dakikada bir - çoğu kişi için önerilen",
+          "label": "Orta"
+        }
+      },
       "recommended": "(Önerilen)",
       "reminderFrequency": "Hatırlatıcı Sıklığı",
       "skip": "Şimdilik atla",
@@ -203,6 +233,10 @@
       "subtitle": "Zamanı takip etmeye ve devamsızlıkları doğru bir şekilde yönetmeye yardımcı olması için çalışma saatlerinizi tanımlayın.",
       "success": "Çalışma programı başarıyla ayarlandı!",
       "title": "Çalışma programınızı ayarlayın",
+      "validation": {
+        "hoursNegative": "Saat negatif olamaz",
+        "hoursTooMany": "Bir hafta en fazla 168 saat olabilir"
+      },
       "weekly": "Haftalık"
     },
     "workTemplates": {
@@ -226,6 +260,12 @@
       "subtitle": "Kuruluşunuz için bir çalışma programı şablonu oluşturun. Bu, ekibinizin çalışma saatlerini belirler.",
       "success": "Çalışma programı şablonu oluşturuldu!",
       "title": "Çalışma programı şablonu oluştur",
+      "validation": {
+        "hoursNegative": "Saat negatif olamaz",
+        "hoursTooMany": "Bir hafta en fazla 168 saat olabilir",
+        "nameRequired": "Şablon adı zorunludur",
+        "nameTooLong": "Şablon adı 100 karakter veya daha az olmalıdır"
+      },
       "workingDays": "Çalışma Günleri",
       "workingDaysDesc": "Hangi günlerin çalışma günü olduğunu seçin. Saatler eşit olarak dağıtılacaktır."
     }

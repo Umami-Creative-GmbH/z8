@@ -6,21 +6,19 @@ import {
 	DatabaseError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import type { MessageTranslate } from "@/lib/i18n/message-translate";
 import { PayrollWorkCollectionBlockedError } from "@/lib/payroll-collection/payroll-work-collection-blocked-error";
 import { PayrollOffboardingRepairBlockedError } from "@/lib/payroll-export/offboarding-repair-guard";
 import {
 	PayrollIdentifierChangedError,
+	PayrollIdentifierDuplicateError,
 	PayrollIdentifierMissingError,
 } from "@/lib/payroll-export/personnel-identifier";
+import { payrollIdentifierDuplicateConflict } from "@/lib/payroll-export/personnel-identifier-refusal";
 import { PayrollWorkAllocationBlockedError } from "@/lib/payroll-export/work-allocation-blocked-error";
 import { CanonicalCutoverNotReadyError } from "@/lib/time-record/migration/cutover-state";
 
-export type PayrollErrorTranslator = (key: string, fallback: string) => string;
-
-export function mapPayrollWorkspaceActionError(
-	error: unknown,
-	t: PayrollErrorTranslator,
-): AnyAppError {
+export function mapPayrollWorkspaceActionError(error: unknown, t: MessageTranslate): AnyAppError {
 	if (isKnownPayrollActionError(error)) {
 		return error;
 	}
@@ -65,6 +63,10 @@ export function mapPayrollWorkspaceActionError(
 				employeeIds: error.employeeIds,
 			},
 		});
+	}
+
+	if (error instanceof PayrollIdentifierDuplicateError) {
+		return payrollIdentifierDuplicateConflict(error, t);
 	}
 
 	if (error instanceof PayrollIdentifierChangedError) {
@@ -122,7 +124,7 @@ export function mapPayrollWorkspaceActionError(
 	});
 }
 
-function missingIdentifierMessage(t: PayrollErrorTranslator): string {
+function missingIdentifierMessage(t: MessageTranslate): string {
 	return t(
 		"payroll.errors.exportBlockedByMissingIdentifier",
 		"Export blocked: some employees have no value for the custom field used as payroll identifier",

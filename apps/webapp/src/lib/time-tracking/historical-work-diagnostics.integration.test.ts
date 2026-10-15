@@ -19,6 +19,7 @@ import type { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -70,7 +71,6 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOri
 	sendManualEntryApprovedNotification: async () => undefined,
 }));
 
-const { db } = await import("@/db");
 const { runCanonicalBackfill } = await import("@/lib/time-record/migration/backfill");
 const { reconcileLegacyToCanonical } = await import("@/lib/time-record/migration/reconciliation");
 const { POST } = await import("@/app/api/time-entries/diagnostics/route");
@@ -317,10 +317,13 @@ describe("historical work diagnostics on PostgreSQL", () => {
 			"select canonical_record_id from work_period where id = $1",
 			[periodId],
 		);
-		await admin.query("update work_period set canonical_record_id = null where id = $1", [
-			periodId,
-		]);
-		await admin.query("delete from time_record where id = $1", [period.canonical_record_id]);
+		// History before every completed work period had its record (#1224).
+		await asHistory(admin, async (client) => {
+			await client.query("update work_period set canonical_record_id = null where id = $1", [
+				periodId,
+			]);
+			await client.query("delete from time_record where id = $1", [period.canonical_record_id]);
+		});
 		await runCanonicalBackfill({
 			organizationId: ids.organization,
 			actorId: ids.ownerUser,
@@ -331,6 +334,8 @@ describe("historical work diagnostics on PostgreSQL", () => {
 			id: periodId,
 			duration_minutes: 480,
 			end_at: "2026-07-02T14:00:00",
+			origin: "system",
+			created_by: ids.workerUser,
 		});
 		await runCanonicalBackfill({
 			organizationId: ids.organization,
@@ -339,7 +344,7 @@ describe("historical work diagnostics on PostgreSQL", () => {
 		expect(await snapshot()).toEqual(completed);
 	});
 
-	it("rolls back new work inserts if another unlinked period already has a same-ID canonical copy", async () => {
+	it("never rewrites an unlinked same-ID canonical copy: that work is left to repair (#1224)", async () => {
 		const first = await legacyManual({
 			date: "2026-07-02",
 			clockInTime: "08:00",
@@ -350,61 +355,42 @@ describe("historical work diagnostics on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "12:00",
 		});
-		await admin.query(
-			"update work_period set canonical_record_id = null where id = any($1::uuid[])",
-			[[first, second]],
-		);
-		await admin.query(
-			`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at, duration_minutes, approval_state, origin, created_by, updated_by, updated_at)
-			select id, organization_id, employee_id, 'work', start_time, null, null, 'approved', 'system', $2, $2, updated_at from work_period where id = $1`,
-			[second, ids.ownerUser],
-		);
-		const before = await snapshot();
-		await expect(
-			runCanonicalBackfill({
-				organizationId: ids.organization,
-				actorId: ids.ownerUser,
-			}),
-		).rejects.toThrow("Canonical work backfill conflict");
-		expect(await snapshot()).toEqual(before);
-	});
+		await asHistory(admin, async (client) => {
+			await client.query(
+				"update work_period set canonical_record_id = null where id = any($1::uuid[])",
+				[[first, second]],
+			);
+			await client.query(
+				`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at, duration_minutes, approval_state, origin, created_by, updated_by, updated_at)
+				select id, organization_id, employee_id, 'work', start_time, null, null, 'approved', 'system', $2, $2, updated_at from work_period where id = $1`,
+				[second, ids.ownerUser],
+			);
+		});
+		const copy = await admin.query("select * from time_record where id = $1", [second]);
 
-	it("rolls back a stale backfill snapshot when a concurrent writer establishes a different link", async () => {
-		const periodId = await legacyManual({
-			date: "2026-07-02",
-			clockInTime: "08:00",
-			clockOutTime: "12:00",
+		const result = await runCanonicalBackfill({
+			organizationId: ids.organization,
+			actorId: ids.ownerUser,
 		});
-		const {
-			rows: [established],
-		} = await admin.query<{ canonical_record_id: string }>(
-			"select canonical_record_id from work_period where id = $1",
-			[periodId],
+
+		expect(result.work).toEqual({
+			attached: [first],
+			closedMonthSkips: [],
+			refused: [
+				expect.objectContaining({
+					workPeriodId: second,
+					refusal: "canonical_record_present",
+					reason: "canonical_record_present",
+				}),
+			],
+		});
+		expect((await admin.query("select * from time_record where id = $1", [second])).rows).toEqual(
+			copy.rows,
 		);
-		await admin.query("update work_period set canonical_record_id = null where id = $1", [
-			periodId,
-		]);
-		const source = await db.query.workPeriod.findMany({
-			where: (period, { eq }) => eq(period.id, periodId),
-		});
-		await admin.query("update work_period set canonical_record_id = $2 where id = $1", [
-			periodId,
-			established.canonical_record_id,
-		]);
-		const before = await snapshot();
-		await expect(
-			runCanonicalBackfill({
-				organizationId: ids.organization,
-				actorId: ids.ownerUser,
-				legacy: {
-					workPeriods: source,
-					absenceEntries: [],
-					approvalRequests: [],
-					absenceCategories: [],
-				},
-			}),
-		).rejects.toThrow("Work changed during canonical backfill");
-		expect(await snapshot()).toEqual(before);
+		const {
+			rows: [unlinked],
+		} = await admin.query("select canonical_record_id from work_period where id = $1", [second]);
+		expect(unlinked).toEqual({ canonical_record_id: null });
 	});
 
 	it("reports consistent legacy manual work as complete and writes nothing", async () => {
@@ -484,15 +470,23 @@ describe("historical work diagnostics on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "12:00",
 		});
+		// Created before the June work loses its end: open-ended work occupies everything after it.
+		const requestLinked = await legacyManual({
+			date: "2026-07-15",
+			clockInTime: "08:00",
+			clockOutTime: "12:00",
+		});
 		const {
 			rows: [{ canonical_record_id: removedRecord }],
 		} = await admin.query("select canonical_record_id from work_period where id = $1", [
 			missingCanonical,
 		]);
-		await admin.query("update work_period set canonical_record_id = null where id = $1", [
-			missingCanonical,
-		]);
-		await admin.query("delete from time_record where id = $1", [removedRecord]);
+		await asHistory(admin, async (client) => {
+			await client.query("update work_period set canonical_record_id = null where id = $1", [
+				missingCanonical,
+			]);
+			await client.query("delete from time_record where id = $1", [removedRecord]);
+		});
 		await admin.query(
 			`update work_period set approval_status = 'pending', duration_minutes = null where id = $1`,
 			[pendingNoDuration],
@@ -506,11 +500,6 @@ describe("historical work diagnostics on PostgreSQL", () => {
 			[juneOpenEnd],
 		);
 		// Older pending work linked only through its legacy approval request.
-		const requestLinked = await legacyManual({
-			date: "2026-07-15",
-			clockInTime: "08:00",
-			clockOutTime: "12:00",
-		});
 		await admin.query("update work_period set approval_status = 'pending' where id = $1", [
 			requestLinked,
 		]);

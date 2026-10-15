@@ -97,23 +97,6 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(source).toContain('from "@/lib/billing/guard"');
 	});
 
-	it("imports the work balance dirty marker", () => {
-		expect(clockingSource).toContain("markEmployeeWorkBalanceDirty");
-		expect(clockingSource).toContain('from "@/lib/work-balance/service"');
-	});
-
-	it("wraps work balance dirty marking as best effort", () => {
-		expect(clockingSource).toContain(
-			"async function markWorkBalanceDirtyAfterManualTimeEntryBestEffort(",
-		);
-		expect(clockingSource).toContain(
-			"await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(",
-		);
-		expect(clockingSource).toContain(
-			'"Failed to mark work balance dirty after manual time entry"',
-		);
-	});
-
 	it("leaves clock-in billing, holiday, capture and occupancy to the Clocking module", () => {
 		// Proven through `run` in lib/time-tracking/clocking/clock-in.integration.test.ts.
 		const body = functionBody("clockInAs", clockingSource);
@@ -174,29 +157,25 @@ describe("legacy time-tracking action billing guards", () => {
 	it("guards the canonical same-day edit before writing time data", () => {
 		expectBillingGuardBeforeWrite(
 			"editSameDayTimeEntry",
-			"canonicalTimeEntryClient.createCorrectionEntry",
+			"withCompletedWorkTransaction(",
 			correctionSubmissionSource,
 		);
 	});
 
-	it("marks work balances dirty after createManualTimeEntry changes payable time", () => {
-		const name = "createManualTimeEntry";
-		const body = functionBody(name, clockingSource);
-		expect(body).toContain(
-			"await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(",
-		);
-		expect(body).toContain("dirtyFromDate:");
+	it("leaves the manual entry's balance refresh to the work record's transaction (#1223)", () => {
+		const body = functionBody("createManualTimeEntry", clockingSource);
+		expect(body).toContain("applyWorkRecordChange(context, {");
+		expect(body).toContain('kind: "create_new"');
+		expect(clockingSource).not.toContain("markEmployeeWorkBalanceDirty");
 	});
 
-	it("marks work balances dirty after the canonical same-day edit", () => {
+	it("leaves the same-day edit's balance refresh to the amendment's transaction (#1226)", () => {
 		const body = functionBody(
 			"editSameDayTimeEntry",
 			correctionSubmissionSource,
 		);
-		expect(body).toContain(
-			"await markWorkBalanceDirtyAfterSameDayEditBestEffort(",
-		);
-		expect(body).toContain("dirtyFromDate:");
+		expect(body).toContain("replayOrAmendCompletedWork(scope, amendment)");
+		expect(body).not.toContain("markEmployeeWorkBalanceDirty");
 	});
 
 	it.each(["updateWorkPeriodProject", "updateWorkPeriodBillability", "updateWorkPeriodNotes"])(
@@ -236,10 +215,11 @@ describe("legacy time-tracking action billing guards", () => {
 	it("keeps manual source rows pending until approval routing resolves", () => {
 		const body = functionBody("createManualTimeEntry", clockingSource);
 
-		expect(body).toContain(
-			'approvalStatus: requiresApproval ? "pending" : "approved"',
+		const approval = body.slice(body.indexOf("approval: requiresApproval"));
+		expect(approval).toMatch(
+			/^approval: requiresApproval\s*\?\s*\{\s*state: "pending",\s*pendingChanges: \{/,
 		);
-		expect(body).toContain("pendingChanges: requiresApproval");
+		expect(approval).toContain(': { state: "approved" }');
 		expect(body).toContain(
 			"executeOrdinaryWorkPeriodSubmissionInTransaction({",
 		);
@@ -262,7 +242,7 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it.each([
-		["createManualTimeEntry", "createTimeEntry("],
+		["createManualTimeEntry", "applyWorkRecordChange("],
 	])("fails closed when %s policy checks fail before writing", (name, writeMarker) => {
 		expectPolicyCheckFailureBeforeWrite(name, writeMarker, clockingSource);
 	});

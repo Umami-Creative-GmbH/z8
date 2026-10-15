@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, createElement, type ReactNode, use, useState } from "react";
+import {
+	createContext,
+	createElement,
+	type ReactNode,
+	use,
+	useState,
+	useLayoutEffect,
+} from "react";
 import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
 
@@ -78,6 +85,9 @@ export function OrganizationSettingsStoreProvider({
 	initialSettings?: OrganizationSettingsBootstrap | null;
 }) {
 	const [store] = useState(() => createOrganizationSettingsStore(initialSettings));
+	useLayoutEffect(() => {
+		if (initialSettings) store.getState().hydrate(initialSettings);
+	}, [store, initialSettings]);
 
 	return createElement(OrganizationSettingsStoreContext.Provider, { value: store }, children);
 }

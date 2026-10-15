@@ -4,6 +4,7 @@ import type {
 	ReactFormExtendedApi,
 } from "@tanstack/react-form";
 import { DateTime } from "luxon";
+import { PERSONNEL_NUMBER_TAKEN } from "@/lib/organization/personnel-number-refusal";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 
 export interface EmployeeDetailFormValues {
@@ -83,13 +84,35 @@ export function buildEmployeeUpdatePayload(value: EmployeeDetailFormValues) {
 	};
 }
 
+/**
+ * Focuses the first field, in form order, that holds an error: a client
+ * validation error or a save refusal the server put on the field (a taken
+ * personnel number, `showEmployeeSaveRefusal`).
+ */
 export function focusFirstInvalidEmployeeDetailField(formApi: EmployeeDetailFormMetaApi) {
-	for (const fieldName of ["firstName", "lastName", "pronouns"] as const) {
+	for (const fieldName of ["firstName", "lastName", "pronouns", "employeeNumber"] as const) {
 		if (formApi.getFieldMeta(fieldName)?.errors.length) {
 			document.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)?.focus();
 			break;
 		}
 	}
+}
+
+/**
+ * Puts a save refusal the server ties to a form field on that field: a taken
+ * personnel number (#881) goes on the personnel number field and stays there
+ * until the field changes. False for any other failure, which the caller shows.
+ */
+export function showEmployeeSaveRefusal(
+	form: Pick<EmployeeDetailFormApi, "setFieldMeta">,
+	result: { error: string; refusal?: string },
+): boolean {
+	if (result.refusal !== PERSONNEL_NUMBER_TAKEN) return false;
+	form.setFieldMeta("employeeNumber", (meta) => ({
+		...meta,
+		errorMap: { ...meta.errorMap, onSubmit: result.error },
+	}));
+	return true;
 }
 
 export function syncEmployeeForm(form: EmployeeDetailFormApi, employee: EmployeeDetail) {

@@ -8,7 +8,7 @@
  * evidence owned by others (a period linking another employee's canonical record,
  * or the reverse), so ownership conflicts cannot hide behind an employee filter.
  */
-import { and, eq, inArray, notInArray, type SQL } from "drizzle-orm";
+import { and, asc, eq, inArray, notInArray, type SQL, sql } from "drizzle-orm";
 import type { db as database } from "@/db";
 import {
 	approvalRequest,
@@ -37,6 +37,7 @@ import {
 	type HistoricalWorkEvidence,
 	type HistoricalWorkScope,
 } from "./historical-work-diagnostics";
+import type { CanonicalAllocationShape } from "./work-records/work-attribution";
 
 type Database = typeof database;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -76,10 +77,20 @@ const periodColumns = {
 	approvalWorkflowId: workPeriod.approvalWorkflowId,
 	deletedAt: workPeriod.deletedAt,
 	projectId: workPeriod.projectId,
+	taskId: workPeriod.taskId,
 	isBillable: workPeriod.isBillable,
 	workCategoryId: workPeriod.workCategoryId,
 	workLocationType: workPeriod.workLocationType,
+	vehicleKind: workPeriod.vehicleKind,
+	vehicleId: workPeriod.vehicleId,
+	odometerStartKm: workPeriod.odometerStartKm,
+	odometerEndKm: workPeriod.odometerEndKm,
+	drivenDistanceKm: workPeriod.drivenDistanceKm,
 	canonicalRecordId: workPeriod.canonicalRecordId,
+	// The closed month completed work without a canonical record touches (ADR-0004).
+	closedMonth: sql<
+		string | null
+	>`case when ${workPeriod.canonicalRecordId} is null and ${workPeriod.endTime} is not null then to_char(public.closed_month_touching_work(${workPeriod.employeeId}, ${workPeriod.startTime}, ${workPeriod.endTime}), 'YYYY-MM') end`,
 	graphRevision: workPeriod.graphRevision,
 	createdAt: workPeriod.createdAt,
 };
@@ -198,6 +209,11 @@ export async function readHistoricalWorkEvidence(
 				recordId: timeRecordWork.recordId,
 				workCategoryId: timeRecordWork.workCategoryId,
 				workLocationType: timeRecordWork.workLocationType,
+				vehicleKind: timeRecordWork.vehicleKind,
+				vehicleId: timeRecordWork.vehicleId,
+				odometerStartKm: timeRecordWork.odometerStartKm,
+				odometerEndKm: timeRecordWork.odometerEndKm,
+				drivenDistanceKm: timeRecordWork.drivenDistanceKm,
 				computationMetadata: timeRecordWork.computationMetadata,
 			})
 			.from(timeRecordWork)
@@ -212,17 +228,22 @@ export async function readHistoricalWorkEvidence(
 		reader
 			.select({
 				recordId: timeRecordAllocation.recordId,
+				allocationKind: timeRecordAllocation.allocationKind,
 				projectId: timeRecordAllocation.projectId,
+				taskId: timeRecordAllocation.taskId,
+				costCenterId: timeRecordAllocation.costCenterId,
+				weightPercent: timeRecordAllocation.weightPercent,
 				isBillable: timeRecordAllocation.isBillable,
 			})
 			.from(timeRecordAllocation)
 			.where(
 				and(
 					eq(timeRecordAllocation.organizationId, organizationId),
-					eq(timeRecordAllocation.allocationKind, "project"),
 					inArray(timeRecordAllocation.recordId, chunk),
 				),
-			),
+			)
+			// A stable order: the record agreement rule reads the first project allocation.
+			.orderBy(asc(timeRecordAllocation.createdAt), asc(timeRecordAllocation.id)),
 	);
 	const operations = await selectInChunks(periodIds, (chunk) =>
 		reader
@@ -295,19 +316,11 @@ export async function readHistoricalWorkEvidence(
 		);
 
 	const detailByRecord = new Map(details.map((detail) => [detail.recordId, detail]));
-	const projectsByRecord = new Map<string, string[]>();
-	const billableProjectsByRecord = new Map<string, string[]>();
-	for (const allocation of allocations) {
-		if (allocation.projectId === null) continue;
-		projectsByRecord.set(allocation.recordId, [
-			...(projectsByRecord.get(allocation.recordId) ?? []),
-			allocation.projectId,
-		]);
-		if (!allocation.isBillable) continue;
-		billableProjectsByRecord.set(allocation.recordId, [
-			...(billableProjectsByRecord.get(allocation.recordId) ?? []),
-			allocation.projectId,
-		]);
+	const allocationsByRecord = new Map<string, CanonicalAllocationShape[]>();
+	for (const { recordId, ...allocation } of allocations) {
+		const recordAllocations = allocationsByRecord.get(recordId);
+		if (recordAllocations) recordAllocations.push(allocation);
+		else allocationsByRecord.set(recordId, [allocation]);
 	}
 
 	return {
@@ -328,10 +341,17 @@ export async function readHistoricalWorkEvidence(
 				approvalWorkflowId: row.approvalWorkflowId,
 				deletedAt: row.deletedAt ? instantFromDate(row.deletedAt) : null,
 				projectId: row.projectId,
+				taskId: row.taskId,
 				isBillable: row.isBillable,
 				workCategoryId: row.workCategoryId,
 				workLocationType: row.workLocationType,
+				vehicleKind: row.vehicleKind,
+				vehicleId: row.vehicleId,
+				odometerStartKm: row.odometerStartKm,
+				odometerEndKm: row.odometerEndKm,
+				drivenDistanceKm: row.drivenDistanceKm,
 				canonicalRecordId: row.canonicalRecordId,
+				closedMonth: row.closedMonth,
 				graphRevision: row.graphRevision,
 				createdAt: instantFromDate(row.createdAt),
 			}),
@@ -351,11 +371,15 @@ export async function readHistoricalWorkEvidence(
 					? {
 							workCategoryId: detail.workCategoryId,
 							workLocationType: detail.workLocationType,
+							vehicleKind: detail.vehicleKind,
+							vehicleId: detail.vehicleId,
+							odometerStartKm: detail.odometerStartKm,
+							odometerEndKm: detail.odometerEndKm,
+							drivenDistanceKm: detail.drivenDistanceKm,
 							computationMetadata: detail.computationMetadata,
 						}
 					: null,
-				projectIds: projectsByRecord.get(row.id) ?? [],
-				billableProjectIds: billableProjectsByRecord.get(row.id) ?? [],
+				allocations: allocationsByRecord.get(row.id) ?? [],
 			};
 		}),
 		entries: entries.map((row) => ({

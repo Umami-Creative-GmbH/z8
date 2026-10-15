@@ -18,7 +18,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
@@ -26,6 +26,7 @@ import {
 	updateProfileDetails,
 	updateProfileImage,
 } from "@/app/[locale]/(app)/settings/profile/actions";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -189,6 +190,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 							queryKey: queryKeys.employees.all,
 						}),
 					]);
+					if (form.store.state.values === value) form.reset(value, { keepDefaultValues: true });
 					refresh();
 					return;
 				}
@@ -278,48 +280,46 @@ export function ProfileForm({ user }: ProfileFormProps) {
 	});
 
 	// Load employee personal info
-	useEffect(() => {
-		let isMounted = true;
+	const profileLoadGeneration = useRef(0);
 
-		async function loadEmployeeData() {
-			const emp = await getCurrentEmployee().then(
-				(value) => value,
-				() => null,
-			);
+	const runLoadEmployeeData = useCallback(async () => {
+		const generation = ++profileLoadGeneration.current;
+		const emp = await getCurrentEmployee().catch((error: unknown) => {
+			if (generation === profileLoadGeneration.current) setIsInitialLoading(false);
+			throw error;
+		});
 
-			if (!isMounted) {
-				return;
-			}
-
-			form.setFieldValue("image", user.image || "");
-			form.setFieldValue("firstName", user.firstName || "");
-			form.setFieldValue("lastName", user.lastName || "");
-			form.setFieldValue(
-				"gender",
-				(emp?.gender as ProfileFormValues["gender"] | null) || "",
-			);
-			form.setFieldValue("pronouns", emp?.pronouns || "");
-			form.setFieldValue(
-				"birthday",
-				birthdayValueToCalendarDate(emp?.birthday),
-			);
-			form.setFieldValue("helpImproveProduct", user.helpImproveProduct ?? true);
-			setCurrentEmployeeId(emp?.id ?? null);
-			setIsInitialLoading(false);
+		if (generation !== profileLoadGeneration.current) {
+			return;
 		}
 
-		loadEmployeeData();
+		if (!form.store.state.isDirty) {
+			form.reset(
+				{
+					image: user.image || "",
+					firstName: user.firstName || "",
+					lastName: user.lastName || "",
+					gender: (emp?.gender as ProfileFormValues["gender"] | null) || "",
+					pronouns: emp?.pronouns || "",
+					birthday: birthdayValueToCalendarDate(emp?.birthday),
+					helpImproveProduct: user.helpImproveProduct ?? true,
+				},
+				{ keepDefaultValues: true },
+			);
+		}
+		setCurrentEmployeeId(emp?.id ?? null);
+		setIsInitialLoading(false);
+	}, [form, user.firstName, user.helpImproveProduct, user.image, user.lastName]);
 
+	useViewRefresh(runLoadEmployeeData);
+	useEffect(() => {
+		void runLoadEmployeeData().catch(() => {
+			toast.error(t("settings.profile.loadFailed", "Failed to load profile"));
+		});
 		return () => {
-			isMounted = false;
+			profileLoadGeneration.current += 1;
 		};
-	}, [
-		form,
-		user.firstName,
-		user.helpImproveProduct,
-		user.image,
-		user.lastName,
-	]);
+	}, [runLoadEmployeeData, t]);
 
 	// Create ref for file input
 	const inputRef = useRef<HTMLInputElement>(null);

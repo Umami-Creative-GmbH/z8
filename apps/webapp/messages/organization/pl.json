@@ -50,7 +50,6 @@
       "description": "Skonfiguruj swoją organizację, aby rozpocząć",
       "title": "Utwórz organizację"
     },
-    "createError": "Nie udało się utworzyć organizacji",
     "createNew": "Utwórz nową organizację",
     "createSuccess": "Organizacja została pomyślnie utworzona!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Właściciel"
     },
     "slugDescription": "Używane w adresach URL. Generowane automatycznie z nazwy.",
-    "slugErrors": {
-      "format": "Slug może zawierać tylko małe litery, cyfry i myślniki",
-      "hyphen": "Slug nie może zaczynać się ani kończyć myślnikiem",
-      "max": "Slug musi mieć mniej niż 50 znaków",
-      "min": "Slug musi mieć co najmniej 2 znaki"
-    },
     "slugLabel": "Slug organizacji",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "Ten slug jest już zajęty. Proszę wybrać inny.",
@@ -372,6 +365,56 @@
       "updated": "Strefa czasowa organizacji została zaktualizowana na {timezone}",
       "update-failed": "Nie udało się zaktualizować strefy czasowej organizacji"
     },
-    "title": "Eksplorator organizacji"
+    "title": "Eksplorator organizacji",
+    "tracking": {
+      "activate-reviewed": "Aktywuj zweryfikowaną datę",
+      "activation-description": "Wybierz rzeczywistą datę wdrożenia i sprawdź jej wpływ przed zapisaniem. Wstępna propozycja wykorzystuje datę utworzenia organizacji w jej strefie czasowej. Zmienia to rejestrowanie bez korygowania dat zatrudnienia pracowników.",
+      "actual": "Przepracowany czas",
+      "affected-periods": "Miesiące, których dotyczy zmiana",
+      "after": "Po",
+      "balance": "Bilans czasu pracy",
+      "before": "Przed",
+      "blocked-save": "Otwórz ponownie zamknięte miesiące, których dotyczy zmiana, i wygeneruj nowy podgląd.",
+      "change-date": "Zmień datę rejestrowania",
+      "closed": "Zamknięte",
+      "closed-blockers": "Rozwiąż poniższe problemy przed wygenerowaniem nowego podglądu i zapisaniem.",
+      "closed-settings": "Otwórz ustawienia zamkniętych miesięcy",
+      "commit-failed": "Nie udało się zapisać zweryfikowanej zmiany. Wygeneruj nowy podgląd i spróbuj ponownie.",
+      "day-unit": "dni",
+      "description": "Ta data określa wymagany czas i skumulowane bilanse czasu pracy. Rzeczywiste daty zatrudnienia pracowników określają ich wymiar urlopu.",
+      "employee-impacts": "Wpływ na bilanse pracowników",
+      "employee-zone": "Strefa czasowa pracownika",
+      "ending-balance": "Bilans na koniec miesiąca",
+      "exception-conflict": "Wyjątek pracownika {exception} poprzedza nową minimalną wartość {minimum}. Najpierw usuń lub zmień wyjątek pracownika.",
+      "hours": "Godziny",
+      "hours-caption": "Godziny przed i po",
+      "hour-unit": "godz.",
+      "invalid-date": "Wybierz prawidłową datę z kalendarza.",
+      "legacy": "Nadal używane jest obecne obliczanie bilansu czasu pracy. Nie aktywowano żadnej daty rozpoczęcia rejestrowania czasu.",
+      "no-boundary": "Brak daty rozpoczęcia obliczeń",
+      "no-changed-periods": "Wyniki zamkniętych miesięcy nie ulegają zmianie.",
+      "no-employees": "Brak wpływu na bilanse pracowników.",
+      "old-boundary": "Bieżąca data rozpoczęcia obliczeń",
+      "opening-preserved": "Zachowano bilans otwarcia:",
+      "preview": "Podgląd wpływu",
+      "preview-failed": "Nie udało się wygenerować podglądu. Spróbuj ponownie.",
+      "proposed-boundary": "Proponowany początek rejestrowania czasu",
+      "reason": "Powód tej zmiany",
+      "reason-required": "Wprowadź powód przed zapisaniem.",
+      "required": "Wymagany czas",
+      "review-explanation": "Przejrzyj poniższe daty wejścia w życie, wymagane godziny i salda czasu pracy. Daty zatrudnienia i wymiary urlopu pozostają bez zmian. Salda obejmują czas do ostatniego zakończonego dnia w strefie czasowej danego pracownika.",
+      "review-title": "Przegląd wpływu daty rejestrowania czasu",
+      "saved": "Data rejestrowania czasu została zapisana, a salda zaktualizowane.",
+      "saved-date": "Bieżąca data rejestrowania czasu w organizacji:",
+      "saved-pending": "Data rejestrowania czasu została zapisana. Trwa ponowne przeliczanie sald czasu pracy.",
+      "save-reviewed": "Zapisz przejrzaną datę",
+      "setup-description": "Wymagany czas i salda czasu pracy są naliczane od tej daty lub od rzeczywistego rozpoczęcia zatrudnienia pracownika, jeśli nastąpiło później. Daty zatrudnienia nadal określają wymiar urlopu. Sugestia bazuje na dacie utworzenia organizacji w jej strefie czasowej.",
+      "setup-timezone": "Strefa czasowa organizacji",
+      "stale-preview": "Przejrzane dane wejściowe uległy zmianie. Wygeneruj nowy podgląd przed zapisaniem.",
+      "start-date": "Data rozpoczęcia rejestrowania czasu",
+      "through-date": "Salda do dnia",
+      "title": "Początek rejestrowania czasu",
+      "vacation-unchanged": "Wymiar i saldo urlopu bez zmian:"
+    }
   }
 }

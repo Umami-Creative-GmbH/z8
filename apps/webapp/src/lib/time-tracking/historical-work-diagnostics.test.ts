@@ -26,6 +26,30 @@ function nextId(prefix = "b") {
 
 const at = (value: string) => parseInstant(value);
 
+const noVehicle = {
+	vehicleKind: null,
+	vehicleId: null,
+	odometerStartKm: null,
+	odometerEndKm: null,
+	drivenDistanceKm: null,
+} as const;
+
+/** A canonical project allocation; whole (weight 100) and non-billable unless overridden. */
+function projectAllocation(
+	projectId: string,
+	overrides: Partial<HistoricalRecordEvidence["allocations"][number]> = {},
+): HistoricalRecordEvidence["allocations"][number] {
+	return {
+		allocationKind: "project",
+		projectId,
+		taskId: null,
+		costCenterId: null,
+		weightPercent: 100,
+		isBillable: false,
+		...overrides,
+	};
+}
+
 function entry(
 	type: "clock_in" | "clock_out",
 	timestamp: string,
@@ -83,9 +107,12 @@ function work(
 		approvalWorkflowId: null,
 		deletedAt: null,
 		projectId: null,
+		taskId: null,
 		workCategoryId: null,
 		workLocationType: null,
+		...noVehicle,
 		canonicalRecordId: recordId,
+		closedMonth: null,
 		graphRevision: 0,
 		createdAt: at(end),
 		...options.period,
@@ -99,8 +126,13 @@ function work(
 		approvalState: "approved",
 		origin: "clock",
 		createdAt: at(end),
-		detail: { workCategoryId: null, workLocationType: null, computationMetadata: null },
-		projectIds: [],
+		detail: {
+			workCategoryId: null,
+			workLocationType: null,
+			...noVehicle,
+			computationMetadata: null,
+		},
+		allocations: [],
 		...options.record,
 	};
 	return { period, record, entries: [clockIn, clockOut] };
@@ -516,7 +548,11 @@ describe("assessHistoricalWork shape matrix", () => {
 			assessHistoricalWork(evidence([fixture]), july).findings,
 			"duration_conflict",
 		);
-		expect(finding.details).toEqual({ periodMinutes: 480, canonicalMinutes: 470 });
+		expect(finding.details).toEqual({
+			facet: "duration",
+			periodMinutes: 480,
+			canonicalMinutes: 470,
+		});
 	});
 
 	it("preserves zero minutes over a positive sub-minute interval", () => {
@@ -586,10 +622,11 @@ describe("assessHistoricalWork shape matrix", () => {
 		const fixture = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
 			period: { projectId: project, workCategoryId: category, workLocationType: null },
 			record: {
-				projectIds: [],
+				allocations: [],
 				detail: {
 					workCategoryId: otherCategory,
 					workLocationType: "home",
+					...noVehicle,
 					computationMetadata: null,
 				},
 			},
@@ -605,14 +642,27 @@ describe("assessHistoricalWork shape matrix", () => {
 		expect(findings.find((f) => f.kind === "metadata_canonical_only")?.blocking).toBe(false);
 	});
 
-	it("accepts a project the canonical allocations already hold", () => {
+	it("reports a project held among several canonical project allocations as divergent", () => {
 		const project = "d0000000-0000-4000-8000-000000000003";
 		const fixture = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
 			period: { projectId: project },
-			record: { projectIds: ["d0000000-0000-4000-8000-000000000009", project] },
+			record: {
+				allocations: [
+					projectAllocation(project, { weightPercent: 50 }),
+					projectAllocation("d0000000-0000-4000-8000-000000000009", { weightPercent: 50 }),
+				],
+			},
 		});
 
-		expect(assessHistoricalWork(evidence([fixture]), july).findings).toEqual([]);
+		const finding = only(
+			assessHistoricalWork(evidence([fixture]), july).findings,
+			"metadata_conflict",
+		);
+		expect(finding.details).toEqual({
+			facet: "allocation_weight",
+			field: "allocation_weight",
+			canonicalValues: ["50", "50"],
+		});
 	});
 
 	it("reports approval state conflicts and pending work without any relationship", () => {
@@ -635,6 +685,7 @@ describe("assessHistoricalWork shape matrix", () => {
 		).findings;
 
 		expect(only(findings, "approval_state_conflict").details).toEqual({
+			facet: "approval_state",
 			periodState: "pending",
 			canonicalState: "approved",
 		});
@@ -666,6 +717,228 @@ describe("assessHistoricalWork shape matrix", () => {
 			]),
 		);
 		expect(findings).toHaveLength(2);
+	});
+});
+
+describe("assessHistoricalWork record agreement (#1217)", () => {
+	const project = "d0000000-0000-4000-8000-000000000003";
+	const otherProject = "d0000000-0000-4000-8000-000000000004";
+	const task = "d0000000-0000-4000-8000-000000000005";
+	const category = "d0000000-0000-4000-8000-000000000006";
+	const otherCategory = "d0000000-0000-4000-8000-000000000007";
+	const ownCar = { ...noVehicle, vehicleKind: "own" as const, odometerStartKm: 100 };
+
+	/** The pair findings: those naming the agreement facet they report. */
+	function facetsOf(findings: readonly WorkFinding[]) {
+		return findings.flatMap((finding) =>
+			typeof finding.details.facet === "string"
+				? [[finding.kind, finding.details.facet] as const]
+				: [],
+		);
+	}
+
+	it.each<[string, Parameters<typeof work>[2], WorkFinding["kind"]]>([
+		["interval", { record: { startAt: at("2026-07-02T08:30:00Z") } }, "endpoint_conflict"],
+		["duration", { record: { durationMinutes: 470 } }, "duration_conflict"],
+		["approval_state", { record: { approvalState: "rejected" } }, "approval_state_conflict"],
+		[
+			"project",
+			{
+				period: { projectId: project },
+				record: { allocations: [projectAllocation(otherProject)] },
+			},
+			"metadata_conflict",
+		],
+		[
+			"task",
+			{
+				period: { projectId: project, taskId: task },
+				record: { allocations: [projectAllocation(project)] },
+			},
+			"metadata_missing",
+		],
+		[
+			"billable",
+			{
+				period: { projectId: project, isBillable: true },
+				record: { allocations: [projectAllocation(project)] },
+			},
+			"metadata_conflict",
+		],
+		[
+			"allocation_weight",
+			{
+				period: { projectId: project },
+				record: { allocations: [projectAllocation(project, { weightPercent: 60 })] },
+			},
+			"metadata_conflict",
+		],
+		[
+			"work_category",
+			{
+				period: { workCategoryId: category },
+				record: {
+					detail: {
+						workCategoryId: otherCategory,
+						workLocationType: null,
+						...noVehicle,
+						computationMetadata: null,
+					},
+				},
+			},
+			"metadata_conflict",
+		],
+		[
+			"work_location",
+			{
+				period: { workLocationType: "office" },
+				record: {
+					detail: {
+						workCategoryId: null,
+						workLocationType: "home",
+						...noVehicle,
+						computationMetadata: null,
+					},
+				},
+			},
+			"metadata_conflict",
+		],
+		[
+			"vehicle_use",
+			{
+				period: ownCar,
+				record: {
+					detail: {
+						workCategoryId: null,
+						workLocationType: null,
+						...ownCar,
+						odometerStartKm: 120,
+						computationMetadata: null,
+					},
+				},
+			},
+			"metadata_conflict",
+		],
+	])("reports a pair disagreeing only on %s once, naming that facet", (facet, options, kind) => {
+		const fixture = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", options);
+
+		const findings = assessHistoricalWork(evidence([fixture]), july).findings;
+
+		expect(facetsOf(findings)).toEqual([[kind, facet]]);
+		expect(findings.find((finding) => finding.details.facet === facet)).toMatchObject({
+			workPeriodIds: [fixture.period.id],
+			timeRecordIds: [fixture.record.id],
+			blocking: kind !== "metadata_canonical_only",
+		});
+	});
+
+	it("names the task, billable flag and vehicle use the two sides record", () => {
+		const fixture = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
+			period: { projectId: project, taskId: task, isBillable: true, ...ownCar },
+			record: {
+				allocations: [projectAllocation(project)],
+				detail: {
+					workCategoryId: null,
+					workLocationType: null,
+					...noVehicle,
+					computationMetadata: null,
+				},
+			},
+		});
+
+		const details = assessHistoricalWork(evidence([fixture]), july).findings.map(
+			(finding) => finding.details,
+		);
+
+		expect(details).toEqual(
+			expect.arrayContaining([
+				{ facet: "task", field: "task", periodValue: task },
+				{ facet: "billable", field: "billable", periodValue: true, canonicalValue: false },
+				{ facet: "vehicle_use", field: "vehicle_use", periodValue: "own:100::" },
+			]),
+		);
+	});
+
+	it("reports billability as missing where the record lost its project, not as a conflict", () => {
+		const lostProject = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
+			period: { projectId: project, isBillable: true },
+		});
+		const onlyOnRecord = work("2026-07-03T08:00:00Z", "2026-07-03T16:00:00Z", {
+			record: { allocations: [projectAllocation(project, { isBillable: true })] },
+		});
+
+		const findings = assessHistoricalWork(evidence([lostProject, onlyOnRecord]), july).findings;
+
+		expect(
+			findings.map((finding) => [finding.workPeriodIds[0], finding.kind, finding.details.field]),
+		).toEqual(
+			expect.arrayContaining([
+				[lostProject.period.id, "metadata_missing", "project"],
+				[lostProject.period.id, "metadata_missing", "billable"],
+				[onlyOnRecord.period.id, "metadata_canonical_only", "project"],
+				[onlyOnRecord.period.id, "metadata_canonical_only", "billable"],
+			]),
+		);
+		expect(findings.filter((finding) => finding.kind === "metadata_conflict")).toEqual([]);
+	});
+
+	it("reports a side whose attribution cannot be represented instead of failing", () => {
+		const billableWithoutProject = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
+			period: { isBillable: true },
+			record: { durationMinutes: 470 },
+		});
+		const taskWithoutProject = work("2026-07-03T08:00:00Z", "2026-07-03T16:00:00Z", {
+			record: {
+				allocations: [{ ...projectAllocation(project), projectId: null, taskId: task }],
+			},
+		});
+
+		const findings = assessHistoricalWork(
+			evidence([billableWithoutProject, taskWithoutProject]),
+			july,
+		).findings;
+
+		expect(
+			findings
+				.filter((finding) => finding.kind === "attribution_unrepresentable")
+				.map((finding) => [finding.workPeriodIds[0], finding.shape, finding.details]),
+		).toEqual(
+			expect.arrayContaining([
+				[
+					billableWithoutProject.period.id,
+					"conflicting",
+					{ side: "work_period", reason: "billable_without_project" },
+				],
+				[
+					taskWithoutProject.period.id,
+					"conflicting",
+					{ side: "canonical", reason: "task_without_project" },
+				],
+			]),
+		);
+		// The facets that do not depend on the attribution are still judged.
+		expect(only(findings, "duration_conflict").workPeriodIds).toEqual([
+			billableWithoutProject.period.id,
+		]);
+		expect(facetsOf(findings)).toEqual([["duration_conflict", "duration"]]);
+	});
+
+	it("separates completed work without a canonical record in a closed month from the rest", () => {
+		const open = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
+			period: { canonicalRecordId: null },
+		});
+		const closed = work("2026-07-03T08:00:00Z", "2026-07-03T16:00:00Z", {
+			period: { canonicalRecordId: null, closedMonth: "2026-07" },
+		});
+
+		const findings = assessHistoricalWork(evidence([open, closed], { records: [] }), july).findings;
+
+		expect(only(findings, "canonical_missing").workPeriodIds).toEqual([open.period.id]);
+		expect(only(findings, "canonical_missing_closed_month")).toMatchObject({
+			shape: "missing",
+			workPeriodIds: [closed.period.id],
+			details: { closedMonth: "2026-07" },
+		});
 	});
 });
 

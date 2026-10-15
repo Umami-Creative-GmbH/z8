@@ -9,6 +9,7 @@
       "displacedVacation": "Datele de concediu sunt înlocuite la aprobare",
       "exactHours": "Ore exacte înregistrate",
       "fullDay": "Zi întreagă",
+      "historicalRemaining": "Concediu efectuat anterior rămas",
       "morning": "Dimineață",
       "original": "Date înregistrate",
       "originalEndCoverage": "Zi de sfârșit înregistrată",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Motiv",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Concediu disponibil după reconciliere",
+      "reconciliationReason": "Sursa reconcilierii concediului istoric",
       "title": "Modificare absență"
     },
     "absenceRejected": "Cerere de absență respinsă",

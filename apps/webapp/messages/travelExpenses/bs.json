@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Odobrenje evidentirano",
           "approved": "Odobreno",
+          "receiptAdded": "Račun dodan nakon podnošenja",
           "rejected": "Odbijeno",
           "reopened": "Ponovo otvoreno za ispravku",
           "returned": "Vraćeno radi izmjena",
@@ -851,6 +852,9 @@
         "withdraw": "Ukloni obrazloženje"
       },
       "receipts": {
+        "add": "Dodaj račun",
+        "addedAfterSubmission": "{fileName}: Dodao/la {name} dana {date} nakon podnošenja.",
+        "choose": "Odaberi račun",
         "chooseFile": "Odaberite datoteku",
         "description": "Snimite fotografiju ili priložite PDF ili sliku računa.",
         "downloadNamed": "Preuzmi {fileName}",
@@ -862,10 +866,13 @@
         },
         "none": "Još nema priloženog računa.",
         "previewNamed": "Pregledaj {fileName}",
+        "processing": "Prilaganje računa…",
         "progress": "Napredak učitavanja",
         "remove": "Ukloni",
         "removeFailed": "Račun se nije mogao ukloniti.",
         "removeNamed": "Ukloni {fileName}",
+        "supplementConflict": "Račun je već priložen ili je izvještaj promijenjen. Ponovo učitajte izvještaj prije ponovnog pokušaja.",
+        "supplementFailed": "Račun nije priložen. Ponovo učitajte izvještaj i pokušajte ponovo.",
         "takePhoto": "Snimi fotografiju",
         "title": "Račun",
         "uploadFailed": "Račun nije priložen.",

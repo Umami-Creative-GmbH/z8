@@ -50,7 +50,6 @@
       "description": "Configure a sua organização para começar",
       "title": "Criar organização"
     },
-    "createError": "Falha ao criar organização",
     "createNew": "Criar nova organização",
     "createSuccess": "Organização criada com sucesso!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Proprietário"
     },
     "slugDescription": "Usado em URLs. Gerado automaticamente a partir do nome.",
-    "slugErrors": {
-      "format": "O slug deve conter apenas letras minúsculas, números e hífens",
-      "hyphen": "O slug não pode começar ou terminar com um hífen",
-      "max": "O slug deve ter menos de 50 caracteres",
-      "min": "O slug deve ter pelo menos 2 caracteres"
-    },
     "slugLabel": "Slug da organização",
     "slugPlaceholder": "acme-lda",
     "slugTaken": "Este slug já está ocupado. Por favor escolha outro.",
@@ -372,6 +365,56 @@
       "updated": "Fuso horário da organização atualizado para {timezone}",
       "update-failed": "Falha ao atualizar o fuso horário da organização"
     },
-    "title": "Explorador Organizacional"
+    "title": "Explorador Organizacional",
+    "tracking": {
+      "activate-reviewed": "Ativar data revisada",
+      "activation-description": "Escolha a data real de implantação e revise seu impacto antes de salvar. A sugestão inicial usa a data de criação da sua organização no fuso horário dela. Isso altera o rastreamento, sem corrigir a data de admissão de ninguém.",
+      "actual": "Trabalho concluído",
+      "affected-periods": "Meses afetados",
+      "after": "Depois",
+      "balance": "Saldo de trabalho",
+      "before": "Antes",
+      "blocked-save": "Reabra os meses fechados afetados e gere uma nova pré-visualização.",
+      "change-date": "Alterar data de rastreamento",
+      "closed": "Fechado",
+      "closed-blockers": "Resolva os problemas abaixo antes de gerar uma nova pré-visualização e salvar.",
+      "closed-settings": "Abrir configurações de meses fechados",
+      "commit-failed": "Não foi possível salvar a alteração revisada. Gere uma nova pré-visualização e tente novamente.",
+      "day-unit": "dias",
+      "description": "Esta data controla a carga horária obrigatória e os saldos de trabalho acumulados. As datas de admissão reais dos funcionários determinam o direito a férias.",
+      "employee-impacts": "Impactos no saldo dos funcionários",
+      "employee-zone": "Fuso horário do funcionário",
+      "ending-balance": "Saldo no final do mês",
+      "exception-conflict": "A exceção do funcionário {exception} precede o novo mínimo {minimum}. Remova ou altere a exceção do funcionário primeiro.",
+      "hours": "Horas",
+      "hours-caption": "Horas antes e depois",
+      "hour-unit": "horas",
+      "invalid-date": "Escolha uma data de calendário válida.",
+      "legacy": "O cálculo atual do seu saldo de trabalho ainda está em uso. Nenhuma data de início do rastreamento de tempo foi ativada.",
+      "no-boundary": "Nenhum início de cálculo",
+      "no-changed-periods": "Nenhum resultado de mês concluído é alterado.",
+      "no-employees": "Nenhum saldo de funcionário é afetado.",
+      "old-boundary": "Início do cálculo atual",
+      "opening-preserved": "Saldo inicial preservado:",
+      "preview": "Pré-visualizar impacto",
+      "preview-failed": "Não foi possível gerar a pré-visualização. Tente novamente.",
+      "proposed-boundary": "Início proposto do registro de horas",
+      "reason": "Motivo desta alteração",
+      "reason-required": "Insira um motivo antes de salvar.",
+      "required": "Tempo obrigatório",
+      "review-explanation": "Revise as datas de vigência, as horas obrigatórias e os saldos de trabalho abaixo. As datas de contratação e as concessões de férias permanecem inalteradas. Os saldos são calculados até o último dia concluído no fuso horário de cada funcionário.",
+      "review-title": "Revisão do impacto da data de registro",
+      "saved": "Data de registro salva e saldos atualizados.",
+      "saved-date": "Data atual de registro da organização:",
+      "saved-pending": "Data de registro salva. Os saldos de trabalho estão sendo recalculados.",
+      "save-reviewed": "Salvar data revisada",
+      "setup-description": "O tempo obrigatório e os saldos de trabalho começam nesta data, ou no início real do contrato do funcionário, se for posterior. As datas de contratação ainda determinam o direito a férias. A sugestão usa a data de criação da organização em seu fuso horário.",
+      "setup-timezone": "Fuso horário da organização",
+      "stale-preview": "Os dados revisados foram alterados. Gere uma nova pré-visualização antes de salvar.",
+      "start-date": "Data de início do registro de horas",
+      "through-date": "Saldos até",
+      "title": "Início do registro de horas",
+      "vacation-unchanged": "Direito e saldo de férias inalterados:"
+    }
   }
 }

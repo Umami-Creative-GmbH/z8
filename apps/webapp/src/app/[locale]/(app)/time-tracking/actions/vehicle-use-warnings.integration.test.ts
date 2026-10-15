@@ -12,6 +12,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -150,24 +151,26 @@ async function vanTrip(person: Person, start: string, end: string, startKm: numb
 		 values ($1, $2, $3, 'clock_in', $4, 0, 'UTC', 'backfill', $6, $5, $4)`,
 		[clockInId, ids[person], ORG, new Date(start), userOf(person), `hash-${clockInId}`],
 	);
-	await admin.query(
-		`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
-		   duration_minutes, is_active, vehicle_kind, vehicle_id, odometer_start_km, odometer_end_km,
-		   driven_distance_km, updated_at)
-		 values ($1, $2, $3, $4, $5, $6, $7, false, 'organization', $8, $9, $10, $11, $5)`,
-		[
-			randomUUID(),
-			ids[person],
-			ORG,
-			clockInId,
-			new Date(start),
-			new Date(end),
-			Math.round((Date.parse(end) - Date.parse(start)) / 60_000),
-			ids.van,
-			startKm,
-			endKm,
-			endKm - startKm,
-		],
+	await withCanonicalRecords(admin, (client) =>
+		client.query(
+			`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
+			   duration_minutes, is_active, vehicle_kind, vehicle_id, odometer_start_km, odometer_end_km,
+			   driven_distance_km, updated_at)
+			 values ($1, $2, $3, $4, $5, $6, $7, false, 'organization', $8, $9, $10, $11, $5)`,
+			[
+				randomUUID(),
+				ids[person],
+				ORG,
+				clockInId,
+				new Date(start),
+				new Date(end),
+				Math.round((Date.parse(end) - Date.parse(start)) / 60_000),
+				ids.van,
+				startKm,
+				endKm,
+				endKm - startKm,
+			],
+		),
 	);
 }
 

@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Miratimi u regjistrua",
           "approved": "Miratuar",
+          "receiptAdded": "Faturë e shtuar pas dorëzimit",
           "rejected": "Refuzuar",
           "reopened": "Rihapur për korrigjim",
           "returned": "Kthyer për ndryshime",
@@ -851,6 +852,9 @@
         "withdraw": "Hiq shpjegimin"
       },
       "receipts": {
+        "add": "Shto faturë",
+        "addedAfterSubmission": "{fileName}: Shtuar pas dorëzimit nga {name} më {date}.",
+        "choose": "Zgjidh faturën",
         "chooseFile": "Zgjidh skedarin",
         "description": "Bëni një foto ose bashkëngjitni një PDF ose imazh të faturës.",
         "downloadNamed": "Shkarko {fileName}",
@@ -862,10 +866,13 @@
         },
         "none": "Nuk është bashkëngjitur ende asnjë faturë.",
         "previewNamed": "Shiko paraprakisht {fileName}",
+        "processing": "Po bashkëngjitet fatura…",
         "progress": "Ecuria e ngarkimit",
         "remove": "Hiq",
         "removeFailed": "Fatura nuk mund të hiqej.",
         "removeNamed": "Hiq {fileName}",
+        "supplementConflict": "Një faturë është dhënë tashmë ose raporti ka ndryshuar. Ringarkoni raportin përpara se të provoni përsëri.",
+        "supplementFailed": "Fatura nuk u bashkëngjit. Ringarkoni raportin dhe provoni përsëri.",
         "takePhoto": "Bëj foto",
         "title": "Fatura",
         "uploadFailed": "Fatura nuk u bashkëngjit.",

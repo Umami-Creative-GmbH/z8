@@ -15,6 +15,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -216,6 +217,28 @@ describe("billable work across the work writers on PostgreSQL", () => {
 			   (select json_agg(row_to_json(t) order by t.id) from time_record_allocation t where organization_id = $1) as allocations,
 			   (select json_agg(row_to_json(t) order by t.id) from completed_work_operation t where organization_id = $1) as receipts`,
 			[ids.organization],
+		);
+		return only(rows);
+	}
+
+	/** A computed, clean work balance, as after the latest refresh. */
+	async function cleanBalance() {
+		await admin.query(
+			`insert into employee_work_balance
+			 (employee_id, organization_id, actual_minutes, required_minutes, balance_minutes,
+			  computed_from_date, computed_through_date, is_dirty, dirty_from_date, updated_at)
+			 values ($1, $2, 0, 0, 0, '2026-07-01', '2026-07-31', false, null, now())
+			 on conflict (organization_id, employee_id)
+			 do update set is_dirty = false, dirty_from_date = null`,
+			[ids.employee, ids.organization],
+		);
+	}
+
+	async function balanceRefresh() {
+		const { rows } = await admin.query<{ is_dirty: boolean; dirty_from_date: string | null }>(
+			`select is_dirty, dirty_from_date::text from employee_work_balance
+			 where organization_id = $1 and employee_id = $2`,
+			[ids.organization, ids.employee],
 		);
 		return only(rows);
 	}
@@ -497,9 +520,10 @@ describe("billable work across the work writers on PostgreSQL", () => {
 				const period = await recordWork(ids.billableProject, { billable: false });
 
 				actAs();
+				// Both admissions run the same amendment (#1225): naming the same project changes nothing.
 				await expect(
 					updateWorkPeriodProject(period.id, ids.billableProject),
-				).resolves.toMatchObject({ success: admission === "legacy" });
+				).resolves.toMatchObject({ success: false });
 				expectAgreement(await attributionOf(period.id), {
 					projectId: ids.billableProject,
 					billable: false,
@@ -576,6 +600,29 @@ describe("billable work across the work writers on PostgreSQL", () => {
 				{ projectId: ids.billableProject, billable: true },
 				{ canonical: admission === "append" },
 			);
+		});
+
+		it("marks the work balance dirty from the split work's start date (#1214)", async () => {
+			const period = await recordWork(ids.billableProject);
+			await cleanBalance();
+			actAs();
+
+			await expect(
+				splitWorkPeriod(
+					period.id,
+					"2026-07-22",
+					"10:00",
+					undefined,
+					undefined,
+					undefined,
+					randomUUID(),
+				),
+			).resolves.toMatchObject({ success: true });
+
+			await expect(balanceRefresh()).resolves.toEqual({
+				is_dirty: true,
+				dirty_from_date: "2026-07-22",
+			});
 		});
 
 		it("never changes existing work when the project's billable default changes", async () => {
@@ -655,33 +702,37 @@ describe("billable work across the work writers on PostgreSQL", () => {
 
 			it("commits rows staged without attribution with no project, as before", async () => {
 				await expect(importRow(undefined)).resolves.toMatchObject({ row_status: "committed" });
-				expectAgreement(
-					only(await attributions()),
-					{ projectId: null, billable: false },
-					{ canonical: admission === "append" },
-				);
+				expectAgreement(only(await attributions()), { projectId: null, billable: false });
+			});
+
+			it("marks the work balance dirty from the imported work's UTC start date (#1214, #1223)", async () => {
+				await cleanBalance();
+				await expect(importRow(undefined)).resolves.toMatchObject({ row_status: "committed" });
+				// Imported endpoints are captured in UTC, so the work's own day is its UTC date.
+				await expect(balanceRefresh()).resolves.toEqual({
+					is_dirty: true,
+					dirty_from_date: "2026-07-20",
+				});
 			});
 
 			it("records an imported project with its billable default", async () => {
 				await expect(importRow({ projectId: ids.billableProject })).resolves.toMatchObject({
 					row_status: "committed",
 				});
-				expectAgreement(
-					only(await attributions()),
-					{ projectId: ids.billableProject, billable: true },
-					{ canonical: admission === "append" },
-				);
+				expectAgreement(only(await attributions()), {
+					projectId: ids.billableProject,
+					billable: true,
+				});
 			});
 
 			it("records an imported billability over the project default", async () => {
 				await expect(
 					importRow({ projectId: ids.customerProject, billable: true }),
 				).resolves.toMatchObject({ row_status: "committed" });
-				expectAgreement(
-					only(await attributions()),
-					{ projectId: ids.customerProject, billable: true },
-					{ canonical: admission === "append" },
-				);
+				expectAgreement(only(await attributions()), {
+					projectId: ids.customerProject,
+					billable: true,
+				});
 			});
 
 			it("holds billable imported work on a project without a customer", async () => {
@@ -702,11 +753,10 @@ describe("billable work across the work writers on PostgreSQL", () => {
 						nonBillableWhenRefused: true,
 					}),
 				).resolves.toMatchObject({ row_status: "committed", commit_hold: null });
-				expectAgreement(
-					only(await attributions()),
-					{ projectId: ids.internalProject, billable: false },
-					{ canonical: admission === "append" },
-				);
+				expectAgreement(only(await attributions()), {
+					projectId: ids.internalProject,
+					billable: false,
+				});
 			});
 
 			it("holds an explicit billable import, but downgrades a provider's request, once the customer is deleted", async () => {
@@ -724,11 +774,10 @@ describe("billable work across the work writers on PostgreSQL", () => {
 						nonBillableWhenRefused: true,
 					}),
 				).resolves.toMatchObject({ row_status: "committed" });
-				expectAgreement(
-					only(await attributions()),
-					{ projectId: ids.billableProject, billable: false },
-					{ canonical: admission === "append" },
-				);
+				expectAgreement(only(await attributions()), {
+					projectId: ids.billableProject,
+					billable: false,
+				});
 			});
 		});
 
@@ -841,9 +890,7 @@ describe("billable work across the work writers on PostgreSQL", () => {
 				await setAdmission(mode);
 				const period = await recordWork(ids.billableProject);
 				expect(await diagnose()).toEqual([]);
-				expect(
-					(await reconcileLegacyToCanonical(ids.organization)).missingProjectAllocationRows,
-				).toBe(0);
+				expect((await reconcileLegacyToCanonical(ids.organization)).divergentWorkRecords).toBe(0);
 
 				await divergeBillability(period);
 
@@ -852,22 +899,28 @@ describe("billable work across the work writers on PostgreSQL", () => {
 						kind: "metadata_conflict",
 						shape: "conflicting",
 						workPeriodIds: [period.id],
-						details: { field: "billable", periodValue: true, canonicalValue: false },
+						details: {
+							facet: "billable",
+							field: "billable",
+							periodValue: true,
+							canonicalValue: false,
+						},
 					}),
 				);
-				expect(
-					(await reconcileLegacyToCanonical(ids.organization)).missingProjectAllocationRows,
-				).toBe(1);
+				expect((await reconcileLegacyToCanonical(ids.organization)).divergentWorkRecords).toBe(1);
 			},
 		);
 
 		it("backfills a billable legacy period's canonical record with its billability", async () => {
 			await setAdmission("inactive");
 			const period = await recordWork(ids.billableProject);
-			await admin.query("update work_period set canonical_record_id = null where id = $1", [
-				period.id,
-			]);
-			await admin.query("delete from time_record where id = $1", [period.canonical_record_id]);
+			// History before every completed work period had its record (#1224).
+			await asHistory(admin, async (client) => {
+				await client.query("update work_period set canonical_record_id = null where id = $1", [
+					period.id,
+				]);
+				await client.query("delete from time_record where id = $1", [period.canonical_record_id]);
+			});
 
 			await runCanonicalBackfill({ organizationId: ids.organization, actorId: ids.ownerUser });
 
@@ -875,9 +928,7 @@ describe("billable work across the work writers on PostgreSQL", () => {
 				projectId: ids.billableProject,
 				billable: true,
 			});
-			expect(
-				(await reconcileLegacyToCanonical(ids.organization)).missingProjectAllocationRows,
-			).toBe(0);
+			expect((await reconcileLegacyToCanonical(ids.organization)).divergentWorkRecords).toBe(0);
 		});
 	});
 });

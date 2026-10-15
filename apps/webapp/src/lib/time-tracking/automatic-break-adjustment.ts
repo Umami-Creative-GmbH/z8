@@ -1,93 +1,75 @@
 import "server-only";
 
 /**
- * Ordinary automatic break adjustment (#305 / T41, design #256 §5/§7).
+ * Ordinary automatic break adjustment (#305 / T41, design #256 §5/§7; #1220).
  *
  * After an ordinary (not approval-routed) closure has committed consistent work, a
  * regulation may still owe a break. This module is the one owner of that adjustment
- * for the immediate post-commit path, the departure post-processing and the cron:
+ * for the immediate post-commit path, the departure post-processing and the cron, in
+ * both admissions. It states the job's policy; work records (ADR 0010) divides the
+ * work period and its canonical work record by the owed break, carries vehicle use
+ * across it, marks the work auto-adjusted and applies the effects.
  *
  * - Every call runs under the owner's completed-work coordination (a system actor),
- *   re-reads the current period, its revision, its canonical graph, the unresolved-
- *   review guard, occupancy and the break regulation in effect when the work ended,
- *   and then adjusts atomically or writes nothing but its intent.
- * - Adopted organizations (active append control) commit a durable intent with the
- *   closure (`closeActiveWorkGraph`). Unresolved review or another blocker keeps the
- *   intent `deferred`; every later run re-evaluates the current work on any date and
- *   never applies a formerly planned split. A completed adjustment appends both break
- *   entries through the append collaborator, rounds each segment on its own, advances
- *   the source revision, clones the canonical record with its detail and allocations
- *   and writes an `automatic_break_adjustment` receipt with a system actor, the
- *   triggering human and the originating work. A receipt or an adjusted period is
- *   final: no later run regenerates the adjustment.
- * - Legacy organizations keep the established break-enforcement writes, now inside
- *   the coordinated transaction, against a locked unchanged period and behind the
- *   review guard, so a failed adjustment leaves the committed closure intact.
+ *   locks the period's intent and then the work, checks the job's own preconditions
+ *   (obsolete work, the unresolved-review guard, work awaiting approval) and names the
+ *   regulation in effect when the work ended. Breaks already taken are counted as
+ *   "earlier breaks".
+ * - Adopted organizations commit a durable intent with the closure
+ *   (`closeActiveWorkGraph`). A blocker, including each work records outcome that is
+ *   not an adjustment (a pair that disagrees, occupancy, a closed month, a stale
+ *   revision, append review), keeps the intent `deferred`; every later run
+ *   re-evaluates the current work on any date and never applies a formerly planned
+ *   split. A completed adjustment writes an `automatic_break_adjustment` receipt with
+ *   a system actor, the triggering human and the originating work. A receipt or an
+ *   adjusted period is final: no later run regenerates the adjustment.
+ * - Legacy organizations run the same policy and division without an intent or a
+ *   receipt; a blocked adjustment is simply not made, and the daily check retries.
  */
-import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, exists, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, exists, isNull, type SQL, type SQLWrapper, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	completedWorkOperation,
-	timeEntry,
-	timeRecord,
-	timeRecordAllocation,
-	timeRecordApprovalDecision,
-	timeRecordWork,
 	type WorkBreakAdjustmentBlocker,
-	type WorkPeriodAutoAdjustmentReason,
 	workBreakAdjustmentIntent,
 	workPeriod,
 } from "@/db/schema";
 import { timeEntryAppendControl } from "@/db/schema/time-entry-append";
-import { carryInvoicedWorkToSplit } from "@/lib/billable-time/hand-off/invoiced-work";
 import {
-	compareInstants,
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
 	instantToCanonicalString,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import type { AllocationEvidence } from "./allocation-evidence";
 import {
 	deriveAutomaticBreakIntentId,
 	deriveAutomaticBreakOperationId,
 } from "./automatic-break-intent";
-import { planAutomaticBreak } from "./automatic-break-plan";
-import { calculateHash } from "./blockchain";
 import type { BreakPolicyRegulation } from "./break-policy-calculation";
-import { readBreakMinutesTakenBefore } from "./breaks-taken";
-import {
-	type CompletedWorkFollowUp,
-	CompletedWorkIntegrityError,
-	earliestStartDate,
-} from "./close-active-work";
-import { workInterval } from "./closed-months/store";
+import { type CompletedWorkFollowUp, CompletedWorkIntegrityError } from "./close-active-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
-import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
-import { resolvePolicyClockOutBreakSnapshotInTransaction } from "./policy-clock-out-break-snapshot";
+import {
+	regulationFromSnapshot,
+	resolvePolicyClockOutBreakSnapshotInTransaction,
+} from "./policy-clock-out-break-snapshot";
 import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
-import { recordedTaskId } from "./task-attribution";
-import { admitTimeEntryAppend } from "./time-entry-append";
-import { capturedZone, resolveFallbackTimezoneCapture } from "./timezone-capture";
-import { vehicleUseAcrossAutomaticBreak } from "./vehicle-use/split-vehicle-use";
-import {
-	sameWorkVehicleUse,
-	vehicleUseColumns,
-	vehicleUseFromColumns,
-	type WorkVehicleUse,
-} from "./vehicle-use/work-vehicle-use";
-import { projectAllocationAgrees } from "./work-billability";
-import { assertWorkOccupancyFree, WorkOccupancyConflictError } from "./work-occupancy";
+import { capturedZone } from "./timezone-capture";
 import {
 	assertNoUnresolvedWorkPeriodReview,
 	isUnresolvedWorkPeriodReview,
 } from "./work-period-review";
+import {
+	applyWorkRecordChange,
+	type OwedBreakDivision,
+	orRefuse,
+	readWorkRecord,
+	type WorkRecordRefusal,
+	type WorkSegment,
+} from "./work-records";
 import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const AUTOMATIC_BREAK_ADJUSTMENT_COMMAND_VERSION = 1;
@@ -108,7 +90,7 @@ export type AutomaticBreakAdjustmentTrigger = {
 export type AutomaticBreakAdjustmentOutcome =
 	| {
 			kind: "adjusted";
-			/** The receipt identity; null for a legacy organization's established writes. */
+			/** The receipt identity; null in legacy admission, which commits no receipt. */
 			operationId: string | null;
 			workPeriodId: string;
 			generatedWorkPeriodId: string;
@@ -117,7 +99,7 @@ export type AutomaticBreakAdjustmentOutcome =
 			regulationName: string;
 			originalDurationMinutes: number;
 			adjustedDurationMinutes: number;
-			/** Evidence for the recovery path's surcharge refresh; null for legacy writes. */
+			/** Evidence for the recovery path's surcharge refresh. */
 			surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null;
 	  }
 	| { kind: "not_required" }
@@ -125,28 +107,8 @@ export type AutomaticBreakAdjustmentOutcome =
 	| { kind: "deferred"; blocker: WorkBreakAdjustmentBlocker }
 	| {
 			kind: "obsolete";
-			reason: "missing" | "deleted" | "active" | "rejected" | "already_adjusted" | "changed";
+			reason: "missing" | "deleted" | "active" | "rejected" | "already_adjusted";
 	  };
-
-/**
- * The established legacy plan (`break-enforcement.service.ts`): its arithmetic and
- * its reads stay as they were; only the writes move into the coordinated transaction.
- */
-export type LegacyBreakPlan = {
-	expected: {
-		clockInId: string;
-		clockOutId: string;
-		startTime: Date;
-		endTime: Date;
-		durationMinutes: number | null;
-	};
-	breakStart: Date;
-	breakEnd: Date;
-	timezone: string;
-	firstDurationMinutes: number;
-	secondDurationMinutes: number;
-	reason: WorkPeriodAutoAdjustmentReason;
-};
 
 export type AutomaticBreakTarget = {
 	organizationId: string;
@@ -162,29 +124,7 @@ export type AutomaticBreakAdjustmentCommand = {
 };
 
 /** One segment by value: committed evidence, not a pointer to current rows. */
-export type AutomaticBreakSegment = {
-	workPeriodId: string;
-	canonicalRecordId: string;
-	clockInEntryId: string;
-	clockOutEntryId: string;
-	startAt: string;
-	endAt: string;
-	durationMinutes: number;
-	startUtcOffsetMinutes: number | null;
-	endUtcOffsetMinutes: number | null;
-	attribution: {
-		projectId: string | null;
-		/** Present only when the work is booked to a task (#873). */
-		taskId?: string;
-		/** Absent on receipts committed before billability (#900), which were non-billable. */
-		isBillable?: boolean;
-		workCategoryId: string | null;
-		workLocationType: string | null;
-		allocations: AllocationEvidence[];
-		/** The segment's own vehicle use (#1126); present only when it has one. */
-		vehicleUse?: WorkVehicleUse;
-	};
-};
+export type AutomaticBreakSegment = WorkSegment;
 
 /** Committed result (receipt version 1). Current state is a separate read. */
 export type AutomaticBreakAdjustmentResult = {
@@ -240,59 +180,83 @@ export type AutomaticBreakAdjustmentResult = {
 	followUps: CompletedWorkFollowUp[];
 };
 
+type PolicyBreakSnapshot = Awaited<
+	ReturnType<typeof resolvePolicyClockOutBreakSnapshotInTransaction>
+>;
+
 function regulationFrom(
-	snapshot: Awaited<ReturnType<typeof resolvePolicyClockOutBreakSnapshotInTransaction>>,
+	snapshot: PolicyBreakSnapshot,
 ): (BreakPolicyRegulation & { policyId: string }) | null {
-	if (
-		snapshot.resolution === "none" ||
-		!snapshot.regulationEnabled ||
-		snapshot.breakRules.length === 0
-	) {
-		return null;
-	}
-	const { id, name, maxUninterruptedMinutes } = snapshot.regulation;
-	if (id === null || name === null) {
+	const regulation = regulationFromSnapshot(snapshot);
+	if (regulation === "incomplete") {
 		throw new CompletedWorkIntegrityError("Break regulation evidence is incomplete");
 	}
-	return {
-		policyId: snapshot.policy.id,
-		id,
-		name,
-		maxUninterruptedMinutes,
-		breakRules: snapshot.breakRules.map((rule) => ({
-			workingMinutesThreshold: rule.workingMinutesThreshold,
-			requiredBreakMinutes: rule.requiredBreakMinutes,
-		})),
-	};
+	if (!regulation || snapshot.resolution === "none") return null;
+	return { policyId: snapshot.policy.id, ...regulation };
 }
 
 /**
- * Evaluates one period's adjustment in an adopted organization, inside the owner's
- * coordinated transaction. The period's intent, when there is one, is locked first
- * and resolved by the outcome: deleted once final, kept `deferred` while blocked.
+ * The blocker each work records refusal keeps the intent deferred with. Refusals a
+ * division by an owed break never returns are defects, thrown as their errors.
+ */
+function blockerOf(refusal: WorkRecordRefusal): WorkBreakAdjustmentBlocker {
+	switch (refusal.kind) {
+		case "stale":
+			return "work_period_stale";
+		case "canonical_divergence":
+			return "canonical_divergence";
+		case "canonical_record_missing":
+		case "endpoint_entry_missing":
+		case "endpoint_superseded":
+			return "completed_work_review_required";
+		case "work_occupied":
+			return "work_occupancy_conflict";
+		case "month_closed":
+			return "month_closed";
+		case "append_review_required":
+			return "append_review_required";
+		default:
+			return orRefuse<never>(refusal);
+	}
+}
+
+/**
+ * Evaluates one period's adjustment inside the owner's coordinated transaction, in
+ * either admission. In append admission the period's intent, when there is one, is
+ * locked first and resolved by the outcome: deleted once final, kept `deferred`
+ * while blocked. Legacy admission keeps no intent.
  */
 export async function adjustAutomaticBreakInTransaction(
 	scope: SealedWorkTransactionScope,
-	input: AutomaticBreakTarget & { trigger: AutomaticBreakAdjustmentTrigger; now: Instant },
+	input: AutomaticBreakTarget & {
+		trigger: AutomaticBreakAdjustmentTrigger;
+		now: Instant;
+		recoveringIntent?: boolean;
+	},
 ): Promise<AutomaticBreakAdjustmentOutcome> {
 	const { organizationId, employeeId, workPeriodId } = input;
 	scope.assertEmployee(organizationId, employeeId);
-	if (scope.admission !== "append") {
-		throw new Error("Automatic break adjustment operation requires the adopted work transaction");
-	}
+	// Durable intents are the adopted organization's commitment: its closures commit
+	// one. The job reads that here, inside the transaction; its callers never do (#1231).
+	const adopted = scope.admission === "append";
+	// Admission turned legacy after the intent was read: leave it for re-adoption.
+	if (input.recoveringIntent && !adopted) return { kind: "not_required" };
 	const tx = scope.db;
 	const now = dateFromInstant(input.now);
 	const intentId = deriveAutomaticBreakIntentId(input);
-	const [intent] = await tx
-		.select()
-		.from(workBreakAdjustmentIntent)
-		.where(
-			and(
-				eq(workBreakAdjustmentIntent.id, intentId),
-				eq(workBreakAdjustmentIntent.organizationId, organizationId),
-			),
-		)
-		.for("update");
+	// The caller's own lock comes before work records' (`WORK_RECORD_LOCK_ORDER`).
+	const [intent] = adopted
+		? await tx
+				.select()
+				.from(workBreakAdjustmentIntent)
+				.where(
+					and(
+						eq(workBreakAdjustmentIntent.id, intentId),
+						eq(workBreakAdjustmentIntent.organizationId, organizationId),
+					),
+				)
+				.for("update")
+		: [];
 	if (intent && (intent.employeeId !== employeeId || intent.workPeriodId !== workPeriodId)) {
 		throw new CompletedWorkIntegrityError("Break adjustment intent does not match its work");
 	}
@@ -309,19 +273,25 @@ export async function adjustAutomaticBreakInTransaction(
 		return outcome;
 	};
 
-	const [period] = await tx
-		.select()
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.id, workPeriodId),
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.employeeId, employeeId),
-			),
-		)
-		.for("update");
-	if (!period) return resolveIntent({ kind: "obsolete", reason: "missing" });
-	if (period.deletedAt) return resolveIntent({ kind: "obsolete", reason: "deleted" });
+	const current = await readWorkRecord(
+		scope,
+		{ organizationId, employeeId, workPeriodId },
+		{ lock: true },
+	);
+	if (!current) {
+		const [deleted] = await tx
+			.select({ id: workPeriod.id })
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.organizationId, organizationId),
+					eq(workPeriod.employeeId, employeeId),
+				),
+			);
+		return resolveIntent({ kind: "obsolete", reason: deleted ? "deleted" : "missing" });
+	}
+	const { period, clockIn, clockOut, canonical } = current;
 	if (period.isActive || !period.endTime || !period.clockOutId) {
 		return resolveIntent({ kind: "obsolete", reason: "active" });
 	}
@@ -340,12 +310,14 @@ export async function adjustAutomaticBreakInTransaction(
 	if (period.wasAutoAdjusted || receipt) {
 		return resolveIntent({ kind: "obsolete", reason: "already_adjusted" });
 	}
-	if (period.approvalStatus === "rejected")
+	if (period.approvalStatus === "rejected") {
 		return resolveIntent({ kind: "obsolete", reason: "rejected" });
+	}
 
 	const defer = async (
 		blocker: WorkBreakAdjustmentBlocker,
 	): Promise<AutomaticBreakAdjustmentOutcome> => {
+		if (!adopted) return { kind: "deferred", blocker };
 		const unchanged =
 			intent?.status === "deferred" &&
 			intent.blocker === blocker &&
@@ -387,91 +359,15 @@ export async function adjustAutomaticBreakInTransaction(
 		if (!isUnresolvedWorkPeriodReview(error)) throw error;
 		return defer(error.conflictType as WorkBreakAdjustmentBlocker);
 	}
-
-	const endpoints = await tx
-		.select()
-		.from(timeEntry)
-		.where(
-			and(
-				eq(timeEntry.organizationId, organizationId),
-				eq(timeEntry.employeeId, employeeId),
-				inArray(timeEntry.id, [period.clockInId, period.clockOutId]),
-			),
-		)
-		.orderBy(asc(timeEntry.id))
-		.for("update");
-	const sourceClockIn = endpoints.find(({ id }) => id === period.clockInId);
-	const sourceClockOut = endpoints.find(({ id }) => id === period.clockOutId);
-	if (
-		!sourceClockIn ||
-		!sourceClockOut ||
-		sourceClockIn.isSuperseded ||
-		sourceClockOut.isSuperseded ||
-		!period.canonicalRecordId ||
-		period.durationMinutes === null
-	) {
-		return defer("completed_work_review_required");
+	// Work still under review is review, in either record.
+	if (period.approvalStatus === "pending" || canonical?.record.approvalState === "pending") {
+		return defer("work_period_pending_approval");
 	}
-	const [record] = await tx
-		.select()
-		.from(timeRecord)
-		.where(
-			and(
-				eq(timeRecord.id, period.canonicalRecordId),
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.employeeId, employeeId),
-				eq(timeRecord.recordKind, "work"),
-			),
-		)
-		.for("update");
-	const [detail] = await tx
-		.select()
-		.from(timeRecordWork)
-		.where(
-			and(
-				eq(timeRecordWork.recordId, period.canonicalRecordId),
-				eq(timeRecordWork.organizationId, organizationId),
-				eq(timeRecordWork.recordKind, "work"),
-			),
-		)
-		.for("update");
-	const allocations = await tx
-		.select()
-		.from(timeRecordAllocation)
-		.where(
-			and(
-				eq(timeRecordAllocation.recordId, period.canonicalRecordId),
-				eq(timeRecordAllocation.organizationId, organizationId),
-			),
-		)
-		.orderBy(asc(timeRecordAllocation.id))
-		.for("update");
-	if (!record || !detail) return defer("completed_work_review_required");
-	// A canonical record still under review is review, even when the period lags.
-	if (record.approvalState === "pending") return defer("work_period_pending_approval");
-	const sourceStart = instantFromDate(period.startTime);
-	const sourceEnd = instantFromDate(period.endTime);
-	// Project and billability must agree in both representations (#900).
-	const allocationAgrees = projectAllocationAgrees(period, allocations);
-	// Divergence between the period and its canonical record is evidence for review,
-	// never repaired by an automatic process.
-	if (
-		!record.endAt ||
-		compareInstants(instantFromDate(record.startAt), sourceStart) !== 0 ||
-		compareInstants(instantFromDate(record.endAt), sourceEnd) !== 0 ||
-		record.durationMinutes !== period.durationMinutes ||
-		detail.workCategoryId !== period.workCategoryId ||
-		detail.workLocationType !== period.workLocationType ||
-		!sameWorkVehicleUse(vehicleUseFromColumns(detail), vehicleUseFromColumns(period)) ||
-		!allocationAgrees ||
-		compareInstants(instantFromDate(sourceClockIn.timestamp), sourceStart) !== 0 ||
-		compareInstants(instantFromDate(sourceClockOut.timestamp), sourceEnd) !== 0
-	) {
-		return defer("completed_work_review_required");
-	}
+	if (!clockOut) return defer("completed_work_review_required");
 
 	// The regulation in effect when the work ended, read now: a policy changed while the
 	// adjustment was deferred applies as it stands for that work, never as planned before.
+	const sourceEnd = instantFromDate(period.endTime);
 	const breakPolicy = await resolvePolicyClockOutBreakSnapshotInTransaction({
 		dbService: { db: tx },
 		organizationId,
@@ -479,459 +375,63 @@ export async function adjustAutomaticBreakInTransaction(
 		endTime: sourceEnd,
 	});
 	const regulation = regulationFrom(breakPolicy);
-	if (!regulation || breakPolicy.resolution === "none") {
-		return resolveIntent({ kind: "not_required" });
-	}
-
-	// Breaks already taken on the work's local start day, in the zone captured with the
-	// work's start (its offset when no zone was captured), never a viewer's or today's
-	// setting: the plan depends on the work's facts, not on the date it is evaluated.
-	const alreadyTakenBreakMinutes = await readBreakMinutesTakenBefore(tx, {
+	// The break entries are captured like the closure they divide.
+	const timezone = capturedZone(clockOut);
+	const outcome = await applyWorkRecordChange(scope, {
+		kind: "divide_owed_break",
 		organizationId,
 		employeeId,
-		workPeriodId: period.id,
-		startAt: sourceStart,
-		endAt: sourceEnd,
-		startZone: capturedZone(sourceClockIn),
-	});
-	// The break entries are captured like the closure they divide.
-	const timezone = capturedZone(sourceClockOut);
-	const plan = planAutomaticBreak({
-		sourceStart,
-		sourceEnd,
-		sourceDurationMinutes: period.durationMinutes,
-		alreadyTakenBreakMinutes,
+		expected: current.expected,
 		regulation,
+		takenBefore: "earlier_breaks",
+		notes: ADJUSTMENT_NOTE,
+		actorUserId: null,
+		entries: {
+			// Rows need a user: the triggering human, else the human who completed the work.
+			createdBy: trigger.userId ?? clockOut.createdBy,
+			...ADJUSTMENT_SOURCE,
+			timezone,
+			timezoneSource: "historical_inference",
+		},
+		appendOperation: "automatic_break_adjustment",
 	});
-	if (!plan) return resolveIntent({ kind: "not_required" });
-
-	// Symmetric occupancy: both resulting segments lie inside the source interval.
-	try {
-		await assertWorkOccupancyFree(tx, {
-			organizationId,
-			employeeId,
-			interval: { startAt: sourceStart, endAt: sourceEnd },
-			excludeWorkPeriodIds: [period.id],
-		});
-	} catch (error) {
-		if (!(error instanceof WorkOccupancyConflictError)) throw error;
-		return defer("work_occupancy_conflict");
+	if (outcome.kind === "not_required") return resolveIntent({ kind: "not_required" });
+	if (outcome.kind !== "owed_break_divided") return defer(blockerOf(outcome));
+	if (!regulation || breakPolicy.resolution === "none") {
+		throw new CompletedWorkIntegrityError("A break was owed without a regulation");
 	}
+	if (!clockIn) throw new CompletedWorkIntegrityError("Adjusted work has no clock-in");
 
-	const admission = await admitTimeEntryAppend(
-		tx,
-		{ organizationId, employeeId },
-		"automatic_break_adjustment",
-	);
-	if (admission.kind === "review_required") return defer("append_review_required");
-	const append = admission.append;
-
-	const decisions = await tx
-		.select({ id: timeRecordApprovalDecision.id })
-		.from(timeRecordApprovalDecision)
-		.where(
-			and(
-				eq(timeRecordApprovalDecision.organizationId, organizationId),
-				eq(timeRecordApprovalDecision.recordId, record.id),
-			),
-		)
-		.orderBy(asc(timeRecordApprovalDecision.createdAt), asc(timeRecordApprovalDecision.id));
 	const surchargeSnapshot = await resolvePolicyClockOutSurchargeSnapshotInTransaction({
 		dbService: { db: tx },
 		organizationId,
 		employeeId,
-		startTime: sourceStart,
+		startTime: instantFromDate(period.startTime),
 		endTime: sourceEnd,
 	});
+	// The receipt follows work records' outcome: only appended entries commit one.
+	const receipted = outcome.appended.admission === "append";
+	const adjusted = {
+		kind: "adjusted",
+		operationId: receipted ? operationId : null,
+		workPeriodId: period.id,
+		generatedWorkPeriodId: outcome.generated.segment.workPeriodId,
+		breakMinutes: outcome.owedBreak.breakMinutes,
+		breakStartAt: instantToCanonicalString(outcome.owedBreak.startAt),
+		regulationName: outcome.owedBreak.regulation.name,
+		originalDurationMinutes: outcome.source.segment.durationMinutes,
+		adjustedDurationMinutes:
+			outcome.retained.segment.durationMinutes + outcome.generated.segment.durationMinutes,
+		surchargeSnapshot,
+	} as const;
+	// Legacy admission's writer commits no receipt, as before.
+	if (!receipted) return resolveIntent(adjusted);
 
-	// Rows need a user: the triggering human, else the human who completed the work.
-	const writtenBy = trigger.userId ?? sourceClockOut.createdBy;
-	const insertEntry = async (
-		type: "clock_out" | "clock_in",
-		instant: Instant,
-		previous: { id: string | null; hash: string | null },
-	) => {
-		const timestamp = dateFromInstant(instant);
-		const capture = resolveFallbackTimezoneCapture({
-			timestamp,
-			timezone,
-			timezoneSource: "historical_inference",
-		});
-		const [entry] = await tx
-			.insert(timeEntry)
-			.values({
-				employeeId,
-				organizationId,
-				type,
-				timestamp,
-				hash: calculateHash({
-					employeeId,
-					type,
-					timestamp: timestamp.toISOString(),
-					previousHash: previous.hash,
-				}),
-				previousHash: previous.hash,
-				previousEntryId: previous.id,
-				notes: ADJUSTMENT_NOTE,
-				...ADJUSTMENT_SOURCE,
-				createdBy: writtenBy,
-				...capture,
-			})
-			.returning();
-		if (!entry) throw new Error("Break adjustment entry insert failed");
-		await append.record({
-			id: entry.id,
-			hash: entry.hash,
-			previousEntryId: previous.id,
-			previousHash: previous.hash,
-		});
-		return entry;
-	};
-	const breakClockOut = await insertEntry("clock_out", plan.breakStartAt, {
-		id: append.predecessor?.id ?? null,
-		hash: append.predecessor?.hash ?? null,
-	});
-	const breakClockIn = await insertEntry("clock_in", plan.breakEndAt, {
-		id: breakClockOut.id,
-		hash: breakClockOut.hash,
-	});
-
-	const adjustedDurationMinutes = plan.retainedMinutes + plan.generatedMinutes;
-	const reason: WorkPeriodAutoAdjustmentReason = {
-		type: "break_enforcement",
-		regulationId: plan.regulation.id,
-		regulationName: plan.regulation.name,
-		breakInsertedMinutes: plan.breakMinutes,
-		breakInsertedAt: instantToCanonicalString(plan.breakStartAt),
-		originalDurationMinutes: period.durationMinutes,
-		adjustedDurationMinutes,
-		ruleApplied: plan.rule,
-	};
-	const breakStartDate = dateFromInstant(plan.breakStartAt);
-	const breakEndDate = dateFromInstant(plan.breakEndAt);
-	// The vehicle carries over the break; nobody read the odometer at it (#1126).
-	const sourceVehicleUse = vehicleUseFromColumns(period);
-	const vehicleSplit = vehicleUseAcrossAutomaticBreak(sourceVehicleUse);
-	const retainedVehicle = vehicleUseColumns(vehicleSplit.retained);
-	const generatedVehicle = vehicleUseColumns(vehicleSplit.generated);
-	const sourceRevision = period.graphRevision + 1;
-	const updatedPeriods = await tx
-		.update(workPeriod)
-		.set({
-			clockOutId: breakClockOut.id,
-			endTime: breakStartDate,
-			durationMinutes: plan.retainedMinutes,
-			odometerStartKm: retainedVehicle.odometerStartKm,
-			odometerEndKm: retainedVehicle.odometerEndKm,
-			drivenDistanceKm: retainedVehicle.drivenDistanceKm,
-			wasAutoAdjusted: true,
-			autoAdjustmentReason: reason,
-			autoAdjustedAt: now,
-			originalEndTime: period.endTime,
-			originalDurationMinutes: period.durationMinutes,
-			graphRevision: sourceRevision,
-			updatedAt: now,
-		})
-		.where(
-			and(
-				eq(workPeriod.id, period.id),
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.employeeId, employeeId),
-				eq(workPeriod.clockInId, period.clockInId),
-				eq(workPeriod.clockOutId, period.clockOutId),
-				eq(workPeriod.graphRevision, period.graphRevision),
-				eq(workPeriod.wasAutoAdjusted, false),
-				eq(workPeriod.isActive, false),
-				isNull(workPeriod.deletedAt),
-			),
-		)
-		.returning({ id: workPeriod.id });
-	if (updatedPeriods.length !== 1) {
-		throw new CompletedWorkIntegrityError("Adjusted work period changed");
-	}
-	const updatedRecords = await tx
-		.update(timeRecord)
-		.set({
-			endAt: breakStartDate,
-			durationMinutes: plan.retainedMinutes,
-			updatedAt: now,
-			updatedBy: writtenBy,
-		})
-		.where(
-			and(
-				eq(timeRecord.id, record.id),
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.employeeId, employeeId),
-				eq(timeRecord.recordKind, "work"),
-			),
-		)
-		.returning({ id: timeRecord.id });
-	if (updatedRecords.length !== 1) {
-		throw new CompletedWorkIntegrityError("Canonical work record update failed");
-	}
-	// The canonical detail mirrors the retained work's kilometres (#1126).
-	if (sourceVehicleUse) {
-		const updatedDetails = await tx
-			.update(timeRecordWork)
-			.set({
-				odometerStartKm: retainedVehicle.odometerStartKm,
-				odometerEndKm: retainedVehicle.odometerEndKm,
-				drivenDistanceKm: retainedVehicle.drivenDistanceKm,
-			})
-			.where(
-				and(
-					eq(timeRecordWork.recordId, record.id),
-					eq(timeRecordWork.organizationId, organizationId),
-					eq(timeRecordWork.recordKind, "work"),
-				),
-			)
-			.returning({ recordId: timeRecordWork.recordId });
-		if (updatedDetails.length !== 1) {
-			throw new CompletedWorkIntegrityError("Canonical work detail update failed");
-		}
-	}
-
-	// The generated record keeps the originating work's origin, approval state and
-	// recording actor; no new decision is recorded for it.
-	const generatedRecordId = randomUUID();
-	await tx.insert(timeRecord).values({
-		id: generatedRecordId,
-		organizationId,
-		employeeId,
-		recordKind: "work",
-		startAt: breakEndDate,
-		endAt: period.endTime,
-		durationMinutes: plan.generatedMinutes,
-		approvalState: record.approvalState,
-		origin: record.origin,
-		createdBy: record.createdBy,
-		updatedAt: now,
-		updatedBy: writtenBy,
-	});
-	await tx.insert(timeRecordWork).values({
-		recordId: generatedRecordId,
-		organizationId,
-		recordKind: "work",
-		workCategoryId: detail.workCategoryId,
-		workLocationType: detail.workLocationType,
-		computationMetadata: detail.computationMetadata,
-		vehicleKind: generatedVehicle.vehicleKind,
-		vehicleId: generatedVehicle.vehicleId,
-		odometerStartKm: generatedVehicle.odometerStartKm,
-		odometerEndKm: generatedVehicle.odometerEndKm,
-		drivenDistanceKm: generatedVehicle.drivenDistanceKm,
-	});
-	for (const allocation of allocations) {
-		await tx.insert(timeRecordAllocation).values({
-			organizationId,
-			recordId: generatedRecordId,
-			allocationKind: allocation.allocationKind,
-			projectId: allocation.projectId,
-			taskId: allocation.taskId,
-			costCenterId: allocation.costCenterId,
-			weightPercent: allocation.weightPercent,
-			isBillable: allocation.isBillable,
-		});
-	}
-	const [generated] = await tx
-		.insert(workPeriod)
-		.values({
-			employeeId,
-			organizationId,
-			clockInId: breakClockIn.id,
-			clockOutId: period.clockOutId,
-			projectId: period.projectId,
-			isBillable: period.isBillable,
-			taskId: period.taskId,
-			workCategoryId: period.workCategoryId,
-			workLocationType: period.workLocationType,
-			vehicleKind: generatedVehicle.vehicleKind,
-			vehicleId: generatedVehicle.vehicleId,
-			odometerStartKm: generatedVehicle.odometerStartKm,
-			odometerEndKm: generatedVehicle.odometerEndKm,
-			drivenDistanceKm: generatedVehicle.drivenDistanceKm,
-			startTime: breakEndDate,
-			endTime: period.endTime,
-			durationMinutes: plan.generatedMinutes,
-			isActive: false,
-			approvalStatus: period.approvalStatus,
-			wasAutoAdjusted: true,
-			autoAdjustmentReason: reason,
-			autoAdjustedAt: now,
-			canonicalRecordId: generatedRecordId,
-			graphRevision: 1,
-			updatedAt: now,
-		})
-		.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
-	if (!generated) throw new Error("Generated work period insert failed");
-	// Invoiced work stays invoiced in both halves; the source is marked by trigger (#903).
-	await carryInvoicedWorkToSplit(tx, {
-		organizationId,
-		sourceWorkPeriodId: period.id,
-		newWorkPeriodId: generated.id,
-	});
-	// The inserted break changes the work: a submitted period goes back (#805). A system change.
-	await sendBackChangedPeriodSubmissions(tx, {
-		organizationId,
-		employeeId,
-		causedByUserId: null,
-		work: [workInterval(period.startTime, period.endTime)],
-	});
-
-	// Independent rounding can change the total: the refresh commits with the work.
-	const dirtyFromDate = earliestStartDate(sourceStart, sourceClockIn.utcOffsetMinutes);
-	await markEmployeeWorkBalanceDirty({ employeeId, organizationId, dirtyFromDate }, tx);
-	const followUps: CompletedWorkFollowUp[] = [
-		{ kind: "work_balance_refresh", delivery: "committed_intent", dirtyFromDate },
-		{ kind: "surcharge_calculation", delivery: "post_commit_best_effort" },
-	];
-
-	const attribution = {
-		projectId: period.projectId,
-		...recordedTaskId(period.taskId),
-		isBillable: period.isBillable,
-		workCategoryId: period.workCategoryId,
-		workLocationType: period.workLocationType,
-		allocations: allocations.map((allocation) => ({
-			allocationKind: allocation.allocationKind,
-			projectId: allocation.projectId,
-			...recordedTaskId(allocation.taskId),
-			costCenterId: allocation.costCenterId,
-			weightPercent: allocation.weightPercent,
-			isBillable: allocation.isBillable,
-		})),
-	};
-	const segment = (values: {
-		workPeriodId: string;
-		canonicalRecordId: string;
-		clockIn: typeof timeEntry.$inferSelect;
-		clockOut: typeof timeEntry.$inferSelect;
-		startAt: Instant;
-		endAt: Instant;
-		durationMinutes: number;
-		vehicleUse: WorkVehicleUse | null;
-	}): AutomaticBreakSegment => ({
-		workPeriodId: values.workPeriodId,
-		canonicalRecordId: values.canonicalRecordId,
-		clockInEntryId: values.clockIn.id,
-		clockOutEntryId: values.clockOut.id,
-		startAt: instantToCanonicalString(values.startAt),
-		endAt: instantToCanonicalString(values.endAt),
-		durationMinutes: values.durationMinutes,
-		startUtcOffsetMinutes: values.clockIn.utcOffsetMinutes ?? null,
-		endUtcOffsetMinutes: values.clockOut.utcOffsetMinutes ?? null,
-		// Vehicle use only when there is one, keeping earlier receipts' shape (#1126).
-		attribution: values.vehicleUse
-			? { ...attribution, vehicleUse: values.vehicleUse }
-			: attribution,
-	});
 	const command: AutomaticBreakAdjustmentCommand = {
 		version: AUTOMATIC_BREAK_ADJUSTMENT_COMMAND_VERSION,
 		workPeriodId: period.id,
 		sourceRevision: period.graphRevision,
 		intent: intent ? { id: intent.id, closureEntryId: intent.closureEntryId } : null,
-	};
-	const result: AutomaticBreakAdjustmentResult = {
-		version: AUTOMATIC_BREAK_ADJUSTMENT_RESULT_VERSION,
-		operationId,
-		owner: { employeeId },
-		actors: {
-			executing: { kind: "system", process: "automatic_break_adjustment" },
-			triggeredBy: trigger.userId
-				? { kind: "human", userId: trigger.userId, closureEntryId: trigger.closureEntryId }
-				: { kind: "unknown", closureEntryId: trigger.closureEntryId },
-		},
-		originatingWork: {
-			...segment({
-				workPeriodId: period.id,
-				canonicalRecordId: record.id,
-				clockIn: sourceClockIn,
-				clockOut: sourceClockOut,
-				startAt: sourceStart,
-				endAt: sourceEnd,
-				durationMinutes: period.durationMinutes,
-				vehicleUse: sourceVehicleUse,
-			}),
-			approvalState: period.approvalStatus,
-			recordCreatedBy: record.createdBy,
-		},
-		deferral:
-			intent?.status === "deferred" &&
-			intent.blocker &&
-			intent.observedGraphRevision !== null &&
-			intent.deferredAt
-				? {
-						blocker: intent.blocker,
-						observedGraphRevision: intent.observedGraphRevision,
-						deferredAt: instantToCanonicalString(instantFromDate(intent.deferredAt)),
-					}
-				: null,
-		policy: {
-			evaluatedAt: breakPolicy.evaluatedAt,
-			policyId: regulation.policyId,
-			regulationId: plan.regulation.id,
-			regulationName: plan.regulation.name,
-			rule: plan.rule,
-		},
-		adjustment: {
-			breakMinutes: plan.breakMinutes,
-			alreadyTakenBreakMinutes: plan.alreadyTakenBreakMinutes,
-			breakStartAt: instantToCanonicalString(plan.breakStartAt),
-			breakEndAt: instantToCanonicalString(plan.breakEndAt),
-			timezone,
-		},
-		segments: [
-			{
-				role: "retained",
-				...segment({
-					workPeriodId: period.id,
-					canonicalRecordId: record.id,
-					clockIn: sourceClockIn,
-					clockOut: breakClockOut,
-					startAt: sourceStart,
-					endAt: plan.breakStartAt,
-					durationMinutes: plan.retainedMinutes,
-					vehicleUse: vehicleSplit.retained,
-				}),
-			},
-			{
-				role: "generated",
-				...segment({
-					workPeriodId: generated.id,
-					canonicalRecordId: generatedRecordId,
-					clockIn: breakClockIn,
-					clockOut: sourceClockOut,
-					startAt: plan.breakEndAt,
-					endAt: sourceEnd,
-					durationMinutes: plan.generatedMinutes,
-					vehicleUse: vehicleSplit.generated,
-				}),
-				origin: { workPeriodId: period.id, canonicalRecordId: record.id },
-				approval: {
-					state: record.approvalState,
-					basis: "originating_work",
-					sourceDecisionIds: decisions.map(({ id }) => id),
-				},
-			},
-		],
-		append: {
-			admission: "append",
-			clockOut: {
-				entryId: breakClockOut.id,
-				previousEntryId: breakClockOut.previousEntryId,
-				previousHash: breakClockOut.previousHash,
-			},
-			clockIn: {
-				entryId: breakClockIn.id,
-				previousEntryId: breakClockOut.id,
-				previousHash: breakClockOut.hash,
-			},
-		},
-		revisions: {
-			originating: { source: period.graphRevision, result: sourceRevision },
-			generated: { source: null, result: generated.graphRevision },
-		},
-		followUps,
 	};
 	await tx.insert(completedWorkOperation).values({
 		id: operationId,
@@ -948,363 +448,122 @@ export async function adjustAutomaticBreakInTransaction(
 		// The originating work; the generated period is in the result.
 		workPeriodId: period.id,
 		resultVersion: AUTOMATIC_BREAK_ADJUSTMENT_RESULT_VERSION,
-		result,
+		result: adjustmentResult({
+			operationId,
+			employeeId,
+			trigger,
+			intent: intent ?? null,
+			policy: { evaluatedAt: breakPolicy.evaluatedAt, policyId: regulation.policyId },
+			timezone,
+			division: outcome,
+		}),
 	});
-	return resolveIntent({
-		kind: "adjusted",
-		operationId,
-		workPeriodId: period.id,
-		generatedWorkPeriodId: generated.id,
-		breakMinutes: plan.breakMinutes,
-		breakStartAt: instantToCanonicalString(plan.breakStartAt),
-		regulationName: plan.regulation.name,
-		originalDurationMinutes: period.durationMinutes,
-		adjustedDurationMinutes,
-		surchargeSnapshot,
-	});
+	return resolveIntent(adjusted);
 }
 
-/**
- * A legacy organization's established break-enforcement writes, now inside the
- * owner's coordinated transaction: the period must still be exactly the one the plan
- * was made from, and an unresolved review refuses the adjustment without writes.
- */
-export async function applyLegacyAutomaticBreakInTransaction(
-	scope: SealedWorkTransactionScope,
-	input: AutomaticBreakTarget & {
-		trigger: AutomaticBreakAdjustmentTrigger;
-		plan: LegacyBreakPlan;
-		now: Instant;
-	},
-): Promise<AutomaticBreakAdjustmentOutcome> {
-	const { organizationId, employeeId, workPeriodId, plan } = input;
-	scope.assertEmployee(organizationId, employeeId);
-	const tx = scope.db;
-	const now = dateFromInstant(input.now);
-	const [period] = await tx
-		.select()
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.id, workPeriodId),
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.employeeId, employeeId),
-			),
-		)
-		.for("update");
-	if (!period) return { kind: "obsolete", reason: "missing" };
-	if (period.deletedAt) return { kind: "obsolete", reason: "deleted" };
-	if (period.wasAutoAdjusted) return { kind: "obsolete", reason: "already_adjusted" };
-	if (
-		period.isActive ||
-		period.clockInId !== plan.expected.clockInId ||
-		period.clockOutId !== plan.expected.clockOutId ||
-		period.startTime.getTime() !== plan.expected.startTime.getTime() ||
-		period.endTime?.getTime() !== plan.expected.endTime.getTime() ||
-		period.durationMinutes !== plan.expected.durationMinutes
-	) {
-		return { kind: "obsolete", reason: "changed" };
+/** The adjustment's receipt, built from work records' division. */
+function adjustmentResult(input: {
+	operationId: string;
+	employeeId: string;
+	trigger: AutomaticBreakAdjustmentTrigger;
+	intent: typeof workBreakAdjustmentIntent.$inferSelect | null;
+	policy: { evaluatedAt: string; policyId: string };
+	timezone: string;
+	division: OwedBreakDivision;
+}): AutomaticBreakAdjustmentResult {
+	const { trigger, intent, division } = input;
+	const { owedBreak, source, retained, generated, appended } = division;
+	const { previousEntryId, previousHash } = appended.clockIn;
+	if (!previousEntryId || !previousHash) {
+		throw new CompletedWorkIntegrityError("Break clock-in has no predecessor");
 	}
-	try {
-		await assertNoUnresolvedWorkPeriodReview(tx, organizationId, period);
-	} catch (error) {
-		if (!isUnresolvedWorkPeriodReview(error)) throw error;
-		return { kind: "deferred", blocker: error.conflictType as WorkBreakAdjustmentBlocker };
-	}
-	const [sourceClockOut] = await tx
-		.select({ createdBy: timeEntry.createdBy })
-		.from(timeEntry)
-		.where(
-			and(
-				eq(timeEntry.id, plan.expected.clockOutId),
-				eq(timeEntry.organizationId, organizationId),
-				eq(timeEntry.employeeId, employeeId),
-			),
-		)
-		.limit(1);
-	if (!sourceClockOut) return { kind: "obsolete", reason: "changed" };
-	// The canonical record divides with the work, as in the adopted adjustment; the
-	// established writes left it spanning the break and the generated work (#514).
-	// A record that no longer spans exactly this period stays as it is.
-	let canonical: {
-		record: typeof timeRecord.$inferSelect;
-		detail: typeof timeRecordWork.$inferSelect;
-		allocations: Array<typeof timeRecordAllocation.$inferSelect>;
-	} | null = null;
-	if (period.canonicalRecordId) {
-		const [record] = await tx
-			.select()
-			.from(timeRecord)
-			.where(
-				and(
-					eq(timeRecord.id, period.canonicalRecordId),
-					eq(timeRecord.organizationId, organizationId),
-					eq(timeRecord.employeeId, employeeId),
-					eq(timeRecord.recordKind, "work"),
-				),
-			)
-			.for("update");
-		const [detail] = await tx
-			.select()
-			.from(timeRecordWork)
-			.where(
-				and(
-					eq(timeRecordWork.recordId, period.canonicalRecordId),
-					eq(timeRecordWork.organizationId, organizationId),
-					eq(timeRecordWork.recordKind, "work"),
-				),
-			)
-			.for("update");
-		const allocations = await tx
-			.select()
-			.from(timeRecordAllocation)
-			.where(
-				and(
-					eq(timeRecordAllocation.recordId, period.canonicalRecordId),
-					eq(timeRecordAllocation.organizationId, organizationId),
-				),
-			)
-			.orderBy(asc(timeRecordAllocation.id))
-			.for("update");
-		if (
-			record &&
-			detail &&
-			record.endAt &&
-			record.startAt.getTime() === period.startTime.getTime() &&
-			record.endAt.getTime() === plan.expected.endTime.getTime()
-		) {
-			canonical = { record, detail, allocations };
-		}
-	}
-	// Established head selection: the latest-created entry of the employee.
-	const [head] = await tx
-		.select({ hash: timeEntry.hash })
-		.from(timeEntry)
-		.where(and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)))
-		.orderBy(desc(timeEntry.createdAt))
-		.limit(1)
-		.for("update");
-	const writtenBy = input.trigger.userId ?? sourceClockOut.createdBy;
-	const insertEntry = async (
-		type: "clock_out" | "clock_in",
-		timestamp: Date,
-		previousHash: string | null,
-	) => {
-		const [entry] = await tx
-			.insert(timeEntry)
-			.values({
-				employeeId,
-				organizationId,
-				type,
-				timestamp,
-				hash: calculateHash({ employeeId, type, timestamp: timestamp.toISOString(), previousHash }),
-				previousHash,
-				notes: ADJUSTMENT_NOTE,
-				...ADJUSTMENT_SOURCE,
-				createdBy: writtenBy,
-				...resolveFallbackTimezoneCapture({
-					timestamp,
-					timezone: plan.timezone,
-					timezoneSource: "user_setting",
-				}),
-			})
-			.returning();
-		if (!entry) throw new Error("Break adjustment entry insert failed");
-		return entry;
-	};
-	const firstClockOut = await insertEntry("clock_out", plan.breakStart, head?.hash ?? null);
-	const secondClockIn = await insertEntry("clock_in", plan.breakEnd, firstClockOut.hash);
-	// The vehicle carries over the break; nobody read the odometer at it (#1126). Each
-	// representation divides its own vehicle use.
-	const periodVehicle = vehicleUseAcrossAutomaticBreak(vehicleUseFromColumns(period));
-	const retainedVehicle = vehicleUseColumns(periodVehicle.retained);
-	const generatedVehicle = vehicleUseColumns(periodVehicle.generated);
-	const updated = await tx
-		.update(workPeriod)
-		.set({
-			clockOutId: firstClockOut.id,
-			endTime: plan.breakStart,
-			durationMinutes: plan.firstDurationMinutes,
-			odometerStartKm: retainedVehicle.odometerStartKm,
-			odometerEndKm: retainedVehicle.odometerEndKm,
-			drivenDistanceKm: retainedVehicle.drivenDistanceKm,
-			wasAutoAdjusted: true,
-			autoAdjustmentReason: plan.reason,
-			autoAdjustedAt: now,
-			originalEndTime: plan.expected.endTime,
-			originalDurationMinutes: plan.reason.originalDurationMinutes,
-			updatedAt: now,
-		})
-		.where(
-			and(
-				eq(workPeriod.id, period.id),
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.wasAutoAdjusted, false),
-			),
-		)
-		.returning({ id: workPeriod.id });
-	if (updated.length !== 1) throw new CompletedWorkIntegrityError("Adjusted work period changed");
-	let generatedRecordId: string | null = null;
-	if (canonical) {
-		const updatedRecords = await tx
-			.update(timeRecord)
-			.set({
-				endAt: plan.breakStart,
-				durationMinutes: plan.firstDurationMinutes,
-				updatedAt: now,
-				updatedBy: writtenBy,
-			})
-			.where(
-				and(
-					eq(timeRecord.id, canonical.record.id),
-					eq(timeRecord.organizationId, organizationId),
-					eq(timeRecord.employeeId, employeeId),
-					eq(timeRecord.recordKind, "work"),
-				),
-			)
-			.returning({ id: timeRecord.id });
-		if (updatedRecords.length !== 1) {
-			throw new CompletedWorkIntegrityError("Canonical work record update failed");
-		}
-		const detailVehicleUse = vehicleUseFromColumns(canonical.detail);
-		const detailVehicle = vehicleUseAcrossAutomaticBreak(detailVehicleUse);
-		const retainedDetailVehicle = vehicleUseColumns(detailVehicle.retained);
-		const generatedDetailVehicle = vehicleUseColumns(detailVehicle.generated);
-		if (detailVehicleUse) {
-			const updatedDetails = await tx
-				.update(timeRecordWork)
-				.set({
-					odometerStartKm: retainedDetailVehicle.odometerStartKm,
-					odometerEndKm: retainedDetailVehicle.odometerEndKm,
-					drivenDistanceKm: retainedDetailVehicle.drivenDistanceKm,
-				})
-				.where(
-					and(
-						eq(timeRecordWork.recordId, canonical.record.id),
-						eq(timeRecordWork.organizationId, organizationId),
-						eq(timeRecordWork.recordKind, "work"),
-					),
-				)
-				.returning({ recordId: timeRecordWork.recordId });
-			if (updatedDetails.length !== 1) {
-				throw new CompletedWorkIntegrityError("Canonical work detail update failed");
-			}
-		}
-		// The generated record keeps the originating work's origin, approval state and
-		// recording actor; no new decision is recorded for it.
-		generatedRecordId = randomUUID();
-		await tx.insert(timeRecord).values({
-			id: generatedRecordId,
-			organizationId,
-			employeeId,
-			recordKind: "work",
-			startAt: plan.breakEnd,
-			endAt: plan.expected.endTime,
-			durationMinutes: plan.secondDurationMinutes,
-			approvalState: canonical.record.approvalState,
-			origin: canonical.record.origin,
-			createdBy: canonical.record.createdBy,
-			updatedAt: now,
-			updatedBy: writtenBy,
-		});
-		await tx.insert(timeRecordWork).values({
-			recordId: generatedRecordId,
-			organizationId,
-			recordKind: "work",
-			workCategoryId: canonical.detail.workCategoryId,
-			workLocationType: canonical.detail.workLocationType,
-			computationMetadata: canonical.detail.computationMetadata,
-			vehicleKind: generatedDetailVehicle.vehicleKind,
-			vehicleId: generatedDetailVehicle.vehicleId,
-			odometerStartKm: generatedDetailVehicle.odometerStartKm,
-			odometerEndKm: generatedDetailVehicle.odometerEndKm,
-			drivenDistanceKm: generatedDetailVehicle.drivenDistanceKm,
-		});
-		for (const allocation of canonical.allocations) {
-			await tx.insert(timeRecordAllocation).values({
-				organizationId,
-				recordId: generatedRecordId,
-				allocationKind: allocation.allocationKind,
-				projectId: allocation.projectId,
-				taskId: allocation.taskId,
-				costCenterId: allocation.costCenterId,
-				weightPercent: allocation.weightPercent,
-				isBillable: allocation.isBillable,
-			});
-		}
-	}
-	const [inserted] = await tx
-		.insert(workPeriod)
-		.values({
-			employeeId,
-			organizationId,
-			clockInId: secondClockIn.id,
-			clockOutId: plan.expected.clockOutId,
-			startTime: plan.breakEnd,
-			endTime: plan.expected.endTime,
-			durationMinutes: plan.secondDurationMinutes,
-			projectId: period.projectId,
-			isBillable: period.isBillable,
-			taskId: period.taskId,
-			workCategoryId: period.workCategoryId,
-			workLocationType: period.workLocationType,
-			vehicleKind: generatedVehicle.vehicleKind,
-			vehicleId: generatedVehicle.vehicleId,
-			odometerStartKm: generatedVehicle.odometerStartKm,
-			odometerEndKm: generatedVehicle.odometerEndKm,
-			drivenDistanceKm: generatedVehicle.drivenDistanceKm,
-			canonicalRecordId: generatedRecordId,
-			isActive: false,
-			wasAutoAdjusted: true,
-			autoAdjustmentReason: plan.reason,
-			autoAdjustedAt: now,
-			originalEndTime: null,
-			originalDurationMinutes: null,
-		})
-		.returning({ id: workPeriod.id });
-	if (!inserted) throw new Error("Break enforcement did not create a second work period");
-	await carryInvoicedWorkToSplit(tx, {
-		organizationId,
-		sourceWorkPeriodId: period.id,
-		newWorkPeriodId: inserted.id,
-	});
-	// The inserted break changes the work: a submitted period goes back (#805). A system change.
-	await sendBackChangedPeriodSubmissions(tx, {
-		organizationId,
-		employeeId,
-		causedByUserId: null,
-		work: [workInterval(period.startTime, plan.expected.endTime)],
-	});
 	return {
-		kind: "adjusted",
-		operationId: null,
-		workPeriodId: period.id,
-		generatedWorkPeriodId: inserted.id,
-		breakMinutes: plan.reason.breakInsertedMinutes,
-		breakStartAt: plan.reason.breakInsertedAt,
-		regulationName: plan.reason.regulationName,
-		originalDurationMinutes: plan.reason.originalDurationMinutes,
-		adjustedDurationMinutes: plan.reason.adjustedDurationMinutes,
-		surchargeSnapshot: null,
+		version: AUTOMATIC_BREAK_ADJUSTMENT_RESULT_VERSION,
+		operationId: input.operationId,
+		owner: { employeeId: input.employeeId },
+		actors: {
+			executing: { kind: "system", process: "automatic_break_adjustment" },
+			triggeredBy: trigger.userId
+				? { kind: "human", userId: trigger.userId, closureEntryId: trigger.closureEntryId }
+				: { kind: "unknown", closureEntryId: trigger.closureEntryId },
+		},
+		originatingWork: {
+			...source.segment,
+			approvalState: source.approvalState,
+			recordCreatedBy: source.recordCreatedBy,
+		},
+		deferral:
+			intent?.status === "deferred" &&
+			intent.blocker &&
+			intent.observedGraphRevision !== null &&
+			intent.deferredAt
+				? {
+						blocker: intent.blocker,
+						observedGraphRevision: intent.observedGraphRevision,
+						deferredAt: instantToCanonicalString(instantFromDate(intent.deferredAt)),
+					}
+				: null,
+		policy: {
+			evaluatedAt: input.policy.evaluatedAt,
+			policyId: input.policy.policyId,
+			regulationId: owedBreak.regulation.id,
+			regulationName: owedBreak.regulation.name,
+			rule: owedBreak.rule,
+		},
+		adjustment: {
+			breakMinutes: owedBreak.breakMinutes,
+			alreadyTakenBreakMinutes: owedBreak.alreadyTakenBreakMinutes,
+			breakStartAt: instantToCanonicalString(owedBreak.startAt),
+			breakEndAt: instantToCanonicalString(owedBreak.endAt),
+			timezone: input.timezone,
+		},
+		segments: [
+			{ role: "retained", ...retained.segment },
+			{
+				role: "generated",
+				...generated.segment,
+				origin: {
+					workPeriodId: source.segment.workPeriodId,
+					canonicalRecordId: source.segment.canonicalRecordId,
+				},
+				approval: {
+					state: source.recordApprovalState,
+					basis: "originating_work",
+					sourceDecisionIds: source.decisionIds,
+				},
+			},
+		],
+		append: {
+			admission: "append",
+			clockOut: {
+				entryId: appended.clockOut.entryId,
+				previousEntryId: appended.clockOut.previousEntryId,
+				previousHash: appended.clockOut.previousHash,
+			},
+			clockIn: { entryId: appended.clockIn.entryId, previousEntryId, previousHash },
+		},
+		revisions: {
+			originating: { source: source.revision, result: retained.after.revision },
+			generated: { source: null, result: generated.after.revision },
+		},
+		followUps: [
+			{
+				kind: "work_balance_refresh",
+				delivery: "committed_intent",
+				dirtyFromDate: division.effects.workBalanceDirtyFromDate,
+			},
+			{ kind: "surcharge_calculation", delivery: "post_commit_best_effort" },
+		],
 	};
 }
-
-/** Routing hint only; the coordinated transaction re-reads the mode under the gate. */
-async function readAdmissionHint(organizationId: string): Promise<"legacy" | "append"> {
-	const [control] = await db
-		.select({ mode: timeEntryAppendControl.mode })
-		.from(timeEntryAppendControl)
-		.where(eq(timeEntryAppendControl.organizationId, organizationId))
-		.limit(1);
-	return control?.mode === "active" ? "append" : "legacy";
-}
-
-const MODE_CHANGED = Symbol("append mode changed");
 
 export type RunAutomaticBreakAdjustmentInput = AutomaticBreakTarget & {
 	trigger: AutomaticBreakAdjustmentTrigger;
-	/** The established legacy plan, made from plain reads before the transaction. */
-	planLegacy: () => Promise<LegacyBreakPlan | null>;
+	/**
+	 * The scheduled recovery of a committed intent. An organization that returned to
+	 * legacy admission keeps its intents for re-adoption, untouched.
+	 */
+	recoveringIntent?: boolean;
 	now?: () => Instant;
 };
 
@@ -1317,37 +576,59 @@ export async function runAutomaticBreakAdjustment(
 	input: RunAutomaticBreakAdjustmentInput,
 ): Promise<AutomaticBreakAdjustmentOutcome> {
 	const now = input.now ?? (() => systemClock.nowInstant());
-	for (let attempt = 0; attempt < 2; attempt += 1) {
-		const hint = await readAdmissionHint(input.organizationId);
-		const legacyPlan = hint === "legacy" ? await input.planLegacy() : null;
-		if (hint === "legacy" && !legacyPlan) return { kind: "not_required" };
-		let outcome: AutomaticBreakAdjustmentOutcome | typeof MODE_CHANGED;
-		try {
-			outcome = await withCompletedWorkTransaction(
-				{
-					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					actorUserId: null,
-				},
-				async (scope) => {
-					if (scope.admission === "append") {
-						return adjustAutomaticBreakInTransaction(scope, { ...input, now: now() });
-					}
-					if (!legacyPlan) return MODE_CHANGED;
-					return applyLegacyAutomaticBreakInTransaction(scope, {
-						...input,
-						plan: legacyPlan,
-						now: now(),
-					});
-				},
-			);
-		} catch (error) {
-			await recordAutomaticBreakFailure(input, error, now());
-			throw error;
-		}
-		if (outcome !== MODE_CHANGED) return outcome;
+	if (!input.recoveringIntent && !(await mayOweBreak(input))) return { kind: "not_required" };
+	try {
+		return await withCompletedWorkTransaction(
+			{
+				organizationId: input.organizationId,
+				employeeId: input.employeeId,
+				actorUserId: null,
+			},
+			(scope) => adjustAutomaticBreakInTransaction(scope, { ...input, now: now() }),
+		);
+	} catch (error) {
+		await recordAutomaticBreakFailure(input, error, now());
+		throw error;
 	}
-	throw new Error("Append mode changed during the automatic break adjustment");
+}
+
+/**
+ * A hint from plain reads, so that work with no committed intent to resolve and no
+ * break regulation opens no coordinated transaction. It never reads admission (#1231):
+ * the transaction re-reads everything, and a committed intent always runs it.
+ */
+async function mayOweBreak(target: AutomaticBreakTarget): Promise<boolean> {
+	const [intent] = await db
+		.select({ id: workBreakAdjustmentIntent.id })
+		.from(workBreakAdjustmentIntent)
+		.where(
+			and(
+				eq(workBreakAdjustmentIntent.id, deriveAutomaticBreakIntentId(target)),
+				eq(workBreakAdjustmentIntent.organizationId, target.organizationId),
+			),
+		)
+		.limit(1);
+	if (intent) return true;
+	const [period] = await db
+		.select({ endTime: workPeriod.endTime, wasAutoAdjusted: workPeriod.wasAutoAdjusted })
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.id, target.workPeriodId),
+				eq(workPeriod.organizationId, target.organizationId),
+				eq(workPeriod.employeeId, target.employeeId),
+				isNull(workPeriod.deletedAt),
+			),
+		)
+		.limit(1);
+	if (!period?.endTime || period.wasAutoAdjusted) return false;
+	const breakPolicy = await resolvePolicyClockOutBreakSnapshotInTransaction({
+		dbService: { db },
+		organizationId: target.organizationId,
+		employeeId: target.employeeId,
+		endTime: instantFromDate(period.endTime),
+	});
+	return regulationFrom(breakPolicy) !== null;
 }
 
 /**
@@ -1384,6 +665,15 @@ async function recordAutomaticBreakFailure(
 	} catch {
 		// The adjustment's own error is the one to report.
 	}
+}
+
+/**
+ * Whether the organization's closures commit adjustment intents: those organizations'
+ * work is recovered by `processAutomaticBreakIntents`, so the daily check of a day's
+ * work leaves them out. A selection by it never names admission (#1231).
+ */
+export function recoveredByIntent(organizationId: SQLWrapper): SQL {
+	return sql`exists (select 1 from time_entry_append_control control where control.organization_id = ${organizationId} and control.mode = 'active')`;
 }
 
 export type AutomaticBreakIntentRun = {
@@ -1456,8 +746,7 @@ export async function processAutomaticBreakIntents(input: {
 			const outcome = await runAutomaticBreakAdjustment({
 				...target,
 				trigger: { userId: intent.triggeredByUserId, closureEntryId: intent.closureEntryId },
-				// Admission turned legacy after the read: leave the intent for re-adoption.
-				planLegacy: async () => null,
+				recoveringIntent: true,
 				now: input.now,
 			});
 			if (outcome.kind === "adjusted") {

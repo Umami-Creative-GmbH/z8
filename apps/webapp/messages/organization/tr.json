@@ -50,7 +50,6 @@
       "description": "Başlamak için kuruluşunuzu ayarlayın",
       "title": "Kuruluş Oluştur"
     },
-    "createError": "Kuruluş oluşturulamadı",
     "createNew": "Yeni Kuruluş Oluştur",
     "createSuccess": "Kuruluş başarıyla oluşturuldu!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Sahip"
     },
     "slugDescription": "URL'lerde kullanılır. İsimden otomatik oluşturulur.",
-    "slugErrors": {
-      "format": "Slug yalnızca küçük harf, rakam ve kısa çizgi içermelidir",
-      "hyphen": "Slug kısa çizgi ile başlayamaz veya bitemez",
-      "max": "Slug 50 karakterden kısa olmalıdır",
-      "min": "Slug en az 2 karakter olmalıdır"
-    },
     "slugLabel": "Organizasyon Slug'ı",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "Bu slug zaten alınmış. Lütfen farklı bir tane seçin.",
@@ -372,6 +365,56 @@
       "updated": "Kuruluş saat dilimi {timezone} olarak güncellendi",
       "update-failed": "Kuruluş saat dilimi güncellenemedi"
     },
-    "title": "Kuruluş Gezgini"
+    "title": "Kuruluş Gezgini",
+    "tracking": {
+      "activate-reviewed": "İncelenen tarihi etkinleştir",
+      "activation-description": "Kaydetmeden önce gerçek kullanıma sunma tarihini seçin ve etkisini inceleyin. İlk öneride kuruluşunuzun kendi saat dilimindeki oluşturulma tarihi kullanılır. Bu işlem, kimsenin işe başlama tarihini düzeltmeden takibi değiştirir.",
+      "actual": "Tamamlanan çalışma",
+      "affected-periods": "Etkilenen aylar",
+      "after": "Sonra",
+      "balance": "Çalışma bakiyesi",
+      "before": "Önce",
+      "blocked-save": "Etkilenen kapalı ayları yeniden açın ve yeni bir önizleme oluşturun.",
+      "change-date": "Takip tarihini değiştir",
+      "closed": "Kapalı",
+      "closed-blockers": "Yeni bir önizleme oluşturup kaydetmeden önce aşağıdaki sorunları giderin.",
+      "closed-settings": "Kapalı ay ayarlarını aç",
+      "commit-failed": "İncelenen değişiklik kaydedilemedi. Yeni bir önizleme oluşturup tekrar deneyin.",
+      "day-unit": "gün",
+      "description": "Bu tarih, gereken süreyi ve birikmiş çalışma bakiyelerini denetler. Çalışanların gerçek işe başlama tarihleri izin haklarını belirler.",
+      "employee-impacts": "Çalışan bakiyesi etkileri",
+      "employee-zone": "Çalışan saat dilimi",
+      "ending-balance": "Ay sonu bakiyesi",
+      "exception-conflict": "{exception} çalışan istisnası, yeni minimum {minimum} değerinden önce geliyor. Önce çalışan istisnasını kaldırın veya değiştirin.",
+      "hours": "Saat",
+      "hours-caption": "Önceki ve sonraki saatler",
+      "hour-unit": "saat",
+      "invalid-date": "Geçerli bir takvim tarihi seçin.",
+      "legacy": "Mevcut çalışma bakiyesi hesaplamanız hâlâ kullanımda. Hiçbir zaman takibi başlangıç tarihi etkinleştirilmedi.",
+      "no-boundary": "Hesaplama başlangıcı yok",
+      "no-changed-periods": "Tamamlanan ay sonuçlarında değişiklik yok.",
+      "no-employees": "Hiçbir çalışan bakiyesi etkilenmedi.",
+      "old-boundary": "Mevcut hesaplama başlangıcı",
+      "opening-preserved": "Açılış bakiyesi korundu:",
+      "preview": "Etkiyi önizle",
+      "preview-failed": "Önizleme oluşturulamadı. Tekrar deneyin.",
+      "proposed-boundary": "Önerilen takip başlangıcı",
+      "reason": "Bu değişikliğin nedeni",
+      "reason-required": "Kaydetmeden önce bir neden girin.",
+      "required": "Gereken süre",
+      "review-explanation": "Aşağıdaki geçerlilik tarihlerini, gereken çalışma saatlerini ve çalışma bakiyelerini inceleyin. İşe giriş tarihleri ve izin hakları değişmeden kalır. Bakiyeler, her çalışanın saat dilimindeki son tamamlanan güne kadar işlenir.",
+      "review-title": "Takip tarihi etki incelemesi",
+      "saved": "Takip tarihi kaydedildi ve bakiyeler güncellendi.",
+      "saved-date": "Geçerli kuruluş takip tarihi:",
+      "saved-pending": "Takip tarihi kaydedildi. Çalışma bakiyeleri yeniden hesaplanıyor.",
+      "save-reviewed": "İncelenen tarihi kaydet",
+      "setup-description": "Gereken süre ve çalışma bakiyeleri bu tarihte veya daha sonraysa çalışanın fiili işe başlama tarihinde başlar. İşe giriş tarihleri izin hakkını belirlemeye devam eder. Öneri, kuruluşun kendi saat dilimindeki oluşturulma tarihini kullanır.",
+      "setup-timezone": "Kuruluş saat dilimi",
+      "stale-preview": "İncelenen girdiler değişti. Kaydetmeden önce yeni bir önizleme oluşturun.",
+      "start-date": "Zaman takibi başlangıç tarihi",
+      "through-date": "Şu tarihe kadarki bakiyeler",
+      "title": "Zaman takibi başlangıcı",
+      "vacation-unchanged": "İzin hakkı ve bakiye değişmedi:"
+    }
   }
 }

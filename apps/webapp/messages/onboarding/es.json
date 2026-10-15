@@ -9,30 +9,11 @@
       "inviteTeamDesc": "Agrega colegas para colaborar y gestionar el tiempo juntos",
       "loading": "Finalizando tu configuración...",
       "nextStepsTitle": "Próximos Pasos",
+      "setUpHolidays": "Configura los días festivos",
+      "setUpHolidaysDesc": "Elige tu país y región en la configuración de días festivos",
       "subtitle": "Tu cuenta está lista para usar. ¡Bienvenido al equipo!",
       "summaryError": "No se pudo obtener el resumen de la incorporación",
       "title": "¡Todo listo!"
-    },
-    "holidaySetup": {
-      "cardDesc": "Elige tu país para importar días festivos. Puedes personalizar los días festivos más tarde en la configuración.",
-      "cardTitle": "Preajuste de Días Festivos",
-      "continue": "Continuar",
-      "country": "País",
-      "countryDesc": "Los días festivos se importarán según su selección.",
-      "error": "Error al crear preajuste de días festivos",
-      "noCountry": "No se encontró país.",
-      "presetName": "Nombre del Preajuste",
-      "presetNameDesc": "Un nombre para identificar este preajuste de días festivos.",
-      "presetNamePlaceholder": "p. ej., Días Festivos España",
-      "searchCountry": "Buscar países...",
-      "selectCountry": "Seleccionar un país",
-      "setAsDefault": "Establecer como Predeterminado de la Organización",
-      "setAsDefaultDesc": "Aplicar este preajuste de días festivos a todos los empleados.",
-      "skip": "Omitir por ahora",
-      "skipError": "No se pudo omitir la configuración de días festivos",
-      "subtitle": "Selecciona tu país para importar días festivos. Esto ayuda a rastrear el tiempo libre con precisión.",
-      "success": "¡Preajuste de días festivos creado!",
-      "title": "Configurar días festivos"
     },
     "notifications": {
       "approvals": "Solicitudes de aprobación",
@@ -67,13 +48,31 @@
     "organization": {
       "create": "Crear Organización",
       "createDescription": "Configura tu propia organización e invita a tu equipo",
+      "createError": "Error al crear la organización",
+      "createSuccess": "¡Organización creada con éxito!",
       "createTitle": "Crear Organización",
       "disabledSkipDescription": "Puede continuar omitiendo este paso mientras espera una invitación a una organización existente.",
       "disabledSubtitle": "La creación de organizaciones está deshabilitada para este despliegue.",
+      "nameErrors": {
+        "max": "El nombre de la organización debe tener menos de 100 caracteres",
+        "min": "El nombre de la organización debe tener al menos 2 caracteres"
+      },
+      "nameLabel": "Nombre de la organización",
+      "namePlaceholder": "Acme Inc.",
       "skip": "Omitir por ahora",
       "skipDescription": "Si tu administrador te invitará a una organización, puedes omitir este paso por ahora.",
       "skipError": "No se pudo omitir la configuración de la organización",
       "skipTitle": "¿Esperando una invitación?",
+      "slugDescription": "Usado en las URL. Generado automáticamente a partir del nombre.",
+      "slugErrors": {
+        "format": "El slug solo debe contener letras minúsculas, números y guiones",
+        "hyphen": "El slug no puede empezar ni terminar con un guion",
+        "max": "El slug debe tener menos de 50 caracteres",
+        "min": "El slug debe tener al menos 2 caracteres"
+      },
+      "slugLabel": "Slug de la organización",
+      "slugPlaceholder": "acme-inc",
+      "slugTaken": "Este slug ya está en uso. Por favor, elija uno diferente.",
       "subtitle": "Crea tu organización para desbloquear todas las funciones, o omite si estás esperando una invitación.",
       "title": "Configurar tu organización"
     },
@@ -102,14 +101,21 @@
       "timeFormat24h": "24 horas (08:00)",
       "timeFormatDesc": "Esto controla cómo se muestran las horas del reloj.",
       "title": "Completa tu perfil",
+      "validation": {
+        "firstNameRequired": "El nombre es obligatorio",
+        "firstNameTooLong": "El nombre debe tener 50 caracteres o menos",
+        "lastNameRequired": "El apellido es obligatorio",
+        "lastNameTooLong": "El apellido debe tener 50 caracteres o menos"
+      },
       "weekStartDay": "Primer día de la semana",
       "weekStartDayDesc": "Esto controla cómo se muestran los calendarios y los resúmenes semanales."
     },
     "steps": {
       "complete": "Completo",
-      "holidaySetup": "Días festivos",
+      "label": "Progreso de incorporación",
       "notifications": "Notificaciones",
       "organization": "Organización",
+      "position": "Paso {current} de {total}",
       "profile": "Perfil",
       "vacationPolicy": "Vacaciones",
       "welcome": "Bienvenido",
@@ -144,7 +150,13 @@
       "skipError": "No se pudo omitir la configuración de la política de vacaciones",
       "subtitle": "Crea una política de vacaciones para tu organización. Esto determina cuántos días libres obtienen los empleados.",
       "success": "¡Política de vacaciones creada!",
-      "title": "Configurar política de vacaciones"
+      "title": "Configurar política de vacaciones",
+      "validation": {
+        "daysNegative": "Los días no pueden ser negativos",
+        "daysTooMany": "Los días no pueden superar los 365",
+        "nameRequired": "El nombre de la política es obligatorio",
+        "nameTooLong": "El nombre de la política debe tener 100 caracteres o menos"
+      }
     },
     "welcome": {
       "continueSetup": "Continuar configuración",
@@ -177,6 +189,24 @@
       "features": "Lo que obtendrá",
       "glass": "vaso",
       "glasses": "vasos",
+      "presets": {
+        "active": {
+          "description": "Cada 30 minutos: para alta actividad o entornos calurosos",
+          "label": "Activo"
+        },
+        "custom": {
+          "description": "Define tu propio intervalo (15-120 minutos)",
+          "label": "Personalizado"
+        },
+        "light": {
+          "description": "Cada 60 minutos: para baja actividad",
+          "label": "Ligero"
+        },
+        "moderate": {
+          "description": "Cada 45 minutos: recomendado para la mayoría de las personas",
+          "label": "Moderado"
+        }
+      },
       "recommended": "(Recomendado)",
       "reminderFrequency": "Frecuencia de recordatorio",
       "skip": "Omitir por ahora",
@@ -203,6 +233,10 @@
       "subtitle": "Define tus horas de trabajo para ayudar a rastrear el tiempo y gestionar ausencias con precisión.",
       "success": "¡Horario de trabajo establecido con éxito!",
       "title": "Establece tu horario de trabajo",
+      "validation": {
+        "hoursNegative": "Las horas no pueden ser negativas",
+        "hoursTooMany": "Una semana tiene como máximo 168 horas"
+      },
       "weekly": "Semanal"
     },
     "workTemplates": {
@@ -226,6 +260,12 @@
       "subtitle": "Configura una plantilla de horario de trabajo para tu organización. Esto define las horas de trabajo para tu equipo.",
       "success": "¡Plantilla de horario de trabajo creada!",
       "title": "Crear plantilla de horario de trabajo",
+      "validation": {
+        "hoursNegative": "Las horas no pueden ser negativas",
+        "hoursTooMany": "Una semana tiene como máximo 168 horas",
+        "nameRequired": "El nombre de la plantilla es obligatorio",
+        "nameTooLong": "El nombre de la plantilla debe tener 100 caracteres o menos"
+      },
       "workingDays": "Días Laborables",
       "workingDaysDesc": "Selecciona qué días son laborables. Las horas se distribuirán uniformemente."
     }

@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Approval recorded",
           "approved": "Approved",
+          "receiptAdded": "Receipt added after submission",
           "rejected": "Rejected",
           "reopened": "Reopened for correction",
           "returned": "Returned for changes",
@@ -851,6 +852,9 @@
         "withdraw": "Remove explanation"
       },
       "receipts": {
+        "add": "Add receipt",
+        "addedAfterSubmission": "{fileName}: Added after submission by {name} on {date}.",
+        "choose": "Choose receipt",
         "chooseFile": "Choose file",
         "description": "Take a photo or attach a PDF or image of the receipt.",
         "downloadNamed": "Download {fileName}",
@@ -862,10 +866,13 @@
         },
         "none": "No receipt attached yet.",
         "previewNamed": "Preview {fileName}",
+        "processing": "Attaching receipt…",
         "progress": "Upload progress",
         "remove": "Remove",
         "removeFailed": "The receipt could not be removed.",
         "removeNamed": "Remove {fileName}",
+        "supplementConflict": "A receipt was already supplied or the report changed. Reload the report before trying again.",
+        "supplementFailed": "The receipt was not attached. Reload the report and try again.",
         "takePhoto": "Take photo",
         "title": "Receipt",
         "uploadFailed": "The receipt was not attached.",

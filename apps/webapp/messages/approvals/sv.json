@@ -9,6 +9,7 @@
       "displacedVacation": "Semesterdatum ersätts vid godkännande",
       "exactHours": "Exakta registrerade timmar",
       "fullDay": "Heldag",
+      "historicalRemaining": "Återstående tidigare uttagen semester",
       "morning": "Förmiddag",
       "original": "Registrerade datum",
       "originalEndCoverage": "Registrerad slutdag",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Anledning",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Tillgänglig semester efter avstämning",
+      "reconciliationReason": "Källa för avstämning av historisk semester",
       "title": "Frånvaroändring"
     },
     "absenceRejected": "Frånvaroansökan avvisad",

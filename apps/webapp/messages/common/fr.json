@@ -373,6 +373,8 @@
     "previous": "Précédent",
     "recovering": "Récupération...",
     "refresh": "Actualiser",
+    "refreshData": "Actualiser les données",
+    "refreshDataFailed": "Impossible d'actualiser les données. Veuillez réessayer.",
     "refreshing": "Actualisation en cours...",
     "reject": "Rejeter",
     "rejecting": "Rejet en cours…",
@@ -2528,6 +2530,9 @@
     "theme-time": "Basé sur l'heure",
     "theme-time-info": "Le mode basé sur l'heure utilise le mode {currentMode}. Passage au mode {nextMode} à {time}.",
     "theme-toggle": "Basculer le thème"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Comprend {days} jours déjà pris avant le suivi"
   },
   "validation": {
     "first-name-required": "Le prénom est requis",

@@ -373,6 +373,8 @@
     "previous": "Mëparshme",
     "recovering": "Po rikuperohet...",
     "refresh": "Rifresko",
+    "refreshData": "Rifresko të dhënat",
+    "refreshDataFailed": "Nuk mund të rifreskoheshin të dhënat. Ju lutemi provoni përsëri.",
     "refreshing": "Po rifreskohet...",
     "reject": "Refuzo",
     "rejecting": "Po refuzohet…",
@@ -2528,6 +2530,9 @@
     "theme-time": "Bazuar në kohë",
     "theme-time-info": "Modaliteti i bazuar në kohë po përdor {currentMode}. Ndryshon në {nextMode} në orën {time}.",
     "theme-toggle": "Ndrysho temën"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Përfshin {days} ditë të marra më parë përpara gjurmimit"
   },
   "validation": {
     "first-name-required": "Emri është i detyrueshëm",

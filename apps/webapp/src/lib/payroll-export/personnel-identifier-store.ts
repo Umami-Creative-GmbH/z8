@@ -9,19 +9,26 @@
  */
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { db as database } from "@/db";
-import { customFieldDefinition, payrollExportConfig } from "@/db/schema";
-import type { PlainDate } from "@/lib/datetime/temporal-core";
+import { user } from "@/db/auth-schema";
+import { customFieldDefinition, employee, payrollExportConfig } from "@/db/schema";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { isUuid } from "@/lib/billable-time/input";
+import type { PlainDate } from "@/lib/datetime/temporal-core";
 import type { CustomFieldReader } from "@/lib/organization/custom-fields/definitions";
 import { lockCustomFieldDefinitions } from "@/lib/organization/custom-fields/lock";
 import { readCustomFieldValues } from "@/lib/organization/custom-fields/values";
+import { exportedPersonnelIdentifier } from "./exported-personnel-identifier";
+import { isPayrollExportFormatId } from "./format-registry";
 import {
 	CUSTOM_FIELD_IDENTIFIER,
 	EMPLOYEE_MATCH_CUSTOM_FIELD_KEY,
+	findDuplicatePersonnelIdentifiers,
 	PAYROLL_IDENTIFIER_FIELD_TYPES,
+	PayrollIdentifierDuplicateError,
 	PERSONNEL_NUMBER_CUSTOM_FIELD_KEY,
+	type PersonnelIdentifierClash,
 	payrollIdentifierCustomFieldId,
 } from "./personnel-identifier";
 
@@ -166,6 +173,139 @@ export async function savePayrollExportConfig(
 			.returning();
 		return { ok: true, config: inserted } as const;
 	});
+}
+
+interface IdentityEmployee {
+	employeeId: string;
+	employeeNumber: string | null;
+	/** API connectors may match employees by email (#1199). */
+	email: string;
+	name: string | null;
+}
+
+/** The employees of the organization among `employeeIds`, with number, email and name. */
+async function readIdentityEmployees(
+	reader: CustomFieldReader,
+	organizationId: string,
+	employeeIds: readonly string[],
+): Promise<IdentityEmployee[]> {
+	const unique = [...new Set(employeeIds)];
+	const employees: IdentityEmployee[] = [];
+	for (let index = 0; index < unique.length; index += ID_CHUNK) {
+		const rows = await reader
+			.select({
+				employeeId: employee.id,
+				employeeNumber: employee.employeeNumber,
+				email: user.email,
+				name: user.name,
+				firstName: user.firstName,
+				lastName: user.lastName,
+			})
+			.from(employee)
+			.innerJoin(user, eq(user.id, employee.userId))
+			.where(
+				and(
+					eq(employee.organizationId, organizationId),
+					inArray(employee.id, unique.slice(index, index + ID_CHUNK)),
+				),
+			);
+		employees.push(
+			...rows.map(({ firstName, lastName, name, ...row }) => ({
+				...row,
+				// The display name the employee holder lookups use (#881).
+				name: buildAuthUserDisplayName({ firstName, lastName, name, email: row.email }) || null,
+			})),
+		);
+	}
+	return employees;
+}
+
+/** The clashes with each employee's name, read within the organization. */
+async function withEmployeeNames(
+	reader: CustomFieldReader,
+	organizationId: string,
+	clashes: readonly PersonnelIdentifierClash[],
+): Promise<PersonnelIdentifierClash[]> {
+	const employees = await readIdentityEmployees(
+		reader,
+		organizationId,
+		clashes.flatMap((clash) => clash.employees.map((holder) => holder.employeeId)),
+	);
+	const names = new Map(employees.map((row) => [row.employeeId, row.name]));
+	return clashes.map((clash) => ({
+		employees: clash.employees.map((holder) => ({
+			...holder,
+			name: names.get(holder.employeeId) ?? null,
+		})),
+	}));
+}
+
+/**
+ * Refuses an export whose rows would write two employees under one personnel
+ * identifier (#1198), naming the employees. `identifierOf` is the target's
+ * rule (`exportedPersonnelIdentifier`); every export target runs this once,
+ * before it writes a file or calls a connector.
+ */
+export async function refuseDuplicatePersonnelIdentifiers<T extends { employeeId: string }>(
+	reader: CustomFieldReader,
+	input: {
+		organizationId: string;
+		rows: readonly T[];
+		identifierOf: (row: T) => string | null;
+	},
+): Promise<void> {
+	const clashes = findDuplicatePersonnelIdentifiers(input.rows, input.identifierOf);
+	if (clashes.length === 0) return;
+	throw new PayrollIdentifierDuplicateError(
+		await withEmployeeNames(reader, input.organizationId, clashes),
+		input.organizationId,
+	);
+}
+
+/**
+ * The employees among `employeeIds` that an export of each configuration
+ * would write under one personnel identifier, named, for payroll readiness
+ * (#1198). Custom field identifiers are read as of `asOf` like the export
+ * reads them; employees without a value are left to the missing-identifier
+ * check. Configurations of formats the check does not cover are skipped.
+ */
+export async function findPersonnelIdentifierClashes(
+	reader: CustomFieldReader,
+	input: {
+		organizationId: string;
+		configs: ReadonlyArray<{ formatId: string; config: unknown }>;
+		employeeIds: readonly string[];
+		asOf: PlainDate;
+	},
+): Promise<PersonnelIdentifierClash[]> {
+	const rules = input.configs.flatMap(({ formatId, config }) => {
+		const identifierOf = isPayrollExportFormatId(formatId)
+			? exportedPersonnelIdentifier(formatId, config)
+			: null;
+		return identifierOf
+			? [{ identifierOf, customFieldId: payrollIdentifierCustomFieldId(config) }]
+			: [];
+	});
+	if (rules.length === 0 || input.employeeIds.length === 0) return [];
+
+	const employees = await readIdentityEmployees(reader, input.organizationId, input.employeeIds);
+	const clashes: PersonnelIdentifierClash[] = [];
+	for (const rule of rules) {
+		const values = rule.customFieldId
+			? await readPersonnelIdentifierValues(reader, {
+					organizationId: input.organizationId,
+					customFieldId: rule.customFieldId,
+					employeeIds: employees.map((row) => row.employeeId),
+					asOf: input.asOf,
+				})
+			: {};
+		const rows = employees.map((row) => ({
+			...row,
+			personnelIdentifier: values[row.employeeId] ?? null,
+		}));
+		clashes.push(...findDuplicatePersonnelIdentifiers(rows, rule.identifierOf));
+	}
+	return withEmployeeNames(reader, input.organizationId, clashes);
 }
 
 function withoutUnusedCustomFieldIds(config: Record<string, unknown>): Record<string, unknown> {

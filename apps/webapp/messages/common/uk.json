@@ -373,6 +373,8 @@
     "previous": "Попередній",
     "recovering": "Відновлення...",
     "refresh": "Оновити",
+    "refreshData": "Оновити дані",
+    "refreshDataFailed": "Не вдалося оновити дані. Будь ласка, спробуйте ще раз.",
     "refreshing": "Оновлення...",
     "reject": "Відхилити",
     "rejecting": "Відхилення…",
@@ -2528,6 +2530,9 @@
     "theme-time": "За часом доби",
     "theme-time-info": "За часом доби використовується режим «{currentMode}». Перемикання на «{nextMode}» о {time}.",
     "theme-toggle": "Перемкнути тему"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Включає {days} дн., раніше використаних до початку обліку"
   },
   "validation": {
     "first-name-required": "Ім'я обов'язкове",

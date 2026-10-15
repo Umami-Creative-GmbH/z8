@@ -172,6 +172,33 @@ const TIME_ENTRY_LIFECYCLE_COLUMNS = new Set([
 	"superseded_by_id",
 ]);
 
+/** A Drizzle property's column: the known names, else its snake_case spelling. */
+function sourceColumnName(name: string): string {
+	return (
+		SOURCE_COLUMN_NAMES[name] ??
+		name.replaceAll(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
+	);
+}
+
+/**
+ * Every column of the work tables is work (Time Tracking ADR 0010), except row
+ * bookkeeping and a time entry's free-text note, which no work rule reads.
+ */
+function isReportedSourceColumn(
+	table: ProtectedWriteTable,
+	column: string,
+): boolean {
+	if (column === "updated_at" || column === "updated_by") return false;
+	return !(table === "time_entry" && column === "notes");
+}
+
+/** Columns whose `isNull`/`eq true` predicate limits a work period update to live work. */
+const LIVE_WORK_PREDICATES: Readonly<Record<string, "is_null" | "is_true">> = {
+	clockOutId: "is_null",
+	endTime: "is_null",
+	isActive: "is_true",
+};
+
 export const APPROVAL_WRITE_SCHEMA_MODULE_SPECIFIERS = [
 	"@/db",
 	"@/db/schema",
@@ -302,7 +329,11 @@ const TRUSTED_TRANSACTION_TYPE_EXPORTS = new Map<
 	],
 	[
 		"lib/time-tracking/web-clock-out-transaction",
-		new Map([["WorkTransactionContext", "approval_db_service"]]),
+		new Map([
+			// Re-exported from `work-transaction` (#1230: break-in-progress writes hid behind it).
+			["WorkTransactionClient", "database_receiver"],
+			["WorkTransactionContext", "approval_db_service"],
+		]),
 	],
 	[
 		"lib/time-tracking/work-transaction",
@@ -2392,6 +2423,11 @@ function analyzeApprovalWriteMutationsInContext(
 			"delete",
 			node.getStart(sourceFile),
 		);
+		// Every delete of work is reported (Time Tracking ADR 0010); a time entry's
+		// carries the inactive-correction meaning when its predicate proves it.
+		for (const table of tables) {
+			if (table !== "time_entry") emit(node, "delete", table);
+		}
 		if (!tables.includes("time_entry")) return;
 		const columns = new Set<string>();
 		let correctionType = false;
@@ -2466,11 +2502,61 @@ function analyzeApprovalWriteMutationsInContext(
 			predicate.forEachChild(inspectPredicate);
 		};
 		inspectPredicate(node.arguments[0]);
-		if (!correctionType || !inactive || !nullSuccessor || !replacement) return;
+		if (!correctionType || !inactive || !nullSuccessor || !replacement) {
+			emit(node, "delete", "time_entry");
+			return;
+		}
 		emit(node, "delete", "time_entry", {
 			columns: [...columns].sort(compareAscii),
 			semantic: "inactive_correction",
 		});
+	};
+	/**
+	 * Whether a work period update's own `where` limits it to work that has not
+	 * ended: an `isNull` end or clock-out, or `isActive` equal to true, at its top
+	 * level or inside `and(...)`. A predicate held elsewhere proves nothing.
+	 */
+	const limitedToLiveWork = (setCall: ts.CallExpression): boolean => {
+		const whereAccess = setCall.parent;
+		if (
+			!whereAccess ||
+			!ts.isPropertyAccessExpression(whereAccess) ||
+			propertyAccess(whereAccess)?.name !== "where"
+		)
+			return false;
+		const whereCall = whereAccess.parent;
+		if (
+			!whereCall ||
+			!ts.isCallExpression(whereCall) ||
+			whereCall.expression !== whereAccess ||
+			!whereCall.arguments[0]
+		)
+			return false;
+		const position = whereCall.getStart(sourceFile);
+		const proves = (predicate: ts.Expression): boolean => {
+			const call = unwrap(predicate);
+			if (!ts.isCallExpression(call)) return false;
+			const callName =
+				propertyAccess(call.expression)?.name ??
+				(ts.isIdentifier(call.expression) ? call.expression.text : null);
+			if (callName === "and") return call.arguments.some(proves);
+			const column = call.arguments[0] ? unwrap(call.arguments[0]) : null;
+			if (
+				!column ||
+				!ts.isPropertyAccessExpression(column) ||
+				!resolveExpression(column.expression, position).has("table:work_period")
+			)
+				return false;
+			const required = LIVE_WORK_PREDICATES[propertyAccess(column)?.name ?? ""];
+			const value = call.arguments[1] ? unwrap(call.arguments[1]) : null;
+			return (
+				(required === "is_null" && callName === "isNull") ||
+				(required === "is_true" &&
+					callName === "eq" &&
+					value?.kind === ts.SyntaxKind.TrueKeyword)
+			);
+		};
+		return proves(whereCall.arguments[0]);
 	};
 	const inspectSourceMutation = (
 		node: ts.CallExpression,
@@ -2482,83 +2568,21 @@ function analyzeApprovalWriteMutationsInContext(
 			? payloadProperties(node.arguments[0], node.getStart(sourceFile))
 			: null;
 		if (!payload) return;
-		const normalizedColumns = [...payload.properties.keys()]
-			.map((name) => SOURCE_COLUMN_NAMES[name])
-			.filter((name): name is string => Boolean(name));
+		const normalizedColumns = [...payload.properties.keys()].map(
+			sourceColumnName,
+		);
 		for (const table of sourceBuilderTables(
 			access.target,
 			operation,
 			node.getStart(sourceFile),
 		)) {
-			const protectedPropertyNames =
-				table === "work_period"
-					? [
-							"approvalStatus",
-							"pendingChanges",
-							"approvalWorkflowId",
-							"canonicalRecordId",
-							"clockInId",
-							"clockOutId",
-							"startTime",
-							"endTime",
-							"durationMinutes",
-						]
-					: table === "time_entry"
-						? Object.keys(SOURCE_COLUMN_NAMES).filter(
-								(name) =>
-									name === "type" ||
-									TIME_ENTRY_LIFECYCLE_COLUMNS.has(
-										SOURCE_COLUMN_NAMES[name] ?? "",
-									),
-							)
-						: table === "time_record"
-							? [
-									"approvalState",
-									"startAt",
-									"endAt",
-									"durationMinutes",
-									"organizationId",
-									"employeeId",
-								]
-							: table === "time_record_work"
-								? [
-										"recordId",
-										"organizationId",
-										"recordKind",
-										"workCategoryId",
-										"workLocationType",
-										"computationMetadata",
-										// Vehicle use (#1120) is part of the work's attribution.
-										"vehicleKind",
-										"vehicleId",
-										"odometerStartKm",
-										"odometerEndKm",
-										"drivenDistanceKm",
-									]
-								: [
-										"id",
-										"organizationId",
-										"recordId",
-										"allocationKind",
-										"projectId",
-										"taskId",
-										"costCenterId",
-										"weightPercent",
-										// Billable work (#900) is part of the allocation, like its project.
-										"isBillable",
-										"createdAt",
-									];
-			const unresolvedPayload =
-				payload.unresolved &&
-				protectedPropertyNames.some(
-					(name) => !payload.resolvedAfterUncertainty.has(name),
-				);
-			const protectedColumnSet = new Set(
-				protectedPropertyNames.map((name) => SOURCE_COLUMN_NAMES[name]),
-			);
+			// Any unresolved part of the payload may write any column of the table.
+			const unresolvedPayload = payload.unresolved;
 			const columns = [
 				...new Set(
-					normalizedColumns.filter((column) => protectedColumnSet.has(column)),
+					normalizedColumns.filter((column) =>
+						isReportedSourceColumn(table, column),
+					),
 				),
 			].sort(compareAscii);
 			const reportedColumns =
@@ -2570,12 +2594,6 @@ function analyzeApprovalWriteMutationsInContext(
 					? []
 					: columns;
 			if (columns.length === 0 && !unresolvedPayload) continue;
-			if (
-				(table === "time_record_work" || table === "time_record_allocation") &&
-				operation !== "insert"
-			) {
-				continue;
-			}
 			if (table === "time_entry" && operation === "insert") {
 				const typeValue = payload.properties.get("type");
 				const correction =
@@ -2584,12 +2602,6 @@ function analyzeApprovalWriteMutationsInContext(
 					ts.isStringLiteralLikeNode(unwrap(typeValue)) &&
 					unwrap(typeValue).getText(sourceFile).replaceAll(/["']/g, "") ===
 						"correction";
-				if (
-					!correction &&
-					!columns.some((column) => TIME_ENTRY_LIFECYCLE_COLUMNS.has(column)) &&
-					!unresolvedPayload
-				)
-					continue;
 				emit(node, operation, table, {
 					...(reportedColumns.length > 0 ? { columns: reportedColumns } : {}),
 					...(correction
@@ -2605,8 +2617,10 @@ function analyzeApprovalWriteMutationsInContext(
 			}
 			emit(node, operation, table, {
 				...(reportedColumns.length > 0 ? { columns: reportedColumns } : {}),
-				...(table === "time_entry" && columns.length > 0
-					? { semantic: "correction_lifecycle" as const }
+				...(table === "time_entry"
+					? columns.some((column) => TIME_ENTRY_LIFECYCLE_COLUMNS.has(column))
+						? { semantic: "correction_lifecycle" as const }
+						: {}
 					: table === "time_record"
 						? {
 								semantic:
@@ -2615,12 +2629,38 @@ function analyzeApprovalWriteMutationsInContext(
 										: ("ordinary_finalization" as const),
 							}
 						: table === "time_record_work" || table === "time_record_allocation"
-							? { semantic: "policy_clock_out_terminal_break" as const }
-							: {}),
+							? operation === "insert"
+								? { semantic: "policy_clock_out_terminal_break" as const }
+								: {}
+							: operation === "update" && limitedToLiveWork(node)
+								? { semantic: "live_work" as const }
+								: {}),
 				...(unresolvedPayload
 					? { uncertainty: "dynamic_payload" as const }
 					: {}),
 			});
+		}
+	};
+	/** A delete of work without a `where` of its own deletes every row it reaches. */
+	const inspectUnfilteredSourceDelete = (
+		node: ts.CallExpression,
+		access: { name: string; target: ts.Expression },
+	): void => {
+		if (access.name !== "delete" || !node.arguments[0]) return;
+		const parent = node.parent;
+		if (
+			parent &&
+			ts.isPropertyAccessExpression(parent) &&
+			propertyAccess(parent)?.name === "where"
+		)
+			return;
+		const position = node.getStart(sourceFile);
+		if (!resolveExpression(access.target, position).has("database_receiver"))
+			return;
+		for (const value of resolveExpression(node.arguments[0], position)) {
+			if (!value.startsWith("table:")) continue;
+			const table = value.slice(6) as ProtectedWriteTable;
+			if (SOURCE_TABLES.has(table)) emit(node, "delete", table);
 		}
 	};
 	const inspect = (node: ts.Node): void => {
@@ -2629,6 +2669,7 @@ function analyzeApprovalWriteMutationsInContext(
 			if (access) {
 				inspectSourceDelete(node, access);
 				inspectSourceMutation(node, access);
+				inspectUnfilteredSourceDelete(node, access);
 			}
 			const callPosition = node.getStart(sourceFile);
 			if (

@@ -7,16 +7,19 @@ import { getVehicleUseAdminDataAction } from "./actions";
 
 async function VehicleUseSettingsPageContent() {
 	await requireOrgAdminSettingsAccess();
-	const [t, result] = await Promise.all([getTranslate(), getVehicleUseAdminDataAction()]);
+	const [t, result] = await Promise.all([
+		getTranslate(),
+		getVehicleUseAdminDataAction(),
+	]);
 
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold">
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<div className="min-w-0 space-y-4">
+				<div className="flex flex-col gap-2">
+					<h1 className="text-2xl font-semibold tracking-tight">
 						{t("settings.vehicleUse.title", "Vehicle use")}
 					</h1>
-					<p className="text-muted-foreground">
+					<p className="text-sm text-muted-foreground">
 						{t(
 							"settings.vehicleUse.description",
 							"Who is asked to record the vehicle they drove and its odometer readings",
@@ -40,8 +43,8 @@ async function VehicleUseSettingsPageContent() {
 
 function VehicleUseSettingsPageLoading() {
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<div className="min-w-0 space-y-4">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-56" />
 					<Skeleton className="h-5 w-full max-w-xl" />

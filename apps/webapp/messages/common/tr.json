@@ -373,6 +373,8 @@
     "previous": "Önceki",
     "recovering": "Kurtarılıyor...",
     "refresh": "Yenile",
+    "refreshData": "Verileri yenile",
+    "refreshDataFailed": "Veriler yenilenemedi. Lütfen tekrar deneyin.",
     "refreshing": "Yenileniyor...",
     "reject": "Reddet",
     "rejecting": "Reddediliyor…",
@@ -2528,6 +2530,9 @@
     "theme-time": "Zamana dayalı",
     "theme-time-info": "Zamana dayalı mod {currentMode} modunu kullanıyor. {time} saatinde {nextMode} moduna geçiş yapar.",
     "theme-toggle": "Temayı değiştir"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Takip öncesinde kullanılan {days} günü içerir"
   },
   "validation": {
     "first-name-required": "Ad gerekli",

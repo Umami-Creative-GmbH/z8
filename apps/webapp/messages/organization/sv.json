@@ -50,7 +50,6 @@
       "description": "Konfigurera din organisation för att komma igång",
       "title": "Skapa organisation"
     },
-    "createError": "Det gick inte att skapa organisationen",
     "createNew": "Skapa ny organisation",
     "createSuccess": "Organisationen har skapats!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Ägare"
     },
     "slugDescription": "Används i URL:er. Genereras automatiskt från namnet.",
-    "slugErrors": {
-      "format": "Sluggen får endast innehålla små bokstäver, siffror och bindestreck",
-      "hyphen": "Sluggen får inte börja eller sluta med ett bindestreck",
-      "max": "Sluggen måste vara kortare än 50 tecken",
-      "min": "Sluggen måste vara minst 2 tecken"
-    },
     "slugLabel": "Organisationsslug",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "Denna slug är redan upptagen. Välj en annan.",
@@ -372,6 +365,56 @@
       "updated": "Organisationens tidszon har uppdaterats till {timezone}",
       "update-failed": "Det gick inte att uppdatera organisationens tidszon"
     },
-    "title": "Organisationsutforskare"
+    "title": "Organisationsutforskare",
+    "tracking": {
+      "activate-reviewed": "Aktivera granskat datum",
+      "activation-description": "Välj det faktiska införandedatumet och granska dess påverkan innan du sparar. Det ursprungliga förslaget använder din organisations skapandedatum i dess tidszon. Detta ändrar spårningen utan att korrigera någons anställningsdatum.",
+      "actual": "Slutfört arbete",
+      "affected-periods": "Påverkade månader",
+      "after": "Efter",
+      "balance": "Arbetssaldo",
+      "before": "Före",
+      "blocked-save": "Återöppna de påverkade stängda månaderna och generera en ny förhandsgranskning.",
+      "change-date": "Ändra spårningsdatum",
+      "closed": "Stängd",
+      "closed-blockers": "Åtgärda problemen nedan innan du genererar en ny förhandsgranskning och sparar.",
+      "closed-settings": "Öppna inställningar för stängda månader",
+      "commit-failed": "Det gick inte att spara den granskade ändringen. Generera en ny förhandsgranskning och försök igen.",
+      "day-unit": "dagar",
+      "description": "Detta datum styr obligatorisk tid och ackumulerade arbetssaldon. Anställdas faktiska anställningsdatum avgör deras semesterrätt.",
+      "employee-impacts": "Påverkan på anställdas saldon",
+      "employee-zone": "Anställds tidszon",
+      "ending-balance": "Saldo vid månadsslut",
+      "exception-conflict": "Undantaget för anställd {exception} infaller före det nya minimivärdet {minimum}. Ta bort eller ändra undantaget för den anställde först.",
+      "hours": "Timmar",
+      "hours-caption": "Timmar före och efter",
+      "hour-unit": "timmar",
+      "invalid-date": "Välj ett giltigt kalenderdatum.",
+      "legacy": "Din nuvarande beräkning av arbetssaldo används fortfarande. Inget startdatum för tidsspårning har aktiverats.",
+      "no-boundary": "Ingen beräkningsstart",
+      "no-changed-periods": "Inga resultat för slutförda månader ändras.",
+      "no-employees": "Inga saldon för anställda påverkas.",
+      "old-boundary": "Aktuell beräkningsstart",
+      "opening-preserved": "Ingående saldo bevarat:",
+      "preview": "Förhandsgranska påverkan",
+      "preview-failed": "Kunde inte generera förhandsgranskningen. Försök igen.",
+      "proposed-boundary": "Föreslagen start för tidsregistrering",
+      "reason": "Anledning till ändringen",
+      "reason-required": "Ange en anledning innan du sparar.",
+      "required": "Krävd tid",
+      "review-explanation": "Granska gällande datum, obligatoriska timmar och arbetssaldon nedan. Anställningsdatum och semesterrätter förblir oförändrade. Saldon beräknas till och med den senaste slutförda dagen i respektive medarbetares tidszon.",
+      "review-title": "Granskning av påverkan för tidsregistreringsdatum",
+      "saved": "Datum för tidsregistrering har sparats och saldon har uppdaterats.",
+      "saved-date": "Nuvarande datum för organisationens tidsregistrering:",
+      "saved-pending": "Datum för tidsregistrering har sparats. Arbetssaldon räknas om.",
+      "save-reviewed": "Spara granskat datum",
+      "setup-description": "Krävd tid och arbetssaldon börjar på detta datum, eller vid medarbetarens faktiska anställningsstart om den infaller senare. Anställningsdatum avgör fortfarande semesterrätten. Förslaget baseras på organisationens skapandedatum i dess tidszon.",
+      "setup-timezone": "Organisationens tidszon",
+      "stale-preview": "De granskade uppgifterna har ändrats. Generera en ny förhandsgranskning innan du sparar.",
+      "start-date": "Startdatum för tidsregistrering",
+      "through-date": "Saldon till och med",
+      "title": "Start för tidsregistrering",
+      "vacation-unchanged": "Semesterrätt och saldo oförändrade:"
+    }
   }
 }

@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "Τα employeeIds πρέπει να είναι πίνακας",
       "employeeIdsMustContainOnlyStrings": "Τα employeeIds πρέπει να περιέχουν μόνο συμβολοσειρές",
       "endDateAfterStart": "Η ημερομηνία λήξης πρέπει να είναι μεταγενέστερη ή ίση με την ημερομηνία έναρξης",
+      "exportBlockedByDuplicateIdentifier": "Η εξαγωγή αποκλείστηκε: αρκετοί εργαζόμενοι μοιράζονται το ίδιο αναγνωριστικό προσωπικού. Ορίστε ένα μοναδικό για κάθε εργαζόμενο: {employees}",
       "exportBlockedByMissingIdentifier": "Η εξαγωγή αποκλείστηκε: ορισμένοι εργαζόμενοι δεν έχουν τιμή για το προσαρμοσμένο πεδίο που χρησιμοποιείται ως αναγνωριστικό μισθοδοσίας",
       "exportBlockedByOffboardingClockRepair": "Η εξαγωγή αποκλείστηκε: διορθώστε πρώτα την αποχώρηση offboarding",
       "exportBlockedByUncertainWork": "Η εξαγωγή αποκλείστηκε: επιλύστε πρώτα την αβέβαιη εργασία στο επιλεγμένο εύρος",

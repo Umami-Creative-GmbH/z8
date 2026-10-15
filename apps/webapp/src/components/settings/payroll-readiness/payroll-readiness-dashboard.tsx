@@ -172,14 +172,27 @@ function AffectedEmployeesTable({
 	t: TranslateFn;
 	employees: PayrollReadinessCheck["affectedEmployees"];
 }) {
+	// A check about personnel identifiers (#1198) shows what the export writes for each employee.
+	const showsPersonnelIdentifier = employees.some(
+		(employee) => employee.personnelIdentifier !== undefined,
+	);
+
 	return (
 		<Table>
 			<TableHeader>
 				<TableRow>
 					<TableHead>{t("settings.payrollReadiness.affectedEmployees.name", "Employee")}</TableHead>
 					<TableHead>
-						{t("settings.payrollReadiness.affectedEmployees.number", "Employee number")}
+						{t("settings.payrollReadiness.affectedEmployees.personnelNumber", "Personnel number")}
 					</TableHead>
+					{showsPersonnelIdentifier ? (
+						<TableHead>
+							{t(
+								"settings.payrollReadiness.affectedEmployees.personnelIdentifier",
+								"Personnel identifier",
+							)}
+						</TableHead>
+					) : null}
 				</TableRow>
 			</TableHeader>
 			<TableBody>
@@ -199,6 +212,9 @@ function AffectedEmployeesTable({
 							{employee.employeeNumber ??
 								t("settings.payrollReadiness.affectedEmployees.noNumber", "Not set")}
 						</TableCell>
+						{showsPersonnelIdentifier ? (
+							<TableCell className="break-words">{employee.personnelIdentifier}</TableCell>
+						) : null}
 					</TableRow>
 				))}
 			</TableBody>
@@ -247,6 +263,8 @@ function getActionLabel(href: string | undefined, t: TranslateFn) {
 			return t("settings.payrollReadiness.actions.payrollExport", "Open payroll export settings");
 		case "/approvals/inbox?types=travel_expense_report,travel_expense_claim":
 			return t("settings.payrollReadiness.actions.travelExpenses", "Review travel expenses");
+		case "/settings/employees":
+			return t("settings.payrollReadiness.actions.employees", "Review employees");
 		default:
 			return undefined;
 	}

@@ -1,3 +1,4 @@
+import { FieldApi, FormApi } from "@tanstack/react-form";
 import { describe, expect, it, vi } from "vitest";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import {
@@ -5,8 +6,11 @@ import {
 	defaultFormValues,
 	formatEmployeeDetailDateInputValue,
 	parseEmployeeDetailDateInputValue,
+	showEmployeeSaveRefusal,
 	syncEmployeeForm,
 } from "./page-utils";
+
+const defaultValues = defaultFormValues;
 
 describe("employee detail page utilities", () => {
 	it("includes an empty start date in default form values", () => {
@@ -45,6 +49,38 @@ describe("employee detail page utilities", () => {
 		expect(buildEmployeeUpdatePayload(defaultFormValues)).toEqual(
 			expect.objectContaining({ startDate: null }),
 		);
+	});
+});
+
+describe("showEmployeeSaveRefusal", () => {
+	function createForm() {
+		const form = new FormApi({ defaultValues });
+		form.mount();
+		new FieldApi({ form, name: "employeeNumber" }).mount();
+		return form;
+	}
+
+	it("puts a taken personnel number on the personnel number field", () => {
+		const form = createForm();
+
+		const shown = showEmployeeSaveRefusal(form as never, {
+			error: "This personnel number belongs to Ada Holder.",
+			refusal: "personnel_number_taken",
+		});
+
+		expect(shown).toBe(true);
+		expect(form.getFieldMeta("employeeNumber")?.errors).toEqual([
+			"This personnel number belongs to Ada Holder.",
+		]);
+	});
+
+	it("leaves other failures to the caller", () => {
+		const form = createForm();
+
+		expect(showEmployeeSaveRefusal(form as never, { error: "Failed to update employee" })).toBe(
+			false,
+		);
+		expect(form.getFieldMeta("employeeNumber")?.errors).toEqual([]);
 	});
 });
 

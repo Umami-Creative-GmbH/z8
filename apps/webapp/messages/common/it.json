@@ -373,6 +373,8 @@
     "previous": "Precedente",
     "recovering": "Ripristino in corso...",
     "refresh": "Aggiorna",
+    "refreshData": "Aggiorna dati",
+    "refreshDataFailed": "Impossibile aggiornare i dati. Riprova.",
     "refreshing": "Aggiornamento in corso...",
     "reject": "Rifiuta",
     "rejecting": "Rifiuto in corso…",
@@ -2528,6 +2530,9 @@
     "theme-time": "Basato sull'orario",
     "theme-time-info": "La modalità basata sull'orario sta utilizzando {currentMode}. Passerà a {nextMode} alle {time}.",
     "theme-toggle": "Cambia tema"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Include {days} giorni già fruiti prima del tracciamento"
   },
   "validation": {
     "first-name-required": "Il nome è obbligatorio",

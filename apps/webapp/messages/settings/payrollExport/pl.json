@@ -156,6 +156,7 @@
         "deleteTitle": "Usuń mapowanie",
         "description": "Opis",
         "formatSpecificHint": "Skonfiguruj kody typów płac dla każdego formatu płacowego. Wymagany jest co najmniej jeden.",
+        "loadFailed": "Nie udało się załadować mapowania składników wynagrodzeń",
         "noMappings": "Brak skonfigurowanych mapowań",
         "saveError": "Nie udało się zapisać mapowania",
         "saveSuccess": "Mapowanie zapisane",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Przejrzyj skrzynkę zatwierdzeń",
+        "employees": "Sprawdź pracowników",
         "payrollExport": "Otwórz ustawienia eksportu listy płac",
         "timeTracking": "Przejrzyj ewidencję czasu pracy",
         "travelExpenses": "Przejrzyj koszty podróży"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Pracownik",
         "noNumber": "Nie ustawiono",
-        "number": "Numer pracownika"
+        "personnelIdentifier": "Identyfikator kadrowy",
+        "personnelNumber": "Numer kadrowy"
       },
       "checks": {
         "count": "Liczba",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Pracownicy, których eksport płacowy zapisałby pod tym samym identyfikatorem kadrowym. System płacowy połączyłby ich dane, dlatego eksport jest odrzucany, dopóki każdy pracownik nie będzie miał własnego identyfikatora.",
+          "title": "Współdzielone identyfikatory kadrowe"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Wszyscy aktywni pracownicy mają potwierdzoną historię zatrudnienia dla tego okresu rozliczeniowego.",
           "descriptionWarning": "Niektórzy aktywni pracownicy nie mają potwierdzonej historii zatrudnienia dla tego okresu rozliczeniowego."
@@ -409,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Oczekująca praca bez wniosku o zatwierdzenie",
         "approvalStateConflict": "Stany zatwierdzenia są niezgodne",
+        "attributionUnrepresentable": "Oznaczenie jako rozliczalne lub zadanie bez projektu",
         "canonicalDetailMissing": "Brak szczegółów pracy we wpisie czasu pracy",
         "canonicalLinkMissing": "Brak powiązania z wpisem czasu pracy",
         "canonicalLinkShared": "Kilka okresów pracy wskazuje na jeden wpis czasu pracy",
         "canonicalLinkUnresolved": "Nie znaleziono powiązanego wpisu czasu pracy",
         "canonicalMissing": "Brak wpisu czasu pracy",
+        "canonicalMissingClosedMonth": "Brakujący wpis czasu pracy w zamkniętym miesiącu",
         "captureInferred": "Strefa czasowa wywnioskowana po zdarzeniu",
         "deletedWorkPayable": "Usunięta praca nadal ma płatny wpis czasu pracy",
         "durationConflict": "Zapisane czasy trwania są niezgodne",
@@ -561,7 +570,8 @@
           "noRestorableEvidence": "Brak dowodów określających brakującą wartość",
           "originalActorUnrepresentable": "Żaden wpis nie wskazuje, kto wykonał pracę",
           "originalRuleUnknown": "Żadna reprezentacja nie zawiera minut; pierwotne zaokrąglenie jest nieznane",
-          "referenceOutsideOrganization": "Wskazany projekt lub kategoria nie należy do tej organizacji"
+          "referenceOutsideOrganization": "Wskazany projekt lub kategoria nie należy do tej organizacji",
+          "repairLeavesDivergence": "Uzupełniony czas pracy nadal nie zgadzałby się ze swoim kanonicznym wpisem; wymaga weryfikacji"
         },
         "inactive": "Brak autoryzacji",
         "inactiveDescription": "Naprawa wymaga osobnej autoryzacji dla tej organizacji. Plan pozostaje dostępny do odczytu.",

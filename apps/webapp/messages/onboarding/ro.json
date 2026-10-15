@@ -9,30 +9,11 @@
       "inviteTeamDesc": "Adaugă colegi pentru a colabora și a gestiona timpul împreună",
       "loading": "Se finalizează configurarea...",
       "nextStepsTitle": "Pașii următori",
+      "setUpHolidays": "Configurează sărbătorile legale",
+      "setUpHolidaysDesc": "Alege țara și regiunea în setările pentru sărbători",
       "subtitle": "Contul tău este gata de utilizare. Bun venit în echipă!",
       "summaryError": "Nu s-a putut obține rezumatul configurării inițiale",
       "title": "Totul este pregătit!"
-    },
-    "holidaySetup": {
-      "cardDesc": "Alege țara pentru a importa sărbătorile legale. Poți personaliza sărbătorile mai târziu în setări.",
-      "cardTitle": "Presetare de sărbători",
-      "continue": "Continuă",
-      "country": "Țară",
-      "countryDesc": "Sărbătorile legale vor fi importate în funcție de selecția ta.",
-      "error": "Nu s-a putut crea presetarea de sărbători",
-      "noCountry": "Nicio țară găsită.",
-      "presetName": "Nume presetare",
-      "presetNameDesc": "Un nume pentru a identifica această presetare de sărbători.",
-      "presetNamePlaceholder": "de ex., Sărbători Germania",
-      "searchCountry": "Caută țări...",
-      "selectCountry": "Selectează o țară",
-      "setAsDefault": "Setează ca prestabilit pentru organizație",
-      "setAsDefaultDesc": "Aplică această presetare de sărbători legale tuturor angajaților.",
-      "skip": "Omite pentru moment",
-      "skipError": "Nu s-a putut omite configurarea sărbătorilor legale",
-      "subtitle": "Selectează țara pentru a importa sărbătorile legale. Acest lucru ajută la monitorizarea exactă a concediilor.",
-      "success": "Presetarea de sărbători a fost creată!",
-      "title": "Configurează sărbătorile"
     },
     "notifications": {
       "approvals": "Cereri de aprobare",
@@ -67,13 +48,31 @@
     "organization": {
       "create": "Creează o organizație",
       "createDescription": "Configurează-ți propria organizație și invită-ți echipa",
+      "createError": "Nu s-a putut crea organizația",
+      "createSuccess": "Organizația a fost creată cu succes!",
       "createTitle": "Creează o organizație",
       "disabledSkipDescription": "Puteți continua omițând acest pas în timp ce așteptați o invitație la o organizație existentă.",
       "disabledSubtitle": "Crearea organizațiilor este dezactivată pentru această implementare.",
+      "nameErrors": {
+        "max": "Numele organizației trebuie să aibă mai puțin de 100 de caractere",
+        "min": "Numele organizației trebuie să aibă cel puțin 2 caractere"
+      },
+      "nameLabel": "Numele organizației",
+      "namePlaceholder": "Acme Inc.",
       "skip": "Omite pentru moment",
       "skipDescription": "Dacă administratorul tău urmează să te invite într-o organizație, poți omite acest pas pentru moment.",
       "skipError": "Nu s-a putut omite configurarea organizației",
       "skipTitle": "Aștepți o invitație?",
+      "slugDescription": "Utilizat în adresele URL. Generat automat din nume.",
+      "slugErrors": {
+        "format": "Slug-ul trebuie să conțină doar litere mici, cifre și cratime",
+        "hyphen": "Slug-ul nu poate începe sau să se termine cu o cratimă",
+        "max": "Slug-ul trebuie să aibă mai puțin de 50 de caractere",
+        "min": "Slug-ul trebuie să aibă cel puțin 2 caractere"
+      },
+      "slugLabel": "Slug organizație",
+      "slugPlaceholder": "acme-inc",
+      "slugTaken": "Acest slug este deja utilizat. Vă rugăm să alegeți altul.",
       "subtitle": "Creează-ți organizația pentru a debloca toate funcționalitățile sau omite dacă aștepți o invitație.",
       "title": "Configurează-ți organizația"
     },
@@ -102,14 +101,21 @@
       "timeFormat24h": "24 de ore (08:00)",
       "timeFormatDesc": "Această setare controlează modul în care este afișată ora.",
       "title": "Completează-ți profilul",
+      "validation": {
+        "firstNameRequired": "Prenumele este obligatoriu",
+        "firstNameTooLong": "Prenumele trebuie să aibă maximum 50 de caractere",
+        "lastNameRequired": "Numele de familie este obligatoriu",
+        "lastNameTooLong": "Numele de familie trebuie să aibă maximum 50 de caractere"
+      },
       "weekStartDay": "Prima zi a săptămânii",
       "weekStartDayDesc": "Această setare controlează modul în care sunt afișate calendarele și rezumatele săptămânale."
     },
     "steps": {
       "complete": "Finalizează",
-      "holidaySetup": "Sărbători legale",
+      "label": "Progresul integrării",
       "notifications": "Notificări",
       "organization": "Organizație",
+      "position": "Pasul {current} din {total}",
       "profile": "Profil",
       "vacationPolicy": "Concediu",
       "welcome": "Bun venit",
@@ -144,7 +150,13 @@
       "skipError": "Nu s-a putut omite configurarea politicii de concediu",
       "subtitle": "Creează o politică de concediu pentru organizația ta. Aceasta stabilește câte zile libere primesc angajații.",
       "success": "Politica de concediu a fost creată!",
-      "title": "Configurează politica de concediu"
+      "title": "Configurează politica de concediu",
+      "validation": {
+        "daysNegative": "Numărul de zile nu poate fi negativ",
+        "daysTooMany": "Numărul de zile nu poate depăși 365",
+        "nameRequired": "Numele politicii este obligatoriu",
+        "nameTooLong": "Numele politicii trebuie să aibă maximum 100 de caractere"
+      }
     },
     "welcome": {
       "continueSetup": "Continuă configurarea",
@@ -177,6 +189,24 @@
       "features": "Ce vei primi",
       "glass": "pahar",
       "glasses": "pahare",
+      "presets": {
+        "active": {
+          "description": "La fiecare 30 de minute – pentru activitate intensă sau medii călduroase",
+          "label": "Activ"
+        },
+        "custom": {
+          "description": "Setați propriul interval (15-120 de minute)",
+          "label": "Personalizat"
+        },
+        "light": {
+          "description": "La fiecare 60 de minute – pentru activitate redusă",
+          "label": "Ușor"
+        },
+        "moderate": {
+          "description": "La fiecare 45 de minute – recomandat pentru majoritatea persoanelor",
+          "label": "Moderat"
+        }
+      },
       "recommended": "(Recomandat)",
       "reminderFrequency": "Frecvența mementourilor",
       "skip": "Omite pentru moment",
@@ -203,6 +233,10 @@
       "subtitle": "Definiți-vă orele de lucru pentru a urmări timpul și a gestiona absențele cu precizie.",
       "success": "Programul de lucru a fost setat cu succes!",
       "title": "Setați-vă programul de lucru",
+      "validation": {
+        "hoursNegative": "Numărul de ore nu poate fi negativ",
+        "hoursTooMany": "O săptămână are cel mult 168 de ore"
+      },
       "weekly": "Săptămânal"
     },
     "workTemplates": {
@@ -226,6 +260,12 @@
       "subtitle": "Configurați un șablon de program de lucru pentru organizația dvs. Acesta definește orele de lucru pentru echipa dvs.",
       "success": "Șablonul de program de lucru a fost creat!",
       "title": "Creare șablon de program de lucru",
+      "validation": {
+        "hoursNegative": "Numărul de ore nu poate fi negativ",
+        "hoursTooMany": "O săptămână are cel mult 168 de ore",
+        "nameRequired": "Numele șablonului este obligatoriu",
+        "nameTooLong": "Numele șablonului trebuie să aibă maximum 100 de caractere"
+      },
       "workingDays": "Zile lucrătoare",
       "workingDaysDesc": "Selectați zilele lucrătoare. Orele vor fi distribuite uniform."
     }

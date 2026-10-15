@@ -156,6 +156,7 @@
         "deleteTitle": "Obriši mapiranje",
         "description": "Opis",
         "formatSpecificHint": "Konfigurišite kodove vrsta plaća za svaki format obračuna plate. Potreban je najmanje jedan.",
+        "loadFailed": "Učitavanje mapiranja vrsta plata nije uspjelo",
         "noMappings": "Još nema konfigurisanih mapiranja",
         "saveError": "Čuvanje mapiranja nije uspjelo",
         "saveSuccess": "Mapiranje je sačuvano",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Pregledajte sanduče za odobrenja",
+        "employees": "Pregledaj zaposlenike",
         "payrollExport": "Otvorite postavke izvoza obračuna plata",
         "timeTracking": "Pregledajte evidenciju radnog vremena",
         "travelExpenses": "Pregledajte putne troškove"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Zaposlenik",
         "noNumber": "Nije postavljeno",
-        "number": "Broj zaposlenika"
+        "personnelIdentifier": "Identifikator osoblja",
+        "personnelNumber": "Kadrovski broj"
       },
       "checks": {
         "count": "Broj",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Zaposlenici koje bi izvoz obračuna plata upisao pod istim identifikatorom osoblja. Sistem za obračun plata bi ih spojio, pa je izvoz odbijen dok svaki zaposlenik ne dobije vlastiti.",
+          "title": "Dijeljeni identifikatori osoblja"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Svi aktivni zaposlenici imaju potvrđenu historiju zaposlenja za ovaj obračunski period.",
           "descriptionWarning": "Neki aktivni zaposlenici nemaju potvrđenu historiju zaposlenja za ovaj obračunski period."
@@ -409,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Rad na čekanju bez zahtjeva za odobrenje",
         "approvalStateConflict": "Statusi odobrenja se ne podudaraju",
+        "attributionUnrepresentable": "Oznaka naplativosti ili zadatak bez projekta",
         "canonicalDetailMissing": "Nedostaju detalji rada u evidenciji radnog vremena",
         "canonicalLinkMissing": "Nedostaje veza s evidencijom radnog vremena",
         "canonicalLinkShared": "Nekoliko radnih perioda povezano je s jednom evidencijom radnog vremena",
         "canonicalLinkUnresolved": "Povezana evidencija radnog vremena nije pronađena",
         "canonicalMissing": "Nedostaje evidencija radnog vremena",
+        "canonicalMissingClosedMonth": "Nedostaje zapis radnog vremena u zatvorenom mjesecu",
         "captureInferred": "Evidentiranje vremenske zone izvedeno nakon događaja",
         "deletedWorkPayable": "Obrisani rad i dalje ima plativu evidenciju radnog vremena",
         "durationConflict": "Pohranjena trajanja se ne podudaraju",
@@ -561,7 +570,8 @@
           "noRestorableEvidence": "Nema dokaza koji utvrđuju vrijednost koja nedostaje",
           "originalActorUnrepresentable": "Nijedan unos ne navodi ko je završio rad",
           "originalRuleUnknown": "Nijedan prikaz ne sadrži minute; originalno zaokruživanje je nepoznato",
-          "referenceOutsideOrganization": "Referencirani projekat ili kategorija ne pripadaju ovoj organizaciji"
+          "referenceOutsideOrganization": "Referencirani projekat ili kategorija ne pripadaju ovoj organizaciji",
+          "repairLeavesDivergence": "Uneseni rad se i dalje ne bi podudarao sa svojim kanonskim zapisom; potreban je pregled"
         },
         "inactive": "Nije autorizovano",
         "inactiveDescription": "Popravak zahtijeva zasebnu autorizaciju za ovu organizaciju. Plan ostaje čitljiv.",

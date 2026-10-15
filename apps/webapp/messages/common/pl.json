@@ -373,6 +373,8 @@
     "previous": "Poprzedni",
     "recovering": "Odzyskiwanie...",
     "refresh": "Odśwież",
+    "refreshData": "Odśwież dane",
+    "refreshDataFailed": "Nie udało się odświeżyć danych. Spróbuj ponownie.",
     "refreshing": "Odświeżanie...",
     "reject": "Odrzuć",
     "rejecting": "Odrzucanie...",
@@ -2528,6 +2530,9 @@
     "theme-time": "Oparty na czasie",
     "theme-time-info": "Tryb oparty na czasie używa trybu {currentMode}. Przełączy się na {nextMode} o {time}.",
     "theme-toggle": "Przełącz motyw"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Obejmuje {days} dni wykorzystanych przed rozpoczęciem rejestrowania"
   },
   "validation": {
     "first-name-required": "Imię jest wymagane",

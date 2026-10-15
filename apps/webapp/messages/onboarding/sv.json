@@ -9,30 +9,11 @@
       "inviteTeamDesc": "Lägg till kollegor för att samarbeta och hantera tid tillsammans",
       "loading": "Slutför konfigurationen...",
       "nextStepsTitle": "Nästa steg",
+      "setUpHolidays": "Ställ in allmänna helgdagar",
+      "setUpHolidaysDesc": "Välj ditt land och din region i inställningarna för helgdagar",
       "subtitle": "Ditt konto är redo att användas. Välkommen till teamet!",
       "summaryError": "Det gick inte att hämta introduktionssammanfattning",
       "title": "Allt är klart!"
-    },
-    "holidaySetup": {
-      "cardDesc": "Välj ditt land för att importera allmänna helgdagar. Du kan anpassa helgdagar senare i inställningarna.",
-      "cardTitle": "Förinställning för helgdagar",
-      "continue": "Fortsätt",
-      "country": "Land",
-      "countryDesc": "Allmänna helgdagar kommer att importeras baserat på ditt val.",
-      "error": "Kunde inte skapa förinställning för helgdagar",
-      "noCountry": "Inget land hittades.",
-      "presetName": "Förinställningens namn",
-      "presetNameDesc": "Ett namn för att identifiera denna förinställning för helgdagar.",
-      "presetNamePlaceholder": "t.ex. Helgdagar i Tyskland",
-      "searchCountry": "Sök länder...",
-      "selectCountry": "Välj ett land",
-      "setAsDefault": "Ange som organisationsstandard",
-      "setAsDefaultDesc": "Tillämpa denna helgdagsförinställning på alla anställda.",
-      "skip": "Hoppa över så länge",
-      "skipError": "Det gick inte att hoppa över inställning av helgdagar",
-      "subtitle": "Välj ditt land för att importera allmänna helgdagar. Detta hjälper till att registrera ledighet korrekt.",
-      "success": "Helgdagsförinställning har skapats!",
-      "title": "Konfigurera helgdagar"
     },
     "notifications": {
       "approvals": "Godkännandeförfrågningar",
@@ -67,13 +48,31 @@
     "organization": {
       "create": "Skapa organisation",
       "createDescription": "Skapa din egen organisation och bjud in ditt team",
+      "createError": "Det gick inte att skapa organisationen",
+      "createSuccess": "Organisationen har skapats!",
       "createTitle": "Skapa organisation",
       "disabledSkipDescription": "Du kan fortsätta genom att hoppa över detta steg medan du väntar på en inbjudan till en befintlig organisation.",
       "disabledSubtitle": "Skapande av organisationer är inaktiverat för denna distribution.",
+      "nameErrors": {
+        "max": "Organisationsnamnet måste vara kortare än 100 tecken",
+        "min": "Organisationsnamnet måste innehålla minst 2 tecken"
+      },
+      "nameLabel": "Organisationsnamn",
+      "namePlaceholder": "Acme Inc.",
       "skip": "Hoppa över så länge",
       "skipDescription": "Om din administratör kommer att bjuda in dig till en organisation kan du hoppa över det här steget så länge.",
       "skipError": "Det gick inte att hoppa över inställning av organisation",
       "skipTitle": "Väntar du på en inbjudan?",
+      "slugDescription": "Används i webbadresser. Genereras automatiskt från namnet.",
+      "slugErrors": {
+        "format": "Slug får endast innehålla små bokstäver, siffror och bindestreck",
+        "hyphen": "Slug får inte börja eller sluta med ett bindestreck",
+        "max": "Slug måste vara kortare än 50 tecken",
+        "min": "Slug måste innehålla minst 2 tecken"
+      },
+      "slugLabel": "Organisationens slug",
+      "slugPlaceholder": "acme-inc",
+      "slugTaken": "Denna slug är redan upptagen. Välj en annan.",
       "subtitle": "Skapa din organisation för att låsa upp alla funktioner, eller hoppa över om du väntar på en inbjudan.",
       "title": "Konfigurera din organisation"
     },
@@ -102,14 +101,21 @@
       "timeFormat24h": "24-timmars (08:00)",
       "timeFormatDesc": "Detta styr hur klockslag visas.",
       "title": "Slutför din profil",
+      "validation": {
+        "firstNameRequired": "Förnamn krävs",
+        "firstNameTooLong": "Förnamn får innehålla högst 50 tecken",
+        "lastNameRequired": "Efternamn krävs",
+        "lastNameTooLong": "Efternamn får innehålla högst 50 tecken"
+      },
       "weekStartDay": "Veckans första dag",
       "weekStartDayDesc": "Detta styr hur kalendrar och veckosammanfattningar visas."
     },
     "steps": {
       "complete": "Slutför",
-      "holidaySetup": "Helgdagar",
+      "label": "Introduktionsförlopp",
       "notifications": "Aviseringar",
       "organization": "Organisation",
+      "position": "Steg {current} av {total}",
       "profile": "Profil",
       "vacationPolicy": "Semester",
       "welcome": "Välkommen",
@@ -144,7 +150,13 @@
       "skipError": "Det gick inte att hoppa över inställning av semesterpolicy",
       "subtitle": "Skapa en semesterpolicy för din organisation. Detta avgör hur många lediga dagar de anställda får.",
       "success": "Semesterpolicy skapad!",
-      "title": "Konfigurera semesterpolicy"
+      "title": "Konfigurera semesterpolicy",
+      "validation": {
+        "daysNegative": "Dagar kan inte vara negativa",
+        "daysTooMany": "Dagar kan inte överstiga 365",
+        "nameRequired": "Policynamn krävs",
+        "nameTooLong": "Policynamnet får innehålla högst 100 tecken"
+      }
     },
     "welcome": {
       "continueSetup": "Fortsätt konfigureringen",
@@ -177,6 +189,24 @@
       "features": "Det här får du",
       "glass": "glas",
       "glasses": "glas",
+      "presets": {
+        "active": {
+          "description": "Var 30:e minut – för hög aktivitet eller varma miljöer",
+          "label": "Aktiv"
+        },
+        "custom": {
+          "description": "Ange ett eget intervall (15–120 minuter)",
+          "label": "Anpassad"
+        },
+        "light": {
+          "description": "Var 60:e minut – för låg aktivitet",
+          "label": "Lätt"
+        },
+        "moderate": {
+          "description": "Var 45:e minut – rekommenderas för de flesta",
+          "label": "Måttlig"
+        }
+      },
       "recommended": "(Rekommenderas)",
       "reminderFrequency": "Påminnelsefrekvens",
       "skip": "Hoppa över så länge",
@@ -203,6 +233,10 @@
       "subtitle": "Definiera dina arbetstider för att underlätta tidrapportering och hantera frånvaro korrekt.",
       "success": "Arbetsschemat har angetts!",
       "title": "Ange ditt arbetsschema",
+      "validation": {
+        "hoursNegative": "Timmar kan inte vara negativa",
+        "hoursTooMany": "En vecka har som mest 168 timmar"
+      },
       "weekly": "Veckovis"
     },
     "workTemplates": {
@@ -226,6 +260,12 @@
       "subtitle": "Konfigurera en arbetsschemamall för din organisation. Detta definierar arbetstiderna för ditt team.",
       "success": "Arbetsschemamall har skapats!",
       "title": "Skapa mall för arbetsschema",
+      "validation": {
+        "hoursNegative": "Timmar kan inte vara negativa",
+        "hoursTooMany": "En vecka har som mest 168 timmar",
+        "nameRequired": "Mallnamn krävs",
+        "nameTooLong": "Mallnamnet får innehålla högst 100 tecken"
+      },
       "workingDays": "Arbetsdagar",
       "workingDaysDesc": "Välj vilka dagar som är arbetsdagar. Timmarna fördelas jämnt."
     }

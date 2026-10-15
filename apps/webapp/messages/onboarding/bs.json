@@ -9,30 +9,11 @@
       "inviteTeamDesc": "Dodajte kolege kako biste sarađivali i zajedno upravljali vremenom",
       "loading": "Dovršavanje postavljanja...",
       "nextStepsTitle": "Sljedeći koraci",
+      "setUpHolidays": "Podesite državne praznike",
+      "setUpHolidaysDesc": "Odaberite svoju državu i regiju u postavkama praznika",
       "subtitle": "Vaš račun je spreman za korištenje. Dobrodošli u tim!",
       "summaryError": "Neuspjelo preuzimanje sažetka uvođenja",
       "title": "Sve je spremno!"
-    },
-    "holidaySetup": {
-      "cardDesc": "Odaberite svoju državu kako biste uvezli državne praznike. Praznike možete naknadno prilagoditi u postavkama.",
-      "cardTitle": "Predložak praznika",
-      "continue": "Nastavi",
-      "country": "Država",
-      "countryDesc": "Državni praznici će biti uvezeni na osnovu vašeg izbora.",
-      "error": "Kreiranje predloška praznika nije uspjelo",
-      "noCountry": "Nijedna država nije pronađena.",
-      "presetName": "Naziv predloška",
-      "presetNameDesc": "Naziv za identifikaciju ovog predloška praznika.",
-      "presetNamePlaceholder": "npr. Praznici u Njemačkoj",
-      "searchCountry": "Pretraži države...",
-      "selectCountry": "Odaberite državu",
-      "setAsDefault": "Postavi kao zadano za organizaciju",
-      "setAsDefaultDesc": "Primijeni ovaj predložak praznika na sve zaposlenike.",
-      "skip": "Preskoči za sada",
-      "skipError": "Neuspjelo preskakanje podešavanja praznika",
-      "subtitle": "Odaberite svoju državu za uvoz državnih praznika. To pomaže u tačnom praćenju slobodnih dana.",
-      "success": "Predložak praznika je kreiran!",
-      "title": "Podesite praznike"
     },
     "notifications": {
       "approvals": "Zahtjevi za odobrenje",
@@ -67,13 +48,31 @@
     "organization": {
       "create": "Kreirajte organizaciju",
       "createDescription": "Postavite vlastitu organizaciju i pozovite svoj tim",
+      "createError": "Kreiranje organizacije nije uspjelo",
+      "createSuccess": "Organizacija je uspješno kreirana!",
       "createTitle": "Kreirajte organizaciju",
       "disabledSkipDescription": "Možete nastaviti preskakanjem ovog koraka dok čekate pozivnicu za postojeću organizaciju.",
       "disabledSubtitle": "Kreiranje organizacije je onemogućeno za ovu implementaciju.",
+      "nameErrors": {
+        "max": "Naziv organizacije mora imati manje od 100 znakova",
+        "min": "Naziv organizacije mora imati najmanje 2 znaka"
+      },
+      "nameLabel": "Naziv organizacije",
+      "namePlaceholder": "Acme Inc.",
       "skip": "Preskočite za sada",
       "skipDescription": "Ako će vas administrator pozvati u organizaciju, ovaj korak možete za sada preskočiti.",
       "skipError": "Neuspjelo preskakanje podešavanja organizacije",
       "skipTitle": "Čekate pozivnicu?",
+      "slugDescription": "Koristi se u URL-ovima. Automatski se generiše na osnovu naziva.",
+      "slugErrors": {
+        "format": "Slug mora sadržavati samo mala slova, brojeve i crtice",
+        "hyphen": "Slug ne može početi ili završiti crticom",
+        "max": "Slug mora imati manje od 50 znakova",
+        "min": "Slug mora imati najmanje 2 znaka"
+      },
+      "slugLabel": "Slug organizacije",
+      "slugPlaceholder": "acme-inc",
+      "slugTaken": "Ovaj slug je već zauzet. Molimo odaberite drugi.",
       "subtitle": "Kreirajte svoju organizaciju kako biste otključali sve funkcije ili preskočite ako čekate pozivnicu.",
       "title": "Postavite svoju organizaciju"
     },
@@ -102,14 +101,21 @@
       "timeFormat24h": "24-satni (08:00)",
       "timeFormatDesc": "Ovo određuje kako se prikazuje vrijeme na satu.",
       "title": "Dovršite svoj profil",
+      "validation": {
+        "firstNameRequired": "Ime je obavezno",
+        "firstNameTooLong": "Ime mora imati 50 znakova ili manje",
+        "lastNameRequired": "Prezime je obavezno",
+        "lastNameTooLong": "Prezime mora imati 50 ili manje znakova"
+      },
       "weekStartDay": "Prvi dan u sedmici",
       "weekStartDayDesc": "Ovo određuje kako se prikazuju kalendari i sedmični pregledi."
     },
     "steps": {
       "complete": "Dovrši",
-      "holidaySetup": "Praznici",
+      "label": "Napredak uvođenja",
       "notifications": "Obavještenja",
       "organization": "Organizacija",
+      "position": "Korak {current} od {total}",
       "profile": "Profil",
       "vacationPolicy": "Godišnji odmor",
       "welcome": "Dobrodošli",
@@ -144,7 +150,13 @@
       "skipError": "Neuspjelo preskakanje podešavanja pravila o godišnjem odmoru",
       "subtitle": "Kreirajte politiku godišnjeg odmora za svoju organizaciju. Ovo određuje koliko slobodnih dana zaposlenici dobijaju.",
       "success": "Politika godišnjeg odmora kreirana!",
-      "title": "Postavite politiku godišnjeg odmora"
+      "title": "Postavite politiku godišnjeg odmora",
+      "validation": {
+        "daysNegative": "Broj dana ne može biti negativan",
+        "daysTooMany": "Broj dana ne može prelaziti 365",
+        "nameRequired": "Naziv pravila je obavezan",
+        "nameTooLong": "Naziv pravila mora imati 100 ili manje znakova"
+      }
     },
     "welcome": {
       "continueSetup": "Nastavi postavljanje",
@@ -177,6 +189,24 @@
       "features": "Šta dobijate",
       "glass": "čaša",
       "glasses": "čaše",
+      "presets": {
+        "active": {
+          "description": "Svakih 30 minuta – za visoku aktivnost ili topla okruženja",
+          "label": "Aktivno"
+        },
+        "custom": {
+          "description": "Postavite vlastiti interval (15–120 minuta)",
+          "label": "Prilagođeno"
+        },
+        "light": {
+          "description": "Svakih 60 minuta – za nisku aktivnost",
+          "label": "Lagano"
+        },
+        "moderate": {
+          "description": "Svakih 45 minuta – preporučeno za većinu ljudi",
+          "label": "Umjereno"
+        }
+      },
       "recommended": "(Preporučeno)",
       "reminderFrequency": "Učestalost podsjetnika",
       "skip": "Preskoči za sada",
@@ -203,6 +233,10 @@
       "subtitle": "Definišite svoje radno vrijeme kako biste tačno pratili vrijeme i upravljali odsustvima.",
       "success": "Raspored rada uspješno postavljen!",
       "title": "Postavite svoj raspored rada",
+      "validation": {
+        "hoursNegative": "Broj sati ne može biti negativan",
+        "hoursTooMany": "Sedmica može imati najviše 168 sati"
+      },
       "weekly": "Sedmično"
     },
     "workTemplates": {
@@ -226,6 +260,12 @@
       "subtitle": "Postavite šablon rasporeda rada za svoju organizaciju. Ovo definiše radno vrijeme za vaš tim.",
       "success": "Šablon rasporeda rada je kreiran!",
       "title": "Kreirajte predložak radnog rasporeda",
+      "validation": {
+        "hoursNegative": "Broj sati ne može biti negativan",
+        "hoursTooMany": "Sedmica može imati najviše 168 sati",
+        "nameRequired": "Naziv predloška je obavezan",
+        "nameTooLong": "Naziv predloška mora imati 100 ili manje znakova"
+      },
       "workingDays": "Radni dani",
       "workingDaysDesc": "Odaberite koji dani su radni. Sati će biti ravnomjerno raspoređeni."
     }

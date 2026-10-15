@@ -7,7 +7,6 @@
  */
 import { compareInstants, type Instant } from "@/lib/datetime/temporal-core";
 import { type BreakPolicyRegulation, calculateBreakDeficit } from "./break-policy-calculation";
-import { deriveWorkDurationMinutes } from "./work-duration";
 
 export interface WorkInterval {
 	startAt: Instant;
@@ -48,15 +47,13 @@ export interface AutomaticBreakPlan {
 	regulation: { id: string; name: string };
 	breakStartAt: Instant;
 	breakEndAt: Instant;
-	/** Each resulting segment rounds its own exact UTC elapsed time half up (#252). */
-	retainedMinutes: number;
-	generatedMinutes: number;
 }
 
 /**
  * The owed break, placed after the lower of the regulation's maximum uninterrupted
  * time and the applicable rule's threshold, or null when nothing is owed or the break
- * would not end strictly inside the work. A positive segment may round to zero minutes.
+ * would not end strictly inside the work. Work records rounds each resulting half in its
+ * admission's arithmetic (`planOwedBreakDivision`).
  */
 export function planAutomaticBreak(input: {
 	sourceStart: Instant;
@@ -96,7 +93,5 @@ export function planAutomaticBreak(input: {
 		regulation: { id: input.regulation.id, name: input.regulation.name },
 		breakStartAt,
 		breakEndAt,
-		retainedMinutes: deriveWorkDurationMinutes(input.sourceStart, breakStartAt),
-		generatedMinutes: deriveWorkDurationMinutes(breakEndAt, input.sourceEnd),
 	};
 }

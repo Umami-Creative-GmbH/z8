@@ -115,7 +115,7 @@ function useVacationPolicyForm({
 								"Vacation policy created!",
 							),
 						);
-						push("/onboarding/holiday-setup");
+						push("/onboarding/work-templates");
 						return true;
 					}
 					toast.error(
@@ -155,6 +155,23 @@ function VacationPolicyForm({
 	onSkip: () => void;
 	t: Translate;
 }) {
+	const dayCountSchema = z
+		.number()
+		.min(
+			0,
+			t(
+				"onboarding.vacationPolicy.validation.daysNegative",
+				"Days cannot be negative",
+			),
+		)
+		.max(
+			365,
+			t(
+				"onboarding.vacationPolicy.validation.daysTooMany",
+				"Days cannot exceed 365",
+			),
+		);
+
 	return (
 		<Card>
 			<CardHeader>
@@ -178,15 +195,31 @@ function VacationPolicyForm({
 					<form.Field
 						name="name"
 						validators={{
-							onChange: z.string().min(1, "Policy name is required").max(100),
+							onChange: z
+								.string()
+								.min(
+									1,
+									t(
+										"onboarding.vacationPolicy.validation.nameRequired",
+										"Policy name is required",
+									),
+								)
+								.max(
+									100,
+									t(
+										"onboarding.vacationPolicy.validation.nameTooLong",
+										"Policy name must be 100 characters or fewer",
+									),
+								),
 						}}
 					>
 						{(field) => (
 							<div className="space-y-2">
-								<Label>
+								<Label htmlFor="vacation-policy-name">
 									{t("onboarding.vacationPolicy.name", "Policy Name")}
 								</Label>
 								<Input
+									id="vacation-policy-name"
 									value={field.state.value}
 									onChange={(event) => field.handleChange(event.target.value)}
 									onBlur={field.handleBlur}
@@ -215,17 +248,18 @@ function VacationPolicyForm({
 
 					<form.Field
 						name="defaultAnnualDays"
-						validators={{ onChange: z.number().min(0).max(365) }}
+						validators={{ onChange: dayCountSchema }}
 					>
 						{(field) => (
 							<div className="space-y-2">
-								<Label>
+								<Label htmlFor="vacation-policy-annual-days">
 									{t(
 										"onboarding.vacationPolicy.annualDays",
 										"Annual Vacation Days",
 									)}
 								</Label>
 								<Input
+									id="vacation-policy-annual-days"
 									type="number"
 									min={0}
 									max={365}
@@ -262,7 +296,7 @@ function VacationPolicyForm({
 					<form.Field name="accrualType">
 						{(field) => (
 							<div className="space-y-2">
-								<Label>
+								<Label htmlFor="vacation-policy-accrual-type">
 									{t("onboarding.vacationPolicy.accrualType", "Accrual Type")}
 								</Label>
 								<Select
@@ -274,7 +308,7 @@ function VacationPolicyForm({
 									value={field.state.value}
 									disabled={loading}
 								>
-									<SelectTrigger>
+									<SelectTrigger id="vacation-policy-accrual-type" className="w-full">
 										<SelectValue
 											placeholder={t(
 												"onboarding.vacationPolicy.selectAccrualType",
@@ -315,15 +349,21 @@ function VacationPolicyForm({
 
 					<form.Field name="allowCarryover">
 						{(field) => (
-							<div className="flex flex-row items-center justify-between rounded-lg border p-4">
-								<div className="space-y-0.5">
-									<Label className="text-base">
+							<div className="flex flex-row items-center justify-between gap-4 rounded-lg border p-4">
+								<div className="min-w-0 space-y-0.5">
+									<Label
+										htmlFor="vacation-policy-allow-carryover"
+										className="text-base"
+									>
 										{t(
 											"onboarding.vacationPolicy.allowCarryover",
 											"Allow Carryover",
 										)}
 									</Label>
-									<p className="text-sm text-muted-foreground">
+									<p
+										id="vacation-policy-allow-carryover-description"
+										className="text-sm text-muted-foreground"
+									>
 										{t(
 											"onboarding.vacationPolicy.allowCarryoverDesc",
 											"Allow unused days to be carried to next year.",
@@ -331,6 +371,8 @@ function VacationPolicyForm({
 									</p>
 								</div>
 								<Switch
+									id="vacation-policy-allow-carryover"
+									aria-describedby="vacation-policy-allow-carryover-description"
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
 									disabled={loading}
@@ -342,17 +384,18 @@ function VacationPolicyForm({
 					{allowCarryover && (
 						<form.Field
 							name="maxCarryoverDays"
-							validators={{ onChange: z.number().min(0).max(365) }}
+							validators={{ onChange: dayCountSchema }}
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label>
+									<Label htmlFor="vacation-policy-max-carryover">
 										{t(
 											"onboarding.vacationPolicy.maxCarryover",
 											"Max Carryover Days",
 										)}
 									</Label>
 									<Input
+										id="vacation-policy-max-carryover"
 										type="number"
 										min={0}
 										max={365}
@@ -446,7 +489,7 @@ export default function VacationPolicyPage() {
 			action: skipVacationPolicySetup,
 			onResult: (result) => {
 				if (result.success) {
-					push("/onboarding/holiday-setup");
+					push("/onboarding/work-templates");
 					return true;
 				} else {
 					toast.error(

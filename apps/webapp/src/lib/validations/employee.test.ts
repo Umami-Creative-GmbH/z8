@@ -3,6 +3,7 @@ import {
 	createEmployeeSchema,
 	personalInformationSchema,
 	pronounsSchema,
+	updateEmployeeInvitationDraftSchema,
 	updateEmployeeSchema,
 } from "./employee";
 
@@ -21,6 +22,41 @@ describe("pronounsSchema", () => {
 		expect(() => pronounsSchema.parse("x".repeat(51))).toThrow(
 			"Pronouns must be 50 characters or less",
 		);
+	});
+});
+
+describe("personnel number on employee and invitation draft saves", () => {
+	it.each([
+		["employee", updateEmployeeSchema],
+		["invitation draft", updateEmployeeInvitationDraftSchema],
+	] as const)("stores the trimmed number for an %s, keeping its case", (_label, schema) => {
+		const result = schema.safeParse({ employeeNumber: " E-42 " });
+
+		expect(result.success).toBe(true);
+		expect(result.data?.employeeNumber).toBe("E-42");
+	});
+
+	it.each([
+		["employee", updateEmployeeSchema],
+		["invitation draft", updateEmployeeInvitationDraftSchema],
+	] as const)("stores no number for an empty or blank %s field", (_label, schema) => {
+		expect(schema.safeParse({ employeeNumber: "" }).data?.employeeNumber).toBeNull();
+		expect(schema.safeParse({ employeeNumber: "   " }).data?.employeeNumber).toBeNull();
+		expect(schema.safeParse({ employeeNumber: null }).data?.employeeNumber).toBeNull();
+	});
+
+	it("leaves the number untouched when a save does not carry it", () => {
+		const result = updateEmployeeSchema.safeParse({ position: "Engineer" });
+
+		expect(result.success).toBe(true);
+		expect(result.data).toEqual({ position: "Engineer" });
+	});
+
+	it("allows 50 characters after trimming and refuses more", () => {
+		expect(updateEmployeeSchema.safeParse({ employeeNumber: ` ${"x".repeat(50)} ` }).success).toBe(
+			true,
+		);
+		expect(updateEmployeeSchema.safeParse({ employeeNumber: "x".repeat(51) }).success).toBe(false);
 	});
 });
 

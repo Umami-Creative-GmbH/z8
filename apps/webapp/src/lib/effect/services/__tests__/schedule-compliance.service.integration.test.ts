@@ -16,6 +16,7 @@ import {
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { shiftDateBounds } from "@/lib/scheduling/shift-date";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { DatabaseServiceLive } from "../database.service";
 import {
 	ScheduleComplianceService,
@@ -137,20 +138,22 @@ describe.each(["Europe/Berlin", "UTC"])("schedule compliance window (%s)", (time
 				person.userId,
 			],
 		);
-		await fixture.pool.query(
-			`insert into work_period (
-				id, employee_id, organization_id, clock_in_id,
-				start_time, end_time, duration_minutes, is_active, updated_at
-			 ) values ($1, $2, $3, $4, $5, $6, $7, false, $5)`,
-			[
-				randomUUID(),
-				person.employeeId,
-				org.organizationId,
-				clockInId,
-				dateFromInstant(start.toInstant()),
-				dateFromInstant(end.toInstant()),
-				start.until(end).total("minutes"),
-			],
+		await withCanonicalRecords(fixture.pool, (client) =>
+			client.query(
+				`insert into work_period (
+					id, employee_id, organization_id, clock_in_id,
+					start_time, end_time, duration_minutes, is_active, updated_at
+				 ) values ($1, $2, $3, $4, $5, $6, $7, false, $5)`,
+				[
+					randomUUID(),
+					person.employeeId,
+					org.organizationId,
+					clockInId,
+					dateFromInstant(start.toInstant()),
+					dateFromInstant(end.toInstant()),
+					start.until(end).total("minutes"),
+				],
+			),
 		);
 	}
 

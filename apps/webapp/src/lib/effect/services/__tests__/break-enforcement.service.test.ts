@@ -144,12 +144,9 @@ vi.mock("@/lib/datetime/drizzle-adapter", () => ({
 	dateToDB: vi.fn((dt: { toJSDate: () => Date }) => dt?.toJSDate?.() || null),
 }));
 
-// The adjustment owner runs the legacy plan for a legacy organization.
 vi.mock("@/lib/time-tracking/automatic-break-adjustment", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/time-tracking/automatic-break-adjustment")>()),
-	runAutomaticBreakAdjustment: vi.fn((input: { planLegacy: () => Promise<unknown> }) =>
-		input.planLegacy(),
-	),
+	runAutomaticBreakAdjustment: vi.fn(),
 }));
 
 vi.mock("@/lib/time-tracking/timezone-utils", () => ({
@@ -666,50 +663,7 @@ describe("Break Enforcement Service", () => {
 	});
 });
 
-describe("legacy break enforcement failures", () => {
-	// The owner's catch keeps the NotFoundError the legacy plan failed with instead of
-	// wrapping it as a DatabaseError.
-	test("fails with the legacy plan's NotFoundError when the work period is gone", async () => {
-		const { Layer } = await import("effect");
-		const { NotFoundError } = await import("@/lib/effect/errors");
-		const { DatabaseServiceLive } = await import("../database.service");
-		const { WorkPolicyService } = await import("../work-policy.service");
-		const { BreakEnforcementService, BreakEnforcementServiceLive } = await import(
-			"../break-enforcement.service"
-		);
-		mockQueryResults = {};
-
-		const failure = await Effect.runPromise(
-			Effect.gen(function* () {
-				const service = yield* BreakEnforcementService;
-				return yield* service.enforceBreaksAfterClockOut({
-					employeeId: "emp-123",
-					organizationId: "org-123",
-					workPeriodId: "period-missing",
-					sessionDurationMinutes: 420,
-					timezone: "Europe/Berlin",
-					createdBy: "user-123",
-				});
-			}).pipe(
-				Effect.flip,
-				Effect.provide(
-					BreakEnforcementServiceLive.pipe(
-						Layer.provide(
-							Layer.succeed(WorkPolicyService, mockWorkPolicyService as never),
-						),
-						Layer.provide(DatabaseServiceLive),
-					),
-				),
-			),
-		);
-
-		expect(failure).toBeInstanceOf(NotFoundError);
-		expect(failure).toMatchObject({
-			message: "Work period not found",
-			entityId: "period-missing",
-		});
-	});
-
+describe("break enforcement failures", () => {
 	test("keeps an unexpected adjustment failure's own message out of its DatabaseError", async () => {
 		const { Layer } = await import("effect");
 		const { DatabaseError } = await import("@/lib/effect/errors");
@@ -731,8 +685,6 @@ describe("legacy break enforcement failures", () => {
 					employeeId: "emp-123",
 					organizationId: "org-123",
 					workPeriodId: "period-123",
-					sessionDurationMinutes: 420,
-					timezone: "Europe/Berlin",
 					createdBy: "user-123",
 				});
 			}).pipe(
@@ -747,7 +699,10 @@ describe("legacy break enforcement failures", () => {
 		);
 
 		expect(failure).toBeInstanceOf(DatabaseError);
-		expect(failure).toMatchObject({ message: "Automatic break adjustment failed", cause });
+		expect(failure).toMatchObject({
+			message: "Database query failed: timeTracking.adjustAutomaticBreak",
+			cause,
+		});
 	});
 });
 

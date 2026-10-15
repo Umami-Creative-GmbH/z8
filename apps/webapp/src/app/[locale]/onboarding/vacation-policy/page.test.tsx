@@ -74,7 +74,7 @@ describe("VacationPolicyPage load effect", () => {
 		fireEvent.click(continueButton);
 
 		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/onboarding/holiday-setup"),
+			expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"),
 		);
 		expect(mocks.push).toHaveBeenCalledOnce();
 		expect(continueButton).toHaveProperty("disabled", true);
@@ -115,7 +115,7 @@ describe("VacationPolicyPage load effect", () => {
 
 		request.resolve({ success: true });
 		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/onboarding/holiday-setup"),
+			expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"),
 		);
 	});
 
@@ -134,7 +134,28 @@ describe("VacationPolicyPage load effect", () => {
 		expect(await screen.findByText("Policy name is required")).toBeTruthy();
 		expect(nameInput).toHaveProperty("value", "");
 		expect(mocks.createVacationPolicyOnboarding).not.toHaveBeenCalled();
-		expect(mocks.push).not.toHaveBeenCalledWith("/onboarding/holiday-setup");
+		expect(mocks.push).not.toHaveBeenCalledWith("/onboarding/work-templates");
+	});
+
+	it("associates policy fields with their visible labels", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		render(<VacationPolicyPage />);
+
+		expect(await screen.findByLabelText("Policy Name")).toBeTruthy();
+		expect(screen.getByLabelText("Annual Vacation Days")).toBeTruthy();
+		expect(screen.getByLabelText("Accrual Type")).toBeTruthy();
+		expect(screen.getByRole("switch", { name: "Allow Carryover" })).toBeTruthy();
+		expect(screen.getByLabelText("Max Carryover Days")).toBeTruthy();
+	});
+
+	it("shows a readable message when the day count is out of range", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		render(<VacationPolicyPage />);
+
+		const annualDays = await screen.findByLabelText("Annual Vacation Days");
+		fireEvent.change(annualDays, { target: { value: "400" } });
+
+		expect(await screen.findByText("Days cannot exceed 365")).toBeTruthy();
 	});
 
 	it("keeps skip disabled after successful skip navigation", async () => {
@@ -148,7 +169,7 @@ describe("VacationPolicyPage load effect", () => {
 		fireEvent.click(skipButton);
 
 		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/onboarding/holiday-setup"),
+			expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"),
 		);
 		expect(mocks.push).toHaveBeenCalledOnce();
 		expect(skipButton).toHaveProperty("disabled", true);

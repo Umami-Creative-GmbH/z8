@@ -200,9 +200,9 @@ describe("time correction request safety", () => {
 		const directBody = functionBody(modularSource, "editSameDayTimeEntry");
 		const submissionBody = functionBody(modularSource, "submitCorrection");
 
-		expect(directBody).toContain("validateCorrectionWorkMetadata");
-		expect(directBody).toContain("timeRecordWork");
-		expect(directBody).toContain("canonicalRecordId");
+		// The amendment validates and writes the same-day metadata through work records (#1226).
+		expect(directBody).toContain("replayOrAmendCompletedWork(scope, amendment)");
+		expect(directBody).not.toContain("timeRecordWork");
 		expect(submissionBody).toContain("validateCorrectionWorkMetadata");
 		expect(submissionBody).toContain("input.workLocationType");
 		expect(submissionBody).toContain("input.workCategoryId");
@@ -334,24 +334,25 @@ describe("time correction request safety", () => {
 		expect(body).toContain("Date changes require manager approval");
 	});
 
-	it("updates same-day metadata only after locking the scoped work period", () => {
+	it("scopes the same-day work period to the authenticated employee and organization", () => {
 		const body = functionBody(modularSource, "editSameDayTimeEntry");
 
-		expect(body).toContain(".update(workPeriod)");
+		expect(body).not.toContain(".update(workPeriod)");
 		expect(body).toContain("eq(workPeriod.employeeId, currentEmployee.id)");
 		expect(body).toContain(
 			"eq(workPeriod.organizationId, currentEmployee.organizationId)",
 		);
-		expect(body).toContain("canonicalTimeEntryClient.createCorrectionEntry");
 	});
 
 	it("applies direct same-day corrections through the shared locked service in one transaction", () => {
 		const body = functionBody(modularSource, "editSameDayTimeEntry");
 
 		expect(body).toContain("withCompletedWorkTransaction");
-		expect(body).toContain("canonicalTimeEntryClient.createCorrectionEntry");
+		expect(body).toContain("replayOrAmendCompletedWork(scope, amendment)");
+		// Admission stays hidden (#1231).
+		expect(body).not.toContain("amendLegacyCompletedWork");
 		expect(body).toContain("workPeriodId: selectedWorkPeriod.id");
-		expect(body).toContain("tx,");
+		expect(body).not.toContain(".update(timeEntry)");
 		expect(body).not.toContain("createTimeEntry({");
 		expect(body).not.toContain("markTimeEntrySuperseded");
 	});
@@ -424,13 +425,11 @@ describe("time correction request safety", () => {
 		);
 	});
 
-	it("derives same-day dirty dates from original and corrected endpoint-local evidence", () => {
+	it("leaves same-day balance marks to the amendment's transaction (#1226)", () => {
 		const body = functionBody(modularSource, "editSameDayTimeEntry");
 
-		expect(body).toContain("dirtyFromDateForTimeCorrection");
-		expect(body).toContain("originalEndpointEvidence");
-		expect(body).toContain("clockInTimezoneCapture");
-		expect(body).not.toContain("earliestAffectedDate");
+		expect(body).not.toContain("dirtyFromDateForTimeCorrection");
+		expect(body).not.toContain("markEmployeeWorkBalanceDirty");
 	});
 
 	it("fails closed for same-day edits when policy verification fails", () => {

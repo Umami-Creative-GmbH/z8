@@ -2,6 +2,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { FieldApi, FormApi } from "@tanstack/react-form";
 import { render, screen } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,7 +12,11 @@ import {
 	EmployeeEditFormCard,
 	EmployeeOverviewCard,
 } from "./page-sections";
-import { focusFirstInvalidEmployeeDetailField } from "./page-utils";
+import {
+	defaultFormValues,
+	focusFirstInvalidEmployeeDetailField,
+	showEmployeeSaveRefusal,
+} from "./page-utils";
 
 const userAvatarMock = vi.hoisted(() =>
 	vi.fn(({ name }: { name?: string | null }) => (
@@ -69,11 +74,11 @@ const translations = new Map([
 		"settings.employees.detailView.positionDescription",
 		"Stellenbezeichnung oder Rolle",
 	],
-	["settings.employees.detailView.employeeNumber", "Personalnummer"],
+	["settings.employees.detailView.personnelNumber", "Personalnummer"],
 	["settings.employees.detailView.employeeNumberPlaceholder", "z. B. EMP-001"],
 	[
-		"settings.employees.detailView.employeeNumberDescription",
-		"Externe ID im Lohnabrechnungssystem",
+		"settings.employees.detailView.personnelNumberDescription",
+		"Die eigene Nummer Ihrer Organisation für diesen Mitarbeiter",
 	],
 	["settings.employees.detailView.startDate", "Startdatum"],
 	[
@@ -540,7 +545,7 @@ describe("employee detail page sections", () => {
 		expect(screen.queryByRole("link", { name: "Change in Contract & Work Model" })).toBeNull();
 	});
 
-	it("renders the start date field in the edit form", () => {
+	it("shows actual employment start as read-only with the reviewed correction explanation", () => {
 		render(
 			<EmployeeEditFormCard
 				form={createForm() as never}
@@ -553,14 +558,15 @@ describe("employee detail page sections", () => {
 			/>,
 		);
 
-		const startDateInput = screen.getByLabelText("Startdatum");
+		const startDateInput = screen.getByLabelText("Actual employment start");
 
+		expect(startDateInput.hasAttribute("disabled")).toBe(true);
 		expect(startDateInput.getAttribute("type")).toBe("date");
 		expect(startDateInput.getAttribute("name")).toBe("startDate");
 		expect(startDateInput.getAttribute("autocomplete")).toBe("off");
 		expect((startDateInput as HTMLInputElement).value).toBe("2024-05-01");
 		expect(
-			screen.getByText("Arbeitszeitsaldo wird ab diesem Datum verfolgt"),
+			screen.getByText("The actual joining date determines employment-based vacation allowance. Correct it in the reviewed employment correction below; time tracking has its own start date."),
 		).toBeTruthy();
 	});
 
@@ -616,5 +622,20 @@ describe("employee detail page sections", () => {
 		} as never);
 
 		expect(document.activeElement).toBe(pronounsInput);
+	});
+
+	it("focuses the personnel number when the save refused it as taken", () => {
+		render(<input aria-label="Personnel number" name="employeeNumber" />);
+		const form = new FormApi({ defaultValues: defaultFormValues });
+		form.mount();
+		new FieldApi({ form, name: "employeeNumber" }).mount();
+
+		showEmployeeSaveRefusal(form as never, {
+			error: "This personnel number belongs to Ada Holder.",
+			refusal: "personnel_number_taken",
+		});
+		focusFirstInvalidEmployeeDetailField(form);
+
+		expect(document.activeElement).toBe(screen.getByLabelText("Personnel number"));
 	});
 });

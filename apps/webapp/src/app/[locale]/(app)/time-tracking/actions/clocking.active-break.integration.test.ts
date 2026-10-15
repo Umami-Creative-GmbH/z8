@@ -15,6 +15,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -437,18 +438,20 @@ describe("web active breaks through the close/resume operation on PostgreSQL", (
 		await startWork();
 		const now = systemClock.nowInstant();
 		// Completed work that ends after the resume instant occupies it.
-		await admin.query(
-			`insert into work_period (id, organization_id, employee_id, clock_in_id, start_time, end_time,
-			  duration_minutes, is_active, approval_status, updated_at)
-			 select $1, $2, $3, clock_in_id, $4, $5, 30, false, 'approved', now()
-			 from work_period where employee_id = $3 and end_time is null`,
-			[
-				randomUUID(),
-				ids.organization,
-				ids.requester,
-				new Date(now.add({ minutes: 30 }).epochMilliseconds),
-				new Date(now.add({ minutes: 60 }).epochMilliseconds),
-			],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`insert into work_period (id, organization_id, employee_id, clock_in_id, start_time, end_time,
+				  duration_minutes, is_active, approval_status, updated_at)
+				 select $1, $2, $3, clock_in_id, $4, $5, 30, false, 'approved', now()
+				 from work_period where employee_id = $3 and end_time is null`,
+				[
+					randomUUID(),
+					ids.organization,
+					ids.requester,
+					new Date(now.add({ minutes: 30 }).epochMilliseconds),
+					new Date(now.add({ minutes: 60 }).epochMilliseconds),
+				],
+			),
 		);
 		const before = await snapshot();
 
@@ -513,7 +516,8 @@ describe("web active breaks through the close/resume operation on PostgreSQL", (
 			id: active.id,
 			is_active: false,
 			approval_status: "approved",
-			graph_revision: 0,
+			// Work records closes the work and advances its revision in both admissions (#1222).
+			graph_revision: 1,
 		});
 		expect(resumed).toMatchObject({ is_active: true, work_location_type: "home" });
 		const { rows } = await admin.query(

@@ -391,29 +391,6 @@ describe("changing billability after recording on PostgreSQL", () => {
 				});
 			});
 
-			it("re-applies the new project's default when the edit leaves the flag alone", async () => {
-				const period = await recordWork(ids.billableProject);
-				actAs();
-				await expect(updateWorkPeriodBillability(period.id, false)).resolves.toMatchObject({
-					success: true,
-				});
-
-				await expect(
-					updateWorkPeriodProject(period.id, ids.customerProject),
-				).resolves.toMatchObject({ success: true });
-				expectAgreement(await attributionOf(period.id), {
-					projectId: ids.customerProject,
-					billable: false,
-				});
-				await expect(
-					updateWorkPeriodProject(period.id, ids.billableProject),
-				).resolves.toMatchObject({ success: true });
-				expectAgreement(await attributionOf(period.id), {
-					projectId: ids.billableProject,
-					billable: true,
-				});
-			});
-
 			it("changes billability alone and keeps the project", async () => {
 				const period = await recordWork(ids.customerProject);
 

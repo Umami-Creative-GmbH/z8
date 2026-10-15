@@ -5,6 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useReducer, useRef, useState } from "react";
 import { getSurchargeCalculationsForPeriod } from "@/app/[locale]/(app)/settings/surcharges/actions";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +32,12 @@ interface SurchargeReportState {
 type SurchargeReportAction =
 	| { type: "invalidRange"; message: string }
 	| { type: "requestFailed"; message: string; retainRows: boolean }
-	| { type: "requestStarted"; organizationId: string; shouldClearRows: boolean }
+	| {
+			type: "requestStarted";
+			organizationId: string;
+			shouldClearRows: boolean;
+			background?: boolean;
+	  }
 	| {
 			type: "requestSucceeded";
 			organizationId: string;
@@ -62,7 +68,7 @@ function surchargeReportReducer(
 				dateError: null,
 				error: null,
 				expandedId: action.shouldClearRows ? null : state.expandedId,
-				isLoading: true,
+				isLoading: !action.background,
 				isShowingPreviousResults: false,
 				rows: action.shouldClearRows ? [] : state.rows,
 			};
@@ -108,7 +114,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 	const loadedRowsOrganizationIdRef = useRef<string | null>(null);
 	const latestRequestId = useRef(0);
 
-	const loadCalculations = useEffectEvent(async (filters: FilterValues) => {
+	const runLoadCalculations = async (filters: FilterValues, background = false) => {
 		const requestId = latestRequestId.current + 1;
 		latestRequestId.current = requestId;
 		const startDate = parseFilterDate(filters.startDate, "start");
@@ -128,6 +134,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 
 		dispatch({
 			type: "requestStarted",
+			background,
 			organizationId,
 			shouldClearRows: loadedRowsOrganizationIdRef.current !== organizationId,
 		});
@@ -163,7 +170,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 					),
 			});
 		}
-	});
+	};
+	const loadCalculations = useEffectEvent(runLoadCalculations);
+
+	useViewRefresh(() => runLoadCalculations(state.activeFilters, true));
 
 	const form = useForm({
 		defaultValues: defaultFilters,

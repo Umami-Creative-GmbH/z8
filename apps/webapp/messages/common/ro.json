@@ -373,6 +373,8 @@
     "previous": "Anterior",
     "recovering": "Se recuperează...",
     "refresh": "Reîmprospătează",
+    "refreshData": "Reîmprospătează datele",
+    "refreshDataFailed": "Datele nu au putut fi reîmprospătate. Vă rugăm să încercați din nou.",
     "refreshing": "Se reîmprospătează...",
     "reject": "Respinge",
     "rejecting": "Se respinge…",
@@ -2528,6 +2530,9 @@
     "theme-time": "Bazat pe timp",
     "theme-time-info": "Modul bazat pe timp folosește {currentMode}. Se comută la {nextMode} la {time}.",
     "theme-toggle": "Comută tema"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Include {days} zile efectuate anterior înainte de monitorizare"
   },
   "validation": {
     "first-name-required": "Prenumele este obligatoriu",

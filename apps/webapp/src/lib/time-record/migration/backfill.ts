@@ -1,6 +1,5 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
-
 import {
 	absenceCategory,
 	absenceEntry,
@@ -9,40 +8,19 @@ import {
 	employee,
 	timeRecord,
 	timeRecordAbsence,
-	timeRecordAllocation,
 	timeRecordApprovalDecision,
-	timeRecordWork,
-	workPeriod,
 } from "@/db";
-import { recordedTaskId } from "@/lib/time-tracking/task-attribution";
-import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+import { legacyApprovalDecision } from "@/lib/time-record/legacy-approval-decision";
+import {
+	attachMissingWorkRecords,
+	type MissingWorkRecordAttachment,
+} from "./attach-missing-work-records";
 
 type LegacyApprovalStatus = "pending" | "approved" | "rejected";
 type CanonicalDayPeriod = "full_day" | "am" | "pm";
 type LegacyDayPeriod = CanonicalDayPeriod | "morning" | "afternoon";
 type LegacyEntityType = "time_entry" | "absence_entry";
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-export type LegacyWorkPeriod = {
-	id: string;
-	organizationId: string;
-	employeeId: string;
-	startTime: Date;
-	endTime: Date | null;
-	isActive: boolean;
-	canonicalRecordId: string | null;
-	durationMinutes: number | null;
-	approvalStatus: LegacyApprovalStatus;
-	projectId: string | null;
-	/** Billable work (#900); absent reads as non-billable. */
-	isBillable?: boolean;
-	/** The task of the project (#873); absent from callers that predate tasks. */
-	taskId?: string | null;
-	workCategoryId: string | null;
-	workLocationType: WorkLocationType | null;
-	createdAt: Date;
-	updatedAt: Date;
-};
 
 export type LegacyAbsenceEntry = {
 	id: string;
@@ -81,7 +59,6 @@ export type CanonicalBackfillInput = {
 	organizationId: string;
 	actorId: string;
 	legacy: {
-		workPeriods: LegacyWorkPeriod[];
 		absenceEntries: LegacyAbsenceEntry[];
 		approvalRequests: LegacyApprovalRequest[];
 		absenceCategories: BackfillAbsenceCategory[];
@@ -90,16 +67,18 @@ export type CanonicalBackfillInput = {
 
 export type CanonicalBackfillRunInput = {
 	organizationId: string;
+	/** The user the absences' canonical records are created by. */
 	actorId: string;
 	legacy?: CanonicalBackfillInput["legacy"];
 };
 
+/** The canonical absence records the backfill writes. */
 export type CanonicalBackfillPayload = {
 	timeRecords: Array<{
 		id: string;
 		organizationId: string;
 		employeeId: string;
-		recordKind: "work" | "absence";
+		recordKind: "absence";
 		startAt: Date;
 		endAt: Date | null;
 		durationMinutes: number | null;
@@ -110,14 +89,6 @@ export type CanonicalBackfillPayload = {
 		updatedAt: Date;
 		updatedBy: string;
 	}>;
-	timeRecordWork: Array<{
-		recordId: string;
-		organizationId: string;
-		recordKind: "work";
-		workCategoryId: string | null;
-		workLocationType: WorkLocationType | null;
-		computationMetadata: string | null;
-	}>;
 	timeRecordAbsence: Array<{
 		recordId: string;
 		organizationId: string;
@@ -126,17 +97,6 @@ export type CanonicalBackfillPayload = {
 		startPeriod: CanonicalDayPeriod;
 		endPeriod: CanonicalDayPeriod;
 		countsAgainstVacation: boolean;
-	}>;
-	timeRecordAllocation: Array<{
-		organizationId: string;
-		recordId: string;
-		allocationKind: "project";
-		projectId: string;
-		/** Present only when the period has a task, so the allocation and period agree. */
-		taskId?: string;
-		weightPercent: number;
-		/** Present when the period is billable (#900); the column defaults to false. */
-		isBillable?: boolean;
 	}>;
 	timeRecordApprovalDecision: Array<{
 		organizationId: string;
@@ -147,7 +107,6 @@ export type CanonicalBackfillPayload = {
 		createdAt: Date;
 	}>;
 	legacyLinks: {
-		workPeriod: Array<{ id: string; canonicalRecordId: string }>;
 		absenceEntry: Array<{
 			id: string;
 			canonicalRecordId: string;
@@ -157,6 +116,11 @@ export type CanonicalBackfillPayload = {
 	};
 };
 
+/**
+ * The canonical absence records of the organization's legacy absences. Work is
+ * not built here: completed work gets its canonical work record from work
+ * records' attach (#1224).
+ */
 export function buildCanonicalBackfillPayload(
 	input: CanonicalBackfillInput,
 ): CanonicalBackfillPayload {
@@ -164,69 +128,19 @@ export function buildCanonicalBackfillPayload(
 		input.legacy.absenceCategories.map((category) => [category.id, category.countsAgainstVacation]),
 	);
 
-	const workPeriods = input.legacy.workPeriods.filter(
-		(workPeriod) =>
-			workPeriod.organizationId === input.organizationId &&
-			!workPeriod.isActive &&
-			workPeriod.endTime !== null &&
-			workPeriod.canonicalRecordId === null,
-	);
 	const absences = input.legacy.absenceEntries.filter(
 		(absenceEntry) => absenceEntry.organizationId === input.organizationId,
 	);
 	const approvals = input.legacy.approvalRequests.filter(
-		(approvalRequest) => approvalRequest.organizationId === input.organizationId,
+		(approvalRequest) =>
+			approvalRequest.organizationId === input.organizationId &&
+			approvalRequest.entityType === "absence_entry",
 	);
 
 	const timeRecords: CanonicalBackfillPayload["timeRecords"] = [];
-	const timeRecordWork: CanonicalBackfillPayload["timeRecordWork"] = [];
 	const timeRecordAbsence: CanonicalBackfillPayload["timeRecordAbsence"] = [];
-	const timeRecordAllocation: CanonicalBackfillPayload["timeRecordAllocation"] = [];
 	const timeRecordApprovalDecision: CanonicalBackfillPayload["timeRecordApprovalDecision"] = [];
-
-	const workPeriodRecordMap = new Map<string, string>();
 	const absenceRecordMap = new Map<string, string>();
-
-	for (const workPeriod of workPeriods) {
-		timeRecords.push({
-			id: workPeriod.id,
-			organizationId: input.organizationId,
-			employeeId: workPeriod.employeeId,
-			recordKind: "work",
-			startAt: workPeriod.startTime,
-			endAt: workPeriod.endTime,
-			durationMinutes: workPeriod.durationMinutes,
-			approvalState: workPeriod.approvalStatus,
-			origin: "system",
-			createdAt: workPeriod.createdAt,
-			createdBy: input.actorId,
-			updatedAt: workPeriod.updatedAt,
-			updatedBy: input.actorId,
-		});
-
-		timeRecordWork.push({
-			recordId: workPeriod.id,
-			organizationId: input.organizationId,
-			recordKind: "work",
-			workCategoryId: workPeriod.workCategoryId,
-			workLocationType: workPeriod.workLocationType,
-			computationMetadata: null,
-		});
-
-		if (workPeriod.projectId) {
-			timeRecordAllocation.push({
-				organizationId: input.organizationId,
-				recordId: workPeriod.id,
-				allocationKind: "project",
-				projectId: workPeriod.projectId,
-				...recordedTaskId(workPeriod.taskId),
-				weightPercent: 100,
-				...(workPeriod.isBillable ? { isBillable: true } : {}),
-			});
-		}
-
-		workPeriodRecordMap.set(workPeriod.id, workPeriod.id);
-	}
 
 	for (const absenceEntry of absences) {
 		const startPeriod = normalizeLegacyDayPeriod(absenceEntry.startPeriod);
@@ -268,12 +182,9 @@ export function buildCanonicalBackfillPayload(
 		absenceRecordMap.set(absenceEntry.id, absenceEntry.id);
 	}
 
+	const approvalLinks: CanonicalBackfillPayload["legacyLinks"]["approvalRequest"] = [];
 	for (const approvalRequest of approvals) {
-		const recordId =
-			approvalRequest.entityType === "time_entry"
-				? workPeriodRecordMap.get(approvalRequest.entityId)
-				: absenceRecordMap.get(approvalRequest.entityId);
-
+		const recordId = absenceRecordMap.get(approvalRequest.entityId);
 		if (!recordId) {
 			continue;
 		}
@@ -281,108 +192,73 @@ export function buildCanonicalBackfillPayload(
 		timeRecordApprovalDecision.push({
 			organizationId: input.organizationId,
 			recordId,
-			actorEmployeeId:
-				approvalRequest.status === "pending"
-					? approvalRequest.requestedBy
-					: approvalRequest.approverId,
-			action: mapApprovalStatusToAction(approvalRequest.status),
-			reason: approvalRequest.rejectionReason ?? approvalRequest.reason,
-			createdAt: approvalRequest.approvedAt ?? approvalRequest.createdAt,
+			...legacyApprovalDecision(approvalRequest),
 		});
+		approvalLinks.push({ id: approvalRequest.id, canonicalRecordId: recordId });
 	}
 
 	return {
 		timeRecords,
-		timeRecordWork,
 		timeRecordAbsence,
-		timeRecordAllocation,
 		timeRecordApprovalDecision,
 		legacyLinks: {
-			workPeriod: workPeriods.map((workPeriod) => ({
-				id: workPeriod.id,
-				canonicalRecordId: workPeriod.id,
-			})),
 			absenceEntry: absences.map((absenceEntry) => ({
 				id: absenceEntry.id,
 				canonicalRecordId: absenceEntry.id,
 				organizationId: input.organizationId,
 			})),
-			approvalRequest: approvals
-				.map((approvalRequest) => {
-					const canonicalRecordId =
-						approvalRequest.entityType === "time_entry"
-							? workPeriodRecordMap.get(approvalRequest.entityId)
-							: absenceRecordMap.get(approvalRequest.entityId);
-
-					if (!canonicalRecordId) {
-						return null;
-					}
-
-					return {
-						id: approvalRequest.id,
-						canonicalRecordId,
-					};
-				})
-				.filter((value): value is { id: string; canonicalRecordId: string } => value !== null),
+			approvalRequest: approvalLinks,
 		},
 	};
 }
 
+export type CanonicalBackfillResult = CanonicalBackfillPayload & {
+	/**
+	 * Completed work attached through work records one period at a time (#1224). Work
+	 * touching a closed month is skipped and stays a half pair (#1213, Time Tracking
+	 * ADR-0004) until the month reopens.
+	 */
+	work: MissingWorkRecordAttachment;
+};
+
+/**
+ * The lazy canonical backfill behind the payroll export and the payroll workspace:
+ * completed work without a canonical work record gets one through work records'
+ * attach, a period at a time, skipping closed months; legacy absences get theirs in
+ * one transaction.
+ */
 export async function runCanonicalBackfill(
 	input: CanonicalBackfillRunInput,
-): Promise<CanonicalBackfillPayload> {
+): Promise<CanonicalBackfillResult> {
+	// A system process: the records are created by each work's original actor.
+	const work = await attachMissingWorkRecords({
+		organizationId: input.organizationId,
+		actorUserId: null,
+	});
+
 	const resolvedInput = input.legacy
 		? { organizationId: input.organizationId, actorId: input.actorId, legacy: input.legacy }
 		: await loadCanonicalBackfillInput(input);
 	const payload = buildCanonicalBackfillPayload(resolvedInput);
-	const sourceWork = new Map(resolvedInput.legacy.workPeriods.map((period) => [period.id, period]));
 
+	// Absences: the closed-month refusal guards an absence by its entry's local days, and
+	// neither its canonical record nor the entry's link and organization are frozen.
 	await db.transaction(async (tx) => {
-		await upsertCanonicalTimeRecords(tx, payload.timeRecords);
-		await insertIfPresent(tx, timeRecordWork, payload.timeRecordWork);
+		await upsertCanonicalAbsenceRecords(tx, payload.timeRecords);
 		await insertIfPresent(tx, timeRecordAbsence, payload.timeRecordAbsence);
 
-		const allocationRecordIds = payload.timeRecordAllocation.map(
-			(allocation) => allocation.recordId,
-		);
-		if (allocationRecordIds.length > 0) {
-			await tx
-				.delete(timeRecordAllocation)
-				.where(inArray(timeRecordAllocation.recordId, allocationRecordIds));
-			await tx.insert(timeRecordAllocation).values(payload.timeRecordAllocation);
-		}
-
-		const decisionRecordIds = payload.timeRecordApprovalDecision.map(
-			(decision) => decision.recordId,
-		);
-		if (decisionRecordIds.length > 0) {
-			await tx
-				.delete(timeRecordApprovalDecision)
-				.where(inArray(timeRecordApprovalDecision.recordId, decisionRecordIds));
-			await tx.insert(timeRecordApprovalDecision).values(payload.timeRecordApprovalDecision);
-		}
-
-		for (const link of payload.legacyLinks.workPeriod) {
-			const source = sourceWork.get(link.id);
-			if (!source || source.endTime === null) throw new Error("Invalid work backfill source");
-			// A clock-out or correction may have established work since the read.
-			// Reject the stale snapshot and roll back every representation written here.
-			const linked = await tx
-				.update(workPeriod)
-				.set({ canonicalRecordId: link.canonicalRecordId })
-				.where(
-					and(
-						eq(workPeriod.id, link.id),
-						eq(workPeriod.organizationId, input.organizationId),
-						isNull(workPeriod.canonicalRecordId),
-						eq(workPeriod.isActive, false),
-						eq(workPeriod.startTime, source.startTime),
-						eq(workPeriod.endTime, source.endTime),
-						eq(workPeriod.updatedAt, source.updatedAt),
+		const decisions = payload.timeRecordApprovalDecision;
+		if (decisions.length > 0) {
+			await tx.delete(timeRecordApprovalDecision).where(
+				and(
+					eq(timeRecordApprovalDecision.organizationId, input.organizationId),
+					inArray(
+						timeRecordApprovalDecision.recordId,
+						decisions.map((decision) => decision.recordId),
 					),
-				)
-				.returning({ id: workPeriod.id });
-			if (linked.length !== 1) throw new Error("Work changed during canonical backfill");
+				),
+			);
+			await tx.insert(timeRecordApprovalDecision).values(decisions);
 		}
 
 		for (const link of payload.legacyLinks.absenceEntry) {
@@ -399,11 +275,16 @@ export async function runCanonicalBackfill(
 			await tx
 				.update(approvalRequest)
 				.set({ canonicalRecordId: link.canonicalRecordId })
-				.where(eq(approvalRequest.id, link.id));
+				.where(
+					and(
+						eq(approvalRequest.id, link.id),
+						eq(approvalRequest.organizationId, input.organizationId),
+					),
+				);
 		}
 	});
 
-	return payload;
+	return { ...payload, work };
 }
 
 async function loadCanonicalBackfillInput(
@@ -411,7 +292,6 @@ async function loadCanonicalBackfillInput(
 ): Promise<CanonicalBackfillInput> {
 	const [
 		targetEmployees,
-		workPeriods,
 		scopedAbsenceEntries,
 		nullOrgAbsenceEntries,
 		approvalRequests,
@@ -420,9 +300,6 @@ async function loadCanonicalBackfillInput(
 		db.query.employee.findMany({
 			where: eq(employee.organizationId, input.organizationId),
 			columns: { id: true },
-		}),
-		db.query.workPeriod.findMany({
-			where: eq(workPeriod.organizationId, input.organizationId),
 		}),
 		db.query.absenceEntry.findMany({
 			where: eq(absenceEntry.organizationId, input.organizationId),
@@ -464,7 +341,6 @@ async function loadCanonicalBackfillInput(
 		organizationId: input.organizationId,
 		actorId: input.actorId,
 		legacy: {
-			workPeriods,
 			absenceEntries: [...normalizedScopedAbsenceEntries, ...attributedNullOrgAbsenceEntries],
 			approvalRequests: normalizedApprovalRequests,
 			absenceCategories,
@@ -472,28 +348,14 @@ async function loadCanonicalBackfillInput(
 	};
 }
 
-async function upsertCanonicalTimeRecords(
+async function upsertCanonicalAbsenceRecords(
 	tx: Transaction,
 	values: CanonicalBackfillPayload["timeRecords"],
 ) {
-	const work = values.filter((record) => record.recordKind === "work");
-	if (work.length > 0) {
-		const inserted = await tx
-			.insert(timeRecord)
-			.values(work)
-			.onConflictDoNothing({
-				target: [timeRecord.id, timeRecord.organizationId],
-			})
-			.returning({ id: timeRecord.id });
-		// An existing same-ID copy needs evidence-based repair, not an automatic rewrite.
-		if (inserted.length !== work.length) throw new Error("Canonical work backfill conflict");
-	}
-
-	const absences = values.filter((record) => record.recordKind === "absence");
-	if (absences.length === 0) return;
+	if (values.length === 0) return;
 	await tx
 		.insert(timeRecord)
-		.values(absences)
+		.values(values)
 		.onConflictDoUpdate({
 			target: [timeRecord.id, timeRecord.organizationId],
 			set: {
@@ -519,16 +381,6 @@ async function insertIfPresent<TTable, TValue>(
 	}
 
 	await tx.insert(table).values(values).onConflictDoNothing();
-}
-
-function mapApprovalStatusToAction(
-	status: LegacyApprovalStatus,
-): "submitted" | "approved" | "rejected" {
-	if (status === "pending") {
-		return "submitted";
-	}
-
-	return status;
 }
 
 function mapAbsenceToInterval(

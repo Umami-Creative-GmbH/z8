@@ -373,6 +373,8 @@
     "previous": "Назад",
     "recovering": "Восстановление...",
     "refresh": "Обновить",
+    "refreshData": "Обновить данные",
+    "refreshDataFailed": "Не удалось обновить данные. Повторите попытку.",
     "refreshing": "Обновление...",
     "reject": "Отклонить",
     "rejecting": "Отклонение…",
@@ -2528,6 +2530,9 @@
     "theme-time": "По времени",
     "theme-time-info": "В режиме по времени используется тема «{currentMode}». Переключение на «{nextMode}» в {time}.",
     "theme-toggle": "Переключить тему"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Включает {days} дн., использованных до начала учета"
   },
   "validation": {
     "first-name-required": "Имя обязательно для заполнения",

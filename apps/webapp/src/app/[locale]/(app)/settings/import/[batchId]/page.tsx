@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { HistoricalVacationImportReview } from "@/components/settings/import/historical-vacation-import-review";
 import { ImportReviewPage } from "@/components/settings/import/import-review-page";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,7 +26,10 @@ interface ImportReviewRouteProps {
 const IMPORT_REVIEW_PAGE_SIZE = 100;
 
 /** The requested page, within 1…pageCount; anything unreadable is the first page. */
-function importReviewPage(requested: string | string[] | undefined, totalRows: number) {
+function importReviewPage(
+	requested: string | string[] | undefined,
+	totalRows: number,
+) {
 	const rows = Number.isFinite(totalRows) ? totalRows : 0;
 	const pageCount = Math.max(1, Math.ceil(rows / IMPORT_REVIEW_PAGE_SIZE));
 	const value = Array.isArray(requested) ? requested[0] : requested;
@@ -42,10 +46,14 @@ const IMPORT_REVIEW_SUMMARY_LOADING_KEYS = [
 	"issues",
 ] as const;
 
-async function ImportReviewRouteContent({ params, searchParams }: ImportReviewRouteProps) {
+async function ImportReviewRouteContent({
+	params,
+	searchParams,
+}: ImportReviewRouteProps) {
 	const [{ batchId }, query, { organizationId }] = await Promise.all([
 		params,
-		searchParams ?? Promise.resolve({} as Record<string, string | string[] | undefined>),
+		searchParams ??
+			Promise.resolve({} as Record<string, string | string[] | undefined>),
 		requireOrgAdminSettingsAccess(),
 	]);
 	const batch = await db.query.importBatch.findFirst({
@@ -59,7 +67,10 @@ async function ImportReviewRouteContent({ params, searchParams }: ImportReviewRo
 	// A customer import from the accounting connection (#906) reviews per-contact decisions.
 	const isCustomerImport = batch.provider === "accounting";
 
-	const summary = await getImportReviewSummary({ batchId: batch.id, organizationId });
+	const summary = await getImportReviewSummary({
+		batchId: batch.id,
+		organizationId,
+	});
 	// Every import is reviewed page by page (#906 contacts, #937 work rows).
 	const paging = importReviewPage(query.page, summary.totalRows);
 	const [rows, billableTime, customerAccounting] = await Promise.all([
@@ -70,7 +81,9 @@ async function ImportReviewRouteContent({ params, searchParams }: ImportReviewRo
 			offset: (paging.page - 1) * IMPORT_REVIEW_PAGE_SIZE,
 		}),
 		getBillableTimeSettings(organizationId, db),
-		isCustomerImport ? listCustomerAccounting(db, organizationId) : Promise.resolve([]),
+		isCustomerImport
+			? listCustomerAccounting(db, organizationId)
+			: Promise.resolve([]),
 	]);
 	const showBillability = billableTime.enabled;
 	// Rows whose mapped project has no active customer now import as non-billable (#907).
@@ -98,6 +111,9 @@ async function ImportReviewRouteContent({ params, searchParams }: ImportReviewRo
 	return (
 		<div className="p-6">
 			<div className="mx-auto max-w-6xl">
+				{!isCustomerImport ? (
+					<HistoricalVacationImportReview batchId={batch.id} />
+				) : null}
 				<ImportReviewPage
 					organizationId={organizationId}
 					batchId={batch.id}

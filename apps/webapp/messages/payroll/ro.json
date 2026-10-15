@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds trebuie să fie o matrice",
       "employeeIdsMustContainOnlyStrings": "employeeIds trebuie să conțină doar șiruri de caractere",
       "endDateAfterStart": "Data de încheiere trebuie să fie la fel sau ulterioară datei de început",
+      "exportBlockedByDuplicateIdentifier": "Export blocat: mai mulți angajați au același identificator de personal. Atribuiți fiecărui angajat propriul identificator: {employees}",
       "exportBlockedByMissingIdentifier": "Export blocat: unii angajați nu au o valoare pentru câmpul personalizat folosit ca identificator de salarizare",
       "exportBlockedByOffboardingClockRepair": "Export blocat: remediați mai întâi pontajul de ieșire la offboarding",
       "exportBlockedByUncertainWork": "Export blocat: rezolvați mai întâi activitatea incertă din intervalul selectat",

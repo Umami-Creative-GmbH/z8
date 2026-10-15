@@ -10,6 +10,11 @@ import {
 	createClockingService,
 	createDatabaseClockingStore,
 } from "@/lib/time-tracking/clocking-core";
+import {
+	closeActiveWorkGraph,
+	MANAGER_ON_BEHALF_WRITER,
+} from "@/lib/time-tracking/close-active-work";
+import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
 import { createDepartureClockOut } from "./clock-out";
 import { assertEmployeeMayClock } from "./clocking-gate";
 import { runDepartureTransaction } from "./departure-transaction";
@@ -155,19 +160,40 @@ describe("clocking against departures", () => {
 		const identity = await schedule(target, cutoff);
 		const actionAt = parseInstant(new Date().toISOString());
 
+		const live = await fixture.pool.query<{ id: string }>(
+			"select id from work_period where employee_id = $1 and end_time is null",
+			[target.employeeId],
+		);
+		// The closure every on-behalf clock-out runs, under its own work transaction.
 		await expect(
-			clocking().clockOut({
-				employeeId: target.employeeId,
-				organizationId: fixture.organizationId,
-				createdBy: fixture.ownerUserId,
-				action: {
-					instant: actionAt,
-					utcOffsetMinutes: 0,
-					timezone: "UTC",
-					timezoneSource: "user_setting",
+			withCompletedWorkTransaction(
+				{
+					organizationId: fixture.organizationId,
+					employeeId: target.employeeId,
+					actorUserId: fixture.ownerUserId,
 				},
-				source: { ipAddress: null, deviceInfo: "manager" },
-			}),
+				(scope) =>
+					closeActiveWorkGraph(
+						scope as never,
+						{
+							organizationId: fixture.organizationId,
+							employeeId: target.employeeId,
+							teamId: null,
+							actorUserId: fixture.ownerUserId,
+							workPeriodId: live.rows[0]?.id ?? "",
+							command: {
+								version: 1,
+								operationId: randomUUID(),
+								project: { kind: "preserve" },
+								workCategory: { kind: "preserve" },
+							},
+							writer: MANAGER_ON_BEHALF_WRITER,
+							eventInstant: actionAt,
+							capture: { utcOffsetMinutes: 0, timezone: "UTC", timezoneSource: "user_setting" },
+						},
+						randomUUID(),
+					),
+			),
 		).rejects.toBeInstanceOf(ClockingAccessError);
 		expect(await activePeriods(target)).toBe(1);
 

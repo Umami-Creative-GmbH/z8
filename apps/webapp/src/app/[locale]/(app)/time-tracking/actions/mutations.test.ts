@@ -121,10 +121,6 @@ vi.mock("./entry-helpers", () => ({
 	validateProjectAssignment: vi.fn(),
 }));
 
-vi.mock("@/lib/time-tracking/time-entry-writer", () => ({
-	createTimeEntry: vi.fn(),
-}));
-
 vi.mock("./shared", () => ({
 	logger: mockState.logger,
 }));

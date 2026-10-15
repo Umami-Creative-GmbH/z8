@@ -23,6 +23,14 @@ function nextId(prefix: string) {
 
 const at = (value: string) => parseInstant(value);
 
+const noVehicle = {
+	vehicleKind: null,
+	vehicleId: null,
+	odometerStartKm: null,
+	odometerEndKm: null,
+	drivenDistanceKm: null,
+} as const;
+
 function entry(type: "clock_in" | "clock_out", timestamp: string): HistoricalEntryEvidence {
 	return {
 		id: nextId("e"),
@@ -74,9 +82,12 @@ function work(
 		approvalWorkflowId: null,
 		deletedAt: null,
 		projectId: null,
+		taskId: null,
 		workCategoryId: null,
 		workLocationType: null,
+		...noVehicle,
 		canonicalRecordId: options.record === null ? null : id,
+		closedMonth: null,
 		graphRevision: 3,
 		createdAt: at(end),
 		...options.period,
@@ -93,8 +104,13 @@ function work(
 					approvalState: "approved",
 					origin: "clock",
 					createdAt: at(end),
-					detail: { workCategoryId: null, workLocationType: null, computationMetadata: null },
-					projectIds: [],
+					detail: {
+						workCategoryId: null,
+						workLocationType: null,
+						...noVehicle,
+						computationMetadata: null,
+					},
+					allocations: [],
 					...options.record,
 				};
 	return { period, record, entries: [clockIn, clockOut] };
@@ -198,6 +214,39 @@ describe("proposeHistoricalRepair", () => {
 		expect(fingerprint).toMatch(/^[0-9a-f]{64}$/);
 	});
 
+	// spec-2 M1: work attach refuses (no minutes) is repairable: the repair attaches its
+	// canonical work record with the named minutes.
+	it("proposes the minutes that let work without a canonical work record be attached", () => {
+		const fixture = work({ periodMinutes: null, record: null });
+
+		const { proposal } = proposalOf(
+			propose(evidence([fixture]), fixture.period.id, [
+				{ target: "work_period", field: "duration_minutes", after: 60 },
+			]),
+		);
+
+		expect(proposal.work).toEqual({ workPeriodId: fixture.period.id, timeRecordId: null });
+		expect(proposal.changes).toEqual([
+			{
+				target: "work_period",
+				id: fixture.period.id,
+				field: "duration_minutes",
+				before: null,
+				after: 60,
+			},
+		]);
+	});
+
+	it("refuses a change to work without a canonical work record that attach would still refuse", () => {
+		const fixture = work({ periodMinutes: null, record: null });
+
+		expect(
+			propose(evidence([fixture]), fixture.period.id, [
+				{ target: "work_period", field: "work_category_id", after: category },
+			]),
+		).toEqual({ kind: "refused", reasons: ["repair_leaves_divergence"] });
+	});
+
 	it("accepts operator minutes where no representation holds them", () => {
 		const fixture = work({ periodMinutes: null, recordMinutes: null });
 		const { proposal } = proposalOf(
@@ -242,13 +291,46 @@ describe("proposeHistoricalRepair", () => {
 		expect(proposal.uncertainty.remainingFindings.map((finding) => finding.kind)).not.toContain(
 			"endpoint_conflict",
 		);
-		expect(proposal.consequences.allocation.effects).toContain(
+		// A repair changes both records (#1226): the record takes the period's new project.
+		expect(proposal.consequences.allocation.effects).not.toContain(
 			"period_project_differs_from_record_allocation",
 		);
+		expect(proposal.uncertainty.remainingFindings).toEqual([]);
+	});
+
+	it("refuses a repair that leaves a disagreement it does not name (#1226)", () => {
+		const fixture = work({ recordMinutes: 45, period: { workCategoryId: category } });
+		expect(
+			propose(evidence([fixture]), fixture.period.id, [
+				{ target: "time_record", field: "duration_minutes", after: 60 },
+			]),
+		).toEqual({ kind: "refused", reasons: ["repair_leaves_divergence"] });
+		expect(
+			propose(evidence([fixture]), fixture.period.id, [
+				{ target: "time_record", field: "duration_minutes", after: 60 },
+				{ target: "time_record", field: "start_at", after: "2026-07-06T06:30:00Z" },
+				{ target: "time_record", field: "work_category_id", after: category },
+			]),
+		).toEqual({ kind: "refused", reasons: ["repair_leaves_divergence"] });
 	});
 
 	it("discloses that record allocations keep their weights when minutes change", () => {
-		const fixture = work({ recordMinutes: 45, record: { projectIds: [project] } });
+		const fixture = work({
+			recordMinutes: 45,
+			period: { projectId: project },
+			record: {
+				allocations: [
+					{
+						allocationKind: "project",
+						projectId: project,
+						taskId: null,
+						costCenterId: null,
+						weightPercent: 100,
+						isBillable: false,
+					},
+				],
+			},
+		});
 		const { proposal } = proposalOf(
 			propose(evidence([fixture]), fixture.period.id, [
 				{ target: "time_record", field: "duration_minutes", after: 60 },

@@ -1335,6 +1335,14 @@ export async function onTeamMemberRemoved(
 interface SecurityParams {
 	userId: string;
 	organizationId: string;
+	/** The client of the request that caused the event, for the security alert email (#1180). */
+	ipAddress?: string;
+	userAgent?: string;
+}
+
+/** The event's client, when known; the email shows it as IP address and device rows. */
+function securityClientMetadata({ ipAddress, userAgent }: SecurityParams) {
+	return { ...(ipAddress ? { ipAddress } : {}), ...(userAgent ? { userAgent } : {}) };
 }
 
 /**
@@ -1351,7 +1359,7 @@ export async function onPasswordChanged(params: SecurityParams): Promise<void> {
 			title: content.title,
 			message: content.message,
 			actionUrl: "/settings/security",
-			metadata: { i18n: content.i18n },
+			metadata: { i18n: content.i18n, ...securityClientMetadata(params) },
 		});
 	} catch (error) {
 		logger.error(
@@ -1393,7 +1401,7 @@ export async function onTwoFactorEnabled(
 			title: content.title,
 			message: content.message,
 			actionUrl: "/settings/security",
-			metadata: { i18n: content.i18n },
+			metadata: { i18n: content.i18n, ...securityClientMetadata(params) },
 		});
 	} catch (error) {
 		logger.error(
@@ -1419,7 +1427,7 @@ export async function onTwoFactorDisabled(
 			title: content.title,
 			message: content.message,
 			actionUrl: "/settings/security",
-			metadata: { i18n: content.i18n },
+			metadata: { i18n: content.i18n, ...securityClientMetadata(params) },
 		});
 	} catch (error) {
 		logger.error(

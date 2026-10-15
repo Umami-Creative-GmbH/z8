@@ -9,30 +9,11 @@
       "inviteTeamDesc": "Add colleagues to collaborate and manage time together",
       "loading": "Finalizing your setup...",
       "nextStepsTitle": "Next Steps",
+      "setUpHolidays": "Set up public holidays",
+      "setUpHolidaysDesc": "Choose your country and region in the holiday settings",
       "subtitle": "Your account is ready to use. Welcome to the team!",
       "summaryError": "Failed to get onboarding summary",
       "title": "You're all set!"
-    },
-    "holidaySetup": {
-      "cardDesc": "Choose your country to import public holidays. You can customize holidays later in settings.",
-      "cardTitle": "Holiday Preset",
-      "continue": "Continue",
-      "country": "Country",
-      "countryDesc": "Public holidays will be imported based on your selection.",
-      "error": "Failed to create holiday preset",
-      "noCountry": "No country found.",
-      "presetName": "Preset Name",
-      "presetNameDesc": "A name to identify this holiday preset.",
-      "presetNamePlaceholder": "e.g., Germany Holidays",
-      "searchCountry": "Search countries...",
-      "selectCountry": "Select a country",
-      "setAsDefault": "Set as Organization Default",
-      "setAsDefaultDesc": "Apply this holiday preset to all employees.",
-      "skip": "Skip for now",
-      "skipError": "Failed to skip holiday setup",
-      "subtitle": "Select your country to import public holidays. This helps track time off accurately.",
-      "success": "Holiday preset created!",
-      "title": "Set up holidays"
     },
     "notifications": {
       "approvals": "Approval requests",
@@ -67,13 +48,31 @@
     "organization": {
       "create": "Create Organization",
       "createDescription": "Set up your own organization and invite your team",
+      "createError": "Failed to create organization",
+      "createSuccess": "Organization created successfully!",
       "createTitle": "Create Organization",
       "disabledSkipDescription": "You can continue by skipping this step while you wait for an invitation to an existing organization.",
       "disabledSubtitle": "Organization creation is disabled for this deployment.",
+      "nameErrors": {
+        "max": "Organization name must be less than 100 characters",
+        "min": "Organization name must be at least 2 characters"
+      },
+      "nameLabel": "Organization Name",
+      "namePlaceholder": "Acme Inc.",
       "skip": "Skip for now",
       "skipDescription": "If your administrator will invite you to an organization, you can skip this step for now.",
       "skipError": "Failed to skip organization setup",
       "skipTitle": "Waiting for an Invitation?",
+      "slugDescription": "Used in URLs. Auto-generated from name.",
+      "slugErrors": {
+        "format": "Slug must contain only lowercase letters, numbers, and hyphens",
+        "hyphen": "Slug cannot start or end with a hyphen",
+        "max": "Slug must be less than 50 characters",
+        "min": "Slug must be at least 2 characters"
+      },
+      "slugLabel": "Organization Slug",
+      "slugPlaceholder": "acme-inc",
+      "slugTaken": "This slug is already taken. Please choose a different one.",
       "subtitle": "Create your organization to unlock all features, or skip if you're waiting for an invitation.",
       "title": "Set up your organization"
     },
@@ -102,14 +101,21 @@
       "timeFormat24h": "24-hour (08:00)",
       "timeFormatDesc": "This controls how clock times are displayed.",
       "title": "Complete your profile",
+      "validation": {
+        "firstNameRequired": "First name is required",
+        "firstNameTooLong": "First name must be 50 characters or fewer",
+        "lastNameRequired": "Last name is required",
+        "lastNameTooLong": "Last name must be 50 characters or fewer"
+      },
       "weekStartDay": "First day of the week",
       "weekStartDayDesc": "This controls how calendars and weekly summaries are displayed."
     },
     "steps": {
       "complete": "Complete",
-      "holidaySetup": "Holidays",
+      "label": "Onboarding progress",
       "notifications": "Notifications",
       "organization": "Organization",
+      "position": "Step {current} of {total}",
       "profile": "Profile",
       "vacationPolicy": "Vacation",
       "welcome": "Welcome",
@@ -144,7 +150,13 @@
       "skipError": "Failed to skip vacation policy setup",
       "subtitle": "Create a vacation policy for your organization. This determines how many days off employees get.",
       "success": "Vacation policy created!",
-      "title": "Set up vacation policy"
+      "title": "Set up vacation policy",
+      "validation": {
+        "daysNegative": "Days cannot be negative",
+        "daysTooMany": "Days cannot exceed 365",
+        "nameRequired": "Policy name is required",
+        "nameTooLong": "Policy name must be 100 characters or fewer"
+      }
     },
     "welcome": {
       "continueSetup": "Continue Setup",
@@ -177,6 +189,24 @@
       "features": "What you'll get",
       "glass": "glass",
       "glasses": "glasses",
+      "presets": {
+        "active": {
+          "description": "Every 30 minutes - for high activity or hot environments",
+          "label": "Active"
+        },
+        "custom": {
+          "description": "Set your own interval (15-120 minutes)",
+          "label": "Custom"
+        },
+        "light": {
+          "description": "Every 60 minutes - for low activity",
+          "label": "Light"
+        },
+        "moderate": {
+          "description": "Every 45 minutes - recommended for most people",
+          "label": "Moderate"
+        }
+      },
       "recommended": "(Recommended)",
       "reminderFrequency": "Reminder Frequency",
       "skip": "Skip for now",
@@ -203,6 +233,10 @@
       "subtitle": "Define your working hours to help track time and manage absences accurately.",
       "success": "Work schedule set successfully!",
       "title": "Set your work schedule",
+      "validation": {
+        "hoursNegative": "Hours cannot be negative",
+        "hoursTooMany": "A week has at most 168 hours"
+      },
       "weekly": "Weekly"
     },
     "workTemplates": {
@@ -226,6 +260,12 @@
       "subtitle": "Set up a work schedule template for your organization. This defines working hours for your team.",
       "success": "Work schedule template created!",
       "title": "Create work schedule template",
+      "validation": {
+        "hoursNegative": "Hours cannot be negative",
+        "hoursTooMany": "A week has at most 168 hours",
+        "nameRequired": "Template name is required",
+        "nameTooLong": "Template name must be 100 characters or fewer"
+      },
       "workingDays": "Working Days",
       "workingDaysDesc": "Select which days are working days. Hours will be distributed evenly."
     }

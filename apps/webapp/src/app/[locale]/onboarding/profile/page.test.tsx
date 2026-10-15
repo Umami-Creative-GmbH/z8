@@ -6,6 +6,7 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import {
 	afterEach,
@@ -37,6 +38,10 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback?: string) => fallback ?? _key,
 	}),
+}));
+
+vi.mock("next-intl", () => ({
+	useLocale: () => "en",
 }));
 
 vi.mock("sonner", () => ({
@@ -168,6 +173,21 @@ describe("ProfilePage", () => {
 		expect(
 			screen.getByRole("checkbox", { name: "Help us improve this app" }),
 		).toBeTruthy();
+	});
+
+	it("exposes the gender choices as a labelled group of toggle buttons", () => {
+		render(<ProfilePage />);
+
+		const group = screen.getByRole("group", { name: "Gender (Optional)" });
+		const female = within(group).getByRole("button", { name: "Female" });
+		expect(female.getAttribute("aria-pressed")).toBe("false");
+
+		fireEvent.click(female);
+
+		expect(female.getAttribute("aria-pressed")).toBe("true");
+		expect(
+			within(group).getByRole("button", { name: "Male" }).getAttribute("aria-pressed"),
+		).toBe("false");
 	});
 
 	it("keeps skip disabled after successful skip navigation", async () => {

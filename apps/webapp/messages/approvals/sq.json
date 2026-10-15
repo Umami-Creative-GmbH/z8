@@ -9,6 +9,7 @@
       "displacedVacation": "Datat e pushimit zëvendësohen pas miratimit",
       "exactHours": "Orët e sakta të regjistruara",
       "fullDay": "Ditë e plotë",
+      "historicalRemaining": "Pushimet e mbetura të marra më parë",
       "morning": "Mëngjes",
       "original": "Datat e regjistruara",
       "originalEndCoverage": "Dita e fundit e regjistruar",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Arsyeja",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Pushimet e disponueshme pas rakordimit",
+      "reconciliationReason": "Burimi i rakordimit të pushimeve historike",
       "title": "Ndryshimi i mungesës"
     },
     "absenceRejected": "Kërkesa për mungesë u refuzua",

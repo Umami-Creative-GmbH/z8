@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Zarejestrowano zatwierdzenie",
           "approved": "Zatwierdzono",
+          "receiptAdded": "Rachunek dodany po przesłaniu",
           "rejected": "Odrzucono",
           "reopened": "Wznowiono do poprawy",
           "returned": "Zwrócono do wprowadzenia zmian",
@@ -851,6 +852,9 @@
         "withdraw": "Usuń wyjaśnienie"
       },
       "receipts": {
+        "add": "Dodaj paragon",
+        "addedAfterSubmission": "{fileName}: Dodano po przesłaniu przez {name} w dniu {date}.",
+        "choose": "Wybierz paragon",
         "chooseFile": "Wybierz plik",
         "description": "Zrób zdjęcie lub załącz plik PDF albo obraz rachunku.",
         "downloadNamed": "Pobierz {fileName}",
@@ -862,10 +866,13 @@
         },
         "none": "Nie załączono jeszcze żadnego rachunku.",
         "previewNamed": "Podgląd {fileName}",
+        "processing": "Załączanie paragonu…",
         "progress": "Postęp przesyłania",
         "remove": "Usuń",
         "removeFailed": "Nie udało się usunąć rachunku.",
         "removeNamed": "Usuń {fileName}",
+        "supplementConflict": "Rachunek został już dołączony lub raport uległ zmianie. Odśwież raport przed ponowną próbą.",
+        "supplementFailed": "Rachunek nie został załączony. Odśwież raport i spróbuj ponownie.",
         "takePhoto": "Zrób zdjęcie",
         "title": "Rachunek",
         "uploadFailed": "Rachunek nie został załączony.",

@@ -1,3 +1,7 @@
+vi.mock("@/lib/time-tracking/tracking-start", () => ({
+ loadEmployeeTrackingStart: async () => null,
+ loadEmployeeTrackingContext: async () => null,
+}));
 import { and, eq, gte, inArray, isNotNull, lt } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { employee, employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";

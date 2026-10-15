@@ -13,6 +13,7 @@ import type {
 	WorkPeriodData,
 } from "../../types";
 import { WorkdayApiClient } from "./api-client";
+import { isWorkdayMatchStrategy, workdayMatchValue } from "./match-value";
 import {
 	DEFAULT_WORKDAY_CONFIG,
 	type WorkdayAbsencePayload,
@@ -343,7 +344,7 @@ export class WorkdayConnector implements IPayrollExporter {
 		if (employeeMatchStrategy !== undefined) {
 			if (typeof employeeMatchStrategy !== "string") {
 				errors.push(STRATEGY_ERROR);
-			} else if (!this.isValidEmployeeMatchStrategy(employeeMatchStrategy)) {
+			} else if (!isWorkdayMatchStrategy(employeeMatchStrategy)) {
 				errors.push(STRATEGY_ERROR);
 			} else {
 				config.employeeMatchStrategy = employeeMatchStrategy;
@@ -414,14 +415,6 @@ export class WorkdayConnector implements IPayrollExporter {
 		};
 	}
 
-	private isValidEmployeeMatchStrategy(
-		strategy: string,
-	): strategy is WorkdayConfig["employeeMatchStrategy"] {
-		return (
-			strategy === "employeeNumber" || strategy === "email" || strategy === CUSTOM_FIELD_IDENTIFIER
-		);
-	}
-
 	private getDateRange(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
@@ -477,7 +470,7 @@ export class WorkdayConnector implements IPayrollExporter {
 		skipped: NonNullable<ApiExportResult["skipped"]>;
 		onLookup: () => void;
 	}): Promise<WorkdayWorker | null> {
-		const matchValue = this.getMatchValue(params.record, params.strategy);
+		const matchValue = workdayMatchValue(params.record, params.strategy);
 		if (!matchValue) {
 			params.skipped.push({
 				recordId: (params.record as WorkPeriodData | AbsenceData).id,
@@ -514,21 +507,6 @@ export class WorkdayConnector implements IPayrollExporter {
 		}
 
 		return worker;
-	}
-
-	private getMatchValue(
-		record: MatchableRecord,
-		strategy: WorkdayConfig["employeeMatchStrategy"],
-	): string | null {
-		if (strategy === "email") {
-			return record.email?.trim() || null;
-		}
-		// The frozen custom field value, matched as Workday employee number (#821); never a fallback.
-		if (strategy === CUSTOM_FIELD_IDENTIFIER) {
-			return record.personnelIdentifier?.trim() || null;
-		}
-
-		return record.employeeNumber?.trim() || null;
 	}
 
 	private isRetryableError(error: unknown): boolean {

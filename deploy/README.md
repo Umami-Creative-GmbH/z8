@@ -125,6 +125,11 @@ docker compose -f docker-compose.prod.yml up -d db pgbouncer valkey
 # 5. Run migrations
 docker compose -f docker-compose.prod.yml up migration
 
+# 5a. Once, right after the migration that adds 0234: attach missing canonical work records
+#     (see "After Migration 0234" below)
+docker compose -f docker-compose.prod.yml run --rm --entrypoint tsx worker \
+  --import ./src/worker-preload.mjs scripts/attach-missing-work-records.ts
+
 # 6. Start webapp and worker
 docker compose -f docker-compose.prod.yml up -d webapp worker
 
@@ -203,6 +208,35 @@ kubectl logs -n z8 -l app.kubernetes.io/component=webapp
 kubectl apply -f migration.yaml
 kubectl wait --for=condition=complete job/z8-migration -n z8 --timeout=300s
 ```
+
+### After Migration 0234: Attach Missing Canonical Work Records (once)
+
+Migration 0234 (spec #1212) adds a `NOT VALID` check that every completed work period has a
+canonical work record. Rows written before it may still lack one. **Run right after migrate**,
+once, from the worker image of the same release (it has `tsx` and the `server-only` preload),
+with the worker's environment (database variables plus `BETTER_AUTH_SECRET` and
+`SCIM_CREDENTIAL_HASH_SECRET`):
+
+```bash
+docker run --rm \
+  --entrypoint tsx \
+  --env-file "$PRODUCTION_WORKER_ENV_FILE" \
+  --network "$PRODUCTION_WORKER_NETWORK" \
+  "$WORKER_IMAGE" \
+  --import ./src/worker-preload.mjs scripts/attach-missing-work-records.ts
+```
+
+Locally: `pnpm --dir apps/webapp work-records:attach-missing [--organization-id <org-id>] [--json]`.
+
+- Every organization is processed, one work period at a time in its own work transaction.
+- Work touching a closed month is skipped and stays a half pair until the month reopens
+  (reopening attaches it).
+- Attaching changes no work: no period submission is sent back and no balance is marked.
+- The report lists per organization: attached, closed-month skips and refused periods with their
+  reason (for example `duration_missing` or `end_without_clock_out`). Refused periods do not block
+  payroll; repair them through work diagnostics.
+- It is safe to rerun. Until it has run, the payroll export and the payroll workspace attach the
+  missing records of their organization on first use.
 
 ## Services
 

@@ -9,30 +9,11 @@
       "inviteTeamDesc": "Fügen Sie Kollegen hinzu, um zusammenzuarbeiten und Zeit gemeinsam zu verwalten",
       "loading": "Einrichtung wird abgeschlossen...",
       "nextStepsTitle": "Nächste Schritte",
+      "setUpHolidays": "Feiertage einrichten",
+      "setUpHolidaysDesc": "Wählen Sie Ihr Land und Ihre Region in den Feiertagseinstellungen",
       "subtitle": "Ihr Konto ist einsatzbereit. Willkommen im Team!",
       "summaryError": "Onboarding-Zusammenfassung konnte nicht abgerufen werden",
       "title": "Alles erledigt!"
-    },
-    "holidaySetup": {
-      "cardDesc": "Wählen Sie Ihr Land, um gesetzliche Feiertage zu importieren. Sie können Feiertage später in den Einstellungen anpassen.",
-      "cardTitle": "Feiertagsvorlage",
-      "continue": "Weiter",
-      "country": "Land",
-      "countryDesc": "Gesetzliche Feiertage werden basierend auf Ihrer Auswahl importiert.",
-      "error": "Feiertagsvorlage konnte nicht erstellt werden",
-      "noCountry": "Kein Land gefunden.",
-      "presetName": "Vorlagenname",
-      "presetNameDesc": "Ein Name zur Identifizierung dieser Feiertagsvorlage.",
-      "presetNamePlaceholder": "z.B. Feiertage Deutschland",
-      "searchCountry": "Länder suchen...",
-      "selectCountry": "Land auswählen",
-      "setAsDefault": "Als Organisationsstandard festlegen",
-      "setAsDefaultDesc": "Diese Feiertagsvorlage auf alle Mitarbeiter anwenden.",
-      "skip": "Vorerst überspringen",
-      "skipError": "Überspringen der Feiertagseinrichtung fehlgeschlagen",
-      "subtitle": "Wählen Sie Ihr Land, um gesetzliche Feiertage zu importieren. Dies hilft, Abwesenheiten genau zu erfassen.",
-      "success": "Feiertagsvorlage erstellt!",
-      "title": "Feiertage einrichten"
     },
     "notifications": {
       "approvals": "Genehmigungsanfragen",
@@ -67,13 +48,31 @@
     "organization": {
       "create": "Organisation erstellen",
       "createDescription": "Erstellen Sie Ihre eigene Organisation und laden Sie Ihr Team ein",
+      "createError": "Organisation konnte nicht erstellt werden",
+      "createSuccess": "Organisation erfolgreich erstellt!",
       "createTitle": "Organisation erstellen",
       "disabledSkipDescription": "Sie können fortfahren, indem Sie diesen Schritt überspringen, während Sie auf eine Einladung zu einer bestehenden Organisation warten.",
       "disabledSubtitle": "Die Erstellung von Organisationen ist für diese Bereitstellung deaktiviert.",
+      "nameErrors": {
+        "max": "Organisationsname muss weniger als 100 Zeichen lang sein",
+        "min": "Organisationsname muss mindestens 2 Zeichen lang sein"
+      },
+      "nameLabel": "Organisationsname",
+      "namePlaceholder": "Acme Inc.",
       "skip": "Vorerst überspringen",
       "skipDescription": "Wenn Ihr Administrator Sie zu einer Organisation einlädt, können Sie diesen Schritt vorerst überspringen.",
       "skipError": "Überspringen der Organisationseinrichtung fehlgeschlagen",
       "skipTitle": "Warten Sie auf eine Einladung?",
+      "slugDescription": "Wird in URLs verwendet. Automatisch aus dem Namen generiert.",
+      "slugErrors": {
+        "format": "Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten",
+        "hyphen": "Slug darf nicht mit einem Bindestrich beginnen oder enden",
+        "max": "Slug muss weniger als 50 Zeichen lang sein",
+        "min": "Slug muss mindestens 2 Zeichen lang sein"
+      },
+      "slugLabel": "Organisations-Slug",
+      "slugPlaceholder": "acme-inc",
+      "slugTaken": "Dieser Slug ist bereits vergeben. Bitte wählen Sie einen anderen.",
       "subtitle": "Erstellen Sie Ihre Organisation, um alle Funktionen freizuschalten, oder überspringen Sie, wenn Sie auf eine Einladung warten.",
       "title": "Organisation einrichten"
     },
@@ -102,14 +101,21 @@
       "timeFormat24h": "24-Stunden (08:00)",
       "timeFormatDesc": "Dies steuert die Anzeige der Uhrzeiten.",
       "title": "Profil vervollständigen",
+      "validation": {
+        "firstNameRequired": "Vorname ist erforderlich",
+        "firstNameTooLong": "Vorname darf höchstens 50 Zeichen lang sein",
+        "lastNameRequired": "Nachname ist erforderlich",
+        "lastNameTooLong": "Nachname darf höchstens 50 Zeichen lang sein"
+      },
       "weekStartDay": "Erster Tag der Woche",
       "weekStartDayDesc": "Dies steuert die Anzeige von Kalendern und wöchentlichen Zusammenfassungen."
     },
     "steps": {
       "complete": "Abgeschlossen",
-      "holidaySetup": "Feiertage",
+      "label": "Onboarding-Fortschritt",
       "notifications": "Benachrichtigungen",
       "organization": "Organisation",
+      "position": "Schritt {current} von {total}",
       "profile": "Profil",
       "vacationPolicy": "Urlaub",
       "welcome": "Willkommen",
@@ -144,7 +150,13 @@
       "skipError": "Überspringen der Urlaubsrichtlinieneinrichtung fehlgeschlagen",
       "subtitle": "Erstellen Sie eine Urlaubsrichtlinie für Ihre Organisation. Dies bestimmt, wie viele freie Tage Mitarbeiter erhalten.",
       "success": "Urlaubsrichtlinie erstellt!",
-      "title": "Urlaubsrichtlinie einrichten"
+      "title": "Urlaubsrichtlinie einrichten",
+      "validation": {
+        "daysNegative": "Tage dürfen nicht negativ sein",
+        "daysTooMany": "Tage dürfen 365 nicht überschreiten",
+        "nameRequired": "Richtlinienname ist erforderlich",
+        "nameTooLong": "Richtlinienname darf höchstens 100 Zeichen lang sein"
+      }
     },
     "welcome": {
       "continueSetup": "Einrichtung fortsetzen",
@@ -177,6 +189,24 @@
       "features": "Was Sie erhalten",
       "glass": "Glas",
       "glasses": "Gläser",
+      "presets": {
+        "active": {
+          "description": "Alle 30 Minuten – bei hoher Aktivität oder heißer Umgebung",
+          "label": "Aktiv"
+        },
+        "custom": {
+          "description": "Eigenes Intervall festlegen (15–120 Minuten)",
+          "label": "Benutzerdefiniert"
+        },
+        "light": {
+          "description": "Alle 60 Minuten – bei geringer Aktivität",
+          "label": "Leicht"
+        },
+        "moderate": {
+          "description": "Alle 45 Minuten – für die meisten Personen empfohlen",
+          "label": "Moderat"
+        }
+      },
       "recommended": "(Empfohlen)",
       "reminderFrequency": "Erinnerungshäufigkeit",
       "skip": "Vorerst überspringen",
@@ -203,6 +233,10 @@
       "subtitle": "Definieren Sie Ihre Arbeitszeiten, um Zeit und Abwesenheiten genau zu erfassen.",
       "success": "Arbeitszeit erfolgreich festgelegt!",
       "title": "Arbeitszeit festlegen",
+      "validation": {
+        "hoursNegative": "Stunden dürfen nicht negativ sein",
+        "hoursTooMany": "Eine Woche hat höchstens 168 Stunden"
+      },
       "weekly": "Wöchentlich"
     },
     "workTemplates": {
@@ -226,6 +260,12 @@
       "subtitle": "Richten Sie eine Arbeitszeitplan-Vorlage für Ihre Organisation ein. Dies definiert die Arbeitszeiten für Ihr Team.",
       "success": "Arbeitszeitvorlage erstellt!",
       "title": "Arbeitszeitvorlage erstellen",
+      "validation": {
+        "hoursNegative": "Stunden dürfen nicht negativ sein",
+        "hoursTooMany": "Eine Woche hat höchstens 168 Stunden",
+        "nameRequired": "Vorlagenname ist erforderlich",
+        "nameTooLong": "Vorlagenname darf höchstens 100 Zeichen lang sein"
+      },
       "workingDays": "Arbeitstage",
       "workingDaysDesc": "Wählen Sie, welche Tage Arbeitstage sind. Stunden werden gleichmäßig verteilt."
     }

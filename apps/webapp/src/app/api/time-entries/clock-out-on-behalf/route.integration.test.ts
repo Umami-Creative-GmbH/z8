@@ -18,6 +18,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { dateFromInstant, type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -517,18 +518,20 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 	async function seedEarlierWork(start: string, minutes: number, deleted = false) {
 		const startAt = parseInstant(start);
 		const startTime = dateFromInstant(startAt);
-		await admin.query(
-			`insert into work_period (organization_id, employee_id, clock_in_id, start_time, end_time,
-			  duration_minutes, is_active, approval_status, deleted_at, updated_at)
-			 select organization_id, employee_id, clock_in_id, $2, $3, $4, false, 'approved', $5, now()
-			 from work_period where employee_id = $1 and end_time is null`,
-			[
-				ids.target,
-				startTime,
-				dateFromInstant(startAt.add({ minutes })),
-				minutes,
-				deleted ? startTime : null,
-			],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`insert into work_period (organization_id, employee_id, clock_in_id, start_time, end_time,
+				  duration_minutes, is_active, approval_status, deleted_at, updated_at)
+				 select organization_id, employee_id, clock_in_id, $2, $3, $4, false, 'approved', $5, now()
+				 from work_period where employee_id = $1 and end_time is null`,
+				[
+					ids.target,
+					startTime,
+					dateFromInstant(startAt.add({ minutes })),
+					minutes,
+					deleted ? startTime : null,
+				],
+			),
 		);
 	}
 
@@ -986,7 +989,8 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 			clock_out_id: operationId,
 			// Omission no longer clears the target's project.
 			project_id: ids.projectA,
-			graph_revision: 0,
+			// Work records advances the revision in both admissions (#1222).
+			graph_revision: 1,
 			clock_out_created_by: ids.managerUser,
 			clock_out_timezone: "America/New_York",
 			clock_out_timezone_source: "manager_target_user_setting",

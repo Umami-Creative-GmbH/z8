@@ -89,6 +89,7 @@ const TIMEZONE_GROUPS = [
 ];
 
 interface TimezonePickerProps {
+	id?: string;
 	value?: string;
 	onChange: (timezone: string) => void;
 	disabled?: boolean;
@@ -96,6 +97,7 @@ interface TimezonePickerProps {
 }
 
 export function TimezonePicker({
+	id,
 	value = "UTC",
 	onChange,
 	disabled,
@@ -253,6 +255,7 @@ export function TimezonePicker({
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
+					id={id}
 					variant="field"
 					role="combobox"
 					aria-expanded={open}

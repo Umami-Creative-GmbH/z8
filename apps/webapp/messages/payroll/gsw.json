@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds mues es Array si",
       "employeeIdsMustContainOnlyStrings": "employeeIds dörfe nume Strings enthaute",
       "endDateAfterStart": "S'Änddatum mues glich oder nach em Startdatum si",
+      "exportBlockedByDuplicateIdentifier": "Export blockiert: Mehreri Mitarbeiter teiled sich en Personal-Kennig. Gib jedem Mitarbeiter en eigeni: {employees}",
       "exportBlockedByMissingIdentifier": "Export blockiert: Einigi Mitarbeiter hend kein Wert fürs benutzerdefinierte Feld, wo als Lohnabrechnigs-ID bruucht wird",
       "exportBlockedByOffboardingClockRepair": "Export blockiert: Zersch s'Offboarding-Usstämpfle korrigiere",
       "exportBlockedByUncertainWork": "Export blockiert: Zersch die unklari Arbet im uswählte Bereich kläre",

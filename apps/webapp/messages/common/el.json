@@ -373,6 +373,8 @@
     "previous": "Προηγούμενο",
     "recovering": "Ανάκτηση...",
     "refresh": "Ανανέωση",
+    "refreshData": "Ανανέωση δεδομένων",
+    "refreshDataFailed": "Δεν ήταν δυνατή η ανανέωση των δεδομένων. Δοκιμάστε ξανά.",
     "refreshing": "Ανανέωση...",
     "reject": "Απόρριψη",
     "rejecting": "Απόρριψη...",
@@ -2528,6 +2530,9 @@
     "theme-time": "Βάσει ώρας",
     "theme-time-info": "Η λειτουργία βάσει ώρας χρησιμοποιεί τη λειτουργία {currentMode}. Θα αλλάξει σε {nextMode} στις {time}.",
     "theme-toggle": "Εναλλαγή θέματος"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Περιλαμβάνει {days} ημέρες που λήφθηκαν πριν από την παρακολούθηση"
   },
   "validation": {
     "first-name-required": "Το όνομα είναι υποχρεωτικό",

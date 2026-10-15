@@ -13,6 +13,6 @@ export async function enqueueImportScanJob(
 }
 
 export async function enqueueImportCommitJob(data: ImportCommitJobData) {
-	const queueJobId = `import-review-commit-${data.jobId}`;
+	const queueJobId = `import-review-commit-${data.jobId}${data.historicalReconciliation ? `-${data.historicalReconciliation.operationId}` : ""}`;
 	return addJob(queueJobId, data, { priority: 4, jobId: queueJobId });
 }

@@ -65,6 +65,9 @@ const { clockIn, clockOut } = await import(
 );
 const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
+const { expectRecordAgreement } = await import(
+	"@/lib/time-tracking/work-records/__tests__/expect-record-agreement"
+);
 
 const ids = {
 	organization: "t284-reviewed-import-org",
@@ -463,7 +466,7 @@ describe("reviewed imports through the completed-work operation on PostgreSQL", 
 	});
 
 	describe("legacy organizations", () => {
-		it("keep the legacy writer, now under the shared employee key and the #264 gates", async () => {
+		it("create completed work through work records under the shared employee key and the #264 gates", async () => {
 			const batch = await createBatch();
 			const rowId = await stageRow(batch, {
 				sourceId: "clockodo:entry:1",
@@ -500,12 +503,20 @@ describe("reviewed imports through the completed-work operation on PostgreSQL", 
 
 			expect((await commit).error).toBeNull();
 			const [period] = await periods();
+			// Regression (#1223): the legacy import created a period without its canonical work
+			// record and left the balance clean. Legacy admission floors 60m40s to 60.
 			expect(period).toMatchObject({
 				is_active: false,
-				duration_minutes: 61,
-				canonical_record_id: null,
-				graph_revision: 0,
+				duration_minutes: 60,
+				canonical_record_id: expect.any(String),
+				graph_revision: 1,
 			});
+			await expectRecordAgreement({ organizationId: ids.organization });
+			const { rows: balances } = await admin.query(
+				"select is_dirty, dirty_from_date::text from employee_work_balance where employee_id = $1",
+				[ids.employee],
+			);
+			expect(only(balances)).toEqual({ is_dirty: true, dirty_from_date: "2021-03-01" });
 			expect(await stagedRow(rowId)).toMatchObject({
 				row_status: "committed",
 				commit_target_table: "work_period",
@@ -599,7 +610,8 @@ describe("reviewed imports through the completed-work operation on PostgreSQL", 
 				"select is_dirty, dirty_from_date::text from employee_work_balance where employee_id = $1",
 				[ids.employee],
 			);
-			expect(only(balances)).toEqual({ is_dirty: true, dirty_from_date: "2021-02-28" });
+			// UTC-captured entries: the refresh starts at the start's own (UTC) date (#1223).
+			expect(only(balances)).toEqual({ is_dirty: true, dirty_from_date: "2021-03-01" });
 
 			const committed = await receipt(rowId);
 			expect(committed).toMatchObject({
@@ -669,7 +681,7 @@ describe("reviewed imports through the completed-work operation on PostgreSQL", 
 					{
 						kind: "work_balance_refresh",
 						delivery: "committed_intent",
-						dirtyFromDate: "2021-02-28",
+						dirtyFromDate: "2021-03-01",
 					},
 				],
 			});
@@ -928,8 +940,8 @@ describe("reviewed imports through the completed-work operation on PostgreSQL", 
 					{
 						kind: "work_period",
 						id: rejected?.id,
-						startAt: "2021-05-03T08:00:00.000Z",
-						endAt: "2021-05-03T09:00:00.000Z",
+						startAt: "2021-05-03T08:00:00Z",
+						endAt: "2021-05-03T09:00:00Z",
 					},
 				],
 			});
@@ -941,8 +953,8 @@ describe("reviewed imports through the completed-work operation on PostgreSQL", 
 					{
 						kind: "time_record",
 						id: nativeRecordId,
-						startAt: "2021-05-03T15:00:00.000Z",
-						endAt: "2021-05-03T16:00:00.000Z",
+						startAt: "2021-05-03T15:00:00Z",
+						endAt: "2021-05-03T16:00:00Z",
 					},
 				],
 			});
@@ -976,7 +988,7 @@ describe("reviewed imports through the completed-work operation on PostgreSQL", 
 					{
 						kind: "work_period",
 						id: active.id,
-						startAt: "2026-07-21T22:00:00.000Z",
+						startAt: "2026-07-21T22:00:00Z",
 						endAt: null,
 					},
 				],

@@ -84,11 +84,16 @@
         "absencesRead": "Odczyt nieobecności",
         "absencesReadHealth": "Odczyt szczegółów zdrowotnych nieobecności",
         "customersRead": "Odczyt klientów",
+        "customFieldsReadRestricted": "Odczyt zastrzeżonych pól niestandardowych",
         "employeesRead": "Odczyt pracowników",
         "projectsRead": "Odczyt projektów",
         "timeEntriesRead": "Odczyt wpisów czasu"
       },
       "scopes": "Uprawnienia",
+      "scopeWarning": {
+        "absencesReadHealth": "Wyświetla nieobecności chorobowe wraz z ich kategorią i szczegółami choroby. Przyznawaj to uprawnienie tylko integracjom, które wymagają danych o zdrowiu.",
+        "customFieldsReadRestricted": "Dodaje do pracowników, projektów i klientów pola niestandardowe widoczne tylko dla menedżerów lub administratorów, takie jak widełki płacowe. Bez tego klucz odczytuje tylko pola widoczne dla każdego członka."
+      },
       "security": {
         "description": "Klucze API zapewniają pełny dostęp do danych organizacji w zakresie swoich uprawnień. Dbaj o ich bezpieczeństwo i nigdy nie udostępniaj ich w publicznych repozytoriach ani w kodzie po stronie klienta.",
         "title": "Uwaga dotycząca bezpieczeństwa"

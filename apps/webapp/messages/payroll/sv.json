@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds måste vara en array",
       "employeeIdsMustContainOnlyStrings": "employeeIds får endast innehålla strängar",
       "endDateAfterStart": "Slutdatum måste vara samma som eller efter startdatum",
+      "exportBlockedByDuplicateIdentifier": "Exporten blockerad: flera anställda delar samma personalidentifierare. Ge varje anställd en egen: {employees}",
       "exportBlockedByMissingIdentifier": "Exporten är blockerad: vissa anställda saknar värde för det anpassade fält som används som löneidentifierare",
       "exportBlockedByOffboardingClockRepair": "Export blockerad: åtgärda utstämplingen för offboarding först",
       "exportBlockedByUncertainWork": "Export blockerad: åtgärda det osäkra arbetet i det valda omfånget först",

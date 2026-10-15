@@ -30,7 +30,7 @@ import {
 	vacationAdjustmentTotal,
 } from "./vacation-adjustments";
 import { loadVacationBalances } from "./vacation-balance-store";
-import { startingAllowanceDays } from "./vacation-calculator";
+import { calculateCarryoverDays, startingAllowanceDays } from "./vacation-calculator";
 import type { VacationPolicy } from "./vacation-policy-store";
 
 const logger = createLogger("vacation-service");
@@ -231,15 +231,7 @@ export async function calculateAnnualCarryover(
 			const adjustments = vacationAdjustmentTotal(adjustmentSums.get(emp.id));
 
 			const totalAllowance = baseAllowance + previousCarryover + adjustments;
-			const remaining = Math.max(0, totalAllowance - vacationTaken.totalDays);
-
-			// Apply carryover cap
-			const maxCarryover = fromYearPolicy.maxCarryoverDays
-				? parseFloat(fromYearPolicy.maxCarryoverDays)
-				: remaining;
-
-			const carryoverApplied = Math.min(remaining, maxCarryover);
-			const carryoverCapped = remaining > maxCarryover;
+			const {remaining,applied:carryoverApplied,capped:carryoverCapped}=calculateCarryoverDays({totalAllowance,usedDays:vacationTaken.totalDays,previouslyTakenDays:adjustmentSums.get(emp.id)?.previouslyTaken??0,maxCarryoverDays:fromYearPolicy.maxCarryoverDays});
 
 			// Calculate expiry date
 			let expiryDate: Date | null = null;

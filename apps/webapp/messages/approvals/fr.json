@@ -9,6 +9,7 @@
       "displacedVacation": "Dates de congés remplacées lors de l'approbation",
       "exactHours": "Heures exactes enregistrées",
       "fullDay": "Journée entière",
+      "historicalRemaining": "Congés déjà pris restants",
       "morning": "Matin",
       "original": "Dates enregistrées",
       "originalEndCoverage": "Jour de fin enregistré",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Motif",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Congés disponibles après rapprochement",
+      "reconciliationReason": "Source du rapprochement des congés historiques",
       "title": "Modification d'absence"
     },
     "absenceRejected": "Demande d'absence rejetée",

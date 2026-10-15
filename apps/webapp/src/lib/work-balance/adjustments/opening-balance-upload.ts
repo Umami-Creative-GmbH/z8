@@ -5,6 +5,7 @@ import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { AuditTrail } from "@/lib/audit-trail";
 import type { Instant } from "@/lib/datetime/temporal-core";
+import { personnelNumberKey } from "@/lib/organization/personnel-number";
 import { listBalanceAdjustmentGrantEmployees } from "@/lib/payroll-access/adjustment-coverage";
 import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 import { type BalanceAdjustmentAuthority, balanceAdjustmentAuditMetadata } from "./authorization";
@@ -29,8 +30,8 @@ import {
  * The bulk opening balance upload (#999, ADR-0008): one CSV row is one opening
  * balance, checked and written exactly like one set on the employee's page
  * (`checkOpeningBalance`, `writeOpeningBalance`). Rows are matched to the
- * organization's employees by personnel number (trimmed, letters ignoring
- * case, leading zeros significant). An owner or admin may write any of them;
+ * organization's employees by the shared personnel number key (trimmed,
+ * letters ignoring case, leading zeros significant). An owner or admin may write any of them;
  * a payroll grant holder only the employees their grant covers for balance
  * adjustments, including those who have left, never their own record (#995).
  *
@@ -252,10 +253,6 @@ async function loadUploadScope(
 	return { employees, writable: new Set(coverage.employees.map((covered) => covered.id)) };
 }
 
-function numberKey(value: string): string {
-	return value.trim().toLocaleLowerCase("en");
-}
-
 /** Matches each row to an employee in the scope; parsing and matching errors only. */
 function resolveRows(
 	parsedRows: readonly OpeningBalanceCsvRow[],
@@ -263,16 +260,17 @@ function resolveRows(
 ): OpeningBalanceUploadRow[] {
 	const byNumber = new Map<string, UploadEmployee[]>();
 	for (const candidate of scope.employees) {
-		const key = numberKey(candidate.employeeNumber);
-		if (!key) continue;
+		const key = personnelNumberKey(candidate.employeeNumber);
+		if (key === null) continue;
 		byNumber.set(key, [...(byNumber.get(key) ?? []), candidate]);
 	}
 
 	const rows = parsedRows.map((parsed): OpeningBalanceUploadRow => {
 		const errors: OpeningBalanceUploadRowError[] = parsed.errors.map((code) => ({ code }));
 		let matched: UploadEmployee | null = null;
-		if (parsed.employeeNumber) {
-			const candidates = byNumber.get(numberKey(parsed.employeeNumber)) ?? [];
+		const key = personnelNumberKey(parsed.employeeNumber);
+		if (key !== null) {
+			const candidates = byNumber.get(key) ?? [];
 			if (candidates.length === 0) errors.push({ code: "unknown_employee" });
 			else if (candidates.length > 1) errors.push({ code: "ambiguous_employee" });
 			else if (scope.writable && !scope.writable.has((candidates[0] as UploadEmployee).id)) {

@@ -1,4 +1,5 @@
 "use client";
+import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 
 import { IconAlertTriangle, IconBeach, IconCalendarTime, IconClock } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -12,6 +13,7 @@ import { WidgetCard } from "./widget-card";
 type VacationBalance = {
 	totalDays: number;
 	usedDays: number;
+	previouslyTakenDays?: number;
 	pendingDays: number;
 	remainingDays: number;
 	carryoverDays: number;
@@ -96,6 +98,7 @@ export function VacationBalanceWidget() {
 						</div>
 
 						{/* Progress Bar */}
+						<PreviouslyTakenVacationExplanation days={balance.previouslyTakenDays} />
 						<div className="space-y-1">
 							<Progress value={Math.min(usedPercentage, 100)} className="h-2" />
 							<div className="flex items-center justify-between text-xs">

@@ -9,6 +9,7 @@
       "displacedVacation": "Datas de férias substituídas após aprovação",
       "exactHours": "Horas exatas registradas",
       "fullDay": "Dia inteiro",
+      "historicalRemaining": "Férias restantes tiradas anteriormente",
       "morning": "Manhã",
       "original": "Datas registradas",
       "originalEndCoverage": "Dia de término registrado",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Motivo",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Férias disponíveis após reconciliação",
+      "reconciliationReason": "Fonte de reconciliação de férias históricas",
       "title": "Alteração de ausência"
     },
     "absenceRejected": "Solicitação de ausência rejeitada",

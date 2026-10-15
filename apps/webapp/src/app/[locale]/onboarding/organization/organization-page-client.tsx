@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { checkSlugAvailability } from "@/app/[locale]/(app)/organization-actions";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
+import { OrganizationTrackingSetupFields } from "@/components/organization/organization-tracking-setup-fields";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -24,7 +25,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { generateSlug } from "@/lib/validations/organization";
+import {
+	generateSlug,
+	organizationSchema,
+} from "@/lib/validations/organization";
 import { useRouter } from "@/navigation";
 import { runOnboardingAction } from "../run-onboarding-action";
 import {
@@ -34,6 +38,8 @@ import {
 } from "./actions";
 
 const defaultValues = {
+	timezone: "UTC",
+	trackingStartDate: "",
 	name: "",
 	slug: "",
 };
@@ -71,6 +77,7 @@ function getErrorMessage(error: unknown) {
 
 type OrganizationPageClientProps = {
 	canCreateOrganizations: boolean;
+	trackingSuggestedAt?: string;
 };
 
 function OrganizationSetupHeader({
@@ -144,12 +151,14 @@ function OrganizationSkipCard({
 }
 
 function CreateOrganizationCard({
+	trackingSuggestedAt,
 	form,
 	status,
 	setSlugError,
 	t,
 }: {
 	form: OrganizationForm;
+	trackingSuggestedAt?: string;
 	status: {
 		checkingSlug: boolean;
 		loading: boolean;
@@ -192,14 +201,26 @@ function CreateOrganizationCard({
 						validators={{
 							onChange: z
 								.string()
-								.min(2, "Organization name must be at least 2 characters")
-								.max(100, "Organization name must be less than 100 characters"),
+								.min(
+									2,
+									t(
+										"onboarding.organization.nameErrors.min",
+										"Organization name must be at least 2 characters",
+									),
+								)
+								.max(
+									100,
+									t(
+										"onboarding.organization.nameErrors.max",
+										"Organization name must be less than 100 characters",
+									),
+								),
 						}}
 					>
 						{(field) => (
 							<div className="space-y-2">
 								<Label htmlFor="organization-name">
-									{t("organization.nameLabel", "Organization Name")}
+									{t("onboarding.organization.nameLabel", "Organization Name")}
 								</Label>
 								<Input
 									id="organization-name"
@@ -212,7 +233,7 @@ function CreateOrganizationCard({
 										}
 									}}
 									onBlur={field.handleBlur}
-									placeholder={t("organization.namePlaceholder", "Acme Inc.")}
+									placeholder={t("onboarding.organization.namePlaceholder", "Acme Inc.")}
 									disabled={status.loading}
 								/>
 								{field.state.meta.errors.length > 0 && (
@@ -231,21 +252,21 @@ function CreateOrganizationCard({
 								.min(
 									2,
 									t(
-										"organization.slugErrors.min",
+										"onboarding.organization.slugErrors.min",
 										"Slug must be at least 2 characters",
 									),
 								)
 								.max(
 									50,
 									t(
-										"organization.slugErrors.max",
+										"onboarding.organization.slugErrors.max",
 										"Slug must be less than 50 characters",
 									),
 								)
 								.regex(
 									/^[a-z0-9-]+$/,
 									t(
-										"organization.slugErrors.format",
+										"onboarding.organization.slugErrors.format",
 										"Slug must contain only lowercase letters, numbers, and hyphens",
 									),
 								)
@@ -253,7 +274,7 @@ function CreateOrganizationCard({
 									(value) => !value.startsWith("-") && !value.endsWith("-"),
 									{
 										message: t(
-											"organization.slugErrors.hyphen",
+											"onboarding.organization.slugErrors.hyphen",
 											"Slug cannot start or end with a hyphen",
 										),
 									},
@@ -263,7 +284,7 @@ function CreateOrganizationCard({
 						{(field) => (
 							<div className="space-y-2">
 								<Label htmlFor="organization-slug">
-									{t("organization.slugLabel", "Organization Slug")}
+									{t("onboarding.organization.slugLabel", "Organization Slug")}
 								</Label>
 								<div className="relative">
 									<Input
@@ -275,7 +296,7 @@ function CreateOrganizationCard({
 											field.handleChange(event.target.value);
 										}}
 										onBlur={field.handleBlur}
-										placeholder={t("organization.slugPlaceholder", "acme-inc")}
+										placeholder={t("onboarding.organization.slugPlaceholder", "acme-inc")}
 										disabled={status.loading}
 									/>
 									{status.checkingSlug && (
@@ -286,7 +307,7 @@ function CreateOrganizationCard({
 								</div>
 								<p className="text-sm text-muted-foreground">
 									{t(
-										"organization.slugDescription",
+										"onboarding.organization.slugDescription",
 										"Used in URLs. Auto-generated from name.",
 									)}
 								</p>
@@ -301,6 +322,28 @@ function CreateOrganizationCard({
 									</p>
 								)}
 							</div>
+						)}
+					</form.Field>
+					<form.Field name="timezone">
+						{(timezoneField) => (
+							<form.Field
+								name="trackingStartDate"
+								validators={{
+									onChange: organizationSchema.shape.trackingStartDate.unwrap(),
+								}}
+							>
+								{(dateField) => (
+									<OrganizationTrackingSetupFields
+										timezone={timezoneField.state.value}
+										trackingStartDate={dateField.state.value}
+										suggestedAt={trackingSuggestedAt}
+										disabled={status.loading}
+										onTimezoneChange={timezoneField.handleChange}
+										onDateChange={dateField.handleChange}
+										error={getErrorMessage(dateField.state.meta.errors[0])}
+									/>
+								)}
+							</form.Field>
 						)}
 					</form.Field>
 					<div className="flex gap-3 pt-2">
@@ -327,6 +370,7 @@ function CreateOrganizationCard({
 
 export default function OrganizationPageClient({
 	canCreateOrganizations,
+	trackingSuggestedAt,
 }: OrganizationPageClientProps) {
 	const { t } = useTranslate();
 	const { push, replace } = useRouter();
@@ -349,7 +393,7 @@ export default function OrganizationPageClient({
 					if (result.success) {
 						toast.success(
 							t(
-								"organization.createSuccess",
+								"onboarding.organization.createSuccess",
 								"Organization created successfully!",
 							),
 						);
@@ -358,13 +402,13 @@ export default function OrganizationPageClient({
 					} else {
 						toast.error(
 							result.error ||
-								t("organization.createError", "Failed to create organization"),
+								t("onboarding.organization.createError", "Failed to create organization"),
 						);
 					}
 				},
 				onRejected: () => {
 					toast.error(
-						t("organization.createError", "Failed to create organization"),
+						t("onboarding.organization.createError", "Failed to create organization"),
 					);
 				},
 				setLoading,
@@ -378,7 +422,7 @@ export default function OrganizationPageClient({
 	const slugErrorMessage = slugError?.slug === slug ? slugError.message : null;
 	const getSlugTakenMessage = useEffectEvent(() =>
 		t(
-			"organization.slugTaken",
+			"onboarding.organization.slugTaken",
 			"This slug is already taken. Please choose a different one.",
 		),
 	);
@@ -512,6 +556,7 @@ export default function OrganizationPageClient({
 				<div className="space-y-6">
 					{canCreateOrganizations && (
 						<CreateOrganizationCard
+							trackingSuggestedAt={trackingSuggestedAt}
 							form={form}
 							status={{ checkingSlug, loading, slugErrorMessage }}
 							setSlugError={setSlugError}

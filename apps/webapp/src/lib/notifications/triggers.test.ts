@@ -24,6 +24,7 @@ import {
 	onManualEntryApproved,
 	onManualEntryRejected,
 	onOpenShiftAvailable,
+	onPasswordChanged,
 	onSchedulePublished,
 	onShiftAssigned,
 	onShiftPickupApproved,
@@ -1152,6 +1153,34 @@ describe("security notification triggers", () => {
 			messageKey: `common:notifications.content.${key}.message`,
 			messageDefault: message,
 		});
+	});
+
+	it.each([
+		[onPasswordChanged, "password_changed"],
+		[onTwoFactorEnabled, "two_factor_enabled"],
+		[onTwoFactorDisabled, "two_factor_disabled"],
+	] as const)("gives the security alert email the event's client (%#)", async (trigger, type) => {
+		await trigger({
+			userId: "user-1",
+			organizationId: "org-1",
+			ipAddress: "203.0.113.7",
+			userAgent: "Synthetic Browser/1.0",
+		});
+
+		expect(lastNotification()).toMatchObject({
+			userId: "user-1",
+			organizationId: "org-1",
+			type,
+			metadata: { ipAddress: "203.0.113.7", userAgent: "Synthetic Browser/1.0" },
+		});
+	});
+
+	it("leaves an unknown client out of the security alert", async () => {
+		await onPasswordChanged({ userId: "user-1", organizationId: "org-1" });
+
+		const { metadata } = lastNotification();
+		expect(metadata).not.toHaveProperty("ipAddress");
+		expect(metadata).not.toHaveProperty("userAgent");
 	});
 });
 

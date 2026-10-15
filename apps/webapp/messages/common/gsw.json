@@ -373,6 +373,8 @@
     "previous": "Zrugg",
     "recovering": "Wird wiederhergstellt...",
     "refresh": "Aktualisiere",
+    "refreshData": "Date aktualisiere",
+    "refreshDataFailed": "Date händ nöd chönne aktualisiert werde. Bitte nomal probiere.",
     "refreshing": "Wird aktualisiert...",
     "reject": "Ablehne",
     "rejecting": "Wird abglehnt...",
@@ -2528,6 +2530,9 @@
     "theme-time": "Zeitbasiert",
     "theme-time-info": "Zeitbasiert verwendet den {currentMode}-Modus. Wechselt um {time} zu {nextMode}.",
     "theme-toggle": "Theme wächsle"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Enthaltet {days} Täg, wo vor em Tracking bezoge worde sind"
   },
   "validation": {
     "first-name-required": "Vorname isch erforderlich",

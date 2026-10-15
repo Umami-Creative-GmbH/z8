@@ -8,10 +8,9 @@ const FUNCTION_DECLARATION = /\bfunction\s+(\w+)\s*[<(]/g;
 /**
  * Promise code that calls back into effects through `tryPromiseWithRunner`, which
  * `DatabaseService.query` cannot hand a runner to. Their DatabaseError keeps a generic
- * message: the seat delivery (Stripe port) and the automatic break adjustment
- * (`planLegacy` hook).
+ * message: the seat delivery (Stripe port).
  */
-const NEEDS_CALLBACK_RUNNER = ["deliverOrganizationSeats(", "runAutomaticBreakAdjustment("];
+const NEEDS_CALLBACK_RUNNER = ["deliverOrganizationSeats("];
 /** A DatabaseError message read from the failure leaks driver or SQL details. */
 const MESSAGE_FROM_CAUSE = /\bmessage:[^,]*\b(?:cause|error|e|err)\.message\b/;
 

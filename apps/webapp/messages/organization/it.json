@@ -50,7 +50,6 @@
       "description": "Configura la tua organizzazione per iniziare",
       "title": "Crea organizzazione"
     },
-    "createError": "Impossibile creare l'organizzazione",
     "createNew": "Crea nuova organizzazione",
     "createSuccess": "Organizzazione creata con successo!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Proprietario"
     },
     "slugDescription": "Utilizzato negli URL. Generato automaticamente dal nome.",
-    "slugErrors": {
-      "format": "Lo slug può contenere solo lettere minuscole, numeri e trattini",
-      "hyphen": "Lo slug non può iniziare o terminare con un trattino",
-      "max": "Lo slug deve essere più corto di 50 caratteri",
-      "min": "Lo slug deve essere lungo almeno 2 caratteri"
-    },
     "slugLabel": "Slug dell'organizzazione",
     "slugPlaceholder": "acme-spa",
     "slugTaken": "Questo slug è già preso. Scegline un altro.",
@@ -372,6 +365,56 @@
       "updated": "Fuso orario dell'organizzazione aggiornato a {timezone}",
       "update-failed": "Impossibile aggiornare il fuso orario dell'organizzazione"
     },
-    "title": "Esplora organizzazione"
+    "title": "Esplora organizzazione",
+    "tracking": {
+      "activate-reviewed": "Attiva data revisionata",
+      "activation-description": "Scegli la data effettiva di rilascio ed esamina il relativo impatto prima di salvare. Il suggerimento iniziale utilizza la data di creazione dell'organizzazione nel rispettivo fuso orario. Questa operazione modifica il tracciamento, senza correggere la data di assunzione del personale.",
+      "actual": "Lavoro completato",
+      "affected-periods": "Mesi interessati",
+      "after": "Dopo",
+      "balance": "Saldo ore",
+      "before": "Prima",
+      "blocked-save": "Riapri i mesi chiusi interessati e genera una nuova anteprima.",
+      "change-date": "Modifica data di tracciamento",
+      "closed": "Chiuso",
+      "closed-blockers": "Risolvi i problemi sottostanti prima di generare una nuova anteprima e salvare.",
+      "closed-settings": "Apri impostazioni dei mesi chiusi",
+      "commit-failed": "Impossibile salvare la modifica revisionata. Genera una nuova anteprima e riprova.",
+      "day-unit": "giorni",
+      "description": "Questa data controlla le ore richieste e i saldi accumulati. Le date di assunzione effettive dei dipendenti determinano la loro indennità di ferie.",
+      "employee-impacts": "Impatti sui saldi dei dipendenti",
+      "employee-zone": "Fuso orario del dipendente",
+      "ending-balance": "Saldo a fine mese",
+      "exception-conflict": "L'eccezione dipendente {exception} precede il nuovo minimo {minimum}. Rimuovi o modifica prima l'eccezione dipendente.",
+      "hours": "Ore",
+      "hours-caption": "Ore prima e dopo",
+      "hour-unit": "ore",
+      "invalid-date": "Scegli una data di calendario valida.",
+      "legacy": "Il calcolo attuale del saldo ore è ancora in uso. Non è stata attivata alcuna data di inizio per il tracciamento del tempo.",
+      "no-boundary": "Nessun inizio calcolo",
+      "no-changed-periods": "Nessuna variazione nei risultati dei mesi completati.",
+      "no-employees": "Nessun saldo dipendente è interessato.",
+      "old-boundary": "Inizio calcolo attuale",
+      "opening-preserved": "Saldo iniziale mantenuto:",
+      "preview": "Anteprima impatto",
+      "preview-failed": "Impossibile generare l'anteprima. Riprova.",
+      "proposed-boundary": "Inizio monitoraggio proposto",
+      "reason": "Motivo della modifica",
+      "reason-required": "Inserisci un motivo prima di salvare.",
+      "required": "Ore richieste",
+      "review-explanation": "Verifica le date di validità, le ore richieste e i saldi orari riportati di seguito. Le date di assunzione e le ferie spettanti rimangono invariate. I saldi sono calcolati fino all'ultimo giorno completato nel fuso orario di ciascun dipendente.",
+      "review-title": "Verifica dell'impatto della data di monitoraggio",
+      "saved": "Data di monitoraggio salvata e saldi aggiornati.",
+      "saved-date": "Data di monitoraggio attuale dell'organizzazione:",
+      "saved-pending": "Data di monitoraggio salvata. I saldi orari sono in fase di ricalcolo.",
+      "save-reviewed": "Salva la data verificata",
+      "setup-description": "Le ore richieste e i saldi orari decorrono da questa data, o dalla data di assunzione effettiva del dipendente se successiva. Le date di assunzione continuano a determinare le ferie spettanti. Il suggerimento si basa sulla data di creazione dell'organizzazione nel rispettivo fuso orario.",
+      "setup-timezone": "Fuso orario dell'organizzazione",
+      "stale-preview": "I dati verificati sono stati modificati. Genera una nuova anteprima prima di salvare.",
+      "start-date": "Data di inizio del monitoraggio del tempo",
+      "through-date": "Saldi al",
+      "title": "Inizio del monitoraggio del tempo",
+      "vacation-unchanged": "Ferie spettanti e saldo invariati:"
+    }
   }
 }

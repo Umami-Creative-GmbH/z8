@@ -15,6 +15,7 @@ import {
 	useForm,
 } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
@@ -174,31 +175,39 @@ function ProfileGenderField({
 	return (
 		<form.Field name="gender">
 			{(field) => (
-				<div className="gap-y-2">
-					<Label>
+				<div className="flex flex-col gap-y-2">
+					<Label id="profile-gender-label">
 						{t("onboarding.profile.genderOptional", "Gender (Optional)")}
 					</Label>
-					<div className="grid grid-cols-3 gap-3">
+					<div
+						role="group"
+						aria-labelledby="profile-gender-label"
+						aria-describedby="profile-gender-description"
+						className="grid grid-cols-3 gap-3"
+					>
 						{genderOptions.map((option) => {
 							const Icon = option.icon;
+							const selected = field.state.value === option.value;
 							return (
 								<Button
 									key={option.value}
 									type="button"
-									variant={
-										field.state.value === option.value ? "default" : "outline"
-									}
+									variant={selected ? "default" : "outline"}
+									aria-pressed={selected}
 									className="h-auto flex-col gap-2 py-4"
 									onClick={() => field.handleChange(option.value)}
 									disabled={loading}
 								>
-									<Icon className="size-6" />
+									<Icon aria-hidden="true" className="size-6" />
 									<span className="text-sm">{option.label}</span>
 								</Button>
 							);
 						})}
 					</div>
-					<p className="text-sm text-muted-foreground">
+					<p
+						id="profile-gender-description"
+						className="text-sm text-muted-foreground"
+					>
 						{t(
 							"onboarding.profile.genderDesc",
 							"This helps personalize your experience.",
@@ -224,11 +233,26 @@ function ProfileNameFields({
 			<form.Field
 				name="firstName"
 				validators={{
-					onChange: z.string().min(1, "First name is required").max(50),
+					onChange: z
+						.string()
+						.min(
+							1,
+							t(
+								"onboarding.profile.validation.firstNameRequired",
+								"First name is required",
+							),
+						)
+						.max(
+							50,
+							t(
+								"onboarding.profile.validation.firstNameTooLong",
+								"First name must be 50 characters or fewer",
+							),
+						),
 				}}
 			>
 				{(field) => (
-					<div className="gap-y-2">
+					<div className="flex flex-col gap-y-2">
 						<Label htmlFor="profile-first-name">
 							{t("onboarding.profile.firstName", "First Name")}
 						</Label>
@@ -251,11 +275,26 @@ function ProfileNameFields({
 			<form.Field
 				name="lastName"
 				validators={{
-					onChange: z.string().min(1, "Last name is required").max(50),
+					onChange: z
+						.string()
+						.min(
+							1,
+							t(
+								"onboarding.profile.validation.lastNameRequired",
+								"Last name is required",
+							),
+						)
+						.max(
+							50,
+							t(
+								"onboarding.profile.validation.lastNameTooLong",
+								"Last name must be 50 characters or fewer",
+							),
+						),
 				}}
 			>
 				{(field) => (
-					<div className="gap-y-2">
+					<div className="flex flex-col gap-y-2">
 						<Label htmlFor="profile-last-name">
 							{t("onboarding.profile.lastName", "Last Name")}
 						</Label>
@@ -279,6 +318,13 @@ function ProfileNameFields({
 	);
 }
 
+// 2024-01-01 was a Monday and 2024-01-07 a Sunday.
+function getWeekdayName(locale: string, day: WeekStartDay) {
+	return new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "UTC" }).format(
+		Date.UTC(2024, 0, day === "monday" ? 1 : 7),
+	);
+}
+
 function ProfileDateAndDisplayFields({
 	form,
 	status,
@@ -288,6 +334,7 @@ function ProfileDateAndDisplayFields({
 	status: { loading: boolean; today: Date };
 	t: TranslationFunction;
 }) {
+	const locale = useLocale();
 	return (
 		<>
 			<form.Field name="birthday">
@@ -344,7 +391,7 @@ function ProfileDateAndDisplayFields({
 			</form.Field>
 			<form.Field name="weekStartDay">
 				{(field) => (
-					<div className="gap-y-2">
+					<div className="flex flex-col gap-y-2">
 						<Label htmlFor="week-start-day">
 							{t("onboarding.profile.weekStartDay", "First day of the week")}
 						</Label>
@@ -361,7 +408,7 @@ function ProfileDateAndDisplayFields({
 							<SelectContent>
 								{WEEK_START_OPTIONS.map((option) => (
 									<SelectItem key={option.value} value={option.value}>
-										{option.label}
+										{getWeekdayName(locale, option.value)}
 									</SelectItem>
 								))}
 							</SelectContent>
@@ -377,7 +424,7 @@ function ProfileDateAndDisplayFields({
 			</form.Field>
 			<form.Field name="timeFormat">
 				{(field) => (
-					<div className="gap-y-2">
+					<div className="flex flex-col gap-y-2">
 						<Label htmlFor="time-format">
 							{t("onboarding.profile.timeFormat", "Time format")}
 						</Label>

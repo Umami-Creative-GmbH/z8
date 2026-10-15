@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds debe ser una matriz",
       "employeeIdsMustContainOnlyStrings": "employeeIds solo debe contener cadenas",
       "endDateAfterStart": "La fecha de finalización debe ser igual o posterior a la fecha de inicio",
+      "exportBlockedByDuplicateIdentifier": "Exportación bloqueada: varios empleados comparten un identificador de personal. Asigna a cada empleado el suyo propio: {employees}",
       "exportBlockedByMissingIdentifier": "Exportación bloqueada: algunos empleados no tienen ningún valor para el campo personalizado utilizado como identificador de nómina",
       "exportBlockedByOffboardingClockRepair": "Exportación bloqueada: corrige primero el fichaje de salida por baja",
       "exportBlockedByUncertainWork": "Exportación bloqueada: resuelve primero el trabajo incierto en el alcance seleccionado",

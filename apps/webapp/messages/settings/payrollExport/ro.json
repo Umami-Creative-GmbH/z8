@@ -156,6 +156,7 @@
         "deleteTitle": "Șterge maparea",
         "description": "Descriere",
         "formatSpecificHint": "Configurați codurile tipurilor de salarizare pentru fiecare format de salarii. Cel puțin unul este obligatoriu.",
+        "loadFailed": "Asocierile tipurilor de salariu nu au putut fi încărcate",
         "noMappings": "Nu există încă mapări configurate",
         "saveError": "Nu s-a putut salva maparea",
         "saveSuccess": "Mapare salvată",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Verifică aprobările primite",
+        "employees": "Verificați angajații",
         "payrollExport": "Deschide setările de export pentru salarii",
         "timeTracking": "Verifică pontajul",
         "travelExpenses": "Verifică cheltuielile de deplasare"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Angajat",
         "noNumber": "Nesetat",
-        "number": "Număr angajat"
+        "personnelIdentifier": "Identificator de personal",
+        "personnelNumber": "Număr de personal"
       },
       "checks": {
         "count": "Număr",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Angajați pe care un export de salarii i-ar include sub același identificator de personal. Sistemul de salarizare i-ar îmbina, astfel că exportul este refuzat până când fiecare angajat are propriul număr.",
+          "title": "Identificatori de personal partajați"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Toți angajații activi au un istoric de angajare confirmat pentru această perioadă de salarizare.",
           "descriptionWarning": "Unii angajați activi nu au un istoric de angajare confirmat pentru această perioadă de salarizare."
@@ -409,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Muncă în așteptare fără cerere de aprobare",
         "approvalStateConflict": "Stările de aprobare nu coincid",
+        "attributionUnrepresentable": "Marcaj facturabil sau sarcină fără proiect",
         "canonicalDetailMissing": "Detaliul de activitate din fișa de pontaj lipsește",
         "canonicalLinkMissing": "Legătura fișei de pontaj lipsește",
         "canonicalLinkShared": "Mai multe perioade de lucru sunt asociate aceleiași fișe de pontaj",
         "canonicalLinkUnresolved": "Fișa de pontaj asociată nu a fost găsită",
         "canonicalMissing": "Fișa de pontaj lipsește",
+        "canonicalMissingClosedMonth": "Înregistrare de timp lipsă într-o lună închisă",
         "captureInferred": "Fusul orar a fost dedus după eveniment",
         "deletedWorkPayable": "Activitatea ștearsă are în continuare o fișă de pontaj plătibilă",
         "durationConflict": "Duratele stocate nu coincid",
@@ -561,7 +570,8 @@
           "noRestorableEvidence": "Nicio dovadă nu stabilește valoarea lipsă",
           "originalActorUnrepresentable": "Nicio înregistrare nu menționează cine a finalizat activitatea",
           "originalRuleUnknown": "Nicio reprezentare nu conține minutele; rotunjirea inițială este necunoscută",
-          "referenceOutsideOrganization": "Un proiect sau o categorie de referință nu aparține acestei organizații"
+          "referenceOutsideOrganization": "Un proiect sau o categorie de referință nu aparține acestei organizații",
+          "repairLeavesDivergence": "Munca completată ar fi în continuare în neconcordanță cu înregistrarea sa canonică; necesită examinare"
         },
         "inactive": "Neautorizat",
         "inactiveDescription": "Remedierea necesită o autorizare separată pentru această organizație. Planul rămâne lizibil.",

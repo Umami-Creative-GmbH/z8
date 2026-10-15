@@ -373,6 +373,8 @@
     "previous": "Föregående",
     "recovering": "Återställer...",
     "refresh": "Uppdatera",
+    "refreshData": "Uppdatera data",
+    "refreshDataFailed": "Det gick inte att uppdatera data. Försök igen.",
     "refreshing": "Uppdaterar...",
     "reject": "Avvisa",
     "rejecting": "Avvisar…",
@@ -2528,6 +2530,9 @@
     "theme-time": "Tidsbaserat",
     "theme-time-info": "Tidsbaserat använder läget {currentMode}. Växlar till {nextMode} kl. {time}.",
     "theme-toggle": "Växla tema"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Inkluderar {days} dagar som tidigare tagits ut före spårning"
   },
   "validation": {
     "first-name-required": "Förnamn är obligatoriskt",

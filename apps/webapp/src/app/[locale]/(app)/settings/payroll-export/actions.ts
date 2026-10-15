@@ -40,12 +40,15 @@ import {
 	type WageTypeMapping,
 	type WorkdayConfig,
 } from "@/lib/payroll-export";
+import { PayrollIdentifierDuplicateError } from "@/lib/payroll-export/personnel-identifier";
+import { payrollIdentifierDuplicateConflict } from "@/lib/payroll-export/personnel-identifier-refusal";
 import {
 	listPayrollIdentifierFields,
 	type SavePayrollExportConfigOutcome,
 	savePayrollExportConfig,
 } from "@/lib/payroll-export/personnel-identifier-store";
 import { type DiscardPayrollRunResult, discardPayrollRun } from "@/lib/travel-expenses/payroll-run";
+import { getTranslate } from "@/tolgee/server";
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
@@ -1657,9 +1660,24 @@ export async function startExportAction(input: StartExportInput): Promise<
 
 		// If sync, process immediately and return result
 		if (!isAsync) {
-			const { result, downloadUrl } = yield* Effect.promise(() =>
-				processExportJob({ jobId, organizationId: input.organizationId }),
+			const processed = yield* Effect.promise(() =>
+				processExportJob({ jobId, organizationId: input.organizationId }).then(
+					(output) => ({ output, refusal: null }),
+					(error: unknown) => {
+						// Two employees under one identifier: the user can fix it, so it is a
+						// translated conflict naming them (#1199). Other failures stay defects.
+						if (error instanceof PayrollIdentifierDuplicateError) {
+							return { output: null, refusal: error };
+						}
+						throw error;
+					},
+				),
 			);
+			if (processed.refusal) {
+				const t = yield* Effect.promise(() => getTranslate());
+				return yield* Effect.fail(payrollIdentifierDuplicateConflict(processed.refusal, t));
+			}
+			const { result, downloadUrl } = processed.output;
 
 			revalidatePath("/settings/payroll-export");
 

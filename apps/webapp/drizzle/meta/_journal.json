@@ -1625,6 +1625,69 @@
       "when": 1804694400000,
       "tag": "0231_absence_change_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 232,
+      "version": "7",
+      "when": 1804780800000,
+      "tag": "0232_employee_personnel_number_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 233,
+      "version": "7",
+      "when": 1804867200000,
+      "tag": "0233_automatic_break_work_records_blockers",
+      "breakpoints": true
+    },
+    {
+      "idx": 234,
+      "version": "7",
+      "when": 1804953600000,
+      "tag": "0234_work_period_canonical_record_required",
+      "breakpoints": true
+    },
+    {
+      "idx": 235,
+      "version": "7",
+      "when": 1805040000000,
+      "tag": "0235_organization_tracking_dates",
+      "breakpoints": true
+    },
+    {
+      "idx": 236,
+      "version": "7",
+      "when": 1805126400000,
+      "tag": "0236_reviewed_tracking_dates",
+      "breakpoints": true
+    },
+    {
+      "idx": 237,
+      "version": "7",
+      "when": 1805212800000,
+      "tag": "0237_historical_vacation_usage",
+      "breakpoints": true
+    },
+    {
+      "idx": 238,
+      "version": "7",
+      "when": 1805299200000,
+      "tag": "0238_employee_tracking_dates",
+      "breakpoints": true
+    },
+    {
+      "idx": 239,
+      "version": "7",
+      "when": 1805385600000,
+      "tag": "0239_vacation_reconciliation",
+      "breakpoints": true
+    },
+    {
+      "idx": 240,
+      "version": "7",
+      "when": 1805472000000,
+      "tag": "0240_supplemental_report_receipts",
+      "breakpoints": true
     }
   ]
 }

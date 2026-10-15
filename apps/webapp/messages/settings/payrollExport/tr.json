@@ -156,6 +156,7 @@
         "deleteTitle": "Eşlemeyi Sil",
         "description": "Açıklama",
         "formatSpecificHint": "Her bordro formatı için ücret türü kodlarını yapılandırın. En az bir tane gereklidir.",
+        "loadFailed": "Ücret türü eşlemeleri yüklenemedi",
         "noMappings": "Henüz yapılandırılmış eşleme yok",
         "saveError": "Eşleme kaydedilemedi",
         "saveSuccess": "Eşleme kaydedildi",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Onay gelen kutusunu incele",
+        "employees": "Çalışanları incele",
         "payrollExport": "Bordro dışa aktarma ayarlarını aç",
         "timeTracking": "Zaman takibini incele",
         "travelExpenses": "Seyahat giderlerini incele"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Çalışan",
         "noNumber": "Ayarlanmadı",
-        "number": "Çalışan numarası"
+        "personnelIdentifier": "Personel kimliği",
+        "personnelNumber": "Personel numarası"
       },
       "checks": {
         "count": "Sayı",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Bir bordro dışa aktarımının aynı personel kimliği altında yazacağı çalışanlar. Bordro sistemi bunları birleştireceğinden, her çalışanın kendine ait bir kimliği olana kadar dışa aktarma reddedilir.",
+          "title": "Paylaşılan personel kimlikleri"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Tüm aktif çalışanlar bu bordro dönemi için onaylanmış istihdam geçmişine sahip.",
           "descriptionWarning": "Bazı aktif çalışanlar bu bordro dönemi için onaylanmış istihdam geçmişine sahip değil."
@@ -409,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Onay talebi olmayan bekleyen çalışma",
         "approvalStateConflict": "Onay durumları uyuşmuyor",
+        "attributionUnrepresentable": "Faturalandırılabilir işareti veya projesi olmayan görev",
         "canonicalDetailMissing": "Zaman kaydı çalışma ayrıntısı eksik",
         "canonicalLinkMissing": "Zaman kaydı bağlantısı eksik",
         "canonicalLinkShared": "Birden fazla çalışma dönemi tek bir zaman kaydına bağlı",
         "canonicalLinkUnresolved": "Bağlantılı zaman kaydı bulunamadı",
         "canonicalMissing": "Zaman kaydı eksik",
+        "canonicalMissingClosedMonth": "Kapatılmış bir ayda zaman kaydı eksik",
         "captureInferred": "Saat dilimi tespiti olaydan sonra çıkarsandı",
         "deletedWorkPayable": "Silinen çalışmanın hâlâ ödenebilir bir zaman kaydı var",
         "durationConflict": "Kaydedilen süreler uyuşmuyor",
@@ -561,7 +570,8 @@
           "noRestorableEvidence": "Eksik değeri belirten hiçbir kanıt yok",
           "originalActorUnrepresentable": "Hiçbir kayıt çalışmayı kimin tamamladığını belirtmiyor",
           "originalRuleUnknown": "Hiçbir gösterim dakikaları içermiyor; orijinal yuvarlama bilinmiyor",
-          "referenceOutsideOrganization": "Referans verilen bir proje veya kategori bu kuruluşa ait değil"
+          "referenceOutsideOrganization": "Referans verilen bir proje veya kategori bu kuruluşa ait değil",
+          "repairLeavesDivergence": "Doldurulan çalışma yine de asıl kaydıyla uyuşmuyor; incelenmesi gerekiyor"
         },
         "inactive": "Yetkisiz",
         "inactiveDescription": "Onarım için bu kuruluşa özel ayrı bir yetki gerekiyor. Plan okunabilir durumda kalır.",

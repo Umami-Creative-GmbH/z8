@@ -29,22 +29,28 @@ const state = vi.hoisted(() => ({
 	originError: null as unknown,
 }));
 const terminalBreakMocks = vi.hoisted(() => ({
-	apply: vi.fn().mockResolvedValue({
-		kind: "not_required",
-		maintenance: {
-			organizationId: "org-1",
-			employeeId: "20000000-0000-4000-8000-000000000001",
-			dirtyFromDate: "2026-07-22",
-			decision: "approved",
-			surchargePeriodIds: ["10000000-0000-4000-8000-000000000001"],
-			staleSurchargePeriodIds: [],
-		},
-	}),
+	apply: vi.fn().mockResolvedValue({ kind: "not_required" }),
 }));
 
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
 	applyPolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.apply,
 }));
+// A requester auto-approval decides through work records (#1227); its writes
+// are verified against PostgreSQL. The fake writes both approval states
+// through the harness database.
+vi.mock("@/lib/time-tracking/work-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/work-transaction")>()),
+	holdFinalizerEmployeeLocks: async () => undefined,
+}));
+vi.mock("@/lib/time-tracking/work-records", async (importOriginal) => {
+	const fake = await import("./__tests__/fake-work-records");
+	return {
+		...(await importOriginal<typeof import("@/lib/time-tracking/work-records")>()),
+		workRecordScopeForFinalizer: fake.fakeFinalizerScope,
+		applyWorkRecordChange: (scope: { db: object }, change: never) =>
+			fake.fakeApprovalDecision(scope.db, change),
+	};
+});
 
 vi.mock("../policies/chain-service", async (importOriginal) => {
 	const actual =

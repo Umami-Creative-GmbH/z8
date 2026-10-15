@@ -1,8 +1,8 @@
 import "server-only";
 
 // Server-side helpers only (#327): not server actions, so they cannot be invoked
-// from a client without the callers' authorization. The raw entry writers live in
-// `@/lib/time-tracking/time-entry-writer` (#524).
+// from a client without the callers' authorization. Entries are written by work
+// records and Clocking's live-work functions only (Time Tracking ADR 0010).
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";

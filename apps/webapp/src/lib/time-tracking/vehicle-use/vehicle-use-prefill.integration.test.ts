@@ -8,6 +8,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 import { loadWorkVehicleUseFormContext } from "./form-context";
 import { checkWorkVehicleUsePlausibility } from "./plausibility-check";
@@ -66,27 +67,29 @@ async function work(
 	);
 	const startKm = use.startKm ?? null;
 	const endKm = use.endKm ?? null;
-	await pool.query(
-		`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
-		   duration_minutes, is_active, vehicle_kind, vehicle_id, odometer_start_km, odometer_end_km,
-		   driven_distance_km, deleted_at, updated_at)
-		 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $5)`,
-		[
-			id,
-			ids[person],
-			organizationId,
-			clockInId,
-			new Date(start),
-			end ? new Date(end) : null,
-			end ? Math.round((Date.parse(end) - Date.parse(start)) / 60_000) : null,
-			end === null,
-			use.vehicleId ? "organization" : "own",
-			use.vehicleId,
-			startKm,
-			endKm,
-			startKm !== null && endKm !== null ? endKm - startKm : (use.distanceKm ?? null),
-			options.deleted ? new Date(end ?? start) : null,
-		],
+	await withCanonicalRecords(pool, (client) =>
+		client.query(
+			`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
+			   duration_minutes, is_active, vehicle_kind, vehicle_id, odometer_start_km, odometer_end_km,
+			   driven_distance_km, deleted_at, updated_at)
+			 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $5)`,
+			[
+				id,
+				ids[person],
+				organizationId,
+				clockInId,
+				new Date(start),
+				end ? new Date(end) : null,
+				end ? Math.round((Date.parse(end) - Date.parse(start)) / 60_000) : null,
+				end === null,
+				use.vehicleId ? "organization" : "own",
+				use.vehicleId,
+				startKm,
+				endKm,
+				startKm !== null && endKm !== null ? endKm - startKm : (use.distanceKm ?? null),
+				options.deleted ? new Date(end ?? start) : null,
+			],
+		),
 	);
 	return id;
 }

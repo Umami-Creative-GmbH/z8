@@ -25,6 +25,7 @@ import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { resolvePolicyClockOutSurchargeSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { openIntegrationPool } from "@/test/integration-database";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import { loadOrdinaryWorkPeriodLegacyDecisionEvidence } from "../domain-adapters/work-period-legacy-state";
@@ -1009,21 +1010,23 @@ describe(
 					ids.foreignUser,
 				],
 			);
-			await pool.query(
-				`insert into work_period (
-				 id, organization_id, employee_id, clock_in_id, clock_out_id,
-				 start_time, end_time, duration_minutes, is_active, approval_status, updated_at
-				 ) values ($1, $2, $3, $4, $5, $6, $7, 480, false, 'approved', $8)`,
-				[
-					ids.foreignPeriod,
-					ids.foreignOrganization,
-					ids.foreignEmployee,
-					ids.foreignClockIn,
-					ids.foreignClockOut,
-					startTime,
-					endTime,
-					timestamp,
-				],
+			await withCanonicalRecords(pool, (client) =>
+				client.query(
+					`insert into work_period (
+					 id, organization_id, employee_id, clock_in_id, clock_out_id,
+					 start_time, end_time, duration_minutes, is_active, approval_status, updated_at
+					 ) values ($1, $2, $3, $4, $5, $6, $7, 480, false, 'approved', $8)`,
+					[
+						ids.foreignPeriod,
+						ids.foreignOrganization,
+						ids.foreignEmployee,
+						ids.foreignClockIn,
+						ids.foreignClockOut,
+						startTime,
+						endTime,
+						timestamp,
+					],
+				),
 			);
 			await pool.query(
 				`insert into surcharge_calculation
@@ -3578,13 +3581,15 @@ describe(
 					await expect(
 						waitForBlocker(blockerPid.rows[0].pid),
 					).resolves.toMatchObject({ wait_event_type: "Lock" });
+					// Created when the blocker's transaction started, before the waiting split's:
+					// the break entries work records appends carry their own transaction's time (#1221).
 					await client.query(
 						`insert into time_entry (
 			 id, organization_id, employee_id, type, timestamp, utc_offset_minutes,
 			 timezone, timezone_source, previous_entry_id, hash, previous_hash,
 			 created_by, created_at
 			 ) values ($1, $2, $3, 'correction', $4, 0, 'UTC', 'backfill', $5,
-			 $6, $7, $8, $9)`,
+			 $6, $7, $8, now())`,
 						[
 							ids.competingEntry,
 							ids.organization,
@@ -3594,7 +3599,6 @@ describe(
 							competingHash,
 							previousHash,
 							ids.managerUser,
-							new Date(now.epochMilliseconds),
 						],
 					);
 					await commit();

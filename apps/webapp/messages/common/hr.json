@@ -373,6 +373,8 @@
     "previous": "Prethodno",
     "recovering": "Oporavljanje...",
     "refresh": "Osvježi",
+    "refreshData": "Osvježi podatke",
+    "refreshDataFailed": "Nije uspjelo osvježavanje podataka. Pokušajte ponovno.",
     "refreshing": "Osvježavanje...",
     "reject": "Odbij",
     "rejecting": "Odbijanje…",
@@ -2528,6 +2530,9 @@
     "theme-time": "Temeljeno na vremenu",
     "theme-time-info": "Način rada prema vremenu koristi način {currentMode}. Prebacuje se na {nextMode} u {time}.",
     "theme-toggle": "Promijeni temu"
+  },
+  "vacationBalance": {
+    "previouslyTaken": "Uključuje {days} dana prethodno iskorištenih prije praćenja"
   },
   "validation": {
     "first-name-required": "Ime je obavezno",

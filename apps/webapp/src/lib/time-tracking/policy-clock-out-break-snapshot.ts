@@ -5,6 +5,7 @@ import {
 	instantToCanonicalString,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
+import type { BreakPolicyRegulation } from "./break-policy-calculation";
 import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot.types";
 
 export type {
@@ -12,18 +13,42 @@ export type {
 	PolicyClockOutBreakSnapshot,
 } from "./policy-clock-out-break-snapshot.types";
 
-const UUID =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+/**
+ * The break regulation a captured snapshot names: null when none applies,
+ * `incomplete` when the snapshot names one without its id or name (each caller
+ * refuses that its own way). Shared by the automatic break and the terminal break.
+ */
+export function regulationFromSnapshot(
+	snapshot: PolicyClockOutBreakSnapshot,
+): BreakPolicyRegulation | null | "incomplete" {
+	if (
+		snapshot.resolution === "none" ||
+		!snapshot.regulationEnabled ||
+		snapshot.breakRules.length === 0
+	) {
+		return null;
+	}
+	const { id, name, maxUninterruptedMinutes } = snapshot.regulation;
+	if (id === null || name === null) return "incomplete";
+	return {
+		id,
+		name,
+		maxUninterruptedMinutes,
+		breakRules: snapshot.breakRules.map((rule) => ({
+			workingMinutesThreshold: rule.workingMinutesThreshold,
+			requiredBreakMinutes: rule.requiredBreakMinutes,
+		})),
+	};
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const ERROR = "Policy clock-out break snapshot is invalid";
 
 function fail(): never {
 	throw new Error(ERROR);
 }
 
-function exact(
-	value: unknown,
-	keys: readonly string[],
-): Record<string, unknown> {
+function exact(value: unknown, keys: readonly string[]): Record<string, unknown> {
 	if (
 		typeof value !== "object" ||
 		value === null ||
@@ -59,17 +84,13 @@ function name(value: unknown): string {
 }
 
 function minutes(value: unknown): number {
-	return Number.isSafeInteger(value) && (value as number) > 0
-		? (value as number)
-		: fail();
+	return Number.isSafeInteger(value) && (value as number) > 0 ? (value as number) : fail();
 }
 
 function canonicalInstant(value: unknown): string {
 	if (typeof value !== "string") return fail();
 	try {
-		return instantToCanonicalString(parseInstant(value)) === value
-			? value
-			: fail();
+		return instantToCanonicalString(parseInstant(value)) === value ? value : fail();
 	} catch {
 		return fail();
 	}
@@ -99,10 +120,7 @@ export function parsePolicyClockOutBreakSnapshot(
 						"breakRules",
 					],
 		);
-		if (
-			root.version !== 1 ||
-			canonicalInstant(root.evaluatedAt) !== evaluatedAt
-		) {
+		if (root.version !== 1 || canonicalInstant(root.evaluatedAt) !== evaluatedAt) {
 			return fail();
 		}
 		if (root.resolution === "none") {
@@ -118,19 +136,11 @@ export function parsePolicyClockOutBreakSnapshot(
 			return fail();
 		}
 		const policy = exact(root.policy, ["id", "name"]);
-		const regulation = exact(root.regulation, [
-			"id",
-			"name",
-			"maxUninterruptedMinutes",
-		]);
+		const regulation = exact(root.regulation, ["id", "name", "maxUninterruptedMinutes"]);
 		if (typeof root.regulationEnabled !== "boolean") return fail();
 		if (!Array.isArray(root.breakRules)) return fail();
 		const breakRules = root.breakRules.map((value) => {
-			const rule = exact(value, [
-				"id",
-				"workingMinutesThreshold",
-				"requiredBreakMinutes",
-			]);
+			const rule = exact(value, ["id", "workingMinutesThreshold", "requiredBreakMinutes"]);
 			return Object.freeze({
 				id: uuid(rule.id),
 				workingMinutesThreshold: minutes(rule.workingMinutesThreshold),
@@ -139,15 +149,13 @@ export function parsePolicyClockOutBreakSnapshot(
 		});
 		if (
 			new Set(breakRules.map((rule) => rule.id)).size !== breakRules.length ||
-			new Set(breakRules.map((rule) => rule.workingMinutesThreshold)).size !==
-				breakRules.length ||
+			new Set(breakRules.map((rule) => rule.workingMinutesThreshold)).size !== breakRules.length ||
 			breakRules.some((rule, index) => {
 				const previous = breakRules[index - 1];
 				return (
 					previous !== undefined &&
 					(previous.workingMinutesThreshold > rule.workingMinutesThreshold ||
-						(previous.workingMinutesThreshold ===
-							rule.workingMinutesThreshold &&
+						(previous.workingMinutesThreshold === rule.workingMinutesThreshold &&
 							previous.id.localeCompare(rule.id) >= 0))
 				);
 			})
@@ -156,15 +164,13 @@ export function parsePolicyClockOutBreakSnapshot(
 		}
 		const regulationEnabled = root.regulationEnabled;
 		const regulationId = regulation.id === null ? null : uuid(regulation.id);
-		const regulationName =
-			regulation.name === null ? null : name(regulation.name);
+		const regulationName = regulation.name === null ? null : name(regulation.name);
 		const maxUninterruptedMinutes =
 			regulation.maxUninterruptedMinutes === null
 				? null
 				: minutes(regulation.maxUninterruptedMinutes);
 		if (
-			(regulationEnabled &&
-				(regulationId === null || regulationName === null)) ||
+			(regulationEnabled && (regulationId === null || regulationName === null)) ||
 			(!regulationEnabled &&
 				(regulationId !== null ||
 					regulationName !== null ||
@@ -203,12 +209,8 @@ export function policyClockOutBreakSnapshotsEqual(
 ): boolean {
 	try {
 		return (
-			JSON.stringify(
-				parsePolicyClockOutBreakSnapshot(left, expectedEvaluatedAt),
-			) ===
-			JSON.stringify(
-				parsePolicyClockOutBreakSnapshot(right, expectedEvaluatedAt),
-			)
+			JSON.stringify(parsePolicyClockOutBreakSnapshot(left, expectedEvaluatedAt)) ===
+			JSON.stringify(parsePolicyClockOutBreakSnapshot(right, expectedEvaluatedAt))
 		);
 	} catch {
 		return false;
@@ -223,15 +225,9 @@ export function policyClockOutBreakSnapshotFromPendingChanges(
 		if (typeof value !== "object" || value === null || Array.isArray(value)) {
 			return fail();
 		}
-		const descriptor = Object.getOwnPropertyDescriptor(
-			value,
-			"breakPolicySnapshot",
-		);
+		const descriptor = Object.getOwnPropertyDescriptor(value, "breakPolicySnapshot");
 		if (!descriptor?.enumerable || !("value" in descriptor)) return fail();
-		return parsePolicyClockOutBreakSnapshot(
-			descriptor.value,
-			expectedEvaluatedAt,
-		);
+		return parsePolicyClockOutBreakSnapshot(descriptor.value, expectedEvaluatedAt);
 	} catch {
 		throw new Error(ERROR);
 	}
@@ -285,18 +281,14 @@ function selectAssignmentCandidate(
 			fail();
 		}
 		candidates.push({
-			teamId:
-				row.teamId === null || typeof row.teamId === "string"
-					? row.teamId
-					: fail(),
+			teamId: row.teamId === null || typeof row.teamId === "string" ? row.teamId : fail(),
 			id: row.assignmentId,
 			type: row.assignmentType,
 			policyId: row.assignmentPolicyId,
 			priority: row.priority as number,
 		});
 	}
-	if (new Set(candidates.map(({ id }) => id)).size !== candidates.length)
-		fail();
+	if (new Set(candidates.map(({ id }) => id)).size !== candidates.length) fail();
 	const specificity = { employee: 2, team: 1, organization: 0 } as const;
 	return (
 		candidates.toSorted(
@@ -367,10 +359,7 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 		) {
 			throw new Error();
 		}
-		const assignment = selectAssignmentCandidate(
-			candidateResult.rows,
-			input.organizationId,
-		);
+		const assignment = selectAssignmentCandidate(candidateResult.rows, input.organizationId);
 		if (assignment === null) {
 			return parsePolicyClockOutBreakSnapshot(
 				{ version: 1, evaluatedAt, resolution: "none" },
@@ -429,18 +418,13 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 		) {
 			throw new Error();
 		}
-		if (row.regulationEnabled === true && row.regulationId === null)
-			throw new Error();
+		if (row.regulationEnabled === true && row.regulationId === null) throw new Error();
 		if (!Array.isArray(row.breakRules)) throw new Error();
 		const breakRules = row.breakRules
 			.map((value) => {
-				if (typeof value !== "object" || value === null || Array.isArray(value))
-					throw new Error();
+				if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error();
 				const rule = value as Record<string, unknown>;
-				if (
-					typeof rule.id !== "string" ||
-					!Number.isSafeInteger(rule.workingMinutesThreshold)
-				) {
+				if (typeof rule.id !== "string" || !Number.isSafeInteger(rule.workingMinutesThreshold)) {
 					throw new Error();
 				}
 				return value;

@@ -51,43 +51,45 @@ export async function getCurrentEmployee(): Promise<CurrentTeamEmployee | null> 
 	return null;
 }
 
-function getCachedCalendarManagedEmployeeRecords(organizationId: string, managerId: string) {
-	return unstable_cache(
-		async () => {
-			return await db.query.employeeManagers.findMany({
-				where: and(
-					eq(employeeManagers.managerId, managerId),
-					inArray(
-						employeeManagers.employeeId,
-						db
-							.select({ id: employee.id })
-							.from(employee)
-							.where(eq(employee.organizationId, organizationId)),
-					),
+function getCachedCalendarManagedEmployeeRecords(
+	organizationId: string,
+	managerId: string,
+	fresh = false,
+) {
+	const load = async () => {
+		return await db.query.employeeManagers.findMany({
+			where: and(
+				eq(employeeManagers.managerId, managerId),
+				inArray(
+					employeeManagers.employeeId,
+					db
+						.select({ id: employee.id })
+						.from(employee)
+						.where(eq(employee.organizationId, organizationId)),
 				),
-				with: {
-					employee: {
-						with: {
-							user: true,
-							team: true,
-						},
+			),
+			with: {
+				employee: {
+					with: {
+						user: true,
+						team: true,
 					},
 				},
-			});
-		},
-		["calendar-managed-employees", organizationId, managerId],
-		{
-			revalidate: 5 * 60,
-			tags: [CACHE_TAGS.EMPLOYEES(organizationId)],
-		},
-	)();
+			},
+		});
+	};
+	if (fresh) return load();
+	return unstable_cache(load, ["calendar-managed-employees", organizationId, managerId], {
+		revalidate: 5 * 60,
+		tags: [CACHE_TAGS.EMPLOYEES(organizationId)],
+	})();
 }
 
 /**
  * Lightweight employee list for the calendar selector.
  * Avoids team-page balance refresh work and caches the manager relationship lookup.
  */
-export async function getCalendarManagedEmployees(): Promise<
+export async function getCalendarManagedEmployees(options?: { fresh?: boolean }): Promise<
 	ServerActionResult<ManagedEmployee[]>
 > {
 	const effect = Effect.gen(function* () {
@@ -136,7 +138,7 @@ export async function getCalendarManagedEmployees(): Promise<
 		}
 
 		const records = yield* Effect.promise(() =>
-			getCachedCalendarManagedEmployeeRecords(currentEmp.organizationId, currentEmp.id),
+			getCachedCalendarManagedEmployeeRecords(currentEmp.organizationId, currentEmp.id, options?.fresh === true),
 		);
 		const typedRecords = records as unknown as ManagedEmployeeRecord[];
 		const byId = new Map<string, ManagedEmployee>();

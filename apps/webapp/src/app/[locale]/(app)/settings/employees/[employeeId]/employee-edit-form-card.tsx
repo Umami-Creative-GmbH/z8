@@ -158,14 +158,14 @@ export function EmployeeEditFormCard({
 						<TextField
 							form={form}
 							name="employeeNumber"
-							label={t("settings.employees.detailView.employeeNumber", "Employee Number")}
+							label={t("settings.employees.detailView.personnelNumber", "Personnel number")}
 							placeholder={t(
 								"settings.employees.detailView.employeeNumberPlaceholder",
 								"e.g., EMP-001",
 							)}
 							description={t(
-								"settings.employees.detailView.employeeNumberDescription",
-								"External payroll system ID",
+								"settings.employees.detailView.personnelNumberDescription",
+								"Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.",
 							)}
 							disabled={!canEditOrgAdminFields || isUpdating}
 						/>
@@ -173,7 +173,7 @@ export function EmployeeEditFormCard({
 							{(field) => (
 								<TFormItem>
 									<TFormLabel hasError={fieldHasError(field)}>
-										{t("settings.employees.detailView.startDate", "Start date")}
+										{t("settings.employees.detailView.actualEmploymentStart", "Actual employment start")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
 										<Input
@@ -183,13 +183,13 @@ export function EmployeeEditFormCard({
 											value={field.state.value || ""}
 											onChange={(event) => field.handleChange(event.target.value)}
 											onBlur={field.handleBlur}
-											disabled={!canEditManagerFields || isUpdating}
+											disabled={contract.kind !== "draft" || !canEditOrgAdminFields || isUpdating}
 										/>
 									</TFormControl>
 									<TFormDescription>
 										{t(
-											"settings.employees.detailView.startDateDescription",
-											"Work-balance tracking starts on this date",
+											"settings.employees.detailView.actualEmploymentStartDescription",
+											"The actual joining date determines employment-based vacation allowance. Correct it in the reviewed employment correction below; time tracking has its own start date.",
 										)}
 									</TFormDescription>
 									<TFormMessage field={field} />

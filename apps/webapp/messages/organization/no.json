@@ -50,7 +50,6 @@
       "description": "Konfigurer organisasjonen din for å komme i gang",
       "title": "Opprett organisasjon"
     },
-    "createError": "Kunne ikke opprette organisasjon",
     "createNew": "Opprett ny organisasjon",
     "createSuccess": "Organisasjonen ble opprettet!",
     "delete": {
@@ -303,12 +302,6 @@
       "owner": "Eier"
     },
     "slugDescription": "Brukes i nettadresser. Genereres automatisk fra navn.",
-    "slugErrors": {
-      "format": "Slug kan bare inneholde små bokstaver, tall og bindestreker",
-      "hyphen": "Slug kan ikke starte eller slutte med en bindestrek",
-      "max": "Slug må ha færre enn 50 tegn",
-      "min": "Slug må ha minst 2 tegn"
-    },
     "slugLabel": "Organisasjons-slug",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "Denne slug-en er allerede i bruk. Vennligst velg en annen.",
@@ -372,6 +365,56 @@
       "updated": "Organisasjonens tidssone er oppdatert til {timezone}",
       "update-failed": "Kunne ikke oppdatere organisasjonens tidssone"
     },
-    "title": "Organisasjonsutforsker"
+    "title": "Organisasjonsutforsker",
+    "tracking": {
+      "activate-reviewed": "Aktiver gjennomgått dato",
+      "activation-description": "Velg den faktiske utrullingsdatoen og se over konsekvensene før du lagrer. Det opprinnelige forslaget bruker organisasjonens opprettelsesdato i dens tidssone. Dette endrer sporingen, uten å korrigere noens ansettelsesdato.",
+      "actual": "Fullført arbeid",
+      "affected-periods": "Berørte måneder",
+      "after": "Etter",
+      "balance": "Arbeidssaldo",
+      "before": "Før",
+      "blocked-save": "Gjenåpne de berørte lukkede månedene og generer en ny forhåndsvisning.",
+      "change-date": "Endre sporingsdato",
+      "closed": "Lukket",
+      "closed-blockers": "Løs problemene nedenfor før du genererer en ny forhåndsvisning og lagrer.",
+      "closed-settings": "Åpne innstillinger for lukkede måneder",
+      "commit-failed": "Kunne ikke lagre den gjennomgåtte endringen. Generer en ny forhåndsvisning og prøv igjen.",
+      "day-unit": "dager",
+      "description": "Denne datoen styrer påkrevd tid og akkumulert arbeidssaldo. Ansattes faktiske ansettelsesdatoer bestemmer feriekvoten deres.",
+      "employee-impacts": "Påvirkning på ansattes saldo",
+      "employee-zone": "Ansattes tidssone",
+      "ending-balance": "Saldo ved månedsslutt",
+      "exception-conflict": "Ansattunntaket {exception} er tidligere enn det nye minimumet {minimum}. Fjern eller endre unntaket for den ansatte først.",
+      "hours": "Timer",
+      "hours-caption": "Timer før og etter",
+      "hour-unit": "timer",
+      "invalid-date": "Velg en gyldig kalenderdato.",
+      "legacy": "Den nåværende beregningen av arbeidssaldo er fortsatt i bruk. Ingen startdato for tidssporing er aktivert.",
+      "no-boundary": "Ingen beregningsstart",
+      "no-changed-periods": "Ingen resultater for fullførte måneder endres.",
+      "no-employees": "Ingen ansattes saldoer påvirkes.",
+      "old-boundary": "Nåværende beregningsstart",
+      "opening-preserved": "Åpningssaldo bevart:",
+      "preview": "Forhåndsvis påvirkning",
+      "preview-failed": "Kunne ikke generere forhåndsvisningen. Prøv igjen.",
+      "proposed-boundary": "Foreslått start for tidsregistrering",
+      "reason": "Årsak til denne endringen",
+      "reason-required": "Oppgi en årsak før du lagrer.",
+      "required": "Påkrevd tid",
+      "review-explanation": "Gå gjennom ikrafttredelsesdatoene, påkrevde timer og arbeidssaldoene nedenfor. Ansettelsesdatoer og feriekvoter forblir uendret. Saldoer beregnes frem til den siste fullførte dagen i den enkelte ansattes tidssone.",
+      "review-title": "Gjennomgang av konsekvenser for sporingsdato",
+      "saved": "Sporingsdato er lagret og saldoer er oppdatert.",
+      "saved-date": "Gjeldende sporingsdato for organisasjonen:",
+      "saved-pending": "Sporingsdato er lagret. Arbeidssaldoer beregnes på nytt.",
+      "save-reviewed": "Lagre gjennomgått dato",
+      "setup-description": "Påkrevd tid og arbeidssaldoer starter på denne datoen, eller ved den ansattes faktiske ansettelsesstart hvis denne er senere. Ansettelsesdatoer bestemmer fortsatt feriekvoten. Forslaget bruker organisasjonens opprettelsesdato i organisasjonens tidssone.",
+      "setup-timezone": "Organisasjonens tidssone",
+      "stale-preview": "De gjennomgåtte inndataene er endret. Generer en ny forhåndsvisning før du lagrer.",
+      "start-date": "Startdato for tidsregistrering",
+      "through-date": "Saldoer til og med",
+      "title": "Start for tidsregistrering",
+      "vacation-unchanged": "Feriekvote og saldo er uendret:"
+    }
   }
 }

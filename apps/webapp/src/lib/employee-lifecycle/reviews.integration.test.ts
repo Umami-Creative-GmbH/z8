@@ -5,6 +5,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import {
 	findOpenDepartureClockRepairs,
 	resolveDepartureReview,
@@ -205,10 +206,12 @@ describe("departure clock repairs", () => {
 		await expect(resolve(reviewId, "Looks fine")).rejects.toMatchObject({
 			code: "repair_incomplete",
 		});
-		await fixture.pool.query(
-			`update work_period set end_time = '2026-09-14T22:00:00Z', duration_minutes = 120,
-			 is_active = false where id = $1`,
-			[periodId],
+		await withCanonicalRecords(fixture.pool, (client) =>
+			client.query(
+				`update work_period set end_time = '2026-09-14T22:00:00Z', duration_minutes = 120,
+				 is_active = false where id = $1`,
+				[periodId],
+			),
 		);
 
 		await expect(resolve(reviewId, "Corrected to 22:00")).resolves.toBeUndefined();

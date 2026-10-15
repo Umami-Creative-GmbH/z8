@@ -156,6 +156,7 @@
         "deleteTitle": "Eliminar asignación",
         "description": "Descripción",
         "formatSpecificHint": "Configure los códigos de tipo de salario para cada formato de nómina. Se requiere al menos uno.",
+        "loadFailed": "Error al cargar las asignaciones de tipos de salario",
         "noMappings": "Aún no hay asignaciones configuradas",
         "saveError": "Error al guardar la asignación",
         "saveSuccess": "Asignación guardada",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Revisar bandeja de aprobaciones",
+        "employees": "Revisar empleados",
         "payrollExport": "Abrir configuración de exportación de nómina",
         "timeTracking": "Revisar registro de horas",
         "travelExpenses": "Revisar gastos de viaje"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Empleado",
         "noNumber": "No establecido",
-        "number": "Número de empleado"
+        "personnelIdentifier": "Identificador de personal",
+        "personnelNumber": "Número de personal"
       },
       "checks": {
         "count": "Cantidad",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Empleados a los que una exportación de nómina registraría con el mismo identificador de personal. El sistema de nómina los combinaría, por lo que la exportación se rechaza hasta que cada empleado tenga el suyo.",
+          "title": "Identificadores de personal compartidos"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Todos los empleados activos tienen confirmado el historial laboral para este periodo de nómina.",
           "descriptionWarning": "Algunos empleados activos no tienen confirmado el historial laboral para este periodo de nómina."
@@ -409,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Trabajo pendiente sin solicitud de aprobación",
         "approvalStateConflict": "Los estados de aprobación no coinciden",
+        "attributionUnrepresentable": "Indicador de facturable o tarea sin proyecto",
         "canonicalDetailMissing": "Falta el detalle de trabajo del registro de horas",
         "canonicalLinkMissing": "Falta el enlace al registro de horas",
         "canonicalLinkShared": "Varios periodos de trabajo vinculan un mismo registro de horas",
         "canonicalLinkUnresolved": "No se encontró el registro de horas vinculado",
         "canonicalMissing": "Falta el registro de horas",
+        "canonicalMissingClosedMonth": "Falta el registro de horas en un mes cerrado",
         "captureInferred": "Captura de zona horaria inferida tras el evento",
         "deletedWorkPayable": "El trabajo eliminado aún tiene un registro de horas remunerable",
         "durationConflict": "Las duraciones guardadas no coinciden",
@@ -561,7 +570,8 @@
           "noRestorableEvidence": "Ninguna prueba establece el valor faltante",
           "originalActorUnrepresentable": "Ninguna entrada indica quién completó el trabajo",
           "originalRuleUnknown": "Ninguna representación contiene los minutos; se desconoce el redondeo original",
-          "referenceOutsideOrganization": "Un proyecto o una categoría de referencia no pertenecen a esta organización"
+          "referenceOutsideOrganization": "Un proyecto o una categoría de referencia no pertenecen a esta organización",
+          "repairLeavesDivergence": "El trabajo completado aún no coincide con su registro canónico; requiere revisión"
         },
         "inactive": "No autorizado",
         "inactiveDescription": "La reparación requiere una autorización independiente para esta organización. El plan se mantiene legible.",

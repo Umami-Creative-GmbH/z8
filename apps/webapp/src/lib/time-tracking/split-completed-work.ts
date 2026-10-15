@@ -3,73 +3,42 @@ import "server-only";
 /**
  * Completed-work operation for calendar splits (#304 / T40, design #256).
  *
- * One call inside the completed-work outer transaction splits one completed
- * period of the owner at an exact instant. It owns the authoritative locked
- * reads, current owner authority, the unresolved-review guard, symmetric
- * occupancy, the two split entries through the append collaborator, the
- * retained and generated periods, canonical records, work details and
- * allocations, the work revisions, the work-balance refresh intent and the
- * committed receipt. Callers supply intent and evidence, never durations,
- * links or storage patches.
+ * One call inside the completed-work work transaction splits one completed
+ * period of the owner at an exact instant. The split owns its caller policy:
+ * current owner authority, the unresolved-review guard, refusing work awaiting
+ * approval, and the committed receipt with its exact replay. Work records
+ * divides the work period and its canonical work record, appends the entries
+ * and applies the effects (ADR 0010); this operation states only where to
+ * divide, the notes and the odometer value at the split.
  *
- * Each segment rounds its own exact UTC elapsed time (#252 §2). The generated
- * segment inherits the source's approval state and names the source's decision
- * lineage; a split never promotes pending work, because pending work is under
- * review and refused. Exact replay of a committed receipt writes nothing, and a
- * receipt whose work has since changed or been deleted is a collision.
+ * Exact replay of a committed receipt writes nothing, and a receipt whose work
+ * has since changed or been deleted is a collision. Callers never choose by
+ * admission (#1231): the split runs the same policy and division in either
+ * admission and commits the receipt only where work records appended the
+ * entries (#1219).
  */
-import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import {
-	completedWorkOperation,
-	timeEntry,
-	timeRecord,
-	timeRecordAllocation,
-	timeRecordApprovalDecision,
-	timeRecordWork,
-	workPeriod,
-} from "@/db/schema";
-import { carryInvoicedWorkToSplit } from "@/lib/billable-time/hand-off/invoiced-work";
-import {
-	compareInstants,
-	dateFromInstant,
-	type Instant,
-	instantFromDate,
-	instantToCanonicalString,
-} from "@/lib/datetime/temporal-core";
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import type { AllocationEvidence } from "./allocation-evidence";
-import {
-	CompletedWorkReviewRequiredError,
-	lockAuthority,
-	sameVehicleColumns,
-} from "./amend-completed-work";
-import { calculateHash } from "./blockchain";
+import { completedWorkOperation, timeEntry, workPeriod } from "@/db/schema";
+import { type Instant, instantToCanonicalString } from "@/lib/datetime/temporal-core";
+import { ConflictError, NotFoundError } from "@/lib/effect/errors";
+import { lockAuthority } from "./amend-completed-work";
 import { canonicalJson } from "./canonical-json";
-import { assertWorkOpen } from "./closed-months/store";
-import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	CompletedWorkCollisionError,
 	type CompletedWorkFollowUp,
 	CompletedWorkIntegrityError,
-	earliestStartDate,
 } from "./close-active-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
-import { planCompletedWorkSplit } from "./split-work-period";
-import { recordedTaskId } from "./task-attribution";
-import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneCapture } from "./timezone-capture";
 import {
-	vehicleUseColumns,
-	vehicleUseFromColumns,
-	type WorkVehicleUse,
-} from "./vehicle-use/work-vehicle-use";
-import { resolveWorkVehicleUseSplit } from "./vehicle-use/work-vehicle-use-eligibility";
-import { projectAllocationAgrees } from "./work-billability";
-import { WorkIntervalError } from "./work-duration";
-import { assertWorkOccupancyFree } from "./work-occupancy";
+	applyWorkRecordChange,
+	orRefuse,
+	readWorkRecord,
+	type WorkDivision,
+	type WorkRecordExpected,
+	type WorkSegment,
+} from "./work-records";
 import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
 import type { SealedWorkTransactionScope } from "./work-transaction";
 
@@ -102,29 +71,7 @@ export type SplitCompletedWorkCommand = {
 };
 
 /** One segment by value: committed evidence, not a pointer to current rows. */
-export type SplitSegment = {
-	workPeriodId: string;
-	canonicalRecordId: string;
-	clockInEntryId: string;
-	clockOutEntryId: string;
-	startAt: string;
-	endAt: string;
-	durationMinutes: number;
-	startUtcOffsetMinutes: number | null;
-	endUtcOffsetMinutes: number | null;
-	attribution: {
-		projectId: string | null;
-		/** Present only when the work is booked to a task (#873). */
-		taskId?: string;
-		/** Absent on receipts committed before billability (#900), which were non-billable. */
-		isBillable?: boolean;
-		workCategoryId: string | null;
-		workLocationType: string | null;
-		allocations: AllocationEvidence[];
-		/** The segment's own vehicle use (#1126); present only when it has one. */
-		vehicleUse?: WorkVehicleUse;
-	};
-};
+export type SplitSegment = WorkSegment;
 
 /** Committed result (receipt version 1). Current state is a separate read. */
 export type SplitCompletedWorkResult = {
@@ -172,25 +119,14 @@ export type SplitCompletedWorkInput = {
 	splitAt: Instant;
 	capture: TimeEntryTimezoneCapture;
 	/**
-	 * The period state the caller validated and showed. The operation re-reads it
-	 * under its locks; any difference is a stale source.
+	 * The work the caller validated and showed. Work records compares it under
+	 * its locks; any difference is a stale source.
 	 */
-	expectedSource: { clockInId: string; clockOutId: string; startAt: Instant; endAt: Instant };
+	expected: WorkRecordExpected;
 	request: { ipAddress: string | null; deviceInfo: string | null };
 };
 
 type TransactionClient = SealedWorkTransactionScope["db"];
-
-function staleSource(): ConflictError {
-	return new ConflictError({
-		message: "Work period changed while editing",
-		conflictType: "time_correction_work_period_stale",
-	});
-}
-
-function sameInstant(left: Date | null, right: Instant): boolean {
-	return left !== null && compareInstants(instantFromDate(left), right) === 0;
-}
 
 type ReplayInput = Pick<
 	SplitCompletedWorkInput,
@@ -293,7 +229,7 @@ async function isSplitStanding(
  */
 export async function replayCommittedSplit(
 	input: Omit<ReplayInput, "employeeId">,
-): Promise<SplitCompletedWorkReceipt | null> {
+): Promise<SplitCompletedWorkOutcome | null> {
 	const [receipt] = await db
 		.select({ employeeId: completedWorkOperation.employeeId })
 		.from(completedWorkOperation)
@@ -311,568 +247,66 @@ export async function replayCommittedSplit(
 			employeeId: receipt.employeeId,
 			actorUserId: input.actorUserId,
 		},
-		(scope) => replaySplitCompletedWork(scope, { ...input, employeeId: receipt.employeeId }),
+		async (scope) => {
+			const replayed = await replaySplitCompletedWork(scope, {
+				...input,
+				employeeId: receipt.employeeId,
+			});
+			return replayed && receiptOutcome(replayed);
+		},
 	);
 }
 
 /**
- * Fresh split. The caller has already ruled out committed replay under the same
- * transaction, so an existing receipt with this identity is a collision.
+ * What a split hands its caller, in either admission: the two halves and, where
+ * one was committed, the receipt.
+ */
+export type SplitCompletedWorkOutcome = {
+	disposition: "executed" | "replayed";
+	retainedWorkPeriodId: string;
+	generatedWorkPeriodId: string;
+	/** The committed receipt's result; null where work records' writer commits none (legacy admission). */
+	result: SplitCompletedWorkResult | null;
+};
+
+function receiptOutcome(receipt: SplitCompletedWorkReceipt): SplitCompletedWorkOutcome {
+	const [retained, generated] = receipt.result.segments;
+	return {
+		disposition: receipt.disposition,
+		retainedWorkPeriodId: retained.workPeriodId,
+		generatedWorkPeriodId: generated.workPeriodId,
+		result: receipt.result,
+	};
+}
+
+/**
+ * The split every caller runs, in either admission (#1231): exact replay of a
+ * committed receipt first, otherwise the fresh split. Admission stays hidden:
+ * work records divides with the writer of the organization's admission, and the
+ * receipt is committed only when its outcome says the entries were appended
+ * (append admission). A legacy split commits no receipt, so a retry is not
+ * recognized there.
  */
 export async function splitCompletedWork(
 	scope: SealedWorkTransactionScope,
 	input: SplitCompletedWorkInput,
-): Promise<SplitCompletedWorkReceipt> {
+): Promise<SplitCompletedWorkOutcome> {
 	const { organizationId, employeeId, command } = input;
 	scope.assertEmployee(organizationId, employeeId);
-	if (scope.admission !== "append") {
-		throw new Error("Completed-work split requires the adopted work transaction");
-	}
-	const tx = scope.db;
-	const [existing] = await tx
-		.select({ id: completedWorkOperation.id })
-		.from(completedWorkOperation)
-		.where(eq(completedWorkOperation.id, command.operationId))
-		.limit(1);
-	if (existing) throw new CompletedWorkCollisionError();
+	const replayed = await replaySplitCompletedWork(scope, input);
+	if (replayed) return receiptOutcome(replayed);
 
-	await lockAuthority(tx, { ...input, authority: "owner" });
-
-	// Authoritative source: the routed period, its entries and its canonical graph, locked.
-	const [period] = await tx
-		.select()
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.id, command.request.workPeriodId),
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.employeeId, employeeId),
-				isNull(workPeriod.deletedAt),
-			),
-		)
-		.for("update");
-	if (!period) {
-		throw new NotFoundError({
-			message: "Work period not found",
-			entityType: "workPeriod",
-			entityId: command.request.workPeriodId,
-		});
+	const division = await divideForSplit(scope, input);
+	if (division.appended.admission !== "append") {
+		return {
+			disposition: "executed",
+			retainedWorkPeriodId: division.retained.segment.workPeriodId,
+			generatedWorkPeriodId: division.generated.segment.workPeriodId,
+			result: null,
+		};
 	}
-	if (
-		period.clockInId !== input.expectedSource.clockInId ||
-		period.clockOutId !== input.expectedSource.clockOutId ||
-		!sameInstant(period.startTime, input.expectedSource.startAt) ||
-		!sameInstant(period.endTime, input.expectedSource.endAt)
-	) {
-		throw staleSource();
-	}
-	if (period.isActive || !period.endTime || !period.clockOutId) {
-		throw new ConflictError({
-			message: "Cannot split an active work period",
-			conflictType: "work_period_running",
-		});
-	}
-	// A split is a structural change: it waits while any review of the period is open.
-	await assertNoUnresolvedWorkPeriodReview(tx, organizationId, period);
-
-	const originals = await tx
-		.select()
-		.from(timeEntry)
-		.where(
-			and(
-				eq(timeEntry.organizationId, organizationId),
-				eq(timeEntry.employeeId, employeeId),
-				inArray(timeEntry.id, [period.clockInId, period.clockOutId]),
-			),
-		)
-		.orderBy(asc(timeEntry.id))
-		.for("update");
-	const sourceClockIn = originals.find(({ id }) => id === period.clockInId);
-	const sourceClockOut = originals.find(({ id }) => id === period.clockOutId);
-	if (!sourceClockIn || !sourceClockOut) {
-		throw new CompletedWorkReviewRequiredError("endpoint_entry_missing");
-	}
-	if (sourceClockIn.isSuperseded || sourceClockOut.isSuperseded) {
-		throw new ConflictError({
-			message: "Time entry was already corrected by another process",
-			conflictType: "time_entry_already_corrected",
-		});
-	}
-
-	// The period and its canonical record must describe the same segment before
-	// this operation divides both; divergence is evidence for review, not repair.
-	if (!period.canonicalRecordId) {
-		throw new CompletedWorkReviewRequiredError("canonical_record_missing");
-	}
-	const [record] = await tx
-		.select()
-		.from(timeRecord)
-		.where(
-			and(
-				eq(timeRecord.id, period.canonicalRecordId),
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.employeeId, employeeId),
-				eq(timeRecord.recordKind, "work"),
-			),
-		)
-		.for("update");
-	const [detail] = await tx
-		.select()
-		.from(timeRecordWork)
-		.where(
-			and(
-				eq(timeRecordWork.recordId, period.canonicalRecordId),
-				eq(timeRecordWork.organizationId, organizationId),
-				eq(timeRecordWork.recordKind, "work"),
-			),
-		)
-		.for("update");
-	const allocations = await tx
-		.select()
-		.from(timeRecordAllocation)
-		.where(
-			and(
-				eq(timeRecordAllocation.recordId, period.canonicalRecordId),
-				eq(timeRecordAllocation.organizationId, organizationId),
-			),
-		)
-		.orderBy(asc(timeRecordAllocation.id))
-		.for("update");
-	if (!record || !detail) throw new CompletedWorkReviewRequiredError("canonical_record_missing");
-	// A canonical record still under review is review, even when the period lags.
-	if (record.approvalState === "pending") {
-		throw new ConflictError({
-			message: "This work period is awaiting approval and cannot be edited",
-			conflictType: "work_period_pending_approval",
-		});
-	}
-	// Project and billability must agree in both representations (#900).
-	const allocationAgrees = projectAllocationAgrees(period, allocations);
-	const sourceStart = instantFromDate(period.startTime);
-	const sourceEnd = instantFromDate(period.endTime);
-	if (
-		!sameInstant(record.startAt, sourceStart) ||
-		!sameInstant(record.endAt, sourceEnd) ||
-		detail.workCategoryId !== period.workCategoryId ||
-		detail.workLocationType !== period.workLocationType ||
-		!sameVehicleColumns(detail, period) ||
-		!allocationAgrees
-	) {
-		throw new CompletedWorkReviewRequiredError("canonical_divergence");
-	}
-	if (period.durationMinutes === null) {
-		throw new CompletedWorkReviewRequiredError("canonical_divergence");
-	}
-
-	let plan: ReturnType<typeof planCompletedWorkSplit>;
-	try {
-		plan = planCompletedWorkSplit({
-			startAt: sourceStart,
-			endAt: sourceEnd,
-			splitAt: input.splitAt,
-		});
-	} catch (error) {
-		if (error instanceof WorkIntervalError) {
-			throw new ValidationError({
-				message: "Split time must be between work period start and end times",
-				field: "splitTime",
-			});
-		}
-		throw error;
-	}
-	// The vehicle carries over to both halves; the value at the split divides the km (#1126).
-	const sourceVehicleUse = vehicleUseFromColumns(period);
-	const vehicleSplit = await resolveWorkVehicleUseSplit(tx, {
-		organizationId,
-		employeeId,
-		workPeriodId: period.id,
-		use: sourceVehicleUse,
-		value: command.request.vehicleSplitKm,
-	});
-	const retainedVehicle = vehicleUseColumns(vehicleSplit.retained);
-	const generatedVehicle = vehicleUseColumns(vehicleSplit.generated);
-	// Symmetric occupancy: both resulting segments, which together cover the
-	// source interval, against every other work of the owner.
-	await assertWorkOccupancyFree(tx, {
-		organizationId,
-		employeeId,
-		interval: { startAt: sourceStart, endAt: sourceEnd },
-		excludeWorkPeriodIds: [period.id],
-	});
-	// Splitting work that touches a closed month changes it (#762).
-	await assertWorkOpen(tx, {
-		organizationId,
-		employeeId,
-		intervals: [{ start: sourceStart, end: sourceEnd }],
-	});
-	// ... and sends a submitted period back to the employee (#1062).
-	await sendBackChangedPeriodSubmissions(tx, {
-		organizationId,
-		employeeId,
-		causedByUserId: input.actorUserId,
-		work: [{ start: sourceStart, end: sourceEnd }],
-	});
-
-	const decisions = await tx
-		.select({ id: timeRecordApprovalDecision.id })
-		.from(timeRecordApprovalDecision)
-		.where(
-			and(
-				eq(timeRecordApprovalDecision.organizationId, organizationId),
-				eq(timeRecordApprovalDecision.recordId, record.id),
-			),
-		)
-		.orderBy(asc(timeRecordApprovalDecision.createdAt), asc(timeRecordApprovalDecision.id));
-
-	// Split entries: exact predecessor from the append collaborator.
-	const admission = await admitTimeEntryAppend(
-		tx,
-		{ organizationId, employeeId },
-		"completed_work_split",
-	);
-	if (admission.kind === "review_required") {
-		throw new TimeEntryAppendReviewRequiredError(admission.requirement);
-	}
-	const append = admission.append;
-	const splitAtDate = dateFromInstant(input.splitAt);
-	const insertEntry = async (
-		type: "clock_out" | "clock_in",
-		notes: string | null,
-		previous: { id: string | null; hash: string | null },
-	) => {
-		const [entry] = await tx
-			.insert(timeEntry)
-			.values({
-				employeeId,
-				organizationId,
-				type,
-				timestamp: splitAtDate,
-				hash: calculateHash({
-					employeeId,
-					type,
-					timestamp: splitAtDate.toISOString(),
-					previousHash: previous.hash,
-				}),
-				previousHash: previous.hash,
-				previousEntryId: previous.id,
-				notes,
-				ipAddress: input.request.ipAddress,
-				deviceInfo: input.request.deviceInfo,
-				createdBy: input.actorUserId,
-				utcOffsetMinutes: input.capture.utcOffsetMinutes,
-				timezone: input.capture.timezone,
-				timezoneSource: input.capture.timezoneSource,
-			})
-			.returning();
-		if (!entry) throw new Error("Split entry insert failed");
-		await append.record({
-			id: entry.id,
-			hash: entry.hash,
-			previousEntryId: previous.id,
-			previousHash: previous.hash,
-		});
-		return entry;
-	};
-	const { beforeNotes, afterNotes } = command.request;
-	const splitClockOut = await insertEntry("clock_out", beforeNotes, {
-		id: append.predecessor?.id ?? null,
-		hash: append.predecessor?.hash ?? null,
-	});
-	const splitClockIn = await insertEntry("clock_in", afterNotes, {
-		id: splitClockOut.id,
-		hash: splitClockOut.hash,
-	});
-	// Period notes are read from the clock-out entry, and the generated period
-	// keeps the source clock-out; notes are not part of the entry hash.
-	if (afterNotes !== null) {
-		const updatedNotes = await tx
-			.update(timeEntry)
-			.set({ notes: afterNotes })
-			.where(
-				and(
-					eq(timeEntry.id, sourceClockOut.id),
-					eq(timeEntry.organizationId, organizationId),
-					eq(timeEntry.employeeId, employeeId),
-					eq(timeEntry.isSuperseded, false),
-				),
-			)
-			.returning({ id: timeEntry.id });
-		if (updatedNotes.length !== 1) throw staleSource();
-	}
-
-	const updatedAt = new Date();
-	const sourceRevision = period.graphRevision + 1;
-	const updatedPeriods = await tx
-		.update(workPeriod)
-		.set({
-			clockOutId: splitClockOut.id,
-			endTime: splitAtDate,
-			durationMinutes: plan.first.durationMinutes,
-			odometerStartKm: retainedVehicle.odometerStartKm,
-			odometerEndKm: retainedVehicle.odometerEndKm,
-			drivenDistanceKm: retainedVehicle.drivenDistanceKm,
-			graphRevision: sourceRevision,
-			updatedAt,
-		})
-		.where(
-			and(
-				eq(workPeriod.id, period.id),
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.employeeId, employeeId),
-				eq(workPeriod.clockInId, period.clockInId),
-				eq(workPeriod.clockOutId, period.clockOutId),
-				eq(workPeriod.graphRevision, period.graphRevision),
-				eq(workPeriod.isActive, false),
-				isNull(workPeriod.deletedAt),
-			),
-		)
-		.returning({ id: workPeriod.id });
-	if (updatedPeriods.length !== 1) throw staleSource();
-
-	const updatedRecords = await tx
-		.update(timeRecord)
-		.set({
-			endAt: splitAtDate,
-			durationMinutes: plan.first.durationMinutes,
-			updatedAt,
-			updatedBy: input.actorUserId,
-		})
-		.where(
-			and(
-				eq(timeRecord.id, record.id),
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.employeeId, employeeId),
-				eq(timeRecord.recordKind, "work"),
-			),
-		)
-		.returning({ id: timeRecord.id });
-	if (updatedRecords.length !== 1) {
-		throw new CompletedWorkIntegrityError("Canonical work record update failed");
-	}
-	// The canonical detail mirrors the retained half's kilometres (#1126).
-	if (sourceVehicleUse) {
-		const updatedDetails = await tx
-			.update(timeRecordWork)
-			.set({
-				odometerStartKm: retainedVehicle.odometerStartKm,
-				odometerEndKm: retainedVehicle.odometerEndKm,
-				drivenDistanceKm: retainedVehicle.drivenDistanceKm,
-			})
-			.where(
-				and(
-					eq(timeRecordWork.recordId, record.id),
-					eq(timeRecordWork.organizationId, organizationId),
-					eq(timeRecordWork.recordKind, "work"),
-				),
-			)
-			.returning({ recordId: timeRecordWork.recordId });
-		if (updatedDetails.length !== 1) {
-			throw new CompletedWorkIntegrityError("Canonical work detail update failed");
-		}
-	}
-
-	// The generated record keeps the source's origin, approval state and
-	// recording actor; the splitting human is its updater.
-	const generatedRecordId = randomUUID();
-	await tx.insert(timeRecord).values({
-		id: generatedRecordId,
-		organizationId,
-		employeeId,
-		recordKind: "work",
-		startAt: splitAtDate,
-		endAt: period.endTime,
-		durationMinutes: plan.second.durationMinutes,
-		approvalState: record.approvalState,
-		origin: record.origin,
-		createdBy: record.createdBy,
-		updatedAt,
-		updatedBy: input.actorUserId,
-	});
-	await tx.insert(timeRecordWork).values({
-		recordId: generatedRecordId,
-		organizationId,
-		recordKind: "work",
-		workCategoryId: detail.workCategoryId,
-		workLocationType: detail.workLocationType,
-		computationMetadata: detail.computationMetadata,
-		vehicleKind: generatedVehicle.vehicleKind,
-		vehicleId: generatedVehicle.vehicleId,
-		odometerStartKm: generatedVehicle.odometerStartKm,
-		odometerEndKm: generatedVehicle.odometerEndKm,
-		drivenDistanceKm: generatedVehicle.drivenDistanceKm,
-	});
-	for (const allocation of allocations) {
-		await tx.insert(timeRecordAllocation).values({
-			organizationId,
-			recordId: generatedRecordId,
-			allocationKind: allocation.allocationKind,
-			projectId: allocation.projectId,
-			taskId: allocation.taskId,
-			costCenterId: allocation.costCenterId,
-			weightPercent: allocation.weightPercent,
-			// Both halves keep the source's billability (#900).
-			isBillable: allocation.isBillable,
-		});
-	}
-	const [generated] = await tx
-		.insert(workPeriod)
-		.values({
-			employeeId,
-			organizationId,
-			clockInId: splitClockIn.id,
-			clockOutId: period.clockOutId,
-			projectId: period.projectId,
-			isBillable: period.isBillable,
-			taskId: period.taskId,
-			workCategoryId: period.workCategoryId,
-			workLocationType: period.workLocationType,
-			vehicleKind: generatedVehicle.vehicleKind,
-			vehicleId: generatedVehicle.vehicleId,
-			odometerStartKm: generatedVehicle.odometerStartKm,
-			odometerEndKm: generatedVehicle.odometerEndKm,
-			drivenDistanceKm: generatedVehicle.drivenDistanceKm,
-			startTime: splitAtDate,
-			endTime: period.endTime,
-			durationMinutes: plan.second.durationMinutes,
-			isActive: false,
-			approvalStatus: period.approvalStatus,
-			canonicalRecordId: generatedRecordId,
-			graphRevision: 1,
-			updatedAt,
-		})
-		.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
-	if (!generated) throw new Error("Generated work period insert failed");
-	// Invoiced work stays invoiced in both halves; the source is marked by trigger (#903).
-	await carryInvoicedWorkToSplit(tx, {
-		organizationId,
-		sourceWorkPeriodId: period.id,
-		newWorkPeriodId: generated.id,
-	});
-
-	// Independent rounding can change the total: the refresh commits with the work,
-	// from the earliest UTC or captured-offset local date of the affected endpoints.
-	const [dirtyFromDate] = [
-		earliestStartDate(sourceStart, sourceClockIn.utcOffsetMinutes ?? 0),
-		earliestStartDate(input.splitAt, input.capture.utcOffsetMinutes),
-	].sort();
-	if (!dirtyFromDate) throw new Error("Work balance refresh date is missing");
-	await markEmployeeWorkBalanceDirty({ employeeId, organizationId, dirtyFromDate }, tx);
-	const followUps: CompletedWorkFollowUp[] = [
-		{ kind: "work_balance_refresh", delivery: "committed_intent", dirtyFromDate },
-		{ kind: "surcharge_calculation", delivery: "post_commit_best_effort" },
-	];
-
-	const attribution = {
-		projectId: period.projectId,
-		...recordedTaskId(period.taskId),
-		isBillable: period.isBillable,
-		workCategoryId: period.workCategoryId,
-		workLocationType: period.workLocationType,
-		allocations: allocations.map((allocation) => ({
-			allocationKind: allocation.allocationKind,
-			projectId: allocation.projectId,
-			...recordedTaskId(allocation.taskId),
-			costCenterId: allocation.costCenterId,
-			weightPercent: allocation.weightPercent,
-			isBillable: allocation.isBillable,
-		})),
-	};
-	const segment = (values: {
-		workPeriodId: string;
-		canonicalRecordId: string;
-		clockIn: typeof timeEntry.$inferSelect;
-		clockOut: typeof timeEntry.$inferSelect;
-		startAt: Instant;
-		endAt: Instant;
-		durationMinutes: number;
-		vehicleUse: WorkVehicleUse | null;
-	}): SplitSegment => ({
-		workPeriodId: values.workPeriodId,
-		canonicalRecordId: values.canonicalRecordId,
-		clockInEntryId: values.clockIn.id,
-		clockOutEntryId: values.clockOut.id,
-		startAt: instantToCanonicalString(values.startAt),
-		endAt: instantToCanonicalString(values.endAt),
-		durationMinutes: values.durationMinutes,
-		startUtcOffsetMinutes: values.clockIn.utcOffsetMinutes ?? null,
-		endUtcOffsetMinutes: values.clockOut.utcOffsetMinutes ?? null,
-		// Vehicle use only when there is one, keeping earlier receipts' shape (#1126).
-		attribution: values.vehicleUse
-			? { ...attribution, vehicleUse: values.vehicleUse }
-			: attribution,
-	});
-	const result: SplitCompletedWorkResult = {
-		version: SPLIT_COMPLETED_WORK_RESULT_VERSION,
-		operationId: command.operationId,
-		owner: { employeeId },
-		actor: { kind: "human", userId: input.actorUserId },
-		authority: "owner",
-		split: { at: instantToCanonicalString(input.splitAt), ...input.capture },
-		source: {
-			...segment({
-				workPeriodId: period.id,
-				canonicalRecordId: record.id,
-				clockIn: sourceClockIn,
-				clockOut: sourceClockOut,
-				startAt: sourceStart,
-				endAt: sourceEnd,
-				durationMinutes: period.durationMinutes,
-				vehicleUse: sourceVehicleUse,
-			}),
-			approvalState: period.approvalStatus,
-			recordCreatedBy: record.createdBy,
-		},
-		segments: [
-			{
-				role: "retained",
-				...segment({
-					workPeriodId: period.id,
-					canonicalRecordId: record.id,
-					clockIn: sourceClockIn,
-					clockOut: splitClockOut,
-					...plan.first,
-					vehicleUse: vehicleSplit.retained,
-				}),
-			},
-			{
-				role: "generated",
-				...segment({
-					workPeriodId: generated.id,
-					canonicalRecordId: generatedRecordId,
-					clockIn: splitClockIn,
-					clockOut: sourceClockOut,
-					...plan.second,
-					vehicleUse: vehicleSplit.generated,
-				}),
-				origin: { workPeriodId: period.id, canonicalRecordId: record.id },
-				approval: {
-					state: record.approvalState,
-					basis: "split_source",
-					sourceDecisionIds: decisions.map(({ id }) => id),
-				},
-			},
-		],
-		notes: { sourceClockOut: sourceClockOut.notes ?? null, before: beforeNotes, after: afterNotes },
-		append: {
-			admission: "append",
-			clockOut: {
-				entryId: splitClockOut.id,
-				previousEntryId: splitClockOut.previousEntryId,
-				previousHash: splitClockOut.previousHash,
-			},
-			clockIn: {
-				entryId: splitClockIn.id,
-				previousEntryId: splitClockOut.id,
-				previousHash: splitClockOut.hash,
-			},
-		},
-		revisions: {
-			source: { source: period.graphRevision, result: sourceRevision },
-			generated: { source: null, result: generated.graphRevision },
-		},
-		followUps,
-	};
-	await tx.insert(completedWorkOperation).values({
+	const result = splitResult(input, division);
+	await scope.db.insert(completedWorkOperation).values({
 		id: command.operationId,
 		organizationId,
 		employeeId,
@@ -885,9 +319,136 @@ export async function splitCompletedWork(
 		actorKind: "human",
 		actorUserId: input.actorUserId,
 		// The split source; the generated period is in the result.
-		workPeriodId: period.id,
+		workPeriodId: division.source.segment.workPeriodId,
 		resultVersion: SPLIT_COMPLETED_WORK_RESULT_VERSION,
 		result,
 	});
-	return { disposition: "executed", result };
+	return receiptOutcome({ disposition: "executed", result });
+}
+
+/**
+ * The split's caller policy, then the division: current owner authority, the
+ * unresolved-review guard and refusing work awaiting approval, on exactly the
+ * rows work records will change, locked.
+ */
+async function divideForSplit(
+	scope: SealedWorkTransactionScope,
+	input: SplitCompletedWorkInput,
+): Promise<WorkDivision> {
+	const { organizationId, employeeId, command } = input;
+	const tx = scope.db;
+	await lockAuthority(tx, { ...input, authority: "owner" });
+
+	const current = await readWorkRecord(
+		scope,
+		{ organizationId, employeeId, workPeriodId: command.request.workPeriodId },
+		{ lock: true },
+	);
+	if (!current) {
+		throw new NotFoundError({
+			message: "Work period not found",
+			entityType: "workPeriod",
+			entityId: command.request.workPeriodId,
+		});
+	}
+	// A split is a structural change: it waits while any review of the period is open.
+	await assertNoUnresolvedWorkPeriodReview(tx, organizationId, current.period);
+	// Work under review is never split; a split never promotes pending work.
+	if (
+		current.period.approvalStatus === "pending" ||
+		current.canonical?.record.approvalState === "pending"
+	) {
+		throw new ConflictError({
+			message: "This work period is awaiting approval and cannot be edited",
+			conflictType: "work_period_pending_approval",
+		});
+	}
+
+	const { beforeNotes, afterNotes } = command.request;
+	return orRefuse(
+		await applyWorkRecordChange(scope, {
+			kind: "divide",
+			organizationId,
+			employeeId,
+			expected: input.expected,
+			at: input.splitAt,
+			notes: { before: beforeNotes, after: afterNotes },
+			odometerKm: command.request.vehicleSplitKm,
+			actorUserId: input.actorUserId,
+			entries: {
+				createdBy: input.actorUserId,
+				ipAddress: input.request.ipAddress,
+				deviceInfo: input.request.deviceInfo,
+				capture: input.capture,
+			},
+			appendOperation: "completed_work_split",
+		}),
+	);
+}
+
+/** The split's receipt, built from work records' division. */
+function splitResult(
+	input: SplitCompletedWorkInput,
+	division: WorkDivision,
+): SplitCompletedWorkResult {
+	const { source, retained, generated, appended } = division;
+	const { previousEntryId, previousHash } = appended.clockIn;
+	if (!previousEntryId || !previousHash) {
+		throw new CompletedWorkIntegrityError("Split clock-in has no predecessor");
+	}
+	return {
+		version: SPLIT_COMPLETED_WORK_RESULT_VERSION,
+		operationId: input.command.operationId,
+		owner: { employeeId: input.employeeId },
+		actor: { kind: "human", userId: input.actorUserId },
+		authority: "owner",
+		split: { at: instantToCanonicalString(input.splitAt), ...input.capture },
+		source: {
+			...source.segment,
+			approvalState: source.approvalState,
+			recordCreatedBy: source.recordCreatedBy,
+		},
+		segments: [
+			{ role: "retained", ...retained.segment },
+			{
+				role: "generated",
+				...generated.segment,
+				origin: {
+					workPeriodId: source.segment.workPeriodId,
+					canonicalRecordId: source.segment.canonicalRecordId,
+				},
+				approval: {
+					state: source.recordApprovalState,
+					basis: "split_source",
+					sourceDecisionIds: source.decisionIds,
+				},
+			},
+		],
+		notes: {
+			sourceClockOut: source.clockOutNotes,
+			before: input.command.request.beforeNotes,
+			after: input.command.request.afterNotes,
+		},
+		append: {
+			admission: "append",
+			clockOut: {
+				entryId: appended.clockOut.entryId,
+				previousEntryId: appended.clockOut.previousEntryId,
+				previousHash: appended.clockOut.previousHash,
+			},
+			clockIn: { entryId: appended.clockIn.entryId, previousEntryId, previousHash },
+		},
+		revisions: {
+			source: { source: source.revision, result: retained.after.revision },
+			generated: { source: null, result: generated.after.revision },
+		},
+		followUps: [
+			{
+				kind: "work_balance_refresh",
+				delivery: "committed_intent",
+				dirtyFromDate: division.effects.workBalanceDirtyFromDate,
+			},
+			{ kind: "surcharge_calculation", delivery: "post_commit_best_effort" },
+		],
+	};
 }

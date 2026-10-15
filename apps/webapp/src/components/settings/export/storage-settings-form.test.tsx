@@ -1,11 +1,17 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps, ReactNode } from "react";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { deleteMock, saveMock } = vi.hoisted(() => ({
+let refreshHandler: (() => unknown) | undefined;
+vi.mock("@/components/providers/view-refresh-provider", () => ({
+	useViewRefresh: (handler: () => unknown) => { refreshHandler = handler; },
+}));
+
+const { deleteMock, saveMock, getMock } = vi.hoisted(() => ({
+	getMock: vi.fn(),
 	deleteMock: vi.fn(),
 	saveMock: vi.fn(),
 }));
@@ -25,7 +31,7 @@ vi.mock("@/hooks/use-display-context", () => ({
 }));
 vi.mock("@/app/[locale]/(app)/settings/export/actions", () => ({
 	deleteStorageConfigAction: deleteMock,
-	getStorageConfigAction: vi.fn(),
+	getStorageConfigAction: getMock,
 	saveStorageConfigAction: saveMock,
 	testStorageConnectionAction: vi.fn(),
 }));
@@ -65,9 +71,11 @@ describe("StorageSettingsForm", () => {
 
 	it("omits blank credentials when saving an existing configuration", async () => {
 		saveMock.mockResolvedValue({ success: true, data: existingConfig });
+		const onConfigChange = vi.fn();
 		render(
 			<StorageSettingsForm
 				organizationId="org-1"
+				onConfigChange={onConfigChange}
 				initialConfig={existingConfig}
 			/>,
 		);
@@ -75,6 +83,8 @@ describe("StorageSettingsForm", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Save Configuration" }));
 
 		await waitFor(() => expect(saveMock).toHaveBeenCalledOnce());
+		await waitFor(() => expect(onConfigChange).toHaveBeenCalledWith(true));
+		expect(toast.success).toHaveBeenCalledWith("Configuration saved", expect.any(Object));
 		expect(saveMock.mock.calls[0]?.[0]).toEqual({
 			organizationId: "org-1",
 			bucket: "existing-bucket",
@@ -110,5 +120,24 @@ describe("StorageSettingsForm", () => {
 			),
 		);
 		expect(screen.getByDisplayValue("existing-bucket")).toBeTruthy();
+	});
+	it("accepts fresh untouched config after mount loading and preserves credential drafts", async () => {
+		getMock.mockResolvedValue({ success: true, data: existingConfig });
+		render(<StorageSettingsForm organizationId="org-1" />);
+		await screen.findByDisplayValue("existing-bucket");
+		getMock.mockResolvedValue({ success: true, data: { ...existingConfig, bucket: "fresh-bucket" } });
+		await act(async () => {
+			await refreshHandler?.();
+		});
+		expect(screen.getByDisplayValue("fresh-bucket")).toBeTruthy();
+		fireEvent.change(screen.getByLabelText(/Secret Access Key/), {
+			target: { value: "unsaved-secret" },
+		});
+		getMock.mockResolvedValue({ success: true, data: { ...existingConfig, bucket: "newer-bucket" } });
+		await act(async () => {
+			await refreshHandler?.();
+		});
+		expect(screen.getByDisplayValue("fresh-bucket")).toBeTruthy();
+		expect(screen.getByLabelText(/Secret Access Key/)).toHaveProperty("value", "unsaved-secret");
 	});
 });

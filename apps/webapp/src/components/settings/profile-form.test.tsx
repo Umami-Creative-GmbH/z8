@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import {
 	afterEach,
@@ -12,6 +12,11 @@ import {
 	it,
 	vi,
 } from "vitest";
+
+let refreshHandler: (() => unknown) | undefined;
+vi.mock("@/components/providers/view-refresh-provider", () => ({
+	useViewRefresh: (handler: () => unknown) => { refreshHandler = handler; },
+}));
 
 const {
 	getCurrentEmployeeMock,
@@ -433,4 +438,44 @@ describe("ProfileForm", () => {
 		expect(removePictureButton.className).toContain("right-0");
 		expect(removePictureButton.textContent).toBe("");
 	});
+	it("refreshes pristine personal fields while preserving unsaved profile edits", async () => {
+		renderProfileForm();
+		await waitFor(() =>
+			expect(screen.getByLabelText("Custom pronouns")).toHaveProperty("value", "she/her"),
+		);
+		getCurrentEmployeeMock.mockResolvedValue({
+			pronouns: "they/them",
+			gender: "other",
+			birthday: null,
+		});
+		await act(async () => {
+			await refreshHandler?.();
+		});
+		expect(screen.getByLabelText("Custom pronouns")).toHaveProperty("value", "they/them");
+		fireEvent.change(screen.getByLabelText("First Name"), { target: { value: "Unsaved" } });
+		getCurrentEmployeeMock.mockResolvedValue({
+			pronouns: "she/her",
+			gender: "female",
+			birthday: null,
+		});
+		await act(async () => {
+			await refreshHandler?.();
+		});
+		expect(screen.getByLabelText("First Name")).toHaveProperty("value", "Unsaved");
+		expect(screen.getByLabelText("Custom pronouns")).toHaveProperty("value", "they/them");
+	});
+
+	it("retains loaded personal information when refresh fails", async () => {
+		renderProfileForm();
+		await waitFor(() =>
+			expect(screen.getByLabelText("Custom pronouns")).toHaveProperty("value", "she/her"),
+		);
+		getCurrentEmployeeMock.mockRejectedValue(new Error("Offline"));
+		await act(async () => {
+			await expect(refreshHandler?.()).rejects.toThrow("Offline");
+		});
+		expect(screen.getByLabelText("Custom pronouns")).toHaveProperty("value", "she/her");
+	});
+
+
 });

@@ -29,7 +29,6 @@ import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
 import { canonicalJson } from "./canonical-json";
 import {
 	appendClockEntry,
-	ClockingConflictError,
 	ClockingOrganizationError,
 	createDatabaseClockingStore,
 	type Entry,
@@ -300,24 +299,19 @@ export async function startLiveWorkGraph(
 		"clock_in",
 		context.admission,
 	);
-	const [period] = await tx
-		.insert(workPeriod)
-		.values({
-			employeeId,
-			organizationId,
-			clockInId: appended.entry.id,
-			startTime: startAt,
-			isActive: true,
-			workLocationType: command.workLocationType,
-			projectId: input.carriedAttribution?.projectId ?? null,
-			isBillable:
-				(input.carriedAttribution?.projectId ?? null) !== null &&
-				(input.carriedAttribution?.isBillable ?? false),
-			taskId: input.carriedAttribution?.taskId ?? null,
-			workCategoryId: input.carriedAttribution?.workCategoryId ?? null,
-		})
-		.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
-	if (!period) throw new ClockingConflictError("Failed to create work period");
+	const period = await store.insertActivePeriod({
+		employeeId,
+		organizationId,
+		clockInId: appended.entry.id,
+		startTime: startAt,
+		workLocationType: command.workLocationType,
+		projectId: input.carriedAttribution?.projectId ?? null,
+		isBillable:
+			(input.carriedAttribution?.projectId ?? null) !== null &&
+			(input.carriedAttribution?.isBillable ?? false),
+		taskId: input.carriedAttribution?.taskId ?? null,
+		workCategoryId: input.carriedAttribution?.workCategoryId ?? null,
+	});
 	// Work started in a submitted period (e.g. later on its last day) sends it back (#1062).
 	const actor = writerActor(input.writer, input.actorUserId);
 	await sendBackChangedPeriodSubmissions(tx, {

@@ -29,6 +29,7 @@ const SHELL_SOURCES = [
 	"components/settings/timezone-picker.tsx",
 	"components/organization-switcher.tsx",
 	"components/organization/create-organization-dialog.tsx",
+	"components/organization/organization-tracking-setup-fields.tsx",
 	"components/organization/organization-deletion-banner.tsx",
 	"components/billing/trial-banner.tsx",
 	"components/store-app/get-the-app-banner.tsx",

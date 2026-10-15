@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -58,4 +58,25 @@ describe("BrandingForm", () => {
 		);
 		expect(toast.success).not.toHaveBeenCalled();
 	});
+	it("updates pristine branding on refresh and retains edited branding", async () => {
+		const branding = {
+			logoUrl: null,
+			backgroundImageUrl: null,
+			appName: "Before",
+			primaryColor: null,
+			accentColor: null,
+		};
+		const { rerender } = render(<BrandingForm organizationId="org_1" initialBranding={branding} />);
+		rerender(
+			<BrandingForm organizationId="org_1" initialBranding={{ ...branding, appName: "Fresh" }} />,
+		);
+		await waitFor(() => expect(screen.getByLabelText("App Name")).toHaveProperty("value", "Fresh"));
+		fireEvent.change(screen.getByLabelText("App Name"), { target: { value: "Unsaved" } });
+		rerender(
+			<BrandingForm organizationId="org_1" initialBranding={{ ...branding, appName: "Newer" }} />,
+		);
+		expect(screen.getByLabelText("App Name")).toHaveProperty("value", "Unsaved");
+	});
+
+
 });

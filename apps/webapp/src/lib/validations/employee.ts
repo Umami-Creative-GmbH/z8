@@ -1,5 +1,6 @@
 import { Temporal } from "temporal-polyfill";
 import * as z from "zod";
+import { normalizePersonnelNumber } from "@/lib/organization/personnel-number";
 
 // Gender enum matching database enum
 export const genderSchema = z.enum(["male", "female", "other"]);
@@ -12,6 +13,16 @@ export const pronounsSchema = z.preprocess(
 		.transform((value) => value || null)
 		.optional()
 		.nullable(),
+);
+
+/**
+ * A personnel number as saved: trimmed with its case kept, an empty or blank
+ * field stored as no number (`null`) — the shared rule in
+ * `@/lib/organization/personnel-number` (#881). Not sent means unchanged.
+ */
+export const personnelNumberSchema = z.preprocess(
+	(value) => (typeof value === "string" ? normalizePersonnelNumber(value) : value),
+	z.string().max(50, "Personnel number is too long").optional().nullable(),
 );
 
 // Employee role enum
@@ -99,11 +110,7 @@ const updateEmployeeFieldsSchema = z.object({
 	teamId: z.uuid("Invalid team ID").optional().nullable(),
 	role: employeeRoleSchema.optional(),
 	position: z.string().max(100, "Position is too long").optional().nullable(),
-	employeeNumber: z
-		.string()
-		.max(50, "Employee number is too long")
-		.optional()
-		.nullable(),
+	employeeNumber: personnelNumberSchema,
 
 	// Personal information owned by the employee record
 	gender: genderSchema.optional().nullable(),

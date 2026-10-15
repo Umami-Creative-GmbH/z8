@@ -119,6 +119,7 @@ export interface AccountingCustomerScanJobData {
 }
 
 export interface ImportCommitJobData {
+	historicalReconciliation?: import("@/lib/absences/vacation-reconciliation-types").ReconciliationProof;
 	type: "import-review-commit";
 	batchId: string;
 	jobId: string;

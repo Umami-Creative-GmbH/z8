@@ -6,6 +6,27 @@
  * `export-manifest.ts` binds them to the frozen report facts.
  */
 
+/** A later document frozen independently of the originally approved facts. */
+export interface TravelExpenseSupplementalReceiptManifestItem {
+	receipt: {
+		receiptId: string;
+		itemId: string;
+		object: {
+			provider: string;
+			bucket: string | null;
+			key: string;
+			versionId: string | null;
+		};
+		checksumSha256: string;
+		sizeBytes: number;
+		mimeType: string;
+	};
+	fileName: string;
+	uploadedBy: string;
+	uploadedByName: string;
+	uploadedAt: string;
+}
+
 export interface TravelExpenseExportManifestRevisionRecord<TFacts = unknown> {
 	reportId: string;
 	/** `approval_submitted_revision.id` of the approved cycle. */
@@ -26,6 +47,8 @@ export interface TravelExpenseExportManifestRevisionRecord<TFacts = unknown> {
 	employeeName: string | null;
 	/** The frozen facts exactly as approved, receipts included. */
 	facts: TFacts;
+	/** Documents available when this batch was created; absent on older manifests. */
+	supplementalReceipts?: TravelExpenseSupplementalReceiptManifestItem[];
 	/** Uploaded file names by receipt id (revision labels); descriptive only. */
 	receiptFileNames: Record<string, string>;
 }

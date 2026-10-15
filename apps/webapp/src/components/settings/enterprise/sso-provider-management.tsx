@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useServerDataState } from "@/hooks/use-server-data-state";
 import { SSOProviderDialog } from "./sso-provider-dialog";
 import { type SsoProvider, SsoProviderListCard } from "./sso-provider-list-card";
 
@@ -36,7 +37,7 @@ export function SSOProviderManagement({
 	callbackBaseUrl,
 }: SSOProviderManagementProps) {
 	const { t } = useTranslate();
-	const [providers, setProviders] = useState<SSOProvider[]>(initialProviders);
+	const [providers, setProviders] = useServerDataState<SSOProvider[]>(initialProviders);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [tokenByProviderId, setTokenByProviderId] = useState<Record<string, string>>(() =>
 		initialProviders.reduce<Record<string, string>>((tokens, provider) => {

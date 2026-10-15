@@ -1,6 +1,7 @@
 /** #763 slice 4: GET /api/v1/work-periods on PostgreSQL. */
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 import { callPublicApi, createTestKey, walkPublicApi } from "../testing/public-api-fixture";
 import { listWorkPeriods } from "./work-periods";
@@ -79,25 +80,27 @@ describe("work periods in the Public API", () => {
 		const clockOutId = input.end
 			? await entry(organizationId, employeeId, "clock_out", ...input.end)
 			: null;
-		const { rows } = await admin.query<{ id: string }>(
-			`insert into work_period (employee_id, organization_id, clock_in_id, clock_out_id, start_time,
-			   end_time, duration_minutes, is_active, approval_status, deleted_at, updated_at)
-			 values ($1, $2, $3, $4, $5::timestamptz at time zone 'UTC',
-			   $6::timestamptz at time zone 'UTC',
-			   case when $6::timestamptz is null then null
-			     else (extract(epoch from ($6::timestamptz - $5::timestamptz)) / 60)::int end,
-			   $6::timestamptz is null, $7, case when $8 then now() end, now())
-			 returning id`,
-			[
-				employeeId,
-				organizationId,
-				clockInId,
-				clockOutId,
-				start,
-				input.end?.[0] ?? null,
-				input.approvalStatus ?? "approved",
-				input.deleted ?? false,
-			],
+		const { rows } = await withCanonicalRecords(admin, (client) =>
+			client.query<{ id: string }>(
+				`insert into work_period (employee_id, organization_id, clock_in_id, clock_out_id, start_time,
+				   end_time, duration_minutes, is_active, approval_status, deleted_at, updated_at)
+				 values ($1, $2, $3, $4, $5::timestamptz at time zone 'UTC',
+				   $6::timestamptz at time zone 'UTC',
+				   case when $6::timestamptz is null then null
+				     else (extract(epoch from ($6::timestamptz - $5::timestamptz)) / 60)::int end,
+				   $6::timestamptz is null, $7, case when $8 then now() end, now())
+				 returning id`,
+				[
+					employeeId,
+					organizationId,
+					clockInId,
+					clockOutId,
+					start,
+					input.end?.[0] ?? null,
+					input.approvalStatus ?? "approved",
+					input.deleted ?? false,
+				],
+			),
 		);
 		periods[name] = rows[0].id;
 	}

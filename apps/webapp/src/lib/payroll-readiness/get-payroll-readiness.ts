@@ -17,7 +17,11 @@ import {
 } from "@/db/schema";
 import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
+import { createLogger } from "@/lib/logger";
 import { loadPeriodSubmissionGaps } from "@/lib/time-tracking/period-submissions/submission-gaps-store";
+import { loadPersonnelIdentifierClashes } from "./personnel-identifier-clashes";
+
+const logger = createLogger("PayrollReadiness");
 
 export type PayrollReadinessStatus = "ready" | "blocked" | "unavailable";
 export type PayrollReadinessSeverity = "info" | "warning" | "blocker";
@@ -34,6 +38,8 @@ export type PayrollReadinessAffectedEmployee = {
 	name?: string | null;
 	email?: string | null;
 	employeeNumber: string | null;
+	/** The personnel identifier an export writes for the employee, when the check is about it. */
+	personnelIdentifier?: string;
 };
 export type PayrollReadinessCheck = {
 	id: string;
@@ -358,15 +364,34 @@ export async function getPayrollReadiness(
 		),
 	]);
 
-	const wageMappings =
+	const [wageMappings, identifierClashLookup] = await Promise.all([
 		exportConfigs.length > 0
-			? await db.query.payrollWageTypeMapping.findMany({
+			? db.query.payrollWageTypeMapping.findMany({
 					where: and(
 						eq(payrollWageTypeMapping.isActive, true),
 						eq(payrollWageTypeMapping.organizationId, organizationId),
 					),
 				})
-			: [];
+			: [],
+		// Employees an export would merge under one personnel identifier (#1198); a failed
+		// lookup must surface as unavailable, never as ready.
+		loadPersonnelIdentifierClashes({
+			organizationId,
+			configs: exportConfigs,
+			period: { start: start.toJSDate(), end: end.toJSDate() },
+			from: parsePlainDate(selectedStartDate),
+			asOf: parsePlainDate(selectedEndDate),
+		}).then(
+			(clashes) => ({ available: true as const, clashes }),
+			(error: unknown) => {
+				logger.error(
+					{ organizationId, error },
+					"Payroll readiness could not check for shared personnel identifiers",
+				);
+				return { available: false as const, clashes: [] };
+			},
+		),
+	]);
 
 	const staleActiveWorkRecords = activeWorkRecords.filter((record) => {
 		const startAt = DateTime.fromJSDate(record.startAt);
@@ -446,6 +471,22 @@ export async function getPayrollReadiness(
 					: []),
 			]
 		: [];
+
+	// One row per clashing employee, with the identifier the export writes for them.
+	const identifierClashEmployees = new Map<string, PayrollReadinessAffectedEmployee>();
+	for (const clash of identifierClashLookup.clashes) {
+		for (const holder of clash.employees) {
+			if (identifierClashEmployees.has(holder.employeeId)) continue;
+			const known = activeEmployeesById.get(holder.employeeId);
+			identifierClashEmployees.set(holder.employeeId, {
+				id: holder.employeeId,
+				name: holder.name ?? known?.user?.name,
+				email: known?.user?.email,
+				employeeNumber: known?.employeeNumber ?? null,
+				personnelIdentifier: holder.identifier,
+			});
+		}
+	}
 
 	const checks: PayrollReadinessCheck[] = [
 		buildCheck({
@@ -589,6 +630,25 @@ export async function getPayrollReadiness(
 			required: true,
 			count: latestExportJob ? 1 : 0,
 			actionHref: "/settings/payroll-export",
+		}),
+		buildCheck({
+			id: "duplicate-personnel-identifiers",
+			group: "exports",
+			title: "Shared personnel identifiers",
+			titleKey: "settings.payrollReadiness.checks.duplicatePersonnelIdentifiers.title",
+			description:
+				"Employees a payroll export would write under the same personnel identifier. The payroll system would merge them, so the export is refused until each employee has their own.",
+			descriptionKey: "settings.payrollReadiness.checks.duplicatePersonnelIdentifiers.description",
+			status: !identifierClashLookup.available
+				? "unavailable"
+				: identifierClashEmployees.size > 0
+					? "fail"
+					: "pass",
+			severity: "blocker",
+			required: true,
+			count: identifierClashEmployees.size,
+			actionHref: "/settings/employees",
+			affectedEmployees: [...identifierClashEmployees.values()],
 		}),
 		buildCheck({
 			id: "compliance-warnings",

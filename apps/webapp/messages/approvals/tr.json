@@ -9,6 +9,7 @@
       "displacedVacation": "Onaylandığında tatil tarihleri değiştirilir",
       "exactHours": "Kayıtlı tam saatler",
       "fullDay": "Tam gün",
+      "historicalRemaining": "Önceden kullanılan kalan izin",
       "morning": "Sabah",
       "original": "Kayıtlı tarihler",
       "originalEndCoverage": "Kayıtlı bitiş günü",
@@ -21,6 +22,8 @@
       "range": "{range}",
       "reason": "Neden",
       "reasonValue": "{reason}",
+      "reconciledBalance": "Mutabakat sonrası kullanılabilir izin",
+      "reconciliationReason": "Geçmiş izin mutabakat kaynağı",
       "title": "İzin değişikliği"
     },
     "absenceRejected": "İzin talebi reddedildi",

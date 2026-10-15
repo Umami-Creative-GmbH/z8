@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds должен быть массивом",
       "employeeIdsMustContainOnlyStrings": "employeeIds должен содержать только строки",
       "endDateAfterStart": "Дата окончания должна быть не раньше даты начала",
+      "exportBlockedByDuplicateIdentifier": "Экспорт заблокирован: у нескольких сотрудников совпадает идентификатор персонала. Задайте каждому сотруднику уникальный: {employees}",
       "exportBlockedByMissingIdentifier": "Экспорт заблокирован: у некоторых сотрудников не заполнено настраиваемое поле, используемое в качестве идентификатора для расчета зарплаты",
       "exportBlockedByOffboardingClockRepair": "Экспорт заблокирован: сначала исправьте завершение смены при увольнении",
       "exportBlockedByUncertainWork": "Экспорт заблокирован: сначала устраните неясности в рабочих часах для выбранного диапазона",

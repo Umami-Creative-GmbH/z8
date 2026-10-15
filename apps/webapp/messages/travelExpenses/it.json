@@ -614,6 +614,7 @@
         "step": {
           "approvalRecorded": "Approvazione registrata",
           "approved": "Approvato",
+          "receiptAdded": "Ricevuta aggiunta dopo l'invio",
           "rejected": "Rifiutato",
           "reopened": "Riaperto per correzione",
           "returned": "Restituito per modifiche",
@@ -851,6 +852,9 @@
         "withdraw": "Rimuovi spiegazione"
       },
       "receipts": {
+        "add": "Aggiungi ricevuta",
+        "addedAfterSubmission": "{fileName}: aggiunta dopo l'invio da {name} il {date}.",
+        "choose": "Scegli ricevuta",
         "chooseFile": "Scegli file",
         "description": "Scatta una foto o allega un PDF o un'immagine della ricevuta.",
         "downloadNamed": "Scarica {fileName}",
@@ -862,10 +866,13 @@
         },
         "none": "Nessuna ricevuta ancora allegata.",
         "previewNamed": "Anteprima di {fileName}",
+        "processing": "Allegamento ricevuta in corso…",
         "progress": "Avanzamento caricamento",
         "remove": "Rimuovi",
         "removeFailed": "Impossibile rimuovere la ricevuta.",
         "removeNamed": "Rimuovi {fileName}",
+        "supplementConflict": "È già stata fornita una ricevuta oppure la nota spese è cambiata. Ricarica la nota spese prima di riprovare.",
+        "supplementFailed": "La ricevuta non è stata allegata. Ricarica la nota spese e riprova.",
         "takePhoto": "Scatta foto",
         "title": "Ricevuta",
         "uploadFailed": "La ricevuta non è stata allegata.",
