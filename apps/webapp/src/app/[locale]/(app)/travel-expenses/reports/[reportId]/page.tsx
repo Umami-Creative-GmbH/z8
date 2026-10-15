@@ -8,7 +8,10 @@ import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { getAuthContext } from "@/lib/auth-helpers";
-import { financeActorReads, loadFinanceActor } from "@/lib/travel-expenses/finance-access";
+import {
+	financeActorReads,
+	loadFinanceActor,
+} from "@/lib/travel-expenses/finance-access";
 import { loadAuthorizedTravelExpenseReport } from "@/lib/travel-expenses/report-read";
 import { getTranslate } from "@/tolgee/server";
 
@@ -18,7 +21,9 @@ type ReportPageProps = {
 };
 
 /** An earlier submission cycle named by `?cycle=` (#603); undefined for the current report. */
-function requestedCycle(value: string | string[] | undefined): number | undefined {
+function requestedCycle(
+	value: string | string[] | undefined,
+): number | undefined {
 	const cycle = typeof value === "string" ? Number(value) : Number.NaN;
 	return Number.isInteger(cycle) && cycle > 0 ? cycle : undefined;
 }
@@ -32,7 +37,11 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 	]);
 	const cycle = requestedCycle(search.cycle);
 	if (!actor?.employee)
-		return <NoEmployeeError feature={t("travelExpenses.feature", "manage travel expenses")} />;
+		return (
+			<NoEmployeeError
+				feature={t("travelExpenses.feature", "manage travel expenses")}
+			/>
+		);
 	const authorized = await loadAuthorizedTravelExpenseReport(reportId);
 	if (authorized.status !== "found") notFound();
 	if (authorized.access !== "owner") {
@@ -58,7 +67,11 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 						{t("travelExpenses.report.backToApprovals", "Back to approvals")}
 					</BackLink>
 				)}
-				<SubmittedTravelExpenseReport reportId={reportId} cycle={cycle} maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)} />
+				<SubmittedTravelExpenseReport
+					reportId={reportId}
+					cycle={cycle}
+					maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
+				/>
 			</div>
 		);
 	}
@@ -67,7 +80,10 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 			{cycle === undefined ? (
 				<>
 					<BackLink href="/travel-expenses">
-						{t("travelExpenses.report.backToTravelExpenses", "Back to travel expenses")}
+						{t(
+							"travelExpenses.report.backToTravelExpenses",
+							"Back to travel expenses",
+						)}
 					</BackLink>
 					<TravelExpenseReportEditor
 						reportId={reportId}
@@ -78,9 +94,16 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 				<>
 					{/* An earlier submission is reached from the current report, so it leads back there. */}
 					<BackLink href={`/travel-expenses/reports/${reportId}`}>
-						{t("travelExpenses.report.backToCurrent", "Back to the current report")}
+						{t(
+							"travelExpenses.report.backToCurrent",
+							"Back to the current report",
+						)}
 					</BackLink>
-					<SubmittedTravelExpenseReport reportId={reportId} cycle={cycle} maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)} />
+					<SubmittedTravelExpenseReport
+						reportId={reportId}
+						cycle={cycle}
+						maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
+					/>
 				</>
 			)}
 		</div>
