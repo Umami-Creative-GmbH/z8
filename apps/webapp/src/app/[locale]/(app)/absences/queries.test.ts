@@ -33,9 +33,7 @@ describe("getVacationBalance calendar ranges", () => {
 		expect(source).toContain('timezone = "UTC"');
 		expect(source).toContain("loadVacationBalances(db, {");
 		expect(source).toContain("timezone,");
-		expect(balanceStoreSource).toContain(
-			"Temporal.PlainDate.from({ year, month: 1, day: 1 })",
-		);
+		expect(balanceStoreSource).toMatch(/Temporal\.PlainDate\.from\(\{\s*year,\s*month: 1,\s*day: 1,?\s*\}\)/);
 		expect(balanceStoreSource).toContain("lte(absenceEntry.startDate, endOfYear)");
 		expect(balanceStoreSource).toContain("gte(absenceEntry.endDate, startOfYear)");
 		expect(balanceStoreSource).not.toContain(`const startOfYear = \`\${year}-01-01\``);

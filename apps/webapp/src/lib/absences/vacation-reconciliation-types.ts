@@ -4,7 +4,7 @@ export const reconciliationProofSchema = z.object({
 	operationId: z.uuid(),
 	fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
 });
-export type ReconciliationProof = z.infer<typeof reconciliationProofSchema>;
+export type { ReconciliationProof } from "./vacation-reconciliation.types";
 export const reconciledAbsenceSchema = z.object({
 	employeeId: z.uuid(),
 	categoryId: z.uuid(),

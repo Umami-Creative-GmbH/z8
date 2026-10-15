@@ -1,19 +1,32 @@
 import { sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { DateTime } from "luxon";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
+import {
+	asHistory,
+	withCanonicalRecords,
+} from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 }));
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
@@ -45,12 +58,18 @@ vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
 
-const actions = await import("@/app/[locale]/(app)/settings/employees/work-balance-actions");
+const actions = await import(
+	"@/app/[locale]/(app)/settings/employees/work-balance-actions"
+);
 const workBalance = await import("@/lib/work-balance/service");
-const { refreshEmployeeTimeBalances } = await import("@/app/[locale]/(app)/team/team-time-balance");
+const { refreshEmployeeTimeBalances } = await import(
+	"@/app/[locale]/(app)/team/team-time-balance"
+);
 
 const { runtime } = await import("@/lib/effect/runtime");
-const { calculateExpectedWorkHoursForEmployee } = await import("@/lib/time-tracking/calculations");
+const { calculateExpectedWorkHoursForEmployee } = await import(
+	"@/lib/time-tracking/calculations"
+);
 const { getDailyWorkRequirementsForEmployee } = await import(
 	"@/lib/calendar/work-policy-requirements"
 );
@@ -72,9 +91,10 @@ describe("explicit tracking start across public balance readers", () => {
 			startDate: new Date("2020-01-01T00:00:00Z"),
 		});
 		employeeId = subject.employeeId;
-		await fixture.pool.query(`update organization set timezone = 'Europe/Berlin' where id = $1`, [
-			organizationId,
-		]);
+		await fixture.pool.query(
+			`update organization set timezone = 'Europe/Berlin' where id = $1`,
+			[organizationId],
+		);
 		await fixture.pool.query(
 			`update "user" set created_at = '2026-06-01T00:00:00Z' where id = $1`,
 			[subject.userId],
@@ -84,8 +104,16 @@ describe("explicit tracking start across public balance readers", () => {
 			[organizationId],
 		);
 		await assignMondayHourPolicy();
-		await seedCompletedWork("2026-05-20T21:00:00Z", "2026-05-20T23:00:00Z", 120);
-		await seedCompletedWork("2026-05-01T08:00:00Z", "2026-05-01T18:00:00Z", 600);
+		await seedCompletedWork(
+			"2026-05-20T21:00:00Z",
+			"2026-05-20T23:00:00Z",
+			120,
+		);
+		await seedCompletedWork(
+			"2026-05-01T08:00:00Z",
+			"2026-05-01T18:00:00Z",
+			600,
+		);
 	});
 	afterAll(async () => {
 		await fixture?.close();
@@ -129,30 +157,51 @@ describe("explicit tracking start across public balance readers", () => {
 		endTime: string,
 		minutes: number,
 		targetEmployeeId = employeeId,
+		deleted = false,
 	) {
-		return withCanonicalRecords(fixture.pool, async (client) => {
-			const clockInId = randomUUID();
-			const clockOutId = randomUUID();
-			for (const [entryId, type, timestamp] of [
-				[clockInId, "clock_in", startTime],
-				[clockOutId, "clock_out", endTime],
-			]) {
-				await client.query(
-					`insert into time_entry
+		return (deleted ? asHistory : withCanonicalRecords)(
+			fixture.pool,
+			async (client) => {
+				const clockInId = randomUUID();
+				const clockOutId = randomUUID();
+				for (const [entryId, type, timestamp] of [
+					[clockInId, "clock_in", startTime],
+					[clockOutId, "clock_out", endTime],
+				]) {
+					await client.query(
+						`insert into time_entry
 				 (id, employee_id, organization_id, type, timestamp, utc_offset_minutes, timezone,
 				  timezone_source, hash, created_by)
 				 values ($1, $2, $3, $4, $5, 0, 'UTC', 'user_setting', $7, $6)`,
-					[entryId, targetEmployeeId, organizationId, type, timestamp, owner.userId, entryId],
-				);
-			}
-			await client.query(
-				`insert into work_period
+						[
+							entryId,
+							targetEmployeeId,
+							organizationId,
+							type,
+							timestamp,
+							owner.userId,
+							entryId,
+						],
+					);
+				}
+				await client.query(
+					`insert into work_period
 			 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
-			  duration_minutes, is_active, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, false, now())`,
-				[targetEmployeeId, organizationId, clockInId, clockOutId, startTime, endTime, minutes],
-			);
-		});
+			  duration_minutes, is_active, deleted_at, updated_at)
+			 values ($1, $2, $3, $4, $5, $6, $7, false, case when $8 then now() else null end, now())`,
+					[
+						targetEmployeeId,
+						organizationId,
+						clockInId,
+						clockOutId,
+						startTime,
+						endTime,
+						minutes,
+						deleted,
+					],
+				);
+			},
+		);
 	}
 
 	it("counts from rollout in the employee zone even when account creation is later and earlier work exists", async () => {
@@ -207,7 +256,10 @@ describe("explicit tracking start across public balance readers", () => {
 	});
 
 	it("previews a proposed rollout through the production balance reader without changing saved rules", async () => {
-		const subject = await workBalance.loadWorkBalanceEmployee({ organizationId, employeeId });
+		const subject = await workBalance.loadWorkBalanceEmployee({
+			organizationId,
+			employeeId,
+		});
 		expect(subject).not.toBeNull();
 		const proposed = await workBalance.computeEmployeeWorkBalanceAtEndOfDay({
 			organizationId,
@@ -247,8 +299,89 @@ describe("explicit tracking start across public balance readers", () => {
 			}),
 		).toEqual({});
 		expect(
-			await workBalance.getEmployeeWorkBalance({ organizationId: otherOrganizationId, employeeId }),
+			await workBalance.getEmployeeWorkBalance({
+				organizationId: otherOrganizationId,
+				employeeId,
+			}),
 		).toBeNull();
+	});
+	it("excludes historical deletion tombstones with retained minutes from tracked balances, reports and daily analytics", async () => {
+		const subject = await fixture.seedEmployee({
+			withPeriod: false,
+			startDate: new Date("2020-01-01T00:00:00Z"),
+		});
+		await assignMondayHourPolicy(subject.employeeId);
+		await seedCompletedWork(
+			"2026-05-25T08:00:00Z",
+			"2026-05-25T09:00:00Z",
+			60,
+			subject.employeeId,
+		);
+		// Approved deletions before the zero-duration writer retained their original interval and minutes.
+		await seedCompletedWork(
+			"2026-05-25T09:00:00Z",
+			"2026-05-25T12:00:00Z",
+			180,
+			subject.employeeId,
+			true,
+		);
+		await workBalance.refreshEmployeeWorkBalanceFromPeriods({
+			organizationId,
+			employeeId: subject.employeeId,
+			forceFullRebuild: true,
+			now: new Date("2026-06-01T10:00:00Z"),
+		});
+		expect(
+			await workBalance.getEmployeeWorkBalance({
+				organizationId,
+				employeeId: subject.employeeId,
+			}),
+		).toMatchObject({
+			actualMinutes: 60,
+			requiredMinutes: 60,
+			balanceMinutes: 0,
+		});
+		const { generateEmployeeReport } = await import(
+			"@/lib/reports/report-generator"
+		);
+		const start = new Date("2026-05-01T00:00:00Z");
+		const end = new Date("2026-05-31T21:59:59Z");
+		const report = await generateEmployeeReport(
+			subject.employeeId,
+			organizationId,
+			start,
+			end,
+		);
+		expect(report.workHours.totalMinutes).toBe(60);
+		expect(report.complianceMetrics).toMatchObject({
+			overtimeMinutes: 0,
+			underTimeMinutes: 0,
+		});
+		const { AnalyticsService } = await import(
+			"@/lib/effect/services/analytics.service"
+		);
+		const analytics = await runtime.runPromise(AnalyticsService);
+		const hours = await runtime.runPromise(
+			analytics.getWorkHoursAnalytics({
+				organizationId,
+				employeeId: subject.employeeId,
+				dateRange: {
+					start: new Date("2026-04-30T22:00:00Z"),
+					end: new Date("2026-05-31T21:59:59.999Z"),
+					startDate: "2026-05-01",
+					endDate: "2026-05-31",
+					timezone: "Europe/Berlin",
+				},
+			}),
+		);
+		expect(hours.summary).toMatchObject({
+			totalHours: 1,
+			overtimeHours: 0,
+			undertimeHours: 0,
+		});
+		expect(
+			hours.distribution.find((day) => day.date === "2026-05-25"),
+		).toMatchObject({ hours: 1, expectedHours: 1, isOvertime: false });
 	});
 	it("preserves earlier work as readable report history", async () => {
 		const { aggregateWorkHours, generateEmployeeReport } = await import(
@@ -287,7 +420,12 @@ describe("explicit tracking start across public balance readers", () => {
 			timezone: "Europe/Berlin",
 		});
 		// Legacy earliest historical work remains the lower bound: all four May Mondays.
-		expect(Object.keys(required)).toEqual(["2026-05-04", "2026-05-11", "2026-05-18", "2026-05-25"]);
+		expect(Object.keys(required)).toEqual([
+			"2026-05-04",
+			"2026-05-11",
+			"2026-05-18",
+			"2026-05-25",
+		]);
 		await fixture.pool.query(
 			`update organization_tracking_settings set activated_at = now() where organization_id = $1`,
 			[organizationId],
@@ -346,7 +484,9 @@ describe("explicit tracking start across public balance readers", () => {
 				reason: "Later reviewed checkpoint",
 			}),
 		).toMatchObject({ success: true });
-		expect(await workBalance.getEmployeeWorkBalance({ organizationId, employeeId })).toMatchObject({
+		expect(
+			await workBalance.getEmployeeWorkBalance({ organizationId, employeeId }),
+		).toMatchObject({
 			balanceMinutes: 120,
 			adjustmentMinutes: 120,
 			actualMinutes: 0,
@@ -356,8 +496,15 @@ describe("explicit tracking start across public balance readers", () => {
 	});
 
 	it("clips at the employee's DST midnight through the same production preview", async () => {
-		await seedCompletedWork("2026-10-24T21:00:00Z", "2026-10-25T02:00:00Z", 300);
-		const subject = await workBalance.loadWorkBalanceEmployee({ organizationId, employeeId });
+		await seedCompletedWork(
+			"2026-10-24T21:00:00Z",
+			"2026-10-25T02:00:00Z",
+			300,
+		);
+		const subject = await workBalance.loadWorkBalanceEmployee({
+			organizationId,
+			employeeId,
+		});
 		expect(
 			await workBalance.computeEmployeeWorkBalanceAtEndOfDay({
 				organizationId,
@@ -368,7 +515,10 @@ describe("explicit tracking start across public balance readers", () => {
 		).toBe(240);
 	});
 	it("uses transaction-bound policy inputs for the production impact preview", async () => {
-		const subject = await workBalance.loadWorkBalanceEmployee({ organizationId, employeeId });
+		const subject = await workBalance.loadWorkBalanceEmployee({
+			organizationId,
+			employeeId,
+		});
 		await expect(
 			fixture.db.transaction(async (tx) => {
 				await tx.execute(
@@ -390,7 +540,9 @@ describe("explicit tracking start across public balance readers", () => {
 		).rejects.toThrow("rollback preview fixture");
 	});
 	it("keeps historical analytics work readable while tracking team variance and weekly overtime from rollout", async () => {
-		const { AnalyticsService } = await import("@/lib/effect/services/analytics.service");
+		const { AnalyticsService } = await import(
+			"@/lib/effect/services/analytics.service"
+		);
 		const analytics = await runtime.runPromise(AnalyticsService);
 		const dateRange = {
 			start: new Date("2026-04-30T22:00:00Z"),
@@ -412,25 +564,43 @@ describe("explicit tracking start across public balance readers", () => {
 			percentageOfExpected: 100,
 		});
 		const burndown = await runtime.runPromise(
-			analytics.getOvertimeBurnDown({ organizationId, dateRange, scope: { role: "admin" } }),
+			analytics.getOvertimeBurnDown({
+				organizationId,
+				dateRange,
+				scope: { role: "admin" },
+			}),
 		);
 		expect(
-			burndown.weeklySeries.find((week) => week.weekStart === "2026-04-27")?.overtimeHours,
+			burndown.weeklySeries.find((week) => week.weekStart === "2026-04-27")
+				?.overtimeHours,
 		).toBe(0);
 		expect(
-			burndown.weeklySeries.find((week) => week.weekStart === "2026-05-18")?.overtimeHours,
+			burndown.weeklySeries.find((week) => week.weekStart === "2026-05-18")
+				?.overtimeHours,
 		).toBe(1);
 		const hours = await runtime.runPromise(
-			analytics.getWorkHoursAnalytics({ organizationId, dateRange, employeeId }),
+			analytics.getWorkHoursAnalytics({
+				organizationId,
+				dateRange,
+				employeeId,
+			}),
 		);
-		expect(hours.summary).toMatchObject({ totalHours: 12, overtimeHours: 0, undertimeHours: 0 });
-		expect(hours.distribution.find((day) => day.date === "2026-05-01")).toMatchObject({
+		expect(hours.summary).toMatchObject({
+			totalHours: 12,
+			overtimeHours: 0,
+			undertimeHours: 0,
+		});
+		expect(
+			hours.distribution.find((day) => day.date === "2026-05-01"),
+		).toMatchObject({
 			hours: 10,
 			expectedHours: 0,
 			isOvertime: false,
 			isUndertime: false,
 		});
-		expect(hours.byEmployee.find((person) => person.employeeId === employeeId)).toMatchObject({
+		expect(
+			hours.byEmployee.find((person) => person.employeeId === employeeId),
+		).toMatchObject({
 			totalHours: 12,
 			overtimeHours: 0,
 			undertimeHours: 0,

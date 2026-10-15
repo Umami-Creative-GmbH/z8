@@ -425,16 +425,21 @@ describe("createEmployeeAction", () => {
 
 			expect(result).toMatchObject({ success: true, data: createdEmployee });
 			// The fake protection runs the mutation on the database itself.
-			expect(mocks.writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(db, {
-				organizationId: "org-1",
-				employeeId: "employee-1",
-				actorUserId: "user-admin-1",
-				contractType: "hourly",
-				hourlyRate: 25.5,
-				startDate,
-			});
+			expect(mocks.writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(
+				db,
+				{
+					organizationId: "org-1",
+					employeeId: "employee-1",
+					actorUserId: "user-admin-1",
+					contractType: "hourly",
+					hourlyRate: 25.5,
+					startDate,
+				},
+			);
 			expect(insert).toHaveBeenCalledOnce();
-			expect(mocks.markEmployeeWorkBalanceDirty).toHaveBeenCalledExactlyOnceWith({
+			expect(
+				mocks.markEmployeeWorkBalanceDirty,
+			).toHaveBeenCalledExactlyOnceWith({
 				employeeId: "employee-1",
 				organizationId: "org-1",
 				dirtyFromDate: "2026-03-01",
@@ -459,7 +464,8 @@ describe("createEmployeeAction", () => {
 			arrange({ contractType: "hourly", hourlyRate: "25.50", startDate });
 			mocks.writeFirstEmploymentTerms.mockRejectedValue(
 				new ValidationError({
-					message: "Employment terms cannot start before the current employment period.",
+					message:
+						"Employment terms cannot start before the current employment period.",
 					field: "validFrom",
 				}),
 			);
@@ -469,7 +475,8 @@ describe("createEmployeeAction", () => {
 			expect(result).toEqual({
 				success: false,
 				code: "ValidationError",
-				error: "Employment terms cannot start before the current employment period.",
+				error:
+					"Employment terms cannot start before the current employment period.",
 			});
 			expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
 			expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
@@ -725,118 +732,78 @@ describe("updateEmployeeAction", () => {
 
 		expect(result.success).toBe(true);
 		if (!result.success) return;
-		expect(result.data).toEqual({ contractType: "hourly", hourlyRate: "42.50" });
-	});
-
-	it("marks the employee work balance dirty when the start date changes", async () => {
-		const where = vi.fn().mockResolvedValue(undefined);
-		const set = vi.fn(() => ({ where }));
-		const update = vi.fn(() => ({ set }));
-		const dbService = {
-			db: { update },
-			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
-				Effect.promise(run),
-			),
-		};
-
-		mocks.runTracedEmployeeAction.mockImplementation((options) =>
-			Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
-		);
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				session: { user: { id: "user-admin-1", email: "admin@example.com" } },
-				dbService,
-			}),
-		);
-		mocks.getTargetEmployee.mockReturnValue(
-			Effect.succeed({
-				id: "employee-1",
-				userId: validUserId,
-				organizationId: "org-1",
-				contractType: "fixed",
-				startDate: new Date("2026-05-10T00:00:00.000Z"),
-			}),
-		);
-		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
-			Effect.void,
-		);
-		mocks.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
-		mocks.validateInput.mockReturnValue(
-			Effect.succeed({
-				startDate: new Date("2026-05-01T00:00:00.000Z"),
-			}),
-		);
-
-		await updateEmployeeAction("employee-1", {
-			startDate: new Date("2026-05-01T00:00:00.000Z"),
-		} as Parameters<typeof updateEmployeeAction>[1]);
-
-		expect(mocks.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
-			employeeId: "employee-1",
-			organizationId: "org-1",
-			dirtyFromDate: "2026-05-01",
+		expect(result.data).toEqual({
+			contractType: "hourly",
+			hourlyRate: "42.50",
 		});
-		expect(where.mock.invocationCallOrder[0]).toBeLessThan(
-			mocks.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
-		);
 	});
 
-	it("requests a full work balance rebuild when clearing the start date", async () => {
-		const where = vi.fn().mockResolvedValue(undefined);
-		const set = vi.fn(() => ({ where }));
-		const update = vi.fn(() => ({ set }));
-		const dbService = {
-			db: { update },
-			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
-				Effect.promise(run),
-			),
-		};
-
-		mocks.runTracedEmployeeAction.mockImplementation((options) =>
-			Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
-		);
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				session: { user: { id: "user-admin-1", email: "admin@example.com" } },
-				dbService,
-			}),
-		);
-		mocks.getTargetEmployee.mockReturnValue(
-			Effect.succeed({
-				id: "employee-1",
-				userId: validUserId,
-				organizationId: "org-1",
-				contractType: "fixed",
-				startDate: new Date("2026-05-10T00:00:00.000Z"),
-			}),
-		);
-		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
-			Effect.void,
-		);
-		mocks.requestEmployeeWorkBalanceFullRebuild.mockResolvedValue(undefined);
-		mocks.validateInput.mockReturnValue(
-			Effect.succeed({
-				startDate: null,
-			}),
-		);
-
-		await updateEmployeeAction("employee-1", {
-			startDate: null,
-		} as Parameters<typeof updateEmployeeAction>[1]);
-
-		expect(mocks.requestEmployeeWorkBalanceFullRebuild).toHaveBeenCalledWith({
-			employeeId: "employee-1",
-			organizationId: "org-1",
-		});
-		expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
-		expect(where.mock.invocationCallOrder[0]).toBeLessThan(
-			mocks.requestEmployeeWorkBalanceFullRebuild.mock.invocationCallOrder[0],
-		);
-	});
+	it.each([
+		{ change: "changing", startDate: new Date("2026-05-01T00:00:00.000Z") },
+		{ change: "clearing", startDate: null },
+	])(
+		"requires reviewed correction when $change the actual joining date",
+		async ({ startDate }) => {
+			const update = vi.fn();
+			const selectWhere = vi
+				.fn()
+				.mockResolvedValue([
+					{ startDate: new Date("2026-05-10T00:00:00.000Z") },
+				]);
+			const select = vi.fn(() => ({
+				from: vi.fn(() => ({ where: selectWhere })),
+			}));
+			const dbService = {
+				db: { update, select },
+				query: vi.fn((_name: string, run: () => Promise<unknown>) =>
+					Effect.promise(run),
+				),
+			};
+			mocks.runTracedEmployeeAction.mockImplementation(async (options) =>
+				toServerActionResult(
+					await Effect.runPromiseExit(
+						options.execute({ setAttribute: vi.fn() }),
+					),
+				),
+			);
+			mocks.getEmployeeSettingsActorContext.mockReturnValue(
+				Effect.succeed({
+					accessTier: "orgAdmin",
+					organizationId: "org-1",
+					session: { user: { id: "user-admin-1", email: "admin@example.com" } },
+					dbService,
+				}),
+			);
+			mocks.getTargetEmployee.mockReturnValue(
+				Effect.succeed({
+					id: "employee-1",
+					userId: validUserId,
+					organizationId: "org-1",
+					contractType: "fixed",
+					startDate: new Date("2026-05-10T00:00:00.000Z"),
+				}),
+			);
+			mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
+				Effect.void,
+			);
+			mocks.validateInput.mockReturnValue(Effect.succeed({ startDate }));
+			expect(
+				await updateEmployeeAction("employee-1", { startDate }),
+			).toMatchObject({
+				success: false,
+				code: "ValidationError",
+				error:
+					"Review the actual employment start correction before saving it.",
+			});
+			expect(selectWhere).toHaveBeenCalled();
+			expect(update).not.toHaveBeenCalled();
+			expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+			expect(
+				mocks.requestEmployeeWorkBalanceFullRebuild,
+			).not.toHaveBeenCalled();
+			expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
+		},
+	);
 });
 
 describe("assignManagersAction", () => {

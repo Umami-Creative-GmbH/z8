@@ -33,10 +33,6 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 
-function clearBusy(setBusy: (value: boolean) => void) {
-	setBusy(false);
-}
-
 export function HistoricalVacationUsageCard({
 	organizationId,
 	employeeId,
@@ -106,7 +102,7 @@ export function HistoricalVacationUsageCard({
 				});
 				if (!result.success) {
 					setMessage(result.error);
-					clearBusy(setBusy);
+					setBusy(false);
 					return;
 				}
 				if (
@@ -123,7 +119,7 @@ export function HistoricalVacationUsageCard({
 							"The dated history changed. Read the updated list and confirm its exclusion again.",
 						),
 					);
-					clearBusy(setBusy);
+					setBusy(false);
 					return;
 				}
 				setReview(result.data);
@@ -135,7 +131,7 @@ export function HistoricalVacationUsageCard({
 					),
 				);
 			}
-			clearBusy(setBusy);
+			setBusy(false);
 		},
 	});
 
@@ -156,7 +152,7 @@ export function HistoricalVacationUsageCard({
 			if (!result.success) {
 				setMessage(result.error);
 				setReview(null);
-				clearBusy(setBusy);
+				setBusy(false);
 				return;
 			}
 			setMessage(
@@ -181,7 +177,7 @@ export function HistoricalVacationUsageCard({
 				),
 			);
 		}
-		clearBusy(setBusy);
+		setBusy(false);
 	}
 	return (
 		<Card className="lg:col-span-3" aria-busy={busy}>
