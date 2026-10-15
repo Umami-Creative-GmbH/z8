@@ -38,7 +38,7 @@ function ChannelForm({ setting }: { setting: ReimbursementChannelSetting }) {
 				return;
 			}
 			queryClient.setQueryData(queryKey, result.data);
-			form.reset(value);
+			if (form.store.state.values === value) form.reset(value, { keepDefaultValues: true });
 			toast.success(
 				t("travelExpenses.settings.reimbursementChannel.saved", "Reimbursement channel saved"),
 			);

@@ -49,7 +49,9 @@ export function useWidgetData<T>(
 				shouldFinish = false;
 				return;
 			}
-			if (result.success && result.data) {
+			if (!result.success) {
+				toast.error(options?.errorMessage ?? "Failed to load data");
+			} else if (result.data) {
 				setData(result.data);
 			}
 		} catch (error) {

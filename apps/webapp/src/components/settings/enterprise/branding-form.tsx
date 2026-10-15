@@ -1,11 +1,11 @@
 "use client";
 
-import { useServerDraftState } from "@/hooks/use-server-draft-state";
-
 import { IconLoader2, IconUpload, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import Image from "next/image";
-import { useState } from "react";
+import type { SetStateAction } from "react";
+import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { toast } from "sonner";
 import { updateBrandingAction } from "@/app/[locale]/(app)/settings/enterprise/actions";
 import { Button } from "@/components/ui/button";
@@ -20,21 +20,41 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import type { OrganizationBranding } from "@/lib/domain";
-import { runWithBusyState } from "../run-with-busy-state";
 
 interface BrandingFormProps {
 	initialBranding: OrganizationBranding;
 	organizationId: string;
 }
 
-function useBrandingFormController({
-	initialBranding,
-	organizationId,
-}: BrandingFormProps) {
+function useBrandingFormController({ initialBranding, organizationId }: BrandingFormProps) {
 	const { t } = useTranslate();
-	const [branding, setBranding, markSaved] =
-		useServerDraftState<OrganizationBranding>(initialBranding);
-	const [isSaving, setIsSaving] = useState(false);
+	const form = useForm({
+		defaultValues: initialBranding,
+		onSubmit: async ({ value }) => {
+			try {
+				await updateBrandingAction(value);
+				if (form.store.state.values === value) form.reset(value, { keepDefaultValues: true });
+				toast.success(t("settings.branding.saveSuccess", "Branding settings saved"));
+			} catch {
+				toast.error(t("settings.branding.saveFailed", "Failed to save branding settings"));
+			}
+		},
+	});
+	const branding = useStore(form.store, (state) => state.values);
+	const isSaving = useStore(form.store, (state) => state.isSubmitting);
+	const setBranding = (update: SetStateAction<OrganizationBranding>) => {
+		const previous = form.store.state.values;
+		const next = typeof update === "function" ? update(previous) : update;
+		for (const field of [
+			"logoUrl",
+			"backgroundImageUrl",
+			"appName",
+			"primaryColor",
+			"accentColor",
+		] as const) {
+			if (next[field] !== previous[field]) form.setFieldValue(field, next[field]);
+		}
+	};
 
 	// Logo upload
 	const logoUpload = useImageUpload({
@@ -43,14 +63,11 @@ function useBrandingFormController({
 		maxFileSize: 2 * 1024 * 1024, // 2MB
 		onSuccess: (url) => {
 			setBranding((prev) => ({ ...prev, logoUrl: url }));
-			toast.success(
-				t("settings.branding.logoUploadSuccess", "Logo uploaded successfully"),
-			);
+			toast.success(t("settings.branding.logoUploadSuccess", "Logo uploaded successfully"));
 		},
 		onError: (error) => {
 			toast.error(
-				error.message ||
-					t("settings.branding.logoUploadFailed", "Failed to upload logo"),
+				error.message || t("settings.branding.logoUploadFailed", "Failed to upload logo"),
 			);
 		},
 	});
@@ -63,19 +80,13 @@ function useBrandingFormController({
 		onSuccess: (url) => {
 			setBranding((prev) => ({ ...prev, backgroundImageUrl: url }));
 			toast.success(
-				t(
-					"settings.branding.backgroundUploadSuccess",
-					"Background image uploaded successfully",
-				),
+				t("settings.branding.backgroundUploadSuccess", "Background image uploaded successfully"),
 			);
 		},
 		onError: (error) => {
 			toast.error(
 				error.message ||
-					t(
-						"settings.branding.backgroundUploadFailed",
-						"Failed to upload background image",
-					),
+					t("settings.branding.backgroundUploadFailed", "Failed to upload background image"),
 			);
 		},
 	});
@@ -94,21 +105,7 @@ function useBrandingFormController({
 		}
 	};
 
-	const handleSave = async () => {
-		await runWithBusyState(setIsSaving, async () => {
-			try {
-				await updateBrandingAction(branding);
-				markSaved(branding);
-				toast.success(
-					t("settings.branding.saveSuccess", "Branding settings saved"),
-				);
-			} catch {
-				toast.error(
-					t("settings.branding.saveFailed", "Failed to save branding settings"),
-				);
-			}
-		});
-	};
+	const handleSave = () => form.handleSubmit();
 
 	return {
 		backgroundUpload,

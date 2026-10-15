@@ -104,7 +104,7 @@ function MappingsForm({ setting }: { setting: ExpenseWageTypeSetting }) {
 				);
 				return;
 			}
-			form.reset(value);
+			if (form.store.state.values === value) form.reset(value, { keepDefaultValues: true });
 			toast.success(t("settings.payrollExport.expenseMappings.saved", "Wage types saved"));
 		},
 	});

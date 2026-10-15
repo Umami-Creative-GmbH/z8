@@ -190,6 +190,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 							queryKey: queryKeys.employees.all,
 						}),
 					]);
+					if (form.store.state.values === value) form.reset(value, { keepDefaultValues: true });
 					refresh();
 					return;
 				}
@@ -283,47 +284,42 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
 	const runLoadEmployeeData = useCallback(async () => {
 		const generation = ++profileLoadGeneration.current;
-		const emp = await getCurrentEmployee().then(
-				(value) => value,
-				() => null,
-			);
+		const emp = await getCurrentEmployee().catch((error: unknown) => {
+			if (generation === profileLoadGeneration.current) setIsInitialLoading(false);
+			throw error;
+		});
 
 		if (generation !== profileLoadGeneration.current) {
 			return;
 		}
 
 		if (!form.store.state.isDirty) {
-			form.setFieldValue("image", user.image || "");
-			form.setFieldValue("firstName", user.firstName || "");
-			form.setFieldValue("lastName", user.lastName || "");
-			form.setFieldValue(
-				"gender",
-				(emp?.gender as ProfileFormValues["gender"] | null) || "",
+			form.reset(
+				{
+					image: user.image || "",
+					firstName: user.firstName || "",
+					lastName: user.lastName || "",
+					gender: (emp?.gender as ProfileFormValues["gender"] | null) || "",
+					pronouns: emp?.pronouns || "",
+					birthday: birthdayValueToCalendarDate(emp?.birthday),
+					helpImproveProduct: user.helpImproveProduct ?? true,
+				},
+				{ keepDefaultValues: true },
 			);
-			form.setFieldValue("pronouns", emp?.pronouns || "");
-			form.setFieldValue(
-				"birthday",
-				birthdayValueToCalendarDate(emp?.birthday),
-			);
-			form.setFieldValue("helpImproveProduct", user.helpImproveProduct ?? true);
 		}
 		setCurrentEmployeeId(emp?.id ?? null);
 		setIsInitialLoading(false);
-	}, [
-		form,
-		user.firstName,
-		user.helpImproveProduct,
-		user.image,
-		user.lastName,
-	]);
+	}, [form, user.firstName, user.helpImproveProduct, user.image, user.lastName]);
 
 	useViewRefresh(runLoadEmployeeData);
 	useEffect(() => {
-		void runLoadEmployeeData();
+		void runLoadEmployeeData().catch(() => {
+			toast.error(t("settings.profile.loadFailed", "Failed to load profile"));
+		});
 		return () => {
 			profileLoadGeneration.current += 1;
 		};
-	}, [runLoadEmployeeData]);
+	}, [runLoadEmployeeData, t]);
 
 	// Create ref for file input
 	const inputRef = useRef<HTMLInputElement>(null);

@@ -50,7 +50,7 @@ function CurrencyForm({ currency }: { currency: string }) {
 				return;
 			}
 			await queryClient.invalidateQueries({ queryKey });
-			form.reset(value);
+			if (form.store.state.values === value) form.reset(value, { keepDefaultValues: true });
 			toast.success(t("settings.travelExpenses.currency.saved", "Reimbursement currency saved"));
 		},
 	});

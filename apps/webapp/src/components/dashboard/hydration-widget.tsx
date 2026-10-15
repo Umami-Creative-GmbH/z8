@@ -230,7 +230,7 @@ export function HydrationWidget() {
 		loading,
 		refreshing,
 		refetch,
-	} = useWidgetData<HydrationWidgetData>(getHydrationWidgetData, {
+	} = useWidgetData<HydrationWidgetData>(() => getHydrationWidgetData({ fresh: true }), {
 		errorMessage: t("dashboard.hydration.error", "Failed to load hydration stats"),
 	});
 

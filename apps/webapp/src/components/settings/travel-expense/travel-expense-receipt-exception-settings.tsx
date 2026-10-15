@@ -40,7 +40,7 @@ function ReceiptExceptionForm({ settings }: { settings: ReceiptExceptionSettings
 				return;
 			}
 			await queryClient.invalidateQueries({ queryKey });
-			form.reset(value);
+			if (form.store.state.values === value) form.reset(value, { keepDefaultValues: true });
 			toast.success(
 				t("settings.travelExpenses.receiptExceptions.saved", "Missing-receipt setting saved"),
 			);

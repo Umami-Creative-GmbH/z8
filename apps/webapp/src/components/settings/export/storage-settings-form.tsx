@@ -98,12 +98,17 @@ function useStorageSettingsForm({
 				if (result.success) {
 					setConfig(result.data);
 					setTestResult(null);
-					form.reset();
-					form.setFieldValue("bucket", result.data.bucket);
-					form.setFieldValue("accessKeyId", "");
-					form.setFieldValue("secretAccessKey", "");
-					form.setFieldValue("region", result.data.region);
-					form.setFieldValue("endpoint", result.data.endpoint ?? "");
+					if (form.store.state.values === value)
+						form.reset(
+							{
+								bucket: result.data.bucket,
+								accessKeyId: "",
+								secretAccessKey: "",
+								region: result.data.region,
+								endpoint: result.data.endpoint ?? "",
+							},
+							{ keepDefaultValues: true },
+						);
 					toast.success(t("settings.dataExport.storage.saveSuccess", "Configuration saved"), {
 						description: t(
 							"settings.dataExport.storage.saveSuccessDescription",
@@ -139,13 +144,16 @@ function useStorageSettingsForm({
 		setConfig(result.data);
 		onConfigChange?.(Boolean(result.data));
 		if (!form.store.state.isDirty) {
-			form.reset({
-				bucket: result.data?.bucket ?? "",
-				accessKeyId: "",
-				secretAccessKey: "",
-				region: result.data?.region ?? "us-east-1",
-				endpoint: result.data?.endpoint ?? "",
-			});
+			form.reset(
+				{
+					bucket: result.data?.bucket ?? "",
+					accessKeyId: "",
+					secretAccessKey: "",
+					region: result.data?.region ?? "us-east-1",
+					endpoint: result.data?.endpoint ?? "",
+				},
+				{ keepDefaultValues: true },
+			);
 		}
 	});
 
@@ -156,11 +164,17 @@ function useStorageSettingsForm({
 				const result = await getStorageConfigAction(organizationId);
 				if (result.success && result.data) {
 					setConfig(result.data);
-					form.setFieldValue("bucket", result.data.bucket);
-					form.setFieldValue("accessKeyId", "");
-					form.setFieldValue("secretAccessKey", "");
-					form.setFieldValue("region", result.data.region);
-					form.setFieldValue("endpoint", result.data.endpoint ?? "");
+					if (!form.store.state.isDirty)
+						form.reset(
+							{
+								bucket: result.data.bucket,
+								accessKeyId: "",
+								secretAccessKey: "",
+								region: result.data.region,
+								endpoint: result.data.endpoint ?? "",
+							},
+							{ keepDefaultValues: true },
+						);
 				}
 			});
 		}

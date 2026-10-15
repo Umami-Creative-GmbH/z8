@@ -102,7 +102,7 @@ export function useCalendarEmployees(currentEmployeeId?: string): UseCalendarEmp
 			// Fetch current employee and managed employees in parallel
 			const [currentEmp, managedResult] = await Promise.all([
 				getCurrentEmployee(),
-				getCalendarManagedEmployees(),
+				getCalendarManagedEmployees({ fresh: true }),
 			]);
 
 			// Transform current employee if available

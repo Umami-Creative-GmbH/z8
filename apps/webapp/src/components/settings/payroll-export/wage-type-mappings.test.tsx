@@ -1,7 +1,12 @@
 /* @vitest-environment jsdom */
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+let refreshHandler: (() => unknown) | undefined;
+vi.mock("@/components/providers/view-refresh-provider", () => ({
+	useViewRefresh: (handler: () => unknown) => { refreshHandler = handler; },
+}));
 
 const {
 	deleteMappingActionMock,
@@ -106,5 +111,14 @@ describe("WageTypeMappings", () => {
 			screen.getByText(/configure at least one payroll export format/),
 		).toBeTruthy();
 		expect(getMappingsActionMock).not.toHaveBeenCalled();
+	});
+	it("reports unsuccessful header refresh actions and keeps current mappings", async () => {
+		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
+		await screen.findByText("First category");
+		getMappingsActionMock.mockResolvedValue({ success: false, error: "Unavailable" });
+		await act(async () => {
+			await expect(refreshHandler?.()).rejects.toThrow("Failed to refresh wage type mappings");
+		});
+		expect(screen.getByText("First category")).toBeTruthy();
 	});
 });

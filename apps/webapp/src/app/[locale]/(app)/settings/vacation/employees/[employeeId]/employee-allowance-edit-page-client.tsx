@@ -249,17 +249,16 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 					const policyId = assignmentResult.success
 					? assignmentResult.data?.policyId || DEFAULT_POLICY_VALUE
 					: DEFAULT_POLICY_VALUE;
-					form.setFieldValue("policyId", policyId);
-					form.setFieldValue(
-					"customAnnualDays",
-					allowance?.customAnnualDays || "",
-				);
-					form.setFieldValue(
-					"customCarryoverDays",
-					allowance?.customCarryoverDays || "",
-				);
-					form.setFieldValue("adjustmentDays", "");
-					form.setFieldValue("adjustmentReason", "");
+					form.reset(
+						{
+							policyId,
+							customAnnualDays: allowance?.customAnnualDays || "",
+							customCarryoverDays: allowance?.customCarryoverDays || "",
+							adjustmentDays: "",
+							adjustmentReason: "",
+						},
+						{ keepDefaultValues: true },
+					);
 				}
 			}
 

@@ -48,7 +48,7 @@ function ApproverForm({ settings }: { settings: TravelExpenseApproverSettings })
 				return;
 			}
 			await queryClient.invalidateQueries({ queryKey });
-			form.reset(value);
+			if (form.store.state.values === value) form.reset(value, { keepDefaultValues: true });
 			toast.success(t("settings.travelExpenses.approver.saved", "Expense approver saved"));
 		},
 	});
