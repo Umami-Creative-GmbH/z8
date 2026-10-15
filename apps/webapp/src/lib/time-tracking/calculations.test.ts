@@ -1,3 +1,6 @@
+vi.mock("@/lib/time-tracking/tracking-start", () => ({
+	loadEmployeeTrackingContext: async () => null,
+}));
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
@@ -71,11 +74,13 @@ function workPolicyOverFakeDatabase(queryError?: unknown) {
 function fixedPolicyLayer(policy: EffectiveWorkPolicy | null) {
 	return Layer.succeed(
 		WorkPolicyService,
-		WorkPolicyService.of({
-			getEffectivePolicy: () => Effect.succeed(policy),
-		} as never),
+		WorkPolicyService.of({ getEffectivePolicy: () => Effect.succeed(policy) } as never),
 	);
 }
+const legacyTrackingDatabase = DatabaseService.of({
+	db: {} as never,
+	query: (_name, query) => Effect.promise(query),
+});
 
 describe("getEmployeePolicy", () => {
 	it("looks the policy up within the organization through the work-policy service", async () => {
@@ -129,7 +134,10 @@ describe("calculateExpectedWorkHoursForEmployee", () => {
 				monday,
 				sunday,
 				"UTC",
-			).pipe(Effect.provide(fixedPolicyLayer(policy))),
+			).pipe(
+				Effect.provide(fixedPolicyLayer(policy)),
+				Effect.provideService(DatabaseService, legacyTrackingDatabase),
+			),
 		);
 
 		expect(expected).toMatchObject({
@@ -147,7 +155,10 @@ describe("calculateExpectedWorkHoursForEmployee", () => {
 				monday,
 				sunday,
 				"UTC",
-			).pipe(Effect.provide(fixedPolicyLayer(null))),
+			).pipe(
+				Effect.provide(fixedPolicyLayer(null)),
+				Effect.provideService(DatabaseService, legacyTrackingDatabase),
+			),
 		);
 
 		expect(expected).toMatchObject({ totalMinutes: 2400, workDays: 5, scheduleInfo: null });

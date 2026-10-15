@@ -350,7 +350,13 @@ export class AnalyticsService extends Context.Service<
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
 			const workPolicyService = yield* WorkPolicyService;
-			const withWorkPolicy = Effect.provideService(WorkPolicyService, workPolicyService);
+			const withWorkPolicy = <A, E>(
+				effect: Effect.Effect<A, E, WorkPolicyService | DatabaseService>,
+			) =>
+				effect.pipe(
+					Effect.provideService(WorkPolicyService, workPolicyService),
+					Effect.provideService(DatabaseService, dbService),
+				);
 
 			return {
 				getTeamPerformance: (params: TeamPerformanceParams) =>

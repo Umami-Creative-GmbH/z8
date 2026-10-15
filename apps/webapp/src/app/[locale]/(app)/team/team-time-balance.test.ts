@@ -1,3 +1,7 @@
+vi.mock("@/lib/time-tracking/tracking-start", () => ({
+ loadEmployeeTrackingStart: async () => null,
+ loadEmployeeTrackingContext: async () => null,
+}));
 import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

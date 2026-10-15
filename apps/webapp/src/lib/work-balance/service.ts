@@ -9,6 +9,10 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
+import {
+	loadEmployeeTrackingContext,
+	loadEmployeeTrackingStart,
+} from "@/lib/time-tracking/tracking-start";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { readWorkBalanceAdjustments } from "./adjustments/ledger";
 import type { WorkBalanceDbClient } from "./db-client";
@@ -266,6 +270,7 @@ async function getFirstRelevantDate(
 	input: {
 		employeeId: string;
 		organizationId: string;
+		trackingStartDateOverride?: string | null;
 	},
 	dbClient: WorkBalanceDbClient = db,
 	knownEmployee?: { id: string; startDate: Date | string | null },
@@ -282,6 +287,8 @@ async function getFirstRelevantDate(
 		}));
 	if (!scopedEmployee) return null;
 
+	const trackingStartDate = await loadEmployeeTrackingStart(dbClient, input);
+	if (trackingStartDate) return trackingStartDate;
 	const employeeStartDate = toUtcIsoDate(scopedEmployee.startDate);
 	if (employeeStartDate) return employeeStartDate;
 
@@ -311,7 +318,9 @@ async function getActualMinutes(input: {
 	endDate: Date;
 }): Promise<number> {
 	const [row] = await db
-		.select({ totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)` })
+		.select({
+			totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)`,
+		})
 		.from(workPeriod)
 		.where(
 			and(
@@ -332,6 +341,34 @@ export async function computeEmployeeWorkBalance(input: {
 	organizationId: string;
 	now?: Date;
 }) {
+	const tracking = await loadEmployeeTrackingContext(db, input);
+	if (tracking) {
+		const throughDate = getWorkBalanceBatchCutoffDate(input.now ?? new Date(), tracking.timezone);
+		const adjustments = await readWorkBalanceAdjustments(db, {
+			...input,
+			throughDate,
+			openingBalanceDatedLater: "count",
+		});
+		const fromDate = laterIsoDate(tracking.startDate, adjustments.countFrom)!;
+		const period = await computeEmployeePeriodBalance({
+			...input,
+			periodType: "month",
+			periodStart: fromDate,
+			periodEnd: throughDate,
+			calculationStartDate: fromDate,
+			timezone: tracking.timezone,
+			isClosed: false,
+		});
+		return buildWorkBalanceValues({
+			...input,
+			actualMinutes: period.actualMinutes,
+			requiredMinutes: period.requiredMinutes,
+			adjustmentMinutes: adjustments.adjustmentMinutes,
+			computedFromDate: fromDate,
+			computedThroughDate: throughDate,
+			computedAt: input.now ?? new Date(),
+		});
+	}
 	const firstDate = await getFirstRelevantDate(input);
 	if (!firstDate) return null;
 
@@ -478,7 +515,10 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 	const fullRebuildStartDate = forceFullRebuild
 		? await getFirstRelevantDate(input, dbClient, scopedEmployee, timezone)
 		: null;
-	const employeeStartDate = forceFullRebuild ? null : toUtcIsoDate(scopedEmployee.startDate);
+	const employeeStartDate = forceFullRebuild
+		? null
+		: ((await loadEmployeeTrackingStart(dbClient, input)) ??
+			toUtcIsoDate(scopedEmployee.startDate));
 	// Balance adjustments are read from their ledger on every computation, never
 	// kept in the stored rows, so a full rebuild counts them again (ADR-0008).
 	// An opening balance in effect replaces everything through its day: the
@@ -542,7 +582,10 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 					isClosed: true,
 					now,
 				});
-				await upsertEmployeeWorkBalancePeriod(values, { dbClient, refreshStartedAt: now });
+				await upsertEmployeeWorkBalancePeriod(values, {
+					dbClient,
+					refreshStartedAt: now,
+				});
 			}),
 		);
 
@@ -652,10 +695,16 @@ export async function computeEmployeeWorkBalanceAtEndOfDay(
 		organizationId: string;
 		employee: { id: string; startDate: Date | null; timezone: string };
 		day: string;
+		/** Server-side proposed organization date for reviewed impact calculations; never persisted here. */
+		trackingStartDateOverride?: string | null;
 	},
 	dbClient: WorkBalanceDbClient = db,
 ): Promise<number> {
-	const scope = { employeeId: input.employee.id, organizationId: input.organizationId };
+	const scope = {
+		employeeId: input.employee.id,
+		organizationId: input.organizationId,
+		trackingStartDateOverride: input.trackingStartDateOverride,
+	};
 	const [firstRelevantDate, { countFrom, adjustmentMinutes }] = await Promise.all([
 		getFirstRelevantDate(scope, dbClient, input.employee, input.employee.timezone),
 		readWorkBalanceAdjustments(dbClient, {

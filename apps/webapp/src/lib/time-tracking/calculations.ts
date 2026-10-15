@@ -6,12 +6,9 @@ import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
-import {
-	endOfDay,
-	fromJSDate,
-	startOfDay,
-	toDateKey,
-} from "@/lib/datetime/luxon-utils";
+import { endOfDay, fromJSDate, startOfDay, toDateKey } from "@/lib/datetime/luxon-utils";
+import type { DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { loadEmployeeTrackingContext } from "./tracking-start";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	type EffectiveWorkPolicy,
@@ -31,23 +28,10 @@ export interface WorkHoursSummary {
  */
 function luxonWeekdayToScheduleDay(
 	luxonWeekday: number,
-):
-	| "monday"
-	| "tuesday"
-	| "wednesday"
-	| "thursday"
-	| "friday"
-	| "saturday"
-	| "sunday" {
+): "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" {
 	const dayMap: Record<
 		number,
-		| "monday"
-		| "tuesday"
-		| "wednesday"
-		| "thursday"
-		| "friday"
-		| "saturday"
-		| "sunday"
+		"monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
 	> = {
 		1: "monday",
 		2: "tuesday",
@@ -63,10 +47,7 @@ function luxonWeekdayToScheduleDay(
 /**
  * Get expected hours for a specific day based on work policy schedule
  */
-function getExpectedHoursForDay(
-	policy: EffectiveWorkPolicy | null,
-	luxonWeekday: number,
-): number {
+function getExpectedHoursForDay(policy: EffectiveWorkPolicy | null, luxonWeekday: number): number {
 	// Default to 8 hours on weekdays if no schedule
 	if (!policy?.schedule) {
 		return luxonWeekday >= 1 && luxonWeekday <= 5 ? 8 : 0;
@@ -86,10 +67,7 @@ function getExpectedHoursForDay(
 /**
  * Check if a day is a working day based on policy schedule
  */
-function isWorkingDay(
-	policy: EffectiveWorkPolicy | null,
-	luxonWeekday: number,
-): boolean {
+function isWorkingDay(policy: EffectiveWorkPolicy | null, luxonWeekday: number): boolean {
 	// Default to weekdays if no schedule
 	if (!policy?.schedule) {
 		return luxonWeekday >= 1 && luxonWeekday <= 5;
@@ -139,10 +117,7 @@ export async function calculateWorkHours(
 	const periodsWithExclusion = await Promise.all(
 		periods.map(async (period) => ({
 			period,
-			shouldExclude: await shouldExcludeFromCalculations(
-				organizationId,
-				period.startTime,
-			),
+			shouldExclude: await shouldExcludeFromCalculations(organizationId, period.startTime),
 		})),
 	);
 
@@ -187,12 +162,7 @@ export async function calculateWorkHoursByEmployee(
 	const summaries = await Promise.all(
 		employeeIds.map(async (employeeId) => ({
 			employeeId,
-			summary: await calculateWorkHours(
-				employeeId,
-				organizationId,
-				startDate,
-				endDate,
-			),
+			summary: await calculateWorkHours(employeeId, organizationId, startDate, endDate),
 		})),
 	);
 
@@ -288,14 +258,44 @@ export function calculateExpectedWorkHoursForEmployee(
 	startDate: Date,
 	endDate: Date,
 	timezone: string,
-): Effect.Effect<ExpectedWorkHoursSummary, never, WorkPolicyService> {
-	return getEmployeePolicy(employeeId, organizationId).pipe(
-		Effect.flatMap((policy) =>
-			Effect.promise(() =>
-				calculateExpectedWorkHoursForPolicy(policy, organizationId, startDate, endDate, timezone),
-			),
-		),
-	);
+): Effect.Effect<
+	ExpectedWorkHoursSummary,
+	DatabaseError | NotFoundError,
+	WorkPolicyService | DatabaseService
+> {
+	return Effect.gen(function* () {
+		const database = yield* DatabaseService;
+		const tracking = yield* database.query("tracking.expectedHoursStart", () =>
+			loadEmployeeTrackingContext(database.db, { employeeId, organizationId }),
+		);
+		const policy = yield* getEmployeePolicy(employeeId, organizationId);
+		if (tracking) {
+			// Loaded only when called, avoiding a runtime initialization cycle through AnalyticsService.
+			const { loadDailyWorkRequirementsForEmployee } = yield* Effect.promise(
+				() => import("@/lib/calendar/work-policy-requirements"),
+			);
+			const requirements = yield* loadDailyWorkRequirementsForEmployee({
+				employeeId,
+				organizationId,
+				startDate,
+				endDate,
+				timezone: tracking.timezone,
+			});
+			const days = Object.values(requirements);
+			const totalMinutes = days.reduce((total, day) => total + day.requiredMinutes, 0);
+			return {
+				totalMinutes,
+				totalHours: Math.round((totalMinutes / 60) * 100) / 100,
+				excludedMinutes: 0,
+				excludedDays: 0,
+				workDays: days.filter((day) => day.requiredMinutes > 0).length,
+				scheduleInfo: policy ? { name: policy.policyName, source: policy.assignedVia } : null,
+			};
+		}
+		return yield* Effect.promise(() =>
+			calculateExpectedWorkHoursForPolicy(policy, organizationId, startDate, endDate, timezone),
+		);
+	});
 }
 
 /**

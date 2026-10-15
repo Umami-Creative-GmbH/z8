@@ -3,6 +3,9 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
+import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
+import type { WorkBalanceDbClient } from "./db-client";
+import { sumTrackedWorkMinutes } from "./tracked-work";
 import { getYearPeriodForDate } from "./periods";
 
 export type EmployeeWorkBalancePeriodType = "month" | "year";
@@ -42,21 +45,29 @@ export function buildPeriodBalanceValues(input: {
 export async function computeEmployeePeriodBalance(input: {
 	employeeId: string;
 	organizationId: string;
-	dbClient?: PeriodAggregationDbClient;
+	dbClient?: WorkBalanceDbClient;
 	periodType: EmployeeWorkBalancePeriodType;
 	periodStart: string;
 	periodEnd: string;
 	calculationStartDate?: string | null;
+	trackingStartDateOverride?: string | null;
 	timezone?: string;
 	isClosed: boolean;
 	now?: Date;
 }) {
 	const dbClient = input.dbClient ?? db;
-	const timezone = input.timezone ?? "UTC";
-	const periodStart = DateTime.fromISO(input.periodStart, { zone: timezone }).startOf("day");
+	const tracking = await loadEmployeeTrackingContext(dbClient, input);
+	const timezone = tracking?.timezone ?? input.timezone ?? "UTC";
+	const calculationStartDate =
+		tracking && (!input.calculationStartDate || tracking.startDate > input.calculationStartDate)
+			? tracking.startDate
+			: input.calculationStartDate;
+	const periodStart = DateTime.fromISO(input.periodStart, {
+		zone: timezone,
+	}).startOf("day");
 	const periodEnd = DateTime.fromISO(input.periodEnd, { zone: timezone }).endOf("day");
-	const calculationStart = input.calculationStartDate
-		? DateTime.fromISO(input.calculationStartDate, { zone: timezone }).startOf("day")
+	const calculationStart = calculationStartDate
+		? DateTime.fromISO(calculationStartDate, { zone: timezone }).startOf("day")
 		: null;
 	const effectiveStart =
 		calculationStart && calculationStart > periodStart ? calculationStart : periodStart;
@@ -79,26 +90,39 @@ export async function computeEmployeePeriodBalance(input: {
 	const endDate = periodEnd.toJSDate();
 
 	const [actualRow, requirements] = await Promise.all([
-		dbClient
-			.select({ totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)` })
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.employeeId, input.employeeId),
-					eq(workPeriod.organizationId, input.organizationId),
-					isNotNull(workPeriod.endTime),
-					isNotNull(workPeriod.durationMinutes),
-					gte(workPeriod.startTime, startDate),
-					lte(workPeriod.startTime, endDate),
-				),
-			),
-		getDailyWorkRequirementsForEmployee({
-			employeeId: input.employeeId,
-			organizationId: input.organizationId,
-			startDate,
-			endDate,
-			timezone,
-		}),
+		tracking
+			? sumTrackedWorkMinutes(dbClient, {
+					...input,
+					startDate: effectiveStart.toISODate()!,
+					throughDate: input.periodEnd,
+					timezone,
+				}).then((totalMinutes) => [{ totalMinutes }])
+			: dbClient
+					.select({
+						totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)`,
+					})
+					.from(workPeriod)
+					.where(
+						and(
+							eq(workPeriod.employeeId, input.employeeId),
+							eq(workPeriod.organizationId, input.organizationId),
+							isNotNull(workPeriod.endTime),
+							isNotNull(workPeriod.durationMinutes),
+							gte(workPeriod.startTime, startDate),
+							lte(workPeriod.startTime, endDate),
+						),
+					),
+		getDailyWorkRequirementsForEmployee(
+			{
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+				startDate,
+				endDate,
+				timezone,
+				trackingStartDateOverride: input.trackingStartDateOverride,
+			},
+			...(input.dbClient ? ([input.dbClient] as const) : []),
+		),
 	]);
 
 	const requiredMinutes = Object.values(requirements).reduce(

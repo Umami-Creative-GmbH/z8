@@ -10,31 +10,26 @@ import { absenceCategory, absenceEntry, employee, timeEntry, workPeriod } from "
 import { clipAbsenceDayRange, countAbsenceDays } from "@/lib/absences/absence-days";
 import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
-import {
-	endOfDay,
-	format,
-	fromJSDate,
-	startOfDay,
-} from "@/lib/datetime/luxon-utils";
+import { endOfDay, format, fromJSDate, startOfDay } from "@/lib/datetime/luxon-utils";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	comparePlainDates,
 	dateFromInstant,
 	instantFromDate,
 	parsePlainDate,
+	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import { loadConfirmedTermsSpans } from "@/lib/employment-history/load-terms-in-force";
 import { readCustomFieldReportValues } from "@/lib/organization/custom-fields/report-reads";
 import type { CustomFieldViewer } from "@/lib/organization/custom-fields/values";
+import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
+import { sumTrackedWorkMinutes } from "@/lib/work-balance/tracked-work";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
 import { completedWorkPeriodCondition } from "./completed-work";
 import { formatDateRangeLabel } from "./date-ranges";
 import { calculateHourlyEarningsFromTerms } from "./hourly-earnings";
-import {
-	type ReportDateRange,
-	resolveReportDateRange,
-} from "./report-date-range";
+import { type ReportDateRange, resolveReportDateRange } from "./report-date-range";
 import type {
 	AbsenceSummary,
 	AbsencesData,
@@ -73,10 +68,7 @@ function getReportRange(
 	}
 
 	return resolveReportDateRange(
-		instantFromDate(startDate)
-			.toZonedDateTimeISO("UTC")
-			.toPlainDate()
-			.toString(),
+		instantFromDate(startDate).toZonedDateTimeISO("UTC").toPlainDate().toString(),
 		instantFromDate(endDate).toZonedDateTimeISO("UTC").toPlainDate().toString(),
 		"UTC",
 	);
@@ -135,10 +127,7 @@ export async function generateEmployeeReport(
 ): Promise<ReportData> {
 	// Fetch employee info
 	const emp = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.id, employeeId),
-			eq(employee.organizationId, organizationId),
-		),
+		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 		with: {
 			user: true,
 		},
@@ -152,20 +141,8 @@ export async function generateEmployeeReport(
 	const reportRange = getReportRange(startDate, endDate, calendarRange);
 	const [periods, absences, homeOffice, expectedHours, customFields] = await Promise.all([
 		loadCompletedWorkPeriods(employeeId, organizationId, reportRange),
-		aggregateAbsences(
-			employeeId,
-			organizationId,
-			startDate,
-			endDate,
-			calendarRange,
-		),
-		aggregateHomeOfficeDays(
-			employeeId,
-			organizationId,
-			startDate,
-			endDate,
-			calendarRange,
-		),
+		aggregateAbsences(employeeId, organizationId, startDate, endDate, calendarRange),
+		aggregateHomeOfficeDays(employeeId, organizationId, startDate, endDate, calendarRange),
 		runtime.runPromise(
 			calculateExpectedWorkHoursForEmployee(
 				employeeId,
@@ -187,8 +164,23 @@ export async function generateEmployeeReport(
 	const workHours = aggregateWorkHoursFromPeriods(periods, reportRange);
 
 	// Calculate compliance metrics using schedule-based expected hours
+	const tracking = await loadEmployeeTrackingContext(db, { employeeId, organizationId });
+	const requestedFirstDay = tracking
+		? plainDateAt(instantFromDate(startDate), tracking.timezone).toString()
+		: null;
+	const trackedMinutes = tracking
+		? await sumTrackedWorkMinutes(db, {
+				employeeId,
+				organizationId,
+				timezone: tracking.timezone,
+				startDate:
+					requestedFirstDay! > tracking.startDate ? requestedFirstDay! : tracking.startDate,
+				throughDate: plainDateAt(instantFromDate(endDate), tracking.timezone).toString(),
+			})
+		: workHours.totalMinutes;
+	// Historical work remains in the report; its overtime uses the shared tracking window.
 	const complianceMetrics = calculateComplianceMetrics(
-		workHours,
+		{ ...workHours, totalMinutes: trackedMinutes },
 		absences,
 		expectedHours,
 	);
@@ -245,11 +237,7 @@ export async function aggregateWorkHours(
 	calendarRange?: ReportCalendarRange,
 ): Promise<WorkHoursData> {
 	const reportRange = getReportRange(startDate, endDate, calendarRange);
-	const periods = await loadCompletedWorkPeriods(
-		employeeId,
-		organizationId,
-		reportRange,
-	);
+	const periods = await loadCompletedWorkPeriods(employeeId, organizationId, reportRange);
 	return aggregateWorkHoursFromPeriods(periods, reportRange);
 }
 
@@ -266,12 +254,8 @@ function aggregateWorkHoursFromPeriods(
 		const periodEnd = instantFromDate(period.endTime);
 		const pieces = reportRange.splitPeriod(periodStart, periodEnd);
 		const fullElapsedMinutes =
-			Number(periodEnd.epochNanoseconds - periodStart.epochNanoseconds) /
-			60_000_000_000;
-		const includedElapsedMinutes = pieces.reduce(
-			(sum, piece) => sum + piece.minutes,
-			0,
-		);
+			Number(periodEnd.epochNanoseconds - periodStart.epochNanoseconds) / 60_000_000_000;
+		const includedElapsedMinutes = pieces.reduce((sum, piece) => sum + piece.minutes, 0);
 		const includedDurationMinutes =
 			fullElapsedMinutes > 0
 				? period.durationMinutes * (includedElapsedMinutes / fullElapsedMinutes)
@@ -290,9 +274,7 @@ function aggregateWorkHoursFromPeriods(
 		}
 	}
 	for (const [monthKey, monthData] of byMonth) {
-		monthData.days = [...workDays].filter((date) =>
-			date.startsWith(monthKey),
-		).length;
+		monthData.days = [...workDays].filter((date) => date.startsWith(monthKey)).length;
 	}
 
 	// Round hours to 2 decimals
@@ -303,27 +285,19 @@ function aggregateWorkHoursFromPeriods(
 	return {
 		totalHours:
 			Math.round(
-				((totalMinutes ||
-					[...byMonth.values()].reduce(
-						(sum, month) => sum + month.hours * 60,
-						0,
-					)) /
+				((totalMinutes || [...byMonth.values()].reduce((sum, month) => sum + month.hours * 60, 0)) /
 					60) *
 					100,
 			) / 100,
 		totalMinutes: Math.round(
-			totalMinutes ||
-				[...byMonth.values()].reduce((sum, month) => sum + month.hours * 60, 0),
+			totalMinutes || [...byMonth.values()].reduce((sum, month) => sum + month.hours * 60, 0),
 		),
 		workDays: workDays.size,
 		averagePerDay:
 			workDays.size > 0
 				? Math.round(
 						((totalMinutes ||
-							[...byMonth.values()].reduce(
-								(sum, month) => sum + month.hours * 60,
-								0,
-							)) /
+							[...byMonth.values()].reduce((sum, month) => sum + month.hours * 60, 0)) /
 							60 /
 							workDays.size) *
 							100,
@@ -349,11 +323,8 @@ export async function aggregateAbsences(
 ): Promise<Omit<AbsencesData, "homeOffice">> {
 	// Convert dates to YYYY-MM-DD strings for date column comparison
 	const rangeStartStr =
-		calendarRange?.startDate ??
-		format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
-	const rangeEndStr =
-		calendarRange?.endDate ??
-		format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
+		calendarRange?.startDate ?? format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
+	const rangeEndStr = calendarRange?.endDate ?? format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
 
 	// Fetch all absences in date range
 	const absences = await db.query.absenceEntry.findMany({
@@ -464,11 +435,8 @@ export async function aggregateHomeOfficeDays(
 ): Promise<HomeOfficeData> {
 	// Convert dates to YYYY-MM-DD strings for date column comparison
 	const rangeStartStr =
-		calendarRange?.startDate ??
-		format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
-	const rangeEndStr =
-		calendarRange?.endDate ??
-		format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
+		calendarRange?.startDate ?? format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
+	const rangeEndStr = calendarRange?.endDate ?? format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
 
 	// Step 1: Get approved home office absences
 	const homeOfficeCategories = await db.query.absenceCategory.findMany({
@@ -490,11 +458,7 @@ export async function aggregateHomeOfficeDays(
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
 			eq(absenceEntry.organizationId, organizationId),
-			or(
-				...homeOfficeCategories.map((category) =>
-					eq(absenceEntry.categoryId, category.id),
-				),
-			),
+			or(...homeOfficeCategories.map((category) => eq(absenceEntry.categoryId, category.id))),
 			eq(absenceEntry.status, "approved"),
 			lte(absenceEntry.startDate, rangeEndStr),
 			gte(absenceEntry.endDate, rangeStartStr),
@@ -507,17 +471,11 @@ export async function aggregateHomeOfficeDays(
 	const homeOfficeDates = new Set<string>();
 	for (const absence of homeOfficeAbsences) {
 		let day =
-			comparePlainDates(
-				parsePlainDate(absence.startDate),
-				parsePlainDate(rangeStartStr),
-			) < 0
+			comparePlainDates(parsePlainDate(absence.startDate), parsePlainDate(rangeStartStr)) < 0
 				? parsePlainDate(rangeStartStr)
 				: parsePlainDate(absence.startDate);
 		const lastDay =
-			comparePlainDates(
-				parsePlainDate(absence.endDate),
-				parsePlainDate(rangeEndStr),
-			) > 0
+			comparePlainDates(parsePlainDate(absence.endDate), parsePlainDate(rangeEndStr)) > 0
 				? parsePlainDate(rangeEndStr)
 				: parsePlainDate(absence.endDate);
 		while (comparePlainDates(day, lastDay) <= 0) {
@@ -533,17 +491,13 @@ export async function aggregateHomeOfficeDays(
 	const reportTimezone = calendarRange?.timezone;
 	const periodResults = await Promise.all(
 		sortedDates.map(async (dateStr) => {
-			const dayRange = reportTimezone
-				? localDayRange(dateStr, reportTimezone)
-				: undefined;
+			const dayRange = reportTimezone ? localDayRange(dateStr, reportTimezone) : undefined;
 			const dayStart = dayRange
 				? dateToDB(fromJSDate(dateFromInstant(dayRange.start)))!
 				: dateToDB(startOfDay(fromJSDate(new Date(dateStr))))!;
 			const dayEndExclusive = dayRange
 				? dateToDB(fromJSDate(dateFromInstant(dayRange.endExclusive)))!
-				: dateToDB(
-						endOfDay(fromJSDate(new Date(dateStr))).plus({ milliseconds: 1 }),
-					)!;
+				: dateToDB(endOfDay(fromJSDate(new Date(dateStr))).plus({ milliseconds: 1 }))!;
 
 			const dayPeriods = await db
 				.select()
@@ -566,17 +520,11 @@ export async function aggregateHomeOfficeDays(
 						return (
 							sum +
 							resolveReportDateRange(dateStr, dateStr, reportTimezone!)
-								.splitPeriod(
-									instantFromDate(period.startTime),
-									instantFromDate(period.endTime),
-								)
+								.splitPeriod(instantFromDate(period.startTime), instantFromDate(period.endTime))
 								.reduce((minutes, piece) => minutes + piece.minutes, 0)
 						);
 					}, 0)
-				: dayPeriods.reduce(
-						(sum, period) => sum + (period.durationMinutes || 0),
-						0,
-					);
+				: dayPeriods.reduce((sum, period) => sum + (period.durationMinutes || 0), 0);
 			const dayHours = Math.round((dayMinutes / 60) * 100) / 100;
 
 			return { date: dateStr, hours: dayHours };
@@ -585,10 +533,7 @@ export async function aggregateHomeOfficeDays(
 
 	// Aggregate results
 	const dateDetails: HomeOfficeDetail[] = periodResults;
-	const totalHoursWorked = periodResults.reduce(
-		(sum, result) => sum + result.hours,
-		0,
-	);
+	const totalHoursWorked = periodResults.reduce((sum, result) => sum + result.hours, 0);
 
 	return {
 		days: homeOfficeDates.size,
@@ -617,17 +562,12 @@ function calculateComplianceMetrics(
 	// Simple attendance percentage based on expected vs actual work days
 	const totalPossibleDays = workHours.workDays + absences.totalDays;
 	const attendancePercentage =
-		totalPossibleDays > 0
-			? Math.round((workHours.workDays / totalPossibleDays) * 100)
-			: 100;
+		totalPossibleDays > 0 ? Math.round((workHours.workDays / totalPossibleDays) * 100) : 100;
 
 	// Overtime/undertime calculation using schedule-based expected hours
 	const expectedMinutes = expectedHoursData.totalMinutes;
 	const overtimeMinutes = Math.max(0, workHours.totalMinutes - expectedMinutes);
-	const underTimeMinutes = Math.max(
-		0,
-		expectedMinutes - workHours.totalMinutes,
-	);
+	const underTimeMinutes = Math.max(0, expectedMinutes - workHours.totalMinutes);
 
 	return {
 		attendancePercentage,
