@@ -192,14 +192,26 @@ function CreateOrganizationCard({
 						validators={{
 							onChange: z
 								.string()
-								.min(2, "Organization name must be at least 2 characters")
-								.max(100, "Organization name must be less than 100 characters"),
+								.min(
+									2,
+									t(
+										"onboarding.organization.nameErrors.min",
+										"Organization name must be at least 2 characters",
+									),
+								)
+								.max(
+									100,
+									t(
+										"onboarding.organization.nameErrors.max",
+										"Organization name must be less than 100 characters",
+									),
+								),
 						}}
 					>
 						{(field) => (
 							<div className="space-y-2">
 								<Label htmlFor="organization-name">
-									{t("organization.nameLabel", "Organization Name")}
+									{t("onboarding.organization.nameLabel", "Organization Name")}
 								</Label>
 								<Input
 									id="organization-name"
@@ -212,7 +224,7 @@ function CreateOrganizationCard({
 										}
 									}}
 									onBlur={field.handleBlur}
-									placeholder={t("organization.namePlaceholder", "Acme Inc.")}
+									placeholder={t("onboarding.organization.namePlaceholder", "Acme Inc.")}
 									disabled={status.loading}
 								/>
 								{field.state.meta.errors.length > 0 && (
@@ -231,21 +243,21 @@ function CreateOrganizationCard({
 								.min(
 									2,
 									t(
-										"organization.slugErrors.min",
+										"onboarding.organization.slugErrors.min",
 										"Slug must be at least 2 characters",
 									),
 								)
 								.max(
 									50,
 									t(
-										"organization.slugErrors.max",
+										"onboarding.organization.slugErrors.max",
 										"Slug must be less than 50 characters",
 									),
 								)
 								.regex(
 									/^[a-z0-9-]+$/,
 									t(
-										"organization.slugErrors.format",
+										"onboarding.organization.slugErrors.format",
 										"Slug must contain only lowercase letters, numbers, and hyphens",
 									),
 								)
@@ -253,7 +265,7 @@ function CreateOrganizationCard({
 									(value) => !value.startsWith("-") && !value.endsWith("-"),
 									{
 										message: t(
-											"organization.slugErrors.hyphen",
+											"onboarding.organization.slugErrors.hyphen",
 											"Slug cannot start or end with a hyphen",
 										),
 									},
@@ -263,7 +275,7 @@ function CreateOrganizationCard({
 						{(field) => (
 							<div className="space-y-2">
 								<Label htmlFor="organization-slug">
-									{t("organization.slugLabel", "Organization Slug")}
+									{t("onboarding.organization.slugLabel", "Organization Slug")}
 								</Label>
 								<div className="relative">
 									<Input
@@ -275,7 +287,7 @@ function CreateOrganizationCard({
 											field.handleChange(event.target.value);
 										}}
 										onBlur={field.handleBlur}
-										placeholder={t("organization.slugPlaceholder", "acme-inc")}
+										placeholder={t("onboarding.organization.slugPlaceholder", "acme-inc")}
 										disabled={status.loading}
 									/>
 									{status.checkingSlug && (
@@ -286,7 +298,7 @@ function CreateOrganizationCard({
 								</div>
 								<p className="text-sm text-muted-foreground">
 									{t(
-										"organization.slugDescription",
+										"onboarding.organization.slugDescription",
 										"Used in URLs. Auto-generated from name.",
 									)}
 								</p>
@@ -349,7 +361,7 @@ export default function OrganizationPageClient({
 					if (result.success) {
 						toast.success(
 							t(
-								"organization.createSuccess",
+								"onboarding.organization.createSuccess",
 								"Organization created successfully!",
 							),
 						);
@@ -358,13 +370,13 @@ export default function OrganizationPageClient({
 					} else {
 						toast.error(
 							result.error ||
-								t("organization.createError", "Failed to create organization"),
+								t("onboarding.organization.createError", "Failed to create organization"),
 						);
 					}
 				},
 				onRejected: () => {
 					toast.error(
-						t("organization.createError", "Failed to create organization"),
+						t("onboarding.organization.createError", "Failed to create organization"),
 					);
 				},
 				setLoading,
@@ -378,7 +390,7 @@ export default function OrganizationPageClient({
 	const slugErrorMessage = slugError?.slug === slug ? slugError.message : null;
 	const getSlugTakenMessage = useEffectEvent(() =>
 		t(
-			"organization.slugTaken",
+			"onboarding.organization.slugTaken",
 			"This slug is already taken. Please choose a different one.",
 		),
 	);

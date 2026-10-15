@@ -97,6 +97,14 @@ describe("WorkSchedulePage load effect", () => {
 		).toBe("2026-07-30T12:13:14.000Z");
 	});
 
+	it("associates schedule fields with their visible labels", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		render(<WorkSchedulePage />);
+
+		expect(await screen.findByLabelText("Hours per Week")).toBeTruthy();
+		expect(screen.getByLabelText("Work Classification")).toBeTruthy();
+	});
+
 	it("keeps submit disabled after successful schedule navigation", async () => {
 		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
 		mocks.setWorkScheduleOnboarding.mockResolvedValue({

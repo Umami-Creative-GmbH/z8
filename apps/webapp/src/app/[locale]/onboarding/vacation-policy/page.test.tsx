@@ -137,6 +137,27 @@ describe("VacationPolicyPage load effect", () => {
 		expect(mocks.push).not.toHaveBeenCalledWith("/onboarding/work-templates");
 	});
 
+	it("associates policy fields with their visible labels", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		render(<VacationPolicyPage />);
+
+		expect(await screen.findByLabelText("Policy Name")).toBeTruthy();
+		expect(screen.getByLabelText("Annual Vacation Days")).toBeTruthy();
+		expect(screen.getByLabelText("Accrual Type")).toBeTruthy();
+		expect(screen.getByRole("switch", { name: "Allow Carryover" })).toBeTruthy();
+		expect(screen.getByLabelText("Max Carryover Days")).toBeTruthy();
+	});
+
+	it("shows a readable message when the day count is out of range", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		render(<VacationPolicyPage />);
+
+		const annualDays = await screen.findByLabelText("Annual Vacation Days");
+		fireEvent.change(annualDays, { target: { value: "400" } });
+
+		expect(await screen.findByText("Days cannot exceed 365")).toBeTruthy();
+	});
+
 	it("keeps skip disabled after successful skip navigation", async () => {
 		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
 		mocks.skipVacationPolicySetup.mockResolvedValue({ success: true });

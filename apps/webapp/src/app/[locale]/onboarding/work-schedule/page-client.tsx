@@ -212,18 +212,34 @@ export default function WorkSchedulePage() {
 							<form.Field
 								name="hoursPerWeek"
 								validators={{
-									onChange: z.number().min(0).max(168),
+									onChange: z
+										.number()
+										.min(
+											0,
+											t(
+												"onboarding.workSchedule.validation.hoursNegative",
+												"Hours cannot be negative",
+											),
+										)
+										.max(
+											168,
+											t(
+												"onboarding.workSchedule.validation.hoursTooMany",
+												"A week has at most 168 hours",
+											),
+										),
 								}}
 							>
 								{(field) => (
 									<div className="space-y-2">
-										<Label>
+										<Label htmlFor="work-schedule-hours-per-week">
 											{t(
 												"onboarding.workSchedule.hoursPerWeek",
 												"Hours per Week",
 											)}
 										</Label>
 										<Input
+											id="work-schedule-hours-per-week"
 											type="number"
 											min={0}
 											max={168}
@@ -259,7 +275,7 @@ export default function WorkSchedulePage() {
 							<form.Field name="workClassification">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>
+										<Label htmlFor="work-schedule-classification">
 											{t(
 												"onboarding.workSchedule.classification",
 												"Work Classification",
@@ -274,7 +290,10 @@ export default function WorkSchedulePage() {
 											value={field.state.value}
 											disabled={loading}
 										>
-											<SelectTrigger className="w-full">
+											<SelectTrigger
+												id="work-schedule-classification"
+												className="w-full"
+											>
 												<SelectValue
 													placeholder={t(
 														"onboarding.workSchedule.selectClassification",

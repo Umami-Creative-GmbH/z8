@@ -176,30 +176,38 @@ function ProfileGenderField({
 		<form.Field name="gender">
 			{(field) => (
 				<div className="flex flex-col gap-y-2">
-					<Label>
+					<Label id="profile-gender-label">
 						{t("onboarding.profile.genderOptional", "Gender (Optional)")}
 					</Label>
-					<div className="grid grid-cols-3 gap-3">
+					<div
+						role="group"
+						aria-labelledby="profile-gender-label"
+						aria-describedby="profile-gender-description"
+						className="grid grid-cols-3 gap-3"
+					>
 						{genderOptions.map((option) => {
 							const Icon = option.icon;
+							const selected = field.state.value === option.value;
 							return (
 								<Button
 									key={option.value}
 									type="button"
-									variant={
-										field.state.value === option.value ? "default" : "outline"
-									}
+									variant={selected ? "default" : "outline"}
+									aria-pressed={selected}
 									className="h-auto flex-col gap-2 py-4"
 									onClick={() => field.handleChange(option.value)}
 									disabled={loading}
 								>
-									<Icon className="size-6" />
+									<Icon aria-hidden="true" className="size-6" />
 									<span className="text-sm">{option.label}</span>
 								</Button>
 							);
 						})}
 					</div>
-					<p className="text-sm text-muted-foreground">
+					<p
+						id="profile-gender-description"
+						className="text-sm text-muted-foreground"
+					>
 						{t(
 							"onboarding.profile.genderDesc",
 							"This helps personalize your experience.",
@@ -225,7 +233,22 @@ function ProfileNameFields({
 			<form.Field
 				name="firstName"
 				validators={{
-					onChange: z.string().min(1, "First name is required").max(50),
+					onChange: z
+						.string()
+						.min(
+							1,
+							t(
+								"onboarding.profile.validation.firstNameRequired",
+								"First name is required",
+							),
+						)
+						.max(
+							50,
+							t(
+								"onboarding.profile.validation.firstNameTooLong",
+								"First name must be 50 characters or fewer",
+							),
+						),
 				}}
 			>
 				{(field) => (
@@ -252,7 +275,22 @@ function ProfileNameFields({
 			<form.Field
 				name="lastName"
 				validators={{
-					onChange: z.string().min(1, "Last name is required").max(50),
+					onChange: z
+						.string()
+						.min(
+							1,
+							t(
+								"onboarding.profile.validation.lastNameRequired",
+								"Last name is required",
+							),
+						)
+						.max(
+							50,
+							t(
+								"onboarding.profile.validation.lastNameTooLong",
+								"Last name must be 50 characters or fewer",
+							),
+						),
 				}}
 			>
 				{(field) => (
