@@ -4,11 +4,12 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { AnalyticsDateRangePicker } from "@/components/analytics/date-range-picker";
 import { ExportButton, type ExportData } from "@/components/analytics/export-button";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import {
@@ -459,78 +460,93 @@ export default function OvertimeBurnDownPage() {
 		dispatch({ type: "filterChanged", name, value });
 	};
 
-	useEffect(() => {
-		if (!isHydrated || !dateRange) {
+	const refreshGeneration = useRef(0);
+	const runAnalyticsLoad = useCallback(
+		async (background = false) => {
+			if (!isHydrated || !dateRange) {
+				return;
+			}
+
+			const expectedDefaultDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
+			if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
 			return;
 		}
 
-		const expectedDefaultDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
-		if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
-			return;
-		}
+			const range = dateRange;
+			const generation = ++refreshGeneration.current;
+			const isLatest = () => generation === refreshGeneration.current;
 
-		const range = dateRange;
-		let isMounted = true;
-
-		async function loadData() {
-			dispatch({ type: "loadingStarted" });
-			try {
-				const filters: {
+			async function loadData() {
+				if (!background) dispatch({ type: "loadingStarted" });
+				try {
+					const filters: {
 					teamId?: string;
 					costCenterId?: string;
 					managerId?: string;
 				} = {};
 
-				if (teamId !== ALL_FILTER_VALUE) {
+					if (teamId !== ALL_FILTER_VALUE) {
 					filters.teamId = teamId;
 				}
 
-				if (costCenterId !== ALL_FILTER_VALUE) {
+					if (costCenterId !== ALL_FILTER_VALUE) {
 					filters.costCenterId = costCenterId;
 				}
 
-				if (managerId !== ALL_FILTER_VALUE) {
+					if (managerId !== ALL_FILTER_VALUE) {
 					filters.managerId = managerId;
 				}
 
-				const result = await getOvertimeBurnDownData(
+					const result = await getOvertimeBurnDownData(
 					range,
 					Object.keys(filters).length > 0 ? filters : undefined,
 				);
 
-				if (!isMounted) {
-					return;
-				}
+					if (!isLatest()) {
+						return;
+					}
 
-				if (result.success && result.data) {
+					if (result.success && result.data) {
 					dispatch({ type: "dataLoaded", data: result.data });
 					return;
 				}
 
-				dispatch({ type: "dataLoadFailed" });
-				toast.error(
-					t("analytics.overtimeBurnDown.errors.loadData", "Failed to load overtime burn-down data"),
-				);
-			} catch (error) {
-				console.error("Failed to load overtime burn-down data:", error);
-				if (isMounted) {
-					dispatch({ type: "dataLoadFailed" });
+					if (!background) dispatch({ type: "dataLoadFailed" });
 					toast.error(
 						t(
 							"analytics.overtimeBurnDown.errors.loadData",
 							"Failed to load overtime burn-down data",
 						),
 					);
+				} catch (error) {
+					console.error("Failed to load overtime burn-down data:", error);
+					if (isLatest()) {
+						if (!background) dispatch({ type: "dataLoadFailed" });
+						toast.error(
+						t(
+							"analytics.overtimeBurnDown.errors.loadData",
+							"Failed to load overtime burn-down data",
+						),
+					);
+					}
 				}
 			}
-		}
 
-		loadData();
-
+			await loadData();
+		},
+		[dateRange, teamId, costCenterId, managerId, isHydrated, timezone, t],
+	);
+	useViewRefresh(() => runAnalyticsLoad(true));
+	useEffect(() => {
+		let active = true;
+		queueMicrotask(() => {
+			if (active) void runAnalyticsLoad();
+		});
 		return () => {
-			isMounted = false;
+			active = false;
+			refreshGeneration.current += 1;
 		};
-	}, [dateRange, teamId, costCenterId, managerId, isHydrated, timezone, t]);
+	}, [runAnalyticsLoad]);
 
 	const summary = data?.summary ?? {
 		currentOvertimeHours: 0,

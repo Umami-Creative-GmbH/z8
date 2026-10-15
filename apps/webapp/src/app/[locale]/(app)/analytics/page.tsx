@@ -4,9 +4,11 @@ import { IconCalendarOff, IconCheck, IconClock, IconLoader2, IconUsers } from "@
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
+
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 
 // Dynamic imports for recharts to reduce initial bundle size
 const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
@@ -147,39 +149,47 @@ export default function AnalyticsOverviewPage() {
 		setDateRange(range);
 	};
 
-	useEffect(() => {
-		if (!isHydrated || !dateRange) {
+	const refreshGeneration = useRef(0);
+	const runAnalyticsLoad = useCallback(
+		async (background = false) => {
+			if (!isHydrated || !dateRange) {
+				return;
+			}
+
+			const expectedDefaultDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
+			if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
 			return;
 		}
 
-		const expectedDefaultDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
-		if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
-			return;
-		}
+			const generation = ++refreshGeneration.current;
 
-		let canceled = false;
+			const isLatest = () => generation === refreshGeneration.current;
 
-		dispatchAnalyticsData({ type: "loading" });
-		// Organization ID is now derived server-side from authenticated session
-		Promise.allSettled([
+			if (!background) dispatchAnalyticsData({ type: "loading" });
+			// Organization ID is now derived server-side from authenticated session
+			await Promise.allSettled([
 			getTeamPerformanceData(dateRange),
 			getAbsencePatternsData(dateRange),
 			getManagerEffectivenessData(dateRange),
 		])
 			.then(([teamResult, absenceResult, managerResult]) => {
-				if (canceled) {
-					return;
-				}
+					if (!isLatest()) {
+						return;
+					}
 
-				const failedResults = [teamResult, absenceResult, managerResult].filter(
+					const failedResults = [teamResult, absenceResult, managerResult].filter(
 					(result) => result.status === "rejected" || !result.value.success,
 				);
-				if (failedResults.length > 0) {
+					if (background && failedResults.length > 0) {
+						toast.error(loadAnalyticsError);
+						return;
+					}
+					if (failedResults.length > 0) {
 					console.error(`${loadAnalyticsError}:`, failedResults);
 					toast.error(loadAnalyticsError);
 				}
 
-				dispatchAnalyticsData({
+					dispatchAnalyticsData({
 					type: "loaded",
 					teamData:
 						teamResult.status === "fulfilled" && teamResult.value.success && teamResult.value.data
@@ -203,21 +213,30 @@ export default function AnalyticsOverviewPage() {
 						managerResult.value.data
 					),
 				});
-			})
-			.catch((error) => {
-				if (canceled) {
-					return;
-				}
+				})
+				.catch((error) => {
+					if (!isLatest()) {
+						return;
+					}
 
-				console.error(`${loadAnalyticsError}:`, error);
-				dispatchAnalyticsData({ type: "failed" });
-				toast.error(loadAnalyticsError);
-			});
-
+					console.error(`${loadAnalyticsError}:`, error);
+					if (!background) dispatchAnalyticsData({ type: "failed" });
+					toast.error(loadAnalyticsError);
+				});
+		},
+		[dateRange, isHydrated, loadAnalyticsError, timezone],
+	);
+	useViewRefresh(() => runAnalyticsLoad(true));
+	useEffect(() => {
+		let active = true;
+		queueMicrotask(() => {
+			if (active) void runAnalyticsLoad();
+		});
 		return () => {
-			canceled = true;
+			active = false;
+			refreshGeneration.current += 1;
 		};
-	}, [dateRange, isHydrated, loadAnalyticsError, timezone]);
+	}, [runAnalyticsLoad]);
 
 	// Calculate KPIs from loaded data
 	const kpiData = {

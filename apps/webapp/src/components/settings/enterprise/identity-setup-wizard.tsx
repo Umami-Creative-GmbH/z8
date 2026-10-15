@@ -34,6 +34,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useServerDataState } from "@/hooks/use-server-data-state";
 import {
 	ENTERPRISE_IDENTITY_PROVIDER_PRESETS,
 	type EnterpriseIdentityProtocol,
@@ -349,7 +350,7 @@ function useIdentitySetupController({
 	organizationId,
 }: IdentitySetupWizardProps) {
 	const { t } = useTranslate();
-	const [setup, setSetup] = useState(initialSetup.state);
+	const [setup, setSetup] = useServerDataState(initialSetup.state);
 	const [defaultRoleTemplateId, setDefaultRoleTemplateId] = useState(
 		initialSetup.defaultRoleTemplateId ?? "none",
 	);

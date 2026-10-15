@@ -32,6 +32,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useEditSession } from "@/hooks/use-edit-session";
 import { queryKeys } from "@/lib/query";
 import { formatFactorAsMultiplier } from "@/lib/work-category/work-category.service";
 
@@ -120,7 +121,17 @@ export function WorkCategorySetDialog({
 		enabled: isEditing && open,
 	});
 
-	const selectionScopeKey = `${metaScopeKey}:${setDetail?.categories.map((c) => c.id).join(",") ?? ""}`;
+	useEditSession({
+		open,
+		scope: categorySet?.id ?? "new",
+		ready: !isEditing || !!setDetail,
+		initialize: () => {
+			setMetaDraft(null);
+			setSelectionDraft(null);
+		},
+	});
+
+	const selectionScopeKey = metaScopeKey;
 
 	const initialSelectedCategoryIds = isEditing
 		? (setDetail?.categories.map((c) => c.id) ?? [])

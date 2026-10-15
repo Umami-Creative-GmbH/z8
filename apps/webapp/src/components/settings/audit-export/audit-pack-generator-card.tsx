@@ -22,6 +22,7 @@ import {
 	getAuditPackDownloadUrlAction,
 	getAuditPackRequestsAction,
 } from "@/app/[locale]/(app)/settings/audit-export/actions";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -200,6 +201,8 @@ function AuditPackGeneratorCardForOrganization({
 			);
 		}
 	};
+
+	useViewRefresh(() => loadRequests(false));
 
 	const loadRequestsForEffect = useEffectEvent(async () => {
 		await loadRequests(false);

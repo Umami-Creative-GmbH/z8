@@ -35,6 +35,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { SocialOAuthProvider } from "@/db/schema";
+import { useServerDataState } from "@/hooks/use-server-data-state";
 import { SocialOAuthDialog } from "./social-oauth-dialog";
 
 interface SocialOAuthManagementProps {
@@ -54,7 +55,7 @@ export function SocialOAuthManagement({
 	callbackBaseUrl,
 }: SocialOAuthManagementProps) {
 	const { t } = useTranslate();
-	const [configs, setConfigs] = useState<SocialOAuthConfigResponse[]>(initialConfigs);
+	const [configs, setConfigs] = useServerDataState<SocialOAuthConfigResponse[]>(initialConfigs);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [editConfig, setEditConfig] = useState<SocialOAuthConfigResponse | null>(null);
 	const [deleteDialog, setDeleteDialog] = useState<{

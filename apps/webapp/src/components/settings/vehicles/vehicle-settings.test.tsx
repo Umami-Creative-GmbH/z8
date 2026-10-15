@@ -93,6 +93,21 @@ describe("VehicleSettings", () => {
 		expect(within(archived).getByRole("button", { name: "Restore Old car" })).toBeTruthy();
 	});
 
+	it("refreshes the saved list while preserving an open vehicle draft", async () => {
+		const { rerender } = render(<VehicleSettings initialData={data([vehicle()])} />);
+		await userEvent.click(screen.getByRole("button", { name: "Edit Van" }));
+		const input = screen.getByLabelText("Name");
+		await userEvent.clear(input);
+		await userEvent.type(input, "Unsaved van name");
+		rerender(<VehicleSettings initialData={data([vehicle({ name: "Renamed elsewhere" })])} />);
+		expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Unsaved van name");
+		expect(screen.getByRole("dialog")).toBeTruthy();
+		await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		expect(
+			within(screen.getByRole("list", { name: "Active vehicles" })).getByText("Renamed elsewhere"),
+		).toBeTruthy();
+	});
+
 	it("creates a vehicle from the dialog", async () => {
 		const created = vehicle({ id: "new", name: "Van 2", licencePlate: "M-XY 2" });
 		changeMock.mockResolvedValue({ success: true, data: { ok: true, vehicles: [created] } });

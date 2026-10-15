@@ -99,7 +99,7 @@ function ProjectTemplateDialog({
 						</ActionPanelBody>
 					) : (
 						<ProjectTemplateForm
-							key={`${template.id}:${template.updatedAt.toString()}`}
+							key={template.id}
 							organizationId={organizationId}
 							template={template}
 							onCancel={() => onOpenChange(false)}

@@ -29,6 +29,9 @@ import {
 	type PayrollExportFormatOption,
 	startScopedPayrollExportAction,
 } from "@/app/[locale]/(app)/payroll/actions";
+import { MonthClosureStrip } from "@/components/closed-months/month-closure-strip";
+import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,8 +76,6 @@ import {
 	type PayrollBlockerIdentity,
 	payrollBlockerIdentity,
 } from "@/lib/payroll-workspace/blocker-identity";
-import { MonthClosureStrip } from "@/components/closed-months/month-closure-strip";
-import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
 import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { queryKeys } from "@/lib/query/keys";
 import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
@@ -108,6 +109,7 @@ interface PayrollWorkspaceState {
 
 type PayrollWorkspaceAction =
 	| { type: "summaryRefreshed"; summary: PayrollWorkspaceSummary }
+	| { type: "summaryDataRefreshed"; summary: PayrollWorkspaceSummary }
 	| { type: "dateModeChanged"; dateMode: PayrollDateRangeMode }
 	| { type: "startDateChanged"; value: string }
 	| { type: "endDateChanged"; value: string }
@@ -129,6 +131,8 @@ function payrollWorkspaceReducer(
 	action: PayrollWorkspaceAction,
 ): PayrollWorkspaceState {
 	switch (action.type) {
+		case "summaryDataRefreshed":
+			return { ...state, summary: action.summary };
 		case "summaryRefreshed":
 			return {
 				...state,
@@ -181,6 +185,7 @@ function usePayrollSummaryLoader({
 		options: {
 			onError: (error?: string) => void;
 			onSuccess?: () => void;
+			preserveDraft?: boolean;
 		},
 	): Promise<SummaryLoadResult> {
 		if (!isMountedRef.current) return { status: "unmounted" };
@@ -200,7 +205,10 @@ function usePayrollSummaryLoader({
 				return { status: "failed" };
 			}
 
-			dispatch({ type: "summaryRefreshed", summary: result.data });
+			dispatch({
+				type: options.preserveDraft ? "summaryDataRefreshed" : "summaryRefreshed",
+				summary: result.data,
+			});
 			options.onSuccess?.();
 			return { status: "applied", summary: result.data };
 		} catch {
@@ -213,6 +221,7 @@ function usePayrollSummaryLoader({
 	}
 
 	function refreshLatestSummary(options: {
+		preserveDraft?: boolean;
 		onError: (error?: string) => void;
 	}): Promise<SummaryLoadResult> {
 		return loadSummary(latestRequestRef.current, options);
@@ -429,6 +438,15 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		initialRequest: request,
 		isMountedRef,
 	});
+	useViewRefresh(() =>
+		refreshLatestSummary({
+			preserveDraft: true,
+			onError: (error) =>
+						toast.error(
+							error ?? t("payroll.errors.actionFailed", "Payroll workspace action failed"),
+						),
+		}),
+	);
 	const { clearingBlockerKeys, clearPayrollBlocker, focusRequest } = usePayrollBlockerClearing({
 		blockers: displayedBlockers,
 		clickRequest: request,

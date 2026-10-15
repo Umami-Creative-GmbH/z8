@@ -3,11 +3,12 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { AnalyticsDateRangePicker } from "@/components/analytics/date-range-picker";
 import { ExportButton } from "@/components/analytics/export-button";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Badge } from "@/components/ui/badge";
 import {
 	Card,
@@ -289,9 +290,7 @@ function EmployeeWorkHoursCard({
 									<TableCell className="font-medium">
 										{employee.employeeName}
 									</TableCell>
-									<TableCell className="text-right">
-										{employee.totalHours.toFixed(1)}h
-									</TableCell>
+									<TableCell className="text-right">{employee.totalHours.toFixed(1)}h</TableCell>
 									<TableCell className="text-right">
 										{(employee.totalHours + employee.overtimeHours).toFixed(1)}h
 									</TableCell>
@@ -430,59 +429,74 @@ export default function WorkHoursPage() {
 		setDateRange(range);
 	};
 
-	useEffect(() => {
-		if (!isHydrated || !dateRange) {
-			return;
-		}
+	const refreshGeneration = useRef(0);
+	const runAnalyticsLoad = useCallback(
+		async (background = false) => {
+			if (!isHydrated || !dateRange) {
+				return;
+			}
 
-		const expectedDefaultDateRange = getAnalyticsDateRangeForPreset(
+			const expectedDefaultDateRange = getAnalyticsDateRangeForPreset(
 			"current_month",
 			{ timezone },
 		);
-		if (
+			if (
 			!hasUserChangedRange.current &&
 			!areDateRangesEqual(dateRange, expectedDefaultDateRange)
 		) {
 			return;
 		}
-		const range = dateRange;
-		let isCurrent = true;
+			const range = dateRange;
+			const generation = ++refreshGeneration.current;
 
-		setLoading(true);
-		void Promise.resolve()
+			const isLatest = () => generation === refreshGeneration.current;
+
+			if (!background) setLoading(true);
+			await Promise.resolve()
 			.then(() => getWorkHoursAnalyticsData(range))
 			.then((result) => {
-				if (!isCurrent) {
-					return;
-				}
+					if (!isLatest()) {
+						return;
+					}
 
-				if (result.success && result.data) {
-					setWorkHoursData(result.data);
-				}
-			})
-			.catch((error) => {
-				if (!isCurrent) {
-					return;
-				}
+					if (result.success && result.data) {
+						setWorkHoursData(result.data);
+					} else {
+						throw new Error("Failed to load analytics data");
+					}
+				})
+				.catch((error) => {
+					if (!isLatest()) {
+						return;
+					}
 
-				console.error("Failed to load work hours analytics data:", error);
-				toast.error(
+					console.error("Failed to load work hours analytics data:", error);
+					toast.error(
 					t(
 						"analytics.workHours.errors.loadData",
 						"Failed to load work hours analytics data",
 					),
 				);
-			})
-			.finally(() => {
-				if (isCurrent) {
-					setLoading(false);
-				}
-			});
-
+				})
+				.finally(() => {
+					if (isLatest()) {
+						setLoading(false);
+					}
+				});
+		},
+		[dateRange, isHydrated, timezone, t],
+	);
+	useViewRefresh(() => runAnalyticsLoad(true));
+	useEffect(() => {
+		let active = true;
+		queueMicrotask(() => {
+			if (active) void runAnalyticsLoad();
+		});
 		return () => {
-			isCurrent = false;
+			active = false;
+			refreshGeneration.current += 1;
 		};
-	}, [dateRange, isHydrated, timezone, t]);
+	}, [runAnalyticsLoad]);
 
 	const employees = workHoursData?.byEmployee || [];
 

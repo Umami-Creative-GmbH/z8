@@ -9,6 +9,7 @@ import {
 	getProjectDetailedReport,
 	getProjectsOverview,
 } from "@/app/[locale]/(app)/reports/projects/actions";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { ReportDocumentExportButtons } from "@/components/reports/report-document-export-buttons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,12 +44,37 @@ export function ProjectReportsContainer() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const dateRangeRef = useRef<ReportDateRange | null>(null);
+	const reportGeneration = useRef(0);
+	const statusFilterRef = useRef<string[] | undefined>(undefined);
 	const [activeTab, setActiveTab] = useState<"portfolio" | "customers" | "project">("portfolio");
 
+	useViewRefresh(async () => {
+		const range = dateRangeRef.current;
+		const generation = reportGeneration.current;
+		if (!range || !portfolioData) return;
+		const projectId = detailedReport?.project.id;
+		const [portfolio, customers, details] = await Promise.all([
+			getProjectsOverview(range.startDate, range.endDate, statusFilterRef.current),
+			portfolioData.billableTime
+				? getCustomerBillableReport(range.startDate, range.endDate, statusFilterRef.current)
+				: null,
+			projectId ? getProjectDetailedReport(projectId, range.startDate, range.endDate) : null,
+		]);
+		if (dateRangeRef.current !== range || generation !== reportGeneration.current) return;
+		if (!portfolio.success || (customers && !customers.success) || (details && !details.success))
+			throw new Error("Could not refresh project reports");
+		setPortfolioData(portfolio.data);
+		if (customers?.success) setCustomerReport(customers.data);
+		if (details?.success) setDetailedReport(details.data);
+	});
+
 	const handleGeneratePortfolio = async (range: ReportDateRange, statusFilter?: string[]) => {
+		reportGeneration.current += 1;
 		setIsLoading(true);
 		setError(null);
 		dateRangeRef.current = range;
+
+		statusFilterRef.current = statusFilter;
 
 		await runWithCleanup(
 			async () => {
@@ -91,6 +117,7 @@ export function ProjectReportsContainer() {
 	};
 
 	const handleSelectProject = async (projectId: string) => {
+		reportGeneration.current += 1;
 		const dateRange = dateRangeRef.current;
 		if (!dateRange) {
 			return;

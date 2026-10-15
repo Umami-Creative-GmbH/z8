@@ -327,6 +327,7 @@ describe("AnalyticsOverviewPage", () => {
 			});
 
 		render(<AnalyticsOverviewPage />);
+		await waitFor(() => expect(getManagerEffectivenessDataMock).toHaveBeenCalledTimes(1));
 		fireEvent.click(screen.getByRole("button", { name: "Change range" }));
 
 		await screen.findByText("Current approvals");
