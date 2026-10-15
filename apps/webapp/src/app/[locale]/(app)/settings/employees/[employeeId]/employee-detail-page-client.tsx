@@ -13,6 +13,7 @@ import { EmployeeLifecycleActions } from "@/components/organization/employee-lif
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
+import {EmploymentDateCorrectionCard} from "@/components/settings/employment-date-correction-card";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
 import { WageHistoryMergeNote } from "@/components/settings/employee-employment-history/wage-history-merge-note";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
@@ -383,6 +384,7 @@ function EmployeeRecordSections({
 				/>
 			)}
 
+			{isOrgAdmin && employee.kind === "employee" ? <EmploymentDateCorrectionCard key={employeeId} employeeId={employeeId} employmentStartDate={employee.startDate ? new Date(employee.startDate).toISOString().slice(0,10) : null} onSaved={data.refetch}/> : null}
 			<EmployeeEmploymentHistoryCard
 				history={data.employmentHistory}
 				canManage={isOrgAdmin}

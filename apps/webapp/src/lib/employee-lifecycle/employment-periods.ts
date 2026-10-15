@@ -2,7 +2,8 @@ import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { employee } from "@/db/schema";
 import { employeeDeparture, employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { EmploymentInterval } from "./employment-coverage";
 import type { LifecycleClient } from "./types";
 
@@ -128,6 +129,7 @@ type CoverageRow = {
 function selectCoverageRows(database: CoverageDatabase) {
 	return database
 		.select({
+			id: employeeEmploymentPeriod.id,
 			employeeId: employeeEmploymentPeriod.employeeId,
 			startedAt: employeeEmploymentPeriod.startedAt,
 			startProvenance: employeeEmploymentPeriod.startProvenance,
@@ -167,7 +169,11 @@ function toEmploymentCoverage(periods: readonly CoverageRow[]): EmploymentInterv
  */
 export async function loadEmploymentCoverage(
 	database: CoverageDatabase,
-	input: { organizationId: string; employeeId: string },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		employeeEmploymentStartDateOverride?: string;
+	},
 ): Promise<EmploymentInterval[] | null> {
 	const periods = await selectCoverageRows(database).where(
 		and(
@@ -175,6 +181,19 @@ export async function loadEmploymentCoverage(
 			eq(employeeEmploymentPeriod.employeeId, input.employeeId),
 		),
 	);
+	if (input.employeeEmploymentStartDateOverride) {
+		const first = [...periods].sort(
+			(a, b) =>
+				(a.startedAt?.getTime() ?? Number.NEGATIVE_INFINITY) -
+					(b.startedAt?.getTime() ?? Number.NEGATIVE_INFINITY) || a.id.localeCompare(b.id),
+		)[0];
+		if (first?.startProvenance === "recorded")
+			first.startedAt = dateFromInstant(
+				parsePlainDate(input.employeeEmploymentStartDateOverride)
+					.toZonedDateTime(await loadOrganizationTimezone(database, input.organizationId))
+					.toInstant(),
+			);
+	}
 	return toEmploymentCoverage(periods);
 }
 

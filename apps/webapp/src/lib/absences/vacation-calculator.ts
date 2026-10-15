@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import type { DateTime } from "luxon";
 import type { VacationAccrualType } from "@/db/schema/vacation";
 import { fromJSDate } from "@/lib/datetime/luxon-utils";
 import {
@@ -172,4 +172,16 @@ export function calculateVacationBalance({
  */
 export function hasSufficientBalance(balance: VacationBalance, requestedDays: number): boolean {
 	return balance.remainingDays >= requestedDays;
+}
+
+/** Annual carryover excludes approved and explicitly recorded historical usage; pending requests do not settle usage. */
+export function calculateCarryoverDays(input: {
+	totalAllowance: number;
+	usedDays: number;
+	previouslyTakenDays: number;
+	maxCarryoverDays: string | null;
+}) {
+	const remaining = Math.max(0, input.totalAllowance - input.usedDays - input.previouslyTakenDays);
+	const cap = input.maxCarryoverDays === null ? remaining : Number(input.maxCarryoverDays);
+	return { remaining, applied: Math.min(remaining, cap), capped: remaining > cap };
 }

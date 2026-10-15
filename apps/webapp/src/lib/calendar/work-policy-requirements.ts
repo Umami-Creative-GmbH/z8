@@ -643,6 +643,7 @@ export function loadDailyWorkRequirementsForEmployee(params: DailyWorkRequiremen
 		// Days outside employment (after a departure, or between stints) require nothing.
 		const employmentCoverage = yield* database.query("getEmploymentCoverageForRequirements", () =>
 			loadEmploymentCoverage(database.db, {
+    employeeEmploymentStartDateOverride: params.employeeEmploymentStartDateOverride,
 				organizationId: params.organizationId,
 				employeeId: params.employeeId,
 			}),

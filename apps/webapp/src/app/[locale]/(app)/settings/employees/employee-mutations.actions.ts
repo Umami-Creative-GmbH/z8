@@ -311,6 +311,14 @@ export async function updateEmployeeAction(
 								employeeIds: [employeeId],
 							},
 							async (tx) => {
+        // Actual joining dates require a reviewed correction. Recheck under the employee guard,
+        // including stale full-form payloads that would otherwise undo a reviewed save.
+        if (Object.hasOwn(scopedData, "startDate") && scopedData.startDate !== undefined) {
+         const [current] = await tx.select({startDate:employee.startDate}).from(employee).where(and(eq(employee.id,employeeId),eq(employee.organizationId,targetEmployee.organizationId)));
+         if (!current || dateToUtcIsoDate(scopedData.startDate) !== dateToUtcIsoDate(current.startDate)) {
+          throw new ValidationError({message:"Review the actual employment start correction before saving it.",field:"startDate"});
+         }
+        }
 								if (personnelNumber !== null) {
 									await assertPersonnelNumberFree(tx, {
 										...personnelNumberScope,

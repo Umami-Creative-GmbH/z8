@@ -44,6 +44,7 @@ export async function loadTrackingReviewEvidence(
 		"organization_tracking_settings",
 		"employee_tracking_settings",
 		"employee_employment_period",
+		"employee_departure",
 		"employee_employment_history",
 		"work_period",
 		"time_entry",

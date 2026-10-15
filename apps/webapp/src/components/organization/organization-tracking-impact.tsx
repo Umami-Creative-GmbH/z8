@@ -2,26 +2,35 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
+import { type ReactNode, useMemo } from "react";
 import type { TrackingDateImpact } from "@/lib/time-tracking/tracking-date-review-types";
 import { Link } from "@/navigation";
 
-export function OrganizationTrackingImpact({ impact }: { impact: TrackingDateImpact }) {
+export function OrganizationTrackingImpact({
+	impact,
+	description,
+}: {
+	impact: TrackingDateImpact;
+	description?: ReactNode;
+}) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const hours = (minutes: number) =>
-		new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-			minutes / 60,
-		);
+	const formatter = useMemo(
+		() => new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+		[locale],
+	);
+	const hours = (minutes: number) => formatter.format(minutes / 60);
 	return (
 		<section
 			className="space-y-4"
 			aria-label={t("organization.tracking.review-title", "Tracking date impact review")}
 		>
 			<p className="text-sm text-muted-foreground">
-				{t(
-					"organization.tracking.review-explanation",
-					"Review the effective dates, required hours and work balances below. Employment dates and vacation allowances stay unchanged. Balances run through the last completed day in each employee’s timezone.",
-				)}
+				{description ??
+					t(
+						"organization.tracking.review-explanation",
+						"Review the effective dates, required hours and work balances below. Employment dates and vacation allowances stay unchanged. Balances run through the last completed day in each employee’s timezone.",
+					)}
 			</p>
 			{impact.blockers.length > 0 ? (
 				<div role="alert" className="rounded-md border border-destructive p-3 text-sm">
