@@ -7,10 +7,11 @@ import * as authSchema from "@/db/auth-schema";
 import { organizationNotificationSettings } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { getBillableTimeSettings } from "@/lib/billable-time/settings";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
+import { loadOrganizationTrackingSettings } from "@/lib/organization/tracking-settings";
 import { loadAutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/settings";
-import { systemClock } from "@/lib/datetime/temporal-core";
 import { loadClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings";
 import { loadPeriodSubmissionSettings } from "@/lib/time-tracking/period-submissions/settings";
 import { getTranslate } from "@/tolgee/server";
@@ -46,6 +47,7 @@ async function OrganizationsPageContent() {
 		billableTimeSettings,
 		clockingReminderSettings,
 		periodSubmissionSettings,
+		trackingSettings,
 	] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(authSchema.organization.id, organizationId),
@@ -75,6 +77,7 @@ async function OrganizationsPageContent() {
 		getBillableTimeSettings(organizationId, db),
 		loadClockingReminderSettings(db, organizationId),
 		loadPeriodSubmissionSettings(db, organizationId, { clock: systemClock }),
+		loadOrganizationTrackingSettings(db, organizationId),
 	]);
 
 	const [currentMemberRecord] = currentMember;
@@ -102,6 +105,8 @@ async function OrganizationsPageContent() {
 
 	return (
 		<OrganizationsPageClient
+			trackingSettings={trackingSettings}
+			trackingSuggestedAt={systemClock.nowInstant().toString()}
 			autoClockOutSettings={autoClockOutSettings}
 			clockingReminderSettings={clockingReminderSettings}
 			periodSubmissionSettings={periodSubmissionSettings}

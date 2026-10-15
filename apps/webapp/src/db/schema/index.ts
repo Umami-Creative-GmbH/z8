@@ -83,6 +83,7 @@ export * from "./notification";
 export * from "./organization";
 export * from "./organization-notification-settings";
 export * from "./organization-time-tracking-settings";
+export * from "./organization-tracking-settings";
 // Payroll export
 export * from "./payroll-access";
 export * from "./payroll-blocker";
