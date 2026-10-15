@@ -123,18 +123,27 @@ export async function amendWorkRecord(
 	if (writer.admission === "append" && (clockIn.isSuperseded || clockOut.isSuperseded)) {
 		return { kind: "endpoint_superseded" };
 	}
-	const endpoints = await resolvedEndpoints(tx, change, { clockIn, clockOut });
+	const endpoints = await resolvedEndpoints(tx, change, change.times ?? {}, {
+		clockIn,
+		clockOut,
+	});
 	if (endpoints === "adopted_entry_mismatch") return { kind: "adopted_entry_mismatch" };
 	const patch = await resolvedPatch(tx, change, WorkAttribution.fromWorkPeriod(period));
+	const plannable = (endpoint: ResolvedEndpoint) => ({
+		at: endpoint.at,
+		adopted: endpoint.adopted !== undefined,
+	});
 	const plan = planChange(
 		pairOf(locked),
 		{
 			kind: "amend",
 			times: {
-				...(endpoints.clockIn ? { clockIn: { at: endpoints.clockIn.at } } : {}),
-				...(endpoints.clockOut ? { clockOut: { at: endpoints.clockOut.at } } : {}),
+				...(endpoints.clockIn ? { clockIn: plannable(endpoints.clockIn) } : {}),
+				...(endpoints.clockOut ? { clockOut: plannable(endpoints.clockOut) } : {}),
 			},
 			attribution: patch,
+			approval: change.approval,
+			toleratedDrift: change.toleratedDrift,
 		},
 		writer.durationArithmetic,
 	);
@@ -296,7 +305,7 @@ export async function resolvedPatch(
 }
 
 /** A named endpoint with its instant: new, or an adopted entry as recorded. */
-type ResolvedEndpoint =
+export type ResolvedEndpoint =
 	| { at: Instant; endpoint: NewAmendedEndpoint; adopted?: undefined }
 	| { at: Instant; adopted: TimeEntryRow };
 
@@ -307,13 +316,12 @@ type ResolvedEndpoint =
  * the coordinator's employee guard serializes the employee's writers, and its
  * activation is guarded on exactly that state.
  */
-async function resolvedEndpoints(
+export async function resolvedEndpoints(
 	tx: WorkTransactionClient,
-	change: AmendWorkRecord,
+	key: { organizationId: string; employeeId: string },
+	times: { clockIn?: AmendedEndpoint; clockOut?: AmendedEndpoint },
 	current: { clockIn: TimeEntryRow; clockOut: TimeEntryRow },
 ): Promise<{ clockIn?: ResolvedEndpoint; clockOut?: ResolvedEndpoint } | "adopted_entry_mismatch"> {
-	const times = change.times;
-	if (!times) return {};
 	const adoptedIds = [times.clockIn, times.clockOut].flatMap((endpoint) =>
 		endpoint && isAdoptedEndpoint(endpoint) ? [endpoint.adopt] : [],
 	);
@@ -323,8 +331,8 @@ async function resolvedEndpoints(
 				.from(timeEntry)
 				.where(
 					and(
-						eq(timeEntry.organizationId, change.organizationId),
-						eq(timeEntry.employeeId, change.employeeId),
+						eq(timeEntry.organizationId, key.organizationId),
+						eq(timeEntry.employeeId, key.employeeId),
 						inArray(timeEntry.id, adoptedIds),
 					),
 				)
@@ -403,7 +411,7 @@ function movedEndpoints(
  * entry becomes current and supersedes the endpoint, unless that one already
  * is superseded (a legacy split's generated half keeps a superseded clock-out).
  */
-async function adoptRecordedEntry(
+export async function adoptRecordedEntry(
 	tx: WorkTransactionClient,
 	entry: TimeEntryRow,
 	replaces: TimeEntryRow,
@@ -444,7 +452,7 @@ async function adoptRecordedEntry(
 	return activated;
 }
 
-type WrittenPair = { period: WorkPeriodRow } & CanonicalWorkRows;
+export type WrittenPair = { period: WorkPeriodRow } & CanonicalWorkRows;
 
 /**
  * The amended pair: compare-and-set on the work period's revision, which
@@ -483,6 +491,9 @@ async function writeAmendedPair(
 			odometerStartKm: columns.odometerStartKm,
 			odometerEndKm: columns.odometerEndKm,
 			drivenDistanceKm: columns.drivenDistanceKm,
+			approvalStatus: columns.approvalStatus,
+			// The changes that waited for the decision are decided with it.
+			...(input.plan.changes.approval ? { pendingChanges: null } : {}),
 			graphRevision: period.graphRevision + 1,
 			updatedAt: input.updatedAt,
 		})
@@ -506,6 +517,7 @@ async function writeAmendedPair(
 			startAt: record.startAt,
 			endAt: record.endAt,
 			durationMinutes: record.durationMinutes,
+			approvalState: record.approvalState,
 			updatedAt: input.updatedAt,
 			updatedBy: input.updatedBy,
 		})
@@ -593,7 +605,7 @@ async function writeAmendedPair(
 }
 
 /** The written rows must agree; anything else is a defect of work records. */
-function assertWrittenAgreement(written: WrittenPair): void {
+export function assertWrittenAgreement(written: WrittenPair): void {
 	const agreement = recordAgreement(written.period, written);
 	if (!agreement.agrees) {
 		throw new CompletedWorkIntegrityError(

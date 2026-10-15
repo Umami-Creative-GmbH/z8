@@ -35,6 +35,21 @@ const terminalBreakMocks = vi.hoisted(() => ({
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
 	applyPolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.apply,
 }));
+// A requester auto-approval decides through work records (#1227); its writes
+// are verified against PostgreSQL. The fake writes both approval states
+// through the harness database.
+vi.mock("@/lib/time-tracking/finalizer-employee-locks", () => ({
+	holdFinalizerEmployeeLocks: async () => undefined,
+}));
+vi.mock("@/lib/time-tracking/work-records", async (importOriginal) => {
+	const fake = await import("./__tests__/fake-work-records");
+	return {
+		...(await importOriginal<typeof import("@/lib/time-tracking/work-records")>()),
+		workRecordScopeForFinalizer: fake.fakeFinalizerScope,
+		applyWorkRecordChange: (scope: { db: object }, change: never) =>
+			fake.fakeApprovalDecision(scope.db, change),
+	};
+});
 
 vi.mock("../policies/chain-service", async (importOriginal) => {
 	const actual =

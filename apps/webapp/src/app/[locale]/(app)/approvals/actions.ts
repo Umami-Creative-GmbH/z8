@@ -12,7 +12,6 @@ import {
 import {
 	approveTimeCorrectionEffect as approveTimeCorrectionAction,
 	rejectTimeCorrectionEffect as rejectTimeCorrectionAction,
-	syncCanonicalWorkCorrection,
 } from "@/lib/approvals/server/time-correction-approvals";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
@@ -25,7 +24,6 @@ export type {
 	BulkDecisionSuccess,
 } from "@/lib/approvals/domain/types";
 export type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "@/lib/approvals/server/types";
-export { syncCanonicalWorkCorrection };
 
 export async function approveAbsence(...args: Parameters<typeof approveAbsenceAction>) {
 	return approveAbsenceAction(...args);
