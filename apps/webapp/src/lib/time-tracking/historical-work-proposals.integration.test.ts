@@ -17,8 +17,10 @@ import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
 import type { PoolClient } from "pg";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -79,6 +81,13 @@ const { withCompletedWorkTransaction } = await import(
 	"@/lib/time-tracking/completed-work-transaction"
 );
 const { deleteDemoEmployeeHistory } = await import("@/lib/demo/demo-work");
+const { db } = await import("@/db");
+const { submitPeriodSubmission } = await import(
+	"@/lib/time-tracking/period-submissions/submission-service"
+);
+const { expectRecordAgreement } = await import(
+	"@/lib/time-tracking/work-records/__tests__/expect-record-agreement"
+);
 
 const ids = {
 	organization: "t323-proposal-org",
@@ -538,6 +547,143 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 		expect((await applyProposal(proposal.id)).body).toMatchObject({ status: "already_applied" });
 	});
 
+	it("repairs both records through work records: the pair agrees and the effects apply (#1226)", async () => {
+		await authorizeRepair();
+		const { periodId, recordId } = await conflictingWork("2026-07-15", 200);
+		const category = randomUUID();
+		await admin.query(
+			`insert into work_category (id, organization_id, name, created_by, updated_at)
+			 values ($1, $2, 'T1226 travel', $3, now())`,
+			[category, ids.organization, ids.ownerUser],
+		);
+		// The record also books a category the period lost.
+		await admin.query("update time_record_work set work_category_id = $2 where record_id = $1", [
+			recordId,
+			category,
+		]);
+		await admin.query(
+			`insert into period_submission_cadence_change
+			 (id, organization_id, cadence, week_start_day, changed_at, changed_by)
+			 values ($1, $2, 'weekly', 'monday', '2026-06-01T00:00:00Z', $3)`,
+			[randomUUID(), ids.organization, ids.ownerUser],
+		);
+		const submitted = await submitPeriodSubmission(
+			{ organizationId: ids.organization, userId: ids.workerUser, periodStartDate: "2026-07-13" },
+			{ database: db, clock: { nowInstant: () => parseInstant("2026-07-20T12:00:00Z") } },
+		);
+		if (submitted.kind !== "submitted") throw new Error(`not submitted: ${submitted.reason}`);
+		await admin.query(
+			"update employee_work_balance set is_dirty = false, dirty_from_date = null where employee_id = $1",
+			[ids.worker],
+		);
+
+		// Named on either representation, each value lands in both.
+		const proposal = (
+			await proposeRepair(periodId, [
+				{ target: "time_record", field: "duration_minutes", after: 240 },
+				{ target: "work_period", field: "work_category_id", after: category },
+			])
+		).body.proposal;
+		await approve(proposal);
+		const before = await periodRow(periodId);
+		expect((await applyProposal(proposal.id)).body).toMatchObject({ status: "applied" });
+
+		await expectRecordAgreement({ organizationId: ids.organization });
+		expect(await periodRow(periodId)).toMatchObject({
+			duration_minutes: 240,
+			work_category_id: category,
+			graph_revision: before.graph_revision + 1,
+		});
+		const { rows: balances } = await admin.query(
+			"select is_dirty, dirty_from_date::text from employee_work_balance where employee_id = $1",
+			[ids.worker],
+		);
+		expect(balances).toEqual([{ is_dirty: true, dirty_from_date: "2026-07-15" }]);
+		const { rows: submissions } = await admin.query(
+			"select status, closed_cause from period_submission where id = $1",
+			[submitted.submissionId],
+		);
+		expect(submissions).toEqual([{ status: "withdrawn", closed_cause: "change" }]);
+		expect(await findingKinds()).toEqual([]);
+	});
+
+	// spec-2 M1: work the backfill cannot attach is attached by the repair that names its minutes.
+	it("attaches work without minutes or a canonical work record through a repair naming the minutes", async () => {
+		await authorizeRepair();
+		const { periodId, recordId } = await conflictingWork("2026-07-17", 240);
+		await asHistory(admin, async (client) => {
+			await client.query(
+				"update work_period set canonical_record_id = null, duration_minutes = null where id = $1",
+				[periodId],
+			);
+			await client.query("delete from time_record where id = $1", [recordId]);
+		});
+		// The period's legacy approval, decided before canonical records existed.
+		await admin.query(
+			`insert into approval_request
+			 (organization_id, entity_type, entity_id, requested_by, approver_id, status, updated_at)
+			 values ($1, 'time_entry', $2, $3, $4, 'approved', now())`,
+			[ids.organization, periodId, ids.worker, ids.manager],
+		);
+
+		const created = await proposeRepair(periodId, [
+			{ target: "work_period", field: "duration_minutes", after: 240 },
+		]);
+		expect(created.status).toBe(200);
+		await approve(created.body.proposal);
+		expect((await applyProposal(created.body.proposal.id)).body).toMatchObject({
+			status: "applied",
+		});
+
+		await expectRecordAgreement({ organizationId: ids.organization, workPeriodIds: [periodId] });
+		expect(await periodRow(periodId)).toMatchObject({
+			canonical_record_id: periodId,
+			duration_minutes: 240,
+		});
+		// The period's legacy approval history links to the attached record (spec-2 L5).
+		const { rows: requests } = await admin.query(
+			"select canonical_record_id from approval_request where entity_id = $1",
+			[periodId],
+		);
+		expect(requests).toEqual([{ canonical_record_id: periodId }]);
+		const { rows: decisions } = await admin.query(
+			"select action from time_record_approval_decision where record_id = $1",
+			[periodId],
+		);
+		expect(decisions).toEqual([{ action: "approved" }]);
+	});
+
+	it("refuses a proposal whose repaired work would still disagree (#1226)", async () => {
+		const { periodId } = await conflictingWork("2026-07-16", 200);
+		// The record's start is evidence of nothing: the period's start mirrors its entry.
+		expect(
+			(
+				await proposeRepair(periodId, [
+					{ target: "time_record", field: "duration_minutes", after: 240 },
+					{ target: "time_record", field: "start_at", after: "2026-07-16T05:30:00Z" },
+				])
+			).body,
+		).toMatchObject({ code: "proposal_refused", reasons: ["repair_leaves_divergence"] });
+		// A repair of the duration alone cannot fix a category the records disagree on.
+		const category = randomUUID();
+		await admin.query(
+			`insert into work_category (id, organization_id, name, created_by, updated_at)
+			 values ($1, $2, 'T1226 travel', $3, now())`,
+			[category, ids.organization, ids.ownerUser],
+		);
+		await admin.query("update work_period set work_category_id = $2 where id = $1", [
+			periodId,
+			category,
+		]);
+		expect(
+			(
+				await proposeRepair(periodId, [
+					{ target: "time_record", field: "duration_minutes", after: 240 },
+				])
+			).body,
+		).toMatchObject({ code: "proposal_refused", reasons: ["repair_leaves_divergence"] });
+	});
+
 	it("accepts approval by the proposer and returns the same proposal for a repeated creation", async () => {
 		const { periodId } = await conflictingWork("2026-07-07", 200);
 		const proposalId = randomUUID();
@@ -673,8 +819,9 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 		throw new Error(`Fewer than ${count} transactions waited on advisory locks`);
 	}
 
-	// #327: the real split writer races an approved field repair in both arrival orders.
-	it("goes stale when a real split commits first while the application waits", async () => {
+	// A split divides through work records in either admission (#1219), which refuses
+	// work whose pair disagrees: the split writes nothing and the approved repair applies.
+	it("refuses a real split of diverging work; the repair still applies", async () => {
 		await authorizeRepair();
 		const { periodId, recordId } = await conflictingWork("2026-07-10", 200);
 		const proposal = (
@@ -684,24 +831,20 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 		).body.proposal;
 		await approve(proposal);
 
-		const park = await parkNextInsert("time_entry");
 		actAs(ids.workerUser);
-		const split = splitWorkPeriod(periodId, "2026-07-10", "09:00");
-		await waitForLockWaiters(1);
-		const pending = applyProposal(proposal.id);
-		await waitForLockWaiters(2);
-		await park.release();
+		await expect(splitWorkPeriod(periodId, "2026-07-10", "09:00")).resolves.toMatchObject({
+			success: false,
+			code: "completed_work_review_required",
+		});
 
-		await expect(split).resolves.toMatchObject({ success: true });
-		expect((await pending).body).toMatchObject({ status: "stale" });
-		const { rows } = await admin.query("select id from completed_work_operation where id = $1", [
-			proposal.id,
-		]);
-		expect(rows).toEqual([]);
-		expect((await recordRow(recordId)).duration_minutes).not.toBe(240);
+		expect((await applyProposal(proposal.id)).body).toMatchObject({ status: "applied" });
+		expect((await recordRow(recordId)).duration_minutes).toBe(240);
 	});
 
-	it("lets a real split proceed on the repaired graph when the application commits first", async () => {
+	// #327: the real split writer waits for an approved field repair under the shared key.
+	// The repair advances the work's revision, so the waiting split, decided on the work as
+	// read before, is stale (#1219); a fresh split proceeds on the repaired graph.
+	it("refuses a waiting split as stale once the application commits", async () => {
 		await authorizeRepair();
 		const { periodId } = await conflictingWork("2026-07-11", 200);
 		const proposal = (
@@ -720,7 +863,13 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 		await park.release();
 
 		expect((await pending).body).toMatchObject({ status: "applied" });
-		await expect(split).resolves.toMatchObject({ success: true });
+		await expect(split).resolves.toMatchObject({
+			success: false,
+			code: "time_correction_work_period_stale",
+		});
+		await expect(splitWorkPeriod(periodId, "2026-07-11", "09:00")).resolves.toMatchObject({
+			success: true,
+		});
 		const { rows } = await admin.query("select id from completed_work_operation where id = $1", [
 			proposal.id,
 		]);
@@ -1184,9 +1333,12 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 			expect((await proposeContinuation(right)).body).toMatchObject({
 				reasons: expect.arrayContaining(["active_work"]),
 			});
-			await admin.query("update work_period set is_active = false where employee_id = $1", [
-				ids.worker,
-			]);
+			// History: work no longer live that never recorded its end (#1224).
+			await asHistory(admin, (client) =>
+				client.query("update work_period set is_active = false where employee_id = $1", [
+					ids.worker,
+				]),
+			);
 			const proposal = (await proposeContinuation(right)).body.proposal;
 			await approve(proposal);
 			expect((await applyProposal(proposal.id)).body.status).toBe("applied");

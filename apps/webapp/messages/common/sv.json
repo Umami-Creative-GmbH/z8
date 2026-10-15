@@ -373,6 +373,8 @@
     "previous": "Föregående",
     "recovering": "Återställer...",
     "refresh": "Uppdatera",
+    "refreshData": "Uppdatera data",
+    "refreshDataFailed": "Det gick inte att uppdatera data. Försök igen.",
     "refreshing": "Uppdaterar...",
     "reject": "Avvisa",
     "rejecting": "Avvisar…",

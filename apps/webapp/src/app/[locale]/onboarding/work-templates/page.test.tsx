@@ -31,6 +31,10 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "en",
+}));
+
 vi.mock("sonner", () => ({
 	toast: { error: mocks.toastError, success: mocks.toastSuccess },
 }));
@@ -276,6 +280,18 @@ describe("WorkTemplatesPage load effect", () => {
 		expect(hoursInput.getAttribute("aria-describedby")).toMatch(/description/);
 		expect(mondayCheckbox.getAttribute("aria-checked")).toBe("true");
 		expect(defaultSwitch.getAttribute("role")).toBe("switch");
+	});
+
+	it("toggles a working day when its day name is clicked", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		render(<WorkTemplatesPage />);
+
+		const saturdayCheckbox = await screen.findByRole("checkbox", { name: "Sat" });
+		expect(saturdayCheckbox.getAttribute("aria-checked")).toBe("false");
+
+		fireEvent.click(screen.getByText("Sat"));
+
+		await waitFor(() => expect(saturdayCheckbox.getAttribute("aria-checked")).toBe("true"));
 	});
 
 	it("associates a template-name validation error with the invalid input", async () => {

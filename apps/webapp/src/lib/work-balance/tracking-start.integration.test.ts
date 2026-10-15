@@ -6,6 +6,7 @@ import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -129,27 +130,29 @@ describe("explicit tracking start across public balance readers", () => {
 		minutes: number,
 		targetEmployeeId = employeeId,
 	) {
-		const clockInId = randomUUID();
-		const clockOutId = randomUUID();
-		for (const [entryId, type, timestamp] of [
-			[clockInId, "clock_in", startTime],
-			[clockOutId, "clock_out", endTime],
-		]) {
-			await fixture.pool.query(
-				`insert into time_entry
+		return withCanonicalRecords(fixture.pool, async (client) => {
+			const clockInId = randomUUID();
+			const clockOutId = randomUUID();
+			for (const [entryId, type, timestamp] of [
+				[clockInId, "clock_in", startTime],
+				[clockOutId, "clock_out", endTime],
+			]) {
+				await client.query(
+					`insert into time_entry
 				 (id, employee_id, organization_id, type, timestamp, utc_offset_minutes, timezone,
 				  timezone_source, hash, created_by)
 				 values ($1, $2, $3, $4, $5, 0, 'UTC', 'user_setting', $7, $6)`,
-				[entryId, targetEmployeeId, organizationId, type, timestamp, owner.userId, entryId],
-			);
-		}
-		await fixture.pool.query(
-			`insert into work_period
+					[entryId, targetEmployeeId, organizationId, type, timestamp, owner.userId, entryId],
+				);
+			}
+			await client.query(
+				`insert into work_period
 			 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
 			  duration_minutes, is_active, updated_at)
 			 values ($1, $2, $3, $4, $5, $6, $7, false, now())`,
-			[employeeId, organizationId, clockInId, clockOutId, startTime, endTime, minutes],
-		);
+				[targetEmployeeId, organizationId, clockInId, clockOutId, startTime, endTime, minutes],
+			);
+		});
 	}
 
 	it("counts from rollout in the employee zone even when account creation is later and earlier work exists", async () => {

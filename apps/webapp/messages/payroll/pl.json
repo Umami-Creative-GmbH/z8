@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds musi być tablicą",
       "employeeIdsMustContainOnlyStrings": "employeeIds musi zawierać tylko ciągi znaków",
       "endDateAfterStart": "Data końcowa musi być późniejsza lub równa dacie początkowej",
+      "exportBlockedByDuplicateIdentifier": "Eksport zablokowany: kilku pracowników ma ten sam identyfikator kadrowy. Nadaj każdemu pracownikowi własny identyfikator: {employees}",
       "exportBlockedByMissingIdentifier": "Eksport zablokowany: niektórzy pracownicy nie mają wartości w polu niestandardowym używanym jako identyfikator płacowy",
       "exportBlockedByOffboardingClockRepair": "Eksport zablokowany: najpierw napraw zakończenie pracy w ramach offboardingu",
       "exportBlockedByUncertainWork": "Eksport zablokowany: najpierw wyjaśnij niepewny czas pracy w wybranym zakresie",

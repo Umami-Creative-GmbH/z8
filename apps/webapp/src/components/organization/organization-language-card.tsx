@@ -1,5 +1,7 @@
 "use client";
 
+import { useServerDataState } from "@/hooks/use-server-data-state";
+
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { type ComponentType, type SVGProps, useState, useTransition } from "react";
@@ -33,7 +35,7 @@ export function OrganizationLanguageCard({
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [isSaving, setIsSaving] = useState(false);
-	const [defaultLanguage, setDefaultLanguage] = useState(initialDefaultLanguage);
+	const [defaultLanguage, setDefaultLanguage] = useServerDataState(initialDefaultLanguage);
 
 	const canEdit = currentMemberRole === "admin" || currentMemberRole === "owner";
 

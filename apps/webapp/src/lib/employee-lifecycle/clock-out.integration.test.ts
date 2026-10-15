@@ -168,7 +168,7 @@ describe("departure clock-out", () => {
 					timezone: "Europe/Berlin",
 					createdBy: fixture.ownerUserId,
 					projectId: null,
-					balanceRefreshCommitted: false,
+					balanceRefreshCommitted: true,
 					surchargeSnapshot: expect.anything(),
 				},
 			},

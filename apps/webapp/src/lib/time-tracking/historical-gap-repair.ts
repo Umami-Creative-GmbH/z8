@@ -23,14 +23,16 @@
 import { createHash } from "node:crypto";
 import { compareInstants, instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import { canonicalJson } from "./canonical-json";
-import type {
-	HistoricalEntryEvidence,
-	HistoricalPeriodEvidence,
-	HistoricalRecordEvidence,
-	HistoricalWorkDiagnostics,
-	HistoricalWorkEvidence,
-	WorkFinding,
-	WorkFindingKind,
+import { gapRepairResolution, repairedWorkAgrees } from "./historical-repair-resolution";
+import {
+	type HistoricalEntryEvidence,
+	type HistoricalPeriodEvidence,
+	type HistoricalRecordEvidence,
+	type HistoricalWorkDiagnostics,
+	type HistoricalWorkEvidence,
+	recordProjectIds,
+	type WorkFinding,
+	type WorkFindingKind,
 } from "./historical-work-diagnostics";
 
 export const HISTORICAL_GAP_REPAIR_PLAN_VERSION = 1;
@@ -137,7 +139,9 @@ export type GapHoldReason =
 	/** Active work is completed by its own writers, not by repair. */
 	| "active_work"
 	/** A referenced project or category is not the organization's. */
-	| "reference_outside_organization";
+	| "reference_outside_organization"
+	/** The filled work would still disagree with its canonical record (#1226). */
+	| "repair_leaves_divergence";
 
 export interface HeldGap {
 	findingId: string;
@@ -199,7 +203,8 @@ export function planHistoricalGapRepair(input: HistoricalGapRepairInput): Histor
 	// A gap belongs to the one period it names; native-record gaps have no evidence.
 	const gapsByPeriod = new Map<string, WorkFinding[]>();
 	for (const gap of gaps) {
-		const period = gap.workPeriodIds.length === 1 ? periodsById.get(gap.workPeriodIds[0]) : undefined;
+		const period =
+			gap.workPeriodIds.length === 1 ? periodsById.get(gap.workPeriodIds[0]) : undefined;
 		if (!period) {
 			hold(gap, "no_restorable_evidence");
 			continue;
@@ -233,6 +238,21 @@ export function planHistoricalGapRepair(input: HistoricalGapRepairInput): Histor
 			if (outcome.actor) originalActor = outcome.actor;
 		}
 		if (fills.length === 0) continue;
+		// Work records writes a repair only when the repaired pair agrees (#1226):
+		// work whose fills leave a disagreement, such as a gap held on its own, is held whole.
+		// A missing record is attached with what the other fills establish (spec-2 M1).
+		const agrees = repairedWorkAgrees(
+			period,
+			fills.some((fill) => fill.kind === "canonical_record") ? null : record,
+			gapRepairResolution(fills),
+		);
+		if (!agrees) {
+			const filled = new Set(fills.map((fill) => fill.findingId));
+			for (const gap of periodGaps) {
+				if (filled.has(gap.id)) hold(gap, "repair_leaves_divergence");
+			}
+			continue;
+		}
 
 		const expected = expectedStateOf(period, record);
 		const unit = {
@@ -317,10 +337,11 @@ function fillFor(
 		}
 		case "canonical_detail_missing": {
 			if (!record || record.detail !== null) return { hold: "no_restorable_evidence" };
+			const projectIds = recordProjectIds(record);
 			if (
 				period.projectId !== null &&
-				record.projectIds.length > 0 &&
-				!record.projectIds.includes(period.projectId)
+				projectIds.length > 0 &&
+				!projectIds.includes(period.projectId)
 			) {
 				return { hold: "no_restorable_evidence" };
 			}
@@ -331,7 +352,7 @@ function fillFor(
 					findingId,
 					recordId: record.id,
 					detail: detailOf(period),
-					projectId: record.projectIds.length === 0 ? period.projectId : null,
+					projectId: projectIds.length === 0 ? period.projectId : null,
 				},
 			};
 		}
@@ -417,20 +438,26 @@ function fillFor(
 			const value = gap.details.periodValue;
 			if (!record?.detail || typeof value !== "string") return { hold: "no_restorable_evidence" };
 			if (field === "project") {
-				if (record.projectIds.length > 0) return { hold: "no_restorable_evidence" };
+				if (recordProjectIds(record).length > 0) return { hold: "no_restorable_evidence" };
 				if (!references.projectIds.has(value)) return { hold: "reference_outside_organization" };
-				return { fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value } };
+				return {
+					fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value },
+				};
 			}
 			if (field === "work_category") {
 				if (record.detail.workCategoryId !== null) return { hold: "no_restorable_evidence" };
 				if (!references.workCategoryIds.has(value)) {
 					return { hold: "reference_outside_organization" };
 				}
-				return { fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value } };
+				return {
+					fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value },
+				};
 			}
 			if (field === "work_location_type") {
 				if (record.detail.workLocationType !== null) return { hold: "no_restorable_evidence" };
-				return { fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value } };
+				return {
+					fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value },
+				};
 			}
 			return { hold: "no_restorable_evidence" };
 		}
@@ -519,7 +546,7 @@ function expectedStateOf(
 								workLocationType: record.detail.workLocationType,
 							}
 						: null,
-					projectIds: [...record.projectIds].toSorted(),
+					projectIds: recordProjectIds(record).toSorted(),
 				}
 			: null,
 	};

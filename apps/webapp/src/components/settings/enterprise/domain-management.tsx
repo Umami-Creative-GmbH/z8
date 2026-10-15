@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useServerDataState } from "@/hooks/use-server-data-state";
 import type { AuthConfig } from "@/lib/domain";
-import { CustomDomainSummary, type CustomDomain } from "./custom-domain-summary";
+import { type CustomDomain, CustomDomainSummary } from "./custom-domain-summary";
 import { DomainAddDialog } from "./domain-add-dialog";
 import { DomainAuthConfigDialog } from "./domain-auth-config-dialog";
 import { DomainVerificationDialog } from "./domain-verification-dialog";
@@ -48,7 +49,7 @@ export function DomainManagement({
 }: DomainManagementProps) {
 	const { t } = useTranslate();
 	// Since each org can only have 1 domain, we track it as a single domain
-	const [domain, setDomain] = useState<Domain | null>(initialDomains[0] ?? null);
+	const [domain, setDomain] = useServerDataState<Domain | null>(initialDomains[0] ?? null);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [verificationDialog, setVerificationDialog] = useState<{
 		isOpen: boolean;

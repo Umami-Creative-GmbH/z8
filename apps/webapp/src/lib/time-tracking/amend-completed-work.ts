@@ -3,17 +3,22 @@ import "server-only";
 /**
  * Completed-work operation for direct amendments (#286 / T22, design #256).
  *
- * One call inside the completed-work outer transaction corrects the endpoints
- * and/or changes the attribution of one completed period. It owns the
- * authoritative locked reads, current scoped authorization, symmetric
- * occupancy, fresh duration, the correction entries through the append
- * collaborator, the period, canonical base/detail/allocation, the work revision,
- * the work-balance refresh intent and the committed receipt. Callers supply
- * intent and evidence, never durations, links or storage patches.
+ * One call inside the completed-work work transaction corrects the endpoints
+ * and/or changes the attribution of one completed period. It owns the caller
+ * policy: current scoped authorization, the unresolved-review guard, the
+ * requested times (range rule, no future endpoints), attribution eligibility
+ * and, in append admission, the committed receipt with its exact replay. Work
+ * records amends the work period and its canonical work record together,
+ * appends the replacing correction entries and applies the effects (ADR 0010,
+ * #1225). Callers supply intent and evidence, never durations, links or
+ * storage patches.
  *
  * Replaced entries are superseded, never removed: their hashes stay predecessor
  * evidence. Exact replay of a committed receipt writes nothing, and a receipt
  * whose work has since changed or been deleted is a collision, never new work.
+ * Callers never choose by admission (#1231): `replayOrAmendCompletedWork` runs
+ * the same policy and change in either admission, and commits the receipt only
+ * when work records' outcome says the entries were appended.
  */
 import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 import { db } from "@/db";
@@ -26,26 +31,15 @@ import {
 	projectAssignment,
 	projectManager,
 	timeEntry,
-	timeRecord,
-	timeRecordAllocation,
-	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
 import {
 	authorizeTimeCorrectionCategoryChange,
 	lockTrustedTimeCorrectionEmployeeTeamId,
 } from "@/lib/approvals/server/time-correction-category-authorization";
-import {
-	BOOKABLE_PROJECT_STATUSES,
-	PROJECT_TASK_INELIGIBILITY_MESSAGES,
-	type ProjectTaskIneligibility,
-	taskBookingIneligibility,
-} from "./project-eligibility";
-import { recordedTaskId } from "./task-attribution";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	compareInstants,
-	dateFromInstant,
 	type Instant,
 	instantFromDate,
 	instantToCanonicalString,
@@ -58,9 +52,7 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
-	type AmendmentIntent,
 	AmendmentNoChangeError,
 	AmendmentRangeError,
 	type BillableIntent,
@@ -68,39 +60,46 @@ import {
 	planAttributionChange,
 	planCompletedWorkAmendment,
 } from "./amend-completed-work-plan";
-import { calculateHash } from "./blockchain";
+import { canonicalJson } from "./canonical-json";
 import {
 	type AttributionIntent,
 	CompletedWorkCollisionError,
-	CompletedWorkIntegrityError,
 	type CompletedWorkFollowUp,
-	earliestStartDate,
+	CompletedWorkIntegrityError,
 } from "./close-active-work";
-import { canonicalJson } from "./canonical-json";
 import { monthClosedRefusalOf } from "./closed-months/refusal";
-import { assertWorkOpen } from "./closed-months/store";
+import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
-import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
+import {
+	BOOKABLE_PROJECT_STATUSES,
+	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	type ProjectTaskIneligibility,
+	taskBookingIneligibility,
+} from "./project-eligibility";
+import { recordedTaskId } from "./task-attribution";
+import { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import {
-	BillableWorkRefusedError,
-	projectAllocationAgrees,
-	resolveWorkBillabilityInTransaction,
-} from "./work-billability";
-import { WorkIntervalError } from "./work-duration";
-import { assertWorkVehicleUseChangeAllowed } from "./vehicle-use/work-vehicle-use-eligibility";
-import {
-	sameWorkVehicleUse,
 	type VehicleUseIntent,
 	vehicleUseColumns,
 	vehicleUseFromColumns,
 	type WorkVehicleUse,
-	type WorkVehicleUseColumns,
 } from "./vehicle-use/work-vehicle-use";
+import { assertWorkVehicleUseChangeAllowed } from "./vehicle-use/work-vehicle-use-eligibility";
+import { BillableWorkRefusedError, resolveWorkBillabilityInTransaction } from "./work-billability";
+import { WorkIntervalError } from "./work-duration";
 import type { WorkLocationType } from "./work-location";
-import { withCompletedWorkTransaction } from "./completed-work-transaction";
-import { assertWorkOccupancyFree, WorkOccupancyConflictError } from "./work-occupancy";
+import { WorkOccupancyConflictError } from "./work-occupancy";
 import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
+import {
+	type AmendAttributionPatch,
+	type AmendedEndpoint,
+	applyWorkRecordChange,
+	CompletedWorkReviewRequiredError,
+	orRefuse,
+	readWorkRecord,
+	type WorkSegment,
+} from "./work-records";
 import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const AMEND_COMPLETED_WORK_COMMAND_VERSION = 1;
@@ -236,7 +235,8 @@ export type AmendCompletedWorkResult = {
 		previousHash: string | null;
 	}>;
 	revisions: { workPeriod: { source: number; result: number } };
-	append: { admission: "append"; used: boolean };
+	/** Receipts are committed in append admission only; legacy amendments return the same shape. */
+	append: { admission: "append" | "legacy"; used: boolean };
 	/** Unchanged by a direct amendment; recorded as committed evidence. */
 	approvalState: string | null;
 	followUps: CompletedWorkFollowUp[];
@@ -248,15 +248,8 @@ export type AmendCompletedWorkReceipt = {
 	correctionEntries: Array<typeof timeEntry.$inferSelect>;
 };
 
-/** Evidence the work graph needs review before this operation may change it. */
-export class CompletedWorkReviewRequiredError extends Error {
-	constructor(
-		readonly reason: "canonical_record_missing" | "canonical_divergence" | "endpoint_entry_missing",
-	) {
-		super("This work needs review before it can be changed");
-		this.name = "CompletedWorkReviewRequiredError";
-	}
-}
+// Work records owns the review refusal (ADR 0010); re-exported for existing callers.
+export { CompletedWorkReviewRequiredError };
 
 export type AmendCompletedWorkInput = {
 	organizationId: string;
@@ -289,13 +282,6 @@ function staleSource(): ConflictError {
 	return new ConflictError({
 		message: "Work period changed while editing",
 		conflictType: "time_correction_work_period_stale",
-	});
-}
-
-function alreadyCorrected(): ConflictError {
-	return new ConflictError({
-		message: "Time entry was already corrected by another process",
-		conflictType: "time_entry_already_corrected",
 	});
 }
 
@@ -462,12 +448,27 @@ export async function replayCommittedAmendment(
 	);
 }
 
-/** In one coordinated scope: exact replay first, otherwise the fresh operation. */
+/**
+ * The amendment every caller runs, in either admission (#1231): in one
+ * coordinated scope, exact replay of a committed receipt first, otherwise the
+ * fresh amendment. Admission stays hidden: work records amends with the writer
+ * of the organization's admission, and the receipt is committed only when its
+ * outcome says the entries were appended (append admission). A legacy
+ * amendment returns the same receipt shape without committing it, so a retry
+ * is not recognized there.
+ */
 export async function replayOrAmendCompletedWork(
 	scope: SealedWorkTransactionScope,
 	input: AmendCompletedWorkInput,
 ): Promise<AmendCompletedWorkReceipt> {
-	return (await replayAmendCompletedWork(scope, input)) ?? (await amendCompletedWork(scope, input));
+	scope.assertEmployee(input.organizationId, input.employeeId);
+	const replayed = await replayAmendCompletedWork(scope, input);
+	if (replayed) return replayed;
+	const amended = await amendWork(scope, input);
+	if (amended.result.append.admission === "append") {
+		await insertReceipt(scope.db, input, amended.result.workPeriodId, amended.result);
+	}
+	return { disposition: "executed", ...amended };
 }
 
 /**
@@ -749,35 +750,47 @@ function receiptChanges(
 	};
 }
 
-/** Period and canonical detail record the same vehicle use, column by column (#1120). */
-export function sameVehicleColumns(
-	left: Partial<WorkVehicleUseColumns>,
-	right: Partial<WorkVehicleUseColumns>,
-): boolean {
-	return sameWorkVehicleUse(vehicleUseFromColumns(left), vehicleUseFromColumns(right));
-}
-
 /**
- * Fresh amendment. The caller has already ruled out committed replay under the
- * same transaction, so an existing receipt with this identity is a collision.
+ * Fresh amendment in append admission, with its receipt. The caller has already
+ * ruled out committed replay under the same transaction, so an existing receipt
+ * with this identity is a collision. Only the live vehicle-use change runs it
+ * directly (live work, an adopted-only receipt); every completed-work caller uses
+ * `replayOrAmendCompletedWork`, which hides admission (#1231).
  */
 export async function amendCompletedWork(
 	scope: SealedWorkTransactionScope,
 	input: AmendCompletedWorkInput,
 ): Promise<AmendCompletedWorkReceipt> {
-	const { organizationId, employeeId, command, intent: requested } = input;
-	scope.assertEmployee(organizationId, employeeId);
+	scope.assertEmployee(input.organizationId, input.employeeId);
 	if (scope.admission !== "append") {
 		throw new Error("Completed-work amendment requires the adopted work transaction");
 	}
-	const tx = scope.db;
-	const [existing] = await tx
+	const [existing] = await scope.db
 		.select({ id: completedWorkOperation.id })
 		.from(completedWorkOperation)
-		.where(eq(completedWorkOperation.id, command.operationId))
+		.where(eq(completedWorkOperation.id, input.command.operationId))
 		.limit(1);
 	if (existing) throw new CompletedWorkCollisionError();
 
+	const amended = await amendWork(scope, input);
+	await insertReceipt(scope.db, input, amended.result.workPeriodId, amended.result);
+	return { disposition: "executed", ...amended };
+}
+
+/**
+ * The amendment's caller policy, then the change: current authority, the
+ * caller's own change policy (the billability authority, a project manager's
+ * project), the unresolved-review guard, the requested times (range rule, no
+ * future endpoints) and attribution eligibility, on exactly the rows work
+ * records will change, locked. Work records applies the times and the
+ * attribution patch to both records with the effects (ADR 0010).
+ */
+async function amendWork(
+	scope: SealedWorkTransactionScope,
+	input: AmendCompletedWorkInput,
+): Promise<Omit<AmendCompletedWorkReceipt, "disposition">> {
+	const { organizationId, employeeId, intent: requested } = input;
+	const tx = scope.db;
 	assertAuthorityPermitsIntent(input);
 	const target = await lockAuthority(tx, { ...input, workPeriodId: requested.workPeriodId });
 	const changesAttribution =
@@ -793,26 +806,20 @@ export async function amendCompletedWork(
 			})
 		: null;
 
-	// Authoritative source: the routed period and its entries, locked.
-	const [period] = await tx
-		.select()
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.id, requested.workPeriodId),
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.employeeId, employeeId),
-				isNull(workPeriod.deletedAt),
-			),
-		)
-		.for("update");
-	if (!period) {
+	// Authoritative source: the routed period with its entries and canonical work record, locked.
+	const current = await readWorkRecord(
+		scope,
+		{ organizationId, employeeId, workPeriodId: requested.workPeriodId },
+		{ lock: true },
+	);
+	if (!current) {
 		throw new NotFoundError({
 			message: "Work period not found",
 			entityType: "workPeriod",
 			entityId: requested.workPeriodId,
 		});
 	}
+	const { period } = current;
 	if (
 		period.clockInId !== input.expectedSource.clockInId ||
 		period.clockOutId !== input.expectedSource.clockOutId ||
@@ -834,95 +841,12 @@ export async function amendCompletedWork(
 		if (requested.clockIn.kind !== "preserve" || requested.clockOut.kind !== "preserve") {
 			throw running;
 		}
-		return amendActiveAttribution(tx, input, period, teamId);
+		// Legacy clock-outs decide billability at recording: live work keeps it until then.
+		if (scope.admission === "legacy" && requested.project.kind === "preserve") throw running;
+		return amendActiveAttribution(scope, input, period, teamId);
 	}
 	if (period.isActive || !period.endTime || !period.clockOutId) throw running;
 
-	const endpointIds = [period.clockInId, period.clockOutId];
-	const originals = await tx
-		.select()
-		.from(timeEntry)
-		.where(
-			and(
-				eq(timeEntry.organizationId, organizationId),
-				eq(timeEntry.employeeId, employeeId),
-				inArray(timeEntry.id, endpointIds),
-			),
-		)
-		.orderBy(asc(timeEntry.id))
-		.for("update");
-	const originalClockIn = originals.find(({ id }) => id === period.clockInId);
-	const originalClockOut = originals.find(({ id }) => id === period.clockOutId);
-	if (!originalClockIn || !originalClockOut) {
-		throw new CompletedWorkReviewRequiredError("endpoint_entry_missing");
-	}
-	if (originalClockIn.isSuperseded || originalClockOut.isSuperseded) throw alreadyCorrected();
-
-	// The period and its canonical record must describe the same segment before
-	// this operation changes both. A missing or diverging record is evidence for
-	// review (historical repair), never something to rebuild inline.
-	if (!period.canonicalRecordId) {
-		throw new CompletedWorkReviewRequiredError("canonical_record_missing");
-	}
-	const [record] = await tx
-		.select()
-		.from(timeRecord)
-		.where(
-			and(
-				eq(timeRecord.id, period.canonicalRecordId),
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.employeeId, employeeId),
-				eq(timeRecord.recordKind, "work"),
-			),
-		)
-		.for("update");
-	const [detail] = await tx
-		.select()
-		.from(timeRecordWork)
-		.where(
-			and(
-				eq(timeRecordWork.recordId, period.canonicalRecordId),
-				eq(timeRecordWork.organizationId, organizationId),
-				eq(timeRecordWork.recordKind, "work"),
-			),
-		)
-		.for("update");
-	const projectAllocations = await tx
-		.select()
-		.from(timeRecordAllocation)
-		.where(
-			and(
-				eq(timeRecordAllocation.recordId, period.canonicalRecordId),
-				eq(timeRecordAllocation.organizationId, organizationId),
-				eq(timeRecordAllocation.allocationKind, "project"),
-			),
-		)
-		.orderBy(asc(timeRecordAllocation.id))
-		.for("update");
-	if (!record || !detail) throw new CompletedWorkReviewRequiredError("canonical_record_missing");
-	// Project and billability must agree in both representations (#900).
-	const allocationAgrees = projectAllocationAgrees(period, projectAllocations);
-	if (
-		!sameInstant(record.startAt, instantFromDate(period.startTime)) ||
-		!sameInstant(record.endAt, instantFromDate(period.endTime)) ||
-		detail.workCategoryId !== period.workCategoryId ||
-		detail.workLocationType !== period.workLocationType ||
-		!sameVehicleColumns(detail, period) ||
-		!allocationAgrees
-	) {
-		throw new CompletedWorkReviewRequiredError("canonical_divergence");
-	}
-
-	const intent: AmendmentIntent = {
-		clockIn: endpointIntent(requested.clockIn),
-		clockOut: endpointIntent(requested.clockOut),
-		project: requested.project,
-		task: requested.task,
-		workCategory: requested.workCategory,
-		workLocation: requested.workLocation,
-		billable: requested.billable,
-		vehicleUse: requested.vehicleUse,
-	};
 	const sourceVehicleUse = vehicleUseFromColumns(period);
 	let plan: ReturnType<typeof planCompletedWorkAmendment>;
 	try {
@@ -938,19 +862,28 @@ export async function amendCompletedWork(
 				isBillable: period.isBillable,
 				vehicleUse: sourceVehicleUse,
 			},
-			intent,
+			{
+				clockIn: endpointIntent(requested.clockIn),
+				clockOut: endpointIntent(requested.clockOut),
+				project: requested.project,
+				task: requested.task,
+				workCategory: requested.workCategory,
+				workLocation: requested.workLocation,
+				billable: requested.billable,
+				vehicleUse: requested.vehicleUse,
+			},
 		);
 	} catch (error) {
 		throw planningFailure(error);
 	}
-	const { result: resulting } = plan;
-	if (plan.changes.clockIn && compareInstants(resulting.startAt, input.evaluatedAt) > 0) {
+	const { changes, result: resulting } = plan;
+	if (changes.clockIn && compareInstants(resulting.startAt, input.evaluatedAt) > 0) {
 		throw new ValidationError({
 			message: "Clock in time cannot be in the future",
 			field: "timestamp",
 		});
 	}
-	if (plan.changes.clockOut && compareInstants(resulting.endAt, input.evaluatedAt) > 0) {
+	if (changes.clockOut && compareInstants(resulting.endAt, input.evaluatedAt) > 0) {
 		throw new ValidationError({
 			message: "Clock out time cannot be in the future",
 			field: "timestamp",
@@ -960,330 +893,141 @@ export async function amendCompletedWork(
 		organizationId,
 		employeeId,
 		teamId,
-		changes: plan.changes,
+		changes,
 		resulting,
 		currentWorkCategoryId: period.workCategoryId,
 		currentVehicleUse: sourceVehicleUse,
 	});
-	// An explicit `set` wins; a changed project applies its default; else kept (#900).
-	const isBillable = await resolveWorkBillabilityInTransaction(tx, organizationId, {
-		projectId: resulting.projectId,
-		projectChosen: plan.changes.project,
-		current: period.isBillable,
-		requested: requested.billable?.kind === "set" ? requested.billable.billable : undefined,
-	});
-	// The resolved billability decides the change: a new project's default may change it too.
-	const changes = { ...plan.changes, billable: isBillable !== period.isBillable };
-	const endpointsChanged = changes.clockIn || changes.clockOut;
-	if (endpointsChanged) {
-		await assertWorkOccupancyFree(tx, {
+
+	const amendment = orRefuse(
+		await applyWorkRecordChange(scope, {
+			kind: "amend",
 			organizationId,
 			employeeId,
-			interval: { startAt: resulting.startAt, endAt: resulting.endAt },
-			excludeWorkPeriodIds: [period.id],
-		});
-	}
-	// Work and attribution touching a closed month are frozen, before or after
-	// the change; notes alone are not (#762).
-	if (Object.values(changes).some(Boolean)) {
-		const intervals = [
-			{ start: instantFromDate(period.startTime), end: instantFromDate(period.endTime) },
-			{ start: resulting.startAt, end: resulting.endAt },
-		];
-		await assertWorkOpen(tx, { organizationId, employeeId, intervals });
-		// The same change sends a submitted period back to the employee (#1062).
-		await sendBackChangedPeriodSubmissions(tx, {
-			organizationId,
-			employeeId,
-			causedByUserId: input.actorUserId,
-			work: intervals,
-		});
-	}
-
-	// Correction entries: exact predecessor from the append collaborator.
-	const corrections: AmendCompletedWorkResult["corrections"] = [];
-	const correctionEntries: Array<typeof timeEntry.$inferSelect> = [];
-	const replacements = new Map<string, typeof timeEntry.$inferSelect>();
-	if (endpointsChanged) {
-		const admission = await admitTimeEntryAppend(
-			tx,
-			{ organizationId, employeeId },
-			"completed_work_correction",
-		);
-		if (admission.kind === "review_required") {
-			throw new TimeEntryAppendReviewRequiredError(admission.requirement);
-		}
-		const append = admission.append;
-		for (const endpoint of [
-			{
-				kind: "clock_in" as const,
-				changed: changes.clockIn,
-				command: requested.clockIn,
-				original: originalClockIn,
-			},
-			{
-				kind: "clock_out" as const,
-				changed: changes.clockOut,
-				command: requested.clockOut,
-				original: originalClockOut,
-			},
-		]) {
-			if (!endpoint.changed || endpoint.command.kind !== "set") continue;
-			const timestamp = dateFromInstant(parseInstant(endpoint.command.at));
-			const previousHash = append.predecessor?.hash ?? null;
-			const previousEntryId = append.predecessor?.id ?? null;
-			const [entry] = await tx
-				.insert(timeEntry)
-				.values({
-					employeeId,
-					organizationId,
-					type: "correction",
-					timestamp,
-					hash: calculateHash({
-						employeeId,
-						type: "correction",
-						timestamp: timestamp.toISOString(),
-						previousHash,
-					}),
-					previousHash,
-					previousEntryId,
-					replacesEntryId: endpoint.original.id,
-					notes: requested.notes,
-					ipAddress: input.request.ipAddress,
-					deviceInfo: input.request.deviceInfo,
-					createdBy: input.actorUserId,
-					utcOffsetMinutes: endpoint.command.utcOffsetMinutes,
-					timezone: endpoint.command.timezone,
-					timezoneSource: endpoint.command.timezoneSource,
-				})
-				.returning();
-			if (!entry) throw new Error("Correction entry insert failed");
-			await append.record({ id: entry.id, hash: entry.hash, previousEntryId, previousHash });
-			const superseded = await tx
-				.update(timeEntry)
-				.set({ isSuperseded: true, supersededById: entry.id })
-				.where(
-					and(
-						eq(timeEntry.id, endpoint.original.id),
-						eq(timeEntry.organizationId, organizationId),
-						eq(timeEntry.employeeId, employeeId),
-						eq(timeEntry.isSuperseded, false),
-					),
-				)
-				.returning({ id: timeEntry.id });
-			if (superseded.length !== 1) throw alreadyCorrected();
-			replacements.set(endpoint.original.id, entry);
-			correctionEntries.push(entry);
-			corrections.push({
-				endpoint: endpoint.kind,
-				entryId: entry.id,
-				replacesEntryId: endpoint.original.id,
-				previousEntryId,
-				previousHash,
-			});
-		}
-	}
-	const resultClockIn = replacements.get(originalClockIn.id) ?? originalClockIn;
-	const resultClockOut = replacements.get(originalClockOut.id) ?? originalClockOut;
-
-	const vehicle = vehicleUseColumns(resulting.vehicleUse);
-	const startAt = dateFromInstant(resulting.startAt);
-	const endAt = dateFromInstant(resulting.endAt);
-	const updatedAt = new Date();
-	const resultRevision = period.graphRevision + 1;
-	const updated = await tx
-		.update(workPeriod)
-		.set({
-			clockInId: resultClockIn.id,
-			clockOutId: resultClockOut.id,
-			startTime: startAt,
-			endTime: endAt,
-			durationMinutes: resulting.durationMinutes,
-			projectId: resulting.projectId,
-			isBillable,
-			taskId: resulting.taskId,
-			workCategoryId: resulting.workCategoryId,
-			workLocationType: resulting.workLocationType as WorkLocationType | null,
-			vehicleKind: vehicle.vehicleKind,
-			vehicleId: vehicle.vehicleId,
-			odometerStartKm: vehicle.odometerStartKm,
-			odometerEndKm: vehicle.odometerEndKm,
-			drivenDistanceKm: vehicle.drivenDistanceKm,
-			graphRevision: resultRevision,
-			updatedAt,
-		})
-		.where(
-			and(
-				eq(workPeriod.id, period.id),
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.employeeId, employeeId),
-				eq(workPeriod.clockInId, period.clockInId),
-				eq(workPeriod.clockOutId, period.clockOutId),
-				eq(workPeriod.graphRevision, period.graphRevision),
-				isNull(workPeriod.deletedAt),
-			),
-		)
-		.returning({ id: workPeriod.id });
-	if (updated.length !== 1) throw staleSource();
-
-	// Metadata-only changes keep the record's own, possibly historical, minutes.
-	const updatedRecords = await tx
-		.update(timeRecord)
-		.set({
-			...(endpointsChanged ? { startAt, endAt, durationMinutes: resulting.durationMinutes } : {}),
-			updatedAt,
-			updatedBy: input.actorUserId,
-		})
-		.where(
-			and(
-				eq(timeRecord.id, record.id),
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.employeeId, employeeId),
-				eq(timeRecord.recordKind, "work"),
-			),
-		)
-		.returning({ id: timeRecord.id });
-	if (updatedRecords.length !== 1) {
-		throw new CompletedWorkIntegrityError("Canonical work record update failed");
-	}
-	if (changes.workCategory || changes.workLocation || changes.vehicleUse) {
-		const updatedDetails = await tx
-			.update(timeRecordWork)
-			.set({
-				workCategoryId: resulting.workCategoryId,
-				workLocationType: resulting.workLocationType as WorkLocationType | null,
-				vehicleKind: vehicle.vehicleKind,
-				vehicleId: vehicle.vehicleId,
-				odometerStartKm: vehicle.odometerStartKm,
-				odometerEndKm: vehicle.odometerEndKm,
-				drivenDistanceKm: vehicle.drivenDistanceKm,
-			})
-			.where(
-				and(
-					eq(timeRecordWork.recordId, record.id),
-					eq(timeRecordWork.organizationId, organizationId),
-					eq(timeRecordWork.recordKind, "work"),
-				),
-			)
-			.returning({ recordId: timeRecordWork.recordId });
-		if (updatedDetails.length !== 1) {
-			throw new CompletedWorkIntegrityError("Canonical work metadata update failed");
-		}
-	}
-	// Only project allocations follow the project and its task; other allocation kinds stay.
-	if (changes.project || changes.task) {
-		if (projectAllocations.length > 0) {
-			await tx.delete(timeRecordAllocation).where(
-				and(
-					eq(timeRecordAllocation.organizationId, organizationId),
-					inArray(
-						timeRecordAllocation.id,
-						projectAllocations.map(({ id }) => id),
-					),
-				),
-			);
-		}
-		if (resulting.projectId) {
-			await tx.insert(timeRecordAllocation).values({
-				organizationId,
-				recordId: record.id,
-				allocationKind: "project",
-				projectId: resulting.projectId,
-				taskId: resulting.taskId,
-				weightPercent: 100,
-				isBillable,
-			});
-		}
-	} else if (changes.billable) {
-		// The same project's allocation carries the new billability (#900).
-		const updatedAllocations = await tx
-			.update(timeRecordAllocation)
-			.set({ isBillable })
-			.where(
-				and(
-					eq(timeRecordAllocation.organizationId, organizationId),
-					inArray(
-						timeRecordAllocation.id,
-						projectAllocations.map(({ id }) => id),
-					),
-				),
-			)
-			.returning({ id: timeRecordAllocation.id });
-		if (updatedAllocations.length !== 1) {
-			throw new CompletedWorkIntegrityError("Canonical project allocation update failed");
-		}
-	}
-
-	const followUps: CompletedWorkFollowUp[] = [];
-	if (endpointsChanged) {
-		// Required recalculation commits with the work: from the earliest UTC or
-		// captured-offset local date of every original and resulting endpoint.
-		// Entries without a captured offset fall back to their UTC date.
-		const [dirtyFromDate] = [originalClockIn, originalClockOut, resultClockIn, resultClockOut]
-			.map((entry) =>
-				earliestStartDate(instantFromDate(entry.timestamp), entry.utcOffsetMinutes ?? 0),
-			)
-			.sort();
-		if (!dirtyFromDate) throw new Error("Work balance refresh date is missing");
-		await markEmployeeWorkBalanceDirty({ employeeId, organizationId, dirtyFromDate }, tx);
-		followUps.push({ kind: "work_balance_refresh", delivery: "committed_intent", dirtyFromDate });
-	}
-
-	const segmentOf = (
-		clockIn: typeof timeEntry.$inferSelect,
-		clockOut: typeof timeEntry.$inferSelect,
-		values: {
-			startAt: Instant;
-			endAt: Instant;
-			durationMinutes: number | null;
-			projectId: string | null;
-			isBillable: boolean;
-			taskId: string | null;
-			workCategoryId: string | null;
-			workLocationType: string | null;
-			vehicleUse: WorkVehicleUse | null;
-		},
-	): AmendedSegment => ({
-		clockInEntryId: clockIn.id,
-		clockOutEntryId: clockOut.id,
-		startAt: instantToCanonicalString(values.startAt),
-		endAt: instantToCanonicalString(values.endAt),
-		durationMinutes: values.durationMinutes,
-		startUtcOffsetMinutes: clockIn.utcOffsetMinutes ?? null,
-		endUtcOffsetMinutes: clockOut.utcOffsetMinutes ?? null,
-		attribution: segmentAttribution(values),
-	});
+			expected: current.expected,
+			times:
+				changes.clockIn || changes.clockOut
+					? {
+							...(changes.clockIn ? { clockIn: amendedEndpoint(requested.clockIn) } : {}),
+							...(changes.clockOut ? { clockOut: amendedEndpoint(requested.clockOut) } : {}),
+							notes: requested.notes,
+							entries: {
+								createdBy: input.actorUserId,
+								ipAddress: input.request.ipAddress,
+								deviceInfo: input.request.deviceInfo,
+							},
+							appendOperation: "completed_work_correction",
+						}
+					: undefined,
+			attribution: attributionPatch(plan, requested.billable),
+			actorUserId: input.actorUserId,
+		}),
+	);
+	const parts = new Set(amendment.changes.attribution);
 	const result: AmendCompletedWorkResult = {
 		version: AMEND_COMPLETED_WORK_RESULT_VERSION,
-		operationId: command.operationId,
+		operationId: input.command.operationId,
 		owner: { employeeId },
 		actor: { kind: "human", userId: input.actorUserId },
 		authority: input.authority,
 		intent: requested,
 		workPeriodId: period.id,
-		canonicalRecordId: record.id,
-		source: segmentOf(originalClockIn, originalClockOut, {
-			startAt: instantFromDate(period.startTime),
-			endAt: instantFromDate(period.endTime),
-			durationMinutes: period.durationMinutes,
-			projectId: period.projectId,
-			taskId: period.taskId,
-			isBillable: period.isBillable,
-			workCategoryId: period.workCategoryId,
-			workLocationType: period.workLocationType,
-			vehicleUse: sourceVehicleUse,
+		canonicalRecordId: amendment.segment.canonicalRecordId,
+		source: amendedSegment(amendment.source.segment),
+		segment: amendedSegment(amendment.segment),
+		changes: receiptChanges({
+			clockIn: amendment.changes.clockIn,
+			clockOut: amendment.changes.clockOut,
+			project: parts.has("project"),
+			task: parts.has("task"),
+			workCategory: parts.has("work_category"),
+			workLocation: parts.has("work_location"),
+			billable: parts.has("billable"),
+			vehicleUse: parts.has("vehicle_use"),
 		}),
-		segment: segmentOf(resultClockIn, resultClockOut, { ...resulting, isBillable }),
-		changes: receiptChanges(changes),
-		corrections,
-		revisions: { workPeriod: { source: period.graphRevision, result: resultRevision } },
-		append: { admission: "append", used: endpointsChanged },
+		corrections: amendment.appended.corrections.map((correction) => ({
+			endpoint: correction.endpoint,
+			entryId: correction.entryId,
+			replacesEntryId: correction.replacesEntryId,
+			previousEntryId: correction.previousEntryId,
+			previousHash: correction.previousHash,
+		})),
+		revisions: {
+			workPeriod: { source: amendment.source.revision, result: amendment.after.revision },
+		},
+		append: {
+			admission: amendment.appended.admission,
+			used: amendment.appended.corrections.length > 0,
+		},
 		approvalState: period.approvalStatus,
-		followUps,
+		followUps: [
+			{
+				kind: "work_balance_refresh",
+				delivery: "committed_intent",
+				dirtyFromDate: amendment.effects.workBalanceDirtyFromDate,
+			},
+		],
 	};
-	await insertReceipt(tx, input, period.id, result);
+	return { result, correctionEntries: amendment.appended.entries };
+}
 
-	return { disposition: "executed", result, correctionEntries };
+/** A set endpoint as work records takes it: the instant and its capture. */
+function amendedEndpoint(command: EndpointCommand): AmendedEndpoint | undefined {
+	if (command.kind !== "set") return undefined;
+	return {
+		at: parseInstant(command.at),
+		capture: {
+			utcOffsetMinutes: command.utcOffsetMinutes,
+			timezone: command.timezone,
+			timezoneSource: command.timezoneSource,
+		},
+	};
+}
+
+/**
+ * The attribution patch work records applies: the parts the request changes,
+ * named by their resulting value, and an explicit billability. Work records
+ * applies the rules again (the task follows the project, a new project takes
+ * its billable default).
+ */
+function attributionPatch(
+	plan: ReturnType<typeof planCompletedWorkAmendment>,
+	billable: BillableIntent | undefined,
+): AmendAttributionPatch | undefined {
+	const { changes, result } = plan;
+	const patch: AmendAttributionPatch = {
+		...(changes.project ? { project: result.projectId } : {}),
+		...(changes.task ? { task: result.taskId } : {}),
+		...(changes.workCategory ? { workCategoryId: result.workCategoryId } : {}),
+		...(changes.workLocation
+			? { workLocationType: result.workLocationType as WorkLocationType | null }
+			: {}),
+		...(changes.vehicleUse ? { vehicleUse: result.vehicleUse } : {}),
+		...(billable?.kind === "set" ? { billable: billable.billable } : {}),
+	};
+	return Object.keys(patch).length > 0 ? patch : undefined;
+}
+
+/** A work records segment in the receipt's segment shape (receipt version 1). */
+function amendedSegment(segment: WorkSegment): AmendedSegment {
+	const { attribution } = segment;
+	return {
+		clockInEntryId: segment.clockInEntryId,
+		clockOutEntryId: segment.clockOutEntryId,
+		startAt: segment.startAt,
+		endAt: segment.endAt,
+		durationMinutes: segment.durationMinutes,
+		startUtcOffsetMinutes: segment.startUtcOffsetMinutes,
+		endUtcOffsetMinutes: segment.endUtcOffsetMinutes,
+		attribution: segmentAttribution({
+			projectId: attribution.projectId,
+			taskId: attribution.taskId ?? null,
+			isBillable: attribution.isBillable ?? false,
+			workCategoryId: attribution.workCategoryId,
+			workLocationType: attribution.workLocationType,
+			vehicleUse: attribution.vehicleUse ?? null,
+		}),
+	};
 }
 
 /** Replacement attribution must be eligible for the owner, re-checked under locks. */
@@ -1348,11 +1092,12 @@ async function assertAttributionEligible(
  * earlier revision cannot commit over this change.
  */
 async function amendActiveAttribution(
-	tx: TransactionClient,
+	scope: SealedWorkTransactionScope,
 	input: AmendCompletedWorkInput,
 	period: typeof workPeriod.$inferSelect,
 	teamId: string | null,
-): Promise<AmendCompletedWorkReceipt> {
+): Promise<Omit<AmendCompletedWorkReceipt, "disposition">> {
+	const tx = scope.db;
 	const { organizationId, employeeId, command, intent: requested } = input;
 	const source = {
 		projectId: period.projectId,
@@ -1455,12 +1200,11 @@ async function amendActiveAttribution(
 		changes: receiptChanges({ clockIn: false, clockOut: false, ...changes }),
 		corrections: [],
 		revisions: { workPeriod: { source: period.graphRevision, result: resultRevision } },
-		append: { admission: "append", used: false },
+		append: { admission: scope.admission, used: false },
 		approvalState: period.approvalStatus,
 		followUps: [],
 	};
-	await insertReceipt(tx, input, period.id, result);
-	return { disposition: "executed", result, correctionEntries: [] };
+	return { result, correctionEntries: [] };
 }
 
 async function insertReceipt(

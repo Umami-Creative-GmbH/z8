@@ -5,7 +5,7 @@ import { PreviouslyTakenVacationExplanation } from "@/components/absences/previo
 import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { use, useEffect, useId, useState } from "react";
+import { use, useEffect, useId, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import {
@@ -13,6 +13,7 @@ import {
 	VacationAllowanceExplanation,
 } from "@/components/absences/vacation-allowance-explanation";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -99,7 +100,6 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [revision, setRevision] = useState(0);
 	const [historicalAdminOrganizationId, setHistoricalAdminOrganizationId] = useState<string | null>(
 		null,
 	);
@@ -200,12 +200,13 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 		},
 	});
 
-	useEffect(() => {
-		let cancelled = false;
+	const loadGeneration = useRef(0);
 
-		async function loadData() {
+	const runLoadData = useCallback(
+		async (background = false) => {
+			const generation = ++loadGeneration.current;
 			const current = await getCurrentEmployee();
-			if (cancelled) return;
+			if (generation !== loadGeneration.current) return;
 			if (!current) {
 				setNoEmployee(true);
 				return;
@@ -213,31 +214,43 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 
 			setHistoricalAdminOrganizationId(current.role === "admin" ? current.organizationId : null);
 			const balanceResult = await getEmployeeVacationBalance(employeeId);
-			if (cancelled || !balanceResult.success) return;
+			if (generation !== loadGeneration.current || !balanceResult.success) return;
 			const { year } = balanceResult.data;
 
-			const [empResult, policyResult, policiesResult, assignmentResult, adjustmentSummaryResult] =
-				await Promise.all([
-					getEmployeeAllowance(employeeId, year),
-					getVacationPolicies(current.organizationId),
-					getAssignmentPolicies(current.organizationId),
-					getEmployeePolicyAssignment(employeeId),
-					getEmployeeAdjustmentSummary(employeeId, year),
-				]);
-			if (cancelled) return;
+			const [
+				empResult,
+				policyResult,
+				policiesResult,
+				assignmentResult,
+				adjustmentSummaryResult,
+			] = await Promise.all([
+				getEmployeeAllowance(employeeId, year),
+				getVacationPolicies(current.organizationId),
+				getAssignmentPolicies(current.organizationId),
+				getEmployeePolicyAssignment(employeeId),
+				getEmployeeAdjustmentSummary(employeeId, year),
+			]);
+			if (generation !== loadGeneration.current) return;
 
 			setBalanceView(balanceResult.data);
 			if (empResult.success && empResult.data) {
 				setEmployee(empResult.data as EmployeeAllowanceView);
-				const allowance = empResult.data.vacationAllowances[0];
-				const policyId = assignmentResult.success
+				if (!background || !form.store.state.isDirty) {
+					const allowance = empResult.data.vacationAllowances[0];
+					const policyId = assignmentResult.success
 					? assignmentResult.data?.policyId || DEFAULT_POLICY_VALUE
 					: DEFAULT_POLICY_VALUE;
-				form.setFieldValue("policyId", policyId);
-				form.setFieldValue("customAnnualDays", allowance?.customAnnualDays || "");
-				form.setFieldValue("customCarryoverDays", allowance?.customCarryoverDays || "");
-				form.setFieldValue("adjustmentDays", "");
-				form.setFieldValue("adjustmentReason", "");
+					form.reset(
+						{
+							policyId,
+							customAnnualDays: allowance?.customAnnualDays || "",
+							customCarryoverDays: allowance?.customCarryoverDays || "",
+							adjustmentDays: "",
+							adjustmentReason: "",
+						},
+						{ keepDefaultValues: true },
+					);
+				}
 			}
 
 			if (policyResult.success && policyResult.data) {
@@ -254,18 +267,26 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 			if (assignmentResult.success) {
 				setCurrentAssignment(assignmentResult.data as EmployeePolicyAssignment | null);
 			}
-			if (adjustmentSummaryResult.success) setAdjustmentSummary(adjustmentSummaryResult.data);
-		}
-
-		void loadData();
+			if (adjustmentSummaryResult.success)
+				setAdjustmentSummary(adjustmentSummaryResult.data);
+		},
+		[employeeId, form],
+	);
+	useViewRefresh(() => runLoadData(true));
+	useEffect(() => {
+		let active = true;
+		queueMicrotask(() => {
+			if (active) void runLoadData();
+		});
 		return () => {
-			cancelled = true;
+			active = false;
+			loadGeneration.current += 1;
 		};
-	}, [employeeId, form, revision]);
+	}, [runLoadData]);
 
 	return {
 		historicalAdminOrganizationId,
-		reload: () => setRevision((value) => value + 1),
+		reload: () => runLoadData(true),
 		adjustmentSummary,
 		balanceView,
 		currentAssignment,

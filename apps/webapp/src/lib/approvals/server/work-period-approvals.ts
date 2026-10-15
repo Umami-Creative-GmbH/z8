@@ -48,7 +48,15 @@ import {
 } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { applyPolicyClockOutTerminalBreakInTransaction } from "@/lib/time-tracking/policy-clock-out-terminal-break";
 import { isUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import {
+	applyWorkRecordChange,
+	refusalError,
+	workRecordScopeForFinalizer,
+} from "@/lib/time-tracking/work-records";
+import {
+	holdFinalizerEmployeeLocks,
+	type WorkTransactionClient,
+} from "@/lib/time-tracking/work-transaction";
 import { decodeApprovalDatabaseJsonText } from "../approval-database-row";
 import { recordLegacyTimeDecisionIntent } from "../delivery/intents";
 import { kickApprovalDelivery } from "../delivery/kick";
@@ -1662,6 +1670,14 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	const fail = ordinaryWorkPeriodFinalizationConflict;
 	const evidence = validateTerminalEvidence(input);
 	const db: ApprovalDbService["db"] = input.dbService.db;
+	const workDb = db as WorkTransactionClient;
+	const owner = {
+		organizationId: input.organizationId,
+		employeeId: input.requesterEmployeeId,
+	};
+	// The decision changes completed work through work records (#1227): outside
+	// the owner's coordinated transaction, the employee locks come first.
+	await holdFinalizerEmployeeLocks(workDb, owner);
 	const periods = await db
 		.select({
 			id: workPeriod.id,
@@ -1682,6 +1698,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			endTime: workPeriod.endTime,
 			durationMinutes: workPeriod.durationMinutes,
 			deletedAt: workPeriod.deletedAt,
+			graphRevision: workPeriod.graphRevision,
 		})
 		.from(workPeriod)
 		.where(
@@ -2019,59 +2036,28 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	}
 
 	const finalizedAt = dateFromInstant(input.finalizedAt);
-	const updatedPeriods = await db
-		.update(workPeriod)
-		.set({
-			approvalStatus: terminalStatus,
-			pendingChanges: null,
-			updatedAt: finalizedAt,
-		})
-		.where(
-			and(
-				eq(workPeriod.id, period.id),
-				eq(workPeriod.organizationId, period.organizationId),
-				eq(workPeriod.employeeId, period.employeeId),
-				eq(workPeriod.clockInId, period.clockInId),
-				eq(workPeriod.clockOutId, period.clockOutId),
-				eq(workPeriod.canonicalRecordId, period.canonicalRecordId),
-				input.expectedApprovalWorkflowId === null
-					? isNull(workPeriod.approvalWorkflowId)
-					: eq(workPeriod.approvalWorkflowId, input.expectedApprovalWorkflowId),
-				eq(workPeriod.startTime, period.startTime),
-				eq(workPeriod.endTime, period.endTime),
-				eq(workPeriod.durationMinutes, period.durationMinutes),
-				eq(workPeriod.approvalStatus, "pending"),
-				eq(workPeriod.isActive, false),
-				isNull(workPeriod.deletedAt),
-			),
-		)
-		.returning({ id: workPeriod.id });
-	if (updatedPeriods.length !== 1 || updatedPeriods[0]?.id !== period.id) {
-		throw fail();
-	}
-
-	const updatedRecords = await db
-		.update(timeRecord)
-		.set({
-			approvalState: terminalStatus,
-			updatedAt: finalizedAt,
-			updatedBy: input.actorUserId,
-		})
-		.where(
-			and(
-				eq(timeRecord.id, record.id),
-				eq(timeRecord.organizationId, record.organizationId),
-				eq(timeRecord.employeeId, record.employeeId),
-				eq(timeRecord.recordKind, "work"),
-				eq(timeRecord.startAt, record.startAt),
-				eq(timeRecord.endAt, record.endAt),
-				eq(timeRecord.durationMinutes, record.durationMinutes),
-				eq(timeRecord.approvalState, "pending"),
-			),
-		)
-		.returning({ id: timeRecord.id });
-	if (updatedRecords.length !== 1 || updatedRecords[0]?.id !== record.id) {
-		throw fail();
+	// Work records decides the approval state on both records, clears the pending
+	// changes and applies the effects (the work balance mark among them) inside
+	// this transaction. The pending record is this finalizer's precondition.
+	const decided = await applyWorkRecordChange(
+		await workRecordScopeForFinalizer(workDb, owner),
+		{
+			kind: "amend",
+			...owner,
+			expected: {
+				workPeriodId: period.id,
+				revision: period.graphRevision,
+				clockInId: period.clockInId,
+				clockOutId: period.clockOutId,
+				startAt: instantFromDate(period.startTime),
+				endAt: instantFromDate(period.endTime),
+			},
+			approval: terminalStatus,
+			actorUserId: input.actorUserId,
+		},
+	);
+	if (decided.kind !== "amended") {
+		throw decided.kind === "month_closed" ? refusalError(decided) : fail();
 	}
 	// The decision is recorded on the originating record before any split, so the
 	// generated segment's lineage names it instead of a fabricated approval.
@@ -2096,7 +2082,9 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		input.transition.kind === "approve" &&
 		!historicalPolicyClockOut
 	) {
-		if (!sourceBreakPolicySnapshot || !sourceSurchargeSnapshot) throw fail();
+		if (!sourceBreakPolicySnapshot || !sourceSurchargeSnapshot || !maintenance) throw fail();
+		// Work records applies the division's effects inside this transaction, the
+		// work balance mark included; maintenance keeps the surcharges of both halves.
 		const breakResult = await applyPolicyClockOutTerminalBreakInTransaction({
 			dbService: input.dbService,
 			organizationId: input.organizationId,
@@ -2116,31 +2104,23 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			decisionRecordId: decision.id,
 			period: {
 				id: period.id,
-				organizationId: period.organizationId,
-				employeeId: period.employeeId,
 				clockInId: period.clockInId,
 				clockOutId: period.clockOutId,
-				canonicalRecordId: period.canonicalRecordId,
-				approvalWorkflowId: period.approvalWorkflowId,
 				startTime: period.startTime,
 				endTime: period.endTime,
-				durationMinutes: period.durationMinutes,
-				projectId: period.projectId,
-				taskId: period.taskId,
-				workCategoryId: period.workCategoryId,
-				workLocationType: period.workLocationType,
 			},
-			adjustedAt: input.finalizedAt,
 			breakPolicySnapshot: sourceBreakPolicySnapshot,
-			surchargeSnapshot: sourceSurchargeSnapshot,
 		});
-		maintenance = breakResult.maintenance;
 		if (breakResult.kind === "adjusted") {
 			adjustment = {
 				kind: "break_enforced",
 				breakMinutes: breakResult.breakMinutes,
 			};
 			resultPeriodIds.push(breakResult.secondPeriodId);
+			maintenance = {
+				...maintenance,
+				surchargePeriodIds: [period.id, breakResult.secondPeriodId],
+			};
 		} else {
 			adjustment = { kind: "break_not_required" };
 		}
@@ -2169,7 +2149,13 @@ export async function finalizeOrdinaryWorkPeriodTerminalInTransaction(
 	try {
 		return await finalizeOrdinaryWorkPeriodTerminal(input);
 	} catch (error) {
-		throw unresolvedWorkPeriodReviewFrom(error) ?? ordinaryWorkPeriodFinalizationConflict();
+		// A closed month is refused as such, whether the terminal break's pre-check or
+		// the database (Z8M01, ADR 0004) found it: never a finalization conflict.
+		throw (
+			monthClosedRefusalOf(error) ??
+			unresolvedWorkPeriodReviewFrom(error) ??
+			ordinaryWorkPeriodFinalizationConflict()
+		);
 	}
 }
 
@@ -2265,6 +2251,7 @@ function finalizeCurrentWorkPeriodDecision(
 					finalizedAt: systemClock.nowInstant(),
 				}),
 			catch: (error) =>
+				monthClosedRefusalOf(error) ??
 				unresolvedWorkPeriodReviewFrom(error) ??
 				conflict("Ordinary work-period finalization conflict"),
 		});
@@ -2369,13 +2356,19 @@ export async function completeOrdinaryWorkPeriodDecisionAfterCommit<
 	return execution;
 }
 
+/**
+ * The after-commit maintenance of a decided ordinary work period: its
+ * surcharges. The work balance is no longer marked here: every decision, the
+ * auto-completed manual submission's included, decides the approval state
+ * through work records, which marks the balance inside the decision's
+ * transaction (#1227).
+ */
 export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 	maintenance: WorkPeriodMaintenanceFacts,
 	dependencies: {
 		reconcileSurcharges: (
 			maintenance: WorkPeriodMaintenanceFacts,
 		) => Promise<void>;
-		markWorkBalanceDirty: typeof markEmployeeWorkBalanceDirty;
 	} = {
 		reconcileSurcharges: (facts) =>
 			runtime.runPromise(
@@ -2390,28 +2383,12 @@ export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 					});
 				}).pipe(Effect.provide(SurchargeServiceLive)),
 			),
-		markWorkBalanceDirty: markEmployeeWorkBalanceDirty,
 	},
 ): Promise<void> {
-	const surcharge = Promise.resolve().then(() =>
-		dependencies.reconcileSurcharges(maintenance),
-	);
-	const balance = Promise.resolve().then(() =>
-		dependencies.markWorkBalanceDirty({
-			organizationId: maintenance.organizationId,
-			employeeId: maintenance.employeeId,
-			dirtyFromDate: maintenance.dirtyFromDate,
-		}),
-	);
-	const settled = await Promise.allSettled([surcharge, balance]);
-	const failures = settled.flatMap((result) =>
-		result.status === "rejected" ? [result.reason] : [],
-	);
-	if (failures.length > 0) {
-		throw new AggregateError(
-			failures,
-			"Ordinary work-period maintenance failed",
-		);
+	try {
+		await dependencies.reconcileSurcharges(maintenance);
+	} catch (error) {
+		throw new AggregateError([error], "Ordinary work-period maintenance failed");
 	}
 }
 

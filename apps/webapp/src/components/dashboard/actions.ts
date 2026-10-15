@@ -1313,7 +1313,7 @@ export async function getVacationBalance(): Promise<
 /**
  * Get hydration widget data for dashboard
  */
-export async function getHydrationWidgetData(): Promise<
+export async function getHydrationWidgetData(options?: { fresh?: boolean }): Promise<
 	ServerActionResult<{
 		enabled: boolean;
 		currentStreak: number;
@@ -1428,45 +1428,47 @@ export async function getHydrationWidgetData(): Promise<
 				});
 				const sortedTeamIds = teamIds.toSorted();
 
-				return unstable_cache(
-					async () => {
-						const candidates = await dbService.db
-							.select({
-								employeeId: employee.id,
-								userId: employee.userId,
-								userName: user.name,
-								currentStreak: hydrationStats.currentStreak,
-							})
-							.from(employee)
-							.innerJoin(user, eq(employee.userId, user.id))
-							.leftJoin(hydrationStats, eq(hydrationStats.userId, employee.userId))
-							.leftJoin(
-								teamMembership,
-								and(
-									eq(teamMembership.employeeId, employee.id),
-									eq(teamMembership.organizationId, activeOrganizationId),
-									inArray(teamMembership.teamId, sortedTeamIds),
-								),
-							)
-							.where(
-								and(
-									eq(employee.organizationId, activeOrganizationId),
-									eq(employee.isActive, true),
-									or(inArray(employee.teamId, sortedTeamIds), isNotNull(teamMembership.id)),
-								),
-							);
-
-						return buildTeamStreakLeaders(
-							candidates.map((candidate) => ({
-								employeeId: candidate.employeeId,
-								userId: candidate.userId,
-								displayName: candidate.userName || "Team member",
-								currentStreak: candidate.currentStreak,
-							})),
-							session.user.id,
-							{ limit: 5, minimumParticipants: 2 },
+				const load = async () => {
+					const candidates = await dbService.db
+						.select({
+							employeeId: employee.id,
+							userId: employee.userId,
+							userName: user.name,
+							currentStreak: hydrationStats.currentStreak,
+						})
+						.from(employee)
+						.innerJoin(user, eq(employee.userId, user.id))
+						.leftJoin(hydrationStats, eq(hydrationStats.userId, employee.userId))
+						.leftJoin(
+							teamMembership,
+							and(
+								eq(teamMembership.employeeId, employee.id),
+								eq(teamMembership.organizationId, activeOrganizationId),
+								inArray(teamMembership.teamId, sortedTeamIds),
+							),
+						)
+						.where(
+							and(
+								eq(employee.organizationId, activeOrganizationId),
+								eq(employee.isActive, true),
+								or(inArray(employee.teamId, sortedTeamIds), isNotNull(teamMembership.id)),
+							),
 						);
-					},
+
+					return buildTeamStreakLeaders(
+						candidates.map((candidate) => ({
+							employeeId: candidate.employeeId,
+							userId: candidate.userId,
+							displayName: candidate.userName || "Team member",
+							currentStreak: candidate.currentStreak,
+						})),
+						session.user.id,
+						{ limit: 5, minimumParticipants: 2 },
+					);
+				};
+				if (options?.fresh === true) return load();
+				return unstable_cache(
+					load,
 					cacheConfig.keyParts,
 					cacheConfig.options,
 				)();

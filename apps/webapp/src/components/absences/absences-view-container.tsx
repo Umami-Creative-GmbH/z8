@@ -4,6 +4,7 @@ import { IconCalendar, IconPlus, IconTable } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
 import { getAbsenceCalendarYearData } from "@/app/[locale]/(app)/absences/actions";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toLocalDateString } from "@/lib/absences/date-utils";
@@ -52,13 +53,15 @@ export function AbsencesViewContainer({
 		holidays,
 	}));
 	const latestRequestedYearRef = useRef(currentYear);
+	const yearRequestId = useRef(0);
+	const [selectedYear, setSelectedYear] = useState(currentYear);
 
 	if (calendarData.sourceAbsences !== absences || calendarData.sourceHolidays !== holidays) {
 		setCalendarData({
 			sourceAbsences: absences,
 			sourceHolidays: holidays,
-			absences,
-			holidays,
+			absences: selectedYear === currentYear ? absences : calendarData.absences,
+			holidays: selectedYear === currentYear ? holidays : calendarData.holidays,
 		});
 	}
 
@@ -86,11 +89,13 @@ export function AbsencesViewContainer({
 		setRequestDialogOpen(true);
 	};
 
-	const reloadYearData = async (year: number) => {
+	const reloadYearData = async (year: number, reportFailure = false) => {
+		const requestId = ++yearRequestId.current;
 		latestRequestedYearRef.current = year;
 		try {
 			const data = await getAbsenceCalendarYearData(year);
-			const isLatestRequest = latestRequestedYearRef.current === year;
+			const isLatestRequest =
+				latestRequestedYearRef.current === year && requestId === yearRequestId.current;
 			if (!isLatestRequest) {
 				return;
 			}
@@ -101,10 +106,14 @@ export function AbsencesViewContainer({
 			}));
 		} catch (error) {
 			console.error("Failed to load absence calendar year data", error);
+			if (reportFailure) throw error;
 		}
 	};
 
+	useViewRefresh(() => reloadYearData(latestRequestedYearRef.current, true));
+
 	const handleYearChange = (year: number) => {
+		setSelectedYear(year);
 		void reloadYearData(year);
 	};
 
@@ -136,7 +145,7 @@ export function AbsencesViewContainer({
 					<AbsenceYearCalendar
 						absences={calendarAbsences}
 						holidays={calendarHolidays}
-						initialYear={currentYear}
+						initialYear={selectedYear}
 						onDayClick={handleDayClick}
 						onYearChange={handleYearChange}
 					/>

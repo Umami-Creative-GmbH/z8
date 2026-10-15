@@ -64,4 +64,20 @@ describe("useWidgetData", () => {
 
 		await waitFor(() => expect(toastErrorMock).toHaveBeenCalledWith("Failed to load quick stats"));
 	});
+	it("keeps saved widget data and reports a failed refresh action", async () => {
+		const fetcher = vi
+			.fn()
+			.mockResolvedValueOnce({ success: true, data: { count: 3 } })
+			.mockResolvedValueOnce({ success: false, error: "Unavailable" });
+		const { result } = renderHook(() =>
+			useWidgetData(fetcher, { errorMessage: "Failed to load quick stats" }),
+		);
+		await waitFor(() => expect(result.current.data).toEqual({ count: 3 }));
+		act(() => result.current.refetch());
+		await waitFor(() => expect(toastErrorMock).toHaveBeenCalledWith("Failed to load quick stats"));
+		expect(result.current.data).toEqual({ count: 3 });
+		expect(result.current.refreshing).toBe(false);
+	});
+
+
 });

@@ -156,6 +156,7 @@
         "deleteTitle": "Slett tilordning",
         "description": "Beskrivelse",
         "formatSpecificHint": "Konfigurer lønnsartkoder for hvert lønnsformat. Minst én er påkrevd.",
+        "loadFailed": "Kunne ikke laste inn lønnsarttilordninger",
         "noMappings": "Ingen tilordninger er konfigurert ennå",
         "saveError": "Kunne ikke lagre tilordning",
         "saveSuccess": "Tilordning lagret",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Gjennomgå godkjenningsinnboks",
+        "employees": "Se over ansatte",
         "payrollExport": "Åpne innstillinger for lønnseksport",
         "timeTracking": "Gjennomgå timeføring",
         "travelExpenses": "Gjennomgå reiseutgifter"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Ansatt",
         "noNumber": "Ikke angitt",
-        "number": "Ansattnummer"
+        "personnelIdentifier": "Ansattidentifikator",
+        "personnelNumber": "Ansattnummer"
       },
       "checks": {
         "count": "Antall",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Ansatte som en lønnseksport ville føre under samme ansattidentifikator. Lønnssystemet ville slå dem sammen, så eksporten avvises inntil hver ansatt har sin egen.",
+          "title": "Delte ansattidentifikatorer"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Alle aktive ansatte har bekreftet ansettelseshistorikk for denne lønnsperioden.",
           "descriptionWarning": "Noen aktive ansatte har ikke bekreftet ansettelseshistorikk for denne lønnsperioden."

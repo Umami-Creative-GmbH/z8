@@ -4,7 +4,6 @@ import { IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect } from "react";
 import { toast } from "sonner";
 import {
 	createSurchargeModel,
@@ -26,6 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
+import { useEditSession } from "@/hooks/use-edit-session";
 import type { SurchargeModelWithRules } from "@/lib/surcharges/validation";
 import { surchargeModelFormSchema } from "@/lib/surcharges/validation";
 import { SurchargeRuleEditor, type SurchargeRuleFormValues } from "./surcharge-rule-editor";
@@ -91,7 +91,10 @@ export function SurchargeModelDialog({
 	});
 
 	// Reset form when dialog opens/closes or when editing model changes
-	useEffect(() => {
+	useEditSession({
+		open,
+		scope: editingModel?.id ?? "create",
+		initialize: () => {
 		if (open) {
 			if (editingModel) {
 				form.reset({
@@ -124,7 +127,8 @@ export function SurchargeModelDialog({
 				});
 			}
 		}
-	}, [open, editingModel, form]);
+	},
+	});
 
 	// Create mutation
 	const createMutation = useMutation({

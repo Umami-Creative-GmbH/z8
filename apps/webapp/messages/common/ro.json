@@ -373,6 +373,8 @@
     "previous": "Anterior",
     "recovering": "Se recuperează...",
     "refresh": "Reîmprospătează",
+    "refreshData": "Reîmprospătează datele",
+    "refreshDataFailed": "Datele nu au putut fi reîmprospătate. Vă rugăm să încercați din nou.",
     "refreshing": "Se reîmprospătează...",
     "reject": "Respinge",
     "rejecting": "Se respinge…",

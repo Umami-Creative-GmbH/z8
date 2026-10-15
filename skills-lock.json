@@ -209,7 +209,7 @@
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/stripe-best-practices/SKILL.md",
-      "computedHash": "94f635a700cd69374f8e2bd3fb894320f3467c404ac3c6e3e86c38b0b0e3ec36"
+      "computedHash": "d7f84e7c9fb520877c615cd19072136170c68bc5998ad0341f624a8a577c8469"
     },
     "stripe-projects": {
       "source": "stripe/ai",
@@ -263,7 +263,7 @@
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/upgrade-stripe/SKILL.md",
-      "computedHash": "3247d3130714389f9cb92c4f7c48e418761a5361155eb2e73bba822beace3e1d"
+      "computedHash": "e763c1c68d4ac8557bd92f49a585f5f5bff62319cc95cb660c1c9fca5682b5b2"
     },
     "vercel-composition-patterns": {
       "source": "vercel-labs/agent-skills",

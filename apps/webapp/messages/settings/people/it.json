@@ -43,8 +43,6 @@
         "editRealEmployee": "Modifica dipendente attivo",
         "editTitle": "Modifica dipendente",
         "employeeInformation": "Informazioni dipendente",
-        "employeeNumber": "Numero dipendente",
-        "employeeNumberDescription": "ID del sistema paghe esterno",
         "employeeNumberPlaceholder": "es. EMP-001",
         "firstName": "Nome",
         "firstNameDescription": "Visualizzato nell'account del dipendente",
@@ -64,6 +62,8 @@
         "manageEmployees": "gestisci dipendenti",
         "managers": "Manager",
         "noScheduleAssigned": "Nessun orario assegnato",
+        "personnelNumber": "Numero di matricola",
+        "personnelNumberDescription": "Il numero identificativo della tua organizzazione per questo dipendente, utilizzato nelle esportazioni delle paghe. Deve essere univoco, anche tra gli ex dipendenti.",
         "position": "Posizione",
         "positionDescription": "Qualifica o ruolo",
         "positionPlaceholder": "Inserisci posizione",
@@ -136,7 +136,7 @@
           "actions": "Azioni",
           "contract": "Contratto",
           "employee": "Dipendente",
-          "employeeNumber": "Numero dipendente",
+          "personnelNumber": "Numero di matricola",
           "position": "Posizione",
           "role": "Ruolo",
           "status": "Stato",
@@ -375,6 +375,10 @@
         "statusPreparing": "In preparazione",
         "statusReady": "Pronta",
         "title": "Esportazione dati personali"
+      },
+      "personnelNumber": {
+        "taken": "Questo numero di matricola appartiene a {name}. Ogni dipendente, attuale o precedente, deve avere il proprio numero.",
+        "takenByAnother": "Un altro dipendente ha già questo numero di matricola. Ogni dipendente, attuale o precedente, deve avere il proprio numero."
       },
       "tabs": {
         "employees": "Dipendenti",

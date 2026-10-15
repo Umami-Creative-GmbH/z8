@@ -121,6 +121,39 @@ describe("AbsencesViewContainer", () => {
 		});
 	});
 
+	it("keeps the selected year's data and open request when fresh server props arrive", async () => {
+		mockGetAbsenceCalendarYearData.mockResolvedValue({
+			absences: [],
+			holidays: [
+				{
+					id: "holiday-2027",
+					name: "Selected year holiday",
+					startDate: new Date(2027, 0, 6),
+					endDate: new Date(2027, 0, 6),
+					categoryId: "public",
+				},
+			],
+		});
+		const props = {
+			absences: [],
+			holidays: [],
+			categories,
+			currentYear: 2026,
+			currentDate: "2026-05-20",
+			organizationId: "org-1",
+			remainingDays: 10,
+		};
+		const { rerender } = render(<AbsencesViewContainer {...props} />);
+		fireEvent.click(screen.getByRole("button", { name: "Next year" }));
+		await waitFor(() =>
+			expect(screen.getAllByRole("button", { name: "6" })[0].className).toContain("bg-amber-100"),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Add absence" }));
+		rerender(<AbsencesViewContainer {...props} absences={[]} holidays={[]} />);
+		expect(screen.getAllByRole("button", { name: "6" })[0].className).toContain("bg-amber-100");
+		expect(screen.getByTestId("request-absence-dialog").getAttribute("data-open")).toBe("true");
+	});
+
 	it("reloads absence data after a request succeeds", async () => {
 		mockGetAbsenceCalendarYearData.mockResolvedValue({
 			absences: [

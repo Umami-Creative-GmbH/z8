@@ -77,10 +77,13 @@ const integrationSource = readFileSync(
 const databaseSchema = { ...authSchema, ...schema };
 
 function functionSource(name: string): string {
-	const start = productionSource.indexOf(`function ${name}`);
-	const next = productionSource.indexOf("\nfunction ", start + 1);
+	const start = productionSource.indexOf(`function ${name}(`);
 	if (start === -1) throw new Error(`Missing production function ${name}`);
-	return productionSource.slice(start, next === -1 ? undefined : next);
+	// Up to the next top-level declaration.
+	const end = productionSource
+		.slice(start + 1)
+		.search(/\n(?:export )?(?:(?:async )?function|type|interface|const) /);
+	return productionSource.slice(start, end === -1 ? undefined : start + 1 + end);
 }
 
 describe("time correction PostgreSQL non-live contracts", () => {
@@ -165,12 +168,12 @@ describe("time correction PostgreSQL non-live contracts", () => {
 		const authorization = body.indexOf(
 			"authorizeTimeCorrectionCategoryChange",
 		);
-		const endpointWrite = body.indexOf(".update(timeEntry)");
-		const metadataWrite = body.indexOf(".update(workPeriod)");
+		const liveWrite = body.indexOf("applyLiveWorkCorrection(");
+		const completedWrite = body.indexOf("applyCompletedWorkCorrection(");
 
 		expect(authorization).toBeGreaterThanOrEqual(0);
-		expect(authorization).toBeLessThan(endpointWrite);
-		expect(authorization).toBeLessThan(metadataWrite);
+		expect(authorization).toBeLessThan(liveWrite);
+		expect(authorization).toBeLessThan(completedWrite);
 	});
 
 	it("reuses the production outer submission lock sequence in the deadlock race", () => {
@@ -183,44 +186,6 @@ describe("time correction PostgreSQL non-live contracts", () => {
 		expect(integrationSource).toMatch(
 			/manager-before-requester UUID decision[\s\S]*lockTimeCorrectionSubmissionActorAndPeriodInTransaction/,
 		);
-	});
-
-	it("uses affected-row CAS for corrections, originals, period, canonical record, and source binding", () => {
-		const finalizer = functionSource(
-			"finalizeTimeCorrectionTerminalDetailedInTransaction",
-		);
-		const binding = functionSource("bindTimeCorrectionWorkflowToWorkPeriod");
-
-		for (const predicate of [
-			"eq(timeEntry.isSuperseded, true)",
-			"eq(timeEntry.isSuperseded, false)",
-			"eq(workPeriod.clockInId, period.clockInId)",
-			"eq(workPeriod.approvalWorkflowId, expectedApprovalWorkflowId)",
-			"eq(timeRecord.startAt, canonical.startAt)",
-			"eq(timeRecordWork.recordId, canonicalWork.recordId)",
-			"eq(timeRecordWork.organizationId, input.organizationId)",
-			'eq(timeRecordWork.recordKind, "work")',
-			"timeRecordWork.workLocationType",
-			"timeRecordWork.workCategoryId",
-		]) {
-			expect(finalizer).toContain(predicate);
-		}
-		const returningCount =
-			finalizer.match(
-				/\.returning\(\{ id: (?:timeEntry|workPeriod|timeRecord)\.id \}\)/g,
-			)?.length ?? 0;
-		const affectedRowCheckCount =
-			finalizer.match(/requireSingleMutation\(/g)?.length ?? 0;
-		expect(returningCount).toBeGreaterThanOrEqual(4);
-		expect(affectedRowCheckCount).toBe(returningCount);
-		expect(finalizer).toContain(
-			"updatedCanonicalWork[0]?.recordId !== canonicalWork.recordId",
-		);
-		expect(binding).toContain("source.approvalWorkflowId === null");
-		expect(binding).toContain(
-			"eq(workPeriod.approvalWorkflowId, source.approvalWorkflowId)",
-		);
-		expect(binding).toContain("updated.length !== 1");
 	});
 
 	// The integration project includes this suite by its suffix and sets

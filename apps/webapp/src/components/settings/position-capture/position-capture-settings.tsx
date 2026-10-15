@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLoader2, IconMapPin, IconTrash } from "@tabler/icons-react";
+import { IconLoader2, IconMapPin } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
@@ -10,7 +10,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
 	type PositionCaptureAdminData,
-	type PositionCaptureAssignmentData,
 	removePositionCaptureAssignmentAction,
 	type SavePositionCaptureSettingsInput,
 	savePositionCaptureSettingsAction,
@@ -19,18 +18,19 @@ import {
 import { positionCaptureErrorMessage } from "@/components/position-capture/error-message";
 import { formatRecordedPositionInstant } from "@/components/position-capture/format";
 import { PositionNoticeText } from "@/components/position-capture/position-notice-text";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+	FeatureSettingsTabs,
+	ScopedFeatureAssignments,
+} from "@/components/settings/scoped-feature-assignments";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
 	TFormControl,
@@ -52,19 +52,22 @@ interface PositionCaptureSettingsProps {
 	data: PositionCaptureAdminData;
 }
 
-type AssignmentTargetType = "organization" | "team" | "employee";
-
 /** Owner/admin position capture settings (#825): switch, purpose, retention, assignments, notices. */
-export function PositionCaptureSettings({ data }: PositionCaptureSettingsProps) {
+export function PositionCaptureSettings({
+	data,
+}: PositionCaptureSettingsProps) {
 	return (
-		<div className="space-y-6">
-			<CaptureSettingsForm data={data} />
-			<CaptureAssignments data={data} />
-			<NoticeHistory data={data} />
-		</div>
+		<FeatureSettingsTabs
+			settings={
+				<>
+					<CaptureSettingsForm data={data} />
+					<NoticeHistory data={data} />
+				</>
+			}
+			assignments={<CaptureAssignments data={data} />}
+		/>
 	);
 }
-
 function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -90,7 +93,10 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 				if (!result.success) {
 					toast.error(
 						positionCaptureErrorMessage(t, result.code) ??
-							t("settings.positionCapture.saveFailed", "Position capture settings were not saved"),
+							t(
+								"settings.positionCapture.saveFailed",
+								"Position capture settings were not saved",
+							),
 					);
 					return;
 				}
@@ -103,7 +109,12 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 						),
 					);
 				} else {
-					toast.success(t("settings.positionCapture.saved", "Position capture settings saved"));
+					toast.success(
+						t(
+							"settings.positionCapture.saved",
+							"Position capture settings saved",
+						),
+					);
 				}
 				router.refresh();
 			})().finally(() => {
@@ -137,8 +148,8 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 					</CardTitle>
 					<CardDescription>
 						{t(
-							"settings.positionCapture.captureDescription",
-							"Record an employee's position with their own clock-ins, clock-outs and breaks, only with their consent. Switching capture on applies to nobody until you assign it below.",
+							"settings.positionCapture.captureTabDescription",
+							"Record an employee's position with their own clock-ins, clock-outs and breaks, only with their consent. Switching capture on applies to nobody until you add an assignment on the Assignments tab.",
 						)}
 					</CardDescription>
 				</CardHeader>
@@ -161,7 +172,10 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
 									disabled={saving}
-									aria-label={t("settings.positionCapture.enabled", "Capture positions")}
+									aria-label={t(
+										"settings.positionCapture.enabled",
+										"Capture positions",
+									)}
 								/>
 							</div>
 						)}
@@ -216,7 +230,10 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 									? t(
 											"settings.positionCapture.retentionRange",
 											"Enter a whole number of days between {min} and {max}.",
-											{ min: POSITION_RETENTION_MIN_DAYS, max: POSITION_RETENTION_MAX_DAYS },
+											{
+												min: POSITION_RETENTION_MIN_DAYS,
+												max: POSITION_RETENTION_MAX_DAYS,
+											},
 										)
 									: undefined,
 						}}
@@ -235,8 +252,12 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 										min={POSITION_RETENTION_MIN_DAYS}
 										max={POSITION_RETENTION_MAX_DAYS}
 										className="max-w-40"
-										value={Number.isNaN(field.state.value) ? "" : field.state.value}
-										onChange={(event) => field.handleChange(event.target.valueAsNumber)}
+										value={
+											Number.isNaN(field.state.value) ? "" : field.state.value
+										}
+										onChange={(event) =>
+											field.handleChange(event.target.valueAsNumber)
+										}
 										onBlur={field.handleBlur}
 										disabled={saving}
 									/>
@@ -253,7 +274,10 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 					</form.Field>
 
 					{publishesVersion ? (
-						<p className="rounded-md border border-dashed p-3 text-sm" role="status">
+						<p
+							className="rounded-md border border-dashed p-3 text-sm"
+							role="status"
+						>
 							{t(
 								"settings.positionCapture.publishesVersion",
 								"Saving publishes notice version {version}. Every existing consent lapses until employees agree again.",
@@ -263,7 +287,9 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 					) : null}
 
 					<Button type="submit" disabled={saving}>
-						{saving ? <IconLoader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+						{saving ? (
+							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+						) : null}
 						{t("settings.positionCapture.save", "Save settings")}
 					</Button>
 				</CardContent>
@@ -275,267 +301,77 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
-	const [pending, setPending] = useState(false);
-	const teamNames = new Map(data.teams.map((team) => [team.id, team.name]));
-	const employeeNames = new Map(data.employees.map((employee) => [employee.id, employee.name]));
-
-	const form = useForm({
-		defaultValues: {
-			targetType: "team" as AssignmentTargetType,
-			teamId: "",
-			employeeId: "",
-			captureEnabled: true,
-		},
-		onSubmit: async ({ value, formApi }) => {
-			setPending(true);
-			await (async () => {
-				const target =
-					value.targetType === "organization"
-						? ({ type: "organization" } as const)
-						: value.targetType === "team"
-							? ({ type: "team", teamId: value.teamId } as const)
-							: ({ type: "employee", employeeId: value.employeeId } as const);
+	return (
+		<ScopedFeatureAssignments
+			assignments={data.assignments.map((assignment) => ({
+				...assignment,
+				value: assignment.captureEnabled ? "on" : "off",
+			}))}
+			organizationLabel={t(
+				"settings.positionCapture.targetOrganization",
+				"Whole organization",
+			)}
+			teams={data.teams}
+			employees={data.employees}
+			options={[
+				{
+					value: "on",
+					label: t("settings.positionCapture.captureOn", "Capture on"),
+				},
+				{
+					value: "off",
+					label: t("settings.positionCapture.captureOff", "Capture off"),
+				},
+			]}
+			valueLabel={t("settings.positionCapture.captureTitle", "Capture")}
+			description={t(
+				"settings.positionCapture.assignmentsDescription",
+				"The most specific assignment wins: an employee's own assignment over their primary team's, and a team's over the whole organization's. Use “off” to exclude a team or employee.",
+			)}
+			onSave={async (target, value) => {
 				const result = await setPositionCaptureAssignmentAction({
 					target,
-					captureEnabled: value.captureEnabled,
+					captureEnabled: value === "on",
 				});
-				if (result.success) {
-					toast.success(t("settings.positionCapture.assignmentSaved", "Assignment saved"));
-					formApi.reset();
-					router.refresh();
-				} else {
+				if (!result.success) {
 					toast.error(
 						positionCaptureErrorMessage(t, result.code) ??
-							t("settings.positionCapture.assignmentFailed", "The assignment was not saved"),
+							t(
+								"settings.positionCapture.assignmentFailed",
+								"The assignment was not saved",
+							),
 					);
+					return false;
 				}
-			})().finally(() => {
-				setPending(false);
-			});
-		},
-	});
-	const targetType = useStore(form.store, (state) => state.values.targetType);
-	const teamId = useStore(form.store, (state) => state.values.teamId);
-	const employeeId = useStore(form.store, (state) => state.values.employeeId);
-	const canAdd =
-		!pending &&
-		(targetType === "organization" ||
-			(targetType === "team" && teamId !== "") ||
-			(targetType === "employee" && employeeId !== ""));
-
-	const remove = async (assignment: PositionCaptureAssignmentData) => {
-		setPending(true);
-		await (async () => {
-			const result = await removePositionCaptureAssignmentAction({ assignmentId: assignment.id });
-			if (result.success) {
-				toast.success(t("settings.positionCapture.assignmentRemoved", "Assignment removed"));
-				router.refresh();
-			} else {
-				toast.error(
-					positionCaptureErrorMessage(t, result.code) ??
-						t("settings.positionCapture.assignmentRemoveFailed", "The assignment was not removed"),
+				toast.success(
+					t("settings.positionCapture.assignmentSaved", "Assignment saved"),
 				);
-			}
-		})().finally(() => {
-			setPending(false);
-		});
-	};
-
-	const targetLabel = (assignment: PositionCaptureAssignmentData) =>
-		assignment.assignmentType === "organization"
-			? t("settings.positionCapture.targetOrganization", "Whole organization")
-			: assignment.assignmentType === "team"
-				? t("settings.positionCapture.targetTeamLabel", "Team: {name}", {
-						name: teamNames.get(assignment.teamId ?? "") ?? assignment.teamId ?? "",
-					})
-				: t("settings.positionCapture.targetEmployeeLabel", "Employee: {name}", {
-						name: employeeNames.get(assignment.employeeId ?? "") ?? assignment.employeeId ?? "",
-					});
-
-	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>
-					{t("settings.positionCapture.assignmentsTitle", "Who capture applies to")}
-				</CardTitle>
-				<CardDescription>
-					{t(
-						"settings.positionCapture.assignmentsDescription",
-						"The most specific assignment wins: an employee's own assignment over their primary team's, and a team's over the whole organization's. Use “off” to exclude a team or employee.",
-					)}
-				</CardDescription>
-			</CardHeader>
-			<CardContent className="space-y-5">
-				{data.assignments.length === 0 ? (
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.positionCapture.noAssignments",
-							"Nobody is assigned. Capture applies to nobody until you assign it.",
-						)}
-					</p>
-				) : (
-					<ul
-						className="divide-y rounded-md border"
-						aria-label={t("settings.positionCapture.assignmentsList", "Capture assignments")}
-					>
-						{data.assignments.map((assignment) => (
-							<li key={assignment.id} className="flex items-center justify-between gap-3 p-3">
-								<div className="flex min-w-0 flex-wrap items-center gap-2">
-									<span className="truncate text-sm font-medium">{targetLabel(assignment)}</span>
-									<Badge variant={assignment.captureEnabled ? "default" : "secondary"}>
-										{assignment.captureEnabled
-											? t("settings.positionCapture.captureOn", "Capture on")
-											: t("settings.positionCapture.captureOff", "Capture off")}
-									</Badge>
-								</div>
-								<Button
-									type="button"
-									variant="ghost"
-									size="icon"
-									onClick={() => void remove(assignment)}
-									disabled={pending}
-									aria-label={t("settings.positionCapture.removeAssignment", "Remove {target}", {
-										target: targetLabel(assignment),
-									})}
-								>
-									<IconTrash className="size-4" aria-hidden="true" />
-								</Button>
-							</li>
-						))}
-					</ul>
-				)}
-
-				{/* react-doctor-disable-next-line react-doctor/no-prevent-default */}
-				<form
-					className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto] md:items-end"
-					onSubmit={(event) => {
-						event.preventDefault();
-						void form.handleSubmit();
-					}}
-				>
-					<form.Field name="targetType">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel>{t("settings.positionCapture.targetType", "Applies to")}</TFormLabel>
-								<Select
-									name="targetType"
-									value={field.state.value}
-									onValueChange={(value: AssignmentTargetType) => field.handleChange(value)}
-									disabled={pending}
-								>
-									<TFormControl>
-										<SelectTrigger className="h-10 w-full" onBlur={field.handleBlur}>
-											<SelectValue />
-										</SelectTrigger>
-									</TFormControl>
-									<SelectContent>
-										<SelectItem value="team">
-											{t("settings.positionCapture.targetTeam", "A team")}
-										</SelectItem>
-										<SelectItem value="employee">
-											{t("settings.positionCapture.targetEmployee", "An employee")}
-										</SelectItem>
-										<SelectItem value="organization">
-											{t("settings.positionCapture.targetOrganization", "Whole organization")}
-										</SelectItem>
-									</SelectContent>
-								</Select>
-							</TFormItem>
-						)}
-					</form.Field>
-
-					{targetType === "team" ? (
-						<form.Field name="teamId">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel>{t("settings.positionCapture.team", "Team")}</TFormLabel>
-									<Select
-										name="teamId"
-										value={field.state.value || null}
-										onValueChange={(value: string | null) => field.handleChange(value ?? "")}
-										disabled={pending}
-									>
-										<TFormControl>
-											<SelectTrigger className="h-10 w-full" onBlur={field.handleBlur}>
-												<SelectValue
-													placeholder={t("settings.positionCapture.selectTeam", "Select a team")}
-												/>
-											</SelectTrigger>
-										</TFormControl>
-										<SelectContent>
-											{data.teams.map((team) => (
-												<SelectItem key={team.id} value={team.id}>
-													{team.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</TFormItem>
-							)}
-						</form.Field>
-					) : targetType === "employee" ? (
-						<form.Field name="employeeId">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel>{t("settings.positionCapture.employee", "Employee")}</TFormLabel>
-									<Select
-										name="employeeId"
-										value={field.state.value || null}
-										onValueChange={(value: string | null) => field.handleChange(value ?? "")}
-										disabled={pending}
-									>
-										<TFormControl>
-											<SelectTrigger className="h-10 w-full" onBlur={field.handleBlur}>
-												<SelectValue
-													placeholder={t(
-														"settings.positionCapture.selectEmployee",
-														"Select an employee",
-													)}
-												/>
-											</SelectTrigger>
-										</TFormControl>
-										<SelectContent>
-											{data.employees.map((employee) => (
-												<SelectItem key={employee.id} value={employee.id}>
-													{employee.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</TFormItem>
-							)}
-						</form.Field>
-					) : (
-						<div />
-					)}
-
-					<form.Field name="captureEnabled">
-						{(field) => (
-							<div className="flex h-10 items-center gap-2">
-								<Switch
-									id="position-capture-assignment-enabled"
-									checked={field.state.value}
-									onCheckedChange={field.handleChange}
-									disabled={pending}
-								/>
-								<Label htmlFor="position-capture-assignment-enabled">
-									{field.state.value
-										? t("settings.positionCapture.captureOn", "Capture on")
-										: t("settings.positionCapture.captureOff", "Capture off")}
-								</Label>
-							</div>
-						)}
-					</form.Field>
-
-					<Button type="submit" disabled={!canAdd}>
-						{t("settings.positionCapture.addAssignment", "Add assignment")}
-					</Button>
-				</form>
-			</CardContent>
-		</Card>
+				router.refresh();
+				return true;
+			}}
+			onRemove={async (assignmentId) => {
+				const result = await removePositionCaptureAssignmentAction({
+					assignmentId,
+				});
+				if (!result.success) {
+					toast.error(
+						positionCaptureErrorMessage(t, result.code) ??
+							t(
+								"settings.positionCapture.assignmentRemoveFailed",
+								"The assignment was not removed",
+							),
+					);
+					return false;
+				}
+				toast.success(
+					t("settings.positionCapture.assignmentRemoved", "Assignment removed"),
+				);
+				router.refresh();
+				return true;
+			}}
+		/>
 	);
 }
-
 function NoticeHistory({ data }: PositionCaptureSettingsProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -544,7 +380,9 @@ function NoticeHistory({ data }: PositionCaptureSettingsProps) {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("settings.positionCapture.noticeTitle", "Position notice")}</CardTitle>
+				<CardTitle>
+					{t("settings.positionCapture.noticeTitle", "Position notice")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"settings.positionCapture.noticeDescription",
@@ -557,7 +395,10 @@ function NoticeHistory({ data }: PositionCaptureSettingsProps) {
 					<PositionNoticeText
 						version={current.version}
 						purposeStatement={current.purposeStatement}
-						retentionDays={Math.min(current.retentionDays, data.settings.retentionDays)}
+						retentionDays={Math.min(
+							current.retentionDays,
+							data.settings.retentionDays,
+						)}
 					/>
 				) : (
 					<p className="text-sm text-muted-foreground">
@@ -570,7 +411,10 @@ function NoticeHistory({ data }: PositionCaptureSettingsProps) {
 				{previous.length > 0 ? (
 					<div className="space-y-2">
 						<h3 className="text-sm font-medium">
-							{t("settings.positionCapture.previousVersions", "Earlier versions")}
+							{t(
+								"settings.positionCapture.previousVersions",
+								"Earlier versions",
+							)}
 						</h3>
 						<ul className="divide-y rounded-md border text-sm">
 							{previous.map((notice) => (
@@ -581,7 +425,10 @@ function NoticeHistory({ data }: PositionCaptureSettingsProps) {
 											"Version {version}, published {date}, kept {days, plural, one {# day} other {# days}}",
 											{
 												version: notice.version,
-												date: formatRecordedPositionInstant(locale, notice.createdAt),
+												date: formatRecordedPositionInstant(
+													locale,
+													notice.createdAt,
+												),
 												days: notice.retentionDays,
 											},
 										)}

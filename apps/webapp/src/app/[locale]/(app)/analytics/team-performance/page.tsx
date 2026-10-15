@@ -3,9 +3,11 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
+
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 
 // Dynamic imports for recharts to reduce initial bundle size
 const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
@@ -71,50 +73,65 @@ export default function TeamPerformancePage() {
 		setDateRange(range);
 	};
 
-	useEffect(() => {
-		if (!isHydrated || !dateRange) {
+	const refreshGeneration = useRef(0);
+	const runAnalyticsLoad = useCallback(
+		async (background = false) => {
+			if (!isHydrated || !dateRange) {
+				return;
+			}
+
+			const expectedDefaultDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
+			if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
 			return;
 		}
+			const range = dateRange;
+			const generation = ++refreshGeneration.current;
 
-		const expectedDefaultDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
-		if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
-			return;
-		}
-		const range = dateRange;
-		let isCurrent = true;
+			const isLatest = () => generation === refreshGeneration.current;
 
-		setLoading(true);
-		void Promise.resolve()
+			if (!background) setLoading(true);
+			await Promise.resolve()
 			.then(() => getTeamPerformanceData(range))
 			.then((result) => {
-				if (!isCurrent) {
-					return;
-				}
+					if (!isLatest()) {
+						return;
+					}
 
-				if (result.success && result.data) {
-					setTeamData(result.data);
-				}
-			})
-			.catch((error) => {
-				if (!isCurrent) {
-					return;
-				}
+					if (result.success && result.data) {
+						setTeamData(result.data);
+					} else {
+						throw new Error("Failed to load analytics data");
+					}
+				})
+				.catch((error) => {
+					if (!isLatest()) {
+						return;
+					}
 
-				console.error("Failed to load team performance data:", error);
-				toast.error(
+					console.error("Failed to load team performance data:", error);
+					toast.error(
 					t("analytics.teamPerformance.errors.loadData", "Failed to load team performance data"),
 				);
-			})
-			.finally(() => {
-				if (isCurrent) {
-					setLoading(false);
-				}
-			});
-
+				})
+				.finally(() => {
+					if (isLatest()) {
+						setLoading(false);
+					}
+				});
+		},
+		[dateRange, isHydrated, timezone, t],
+	);
+	useViewRefresh(() => runAnalyticsLoad(true));
+	useEffect(() => {
+		let active = true;
+		queueMicrotask(() => {
+			if (active) void runAnalyticsLoad();
+		});
 		return () => {
-			isCurrent = false;
+			active = false;
+			refreshGeneration.current += 1;
 		};
-	}, [dateRange, isHydrated, timezone, t]);
+	}, [runAnalyticsLoad]);
 
 	const teams = teamData?.teams || [];
 

@@ -4,6 +4,7 @@ import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 const harness = vi.hoisted(() => ({
 	now: "2026-05-21T10:00:00Z",
@@ -114,31 +115,33 @@ describe("dashboard quick stats use the explicit tracking window", () => {
 		);
 	}
 	async function seedWork(startTime: string, endTime: string | null, minutes: number | null) {
-		const clockInId = randomUUID();
-		const clockOutId = endTime ? randomUUID() : null;
-		for (const [entryId, type, timestamp] of [
-			[clockInId, "clock_in", startTime],
-			...(endTime ? [[clockOutId, "clock_out", endTime]] : []),
-		]) {
-			await fixture.pool.query(
-				`insert into time_entry (id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by) values ($1,$2,$3,$4,$5,0,'UTC','user_setting',$7,$6)`,
-				[entryId, employeeId, organizationId, type, timestamp, subjectUserId, entryId],
+		return withCanonicalRecords(fixture.pool, async (client) => {
+			const clockInId = randomUUID();
+			const clockOutId = endTime ? randomUUID() : null;
+			for (const [entryId, type, timestamp] of [
+				[clockInId, "clock_in", startTime],
+				...(endTime ? [[clockOutId, "clock_out", endTime]] : []),
+			]) {
+				await client.query(
+					`insert into time_entry (id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by) values ($1,$2,$3,$4,$5,0,'UTC','user_setting',$7,$6)`,
+					[entryId, employeeId, organizationId, type, timestamp, subjectUserId, entryId],
+				);
+			}
+			const result = await client.query<{ id: string }>(
+				`insert into work_period (employee_id,organization_id,clock_in_id,clock_out_id,start_time,end_time,duration_minutes,is_active,updated_at) values ($1,$2,$3,$4,$5,$6,$7,$8,now()) returning id`,
+				[
+					employeeId,
+					organizationId,
+					clockInId,
+					clockOutId,
+					startTime,
+					endTime,
+					minutes,
+					endTime === null,
+				],
 			);
-		}
-		const result = await fixture.pool.query<{ id: string }>(
-			`insert into work_period (employee_id,organization_id,clock_in_id,clock_out_id,start_time,end_time,duration_minutes,is_active,updated_at) values ($1,$2,$3,$4,$5,$6,$7,$8,now()) returning id`,
-			[
-				employeeId,
-				organizationId,
-				clockInId,
-				clockOutId,
-				startTime,
-				endTime,
-				minutes,
-				endTime === null,
-			],
-		);
-		return result.rows[0].id;
+			return result.rows[0].id;
+		});
 	}
 	it("shows only rollout requirements and clipped work, pacing today's requirement by employee-local day progress", async () => {
 		expect(await getQuickStats()).toMatchObject({

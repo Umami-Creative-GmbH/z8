@@ -16,6 +16,7 @@ import {
 	getSigningKeyHistoryAction,
 	rotateSigningKeyAction,
 } from "@/app/[locale]/(app)/settings/audit-export/actions";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -238,6 +239,13 @@ function KeyManagementForOrganization({
 			);
 		}
 	};
+
+	useViewRefresh(async () => {
+		await Promise.all([
+			historyOperationRef.current > 0 ? loadKeyHistory() : undefined,
+			publicKey ? loadPublicKey() : undefined,
+		]);
+	});
 
 	const handleCopyPublicKey = async () => {
 		if (publicKey?.publicKeyPem) {

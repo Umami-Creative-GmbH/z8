@@ -2,9 +2,11 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Temporal } from "temporal-polyfill";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
+
+import { useEditSession } from "@/hooks/use-edit-session";
 
 export interface ShiftDialogFormValues {
 	employeeId: string | null;
@@ -100,33 +102,45 @@ export function useShiftDialogForm({
 
 	const formValues = useStore(form.store, (state) => state.values);
 
-	useEffect(() => {
-		if (!open) {
-			return;
-		}
+	const appliedTemplateId = useRef<string | null>(null);
+	useEditSession({
+		open,
+		scope: shift?.id ?? "create",
+		initialize: () => {
+			appliedTemplateId.current = shift?.templateId ?? null;
+			if (!open) {
+				return;
+			}
 
-		const nextValues = shift
+			const nextValues = shift
 			? getShiftDialogValues(shift, organizationTimezone)
 			: getDefaultShiftDialogValues(defaultDate, organizationTimezone);
 
-		form.setFieldValue("employeeId", nextValues.employeeId);
-		form.setFieldValue("templateId", nextValues.templateId);
-		form.setFieldValue("subareaId", nextValues.subareaId);
-		form.setFieldValue("date", nextValues.date);
-		form.setFieldValue("startTime", nextValues.startTime);
-		form.setFieldValue("endTime", nextValues.endTime);
-		form.setFieldValue("notes", nextValues.notes);
-		form.setFieldValue("color", nextValues.color);
-	}, [defaultDate, form, open, organizationTimezone, shift]);
+			form.setFieldValue("employeeId", nextValues.employeeId);
+			form.setFieldValue("templateId", nextValues.templateId);
+			form.setFieldValue("subareaId", nextValues.subareaId);
+			form.setFieldValue("date", nextValues.date);
+			form.setFieldValue("startTime", nextValues.startTime);
+			form.setFieldValue("endTime", nextValues.endTime);
+			form.setFieldValue("notes", nextValues.notes);
+			form.setFieldValue("color", nextValues.color);
+		},
+	});
 
 	useEffect(() => {
 		const selectedTemplateId = formValues.templateId;
-		const selectedSubareaId = formValues.subareaId;
+		if (selectedTemplateId !== form.store.state.values.templateId) return;
+		const selectedSubareaId = form.store.state.values.subareaId;
 
+		if (!open) return;
 		if (!selectedTemplateId) {
+			appliedTemplateId.current = null;
 			return;
 		}
 
+		if (appliedTemplateId.current === selectedTemplateId) return;
+		if (!templates.some((template) => template.id === selectedTemplateId)) return;
+		appliedTemplateId.current = selectedTemplateId;
 		const updates = getTemplateAutofillValues(
 			templates.find((template) => template.id === selectedTemplateId),
 			selectedSubareaId,
@@ -144,7 +158,7 @@ export function useShiftDialogForm({
 		if (updates.subareaId) {
 			form.setFieldValue("subareaId", updates.subareaId);
 		}
-	}, [form, formValues.subareaId, formValues.templateId, templates]);
+	}, [form, formValues.templateId, templates, open]);
 
 	return {
 		form,

@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds bir dizi olmalıdır",
       "employeeIdsMustContainOnlyStrings": "employeeIds yalnızca dizeler içermelidir",
       "endDateAfterStart": "Bitiş tarihi, başlangıç tarihinden sonra veya aynı gün olmalıdır",
+      "exportBlockedByDuplicateIdentifier": "Dışa aktarma engellendi: birden fazla çalışan aynı personel kimliğini paylaşıyor. Her çalışana kendine ait bir kimlik verin: {employees}",
       "exportBlockedByMissingIdentifier": "Dışa aktarma engellendi: Bazı çalışanların bordro tanımlayıcısı olarak kullanılan özel alanda bir değeri yok",
       "exportBlockedByOffboardingClockRepair": "Dışa aktarma engellendi: önce işten ayrılış çıkış kaydını düzeltin",
       "exportBlockedByUncertainWork": "Dışa aktarma engellendi: önce seçilen kapsamdaki belirsiz çalışmayı çözümleyin",

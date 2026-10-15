@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import {withCanonicalRecords} from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createLifecycleDatabaseFixture,
@@ -120,20 +121,22 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 		});
 	}
 	async function seedWork(start: string, end: string, minutes: number) {
+		await withCanonicalRecords(fixture.pool, async (client) => {
 		const clockIn = randomUUID(),
 			clockOut = randomUUID();
 		for (const [id, type, timestamp] of [
 			[clockIn, "clock_in", start],
 			[clockOut, "clock_out", end],
 		])
-			await fixture.pool.query(
+			await client.query(
 				`insert into time_entry (id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by) values ($1,$2,$3,$4,$5,120,'Europe/Berlin','user_setting',$7,$6)`,
 				[id, employeeId, fixture.organizationId, type, timestamp, fixture.ownerUserId, id],
 			);
-		await fixture.pool.query(
+		await client.query(
 			`insert into work_period (employee_id,organization_id,clock_in_id,clock_out_id,start_time,end_time,duration_minutes,is_active,updated_at) values ($1,$2,$3,$4,$5,$6,$7,false,now())`,
 			[employeeId, fixture.organizationId, clockIn, clockOut, start, end, minutes],
 		);
+		});
 	}
 	it("keeps legacy behavior during preview, then activates reviewed dates and refreshes public balances", async () => {
 		expect(await currentBalance()).toBe(-1260);

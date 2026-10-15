@@ -21,6 +21,10 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 	useUserTimezone: () => "Europe/Berlin",
 }));
 
+vi.mock("@/components/header-refresh-button", () => ({
+	HeaderRefreshButton: () => <button type="button">Refresh data</button>,
+}));
+
 vi.mock("@/components/header-timezone-control", () => ({
 	HeaderTimezoneControl: () => <button type="button">Timezone</button>,
 }));
@@ -57,6 +61,7 @@ describe("SiteHeader", () => {
 			"Customize dashboard",
 			"Timezone",
 			"Clock In",
+			"Refresh data",
 			"Notifications",
 		]);
 	});

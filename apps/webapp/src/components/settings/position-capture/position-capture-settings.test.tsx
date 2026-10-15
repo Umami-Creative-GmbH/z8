@@ -6,15 +6,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PositionCaptureAdminData } from "@/app/[locale]/(app)/settings/position-capture/actions";
 import { PositionCaptureSettings } from "./position-capture-settings";
 
-const { saveMock, setAssignmentMock, removeAssignmentMock, refreshMock, toastMock } = vi.hoisted(
-	() => ({
-		saveMock: vi.fn(),
-		setAssignmentMock: vi.fn(),
-		removeAssignmentMock: vi.fn(),
-		refreshMock: vi.fn(),
-		toastMock: { success: vi.fn(), error: vi.fn() },
-	}),
-);
+const {
+	saveMock,
+	setAssignmentMock,
+	removeAssignmentMock,
+	refreshMock,
+	toastMock,
+} = vi.hoisted(() => ({
+	saveMock: vi.fn(),
+	setAssignmentMock: vi.fn(),
+	removeAssignmentMock: vi.fn(),
+	refreshMock: vi.fn(),
+	toastMock: { success: vi.fn(), error: vi.fn() },
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -36,14 +40,47 @@ vi.mock("@/app/[locale]/(app)/settings/position-capture/actions", () => ({
 	setPositionCaptureAssignmentAction: setAssignmentMock,
 	removePositionCaptureAssignmentAction: removeAssignmentMock,
 }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: refreshMock }) }));
+vi.mock("next/navigation", () => ({
+	useRouter: () => ({ refresh: refreshMock }),
+}));
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 vi.mock("sonner", () => ({ toast: toastMock }));
+vi.mock("@/components/employee-select", () => ({
+	EmployeeSingleSelect: ({
+		value,
+		onChange,
+		label,
+		disabled,
+		employees,
+	}: {
+		value: string | null;
+		onChange: (id: string | null) => void;
+		label: string;
+		disabled: boolean;
+		employees: { id: string; user: { name: string | null } }[];
+	}) => (
+		<select
+			aria-label={label}
+			value={value ?? ""}
+			disabled={disabled}
+			onChange={(event) => onChange(event.target.value)}
+		>
+			<option value="">Select an employee</option>
+			{employees.map((employee) => (
+				<option key={employee.id} value={employee.id}>
+					{employee.user.name}
+				</option>
+			))}
+		</select>
+	),
+}));
 
 const teamId = "d8250000-0000-4000-8000-0000000000a1";
 const employeeId = "d8250000-0000-4000-8000-000000000004";
 
-function adminData(overrides: Partial<PositionCaptureAdminData> = {}): PositionCaptureAdminData {
+function adminData(
+	overrides: Partial<PositionCaptureAdminData> = {},
+): PositionCaptureAdminData {
 	return {
 		settings: { enabled: false, purposeStatement: null, retentionDays: 90 },
 		notices: [],
@@ -56,8 +93,13 @@ function adminData(overrides: Partial<PositionCaptureAdminData> = {}): PositionC
 
 describe("PositionCaptureSettings", () => {
 	beforeEach(() => {
-		saveMock.mockReset().mockResolvedValue({ success: true, data: { publishedNoticeVersion: 1 } });
-		setAssignmentMock.mockReset().mockResolvedValue({ success: true, data: { assignmentId: "a" } });
+		saveMock.mockReset().mockResolvedValue({
+			success: true,
+			data: { publishedNoticeVersion: 1 },
+		});
+		setAssignmentMock
+			.mockReset()
+			.mockResolvedValue({ success: true, data: { assignmentId: "a" } });
 		removeAssignmentMock.mockReset();
 		refreshMock.mockReset();
 		toastMock.success.mockReset();
@@ -67,22 +109,37 @@ describe("PositionCaptureSettings", () => {
 	it("does not switch capture on without a purpose statement", async () => {
 		render(<PositionCaptureSettings data={adminData()} />);
 
-		await userEvent.click(screen.getByRole("switch", { name: "Capture positions" }));
-		await userEvent.click(screen.getByRole("button", { name: "Save settings" }));
+		await userEvent.click(
+			screen.getByRole("switch", { name: "Capture positions" }),
+		);
+		await userEvent.click(
+			screen.getByRole("button", { name: "Save settings" }),
+		);
 
-		expect(screen.getByText("Write a purpose statement before switching capture on.")).toBeTruthy();
+		expect(
+			screen.getByText(
+				"Write a purpose statement before switching capture on.",
+			),
+		).toBeTruthy();
 		expect(saveMock).not.toHaveBeenCalled();
 	});
 
 	it("saves the settings and reports a newly published notice version", async () => {
 		render(<PositionCaptureSettings data={adminData()} />);
 
-		await userEvent.click(screen.getByRole("switch", { name: "Capture positions" }));
-		await userEvent.type(screen.getByLabelText("Purpose statement"), "Proof of on-site work");
+		await userEvent.click(
+			screen.getByRole("switch", { name: "Capture positions" }),
+		);
+		await userEvent.type(
+			screen.getByLabelText("Purpose statement"),
+			"Proof of on-site work",
+		);
 		const retention = screen.getByLabelText("Retention (days)");
 		await userEvent.clear(retention);
 		await userEvent.type(retention, "30");
-		await userEvent.click(screen.getByRole("button", { name: "Save settings" }));
+		await userEvent.click(
+			screen.getByRole("button", { name: "Save settings" }),
+		);
 
 		expect(saveMock).toHaveBeenCalledWith({
 			enabled: true,
@@ -106,12 +163,18 @@ describe("PositionCaptureSettings", () => {
 		render(
 			<PositionCaptureSettings
 				data={adminData({
-					settings: { enabled: true, purposeStatement: "Customer proof", retentionDays: 90 },
+					settings: {
+						enabled: true,
+						purposeStatement: "Customer proof",
+						retentionDays: 90,
+					},
 				})}
 			/>,
 		);
 
-		await userEvent.click(screen.getByRole("button", { name: "Save settings" }));
+		await userEvent.click(
+			screen.getByRole("button", { name: "Save settings" }),
+		);
 
 		await waitFor(() =>
 			expect(toastMock.error).toHaveBeenCalledWith(
@@ -125,7 +188,11 @@ describe("PositionCaptureSettings", () => {
 		render(
 			<PositionCaptureSettings
 				data={adminData({
-					settings: { enabled: true, purposeStatement: "Customer proof", retentionDays: 90 },
+					settings: {
+						enabled: true,
+						purposeStatement: "Customer proof",
+						retentionDays: 90,
+					},
 					notices: [
 						{
 							id: "n1",
@@ -141,7 +208,10 @@ describe("PositionCaptureSettings", () => {
 		);
 
 		expect(screen.queryByText(/publishes notice version 2/)).toBeNull();
-		await userEvent.type(screen.getByLabelText("Purpose statement"), " and site safety");
+		await userEvent.type(
+			screen.getByLabelText("Purpose statement"),
+			" and site safety",
+		);
 
 		expect(
 			screen.getByText(
@@ -150,39 +220,85 @@ describe("PositionCaptureSettings", () => {
 		).toBeTruthy();
 	});
 
-	it("assigns capture to a team and lists the assignment", async () => {
-		const { rerender } = render(<PositionCaptureSettings data={adminData()} />);
+	it.each(["organization", "team", "employee"] as const)(
+		"assigns capture to a %s and lists it",
+		async (scope) => {
+			const { rerender } = render(
+				<PositionCaptureSettings data={adminData()} />,
+			);
 
-		expect(
-			screen.getByText("Nobody is assigned. Capture applies to nobody until you assign it."),
-		).toBeTruthy();
-		expect(screen.getByRole("combobox", { name: "Applies to" }).textContent).toContain("A team");
-		await userEvent.click(screen.getByRole("combobox", { name: "Team" }));
-		await userEvent.click(await screen.findByRole("option", { name: "Field" }));
-		await userEvent.click(screen.getByRole("button", { name: "Add assignment" }));
+			await userEvent.click(screen.getByRole("tab", { name: "Assignments" }));
+			expect(screen.getByText("No organization default set")).toBeTruthy();
+			expect(screen.getByText("No team-specific settings")).toBeTruthy();
+			expect(screen.getByText("No employee-specific settings")).toBeTruthy();
+			await userEvent.click(
+				screen.getByRole("button", {
+					name:
+						scope === "organization"
+							? "Set Organization Default"
+							: scope === "team"
+								? "Add Team"
+								: "Add Employee",
+				}),
+			);
+			if (scope === "team") {
+				await userEvent.click(screen.getByRole("combobox", { name: "Team" }));
+				await userEvent.click(
+					await screen.findByRole("option", { name: "Field" }),
+				);
+			} else if (scope === "employee") {
+				await userEvent.selectOptions(
+					screen.getByRole("combobox", { name: "Employee" }),
+					employeeId,
+				);
+			}
+			await userEvent.click(screen.getByRole("button", { name: "Save" }));
+			await waitFor(() => expect(refreshMock).toHaveBeenCalled());
+			expect(setAssignmentMock).toHaveBeenCalledWith({
+				target:
+					scope === "organization"
+						? { type: "organization" }
+						: scope === "team"
+							? { type: "team", teamId }
+							: { type: "employee", employeeId },
+				captureEnabled: true,
+			});
 
-		expect(setAssignmentMock).toHaveBeenCalledWith({
-			target: { type: "team", teamId },
-			captureEnabled: true,
-		});
-
-		rerender(
-			<PositionCaptureSettings
-				data={adminData({
-					assignments: [
-						{
-							id: "a1",
-							assignmentType: "team",
-							teamId,
-							employeeId: null,
-							captureEnabled: true,
-						},
-					],
-				})}
-			/>,
-		);
-		const list = screen.getByRole("list", { name: "Capture assignments" });
-		expect(within(list).getByText("Team: Field")).toBeTruthy();
-		expect(within(list).getByText("Capture on")).toBeTruthy();
-	});
+			rerender(
+				<PositionCaptureSettings
+					data={adminData({
+						assignments: [
+							{
+								id: "a1",
+								assignmentType: scope,
+								teamId: scope === "team" ? teamId : null,
+								employeeId: scope === "employee" ? employeeId : null,
+								captureEnabled: true,
+							},
+						],
+					})}
+				/>,
+			);
+			const list = await screen.findByRole("list", {
+				name:
+					scope === "organization"
+						? "Organization Default"
+						: scope === "team"
+							? "Team Overrides"
+							: "Employee Overrides",
+			});
+			expect(
+				within(list).getByText(
+					scope === "organization"
+						? "Whole organization"
+						: scope === "team"
+							? "Field"
+							: "Fiona Field",
+				),
+			).toBeTruthy();
+			expect(
+				within(list).getByRole("combobox").textContent?.includes("Capture on"),
+			).toBeTruthy();
+		},
+	);
 });

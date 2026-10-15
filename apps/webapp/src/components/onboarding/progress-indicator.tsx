@@ -17,7 +17,6 @@ const STEP_I18N_KEYS: Record<OnboardingStep, { key: string; default: string }> =
 	profile: { key: "onboarding.steps.profile", default: "Profile" },
 	work_schedule: { key: "onboarding.steps.workSchedule", default: "Schedule" },
 	vacation_policy: { key: "onboarding.steps.vacationPolicy", default: "Vacation" },
-	holiday_setup: { key: "onboarding.steps.holidaySetup", default: "Holidays" },
 	work_templates: { key: "onboarding.steps.workTemplates", default: "Templates" },
 	wellness: { key: "onboarding.steps.wellness", default: "Wellness" },
 	notifications: { key: "onboarding.steps.notifications", default: "Notifications" },
@@ -50,33 +49,58 @@ export function ProgressIndicator({
 
 	const currentStepIndex = visibleSteps.indexOf(currentStep);
 	const currentDisplayOrder = currentStepIndex + 1;
+	const stepLabel = (step: OnboardingStep) =>
+		t(STEP_I18N_KEYS[step].key, STEP_I18N_KEYS[step].default);
+
+	// Every step gets an equal-width column with its circle centred, so the first and last
+	// circle centres sit half a column in from each edge. The line runs between them.
+	const columnPercent = 100 / steps.length;
+	const lineInset = `${columnPercent / 2}%`;
+	const progressWidth = `${Math.max(currentDisplayOrder - 1, 0) * columnPercent}%`;
 
 	return (
-		<div className={cn("w-full py-8", className)}>
+		<nav
+			aria-label={t("onboarding.steps.label", "Onboarding progress")}
+			className={cn("w-full py-8", className)}
+		>
 			<div className="mx-auto max-w-3xl">
 				{/* Progress Bar */}
 				<div className="relative">
 					{/* Background Line */}
-					<div className="absolute left-0 top-5 h-0.5 w-full bg-muted" />
+					<div
+						aria-hidden="true"
+						className="absolute top-4 h-0.5 bg-muted sm:top-5"
+						style={{ left: lineInset, right: lineInset }}
+					/>
 
 					{/* Progress Line */}
 					<div
-						className="absolute left-0 top-5 h-0.5 bg-primary transition-[width] duration-500"
-						style={{ width: `${((currentDisplayOrder - 1) / (steps.length - 1)) * 100}%` }}
+						aria-hidden="true"
+						data-testid="onboarding-progress-line"
+						className="absolute top-4 h-0.5 bg-primary transition-[width] duration-500 sm:top-5"
+						style={{ left: lineInset, width: progressWidth }}
 					/>
 
 					{/* Step Indicators */}
-					<div className="relative flex justify-between">
+					<ol
+						className="relative grid"
+						style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+					>
 						{steps.map((step) => {
 							const isCompleted = step.displayOrder < currentDisplayOrder;
 							const isCurrent = step.key === currentStep;
 
 							return (
-								<div key={step.key} className="flex flex-col items-center">
+								<li
+									key={step.key}
+									aria-current={isCurrent ? "step" : undefined}
+									className="flex min-w-0 flex-col items-center"
+								>
 									{/* Step Circle */}
 									<div
+										aria-hidden="true"
 										className={cn(
-											"flex size-10 items-center justify-center rounded-full border-2 bg-background transition-[border-color,background-color,color] duration-300",
+											"flex size-8 items-center justify-center rounded-full border-2 bg-background transition-[border-color,background-color,color] duration-300 sm:size-10",
 											{
 												"border-primary bg-primary text-primary-foreground": isCompleted,
 												"border-primary bg-background text-primary": isCurrent,
@@ -86,27 +110,43 @@ export function ProgressIndicator({
 										)}
 									>
 										{isCompleted ? (
-											<IconCheck className="size-5" />
+											<IconCheck className="size-4 sm:size-5" />
 										) : (
-											<span className="text-sm font-medium">{step.displayOrder}</span>
+											<span className="text-xs font-medium sm:text-sm">{step.displayOrder}</span>
 										)}
 									</div>
 
-									{/* Step Label */}
+									{/* Step Label: visible from sm, read by screen readers everywhere */}
 									<span
-										className={cn("mt-2 text-xs font-medium transition-colors sm:text-sm", {
-											"text-primary": isCompleted || isCurrent,
-											"text-muted-foreground": !isCompleted && !isCurrent,
-										})}
+										className={cn(
+											"sr-only w-full px-0.5 text-center text-xs font-medium break-words hyphens-auto transition-colors sm:not-sr-only sm:mt-2 lg:text-sm",
+											{
+												"text-primary": isCompleted || isCurrent,
+												"text-muted-foreground": !isCompleted && !isCurrent,
+											},
+										)}
 									>
-										{t(STEP_I18N_KEYS[step.key].key, STEP_I18N_KEYS[step.key].default)}
+										{stepLabel(step.key)}
 									</span>
-								</div>
+								</li>
 							);
 						})}
-					</div>
+					</ol>
 				</div>
+
+				{/* Phones only have room for the current step's label */}
+				{currentStepIndex >= 0 && (
+					<p aria-hidden="true" className="mt-3 text-center text-sm font-medium sm:hidden">
+						<span className="text-muted-foreground">
+							{t("onboarding.steps.position", "Step {current} of {total}", {
+								current: currentDisplayOrder,
+								total: steps.length,
+							})}
+						</span>{" "}
+						<span className="text-primary">{stepLabel(currentStep)}</span>
+					</p>
+				)}
 			</div>
-		</div>
+		</nav>
 	);
 }

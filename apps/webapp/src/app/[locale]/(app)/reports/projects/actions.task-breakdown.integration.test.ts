@@ -10,6 +10,7 @@
 
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const { sessions } = await vi.hoisted(async () => {
@@ -121,22 +122,24 @@ describe("the project report's By task section on PostgreSQL", () => {
 			 ) values ($1, $2, $3, 'clock_in', $4, 0, 'UTC', 'backfill', $6, $5, $4)`,
 			[clockInId, input.employeeId, input.organizationId, start, input.userId, `t876-${clockInId}`],
 		);
-		await admin.query(
-			`insert into work_period (
-				id, employee_id, organization_id, clock_in_id, project_id, task_id,
-				start_time, end_time, duration_minutes, is_active, updated_at
-			 ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, $8)`,
-			[
-				randomUUID(),
-				input.employeeId,
-				input.organizationId,
-				clockInId,
-				input.projectId,
-				input.taskId,
-				start,
-				end,
-				input.minutes,
-			],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`insert into work_period (
+					id, employee_id, organization_id, clock_in_id, project_id, task_id,
+					start_time, end_time, duration_minutes, is_active, updated_at
+				 ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, $8)`,
+				[
+					randomUUID(),
+					input.employeeId,
+					input.organizationId,
+					clockInId,
+					input.projectId,
+					input.taskId,
+					start,
+					end,
+					input.minutes,
+				],
+			),
 		);
 	}
 

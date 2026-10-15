@@ -63,7 +63,7 @@
         "managers": "Vorgesetzte",
         "noScheduleAssigned": "Kein Arbeitsplan zugewiesen",
         "personnelNumber": "Personalnummer",
-        "personnelNumberDescription": "Die eigene Nummer Ihrer Organisation für diesen Mitarbeiter, verwendet in Lohnexporten. Sie muss eindeutig sein, auch gegenüber ehemaligen Mitarbeitern.",
+        "personnelNumberDescription": "Die organisationsinterne Nummer für diesen Mitarbeiter, die bei Lohnexporten verwendet wird. Sie muss eindeutig sein, auch gegenüber ehemaligen Mitarbeitern.",
         "position": "Position",
         "positionDescription": "Berufsbezeichnung oder Rolle",
         "positionPlaceholder": "Position eingeben",
@@ -377,8 +377,8 @@
         "title": "Export personenbezogener Daten"
       },
       "personnelNumber": {
-        "taken": "Diese Personalnummer gehört {name}. Jeder Mitarbeiter, aktuell oder ehemalig, braucht eine eigene Nummer.",
-        "takenByAnother": "Ein anderer Mitarbeiter hat bereits diese Personalnummer. Jeder Mitarbeiter, aktuell oder ehemalig, braucht eine eigene Nummer."
+        "taken": "Diese Personalnummer gehört bereits {name}. Jeder Mitarbeiter, ob aktiv oder ehemalig, benötigt eine eigene Nummer.",
+        "takenByAnother": "Ein anderer Mitarbeiter hat bereits diese Personalnummer. Jeder Mitarbeiter, ob aktiv oder ehemalig, benötigt eine eigene Nummer."
       },
       "tabs": {
         "employees": "Mitarbeiter",

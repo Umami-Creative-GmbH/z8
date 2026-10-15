@@ -3,7 +3,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect } from "react";
 import { toast } from "sonner";
 import {
 	createCoverageRule,
@@ -29,6 +28,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { TimeInput } from "@/components/ui/time-input";
+import { useEditSession } from "@/hooks/use-edit-session";
 import type { CoverageRuleWithRelations } from "@/lib/effect/services/coverage.service";
 import type { DayOfWeek } from "@/lib/validations/coverage";
 
@@ -107,7 +107,10 @@ export function CoverageRuleDialog({
 	});
 
 	// Reset form when dialog opens/closes or editing rule changes
-	useEffect(() => {
+	useEditSession({
+		open,
+		scope: editingRule?.id ?? "create",
+		initialize: () => {
 		if (open) {
 			form.reset({
 				subareaId:
@@ -118,7 +121,8 @@ export function CoverageRuleDialog({
 				minimumStaffCount: editingRule?.minimumStaffCount || 1,
 			});
 		}
-	}, [defaultSubareaId, editingRule, form, open, requireScopedSubareaSelection]);
+	},
+	});
 
 	// Create mutation
 	const createMutation = useMutation({

@@ -16,17 +16,18 @@
  * coordination key, so participating writers are drained for that employee. Under
  * those locks it re-reads the evidence, rebuilds the proposal and continues only
  * when the fingerprint is unchanged; otherwise the proposal becomes `stale` and
- * nothing else is written. A field repair's guarded writes, advanced work revision,
- * receipt and outcome commit together; a continuation establishes the append
- * position at its anchor with its provenance. Applying again returns the recorded
- * outcome.
+ * nothing else is written. A field repair writes through work records (#1226):
+ * both records take the repaired values in one revision step, with the effects of
+ * any change to work, and its receipt and outcome commit with them. A continuation
+ * establishes the append position at its anchor with its provenance. Applying
+ * again returns the recorded outcome.
  *
  * Committed replay never calls this module. Nothing here rechains, rehashes,
  * deletes, relinks, starts approval workflows or reconstructs decisions.
  */
 import "server-only";
 
-import { type AnyColumn, and, desc, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { db as database } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
@@ -36,9 +37,7 @@ import {
 	project,
 	timeEntry,
 	timeEntryAppendPosition,
-	timeRecord,
 	timeRecordAllocation,
-	timeRecordWork,
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
@@ -46,7 +45,7 @@ import type {
 	HistoricalWorkProposalKind,
 	HistoricalWorkProposalStatus,
 } from "@/db/schema/completed-work";
-import { dateFromInstant, parseInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { withAppendEvidenceSnapshot } from "./append-assurance-reader";
 import {
 	type AppendContinuationPlan,
@@ -62,15 +61,20 @@ import {
 	type HistoricalRepairRefusal,
 	type HistoricalRepairRequest,
 	proposeHistoricalRepair,
-	type RepairChange,
 	type RequestedRepairChange,
 } from "./historical-repair-proposal";
+import { fieldRepairResolution } from "./historical-repair-resolution";
 import {
 	type HistoricalWorkEvidenceReader,
 	readHistoricalWorkEvidence,
 } from "./historical-work-diagnostics-reader";
-import type { WorkLocationType } from "./work-location";
-import type { WorkTransactionClient } from "./work-transaction";
+import {
+	applyWorkRecordChange,
+	isWorkRecordRefusal,
+	readWorkRecord,
+	refusalError,
+} from "./work-records";
+import type { SealedWorkTransactionScope, WorkTransactionClient } from "./work-transaction";
 
 type Database = typeof database;
 
@@ -643,7 +647,7 @@ export async function applyHistoricalWorkProposal(
 			{ organizationId: input.organizationId, employeeId, actorUserId: input.actorUserId },
 			async (scope) => {
 				scope.assertEmployee(input.organizationId, employeeId);
-				return applyInCoordination(scope.db, scope.admission, input);
+				return applyInCoordination(scope, input);
 			},
 		);
 	} catch (error) {
@@ -663,10 +667,10 @@ export async function applyHistoricalWorkProposal(
 }
 
 async function applyInCoordination(
-	tx: WorkTransactionClient,
-	admission: "legacy" | "append",
+	scope: SealedWorkTransactionScope,
 	input: { organizationId: string; actorUserId: string; proposalId: string },
 ): Promise<ProposalApplicationResult> {
+	const { db: tx, admission } = scope;
 	const row = await lockProposal(tx, input.organizationId, input.proposalId);
 	// A retry returns the recorded outcome even after authorization was withdrawn.
 	if (row.status === "applied") return { status: "already_applied", proposal: viewOf(row) };
@@ -681,11 +685,9 @@ async function applyInCoordination(
 		throw new HistoricalProposalConflictError("append_not_adopted");
 	}
 
-	if (row.kind === "field_repair") {
-		// Lock the work rows in table/ID order before the re-read.
-		const proposal = row.proposal as unknown as HistoricalRepairProposal;
-		await lockWorkRows(tx, input.organizationId, proposal);
-	} else {
+	// A field repair's rows are locked by work records, in its table order; the
+	// employee's coordination key already keeps every other writer out of the re-read.
+	if (row.kind === "append_continuation") {
 		await tx
 			.select({ version: timeEntryAppendPosition.version })
 			.from(timeEntryAppendPosition)
@@ -707,7 +709,7 @@ async function applyInCoordination(
 
 	const outcome =
 		row.kind === "field_repair"
-			? await applyFieldRepair(tx, admission, input.actorUserId, row)
+			? await applyFieldRepair(scope, input.actorUserId, row)
 			: await applyContinuation(tx, row);
 	const [updated] = await tx
 		.update(historicalWorkProposal)
@@ -725,208 +727,58 @@ async function applyInCoordination(
 	return { status: "applied", proposal: viewOf(updated) };
 }
 
-async function lockWorkRows(
-	tx: WorkTransactionClient,
-	organizationId: string,
-	proposal: HistoricalRepairProposal,
-) {
-	await tx
-		.select({ id: workPeriod.id })
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.id, proposal.work.workPeriodId),
-			),
-		)
-		.for("update");
-	if (proposal.work.timeRecordId === null) return;
-	await tx
-		.select({ id: timeRecord.id })
-		.from(timeRecord)
-		.where(
-			and(
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.id, proposal.work.timeRecordId),
-			),
-		)
-		.for("update");
-}
-
-/** Requires exactly one affected row; anything else means the expected state moved. */
-function expectOne(rows: readonly unknown[]) {
-	if (rows.length !== 1) throw new StaleHistoricalProposalError();
-}
-
-function equalsBefore(column: AnyColumn, before: RepairChange["before"]) {
-	return before === null ? isNull(column) : eq(column, before);
-}
-
-/** The billability the canonical record carries for a project; none without a record. */
-async function canonicalProjectBillability(
-	tx: WorkTransactionClient,
-	organizationId: string,
-	recordId: string | null,
-	projectId: string,
-): Promise<boolean> {
-	if (recordId === null) return false;
-	const [allocation] = await tx
-		.select({ isBillable: timeRecordAllocation.isBillable })
-		.from(timeRecordAllocation)
-		.where(
-			and(
-				eq(timeRecordAllocation.organizationId, organizationId),
-				eq(timeRecordAllocation.recordId, recordId),
-				eq(timeRecordAllocation.allocationKind, "project"),
-				eq(timeRecordAllocation.projectId, projectId),
-			),
-		)
-		.limit(1);
-	return allocation?.isBillable ?? false;
-}
-
 async function applyFieldRepair(
-	tx: WorkTransactionClient,
-	admission: "legacy" | "append",
+	scope: SealedWorkTransactionScope,
 	executorUserId: string,
 	row: ProposalRow,
 ) {
 	const proposal = row.proposal as unknown as HistoricalRepairProposal;
 	const { organizationId, employeeId } = proposal.scope;
 	const executedAt = systemClock.nowInstant();
-	const executedAtDate = dateFromInstant(executedAt);
-	const changesOf = (target: RepairChange["target"]) =>
-		proposal.changes.filter((change) => change.target === target);
-
-	const recordChanges = changesOf("time_record");
-	const recordSet: Partial<typeof timeRecord.$inferInsert> = {};
-	const recordGuards: SQL[] = [];
-	const detailSet: Partial<typeof timeRecordWork.$inferInsert> = {};
-	const detailGuards: SQL[] = [];
-	for (const change of recordChanges) {
-		switch (change.field) {
-			case "start_at":
-				recordSet.startAt = dateFromInstant(parseInstant(change.after as string));
-				recordGuards.push(
-					eq(timeRecord.startAt, dateFromInstant(parseInstant(change.before as string))),
-				);
-				break;
-			case "end_at":
-				recordSet.endAt = dateFromInstant(parseInstant(change.after as string));
-				recordGuards.push(
-					change.before === null
-						? isNull(timeRecord.endAt)
-						: eq(timeRecord.endAt, dateFromInstant(parseInstant(change.before as string))),
-				);
-				break;
-			case "duration_minutes":
-				recordSet.durationMinutes = change.after as number;
-				recordGuards.push(equalsBefore(timeRecord.durationMinutes, change.before));
-				break;
-			case "work_category_id":
-				detailSet.workCategoryId = change.after as string;
-				detailGuards.push(equalsBefore(timeRecordWork.workCategoryId, change.before));
-				break;
-			case "work_location_type":
-				detailSet.workLocationType = change.after as WorkLocationType;
-				detailGuards.push(equalsBefore(timeRecordWork.workLocationType, change.before));
-				break;
-		}
-	}
-	const recordId = proposal.work.timeRecordId;
-	if (recordId !== null && recordChanges.length > 0) {
-		expectOne(
-			await tx
-				.update(timeRecord)
-				.set({ ...recordSet, updatedAt: executedAtDate, updatedBy: executorUserId })
-				.where(
-					and(
-						eq(timeRecord.id, recordId),
-						eq(timeRecord.organizationId, organizationId),
-						eq(timeRecord.employeeId, employeeId),
-						eq(timeRecord.recordKind, "work"),
-						...recordGuards,
-					),
-				)
-				.returning({ id: timeRecord.id }),
-		);
-	}
-	if (recordId !== null && Object.keys(detailSet).length > 0) {
-		expectOne(
-			await tx
-				.update(timeRecordWork)
-				.set(detailSet)
-				.where(
-					and(
-						eq(timeRecordWork.recordId, recordId),
-						eq(timeRecordWork.organizationId, organizationId),
-						...detailGuards,
-					),
-				)
-				.returning({ recordId: timeRecordWork.recordId }),
-		);
-	}
-
-	// The revision advance proves the period is unchanged since review and commits
-	// every period change with it.
-	const periodSet: Partial<typeof workPeriod.$inferInsert> = {};
-	const periodGuards: SQL[] = [];
-	for (const change of changesOf("work_period")) {
-		switch (change.field) {
-			case "duration_minutes":
-				periodSet.durationMinutes = change.after as number;
-				periodGuards.push(equalsBefore(workPeriod.durationMinutes, change.before));
-				break;
-			case "work_category_id":
-				periodSet.workCategoryId = change.after as string;
-				periodGuards.push(equalsBefore(workPeriod.workCategoryId, change.before));
-				break;
-			case "work_location_type":
-				periodSet.workLocationType = change.after as WorkLocationType;
-				periodGuards.push(equalsBefore(workPeriod.workLocationType, change.before));
-				break;
-			case "project_id":
-				periodSet.projectId = change.after as string;
-				// A task never outlives its project (#873).
-				periodSet.taskId = null;
-				periodGuards.push(equalsBefore(workPeriod.projectId, change.before));
-				// The period takes the canonical allocation's billability for that
-				// project, so both representations agree afterwards (#900).
-				periodSet.isBillable = await canonicalProjectBillability(
-					tx,
-					organizationId,
-					recordId,
-					change.after as string,
-				);
-				break;
-		}
-	}
-	const sourceRevision = proposal.expected.period.graphRevision;
-	expectOne(
-		await tx
-			.update(workPeriod)
-			.set({ ...periodSet, graphRevision: sourceRevision + 1 })
-			.where(
-				and(
-					eq(workPeriod.id, proposal.work.workPeriodId),
-					eq(workPeriod.organizationId, organizationId),
-					eq(workPeriod.employeeId, employeeId),
-					eq(workPeriod.graphRevision, sourceRevision),
-					isNull(workPeriod.deletedAt),
-					...periodGuards,
-				),
-			)
-			.returning({ id: workPeriod.id }),
+	const recordProjects = proposal.expected.record?.projectIds ?? [];
+	// A repaired project keeps the task and billability the record's allocation
+	// already has; the rebuilt fingerprint proved the allocations unchanged.
+	const resolution = fieldRepairResolution(
+		proposal.changes,
+		await reviewedAllocations(scope.db, organizationId, proposal.work.timeRecordId, recordProjects),
 	);
+	const sourceRevision = proposal.expected.period.graphRevision;
+	const expected = { workPeriodId: proposal.work.workPeriodId, revision: sourceRevision };
+	const repaired =
+		proposal.work.timeRecordId === null
+			? await attachRepaired(scope, {
+					organizationId,
+					employeeId,
+					expected,
+					resolution,
+					actorUserId: executorUserId,
+				})
+			: await applyWorkRecordChange(scope, {
+					kind: "repair",
+					organizationId,
+					employeeId,
+					expected,
+					resolution,
+					actorUserId: executorUserId,
+				});
+	if (isWorkRecordRefusal(repaired)) {
+		// A closed month is a refusal of its own; anything else means the reviewed
+		// work moved, so the proposal is stale and nothing was written.
+		if (repaired.kind === "month_closed") throw refusalError(repaired);
+		throw new StaleHistoricalProposalError();
+	}
 
 	const executor = {
 		kind: "human" as const,
 		userId: executorUserId,
 		executedAt: executedAt.toString(),
 	};
-	const revisions = { workPeriod: { source: sourceRevision, result: sourceRevision + 1 } };
+	const revisions = {
+		workPeriod: { source: sourceRevision, result: repaired.after.revision },
+	};
+	const recordId = repaired.segment.canonicalRecordId;
 	// The receipt's identity is the proposal's: one application per approved proposal.
-	await tx.insert(completedWorkOperation).values({
+	await scope.db.insert(completedWorkOperation).values({
 		id: row.id,
 		organizationId,
 		employeeId,
@@ -940,7 +792,7 @@ async function applyFieldRepair(
 			fingerprint: row.fingerprint,
 			reason: row.reason,
 		},
-		appendAdmission: admission,
+		appendAdmission: scope.admission,
 		// The operation's actor is its executor; proposer and approver are in the result.
 		actorKind: "human",
 		actorUserId: executorUserId,
@@ -964,9 +816,75 @@ async function applyFieldRepair(
 			consequences: proposal.consequences,
 			expected: proposal.expected,
 			revisions,
+			effects: repaired.effects ?? null,
 		},
 	});
 	return { operationId: row.id, executor, revisions };
+}
+
+/**
+ * Work without a canonical work record gets one with the repaired values
+ * (spec-2 M1): work records' attach with the resolution. The record is created
+ * by the user who recorded the work's clock-out, as every attach creates it.
+ */
+async function attachRepaired(
+	scope: SealedWorkTransactionScope,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		expected: { workPeriodId: string; revision: number };
+		resolution: ReturnType<typeof fieldRepairResolution>;
+		actorUserId: string;
+	},
+) {
+	const work = await readWorkRecord(
+		scope,
+		{
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			workPeriodId: input.expected.workPeriodId,
+		},
+		{ lock: true },
+	);
+	const recordedBy = work?.clockOut?.createdBy ?? work?.clockIn?.createdBy;
+	if (!recordedBy) throw new StaleHistoricalProposalError();
+	return applyWorkRecordChange(scope, {
+		kind: "attach",
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		expected: input.expected,
+		record: { origin: "system", createdBy: recordedBy, computationMetadata: null },
+		resolution: input.resolution,
+		actorUserId: input.actorUserId,
+	});
+}
+
+/** The reviewed record's project allocations, as the resolution of a project repair reads them. */
+async function reviewedAllocations(
+	tx: WorkTransactionClient,
+	organizationId: string,
+	recordId: string | null,
+	projectIds: readonly string[],
+) {
+	if (recordId === null || projectIds.length === 0) return null;
+	const allocations = await tx
+		.select({
+			allocationKind: timeRecordAllocation.allocationKind,
+			projectId: timeRecordAllocation.projectId,
+			taskId: timeRecordAllocation.taskId,
+			costCenterId: timeRecordAllocation.costCenterId,
+			weightPercent: timeRecordAllocation.weightPercent,
+			isBillable: timeRecordAllocation.isBillable,
+		})
+		.from(timeRecordAllocation)
+		.where(
+			and(
+				eq(timeRecordAllocation.organizationId, organizationId),
+				eq(timeRecordAllocation.recordId, recordId),
+				eq(timeRecordAllocation.allocationKind, "project"),
+			),
+		);
+	return { allocations };
 }
 
 async function applyContinuation(tx: WorkTransactionClient, row: ProposalRow) {

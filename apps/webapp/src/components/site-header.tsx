@@ -2,6 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { DashboardHeaderCustomize } from "@/components/dashboard/dashboard-header-customize";
+import { HeaderRefreshButton } from "@/components/header-refresh-button";
 import { HeaderTimezoneControl } from "@/components/header-timezone-control";
 import { NotificationBell } from "@/components/notifications";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
@@ -39,6 +40,7 @@ export function SiteHeader() {
 					{isDashboardRoute ? <DashboardHeaderCustomize /> : null}
 					<HeaderTimezoneControl />
 					<TimeClockPopover timeFormat={timeFormat} />
+					<HeaderRefreshButton />
 					<NotificationBell />
 				</div>
 			</div>

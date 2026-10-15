@@ -156,6 +156,7 @@
         "deleteTitle": "Elimina mappatura",
         "description": "Descrizione",
         "formatSpecificHint": "Configura i codici dei tipi di retribuzione per ogni formato di busta paga. Ne è richiesto almeno uno.",
+        "loadFailed": "Impossibile caricare le mappature delle voci retributive",
         "noMappings": "Nessuna mappatura configurata",
         "saveError": "Impossibile salvare la mappatura",
         "saveSuccess": "Mappatura salvata",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Rivedi la posta in arrivo delle approvazioni",
+        "employees": "Verifica dipendenti",
         "payrollExport": "Apri le impostazioni di esportazione buste paga",
         "timeTracking": "Rivedi il tracciamento del tempo",
         "travelExpenses": "Rivedi le spese di viaggio"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Dipendente",
         "noNumber": "Non impostato",
-        "number": "Numero dipendente"
+        "personnelIdentifier": "Identificativo del personale",
+        "personnelNumber": "Numero di matricola"
       },
       "checks": {
         "count": "Conteggio",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Dipendenti che un'esportazione paghe registrerebbe con lo stesso identificativo del personale. Il sistema paghe li unirebbe, quindi l'esportazione viene rifiutata finché ciascun dipendente non avrà il proprio.",
+          "title": "Identificativi del personale condivisi"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Tutti i dipendenti attivi dispongono di uno storico lavorativo confermato per questo periodo di paga.",
           "descriptionWarning": "Alcuni dipendenti attivi non dispongono di uno storico lavorativo confermato per questo periodo di paga."

@@ -7,6 +7,7 @@
  */
 
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -438,23 +439,25 @@ describe("desktop context vehicle use on PostgreSQL (#1124)", () => {
 				[ids.employee, ids.organization, ids.user],
 			)
 		).rows;
-		await admin.query(
-			`insert into work_period
-			 (employee_id, organization_id, clock_in_id, start_time, end_time, duration_minutes, is_active,
-			  vehicle_kind, vehicle_id, odometer_start_km, odometer_end_km, driven_distance_km, updated_at)
-			 values ($1, $2, $3, now() - interval '3 hours', $4, $5, $6, 'organization', $7, $8, $9, $10, now())`,
-			[
-				ids.employee,
-				ids.organization,
-				entry.id,
-				live ? null : new Date(Date.now() - 2 * 60 * 60_000),
-				live ? null : 60,
-				live,
-				vehicleId,
-				readings.startKm,
-				readings.endKm,
-				readings.endKm === null ? null : readings.endKm - readings.startKm,
-			],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`insert into work_period
+				 (employee_id, organization_id, clock_in_id, start_time, end_time, duration_minutes, is_active,
+				  vehicle_kind, vehicle_id, odometer_start_km, odometer_end_km, driven_distance_km, updated_at)
+				 values ($1, $2, $3, now() - interval '3 hours', $4, $5, $6, 'organization', $7, $8, $9, $10, now())`,
+				[
+					ids.employee,
+					ids.organization,
+					entry.id,
+					live ? null : new Date(Date.now() - 2 * 60 * 60_000),
+					live ? null : 60,
+					live,
+					vehicleId,
+					readings.startKm,
+					readings.endKm,
+					readings.endKm === null ? null : readings.endKm - readings.startKm,
+				],
+			),
 		);
 	}
 

@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useServerDataState } from "@/hooks/use-server-data-state";
 import type { PublicWebhookEndpoint, WebhookEndpoint } from "@/lib/webhooks/types";
 import { WebhookEndpointCard } from "./webhook-endpoint-card";
 import { WebhookFormDialog } from "./webhook-form-dialog";
@@ -19,7 +20,7 @@ export function WebhooksPageClient({
 	webhooks: initialWebhooks,
 }: WebhooksPageClientProps) {
 	const { t } = useTranslate();
-	const [webhooks, setWebhooks] = useState<PublicWebhookEndpoint[]>(initialWebhooks);
+	const [webhooks, setWebhooks] = useServerDataState<PublicWebhookEndpoint[]>(initialWebhooks);
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
 	const handleWebhookCreated = (webhook: WebhookEndpoint) => {

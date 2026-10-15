@@ -29,6 +29,7 @@ import { Temporal } from "temporal-polyfill";
 import type { CompletedWorkOperationKind } from "@/db/schema/completed-work";
 import {
 	compareInstants,
+	dateFromInstant,
 	type Instant,
 	instantToCanonicalString,
 	parseInstant,
@@ -36,6 +37,18 @@ import {
 	parsePlainTimeMinute,
 } from "@/lib/datetime/temporal-core";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
+import {
+	vehicleUseFromColumns,
+	vehicleUseIdentity,
+	type WorkVehicleUseColumns,
+} from "./vehicle-use/work-vehicle-use";
+import type { WorkLocationType } from "./work-location";
+import type { AgreementWorkPeriod, RecordAgreementFacet } from "./work-records/record-agreement";
+import {
+	diagnoseRecordAgreement,
+	type StoredCanonicalRecord,
+} from "./work-records/record-agreement-diagnosis";
+import type { CanonicalAllocationShape } from "./work-records/work-attribution";
 
 // ---------------------------------------------------------------------------
 // Evidence
@@ -55,7 +68,7 @@ export interface HistoricalEntryEvidence {
 	createdBy: string;
 }
 
-export interface HistoricalPeriodEvidence {
+export interface HistoricalPeriodEvidence extends WorkVehicleUseColumns {
 	id: string;
 	employeeId: string;
 	clockInId: string;
@@ -71,11 +84,18 @@ export interface HistoricalPeriodEvidence {
 	approvalWorkflowId: string | null;
 	deletedAt: Instant | null;
 	projectId: string | null;
+	taskId: string | null;
 	/** Billable work (#900); absent reads as non-billable. */
 	isBillable?: boolean;
 	workCategoryId: string | null;
-	workLocationType: string | null;
+	workLocationType: WorkLocationType | null;
 	canonicalRecordId: string | null;
+	/**
+	 * The closed month (`YYYY-MM`) completed work without a canonical record
+	 * touches, if any. Closed months keep such half pairs unchanged until reopened
+	 * (Time Tracking ADR-0004); null for linked work.
+	 */
+	closedMonth: string | null;
 	/** Explicit work-graph revision (#256 §6); repairs expect it unchanged. */
 	graphRevision: number;
 	/** Row write time: write evidence, never the work date. */
@@ -91,14 +111,24 @@ export interface HistoricalRecordEvidence {
 	approvalState: "draft" | "pending" | "approved" | "rejected";
 	origin: string;
 	createdAt: Instant;
-	detail: {
-		workCategoryId: string | null;
-		workLocationType: string | null;
-		computationMetadata: string | null;
-	} | null;
-	projectIds: readonly string[];
-	/** The projects whose allocation is billable (#900); absent reads as none. */
-	billableProjectIds?: readonly string[];
+	detail:
+		| (WorkVehicleUseColumns & {
+				workCategoryId: string | null;
+				workLocationType: WorkLocationType | null;
+				computationMetadata: string | null;
+		  })
+		| null;
+	/** Every allocation as stored, in a stable order. */
+	allocations: readonly CanonicalAllocationShape[];
+}
+
+/** The projects a canonical record's project allocations book, in stored order. */
+export function recordProjectIds(record: Pick<HistoricalRecordEvidence, "allocations">): string[] {
+	return record.allocations.flatMap((allocation) =>
+		allocation.allocationKind === "project" && allocation.projectId !== null
+			? [allocation.projectId]
+			: [],
+	);
 }
 
 export interface HistoricalOperationEvidence {
@@ -148,6 +178,8 @@ export type WorkFindingKind =
 	| "ownership_conflict"
 	| "work_outside_organization_employees"
 	| "canonical_missing"
+	/** Completed work without a canonical record whose closed month keeps it so (ADR-0004). */
+	| "canonical_missing_closed_month"
 	| "canonical_link_missing"
 	| "canonical_link_unresolved"
 	| "canonical_link_shared"
@@ -171,6 +203,8 @@ export type WorkFindingKind =
 	| "metadata_missing"
 	| "metadata_conflict"
 	| "metadata_canonical_only"
+	/** One side's project, task and billable flag break the attribution invariants. */
+	| "attribution_unrepresentable"
 	| "approval_state_conflict"
 	| "approval_relationship_missing"
 	| "overlapping_work"
@@ -419,7 +453,16 @@ export function assessHistoricalWork(
 			!record &&
 			!(period.isActive && period.endTime === null)
 		) {
-			push({ kind: "canonical_missing", shape: "missing", relevance });
+			push(
+				period.closedMonth === null
+					? { kind: "canonical_missing", shape: "missing", relevance }
+					: {
+							kind: "canonical_missing_closed_month",
+							shape: "missing",
+							relevance,
+							details: { closedMonth: period.closedMonth },
+						},
+			);
 		} else if (period.canonicalRecordId !== null && !record) {
 			push({
 				kind: "canonical_link_unresolved",
@@ -569,145 +612,39 @@ export function assessHistoricalWork(
 			});
 		}
 
-		if (record) {
-			for (const side of ["start", "end"] as const) {
-				const periodInstant = side === "start" ? period.startTime : period.endTime;
-				const recordInstant = side === "start" ? record.startAt : record.endAt;
-				if (
-					periodInstant !== null &&
-					recordInstant !== null &&
-					compareInstants(periodInstant, recordInstant) !== 0
-				) {
-					push({
-						kind: "endpoint_conflict",
-						shape: "conflicting",
-						timeRecordIds: [record.id],
-						relevance,
-						details: {
-							side,
-							source: "canonical",
-							periodInstant: instantToCanonicalString(periodInstant),
-							otherInstant: instantToCanonicalString(recordInstant),
-						},
-						discriminator: `${side}:canonical`,
-					});
-				}
-			}
-			if (record.detail === null) {
-				push({
-					kind: "canonical_detail_missing",
-					shape: "missing",
-					timeRecordIds: [record.id],
-					relevance,
-				});
-			}
+		if (record && record.detail === null) {
+			push({
+				kind: "canonical_detail_missing",
+				shape: "missing",
+				timeRecordIds: [record.id],
+				relevance,
+			});
 		}
 
-		// Durations and interval shape.
+		// Durations and interval shape of each representation.
 		pushIntervalShape(period.startTime, period.endTime, period.durationMinutes, (draft) =>
 			push({ ...draft, relevance, details: { ...draft.details, source: "period" } }),
 		);
-		if (record) {
-			if (periodClosed && record.endAt !== null && record.durationMinutes === null) {
-				push({
-					kind: "duration_missing",
-					shape: "missing",
-					timeRecordIds: [record.id],
-					relevance,
-					details: { source: "canonical" },
-					discriminator: "canonical",
-				});
-			}
-			if (
-				period.durationMinutes !== null &&
-				record.durationMinutes !== null &&
-				period.durationMinutes !== record.durationMinutes
-			) {
-				push({
-					kind: "duration_conflict",
-					shape: "conflicting",
-					timeRecordIds: [record.id],
-					relevance,
-					details: {
-						periodMinutes: period.durationMinutes,
-						canonicalMinutes: record.durationMinutes,
-					},
-				});
-			}
-		}
-
-		// Metadata: omission, clearing and replacement are distinct.
-		if (record?.detail) {
-			const detail = record.detail;
-			const compare = (
-				field: string,
-				periodValue: string | null,
-				canonicalValues: readonly string[],
-			) => {
-				const common = { timeRecordIds: [record.id], relevance, discriminator: field };
-				if (periodValue !== null && canonicalValues.length === 0) {
-					push({
-						...common,
-						kind: "metadata_missing",
-						shape: "missing",
-						details: { field, periodValue },
-					});
-					// One membership check against one record's few canonical values.
-					// react-doctor-disable-next-line react-doctor/js-set-map-lookups
-				} else if (periodValue !== null && !canonicalValues.includes(periodValue)) {
-					push({
-						...common,
-						kind: "metadata_conflict",
-						shape: "conflicting",
-						details: { field, periodValue, canonicalValues: [...canonicalValues] },
-					});
-				} else if (periodValue === null && canonicalValues.length > 0) {
-					push({
-						...common,
-						kind: "metadata_canonical_only",
-						shape: "disclosure",
-						details: { field, canonicalValues: [...canonicalValues] },
-					});
-				}
-			};
-			compare("project", period.projectId, record.projectIds);
-			compare("work_category", period.workCategoryId, nonNull(detail.workCategoryId));
-			compare("work_location_type", period.workLocationType, nonNull(detail.workLocationType));
-			// Billability (#900) is compared only where both sides name the same
-			// project; both representations always carry it, so any difference is a
-			// conflict for review, never a value to fill in.
-			if (period.projectId !== null && record.projectIds.includes(period.projectId)) {
-				const periodBillable = period.isBillable ?? false;
-				// One lookup against this record's small project list, not repeated lookups against a shared list.
-				// react-doctor-disable-next-line react-doctor/js-set-map-lookups
-				const canonicalBillable = (record.billableProjectIds ?? []).includes(period.projectId);
-				if (periodBillable !== canonicalBillable) {
-					push({
-						timeRecordIds: [record.id],
-						relevance,
-						discriminator: "billable",
-						kind: "metadata_conflict",
-						shape: "conflicting",
-						details: {
-							field: "billable",
-							periodValue: periodBillable,
-							canonicalValue: canonicalBillable,
-						},
-					});
-				}
-			}
-		}
-
-		// Approval relationships and state.
-		if (record && record.approvalState !== period.approvalStatus) {
+		if (record && periodClosed && record.endAt !== null && record.durationMinutes === null) {
 			push({
-				kind: "approval_state_conflict",
-				shape: "conflicting",
+				kind: "duration_missing",
+				shape: "missing",
 				timeRecordIds: [record.id],
 				relevance,
-				details: { periodState: period.approvalStatus, canonicalState: record.approvalState },
+				details: { source: "canonical" },
+				discriminator: "canonical",
 			});
 		}
+
+		// Record agreement (#1217): one finding for each facet the shared rule finds
+		// disagreeing, plus each side whose attribution cannot be represented.
+		if (record) {
+			for (const draft of recordAgreementFindings(period, record)) {
+				push({ ...draft, timeRecordIds: [record.id], relevance });
+			}
+		}
+
+		// Approval relationships.
 		if (
 			period.approvalStatus === "pending" &&
 			!period.hasPendingChanges &&
@@ -1056,6 +993,271 @@ function pushIntervalShape(
 			details: { storedMinutes: minutes, elapsedSeconds },
 		});
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Record agreement (#1217)
+// ---------------------------------------------------------------------------
+
+type PairDraft = {
+	kind: WorkFindingKind;
+	shape: WorkFindingShape;
+	details: FindingDetails;
+	discriminator?: string;
+};
+
+/** A period's evidence as the record agreement rule reads a work period. */
+export function agreementPeriodOf(period: HistoricalPeriodEvidence): AgreementWorkPeriod {
+	return {
+		startTime: dateFromInstant(period.startTime),
+		endTime: period.endTime ? dateFromInstant(period.endTime) : null,
+		durationMinutes: period.durationMinutes,
+		approvalStatus: period.approvalStatus,
+		projectId: period.projectId,
+		taskId: period.taskId,
+		isBillable: period.isBillable ?? false,
+		workCategoryId: period.workCategoryId,
+		workLocationType: period.workLocationType,
+		...vehicleColumnsOf(period),
+	};
+}
+
+/** A record's evidence as the record agreement rule reads a stored canonical work record. */
+export function agreementRecordOf(record: HistoricalRecordEvidence): StoredCanonicalRecord {
+	return {
+		record: {
+			startAt: dateFromInstant(record.startAt),
+			endAt: record.endAt ? dateFromInstant(record.endAt) : null,
+			durationMinutes: record.durationMinutes,
+			approvalState: record.approvalState,
+		},
+		detail: record.detail && {
+			workCategoryId: record.detail.workCategoryId,
+			workLocationType: record.detail.workLocationType,
+			...vehicleColumnsOf(record.detail),
+		},
+		allocations: record.allocations,
+	};
+}
+
+/**
+ * A completed period and its canonical record judged by the record agreement
+ * rule every writer uses. Each disagreeing facet keeps the finding kind repairs
+ * already know (an omitted, replaced or canonical-only assignment stays distinct)
+ * and names its facet in `details.facet`. A disagreement that is a missing end or
+ * duration is reported where that value is missing, not twice.
+ */
+function recordAgreementFindings(
+	period: HistoricalPeriodEvidence,
+	record: HistoricalRecordEvidence,
+): PairDraft[] {
+	const diagnosis = diagnoseRecordAgreement(agreementPeriodOf(period), agreementRecordOf(record));
+
+	const drafts: PairDraft[] = diagnosis.unrepresentable.map(({ side, reason }) => ({
+		kind: "attribution_unrepresentable",
+		shape: "conflicting",
+		details: { side, reason },
+		discriminator: side,
+	}));
+	for (const facet of diagnosis.disagreements) {
+		for (const draft of facetFindings(facet, period, record)) {
+			drafts.push({ ...draft, details: { facet, ...draft.details } });
+		}
+	}
+	return drafts;
+}
+
+function facetFindings(
+	facet: RecordAgreementFacet,
+	period: HistoricalPeriodEvidence,
+	record: HistoricalRecordEvidence,
+): PairDraft[] {
+	const projectAllocations = record.allocations.filter(
+		(allocation) => allocation.allocationKind === "project",
+	);
+	// The canonical project is its first project allocation, as the rule reads it.
+	const canonicalProject = projectAllocations[0] ?? null;
+	switch (facet) {
+		case "interval":
+			return (["start", "end"] as const).flatMap((side): PairDraft[] => {
+				const periodInstant = side === "start" ? period.startTime : period.endTime;
+				const recordInstant = side === "start" ? record.startAt : record.endAt;
+				// A missing end is reported as a missing end or an open-state conflict.
+				if (
+					periodInstant === null ||
+					recordInstant === null ||
+					compareInstants(periodInstant, recordInstant) === 0
+				) {
+					return [];
+				}
+				return [
+					{
+						kind: "endpoint_conflict",
+						shape: "conflicting",
+						details: {
+							side,
+							source: "canonical",
+							periodInstant: instantToCanonicalString(periodInstant),
+							otherInstant: instantToCanonicalString(recordInstant),
+						},
+						discriminator: `${side}:canonical`,
+					},
+				];
+			});
+		case "duration":
+			// A missing duration is reported as missing on its own side.
+			if (period.durationMinutes === null || record.durationMinutes === null) return [];
+			return [
+				{
+					kind: "duration_conflict",
+					shape: "conflicting",
+					details: {
+						periodMinutes: period.durationMinutes,
+						canonicalMinutes: record.durationMinutes,
+					},
+				},
+			];
+		case "approval_state":
+			return [
+				{
+					kind: "approval_state_conflict",
+					shape: "conflicting",
+					details: { periodState: period.approvalStatus, canonicalState: record.approvalState },
+				},
+			];
+		case "project":
+			return [
+				assignmentFinding(
+					"project",
+					period.projectId,
+					canonicalProject?.projectId ?? null,
+					recordProjectIds(record),
+				),
+			];
+		case "task":
+			return [assignmentFinding("task", period.taskId, canonicalProject?.taskId ?? null)];
+		case "billable": {
+			// Billability travels with the project (#900). Where only one side books a
+			// project, its billability is missing or canonical-only with it; where both
+			// do, a difference is a conflict for review, never a value to fill in.
+			const periodValue = period.isBillable ?? false;
+			const canonicalValue = canonicalProject?.isBillable ?? false;
+			const discriminator = "billable";
+			if (canonicalProject === null) {
+				return [
+					{
+						kind: "metadata_missing",
+						shape: "missing",
+						details: { field: "billable", periodValue },
+						discriminator,
+					},
+				];
+			}
+			if (period.projectId === null) {
+				return [
+					{
+						kind: "metadata_canonical_only",
+						shape: "disclosure",
+						details: { field: "billable", canonicalValue },
+						discriminator,
+					},
+				];
+			}
+			return [
+				{
+					kind: "metadata_conflict",
+					shape: "conflicting",
+					details: { field: "billable", periodValue, canonicalValue },
+					discriminator,
+				},
+			];
+		}
+		case "allocation_weight":
+			return [
+				{
+					kind: "metadata_conflict",
+					shape: "conflicting",
+					details: {
+						field: "allocation_weight",
+						canonicalValues: projectAllocations.map((allocation) =>
+							String(allocation.weightPercent),
+						),
+					},
+					discriminator: "allocation_weight",
+				},
+			];
+		case "work_category":
+			return [
+				assignmentFinding(
+					"work_category",
+					period.workCategoryId,
+					record.detail?.workCategoryId ?? null,
+				),
+			];
+		case "work_location":
+			return [
+				assignmentFinding(
+					"work_location_type",
+					period.workLocationType,
+					record.detail?.workLocationType ?? null,
+				),
+			];
+		case "vehicle_use":
+			return [
+				assignmentFinding(
+					"vehicle_use",
+					vehicleUseValue(period),
+					record.detail ? vehicleUseValue(record.detail) : null,
+				),
+			];
+	}
+}
+
+/** Omission, clearing and replacement of an assignment are distinct findings. */
+function assignmentFinding(
+	field: string,
+	periodValue: string | null,
+	canonicalValue: string | null,
+	canonicalValues: readonly string[] = nonNull(canonicalValue),
+): PairDraft {
+	if (periodValue !== null && canonicalValue === null) {
+		return {
+			kind: "metadata_missing",
+			shape: "missing",
+			details: { field, periodValue },
+			discriminator: field,
+		};
+	}
+	if (periodValue === null) {
+		return {
+			kind: "metadata_canonical_only",
+			shape: "disclosure",
+			details: { field, canonicalValues: [...canonicalValues] },
+			discriminator: field,
+		};
+	}
+	return {
+		kind: "metadata_conflict",
+		shape: "conflicting",
+		details: { field, periodValue, canonicalValues: [...canonicalValues] },
+		discriminator: field,
+	};
+}
+
+function vehicleColumnsOf(row: WorkVehicleUseColumns): WorkVehicleUseColumns {
+	return {
+		vehicleKind: row.vehicleKind,
+		vehicleId: row.vehicleId,
+		odometerStartKm: row.odometerStartKm,
+		odometerEndKm: row.odometerEndKm,
+		drivenDistanceKm: row.drivenDistanceKm,
+	};
+}
+
+/** Recorded vehicle use as its stable identity, or null without a vehicle. */
+function vehicleUseValue(row: WorkVehicleUseColumns): string | null {
+	const use = vehicleUseFromColumns(row);
+	return use ? vehicleUseIdentity(use) : null;
 }
 
 // ---------------------------------------------------------------------------

@@ -499,7 +499,7 @@ export async function recordAbsenceForEmployee(
 
 		const audit = new AuditTrail();
 		const transactionResult = await db.transaction(async (tx) => {
-			const write = async () => {
+			const createManagerAbsenceRecords = async () => {
 				await tx.execute(
 					sql`select pg_advisory_xact_lock(hashtext(${managerAbsenceAdvisoryLockKey(target.id)}))`,
 				);
@@ -673,10 +673,10 @@ export async function recordAbsenceForEmployee(
 						proof: input.historicalReconciliation,
 						expectedManual: input,
 					},
-					write,
+					createManagerAbsenceRecords,
 				);
 			await acquireOrganizationConfigurationGuard(tx, actor.organizationId);
-			return write();
+			return createManagerAbsenceRecords();
 		});
 
 		if (!transactionResult.success) {

@@ -1,5 +1,12 @@
 # Active breaks and calendar splits (#304 / T40)
 
+> **Since #1219 (spec #1212):** the calendar split divides completed work through work records
+> (`lib/time-tracking/work-records`, ADR 0010) in both admissions; `splitLegacyWorkPeriod` and
+> its legacy write sequence are gone. Legacy admission now divides the canonical work record
+> too, refuses a pair that disagrees, advances the revision and marks the work balance dirty.
+> Since #1222 the break on running work also ends it through work records. The sections below
+> describe #304 as delivered.
+
 ## Delivery and activation status
 
 Three structural writers used to change work with separate raw writes:

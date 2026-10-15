@@ -8,6 +8,7 @@
 
 import { randomUUID } from "node:crypto";
 import type { Pool } from "pg";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 export function shareLinkFixture(tag: string, uuidPrefix: string) {
 	const uuid = (suffix: string) => `${uuidPrefix}0000-0000-4000-8000-${suffix.padStart(12, "0")}`;
@@ -76,22 +77,24 @@ export function shareLinkFixture(tag: string, uuidPrefix: string) {
 			);
 		}
 		const id = randomUUID();
-		await admin.query(
-			`insert into work_period
-			 (id, employee_id, organization_id, clock_in_id, clock_out_id, project_id, is_billable, start_time,
-			  end_time, duration_minutes, is_active, approval_status, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, true, $7, $8, $9, false, 'approved', now())`,
-			[
-				id,
-				options.employeeId,
-				ids.organization,
-				clockInId,
-				clockOutId,
-				options.projectId,
-				options.start,
-				options.end,
-				options.minutes,
-			],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`insert into work_period
+				 (id, employee_id, organization_id, clock_in_id, clock_out_id, project_id, is_billable, start_time,
+				  end_time, duration_minutes, is_active, approval_status, updated_at)
+				 values ($1, $2, $3, $4, $5, $6, true, $7, $8, $9, false, 'approved', now())`,
+				[
+					id,
+					options.employeeId,
+					ids.organization,
+					clockInId,
+					clockOutId,
+					options.projectId,
+					options.start,
+					options.end,
+					options.minutes,
+				],
+			),
 		);
 		return id;
 	}

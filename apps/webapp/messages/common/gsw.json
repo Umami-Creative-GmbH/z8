@@ -373,6 +373,8 @@
     "previous": "Zrugg",
     "recovering": "Wird wiederhergstellt...",
     "refresh": "Aktualisiere",
+    "refreshData": "Date aktualisiere",
+    "refreshDataFailed": "Date händ nöd chönne aktualisiert werde. Bitte nomal probiere.",
     "refreshing": "Wird aktualisiert...",
     "reject": "Ablehne",
     "rejecting": "Wird abglehnt...",

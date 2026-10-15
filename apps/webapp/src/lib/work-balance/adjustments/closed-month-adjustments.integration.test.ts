@@ -15,6 +15,7 @@ import {
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { MONTH_CLOSED_SQLSTATE } from "@/lib/time-tracking/closed-months/refusal";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -120,12 +121,14 @@ describe("balance adjustments in closed months on PostgreSQL", () => {
 				[entryId, seeded.employeeId, organizationId, type, timestamp, owner, entryId],
 			);
 		}
-		await fixture.pool.query(
-			`insert into work_period
-			 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
-			  duration_minutes, is_active, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, 720, false, now())`,
-			[seeded.employeeId, organizationId, clockInId, clockOutId, start, end],
+		await withCanonicalRecords(fixture.pool, (client) =>
+			client.query(
+				`insert into work_period
+				 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
+				  duration_minutes, is_active, updated_at)
+				 values ($1, $2, $3, $4, $5, $6, 720, false, now())`,
+				[seeded.employeeId, organizationId, clockInId, clockOutId, start, end],
+			),
 		);
 		return seeded;
 	}

@@ -156,6 +156,7 @@
         "deleteTitle": "Eşlemeyi Sil",
         "description": "Açıklama",
         "formatSpecificHint": "Her bordro formatı için ücret türü kodlarını yapılandırın. En az bir tane gereklidir.",
+        "loadFailed": "Ücret türü eşlemeleri yüklenemedi",
         "noMappings": "Henüz yapılandırılmış eşleme yok",
         "saveError": "Eşleme kaydedilemedi",
         "saveSuccess": "Eşleme kaydedildi",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Onay gelen kutusunu incele",
+        "employees": "Çalışanları incele",
         "payrollExport": "Bordro dışa aktarma ayarlarını aç",
         "timeTracking": "Zaman takibini incele",
         "travelExpenses": "Seyahat giderlerini incele"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Çalışan",
         "noNumber": "Ayarlanmadı",
-        "number": "Çalışan numarası"
+        "personnelIdentifier": "Personel kimliği",
+        "personnelNumber": "Personel numarası"
       },
       "checks": {
         "count": "Sayı",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Bir bordro dışa aktarımının aynı personel kimliği altında yazacağı çalışanlar. Bordro sistemi bunları birleştireceğinden, her çalışanın kendine ait bir kimliği olana kadar dışa aktarma reddedilir.",
+          "title": "Paylaşılan personel kimlikleri"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Tüm aktif çalışanlar bu bordro dönemi için onaylanmış istihdam geçmişine sahip.",
           "descriptionWarning": "Bazı aktif çalışanlar bu bordro dönemi için onaylanmış istihdam geçmişine sahip değil."

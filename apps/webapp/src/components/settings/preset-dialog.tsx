@@ -10,7 +10,6 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useEffect } from "react";
 import { toast } from "sonner";
 import {
 	deleteHolidayFromPreset,
@@ -42,6 +41,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useEditSession } from "@/hooks/use-edit-session";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { queryKeys } from "@/lib/query";
@@ -137,7 +137,11 @@ function usePresetDialogController({
 	});
 
 	// Update form when data loads
-	useEffect(() => {
+	useEditSession({
+		open,
+		scope: presetId ?? "create",
+		ready: !!data?.preset,
+		initialize: () => {
 		if (data?.preset) {
 			form.setFieldValue("name", data.preset.name);
 			form.setFieldValue("description", data.preset.description || "");
@@ -148,7 +152,8 @@ function usePresetDialogController({
 			form.setFieldValue("color", data.preset.color || "");
 			form.setFieldValue("isActive", data.preset.isActive);
 		}
-	}, [data, form]);
+	},
+	});
 
 	// Update mutation
 	const updateMutation = useMutation({

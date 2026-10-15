@@ -15,6 +15,7 @@ import {
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { generateEmployeeReport } from "@/lib/reports/report-generator";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { writeFirstEmploymentTerms } from "./first-terms";
 
 // The report's schedule-based expected hours are not under test.
@@ -172,20 +173,22 @@ describe("first employment terms", () => {
 				[entryId, input.employeeId, input.organizationId, type, timestamp, input.userId, entryId],
 			);
 		}
-		await fixture.pool.query(
-			`insert into work_period
-			 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
-			  duration_minutes, is_active, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, false, now())`,
-			[
-				input.employeeId,
-				input.organizationId,
-				clockInId,
-				clockOutId,
-				input.start,
-				input.end,
-				input.minutes,
-			],
+		await withCanonicalRecords(fixture.pool, (client) =>
+			client.query(
+				`insert into work_period
+				 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
+				  duration_minutes, is_active, updated_at)
+				 values ($1, $2, $3, $4, $5, $6, $7, false, now())`,
+				[
+					input.employeeId,
+					input.organizationId,
+					clockInId,
+					clockOutId,
+					input.start,
+					input.end,
+					input.minutes,
+				],
+			),
 		);
 	}
 

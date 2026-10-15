@@ -26,7 +26,8 @@
     "approvals:pilot-readiness": "tsx scripts/approval-pilot-readiness.ts",
     "time:pilot-readiness": "tsx scripts/time-pilot-readiness.ts",
     "rollout:rollback-readiness": "tsx scripts/rollback-readiness.ts",
-    "queue:obliterate": "tsx scripts/obliterate-job-queue.ts"
+    "queue:obliterate": "tsx scripts/obliterate-job-queue.ts",
+    "work-records:attach-missing": "tsx --import ./src/worker-preload.mjs scripts/attach-missing-work-records.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",

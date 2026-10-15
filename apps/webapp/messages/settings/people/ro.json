@@ -43,8 +43,6 @@
         "editRealEmployee": "Editați angajatul activ",
         "editTitle": "Editează angajatul",
         "employeeInformation": "Informații despre angajat",
-        "employeeNumber": "Număr angajat",
-        "employeeNumberDescription": "ID extern în sistemul de salarizare",
         "employeeNumberPlaceholder": "de ex., EMP-001",
         "firstName": "Prenume",
         "firstNameDescription": "Afișat în întregul cont al angajatului",
@@ -64,6 +62,8 @@
         "manageEmployees": "gestionați angajații",
         "managers": "Manageri",
         "noScheduleAssigned": "Niciun program alocat",
+        "personnelNumber": "Număr de personal",
+        "personnelNumberDescription": "Numărul atribuit de organizația dvs. acestui angajat, utilizat în exporturile de salarii. Acesta trebuie să fie unic, inclusiv în rândul foștilor angajați.",
         "position": "Funcție",
         "positionDescription": "Titlul funcției sau rolul",
         "positionPlaceholder": "Introduceți funcția",
@@ -136,7 +136,7 @@
           "actions": "Acțiuni",
           "contract": "Contract",
           "employee": "Angajat",
-          "employeeNumber": "Număr angajat",
+          "personnelNumber": "Număr de personal",
           "position": "Funcție",
           "role": "Rol",
           "status": "Stare",
@@ -375,6 +375,10 @@
         "statusPreparing": "În curs de pregătire",
         "statusReady": "Gata",
         "title": "Export de date cu caracter personal"
+      },
+      "personnelNumber": {
+        "taken": "Acest număr de personal îi aparține lui {name}. Fiecare angajat, actual sau fost, trebuie să aibă propriul număr.",
+        "takenByAnother": "Un alt angajat are deja acest număr de personal. Fiecare angajat, actual sau fost, trebuie să aibă propriul număr."
       },
       "tabs": {
         "employees": "Angajați",

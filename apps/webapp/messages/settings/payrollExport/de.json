@@ -156,6 +156,7 @@
         "deleteTitle": "Zuordnung löschen",
         "description": "Beschreibung",
         "formatSpecificHint": "Konfigurieren Sie Lohnartencodes für jedes Lohnformat. Mindestens einer ist erforderlich.",
+        "loadFailed": "Lohnartenzuordnungen konnten nicht geladen werden",
         "noMappings": "Noch keine Zuordnungen konfiguriert",
         "saveError": "Speichern der Zuordnung fehlgeschlagen",
         "saveSuccess": "Zuordnung gespeichert",
@@ -325,7 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Genehmigungsposteingang prüfen",
-        "employees": "Mitarbeiter prüfen",
+        "employees": "Mitarbeiter überprüfen",
         "payrollExport": "Einstellungen für Lohnabrechnungsexport öffnen",
         "timeTracking": "Zeiterfassung prüfen",
         "travelExpenses": "Reisekosten prüfen"
@@ -339,8 +340,8 @@
       "checks": {
         "count": "Anzahl",
         "duplicatePersonnelIdentifiers": {
-          "description": "Mitarbeiter, die ein Lohnabrechnungsexport unter derselben Personalnummer ausgeben würde. Das Abrechnungssystem würde sie zusammenführen, daher wird der Export verweigert, bis jeder Mitarbeiter eine eigene hat.",
-          "title": "Mehrfach vergebene Personalnummern"
+          "description": "Mitarbeiter, die ein Lohnexport unter derselben Personalkennung ausgeben würde. Das Lohnbuchhaltungssystem würde diese zusammenführen, daher wird der Export abgelehnt, bis jeder Mitarbeiter eine eigene Kennung hat.",
+          "title": "Mehrfach vergebene Personalkennungen"
         },
         "missingEmploymentHistory": {
           "descriptionPass": "Alle aktiven Mitarbeitenden haben einen bestätigten Beschäftigungsverlauf für diesen Abrechnungszeitraum.",
@@ -415,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Ausstehende Arbeit ohne Genehmigungsanfrage",
         "approvalStateConflict": "Genehmigungsstatus stimmen nicht überein",
+        "attributionUnrepresentable": "Abrechenbar oder Aufgabe ohne Projekt",
         "canonicalDetailMissing": "Arbeitsdetails im Zeiteintrag fehlen",
         "canonicalLinkMissing": "Verknüpfung zum Zeiteintrag fehlt",
         "canonicalLinkShared": "Mehrere Arbeitszeiträume verknüpfen denselben Zeiteintrag",
         "canonicalLinkUnresolved": "Verknüpfter Zeiteintrag nicht gefunden",
         "canonicalMissing": "Zeiteintrag fehlt",
+        "canonicalMissingClosedMonth": "Zeiteintrag fehlt in einem abgeschlossenen Monat",
         "captureInferred": "Zeitzonenerfassung nach dem Ereignis abgeleitet",
         "deletedWorkPayable": "Gelöschte Arbeit enthält weiterhin einen vergütbaren Zeiteintrag",
         "durationConflict": "Gespeicherte Zeitdauern stimmen nicht überein",
@@ -567,7 +570,8 @@
           "noRestorableEvidence": "Kein Nachweis belegt den fehlenden Wert",
           "originalActorUnrepresentable": "Kein Eintrag gibt an, wer die Arbeit abgeschlossen hat",
           "originalRuleUnknown": "Keine Darstellung enthält die Minuten; die ursprüngliche Rundung ist unbekannt",
-          "referenceOutsideOrganization": "Ein referenziertes Projekt oder eine Kategorie gehört nicht zu dieser Organisation"
+          "referenceOutsideOrganization": "Ein referenziertes Projekt oder eine Kategorie gehört nicht zu dieser Organisation",
+          "repairLeavesDivergence": "Die ergänzte Arbeit würde weiter von ihrem kanonischen Datensatz abweichen; Prüfung nötig"
         },
         "inactive": "Nicht autorisiert",
         "inactiveDescription": "Die Reparatur erfordert eine separate Autorisierung für diese Organisation. Der Plan bleibt lesbar.",

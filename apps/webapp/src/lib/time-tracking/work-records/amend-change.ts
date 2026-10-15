@@ -1,0 +1,116 @@
+/**
+ * The amend change of work records (ADR 0010, #1225): new times and a work
+ * attribution patch for one completed work period, applied to the work period
+ * and its canonical work record together. No I/O and no server-only imports.
+ *
+ * Endpoints that already exist as recorded time entries are adopted by
+ * reference (`AdoptedEndpoint`, #1226). The Approvals finalizers decide the
+ * approval state in the same change (#1227).
+ */
+import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
+import type { Instant } from "@/lib/datetime/temporal-core";
+import type { TimeEntryTimezoneCapture } from "../timezone-capture";
+import type { NewEntryProvenance, WorkRecordExpected } from "./change";
+import type { WorkAttributionPart, WorkAttributionPatch } from "./work-attribution";
+
+/** A new endpoint: a correction entry at the instant, captured in the zone it was resolved in. */
+export type NewAmendedEndpoint = {
+	at: Instant;
+	capture: TimeEntryTimezoneCapture;
+};
+
+/**
+ * An endpoint that already exists as a recorded time entry (#1226): a pending
+ * correction recorded while its change waited for approval, still inactive
+ * (superseded, by nothing) and replacing the current endpoint. Work records
+ * adopts it by reference, activating it in place of the endpoint, and appends
+ * nothing for it. Its instant and capture are the entry's own.
+ */
+export type AdoptedEndpoint = {
+	/** The id of the recorded correction entry. */
+	adopt: string;
+};
+
+export type AmendedEndpoint = NewAmendedEndpoint | AdoptedEndpoint;
+
+export function isAdoptedEndpoint(endpoint: AmendedEndpoint): endpoint is AdoptedEndpoint {
+	return "adopt" in endpoint;
+}
+
+/**
+ * New times. Each named endpoint is appended as a correction entry that
+ * replaces the current one, or adopted when it is already recorded; an
+ * endpoint left out, or named at its current instant, stays.
+ */
+export type AmendedTimes = {
+	clockIn?: AmendedEndpoint;
+	clockOut?: AmendedEndpoint;
+	/** The notes every correction entry carries. */
+	notes: string | null;
+	/** Who and what records the correction entries; each endpoint has its own capture. */
+	entries: Omit<NewEntryProvenance, "capture">;
+	/** The append position's record of the operation that appended the corrections. */
+	appendOperation: TimeEntryAppendOperation;
+};
+
+/**
+ * A work attribution patch as callers name it. The project is named by its id
+ * only: work records reads the project and applies its billable default when
+ * the project changes and `billable` is left out (#900). Every other key
+ * follows `WorkAttributionPatch`: left out keeps, null clears, and a task left
+ * out follows the project (#873).
+ */
+export type AmendAttributionPatch = Omit<WorkAttributionPatch, "project"> & {
+	project?: string | null;
+};
+
+/**
+ * An approval decision (#1227): the work period and its canonical work record
+ * both take the decided state, and the work period's pending changes, which
+ * waited for the decision, are cleared. Only the Approvals finalizers decide;
+ * the decision's preconditions (a pending record, the lifecycle) stay theirs.
+ */
+export type WorkApprovalDecision = "approved" | "rejected";
+
+/**
+ * Facets on which a locked pair may disagree because the change rewrites them
+ * from the work period: its interval and minutes. Only time-correction
+ * finalization names them, for history from before the legacy split and the
+ * legacy automatic break kept the canonical work record (#304). #1229 removes
+ * this once production shows no divergence.
+ */
+export type ToleratedDrift = "interval" | "duration";
+
+/**
+ * Amend completed work: change its times, its work attribution, its approval
+ * state or several of them, in one revision step with one send-back. Callers
+ * keep their own policy (change policy, eligibility, review guard, a range
+ * rule for the new times) and name only what changes. A change of nothing is
+ * refused as `unchanged`.
+ */
+export type AmendWorkRecord = {
+	kind: "amend";
+	organizationId: string;
+	employeeId: string;
+	expected: WorkRecordExpected;
+	times?: AmendedTimes;
+	attribution?: AmendAttributionPatch;
+	approval?: WorkApprovalDecision;
+	toleratedDrift?: readonly ToleratedDrift[];
+	/** The user making the change; null for a job or the system. */
+	actorUserId: string | null;
+};
+
+/** What an amendment changed. */
+export type AmendmentChanges = {
+	/**
+	 * Whether the clock-in moved: to a new instant, or to an adopted recorded
+	 * correction, which replaces the endpoint even at the same instant.
+	 */
+	clockIn: boolean;
+	clockOut: boolean;
+	/** The parts of the work attribution that changed, in `WorkAttribution` order. */
+	attribution: WorkAttributionPart[];
+	/** Whether the approval state changed. */
+	approval: boolean;
+};

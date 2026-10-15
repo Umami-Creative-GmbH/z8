@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useServerDataState } from "@/hooks/use-server-data-state";
 import type { VehicleChangeInput } from "@/lib/organization/vehicles/vehicle-rules";
 import type { OrganizationVehicleView } from "@/lib/organization/vehicles/vehicles";
 import { VehicleDialog } from "./vehicle-dialog";
@@ -45,7 +46,7 @@ type Deletion = { vehicle: OrganizationVehicleView; used: boolean } | null;
 /** Org admin management of organization vehicles and their assigned drivers (#1118). */
 export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 	const { t } = useTranslate();
-	const [vehicles, setVehicles] = useState(initialData.vehicles);
+	const [vehicles, setVehicles] = useServerDataState(initialData.vehicles);
 	const [dialog, setDialog] = useState<{ vehicle: OrganizationVehicleView | null } | null>(null);
 	const [deletion, setDeletion] = useState<Deletion>(null);
 	const [pending, setPending] = useState(false);

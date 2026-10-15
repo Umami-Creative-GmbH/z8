@@ -3,6 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useLayoutEffect, useReducer, useRef } from "react";
 import { toast } from "sonner";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { loadPermissionsPageData } from "./actions";
 import {
 	PermissionEditorDialog,
@@ -165,12 +166,12 @@ export function PermissionsPageClient(props: {
 		};
 	}, [props.isOrgAdmin, props.organizationId, t]);
 
-	const handleRefresh = async () => {
+	const handleRefresh = async (background = false) => {
 		const organizationId = props.organizationId;
 		if (!mounted.current) return;
 		if (activeOrganizationId.current !== organizationId) return;
 		const requestId = ++requestSequence.current;
-		dispatch({ type: "setLoading", value: true });
+		if (!background) dispatch({ type: "setLoading", value: true });
 
 		let result: Awaited<ReturnType<typeof loadPermissionsPageData>>;
 		try {
@@ -230,6 +231,8 @@ export function PermissionsPageClient(props: {
 			},
 		});
 	};
+
+	useViewRefresh(() => handleRefresh(true));
 
 	const filteredEmployees = filterEmployeesByQuery(
 		state.employees,

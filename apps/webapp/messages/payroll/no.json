@@ -59,6 +59,7 @@
       "employeeIdsMustBeArray": "employeeIds må være en matrise",
       "employeeIdsMustContainOnlyStrings": "employeeIds må bare inneholde strenger",
       "endDateAfterStart": "Sluttdato må være på eller etter startdato",
+      "exportBlockedByDuplicateIdentifier": "Eksport blokkert: flere ansatte deler samme ansattidentifikator. Gi hver ansatt sin egen: {employees}",
       "exportBlockedByMissingIdentifier": "Eksport blokkert: enkelte ansatte mangler verdi for det egendefinerte feltet som brukes som lønnsidentifikator",
       "exportBlockedByOffboardingClockRepair": "Eksport blokkert: korriger offboarding-utstemplingen først",
       "exportBlockedByUncertainWork": "Eksport blokkert: avklar det usikre arbeidet i det valgte omfanget først",

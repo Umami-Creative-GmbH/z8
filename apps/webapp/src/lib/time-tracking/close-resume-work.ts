@@ -27,6 +27,7 @@ import {
 	type CloseActiveWorkResult,
 	type CloseActiveWorkWriter,
 	type ClosedActiveWork,
+	type ClosingVehicleUse,
 	CompletedWorkCollisionError,
 	CompletedWorkIntegrityError,
 	closeActiveWorkGraph,
@@ -92,6 +93,8 @@ export type CloseResumeWorkInput = {
 	close: Endpoint;
 	/** The detected return. */
 	resume: Endpoint;
+	/** The closed work's vehicle use, decided from the live work's (#1122). */
+	closingVehicleUse?: ClosingVehicleUse;
 };
 
 /**
@@ -196,8 +199,11 @@ export async function closeAndResumeWork(
 			writer: input.writer,
 			eventInstant: input.close.instant,
 			capture: input.close.capture,
+			...(input.closingVehicleUse ? { closingVehicleUse: input.closingVehicleUse } : {}),
 		},
+		// A fresh server identity: nothing can hold it yet.
 		randomUUID(),
+		{ identityChecked: true },
 	);
 	// Symmetric occupancy for the resumed interval runs after the closure, so the
 	// closed target no longer occupies it and any other work still does. The

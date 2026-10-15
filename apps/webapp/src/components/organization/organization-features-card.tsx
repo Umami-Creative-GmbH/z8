@@ -11,7 +11,7 @@ import {
 	IconReceipt,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useReducer, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { switchBillableTime } from "@/app/[locale]/(app)/settings/billable-time/actions";
 import { toggleOrganizationFeature } from "@/app/[locale]/(app)/settings/organizations/actions";
@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useServerDataState } from "@/hooks/use-server-data-state";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
@@ -81,13 +82,7 @@ export function OrganizationFeaturesCard({
 		personnelFilesEnabled,
 	};
 
-	return (
-		<OrganizationFeaturesCardContent
-			key={Object.values(initialFeatures).join(":")}
-			{...props}
-			initialFeatures={initialFeatures}
-		/>
-	);
+	return <OrganizationFeaturesCardContent {...props} initialFeatures={initialFeatures} />;
 }
 
 function useOrganizationFeatures({
@@ -101,7 +96,9 @@ function useOrganizationFeatures({
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const [isPending, startTransition] = useTransition();
-	const [features, dispatch] = useReducer(organizationFeatureReducer, initialFeatures);
+	const [features, setFeatures] = useServerDataState(initialFeatures);
+	const dispatch = (action: Parameters<typeof organizationFeatureReducer>[1]) =>
+		setFeatures((current) => organizationFeatureReducer(current, action));
 	const [currencyDialogOpen, setCurrencyDialogOpen] = useState(false);
 	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 

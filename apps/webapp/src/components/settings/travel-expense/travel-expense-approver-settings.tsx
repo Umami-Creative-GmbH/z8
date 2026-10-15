@@ -48,6 +48,7 @@ function ApproverForm({ settings }: { settings: TravelExpenseApproverSettings })
 				return;
 			}
 			await queryClient.invalidateQueries({ queryKey });
+			if (form.store.state.values === value) form.reset(value, { keepDefaultValues: true });
 			toast.success(t("settings.travelExpenses.approver.saved", "Expense approver saved"));
 		},
 	});
@@ -157,7 +158,7 @@ export function TravelExpenseApproverSettingsCard() {
 						</Button>
 					</div>
 				)}
-				{data && <ApproverForm key={data.expenseApproverEmployeeId ?? NONE} settings={data} />}
+				{data && <ApproverForm settings={data} />}
 			</CardContent>
 		</Card>
 	);

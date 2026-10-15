@@ -43,8 +43,6 @@
         "editRealEmployee": "Aktive Mitarbeiter bearbeite",
         "editTitle": "Mitarbeiter bearbeite",
         "employeeInformation": "Mitarbeiter-Informatione",
-        "employeeNumber": "Mitarbeiternummere",
-        "employeeNumberDescription": "ID vom externe Lohnsyschtem",
         "employeeNumberPlaceholder": "z. B. EMP-001",
         "firstName": "Vorname",
         "firstNameDescription": "Wird im ganze Mitarbeiterkonto aazeigt",
@@ -64,6 +62,8 @@
         "manageEmployees": "Mitarbeiter verwalte",
         "managers": "Manager",
         "noScheduleAssigned": "Kei Zytplan zuegwise",
+        "personnelNumber": "Personalnummere",
+        "personnelNumberDescription": "D Nummere vo dinere Organisation für de Mitarbeiter, wo bi Lohnexport brucht wird. Si muess eidütig si, au bi ehemalige Mitarbeiter.",
         "position": "Position",
         "positionDescription": "Jobtitel oder Rolle",
         "positionPlaceholder": "Position iigee",
@@ -136,7 +136,7 @@
           "actions": "Aktione",
           "contract": "Vertrag",
           "employee": "Mitarbeiter",
-          "employeeNumber": "Mitarbeiternummer",
+          "personnelNumber": "Personalnummere",
           "position": "Position",
           "role": "Rolle",
           "status": "Status",
@@ -375,6 +375,10 @@
         "statusPreparing": "Wird vorbereitet",
         "statusReady": "Parat",
         "title": "Export vo persöönliche Date"
+      },
+      "personnelNumber": {
+        "taken": "Die Personalnummere ghört {name}. Jede Mitarbeiter, egal ob aktuell oder ehemalig, brucht en eigeni Nummere.",
+        "takenByAnother": "En andere Mitarbeiter hät die Personalnummere scho. Jede Mitarbeiter, egal ob aktuell oder ehemalig, brucht en eigeni Nummere."
       },
       "tabs": {
         "employees": "Mitarbeitende",

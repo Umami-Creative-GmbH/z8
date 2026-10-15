@@ -11,6 +11,7 @@ import {
 	getWorkCategoriesAction,
 	saveMappingAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -127,8 +128,9 @@ export function WageTypeMappings({
 		value: MappingDraft[K],
 	) => setDraft((current) => ({ ...current, [key]: value }));
 	const resetForm = () => setDraft(EMPTY_DRAFT);
-	const refreshData = async () =>
-		startTransition(async () => {
+	const refreshData = async (throwOnError = false) => {
+		let failure: unknown;
+		try {
 			const [mappingsResult, workResult, absenceResult] = await Promise.all([
 				getMappingsAction(organizationId),
 				getWorkCategoriesAction(organizationId),
@@ -137,8 +139,28 @@ export function WageTypeMappings({
 			if (mappingsResult.success) setMappings(mappingsResult.data);
 			if (workResult.success) setWorkCategories(workResult.data);
 			if (absenceResult.success) setAbsenceCategories(absenceResult.data);
+			if (!mappingsResult.success || !workResult.success || !absenceResult.success) {
+				failure = new Error("Failed to refresh wage type mappings");
+			}
+		} catch (error) {
+			failure = error;
+		}
+		if (failure) {
+			if (throwOnError) throw failure;
+			toast.error(
+				t("settings.payrollExport.mappings.loadFailed", "Failed to load wage type mappings"),
+			);
+		}
+	};
+
+	useViewRefresh(() => {
+		if (hasMappingFormat) return refreshData(true);
+	});
+	const loadData = useEffectEvent(() => {
+		startTransition(async () => {
+			await refreshData();
 		});
-	const loadData = useEffectEvent(refreshData);
+	});
 	useEffect(() => {
 		if (hasMappingFormat) loadData();
 	}, [hasMappingFormat]);

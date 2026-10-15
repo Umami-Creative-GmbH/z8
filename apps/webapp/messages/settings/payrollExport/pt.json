@@ -156,6 +156,7 @@
         "deleteTitle": "Excluir mapeamento",
         "description": "Descrição",
         "formatSpecificHint": "Configure os códigos de tipo de salário para cada formato de folha de pagamento. Pelo menos um é obrigatório.",
+        "loadFailed": "Falha ao carregar os mapeamentos de tipos de remuneração",
         "noMappings": "Nenhum mapeamento configurado ainda",
         "saveError": "Falha ao salvar o mapeamento",
         "saveSuccess": "Mapeamento salvo",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Revisar caixa de aprovações",
+        "employees": "Revisar colaboradores",
         "payrollExport": "Abrir configurações de exportação da folha de pagamento",
         "timeTracking": "Revisar controle de horas",
         "travelExpenses": "Revisar despesas de viagem"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Funcionário",
         "noNumber": "Não definido",
-        "number": "Número do funcionário"
+        "personnelIdentifier": "Identificador de pessoal",
+        "personnelNumber": "Número de pessoal"
       },
       "checks": {
         "count": "Contagem",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Colaboradores que uma exportação da folha de pagamento registraria sob o mesmo identificador de pessoal. O sistema de folha de pagamento os mesclaria, portanto a exportação é recusada até que cada colaborador tenha o seu próprio.",
+          "title": "Identificadores de pessoal compartilhados"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Todos os colaboradores ativos têm histórico de trabalho confirmado para este período de folha de pagamento.",
           "descriptionWarning": "Alguns colaboradores ativos não têm histórico de trabalho confirmado para este período de folha de pagamento."

@@ -97,6 +97,11 @@ function holdLabel(reason: GapHoldReason, t: Translate): string {
 				"settings.workDiagnostics.repair.hold.referenceOutsideOrganization",
 				"A referenced project or category is not this organization's",
 			);
+		case "repair_leaves_divergence":
+			return t(
+				"settings.workDiagnostics.repair.hold.repairLeavesDivergence",
+				"The filled work would still disagree with its canonical record; needs review",
+			);
 	}
 }
 

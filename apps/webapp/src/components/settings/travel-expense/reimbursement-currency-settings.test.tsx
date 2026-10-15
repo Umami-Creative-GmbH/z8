@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -45,9 +45,35 @@ function mount(currency: string) {
 			<ReimbursementCurrencySettingsCard />
 		</QueryClientProvider>,
 	);
+	return client;
 }
 
 describe("ReimbursementCurrencySettingsCard (#688)", () => {
+	it("updates pristine settings and preserves a changed currency across a data refresh", async () => {
+		const user = userEvent.setup();
+		const client = mount("EUR");
+		const select = await screen.findByRole("combobox", { name: "Reimbursement currency" });
+		actions.getReimbursementCurrencySetting.mockResolvedValue({
+			success: true,
+			data: { currency: "USD" },
+		});
+		await act(async () => {
+			await client.refetchQueries({ type: "active" });
+		});
+		await waitFor(() => expect(select.textContent).toContain("USD – US Dollar"));
+		await user.click(select);
+		await user.keyboard("franc");
+		await user.click(screen.getByRole("option", { name: "CHF – Swiss Franc" }));
+		actions.getReimbursementCurrencySetting.mockResolvedValue({
+			success: true,
+			data: { currency: "EUR" },
+		});
+		await act(async () => {
+			await client.refetchQueries({ type: "active" });
+		});
+		expect(select.textContent).toContain("CHF – Swiss Franc");
+	});
+
 	it("offers only currencies that can be reimbursed, searchable by code and name", async () => {
 		actions.saveReimbursementCurrencySetting.mockResolvedValue({
 			success: true,

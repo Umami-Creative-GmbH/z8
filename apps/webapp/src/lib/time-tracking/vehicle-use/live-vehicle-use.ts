@@ -14,6 +14,7 @@ import { assertWorkOpen, workInterval } from "../closed-months/store";
 import { withCompletedWorkTransaction } from "../completed-work-transaction";
 import { sendBackChangedPeriodSubmissions } from "../period-submissions/submission-send-back";
 import { assertNoUnresolvedWorkPeriodReview } from "../work-period-review";
+import type { SealedWorkTransactionScope } from "../work-transaction";
 import {
 	sameWorkVehicleUse,
 	vehicleUseColumns,
@@ -53,7 +54,8 @@ export async function changeLiveWorkVehicleUse(input: {
 	const { organizationId, employeeId, workPeriodId } = input;
 	await withCompletedWorkTransaction(
 		{ organizationId, employeeId, actorUserId: input.actorUserId },
-		async (scope) => {
+		// Typed, so the approval write-boundary scanner sees this live-work write (#1230).
+		async (scope: SealedWorkTransactionScope) => {
 			const tx = scope.db;
 			const [period] = await tx
 				.select()
@@ -161,11 +163,14 @@ export async function changeLiveWorkVehicleUse(input: {
 					drivenDistanceKm: columns.drivenDistanceKm,
 					updatedAt: new Date(),
 				})
+				// Live work only (Time Tracking ADR 0010): ended work is work records'.
 				.where(
 					and(
 						eq(workPeriod.id, workPeriodId),
 						eq(workPeriod.organizationId, organizationId),
 						eq(workPeriod.employeeId, employeeId),
+						eq(workPeriod.isActive, true),
+						isNull(workPeriod.endTime),
 					),
 				);
 			await sendBackChangedPeriodSubmissions(tx, {

@@ -373,6 +373,8 @@
     "previous": "Forrige",
     "recovering": "Gjenoppretter...",
     "refresh": "Oppdater",
+    "refreshData": "Oppdater data",
+    "refreshDataFailed": "Kunne ikke oppdatere data. Prøv igjen.",
     "refreshing": "Oppdaterer...",
     "reject": "Avvis",
     "rejecting": "Avviser…",

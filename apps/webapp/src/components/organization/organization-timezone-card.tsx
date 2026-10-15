@@ -1,8 +1,10 @@
 "use client";
 
+import { useServerDataState } from "@/hooks/use-server-data-state";
+
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { toast } from "sonner";
 import { updateOrganizationTimezone } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { TimezonePicker } from "@/components/settings/timezone-picker";
@@ -25,7 +27,7 @@ export function OrganizationTimezoneCard({
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
-	const [timezone, setTimezone] = useState(initialTimezone);
+	const [timezone, setTimezone] = useServerDataState(initialTimezone);
 	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 
 	const canEdit = currentMemberRole === "owner";

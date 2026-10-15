@@ -36,7 +36,6 @@ const mockState = vi.hoisted(() => ({
 	checkComplianceAfterClockOut: vi.fn(),
 	enforceBreaksAfterClockOut: vi.fn(),
 	checkProjectBudgetAfterClockOut: vi.fn(),
-	markEmployeeWorkBalanceDirty: vi.fn(),
 	reconcileOrdinaryMaintenance: vi.fn(),
 	isBillingMutationAllowed: vi.fn(),
 	requireBillingForMutation: vi.fn(),
@@ -60,7 +59,13 @@ const mockState = vi.hoisted(() => ({
 	updateReturning: vi.fn(),
 	updateSet: vi.fn(),
 	updateWhere: vi.fn(),
-	createCanonicalWorkRecord: vi.fn(),
+	applyWorkRecordChange: vi.fn(
+		async (_scope: unknown, change: { workPeriodId?: string }): Promise<unknown> => ({
+			kind: "created",
+			segment: { workPeriodId: change.workPeriodId },
+		}),
+	),
+	requireApprovalScope: vi.fn(),
 	resolveBreakPolicySnapshot: vi.fn(
 		async (input: { endTime: { toString(): string } }) => ({
 			version: 1 as const,
@@ -235,10 +240,6 @@ vi.mock("@/lib/billing/guard", () => ({
 	requireBillingForMutation: mockState.requireBillingForMutation,
 }));
 
-vi.mock("@/lib/work-balance/service", () => ({
-	markEmployeeWorkBalanceDirty: mockState.markEmployeeWorkBalanceDirty,
-}));
-
 vi.mock("@/lib/time-tracking/work-transaction", async (importOriginal) => ({
 	...(await importOriginal<
 		typeof import("@/lib/time-tracking/work-transaction")
@@ -366,10 +367,41 @@ vi.mock("@/lib/approvals/workflow/runtime", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/lib/time-tracking/canonical-work-record", () => ({
-	canonicalWorkRecordClient: {
-		createForCompletedPeriod: mockState.createCanonicalWorkRecord,
+// Work records (#1223) creates the manual work; its PostgreSQL contract suite covers the
+// writes. Here the action's change is observed.
+vi.mock("@/lib/time-tracking/work-records", () => ({
+	applyWorkRecordChange: (...args: unknown[]) =>
+		mockState.applyWorkRecordChange(...(args as [unknown, { workPeriodId?: string }])),
+	orRefuse: (outcome: { kind: string }) => {
+		if (outcome.kind !== "created") throw new Error(`Work records refused: ${outcome.kind}`);
+		return outcome;
 	},
+}));
+
+// The manual work transaction's guards have their own suites; here it opens the mocked
+// approval runtime's transaction and seals it as the coordinator would.
+vi.mock("@/lib/time-tracking/manual-work-transaction", () => ({
+	withManualWorkTransaction: async (
+		_input: unknown,
+		createRuntime: () => {
+			repository: {
+				withTransaction: <T>(operation: (context: never) => Promise<T>) => Promise<T>;
+			};
+		},
+		operation: (context: unknown) => Promise<unknown>,
+	) =>
+		createRuntime().repository.withTransaction(
+			async (approval: { dbService: { db: unknown } }) =>
+				operation({
+					db: approval.dbService.db,
+					admission: await mockState.readAppendAdmission(),
+					approval,
+					assertEmployee: () => {},
+					assertParticipant: () => {},
+					assertApprovalPolicy: () => {},
+					requireApprovalScope: mockState.requireApprovalScope,
+				}),
+		),
 }));
 
 vi.mock("./approvals", () => ({
@@ -401,10 +433,6 @@ vi.mock("./compliance", () => ({
 
 vi.mock("./entry-helpers", () => ({
 	validateProjectAssignment: mockState.validateProjectAssignment,
-}));
-
-vi.mock("@/lib/time-tracking/time-entry-writer", () => ({
-	createTimeEntry: mockState.createTimeEntry,
 }));
 
 vi.mock("./policy-helpers", () => ({
@@ -823,6 +851,28 @@ function createManualTimeEntry(
 	});
 }
 
+type CreatedEndpoint = {
+	at: { toString(): string };
+	notes: string | null;
+	capture: { utcOffsetMinutes: number; timezone: string; timezoneSource: string };
+};
+type CreatedChange = {
+	kind: string;
+	employeeId: string;
+	workPeriodId?: string;
+	start: CreatedEndpoint;
+	end: CreatedEndpoint;
+	approval: { state: string; pendingChanges?: Record<string, unknown> };
+	[key: string]: unknown;
+};
+
+/** The change the action asked work records to create (#1223). */
+function createdChange(call = 0): CreatedChange {
+	const args = mockState.applyWorkRecordChange.mock.calls[call];
+	if (!args) throw new Error("work records was not asked to create work");
+	return args[1] as unknown as CreatedChange;
+}
+
 vi.mock("@/lib/auth-helpers", () => ({
 	getPrincipalContext: mockState.getPrincipalContext,
 	isOrgAdminCasl: mockState.isOrgAdminCasl,
@@ -865,6 +915,10 @@ function principalFor(
 describe("createManualTimeEntry", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.applyWorkRecordChange.mockReset().mockImplementation(async (_scope, change) => ({
+			kind: "created",
+			segment: { workPeriodId: change.workPeriodId },
+		}));
 		mockState.transaction.mockReset();
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-04T10:00:00.000Z"));
@@ -884,7 +938,6 @@ describe("createManualTimeEntry", () => {
 			type: "approval_required",
 			reason: "outside_direct_edit_window",
 		});
-		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.findWorkPeriods.mockResolvedValue([]);
 		mockState.findExistingPeriod.mockResolvedValue(null);
 		mockState.findCanonicalRecord.mockResolvedValue(null);
@@ -922,7 +975,7 @@ describe("createManualTimeEntry", () => {
 		mockState.findTeams.mockResolvedValue([]);
 		mockState.transaction.mockImplementation(async (callback) =>
 			callback({
-				execute: ordinarySubmissionExecute("manual_time_submission"),
+				execute: ordinarySubmissionExecute("manual_time_submission", defaultSubmissionId),
 				query: {
 					...ordinarySubmissionQueries(),
 					workPeriod: {
@@ -973,9 +1026,6 @@ describe("createManualTimeEntry", () => {
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1", type: "clock_in" })
 			.mockResolvedValueOnce({ id: "clock-out-1", type: "clock_out" });
-		mockState.createCanonicalWorkRecord.mockResolvedValue({
-			id: "canonical-1",
-		});
 		mockState.insertValues.mockReturnValue({
 			returning: mockState.insertReturning,
 		});
@@ -1018,9 +1068,6 @@ describe("createManualTimeEntry", () => {
 			mockState.createTimeEntry
 				.mockResolvedValueOnce({ id: "clock-in-1", type: "clock_in" })
 				.mockResolvedValueOnce({ id: "clock-out-1", type: "clock_out" });
-			mockState.createCanonicalWorkRecord.mockResolvedValue({
-				id: "canonical-1",
-			});
 			mockState.insertValues.mockReturnValue({
 				returning: mockState.insertReturning,
 			});
@@ -1057,9 +1104,8 @@ describe("createManualTimeEntry", () => {
 			success: false,
 			error: "Could not verify time approval policy. Please try again.",
 		});
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 		expect(mockState.insertValues).not.toHaveBeenCalled();
-		expect(mockState.createCanonicalWorkRecord).not.toHaveBeenCalled();
 	});
 
 	it("allows an organization owner or admin to create their own entry beyond the approval window", async () => {
@@ -1072,9 +1118,6 @@ describe("createManualTimeEntry", () => {
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1" })
 			.mockResolvedValueOnce({ id: "clock-out-1" });
-		mockState.createCanonicalWorkRecord.mockResolvedValue({
-			id: "canonical-1",
-		});
 		mockState.insertValues.mockReturnValue({
 			returning: mockState.insertReturning,
 		});
@@ -1110,24 +1153,14 @@ describe("createManualTimeEntry", () => {
 			success: false,
 			error: "Could not verify time approval policy. Please try again.",
 		});
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 	});
 
-	it("marks the work balance dirty from the manual clock-in date after creating an approved entry", async () => {
+	it("creates an approved entry through work records, which marks the balance in its transaction", async () => {
 		mockState.getEditCapabilityForPeriod.mockResolvedValue({
 			type: "direct",
 			reason: "within_window",
 		});
-		mockState.createTimeEntry
-			.mockResolvedValueOnce({ id: "clock-in-1" })
-			.mockResolvedValueOnce({ id: "clock-out-1" });
-		mockState.createCanonicalWorkRecord.mockResolvedValue({
-			id: "canonical-1",
-		});
-		mockState.insertValues.mockReturnValue({
-			returning: mockState.insertReturning,
-		});
-		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 
 		const result = await createManualTimeEntry({
@@ -1137,15 +1170,34 @@ describe("createManualTimeEntry", () => {
 			reason: "Forgot to clock in",
 		});
 
-		expect(result.success).toBe(true);
-		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
-			employeeId: "employee-1",
-			organizationId: "org-1",
-			dirtyFromDate: "2026-05-04",
+		expect(result).toMatchObject({
+			success: true,
+			data: { workPeriodId: defaultSubmissionId, requiresApproval: false },
 		});
-		expect(mockState.insertReturning.mock.invocationCallOrder[0]).toBeLessThan(
-			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
-		);
+		const change = createdChange();
+		expect(change).toMatchObject({
+			kind: "create_new",
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			workPeriodId: defaultSubmissionId,
+			start: { notes: "Manual entry: Forgot to clock in" },
+			end: { notes: "Forgot to clock in" },
+			attribution: {
+				project: null,
+				workCategoryId: null,
+				workLocationType: null,
+				vehicleUse: null,
+			},
+			approval: { state: "approved" },
+			origin: "manual",
+			recordedBy: "user-1",
+			actorUserId: "user-1",
+			entries: { createdBy: "user-1", ipAddress: "127.0.0.1", deviceInfo: "test-agent" },
+			appendOperation: "manual_entry",
+		});
+		expect(change.start.at.toString()).toBe("2026-05-04T08:00:00Z");
+		expect(change.end.at.toString()).toBe("2026-05-04T09:00:00Z");
+		// The work balance refresh commits with the work; nothing marks it after commit.
 		expect(mockState.resolveSurchargeSnapshot).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-1",
@@ -1155,7 +1207,7 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			employeeId: "employee-1",
-			affectedWorkPeriodIds: ["period-1"],
+			affectedWorkPeriodIds: [defaultSubmissionId],
 			snapshot: expect.objectContaining({ resolution: { kind: "none" } }),
 		});
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
@@ -1186,28 +1238,19 @@ describe("createManualTimeEntry", () => {
 		});
 
 		expect(result.success).toBe(true);
-		expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
-			1,
-			expect.objectContaining({
-				type: "clock_in",
-				timestamp: new Date("2026-05-04T06:00:00.000Z"),
-				timezone: "Europe/Berlin",
-				timezoneSource: "user_setting",
-				utcOffsetMinutes: 120,
-			}),
-			expect.anything(),
-		);
-		expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
-			2,
-			expect.objectContaining({
-				type: "clock_out",
-				timestamp: new Date("2026-05-04T07:00:00.000Z"),
-				timezone: "Europe/Berlin",
-				timezoneSource: "user_setting",
-				utcOffsetMinutes: 120,
-			}),
-			expect.anything(),
-		);
+		const { start, end } = createdChange();
+		expect(start.at.toString()).toBe("2026-05-04T06:00:00Z");
+		expect(start.capture).toEqual({
+			timezone: "Europe/Berlin",
+			timezoneSource: "user_setting",
+			utcOffsetMinutes: 120,
+		});
+		expect(end.at.toString()).toBe("2026-05-04T07:00:00Z");
+		expect(end.capture).toEqual({
+			timezone: "Europe/Berlin",
+			timezoneSource: "user_setting",
+			utcOffsetMinutes: 120,
+		});
 		expect(mockState.getEditCapabilityForPeriod).toHaveBeenCalledWith(
 			expect.objectContaining({
 				workPeriodEndTime: new Date("2026-05-04T07:00:00.000Z"),
@@ -1241,17 +1284,13 @@ describe("createManualTimeEntry", () => {
 		});
 
 		expect(result.success).toBe(true);
-		expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
-			1,
-			expect.objectContaining({
-				type: "clock_in",
-				timestamp: new Date("2026-05-04T12:00:00.000Z"),
-				timezone: "America/New_York",
-				timezoneSource: "browser",
-				utcOffsetMinutes: -240,
-			}),
-			expect.anything(),
-		);
+		const { start } = createdChange();
+		expect(start.at.toString()).toBe("2026-05-04T12:00:00Z");
+		expect(start.capture).toEqual({
+			timezone: "America/New_York",
+			timezoneSource: "browser",
+			utcOffsetMinutes: -240,
+		});
 	});
 
 	it("uses target employee identity and saved timezone for manager manual entries", async () => {
@@ -1308,9 +1347,6 @@ describe("createManualTimeEntry", () => {
 		mockState.getUserTimezone.mockImplementation(async (userId: string) =>
 			userId === "staff-user" ? "Europe/Berlin" : "UTC",
 		);
-		mockState.createCanonicalWorkRecord.mockResolvedValue({
-			id: "canonical-1",
-		});
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1" })
 			.mockResolvedValueOnce({ id: "clock-out-1" });
@@ -1339,42 +1375,22 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.findWorkPeriods).toHaveBeenCalledWith(
 			expect.objectContaining({ where: expect.anything() }),
 		);
-		expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
-			1,
-			expect.objectContaining({
-				employeeId: "staff-1",
-				organizationId: "org-1",
-				timestamp: new Date("2026-05-04T06:00:00.000Z"),
-				timezone: "Europe/Berlin",
-				timezoneSource: "manager_target_user_setting",
-				utcOffsetMinutes: 120,
-			}),
-			expect.anything(),
-		);
-		expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
-			2,
-			expect.objectContaining({
-				employeeId: "staff-1",
-				organizationId: "org-1",
-				timestamp: new Date("2026-05-04T07:00:00.000Z"),
-				timezone: "Europe/Berlin",
-				timezoneSource: "manager_target_user_setting",
-				utcOffsetMinutes: 120,
-			}),
-			expect.anything(),
-		);
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				employeeId: "staff-1",
-				organizationId: "org-1",
-			}),
-		);
-		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith(
-			expect.objectContaining({
-				employeeId: "staff-1",
-				organizationId: "org-1",
-			}),
-		);
+		const change = createdChange();
+		expect(change).toMatchObject({
+			employeeId: "staff-1",
+			organizationId: "org-1",
+			recordedBy: "manager-user",
+			entries: { createdBy: "manager-user" },
+		});
+		const target = {
+			timezone: "Europe/Berlin",
+			timezoneSource: "manager_target_user_setting",
+			utcOffsetMinutes: 120,
+		};
+		expect(change.start.at.toString()).toBe("2026-05-04T06:00:00Z");
+		expect(change.start.capture).toEqual(target);
+		expect(change.end.at.toString()).toBe("2026-05-04T07:00:00Z");
+		expect(change.end.capture).toEqual(target);
 	});
 
 	it("rejects same-organization manual entries for unauthorized target employees before writing", async () => {
@@ -1433,7 +1449,7 @@ describe("createManualTimeEntry", () => {
 		});
 		expect(mockState.validateTimeEntryRange).not.toHaveBeenCalled();
 		expect(mockState.getEditCapabilityForPeriod).not.toHaveBeenCalled();
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
 
@@ -1470,9 +1486,6 @@ describe("createManualTimeEntry", () => {
 		}
 
 		function arrangeSuccessfulWrite() {
-			mockState.createCanonicalWorkRecord.mockResolvedValue({
-				id: "canonical-1",
-			});
 			mockState.createTimeEntry
 				.mockResolvedValueOnce({ id: "clock-in-1" })
 				.mockResolvedValueOnce({ id: "clock-out-1" });
@@ -1509,15 +1522,11 @@ describe("createManualTimeEntry", () => {
 
 			expect(result.success).toBe(true);
 			expect(mockState.getEditCapabilityForPeriod).not.toHaveBeenCalled();
-			expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
-				1,
-				expect.objectContaining({
-					employeeId: "staff-1",
-					organizationId: "org-1",
-					timezoneSource: "manager_target_user_setting",
-				}),
-				expect.anything(),
-			);
+			expect(createdChange()).toMatchObject({
+				employeeId: "staff-1",
+				organizationId: "org-1",
+				start: { capture: { timezoneSource: "manager_target_user_setting" } },
+			});
 		});
 
 		it("rejects a manager creating for a teammate who is not a direct report", async () => {
@@ -1546,7 +1555,7 @@ describe("createManualTimeEntry", () => {
 				error: "Not authorized to create time entries for this employee",
 			});
 			expect(mockState.validateTimeEntryRange).not.toHaveBeenCalled();
-			expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+			expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 		});
 
 		it("rejects targets that are inactive or outside the active organization", async () => {
@@ -1574,7 +1583,7 @@ describe("createManualTimeEntry", () => {
 				success: false,
 				error: "Not authorized to create time entries for this employee",
 			});
-			expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+			expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 		});
 
 		it("rejects on-behalf entries when the principal is for another organization", async () => {
@@ -1600,7 +1609,7 @@ describe("createManualTimeEntry", () => {
 
 			expect(result.success).toBe(false);
 			expect(mockState.findEmployee).not.toHaveBeenCalled();
-			expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+			expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 		});
 
 		it("interprets on-behalf entries in the organization timezone when the target has none", async () => {
@@ -1631,36 +1640,23 @@ describe("createManualTimeEntry", () => {
 			});
 
 			expect(result.success).toBe(true);
-			expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
-				1,
-				expect.objectContaining({
-					employeeId: "staff-1",
-					timestamp: new Date("2026-05-03T12:00:00.000Z"),
-					timezone: "America/New_York",
-					timezoneSource: "manager_target_user_setting",
-					utcOffsetMinutes: -240,
-				}),
-				expect.anything(),
-			);
+			const change = createdChange();
+			expect(change.employeeId).toBe("staff-1");
+			expect(change.start.at.toString()).toBe("2026-05-03T12:00:00Z");
+			expect(change.start.capture).toEqual({
+				timezone: "America/New_York",
+				timezoneSource: "manager_target_user_setting",
+				utcOffsetMinutes: -240,
+			});
 		});
 	});
 
-	it("keeps manual entry creation successful when dirty marking fails", async () => {
+	it("reports work that overlaps recorded work on another day without writing", async () => {
 		mockState.getEditCapabilityForPeriod.mockResolvedValue({
 			type: "direct",
 			reason: "within_window",
 		});
-		mockState.createTimeEntry
-			.mockResolvedValueOnce({ id: "clock-in-1" })
-			.mockResolvedValueOnce({ id: "clock-out-1" });
-		mockState.insertValues.mockReturnValueOnce({
-			returning: mockState.insertReturning,
-		});
-		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
-		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
-		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(
-			new Error("dirty marker failed"),
-		);
+		mockState.applyWorkRecordChange.mockResolvedValueOnce({ kind: "work_occupied", occupants: [] });
 
 		const result = await createManualTimeEntry({
 			date: "2026-05-04",
@@ -1669,21 +1665,23 @@ describe("createManualTimeEntry", () => {
 			reason: "Forgot to clock in",
 		});
 
-		expect(result.success).toBe(true);
-		expect(mockState.logger.error).toHaveBeenCalledWith(
-			expect.objectContaining({
-				employeeId: "employee-1",
-				organizationId: "org-1",
-				workPeriodId: "period-1",
-			}),
-			"Failed to mark work balance dirty after manual time entry",
-		);
+		expect(result).toEqual({
+			success: false,
+			error:
+				"This time overlaps recorded work. Please choose a time range that does not overlap existing entries.",
+		});
+		expect(mockState.reconcileImmediateSurcharges).not.toHaveBeenCalled();
+		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 });
 
 describe("createManualTimeEntry", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.applyWorkRecordChange.mockReset().mockImplementation(async (_scope, change) => ({
+			kind: "created",
+			segment: { workPeriodId: change.workPeriodId },
+		}));
 		mockState.executeOrdinarySubmission.mockReset();
 		mockState.createManualEntryApprovalRequest.mockReset();
 		mockState.isOrgAdminCasl.mockReset().mockResolvedValue(false);
@@ -1728,9 +1726,6 @@ describe("createManualTimeEntry", () => {
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1", type: "clock_in" })
 			.mockResolvedValueOnce({ id: "clock-out-1", type: "clock_out" });
-		mockState.createCanonicalWorkRecord.mockResolvedValue({
-			id: "canonical-1",
-		});
 		mockState.insertValues.mockReturnValue({
 			returning: vi.fn().mockResolvedValue([{ id: "period-1" }]),
 		});
@@ -1766,7 +1761,6 @@ describe("createManualTimeEntry", () => {
 		mockState.sendManualEntryApprovalNotifications.mockResolvedValue(undefined);
 		mockState.sendManualEntryApprovedNotification.mockResolvedValue(undefined);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
-		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.reconcileOrdinaryMaintenance.mockResolvedValue(undefined);
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
@@ -1811,20 +1805,24 @@ describe("createManualTimeEntry", () => {
 			success: true,
 			data: { requiresApproval: true },
 		});
-		expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledWith(
-			expect.objectContaining({
-				organizationId: "org-1",
-				employeeId: "employee-1",
-				approvalState: "pending",
-			}),
-			expect.objectContaining({ insert: expect.any(Function) }),
-		);
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				organizationId: "org-1",
-				employeeId: "employee-1",
-				approvalStatus: "pending",
-			}),
+		expect(createdChange()).toMatchObject({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			approval: {
+				state: "pending",
+				pendingChanges: {
+					ordinarySubmission: {
+						submissionId: defaultSubmissionId,
+						kind: "manual_time_submission",
+					},
+					isManualEntry: true,
+					reason: "Forgot to clock in",
+				},
+			},
+		});
+		// Approval participants are protected before anything is written.
+		expect(mockState.requireApprovalScope).toHaveBeenCalledBefore(
+			mockState.applyWorkRecordChange,
 		);
 		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -1844,9 +1842,6 @@ describe("createManualTimeEntry", () => {
 
 	it("uses the required canonical submission id as the manual work-period id", async () => {
 		const submissionId = "10000000-0000-4000-8000-000000000099";
-		mockState.insertValues.mockReturnValueOnce({
-			returning: vi.fn().mockResolvedValue([{ id: submissionId }]),
-		});
 
 		const result = await createManualTimeEntry({
 			submissionId,
@@ -1860,9 +1855,7 @@ describe("createManualTimeEntry", () => {
 			success: true,
 			data: { workPeriodId: submissionId },
 		});
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({ id: submissionId }),
-		);
+		expect(createdChange().workPeriodId).toBe(submissionId);
 		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
 			expect.objectContaining({ submissionId, workPeriodId: submissionId }),
 		);
@@ -1876,7 +1869,8 @@ describe("createManualTimeEntry", () => {
 		} as const;
 		mockState.resolveSurchargeSnapshot.mockImplementationOnce(async (input) => {
 			expect(mockState.transactionOpen).toBe(true);
-			expect(mockState.createTimeEntry).toHaveBeenCalledTimes(2);
+			// Resolved before the work exists, so the pending evidence can carry it.
+			expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 			expect(input).toMatchObject({
 				organizationId: "org-1",
 				employeeId: "employee-1",
@@ -1922,11 +1916,7 @@ describe("createManualTimeEntry", () => {
 		).resolves.toMatchObject({ success: true });
 
 		expect(mockState.resolveSurchargeSnapshot).toHaveBeenCalledOnce();
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				pendingChanges: expect.objectContaining({ surchargeSnapshot }),
-			}),
-		);
+		expect(createdChange().approval.pendingChanges).toMatchObject({ surchargeSnapshot });
 		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledAfter(
 			mockState.resolveSurchargeSnapshot,
 		);
@@ -2017,16 +2007,14 @@ describe("createManualTimeEntry", () => {
 			success: true,
 			data: { workPeriodId: submissionId, requiresApproval: true },
 		});
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 		expect(mockState.insertValues).not.toHaveBeenCalled();
-		expect(mockState.createCanonicalWorkRecord).not.toHaveBeenCalled();
 		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
 		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledOnce();
 		expect(
 			mockState.sendManualEntryApprovalNotifications,
 		).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 	});
 
 	it("replays committed manual evidence before changed mutable guards", async () => {
@@ -2058,8 +2046,7 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.validateTimeEntryRange).not.toHaveBeenCalled();
 		expect(mockState.getEditCapabilityForPeriod).not.toHaveBeenCalled();
 		expect(mockState.findWorkPeriods).not.toHaveBeenCalled();
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-		expect(mockState.createCanonicalWorkRecord).not.toHaveBeenCalled();
+		expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 	});
 
 	it("rejects a markerless manual token collision without writes or effects", async () => {
@@ -2082,9 +2069,8 @@ describe("createManualTimeEntry", () => {
 			success: false,
 			error: "Failed to create time entry. Please try again.",
 		});
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 		expect(mockState.executeOrdinarySubmission).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 
@@ -2156,12 +2142,11 @@ describe("createManualTimeEntry", () => {
 			error: "Failed to create time entry. Please try again.",
 		});
 		expect(durableState.approvalWrites).toEqual([]);
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 		expect(
 			mockState.sendManualEntryApprovalNotifications,
 		).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 
@@ -2262,14 +2247,7 @@ describe("createManualTimeEntry", () => {
 				release();
 			}
 		});
-		mockState.createTimeEntry
-			.mockReset()
-			.mockResolvedValueOnce({ id: "clock-in-1", type: "clock_in" })
-			.mockResolvedValueOnce({ id: "clock-out-1", type: "clock_out" });
-		mockState.createCanonicalWorkRecord.mockResolvedValue({
-			id: "canonical-1",
-		});
-		mockState.insertValues.mockImplementation(() => {
+		mockState.applyWorkRecordChange.mockImplementationOnce(async (_scope, change) => {
 			setManualReplayEvidence();
 			mockState.executeOrdinarySubmission
 				.mockReset()
@@ -2287,9 +2265,7 @@ describe("createManualTimeEntry", () => {
 					disposition: "replayed",
 					postCommit: null,
 				});
-			return {
-				returning: vi.fn().mockResolvedValue([{ id: defaultSubmissionId }]),
-			};
+			return { kind: "created", segment: { workPeriodId: change.workPeriodId } };
 		});
 
 		const request = {
@@ -2309,11 +2285,8 @@ describe("createManualTimeEntry", () => {
 			data: { workPeriodId: defaultSubmissionId },
 		});
 		expect(second).toEqual(first);
-		expect(mockState.createTimeEntry).toHaveBeenCalledTimes(2);
-		expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledOnce();
-		expect(mockState.insertValues).toHaveBeenCalledOnce();
+		expect(mockState.applyWorkRecordChange).toHaveBeenCalledOnce();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).toHaveBeenCalledOnce();
 		expect(order.slice(0, 2)).toEqual(["lock", "lookup"]);
 	});
@@ -2529,7 +2502,6 @@ describe("createManualTimeEntry", () => {
 			mockState.sendManualEntryApprovalNotifications,
 		).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 
@@ -2570,7 +2542,6 @@ describe("createManualTimeEntry", () => {
 			mockState.sendManualEntryApprovalNotifications,
 		).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 
@@ -2684,7 +2655,6 @@ describe("createManualTimeEntry", () => {
 			mockState.sendManualEntryApprovalNotifications,
 		).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 
@@ -2725,7 +2695,7 @@ describe("createManualTimeEntry", () => {
 			success: false,
 			error: "Failed to create time entry. Please try again.",
 		});
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.applyWorkRecordChange).not.toHaveBeenCalled();
 		expect(mockState.executeOrdinarySubmission).not.toHaveBeenCalled();
 	});
 
@@ -2740,7 +2710,7 @@ describe("createManualTimeEntry", () => {
 		expect(result.success).toBe(true);
 		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
 			expect.objectContaining({
-				workPeriodId: "period-1",
+				workPeriodId: defaultSubmissionId,
 				requesterEmployeeId: "employee-1",
 				defaultApproverId: null,
 				organizationId: "org-1",
@@ -2750,16 +2720,10 @@ describe("createManualTimeEntry", () => {
 		expect(
 			mockState.sendManualEntryApprovalNotifications,
 		).toHaveBeenCalledOnce();
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				approvalStatus: "pending",
-				canonicalRecordId: "canonical-1",
-			}),
-		);
-		expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledWith(
-			expect.objectContaining({ approvalState: "pending", origin: "manual" }),
-			expect.anything(),
-		);
+		expect(createdChange()).toMatchObject({
+			approval: { state: "pending" },
+			origin: "manual",
+		});
 	});
 
 	it("keeps an explicit policy reviewer route pending without a fallback manager", async () => {
@@ -2779,17 +2743,15 @@ describe("createManualTimeEntry", () => {
 
 		expect(result).toMatchObject({
 			success: true,
-			data: { workPeriodId: "period-1", requiresApproval: true },
+			data: { workPeriodId: defaultSubmissionId, requiresApproval: true },
 		});
 		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
 			expect.objectContaining({ defaultApproverId: null }),
 		);
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				approvalStatus: "pending",
-				pendingChanges: expect.objectContaining({ isManualEntry: true }),
-			}),
-		);
+		expect(createdChange().approval).toMatchObject({
+			state: "pending",
+			pendingChanges: { isManualEntry: true },
+		});
 	});
 
 	it("finalizes auto-completed manual approval in the source transaction and notifies after commit", async () => {
@@ -2842,7 +2804,7 @@ describe("createManualTimeEntry", () => {
 			data: { requiresApproval: false },
 		});
 		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
-			expect.objectContaining({ workPeriodId: "period-1" }),
+			expect.objectContaining({ workPeriodId: defaultSubmissionId }),
 		);
 		expect(
 			mockState.sendManualEntryApprovedNotification,
@@ -2876,34 +2838,21 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.logger.error).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-1",
-				workPeriodId: "period-1",
+				workPeriodId: defaultSubmissionId,
 			}),
 			"Failed to dispatch manual-entry approval notification after commit",
 		);
 	});
 
 	it("rolls back every manual source row when auto-completion finalization fails", async () => {
+		// Work records' whole graph (entries, period, canonical work record) is one write here.
 		const durableState = {
-			entries: [] as string[],
-			workPeriods: [] as string[],
-			canonicalRecords: [] as string[],
+			work: [] as string[],
 			approvals: [] as string[],
 		};
-		mockState.createTimeEntry.mockReset();
-		mockState.createTimeEntry.mockImplementation(async (input) => {
-			const id = input.type === "clock_in" ? "clock-in-1" : "clock-out-1";
-			durableState.entries.push(id);
-			return { id, type: input.type };
-		});
-		mockState.createCanonicalWorkRecord.mockImplementation(async () => {
-			durableState.canonicalRecords.push("canonical-1");
-			return { id: "canonical-1" };
-		});
-		mockState.insertValues.mockImplementation((values) => {
-			durableState.workPeriods.push("period-1");
-			return {
-				returning: vi.fn().mockResolvedValue([{ id: "period-1", ...values }]),
-			};
+		mockState.applyWorkRecordChange.mockImplementation(async (_scope, change) => {
+			durableState.work.push(change.workPeriodId ?? "");
+			return { kind: "created", segment: { workPeriodId: change.workPeriodId } };
 		});
 		mockState.createManualEntryApprovalRequest.mockImplementation(async () => {
 			durableState.approvals.push("approval-1");
@@ -2911,9 +2860,7 @@ describe("createManualTimeEntry", () => {
 		});
 		mockState.transaction.mockImplementation(async (callback) => {
 			const snapshot = {
-				entries: durableState.entries.length,
-				workPeriods: durableState.workPeriods.length,
-				canonicalRecords: durableState.canonicalRecords.length,
+				work: durableState.work.length,
 				approvals: durableState.approvals.length,
 			};
 			try {
@@ -2936,9 +2883,7 @@ describe("createManualTimeEntry", () => {
 					})),
 				});
 			} catch (error) {
-				durableState.entries.length = snapshot.entries;
-				durableState.workPeriods.length = snapshot.workPeriods;
-				durableState.canonicalRecords.length = snapshot.canonicalRecords;
+				durableState.work.length = snapshot.work;
 				durableState.approvals.length = snapshot.approvals;
 				throw error;
 			}
@@ -2955,12 +2900,8 @@ describe("createManualTimeEntry", () => {
 			success: false,
 			error: "Failed to create time entry. Please try again.",
 		});
-		expect(durableState).toEqual({
-			entries: [],
-			workPeriods: [],
-			canonicalRecords: [],
-			approvals: [],
-		});
+		expect(mockState.applyWorkRecordChange).toHaveBeenCalledOnce();
+		expect(durableState).toEqual({ work: [], approvals: [] });
 		expect(
 			mockState.sendManualEntryApprovedNotification,
 		).not.toHaveBeenCalled();
@@ -2973,34 +2914,19 @@ describe("createManualTimeEntry", () => {
 		mockState.findManagerLinks.mockResolvedValue([]);
 		mockState.useRealOrdinarySubmission = true;
 		let insertedWorkPeriodId = "";
+		// Work records' whole graph (entries, period, canonical work record) is one write here.
 		const durableState = {
-			entries: [] as string[],
-			workPeriods: [] as string[],
-			canonicalRecords: [] as string[],
+			work: [] as string[],
 			approvals: [] as string[],
 		};
-		mockState.createTimeEntry.mockReset();
-		mockState.createTimeEntry.mockImplementation(async (input) => {
-			const id = input.type === "clock_in" ? "clock-in-1" : "clock-out-1";
-			durableState.entries.push(id);
-			return { id, type: input.type };
-		});
-		mockState.createCanonicalWorkRecord.mockImplementation(async () => {
-			durableState.canonicalRecords.push("canonical-1");
-			return { id: "canonical-1" };
-		});
-		mockState.insertValues.mockImplementation((values) => {
-			insertedWorkPeriodId = values.id;
-			durableState.workPeriods.push(insertedWorkPeriodId);
-			return {
-				returning: vi.fn().mockResolvedValue([values]),
-			};
+		mockState.applyWorkRecordChange.mockImplementation(async (_scope, change) => {
+			insertedWorkPeriodId = change.workPeriodId ?? "";
+			durableState.work.push(insertedWorkPeriodId);
+			return { kind: "created", segment: { workPeriodId: change.workPeriodId } };
 		});
 		mockState.transaction.mockImplementation(async (callback) => {
 			const snapshot = {
-				entries: durableState.entries.length,
-				workPeriods: durableState.workPeriods.length,
-				canonicalRecords: durableState.canonicalRecords.length,
+				work: durableState.work.length,
 				approvals: durableState.approvals.length,
 			};
 			try {
@@ -3028,9 +2954,7 @@ describe("createManualTimeEntry", () => {
 					})),
 				});
 			} catch (error) {
-				durableState.entries.length = snapshot.entries;
-				durableState.workPeriods.length = snapshot.workPeriods;
-				durableState.canonicalRecords.length = snapshot.canonicalRecords;
+				durableState.work.length = snapshot.work;
 				durableState.approvals.length = snapshot.approvals;
 				throw error;
 			}
@@ -3047,11 +2971,7 @@ describe("createManualTimeEntry", () => {
 			success: false,
 			error: "No manager assigned to approve time changes",
 		});
-		expect(durableState).toEqual({
-			entries: [],
-			workPeriods: [],
-			canonicalRecords: [],
-			approvals: [],
-		});
+		expect(mockState.applyWorkRecordChange).toHaveBeenCalledOnce();
+		expect(durableState).toEqual({ work: [], approvals: [] });
 	});
 });

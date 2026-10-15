@@ -43,8 +43,6 @@
         "editRealEmployee": "Modifier l'employé actif",
         "editTitle": "Modifier l'employé",
         "employeeInformation": "Informations de l'employé",
-        "employeeNumber": "Numéro d'employé",
-        "employeeNumberDescription": "Identifiant du système de paie externe",
         "employeeNumberPlaceholder": "ex. EMP-001",
         "firstName": "Prénom",
         "firstNameDescription": "Affiché sur l'ensemble du compte de l'employé",
@@ -64,6 +62,8 @@
         "manageEmployees": "gérer les employés",
         "managers": "Responsables",
         "noScheduleAssigned": "Aucun planning attribué",
+        "personnelNumber": "Numéro de personnel",
+        "personnelNumberDescription": "Numéro attribué par votre organisation à cet employé, utilisé dans les exportations de paie. Il doit être unique, y compris parmi les anciens employés.",
         "position": "Poste",
         "positionDescription": "Intitulé de poste ou rôle",
         "positionPlaceholder": "Saisir un poste",
@@ -136,7 +136,7 @@
           "actions": "Actions",
           "contract": "Contrat",
           "employee": "Employé",
-          "employeeNumber": "Numéro d'employé",
+          "personnelNumber": "Numéro de personnel",
           "position": "Poste",
           "role": "Rôle",
           "status": "Statut",
@@ -375,6 +375,10 @@
         "statusPreparing": "En cours de préparation",
         "statusReady": "Prêt",
         "title": "Export des données personnelles"
+      },
+      "personnelNumber": {
+        "taken": "Ce numéro de personnel appartient à {name}. Chaque employé, actuel ou ancien, doit avoir son propre numéro.",
+        "takenByAnother": "Un autre employé possède déjà ce numéro de personnel. Chaque employé, actuel ou ancien, doit avoir son propre numéro."
       },
       "tabs": {
         "employees": "Employés",

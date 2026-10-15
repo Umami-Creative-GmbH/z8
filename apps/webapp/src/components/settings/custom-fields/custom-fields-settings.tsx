@@ -33,6 +33,7 @@ import { changeCustomFields } from "@/app/[locale]/(app)/settings/custom-fields/
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useServerDataState } from "@/hooks/use-server-data-state";
 import {
 	type CustomFieldChange,
 	type CustomFieldEntity,
@@ -45,7 +46,12 @@ import { entityLabel, levelLabel, refusalMessage, typeLabel } from "./custom-fie
 export type RunCustomFieldChange = (change: CustomFieldChange) => Promise<boolean>;
 
 /** `session` remounts the dialog each time it opens; `fieldId` null creates a field. */
-type DialogState = { session: number; open: boolean; fieldId: string | null };
+type DialogState = {
+	session: number;
+	open: boolean;
+	fieldId: string | null;
+	field?: CustomFieldDefinitionView;
+};
 
 /** The server action's result, or null when the request itself failed. */
 async function sendChange(change: CustomFieldChange) {
@@ -87,7 +93,7 @@ export function CustomFieldsSettings({
 }) {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
-	const [fields, setFields] = useState(initialFields);
+	const [fields, setFields] = useServerDataState(initialFields);
 	const entity = entityFromTab(searchParams.get("tab"), entities);
 
 	function selectTab(value: unknown) {
@@ -120,10 +126,14 @@ export function CustomFieldsSettings({
 		return true;
 	};
 
-	const editedField =
-		dialog.fieldId === null ? undefined : fields.find((field) => field.id === dialog.fieldId);
+	const editedField = dialog.field;
 	const openDialog = (fieldId: string | null) =>
-		setDialog((current) => ({ session: current.session + 1, open: true, fieldId }));
+		setDialog((current) => ({
+			session: current.session + 1,
+			open: true,
+			fieldId,
+			field: fields.find((field) => field.id === fieldId),
+		}));
 
 	return (
 		<>

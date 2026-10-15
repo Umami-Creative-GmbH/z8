@@ -64,7 +64,7 @@ What a work period is recorded against: its project, work category, work locatio
 _Avoid_: Work metadata, tags
 
 **Canonical work record**:
-The record of a completed work period that payroll reads, kept beside the work period in both admissions. Every completed work period has exactly one.
+The record of a completed work period that payroll reads, kept beside the work period in both admissions. Every completed work period has exactly one, except history written before that rule in a closed month, which gets its record when the month is reopened.
 _Avoid_: Canonical record (alone; Approvals has canonical workflows), time record, shadow record, mirror
 
 **Record agreement**:
@@ -82,6 +82,14 @@ _Avoid_: Locked period, payroll period, frozen month, closed balance period
 **Reopening**:
 Lifting a month's close for some or all of the employees it covers, with a stated reason, by someone permitted to reopen. It is the only way to change work inside a closed month, and the month stays open for them until it is closed again.
 _Avoid_: Unlock
+
+### Feature assignments
+
+**Global feature switch**:
+The organization's control that switches vehicle use or position capture off for everyone, regardless of their feature assignments. Switching it on allows the assignments to decide who the feature applies to.
+
+**Feature assignment**:
+The vehicle-use mode or position-capture setting for an organization, primary team or employee. An employee's own assignment overrides their primary team's, which overrides the organization default; an explicit off assignment excludes its scope, and removing an override restores inheritance.
 
 ### Driving
 
@@ -154,7 +162,7 @@ An organization's choice of week or calendar month as its submission period, wit
 _Avoid_: Submission frequency, timesheet interval
 
 **Sent back after a change**:
-A submitted period whose work, work attribution or absences changed afterwards, by any writer, even in part; notes do not count. A pending period submission is withdrawn automatically (its approval is cancelled); an approved one goes out of date, and its approval stays as history. Either way the period awaits submission again, and the employee is told once.
+A submitted period whose work, work attribution or absences changed afterwards, or whose work's approval state was decided again, by any writer, even in part; notes do not count. A pending period submission is withdrawn automatically (its approval is cancelled); an approved one goes out of date, and its approval stays as history. Either way the period awaits submission again, and the employee is told once.
 _Avoid_: Rejected (an approver's decision), reopened (a closed month's term), invalidated
 
 ### Clocking

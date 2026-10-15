@@ -156,6 +156,7 @@
         "deleteTitle": "Fshi përputhjen",
         "description": "Përshkrimi",
         "formatSpecificHint": "Konfiguroni kodet e llojit të pagës për secilin format listëpagese. Të paktën një kërkohet.",
+        "loadFailed": "Dështoi ngarkimi i hartëzimeve të llojit të pagës",
         "noMappings": "Nuk është konfiguruar ende asnjë përputhje",
         "saveError": "Ruajtja e përputhjes dështoi",
         "saveSuccess": "Përputhja u ruajt",
@@ -325,6 +326,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Rishiko kutinë hyrëse të miratimeve",
+        "employees": "Shqyrto punonjësit",
         "payrollExport": "Hap cilësimet e eksportit të listëpagesës",
         "timeTracking": "Rishiko regjistrimin e kohës",
         "travelExpenses": "Rishiko shpenzimet e udhëtimit"
@@ -332,10 +334,15 @@
       "affectedEmployees": {
         "name": "Punonjësi",
         "noNumber": "Nuk është caktuar",
-        "number": "Numri i punonjësit"
+        "personnelIdentifier": "Identifikuesi i personelit",
+        "personnelNumber": "Numri i personelit"
       },
       "checks": {
         "count": "Numri",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Punonjësit që një eksportim i listëpagesave do t'i regjistronte nën të njëjtin identifikues personeli. Sistemi i listëpagesave do t'i bashkonte ata, prandaj eksportimi refuzohet derisa secili punonjës të ketë identifikuesin e vet.",
+          "title": "Identifikues të përbashkët personeli"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Të gjithë punonjësit aktivë e kanë të konfirmuar historikun e punësimit për këtë periudhë të listëpagesës.",
           "descriptionWarning": "Disa punonjës aktivë nuk e kanë të konfirmuar historikun e punësimit për këtë periudhë të listëpagesës."

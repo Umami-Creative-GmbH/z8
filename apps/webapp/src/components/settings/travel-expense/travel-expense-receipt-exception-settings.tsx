@@ -40,6 +40,7 @@ function ReceiptExceptionForm({ settings }: { settings: ReceiptExceptionSettings
 				return;
 			}
 			await queryClient.invalidateQueries({ queryKey });
+			if (form.store.state.values === value) form.reset(value, { keepDefaultValues: true });
 			toast.success(
 				t("settings.travelExpenses.receiptExceptions.saved", "Missing-receipt setting saved"),
 			);
@@ -141,12 +142,7 @@ export function TravelExpenseReceiptExceptionSettingsCard() {
 						</Button>
 					</div>
 				)}
-				{data && (
-					<ReceiptExceptionForm
-						key={String(data.missingReceiptExceptionsAllowed)}
-						settings={data}
-					/>
-				)}
+				{data && <ReceiptExceptionForm settings={data} />}
 			</CardContent>
 		</Card>
 	);

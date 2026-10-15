@@ -16,6 +16,11 @@
  * is a historical one: a real clock-out, then its policy submission seeded through
  * the real ordinary submission; routing, approval, split and evidence
  * collaborators are real.
+ *
+ * Since #1221 the division itself (rounding, vehicle use, agreement, effects) is
+ * work records' contract (`work-records/owed-break.integration.test.ts`); this
+ * suite keeps the finalizer's policy: when the break runs, its lifecycle and
+ * receipt, the review guard, rollback, refusals and the finalizer handle.
  */
 
 import { randomUUID } from "node:crypto";
@@ -86,11 +91,17 @@ const { clockIn, clockOut } = await import("./clocking");
 // The inbox API route registers the approval type handlers the same way.
 await import("@/lib/approvals/init");
 const { approveApprovalInboxItem } = await import("@/lib/approvals/inbox/decision-service");
-const { derivePolicyClockOutBreakOperationId } = await import(
-	"@/lib/time-tracking/policy-clock-out-terminal-break"
-);
+const { applyPolicyClockOutTerminalBreakInTransaction, derivePolicyClockOutBreakOperationId } =
+	await import("@/lib/time-tracking/policy-clock-out-terminal-break");
 const { submitHistoricalPolicyClockOut } = await import(
 	"@/lib/time-tracking/__tests__/historical-policy-clock-out"
+);
+const { expectRecordAgreement } = await import(
+	"@/lib/time-tracking/work-records/__tests__/expect-record-agreement"
+);
+const { db } = await import("@/db");
+const { policyClockOutBreakSnapshotFromPendingChanges } = await import(
+	"@/lib/time-tracking/policy-clock-out-break-snapshot"
 );
 
 const ids = {
@@ -400,7 +411,8 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 			start_time: new Date("2026-07-22T08:00:00Z"),
 			end_time: new Date("2026-07-22T14:00:00Z"),
 			duration_minutes: 360,
-			graph_revision: submitted.graph_revision + 1,
+			// The decision itself is a change through work records (#1227); the split follows it.
+			graph_revision: submitted.graph_revision + 2,
 		});
 		expect(generated).toMatchObject({
 			clock_out_id: submissionId,
@@ -567,7 +579,10 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 				},
 			},
 			revisions: {
-				originating: { source: submitted.graph_revision, result: submitted.graph_revision + 1 },
+				originating: {
+					source: submitted.graph_revision + 1,
+					result: submitted.graph_revision + 2,
+				},
 				generated: { source: null, result: 1 },
 			},
 			followUps: {
@@ -580,7 +595,7 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 			version: 1,
 			workPeriodId: periodId,
 			lifecycle: { authority: "legacy", approvalRequestId: requestId, observedWorkflowId: null },
-			sourceRevision: submitted.graph_revision,
+			sourceRevision: submitted.graph_revision + 1,
 		});
 
 		// Exact replay returns the committed decision and writes nothing.
@@ -619,18 +634,23 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 		});
 	});
 
-	it("keeps the established writes in an organization that has not adopted append", async () => {
+	it("divides through work records without a receipt in an organization that has not adopted append", async () => {
 		await setAppend("inactive");
 		const { periodId } = await policyClockOut();
 		const requestId = await pendingRequest(periodId);
+		const [submitted] = await periods();
+		if (!submitted) throw new Error("missing submitted period");
 
 		await expect(approve(requestId)).resolves.toMatchObject({ status: "approved" });
 
+		// Legacy admission floors each half and advances the revision (ADR 0010), for
+		// the decision and the split alike.
 		const split = await periods();
 		expect(split.map((period) => [period.duration_minutes, period.graph_revision])).toEqual([
-			[360, 0],
-			[31, 0],
+			[360, submitted.graph_revision + 2],
+			[30, 1],
 		]);
+		await expectRecordAgreement({ organizationId: ids.organization });
 		expect(await receipts()).toEqual([]);
 		const { rows: positions } = await admin.query(
 			"select 1 from time_entry_append_position where organization_id = $1",
@@ -732,22 +752,6 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 		},
 	);
 
-	it("commits a positive generated segment that rounds to zero minutes", async () => {
-		// 6h 30m 20s: the 30-minute break leaves a 20-second generated segment.
-		const { periodId } = await policyClockOut(clockInAt.add({ hours: 6, minutes: 30, seconds: 20 }));
-		const requestId = await pendingRequest(periodId);
-
-		await expect(approve(requestId)).resolves.toMatchObject({ status: "approved" });
-
-		const [retained, generated] = await periods();
-		expect(retained).toMatchObject({ duration_minutes: 360 });
-		expect(generated).toMatchObject({
-			start_time: new Date("2026-07-22T14:30:00Z"),
-			end_time: new Date("2026-07-22T14:30:20Z"),
-			duration_minutes: 0,
-		});
-	});
-
 	it("exempts the canonical lifecycle's own transition and its compatibility mirror", async () => {
 		await setRollout("canonical");
 		const { periodId } = await policyClockOut();
@@ -768,128 +772,148 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 		});
 	});
 
-	describe("vehicle use (#1126)", () => {
-		const van = "f3033000-0000-4000-8000-000000000001";
-		type Km = { start: number | null; end: number | null; distance: number | null };
-		const km = (start: number | null, end: number | null, distance: number | null) => ({
-			vehicle: van,
-			start,
-			end,
-			distance,
-		});
-
-		/** Records vehicle use the way #1120 stores it: on the period and its canonical detail. */
-		async function driveVan(periodId: string, value: Km) {
-			await admin.query(
-				`insert into organization_vehicle (id, organization_id, name, licence_plate)
-				 values ($1, $2, 'Van', 'B-VN 303') on conflict do nothing`,
-				[van, ids.organization],
-			);
-			const set = `vehicle_kind = 'organization', vehicle_id = $2, odometer_start_km = $3,
-			  odometer_end_km = $4, driven_distance_km = $5`;
-			const values = [periodId, van, value.start, value.end, value.distance];
-			await admin.query(`update work_period set ${set} where id = $1`, values);
-			await admin.query(
-				`update time_record_work set ${set}
-				 where record_id = (select canonical_record_id from work_period where id = $1)`,
-				values,
-			);
-		}
-
-		async function vehicleGraph() {
-			const { rows } = await admin.query<{ period: Km; detail: Km }>(
-				`select json_build_object('vehicle', wp.vehicle_id, 'start', wp.odometer_start_km,
-				   'end', wp.odometer_end_km, 'distance', wp.driven_distance_km) as period,
-				 json_build_object('vehicle', w.vehicle_id, 'start', w.odometer_start_km,
-				   'end', w.odometer_end_km, 'distance', w.driven_distance_km) as detail
-				 from work_period wp
-				 join time_record_work w on w.record_id = wp.canonical_record_id
-				 where wp.organization_id = $1 and wp.deleted_at is null
-				 order by wp.start_time`,
-				[ids.organization],
-			);
-			return rows;
-		}
-
-		/** Whether each half shows "driving details missing" (vehicle use expected). */
-		async function drivingDetailsFlags() {
-			return (await vehicleGraph()).map(({ period }) =>
-				lacksDrivingDetails(
-					vehicleUseFromColumns({
-						vehicleKind: "organization",
-						vehicleId: van,
-						odometerStartKm: period.start,
-						odometerEndKm: period.end,
-						drivenDistanceKm: period.distance,
-					}),
-				),
-			);
-		}
-
-		it.each([
-			["an adopted", "active"],
-			["a legacy", "inactive"],
-		] as const)(
-			"keeps complete readings on the retained work over %s organization's terminal break",
-			async (_label, mode) => {
-				await setAppend(mode);
-				const { periodId } = await policyClockOut();
-				await driveVan(periodId, { start: 12_000, end: 12_085, distance: 85 });
-
-				await expect(approve(await pendingRequest(periodId))).resolves.toMatchObject({
-					status: "approved",
-				});
-
-				expect(await vehicleGraph()).toEqual([
-					{ period: km(12_000, 12_085, 85), detail: km(12_000, 12_085, 85) },
-					{ period: km(null, null, 0), detail: km(null, null, 0) },
-				]);
-				expect(await drivingDetailsFlags()).toEqual([false, false]);
-				if (mode === "active") {
-					const result = only(await receipts()).result as {
-						originatingWork: { attribution: object };
-						segments: { attribution: object }[];
-					};
-					const vehicle = { kind: "organization", vehicleId: van };
-					expect(result.originatingWork.attribution).toMatchObject({
-						vehicleUse: { vehicle, startKm: 12_000, endKm: 12_085, distanceKm: 85 },
-					});
-					expect(result.segments.map(({ attribution }) => attribution)).toMatchObject([
-						{ vehicleUse: { vehicle, startKm: 12_000, endKm: 12_085, distanceKm: 85 } },
-						{ vehicleUse: { vehicle, startKm: null, endKm: null, distanceKm: 0 } },
-					]);
-				}
-			},
+	it("refuses the approval of work whose records disagree and writes nothing", async () => {
+		const { periodId } = await policyClockOut();
+		const requestId = await pendingRequest(periodId);
+		const [submitted] = await periods();
+		if (!submitted) throw new Error("missing submitted period");
+		await admin.query(
+			"update time_record_work set work_location_type = 'home' where record_id = $1",
+			[submitted.canonical_record_id],
 		);
+		const before = await snapshot();
 
-		it("keeps a directly entered distance on the retained work", async () => {
+		await expect(approve(requestId)).rejects.toBeDefined();
+		expect(await snapshot()).toEqual(before);
+	});
+
+	it("refuses the approval in a closed month as such and writes nothing", async () => {
+		const { periodId } = await policyClockOut();
+		const requestId = await pendingRequest(periodId);
+		// Closing refuses months with pending work, so the close is seeded directly, as a
+		// close that won a race with this approval would leave it.
+		const { rows: closed } = await admin.query<{ id: string }>(
+			`insert into closed_month (organization_id, month, scope, actor_kind, closed_by)
+			 values ($1, '2026-07-01', 'organization', 'user', $2) returning id`,
+			[ids.organization, ids.managerUser],
+		);
+		await admin.query(
+			`insert into closed_month_employee
+			 (organization_id, closed_month_id, employee_id, month, range_start, range_end, timezone)
+			 values ($1, $2, $3, '2026-07-01', '2026-07-01T00:00:00', '2026-08-01T00:00:00', 'UTC')`,
+			[ids.organization, only(closed).id, ids.requester],
+		);
+		const before = await snapshot();
+
+		await expect(approve(requestId)).rejects.toMatchObject({ _tag: "MonthClosedError" });
+		expect(await snapshot()).toEqual(before);
+	});
+
+	describe("terminal break on the finalizer handle outside the coordinators", () => {
+		/**
+		 * Work the finalizer has just approved, in a legacy organization: the terminal
+		 * break runs on a plain approval transaction and takes the employee locks itself.
+		 */
+		async function approvedWork() {
+			await setAppend("inactive");
 			const { periodId } = await policyClockOut();
-			await driveVan(periodId, { start: null, end: null, distance: 120 });
-
-			await expect(approve(await pendingRequest(periodId))).resolves.toMatchObject({
-				status: "approved",
-			});
-
-			expect(await vehicleGraph()).toEqual([
-				{ period: km(null, null, 120), detail: km(null, null, 120) },
-				{ period: km(null, null, 0), detail: km(null, null, 0) },
+			const requestId = await pendingRequest(periodId);
+			const { rows } = await admin.query<PeriodRow & { pending_changes: string }>(
+				"select * from work_period where id = $1",
+				[periodId],
+			);
+			const period = only(rows);
+			const breakPolicySnapshot = policyClockOutBreakSnapshotFromPendingChanges(
+				JSON.parse(period.pending_changes),
+				"2026-07-22T15:00:40Z",
+			);
+			await admin.query(
+				"update work_period set approval_status = 'approved', pending_changes = null where id = $1",
+				[periodId],
+			);
+			await admin.query("update time_record set approval_state = 'approved' where id = $1", [
+				period.canonical_record_id,
 			]);
-			expect(await drivingDetailsFlags()).toEqual([false, false]);
+			return {
+				period,
+				input: {
+					organizationId: ids.organization,
+					employeeId: ids.requester,
+					actorUserId: ids.managerUser,
+					actorEmployeeId: ids.manager,
+					lifecycle: {
+						authority: "legacy" as const,
+						approvalRequestId: requestId,
+						observedWorkflowId: null,
+					},
+					decisionRecordId: randomUUID(),
+					period: {
+						id: period.id,
+						clockInId: period.clock_in_id,
+						clockOutId: period.clock_out_id,
+						startTime: period.start_time,
+						endTime: period.end_time,
+					},
+					breakPolicySnapshot,
+				},
+			};
+		}
+
+		function terminalBreak(input: Awaited<ReturnType<typeof approvedWork>>["input"]) {
+			return db.transaction((tx) =>
+				applyPolicyClockOutTerminalBreakInTransaction({ ...input, dbService: { db: tx } }),
+			);
+		}
+
+		it("divides the approved work of a legacy organization under its own employee locks", async () => {
+			const { input } = await approvedWork();
+
+			await expect(terminalBreak(input)).resolves.toMatchObject({
+				kind: "adjusted",
+				breakMinutes: 30,
+			});
+			expect((await periods()).map((period) => period.duration_minutes)).toEqual([360, 30]);
+			await expectRecordAgreement({ organizationId: ids.organization });
 		});
 
-		it("leaves vehicle use awaiting its end reading on the work that ends at the clock-out", async () => {
-			const { periodId } = await policyClockOut();
-			await driveVan(periodId, { start: 12_000, end: null, distance: null });
+		it("raises the named terminal-break error for a divergent pair and writes nothing", async () => {
+			const { period, input } = await approvedWork();
+			await admin.query(
+				"update time_record_work set work_location_type = 'home' where record_id = $1",
+				[period.canonical_record_id],
+			);
+			const before = await snapshot();
 
-			await expect(approve(await pendingRequest(periodId))).resolves.toMatchObject({
-				status: "approved",
+			await expect(terminalBreak(input)).rejects.toMatchObject({
+				name: "PolicyClockOutTerminalBreakError",
+				refusal: { kind: "canonical_divergence", found: "locked_pair" },
 			});
+			expect(await snapshot()).toEqual(before);
+		});
 
-			expect(await vehicleGraph()).toEqual([
-				{ period: km(null, null, 0), detail: km(null, null, 0) },
-				{ period: km(12_000, null, null), detail: km(12_000, null, null) },
-			]);
-			expect(await drivingDetailsFlags()).toEqual([false, true]);
+		it("raises the named terminal-break error for stale work and writes nothing", async () => {
+			const { input } = await approvedWork();
+			const before = await snapshot();
+
+			await expect(
+				terminalBreak({
+					...input,
+					period: { ...input.period, endTime: new Date(input.period.endTime.getTime() - 60_000) },
+				}),
+			).rejects.toMatchObject({
+				name: "PolicyClockOutTerminalBreakError",
+				refusal: { kind: "stale" },
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("is refused in an adopted organization", async () => {
+			const { input } = await approvedWork();
+			await setAppend("active");
+			const before = await snapshot();
+
+			await expect(terminalBreak(input)).rejects.toThrow(/adopted organization/);
+			expect(await snapshot()).toEqual(before);
 		});
 	});
 });

@@ -9,6 +9,7 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { betterAuth } from "better-auth/minimal";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const { db } = await import("@/db");
@@ -202,14 +203,16 @@ describe("the MCP server on PostgreSQL", () => {
 	async function workPeriod(start: string, end: string | null) {
 		const clockIn = await timeEntry(employees.ana, "clock_in", start, 120);
 		const clockOut = end ? await timeEntry(employees.ana, "clock_out", end, 120) : null;
-		await admin.query(
-			`insert into work_period (employee_id, organization_id, clock_in_id, clock_out_id, start_time,
-			   end_time, duration_minutes, is_active, approval_status, updated_at)
-			 values ($1, $2, $3, $4, $5::timestamptz at time zone 'UTC', $6::timestamptz at time zone 'UTC',
-			   case when $6::timestamptz is null then null
-			     else (extract(epoch from ($6::timestamptz - $5::timestamptz)) / 60)::int end,
-			   $6::timestamptz is null, 'approved', now())`,
-			[employees.ana, ids.organization, clockIn, clockOut, start, end],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`insert into work_period (employee_id, organization_id, clock_in_id, clock_out_id, start_time,
+				   end_time, duration_minutes, is_active, approval_status, updated_at)
+				 values ($1, $2, $3, $4, $5::timestamptz at time zone 'UTC', $6::timestamptz at time zone 'UTC',
+				   case when $6::timestamptz is null then null
+				     else (extract(epoch from ($6::timestamptz - $5::timestamptz)) / 60)::int end,
+				   $6::timestamptz is null, 'approved', now())`,
+				[employees.ana, ids.organization, clockIn, clockOut, start, end],
+			),
 		);
 	}
 

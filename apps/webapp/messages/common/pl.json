@@ -373,6 +373,8 @@
     "previous": "Poprzedni",
     "recovering": "Odzyskiwanie...",
     "refresh": "Odśwież",
+    "refreshData": "Odśwież dane",
+    "refreshDataFailed": "Nie udało się odświeżyć danych. Spróbuj ponownie.",
     "refreshing": "Odświeżanie...",
     "reject": "Odrzuć",
     "rejecting": "Odrzucanie...",

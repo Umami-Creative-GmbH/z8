@@ -7,16 +7,19 @@ import { getPositionCaptureAdminDataAction } from "./actions";
 
 async function PositionCaptureSettingsPageContent() {
 	await requireOrgAdminSettingsAccess();
-	const [t, result] = await Promise.all([getTranslate(), getPositionCaptureAdminDataAction()]);
+	const [t, result] = await Promise.all([
+		getTranslate(),
+		getPositionCaptureAdminDataAction(),
+	]);
 
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold">
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<div className="min-w-0 space-y-4">
+				<div className="flex flex-col gap-2">
+					<h1 className="text-2xl font-semibold tracking-tight">
 						{t("settings.positionCapture.title", "Position capture")}
 					</h1>
-					<p className="text-muted-foreground">
+					<p className="text-sm text-muted-foreground">
 						{t(
 							"settings.positionCapture.description",
 							"Record positions with employees' own clock events, with their consent",
@@ -35,8 +38,8 @@ async function PositionCaptureSettingsPageContent() {
 
 function PositionCaptureSettingsPageLoading() {
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<div className="min-w-0 space-y-4">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-56" />
 					<Skeleton className="h-5 w-full max-w-xl" />
