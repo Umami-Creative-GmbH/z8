@@ -92,7 +92,16 @@ export function EmploymentDateCorrectionCard({
 							),
 				);
 				setReview(null);
-				await onSaved();
+				await Promise.resolve()
+					.then(onSaved)
+					.catch(() => {
+						setError(
+							t(
+								"settings.employmentCorrection.savedRefreshFailed",
+								"Employment date saved. Reload this page to refresh the displayed results.",
+							),
+						);
+					});
 			} else {
 				setError(result.error);
 				setReview(null);
@@ -152,6 +161,7 @@ export function EmploymentDateCorrectionCard({
 								<Input
 									id={`${id}-date`}
 									name="employmentStartDate"
+									autoComplete="off"
 									type="date"
 									required
 									value={field.state.value}
@@ -161,9 +171,12 @@ export function EmploymentDateCorrectionCard({
 										setReview(null);
 									}}
 									onBlur={field.handleBlur}
-									aria-describedby={`${id}-date-help`}
+									aria-describedby={`${id}-date-help ${id}-date-errors`}
 									aria-invalid={field.state.meta.errors.length > 0}
 								/>
+								<p id={`${id}-date-errors`} aria-live="polite" className="text-sm text-destructive">
+									{field.state.meta.errors.join(" ")}
+								</p>
 								<p id={`${id}-date-help`} className="text-sm text-muted-foreground">
 									{t(
 										"settings.employmentCorrection.actualStartHelp",
@@ -267,6 +280,8 @@ export function EmploymentDateCorrectionCard({
 									</Label>
 									<Textarea
 										id={`${id}-reason`}
+										name="reason"
+										autoComplete="off"
 										value={field.state.value}
 										maxLength={1000}
 										disabled={busy}

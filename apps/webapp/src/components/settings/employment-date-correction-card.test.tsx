@@ -83,4 +83,49 @@ describe("actual joining date review", () => {
 		);
 		expect(screen.queryByRole("button", { name: "Save reviewed employment date" })).toBeNull();
 	});
+	it("keeps a committed correction successful if refreshing the page data fails", async () => {
+		mocks.preview.mockResolvedValue({
+			success: true,
+			data: {
+				employeeId: "employee",
+				employmentStartDate: "2024-01-01",
+				previousEmploymentStartDate: "2026-05-21",
+				employmentPeriodId: null,
+				employmentBlockers: [],
+				vacation: [],
+				kind: "date_change",
+				currentDate: "2026-05-21",
+				proposedDate: "2026-05-21",
+				employees: [],
+				blockers: [],
+				fingerprint: "reviewed",
+			},
+		});
+		mocks.commit.mockResolvedValue({
+			success: true,
+			data: { status: "committed", refreshPending: false },
+		});
+		mocks.refresh.mockRejectedValue(new Error("Refresh unavailable"));
+		render(
+			<EmploymentDateCorrectionCard
+				employeeId="employee"
+				employmentStartDate="2026-05-21"
+				onSaved={mocks.refresh}
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Review employment correction" }));
+		await screen.findByRole("button", { name: "Save reviewed employment date" });
+		fireEvent.change(screen.getByLabelText("Reason for correction"), {
+			target: { value: "Signed contract" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Save reviewed employment date" }));
+		expect(await screen.findByRole("status")).toHaveProperty(
+			"textContent",
+			"Employment date corrected and balances updated.",
+		);
+		expect(await screen.findByRole("alert")).toHaveProperty(
+			"textContent",
+			"Employment date saved. Reload this page to refresh the displayed results.",
+		);
+	});
 });
