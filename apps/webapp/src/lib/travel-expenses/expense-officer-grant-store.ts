@@ -9,7 +9,11 @@ import {
 	team,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
-import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import {
+	DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { validateId, validateIdList } from "@/lib/payroll-access/grant-scope";
 import {
 	buildValidatedExpenseOfficerGrant,
@@ -32,10 +36,14 @@ import type { ReimbursingOfficer } from "./officer-scope";
 type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 /** Writes run in the caller's transaction, including a departure's work transaction (#750). */
-type GrantTransaction = Pick<Transaction, "select" | "insert" | "update" | "delete">;
+type GrantTransaction = Pick<
+	Transaction,
+	"select" | "insert" | "update" | "delete"
+>;
 type Executor = Database | GrantTransaction;
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface ExpenseOfficerGrantRecord extends ExpenseOfficerGrantValues {
 	id: string;
@@ -84,8 +92,9 @@ export async function listActiveExpenseOfficerGrants(
 export async function loadActiveExpenseOfficerGrant(
 	database: Executor,
 	input: { organizationId: string; officerEmployeeId: string },
+	options: { lock?: boolean } = {},
 ): Promise<ExpenseOfficerGrantRecord | null> {
-	const grants = await database
+	const query = database
 		.select(grantColumns())
 		.from(expenseOfficerGrant)
 		.innerJoin(
@@ -104,6 +113,11 @@ export async function loadActiveExpenseOfficerGrant(
 			),
 		)
 		.limit(1);
+	// Grant edits and revocations lock this row before changing capabilities or scope.
+	// Holding a shared lock through receipt attachment keeps that authority stable.
+	const grants = options.lock
+		? await query.for("share", { of: expenseOfficerGrant })
+		: await query;
 	const [grant] = await withScopeRows(database, input.organizationId, grants);
 	return grant ?? null;
 }
@@ -178,7 +192,10 @@ async function withScopeRows(
 	const grantIds = grants.map((grant) => grant.id);
 	const [teamRows, employeeRows] = await Promise.all([
 		database
-			.select({ grantId: expenseOfficerTeam.grantId, teamId: expenseOfficerTeam.teamId })
+			.select({
+				grantId: expenseOfficerTeam.grantId,
+				teamId: expenseOfficerTeam.teamId,
+			})
 			.from(expenseOfficerTeam)
 			.where(
 				and(
@@ -203,7 +220,9 @@ async function withScopeRows(
 		id: grant.id,
 		officerEmployeeId: grant.officerEmployeeId,
 		scope: grant.scope === "all" ? "all" : "specific",
-		teamIds: teamRows.flatMap((row) => (row.grantId === grant.id ? [row.teamId] : [])).toSorted(),
+		teamIds: teamRows
+			.flatMap((row) => (row.grantId === grant.id ? [row.teamId] : []))
+			.toSorted(),
 		employeeIds: employeeRows
 			.flatMap((row) => (row.grantId === grant.id ? [row.employeeId] : []))
 			.toSorted(),
@@ -214,16 +233,30 @@ async function withScopeRows(
 
 export async function saveExpenseOfficerGrant(
 	tx: Transaction,
-	input: { organizationId: string; actorUserId: string; grant: SaveExpenseOfficerGrantInput },
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		grant: SaveExpenseOfficerGrantInput;
+	},
 ): Promise<{ grantId: string; outcome: "created" | "changed" | "unchanged" }> {
 	const { organizationId, actorUserId } = input;
 	if (!input.grant || typeof input.grant !== "object") {
 		throw new ValidationError({ message: "Expense officer input is required" });
 	}
-	const officerEmployeeId = validateId(input.grant.officerEmployeeId, "officerEmployeeId");
+	const officerEmployeeId = validateId(
+		input.grant.officerEmployeeId,
+		"officerEmployeeId",
+	);
 	const requestedTeamIds = validateIdList(input.grant.teamIds, "teamIds");
-	const requestedEmployeeIds = validateIdList(input.grant.employeeIds, "employeeIds");
-	if (![officerEmployeeId, ...requestedTeamIds, ...requestedEmployeeIds].every(isUuid)) {
+	const requestedEmployeeIds = validateIdList(
+		input.grant.employeeIds,
+		"employeeIds",
+	);
+	if (
+		![officerEmployeeId, ...requestedTeamIds, ...requestedEmployeeIds].every(
+			isUuid,
+		)
+	) {
 		throw new ValidationError({ message: "Expense officer IDs must be valid" });
 	}
 
@@ -239,7 +272,9 @@ export async function saveExpenseOfficerGrant(
 		)
 		.limit(1)
 		.for("update");
-	const [currentGrant] = current ? await withScopeRows(tx, organizationId, [current]) : [];
+	const [currentGrant] = current
+		? await withScopeRows(tx, organizationId, [current])
+		: [];
 
 	const [employeeRows, teamRows] = await Promise.all([
 		tx
@@ -255,11 +290,18 @@ export async function saveExpenseOfficerGrant(
 			? tx
 					.select({ id: team.id })
 					.from(team)
-					.where(and(eq(team.organizationId, organizationId), inArray(team.id, requestedTeamIds)))
+					.where(
+						and(
+							eq(team.organizationId, organizationId),
+							inArray(team.id, requestedTeamIds),
+						),
+					)
 			: Promise.resolve([]),
 	]);
 	const validated = buildValidatedExpenseOfficerGrant(input.grant, {
-		activeEmployeeIds: employeeRows.filter((row) => row.isActive).map((row) => row.id),
+		activeEmployeeIds: employeeRows
+			.filter((row) => row.isActive)
+			.map((row) => row.id),
 		organizationEmployeeIds: employeeRows.map((row) => row.id),
 		organizationTeamIds: teamRows.map((row) => row.id),
 	});
@@ -398,7 +440,12 @@ export async function revokeExpenseOfficerGrant(
 	const [grant] = await withScopeRows(tx, organizationId, [row]);
 	if (!grant) throw notFound;
 
-	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: null });
+	await revokeLockedGrant(tx, {
+		organizationId,
+		actorUserId,
+		grant,
+		metadata: null,
+	});
 	return { grantId: grant.id, officerEmployeeId: grant.officerEmployeeId };
 }
 
@@ -433,7 +480,12 @@ export async function revokeExpenseOfficerGrantHeldBy(
 	const [grant] = row ? await withScopeRows(tx, organizationId, [row]) : [];
 	if (!grant) return;
 
-	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: input.auditMetadata });
+	await revokeLockedGrant(tx, {
+		organizationId,
+		actorUserId,
+		grant,
+		metadata: input.auditMetadata,
+	});
 }
 
 async function revokeLockedGrant(
@@ -479,16 +531,14 @@ async function insertScopeRows(
 ): Promise<void> {
 	const { organizationId, actorUserId, grantId } = input;
 	if (input.teamIds.length > 0) {
-		await tx
-			.insert(expenseOfficerTeam)
-			.values(
-				input.teamIds.map((teamId) => ({
-					organizationId,
-					grantId,
-					teamId,
-					createdBy: actorUserId,
-				})),
-			);
+		await tx.insert(expenseOfficerTeam).values(
+			input.teamIds.map((teamId) => ({
+				organizationId,
+				grantId,
+				teamId,
+				createdBy: actorUserId,
+			})),
+		);
 	}
 	if (input.employeeIds.length > 0) {
 		await tx.insert(expenseOfficerEmployee).values(
@@ -522,7 +572,9 @@ async function writeGrantAudit(
 		action: input.action,
 		performedBy: input.actorUserId,
 		employeeId: input.officerEmployeeId,
-		changes: JSON.stringify(expenseOfficerGrantAuditChanges(input.from, input.to)),
+		changes: JSON.stringify(
+			expenseOfficerGrantAuditChanges(input.from, input.to),
+		),
 		metadata: input.metadata ? JSON.stringify(input.metadata) : null,
 	});
 }

@@ -467,6 +467,37 @@ describe("report submission", () => {
 		expect(action.closest("li")?.textContent).toContain("Train to Hamburg");
 		expect(screen.queryByRole("button", { name: "Remove" })).toBeNull();
 	});
+	it.each([true, false])(
+		"shows the approved finance missing-receipt action only with handling authority (%s)",
+		async (canAddReceipt) => {
+			reportActions.getMyTravelExpenseReport.mockResolvedValue(
+				tripReport({ status: "approved", submissionCount: 1 }),
+			);
+			const approved = submittedView({
+				status: "approved",
+				access: "finance",
+				cycleOutcome: "approved",
+				canAddReceipt,
+				reviewerName: null,
+			});
+			approved.data.facts.items[0].receipts = [];
+			reportActions.getTravelExpenseReportSubmission.mockResolvedValue(
+				approved,
+			);
+			mount();
+			await screen.findByText("Train to Hamburg");
+			expect(
+				Boolean(screen.queryByRole("button", { name: "Add receipt" })),
+			).toBe(canAddReceipt);
+			expect(
+				screen.queryByRole("button", { name: "Withdraw report" }),
+			).toBeNull();
+			expect(
+				screen.queryByRole("textbox", { name: "Purpose of the trip" }),
+			).toBeNull();
+		},
+	);
+
 	it("withdraws a pending submission after the employee confirms it", async () => {
 		reportActions.getMyTravelExpenseReport.mockResolvedValue(
 			tripReport({ status: "submitted", submissionCount: 1 }),
