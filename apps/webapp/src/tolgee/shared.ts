@@ -165,6 +165,8 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/settings/vacation": ["common", "settings/generic", "settings/vacation"],
 	"/settings/webhooks": ["common", "settings/generic", "webhooks"],
 	"/settings/work-categories": ["common", "settings/generic", "settings/rules"],
+	"/settings/vehicle-use": ["common", "settings/generic", "settings/workPolicies"],
+	"/settings/position-capture": ["common", "settings/generic", "settings/workPolicies"],
 	"/settings/work-policies": ["common", "settings/generic", "settings/workPolicies"],
 	"/settings/compliance": ["common", "settings/generic", "compliance"],
 	"/onboarding": ["common", "onboarding"],
