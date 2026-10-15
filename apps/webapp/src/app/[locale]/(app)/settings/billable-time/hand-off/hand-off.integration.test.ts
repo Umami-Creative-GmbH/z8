@@ -10,6 +10,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FakeAccountingTool } from "@/lib/billable-time/accounting/fake-provider";
 import type { AccountingProviderRegistry } from "@/lib/billable-time/accounting/registry";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -190,27 +191,29 @@ describe("hand-off on PostgreSQL", () => {
 			);
 		}
 		const id = randomUUID();
-		await admin.query(
-			`insert into work_period
-			 (id, employee_id, organization_id, clock_in_id, clock_out_id, project_id, is_billable, start_time,
-			  end_time, duration_minutes, is_active, approval_status, deleted_at, deleted_by, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now())`,
-			[
-				id,
-				employeeId,
-				organizationId,
-				clockInId,
-				clockOutId,
-				options.projectId,
-				options.billable ?? true,
-				options.start,
-				options.end ?? null,
-				options.minutes ?? null,
-				!options.end,
-				options.pending ? "pending" : "approved",
-				options.deleted ? "2026-09-20T00:00:00Z" : null,
-				options.deleted ? ids.ownerUser : null,
-			],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`insert into work_period
+				 (id, employee_id, organization_id, clock_in_id, clock_out_id, project_id, is_billable, start_time,
+				  end_time, duration_minutes, is_active, approval_status, deleted_at, deleted_by, updated_at)
+				 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now())`,
+				[
+					id,
+					employeeId,
+					organizationId,
+					clockInId,
+					clockOutId,
+					options.projectId,
+					options.billable ?? true,
+					options.start,
+					options.end ?? null,
+					options.minutes ?? null,
+					!options.end,
+					options.pending ? "pending" : "approved",
+					options.deleted ? "2026-09-20T00:00:00Z" : null,
+					options.deleted ? ids.ownerUser : null,
+				],
+			),
 		);
 		return id;
 	}

@@ -41,10 +41,14 @@ describe("clocking service delegation", () => {
 		expect(body).not.toContain("db.transaction");
 	});
 
-	it("creates manual source and approval state in one workflow transaction", () => {
+	it("creates manual work and approval state in one manual work transaction", () => {
 		const body = functionBody("createManualTimeEntry");
 
 		expect(body).toContain("runtime.repository.withTransaction(");
+		expect(body).toContain("withManualWorkTransaction(");
+		// Work records writes the work period, its entries and canonical work record (#1223).
+		expect(body).toContain("applyWorkRecordChange(context,");
+		expect(body).not.toContain("createTimeEntry(");
 		expect(body).toContain("executeOrdinaryWorkPeriodSubmissionInTransaction(");
 		expect(body).not.toContain("await db.transaction(");
 		expect(body).not.toContain("createManualEntryApprovalRequest(");
@@ -55,9 +59,7 @@ describe("clocking service delegation", () => {
 		const replayTransaction = body.indexOf(
 			"runtime.repository.withTransaction(",
 		);
-		const creationTransaction = body.lastIndexOf(
-			"runtime.repository.withTransaction(",
-		);
+		const creationTransaction = body.indexOf("withManualWorkTransaction(");
 		expect(categoryGuard).toBeGreaterThanOrEqual(0);
 		expect(replayTransaction).toBeLessThan(categoryGuard);
 		expect(categoryGuard).toBeLessThan(creationTransaction);

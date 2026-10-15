@@ -17,6 +17,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -1751,15 +1752,17 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 
 			// Completed work already occupies the resumed interval.
 			const occupiedAt = detectedReturn.add({ minutes: 10 });
-			await admin.query(
-				`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time, is_active, duration_minutes, updated_at)
-				 select $1, employee_id, organization_id, id, $2, $3, false, 10, now() from time_entry where id = $4`,
-				[
-					randomUUID(),
-					occupiedAt.toString(),
-					occupiedAt.add({ minutes: 10 }).toString(),
-					start.operationId,
-				],
+			await withCanonicalRecords(admin, (client) =>
+				client.query(
+					`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time, is_active, duration_minutes, updated_at)
+					 select $1, employee_id, organization_id, id, $2, $3, false, 10, now() from time_entry where id = $4`,
+					[
+						randomUUID(),
+						occupiedAt.toString(),
+						occupiedAt.add({ minutes: 10 }).toString(),
+						start.operationId,
+					],
+				),
 			);
 			let before = await snapshot();
 			const occupied = await submit(breakCommand(target));

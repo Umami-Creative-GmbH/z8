@@ -14,29 +14,15 @@ import "server-only";
  */
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import {
-	completedWorkOperation,
-	timeRecord,
-	timeRecordAllocation,
-	timeRecordWork,
-	workPeriod,
-} from "@/db/schema";
+import { completedWorkOperation, workPeriod } from "@/db/schema";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "@/lib/approvals/server/work-period-submission";
 import {
-	comparePlainDates,
 	dateFromInstant,
 	type Instant,
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { canonicalJson } from "./canonical-json";
-import {
-	appendAdmittedClockEntries,
-	type ClockingInput,
-	createDatabaseClockingStore,
-	TimeEntryAppendReviewRequiredError,
-} from "./clocking-core";
 import {
 	CompletedWorkCollisionError,
 	type CompletedWorkFollowUp,
@@ -50,15 +36,19 @@ import type {
 	ManualTimeEntryCommand,
 } from "./manual-command";
 import type { ManualWorkTransactionContext } from "./manual-work-transaction";
-import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
 import { recordedTaskId } from "./task-attribution";
-import { vehicleUseColumns, type WorkVehicleUse } from "./vehicle-use/work-vehicle-use";
 import type { AppendReviewReason } from "./time-entry-append";
-import { loadWorkOccupants } from "./work-occupancy";
+import type { WorkVehicleUse } from "./vehicle-use/work-vehicle-use";
+import {
+	applyWorkRecordChange,
+	type NewWorkCreation,
+	orRefuse,
+	type WorkAttributionPatch,
+} from "./work-records";
 import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const MANUAL_WORK_RESULT_VERSION = 1;
@@ -169,7 +159,9 @@ export type ManualWorkOccupant = {
 
 export type ManualWorkRejection =
 	| { reason: "occupancy_conflict"; occupants: ManualWorkOccupant[] }
-	| { reason: "append_review_required"; reasons: AppendReviewReason[] };
+	| { reason: "append_review_required"; reasons: AppendReviewReason[] }
+	/** A closed month found under protection after preparation, named as `YYYY-MM` (#762). */
+	| { reason: "month_closed"; month: string };
 
 export type RecordedManualWork =
 	| {
@@ -255,6 +247,17 @@ function approvalDbService(context: ManualWorkTransactionContext): ApprovalDbSer
 	};
 }
 
+/** The prepared attribution; billability was resolved by preparation (#900). */
+function manualAttribution(facts: ManualWorkFacts): WorkAttributionPatch {
+	return {
+		project: facts.projectId ? { projectId: facts.projectId, billableDefault: false } : null,
+		...(facts.projectId ? { billable: facts.isBillable, task: facts.taskId ?? null } : {}),
+		workCategoryId: facts.workCategoryId,
+		workLocationType: facts.workLocationType ?? null,
+		vehicleUse: facts.vehicleUse ?? null,
+	};
+}
+
 /**
  * Fresh manual work. The caller has ruled out replay, runs in the adopted
  * (`append`) admission mode and passes prepared facts sampled at one instant.
@@ -274,154 +277,40 @@ export async function recordManualWork(
 	if (requiresApproval) context.requireApprovalScope();
 	const tx = context.db;
 
-	const occupants = await loadWorkOccupants(tx, {
-		organizationId,
-		employeeId,
-		interval: { startAt: facts.start, endAt: facts.end },
-		excludeWorkPeriodIds: [],
-	});
-	if (occupants.length > 0) {
-		return {
-			kind: "rejected",
-			rejection: {
-				reason: "occupancy_conflict",
-				occupants: occupants.map((occupant) => ({
-					kind: occupant.kind,
-					id: occupant.id,
-					startAt: instantToCanonicalString(occupant.startAt),
-					endAt: occupant.endAt ? instantToCanonicalString(occupant.endAt) : null,
-				})),
-			},
-		};
-	}
-
-	const entryInput = (
-		instant: Instant,
-		utcOffsetMinutes: number,
-		notes: string,
-	): ClockingInput => ({
-		employeeId,
-		organizationId,
-		createdBy: input.actorUserId,
-		action: {
-			instant,
-			utcOffsetMinutes,
-			timezone: facts.timezone,
-			timezoneSource: facts.captureSource,
-		},
-		source: { ipAddress: null, deviceInfo: null },
-		notes,
-	});
-	let appended: Awaited<ReturnType<typeof appendAdmittedClockEntries>>;
-	try {
-		appended = await appendAdmittedClockEntries(createDatabaseClockingStore(tx), "manual_entry", [
-			{
-				input: entryInput(facts.start, facts.startOffsetMinutes, `Manual entry: ${facts.reason}`),
-				type: "clock_in",
-			},
-			{ input: entryInput(facts.end, facts.endOffsetMinutes, facts.reason), type: "clock_out" },
-		]);
-	} catch (error) {
-		if (!(error instanceof TimeEntryAppendReviewRequiredError)) throw error;
-		return {
-			kind: "rejected",
-			rejection: { reason: "append_review_required", reasons: error.requirement.reasons },
-		};
-	}
-	const [clockIn, clockOut] = appended;
-	if (!clockIn || !clockOut)
-		throw new CompletedWorkIntegrityError("Manual work needs both entries");
-	// Manual work in a submitted period sends it back to the employee (#1062).
-	await sendBackChangedPeriodSubmissions(tx, {
-		organizationId,
-		employeeId,
-		causedByUserId: input.actorUserId,
-		work: [{ start: facts.start, end: facts.end }],
-	});
-
-	const startAt = dateFromInstant(facts.start);
-	const endAt = dateFromInstant(facts.end);
-	const approvalState = requiresApproval ? "pending" : "approved";
 	// Surcharge evidence keeps its existing event-time semantics.
 	const surchargeSnapshot = await resolvePolicyClockOutSurchargeSnapshotInTransaction({
-		dbService: { db: tx },
+		dbService: { db: context.db },
 		organizationId,
 		employeeId,
 		startTime: facts.start,
 		endTime: facts.end,
 	});
-	const [record] = await tx
-		.insert(timeRecord)
-		.values({
-			organizationId,
-			employeeId,
-			recordKind: "work",
-			startAt,
-			endAt,
-			durationMinutes: facts.durationMinutes,
-			approvalState,
-			origin: "manual",
-			createdBy: input.actorUserId,
-			updatedBy: input.actorUserId,
-		})
-		.returning({ id: timeRecord.id });
-	if (!record) throw new Error("Failed to create canonical work record");
-	const vehicle = vehicleUseColumns(facts.vehicleUse ?? null);
-	await tx.insert(timeRecordWork).values({
-		recordId: record.id,
-		organizationId,
-		recordKind: "work",
-		workCategoryId: facts.workCategoryId,
-		workLocationType: facts.workLocationType ?? null,
-		computationMetadata: null,
-		vehicleKind: vehicle.vehicleKind,
-		vehicleId: vehicle.vehicleId,
-		odometerStartKm: vehicle.odometerStartKm,
-		odometerEndKm: vehicle.odometerEndKm,
-		drivenDistanceKm: vehicle.drivenDistanceKm,
+	const startAt = dateFromInstant(facts.start);
+	const endAt = dateFromInstant(facts.end);
+	const capture = (utcOffsetMinutes: number) => ({
+		utcOffsetMinutes,
+		timezone: facts.timezone,
+		timezoneSource: facts.captureSource,
 	});
-	if (facts.projectId) {
-		await tx.insert(timeRecordAllocation).values({
-			organizationId,
-			recordId: record.id,
-			allocationKind: "project",
-			projectId: facts.projectId,
-			taskId: facts.taskId ?? null,
-			weightPercent: 100,
-			isBillable: facts.isBillable,
-		});
-	}
-
-	const resultRevision = 1;
-	const [period] = await tx
-		.insert(workPeriod)
-		.values({
-			id: command.submissionId,
-			employeeId,
-			organizationId,
-			clockInId: clockIn.entry.id,
-			clockOutId: clockOut.entry.id,
-			startTime: startAt,
-			endTime: endAt,
-			durationMinutes: facts.durationMinutes,
-			projectId: facts.projectId,
-			isBillable: facts.projectId !== null && facts.isBillable,
-			taskId: facts.taskId ?? null,
-			workCategoryId: facts.workCategoryId,
-			workLocationType: facts.workLocationType ?? null,
-			vehicleKind: vehicle.vehicleKind,
-			vehicleId: vehicle.vehicleId,
-			odometerStartKm: vehicle.odometerStartKm,
-			odometerEndKm: vehicle.odometerEndKm,
-			drivenDistanceKm: vehicle.drivenDistanceKm,
-			canonicalRecordId: record.id,
-			isActive: false,
-			approvalStatus: approvalState,
-			pendingChanges: requiresApproval
-				? {
+	const created = await applyWorkRecordChange(context, {
+		kind: "create_new",
+		organizationId,
+		employeeId,
+		workPeriodId: command.submissionId,
+		start: {
+			at: facts.start,
+			notes: `Manual entry: ${facts.reason}`,
+			capture: capture(facts.startOffsetMinutes),
+		},
+		end: { at: facts.end, notes: facts.reason, capture: capture(facts.endOffsetMinutes) },
+		attribution: manualAttribution(facts),
+		approval: requiresApproval
+			? {
+					state: "pending",
+					pendingChanges: {
 						ordinarySubmission: {
 							submissionId: command.submissionId,
-							kind: "manual_time_submission" as const,
+							kind: "manual_time_submission",
 						},
 						originalStartTime: startAt.toISOString(),
 						originalEndTime: endAt.toISOString(),
@@ -431,12 +320,42 @@ export async function recordManualWork(
 						reason: facts.reason,
 						isManualEntry: true,
 						surchargeSnapshot,
-					}
-				: null,
-			graphRevision: resultRevision,
-		})
-		.returning({ id: workPeriod.id });
-	if (!period) throw new Error("Failed to create manual work period");
+					},
+				}
+			: { state: "approved" },
+		origin: "manual",
+		recordedBy: input.actorUserId,
+		actorUserId: input.actorUserId,
+		entries: { createdBy: input.actorUserId, ipAddress: null, deviceInfo: null },
+		appendOperation: "manual_entry",
+	});
+	switch (created.kind) {
+		case "work_occupied":
+			return {
+				kind: "rejected",
+				rejection: {
+					reason: "occupancy_conflict",
+					occupants: created.occupants.map((occupant) => ({
+						kind: occupant.kind,
+						id: occupant.id,
+						startAt: instantToCanonicalString(occupant.startAt),
+						endAt: occupant.endAt ? instantToCanonicalString(occupant.endAt) : null,
+					})),
+				},
+			};
+		case "append_review_required":
+			return {
+				kind: "rejected",
+				rejection: { reason: "append_review_required", reasons: created.requirement.reasons },
+			};
+		case "month_closed":
+			return { kind: "rejected", rejection: { reason: "month_closed", month: created.month } };
+	}
+	const creation = orRefuse<NewWorkCreation>(created);
+	const period = { id: creation.segment.workPeriodId };
+	const { clockIn, clockOut } = creation.appended;
+	const approvalState = requiresApproval ? "pending" : "approved";
+	const dirtyFromDate = creation.effects.workBalanceDirtyFromDate;
 
 	let approvalSubmission: Extract<RecordedManualWork, { kind: "executed" }>["approvalSubmission"] =
 		null;
@@ -478,14 +397,6 @@ export async function recordManualWork(
 		committedApprovalState = after.approvalStatus;
 	}
 
-	// The earlier of the UTC and captured local start date covers the work's day.
-	const utcDate = facts.start.toZonedDateTimeISO("UTC").toPlainDate();
-	const localDate = facts.start.toZonedDateTimeISO(facts.timezone).toPlainDate();
-	const dirtyFromDate = (
-		comparePlainDates(localDate, utcDate) < 0 ? localDate : utcDate
-	).toString();
-	await markEmployeeWorkBalanceDirty({ employeeId, organizationId, dirtyFromDate }, tx);
-
 	const followUps: CompletedWorkFollowUp[] = [
 		{ kind: "work_balance_refresh", delivery: "committed_intent", dirtyFromDate },
 		...(requiresApproval
@@ -501,9 +412,9 @@ export async function recordManualWork(
 			submitting: { kind: "human", userId: input.actorUserId },
 		},
 		workPeriodId: period.id,
-		clockInEntryId: clockIn.entry.id,
-		clockOutEntryId: clockOut.entry.id,
-		canonicalRecordId: record.id,
+		clockInEntryId: clockIn.entryId,
+		clockOutEntryId: clockOut.entryId,
+		canonicalRecordId: creation.segment.canonicalRecordId,
 		interpretation: {
 			evaluatedAt: instantToCanonicalString(facts.evaluatedAt),
 			timezone: facts.timezone,
@@ -517,7 +428,7 @@ export async function recordManualWork(
 		segment: {
 			startAt: instantToCanonicalString(facts.start),
 			endAt: instantToCanonicalString(facts.end),
-			durationMinutes: facts.durationMinutes,
+			durationMinutes: creation.segment.durationMinutes,
 			startUtcOffsetMinutes: facts.startOffsetMinutes,
 			endUtcOffsetMinutes: facts.endOffsetMinutes,
 		},
@@ -531,12 +442,12 @@ export async function recordManualWork(
 				: {}),
 			...(facts.vehicleUse ? { vehicleUse: facts.vehicleUse } : {}),
 		},
-		revisions: { workPeriod: { source: null, result: resultRevision } },
+		revisions: { workPeriod: { source: null, result: creation.after.revision } },
 		append: {
 			admission: "append",
 			previousEntryId: clockIn.previousEntryId,
 			previousHash: clockIn.previousHash,
-			tipEntryId: clockOut.entry.id,
+			tipEntryId: clockOut.entryId,
 		},
 		approvalState: committedApprovalState,
 		approval,

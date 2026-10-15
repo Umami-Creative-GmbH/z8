@@ -62,7 +62,7 @@ test("base dependency warming cannot execute arbitrary PR refs or repeat an exac
   }
 });
 test("draft PRs skip every validation job, including setup, summary and reusable debounce", () => {
-  const guardJobs = ["tests", "desktop-windows", "check-package-lock-sync", "react-doctor", "ci-debounce"];
+  const guardJobs = ["tests", "desktop-windows", "check-package-lock-sync", "react-doctor", "ci-debounce", "work-records-integration"];
   for (const name of guardJobs) {
     const source = workflow(name);
     if (name !== "ci-debounce") {
@@ -85,6 +85,33 @@ test("draft PRs skip every validation job, including setup, summary and reusable
       assert.equal(Boolean(evaluate(needs, {event_name:"workflow_dispatch",event:{}}, {}, ()=>true, ()=>false, {POSTGRES_INTEGRATION_TESTS_ENABLED:"true"})), true, name + "/" + id + " manual");
     }
   }
+});
+
+test("work records PostgreSQL suites run on every ready PR into dev, regardless of the global PostgreSQL switch", () => {
+  const source = workflow("work-records-integration");
+  assert.match(source, /pull_request:\s+types: \[opened, synchronize, reopened, ready_for_review, converted_to_draft\]\s+branches:\s+- dev\n/);
+  assert.match(source, /group: .*github.event.pull_request.number/);
+  assert.match(source, /cancel-in-progress: true/);
+  assert.doesNotMatch(source, /continue-on-error|\|\| true/);
+  const block = source.split("\njobs:\n")[1];
+  const condition = block.match(/^    if: (.+)$/m)[1].replace(/^\$\{\{\s*|\s*\}\}$/g, "");
+  const evaluate = new Function("github", "vars", `return (${condition})`);
+  for (const enabled of [undefined, "", "false", "true"]) {
+    const vars = { POSTGRES_INTEGRATION_TESTS_ENABLED: enabled };
+    assert.equal(Boolean(evaluate({ event_name: "pull_request", event: { pull_request: { draft: false } } }, vars)), true, `ready ${enabled}`);
+    assert.equal(Boolean(evaluate({ event_name: "pull_request", event: { pull_request: { draft: true } } }, vars)), false, `draft ${enabled}`);
+    assert.equal(Boolean(evaluate({ event_name: "workflow_dispatch", event: {} }, vars)), true, `manual ${enabled}`);
+  }
+});
+test("the work records job hands the selected suites to the shared runner on a disposable database", () => {
+  const source = workflow("work-records-integration");
+  assert.match(source, /image: public\.ecr\.aws\/docker\/library\/postgres:16/);
+  assert.match(source, /--tmpfs \/var\/lib\/postgresql\/data/);
+  assert.match(source, /set -euo pipefail/);
+  assert.match(source, /suites="\$\(node \.github\/scripts\/work-records-suites\.mjs\)"/);
+  assert.match(source, /create database \\"\$\{database_name\}\\"/);
+  assert.match(source, /database_name="approval_workflow_repository_test_/);
+  assert.match(source, /bash apps\/webapp\/scripts\/run-postgres-integration-suites\.sh\s+\\\s+"postgresql:\/\/postgres:postgres@127\.0\.0\.1:5432\/\$\{database_name\}" "\$\{suite_paths\[@\]\}"/);
 });
 
 test("PostgreSQL enablement is shared by runner scheduling and the required summary", () => {

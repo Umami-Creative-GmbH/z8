@@ -3,9 +3,14 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import type { AttributionIntent, ClockChannel, CloseActiveWorkResult } from "../close-active-work";
 import type { ProjectTaskIneligibility } from "../project-eligibility";
-import type { TimeEntryRequestMetadata } from "../time-entry-writer";
 import type { BreakVehicleUse, ClockVehicleUse } from "../vehicle-use/clock-vehicle-use";
 import type { WorkLocationType } from "../work-location";
+
+/** A command's request evidence, stored on its entries as `ip_address` and `device_info`. */
+export type TimeEntryRequestMetadata = {
+	ipAddress: string | null;
+	userAgent: string | null;
+};
 
 /** An authenticated human clocking their own employee record. */
 export type ClockActor = {

@@ -6,33 +6,31 @@
  * (`historical_work_repair_control`) and runs one short transaction per employee
  * through the shared completed-work coordinator: adoption gate, organization and
  * user configuration guards, then the employee's coordination key. Under those
- * locks the executor locks the planned work rows, re-reads the employee's field,
- * absence and lineage evidence, re-plans, and continues only when the plan is
- * exactly the one the operator reviewed. Every fill is a guarded write against the
- * expected state; the work graph, its advanced revision and one receipt per repaired
- * work commit together. A repeated application finds its own receipts and returns
- * them; a changed plan stops without writing.
+ * locks the executor re-reads the employee's field, absence and lineage evidence,
+ * re-plans, and continues only when the plan is exactly the one the operator
+ * reviewed. Each repaired work is written through work records (#1226): a missing
+ * canonical work record is attached, every other fill is a repair against the
+ * reviewed revision, so both records agree afterwards and the effects of any change
+ * to work apply. One receipt per repaired work commits with it. A repeated
+ * application finds its own receipts and returns them; a changed plan stops without
+ * writing.
  *
  * Committed replay never calls this module, and the organization-wide canonical
- * backfill is not used: nothing here relinks, overwrites, deletes or rebuilds.
+ * backfill is not used: nothing here relinks another record, deletes or rebuilds.
  */
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { and, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Temporal } from "temporal-polyfill";
 import type { db as database } from "@/db";
 import {
 	completedWorkOperation,
 	historicalWorkRepairControl,
 	project,
-	timeRecord,
-	timeRecordAllocation,
-	timeRecordWork,
 	workCategory,
-	workPeriod,
 } from "@/db/schema";
-import { dateFromInstant, parseInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import type { AppendAssuranceReport } from "./append-assurance";
 import { readAppendAssurance, withAppendEvidenceSnapshot } from "./append-assurance-reader";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
@@ -41,8 +39,8 @@ import {
 	type GapRepairUnit,
 	type HistoricalGapRepairPlan,
 	planHistoricalGapRepair,
-	type RepairedWorkDetail,
 } from "./historical-gap-repair";
+import { gapRepairResolution } from "./historical-repair-resolution";
 import {
 	assessHistoricalWork,
 	type HistoricalWorkDiagnostics,
@@ -53,9 +51,13 @@ import {
 	type HistoricalWorkEvidenceReader,
 	readHistoricalWorkEvidence,
 } from "./historical-work-diagnostics-reader";
-import { vehicleUseColumns, vehicleUseFromColumns } from "./vehicle-use/work-vehicle-use";
-import { WORK_LOCATION_TYPES, type WorkLocationType } from "./work-location";
-import type { WorkTransactionClient } from "./work-transaction";
+import {
+	applyWorkRecordChange,
+	isWorkRecordRefusal,
+	refusalError,
+	type WorkRecordRefusal,
+} from "./work-records";
+import type { SealedWorkTransactionScope, WorkTransactionClient } from "./work-transaction";
 
 type Database = typeof database;
 
@@ -212,7 +214,7 @@ export async function applyHistoricalGapRepair(
 					{ organizationId: input.organizationId, employeeId, actorUserId: input.actorUserId },
 					(scope) => {
 						scope.assertEmployee(input.organizationId, employeeId);
-						return repairEmployee(scope.db, scope.admission, input, employeeId, fingerprint);
+						return repairEmployee(scope, input, employeeId, fingerprint);
 					},
 				),
 			);
@@ -225,22 +227,19 @@ export async function applyHistoricalGapRepair(
 }
 
 async function repairEmployee(
-	tx: WorkTransactionClient,
-	admission: "legacy" | "append",
+	work: SealedWorkTransactionScope,
 	input: ApplyHistoricalGapRepairInput,
 	employeeId: string,
 	fingerprint: string,
 ): Promise<EmployeeRepairOutcome> {
+	const tx = work.db;
 	if (!(await readRepairAuthorization(tx, input.organizationId))) {
 		throw new HistoricalRepairNotAuthorizedError();
 	}
 	const scope: HistoricalWorkScope = { employeeIds: [employeeId], range: input.range };
 
-	// Lock the planned rows in table/ID order, then re-read and re-plan under them.
-	const preliminary = await planFrom(tx, input.organizationId, scope);
-	const lockedUnits = preliminary.plan.employees.find((plan) => plan.employeeId === employeeId);
-	if (lockedUnits) await lockWorkRows(tx, input.organizationId, lockedUnits.units);
-
+	// Re-plan under the employee's coordination key, which keeps every other writer
+	// out; work records locks each repaired work's rows in its own table order.
 	const { plan } = await planFrom(tx, input.organizationId, scope);
 	const current = plan.employees.find((employeePlan) => employeePlan.employeeId === employeeId);
 	if (!current || current.fingerprint !== fingerprint) {
@@ -253,12 +252,11 @@ async function repairEmployee(
 	const receipts: RepairReceiptSummary[] = [];
 	for (const unit of current.units) {
 		receipts.push(
-			await applyUnit(tx, {
+			await applyUnit(work, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
 				reason: input.reason,
 				range: input.range,
-				admission,
 				planFingerprint: fingerprint,
 				executedAt,
 				unit,
@@ -266,30 +264,6 @@ async function repairEmployee(
 		);
 	}
 	return { employeeId, status: "applied", receipts };
-}
-
-async function lockWorkRows(
-	tx: WorkTransactionClient,
-	organizationId: string,
-	units: readonly GapRepairUnit[],
-) {
-	const periodIds = units.map((unit) => unit.workPeriodId).toSorted();
-	await tx
-		.select({ id: workPeriod.id })
-		.from(workPeriod)
-		.where(and(eq(workPeriod.organizationId, organizationId), inArray(workPeriod.id, periodIds)))
-		.orderBy(workPeriod.id)
-		.for("update");
-	const recordIds = units
-		.flatMap((unit) => (unit.expected.record ? [unit.expected.record.id] : []))
-		.toSorted();
-	if (recordIds.length === 0) return;
-	await tx
-		.select({ id: timeRecord.id })
-		.from(timeRecord)
-		.where(and(eq(timeRecord.organizationId, organizationId), inArray(timeRecord.id, recordIds)))
-		.orderBy(timeRecord.id)
-		.for("update");
 }
 
 async function committedReceipts(
@@ -330,174 +304,58 @@ interface UnitContext {
 	actorUserId: string;
 	reason: string;
 	range: HistoricalWorkScope["range"];
-	admission: "legacy" | "append";
 	planFingerprint: string;
 	executedAt: Temporal.Instant;
 	unit: GapRepairUnit;
 }
 
-/** Requires exactly one affected row; anything else means the expected state moved. */
-function expectOne(rows: readonly unknown[], unit: GapRepairUnit) {
-	if (rows.length !== 1) throw new StaleHistoricalRepairPlanError(unit.workPeriodId);
-}
-
-async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
+/**
+ * The repaired work through work records: a missing canonical work record is
+ * attached, anything else is repaired to what the fills establish, against the
+ * revision the plan was made for.
+ */
+async function applyUnit(work: SealedWorkTransactionScope, context: UnitContext) {
 	const { organizationId, unit } = context;
-	const executedAt = dateFromInstant(context.executedAt);
+	const tx = work.db;
 	const recordId = unit.canonicalRecordId;
-	const expectedRecord = unit.expected.record;
-	const periodSet: Partial<typeof workPeriod.$inferInsert> = {};
-	const periodGuards: SQL[] = [];
-
-	for (const fill of unit.fills) {
-		switch (fill.kind) {
-			case "canonical_record": {
-				if (unit.originalActor.kind !== "human") {
-					throw new StaleHistoricalRepairPlanError(unit.workPeriodId);
-				}
-				// A record another writer created under this ID meanwhile is a stale plan.
-				const inserted = await tx
-					.insert(timeRecord)
-					.values({
-						id: fill.recordId,
-						organizationId,
-						employeeId: unit.employeeId,
-						recordKind: "work",
-						startAt: dateFromInstant(parseInstant(fill.record.startAt)),
-						endAt: dateFromInstant(parseInstant(fill.record.endAt)),
-						durationMinutes: fill.record.durationMinutes,
-						approvalState: fill.record.approvalState,
-						// A representation created by a system process; its creator is the
-						// human the completing entry evidences.
-						origin: "system",
-						createdBy: unit.originalActor.userId,
-						// The repair wrote this row: its executor is the updater.
-						updatedAt: executedAt,
-						updatedBy: context.actorUserId,
-					})
-					.onConflictDoNothing()
-					.returning({ id: timeRecord.id });
-				expectOne(inserted, unit);
-				await insertDetail(tx, organizationId, fill.recordId, fill.detail, unit);
-				if (fill.projectId) await insertProject(tx, context, fill.recordId, fill.projectId);
-				periodSet.canonicalRecordId = fill.recordId;
-				periodGuards.push(isNull(workPeriod.canonicalRecordId));
-				break;
-			}
-			case "canonical_link":
-				periodSet.canonicalRecordId = fill.recordId;
-				periodGuards.push(isNull(workPeriod.canonicalRecordId));
-				break;
-			case "canonical_detail":
-				await insertDetail(tx, organizationId, fill.recordId, fill.detail, unit);
-				if (fill.projectId) await insertProject(tx, context, fill.recordId, fill.projectId);
-				break;
-			case "canonical_completion": {
-				if (!expectedRecord) throw new StaleHistoricalRepairPlanError(unit.workPeriodId);
-				expectOne(
-					await tx
-						.update(timeRecord)
-						.set({
-							endAt: dateFromInstant(parseInstant(fill.endAt)),
-							...(fill.durationMinutes === null ? {} : { durationMinutes: fill.durationMinutes }),
-							updatedAt: executedAt,
-							updatedBy: context.actorUserId,
-						})
-						.where(
-							and(
-								recordTarget(organizationId, unit, fill.recordId),
-								isNull(timeRecord.endAt),
-								eq(timeRecord.startAt, dateFromInstant(parseInstant(expectedRecord.startAt))),
-								fill.durationMinutes === null
-									? eq(timeRecord.durationMinutes, expectedRecord.durationMinutes ?? -1)
-									: isNull(timeRecord.durationMinutes),
-							),
-						)
-						.returning({ id: timeRecord.id }),
-					unit,
-				);
-				break;
-			}
-			case "canonical_duration":
-				expectOne(
-					await tx
-						.update(timeRecord)
-						.set({
-							durationMinutes: fill.durationMinutes,
-							updatedAt: executedAt,
-							updatedBy: context.actorUserId,
-						})
-						.where(
-							and(
-								recordTarget(organizationId, unit, fill.recordId),
-								isNull(timeRecord.durationMinutes),
-							),
-						)
-						.returning({ id: timeRecord.id }),
-					unit,
-				);
-				break;
-			case "period_completion":
-				periodSet.endTime = dateFromInstant(parseInstant(fill.endTime));
-				periodGuards.push(isNull(workPeriod.endTime), eq(workPeriod.isActive, false));
-				if (fill.durationMinutes !== null) {
-					periodSet.durationMinutes = fill.durationMinutes;
-					periodGuards.push(isNull(workPeriod.durationMinutes));
-				}
-				break;
-			case "period_duration":
-				periodSet.durationMinutes = fill.durationMinutes;
-				periodGuards.push(isNull(workPeriod.durationMinutes));
-				break;
-			case "canonical_metadata":
-				if (fill.field === "project") {
-					await insertProject(tx, context, fill.recordId, fill.value);
-					break;
-				}
-				expectOne(
-					await tx
-						.update(timeRecordWork)
-						.set(
-							fill.field === "work_category"
-								? { workCategoryId: fill.value }
-								: { workLocationType: workLocationTypeOf(fill.value, unit) },
-						)
-						.where(
-							and(
-								eq(timeRecordWork.recordId, fill.recordId),
-								eq(timeRecordWork.organizationId, organizationId),
-								fill.field === "work_category"
-									? isNull(timeRecordWork.workCategoryId)
-									: isNull(timeRecordWork.workLocationType),
-							),
-						)
-						.returning({ recordId: timeRecordWork.recordId }),
-					unit,
-				);
-				break;
-		}
+	const expected = {
+		workPeriodId: unit.workPeriodId,
+		revision: unit.expected.period.graphRevision,
+	};
+	const attaches = unit.fills.some((fill) => fill.kind === "canonical_record");
+	const { originalActor } = unit;
+	if (attaches && originalActor.kind !== "human") {
+		throw new StaleHistoricalRepairPlanError(unit.workPeriodId);
 	}
-
-	// The revision advance proves the period is unchanged since planning and commits
-	// every period fill with it.
-	const sourceRevision = unit.expected.period.graphRevision;
-	expectOne(
-		await tx
-			.update(workPeriod)
-			.set({ ...periodSet, graphRevision: sourceRevision + 1 })
-			.where(
-				and(
-					eq(workPeriod.id, unit.workPeriodId),
-					eq(workPeriod.organizationId, organizationId),
-					eq(workPeriod.employeeId, unit.employeeId),
-					eq(workPeriod.graphRevision, sourceRevision),
-					isNull(workPeriod.deletedAt),
-					...periodGuards,
-				),
-			)
-			.returning({ id: workPeriod.id }),
-		unit,
-	);
+	const written =
+		originalActor.kind === "human" && attaches
+			? await applyWorkRecordChange(work, {
+					kind: "attach",
+					organizationId,
+					employeeId: unit.employeeId,
+					expected,
+					// A representation created by a system process; its creator is the
+					// human the completing entry evidences, its updater the executor.
+					record: {
+						id: recordId,
+						origin: "system",
+						createdBy: originalActor.userId,
+						computationMetadata: null,
+					},
+					// Whatever the other fills establish, as the plan checked it.
+					resolution: gapRepairResolution(unit.fills),
+					actorUserId: context.actorUserId,
+				})
+			: await applyWorkRecordChange(work, {
+					kind: "repair",
+					organizationId,
+					employeeId: unit.employeeId,
+					expected,
+					resolution: gapRepairResolution(unit.fills),
+					actorUserId: context.actorUserId,
+				});
+	if (isWorkRecordRefusal(written)) throw unitRefusal(written, unit);
+	const sourceRevision = expected.revision;
 
 	const operationId = uuidFromDigest(
 		[RECEIPT_NAMESPACE, organizationId, unit.workPeriodId, unit.fingerprint].join("|"),
@@ -525,7 +383,7 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 			},
 			reason: context.reason,
 		},
-		appendAdmission: context.admission,
+		appendAdmission: work.admission,
 		// The operation's actor is its executor; the original actor is in the result.
 		actorKind: "human",
 		actorUserId: context.actorUserId,
@@ -545,7 +403,9 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 				expected: unit.expected,
 				sources: unit.fills.map((fill) => ({ fill: fill.kind, source: FILL_SOURCES[fill.kind] })),
 			},
-			revisions: { workPeriod: { source: sourceRevision, result: sourceRevision + 1 } },
+			revisions: { workPeriod: { source: sourceRevision, result: written.after.revision } },
+			// Attaching changes no work, so it has no effects unless a fill named a change.
+			effects: written.effects ?? null,
 		},
 	});
 	return {
@@ -556,114 +416,13 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 	};
 }
 
-function recordTarget(organizationId: string, unit: GapRepairUnit, recordId: string) {
-	return and(
-		eq(timeRecord.id, recordId),
-		eq(timeRecord.organizationId, organizationId),
-		eq(timeRecord.employeeId, unit.employeeId),
-		eq(timeRecord.recordKind, "work"),
-	);
-}
-
-async function insertDetail(
-	tx: WorkTransactionClient,
-	organizationId: string,
-	recordId: string,
-	detail: RepairedWorkDetail,
-	unit: GapRepairUnit,
-) {
-	// Vehicle use is mirrored from the planned period as it stands, never invented
-	// (#1126); the period's revision guard proves it unchanged since planning.
-	const [period] = await tx
-		.select({
-			vehicleKind: workPeriod.vehicleKind,
-			vehicleId: workPeriod.vehicleId,
-			odometerStartKm: workPeriod.odometerStartKm,
-			odometerEndKm: workPeriod.odometerEndKm,
-			drivenDistanceKm: workPeriod.drivenDistanceKm,
-		})
-		.from(workPeriod)
-		.where(and(eq(workPeriod.id, unit.workPeriodId), eq(workPeriod.organizationId, organizationId)))
-		.limit(1);
-	const vehicle = vehicleUseColumns(period ? vehicleUseFromColumns(period) : null);
-	expectOne(
-		await tx
-			.insert(timeRecordWork)
-			.values({
-				recordId,
-				organizationId,
-				recordKind: "work",
-				workCategoryId: detail.workCategoryId,
-				workLocationType:
-					detail.workLocationType === null
-						? null
-						: workLocationTypeOf(detail.workLocationType, unit),
-				computationMetadata: null,
-				vehicleKind: vehicle.vehicleKind,
-				vehicleId: vehicle.vehicleId,
-				odometerStartKm: vehicle.odometerStartKm,
-				odometerEndKm: vehicle.odometerEndKm,
-				drivenDistanceKm: vehicle.drivenDistanceKm,
-			})
-			.onConflictDoNothing()
-			.returning({ recordId: timeRecordWork.recordId }),
-		unit,
-	);
-}
-
 /**
- * Adds the project allocation only while the record has none (checked under its
- * row lock). The allocation takes the period's task (#873) and billability (#900)
- * while the period is on that project, so the period and its allocation agree on
- * project, task and billability; the planned period is locked and its revision
- * guard proves it unchanged.
+ * A closed month refuses as itself; any other refusal means the work moved since
+ * the plan was read, so the plan is stale and the employee's repair rolls back.
  */
-async function insertProject(
-	tx: WorkTransactionClient,
-	context: UnitContext,
-	recordId: string,
-	projectId: string,
-) {
-	const { organizationId, unit } = context;
-	const existing = await tx
-		.select({ id: timeRecordAllocation.id })
-		.from(timeRecordAllocation)
-		.where(
-			and(
-				eq(timeRecordAllocation.organizationId, organizationId),
-				eq(timeRecordAllocation.recordId, recordId),
-				eq(timeRecordAllocation.allocationKind, "project"),
-			),
-		)
-		.limit(1);
-	if (existing.length > 0) throw new StaleHistoricalRepairPlanError(recordId);
-	const [period] = await tx
-		.select({
-			projectId: workPeriod.projectId,
-			taskId: workPeriod.taskId,
-			isBillable: workPeriod.isBillable,
-		})
-		.from(workPeriod)
-		.where(and(eq(workPeriod.id, unit.workPeriodId), eq(workPeriod.organizationId, organizationId)))
-		.limit(1);
-	const isBillable = period?.projectId === projectId && period.isBillable;
-	await tx.insert(timeRecordAllocation).values({
-		organizationId,
-		recordId,
-		allocationKind: "project",
-		projectId,
-		taskId: period?.projectId === projectId ? period.taskId : null,
-		weightPercent: 100,
-		isBillable,
-	});
-}
-
-/** A stored location outside the enum cannot be written back; the plan is stale. */
-function workLocationTypeOf(value: string, unit: GapRepairUnit): WorkLocationType {
-	if (!(WORK_LOCATION_TYPES as readonly string[]).includes(value)) {
-		throw new StaleHistoricalRepairPlanError(unit.workPeriodId);
-	}
-	return value as WorkLocationType;
+function unitRefusal(refusal: WorkRecordRefusal, unit: GapRepairUnit): Error {
+	if (refusal.kind === "month_closed") return refusalError(refusal);
+	return new StaleHistoricalRepairPlanError(unit.workPeriodId);
 }
 
 function uuidFromDigest(value: string): string {

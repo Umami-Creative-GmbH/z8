@@ -19,6 +19,7 @@ import type { NextRequest } from "next/server";
 import type { PoolClient } from "pg";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -75,6 +76,9 @@ const { POST: diagnosticsRoute } = await import("@/app/api/time-entries/diagnost
 const { createManualTimeEntry, splitWorkPeriod } = await import(
 	"@/app/[locale]/(app)/time-tracking/actions"
 );
+const { expectRecordAgreement } = await import(
+	"@/lib/time-tracking/work-records/__tests__/expect-record-agreement"
+);
 
 const ids = {
 	organization: "t320-repair-org",
@@ -115,6 +119,9 @@ type Plan = {
 describe("historical gap repair on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 	const admin = integrationAdminPool();
+	/** Changes history the canonical record check (#1224) refuses to new writes. */
+	const history = (text: string, values: unknown[]) =>
+		asHistory(admin, (client) => client.query(text, values));
 
 	function actAs(userId: string, organizationId: string = ids.organization) {
 		harness.userId = userId;
@@ -334,12 +341,15 @@ describe("historical gap repair on PostgreSQL", () => {
 	async function missingRecord(date: string) {
 		const periodId = await legacyManual({ date, clockInTime: "08:00", clockOutTime: "12:00" });
 		const { canonical_record_id: recordId } = await periodRow(periodId);
-		await admin.query(
-			`update work_period set canonical_record_id = null, project_id = $2, work_category_id = $3
-			 where id = $1`,
-			[periodId, ids.project, ids.category],
-		);
-		await admin.query("delete from time_record where id = $1", [recordId]);
+		// History before every completed work period had its record (#1224).
+		await asHistory(admin, async (client) => {
+			await client.query(
+				`update work_period set canonical_record_id = null, project_id = $2, work_category_id = $3
+				 where id = $1`,
+				[periodId, ids.project, ids.category],
+			);
+			await client.query("delete from time_record where id = $1", [recordId]);
+		});
 		return periodId;
 	}
 
@@ -347,9 +357,9 @@ describe("historical gap repair on PostgreSQL", () => {
 	async function missingLink(date: string) {
 		const periodId = await legacyManual({ date, clockInTime: "13:00", clockOutTime: "15:00" });
 		const { canonical_record_id: recordId } = await periodRow(periodId);
-		await admin.query("update work_period set canonical_record_id = null where id = $1", [
-			periodId,
-		]);
+		await asHistory(admin, (client) =>
+			client.query("update work_period set canonical_record_id = null where id = $1", [periodId]),
+		);
 		// Re-key the record (and its detail) to the period's ID, as the backfill convention did.
 		await admin.query(
 			`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at,
@@ -391,12 +401,12 @@ describe("historical gap repair on PostgreSQL", () => {
 		const incomplete = await incompleteRecord("2026-07-03");
 		const beforeCreated = await periodRow(created);
 		// Established historical minutes differ from today's rounding of the endpoints.
-		await admin.query("update work_period set duration_minutes = 239 where id = $1", [created]);
+		await history("update work_period set duration_minutes = 239 where id = $1", [created]);
 		// Agreeing established minutes of the linked work stay as stored (not 120).
-		await admin.query("update work_period set duration_minutes = 125 where id = $1", [linked]);
+		await history("update work_period set duration_minutes = 125 where id = $1", [linked]);
 		await admin.query("update time_record set duration_minutes = 125 where id = $1", [linked]);
 		// Pending work with a legacy approval request whose history must survive.
-		await admin.query("update work_period set approval_status = 'pending' where id = $1", [
+		await history("update work_period set approval_status = 'pending' where id = $1", [
 			created,
 		]);
 		await admin.query(
@@ -544,7 +554,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "10:00",
 		});
-		await admin.query(
+		await history(
 			"update work_period set project_id = $2, is_billable = true where id = any($1::uuid[])",
 			[[created, metadata], ids.project],
 		);
@@ -580,7 +590,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "10:00",
 		});
-		await admin.query("update work_period set work_category_id = $2 where id = $1", [
+		await history("update work_period set work_category_id = $2 where id = $1", [
 			metadata,
 			ids.category,
 		]);
@@ -589,7 +599,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			id: string,
 			use: [string, string | null, number | null, number | null, number | null],
 		) =>
-			admin.query(
+			history(
 				`update ${table} set vehicle_kind = $2, vehicle_id = $3, odometer_start_km = $4,
 				   odometer_end_km = $5, driven_distance_km = $6
 				 where ${table === "work_period" ? "id" : "record_id"} = $1`,
@@ -633,6 +643,75 @@ describe("historical gap repair on PostgreSQL", () => {
 		expect(filled).toEqual([{ work_category_id: ids.category }]);
 	});
 
+	it("attaches a missing canonical work record through work records: it agrees and changes no work (#1226)", async () => {
+		const created = await missingRecord("2026-07-02");
+		const incomplete = await incompleteRecord("2026-07-03");
+		const van = "e3200000-0000-4000-8000-0000000000a1";
+		await admin.query(
+			`insert into organization_vehicle (id, organization_id, name, licence_plate)
+			 values ($1, $2, 'Van', 'B-VN 320')`,
+			[van, ids.organization],
+		);
+		await history(
+			`update work_period set vehicle_kind = 'organization', vehicle_id = $2,
+			   odometer_start_km = 12000, odometer_end_km = 12085, driven_distance_km = 85
+			 where id = $1`,
+			[created, van],
+		);
+		await admin.query(
+			"update employee_work_balance set is_dirty = false, dirty_from_date = null where employee_id = $1",
+			[ids.worker],
+		);
+		await authorizeRepair();
+		const before = await periodRow(created);
+
+		const applied = await apply(await readPlan());
+
+		expect(applied.body.outcomes).toMatchObject([{ employeeId: ids.worker, status: "applied" }]);
+		await expectRecordAgreement({
+			organizationId: ids.organization,
+			workPeriodIds: [created, incomplete.periodId],
+		});
+		expect(await periodRow(created)).toMatchObject({
+			canonical_record_id: created,
+			graph_revision: before.graph_revision + 1,
+		});
+		const { rows: receipts } = await admin.query(
+			"select result from completed_work_operation where work_period_id = $1",
+			[created],
+		);
+		expect(receipts).toEqual([
+			{
+				result: expect.objectContaining({
+					revisions: {
+						workPeriod: { source: before.graph_revision, result: before.graph_revision + 1 },
+					},
+					effects: null,
+				}),
+			},
+		]);
+		// Only the repair of the incomplete record changes work and marks the balance.
+		const { rows: balances } = await admin.query(
+			"select is_dirty, dirty_from_date::text from employee_work_balance where employee_id = $1",
+			[ids.worker],
+		);
+		expect(balances).toEqual([{ is_dirty: true, dirty_from_date: "2026-07-03" }]);
+	});
+
+	it("holds a gap whose fill would leave the work disagreeing (#1226)", async () => {
+		const { periodId } = await incompleteRecord("2026-07-03");
+		// No representation holds the minutes: that gap is held, so the record's
+		// completion alone would leave a disagreement and is held with it.
+		await history("update work_period set duration_minutes = null where id = $1", [periodId]);
+
+		const plan = await readPlan();
+
+		expect(plan.plan.employees).toEqual([]);
+		expect(plan.plan.held.map(({ reason }) => reason).toSorted()).toEqual(
+			expect.arrayContaining(["repair_leaves_divergence"]),
+		);
+	});
+
 	it("restores a project allocation with the period's task, so period and allocation agree", async () => {
 		const task = "d3200000-0000-4000-8000-0000000000a3";
 		await admin.query(
@@ -641,10 +720,10 @@ describe("historical gap repair on PostgreSQL", () => {
 			[task, ids.organization, ids.project, ids.ownerUser],
 		);
 		const created = await missingRecord("2026-07-02");
-		await admin.query("update work_period set task_id = $2 where id = $1", [created, task]);
+		await history("update work_period set task_id = $2 where id = $1", [created, task]);
 		// An existing record that lost its allocation gets it back with the task too.
 		const { periodId: detailed, recordId } = await incompleteRecord("2026-07-03");
-		await admin.query("update work_period set project_id = $2, task_id = $3 where id = $1", [
+		await history("update work_period set project_id = $2, task_id = $3 where id = $1", [
 			detailed,
 			ids.project,
 			task,
@@ -675,7 +754,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "12:00",
 		});
-		await admin.query("update work_period set project_id = $2 where id = $1", [
+		await history("update work_period set project_id = $2 where id = $1", [
 			conflicted,
 			ids.project,
 		]);
@@ -689,7 +768,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "12:00",
 		});
-		await admin.query("update work_period set duration_minutes = null where id = $1", [unmeasured]);
+		await history("update work_period set duration_minutes = null where id = $1", [unmeasured]);
 		await admin.query(
 			"update time_record set duration_minutes = null where id = (select canonical_record_id from work_period where id = $1)",
 			[unmeasured],
@@ -700,7 +779,7 @@ describe("historical gap repair on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "12:00",
 		});
-		await admin.query("update work_period set approval_status = 'pending' where id = $1", [
+		await history("update work_period set approval_status = 'pending' where id = $1", [
 			orphaned,
 		]);
 		await admin.query(
@@ -709,17 +788,17 @@ describe("historical gap repair on PostgreSQL", () => {
 		);
 		// A missing record without a completing entry: its creator cannot be named.
 		const unattributed = await missingRecord("2026-07-09");
-		await admin.query("update work_period set clock_out_id = null where id = $1", [unattributed]);
+		await history("update work_period set clock_out_id = null where id = $1", [unattributed]);
 		// Deleted work without a record stays deleted and unrepresented.
 		const deleted = await missingRecord("2026-07-10");
-		await admin.query(
+		await history(
 			"update work_period set deleted_at = now(), deletion_reason = 'duplicate' where id = $1",
 			[deleted],
 		);
 		// Overlapping duplicates are never resolved by repair.
 		await missingRecord("2026-07-13");
 		await legacyManual({ date: "2026-07-13", clockInTime: "11:00", clockOutTime: "13:00" });
-		await admin.query(
+		await history(
 			`update work_period set start_time = start_time - interval '2 hours'
 			 where employee_id = $1 and start_time::date = '2026-07-13' and canonical_record_id is not null`,
 			[ids.worker],
@@ -801,27 +880,30 @@ describe("historical gap repair on PostgreSQL", () => {
 			expect(after.receipts, name).toEqual(before.receipts);
 			expect(after.details, name).toEqual(before.details);
 			// Leave no gap behind for the next scenario.
-			await admin.query("update work_period set deleted_at = now() where id = $1", [periodId]);
+			await history("update work_period set deleted_at = now() where id = $1", [periodId]);
 		}
 	});
 
-	// The split refuses linked canonical work that disagrees with its period (#1205), so
-	// the racing splits divide a gap without a canonical record (#1234).
-	it("stops a stale plan after a real calendar split", async () => {
+	// A split divides through work records in either admission (#1219), which refuses
+	// work without a canonical record: only the repair can fill the gap, so the split
+	// writes nothing and leaves the plan applicable.
+	it("refuses a real calendar split on a gap, and the plan still applies", async () => {
 		await authorizeRepair();
 		const periodId = await missingRecord("2026-07-20");
 		const plan = await readPlan();
 		const before = await snapshot();
 
 		actAs(ids.workerUser);
-		const split = await splitWorkPeriod(periodId, "2026-07-20", "09:00");
-		expect(split).toMatchObject({ success: true });
-		const afterSplit = await snapshot();
+		await expect(splitWorkPeriod(periodId, "2026-07-20", "09:00")).resolves.toMatchObject({
+			success: false,
+			code: "completed_work_review_required",
+		});
+		expect(await snapshot()).toEqual(before);
 
 		const outcome = await apply(plan);
-		expect(outcome.body.outcomes).toEqual([{ employeeId: ids.worker, status: "stale" }]);
-		expect((await snapshot()).receipts).toEqual(before.receipts);
-		expect(await snapshot()).toEqual(afterSplit);
+		expect(outcome.body.outcomes).toEqual([
+			expect.objectContaining({ employeeId: ids.worker, status: "applied" }),
+		]);
 	});
 
 	/**
@@ -857,29 +939,11 @@ describe("historical gap repair on PostgreSQL", () => {
 		throw new Error(`Fewer than ${count} transactions waited on advisory locks`);
 	}
 
-	// #327: the real split writer races the repair in both arrival orders, instead of
-	// an SQL write holding the shared key.
-	it("stops a stale plan when a real split commits first while the repair waits", async () => {
-		await authorizeRepair();
-		const periodId = await missingRecord("2026-07-23");
-		const plan = await readPlan();
-		const before = await snapshot();
-
-		const park = await parkNextInsert("time_entry");
-		actAs(ids.workerUser);
-		const split = splitWorkPeriod(periodId, "2026-07-23", "09:00");
-		await waitForLockWaiters(1);
-		const repair = apply(plan);
-		await waitForLockWaiters(2);
-		await park.release();
-
-		await expect(split).resolves.toMatchObject({ success: true });
-		const outcome = await repair;
-		expect(outcome.body.outcomes).toEqual([{ employeeId: ids.worker, status: "stale" }]);
-		expect((await snapshot()).receipts).toEqual(before.receipts);
-	});
-
-	it("lets a real split proceed on the repaired graph when the repair commits first", async () => {
+	// #327: the real split writer waits for the repair under the shared key, instead of
+	// an SQL write holding it. A split arriving first is refused on the gap (above). The
+	// repair advances the work's revision, so the waiting split, decided on the work as
+	// read before, is stale (#1219); a fresh split proceeds on the repaired graph.
+	it("refuses a waiting split as stale once the repair commits", async () => {
 		await authorizeRepair();
 		const { periodId } = await incompleteRecord("2026-07-24");
 		const plan = await readPlan();
@@ -896,7 +960,13 @@ describe("historical gap repair on PostgreSQL", () => {
 		expect(outcome.body.outcomes).toEqual([
 			expect.objectContaining({ employeeId: ids.worker, status: "applied" }),
 		]);
-		await expect(split).resolves.toMatchObject({ success: true });
+		await expect(split).resolves.toMatchObject({
+			success: false,
+			code: "time_correction_work_period_stale",
+		});
+		await expect(splitWorkPeriod(periodId, "2026-07-24", "09:00")).resolves.toMatchObject({
+			success: true,
+		});
 		const { rows } = await admin.query(
 			`select count(*)::int as periods from work_period
 			 where employee_id = $1 and deleted_at is null
@@ -949,7 +1019,7 @@ describe("historical gap repair on PostgreSQL", () => {
 		await authorizeRepair();
 		const historical = await missingLink("2026-07-23");
 		// Pending without a relationship: a gap repair cannot fill, which stays historical.
-		await admin.query("update work_period set approval_status = 'pending' where id = $1", [
+		await history("update work_period set approval_status = 'pending' where id = $1", [
 			historical,
 		]);
 		await admin.query("update time_record set approval_state = 'pending' where id = $1", [

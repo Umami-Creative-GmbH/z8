@@ -154,7 +154,8 @@ describe("automatic clock-out work transactions", () => {
 						end: "2026-10-25T06:00:00Z",
 						durationMinutes: 720,
 						completingActor: { kind: "system", process: "automatic_clock_out" },
-						balanceRefreshCommitted: admission === "append",
+						// Both admissions mark the balance dirty with the work (#1222).
+						balanceRefreshCommitted: true,
 					},
 				});
 				expect(state.entries[0]).toMatchObject({

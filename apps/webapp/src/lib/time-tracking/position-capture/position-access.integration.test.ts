@@ -7,6 +7,7 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -251,25 +252,27 @@ describe("position stamp viewing and access log on PostgreSQL", () => {
 			false,
 			null,
 		]);
-		await pool.query(
-			`insert into work_period (id, employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
-				duration_minutes, is_active, updated_at) values
-			 ($1, $2, $3, $4, $5, $6, $7, 510, false, $8),
-			 ($9, $10, $11, $12, null, $6, null, null, true, $8)`,
-			[
-				ids.period,
-				ids.field,
-				ids.organization,
-				ids.clockIn,
-				ids.correctedClockOut,
-				new Date("2026-09-20T06:00:00Z"),
-				new Date("2026-09-20T14:30:00Z"),
-				at,
-				ids.foreignPeriod,
-				ids.foreign,
-				ids.otherOrganization,
-				ids.foreignClockIn,
-			],
+		await withCanonicalRecords(pool, (client) =>
+			client.query(
+				`insert into work_period (id, employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
+					duration_minutes, is_active, updated_at) values
+				 ($1, $2, $3, $4, $5, $6, $7, 510, false, $8),
+				 ($9, $10, $11, $12, null, $6, null, null, true, $8)`,
+				[
+					ids.period,
+					ids.field,
+					ids.organization,
+					ids.clockIn,
+					ids.correctedClockOut,
+					new Date("2026-09-20T06:00:00Z"),
+					new Date("2026-09-20T14:30:00Z"),
+					at,
+					ids.foreignPeriod,
+					ids.foreign,
+					ids.otherOrganization,
+					ids.foreignClockIn,
+				],
+			),
 		);
 		const stamp = `insert into position_stamp (organization_id, employee_id, time_entry_id, consent_id,
 			latitude, longitude, accuracy_meters, fixed_at, captured_at, purge_at)

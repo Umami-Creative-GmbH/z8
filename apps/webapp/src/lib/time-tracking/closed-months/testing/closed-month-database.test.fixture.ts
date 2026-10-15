@@ -10,6 +10,10 @@ import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import {
+	asHistory,
+	withCanonicalRecords,
+} from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 export type ClosedMonthDatabaseFixture = LifecycleDatabaseFixture & {
 	organization(timezone?: string): Promise<{ organizationId: string; ownerUserId: string }>;
@@ -28,6 +32,11 @@ export type ClosedMonthDatabaseFixture = LifecycleDatabaseFixture & {
 		start: string;
 		end: string | null;
 		approvalStatus?: "approved" | "pending";
+		/**
+		 * Completed work gets its canonical work record (`true`, the default), stays a half
+		 * pair written before the check (`"history"`, #1224), or is inserted as is (`false`).
+		 */
+		canonical?: boolean | "history";
 	}): Promise<{ workPeriodId: string; clockInId: string; clockOutId: string | null }>;
 	absence(input: {
 		organizationId: string;
@@ -152,26 +161,32 @@ export async function createClosedMonthDatabaseFixture(): Promise<ClosedMonthDat
 				? await timeEntry({ ...input, type: "clock_out", at: input.end })
 				: null;
 			const workPeriodId = randomUUID();
-			await pool.query(
-				`insert into work_period
-				 (id, employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
-				  duration_minutes, is_active, approval_status, updated_at)
-				 values ($1, $2, $3, $4, $5,
-				  $6::timestamptz at time zone 'UTC', $7::timestamptz at time zone 'UTC',
-				  case when $7::timestamptz is null then null
-				   else (extract(epoch from ($7::timestamptz - $6::timestamptz)) / 60)::int end,
-				  $7::timestamptz is null, $8, now())`,
-				[
-					workPeriodId,
-					input.employeeId,
-					input.organizationId,
-					clockInId,
-					clockOutId,
-					input.start,
-					input.end,
-					input.approvalStatus ?? "approved",
-				],
-			);
+			const insert = (client: Pick<typeof pool, "query">) =>
+				client.query(
+					`insert into work_period
+					 (id, employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
+					  duration_minutes, is_active, approval_status, updated_at)
+					 values ($1, $2, $3, $4, $5,
+					  $6::timestamptz at time zone 'UTC', $7::timestamptz at time zone 'UTC',
+					  case when $7::timestamptz is null then null
+					   else (extract(epoch from ($7::timestamptz - $6::timestamptz)) / 60)::int end,
+					  $7::timestamptz is null, $8, now())`,
+					[
+						workPeriodId,
+						input.employeeId,
+						input.organizationId,
+						clockInId,
+						clockOutId,
+						input.start,
+						input.end,
+						input.approvalStatus ?? "approved",
+					],
+				);
+			// Completed work has its canonical work record (#1224) unless the suite seeds history.
+			const canonical = input.canonical ?? true;
+			if (input.end === null || canonical === false) await insert(pool);
+			else if (canonical === "history") await asHistory(pool, insert);
+			else await withCanonicalRecords(pool, insert);
 			return { workPeriodId, clockInId, clockOutId };
 		},
 		async absence(input) {

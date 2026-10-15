@@ -416,11 +416,13 @@
       "kind": {
         "approvalRelationshipMissing": "Ausstehende Arbeit ohne Genehmigungsanfrage",
         "approvalStateConflict": "Genehmigungsstatus stimmen nicht überein",
+        "attributionUnrepresentable": "Abrechenbar oder Aufgabe ohne Projekt",
         "canonicalDetailMissing": "Arbeitsdetails im Zeiteintrag fehlen",
         "canonicalLinkMissing": "Verknüpfung zum Zeiteintrag fehlt",
         "canonicalLinkShared": "Mehrere Arbeitszeiträume verknüpfen denselben Zeiteintrag",
         "canonicalLinkUnresolved": "Verknüpfter Zeiteintrag nicht gefunden",
         "canonicalMissing": "Zeiteintrag fehlt",
+        "canonicalMissingClosedMonth": "Zeiteintrag fehlt in einem abgeschlossenen Monat",
         "captureInferred": "Zeitzonenerfassung nach dem Ereignis abgeleitet",
         "deletedWorkPayable": "Gelöschte Arbeit enthält weiterhin einen vergütbaren Zeiteintrag",
         "durationConflict": "Gespeicherte Zeitdauern stimmen nicht überein",
@@ -568,7 +570,8 @@
           "noRestorableEvidence": "Kein Nachweis belegt den fehlenden Wert",
           "originalActorUnrepresentable": "Kein Eintrag gibt an, wer die Arbeit abgeschlossen hat",
           "originalRuleUnknown": "Keine Darstellung enthält die Minuten; die ursprüngliche Rundung ist unbekannt",
-          "referenceOutsideOrganization": "Ein referenziertes Projekt oder eine Kategorie gehört nicht zu dieser Organisation"
+          "referenceOutsideOrganization": "Ein referenziertes Projekt oder eine Kategorie gehört nicht zu dieser Organisation",
+          "repairLeavesDivergence": "Die ergänzte Arbeit würde weiter von ihrem kanonischen Datensatz abweichen; Prüfung nötig"
         },
         "inactive": "Nicht autorisiert",
         "inactiveDescription": "Die Reparatur erfordert eine separate Autorisierung für diese Organisation. Der Plan bleibt lesbar.",

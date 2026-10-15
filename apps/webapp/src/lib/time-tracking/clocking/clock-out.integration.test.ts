@@ -17,7 +17,17 @@ import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	billing: { canAccess: true } as { canAccess: boolean; reason?: string },
+	/** Every statement production code sends through `@/db`. */
+	queries: [] as string[],
 }));
+
+vi.mock("@/db", async () =>
+	(await import("@/test/integration-database")).integrationDbModule({
+		logQuery: (query) => {
+			harness.queries.push(query);
+		},
+	}),
+);
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
@@ -33,7 +43,8 @@ vi.mock("@/lib/billing/guard", () => ({
 }));
 
 const { createClocking } = await import("./clocking");
-const { durableFollowUps, recordingFollowUps } = await import("./follow-ups");
+const { afterCommitFollowUps, durableFollowUps, recordingFollowUps } = await import("./follow-ups");
+const { markEmployeeWorkBalanceDirty } = await import("@/lib/work-balance/service");
 const { coordinatedTransactions, enlistedTransactions } = await import("./transactions");
 const { runDepartureTransaction } = await import("@/lib/employee-lifecycle/departure-transaction");
 const { clockInAs } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
@@ -59,6 +70,7 @@ const ids = {
 	assignment: "f4780000-0000-4000-8000-000000000013",
 	holidayCategory: "f4780000-0000-4000-8000-000000000021",
 	holiday: "f4780000-0000-4000-8000-000000000022",
+	van: "f4780000-0000-4000-8000-000000000031",
 } as const;
 const clockInAt = parseInstant("2026-07-22T08:00:00Z");
 const clockOutAt = parseInstant("2026-07-22T09:00:40Z");
@@ -359,10 +371,127 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 					durationMinutes: 61,
 					projectId: ids.assignedProject,
 					surchargeSnapshot: expect.any(Object),
-					balanceRefreshCommitted: admission === "append",
+					// Both admissions mark the balance dirty with the work (#1222).
+					balanceRefreshCommitted: true,
 					timezone: "UTC",
 				},
 			]);
+		});
+
+		/**
+		 * Clock-out is the hot path (#1222): creating its completed work through work
+		 * records must not cost a query more than the writers it replaced. Each count
+		 * is every statement through `@/db` of one executed clock-out, the work
+		 * transaction and the production follow-ups' own balance mark included (the
+		 * other follow-ups read only policy and are left out). Baselines measured on
+		 * the integration branch before #1222.
+		 */
+		describe("query budget", () => {
+			const before1222 = {
+				legacy: { preserve: 63, project: 67, onBehalf: 70, vehicle: 69 },
+				append: { preserve: 68, project: 73, onBehalf: 75, vehicle: 74 },
+			};
+
+			/** The production follow-ups with only the balance mark doing database work. */
+			function countedClocking() {
+				return createClocking({
+					clock: { nowInstant: () => clockOutAt } as never,
+					transactions: coordinatedTransactions(),
+					followUps: afterCommitFollowUps({
+						checkCompliance: async () => [],
+						enforceBreaks: async ({ workPeriodId }) => ({
+							wasAdjusted: false,
+							affectedWorkPeriodIds: [workPeriodId],
+						}),
+						reconcileSurcharges: async () => {},
+						markBalanceDirty: (input) => markEmployeeWorkBalanceDirty(input),
+						checkProjectBudget: async () => {},
+					}),
+				});
+			}
+
+			async function queriesOf(
+				command: (periodId: string) => ClockCommand,
+				prepare: (periodId: string) => Promise<void> = async () => {},
+			) {
+				const periodId = await startWork();
+				await prepare(periodId);
+				const clocking = countedClocking();
+				harness.queries.length = 0;
+				await expect(clocking.run(command(periodId))).resolves.toMatchObject({
+					outcome: "executed",
+				});
+				return harness.queries.length;
+			}
+
+			it("keeps a preserving clock-out within its budget", async () => {
+				expect(await queriesOf(() => clockOut())).toBeLessThanOrEqual(
+					before1222[admission].preserve,
+				);
+			});
+
+			it("keeps a clock-out that books a project within its budget", async () => {
+				const count = await queriesOf(() =>
+					clockOut({
+						body: {
+							kind: "clock_out",
+							project: { kind: "replace", id: ids.assignedProject },
+							workCategory: { kind: "preserve" },
+						},
+					}),
+				);
+				expect(count).toBeLessThanOrEqual(before1222[admission].project);
+			});
+
+			it("keeps an on-behalf clock-out within its budget", async () => {
+				expect(
+					await queriesOf((periodId) => onBehalf(periodId, ids.managerUser)),
+				).toBeLessThanOrEqual(before1222[admission].onBehalf);
+			});
+
+			/** The live work drives the organization's van, started at 12,000 km. */
+			async function driveVan(periodId: string) {
+				await admin.query(
+					`insert into vehicle_use_setting (organization_id, enabled) values ($1, true)
+					 on conflict (organization_id) do update set enabled = excluded.enabled`,
+					[ids.organization],
+				);
+				await admin.query(
+					`insert into vehicle_use_assignment (organization_id, assignment_type, priority, mode, created_by)
+					 values ($1, 'organization', 0, 'asked', $2)`,
+					[ids.organization, ids.ownerUser],
+				);
+				await admin.query(
+					`insert into organization_vehicle (id, organization_id, name, licence_plate)
+					 values ($1, $2, 'Van', 'M-VW 478')`,
+					[ids.van, ids.organization],
+				);
+				await admin.query(
+					`update work_period set vehicle_kind = 'organization', vehicle_id = $2, odometer_start_km = 12000
+					 where id = $1`,
+					[periodId, ids.van],
+				);
+			}
+
+			it("keeps a clock-out with an end reading within its budget", async () => {
+				let workPeriodId = "";
+				const count = await queriesOf(
+					() => clockOut({ vehicleUse: { endKm: 12_085 } }),
+					async (periodId) => {
+						workPeriodId = periodId;
+						await driveVan(periodId);
+					},
+				);
+
+				expect(count).toBeLessThanOrEqual(before1222[admission].vehicle);
+				const { rows } = await admin.query(
+					`select wp.odometer_end_km as period, w.odometer_end_km as record
+					 from work_period wp join time_record_work w on w.record_id = wp.canonical_record_id
+					 where wp.id = $1`,
+					[workPeriodId],
+				);
+				expect(only(rows)).toEqual({ period: 12_085, record: 12_085 });
+			});
 		});
 
 		it.each(["client", "derived"] as const)(

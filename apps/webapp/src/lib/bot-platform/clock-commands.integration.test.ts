@@ -530,16 +530,17 @@ describe("bot clocking through the shared clock commands on PostgreSQL", () => {
 
 			expect(reply).toContain("Clocked out at 09:00. Duration: 1h 1m.");
 			// The coordinated legacy closure writes the canonical record with the
-			// period's one derived duration; no receipt or revision before adoption.
+			// period's one derived duration and no receipt before adoption. Work records
+			// advances the revision and chains the clock-out in both admissions (#1222).
 			expect(await closedGraph(period.id)).toMatchObject({
 				duration_minutes: 61,
 				record_duration: 61,
 				record_state: "approved",
 				record_created_by: ids.user,
 				record_end: new Date("2026-07-22T09:00:40Z"),
-				graph_revision: 0,
+				graph_revision: 1,
 				device_info: `${platform}-bot`,
-				previous_entry_id: null,
+				previous_entry_id: expect.any(String),
 			});
 			expect(await receipts()).toEqual([]);
 		},

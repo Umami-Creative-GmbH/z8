@@ -25,6 +25,14 @@ const source = readFileSync(
 	"utf8",
 );
 
+/**
+ * Balance marks made outside a transaction. Every mark of corrected work commits
+ * with it (#1212): an in-transaction mark names its transaction handle.
+ */
+function markedAfterCommit() {
+	return markEmployeeWorkBalanceDirty.mock.calls.filter((call) => call[1] === undefined);
+}
+
 const {
 	markEmployeeWorkBalanceDirty,
 	onTimeCorrectionApproved,
@@ -166,7 +174,44 @@ vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty,
 }));
 
+// Work records is the only writer of completed work (#1227). These mock-database
+// harnesses see the change a finalizer asks of it, and the fake writes its
+// outline through the harness database so their rollback and replay states
+// follow. Its real writes, record agreement and effects are verified against
+// PostgreSQL (work-records/amend.integration.test.ts,
+// correction-lifecycle.integration.test.ts).
+const workRecords = vi.hoisted(() => ({
+	changes: [] as Array<{ kind: string } & Record<string, unknown>>,
+	refusal: null as null | ({ kind: string } & Record<string, unknown>),
+	throws: null as Error | null,
+}));
+vi.mock("@/lib/time-tracking/work-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/work-transaction")>()),
+	holdFinalizerEmployeeLocks: async () => undefined,
+}));
+vi.mock("@/lib/time-tracking/work-records", async (importOriginal) => {
+	const { fakeWorkRecordChange } = await import("./__tests__/fake-work-records");
+	return {
+		...(await importOriginal<typeof import("@/lib/time-tracking/work-records")>()),
+		workRecordScopeForFinalizer: async (db: object) => ({
+			db,
+			admission: "legacy",
+			assertEmployee: () => undefined,
+		}),
+		applyWorkRecordChange: async (
+			scope: { db: object },
+			change: { kind: string } & Record<string, unknown>,
+		) => {
+			workRecords.changes.push(change);
+			if (workRecords.throws) throw workRecords.throws;
+			if (workRecords.refusal) return workRecords.refusal;
+			return fakeWorkRecordChange(scope.db, change as never);
+		},
+	};
+});
+
 import { db as globalDb } from "@/db";
+import { CompletedWorkIntegrityError } from "@/lib/time-tracking/close-active-work";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { answerObservedWorkflowLookup } from "@/lib/approvals/domain-adapters/observed-workflow-lookup.test-fixture";
 import { createTimeCorrectionApprovalAdapter } from "@/lib/approvals/domain-adapters/time-correction.adapter";
@@ -236,7 +281,15 @@ beforeEach(() => {
 	onTimeCorrectionRejected.mockClear();
 	loggerWarn.mockClear();
 	testEnv.NODE_ENV = "test";
+	workRecords.changes.length = 0;
+	workRecords.refusal = null;
+	workRecords.throws = null;
 });
+
+/** The changes finalizers asked of work records (#1227), in order. */
+function workRecordChanges() {
+	return workRecords.changes as Array<Record<string, unknown>>;
+}
 
 function requiredValue<T>(value: T | undefined): T {
 	if (value === undefined) throw new Error("Expected fixture value");
@@ -501,7 +554,7 @@ describe("time correction transaction boundaries", () => {
 		});
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 	});
 
 	function canonicalSubmissionHarness(input: {
@@ -630,7 +683,7 @@ describe("time correction transaction boundaries", () => {
 					canonicalWork,
 					terminalFinalizations,
 					effects: {
-						dirty: markEmployeeWorkBalanceDirty.mock.calls,
+						dirty: markedAfterCommit(),
 						approved: onTimeCorrectionApproved.mock.calls,
 						rejected: onTimeCorrectionRejected.mock.calls,
 					},
@@ -1609,7 +1662,7 @@ describe("time correction transaction boundaries", () => {
 					canonicalWork,
 					terminalFinalizations,
 					effects: {
-						dirty: markEmployeeWorkBalanceDirty.mock.calls,
+						dirty: markedAfterCommit(),
 						approved: onTimeCorrectionApproved.mock.calls,
 						rejected: onTimeCorrectionRejected.mock.calls,
 					},
@@ -3384,7 +3437,7 @@ describe("time correction transaction boundaries", () => {
 		);
 
 		expect(transactionCommitted).toHaveBeenCalledOnce();
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -3429,7 +3482,7 @@ describe("time correction transaction boundaries", () => {
 		expect(fixture.legacyWrites).toHaveLength(durable.legacy);
 		expect(fixture.terminalFinalizations()).toBe(0);
 		expect(fixture.repository.completeCommand).not.toHaveBeenCalled();
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -3594,7 +3647,7 @@ describe("time correction transaction boundaries", () => {
 		expect(evidence[evidenceKey]).toBeTruthy();
 		expect(evidence.state).not.toEqual(before);
 		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -3619,7 +3672,7 @@ describe("time correction transaction boundaries", () => {
 		});
 		expect(evidence.state).not.toEqual(before);
 		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -3644,7 +3697,7 @@ describe("time correction transaction boundaries", () => {
 		});
 		expect(evidence.state).not.toEqual(before);
 		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -3675,7 +3728,7 @@ describe("time correction transaction boundaries", () => {
 			expect(evidence[evidenceKey]).toBeTruthy();
 			expect(evidence.state).not.toEqual(before);
 			expect(fixture.durableSnapshot()).toEqual(before);
-			expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+			expect(markedAfterCommit()).toEqual([]);
 			expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 			expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 		},
@@ -4171,7 +4224,7 @@ describe("time correction transaction boundaries", () => {
 				projections: fixture.projections.length,
 				outbox: fixture.outbox.length,
 				finalizers: fixture.terminalFinalizations(),
-				dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
+				dirty: markedAfterCommit().length,
 				approved: onTimeCorrectionApproved.mock.calls.length,
 				rejected: onTimeCorrectionRejected.mock.calls.length,
 			};
@@ -4185,7 +4238,7 @@ describe("time correction transaction boundaries", () => {
 				projections: fixture.projections.length,
 				outbox: fixture.outbox.length,
 				finalizers: fixture.terminalFinalizations(),
-				dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
+				dirty: markedAfterCommit().length,
 				approved: onTimeCorrectionApproved.mock.calls.length,
 				rejected: onTimeCorrectionRejected.mock.calls.length,
 			}).toEqual(before);
@@ -4235,7 +4288,7 @@ describe("time correction transaction boundaries", () => {
 				outbox: fixture.outbox.length,
 				legacy: fixture.legacyWrites.length,
 				finalizers: fixture.terminalFinalizations(),
-				dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
+				dirty: markedAfterCommit().length,
 				approved: onTimeCorrectionApproved.mock.calls.length,
 				rejected: onTimeCorrectionRejected.mock.calls.length,
 			};
@@ -4251,7 +4304,7 @@ describe("time correction transaction boundaries", () => {
 				outbox: fixture.outbox.length,
 				legacy: fixture.legacyWrites.length,
 				finalizers: fixture.terminalFinalizations(),
-				dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
+				dirty: markedAfterCommit().length,
 				approved: onTimeCorrectionApproved.mock.calls.length,
 				rejected: onTimeCorrectionRejected.mock.calls.length,
 			}).toEqual(before);
@@ -4607,7 +4660,7 @@ describe("time correction transaction boundaries", () => {
 			expect(evidence[evidenceKey]).toBeTruthy();
 			expect(evidence.state).not.toEqual(before);
 			expect(fixture.durableSnapshot()).toEqual(before);
-			expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+			expect(markedAfterCommit()).toEqual([]);
 			expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 			expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 		},
@@ -4632,7 +4685,7 @@ describe("time correction transaction boundaries", () => {
 			});
 			expect(evidence.state).not.toEqual(before);
 			expect(fixture.durableSnapshot()).toEqual(before);
-			expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+			expect(markedAfterCommit()).toEqual([]);
 			expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 			expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 		},
@@ -4672,7 +4725,7 @@ describe("time correction transaction boundaries", () => {
 		expect(evidence[evidenceKey]).toBeTruthy();
 		expect(evidence.state).not.toEqual(before);
 		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -4693,7 +4746,7 @@ describe("time correction transaction boundaries", () => {
 		expect(evidence.chainStageStatus).toBe("approved");
 		expect(evidence.state).not.toEqual(before);
 		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -4933,7 +4986,7 @@ describe("time correction transaction boundaries", () => {
 			currentStageOrder: 2,
 		});
 		expect(fixture.terminalFinalizations()).toBe(0);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 
 		const terminal = await fixture.decide(
@@ -8187,28 +8240,26 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		expect(mutations).toHaveLength(6);
 	});
 
-	it("atomically applies metadata-only approval to legacy and canonical work metadata", async () => {
+	it("amends a metadata-only approval's work attribution on both records through work records", async () => {
 		const correction = {
 			action: "edit" as const,
 			workLocationType: "remote" as const,
 			workCategoryId: null,
 		};
-		const { dbService, lockedTables, lockWhereClauses, mutations } =
-			createFinalizerDb({
-				entries: [originalIn, originalOut],
-				legacyRequest: null,
-				workflow: {
-					...canonicalWorkflow,
-					contextSnapshot: {
-						timeCorrection: correction,
-						timeCorrectionOriginalWorkMetadata: {
-							workLocationType: "office",
-							workCategoryId: terminalPeriod.workCategoryId,
-						},
+		const { dbService, lockedTables, lockWhereClauses } = createFinalizerDb({
+			entries: [originalIn, originalOut],
+			legacyRequest: null,
+			workflow: {
+				...canonicalWorkflow,
+				contextSnapshot: {
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: terminalPeriod.workCategoryId,
 					},
 				},
-				mutationRows: [[{ id: ids.period }], [{ recordId: ids.canonical }]],
-			});
+			},
+		});
 
 		await finalizeTimeCorrectionTerminalInTransaction(
 			approveInput(dbService, {
@@ -8217,26 +8268,8 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			}),
 		);
 
-		expect(mutations.filter(({ table }) => table === timeEntry)).toEqual([]);
-		expect(mutations).toEqual(
-			expect.arrayContaining([
-				expect.objectContaining({
-					table: workPeriod,
-					values: expect.objectContaining({
-						workLocationType: "remote",
-						workCategoryId: null,
-					}),
-				}),
-				expect.objectContaining({
-					table: timeRecordWork,
-					values: {
-						workLocationType: "remote",
-						workCategoryId: null,
-					},
-				}),
-			]),
-		);
-		expect(lockedTables).toEqual([
+		// The finalizer's own locks are its preconditions; work records writes.
+		expect(lockedTables.slice(0, 5)).toEqual([
 			employee,
 			workPeriod,
 			timeEntry,
@@ -8246,18 +8279,23 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		expect(collectSqlColumnNames(lockWhereClauses[4])).toEqual(
 			expect.arrayContaining(["record_id", "organization_id", "record_kind"]),
 		);
-		const canonicalWorkMutation = mutations.find(
-			({ table }) => table === timeRecordWork,
-		);
-		expect(collectSqlColumnNames(canonicalWorkMutation?.where)).toEqual(
-			expect.arrayContaining([
-				"record_id",
-				"organization_id",
-				"record_kind",
-				"work_location_type",
-				"work_category_id",
-			]),
-		);
+		expect(workRecordChanges()).toEqual([
+			{
+				kind: "amend",
+				organizationId: "org-1",
+				employeeId: "emp-requester",
+				expected: {
+					workPeriodId: ids.period,
+					revision: undefined,
+					clockInId: ids.originalIn,
+					clockOutId: ids.originalOut,
+				},
+				attribution: { workLocationType: "remote", workCategoryId: null },
+				// A canonical workflow tolerates only historical minutes drift (#1229 removes it).
+				toleratedDrift: ["duration"],
+				actorUserId: "user-manager",
+			},
+		]);
 	});
 
 	it("applies a clock-in correction before an active period has a canonical record", async () => {
@@ -8305,6 +8343,8 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		);
 
 		expect(result.transition).toBe("approved");
+		// Live work is Clocking's (ADR 0002), not work records'.
+		expect(workRecordChanges()).toEqual([]);
 		expect(mutations.map(({ table }) => table)).toEqual([
 			timeEntry,
 			timeEntry,
@@ -8312,10 +8352,9 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		]);
 		expect(mutations.at(-1)?.values).toMatchObject({
 			clockInId: ids.correctionIn,
-			clockOutId: null,
-			endTime: null,
-			durationMinutes: null,
+			startTime: correctionIn.timestamp,
 		});
+		expect(mutations.at(-1)?.values).not.toHaveProperty("endTime");
 	});
 
 	it("does not extend the missing-canonical exception to rejection", async () => {
@@ -8520,42 +8559,40 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 	});
 
 	it.each([
-		["zero", []],
-		["multiple", [{ recordId: ids.canonical }, { recordId: ids.canonical }]],
+		[{ kind: "stale", current: { revision: 3 } }, "work_period_source_mismatch"],
+		[
+			{ kind: "canonical_divergence", found: "locked_pair", disagreements: ["project"] },
+			"canonical_record_source_mismatch",
+		],
+		[{ kind: "canonical_record_missing" }, "missing_canonical_record"],
+		[{ kind: "adopted_entry_mismatch" }, "correction_entry_identity_mismatch"],
+		[{ kind: "endpoint_superseded" }, "correction_entry_state_mismatch"],
+		[{ kind: "interval_invalid" }, "work_period_source_mismatch"],
 	] as const)(
-		"fails metadata-only approval when canonical work CAS returns %s rows",
-		async (_label, canonicalWorkRows) => {
-			const correction = {
-				action: "edit" as const,
-				workLocationType: "remote" as const,
-				workCategoryId: null,
-			};
-			const { dbService } = createFinalizerDb({
-				entries: [originalIn, originalOut],
-				legacyRequest: null,
-				workflow: {
-					...canonicalWorkflow,
-					contextSnapshot: {
-						timeCorrection: correction,
-						timeCorrectionOriginalWorkMetadata: {
-							workLocationType: "office",
-							workCategoryId: terminalPeriod.workCategoryId,
-						},
-					},
-				},
-				mutationRows: [[{ id: ids.period }], [...canonicalWorkRows]],
-			});
+		"refuses work records' %o as the finalization conflict %s",
+		async (refusal, reason) => {
+			workRecords.refusal = { ...refusal };
+			const { dbService } = createFinalizerDb();
 
 			await expect(
-				finalizeTimeCorrectionTerminalInTransaction(
-					approveInput(dbService, {
-						legacyApprovalRequestId: null,
-						correction,
-					}),
-				),
-			).rejects.toThrow("Time correction source changed during finalization");
+				finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService)),
+			).rejects.toMatchObject({
+				message: "Time correction source changed during finalization",
+				details: { reason },
+			});
 		},
 	);
+
+	it("keeps work records' typed refusals: occupied work and a closed month", async () => {
+		workRecords.refusal = { kind: "work_occupied", occupants: [] };
+		await expect(
+			finalizeTimeCorrectionTerminalInTransaction(approveInput(createFinalizerDb().dbService)),
+		).rejects.toMatchObject({ name: "WorkOccupancyConflictError" });
+		workRecords.refusal = { kind: "month_closed", month: "2026-07" };
+		await expect(
+			finalizeTimeCorrectionTerminalInTransaction(approveInput(createFinalizerDb().dbService)),
+		).rejects.toMatchObject({ month: "2026-07" });
+	});
 
 	it("fails metadata-only approval before writes when canonical work metadata diverges", async () => {
 		const correction = {
@@ -9092,8 +9129,8 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 				...overrides,
 			});
 
-		it("approves without touching canonical tables", async () => {
-			const { dbService, mutations } = legacyOnlyPeriodDb();
+		it("attaches the missing canonical work record, then amends both through work records", async () => {
+			const { dbService } = legacyOnlyPeriodDb();
 
 			await expect(
 				finalizeTimeCorrectionTerminalInTransaction(
@@ -9104,17 +9141,24 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 					}),
 				),
 			).resolves.toMatchObject({ transition: "approved" });
-			expect(mutations.map(({ table }) => table)).toEqual([
-				timeEntry,
-				timeEntry,
-				workPeriod,
-			]);
-			expect(mutations.at(-1)?.values).toMatchObject({
-				clockOutId: ids.correctionOut,
-				endTime: correctionOut.timestamp,
-				workLocationType: "office",
-				workCategoryId: terminalPeriod.workCategoryId,
+			const [attach, amend] = workRecordChanges();
+			expect(attach).toMatchObject({
+				kind: "attach",
+				expected: { workPeriodId: ids.period },
+				record: { origin: "system", createdBy: "user-requester", computationMetadata: null },
 			});
+			// The amendment chains on the attachment's resulting revision.
+			expect(amend).toMatchObject({
+				kind: "amend",
+				expected: { workPeriodId: ids.period },
+				times: { clockOut: { adopt: ids.correctionOut } },
+				attribution: {
+					workLocationType: "office",
+					workCategoryId: terminalPeriod.workCategoryId,
+				},
+				toleratedDrift: ["interval", "duration"],
+			});
+			expect(amend?.times).not.toHaveProperty("clockIn");
 		});
 
 		it("rejects without touching canonical tables", async () => {
@@ -9190,25 +9234,24 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			expectedApprovalWorkflowVersion: null,
 		};
 
-		it("approves and rewrites both minutes from the corrected endpoints", async () => {
-			const { dbService, mutations } = legacyDriftDb({ durationMinutes: 479 });
+		it("approves through work records, which tolerates and rewrites the minutes drift", async () => {
+			const { dbService } = legacyDriftDb({ durationMinutes: 479 });
 
 			await expect(
 				finalizeTimeCorrectionTerminalInTransaction(
 					approveInput(dbService, legacyDecision),
 				),
 			).resolves.toMatchObject({ transition: "approved" });
-			const periodMutation = mutations.find(
-				({ table }) => table === workPeriod,
-			);
-			const canonicalMutation = mutations.find(
-				({ table }) => table === timeRecord,
-			);
-			expect(periodMutation?.values).toMatchObject({ durationMinutes: 210 });
-			expect(canonicalMutation?.values).toMatchObject({ durationMinutes: 210 });
-			expect(collectTerminalBoundValues(canonicalMutation?.where)).toContain(
-				479,
-			);
+			expect(workRecordChanges()).toEqual([
+				expect.objectContaining({
+					kind: "amend",
+					times: expect.objectContaining({
+						clockIn: { adopt: ids.correctionIn },
+						clockOut: { adopt: ids.correctionOut },
+					}),
+					toleratedDrift: ["interval", "duration"],
+				}),
+			]);
 		});
 
 		// The legacy automatic break (or calendar split) moved the first period's
@@ -9218,26 +9261,21 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			durationMinutes: 690,
 		};
 
-		it("approves over a canonical interval a legacy break left stale and rewrites it", async () => {
+		it("approves over a canonical interval a legacy break left stale, tolerating the interval", async () => {
 			testEnv.NODE_ENV = "production";
-			const { dbService, mutations } = legacyDriftDb(staleCanonicalInterval);
+			const { dbService } = legacyDriftDb(staleCanonicalInterval);
 
 			await expect(
 				finalizeTimeCorrectionTerminalInTransaction(
 					approveInput(dbService, legacyDecision),
 				),
 			).resolves.toMatchObject({ transition: "approved" });
-			const canonicalMutation = mutations.find(
-				({ table }) => table === timeRecord,
-			);
-			expect(canonicalMutation?.values).toMatchObject({
-				startAt: correctionIn.timestamp,
-				endAt: correctionOut.timestamp,
-				durationMinutes: 210,
-			});
-			const boundValues = collectTerminalBoundValues(canonicalMutation?.where);
-			expect(boundValues).toContainEqual(staleCanonicalInterval.endAt);
-			expect(boundValues).toContain(690);
+			expect(workRecordChanges()).toEqual([
+				expect.objectContaining({
+					kind: "amend",
+					toleratedDrift: ["interval", "duration"],
+				}),
+			]);
 			expect(loggerWarn).not.toHaveBeenCalled();
 		});
 
@@ -9268,42 +9306,31 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			expect(mutations).toEqual([]);
 		});
 
-		it("still refuses a canonical approval-state drift and names every field", async () => {
-			testEnv.NODE_ENV = "production";
-			const { dbService, mutations } = legacyDriftDb({
+		// Record agreement is work records' one rule (standards-C 3): an approval-state
+		// drift reaches it untolerated, and its refusal is the conflict (mapped above).
+		it("leaves a canonical approval-state drift to work records, tolerating only interval and minutes", async () => {
+			const { dbService } = legacyDriftDb({
 				...staleCanonicalInterval,
 				approvalState: "pending",
 			});
 
-			await expect(
-				finalizeTimeCorrectionTerminalInTransaction(
-					approveInput(dbService, legacyDecision),
-				),
-			).rejects.toMatchObject({
-				details: { reason: "canonical_record_source_mismatch" },
-			});
-			expect(loggerWarn).toHaveBeenCalledExactlyOnceWith(
-				{
-					reason: "canonical_record_source_mismatch",
-					canonicalRowCount: 1,
-					mismatchedFields: ["approvalState", "endAt", "durationMinutes"],
-				},
-				"Time correction finalization conflict",
-			);
-			expect(mutations).toEqual([]);
+			await finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService, legacyDecision));
+
+			expect(workRecordChanges()).toEqual([
+				expect.objectContaining({ kind: "amend", toleratedDrift: ["interval", "duration"] }),
+			]);
 		});
 
-		it("still refuses a canonical interval drift under a canonical workflow", async () => {
-			const { dbService, mutations } = createFinalizerDb({
+		it("tolerates only the minutes under a canonical workflow, so work records refuses an interval drift", async () => {
+			const { dbService } = createFinalizerDb({
 				canonical: { ...canonicalRecord, ...staleCanonicalInterval },
 			});
 
-			await expect(
-				finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService)),
-			).rejects.toMatchObject({
-				details: { reason: "canonical_record_source_mismatch" },
-			});
-			expect(mutations).toEqual([]);
+			await finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService));
+
+			expect(workRecordChanges()).toEqual([
+				expect.objectContaining({ kind: "amend", toleratedDrift: ["duration"] }),
+			]);
 		});
 	});
 
@@ -9411,8 +9438,10 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 
 		await finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService));
 
-		expect(lockedTables).toEqual([employee, workPeriod, timeEntry, timeRecord]);
-		expect(mutations).toHaveLength(6);
+		// The finalizer locks, then work records writes (here the harness fake).
+		expect(lockedTables.slice(0, 4)).toEqual([employee, workPeriod, timeEntry, timeRecord]);
+		expect(workRecordChanges()).toHaveLength(1);
+		expect(mutations.length).toBeGreaterThan(0);
 		// The departed requester's rows are still locked; activity is checked
 		// on the locked actor row, not in the lock predicate.
 		expect(collectSqlColumnNames(lockWhereClauses[0])).toEqual(
@@ -9427,8 +9456,8 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		);
 	});
 
-	it("applies two endpoint edits with exact CAS and returns local dirty-date facts", async () => {
-		const { dbService, mutations, transaction } = createFinalizerDb();
+	it("adopts both pending corrections in one amendment and returns local dirty-date facts", async () => {
+		const { dbService, transaction } = createFinalizerDb();
 
 		const result = await finalizeTimeCorrectionTerminalInTransaction(
 			approveInput(dbService),
@@ -9439,34 +9468,29 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			requesterEmployeeId: "emp-requester",
 			dirtyFromDate: "2026-07-18",
 		});
-		expect(mutations.map((mutation) => mutation.table)).toEqual([
-			timeEntry,
-			timeEntry,
-			timeEntry,
-			timeEntry,
-			workPeriod,
-			timeRecord,
+		expect(workRecordChanges()).toEqual([
+			{
+				kind: "amend",
+				organizationId: "org-1",
+				employeeId: "emp-requester",
+				expected: {
+					workPeriodId: ids.period,
+					revision: undefined,
+					clockInId: ids.originalIn,
+					clockOutId: ids.originalOut,
+				},
+				times: {
+					clockIn: { adopt: ids.correctionIn },
+					clockOut: { adopt: ids.correctionOut },
+					notes: null,
+					entries: { createdBy: "user-manager", ipAddress: null, deviceInfo: null },
+					appendOperation: "completed_work_correction",
+				},
+				toleratedDrift: ["duration"],
+				actorUserId: "user-manager",
+			},
 		]);
-		expect(mutations[4].values).toMatchObject({
-			clockInId: ids.correctionIn,
-			clockOutId: ids.correctionOut,
-			startTime: correctionIn.timestamp,
-			endTime: correctionOut.timestamp,
-			durationMinutes: 210,
-		});
-		expect(mutations[5].values).toMatchObject({
-			startAt: correctionIn.timestamp,
-			endAt: correctionOut.timestamp,
-			durationMinutes: 210,
-			updatedBy: "user-manager",
-		});
-		for (const mutation of mutations) {
-			expect(collectSqlColumnNames(mutation.where)).toContain(
-				"organization_id",
-			);
-		}
 		expect(transaction).not.toHaveBeenCalled();
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 	});
 
@@ -9538,33 +9562,21 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			requesterEmployeeId: "emp-requester",
 			dirtyFromDate: "2026-07-18",
 		});
-		expect(mutations.map((mutation) => mutation.table)).toEqual([
-			timeEntry,
-			timeEntry,
-			timeEntry,
-			timeEntry,
-			workPeriod,
-			timeRecord,
+		// The current endpoints are the earlier cycle's corrections; the next ones replace them.
+		expect(workRecordChanges()).toEqual([
+			expect.objectContaining({
+				kind: "amend",
+				expected: expect.objectContaining({
+					clockInId: ids.correctionIn,
+					clockOutId: ids.correctionOut,
+				}),
+				times: expect.objectContaining({
+					clockIn: { adopt: ids.nextCorrectionIn },
+					clockOut: { adopt: ids.nextCorrectionOut },
+				}),
+			}),
 		]);
-		expect(mutations[4]?.values).toMatchObject({
-			clockInId: ids.nextCorrectionIn,
-			clockOutId: ids.nextCorrectionOut,
-			startTime: nextIn.timestamp,
-			endTime: nextOut.timestamp,
-			durationMinutes: 240,
-		});
-		expect(collectTerminalBoundValues(mutations[1]?.where)).toEqual(
-			expect.arrayContaining([ids.correctionIn, ids.originalIn]),
-		);
-		expect(mutations[1]?.values).toMatchObject({
-			supersededById: ids.nextCorrectionIn,
-		});
-		expect(collectTerminalBoundValues(mutations[3]?.where)).toEqual(
-			expect.arrayContaining([ids.correctionOut, ids.originalOut]),
-		);
-		expect(mutations[3]?.values).toMatchObject({
-			supersededById: ids.nextCorrectionOut,
-		});
+		expect(mutations.filter(({ table }) => table === timeEntry)).toHaveLength(4);
 	});
 
 	it("preserves an untouched clock-out for a clock-in-only correction", async () => {
@@ -9584,11 +9596,16 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			}),
 		);
 
-		expect(mutations[2].values).toMatchObject({
-			clockInId: ids.correctionIn,
-			clockOutId: ids.originalOut,
-			endTime: originalOut.timestamp,
+		const [change] = workRecordChanges();
+		expect(change).toMatchObject({
+			kind: "amend",
+			expected: { clockOutId: ids.originalOut },
+			times: { clockIn: { adopt: ids.correctionIn } },
 		});
+		expect(change?.times).not.toHaveProperty("clockOut");
+		expect(mutations.find(({ table }) => table === workPeriod)?.values).not.toHaveProperty(
+			"clockOutId",
+		);
 	});
 
 	it("leaves modern rejected corrections inactive and source records unchanged", async () => {
@@ -9608,18 +9625,16 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		expect(mutations).toEqual([]);
 	});
 
-	it.each([
-		["zero", []],
-		["multiple", [{ id: ids.correctionIn }, { id: ids.correctionIn }]],
-	] as const)("fails approval when a correction activation returns %s rows", async (_label, rows) => {
-		const { dbService, mutations } = createFinalizerDb({
-			mutationRows: [[...rows]],
-		});
+	it("refuses a work records write that missed its locked row as the finalization conflict", async () => {
+		workRecords.throws = new CompletedWorkIntegrityError("Adopted entry changed under its lock");
+		const { dbService } = createFinalizerDb();
 
 		await expect(
 			finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService)),
-		).rejects.toThrow(/conflict|changed|finaliz/i);
-		expect(mutations).toHaveLength(1);
+		).rejects.toMatchObject({
+			message: "Time correction source changed during finalization",
+			details: { reason: "work_record_write_mismatch" },
+		});
 	});
 
 	it("rejects stale workflow links before writing", async () => {
@@ -9732,20 +9747,6 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		},
 	);
 
-	it("rejects stale canonical current-value parity before writing", async () => {
-		const { dbService, mutations } = createFinalizerDb({
-			canonical: {
-				...canonicalRecord,
-				startAt: new Date("2026-07-18T22:31:00.000Z"),
-			},
-		});
-
-		await expect(
-			finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService)),
-		).rejects.toThrow(/changed|finaliz/i);
-		expect(mutations).toEqual([]);
-	});
-
 	it("rejects mismatched endpoint offset evidence before writing", async () => {
 		const { dbService, mutations } = createFinalizerDb({
 			entries: [
@@ -9778,38 +9779,6 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		expect(mutations).toEqual([]);
 	});
 
-	it.each([
-		[
-			"work period",
-			[
-				[{ id: ids.correctionIn }],
-				[{ id: ids.originalIn }],
-				[{ id: ids.correctionOut }],
-				[{ id: ids.originalOut }],
-				[],
-			],
-		],
-		[
-			"canonical record",
-			[
-				[{ id: ids.correctionIn }],
-				[{ id: ids.originalIn }],
-				[{ id: ids.correctionOut }],
-				[{ id: ids.originalOut }],
-				[{ id: ids.period }],
-				[{ id: ids.canonical }, { id: ids.canonical }],
-			],
-		],
-	] as const)("fails when the %s CAS has unexpected affected-row evidence", async (_label, rows) => {
-		const { dbService } = createFinalizerDb({
-			mutationRows: rows.map((row) => [...row]),
-		});
-
-		await expect(
-			finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService)),
-		).rejects.toThrow(/changed|finaliz/i);
-	});
-
 	it("commits finalization once and leaves durable state unchanged on a duplicate attempt", async () => {
 		const harness = createStatefulFinalizerTransaction();
 
@@ -9833,24 +9802,11 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		expect(harness.snapshot()).toEqual(committed);
 	});
 
-	it.each([
-		["work period", "workPeriod", workPeriod],
-		["canonical record", "canonical", timeRecord],
-	] as const)("rolls back every earlier write when the late %s CAS fails", async (_label, failAt, failedTable) => {
-		const harness = createStatefulFinalizerTransaction(failAt);
-		const before = harness.snapshot();
-
-		await expect(harness.finalize()).rejects.toThrow(/changed|finaliz/i);
-
-		expect(harness.attemptedTables).toContain(failedTable);
-		expect(harness.snapshot()).toEqual(before);
-	});
-
-	it("applies deletion sentinels with the supplied finalization instant and legacy actor fields", async () => {
+	it("deletes through work records with the supplied finalization instant and legacy request", async () => {
 		const sentinel = new Date("2026-07-18T22:30:00.000Z");
 		const deletionIn = { ...correctionIn, timestamp: sentinel };
 		const deletionOut = { ...correctionOut, timestamp: sentinel };
-		const { dbService, mutations } = createFinalizerDb({
+		const { dbService } = createFinalizerDb({
 			entries: [originalIn, originalOut, deletionIn, deletionOut],
 		});
 
@@ -9865,15 +9821,30 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			}),
 		);
 
-		expect(mutations[4].values).toMatchObject({
-			startTime: sentinel,
-			endTime: sentinel,
-			durationMinutes: 0,
-			deletedAt: new Date("2026-07-20T09:00:00.000Z"),
-			deletedBy: "user-manager",
-			deletionReason: "Duplicate period",
-			deletionApprovalRequestId: ids.approval,
-		});
+		expect(workRecordChanges()).toEqual([
+			{
+				kind: "delete",
+				organizationId: "org-1",
+				employeeId: "emp-requester",
+				expected: {
+					workPeriodId: ids.period,
+					revision: undefined,
+					clockInId: ids.originalIn,
+					clockOutId: ids.originalOut,
+				},
+				markers: {
+					clockIn: { adopt: ids.correctionIn },
+					clockOut: { adopt: ids.correctionOut },
+				},
+				deletion: {
+					at: parseInstant("2026-07-20T09:00:00Z"),
+					reason: "Duplicate period",
+					approvalRequestId: ids.approval,
+				},
+				toleratedDrift: ["duration"],
+				actorUserId: "user-manager",
+			},
+		]);
 	});
 
 	it("reactivates an exact historical lineage only when the explicit fallback is enabled", async () => {
@@ -10260,7 +10231,7 @@ describe("time correction approval workflow safety", () => {
 		const body = source.slice(
 			start,
 			source.indexOf(
-				"export async function syncCanonicalWorkCorrection",
+				"export function approveTimeCorrectionWithCurrentApproverEffect",
 				start,
 			),
 		);
@@ -10327,12 +10298,9 @@ describe("time correction requester decision notifications", () => {
 		).not.toHaveBeenCalled();
 	});
 
-	it("swallows production-wrapper notification and maintenance delivery failures after commit", async () => {
+	it("swallows production-wrapper notification delivery failures after commit", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 		dbService.enableBoundaryMode("legacy");
-		markEmployeeWorkBalanceDirty.mockRejectedValueOnce(
-			new Error("maintenance unavailable"),
-		);
 		onTimeCorrectionApproved.mockRejectedValueOnce(
 			new Error("notification unavailable"),
 		);
@@ -10348,7 +10316,8 @@ describe("time correction requester decision notifications", () => {
 			),
 		).resolves.toBeUndefined();
 		expect(dbService.transactionCommitted).toHaveBeenCalledOnce();
-		expect(markEmployeeWorkBalanceDirty).toHaveBeenCalledOnce();
+		// The balance refresh committed with the work; nothing is marked after commit.
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).toHaveBeenCalledOnce();
 	});
 
@@ -10368,7 +10337,7 @@ describe("time correction requester decision notifications", () => {
 			),
 		).rejects.toThrow(/changed during finalization/i);
 		expect(dbService.transactionCommitted).not.toHaveBeenCalled();
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -10398,12 +10367,14 @@ describe("time correction requester decision notifications", () => {
 		} else {
 			await expect(decision).rejects.toThrow(/not authorized/i);
 			expect(dbService.transactionCommitted).not.toHaveBeenCalled();
-			expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+			expect(markedAfterCommit()).toEqual([]);
 			expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		}
 	});
 
-	it("marks work balances dirty after approving a time correction request", async () => {
+	// Work records marks the balance with the amended work, inside the transaction
+	// (verified against PostgreSQL); the decision marks nothing after commit (#1212).
+	it("leaves the balance mark of approved completed work to work records", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 
 		await runTimeCorrectionDecisionEffect(
@@ -10414,32 +10385,7 @@ describe("time correction requester decision notifications", () => {
 			),
 		);
 
-		expect(markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
-			employeeId: "emp-requester",
-			organizationId: "org-1",
-			dirtyFromDate: "2026-05-11",
-		});
-		expect(dbService.db.transaction).toHaveBeenCalled();
-		expect(
-			vi.mocked(dbService.db.transaction).mock.invocationCallOrder[0],
-		).toBeLessThan(markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0]);
-	});
-
-	it("keeps approval successful when dirty marking fails", async () => {
-		const dbService = createTimeCorrectionDecisionDbService();
-		markEmployeeWorkBalanceDirty.mockRejectedValueOnce(
-			new Error("dirty marker failed"),
-		);
-
-		await expect(
-			runTimeCorrectionDecisionEffect(
-				approveTimeCorrectionWithCurrentApproverEffect(
-					dbService,
-					timeCorrectionCurrentApprover,
-					"period-1",
-				),
-			),
-		).resolves.toBeDefined();
+		expect(markedAfterCommit()).toEqual([]);
 		expect(onTimeCorrectionApproved).toHaveBeenCalled();
 	});
 
@@ -10587,19 +10533,14 @@ describe("time correction requester decision notifications", () => {
 			),
 		);
 
-		expect(dbService.updateSets).toEqual(
-			expect.arrayContaining([
-				expect.objectContaining({
-					clockInId: period.clockInId,
-					clockOutId: clockOutCorrection.id,
-					startTime: period.startTime,
-					endTime: clockOutCorrection.timestamp,
-					durationMinutes: 495,
-				}),
-				{ isSuperseded: false, supersededById: null },
-				{ isSuperseded: true, supersededById: clockOutCorrection.id },
-			]),
-		);
+		// Work records adopts the clock-out correction alone; the clock-in stays.
+		const change = workRecordChanges().find(({ kind }) => kind === "amend");
+		expect(change).toMatchObject({
+			kind: "amend",
+			expected: { clockInId: period.clockInId, clockOutId: "entry-clock-out-original" },
+			times: { clockOut: { adopt: clockOutCorrection.id } },
+		});
+		expect(change?.times).not.toHaveProperty("clockIn");
 		expect(onTimeCorrectionApproved).toHaveBeenCalledWith(
 			expect.objectContaining({
 				originalTime: period.endTime,
@@ -10838,21 +10779,22 @@ describe("time correction requester decision notifications", () => {
 			replacesEntryId: "entry-clock-out-original",
 			isSuperseded: true,
 		});
-		expect(dbService.updateSets).toEqual(
-			expect.arrayContaining([
-				expect.objectContaining({
-					clockInId: deletionClockInCorrection.id,
-					clockOutId: deletionClockOutCorrection.id,
-					startTime: deletionTimestamp,
-					endTime: deletionTimestamp,
-					durationMinutes: 0,
-					deletedAt: expect.any(Date),
-					deletedBy: timeCorrectionCurrentApprover.userId,
-					deletionReason: deletionApproval.reason,
-					deletionApprovalRequestId: deletionApproval.id,
+		// This harness's work has no canonical work record: it is attached first.
+		expect(workRecordChanges()).toEqual([
+			expect.objectContaining({ kind: "attach" }),
+			expect.objectContaining({
+				kind: "delete",
+				markers: {
+					clockIn: { adopt: deletionClockInCorrection.id },
+					clockOut: { adopt: deletionClockOutCorrection.id },
+				},
+				deletion: expect.objectContaining({
+					reason: deletionApproval.reason,
+					approvalRequestId: deletionApproval.id,
 				}),
-			]),
-		);
+				actorUserId: timeCorrectionCurrentApprover.userId,
+			}),
+		]);
 	});
 
 	it("rejects deletion approvals when correction timestamps do not match", async () => {
@@ -10971,14 +10913,13 @@ describe("time correction requester decision notifications", () => {
 			),
 		);
 
-		expect(dbService.updateSets).toEqual(
-			expect.arrayContaining([
-				expect.objectContaining({
-					clockInId: linkedCorrection.id,
-					startTime: linkedCorrection.timestamp,
-				}),
-			]),
-		);
+		expect(workRecordChanges()).toEqual([
+			expect.objectContaining({ kind: "attach" }),
+			expect.objectContaining({
+				kind: "amend",
+				times: expect.objectContaining({ clockIn: { adopt: linkedCorrection.id } }),
+			}),
+		]);
 		expect(dbService.db.query.timeEntry.findFirst).toHaveBeenCalled();
 	});
 

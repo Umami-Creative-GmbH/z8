@@ -10,6 +10,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 vi.mock("@/lib/billing/guard", async () =>
@@ -184,25 +185,46 @@ describe("legacy break enforcement judges the work by its own day and policy on 
 		const clockInId = await entry("clock_in", start);
 		const clockOutId = await entry("clock_out", end);
 		const durationMinutes = Math.floor((Date.parse(end) - Date.parse(start)) / 60_000);
-		const { rows } = await admin.query<{ id: string }>(
-			`insert into work_period
-			 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
-			  duration_minutes, is_active, approval_status, deleted_at, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, false, $8, $9, $5) returning id`,
-			[
-				ids.employee,
-				organizationId,
-				clockInId,
-				clockOutId,
-				new Date(start),
-				new Date(end),
-				durationMinutes,
-				options.rejected ? "rejected" : "approved",
-				options.deleted ? new Date(end) : null,
-			],
-		);
-		const id = rows[0]?.id;
-		if (!id) throw new Error("work period insert failed");
+		// Completed work has its canonical work record, in agreement (#1212); seeded as one
+		// write, which the database's record check (#1224) sees only once linked.
+		const id = await asHistory(admin, async (client) => {
+			const { rows } = await client.query<{ id: string }>(
+				`insert into work_period
+				 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
+				  duration_minutes, is_active, approval_status, deleted_at, updated_at)
+				 values ($1, $2, $3, $4, $5, $6, $7, false, $8, $9, $5) returning id`,
+				[
+					ids.employee,
+					organizationId,
+					clockInId,
+					clockOutId,
+					new Date(start),
+					new Date(end),
+					durationMinutes,
+					options.rejected ? "rejected" : "approved",
+					options.deleted ? new Date(end) : null,
+				],
+			);
+			const inserted = rows[0]?.id;
+			if (!inserted) throw new Error("work period insert failed");
+			await client.query(
+				`with record as (
+				   insert into time_record
+				     (organization_id, employee_id, record_kind, start_at, end_at, duration_minutes,
+				      approval_state, origin, created_by, updated_at)
+				   select organization_id, employee_id, 'work', start_time, end_time, duration_minutes,
+				          approval_status::text::time_record_approval_state, 'clock', $2, now()
+				     from work_period where id = $1
+				   returning id, organization_id
+				 ), detail as (
+				   insert into time_record_work (record_id, organization_id, record_kind)
+				   select id, organization_id, 'work' from record
+				 )
+				 update work_period set canonical_record_id = (select id from record) where id = $1`,
+				[inserted, ids.user],
+			);
+			return inserted;
+		});
 		return { id, durationMinutes };
 	}
 

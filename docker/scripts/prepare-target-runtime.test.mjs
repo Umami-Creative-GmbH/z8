@@ -242,6 +242,13 @@ test("collectTarget lists traced worker runtime files and packages", async () =>
   assert.ok(Array.isArray(result.packages));
   assert.ok(result.files.includes("src/worker.ts"));
 	assert.ok(result.files.includes("scripts/obliterate-job-queue.ts"));
+	// The deploy backfill of migration 0234 runs from the worker image (#1212).
+	assert.ok(result.files.includes("scripts/attach-missing-work-records.ts"));
+	assert.ok(
+		result.files
+			.map((filePath) => filePath.replaceAll("\\", "/"))
+			.includes("src/lib/time-record/migration/attach-missing-work-records.ts"),
+	);
 	assert.ok(result.files.includes("tsconfig.json"));
 	assert.ok(result.packages.includes("bullmq"));
 	assert.ok(result.packages.includes("dotenv"));

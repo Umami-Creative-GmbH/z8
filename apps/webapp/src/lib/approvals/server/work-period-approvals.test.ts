@@ -72,6 +72,28 @@ vi.mock("../escalation/legacy-transfer-store", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/notifications/triggers", () => notificationMocks);
+// Work records decides the approval state on both records (#1227). These
+// mock-database harnesses see the change the finalizer asks for, and the fake
+// writes its outline (both approval states) through the harness database; a
+// write that misses its row comes back as a stale outcome. The real writes,
+// record agreement and effects are verified against PostgreSQL
+// (work-records/amend.integration.test.ts, clocking.policy-break-split).
+const workRecordChanges = vi.hoisted(() => [] as Array<Record<string, unknown>>);
+vi.mock("@/lib/time-tracking/work-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/work-transaction")>()),
+	holdFinalizerEmployeeLocks: async () => undefined,
+}));
+vi.mock("@/lib/time-tracking/work-records", async (importOriginal) => {
+	const fake = await import("./__tests__/fake-work-records");
+	return {
+		...(await importOriginal<typeof import("@/lib/time-tracking/work-records")>()),
+		workRecordScopeForFinalizer: fake.fakeFinalizerScope,
+		applyWorkRecordChange: async (scope: { db: object }, change: never) => {
+			workRecordChanges.push(change);
+			return fake.fakeApprovalDecision(scope.db, change);
+		},
+	};
+});
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
 	applyPolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.enforce,
 }));
@@ -153,6 +175,7 @@ vi.mock("../workflow/transition-engine", async (importOriginal) => ({
 beforeEach(() => {
 	decisionRouting.kind = "manual_time_submission";
 	decisionRouting.ownerEmployeeId = "employee-1";
+	workRecordChanges.length = 0;
 });
 
 const workPeriodApprovals = await import("./work-period-approvals");
@@ -1634,7 +1657,7 @@ describe("stable ordinary work-period decisions", () => {
 });
 
 describe("ordinary stable-target production composition", () => {
-	it("reconciles surcharge and marks work balance once from the exact local date", async () => {
+	it("reconciles surcharges once after commit; the decision marked the balance in its transaction", async () => {
 		const reconcileSurcharges = vi.fn().mockResolvedValue(undefined);
 		const markWorkBalanceDirty = vi.fn().mockResolvedValue(undefined);
 		const reconcile =
@@ -1655,12 +1678,32 @@ describe("ordinary stable-target production composition", () => {
 
 		expect(reconcileSurcharges).toHaveBeenCalledOnce();
 		expect(reconcileSurcharges).toHaveBeenCalledWith(maintenance);
-		expect(markWorkBalanceDirty).toHaveBeenCalledOnce();
-		expect(markWorkBalanceDirty).toHaveBeenCalledWith({
-			organizationId: "org-1",
-			employeeId: "employee-1",
-			dirtyFromDate: "2026-07-13",
-		});
+		// Work records marks the balance inside the decision's transaction (#1227).
+		expect(markWorkBalanceDirty).not.toHaveBeenCalled();
+	});
+
+	it("decides both records' approval state through work records", async () => {
+		const dbService = createFinalizerDbService();
+
+		await finalize(dbService);
+
+		expect(workRecordChanges).toEqual([
+			{
+				kind: "amend",
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				expected: {
+					workPeriodId: "period-1",
+					revision: period.graphRevision,
+					clockInId: period.clockInId,
+					clockOutId: period.clockOutId,
+					startAt: parseInstant(period.startTime.toISOString()),
+					endAt: parseInstant(period.endTime.toISOString()),
+				},
+				approval: "approved",
+				actorUserId: "manager-user-1",
+			},
+		]);
 	});
 
 	it.each([
@@ -2304,18 +2347,7 @@ function createDecisionDbService(options?: {
 describe("ordinary work-period approval finalizer", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		terminalBreakMocks.enforce.mockResolvedValue({
-			kind: "not_required",
-			maintenance: {
-				organizationId: "org-1",
-				employeeId: "employee-1",
-				dirtyFromDate: "2026-07-14",
-				decision: "approved",
-				surchargePeriodIds: ["period-1"],
-				staleSurchargePeriodIds: [],
-				surchargeSnapshot,
-			},
-		});
+		terminalBreakMocks.enforce.mockResolvedValue({ kind: "not_required" });
 	});
 
 	it.each([
@@ -2726,12 +2758,15 @@ describe("ordinary work-period approval finalizer", () => {
 					observedWorkflowId: "workflow-1",
 				},
 				decisionRecordId: "decision-1",
-				period: expect.objectContaining({
+				// The work exactly as the finalizer verified it, named as work records' expected state.
+				period: {
 					id: "period-1",
+					clockInId: "clock-in-1",
 					clockOutId: "clock-out-1",
-					canonicalRecordId: "record-1",
-					projectId: "project-1",
-				}),
+					startTime: period.startTime,
+					endTime: period.endTime,
+				},
+				breakPolicySnapshot,
 			}),
 		);
 		expect(result.period).toMatchObject({
@@ -2755,6 +2790,57 @@ describe("ordinary work-period approval finalizer", () => {
 		expect(vi.mocked(dbService.db.insert).mock.invocationCallOrder[0]).toBeLessThan(
 			terminalBreakMocks.enforce.mock.invocationCallOrder[0],
 		);
+	});
+
+	it("keeps the surcharges of both halves when the terminal break divides the work", async () => {
+		terminalBreakMocks.enforce.mockResolvedValueOnce({
+			kind: "adjusted",
+			breakMinutes: 30,
+			secondPeriodId: "period-2",
+		});
+		const dbService = createFinalizerDbService({
+			request: {
+				metadata: {
+					timeRequest: { kind: "policy_clock_out" },
+					breakPolicySnapshot,
+					surchargeSnapshot,
+					workflow: { id: "workflow-1", organizationId: "org-1" },
+					stage: { id: "stage-1", sequence: 1 },
+				},
+			},
+		});
+
+		const result = await finalize(dbService, { kind: "policy_clock_out" });
+
+		expect(result.outcome).toEqual({
+			status: "approved",
+			adjustment: { kind: "break_enforced", breakMinutes: 30 },
+			resultPeriodIds: ["period-1", "period-2"],
+		});
+		expect(result.maintenance).toMatchObject({ surchargePeriodIds: ["period-1", "period-2"] });
+	});
+
+	it("refuses a terminal break in a closed month as such, not as a finalization conflict", async () => {
+		// The database refusal (Z8M01, ADR 0004) behind a write of the division.
+		terminalBreakMocks.enforce.mockRejectedValueOnce(
+			Object.assign(new Error("month closed"), { code: "Z8M01", detail: "2026-07" }),
+		);
+		const dbService = createFinalizerDbService({
+			request: {
+				metadata: {
+					timeRequest: { kind: "policy_clock_out" },
+					breakPolicySnapshot,
+					surchargeSnapshot,
+					workflow: { id: "workflow-1", organizationId: "org-1" },
+					stage: { id: "stage-1", sequence: 1 },
+				},
+			},
+		});
+
+		await expect(finalize(dbService, { kind: "policy_clock_out" })).rejects.toMatchObject({
+			_tag: "MonthClosedError",
+			month: "2026-07",
+		});
 	});
 
 	it("rejects terminal approval when transactional break enforcement fails", async () => {
@@ -3341,16 +3427,14 @@ describe("ordinary work-period approval finalizer", () => {
 		expect(dbService.insertedValues).toHaveLength(0);
 	});
 
-	it("keeps every source and canonical mutation organization and employee scoped", () => {
+	it("keeps every source read organization and employee scoped", () => {
 		expect(source).toContain(
 			"eq(workPeriod.organizationId, approval.organizationId)",
 		);
 		expect(source).toContain("eq(workPeriod.employeeId, requestedBy)");
-		expect(source).toContain("eq(workPeriod.isActive, false)");
 		expect(source).toContain(
 			"eq(timeRecord.organizationId, input.organizationId)",
 		);
-		expect(source).toContain("eq(timeRecord.employeeId, record.employeeId)");
 		expect(source).toContain('eq(timeRecord.recordKind, "work")');
 	});
 

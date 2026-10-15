@@ -9,7 +9,8 @@
  * - pending correction entries through the internal append collaborator
  *   (operation `time_correction_submission`), never from the latest-created row;
  * - a `graph_revision` advance on the corrected period for every lifecycle
- *   transition, with a compare-and-set on the revision the transition read;
+ *   transition, with a compare-and-set on the revision the transition read
+ *   (work records' `advanceWorkRevision` or its change, ADR 0010);
  * - a `completed_work_operation` receipt per transition (`submit_time_correction`,
  *   `finalize_time_correction`, `cancel_time_correction`) holding the baseline,
  *   the requested change mask and intent, and the actual resulting graph;
@@ -258,42 +259,6 @@ export async function admitTimeCorrectionAppend(
 export function correctedDurationMinutes(adopted: boolean, start: Instant, end: Instant): number {
 	if (adopted) return deriveWorkDurationMinutes(start, end);
 	return Math.floor(start.until(end).total("minutes"));
-}
-
-/**
- * Advances the period's work revision by one, compare-and-set on the revision
- * the transition read under its locks. Deleted periods advance too: deletion is
- * the transition that changes them.
- */
-export async function advanceCorrectionWorkRevision(
-	tx: Pick<WorkTransactionClient, "update">,
-	input: {
-		organizationId: string;
-		employeeId: string;
-		workPeriodId: string;
-		expectedRevision: number;
-	},
-): Promise<number> {
-	const next = input.expectedRevision + 1;
-	const updated = await tx
-		.update(workPeriod)
-		.set({ graphRevision: next })
-		.where(
-			and(
-				eq(workPeriod.id, input.workPeriodId),
-				eq(workPeriod.organizationId, input.organizationId),
-				eq(workPeriod.employeeId, input.employeeId),
-				eq(workPeriod.graphRevision, input.expectedRevision),
-			),
-		)
-		.returning({ id: workPeriod.id });
-	if (updated.length !== 1) {
-		throw new ConflictError({
-			message: "Work period changed while processing the correction",
-			conflictType: "time_correction_work_period_stale",
-		});
-	}
-	return next;
 }
 
 /** The locked period's current revision; the caller already holds the period row lock. */

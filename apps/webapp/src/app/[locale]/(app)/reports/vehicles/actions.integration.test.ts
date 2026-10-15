@@ -7,6 +7,7 @@
 
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -133,27 +134,29 @@ describe("distance per vehicle report on PostgreSQL", () => {
 			);
 		}
 		const vehicleId = options.vehicleId ?? null;
-		await admin.query(
-			`insert into work_period
-			 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
-			  duration_minutes, is_active, deleted_at, deleted_by, vehicle_kind, vehicle_id,
-			  driven_distance_km, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())`,
-			[
-				options.employeeId,
-				organizationId,
-				clockInId,
-				clockOutId,
-				options.start,
-				options.end ?? null,
-				options.end ? 60 : null,
-				!options.end,
-				options.deleted ? "2026-04-01T00:00:00Z" : null,
-				options.deleted ? ids.ownerUser : null,
-				vehicleId ? "organization" : "own",
-				vehicleId,
-				options.distanceKm,
-			],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`insert into work_period
+				 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
+				  duration_minutes, is_active, deleted_at, deleted_by, vehicle_kind, vehicle_id,
+				  driven_distance_km, updated_at)
+				 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())`,
+				[
+					options.employeeId,
+					organizationId,
+					clockInId,
+					clockOutId,
+					options.start,
+					options.end ?? null,
+					options.end ? 60 : null,
+					!options.end,
+					options.deleted ? "2026-04-01T00:00:00Z" : null,
+					options.deleted ? ids.ownerUser : null,
+					vehicleId ? "organization" : "own",
+					vehicleId,
+					options.distanceKm,
+				],
+			),
 		);
 	}
 

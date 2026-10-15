@@ -8,53 +8,39 @@ import "server-only";
  * (reading the append control under it), organization configuration, the
  * triggering admin's configuration/access guard and the sorted employee keys.
  *
- * Organizations without an active append control keep the established demo writes:
- * latest-created head selection, periods without canonical records and no
- * receipts. The only legacy changes are atomicity per employee-day and distinct
- * creation times, so later latest-created readers never see tied demo rows.
- *
- * In an adopted organization every fresh demo entry is admitted through the internal
- * append collaborator, overlapping work is left untouched, and each generated
- * session is persisted as complete work: linked entries, a closed period,
- * canonical base/detail, the committed balance refresh intent and a
- * `completed_work_operation` receipt. The receipt names the demo generator as the
+ * Every generated session is created through work records (ADR 0010, #1223) in
+ * either admission: linked entries, a closed period and its canonical work
+ * record in agreement, with the effects. Overlapping work leaves the day
+ * untouched. In an adopted organization each session also gets a
+ * `completed_work_operation` receipt that names the demo generator as the
  * executing system actor (no actor user) and records the triggering admin in its
  * result. Demo generation is unkeyed, so its receipts are evidence, never replay
- * identities.
+ * identities. Demo attribution changes amend through work records, and cleanup
+ * erases the work history through it.
  */
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, gt, inArray, isNull, lt, notExists, or, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, or } from "drizzle-orm";
 import {
-	approvalRequest,
 	completedWorkOperation,
 	historicalWorkProposal,
-	timeEntry,
-	timeEntryAppendPosition,
-	timeRecord,
-	timeRecordWork,
 	workBreakAdjustmentIntent,
 	workPeriod,
 } from "@/db/schema";
 import { deleteWorkPeriodApprovalEvidence } from "@/lib/approvals/maintenance";
-import {
-	compareInstants,
-	dateFromInstant,
-	type Instant,
-	instantFromDate,
-	instantToCanonicalString,
-} from "@/lib/datetime/temporal-core";
-import { calculateHash } from "@/lib/time-tracking/blockchain";
-import {
-	type AppendReviewRequirement,
-	admitTimeEntryAppend,
-	type TimeEntryAppend,
-} from "@/lib/time-tracking/time-entry-append";
+import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import type { AppendReviewRequirement } from "@/lib/time-tracking/time-entry-append";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
+import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import {
-	vehicleUseColumns,
-	type WorkVehicleUse,
-} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
-import { deriveWorkDurationMinutes } from "@/lib/time-tracking/work-duration";
+	type AmendAttributionPatch,
+	applyWorkRecordChange,
+	eraseEmployeeWorkHistory,
+	isWorkRecordRefusal,
+	type NewWorkCreation,
+	orRefuse,
+	readWorkRecord,
+	type WorkRecord,
+} from "@/lib/time-tracking/work-records";
 import {
 	runWorkTransaction,
 	type SealedWorkTransactionScope,
@@ -62,8 +48,6 @@ import {
 	type WorkTransactionClient,
 	type WorkTransactionScope,
 } from "@/lib/time-tracking/work-transaction";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-
 export const DEMO_WORK_COMMAND_VERSION = 1;
 export const DEMO_WORK_RESULT_VERSION = 1;
 export const RUNTIME_DEMO_WRITER_VERSION = 1;
@@ -173,9 +157,9 @@ export interface DemoWorkDayInput {
 }
 
 // Demo sessions carry no zone evidence; they are captured as UTC backfill.
-function demoCapture(timestamp: Date) {
+function demoCapture(instant: Instant) {
 	return resolveFallbackTimezoneCapture({
-		timestamp,
+		timestamp: dateFromInstant(instant),
 		timezone: "UTC",
 		timezoneSource: "backfill",
 	});
@@ -183,7 +167,9 @@ function demoCapture(timestamp: Date) {
 
 /**
  * Persists one employee-day of generated sessions in the caller's coordinated
- * transaction. The caller owns the transaction, so a failure rolls back the day.
+ * transaction, each created through work records with its canonical work record
+ * (#1223). Overlapping work leaves the whole day untouched. The caller owns the
+ * transaction, so a failure rolls back the day.
  */
 export async function recordDemoWorkDay(
 	scope: SealedWorkTransactionScope,
@@ -193,95 +179,33 @@ export async function recordDemoWorkDay(
 	if (input.sessions.length === 0) {
 		return { kind: "recorded", timeEntriesCreated: 0, workPeriodsCreated: 0 };
 	}
-	return scope.admission === "append"
-		? recordAdoptedDemoWorkDay(scope, input)
-		: recordLegacyDemoWorkDay(scope.db, input);
-}
-
-type LinkedEntry = { id: string; hash: string };
-
-async function insertDemoEntry(
-	client: WorkTransactionClient,
-	input: DemoWorkDayInput,
-	values: {
-		type: "clock_in" | "clock_out";
-		instant: Instant;
-		notes: string;
-		predecessor: LinkedEntry | null;
-	},
-) {
-	const timestamp = dateFromInstant(values.instant);
-	const previousHash = values.predecessor?.hash ?? null;
-	const capture = demoCapture(timestamp);
-	const [entry] = await client
-		.insert(timeEntry)
-		.values({
-			employeeId: input.employeeId,
+	if (await isOccupied(scope.db, input)) return { kind: "occupied" };
+	for (const [sessionIndex, session] of input.sessions.entries()) {
+		const created = await applyWorkRecordChange(scope, {
+			kind: "create_new",
 			organizationId: input.organizationId,
-			type: values.type,
-			timestamp,
-			hash: calculateHash({
-				employeeId: input.employeeId,
-				type: values.type,
-				timestamp: timestamp.toISOString(),
-				previousHash,
-			}),
-			previousHash,
-			previousEntryId: values.predecessor?.id ?? null,
-			notes: values.notes,
-			createdBy: input.triggeringUserId,
-			// Rows written in one transaction would otherwise share `now()`; distinct
-			// creation times keep latest-created readers from seeing ties.
-			createdAt: sql`clock_timestamp()`,
-			...capture,
-		})
-		.returning();
-	if (!entry) throw new Error("Failed to create demo time entry");
-	return { entry, capture };
-}
-
-async function recordLegacyDemoWorkDay(
-	client: WorkTransactionClient,
-	input: DemoWorkDayInput,
-): Promise<DemoWorkDayOutcome> {
-	// Established legacy head selection: the employee's latest-created entry.
-	const [head] = await client
-		.select({ id: timeEntry.id, hash: timeEntry.hash })
-		.from(timeEntry)
-		.where(
-			and(
-				eq(timeEntry.organizationId, input.organizationId),
-				eq(timeEntry.employeeId, input.employeeId),
-			),
-		)
-		.orderBy(desc(timeEntry.createdAt))
-		.limit(1);
-	let predecessor: LinkedEntry | null = head ?? null;
-	for (const session of input.sessions) {
-		const clockIn = await insertDemoEntry(client, input, {
-			type: "clock_in",
-			instant: session.start,
-			notes: session.clockInNotes,
-			predecessor,
-		});
-		const clockOut = await insertDemoEntry(client, input, {
-			type: "clock_out",
-			instant: session.end,
-			notes: session.clockOutNotes,
-			predecessor: clockIn.entry,
-		});
-		predecessor = clockOut.entry;
-		await client.insert(workPeriod).values({
 			employeeId: input.employeeId,
-			organizationId: input.organizationId,
-			clockInId: clockIn.entry.id,
-			clockOutId: clockOut.entry.id,
-			startTime: clockIn.entry.timestamp,
-			endTime: clockOut.entry.timestamp,
-			// Demo endpoints are whole minutes, so this equals the established rounding.
-			durationMinutes: deriveWorkDurationMinutes(session.start, session.end),
-			isActive: false,
+			start: {
+				at: session.start,
+				notes: session.clockInNotes,
+				capture: demoCapture(session.start),
+			},
+			end: { at: session.end, notes: session.clockOutNotes, capture: demoCapture(session.end) },
+			approval: { state: "approved" },
+			origin: "clock",
+			recordedBy: input.triggeringUserId,
+			actorUserId: input.triggeringUserId,
+			entries: { createdBy: input.triggeringUserId, ipAddress: null, deviceInfo: null },
+			appendOperation: "demo_generation",
 		});
+		// The first session is admitted before anything of the day is written.
+		if (created.kind === "append_review_required" && sessionIndex === 0) {
+			return { kind: "held_for_review", requirement: created.requirement };
+		}
+		const creation = orRefuse<NewWorkCreation>(created);
+		if (creation.appended.admission === "append") {
+			await recordDemoReceipt(scope.db, input, sessionIndex, creation);
+		}
 	}
 	return {
 		kind: "recorded",
@@ -319,173 +243,83 @@ async function isOccupied(
 	return occupant !== undefined;
 }
 
-async function recordAdoptedDemoWorkDay(
-	scope: SealedWorkTransactionScope,
-	input: DemoWorkDayInput,
-): Promise<DemoWorkDayOutcome> {
-	const client = scope.db;
-	if (await isOccupied(client, input)) return { kind: "occupied" };
-	const admitted = await admitTimeEntryAppend(
-		client,
-		{ organizationId: input.organizationId, employeeId: input.employeeId },
-		"demo_generation",
-	);
-	if (admitted.kind === "review_required") {
-		return { kind: "held_for_review", requirement: admitted.requirement };
-	}
-	const append = admitted.append;
-	for (const [sessionIndex, session] of input.sessions.entries()) {
-		const operationId = randomUUID();
-		const durationMinutes = deriveWorkDurationMinutes(session.start, session.end);
-		const clockIn = await appendDemoEntry(client, append, input, {
-			type: "clock_in",
-			instant: session.start,
-			notes: session.clockInNotes,
-		});
-		const clockOut = await appendDemoEntry(client, append, input, {
-			type: "clock_out",
-			instant: session.end,
-			notes: session.clockOutNotes,
-		});
-		const [record] = await client
-			.insert(timeRecord)
-			.values({
-				organizationId: input.organizationId,
-				employeeId: input.employeeId,
-				recordKind: "work",
-				startAt: clockIn.entry.timestamp,
-				endAt: clockOut.entry.timestamp,
-				durationMinutes,
-				approvalState: "approved",
-				origin: "clock",
-				createdBy: input.triggeringUserId,
-				updatedBy: input.triggeringUserId,
-			})
-			.returning({ id: timeRecord.id });
-		if (!record) throw new Error("Failed to create demo canonical work record");
-		await client.insert(timeRecordWork).values({
-			recordId: record.id,
-			organizationId: input.organizationId,
-			recordKind: "work",
-			workCategoryId: null,
-			workLocationType: null,
-			computationMetadata: null,
-		});
-		const [period] = await client
-			.insert(workPeriod)
-			.values({
-				employeeId: input.employeeId,
-				organizationId: input.organizationId,
-				clockInId: clockIn.entry.id,
-				clockOutId: clockOut.entry.id,
-				startTime: clockIn.entry.timestamp,
-				endTime: clockOut.entry.timestamp,
-				durationMinutes,
-				isActive: false,
-				canonicalRecordId: record.id,
-				approvalStatus: "approved",
-			})
-			.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
-		if (!period) throw new Error("Failed to create demo work period");
-
-		const dirtyFromDate = utcDate(session.start);
-		const result: DemoWorkResult = {
-			version: DEMO_WORK_RESULT_VERSION,
-			operationId,
-			owner: { employeeId: input.employeeId },
-			actors: {
-				executing: { kind: "system", process: "runtime_demo" },
-				triggeredBy: { kind: "human", userId: input.triggeringUserId },
-			},
-			workPeriodId: period.id,
-			clockInEntryId: clockIn.entry.id,
-			clockOutEntryId: clockOut.entry.id,
-			canonicalRecordId: record.id,
-			segment: {
-				startAt: instantToCanonicalString(session.start),
-				endAt: instantToCanonicalString(session.end),
-				durationMinutes,
-				startUtcOffsetMinutes: clockIn.capture.utcOffsetMinutes,
-				endUtcOffsetMinutes: clockOut.capture.utcOffsetMinutes,
-				timezone: clockOut.capture.timezone,
-				timezoneSource: "backfill",
-			},
-			attribution: { projectId: null, workCategoryId: null, workLocationType: null },
-			revisions: { workPeriod: { source: null, result: period.graphRevision } },
-			append: {
-				admission: "append",
-				clockIn: clockIn.link,
-				clockOut: {
-					previousEntryId: clockIn.entry.id,
-					previousHash: clockIn.entry.hash,
-				},
-			},
-			approvalState: "approved",
-			approval: { participation: "none" },
-			followUps: [{ kind: "work_balance_refresh", delivery: "committed_intent", dirtyFromDate }],
-		};
-		const command: DemoWorkCommand = {
-			version: DEMO_WORK_COMMAND_VERSION,
-			runId: input.runId,
-			sessionIndex,
-			startAt: result.segment.startAt,
-			endAt: result.segment.endAt,
-		};
-		await client.insert(completedWorkOperation).values({
-			id: operationId,
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-			kind: "create_completed_work",
-			writer: "runtime_demo",
-			writerVersion: RUNTIME_DEMO_WRITER_VERSION,
-			commandVersion: DEMO_WORK_COMMAND_VERSION,
-			command,
-			appendAdmission: "append",
-			actorKind: "system",
-			// The column names a human actor only; the triggering admin is in the result.
-			actorUserId: null,
-			workPeriodId: period.id,
-			resultVersion: DEMO_WORK_RESULT_VERSION,
-			result,
-		});
-	}
-	// Required recalculation commits with the work (UTC capture, so the UTC date).
-	const earliestStart = input.sessions
-		.map((session) => session.start)
-		.reduce((earliest, start) => (compareInstants(start, earliest) < 0 ? start : earliest));
-	await markEmployeeWorkBalanceDirty(
-		{
-			employeeId: input.employeeId,
-			organizationId: input.organizationId,
-			dirtyFromDate: utcDate(earliestStart),
-		},
-		client,
-	);
-	return {
-		kind: "recorded",
-		timeEntriesCreated: input.sessions.length * 2,
-		workPeriodsCreated: input.sessions.length,
-	};
-}
-
-function utcDate(instant: Instant): string {
-	return instant.toZonedDateTimeISO("UTC").toPlainDate().toString();
-}
-
-async function appendDemoEntry(
+/**
+ * An adopted organization's receipt of one generated session: evidence naming
+ * the demo generator as the executing system actor, never a replay identity.
+ */
+async function recordDemoReceipt(
 	client: WorkTransactionClient,
-	append: TimeEntryAppend,
 	input: DemoWorkDayInput,
-	values: { type: "clock_in" | "clock_out"; instant: Instant; notes: string },
-) {
-	const predecessor = append.predecessor;
-	const inserted = await insertDemoEntry(client, input, { ...values, predecessor });
-	const link = {
-		previousEntryId: predecessor?.id ?? null,
-		previousHash: predecessor?.hash ?? null,
+	sessionIndex: number,
+	creation: NewWorkCreation,
+): Promise<void> {
+	const operationId = randomUUID();
+	const [clockIn, clockOut] = creation.appended.entries;
+	const result: DemoWorkResult = {
+		version: DEMO_WORK_RESULT_VERSION,
+		operationId,
+		owner: { employeeId: input.employeeId },
+		actors: {
+			executing: { kind: "system", process: "runtime_demo" },
+			triggeredBy: { kind: "human", userId: input.triggeringUserId },
+		},
+		workPeriodId: creation.segment.workPeriodId,
+		clockInEntryId: clockIn.id,
+		clockOutEntryId: clockOut.id,
+		canonicalRecordId: creation.segment.canonicalRecordId,
+		segment: {
+			startAt: creation.segment.startAt,
+			endAt: creation.segment.endAt,
+			durationMinutes: creation.segment.durationMinutes,
+			startUtcOffsetMinutes: clockIn.utcOffsetMinutes ?? 0,
+			endUtcOffsetMinutes: clockOut.utcOffsetMinutes ?? 0,
+			timezone: clockOut.timezone ?? "UTC",
+			timezoneSource: "backfill",
+		},
+		attribution: { projectId: null, workCategoryId: null, workLocationType: null },
+		revisions: { workPeriod: { source: null, result: creation.after.revision } },
+		append: {
+			admission: "append",
+			clockIn: {
+				previousEntryId: creation.appended.clockIn.previousEntryId,
+				previousHash: creation.appended.clockIn.previousHash,
+			},
+			clockOut: { previousEntryId: clockIn.id, previousHash: clockIn.hash },
+		},
+		approvalState: "approved",
+		approval: { participation: "none" },
+		followUps: [
+			{
+				kind: "work_balance_refresh",
+				delivery: "committed_intent",
+				dirtyFromDate: creation.effects.workBalanceDirtyFromDate,
+			},
+		],
 	};
-	await append.record({ id: inserted.entry.id, hash: inserted.entry.hash, ...link });
-	return { ...inserted, link };
+	const command: DemoWorkCommand = {
+		version: DEMO_WORK_COMMAND_VERSION,
+		runId: input.runId,
+		sessionIndex,
+		startAt: result.segment.startAt,
+		endAt: result.segment.endAt,
+	};
+	await client.insert(completedWorkOperation).values({
+		id: operationId,
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		kind: "create_completed_work",
+		writer: "runtime_demo",
+		writerVersion: RUNTIME_DEMO_WRITER_VERSION,
+		commandVersion: DEMO_WORK_COMMAND_VERSION,
+		command,
+		appendAdmission: "append",
+		actorKind: "system",
+		// The column names a human actor only; the triggering admin is in the result.
+		actorUserId: null,
+		workPeriodId: creation.segment.workPeriodId,
+		resultVersion: DEMO_WORK_RESULT_VERSION,
+		result,
+	});
 }
 
 // ---------------------------------------------------------------------------
@@ -493,11 +327,39 @@ async function appendDemoEntry(
 // ---------------------------------------------------------------------------
 
 /**
- * Assigns a demo work category to one completed period. Legacy organizations keep
- * the established period-only update. An adopted organization changes only
- * settled work (approved, undeleted, nothing pending), updates the canonical work
- * detail with it and advances the period's graph revision.
+ * Amends one demo period's work attribution through work records (#1223): only
+ * settled work (completed, approved, nothing pending, with its canonical work
+ * record) changes; anything else, or a refusal, leaves it as it is.
  */
+async function amendDemoAttribution(
+	scope: SealedWorkTransactionScope,
+	input: { organizationId: string; employeeId: string; workPeriodId: string },
+	patch: AmendAttributionPatch,
+	settled: (record: WorkRecord) => boolean,
+): Promise<boolean> {
+	const record = await readWorkRecord(scope, input, { lock: true });
+	if (
+		!record ||
+		record.period.isActive ||
+		record.period.approvalStatus !== "approved" ||
+		record.period.pendingChanges !== null ||
+		!record.canonical ||
+		!settled(record)
+	) {
+		return false;
+	}
+	const amended = await applyWorkRecordChange(scope, {
+		kind: "amend",
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		expected: record.expected,
+		attribution: patch,
+		actorUserId: null,
+	});
+	return !isWorkRecordRefusal(amended) || amended.kind === "unchanged";
+}
+
+/** Assigns a demo work category to one completed period. */
 export async function assignDemoWorkCategory(
 	scope: SealedWorkTransactionScope,
 	input: {
@@ -507,59 +369,10 @@ export async function assignDemoWorkCategory(
 		workCategoryId: string;
 	},
 ): Promise<boolean> {
-	scope.assertEmployee(input.organizationId, input.employeeId);
-	const client = scope.db;
-	const inScope = and(
-		eq(workPeriod.id, input.workPeriodId),
-		eq(workPeriod.organizationId, input.organizationId),
-		eq(workPeriod.employeeId, input.employeeId),
-	);
-	if (scope.admission !== "append") {
-		const updated = await client
-			.update(workPeriod)
-			.set({ workCategoryId: input.workCategoryId })
-			.where(inScope)
-			.returning({ id: workPeriod.id });
-		return updated.length === 1;
-	}
-	const [period] = await client.select().from(workPeriod).where(inScope).for("update").limit(1);
-	if (
-		!period ||
-		period.isActive ||
-		period.deletedAt !== null ||
-		period.approvalStatus !== "approved" ||
-		period.pendingChanges !== null ||
-		!period.canonicalRecordId
-	) {
-		return false;
-	}
-	const detail = await client
-		.update(timeRecordWork)
-		.set({ workCategoryId: input.workCategoryId })
-		.where(
-			and(
-				eq(timeRecordWork.recordId, period.canonicalRecordId),
-				eq(timeRecordWork.organizationId, input.organizationId),
-			),
-		)
-		.returning({ recordId: timeRecordWork.recordId });
-	if (detail.length !== 1) return false;
-	const [updated] = await client
-		.update(workPeriod)
-		.set({ workCategoryId: input.workCategoryId, graphRevision: period.graphRevision + 1 })
-		.where(and(inScope, eq(workPeriod.graphRevision, period.graphRevision)))
-		.returning({ id: workPeriod.id });
-	if (!updated) throw new Error("Demo work period changed during category assignment");
-	return true;
+	return amendDemoAttribution(scope, input, { workCategoryId: input.workCategoryId }, () => true);
 }
 
-/**
- * Records demo vehicle use (#1132) on one completed period that has none, like
- * `assignDemoWorkCategory`: a legacy organization gets a period-only update; an adopted one
- * changes only settled work, writes the same columns to the canonical work detail and advances
- * the period's graph revision. The columns are named explicitly, so the approval write-boundary
- * scanner sees a resolved payload.
- */
+/** Records demo vehicle use (#1132) on one completed period that has none. */
 export async function assignDemoVehicleUse(
 	scope: SealedWorkTransactionScope,
 	input: {
@@ -569,71 +382,12 @@ export async function assignDemoVehicleUse(
 		use: WorkVehicleUse;
 	},
 ): Promise<boolean> {
-	scope.assertEmployee(input.organizationId, input.employeeId);
-	const client = scope.db;
-	const columns = vehicleUseColumns(input.use);
-	const inScope = and(
-		eq(workPeriod.id, input.workPeriodId),
-		eq(workPeriod.organizationId, input.organizationId),
-		eq(workPeriod.employeeId, input.employeeId),
-		isNull(workPeriod.vehicleKind),
+	return amendDemoAttribution(
+		scope,
+		input,
+		{ vehicleUse: input.use },
+		(record) => record.attribution.vehicleUse === null,
 	);
-	if (scope.admission !== "append") {
-		const updated = await client
-			.update(workPeriod)
-			.set({
-				vehicleKind: columns.vehicleKind,
-				vehicleId: columns.vehicleId,
-				odometerStartKm: columns.odometerStartKm,
-				odometerEndKm: columns.odometerEndKm,
-				drivenDistanceKm: columns.drivenDistanceKm,
-			})
-			.where(and(inScope, eq(workPeriod.isActive, false)))
-			.returning({ id: workPeriod.id });
-		return updated.length === 1;
-	}
-	const [period] = await client.select().from(workPeriod).where(inScope).for("update").limit(1);
-	if (
-		!period ||
-		period.isActive ||
-		period.deletedAt !== null ||
-		period.approvalStatus !== "approved" ||
-		period.pendingChanges !== null ||
-		!period.canonicalRecordId
-	) {
-		return false;
-	}
-	const detail = await client
-		.update(timeRecordWork)
-		.set({
-			vehicleKind: columns.vehicleKind,
-			vehicleId: columns.vehicleId,
-			odometerStartKm: columns.odometerStartKm,
-			odometerEndKm: columns.odometerEndKm,
-			drivenDistanceKm: columns.drivenDistanceKm,
-		})
-		.where(
-			and(
-				eq(timeRecordWork.recordId, period.canonicalRecordId),
-				eq(timeRecordWork.organizationId, input.organizationId),
-			),
-		)
-		.returning({ recordId: timeRecordWork.recordId });
-	if (detail.length !== 1) return false;
-	const [updated] = await client
-		.update(workPeriod)
-		.set({
-			vehicleKind: columns.vehicleKind,
-			vehicleId: columns.vehicleId,
-			odometerStartKm: columns.odometerStartKm,
-			odometerEndKm: columns.odometerEndKm,
-			drivenDistanceKm: columns.drivenDistanceKm,
-			graphRevision: period.graphRevision + 1,
-		})
-		.where(and(inScope, eq(workPeriod.graphRevision, period.graphRevision)))
-		.returning({ id: workPeriod.id });
-	if (!updated) throw new Error("Demo work period changed during vehicle use assignment");
-	return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -648,15 +402,16 @@ export type DemoHistoryDeletion = {
 
 /**
  * Removes one employee's whole time history atomically under its employee key:
- * approval lifecycle evidence (#302), append position, proposals (#323), break adjustment
- * intents (#305), receipts, periods, their
- * canonical work records (except those a retained approval request references) and
- * entries. An adopted scope also commits the balance refresh intent. No other
- * employee or organization is touched.
+ * approval lifecycle evidence (#302), then the work itself through work records
+ * (periods, their canonical work records except those a retained approval
+ * request references, entries and the append position, with the effects,
+ * #1223), then proposals (#323), break adjustment intents (#305) and receipts,
+ * which describe that history by value. No other employee or organization is
+ * touched.
  */
 export async function deleteDemoEmployeeHistory(
 	scope: SealedWorkTransactionScope,
-	input: { organizationId: string; employeeId: string },
+	input: { organizationId: string; employeeId: string; triggeringUserId?: string | null },
 ): Promise<DemoHistoryDeletion> {
 	scope.assertEmployee(input.organizationId, input.employeeId);
 	const client = scope.db;
@@ -665,16 +420,12 @@ export async function deleteDemoEmployeeHistory(
 		organizationId: input.organizationId,
 		employeeIds: [input.employeeId],
 	});
-	// The append position references its tip entry; remove it with the history.
-	await client
-		.delete(timeEntryAppendPosition)
-		.where(
-			and(
-				eq(timeEntryAppendPosition.organizationId, input.organizationId),
-				eq(timeEntryAppendPosition.employeeId, input.employeeId),
-			),
-		);
-	// Explicit proposals (#323) copy that history by value; the position above referenced
+	const erased = await eraseEmployeeWorkHistory(scope, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		actorUserId: input.triggeringUserId ?? null,
+	});
+	// Explicit proposals (#323) copy that history by value; the append position referenced
 	// an applied continuation, so they go after it.
 	await client
 		.delete(historicalWorkProposal)
@@ -702,77 +453,12 @@ export async function deleteDemoEmployeeHistory(
 				eq(completedWorkOperation.employeeId, input.employeeId),
 			),
 		);
-	const periods = await client
-		.delete(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.organizationId, input.organizationId),
-				eq(workPeriod.employeeId, input.employeeId),
-			),
-		)
-		.returning({
-			canonicalRecordId: workPeriod.canonicalRecordId,
-			workCategoryId: workPeriod.workCategoryId,
-			startTime: workPeriod.startTime,
-		});
-	const canonicalRecordIds = periods.flatMap((period) =>
-		period.canonicalRecordId ? [period.canonicalRecordId] : [],
-	);
-	// The periods' canonical work goes with them in every mode (#284); left behind it
-	// would read as unlinked canonical-native work.
-	if (canonicalRecordIds.length > 0) {
-		await client.delete(timeRecord).where(
-			and(
-				eq(timeRecord.organizationId, input.organizationId),
-				eq(timeRecord.employeeId, input.employeeId),
-				eq(timeRecord.recordKind, "work"),
-				inArray(timeRecord.id, canonicalRecordIds),
-				notExists(
-					client
-						.select({ id: approvalRequest.id })
-						.from(approvalRequest)
-						.where(
-							and(
-								eq(approvalRequest.organizationId, timeRecord.organizationId),
-								eq(approvalRequest.canonicalRecordId, timeRecord.id),
-							),
-						),
-				),
-			),
-		);
-	}
-	const entries = await client
-		.delete(timeEntry)
-		.where(
-			and(
-				eq(timeEntry.organizationId, input.organizationId),
-				eq(timeEntry.employeeId, input.employeeId),
-			),
-		)
-		.returning({ id: timeEntry.id });
-	const earliestStart = periods.reduce<Date | null>(
-		(earliest, period) =>
-			earliest === null || period.startTime < earliest ? period.startTime : earliest,
-		null,
-	);
-	// Adopted scopes commit the balance refresh intent for the removed work.
-	if (scope.admission === "append" && earliestStart) {
-		await markEmployeeWorkBalanceDirty(
-			{
-				employeeId: input.employeeId,
-				organizationId: input.organizationId,
-				dirtyFromDate: utcDate(instantFromDate(earliestStart)),
-			},
-			client,
-		);
-	}
 	return {
-		workPeriodsDeleted: periods.length,
-		workPeriodsWithCategory: periods.filter((period) => period.workCategoryId !== null).length,
-		timeEntriesDeleted: entries.length,
+		workPeriodsDeleted: erased.workPeriodsDeleted,
+		workPeriodsWithCategory: erased.workPeriodsWithCategory,
+		timeEntriesDeleted: erased.timeEntriesDeleted,
 	};
 }
-
 /**
  * Removes the whole time history of each employee, one coordinated transaction per
  * employee (see `deleteDemoEmployeeHistory`), and sums what was removed.

@@ -19,6 +19,7 @@ import {
 	listDrivingDetailsMissing,
 } from "./driving-details-missing-store";
 import { loadTeamDrivingDetails } from "./driving-details-team-store";
+import { completeLiveWork } from "@/lib/time-tracking/work-records/__tests__/complete-live-work";
 
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
@@ -104,12 +105,12 @@ describe("driving details missing on PostgreSQL", () => {
 		});
 		if (!("period" in opened)) throw new Error("Expected live work");
 		if (end) {
-			await clocking().clockOut({
+			await completeLiveWork({
 				organizationId: org.organizationId,
 				employeeId: person.employeeId,
-				createdBy: person.userId,
-				action: action(end),
-				source: { deviceInfo: "test", ipAddress: null },
+				actorUserId: person.userId,
+				at: action(end).instant,
+				capture: action(end),
 			});
 		}
 		const { rows } = await fixture.pool.query<{ id: string }>(

@@ -178,128 +178,60 @@ export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 	"src/lib/time-record/migration/backfill.ts": {
 		approval_request: ["update"],
 	},
+	// A work period's legacy approval requests link to its attached record (#1224).
+	"src/lib/time-tracking/work-records/repair.ts": {
+		approval_request: ["update"],
+	},
 } as const satisfies ApprovalWriteOwners;
 
 export const CANONICAL_SOURCE_WRITE_OWNERS = {
-	"src/lib/approvals/maintenance.ts": [
-		{
-			columns: ["approval_workflow_id"],
-			functionName: "clearWorkflowSourceReferences",
-			operation: "update",
-			table: "work_period",
-		},
-	],
-	"src/lib/time-tracking/canonical-work-record.ts": [
-		{
-			columns: [
-				"approval_state",
-				"duration_minutes",
-				"employee_id",
-				"end_at",
-				"organization_id",
-				"start_at",
-			],
-			functionName: "createForCompletedPeriodInTransaction",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-		{
-			columns: [
-				"computation_metadata",
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"organization_id",
-				"record_id",
-				"record_kind",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "createForCompletedPeriodInTransaction",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_work",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "createForCompletedPeriodInTransaction",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
-	],
-	"src/lib/approvals/server/time-correction-approvals.ts": [
-		{
-			columns: ["approval_workflow_id"],
-			functionName: "bindTimeCorrectionWorkflowToWorkPeriod",
-			operation: "update",
-			table: "work_period",
-		},
-		{
-			columns: ["is_superseded", "superseded_by_id"],
-			functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
-			operation: "update",
-			semantic: "correction_lifecycle",
-			table: "time_entry",
-		},
-		{
-			columns: [
-				"is_superseded",
-				"replaces_entry_id",
-				"superseded_by_id",
-				"type",
-			],
-			functionName: "insertTimeCorrectionSourceEntry",
-			operation: "insert",
-			semantic: "correction",
-			table: "time_entry",
-		},
-		{
-			columns: [
-				"is_superseded",
-				"replaces_entry_id",
-				"superseded_by_id",
-				"type",
-			],
-			functionName: "deleteCancelledTimeCorrectionsInTransaction",
-			operation: "delete",
-			semantic: "inactive_correction",
-			table: "time_entry",
-		},
-		{
-			columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
-			functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
+	// Absence records (`ABSENCE_RECORD_WRITERS`): the base record of an absence, never work.
+	"src/app/[locale]/(app)/absences/actions.canonical.ts": [
 		{
 			columns: ["duration_minutes", "end_at", "start_at"],
-			functionName: "syncCanonicalWorkCorrection",
+			functionName: "updateCanonicalAbsenceRangeInTransaction",
 			operation: "update",
 			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: ["approval_state"],
+			functionName: "syncCanonicalAbsenceApprovalStateInTransaction",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: [],
+			functionName: "removeCanonicalAbsenceRecord",
+			operation: "delete",
+			table: "time_record",
+		},
+		{
+			columns: [],
+			functionName: "removeCanonicalAbsenceRecordInTransaction",
+			operation: "delete",
 			table: "time_record",
 		},
 	],
 	"src/lib/absences/sick-vacation-override.ts": [
 		{
+			columns: ["approval_state"],
+			functionName: "rejectCanonicalAbsenceInTransaction",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
 			columns: [
 				"approval_state",
+				"created_by",
 				"duration_minutes",
 				"employee_id",
 				"end_at",
 				"organization_id",
+				"origin",
+				"record_kind",
 				"start_at",
 			],
 			functionName: "createCanonicalAbsenceInTransaction",
@@ -314,12 +246,20 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			semantic: "ordinary_finalization",
 			table: "time_record",
 		},
+	],
+	// Approval references (`APPROVAL_REFERENCE_WRITERS`): detaching a purged workflow or legacy request.
+	"src/lib/approvals/maintenance.ts": [
 		{
-			columns: ["approval_state"],
-			functionName: "rejectCanonicalAbsenceInTransaction",
+			columns: ["approval_workflow_id"],
+			functionName: "clearWorkflowSourceReferences",
 			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
+			table: "work_period",
+		},
+		{
+			columns: ["deletion_approval_request_id"],
+			functionName: "deleteApprovalInTransaction",
+			operation: "update",
+			table: "work_period",
 		},
 	],
 	"src/lib/approvals/server/absence-approvals.ts": [
@@ -331,41 +271,90 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record",
 		},
 	],
-	"src/lib/approvals/server/time-correction-submission.ts": [
+	// A correction's workflow reference, its pending correction entries, and an approved
+	// correction of live work (`LIVE_WORK_WRITERS`, `PENDING_CORRECTION_WRITERS`). Completed
+	// work is decided through work records (#1227).
+	"src/lib/approvals/server/time-correction-approvals.ts": [
 		{
-			columns: [
-				"is_superseded",
-				"replaces_entry_id",
-				"superseded_by_id",
-				"type",
-			],
-			functionName: "submitCorrectionInTransaction",
+			columns: ["is_superseded", "replaces_entry_id", "superseded_by_id", "type"],
+			functionName: "deleteCancelledTimeCorrectionsInTransaction",
 			operation: "delete",
 			semantic: "inactive_correction",
 			table: "time_entry",
 		},
-	],
-	"src/lib/approvals/server/work-period-submission.ts": [
+		{
+			columns: ["is_superseded", "superseded_by_id"],
+			functionName: "restoreHistoricalRejectedCorrection",
+			operation: "update",
+			semantic: "correction_lifecycle",
+			table: "time_entry",
+		},
+		{
+			columns: ["is_superseded", "superseded_by_id"],
+			functionName: "applyLiveWorkCorrection",
+			operation: "update",
+			semantic: "correction_lifecycle",
+			table: "time_entry",
+		},
 		{
 			columns: [
-				"approval_status",
-				"canonical_record_id",
 				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"pending_changes",
+				"driven_distance_km",
+				"graph_revision",
+				"odometer_end_km",
+				"odometer_start_km",
 				"start_time",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
 			],
-			functionName: "insertOrdinaryWorkPeriodSourceInTransaction",
-			operation: "insert",
+			functionName: "applyLiveWorkCorrection",
+			operation: "update",
+			semantic: "live_work",
 			table: "work_period",
 		},
 		{
 			columns: ["approval_workflow_id"],
-			functionName: "bindSourceWorkflow",
+			functionName: "bindTimeCorrectionWorkflowToWorkPeriod",
 			operation: "update",
 			table: "work_period",
+		},
+		{
+			columns: [
+				"created_by",
+				"device_info",
+				"employee_id",
+				"hash",
+				"id",
+				"ip_address",
+				"is_superseded",
+				"location",
+				"organization_id",
+				"previous_entry_id",
+				"previous_hash",
+				"replaces_entry_id",
+				"superseded_by_id",
+				"timestamp",
+				"timezone",
+				"timezone_source",
+				"type",
+				"utc_offset_minutes",
+			],
+			functionName: "insertTimeCorrectionSourceEntry",
+			operation: "insert",
+			semantic: "correction",
+			table: "time_entry",
+		},
+	],
+	// A resubmission replaces the employee's inactive pending correction entries.
+	"src/lib/approvals/server/time-correction-submission.ts": [
+		{
+			columns: ["is_superseded", "replaces_entry_id", "superseded_by_id", "type"],
+			functionName: "submitCorrectionInTransaction",
+			operation: "delete",
+			semantic: "inactive_correction",
+			table: "time_entry",
 		},
 	],
 	"src/lib/approvals/server/work-period-approvals.ts": [
@@ -375,58 +364,226 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			operation: "update",
 			table: "work_period",
 		},
+	],
+	"src/lib/approvals/server/work-period-submission.ts": [
 		{
-			columns: ["approval_status", "pending_changes"],
-			functionName: "finalizeOrdinaryWorkPeriodTerminal",
+			columns: ["approval_workflow_id"],
+			functionName: "bindSourceWorkflow",
+			operation: "update",
+			table: "work_period",
+		},
+	],
+	// Demo pending corrections replace their inactive entries.
+	"src/lib/demo/demo-data.service.ts": [
+		{
+			columns: ["is_superseded", "replaces_entry_id", "superseded_by_id", "type"],
+			functionName: "generateDemoPendingTimeCorrectionApprovals",
+			operation: "delete",
+			semantic: "inactive_correction",
+			table: "time_entry",
+		},
+	],
+	// Live work's attribution (`LIVE_WORK_WRITERS`); completed work amends through work records.
+	"src/lib/time-tracking/amend-completed-work.ts": [
+		{
+			columns: [
+				"driven_distance_km",
+				"graph_revision",
+				"is_billable",
+				"odometer_end_km",
+				"odometer_start_km",
+				"project_id",
+				"task_id",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "amendActiveAttribution",
+			operation: "update",
+			semantic: "live_work",
+			table: "work_period",
+		},
+	],
+	// Clocking's store starts live work (ADR 0002): clock-in, the legacy break's resume, open imports.
+	"src/lib/time-tracking/clocking-core.ts": [
+		{
+			columns: [
+				"created_by",
+				"device_info",
+				"employee_id",
+				"hash",
+				"id",
+				"ip_address",
+				"location",
+				"organization_id",
+				"previous_entry_id",
+				"previous_hash",
+				"timestamp",
+				"timezone",
+				"timezone_source",
+				"type",
+				"utc_offset_minutes",
+			],
+			functionName: "insertEntry",
+			operation: "insert",
+			table: "time_entry",
+		},
+		{
+			columns: [
+				"approval_status",
+				"clock_in_id",
+				"employee_id",
+				"graph_revision",
+				"is_active",
+				"is_billable",
+				"organization_id",
+				"project_id",
+				"start_time",
+				"task_id",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "insertActivePeriod",
+			operation: "insert",
+			table: "work_period",
+		},
+	],
+	// A break in progress on live work (#861); work records clears it when the work completes.
+	"src/lib/time-tracking/clocking/break-in-progress.ts": [
+		{
+			columns: ["break_started_at", "break_started_operation_id", "break_started_zone"],
+			functionName: "recordBreakInProgress",
+			operation: "update",
+			semantic: "live_work",
+			table: "work_period",
+		},
+	],
+	// Vehicle use of live work at its start (#1122).
+	"src/lib/time-tracking/clocking/vehicle-use.ts": [
+		{
+			columns: [
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
+				"vehicle_id",
+				"vehicle_kind",
+			],
+			functionName: "writeLive",
+			operation: "update",
+			semantic: "live_work",
+			table: "work_period",
+		},
+	],
+	// The employee's change of live work's vehicle use, legacy admission (#1122).
+	"src/lib/time-tracking/vehicle-use/live-vehicle-use.ts": [
+		{
+			columns: [
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
+				"vehicle_id",
+				"vehicle_kind",
+			],
+			functionName: "changeLiveWorkVehicleUse",
+			operation: "update",
+			semantic: "live_work",
+			table: "work_period",
+		},
+	],
+	// Work records (ADR 0010, #1225-#1227) amends times, work attribution and approval state of
+	// one completed pair together, compare-and-set against the locked pair; an endpoint already
+	// recorded as a pending correction is adopted.
+	"src/lib/time-tracking/work-records/amend.ts": [
+		{
+			columns: ["is_superseded", "superseded_by_id"],
+			functionName: "adoptRecordedEntry",
+			operation: "update",
+			semantic: "correction_lifecycle",
+			table: "time_entry",
+		},
+		{
+			columns: [
+				"approval_status",
+				"clock_in_id",
+				"clock_out_id",
+				"driven_distance_km",
+				"duration_minutes",
+				"end_time",
+				"graph_revision",
+				"is_billable",
+				"odometer_end_km",
+				"odometer_start_km",
+				"pending_changes",
+				"project_id",
+				"start_time",
+				"task_id",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "writeAmendedPair",
 			operation: "update",
 			table: "work_period",
 		},
 		{
-			columns: ["approval_state"],
-			functionName: "finalizeOrdinaryWorkPeriodTerminal",
+			columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
+			functionName: "writeAmendedPair",
 			operation: "update",
 			semantic: "ordinary_finalization",
 			table: "time_record",
 		},
 	],
-	"src/lib/time-tracking/policy-clock-out-terminal-break.ts": [
+	// Work records (ADR 0010, #1223) creates new completed work: manual, imported and demo work.
+	"src/lib/time-tracking/work-records/create-new.ts": [
 		{
-			columns: ["type"],
-			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			columns: [
+				"approval_status",
+				"canonical_record_id",
+				"clock_in_id",
+				"clock_out_id",
+				"driven_distance_km",
+				"duration_minutes",
+				"employee_id",
+				"end_time",
+				"graph_revision",
+				"id",
+				"is_active",
+				"is_billable",
+				"odometer_end_km",
+				"odometer_start_km",
+				"organization_id",
+				"pending_changes",
+				"project_id",
+				"start_time",
+				"task_id",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "insertNewWorkPeriod",
 			operation: "insert",
-			semantic: "synthetic_time_entry",
-			table: "time_entry",
-		},
-		{
-			columns: ["clock_out_id", "duration_minutes", "end_time"],
-			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
-			operation: "update",
-			semantic: "policy_clock_out_terminal_break",
 			table: "work_period",
 		},
-		{
-			columns: ["duration_minutes", "end_at"],
-			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
-			operation: "update",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-		{
-			columns: ["driven_distance_km", "odometer_end_km", "odometer_start_km"],
-			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
-			operation: "update",
-			table: "time_record_work",
-		},
+	],
+	// Work records (ADR 0010, #1222) creates completed work from live work at every closure,
+	// clearing a break in progress, and writes the canonical work record of every creation.
+	"src/lib/time-tracking/work-records/create.ts": [
 		{
 			columns: [
 				"approval_state",
+				"created_by",
 				"duration_minutes",
 				"employee_id",
 				"end_at",
 				"organization_id",
+				"origin",
+				"record_kind",
 				"start_at",
 			],
-			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			functionName: "insertCanonicalRecord",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record",
@@ -445,150 +602,257 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"work_category_id",
 				"work_location_type",
 			],
-			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			functionName: "insertCanonicalRecord",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record_work",
 		},
 		{
 			columns: [
-				"allocation_kind",
-				"cost_center_id",
-				"created_at",
-				"id",
+				"approval_status",
+				"break_started_at",
+				"break_started_zone",
+				"canonical_record_id",
+				"clock_out_id",
+				"driven_distance_km",
+				"duration_minutes",
+				"end_time",
+				"graph_revision",
+				"is_active",
 				"is_billable",
-				"organization_id",
+				"odometer_end_km",
+				"odometer_start_km",
+				"pending_changes",
 				"project_id",
-				"record_id",
 				"task_id",
-				"weight_percent",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
 			],
-			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			functionName: "closeLiveWorkPeriod",
+			operation: "update",
+			semantic: "live_work",
+			table: "work_period",
+		},
+	],
+	// Work records (ADR 0010, #1227) soft-deletes completed work for an approved business deletion.
+	"src/lib/time-tracking/work-records/delete.ts": [
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"deleted_at",
+				"deleted_by",
+				"deletion_approval_request_id",
+				"deletion_reason",
+				"duration_minutes",
+				"end_time",
+				"graph_revision",
+				"start_time",
+			],
+			functionName: "deleteWorkRecord",
+			operation: "update",
+			table: "work_period",
+		},
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "deleteWorkRecord",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+	],
+	// Work records (ADR 0010, #1218-#1221) divides one completed pair: calendar splits and owed breaks.
+	"src/lib/time-tracking/work-records/divide.ts": [
+		{
+			columns: [
+				"auto_adjusted_at",
+				"auto_adjustment_reason",
+				"clock_out_id",
+				"driven_distance_km",
+				"duration_minutes",
+				"end_time",
+				"graph_revision",
+				"is_billable",
+				"odometer_end_km",
+				"odometer_start_km",
+				"original_duration_minutes",
+				"original_end_time",
+				"project_id",
+				"task_id",
+				"vehicle_id",
+				"vehicle_kind",
+				"was_auto_adjusted",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "writeRetainedHalf",
+			operation: "update",
+			table: "work_period",
+		},
+		{
+			columns: ["duration_minutes", "end_at"],
+			functionName: "writeRetainedHalf",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"approval_state",
+				"created_by",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"id",
+				"organization_id",
+				"origin",
+				"record_kind",
+				"start_at",
+			],
+			functionName: "writeGeneratedHalf",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "writeGeneratedHalf",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
 		},
 		{
 			columns: [
 				"approval_status",
-				"approval_workflow_id",
+				"auto_adjusted_at",
+				"auto_adjustment_reason",
 				"canonical_record_id",
 				"clock_in_id",
 				"clock_out_id",
+				"driven_distance_km",
 				"duration_minutes",
+				"employee_id",
 				"end_time",
-				"pending_changes",
+				"graph_revision",
+				"is_active",
+				"is_billable",
+				"odometer_end_km",
+				"odometer_start_km",
+				"organization_id",
+				"project_id",
 				"start_time",
+				"task_id",
+				"vehicle_id",
+				"vehicle_kind",
+				"was_auto_adjusted",
+				"work_category_id",
+				"work_location_type",
 			],
-			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			functionName: "writeGeneratedHalf",
 			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
 			table: "work_period",
 		},
 	],
-	"src/lib/effect/services/time-entry.service.ts": [
+	// Work records' entry writers append a change's entries in either admission (#1219, #1225).
+	"src/lib/time-tracking/work-records/entry-writer.ts": [
 		{
-			columns: ["is_superseded", "replaces_entry_id", "type"],
-			functionName: "applyCorrectionWritesInTransaction",
+			columns: [
+				"created_at",
+				"created_by",
+				"device_info",
+				"employee_id",
+				"hash",
+				"id",
+				"ip_address",
+				"organization_id",
+				"previous_entry_id",
+				"previous_hash",
+				"replaces_entry_id",
+				"timestamp",
+				"timezone",
+				"timezone_source",
+				"type",
+				"utc_offset_minutes",
+			],
+			functionName: "insertAppendedEntry",
 			operation: "insert",
-			semantic: "correction",
-			table: "time_entry",
-		},
-		{
-			columns: ["is_superseded", "superseded_by_id"],
-			functionName: "applyCorrectionWritesInTransaction",
-			operation: "update",
 			semantic: "correction_lifecycle",
 			table: "time_entry",
 		},
 		{
-			columns: ["clock_in_id", "duration_minutes", "start_time"],
-			functionName: "applyCorrectionWritesInTransaction",
+			columns: ["is_superseded", "superseded_by_id"],
+			functionName: "supersedeEndpoint",
 			operation: "update",
+			semantic: "correction_lifecycle",
+			table: "time_entry",
+		},
+	],
+	// Work records erases an employee's whole work history (demo cleanup, #1223).
+	"src/lib/time-tracking/work-records/erase-history.ts": [
+		{
+			columns: [],
+			functionName: "eraseEmployeeWorkHistory",
+			operation: "delete",
+			table: "time_entry",
+		},
+		{
+			columns: [],
+			functionName: "eraseEmployeeWorkHistory",
+			operation: "delete",
 			table: "work_period",
 		},
 		{
-			columns: ["clock_out_id", "duration_minutes", "end_time"],
-			functionName: "applyCorrectionWritesInTransaction",
-			operation: "update",
-			table: "work_period",
-		},
-		{
-			columns: ["duration_minutes"],
-			functionName: "applyCorrectionWritesInTransaction",
-			operation: "update",
-			table: "work_period",
-		},
-		{
-			columns: ["duration_minutes", "end_at", "start_at"],
-			functionName: "applyCorrectionWritesInTransaction",
-			operation: "update",
-			semantic: "ordinary_finalization",
+			columns: [],
+			functionName: "eraseEmployeeWorkHistory",
+			operation: "delete",
 			table: "time_record",
 		},
 	],
-	// Owner/admin direct edits in legacy organizations (append ones amend below).
-	"src/lib/time-tracking/admin-work-period-time-edit.ts": [
+	// Work records corrects the open canonical work record some history gave live work (#1230).
+	"src/lib/time-tracking/work-records/open-record.ts": [
 		{
-			columns: ["replaces_entry_id", "type"],
-			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
-			operation: "insert",
-			semantic: "correction",
-			table: "time_entry",
-		},
-		{
-			columns: ["is_superseded", "superseded_by_id"],
-			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
-			operation: "update",
-			semantic: "correction_lifecycle",
-			table: "time_entry",
-		},
-		{
-			columns: ["duration_minutes", "end_at", "start_at"],
-			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
+			columns: ["start_at"],
+			functionName: "correctOpenWorkRecord",
 			operation: "update",
 			semantic: "ordinary_finalization",
 			table: "time_record",
 		},
 		{
 			columns: [
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
 			],
-			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
+			functionName: "correctOpenWorkRecord",
 			operation: "update",
-			table: "work_period",
+			table: "time_record_work",
 		},
 	],
-	// Completed-work operations (#264) write sources inside the outer work transaction.
-	"src/lib/time-tracking/amend-completed-work.ts": [
-		{
-			columns: ["replaces_entry_id", "type"],
-			functionName: "amendCompletedWork",
-			operation: "insert",
-			semantic: "correction",
-			table: "time_entry",
-		},
-		{
-			columns: ["is_superseded", "superseded_by_id"],
-			functionName: "amendCompletedWork",
-			operation: "update",
-			semantic: "correction_lifecycle",
-			table: "time_entry",
-		},
-		{
-			columns: ["duration_minutes", "end_at", "start_at"],
-			functionName: "amendCompletedWork",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
+	// Work records' one pair writer (ADR 0010): the canonical detail and project allocation
+	// every operation writes as planned.
+	"src/lib/time-tracking/work-records/pair-writer.ts": [
 		{
 			columns: [
 				"allocation_kind",
+				"cost_center_id",
 				"is_billable",
 				"organization_id",
 				"project_id",
@@ -596,69 +860,77 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"task_id",
 				"weight_percent",
 			],
-			functionName: "amendCompletedWork",
+			functionName: "insertAllocations",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record_allocation",
 		},
 		{
 			columns: [
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
 			],
-			functionName: "amendCompletedWork",
+			functionName: "writeCanonicalDetail",
 			operation: "update",
-			table: "work_period",
+			table: "time_record_work",
+		},
+		{
+			columns: [],
+			functionName: "replaceProjectAllocation",
+			operation: "delete",
+			table: "time_record_allocation",
 		},
 	],
-	// Evidence-only historical gap repair (#320) fills absent facts inside the outer
-	// completed-work transaction, guarded against the planned state.
-	"src/lib/time-tracking/historical-gap-repair-executor.ts": [
+	// Work records (ADR 0010, #1224, #1226) attaches a missing canonical work record and repairs a pair.
+	"src/lib/time-tracking/work-records/repair.ts": [
 		{
 			columns: [
 				"approval_state",
+				"created_by",
 				"duration_minutes",
 				"employee_id",
 				"end_at",
+				"id",
 				"organization_id",
+				"origin",
+				"record_kind",
 				"start_at",
 			],
-			functionName: "applyUnit",
+			functionName: "attachWorkRecord",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-		{
-			columns: ["duration_minutes"],
-			functionName: "applyUnit",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-		{
-			columns: ["duration_minutes", "end_at"],
-			functionName: "applyUnit",
-			operation: "update",
-			semantic: "ordinary_finalization",
 			table: "time_record",
 		},
 		{
 			columns: [
-				"allocation_kind",
-				"is_billable",
+				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
-				"project_id",
 				"record_id",
-				"task_id",
-				"weight_percent",
+				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
+				"work_category_id",
+				"work_location_type",
 			],
-			functionName: "insertProject",
+			functionName: "attachWorkRecord",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
+			table: "time_record_work",
+		},
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "repairWorkRecord",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
 		},
 		{
 			columns: [
@@ -680,406 +952,41 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record_work",
 		},
 		{
-			columns: ["canonical_record_id", "duration_minutes", "end_time"],
-			functionName: "applyUnit",
-			operation: "update",
-			table: "work_period",
-		},
-	],
-	// Separately authorized explicit repair proposals (#323) change the reviewed
-	// fields inside the outer completed-work transaction, guarded by their before values.
-	"src/lib/time-tracking/historical-work-proposals.ts": [
-		{
-			columns: ["duration_minutes", "end_at", "start_at"],
-			functionName: "applyFieldRepair",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-		{
-			columns: ["duration_minutes"],
-			functionName: "applyFieldRepair",
-			operation: "update",
-			table: "work_period",
-		},
-	],
-	"src/lib/time-tracking/close-active-work.ts": [
-		{
 			columns: [
-				"approval_state",
-				"duration_minutes",
-				"employee_id",
-				"end_at",
-				"organization_id",
-				"start_at",
-			],
-			functionName: "closeActiveWorkGraph",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-		{
-			columns: [
-				"computation_metadata",
+				"canonical_record_id",
 				"driven_distance_km",
+				"duration_minutes",
+				"end_time",
+				"graph_revision",
+				"is_billable",
 				"odometer_end_km",
 				"odometer_start_km",
-				"organization_id",
-				"record_id",
-				"record_kind",
+				"project_id",
+				"task_id",
 				"vehicle_id",
 				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
-			functionName: "closeActiveWorkGraph",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_work",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "closeActiveWorkGraph",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
-				"approval_status",
-				"canonical_record_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"pending_changes",
-			],
-			functionName: "closeActiveWorkGraph",
+			functionName: "writeRepairedPeriod",
 			operation: "update",
 			table: "work_period",
 		},
 	],
-	"src/lib/time-tracking/record-imported-work.ts": [
+	// Work records advances a period's revision for a pending correction's transition (#1230).
+	"src/lib/time-tracking/work-records/revision.ts": [
 		{
-			columns: [
-				"approval_state",
-				"duration_minutes",
-				"employee_id",
-				"end_at",
-				"organization_id",
-				"start_at",
-			],
-			functionName: "recordImportedWork",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-		{
-			columns: [
-				"computation_metadata",
-				"organization_id",
-				"record_id",
-				"record_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "recordImportedWork",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_work",
-		},
-		// The reviewed row's project attribution and billability (#900).
-		{
-			columns: [
-				"allocation_kind",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"weight_percent",
-			],
-			functionName: "recordImportedWork",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
-				"approval_status",
-				"canonical_record_id",
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
-			],
-			functionName: "recordImportedWork",
-			operation: "insert",
-			table: "work_period",
-		},
-	],
-	"src/lib/time-tracking/record-manual-work.ts": [
-		{
-			columns: [
-				"approval_state",
-				"duration_minutes",
-				"employee_id",
-				"end_at",
-				"organization_id",
-				"start_at",
-			],
-			functionName: "recordManualWork",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-		{
-			columns: [
-				"computation_metadata",
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"organization_id",
-				"record_id",
-				"record_kind",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "recordManualWork",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_work",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "recordManualWork",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
-				"approval_status",
-				"canonical_record_id",
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"pending_changes",
-				"start_time",
-			],
-			functionName: "recordManualWork",
-			operation: "insert",
-			table: "work_period",
-		},
-	],
-	// The legacy project change (#900) moves the canonical project allocation with the
-	// period inside the coordinated completed-work transaction, so both agree.
-	"src/lib/time-tracking/work-period-attribution.ts": [
-		{
-			columns: [
-				"allocation_kind",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "changeLegacyWorkPeriodProject",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
-	],
-	// Calendar splits (#304) divide one completed period inside the outer completed-work
-	// transaction, guarded against the locked source and its canonical graph.
-	"src/lib/time-tracking/split-completed-work.ts": [
-		{
-			columns: [
-				"approval_state",
-				"duration_minutes",
-				"employee_id",
-				"end_at",
-				"organization_id",
-				"start_at",
-			],
-			functionName: "splitCompletedWork",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-		{
-			columns: ["duration_minutes", "end_at"],
-			functionName: "splitCompletedWork",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"cost_center_id",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "splitCompletedWork",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
-				"computation_metadata",
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"organization_id",
-				"record_id",
-				"record_kind",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "splitCompletedWork",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_work",
-		},
-		{
-			columns: [
-				"approval_status",
-				"canonical_record_id",
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
-			],
-			functionName: "splitCompletedWork",
-			operation: "insert",
-			table: "work_period",
-		},
-		{
-			columns: ["clock_out_id", "duration_minutes", "end_time"],
-			functionName: "splitCompletedWork",
-			operation: "update",
-			table: "work_period",
-		},
-	],
-	"src/lib/time-tracking/start-live-work.ts": [
-		{
-			columns: ["clock_in_id", "start_time"],
-			functionName: "startLiveWorkGraph",
-			operation: "insert",
-			table: "work_period",
-		},
-	],
-	// Ordinary automatic break adjustment (#305) divides one completed period inside the
-	// outer completed-work transaction, guarded against the locked source and its graph.
-	"src/lib/time-tracking/automatic-break-adjustment.ts": [
-		{
-			columns: [
-				"approval_state",
-				"duration_minutes",
-				"employee_id",
-				"end_at",
-				"organization_id",
-				"start_at",
-			],
-			functionName: "adjustAutomaticBreakInTransaction",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-		{
-			columns: ["duration_minutes", "end_at"],
-			functionName: "adjustAutomaticBreakInTransaction",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"cost_center_id",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "adjustAutomaticBreakInTransaction",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
-				"computation_metadata",
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"organization_id",
-				"record_id",
-				"record_kind",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "adjustAutomaticBreakInTransaction",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_work",
-		},
-		{
-			columns: [
-				"approval_status",
-				"canonical_record_id",
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
-			],
-			functionName: "adjustAutomaticBreakInTransaction",
-			operation: "insert",
-			table: "work_period",
-		},
-		{
-			columns: ["clock_out_id", "duration_minutes", "end_time"],
-			functionName: "adjustAutomaticBreakInTransaction",
+			columns: ["graph_revision"],
+			functionName: "advanceWorkRevision",
 			operation: "update",
 			table: "work_period",
 		},
 	],
 } as const satisfies CanonicalApprovalSourceWriteOwners;
 
+// Writes whose payload the analyzer cannot resolve, scoped to their named function.
 export const SOURCE_WRITE_EXCEPTIONS = {
+	// Absence records (`ABSENCE_RECORD_WRITERS`): the base record of an absence, never work.
 	"src/app/[locale]/(app)/absences/actions.canonical.ts": [
 		{
 			columns: [],
@@ -1088,20 +995,6 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record",
 			uncertainty: "dynamic_payload",
-		},
-		{
-			columns: ["duration_minutes", "end_at", "start_at"],
-			functionName: "updateCanonicalAbsenceRangeInTransaction",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-		{
-			columns: ["approval_state"],
-			functionName: "syncCanonicalAbsenceApprovalStateInTransaction",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
 		},
 	],
 	"src/app/[locale]/(app)/absences/request-absence-effect.ts": [
@@ -1124,384 +1017,245 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			uncertainty: "dynamic_payload",
 		},
 	],
-	"src/lib/time-tracking/clocking/break.ts": [
-		{
-			columns: [
-				"approval_status",
-				"canonical_record_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"pending_changes",
-			],
-			functionName: "takeLegacyBreak",
-			operation: "update",
-			table: "work_period",
-		},
-		{
-			columns: ["clock_in_id", "start_time"],
-			functionName: "takeLegacyBreak",
-			operation: "insert",
-			table: "work_period",
-		},
-	],
-	"src/lib/time-tracking/time-entry-writer.ts": [
-		{
-			columns: ["is_superseded", "replaces_entry_id", "type"],
-			functionName: "createTimeEntry",
-			operation: "insert",
-			semantic: "correction_lifecycle",
-			table: "time_entry",
-		},
-		{
-			columns: ["is_superseded", "superseded_by_id"],
-			functionName: "markTimeEntrySuperseded",
-			operation: "update",
-			semantic: "correction_lifecycle",
-			table: "time_entry",
-		},
-	],
-	"src/app/[locale]/(app)/time-tracking/actions/work-period-split.ts": [
-		{
-			columns: [
-				"approval_state",
-				"duration_minutes",
-				"employee_id",
-				"end_at",
-				"organization_id",
-				"start_at",
-			],
-			functionName: "splitLegacyWorkPeriod",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-		{
-			columns: ["duration_minutes", "end_at"],
-			functionName: "splitLegacyWorkPeriod",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"cost_center_id",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "splitLegacyWorkPeriod",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
-				"computation_metadata",
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"organization_id",
-				"record_id",
-				"record_kind",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "splitLegacyWorkPeriod",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_work",
-		},
-		{
-			columns: ["is_superseded", "superseded_by_id"],
-			functionName: "splitLegacyWorkPeriod",
-			operation: "update",
-			semantic: "correction_lifecycle",
-			table: "time_entry",
-		},
-		{
-			columns: ["clock_out_id", "duration_minutes", "end_time"],
-			functionName: "splitLegacyWorkPeriod",
-			operation: "update",
-			table: "work_period",
-		},
-		{
-			columns: [
-				"approval_status",
-				"canonical_record_id",
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
-			],
-			functionName: "splitLegacyWorkPeriod",
-			operation: "insert",
-			table: "work_period",
-		},
-	],
-	"src/lib/demo/demo-data.service.ts": [
-		{
-			columns: [
-				"is_superseded",
-				"replaces_entry_id",
-				"superseded_by_id",
-				"type",
-			],
-			functionName: "generateDemoPendingTimeCorrectionApprovals",
-			operation: "delete",
-			semantic: "inactive_correction",
-			table: "time_entry",
-		},
-	],
-	// Runtime demo work (#285) writes through the shared work-transaction scope.
-	"src/lib/demo/demo-work.ts": [
-		{
-			columns: ["type"],
-			functionName: "insertDemoEntry",
-			operation: "insert",
-			table: "time_entry",
-			uncertainty: "dynamic_payload",
-		},
-		{
-			columns: [
-				"approval_state",
-				"duration_minutes",
-				"employee_id",
-				"end_at",
-				"organization_id",
-				"start_at",
-			],
-			functionName: "recordAdoptedDemoWorkDay",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-		{
-			columns: [
-				"computation_metadata",
-				"organization_id",
-				"record_id",
-				"record_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "recordAdoptedDemoWorkDay",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_work",
-		},
-		{
-			columns: [
-				"approval_status",
-				"canonical_record_id",
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
-			],
-			functionName: "recordAdoptedDemoWorkDay",
-			operation: "insert",
-			table: "work_period",
-		},
-		{
-			columns: [
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
-			],
-			functionName: "recordLegacyDemoWorkDay",
-			operation: "insert",
-			table: "work_period",
-		},
-	],
-	// #305: both adjustment paths append their break entries through a local helper, and a
-	// legacy organization keeps the established period writes inside the coordinated owner.
-	"src/lib/time-tracking/automatic-break-adjustment.ts": [
-		{
-			columns: ["type"],
-			functionName: "insertEntry",
-			operation: "insert",
-			table: "time_entry",
-			uncertainty: "dynamic_payload",
-		},
-		{
-			columns: ["clock_out_id", "duration_minutes", "end_time"],
-			functionName: "applyLegacyAutomaticBreakInTransaction",
-			operation: "update",
-			table: "work_period",
-		},
-		{
-			columns: [
-				"approval_state",
-				"duration_minutes",
-				"employee_id",
-				"end_at",
-				"organization_id",
-				"start_at",
-			],
-			functionName: "applyLegacyAutomaticBreakInTransaction",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-		{
-			columns: ["duration_minutes", "end_at"],
-			functionName: "applyLegacyAutomaticBreakInTransaction",
-			operation: "update",
-			semantic: "ordinary_finalization",
-			table: "time_record",
-		},
-		{
-			columns: [
-				"allocation_kind",
-				"cost_center_id",
-				"is_billable",
-				"organization_id",
-				"project_id",
-				"record_id",
-				"task_id",
-				"weight_percent",
-			],
-			functionName: "applyLegacyAutomaticBreakInTransaction",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-		},
-		{
-			columns: [
-				"computation_metadata",
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"organization_id",
-				"record_id",
-				"record_kind",
-				"vehicle_id",
-				"vehicle_kind",
-				"work_category_id",
-				"work_location_type",
-			],
-			functionName: "applyLegacyAutomaticBreakInTransaction",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_work",
-		},
-		{
-			columns: [
-				"canonical_record_id",
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
-			],
-			functionName: "applyLegacyAutomaticBreakInTransaction",
-			operation: "insert",
-			table: "work_period",
-		},
-	],
-	"src/lib/import-review/committers.ts": [
-		{
-			columns: ["type"],
-			functionName: "commitWorkPeriod",
-			operation: "insert",
-			table: "time_entry",
-			uncertainty: "dynamic_payload",
-		},
-		{
-			columns: [
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
-			],
-			functionName: "commitWorkPeriod",
-			operation: "insert",
-			table: "work_period",
-		},
-	],
 	"src/lib/time-record/migration/backfill.ts": [
 		{
-			columns: ["canonical_record_id"],
-			functionName: "runCanonicalBackfill",
-			operation: "update",
-			table: "work_period",
-		},
-		{
 			columns: [],
-			functionName: "upsertCanonicalTimeRecords",
+			functionName: "upsertCanonicalAbsenceRecords",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record",
-			uncertainty: "dynamic_payload",
-		},
-		{
-			columns: [],
-			functionName: "insertIfPresent",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_work",
-			uncertainty: "dynamic_payload",
-		},
-		{
-			columns: [],
-			functionName: "runCanonicalBackfill",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
-			uncertainty: "dynamic_payload",
-		},
-	],
-	"src/lib/approvals/server/time-correction-approvals.ts": [
-		{
-			columns: [
-				"approval_status",
-				"clock_in_id",
-				"clock_out_id",
-				"duration_minutes",
-				"end_time",
-				"start_time",
-			],
-			functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
-			operation: "update",
-			table: "work_period",
-		},
-	],
-	"src/lib/time-tracking/clocking-core.ts": [
-		{
-			columns: [],
-			functionName: "insertEntry",
-			operation: "insert",
-			table: "time_entry",
-			uncertainty: "dynamic_payload",
-		},
-		{
-			columns: [],
-			functionName: "insertActivePeriod",
-			operation: "insert",
-			table: "work_period",
-			uncertainty: "dynamic_payload",
-		},
-		{
-			columns: [],
-			functionName: "closeActivePeriod",
-			operation: "update",
-			table: "work_period",
 			uncertainty: "dynamic_payload",
 		},
 	],
 } as const satisfies ApprovalSourceWriteOwners;
+
+/**
+ * The work records seam (Time Tracking ADR 0010). Only work records writes the
+ * canonical work record and completed work; besides it only Clocking's live-work
+ * functions write work periods and time entries (ADR 0002), and they never write a
+ * work period that has ended. SQL migrations are the only exemption (they are not
+ * scanned). The few other writers of these tables are named below by what they
+ * write, none of it completed work.
+ */
+export const WORK_RECORDS_MODULE = "src/lib/time-tracking/work-records/";
+
+type NamedSourceWriters = Readonly<Record<string, readonly string[]>>;
+
+/**
+ * Live work (ADR 0002): starting it, its clock-in entry, a break in progress, live
+ * vehicle use and attribution, and an approved correction of it. Each writes only
+ * work that has not ended: an update names the live work in its own `where`, and
+ * nothing here sets an end. Work records takes the work over at its closure (#1222).
+ */
+export const LIVE_WORK_WRITERS = {
+	// Clocking's store: every live start (clock-in, the legacy break's resume, open imports).
+	"src/lib/time-tracking/clocking-core.ts": ["insertActivePeriod", "insertEntry"],
+	"src/lib/time-tracking/clocking/break-in-progress.ts": ["recordBreakInProgress"],
+	"src/lib/time-tracking/clocking/vehicle-use.ts": ["writeLive"],
+	"src/lib/time-tracking/vehicle-use/live-vehicle-use.ts": ["changeLiveWorkVehicleUse"],
+	"src/lib/time-tracking/amend-completed-work.ts": ["amendActiveAttribution"],
+	"src/lib/approvals/server/time-correction-approvals.ts": ["applyLiveWorkCorrection"],
+} as const satisfies NamedSourceWriters;
+
+/**
+ * Pending corrections are not completed work: an employee's submitted correction
+ * entries wait inactive until a decision. These functions write only correction
+ * entries and their lineage: submitting, replacing, cancelling and rejecting them,
+ * and activating one on live work. An approved correction of completed work is
+ * adopted by work records (#1226, #1227).
+ */
+export const PENDING_CORRECTION_WRITERS = {
+	"src/lib/approvals/server/time-correction-approvals.ts": [
+		"applyLiveWorkCorrection",
+		"deleteCancelledTimeCorrectionsInTransaction",
+		"insertTimeCorrectionSourceEntry",
+		"restoreHistoricalRejectedCorrection",
+	],
+	"src/lib/approvals/server/time-correction-submission.ts": [
+		"submitCorrectionInTransaction",
+	],
+	"src/lib/demo/demo-data.service.ts": ["generateDemoPendingTimeCorrectionApprovals"],
+} as const satisfies NamedSourceWriters;
+
+/**
+ * Approvals' references on a work period: the workflow deciding it and a legacy
+ * deletion request. They link the work to a decision and change none of it.
+ */
+export const APPROVAL_REFERENCE_WRITERS = {
+	"src/lib/approvals/maintenance.ts": [
+		"clearWorkflowSourceReferences",
+		"deleteApprovalInTransaction",
+	],
+	"src/lib/approvals/server/time-correction-approvals.ts": [
+		"bindTimeCorrectionWorkflowToWorkPeriod",
+	],
+	"src/lib/approvals/server/work-period-approvals.ts": ["bindPreCanonicalOrdinaryWorkflow"],
+	"src/lib/approvals/server/work-period-submission.ts": ["bindSourceWorkflow"],
+} as const satisfies NamedSourceWriters;
+const APPROVAL_REFERENCE_COLUMNS = new Set([
+	"approval_workflow_id",
+	"deletion_approval_request_id",
+]);
+
+/**
+ * Absences share the base `time_record` table with work, as their own record kind;
+ * they never write its work detail or allocations, nor work periods.
+ */
+export const ABSENCE_RECORD_WRITERS = {
+	"src/app/[locale]/(app)/absences/actions.canonical.ts": [
+		"create",
+		"removeCanonicalAbsenceRecord",
+		"removeCanonicalAbsenceRecordInTransaction",
+		"syncCanonicalAbsenceApprovalStateInTransaction",
+		"updateCanonicalAbsenceRangeInTransaction",
+	],
+	"src/app/[locale]/(app)/absences/request-absence-effect.ts": ["createRecords"],
+	"src/app/[locale]/(app)/team/absences/actions.ts": ["recordAbsenceForEmployee"],
+	"src/lib/absences/sick-vacation-override.ts": [
+		"createCanonicalAbsenceInTransaction",
+		"rejectCanonicalAbsenceInTransaction",
+		"updateCanonicalAbsenceRangeInTransaction",
+	],
+	"src/lib/approvals/server/absence-approvals.ts": ["syncCanonicalAbsenceApprovalStateAt"],
+	"src/lib/time-record/migration/backfill.ts": ["upsertCanonicalAbsenceRecords"],
+} as const satisfies NamedSourceWriters;
+
+/** The base record columns an absence's range or decision changes. */
+const ABSENCE_RECORD_UPDATE_COLUMNS = new Set([
+	"approval_state",
+	"duration_minutes",
+	"end_at",
+	"start_at",
+]);
+
+/**
+ * A named absence writer is allowed by what it writes, not by its name alone
+ * (spec-3 L2): an insert names its record kind (or is a dynamic absence
+ * payload), an update changes only an absence's range or approval state, a
+ * delete removes its record. Anything else could change a work record.
+ */
+function absenceRecordViolation(
+	path: string,
+	writer: string,
+	write: {
+		columns?: readonly string[];
+		operation: ApprovalWriteOperation;
+		uncertainty?: ApprovalSourceMutationUncertainty;
+	},
+): string | null {
+	const columns = write.columns ?? [];
+	if (write.operation === "delete") return null;
+	if (write.operation === "insert") {
+		return write.uncertainty !== undefined || columns.includes("record_kind")
+			? null
+			: `${SEAM}: absence writer ${writer} in ${path} must name the record_kind it inserts.`;
+	}
+	return write.uncertainty === undefined &&
+		columns.length > 0 &&
+		columns.every((column) => ABSENCE_RECORD_UPDATE_COLUMNS.has(column))
+		? null
+		: `${SEAM}: absence writer ${writer} in ${path} may change only an absence record's range and approval state.`;
+}
+
+/** Columns that end a work period, which live work never sets. */
+const WORK_PERIOD_END_COLUMNS = new Set([
+	"clock_out_id",
+	"duration_minutes",
+	"end_time",
+	"is_active",
+]);
+const PENDING_CORRECTION_SEMANTICS = new Set<ApprovalSourceMutationSemantic | undefined>([
+	"correction",
+	"correction_lifecycle",
+	"inactive_correction",
+]);
+
+function namedIn(
+	writers: NamedSourceWriters,
+	path: string,
+	functionName: string | undefined,
+): boolean {
+	return functionName !== undefined && Boolean(writers[path]?.includes(functionName));
+}
+
+const SEAM = "Time Tracking ADR 0010 (work records)";
+
+/**
+ * Why a write of the work tables breaks the work records seam, or null when the
+ * seam allows it. Applies to every source-table write the scanner finds and to
+ * every capability the inventory declares; a declared write must also pass it.
+ */
+export function workRecordsSeamViolation(
+	path: string,
+	write: {
+		columns?: readonly string[];
+		functionName?: string;
+		operation: ApprovalWriteOperation;
+		semantic?: ApprovalSourceMutationSemantic;
+		table: ProtectedWriteTable;
+		uncertainty?: ApprovalSourceMutationUncertainty;
+	},
+): string | null {
+	const { functionName, table } = write;
+	if (
+		!TARGETED_APPROVAL_SOURCE_TABLES.includes(table as TargetedApprovalSourceTable)
+	) {
+		return null;
+	}
+	if (path.startsWith(WORK_RECORDS_MODULE)) return null;
+	const writer = functionName ?? "<anonymous>";
+	if (table === "time_record_work" || table === "time_record_allocation") {
+		return `${SEAM}: only work records may write ${table}; ${writer} in ${path} must go through work records.`;
+	}
+	if (table === "time_record") {
+		return namedIn(ABSENCE_RECORD_WRITERS, path, functionName)
+			? absenceRecordViolation(path, writer, write)
+			: `${SEAM}: only work records may write the canonical work record (time_record); ${writer} in ${path} must go through work records.`;
+	}
+	const columns = write.columns ?? [];
+	const live = namedIn(LIVE_WORK_WRITERS, path, functionName);
+	if (table === "time_entry") {
+		const pendingCorrection =
+			namedIn(PENDING_CORRECTION_WRITERS, path, functionName) &&
+			PENDING_CORRECTION_SEMANTICS.has(write.semantic) &&
+			write.uncertainty === undefined;
+		const liveEntry =
+			live &&
+			write.operation === "insert" &&
+			write.semantic === undefined &&
+			write.uncertainty === undefined;
+		return pendingCorrection || liveEntry
+			? null
+			: `${SEAM}: only work records and Clocking's named live-work functions may write time_entry (pending correction entries aside); ${writer} in ${path} is neither.`;
+	}
+	// work_period
+	if (
+		namedIn(APPROVAL_REFERENCE_WRITERS, path, functionName) &&
+		write.operation === "update" &&
+		write.uncertainty === undefined &&
+		columns.length > 0 &&
+		columns.every((column) => APPROVAL_REFERENCE_COLUMNS.has(column))
+	) {
+		return null;
+	}
+	if (!live) {
+		return `${SEAM}: only work records and Clocking's named live-work functions may write work_period; ${writer} in ${path} is neither.`;
+	}
+	const ended = (reason: string) =>
+		`${SEAM}: live-work function ${writer} in ${path} must never write a work period that has ended (${reason}).`;
+	if (write.uncertainty !== undefined) return ended("its payload is not static");
+	if (write.operation === "delete") return ended("it deletes work periods");
+	const ending = columns.filter((column) =>
+		write.operation === "insert"
+			? column !== "is_active" && WORK_PERIOD_END_COLUMNS.has(column)
+			: WORK_PERIOD_END_COLUMNS.has(column),
+	);
+	if (ending.length > 0) return ended(`it sets ${ending.join(", ")}`);
+	if (write.operation === "update" && write.semantic !== "live_work") {
+		return ended("its update's own where does not limit it to live work");
+	}
+	return null;
+}
 
 export interface ApprovalWriteBoundaryMutationViolation {
 	column: number;
@@ -1514,6 +1268,8 @@ export interface ApprovalWriteBoundaryMutationViolation {
 	semantic?: ApprovalSourceMutationSemantic;
 	table: ProtectedWriteTable;
 	uncertainty?: ApprovalSourceMutationUncertainty;
+	/** Why the write breaks the work records seam (Time Tracking ADR 0010). */
+	violation?: string;
 }
 
 export interface ApprovalWriteBoundaryError {
@@ -1931,6 +1687,7 @@ function isAllowed(
 				temporary[path]?.[table]?.includes(mutation.operation),
 		);
 	}
+	if (workRecordsSeamViolation(path, mutation) !== null) return false;
 	const owners = CANONICAL_SOURCE_WRITE_OWNERS as ApprovalSourceWriteOwners;
 	const exceptions = SOURCE_WRITE_EXCEPTIONS as ApprovalSourceWriteOwners;
 	const columns = mutation.columns ?? [];
@@ -2165,7 +1922,9 @@ function scanApprovalWrites(
 			}
 			for (const mutation of result.mutations) {
 				if (includeAllowed || !isAllowed(path, mutation)) {
+					const violation = workRecordsSeamViolation(path, mutation);
 					findings.push({
+						...(violation === null ? {} : { violation }),
 						column: mutation.column,
 						...(mutation.columns ? { columns: mutation.columns } : {}),
 						...(mutation.functionName

@@ -14,10 +14,7 @@ import {
 	completeOrdinaryWorkPeriodDecisionAfterCommit,
 	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
 } from "@/lib/approvals/server/work-period-approvals";
-import {
-	executeOrdinaryWorkPeriodSubmissionInTransaction,
-	insertOrdinaryWorkPeriodSourceInTransaction,
-} from "@/lib/approvals/server/work-period-submission";
+import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "@/lib/approvals/server/work-period-submission";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import {
@@ -29,14 +26,12 @@ import {
 import { ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { WorkCategoryReader } from "@/lib/query/work-category.queries";
-import { canonicalWorkRecordClient } from "@/lib/time-tracking/canonical-work-record";
 import { attributionIntent, type ClockChannel } from "@/lib/time-tracking/close-active-work";
 import { reconcileImmediateSurcharges } from "@/lib/time-tracking/clock-out-effects";
 import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
-import { createTimeEntry } from "@/lib/time-tracking/time-entry-writer";
 import {
 	resolveFallbackTimezoneCapture,
 	resolveTimeEntryTimezoneCapture,
@@ -93,8 +88,13 @@ import {
 	readClockVehicleUse,
 } from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
 import { workCategoryIneligibility } from "@/lib/time-tracking/work-category-eligibility";
-import { acquireAdoptionGate, readAppendAdmission } from "@/lib/time-tracking/work-transaction";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
+import { withManualWorkTransaction } from "@/lib/time-tracking/manual-work-transaction";
+import {
+	applyWorkRecordChange,
+	type NewWorkCreation,
+	orRefuse,
+} from "@/lib/time-tracking/work-records";
 import {
 	breakFailureMessage,
 	clockInFailureMessage,
@@ -144,8 +144,6 @@ type ManualEntryOverlapResult =
 	| {
 			error: string;
 	  };
-
-type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
 
 const APPROVAL_POLICY_CHECK_ERROR =
 	"Could not verify time approval policy. Please try again.";
@@ -480,20 +478,6 @@ function webVehicleUse(value: unknown): { vehicleUse?: ClockVehicleUse } {
 export type ClockInCommandResult =
 	| { success: true; data: ClockInResult }
 	| { success: false; failure: ClockInFailure; refusal: ClockInRefusal };
-
-async function markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
-	input: WorkBalanceDirtyInput,
-	context: Record<string, unknown>,
-) {
-	try {
-		await markEmployeeWorkBalanceDirty(input);
-	} catch (error) {
-		logger.error(
-			{ error, ...context },
-			"Failed to mark work balance dirty after manual time entry",
-		);
-	}
-}
 
 export async function validateWorkCategoryAssignment(
 	employeeId: string,
@@ -1225,193 +1209,185 @@ export async function createManualTimeEntry(
 		let immediateSurchargeSnapshot: PolicyClockOutSurchargeSnapshot | null =
 			null;
 		const requestMetadata = await getRequestMetadata();
-		const runtime = createOrdinaryApprovalRuntime();
-		const committed = await runtime.repository.withTransaction(async (context) => {
-			const tx = context.dbService.db as unknown as typeof db;
-			// Adopted organizations (#308) admit fresh work only from version-2
-			// commands; unversioned input may still replay what it committed.
-			await acquireAdoptionGate(tx, targetEmployee.organizationId);
-			const admission = await readAppendAdmission(tx, targetEmployee.organizationId);
-			const existingEvidence = await findAndReplayManualSubmission({
-				context,
+		// The manual work transaction (#308) protects the actor, the target and the
+		// submission identity in acquisition order; work records needs its sealed scope.
+		const committed = await withManualWorkTransaction(
+			{
+				organizationId: targetEmployee.organizationId,
+				actorUserId: session.user.id,
+				targetEmployeeId: targetEmployee.id,
+				targetUserId: targetEmployee.userId ?? session.user.id,
 				submissionId,
-				request: requestEvidence,
-				targetEmployee,
-				requesterUserId: session.user.id,
-			});
-			if (existingEvidence) {
-				return {
-					period: existingEvidence.period,
-					approvalSubmission: existingEvidence.approvalSubmission,
-					disposition: "replayed" as const,
-					requiresApproval: existingEvidence.requiresApproval,
-					resultEvidence: existingEvidence.result,
-				};
-			}
-			// Absence is established under the submission identity lock.
-			if (admission === "append") return { disposition: "refresh_required" as const };
-			// New work takes the project's billable default unless the request chose
-			// (#900), decided in the write transaction with the project as it is now.
-			let isBillable: boolean;
-			try {
-				isBillable = await resolveWorkBillabilityInTransaction(tx, targetEmployee.organizationId, {
-					projectId: data.projectId || null,
-					projectChosen: true,
-					current: false,
-					requested: requestEvidence.billable,
+			},
+			createOrdinaryApprovalRuntime,
+			async (context) => {
+				immediateSurchargeSnapshot = null;
+				const tx = context.db as unknown as typeof db;
+				// Adopted organizations (#308) admit fresh work only from version-2
+				// commands; unversioned input may still replay what it committed.
+				const existingEvidence = await findAndReplayManualSubmission({
+					context: context.approval,
+					submissionId,
+					request: requestEvidence,
+					targetEmployee,
+					requesterUserId: session.user.id,
 				});
-			} catch (error) {
-				if (!(error instanceof BillableWorkRefusedError)) throw error;
-				return { disposition: "billable_refused" as const, message: error.message };
-			}
-			// The task is re-checked under its row lock, so it cannot be marked done or
-			// deleted between the check and this booking's commit (#873).
-			if (taskBooking) {
-				const reason = await projectTaskIneligibility(taskTarget, taskBooking, tx, {
-					lock: "share",
-				});
-				if (reason) return { disposition: "task_refused" as const, reason };
-			}
-			if (vehicleUse) {
+				if (existingEvidence) {
+					return {
+						period: existingEvidence.period,
+						approvalSubmission: existingEvidence.approvalSubmission,
+						disposition: "replayed" as const,
+						requiresApproval: existingEvidence.requiresApproval,
+						resultEvidence: existingEvidence.result,
+					};
+				}
+				// Absence is established under the submission identity lock.
+				if (context.admission === "append") return { disposition: "refresh_required" as const };
+				// Approval participants must be protected before any write; this may restart.
+				if (requiresApproval) context.requireApprovalScope();
+				// New work takes the project's billable default unless the request chose
+				// (#900), decided in the write transaction with the project as it is now.
+				let isBillable: boolean;
 				try {
-					await assertWorkVehicleUseChangeAllowed(tx, {
-						organizationId: targetEmployee.organizationId,
-						employeeId: targetEmployee.id,
-						previous: null,
-						resulting: vehicleUse,
+					isBillable = await resolveWorkBillabilityInTransaction(tx, targetEmployee.organizationId, {
+						projectId: data.projectId || null,
+						projectChosen: true,
+						current: false,
+						requested: requestEvidence.billable,
 					});
 				} catch (error) {
-					const code = workVehicleUseRefusalCodeOf(error);
-					if (!code) throw error;
-					return { disposition: "vehicle_refused" as const, code };
+					if (!(error instanceof BillableWorkRefusedError)) throw error;
+					return { disposition: "billable_refused" as const, message: error.message };
 				}
-			}
-			const clockInEntry = await createTimeEntry(
-				{
-					employeeId: targetEmployee.id,
-					organizationId: targetEmployee.organizationId,
-					type: "clock_in",
-					timestamp: adjustedClockIn,
-					createdBy: session.user.id,
-					notes: `Manual entry: ${data.reason}`,
-					...clockInTimezoneCapture,
-					request: requestMetadata,
-				},
-				tx,
-			);
-			const [clockOutEntry, surchargeSnapshot] = await Promise.all([
-				createTimeEntry(
-					{
-						employeeId: targetEmployee.id,
-						organizationId: targetEmployee.organizationId,
-						type: "clock_out",
-						timestamp: adjustedClockOut,
-						createdBy: session.user.id,
-						notes: data.reason,
-						...clockOutTimezoneCapture,
-						request: requestMetadata,
-						chainAfter: clockInEntry,
-					},
-					tx,
-				),
-				resolvePolicyClockOutSurchargeSnapshotInTransaction({
-					dbService: context.dbService as never,
+				// The task is re-checked under its row lock, so it cannot be marked done or
+				// deleted between the check and this booking's commit (#873).
+				if (taskBooking) {
+					const reason = await projectTaskIneligibility(taskTarget, taskBooking, tx, {
+						lock: "share",
+					});
+					if (reason) return { disposition: "task_refused" as const, reason };
+				}
+				if (vehicleUse) {
+					try {
+						await assertWorkVehicleUseChangeAllowed(tx, {
+							organizationId: targetEmployee.organizationId,
+							employeeId: targetEmployee.id,
+							previous: null,
+							resulting: vehicleUse,
+						});
+					} catch (error) {
+						const code = workVehicleUseRefusalCodeOf(error);
+						if (!code) throw error;
+						return { disposition: "vehicle_refused" as const, code };
+					}
+				}
+				const surchargeSnapshot = await resolvePolicyClockOutSurchargeSnapshotInTransaction({
+					dbService: context.approval.dbService as never,
 					organizationId: targetEmployee.organizationId,
 					employeeId: targetEmployee.id,
 					startTime: instantFromDate(adjustedClockIn),
 					endTime: instantFromDate(adjustedClockOut),
-				}),
-			]);
-			if (!requiresApproval) immediateSurchargeSnapshot = surchargeSnapshot;
-			const canonicalRecord =
-				await canonicalWorkRecordClient.createForCompletedPeriod(
-					{
-						organizationId: targetEmployee.organizationId,
-						employeeId: targetEmployee.id,
-						startAt: adjustedClockIn,
-						endAt: adjustedClockOut,
-						durationMinutes,
-						approvalState: requiresApproval ? "pending" : "approved",
-						createdBy: session.user.id,
+				});
+				if (!requiresApproval) immediateSurchargeSnapshot = surchargeSnapshot;
+				const projectId = data.projectId || null;
+				const created = await applyWorkRecordChange(context, {
+					kind: "create_new",
+					organizationId: targetEmployee.organizationId,
+					employeeId: targetEmployee.id,
+					workPeriodId: submissionId,
+					start: {
+						at: instantFromDate(adjustedClockIn),
+						notes: `Manual entry: ${data.reason}`,
+						capture: clockInTimezoneCapture,
+					},
+					end: {
+						at: instantFromDate(adjustedClockOut),
+						notes: data.reason,
+						capture: clockOutTimezoneCapture,
+					},
+					attribution: {
+						project: projectId ? { projectId, billableDefault: false } : null,
+						...(projectId ? { billable: isBillable, task: data.taskId || null } : {}),
 						workCategoryId: data.workCategoryId || null,
 						workLocationType: data.workLocationType ?? null,
-						projectId: data.projectId || null,
-						isBillable,
-						taskId: data.taskId || null,
 						vehicleUse: vehicleUse ?? null,
-						computationMetadata: manualSubmissionMetadata({
-							submissionId,
-							request: requestEvidence,
-							result: resultEvidence,
-						}),
-						origin: "manual",
 					},
-					tx,
-				);
-
-			const period = await insertOrdinaryWorkPeriodSourceInTransaction({
-				dbService: approvalDbServiceForTransaction(context.dbService),
-				id: submissionId,
-				employeeId: targetEmployee.id,
-				organizationId: targetEmployee.organizationId,
-				clockInId: clockInEntry.id,
-				clockOutId: clockOutEntry.id,
-				startTime: adjustedClockIn,
-				endTime: adjustedClockOut,
-				durationMinutes,
-				projectId: data.projectId || null,
-				isBillable,
-				taskId: data.taskId || null,
-				workCategoryId: data.workCategoryId || null,
-				workLocationType: data.workLocationType ?? null,
-				vehicleUse: vehicleUse ?? null,
-				canonicalRecordId: canonicalRecord.id,
-				approvalStatus: requiresApproval ? "pending" : "approved",
-				pendingChanges: requiresApproval
-					? {
-							ordinarySubmission: {
-								submissionId,
-								kind: "manual_time_submission" as const,
-							},
-							originalStartTime: adjustedClockIn.toISOString(),
-							originalEndTime: adjustedClockOut.toISOString(),
-							originalDurationMinutes: durationMinutes,
-							requestedAt: now.toISOString(),
-							requestedBy: session.user.id,
-							reason: data.reason,
-							isManualEntry: true,
-							surchargeSnapshot,
-						}
-					: null,
-			});
-
-			const approvalSubmission = requiresApproval
-				? await executeOrdinaryWorkPeriodSubmissionInTransaction({
-						dbService: approvalDbServiceForTransaction(context.dbService),
-						context,
-						organizationId: targetEmployee.organizationId,
-						workPeriodId: period.id,
+					approval: requiresApproval
+						? {
+								state: "pending",
+								pendingChanges: {
+									ordinarySubmission: { submissionId, kind: "manual_time_submission" },
+									originalStartTime: adjustedClockIn.toISOString(),
+									originalEndTime: adjustedClockOut.toISOString(),
+									originalDurationMinutes: durationMinutes,
+									requestedAt: now.toISOString(),
+									requestedBy: session.user.id,
+									reason: data.reason,
+									isManualEntry: true,
+									surchargeSnapshot,
+								},
+							}
+						: { state: "approved" },
+					origin: "manual",
+					computationMetadata: manualSubmissionMetadata({
 						submissionId,
-						requesterEmployeeId: targetEmployee.id,
-						requesterUserId: targetEmployee.userId ?? session.user.id,
-						teamId: targetEmployee.teamId,
-						defaultApproverId: null,
-						reason: `Manual time entry: ${data.reason}`,
-						overtimeRisk: "none",
-						kind: "manual_time_submission",
-						metadata: {},
-						submitterUserId: session.user.id,
-					})
-				: null;
+						request: requestEvidence,
+						result: resultEvidence,
+					}),
+					recordedBy: session.user.id,
+					actorUserId: session.user.id,
+					entries: {
+						createdBy: session.user.id,
+						ipAddress: requestMetadata.ipAddress,
+						deviceInfo: requestMetadata.userAgent,
+					},
+					appendOperation: "manual_entry",
+				});
+				if (created.kind === "work_occupied") return { disposition: "occupied" as const };
+				if (created.kind === "month_closed") {
+					return { disposition: "month_closed" as const, month: created.month };
+				}
+				const period = { id: orRefuse<NewWorkCreation>(created).segment.workPeriodId };
 
+				const approvalSubmission = requiresApproval
+					? await executeOrdinaryWorkPeriodSubmissionInTransaction({
+							dbService: approvalDbServiceForTransaction(context.approval.dbService),
+							context: context.approval,
+							coordination: context,
+							organizationId: targetEmployee.organizationId,
+							workPeriodId: period.id,
+							submissionId,
+							requesterEmployeeId: targetEmployee.id,
+							requesterUserId: targetEmployee.userId ?? session.user.id,
+							teamId: targetEmployee.teamId,
+							defaultApproverId: null,
+							reason: `Manual time entry: ${data.reason}`,
+							overtimeRisk: "none",
+							kind: "manual_time_submission",
+							metadata: {},
+							submitterUserId: session.user.id,
+						})
+					: null;
+
+				return {
+					period,
+					approvalSubmission,
+					disposition: "executed" as const,
+					requiresApproval,
+					resultEvidence,
+				};
+			},
+		);
+		if (committed.disposition === "occupied") {
 			return {
-				period,
-				approvalSubmission,
-				disposition: "executed" as const,
-				requiresApproval,
-				resultEvidence,
+				success: false,
+				error:
+					"This time overlaps recorded work. Please choose a time range that does not overlap existing entries.",
 			};
-		});
+		}
+		if (committed.disposition === "month_closed") {
+			return { success: false, error: await monthClosedMessage(committed.month) };
+		}
 		if (committed.disposition === "billable_refused") {
 			return { success: false, error: committed.message };
 		}
@@ -1505,22 +1481,6 @@ export async function createManualTimeEntry(
 			);
 		}
 
-		if (shouldRunPostCommitEffects && !requiresApproval) {
-			await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
-				{
-					employeeId: targetEmployee.id,
-					organizationId: targetEmployee.organizationId,
-					dirtyFromDate:
-						DateTime.fromJSDate(adjustedClockIn, { zone: "utc" }).toISODate() ??
-						undefined,
-				},
-				{
-					employeeId: targetEmployee.id,
-					organizationId: targetEmployee.organizationId,
-					workPeriodId: createdWorkPeriod.id,
-				},
-			);
-		}
 		if (shouldRunPostCommitEffects) {
 			await bestEffort(
 				async () => revalidatePath("/time-tracking"),

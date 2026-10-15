@@ -72,6 +72,7 @@ const workHarness = vi.hoisted(() => ({
 	guards: [] as Array<{ rank: number; key: string; mode: string; attempt: number }>,
 	replay: vi.fn(),
 	record: vi.fn(),
+	create: vi.fn(),
 }));
 
 // The period submission seam (#1062) has its own PostgreSQL suites; here nothing is submitted.
@@ -147,11 +148,12 @@ vi.mock("@/lib/time-tracking/record-imported-work", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/time-tracking/record-imported-work")>()),
 	replayImportedWork: workHarness.replay,
 	recordImportedWork: workHarness.record,
+	// Work records' creation has its own PostgreSQL contract suite (#1223).
+	createImportedCompletedWork: workHarness.create,
 }));
 
 const { commitAcceptedRowsForEntity } = await import("./committers");
 const { calculateHash } = await import("@/lib/time-tracking/blockchain");
-const { markEmployeeWorkBalanceDirty } = await import("@/lib/work-balance/service");
 
 function commitJob(entityType: "work_period" | "absence") {
 	return {
@@ -455,6 +457,11 @@ beforeEach(() => {
 	workHarness.replay.mockReset();
 	workHarness.replay.mockResolvedValue(null);
 	workHarness.record.mockReset();
+	workHarness.create.mockReset();
+	workHarness.create.mockImplementation(async () => ({
+		kind: "created",
+		creation: { segment: { workPeriodId: "period_created" } },
+	}));
 	dbMock.query.absenceCategory.findFirst.mockImplementation(() => {
 		return Promise.resolve(dbMock.categories.get("Vacation") ?? null);
 	});
@@ -481,7 +488,7 @@ beforeEach(() => {
 });
 
 describe("commitAcceptedRowsForEntity", () => {
-	it("commits accepted work periods with chained clock entries and marks the row committed", async () => {
+	it("creates legacy completed work through work records and marks the row committed", async () => {
 		dbMock.rows = [
 			stagedRow({
 				normalizedPayload: {
@@ -491,54 +498,34 @@ describe("commitAcceptedRowsForEntity", () => {
 				},
 			}),
 		];
-		dbMock.latestEntries.set("emp_1", { id: "entry_prev", hash: "hash_prev" });
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 
 		expect(result).toMatchObject({ committedRows: 1, failedRows: 0, errors: [] });
-		expect(calculateHash).toHaveBeenNthCalledWith(1, {
+		expect(workHarness.create).toHaveBeenCalledTimes(1);
+		const [scope, input] = workHarness.create.mock.calls[0] ?? [];
+		expect(scope).toMatchObject({ admission: "legacy" });
+		expect({
+			...input,
+			start: input.start.toString(),
+			end: input.end.toString(),
+		}).toEqual({
+			organizationId: "org_1",
 			employeeId: "emp_1",
-			type: "clock_in",
-			timestamp: "2026-01-01T08:00:00.000Z",
-			previousHash: "hash_prev",
+			importerUserId: "user_1",
+			start: "2026-01-01T08:00:00Z",
+			end: "2026-01-01T16:00:00Z",
+			recorded: null,
 		});
-		expect(dbMock.insertCalls).toEqual(
-			expect.arrayContaining([
-				expect.objectContaining({
-					employeeId: "emp_1",
-					organizationId: "org_1",
-					type: "clock_in",
-					previousEntryId: "entry_prev",
-					previousHash: "hash_prev",
-				}),
-				expect.objectContaining({
-					employeeId: "emp_1",
-					organizationId: "org_1",
-					type: "clock_out",
-					previousEntryId: "created_1",
-				}),
-				expect.objectContaining({
-					employeeId: "emp_1",
-					organizationId: "org_1",
-					clockInId: "created_1",
-					clockOutId: "created_2",
-					durationMinutes: 480,
-					isActive: false,
-				}),
-			]),
-		);
+		// No legacy writes: work records owns the whole graph and its effects.
+		expect(dbMock.insertCalls).toEqual([]);
 		expect(dbMock.updates).toContainEqual(
 			expect.objectContaining({
 				rowStatus: "committed",
 				commitTargetTable: "work_period",
-				commitTargetId: "created_3",
+				commitTargetId: "period_created",
 				commitError: null,
 			}),
-		);
-		// From the day before the UTC start date, inside the row's transaction (#1214).
-		expect(markEmployeeWorkBalanceDirty).toHaveBeenCalledWith(
-			{ employeeId: "emp_1", organizationId: "org_1", dirtyFromDate: "2025-12-31" },
-			expect.anything(),
 		);
 		expect(dbMock.updatePredicates).toEqual(
 			expect.arrayContaining([
@@ -564,6 +551,30 @@ describe("commitAcceptedRowsForEntity", () => {
 				},
 			]),
 		);
+	});
+
+	it("holds a legacy completed row that work records refuses, with nothing written", async () => {
+		dbMock.rows = [
+			stagedRow({
+				normalizedPayload: {
+					employeeId: "emp_1",
+					startsAt: "2026-01-01T08:00:00.000Z",
+					endsAt: "2026-01-01T16:00:00.000Z",
+				},
+			}),
+		];
+		const hold = { reason: "month_closed", month: "2026-01" };
+		workHarness.create.mockResolvedValue({ kind: "held", hold });
+
+		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
+
+		expect(result).toMatchObject({ committedRows: 0, failedRows: 0, heldRows: 1 });
+		expect(dbMock.persistedRows.get("row_1")).toMatchObject({
+			rowStatus: "blocked",
+			commitError: "Held for review: month_closed",
+			commitHold: hold,
+		});
+		expect(dbMock.insertCalls).toEqual([]);
 	});
 
 	it("commits accepted absences with an organization-scoped category", async () => {
@@ -705,14 +716,15 @@ describe("commitAcceptedRowsForEntity", () => {
 		);
 	});
 
-	it("reloads the chain head under a transaction lock for each row", async () => {
+	// Open work stays with the legacy writer (live work): it chains its clock-in itself.
+	it("reloads the chain head under a transaction lock for each open row", async () => {
 		dbMock.rows = [
 			stagedRow({
 				id: "row_1",
 				normalizedPayload: {
 					employeeId: "emp_1",
 					startsAt: "2026-01-01T08:00:00.000Z",
-					endsAt: "2026-01-01T12:00:00.000Z",
+					endsAt: null,
 				},
 			}),
 			stagedRow({
@@ -720,7 +732,7 @@ describe("commitAcceptedRowsForEntity", () => {
 				normalizedPayload: {
 					employeeId: "emp_1",
 					startsAt: "2026-01-02T08:00:00.000Z",
-					endsAt: "2026-01-02T12:00:00.000Z",
+					endsAt: null,
 				},
 			}),
 		];
@@ -731,22 +743,32 @@ describe("commitAcceptedRowsForEntity", () => {
 		expect(result).toMatchObject({ committedRows: 2, failedRows: 0, errors: [] });
 		expect(executeCallsWithParameterCount(1)).toHaveLength(2);
 		expect(executeCallsWithParameterCount(4)).toHaveLength(2);
-		expect(dbMock.insertCalls[3]).toEqual(
+		expect(calculateHash).toHaveBeenNthCalledWith(1, {
+			employeeId: "emp_1",
+			type: "clock_in",
+			timestamp: "2026-01-01T08:00:00.000Z",
+			previousHash: "hash_prev",
+		});
+		expect(dbMock.insertCalls[1]).toEqual(
+			expect.objectContaining({ clockInId: "created_1", isActive: true }),
+		);
+		expect(dbMock.insertCalls[2]).toEqual(
 			expect.objectContaining({
 				type: "clock_in",
-				previousEntryId: "created_2",
-				previousHash: expect.stringContaining("clock_out"),
+				previousEntryId: "created_1",
+				previousHash: expect.stringContaining("clock_in"),
 			}),
 		);
+		expect(workHarness.create).not.toHaveBeenCalled();
 	});
 
-	it("serializes overlapping different rows for the same employee without forking the chain", async () => {
+	it("serializes overlapping different open rows for the same employee without forking the chain", async () => {
 		const firstRow = stagedRow({
 			id: "row_1",
 			normalizedPayload: {
 				employeeId: "emp_1",
 				startsAt: "2026-01-01T08:00:00.000Z",
-				endsAt: "2026-01-01T12:00:00.000Z",
+				endsAt: null,
 			},
 		});
 		const secondRow = stagedRow({
@@ -754,7 +776,7 @@ describe("commitAcceptedRowsForEntity", () => {
 			normalizedPayload: {
 				employeeId: "emp_1",
 				startsAt: "2026-01-02T08:00:00.000Z",
-				endsAt: "2026-01-02T12:00:00.000Z",
+				endsAt: null,
 			},
 		});
 		dbMock.rows = [firstRow, secondRow];
@@ -771,14 +793,10 @@ describe("commitAcceptedRowsForEntity", () => {
 
 		expect(results.reduce((total, result) => total + result.committedRows, 0)).toBe(2);
 		const clockIns = dbMock.insertCalls.filter((insert) => insert.type === "clock_in");
-		const clockOuts = dbMock.insertCalls.filter((insert) => insert.type === "clock_out");
 		expect(clockIns).toHaveLength(2);
-		expect(clockOuts).toHaveLength(2);
 		expect(clockIns.filter((entry) => entry.previousEntryId === "entry_prev")).toHaveLength(1);
 		expect(
-			clockIns.filter((entry) =>
-				clockOuts.some((clockOut) => entry.previousHash === clockOut.hash),
-			),
+			clockIns.filter((entry) => clockIns.some((other) => entry.previousHash === other.hash)),
 		).toHaveLength(1);
 		// The shared employee key is taken before each staging claim, so the worker
 		// that loses a claim has still waited for the committed chain.
@@ -893,7 +911,7 @@ describe("commitAcceptedRowsForEntity", () => {
 				normalizedPayload: {
 					employeeId: "emp_1",
 					startsAt: "2026-01-01T08:00:00.000Z",
-					endsAt: "2026-01-01T16:00:00.000Z",
+					endsAt: null,
 				},
 			}),
 		];
@@ -901,7 +919,7 @@ describe("commitAcceptedRowsForEntity", () => {
 			Promise.resolve([{ id: "created_1", hash: "hash_1" }]),
 		);
 		dbMock.returning.mockImplementationOnce(() =>
-			Promise.reject(new Error("clock out insert failed")),
+			Promise.reject(new Error("work period insert failed")),
 		);
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
@@ -909,13 +927,13 @@ describe("commitAcceptedRowsForEntity", () => {
 		expect(result).toMatchObject({
 			committedRows: 0,
 			failedRows: 1,
-			errors: [{ rowId: "row_1", message: "clock out insert failed" }],
+			errors: [{ rowId: "row_1", message: "work period insert failed" }],
 		});
 		expect(dbMock.insertCalls).toEqual([]);
 		expect(dbMock.updates).toEqual([
 			expect.objectContaining({
 				rowStatus: "commit_failed",
-				commitError: "clock out insert failed",
+				commitError: "work period insert failed",
 			}),
 		]);
 		expect(dbMock.updatePredicates.at(-1)).toEqual({
@@ -940,7 +958,7 @@ describe("commitAcceptedRowsForEntity", () => {
 				},
 			}),
 		];
-		dbMock.returning.mockRejectedValueOnce(new Error("clock in insert failed"));
+		workHarness.create.mockRejectedValueOnce(new Error("work records write failed"));
 
 		const firstResult = await commitAcceptedRowsForEntity(commitJob("work_period"), {
 			finalAttempt: false,
@@ -1221,10 +1239,7 @@ describe("reviewed work rows (#284)", () => {
 
 		expect(result).toMatchObject({ committedRows: 1, failedRows: 0 });
 		expect(workHarness.coordinated.map((route) => route.employees)).toEqual([["emp_1"], ["emp_2"]]);
-		expect(dbMock.insertCalls).toContainEqual(
-			expect.objectContaining({ type: "clock_in", employeeId: "emp_2" }),
-		);
-		expect(dbMock.insertCalls).not.toContainEqual(expect.objectContaining({ employeeId: "emp_1" }));
+		expect(workHarness.create.mock.calls.map(([, input]) => input.employeeId)).toEqual(["emp_2"]);
 	});
 
 	it("fails a row without a mapped employee while routing, before any guard", async () => {
