@@ -491,13 +491,13 @@ async function recordOpenImport(
 		action: { instant: start, ...importedCapture(start) },
 		source: { ipAddress: null, deviceInfo: null },
 	};
+	// Live work is Clocking's (Time Tracking ADR 0010): its store writes the entry and period.
+	const store = createDatabaseClockingStore(tx);
 	let appended: AppendedClockEntry[];
 	try {
-		appended = await appendAdmittedClockEntries(
-			createDatabaseClockingStore(tx),
-			"reviewed_import",
-			[{ input: entryInput, type: "clock_in" }],
-		);
+		appended = await appendAdmittedClockEntries(store, "reviewed_import", [
+			{ input: entryInput, type: "clock_in" },
+		]);
 	} catch (error) {
 		if (!(error instanceof TimeEntryAppendReviewRequiredError)) throw error;
 		return {
@@ -515,21 +515,16 @@ async function recordOpenImport(
 		work: [{ start, end: start }],
 	});
 	const revision = 1;
-	const [period] = await tx
-		.insert(workPeriod)
-		.values({
-			employeeId,
-			organizationId,
-			clockInId: clockIn.entry.id,
-			startTime: dateFromInstant(start),
-			isActive: true,
-			approvalStatus: "approved",
-			projectId: recorded?.projectId ?? null,
-			isBillable: recorded?.isBillable ?? false,
-			graphRevision: revision,
-		})
-		.returning({ id: workPeriod.id });
-	if (!period) throw new Error("Failed to create imported work period");
+	const period = await store.insertActivePeriod({
+		employeeId,
+		organizationId,
+		clockInId: clockIn.entry.id,
+		startTime: dateFromInstant(start),
+		approvalStatus: "approved",
+		projectId: recorded?.projectId ?? null,
+		isBillable: recorded?.isBillable ?? false,
+		graphRevision: revision,
+	});
 	return {
 		kind: "recorded",
 		written: {

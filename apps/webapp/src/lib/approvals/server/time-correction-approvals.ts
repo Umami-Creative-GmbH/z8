@@ -51,7 +51,6 @@ import {
 import { workInterval } from "@/lib/time-tracking/closed-months/store";
 import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 import {
-	advanceCorrectionWorkRevision,
 	deriveTimeCorrectionOperationId,
 	type FinalizeTimeCorrectionResult,
 	insertTimeCorrectionReceipt,
@@ -85,7 +84,9 @@ import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import { assertWorkOccupancyFree } from "@/lib/time-tracking/work-occupancy";
 import {
 	type AmendAttributionPatch,
+	advanceWorkRevision,
 	applyWorkRecordChange,
+	correctOpenWorkRecord,
 	refusalError,
 	type ToleratedDrift,
 	type WorkApprovalDecision,
@@ -854,8 +855,11 @@ export async function insertTimeCorrectionSourceEntry(input: {
 }): Promise<typeof timeEntry.$inferSelect | null> {
 	const [created] = await input.dbService.db
 		.insert(timeEntry)
+		// Explicit columns: the approval write-boundary scanner proves this a pending correction.
 		.values({
-			...input.timezoneCapture,
+			utcOffsetMinutes: input.timezoneCapture.utcOffsetMinutes,
+			timezone: input.timezoneCapture.timezone,
+			timezoneSource: input.timezoneCapture.timezoneSource,
 			id: input.id,
 			employeeId: input.employeeId,
 			organizationId: input.organizationId,
@@ -1352,7 +1356,7 @@ export async function deleteCancelledTimeCorrectionsInTransaction(input: {
 			stage: "cancel",
 			key: lifecycleKey,
 		});
-		const resultRevision = await advanceCorrectionWorkRevision(adoptedScope.db, {
+		const resultRevision = await advanceWorkRevision(adoptedScope, {
 			organizationId: input.organizationId,
 			employeeId: expected.employeeId,
 			workPeriodId: period.id,
@@ -2940,7 +2944,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 					result: { kind: "unchanged" },
 					corrections: correctionEvidence("rejected_inactive"),
 					sourceRevision: period.graphRevision,
-					resultRevision: await advanceCorrectionWorkRevision(adopted.scope.db, {
+					resultRevision: await advanceWorkRevision(adopted.scope, {
 						organizationId: input.organizationId,
 						employeeId: period.employeeId,
 						workPeriodId: period.id,
@@ -2978,38 +2982,12 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 					"rejection_original_entry_missing",
 				);
 			}
-			const reactivated = await input.dbService.db
-				.update(timeEntry)
-				.set({ isSuperseded: false, supersededById: null })
-				.where(
-					and(
-						eq(timeEntry.id, original.id),
-						eq(timeEntry.organizationId, input.organizationId),
-						eq(timeEntry.employeeId, period.employeeId),
-						eq(timeEntry.type, original.type),
-						eq(timeEntry.isSuperseded, true),
-						eq(timeEntry.supersededById, correctionEntry.id),
-						exactReplacementLineage(original),
-					),
-				)
-				.returning({ id: timeEntry.id });
-			requireSingleMutation(reactivated, original.id);
-			const deactivated = await input.dbService.db
-				.update(timeEntry)
-				.set({ isSuperseded: true, supersededById: null })
-				.where(
-					and(
-						eq(timeEntry.id, correctionEntry.id),
-						eq(timeEntry.organizationId, input.organizationId),
-						eq(timeEntry.employeeId, period.employeeId),
-						eq(timeEntry.type, "correction"),
-						eq(timeEntry.replacesEntryId, original.id),
-						eq(timeEntry.isSuperseded, false),
-						isNull(timeEntry.supersededById),
-					),
-				)
-				.returning({ id: timeEntry.id });
-			requireSingleMutation(deactivated, correctionEntry.id);
+			await restoreHistoricalRejectedCorrection(input.dbService, {
+				organizationId: input.organizationId,
+				employeeId: period.employeeId,
+				original,
+				correctionEntry,
+			});
 		});
 		if (adopted) {
 			await recordAdoptedCorrectionFinalization({
@@ -3023,7 +3001,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				result: { kind: "unchanged" },
 				corrections: correctionEvidence("rejected_inactive"),
 				sourceRevision: period.graphRevision,
-				resultRevision: await advanceCorrectionWorkRevision(adopted.scope.db, {
+				resultRevision: await advanceWorkRevision(adopted.scope, {
 					organizationId: input.organizationId,
 					employeeId: period.employeeId,
 					workPeriodId: period.id,
@@ -3140,7 +3118,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		}
 		const resultRevision =
 			applied.resultRevision ??
-			(await advanceCorrectionWorkRevision(adopted.scope.db, {
+			(await advanceWorkRevision(adopted.scope, {
 				organizationId: input.organizationId,
 				employeeId: period.employeeId,
 				workPeriodId: period.id,
@@ -3358,10 +3336,63 @@ function correctionWorkRefusal(refusal: WorkRecordRefusal): Error {
 }
 
 /**
+ * A legacy correction rejected in its historical state, where it had been made
+ * current over the entry it replaces before any decision: the replaced entry
+ * becomes current again and the correction an inactive pending one. A pending
+ * correction is not completed work (Time Tracking ADR 0010); only the two
+ * entries' lineage changes, compare-and-set on the state the rejection read.
+ */
+async function restoreHistoricalRejectedCorrection(
+	dbService: ApprovalDbService,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		original: LockedTimeCorrectionEntry;
+		correctionEntry: LockedTimeCorrectionEntry;
+	},
+): Promise<void> {
+	const { original, correctionEntry } = input;
+	const reactivated = await dbService.db
+		.update(timeEntry)
+		.set({ isSuperseded: false, supersededById: null })
+		.where(
+			and(
+				eq(timeEntry.id, original.id),
+				eq(timeEntry.organizationId, input.organizationId),
+				eq(timeEntry.employeeId, input.employeeId),
+				eq(timeEntry.type, original.type),
+				eq(timeEntry.isSuperseded, true),
+				eq(timeEntry.supersededById, correctionEntry.id),
+				exactReplacementLineage(original),
+			),
+		)
+		.returning({ id: timeEntry.id });
+	requireSingleMutation(reactivated, original.id);
+	const deactivated = await dbService.db
+		.update(timeEntry)
+		.set({ isSuperseded: true, supersededById: null })
+		.where(
+			and(
+				eq(timeEntry.id, correctionEntry.id),
+				eq(timeEntry.organizationId, input.organizationId),
+				eq(timeEntry.employeeId, input.employeeId),
+				eq(timeEntry.type, "correction"),
+				eq(timeEntry.replacesEntryId, original.id),
+				eq(timeEntry.isSuperseded, false),
+				isNull(timeEntry.supersededById),
+			),
+		)
+		.returning({ id: timeEntry.id });
+	requireSingleMutation(deactivated, correctionEntry.id);
+}
+
+/**
  * An approved correction of live work: the corrected clock-in replaces the
  * running work's. Live work is Clocking's (ADR 0002), not work records', so
- * this keeps its own writes, the open canonical work record some history gave
- * live work included. #1230 lists it among the live-work writers.
+ * this keeps its writes to the live work period and the correction's entries;
+ * the approval write-boundary scanner names it a live-work and pending-correction
+ * writer (#1230). The open canonical work record some history gave live work is
+ * work records' (`correctOpenWorkRecord`, ADR 0010).
  */
 async function applyLiveWorkCorrection(change: {
 	input: FinalizeTimeCorrectionTerminalInput;
@@ -3525,65 +3556,43 @@ async function applyLiveWorkCorrection(change: {
 			{ start: correctedPeriod.clockIn.instant, end: correctedPeriod.clockOut?.instant ?? null },
 		],
 	});
-	if (canonical && hasEndpointCorrection) {
-		const updatedCanonical = await input.dbService.db
-			.update(timeRecord)
-			.set({
-				startAt: instantToTimeCorrectionDate(correctedPeriod.clockIn.instant),
-				updatedAt: finalizedAt,
-				updatedBy: input.actorUserId,
-			})
-			.where(
-				and(
-					eq(timeRecord.id, canonical.id),
-					eq(timeRecord.organizationId, input.organizationId),
-					eq(timeRecord.employeeId, period.employeeId),
-					eq(timeRecord.recordKind, "work"),
-					eq(timeRecord.startAt, canonical.startAt),
-					isNull(timeRecord.endAt),
-					eq(timeRecord.approvalState, canonical.approvalState),
-				),
-			)
-			.returning({ id: timeRecord.id });
-		requireSingleMutation(updatedCanonical, canonical.id);
+	// The open canonical work record some history gave live work is work records' (ADR 0010).
+	const correctedOpenRecord = await correctOpenWorkRecord(input.dbService.db, {
+		organizationId: input.organizationId,
+		employeeId: period.employeeId,
+		actorUserId: input.actorUserId,
+		at: finalizedAt,
+		...(canonical && hasEndpointCorrection
+			? {
+					start: {
+						recordId: canonical.id,
+						expected: { startAt: canonical.startAt, approvalState: canonical.approvalState },
+						startAt: instantToTimeCorrectionDate(correctedPeriod.clockIn.instant),
+					},
+				}
+			: {}),
+		...(canonicalWork && currentCorrection
+			? {
+					detail: {
+						recordId: canonicalWork.recordId,
+						expected: {
+							workLocationType: canonicalWork.workLocationType,
+							workCategoryId: canonicalWork.workCategoryId,
+						},
+						workLocationType: currentCorrection.workLocationType,
+						workCategoryId: currentCorrection.workCategoryId,
+						...(appliedVehicle
+							? { vehicle: { expected: lockedVehicle, applied: appliedVehicle } }
+							: {}),
+					},
+				}
+			: {}),
+	});
+	if (!correctedOpenRecord.start) {
+		throw timeCorrectionFinalizationConflict("mutation_cardinality_mismatch");
 	}
-	if (canonicalWork && currentCorrection) {
-		const updatedCanonicalWork = await input.dbService.db
-			.update(timeRecordWork)
-			.set({
-				workLocationType: currentCorrection.workLocationType,
-				workCategoryId: currentCorrection.workCategoryId,
-				...(appliedVehicle
-					? {
-							vehicleKind: appliedVehicle.vehicleKind,
-							vehicleId: appliedVehicle.vehicleId,
-							odometerStartKm: appliedVehicle.odometerStartKm,
-							odometerEndKm: appliedVehicle.odometerEndKm,
-							drivenDistanceKm: appliedVehicle.drivenDistanceKm,
-						}
-					: {}),
-			})
-			.where(
-				and(
-					eq(timeRecordWork.recordId, canonicalWork.recordId),
-					eq(timeRecordWork.organizationId, input.organizationId),
-					eq(timeRecordWork.recordKind, "work"),
-					canonicalWork.workLocationType === null
-						? isNull(timeRecordWork.workLocationType)
-						: eq(timeRecordWork.workLocationType, canonicalWork.workLocationType),
-					canonicalWork.workCategoryId === null
-						? isNull(timeRecordWork.workCategoryId)
-						: eq(timeRecordWork.workCategoryId, canonicalWork.workCategoryId),
-					...(appliedVehicle ? vehicleColumnsMatch(timeRecordWork, lockedVehicle) : []),
-				),
-			)
-			.returning({ recordId: timeRecordWork.recordId });
-		if (
-			updatedCanonicalWork.length !== 1 ||
-			updatedCanonicalWork[0]?.recordId !== canonicalWork.recordId
-		) {
-			throw timeCorrectionFinalizationConflict("canonical_work_mutation_cardinality_mismatch");
-		}
+	if (!correctedOpenRecord.detail) {
+		throw timeCorrectionFinalizationConflict("canonical_work_mutation_cardinality_mismatch");
 	}
 	return {
 		resultRevision: change.adopted ? period.graphRevision + 1 : null,

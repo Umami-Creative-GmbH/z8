@@ -51,7 +51,6 @@ describe("Clocking module layering", () => {
 		expect([
 			...appImports("../clock-out-effects.ts"),
 			...workRecordFiles.flatMap(appImports),
-			...appImports("../time-entry-writer.ts"),
 		]).toEqual([]);
 	});
 });

@@ -21,6 +21,7 @@ import {
 	scanApprovalWriteBoundary,
 	scanApprovalWriteInventory,
 	TEMPORARY_LEGACY_WRITE_EXCEPTIONS,
+	workRecordsSeamViolation,
 } from "./approval-write-boundary";
 import {
 	ApprovalWriteBoundaryAnalysisLimitError,
@@ -617,11 +618,11 @@ db.update(workPeriod).set(values);`;
 		const source = `import { db, workPeriod } from "@/db";
 export function unprotected() {
   const values = { approvalWorkflowId: "workflow-1" };
-  values.note = input;
+  values.updatedAt = input;
   db.update(workPeriod).set(values);
 }
 export function protectedWrite() {
-  const values = { note: "initial" };
+  const values = { updatedAt: "initial" };
   values.approvalStatus = "approved";
   db.update(workPeriod).set(values);
 }`;
@@ -648,31 +649,31 @@ export function protectedWrite() {
 		const source = `import { db, workPeriod } from "@/db";
 export function unprotectedIf(condition: boolean) {
   const values = { approvalWorkflowId: "workflow-1" };
-  if (condition) values.note = input;
+  if (condition) values.updatedAt = input;
   db.update(workPeriod).set(values);
 }
 export function unprotectedLoop(items: unknown[]) {
   const values = { approvalWorkflowId: "workflow-1" };
-  for (const item of items) values.note = item;
+  for (const item of items) values.updatedAt = item;
   db.update(workPeriod).set(values);
 }
 export function unprotectedTry() {
   const values = { approvalWorkflowId: "workflow-1" };
-  try { values.note = input; } catch {}
+  try { values.updatedAt = input; } catch {}
   db.update(workPeriod).set(values);
 }
 export function protectedIf(condition: boolean) {
-  const values = { note: "initial" };
+  const values = { updatedAt: "initial" };
   if (condition) values.approvalStatus = "approved";
   db.update(workPeriod).set(values);
 }
 export function protectedLoop(items: unknown[]) {
-  const values = { note: "initial" };
+  const values = { updatedAt: "initial" };
   for (const item of items) values.approvalStatus = item;
   db.update(workPeriod).set(values);
 }
 export function protectedTry() {
-  const values = { note: "initial" };
+  const values = { updatedAt: "initial" };
   try { values.approvalStatus = "approved"; } catch {}
   db.update(workPeriod).set(values);
 }
@@ -857,7 +858,10 @@ insert into time_record_allocation (id, organization_id, record_id, allocation_k
 					"duration_minutes",
 					"employee_id",
 					"end_at",
+					"id",
 					"organization_id",
+					"origin",
+					"record_kind",
 					"start_at",
 				],
 				operation: "insert",
@@ -987,14 +991,16 @@ function mutate(patch: object) {
 		},
 	);
 
-	it("ignores a statically complete unrelated source payload", () => {
-		const source = `import { db, workPeriod } from "@/db";
-db.update(workPeriod).set({ projectId, updatedAt: now });`;
+	it("ignores row bookkeeping and a time entry's note, which no work rule reads", () => {
+		const source = `import { db, timeEntry, timeRecord, workPeriod } from "@/db";
+db.update(workPeriod).set({ updatedAt: now });
+db.update(timeRecord).set({ updatedAt: now, updatedBy: actor });
+db.update(timeEntry).set({ notes });`;
 
 		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([]);
 	});
 
-	it("resolves protected keys that explicitly override an earlier dynamic spread", () => {
+	it("keeps a payload uncertain when explicit keys follow an earlier dynamic spread", () => {
 		const source = `import { db, timeEntry } from "@/db";
 function insertCorrection(extra: object) {
   return db.insert(timeEntry).values({
@@ -1017,9 +1023,10 @@ function insertCorrection(extra: object) {
 				],
 				semantic: "correction",
 				table: "time_entry",
+				// The spread may write any other column of the entry (Time Tracking ADR 0010).
+				uncertainty: "dynamic_payload",
 			}),
 		]);
-		expect(findings[0]).not.toHaveProperty("uncertainty");
 	});
 
 	it("attributes anonymous callback writes to the nearest named enclosing function", () => {
@@ -1097,11 +1104,19 @@ export function hiddenDelete(id: string, originalId: string) {
 		]);
 	});
 
-	it("ignores an unrelated time-entry bulk delete", () => {
+	it("reports a time-entry bulk delete without the inactive-correction meaning", () => {
 		const source = `import { db, timeEntry } from "@/db";
 db.delete(timeEntry).where(inArray(timeEntry.employeeId, employeeIds));`;
 
-		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([]);
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			{
+				column: 1,
+				fileName: FILE_NAME,
+				line: 2,
+				operation: "delete",
+				table: "time_entry",
+			},
+		]);
 	});
 
 	it.each([
@@ -1121,7 +1136,7 @@ db.delete(timeEntry).where(inArray(timeEntry.employeeId, employeeIds));`;
 			"insert into time_entry (id, type, replaces_entry_id, is_superseded) values ($1, 'correction', $2, true)",
 			[
 				{
-					columns: ["is_superseded", "replaces_entry_id", "type"],
+					columns: ["id", "is_superseded", "replaces_entry_id", "type"],
 					operation: "insert",
 					semantic: "correction",
 					table: "time_entry",
@@ -2959,7 +2974,7 @@ db.execute("insert into time_entry (type) values ('" + entryType + "')");`,
 declare const workflowId: string;
 declare const note: string;
 db.execute(\`update work_period set approval_workflow_id = '\${workflowId}' where id = 'period-1'\`);
-db.execute(\`update work_period set notes = '\${note}' where id = 'period-1'\`);`;
+db.execute(\`update work_period set updated_at = '\${note}' where id = 'period-1'\`);`;
 
 		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
 			expect.objectContaining({
@@ -4434,611 +4449,56 @@ db.delete(approvalOutbox);`,
 		});
 	});
 
-	it("exports exact function-scoped source write capabilities", () => {
-		const boundary = approvalWriteBoundary as typeof approvalWriteBoundary & {
-			CANONICAL_SOURCE_WRITE_OWNERS: unknown;
-			SOURCE_WRITE_EXCEPTIONS: unknown;
-		};
-		expect(boundary.CANONICAL_SOURCE_WRITE_OWNERS).toEqual({
-			"src/lib/approvals/maintenance.ts": [
-				{
-					columns: ["approval_workflow_id"],
-					functionName: "clearWorkflowSourceReferences",
-					operation: "update",
-					table: "work_period",
-				},
-			],
-			"src/lib/approvals/server/time-correction-approvals.ts": [
-				{
-					columns: ["approval_workflow_id"],
-					functionName: "bindTimeCorrectionWorkflowToWorkPeriod",
-					operation: "update",
-					table: "work_period",
-				},
-				{
-					columns: ["is_superseded", "superseded_by_id"],
-					functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
-					operation: "update",
-					semantic: "correction_lifecycle",
-					table: "time_entry",
-				},
-				{
-					columns: [
-						"is_superseded",
-						"replaces_entry_id",
-						"superseded_by_id",
-						"type",
-					],
-					functionName: "insertTimeCorrectionSourceEntry",
-					operation: "insert",
-					semantic: "correction",
-					table: "time_entry",
-				},
-				{
-					columns: [
-						"is_superseded",
-						"replaces_entry_id",
-						"superseded_by_id",
-						"type",
-					],
-					functionName: "deleteCancelledTimeCorrectionsInTransaction",
-					operation: "delete",
-					semantic: "inactive_correction",
-					table: "time_entry",
-				},
-				{
-					columns: ["is_superseded", "superseded_by_id"],
-					functionName: "applyLiveWorkCorrection",
-					operation: "update",
-					semantic: "correction_lifecycle",
-					table: "time_entry",
-				},
-				{
-					columns: ["start_at"],
-					functionName: "applyLiveWorkCorrection",
-					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
-				},
-			],
-			"src/lib/absences/sick-vacation-override.ts": [
-				{
-					columns: [
-						"approval_state",
-						"duration_minutes",
-						"employee_id",
-						"end_at",
-						"organization_id",
-						"start_at",
-					],
-					functionName: "createCanonicalAbsenceInTransaction",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-				},
-				{
-					columns: ["duration_minutes", "end_at", "start_at"],
-					functionName: "updateCanonicalAbsenceRangeInTransaction",
-					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
-				},
-				{
-					columns: ["approval_state"],
-					functionName: "rejectCanonicalAbsenceInTransaction",
-					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
-				},
-			],
-			"src/lib/approvals/server/absence-approvals.ts": [
-				{
-					columns: ["approval_state"],
-					functionName: "syncCanonicalAbsenceApprovalStateAt",
-					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
-				},
-			],
-			"src/lib/approvals/server/time-correction-submission.ts": [
-				{
-					columns: [
-						"is_superseded",
-						"replaces_entry_id",
-						"superseded_by_id",
-						"type",
-					],
-					functionName: "submitCorrectionInTransaction",
-					operation: "delete",
-					semantic: "inactive_correction",
-					table: "time_entry",
-				},
-			],
-			"src/lib/approvals/server/work-period-submission.ts": [
-				{
-					columns: ["approval_workflow_id"],
-					functionName: "bindSourceWorkflow",
-					operation: "update",
-					table: "work_period",
-				},
-			],
-			"src/lib/approvals/server/work-period-approvals.ts": [
-				{
-					columns: ["approval_workflow_id"],
-					functionName: "bindPreCanonicalOrdinaryWorkflow",
-					operation: "update",
-					table: "work_period",
-				},
-			],
-			"src/lib/time-tracking/record-imported-work.ts": [
-				{
-					columns: [
-						"approval_status",
-						"clock_in_id",
-						"start_time",
-					],
-					functionName: "recordOpenImport",
-					operation: "insert",
-					table: "work_period",
-				},
-			],
-			"src/lib/time-tracking/work-records/amend.ts": [
-				{
-					columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
-					functionName: "writeAmendedPair",
-					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
-				},
-				{
-					columns: [
-						"allocation_kind",
-						"cost_center_id",
-						"is_billable",
-						"organization_id",
-						"project_id",
-						"record_id",
-						"task_id",
-						"weight_percent",
-					],
-					functionName: "writeAmendedPair",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_allocation",
-				},
-				{
-					columns: [
-						"approval_status",
-						"clock_in_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"pending_changes",
-						"start_time",
-					],
-					functionName: "writeAmendedPair",
-					operation: "update",
-					table: "work_period",
-				},
-				{
-					columns: ["is_superseded", "superseded_by_id"],
-					functionName: "adoptRecordedEntry",
-					operation: "update",
-					semantic: "correction_lifecycle",
-					table: "time_entry",
-				},
-			],
-			"src/lib/time-tracking/work-records/delete.ts": [
-				{
-					columns: ["duration_minutes", "end_at", "start_at"],
-					functionName: "deleteWorkRecord",
-					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
-				},
-				{
-					columns: [
-						"clock_in_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"start_time",
-					],
-					functionName: "deleteWorkRecord",
-					operation: "update",
-					table: "work_period",
-				},
-			],
-			"src/lib/time-tracking/work-records/repair.ts": [
-				{
-					columns: [
-						"approval_state",
-						"duration_minutes",
-						"employee_id",
-						"end_at",
-						"organization_id",
-						"start_at",
-					],
-					functionName: "attachWorkRecord",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-				},
-				{
-					columns: ["duration_minutes", "end_at", "start_at"],
-					functionName: "repairWorkRecord",
-					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
-				},
-				{
-					columns: [
-						"computation_metadata",
-						"driven_distance_km",
-						"odometer_end_km",
-						"odometer_start_km",
-						"organization_id",
-						"record_id",
-						"record_kind",
-						"vehicle_id",
-						"vehicle_kind",
-						"work_category_id",
-						"work_location_type",
-					],
-					functionName: "attachWorkRecord",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_work",
-				},
-				{
-					columns: [
-						"computation_metadata",
-						"driven_distance_km",
-						"odometer_end_km",
-						"odometer_start_km",
-						"organization_id",
-						"record_id",
-						"record_kind",
-						"vehicle_id",
-						"vehicle_kind",
-						"work_category_id",
-						"work_location_type",
-					],
-					functionName: "insertDetail",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_work",
-				},
-				{
-					columns: ["canonical_record_id", "duration_minutes", "end_time"],
-					functionName: "writeRepairedPeriod",
-					operation: "update",
-					table: "work_period",
-				},
-			],
-			"src/lib/time-tracking/work-records/entry-writer.ts": [
-				{
-					columns: ["replaces_entry_id", "type"],
-					functionName: "insertAppendedEntry",
-					operation: "insert",
-					semantic: "correction_lifecycle",
-					table: "time_entry",
-				},
-				{
-					columns: ["is_superseded", "superseded_by_id"],
-					functionName: "supersedeTakenOverEntry",
-					operation: "update",
-					semantic: "correction_lifecycle",
-					table: "time_entry",
-				},
-			],
-			"src/lib/time-tracking/work-records/create.ts": [
-				{
-					columns: [
-						"approval_state",
-						"duration_minutes",
-						"employee_id",
-						"end_at",
-						"organization_id",
-						"start_at",
-					],
-					functionName: "insertCanonicalRecord",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-				},
-				{
-					columns: [
-						"computation_metadata",
-						"driven_distance_km",
-						"odometer_end_km",
-						"odometer_start_km",
-						"organization_id",
-						"record_id",
-						"record_kind",
-						"vehicle_id",
-						"vehicle_kind",
-						"work_category_id",
-						"work_location_type",
-					],
-					functionName: "insertCanonicalRecord",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_work",
-				},
-				{
-					columns: [
-						"allocation_kind",
-						"cost_center_id",
-						"is_billable",
-						"organization_id",
-						"project_id",
-						"record_id",
-						"task_id",
-						"weight_percent",
-					],
-					functionName: "insertCanonicalRecord",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_allocation",
-				},
-				{
-					columns: [
-						"approval_status",
-						"canonical_record_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"pending_changes",
-					],
-					functionName: "closeLiveWorkPeriod",
-					operation: "update",
-					table: "work_period",
-				},
-			],
-			// Work records (ADR 0010, #1223) creates new completed work in both admissions: manual
-			// entries, imported work and demo data, with the canonical work record `create.ts`
-			// inserts and the entries the entry writers append.
-			"src/lib/time-tracking/work-records/create-new.ts": [
-				{
-					columns: [
-						"approval_status",
-						"canonical_record_id",
-						"clock_in_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"pending_changes",
-						"start_time",
-					],
-					functionName: "insertNewWorkPeriod",
-					operation: "insert",
-					table: "work_period",
-				},
-			],
-			"src/lib/time-tracking/work-records/divide.ts": [
-				{
-					columns: [
-						"approval_state",
-						"duration_minutes",
-						"employee_id",
-						"end_at",
-						"organization_id",
-						"start_at",
-					],
-					functionName: "writeGeneratedHalf",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-				},
-				{
-					columns: ["duration_minutes", "end_at"],
-					functionName: "writeRetainedHalf",
-					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
-				},
-				{
-					columns: [
-						"allocation_kind",
-						"cost_center_id",
-						"is_billable",
-						"organization_id",
-						"project_id",
-						"record_id",
-						"task_id",
-						"weight_percent",
-					],
-					functionName: "insertAllocations",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_allocation",
-				},
-				{
-					columns: [
-						"computation_metadata",
-						"driven_distance_km",
-						"odometer_end_km",
-						"odometer_start_km",
-						"organization_id",
-						"record_id",
-						"record_kind",
-						"vehicle_id",
-						"vehicle_kind",
-						"work_category_id",
-						"work_location_type",
-					],
-					functionName: "writeGeneratedHalf",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_work",
-				},
-				{
-					columns: [
-						"approval_status",
-						"canonical_record_id",
-						"clock_in_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"start_time",
-					],
-					functionName: "writeGeneratedHalf",
-					operation: "insert",
-					table: "work_period",
-				},
-				{
-					columns: ["clock_out_id", "duration_minutes", "end_time"],
-					functionName: "writeRetainedHalf",
-					operation: "update",
-					table: "work_period",
-				},
-			],
-			"src/lib/time-tracking/start-live-work.ts": [
-				{
-					columns: ["clock_in_id", "start_time"],
-					functionName: "startLiveWorkGraph",
-					operation: "insert",
-					table: "work_period",
-				},
-			],
-		});
-		expect(boundary.SOURCE_WRITE_EXCEPTIONS).toEqual({
-			"src/app/[locale]/(app)/absences/actions.canonical.ts": [
-				{
-					columns: [],
-					functionName: "create",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-					uncertainty: "dynamic_payload",
-				},
-				{
-					columns: ["duration_minutes", "end_at", "start_at"],
-					functionName: "updateCanonicalAbsenceRangeInTransaction",
-					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
-				},
-				{
-					columns: ["approval_state"],
-					functionName: "syncCanonicalAbsenceApprovalStateInTransaction",
-					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
-				},
-			],
-			"src/app/[locale]/(app)/absences/request-absence-effect.ts": [
-				{
-					columns: [],
-					functionName: "createRecords",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-					uncertainty: "dynamic_payload",
-				},
-			],
-			"src/app/[locale]/(app)/team/absences/actions.ts": [
-				{
-					columns: [],
-					functionName: "recordAbsenceForEmployee",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-					uncertainty: "dynamic_payload",
-				},
-			],
-			"src/lib/time-tracking/clocking/break.ts": [
-				{
-					columns: ["clock_in_id", "start_time"],
-					functionName: "takeLegacyBreak",
-					operation: "insert",
-					table: "work_period",
-				},
-			],
-			"src/lib/time-tracking/time-entry-writer.ts": [
-				{
-					columns: ["is_superseded", "replaces_entry_id", "type"],
-					functionName: "createTimeEntry",
-					operation: "insert",
-					semantic: "correction_lifecycle",
-					table: "time_entry",
-				},
-				{
-					columns: ["is_superseded", "superseded_by_id"],
-					functionName: "markTimeEntrySuperseded",
-					operation: "update",
-					semantic: "correction_lifecycle",
-					table: "time_entry",
-				},
-			],
-			"src/lib/approvals/server/time-correction-approvals.ts": [
-				{
-					columns: ["clock_in_id", "start_time"],
-					functionName: "applyLiveWorkCorrection",
-					operation: "update",
-					table: "work_period",
-				},
-			],
-			"src/lib/demo/demo-data.service.ts": [
-				{
-					columns: [
-						"is_superseded",
-						"replaces_entry_id",
-						"superseded_by_id",
-						"type",
-					],
-					functionName: "generateDemoPendingTimeCorrectionApprovals",
-					operation: "delete",
-					semantic: "inactive_correction",
-					table: "time_entry",
-				},
-			],
-			"src/lib/import-review/committers.ts": [
-				{
-					columns: ["type"],
-					functionName: "commitLegacyOpenWorkPeriod",
-					operation: "insert",
-					table: "time_entry",
-					uncertainty: "dynamic_payload",
-				},
-				{
-					columns: [
-						"clock_in_id",
-						"start_time",
-					],
-					functionName: "commitLegacyOpenWorkPeriod",
-					operation: "insert",
-					table: "work_period",
-				},
-			],
-			"src/lib/time-record/migration/backfill.ts": [
-				{
-					columns: [],
-					functionName: "upsertCanonicalAbsenceRecords",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-					uncertainty: "dynamic_payload",
-				},
-			],
-			"src/lib/time-tracking/clocking-core.ts": [
-				{
-					columns: [],
-					functionName: "insertEntry",
-					operation: "insert",
-					table: "time_entry",
-					uncertainty: "dynamic_payload",
-				},
-				{
-					columns: [],
-					functionName: "insertActivePeriod",
-					operation: "insert",
-					table: "work_period",
-					uncertainty: "dynamic_payload",
-				},
-			],
-		});
+	it("registers source writes only for work records and the named writers", () => {
+		// Outside work records only these functions write the work tables (Time Tracking
+		// ADR 0010): live work, pending corrections, approval references and absence records.
+		const named = [
+			approvalWriteBoundary.LIVE_WORK_WRITERS,
+			approvalWriteBoundary.PENDING_CORRECTION_WRITERS,
+			approvalWriteBoundary.APPROVAL_REFERENCE_WRITERS,
+			approvalWriteBoundary.ABSENCE_RECORD_WRITERS,
+		].flatMap((writers) =>
+			Object.entries(writers).flatMap(([path, functions]) =>
+				functions.map((functionName) => `${path}#${functionName}`),
+			),
+		);
+		const registered = [
+			...Object.entries(CANONICAL_SOURCE_WRITE_OWNERS),
+			...Object.entries(SOURCE_WRITE_EXCEPTIONS),
+		].flatMap(([path, capabilities]) =>
+			capabilities.map((capability) => `${path}#${capability.functionName}`),
+		);
+		const outsideWorkRecords = registered.filter(
+			(writer) => !writer.startsWith(approvalWriteBoundary.WORK_RECORDS_MODULE),
+		);
+
+		// Every registered writer outside work records is named, and every name is registered.
+		expect([...new Set(outsideWorkRecords)].sort()).toEqual([...new Set(named)].sort());
+		const workRecordsWriters = [...new Set(registered)].filter((writer) =>
+			writer.startsWith(approvalWriteBoundary.WORK_RECORDS_MODULE),
+		);
+		expect(workRecordsWriters.sort()).toEqual([
+			"src/lib/time-tracking/work-records/amend.ts#adoptRecordedEntry",
+			"src/lib/time-tracking/work-records/amend.ts#writeAmendedPair",
+			"src/lib/time-tracking/work-records/create-new.ts#insertNewWorkPeriod",
+			"src/lib/time-tracking/work-records/create.ts#closeLiveWorkPeriod",
+			"src/lib/time-tracking/work-records/create.ts#insertCanonicalRecord",
+			"src/lib/time-tracking/work-records/delete.ts#deleteWorkRecord",
+			"src/lib/time-tracking/work-records/divide.ts#insertAllocations",
+			"src/lib/time-tracking/work-records/divide.ts#writeGeneratedHalf",
+			"src/lib/time-tracking/work-records/divide.ts#writeRetainedHalf",
+			"src/lib/time-tracking/work-records/entry-writer.ts#insertAppendedEntry",
+			"src/lib/time-tracking/work-records/entry-writer.ts#supersedeTakenOverEntry",
+			"src/lib/time-tracking/work-records/erase-history.ts#eraseEmployeeWorkHistory",
+			"src/lib/time-tracking/work-records/open-record.ts#correctOpenWorkRecord",
+			"src/lib/time-tracking/work-records/repair.ts#attachWorkRecord",
+			"src/lib/time-tracking/work-records/repair.ts#insertDetail",
+			"src/lib/time-tracking/work-records/repair.ts#replaceProjectAllocations",
+			"src/lib/time-tracking/work-records/repair.ts#repairWorkRecord",
+			"src/lib/time-tracking/work-records/repair.ts#updateDetail",
+			"src/lib/time-tracking/work-records/repair.ts#writeRepairedPeriod",
+			"src/lib/time-tracking/work-records/revision.ts#advanceWorkRevision",
+		].sort());
 	});
 
 	it("allows a source write only for its exact declared function capability", () => {
@@ -5180,14 +4640,18 @@ export function applyPolicyClockOutTerminalBreakInTransaction() {
 			{
 				[canonicalPath]: `import { db, timeRecord } from "@/db";
 export function insertCanonicalRecord() {
-  return db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
+  return db.insert(timeRecord).values({ organizationId, employeeId, recordKind: "work", startAt, endAt, durationMinutes, approvalState: "approved", origin, createdBy, updatedBy });
 }
 export function wrongCompletedPeriodOwner() {
-  return db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
+  return db.insert(timeRecord).values({ organizationId, employeeId, recordKind: "work", startAt, endAt, durationMinutes, approvalState: "approved", origin, createdBy, updatedBy });
 }`,
 				[correctionPath]: `import { db, workPeriod } from "@/db";
 export function writeAmendedPair() {
-  return db.update(workPeriod).set({ clockInId, clockOutId, startTime, endTime, durationMinutes, approvalStatus, pendingChanges });
+  return db.update(workPeriod).set({
+    clockInId, clockOutId, startTime, endTime, durationMinutes, approvalStatus, pendingChanges,
+    projectId, taskId, isBillable, workCategoryId, workLocationType,
+    vehicleKind, vehicleId, odometerStartKm, odometerEndKm, drivenDistanceKm, graphRevision,
+  });
 }
 export function dynamicCorrectionOwner(patch: object) {
   return db.update(workPeriod).set(patch);
@@ -5250,42 +4714,43 @@ export function renamedCreateTimeRecord() {
 	});
 
 	it("allows only an exact uncertainty-bearing source exception", () => {
-		const path = "src/lib/time-tracking/time-entry-writer.ts";
+		const path = "src/lib/time-record/migration/backfill.ts";
 		const capabilities = SOURCE_WRITE_EXCEPTIONS[path] as unknown as Array<
 			Record<string, unknown>
 		>;
 		const original = capabilities[0];
 		const source =
-			'import { db, timeEntry } from "@/db";\nexport function createTimeEntry(extra: object) { return db.insert(timeEntry).values({ type: "manual", replacesEntryId: "entry-1", isSuperseded: false, ...extra }); }';
+			'import { db, timeRecord } from "@/db";\nexport function upsertCanonicalAbsenceRecords(rows: object[]) { return db.insert(timeRecord).values(rows); }';
 		withApprovalWriteTree({ [path]: source }, (workspaceRoot) => {
 			const scan = () =>
 				scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot });
 			try {
-				expect(scan()).toEqual([
-					expect.objectContaining({ uncertainty: "dynamic_payload" }),
-				]);
+				expect(scan()).toEqual([]);
 
 				capabilities[0] = { ...original, uncertainty: "dynamic_sql" };
 				expect(scan()).toEqual([
 					expect.objectContaining({ uncertainty: "dynamic_payload" }),
 				]);
 
-				capabilities[0] = { ...original, uncertainty: "dynamic_payload" };
-				expect(scan()).toEqual([]);
+				const { uncertainty: _uncertainty, ...certain } = original ?? {};
+				capabilities[0] = certain;
+				expect(scan()).toEqual([
+					expect.objectContaining({ uncertainty: "dynamic_payload" }),
+				]);
 			} finally {
-				capabilities[0] = original;
+				capabilities[0] = original ?? {};
 			}
 		});
 	});
 
 	it("keeps uncertainty exceptions scoped to their named helper", () => {
-		const path = "src/lib/time-tracking/clocking-core.ts";
-		const source = `import { db, timeEntry } from "@/db";
-export async function insertEntry(values: object) {
-  return db.transaction(async (tx) => tx.insert(timeEntry).values(values));
+		const path = "src/lib/time-record/migration/backfill.ts";
+		const source = `import { db, timeRecord } from "@/db";
+export async function upsertCanonicalAbsenceRecords(rows: object[]) {
+  return db.transaction(async (tx) => tx.insert(timeRecord).values(rows));
 }
-export async function hiddenImport(values: object) {
-  return db.transaction(async (tx) => tx.insert(timeEntry).values(values));
+export async function hiddenImport(rows: object[]) {
+  return db.transaction(async (tx) => tx.insert(timeRecord).values(rows));
 }`;
 
 		withApprovalWriteTree({ [path]: source }, (workspaceRoot) => {
@@ -5295,7 +4760,7 @@ export async function hiddenImport(values: object) {
 				expect.objectContaining({
 					functionName: "hiddenImport",
 					path,
-					table: "time_entry",
+					table: "time_record",
 					uncertainty: "dynamic_payload",
 				}),
 			]);
@@ -5502,5 +4967,291 @@ export async function hiddenImport(values: object) {
 		).toEqual({
 			approval_request: ["insert"],
 		});
+	});
+});
+
+/** Registers a fixture capability for one test; the registry is restored afterwards. */
+function withRegisteredSourceWrite(
+	path: string,
+	capability: Record<string, unknown>,
+	run: () => void,
+): void {
+	const owners = CANONICAL_SOURCE_WRITE_OWNERS as unknown as Record<
+		string,
+		Array<Record<string, unknown>> | undefined
+	>;
+	const original = owners[path];
+	owners[path] = [...(original ?? []), capability];
+	try {
+		run();
+	} finally {
+		if (original) owners[path] = original;
+		else delete owners[path];
+	}
+}
+
+describe("work records seam (Time Tracking ADR 0010)", () => {
+	it("reports updates and deletes of the canonical work tables and work periods", () => {
+		const source = `import { db, timeRecord, timeRecordAllocation, timeRecordWork, workPeriod } from "@/db";
+import { eq } from "drizzle-orm";
+export function amendDetail(id: string) {
+  return db.update(timeRecordWork).set({ workCategoryId: "category" }).where(eq(timeRecordWork.recordId, id));
+}
+export function amendAllocation(id: string) {
+  return db.update(timeRecordAllocation).set({ isBillable: true }).where(eq(timeRecordAllocation.recordId, id));
+}
+export function dropAllocations(id: string) {
+  return db.delete(timeRecordAllocation).where(eq(timeRecordAllocation.recordId, id));
+}
+export function dropRecord(id: string) {
+  return db.delete(timeRecord).where(eq(timeRecord.id, id));
+}
+export function dropPeriod(id: string) {
+  return db.delete(workPeriod).where(eq(workPeriod.id, id));
+}`;
+
+		expect(
+			analyzeApprovalWriteMutations(source, FILE_NAME).map(
+				({ columns, functionName, operation, table }) => ({
+					columns,
+					functionName,
+					operation,
+					table,
+				}),
+			),
+		).toEqual([
+			{
+				columns: ["work_category_id"],
+				functionName: "amendDetail",
+				operation: "update",
+				table: "time_record_work",
+			},
+			{
+				columns: ["is_billable"],
+				functionName: "amendAllocation",
+				operation: "update",
+				table: "time_record_allocation",
+			},
+			{
+				columns: undefined,
+				functionName: "dropAllocations",
+				operation: "delete",
+				table: "time_record_allocation",
+			},
+			{
+				columns: undefined,
+				functionName: "dropRecord",
+				operation: "delete",
+				table: "time_record",
+			},
+			{
+				columns: undefined,
+				functionName: "dropPeriod",
+				operation: "delete",
+				table: "work_period",
+			},
+		]);
+	});
+
+	it("reports every work column of a work period, not only its approval columns", () => {
+		const source = `import { db, workPeriod } from "@/db";
+export function retag() {
+  return db.update(workPeriod).set({ projectId: "project", graphRevision: 2, updatedAt: new Date() });
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			expect.objectContaining({
+				columns: ["graph_revision", "project_id"],
+				functionName: "retag",
+				table: "work_period",
+			}),
+		]);
+	});
+
+	it("fails a writer of a canonical table outside work records, even once registered", () => {
+		const path = "src/lib/time-tracking/rogue-detail-writer.ts";
+		const capability = {
+			columns: ["work_category_id"],
+			functionName: "rogueDetail",
+			operation: "update",
+			table: "time_record_work",
+		};
+		withApprovalWriteTree(
+			{
+				[path]: `import { db, timeRecordWork } from "@/db";
+import { eq } from "drizzle-orm";
+export function rogueDetail(id: string) {
+  return db.update(timeRecordWork).set({ workCategoryId: "category" }).where(eq(timeRecordWork.recordId, id));
+}`,
+			},
+			(workspaceRoot) => {
+				const scan = () => scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot });
+				const failure = expect.objectContaining({
+					functionName: "rogueDetail",
+					path,
+					table: "time_record_work",
+					violation: expect.stringContaining("ADR 0010"),
+				});
+				expect(scan()).toEqual([failure]);
+				withRegisteredSourceWrite(path, capability, () => {
+					expect(scan()).toEqual([failure]);
+				});
+			},
+		);
+	});
+
+	it("lets work records write the canonical tables once the write is registered", () => {
+		const path = "src/lib/time-tracking/work-records/fixture-writer.ts";
+		withApprovalWriteTree(
+			{
+				[path]: `import { db, timeRecordWork } from "@/db";
+import { eq } from "drizzle-orm";
+export function writeDetail(id: string) {
+  return db.update(timeRecordWork).set({ workCategoryId: "category" }).where(eq(timeRecordWork.recordId, id));
+}`,
+			},
+			(workspaceRoot) => {
+				const scan = () => scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot });
+				expect(scan()).toEqual([
+					expect.objectContaining({ functionName: "writeDetail", path }),
+				]);
+				expect(scan()[0]).not.toHaveProperty("violation");
+				withRegisteredSourceWrite(
+					path,
+					{
+						columns: ["work_category_id"],
+						functionName: "writeDetail",
+						operation: "update",
+						table: "time_record_work",
+					},
+					() => expect(scan()).toEqual([]),
+				);
+			},
+		);
+	});
+
+	it("fails a writer of work periods and time entries outside work records and live work", () => {
+		const path = "src/lib/approvals/server/rogue-work-writer.ts";
+		withApprovalWriteTree(
+			{
+				[path]: `import { db, timeEntry, workPeriod } from "@/db";
+import { eq } from "drizzle-orm";
+export function retagPeriod(id: string) {
+  return db.update(workPeriod).set({ projectId: "project" }).where(eq(workPeriod.id, id));
+}
+export function appendEntry(values: { employeeId: string; organizationId: string; timestamp: Date }) {
+  return db.insert(timeEntry).values({ employeeId: values.employeeId, organizationId: values.organizationId, type: "clock_in", timestamp: values.timestamp });
+}`,
+			},
+			(workspaceRoot) => {
+				const capabilities = [
+					{
+						columns: ["project_id"],
+						functionName: "retagPeriod",
+						operation: "update",
+						table: "work_period",
+					},
+					{
+						columns: ["employee_id", "organization_id", "timestamp", "type"],
+						functionName: "appendEntry",
+						operation: "insert",
+						table: "time_entry",
+					},
+				];
+				const scan = () => scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot });
+				const failures = [
+					expect.objectContaining({
+						functionName: "retagPeriod",
+						table: "work_period",
+						violation: expect.stringContaining("ADR 0010"),
+					}),
+					expect.objectContaining({
+						functionName: "appendEntry",
+						table: "time_entry",
+						violation: expect.stringContaining("ADR 0010"),
+					}),
+				];
+				expect(scan()).toEqual(expect.arrayContaining(failures));
+				withRegisteredSourceWrite(path, capabilities[0] ?? {}, () =>
+					withRegisteredSourceWrite(path, capabilities[1] ?? {}, () => {
+						expect(scan()).toEqual(expect.arrayContaining(failures));
+						expect(scan()).toHaveLength(2);
+					}),
+				);
+			},
+		);
+	});
+
+	it("fails a live-work function that ends a work period or writes one that has ended", () => {
+		const path = "src/lib/time-tracking/clocking/vehicle-use.ts";
+		const live = `import { db, workPeriod } from "@/db";
+import { and, eq, isNull } from "drizzle-orm";
+export async function writeLive(id: string) {
+  await db.update(workPeriod).set({ vehicleKind: null, vehicleId: null, odometerStartKm: null, odometerEndKm: null, drivenDistanceKm: null, updatedAt: new Date() }).where(and(eq(workPeriod.id, id), eq(workPeriod.isActive, true), isNull(workPeriod.endTime)));
+}`;
+		const ending = `import { db, workPeriod } from "@/db";
+import { and, eq, isNull } from "drizzle-orm";
+export async function writeLive(id: string, end: Date) {
+  await db.update(workPeriod).set({ endTime: end, durationMinutes: 5 }).where(and(eq(workPeriod.id, id), isNull(workPeriod.endTime)));
+}`;
+		const unguarded = `import { db, workPeriod } from "@/db";
+import { eq } from "drizzle-orm";
+export async function writeLive(id: string) {
+  await db.update(workPeriod).set({ vehicleKind: null, vehicleId: null, odometerStartKm: null, odometerEndKm: null, drivenDistanceKm: null, updatedAt: new Date() }).where(eq(workPeriod.id, id));
+}`;
+		withApprovalWriteTree({ [path]: live }, (workspaceRoot) => {
+			expect(scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot })).toEqual([]);
+		});
+		for (const [source, columns, reason] of [
+			[ending, ["duration_minutes", "end_time"], "ended"],
+			[
+				unguarded,
+				[
+					"driven_distance_km",
+					"odometer_end_km",
+					"odometer_start_km",
+					"vehicle_id",
+					"vehicle_kind",
+				],
+				"ended",
+			],
+		] as const) {
+			withApprovalWriteTree({ [path]: source }, (workspaceRoot) => {
+				const scan = () => scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot });
+				const failure = expect.objectContaining({
+					functionName: "writeLive",
+					table: "work_period",
+					violation: expect.stringMatching(new RegExp(`ADR 0010.*${reason}`)),
+				});
+				expect(scan()).toEqual([failure]);
+				// Registering the write does not make it live work.
+				withRegisteredSourceWrite(
+					path,
+					{
+						columns: [...columns],
+						functionName: "writeLive",
+						operation: "update",
+						table: "work_period",
+						...(source === ending ? { semantic: "live_work" } : {}),
+					},
+					() => expect(scan()).toEqual([failure]),
+				);
+			});
+		}
+	});
+
+	it("registers only writes the seam allows", () => {
+		const declared = [
+			...Object.entries(CANONICAL_SOURCE_WRITE_OWNERS),
+			...Object.entries(SOURCE_WRITE_EXCEPTIONS),
+		].flatMap(([path, capabilities]) =>
+			capabilities.map((capability) => ({
+				path,
+				capability,
+				violation: workRecordsSeamViolation(path, capability),
+			})),
+		);
+
+		expect(declared.filter(({ violation }) => violation !== null)).toEqual([]);
 	});
 });

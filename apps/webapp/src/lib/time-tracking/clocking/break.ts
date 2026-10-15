@@ -11,7 +11,12 @@ import {
 	instantToCanonicalString,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
-import { ClockingConflictError, LiveWorkOccupiedError } from "../clocking-core";
+import {
+	ClockingConflictError,
+	createDatabaseClockingStore,
+	insertChainedClockIn,
+	LiveWorkOccupiedError,
+} from "../clocking-core";
 import {
 	type CloseActiveWorkWriter,
 	type ClosingVehicleUse,
@@ -26,7 +31,6 @@ import {
 } from "../close-resume-work";
 import { sendBackChangedPeriodSubmissions } from "../period-submissions/submission-send-back";
 import { findLiveWorkOccupant } from "../start-live-work";
-import { createTimeEntry, type TimeEntryRequestMetadata } from "../time-entry-writer";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { WorkTransactionContext } from "../web-clock-out-transaction";
 import type { WorkLocationType } from "../work-location";
@@ -41,7 +45,12 @@ import {
 } from "./frozen";
 import { clockWriterOf, kioskReceiptEvidence } from "./kiosk";
 import { assertLegacyAccepted } from "./legacy-command";
-import { type BreakCommand, type BreakResult, principalCausingUserId } from "./types";
+import {
+	type BreakCommand,
+	type BreakResult,
+	principalCausingUserId,
+	type TimeEntryRequestMetadata,
+} from "./types";
 
 type Employee = typeof employee.$inferSelect;
 
@@ -353,32 +362,28 @@ async function takeLegacyBreak(
 	);
 	if (occupant) throw new LiveWorkOccupiedError(occupant);
 
-	const clockInEntry = await createTimeEntry(
+	// The resumed work is live work, which Clocking starts (Time Tracking ADR 0010).
+	const store = createDatabaseClockingStore(tx);
+	const clockInEntry = await insertChainedClockIn(
+		store,
 		{
-			id: command.identity.id,
 			employeeId,
 			organizationId,
-			type: "clock_in",
-			timestamp: dateFromInstant(endpoints.resume.instant),
 			createdBy: actorUserId,
-			...endpoints.resume.capture,
-			request,
-			// Entries written in one transaction share their creation time: chain explicitly.
-			chainAfter: closed.entry as typeof timeEntry.$inferSelect,
+			actionId: command.identity.id,
+			action: { instant: endpoints.resume.instant, ...endpoints.resume.capture },
+			source: { ipAddress: request.ipAddress, deviceInfo: request.userAgent },
 		},
-		tx,
+		// Entries written in one transaction share their creation time: chain explicitly.
+		{ id: closed.entry.id, hash: (closed.entry as typeof timeEntry.$inferSelect).hash },
 	);
-	const [resumedPeriod] = await tx
-		.insert(workPeriod)
-		.values({
-			employeeId,
-			organizationId,
-			clockInId: clockInEntry.id,
-			startTime: dateFromInstant(endpoints.resume.instant),
-			workLocationType: period.workLocationType ?? ("office" satisfies WorkLocationType),
-		})
-		.returning({ id: workPeriod.id });
-	if (!resumedPeriod) throw new Error("New work period was not inserted");
+	const resumedPeriod = await store.insertActivePeriod({
+		employeeId,
+		organizationId,
+		clockInId: clockInEntry.id,
+		startTime: dateFromInstant(endpoints.resume.instant),
+		workLocationType: period.workLocationType ?? ("office" satisfies WorkLocationType),
+	});
 	// The resumed start sends a submitted period back (#805); the closed work did already.
 	await sendBackChangedPeriodSubmissions(tx, {
 		organizationId,

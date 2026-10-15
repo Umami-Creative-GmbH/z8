@@ -389,6 +389,33 @@ describe.each(ADMISSIONS)(
 			},
 		);
 
+		it("clears the live work's break in progress, keeping its start operation for replay (#1230)", async () => {
+			const live = await startWork();
+			const breakStart = new Date("2026-07-22T12:00:00Z");
+			const startOperation = randomUUID();
+			await admin.query(
+				`update work_period set break_started_at = $2, break_started_zone = 'Europe/Berlin',
+				   break_started_operation_id = $3 where id = $1`,
+				[live.id, breakStart, startOperation],
+			);
+
+			await expect(
+				complete(live.id, parseInstant(breakStart.toISOString())),
+			).resolves.toMatchObject({ kind: "created" });
+
+			const { rows } = await admin.query(
+				`select end_time, break_started_at, break_started_zone, break_started_operation_id
+				 from work_period where id = $1`,
+				[live.id],
+			);
+			expect(only(rows)).toEqual({
+				end_time: breakStart,
+				break_started_at: null,
+				break_started_zone: null,
+				break_started_operation_id: startOperation,
+			});
+		});
+
 		it("marks the work balance dirty from the clock-in's own offset", async () => {
 			// New York 2026-07-10 22:00 to 2026-07-11 00:30 (UTC 07-11 02:00 to 04:30).
 			const live = await startWork(parseInstant("2026-07-11T02:00:00Z"), "America/New_York");

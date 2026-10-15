@@ -440,10 +440,6 @@ vi.mock("./entry-helpers", () => ({
 	validateProjectAssignment: mockState.validateProjectAssignment,
 }));
 
-vi.mock("@/lib/time-tracking/time-entry-writer", () => ({
-	createTimeEntry: mockState.createTimeEntry,
-}));
-
 vi.mock("./policy-helpers", () => ({
 	getEditCapabilityForPeriod: mockState.getEditCapabilityForPeriod,
 }));

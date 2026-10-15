@@ -146,8 +146,30 @@ export type ClockingStore = {
 		scope: AppendScope,
 		operation: TimeEntryAppendOperation,
 	): Promise<TimeEntryAppendAdmissionResult>;
-	insertEntry(entry: Record<string, unknown>): Promise<Entry>;
-	insertActivePeriod(period: Record<string, unknown>): Promise<{ id: string }>;
+	/** A live clock-in entry (Time Tracking ADR 0010: live work is Clocking's). */
+	insertEntry(entry: ClockEntryValues): Promise<Entry>;
+	/** Starts live work: an active period with no end. */
+	insertActivePeriod(period: LiveWorkPeriodValues): Promise<{ id: string; graphRevision: number }>;
+};
+
+export type ClockEntryValues = ReturnType<typeof entryValues>;
+
+/**
+ * Live work as it starts (ADR 0002): its clock-in and attribution, never an end,
+ * which only work records writes when it completes the work (ADR 0010).
+ */
+export type LiveWorkPeriodValues = {
+	employeeId: string;
+	organizationId: string;
+	clockInId: string;
+	startTime: Date;
+	workLocationType?: (typeof workPeriod.$inferInsert)["workLocationType"];
+	projectId?: string | null;
+	isBillable?: boolean;
+	taskId?: string | null;
+	workCategoryId?: string | null;
+	approvalStatus?: "approved";
+	graphRevision?: number;
 };
 
 export type ClockingDependencies = {
@@ -214,6 +236,20 @@ function entryValues(input: ClockingInput, type: "clock_in" | "clock_out", link:
 		timezone: input.action.timezone,
 		timezoneSource: input.action.timezoneSource,
 	};
+}
+
+/**
+ * A live clock-in entry chained right after a predecessor its caller already
+ * holds (the legacy break's clock-out, the legacy import's chain head): the exact
+ * link an admitted append records, without an admission. Live work's entry, so
+ * Clocking writes it (Time Tracking ADR 0010).
+ */
+export function insertChainedClockIn(
+	store: Pick<ClockingStore, "insertEntry">,
+	input: ClockingInput,
+	predecessor: AppendPredecessor | null,
+): Promise<Entry> {
+	return store.insertEntry(entryValues(input, "clock_in", { kind: "admitted", predecessor }));
 }
 
 /** How a clock entry was linked: the admission mode and the exact predecessor it follows. */
@@ -456,7 +492,6 @@ export function createClockingService(deps: ClockingDependencies) {
 					organizationId: input.organizationId,
 					clockInId: entry.id,
 					startTime: dateFromInstant(input.action.instant),
-					isActive: true,
 					workLocationType: input.workLocationType,
 				});
 				return { entry, period };
@@ -553,10 +588,28 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 			return latest?.hash ?? null;
 		},
 		admitAppend: (scope, operation) => admitTimeEntryAppend(tx, scope, operation),
+		// Explicit columns: the approval write-boundary scanner checks live work's writes.
 		insertEntry: async (values) => {
 			const [entry] = await tx
 				.insert(timeEntry)
-				.values(values as never)
+				.values({
+					id: values.id,
+					previousEntryId: values.previousEntryId,
+					employeeId: values.employeeId,
+					organizationId: values.organizationId,
+					type: values.type,
+					timestamp: values.timestamp,
+					hash: values.hash,
+					previousHash: values.previousHash,
+					createdBy: values.createdBy,
+					ipAddress: values.ipAddress,
+					deviceInfo: values.deviceInfo,
+					notes: values.notes,
+					location: values.location,
+					utcOffsetMinutes: values.utcOffsetMinutes,
+					timezone: values.timezone,
+					timezoneSource: values.timezoneSource,
+				})
 				.returning();
 			if (!entry) throw new Error("Failed to create time entry");
 			return entry;
@@ -564,8 +617,21 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 		insertActivePeriod: async (values) => {
 			const [period] = await tx
 				.insert(workPeriod)
-				.values(values as never)
-				.returning({ id: workPeriod.id });
+				.values({
+					employeeId: values.employeeId,
+					organizationId: values.organizationId,
+					clockInId: values.clockInId,
+					startTime: values.startTime,
+					isActive: true,
+					workLocationType: values.workLocationType,
+					projectId: values.projectId,
+					isBillable: values.isBillable,
+					taskId: values.taskId,
+					workCategoryId: values.workCategoryId,
+					approvalStatus: values.approvalStatus,
+					graphRevision: values.graphRevision,
+				})
+				.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
 			if (!period) throw new Error("Failed to create work period");
 			return period;
 		},

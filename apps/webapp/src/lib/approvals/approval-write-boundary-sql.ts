@@ -51,6 +51,8 @@ export type ApprovalSourceMutationSemantic =
 	| "correction"
 	| "correction_lifecycle"
 	| "inactive_correction"
+	/** A work period update limited to work that has not ended (Time Tracking ADR 0010). */
+	| "live_work"
 	| "ordinary_finalization"
 	| "policy_clock_out_terminal_break"
 	| "synthetic_time_entry";
@@ -105,25 +107,6 @@ const TIME_ENTRY_LIFECYCLE_COLUMNS = new Set([
 	"is_superseded",
 	"replaces_entry_id",
 	"superseded_by_id",
-]);
-const WORK_PERIOD_APPROVAL_COLUMNS = new Set([
-	"approval_status",
-	"pending_changes",
-	"approval_workflow_id",
-	"canonical_record_id",
-	"clock_in_id",
-	"clock_out_id",
-	"start_time",
-	"end_time",
-	"duration_minutes",
-]);
-const TIME_RECORD_APPROVAL_COLUMNS = new Set([
-	"approval_state",
-	"employee_id",
-	"organization_id",
-	"start_at",
-	"end_at",
-	"duration_minutes",
 ]);
 const SYNTHETIC_TIME_ENTRY_COLUMNS = [
 	"created_by",
@@ -687,17 +670,15 @@ function targetedColumns(
 	table: TargetedApprovalSourceTable,
 	columns: readonly string[],
 ): string[] {
-	const protectedColumns =
-		table === "work_period"
-			? columns.filter((column) => WORK_PERIOD_APPROVAL_COLUMNS.has(column))
-			: table === "time_entry"
-				? columns.filter(
-						(column) =>
-							column === "type" || TIME_ENTRY_LIFECYCLE_COLUMNS.has(column),
-					)
-				: table === "time_record"
-					? columns.filter((column) => TIME_RECORD_APPROVAL_COLUMNS.has(column))
-					: columns;
+	// Every column of the work tables is work (Time Tracking ADR 0010), except row
+	// bookkeeping and a time entry's free-text note, which no work rule reads.
+	const protectedColumns = columns.filter(
+		(column) =>
+			column !== APPROVAL_DYNAMIC_SQL_MARKER &&
+			column !== "updated_at" &&
+			column !== "updated_by" &&
+			!(table === "time_entry" && column === "notes"),
+	);
 	return [...new Set(protectedColumns)].sort();
 }
 
@@ -767,17 +748,6 @@ function inspectTargetedSourceSqlMutations(
 				statement.includes(APPROVAL_DYNAMIC_SQL_MARKER) &&
 				!correction &&
 				!syntheticTimeEntry;
-			if (
-				target.table === "time_entry" &&
-				!correction &&
-				!syntheticTimeEntry &&
-				!protectedColumns.some((column) =>
-					TIME_ENTRY_LIFECYCLE_COLUMNS.has(column),
-				) &&
-				!dynamicColumns &&
-				!dynamicCorrectionSemantic
-			)
-				continue;
 			mutations.push({
 				...(protectedColumns.length > 0 ? { columns: protectedColumns } : {}),
 				offset: tokens[start]?.start ?? 0,
@@ -801,7 +771,15 @@ function inspectTargetedSourceSqlMutations(
 			continue;
 		}
 		if (operation === "delete") {
-			if (target.table !== "time_entry") continue;
+			// Every delete of work is reported (Time Tracking ADR 0010).
+			if (target.table !== "time_entry") {
+				mutations.push({
+					offset: tokens[start]?.start ?? 0,
+					operation,
+					table: target.table,
+				});
+				continue;
+			}
 			const statementEnd = sqlText.indexOf(";", tokens[start]?.start ?? 0);
 			const statement = sqlText.slice(
 				tokens[start]?.start ?? 0,
@@ -820,7 +798,14 @@ function inspectTargetedSourceSqlMutations(
 				/\breplaces_entry_id\s*=/i.test(statement) &&
 				/\bis_superseded\s*=\s*true\b/i.test(statement) &&
 				/\bsuperseded_by_id\s+is\s+null\b/i.test(statement);
-			if (!inactiveCorrection) continue;
+			if (!inactiveCorrection) {
+				mutations.push({
+					offset: tokens[start]?.start ?? 0,
+					operation,
+					table: target.table,
+				});
+				continue;
+			}
 			mutations.push({
 				columns: constrainedColumns,
 				offset: tokens[start]?.start ?? 0,
@@ -868,13 +853,27 @@ function inspectTargetedSourceSqlMutations(
 		}
 		const protectedColumns = targetedColumns(target.table, columns);
 		if (protectedColumns.length === 0 && !dynamicAssignment) continue;
+		const updateEnd = sqlText.indexOf(";", tokens[start]?.start ?? 0);
+		const updateStatement = sqlText.slice(
+			tokens[start]?.start ?? 0,
+			updateEnd === -1 ? undefined : updateEnd,
+		);
+		const liveWork =
+			target.table === "work_period" &&
+			/\bwhere\b[\s\S]*\b(?:end_time\s+is\s+null|clock_out_id\s+is\s+null|is_active\s*=\s*true)\b/i.test(
+				updateStatement,
+			);
 		mutations.push({
 			...(protectedColumns.length > 0 ? { columns: protectedColumns } : {}),
 			offset: tokens[start]?.start ?? 0,
 			operation,
-			...(target.table === "time_entry" && protectedColumns.length > 0
-				? { semantic: "correction_lifecycle" as const }
-				: target.table === "time_record"
+			...(target.table === "time_entry"
+				? protectedColumns.some((column) => TIME_ENTRY_LIFECYCLE_COLUMNS.has(column))
+					? { semantic: "correction_lifecycle" as const }
+					: {}
+				: liveWork
+					? { semantic: "live_work" as const }
+					: target.table === "time_record"
 					? {
 							semantic: protectedColumns.includes("approval_state")
 								? ("ordinary_finalization" as const)

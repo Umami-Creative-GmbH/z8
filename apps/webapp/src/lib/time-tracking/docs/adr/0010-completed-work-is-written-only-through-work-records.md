@@ -26,3 +26,4 @@ A completed work period is kept twice: the work period with its time entries, an
 - Legacy writers now advance the revision. Fingerprints built on it (payroll source, time-correction evidence, automatic-break intents) see legacy changes as well.
 - Historical repairs, the canonical backfill, the legacy import and demo data also write through work records. Only SQL migrations are exempt from the scanner rule.
 - Retiring legacy admission later means deleting work records' legacy writer, with no changes to callers.
+- The scanner reports every column, update and delete of these tables, and names the few other writers by what they write, none of it completed work (#1230): live work, pending corrections (an employee's inactive correction entries until a decision), Approvals' workflow references on a work period, and absence records, which share `time_record` but never its work tables. Live-work functions must name the live work in their own `where` and never set an end.
