@@ -107,6 +107,16 @@ describe("WellnessPage", () => {
 		expect(continueButton).toHaveProperty("disabled", true);
 	});
 
+	it("associates wellness controls with their visible labels", () => {
+		render(<WellnessPage />);
+
+		expect(
+			screen.getByRole("switch", { name: "Enable Water Reminders" }),
+		).toBeTruthy();
+		expect(screen.getByLabelText("Reminder Frequency")).toBeTruthy();
+		expect(screen.getByRole("slider", { name: "Daily Goal" })).toBeTruthy();
+	});
+
 	it("keeps skip disabled after successful skip navigation", async () => {
 		skipWellnessSetupMock.mockResolvedValue({ success: true });
 		render(<WellnessPage />);

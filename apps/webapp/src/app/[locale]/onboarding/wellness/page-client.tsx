@@ -36,6 +36,43 @@ import { configureWellnessOnboarding, skipWellnessSetup } from "./actions";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
+// The /onboarding route only loads the common and onboarding namespaces, so the
+// settings.wellness.presets.* keys on WATER_PRESETS would render in English here.
+const WATER_PRESET_COPY: Record<
+	WaterReminderPreset,
+	{
+		labelKey: string;
+		labelDefault: string;
+		descriptionKey: string;
+		descriptionDefault: string;
+	}
+> = {
+	light: {
+		labelKey: "onboarding.wellness.presets.light.label",
+		labelDefault: "Light",
+		descriptionKey: "onboarding.wellness.presets.light.description",
+		descriptionDefault: "Every 60 minutes - for low activity",
+	},
+	moderate: {
+		labelKey: "onboarding.wellness.presets.moderate.label",
+		labelDefault: "Moderate",
+		descriptionKey: "onboarding.wellness.presets.moderate.description",
+		descriptionDefault: "Every 45 minutes - recommended for most people",
+	},
+	active: {
+		labelKey: "onboarding.wellness.presets.active.label",
+		labelDefault: "Active",
+		descriptionKey: "onboarding.wellness.presets.active.description",
+		descriptionDefault: "Every 30 minutes - for high activity or hot environments",
+	},
+	custom: {
+		labelKey: "onboarding.wellness.presets.custom.label",
+		labelDefault: "Custom",
+		descriptionKey: "onboarding.wellness.presets.custom.description",
+		descriptionDefault: "Set your own interval (15-120 minutes)",
+	},
+};
+
 function WellnessHeader({ t }: { t: Translate }) {
 	return (
 		<div className="mb-8 text-center">
@@ -123,18 +160,25 @@ function WellnessSettings({
 	return (
 		<div className="space-y-4 rounded-lg bg-muted/50 p-4">
 			<div className="space-y-2">
-				<Label>
+				<Label htmlFor="wellness-reminder-frequency">
 					{t("onboarding.wellness.reminderFrequency", "Reminder Frequency")}
 				</Label>
 				<Select value={selectedPreset} onValueChange={onPresetChange}>
-					<SelectTrigger className="w-full">
+					<SelectTrigger
+						id="wellness-reminder-frequency"
+						aria-describedby="wellness-reminder-frequency-description"
+						className="w-full"
+					>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
 						{Object.values(WATER_PRESETS).map((preset) => (
 							<SelectItem key={preset.id} value={preset.id}>
 								<span className="flex items-center gap-2">
-									{preset.label}
+									{t(
+										WATER_PRESET_COPY[preset.id].labelKey,
+										WATER_PRESET_COPY[preset.id].labelDefault,
+									)}
 									{preset.recommended && (
 										<span className="text-xs text-primary">
 											{t("onboarding.wellness.recommended", "(Recommended)")}
@@ -145,8 +189,14 @@ function WellnessSettings({
 						))}
 					</SelectContent>
 				</Select>
-				<p className="text-xs text-muted-foreground">
-					{WATER_PRESETS[selectedPreset].description}
+				<p
+					id="wellness-reminder-frequency-description"
+					className="text-xs text-muted-foreground"
+				>
+					{t(
+						WATER_PRESET_COPY[selectedPreset].descriptionKey,
+						WATER_PRESET_COPY[selectedPreset].descriptionDefault,
+					)}
 				</p>
 			</div>
 
@@ -155,7 +205,7 @@ function WellnessSettings({
 					{(field) => (
 						<div className="space-y-2">
 							<div className="flex items-center justify-between">
-								<Label>
+								<Label id="wellness-custom-interval-label">
 									{t("onboarding.wellness.customInterval", "Custom Interval")}
 								</Label>
 								<span className="text-sm font-medium">
@@ -165,6 +215,7 @@ function WellnessSettings({
 								</span>
 							</div>
 							<Slider
+								aria-labelledby="wellness-custom-interval-label"
 								value={[field.state.value]}
 								onValueChange={(value) => field.handleChange(value[0])}
 								min={CUSTOM_INTERVAL_RANGE.min}
@@ -193,13 +244,16 @@ function WellnessSettings({
 				{(field) => (
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
-							<Label>{t("onboarding.wellness.dailyGoal", "Daily Goal")}</Label>
+							<Label id="wellness-daily-goal-label">
+								{t("onboarding.wellness.dailyGoal", "Daily Goal")}
+							</Label>
 							<span className="text-sm font-medium">
 								{field.state.value}{" "}
 								{t("onboarding.wellness.glasses", "glasses")}
 							</span>
 						</div>
 						<Slider
+							aria-labelledby="wellness-daily-goal-label"
 							value={[field.state.value]}
 							onValueChange={(value) => field.handleChange(value[0])}
 							min={DAILY_GOAL_RANGE.min}
@@ -346,13 +400,19 @@ export default function WellnessPage() {
 								{(field) => (
 									<div className="flex flex-row items-center justify-between gap-4 rounded-lg border p-4">
 										<div className="min-w-0 space-y-0.5">
-											<Label className="text-base">
+											<Label
+												htmlFor="wellness-enable-reminder"
+												className="text-base"
+											>
 												{t(
 													"onboarding.wellness.enableReminder",
 													"Enable Water Reminders",
 												)}
 											</Label>
-											<p className="text-sm text-muted-foreground">
+											<p
+												id="wellness-enable-reminder-description"
+												className="text-sm text-muted-foreground"
+											>
 												{t(
 													"onboarding.wellness.enableReminderDesc",
 													"Receive gentle reminders to drink water during work hours.",
@@ -360,6 +420,8 @@ export default function WellnessPage() {
 											</p>
 										</div>
 										<Switch
+											id="wellness-enable-reminder"
+											aria-describedby="wellness-enable-reminder-description"
 											checked={field.state.value}
 											onCheckedChange={field.handleChange}
 											disabled={loading}

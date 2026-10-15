@@ -520,8 +520,20 @@ export default function WorkTemplatesPage() {
 								validators={{
 									onChange: z
 										.string()
-										.min(1, "Template name is required")
-										.max(100),
+										.min(
+											1,
+											t(
+												"onboarding.workTemplates.validation.nameRequired",
+												"Template name is required",
+											),
+										)
+										.max(
+											100,
+											t(
+												"onboarding.workTemplates.validation.nameTooLong",
+												"Template name must be 100 characters or fewer",
+											),
+										),
 								}}
 							>
 								{(field) => (
@@ -540,7 +552,22 @@ export default function WorkTemplatesPage() {
 							<form.Field
 								name="hoursPerWeek"
 								validators={{
-									onChange: z.number().min(0).max(168),
+									onChange: z
+										.number()
+										.min(
+											0,
+											t(
+												"onboarding.workTemplates.validation.hoursNegative",
+												"Hours cannot be negative",
+											),
+										)
+										.max(
+											168,
+											t(
+												"onboarding.workTemplates.validation.hoursTooMany",
+												"A week has at most 168 hours",
+											),
+										),
 								}}
 							>
 								{(field) => (
