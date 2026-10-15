@@ -1,5 +1,6 @@
 "use client";
 
+import { EmployeeTrackingDateCard } from "@/components/settings/employee-tracking-date-card";
 import { IconCoin, IconLoader2, IconReceipt2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -382,6 +383,8 @@ function EmployeeRecordSections({
 					isOwnRecord={employee.userId === currentUserId}
 				/>
 			)}
+
+			{isOrgAdminOrManager && <EmployeeTrackingDateCard employeeId={employeeId} />}
 
 			<EmployeeEmploymentHistoryCard
 				history={data.employmentHistory}
