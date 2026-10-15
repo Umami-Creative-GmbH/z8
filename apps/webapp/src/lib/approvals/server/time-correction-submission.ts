@@ -89,7 +89,6 @@ import {
 	type AmendCompletedWorkCommand,
 	type AmendCompletedWorkInput,
 	type AmendCompletedWorkIntent,
-	amendLegacyCompletedWork,
 	describeAmendmentFailure,
 	replayCommittedAmendment,
 	replayOrAmendCompletedWork,
@@ -574,9 +573,7 @@ export async function editSameDayTimeEntry(
 						deviceInfo: requestMetadata.userAgent,
 					},
 				};
-				return scope.admission === "append"
-					? replayOrAmendCompletedWork(scope, amendment)
-					: amendLegacyCompletedWork(scope, amendment);
+				return replayOrAmendCompletedWork(scope, amendment);
 			},
 		);
 		logger.info(

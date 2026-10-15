@@ -201,7 +201,7 @@ describe("time correction request safety", () => {
 		const submissionBody = functionBody(modularSource, "submitCorrection");
 
 		// The amendment validates and writes the same-day metadata through work records (#1226).
-		expect(directBody).toContain("amendLegacyCompletedWork(scope, amendment)");
+		expect(directBody).toContain("replayOrAmendCompletedWork(scope, amendment)");
 		expect(directBody).not.toContain("timeRecordWork");
 		expect(submissionBody).toContain("validateCorrectionWorkMetadata");
 		expect(submissionBody).toContain("input.workLocationType");
@@ -349,7 +349,8 @@ describe("time correction request safety", () => {
 
 		expect(body).toContain("withCompletedWorkTransaction");
 		expect(body).toContain("replayOrAmendCompletedWork(scope, amendment)");
-		expect(body).toContain("amendLegacyCompletedWork(scope, amendment)");
+		// Admission stays hidden (#1231).
+		expect(body).not.toContain("amendLegacyCompletedWork");
 		expect(body).toContain("workPeriodId: selectedWorkPeriod.id");
 		expect(body).not.toContain(".update(timeEntry)");
 		expect(body).not.toContain("createTimeEntry({");
