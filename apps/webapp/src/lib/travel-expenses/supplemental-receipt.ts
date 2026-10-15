@@ -13,6 +13,9 @@ import { loadAuthorizedApprovalDetail } from "@/lib/approvals/inbox/authorized-d
 import { getAuthContext } from "@/lib/auth-helpers";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "./attachment-validation";
+import { loadFinanceActor } from "./finance-access";
+import { mergeOfficerScopes } from "./officer-scope";
+import { isSourceInOfficerScope } from "./officer-scope-read";
 import type { StoredReceiptObject } from "./receipt-upload";
 import type { StagedReportReceiptUpload } from "./report-receipt-upload";
 
@@ -22,12 +25,16 @@ type Executor =
 	| Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Report = typeof travelExpenseReport.$inferSelect;
 
-/** Current review rights, never historical read access or report ownership. */
-export async function canSupplySubmittedReceipt(
+/** Current review rights, or approved handling capability within the captured officer scope. */
+export async function canSupplyReportReceipt(
 	report: Report,
 	cycle: number,
+	options: { database?: Executor; lockAuthority?: boolean } = {},
 ): Promise<boolean> {
-	if (report.status !== "submitted" || report.submissionCount !== cycle)
+	if (
+		(report.status !== "submitted" && report.status !== "approved") ||
+		report.submissionCount !== cycle
+	)
 		return false;
 	const actor = await getAuthContext();
 	if (
@@ -35,6 +42,24 @@ export async function canSupplySubmittedReceipt(
 		actor.employee.organizationId !== report.organizationId
 	)
 		return false;
+	if (report.status === "approved") {
+		const database = options.database ?? db;
+		const finance = await loadFinanceActor({
+			database,
+			lockGrant: options.lockAuthority,
+		});
+		if (!finance || finance.organizationId !== report.organizationId)
+			return false;
+		return isSourceInOfficerScope(
+			database,
+			mergeOfficerScopes(finance.scopes.export, finance.scopes.settle),
+			{
+				organizationId: report.organizationId,
+				source: { type: "report", id: report.id },
+				employeeId: report.employeeId,
+			},
+		);
+	}
 	const revision = await loadTravelExpenseReportSubmittedRevision(db, {
 		organizationId: report.organizationId,
 		reportId: report.id,
@@ -89,6 +114,7 @@ export async function missingSubmittedReceiptEligible(
 		submissionCycle: number;
 	},
 	report?: Report,
+	options: { lockAuthority?: boolean } = {},
 ) {
 	const current =
 		report ??
@@ -100,7 +126,10 @@ export async function missingSubmittedReceiptEligible(
 		}));
 	if (
 		!current ||
-		!(await canSupplySubmittedReceipt(current, input.submissionCycle))
+		!(await canSupplyReportReceipt(current, input.submissionCycle, {
+			database,
+			lockAuthority: options.lockAuthority,
+		}))
 	)
 		return false;
 	const revision = await loadTravelExpenseReportSubmittedRevision(database, {
@@ -154,7 +183,12 @@ export async function finalizeSupplementalReceipt(
 				),
 			)
 			.for("update");
-		if (!report || !(await missingSubmittedReceiptEligible(tx, input, report)))
+		if (
+			!report ||
+			!(await missingSubmittedReceiptEligible(tx, input, report, {
+				lockAuthority: true,
+			}))
+		)
 			return { kind: "conflict" } as const;
 		const actor = await getAuthContext();
 		if (

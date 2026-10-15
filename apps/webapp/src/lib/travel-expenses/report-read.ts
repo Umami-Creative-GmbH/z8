@@ -39,7 +39,7 @@ import {
 } from "./owner-self-approval";
 import { sortHistoryByInstant } from "./report-history";
 import {
-	canSupplySubmittedReceipt,
+	canSupplyReportReceipt,
 	listSupplementalReceipts,
 } from "./supplemental-receipt";
 
@@ -112,7 +112,25 @@ export async function loadAuthorizedTravelExpenseReport(
 	const reviewer = { userId: actor.user.id, organizationId };
 	const reviewerCycles = await reviewedCyclesOf(reviewer, report.id);
 	if (reviewerCycles.length > 0) {
-		return { status: "found", report, access: "reviewer", reviewerCycles };
+		// A historical reviewer may also handle the approved current submission as
+		// an expense officer. Preserve both rights without opening unrelated cycles.
+		if (
+			report.status === "approved" &&
+			(await financeActorReads(await loadFinanceActor(), {
+				source: { type: "report", id: report.id },
+				employeeId: report.employeeId,
+			}))
+		) {
+			reviewerCycles.push(report.submissionCount);
+		}
+		return {
+			status: "found",
+			report,
+			access: "reviewer",
+			reviewerCycles: [...new Set(reviewerCycles)].sort(
+				(left, right) => left - right,
+			),
+		};
 	}
 	// The reviewer of an adjustment (#615) reads the report it corrects (#617):
 	// the adjustment's own facts are a copy of it, so this reveals no other expense.
@@ -555,7 +573,7 @@ export async function loadSubmittedReportView(
 		})),
 	);
 	return {
-		canAddReceipt: await canSupplySubmittedReceipt(report, cycle),
+		canAddReceipt: await canSupplyReportReceipt(report, cycle),
 		reportId: report.id,
 		status: report.status,
 		access,
