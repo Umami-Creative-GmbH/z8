@@ -2,6 +2,7 @@
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { useOrganization } from "@/hooks/use-organization";
 
 type ActionResult<T> = {
@@ -65,6 +66,8 @@ export function useWidgetData<T>(
 			setRefreshing(false);
 		}
 	}
+
+	useViewRefresh(() => runLoadData(true));
 
 	const loadData = useEffectEvent(runLoadData);
 

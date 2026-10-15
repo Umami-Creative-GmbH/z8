@@ -1,5 +1,7 @@
 "use client";
 
+import { useServerDraftState } from "@/hooks/use-server-draft-state";
+
 import { IconLoader2, IconUpload, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import Image from "next/image";
@@ -30,8 +32,8 @@ function useBrandingFormController({
 	organizationId,
 }: BrandingFormProps) {
 	const { t } = useTranslate();
-	const [branding, setBranding] =
-		useState<OrganizationBranding>(initialBranding);
+	const [branding, setBranding, markSaved] =
+		useServerDraftState<OrganizationBranding>(initialBranding);
 	const [isSaving, setIsSaving] = useState(false);
 
 	// Logo upload
@@ -96,6 +98,7 @@ function useBrandingFormController({
 		await runWithBusyState(setIsSaving, async () => {
 			try {
 				await updateBrandingAction(branding);
+				markSaved(branding);
 				toast.success(
 					t("settings.branding.saveSuccess", "Branding settings saved"),
 				);
@@ -256,8 +259,7 @@ function BackgroundImageCard({
 						</p>
 						{backgroundUpload.isUploading && (
 							<p className="text-sm text-muted-foreground">
-								{t("common.uploading", "Uploading...")}{" "}
-								{backgroundUpload.progress}%
+								{t("common.uploading", "Uploading...")} {backgroundUpload.progress}%
 							</p>
 						)}
 					</div>

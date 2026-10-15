@@ -13,13 +13,19 @@ import {
 	ReactFlowProvider,
 	useReactFlow,
 } from "@xyflow/react";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import "@xyflow/react/dist/style.css";
 import { useTranslate } from "@tolgee/react";
 import { startTransition, useEffect, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/user-avatar";
 import { normalizePronouns } from "@/lib/employee-identity";
-import { getEmployeeNeighborhood, getTeamNeighborhood, searchOrgEmployees } from "./actions";
+import {
+	getEmployeeNeighborhood,
+	getOrgChartInitialGraph,
+	getTeamNeighborhood,
+	searchOrgEmployees,
+} from "./actions";
 import { mergeOrgChartGraphs } from "./org-chart-graph";
 import type {
 	OrgChartEdge,
@@ -151,6 +157,25 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 	const searchRequestSequence = useRef(0);
 	const skipNextFitViewRef = useRef(false);
 
+	const [expandedEmployees, setExpandedEmployees] = useState<string[]>([]);
+	const [expandedTeams, setExpandedTeams] = useState<string[]>([]);
+
+	useViewRefresh(async () => {
+		const [base, ...neighborhoods] = await Promise.all([
+			getOrgChartInitialGraph(),
+			...expandedEmployees.map(getEmployeeNeighborhood),
+			...expandedTeams.map(getTeamNeighborhood),
+		]);
+		if (!base.success) throw new Error(base.error);
+		let next = base.data;
+		for (const result of neighborhoods) {
+			if (!result.success) throw new Error(result.error);
+			next = mergeOrgChartGraphs(next, result.data, graph.focusedEmployeeId);
+		}
+		skipNextFitViewRef.current = next.nodes.length !== graph.nodes.length;
+		setGraph((current) => (current === graph ? next : current));
+	});
+
 	const flowNodes = buildFlowNodes(graph.nodes, graph.edges, {
 		onExpandEmployee: (employeeId: string) => {
 			void expandEmployee(employeeId);
@@ -244,6 +269,9 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 	}
 
 	async function focusEmployee(employeeId: string) {
+		setExpandedEmployees((current) =>
+			current.includes(employeeId) ? current : [...current, employeeId],
+		);
 		dispatchUi({ type: "focusStarted" });
 		const result = await getEmployeeNeighborhood(employeeId);
 
@@ -262,6 +290,9 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 	}
 
 	async function expandEmployee(employeeId: string) {
+		setExpandedEmployees((current) =>
+			current.includes(employeeId) ? current : [...current, employeeId],
+		);
 		dispatchUi({ type: "expandStarted" });
 		const result = await getEmployeeNeighborhood(employeeId);
 		dispatchUi({ type: "expandFinished" });
@@ -280,6 +311,7 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 	}
 
 	async function expandTeam(teamId: string) {
+		setExpandedTeams((current) => (current.includes(teamId) ? current : [...current, teamId]));
 		dispatchUi({ type: "expandStarted" });
 		const result = await getTeamNeighborhood(teamId);
 		dispatchUi({ type: "expandFinished" });

@@ -1,5 +1,7 @@
 "use client";
 
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
+
 import { IconCheck, IconLoader2, IconPlugConnected, IconTrash, IconX } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
@@ -130,6 +132,22 @@ function useStorageSettingsForm({
 	const lastVerifiedLabel = config?.lastVerifiedAt
 		? formatInstant(instantFromDate(config.lastVerifiedAt), displayContext, "dateTimeMedium")
 		: null;
+
+	useViewRefresh(async () => {
+		const result = await getStorageConfigAction(organizationId);
+		if (!result.success) throw new Error(result.error);
+		setConfig(result.data);
+		onConfigChange?.(Boolean(result.data));
+		if (!form.store.state.isDirty) {
+			form.reset({
+				bucket: result.data?.bucket ?? "",
+				accessKeyId: "",
+				secretAccessKey: "",
+				region: result.data?.region ?? "us-east-1",
+				endpoint: result.data?.endpoint ?? "",
+			});
+		}
+	});
 
 	// Load config on mount if not provided
 	useEffect(() => {

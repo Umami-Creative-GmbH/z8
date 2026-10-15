@@ -38,6 +38,7 @@ function ChannelForm({ setting }: { setting: ReimbursementChannelSetting }) {
 				return;
 			}
 			queryClient.setQueryData(queryKey, result.data);
+			form.reset(value);
 			toast.success(
 				t("travelExpenses.settings.reimbursementChannel.saved", "Reimbursement channel saved"),
 			);
@@ -195,12 +196,7 @@ export function ReimbursementChannelSettingsCard() {
 						</Button>
 					</div>
 				)}
-				{data && (
-					<ChannelForm
-						key={`${data.channel}:${data.payrollRunAvailable}:${data.unconfirmedPayrollRuns}`}
-						setting={data}
-					/>
-				)}
+				{data && <ChannelForm setting={data} />}
 			</CardContent>
 		</Card>
 	);

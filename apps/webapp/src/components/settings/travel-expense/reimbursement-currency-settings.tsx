@@ -50,6 +50,7 @@ function CurrencyForm({ currency }: { currency: string }) {
 				return;
 			}
 			await queryClient.invalidateQueries({ queryKey });
+			form.reset(value);
 			toast.success(t("settings.travelExpenses.currency.saved", "Reimbursement currency saved"));
 		},
 	});
@@ -147,7 +148,7 @@ export function ReimbursementCurrencySettingsCard() {
 						</Button>
 					</div>
 				)}
-				{data && <CurrencyForm key={data.currency} currency={data.currency} />}
+				{data && <CurrencyForm currency={data.currency} />}
 			</CardContent>
 		</Card>
 	);

@@ -14,6 +14,8 @@ import {
 	rotateEnterpriseIdentityScimCredentialAction,
 } from "@/app/[locale]/(app)/settings/enterprise/scim-actions";
 
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
+
 type Status = Awaited<ReturnType<typeof getEnterpriseIdentityScimStatusAction>>;
 type Events = Awaited<
 	ReturnType<typeof listEnterpriseIdentityScimEventsAction>
@@ -26,9 +28,7 @@ function loadScimConnection(connectionId: string) {
 	]);
 }
 
-export function useScimAdminController(
-	setup: EnterpriseIdentitySetupResponse["state"],
-) {
+export function useScimAdminController(setup: EnterpriseIdentitySetupResponse["state"]) {
 	const { t } = useTranslate();
 	const [status, setStatus] = useState<Status | null>(null);
 	const [events, setEvents] = useState<Events>([]);
@@ -51,6 +51,14 @@ export function useScimAdminController(
 			: (status?.connection.connectionId ??
 				setup.scim.connection?.connectionId ??
 				null);
+
+	useViewRefresh(async () => {
+		if (!connectionId) return;
+		const [nextStatus, nextEvents] = await loadScimConnection(connectionId);
+		setStatus(nextStatus);
+		setEvents(nextEvents);
+		setEventsError(false);
+	});
 
 	const refresh = () => {
 		if (!connectionId) return;

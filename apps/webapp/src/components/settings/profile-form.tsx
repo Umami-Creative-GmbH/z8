@@ -18,7 +18,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
@@ -26,6 +26,7 @@ import {
 	updateProfileDetails,
 	updateProfileImage,
 } from "@/app/[locale]/(app)/settings/profile/actions";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -278,19 +279,20 @@ export function ProfileForm({ user }: ProfileFormProps) {
 	});
 
 	// Load employee personal info
-	useEffect(() => {
-		let isMounted = true;
+	const profileLoadGeneration = useRef(0);
 
-		async function loadEmployeeData() {
-			const emp = await getCurrentEmployee().then(
+	const runLoadEmployeeData = useCallback(async () => {
+		const generation = ++profileLoadGeneration.current;
+		const emp = await getCurrentEmployee().then(
 				(value) => value,
 				() => null,
 			);
 
-			if (!isMounted) {
-				return;
-			}
+		if (generation !== profileLoadGeneration.current) {
+			return;
+		}
 
+		if (!form.store.state.isDirty) {
 			form.setFieldValue("image", user.image || "");
 			form.setFieldValue("firstName", user.firstName || "");
 			form.setFieldValue("lastName", user.lastName || "");
@@ -304,15 +306,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 				birthdayValueToCalendarDate(emp?.birthday),
 			);
 			form.setFieldValue("helpImproveProduct", user.helpImproveProduct ?? true);
-			setCurrentEmployeeId(emp?.id ?? null);
-			setIsInitialLoading(false);
 		}
-
-		loadEmployeeData();
-
-		return () => {
-			isMounted = false;
-		};
+		setCurrentEmployeeId(emp?.id ?? null);
+		setIsInitialLoading(false);
 	}, [
 		form,
 		user.firstName,
@@ -320,6 +316,14 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		user.image,
 		user.lastName,
 	]);
+
+	useViewRefresh(runLoadEmployeeData);
+	useEffect(() => {
+		void runLoadEmployeeData();
+		return () => {
+			profileLoadGeneration.current += 1;
+		};
+	}, [runLoadEmployeeData]);
 
 	// Create ref for file input
 	const inputRef = useRef<HTMLInputElement>(null);

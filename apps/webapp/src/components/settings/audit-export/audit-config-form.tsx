@@ -21,6 +21,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useServerDataState } from "@/hooks/use-server-data-state";
 import type { AuditExportConfigData } from "@/lib/audit-export";
 import { useRouter } from "@/navigation";
 
@@ -33,7 +34,7 @@ export function AuditConfigForm({ organizationId, initialConfig }: AuditConfigFo
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [config, setConfig] = useState<AuditExportConfigData | null>(initialConfig);
+	const [config, setConfig] = useServerDataState<AuditExportConfigData | null>(initialConfig);
 
 	const handleInitialize = async () => {
 		setLoading(true);

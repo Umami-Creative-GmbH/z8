@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { getVehicleDistanceReport } from "@/app/[locale]/(app)/reports/vehicles/actions";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { DateRangePicker } from "@/components/reports/date-range-picker";
 import { ReportDocumentExportButtons } from "@/components/reports/report-document-export-buttons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -46,6 +47,7 @@ export function VehicleDistanceReportContainer() {
 	);
 	const hasUserChangedRange = useRef(false);
 	const [dateRange, setDateRange] = useState<ReportDateRange | null>(null);
+	const generatedRange = useRef<ReportDateRange | null>(null);
 	const [report, setReport] = useState<VehicleDistanceReport | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -79,8 +81,18 @@ export function VehicleDistanceReportContainer() {
 		monthLabel,
 	};
 
+	useViewRefresh(async () => {
+		const range = generatedRange.current;
+		if (!range || !report) return;
+		const result = await getVehicleDistanceReport(range.startDate, range.endDate);
+		if (generatedRange.current !== range) return;
+		if (!result.success) throw new Error(result.error);
+		setReport(result.data);
+	});
+
 	const handleGenerate = async () => {
 		if (!dateRange) return;
+		const range = dateRange;
 		setIsLoading(true);
 		setError(null);
 		await runWithCleanup(
@@ -96,6 +108,7 @@ export function VehicleDistanceReportContainer() {
 					);
 					return;
 				}
+				generatedRange.current = range;
 				setReport(result.data);
 			},
 			() => setIsLoading(false),

@@ -10,6 +10,7 @@ import {
 	createServerActionSkewHandler,
 	isServerActionVersionSkewError,
 } from "@/components/deployment-refresh/server-action-skew";
+import { ViewRefreshProvider } from "@/components/providers/view-refresh-provider";
 import { isUnauthorizedError } from "@/lib/fetch";
 
 interface QueryProviderProps {
@@ -80,7 +81,7 @@ export function QueryProvider({ children }: QueryProviderProps) {
 
 	return (
 		<QueryClientProvider client={queryClient}>
-			{children}
+			<ViewRefreshProvider>{children}</ViewRefreshProvider>
 			<ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
 		</QueryClientProvider>
 	);
