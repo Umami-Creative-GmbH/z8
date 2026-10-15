@@ -342,6 +342,22 @@ describe("reviewed historical vacation reconciliation", () => {
 			usedDays: 3,
 			remainingDays: 27,
 		});
+		session.userId = person.userId;
+		const moved = await previewHistoricalVacationReconciliation({
+			kind: "change",
+			absenceId: recorded.data.absenceId,
+			proposed: { ...proposed, startDate: "2026-05-06", endDate: "2026-05-07" },
+			coverage: "choose",
+			decisions: [
+				{ employeeId: person.employeeId, year: 2026, remainingDays: 0 },
+			],
+			reason:
+				"Different historical payroll dates replace the remaining aggregate",
+		});
+		if (!moved.success) throw new Error(moved.error);
+		expect(moved.data.blockers).toEqual([]);
+		expect(moved.data.totals[0]?.datedDays).toBe(2);
+		session.userId = fixture.ownerUserId;
 	});
 
 	it("refuses a changed proposal or stale total without partially recording it", async () => {

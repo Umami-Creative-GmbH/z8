@@ -216,11 +216,8 @@ export function HistoricalVacationReconciliationPanel({
 					{balance.after?.remainingDays ?? "—"}
 				</p>
 			))}
-			{review?.absences.map((absence, index) => (
-				<p
-					className="text-xs text-muted-foreground"
-					key={`${absence.employeeId}:${absence.startDate}:${index}`}
-				>
+			{review?.absences.map((absence) => (
+				<p className="text-xs text-muted-foreground" key={absence.id}>
 					{absence.employeeName} · {absence.categoryName}: {absence.startDate} (
 					{absence.startPeriod}) – {absence.endDate} ({absence.endPeriod})
 				</p>

@@ -21,11 +21,14 @@ import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal"
 import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
 import {
-	getAbsenceDays,
 	loadWorkingDaysForEmployees,
 	type AbsenceDaysDatabase,
 } from "./absence-days-resolver";
-import { clipAbsenceDayRange } from "./absence-days";
+import {
+	clipAbsenceDayRange,
+	mondayToFriday,
+	type AbsenceDayRange,
+} from "./absence-days";
 import {
 	normalizeAbsenceDurationInput,
 	toAbsenceEntryDurationFields,
@@ -69,6 +72,17 @@ const key = (employeeId: string, year: number) => `${employeeId}:${year}`;
 const digest = (value: unknown) =>
 	createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
+/** Morning and afternoon coverage on one day, preserving the shared clipping rules. */
+function dayHalves(range: AbsenceDayRange, date: string) {
+	const clipped = clipAbsenceDayRange(range, {
+		startDate: date,
+		endDate: date,
+	});
+	if (!clipped) return 0;
+	if (clipped.startPeriod === "am" && clipped.endPeriod === "am") return 1;
+	if (clipped.startPeriod === "pm" && clipped.endPeriod === "pm") return 2;
+	return 3;
+}
 async function actorInOrganization(
 	database: Client,
 	organizationId: string,
@@ -552,6 +566,13 @@ async function reviewPlan(
 	const totalReviews = [];
 	for (const total of relevant) {
 		let datedDays = 0;
+		const working = await loadWorkingDaysForEmployees(database, {
+			organizationId,
+			employeeIds: [total.employeeId],
+			startDate: total.historicalCoverageStart!,
+			endDate: total.historicalCoverageEnd!,
+		});
+		const isWorking = working.get(total.employeeId) ?? mondayToFriday;
 		for (const candidate of source.candidates) {
 			if (
 				!candidate.category.countsAgainstVacation ||
@@ -562,26 +583,23 @@ async function reviewPlan(
 				startDate: total.historicalCoverageStart!,
 				endDate: total.historicalCoverageEnd!,
 			});
-			if (clipped)
-				datedDays += await getAbsenceDays(database, {
-					organizationId,
-					employeeId: total.employeeId,
-					absence: clipped,
-				});
-			if (candidate.original) {
-				const old = clipAbsenceDayRange(candidate.original, {
-					startDate: total.historicalCoverageStart!,
-					endDate: total.historicalCoverageEnd!,
-				});
-				if (old)
-					datedDays -= await getAbsenceDays(database, {
-						organizationId,
-						employeeId: total.employeeId,
-						absence: old,
-					});
+			if (!clipped) continue;
+			// Existing dated halves were already accounted for. Moving dates introduces
+			// the newly covered halves, even when the old and new ranges have equal length.
+			for (
+				let day = Temporal.PlainDate.from(clipped.startDate);
+				day.toString() <= clipped.endDate;
+				day = day.add({ days: 1 })
+			) {
+				if (!isWorking(day)) continue;
+				const date = day.toString();
+				const uncovered =
+					dayHalves(clipped, date) &
+					~(candidate.original ? dayHalves(candidate.original, date) : 0);
+				datedDays += uncovered === 3 ? 1 : uncovered ? 0.5 : 0;
 			}
 		}
-		datedDays = Math.max(0, datedDays);
+
 		const currentDays = -Number(total.days),
 			remainingDays = decisions.get(key(total.employeeId, total.year));
 		if (remainingDays === undefined)
@@ -816,6 +834,7 @@ export async function previewVacationReconciliation(
 		balances: review.balances,
 		blockers: review.blockers,
 		absences: review.candidates.map(({ absence }) => ({
+			id: absence.id,
 			employeeId: absence.employeeId,
 			employeeName:
 				review.balances.find(
