@@ -1,13 +1,13 @@
 "use client";
 
-import { IconCheck, IconRocket } from "@tabler/icons-react";
+import { IconCalendarEvent, IconCheck, IconRocket } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useRouter } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
 import { completeOnboarding, getOnboardingSummary } from "./actions";
 
 export default function CompletePage() {
@@ -16,6 +16,8 @@ export default function CompletePage() {
 	const [loading, setLoading] = useState(true);
 	const [summary, setSummary] = useState<{
 		hasOrganization: boolean;
+		isAdmin?: boolean;
+		holidayPresetCreated?: boolean;
 	} | null>(null);
 	const completionPromiseRef = useRef<ReturnType<
 		typeof completeOnboarding
@@ -175,6 +177,31 @@ export default function CompletePage() {
 										{t(
 											"onboarding.complete.inviteTeamDesc",
 											"Add colleagues to collaborate and manage time together",
+										)}
+									</p>
+								</div>
+							</div>
+						)}
+
+						{summary?.isAdmin && summary.holidayPresetCreated === false && (
+							<div className="flex items-start gap-3">
+								<div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
+									<IconCalendarEvent className="size-4 text-primary" />
+								</div>
+								<div className="flex-1">
+									<Link
+										href="/settings/holidays"
+										className="font-medium underline-offset-4 hover:underline"
+									>
+										{t(
+											"onboarding.complete.setUpHolidays",
+											"Set up public holidays",
+										)}
+									</Link>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"onboarding.complete.setUpHolidaysDesc",
+											"Choose your country and region in the holiday settings",
 										)}
 									</p>
 								</div>

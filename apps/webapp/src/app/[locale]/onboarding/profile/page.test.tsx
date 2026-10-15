@@ -39,6 +39,10 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "en",
+}));
+
 vi.mock("sonner", () => ({
 	toast: {
 		success: toastSuccessMock,

@@ -15,6 +15,7 @@ import {
 	useForm,
 } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
@@ -174,7 +175,7 @@ function ProfileGenderField({
 	return (
 		<form.Field name="gender">
 			{(field) => (
-				<div className="gap-y-2">
+				<div className="flex flex-col gap-y-2">
 					<Label>
 						{t("onboarding.profile.genderOptional", "Gender (Optional)")}
 					</Label>
@@ -228,7 +229,7 @@ function ProfileNameFields({
 				}}
 			>
 				{(field) => (
-					<div className="gap-y-2">
+					<div className="flex flex-col gap-y-2">
 						<Label htmlFor="profile-first-name">
 							{t("onboarding.profile.firstName", "First Name")}
 						</Label>
@@ -255,7 +256,7 @@ function ProfileNameFields({
 				}}
 			>
 				{(field) => (
-					<div className="gap-y-2">
+					<div className="flex flex-col gap-y-2">
 						<Label htmlFor="profile-last-name">
 							{t("onboarding.profile.lastName", "Last Name")}
 						</Label>
@@ -279,6 +280,13 @@ function ProfileNameFields({
 	);
 }
 
+// 2024-01-01 was a Monday and 2024-01-07 a Sunday.
+function getWeekdayName(locale: string, day: WeekStartDay) {
+	return new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "UTC" }).format(
+		Date.UTC(2024, 0, day === "monday" ? 1 : 7),
+	);
+}
+
 function ProfileDateAndDisplayFields({
 	form,
 	status,
@@ -288,6 +296,7 @@ function ProfileDateAndDisplayFields({
 	status: { loading: boolean; today: Date };
 	t: TranslationFunction;
 }) {
+	const locale = useLocale();
 	return (
 		<>
 			<form.Field name="birthday">
@@ -344,7 +353,7 @@ function ProfileDateAndDisplayFields({
 			</form.Field>
 			<form.Field name="weekStartDay">
 				{(field) => (
-					<div className="gap-y-2">
+					<div className="flex flex-col gap-y-2">
 						<Label htmlFor="week-start-day">
 							{t("onboarding.profile.weekStartDay", "First day of the week")}
 						</Label>
@@ -361,7 +370,7 @@ function ProfileDateAndDisplayFields({
 							<SelectContent>
 								{WEEK_START_OPTIONS.map((option) => (
 									<SelectItem key={option.value} value={option.value}>
-										{option.label}
+										{getWeekdayName(locale, option.value)}
 									</SelectItem>
 								))}
 							</SelectContent>
@@ -377,7 +386,7 @@ function ProfileDateAndDisplayFields({
 			</form.Field>
 			<form.Field name="timeFormat">
 				{(field) => (
-					<div className="gap-y-2">
+					<div className="flex flex-col gap-y-2">
 						<Label htmlFor="time-format">
 							{t("onboarding.profile.timeFormat", "Time format")}
 						</Label>

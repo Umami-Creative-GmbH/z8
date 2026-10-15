@@ -103,8 +103,8 @@ function PushNotificationsCard({
 			</CardHeader>
 			<CardContent>
 				{status.isSupported ? (
-					<div className="flex items-center justify-between">
-						<div className="space-y-1">
+					<div className="flex items-center justify-between gap-4">
+						<div className="min-w-0 space-y-1">
 							<p className="text-sm font-medium">
 								{status.permission === "granted"
 									? t(
@@ -181,9 +181,9 @@ function PreferenceToggle({
 }) {
 	return (
 		<div
-			className={`flex flex-row items-center justify-between rounded-lg border ${compact ? "p-3" : "p-4"}`}
+			className={`flex flex-row items-center justify-between gap-4 rounded-lg border ${compact ? "p-3" : "p-4"}`}
 		>
-			<div className="space-y-0.5">
+			<div className="min-w-0 space-y-0.5">
 				<Label htmlFor={id} className={compact ? undefined : "text-base"}>
 					{label}
 				</Label>

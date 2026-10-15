@@ -127,7 +127,7 @@ function WellnessSettings({
 					{t("onboarding.wellness.reminderFrequency", "Reminder Frequency")}
 				</Label>
 				<Select value={selectedPreset} onValueChange={onPresetChange}>
-					<SelectTrigger>
+					<SelectTrigger className="w-full">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -344,8 +344,8 @@ export default function WellnessPage() {
 							{/* Enable Toggle */}
 							<form.Field name="enableWaterReminder">
 								{(field) => (
-									<div className="flex flex-row items-center justify-between rounded-lg border p-4">
-										<div className="space-y-0.5">
+									<div className="flex flex-row items-center justify-between gap-4 rounded-lg border p-4">
+										<div className="min-w-0 space-y-0.5">
 											<Label className="text-base">
 												{t(
 													"onboarding.wellness.enableReminder",
