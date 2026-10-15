@@ -21,8 +21,9 @@ import "server-only";
  * period's legacy approval history is linked to the new record in the same
  * transaction.
  */
-import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { approvalRequest, timeRecordApprovalDecision, workPeriod } from "@/db/schema";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
@@ -30,9 +31,21 @@ import {
 	applyWorkRecordChange,
 	isWorkRecordRefusal,
 	readWorkRecord,
+	type WorkRecordRefusal,
 	type WorkRecordRefusalKind,
 } from "@/lib/time-tracking/work-records";
 import type { WorkTransactionClient } from "@/lib/time-tracking/work-transaction";
+
+/** A work period attach refused, with why, for the operator to list. */
+export type RefusedWorkRecordAttachment = {
+	workPeriodId: string;
+	employeeId: string;
+	startAt: string;
+	endAt: string;
+	refusal: WorkRecordRefusalKind;
+	/** The refusal's reason in words a run report lists. */
+	reason: string;
+};
 
 export type MissingWorkRecordAttachment = {
 	/** The work periods that got their canonical work record. */
@@ -45,7 +58,7 @@ export type MissingWorkRecordAttachment = {
 	 * repair), an endpoint entry is missing, or the work cannot be represented.
 	 * They stay for work diagnostics and its repairs.
 	 */
-	refused: Array<{ workPeriodId: string; refusal: WorkRecordRefusalKind }>;
+	refused: RefusedWorkRecordAttachment[];
 };
 
 export async function attachMissingWorkRecords(input: {
@@ -59,7 +72,16 @@ export async function attachMissingWorkRecords(input: {
 	const outcome: MissingWorkRecordAttachment = { attached: [], closedMonthSkips: [], refused: [] };
 	if (input.employeeIds?.length === 0) return outcome;
 	const candidates = await db
-		.select({ id: workPeriod.id, employeeId: workPeriod.employeeId })
+		.select({
+			id: workPeriod.id,
+			employeeId: workPeriod.employeeId,
+			startTime: workPeriod.startTime,
+			endTime: workPeriod.endTime,
+			// A closed month's half pair is skipped here, without a work transaction (#762).
+			closedMonth: sql<
+				string | null
+			>`to_char(public.closed_month_touching_work(${workPeriod.employeeId}, ${workPeriod.startTime}, ${workPeriod.endTime}), 'YYYY-MM')`,
+		})
 		.from(workPeriod)
 		.where(
 			and(
@@ -73,7 +95,12 @@ export async function attachMissingWorkRecords(input: {
 		)
 		.orderBy(asc(workPeriod.employeeId), asc(workPeriod.startTime), asc(workPeriod.id));
 
-	for (const { id: workPeriodId, employeeId } of candidates) {
+	for (const candidate of candidates) {
+		const { id: workPeriodId, employeeId } = candidate;
+		if (candidate.closedMonth !== null) {
+			outcome.closedMonthSkips.push({ workPeriodId, month: candidate.closedMonth });
+			continue;
+		}
 		try {
 			const result = await withCompletedWorkTransaction(
 				{ organizationId, employeeId, actorUserId },
@@ -105,7 +132,16 @@ export async function attachMissingWorkRecords(input: {
 			if (!isWorkRecordRefusal(result)) outcome.attached.push(workPeriodId);
 			else if (result.kind === "month_closed") {
 				outcome.closedMonthSkips.push({ workPeriodId, month: result.month });
-			} else outcome.refused.push({ workPeriodId, refusal: result.kind });
+			} else {
+				outcome.refused.push({
+					workPeriodId,
+					employeeId,
+					startAt: candidate.startTime.toISOString(),
+					endAt: (candidate.endTime ?? candidate.startTime).toISOString(),
+					refusal: result.kind,
+					reason: refusalReason(result),
+				});
+			}
 		} catch (error) {
 			const refusal = monthClosedRefusalOf(error);
 			if (!refusal) throw error;
@@ -113,6 +149,51 @@ export async function attachMissingWorkRecords(input: {
 		}
 	}
 	return outcome;
+}
+
+/** Why attach refused, as a run report lists it. */
+function refusalReason(refusal: WorkRecordRefusal): string {
+	switch (refusal.kind) {
+		case "attribution_unrepresentable":
+			return refusal.reason;
+		case "canonical_divergence":
+			return refusal.disagreements.includes("duration")
+				? "duration_missing"
+				: `disagrees_on_${refusal.disagreements.join("_and_")}`;
+		// Every candidate has an end, so a running refusal is an end without its clock-out.
+		case "work_running":
+			return "end_without_clock_out";
+		default:
+			return refusal.kind;
+	}
+}
+
+export type OrganizationWorkRecordAttachment = MissingWorkRecordAttachment & {
+	organizationId: string;
+};
+
+/**
+ * The deploy backfill of migration 0234 (`pnpm work-records:attach-missing`):
+ * every organization's missing canonical work records, one organization after
+ * another, closed months skipped. A system process, so the records are created
+ * by each work's original actor.
+ */
+export async function attachMissingWorkRecordsInEveryOrganization(
+	options: { organizationIds?: readonly string[] } = {},
+): Promise<OrganizationWorkRecordAttachment[]> {
+	const organizationIds =
+		options.organizationIds ??
+		(await db.select({ id: organization.id }).from(organization).orderBy(asc(organization.id))).map(
+			({ id }) => id,
+		);
+	const reports: OrganizationWorkRecordAttachment[] = [];
+	for (const organizationId of organizationIds) {
+		reports.push({
+			organizationId,
+			...(await attachMissingWorkRecords({ organizationId, actorUserId: null })),
+		});
+	}
+	return reports;
 }
 
 /**

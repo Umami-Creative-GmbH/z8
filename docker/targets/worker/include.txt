@@ -1,4 +1,5 @@
 src/worker.ts
 src/worker-preload.mjs
 scripts/obliterate-job-queue.ts
+scripts/attach-missing-work-records.ts
 tsconfig.json
