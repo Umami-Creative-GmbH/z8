@@ -29,6 +29,7 @@ import {
 	TableCell,
 	TableHead,
 	TableHeader,
+	TableHeaderRow,
 	TableRow,
 } from "@/components/ui/table";
 import { CRON_JOBS } from "@/lib/cron/registry";
@@ -584,25 +585,15 @@ function ScheduledJobsSection({
 					) : (
 						<div className="overflow-x-auto">
 							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>
-											{t("settings.workerQueue.table.jobName", "Job Name")}
-										</TableHead>
-										<TableHead>
-											{t("settings.workerQueue.table.schedule", "Schedule")}
-										</TableHead>
-										<TableHead>
-											{t("settings.workerQueue.table.default", "Default")}
-										</TableHead>
-										<TableHead>
-											{t("settings.workerQueue.table.nextRun", "Next Run")}
-										</TableHead>
-										<TableHead>
-											{t("settings.workerQueue.table.actions", "Actions")}
-										</TableHead>
-									</TableRow>
-								</TableHeader>
+								<TableHeaderRow
+									columns={[
+										{ id: "jobName", label: t("settings.workerQueue.table.jobName", "Job Name") },
+										{ id: "schedule", label: t("settings.workerQueue.table.schedule", "Schedule") },
+										{ id: "default", label: t("settings.workerQueue.table.default", "Default") },
+										{ id: "nextRun", label: t("settings.workerQueue.table.nextRun", "Next Run") },
+										{ id: "actions", label: t("settings.workerQueue.table.actions", "Actions") },
+									]}
+								/>
 								<TableBody>
 									{stats.scheduledJobs.map((job) => {
 										const presetLabel =

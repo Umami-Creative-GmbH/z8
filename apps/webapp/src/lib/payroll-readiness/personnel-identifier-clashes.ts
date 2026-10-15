@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db, timeRecord } from "@/db";
+import { mapConcurrently } from "@/lib/async/map-concurrently";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
 import { employeesWithPayoutsOrExpenseLines } from "@/lib/payroll-export/payout-and-expense-employees";
 import type { PersonnelIdentifierClash } from "@/lib/payroll-export/personnel-identifier";
@@ -42,23 +43,23 @@ export async function loadPersonnelIdentifierClashes(input: {
 			end: DateTime.fromISO(input.asOf.toString(), { zone: "utc" }),
 		},
 	};
-	const clashes: PersonnelIdentifierClash[] = [];
-	for (const config of input.configs) {
-		const employeeIds = new Set(employeesWithRecords.map((row) => row.employeeId));
+	// Read-only pool queries, with two formats at a time to limit database load.
+	const clashes = await mapConcurrently(input.configs, 2, async (config) => {
+		const employeeIds = new Set(
+			employeesWithRecords.map((row) => row.employeeId),
+		);
 		const otherRows = await employeesWithPayoutsOrExpenseLines({
 			organizationId: input.organizationId,
 			formatId: config.formatId,
 			filters,
 		});
 		for (const employeeId of otherRows) employeeIds.add(employeeId);
-		clashes.push(
-			...(await findPersonnelIdentifierClashes(db, {
-				organizationId: input.organizationId,
-				configs: [config],
-				employeeIds: [...employeeIds],
-				asOf: input.asOf,
-			})),
-		);
-	}
-	return clashes;
+		return findPersonnelIdentifierClashes(db, {
+			organizationId: input.organizationId,
+			configs: [config],
+			employeeIds: [...employeeIds],
+			asOf: input.asOf,
+		});
+	});
+	return clashes.flat();
 }

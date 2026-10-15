@@ -10,8 +10,7 @@ import {
 	Table,
 	TableBody,
 	TableCell,
-	TableHead,
-	TableHeader,
+	TableHeaderRow,
 	TableRow,
 } from "@/components/ui/table";
 import { db } from "@/db";
@@ -128,25 +127,15 @@ async function DeputyDecisionsContent({ params, searchParams }: DeputyDecisionsP
 					) : (
 						<div className="overflow-x-auto">
 							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>
-											{t("approvals:approvals.deputyDecisions.columns.request", "Request")}
-										</TableHead>
-										<TableHead>
-											{t("approvals:approvals.deputyDecisions.columns.requester", "Requested by")}
-										</TableHead>
-										<TableHead>
-											{t("approvals:approvals.deputyDecisions.columns.decision", "Decision")}
-										</TableHead>
-										<TableHead>
-											{t("approvals:approvals.deputyDecisions.columns.deputy", "Decided by")}
-										</TableHead>
-										<TableHead>
-											{t("approvals:approvals.deputyDecisions.columns.decidedAt", "Decided at")}
-										</TableHead>
-									</TableRow>
-								</TableHeader>
+								<TableHeaderRow
+									columns={[
+										{ id: "request", label: t("approvals:approvals.deputyDecisions.columns.request", "Request") },
+										{ id: "requester", label: t("approvals:approvals.deputyDecisions.columns.requester", "Requested by") },
+										{ id: "decision", label: t("approvals:approvals.deputyDecisions.columns.decision", "Decision") },
+										{ id: "deputy", label: t("approvals:approvals.deputyDecisions.columns.deputy", "Decided by") },
+										{ id: "decidedAt", label: t("approvals:approvals.deputyDecisions.columns.decidedAt", "Decided at") },
+									]}
+								/>
 								<TableBody>
 									{result.decisions.map((decision) => (
 										<TableRow key={decision.id} data-testid="deputy-decision-row">

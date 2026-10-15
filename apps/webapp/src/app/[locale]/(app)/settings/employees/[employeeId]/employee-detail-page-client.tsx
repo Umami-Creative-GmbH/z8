@@ -1,6 +1,5 @@
 "use client";
 
-import { EmployeeTrackingDateCard } from "@/components/settings/employee-tracking-date-card";
 import { IconCoin, IconLoader2, IconReceipt2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -13,20 +12,21 @@ import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
-import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
-import {EmploymentDateCorrectionCard} from "@/components/settings/employment-date-correction-card";
-import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
-import { WageHistoryMergeNote } from "@/components/settings/employee-employment-history/wage-history-merge-note";
-import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
-import { EmployeePersonalDataExportCard } from "@/components/settings/personal-data-export/employee-personal-data-export-card";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
+import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
+import { WageHistoryMergeNote } from "@/components/settings/employee-employment-history/wage-history-merge-note";
+import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
+import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
+import { EmployeeTrackingDateCard } from "@/components/settings/employee-tracking-date-card";
+import { EmploymentDateCorrectionCard } from "@/components/settings/employment-date-correction-card";
 import { EmployeeKioskCard } from "@/components/settings/kiosk/employee-kiosk-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
-import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
-import { EMPLOYEE_WORK_BALANCE_QUERY_KEY } from "@/components/settings/work-balance/use-employee-work-balance";
+import { EmployeePersonalDataExportCard } from "@/components/settings/personal-data-export/employee-personal-data-export-card";
 import { EmployeeWorkBalanceSection } from "@/components/settings/work-balance/employee-work-balance-section";
+import { EMPLOYEE_WORK_BALANCE_QUERY_KEY } from "@/components/settings/work-balance/use-employee-work-balance";
+import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
@@ -37,7 +37,11 @@ import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useRouter } from "@/navigation";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { EmployeeDraftActions } from "./employee-draft-actions";
-import { EmployeeDetailHeader, EmployeeEditFormCard, EmployeeOverviewCard } from "./page-sections";
+import {
+	EmployeeDetailHeader,
+	EmployeeEditFormCard,
+	EmployeeOverviewCard,
+} from "./page-sections";
 import {
 	buildEmployeeUpdatePayload,
 	defaultFormValues,
@@ -133,8 +137,16 @@ export function EmployeeDetailPageClient({
 	const { push } = useRouter();
 
 	const employeeData = useEmployee({ employeeId, accessTier });
-	const { employee, schedule, isLoading, hasEmployee, updateEmployee, isUpdating } = employeeData;
-	const canManageEmployeeDetails = accessTier === "orgAdmin" || accessTier === "manager";
+	const {
+		employee,
+		schedule,
+		isLoading,
+		hasEmployee,
+		updateEmployee,
+		isUpdating,
+	} = employeeData;
+	const canManageEmployeeDetails =
+		accessTier === "orgAdmin" || accessTier === "manager";
 	// The "Custom fields" section (#818), saved with the employee details.
 	const customFields = useCustomFieldDrafts({
 		entity: "employee",
@@ -144,7 +156,8 @@ export function EmployeeDetailPageClient({
 
 	const form = useForm({
 		defaultValues: defaultFormValues,
-		onSubmitInvalid: ({ formApi }) => focusFirstInvalidEmployeeDetailField(formApi),
+		onSubmitInvalid: ({ formApi }) =>
+			focusFirstInvalidEmployeeDetailField(formApi),
 		onSubmit: async ({ value }) => {
 			const payload = buildEmployeeUpdatePayload(value);
 			const result = await updateEmployee({
@@ -155,14 +168,20 @@ export function EmployeeDetailPageClient({
 
 			if (!result) {
 				toast.error(
-					t("settings.employees.detailView.unexpectedError", "An unexpected error occurred"),
+					t(
+						"settings.employees.detailView.unexpectedError",
+						"An unexpected error occurred",
+					),
 				);
 				return;
 			}
 
 			if (result.success) {
 				toast.success(
-					t("settings.employees.detailView.updateSuccess", "Employee updated successfully"),
+					t(
+						"settings.employees.detailView.updateSuccess",
+						"Employee updated successfully",
+					),
 				);
 				customFields.reset();
 				push("/settings/employees");
@@ -171,7 +190,10 @@ export function EmployeeDetailPageClient({
 			} else {
 				toast.error(
 					result.error ||
-						t("settings.employees.detailView.updateFailed", "Failed to update employee"),
+						t(
+							"settings.employees.detailView.updateFailed",
+							"Failed to update employee",
+						),
 				);
 			}
 		},
@@ -187,7 +209,10 @@ export function EmployeeDetailPageClient({
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
 				<NoEmployeeError
-					feature={t("settings.employees.detailView.manageEmployees", "manage employees")}
+					feature={t(
+						"settings.employees.detailView.manageEmployees",
+						"manage employees",
+					)}
 				/>
 			</div>
 		);
@@ -203,7 +228,10 @@ export function EmployeeDetailPageClient({
 						"Loading employee data",
 					)}
 				>
-					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
+					<IconLoader2
+						className="size-8 animate-spin text-muted-foreground"
+						aria-hidden="true"
+					/>
 				</output>
 			</div>
 		);
@@ -225,7 +253,10 @@ export function EmployeeDetailPageClient({
 						contract={
 							employee.kind === "invitationDraft"
 								? { kind: "draft" }
-								: { kind: "terms", contractTypeToday: employee.contractTypeToday ?? null }
+								: {
+										kind: "terms",
+										contractTypeToday: employee.contractTypeToday ?? null,
+									}
 						}
 						isUpdating={isUpdating}
 						onCancel={() => push("/settings/employees")}
@@ -233,7 +264,10 @@ export function EmployeeDetailPageClient({
 						hasCustomFieldChanges={customFields.isDirty}
 						customFields={
 							isDraft ? null : (
-								<CustomFieldDraftsSection drafts={customFields} disabled={isUpdating} />
+								<CustomFieldDraftsSection
+									drafts={customFields}
+									disabled={isUpdating}
+								/>
 							)
 						}
 					/>
@@ -314,17 +348,20 @@ function EmployeeRecordSections({
 }) {
 	const { t } = useTranslate();
 	const isOrgAdmin = accessTier === "orgAdmin";
- const queryClient = useQueryClient();
 	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
-	const billableTimeEnabled = useBillableTimeEnabled();
 	const { availableManagers, workPolicies } = data;
 
 	const handleWorkBalanceRecalculation = async () => {
-		const result = await data.requestWorkBalanceRecalculation().catch(() => null);
+		const result = await data
+			.requestWorkBalanceRecalculation()
+			.catch(() => null);
 
 		if (result?.success) {
 			toast.success(
-				t("settings.workBalanceRecalculation.requestSuccess", "Work balance recalculation queued"),
+				t(
+					"settings.workBalanceRecalculation.requestSuccess",
+					"Work balance recalculation queued",
+				),
 			);
 			return;
 		}
@@ -374,7 +411,10 @@ function EmployeeRecordSections({
 						id: manager.id,
 						name: buildAuthUserDisplayName(manager.user) || manager.id,
 					}))}
-					workPolicies={workPolicies.map((policy) => ({ id: policy.id, name: policy.name }))}
+					workPolicies={workPolicies.map((policy) => ({
+						id: policy.id,
+						name: policy.name,
+					}))}
 				/>
 			)}
 
@@ -387,38 +427,17 @@ function EmployeeRecordSections({
 				/>
 			)}
 
-			{isOrgAdminOrManager && <EmployeeTrackingDateCard employeeId={employeeId} />}
-
-			{isOrgAdmin && employee.kind === "employee" ? (
-    <EmploymentDateCorrectionCard
-     key={employeeId}
-     employeeId={employeeId}
-     employmentStartDate={employee.startDate ? new Date(employee.startDate).toISOString().slice(0,10) : null}
-     onSaved={async () => {
-      await Promise.all([data.refetch(),queryClient.invalidateQueries({queryKey:["employee-tracking-date",employeeId]}),queryClient.invalidateQueries({queryKey:[...EMPLOYEE_WORK_BALANCE_QUERY_KEY,employeeId]})]);
-     }}
-    />
-   ) : null}
-
-			<EmployeeEmploymentHistoryCard
-				history={data.employmentHistory}
-				canManage={isOrgAdmin}
-				onCreate={data.createEmploymentHistory}
-				onConfirm={data.confirmEmploymentHistory}
-				onCancel={data.cancelEmploymentHistory}
-				isCreating={data.isCreatingEmploymentHistory}
-				isMutating={data.isConfirmingEmploymentHistory || data.isCancelingEmploymentHistory}
-				workPolicies={workPolicies}
-				notice={isOrgAdmin ? <WageHistoryMergeNote employeeId={employeeId} /> : undefined}
-				changeWage={
-					isOrgAdmin && employee.kind === "employee" && employee.contractTypeToday === "hourly"
-						? { onSubmit: data.changeWage, isPending: data.isChangingWage }
-						: undefined
-				}
+			<EmployeeEmploymentSections
+				employee={employee}
+				employeeId={employeeId}
+				accessTier={accessTier}
+				data={data}
 			/>
 
 			{/* Managers see it read-only for employees they manage (#996); the server decides. */}
-			{isOrgAdminOrManager && <EmployeeWorkBalanceSection employeeId={employeeId} />}
+			{isOrgAdminOrManager && (
+				<EmployeeWorkBalanceSection employeeId={employeeId} />
+			)}
 
 			{isOrgAdmin && (
 				<WorkBalanceRecalculationCard
@@ -429,37 +448,130 @@ function EmployeeRecordSections({
 				/>
 			)}
 
-			{isOrgAdmin && billableTimeEnabled && (
-				<BillableRateSeries
-					target={{ level: "employee", employeeId }}
-					title={
-						<>
-							<IconCoin aria-hidden="true" className="size-5" />
-							{t("settings.billableTime.rates.employeeRateTitle", "Billable rate")}
-						</>
-					}
-					description={t(
-						"settings.billableTime.rates.employeeRateDescription",
-						"What your organization charges customers per hour of this employee's work when no project, customer or employee-on-project rate applies.",
-					)}
-				/>
+			<EmployeeRateSections employeeId={employeeId} accessTier={accessTier} />
+		</>
+	);
+}
+
+/** Employment dates and terms share the same refresh after a date correction. */
+function EmployeeEmploymentSections({
+	employee,
+	employeeId,
+	accessTier,
+	data,
+}: {
+	employee: EmployeeDetail;
+	employeeId: string;
+	accessTier: SettingsAccessTier;
+	data: ReturnType<typeof useEmployee>;
+}) {
+	const queryClient = useQueryClient();
+	const isOrgAdmin = accessTier === "orgAdmin";
+	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
+	const { workPolicies } = data;
+
+	return (
+		<>
+			{isOrgAdminOrManager && (
+				<EmployeeTrackingDateCard employeeId={employeeId} />
 			)}
 
-			{isOrgAdmin && billableTimeEnabled && (
-				<CostRateSeries
+			{isOrgAdmin && employee.kind === "employee" ? (
+				<EmploymentDateCorrectionCard
+					key={employeeId}
 					employeeId={employeeId}
-					title={
-						<>
-							<IconReceipt2 aria-hidden="true" className="size-5" />
-							{t("settings.billableTime.costRates.employeeTitle", "Cost rate")}
-						</>
+					employmentStartDate={
+						employee.startDate
+							? new Date(employee.startDate).toISOString().slice(0, 10)
+							: null
 					}
-					description={t(
-						"settings.billableTime.costRates.employeeDescription",
-						"This employee's fully loaded internal cost per hour, used for margin. Separate from the wage.",
-					)}
+					onSaved={async () => {
+						await Promise.all([
+							data.refetch(),
+							queryClient.invalidateQueries({
+								queryKey: ["employee-tracking-date", employeeId],
+							}),
+							queryClient.invalidateQueries({
+								queryKey: [...EMPLOYEE_WORK_BALANCE_QUERY_KEY, employeeId],
+							}),
+						]);
+					}}
 				/>
-			)}
+			) : null}
+
+			<EmployeeEmploymentHistoryCard
+				history={data.employmentHistory}
+				canManage={isOrgAdmin}
+				onCreate={data.createEmploymentHistory}
+				onConfirm={data.confirmEmploymentHistory}
+				onCancel={data.cancelEmploymentHistory}
+				isCreating={data.isCreatingEmploymentHistory}
+				isMutating={
+					data.isConfirmingEmploymentHistory ||
+					data.isCancelingEmploymentHistory
+				}
+				workPolicies={workPolicies}
+				notice={
+					isOrgAdmin ? (
+						<WageHistoryMergeNote employeeId={employeeId} />
+					) : undefined
+				}
+				changeWage={
+					isOrgAdmin &&
+					employee.kind === "employee" &&
+					employee.contractTypeToday === "hourly"
+						? { onSubmit: data.changeWage, isPending: data.isChangingWage }
+						: undefined
+				}
+			/>
+		</>
+	);
+}
+
+/** Customer billing and internal cost rates use the same feature and access gate. */
+function EmployeeRateSections({
+	employeeId,
+	accessTier,
+}: {
+	employeeId: string;
+	accessTier: SettingsAccessTier;
+}) {
+	const { t } = useTranslate();
+	const billableTimeEnabled = useBillableTimeEnabled();
+	if (accessTier !== "orgAdmin" || !billableTimeEnabled) return null;
+
+	return (
+		<>
+			<BillableRateSeries
+				target={{ level: "employee", employeeId }}
+				title={
+					<>
+						<IconCoin aria-hidden="true" className="size-5" />
+						{t(
+							"settings.billableTime.rates.employeeRateTitle",
+							"Billable rate",
+						)}
+					</>
+				}
+				description={t(
+					"settings.billableTime.rates.employeeRateDescription",
+					"What your organization charges customers per hour of this employee's work when no project, customer or employee-on-project rate applies.",
+				)}
+			/>
+
+			<CostRateSeries
+				employeeId={employeeId}
+				title={
+					<>
+						<IconReceipt2 aria-hidden="true" className="size-5" />
+						{t("settings.billableTime.costRates.employeeTitle", "Cost rate")}
+					</>
+				}
+				description={t(
+					"settings.billableTime.costRates.employeeDescription",
+					"This employee's fully loaded internal cost per hour, used for margin. Separate from the wage.",
+				)}
+			/>
 		</>
 	);
 }
@@ -477,7 +589,8 @@ function EmployeeInvitationActions({
 		accessTier === "orgAdmin" &&
 		(hasOrganizationRole(currentMemberRole, "owner") ||
 			hasOrganizationRole(currentMemberRole, "admin"));
-	if (employee.kind !== "invitationDraft" || !canManageDraftActions) return null;
+	if (employee.kind !== "invitationDraft" || !canManageDraftActions)
+		return null;
 	return (
 		<EmployeeDraftActions
 			organizationId={employee.organizationId}

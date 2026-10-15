@@ -347,74 +347,14 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 
 	return (
 		<section className="space-y-3">
-			<div className="flex flex-col gap-3 rounded-lg border bg-card p-4 text-card-foreground shadow-sm md:flex-row md:items-start md:justify-between">
-				<div>
-					<p className="text-sm font-medium">
-						{t("organization.orgChart.explorer", "Org Chart Explorer")}
-					</p>
-					<p className="text-sm text-muted-foreground">
-						{t("organization.orgChart.employeeCount", "{count} active employees", {
-							count: NUMBER_FORMAT.format(graph.employeeCount),
-						})}
-					</p>
-				</div>
-				<div className="relative w-full md:max-w-sm">
-					<input
-						aria-label={t("organization.orgChart.searchLabel", "Search employees")}
-						className="h-10 w-full rounded-md border px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary"
-						autoComplete="off"
-						name="org-chart-employee-search"
-						onChange={(event) => {
-							void handleSearchChange(event.target.value);
-						}}
-						placeholder={t("organization.orgChart.searchPlaceholder", "Search employees…")}
-						value={searchQuery}
-					/>
-					{searchQuery.trim().length >= 2 ? (
-						<div className="absolute right-0 left-0 z-20 mt-2 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg">
-							{isSearching ? (
-								<p className="px-3 py-2 text-sm text-muted-foreground" role="status">
-									{t("organization.orgChart.searching", "Searching…")}
-								</p>
-							) : null}
-							{searchResults.map((result) => {
-								const pronouns = normalizePronouns(result.pronouns);
-								const displayName = pronouns ? `${result.name} (${pronouns})` : result.name;
-
-								return (
-									<button
-										aria-label={`${displayName} ${result.email}`}
-										className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm outline-none transition hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
-										key={result.employeeId}
-										onClick={() => {
-											void focusEmployee(result.employeeId);
-										}}
-										type="button"
-									>
-										<UserAvatar
-											clockStatus="unknown"
-											image={result.image}
-											name={result.name}
-											seed={result.employeeId}
-											size="sm"
-											className="border border-border bg-primary/10"
-										/>
-										<div className="flex min-w-0 flex-1 flex-col">
-											<span className="font-medium">{displayName}</span>
-											<span className="text-muted-foreground">{result.email}</span>
-										</div>
-									</button>
-								);
-							})}
-							{!isSearching && searchResults.length === 0 ? (
-								<p className="px-3 py-2 text-sm text-muted-foreground">
-									{t("organization.orgChart.noSearchResults", "No employees found")}
-								</p>
-							) : null}
-						</div>
-					) : null}
-				</div>
-			</div>
+			<OrgChartToolbar
+				employeeCount={graph.employeeCount}
+				searchQuery={searchQuery}
+				searchResults={searchResults}
+				isSearching={isSearching}
+				onSearchChange={handleSearchChange}
+				onSelectEmployee={focusEmployee}
+			/>
 
 			{graph.partial ? (
 				<p className="rounded-md border border-dashed bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
@@ -454,6 +394,92 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 				</ReactFlow>
 			</div>
 		</section>
+	);
+}
+
+function OrgChartToolbar({
+	employeeCount,
+	searchQuery,
+	searchResults,
+	isSearching,
+	onSearchChange,
+	onSelectEmployee,
+}: Pick<OrgChartUiState, "searchQuery" | "searchResults" | "isSearching"> & {
+	employeeCount: number;
+	onSearchChange: (value: string) => Promise<void>;
+	onSelectEmployee: (employeeId: string) => Promise<void>;
+}) {
+	const { t } = useTranslate();
+
+	return (
+		<div className="flex flex-col gap-3 rounded-lg border bg-card p-4 text-card-foreground shadow-sm md:flex-row md:items-start md:justify-between">
+			<div>
+				<p className="text-sm font-medium">
+					{t("organization.orgChart.explorer", "Org Chart Explorer")}
+				</p>
+				<p className="text-sm text-muted-foreground">
+					{t("organization.orgChart.employeeCount", "{count} active employees", {
+						count: NUMBER_FORMAT.format(employeeCount),
+					})}
+				</p>
+			</div>
+			<div className="relative w-full md:max-w-sm">
+				<input
+					aria-label={t("organization.orgChart.searchLabel", "Search employees")}
+					className="h-10 w-full rounded-md border px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary"
+					autoComplete="off"
+					name="org-chart-employee-search"
+					onChange={(event) => {
+						void onSearchChange(event.target.value);
+					}}
+					placeholder={t("organization.orgChart.searchPlaceholder", "Search employees…")}
+					value={searchQuery}
+				/>
+				{searchQuery.trim().length >= 2 ? (
+					<div className="absolute right-0 left-0 z-20 mt-2 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg">
+						{isSearching ? (
+							<p className="px-3 py-2 text-sm text-muted-foreground" role="status">
+								{t("organization.orgChart.searching", "Searching…")}
+							</p>
+						) : null}
+						{searchResults.map((result) => {
+							const pronouns = normalizePronouns(result.pronouns);
+							const displayName = pronouns ? `${result.name} (${pronouns})` : result.name;
+
+							return (
+								<button
+									aria-label={`${displayName} ${result.email}`}
+									className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm outline-none transition hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
+									key={result.employeeId}
+									onClick={() => {
+										void onSelectEmployee(result.employeeId);
+									}}
+									type="button"
+								>
+									<UserAvatar
+										clockStatus="unknown"
+										image={result.image}
+										name={result.name}
+										seed={result.employeeId}
+										size="sm"
+										className="border border-border bg-primary/10"
+									/>
+									<div className="flex min-w-0 flex-1 flex-col">
+										<span className="font-medium">{displayName}</span>
+										<span className="text-muted-foreground">{result.email}</span>
+									</div>
+								</button>
+							);
+						})}
+						{!isSearching && searchResults.length === 0 ? (
+							<p className="px-3 py-2 text-sm text-muted-foreground">
+								{t("organization.orgChart.noSearchResults", "No employees found")}
+							</p>
+						) : null}
+					</div>
+				) : null}
+			</div>
+		</div>
 	);
 }
 

@@ -3,11 +3,12 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { AnalyticsDateRangePicker } from "@/components/analytics/date-range-picker";
 import { ExportButton } from "@/components/analytics/export-button";
+import { MetricsTableHeader } from "@/components/analytics/metrics-table-header";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,8 +27,6 @@ import {
 	Table,
 	TableBody,
 	TableCell,
-	TableHead,
-	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
 import { getAnalyticsDateRangeForPreset } from "@/lib/analytics/date-ranges";
@@ -267,23 +266,15 @@ function EmployeeWorkHoursCard({
 					</div>
 				) : (
 					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>
-									{t("analytics.common.employee", "Employee")}
-								</TableHead>
-								<TableHead className="text-right">
-									{t("analytics.common.totalHours", "Total Hours")}
-								</TableHead>
-								<TableHead className="text-right">
-									{t("analytics.workHours.expectedHours", "Expected Hours")}
-								</TableHead>
-								<TableHead className="text-right">
-									{t("analytics.workHours.variance", "Variance")}
-								</TableHead>
-								<TableHead>{t("common.status", "Status")}</TableHead>
-							</TableRow>
-						</TableHeader>
+						<MetricsTableHeader
+							name={t("analytics.common.employee", "Employee")}
+							metrics={[
+								t("analytics.common.totalHours", "Total Hours"),
+								t("analytics.workHours.expectedHours", "Expected Hours"),
+								t("analytics.workHours.variance", "Variance"),
+							]}
+							summary={t("common.status", "Status")}
+						/>
 						<TableBody>
 							{employees.map((employee) => (
 								<TableRow key={employee.employeeId}>

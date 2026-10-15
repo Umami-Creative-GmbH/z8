@@ -149,13 +149,11 @@ export async function AuthenticatedAppContent({ children, params }: Authenticate
 								</Suspense>
 								{/* In flow so recovery status never covers header clock controls. */}
 								<OfflineBanner />
-								{showTrialBanner && trialDaysRemaining !== null ? (
-									<TrialBanner
-										daysRemaining={trialDaysRemaining}
-										billingHref="/settings/billing"
-										showUpgradeButton={canManageBilling}
-									/>
-								) : null}
+								<AppTrialBanner
+									showTrialBanner={showTrialBanner}
+									trialDaysRemaining={trialDaysRemaining}
+									canManageBilling={canManageBilling}
+								/>
 								<OrganizationDeletionBanner />
 								{/* Asked on the next clock action when position capture needs consent (#826). */}
 								<PositionConsentDialogHost />
@@ -178,6 +176,27 @@ export async function AuthenticatedAppContent({ children, params }: Authenticate
 				</UserPreferencesProvider>
 			</PushPermissionProvider>
 		</PostHogProvider>
+	);
+}
+
+function AppTrialBanner({
+	showTrialBanner,
+	trialDaysRemaining,
+	canManageBilling,
+}: Pick<
+	Awaited<ReturnType<typeof loadAppBillingStatus>>,
+	"showTrialBanner" | "trialDaysRemaining" | "canManageBilling"
+>) {
+	if (!showTrialBanner || trialDaysRemaining === null) {
+		return null;
+	}
+
+	return (
+		<TrialBanner
+			daysRemaining={trialDaysRemaining}
+			billingHref="/settings/billing"
+			showUpgradeButton={canManageBilling}
+		/>
 	);
 }
 

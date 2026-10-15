@@ -1,5 +1,4 @@
 import {
-	IconChevronRight,
 	IconFileStack,
 	IconFirstAidKit,
 	IconSettings,
@@ -7,15 +6,17 @@ import {
 } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { EmployeeDirectoryCard } from "@/components/employees/employee-directory-card";
 import { ExpiringDocumentsCard } from "@/components/personnel-file/expiring-documents";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { managesAnyDocuments, managesCategory } from "@/lib/personnel-file/access";
+import {
+	managesAnyDocuments,
+	managesCategory,
+} from "@/lib/personnel-file/access";
 import { listManagedEmployees } from "@/lib/personnel-file/access-store";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import {
@@ -34,11 +35,17 @@ import { getTranslate } from "@/tolgee/server";
  * documents (#869) are listed above the employees.
  */
 async function PersonnelFilesContent() {
-	const [t, current] = await Promise.all([getTranslate(), loadCurrentPersonnelFileAccess()]);
-	if (current.status !== "resolved" || !managesAnyDocuments(current.access)) notFound();
+	const [t, current] = await Promise.all([
+		getTranslate(),
+		loadCurrentPersonnelFileAccess(),
+	]);
+	if (current.status !== "resolved" || !managesAnyDocuments(current.access))
+		notFound();
 	const [employees, expiring, leadDays] = await Promise.all([
 		listManagedEmployees(db, current.access),
-		listExpiringDocuments(db, current.access, { now: systemClock.nowInstant() }),
+		listExpiringDocuments(db, current.access, {
+			now: systemClock.nowInstant(),
+		}),
 		loadExpiryReminderLeadDays(db, current.access.organizationId),
 	]);
 	const isOrganizationAdmin = current.access.grants.some(
@@ -64,7 +71,10 @@ async function PersonnelFilesContent() {
 						<Button asChild>
 							<Link href="/personnel-files/payslip-batches">
 								<IconFileStack aria-hidden="true" className="size-4" />
-								{t("settings.personnelFiles.area.payslipBatch", "Payslip batch")}
+								{t(
+									"settings.personnelFiles.area.payslipBatch",
+									"Payslip batch",
+								)}
 							</Link>
 						</Button>
 					) : null}
@@ -79,14 +89,20 @@ async function PersonnelFilesContent() {
 					<Button asChild variant="outline">
 						<Link href="/personnel-files/due-for-deletion">
 							<IconTrashX aria-hidden="true" className="size-4" />
-							{t("settings.personnelFiles.area.dueForDeletion", "Due for deletion")}
+							{t(
+								"settings.personnelFiles.area.dueForDeletion",
+								"Due for deletion",
+							)}
 						</Link>
 					</Button>
 					{isOrganizationAdmin ? (
 						<Button asChild variant="outline">
 							<Link href="/settings/personnel-files">
 								<IconSettings aria-hidden="true" className="size-4" />
-								{t("settings.personnelFiles.area.manageOfficers", "Personnel file officers")}
+								{t(
+									"settings.personnelFiles.area.manageOfficers",
+									"Personnel file officers",
+								)}
 							</Link>
 						</Button>
 					) : null}
@@ -95,41 +111,20 @@ async function PersonnelFilesContent() {
 			<ExpiringDocumentsCard documents={expiring} leadDays={leadDays} />
 			{employees.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
-					{t("settings.personnelFiles.area.empty", "No employees are in your scope yet.")}
+					{t(
+						"settings.personnelFiles.area.empty",
+						"No employees are in your scope yet.",
+					)}
 				</p>
 			) : (
-				<Card className="py-0">
-					<CardContent className="px-0">
-						<ul className="divide-y">
-							{employees.map((employee) => (
-								<li key={employee.id}>
-									<Link
-										href={`/personnel-files/${employee.id}`}
-										className="flex min-w-0 items-center gap-3 px-4 py-3 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
-									>
-										<span className="min-w-0 flex-1">
-											<span className="block truncate font-medium">{employee.name}</span>
-											{employee.employeeNumber ? (
-												<span className="block text-sm text-muted-foreground tabular-nums">
-													{employee.employeeNumber}
-												</span>
-											) : null}
-										</span>
-										{employee.isActive ? null : (
-											<Badge variant="secondary">
-												{t("settings.personnelFiles.area.former", "Former employee")}
-											</Badge>
-										)}
-										<IconChevronRight
-											aria-hidden="true"
-											className="size-4 shrink-0 text-muted-foreground"
-										/>
-									</Link>
-								</li>
-							))}
-						</ul>
-					</CardContent>
-				</Card>
+				<EmployeeDirectoryCard
+					employees={employees}
+					basePath="/personnel-files"
+					formerEmployeeLabel={t(
+						"settings.personnelFiles.area.former",
+						"Former employee",
+					)}
+				/>
 			)}
 		</div>
 	);
