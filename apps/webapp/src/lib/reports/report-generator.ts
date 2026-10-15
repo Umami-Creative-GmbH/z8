@@ -17,14 +17,12 @@ import {
 	dateFromInstant,
 	instantFromDate,
 	parsePlainDate,
-	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import { loadConfirmedTermsSpans } from "@/lib/employment-history/load-terms-in-force";
 import { readCustomFieldReportValues } from "@/lib/organization/custom-fields/report-reads";
 import type { CustomFieldViewer } from "@/lib/organization/custom-fields/values";
-import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
-import { sumTrackedWorkMinutes } from "@/lib/work-balance/tracked-work";
+import { sumWorkMinutesWithinTracking } from "@/lib/work-balance/tracked-work";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
 import { completedWorkPeriodCondition } from "./completed-work";
 import { formatDateRangeLabel } from "./date-ranges";
@@ -164,20 +162,9 @@ export async function generateEmployeeReport(
 	const workHours = aggregateWorkHoursFromPeriods(periods, reportRange);
 
 	// Calculate compliance metrics using schedule-based expected hours
-	const tracking = await loadEmployeeTrackingContext(db, { employeeId, organizationId });
-	const requestedFirstDay = tracking
-		? plainDateAt(instantFromDate(startDate), tracking.timezone).toString()
-		: null;
-	const trackedMinutes = tracking
-		? await sumTrackedWorkMinutes(db, {
-				employeeId,
-				organizationId,
-				timezone: tracking.timezone,
-				startDate:
-					requestedFirstDay! > tracking.startDate ? requestedFirstDay! : tracking.startDate,
-				throughDate: plainDateAt(instantFromDate(endDate), tracking.timezone).toString(),
-			})
-		: workHours.totalMinutes;
+	const trackedMinutes =
+		(await sumWorkMinutesWithinTracking(db, { employeeId, organizationId, startDate, endDate })) ??
+		workHours.totalMinutes;
 	// Historical work remains in the report; its overtime uses the shared tracking window.
 	const complianceMetrics = calculateComplianceMetrics(
 		{ ...workHours, totalMinutes: trackedMinutes },
