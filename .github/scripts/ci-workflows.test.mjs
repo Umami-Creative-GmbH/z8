@@ -105,7 +105,7 @@ test("work records PostgreSQL suites run on every ready PR into dev, regardless 
 });
 test("the work records job hands the selected suites to the shared runner on a disposable database", () => {
   const source = workflow("work-records-integration");
-  assert.match(source, /image: public\.ecr\.aws\/docker\/library\/postgres:16/);
+  assert.match(source, /^        image: postgres:16$/m);
   assert.match(source, /--tmpfs \/var\/lib\/postgresql\/data/);
   assert.match(source, /set -euo pipefail/);
   assert.match(source, /suites="\$\(node \.github\/scripts\/work-records-suites\.mjs\)"/);
