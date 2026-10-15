@@ -14,6 +14,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -234,10 +235,17 @@ async function driveVan(period: RecordedWork) {
 	}
 }
 
-/** History without a canonical work record: the record is gone and unlinked. */
+/**
+ * History without a canonical work record: the record is gone and unlinked, as
+ * only history before the check (#1224) can be.
+ */
 async function loseCanonicalRecord(period: RecordedWork) {
-	await admin.query("update work_period set canonical_record_id = null where id = $1", [period.id]);
-	await admin.query("delete from time_record where id = $1", [period.canonical_record_id]);
+	await asHistory(admin, async (client) => {
+		await client.query("update work_period set canonical_record_id = null where id = $1", [
+			period.id,
+		]);
+		await client.query("delete from time_record where id = $1", [period.canonical_record_id]);
+	});
 }
 
 function expectedOf(workPeriodId: string): Promise<WorkRecordExpected> {

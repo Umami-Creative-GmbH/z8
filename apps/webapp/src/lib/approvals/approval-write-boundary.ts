@@ -178,6 +178,10 @@ export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 	"src/lib/time-record/migration/backfill.ts": {
 		approval_request: ["update"],
 	},
+	// A work period's legacy approval requests link to its attached record (#1224).
+	"src/lib/time-record/migration/attach-missing-work-records.ts": {
+		approval_request: ["update"],
+	},
 } as const satisfies ApprovalWriteOwners;
 
 export const CANONICAL_SOURCE_WRITE_OWNERS = {
@@ -776,35 +780,15 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			table: "work_period",
 		},
 	],
+	// Absences only: completed work gets its canonical work record through work
+	// records' attach (#1224).
 	"src/lib/time-record/migration/backfill.ts": [
 		{
-			columns: ["canonical_record_id"],
-			functionName: "runCanonicalBackfill",
-			operation: "update",
-			table: "work_period",
-		},
-		{
 			columns: [],
-			functionName: "upsertCanonicalTimeRecords",
+			functionName: "upsertCanonicalAbsenceRecords",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record",
-			uncertainty: "dynamic_payload",
-		},
-		{
-			columns: [],
-			functionName: "insertIfPresent",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_work",
-			uncertainty: "dynamic_payload",
-		},
-		{
-			columns: [],
-			functionName: "runCanonicalBackfill",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record_allocation",
 			uncertainty: "dynamic_payload",
 		},
 	],

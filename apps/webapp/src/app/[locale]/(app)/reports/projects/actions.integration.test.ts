@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { plainDateAt } from "@/lib/datetime/temporal-core";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -88,24 +89,26 @@ describe("project reports on PostgreSQL", () => {
 				[entryId, options.employeeId, ids.organization, type, timestamp, ids.adminUser, entryId],
 			);
 		}
-		await admin.query(
-			`insert into work_period
-			 (employee_id, organization_id, clock_in_id, clock_out_id, project_id, start_time, end_time,
-			  duration_minutes, is_active, deleted_at, deleted_by, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now())`,
-			[
-				options.employeeId,
-				ids.organization,
-				clockInId,
-				clockOutId,
-				ids.project,
-				options.start,
-				options.end ?? null,
-				options.minutes ?? null,
-				!options.end,
-				options.deleted ? "2026-04-01T00:00:00Z" : null,
-				options.deleted ? ids.adminUser : null,
-			],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`insert into work_period
+				 (employee_id, organization_id, clock_in_id, clock_out_id, project_id, start_time, end_time,
+				  duration_minutes, is_active, deleted_at, deleted_by, updated_at)
+				 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now())`,
+				[
+					options.employeeId,
+					ids.organization,
+					clockInId,
+					clockOutId,
+					ids.project,
+					options.start,
+					options.end ?? null,
+					options.minutes ?? null,
+					!options.end,
+					options.deleted ? "2026-04-01T00:00:00Z" : null,
+					options.deleted ? ids.adminUser : null,
+				],
+			),
 		);
 	}
 

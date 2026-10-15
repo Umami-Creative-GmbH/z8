@@ -13,6 +13,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 const workBalance = await import("@/lib/work-balance/service");
 const { runWorkBalanceRefresh } = await import("@/lib/jobs/work-balance");
@@ -61,12 +62,14 @@ describe("work balances of employees who have left on PostgreSQL", () => {
 				],
 			);
 		}
-		await fixture.pool.query(
-			`insert into work_period
-			 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
-			  duration_minutes, is_active, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, false, now())`,
-			[employee.employeeId, fixture.organizationId, clockInId, clockOutId, start, end, minutes],
+		await withCanonicalRecords(fixture.pool, (client) =>
+			client.query(
+				`insert into work_period
+				 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
+				  duration_minutes, is_active, updated_at)
+				 values ($1, $2, $3, $4, $5, $6, $7, false, now())`,
+				[employee.employeeId, fixture.organizationId, clockInId, clockOutId, start, end, minutes],
+			),
 		);
 	}
 

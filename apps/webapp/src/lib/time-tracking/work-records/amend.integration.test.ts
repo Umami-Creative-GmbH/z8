@@ -14,6 +14,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -861,9 +862,9 @@ function amendContract({
 
 	it("refuses work without a canonical work record instead of rebuilding it", async () => {
 		const source = await recordWork();
-		await admin.query("update work_period set canonical_record_id = null where id = $1", [
-			source.id,
-		]);
+		await asHistory(admin, (client) =>
+			client.query("update work_period set canonical_record_id = null where id = $1", [source.id]),
+		);
 		const expected = await expectedOf(source.id);
 		const before = await snapshot();
 

@@ -20,6 +20,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -1286,9 +1287,12 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 			expect((await proposeContinuation(right)).body).toMatchObject({
 				reasons: expect.arrayContaining(["active_work"]),
 			});
-			await admin.query("update work_period set is_active = false where employee_id = $1", [
-				ids.worker,
-			]);
+			// History: work no longer live that never recorded its end (#1224).
+			await asHistory(admin, (client) =>
+				client.query("update work_period set is_active = false where employee_id = $1", [
+					ids.worker,
+				]),
+			);
 			const proposal = (await proposeContinuation(right)).body.proposal;
 			await approve(proposal);
 			expect((await applyProposal(proposal.id)).body.status).toBe("applied");

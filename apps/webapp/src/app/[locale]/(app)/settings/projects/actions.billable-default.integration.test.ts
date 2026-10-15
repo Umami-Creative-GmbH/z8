@@ -9,6 +9,7 @@
  */
 
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const { sessions } = await vi.hoisted(async () => {
@@ -220,11 +221,13 @@ describe("project billable default on PostgreSQL", () => {
 				 values ($1, $2, $3, 'clock_in', $4, 0, 'UTC', 'user_setting', $5, $6)`,
 				[entry, ids.employee, ids.organization, start, `t900-hash-${entry}`, ids.employeeUser],
 			);
-			await admin.query(
-				`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
-				   duration_minutes, is_active, project_id, is_billable, updated_at)
-				 values ($1, $2, $3, $4, $5, $5::timestamp + interval '1 hour', 60, false, $6, $7, now())`,
-				[period, ids.employee, ids.organization, entry, start, ids.customerProject, billable],
+			await withCanonicalRecords(admin, (client) =>
+				client.query(
+					`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
+					   duration_minutes, is_active, project_id, is_billable, updated_at)
+					 values ($1, $2, $3, $4, $5, $5::timestamp + interval '1 hour', 60, false, $6, $7, now())`,
+					[period, ids.employee, ids.organization, entry, start, ids.customerProject, billable],
+				),
 			);
 		}
 	}
@@ -444,14 +447,16 @@ describe("project billable default on PostgreSQL", () => {
 			 ('e9001000-0000-4000-8000-000000000042', $1, $2, 'clock_in', '2026-07-22T08:00:00Z', 0, 'UTC', 'user_setting', 't900-hash-running', $3)`,
 			[ids.employee, ids.organization, ids.employeeUser],
 		);
-		await admin.query(
-			`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
-			   duration_minutes, is_active, project_id, deleted_at, updated_at) values
-			 ('e9001000-0000-4000-8000-000000000041', $1, $2, 'e9001000-0000-4000-8000-000000000040',
-			  '2026-07-21T08:00:00Z', '2026-07-21T11:00:00Z', 180, false, $3, now(), now()),
-			 ('e9001000-0000-4000-8000-000000000043', $1, $2, 'e9001000-0000-4000-8000-000000000042',
-			  '2026-07-22T08:00:00Z', null, null, true, $3, null, now())`,
-			[ids.employee, ids.organization, ids.customerProject],
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
+				   duration_minutes, is_active, project_id, deleted_at, updated_at) values
+				 ('e9001000-0000-4000-8000-000000000041', $1, $2, 'e9001000-0000-4000-8000-000000000040',
+				  '2026-07-21T08:00:00Z', '2026-07-21T11:00:00Z', 180, false, $3, now(), now()),
+				 ('e9001000-0000-4000-8000-000000000043', $1, $2, 'e9001000-0000-4000-8000-000000000042',
+				  '2026-07-22T08:00:00Z', null, null, true, $3, null, now())`,
+				[ids.employee, ids.organization, ids.customerProject],
+			),
 		);
 
 		const listed = await actAs(ids.ownerUser, () => projects.getProjects(ids.organization));

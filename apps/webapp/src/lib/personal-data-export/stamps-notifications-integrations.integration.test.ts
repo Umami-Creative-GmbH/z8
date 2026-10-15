@@ -8,6 +8,7 @@
 
 import JSZip from "jszip";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -149,12 +150,14 @@ async function seed() {
 			[id, employeeId, organizationId, type, new Date(timestamp)],
 		);
 	}
-	await admin.query(
-		`insert into work_period (id, employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
-			duration_minutes, is_active, updated_at) values
-		 ($1, $3, $5, $6, $7, '2026-09-20T06:00:00Z', '2026-09-20T14:00:00Z', 480, false, now()),
-		 ($2, $4, $5, $8, null, '2026-09-20T07:00:00Z', null, null, true, now())`,
-		[ids.adaPeriod, ids.bobPeriod, ids.ada, ids.bob, ORG, ids.adaIn, ids.adaOut, ids.bobIn],
+	await withCanonicalRecords(admin, (client) =>
+		client.query(
+			`insert into work_period (id, employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
+				duration_minutes, is_active, updated_at) values
+			 ($1, $3, $5, $6, $7, '2026-09-20T06:00:00Z', '2026-09-20T14:00:00Z', 480, false, now()),
+			 ($2, $4, $5, $8, null, '2026-09-20T07:00:00Z', null, null, true, now())`,
+			[ids.adaPeriod, ids.bobPeriod, ids.ada, ids.bob, ORG, ids.adaIn, ids.adaOut, ids.bobIn],
+		),
 	);
 	const stamp = `insert into position_stamp (organization_id, employee_id, time_entry_id, consent_id,
 		latitude, longitude, accuracy_meters, fixed_at, captured_at, purge_at, created_at)

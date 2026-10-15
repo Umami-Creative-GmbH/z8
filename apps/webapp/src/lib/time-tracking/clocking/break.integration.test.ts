@@ -12,6 +12,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -460,12 +461,14 @@ describe("Clocking break through run on PostgreSQL", () => {
 		it("refuses a break whose resumed interval other work occupies, without writes", async () => {
 			await startWork();
 			// Completed work that ends after the resume instant occupies it.
-			await admin.query(
-				`insert into work_period (id, organization_id, employee_id, clock_in_id, start_time, end_time,
-				  duration_minutes, is_active, approval_status, updated_at)
-				 select $1, $2, $3, clock_in_id, '2026-07-22T10:30:00Z', '2026-07-22T11:00:00Z', 30, false, 'approved', now()
-				 from work_period where employee_id = $3 and end_time is null`,
-				[randomUUID(), ids.organization, ids.employee],
+			await withCanonicalRecords(admin, (client) =>
+				client.query(
+					`insert into work_period (id, organization_id, employee_id, clock_in_id, start_time, end_time,
+					  duration_minutes, is_active, approval_status, updated_at)
+					 select $1, $2, $3, clock_in_id, '2026-07-22T10:30:00Z', '2026-07-22T11:00:00Z', 30, false, 'approved', now()
+					 from work_period where employee_id = $3 and end_time is null`,
+					[randomUUID(), ids.organization, ids.employee],
+				),
 			);
 			const { clocking, followUps } = newClocking();
 			const before = await snapshot();

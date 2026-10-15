@@ -13,6 +13,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -219,12 +220,14 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 				[entryId, employeeId, organizationId, type, timestamp, fixture.ownerUserId, entryId],
 			);
 		}
-		await fixture.pool.query(
-			`insert into work_period
-			 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
-			  duration_minutes, is_active, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, 720, false, now())`,
-			[employeeId, organizationId, clockInId, clockOutId, start, end],
+		await withCanonicalRecords(fixture.pool, (client) =>
+			client.query(
+				`insert into work_period
+				 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
+				  duration_minutes, is_active, updated_at)
+				 values ($1, $2, $3, $4, $5, $6, 720, false, now())`,
+				[employeeId, organizationId, clockInId, clockOutId, start, end],
+			),
 		);
 	}
 

@@ -1995,14 +1995,10 @@ runner.transaction(async (tx) => {
 					}),
 				],
 			},
-			// Work periods' approval links in their savepoint (#1213), then absences'.
+			// Absences' approval links; work periods' link where work records attaches (#1224).
 			{
 				relativePath: fixtures[1],
 				writes: [
-					expect.objectContaining({
-						operation: "update",
-						table: "approval_request",
-					}),
 					expect.objectContaining({
 						operation: "update",
 						table: "approval_request",
@@ -4432,6 +4428,9 @@ db.delete(approvalOutbox);`,
 			"src/lib/time-record/migration/backfill.ts": {
 				approval_request: ["update"],
 			},
+			"src/lib/time-record/migration/attach-missing-work-records.ts": {
+				approval_request: ["update"],
+			},
 		});
 	});
 
@@ -5015,33 +5014,11 @@ db.delete(approvalOutbox);`,
 			],
 			"src/lib/time-record/migration/backfill.ts": [
 				{
-					columns: ["canonical_record_id"],
-					functionName: "runCanonicalBackfill",
-					operation: "update",
-					table: "work_period",
-				},
-				{
 					columns: [],
-					functionName: "upsertCanonicalTimeRecords",
+					functionName: "upsertCanonicalAbsenceRecords",
 					operation: "insert",
 					semantic: "policy_clock_out_terminal_break",
 					table: "time_record",
-					uncertainty: "dynamic_payload",
-				},
-				{
-					columns: [],
-					functionName: "insertIfPresent",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_work",
-					uncertainty: "dynamic_payload",
-				},
-				{
-					columns: [],
-					functionName: "runCanonicalBackfill",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_allocation",
 					uncertainty: "dynamic_payload",
 				},
 			],

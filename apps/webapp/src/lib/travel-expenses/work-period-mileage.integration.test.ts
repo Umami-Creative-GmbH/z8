@@ -9,6 +9,7 @@
  */
 
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -123,27 +124,29 @@ async function seedWork(input: {
 			timezone_source, hash, created_by) values ($1, $2, $3, 'clock_in', $4, 120, 'test', md5(random()::text), $5)`,
 		[clockIn, employeeId, organizationId, startedAt, userId],
 	);
-	await admin.query(
-		`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
-			duration_minutes, is_active, updated_at, vehicle_kind, vehicle_id, odometer_start_km,
-			odometer_end_km, driven_distance_km, deleted_at)
-		 values ($1, $2, $3, $4, $5, $6, $7, $8, $5, $9, $10, $11, $12, $13, $14)`,
-		[
-			input.id,
-			employeeId,
-			organizationId,
-			clockIn,
-			startedAt,
-			input.running ? null : endedAt,
-			input.running ? null : 480,
-			Boolean(input.running),
-			input.vehicleKind,
-			input.vehicleKind === "organization" ? vehicleId : null,
-			input.startKm ?? null,
-			input.endKm ?? null,
-			input.distanceKm,
-			input.deleted ? endedAt : null,
-		],
+	await withCanonicalRecords(admin, (client) =>
+		client.query(
+			`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
+				duration_minutes, is_active, updated_at, vehicle_kind, vehicle_id, odometer_start_km,
+				odometer_end_km, driven_distance_km, deleted_at)
+			 values ($1, $2, $3, $4, $5, $6, $7, $8, $5, $9, $10, $11, $12, $13, $14)`,
+			[
+				input.id,
+				employeeId,
+				organizationId,
+				clockIn,
+				startedAt,
+				input.running ? null : endedAt,
+				input.running ? null : 480,
+				Boolean(input.running),
+				input.vehicleKind,
+				input.vehicleKind === "organization" ? vehicleId : null,
+				input.startKm ?? null,
+				input.endKm ?? null,
+				input.distanceKm,
+				input.deleted ? endedAt : null,
+			],
+		),
 	);
 }
 
