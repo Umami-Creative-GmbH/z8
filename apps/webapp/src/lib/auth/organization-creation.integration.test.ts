@@ -20,7 +20,15 @@ import { organization } from "better-auth/plugins/organization";
 import { eq } from "drizzle-orm";
 import { Effect, Layer } from "effect";
 import type { PoolClient } from "pg";
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import { APPROVAL_KIND_START } from "@/lib/approvals/workflow/kind-start";
 import { APPROVAL_WORKFLOW_TYPES } from "@/lib/approvals/workflow/types";
 import { integrationAdminPool } from "@/test/integration-database";
@@ -38,7 +46,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", () => ({ headers: async () => harness.requestHeaders }));
+vi.mock("next/headers", () => ({
+	headers: async () => harness.requestHeaders,
+}));
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -47,11 +57,14 @@ vi.mock("next/cache", async (importOriginal) =>
 // The onboarding service's `auth` is the real Better Auth instance below, and
 // `runAuthMutation` is production's one-line coordination over its context.
 vi.mock("@/lib/auth", async () => {
-	const { runCoordinatedAuthMutation } = await import("@/lib/auth/auth-transaction");
+	const { runCoordinatedAuthMutation } = await import(
+		"@/lib/auth/auth-transaction"
+	);
 	return {
 		auth: {
 			api: {
-				createOrganization: (input: unknown) => harness.auth.api.createOrganization(input),
+				createOrganization: (input: unknown) =>
+					harness.auth.api.createOrganization(input),
 			},
 		},
 		runAuthMutation: <T>(mutation: () => Promise<T>) =>
@@ -60,30 +73,40 @@ vi.mock("@/lib/auth", async () => {
 });
 
 // Injects a failure into the owner's #314 member guard, after the organization insert.
-vi.mock("@/lib/authorization/authorization-mutation", async (importOriginal) => {
-	const original =
-		await importOriginal<typeof import("@/lib/authorization/authorization-mutation")>();
-	return {
-		...original,
-		protectAuthorizationMutation: async (
-			...args: Parameters<typeof original.protectAuthorizationMutation>
-		) => {
-			if (harness.failOwnerGuard) throw new Error("injected owner guard failure");
-			return original.protectAuthorizationMutation(...args);
-		},
-	};
-});
+vi.mock(
+	"@/lib/authorization/authorization-mutation",
+	async (importOriginal) => {
+		const original =
+			await importOriginal<
+				typeof import("@/lib/authorization/authorization-mutation")
+			>();
+		return {
+			...original,
+			protectAuthorizationMutation: async (
+				...args: Parameters<typeof original.protectAuthorizationMutation>
+			) => {
+				if (harness.failOwnerGuard)
+					throw new Error("injected owner guard failure");
+				return original.protectAuthorizationMutation(...args);
+			},
+		};
+	},
+);
 
 const { db } = await import("@/db");
 const { user: userTable } = await import("@/db/auth-schema");
-const { captureAuthTransactions, runCoordinatedAuthMutation, UncoordinatedAuthMutationError } =
-	await import("@/lib/auth/auth-transaction");
-const { createCoordinatedOrganizationHooks, handleCoordinatedAuthRequest } = await import(
-	"@/lib/auth/auth-mutation-coordination"
-);
+const {
+	captureAuthTransactions,
+	runCoordinatedAuthMutation,
+	UncoordinatedAuthMutationError,
+} = await import("@/lib/auth/auth-transaction");
+const { createCoordinatedOrganizationHooks, handleCoordinatedAuthRequest } =
+	await import("@/lib/auth/auth-mutation-coordination");
 const { authDatabaseSchema } = await import("@/lib/auth-database-schema");
 const { AuthService } = await import("@/lib/effect/services/auth.service");
-const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
+const { DatabaseServiceLive } = await import(
+	"@/lib/effect/services/database.service"
+);
 const { OnboardingService, OnboardingServiceLive } = await import(
 	"@/lib/effect/services/onboarding.service"
 );
@@ -92,7 +115,10 @@ const origin = "http://localhost:3000";
 const ownerUser = "t359-owner-user";
 const slug = "t359-created-org";
 const token = `${ownerUser}-session-token`;
-const ownerGuard = JSON.stringify(["work-user-configuration-access", ownerUser]);
+const ownerGuard = JSON.stringify([
+	"work-user-configuration-access",
+	ownerUser,
+]);
 const backfill = {
 	bare: "t359-backfill-bare-org",
 	partial: "t359-backfill-partial-org",
@@ -117,7 +143,9 @@ describe("coordinated organization creation on PostgreSQL", () => {
 			organization({
 				// Production's check, without the deployment flag.
 				allowUserToCreateOrganization: async (user) => {
-					const record = await db.query.user.findFirst({ where: eq(userTable.id, user.id) });
+					const record = await db.query.user.findFirst({
+						where: eq(userTable.id, user.id),
+					});
 					return record?.canCreateOrganizations ?? false;
 				},
 				creatorRole: "owner",
@@ -163,7 +191,9 @@ describe("coordinated organization creation on PostgreSQL", () => {
 		);
 
 	/** The onboarding organization step, through the production service. */
-	const createThroughOnboarding = () => {
+	const createThroughOnboarding = (
+		setup: { timezone?: string; trackingStartDate?: string } = {},
+	) => {
 		const authLayer = Layer.succeed(
 			AuthService,
 			AuthService.of({
@@ -182,7 +212,11 @@ describe("coordinated organization creation on PostgreSQL", () => {
 			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* OnboardingService;
-					return yield* service.createOrganization({ name: "T359 created", slug });
+					return yield* service.createOrganization({
+						name: "T359 created",
+						slug,
+						...setup,
+					});
 				}).pipe(Effect.provide(layer)),
 			),
 		);
@@ -194,7 +228,10 @@ describe("coordinated organization creation on PostgreSQL", () => {
 		const client: PoolClient = await admin.connect();
 		openHolds.add(client);
 		await client.query("begin");
-		await client.query("select pg_advisory_xact_lock(hashtextextended($1, 0))", [key]);
+		await client.query(
+			"select pg_advisory_xact_lock(hashtextextended($1, 0))",
+			[key],
+		);
 		return {
 			async release() {
 				if (!openHolds.delete(client)) return;
@@ -226,10 +263,12 @@ describe("coordinated organization creation on PostgreSQL", () => {
 			[slug],
 		);
 		const organizationId = organizations[0]?.id ?? null;
-		const { rows: members } = await admin.query<{ user_id: string; role: string }>(
-			"select user_id, role from member where organization_id = $1",
-			[organizationId],
-		);
+		const { rows: members } = await admin.query<{
+			user_id: string;
+			role: string;
+		}>("select user_id, role from member where organization_id = $1", [
+			organizationId,
+		]);
 		const { rows: rollouts } = await admin.query<{
 			workflow_type: string;
 			lifecycle_mode: string;
@@ -239,10 +278,9 @@ describe("coordinated organization creation on PostgreSQL", () => {
 			 where organization_id = $1 order by workflow_type::text`,
 			[organizationId],
 		);
-		const { rows: sessions } = await admin.query<{ active_organization_id: string | null }>(
-			"select active_organization_id from session where token = $1",
-			[token],
-		);
+		const { rows: sessions } = await admin.query<{
+			active_organization_id: string | null;
+		}>("select active_organization_id from session where token = $1", [token]);
 		return {
 			organizationId,
 			organizations: organizations.length,
@@ -254,12 +292,24 @@ describe("coordinated organization creation on PostgreSQL", () => {
 
 	// A canonical-only kind (#1058, #1059) starts in complete mode; 0107 backfills only the
 	// kinds that start legacy.
-	const createdRollouts = [...APPROVAL_WORKFLOW_TYPES].sort().map((workflowType) =>
-		APPROVAL_KIND_START[workflowType] === "canonical_only"
-			? { workflow_type: workflowType, lifecycle_mode: "complete", side_effect_mode: "canonical" }
-			: { workflow_type: workflowType, lifecycle_mode: "legacy", side_effect_mode: "legacy" },
+	const createdRollouts = [...APPROVAL_WORKFLOW_TYPES]
+		.sort()
+		.map((workflowType) =>
+			APPROVAL_KIND_START[workflowType] === "canonical_only"
+				? {
+						workflow_type: workflowType,
+						lifecycle_mode: "complete",
+						side_effect_mode: "canonical",
+					}
+				: {
+						workflow_type: workflowType,
+						lifecycle_mode: "legacy",
+						side_effect_mode: "legacy",
+					},
+		);
+	const legacyRollouts = createdRollouts.filter(
+		(row) => row.lifecycle_mode === "legacy",
 	);
-	const legacyRollouts = createdRollouts.filter((row) => row.lifecycle_mode === "legacy");
 
 	async function expectCreatedTogether() {
 		const created = await createdRows();
@@ -280,12 +330,16 @@ describe("coordinated organization creation on PostgreSQL", () => {
 
 	/** No organization, member, rollout row or session change survives the attempt. */
 	async function expectNothingCreated(rolloutRowsBefore: number) {
-		const { rows } = await admin.query("select id from organization where slug = $1", [slug]);
+		const { rows } = await admin.query(
+			"select id from organization where slug = $1",
+			[slug],
+		);
 		expect(rows).toEqual([]);
 		expect(await rolloutRowCount()).toBe(rolloutRowsBefore);
-		const { rows: members } = await admin.query("select id from member where user_id = $1", [
-			ownerUser,
-		]);
+		const { rows: members } = await admin.query(
+			"select id from member where user_id = $1",
+			[ownerUser],
+		);
 		expect(members).toEqual([]);
 		expect((await createdRows()).activeOrganizationId).toBeNull();
 		expect(harness.provisioned).toEqual([]);
@@ -305,10 +359,10 @@ describe("coordinated organization creation on PostgreSQL", () => {
 			"drop trigger if exists t359_fail_rollout_insert on approval_workflow_rollout",
 		);
 		await admin.query("drop function if exists t359_fail_rollout_insert()");
-		await admin.query("delete from organization where slug = $1 or id = any($2::text[])", [
-			slug,
-			Object.values(backfill),
-		]);
+		await admin.query(
+			"delete from organization where slug = $1 or id = any($2::text[])",
+			[slug, Object.values(backfill)],
+		);
 		await admin.query('delete from "user" where id = $1', [ownerUser]);
 	}
 
@@ -391,12 +445,73 @@ describe("coordinated organization creation on PostgreSQL", () => {
 	});
 
 	describe("onboarding", () => {
+		it("starts tracking on the selected calendar date separately from employment", async () => {
+			const result = await createThroughOnboarding({
+				timezone: "Europe/Berlin",
+				trackingStartDate: "2026-05-21",
+			});
+			expect(result._tag).toBe("Success");
+			const created = await expectCreatedTogether();
+			const { loadOrganizationTrackingSettings } = await import(
+				"@/lib/organization/tracking-settings"
+			);
+			expect(
+				await loadOrganizationTrackingSettings(db, created.organizationId!),
+			).toMatchObject({ trackingStartDate: "2026-05-21", active: true });
+		});
+
+		it("suggests creation day once in the configured timezone and preserves it after a zone change", async () => {
+			vi.useFakeTimers({ toFake: ["Date"] });
+			vi.setSystemTime(new Date("2026-05-20T23:30:00Z"));
+			try {
+				const result = await createThroughOnboarding({
+					timezone: "Europe/Berlin",
+				});
+				expect(result._tag).toBe("Success");
+				const created = await expectCreatedTogether();
+				const { loadOrganizationTrackingSettings } = await import(
+					"@/lib/organization/tracking-settings"
+				);
+				expect(
+					await loadOrganizationTrackingSettings(db, created.organizationId!),
+				).toEqual({ trackingStartDate: "2026-05-21", active: true });
+				const { changeOrganizationTimezone } = await import(
+					"@/lib/timezone/organization-timezone-change"
+				);
+				expect(
+					await changeOrganizationTimezone({
+						organizationId: created.organizationId!,
+						actorUserId: ownerUser,
+						timezone: "America/Los_Angeles",
+					}),
+				).toMatchObject({ status: "changed" });
+				expect(
+					await loadOrganizationTrackingSettings(db, created.organizationId!),
+				).toEqual({ trackingStartDate: "2026-05-21", active: true });
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("refuses an invalid selected date without creating an organization", async () => {
+			const countBefore = await rolloutRowCount();
+			expect(
+				await createThroughOnboarding({ trackingStartDate: "2026-02-30" }),
+			).toMatchObject({
+				_tag: "Failure",
+				failure: { field: "trackingStartDate" },
+			});
+			await expectNothingCreated(countBefore);
+		});
+
 		it("creates the same row set through the server-side call", async () => {
 			const result = await createThroughOnboarding();
 
 			expect(result._tag).toBe("Success");
 			const created = await expectCreatedTogether();
-			expect(result).toMatchObject({ success: { organizationId: created.organizationId } });
+			expect(result).toMatchObject({
+				success: { organizationId: created.organizationId },
+			});
 		});
 
 		it("leaves nothing behind when the rollout-row write fails", async () => {
@@ -405,7 +520,10 @@ describe("coordinated organization creation on PostgreSQL", () => {
 
 			const result = await createThroughOnboarding();
 
-			expect(result).toMatchObject({ _tag: "Failure", failure: { field: "slug" } });
+			expect(result).toMatchObject({
+				_tag: "Failure",
+				failure: { field: "slug" },
+			});
 			await expectNothingCreated(rolloutRowsBefore);
 		});
 	});
@@ -431,7 +549,9 @@ describe("coordinated organization creation on PostgreSQL", () => {
 		);
 		const { organizationId } = await expectCreatedTogether();
 
-		await admin.query("delete from organization where id = $1", [organizationId]);
+		await admin.query("delete from organization where id = $1", [
+			organizationId,
+		]);
 
 		const { rows } = await admin.query(
 			"select id from approval_workflow_rollout where organization_id = $1",
@@ -444,7 +564,10 @@ describe("coordinated organization creation on PostgreSQL", () => {
 		const migrationSql = async () => {
 			const { readFile } = await import("node:fs/promises");
 			return readFile(
-				new URL("../../../drizzle/0107_approval_workflow_rollout_precreate.sql", import.meta.url),
+				new URL(
+					"../../../drizzle/0107_approval_workflow_rollout_precreate.sql",
+					import.meta.url,
+				),
 				"utf8",
 			);
 		};
@@ -488,15 +611,23 @@ describe("coordinated organization creation on PostgreSQL", () => {
 				const bare = await rolloutsOf(client, backfill.bare);
 				const partial = await rolloutsOf(client, backfill.partial);
 
-				expect(bare.map(({ id: _, updated_at: __, ...row }) => row)).toEqual(legacyRollouts);
+				expect(bare.map(({ id: _, updated_at: __, ...row }) => row)).toEqual(
+					legacyRollouts,
+				);
 				expect(partial.map(({ id: _, updated_at: __, ...row }) => row)).toEqual(
 					legacyRollouts.map((row) =>
 						row.workflow_type === "policy_clock_out"
-							? { ...row, lifecycle_mode: "canonical", side_effect_mode: "canonical" }
+							? {
+									...row,
+									lifecycle_mode: "canonical",
+									side_effect_mode: "canonical",
+								}
 							: row,
 					),
 				);
-				expect(partial.find((row) => row.id === existing?.id)).toEqual(existing);
+				expect(partial.find((row) => row.id === existing?.id)).toEqual(
+					existing,
+				);
 
 				await client.query(sql);
 				expect(await rolloutsOf(client, backfill.bare)).toEqual(bare);
@@ -509,7 +640,11 @@ describe("coordinated organization creation on PostgreSQL", () => {
 					   where r.organization_id = o.id and r.workflow_type = t.workflow_type)
 					   and t.workflow_type::text <> all($1::text[])`,
 					// Canonical-only kinds need no backfilled row (#1058).
-					[APPROVAL_WORKFLOW_TYPES.filter((type) => APPROVAL_KIND_START[type] === "canonical_only")],
+					[
+						APPROVAL_WORKFLOW_TYPES.filter(
+							(type) => APPROVAL_KIND_START[type] === "canonical_only",
+						),
+					],
 				);
 				expect(rows[0]?.missing).toBe(0);
 			} finally {

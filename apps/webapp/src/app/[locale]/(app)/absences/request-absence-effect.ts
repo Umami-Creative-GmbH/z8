@@ -10,15 +10,16 @@ import {
 	timeRecord,
 	timeRecordAbsence,
 } from "@/db/schema";
-import {
-	NO_WORKING_DAYS_MESSAGE,
-	refusalForAbsenceDays,
-} from "@/lib/absences/absence-days";
+import { NO_WORKING_DAYS_MESSAGE, refusalForAbsenceDays } from "@/lib/absences/absence-days";
 import { getAbsenceDays } from "@/lib/absences/absence-days-resolver";
 import { dateRangesOverlap } from "@/lib/absences/date-utils";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
 import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import { checkDeputyNaming, recordDeputyChange } from "@/lib/absences/deputy-store";
+import {
+	assertHistoricalVacationNotOverlapping,
+	historicalVacationRefusalOf,
+} from "@/lib/absences/historical-vacation";
 import { AuditTrail } from "@/lib/audit-trail";
 import {
 	type NormalizedAbsenceDurationInput,
@@ -75,10 +76,7 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import {
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService, makeDatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -162,13 +160,11 @@ function createDefaultAbsenceSubmissionApprovalLifecycle(
 			},
 			timeCorrection: {
 				clock: systemClock,
-				finalizeTimeCorrectionTerminal:
-					finalizeTimeCorrectionTerminalInTransaction,
+				finalizeTimeCorrectionTerminal: finalizeTimeCorrectionTerminalInTransaction,
 				deleteCancelledCorrections: deleteCancelledTimeCorrectionsInTransaction,
 			},
 			ordinaryWorkPeriod: {
-				finalizeTerminal:
-					finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
+				finalizeTerminal: finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 			},
 		},
 		canManageApproval: async ({ organizationId, actorEmployeeId }) => {
@@ -185,8 +181,7 @@ function createDefaultAbsenceSubmissionApprovalLifecycle(
 	});
 
 	return {
-		withApprovalTransaction: (operation) =>
-			runtime.repository.withTransaction(operation),
+		withApprovalTransaction: (operation) => runtime.repository.withTransaction(operation),
 		captureLegacyState: captureAbsenceLegacyApprovalState,
 		startCanonicalWorkflow: startApprovalWorkflow,
 		finalizeCanonicalAutoCompletion: finalizeAbsenceTerminalInTransaction,
@@ -226,32 +221,19 @@ function checkForOverlappingAbsences(
 	hasManagerApprovalWorkflow: boolean,
 ) {
 	return Effect.gen(function* () {
-		const overlappingAbsences = yield* dbService.query(
-			"checkAbsenceOverlaps",
-			async () => {
-				return await dbService.db.query.absenceEntry.findMany({
-					where: and(
-						eq(absenceEntry.employeeId, currentEmployee.id),
-						eq(absenceEntry.organizationId, currentEmployee.organizationId),
-						or(
-							eq(absenceEntry.status, "approved"),
-							eq(absenceEntry.status, "pending"),
-						),
-					),
-					with: { category: true },
-				});
-			},
-		);
+		const overlappingAbsences = yield* dbService.query("checkAbsenceOverlaps", async () => {
+			return await dbService.db.query.absenceEntry.findMany({
+				where: and(
+					eq(absenceEntry.employeeId, currentEmployee.id),
+					eq(absenceEntry.organizationId, currentEmployee.organizationId),
+					or(eq(absenceEntry.status, "approved"), eq(absenceEntry.status, "pending")),
+				),
+				with: { category: true },
+			});
+		});
 
 		for (const existing of overlappingAbsences) {
-			if (
-				!dateRangesOverlap(
-					data.startDate,
-					data.endDate,
-					existing.startDate,
-					existing.endDate,
-				)
-			) {
+			if (!dateRangesOverlap(data.startDate, data.endDate, existing.startDate, existing.endDate)) {
 				continue;
 			}
 
@@ -369,20 +351,11 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 	};
 	approvalLifecycle?: AbsenceSubmissionApprovalLifecycle;
 }) {
-	const {
-		dbService,
-		currentEmployee,
-		data,
-		category,
-		createdBy,
-		hasManagerApprovalWorkflow,
-	} = params;
+	const { dbService, currentEmployee, data, category, createdBy, hasManagerApprovalWorkflow } =
+		params;
 	const approvalLifecycle = params.approvalWorkflow
 		? (params.approvalLifecycle ??
-			createDefaultAbsenceSubmissionApprovalLifecycle(
-				dbService,
-				currentEmployee,
-			))
+			createDefaultAbsenceSubmissionApprovalLifecycle(dbService, currentEmployee))
 		: undefined;
 	const deputyEmployeeId = params.deputyEmployeeId ?? null;
 	const audit = new AuditTrail();
@@ -398,6 +371,13 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 					organizationId: currentEmployee.organizationId,
 					employeeId: currentEmployee.id,
 					days: [{ startDate: data.startDate, endDate: data.endDate }],
+				});
+				await assertHistoricalVacationNotOverlapping(tx, {
+					organizationId: currentEmployee.organizationId,
+					employeeId: currentEmployee.id,
+					categoryId: data.categoryId,
+					startDate: data.startDate,
+					endDate: data.endDate,
 				});
 				let vacationOverrideSummary: VacationOverrideSummary = {
 					updatedAbsenceIds: [],
@@ -498,9 +478,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 						),
 				]);
 
-				let approvalWorkflowResult:
-					| RequestedAbsenceApprovalWorkflowResult
-					| undefined;
+				let approvalWorkflowResult: RequestedAbsenceApprovalWorkflowResult | undefined;
 				let autoCompletion: ApprovedAbsenceResult | undefined;
 				let legacyDeliveryIntent = false;
 				if (params.approvalWorkflow) {
@@ -598,23 +576,21 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							actor,
 							idempotencyKey: submissionKey,
 							captureState,
-							mutate:
-								async (): Promise<RequestedAbsenceApprovalWorkflowResult> => {
-									const result = await Effect.runPromise(
-										create(
-											transactionalDbService,
-											currentEmployee,
-											newAbsence.id,
-											params.approvalWorkflow?.categoryId ?? data.categoryId,
-											params.approvalWorkflow?.approverId ?? null,
-										),
-									);
-									return result as RequestedAbsenceApprovalWorkflowResult;
-								},
+							mutate: async (): Promise<RequestedAbsenceApprovalWorkflowResult> => {
+								const result = await Effect.runPromise(
+									create(
+										transactionalDbService,
+										currentEmployee,
+										newAbsence.id,
+										params.approvalWorkflow?.categoryId ?? data.categoryId,
+										params.approvalWorkflow?.approverId ?? null,
+									),
+								);
+								return result as RequestedAbsenceApprovalWorkflowResult;
+							},
 							afterMirror: async (observed) => {
 								if (
-									observed.snapshot.organizationId !==
-										currentEmployee.organizationId ||
+									observed.snapshot.organizationId !== currentEmployee.organizationId ||
 									observed.snapshot.workflowType !== "absence" ||
 									observed.snapshot.sourceType !== "absence_entry" ||
 									observed.snapshot.sourceId !== newAbsence.id
@@ -632,8 +608,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							// Legacy authority stays authoritative; evidence joins its
 							// transaction after the legacy rows and any observation exist.
 							await (
-								approvalLifecycle.captureLegacyEvidence ??
-								captureLegacyAbsenceSubmissionEvidence
+								approvalLifecycle.captureLegacyEvidence ?? captureLegacyAbsenceSubmissionEvidence
 							)(tx, {
 								organizationId: currentEmployee.organizationId,
 								absenceId: newAbsence.id,
@@ -678,27 +653,25 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							});
 						}
 					} else {
-						const verifySourceWorkflow: StartApprovalWorkflowInput["verifySourceWorkflow"] =
-							async (workflowId) => {
-								const linked = await tx.query.absenceEntry.findFirst({
-									where: and(
-										eq(absenceEntry.id, newAbsence.id),
-										eq(
-											absenceEntry.organizationId,
-											currentEmployee.organizationId,
-										),
-										eq(absenceEntry.approvalWorkflowId, workflowId),
-									),
-									columns: { id: true },
-								});
-								return {
-									organizationId: currentEmployee.organizationId,
-									sourceType: "absence_entry",
-									sourceId: newAbsence.id,
-									workflowId,
-									affectedRows: linked?.id === newAbsence.id ? 1 : 0,
-								};
+						const verifySourceWorkflow: StartApprovalWorkflowInput["verifySourceWorkflow"] = async (
+							workflowId,
+						) => {
+							const linked = await tx.query.absenceEntry.findFirst({
+								where: and(
+									eq(absenceEntry.id, newAbsence.id),
+									eq(absenceEntry.organizationId, currentEmployee.organizationId),
+									eq(absenceEntry.approvalWorkflowId, workflowId),
+								),
+								columns: { id: true },
+							});
+							return {
+								organizationId: currentEmployee.organizationId,
+								sourceType: "absence_entry",
+								sourceId: newAbsence.id,
+								workflowId,
+								affectedRows: linked?.id === newAbsence.id ? 1 : 0,
 							};
+						};
 						const startResult = await approvalLifecycle.startCanonicalWorkflow({
 							context,
 							organizationId: currentEmployee.organizationId,
@@ -776,16 +749,14 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							},
 						});
 						if (gate.compatibilityWriting) {
-							await approvalContext.compatibilityWriter.mirrorCanonicalToLegacy(
-								{
-									result: {
-										snapshot: startResult.snapshot,
-										events: startResult.events,
-										projection: startResult.projection,
-										outbox: startResult.outbox,
-									},
+							await approvalContext.compatibilityWriter.mirrorCanonicalToLegacy({
+								result: {
+									snapshot: startResult.snapshot,
+									events: startResult.events,
+									projection: startResult.projection,
+									outbox: startResult.outbox,
 								},
-							);
+							});
 						}
 					}
 				}
@@ -802,13 +773,9 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 			};
 
 			if (params.approvalWorkflow) {
-				if (!approvalLifecycle)
-					throw new Error("Approval lifecycle is unavailable");
+				if (!approvalLifecycle) throw new Error("Approval lifecycle is unavailable");
 				return await approvalLifecycle.withApprovalTransaction((context) =>
-					createRecords(
-						context.dbService.db as ApprovalDbService["db"],
-						context,
-					),
+					createRecords(context.dbService.db as ApprovalDbService["db"], context),
 				);
 			}
 
@@ -818,6 +785,9 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 			// The deputy's audit entry leaves for the external service only once committed.
 			Effect.tap(() => Effect.sync(() => audit.forwardCommitted())),
 			Effect.mapError((error) => {
+				const historical = historicalVacationRefusalOf(error);
+				if (historical)
+					return new ValidationError({ message: historical.message, refusal: historical.refusal });
 				if (error.cause instanceof ValidationError) return error.cause;
 				if (
 					error.cause instanceof ApprovalWorkflowStartError &&
@@ -892,10 +862,7 @@ function getManagerAndEmployeeDetails(
 		dbService
 			.query("getManagerWithUser", async () => {
 				return await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.id, managerId),
-						eq(employee.organizationId, organizationId),
-					),
+					where: and(eq(employee.id, managerId), eq(employee.organizationId, organizationId)),
 					with: { user: true },
 				});
 			})
@@ -1121,14 +1088,12 @@ function requestAbsenceWithResolverEffect(
 					);
 				}
 
-				const absenceDays = yield* dbService.query(
-					"getRequestedAbsenceDays",
-					() =>
-						getAbsenceDays(dbService.db, {
-							organizationId: currentEmployee.organizationId,
-							employeeId: currentEmployee.id,
-							absence: toAbsenceEntryDurationFields(normalizedData),
-						}),
+				const absenceDays = yield* dbService.query("getRequestedAbsenceDays", () =>
+					getAbsenceDays(dbService.db, {
+						organizationId: currentEmployee.organizationId,
+						employeeId: currentEmployee.id,
+						absence: toAbsenceEntryDurationFields(normalizedData),
+					}),
 				);
 				span.setAttribute("absence.absence_days", absenceDays);
 				const refusal = refusalForAbsenceDays({
@@ -1156,10 +1121,7 @@ function requestAbsenceWithResolverEffect(
 				);
 
 				span.setAttribute("absence.category_name", category.name);
-				span.setAttribute(
-					"absence.requires_approval",
-					category.requiresApproval,
-				);
+				span.setAttribute("absence.requires_approval", category.requiresApproval);
 
 				logger.info(
 					{
@@ -1201,15 +1163,10 @@ function requestAbsenceWithResolverEffect(
 				logger.info({ absenceId: newAbsence.id }, "Absence entry created");
 				const autoCompletion = newAbsence.autoCompletion;
 				if (autoCompletion) {
-					yield* Effect.promise(() =>
-						runAutoCompletedAbsenceMaintenance(autoCompletion),
-					);
+					yield* Effect.promise(() => runAutoCompletedAbsenceMaintenance(autoCompletion));
 					span.setAttribute("absence.auto_approved", true);
 				} else if (category.requiresApproval) {
-					if (
-						defaultApproverId &&
-						newAbsence.approvalWorkflowResult?.kind !== "canonical"
-					) {
+					if (defaultApproverId && newAbsence.approvalWorkflowResult?.kind !== "canonical") {
 						span.setAttribute("absence.has_approval_request", true);
 						span.setAttribute("absence.approver_id", defaultApproverId);
 						yield* Effect.promise(() =>
@@ -1239,11 +1196,7 @@ function requestAbsenceWithResolverEffect(
 						});
 					}
 				} else if (!category.requiresApproval) {
-					yield* updateAutoApprovedAbsence(
-						dbService,
-						newAbsence.id,
-						"autoApproveAbsence",
-					);
+					yield* updateAutoApprovedAbsence(dbService, newAbsence.id, "autoApproveAbsence");
 					yield* Effect.promise(() =>
 						markAutoApprovedAbsenceWorkBalanceDirtyBestEffort({
 							employeeId: currentEmployee.id,
@@ -1271,10 +1224,7 @@ function requestAbsenceWithResolverEffect(
 						action: "create",
 					});
 
-					logger.info(
-						{ absenceId: newAbsence.id },
-						"Absence auto-approved (no approval required)",
-					);
+					logger.info({ absenceId: newAbsence.id }, "Absence auto-approved (no approval required)");
 				}
 				// A pending absence names nobody yet; one approved on creation (or
 				// vacations a sick absence changed) tells their deputies (#1013).

@@ -1,4 +1,10 @@
 import {
+	withReviewedVacationReconciliation,
+	withVacationReconciliation,
+} from "./vacation-reconciliation";
+import { historicalVacationRefusalOf } from "./historical-vacation";
+import { isAuthorizedReconciledAbsence } from "./vacation-reconciliation-authorization";
+import {
 	type AbsenceChangeDatabase,
 	type AbsenceChangeRow,
 	originalAbsence,
@@ -21,12 +27,20 @@ import {
 
 import { absenceCategory, absenceEntry } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
-import { dateFromInstant, parseInstant, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	dateFromInstant,
+	parseInstant,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { deleteSickNotesOfCancelledAbsence } from "@/lib/personnel-file/sick-note-store";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import { coverageDays, loadCanonicalCoverage, validateAbsenceProposal } from "./change-request-proposal";
+import {
+	coverageDays,
+	loadCanonicalCoverage,
+	validateAbsenceProposal,
+} from "./change-request-proposal";
 import { AbsenceChangeError } from "./change-request-types";
 import type { AbsenceDeputyEvent } from "./deputy-notifications";
 import type { VacationOverrideSummary } from "./sick-vacation-override";
@@ -64,14 +78,45 @@ export async function validateEffectiveAbsence(
 		);
 	}
 	try {
-		const displaced = await validateAbsenceProposal(database, { ...row, at });
-		if (row.proposed && !isDeepStrictEqual(displaced, row.proposed.displacedVacations))
+		const validate = () => validateAbsenceProposal(database, { ...row, at });
+		const proof = row.proposed?.historicalReconciliation;
+		const displaced =
+			proof &&
+			row.proposed &&
+			!isAuthorizedReconciledAbsence(database, {
+				organizationId: row.organizationId,
+				employeeId: row.employeeId,
+				categoryId: row.original.categoryId,
+				...row.proposed,
+			})
+				? await withReviewedVacationReconciliation(
+						database,
+						{
+							organizationId: row.organizationId,
+							actorUserId: row.submittedBy,
+							proof,
+							expectedChange: {
+								absenceId: row.absenceId,
+								proposed: row.proposed,
+							},
+						},
+						validate,
+					)
+				: await validate();
+		if (
+			row.proposed &&
+			!isDeepStrictEqual(displaced, row.proposed.displacedVacations)
+		)
 			throw new AbsenceChangeError(
 				"obsolete",
 				"The vacation affected by this request changed during review.",
 			);
 	} catch (error) {
-		if (error instanceof AbsenceChangeError || monthClosedRefusalOf(error))
+		if (
+			error instanceof AbsenceChangeError ||
+			monthClosedRefusalOf(error) ||
+			historicalVacationRefusalOf(error)
+		)
 			throw new AbsenceChangeError(
 				"obsolete",
 				`${error instanceof Error ? error.message : "The proposed dates are no longer valid."} Submit a fresh request.`,
@@ -81,7 +126,7 @@ export async function validateEffectiveAbsence(
 	return absence;
 }
 
-export async function applyAbsenceChange(
+async function applyAbsenceChangeRecords(
 	database: AbsenceChangeDatabase,
 	row: AbsenceChangeRow,
 	actorUserId: string,
@@ -118,7 +163,10 @@ export async function applyAbsenceChange(
 			});
 	} else {
 		if (!row.proposed)
-			throw new AbsenceChangeError("invalid_dates", "Proposed dates are required.");
+			throw new AbsenceChangeError(
+				"invalid_dates",
+				"Proposed dates are required.",
+			);
 		const [category] = await database
 			.select()
 			.from(absenceCategory)
@@ -178,7 +226,10 @@ export async function applyAbsenceChange(
 		organizationId: row.organizationId,
 		employeeId: row.employeeId,
 		causedByUserId: actorUserId,
-		days: [coverageDays(row.original), ...(row.proposed ? [coverageDays(row.proposed)] : [])],
+		days: [
+			coverageDays(row.original),
+			...(row.proposed ? [coverageDays(row.proposed)] : []),
+		],
 	});
 	const deputyEvents: AbsenceDeputyEvent[] = [
 		{
@@ -213,7 +264,8 @@ export async function applyAbsenceChange(
 		calendarUpdates: [
 			{
 				absenceId: row.absenceId,
-				action: row.kind === "cancel" ? ("delete" as const) : ("update" as const),
+				action:
+					row.kind === "cancel" ? ("delete" as const) : ("update" as const),
 			},
 			...vacationOverride.updatedAbsenceIds.map((absenceId) => ({
 				absenceId,
@@ -229,4 +281,26 @@ export async function applyAbsenceChange(
 			})),
 		],
 	};
+}
+
+export async function applyAbsenceChange(
+	database: AbsenceChangeDatabase,
+	row: AbsenceChangeRow,
+	actorUserId: string,
+	at: Instant,
+) {
+	const proof = row.proposed?.historicalReconciliation;
+	if (!proof || !row.proposed)
+		return applyAbsenceChangeRecords(database, row, actorUserId, at);
+	return withVacationReconciliation(
+		database,
+		{
+			organizationId: row.organizationId,
+			actorUserId,
+			proof,
+			approval: true,
+			expectedChange: { absenceId: row.absenceId, proposed: row.proposed },
+		},
+		() => applyAbsenceChangeRecords(database, row, actorUserId, at),
+	);
 }

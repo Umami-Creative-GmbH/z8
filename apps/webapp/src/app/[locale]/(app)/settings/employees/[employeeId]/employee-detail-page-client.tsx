@@ -1,5 +1,6 @@
 "use client";
 
+import { EmployeeTrackingDateCard } from "@/components/settings/employee-tracking-date-card";
 import { IconCoin, IconLoader2, IconReceipt2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -13,6 +14,7 @@ import { EmployeeLifecycleActions } from "@/components/organization/employee-lif
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
+import {EmploymentDateCorrectionCard} from "@/components/settings/employment-date-correction-card";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
 import { WageHistoryMergeNote } from "@/components/settings/employee-employment-history/wage-history-merge-note";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
@@ -23,6 +25,7 @@ import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { EmployeeKioskCard } from "@/components/settings/kiosk/employee-kiosk-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
+import { EMPLOYEE_WORK_BALANCE_QUERY_KEY } from "@/components/settings/work-balance/use-employee-work-balance";
 import { EmployeeWorkBalanceSection } from "@/components/settings/work-balance/employee-work-balance-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
@@ -311,6 +314,7 @@ function EmployeeRecordSections({
 }) {
 	const { t } = useTranslate();
 	const isOrgAdmin = accessTier === "orgAdmin";
+ const queryClient = useQueryClient();
 	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
 	const billableTimeEnabled = useBillableTimeEnabled();
 	const { availableManagers, workPolicies } = data;
@@ -382,6 +386,19 @@ function EmployeeRecordSections({
 					isOwnRecord={employee.userId === currentUserId}
 				/>
 			)}
+
+			{isOrgAdminOrManager && <EmployeeTrackingDateCard employeeId={employeeId} />}
+
+			{isOrgAdmin && employee.kind === "employee" ? (
+    <EmploymentDateCorrectionCard
+     key={employeeId}
+     employeeId={employeeId}
+     employmentStartDate={employee.startDate ? new Date(employee.startDate).toISOString().slice(0,10) : null}
+     onSaved={async () => {
+      await Promise.all([data.refetch(),queryClient.invalidateQueries({queryKey:["employee-tracking-date",employeeId]}),queryClient.invalidateQueries({queryKey:[...EMPLOYEE_WORK_BALANCE_QUERY_KEY,employeeId]})]);
+     }}
+    />
+   ) : null}
 
 			<EmployeeEmploymentHistoryCard
 				history={data.employmentHistory}

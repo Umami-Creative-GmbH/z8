@@ -1010,7 +1010,7 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 	"src/app/[locale]/(app)/team/absences/actions.ts": [
 		{
 			columns: [],
-			functionName: "recordAbsenceForEmployee",
+			functionName: "createManagerAbsenceRecords",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record",
@@ -1110,7 +1110,7 @@ export const ABSENCE_RECORD_WRITERS = {
 		"updateCanonicalAbsenceRangeInTransaction",
 	],
 	"src/app/[locale]/(app)/absences/request-absence-effect.ts": ["createRecords"],
-	"src/app/[locale]/(app)/team/absences/actions.ts": ["recordAbsenceForEmployee"],
+	"src/app/[locale]/(app)/team/absences/actions.ts": ["createManagerAbsenceRecords"],
 	"src/lib/absences/sick-vacation-override.ts": [
 		"createCanonicalAbsenceInTransaction",
 		"rejectCanonicalAbsenceInTransaction",

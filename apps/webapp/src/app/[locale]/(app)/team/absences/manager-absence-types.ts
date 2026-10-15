@@ -1,6 +1,10 @@
 import type { DeputyDisplay } from "@/lib/absences/deputy-visibility";
 import type { ProratedAllowance } from "@/lib/absences/prorated-allowance";
-import type { AbsenceDurationKind, DayPeriod, SickDetail } from "@/lib/absences/types";
+import type {
+	AbsenceDurationKind,
+	DayPeriod,
+	SickDetail,
+} from "@/lib/absences/types";
 
 export type ManagerAbsenceRole = "admin" | "manager" | "employee";
 
@@ -56,6 +60,7 @@ export interface ManagerAbsenceEmployeeRow {
 	teamName: string | null;
 	vacationAllowance: number;
 	usedVacationDays: number;
+	previouslyTakenVacationDays?: number;
 	pendingVacationDays: number;
 	remainingVacationDays: number;
 	/** Approved vacation beyond the allowance (overdrawn vacation, #1111); never deducted. */
@@ -130,6 +135,7 @@ export interface ManagerAbsenceCalendarResult {
 }
 
 export interface RecordAbsenceForEmployeeInput {
+	historicalReconciliation?: import("@/lib/absences/vacation-reconciliation-types").ReconciliationProof;
 	employeeId: string;
 	categoryId: string;
 	startDate: string;

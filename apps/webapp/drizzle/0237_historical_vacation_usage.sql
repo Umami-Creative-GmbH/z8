@@ -1,0 +1,10 @@
+ALTER TABLE "vacation_adjustment" ADD COLUMN "historical_coverage_start" date;
+ALTER TABLE "vacation_adjustment" ADD COLUMN "historical_coverage_end" date;
+ALTER TABLE "vacation_adjustment" ADD COLUMN "historical_tracking_start" date;
+ALTER TABLE "vacation_adjustment" ADD COLUMN "historical_timezone" text;
+ALTER TABLE "vacation_adjustment" ADD COLUMN "revision" integer DEFAULT 0 NOT NULL;
+ALTER TABLE "vacation_adjustment" ADD COLUMN "updated_at" timestamp DEFAULT now() NOT NULL;
+ALTER TABLE "vacation_adjustment" DROP CONSTRAINT "vacation_adjustment_kind_check";
+ALTER TABLE "vacation_adjustment" ADD CONSTRAINT "vacation_adjustment_kind_check" CHECK (kind IN ('manual','accrual','historical_usage'));
+ALTER TABLE "vacation_adjustment" ADD CONSTRAINT "vacation_adjustment_historical_check" CHECK (kind <> 'historical_usage' OR (days <= 0 AND mod(days,0.5)=0 AND historical_coverage_start IS NOT NULL AND historical_coverage_end IS NOT NULL AND historical_tracking_start IS NOT NULL AND historical_timezone IS NOT NULL AND historical_coverage_start <= historical_coverage_end AND historical_coverage_end < historical_tracking_start AND extract(year from historical_coverage_start)=year AND extract(year from historical_coverage_end)=year));
+CREATE UNIQUE INDEX "vacationAdjustment_historical_year_idx" ON "vacation_adjustment" (employee_id,year) WHERE kind='historical_usage';

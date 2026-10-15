@@ -7,6 +7,7 @@ import {
 	employeeEmploymentPeriod,
 	employeeVacationAllowance,
 } from "@/db/schema";
+import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { AbsenceDaysDatabase } from "./absence-days-resolver";
 import {
@@ -74,7 +75,11 @@ export interface EmployeeEmployments {
  */
 export async function loadEmployeeEmployments(
 	database: AbsenceDaysDatabase,
-	input: { organizationId: string; employeeIds?: readonly string[] },
+	input: {
+		organizationId: string;
+		employeeIds?: readonly string[];
+		employeeEmploymentStartDateOverrides?: ReadonlyMap<string, string>;
+	},
 ): Promise<Map<string, EmployeeEmployments>> {
 	const { organizationId } = input;
 	const employeeIds = input.employeeIds ? [...new Set(input.employeeIds)] : null;
@@ -136,9 +141,19 @@ export async function loadEmployeeEmployments(
 			{
 				isActive: row.isActive,
 				employments: employmentStintsFromRecords({
-					employeeStartDate: row.startDate,
+					employeeStartDate: input.employeeEmploymentStartDateOverrides?.has(row.id)
+						? dateFromInstant(
+								parsePlainDate(input.employeeEmploymentStartDateOverrides.get(row.id) ?? "")
+									.toZonedDateTime("UTC")
+									.toInstant(),
+							)
+						: row.startDate,
 					employeeEndDate: row.endDate,
-					periods: (periodsByEmployee.get(row.id) ?? []) satisfies EmploymentPeriodRecord[],
+					periods: projectEmploymentPeriodStart(
+						periodsByEmployee.get(row.id) ?? [],
+						input.employeeEmploymentStartDateOverrides?.get(row.id),
+						timezone,
+					),
 					departures: (departuresByEmployee.get(row.id) ?? []) satisfies DepartureRecord[],
 					timezone,
 				}),
@@ -164,6 +179,7 @@ export async function loadProratedVacationAllowances(
 		year: number;
 		policy: ProrationPolicy;
 		overrides?: Map<string, EmployeeVacationOverride>;
+		employeeEmploymentStartDateOverrides?: ReadonlyMap<string, string>;
 	},
 ): Promise<Map<string, ProratedAllowance>> {
 	const employeeIds = [...new Set(input.employeeIds)];
@@ -171,7 +187,11 @@ export async function loadProratedVacationAllowances(
 	const { organizationId, year } = input;
 
 	const [employments, overrides] = await Promise.all([
-		loadEmployeeEmployments(database, { organizationId, employeeIds }),
+		loadEmployeeEmployments(database, {
+			organizationId,
+			employeeIds,
+			employeeEmploymentStartDateOverrides: input.employeeEmploymentStartDateOverrides,
+		}),
 		input.overrides ??
 			loadEmployeeVacationOverrides(database, { organizationId, employeeIds, year }),
 	]);
@@ -186,5 +206,31 @@ export async function loadProratedVacationAllowances(
 				year,
 			}),
 		]),
+	);
+}
+
+/** Project only the original stint; departures and subsequent rehire starts remain authoritative. */
+export function projectEmploymentPeriodStart<T extends EmploymentPeriodRecord>(
+	periods: readonly T[],
+	joiningDate: string | undefined,
+	timezone: string,
+): T[] {
+	if (!joiningDate || periods.length === 0) return [...periods];
+	const first = [...periods].sort(
+		(a, b) =>
+			(a.startedAt?.getTime() ?? Number.NEGATIVE_INFINITY) -
+				(b.startedAt?.getTime() ?? Number.NEGATIVE_INFINITY) || a.id.localeCompare(b.id),
+	)[0];
+	return periods.map((period) =>
+		period.id !== first?.id
+			? period
+			: period.startProvenance === "recorded"
+				? {
+						...period,
+						startedAt: dateFromInstant(
+							parsePlainDate(joiningDate).toZonedDateTime(timezone).toInstant(),
+						),
+					}
+				: { ...period, startProvenance: "legacy" },
 	);
 }

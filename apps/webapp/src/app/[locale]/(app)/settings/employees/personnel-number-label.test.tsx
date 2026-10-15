@@ -133,7 +133,7 @@ const expected: Record<Locale, { label: string; description: string }> = {
 	de: {
 		label: "Personalnummer",
 		description:
-			"Die eigene Nummer Ihrer Organisation für diesen Mitarbeiter, verwendet in Lohnexporten. Sie muss eindeutig sein, auch gegenüber ehemaligen Mitarbeitern.",
+			"Die organisationsinterne Nummer für diesen Mitarbeiter, die bei Lohnexporten verwendet wird. Sie muss eindeutig sein, auch gegenüber ehemaligen Mitarbeitern.",
 	},
 };
 

@@ -1,8 +1,15 @@
+import { withReviewedVacationReconciliation } from "./vacation-reconciliation";
+import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import { createHash } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db as applicationDatabase } from "@/db";
 import { user } from "@/db/auth-schema";
-import { absenceChangeRequest, absenceEntry, approvalStageAssignment, employee } from "@/db/schema";
+import {
+	absenceChangeRequest,
+	absenceEntry,
+	approvalStageAssignment,
+	employee,
+} from "@/db/schema";
 import { recordCanonicalDeputyDecisionOf } from "@/lib/approvals/deputy/deputy-decision-store";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
@@ -26,7 +33,10 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { isUuid } from "@/lib/validations/uuid";
-import { type AppliedAbsenceChange, publishAbsenceChange } from "./change-request-post-commit";
+import {
+	type AppliedAbsenceChange,
+	publishAbsenceChange,
+} from "./change-request-post-commit";
 import {
 	loadCanonicalCoverage,
 	resolveProposedCoverage,
@@ -62,7 +72,12 @@ export async function requestAbsenceChange(
 		kind: input.kind,
 		proposed: input.proposed,
 		reason: input.reason,
-		...(input.kind === "change" ? { coverage: input.coverage } : {}),
+		...(input.kind === "change"
+			? {
+					coverage: input.coverage,
+					historicalReconciliation: input.historicalReconciliation,
+				}
+			: {}),
 	});
 	input = { ...input, ...parsed };
 	const database = dependencies.database ?? applicationDatabase;
@@ -78,7 +93,8 @@ export async function requestAbsenceChange(
 			),
 		)
 		.limit(1);
-	if (!requester) throw new AbsenceChangeError("not_found", "Employee not found");
+	if (!requester)
+		throw new AbsenceChangeError("not_found", "Employee not found");
 	const runtime = createCanonicalSourceApprovalRuntime(database, {
 		clock,
 		workflowType: "absence_change",
@@ -86,6 +102,10 @@ export async function requestAbsenceChange(
 	return runtime.repository
 		.withTransaction(async (context) => {
 			const tx = context.dbService.db as unknown as AbsenceChangeDatabase;
+			await acquireExclusiveOrganizationConfigurationGuard(
+				tx,
+				input.organizationId,
+			);
 			const [absence] = await tx
 				.select()
 				.from(absenceEntry)
@@ -97,7 +117,8 @@ export async function requestAbsenceChange(
 					),
 				)
 				.for("update");
-			if (!absence) throw new AbsenceChangeError("not_found", "Absence not found");
+			if (!absence)
+				throw new AbsenceChangeError("not_found", "Absence not found");
 			if (absence.status !== "approved")
 				throw new AbsenceChangeError(
 					"not_approved",
@@ -129,17 +150,55 @@ export async function requestAbsenceChange(
 			);
 			const proposed =
 				input.kind === "change" && input.proposed
-					? resolveProposedCoverage(original, input.proposed, input.coverage ?? "keep")
+					? resolveProposedCoverage(
+							original,
+							input.proposed,
+							input.coverage ?? "keep",
+						)
 					: null;
-			const displacedVacations = await validateAbsenceProposal(tx, {
-				organizationId: input.organizationId,
-				employeeId: requester.id,
-				absenceId: absence.id,
-				original,
-				proposed,
-				at: clock.nowInstant(),
-			});
-			if (proposed) proposed.displacedVacations = displacedVacations;
+			const validateProposal = () =>
+				validateAbsenceProposal(tx, {
+					organizationId: input.organizationId,
+					employeeId: requester.id,
+					absenceId: absence.id,
+					original,
+					proposed,
+					at: clock.nowInstant(),
+				});
+			const displacedVacations =
+				input.historicalReconciliation && proposed
+					? await withReviewedVacationReconciliation(
+							tx,
+							{
+								organizationId: input.organizationId,
+								actorUserId: input.userId,
+								proof: input.historicalReconciliation,
+								expectedChange: { absenceId: absence.id, proposed },
+							},
+							async (review) => {
+								proposed.historicalReconciliationReview = {
+									reason: review.sourceState.input.reason,
+									totals: review.totals.map((total) => ({
+										year: total.year,
+										currentDays: total.currentDays,
+										remainingDays: total.remainingDays,
+										datedDays: total.datedDays,
+									})),
+									balances: review.balances.map((balance) => ({
+										year: balance.year,
+										before: balance.before?.remainingDays ?? null,
+										after: balance.after?.remainingDays ?? null,
+									})),
+								};
+								return validateProposal();
+							},
+						)
+					: await validateProposal();
+			if (proposed) {
+				proposed.displacedVacations = displacedVacations;
+				if (input.historicalReconciliation)
+					proposed.historicalReconciliation = input.historicalReconciliation;
+			}
 			const [row] = await tx
 				.insert(absenceChangeRequest)
 				.values({
@@ -191,11 +250,12 @@ export async function requestAbsenceChange(
 					userId: input.userId,
 				},
 				submissionKey: `absence-change:${row.id}`,
-				defaultApproverEmployeeId: await getPrimaryEligibleManagerIdForRequester({
-					db: tx,
-					organizationId: input.organizationId,
-					requesterEmployeeId: requester.id,
-				}),
+				defaultApproverEmployeeId:
+					await getPrimaryEligibleManagerIdForRequester({
+						db: tx,
+						organizationId: input.organizationId,
+						requesterEmployeeId: requester.id,
+					}),
 				routingContext,
 				contextSnapshot: { ...routingContext },
 				displayProjection: {
@@ -236,7 +296,10 @@ export async function requestAbsenceChange(
 				},
 			});
 			if (started.terminal)
-				throw new AbsenceChangeError("no_approver", "Another eligible approver is required");
+				throw new AbsenceChangeError(
+					"no_approver",
+					"Another eligible approver is required",
+				);
 			await auditAbsenceChange(tx, {
 				row,
 				actorUserId: input.userId,
@@ -248,7 +311,8 @@ export async function requestAbsenceChange(
 		.catch((error: unknown) => {
 			if (
 				error instanceof ApprovalWorkflowStartError &&
-				(error.code === "NO_DEFAULT_APPROVER" || error.code === "ACTIVATION_FAILED")
+				(error.code === "NO_DEFAULT_APPROVER" ||
+					error.code === "ACTIVATION_FAILED")
 			)
 				throw new AbsenceChangeError(
 					"no_approver",
@@ -280,7 +344,10 @@ export async function decideAbsenceChange(
 	if (!isUuid(input.assignmentId) || !isUuid(input.actorEmployeeId))
 		throw new AbsenceChangeError("not_found", "Approval not found");
 	if (input.action === "reject" && !input.reason?.trim())
-		throw new AbsenceChangeError("reason_required", "A rejection reason is required");
+		throw new AbsenceChangeError(
+			"reason_required",
+			"A rejection reason is required",
+		);
 	if (input.reason && input.reason.length > 2000)
 		throw new AbsenceChangeError("invalid_input", "The reason is too long");
 	const database = dependencies.database ?? applicationDatabase;
@@ -319,7 +386,8 @@ export async function decideAbsenceChange(
 					),
 				)
 				.limit(1);
-			if (!assignment) throw new AbsenceChangeError("not_found", "Approval not found");
+			if (!assignment)
+				throw new AbsenceChangeError("not_found", "Approval not found");
 			const snapshot = await context.repository.loadSnapshot({
 				organizationId: input.organizationId,
 				workflowId: assignment.workflowId,
@@ -327,7 +395,10 @@ export async function decideAbsenceChange(
 			if (snapshot.workflowType !== "absence_change")
 				throw new AbsenceChangeError("not_found", "Approval not found");
 			workflowToRetire = snapshot.id;
-			const command: Extract<ApprovalWorkflowCommand, { type: "approve" | "reject" }> =
+			const command: Extract<
+				ApprovalWorkflowCommand,
+				{ type: "approve" | "reject" }
+			> =
 				input.action === "approve"
 					? {
 							type: "approve",
@@ -340,21 +411,22 @@ export async function decideAbsenceChange(
 							assignmentId: assignment.id,
 							reason: input.reason?.trim() ?? "",
 						};
-			const execution = await runtime.transitionEngine.executeInTransactionWithDisposition(
-				context,
-				{
-					organizationId: input.organizationId,
-					workflowId: snapshot.id,
-					expectedVersion: snapshot.version,
-					idempotencyKey: `absence-change-decision:${assignment.id}:${input.action}:${createHash(
-						"sha256",
-					)
-						.update(input.reason ?? "")
-						.digest("hex")}`,
-					principal: { kind: "employee", userId: actor.userId },
-					command,
-				},
-			);
+			const execution =
+				await runtime.transitionEngine.executeInTransactionWithDisposition(
+					context,
+					{
+						organizationId: input.organizationId,
+						workflowId: snapshot.id,
+						expectedVersion: snapshot.version,
+						idempotencyKey: `absence-change-decision:${assignment.id}:${input.action}:${createHash(
+							"sha256",
+						)
+							.update(input.reason ?? "")
+							.digest("hex")}`,
+						principal: { kind: "employee", userId: actor.userId },
+						command,
+					},
+				);
 			if (execution.disposition === "executed")
 				await recordCanonicalDeputyDecisionOf(tx, {
 					organizationId: input.organizationId,
@@ -369,13 +441,19 @@ export async function decideAbsenceChange(
 				status: execution.result.snapshot.status,
 				requestId: snapshot.sourceId,
 				fresh: execution.disposition === "executed",
-				applied: execution.finalization?.workOutcome as AppliedAbsenceChange | undefined,
+				applied: execution.finalization?.workOutcome as
+					| AppliedAbsenceChange
+					| undefined,
 			};
 		})
 		.catch(async (error: unknown) => {
 			// The adapter runs after authorization. Retirement starts only when that authorized
 			// decision detected stale source data, after its failed transaction has rolled back.
-			if (error instanceof AbsenceChangeError && error.code === "obsolete" && workflowToRetire) {
+			if (
+				error instanceof AbsenceChangeError &&
+				error.code === "obsolete" &&
+				workflowToRetire
+			) {
 				const retiredWorkflowId = workflowToRetire;
 				await runtime.repository.withTransaction(async (context) => {
 					const tx = context.dbService.db as unknown as AbsenceChangeDatabase;
@@ -383,8 +461,16 @@ export async function decideAbsenceChange(
 						organizationId: input.organizationId,
 						workflowId: retiredWorkflowId,
 					});
-					if (snapshot.status !== "pending" || snapshot.workflowType !== "absence_change") return;
-					const row = await loadChangeRequest(tx, input.organizationId, snapshot.sourceId);
+					if (
+						snapshot.status !== "pending" ||
+						snapshot.workflowType !== "absence_change"
+					)
+						return;
+					const row = await loadChangeRequest(
+						tx,
+						input.organizationId,
+						snapshot.sourceId,
+					);
 					if (row?.status !== "pending") return;
 					await retirePendingChange(runtime, context, {
 						row,
@@ -413,7 +499,8 @@ export async function withdrawAbsenceChange(
 	input: { organizationId: string; userId: string; id: string },
 	dependencies: Dependencies = {},
 ) {
-	if (!isUuid(input.id)) throw new AbsenceChangeError("not_found", "Change request not found");
+	if (!isUuid(input.id))
+		throw new AbsenceChangeError("not_found", "Change request not found");
 	const database = dependencies.database ?? applicationDatabase;
 	const clock = dependencies.clock ?? systemClock;
 	const runtime = createCanonicalSourceApprovalRuntime(database, {
@@ -434,7 +521,8 @@ export async function withdrawAbsenceChange(
 					),
 				)
 				.limit(1);
-			if (!requester) throw new AbsenceChangeError("not_found", "Change request not found");
+			if (!requester)
+				throw new AbsenceChangeError("not_found", "Change request not found");
 			const [row] = await tx
 				.select()
 				.from(absenceChangeRequest)
@@ -449,19 +537,25 @@ export async function withdrawAbsenceChange(
 			if (!row?.approvalWorkflowId)
 				throw new AbsenceChangeError("not_found", "Change request not found");
 			if (row.status !== "pending")
-				throw new AbsenceChangeError("not_pending", "Change request is already decided");
+				throw new AbsenceChangeError(
+					"not_pending",
+					"Change request is already decided",
+				);
 			const snapshot = await context.repository.loadSnapshot({
 				organizationId: input.organizationId,
 				workflowId: row.approvalWorkflowId,
 			});
-			await runtime.transitionEngine.executeInTransactionWithDisposition(context, {
-				organizationId: input.organizationId,
-				workflowId: snapshot.id,
-				expectedVersion: snapshot.version,
-				idempotencyKey: `absence-change-withdraw:${row.id}`,
-				principal: { kind: "employee", userId: input.userId },
-				command: { type: "cancel", reason: "Withdrawn by the employee" },
-			});
+			await runtime.transitionEngine.executeInTransactionWithDisposition(
+				context,
+				{
+					organizationId: input.organizationId,
+					workflowId: snapshot.id,
+					expectedVersion: snapshot.version,
+					idempotencyKey: `absence-change-withdraw:${row.id}`,
+					principal: { kind: "employee", userId: input.userId },
+					command: { type: "cancel", reason: "Withdrawn by the employee" },
+				},
+			);
 			return { id: row.id, workflowId: snapshot.id };
 		})
 		.then(async (result) => {
@@ -497,7 +591,8 @@ export async function listOwnAbsenceChanges(
 			),
 		)
 		.limit(1);
-	if (!requester) throw new AbsenceChangeError("not_found", "Employee not found");
+	if (!requester)
+		throw new AbsenceChangeError("not_found", "Employee not found");
 	const scope = and(
 		eq(absenceChangeRequest.organizationId, input.organizationId),
 		eq(absenceChangeRequest.employeeId, requester.id),
@@ -514,35 +609,45 @@ export async function listOwnAbsenceChanges(
 		for (const request of waiting) {
 			if (!request.approvalWorkflowId) continue;
 			const workflowId = request.approvalWorkflowId;
-			const retired = await runtime.repository.withTransaction(async (context) => {
-				const tx = context.dbService.db as unknown as AbsenceChangeDatabase;
-				const snapshot = await context.repository.loadSnapshot({
-					organizationId: input.organizationId,
-					workflowId,
-				});
-				const row = await loadChangeRequest(tx, input.organizationId, request.id);
-				if (
-					!row ||
-					row.employeeId !== requester.id ||
-					row.status !== "pending" ||
-					snapshot.status !== "pending"
-				)
-					return false;
-				try {
-					await validateEffectiveAbsence(tx, row, clock.nowInstant());
-					return false;
-				} catch (error) {
-					if (!(error instanceof AbsenceChangeError) || error.code !== "obsolete") throw error;
-					await retirePendingChange(runtime, context, {
-						row,
-						snapshot,
-						actorUserId: input.userId,
-						decisionReason: error.message,
-						at: clock.nowInstant(),
+			const retired = await runtime.repository.withTransaction(
+				async (context) => {
+					const tx = context.dbService.db as unknown as AbsenceChangeDatabase;
+					const snapshot = await context.repository.loadSnapshot({
+						organizationId: input.organizationId,
+						workflowId,
 					});
-					return true;
-				}
-			});
+					const row = await loadChangeRequest(
+						tx,
+						input.organizationId,
+						request.id,
+					);
+					if (
+						!row ||
+						row.employeeId !== requester.id ||
+						row.status !== "pending" ||
+						snapshot.status !== "pending"
+					)
+						return false;
+					try {
+						await validateEffectiveAbsence(tx, row, clock.nowInstant());
+						return false;
+					} catch (error) {
+						if (
+							!(error instanceof AbsenceChangeError) ||
+							error.code !== "obsolete"
+						)
+							throw error;
+						await retirePendingChange(runtime, context, {
+							row,
+							snapshot,
+							actorUserId: input.userId,
+							decisionReason: error.message,
+							at: clock.nowInstant(),
+						});
+						return true;
+					}
+				},
+			);
 			if (retired)
 				await publishAbsenceChange(database, {
 					organizationId: input.organizationId,
@@ -565,7 +670,11 @@ export async function listOwnAbsenceChanges(
 			.limit(50),
 	]);
 	const deciderIds = [
-		...new Set([...pending, ...recent].flatMap((row) => (row.decidedBy ? [row.decidedBy] : []))),
+		...new Set(
+			[...pending, ...recent].flatMap((row) =>
+				row.decidedBy ? [row.decidedBy] : [],
+			),
+		),
 	];
 	const deciders = deciderIds.length
 		? await database
@@ -573,8 +682,12 @@ export async function listOwnAbsenceChanges(
 				.from(user)
 				.where(inArray(user.id, deciderIds))
 		: [];
-	const deciderNames = new Map(deciders.map((decider) => [decider.id, decider.name]));
-	return [...new Map([...pending, ...recent].map((row) => [row.id, row])).values()].map((row) => ({
+	const deciderNames = new Map(
+		deciders.map((decider) => [decider.id, decider.name]),
+	);
+	return [
+		...new Map([...pending, ...recent].map((row) => [row.id, row])).values(),
+	].map((row) => ({
 		id: row.id,
 		absenceId: row.absenceId,
 		kind: row.kind,
@@ -585,7 +698,9 @@ export async function listOwnAbsenceChanges(
 		decisionReason: row.decisionReason,
 		createdAt: instantFromDate(row.createdAt).toString(),
 		decidedAt: row.decidedAt ? instantFromDate(row.decidedAt).toString() : null,
-		deciderName: row.decidedBy ? (deciderNames.get(row.decidedBy) ?? null) : null,
+		deciderName: row.decidedBy
+			? (deciderNames.get(row.decidedBy) ?? null)
+			: null,
 	}));
 }
 

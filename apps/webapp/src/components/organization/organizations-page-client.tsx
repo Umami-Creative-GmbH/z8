@@ -3,6 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import type * as authSchema from "@/db/auth-schema";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
+import type { OrganizationTrackingSettings } from "@/lib/organization/tracking-settings";
 import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
 import type { ClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings-policy";
 import type { PeriodSubmissionSettings } from "@/lib/time-tracking/period-submissions/settings-policy";
@@ -10,6 +11,8 @@ import { OrganizationTab } from "./organization-tab";
 
 interface OrganizationsPageClientProps {
 	autoClockOutSettings: AutoClockOutSettings;
+	trackingSettings: OrganizationTrackingSettings;
+	trackingSuggestedAt: string;
 	clockingReminderSettings: ClockingReminderSettings;
 	periodSubmissionSettings: PeriodSubmissionSettings;
 	organization: typeof authSchema.organization.$inferSelect;
@@ -22,6 +25,8 @@ interface OrganizationsPageClientProps {
 
 export function OrganizationsPageClient({
 	autoClockOutSettings,
+	trackingSettings,
+	trackingSuggestedAt,
 	clockingReminderSettings,
 	periodSubmissionSettings,
 	organization,
@@ -47,6 +52,8 @@ export function OrganizationsPageClient({
 				</div>
 
 				<OrganizationTab
+					trackingSettings={trackingSettings}
+					trackingSuggestedAt={trackingSuggestedAt}
 					autoClockOutSettings={autoClockOutSettings}
 					clockingReminderSettings={clockingReminderSettings}
 					periodSubmissionSettings={periodSubmissionSettings}

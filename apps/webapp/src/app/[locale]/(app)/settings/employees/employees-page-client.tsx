@@ -12,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { flexRender, type SortingState, useTable } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { EmploymentDateUploadDialog } from "@/components/settings/employment-date-upload-dialog";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { InviteCodeManagement } from "@/components/organization/invite-code-management";
 import { InviteMemberDialog } from "@/components/organization/invite-member-dialog";
@@ -112,7 +113,7 @@ export function EmployeesPageClient(props: {
 						{t("settings.employees.description", "Manage employees, members, and invites")}
 					</p>
 				</div>
-				<OpeningBalanceUploadDialog />
+				<div className="flex flex-wrap gap-2"><EmploymentDateUploadDialog /><OpeningBalanceUploadDialog /></div>
 			</div>
 
 			<Tabs defaultValue="employees" className="space-y-4">

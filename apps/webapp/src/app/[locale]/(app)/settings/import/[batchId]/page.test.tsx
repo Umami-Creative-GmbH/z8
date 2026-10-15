@@ -7,6 +7,7 @@ import { render } from "@/test/render-with-translations";
 
 const mockState = vi.hoisted(() => ({
 	callOrder: [] as string[],
+	renderReviewPage: vi.fn(),
 	findBatch: vi.fn(),
 	getBillableTimeSettings: vi.fn(),
 	getImportReviewSummary: vi.fn(),
@@ -28,11 +29,23 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/components/settings/import/import-review-page", () => ({
-	ImportReviewPage: (props: Record<string, unknown>) => (
-		<div data-testid="import-review-page" {...props} />
-	),
+	ImportReviewPage: (props: Record<string, unknown>) => {
+		mockState.renderReviewPage(props);
+		return <div data-testid="import-review-page" />;
+	},
 }));
 
+vi.mock(
+	"@/components/settings/import/historical-vacation-import-review",
+	() => ({
+		HistoricalVacationImportReview: ({ batchId }: { batchId: string }) => (
+			<div
+				data-testid="historical-vacation-import-review"
+				data-batch-id={batchId}
+			/>
+		),
+	}),
+);
 vi.mock("@/db", () => ({
 	db: {
 		query: {
@@ -64,7 +77,9 @@ vi.mock("@/lib/billable-time/settings", () => ({
 
 // The live customer check runs on PostgreSQL (clockodo-billability.integration.test.ts).
 vi.mock("@/lib/import-review/import-row-billability", async () => {
-	const { importRowBillability } = await import("@/lib/import-review/staged-work-billability");
+	const { importRowBillability } = await import(
+		"@/lib/import-review/staged-work-billability"
+	);
 	return {
 		listImportRowBillability: async (
 			_reader: unknown,
@@ -81,7 +96,10 @@ vi.mock("@/lib/import-review/repository", () => ({
 
 const { default: ImportReviewRoute } = await import("./page");
 
-async function renderRequestContent(batchId: string, searchParams: Record<string, string> = {}) {
+async function renderRequestContent(
+	batchId: string,
+	searchParams: Record<string, string> = {},
+) {
 	const route = ImportReviewRoute({
 		params: Promise.resolve({ batchId }),
 		searchParams: Promise.resolve(searchParams),
@@ -98,7 +116,9 @@ async function renderRequestContent(batchId: string, searchParams: Record<string
 		ContentProps,
 		(props: ContentProps) => Promise<React.ReactNode>
 	>;
-	return content.type(content.props);
+	const response = await content.type(content.props);
+	render(response);
+	return response;
 }
 
 describe("ImportReviewRoute", () => {
@@ -115,7 +135,10 @@ describe("ImportReviewRoute", () => {
 		});
 		mockState.getImportReviewSummary.mockResolvedValue({ total: 1 });
 		mockState.listImportReviewRows.mockResolvedValue([{ id: "row-1" }]);
-		mockState.getBillableTimeSettings.mockResolvedValue({ enabled: false, currency: null });
+		mockState.getBillableTimeSettings.mockResolvedValue({
+			enabled: false,
+			currency: null,
+		});
 	});
 
 	it("renders the import review shell while params remain unresolved", () => {
@@ -149,7 +172,7 @@ describe("ImportReviewRoute", () => {
 			limit: 100,
 			offset: 0,
 		});
-		expect(reviewPage.props.children.props.children.props).toMatchObject({
+		expect(mockState.renderReviewPage.mock.lastCall?.[0]).toMatchObject({
 			batchId: "batch-1",
 			organizationId: "org-1",
 			summary: { total: 1 },
@@ -157,8 +180,16 @@ describe("ImportReviewRoute", () => {
 			showBillability: false,
 			customerImport: undefined,
 		});
-		expect(mockState.getBillableTimeSettings).toHaveBeenCalledWith("org-1", expect.anything());
+		expect(mockState.getBillableTimeSettings).toHaveBeenCalledWith(
+			"org-1",
+			expect.anything(),
+		);
 		expect(mockState.listCustomerAccounting).not.toHaveBeenCalled();
+		expect(
+			screen
+				.getByTestId("historical-vacation-import-review")
+				.getAttribute("data-batch-id"),
+		).toBe("batch-1");
 	});
 
 	it("shows a customer import's contacts with the customers they can link to (#906)", async () => {
@@ -178,14 +209,28 @@ describe("ImportReviewRoute", () => {
 				commitHold: null,
 				normalizedPayload: { contactId: "c-1", name: "Acme GmbH" },
 				matchTarget: {
-					suggestion: { customerId: "cust-1", customerName: "Acme", reason: "name" },
+					suggestion: {
+						customerId: "cust-1",
+						customerName: "Acme",
+						reason: "name",
+					},
 				},
 			},
 		]);
 		mockState.listCustomerAccounting.mockResolvedValue([
 			{ customerId: "cust-1", name: "Acme", isActive: true, contactLink: null },
-			{ customerId: "cust-2", name: "Linked", isActive: true, contactLink: { contactId: "x" } },
-			{ customerId: "cust-3", name: "Inactive", isActive: false, contactLink: null },
+			{
+				customerId: "cust-2",
+				name: "Linked",
+				isActive: true,
+				contactLink: { contactId: "x" },
+			},
+			{
+				customerId: "cust-3",
+				name: "Inactive",
+				isActive: false,
+				contactLink: null,
+			},
 		]);
 
 		const reviewPage = await renderRequestContent("batch-1");
@@ -193,8 +238,13 @@ describe("ImportReviewRoute", () => {
 		expect(mockState.listImportReviewRows).toHaveBeenCalledWith(
 			expect.objectContaining({ limit: 100, offset: 0 }),
 		);
-		expect(mockState.listCustomerAccounting).toHaveBeenCalledWith(expect.anything(), "org-1");
-		expect(reviewPage.props.children.props.children.props.customerImport).toMatchObject({
+		expect(mockState.listCustomerAccounting).toHaveBeenCalledWith(
+			expect.anything(),
+			"org-1",
+		);
+		expect(
+			mockState.renderReviewPage.mock.lastCall?.[0].customerImport,
+		).toMatchObject({
 			editable: true,
 			linkTargets: [{ customerId: "cust-1", name: "Acme" }],
 			rows: [
@@ -244,7 +294,7 @@ describe("ImportReviewRoute", () => {
 				limit: 100,
 				offset,
 			});
-			expect(reviewPage.props.children.props.children.props.paging).toEqual({
+			expect(mockState.renderReviewPage.mock.lastCall?.[0].paging).toEqual({
 				page: shown,
 				pageCount: 3,
 			});
@@ -252,13 +302,20 @@ describe("ImportReviewRoute", () => {
 	});
 
 	it("shows staged work rows' billability while Billable Time is on (#907)", async () => {
-		mockState.getBillableTimeSettings.mockResolvedValue({ enabled: true, currency: "EUR" });
+		mockState.getBillableTimeSettings.mockResolvedValue({
+			enabled: true,
+			currency: "EUR",
+		});
 		mockState.listImportReviewRows.mockResolvedValue([
 			{
 				id: "row-1",
 				entityType: "work_period",
 				normalizedPayload: {
-					billability: { providerValue: 1, billable: false, note: "no_customer" },
+					billability: {
+						providerValue: 1,
+						billable: false,
+						note: "no_customer",
+					},
 				},
 			},
 			{ id: "row-2", entityType: "work_period", normalizedPayload: {} },
@@ -267,9 +324,11 @@ describe("ImportReviewRoute", () => {
 
 		const reviewPage = await renderRequestContent("batch-1");
 
-		const props = reviewPage.props.children.props.children.props;
+		const props = mockState.renderReviewPage.mock.lastCall?.[0];
 		expect(props.showBillability).toBe(true);
-		expect(props.rows.map((row: { billability: unknown }) => row.billability)).toEqual([
+		expect(
+			props.rows.map((row: { billability: unknown }) => row.billability),
+		).toEqual([
 			{ providerValue: 1, billable: false, note: "no_customer" },
 			{ providerValue: null, billable: false, note: "no_billable_value" },
 			null,

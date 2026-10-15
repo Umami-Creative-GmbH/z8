@@ -11,7 +11,15 @@ import {
 import { absenceCategoryReleasesRequiredTime } from "@/lib/absences/required-time-release";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { runtime } from "@/lib/effect/runtime";
-import { instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import {
+	dateFromInstant,
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
+import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
+import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
+import { sumTrackedWorkMinutes } from "@/lib/work-balance/tracked-work";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
 import { readWorkBalanceAdjustments } from "@/lib/work-balance/adjustments/ledger";
 import { loadWorkBalanceEmployee } from "@/lib/work-balance/service";
@@ -123,7 +131,11 @@ export async function refreshEmployeeTimeBalances(input: {
 		employeeIds.map(async (employeeId) => {
 			const scope = { organizationId: input.organizationId, employeeId };
 			// The year and its days are the employee's, in their effective timezone.
-			const timezone = (await loadWorkBalanceEmployee(scope, db))?.timezone ?? "UTC";
+			const [subject, tracking] = await Promise.all([
+				loadWorkBalanceEmployee(scope, db),
+				loadEmployeeTrackingContext(db, scope),
+			]);
+			const timezone = tracking?.timezone ?? subject?.timezone ?? "UTC";
 			const range = getCurrentYearRange(now, timezone);
 			const endDate = dateToDB(range.end)!;
 			const yesterday = plainDateAt(instantFromDate(now.toJSDate()), timezone).subtract({
@@ -138,32 +150,72 @@ export async function refreshEmployeeTimeBalances(input: {
 				throughDate: yesterday.toString(),
 				openingBalanceDatedLater: "count",
 			});
-			const countFrom = adjustments.countFrom
-				? DateTime.fromISO(adjustments.countFrom, { zone: timezone }).startOf("day")
-				: range.start;
-			const countsAnyDay = countFrom <= range.end;
+			const countFromDay = [range.start.toISODate()!, adjustments.countFrom, tracking?.startDate]
+				.filter((day): day is string => !!day)
+				.sort()
+				.at(-1)!;
+			const countFrom = tracking
+				? DateTime.fromJSDate(
+						dateFromInstant(
+							parsePlainDate(countFromDay).toZonedDateTime(tracking.timezone).toInstant(),
+						),
+						{ zone: tracking.timezone },
+					)
+				: adjustments.countFrom
+					? DateTime.fromISO(adjustments.countFrom, { zone: timezone }).startOf("day")
+					: range.start;
+			const countsAnyDay = tracking ? countFromDay <= yesterday.toString() : countFrom <= range.end;
 			const countFromDate = dateToDB(countFrom)!;
-			const [actualMinutes, expectedMinutes, absenceAdjustedMinutes] = countsAnyDay
-				? await Promise.all([
-						sumCompletedWorkMinutes({ ...scope, startDate: countFromDate, endDate }),
-						runtime
-							.runPromise(
-								calculateExpectedWorkHoursForEmployee(
-									employeeId,
-									input.organizationId,
-									countFromDate,
-									endDate,
-									timezone,
+			const [actualMinutes, expectedMinutes, absenceAdjustedMinutes] =
+				tracking && countsAnyDay
+					? await Promise.all([
+							sumTrackedWorkMinutes(db, {
+								...scope,
+								startDate: countFromDay,
+								throughDate: yesterday.toString(),
+								timezone: tracking.timezone,
+							}),
+							getDailyWorkRequirementsForEmployee({
+								...scope,
+								startDate: countFromDate,
+								endDate: dateFromInstant(
+									yesterday
+										.add({ days: 1 })
+										.toZonedDateTime(tracking.timezone)
+										.toInstant()
+										.subtract({ milliseconds: 1 }),
 								),
-							)
-							.then((expected) => expected.totalMinutes),
-						calculateAbsenceAdjustedMinutes({
-							...scope,
-							rangeStart: countFrom,
-							rangeEnd: range.end,
-						}),
-					])
-				: [0, 0, 0];
+								timezone: tracking.timezone,
+							}).then((requirements) =>
+								Object.values(requirements).reduce((sum, day) => sum + day.requiredMinutes, 0),
+							),
+							Promise.resolve(0),
+						])
+					: countsAnyDay
+						? await Promise.all([
+								sumCompletedWorkMinutes({
+									...scope,
+									startDate: countFromDate,
+									endDate,
+								}),
+								runtime
+									.runPromise(
+										calculateExpectedWorkHoursForEmployee(
+											employeeId,
+											input.organizationId,
+											countFromDate,
+											endDate,
+											timezone,
+										),
+									)
+									.then((expected) => expected.totalMinutes),
+								calculateAbsenceAdjustedMinutes({
+									...scope,
+									rangeStart: countFrom,
+									rangeEnd: range.end,
+								}),
+							])
+						: [0, 0, 0];
 			const values = buildEmployeeTimeBalanceValues({
 				employeeId,
 				organizationId: input.organizationId,
@@ -213,7 +265,9 @@ async function sumCompletedWorkMinutes(input: {
 	endDate: Date;
 }) {
 	const [row] = await db
-		.select({ totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)` })
+		.select({
+			totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)`,
+		})
 		.from(workPeriod)
 		.where(
 			and(
@@ -255,41 +309,51 @@ async function calculateAbsenceAdjustedMinutes(input: {
 			),
 		);
 
-	const adjustments = await Promise.all(absenceRows.map(async (absence) => {
-		const absenceDates: Array<{ isoDate: string; date: Date }> = [];
-		let current = DateTime.fromISO(absence.startDate, { zone: "utc" }).startOf("day");
-		const last = DateTime.fromISO(absence.endDate, { zone: "utc" }).startOf("day");
-		while (current <= last) {
-			if (current >= input.rangeStart.startOf("day") && current <= input.rangeEnd.startOf("day")) {
-				absenceDates.push({ isoDate: current.toISODate()!, date: current.toJSDate() });
+	const adjustments = await Promise.all(
+		absenceRows.map(async (absence) => {
+			const absenceDates: Array<{ isoDate: string; date: Date }> = [];
+			let current = DateTime.fromISO(absence.startDate, {
+				zone: "utc",
+			}).startOf("day");
+			const last = DateTime.fromISO(absence.endDate, { zone: "utc" }).startOf("day");
+			while (current <= last) {
+				if (
+					current >= input.rangeStart.startOf("day") &&
+					current <= input.rangeEnd.startOf("day")
+				) {
+					absenceDates.push({
+						isoDate: current.toISODate()!,
+						date: current.toJSDate(),
+					});
+				}
+				current = current.plus({ days: 1 });
 			}
-			current = current.plus({ days: 1 });
-		}
 
-		const dayAdjustments = await Promise.all(
-			absenceDates.map(async ({ isoDate, date }) => {
-				const expected = await runtime.runPromise(
-					calculateExpectedWorkHoursForEmployee(
-						input.employeeId,
-						input.organizationId,
-						date,
-						date,
-						"utc",
-					),
-				);
-				const fraction = getAbsenceDayFraction({
-					date: isoDate,
-					startDate: absence.startDate,
-					startPeriod: absence.startPeriod,
-					endDate: absence.endDate,
-					endPeriod: absence.endPeriod,
-				});
-				return Math.round(expected.totalMinutes * fraction);
-			}),
-		);
+			const dayAdjustments = await Promise.all(
+				absenceDates.map(async ({ isoDate, date }) => {
+					const expected = await runtime.runPromise(
+						calculateExpectedWorkHoursForEmployee(
+							input.employeeId,
+							input.organizationId,
+							date,
+							date,
+							"utc",
+						),
+					);
+					const fraction = getAbsenceDayFraction({
+						date: isoDate,
+						startDate: absence.startDate,
+						startPeriod: absence.startPeriod,
+						endDate: absence.endDate,
+						endPeriod: absence.endPeriod,
+					});
+					return Math.round(expected.totalMinutes * fraction);
+				}),
+			);
 
-		return dayAdjustments.reduce((sum, minutes) => sum + minutes, 0);
-	}));
+			return dayAdjustments.reduce((sum, minutes) => sum + minutes, 0);
+		}),
+	);
 
 	return adjustments.reduce((sum, minutes) => sum + minutes, 0);
 }

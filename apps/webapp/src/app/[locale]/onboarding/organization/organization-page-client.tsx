@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { checkSlugAvailability } from "@/app/[locale]/(app)/organization-actions";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
+import { OrganizationTrackingSetupFields } from "@/components/organization/organization-tracking-setup-fields";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -24,7 +25,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { generateSlug } from "@/lib/validations/organization";
+import {
+	generateSlug,
+	organizationSchema,
+} from "@/lib/validations/organization";
 import { useRouter } from "@/navigation";
 import { runOnboardingAction } from "../run-onboarding-action";
 import {
@@ -34,6 +38,8 @@ import {
 } from "./actions";
 
 const defaultValues = {
+	timezone: "UTC",
+	trackingStartDate: "",
 	name: "",
 	slug: "",
 };
@@ -71,6 +77,7 @@ function getErrorMessage(error: unknown) {
 
 type OrganizationPageClientProps = {
 	canCreateOrganizations: boolean;
+	trackingSuggestedAt?: string;
 };
 
 function OrganizationSetupHeader({
@@ -144,12 +151,14 @@ function OrganizationSkipCard({
 }
 
 function CreateOrganizationCard({
+	trackingSuggestedAt,
 	form,
 	status,
 	setSlugError,
 	t,
 }: {
 	form: OrganizationForm;
+	trackingSuggestedAt?: string;
 	status: {
 		checkingSlug: boolean;
 		loading: boolean;
@@ -315,6 +324,28 @@ function CreateOrganizationCard({
 							</div>
 						)}
 					</form.Field>
+					<form.Field name="timezone">
+						{(timezoneField) => (
+							<form.Field
+								name="trackingStartDate"
+								validators={{
+									onChange: organizationSchema.shape.trackingStartDate.unwrap(),
+								}}
+							>
+								{(dateField) => (
+									<OrganizationTrackingSetupFields
+										timezone={timezoneField.state.value}
+										trackingStartDate={dateField.state.value}
+										suggestedAt={trackingSuggestedAt}
+										disabled={status.loading}
+										onTimezoneChange={timezoneField.handleChange}
+										onDateChange={dateField.handleChange}
+										error={getErrorMessage(dateField.state.meta.errors[0])}
+									/>
+								)}
+							</form.Field>
+						)}
+					</form.Field>
 					<div className="flex gap-3 pt-2">
 						<Button
 							type="submit"
@@ -339,6 +370,7 @@ function CreateOrganizationCard({
 
 export default function OrganizationPageClient({
 	canCreateOrganizations,
+	trackingSuggestedAt,
 }: OrganizationPageClientProps) {
 	const { t } = useTranslate();
 	const { push, replace } = useRouter();
@@ -524,6 +556,7 @@ export default function OrganizationPageClient({
 				<div className="space-y-6">
 					{canCreateOrganizations && (
 						<CreateOrganizationCard
+							trackingSuggestedAt={trackingSuggestedAt}
 							form={form}
 							status={{ checkingSlug, loading, slugErrorMessage }}
 							setSlugError={setSlugError}

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type * as authSchema from "@/db/auth-schema";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
+import type { OrganizationTrackingSettings } from "@/lib/organization/tracking-settings";
 import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
 import type { ClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings-policy";
 import type { PeriodSubmissionSettings } from "@/lib/time-tracking/period-submissions/settings-policy";
@@ -18,9 +19,12 @@ import { OrganizationFeaturesCard } from "./organization-features-card";
 import { OrganizationLanguageCard } from "./organization-language-card";
 import { OrganizationPeriodSubmissionsCard } from "./organization-period-submissions-card";
 import { OrganizationTimezoneCard } from "./organization-timezone-card";
+import { OrganizationTrackingCard } from "./organization-tracking-card";
 
 interface OrganizationTabProps {
 	autoClockOutSettings: AutoClockOutSettings;
+	trackingSettings: OrganizationTrackingSettings;
+	trackingSuggestedAt: string;
 	clockingReminderSettings: ClockingReminderSettings;
 	periodSubmissionSettings: PeriodSubmissionSettings;
 	organization: typeof authSchema.organization.$inferSelect;
@@ -33,6 +37,8 @@ interface OrganizationTabProps {
 
 export function OrganizationTab({
 	autoClockOutSettings,
+	trackingSettings,
+	trackingSuggestedAt,
 	clockingReminderSettings,
 	periodSubmissionSettings,
 	organization,
@@ -50,7 +56,10 @@ export function OrganizationTab({
 			{/* Create Organization Button */}
 			{canCreateOrganizations && (
 				<div className="flex justify-end">
-					<Button onClick={() => setCreateOrgDialogOpen(true)} variant="outline">
+					<Button
+						onClick={() => setCreateOrgDialogOpen(true)}
+						variant="outline"
+					>
 						<IconBuilding aria-hidden="true" className="mr-2 size-4" />
 						{t("organization.createNew", "Create New Organization")}
 					</Button>
@@ -99,6 +108,8 @@ export function OrganizationTab({
 				currentMemberRole={currentMemberRole}
 			/>
 
+			<OrganizationTrackingCard key={`tracking-${organization.id}`} settings={trackingSettings} createdAt={organization.createdAt.toISOString()} timezone={organization.timezone ?? "UTC"} />
+
 			{/* Organization Timezone Card */}
 			<OrganizationTimezoneCard
 				organizationId={organization.id}
@@ -120,7 +131,11 @@ export function OrganizationTab({
 			/>
 
 			{/* Create Organization Dialog */}
-			<CreateOrganizationDialog open={createOrgDialogOpen} onOpenChange={setCreateOrgDialogOpen} />
+			<CreateOrganizationDialog
+				trackingSuggestedAt={trackingSuggestedAt}
+				open={createOrgDialogOpen}
+				onOpenChange={setCreateOrgDialogOpen}
+			/>
 		</div>
 	);
 }

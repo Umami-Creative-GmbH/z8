@@ -173,7 +173,7 @@ export function EmployeeEditFormCard({
 							{(field) => (
 								<TFormItem>
 									<TFormLabel hasError={fieldHasError(field)}>
-										{t("settings.employees.detailView.startDate", "Start date")}
+										{t("settings.employees.detailView.actualEmploymentStart", "Actual employment start")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
 										<Input
@@ -183,13 +183,13 @@ export function EmployeeEditFormCard({
 											value={field.state.value || ""}
 											onChange={(event) => field.handleChange(event.target.value)}
 											onBlur={field.handleBlur}
-											disabled={!canEditManagerFields || isUpdating}
+											disabled={contract.kind !== "draft" || !canEditOrgAdminFields || isUpdating}
 										/>
 									</TFormControl>
 									<TFormDescription>
 										{t(
-											"settings.employees.detailView.startDateDescription",
-											"Work-balance tracking starts on this date",
+											"settings.employees.detailView.actualEmploymentStartDescription",
+											"The actual joining date determines employment-based vacation allowance. Correct it in the reviewed employment correction below; time tracking has its own start date.",
 										)}
 									</TFormDescription>
 									<TFormMessage field={field} />

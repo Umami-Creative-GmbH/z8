@@ -29,9 +29,16 @@ import type {
 } from "./canonical-inbox-read";
 import { getAgeDays } from "./serialization";
 import { buildInboxTriage } from "./triage";
-import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "./types";
+import type {
+	ApprovalInboxDetailSection,
+	ApprovalInboxLocalizedText,
+} from "./types";
 
-function candidateQuery(input: CanonicalInboxLoadInput, now: Date, countOnly: boolean) {
+function candidateQuery(
+	input: CanonicalInboxLoadInput,
+	now: Date,
+	countOnly: boolean,
+) {
 	const selection = countOnly
 		? sql`count(*)::integer as "totalCount"`
 		: sql`assignment.id as "assignmentId", assignment.approver_employee_id as "approverId", workflow.id as "workflowId", workflow.organization_id as "organizationId", workflow.requester_employee_id as "requesterId", workflow.submitted_at as "submittedAt", stage.label as "stageLabel", stage.stage_order as "stageOrder", change.id as "changeId", category.name as "categoryName", change.kind, change.original, change.proposed, change.reason, requester.team_id as "teamId", requester_user.name as "userName", requester_user.email as "userEmail", requester_user.image as "userImage", count(*) over()::integer as "totalCount"`;
@@ -112,9 +119,16 @@ const COPY = {
 	},
 } satisfies Record<string, ApprovalInboxLocalizedText>;
 const period = (value: string): ApprovalInboxLocalizedText =>
-	value === "am" ? COPY.morning : value === "pm" ? COPY.afternoon : COPY.fullDay;
+	value === "am"
+		? COPY.morning
+		: value === "pm"
+			? COPY.afternoon
+			: COPY.fullDay;
 
-function toApproval(row: Record<string, unknown>, now: Date): CanonicalInboxApproval {
+function toApproval(
+	row: Record<string, unknown>,
+	now: Date,
+): CanonicalInboxApproval {
 	const original = row.original as AbsenceChangeOriginal;
 	const proposed = row.proposed as AbsenceChangeProposal | null;
 	const submittedAt = decodeApprovalDatabaseTimestamptz(row.submittedAt);
@@ -200,11 +214,15 @@ function toApproval(row: Record<string, unknown>, now: Date): CanonicalInboxAppr
 				},
 				{
 					label: COPY.originalStartCoverage,
-					value: hasExactAbsenceHours(original) ? COPY.exactHours : period(original.startPeriod),
+					value: hasExactAbsenceHours(original)
+						? COPY.exactHours
+						: period(original.startPeriod),
 				},
 				{
 					label: COPY.originalEndCoverage,
-					value: hasExactAbsenceHours(original) ? COPY.exactHours : period(original.endPeriod),
+					value: hasExactAbsenceHours(original)
+						? COPY.exactHours
+						: period(original.endPeriod),
 				},
 				...(original.canonical
 					? [
@@ -257,11 +275,43 @@ function toApproval(row: Record<string, unknown>, now: Date): CanonicalInboxAppr
 										vacation.startDate > proposed.startDate
 											? vacation.startDate
 											: proposed.startDate,
-									end: vacation.endDate < proposed.endDate ? vacation.endDate : proposed.endDate,
+									end:
+										vacation.endDate < proposed.endDate
+											? vacation.endDate
+											: proposed.endDate,
 								},
 							})),
 						]
 					: [{ label: COPY.proposed, value: COPY.cancelAll }]),
+				...(proposed?.historicalReconciliationReview
+					? [
+							{
+								label: {
+									key: "approvals:approvals.absenceChange.reconciliationReason",
+									fallback: "Historical vacation reconciliation source",
+								},
+								value: proposed.historicalReconciliationReview.reason,
+							},
+							...proposed.historicalReconciliationReview.totals.map(
+								(total) => ({
+									label: {
+										key: "approvals:approvals.absenceChange.historicalRemaining",
+										fallback: "Previously taken vacation remaining",
+									},
+									value: `${total.year}: ${total.currentDays} → ${total.remainingDays} (${total.datedDays} newly dated days)`,
+								}),
+							),
+							...proposed.historicalReconciliationReview.balances.map(
+								(balance) => ({
+									label: {
+										key: "approvals:approvals.absenceChange.reconciledBalance",
+										fallback: "Available vacation after reconciliation",
+									},
+									value: `${balance.year}: ${balance.before} → ${balance.after}`,
+								}),
+							),
+						]
+					: []),
 				{ label: COPY.reason, value: String(row.reason) },
 			],
 		},
@@ -298,12 +348,16 @@ export const absenceChangeInboxRead: CanonicalInboxRead = {
 	},
 	async count(input: CanonicalInboxCountInput) {
 		const now = input.now ?? dateFromInstant(systemClock.nowInstant());
-		const rows = resultRows(await (input.database ?? db).execute(candidateQuery(input, now, true)));
+		const rows = resultRows(
+			await (input.database ?? db).execute(candidateQuery(input, now, true)),
+		);
 		return Number(rows[0]?.totalCount) || 0;
 	},
 	async decide(input) {
 		try {
-			await (await import("@/lib/absences/change-request-service")).decideAbsenceChange({
+			await (
+				await import("@/lib/absences/change-request-service")
+			).decideAbsenceChange({
 				organizationId: input.target.organizationId,
 				actorEmployeeId: input.actorEmployeeId,
 				assignmentId: input.target.id,
