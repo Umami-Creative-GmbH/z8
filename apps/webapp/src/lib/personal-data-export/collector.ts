@@ -92,11 +92,15 @@ export type { PersonalDataExportKind } from "@/db/schema";
 export type PersonalDataExportDatabase = typeof db;
 
 /** Read access only: the global client or a collector's own transaction. */
-export type PersonalDataExportReader = Pick<PersonalDataExportDatabase, "select">;
+export type PersonalDataExportReader = Pick<
+	PersonalDataExportDatabase,
+	"select"
+>;
 
 /** The categories of a personal data export, in README and archive order. */
 export const PERSONAL_DATA_CATEGORIES = [
 	"employment",
+	"driving_licence",
 	"time",
 	"absences",
 	"planning",
@@ -171,7 +175,9 @@ export interface PersonalDataPartGuide {
  * translator's language. Describe every part the collector can return,
  * withheld ones included (see the header).
  */
-export type PersonalDataFieldGuide = (t: ReadmeTranslate) => Record<string, PersonalDataPartGuide>;
+export type PersonalDataFieldGuide = (
+	t: ReadmeTranslate,
+) => Record<string, PersonalDataPartGuide>;
 
 export interface PersonalDataCollector {
 	category: PersonalDataCategoryKey;
@@ -209,19 +215,40 @@ export function commonFieldExplanations(
 				"The record's ID in the app, so other files can refer to it.",
 			),
 		created_at: () =>
-			t("personalDataExport.readme.fields.common.createdAt", "When the record was created."),
+			t(
+				"personalDataExport.readme.fields.common.createdAt",
+				"When the record was created.",
+			),
 		created_by: () =>
-			t("personalDataExport.readme.fields.common.createdBy", "Who created the record."),
+			t(
+				"personalDataExport.readme.fields.common.createdBy",
+				"Who created the record.",
+			),
 		updated_at: () =>
-			t("personalDataExport.readme.fields.common.updatedAt", "When the record was last changed."),
+			t(
+				"personalDataExport.readme.fields.common.updatedAt",
+				"When the record was last changed.",
+			),
 		updated_by: () =>
-			t("personalDataExport.readme.fields.common.updatedBy", "Who last changed the record."),
+			t(
+				"personalDataExport.readme.fields.common.updatedBy",
+				"Who last changed the record.",
+			),
 		assigned_at: () =>
-			t("personalDataExport.readme.fields.common.assignedAt", "When it was assigned to you."),
+			t(
+				"personalDataExport.readme.fields.common.assignedAt",
+				"When it was assigned to you.",
+			),
 		assigned_by: () =>
-			t("personalDataExport.readme.fields.common.assignedBy", "Who assigned it to you."),
+			t(
+				"personalDataExport.readme.fields.common.assignedBy",
+				"Who assigned it to you.",
+			),
 		effective_from: () =>
-			t("personalDataExport.readme.fields.common.effectiveFrom", "When it took effect."),
+			t(
+				"personalDataExport.readme.fields.common.effectiveFrom",
+				"When it took effect.",
+			),
 		effective_to: () =>
 			t(
 				"personalDataExport.readme.fields.common.effectiveTo",
@@ -239,6 +266,9 @@ export function tablePart(
 	return { kind: "table", key, columns, rows };
 }
 
-export function recordPart(key: string, record: PersonalDataRow | null): PersonalDataRecordPart {
+export function recordPart(
+	key: string,
+	record: PersonalDataRow | null,
+): PersonalDataRecordPart {
 	return { kind: "record", key, record };
 }

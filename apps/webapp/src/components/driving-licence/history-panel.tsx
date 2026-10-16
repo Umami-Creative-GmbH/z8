@@ -134,6 +134,13 @@ export function DrivingLicenceHistoryPanel({
 				</p>
 			) : (
 				<>
+					<Button asChild variant="outline">
+						<a
+							href={`/api/driving-licence/evidence?${new URLSearchParams({ employeeId, ...period }).toString()}`}
+						>
+							{t("drivingLicence.history.downloadPdf", "Download evidence PDF")}
+						</a>
+					</Button>
 					<p className="font-medium">
 						<DrivingStatusLabel status={data.authorization.status} />
 					</p>
