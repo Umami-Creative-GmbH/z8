@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import { installKioskWorker, removeKioskWorker } from "./kiosk-worker";
 import { type CachedKioskEmployee, kioskOfflineCache } from "./offline-cache";
 import type { KioskDeviceInfo, KioskEmployeesResponse } from "./protocol";
@@ -12,7 +13,7 @@ import type { KioskDeviceInfo, KioskEmployeesResponse } from "./protocol";
 
 /** The build the kiosk worker caches for; each deployment caches its own page and assets. */
 function currentBuild(): string {
-	return process.env.NEXT_PUBLIC_BUILD_HASH || "development";
+	return env.NEXT_PUBLIC_BUILD_HASH || "development";
 }
 
 /** A contact told the device about its kiosk (session, heartbeat or pairing). */
