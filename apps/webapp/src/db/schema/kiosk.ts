@@ -76,3 +76,33 @@ export const kiosk = pgTable(
 		check("kiosk_name_check", sql`char_length(btrim(${table.name})) BETWEEN 1 AND 100`),
 	],
 );
+
+/**
+ * A kiosk device token that was rotated away (#1289, spec #885). Rotating clears
+ * `kiosk.token_hash`, so the old token would otherwise read as never known; an
+ * offline kiosk still sends its queued commands with it, and Z8 refuses and
+ * lists them for the kiosk (whatever instant they claim). Only the SHA-256 is
+ * kept. A revoked kiosk keeps its hash on `kiosk` and needs no row here.
+ */
+export const kioskRetiredToken = pgTable(
+	"kiosk_retired_token",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		kioskId: uuid("kiosk_id").notNull(),
+		tokenHash: text("token_hash").notNull(),
+		retiredAt: timestamp("retired_at", { withTimezone: true }).notNull(),
+		retiredBy: text("retired_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		foreignKey({
+			name: "kiosk_retired_token_kiosk_fk",
+			columns: [table.kioskId, table.organizationId],
+			foreignColumns: [kiosk.id, kiosk.organizationId],
+		}).onDelete("cascade"),
+		uniqueIndex("kioskRetiredToken_tokenHash_idx").on(table.tokenHash),
+		index("kioskRetiredToken_kiosk_idx").on(table.organizationId, table.kioskId),
+	],
+);

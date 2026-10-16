@@ -945,7 +945,12 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		| { code: "billing_required"; reason: string }
 	> {
 		if (!isEnlistedFor(command) || command.subject.onBehalf) return { code: "access_denied" };
-		if (!CANONICAL_UUID.test(command.identity.id)) return { code: "invalid_command" };
+		if (
+			!CANONICAL_UUID.test(command.identity.id) ||
+			(command.payload && command.payload.operationId !== command.identity.id)
+		) {
+			return { code: "invalid_command" };
+		}
 		const subject = await authorizedSubject({ ...command, kind: "break" });
 		if (!subject) return { code: "access_denied" };
 		const billing = await requireBillingForMutation(command.organizationId);
@@ -953,6 +958,11 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			return { code: "billing_required", reason: billing.reason ?? "subscription_required" };
 		}
 		return { subject };
+	}
+
+	/** A frozen start's own instant, which its committed replay must match (#1289). */
+	function frozenStartOf(command: BreakInProgressCommand) {
+		return command.payload && command.at.kind === "occurred" ? command.at.instant : undefined;
 	}
 
 	function startBreakRefusal(error: unknown): StartBreakRefusal {
@@ -964,6 +974,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			};
 		}
 		if (error instanceof BreakStartCollisionError) return { code: "collision" };
+		if (error instanceof FrozenCommandNotAcceptedError) return { code: "frozen_not_accepted" };
 		if (error instanceof ClockingConflictError) return { code: "not_clocked_in" };
 		return { code: "unconfirmed", cause: error };
 	}
@@ -977,6 +988,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				db,
 				{ organizationId: subject.organizationId, employeeId: subject.id },
 				command.identity.id,
+				frozenStartOf(command),
 			);
 			return result ? { outcome: "replayed", result } : null;
 		} catch (error) {
@@ -1021,6 +1033,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						operationId: command.identity.id,
 						replayable: isReplayable(command.identity),
 						start: { instant, zone },
+						...(command.payload ? { frozen: { admission: coordination.admission } } : {}),
 					}),
 			);
 		} catch (error) {

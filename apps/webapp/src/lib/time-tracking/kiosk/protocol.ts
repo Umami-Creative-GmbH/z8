@@ -11,6 +11,8 @@
  *   again) or `kiosk_revoked` (show the revoked screen).
  */
 import type { WorkVehicleOption, WorkVehicleUse } from "../vehicle-use/work-vehicle-use";
+import type { KioskContactAnchor } from "./frozen-command";
+import type { KioskSealingKey } from "./pin-seal";
 
 export const KIOSK_TOKEN_HEADER = "x-kiosk-token";
 
@@ -148,6 +150,28 @@ export type KioskDeviceInfo = {
 	 */
 	offlineMode: boolean;
 };
+
+/**
+ * What a kiosk needs to queue frozen kiosk commands while offline (#1289, spec
+ * #885). `GET /api/kiosk/session` and `POST /api/kiosk/pair` answer it as
+ * `offline` beside `kiosk`, only while `kiosk.offlineMode` is true:
+ * - `contact`: the signed anchor of this contact. `contact.serverTime` is Z8's
+ *   time now (UTC ISO); the kiosk measures elapsed time from it with a monotonic
+ *   clock (`server_anchor`) and returns the latest anchor with every command it
+ *   queues until its next contact.
+ * - `sealingKey`: Z8's public key to seal each entered PIN with (`pin-seal.ts`).
+ * Frozen commands go to `POST /api/kiosk/commands`; see `frozen-command.ts`.
+ */
+export type KioskOfflineContact = {
+	contact: KioskContactAnchor;
+	sealingKey: KioskSealingKey;
+};
+
+/** `GET /api/kiosk/session`. */
+export type KioskSessionResponse = { kiosk: KioskDeviceInfo; offline?: KioskOfflineContact };
+
+/** `POST /api/kiosk/pair`. */
+export type KioskPairResponse = KioskSessionResponse & { token: string };
 
 /** One employee on the kiosk home screen (#862). */
 export type KioskEmployeeListing = { id: string; name: string };

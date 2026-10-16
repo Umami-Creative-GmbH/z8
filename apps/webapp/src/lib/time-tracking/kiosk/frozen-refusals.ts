@@ -1,0 +1,67 @@
+import "server-only";
+
+import type { Instant } from "@/lib/datetime/temporal-core";
+import type { KioskTimeSource } from "../clocking/types";
+import type {
+	KioskFrozenAction,
+	KioskFrozenCommand,
+	KioskFrozenRefusalReason,
+} from "./frozen-command";
+
+/**
+ * A refused frozen kiosk command (#1289): the one place a refusal leaves the
+ * frozen kiosk command pipeline. #1290 records it (organization-scoped, once per
+ * kiosk and operation), notifies the employee or, for a kiosk-only employee,
+ * their managers, and lists it in the kiosk's settings. Nothing about the
+ * refused command was written to work or receipts; a wrong PIN's failure is
+ * already stored for the lockout (#1288).
+ */
+export type KioskFrozenRefusal = {
+	organizationId: string;
+	kioskId: string;
+	operationId: string;
+	/** The employee the command names, as it names them. */
+	employeeId: string;
+	/** That employee in the kiosk's organization, or null when they are none of its employees. */
+	employee: { id: string; userId: string } | null;
+	action: KioskFrozenAction;
+	/** The instant the command claims. */
+	claimedAt: Instant;
+	timeSource: KioskTimeSource;
+	reason: KioskFrozenRefusalReason;
+	/** The reason's details as the kiosk was answered, e.g. `{ lockedUntil }`, `{ month }`, `{ reason }`. */
+	detail: Record<string, unknown>;
+	/** The frozen command's bytes: a resend with the same bytes is the same refused command. */
+	command: KioskFrozenCommand;
+	/** When Z8 refused it. */
+	refusedAt: Instant;
+};
+
+/** A refusal recorded earlier for this kiosk's operation. */
+export type RecordedKioskFrozenRefusal = {
+	reason: KioskFrozenRefusalReason;
+	detail: Record<string, unknown>;
+	/** The bytes that were refused; other bytes under the identity are a collision. */
+	command: unknown;
+};
+
+/**
+ * Where refusals go. `record` is called exactly once for each refused
+ * judgment, before the kiosk is answered; if it throws, the kiosk is answered
+ * `unknown` and resends. `recall` answers a resend (and the lookup) from the
+ * record instead of judging the command, and its PIN, again.
+ */
+export type KioskFrozenRefusalLedger = {
+	recall(input: {
+		organizationId: string;
+		kioskId: string;
+		operationId: string;
+	}): Promise<RecordedKioskFrozenRefusal | null>;
+	record(refusal: KioskFrozenRefusal): Promise<void>;
+};
+
+/** Until refusals are recorded (#1290): nothing is kept, so a resend is judged again. */
+export const unrecordedKioskFrozenRefusals: KioskFrozenRefusalLedger = {
+	recall: async () => null,
+	record: async () => {},
+};

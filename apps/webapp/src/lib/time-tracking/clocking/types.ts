@@ -66,13 +66,34 @@ export function principalCausingUserId(principal: ClockPrincipal): string | null
 
 /**
  * Proof that this request verified an employee's kiosk PIN at a kiosk. Only the
- * kiosk PIN check (`proveKioskPin`) issues one; a proof built any other way is
- * refused, and each proof expires shortly after it was issued.
+ * kiosk PIN checks (`proveKioskPin`, `proveFrozenKioskPin`) issue one; a proof
+ * built any other way is refused, and each proof expires shortly after it was
+ * issued.
  */
 export type KioskPinProof = {
 	readonly organizationId: string;
 	readonly kioskId: string;
 	readonly employeeId: string;
+	/**
+	 * Set only on the proof of a frozen kiosk clock command (#1289, ADR 0011): the
+	 * PIN the kiosk sealed offline was checked on arrival, at the command's own
+	 * instant. Such a proof authorizes that one command only.
+	 */
+	readonly frozen?: KioskFrozenPinProof;
+};
+
+/**
+ * Where a frozen kiosk command's instant came from (#1289): the server time of
+ * the kiosk's last contact plus a monotonic clock, or, after an offline restart,
+ * the device clock, which Z8 accepts only between that contact and arrival.
+ */
+export type KioskTimeSource = "server_anchor" | "device_clock";
+
+/** The one frozen kiosk command a frozen PIN proof authorizes. */
+export type KioskFrozenPinProof = {
+	readonly operationId: string;
+	readonly occurredAt: Instant;
+	readonly timeSource: KioskTimeSource;
 };
 
 /**
