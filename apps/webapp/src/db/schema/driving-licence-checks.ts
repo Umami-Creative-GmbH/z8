@@ -92,7 +92,7 @@ export const drivingAuthorization = pgTable(
 		employeeId: uuid("employee_id").notNull(),
 		employmentPeriodId: uuid("employment_period_id"),
 		classCode: text("class_code").notNull(),
-		supportingCheckId: uuid("supporting_check_id").notNull(),
+		supportingCheckId: uuid("supporting_check_id"),
 		lastSuccessfulAt: timestamp("last_successful_at", { withTimezone: true }),
 		routineValidThrough: date("routine_valid_through").notNull(),
 		documentValidThrough: date("document_valid_through").notNull(),
@@ -122,6 +122,10 @@ export const drivingAuthorization = pgTable(
 				drivingLicenceCheck.id,
 			],
 		}),
+		check(
+			"driving_authorization_active_evidence",
+			sql`${t.state} <> 'active' OR ${t.supportingCheckId} IS NOT NULL`,
+		),
 		check(
 			"driving_authorization_state",
 			sql`${t.state} IN ('active','suspended','ended')`,

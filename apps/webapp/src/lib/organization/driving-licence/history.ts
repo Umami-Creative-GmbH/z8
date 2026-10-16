@@ -1,3 +1,7 @@
+import {
+	beginDrivingLicenceRetentionChange,
+	finishDrivingLicenceRetentionChange,
+} from "./retention-state";
 import "server-only";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
@@ -97,6 +101,11 @@ export async function supplementDrivingLicenceCheck(
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
 		await lockHistoryActor(tx, actor);
 		const now = systemClock.nowInstant();
+		const retentionBefore = await beginDrivingLicenceRetentionChange(
+			tx,
+			actor.organizationId,
+			now,
+		);
 		await assertDrivingLicenceVerifierAccess(tx, {
 			organizationId: actor.organizationId,
 			userId: actor.userId,
@@ -220,6 +229,12 @@ export async function supplementDrivingLicenceCheck(
 					actorUserId: actor.userId,
 				});
 		}
+		await finishDrivingLicenceRetentionChange(
+			tx,
+			actor.organizationId,
+			now,
+			retentionBefore,
+		);
 		return { supplementId: saved.id };
 	});
 }
