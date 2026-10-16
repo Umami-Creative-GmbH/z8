@@ -34,6 +34,9 @@ export function DrivingLicenceVerifierWorklist() {
 			}),
 	});
 	const refresh = async () => {
+		void queryClient.invalidateQueries({
+			queryKey: ["driving-authorization-status"],
+		});
 		await queryClient.invalidateQueries({
 			queryKey: ["driving-licence-history", ...identity, selected?.employeeId],
 		});

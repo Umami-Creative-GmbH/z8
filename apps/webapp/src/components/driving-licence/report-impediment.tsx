@@ -1,4 +1,5 @@
 "use client";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
@@ -8,6 +9,7 @@ import { reportDrivingImpedimentAction } from "@/lib/organization/driving-licenc
 export function ReportDrivingImpediment() {
 	const { t } = useTranslate();
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const command = useRef<string | null>(null);
 	const [pending, startTransition] = useTransition();
 	const [result, setResult] = useState<"reported" | "error" | null>(null);
@@ -19,7 +21,12 @@ export function ReportDrivingImpediment() {
 					commandId: command.current,
 				});
 				setResult(response.success ? "reported" : "error");
-				if (response.success) router.refresh();
+				if (response.success) {
+					void queryClient.invalidateQueries({
+						queryKey: ["driving-authorization-status"],
+					});
+					router.refresh();
+				}
 			} catch {
 				setResult("error");
 			}
