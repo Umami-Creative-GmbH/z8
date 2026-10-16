@@ -17,6 +17,8 @@ export async function loadDrivingAuthorizationStatus(
 		credentials: "same-origin",
 		signal,
 	});
+	if (!response.ok)
+		throw new Error("Driving authorization status is unavailable.");
 	return response.json();
 }
 export async function loadOperationalDrivingEmployees(
@@ -29,5 +31,7 @@ export async function loadOperationalDrivingEmployees(
 		`/api/driving-licence/operational-employees?${params}`,
 		{ cache: "no-store", credentials: "same-origin", signal },
 	);
+	if (!response.ok)
+		throw new Error("Driving authorization status is unavailable.");
 	return response.json();
 }
