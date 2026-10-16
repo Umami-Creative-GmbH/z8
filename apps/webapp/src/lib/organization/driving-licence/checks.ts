@@ -254,7 +254,8 @@ export async function readEffectiveDrivingAuthorization(
 			row.employmentPeriodId !== employment.periodId ||
 			(!!employment.lastDepartureAt &&
 				!!row.lastSuccessfulAt &&
-				employment.lastDepartureAt >= row.lastSuccessfulAt);
+				instantFromDate(employment.lastDepartureAt).epochNanoseconds >=
+					instantFromDate(row.lastSuccessfulAt).epochNanoseconds);
 		const globalApplies =
 			global && global.employmentPeriodId === row.employmentPeriodId;
 		const expired =
