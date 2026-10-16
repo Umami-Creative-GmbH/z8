@@ -1,16 +1,17 @@
 import { Context, Effect, Layer } from "effect";
 
 import { billingSeatAudit } from "@/db/schema";
-import { createLogger } from "@/lib/logger";
 import { DatabaseError, StripeError } from "@/lib/effect/errors";
 import { type CallbackRunner, tryPromiseWithRunner } from "@/lib/effect/promise-callback";
 import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
-import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	deliverOrganizationSeats,
 	SeatDeliveryUncertainError,
 	type SeatStripePort,
 } from "@/lib/effect/services/billing/seat-delivery";
+import { findFullSeatItem } from "@/lib/effect/services/billing/seat-items";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { createLogger } from "@/lib/logger";
 import { StripeService } from "./stripe.service";
 import { SubscriptionService } from "./subscription.service";
 
@@ -67,7 +68,7 @@ export const SeatSyncServiceLive = Layer.effect(
 		const stripePortFor = (run: CallbackRunner<never>): SeatStripePort => ({
 			getQuantity: async (subscriptionId) => {
 				const stripeSubscription = await run(stripeService.getSubscription(subscriptionId));
-				const item = stripeSubscription.items.data[0];
+				const item = findFullSeatItem(stripeSubscription, stripeService.config);
 				if (!item) throw new Error("Stripe subscription has no seat item");
 				return { itemId: item.id, quantity: item.quantity ?? 0 };
 			},
