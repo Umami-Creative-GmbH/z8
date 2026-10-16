@@ -76,6 +76,23 @@ function original(
 		classes,
 	};
 }
+async function changeInterval(intervalMonths: number) {
+	const intervals = await import(
+		"@/lib/organization/driving-licence/interval-actions"
+	);
+	const preview = await intervals.previewDrivingLicenceIntervalAction({
+		intervalMonths,
+	});
+	if (!preview.success) throw new Error(preview.error);
+	expect(
+		(
+			await intervals.applyDrivingLicenceIntervalAction({
+				intervalMonths,
+				previewToken: preview.data.previewToken,
+			})
+		).success,
+	).toBe(true);
+}
 async function inbox(userId = subjectUserId) {
 	return (await getUserNotifications(userId, fixture.organizationId))
 		.notifications;
@@ -350,19 +367,7 @@ it("serializes concurrent workers and drops a failed email after its check was r
 	harness.mail.mockResolvedValue({ success: true });
 	// Renewal moves the earliest deadline outside every configured lead threshold.
 	harness.userId = fixture.ownerUserId;
-	expect(
-		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: true,
-				intervalMonths: 6,
-				timezone: "Europe/Berlin",
-				reminderLeadDays: [30, 7],
-				retentionMonths: 36,
-				retentionJustification:
-					"Evidence retained for organization driving checks",
-			})
-		).success,
-	).toBe(true);
+	await changeInterval(6);
 	harness.userId = verifier.userId;
 	expect(
 		(await checks.completeDrivingLicenceCheckAction(original())).success,
@@ -417,19 +422,7 @@ it("discards old-employment retries without suspending or sending stale reminder
 	);
 	harness.now = "2026-02-22T10:00:00Z";
 	harness.userId = fixture.ownerUserId;
-	expect(
-		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: true,
-				intervalMonths: 6,
-				timezone: "Europe/Berlin",
-				reminderLeadDays: [30, 7],
-				retentionMonths: 36,
-				retentionJustification:
-					"Evidence retained for organization driving checks",
-			})
-		).success,
-	).toBe(true);
+	await changeInterval(6);
 	harness.userId = verifier.userId;
 	expect(
 		(await checks.completeDrivingLicenceCheckAction(original())).success,
@@ -467,19 +460,7 @@ it("rechecks the live clock before each email so a slow send cannot deliver a st
 
 it("honors the configured 30- and 7-day routine thresholds exactly in the saved deadline zone", async () => {
 	harness.userId = fixture.ownerUserId;
-	expect(
-		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: true,
-				intervalMonths: 6,
-				timezone: "Europe/Berlin",
-				reminderLeadDays: [30, 7],
-				retentionMonths: 36,
-				retentionJustification:
-					"Evidence retained for organization driving checks",
-			})
-		).success,
-	).toBe(true);
+	await changeInterval(6);
 	harness.userId = verifier.userId;
 	expect(
 		(await checks.completeDrivingLicenceCheckAction(original())).success,

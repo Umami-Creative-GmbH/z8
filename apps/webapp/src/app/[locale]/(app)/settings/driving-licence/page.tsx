@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { DrivingLicenceSettings } from "@/components/driving-licence/policy-settings";
+import { DrivingLicenceReassignmentTasks } from "@/components/driving-licence/reminder-tasks";
 import { VerifierSettings } from "@/components/driving-licence/verifier-settings";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getDrivingLicenceAdminDataAction } from "@/lib/organization/driving-licence/policy-actions";
@@ -37,7 +38,10 @@ async function DrivingLicenceSettingsContent() {
 					)}
 				</p>
 			)}
-			<VerifierSettings />
+			<DrivingLicenceReassignmentTasks />
+			<div id="driving-verifier-settings" className="scroll-mt-6">
+				<VerifierSettings />
+			</div>
 		</div>
 	);
 }
