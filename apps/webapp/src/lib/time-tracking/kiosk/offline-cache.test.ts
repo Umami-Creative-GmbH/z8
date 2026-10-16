@@ -1,0 +1,134 @@
+import { describe, expect, it } from "vitest";
+import { createKioskOfflineCache } from "./offline-cache";
+import { memoryKioskCacheStorage } from "./offline-cache.test.fixture";
+import type { KioskDeviceInfo, KioskEmployeesResponse } from "./protocol";
+
+/**
+ * #1291: what an offline-mode kiosk keeps between contacts, and what it drops.
+ */
+const kiosk: KioskDeviceInfo = {
+	id: "22222222-2222-4222-8222-222222222222",
+	name: "Front door",
+	locationId: "11111111-1111-4111-8111-111111111111",
+	locationName: "Store",
+	timezone: "Europe/Berlin",
+	boardEnabled: true,
+	language: "de",
+	offlineMode: true,
+};
+
+const anna = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", name: "Anna Berger" };
+const ben = { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", name: "Ben Özdemir" };
+
+const listed: KioskEmployeesResponse = {
+	employees: [anna, ben],
+	offline: {
+		learnedAt: "2026-10-16T07:45:00Z",
+		states: {
+			[anna.id]: { status: "clocked_in", workPeriodId: "wp-1", since: "2026-10-16T06:30:00Z" },
+			[ben.id]: { status: "clocked_out" },
+		},
+	},
+};
+
+function cache() {
+	const storage = memoryKioskCacheStorage();
+	return { storage, cache: createKioskOfflineCache(() => storage) };
+}
+
+describe("kiosk offline cache (#1291)", () => {
+	it("keeps the kiosk and its employees with their states and when the server read them", async () => {
+		const { cache: offline } = cache();
+
+		await offline.rememberKiosk(kiosk);
+		await offline.rememberEmployees(kiosk.id, listed);
+
+		expect(await offline.readKiosk()).toEqual(kiosk);
+		expect(await offline.readEmployees(kiosk.id)).toEqual([
+			{ ...anna, state: listed.offline?.states[anna.id], learnedAt: "2026-10-16T07:45:00Z" },
+			{ ...ben, state: { status: "clocked_out" }, learnedAt: "2026-10-16T07:45:00Z" },
+		]);
+	});
+
+	it("replaces the employees at each contact, so an unassigned employee is gone", async () => {
+		const { cache: offline } = cache();
+		await offline.rememberKiosk(kiosk);
+		await offline.rememberEmployees(kiosk.id, listed);
+
+		await offline.rememberEmployees(kiosk.id, {
+			employees: [ben],
+			offline: {
+				learnedAt: "2026-10-16T08:00:00Z",
+				states: { [ben.id]: { status: "clocked_out" } },
+			},
+		});
+
+		expect(await offline.readEmployees(kiosk.id)).toEqual([
+			{ ...ben, state: { status: "clocked_out" }, learnedAt: "2026-10-16T08:00:00Z" },
+		]);
+	});
+
+	it("caches nothing for a kiosk without offline mode", async () => {
+		const { cache: offline, storage } = cache();
+
+		await offline.rememberKiosk({ ...kiosk, offlineMode: false });
+		await offline.rememberEmployees(kiosk.id, { employees: listed.employees });
+
+		expect(storage.keys()).toEqual([]);
+		expect(await offline.readKiosk()).toBeNull();
+		expect(await offline.readEmployees(kiosk.id)).toBeNull();
+	});
+
+	it("deletes everything once offline mode is switched off", async () => {
+		const { cache: offline, storage } = cache();
+		await offline.rememberKiosk(kiosk);
+		await offline.rememberEmployees(kiosk.id, listed);
+
+		await offline.rememberKiosk({ ...kiosk, offlineMode: false });
+
+		expect(storage.keys()).toEqual([]);
+	});
+
+	it("drops the employees when a list arrives without states", async () => {
+		const { cache: offline } = cache();
+		await offline.rememberKiosk(kiosk);
+		await offline.rememberEmployees(kiosk.id, listed);
+
+		await offline.rememberEmployees(kiosk.id, { employees: listed.employees });
+
+		expect(await offline.readEmployees(kiosk.id)).toBeNull();
+	});
+
+	it("never mixes up two kiosks: another kiosk's employees are not shown or kept", async () => {
+		const { cache: offline } = cache();
+		await offline.rememberKiosk(kiosk);
+		await offline.rememberEmployees(kiosk.id, listed);
+		const other = { ...kiosk, id: "33333333-3333-4333-8333-333333333333" };
+
+		expect(await offline.readEmployees(other.id)).toBeNull();
+		await offline.rememberKiosk(other);
+		expect(await offline.readEmployees(kiosk.id)).toBeNull();
+		expect(await offline.readKiosk()).toEqual(other);
+	});
+
+	it("forgets everything, as when the kiosk is revoked or unpaired", async () => {
+		const { cache: offline, storage } = cache();
+		await offline.rememberKiosk(kiosk);
+		await offline.rememberEmployees(kiosk.id, listed);
+
+		await offline.forget();
+
+		expect(storage.keys()).toEqual([]);
+	});
+
+	it("reads as empty, and never throws, when the storage fails", async () => {
+		const failing = createKioskOfflineCache(() => {
+			throw new Error("IndexedDB blocked");
+		});
+
+		await expect(failing.rememberKiosk(kiosk)).resolves.toBeUndefined();
+		await expect(failing.readKiosk()).resolves.toBeNull();
+		await expect(failing.readEmployees(kiosk.id)).resolves.toBeNull();
+		await expect(failing.forget()).resolves.toBeUndefined();
+	});
+});

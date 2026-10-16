@@ -6,6 +6,10 @@ import { useEffect, useEffectEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { kioskCall } from "@/lib/time-tracking/kiosk/device";
+import {
+	readOfflineEmployees,
+	rememberKioskEmployees,
+} from "@/lib/time-tracking/kiosk/offline-device";
 import type {
 	KioskDeviceInfo,
 	KioskEmployeeListing,
@@ -37,6 +41,10 @@ function initials(name: string) {
 interface KioskHomeProps {
 	token: string;
 	kiosk: KioskDeviceInfo;
+	/** An offline-mode kiosk's successful contacts (#1291): each one reloads the list and its cache. */
+	contacts?: number;
+	/** An offline-mode kiosk without a connection: no language switch, whose page may not be cached. */
+	offline?: boolean;
 	locale: string;
 	onChooseLanguage: (language: string) => void;
 	onPick: (employee: KioskEmployeeListing) => void;
@@ -47,11 +55,15 @@ interface KioskHomeProps {
  * The kiosk home screen (#862): the kiosk and its location, a searchable list
  * of the employees assigned to the location and, when switched on, the
  * who-is-in board (#863). The list is fetched each time the home screen opens
- * and lives only as long as it shows.
+ * and lives only as long as it shows. An offline-mode kiosk (#1291) also
+ * fetches it at each contact, caches it with the employees' states, and shows
+ * the cached list when the server cannot be reached.
  */
 export function KioskHome({
 	token,
 	kiosk,
+	contacts = 0,
+	offline = false,
 	locale,
 	onChooseLanguage,
 	onPick,
@@ -66,19 +78,29 @@ export function KioskHome({
 		if (result.kind === "kiosk") return onKioskRefused(result.code);
 		if (result.kind === "ok" && Array.isArray(result.body.employees)) {
 			setList({ state: "ready", employees: result.body.employees });
+			void rememberKioskEmployees(kiosk, result.body);
+			return;
+		}
+		const cached = kiosk.offlineMode ? await readOfflineEmployees(kiosk.id) : null;
+		if (cached) {
+			setList({
+				state: "ready",
+				employees: cached.map((employee) => ({ id: employee.id, name: employee.name })),
+			});
 		} else {
 			setList({ state: "failed" });
 		}
 	}
 
 	// The retry button calls load() directly; an Effect Event may only run from Effects.
-	const loadOnMount = useEffectEvent(() => {
+	const loadOnContact = useEffectEvent(() => {
 		void load();
 	});
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: each contact reloads the list
 	useEffect(() => {
-		loadOnMount();
-	}, []);
+		loadOnContact();
+	}, [contacts]);
 
 	const needle = searchable(query.trim());
 	const shown =
@@ -96,7 +118,7 @@ export function KioskHome({
 						<span className="truncate">{kiosk.locationName}</span>
 					</p>
 				</div>
-				<KioskLanguageSwitch locale={locale} onChoose={onChooseLanguage} />
+				<KioskLanguageSwitch locale={locale} disabled={offline} onChoose={onChooseLanguage} />
 			</header>
 
 			<div className="grid flex-1 content-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -185,7 +207,7 @@ export function KioskHome({
 						</ul>
 					) : null}
 				</section>
-				{kiosk.boardEnabled ? (
+				{kiosk.boardEnabled && !offline ? (
 					<aside className="min-w-0">
 						<KioskWhoIsInBoard
 							token={token}

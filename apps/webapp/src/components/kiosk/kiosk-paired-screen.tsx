@@ -6,6 +6,11 @@ import { useEffect, useEffectEvent, useState } from "react";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { kioskFetch, kioskPost, kioskRefusalOf } from "@/lib/time-tracking/kiosk/device";
 import { formatKioskTime } from "@/lib/time-tracking/kiosk/display";
+import type { CachedKioskEmployee } from "@/lib/time-tracking/kiosk/offline-cache";
+import {
+	readOfflineEmployees,
+	rememberKioskContact,
+} from "@/lib/time-tracking/kiosk/offline-device";
 import type {
 	KioskClockRefusal,
 	KioskClockResult,
@@ -39,6 +44,8 @@ export const KIOSK_IDLE_MS = 30_000;
 interface KioskPairedScreenProps {
 	token: string;
 	kiosk: KioskDeviceInfo;
+	/** Opened from the offline-mode kiosk's cache because the server could not be reached (#1291). */
+	cached?: boolean;
 	onRevoked: () => void;
 	onUnpaired: () => void;
 }
@@ -80,6 +87,15 @@ type Flow =
 			ask: VehicleAsk;
 			pending: boolean;
 	  }
+	| {
+			/**
+			 * An offline-mode kiosk without a connection (#1291): the employee's cached
+			 * state as of the instant the server last told it, never a day total. The
+			 * PIN entered is not kept; clocking stays refused until #1292 queues it.
+			 */
+			step: "cached";
+			employee: CachedKioskEmployee;
+	  }
 	| { step: "done"; confirmation: Confirmation };
 
 /**
@@ -115,10 +131,16 @@ async function kioskInfoOf(response: Response): Promise<KioskDeviceInfo | null> 
  * state, day total) lives only in this component's state during the turn and
  * is dropped when the kiosk returns home. Clocking needs a connection: while
  * offline the kiosk says so and sends nothing, and it never queues commands.
+ *
+ * An offline-mode kiosk (#1291) also keeps its kiosk, employees and their
+ * states at every contact (`offline-device.ts`), so it opens and lists them
+ * through an outage, and shows a chosen employee's cached state "as of" when
+ * it was learned. It still clocks nothing offline.
  */
 export function KioskPairedScreen({
 	token,
 	kiosk: pairedKiosk,
+	cached = false,
 	onRevoked,
 	onUnpaired,
 }: KioskPairedScreenProps) {
@@ -132,6 +154,11 @@ export function KioskPairedScreen({
 	const labels = useKioskActionLabels();
 	const [flow, setFlow] = useState<Flow>({ step: "home" });
 	const [activity, setActivity] = useState(0);
+	// Whether the last contact failed; an offline-mode kiosk opened from its cache starts so.
+	const [contactLost, setContactLost] = useState(cached);
+	// Counts an offline-mode kiosk's successful contacts, so its employee cache refreshes at each.
+	const [contacts, setContacts] = useState(0);
+	const offlineNow = !online || (kiosk.offlineMode && contactLost);
 
 	function kioskRefused(code: KioskRefusalCode) {
 		if (code === "kiosk_revoked") onRevoked();
@@ -145,17 +172,38 @@ export function KioskPairedScreen({
 
 	const checkIn = useEffectEvent(async () => {
 		const response = await kioskFetch(token, "/api/kiosk/session").catch(() => null);
-		if (!response) return;
+		if (!response) {
+			setContactLost(true);
+			return;
+		}
 		const refusal = await kioskRefusalOf(response);
 		if (refusal) return kioskRefused(refusal);
 		const current = await kioskInfoOf(response);
-		if (current) setKiosk(current);
+		if (!current) {
+			setContactLost(true);
+			return;
+		}
+		setKiosk(current);
+		setContactLost(false);
+		void rememberKioskContact(current, language.locale);
+		if (current.offlineMode) setContacts((count) => count + 1);
+	});
+
+	// The kiosk the page opened on came from the server: that was a contact too.
+	const rememberOpening = useEffectEvent(() => {
+		if (!cached) void rememberKioskContact(pairedKiosk, language.locale);
 	});
 
 	useEffect(() => {
+		rememberOpening();
 		const timer = window.setInterval(() => void checkIn(), KIOSK_HEARTBEAT_MS);
 		return () => window.clearInterval(timer);
 	}, []);
+
+	// An offline-mode kiosk checks in as soon as the connection is back.
+	useEffect(() => {
+		if (online && kiosk.offlineMode && contactLost) void checkIn();
+	}, [online, kiosk.offlineMode, contactLost]);
 
 	// Every screen of an employee's turn returns home on its own; a touch restarts the wait.
 	const returnHome = useEffectEvent(() => goHome());
@@ -187,6 +235,15 @@ export function KioskPairedScreen({
 				error: null,
 			});
 			return;
+		}
+		if (result.kind === "offline" && kiosk.offlineMode) {
+			const cachedEmployee = (await readOfflineEmployees(kiosk.id))?.find(
+				(candidate) => candidate.id === employee.id,
+			);
+			if (cachedEmployee) {
+				setFlow({ step: "cached", employee: cachedEmployee });
+				return;
+			}
 		}
 		setFlow({
 			step: "pin",
@@ -276,7 +333,7 @@ export function KioskPairedScreen({
 			onPointerDownCapture={() => setActivity((count) => count + 1)}
 			onKeyDownCapture={() => setActivity((count) => count + 1)}
 		>
-			{online ? null : (
+			{offlineNow ? (
 				<div
 					role="alert"
 					className="flex items-center gap-3 rounded-xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-lg text-amber-900 dark:text-amber-100"
@@ -287,11 +344,13 @@ export function KioskPairedScreen({
 						"The kiosk is offline. Clocking is not possible until the connection is back.",
 					)}
 				</div>
-			)}
+			) : null}
 			{flow.step === "home" ? (
 				<KioskHome
 					token={token}
 					kiosk={kiosk}
+					contacts={contacts}
+					offline={kiosk.offlineMode && offlineNow}
 					locale={language.locale}
 					onChooseLanguage={language.choose}
 					onPick={(employee) =>
@@ -311,7 +370,7 @@ export function KioskPairedScreen({
 					key={flow.attempt}
 					name={flow.employee.name}
 					busy={flow.busy}
-					disabled={!online}
+					disabled={!online && !kiosk.offlineMode}
 					error={flow.error ? message(flow.error) : null}
 					onSubmit={(pin) => void verifyPin(flow.employee, flow.attempt, pin)}
 					onBack={goHome}
@@ -352,6 +411,22 @@ export function KioskPairedScreen({
 							error: null,
 						})
 					}
+				/>
+			) : null}
+			{flow.step === "cached" ? (
+				<KioskEmployeePanel
+					snapshot={{
+						employee: { id: flow.employee.id, name: flow.employee.name },
+						state: flow.employee.state,
+						asOf: flow.employee.learnedAt,
+					}}
+					zone={kiosk.timezone}
+					locale={language.locale}
+					pending={null}
+					disabled
+					error={null}
+					onAction={() => undefined}
+					onBack={goHome}
 				/>
 			) : null}
 			{flow.step === "done" ? (

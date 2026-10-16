@@ -4,7 +4,9 @@
  *
  * - The device pairs at `POST /api/kiosk/pair` with `{ code }` and receives
  *   `{ token, kiosk }`. It stores the token in `localStorage` under
- *   `KIOSK_TOKEN_STORAGE_KEY` and nothing else about the kiosk.
+ *   `KIOSK_TOKEN_STORAGE_KEY`. Without offline mode it stores nothing else
+ *   about the kiosk; with offline mode (#1291) it also caches the kiosk, its
+ *   employees and their states in its own IndexedDB (`offline-cache.ts`).
  * - Every later kiosk request sends the token in the `x-kiosk-token` header
  *   (never `Authorization: Bearer`, which Better Auth's bearer plugin consumes).
  * - A refused token is answered with 401 and `{ code }`: `kiosk_unknown` (pair
@@ -153,11 +155,25 @@ export type KioskDeviceInfo = {
 export type KioskEmployeeListing = { id: string; name: string };
 
 /**
- * `GET /api/kiosk/employees` (#862): the active employees assigned to the
- * kiosk's location, ordered by name. The device keeps the list only while its
- * home screen shows.
+ * What an offline-mode kiosk caches at each contact (#1291, spec #885): each
+ * listed employee's state, keyed by employee id, and the server instant it was
+ * read at (UTC ISO), shown offline as "as of HH:MM". Never a day total.
  */
-export type KioskEmployeesResponse = { employees: KioskEmployeeListing[] };
+export type KioskOfflineStates = {
+	learnedAt: string;
+	states: Record<string, KioskEmployeeState>;
+};
+
+/**
+ * `GET /api/kiosk/employees` (#862): the active employees assigned to the
+ * kiosk's location, ordered by name. A kiosk without offline mode keeps the
+ * list only while its home screen shows. An offline-mode kiosk (#1291) also
+ * gets `offline`, and keeps both until its next contact replaces or clears them.
+ */
+export type KioskEmployeesResponse = {
+	employees: KioskEmployeeListing[];
+	offline?: KioskOfflineStates;
+};
 
 /**
  * `GET /api/kiosk/board` (#863): who of the location's assigned employees is

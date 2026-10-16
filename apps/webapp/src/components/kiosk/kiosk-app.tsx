@@ -8,7 +8,9 @@ import {
 	forgetKioskToken,
 	type KioskSession,
 	loadKioskSession,
+	readKioskToken,
 } from "@/lib/time-tracking/kiosk/device";
+import { forgetKioskOfflineData, readOfflineKiosk } from "@/lib/time-tracking/kiosk/offline-device";
 import type { KioskDeviceInfo } from "@/lib/time-tracking/kiosk/protocol";
 import { KioskPairedScreen } from "./kiosk-paired-screen";
 import { KioskPairingForm } from "./kiosk-pairing-form";
@@ -17,7 +19,8 @@ import { KioskRevokedScreen } from "./kiosk-revoked-screen";
 type KioskScreen =
 	| { state: "loading" }
 	| { state: "pairing"; initialCode: string }
-	| { state: "paired"; token: string; kiosk: KioskDeviceInfo }
+	/** `cached`: opened from an offline-mode kiosk's cache while the server is unreachable (#1291). */
+	| { state: "paired"; token: string; kiosk: KioskDeviceInfo; cached: boolean }
 	| { state: "revoked" }
 	| { state: "unreachable" };
 
@@ -36,16 +39,28 @@ function takePairingCodeFromUrl(): string {
 	return code;
 }
 
-function screenFor(session: KioskSession, initialCode: string): KioskScreen {
+/**
+ * The screen a session answer opens. A revoked or unpaired kiosk deletes its
+ * offline data; an unreachable server opens an offline-mode kiosk from its
+ * cache (#1291), and any other kiosk on "Kiosk offline" as before.
+ */
+async function screenFor(session: KioskSession, initialCode: string): Promise<KioskScreen> {
 	switch (session.state) {
 		case "paired":
-			return { state: "paired", token: session.token, kiosk: session.kiosk };
+			return { state: "paired", token: session.token, kiosk: session.kiosk, cached: false };
 		case "unpaired":
+			await forgetKioskOfflineData();
 			return { state: "pairing", initialCode };
 		case "revoked":
+			await forgetKioskOfflineData();
 			return { state: "revoked" };
-		case "unreachable":
-			return { state: "unreachable" };
+		case "unreachable": {
+			const token = readKioskToken();
+			const kiosk = token ? await readOfflineKiosk() : null;
+			return token && kiosk
+				? { state: "paired", token, kiosk, cached: true }
+				: { state: "unreachable" };
+		}
 	}
 }
 
@@ -59,7 +74,7 @@ export function KioskApp() {
 
 	const start = useEffectEvent(async () => {
 		const initialCode = takePairingCodeFromUrl();
-		setScreen(screenFor(await loadKioskSession(), initialCode));
+		setScreen(await screenFor(await loadKioskSession(), initialCode));
 	});
 
 	useEffect(() => {
@@ -68,7 +83,18 @@ export function KioskApp() {
 
 	async function retry() {
 		setScreen({ state: "loading" });
-		setScreen(screenFor(await loadKioskSession(), ""));
+		setScreen(await screenFor(await loadKioskSession(), ""));
+	}
+
+	function revoked() {
+		void forgetKioskOfflineData();
+		setScreen({ state: "revoked" });
+	}
+
+	function unpaired() {
+		forgetKioskToken();
+		void forgetKioskOfflineData();
+		setScreen({ state: "pairing", initialCode: "" });
 	}
 
 	return (
@@ -77,18 +103,16 @@ export function KioskApp() {
 			{screen.state === "pairing" ? (
 				<KioskPairingForm
 					initialCode={screen.initialCode}
-					onPaired={(token, kiosk) => setScreen({ state: "paired", token, kiosk })}
+					onPaired={(token, kiosk) => setScreen({ state: "paired", token, kiosk, cached: false })}
 				/>
 			) : null}
 			{screen.state === "paired" ? (
 				<KioskPairedScreen
 					token={screen.token}
 					kiosk={screen.kiosk}
-					onRevoked={() => setScreen({ state: "revoked" })}
-					onUnpaired={() => {
-						forgetKioskToken();
-						setScreen({ state: "pairing", initialCode: "" });
-					}}
+					cached={screen.cached}
+					onRevoked={revoked}
+					onUnpaired={unpaired}
 				/>
 			) : null}
 			{screen.state === "revoked" ? (

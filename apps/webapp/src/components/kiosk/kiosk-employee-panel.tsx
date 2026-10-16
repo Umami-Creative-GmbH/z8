@@ -70,8 +70,19 @@ export function useKioskActionLabels() {
 	};
 }
 
+/**
+ * What the panel shows: after a live PIN check the state and today's day
+ * total; on an offline-mode kiosk without a connection (#1291) the cached
+ * state `asOf` the instant the server last told it, and never a day total.
+ */
+export type KioskPanelSnapshot = Pick<KioskEmployeeSnapshot, "employee" | "state"> &
+	(
+		| { dayTotal: KioskEmployeeSnapshot["dayTotal"]; asOf?: never }
+		| { asOf: string; dayTotal?: never }
+	);
+
 interface KioskEmployeePanelProps {
-	snapshot: KioskEmployeeSnapshot;
+	snapshot: KioskPanelSnapshot;
 	zone: string;
 	locale: string;
 	/** The action being sent, if any. */
@@ -84,8 +95,9 @@ interface KioskEmployeePanelProps {
 
 /**
  * An employee's turn after a verified PIN (#862): their state and today's day
- * total, and only the actions valid for that state. No history, corrections,
- * projects or work categories.
+ * total (or, offline, "as of" when the state was learned, #1291), and only the
+ * actions valid for that state. No history, corrections, projects or work
+ * categories.
  */
 export function KioskEmployeePanel({
 	snapshot,
@@ -128,9 +140,13 @@ export function KioskEmployeePanel({
 				<h1 className="text-3xl font-semibold break-words">{snapshot.employee.name}</h1>
 				<p className="text-2xl">{stateText}</p>
 				<p className="text-lg text-muted-foreground">
-					{t("timeTracking.kiosk.employee.today", "Today: {duration}", {
-						duration: formatKioskDuration(snapshot.dayTotal.minutes, locale),
-					})}
+					{snapshot.asOf !== undefined
+						? t("timeTracking.kiosk.employee.asOf", "As of {time}", {
+								time: formatKioskTime(snapshot.asOf, zone, locale),
+							})
+						: t("timeTracking.kiosk.employee.today", "Today: {duration}", {
+								duration: formatKioskDuration(snapshot.dayTotal.minutes, locale),
+							})}
 				</p>
 			</div>
 			{error ? (
