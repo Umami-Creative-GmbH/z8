@@ -1,8 +1,6 @@
 import { FormatIcu } from "@tolgee/format-icu";
 import type { TolgeeStaticData } from "@tolgee/react";
-import { DevTools, Tolgee } from "@tolgee/web";
-
-const isDevelopment = process.env.NODE_ENV === "development";
+import { Tolgee } from "@tolgee/web";
 
 // Adding a language: extend this list, LANGUAGE_CONFIG, the calendar locale maps and the
 // Tolgee push list; `language-coverage.test.ts` names any that are missing.
@@ -173,7 +171,7 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/settings/vehicles": ["common", "settings/generic", "settings/workPolicies"],
 	"/settings/vehicle-use": ["common", "settings/generic", "settings/workPolicies"],
 	"/settings/position-capture": ["common", "settings/generic", "settings/workPolicies"],
-	"/settings/work-policies": ["common", "settings/generic", "settings/workPolicies"],
+	"/settings/work-policies": ["common", "settings/generic", "settings/workPolicies", "settings/rules"],
 	"/settings/compliance": ["common", "settings/generic", "compliance"],
 	"/onboarding": ["common", "onboarding"],
 };
@@ -375,12 +373,9 @@ async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslati
 export function TolgeeBase(options: { loadAllLanguageCatalogs?: boolean } = {}) {
 	const tolgee = Tolgee().use(FormatIcu());
 
-	// Only load DevTools in development AND on the client side
-	// Loading DevTools on server causes hydration mismatch (server adds _tolgee attribute,
-	// client adds invisible characters)
-	if (isDevelopment && typeof window !== "undefined") {
-		tolgee.use(DevTools());
-	}
+	// DevTools' observer adds invisible characters once the provider mounts.
+	// Suspense children can hydrate later, so even its SSR adapter's first-render
+	// protection cannot keep those labels consistent with the server markup.
 
 	return tolgee.updateDefaults({
 		// NOTE: apiKey/apiUrl intentionally removed from config.
@@ -388,12 +383,6 @@ export function TolgeeBase(options: { loadAllLanguageCatalogs?: boolean } = {}) 
 		// the default namespace, overriding the complete staticData (all namespaces merged).
 		// This caused non-default-namespace translations (auth, common, etc.) to be lost.
 		// Translations are loaded from local JSON files via staticData instead.
-		// DevTools observer still works for highlighting keys without apiKey.
-
-		// Disable invisible character encoding to prevent broken strings in HTML
-		observerOptions: {
-			fullKeyEncode: false,
-		},
 		// Server/bot callers retain complete fallback; provider instances disable it.
 		staticData: options.loadAllLanguageCatalogs === false ? {} : Object.fromEntries(
 			ALL_LANGUAGES.map((language) => [language, () => loadAllNamespacesForLanguage(language)]),
