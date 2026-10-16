@@ -34,6 +34,7 @@ import { useServerDataState } from "@/hooks/use-server-data-state";
 import type { VehicleChangeInput } from "@/lib/organization/vehicles/vehicle-rules";
 import type { OrganizationVehicleView } from "@/lib/organization/vehicles/vehicles";
 import { VehicleDialog } from "./vehicle-dialog";
+import { VehiclePhotosDialog } from "./vehicle-photos-dialog";
 import { vehicleRefusalMessage } from "./vehicle-refusal-message";
 
 interface VehicleSettingsProps {
@@ -47,7 +48,9 @@ type Deletion = { vehicle: OrganizationVehicleView; used: boolean } | null;
 export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 	const { t } = useTranslate();
 	const [vehicles, setVehicles] = useServerDataState(initialData.vehicles);
-	const [dialog, setDialog] = useState<{ vehicle: OrganizationVehicleView | null } | null>(null);
+	const [dialog, setDialog] = useState<{
+		vehicle: OrganizationVehicleView | null;
+	} | null>(null);
 	const [deletion, setDeletion] = useState<Deletion>(null);
 	const [pending, setPending] = useState(false);
 
@@ -78,7 +81,10 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 		const { vehicle, used } = deletion;
 		setPending(true);
 		const run = async () => {
-			const refusal = await apply({ kind: used ? "archive" : "delete", vehicleId: vehicle.id });
+			const refusal = await apply({
+				kind: used ? "archive" : "delete",
+				vehicleId: vehicle.id,
+			});
 			if (refusal === "vehicle_used") {
 				setDeletion({ vehicle, used: true });
 				return;
@@ -167,6 +173,7 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 										<IconArchive className="size-4" aria-hidden="true" />
 										{t("settings.vehicles.archive", "Archive")}
 									</Button>
+									<VehiclePhotosDialog vehicle={vehicle} />
 									<DeleteButton vehicle={vehicle} onDelete={setDeletion} />
 								</>
 							)}
@@ -193,6 +200,7 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 											<IconArchiveOff className="size-4" aria-hidden="true" />
 											{t("settings.vehicles.restore", "Restore")}
 										</Button>
+										<VehiclePhotosDialog vehicle={vehicle} />
 										<DeleteButton vehicle={vehicle} onDelete={setDeletion} />
 									</>
 								)}
@@ -280,7 +288,9 @@ function DeleteButton({
 			variant="outline"
 			size="sm"
 			className="text-destructive hover:text-destructive"
-			aria-label={t("settings.vehicles.deleteNamed", "Delete {name}", { name: vehicle.name })}
+			aria-label={t("settings.vehicles.deleteNamed", "Delete {name}", {
+				name: vehicle.name,
+			})}
 			onClick={() => onDelete({ vehicle, used: false })}
 		>
 			<IconTrash className="size-4" aria-hidden="true" />
