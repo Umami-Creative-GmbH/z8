@@ -11,11 +11,13 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { lockDrivingLicenceOrganization } from "./locks";
 
 export type DrivingLicenceDatabase = Pick<typeof appDb, "select">;
-export type DrivingLicenceTransaction = Parameters<
-	Parameters<typeof appDb.transaction>[0]
->[0];
+export type DrivingLicenceTransaction = Pick<
+	Parameters<Parameters<typeof appDb.transaction>[0]>[0],
+	"select" | "insert" | "update" | "delete" | "execute"
+>;
 export const verifierGrantInput = z
 	.object({
 		verifierEmployeeId: z.uuid(),
@@ -121,7 +123,7 @@ export async function loadDrivingLicenceVerifierGrant(
 				employeeHasOrganizationAccess(input.now),
 				sql`(${drivingLicenceVerifierGrant.expiresAt} IS NULL OR ${drivingLicenceVerifierGrant.expiresAt} > ${at})`,
 				sql`(${drivingLicenceVerifierGrant.employmentPeriodId} IS NULL OR EXISTS (SELECT 1 FROM employee_employment_period p WHERE p.id = ${drivingLicenceVerifierGrant.employmentPeriodId} AND p.organization_id = ${input.organizationId} AND p.employee_id = ${input.verifierEmployeeId} AND p.status = 'open'))`,
-				sql`NOT EXISTS (SELECT 1 FROM employee_departure d WHERE d.organization_id = ${input.organizationId} AND d.employee_id = ${input.verifierEmployeeId} AND d.status = 'effective' AND d.cutoff_at >= ${drivingLicenceVerifierGrant.grantedAt})`,
+				sql`(${drivingLicenceVerifierGrant.employmentPeriodId} IS NOT NULL OR NOT EXISTS (SELECT 1 FROM employee_departure d WHERE d.organization_id = ${input.organizationId} AND d.employee_id = ${input.verifierEmployeeId} AND d.status = 'effective' AND d.cutoff_at >= ${drivingLicenceVerifierGrant.grantedAt}))`,
 			),
 		)
 		.limit(1);
@@ -136,14 +138,15 @@ export async function saveDrivingLicenceVerifierGrant(
 	},
 ) {
 	const value = verifierGrantInput.parse(input.grant);
-	const now = systemClock.nowInstant();
-	const expiresAt = value.expiresAt ? parseInstant(value.expiresAt) : null;
-	if (expiresAt && expiresAt.epochNanoseconds <= now.epochNanoseconds)
-		throw new Error("Expiry must be in the future");
+	await lockDrivingLicenceOrganization(tx, input.organizationId);
 	// Serialize replacements and grants for the same recipient, including when no grant exists yet.
 	await tx.execute(
 		sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.organizationId}:${value.verifierEmployeeId}:driving-verifier`}, 0))`,
 	);
+	const now = systemClock.nowInstant();
+	const expiresAt = value.expiresAt ? parseInstant(value.expiresAt) : null;
+	if (expiresAt && expiresAt.epochNanoseconds <= now.epochNanoseconds)
+		throw new Error("Expiry must be in the future");
 	const [recipient] = await tx
 		.select({ id: employee.id })
 		.from(employee)
@@ -165,30 +168,28 @@ export async function saveDrivingLicenceVerifierGrant(
 		.limit(1);
 	if (!recipient)
 		throw new Error("Choose a current employee of this organization");
-	const [people, teams] = await Promise.all([
-		value.employeeIds.length
-			? tx
-					.select({ id: employee.id })
-					.from(employee)
-					.where(
-						and(
-							eq(employee.organizationId, input.organizationId),
-							inArray(employee.id, [...new Set(value.employeeIds)]),
-						),
-					)
-			: [],
-		value.teamIds.length
-			? tx
-					.select({ id: team.id })
-					.from(team)
-					.where(
-						and(
-							eq(team.organizationId, input.organizationId),
-							inArray(team.id, [...new Set(value.teamIds)]),
-						),
-					)
-			: [],
-	]);
+	const people = await (value.employeeIds.length
+		? tx
+				.select({ id: employee.id })
+				.from(employee)
+				.where(
+					and(
+						eq(employee.organizationId, input.organizationId),
+						inArray(employee.id, [...new Set(value.employeeIds)]),
+					),
+				)
+		: []);
+	const teams = await (value.teamIds.length
+		? tx
+				.select({ id: team.id })
+				.from(team)
+				.where(
+					and(
+						eq(team.organizationId, input.organizationId),
+						inArray(team.id, [...new Set(value.teamIds)]),
+					),
+				)
+		: []);
 	if (
 		people.length !== new Set(value.employeeIds).size ||
 		teams.length !== new Set(value.teamIds).size
@@ -240,6 +241,7 @@ export async function revokeDrivingLicenceVerifierGrant(
 	input: { organizationId: string; actorUserId: string; grantId: string },
 ) {
 	const grantId = z.uuid().parse(input.grantId);
+	await lockDrivingLicenceOrganization(tx, input.organizationId);
 	const [row] = await tx
 		.update(drivingLicenceVerifierGrant)
 		.set({

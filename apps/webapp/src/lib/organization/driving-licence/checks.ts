@@ -7,7 +7,7 @@ import { and, asc, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { db } from "@/db";
-import { organization, user } from "@/db/auth-schema";
+import { user } from "@/db/auth-schema";
 import { employee, employeeEmploymentPeriod } from "@/db/schema";
 import {
 	drivingAuthorization,
@@ -40,6 +40,10 @@ import {
 	LICENCE_CLASSES,
 } from "./check-types";
 import type { DrivingLicenceActor } from "./context";
+import { lockDrivingLicenceOrganization } from "./locks";
+
+export { lockDrivingLicenceOrganization } from "./locks";
+
 import type {
 	DrivingLicenceDatabase,
 	DrivingLicenceTransaction,
@@ -121,21 +125,6 @@ function deadlineReason(row: typeof drivingAuthorization.$inferSelect) {
 		: row.classValidThrough === row.validThrough
 			? "class_expired"
 			: "check_overdue";
-}
-export async function lockDrivingLicenceOrganization(
-	tx: DrivingLicenceTransaction,
-	organizationId: string,
-) {
-	// Lifecycle already holds this row exclusively before entering driving control.
-	// Take it before the driving key everywhere to avoid an inverted lock order.
-	await tx
-		.select({ id: organization.id })
-		.from(organization)
-		.where(eq(organization.id, organizationId))
-		.for("share");
-	await tx.execute(
-		sql`SELECT pg_advisory_xact_lock(hashtextextended(${`driving-licence:${organizationId}`},0))`,
-	);
 }
 export async function materializeExpiredDrivingAuthorizations(
 	tx: DrivingLicenceTransaction,
@@ -276,7 +265,8 @@ export async function readEffectiveDrivingAuthorization(
 		const ended =
 			!employment?.hasAccess ||
 			row.employmentPeriodId !== employment.periodId ||
-			(!!employment.lastDepartureAt &&
+			(!row.employmentPeriodId &&
+				!!employment.lastDepartureAt &&
 				!!row.lastSuccessfulAt &&
 				instantFromDate(employment.lastDepartureAt).epochNanoseconds >=
 					instantFromDate(row.lastSuccessfulAt).epochNanoseconds);

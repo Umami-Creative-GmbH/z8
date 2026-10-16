@@ -216,12 +216,12 @@ async function schedule() {
 		revision: scheduled.revision,
 	};
 }
-async function rehire() {
+async function rehire(at = "2026-10-01T08:00:00Z") {
 	const policyRow = await fixture.pool.query<{ id: string }>(
 		`insert into work_policy (organization_id,name,created_by,updated_at) values ($1,'Returning policy',$2,now()) returning id`,
 		[fixture.organizationId, fixture.ownerUserId],
 	);
-	harness.now = "2026-10-01T08:00:00Z";
+	harness.now = at;
 	await commands().rehireEmployee(owner(), {
 		employeeId: target.employeeId,
 		requestId: randomUUID(),
@@ -406,4 +406,89 @@ it("terminates legacy unversioned authorizations and held grants when departure 
 				(grant) => grant.verifierEmployeeId === target.employeeId,
 			)?.revokedAt,
 	).toBe("2026-09-03T08:00:00.000Z");
+	const retention = await (
+		await import("./retention-actions")
+	).getDrivingLicenceRetentionAction();
+	expect(
+		retention.success &&
+			retention.data.records.find(
+				(record) => record.employeeId === target.employeeId,
+			),
+	).toMatchObject({
+		retentionStartedAt: "2026-09-03T08:00:00.000Z",
+		protected: false,
+	});
+});
+it("rejects a verifier grant whose locked submission crosses the effective departure cutoff", async () => {
+	await schedule();
+	harness.now = "2026-09-03T21:59:00Z";
+	harness.userId = fixture.ownerUserId;
+	const lease = await fixture.pool.connect();
+	await lease.query("begin");
+	const blocker = (
+		await lease.query<{ pid: number }>("select pg_backend_pid() pid")
+	).rows[0].pid;
+	await lease.query("select pg_advisory_xact_lock(hashtextextended($1,0))", [
+		`${fixture.organizationId}:${target.employeeId}:driving-verifier`,
+	]);
+	const submission = grants.saveDrivingLicenceVerifierGrantAction({
+		verifierEmployeeId: target.employeeId,
+		scope: "all",
+		teamIds: [],
+		employeeIds: [],
+	});
+	try {
+		let waiting = false;
+		for (let attempt = 0; attempt < 400; attempt++) {
+			const result = await fixture.pool.query(
+				"select pid from pg_stat_activity where $1::int=any(pg_blocking_pids(pid)) limit 1",
+				[blocker],
+			);
+			if (result.rows[0]) {
+				waiting = true;
+				break;
+			}
+			await new Promise((resolve) => setTimeout(resolve, 10));
+		}
+		expect(waiting).toBe(true);
+		harness.now = "2026-09-03T22:00:00Z";
+		await lease.query("commit");
+		expect((await submission).success).toBe(false);
+	} finally {
+		await lease.query("rollback");
+		lease.release();
+		await submission;
+	}
+}, 15000);
+it("uses employment period identity for fresh checks and grants even when rehire shares the cutoff instant", async () => {
+	harness.now = "2026-09-03T08:00:00Z";
+	await commands().offboardNow(owner(), {
+		employeeId: target.employeeId,
+		requestId: randomUUID(),
+		replacementEmployeeId: null,
+		acknowledgeUnassignedDuties: true,
+	});
+	await rehire("2026-09-03T08:00:00Z");
+	harness.userId = verifier.userId;
+	expect(
+		(await checks.completeDrivingLicenceCheckAction(original())).success,
+	).toBe(true);
+	expect((await record()).authorizedClasses).toEqual(["B", "C"]);
+	harness.userId = fixture.ownerUserId;
+	expect(
+		(
+			await grants.saveDrivingLicenceVerifierGrantAction({
+				verifierEmployeeId: target.employeeId,
+				scope: "all",
+				teamIds: [],
+				employeeIds: [],
+			})
+		).success,
+	).toBe(true);
+	harness.userId = target.userId;
+	const responsibility =
+		await grants.getDrivingLicenceVerifierResponsibilityAction();
+	expect(
+		responsibility.success && responsibility.data?.employmentPeriodId,
+	).toBeTruthy();
 });

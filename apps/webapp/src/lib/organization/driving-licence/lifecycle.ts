@@ -9,6 +9,10 @@ import { drivingLicenceTask } from "@/db/schema/driving-licence-tasks";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import type { DepartureIdentity } from "@/lib/employee-lifecycle/types";
 import {
+	beginDrivingLicenceRetentionChange,
+	finishDrivingLicenceRetentionChange,
+} from "./retention-state";
+import {
 	type DrivingLicenceTransaction,
 	revokeDrivingLicenceVerifierGrantsHeldBy,
 } from "./verifiers";
@@ -21,6 +25,11 @@ export async function endDrivingLicenceEmployment(
 	cutoff: Instant,
 	recordedAt: Instant,
 ) {
+	const activeBefore = await beginDrivingLicenceRetentionChange(
+		tx,
+		identity.organizationId,
+		cutoff,
+	);
 	// A legacy profile may have acquired its first recorded period only when
 	// scheduling this departure. Its earlier unversioned state belongs to it too.
 	const period = (column: typeof drivingAuthorization.employmentPeriodId) =>
@@ -107,4 +116,10 @@ export async function endDrivingLicenceEmployment(
 				eq(drivingLicenceTask.state, "pending"),
 			),
 		);
+	await finishDrivingLicenceRetentionChange(
+		tx,
+		identity.organizationId,
+		cutoff,
+		activeBefore,
+	);
 }

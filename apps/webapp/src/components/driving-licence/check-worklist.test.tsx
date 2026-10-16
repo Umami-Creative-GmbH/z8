@@ -77,7 +77,7 @@ it("opens a former employee's ended evidence without offering a new check or rei
 		screen.getByRole("heading", { name: "Driving authorization ended" }),
 	).toBeTruthy();
 	expect(
-		screen.queryByRole("heading", { name: /Record original check/ }),
+		screen.queryByRole("heading", { name: /Inspect Anna Driver/ }),
 	).toBeNull();
 	expect(screen.queryByRole("button", { name: /Reinstate/ })).toBeNull();
 });
