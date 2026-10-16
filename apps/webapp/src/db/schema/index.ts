@@ -63,6 +63,7 @@ export * from "./driving-licence-impediments";
 export * from "./driving-licence-policy";
 export * from "./driving-licence-reminders";
 export * from "./driving-licence-retention";
+export * from "./driving-licence-tasks";
 export * from "./driving-licence-verifiers";
 export * from "./email-template";
 export * from "./employee-invitation-draft";

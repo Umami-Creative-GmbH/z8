@@ -32,6 +32,7 @@ import {
 	lockDrivingLicenceOrganization,
 	materializeExpiredDrivingAuthorizations,
 } from "./checks";
+import { reconcileDrivingLicenceTasks } from "./tasks";
 import type { DrivingLicenceTransaction } from "./verifiers";
 
 export interface DrivingLicenceReminderOccasion {
@@ -314,6 +315,7 @@ export async function runDrivingLicenceReminders(clock: Clock) {
 				organizationId,
 				now,
 			);
+			await reconcileDrivingLicenceTasks(tx, organizationId, now, occasions);
 			for (const occasion of occasions) {
 				const recipients = await resolveDrivingLicenceReminderRecipients(
 					tx,
