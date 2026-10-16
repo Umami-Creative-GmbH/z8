@@ -3,6 +3,7 @@ import { absencesCollector } from "./absences";
 import { accountCollector } from "./account";
 import { approvalsCollector } from "./approvals";
 import { auditLogCollector } from "./audit-log";
+import { drivingLicenceCollector } from "./driving-licence";
 import { employmentCollector } from "./employment";
 import { integrationsCollector } from "./integrations";
 import { notificationsCollector } from "./notifications";
@@ -18,6 +19,7 @@ import { travelExpensesCollector } from "./travel-expenses";
  */
 export const PERSONAL_DATA_COLLECTORS: readonly PersonalDataCollector[] = [
 	employmentCollector,
+	drivingLicenceCollector,
 	timeCollector,
 	absencesCollector,
 	planningCollector,

@@ -12,6 +12,7 @@ import { afterEach, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 const remote = vi.hoisted(() => ({
+	available: true,
 	canSupplement: true,
 	corrected: false,
 	submitted: vi.fn(),
@@ -36,6 +37,7 @@ vi.mock("@/lib/auth-client", () => ({
 vi.mock("@/lib/organization/driving-licence/history-actions", () => ({
 	getDrivingLicenceHistoryAction: async (input: unknown) => {
 		remote.read(input);
+		if (!remote.available) return { success: false, error: "unavailable" };
 		return {
 			success: true,
 			data: {
@@ -107,6 +109,7 @@ vi.mock("@/lib/organization/driving-licence/history-actions", () => ({
 const { DrivingLicenceHistoryPanel } = await import("./history-panel");
 afterEach(() => {
 	cleanup();
+	remote.available = true;
 	remote.canSupplement = true;
 	remote.corrected = false;
 	remote.submitted.mockReset();
@@ -175,6 +178,39 @@ it("offers read-only history and explicit UTC period boundaries", async () => {
 			from: "2026-02-01T00:00:00Z",
 			to: "2026-03-01T00:00:00Z",
 		}),
+	);
+	client.clear();
+});
+
+it("offers own and verifier PDF evidence for the applied UTC period and hides export when current history access is unavailable", async () => {
+	remote.canSupplement = false;
+	const client = show();
+	const link = await screen.findByRole("link", {
+		name: "Download evidence PDF",
+	});
+	expect(link.getAttribute("href")).toBe(
+		"/api/driving-licence/evidence?employeeId=employee",
+	);
+	fireEvent.change(screen.getByLabelText("From date (UTC)"), {
+		target: { value: "2026-02-01" },
+	});
+	fireEvent.change(screen.getByLabelText("Before date (UTC)"), {
+		target: { value: "2026-03-01" },
+	});
+	await userEvent.click(screen.getByRole("button", { name: "Apply period" }));
+	await waitFor(() =>
+		expect(
+			screen
+				.getByRole("link", { name: "Download evidence PDF" })
+				.getAttribute("href"),
+		).toContain("from=2026-02-01T00%3A00%3A00Z&to=2026-03-01T00%3A00%3A00Z"),
+	);
+	remote.available = false;
+	await client.invalidateQueries({ queryKey: ["driving-licence-history"] });
+	await waitFor(() =>
+		expect(
+			screen.queryByRole("link", { name: "Download evidence PDF" }),
+		).toBeNull(),
 	);
 	client.clear();
 });
