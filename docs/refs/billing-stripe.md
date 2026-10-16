@@ -59,6 +59,11 @@
   holds the full seat item's quantity in `*_quantity` and the kiosk item's in
   `*_kiosk_quantity`.
 - Prices for display live in `apps/webapp/src/lib/billing/seat-prices.ts` (euro cents).
+- Turning kiosk seats on: create the two kiosk prices in Stripe, set both IDs on the webapp
+  and the worker, then run `pnpm billing:reconcile-kiosk-seats` once
+  (`apps/webapp/src/lib/billing/kiosk-seat-reconcile.ts`). It moves existing subscriptions
+  to kiosk seats right away instead of waiting for the hourly reconciliation. See "After
+  Creating the Kiosk Seat Prices" in `deploy/README.md`.
 
 ## UI Surface
 
