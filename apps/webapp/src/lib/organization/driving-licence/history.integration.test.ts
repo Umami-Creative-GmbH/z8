@@ -39,6 +39,7 @@ const checks = await import("./check-actions");
 const policy = await import("./policy-actions");
 const grants = await import("./verifier-actions");
 const history = await import("./history-actions");
+const reinstatement = await import("./impediment-actions");
 let fixture: LifecycleDatabaseFixture;
 let verifier: SeededEmployee;
 let checkId: string;
@@ -184,6 +185,18 @@ it("suspends supported authorization on corrected negative evidence and never tr
 	).toBe(true);
 	let result = await read();
 	expect(result.authorization.authorizedClasses).toEqual([]);
+	expect(
+		(
+			await reinstatement.reinstateDrivingAuthorizationAction({
+				employeeId: fixture.employeeId,
+				checkId,
+				classCodes: ["B"],
+				expectedReportIds: [],
+				expectedSuspension: null,
+				impedimentResolved: true,
+			})
+		).success,
+	).toBe(false);
 	expect(result.authorization.classes[0]).toMatchObject({
 		reason: "evidence_corrected",
 		supportingCheckId: checkId,
