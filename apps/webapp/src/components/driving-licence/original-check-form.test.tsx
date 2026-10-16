@@ -38,6 +38,7 @@ vi.mock("@/lib/organization/driving-licence/check-actions", () => ({
 		data: [
 			{
 				employeeId: "employee",
+				canVerify: true,
 				name: "Anna Driver",
 				status: remote.completed ? "active" : "not_yet_checked",
 				enrolled: true,

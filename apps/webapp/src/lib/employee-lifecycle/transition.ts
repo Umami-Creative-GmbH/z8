@@ -114,7 +114,13 @@ export async function executeDepartureInTransaction(
 	}
 
 	await lockDrivingLicenceOrganization(tx, identity.organizationId);
-	await endDrivingLicenceEmployment(tx, identity, departure.createdBy, cutoff, now);
+	await endDrivingLicenceEmployment(
+		tx,
+		identity,
+		departure.createdBy,
+		cutoff,
+		now,
+	);
 	await tx.execute(sql`
 		UPDATE employee_departure
 		SET status = 'effective', effective_at = cutoff_at, processed_at = ${nowDate}, updated_at = ${nowDate}

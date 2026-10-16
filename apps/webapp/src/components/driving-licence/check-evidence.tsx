@@ -63,6 +63,15 @@ export function DrivingLicenceEvidence({
 	const { t } = useTranslate();
 	return (
 		<div className="space-y-5">
+			{record.uncertainEmailCount > 0 ? (
+				<p role="status" className="text-sm text-muted-foreground">
+					{t(
+						"drivingLicence.delivery.uncertain",
+						"Optional reminder emails to you have an uncertain delivery outcome ({count}). They will not be sent again automatically. Your in-app reminders remain available; email delivery does not confirm reading.",
+						{ count: record.uncertainEmailCount },
+					)}
+				</p>
+			) : null}
 			<section
 				className="rounded-lg border bg-card p-5"
 				aria-labelledby="driving-status-title"

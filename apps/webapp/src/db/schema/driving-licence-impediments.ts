@@ -27,6 +27,9 @@ export const drivingImpedimentReport = pgTable(
 		scope: text("scope").$type<"person">().notNull().default("person"),
 		reportedAt: timestamp("reported_at", { withTimezone: true }).notNull(),
 		reporterUserId: text("reporter_user_id").notNull(),
+		retentionStartedAt: timestamp("retention_started_at", {
+			withTimezone: true,
+		}),
 		resolvedAt: timestamp("resolved_at", { withTimezone: true }),
 		resolvedByUserId: text("resolved_by_user_id"),
 		resolutionCheckId: uuid("resolution_check_id"),

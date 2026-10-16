@@ -18,6 +18,7 @@ import {
 	type Clock,
 	dateFromInstant,
 	type Instant,
+	instantFromDate,
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
@@ -185,7 +186,8 @@ export async function collectDrivingLicenceReminderOccasions(
 			global &&
 			global.employmentPeriodId === employment.periodId &&
 			(!employment.lastDepartureAt ||
-				global.suspendedAt > employment.lastDepartureAt);
+				instantFromDate(global.suspendedAt).epochNanoseconds >
+					instantFromDate(employment.lastDepartureAt).epochNanoseconds);
 		const common = {
 			organizationId,
 			employeeId: participant.employeeId,
@@ -208,7 +210,8 @@ export async function collectDrivingLicenceReminderOccasions(
 				row.state === "ended" ||
 				(employment.lastDepartureAt &&
 					(!row.lastSuccessfulAt ||
-						row.lastSuccessfulAt <= employment.lastDepartureAt))
+						instantFromDate(row.lastSuccessfulAt).epochNanoseconds <=
+							instantFromDate(employment.lastDepartureAt).epochNanoseconds))
 			)
 				continue;
 			const identity = `${employment.periodId}:${row.id}:${row.supportingCheckId}`;
@@ -295,6 +298,83 @@ function reminderParams(
 		},
 	};
 }
+async function prepareReminderEmail(
+	tx: DrivingLicenceTransaction,
+	organizationId: string,
+	id: string,
+	now: Instant,
+	expectedState: "pending" | "attempted",
+) {
+	const [delivery] = await tx
+		.select()
+		.from(drivingLicenceReminderDelivery)
+		.where(
+			and(
+				eq(drivingLicenceReminderDelivery.organizationId, organizationId),
+				eq(drivingLicenceReminderDelivery.id, id),
+			),
+		)
+		.for("update");
+	if (delivery?.emailState !== expectedState) return;
+	const occasions = await collectDrivingLicenceReminderOccasions(
+		tx,
+		organizationId,
+		now,
+		delivery.employeeId,
+	);
+	const current = occasions.find(
+		(o) =>
+			o.key === delivery.occasionKey &&
+			o.employmentPeriodId === delivery.employmentPeriodId,
+	);
+	const recipients = await resolveDrivingLicenceReminderRecipients(
+		tx,
+		organizationId,
+		delivery.employeeId,
+		now,
+	);
+	const allowed =
+		recipients.verifiers.some((v) => v.userId === delivery.recipientUserId) ||
+		(recipients.employee?.personalRoute &&
+			recipients.employee.userId === delivery.recipientUserId);
+	const condition = and(
+		eq(drivingLicenceReminderDelivery.organizationId, organizationId),
+		eq(drivingLicenceReminderDelivery.id, id),
+	);
+	if (!current || !allowed || !recipients.employee) {
+		await tx
+			.update(drivingLicenceReminderDelivery)
+			.set({ emailState: "obsolete" })
+			.where(condition);
+		return;
+	}
+	const payload = reminderParams(
+		current,
+		delivery.recipientUserId,
+		recipients.employee.name,
+	);
+	const [preference] = await tx
+		.select({ enabled: notificationPreference.enabled })
+		.from(notificationPreference)
+		.where(
+			and(
+				eq(notificationPreference.userId, delivery.recipientUserId),
+				eq(notificationPreference.notificationType, payload.type),
+				eq(notificationPreference.channel, "email"),
+			),
+		);
+	if (
+		!(preference?.enabled ?? isChannelEnabledByDefault(payload.type, "email"))
+	) {
+		await tx
+			.update(drivingLicenceReminderDelivery)
+			.set({ emailState: "suppressed" })
+			.where(condition);
+		return;
+	}
+	return { payload, condition, delivery };
+}
+
 export async function runDrivingLicenceReminders(clock: Clock) {
 	const organizations = await db
 		.select({ organizationId: drivingLicencePolicy.organizationId })
@@ -381,81 +461,41 @@ export async function runDrivingLicenceReminders(clock: Clock) {
 				),
 			);
 		for (const { id } of pending) {
+			const claimed = await db.transaction(async (tx) => {
+				await lockDrivingLicenceOrganization(tx, organizationId);
+				const now = clock.nowInstant();
+				const prepared = await prepareReminderEmail(
+					tx,
+					organizationId,
+					id,
+					now,
+					"pending",
+				);
+				if (!prepared) return false;
+				await tx
+					.update(drivingLicenceReminderDelivery)
+					.set({
+						emailState: "attempted",
+						emailAttempts: prepared.delivery.emailAttempts + 1,
+					})
+					.where(prepared.condition);
+				return true;
+			});
+			if (!claimed) continue;
+			// The attempt is committed before SMTP. An interrupted/ambiguous send is never retried.
+			// Recheck live authority and freshness while holding the organization lock for dispatch.
 			await db.transaction(async (tx) => {
 				await lockDrivingLicenceOrganization(tx, organizationId);
 				const now = clock.nowInstant();
-				const [delivery] = await tx
-					.select()
-					.from(drivingLicenceReminderDelivery)
-					.where(
-						and(
-							eq(drivingLicenceReminderDelivery.organizationId, organizationId),
-							eq(drivingLicenceReminderDelivery.id, id),
-						),
-					)
-					.for("update");
-				if (delivery?.emailState !== "pending") return;
-				const occasions = await collectDrivingLicenceReminderOccasions(
+				const prepared = await prepareReminderEmail(
 					tx,
 					organizationId,
+					id,
 					now,
-					delivery.employeeId,
+					"attempted",
 				);
-				const current = occasions.find(
-					(o) =>
-						o.key === delivery.occasionKey &&
-						o.employmentPeriodId === delivery.employmentPeriodId,
-				);
-				const recipients = await resolveDrivingLicenceReminderRecipients(
-					tx,
-					organizationId,
-					delivery.employeeId,
-					now,
-				);
-				const allowed =
-					recipients.verifiers.some(
-						(v) => v.userId === delivery.recipientUserId,
-					) ||
-					(recipients.employee?.personalRoute &&
-						recipients.employee.userId === delivery.recipientUserId);
-				const condition = and(
-					eq(drivingLicenceReminderDelivery.organizationId, organizationId),
-					eq(drivingLicenceReminderDelivery.id, id),
-				);
-				if (!current || !allowed || !recipients.employee) {
-					await tx
-						.update(drivingLicenceReminderDelivery)
-						.set({ emailState: "obsolete" })
-						.where(condition);
-					return;
-				}
-				const payload = reminderParams(
-					current,
-					delivery.recipientUserId,
-					recipients.employee.name,
-				);
-				const [preference] = await tx
-					.select({ enabled: notificationPreference.enabled })
-					.from(notificationPreference)
-					.where(
-						and(
-							eq(notificationPreference.userId, delivery.recipientUserId),
-							eq(notificationPreference.notificationType, payload.type),
-							eq(notificationPreference.channel, "email"),
-						),
-					);
-				if (
-					!(
-						preference?.enabled ??
-						isChannelEnabledByDefault(payload.type, "email")
-					)
-				) {
-					await tx
-						.update(drivingLicenceReminderDelivery)
-						.set({ emailState: "suppressed" })
-						.where(condition);
-					return;
-				}
+				if (!prepared) return;
+				const { payload, condition } = prepared;
 				try {
 					const { sendEmailNotification } = await import(
 						"@/lib/notifications/email-notifications"
@@ -467,16 +507,11 @@ export async function runDrivingLicenceReminders(clock: Clock) {
 						.update(drivingLicenceReminderDelivery)
 						.set({
 							emailState: sent ? "sent" : "unavailable",
-							emailAttempts: delivery.emailAttempts + 1,
 							emailedAt: sent ? dateFromInstant(now) : null,
 						})
 						.where(condition);
 					if (sent) result.emailSent++;
 				} catch {
-					await tx
-						.update(drivingLicenceReminderDelivery)
-						.set({ emailAttempts: delivery.emailAttempts + 1 })
-						.where(condition);
 					result.emailFailed++;
 				}
 			});

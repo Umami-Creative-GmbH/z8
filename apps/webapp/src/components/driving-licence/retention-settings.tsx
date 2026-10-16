@@ -111,7 +111,7 @@ export function DrivingLicenceRetentionSettings() {
 					{t(
 						"drivingLicence.retention.help",
 
-						"Retention starts when a check no longer supports any active class. A hold requires a specific legal case and must be released when preservation is no longer required. These controls do not grant inspection access. Do not enter medical or personal background details.",
+						"Retention starts when a check no longer supports any active class. A hold requires a specific legal case, also protects related report evidence from the same employment period, and must be released when preservation is no longer required. These controls do not grant inspection access. Do not enter medical or personal background details.",
 					)}
 				</CardDescription>
 			</CardHeader>
@@ -137,6 +137,7 @@ export function DrivingLicenceRetentionSettings() {
 				{query.data && (
 					<>
 						<RetentionRecords data={query.data} onSaved={refresh} />
+						<ImpedimentRetentionRecords data={query.data} />
 						<PlaceHoldForm data={query.data} onSaved={refresh} />
 						<CleanupButton busy={busy} onConfirm={() => void cleanup()} />
 						<h3 className="font-medium">
@@ -268,6 +269,70 @@ function RetentionRecords({
 				</li>
 			))}
 		</ul>
+	);
+}
+
+function ImpedimentRetentionRecords({
+	data,
+}: {
+	data: DrivingLicenceRetentionData;
+}) {
+	const { t } = useTranslate();
+	const formatTime = useRetentionTime();
+	if (!data.reports.length) return null;
+	return (
+		<section className="space-y-3">
+			<h3 className="font-medium">
+				{t(
+					"drivingLicence.retention.reportsTitle",
+					"Impediment report retention",
+				)}
+			</h3>
+			<ul className="space-y-3">
+				{data.reports.map((report) => (
+					<li
+						key={report.reportId}
+						className="space-y-2 break-words rounded-md border p-3 text-sm"
+						style={{ contentVisibility: "auto" }}
+					>
+						<p className="font-medium">
+							{t(
+								"drivingLicence.retention.report",
+								"{employee} · Report {date}",
+								{
+									employee: report.employeeName,
+									date: formatTime(report.reportedAt),
+								},
+							)}
+						</p>
+						<p>
+							{report.protected
+								? t(
+										"drivingLicence.retention.reportProtected",
+										"Protected while the current report remains unresolved or its resolution check supports active authorization.",
+									)
+								: t(
+										"drivingLicence.retention.deadline",
+										"Retention began {start}. Eligible for deletion from {end}.",
+										{
+											start: formatTime(report.retentionStartedAt),
+											end: formatTime(report.deleteAfter),
+										},
+									)}
+						</p>
+						{report.holds.map((hold) => (
+							<p key={hold.id}>
+								{t(
+									"drivingLicence.retention.reportHeld",
+									"Protected by case {case} on related check evidence from this employment period. Release the hold on that check when preservation is no longer required.",
+									{ case: hold.caseReference },
+								)}
+							</p>
+						))}
+					</li>
+				))}
+			</ul>
+		</section>
 	);
 }
 

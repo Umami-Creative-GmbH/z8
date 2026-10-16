@@ -278,3 +278,43 @@ period and documented preservation holds before records become due; restoring a
 previous application version cannot restore deleted records. The configured
 period expresses the organization's justified policy and is no universal legal
 retention guarantee.
+
+### Ambiguous optional email outcomes
+
+Mandatory inbox creation and reminder identity are transactional and deduplicated.
+Before calling SMTP, the worker commits an `attempted` delivery state. It rechecks
+the current organization, recipient authority, preferences and occasion against a
+fresh clock while holding the organization lock for dispatch. SMTP has no reliable
+idempotency contract: a lost response or failed result commit can leave acceptance
+unknown. `attempted` therefore means uncertain, never sent or read, and the worker
+never automatically resends it. A recorded provider success becomes `sent`;
+unavailable transport becomes `unavailable`; current opt-outs and obsolete occasions
+become `suppressed` and `obsolete`. An uncertain optional email does not affect the
+mandatory inbox reminder, deadline or authorization. The recipient's employee record
+shows their uncertain-email count; personal-data exports explain the same states.
+This prevents blind duplicate retries; it does not promise exactly-once SMTP delivery.
+
+### Retention of reported impediments
+
+Once a finite, justified retention policy has been established, disabling licence
+control cannot clear that policy. An unconfigured disabled draft remains possible.
+Cleanup continues under the saved policy without restarting evidence inactivity.
+
+A current unresolved report remains an operational suspension cause. Cleanup never
+marks it resolved or grants permission. A resolved report continues to explain its
+resolution check while that check supports any active class. Its retention starts
+when that final support ends, no earlier than explicit resolution. For a departed
+employment period, the effective departure cutoff (including a due departure before
+worker processing), or its recorded period end, starts retention even if the report
+was never resolved. Where both cutoffs apply, the earlier operational end governs.
+Legacy employment uses its explicitly recorded departure cutoff. Rehire does not
+carry an old report into the new employment period.
+
+The ordinary configured calendar-month policy applies to that inactivity instant.
+Report retention metadata preserves it after linked check deletion. A specific-case
+hold on any check of the same employee and employment period conservatively protects
+that period's report context and its resolution check/events too. The panel shows this scope and the related case
+reference; a new employment period's hold does not retain unrelated old reports.
+Releasing the last such hold does not restart retention. Due cleanup deletes the
+obsolete report and its associated reported/resolved events together, without a
+replacement archive. Current unresolved report state remains protected.

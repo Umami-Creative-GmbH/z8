@@ -1,0 +1,29 @@
+import { Temporal } from "temporal-polyfill";
+import type { Instant } from "@/lib/datetime/temporal-core";
+
+/** Routine anchors and date-only limits always use the authorization's fixed calendar zone. */
+export function drivingAuthorizationDeadline(input: {
+	successfulAt: Instant;
+	intervalMonths: number;
+	timezone: string;
+	documentValidThrough: string;
+	classValidThrough: string | null;
+}) {
+	const routineValidThrough = input.successfulAt
+		.toZonedDateTimeISO(input.timezone)
+		.toPlainDate()
+		.add({ months: input.intervalMonths })
+		.toString();
+	const validThrough = [
+		routineValidThrough,
+		input.documentValidThrough,
+		input.classValidThrough,
+	]
+		.filter((value): value is string => value !== null)
+		.sort()[0];
+	const expires = Temporal.PlainDate.from(validThrough)
+		.add({ days: 1 })
+		.toZonedDateTime({ timeZone: input.timezone, plainTime: "00:00" })
+		.toInstant();
+	return { routineValidThrough, validThrough, expires };
+}

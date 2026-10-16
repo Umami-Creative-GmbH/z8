@@ -28,6 +28,7 @@ async function action<T>(run: () => Promise<T>): Promise<Result<T>> {
 							"timezone_fixed",
 							"not_enabled",
 							"interval_preview_required",
+							"retention_required",
 						].includes(error.message)
 					? error.message
 					: "save_failed";

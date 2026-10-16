@@ -16,7 +16,7 @@ CREATE TABLE "driving_licence_reminder_delivery" (
  "emailed_at" timestamp with time zone,
  CONSTRAINT "driving_reminder_recipient_occasion" UNIQUE ("organization_id","occasion_key","recipient_user_id"),
  CONSTRAINT "driving_reminder_subject" FOREIGN KEY ("employee_id","organization_id") REFERENCES "employee"("id","organization_id") ON DELETE CASCADE,
- CONSTRAINT "driving_reminder_email_state" CHECK ("email_state" IN ('pending','sent','suppressed','obsolete','unavailable'))
+ CONSTRAINT "driving_reminder_email_state" CHECK ("email_state" IN ('pending','attempted','sent','suppressed','obsolete','unavailable'))
 );
 
 --> statement-breakpoint
