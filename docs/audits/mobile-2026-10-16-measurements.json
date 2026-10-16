@@ -1,52 +1,1490 @@
 {
   "date": "2026-10-16",
-  "viewport": {
-    "width": 390,
-    "height": 844
-  },
   "complete": false,
-  "findings": [
+  "scope": "Available-state browser audit; see coverage for blocked and unreviewed routes.",
+  "viewports": [
     {
-      "id": "M01",
-      "route": "/settings/employees",
-      "severity": "Medium",
-      "issue": "Employee directory requires extensive horizontal scrolling to reach the row actions.",
-      "evidence": "At 390 px viewport width, the table is 1041 px wide inside a 306 px scrolling container. The populated state contains 16 employee rows. Team, role, contract, status and actions are off the initial screen.",
-      "fix": "Use employee cards at phone widths or keep the employee name and row action visible while allowing optional columns to scroll.",
-      "source": "apps/webapp/src/app/[locale]/(app)/settings/employees/employees-page-client.tsx:446"
+      "width": 390,
+      "height": 844
     },
     {
-      "id": "M02",
-      "route": "/time-tracking",
+      "width": 320,
+      "height": 844,
+      "targeted": true
+    }
+  ],
+  "findings": [
+    [
+      "M01",
+      "Medium",
+      [
+        "/settings/employees"
+      ],
+      "Employee directory retains eight desktop columns; row actions require extensive horizontal scrolling.",
+      "1041 px table in a 306 px scroller; 16 employees at 390 px.",
+      "Use employee cards or keep name and actions visible."
+    ],
+    [
+      "M02",
+      "Medium",
+      [
+        "/time-tracking"
+      ],
+      "History retains desktop rows; endpoints, duration and description cannot be read together.",
+      "639 px table in a 296 px scroller; 10 rows at 390 px.",
+      "Stack work-period rows on phones."
+    ],
+    [
+      "M03",
+      "High",
+      [
+        "/scheduling"
+      ],
+      "Fixed template sidebar collapses the actual shift calendar.",
+      "256 px sidebar leaves 84 px for calendar at 390 px and about 14 px at 320 px.",
+      "Move templates above the calendar or into a drawer on phones."
+    ],
+    [
+      "M04",
+      "Medium",
+      [
+        "/analytics",
+        "/analytics/work-hours",
+        "/analytics/vacation-trends",
+        "/analytics/team-performance",
+        "/analytics/overtime-burn-down"
+      ],
+      "Charts extend outside cards into the page scroller; right-hand plots and labels start off-screen. Detail tables also retain desktop widths.",
+      "Overview content reaches 599 px inside 380 px; other populated analytics reach 574–610 px. Detail tables measure 517–627 px in 298 px scrollers.",
+      "Allow chart grid items to shrink and size charts to their containers; provide compact detail rows."
+    ],
+    [
+      "M05",
+      "High",
+      [
+        "/settings/payroll-export"
+      ],
+      "Provider tabs are clipped and have no scrolling container; later providers, mappings and history cannot be reached visually.",
+      "691 px tab row inside 358 px at 390 px; later tabs extend to x=704. At 320 px, Personio and subsequent tabs are clipped.",
+      "Use the existing scrollable settings tab pattern or a mobile selector."
+    ],
+    [
+      "M06",
+      "Medium",
+      [
+        "/settings/email-templates",
+        "/settings/enterprise/email?tab=templates",
+        "/platform-admin/system-email-templates"
+      ],
+      "Template navigation expands beyond the mobile page; the right side of the list and editor is clipped.",
+      "Organization template content reaches 684 px inside 380 px; template buttons are 634 px wide. System template grid reaches 668 px inside 332 px.",
+      "Make grid items shrinkable and use a stacked template selector/editor."
+    ],
+    [
+      "M07",
+      "Medium",
+      [
+        "/settings/vacation",
+        "/settings/holidays"
+      ],
+      "Vacation policy content expands past the clipped page edge, including search and actions. The Holidays subpage also clips the Categories tab.",
+      "Policy area reaches 764 px inside 348 px; search input is 384 px and refresh action starts at x=587. Holiday tabs reach 432 px inside 348 px, with Categories at x=359–445.",
+      "Contain the policy table and make its toolbar wrap or stack."
+    ],
+    [
+      "M08",
+      "Medium",
+      [
+        "/notifications"
+      ],
+      "Header actions are clipped; narrow notification bodies also wrap into very short lines.",
+      "Header scroll width 364 px inside 346 px at 390 px and 276 px at 320 px. Settings runs from x=286 to x=381 at 320 px.",
+      "Stack header actions below the title; reduce fixed-width columns in notification rows."
+    ],
+    [
+      "M09",
+      "Medium",
+      [
+        "/calendar (Week mode)"
+      ],
+      "Week grid clips the final day; horizontal scrolling does not reveal Sunday.",
+      "Settled populated grid is 404 px inside a 346 px overflow-hidden container. Sunday starts at x≈381 and ends at x≈421 at 390 px.",
+      "Fit all seven day columns or provide explicit horizontal scrolling/a mobile agenda."
+    ],
+    [
+      "M10",
+      "Low",
+      [
+        "/settings/import",
+        "/settings/clockodo-import"
+      ],
+      "Seven-step import progress indicator is wider than the phone content area.",
+      "512 px stepper inside 342 px; steps 6 and 7 are clipped at 390 px. Credential form itself fits.",
+      "Use a compact current-step indicator on phones."
+    ],
+    [
+      "M11",
+      "Medium",
+      [
+        "/platform-admin/settings"
+      ],
+      "Global settings cards and form controls extend beyond the mobile content width.",
+      "392 px content inside 332 px; input and textarea right edges reach x=391 at a 390 px viewport.",
+      "Make form/card grid items shrink and wrap long content."
+    ],
+    [
+      "M12",
+      "Low",
+      [
+        "/settings/payroll-readiness"
+      ],
+      "Lower readiness cards extend beyond the page edge.",
+      "395 px card grid inside 348 px; the right card borders are clipped at 390 px.",
+      "Constrain card minimum widths and wrap labels/links."
+    ],
+    [
+      "M13",
+      "Medium",
+      [
+        "/settings/locations/[locationId]"
+      ],
+      "Location detail title and actions remain in one row; Delete is off-screen.",
+      "Populated Downtown Branch header reaches 473 px inside 380 px; Delete occupies x=376–473.",
+      "Stack actions below the location title on phones."
+    ]
+  ],
+  "tableViews": [
+    {
+      "id": "T01",
       "severity": "Medium",
-      "issue": "Time-entry history keeps a desktop table at phone widths.",
-      "evidence": "At 390 px viewport width, the history table is 639 px wide inside a 296 px scrolling container. Ten rows are populated. Reading both clock endpoints, duration and description requires horizontal scrolling.",
-      "fix": "Offer a stacked work-period row on mobile, with both endpoints and duration visible and details behind an explicit expansion.",
-      "source": "apps/webapp/src/components/time-tracking/time-entries-table.tsx:141"
+      "route": "/team/absences",
+      "tableWidth": 1043,
+      "containerWidth": 346,
+      "impact": "Allowance, balance and Record absence action"
+    },
+    {
+      "id": "T02",
+      "severity": "Medium",
+      "route": "/team/driving",
+      "tableWidth": 579,
+      "containerWidth": 346,
+      "impact": "Missing details and employee calendar action"
+    },
+    {
+      "id": "T03",
+      "severity": "Medium",
+      "route": "/approvals",
+      "tableWidth": 937,
+      "containerWidth": 306,
+      "impact": "Approve and Reject actions"
+    },
+    {
+      "id": "T04",
+      "severity": "Medium",
+      "route": "/reports/projects",
+      "tableWidth": 786,
+      "containerWidth": 296,
+      "impact": "Project member counts and View project details action"
+    },
+    {
+      "id": "T05",
+      "severity": "Medium",
+      "route": "/settings/audit-export",
+      "tableWidth": 776,
+      "containerWidth": 298,
+      "impact": "User/entity context and details action"
+    },
+    {
+      "id": "T06",
+      "severity": "Medium",
+      "route": "/settings/change-policies",
+      "tableWidth": 856,
+      "containerWidth": 356,
+      "impact": "Policy windows, notification setting and Actions"
+    },
+    {
+      "id": "T07",
+      "severity": "Medium",
+      "route": "/settings/work-policies",
+      "tableWidth": 502,
+      "containerWidth": 356,
+      "impact": "Work limits, break rules and menu"
+    },
+    {
+      "id": "T08",
+      "severity": "Medium",
+      "route": "/settings/locations",
+      "tableWidth": 563,
+      "containerWidth": 356,
+      "impact": "Subareas, supervisors and status"
+    },
+    {
+      "id": "T09",
+      "severity": "Medium",
+      "route": "/settings/work-categories",
+      "tableWidth": 516,
+      "containerWidth": 298,
+      "impact": "Category-set usage and edit/delete actions"
+    },
+    {
+      "id": "T10",
+      "severity": "Medium",
+      "route": "/settings/projects",
+      "tableWidth": 1061,
+      "containerWidth": 308,
+      "impact": "Budget, team member and task controls"
+    },
+    {
+      "id": "T11",
+      "severity": "Medium",
+      "route": "/settings/vacation/employees",
+      "tableWidth": 1265,
+      "containerWidth": 296,
+      "impact": "Allowance values and Edit action"
+    },
+    {
+      "id": "T12",
+      "severity": "Medium",
+      "route": "/platform-admin/organizations",
+      "tableWidth": 616,
+      "containerWidth": 340,
+      "impact": "Status, created date and organization actions"
+    },
+    {
+      "id": "T13",
+      "severity": "Medium",
+      "route": "/platform-admin/users",
+      "tableWidth": 793,
+      "containerWidth": 330,
+      "impact": "Roles, status, sessions and user actions"
+    },
+    {
+      "id": "T14",
+      "severity": "Medium",
+      "route": "/platform-admin/worker-queue",
+      "tableWidth": 1314,
+      "containerWidth": 250,
+      "impact": "Cron schedule, next run and editing/reset actions"
+    },
+    {
+      "id": "T15",
+      "severity": "Low",
+      "route": "/licenses",
+      "tableWidth": 551,
+      "containerWidth": 294,
+      "impact": "License metadata and repository/homepage links"
+    }
+  ],
+  "coverage": [
+    {
+      "route": "/",
+      "dynamic": false,
+      "note": "Reviewed populated dashboard via signed-in authentication redirects; no confirmed layout issue.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/absences",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/accept-invitation/[invitationId]",
+      "dynamic": true,
+      "note": "Not reviewed: no real record/link or valid token available in the current UI.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/analytics",
+      "dynamic": false,
+      "note": "Reviewed populated overview. M04; blank navigation tabs also observed (D01).",
+      "findings": [
+        "M04"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/analytics/overtime-burn-down",
+      "dynamic": false,
+      "note": "Reviewed chart/table state after loading earlier in the pass. M04 and D01.",
+      "findings": [
+        "M04"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/analytics/team-performance",
+      "dynamic": false,
+      "note": "Reviewed populated charts and team detail table. M04 and D01.",
+      "findings": [
+        "M04"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/analytics/vacation-trends",
+      "dynamic": false,
+      "note": "Reviewed populated charts and employee balances. M04 and D01.",
+      "findings": [
+        "M04"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/analytics/work-hours",
+      "dynamic": false,
+      "note": "Reviewed populated charts and 16 employee rows earlier in the pass; repeat navigation remained loading. M04 and D01.",
+      "findings": [
+        "M04"
+      ],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/approvals",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. T03.",
+      "findings": [
+        "T03"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/approvals/deputy-decisions/[absenceId]",
+      "dynamic": true,
+      "note": "Not reviewed: deputy-decision assignment context required.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/approvals/inbox",
+      "dynamic": false,
+      "note": "Reviewed 10-request mobile cards and time-correction detail drawer; no confirmed layout issue.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/approvals/review/[organizationId]/[kind]/[id]",
+      "dynamic": true,
+      "note": "Direct review route not opened; inbox detail drawer reviewed. Valid route link/context required.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/billing/suspended",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/calendar",
+      "dynamic": false,
+      "note": "Reviewed Day, Week, Month, Year and Filters & Legend drawer. M09 in Week; Month uses intentional contained scrolling.",
+      "findings": [
+        "M09"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/calendar/[employeeId]",
+      "dynamic": true,
+      "note": "Reviewed populated Sterling Waters Day calendar via a real Driving Details link; no Day-mode layout issue. Personal calendar Week issue M09 is separately verified.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/compliance",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/forgot-password",
+      "dynamic": false,
+      "note": "Signed-in account redirects to Dashboard; anonymous recovery form not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/init",
+      "dynamic": false,
+      "note": "Not opened: initializes/activates session organization automatically; needs dedicated session test.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/join/[code]",
+      "dynamic": true,
+      "note": "Not reviewed: no real record/link or valid token available in the current UI.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/kiosk",
+      "dynamic": false,
+      "note": "Reviewed unpaired kiosk code-entry screen; paired clocking state requires a test kiosk.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/licenses",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised. T15.",
+      "findings": [
+        "T15"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/my-documents",
+      "dynamic": false,
+      "note": "Personnel Files feature disabled. Visited list/settings paths returned 404; actual workspace/detail states not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/my-requests",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/notifications",
+      "dynamic": false,
+      "note": "Reviewed 8-unread populated inbox at 390 and 320 px. M08.",
+      "findings": [
+        "M08"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/onboarding/complete",
+      "dynamic": false,
+      "note": "Not opened: source completes onboarding automatically on mount; needs disposable account.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/onboarding/notifications",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/onboarding/organization",
+      "dynamic": false,
+      "note": "Existing-organization context redirects to Profile; organization creation state not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/onboarding/profile",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/onboarding/vacation-policy",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/onboarding/welcome",
+      "dynamic": false,
+      "note": "Not opened: source starts onboarding automatically on mount; needs disposable account.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/onboarding/wellness",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/onboarding/work-schedule",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/onboarding/work-templates",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/organization",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/payroll",
+      "dynamic": false,
+      "note": "Access-denied state reviewed; payroll officer access required for actual workspace.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/payroll/work-balances",
+      "dynamic": false,
+      "note": "Returned 404; workspace unavailable in current access/configuration.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/payroll/work-balances/[employeeId]",
+      "dynamic": true,
+      "note": "Not reviewed: no real record/link or valid token available in the current UI.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/personnel-files",
+      "dynamic": false,
+      "note": "Personnel Files feature disabled. Visited list/settings paths returned 404; actual workspace/detail states not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/personnel-files/[employeeId]",
+      "dynamic": true,
+      "note": "Personnel Files feature disabled. Visited list/settings paths returned 404; actual workspace/detail states not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/personnel-files/due-for-deletion",
+      "dynamic": false,
+      "note": "Personnel Files feature disabled. Visited list/settings paths returned 404; actual workspace/detail states not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/personnel-files/payslip-batches",
+      "dynamic": false,
+      "note": "Personnel Files feature disabled. Visited list/settings paths returned 404; actual workspace/detail states not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/personnel-files/payslip-batches/[batchId]",
+      "dynamic": true,
+      "note": "Personnel Files feature disabled. Visited list/settings paths returned 404; actual workspace/detail states not reviewed.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/personnel-files/sick-leave",
+      "dynamic": false,
+      "note": "Personnel Files feature disabled. Visited list/settings paths returned 404; actual workspace/detail states not reviewed.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/platform-admin",
+      "dynamic": false,
+      "note": "Overview populated state reviewed via billing-disabled redirect; no confirmed layout issue.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/platform-admin/analytics",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/platform-admin/billing",
+      "dynamic": false,
+      "note": "Redirects to platform overview because billing is disabled; billing workspace not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/platform-admin/diagnostics",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/platform-admin/organizations",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. T12.",
+      "findings": [
+        "T12"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/platform-admin/settings",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised. M11.",
+      "findings": [
+        "M11"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/platform-admin/system-email-templates",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised. M06.",
+      "findings": [
+        "M06"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/platform-admin/users",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised. T13.",
+      "findings": [
+        "T13"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/platform-admin/worker-queue",
+      "dynamic": false,
+      "note": "Rendered state inspected at 380 px; no additional layout issue confirmed. Deeper interactions not exercised. T14.",
+      "findings": [
+        "T14"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/reports",
+      "dynamic": false,
+      "note": "Reviewed report-generation controls; generated employee report output not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/reports/projects",
+      "dynamic": false,
+      "note": "Generated read-only portfolio report with six projects; table issue T04.",
+      "findings": [
+        "T04"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/reports/vehicles",
+      "dynamic": false,
+      "note": "Generated populated annual distance matrix. Intentional contained 1445 px month matrix in 298 px; no page-wide overflow.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/reset-password",
+      "dynamic": false,
+      "note": "Not reviewed: valid password-reset flow/token required.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/scheduling",
+      "dynamic": false,
+      "note": "Reviewed populated templates and shifts at 390 px; also checked 320 px. M03.",
+      "findings": [
+        "M03"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/approval-escalation",
+      "dynamic": false,
+      "note": "Reviewed shared Approval Escalation panel via scrolling tabs; no confirmed layout issue.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/approval-policies",
+      "dynamic": false,
+      "note": "Reviewed shared policy shell/preview and scrolling navigation; policy list was loading in retained capture.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/audit-export",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. T05.",
+      "findings": [
+        "T05"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/audit-log",
+      "dynamic": false,
+      "note": "Source-verified redirect to Audit Activity; populated target reviewed. T05.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/avv",
+      "dynamic": false,
+      "note": "Redirected to Settings; agreement workspace not reviewed.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/billable-time",
+      "dynamic": false,
+      "note": "Module disabled. Shared source access guard redirects to Settings; billable-time workspace not reviewed.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/billable-time/accounting",
+      "dynamic": false,
+      "note": "Module disabled. Shared source access guard redirects to Settings; billable-time workspace not reviewed.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/billable-time/cost-rates",
+      "dynamic": false,
+      "note": "Module disabled. Shared source access guard redirects to Settings; billable-time workspace not reviewed.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/billable-time/hand-off",
+      "dynamic": false,
+      "note": "Module disabled. Shared source access guard redirects to Settings; billable-time workspace not reviewed.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/billable-time/rates",
+      "dynamic": false,
+      "note": "Module disabled. Shared source access guard redirects to Settings; billable-time workspace not reviewed.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/billing",
+      "dynamic": false,
+      "note": "Billing-disabled deployment redirects to Settings; actual billing workspace not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/calendar",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/change-policies",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. T06.",
+      "findings": [
+        "T06"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/clocking",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/clockodo-import",
+      "dynamic": false,
+      "note": "Source-verified redirect to Import Data; Clockodo credential step reviewed. M10.",
+      "findings": [
+        "M10"
+      ],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/closed-months",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/compliance",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/compliance/works-council",
+      "dynamic": false,
+      "note": "Reviewed loaded privacy/access settings at 390 px; no confirmed layout issue.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/coverage-rules",
+      "dynamic": false,
+      "note": "Reviewed Coverage Targets empty state and publishing setting via shared Shift Planning tabs.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/custom-fields",
+      "dynamic": false,
+      "note": "Reviewed empty employee-field state; other entity tabs and creation forms not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/customers",
+      "dynamic": false,
+      "note": "Reviewed empty-state capture; populated directory not verified.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/demo",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/discord",
+      "dynamic": false,
+      "note": "Redirect target Discord panel reviewed in Chat Integrations; disconnected state fits.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/email-templates",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. M06.",
+      "findings": [
+        "M06"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/employees",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. M01.",
+      "findings": [
+        "M01"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/employees/[employeeId]",
+      "dynamic": true,
+      "note": "Reviewed populated Melissa Heller detail; personnel-file tab absent with feature disabled.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/employees/new",
+      "dynamic": false,
+      "note": "Redirects to Organization; no separate creation form rendered.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/enterprise",
+      "dynamic": false,
+      "note": "Source-verified redirect to Domain & Branding; target reviewed.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/enterprise/api-keys",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/enterprise/api-keys/[keyId]",
+      "dynamic": true,
+      "note": "Not reviewed: no real record/link or valid token available in the current UI.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/enterprise/audit-log",
+      "dynamic": false,
+      "note": "Source-verified redirect to Audit Activity; populated target reviewed. T05.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/enterprise/branding",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/enterprise/domains",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/enterprise/email",
+      "dynamic": false,
+      "note": "Reviewed Delivery and Email Templates panels. M06 affects Templates.",
+      "findings": [
+        "M06"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/enterprise/identity-setup",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/enterprise/sso",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/export",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/export-operations",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/export/history/[organizationId]",
+      "dynamic": true,
+      "note": "Not reviewed: no real record/link or valid token available in the current UI.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/holidays",
+      "dynamic": false,
+      "note": "Reviewed shared Holidays tab. M07 clips nested Categories tab.",
+      "findings": [
+        "M07"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/implementation-checklist",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/import",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. M10.",
+      "findings": [
+        "M10"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/import/[batchId]",
+      "dynamic": true,
+      "note": "Not reviewed: no real record/link or valid token available in the current UI.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/kiosks",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/locations",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. T08.",
+      "findings": [
+        "T08"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/locations/[locationId]",
+      "dynamic": true,
+      "note": "Reviewed populated Downtown Branch detail. M13.",
+      "findings": [
+        "M13"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/my-data",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/notification-channels",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/notifications",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/organizations",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/payroll-access",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/payroll-export",
+      "dynamic": false,
+      "note": "Rendered state inspected at 320 px; no additional layout issue confirmed. Deeper interactions not exercised. M05.",
+      "findings": [
+        "M05"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/payroll-readiness",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. M12.",
+      "findings": [
+        "M12"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/permissions",
+      "dynamic": false,
+      "note": "Reviewed permissions shell; populated employee editing not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/personnel-files",
+      "dynamic": false,
+      "note": "Personnel Files feature disabled. Visited list/settings paths returned 404; actual workspace/detail states not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/position-capture",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/position-stamps",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/profile",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/projects",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. T10.",
+      "findings": [
+        "T10"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/report-share-links",
+      "dynamic": false,
+      "note": "Reviewed empty-state shell; valid shared snapshot token unavailable.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/roles",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/scheduled-exports",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/security",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/shifts",
+      "dynamic": false,
+      "note": "Reviewed template shell and Coverage Targets empty state; template editor not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/skills",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/slack",
+      "dynamic": false,
+      "note": "Source-verified redirect to Chat Integrations / Slack; disconnected target panel reviewed.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/statistics",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/surcharges",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/teams",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/teams-notifications",
+      "dynamic": false,
+      "note": "Source-verified redirect to Chat Integrations / Microsoft Teams; disconnected panel reviewed.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/teams/[teamId]",
+      "dynamic": true,
+      "note": "No detail link exposed by current team cards; populated Manage Members drawer reviewed instead.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/telegram",
+      "dynamic": false,
+      "note": "Source-verified redirect to Chat Integrations / Telegram; setup panel reviewed without connecting.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/settings/travel-expenses",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/vacation",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. M07.",
+      "findings": [
+        "M07"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/vacation/employees",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. T11.",
+      "findings": [
+        "T11"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/vacation/employees/[employeeId]",
+      "dynamic": true,
+      "note": "Reviewed populated individual allowance editor; no confirmed layout issue.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/vehicle-use",
+      "dynamic": false,
+      "note": "Reviewed shared Vehicle use policy panel; no changes made.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/vehicles",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/webhooks",
+      "dynamic": false,
+      "note": "Reviewed shared Developer Access / Webhooks empty state; no endpoints created.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/wellness",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/work-categories",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. T09.",
+      "findings": [
+        "T09"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/work-diagnostics",
+      "dynamic": false,
+      "note": "Runtime database query error blocks normal view. Error-state code block also extends beyond mobile content.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/settings/work-policies",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. T07.",
+      "findings": [
+        "T07"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/setup",
+      "dynamic": false,
+      "note": "First-install wizard requires an unconfigured disposable instance; current deployment is configured.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/share/[token]",
+      "dynamic": true,
+      "note": "Not reviewed: no real record/link or valid token available in the current UI.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/sign-in",
+      "dynamic": false,
+      "note": "Signed-in account redirects to Dashboard; anonymous sign-in form not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/sign-up",
+      "dynamic": false,
+      "note": "Signed-in account redirects to Dashboard; anonymous registration form not reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/team",
+      "dynamic": false,
+      "note": "Reviewed populated mobile cards for 13 team members; no confirmed layout issue.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/team/absences",
+      "dynamic": false,
+      "note": "Reviewed populated year calendar, 16-row allowance table and Record absence drawer. T01.",
+      "findings": [
+        "T01"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/team/driving",
+      "dynamic": false,
+      "note": "Reviewed 64 missing-detail work periods. T02.",
+      "findings": [
+        "T02"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/team/period-submissions",
+      "dynamic": false,
+      "note": "Reviewed disabled-state guidance; populated submissions require organization collection cadence.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/team/presence",
+      "dynamic": false,
+      "note": "Reviewed three-location picker; location detail empty state reviewed.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/team/presence/[locationId]",
+      "dynamic": true,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/time-tracking",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised. M02.",
+      "findings": [
+        "M02"
+      ],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/today",
+      "dynamic": false,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/travel-expenses",
+      "dynamic": false,
+      "note": "Reviewed final empty expense workspace; no claims or reports exist. Draft creation was not opened because drafts save automatically.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/travel-expenses/[claimId]",
+      "dynamic": true,
+      "note": "Rendered state inspected at 390 px; no additional layout issue confirmed. Deeper interactions not exercised.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/travel-expenses/finance",
+      "dynamic": false,
+      "note": "Reviewed final finance filters and empty approved-expense/export states; populated reimbursement/report states need fixtures.",
+      "findings": [],
+      "hasRetainedRender": true
+    },
+    {
+      "route": "/travel-expenses/reports/[reportId]",
+      "dynamic": true,
+      "note": "Not reviewed: no real record/link or valid token available in the current UI.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/verify-2fa",
+      "dynamic": false,
+      "note": "Not reviewed: pending two-factor sign-in context required.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/verify-email",
+      "dynamic": false,
+      "note": "Not reviewed: valid verification flow/token required.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/verify-email-pending",
+      "dynamic": false,
+      "note": "Not reviewed: dedicated pending-verification account required.",
+      "findings": [],
+      "hasRetainedRender": false
+    },
+    {
+      "route": "/works-council",
+      "dynamic": false,
+      "note": "Feature-disabled context redirects to dashboard; actual portal not reviewed.",
+      "findings": [],
+      "hasRetainedRender": false
     }
   ],
   "measurements": [
     {
       "route": "/settings/employees",
-      "viewportWidth": 390,
+      "width": 390,
+      "height": 844,
       "documentWidth": 390,
       "mainWidth": 390,
       "mainScroll": 390,
-      "tableRows": [
-        {
-          "headers": [
-            "Employee",
-            "Personnel number",
-            "Position",
-            "Team",
-            "Role",
-            "Contract",
-            "Status",
-            "Actions"
-          ],
-          "rows": 16
-        }
-      ],
+      "loading": false,
       "scrollContainers": [
         {
           "tag": "DIV",
@@ -54,27 +1492,24 @@
           "scrollWidth": 1041,
           "overflow": "auto"
         }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 42,
+          "right": 1083,
+          "width": 1041
+        }
       ]
     },
     {
       "route": "/time-tracking",
-      "viewportWidth": 390,
+      "width": 390,
+      "height": 844,
       "documentWidth": 390,
       "mainWidth": 390,
       "mainScroll": 390,
-      "tableRows": [
-        {
-          "headers": [
-            "Date",
-            "Clock In\nRecorded local time",
-            "Clock Out\nRecorded local time",
-            "Duration",
-            "Description",
-            ""
-          ],
-          "rows": 10
-        }
-      ],
+      "loading": false,
       "scrollContainers": [
         {
           "tag": "DIV",
@@ -106,45 +1541,5444 @@
           "scrollWidth": 250,
           "overflow": "hidden"
         }
-      ]
-    },
-    {
-      "route": "/calendar",
-      "viewportWidth": 390,
-      "documentWidth": 390,
-      "mainWidth": 390,
-      "mainScroll": 390,
-      "tableRows": [],
-      "scrollContainers": [
+      ],
+      "outside": [
         {
-          "tag": "DIV",
-          "width": 356,
-          "scrollWidth": 384,
-          "overflow": "hidden"
+          "tag": "TABLE",
+          "left": 42,
+          "right": 681,
+          "width": 639
         }
       ]
     },
     {
-      "route": "/notifications",
-      "viewportWidth": 390,
+      "route": "/organization",
+      "width": 390,
+      "height": 844,
       "documentWidth": 390,
       "mainWidth": 390,
       "mainScroll": 390,
-      "tableRows": [],
+      "loading": false,
       "scrollContainers": [
         {
           "tag": "DIV",
           "width": 346,
-          "scrollWidth": 364,
+          "scrollWidth": 1797,
           "overflow": "hidden"
         },
         {
           "tag": "DIV",
           "width": 346,
+          "scrollWidth": 1797,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 1797,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 4440,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 4440,
+          "overflow": "visible"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/team/period-submissions",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/team/presence",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/team/presence/[locationId]",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/approvals",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 306,
+          "scrollWidth": 937,
+          "overflow": "auto"
+        },
+        {
+          "tag": "SPAN",
+          "width": 200,
+          "scrollWidth": 240,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "SPAN",
+          "width": 200,
+          "scrollWidth": 240,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "SPAN",
+          "width": 200,
+          "scrollWidth": 240,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "SPAN",
+          "width": 200,
+          "scrollWidth": 240,
+          "overflow": "hidden"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 42,
+          "right": 979,
+          "width": 937
+        },
+        {
+          "tag": "BUTTON",
+          "left": 775,
+          "right": 877,
+          "width": 102
+        },
+        {
+          "tag": "BUTTON",
+          "left": 885,
+          "right": 971,
+          "width": 87
+        },
+        {
+          "tag": "BUTTON",
+          "left": 775,
+          "right": 877,
+          "width": 102
+        },
+        {
+          "tag": "BUTTON",
+          "left": 885,
+          "right": 971,
+          "width": 87
+        },
+        {
+          "tag": "BUTTON",
+          "left": 775,
+          "right": 877,
+          "width": 102
+        },
+        {
+          "tag": "BUTTON",
+          "left": 885,
+          "right": 971,
+          "width": 87
+        },
+        {
+          "tag": "BUTTON",
+          "left": 775,
+          "right": 877,
+          "width": 102
+        },
+        {
+          "tag": "BUTTON",
+          "left": 885,
+          "right": 971,
+          "width": 87
+        }
+      ]
+    },
+    {
+      "route": "/approvals/inbox",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/reports",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/reports/projects",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 296,
+          "scrollWidth": 786,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 42,
+          "right": 828,
+          "width": 786
+        },
+        {
+          "tag": "BUTTON",
+          "left": 784,
+          "right": 820,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 784,
+          "right": 820,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 784,
+          "right": 820,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 784,
+          "right": 820,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 784,
+          "right": 820,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 784,
+          "right": 820,
+          "width": 36
+        }
+      ]
+    },
+    {
+      "route": "/reports/vehicles",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 298,
+          "scrollWidth": 1445,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 41,
+          "right": 1486,
+          "width": 1445
+        }
+      ]
+    },
+    {
+      "route": "/payroll",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/payroll/work-balances",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/personnel-files",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/personnel-files/[employeeId]",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/personnel-files/[employeeId]",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/personnel-files/[employeeId]",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 374,
+      "mainScroll": 374,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/my-documents",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/compliance",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/works-council",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/today",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/absences",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/settings/export",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/organizations",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/profile",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "SPAN",
+          "width": 200,
+          "scrollWidth": 208,
+          "overflow": "hidden"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/settings/employees/[employeeId]",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/security",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "SPAN",
+          "width": 166,
+          "scrollWidth": 263,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "SPAN",
+          "width": 166,
+          "scrollWidth": 263,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "SPAN",
+          "width": 218,
+          "scrollWidth": 263,
+          "overflow": "hidden"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/settings/employees/[employeeId]",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "BUTTON",
+          "width": 87,
+          "scrollWidth": 91,
+          "overflow": "visible"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/settings/employees/[employeeId]",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/audit-export",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 298,
+          "scrollWidth": 776,
+          "overflow": "auto"
+        },
+        {
+          "tag": "DIV",
+          "width": 120,
+          "scrollWidth": 238,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 120,
+          "scrollWidth": 238,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 120,
+          "scrollWidth": 238,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 120,
+          "scrollWidth": 238,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 120,
+          "scrollWidth": 238,
+          "overflow": "hidden"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 41,
+          "right": 817,
+          "width": 776
+        },
+        {
+          "tag": "BUTTON",
+          "left": 766,
+          "right": 802,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 766,
+          "right": 802,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 766,
+          "right": 802,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 766,
+          "right": 802,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 766,
+          "right": 802,
+          "width": 36
+        }
+      ]
+    },
+    {
+      "route": "/settings/audit-log",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/avv",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/billing",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 332,
+          "scrollWidth": 336,
+          "overflow": "visible"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/settings/change-policies",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 356,
+          "scrollWidth": 856,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 17,
+          "right": 873,
+          "width": 856
+        },
+        {
+          "tag": "BUTTON",
+          "left": 833,
+          "right": 865,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 833,
+          "right": 865,
+          "width": 32
+        }
+      ]
+    },
+    {
+      "route": "/settings/calendar",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/clocking",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 358,
+          "scrollWidth": 571,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "BUTTON",
+          "left": 303,
+          "right": 444,
+          "width": 141
+        },
+        {
+          "tag": "BUTTON",
+          "left": 444,
+          "right": 584,
+          "width": 140
+        }
+      ]
+    },
+    {
+      "route": "/settings/closed-months",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/compliance",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/custom-fields",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/customers",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/demo",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/discord",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/email-templates",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 684,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 684,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 668,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 668,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 668,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 668,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "H2",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "H2",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "H2",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "H2",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "H2",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "H2",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "INPUT",
+          "left": 41,
+          "right": 659,
+          "width": 618
+        },
+        {
+          "tag": "H2",
+          "left": 58,
+          "right": 469,
+          "width": 411
+        },
+        {
+          "tag": "BUTTON",
+          "left": 58,
+          "right": 642,
+          "width": 584
+        },
+        {
+          "tag": "BUTTON",
+          "left": 58,
+          "right": 642,
+          "width": 584
+        },
+        {
+          "tag": "BUTTON",
+          "left": 58,
+          "right": 642,
+          "width": 584
+        },
+        {
+          "tag": "TEXTAREA",
+          "left": 41,
+          "right": 659,
+          "width": 618
+        },
+        {
+          "tag": "BUTTON",
+          "left": 41,
+          "right": 659,
+          "width": 618
+        },
+        {
+          "tag": "BUTTON",
+          "left": 41,
+          "right": 659,
+          "width": 618
+        },
+        {
+          "tag": "BUTTON",
+          "left": 41,
+          "right": 659,
+          "width": 618
+        }
+      ]
+    },
+    {
+      "route": "/settings/enterprise",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 374,
+      "mainScroll": 374,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/enterprise/branding",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "INPUT",
+          "width": 94,
+          "scrollWidth": 243,
+          "overflow": "clip"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/settings/enterprise/sso",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "OL",
+          "width": 326,
+          "scrollWidth": 335,
+          "overflow": "visible"
+        },
+        {
+          "tag": "LI",
+          "width": 326,
+          "scrollWidth": 335,
+          "overflow": "visible"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/settings/enterprise/identity-setup",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 354,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 354,
+          "overflow": "visible"
+        },
+        {
+          "tag": "SECTION",
+          "width": 348,
+          "scrollWidth": 354,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 354,
+          "overflow": "visible"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/settings/enterprise/domains",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "P",
+          "width": 264,
+          "scrollWidth": 269,
+          "overflow": "hidden"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/settings/enterprise/email",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/export-operations",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/implementation-checklist",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/locations",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 356,
+          "scrollWidth": 563,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 17,
+          "right": 580,
+          "width": 563
+        }
+      ]
+    },
+    {
+      "route": "/settings/my-data",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/notifications",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/payroll-readiness",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 411,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 411,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 395,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 395,
+          "overflow": "visible"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/settings/personnel-files",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/position-stamps",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/position-capture",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/report-share-links",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/scheduled-exports",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/surcharges",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/travel-expenses",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/vacation",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 780,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 780,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 764,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 764,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 764,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 298,
+          "scrollWidth": 814,
+          "overflow": "auto"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 764,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 764,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 764,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 41,
+          "right": 855,
+          "width": 814
+        },
+        {
+          "tag": "INPUT",
+          "left": 41,
+          "right": 425,
+          "width": 384
+        },
+        {
+          "tag": "BUTTON",
+          "left": 587,
+          "right": 623,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 631,
+          "right": 755,
+          "width": 123
+        },
+        {
+          "tag": "TABLE",
+          "left": 42,
+          "right": 754,
+          "width": 712
+        },
+        {
+          "tag": "BUTTON",
+          "left": 714,
+          "right": 746,
+          "width": 32
+        }
+      ]
+    },
+    {
+      "route": "/settings/wellness",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/work-categories",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 298,
+          "scrollWidth": 516,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 41,
+          "right": 557,
+          "width": 516
+        },
+        {
+          "tag": "BUTTON",
+          "left": 481,
+          "right": 513,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 517,
+          "right": 549,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 481,
+          "right": 513,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 517,
+          "right": 549,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 481,
+          "right": 513,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 517,
+          "right": 549,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 481,
+          "right": 513,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 517,
+          "right": 549,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 481,
+          "right": 513,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 517,
+          "right": 549,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 481,
+          "right": 513,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 517,
+          "right": 549,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 481,
+          "right": 513,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 517,
+          "right": 549,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 481,
+          "right": 513,
+          "width": 32
+        },
+        {
+          "tag": "BUTTON",
+          "left": 517,
+          "right": 549,
+          "width": 32
+        }
+      ]
+    },
+    {
+      "route": "/settings/work-policies",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 358,
+          "scrollWidth": 374,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 358,
+          "scrollWidth": 374,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 358,
+          "scrollWidth": 374,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 358,
+          "scrollWidth": 374,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 356,
+          "scrollWidth": 502,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 17,
+          "right": 519,
+          "width": 502
+        },
+        {
+          "tag": "BUTTON",
+          "left": 479,
+          "right": 511,
+          "width": 32
+        }
+      ]
+    },
+    {
+      "route": "/settings/billable-time",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/platform-admin",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 374,
+      "mainScroll": 374,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/platform-admin/analytics",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 380,
+      "mainScroll": 380,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/platform-admin/billing",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 380,
+      "mainScroll": 380,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/platform-admin/organizations",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 340,
+          "scrollWidth": 616,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 25,
+          "right": 641,
+          "width": 616
+        },
+        {
+          "tag": "BUTTON",
+          "left": 553,
+          "right": 589,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 597,
+          "right": 633,
+          "width": 36
+        }
+      ]
+    },
+    {
+      "route": "/platform-admin/settings",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 416,
+      "mainWidth": 380,
+      "mainScroll": 416,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 332,
+          "scrollWidth": 392,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 332,
+          "scrollWidth": 392,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "INPUT",
+          "left": 49,
+          "right": 391,
+          "width": 342
+        },
+        {
+          "tag": "INPUT",
+          "left": 49,
+          "right": 391,
+          "width": 342
+        },
+        {
+          "tag": "TEXTAREA",
+          "left": 49,
+          "right": 391,
+          "width": 342
+        }
+      ]
+    },
+    {
+      "route": "/platform-admin/users",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 380,
+      "mainScroll": 380,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 330,
+          "scrollWidth": 793,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 25,
+          "right": 818,
+          "width": 793
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 730,
+          "right": 766,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 774,
+          "right": 810,
+          "width": 36
+        }
+      ]
+    },
+    {
+      "route": "/platform-admin/worker-queue",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 380,
+      "mainScroll": 380,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 250,
+          "scrollWidth": 1314,
+          "overflow": "auto"
+        },
+        {
+          "tag": "TD",
+          "width": 464,
+          "scrollWidth": 551,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 448,
+          "scrollWidth": 543,
+          "overflow": "visible"
+        },
+        {
+          "tag": "TD",
+          "width": 464,
+          "scrollWidth": 598,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 448,
+          "scrollWidth": 590,
+          "overflow": "visible"
+        },
+        {
+          "tag": "TD",
+          "width": 464,
+          "scrollWidth": 616,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 448,
+          "scrollWidth": 608,
+          "overflow": "visible"
+        },
+        {
+          "tag": "TD",
+          "width": 464,
+          "scrollWidth": 531,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 448,
+          "scrollWidth": 523,
+          "overflow": "visible"
+        },
+        {
+          "tag": "TD",
+          "width": 464,
+          "scrollWidth": 516,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 448,
+          "scrollWidth": 508,
+          "overflow": "visible"
+        },
+        {
+          "tag": "TD",
+          "width": 464,
+          "scrollWidth": 520,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 448,
+          "scrollWidth": 512,
+          "overflow": "visible"
+        },
+        {
+          "tag": "TD",
+          "width": 464,
+          "scrollWidth": 729,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 448,
+          "scrollWidth": 721,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 65,
+          "right": 1379,
+          "width": 1314
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        },
+        {
+          "tag": "BUTTON",
+          "left": 913,
+          "right": 963,
+          "width": 50
+        },
+        {
+          "tag": "BUTTON",
+          "left": 971,
+          "right": 1031,
+          "width": 60
+        }
+      ]
+    },
+    {
+      "route": "/settings/enterprise/audit-log",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/sign-in",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/sign-up",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/forgot-password",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/analytics/vacation-trends",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 574,
+          "overflow": "auto"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 574,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 574,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 557,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 557,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 298,
+          "scrollWidth": 523,
+          "overflow": "auto"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 557,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 557,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 41,
+          "right": 564,
+          "width": 523
+        }
+      ]
+    },
+    {
+      "route": "/analytics/team-performance",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 574,
+          "overflow": "auto"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 574,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 574,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 557,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 557,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 298,
+          "scrollWidth": 552,
+          "overflow": "auto"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 557,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 557,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 41,
+          "right": 593,
+          "width": 552
+        }
+      ]
+    },
+    {
+      "route": "/analytics/overtime-burn-down",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/team/absences",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 1043,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 17,
+          "right": 1060,
+          "width": 1043
+        },
+        {
+          "tag": "BUTTON",
+          "left": 283,
+          "right": 428,
+          "width": 146
+        },
+        {
+          "tag": "BUTTON",
+          "left": 444,
+          "right": 549,
+          "width": 105
+        },
+        {
+          "tag": "BUTTON",
+          "left": 565,
+          "right": 637,
+          "width": 72
+        },
+        {
+          "tag": "BUTTON",
+          "left": 653,
+          "right": 745,
+          "width": 92
+        },
+        {
+          "tag": "BUTTON",
+          "left": 843,
+          "right": 907,
+          "width": 64
+        },
+        {
+          "tag": "BUTTON",
+          "left": 923,
+          "right": 988,
+          "width": 65
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1016,
+          "right": 1052,
+          "width": 36
+        }
+      ]
+    },
+    {
+      "route": "/team",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/team/driving",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 579,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 17,
+          "right": 596,
+          "width": 579
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        },
+        {
+          "tag": "A",
+          "left": 552,
+          "right": 588,
+          "width": 36
+        }
+      ]
+    },
+    {
+      "route": "/settings/teams",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/skills",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/statistics",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/roles",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/payroll-access",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/permissions",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/work-diagnostics",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 492,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 492,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 330,
+          "scrollWidth": 467,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 330,
+          "scrollWidth": 467,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 282,
+          "scrollWidth": 443,
+          "overflow": "visible"
+        },
+        {
+          "tag": "P",
+          "width": 258,
+          "scrollWidth": 431,
+          "overflow": "visible"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/settings/kiosks",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/vacation/employees",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 298,
+          "scrollWidth": 814,
+          "overflow": "auto"
+        },
+        {
+          "tag": "DIV",
+          "width": 296,
+          "scrollWidth": 1265,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 41,
+          "right": 855,
+          "width": 814
+        },
+        {
+          "tag": "TABLE",
+          "left": 42,
+          "right": 1307,
+          "width": 1265
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        },
+        {
+          "tag": "A",
+          "left": 1228,
+          "right": 1299,
+          "width": 70
+        }
+      ]
+    },
+    {
+      "route": "/platform-admin/diagnostics",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 380,
+      "mainScroll": 380,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/platform-admin/system-email-templates",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 692,
+      "mainWidth": 380,
+      "mainScroll": 692,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 332,
+          "scrollWidth": 668,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 332,
+          "scrollWidth": 668,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "H2",
+          "left": 41,
+          "right": 675,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 41,
+          "right": 675,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 41,
+          "right": 675,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 41,
+          "right": 675,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 41,
+          "right": 675,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 41,
+          "right": 675,
+          "width": 634
+        },
+        {
+          "tag": "INPUT",
+          "left": 49,
+          "right": 667,
+          "width": 618
+        },
+        {
+          "tag": "H2",
+          "left": 66,
+          "right": 477,
+          "width": 411
+        },
+        {
+          "tag": "BUTTON",
+          "left": 66,
+          "right": 650,
+          "width": 584
+        },
+        {
+          "tag": "BUTTON",
+          "left": 66,
+          "right": 650,
+          "width": 584
+        },
+        {
+          "tag": "BUTTON",
+          "left": 66,
+          "right": 650,
+          "width": 584
+        },
+        {
+          "tag": "BUTTON",
+          "left": 66,
+          "right": 650,
+          "width": 584
+        },
+        {
+          "tag": "BUTTON",
+          "left": 66,
+          "right": 650,
+          "width": 584
+        },
+        {
+          "tag": "TEXTAREA",
+          "left": 49,
+          "right": 667,
+          "width": 618
+        },
+        {
+          "tag": "BUTTON",
+          "left": 49,
+          "right": 667,
+          "width": 618
+        },
+        {
+          "tag": "BUTTON",
+          "left": 49,
+          "right": 667,
+          "width": 618
+        },
+        {
+          "tag": "BUTTON",
+          "left": 49,
+          "right": 667,
+          "width": 618
+        }
+      ]
+    },
+    {
+      "route": "/settings/import",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 390,
+          "scrollWidth": 536,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 390,
+          "scrollWidth": 536,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 342,
+          "scrollWidth": 512,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 342,
+          "scrollWidth": 512,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 342,
+          "scrollWidth": 512,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 342,
+          "scrollWidth": 512,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 342,
+          "scrollWidth": 512,
+          "overflow": "visible"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/my-requests",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/enterprise/api-keys",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/projects",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 308,
+          "scrollWidth": 1061,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 41,
+          "right": 1102,
+          "width": 1061
+        },
+        {
+          "tag": "BUTTON",
+          "left": 802,
+          "right": 913,
+          "width": 111
+        },
+        {
+          "tag": "BUTTON",
+          "left": 929,
+          "right": 1002,
+          "width": 73
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1018,
+          "right": 1054,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1058,
+          "right": 1094,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 802,
+          "right": 913,
+          "width": 111
+        },
+        {
+          "tag": "BUTTON",
+          "left": 929,
+          "right": 1002,
+          "width": 73
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1018,
+          "right": 1054,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1058,
+          "right": 1094,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 802,
+          "right": 913,
+          "width": 111
+        },
+        {
+          "tag": "BUTTON",
+          "left": 929,
+          "right": 1002,
+          "width": 73
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1018,
+          "right": 1054,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1058,
+          "right": 1094,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 802,
+          "right": 913,
+          "width": 111
+        },
+        {
+          "tag": "BUTTON",
+          "left": 929,
+          "right": 1002,
+          "width": 73
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1018,
+          "right": 1054,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1058,
+          "right": 1094,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 802,
+          "right": 913,
+          "width": 111
+        },
+        {
+          "tag": "BUTTON",
+          "left": 929,
+          "right": 1002,
+          "width": 73
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1018,
+          "right": 1054,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1058,
+          "right": 1094,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 802,
+          "right": 913,
+          "width": 111
+        },
+        {
+          "tag": "BUTTON",
+          "left": 929,
+          "right": 1002,
+          "width": 73
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1018,
+          "right": 1054,
+          "width": 36
+        },
+        {
+          "tag": "BUTTON",
+          "left": 1058,
+          "right": 1094,
+          "width": 36
+        }
+      ]
+    },
+    {
+      "route": "/calendar",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": true,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/calendar",
+      "state": "month",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 574,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 1024,
+          "overflow": "auto"
+        },
+        {
+          "tag": "DIV",
+          "width": 980,
+          "scrollWidth": 1012,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 980,
+          "scrollWidth": 1012,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 980,
+          "scrollWidth": 1008,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 980,
+          "scrollWidth": 1008,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 980,
+          "scrollWidth": 1008,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 980,
+          "scrollWidth": 1008,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 980,
+          "scrollWidth": 1008,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "BUTTON",
+          "left": 325,
+          "right": 437,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 445,
+          "right": 557,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 565,
+          "right": 677,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 685,
+          "right": 797,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 805,
+          "right": 917,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 325,
+          "right": 437,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 445,
+          "right": 557,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 565,
+          "right": 677,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 685,
+          "right": 797,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 805,
+          "right": 917,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 325,
+          "right": 437,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 445,
+          "right": 557,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 565,
+          "right": 677,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 685,
+          "right": 797,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 805,
+          "right": 917,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 325,
+          "right": 437,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 445,
+          "right": 557,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 565,
+          "right": 677,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 685,
+          "right": 797,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 805,
+          "right": 917,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 325,
+          "right": 437,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 445,
+          "right": 557,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 565,
+          "right": 677,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 685,
+          "right": 797,
+          "width": 112
+        },
+        {
+          "tag": "BUTTON",
+          "left": 805,
+          "right": 917,
+          "width": 112
+        }
+      ]
+    },
+    {
+      "route": "/calendar",
+      "state": "year",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/calendar",
+      "state": "week",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 404,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 404,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 404,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 404,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 404,
+          "overflow": "visible"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/notifications",
+      "width": 320,
+      "height": 844,
+      "documentWidth": 320,
+      "mainWidth": 320,
+      "mainScroll": 320,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 286,
+          "scrollWidth": 364,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 286,
           "scrollWidth": 364,
           "overflow": "visible"
         }
+      ],
+      "outside": [
+        {
+          "tag": "A",
+          "left": 286,
+          "right": 381,
+          "width": 95
+        }
       ]
+    },
+    {
+      "route": "/notifications",
+      "state": "320",
+      "width": 320,
+      "height": 844,
+      "documentWidth": 320,
+      "mainWidth": 320,
+      "mainScroll": 320,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 276,
+          "scrollWidth": 364,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 276,
+          "scrollWidth": 364,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "A",
+          "left": 286,
+          "right": 381,
+          "width": 95
+        }
+      ]
+    },
+    {
+      "route": "/settings/payroll-export",
+      "width": 320,
+      "height": 844,
+      "documentWidth": 320,
+      "mainWidth": 320,
+      "mainScroll": 320,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 320,
+          "scrollWidth": 707,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 320,
+          "scrollWidth": 707,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 288,
+          "scrollWidth": 691,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 288,
+          "scrollWidth": 296,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 286,
+          "scrollWidth": 295,
+          "overflow": "visible"
+        },
+        {
+          "tag": "FORM",
+          "width": 286,
+          "scrollWidth": 295,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 286,
+          "scrollWidth": 295,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 238,
+          "scrollWidth": 271,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "BUTTON",
+          "left": 257,
+          "right": 330,
+          "width": 73
+        },
+        {
+          "tag": "BUTTON",
+          "left": 330,
+          "right": 471,
+          "width": 141
+        },
+        {
+          "tag": "BUTTON",
+          "left": 471,
+          "right": 546,
+          "width": 75
+        },
+        {
+          "tag": "BUTTON",
+          "left": 546,
+          "right": 640,
+          "width": 94
+        },
+        {
+          "tag": "BUTTON",
+          "left": 640,
+          "right": 704,
+          "width": 64
+        }
+      ]
+    },
+    {
+      "route": "/settings/payroll-export",
+      "state": "320",
+      "width": 320,
+      "height": 844,
+      "documentWidth": 320,
+      "mainWidth": 320,
+      "mainScroll": 320,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 320,
+          "scrollWidth": 707,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 320,
+          "scrollWidth": 707,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 288,
+          "scrollWidth": 691,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 288,
+          "scrollWidth": 296,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 286,
+          "scrollWidth": 295,
+          "overflow": "visible"
+        },
+        {
+          "tag": "FORM",
+          "width": 286,
+          "scrollWidth": 295,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 286,
+          "scrollWidth": 295,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 238,
+          "scrollWidth": 271,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "BUTTON",
+          "left": 257,
+          "right": 330,
+          "width": 73
+        },
+        {
+          "tag": "BUTTON",
+          "left": 330,
+          "right": 471,
+          "width": 141
+        },
+        {
+          "tag": "BUTTON",
+          "left": 471,
+          "right": 546,
+          "width": 75
+        },
+        {
+          "tag": "BUTTON",
+          "left": 546,
+          "right": 640,
+          "width": 94
+        },
+        {
+          "tag": "BUTTON",
+          "left": 640,
+          "right": 704,
+          "width": 64
+        }
+      ]
+    },
+    {
+      "route": "/scheduling",
+      "width": 320,
+      "height": 844,
+      "documentWidth": 320,
+      "mainWidth": 320,
+      "mainScroll": 320,
+      "loading": true,
+      "scrollContainers": [],
+      "outside": [
+        {
+          "tag": "BUTTON",
+          "left": 305,
+          "right": 381,
+          "width": 76
+        },
+        {
+          "tag": "INPUT",
+          "left": 305,
+          "right": 339,
+          "width": 34
+        }
+      ]
+    },
+    {
+      "route": "/scheduling",
+      "state": "320",
+      "width": 320,
+      "height": 844,
+      "documentWidth": 320,
+      "mainWidth": 320,
+      "mainScroll": 320,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": [
+        {
+          "tag": "BUTTON",
+          "left": 305,
+          "right": 381,
+          "width": 76
+        },
+        {
+          "tag": "INPUT",
+          "left": 305,
+          "right": 339,
+          "width": 34
+        }
+      ]
+    },
+    {
+      "route": "/onboarding/profile",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 348,
+      "mainScroll": 348,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/onboarding/notifications",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 348,
+      "mainScroll": 348,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/onboarding/wellness",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 348,
+      "mainScroll": 348,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/onboarding/work-templates",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 348,
+      "mainScroll": 348,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/onboarding/vacation-policy",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 348,
+      "mainScroll": 348,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/licenses",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 348,
+      "mainScroll": 348,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 294,
+          "scrollWidth": 551,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "TABLE",
+          "left": 38,
+          "right": 589,
+          "width": 551
+        },
+        {
+          "tag": "BUTTON",
+          "left": 343,
+          "right": 445,
+          "width": 102
+        }
+      ]
+    },
+    {
+      "route": "/billing/suspended",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/onboarding/organization",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 348,
+      "mainScroll": 348,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/onboarding/work-schedule",
+      "width": 380,
+      "height": 844,
+      "documentWidth": 380,
+      "mainWidth": 348,
+      "mainScroll": 348,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/kiosk",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/locations/[locationId]",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 473,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 473,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 457,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "BUTTON",
+          "left": 376,
+          "right": 473,
+          "width": 97
+        }
+      ]
+    },
+    {
+      "route": "/settings/vacation/employees/[employeeId]",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/analytics",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 599,
+          "overflow": "auto"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 599,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 599,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 583,
+          "overflow": "visible"
+        }
+      ],
+      "outside": []
+    },
+    {
+      "route": "/analytics/work-hours",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": true,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/notification-channels",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/notification-channels",
+      "state": "microsoft-teams",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/notification-channels",
+      "state": "telegram",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/notification-channels",
+      "state": "discord",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/enterprise/email",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 684,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 684,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 668,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 668,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 668,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 668,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "H2",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "H2",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "H2",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "H2",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "H2",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "H2",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "BUTTON",
+          "left": 33,
+          "right": 667,
+          "width": 634
+        },
+        {
+          "tag": "INPUT",
+          "left": 41,
+          "right": 659,
+          "width": 618
+        },
+        {
+          "tag": "H2",
+          "left": 58,
+          "right": 469,
+          "width": 411
+        },
+        {
+          "tag": "BUTTON",
+          "left": 58,
+          "right": 642,
+          "width": 584
+        },
+        {
+          "tag": "BUTTON",
+          "left": 58,
+          "right": 642,
+          "width": 584
+        },
+        {
+          "tag": "BUTTON",
+          "left": 58,
+          "right": 642,
+          "width": 584
+        },
+        {
+          "tag": "TEXTAREA",
+          "left": 41,
+          "right": 659,
+          "width": 618
+        },
+        {
+          "tag": "BUTTON",
+          "left": 41,
+          "right": 659,
+          "width": 618
+        },
+        {
+          "tag": "BUTTON",
+          "left": 41,
+          "right": 659,
+          "width": 618
+        },
+        {
+          "tag": "BUTTON",
+          "left": 41,
+          "right": 659,
+          "width": 618
+        }
+      ]
+    },
+    {
+      "route": "/settings/approval-policies",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": true,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 830,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "BUTTON",
+          "left": 275,
+          "right": 418,
+          "width": 143
+        },
+        {
+          "tag": "BUTTON",
+          "left": 418,
+          "right": 538,
+          "width": 120
+        },
+        {
+          "tag": "BUTTON",
+          "left": 538,
+          "right": 740,
+          "width": 202
+        },
+        {
+          "tag": "BUTTON",
+          "left": 740,
+          "right": 843,
+          "width": 103
+        }
+      ]
+    },
+    {
+      "route": "/settings/approval-escalation",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 830,
+          "overflow": "auto"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "BUTTON",
+          "left": 364,
+          "right": 484,
+          "width": 120
+        },
+        {
+          "tag": "BUTTON",
+          "left": 484,
+          "right": 686,
+          "width": 202
+        },
+        {
+          "tag": "BUTTON",
+          "left": 686,
+          "right": 789,
+          "width": 103
+        }
+      ]
+    },
+    {
+      "route": "/settings/vehicles",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/vehicle-use",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/shifts",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/coverage-rules",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/vacation",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/holidays",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 448,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 380,
+          "scrollWidth": 448,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 432,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 432,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 432,
+          "overflow": "visible"
+        },
+        {
+          "tag": "DIV",
+          "width": 348,
+          "scrollWidth": 432,
+          "overflow": "visible"
+        }
+      ],
+      "outside": [
+        {
+          "tag": "BUTTON",
+          "left": 359,
+          "right": 445,
+          "width": 86
+        }
+      ]
+    },
+    {
+      "route": "/settings/enterprise/api-keys",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/webhooks",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/calendar/[employeeId]",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/travel-expenses",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/travel-expenses/[claimId]",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    },
+    {
+      "route": "/settings/compliance/works-council",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "loading": false,
+      "scrollContainers": [],
+      "outside": []
+    }
+  ],
+  "otherFindings": [
+    {
+      "id": "D01",
+      "route": "/analytics",
+      "issue": "Five tabs have empty text and no aria-label at both mobile and restored 2291 px desktop width."
+    },
+    {
+      "id": "D02",
+      "route": "/settings/work-diagnostics",
+      "issue": "Database query error blocks the normal view; error text also overflows."
     }
   ]
 }
