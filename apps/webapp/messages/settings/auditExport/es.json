@@ -140,7 +140,6 @@
         "keys": "Claves de firma",
         "packages": "Paquetes de auditoría"
       },
-      "title": "Exportación de auditoría",
       "verification": {
         "invalid": "Error de verificación",
         "valid": "Verificación superada",
@@ -175,7 +174,6 @@
       "search": "Buscar",
       "searchPlaceholder": "Buscar acciones, usuarios o metadatos…",
       "timestamp": "Marca de tiempo",
-      "title": "Registro de auditoría",
       "to": "Hasta",
       "unknown": "Desconocido",
       "user": "Usuario",

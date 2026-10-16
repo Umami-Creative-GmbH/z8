@@ -143,7 +143,6 @@
         "title": "Stedfortredere",
         "toggle": "Stedfortredere kan avgjøre godkjenninger"
       },
-      "description": "Gå gjennom organisasjonens eskaleringspolicy, hvordan den ble migrert fra kanalinnstillinger, og betingelser som krever en godkjenningsansvarlig.",
       "dispose": {
         "confirm": "Lukk element",
         "description": "Lukking logger avgjørelsen din i revisjonsloggen. Det omfordeler ikke godkjenningen eller tillater en ny automatisk eskalering.",
@@ -177,7 +176,6 @@
         "usedNo": "Ikke brukt",
         "usedYes": "Brukt"
       },
-      "navDescription": "Organisasjonens eskaleringsretningslinje og godkjenninger som krever oppmerksomhet",
       "off": "Av",
       "on": "På",
       "ownership": {

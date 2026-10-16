@@ -143,7 +143,6 @@
         "title": "Zamjenici",
         "toggle": "Zamjenici mogu donositi odluke o odobrenjima"
       },
-      "description": "Pregledajte politiku eskalacije organizacije, način na koji je migrirana iz postavki kanala i uslove koji zahtijevaju upravitelja odobrenja.",
       "dispose": {
         "confirm": "Zatvori stavku",
         "description": "Zatvaranjem se vaša odluka bilježi u revizijski dnevnik. To ne mijenja dodjelu odobrenja niti dozvoljava drugu automatsku eskalaciju.",
@@ -177,7 +176,6 @@
         "usedNo": "Nije korišteno",
         "usedYes": "Korišteno"
       },
-      "navDescription": "Pravilo eskalacije organizacije i odobrenja koja zahtijevaju pažnju",
       "off": "Isključeno",
       "on": "Uključeno",
       "ownership": {

@@ -143,7 +143,6 @@
         "title": "Deputies",
         "toggle": "Deputies can decide approvals"
       },
-      "description": "Review the organization escalation policy, how it was migrated from channel settings, and conditions that need an approval manager.",
       "dispose": {
         "confirm": "Close item",
         "description": "Closing records your decision in the audit log. It does not reassign the approval or allow another automatic escalation.",
@@ -177,7 +176,6 @@
         "usedNo": "Not used",
         "usedYes": "Used"
       },
-      "navDescription": "Organization escalation policy and approvals that need attention",
       "off": "Off",
       "on": "On",
       "ownership": {

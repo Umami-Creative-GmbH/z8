@@ -202,15 +202,12 @@
       }
     },
     "discord": {
-      "description": "Kuruluşunuz için Discord bildirimlerini yapılandırın",
       "title": "Discord"
     },
     "slack": {
-      "description": "Kuruluşunuz için Slack bildirimlerini yapılandırın",
       "title": "Slack"
     },
     "teamsNotifications": {
-      "description": "Kuruluşunuz için Microsoft Teams bildirimlerini yapılandırın",
       "title": "Microsoft Teams"
     },
     "telegram": {

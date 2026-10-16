@@ -198,7 +198,6 @@
         "deleteDescription": "Är du säker på att du vill ta bort \"{domain}\"? Denna åtgärd kan inte ångras. Användare kommer inte längre att kunna logga in via denna anpassade domän.",
         "deleteFailed": "Det gick inte att ta bort domänen",
         "deleteTitle": "Ta bort domän",
-        "description": "Konfigurera din organisations anpassade inloggningsdomän, varumärkesprofilering och SSO-leverantörer.",
         "dnsPropagation": "DNS-spridning",
         "dnsPropagationDescription": "DNS-ändringar kan ta upp till 48 timmar att spridas, även om det ofta slutförs inom några minuter. Du kan klicka på \"Verifiera\" när du har lagt till TXT-posten.",
         "domain": "Domän",
@@ -212,8 +211,6 @@
         "empty": "Ingen anpassad domän har konfigurerats ännu.",
         "enabledAuthMethods": "Aktiverade autentiseringsmetoder",
         "guidedSetup": {
-          "action": "Guidad konfiguration",
-          "description": "Konfigurera SSO, SCIM, åtkomstpolicy och aktiveringskontroller i ett skyddat flöde.",
           "title": "Guidad konfiguration"
         },
         "keepExistingSecretKey": "Lämna tomt för att behålla befintlig hemlig nyckel",
@@ -238,7 +235,6 @@
           "pending": "Väntar på verifiering",
           "verified": "Verifierad"
         },
-        "title": "Anpassad domän & varumärkesprofilering",
         "tokenExpired": "Token har gått ut",
         "tokenExpiredDescription": "Verifieringstoken har löpt ut. Generera en ny token.",
         "tokenExpires": "Token löper ut: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Vägled SSO, SCIM-provisionering, domänbegränsningar, inbjudningspolicy och standardroller för denna organisation.",
-      "title": "Konfiguration av företagsidentitet"
+      "description": "Vägled SSO, SCIM-provisionering, domänbegränsningar, inbjudningspolicy och standardroller för denna organisation."
     }
   }
 }

@@ -202,15 +202,12 @@
       }
     },
     "discord": {
-      "description": "Konfigurišite Discord obavještenja za svoju organizaciju",
       "title": "Discord"
     },
     "slack": {
-      "description": "Konfigurišite Slack obavještenja za svoju organizaciju",
       "title": "Slack"
     },
     "teamsNotifications": {
-      "description": "Konfigurišite Microsoft Teams obavještenja za svoju organizaciju",
       "title": "Microsoft Teams"
     },
     "telegram": {

@@ -143,7 +143,6 @@
         "title": "Zëvendësuesit",
         "toggle": "Zëvendësuesit mund të marrin vendime për miratimet"
       },
-      "description": "Rishikoni politikën e përshkallëzimit të organizatës, mënyrën se si u migrua nga cilësimet e kanalit dhe kushtet që kërkojnë një menaxher miratimi.",
       "dispose": {
         "confirm": "Mbyll elementin",
         "description": "Mbyllja regjistron vendimin tuaj në regjistrin e auditimit. Ajo nuk e ricakton miratimin dhe nuk lejon një përshkallëzim tjetër automatik.",
@@ -177,7 +176,6 @@
         "usedNo": "E papërdorur",
         "usedYes": "Përdorur"
       },
-      "navDescription": "Politika e eskalimit të organizatës dhe miratimet që kërkojnë vëmendje",
       "off": "Joaktiv",
       "on": "Aktiv",
       "ownership": {

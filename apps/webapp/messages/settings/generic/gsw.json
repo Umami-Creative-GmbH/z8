@@ -504,7 +504,6 @@
       "title": "ArbZG-Compliance"
     },
     "customDomains": {
-      "description": "Konfigurieren Sie eine benutzerdefinierte Domain, Branding und SSO für Ihre Organisation",
       "title": "Domain & Branding"
     },
     "customers": {
@@ -845,10 +844,6 @@
         "storageSettings": "Speichereistellige"
       },
       "title": "Date-Export"
-    },
-    "emailConfig": {
-      "description": "Konfiguriere Sie en benutzerdefinierte E-Mail-Provider für Organisations-E-Mails",
-      "title": "E-Mail-Konfiguration"
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1273,8 @@
     },
     "group": {
       "account": "Konto",
-      "administration": "Administration",
       "data": "Date",
-      "enterprise": "Enterprise",
+      "integrations": "Integratione",
       "notifications": "Benachrichtigunge",
       "organization": "Organisation"
     },
@@ -1517,6 +1511,7 @@
       "searchPlaceholder": "Pakete oder Lizenzen durchsuchen...",
       "unknown": "Unbekannt"
     },
+    "loading": "Istellige wärded glade",
     "locations": {
       "address": "Adresse",
       "assignEmployee": "Mitarbeiter zuweisen",
@@ -1627,6 +1622,55 @@
       "statusReady": "Parat",
       "title": "Mini Date",
       "unavailable": "Mini Date sind für dis Konto i dere Organisation nöd verfüegbar."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Aktivität",
+        "description": "Aktivitäte überprüefe und signierti Audit-Export konfiguriere",
+        "keysDescription": "D Signaturschlüssel verwalte, wo für Audit-Export bruucht wärded",
+        "packagesDescription": "Signierti Audit-Päckli generiere und überprüefe",
+        "title": "Audit"
+      },
+      "chat-integrations": {
+        "description": "Slack, Microsoft Teams, Telegram und Discord konfiguriere",
+        "title": "Chat-Integratione"
+      },
+      "clocking": {
+        "automaticDescription": "Automatischs Uusstämple für ununterbrochnigs Schaffe konfiguriere",
+        "description": "Ziterfassig, automatischs Uusstämple, Erinnerige und Perioden-Ireichige konfiguriere",
+        "remindersDescription": "Erinnerige für s Iistämple, Uusstämple und Pause konfiguriere",
+        "submissionsDescription": "Konfiguriere, wenn Mitarbeiter iri Arbeitsperiode zur Überprüefig ireiched",
+        "title": "Stämple",
+        "trackingDescription": "S Startdatum für d Ziterfassig vo dinere Organisation festlege"
+      },
+      "developerAccess": {
+        "description": "API-Schlüssel und Webhook-Endpünkt verwalte",
+        "title": "Entwickler-Zuegriff"
+      },
+      "domainBranding": {
+        "description": "Eigni Domain und Branding vo dinere Organisation konfiguriere"
+      },
+      "email": {
+        "delivery": "Zuestellig",
+        "description": "E-Mail-Zuestellig konfiguriere und Nachrichtevorlage aapasse",
+        "title": "E-Mail"
+      },
+      "identityAccess": {
+        "description": "SSO, Social Login, Bereitstellig und Organisationszuegriff konfiguriere",
+        "socialDescription": "D Social-Login-Aabieter konfiguriere, wo für dini Organisation verfüegbar sind",
+        "ssoDescription": "Single-Sign-On-Aabieter für dini Organisation verwalte",
+        "title": "Identität & Zuegriff"
+      },
+      "personnel-files": {
+        "description": "Zuegriff uf Personaldossiers, Ablauf-Erinnerige und Dokumentenufbewahrig verwalte"
+      },
+      "scheduled-exports": {
+        "description": "Regelmässigi Lohn-, Date- und Audit-Export plane"
+      },
+      "shiftPlanning": {
+        "description": "Schichtvorlage und Abdeckigsziel konfiguriere",
+        "title": "Schichtplanig"
+      }
     },
     "notifications": {
       "approvals": "Gnehmigungs-Benachrichtigunge",
@@ -2716,6 +2760,45 @@
         "title": "Kein steuerliches Fahrtenbuch"
       },
       "noDrivers": "Keine zugewiesenen Fahrer",
+      "photos": {
+        "accessChanged": "Din Zuegriff hät sich gänderet. Mach d Fahrzüüg-Istellige nomal uf, zum dini Berächtigunge z überprüefe.",
+        "action": "Fotos",
+        "add": "Foto hinzuefüege",
+        "archived": "Das Fahrzüüg isch archiviert. Stells wieder her, zum Fotos hinzuezfüege oder z lösche.",
+        "capacityChanged": "D Galerie hät sich gänderet. Es hät no {count} Foto-Plätz frei. Mach si nomal uf und wähl weniger Fotos uus.",
+        "description": "Privati Referenzfotos für das Fahrzüüg. Abgschlosseni Uploads und Löschige wärded sofort gspycheret.",
+        "empty": "No keini Fotos.",
+        "expired": "Dä Upload isch abgloffe. Wähl s Foto nomal uus, zum s ufelade.",
+        "full": "Das Fahrzüüg hät 20 Fotos. Lösch es Foto, bevor du es neus hinzuefüegsch.",
+        "gallery": "Fahrzüüg-Fotos",
+        "imageNamed": "{name}, Foto {number}",
+        "invalid": "Das Bild hät nöd chönne gläse wärde. Wähl es anders JPEG-, PNG- oder WebP-Foto uus.",
+        "limits": "JPEG, PNG oder WebP. Bis zu 10 MB pro Foto, 20 Fotos pro Fahrzüüg.",
+        "loadFailed": "D Fotos händ nöd chönne glade wärde. Schlüüss de Dialog und probiers nomal.",
+        "loading": "Fotos wärded glade…",
+        "named": "Fotos vo {name}",
+        "next": "Nächschts Foto",
+        "position": "Foto {number} vo {count}",
+        "previous": "Vorherigs Foto",
+        "queued": "Warte uf s Ufelade vo {name}…",
+        "remove": "Foto lösche",
+        "removeConfirm": "Foti ändgültig lösche",
+        "removeDescription": "Das Foti wird ändgültig us de Fahrzüüg-Galerii glöscht. Das cha nümme rückgängig gmacht wärde.",
+        "removeFailed": "Das Foti hät nöd chönne glöscht wärde. Probier's namal.",
+        "removeTitle": "Das Foti ändgültig lösche?",
+        "removing": "Foti wird glöscht…",
+        "retry": "Namal probiere",
+        "retryNamed": "{name} namal probiere",
+        "saved": "{name} gspycheret.",
+        "selectionTooLarge": "Die Uswahl isch nöd ufeghlade worde. Es hät no {count} Foti-Plätz übrig, inklusiv de no usstehende Uploads.",
+        "tooLarge": "Wähl es Foti us, wo nöd grösser als 10 MB isch.",
+        "unsupported": "Wähl es JPEG-, PNG- oder WebP-Foti us. HEIC und anderi Format wärdet nöd unterstützt.",
+        "uploadFailed": "Das Foti hät nöd chönne ufeghlade wärde. Probier's namal.",
+        "uploading": "{name} wird ufeghlade…",
+        "uploadResults": "Ergebnis vom Foti-Upload",
+        "vehicleMissing": "Das Fahrzüüg isch i dinere Organisation nümme verfüegbar.",
+        "viewNamed": "Foti {number} vo {name} aaluege"
+      },
       "refusals": {
         "driverNotFound": "Ein zugewiesener Mitarbeiter oder ein zugewiesenes Team existiert nicht mehr. Laden Sie die Seite neu.",
         "invalidChange": "Die Änderung konnte nicht gespeichert werden. Laden Sie die Seite neu und versuchen Sie es erneut.",
@@ -2739,7 +2822,6 @@
       "assignmentRemoved": "Zueordnig glöscht",
       "assignmentSaved": "Zueordnig gspeicheret",
       "assignmentsDescription": "Gfragti Mitarbeiter chönd d'Fahrzügnutzig erfasse, wänn si stämple. Mitarbeiter, bi dene e Fahrzügnutzig erwartet wird, werded jedes Mal gfragt, und iri Arbet wird markiert, bis d'Date vollständig sind. Niemert wird jemals bim Stämple gstoppt. Die spezifischsti Zueordnig zellt: die eigeti vom Mitarbeiter vor dere vom primäre Team, und die vom Team vor dere vo de ganze Organisation.",
-      "description": "Wer gfragt wird, s'gfahrene Fahrzüg und de Kilometerstand z'erfasse",
       "enabled": "Fahrzügnutzig erfasse",
       "enabledDescription": "Wänn das abgschaltet wird, wird nüme nach de Fahrzügnutzig gfragt und fählendi Fahrtdetails werded nüm markiert. Bereits erfassti Fahrzügnutzige bliibed sichtbar und i de Export.",
       "error": {

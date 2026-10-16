@@ -140,7 +140,6 @@
         "keys": "Signeringsnøkler",
         "packages": "Revisjonspakker"
       },
-      "title": "Revisjonseksport",
       "verification": {
         "invalid": "Verifisering mislyktes",
         "valid": "Verifisering bestått",
@@ -175,7 +174,6 @@
       "search": "Søk",
       "searchPlaceholder": "Søk etter handlinger, brukere eller metadata…",
       "timestamp": "Tidsstempel",
-      "title": "Revisjonslogg",
       "to": "Til",
       "unknown": "Ukjent",
       "user": "Bruker",

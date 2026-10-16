@@ -198,7 +198,6 @@
         "deleteDescription": "\"{domain}\" alan adını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz. Kullanıcılar artık bu özel alan adı üzerinden giriş yapamayacaklar.",
         "deleteFailed": "Etki alanı silinemedi",
         "deleteTitle": "Etki Alanını Sil",
-        "description": "Kuruluşunuzun özel giriş etki alanını, markasını ve SSO sağlayıcılarını yapılandırın.",
         "dnsPropagation": "DNS Yayılımı",
         "dnsPropagationDescription": "DNS değişikliklerinin yayılması 48 saati bulabilir, ancak genellikle birkaç dakika içinde tamamlanır. TXT kaydını ekledikten sonra \"Doğrula\" düğmesine tıklayabilirsiniz.",
         "domain": "Etki Alanı",
@@ -212,8 +211,6 @@
         "empty": "Henüz yapılandırılmış özel bir etki alanı yok.",
         "enabledAuthMethods": "Etkin Kimlik Doğrulama Yöntemleri",
         "guidedSetup": {
-          "action": "Rehberli kurulum",
-          "description": "SSO, SCIM, erişim politikası ve aktivasyon kontrollerini tek bir rehberli akışta yapılandırın.",
           "title": "Rehberli kurulum"
         },
         "keepExistingSecretKey": "Mevcut gizli anahtarı korumak için boş bırakın",
@@ -238,7 +235,6 @@
           "pending": "Doğrulama Bekleniyor",
           "verified": "Doğrulandı"
         },
-        "title": "Özel Etki Alanı ve Marka",
         "tokenExpired": "Belirteç Süresi Doldu",
         "tokenExpiredDescription": "Doğrulama belirtecinin süresi doldu. Lütfen yeni bir belirteç oluşturun.",
         "tokenExpires": "Belirteç son kullanma tarihi: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Bu kuruluş için SSO, SCIM sağlama, alan adı kısıtlamaları, davet politikası ve varsayılan rolleri yönetin.",
-      "title": "Kurumsal Kimlik Kurulumu"
+      "description": "Bu kuruluş için SSO, SCIM sağlama, alan adı kısıtlamaları, davet politikası ve varsayılan rolleri yönetin."
     }
   }
 }

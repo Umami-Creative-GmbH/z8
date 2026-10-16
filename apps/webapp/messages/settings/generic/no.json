@@ -504,7 +504,6 @@
       "title": "ArbZG-samsvar"
     },
     "customDomains": {
-      "description": "Konfigurer egendefinert domene, merkevarebygging og SSO for organisasjonen din",
       "title": "Domene og merkevarebygging"
     },
     "customers": {
@@ -845,10 +844,6 @@
         "storageSettings": "Lagringsinnstillinger"
       },
       "title": "Dataeksport"
-    },
-    "emailConfig": {
-      "description": "Konfigurer en egendefinert e-postleverandør for organisasjonens e-poster",
-      "title": "E-postkonfigurasjon"
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1273,8 @@
     },
     "group": {
       "account": "Konto",
-      "administration": "Administrasjon",
       "data": "Data",
-      "enterprise": "Enterprise",
+      "integrations": "Integrasjoner",
       "notifications": "Varsler",
       "organization": "Organisasjon"
     },
@@ -1517,6 +1511,7 @@
       "searchPlaceholder": "Søk etter pakker eller lisenser...",
       "unknown": "Ukjent"
     },
+    "loading": "Laster innstillinger",
     "locations": {
       "address": "Adresse",
       "assignEmployee": "Tildel ansatt",
@@ -1627,6 +1622,55 @@
       "statusReady": "Klar",
       "title": "Mine data",
       "unavailable": "Mine data er ikke tilgjengelig for kontoen din i denne organisasjonen."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Aktivitet",
+        "description": "Gjennomgå aktivitet og konfigurer signerte revisjonseksporter",
+        "keysDescription": "Administrer signeringsnøklene som brukes av revisjonseksporter",
+        "packagesDescription": "Generer og gjennomgå signerte revisjonspakker",
+        "title": "Revisjon"
+      },
+      "chat-integrations": {
+        "description": "Konfigurer Slack, Microsoft Teams, Telegram og Discord",
+        "title": "Chat-integrasjoner"
+      },
+      "clocking": {
+        "automaticDescription": "Konfigurer automatisk utstempling for uavbrutt arbeid",
+        "description": "Konfigurer sporing, automatisk utstempling, påminnelser og periodeinnsendinger",
+        "remindersDescription": "Konfigurer påminnelser for innstempling, utstempling og pauser",
+        "submissionsDescription": "Konfigurer når ansatte sender inn arbeidsperiodene sine til godkjenning",
+        "title": "Stempling",
+        "trackingDescription": "Angi startdatoen som brukes for organisasjonens tidssporing"
+      },
+      "developerAccess": {
+        "description": "Administrer API-nøkler og webhook-endepunkter",
+        "title": "Utviklertilgang"
+      },
+      "domainBranding": {
+        "description": "Konfigurer organisasjonens egendefinerte domene og merkevarebygging"
+      },
+      "email": {
+        "delivery": "Levering",
+        "description": "Konfigurer e-postlevering og tilpass meldingsmaler",
+        "title": "E-post"
+      },
+      "identityAccess": {
+        "description": "Konfigurer SSO, sosial pålogging, klargjøring og organisasjonstilgang",
+        "socialDescription": "Konfigurer leverandørene av sosial pålogging som er tilgjengelige for organisasjonen din",
+        "ssoDescription": "Administrer leverandører av enkel pålogging (SSO) for organisasjonen din",
+        "title": "Identitet og tilgang"
+      },
+      "personnel-files": {
+        "description": "Administrer tilgang til personalmapper, utløpspåminnelser og oppbevaring av dokumenter"
+      },
+      "scheduled-exports": {
+        "description": "Planlegg regelmessige lønns-, data- og revisjonseksporter"
+      },
+      "shiftPlanning": {
+        "description": "Konfigurer vaktmaler og bemanningsmål",
+        "title": "Vaktplanlegging"
+      }
     },
     "notifications": {
       "approvals": "Godkjenningsvarsler",
@@ -2716,6 +2760,45 @@
         "title": "Ikke en skattegodkjent kjørebok"
       },
       "noDrivers": "Ingen tilordnede sjåfører",
+      "photos": {
+        "accessChanged": "Tilgangen din ble endret. Åpne kjøretøyinnstillingene på nytt for å sjekke tillatelsene dine.",
+        "action": "Bilder",
+        "add": "Legg til bilde",
+        "archived": "Dette kjøretøyet er arkivert. Gjenopprett det for å legge til eller fjerne bilder.",
+        "capacityChanged": "Galleriet ble endret. {count} bildeplasser gjenstår. Åpne det på nytt og velg færre bilder.",
+        "description": "Private referansebilder for dette kjøretøyet. Fullførte opplastinger og slettinger lagres umiddelbart.",
+        "empty": "Ingen bilder ennå.",
+        "expired": "Denne opplastingen utløp. Velg bildet på nytt for å laste det opp.",
+        "full": "Dette kjøretøyet har 20 bilder. Fjern et bilde før du legger til et nytt.",
+        "gallery": "Kjøretøybilder",
+        "imageNamed": "{name}, bilde {number}",
+        "invalid": "Dette bildet kunne ikke leses. Velg et annet JPEG-, PNG- eller WebP-bilde.",
+        "limits": "JPEG, PNG eller WebP. Opptil 10 MB per bilde, 20 bilder per kjøretøy.",
+        "loadFailed": "Bildene kunne ikke lastes inn. Lukk dialogboksen og prøv igjen.",
+        "loading": "Laster inn bilder…",
+        "named": "Bilder av {name}",
+        "next": "Neste bilde",
+        "position": "Bilde {number} av {count}",
+        "previous": "Forrige bilde",
+        "queued": "Venter på å laste opp {name}…",
+        "remove": "Fjern bilde",
+        "removeConfirm": "Fjern bilde permanent",
+        "removeDescription": "Dette bildet vil bli permanent fjernet fra kjøretøygalleriet. Dette kan ikke angres.",
+        "removeFailed": "Bildet kunne ikke fjernes. Prøv igjen.",
+        "removeTitle": "Fjerne dette bildet permanent?",
+        "removing": "Fjerner bilde…",
+        "retry": "Prøv på nytt",
+        "retryNamed": "Prøv {name} på nytt",
+        "saved": "Lagret {name}.",
+        "selectionTooLarge": "Dette utvalget ble ikke lastet opp. Det gjenstår {count} bildeplasser, inkludert ventende opplastinger.",
+        "tooLarge": "Velg et bilde som ikke er større enn 10 MB.",
+        "unsupported": "Velg et JPEG-, PNG- eller WebP-bilde. HEIC og andre formater støttes ikke.",
+        "uploadFailed": "Bildet kunne ikke lastes opp. Prøv igjen.",
+        "uploading": "Laster opp {name}…",
+        "uploadResults": "Resultater for bildeopplasting",
+        "vehicleMissing": "Dette kjøretøyet er ikke lenger tilgjengelig i organisasjonen din.",
+        "viewNamed": "Vis bilde {number} av {name}"
+      },
       "refusals": {
         "driverNotFound": "En tilordnet ansatt eller et team finnes ikke lenger. Last inn siden på nytt.",
         "invalidChange": "Endringen kunne ikke lagres. Last inn siden på nytt og prøv igjen.",
@@ -2739,7 +2822,6 @@
       "assignmentRemoved": "Tilordning fjernet",
       "assignmentSaved": "Tilordning lagret",
       "assignmentsDescription": "Ansatte som blir spurt, kan registrere kjøretøybruk når de stempler. Ansatte med forventet kjøretøybruk blir spurt hver gang, og arbeidet deres flagges til opplysningene er fullstendige. Ingen blir noensinne hindret i å stemple. Den mest spesifikke tilordningen har forrang: en ansatts egen over primærteamets, og et teams over hele organisasjonens.",
-      "description": "Hvem som blir bedt om å registrere kjøretøyet de kjørte og kilometerstanden",
       "enabled": "Registrer kjøretøybruk",
       "enabledDescription": "Hvis du slår dette av, blir det slutt på å spørre om kjøretøybruk og flagge manglende kjøreopplysninger. Allerede registrert kjøretøybruk forblir synlig og inkludert i eksporter.",
       "error": {

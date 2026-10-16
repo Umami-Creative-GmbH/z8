@@ -504,7 +504,6 @@
       "title": "Conformitate ArbZG"
     },
     "customDomains": {
-      "description": "Configurați domeniul personalizat, brandingul și SSO pentru organizația dvs.",
       "title": "Domeniu și branding"
     },
     "customers": {
@@ -845,10 +844,6 @@
         "storageSettings": "Setări de stocare"
       },
       "title": "Export de date"
-    },
-    "emailConfig": {
-      "description": "Configurați un furnizor de e-mail personalizat pentru e-mailurile organizației",
-      "title": "Configurare e-mail"
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1273,8 @@
     },
     "group": {
       "account": "Cont",
-      "administration": "Administrare",
       "data": "Date",
-      "enterprise": "Enterprise",
+      "integrations": "Integrări",
       "notifications": "Notificări",
       "organization": "Organizație"
     },
@@ -1517,6 +1511,7 @@
       "searchPlaceholder": "Căutați pachete sau licențe...",
       "unknown": "Necunoscut"
     },
+    "loading": "Se încarcă setările",
     "locations": {
       "address": "Adresă",
       "assignEmployee": "Atribuie angajat",
@@ -1627,6 +1622,55 @@
       "statusReady": "Gata",
       "title": "Datele mele",
       "unavailable": "Datele mele nu sunt disponibile pentru contul dvs. în această organizație."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Activitate",
+        "description": "Examinați activitatea și configurați exporturile de audit semnate",
+        "keysDescription": "Gestionați cheile de semnare utilizate de exporturile de audit",
+        "packagesDescription": "Generați și examinați pachete de audit semnate",
+        "title": "Audit"
+      },
+      "chat-integrations": {
+        "description": "Configurați Slack, Microsoft Teams, Telegram și Discord",
+        "title": "Integrări de chat"
+      },
+      "clocking": {
+        "automaticDescription": "Configurați pontarea automată la ieșire pentru activitatea neîntreruptă",
+        "description": "Configurați monitorizarea, pontarea automată la ieșire, mementourile și trimiterea pontajelor periodice",
+        "remindersDescription": "Configurați mementouri pentru pontările la intrare, la ieșire și pauze",
+        "submissionsDescription": "Configurați când trimit angajații perioadele de lucru spre examinare",
+        "title": "Pontaj",
+        "trackingDescription": "Setați data de început utilizată pentru monitorizarea timpului organizației dvs."
+      },
+      "developerAccess": {
+        "description": "Gestionați cheile API și endpoint-urile webhook",
+        "title": "Acces pentru dezvoltatori"
+      },
+      "domainBranding": {
+        "description": "Configurați domeniul personalizat și elementele de branding ale organizației dvs."
+      },
+      "email": {
+        "delivery": "Livrare",
+        "description": "Configurați livrarea e-mailurilor și personalizați șabloanele de mesaje",
+        "title": "E-mail"
+      },
+      "identityAccess": {
+        "description": "Configurați SSO, autentificarea prin rețele sociale, provizionarea și accesul la organizație",
+        "socialDescription": "Configurați furnizorii de autentificare prin rețele sociale disponibili pentru organizația dvs.",
+        "ssoDescription": "Gestionați furnizorii de autentificare unică (SSO) pentru organizația dvs.",
+        "title": "Identitate și acces"
+      },
+      "personnel-files": {
+        "description": "Gestionați accesul la dosarele de personal, mementourile de expirare și păstrarea documentelor"
+      },
+      "scheduled-exports": {
+        "description": "Programați exporturi recurente pentru salarizare, date și audit"
+      },
+      "shiftPlanning": {
+        "description": "Configurați șabloanele de ture și obiectivele de acoperire",
+        "title": "Planificarea turelor"
+      }
     },
     "notifications": {
       "approvals": "Notificări de aprobare",
@@ -2716,6 +2760,45 @@
         "title": "Nu este foaie de parcurs fiscală"
       },
       "noDrivers": "Niciun șofer asociat",
+      "photos": {
+        "accessChanged": "Accesul dvs. s-a modificat. Redeschideți setările vehiculului pentru a vă verifica permisiunile.",
+        "action": "Fotografii",
+        "add": "Adăugați o fotografie",
+        "archived": "Acest vehicul este arhivat. Restaurați-l pentru a adăuga sau elimina fotografii.",
+        "capacityChanged": "Galeria s-a modificat. Au mai rămas {count} locuri pentru fotografii. Redeschideți-o și alegeți mai puține fotografii.",
+        "description": "Fotografii de referință private pentru acest vehicul. Încărcările și eliminările finalizate se salvează imediat.",
+        "empty": "Nicio fotografie încă.",
+        "expired": "Această încărcare a expirat. Selectați din nou fotografia pentru a o încărca.",
+        "full": "Acest vehicul are 20 de fotografii. Eliminați o fotografie înainte de a adăuga alta.",
+        "gallery": "Fotografii vehicul",
+        "imageNamed": "{name}, fotografia {number}",
+        "invalid": "Această imagine nu a putut fi citită. Alegeți o altă fotografie JPEG, PNG sau WebP.",
+        "limits": "JPEG, PNG sau WebP. Până la 10 MB per fotografie, 20 de fotografii per vehicul.",
+        "loadFailed": "Fotografiile nu au putut fi încărcate. Închideți caseta de dialog și încercați din nou.",
+        "loading": "Se încarcă fotografiile…",
+        "named": "Fotografii cu {name}",
+        "next": "Fotografia următoare",
+        "position": "Fotografia {number} din {count}",
+        "previous": "Fotografia anterioară",
+        "queued": "Se așteaptă încărcarea {name}…",
+        "remove": "Eliminați fotografia",
+        "removeConfirm": "Elimină definitiv fotografia",
+        "removeDescription": "Această fotografie va fi eliminată definitiv din galeria vehiculului. Această acțiune nu poate fi anulată.",
+        "removeFailed": "Fotografia nu a putut fi eliminată. Încearcă din nou.",
+        "removeTitle": "Elimini definitiv această fotografie?",
+        "removing": "Se elimină fotografia…",
+        "retry": "Reîncearcă",
+        "retryNamed": "Reîncearcă {name}",
+        "saved": "S-a salvat {name}.",
+        "selectionTooLarge": "Această selecție nu a fost încărcată. Au mai rămas {count} locuri pentru fotografii, inclusiv încărcările în așteptare.",
+        "tooLarge": "Alege o fotografie de maximum 10 MB.",
+        "unsupported": "Alege o fotografie JPEG, PNG sau WebP. HEIC și alte formate nu sunt acceptate.",
+        "uploadFailed": "Fotografia nu a putut fi încărcată. Încearcă din nou.",
+        "uploading": "Se încarcă {name}…",
+        "uploadResults": "Rezultate încărcare fotografii",
+        "vehicleMissing": "Acest vehicul nu mai este disponibil în organizația ta.",
+        "viewNamed": "Vizualizează fotografia {number} din {name}"
+      },
       "refusals": {
         "driverNotFound": "Un angajat asociat sau o echipă asociată nu mai există. Reîncărcați pagina.",
         "invalidChange": "Modificarea nu a putut fi salvată. Reîncărcați pagina și încercați din nou.",
@@ -2739,7 +2822,6 @@
       "assignmentRemoved": "Atribuire eliminată",
       "assignmentSaved": "Atribuire salvată",
       "assignmentsDescription": "Angajații întrebați pot înregistra utilizarea vehiculului la pontare. Angajații pentru care este preconizată utilizarea vehiculului sunt întrebați de fiecare dată, iar activitatea lor este marcată până la completarea detaliilor. Nimeni nu este împiedicat vreodată să ponteze. Cea mai specifică atribuire are prioritate: cea a angajatului față de cea a echipei principale, iar cea a echipei față de cea a întregii organizații.",
-      "description": "Cine este întrebat pentru a înregistra vehiculul condus și valorile kilometrajului",
       "enabled": "Înregistrare utilizare vehicul",
       "enabledDescription": "Dezactivarea acestei opțiuni oprește solicitarea utilizării vehiculului și semnalarea detaliilor de conducere lipsă. Utilizarea vehiculelor deja înregistrată rămâne vizibilă și în exporturi.",
       "error": {

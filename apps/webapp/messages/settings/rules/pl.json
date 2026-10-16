@@ -143,7 +143,6 @@
         "title": "Zastępcy",
         "toggle": "Zastępcy mogą rozpatrywać wnioski"
       },
-      "description": "Przejrzyj zasady eskalacji w organizacji, sposób ich migracji z ustawień kanału oraz warunki wymagające menedżera zatwierdzeń.",
       "dispose": {
         "confirm": "Zamknij element",
         "description": "Zamknięcie zapisuje Twoją decyzję w dzienniku audytu. Nie powoduje ponownego przypisania zatwierdzenia ani nie pozwala na kolejną automatyczną eskalację.",
@@ -177,7 +176,6 @@
         "usedNo": "Nieużywane",
         "usedYes": "Używane"
       },
-      "navDescription": "Zasady eskalacji organizacji i zatwierdzenia wymagające uwagi",
       "off": "Wył.",
       "on": "Wł.",
       "ownership": {

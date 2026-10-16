@@ -202,15 +202,12 @@
       }
     },
     "discord": {
-      "description": "Konfiguroni njoftimet e Discord për organizatën tuaj",
       "title": "Discord"
     },
     "slack": {
-      "description": "Konfiguroni njoftimet e Slack për organizatën tuaj",
       "title": "Slack"
     },
     "teamsNotifications": {
-      "description": "Konfiguroni njoftimet e Microsoft Teams për organizatën tuaj",
       "title": "Microsoft Teams"
     },
     "telegram": {

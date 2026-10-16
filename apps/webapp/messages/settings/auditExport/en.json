@@ -140,7 +140,6 @@
         "keys": "Signing Keys",
         "packages": "Audit Packages"
       },
-      "title": "Audit Export",
       "verification": {
         "invalid": "Verification Failed",
         "valid": "Verification Passed",
@@ -175,7 +174,6 @@
       "search": "Search",
       "searchPlaceholder": "Search actions, users, or metadata…",
       "timestamp": "Timestamp",
-      "title": "Audit Log",
       "to": "To",
       "unknown": "Unknown",
       "user": "User",

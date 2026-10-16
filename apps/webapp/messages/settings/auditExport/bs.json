@@ -140,7 +140,6 @@
         "keys": "Ključevi za potpisivanje",
         "packages": "Paketi revizije"
       },
-      "title": "Izvoz revizije",
       "verification": {
         "invalid": "Verifikacija nije uspjela",
         "valid": "Verifikacija je uspjela",
@@ -175,7 +174,6 @@
       "search": "Pretraži",
       "searchPlaceholder": "Pretražite radnje, korisnike ili metapodatke…",
       "timestamp": "Vremenska oznaka",
-      "title": "Revizijski dnevnik",
       "to": "Do",
       "unknown": "Nepoznato",
       "user": "Korisnik",

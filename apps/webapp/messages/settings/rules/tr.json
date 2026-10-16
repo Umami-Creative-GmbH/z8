@@ -143,7 +143,6 @@
         "title": "Vekiller",
         "toggle": "Vekiller onaylar hakkında karar verebilir"
       },
-      "description": "Kuruluş eskalasyon politikasını, bunun kanal ayarlarından nasıl aktarıldığını ve bir onay yöneticisi gerektiren koşulları gözden geçirin.",
       "dispose": {
         "confirm": "Öğeyi kapat",
         "description": "Kapatma işlemi, kararınızı denetim günlüğüne kaydeder. Onayı yeniden atamaz veya başka bir otomatik eskalasyona izin vermez.",
@@ -177,7 +176,6 @@
         "usedNo": "Kullanımda değil",
         "usedYes": "Kullanımda"
       },
-      "navDescription": "Kuruluş eskalasyon ilkesi ve ilgilenilmesi gereken onaylar",
       "off": "Kapalı",
       "on": "Açık",
       "ownership": {

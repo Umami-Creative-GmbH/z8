@@ -504,7 +504,6 @@
       "title": "ArbZG Compliance"
     },
     "customDomains": {
-      "description": "Configure custom domain, branding, and SSO for your organization",
       "title": "Domain & Branding"
     },
     "customers": {
@@ -845,10 +844,6 @@
         "storageSettings": "Storage Settings"
       },
       "title": "Data Export"
-    },
-    "emailConfig": {
-      "description": "Configure a custom email provider for organization emails",
-      "title": "Email Configuration"
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1273,8 @@
     },
     "group": {
       "account": "Account",
-      "administration": "Administration",
       "data": "Data",
-      "enterprise": "Enterprise",
+      "integrations": "Integrations",
       "notifications": "Notifications",
       "organization": "Organization"
     },
@@ -1517,6 +1511,7 @@
       "searchPlaceholder": "Search packages or licenses...",
       "unknown": "Unknown"
     },
+    "loading": "Loading settings",
     "locations": {
       "address": "Address",
       "assignEmployee": "Assign Employee",
@@ -1627,6 +1622,55 @@
       "statusReady": "Ready",
       "title": "My data",
       "unavailable": "My data is not available for your account in this organization."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Activity",
+        "description": "Review activity and configure signed audit exports",
+        "keysDescription": "Manage the signing keys used by audit exports",
+        "packagesDescription": "Generate and review signed audit packages",
+        "title": "Audit"
+      },
+      "chat-integrations": {
+        "description": "Configure Slack, Microsoft Teams, Telegram and Discord",
+        "title": "Chat Integrations"
+      },
+      "clocking": {
+        "automaticDescription": "Configure automatic clock-out for uninterrupted work",
+        "description": "Configure tracking, automatic clock-out, reminders and period submissions",
+        "remindersDescription": "Configure reminders for clock-ins, clock-outs and breaks",
+        "submissionsDescription": "Configure when employees submit their work periods for review",
+        "title": "Clocking",
+        "trackingDescription": "Set the start date used for your organization’s time tracking"
+      },
+      "developerAccess": {
+        "description": "Manage API keys and webhook endpoints",
+        "title": "Developer Access"
+      },
+      "domainBranding": {
+        "description": "Configure your organization’s custom domain and branding"
+      },
+      "email": {
+        "delivery": "Delivery",
+        "description": "Configure email delivery and customize message templates",
+        "title": "Email"
+      },
+      "identityAccess": {
+        "description": "Configure SSO, social login, provisioning and organization access",
+        "socialDescription": "Configure the social login providers available to your organization",
+        "ssoDescription": "Manage single sign-on providers for your organization",
+        "title": "Identity & Access"
+      },
+      "personnel-files": {
+        "description": "Manage personnel file access, expiry reminders and document retention"
+      },
+      "scheduled-exports": {
+        "description": "Schedule recurring payroll, data and audit exports"
+      },
+      "shiftPlanning": {
+        "description": "Configure shift templates and coverage targets",
+        "title": "Shift Planning"
+      }
     },
     "notifications": {
       "approvals": "Approval notifications",
@@ -2716,6 +2760,45 @@
         "title": "Not a tax logbook"
       },
       "noDrivers": "No assigned drivers",
+      "photos": {
+        "accessChanged": "Your access changed. Reopen vehicle settings to check your permissions.",
+        "action": "Photos",
+        "add": "Add photo",
+        "archived": "This vehicle is archived. Restore it to add or remove photos.",
+        "capacityChanged": "The gallery changed. {count} photo slots remain. Reopen it and choose fewer photos.",
+        "description": "Private reference photos for this vehicle. Completed uploads and removals save immediately.",
+        "empty": "No photos yet.",
+        "expired": "This upload expired. Select the photo again to upload it.",
+        "full": "This vehicle has 20 photos. Remove a photo before adding another.",
+        "gallery": "Vehicle photos",
+        "imageNamed": "{name}, photo {number}",
+        "invalid": "This image could not be read. Choose another JPEG, PNG or WebP photo.",
+        "limits": "JPEG, PNG or WebP. Up to 10 MB per photo, 20 photos per vehicle.",
+        "loadFailed": "The photos could not be loaded. Close the dialog and try again.",
+        "loading": "Loading photos…",
+        "named": "Photos of {name}",
+        "next": "Next photo",
+        "position": "Photo {number} of {count}",
+        "previous": "Previous photo",
+        "queued": "Waiting to upload {name}…",
+        "remove": "Remove photo",
+        "removeConfirm": "Permanently remove photo",
+        "removeDescription": "This photo will be permanently removed from the vehicle gallery. This cannot be undone.",
+        "removeFailed": "The photo could not be removed. Try again.",
+        "removeTitle": "Permanently remove this photo?",
+        "removing": "Removing photo…",
+        "retry": "Retry",
+        "retryNamed": "Retry {name}",
+        "saved": "Saved {name}.",
+        "selectionTooLarge": "This selection was not uploaded. {count} photo slots remain, including pending uploads.",
+        "tooLarge": "Choose a photo no larger than 10 MB.",
+        "unsupported": "Choose a JPEG, PNG or WebP photo. HEIC and other formats are not supported.",
+        "uploadFailed": "The photo could not be uploaded. Try again.",
+        "uploading": "Uploading {name}…",
+        "uploadResults": "Photo upload results",
+        "vehicleMissing": "This vehicle is no longer available in your organization.",
+        "viewNamed": "View photo {number} of {name}"
+      },
       "refusals": {
         "driverNotFound": "An assigned employee or team no longer exists. Reload the page.",
         "invalidChange": "The change could not be saved. Reload the page and try again.",
@@ -2739,7 +2822,6 @@
       "assignmentRemoved": "Assignment removed",
       "assignmentSaved": "Assignment saved",
       "assignmentsDescription": "Asked employees may record vehicle use when they clock. Employees with vehicle use expected are asked every time, and their work is flagged until the details are complete. Nobody is ever stopped from clocking. The most specific assignment wins: an employee's own over their primary team's, and a team's over the whole organization's.",
-      "description": "Who is asked to record the vehicle they drove and its odometer readings",
       "enabled": "Record vehicle use",
       "enabledDescription": "Switching this off stops asking for vehicle use and stops flagging missing driving details. Vehicle use already recorded stays visible and in exports.",
       "error": {

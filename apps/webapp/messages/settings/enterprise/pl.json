@@ -198,7 +198,6 @@
         "deleteDescription": "Czy na pewno chcesz usunąć „{domain}”? Tej akcji nie można cofnąć. Użytkownicy nie będą już mogli logować się za pośrednictwem tej domeny niestandardowej.",
         "deleteFailed": "Nie udało się usunąć domeny",
         "deleteTitle": "Usuń domenę",
-        "description": "Skonfiguruj niestandardową domenę logowania, branding i dostawców SSO dla swojej organizacji.",
         "dnsPropagation": "Propagacja DNS",
         "dnsPropagationDescription": "Zmiany DNS mogą trwać do 48 godzin, choć zazwyczaj kończą się w ciągu kilku minut. Możesz kliknąć „Weryfikuj” po dodaniu rekordu TXT.",
         "domain": "Domena",
@@ -212,8 +211,6 @@
         "empty": "Brak skonfigurowanej niestandardowej domeny.",
         "enabledAuthMethods": "Włączone metody uwierzytelniania",
         "guidedSetup": {
-          "action": "Konfiguracja z przewodnikiem",
-          "description": "Skonfiguruj SSO, SCIM, politykę dostępu i kontrole aktywacji w jednym bezpiecznym procesie.",
           "title": "Konfiguracja z przewodnikiem"
         },
         "keepExistingSecretKey": "Pozostaw puste, aby zachować istniejący klucz tajny",
@@ -238,7 +235,6 @@
           "pending": "Oczekuje na weryfikację",
           "verified": "Zweryfikowano"
         },
-        "title": "Niestandardowa domena i branding",
         "tokenExpired": "Token wygasł",
         "tokenExpiredDescription": "Token weryfikacyjny wygasł. Proszę wygenerować nowy token.",
         "tokenExpires": "Token wygasa: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Skonfiguruj SSO, udostępnianie SCIM, ograniczenia domen, zasady zapraszania oraz domyślne role dla tej organizacji.",
-      "title": "Konfiguracja tożsamości korporacyjnej"
+      "description": "Skonfiguruj SSO, udostępnianie SCIM, ograniczenia domen, zasady zapraszania oraz domyślne role dla tej organizacji."
     }
   }
 }

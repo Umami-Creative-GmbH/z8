@@ -198,7 +198,6 @@
         "deleteDescription": "Sei sicuro di voler eliminare \"{domain}\"? Questa azione non può essere annullata. Gli utenti non potranno più accedere tramite questo dominio personalizzato.",
         "deleteFailed": "Eliminazione del dominio non riuscita",
         "deleteTitle": "Elimina dominio",
-        "description": "Configura il dominio di accesso personalizzato, il branding e i provider SSO della tua organizzazione.",
         "dnsPropagation": "Propagazione DNS",
         "dnsPropagationDescription": "Le modifiche DNS possono richiedere fino a 48 ore per propagarsi, sebbene spesso si completino in pochi minuti. Puoi fare clic su \"Verifica\" una volta aggiunto il record TXT.",
         "domain": "Dominio",
@@ -212,8 +211,6 @@
         "empty": "Nessun dominio personalizzato configurato ancora.",
         "enabledAuthMethods": "Metodi di autenticazione abilitati",
         "guidedSetup": {
-          "action": "Configurazione guidata",
-          "description": "Configura SSO, SCIM, policy di accesso e controlli di attivazione in un unico flusso guidato.",
           "title": "Configurazione guidata"
         },
         "keepExistingSecretKey": "Lascia vuoto per mantenere la chiave segreta esistente",
@@ -238,7 +235,6 @@
           "pending": "Verifica in sospeso",
           "verified": "Verificato"
         },
-        "title": "Dominio personalizzato e branding",
         "tokenExpired": "Token scaduto",
         "tokenExpiredDescription": "Il token di verifica è scaduto. Si prega di rigenerarne uno nuovo.",
         "tokenExpires": "Il token scade il: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Guida a SSO, provisioning SCIM, restrizioni di dominio, policy di invito e ruoli predefiniti per questa organizzazione.",
-      "title": "Configurazione identità aziendale"
+      "description": "Guida a SSO, provisioning SCIM, restrizioni di dominio, policy di invito e ruoli predefiniti per questa organizzazione."
     }
   }
 }

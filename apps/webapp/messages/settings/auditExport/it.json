@@ -140,7 +140,6 @@
         "keys": "Chiavi di firma",
         "packages": "Pacchetti di audit"
       },
-      "title": "Esportazione audit",
       "verification": {
         "invalid": "Verifica non riuscita",
         "valid": "Verifica superata",
@@ -175,7 +174,6 @@
       "search": "Cerca",
       "searchPlaceholder": "Cerca azioni, utenti o metadati...",
       "timestamp": "Timestamp",
-      "title": "Registro di controllo",
       "to": "A",
       "unknown": "Sconosciuto",
       "user": "Utente",

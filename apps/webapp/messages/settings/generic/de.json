@@ -504,7 +504,6 @@
       "title": "ArbZG Compliance"
     },
     "customDomains": {
-      "description": "Konfigurieren Sie eine benutzerdefinierte Domain, Branding und SSO für Ihre Organisation",
       "title": "Domain & Branding"
     },
     "customers": {
@@ -845,10 +844,6 @@
         "storageSettings": "Speichereinstellungen"
       },
       "title": "Datenexport"
-    },
-    "emailConfig": {
-      "description": "Konfigurieren Sie einen benutzerdefinierten E-Mail-Anbieter für Organisations-E-Mails",
-      "title": "E-Mail-Konfiguration"
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1273,8 @@
     },
     "group": {
       "account": "Konto",
-      "administration": "Verwaltung",
       "data": "Daten",
-      "enterprise": "Unternehmen",
+      "integrations": "Integrationen",
       "notifications": "Benachrichtigungen",
       "organization": "Organisation"
     },
@@ -1517,6 +1511,7 @@
       "searchPlaceholder": "Pakete oder Lizenzen suchen...",
       "unknown": "Unbekannt"
     },
+    "loading": "Einstellungen werden geladen",
     "locations": {
       "address": "Adresse",
       "assignEmployee": "Mitarbeiter zuweisen",
@@ -1627,6 +1622,55 @@
       "statusReady": "Bereit",
       "title": "Meine Daten",
       "unavailable": "Meine Daten sind für Ihr Konto in dieser Organisation nicht verfügbar."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Aktivität",
+        "description": "Aktivitäten überprüfen und signierte Audit-Exporte konfigurieren",
+        "keysDescription": "Für Audit-Exporte verwendete Signaturschlüssel verwalten",
+        "packagesDescription": "Signierte Audit-Pakete generieren und überprüfen",
+        "title": "Audit"
+      },
+      "chat-integrations": {
+        "description": "Slack, Microsoft Teams, Telegram und Discord konfigurieren",
+        "title": "Chat-Integrationen"
+      },
+      "clocking": {
+        "automaticDescription": "Automatisches Ausstempeln für unterbrechungsfreies Arbeiten konfigurieren",
+        "description": "Erfassung, automatisches Ausstempeln, Erinnerungen und Periodenübermittlungen konfigurieren",
+        "remindersDescription": "Erinnerungen für Einstempeln, Ausstempeln und Pausen konfigurieren",
+        "submissionsDescription": "Festlegen, wann Mitarbeitende ihre Arbeitsperioden zur Prüfung einreichen",
+        "title": "Zeiterfassung",
+        "trackingDescription": "Startdatum für die Zeiterfassung Ihrer Organisation festlegen"
+      },
+      "developerAccess": {
+        "description": "API-Schlüssel und Webhook-Endpunkte verwalten",
+        "title": "Entwicklerzugriff"
+      },
+      "domainBranding": {
+        "description": "Benutzerdefinierte Domain und Branding Ihrer Organisation konfigurieren"
+      },
+      "email": {
+        "delivery": "Zustellung",
+        "description": "E-Mail-Zustellung konfigurieren und Nachrichtenvorlagen anpassen",
+        "title": "E-Mail"
+      },
+      "identityAccess": {
+        "description": "SSO, Social Login, Bereitstellung und Organisationszugriff konfigurieren",
+        "socialDescription": "Für Ihre Organisation verfügbare Social-Login-Anbieter konfigurieren",
+        "ssoDescription": "Single-Sign-On-Anbieter für Ihre Organisation verwalten",
+        "title": "Identität & Zugriff"
+      },
+      "personnel-files": {
+        "description": "Personalaktenzugriff, Ablauferinnerungen und Dokumentenaufbewahrung verwalten"
+      },
+      "scheduled-exports": {
+        "description": "Wiederkehrende Lohnabrechnungs-, Daten- und Audit-Exporte planen"
+      },
+      "shiftPlanning": {
+        "description": "Schichtvorlagen und Abdeckungsziele konfigurieren",
+        "title": "Schichtplanung"
+      }
     },
     "notifications": {
       "approvals": "Genehmigungsbenachrichtigungen",
@@ -2716,6 +2760,45 @@
         "title": "Kein steuerliches Fahrtenbuch"
       },
       "noDrivers": "Keine zugewiesenen Fahrer",
+      "photos": {
+        "accessChanged": "Ihr Zugriff hat sich geändert. Öffnen Sie die Fahrzeugeinstellungen erneut, um Ihre Berechtigungen zu überprüfen.",
+        "action": "Fotos",
+        "add": "Foto hinzufügen",
+        "archived": "Dieses Fahrzeug ist archiviert. Stellen Sie es wieder her, um Fotos hinzuzufügen oder zu entfernen.",
+        "capacityChanged": "Die Galerie wurde geändert. Es verbleiben noch {count} Fotoplätze. Öffnen Sie sie erneut und wählen Sie weniger Fotos aus.",
+        "description": "Private Referenzfotos für dieses Fahrzeug. Abgeschlossene Uploads und Löschungen werden sofort gespeichert.",
+        "empty": "Noch keine Fotos.",
+        "expired": "Dieser Upload ist abgelaufen. Wählen Sie das Foto erneut aus, um es hochzuladen.",
+        "full": "Dieses Fahrzeug hat 20 Fotos. Entfernen Sie ein Foto, bevor Sie ein weiteres hinzufügen.",
+        "gallery": "Fahrzeugfotos",
+        "imageNamed": "{name}, Foto {number}",
+        "invalid": "Dieses Bild konnte nicht gelesen werden. Wählen Sie ein anderes JPEG-, PNG- oder WebP-Foto aus.",
+        "limits": "JPEG, PNG oder WebP. Bis zu 10 MB pro Foto, 20 Fotos pro Fahrzeug.",
+        "loadFailed": "Die Fotos konnten nicht geladen werden. Schließen Sie den Dialog und versuchen Sie es erneut.",
+        "loading": "Fotos werden geladen…",
+        "named": "Fotos von {name}",
+        "next": "Nächstes Foto",
+        "position": "Foto {number} von {count}",
+        "previous": "Vorheriges Foto",
+        "queued": "Warten auf Upload von {name}…",
+        "remove": "Foto entfernen",
+        "removeConfirm": "Foto dauerhaft entfernen",
+        "removeDescription": "Dieses Foto wird dauerhaft aus der Fahrzeuggalerie entfernt. Dies kann nicht rückgängig gemacht werden.",
+        "removeFailed": "Das Foto konnte nicht entfernt werden. Versuchen Sie es erneut.",
+        "removeTitle": "Dieses Foto dauerhaft entfernen?",
+        "removing": "Foto wird entfernt…",
+        "retry": "Wiederholen",
+        "retryNamed": "{name} wiederholen",
+        "saved": "{name} gespeichert.",
+        "selectionTooLarge": "Diese Auswahl wurde nicht hochgeladen. Es verbleiben {count} Fotoplätze, einschließlich ausstehender Uploads.",
+        "tooLarge": "Wählen Sie ein Foto aus, das nicht größer als 10 MB ist.",
+        "unsupported": "Wählen Sie ein JPEG-, PNG- oder WebP-Foto. HEIC und andere Formate werden nicht unterstützt.",
+        "uploadFailed": "Das Foto konnte nicht hochgeladen werden. Versuchen Sie es erneut.",
+        "uploading": "{name} wird hochgeladen…",
+        "uploadResults": "Ergebnisse des Foto-Uploads",
+        "vehicleMissing": "Dieses Fahrzeug ist in Ihrer Organisation nicht mehr verfügbar.",
+        "viewNamed": "Foto {number} von {name} ansehen"
+      },
       "refusals": {
         "driverNotFound": "Ein zugewiesener Mitarbeiter oder ein zugewiesenes Team existiert nicht mehr. Laden Sie die Seite neu.",
         "invalidChange": "Die Änderung konnte nicht gespeichert werden. Laden Sie die Seite neu und versuchen Sie es erneut.",
@@ -2739,7 +2822,6 @@
       "assignmentRemoved": "Zuweisung entfernt",
       "assignmentSaved": "Zuweisung gespeichert",
       "assignmentsDescription": "Gefragte Mitarbeiter können die Fahrzeugnutzung beim Stempeln erfassen. Bei Mitarbeitern, von denen eine Fahrzeugnutzung erwartet wird, erfolgt die Abfrage jedes Mal, und ihre Arbeitszeit wird markiert, bis die Angaben vollständig sind. Niemand wird am Stempeln gehindert. Die spezifischste Zuweisung hat Vorrang: die eigene eines Mitarbeiters vor der seines primären Teams und die eines Teams vor der der gesamten Organisation.",
-      "description": "Wer aufgefordert wird, das gefahrene Fahrzeug und den Kilometerstand zu erfassen",
       "enabled": "Fahrzeugnutzung erfassen",
       "enabledDescription": "Wenn Sie dies deaktivieren, wird nicht mehr nach der Fahrzeugnutzung gefragt und fehlende Fahrtdetails werden nicht mehr markiert. Bereits erfasste Fahrzeugnutzungen bleiben sichtbar und in Exporten enthalten.",
       "error": {

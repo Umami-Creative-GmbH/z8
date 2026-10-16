@@ -143,7 +143,6 @@
         "title": "Remplaçants",
         "toggle": "Les remplaçants peuvent statuer sur les approbations"
       },
-      "description": "Examinez la politique d'escalade de l'organisation, la façon dont elle a été migrée depuis les paramètres des canaux et les conditions nécessitant un responsable d'approbation.",
       "dispose": {
         "confirm": "Clôturer l'élément",
         "description": "La clôture enregistre votre décision dans le journal d'audit. Elle ne réassigne pas l'approbation et n'autorise pas d'autre escalade automatique.",
@@ -177,7 +176,6 @@
         "usedNo": "Non utilisé",
         "usedYes": "Utilisé"
       },
-      "navDescription": "Politique d'escalade de l'organisation et approbations nécessitant une attention particulière",
       "off": "Désactivé",
       "on": "Activé",
       "ownership": {

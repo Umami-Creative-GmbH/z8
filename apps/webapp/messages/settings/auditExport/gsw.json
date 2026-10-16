@@ -140,7 +140,6 @@
         "keys": "Signaturschlüssel",
         "packages": "Audit-Paket"
       },
-      "title": "Audit-Export",
       "verification": {
         "invalid": "Überprüefig fehlgschlage",
         "valid": "Überprüefig erfolgriich",
@@ -175,7 +174,6 @@
       "search": "Sueche",
       "searchPlaceholder": "Aktionen, Benutzer oder Metadate sueche...",
       "timestamp": "Ziitstempel",
-      "title": "Audit-Log",
       "to": "Bis",
       "unknown": "Unbekannt",
       "user": "Benutzer",

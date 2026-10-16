@@ -504,7 +504,6 @@
       "title": "ArbZG usklađenost"
     },
     "customDomains": {
-      "description": "Konfigurišite prilagođenu domenu, brendiranje i SSO za svoju organizaciju",
       "title": "Domena i brendiranje"
     },
     "customers": {
@@ -845,10 +844,6 @@
         "storageSettings": "Postavke pohrane"
       },
       "title": "Izvoz podataka"
-    },
-    "emailConfig": {
-      "description": "Konfigurišite prilagođenog pružaoca usluga e-pošte za poruke organizacije",
-      "title": "Konfiguracija e-pošte"
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1273,8 @@
     },
     "group": {
       "account": "Račun",
-      "administration": "Administracija",
       "data": "Podaci",
-      "enterprise": "Enterprise",
+      "integrations": "Integracije",
       "notifications": "Obavještenja",
       "organization": "Organizacija"
     },
@@ -1517,6 +1511,7 @@
       "searchPlaceholder": "Pretraži pakete ili licence...",
       "unknown": "Nepoznato"
     },
+    "loading": "Učitavanje postavki",
     "locations": {
       "address": "Adresa",
       "assignEmployee": "Dodijeli zaposlenika",
@@ -1627,6 +1622,55 @@
       "statusReady": "Spremno",
       "title": "Moji podaci",
       "unavailable": "Moji podaci nisu dostupni za vaš račun u ovoj organizaciji."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Aktivnost",
+        "description": "Pregledajte aktivnost i konfigurišite potpisane izvoze revizije",
+        "keysDescription": "Upravljajte ključevima za potpisivanje koje koriste izvozi revizije",
+        "packagesDescription": "Generišite i pregledajte potpisane pakete revizije",
+        "title": "Revizija"
+      },
+      "chat-integrations": {
+        "description": "Konfigurišite Slack, Microsoft Teams, Telegram i Discord",
+        "title": "Integracije chata"
+      },
+      "clocking": {
+        "automaticDescription": "Konfigurišite automatsku odjavu za neprekidan rad",
+        "description": "Konfigurišite praćenje, automatsku odjavu, podsjetnike i podnošenje perioda",
+        "remindersDescription": "Konfigurišite podsjetnike za prijavu, odjavu i pauze",
+        "submissionsDescription": "Konfigurišite kada zaposlenici podnose svoje radne periode na pregled",
+        "title": "Evidencija radnog vremena",
+        "trackingDescription": "Postavite datum početka koji se koristi za praćenje radnog vremena vaše organizacije"
+      },
+      "developerAccess": {
+        "description": "Upravljajte API ključevima i krajnjim tačkama webhooka",
+        "title": "Pristup za programere"
+      },
+      "domainBranding": {
+        "description": "Konfigurišite prilagođenu domenu i brendiranje vaše organizacije"
+      },
+      "email": {
+        "delivery": "Isporuka",
+        "description": "Konfigurišite isporuku e-pošte i prilagodite predloške poruka",
+        "title": "E-pošta"
+      },
+      "identityAccess": {
+        "description": "Konfigurišite SSO, prijavu putem društvenih mreža, dodjelu resursa i pristup organizaciji",
+        "socialDescription": "Konfigurišite pružaoce prijave putem društvenih mreža dostupne vašoj organizaciji",
+        "ssoDescription": "Upravljajte pružaocima jedinstvene prijave (SSO) za vašu organizaciju",
+        "title": "Identitet i pristup"
+      },
+      "personnel-files": {
+        "description": "Upravljajte pristupom dosjeima zaposlenika, podsjetnicima o isteku i čuvanjem dokumenata"
+      },
+      "scheduled-exports": {
+        "description": "Zakažite periodične izvoze obračuna plata, podataka i revizije"
+      },
+      "shiftPlanning": {
+        "description": "Konfigurišite predloške smjena i ciljeve pokrivenosti",
+        "title": "Planiranje smjena"
+      }
     },
     "notifications": {
       "approvals": "Obavještenja o odobrenju",
@@ -2716,6 +2760,45 @@
         "title": "Nije porezna evidencija vožnji"
       },
       "noDrivers": "Nema dodijeljenih vozača",
+      "photos": {
+        "accessChanged": "Vaš pristup je promijenjen. Ponovo otvorite postavke vozila kako biste provjerili svoje dozvole.",
+        "action": "Fotografije",
+        "add": "Dodaj fotografiju",
+        "archived": "Ovo vozilo je arhivirano. Vratite ga da biste dodali ili uklonili fotografije.",
+        "capacityChanged": "Galerija se promijenila. Preostalo je još {count} mjesta za fotografije. Ponovo je otvorite i odaberite manje fotografija.",
+        "description": "Privatne referentne fotografije za ovo vozilo. Završena učitavanja i uklanjanja se odmah spremaju.",
+        "empty": "Još nema fotografija.",
+        "expired": "Ovo učitavanje je isteklo. Ponovo odaberite fotografiju da biste je učitali.",
+        "full": "Ovo vozilo ima 20 fotografija. Uklonite fotografiju prije dodavanja nove.",
+        "gallery": "Fotografije vozila",
+        "imageNamed": "{name}, fotografija {number}",
+        "invalid": "Ova slika se nije mogla pročitati. Odaberite drugu JPEG, PNG ili WebP fotografiju.",
+        "limits": "JPEG, PNG ili WebP. Do 10 MB po fotografiji, 20 fotografija po vozilu.",
+        "loadFailed": "Fotografije se nisu mogle učitati. Zatvorite dijaloški okvir i pokušajte ponovo.",
+        "loading": "Učitavanje fotografija…",
+        "named": "Fotografije za {name}",
+        "next": "Sljedeća fotografija",
+        "position": "Fotografija {number} od {count}",
+        "previous": "Prethodna fotografija",
+        "queued": "Čekanje na učitavanje {name}…",
+        "remove": "Ukloni fotografiju",
+        "removeConfirm": "Trajno uklonite fotografiju",
+        "removeDescription": "Ova fotografija će biti trajno uklonjena iz galerije vozila. Ova radnja se ne može poništiti.",
+        "removeFailed": "Fotografija se nije mogla ukloniti. Pokušajte ponovo.",
+        "removeTitle": "Trajno ukloniti ovu fotografiju?",
+        "removing": "Uklanjanje fotografije…",
+        "retry": "Pokušajte ponovo",
+        "retryNamed": "Pokušajte ponovo {name}",
+        "saved": "Sačuvano: {name}.",
+        "selectionTooLarge": "Ovaj odabir nije prenesen. Preostalo je {count} mjesta za fotografije, uključujući prijenose na čekanju.",
+        "tooLarge": "Odaberite fotografiju koja nije veća od 10 MB.",
+        "unsupported": "Odaberite JPEG, PNG ili WebP fotografiju. HEIC i drugi formati nisu podržani.",
+        "uploadFailed": "Fotografija se nije mogla prenijeti. Pokušajte ponovo.",
+        "uploading": "Prijenos {name}…",
+        "uploadResults": "Rezultati prijenosa fotografija",
+        "vehicleMissing": "Ovo vozilo više nije dostupno u vašoj organizaciji.",
+        "viewNamed": "Prikaži fotografiju {number} od {name}"
+      },
       "refusals": {
         "driverNotFound": "Dodijeljeni zaposlenik ili tim više ne postoji. Ponovo učitajte stranicu.",
         "invalidChange": "Promjena se nije mogla sačuvati. Ponovo učitajte stranicu i pokušajte ponovo.",
@@ -2739,7 +2822,6 @@
       "assignmentRemoved": "Dodjela je uklonjena",
       "assignmentSaved": "Dodjela je sačuvana",
       "assignmentsDescription": "Upitani zaposlenici mogu evidentirati korištenje vozila prilikom registracije radnog vremena. Od zaposlenika za koje se očekuje korištenje vozila to se traži svaki put, a njihov rad je označen sve dok detalji ne budu potpuni. Niko nikada nije spriječen da se registruje. Najspecifičnija dodjela ima prednost: lična dodjela zaposlenika nad dodjelom njegovog primarnog tima, a dodjela tima nad dodjelom cijele organizacije.",
-      "description": "Od koga se traži da evidentira vozilo koje je vozio i stanje na brojaču kilometara",
       "enabled": "Evidentiraj korištenje vozila",
       "enabledDescription": "Isključivanjem ove opcije prestaje se tražiti korištenje vozila i prestaje označavanje nedostajućih detalja o vožnji. Već evidentirano korištenje vozila ostaje vidljivo i u izvozima.",
       "error": {

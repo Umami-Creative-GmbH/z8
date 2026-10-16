@@ -504,7 +504,6 @@
       "title": "ArbZG-efterlevnad"
     },
     "customDomains": {
-      "description": "Konfigurera anpassad domän, varumärkesprofilering och SSO för din organisation",
       "title": "Domän & varumärkesprofilering"
     },
     "customers": {
@@ -845,10 +844,6 @@
         "storageSettings": "Lagringsinställningar"
       },
       "title": "Dataexport"
-    },
-    "emailConfig": {
-      "description": "Konfigurera en anpassad e-postleverantör för organisationens e-post",
-      "title": "E-postkonfiguration"
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1273,8 @@
     },
     "group": {
       "account": "Konto",
-      "administration": "Administration",
       "data": "Data",
-      "enterprise": "Enterprise",
+      "integrations": "Integrationer",
       "notifications": "Aviseringar",
       "organization": "Organisation"
     },
@@ -1517,6 +1511,7 @@
       "searchPlaceholder": "Sök efter paket eller licenser...",
       "unknown": "Okänd"
     },
+    "loading": "Laddar inställningar",
     "locations": {
       "address": "Adress",
       "assignEmployee": "Tilldela medarbetare",
@@ -1627,6 +1622,55 @@
       "statusReady": "Redo",
       "title": "Mina uppgifter",
       "unavailable": "Mina uppgifter är inte tillgängliga för ditt konto i denna organisation."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Aktivitet",
+        "description": "Granska aktivitet och konfigurera signerade granskningsexporter",
+        "keysDescription": "Hantera signeringsnycklarna som används av granskningsexporter",
+        "packagesDescription": "Generera och granska signerade granskningspaket",
+        "title": "Granskning"
+      },
+      "chat-integrations": {
+        "description": "Konfigurera Slack, Microsoft Teams, Telegram och Discord",
+        "title": "Chattintegrationer"
+      },
+      "clocking": {
+        "automaticDescription": "Konfigurera automatisk utstämpling för oavbrutet arbete",
+        "description": "Konfigurera spårning, automatisk utstämpling, påminnelser och periodinlämningar",
+        "remindersDescription": "Konfigurera påminnelser för instämplingar, utstämplingar och raster",
+        "submissionsDescription": "Konfigurera när anställda skickar in sina arbetsperioder för granskning",
+        "title": "Stämpling",
+        "trackingDescription": "Ange startdatumet som används för din organisations tidsregistrering"
+      },
+      "developerAccess": {
+        "description": "Hantera API-nycklar och webhook-slutpunkter",
+        "title": "Utvecklaråtkomst"
+      },
+      "domainBranding": {
+        "description": "Konfigurera din organisations anpassade domän och varumärkesprofilering"
+      },
+      "email": {
+        "delivery": "Leverans",
+        "description": "Konfigurera e-postleverans och anpassa meddelandemallar",
+        "title": "E-post"
+      },
+      "identityAccess": {
+        "description": "Konfigurera SSO, social inloggning, provisionering och organisationsåtkomst",
+        "socialDescription": "Konfigurera de leverantörer för social inloggning som är tillgängliga för din organisation",
+        "ssoDescription": "Hantera leverantörer av enkel inloggning för din organisation",
+        "title": "Identitet & åtkomst"
+      },
+      "personnel-files": {
+        "description": "Hantera åtkomst till personalakter, påminnelser om utgångsdatum och dokumentbevarande"
+      },
+      "scheduled-exports": {
+        "description": "Schemalägg återkommande löne-, data- och revisionsexporter"
+      },
+      "shiftPlanning": {
+        "description": "Konfigurera passmallar och bemanningsmål",
+        "title": "Skiftplanering"
+      }
     },
     "notifications": {
       "approvals": "Godkännandeaviseringar",
@@ -2716,6 +2760,45 @@
         "title": "Inte en skattegodkänd körjournal"
       },
       "noDrivers": "Inga tilldelade förare",
+      "photos": {
+        "accessChanged": "Din åtkomst har ändrats. Öppna fordonsinställningarna igen för att kontrollera dina behörigheter.",
+        "action": "Bilder",
+        "add": "Lägg till foto",
+        "archived": "Detta fordon är arkiverat. Återställ det för att lägga till eller ta bort foton.",
+        "capacityChanged": "Galleriet har ändrats. {count} fotoplatser återstår. Öppna det igen och välj färre foton.",
+        "description": "Privata referensbilder för detta fordon. Slutförda uppladdningar och borttagningar sparas omedelbart.",
+        "empty": "Inga foton ännu.",
+        "expired": "Den här uppladdningen har gått ut. Välj fotot igen för att ladda upp det.",
+        "full": "Detta fordon har 20 foton. Ta bort ett foto innan du lägger till ett nytt.",
+        "gallery": "Fordonsbilder",
+        "imageNamed": "{name}, foto {number}",
+        "invalid": "Den här bilden kunde inte läsas. Välj ett annat JPEG-, PNG- eller WebP-foto.",
+        "limits": "JPEG, PNG eller WebP. Upp till 10 MB per foto, 20 foton per fordon.",
+        "loadFailed": "Det gick inte att läsa in bilderna. Stäng dialogrutan och försök igen.",
+        "loading": "Laddar foton…",
+        "named": "Foton på {name}",
+        "next": "Nästa foto",
+        "position": "Foto {number} av {count}",
+        "previous": "Föregående foto",
+        "queued": "Väntar på att ladda upp {name}…",
+        "remove": "Ta bort foto",
+        "removeConfirm": "Ta bort bild permanent",
+        "removeDescription": "Den här bilden kommer att tas bort permanent från fordonets galleri. Detta kan inte ångras.",
+        "removeFailed": "Det gick inte att ta bort bilden. Försök igen.",
+        "removeTitle": "Ta bort den här bilden permanent?",
+        "removing": "Tar bort bild…",
+        "retry": "Försök igen",
+        "retryNamed": "Försök med {name} igen",
+        "saved": "Sparade {name}.",
+        "selectionTooLarge": "Det här urvalet laddades inte upp. {count} bildplatser återstår, inklusive väntande uppladdningar.",
+        "tooLarge": "Välj en bild som inte är större än 10 MB.",
+        "unsupported": "Välj en JPEG-, PNG- eller WebP-bild. HEIC och andra format stöds inte.",
+        "uploadFailed": "Det gick inte att ladda upp bilden. Försök igen.",
+        "uploading": "Laddar upp {name}…",
+        "uploadResults": "Resultat för bilduppladdning",
+        "vehicleMissing": "Det här fordonet är inte längre tillgängligt i din organisation.",
+        "viewNamed": "Visa bild {number} av {name}"
+      },
       "refusals": {
         "driverNotFound": "En tilldelad medarbetare eller ett tilldelat team finns inte längre. Ladda om sidan.",
         "invalidChange": "Ändringen kunde inte sparas. Ladda om sidan och försök igen.",
@@ -2739,7 +2822,6 @@
       "assignmentRemoved": "Tilldelning borttagen",
       "assignmentSaved": "Tilldelning sparad",
       "assignmentsDescription": "Tillfrågade medarbetare kan registrera fordonsanvändning när de stämplar. Medarbetare som förväntas använda fordon tillfrågas varje gång, och deras arbete flaggas tills uppgifterna är fullständiga. Ingen hindras någonsin från att stämpla. Den mest specifika tilldelningen gäller: en medarbetares egen går före dennes primära teams, och ett teams går före hela organisationens.",
-      "description": "Vem som tillfrågas om att registrera vilket fordon de körde och dess mätarställning",
       "enabled": "Registrera fordonsanvändning",
       "enabledDescription": "Om du stänger av detta slutar förfrågningar om fordonsanvändning att ställas och saknade köruppgifter flaggas inte längre. Redan registrerad fordonsanvändning förblir synlig och finns kvar i exporter.",
       "error": {

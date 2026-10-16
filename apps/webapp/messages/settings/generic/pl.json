@@ -504,7 +504,6 @@
       "title": "Zgodność z ArbZG"
     },
     "customDomains": {
-      "description": "Skonfiguruj własną domenę, branding i SSO dla swojej organizacji",
       "title": "Domena i branding"
     },
     "customers": {
@@ -845,10 +844,6 @@
         "storageSettings": "Ustawienia pamięci masowej"
       },
       "title": "Eksport danych"
-    },
-    "emailConfig": {
-      "description": "Skonfiguruj niestandardowego dostawcę poczty e-mail dla wiadomości organizacji",
-      "title": "Konfiguracja poczty e-mail"
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1273,8 @@
     },
     "group": {
       "account": "Konto",
-      "administration": "Administracja",
       "data": "Dane",
-      "enterprise": "Przedsiębiorstwo",
+      "integrations": "Integracje",
       "notifications": "Powiadomienia",
       "organization": "Organizacja"
     },
@@ -1517,6 +1511,7 @@
       "searchPlaceholder": "Szukaj pakietów lub licencji...",
       "unknown": "Nieznany"
     },
+    "loading": "Wczytywanie ustawień",
     "locations": {
       "address": "Adres",
       "assignEmployee": "Przypisz pracownika",
@@ -1627,6 +1622,55 @@
       "statusReady": "Gotowe",
       "title": "Moje dane",
       "unavailable": "Sekcja „Moje dane” nie jest dostępna dla Twojego konta w tej organizacji."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Aktywność",
+        "description": "Przeglądaj aktywność i konfiguruj podpisane eksporty audytu",
+        "keysDescription": "Zarządzaj kluczami podpisywania używanymi w eksportach audytu",
+        "packagesDescription": "Generuj i przeglądaj podpisane pakiety audytowe",
+        "title": "Audyt"
+      },
+      "chat-integrations": {
+        "description": "Skonfiguruj Slacka, Microsoft Teams, Telegrama i Discorda",
+        "title": "Integracje z komunikatorami"
+      },
+      "clocking": {
+        "automaticDescription": "Skonfiguruj automatyczne rejestrowanie wyjścia przy nieprzerwanej pracy",
+        "description": "Skonfiguruj rejestrację czasu, automatyczne wyjścia, przypomnienia i przesyłanie okresów",
+        "remindersDescription": "Skonfiguruj przypomnienia o rozpoczęciu i zakończeniu pracy oraz przerwach",
+        "submissionsDescription": "Skonfiguruj, kiedy pracownicy przesyłają swoje okresy pracy do zatwierdzenia",
+        "title": "Rejestracja czasu pracy",
+        "trackingDescription": "Ustaw datę początkową używaną do rejestracji czasu pracy w organizacji"
+      },
+      "developerAccess": {
+        "description": "Zarządzaj kluczami API i punktami końcowymi webhooków",
+        "title": "Dostęp programistyczny"
+      },
+      "domainBranding": {
+        "description": "Skonfiguruj niestandardową domenę i identyfikację wizualną organizacji"
+      },
+      "email": {
+        "delivery": "Dostarczanie",
+        "description": "Skonfiguruj dostarczanie wiadomości e-mail i dostosuj szablony wiadomości",
+        "title": "E-mail"
+      },
+      "identityAccess": {
+        "description": "Skonfiguruj logowanie jednokrotne (SSO), logowanie społecznościowe, aprowizację i dostęp do organizacji",
+        "socialDescription": "Skonfiguruj dostawców logowania społecznościowego dostępnych dla Twojej organizacji",
+        "ssoDescription": "Zarządzaj dostawcami logowania jednokrotnego (SSO) dla Twojej organizacji",
+        "title": "Tożsamość i dostęp"
+      },
+      "personnel-files": {
+        "description": "Zarządzaj dostępem do akt osobowych, przypomnieniami o wygaśnięciu i retencją dokumentów"
+      },
+      "scheduled-exports": {
+        "description": "Zaplanuj cykliczny eksport list płac, danych i audytów"
+      },
+      "shiftPlanning": {
+        "description": "Skonfiguruj szablony zmian i cele obsady",
+        "title": "Planowanie zmian"
+      }
     },
     "notifications": {
       "approvals": "Powiadomienia o zatwierdzeniach",
@@ -2716,6 +2760,45 @@
         "title": "To nie jest podatkowa ewidencja przebiegu"
       },
       "noDrivers": "Brak przypisanych kierowców",
+      "photos": {
+        "accessChanged": "Twój dostęp uległ zmianie. Otwórz ponownie ustawienia pojazdu, aby sprawdzić swoje uprawnienia.",
+        "action": "Zdjęcia",
+        "add": "Dodaj zdjęcie",
+        "archived": "Ten pojazd jest zarchiwizowany. Przywróć go, aby dodawać lub usuwać zdjęcia.",
+        "capacityChanged": "Galeria uległa zmianie. Pozostało miejsc na zdjęcia: {count}. Otwórz ją ponownie i wybierz mniej zdjęć.",
+        "description": "Prywatne zdjęcia poglądowe tego pojazdu. Przesłane i usunięte pliki są zapisywane natychmiast.",
+        "empty": "Brak zdjęć.",
+        "expired": "Czas przesyłania minął. Wybierz zdjęcie ponownie, aby je przesłać.",
+        "full": "Ten pojazd ma 20 zdjęć. Usuń zdjęcie przed dodaniem kolejnego.",
+        "gallery": "Zdjęcia pojazdu",
+        "imageNamed": "{name}, zdjęcie {number}",
+        "invalid": "Nie udało się odczytać tego obrazu. Wybierz inne zdjęcie JPEG, PNG lub WebP.",
+        "limits": "JPEG, PNG lub WebP. Do 10 MB na zdjęcie, maksymalnie 20 zdjęć na pojazd.",
+        "loadFailed": "Nie udało się załadować zdjęć. Zamknij okno dialogowe i spróbuj ponownie.",
+        "loading": "Wczytywanie zdjęć…",
+        "named": "Zdjęcia: {name}",
+        "next": "Następne zdjęcie",
+        "position": "Zdjęcie {number} z {count}",
+        "previous": "Poprzednie zdjęcie",
+        "queued": "Oczekiwanie na przesłanie {name}…",
+        "remove": "Usuń zdjęcie",
+        "removeConfirm": "Trwale usuń zdjęcie",
+        "removeDescription": "To zdjęcie zostanie trwale usunięte z galerii pojazdu. Tej operacji nie można cofnąć.",
+        "removeFailed": "Nie udało się usunąć zdjęcia. Spróbuj ponownie.",
+        "removeTitle": "Trwale usunąć to zdjęcie?",
+        "removing": "Usuwanie zdjęcia…",
+        "retry": "Ponów próbę",
+        "retryNamed": "Ponów próbę: {name}",
+        "saved": "Zapisano {name}.",
+        "selectionTooLarge": "Ten wybór nie został przesłany. Pozostało {count} wolnych miejsc na zdjęcia, wliczając oczekujące przesłania.",
+        "tooLarge": "Wybierz zdjęcie o rozmiarze nie większym niż 10 MB.",
+        "unsupported": "Wybierz zdjęcie w formacie JPEG, PNG lub WebP. Format HEIC i inne formaty nie są obsługiwane.",
+        "uploadFailed": "Nie udało się przesłać zdjęcia. Spróbuj ponownie.",
+        "uploading": "Przesyłanie {name}…",
+        "uploadResults": "Wyniki przesyłania zdjęć",
+        "vehicleMissing": "Ten pojazd nie jest już dostępny w Twojej organizacji.",
+        "viewNamed": "Wyświetl zdjęcie {number} z {name}"
+      },
       "refusals": {
         "driverNotFound": "Przypisany pracownik lub zespół już nie istnieje. Odśwież stronę.",
         "invalidChange": "Nie udało się zapisać zmiany. Odśwież stronę i spróbuj ponownie.",
@@ -2739,7 +2822,6 @@
       "assignmentRemoved": "Przypisanie usunięte",
       "assignmentSaved": "Przypisanie zapisane",
       "assignmentsDescription": "Pracownicy objęci zapytaniem mogą rejestrować użycie pojazdu podczas rejestracji czasu pracy. Pracownicy z oczekiwanym użyciem pojazdu są pytani za każdym razem, a ich czas pracy jest oznaczany flagą do momentu uzupełnienia szczegółów. Rejestracja czasu pracy nigdy nie jest blokowana. Pierwszeństwo ma najbardziej szczegółowe przypisanie: pracownika przed jego głównym zespołem, a zespołu przed całą organizacją.",
-      "description": "Kto jest proszony o zarejestrowanie prowadzonego pojazdu i stanu licznika",
       "enabled": "Rejestruj użycie pojazdu",
       "enabledDescription": "Wyłączenie tej opcji powoduje zaprzestanie pytania o użycie pojazdu i oznaczania brakujących szczegółów jazdy. Już zarejestrowane użycie pojazdu pozostaje widoczne i uwzględniane w eksportach.",
       "error": {

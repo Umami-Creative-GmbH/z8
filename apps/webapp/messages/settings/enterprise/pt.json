@@ -198,7 +198,6 @@
         "deleteDescription": "Tem certeza de que deseja excluir \"{domain}\"? Esta ação não pode ser desfeita. Os usuários não poderão mais fazer login através deste domínio personalizado.",
         "deleteFailed": "Falha ao excluir domínio",
         "deleteTitle": "Excluir Domínio",
-        "description": "Configure o domínio de login personalizado, a marca e os provedores de SSO da sua organização.",
         "dnsPropagation": "Propagação de DNS",
         "dnsPropagationDescription": "As alterações de DNS podem levar até 48 horas para se propagar, embora geralmente sejam concluídas em poucos minutos. Você pode clicar em \"Verificar\" após adicionar o registro TXT.",
         "domain": "Domínio",
@@ -212,8 +211,6 @@
         "empty": "Nenhum domínio personalizado configurado ainda.",
         "enabledAuthMethods": "Métodos de Autenticação Habilitados",
         "guidedSetup": {
-          "action": "Configuração guiada",
-          "description": "Configure SSO, SCIM, política de acesso e verificações de ativação em um fluxo guiado.",
           "title": "Configuração guiada"
         },
         "keepExistingSecretKey": "Deixe vazio para manter a chave secreta existente",
@@ -238,7 +235,6 @@
           "pending": "Verificação Pendente",
           "verified": "Verificado"
         },
-        "title": "Domínio Personalizado e Branding",
         "tokenExpired": "Token Expirado",
         "tokenExpiredDescription": "O token de verificação expirou. Por favor, gere um novo token.",
         "tokenExpires": "O token expira em: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Gerencie SSO, provisionamento SCIM, restrições de domínio, política de convites e funções padrão para esta organização.",
-      "title": "Configuração de identidade corporativa"
+      "description": "Gerencie SSO, provisionamento SCIM, restrições de domínio, política de convites e funções padrão para esta organização."
     }
   }
 }

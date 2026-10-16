@@ -504,7 +504,6 @@
       "title": "Conformité ArbZG"
     },
     "customDomains": {
-      "description": "Configurez le domaine personnalisé, l'image de marque et le SSO pour votre organisation",
       "title": "Domaine et image de marque"
     },
     "customers": {
@@ -845,10 +844,6 @@
         "storageSettings": "Paramètres de stockage"
       },
       "title": "Exportation de données"
-    },
-    "emailConfig": {
-      "description": "Configurer un fournisseur d'e-mail personnalisé pour les e-mails de l'organisation",
-      "title": "Configuration des e-mails"
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1273,8 @@
     },
     "group": {
       "account": "Compte",
-      "administration": "Administration",
       "data": "Données",
-      "enterprise": "Entreprise",
+      "integrations": "Intégrations",
       "notifications": "Notifications",
       "organization": "Organisation"
     },
@@ -1517,6 +1511,7 @@
       "searchPlaceholder": "Rechercher des paquets ou des licences...",
       "unknown": "Inconnu"
     },
+    "loading": "Chargement des paramètres",
     "locations": {
       "address": "Adresse",
       "assignEmployee": "Assigner un employé",
@@ -1627,6 +1622,55 @@
       "statusReady": "Prêt",
       "title": "Mes données",
       "unavailable": "Mes données ne sont pas disponibles pour votre compte dans cette organisation."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Activité",
+        "description": "Consultez l'activité et configurez les exports d'audit signés",
+        "keysDescription": "Gérez les clés de signature utilisées par les exports d'audit",
+        "packagesDescription": "Générez et examinez les packages d'audit signés",
+        "title": "Audit"
+      },
+      "chat-integrations": {
+        "description": "Configurez Slack, Microsoft Teams, Telegram et Discord",
+        "title": "Intégrations de messagerie"
+      },
+      "clocking": {
+        "automaticDescription": "Configurez le pointage de sortie automatique pour le travail ininterrompu",
+        "description": "Configurez le suivi, le pointage de sortie automatique, les rappels et les soumissions de périodes",
+        "remindersDescription": "Configurez des rappels pour les pointages d'arrivée, de départ et les pauses",
+        "submissionsDescription": "Configurez le moment où les employés soumettent leurs périodes de travail pour validation",
+        "title": "Pointage",
+        "trackingDescription": "Définissez la date de début utilisée pour le suivi du temps de votre organisation"
+      },
+      "developerAccess": {
+        "description": "Gérez les clés API et les points de terminaison de webhooks",
+        "title": "Accès développeur"
+      },
+      "domainBranding": {
+        "description": "Configurez le domaine personnalisé et l'image de marque de votre organisation"
+      },
+      "email": {
+        "delivery": "Distribution",
+        "description": "Configurez la distribution des e-mails et personnalisez les modèles de message",
+        "title": "E-mail"
+      },
+      "identityAccess": {
+        "description": "Configurez le SSO, la connexion via les réseaux sociaux, le provisionnement et l'accès à l'organisation",
+        "socialDescription": "Configurez les fournisseurs de connexion via les réseaux sociaux disponibles pour votre organisation",
+        "ssoDescription": "Gérez les fournisseurs d'authentification unique (SSO) pour votre organisation",
+        "title": "Identité et accès"
+      },
+      "personnel-files": {
+        "description": "Gérez l'accès aux dossiers du personnel, les rappels d'expiration et la conservation des documents"
+      },
+      "scheduled-exports": {
+        "description": "Planifiez des exports récurrents pour la paie, les données et l'audit"
+      },
+      "shiftPlanning": {
+        "description": "Configurez les modèles de quarts de travail et les objectifs de couverture",
+        "title": "Planning des quarts de travail"
+      }
     },
     "notifications": {
       "approvals": "Notifications d'approbation",
@@ -2716,6 +2760,45 @@
         "title": "Pas un carnet de bord fiscal"
       },
       "noDrivers": "Aucun conducteur assigné",
+      "photos": {
+        "accessChanged": "Vos autorisations ont changé. Rouvrez les paramètres du véhicule pour vérifier vos accès.",
+        "action": "Photos",
+        "add": "Ajouter une photo",
+        "archived": "Ce véhicule est archivé. Restaurez-le pour ajouter ou supprimer des photos.",
+        "capacityChanged": "La galerie a été modifiée. Il reste {count} emplacements pour photos. Rouvrez-la et sélectionnez moins de photos.",
+        "description": "Photos de référence privées pour ce véhicule. Les téléversements terminés et les suppressions sont enregistrés immédiatement.",
+        "empty": "Aucune photo pour le moment.",
+        "expired": "Ce téléversement a expiré. Sélectionnez à nouveau la photo pour la téléverser.",
+        "full": "Ce véhicule a 20 photos. Supprimez une photo avant d'en ajouter une autre.",
+        "gallery": "Photos du véhicule",
+        "imageNamed": "{name}, photo {number}",
+        "invalid": "Impossible de lire cette image. Choisissez une autre photo au format JPEG, PNG ou WebP.",
+        "limits": "JPEG, PNG ou WebP. Jusqu'à 10 Mo par photo, 20 photos par véhicule.",
+        "loadFailed": "Impossible de charger les photos. Fermez la boîte de dialogue et réessayez.",
+        "loading": "Chargement des photos…",
+        "named": "Photos de {name}",
+        "next": "Photo suivante",
+        "position": "Photo {number} sur {count}",
+        "previous": "Photo précédente",
+        "queued": "En attente du téléversement de {name}…",
+        "remove": "Supprimer la photo",
+        "removeConfirm": "Supprimer définitivement la photo",
+        "removeDescription": "Cette photo sera définitivement supprimée de la galerie du véhicule. Cette action est irréversible.",
+        "removeFailed": "Impossible de supprimer la photo. Réessayez.",
+        "removeTitle": "Supprimer définitivement cette photo ?",
+        "removing": "Suppression de la photo…",
+        "retry": "Réessayer",
+        "retryNamed": "Réessayer {name}",
+        "saved": "{name} enregistré.",
+        "selectionTooLarge": "Cette sélection n'a pas été importée. Il reste {count} emplacements pour photo, y compris les importations en attente.",
+        "tooLarge": "Choisissez une photo ne dépassant pas 10 Mo.",
+        "unsupported": "Choisissez une photo au format JPEG, PNG ou WebP. Les formats HEIC et autres ne sont pas pris en charge.",
+        "uploadFailed": "Impossible d'importer la photo. Réessayez.",
+        "uploading": "Importation de {name}…",
+        "uploadResults": "Résultats de l'importation de photos",
+        "vehicleMissing": "Ce véhicule n'est plus disponible dans votre organisation.",
+        "viewNamed": "Afficher la photo {number} de {name}"
+      },
       "refusals": {
         "driverNotFound": "Un employé ou une équipe assigné n'existe plus. Rechargez la page.",
         "invalidChange": "La modification n'a pas pu être enregistrée. Rechargez la page et réessayez.",
@@ -2739,7 +2822,6 @@
       "assignmentRemoved": "Affectation supprimée",
       "assignmentSaved": "Affectation enregistrée",
       "assignmentsDescription": "Les employés sollicités peuvent enregistrer l'utilisation d'un véhicule lors du pointage. Les employés pour qui l'utilisation d'un véhicule est attendue sont sollicités à chaque fois, et leur intervention est signalée jusqu'à ce que les détails soient complétés. Le pointage n'est jamais bloqué. L'affectation la plus précise l'emporte : celle de l'employé prévaut sur celle de son équipe principale, et celle d'une équipe sur celle de l'organisation tout entière.",
-      "description": "Qui est sollicité pour enregistrer le véhicule conduit et les relevés de son compteur",
       "enabled": "Enregistrer l'utilisation du véhicule",
       "enabledDescription": "Désactiver cette option arrête les demandes d'utilisation de véhicule et ne signale plus les détails de conduite manquants. Les utilisations de véhicules déjà enregistrées restent visibles et dans les exports.",
       "error": {

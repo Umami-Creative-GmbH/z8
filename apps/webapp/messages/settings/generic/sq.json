@@ -504,7 +504,6 @@
       "title": "Përputhshmëria me ArbZG"
     },
     "customDomains": {
-      "description": "Konfiguroni domenin e personalizuar, identitetin vizual dhe SSO-në për organizatën tuaj",
       "title": "Domeni & Identiteti vizual"
     },
     "customers": {
@@ -845,10 +844,6 @@
         "storageSettings": "Cilësimet e hapësirës ruajtëse"
       },
       "title": "Eksportimi i të dhënave"
-    },
-    "emailConfig": {
-      "description": "Konfiguroni një ofrues të personalizuar të email-it për email-et e organizatës",
-      "title": "Konfigurimi i email-it"
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1273,8 @@
     },
     "group": {
       "account": "Llogaria",
-      "administration": "Administrimi",
       "data": "Të dhënat",
-      "enterprise": "Ndërmarrja",
+      "integrations": "Integrimet",
       "notifications": "Njoftimet",
       "organization": "Organizata"
     },
@@ -1517,6 +1511,7 @@
       "searchPlaceholder": "Kërkoni paketa ose licenca...",
       "unknown": "E panjohur"
     },
+    "loading": "Po ngarkohen cilësimet",
     "locations": {
       "address": "Adresa",
       "assignEmployee": "Cakto punonjës",
@@ -1627,6 +1622,55 @@
       "statusReady": "Gati",
       "title": "Të dhënat e mia",
       "unavailable": "Të dhënat e mia nuk janë të disponueshme për llogarinë tuaj në këtë organizatë."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Aktiviteti",
+        "description": "Rishikoni aktivitetin dhe konfiguroni eksportet e nënshkruara të auditimit",
+        "keysDescription": "Menaxhoni çelësat e nënshkrimit të përdorur nga eksportet e auditimit",
+        "packagesDescription": "Gjeneroni dhe rishikoni paketat e nënshkruara të auditimit",
+        "title": "Auditimi"
+      },
+      "chat-integrations": {
+        "description": "Konfiguroni Slack, Microsoft Teams, Telegram dhe Discord",
+        "title": "Integrimet e bisedës"
+      },
+      "clocking": {
+        "automaticDescription": "Konfiguroni daljen automatike për punë të pandërprerë",
+        "description": "Konfiguroni gjurmimin, daljen automatike, kujtuesit dhe dorëzimet e periudhave",
+        "remindersDescription": "Konfiguroni kujtuesit për hyrjet, daljet dhe pushimet",
+        "submissionsDescription": "Konfiguroni se kur punonjësit dorëzojnë periudhat e tyre të punës për rishikim",
+        "title": "Regjistrimi i orarit",
+        "trackingDescription": "Caktoni datën e fillimit të përdorur për gjurmimin e kohës së organizatës suaj"
+      },
+      "developerAccess": {
+        "description": "Menaxhoni çelësat API dhe pikat përfundimtare webhook",
+        "title": "Qasja e zhvilluesit"
+      },
+      "domainBranding": {
+        "description": "Konfiguroni domenin e personalizuar dhe markën e organizatës suaj"
+      },
+      "email": {
+        "delivery": "Dërgimi",
+        "description": "Konfiguroni dërgimin e email-eve dhe personalizoni shabllonet e mesazheve",
+        "title": "Email"
+      },
+      "identityAccess": {
+        "description": "Konfiguroni SSO, hyrjen me rrjete sociale, provizionimin dhe qasjen në organizatë",
+        "socialDescription": "Konfiguroni ofruesit e hyrjes me rrjete sociale të disponueshëm për organizatën tuaj",
+        "ssoDescription": "Menaxhoni ofruesit e hyrjes së vetme (SSO) për organizatën tuaj",
+        "title": "Identiteti dhe qasja"
+      },
+      "personnel-files": {
+        "description": "Menaxhoni qasjen në dosjet e personelit, kujtuesit e skadimit dhe ruajtjen e dokumenteve"
+      },
+      "scheduled-exports": {
+        "description": "Planifikoni eksporte të përsëritura të listëpagesave, të dhënave dhe auditimit"
+      },
+      "shiftPlanning": {
+        "description": "Konfiguroni shabllonet e turneve dhe objektivat e mbulimit",
+        "title": "Planifikimi i turneve"
+      }
     },
     "notifications": {
       "approvals": "Njoftimet e miratimit",
@@ -2716,6 +2760,45 @@
         "title": "Nuk është ditar tatimor"
       },
       "noDrivers": "Nuk ka shoferë të caktuar",
+      "photos": {
+        "accessChanged": "Qasja juaj ka ndryshuar. Riçeleni cilësimet e automjetit për të kontrolluar lejet tuaja.",
+        "action": "Fotografitë",
+        "add": "Shto fotografi",
+        "archived": "Ky automjet është i arkivuar. Rivendoseni atë për të shtuar ose hequr fotografi.",
+        "capacityChanged": "Galeria ndryshoi. Kanë mbetur {count} vende për fotografi. Riçeleni dhe zgjidhni më pak fotografi.",
+        "description": "Fotografi private referuese për këtë automjet. Ngarkimet dhe heqjet e përfunduara ruhen menjëherë.",
+        "empty": "Nuk ka ende fotografi.",
+        "expired": "Kjo ngarkesë ka skaduar. Zgjidhni përsëri fotografinë për ta ngarkuar.",
+        "full": "Ky automjet ka 20 fotografi. Hiqni një fotografi para se të shtoni një tjetër.",
+        "gallery": "Fotografitë e automjetit",
+        "imageNamed": "{name}, fotografia {number}",
+        "invalid": "Ky imazh nuk mund të lexohej. Zgjidhni një fotografi tjetër JPEG, PNG ose WebP.",
+        "limits": "JPEG, PNG ose WebP. Deri në 10 MB për fotografi, 20 fotografi për automjet.",
+        "loadFailed": "Fotografitë nuk mund të ngarkoheshin. Mbyllni dialogun dhe provoni përsëri.",
+        "loading": "Po ngarkohen fotografitë…",
+        "named": "Fotografitë e {name}",
+        "next": "Fotografia tjetër",
+        "position": "Fotografia {number} nga {count}",
+        "previous": "Fotografia e mëparshme",
+        "queued": "Po pritet ngarkimi i {name}…",
+        "remove": "Hiq fotografinë",
+        "removeConfirm": "Hiq përfundimisht foton",
+        "removeDescription": "Kjo foto do të hiqet përfundimisht nga galeria e automjetit. Ky veprim nuk mund të zhbëhet.",
+        "removeFailed": "Fotoja nuk mund të hiqej. Provoni përsëri.",
+        "removeTitle": "Të hiqet përfundimisht kjo foto?",
+        "removing": "Po hiqet fotoja…",
+        "retry": "Riprovo",
+        "retryNamed": "Riprovo {name}",
+        "saved": "U ruajt {name}.",
+        "selectionTooLarge": "Kjo përzgjedhje nuk u ngarkua. Mbeten {count} vende për foto, duke përfshirë ngarkimet në pritje.",
+        "tooLarge": "Zgjidhni një foto jo më të madhe se 10 MB.",
+        "unsupported": "Zgjidhni një foto JPEG, PNG ose WebP. Formati HEIC dhe formatet e tjera nuk mbështeten.",
+        "uploadFailed": "Fotoja nuk mund të ngarkohej. Provoni përsëri.",
+        "uploading": "Po ngarkohet {name}…",
+        "uploadResults": "Rezultatet e ngarkimit të fotove",
+        "vehicleMissing": "Ky automjet nuk është më i disponueshëm në organizatën tuaj.",
+        "viewNamed": "Shiko foton {number} të {name}"
+      },
       "refusals": {
         "driverNotFound": "Një punonjës ose ekip i caktuar nuk ekziston më. Ringarkoni faqen.",
         "invalidChange": "Ndryshimi nuk mund të ruhej. Ringarkoni faqen dhe provoni përsëri.",
@@ -2739,7 +2822,6 @@
       "assignmentRemoved": "Caktimi u hoq",
       "assignmentSaved": "Caktimi u ruajt",
       "assignmentsDescription": "Punonjësit e pyetur mund të regjistrojnë përdorimin e automjetit kur regjistrojnë orarin. Punonjësit nga të cilët pritet përdorimi i automjetit pyeten çdo herë, dhe puna e tyre sinjalizohet derisa detajet të jenë të plota. Askush nuk pengohet të regjistrojë orarin. Caktimi më specifik ka përparësi: ai individual i punonjësit mbi atë të ekipit të tij kryesor, dhe ai i ekipit mbi atë të gjithë organizatës.",
-      "description": "Kush pyetet të regjistrojë automjetin që ka drejtuar dhe leximet e odometrit",
       "enabled": "Regjistro përdorimin e automjetit",
       "enabledDescription": "Çaktivizimi i kësaj ndalon kërkesën për përdorimin e automjetit dhe ndalon sinjalizimin e detajeve të munguara të drejtimit. Përdorimi i automjetit i regjistruar tashmë mbetet i dukshëm dhe në eksporte.",
       "error": {

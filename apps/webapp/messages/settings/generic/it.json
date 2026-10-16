@@ -504,7 +504,6 @@
       "title": "Conformità ArbZG"
     },
     "customDomains": {
-      "description": "Configura dominio personalizzato, branding e SSO per la tua organizzazione",
       "title": "Dominio e branding"
     },
     "customers": {
@@ -845,10 +844,6 @@
         "storageSettings": "Impostazioni di archiviazione"
       },
       "title": "Esportazione dati"
-    },
-    "emailConfig": {
-      "description": "Configura un provider email personalizzato per le email dell'organizzazione",
-      "title": "Configurazione email"
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1273,8 @@
     },
     "group": {
       "account": "Account",
-      "administration": "Amministrazione",
       "data": "Dati",
-      "enterprise": "Enterprise",
+      "integrations": "Integrazioni",
       "notifications": "Notifiche",
       "organization": "Organizzazione"
     },
@@ -1517,6 +1511,7 @@
       "searchPlaceholder": "Cerca pacchetti o licenze...",
       "unknown": "Sconosciuto"
     },
+    "loading": "Caricamento impostazioni",
     "locations": {
       "address": "Indirizzo",
       "assignEmployee": "Assegna dipendente",
@@ -1627,6 +1622,55 @@
       "statusReady": "Pronto",
       "title": "I miei dati",
       "unavailable": "I miei dati non sono disponibili per il tuo account in questa organizzazione."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Attività",
+        "description": "Esamina l'attività e configura le esportazioni di audit firmate",
+        "keysDescription": "Gestisci le chiavi di firma utilizzate dalle esportazioni di audit",
+        "packagesDescription": "Genera ed esamina i pacchetti di audit firmati",
+        "title": "Audit"
+      },
+      "chat-integrations": {
+        "description": "Configura Slack, Microsoft Teams, Telegram e Discord",
+        "title": "Integrazioni chat"
+      },
+      "clocking": {
+        "automaticDescription": "Configura l'uscita automatica per il lavoro ininterrotto",
+        "description": "Configura il monitoraggio, l'uscita automatica, i promemoria e l'invio dei periodi",
+        "remindersDescription": "Configura i promemoria per entrate, uscite e pause",
+        "submissionsDescription": "Configura quando i dipendenti inviano i propri periodi di lavoro per la revisione",
+        "title": "Timbrature",
+        "trackingDescription": "Imposta la data di inizio utilizzata per il monitoraggio del tempo della tua organizzazione"
+      },
+      "developerAccess": {
+        "description": "Gestisci le chiavi API e gli endpoint webhook",
+        "title": "Accesso sviluppatore"
+      },
+      "domainBranding": {
+        "description": "Configura il dominio personalizzato e il branding della tua organizzazione"
+      },
+      "email": {
+        "delivery": "Recapito",
+        "description": "Configura l'invio delle e-mail e personalizza i modelli di messaggio",
+        "title": "E-mail"
+      },
+      "identityAccess": {
+        "description": "Configura SSO, accesso social, provisioning e accesso all'organizzazione",
+        "socialDescription": "Configura i provider di accesso social disponibili per la tua organizzazione",
+        "ssoDescription": "Gestisci i provider di single sign-on per la tua organizzazione",
+        "title": "Identità e accesso"
+      },
+      "personnel-files": {
+        "description": "Gestisci l'accesso ai fascicoli del personale, i promemoria di scadenza e la conservazione dei documenti"
+      },
+      "scheduled-exports": {
+        "description": "Pianifica esportazioni periodiche di buste paga, dati e audit"
+      },
+      "shiftPlanning": {
+        "description": "Configura i modelli di turno e gli obiettivi di copertura",
+        "title": "Pianificazione turni"
+      }
     },
     "notifications": {
       "approvals": "Notifiche di approvazione",
@@ -2716,6 +2760,45 @@
         "title": "Non valido come registro fiscale"
       },
       "noDrivers": "Nessun conducente assegnato",
+      "photos": {
+        "accessChanged": "Il tuo accesso è cambiato. Riapri le impostazioni del veicolo per verificare i tuoi permessi.",
+        "action": "Foto",
+        "add": "Aggiungi foto",
+        "archived": "Questo veicolo è archiviato. Ripristinalo per aggiungere o rimuovere foto.",
+        "capacityChanged": "La galleria è cambiata. Rimangono {count} spazi per le foto. Riaprila e scegli meno foto.",
+        "description": "Foto di riferimento private per questo veicolo. I caricamenti e le rimozioni completati vengono salvati immediatamente.",
+        "empty": "Ancora nessuna foto.",
+        "expired": "Questo caricamento è scaduto. Seleziona nuovamente la foto per caricarla.",
+        "full": "Questo veicolo ha 20 foto. Rimuovi una foto prima di aggiungerne un'altra.",
+        "gallery": "Foto del veicolo",
+        "imageNamed": "{name}, foto {number}",
+        "invalid": "Impossibile leggere questa immagine. Scegli un'altra foto in formato JPEG, PNG o WebP.",
+        "limits": "JPEG, PNG o WebP. Fino a 10 MB per foto, 20 foto per veicolo.",
+        "loadFailed": "Impossibile caricare le foto. Chiudi la finestra di dialogo e riprova.",
+        "loading": "Caricamento foto in corso…",
+        "named": "Foto di {name}",
+        "next": "Foto successiva",
+        "position": "Foto {number} di {count}",
+        "previous": "Foto precedente",
+        "queued": "In attesa di caricare {name}…",
+        "remove": "Rimuovi foto",
+        "removeConfirm": "Rimuovi definitivamente la foto",
+        "removeDescription": "Questa foto verrà rimossa definitivamente dalla galleria del veicolo. L'operazione non può essere annullata.",
+        "removeFailed": "Impossibile rimuovere la foto. Riprova.",
+        "removeTitle": "Rimuovere definitivamente questa foto?",
+        "removing": "Rimozione foto…",
+        "retry": "Riprova",
+        "retryNamed": "Riprova {name}",
+        "saved": "{name} salvato.",
+        "selectionTooLarge": "Questa selezione non è stata caricata. Rimangono {count} spazi per le foto, inclusi i caricamenti in sospeso.",
+        "tooLarge": "Scegli una foto non superiore a 10 MB.",
+        "unsupported": "Scegli una foto in formato JPEG, PNG o WebP. Il formato HEIC e altri non sono supportati.",
+        "uploadFailed": "Impossibile caricare la foto. Riprova.",
+        "uploading": "Caricamento di {name}…",
+        "uploadResults": "Risultati del caricamento foto",
+        "vehicleMissing": "Questo veicolo non è più disponibile nella tua organizzazione.",
+        "viewNamed": "Visualizza foto {number} di {name}"
+      },
       "refusals": {
         "driverNotFound": "Un dipendente o team assegnato non esiste più. Ricarica la pagina.",
         "invalidChange": "Impossibile salvare la modifica. Ricarica la pagina e riprova.",
@@ -2739,7 +2822,6 @@
       "assignmentRemoved": "Assegnazione rimossa",
       "assignmentSaved": "Assegnazione salvata",
       "assignmentsDescription": "I dipendenti a cui viene richiesto possono registrare l'uso del veicolo quando timbrano. Ai dipendenti per cui l'uso del veicolo è previsto viene richiesto ogni volta e il loro lavoro viene contrassegnato finché i dettagli non sono completi. A nessuno viene mai impedito di timbrare. L'assegnazione più specifica ha la priorità: quella individuale del dipendente prevale su quella del suo team principale, e quella di un team prevale su quella dell'intera organizzazione.",
-      "description": "A chi viene richiesto di registrare il veicolo guidato e le relative letture del contachilometri",
       "enabled": "Registra uso veicolo",
       "enabledDescription": "Disattivando questa opzione, non verrà più richiesto l'uso del veicolo né verranno contrassegnati i dettagli di guida mancanti. L'uso del veicolo già registrato rimarrà visibile e incluso nelle esportazioni.",
       "error": {

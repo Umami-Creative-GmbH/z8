@@ -143,7 +143,6 @@
         "title": "Sustitutos",
         "toggle": "Los sustitutos pueden decidir sobre las aprobaciones"
       },
-      "description": "Revise la política de escalamiento de la organización, cómo se migró desde la configuración de los canales y las condiciones que requieren un gestor de aprobaciones.",
       "dispose": {
         "confirm": "Cerrar elemento",
         "description": "Al cerrar se registra su decisión en el registro de auditoría. No reasigna la aprobación ni permite otro escalamiento automático.",
@@ -177,7 +176,6 @@
         "usedNo": "No usado",
         "usedYes": "Usado"
       },
-      "navDescription": "Política de escalamiento de la organización y aprobaciones que requieren atención",
       "off": "Desactivado",
       "on": "Activado",
       "ownership": {

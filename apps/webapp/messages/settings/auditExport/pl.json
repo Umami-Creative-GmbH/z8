@@ -140,7 +140,6 @@
         "keys": "Klucze podpisywania",
         "packages": "Pakiety audytu"
       },
-      "title": "Eksport audytu",
       "verification": {
         "invalid": "Weryfikacja nie powiodła się",
         "valid": "Weryfikacja zakończona pomyślnie",
@@ -175,7 +174,6 @@
       "search": "Szukaj",
       "searchPlaceholder": "Wyszukaj akcje, użytkowników lub metadane…",
       "timestamp": "Znacznik czasu",
-      "title": "Dziennik audytu",
       "to": "Do",
       "unknown": "Nieznane",
       "user": "Użytkownik",

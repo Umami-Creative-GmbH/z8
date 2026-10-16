@@ -202,15 +202,12 @@
       }
     },
     "discord": {
-      "description": "Διαμόρφωση ειδοποιήσεων Discord για τον οργανισμό σας",
       "title": "Discord"
     },
     "slack": {
-      "description": "Διαμόρφωση ειδοποιήσεων Slack για τον οργανισμό σας",
       "title": "Slack"
     },
     "teamsNotifications": {
-      "description": "Διαμόρφωση ειδοποιήσεων Microsoft Teams για τον οργανισμό σας",
       "title": "Microsoft Teams"
     },
     "telegram": {

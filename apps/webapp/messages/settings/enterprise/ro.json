@@ -198,7 +198,6 @@
         "deleteDescription": "Sigur doriți să ștergeți \"{domain}\"? Această acțiune nu poate fi anulată. Utilizatorii nu se vor mai putea conecta prin acest domeniu personalizat.",
         "deleteFailed": "Nu s-a putut șterge domeniul",
         "deleteTitle": "Șterge domeniul",
-        "description": "Configurați domeniul personalizat de conectare, elementele de branding și furnizorii SSO ai organizației dvs.",
         "dnsPropagation": "Propagare DNS",
         "dnsPropagationDescription": "Propagarea modificărilor DNS poate dura până la 48 de ore, deși de obicei se finalizează în câteva minute. Puteți face clic pe „Verifică” după ce ați adăugat înregistrarea TXT.",
         "domain": "Domeniu",
@@ -212,8 +211,6 @@
         "empty": "Nu este configurat încă niciun domeniu personalizat.",
         "enabledAuthMethods": "Metode de autentificare activate",
         "guidedSetup": {
-          "action": "Configurare ghidată",
-          "description": "Configurați SSO, SCIM, politica de acces și verificările de activare într-un flux securizat unic.",
           "title": "Configurare ghidată"
         },
         "keepExistingSecretKey": "Lăsați gol pentru a păstra cheia secretă existentă",
@@ -238,7 +235,6 @@
           "pending": "În așteptarea verificării",
           "verified": "Verificat"
         },
-        "title": "Domeniu personalizat și branding",
         "tokenExpired": "Token expirat",
         "tokenExpiredDescription": "Tokenul de verificare a expirat. Vă rugăm să regenerați un token nou.",
         "tokenExpires": "Tokenul expiră la: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Ghid pentru SSO, provizionare SCIM, restricții de domeniu, politica de invitații și roluri implicite pentru această organizație.",
-      "title": "Configurare Enterprise Identity"
+      "description": "Ghid pentru SSO, provizionare SCIM, restricții de domeniu, politica de invitații și roluri implicite pentru această organizație."
     }
   }
 }

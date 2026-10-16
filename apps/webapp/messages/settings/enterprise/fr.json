@@ -198,7 +198,6 @@
         "deleteDescription": "Êtes-vous sûr de vouloir supprimer « {domain} » ? Cette action est irréversible. Les utilisateurs ne pourront plus se connecter via ce domaine personnalisé.",
         "deleteFailed": "Échec de la suppression du domaine",
         "deleteTitle": "Supprimer le domaine",
-        "description": "Configurez le domaine de connexion personnalisé, l'image de marque et les fournisseurs SSO de votre organisation.",
         "dnsPropagation": "Propagation DNS",
         "dnsPropagationDescription": "Les modifications DNS peuvent prendre jusqu'à 48 heures pour se propager, bien qu'elles se terminent souvent en quelques minutes. Vous pouvez cliquer sur « Vérifier » une fois que vous avez ajouté l'enregistrement TXT.",
         "domain": "Domaine",
@@ -212,8 +211,6 @@
         "empty": "Aucun domaine personnalisé configuré pour le moment.",
         "enabledAuthMethods": "Méthodes d'authentification activées",
         "guidedSetup": {
-          "action": "Configuration guidée",
-          "description": "Configurez le SSO, le SCIM, la politique d'accès et les vérifications d'activation dans un flux guidé.",
           "title": "Configuration guidée"
         },
         "keepExistingSecretKey": "Laissez vide pour conserver la clé secrète existante",
@@ -238,7 +235,6 @@
           "pending": "Vérification en attente",
           "verified": "Vérifié"
         },
-        "title": "Domaine personnalisé et image de marque",
         "tokenExpired": "Jeton expiré",
         "tokenExpiredDescription": "Le jeton de vérification a expiré. Veuillez en générer un nouveau.",
         "tokenExpires": "Le jeton expire le : {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Guide pour le SSO, le provisionnement SCIM, les restrictions de domaine, la politique d'invitation et les rôles par défaut pour cette organisation.",
-      "title": "Configuration de l'identité d'entreprise"
+      "description": "Guide pour le SSO, le provisionnement SCIM, les restrictions de domaine, la politique d'invitation et les rôles par défaut pour cette organisation."
     }
   }
 }

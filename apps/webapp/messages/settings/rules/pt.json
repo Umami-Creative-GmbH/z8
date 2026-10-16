@@ -143,7 +143,6 @@
         "title": "Substitutos",
         "toggle": "Substitutos podem decidir aprovações"
       },
-      "description": "Revise a política de escalonamento da organização, como ela foi migrada das configurações do canal e as condições que exigem um gerente de aprovação.",
       "dispose": {
         "confirm": "Fechar item",
         "description": "O fechamento registra sua decisão no log de auditoria. Ele não reatribui a aprovação nem permite outro escalonamento automático.",
@@ -177,7 +176,6 @@
         "usedNo": "Não usado",
         "usedYes": "Usado"
       },
-      "navDescription": "Política de escalonamento da organização e aprovações que precisam de atenção",
       "off": "Desativado",
       "on": "Ativado",
       "ownership": {

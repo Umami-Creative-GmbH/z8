@@ -504,7 +504,6 @@
       "title": "ArbZG Uyumluluğu"
     },
     "customDomains": {
-      "description": "Kuruluşunuz için özel alan adı, markalama ve SSO yapılandırın",
       "title": "Alan Adı ve Markalama"
     },
     "customers": {
@@ -845,10 +844,6 @@
         "storageSettings": "Depolama Ayarları"
       },
       "title": "Veri Dışa Aktarma"
-    },
-    "emailConfig": {
-      "description": "Kuruluş e-postaları için özel bir e-posta sağlayıcısı yapılandırın",
-      "title": "E-posta Yapılandırması"
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1273,8 @@
     },
     "group": {
       "account": "Hesap",
-      "administration": "Yönetim",
       "data": "Veri",
-      "enterprise": "Kurumsal",
+      "integrations": "Entegrasyonlar",
       "notifications": "Bildirimler",
       "organization": "Kuruluş"
     },
@@ -1517,6 +1511,7 @@
       "searchPlaceholder": "Paketleri veya lisansları ara...",
       "unknown": "Bilinmiyor"
     },
+    "loading": "Ayarlar yükleniyor",
     "locations": {
       "address": "Adres",
       "assignEmployee": "Çalışan Ata",
@@ -1627,6 +1622,55 @@
       "statusReady": "Hazır",
       "title": "Verilerim",
       "unavailable": "Bu kuruluştaki hesabınız için verileriniz mevcut değil."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Etkinlik",
+        "description": "Etkinliği inceleyin ve imzalı denetim dışa aktarımlarını yapılandırın",
+        "keysDescription": "Denetim dışa aktarımlarında kullanılan imzalama anahtarlarını yönetin",
+        "packagesDescription": "İmzalı denetim paketleri oluşturun ve inceleyin",
+        "title": "Denetim"
+      },
+      "chat-integrations": {
+        "description": "Slack, Microsoft Teams, Telegram ve Discord'u yapılandırın",
+        "title": "Sohbet Entegrasyonları"
+      },
+      "clocking": {
+        "automaticDescription": "Kesintisiz çalışma için otomatik çıkışı yapılandırın",
+        "description": "Takip, otomatik çıkış, hatırlatıcılar ve dönem gönderimlerini yapılandırın",
+        "remindersDescription": "Girişler, çıkışlar ve molalar için hatırlatıcıları yapılandırın",
+        "submissionsDescription": "Çalışanların çalışma dönemlerini inceleme için ne zaman göndereceğini yapılandırın",
+        "title": "Giriş/Çıkış",
+        "trackingDescription": "Kuruluşunuzun zaman takibi için kullanılan başlangıç tarihini belirleyin"
+      },
+      "developerAccess": {
+        "description": "API anahtarlarını ve webhook uç noktalarını yönetin",
+        "title": "Geliştirici Erişimi"
+      },
+      "domainBranding": {
+        "description": "Kuruluşunuzun özel alan adını ve markalamasını yapılandırın"
+      },
+      "email": {
+        "delivery": "İletim",
+        "description": "E-posta iletimini yapılandırın ve ileti şablonlarını özelleştirin",
+        "title": "E-posta"
+      },
+      "identityAccess": {
+        "description": "SSO, sosyal giriş, kullanıcı sağlama ve kuruluş erişimini yapılandırın",
+        "socialDescription": "Kuruluşunuz için mevcut sosyal giriş sağlayıcılarını yapılandırın",
+        "ssoDescription": "Kuruluşunuz için tek oturum açma sağlayıcılarını yönetin",
+        "title": "Kimlik ve Erişim"
+      },
+      "personnel-files": {
+        "description": "Özlük dosyası erişimini, süre sonu hatırlatıcılarını ve belge saklamayı yönetin"
+      },
+      "scheduled-exports": {
+        "description": "Yinelenen bordro, veri ve denetim dışa aktarımlarını planlayın"
+      },
+      "shiftPlanning": {
+        "description": "Vardiya şablonlarını ve karşılama hedeflerini yapılandırın",
+        "title": "Vardiya Planlama"
+      }
     },
     "notifications": {
       "approvals": "Onay bildirimleri",
@@ -2716,6 +2760,45 @@
         "title": "Vergi seyir defteri değildir"
       },
       "noDrivers": "Atanan sürücü yok",
+      "photos": {
+        "accessChanged": "Erişiminiz değişti. İzinlerinizi kontrol etmek için araç ayarlarını tekrar açın.",
+        "action": "Fotoğraflar",
+        "add": "Fotoğraf ekle",
+        "archived": "Bu araç arşivlendi. Fotoğraf eklemek veya kaldırmak için aracı geri yükleyin.",
+        "capacityChanged": "Galeri değişti. {count} fotoğraf alanı kaldı. Galeriyi tekrar açın ve daha az fotoğraf seçin.",
+        "description": "Bu araç için özel referans fotoğrafları. Tamamlanan yüklemeler ve kaldırma işlemleri anında kaydedilir.",
+        "empty": "Henüz fotoğraf yok.",
+        "expired": "Bu yüklemenin süresi doldu. Yüklemek için fotoğrafı tekrar seçin.",
+        "full": "Bu aracın 20 fotoğrafı var. Başka bir fotoğraf eklemeden önce bir fotoğrafı kaldırın.",
+        "gallery": "Araç fotoğrafları",
+        "imageNamed": "{name}, fotoğraf {number}",
+        "invalid": "Bu görsel okunamadı. Başka bir JPEG, PNG veya WebP fotoğrafı seçin.",
+        "limits": "JPEG, PNG veya WebP. Fotoğraf başına en fazla 10 MB, araç başına 20 fotoğraf.",
+        "loadFailed": "Fotoğraflar yüklenemedi. İletişim kutusunu kapatıp tekrar deneyin.",
+        "loading": "Fotoğraflar yükleniyor…",
+        "named": "{name} fotoğrafları",
+        "next": "Sonraki fotoğraf",
+        "position": "Fotoğraf {number} / {count}",
+        "previous": "Önceki fotoğraf",
+        "queued": "{name} yüklenmesi bekleniyor…",
+        "remove": "Fotoğrafı kaldır",
+        "removeConfirm": "Fotoğrafı kalıcı olarak kaldır",
+        "removeDescription": "Bu fotoğraf araç galerisinden kalıcı olarak kaldırılacak. Bu işlem geri alınamaz.",
+        "removeFailed": "Fotoğraf kaldırılamadı. Tekrar deneyin.",
+        "removeTitle": "Bu fotoğraf kalıcı olarak kaldırılsın mı?",
+        "removing": "Fotoğraf kaldırılıyor…",
+        "retry": "Tekrar dene",
+        "retryNamed": "{name} yeniden dene",
+        "saved": "{name} kaydedildi.",
+        "selectionTooLarge": "Bu seçim yüklenmedi. Bekleyen yüklemeler dahil {count} fotoğraf alanı kaldı.",
+        "tooLarge": "10 MB'tan büyük olmayan bir fotoğraf seçin.",
+        "unsupported": "JPEG, PNG veya WebP formatında bir fotoğraf seçin. HEIC ve diğer formatlar desteklenmez.",
+        "uploadFailed": "Fotoğraf yüklenemedi. Tekrar deneyin.",
+        "uploading": "{name} yükleniyor…",
+        "uploadResults": "Fotoğraf yükleme sonuçları",
+        "vehicleMissing": "Bu araç artık kuruluşunuzda mevcut değil.",
+        "viewNamed": "{name} için {number}. fotoğrafı görüntüle"
+      },
       "refusals": {
         "driverNotFound": "Atanan bir çalışan veya ekip artık mevcut değil. Sayfayı yeniden yükleyin.",
         "invalidChange": "Değişiklik kaydedilemedi. Sayfayı yeniden yükleyin ve tekrar deneyin.",
@@ -2739,7 +2822,6 @@
       "assignmentRemoved": "Atama kaldırıldı",
       "assignmentSaved": "Atama kaydedildi",
       "assignmentsDescription": "Sorulan çalışanlar mesai kaydı yaparken araç kullanımını kaydedebilir. Araç kullanımı beklenen çalışanlara her seferinde sorulur ve ayrıntılar tamamlanana kadar çalışmaları işaretlenir. Mesai kaydı yapması hiçbir zaman engellenmez. En belirgin atama geçerli olur: bir çalışanın kendi ataması birincil ekibininkine, bir ekibinki ise tüm kuruluşunkine göre önceliklidir.",
-      "description": "Kullandığı aracı ve kilometre sayacı değerlerini kaydetmesi kimden istenir",
       "enabled": "Araç kullanımını kaydet",
       "enabledDescription": "Bunu kapatmak, araç kullanımının sorulmasını ve eksik sürüş ayrıntılarının işaretlenmesini durdurur. Zaten kaydedilmiş olan araç kullanımı görünür kalır ve dışa aktarmalarda yer alır.",
       "error": {

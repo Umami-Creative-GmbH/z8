@@ -198,7 +198,6 @@
         "deleteDescription": "A jeni i sigurt që dëshironi të fshini \"{domain}\"? Ky veprim nuk mund të zhbëhet. Përdoruesit nuk do të mund të identifikohen më përmes këtij domeni të personalizuar.",
         "deleteFailed": "Fshirja e domenit dështoi",
         "deleteTitle": "Fshij domenin",
-        "description": "Konfiguroni domenin e personalizuar të hyrjes të organizatës suaj, markën dhe ofruesit e SSO-së.",
         "dnsPropagation": "Përhapja e DNS-së",
         "dnsPropagationDescription": "Ndryshimet në DNS mund të kërkojnë deri në 48 orë për t'u përhapur, megjithëse shpesh përfundojnë brenda pak minutash. Mund të klikoni \"Verifiko\" pasi të keni shtuar regjistrimin TXT.",
         "domain": "Domeni",
@@ -212,8 +211,6 @@
         "empty": "Nuk është konfiguruar ende asnjë domen i personalizuar.",
         "enabledAuthMethods": "Metodat e aktivizuara të autentikimit",
         "guidedSetup": {
-          "action": "Konfigurim i udhëhequr",
-          "description": "Konfiguroni SSO-në, SCIM-in, politikat e qasjes dhe kontrollet e aktivizimit në një rrjedhë të vetme të sigurt.",
           "title": "Konfigurim i udhëhequr"
         },
         "keepExistingSecretKey": "Lëreni bosh për të mbajtur çelësin sekret ekzistues",
@@ -238,7 +235,6 @@
           "pending": "Në pritje të verifikimit",
           "verified": "Verifikuar"
         },
-        "title": "Domen i personalizuar & Markimi",
         "tokenExpired": "Token-i ka skaduar",
         "tokenExpiredDescription": "Token-i i verifikimit ka skaduar. Ju lutemi rigjeneroni një token të ri.",
         "tokenExpires": "Token-i skadon më: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Udhëzoni SSO, provizionimin SCIM, kufizimet e domenit, rregullat e ftesave dhe rolet e paracaktuara për këtë organizatë.",
-      "title": "Konfigurimi i identitetit të ndërmarrjes"
+      "description": "Udhëzoni SSO, provizionimin SCIM, kufizimet e domenit, rregullat e ftesave dhe rolet e paracaktuara për këtë organizatë."
     }
   }
 }

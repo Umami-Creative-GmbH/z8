@@ -198,7 +198,6 @@
         "deleteDescription": "Er du sikker på at du vil slette «{domain}»? Denne handlingen kan ikke angres. Brukere vil ikke lenger kunne logge på via dette egendefinerte domenet.",
         "deleteFailed": "Kunne ikke slette domene",
         "deleteTitle": "Slett domene",
-        "description": "Konfigurer organisasjonens egendefinerte påloggingsdomene, merkevarebygging og SSO-leverandører.",
         "dnsPropagation": "DNS-propagering",
         "dnsPropagationDescription": "DNS-endringer kan ta opptil 48 timer å spre seg, selv om de ofte fullføres innen få minutter. Du kan klikke på «Verifiser» når du har lagt til TXT-oppføringen.",
         "domain": "Domene",
@@ -212,8 +211,6 @@
         "empty": "Ingen egendefinerte domener er konfigurert ennå.",
         "enabledAuthMethods": "Aktiverte autentiseringsmetoder",
         "guidedSetup": {
-          "action": "Veiledet oppsett",
-          "description": "Konfigurer SSO, SCIM, tilgangspolicy og aktiveringskontroller i én beskyttet flyt.",
           "title": "Veiledet oppsett"
         },
         "keepExistingSecretKey": "La stå tomt for å beholde eksisterende hemmelig nøkkel",
@@ -238,7 +235,6 @@
           "pending": "Venter på verifisering",
           "verified": "Verifisert"
         },
-        "title": "Tilpasset domene og merkevarebygging",
         "tokenExpired": "Token utløpt",
         "tokenExpiredDescription": "Bekreftelsestokenet er utløpt. Vennligst generer et nytt token.",
         "tokenExpires": "Token utløper: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Administrer SSO, SCIM-klargjøring, domenebegrensninger, invitasjonsretningslinjer og standardroller for denne organisasjonen.",
-      "title": "Oppsett av virksomhetsidentitet"
+      "description": "Administrer SSO, SCIM-klargjøring, domenebegrensninger, invitasjonsretningslinjer og standardroller for denne organisasjonen."
     }
   }
 }
