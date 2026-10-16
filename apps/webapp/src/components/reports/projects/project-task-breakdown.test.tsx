@@ -85,6 +85,24 @@ describe("ProjectTaskBreakdown", () => {
 		expect(rowOf("No task").queryByRole("progressbar")).toBeNull();
 	});
 
+	it("shows how many bookings of the No task row are missing a task (#884)", () => {
+		const [design, build, noTask] = rows;
+		render(
+			<ProjectTaskBreakdown
+				taskBreakdown={[design, build, { ...noTask, workPeriodCount: 3, missingTaskCount: 2 }]}
+			/>,
+		);
+
+		expect(rowOf("No task").getByText("2 missing a task")).toBeTruthy();
+		expect(rowOf("No task").getByText("0.5h")).toBeTruthy();
+	});
+
+	it("shows no missing-task count when none is missing a task", () => {
+		render(<ProjectTaskBreakdown taskBreakdown={rows} />);
+
+		expect(screen.queryByText(/missing a task/)).toBeNull();
+	});
+
 	it("says so when no time was booked", () => {
 		render(<ProjectTaskBreakdown taskBreakdown={[]} />);
 

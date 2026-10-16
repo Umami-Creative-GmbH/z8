@@ -36,6 +36,8 @@ import {
 	insertProjectManagers,
 } from "@/lib/projects/project-creation";
 import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
+// The narrow module, not the work records index: this action needs nothing else of it.
+import { clearProjectMissingTasks } from "@/lib/time-tracking/work-records/project-missing-tasks";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	projectBillableDefault,
@@ -665,6 +667,9 @@ async function saveProjectChanges(
 				// Whoever may edit the project may change its task requirement (#884).
 				const requiresTask = yield* projectRequiresTaskInput(input.requiresTask);
 				if (requiresTask !== undefined) updateData.requiresTask = requiresTask;
+				// Turning it off ends every missing-task marker on the project; turning it
+				// back on later restores none (#884, Projects ADR 0002).
+				const turnsTaskRequirementOff = requiresTask === false && existingProject.requiresTask;
 
 				// Validate customerId if changing to a new customer
 				if (input.customerId) {
@@ -714,19 +719,27 @@ async function saveProjectChanges(
 							eq(project.id, projectId),
 							eq(project.organizationId, existingProject.organizationId),
 						);
-						if (input.status === undefined) {
+						if (input.status === undefined && !turnsTaskRequirementOff) {
 							await dbService.db.transaction(async (tx) => {
 								await tx.update(project).set(updateData).where(scopedProject);
 								await saveCustomFieldValues(tx);
 							});
 							return;
 						}
-						// The bookable lifecycle decides manual eligibility (#315).
+						// The bookable lifecycle decides manual eligibility (#315). The exclusive
+						// guard also drains every work transaction that could still mark work
+						// on this project before its markers are cleared (#884).
 						await withOrganizationConfigurationMutation(
 							db,
 							existingProject.organizationId,
 							async (tx) => {
 								await tx.update(project).set(updateData).where(scopedProject);
+								if (turnsTaskRequirementOff) {
+									await clearProjectMissingTasks(tx, {
+										organizationId: existingProject.organizationId,
+										projectId,
+									});
+								}
 								await saveCustomFieldValues(tx);
 							},
 						);

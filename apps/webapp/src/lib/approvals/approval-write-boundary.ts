@@ -891,6 +891,22 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record_allocation",
 		},
 	],
+	// Work records ends a project's missing-task markers on both records when its task
+	// requirement is turned off (#884); the marker only, never attribution or revision.
+	"src/lib/time-tracking/work-records/project-missing-tasks.ts": [
+		{
+			columns: ["missing_task"],
+			functionName: "clearProjectMissingTasks",
+			operation: "update",
+			table: "work_period",
+		},
+		{
+			columns: ["missing_task"],
+			functionName: "clearProjectMissingTasks",
+			operation: "update",
+			table: "time_record_allocation",
+		},
+	],
 	// Work records (ADR 0010, #1224, #1226) attaches a missing canonical work record and repairs a pair.
 	"src/lib/time-tracking/work-records/repair.ts": [
 		{

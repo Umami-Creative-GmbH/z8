@@ -93,6 +93,20 @@ export function ProjectTaskBreakdown({ taskBreakdown }: ProjectTaskBreakdownProp
 										{row.state === "done" && (
 											<Badge variant="secondary">{t("reports.projects.task.done", "Done")}</Badge>
 										)}
+										{row.missingTaskCount ? (
+											<Badge
+												variant="outline"
+												className="border-amber-500/50 text-amber-700 text-xs dark:text-amber-300"
+												title={t(
+													"reports.projects.task.missingTaskHint",
+													"Bookings on this project that came in without the task it requires. Add a task to each booking in the calendar.",
+												)}
+											>
+												{t("reports.projects.task.missingTaskCount", "{count} missing a task", {
+													count: row.missingTaskCount,
+												})}
+											</Badge>
+										) : null}
 									</span>
 								</TableCell>
 								<TableCell className="text-right tabular-nums">

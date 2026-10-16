@@ -69,6 +69,37 @@ describe("buildProjectTaskBreakdown", () => {
 		expect(rows[0]?.percentOfTotal).toBe(100);
 	});
 
+	it("counts the No task row's bookings that are missing a task (#884)", () => {
+		const rows = buildProjectTaskBreakdown({
+			periods: [
+				{ taskId: null, durationMinutes: 60, missingTask: true },
+				{ taskId: null, durationMinutes: 30 },
+				{ taskId: null, durationMinutes: 45, missingTask: true },
+				{ taskId: "task-design", durationMinutes: 60 },
+			],
+			tasks: [design],
+			bookedMinutesToDate: new Map(),
+		});
+
+		expect(rows.find((row) => row.taskId === null)).toMatchObject({
+			totalMinutes: 135,
+			workPeriodCount: 3,
+			missingTaskCount: 2,
+		});
+		expect(rows.find((row) => row.taskId === "task-design")).not.toHaveProperty("missingTaskCount");
+	});
+
+	it("gives the No task row no count when none of its bookings is missing a task", () => {
+		const rows = buildProjectTaskBreakdown({
+			periods: [{ taskId: null, durationMinutes: 30 }],
+			tasks: [],
+			bookedMinutesToDate: new Map(),
+		});
+
+		expect(rows).toHaveLength(1);
+		expect(rows[0]).not.toHaveProperty("missingTaskCount");
+	});
+
 	it("is empty when nothing was booked", () => {
 		expect(
 			buildProjectTaskBreakdown({ periods: [], tasks: [design], bookedMinutesToDate: new Map() }),
