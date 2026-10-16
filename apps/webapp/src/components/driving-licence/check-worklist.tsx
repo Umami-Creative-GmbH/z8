@@ -10,6 +10,7 @@ import {
 } from "@/lib/organization/driving-licence/check-actions";
 import { DrivingLicenceEvidence, DrivingStatusLabel } from "./check-evidence";
 import { OriginalDrivingCheckForm } from "./original-check-form";
+import { ReinstateDrivingAuthorization } from "./reinstate-authorization";
 export function DrivingLicenceVerifierWorklist() {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -83,7 +84,15 @@ export function DrivingLicenceVerifierWorklist() {
 						onCompleted={refresh}
 					/>
 					{record.data?.success && (
-						<DrivingLicenceEvidence record={record.data.data} />
+						<>
+							<DrivingLicenceEvidence record={record.data.data} />
+							<ReinstateDrivingAuthorization
+								key={selected.employeeId + record.data.data.checks[0]?.id}
+								employeeId={selected.employeeId}
+								record={record.data.data}
+								onCompleted={refresh}
+							/>
+						</>
 					)}
 				</div>
 			)}
