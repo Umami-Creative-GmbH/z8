@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { DrivingLicenceEvidence } from "@/components/driving-licence/check-evidence";
 import { DrivingLicenceVerifierWorklist } from "@/components/driving-licence/check-worklist";
 import { DrivingLicenceHistoryPanel } from "@/components/driving-licence/history-panel";
+import { DrivingLicencePersonalReminderTasks } from "@/components/driving-licence/reminder-tasks";
 import { ReportDrivingImpediment } from "@/components/driving-licence/report-impediment";
 import { VerifierResponsibility } from "@/components/driving-licence/verifier-settings";
 import { getDrivingLicenceEmployeeRecordAction } from "@/lib/organization/driving-licence/check-actions";
@@ -47,6 +48,9 @@ async function OwnDrivingLicenceContent() {
 				</p>
 			)}
 			<VerifierResponsibility />
+			<DrivingLicencePersonalReminderTasks
+				key={`tasks:${actor.organizationId}:${actor.userId}`}
+			/>
 			<DrivingLicenceVerifierWorklist
 				key={`${actor.organizationId}:${actor.userId}`}
 			/>
