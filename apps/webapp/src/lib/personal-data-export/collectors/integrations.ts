@@ -2,8 +2,9 @@
  * Integrations category of a personal data export (#811, #1170): calendar
  * connections (provider and account), the employee's own calendar feeds,
  * linked Slack, Teams, Telegram and Discord accounts, whether a kiosk PIN is
- * set, and the kiosk PIN attempts and unlocks its lockout is judged from
- * (#1288). No withheld data: both kinds of export hold the same rows.
+ * set, the kiosk PIN attempts and unlocks its lockout is judged from
+ * (#1288), and the employee's offline kiosk clockings Z8 refused (#1290). No
+ * withheld data: both kinds of export hold the same rows.
  *
  * Never exported: calendar tokens and OAuth details, sync errors, synced
  * events, calendar feed secret digests, team feeds, PIN hashes, OAuth state,
@@ -17,6 +18,8 @@ import {
 	employeeKioskPin,
 	employeeKioskPinEvent,
 	icsFeed,
+	kiosk,
+	kioskFrozenRefusal,
 	slackUserMapping,
 	teamsUserMapping,
 	telegramUserMapping,
@@ -55,6 +58,15 @@ const ICS_FEED_COLUMNS = [
 ] as const;
 
 const KIOSK_PIN_EVENT_COLUMNS = ["event", "occurred_at", "offline"] as const;
+
+const KIOSK_REFUSAL_COLUMNS = [
+	"kiosk",
+	"action",
+	"claimed_at",
+	"time_source",
+	"reason",
+	"refused_at",
+] as const;
 
 const CHAT_ACCOUNT_COLUMNS = [
 	"platform",
@@ -153,6 +165,7 @@ async function collectIntegrations(
 			)
 			.orderBy(asc(employeeKioskPinEvent.occurredAt), asc(employeeKioskPinEvent.sequence)),
 	]);
+	const refusals = await kioskRefusalRows(database, scope);
 
 	return {
 		category: "integrations",
@@ -199,8 +212,48 @@ async function collectIntegrations(
 					offline: row.offline,
 				})),
 			),
+			tablePart(
+				"kiosk_refused_clockings",
+				KIOSK_REFUSAL_COLUMNS,
+				refusals.map((row) => ({
+					kiosk: row.kiosk,
+					action: row.action,
+					claimed_at: instantText(row.claimedAt),
+					time_source: row.timeSource,
+					reason: row.reason,
+					refused_at: instantText(row.refusedAt),
+				})),
+			),
 		],
 	};
+}
+
+/** The employee's refused offline kiosk clockings (#1290); the frozen command is not exported. */
+function kioskRefusalRows(database: PersonalDataExportDatabase, scope: PersonalDataExportScope) {
+	return database
+		.select({
+			kiosk: kiosk.name,
+			action: kioskFrozenRefusal.action,
+			claimedAt: kioskFrozenRefusal.claimedAt,
+			timeSource: kioskFrozenRefusal.timeSource,
+			reason: kioskFrozenRefusal.reason,
+			refusedAt: kioskFrozenRefusal.refusedAt,
+		})
+		.from(kioskFrozenRefusal)
+		.innerJoin(
+			kiosk,
+			and(
+				eq(kiosk.id, kioskFrozenRefusal.kioskId),
+				eq(kiosk.organizationId, kioskFrozenRefusal.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(kioskFrozenRefusal.organizationId, scope.organizationId),
+				eq(kioskFrozenRefusal.employeeId, scope.employeeId),
+			),
+		)
+		.orderBy(asc(kioskFrozenRefusal.claimedAt), asc(kioskFrozenRefusal.id));
 }
 
 /** The user's linked chat accounts in this organization: Slack, Teams, Telegram, Discord. */

@@ -1486,6 +1486,44 @@
       "pairPairedDescription": "The device token is rotated: the paired device stops working immediately and must be paired again with the new code.",
       "pairTitle": "Pair {name} again?",
       "pairUnpairedDescription": "A new pairing code replaces the previous one.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Clock in",
+          "clockOut": "Clock out",
+          "resumeBreak": "Resume",
+          "startBreak": "Start break"
+        },
+        "columns": {
+          "action": "Action",
+          "claimedAt": "Claimed time",
+          "employee": "Employee",
+          "kiosk": "Kiosk",
+          "reason": "Reason",
+          "timeSource": "Time source"
+        },
+        "description": "Clockings saved on a kiosk while it was offline that were not recorded when it reconnected. The employee, or the managers of an employee without a sign-in, were notified.",
+        "empty": "No offline clocking was refused.",
+        "reasons": {
+          "clockUntrusted": "Kiosk clock not trusted",
+          "conflict": "Conflicts with other recorded time",
+          "holiday": "Holiday without time recording",
+          "kioskRetired": "Kiosk revoked or paired again",
+          "monthClosed": "Month closed",
+          "notAdopted": "Offline clocking not accepted by the organization",
+          "notAssigned": "Not assigned to the location",
+          "other": "Could not be accepted",
+          "outsideWindow": "Arrived too late",
+          "pinLocked": "PIN locked",
+          "pinUnchecked": "PIN could not be checked",
+          "wrongPin": "Wrong PIN"
+        },
+        "timeSources": {
+          "deviceClock": "Device clock",
+          "serverAnchor": "Server time"
+        },
+        "title": "Refused offline clockings",
+        "unknownEmployee": "Not an employee"
+      },
       "revoke": "Revoke",
       "revokeConfirm": "Revoke kiosk",
       "revoked": "Kiosk revoked",
@@ -1493,6 +1531,7 @@
       "revokeFailed": "The kiosk could not be revoked",
       "revokeTitle": "Revoke {name}?",
       "rotateConfirm": "Rotate token and pair again",
+      "rotateOfflineWarning": "This kiosk has offline mode on. Clockings it saved while offline and not yet sent are refused when it reconnects, and listed under refused offline clockings.",
       "save": "Save",
       "saved": "Kiosk saved",
       "saveFailed": "The kiosk could not be saved",

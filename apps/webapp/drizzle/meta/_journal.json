@@ -1716,6 +1716,13 @@
       "when": 1805817600000,
       "tag": "0244_kiosk_retired_token",
       "breakpoints": true
+    },
+    {
+      "idx": 245,
+      "version": "7",
+      "when": 1805904000000,
+      "tag": "0245_kiosk_frozen_refusal",
+      "breakpoints": true
     }
   ]
 }
