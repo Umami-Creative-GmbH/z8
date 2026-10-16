@@ -1,6 +1,5 @@
 import {
 	IconAddressBook,
-	IconArrowUpRight,
 	IconBeach,
 	IconBell,
 	IconBrandDiscord,
@@ -68,7 +67,6 @@ export const SETTINGS_ICON_MAP: Record<
 	clock: IconClock,
 	"clock-edit": IconClockEdit,
 	"git-branch": IconGitBranch,
-	"arrow-up-right": IconArrowUpRight,
 	gavel: IconGavel,
 	percentage: IconPercentage,
 	briefcase: IconBriefcase,

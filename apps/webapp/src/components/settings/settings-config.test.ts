@@ -257,7 +257,7 @@ describe("settings visibility tiers", () => {
 		const travelIds = SETTINGS_ENTRIES.filter(
 			(entry) => entry.group === "travel",
 		).map((entry) => entry.id);
-		expect(travelIds).toEqual(["vehicles", "vehicle-use", "travel-expenses"]);
+		expect(travelIds).toEqual(["vehicles", "vehicle-use"]);
 		expect(managerEntries.some((entry) => entry.id === "vehicles")).toBe(false);
 		expect(memberEntries.some((entry) => entry.id === "vehicles")).toBe(false);
 		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/vehicles")).toBe(
@@ -309,6 +309,29 @@ describe("settings visibility tiers", () => {
 		).toBe(false);
 	});
 
+	it("groups all policy settings around one Approval entry", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
+		expect(
+			entries
+				.filter((entry) => entry.group === "policies")
+				.map((entry) => entry.id),
+		).toEqual([
+			"work-policies",
+			"vacation",
+			"approval",
+			"change-policies",
+			"travel-expenses",
+		]);
+		expect(entries.find((entry) => entry.id === "approval")).toMatchObject({
+			titleDefault: "Approval",
+			href: "/settings/approval-policies",
+			minimumTier: "orgAdmin",
+		});
+		expect(
+			entries.some((entry) => entry.href === "/settings/approval-escalation"),
+		).toBe(false);
+	});
+
 	it("groups notification preferences and channel configuration together", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		const notificationEntries = entries.filter(
@@ -345,6 +368,7 @@ describe("settings visibility tiers", () => {
 		expect(groups.map((group) => group.id)).toEqual([
 			"account",
 			"organization",
+			"policies",
 			"time-tracking",
 			"absences",
 			"scheduling",

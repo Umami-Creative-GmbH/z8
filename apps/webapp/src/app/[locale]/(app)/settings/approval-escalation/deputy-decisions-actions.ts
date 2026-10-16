@@ -7,7 +7,7 @@ import { getAbility, getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 
-const APPROVAL_ESCALATION_PATH = "/settings/approval-escalation";
+const APPROVAL_ESCALATION_PATH = "/settings/approval-policies";
 
 /**
  * "Deputies can decide approvals" (#1015, Approvals ADR 0002): an approval

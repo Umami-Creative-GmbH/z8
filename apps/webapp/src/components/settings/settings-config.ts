@@ -9,7 +9,7 @@ export type SettingsGroup =
 	| "time-tracking"
 	| "absences"
 	| "scheduling"
-	| "approvals"
+	| "policies"
 	| "projects"
 	| "travel"
 	| "payroll"
@@ -53,7 +53,6 @@ export type SettingsIconName =
 	| "clock"
 	| "clock-edit"
 	| "git-branch"
-	| "arrow-up-right"
 	| "gavel"
 	| "percentage"
 	| "address-book"
@@ -121,6 +120,11 @@ export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
 		labelDefault: "Organization",
 	},
 	{
+		id: "policies",
+		labelKey: "settings.changePolicies.tab.policies",
+		labelDefault: "Policies",
+	},
+	{
 		id: "time-tracking",
 		labelKey: "nav.time-tracking",
 		labelDefault: "Time Tracking",
@@ -134,11 +138,6 @@ export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
 		id: "scheduling",
 		labelKey: "nav.scheduling",
 		labelDefault: "Scheduling",
-	},
-	{
-		id: "approvals",
-		labelKey: "nav.approvals",
-		labelDefault: "Approvals",
 	},
 	{
 		id: "projects",
@@ -337,19 +336,30 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/work-policies",
 		icon: "gavel",
 		minimumTier: "manager",
-		group: "time-tracking",
+		group: "policies",
 	},
 	{
-		id: "work-categories",
-		titleKey: "settings.workCategories.title",
-		titleDefault: "Work Categories",
-		descriptionKey: "settings.workCategories.description",
-		descriptionDefault:
-			"Define work categories with time factors for effective time calculation",
-		href: "/settings/work-categories",
-		icon: "tag",
+		id: "vacation",
+		titleKey: "settings.vacation.title",
+		titleDefault: "Vacation",
+		descriptionKey: "settings.vacation.description",
+		descriptionDefault: "Manage vacation policies and allowances",
+		href: "/settings/vacation",
+		icon: "beach",
 		minimumTier: "manager",
-		group: "time-tracking",
+		group: "policies",
+	},
+	{
+		id: "approval",
+		titleKey: "settings.approvalEscalation.attention.approvalType",
+		titleDefault: "Approval",
+		descriptionKey: "settings.approvalPolicies.description",
+		descriptionDefault:
+			"Configure sequential approval chains for operational workflows",
+		href: "/settings/approval-policies",
+		icon: "git-branch",
+		minimumTier: "orgAdmin",
+		group: "policies",
 	},
 	{
 		id: "change-policies",
@@ -360,6 +370,30 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Control when employees can edit time entries and require manager approval",
 		href: "/settings/change-policies",
 		icon: "clock-edit",
+		minimumTier: "manager",
+		group: "policies",
+	},
+	{
+		id: "travel-expenses",
+		titleKey: "settings.travelExpenses.title",
+		titleDefault: "Travel Expense Policies",
+		descriptionKey: "settings.travelExpenses.navDescription",
+		descriptionDefault:
+			"Expense report review, receipts, currencies, mileage and per diem rates, and exceptions.",
+		href: "/settings/travel-expenses",
+		icon: "map-pin",
+		minimumTier: "orgAdmin",
+		group: "policies",
+	},
+	{
+		id: "work-categories",
+		titleKey: "settings.workCategories.title",
+		titleDefault: "Work Categories",
+		descriptionKey: "settings.workCategories.description",
+		descriptionDefault:
+			"Define work categories with time factors for effective time calculation",
+		href: "/settings/work-categories",
+		icon: "tag",
 		minimumTier: "manager",
 		group: "time-tracking",
 	},
@@ -411,17 +445,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "absences",
 	},
 	{
-		id: "vacation",
-		titleKey: "settings.vacation.title",
-		titleDefault: "Vacation",
-		descriptionKey: "settings.vacation.description",
-		descriptionDefault: "Manage vacation policies and allowances",
-		href: "/settings/vacation",
-		icon: "beach",
-		minimumTier: "manager",
-		group: "absences",
-	},
-	{
 		id: "skills",
 		titleKey: "settings.skills.title",
 		titleDefault: "Skills & Qualifications",
@@ -458,30 +481,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		minimumTier: "manager",
 		group: "scheduling",
 		requiredFeature: "shiftsEnabled",
-	},
-	{
-		id: "approval-policies",
-		titleKey: "settings.approvalPolicies.title",
-		titleDefault: "Approval Policies",
-		descriptionKey: "settings.approvalPolicies.description",
-		descriptionDefault:
-			"Configure sequential approval chains for operational workflows",
-		href: "/settings/approval-policies",
-		icon: "git-branch",
-		minimumTier: "orgAdmin",
-		group: "approvals",
-	},
-	{
-		id: "approval-escalation",
-		titleKey: "settings.approvalEscalation.title",
-		titleDefault: "Approval Escalation",
-		descriptionKey: "settings.approvalEscalation.navDescription",
-		descriptionDefault:
-			"Organization escalation policy and approvals that need attention",
-		href: "/settings/approval-escalation",
-		icon: "arrow-up-right",
-		minimumTier: "orgAdmin",
-		group: "approvals",
 	},
 	{
 		id: "customers",
@@ -557,18 +556,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Who is asked to record the vehicle they drove and its odometer readings",
 		href: "/settings/vehicle-use",
 		icon: "car",
-		minimumTier: "orgAdmin",
-		group: "travel",
-	},
-	{
-		id: "travel-expenses",
-		titleKey: "settings.travelExpenses.title",
-		titleDefault: "Travel Expense Policies",
-		descriptionKey: "settings.travelExpenses.navDescription",
-		descriptionDefault:
-			"Expense report review, receipts, currencies, mileage and per diem rates, and exceptions.",
-		href: "/settings/travel-expenses",
-		icon: "map-pin",
 		minimumTier: "orgAdmin",
 		group: "travel",
 	},

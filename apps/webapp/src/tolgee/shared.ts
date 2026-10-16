@@ -134,7 +134,12 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/settings/billable-time/hand-off": ["common", "settings/generic", "reports"],
 	"/settings": ["common", "settings/generic"],
 	"/settings/approval-escalation": ["common", "settings/generic", "settings/rules"],
-	"/settings/approval-policies": ["common", "settings/generic", "settings/rules"],
+	"/settings/approval-policies": [
+		"common",
+		"settings/generic",
+		"settings/rules",
+		"settings/people",
+	],
 	"/settings/audit-export": ["common", "settings/generic", "settings/auditExport"],
 	"/settings/audit-log": ["common", "settings/generic", "settings/auditExport"],
 	"/settings/calendar": ["common", "settings/generic", "settings/integrations"],

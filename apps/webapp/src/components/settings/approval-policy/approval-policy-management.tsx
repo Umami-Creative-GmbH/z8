@@ -26,7 +26,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { EmployeeGroupManagement } from "../employee-group-management";
 import { ApprovalPolicyDialog } from "./approval-policy-dialog";
 import type { buildApprovalPolicyPayload } from "./approval-policy-dialog-utils";
 import { ApprovalPolicyPreview } from "./approval-policy-preview";
@@ -98,21 +97,8 @@ export function ApprovalPolicyManagement({
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.approvalPolicies.title", "Approval Policies")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.approvalPolicies.description",
-						"Configure sequential approval chains by team, location, category, amount, overtime risk, and employee group.",
-					)}
-				</p>
-			</div>
-
+		<div className="flex flex-col gap-4">
 			<ApprovalPolicyPreview />
-			<EmployeeGroupManagement organizationId={organizationId} />
 
 			<Card>
 				<CardHeader>

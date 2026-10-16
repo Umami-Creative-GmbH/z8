@@ -137,6 +137,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.enterpriseIdentitySetup.title",
 	]),
 	...keys("settings/rules", [
+		"settings.changePolicies.tab.policies",
+		"settings.approvalEscalation.attention.approvalType",
 		"settings.approvalEscalation.navDescription",
 		"settings.approvalEscalation.title",
 		"settings.approvalPolicies.description",
