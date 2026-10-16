@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteOldAuditLogs } from "@/lib/audit/cleanup";
 import { cleanupExpiredExports } from "@/lib/export/export-service";
 import { runClockingReminderOccasionRetention } from "@/lib/jobs/clocking-reminder-occasion-retention";
+import { runKioskPinEventRetention } from "@/lib/jobs/kiosk-pin-event-retention";
 import { runPositionRecordRetention } from "@/lib/jobs/position-record-retention";
 import { runKeyRequestLogRetention } from "@/lib/jobs/public-api-request-log-retention";
 import { runReportShareLinkViewRetention } from "@/lib/jobs/report-share-links";
@@ -34,6 +35,10 @@ vi.mock("@/lib/jobs/clocking-reminder-occasion-retention", () => ({
 	runClockingReminderOccasionRetention: vi.fn(),
 }));
 
+vi.mock("@/lib/jobs/kiosk-pin-event-retention", () => ({
+	runKioskPinEventRetention: vi.fn(),
+}));
+
 vi.mock("@/lib/jobs/public-api-request-log-retention", () => ({
 	runKeyRequestLogRetention: vi.fn(),
 }));
@@ -56,6 +61,7 @@ const deleteOldNotificationsMock = vi.mocked(deleteOldNotifications);
 const runPositionRecordRetentionMock = vi.mocked(runPositionRecordRetention);
 const runClockingReminderOccasionRetentionMock = vi.mocked(runClockingReminderOccasionRetention);
 const runKeyRequestLogRetentionMock = vi.mocked(runKeyRequestLogRetention);
+const runKioskPinEventRetentionMock = vi.mocked(runKioskPinEventRetention);
 const runReportShareLinkViewRetentionMock = vi.mocked(runReportShareLinkViewRetention);
 
 describe("runCleanup", () => {
@@ -70,6 +76,8 @@ describe("runCleanup", () => {
 		runClockingReminderOccasionRetentionMock.mockReset();
 		runKeyRequestLogRetentionMock.mockReset();
 		runKeyRequestLogRetentionMock.mockResolvedValue(0);
+		runKioskPinEventRetentionMock.mockReset();
+		runKioskPinEventRetentionMock.mockResolvedValue(0);
 		runReportShareLinkViewRetentionMock.mockReset();
 		runReportShareLinkViewRetentionMock.mockResolvedValue(0);
 	});
@@ -120,6 +128,21 @@ describe("runCleanup", () => {
 		expect(infoMock).toHaveBeenCalledWith(
 			{ count: 30 },
 			"Cleaned up key request log entries past retention",
+		);
+	});
+
+	it("deletes kiosk PIN events that can no longer affect a lockout with the old notifications", async () => {
+		deleteOldNotificationsMock.mockResolvedValue(7);
+		runClockingReminderOccasionRetentionMock.mockResolvedValue(0);
+		runKioskPinEventRetentionMock.mockResolvedValue(9);
+
+		const result = await runCleanup({ type: "cleanup", task: "old_notifications" });
+
+		expect(runKioskPinEventRetentionMock).toHaveBeenCalledOnce();
+		expect(result).toEqual({ deletedCount: 16 });
+		expect(infoMock).toHaveBeenCalledWith(
+			{ count: 9 },
+			"Cleaned up kiosk PIN events past the lockout replay window",
 		);
 	});
 

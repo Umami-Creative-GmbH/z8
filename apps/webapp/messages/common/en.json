@@ -1930,6 +1930,12 @@
             "setBy": "Who set the PIN.",
             "summary": "Whether you have a PIN for clocking in at a kiosk terminal. The PIN itself is never stored readably and is not included."
           },
+          "kioskPinEvents": {
+            "event": "failure for a wrong PIN, success for a correct one, cleared when your PIN was unlocked, reset or changed.",
+            "occurredAt": "When the PIN was entered or the lockout cleared (UTC).",
+            "offline": "Whether the PIN was entered at a kiosk without a connection and checked when it reconnected.",
+            "summary": "Your recent kiosk PIN attempts and PIN unlocks, kept for about a week to decide whether you are locked out after five wrong PINs in a row. The PINs entered are never stored."
+          },
           "shared": {
             "isActive": "Whether the connection is in use."
           }

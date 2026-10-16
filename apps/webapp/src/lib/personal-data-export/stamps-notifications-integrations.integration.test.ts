@@ -315,10 +315,18 @@ async function seed() {
 		[ORG],
 	);
 	await admin.query(
-		`insert into employee_kiosk_pin (organization_id, employee_id, pin_hash, failed_attempts, set_by_user_id,
+		`insert into employee_kiosk_pin (organization_id, employee_id, pin_hash, set_by_user_id,
 			created_at, updated_at) values
-		 ($1, $2, 'pin-hash-secret-t1170', 3, 't1170-owner', '2026-08-07T08:00:00Z', '2026-08-08T08:00:00Z'),
-		 ($3, $4, 'pin-hash-secret-t1170-other', 0, 't1170-ada', now(), now())`,
+		 ($1, $2, 'pin-hash-secret-t1170', 't1170-owner', '2026-08-07T08:00:00Z', '2026-08-08T08:00:00Z'),
+		 ($3, $4, 'pin-hash-secret-t1170-other', 't1170-ada', now(), now())`,
+		[ORG, ids.ada, OTHER, ids.adaOther],
+	);
+	await admin.query(
+		`insert into employee_kiosk_pin_event (organization_id, employee_id, kind, offline, occurred_at) values
+		 ($1, $2, 'failure', false, '2026-08-09T07:58:00Z'),
+		 ($1, $2, 'success', true, '2026-08-09T07:59:00Z'),
+		 ($1, $2, 'cleared', false, '2026-08-08T08:00:00Z'),
+		 ($3, $4, 'failure', false, '2026-08-09T07:00:00Z')`,
 		[ORG, ids.ada, OTHER, ids.adaOther],
 	);
 }
@@ -659,6 +667,15 @@ describe("personal data export: position stamps, notifications and integrations 
 			set_at: null,
 			set_by: null,
 		});
+	});
+
+	it("exports the kiosk PIN attempts and unlocks the lockout is judged from (#1288)", async () => {
+		const { files } = await buildExport(ids.ada, "employee", "t1170-ada");
+		expect(categoryOf(files, "integrations").kiosk_pin_events).toEqual([
+			{ event: "cleared", occurred_at: "2026-08-08T08:00:00Z", offline: false },
+			{ event: "failure", occurred_at: "2026-08-09T07:58:00Z", offline: false },
+			{ event: "success", occurred_at: "2026-08-09T07:59:00Z", offline: true },
+		]);
 	});
 
 	it("holds the same rows in both kinds of export", async () => {
