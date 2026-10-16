@@ -74,19 +74,20 @@ describe("kiosk home screen on PostgreSQL", () => {
 
 	async function kioskToken(
 		locationId: string,
-		input: { orgId?: string; revoked?: boolean } = {},
+		input: { orgId?: string; revoked?: boolean; offlineMode?: boolean } = {},
 	): Promise<string> {
 		const token = `z8k_t862-${randomUUID()}`;
 		await fixture.pool.query(
 			`insert into kiosk (organization_id, location_id, name, timezone, token_hash, paired_at,
-			                    revoked_at, created_by)
-			 values ($1, $2, 'Front door', 'Europe/Berlin', $3, now(), $4, $5)`,
+			                    revoked_at, created_by, offline_mode_enabled)
+			 values ($1, $2, 'Front door', 'Europe/Berlin', $3, now(), $4, $5, $6)`,
 			[
 				input.orgId ?? organizationId,
 				locationId,
 				hashKioskSecret(token),
 				input.revoked ? new Date() : null,
 				fixture.ownerUserId,
+				input.offlineMode ?? false,
 			],
 		);
 		return token;
@@ -173,6 +174,112 @@ describe("kiosk home screen on PostgreSQL", () => {
 		expect(
 			await sessionLanguage(await kioskToken(foreignStore, { orgId: otherOrganizationId })),
 		).toBe("en");
+	});
+
+	describe("offline mode (#1291)", () => {
+		async function liveWork(
+			person: SeededEmployee,
+			startedAt: string,
+			orgId = organizationId,
+			breakSince: string | null = null,
+		) {
+			const clockInId = randomUUID();
+			const workPeriodId = randomUUID();
+			await fixture.pool.query(
+				`insert into time_entry (id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+				   timezone, timezone_source, hash, created_by, created_at)
+				 values ($1, $2, $3, 'clock_in', $4, 120, 'Europe/Berlin', 'backfill', $5, $6, $4)`,
+				[
+					clockInId,
+					person.employeeId,
+					orgId,
+					new Date(startedAt),
+					`hash-${clockInId}`,
+					person.userId,
+				],
+			);
+			await fixture.pool.query(
+				`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, is_active,
+				   break_started_at, break_started_zone, break_started_operation_id, updated_at)
+				 values ($1, $2, $3, $4, $5, true, $6, $7, $8, now())`,
+				[
+					workPeriodId,
+					person.employeeId,
+					orgId,
+					clockInId,
+					new Date(startedAt),
+					breakSince ? new Date(breakSince) : null,
+					breakSince ? "Europe/Lisbon" : null,
+					breakSince ? randomUUID() : null,
+				],
+			);
+			return workPeriodId;
+		}
+
+		let annaWork: string;
+		let benWork: string;
+
+		beforeAll(async () => {
+			await fixture.pool.query(
+				`insert into time_entry_append_control (organization_id, mode) values ($1, 'active')
+				 on conflict (organization_id) do update set mode = excluded.mode`,
+				[organizationId],
+			);
+			annaWork = await liveWork(anna, "2026-10-16T06:30:00Z");
+			benWork = await liveWork(ben, "2026-10-16T05:00:00Z", organizationId, "2026-10-16T09:15:00Z");
+		});
+
+		it("adds each listed employee's current state and when the server read it", async () => {
+			const before = Date.now();
+			const { status, body } = await readEmployees(await kioskToken(store, { offlineMode: true }));
+			const after = Date.now();
+
+			expect(status).toBe(200);
+			expect(body.employees).toEqual([
+				{ id: anna.employeeId, name: "Anna Berger" },
+				{ id: ben.employeeId, name: "ben.kiosk" },
+			]);
+			expect(body.offline.states).toEqual({
+				[anna.employeeId]: {
+					status: "clocked_in",
+					workPeriodId: annaWork,
+					since: "2026-10-16T06:30:00Z",
+				},
+				[ben.employeeId]: {
+					status: "on_break",
+					workPeriodId: benWork,
+					since: "2026-10-16T05:00:00Z",
+					breakSince: "2026-10-16T09:15:00Z",
+					breakZone: "Europe/Lisbon",
+				},
+			});
+			const learnedAt = Date.parse(body.offline.learnedAt);
+			expect(learnedAt).toBeGreaterThanOrEqual(before - 1000);
+			expect(learnedAt).toBeLessThanOrEqual(after + 1000);
+			// Never a day total: the kiosk shows it only after a live PIN check.
+			expect(JSON.stringify(body)).not.toContain("minutes");
+		});
+
+		it("says a clocked-out employee is clocked out", async () => {
+			const { body } = await readEmployees(await kioskToken(warehouse, { offlineMode: true }));
+
+			expect(Object.values(body.offline.states)).toEqual([{ status: "clocked_out" }]);
+		});
+
+		it("adds no state while the switch is off or the organization is not adopted", async () => {
+			const off = await readEmployees(await kioskToken(store));
+			const legacy = await readEmployees(
+				await kioskToken(foreignStore, { orgId: otherOrganizationId, offlineMode: true }),
+			);
+
+			expect(off.body).toEqual({
+				employees: [
+					{ id: anna.employeeId, name: "Anna Berger" },
+					{ id: ben.employeeId, name: "ben.kiosk" },
+				],
+			});
+			expect(legacy.body).toEqual({ employees: [{ id: expect.any(String), name: "Finn Fremd" }] });
+		});
 	});
 
 	it("refuses a missing, unknown or revoked kiosk token without listing anyone", async () => {
