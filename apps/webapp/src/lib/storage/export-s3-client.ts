@@ -19,7 +19,10 @@ import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
 import { isMissingObjectError } from "./missing-object";
-import { type MultipartUploadPort, uploadStreamInParts } from "./multipart-upload";
+import {
+	type MultipartUploadPort,
+	uploadStreamInParts,
+} from "./multipart-upload";
 
 const logger = createLogger("ExportS3Client");
 
@@ -208,6 +211,7 @@ export async function uploadPrivateObject(
 	data: Buffer | Uint8Array | string,
 	contentType: string,
 	metadata?: Record<string, string>,
+	expectedBucket?: string,
 ): Promise<{ bucket: string; versionId: string | null }> {
 	const config = await getStorageConfig(organizationId);
 	if (!config) {
@@ -226,6 +230,8 @@ export async function uploadPrivateObject(
 		"Uploading export to S3",
 	);
 
+	if (expectedBucket && config.bucket !== expectedBucket)
+		throw new Error("Private storage bucket changed before upload");
 	const command = new PutObjectCommand({
 		Bucket: config.bucket,
 		Key: key,
@@ -262,15 +268,23 @@ export async function uploadPrivateObjectStream(
 	const port: MultipartUploadPort = {
 		async putObject(data) {
 			const response = await client.send(
-				new PutObjectCommand({ ...target, Body: data, ContentType: contentType }),
+				new PutObjectCommand({
+					...target,
+					Body: data,
+					ContentType: contentType,
+				}),
 			);
 			return { versionId: response.VersionId ?? null };
 		},
 		async create() {
 			const response = await client.send(
-				new CreateMultipartUploadCommand({ ...target, ContentType: contentType }),
+				new CreateMultipartUploadCommand({
+					...target,
+					ContentType: contentType,
+				}),
 			);
-			if (!response.UploadId) throw new Error("Storage returned no multipart upload id");
+			if (!response.UploadId)
+				throw new Error("Storage returned no multipart upload id");
 			return response.UploadId;
 		},
 		async uploadPart(uploadId, partNumber, data) {
@@ -291,14 +305,19 @@ export async function uploadPrivateObjectStream(
 					...target,
 					UploadId: uploadId,
 					MultipartUpload: {
-						Parts: parts.map((part) => ({ PartNumber: part.partNumber, ETag: part.etag })),
+						Parts: parts.map((part) => ({
+							PartNumber: part.partNumber,
+							ETag: part.etag,
+						})),
 					},
 				}),
 			);
 			return { versionId: response.VersionId ?? null };
 		},
 		async abort(uploadId) {
-			await client.send(new AbortMultipartUploadCommand({ ...target, UploadId: uploadId }));
+			await client.send(
+				new AbortMultipartUploadCommand({ ...target, UploadId: uploadId }),
+			);
 		},
 	};
 	const { versionId } = await uploadStreamInParts(port, body);
@@ -432,8 +451,11 @@ export async function deletePrivateObjectVersions(input: {
 			}),
 		);
 		// The prefix also matches longer keys; only this exact object goes.
-		const versionIds = [...(page.Versions ?? []), ...(page.DeleteMarkers ?? [])].flatMap(
-			(version) => (version.Key === input.key && version.VersionId ? [version.VersionId] : []),
+		const versionIds = [
+			...(page.Versions ?? []),
+			...(page.DeleteMarkers ?? []),
+		].flatMap((version) =>
+			version.Key === input.key && version.VersionId ? [version.VersionId] : [],
 		);
 		// Each version is deleted on its own, so the deletes of one page are independent.
 		await Promise.all(
@@ -588,7 +610,9 @@ export async function getPrivateObjectPresignedUrl(input: {
 		...(input.versionId ? { VersionId: input.versionId } : {}),
 		ResponseContentDisposition: `attachment; filename="${input.fileName.replace(/["\\]/g, "")}"`,
 	});
-	return getSignedUrl(createS3Client(config), command, { expiresIn: input.expiresInSeconds });
+	return getSignedUrl(createS3Client(config), command, {
+		expiresIn: input.expiresInSeconds,
+	});
 }
 
 /**

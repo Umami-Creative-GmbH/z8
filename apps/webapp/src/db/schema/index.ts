@@ -61,6 +61,7 @@ export * from "./email-template";
 export * from "./employee-invitation-draft";
 // Employee offboarding and rehire (employment periods, departures)
 export * from "./employee-lifecycle";
+export * from "./employee-tracking-settings";
 export * from "./employment-history";
 export * from "./enterprise";
 export * from "./enterprise-identity-setup";
@@ -141,8 +142,10 @@ export * from "./travel-expense-settlement";
 export * from "./types";
 export * from "./user-settings";
 export * from "./vacation";
+export * from "./vacation-reconciliation";
 // Organization vehicles and their assigned drivers (#1118, spec #807)
 export * from "./vehicle";
+export * from "./vehicle-photo";
 export * from "./vehicle-use";
 // One-time wage history merge note (#1176)
 export * from "./wage-history-merge-note";
@@ -151,6 +154,3 @@ export * from "./wellness";
 export * from "./work-category";
 export * from "./work-policy";
 export * from "./works-council";
-
-export * from "./employee-tracking-settings";
-export * from "./vacation-reconciliation";
