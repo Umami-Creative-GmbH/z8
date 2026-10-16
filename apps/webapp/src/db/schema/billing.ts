@@ -119,7 +119,7 @@ export const billingSeatAudit = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 
 		// Change details
-		action: text("action").notNull(), // member_added, member_removed, stripe_reported
+		action: text("action").notNull(), // member_added, member_removed, kiosk_seat_upgraded, stripe_reported
 		// Seat totals; the kiosk columns are the kiosk seat part of each total (#886).
 		previousSeats: integer("previous_seats").notNull(),
 		newSeats: integer("new_seats").notNull(),

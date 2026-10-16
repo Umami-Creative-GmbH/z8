@@ -132,6 +132,7 @@ describe("BillingEventsService", () => {
 				syncSeatsForOrganization,
 				handleMemberAdded: vi.fn(),
 				handleMemberRemoved: vi.fn(),
+				handleKioskSeatUpgraded: vi.fn(),
 				getCurrentSeatCount: vi.fn(),
 			}),
 		),

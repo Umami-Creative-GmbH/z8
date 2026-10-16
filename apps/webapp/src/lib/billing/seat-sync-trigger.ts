@@ -48,6 +48,18 @@ export async function reconcileBillingSeatsForOrganization(
 	}
 }
 
+const failureMessage = {
+	added: "Failed to sync seats after member added",
+	removed: "Failed to sync seats after member removed",
+	kiosk_seat_upgraded: "Failed to sync seats after a kiosk seat upgrade",
+} as const;
+
+/**
+ * Best-effort seat sync after a committed change: a member added or removed,
+ * or a kiosk-only employee given a real email (`kiosk_seat_upgraded`, #886),
+ * which moves their seat from kiosk to full. Failures are logged; uncertain
+ * deliveries are reconciled by the billing seat reconciliation job.
+ */
 export async function syncBillingSeatsAfterMemberChange({
 	organizationId,
 	memberId,
@@ -57,7 +69,7 @@ export async function syncBillingSeatsAfterMemberChange({
 	organizationId: string;
 	memberId: string;
 	userId: string;
-	change: "added" | "removed";
+	change: keyof typeof failureMessage;
 }) {
 	if (!BILLING_ENABLED) {
 		return;
@@ -78,6 +90,11 @@ export async function syncBillingSeatsAfterMemberChange({
 				return;
 			}
 
+			if (change === "kiosk_seat_upgraded") {
+				yield* seatSyncService.handleKioskSeatUpgraded(organizationId, memberId, userId);
+				return;
+			}
+
 			yield* seatSyncService.handleMemberRemoved(
 				organizationId,
 				memberId,
@@ -87,11 +104,6 @@ export async function syncBillingSeatsAfterMemberChange({
 
 		await runtime.runPromise(program.pipe(Effect.provide(BillingServicesLive)));
 	} catch (error) {
-		logger.error(
-			{ error, organizationId },
-			change === "added"
-				? "Failed to sync seats after member added"
-				: "Failed to sync seats after member removed",
-		);
+		logger.error({ error, organizationId }, failureMessage[change]);
 	}
 }
