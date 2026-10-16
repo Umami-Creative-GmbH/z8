@@ -12,6 +12,8 @@ import {
 import { ClockingConflictError } from "../clocking-core";
 import type { WorkTransactionClient } from "../web-clock-out-transaction";
 import { assertNoUnresolvedWorkPeriodReview } from "../work-period-review";
+import type { WorkTransactionAdmission } from "../work-transaction";
+import { FrozenCommandNotAcceptedError } from "./frozen";
 import type { BreakCommand, BreakOutcome, BreakStart, ClockCommand } from "./types";
 
 /**
@@ -25,7 +27,21 @@ import type { BreakCommand, BreakOutcome, BreakStart, ClockCommand } from "./typ
 /** Starting or resuming a break in progress: the employee's own command, never on behalf. */
 export type BreakInProgressCommand = Pick<
 	ClockCommand,
-	"organizationId" | "principal" | "subject" | "identity" | "channel" | "at" | "zone" | "freshness"
+	| "organizationId"
+	| "principal"
+	| "subject"
+	| "identity"
+	| "channel"
+	| "at"
+	| "zone"
+	| "freshness"
+	/**
+	 * A frozen kiosk command's bytes (#1289). A start keeps no receipt, so they only
+	 * mark it frozen: it commits only under append admission, and a committed
+	 * start under its identity replays only at the same instant. A resume's become
+	 * its break's receipt command, which keeps the break start it ended.
+	 */
+	| "payload"
 >;
 
 /** A resume becomes a break command; it may carry that command's request evidence. */
@@ -53,7 +69,9 @@ export type StartBreakRefusal =
 				/** A break in progress is already open on the live work. */
 				| "already_on_break"
 				/** The break would start at or before the work. */
-				| "invalid_interval";
+				| "invalid_interval"
+				/** A frozen start in an organization that has not adopted append admission. */
+				| "frozen_not_accepted";
 	  };
 
 export type StartBreakOutcome =
@@ -186,6 +204,8 @@ async function findStartedBreak(
 	client: Reader,
 	scope: EmployeeScope,
 	operationId: string,
+	/** A frozen start's own instant (#1289): a start at another instant is another command. */
+	frozenStart?: Instant,
 ): Promise<StartBreakResult | null> {
 	const [period] = await client
 		.select({
@@ -206,7 +226,11 @@ async function findStartedBreak(
 	const start = period.breakStartedAt ?? period.endTime;
 	// Another employee's operation, or a row no closure would leave, is not this command.
 	if (period.employeeId !== scope.employeeId || !start) throw new BreakStartCollisionError();
-	return { workPeriodId: period.id, start: instantFromDate(start) };
+	const started = instantFromDate(start);
+	if (frozenStart && compareInstants(started, frozenStart) !== 0) {
+		throw new BreakStartCollisionError();
+	}
+	return { workPeriodId: period.id, start: started };
 }
 
 /** The start's identity names another command. */
@@ -221,14 +245,21 @@ export type BreakStartWrite =
 	| { disposition: "refused"; code: "not_clocked_in" | "already_on_break" | "invalid_interval" };
 
 /** A committed start under this identity, read without the work transaction. */
-export function replayBreakStart(client: Reader, scope: EmployeeScope, operationId: string) {
-	return findStartedBreak(client, scope, operationId);
+export function replayBreakStart(
+	client: Reader,
+	scope: EmployeeScope,
+	operationId: string,
+	frozenStart?: Instant,
+) {
+	return findStartedBreak(client, scope, operationId, frozenStart);
 }
 
 /**
  * Records the break in progress on the live work, inside the work transaction
  * that holds the period's lock. Replayable identities re-check replay first.
- * Work under review is refused by throwing, as a break is (both admissions).
+ * Work under review is refused by throwing, as a break is (both admissions). A
+ * frozen start (#1289) commits only under append admission (ADR 0002), after
+ * its replay, like every frozen command.
  */
 export async function recordBreakInProgress(
 	tx: WorkTransactionClient,
@@ -236,11 +267,21 @@ export async function recordBreakInProgress(
 		operationId: string;
 		replayable: boolean;
 		start: BreakStart;
+		/** Set for a frozen start: the work transaction's admission. */
+		frozen?: { admission: WorkTransactionAdmission };
 	},
 ): Promise<BreakStartWrite> {
 	if (input.replayable) {
-		const replay = await findStartedBreak(tx, input, input.operationId);
+		const replay = await findStartedBreak(
+			tx,
+			input,
+			input.operationId,
+			input.frozen ? input.start.instant : undefined,
+		);
 		if (replay) return { disposition: "replayed", result: replay };
+	}
+	if (input.frozen && input.frozen.admission !== "append") {
+		throw new FrozenCommandNotAcceptedError();
 	}
 	const [period] = await tx
 		.select({

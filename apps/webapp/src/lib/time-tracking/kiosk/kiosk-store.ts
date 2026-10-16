@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, asc, eq, gt, isNotNull, isNull } from "drizzle-orm";
-import { kiosk, location, organizationNotificationSettings } from "@/db/schema";
+import { kiosk, kioskRetiredToken, location, organizationNotificationSettings } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import type { AuditTrail } from "@/lib/audit-trail";
 import { type Clock, dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
@@ -292,6 +292,19 @@ export async function issueKioskPairingCode(
 ): Promise<IssuedPairingCode> {
 	const current = await lockManagedKiosk(tx, input.organizationId, input.kioskId);
 	const pairing = newPairingCode(clock);
+	if (current.tokenHash) {
+		// The rotated token still names this kiosk, so commands it queued offline are refused (#1289).
+		await tx
+			.insert(kioskRetiredToken)
+			.values({
+				organizationId: input.organizationId,
+				kioskId: input.kioskId,
+				tokenHash: current.tokenHash,
+				retiredAt: dateFromInstant(clock.nowInstant()),
+				retiredBy: input.actorUserId,
+			})
+			.onConflictDoNothing({ target: kioskRetiredToken.tokenHash });
+	}
 	await tx
 		.update(kiosk)
 		.set({

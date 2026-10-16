@@ -24,6 +24,10 @@ vi.mock("@/lib/time-tracking/kiosk/kiosk-store", () => ({
 	readKioskDeviceInfo: vi.fn(),
 }));
 
+vi.mock("@/lib/time-tracking/kiosk/offline-contact", () => ({
+	readKioskSession: vi.fn(),
+}));
+
 const { POST } = await import("./route");
 
 function pair(code: unknown) {

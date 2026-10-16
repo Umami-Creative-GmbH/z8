@@ -14,9 +14,22 @@ export type ReceiptActor =
 /** The receipt writer of kiosk clock commands; replay only matches the same writer. */
 export const KIOSK_CLOCK_WRITER_VERSION = 1;
 
-/** The device evidence kiosk clock entries carry: the kiosk's identity. */
-export function kioskDeviceInfo(kioskId: string) {
-	return `kiosk:${kioskId}`;
+/**
+ * The device evidence kiosk clock entries carry: the kiosk's identity, and for a
+ * frozen kiosk command (#1289, offline kiosk clocking) also where its instant
+ * came from, `kiosk:<kioskId>:offline:<timeSource>`. Live kiosk entries keep
+ * `kiosk:<kioskId>`.
+ */
+export function kioskDeviceInfo(kioskId: string, offlineTimeSource?: string) {
+	return offlineTimeSource ? `kiosk:${kioskId}:offline:${offlineTimeSource}` : `kiosk:${kioskId}`;
+}
+
+/** The kiosk and, for offline kiosk clocking, the time source a kiosk entry's device evidence names. */
+export function parseKioskDeviceInfo(
+	deviceInfo: string | null | undefined,
+): { kioskId: string; offlineTimeSource: string | null } | null {
+	const match = /^kiosk:([0-9a-f-]{36})(?::offline:([a-z_]+))?$/.exec(deviceInfo ?? "");
+	return match ? { kioskId: match[1], offlineTimeSource: match[2] ?? null } : null;
 }
 
 /** The actor a writer's receipt records: a kiosk writer records its kiosk. */

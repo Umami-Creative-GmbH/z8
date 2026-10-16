@@ -1709,6 +1709,13 @@
       "when": 1805731200000,
       "tag": "0243_kiosk_pin_lockout_events",
       "breakpoints": true
+    },
+    {
+      "idx": 244,
+      "version": "7",
+      "when": 1805817600000,
+      "tag": "0244_kiosk_retired_token",
+      "breakpoints": true
     }
   ]
 }
