@@ -17,6 +17,8 @@ interface ClockButtonProps {
 	onEndDay: () => Promise<void>;
 	isLoading: boolean;
 	disabled?: boolean;
+	/** Holds back the clock-out alone, e.g. while a required task is missing (#1297). */
+	clockOutBlocked?: boolean;
 }
 export function ClockButton({
 	isClockedIn,
@@ -28,10 +30,12 @@ export function ClockButton({
 	onEndDay,
 	isLoading,
 	disabled,
+	clockOutBlocked,
 }: ClockButtonProps) {
 	const { t } = useI18n();
 	const elapsed = useElapsedTimer(startTime);
 	const blocked = isLoading || !!disabled;
+	const primaryBlocked = blocked || (isClockedIn && !!clockOutBlocked);
 	const { mode, action, title, subtitle, secondary } = clockPresentation(
 		isClockedIn,
 		isOnBreak,
@@ -53,8 +57,8 @@ export function ClockButton({
 					type="button"
 					aria-label={t(action)}
 					onClick={isClockedIn ? onClockOut : onClockIn}
-					disabled={blocked}
-					className={`clock-button ${isClockedIn ? "clock-button-stop" : "clock-button-start"} ${blocked ? "clock-button-disabled" : ""}`}
+					disabled={primaryBlocked}
+					className={`clock-button ${isClockedIn ? "clock-button-stop" : "clock-button-start"} ${primaryBlocked ? "clock-button-disabled" : ""}`}
 				>
 					<span className="clock-button-inner">
 						<ClockGlyph loading={isLoading} working={isClockedIn} />

@@ -227,8 +227,17 @@ export interface DesktopContext {
 	dayTotalBasis: import("../lib/day-total").DayBasis;
 	/** Older servers omit this flag; available projects remain the fallback. */
 	projectsEnabled?: boolean;
-	/** `tasks` is missing from older servers and offline snapshots they wrote. */
-	projects: { id: string; name: string; tasks?: ProjectTask[] }[];
+	/**
+	 * `tasks` is missing from older servers and offline snapshots they wrote.
+	 * `taskRequired` is `true` only on a project whose task requirement is
+	 * active (#1297); it is absent everywhere else and from older servers.
+	 */
+	projects: {
+		id: string;
+		name: string;
+		tasks?: ProjectTask[];
+		taskRequired?: boolean;
+	}[];
 	categories: { id: string; name: string }[];
 	liveWork: {
 		id: string;
