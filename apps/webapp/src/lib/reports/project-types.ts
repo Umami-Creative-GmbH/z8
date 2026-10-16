@@ -137,6 +137,11 @@ export interface ProjectTaskBreakdownRow {
 	 * compares every hour ever booked to the task, not only the report period.
 	 */
 	estimate: { estimateHours: number; bookedHours: number; percentUsed: number } | null;
+	/**
+	 * How many of the row's bookings are missing a task (#884, Projects ADR
+	 * 0002). Only on the "No task" row, and only when there are any.
+	 */
+	missingTaskCount?: number;
 }
 
 export interface ProjectDetailedReport {

@@ -2,6 +2,8 @@
  * #1295 runtime evidence: bookings accepted without a task although their
  * project's task requirement was active are marked as missing a task (#884,
  * Projects ADR 0002), and writers that keep attribution keep the marker.
+ * #1296: the marker ends when a task is added, the project changes, or the
+ * project's requirement is turned off; a lapse keeps it.
  *
  * Local contract: pnpm --filter webapp test:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
@@ -51,11 +53,26 @@ vi.mock("@/lib/auth", () => ({
 				harness.userId
 					? {
 							user: { id: harness.userId, role: "user" },
-							session: { activeOrganizationId: harness.organizationId },
+							session: {
+								id: `t1295-session-${harness.userId}`,
+								userId: harness.userId,
+								activeOrganizationId: harness.organizationId,
+							},
 						}
 					: null,
 		},
 	},
+}));
+
+// Project settings (#1296) check the session's SSO proof and write an audit record.
+vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
+	canAccessOrganizationWithSso: async () => true,
+}));
+
+vi.mock("@/lib/audit-logger", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/audit-logger")>()),
+	logAudit: async () => undefined,
 }));
 
 vi.mock("@/lib/auth-helpers", async (importOriginal) => {
@@ -126,6 +143,8 @@ const { updateWorkPeriodProject } = await import("./mutations");
 const { applyAdminWorkPeriodTimeEdit } = await import(
 	"@/lib/time-tracking/admin-work-period-time-edit"
 );
+const projectSettings = await import("../../settings/projects/actions");
+const projectTasks = await import("../../settings/projects/task-actions");
 const { systemClock } = await import("@/lib/datetime/temporal-core");
 const { db } = await import("@/db");
 const { employee } = await import("@/db/schema");
@@ -320,11 +339,14 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 		expect(result.success ? null : result.refusal).toBeNull();
 	}
 
-	/** Completed work on `projectId`, closed by a bot with nobody to pick a task. */
-	async function botWork(projectId: string) {
-		const workPeriodId = await clockInEmployee(workStart);
+	/**
+	 * Completed work on `projectId`, closed by a bot with nobody to pick a task,
+	 * `laterDays` after the first work day.
+	 */
+	async function botWork(projectId: string, laterDays = 0) {
+		const workPeriodId = await clockInEmployee(workStart.add({ hours: 24 * laterDays }));
 		await bookRunning(workPeriodId, projectId);
-		await botClockOut(workEnd);
+		await botClockOut(workEnd.add({ hours: 24 * laterDays }));
 		return workPeriodId;
 	}
 
@@ -502,6 +524,141 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 					[workPeriodId],
 				);
 				expect(edited).toEqual([{ end_time: new Date("2026-07-22T11:00:00Z") }]);
+			});
+		},
+	);
+
+	describe.each(["legacy", "adopted"] as const)(
+		"ending a missing task in a %s organization (#1296)",
+		(admission) => {
+			beforeEach(async () => {
+				await setAdmission(admission);
+				await requireTasks();
+			});
+
+			function changeProject(workPeriodId: string, projectId: string, taskId?: string) {
+				actAs(ids.employeeUser);
+				return updateWorkPeriodProject(workPeriodId, projectId, taskId);
+			}
+
+			function saveRequirement(projectId: string, requiresTask: boolean) {
+				actAs(ids.ownerUser);
+				return projectSettings.updateProject(projectId, { requiresTask });
+			}
+
+			/** Makes the lapsed project's task requirement active, so its bookings are marked too. */
+			async function activateLapsedRequirement() {
+				await admin.query(
+					`update project_task set state = 'open', done_at = null, done_by = null
+					 where organization_id = $1 and id = $2`,
+					[ids.organization, ids.lapsedDoneTask],
+				);
+			}
+
+			async function revisions() {
+				const { rows } = await admin.query<{ id: string; graph_revision: number }>(
+					`select id, graph_revision from work_period
+					 where organization_id = $1 and deleted_at is null order by start_time`,
+					[ids.organization],
+				);
+				return rows;
+			}
+
+			it("adding a task to a marked booking clears its marker", async () => {
+				const workPeriodId = await botWork(ids.project);
+
+				await expect(changeProject(workPeriodId, ids.project, ids.task)).resolves.toMatchObject({
+					success: true,
+				});
+
+				expect(await markers()).toEqual([
+					{ project: ids.project, task: ids.task, period: false, allocation: false },
+				]);
+			});
+
+			it("changing a marked booking's project clears its marker", async () => {
+				const workPeriodId = await botWork(ids.project);
+
+				await expect(changeProject(workPeriodId, ids.plainProject)).resolves.toMatchObject({
+					success: true,
+				});
+
+				expect(await markers()).toEqual([unmarked(ids.plainProject)]);
+			});
+
+			it("turning the requirement off clears that project's markers only, without a new revision", async () => {
+				await activateLapsedRequirement();
+				await botWork(ids.project);
+				await botWork(ids.lapsedProject, 1);
+				await botWork(ids.project, 2);
+				const before = await revisions();
+
+				await expect(saveRequirement(ids.project, false)).resolves.toMatchObject({
+					success: true,
+				});
+
+				expect(await markers()).toEqual([
+					unmarked(ids.project),
+					{ ...marked, project: ids.lapsedProject },
+					unmarked(ids.project),
+				]);
+				expect(await revisions()).toEqual(before);
+			});
+
+			it("turning the requirement back on does not bring cleared markers back", async () => {
+				await botWork(ids.project);
+				await expect(saveRequirement(ids.project, false)).resolves.toMatchObject({
+					success: true,
+				});
+
+				await expect(saveRequirement(ids.project, true)).resolves.toMatchObject({
+					success: true,
+				});
+
+				expect(await markers()).toEqual([unmarked(ids.project)]);
+			});
+
+			it("turning the requirement off clears markers in a closed month", async () => {
+				await botWork(ids.project);
+				const { rows } = await admin.query<{ id: string }>(
+					`insert into closed_month (organization_id, month, scope, actor_kind, closed_by)
+					 values ($1, '2026-07-01', 'organization', 'user', $2) returning id`,
+					[ids.organization, ids.ownerUser],
+				);
+				await admin.query(
+					`insert into closed_month_employee
+					 (organization_id, closed_month_id, employee_id, month, range_start, range_end, timezone)
+					 values ($1, $2, $3, '2026-07-01', '2026-07-01T00:00:00', '2026-08-01T00:00:00', 'Europe/Berlin')`,
+					[ids.organization, only(rows).id, ids.employee],
+				);
+
+				await expect(saveRequirement(ids.project, false)).resolves.toMatchObject({
+					success: true,
+				});
+
+				expect(await markers()).toEqual([unmarked(ids.project)]);
+			});
+
+			it("a lapse keeps the markers, and reopening a task makes them fixable again", async () => {
+				const workPeriodId = await botWork(ids.project);
+
+				actAs(ids.ownerUser);
+				for (const taskId of [ids.task, ids.secondTask]) {
+					await expect(projectTasks.markProjectTaskDone(taskId)).resolves.toMatchObject({
+						success: true,
+					});
+				}
+				expect(await markers()).toEqual([marked]);
+
+				await expect(projectTasks.reopenProjectTask(ids.task)).resolves.toMatchObject({
+					success: true,
+				});
+				await expect(changeProject(workPeriodId, ids.project, ids.task)).resolves.toMatchObject({
+					success: true,
+				});
+				expect(await markers()).toEqual([
+					{ project: ids.project, task: ids.task, period: false, allocation: false },
+				]);
 			});
 		},
 	);

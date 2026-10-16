@@ -3,36 +3,42 @@ import type { ProjectTaskBreakdownRow } from "./project-types";
 
 type BreakdownTask = Pick<ProjectTask, "id" | "name" | "state" | "estimateHours">;
 
+type Stats = { minutes: number; count: number; missingTasks: number };
+
 /**
  * The project report's "By task" section (#876), built from the same work
  * periods as the report's summary, so its rows add up to the summary total.
- * Time without a task is one "No task" row, listed last. Task rows are ordered
- * by booked time, then name.
+ * Time without a task is one "No task" row, listed last; it counts its
+ * bookings that are missing a task (#884). Task rows are ordered by booked
+ * time, then name.
  *
  * `bookedMinutesToDate` holds every minute ever booked to a task; estimate
  * progress compares that with the task estimate.
  */
 export function buildProjectTaskBreakdown(input: {
-	periods: ReadonlyArray<{ taskId: string | null; durationMinutes: number | null }>;
+	periods: ReadonlyArray<{
+		taskId: string | null;
+		durationMinutes: number | null;
+		/** Booked without the task its project required (#884). */
+		missingTask?: boolean;
+	}>;
 	tasks: ReadonlyArray<BreakdownTask>;
 	bookedMinutesToDate: ReadonlyMap<string, number>;
 }): ProjectTaskBreakdownRow[] {
-	const totals = new Map<string | null, { minutes: number; count: number }>();
+	const totals = new Map<string | null, Stats>();
 	let totalMinutes = 0;
 	for (const period of input.periods) {
 		const minutes = period.durationMinutes ?? 0;
-		const entry = totals.get(period.taskId) ?? { minutes: 0, count: 0 };
+		const entry = totals.get(period.taskId) ?? { minutes: 0, count: 0, missingTasks: 0 };
 		entry.minutes += minutes;
 		entry.count += 1;
+		if (period.missingTask) entry.missingTasks += 1;
 		totals.set(period.taskId, entry);
 		totalMinutes += minutes;
 	}
 
 	const tasksById = new Map(input.tasks.map((task) => [task.id, task]));
-	const row = (
-		taskId: string | null,
-		stats: { minutes: number; count: number },
-	): ProjectTaskBreakdownRow => {
+	const row = (taskId: string | null, stats: Stats): ProjectTaskBreakdownRow => {
 		const task = taskId ? tasksById.get(taskId) : undefined;
 		const estimateHours = task?.estimateHours ? Number(task.estimateHours) : null;
 		const bookedHours = taskId ? (input.bookedMinutesToDate.get(taskId) ?? 0) / 60 : 0;
@@ -48,11 +54,12 @@ export function buildProjectTaskBreakdown(input: {
 				estimateHours !== null
 					? { estimateHours, bookedHours, percentUsed: (bookedHours / estimateHours) * 100 }
 					: null,
+			...(stats.missingTasks > 0 ? { missingTaskCount: stats.missingTasks } : {}),
 		};
 	};
 
 	const taskRows = [...totals.entries()]
-		.filter((entry): entry is [string, { minutes: number; count: number }] => entry[0] !== null)
+		.filter((entry): entry is [string, Stats] => entry[0] !== null)
 		.map(([taskId, stats]) => row(taskId, stats))
 		.sort(
 			(a, b) =>
