@@ -9,6 +9,7 @@ import {
 	getDrivingLicenceEmployeeRecordAction,
 } from "@/lib/organization/driving-licence/check-actions";
 import { DrivingLicenceEvidence, DrivingStatusLabel } from "./check-evidence";
+import { DrivingLicenceHistoryPanel } from "./history-panel";
 import { OriginalDrivingCheckForm } from "./original-check-form";
 export function DrivingLicenceVerifierWorklist() {
 	const { t } = useTranslate();
@@ -32,6 +33,9 @@ export function DrivingLicenceVerifierWorklist() {
 			}),
 	});
 	const refresh = async () => {
+		await queryClient.invalidateQueries({
+			queryKey: ["driving-licence-history", ...identity, selected?.employeeId],
+		});
 		await queryClient.invalidateQueries({
 			queryKey: ["driving-licence-worklist", ...identity],
 		});
@@ -83,7 +87,13 @@ export function DrivingLicenceVerifierWorklist() {
 						onCompleted={refresh}
 					/>
 					{record.data?.success && (
-						<DrivingLicenceEvidence record={record.data.data} />
+						<>
+							<DrivingLicenceEvidence record={record.data.data} />
+							<DrivingLicenceHistoryPanel
+								key={selected.employeeId}
+								employeeId={selected.employeeId}
+							/>
+						</>
 					)}
 				</div>
 			)}
