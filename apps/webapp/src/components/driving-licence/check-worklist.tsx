@@ -45,6 +45,9 @@ export function DrivingLicenceVerifierWorklist() {
 		});
 	};
 	if (!worklist.data?.success || !worklist.data.data.length) return null;
+	const canVerify = worklist.data.data.find(
+		(person) => person.employeeId === selected?.employeeId,
+	)?.canVerify;
 	return (
 		<section
 			className="space-y-4 border-t pt-6"
@@ -72,21 +75,29 @@ export function DrivingLicenceVerifierWorklist() {
 							</p>
 						</div>
 						<Button variant="outline" onClick={() => setSelected(person)}>
-							{t("drivingLicence.worklist.open", "Check {name}", {
-								name: person.name,
-							})}
+							{person.canVerify
+								? t("drivingLicence.worklist.open", "Check {name}", {
+										name: person.name,
+									})
+								: t(
+										"drivingLicence.worklist.viewEnded",
+										"View ended record for {name}",
+										{ name: person.name },
+									)}
 						</Button>
 					</li>
 				))}
 			</ul>
 			{selected && (
 				<div className="space-y-5">
-					<OriginalDrivingCheckForm
-						key={selected.employeeId}
-						employeeId={selected.employeeId}
-						name={selected.name}
-						onCompleted={refresh}
-					/>
+					{canVerify && (
+						<OriginalDrivingCheckForm
+							key={selected.employeeId}
+							employeeId={selected.employeeId}
+							name={selected.name}
+							onCompleted={refresh}
+						/>
+					)}
 					{record.data?.success && (
 						<>
 							<DrivingLicenceEvidence record={record.data.data} />
@@ -94,12 +105,14 @@ export function DrivingLicenceVerifierWorklist() {
 								key={selected.employeeId}
 								employeeId={selected.employeeId}
 							/>
-							<ReinstateDrivingAuthorization
-								key={selected.employeeId + record.data.data.checks[0]?.id}
-								employeeId={selected.employeeId}
-								record={record.data.data}
-								onCompleted={refresh}
-							/>
+							{canVerify && (
+								<ReinstateDrivingAuthorization
+									key={selected.employeeId + record.data.data.checks[0]?.id}
+									employeeId={selected.employeeId}
+									record={record.data.data}
+									onCompleted={refresh}
+								/>
+							)}
 						</>
 					)}
 				</div>

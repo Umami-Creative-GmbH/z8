@@ -122,15 +122,16 @@ export async function lockDrivingLicenceOrganization(
 	tx: DrivingLicenceTransaction,
 	organizationId: string,
 ) {
-	await tx.execute(
-		sql`SELECT pg_advisory_xact_lock(hashtextextended(${`driving-licence:${organizationId}`},0))`,
-	);
-	// Lifecycle transitions lock this tenant row before changing employment/grants.
+	// Lifecycle already holds this row exclusively before entering driving control.
+	// Take it before the driving key everywhere to avoid an inverted lock order.
 	await tx
 		.select({ id: organization.id })
 		.from(organization)
 		.where(eq(organization.id, organizationId))
 		.for("share");
+	await tx.execute(
+		sql`SELECT pg_advisory_xact_lock(hashtextextended(${`driving-licence:${organizationId}`},0))`,
+	);
 }
 export async function materializeExpiredDrivingAuthorizations(
 	tx: DrivingLicenceTransaction,
@@ -192,7 +193,10 @@ export async function currentDrivingEmployment(
 			userId: employee.userId,
 			hasAccess: employeeHasOrganizationAccess(now),
 			periodId: employeeEmploymentPeriod.id,
-			lastDepartureAt: sql<Date | null>`(SELECT max(d.cutoff_at) FROM employee_departure d WHERE d.organization_id=${organizationId} AND d.employee_id=${employeeId} AND d.status='effective')`,
+			lastDepartureAt:
+				sql<Date | null>`(SELECT max(d.cutoff_at) FROM employee_departure d WHERE d.organization_id=${organizationId} AND d.employee_id=${employeeId} AND d.status='effective')`.mapWith(
+					employeeEmploymentPeriod.endedAt,
+				),
 		})
 		.from(employee)
 		.leftJoin(
@@ -305,17 +309,19 @@ export async function readEffectiveDrivingAuthorization(
 		.map((c) => c.code);
 	const status: AuthorizationStatus = !participant
 		? "not_enrolled"
-		: reportApplies && employment?.hasAccess
-			? "suspended"
-			: !classes.length
-				? "not_yet_checked"
-				: authorizedClasses.length === classes.length
-					? "active"
-					: authorizedClasses.length
-						? "partially_active"
-						: classes.every((c) => c.status === "ended")
-							? "ended"
-							: "suspended";
+		: !employment?.hasAccess
+			? "ended"
+			: reportApplies
+				? "suspended"
+				: !classes.length
+					? "not_yet_checked"
+					: authorizedClasses.length === classes.length
+						? "active"
+						: authorizedClasses.length
+							? "partially_active"
+							: classes.every((c) => c.status === "ended")
+								? "ended"
+								: "suspended";
 	return {
 		enrolled: !!participant,
 		status,
@@ -689,32 +695,31 @@ export async function readDrivingLicenceWorklist(actor: DrivingLicenceActor) {
 		now,
 	});
 	const rows = await Promise.all(
-		available
-			.filter((target) => target.canVerify)
-			.map(async (target) => {
-				const status = await readEffectiveDrivingAuthorization(
-					db,
-					actor.organizationId,
-					target.id,
-					now,
+		available.map(async (target) => {
+			const status = await readEffectiveDrivingAuthorization(
+				db,
+				actor.organizationId,
+				target.id,
+				now,
+			);
+			if (!status.enrolled) return null;
+			const [identity] = await db
+				.select({ name: user.name })
+				.from(employee)
+				.innerJoin(user, eq(user.id, employee.userId))
+				.where(
+					and(
+						eq(employee.organizationId, actor.organizationId),
+						eq(employee.id, target.id),
+					),
 				);
-				if (!status.enrolled) return null;
-				const [identity] = await db
-					.select({ name: user.name })
-					.from(employee)
-					.innerJoin(user, eq(user.id, employee.userId))
-					.where(
-						and(
-							eq(employee.organizationId, actor.organizationId),
-							eq(employee.id, target.id),
-						),
-					);
-				return {
-					employeeId: target.id,
-					name: identity?.name ?? target.id,
-					...status,
-				};
-			}),
+			return {
+				employeeId: target.id,
+				canVerify: target.canVerify,
+				name: identity?.name ?? target.id,
+				...status,
+			};
+		}),
 	);
 	return rows.filter((row): row is NonNullable<typeof row> => row !== null);
 }
