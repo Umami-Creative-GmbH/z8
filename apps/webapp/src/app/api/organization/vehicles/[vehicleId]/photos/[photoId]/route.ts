@@ -20,7 +20,6 @@ import {
 	readPrivateObject,
 	uploadPrivateObject,
 } from "@/lib/storage/export-s3-client";
-export const runtime = "nodejs";
 const privateHeaders = {
 	"Cache-Control": "private, no-store",
 	"X-Content-Type-Options": "nosniff",
