@@ -77,3 +77,54 @@ _Avoid_: fleet car, company car, pool car
 **Assigned driver**:
 An employee, or every member of a team, for whom an organization vehicle is the one usually driven, so it is suggested first. Anyone may still pick any active vehicle.
 _Avoid_: vehicle owner, vehicle holder
+
+### Driving licence control (confirmed design)
+
+The following terms describe the confirmed extension; see the
+[driving licence management reference](../../../../../docs/refs/driving-licence-management.md)
+for its agreed rules and implementation status.
+
+**Driving entitlement**:
+The employee's legal entitlement to drive a particular class of vehicle, subject to applicable restrictions and prohibitions.
+_Avoid_: driving authorization, assigned driver
+
+**Driving licence**:
+The official document presented as evidence of an employee's driving entitlement. Its validity and the validity of individual licence classes are separate.
+_Avoid_: driving authorization, driving entitlement
+
+**Driving licence check**:
+An authorized verifier's recorded personal inspection of an employee's original driving licence for explicitly identified classes. It establishes what was checked at that time.
+_Avoid_: licence upload, licence photo, self-certification
+
+**Driving licence verifier**:
+A person the organization has explicitly authorized to perform checks for all employees or selected employees and teams. A verifier never verifies their own licence.
+_Avoid_: assigned driver, personnel file officer, manager (as an implied verifier)
+
+**Driving licence check record**:
+The evidence of one check, including the employee, verifier, time, outcome, inspected classes, relevant document dates and the employee's declaration. A correction supplements the record.
+_Avoid_: licence copy, skill certificate, generic audit log
+
+**Driving licence check interval**:
+The common interval an organization sets between routine checks. Each checked class has its own last successful check as the starting point.
+_Avoid_: statutory six-month interval, employee-specific default interval
+
+**Driving authorization**:
+The organization's permission for an employee to drive within explicitly checked licence classes and applicable restrictions. It is separate from legal driving entitlement and recorded vehicle use.
+_Avoid_: driving licence, assigned driver, permission to drive every organization vehicle
+
+**Suspended driving authorization**:
+A driving authorization put out of effect because a relevant condition is no longer met or cannot be confirmed. It requires a new check and explicit reinstatement.
+_Avoid_: revoked driving entitlement, expired employment, automatic reinstatement
+
+**Driving licence verifier scope**:
+The employees a verifier is authorized to check and whose check records they may access. It covers the whole organization or selected employees and teams.
+_Avoid_: line-management scope, payroll access, personnel file access
+
+**Driving licence check retention**:
+The organization's justified period for keeping a check record once it no longer supports an active driving authorization. A documented hold for a specific legal case postpones deletion.
+_Avoid_: permanent archive, statutory three-year retention
+
+## Confirmed design references
+
+- [Driving licence management](../../../../../docs/refs/driving-licence-management.md): the confirmed product rules, awaiting implementation.
+- [Driving authorization and check evidence have their own lifecycle](./docs/adr/0004-driving-authorization-and-check-evidence-have-their-own-lifecycle.md): why permission and check evidence stay separate from vehicle attribution, skill certificates and generic audit retention.
