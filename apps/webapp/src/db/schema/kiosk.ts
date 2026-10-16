@@ -4,6 +4,7 @@ import {
 	check,
 	foreignKey,
 	index,
+	jsonb,
 	pgTable,
 	text,
 	timestamp,
@@ -12,7 +13,7 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "../auth-schema";
-import { location } from "./organization";
+import { employee, location } from "./organization";
 
 /**
  * A kiosk (#859, glossary "Kiosk"): a shared device enrolled to one location of
@@ -104,5 +105,61 @@ export const kioskRetiredToken = pgTable(
 		}).onDelete("cascade"),
 		uniqueIndex("kioskRetiredToken_tokenHash_idx").on(table.tokenHash),
 		index("kioskRetiredToken_kiosk_idx").on(table.organizationId, table.kioskId),
+	],
+);
+
+/**
+ * A frozen kiosk clock command Z8 refused on arrival (#1290, spec #885): kept
+ * once per kiosk and operation, so a resend is answered from it (no second PIN
+ * check) and the kiosk's lookup can say it was refused. Owners and admins see
+ * them in the kiosk settings; the employee, or a kiosk-only employee's
+ * managers, were notified when it was recorded. Never holds the PIN: `command`
+ * is the frozen command without it.
+ *
+ * - `employee_id` is set when the command named an employee of the
+ *   organization (the claimed id is in `command`).
+ * - `claimed_at` is the instant the command claims; `refused_at` when Z8
+ *   refused it. `reason` is a `KioskFrozenRefusalReason`, `detail` its details
+ *   as the kiosk was answered.
+ */
+export const kioskFrozenRefusal = pgTable(
+	"kiosk_frozen_refusal",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		kioskId: uuid("kiosk_id").notNull(),
+		operationId: uuid("operation_id").notNull(),
+		employeeId: uuid("employee_id"),
+		action: text("action").notNull(),
+		claimedAt: timestamp("claimed_at", { withTimezone: true }).notNull(),
+		timeSource: text("time_source").notNull(),
+		reason: text("reason").notNull(),
+		detail: jsonb("detail").$type<Record<string, unknown>>().default({}).notNull(),
+		command: jsonb("command").$type<unknown>().notNull(),
+		refusedAt: timestamp("refused_at", { withTimezone: true }).notNull(),
+	},
+	(table) => [
+		foreignKey({
+			name: "kiosk_frozen_refusal_kiosk_fk",
+			columns: [table.kioskId, table.organizationId],
+			foreignColumns: [kiosk.id, kiosk.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "kiosk_frozen_refusal_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		uniqueIndex("kioskFrozenRefusal_operation_idx").on(
+			table.organizationId,
+			table.kioskId,
+			table.operationId,
+		),
+		index("kioskFrozenRefusal_organization_refusedAt_idx").on(
+			table.organizationId,
+			table.refusedAt,
+		),
+		index("kioskFrozenRefusal_employee_idx").on(table.employeeId),
 	],
 );

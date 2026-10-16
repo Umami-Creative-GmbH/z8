@@ -6,6 +6,11 @@ import { location } from "@/db/schema";
 import { withAuditTrail } from "@/lib/audit-trail";
 import { requireOrganizationAdmin } from "@/lib/auth/current-organization-actor";
 import { runRefusalAction } from "@/lib/effect/refusal-action";
+import type {
+	KioskFrozenAction,
+	KioskFrozenRefusalReason,
+} from "@/lib/time-tracking/kiosk/frozen-command";
+import { listKioskFrozenRefusals } from "@/lib/time-tracking/kiosk/frozen-refusal-store";
 import {
 	type KioskSettingsActionResult,
 	KioskSettingsRefusal,
@@ -51,6 +56,25 @@ export type KioskAdminData = {
 	 * then can a kiosk's offline mode be switched on (#1287).
 	 */
 	organizationAdopted: boolean;
+	/** Refused offline kiosk commands (#1290), newest first, for owners and admins only. */
+	refusals: KioskRefusalData[];
+};
+
+/** A frozen kiosk clock command Z8 refused on arrival (#1290). */
+export type KioskRefusalData = {
+	id: string;
+	kioskId: string;
+	kioskName: string;
+	/** The kiosk's current zone: the claimed instant is shown in it. */
+	kioskTimezone: string;
+	/** Null when the command named no employee of the organization. */
+	employeeName: string | null;
+	action: KioskFrozenAction;
+	/** ISO instants. */
+	claimedAt: string;
+	timeSource: string;
+	reason: KioskFrozenRefusalReason;
+	refusedAt: string;
 };
 
 export type IssuedPairingCodeData = {
@@ -79,7 +103,7 @@ export async function getKioskAdminDataAction(): Promise<
 > {
 	return runRefusalAction("kiosk.adminData", KioskSettingsRefusal, async (db) => {
 		const { organizationId } = await requireKioskAdmin();
-		const [kiosks, locations, organizationTimezone, admission] = await Promise.all([
+		const [kiosks, locations, organizationTimezone, admission, refusals] = await Promise.all([
 			listKiosks(db, organizationId),
 			db
 				.select({ id: location.id, name: location.name })
@@ -88,6 +112,7 @@ export async function getKioskAdminDataAction(): Promise<
 				.orderBy(asc(location.name)),
 			loadOrganizationTimezone(db, organizationId),
 			readAppendAdmission(db, organizationId),
+			listKioskFrozenRefusals(db, { organizationId }),
 		]);
 		return {
 			kiosks: kiosks.map((row) => ({
@@ -107,6 +132,11 @@ export async function getKioskAdminDataAction(): Promise<
 			locations,
 			organizationTimezone,
 			organizationAdopted: admission === "append",
+			refusals: refusals.map((row) => ({
+				...row,
+				claimedAt: row.claimedAt.toISOString(),
+				refusedAt: row.refusedAt.toISOString(),
+			})),
 		};
 	});
 }

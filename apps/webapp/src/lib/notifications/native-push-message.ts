@@ -106,6 +106,7 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	personal_data_export_reminder: "attention",
 	skill_expiry_upcoming: "reminder",
 	skill_expired_today: "reminder",
+	kiosk_command_refused: "working_time",
 };
 
 /** One static `t()` default per key, so the extractor can read every default. */

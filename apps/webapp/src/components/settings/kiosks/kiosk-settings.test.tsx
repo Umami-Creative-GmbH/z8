@@ -2,7 +2,11 @@
 
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { KioskAdminData, KioskData } from "@/app/[locale]/(app)/settings/kiosks/actions";
+import type {
+	KioskAdminData,
+	KioskData,
+	KioskRefusalData,
+} from "@/app/[locale]/(app)/settings/kiosks/actions";
 import { KioskSettings } from "./kiosk-settings";
 
 const mocks = vi.hoisted(() => ({
@@ -61,12 +65,32 @@ function kiosk(overrides: Partial<KioskData> = {}): KioskData {
 	};
 }
 
-function renderSettings(kiosks: KioskData[] = [], options: { organizationAdopted?: boolean } = {}) {
+function refusal(overrides: Partial<KioskRefusalData> = {}): KioskRefusalData {
+	return {
+		id: "55555555-5555-4555-8555-555555555555",
+		kioskId: kiosk().id,
+		kioskName: "Front door",
+		kioskTimezone: "Europe/Berlin",
+		employeeName: "Wanda Worker",
+		action: "clock_in",
+		claimedAt: "2026-10-10T05:00:00.000Z",
+		timeSource: "device_clock",
+		reason: "wrong_pin",
+		refusedAt: "2026-10-10T09:00:00.000Z",
+		...overrides,
+	};
+}
+
+function renderSettings(
+	kiosks: KioskData[] = [],
+	options: { organizationAdopted?: boolean; refusals?: KioskRefusalData[] } = {},
+) {
 	const data: KioskAdminData = {
 		kiosks,
 		locations: [store],
 		organizationTimezone: "America/New_York",
 		organizationAdopted: options.organizationAdopted ?? false,
+		refusals: options.refusals ?? [],
 	};
 	return render(<KioskSettings data={data} />);
 }
@@ -231,6 +255,60 @@ describe("KioskSettings", () => {
 			await waitFor(() =>
 				expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/does not use yet/)),
 			);
+		});
+	});
+
+	describe("refused offline clockings (#1290)", () => {
+		it("warns before rotating the token of an offline-mode kiosk that its queued clockings will be refused", () => {
+			renderSettings([kiosk({ offlineModeEnabled: true })], { organizationAdopted: true });
+
+			fireEvent.click(screen.getByRole("button", { name: "Pair again" }));
+
+			expect(screen.getByText(/saved while offline and not yet sent are refused/)).toBeTruthy();
+			expect(screen.getByRole("button", { name: "Rotate token and pair again" })).toBeTruthy();
+		});
+
+		it("does not warn for a kiosk without offline mode in effect", () => {
+			renderSettings([kiosk({ offlineModeEnabled: true })], { organizationAdopted: false });
+
+			fireEvent.click(screen.getByRole("button", { name: "Pair again" }));
+
+			expect(screen.queryByText(/saved while offline/)).toBeNull();
+		});
+
+		it("lists each refused clocking with its kiosk, employee, action, claimed time, time source and reason", () => {
+			renderSettings([kiosk({ offlineModeEnabled: true })], {
+				organizationAdopted: true,
+				refusals: [
+					refusal(),
+					refusal({
+						id: "66666666-6666-4666-8666-666666666666",
+						employeeName: null,
+						action: "start_break",
+						timeSource: "server_anchor",
+						reason: "kiosk_rotated",
+					}),
+				],
+			});
+
+			const list = screen.getByRole("table", { name: "Refused offline clockings" });
+			const first = within(list).getByRole("row", { name: /Wanda Worker/ });
+			expect(within(first).getByText("Front door")).toBeTruthy();
+			expect(within(first).getByText("Clock in")).toBeTruthy();
+			// The claimed instant in the kiosk's zone, which the kiosk showed.
+			expect(within(first).getByText(/7:00\sAM \(Europe\/Berlin\)/)).toBeTruthy();
+			expect(within(first).getByText("Device clock")).toBeTruthy();
+			expect(within(first).getByText("Wrong PIN")).toBeTruthy();
+			const second = within(list).getByRole("row", { name: /Not an employee/ });
+			expect(within(second).getByText("Start break")).toBeTruthy();
+			expect(within(second).getByText("Server time")).toBeTruthy();
+			expect(within(second).getByText("Kiosk revoked or paired again")).toBeTruthy();
+		});
+
+		it("shows no list while nothing was refused and no kiosk has offline mode", () => {
+			renderSettings([kiosk()]);
+
+			expect(screen.queryByText("Refused offline clockings")).toBeNull();
 		});
 	});
 

@@ -51,6 +51,8 @@ const ids = {
 	logOther: "11700000-0000-4000-8000-0000000000e4",
 	notification: "11700000-0000-4000-8000-0000000000f1",
 	team: "11700000-0000-4000-8000-0000000000f2",
+	store: "11700000-0000-4000-8000-0000000000f3",
+	kiosk: "11700000-0000-4000-8000-0000000000f4",
 } as const;
 
 const admin = integrationAdminPool();
@@ -328,6 +330,26 @@ async function seed() {
 		 ($1, $2, 'cleared', false, '2026-08-08T08:00:00Z'),
 		 ($3, $4, 'failure', false, '2026-08-09T07:00:00Z')`,
 		[ORG, ids.ada, OTHER, ids.adaOther],
+	);
+	// Refused offline kiosk clockings (#1290): Ada's own, and Bob's on the same kiosk.
+	await admin.query(
+		`insert into location (id, organization_id, name, created_by, updated_at)
+		 values ($1, $2, 'Store', 't1170-owner', now())`,
+		[ids.store, ORG],
+	);
+	await admin.query(
+		`insert into kiosk (id, organization_id, location_id, name, timezone, updated_at)
+		 values ($1, $2, $3, 'Front door', 'Europe/Berlin', now())`,
+		[ids.kiosk, ORG, ids.store],
+	);
+	await admin.query(
+		`insert into kiosk_frozen_refusal (organization_id, kiosk_id, operation_id, employee_id, action,
+			claimed_at, time_source, reason, command, refused_at) values
+		 ($1, $2, gen_random_uuid(), $3, 'clock_in', '2026-08-09T06:00:00Z', 'device_clock', 'wrong_pin',
+		  '{"note":"never-t1170"}', '2026-08-09T09:00:00Z'),
+		 ($1, $2, gen_random_uuid(), $4, 'clock_out', '2026-08-09T16:00:00Z', 'server_anchor', 'kiosk_rotated',
+		  '{}', '2026-08-10T09:00:00Z')`,
+		[ORG, ids.kiosk, ids.ada, ids.bob],
 	);
 }
 
@@ -676,6 +698,21 @@ describe("personal data export: position stamps, notifications and integrations 
 			{ event: "failure", occurred_at: "2026-08-09T07:58:00Z", offline: false },
 			{ event: "success", occurred_at: "2026-08-09T07:59:00Z", offline: true },
 		]);
+	});
+
+	it("exports the employee's refused offline kiosk clockings, without the command (#1290)", async () => {
+		const { files } = await buildExport(ids.ada, "employee", "t1170-ada");
+		expect(categoryOf(files, "integrations").kiosk_refused_clockings).toEqual([
+			{
+				kiosk: "Front door",
+				action: "clock_in",
+				claimed_at: "2026-08-09T06:00:00Z",
+				time_source: "device_clock",
+				reason: "wrong_pin",
+				refused_at: "2026-08-09T09:00:00Z",
+			},
+		]);
+		expect(categoryText(files, "integrations")).not.toContain("never-t1170");
 	});
 
 	it("holds the same rows in both kinds of export", async () => {

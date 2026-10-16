@@ -60,7 +60,10 @@ export type KioskFrozenRefusalLedger = {
 	record(refusal: KioskFrozenRefusal): Promise<void>;
 };
 
-/** Until refusals are recorded (#1290): nothing is kept, so a resend is judged again. */
+/**
+ * Keeps nothing, so a resend is judged again (tests that need no record).
+ * Production uses `createKioskFrozenRefusalLedger` in `frozen-refusal-store.ts` (#1290).
+ */
 export const unrecordedKioskFrozenRefusals: KioskFrozenRefusalLedger = {
 	recall: async () => null,
 	record: async () => {},

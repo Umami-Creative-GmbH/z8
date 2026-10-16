@@ -314,6 +314,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"skill_expired_today",
 	// The morning-after reminder about work lacking its vehicle or a reading (#1127)
 	"driving_details_missing_reminder",
+	// A clocking queued on an offline kiosk was refused on arrival (#1290)
+	"kiosk_command_refused",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [
