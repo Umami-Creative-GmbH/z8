@@ -1716,6 +1716,14 @@
       "when": 1805817600000,
       "tag": "20261016_driving_licence_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 247,
+      "version": "7",
+      "when": 1806076800000,
+      "tag": "20261017_driving_licence_reminders",
+      "breakpoints": true
     }
   ]
 }
+
