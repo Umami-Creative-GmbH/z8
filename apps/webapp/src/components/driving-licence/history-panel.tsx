@@ -50,6 +50,9 @@ export function DrivingLicenceHistoryPanel({
 		: null;
 	const refresh = async () => {
 		setSelectedCheckId(null);
+		void queryClient.invalidateQueries({
+			queryKey: ["driving-authorization-status"],
+		});
 		await queryClient.invalidateQueries({
 			queryKey: ["driving-licence-history", ...identity, employeeId],
 		});

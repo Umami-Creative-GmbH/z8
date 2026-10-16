@@ -1,5 +1,6 @@
 "use client";
 import { useForm } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -23,6 +24,7 @@ export function DrivingLicenceIntervalSettings({
 }) {
 	const { t } = useTranslate();
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [preview, setPreview] = useState<DrivingLicenceIntervalPreview | null>(
 		null,
 	);
@@ -72,6 +74,9 @@ export function DrivingLicenceIntervalSettings({
 					"Interval applied. Existing suspensions remain in effect.",
 				),
 			);
+			void queryClient.invalidateQueries({
+				queryKey: ["driving-authorization-status"],
+			});
 			router.refresh();
 		});
 	}

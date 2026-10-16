@@ -17,6 +17,9 @@ vi.mock("@tolgee/react", () => ({
 			),
 	}),
 }));
+vi.mock("@tanstack/react-query", () => ({
+	useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+}));
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({ refresh: api.refresh }),
 }));
