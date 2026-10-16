@@ -64,6 +64,13 @@ const euroCurrencyFormatter = new Intl.NumberFormat("en", {
 	currency: "EUR",
 	maximumFractionDigits: 0,
 });
+// Yearly kiosk seats cost €1.50, so MRR can carry cents (#886): show them instead of rounding.
+const euroCentsCurrencyFormatter = new Intl.NumberFormat("en", {
+	style: "currency",
+	currency: "EUR",
+	minimumFractionDigits: 2,
+	maximumFractionDigits: 2,
+});
 const englishNumberFormatter = new Intl.NumberFormat("en");
 
 type MetricKey = keyof typeof metricConfig;
@@ -407,7 +414,9 @@ function formatValue(value: number | null, kind: "currency" | undefined, t: Tran
 	}
 
 	if (kind === "currency") {
-		return euroCurrencyFormatter.format(value);
+		return Number.isInteger(value)
+			? euroCurrencyFormatter.format(value)
+			: euroCentsCurrencyFormatter.format(value);
 	}
 
 	return englishNumberFormatter.format(value);
