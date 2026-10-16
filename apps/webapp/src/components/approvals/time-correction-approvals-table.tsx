@@ -316,7 +316,7 @@ export function TimeCorrectionApprovalsTable() {
 					}
 				/>
 
-				<DataTable
+				<DataTable mobileLayout="stacked"
 					columns={columns}
 					data={filteredApprovals}
 					isFetching={isFetching}

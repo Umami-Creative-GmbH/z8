@@ -115,6 +115,7 @@ interface DataTableProps<TData extends RowData> {
 	 * @default false
 	 */
 	pinLastColumn?: boolean;
+	mobileLayout?: "scroll" | "stacked";
 }
 
 const PINNED_COLUMN_CLASS_NAME = "sticky right-0 bg-card";
@@ -140,6 +141,7 @@ export function DataTable<TData extends RowData>({
 	onRowClick,
 	rowClassName,
 	pinLastColumn = false,
+	mobileLayout = "scroll",
 }: DataTableProps<TData>) {
 	const { t } = useTranslate();
 
@@ -189,12 +191,12 @@ export function DataTable<TData extends RowData>({
 	return (
 		<div
 			className={cn(
-				"rounded-md border bg-card transition-opacity",
+				"min-w-0 rounded-md border bg-card transition-opacity",
 				isFetching && "opacity-60",
 				className,
 			)}
 		>
-			<Table>
+			<Table mobileLayout={mobileLayout}>
 				<TableHeader>
 					{table.getHeaderGroups().map((headerGroup) => (
 						<TableRow key={headerGroup.id}>
@@ -240,7 +242,9 @@ export function DataTable<TData extends RowData>({
 										<TableCell
 											key={cell.id}
 											className={cn(
-												pinLastColumn && index === cells.length - 1 && PINNED_COLUMN_CLASS_NAME,
+												pinLastColumn &&
+													index === cells.length - 1 &&
+													PINNED_COLUMN_CLASS_NAME,
 											)}
 										>
 											{flexRender(

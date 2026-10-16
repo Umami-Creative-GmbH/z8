@@ -392,8 +392,8 @@ function LocationDetailHeader({
 		.join(", ");
 
 	return (
-		<div className="flex items-center justify-between">
-			<div className="flex items-center gap-4">
+		<div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div className="flex min-w-0 items-center gap-4">
 				<Button asChild variant="ghost" size="icon">
 					<Link
 						href="/settings/locations"
@@ -402,8 +402,8 @@ function LocationDetailHeader({
 						<IconArrowLeft className="size-4" />
 					</Link>
 				</Button>
-				<div>
-					<div className="flex items-center gap-2">
+				<div className="min-w-0">
+					<div className="flex flex-wrap items-center gap-2">
 						<h1 className="text-2xl font-semibold tracking-tight">{location.name}</h1>
 						<Badge variant={location.isActive ? "default" : "secondary"}>
 							{location.isActive ? t("common.active", "Active") : t("common.inactive", "Inactive")}
@@ -412,7 +412,7 @@ function LocationDetailHeader({
 					{address && <p className="text-sm text-muted-foreground">{address}</p>}
 				</div>
 			</div>
-			<div className="flex items-center gap-2">
+			<div className="flex flex-wrap items-center gap-2 sm:shrink-0">
 				<Button
 					variant="ghost"
 					size="icon"

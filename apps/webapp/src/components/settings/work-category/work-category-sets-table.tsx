@@ -134,7 +134,7 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 					<Skeleton className="h-9 w-32" />
 				</div>
 				<div className="rounded-md border">
-					<Table>
+					<Table mobileLayout="stacked">
 						<TableHeader>
 							<TableRow>
 								<TableHead>
@@ -218,7 +218,7 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 					</div>
 				) : (
 					<div className="rounded-md border">
-						<Table>
+						<Table mobileLayout="stacked">
 							<TableHeader>
 								<TableRow>
 									<TableHead>{t("settings.workCategories.setName", "Name")}</TableHead>

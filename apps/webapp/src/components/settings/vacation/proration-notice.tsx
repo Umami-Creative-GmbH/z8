@@ -68,7 +68,7 @@ export function ProrationNotice({ rows }: { rows: ProrationNoticeRow[] }) {
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<Table>
+				<Table mobileLayout="stacked">
 					<TableHeader>
 						<TableRow>
 							<TableHead>{t("settings.vacation.prorationNotice.employee", "Employee")}</TableHead>

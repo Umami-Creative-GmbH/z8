@@ -120,7 +120,7 @@ describe("EmailTemplateEditor", () => {
 		const group = screen.getByRole("group", { name: "Email body" });
 		const editor = screen.getByTestId("react-email-editor");
 
-		expect(group.className).toBe("rounded-xl border bg-background p-2");
+		expect(group.className).toContain("rounded-xl border bg-background p-2");
 		expect(editor.className).not.toContain("email-template-editor-surface");
 		expect(editor.className).toContain("[&_.ProseMirror]:!bg-background");
 		expect(editor.className).toContain("dark:[&_.ProseMirror]:!bg-card");

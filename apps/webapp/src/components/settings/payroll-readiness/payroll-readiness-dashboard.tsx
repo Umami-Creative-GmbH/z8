@@ -178,7 +178,7 @@ function AffectedEmployeesTable({
 	);
 
 	return (
-		<Table>
+		<Table mobileLayout="stacked">
 			<TableHeader>
 				<TableRow>
 					<TableHead>{t("settings.payrollReadiness.affectedEmployees.name", "Employee")}</TableHead>

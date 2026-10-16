@@ -464,7 +464,7 @@ function OrganizationsTable({
 						</div>
 					</div>
 				) : (
-					<Table>
+					<Table mobileLayout="stacked">
 						<TableHeader>
 							<TableRow>
 								<TableHead>

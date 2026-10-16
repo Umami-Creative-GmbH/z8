@@ -356,7 +356,7 @@ export function VacationPoliciesTable({
 					}
 				/>
 
-				<DataTable
+				<DataTable mobileLayout="stacked"
 					columns={columns}
 					data={filteredPolicies}
 					isFetching={isFetching}

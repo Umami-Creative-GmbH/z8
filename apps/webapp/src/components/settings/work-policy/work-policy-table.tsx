@@ -216,7 +216,7 @@ export function WorkPolicyTable({
 				}
 			/>
 
-			<DataTable
+			<DataTable mobileLayout="stacked"
 				columns={columns}
 				data={filteredPolicies}
 				isFetching={isFetching}

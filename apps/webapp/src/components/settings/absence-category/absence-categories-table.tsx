@@ -370,7 +370,7 @@ export function AbsenceCategoriesTable({
 					}
 				/>
 
-				<DataTable
+				<DataTable mobileLayout="stacked"
 					columns={columns}
 					data={filteredCategories}
 					isFetching={isFetching}

@@ -95,7 +95,7 @@ export function TemplateSidebar({
 
 	if (activeTemplates.length === 0) {
 		return (
-			<Card className="w-64 shrink-0">
+			<Card className="w-full min-w-0 shrink-0 lg:w-64">
 				<CardHeader className="pb-3">
 					<CardTitle className="text-sm font-medium">
 						{t("scheduling:scheduling.templates.title", "Shift Templates")}
@@ -114,7 +114,7 @@ export function TemplateSidebar({
 	}
 
 	return (
-		<Card className="w-64 shrink-0">
+		<Card className="w-full min-w-0 shrink-0 lg:w-64">
 			<CardHeader className="pb-3">
 				<CardTitle className="text-sm font-medium">
 					{t("scheduling:scheduling.templates.title", "Shift Templates")}
@@ -127,10 +127,14 @@ export function TemplateSidebar({
 				</p>
 			</CardHeader>
 			<CardContent className="p-0">
-				<ScrollArea className="h-[calc(100vh-320px)]">
+				<ScrollArea className="h-40 lg:h-[calc(100vh-320px)]">
 					<ul className="flex flex-col gap-2 px-4 pb-4">
 						{activeTemplates.map((template) => (
-							<TemplateCard key={template.id} template={template} onDragStart={handleDragStart} />
+							<TemplateCard
+								key={template.id}
+								template={template}
+								onDragStart={handleDragStart}
+							/>
 						))}
 					</ul>
 				</ScrollArea>

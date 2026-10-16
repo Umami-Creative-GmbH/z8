@@ -190,7 +190,7 @@ export function RecentExecutions({
 					<p className="text-muted-foreground text-sm">{labels.noExecutions}</p>
 				) : (
 					<div className="overflow-x-auto">
-						<Table>
+						<Table mobileLayout="stacked">
 							<TableHeader>
 								<TableRow>
 									<TableHead>{labels.table.jobName}</TableHead>

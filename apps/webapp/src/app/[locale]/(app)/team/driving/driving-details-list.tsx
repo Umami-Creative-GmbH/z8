@@ -164,7 +164,7 @@ export function DrivingDetailsList({
 								)}
 					</p>
 					<div className="overflow-x-auto rounded-lg border bg-card">
-						<Table>
+						<Table mobileLayout="stacked">
 							<TableHeader>
 								<TableRow>
 									<TableHead>{t("team.driving.columns.employee", "Employee")}</TableHead>
