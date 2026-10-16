@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { formatEuroAmount, SEAT_PRICES_CENTS } from "@/lib/billing/seat-prices";
+import { formatEuroAmount, SEAT_PRICES_CENTS, seatPriceEuros } from "@/lib/billing/seat-prices";
 
-export const MONTHLY_PRICE = SEAT_PRICES_CENTS.full.month / 100;
-export const YEARLY_PRICE_PER_MONTH = SEAT_PRICES_CENTS.full.yearPerMonth / 100;
-export const YEARLY_PRICE_TOTAL = (SEAT_PRICES_CENTS.full.yearPerMonth * 12) / 100;
+const fullSeatPrice = seatPriceEuros("full");
+export const MONTHLY_PRICE = fullSeatPrice.monthly;
+export const YEARLY_PRICE_PER_MONTH = fullSeatPrice.yearlyPerMonth;
+export const YEARLY_PRICE_TOTAL = fullSeatPrice.yearlyTotal;
 
 interface BillingPricingCardsProps {
 	buttonLabels: { monthly: string; yearly: string };

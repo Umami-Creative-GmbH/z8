@@ -4,11 +4,11 @@
  * against the database; only the Stripe API is a fake holding, per
  * subscription, a full seat item and, once added, a kiosk seat item.
  */
-import { randomUUID } from "node:crypto";
 import { Effect, Layer } from "effect";
 import type Stripe from "stripe";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { StripeError } from "@/lib/effect/errors";
+import { generateReservedEmail } from "@/lib/auth/reserved-email";
+import { KioskSeatsNotConfiguredError, StripeError } from "@/lib/effect/errors";
 import { SeatSyncServiceLive } from "@/lib/effect/services/billing/seat-sync.service";
 import { type StripeConfig, StripeService } from "@/lib/effect/services/billing/stripe.service";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
@@ -114,7 +114,7 @@ describe("reconcile existing subscriptions into kiosk seats", () => {
 			const employee = await fixture.seedEmployee({ organizationId });
 			await fixture.pool.query(`update "user" set email = $2 where id = $1`, [
 				employee.userId,
-				`kiosk-${randomUUID().replaceAll("-", "")}@kiosk.invalid`,
+				generateReservedEmail(),
 			]);
 		}
 		const seats = input.ordinary + input.kioskOnly;
@@ -188,6 +188,86 @@ describe("reconcile existing subscriptions into kiosk seats", () => {
 		expect(stripe.updates).toHaveLength(updatesAfterFirstRun);
 	});
 
+	const seatAudits = async (organizationId: string) =>
+		(
+			await fixture.pool.query(
+				`select action, previous_seats, new_seats, previous_kiosk_seats, new_kiosk_seats, stripe_reported
+				 from billing_seat_audit where organization_id = $1 order by created_at`,
+				[organizationId],
+			)
+		).rows;
+
+	it("records the new split in the seat audit, once, so seat history prices kiosk seats", async () => {
+		const stripe = newStripe();
+		const { organizationId } = await billedAllFull(stripe, { ordinary: 3, kioskOnly: 2 });
+		await fixture.pool.query(
+			`insert into billing_seat_audit (organization_id, action, previous_seats, new_seats, created_at)
+			 values ($1, 'member_added', 4, 5, now() - interval '1 day')`,
+			[organizationId],
+		);
+
+		await reconcile(stripe, [organizationId]);
+		await reconcile(stripe, [organizationId]);
+
+		expect(await seatAudits(organizationId)).toEqual([
+			{
+				action: "member_added",
+				previous_seats: 4,
+				new_seats: 5,
+				previous_kiosk_seats: 0,
+				new_kiosk_seats: 0,
+				stripe_reported: false,
+			},
+			{
+				action: "kiosk_seat_reconciled",
+				previous_seats: 5,
+				new_seats: 5,
+				previous_kiosk_seats: 0,
+				new_kiosk_seats: 2,
+				stripe_reported: true,
+			},
+		]);
+	});
+
+	it("records the split even when seat sync already moved the subscription", async () => {
+		const stripe = newStripe();
+		const { organizationId, subscriptionId } = await billedAllFull(stripe, {
+			ordinary: 1,
+			kioskOnly: 1,
+		});
+		await fixture.pool.query(
+			`insert into billing_seat_audit (organization_id, action, previous_seats, new_seats, created_at)
+			 values ($1, 'member_added', 1, 2, now() - interval '1 day')`,
+			[organizationId],
+		);
+		// The hourly seat reconciliation got there first.
+		await fixture.pool.query(
+			`update subscription set current_kiosk_seats = 1 where organization_id = $1`,
+			[organizationId],
+		);
+		stripe.subscriptions.set(subscriptionId, { full: 1, kiosk: 1 });
+
+		const report = await reconcile(stripe, [organizationId]);
+
+		expect(report).toEqual([{ organizationId, outcome: "unchanged", fullSeats: 1, kioskSeats: 1 }]);
+		expect((await seatAudits(organizationId)).at(-1)).toMatchObject({
+			action: "kiosk_seat_reconciled",
+			previous_seats: 2,
+			new_seats: 2,
+			previous_kiosk_seats: 0,
+			new_kiosk_seats: 1,
+		});
+	});
+
+	it("writes no seat audit for an organization without seat history", async () => {
+		const stripe = newStripe();
+		const { organizationId } = await billedAllFull(stripe, { ordinary: 1, kioskOnly: 1 });
+
+		await reconcile(stripe, [organizationId]);
+
+		expect(await seatAudits(organizationId)).toEqual([]);
+	});
+
 	it("refuses without any Stripe call while either kiosk price is unset", async () => {
 		const stripe = newStripe();
 		const { organizationId } = await billedAllFull(stripe, { ordinary: 3, kioskOnly: 2 });
@@ -197,9 +277,9 @@ describe("reconcile existing subscriptions into kiosk seats", () => {
 			{ ...PRICES, priceKioskYearlyId: undefined },
 			{ ...PRICES, enabled: false },
 		]) {
-			await expect(reconcile(stripe, [organizationId], config)).rejects.toThrow(
-				"Kiosk seats are not configured",
-			);
+			const refusal = reconcile(stripe, [organizationId], config);
+			await expect(refusal).rejects.toBeInstanceOf(KioskSeatsNotConfiguredError);
+			await expect(refusal).rejects.toThrow("Kiosk seats are not configured");
 		}
 
 		expect(stripe.calls).toEqual([]);
@@ -233,6 +313,28 @@ describe("reconcile existing subscriptions into kiosk seats", () => {
 		);
 		expect(stripe.subscriptions.get(last.subscriptionId)).toMatchObject({ full: 1, kiosk: 3 });
 	});
+
+	it.each(["canceled", "incomplete_expired"])(
+		"leaves out an organization whose Stripe subscription has ended (%s)",
+		async (status) => {
+			const stripe = newStripe();
+			const live = await billedAllFull(stripe, { ordinary: 1, kioskOnly: 1 });
+			const ended = await billedAllFull(stripe, { ordinary: 2, kioskOnly: 2 });
+			await fixture.pool.query(`update subscription set status = $2 where organization_id = $1`, [
+				ended.organizationId,
+				status,
+			]);
+
+			const report = await reconcile(stripe, [live.organizationId, ended.organizationId]);
+
+			expect(report).toEqual([
+				{ organizationId: live.organizationId, outcome: "updated", fullSeats: 1, kioskSeats: 1 },
+			]);
+			expect(stripe.calls.filter((call) => call.subscriptionId === ended.subscriptionId)).toEqual(
+				[],
+			);
+		},
+	);
 
 	it("covers every organization with a Stripe subscription, and only those", async () => {
 		const stripe = newStripe();

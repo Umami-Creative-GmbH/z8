@@ -5,17 +5,7 @@ import { db } from "@/db";
 import { stripeEvent, subscription } from "@/db/schema";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
-import { monthlyRecurringRevenueCents, SEAT_PRICES_CENTS } from "@/lib/billing/seat-prices";
-
-/** A seat price in EUR (net), from the shared seat price table. */
-function seatPricing(type: keyof typeof SEAT_PRICES_CENTS) {
-	const prices = SEAT_PRICES_CENTS[type];
-	return {
-		monthly: prices.month / 100,
-		yearlyPerMonth: prices.yearPerMonth / 100,
-		yearlyTotal: (prices.yearPerMonth * 12) / 100,
-	};
-}
+import { monthlyRecurringRevenueCents, seatPriceEuros } from "@/lib/billing/seat-prices";
 
 /**
  * Get platform billing metrics for superadmin dashboard
@@ -184,8 +174,8 @@ export async function GET() {
 
 				// Pricing reference
 				pricing: {
-					...seatPricing("full"),
-					kiosk: seatPricing("kiosk"),
+					...seatPriceEuros("full"),
+					kiosk: seatPriceEuros("kiosk"),
 					currency: "EUR",
 				},
 			},

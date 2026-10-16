@@ -25,10 +25,21 @@ export type KioskSeatPrices = Pick<StripeConfig, "priceKioskMonthlyId" | "priceK
 
 /**
  * Whether kiosk seats are on: only when both kiosk seat prices are configured.
- * While off, every billable seat is a full seat and billing behaves as before #886.
+ * A blank ID counts as unset. While off, every billable seat is a full seat and
+ * billing behaves as before #886. Takes no environment, so the reconcile
+ * script decides with it before loading the app.
  */
 export const kioskSeatsEnabled = (prices: KioskSeatPrices): boolean =>
-	!!prices.priceKioskMonthlyId && !!prices.priceKioskYearlyId;
+	!!prices.priceKioskMonthlyId?.trim() && !!prices.priceKioskYearlyId?.trim();
+
+/** Whether the one-time kiosk seat reconcile may run: billing and kiosk seats are both on. */
+export const kioskSeatReconcileConfigured = (
+	config: Pick<StripeConfig, "enabled"> & KioskSeatPrices,
+): boolean => config.enabled && kioskSeatsEnabled(config);
+
+/** Why the kiosk seat reconcile refuses; shared by the reconcile and its script. */
+export const KIOSK_SEATS_NOT_CONFIGURED_MESSAGE =
+	"Kiosk seats are not configured: set BILLING_ENABLED=true, STRIPE_PRICE_KIOSK_MONTHLY_ID and STRIPE_PRICE_KIOSK_YEARLY_ID on the webapp and the worker first. Nothing was changed.";
 
 /** Whether `priceId` is a configured kiosk seat price. Never true while kiosk seats are off. */
 export const isKioskSeatPrice = (prices: KioskSeatPrices, priceId: string | undefined): boolean =>
@@ -46,6 +57,12 @@ export const findKioskSeatItem = (
 ): Stripe.SubscriptionItem | undefined =>
 	subscription.items.data.find((item) => isKioskSeatPrice(prices, item.price?.id));
 
+/** The configured kiosk seat price for `interval`; empty while it is not configured. */
+export const kioskSeatPriceForInterval = (
+	prices: KioskSeatPrices,
+	interval: "month" | "year",
+): string => (interval === "year" ? prices.priceKioskYearlyId : prices.priceKioskMonthlyId) ?? "";
+
 /**
  * The kiosk seat price for the full seat item's interval: every item on a
  * subscription shares one interval, so a yearly full seat means a yearly kiosk seat.
@@ -54,9 +71,10 @@ export const kioskSeatPriceFor = (
 	prices: FullSeatPrices & KioskSeatPrices,
 	fullSeatItem: Pick<Stripe.SubscriptionItem, "price">,
 ): string =>
-	(fullSeatItem.price?.id === prices.priceYearlyId
-		? prices.priceKioskYearlyId
-		: prices.priceKioskMonthlyId) ?? "";
+	kioskSeatPriceForInterval(
+		prices,
+		fullSeatItem.price?.id === prices.priceYearlyId ? "year" : "month",
+	);
 
 /** One seat line item on a new subscription: the price and how many seats it bills. */
 export type CheckoutSeatLine = { priceId: string; quantity: number };
@@ -78,7 +96,8 @@ export const checkoutSeatLines = (
 		quantity: Math.max(seats.full, 1),
 	};
 	if (!kioskSeatsEnabled(prices) || seats.kiosk <= 0) return { full };
-	const kioskPriceId =
-		(interval === "year" ? prices.priceKioskYearlyId : prices.priceKioskMonthlyId) ?? "";
-	return { full, kiosk: { priceId: kioskPriceId, quantity: seats.kiosk } };
+	return {
+		full,
+		kiosk: { priceId: kioskSeatPriceForInterval(prices, interval), quantity: seats.kiosk },
+	};
 };

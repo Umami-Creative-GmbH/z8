@@ -2,6 +2,11 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { KioskSeatReconciliation } from "@/lib/billing/kiosk-seat-reconcile";
+// Environment-free, so the script can refuse before it loads the app or connects.
+import {
+	KIOSK_SEATS_NOT_CONFIGURED_MESSAGE,
+	kioskSeatReconcileConfigured,
+} from "@/lib/effect/services/billing/seat-items";
 
 const HELP = `Reconcile existing subscriptions into kiosk seats (one-time deploy step, spec #886)
 
@@ -9,9 +14,10 @@ const HELP = `Reconcile existing subscriptions into kiosk seats (one-time deploy
 
 Run once, right after STRIPE_PRICE_KIOSK_MONTHLY_ID and STRIPE_PRICE_KIOSK_YEARLY_ID
 are set on the webapp and the worker. Runs billing seat sync for every
-organization with a Stripe subscription (or only the one named), one at a
-time: kiosk-only employees move from full seats to kiosk seats, the kiosk seat
-item is added, the full seat quantity drops, and Stripe prorates the credit.
+organization with a Stripe subscription that has not ended (or only the one
+named), one at a time: kiosk-only employees move from full seats to kiosk
+seats, the kiosk seat item is added, the full seat quantity drops, and Stripe
+prorates the credit.
 Safe to run again: an organization already billed at its split is left alone.
 
 Refuses, without connecting or calling Stripe, unless BILLING_ENABLED=true and
@@ -24,9 +30,6 @@ Options:
   --json             Print the full report as JSON (for recorded evidence)
   --help             Show this help without connecting to the database
 `;
-
-const NOT_CONFIGURED =
-	"Kiosk seats are not configured: set BILLING_ENABLED=true, STRIPE_PRICE_KIOSK_MONTHLY_ID and STRIPE_PRICE_KIOSK_YEARLY_ID on the webapp and the worker first. Nothing was changed.";
 
 type ReconcileKioskSeatsCommand =
 	| { kind: "help" }
@@ -83,13 +86,13 @@ interface ReconcileKioskSeatsDependencies {
 	output?: { log(line: string): void };
 }
 
-/** Kiosk seats are on only with billing enabled and both kiosk seat prices set. */
+/** The reconcile's own configuration check, applied to the environment before the app loads. */
 function kioskSeatsConfigured(environment: NodeJS.ProcessEnv): boolean {
-	return (
-		environment.BILLING_ENABLED === "true" &&
-		!!environment.STRIPE_PRICE_KIOSK_MONTHLY_ID?.trim() &&
-		!!environment.STRIPE_PRICE_KIOSK_YEARLY_ID?.trim()
-	);
+	return kioskSeatReconcileConfigured({
+		enabled: environment.BILLING_ENABLED === "true",
+		priceKioskMonthlyId: environment.STRIPE_PRICE_KIOSK_MONTHLY_ID,
+		priceKioskYearlyId: environment.STRIPE_PRICE_KIOSK_YEARLY_ID,
+	});
 }
 
 export async function runReconcileKioskSeatsCli(
@@ -103,7 +106,7 @@ export async function runReconcileKioskSeatsCli(
 		output.log(HELP);
 		return;
 	}
-	if (!kioskSeatsConfigured(environment)) throw new Error(NOT_CONFIGURED);
+	if (!kioskSeatsConfigured(environment)) throw new Error(KIOSK_SEATS_NOT_CONFIGURED_MESSAGE);
 	for (const name of [
 		"POSTGRES_HOST",
 		"POSTGRES_PORT",

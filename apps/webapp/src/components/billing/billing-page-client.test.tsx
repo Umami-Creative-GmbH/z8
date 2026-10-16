@@ -12,7 +12,10 @@ const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string) => fallback,
+		t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
+			fallback.replace(/\{(\w+)\}/g, (placeholder, name: string) =>
+				params && name in params ? String(params[name]) : placeholder,
+			),
 	}),
 }));
 
@@ -220,48 +223,44 @@ describe("BillingPageClient", () => {
 			cancelAt: null,
 		};
 
+		// The app locale is "de" here, so amounts use German decimals, like the pricing cards.
 		it("shows full and kiosk seat lines that add up to the monthly total", () => {
 			render(
 				<BillingPageClient
-					subscription={{
-						...activeSubscription,
-						billingInterval: "month",
-						currentKioskSeats: 5,
-						kioskSeatsEnabled: true,
-					}}
+					subscription={{ ...activeSubscription, billingInterval: "month", currentKioskSeats: 5 }}
 					accessResult={{ canAccess: true, status: "active" }}
 					isOwner={true}
+					kioskSeatsEnabled={true}
 				/>,
 			);
 
-			const full = screen.getByRole("listitem", { name: "Full seats" });
-			expect(full.textContent).toContain("3 × €4.00");
-			expect(full.textContent).toContain("€12.00");
-			const kiosk = screen.getByRole("listitem", { name: "Kiosk seats" });
-			expect(kiosk.textContent).toContain("5 × €2.00");
-			expect(kiosk.textContent).toContain("€10.00");
-			expect(screen.getByRole("listitem", { name: "Total" }).textContent).toContain("€22.00");
-			expect(screen.getByText("€22.00", { selector: "p" })).toBeTruthy();
+			const full = screen.getByTestId("seat-line-full");
+			expect(full.textContent).toContain("Full seats");
+			expect(full.textContent).toContain("3 × €4/mo");
+			expect(full.textContent).toContain("€12");
+			const kiosk = screen.getByTestId("seat-line-kiosk");
+			expect(kiosk.textContent).toContain("Kiosk seats");
+			expect(kiosk.textContent).toContain("5 × €2/mo");
+			expect(kiosk.textContent).toContain("€10");
+			expect(screen.getByTestId("seat-line-total").textContent).toBe("Total€22/mo");
+			expect(screen.getByText("€22", { selector: "p" })).toBeTruthy();
 		});
 
-		it("prices yearly kiosk seats at €1.50 per month", () => {
+		it("prices yearly kiosk seats at €1.50 per month in the app locale", () => {
 			render(
 				<BillingPageClient
-					subscription={{
-						...activeSubscription,
-						billingInterval: "year",
-						currentKioskSeats: 5,
-						kioskSeatsEnabled: true,
-					}}
+					subscription={{ ...activeSubscription, billingInterval: "year", currentKioskSeats: 5 }}
 					accessResult={{ canAccess: true, status: "active" }}
 					isOwner={true}
+					kioskSeatsEnabled={true}
 				/>,
 			);
 
-			const kiosk = screen.getByRole("listitem", { name: "Kiosk seats" });
-			expect(kiosk.textContent).toContain("5 × €1.50");
-			expect(kiosk.textContent).toContain("€7.50");
-			expect(screen.getByRole("listitem", { name: "Total" }).textContent).toContain("€16.50");
+			const kiosk = screen.getByTestId("seat-line-kiosk");
+			expect(kiosk.textContent).toContain("5 × €1,50/mo");
+			expect(kiosk.textContent).toContain("€7,50");
+			expect(screen.getByTestId("seat-line-total").textContent).toContain("€16,50/mo");
+			expect(screen.getByText("€198/year total")).toBeTruthy();
 		});
 
 		it("shows only the full seat line while kiosk seats are off", () => {
@@ -273,11 +272,24 @@ describe("BillingPageClient", () => {
 				/>,
 			);
 
-			expect(screen.getByRole("listitem", { name: "Full seats" }).textContent).toContain(
-				"8 × €4.00",
+			expect(screen.getByTestId("seat-line-full").textContent).toContain("8 × €4/mo");
+			expect(screen.queryByTestId("seat-line-kiosk")).toBeNull();
+			expect(screen.getByText("€32", { selector: "p" })).toBeTruthy();
+		});
+
+		it("names each seat line by its visible label, not by an aria-label", () => {
+			render(
+				<BillingPageClient
+					subscription={{ ...activeSubscription, billingInterval: "month", currentKioskSeats: 5 }}
+					accessResult={{ canAccess: true, status: "active" }}
+					isOwner={true}
+					kioskSeatsEnabled={true}
+				/>,
 			);
-			expect(screen.queryByRole("listitem", { name: "Kiosk seats" })).toBeNull();
-			expect(screen.getByText("€32.00", { selector: "p" })).toBeTruthy();
+
+			for (const line of screen.getAllByRole("listitem")) {
+				expect(line.getAttribute("aria-label")).toBeNull();
+			}
 		});
 	});
 

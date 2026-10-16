@@ -2,7 +2,6 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { env } from "@/env";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
@@ -17,6 +16,7 @@ import {
 import { countBillableSeatsByType } from "@/lib/effect/services/billing/billable-seat-count";
 import { getDaysRemaining } from "@/lib/effect/services/billing/billing-access";
 import { checkoutSeatLines, kioskSeatsEnabled } from "@/lib/effect/services/billing/seat-items";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("BillingCheckout");
@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
 	const program = Effect.gen(function* () {
 		const stripeService = yield* StripeService;
 		const subscriptionService = yield* SubscriptionService;
+		const dbService = yield* DatabaseService;
 		const appUrl = getDefaultAppBaseUrl();
 
 		// Check if subscription already exists
@@ -77,8 +78,8 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Get organization details
-		const org = yield* Effect.promise(() =>
-			db.query.organization.findFirst({
+		const org = yield* dbService.query("billing.checkoutOrganization", () =>
+			dbService.db.query.organization.findFirst({
 				where: eq(organization.id, organizationId),
 			}),
 		);
@@ -89,8 +90,8 @@ export async function POST(request: NextRequest) {
 
 		// Initial seats use the shared billable-seat definition, split into full and
 		// kiosk seats while kiosk seats are on (#886).
-		const seats = yield* Effect.promise(() =>
-			countBillableSeatsByType(db, organizationId, {
+		const seats = yield* dbService.query("billing.checkoutSeats", () =>
+			countBillableSeatsByType(dbService.db, organizationId, {
 				kioskSeats: kioskSeatsEnabled(stripeService.config),
 			}),
 		);

@@ -8,6 +8,10 @@ const state = vi.hoisted(() => ({
 	seats: { full: 0, kiosk: 0 },
 	countBillableSeatsByType: vi.fn(),
 	createCheckoutSession: vi.fn(),
+	/** The client of the run's DatabaseService; the route must not reach for the global `db`. */
+	requestDb: {
+		query: { organization: { findFirst: async () => ({ id: "org_123", name: "Acme" }) } },
+	},
 }));
 
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
@@ -26,15 +30,19 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 vi.mock("@/lib/auth-helpers", () => ({ getAbility: async () => ({ cannot: () => false }) }));
-vi.mock("@/db", () => ({
-	db: {
-		query: { organization: { findFirst: async () => ({ id: "org_123", name: "Acme" }) } },
-	},
-}));
+vi.mock("@/db", () => ({ db: { query: {} } }));
 vi.mock("@/lib/app-url", () => ({ getDefaultAppBaseUrl: () => "https://app.test" }));
-vi.mock("@/lib/effect/runtime", () => ({
-	runtime: { runPromise: (effect: Effect.Effect<unknown>) => Effect.runPromise(effect) },
-}));
+vi.mock("@/lib/effect/runtime", async () => {
+	const { DatabaseService, makeDatabaseService } = await import(
+		"@/lib/effect/services/database.service"
+	);
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.succeed(
+			DatabaseService,
+			DatabaseService.of(makeDatabaseService(state.requestDb as never)),
+		),
+	);
+});
 vi.mock("@/lib/effect/services/billing/billable-seat-count", () => ({
 	countBillableSeatsByType: state.countBillableSeatsByType,
 }));
@@ -113,7 +121,7 @@ describe("POST /api/billing/checkout seat line items (#886)", () => {
 
 			expect(response.status).toBe(200);
 			expect(await response.json()).toEqual({ url: "https://checkout.stripe.test/session" });
-			expect(state.countBillableSeatsByType).toHaveBeenCalledWith(expect.anything(), "org_123", {
+			expect(state.countBillableSeatsByType).toHaveBeenCalledWith(state.requestDb, "org_123", {
 				kioskSeats: true,
 			});
 			expect(checkoutParams()).toMatchObject({
@@ -124,6 +132,18 @@ describe("POST /api/billing/checkout seat line items (#886)", () => {
 			});
 		},
 	);
+
+	it("answers a failed seat count without the database's own error text", async () => {
+		state.countBillableSeatsByType.mockRejectedValueOnce(
+			new Error('relation "member" does not exist at 10.0.0.5'),
+		);
+
+		const response = await checkout("month");
+
+		expect(response.status).toBe(500);
+		expect(JSON.stringify(await response.json())).not.toContain("10.0.0.5");
+		expect(state.createCheckoutSession).not.toHaveBeenCalled();
+	});
 
 	it("sends only the full seat line for an organization without kiosk seats", async () => {
 		state.seats = { full: 3, kiosk: 0 };

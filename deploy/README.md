@@ -264,9 +264,11 @@ docker run --rm \
 With compose: `docker compose -f docker-compose.prod.yml run --rm --entrypoint tsx worker --import ./src/worker-preload.mjs scripts/reconcile-kiosk-seats.ts`.
 Locally: `pnpm --dir apps/webapp billing:reconcile-kiosk-seats [--organization-id <org-id>] [--json]`.
 
-- It runs billing seat sync for every organization with a Stripe subscription, one at a time.
-  Kiosk-only employees move from full seats to kiosk seats. The kiosk seat item is added, the
-  full seat quantity drops, and Stripe prorates the credit.
+- It runs billing seat sync for every organization with a Stripe subscription that has not
+  ended (`canceled` and `incomplete_expired` are left out), one at a time. Kiosk-only
+  employees move from full seats to kiosk seats. The kiosk seat item is added, the full seat
+  quantity drops, and Stripe prorates the credit. The seat audit gets a `kiosk_seat_reconciled`
+  row with the new split, so seat history prices kiosk seats from then on.
 - It refuses, and makes no Stripe call, unless `BILLING_ENABLED=true` and both kiosk price IDs
   are set.
 - The report lists per organization `updated` or `unchanged` with its full and kiosk seats, or

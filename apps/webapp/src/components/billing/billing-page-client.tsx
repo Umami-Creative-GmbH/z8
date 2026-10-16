@@ -56,6 +56,7 @@ function BillingPageClientContent({
 					<SubscriptionSummary
 						canManageBilling={canManageBilling}
 						isPortalLoading={isPortalLoading}
+						kioskSeatsEnabled={kioskSeatsEnabled}
 						onManageBilling={openBillingPortal}
 						subscription={subscription}
 					/>

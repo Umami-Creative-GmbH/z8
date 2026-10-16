@@ -3,14 +3,24 @@
  * One billable-seat definition shared by every billing entry point.
  */
 import { randomUUID } from "node:crypto";
+import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+	generateReservedEmail,
+	isReservedEmail,
+	RESERVED_EMAIL_DOMAIN,
+} from "@/lib/auth/reserved-email";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { countBillableSeats, countBillableSeatsByType } from "./billable-seat-count";
+import {
+	countBillableSeats,
+	countBillableSeatsByType,
+	reservedEmailSql,
+} from "./billable-seat-count";
 
 const NOW = parseInstant("2026-09-15T12:00:00Z");
 
@@ -168,7 +178,7 @@ describe("billable seat count", () => {
 		async function makeKioskOnly(target: SeededEmployee) {
 			await fixture.pool.query(`update "user" set email = $2 where id = $1`, [
 				target.userId,
-				`kiosk-${randomUUID().replaceAll("-", "")}@kiosk.invalid`,
+				generateReservedEmail(),
 			]);
 			return target;
 		}
@@ -246,6 +256,54 @@ describe("billable seat count", () => {
 					now: NOW,
 				}),
 			).toBe(3);
+		});
+
+		describe("the SQL reserved-email test agrees with isReservedEmail", () => {
+			const reserved = generateReservedEmail();
+			const local = `x-${randomUUID()}`;
+			it.each([
+				{ email: reserved, expected: true },
+				{ email: reserved.toUpperCase(), expected: true },
+				{ email: `${local}@Kiosk.Invalid`, expected: true },
+				{ email: ` ${reserved} `, expected: true },
+				{ email: `\t${reserved}\n`, expected: true },
+				{ email: `\r\v\f${reserved}`, expected: true },
+				{ email: ` ${reserved}﻿`, expected: true },
+				{ email: ` ${reserved}　`, expected: true },
+				{ email: `a@b@${RESERVED_EMAIL_DOMAIN}`, expected: true },
+				{ email: `${local}@not${RESERVED_EMAIL_DOMAIN}`, expected: false },
+				{ email: `${local}@${RESERVED_EMAIL_DOMAIN}.example`, expected: false },
+				{ email: `${local}@sub.${RESERVED_EMAIL_DOMAIN}`, expected: false },
+				{ email: `@${RESERVED_EMAIL_DOMAIN}`, expected: false },
+				{ email: ` @${RESERVED_EMAIL_DOMAIN}`, expected: false },
+				{ email: `${local}@${RESERVED_EMAIL_DOMAIN} x`, expected: false },
+				{ email: `${local}@example.com`, expected: false },
+			])("$email is reserved: $expected", async ({ email, expected }) => {
+				const result = await fixture.db.execute<{ reserved: boolean }>(
+					sql`select ${reservedEmailSql(sql`${email}::text`)} as reserved`,
+				);
+
+				expect(isReservedEmail(email)).toBe(expected);
+				expect(result.rows[0]?.reserved).toBe(expected);
+			});
+
+			it("counts a reserved address stored in another case and with whitespace as a kiosk seat", async () => {
+				const organizationId = await fixture.createOrganization();
+				await fixture.seedEmployee({ organizationId, role: "owner" });
+				const kioskOnly = await fixture.seedEmployee({ organizationId });
+				await fixture.pool.query(`update "user" set email = $2 where id = $1`, [
+					kioskOnly.userId,
+					`\t${generateReservedEmail().toUpperCase()}\n`,
+				]);
+
+				expect(
+					await countBillableSeatsByType(fixture.db, organizationId, {
+						kioskSeats: true,
+						requireActiveEmployee: true,
+						now: NOW,
+					}),
+				).toEqual({ full: 1, kiosk: 1 });
+			});
 		});
 
 		it("counts nothing from other tenants", async () => {

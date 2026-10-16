@@ -28,8 +28,8 @@ export function stripeConfigFromEnv(): StripeConfig {
 		webhookSecret: env.STRIPE_WEBHOOK_SECRET || "",
 		priceMonthlyId: env.STRIPE_PRICE_MONTHLY_ID || "",
 		priceYearlyId: env.STRIPE_PRICE_YEARLY_ID || "",
-		priceKioskMonthlyId: env.STRIPE_PRICE_KIOSK_MONTHLY_ID || "",
-		priceKioskYearlyId: env.STRIPE_PRICE_KIOSK_YEARLY_ID || "",
+		priceKioskMonthlyId: env.STRIPE_PRICE_KIOSK_MONTHLY_ID?.trim() || "",
+		priceKioskYearlyId: env.STRIPE_PRICE_KIOSK_YEARLY_ID?.trim() || "",
 		enabled: env.BILLING_ENABLED === "true",
 	};
 }

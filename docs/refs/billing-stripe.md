@@ -62,8 +62,14 @@
 - Turning kiosk seats on: create the two kiosk prices in Stripe, set both IDs on the webapp
   and the worker, then run `pnpm billing:reconcile-kiosk-seats` once
   (`apps/webapp/src/lib/billing/kiosk-seat-reconcile.ts`). It moves existing subscriptions
-  to kiosk seats right away instead of waiting for the hourly reconciliation. See "After
+  to kiosk seats right away instead of waiting for the hourly reconciliation, and writes a
+  `kiosk_seat_reconciled` seat audit row where the latest one predates the split. See "After
   Creating the Kiosk Seat Prices" in `deploy/README.md`.
+- Seat delivery never writes to an ended Stripe subscription (`canceled`,
+  `incomplete_expired`, `ENDED_SUBSCRIPTION_STATUSES` in `seat-delivery.ts`): it records the
+  seats locally only, since Stripe refuses updates to it.
+- The reserved-email split in SQL (`reservedEmailSql` in `billable-seat-count.ts`) trims and
+  lowercases as `isReservedEmail` does; a PG test pins both to one table of addresses.
 
 ## UI Surface
 

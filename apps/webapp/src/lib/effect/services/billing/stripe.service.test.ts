@@ -7,7 +7,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { env } from "@/env";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { BillingServicesLive } from "./index";
-import { STRIPE_API_VERSION, StripeService, StripeServiceLive } from "./stripe.service";
+import {
+	STRIPE_API_VERSION,
+	StripeService,
+	StripeServiceLive,
+	stripeConfigFromEnv,
+} from "./stripe.service";
 
 const checkoutSessionsCreate = vi.fn(async (params: Record<string, unknown>) => ({
 	id: "cs_test_123",
@@ -52,6 +57,24 @@ describe("StripeService", () => {
 		(env as { STRIPE_WEBHOOK_SECRET: string }).STRIPE_WEBHOOK_SECRET = "whsec_test_123";
 		(env as { STRIPE_PRICE_MONTHLY_ID: string }).STRIPE_PRICE_MONTHLY_ID = "price_monthly_123";
 		(env as { STRIPE_PRICE_YEARLY_ID: string }).STRIPE_PRICE_YEARLY_ID = "price_yearly_123";
+	});
+
+	it("reads the kiosk seat price IDs from the environment without surrounding whitespace (#886)", () => {
+		const kioskEnv = env as {
+			STRIPE_PRICE_KIOSK_MONTHLY_ID?: string;
+			STRIPE_PRICE_KIOSK_YEARLY_ID?: string;
+		};
+		kioskEnv.STRIPE_PRICE_KIOSK_MONTHLY_ID = " price_kiosk_monthly_123 ";
+		kioskEnv.STRIPE_PRICE_KIOSK_YEARLY_ID = "  ";
+		try {
+			expect(stripeConfigFromEnv()).toMatchObject({
+				priceKioskMonthlyId: "price_kiosk_monthly_123",
+				priceKioskYearlyId: "",
+			});
+		} finally {
+			kioskEnv.STRIPE_PRICE_KIOSK_MONTHLY_ID = undefined;
+			kioskEnv.STRIPE_PRICE_KIOSK_YEARLY_ID = undefined;
+		}
 	});
 
 	it("adds organization metadata to checkout sessions and subscriptions", async () => {

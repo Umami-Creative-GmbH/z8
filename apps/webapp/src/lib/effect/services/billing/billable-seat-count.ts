@@ -64,6 +64,22 @@ export async function countBillableSeats(
 }
 
 /**
+ * The characters JavaScript's `String.prototype.trim` strips (ECMAScript
+ * WhiteSpace and LineTerminator), as a PostgreSQL regular expression class.
+ */
+const TRIMMED_WHITESPACE = String.raw`[\t\n\v\f\r    -     　﻿]`;
+
+/**
+ * The SQL form of `isReservedEmail`, which billing-critical seat counts rely on:
+ * trimmed as JavaScript trims and lowercased, something before the last "@",
+ * then the reserved domain. Kept in agreement by billable-seat-count.integration.test.ts.
+ */
+export function reservedEmailSql(email: SQL): SQL {
+	const trimmed = sql`regexp_replace(${email}, ${`^${TRIMMED_WHITESPACE}+|${TRIMMED_WHITESPACE}+$`}, '', 'g')`;
+	return sql`lower(${trimmed}) LIKE ${`_%@${RESERVED_EMAIL_DOMAIN}`}`;
+}
+
+/**
  * The same billable seats as `countBillableSeats`, split into kiosk seats (the
  * seat's user has a reserved kiosk-only email, `isReservedEmail`) and full
  * seats (everyone else), so full + kiosk always equals the total. While kiosk
@@ -74,8 +90,7 @@ export async function countBillableSeatsByType(
 	organizationId: string,
 	options: SeatCountOptions & { kioskSeats: boolean },
 ): Promise<SeatsByType> {
-	// The SQL form of isReservedEmail: something before the last "@", then the reserved domain.
-	const reserved = sql`lower(btrim(u.email)) LIKE ${`_%@${RESERVED_EMAIL_DOMAIN}`}`;
+	const reserved = reservedEmailSql(sql`u.email`);
 	const result = await database.execute<{ total: number; kiosk: number }>(sql`
 		SELECT count(DISTINCT m.id)::integer AS total,
 			count(DISTINCT m.id) FILTER (WHERE ${reserved})::integer AS kiosk

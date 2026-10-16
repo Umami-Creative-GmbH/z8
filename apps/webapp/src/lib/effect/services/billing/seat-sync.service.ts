@@ -161,16 +161,20 @@ export const SeatSyncServiceLive = Layer.effect(
 				countBillableSeats(dbService.db, organizationId),
 			);
 
-		const auditQueryName = {
-			member_added: "seatSync.auditMemberAdded",
-			member_removed: "seatSync.auditMemberRemoved",
-			kiosk_seat_upgraded: "seatSync.auditKioskSeatUpgraded",
-		} as const;
-
-		const auditLogMessage = {
-			member_added: "Member added, seats synced",
-			member_removed: "Member removed, seats synced",
-			kiosk_seat_upgraded: "Kiosk seat upgraded to a full seat, seats synced",
+		/** Each audited seat change: its audit query name and the message logged once synced. */
+		const auditedChanges = {
+			member_added: {
+				queryName: "seatSync.auditMemberAdded",
+				logMessage: "Member added, seats synced",
+			},
+			member_removed: {
+				queryName: "seatSync.auditMemberRemoved",
+				logMessage: "Member removed, seats synced",
+			},
+			kiosk_seat_upgraded: {
+				queryName: "seatSync.auditKioskSeatUpgraded",
+				logMessage: "Kiosk seat upgraded to a full seat, seats synced",
+			},
 		} as const;
 
 		/**
@@ -179,7 +183,7 @@ export const SeatSyncServiceLive = Layer.effect(
 		 * and kiosk part), read before the sync records the new one.
 		 */
 		const syncAndAudit = (
-			action: keyof typeof auditQueryName,
+			action: keyof typeof auditedChanges,
 			organizationId: string,
 			memberId: string,
 			userId: string,
@@ -198,7 +202,17 @@ export const SeatSyncServiceLive = Layer.effect(
 				const newSeats = outcome.seats;
 				const newKioskSeats = outcome.kioskSeats ?? 0;
 
-				yield* dbService.query(auditQueryName[action], async () => {
+				// An upgrade audits only a seat that actually moved: an employee without a
+				// billable seat changes nothing.
+				if (
+					action === "kiosk_seat_upgraded" &&
+					newSeats === previousSeats &&
+					newKioskSeats === previousKioskSeats
+				) {
+					return;
+				}
+
+				yield* dbService.query(auditedChanges[action].queryName, async () => {
 					await dbService.db.insert(billingSeatAudit).values({
 						organizationId,
 						action,
@@ -208,13 +222,13 @@ export const SeatSyncServiceLive = Layer.effect(
 						newKioskSeats,
 						memberId,
 						userId,
-						stripeReported: config.enabled && !!recorded?.stripeSubscriptionId,
+						stripeReported: outcome.external === "confirmed" || outcome.external === "unchanged",
 					});
 				});
 
 				logger.info(
 					{ organizationId, memberId, previousSeats, newSeats, previousKioskSeats, newKioskSeats },
-					auditLogMessage[action],
+					auditedChanges[action].logMessage,
 				);
 			});
 

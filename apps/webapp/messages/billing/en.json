@@ -13,6 +13,7 @@
       "successDescription": "Your subscription has been activated. Thank you for subscribing!",
       "successTitle": "Success!"
     },
+    "amount": "€{amount}",
     "bestValue": "Best Value",
     "billedMonthly": "billed monthly",
     "cancelsOn": "Cancels on {date}",
@@ -76,8 +77,9 @@
     "seatLines": {
       "full": "Full seats",
       "kiosk": "Kiosk seats",
-      "perMonth": "/mo",
-      "total": "Total"
+      "seatsAtPrice": "{seats} × €{price}/mo",
+      "total": "Total",
+      "totalPerMonth": "€{amount}/mo"
     },
     "starting": "Starting...",
     "startTrial": "Start Free Trial",

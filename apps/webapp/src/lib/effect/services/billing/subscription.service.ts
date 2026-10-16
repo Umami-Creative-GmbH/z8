@@ -9,7 +9,7 @@ import {
 	countBillableSeatsByType,
 } from "@/lib/effect/services/billing/billable-seat-count";
 import { kioskSeatsEnabled } from "@/lib/effect/services/billing/seat-items";
-import { stripeConfigFromEnv } from "@/lib/effect/services/billing/stripe.service";
+import { StripeService } from "@/lib/effect/services/billing/stripe.service";
 import {
 	provisionLocalTrial,
 	withOrganizationBillingMutation,
@@ -136,6 +136,8 @@ export const SubscriptionServiceLive = Layer.effect(
 	SubscriptionService,
 	Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
+		// Kiosk seats are on or off by the same Stripe configuration seat sync, checkout and webhooks use.
+		const kioskSeats = kioskSeatsEnabled((yield* StripeService).config);
 
 		return SubscriptionService.of({
 			getByOrganization: (organizationId) =>
@@ -145,7 +147,7 @@ export const SubscriptionServiceLive = Layer.effect(
 					});
 
 					if (!sub) return null;
-					if (!kioskSeatsEnabled(stripeConfigFromEnv())) {
+					if (!kioskSeats) {
 						const currentSeats = await countBillableSeats(dbService.db, organizationId);
 						return mapToSubscriptionInfo({ ...sub, currentSeats, currentKioskSeats: 0 });
 					}
