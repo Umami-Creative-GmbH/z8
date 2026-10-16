@@ -13,7 +13,7 @@
 	position: absolute;
 	inset: -1px;
 	border-radius: inherit;
-	padding: 1.5px;
+	padding: 0.5px;
 	background: var(--onboarding-glass-edge);
 	content: "";
 	mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);

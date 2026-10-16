@@ -36,7 +36,7 @@ describe("settings visibility tiers", () => {
 		expect(entries.some((entry) => entry.id === "organizations")).toBe(false);
 		expect(entries.some((entry) => entry.id === "statistics")).toBe(true);
 		expect(entries.some((entry) => entry.id === "calendar")).toBe(true);
-		expect(entries.some((entry) => entry.id === "change-policies")).toBe(true);
+		expect(entries.some((entry) => entry.id === "change-policies")).toBe(false);
 		expect(entries.some((entry) => entry.id === "employees")).toBe(true);
 		expect(entries.some((entry) => entry.id === "holidays")).toBe(true);
 		expect(entries.some((entry) => entry.id === "locations")).toBe(true);
@@ -305,13 +305,7 @@ describe("settings visibility tiers", () => {
 			entries
 				.filter((entry) => entry.group === "policies")
 				.map((entry) => entry.id),
-		).toEqual([
-			"work-policies",
-			"vacation",
-			"approval",
-			"change-policies",
-			"travel-expenses",
-		]);
+		).toEqual(["work-policies", "vacation", "approval", "travel-expenses"]);
 		expect(entries.find((entry) => entry.id === "approval")).toMatchObject({
 			titleDefault: "Approval",
 			href: "/settings/approval-policies",
@@ -320,6 +314,18 @@ describe("settings visibility tiers", () => {
 		expect(
 			entries.some((entry) => entry.href === "/settings/approval-escalation"),
 		).toBe(false);
+	});
+
+	it("uses one Work Policies entry for work and change rules", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
+		expect(entries.find((entry) => entry.id === "work-policies")).toMatchObject(
+			{
+				group: "policies",
+				minimumTier: "manager",
+				href: "/settings/work-policies",
+			},
+		);
+		expect(entries.some((entry) => entry.id === "change-policies")).toBe(false);
 	});
 
 	it("groups notification preferences and channel configuration together", () => {

@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import { ChangePolicyManagement } from "@/components/settings/change-policy/change-policy-management";
 import { WorkPolicyManagement } from "@/components/settings/work-policy/work-policy-management";
+import { WorkPolicySettingsTabs } from "@/components/settings/work-policy/work-policy-settings-tabs";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
@@ -20,9 +22,22 @@ async function WorkPoliciesPageContent() {
 	}
 
 	return (
-		<WorkPolicyManagement
-			organizationId={organizationId}
-			accessTier={settingsRouteContext.accessTier}
+		<WorkPolicySettingsTabs
+			key={organizationId}
+			panels={{
+				work: (
+					<WorkPolicyManagement
+						organizationId={organizationId}
+						accessTier={settingsRouteContext.accessTier}
+					/>
+				),
+				changes: (
+					<ChangePolicyManagement
+						organizationId={organizationId}
+						canManage={settingsRouteContext.accessTier === "orgAdmin"}
+					/>
+				),
+			}}
 		/>
 	);
 }

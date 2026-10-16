@@ -68,6 +68,8 @@ export interface NavigationCapabilities {
 	personnelFiles?: boolean;
 	/** Managers and above while the organization collects period submissions (#1075). */
 	periodSubmissions?: boolean;
+	/** Who Is In is useful only while the active organization has active locations. */
+	teamPresence?: boolean;
 	platformAdmin: boolean;
 }
 
@@ -100,6 +102,7 @@ const DEFAULT_NAVIGATION_CAPABILITIES: NavigationCapabilities = {
 	myDocuments: false,
 	personnelFiles: false,
 	periodSubmissions: false,
+	teamPresence: false,
 	platformAdmin: false,
 };
 
@@ -255,11 +258,15 @@ export function AppSidebar({
 			url: "/team/absences",
 			icon: IconBeach,
 		},
-		{
-			title: t("nav.teamPresence", "Who Is In"),
-			url: "/team/presence",
-			icon: IconUserCheck,
-		},
+		...(navigationCapabilities.teamPresence
+			? [
+					{
+						title: t("nav.teamPresence", "Who Is In"),
+						url: "/team/presence",
+						icon: IconUserCheck,
+					},
+				]
+			: []),
 		// Only while the organization collects period submissions (current or scheduled cadence)
 		...(navigationCapabilities.periodSubmissions
 			? [

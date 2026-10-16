@@ -1,13 +1,26 @@
 import { eq } from "drizzle-orm";
+import { Suspense } from "react";
 import { getResolvedSettingsVisibility } from "@/components/settings/settings-config";
 import { SettingsGrid } from "@/components/settings/settings-grid";
+import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
-import { getCurrentSettingsRouteContext, requireUser } from "@/lib/auth-helpers";
+import {
+	getCurrentSettingsRouteContext,
+	requireUser,
+} from "@/lib/auth-helpers";
 import { managesProjectBelowManagerTier } from "@/lib/projects/project-manager-settings-access";
 
-export default async function SettingsPage() {
+export default function SettingsPage() {
+	return (
+		<Suspense fallback={<SettingsContentLoading />}>
+			<SettingsPageContent />
+		</Suspense>
+	);
+}
+
+async function SettingsPageContent() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
 	if (!settingsRouteContext) {
@@ -17,7 +30,9 @@ export default async function SettingsPage() {
 	const { authContext, accessTier } = settingsRouteContext!;
 	const billingEnabled = env.BILLING_ENABLED === "true";
 	const activeOrganizationId =
-		authContext.session.activeOrganizationId ?? authContext.employee?.organizationId ?? null;
+		authContext.session.activeOrganizationId ??
+		authContext.employee?.organizationId ??
+		null;
 
 	const currentOrganization = activeOrganizationId
 		? await db.query.organization.findFirst({
@@ -41,7 +56,8 @@ export default async function SettingsPage() {
 				demoDataEnabled: currentOrganization.demoDataEnabled ?? true,
 				worksCouncilEnabled: currentOrganization.worksCouncilEnabled ?? false,
 				billableTimeEnabled: currentOrganization.billableTimeEnabled ?? false,
-				personnelFilesEnabled: currentOrganization.personnelFilesEnabled ?? false,
+				personnelFilesEnabled:
+					currentOrganization.personnelFilesEnabled ?? false,
 			}
 		: undefined;
 
@@ -62,7 +78,10 @@ export default async function SettingsPage() {
 	return (
 		<div className="flex-1 p-6">
 			<div className="mx-auto max-w-4xl">
-				<SettingsGrid visibleSettings={visibleSettings} visibleGroups={visibleGroups} />
+				<SettingsGrid
+					visibleSettings={visibleSettings}
+					visibleGroups={visibleGroups}
+				/>
 			</div>
 		</div>
 	);

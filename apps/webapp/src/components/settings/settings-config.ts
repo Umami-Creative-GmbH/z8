@@ -368,18 +368,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "policies",
 	},
 	{
-		id: "change-policies",
-		titleKey: "settings.changePolicies.title",
-		titleDefault: "Change Policies",
-		descriptionKey: "settings.changePolicies.description",
-		descriptionDefault:
-			"Control when employees can edit time entries and require manager approval",
-		href: "/settings/change-policies",
-		icon: "clock-edit",
-		minimumTier: "manager",
-		group: "policies",
-	},
-	{
 		id: "travel-expenses",
 		titleKey: "settings.travelExpenses.title",
 		titleDefault: "Travel Expense Policies",

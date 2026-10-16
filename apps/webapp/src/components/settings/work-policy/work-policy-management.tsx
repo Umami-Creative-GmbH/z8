@@ -89,19 +89,7 @@ export function WorkPolicyManagement({ organizationId, accessTier }: WorkPolicyM
 	};
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.workPolicies.title", "Work Policies")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.workPolicies.description",
-						"Manage work schedules, time limits, and break requirements for your organization",
-					)}
-				</p>
-			</div>
-
+		<div className="flex flex-col gap-4">
 			<Tabs defaultValue="policies" className="space-y-4">
 				<TabsList>
 					<TabsTrigger value="policies">

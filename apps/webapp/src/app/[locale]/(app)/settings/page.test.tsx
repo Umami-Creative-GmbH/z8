@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 
 const mockState = vi.hoisted(() => ({
 	getCurrentSettingsRouteContext: vi.fn(),
@@ -59,6 +61,16 @@ describe("SettingsPage", () => {
 		mockState.managesProjectBelowManagerTier.mockResolvedValue(false);
 	});
 
+	it("returns a navigation fallback before accessing the request session", () => {
+		const page = SettingsPage();
+
+		expect(page).not.toBeInstanceOf(Promise);
+		expect(mockState.getCurrentSettingsRouteContext).not.toHaveBeenCalled();
+		expect(mockState.findOrganization).not.toHaveBeenCalled();
+		expect(page.type).toBe(Suspense);
+		expect(page.props.fallback.type).toBe(SettingsContentLoading);
+	});
+
 	it("lists Projects for a member-tier user who manages a project of the active organization (#928)", async () => {
 		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
 			authContext: {
@@ -69,9 +81,11 @@ describe("SettingsPage", () => {
 			accessTier: "member",
 		});
 		const settingHrefs = async () => {
-			const page = await SettingsPage();
+			const page = await SettingsPage().props.children.type();
 			const grid = page.props.children.props.children;
-			return grid.props.visibleSettings.map((entry: { href: string }) => entry.href);
+			return grid.props.visibleSettings.map(
+				(entry: { href: string }) => entry.href,
+			);
 		};
 
 		expect(await settingHrefs()).not.toContain("/settings/projects");
@@ -87,7 +101,7 @@ describe("SettingsPage", () => {
 	});
 
 	it("passes the Works Council settings entry to the grid when the org feature is enabled", async () => {
-		const page = await SettingsPage();
+		const page = await SettingsPage().props.children.type();
 		const grid = page.props.children.props.children;
 
 		expect(grid.props.visibleSettings).toEqual(

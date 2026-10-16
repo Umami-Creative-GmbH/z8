@@ -1,8 +1,12 @@
 "use client";
 
-import { IconAdjustmentsHorizontal, IconArrowDown, IconArrowUp } from "@tabler/icons-react";
+import {
+	IconAdjustmentsHorizontal,
+	IconArrowDown,
+	IconArrowUp,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { type ReactElement, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -16,6 +20,7 @@ import {
 import { WIDGET_CONFIGS, type WidgetId } from "./widget-registry";
 
 interface DashboardCustomizeMenuProps {
+	trigger?: ReactElement;
 	hiddenWidgets: WidgetId[];
 	onVisibilityChange: (widgetId: WidgetId, visible: boolean) => void;
 	visibleWidgetOrder: WidgetId[];
@@ -24,6 +29,7 @@ interface DashboardCustomizeMenuProps {
 }
 
 export function DashboardCustomizeMenu({
+	trigger,
 	hiddenWidgets,
 	onVisibilityChange,
 	visibleWidgetOrder,
@@ -59,17 +65,21 @@ export function DashboardCustomizeMenu({
 	return (
 		<DropdownMenu open={open} onOpenChange={setOpen}>
 			<DropdownMenuTrigger asChild>
-				<Button
-					aria-label={t("dashboard.customize.trigger", "Customize dashboard")}
-					className="size-9"
-					size="icon"
-					variant="ghost"
-				>
-					<IconAdjustmentsHorizontal className="size-4" aria-hidden="true" />
-				</Button>
+				{trigger ?? (
+					<Button
+						aria-label={t("dashboard.customize.trigger", "Customize dashboard")}
+						className="size-9"
+						size="icon"
+						variant="ghost"
+					>
+						<IconAdjustmentsHorizontal className="size-4" aria-hidden="true" />
+					</Button>
+				)}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-64">
-				<DropdownMenuLabel>{t("dashboard.customize.title", "Dashboard widgets")}</DropdownMenuLabel>
+				<DropdownMenuLabel>
+					{t("dashboard.customize.title", "Dashboard widgets")}
+				</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				{WIDGET_CONFIGS.map((widget) => {
 					const visible = !hiddenWidgetSet.has(widget.id);
@@ -85,7 +95,9 @@ export function DashboardCustomizeMenu({
 							<DropdownMenuCheckboxItem
 								checked={visible}
 								className="flex-1"
-								onCheckedChange={(checked) => onVisibilityChange(widget.id, checked === true)}
+								onCheckedChange={(checked) =>
+									onVisibilityChange(widget.id, checked === true)
+								}
 								onSelect={(event) => event.preventDefault()}
 							>
 								{widgetLabel}
@@ -99,9 +111,13 @@ export function DashboardCustomizeMenu({
 										onSelect={(event) => event.preventDefault()}
 									>
 										<Button
-											aria-label={t("dashboard.customize.move-up", "Move {widget} up", {
-												widget: widgetLabel,
-											})}
+											aria-label={t(
+												"dashboard.customize.move-up",
+												"Move {widget} up",
+												{
+													widget: widgetLabel,
+												},
+											)}
 											disabled={visibleIndex === 0}
 											onClick={(event) => {
 												event.preventDefault();
@@ -121,9 +137,13 @@ export function DashboardCustomizeMenu({
 										onSelect={(event) => event.preventDefault()}
 									>
 										<Button
-											aria-label={t("dashboard.customize.move-down", "Move {widget} down", {
-												widget: widgetLabel,
-											})}
+											aria-label={t(
+												"dashboard.customize.move-down",
+												"Move {widget} down",
+												{
+													widget: widgetLabel,
+												},
+											)}
 											disabled={visibleIndex === visibleWidgetOrder.length - 1}
 											onClick={(event) => {
 												event.preventDefault();
