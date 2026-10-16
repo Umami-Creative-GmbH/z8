@@ -53,6 +53,7 @@ export type SettingsIconName =
 	| "clock"
 	| "clock-edit"
 	| "git-branch"
+	| "arrow-up-right"
 	| "gavel"
 	| "percentage"
 	| "address-book"
@@ -478,7 +479,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault:
 			"Organization escalation policy and approvals that need attention",
 		href: "/settings/approval-escalation",
-		icon: "git-branch",
+		icon: "arrow-up-right",
 		minimumTier: "orgAdmin",
 		group: "approvals",
 	},
