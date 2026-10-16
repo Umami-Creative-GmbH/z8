@@ -147,7 +147,11 @@ function VerifierEditor({
 	);
 	const nameOf = (id: string) =>
 		data.employees.find((p) => p.id === id)?.name ?? id;
-	const current = data.grants.filter((g) => !g.revokedAt);
+	const current = data.grants.filter(
+		(g) =>
+			!g.revokedAt &&
+			data.employees.some((person) => person.id === g.verifierEmployeeId),
+	);
 	const edit = (grant: DrivingLicenceVerifierGrantRecord | null) => {
 		setEditing(grant);
 		const next = grant ?? EMPTY;

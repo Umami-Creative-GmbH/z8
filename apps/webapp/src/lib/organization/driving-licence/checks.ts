@@ -7,7 +7,7 @@ import { and, asc, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { db } from "@/db";
-import { organization, user } from "@/db/auth-schema";
+import { user } from "@/db/auth-schema";
 import { employee, employeeEmploymentPeriod } from "@/db/schema";
 import {
 	drivingAuthorization,
@@ -40,6 +40,10 @@ import {
 	LICENCE_CLASSES,
 } from "./check-types";
 import type { DrivingLicenceActor } from "./context";
+import { lockDrivingLicenceOrganization } from "./locks";
+
+export { lockDrivingLicenceOrganization } from "./locks";
+
 import type {
 	DrivingLicenceDatabase,
 	DrivingLicenceTransaction,
@@ -122,20 +126,6 @@ function deadlineReason(row: typeof drivingAuthorization.$inferSelect) {
 			? "class_expired"
 			: "check_overdue";
 }
-export async function lockDrivingLicenceOrganization(
-	tx: DrivingLicenceTransaction,
-	organizationId: string,
-) {
-	await tx.execute(
-		sql`SELECT pg_advisory_xact_lock(hashtextextended(${`driving-licence:${organizationId}`},0))`,
-	);
-	// Lifecycle transitions lock this tenant row before changing employment/grants.
-	await tx
-		.select({ id: organization.id })
-		.from(organization)
-		.where(eq(organization.id, organizationId))
-		.for("share");
-}
 export async function materializeExpiredDrivingAuthorizations(
 	tx: DrivingLicenceTransaction,
 	organizationId: string,
@@ -196,7 +186,10 @@ export async function currentDrivingEmployment(
 			userId: employee.userId,
 			hasAccess: employeeHasOrganizationAccess(now),
 			periodId: employeeEmploymentPeriod.id,
-			lastDepartureAt: sql<Date | null>`(SELECT max(d.cutoff_at) FROM employee_departure d WHERE d.organization_id=${organizationId} AND d.employee_id=${employeeId} AND d.status='effective')`,
+			lastDepartureAt:
+				sql<Date | null>`(SELECT max(d.cutoff_at) FROM employee_departure d WHERE d.organization_id=${organizationId} AND d.employee_id=${employeeId} AND d.status='effective')`.mapWith(
+					employeeEmploymentPeriod.endedAt,
+				),
 		})
 		.from(employee)
 		.leftJoin(
@@ -272,7 +265,8 @@ export async function readEffectiveDrivingAuthorization(
 		const ended =
 			!employment?.hasAccess ||
 			row.employmentPeriodId !== employment.periodId ||
-			(!!employment.lastDepartureAt &&
+			(!row.employmentPeriodId &&
+				!!employment.lastDepartureAt &&
 				!!row.lastSuccessfulAt &&
 				instantFromDate(employment.lastDepartureAt).epochNanoseconds >=
 					instantFromDate(row.lastSuccessfulAt).epochNanoseconds);
@@ -309,17 +303,19 @@ export async function readEffectiveDrivingAuthorization(
 		.map((c) => c.code);
 	const status: AuthorizationStatus = !participant
 		? "not_enrolled"
-		: reportApplies && employment?.hasAccess
-			? "suspended"
-			: !classes.length
-				? "not_yet_checked"
-				: authorizedClasses.length === classes.length
-					? "active"
-					: authorizedClasses.length
-						? "partially_active"
-						: classes.every((c) => c.status === "ended")
-							? "ended"
-							: "suspended";
+		: !employment?.hasAccess
+			? "ended"
+			: reportApplies
+				? "suspended"
+				: !classes.length
+					? "not_yet_checked"
+					: authorizedClasses.length === classes.length
+						? "active"
+						: authorizedClasses.length
+							? "partially_active"
+							: classes.every((c) => c.status === "ended")
+								? "ended"
+								: "suspended";
 	return {
 		enrolled: !!participant,
 		status,
@@ -704,32 +700,31 @@ export async function readDrivingLicenceWorklist(actor: DrivingLicenceActor) {
 		now,
 	});
 	const rows = await Promise.all(
-		available
-			.filter((target) => target.canVerify)
-			.map(async (target) => {
-				const status = await readEffectiveDrivingAuthorization(
-					db,
-					actor.organizationId,
-					target.id,
-					now,
+		available.map(async (target) => {
+			const status = await readEffectiveDrivingAuthorization(
+				db,
+				actor.organizationId,
+				target.id,
+				now,
+			);
+			if (!status.enrolled) return null;
+			const [identity] = await db
+				.select({ name: user.name })
+				.from(employee)
+				.innerJoin(user, eq(user.id, employee.userId))
+				.where(
+					and(
+						eq(employee.organizationId, actor.organizationId),
+						eq(employee.id, target.id),
+					),
 				);
-				if (!status.enrolled) return null;
-				const [identity] = await db
-					.select({ name: user.name })
-					.from(employee)
-					.innerJoin(user, eq(user.id, employee.userId))
-					.where(
-						and(
-							eq(employee.organizationId, actor.organizationId),
-							eq(employee.id, target.id),
-						),
-					);
-				return {
-					employeeId: target.id,
-					name: identity?.name ?? target.id,
-					...status,
-				};
-			}),
+			return {
+				employeeId: target.id,
+				canVerify: target.canVerify,
+				name: identity?.name ?? target.id,
+				...status,
+			};
+		}),
 	);
 	return rows.filter((row): row is NonNullable<typeof row> => row !== null);
 }

@@ -16,6 +16,8 @@ import {
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { lockDrivingLicenceOrganization } from "@/lib/organization/driving-licence/checks";
+import { endDrivingLicenceEmployment } from "@/lib/organization/driving-licence/lifecycle";
 import { revokePayrollAccessGrantHeldBy } from "@/lib/payroll-access/grant-store";
 import { revokePersonnelFileOfficerGrantHeldBy } from "@/lib/personnel-file/officer-grant-store";
 import { WorkTransactionProtocolViolation } from "@/lib/time-tracking/work-transaction";
@@ -111,6 +113,8 @@ export async function executeDepartureInTransaction(
 		};
 	}
 
+	await lockDrivingLicenceOrganization(tx, identity.organizationId);
+	await endDrivingLicenceEmployment(tx, identity, departure.createdBy, cutoff, now);
 	await tx.execute(sql`
 		UPDATE employee_departure
 		SET status = 'effective', effective_at = cutoff_at, processed_at = ${nowDate}, updated_at = ${nowDate}
@@ -146,10 +150,20 @@ export async function executeDepartureInTransaction(
 		actorUserId: departure.createdBy,
 		clockOutActionId: departure.clockOutActionId,
 	});
-	await recordClockOutReview(tx, identity, clockResult, cutoffDate, departure.clockOutActionId);
+	await recordClockOutReview(
+		tx,
+		identity,
+		clockResult,
+		cutoffDate,
+		departure.clockOutActionId,
+	);
 	await persistFollowUpIntent(tx, identity, target.userId);
 	// Under the lifecycle locks, so every duty held at this instant is captured.
-	await captureApprovalHandoverDuties(tx, identity, departure.replacementEmployeeId);
+	await captureApprovalHandoverDuties(
+		tx,
+		identity,
+		departure.replacementEmployeeId,
+	);
 	await enqueueReviewNotifications(tx, identity);
 
 	await recordSystemEvent(tx, identity, "departure_effective", nowDate, {
@@ -230,20 +244,24 @@ async function closeEmploymentWindows(
 			and(
 				eq(employeeEmploymentHistory.organizationId, identity.organizationId),
 				eq(employeeEmploymentHistory.employeeId, identity.employeeId),
-				eq(employeeEmploymentHistory.employmentPeriodId, identity.employmentPeriodId),
+				eq(
+					employeeEmploymentHistory.employmentPeriodId,
+					identity.employmentPeriodId,
+				),
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
 				gte(employeeEmploymentHistory.validFrom, cutoff),
 			),
 		);
-	const reviews: (typeof employeeDepartureReview.$inferInsert)[] = futureTerms.map((terms) => ({
-		...scope,
-		kind: "employment_terms",
-		subjectId: terms.id,
-		metadata: {
-			reason: "future_terms_after_departure",
-			validFrom: terms.validFrom.toISOString(),
-		},
-	}));
+	const reviews: (typeof employeeDepartureReview.$inferInsert)[] =
+		futureTerms.map((terms) => ({
+			...scope,
+			kind: "employment_terms",
+			subjectId: terms.id,
+			metadata: {
+				reason: "future_terms_after_departure",
+				validFrom: terms.validFrom.toISOString(),
+			},
+		}));
 	if (deactivated.rows.length > 0) {
 		reviews.push({
 			...scope,
@@ -251,12 +269,17 @@ async function closeEmploymentWindows(
 			subjectId: null,
 			metadata: {
 				reason: "future_assignments_deactivated",
-				workPolicyAssignmentIds: deactivated.rows.map((assignment) => assignment.id),
+				workPolicyAssignmentIds: deactivated.rows.map(
+					(assignment) => assignment.id,
+				),
 			},
 		});
 	}
 	if (reviews.length > 0) {
-		await tx.insert(employeeDepartureReview).values(reviews).onConflictDoNothing();
+		await tx
+			.insert(employeeDepartureReview)
+			.values(reviews)
+			.onConflictDoNothing();
 	}
 }
 
@@ -431,9 +454,13 @@ async function recordClockOutReview(
 		// that began after the cutoff is covered from the cutoff to its start.
 		const periodStart = result.activePeriodStartedAt ?? null;
 		const affectedStartAt =
-			periodStart && periodStart.getTime() > cutoff.getTime() ? cutoff : periodStart;
+			periodStart && periodStart.getTime() > cutoff.getTime()
+				? cutoff
+				: periodStart;
 		const affectedEndAt =
-			periodStart && periodStart.getTime() > cutoff.getTime() ? periodStart : cutoff;
+			periodStart && periodStart.getTime() > cutoff.getTime()
+				? periodStart
+				: cutoff;
 		await tx
 			.insert(employeeDepartureReview)
 			.values({
