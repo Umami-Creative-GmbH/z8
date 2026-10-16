@@ -41,6 +41,10 @@ const INPUT_PROBLEM_MESSAGES: Record<
 		message: "Deadline offset must be a whole number of days from 0 to 3650",
 		field: "deadlineOffsetDays",
 	},
+	requiresTaskInvalid: {
+		message: "Task requirement must be on or off",
+		field: "requiresTask",
+	},
 	tooManyTasks: { message: "A template can hold at most 200 tasks", field: "tasks" },
 	taskNameRequired: { message: "Task name is required", field: "tasks" },
 	taskNameTooLong: { message: "Task name is too long", field: "tasks" },

@@ -51,8 +51,8 @@ export interface ProjectFromTemplateInput {
 
 /**
  * Creates a project from a template inside the caller's transaction: the
- * template's icon, colour, budget, tasks (all open), managers and assignments
- * are copied, and the deadline is the creation date in the organization's
+ * template's icon, colour, budget, task requirement (#884), tasks (all open),
+ * managers and assignments are copied, and the deadline is the creation date in the organization's
  * timezone plus the template's offset. Managers and assignments whose
  * employee has left or whose team or employee no longer exists are skipped
  * and reported. `alsoManagedBy` adds a manager (the manager-tier creator, as
@@ -98,6 +98,7 @@ export async function createProjectFromTemplateRows(
 		}),
 		customerId: input.customerId,
 		billableDefault: input.billableDefault,
+		requiresTask: template.requiresTask,
 		createdBy: userId,
 	});
 
@@ -172,7 +173,7 @@ const employeeColumns = {
 
 /**
  * What a template saved from a project holds: the project's icon, colour,
- * budget, open tasks, managers and assignments. The deadline offset stays
+ * budget, task requirement (#884), open tasks, managers and assignments. The deadline offset stays
  * empty, because an absolute deadline has no meaningful offset. Managers and
  * assigned employees who have left the organization are skipped and
  * reported. Returns null when the project is not in the organization.
@@ -193,6 +194,7 @@ export async function projectAsTemplateInput(
 			icon: project.icon,
 			color: project.color,
 			budgetHours: project.budgetHours,
+			requiresTask: project.requiresTask,
 		})
 		.from(project)
 		.where(and(eq(project.id, projectId), eq(project.organizationId, organizationId)))
@@ -262,6 +264,7 @@ export async function projectAsTemplateInput(
 			// Stored numeric(8, 2) text passes the template's hours rule as is.
 			budgetHours: source.budgetHours,
 			deadlineOffsetDays: null,
+			requiresTask: source.requiresTask,
 			tasks: tasks.map((task) => ({
 				name: task.name,
 				description: task.description,
