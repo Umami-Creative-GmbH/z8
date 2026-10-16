@@ -20,32 +20,30 @@ export async function resolveDrivingLicenceAccess(
 	database: DrivingLicenceDatabase,
 	input: { organizationId: string; userId: string; now?: Instant },
 ): Promise<DrivingLicenceAccess | null> {
-	const [[membership], [profile]] = await Promise.all([
-		database
-			.select({ id: member.id })
-			.from(member)
-			.where(
-				and(
-					eq(member.organizationId, input.organizationId),
-					eq(member.userId, input.userId),
-					eq(member.status, "approved"),
-				),
-			)
-			.limit(1),
-		database
-			.select({
-				id: employee.id,
-				hasAccess: employeeHasOrganizationAccess(input.now),
-			})
-			.from(employee)
-			.where(
-				and(
-					eq(employee.organizationId, input.organizationId),
-					eq(employee.userId, input.userId),
-				),
-			)
-			.limit(1),
-	]);
+	const [membership] = await database
+		.select({ id: member.id })
+		.from(member)
+		.where(
+			and(
+				eq(member.organizationId, input.organizationId),
+				eq(member.userId, input.userId),
+				eq(member.status, "approved"),
+			),
+		)
+		.limit(1);
+	const [profile] = await database
+		.select({
+			id: employee.id,
+			hasAccess: employeeHasOrganizationAccess(input.now),
+		})
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, input.organizationId),
+				eq(employee.userId, input.userId),
+			),
+		)
+		.limit(1);
 	if (!membership || (profile && !profile.hasAccess)) return null;
 	return {
 		organizationId: input.organizationId,
