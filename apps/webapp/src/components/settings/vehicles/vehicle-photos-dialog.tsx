@@ -1,6 +1,10 @@
 "use client";
 
-import { IconChevronLeft, IconChevronRight, IconPhoto } from "@tabler/icons-react";
+import {
+	IconChevronLeft,
+	IconChevronRight,
+	IconPhoto,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useId, useRef, useState } from "react";
 import {
@@ -24,7 +28,11 @@ import {
 } from "@/lib/organization/vehicles/vehicle-photo-types";
 import type { OrganizationVehicleView } from "@/lib/organization/vehicles/vehicles";
 
-export function VehiclePhotosDialog({ vehicle }: { vehicle: OrganizationVehicleView }) {
+export function VehiclePhotosDialog({
+	vehicle,
+}: {
+	vehicle: OrganizationVehicleView;
+}) {
 	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
 	return (
@@ -46,7 +54,11 @@ export function VehiclePhotosDialog({ vehicle }: { vehicle: OrganizationVehicleV
 	);
 }
 
-function VehiclePhotoGallery({ vehicle }: { vehicle: OrganizationVehicleView }) {
+function VehiclePhotoGallery({
+	vehicle,
+}: {
+	vehicle: OrganizationVehicleView;
+}) {
 	const { t } = useTranslate();
 	const [photos, setPhotos] = useState<VehiclePhotoView[]>([]);
 	const [archived, setArchived] = useState(vehicle.archived);
@@ -92,7 +104,10 @@ function VehiclePhotoGallery({ vehicle }: { vehicle: OrganizationVehicleView }) 
 					"This image could not be read. Choose another JPEG, PNG or WebP photo.",
 				);
 			case "photo_too_large":
-				return t("settings.vehicles.photos.tooLarge", "Choose a photo no larger than 10 MB.");
+				return t(
+					"settings.vehicles.photos.tooLarge",
+					"Choose a photo no larger than 10 MB.",
+				);
 			case "vehicle_archived":
 				return t(
 					"settings.vehicles.photos.archived",
@@ -123,15 +138,26 @@ function VehiclePhotoGallery({ vehicle }: { vehicle: OrganizationVehicleView }) 
 			return;
 		}
 		if (file.size > MAX_VEHICLE_PHOTO_BYTES) {
-			setError(t("settings.vehicles.photos.tooLarge", "Choose a photo no larger than 10 MB."));
+			setError(
+				t(
+					"settings.vehicles.photos.tooLarge",
+					"Choose a photo no larger than 10 MB.",
+				),
+			);
 			return;
 		}
 		setUploading(file.name);
 		try {
 			const started = await initiateVehiclePhotoUpload(vehicle.id);
 			if (!started.success || !started.data.ok) {
-				setError(`${file.name}: ${uploadError(started.success ? started.data.reason : undefined)}`);
-				if (started.success && !started.data.ok && started.data.reason === "vehicle_archived")
+				setError(
+					`${file.name}: ${uploadError(started.success && !started.data.ok ? started.data.reason : undefined)}`,
+				);
+				if (
+					started.success &&
+					!started.data.ok &&
+					started.data.reason === "vehicle_archived"
+				)
 					setArchived(true);
 				return;
 			}
@@ -145,14 +171,17 @@ function VehiclePhotoGallery({ vehicle }: { vehicle: OrganizationVehicleView }) 
 				if (failure.reason === "vehicle_archived") setArchived(true);
 				return;
 			}
-			const result: { ok: true; photo: VehiclePhotoView } | { ok: false; reason?: string } =
-				await response.json();
+			const result:
+				| { ok: true; photo: VehiclePhotoView }
+				| { ok: false; reason?: string } = await response.json();
 			if (!result.ok) {
 				setError(`${file.name}: ${uploadError(result.reason)}`);
 				return;
 			}
 			setPhotos((previousPhotos) =>
-				[...previousPhotos, result.photo].sort((left, right) => left.order - right.order),
+				[...previousPhotos, result.photo].sort(
+					(left, right) => left.order - right.order,
+				),
 			);
 		} catch {
 			setError(`${file.name}: ${uploadError()}`);
@@ -175,7 +204,9 @@ function VehiclePhotoGallery({ vehicle }: { vehicle: OrganizationVehicleView }) 
 				</DialogDescription>
 			</DialogHeader>
 			{loading ? (
-				<p role="status">{t("settings.vehicles.photos.loading", "Loading photos…")}</p>
+				<p role="status">
+					{t("settings.vehicles.photos.loading", "Loading photos…")}
+				</p>
 			) : null}
 			{error ? (
 				<p role="alert" className="text-destructive text-sm">
@@ -265,7 +296,9 @@ function VehiclePhotoBrowser({
 		setSelected((index) => (index === null ? null : Math.max(0, index - 1)));
 	}
 	function next() {
-		setSelected((index) => (index === null ? null : Math.min(photos.length - 1, index + 1)));
+		setSelected((index) =>
+			index === null ? null : Math.min(photos.length - 1, index + 1),
+		);
 	}
 
 	return (
@@ -281,10 +314,14 @@ function VehiclePhotoBrowser({
 						key={photo.id}
 						type="button"
 						className="overflow-hidden rounded-lg border bg-muted transition-colors hover:bg-accent outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-						aria-label={t("settings.vehicles.photos.viewNamed", "View photo {number} of {name}", {
-							number: index + 1,
-							name: vehicle.name,
-						})}
+						aria-label={t(
+							"settings.vehicles.photos.viewNamed",
+							"View photo {number} of {name}",
+							{
+								number: index + 1,
+								name: vehicle.name,
+							},
+						)}
 						onClick={(event) => {
 							thumbnail.current = event.currentTarget;
 							setSelected(index);
@@ -292,10 +329,14 @@ function VehiclePhotoBrowser({
 					>
 						<img
 							src={photo.imageUrl}
-							alt={t("settings.vehicles.photos.imageNamed", "{name}, photo {number}", {
-								name: vehicle.name,
-								number: index + 1,
-							})}
+							alt={t(
+								"settings.vehicles.photos.imageNamed",
+								"{name}, photo {number}",
+								{
+									name: vehicle.name,
+									number: index + 1,
+								},
+							)}
 							width={photo.width}
 							height={photo.height}
 							loading="lazy"
@@ -321,10 +362,14 @@ function VehiclePhotoBrowser({
 				>
 					<DialogHeader>
 						<DialogTitle>
-							{t("settings.vehicles.photos.position", "Photo {number} of {count}", {
-								number: (selected ?? 0) + 1,
-								count: photos.length,
-							})}
+							{t(
+								"settings.vehicles.photos.position",
+								"Photo {number} of {count}",
+								{
+									number: (selected ?? 0) + 1,
+									count: photos.length,
+								},
+							)}
 						</DialogTitle>
 						<DialogDescription>
 							{vehicle.name} · {vehicle.licencePlate}
@@ -332,20 +377,32 @@ function VehiclePhotoBrowser({
 					</DialogHeader>
 					<img
 						src={current.imageUrl}
-						alt={t("settings.vehicles.photos.imageNamed", "{name}, photo {number}", {
-							name: vehicle.name,
-							number: (selected ?? 0) + 1,
-						})}
+						alt={t(
+							"settings.vehicles.photos.imageNamed",
+							"{name}, photo {number}",
+							{
+								name: vehicle.name,
+								number: (selected ?? 0) + 1,
+							},
+						)}
 						width={current.width}
 						height={current.height}
 						className="max-h-[65dvh] w-full object-contain"
 					/>
 					<div className="flex justify-between gap-3">
-						<Button variant="outline" onClick={previous} disabled={selected === 0}>
+						<Button
+							variant="outline"
+							onClick={previous}
+							disabled={selected === 0}
+						>
 							<IconChevronLeft aria-hidden="true" />
 							{t("settings.vehicles.photos.previous", "Previous photo")}
 						</Button>
-						<Button variant="outline" onClick={next} disabled={selected === photos.length - 1}>
+						<Button
+							variant="outline"
+							onClick={next}
+							disabled={selected === photos.length - 1}
+						>
 							{t("settings.vehicles.photos.next", "Next photo")}
 							<IconChevronRight aria-hidden="true" />
 						</Button>

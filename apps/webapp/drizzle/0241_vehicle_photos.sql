@@ -24,7 +24,7 @@ CREATE TABLE "organization_vehicle_photo" (
  "vehicle_id" uuid NOT NULL,
  "uploaded_by" text REFERENCES "user"("id") ON DELETE SET NULL,
  "upload_order" integer NOT NULL,
- "storage_key" text NOT NULL UNIQUE,
+ "storage_key" text NOT NULL CONSTRAINT "vehicle_photo_storage_unique" UNIQUE,
  "storage_bucket" text NOT NULL,
  "storage_version_id" text,
  "width" integer NOT NULL,

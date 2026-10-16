@@ -568,3 +568,32 @@ it("enforces same-organization ownership in PostgreSQL even with valid foreign i
 	).rejects.toThrow();
 	expect((await read(id)).status).toBe(200);
 });
+it("keeps the durable object reference when an audit failure rolls back attachment after storage succeeds", async () => {
+	const id = await start();
+	await admin.query(
+		"create function t1270_reject_photo_audit() returns trigger language plpgsql as $$ begin if NEW.organization_id='photo-org' and NEW.action='vehicle.photo_added' then raise exception 'test audit unavailable'; end if; return NEW; end $$; create trigger t1270_reject_photo_audit before insert on audit_log for each row execute function t1270_reject_photo_audit()",
+	);
+	try {
+		expect((await upload(id, await image())).status).toBe(503);
+		expect((await gallery()).photos).toHaveLength(0);
+		expect(harness.objects.size).toBe(1);
+		expect(
+			(
+				await admin.query(
+					"select storage_bucket,status from organization_vehicle_photo_upload where id=$1",
+					[id],
+				)
+			).rows,
+		).toEqual([{ storage_bucket: "private", status: "pending" }]);
+	} finally {
+		await admin.query(
+			"drop trigger t1270_reject_photo_audit on audit_log; drop function t1270_reject_photo_audit()",
+		);
+	}
+	await admin.query(
+		"update organization_vehicle_photo_upload set next_attempt_at=now()-interval '1 second' where id=$1",
+		[id],
+	);
+	expect(await runVehiclePhotoCleanupJob()).toMatchObject({ deleted: 1 });
+	expect(harness.objects.size).toBe(0);
+});
