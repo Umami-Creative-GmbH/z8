@@ -19,4 +19,3 @@ CREATE TABLE "driving_licence_supplement" (
 CREATE INDEX "driving_supplement_employee_time" ON "driving_licence_supplement" ("organization_id", "employee_id", "recorded_at");
 --> statement-breakpoint
 CREATE TRIGGER "driving_supplement_immutable" BEFORE UPDATE ON "driving_licence_supplement" FOR EACH ROW EXECUTE FUNCTION driving_check_immutable();
-

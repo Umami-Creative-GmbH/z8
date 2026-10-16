@@ -11,6 +11,7 @@ import {
 import { DrivingLicenceEvidence, DrivingStatusLabel } from "./check-evidence";
 import { DrivingLicenceHistoryPanel } from "./history-panel";
 import { OriginalDrivingCheckForm } from "./original-check-form";
+import { ReinstateDrivingAuthorization } from "./reinstate-authorization";
 export function DrivingLicenceVerifierWorklist() {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -92,6 +93,12 @@ export function DrivingLicenceVerifierWorklist() {
 							<DrivingLicenceHistoryPanel
 								key={selected.employeeId}
 								employeeId={selected.employeeId}
+							/>
+							<ReinstateDrivingAuthorization
+								key={selected.employeeId + record.data.data.checks[0]?.id}
+								employeeId={selected.employeeId}
+								record={record.data.data}
+								onCompleted={refresh}
 							/>
 						</>
 					)}

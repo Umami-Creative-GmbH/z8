@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { db } from "@/db";
@@ -11,6 +11,7 @@ import {
 	drivingLicenceCheck,
 	drivingLicenceSubject,
 } from "@/db/schema/driving-licence-checks";
+import { drivingImpedimentReport } from "@/db/schema/driving-licence-impediments";
 import {
 	drivingLicenceParticipant,
 	drivingLicencePolicy,
@@ -217,37 +218,52 @@ export async function readEffectiveDrivingAuthorization(
 	employeeId: string,
 	now: Instant = systemClock.nowInstant(),
 ) {
-	const [[participant], [policy], rows, [global], employment] =
-		await Promise.all([
-			database
-				.select()
-				.from(drivingLicenceParticipant)
-				.where(
-					and(
-						eq(drivingLicenceParticipant.organizationId, organizationId),
-						eq(drivingLicenceParticipant.employeeId, employeeId),
-					),
-				),
-			database
-				.select()
-				.from(drivingLicencePolicy)
-				.where(eq(drivingLicencePolicy.organizationId, organizationId)),
-			database
-				.select()
-				.from(drivingAuthorization)
-				.where(scope(organizationId, employeeId))
-				.orderBy(asc(drivingAuthorization.classCode)),
-			database
-				.select()
-				.from(drivingLicenceSubject)
-				.where(
-					and(
-						eq(drivingLicenceSubject.organizationId, organizationId),
-						eq(drivingLicenceSubject.employeeId, employeeId),
-					),
-				),
-			currentDrivingEmployment(database, organizationId, employeeId, now),
-		]);
+	const [participant] = await database
+		.select()
+		.from(drivingLicenceParticipant)
+		.where(
+			and(
+				eq(drivingLicenceParticipant.organizationId, organizationId),
+				eq(drivingLicenceParticipant.employeeId, employeeId),
+			),
+		);
+	const [policy] = await database
+		.select()
+		.from(drivingLicencePolicy)
+		.where(eq(drivingLicencePolicy.organizationId, organizationId));
+	const rows = await database
+		.select()
+		.from(drivingAuthorization)
+		.where(scope(organizationId, employeeId))
+		.orderBy(asc(drivingAuthorization.classCode));
+	const [global] = await database
+		.select()
+		.from(drivingLicenceSubject)
+		.where(
+			and(
+				eq(drivingLicenceSubject.organizationId, organizationId),
+				eq(drivingLicenceSubject.employeeId, employeeId),
+			),
+		);
+	const employment = await currentDrivingEmployment(
+		database,
+		organizationId,
+		employeeId,
+		now,
+	);
+	const reports = await database
+		.select()
+		.from(drivingImpedimentReport)
+		.where(
+			and(
+				eq(drivingImpedimentReport.organizationId, organizationId),
+				eq(drivingImpedimentReport.employeeId, employeeId),
+				isNull(drivingImpedimentReport.resolvedAt),
+			),
+		);
+	const reportApplies = reports.some(
+		(report) => report.employmentPeriodId === employment?.periodId,
+	);
 	const classes = rows.map((row) => {
 		const ended =
 			!employment?.hasAccess ||
@@ -263,7 +279,7 @@ export async function readEffectiveDrivingAuthorization(
 		const status =
 			ended || row.state === "ended"
 				? "ended"
-				: globalApplies || row.state === "suspended" || expired
+				: reportApplies || globalApplies || row.state === "suspended" || expired
 					? "suspended"
 					: "active";
 		return {
@@ -271,9 +287,11 @@ export async function readEffectiveDrivingAuthorization(
 			status,
 			reason: ended
 				? "employment_ended"
-				: globalApplies
-					? `${global.suspensionKind}_impediment`
-					: (row.suspensionReason ?? (expired ? deadlineReason(row) : null)),
+				: reportApplies
+					? "person_impediment"
+					: globalApplies
+						? `${global.suspensionKind}_impediment`
+						: (row.suspensionReason ?? (expired ? deadlineReason(row) : null)),
 			validThrough: row.validThrough,
 			deadlineTimezone: row.deadlineTimezone,
 			expiresAt: row.expiresAt.toISOString(),
@@ -287,15 +305,17 @@ export async function readEffectiveDrivingAuthorization(
 		.map((c) => c.code);
 	const status: AuthorizationStatus = !participant
 		? "not_enrolled"
-		: !classes.length
-			? "not_yet_checked"
-			: authorizedClasses.length === classes.length
-				? "active"
-				: authorizedClasses.length
-					? "partially_active"
-					: classes.every((c) => c.status === "ended")
-						? "ended"
-						: "suspended";
+		: reportApplies && employment?.hasAccess
+			? "suspended"
+			: !classes.length
+				? "not_yet_checked"
+				: authorizedClasses.length === classes.length
+					? "active"
+					: authorizedClasses.length
+						? "partially_active"
+						: classes.every((c) => c.status === "ended")
+							? "ended"
+							: "suspended";
 	return {
 		enrolled: !!participant,
 		status,
