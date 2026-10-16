@@ -32,7 +32,7 @@ export function OriginalDrivingCheckForm({
 	onCompleted: () => Promise<void>;
 }) {
 	const { t } = useTranslate();
-	const id = useId();
+
 	const [error, setError] = useState("");
 	const [commandId, setCommandId] = useState(() => crypto.randomUUID());
 	const form = useForm({
@@ -49,8 +49,9 @@ export function OriginalDrivingCheckForm({
 		},
 		onSubmit: async ({ value }) => {
 			setError("");
+			const selectedCodes = new Set(value.selected);
 			const classes = value.classes.filter((inspected) =>
-				value.selected.includes(inspected.code),
+				selectedCodes.has(inspected.code),
 			);
 			if (!classes.length) {
 				setError(
@@ -152,129 +153,40 @@ export function OriginalDrivingCheckForm({
 					{t("drivingLicence.check.classes", "Classes actually inspected")}
 				</legend>
 				<form.Field name="selected">
-					{(selected) => (
-						<form.Field name="classes">
-							{(classes) => (
-								<div className="space-y-3">
-									{classes.state.value.map((inspected, index) => {
-										const chosen = selected.state.value.includes(
-											inspected.code,
-										);
-										const change = (values: Partial<DrivingCheckClass>) =>
-											classes.handleChange(
-												classes.state.value.map((row, i) =>
-													i === index ? { ...row, ...values } : row,
-												),
-											);
-										return (
-											<div
+					{(selected) => {
+						const selectedCodes = new Set(selected.state.value);
+						return (
+							<form.Field name="classes">
+								{(classes) => (
+									<div className="space-y-3">
+										{classes.state.value.map((inspected, index) => (
+											<InspectionClassRow
 												key={inspected.code}
-												className="rounded-md border p-3"
-											>
-												<label className="flex items-center gap-2 font-medium">
-													<input
-														type="checkbox"
-														checked={chosen}
-														onChange={(event) =>
-															selected.handleChange(
-																event.target.checked
-																	? [...selected.state.value, inspected.code]
-																	: selected.state.value.filter(
-																			(code) => code !== inspected.code,
-																		),
-															)
-														}
-													/>
-													{inspected.code}
-												</label>
-												{chosen && (
-													<div className="mt-3 grid gap-3 sm:grid-cols-3">
-														<label
-															className="space-y-1 text-sm"
-															htmlFor={`${id}-${inspected.code}-result`}
-														>
-															<span>
-																{t("drivingLicence.check.result", "Result")}
-															</span>
-															<select
-																id={`${id}-${inspected.code}-result`}
-																className="h-9 w-full rounded-md border bg-background px-2"
-																value={inspected.result}
-																onChange={(event) =>
-																	change({
-																		result: event.target.value as CheckResult,
-																	})
-																}
-															>
-																<option value="successful">
-																	{t(
-																		"drivingLicence.result.successful",
-																		"Successful",
-																	)}
-																</option>
-																<option value="unsuccessful">
-																	{t(
-																		"drivingLicence.result.unsuccessful",
-																		"Unsuccessful",
-																	)}
-																</option>
-																<option value="inconclusive">
-																	{t(
-																		"drivingLicence.result.inconclusive",
-																		"Inconclusive",
-																	)}
-																</option>
-															</select>
-														</label>
-														<label
-															className="space-y-1 text-sm"
-															htmlFor={`${id}-${inspected.code}-expiry`}
-														>
-															<span>
-																{t(
-																	"drivingLicence.check.classExpiry",
-																	"Class expiry (if applicable)",
-																)}
-															</span>
-															<Input
-																id={`${id}-${inspected.code}-expiry`}
-																type="date"
-																value={inspected.expiryDate ?? ""}
-																onChange={(event) =>
-																	change({
-																		expiryDate: event.target.value || null,
-																	})
-																}
-															/>
-														</label>
-														<label
-															className="space-y-1 text-sm"
-															htmlFor={`${id}-${inspected.code}-restrictions`}
-														>
-															<span>
-																{t(
-																	"drivingLicence.check.restrictions",
-																	"Necessary driving restrictions",
-																)}
-															</span>
-															<Input
-																id={`${id}-${inspected.code}-restrictions`}
-																maxLength={300}
-																value={inspected.restrictions}
-																onChange={(event) =>
-																	change({ restrictions: event.target.value })
-																}
-															/>
-														</label>
-													</div>
-												)}
-											</div>
-										);
-									})}
-								</div>
-							)}
-						</form.Field>
-					)}
+												inspected={inspected}
+												chosen={selectedCodes.has(inspected.code)}
+												onSelect={(chosen) =>
+													selected.handleChange(
+														chosen
+															? [...selected.state.value, inspected.code]
+															: selected.state.value.filter(
+																	(code) => code !== inspected.code,
+																),
+													)
+												}
+												onChange={(values) =>
+													classes.handleChange(
+														classes.state.value.map((row, i) =>
+															i === index ? { ...row, ...values } : row,
+														),
+													)
+												}
+											/>
+										))}
+									</div>
+								)}
+							</form.Field>
+						);
+					}}
 				</form.Field>
 			</fieldset>
 			<form.Field name="failureScope">
@@ -288,7 +200,11 @@ export function OriginalDrivingCheckForm({
 						</TFormLabel>
 						<TFormControl>
 							<select
-								className="h-9 w-full rounded-md border bg-background px-2"
+								className="h-9 w-full rounded-md border bg-background px-2 focus-visible:ring-2 focus-visible:ring-ring"
+								aria-label={t(
+									"drivingLicence.check.failureScope",
+									"Scope of an unsuccessful or inconclusive check",
+								)}
 								value={field.state.value}
 								onChange={(event) =>
 									field.handleChange(
@@ -328,34 +244,26 @@ export function OriginalDrivingCheckForm({
 				</legend>
 				<form.Field name="originalInspected">
 					{(field) => (
-						<label className="flex items-start gap-3 text-sm">
-							<input
-								type="checkbox"
-								className="mt-1"
-								checked={field.state.value}
-								onChange={(event) => field.handleChange(event.target.checked)}
-							/>
-							{t(
+						<InspectionConfirmation
+							checked={field.state.value}
+							onChange={field.handleChange}
+							label={t(
 								"drivingLicence.check.original",
 								"I personally inspected the original driving licence in the employee's presence.",
 							)}
-						</label>
+						/>
 					)}
 				</form.Field>
 				<form.Field name="identityConfirmed">
 					{(field) => (
-						<label className="flex items-start gap-3 text-sm">
-							<input
-								type="checkbox"
-								className="mt-1"
-								checked={field.state.value}
-								onChange={(event) => field.handleChange(event.target.checked)}
-							/>
-							{t(
+						<InspectionConfirmation
+							checked={field.state.value}
+							onChange={field.handleChange}
+							label={t(
 								"drivingLicence.check.identity",
 								"I confirmed that the original document belongs to this employee.",
 							)}
-						</label>
+						/>
 					)}
 				</form.Field>
 				<blockquote className="border-l-2 border-primary pl-3 text-sm">
@@ -366,35 +274,27 @@ export function OriginalDrivingCheckForm({
 				</blockquote>
 				<form.Field name="employeeDeclaration">
 					{(field) => (
-						<label className="flex items-start gap-3 text-sm">
-							<input
-								type="checkbox"
-								className="mt-1"
-								checked={field.state.value}
-								onChange={(event) => field.handleChange(event.target.checked)}
-							/>
-							{t(
+						<InspectionConfirmation
+							checked={field.state.value}
+							onChange={field.handleChange}
+							label={t(
 								"drivingLicence.check.employeeDeclaration",
 								"The employee personally made the declaration shown above during this check; I attest that declaration.",
 							)}
-						</label>
+						/>
 					)}
 				</form.Field>
 				<form.Field name="verifierConfirmed">
 					{(field) => (
-						<label className="flex items-start gap-3 text-sm">
-							<input
-								type="checkbox"
-								required
-								className="mt-1"
-								checked={field.state.value}
-								onChange={(event) => field.handleChange(event.target.checked)}
-							/>
-							{t(
+						<InspectionConfirmation
+							checked={field.state.value}
+							onChange={field.handleChange}
+							required
+							label={t(
 								"drivingLicence.check.verifier",
 								"I confirm that the recorded facts and individual class results reflect my inspection.",
 							)}
-						</label>
+						/>
 					)}
 				</form.Field>
 			</fieldset>
@@ -419,5 +319,118 @@ export function OriginalDrivingCheckForm({
 				)}
 			</form.Subscribe>
 		</form>
+	);
+}
+
+function InspectionClassRow({
+	inspected,
+	chosen,
+	onSelect,
+	onChange,
+}: {
+	inspected: DrivingCheckClass;
+	chosen: boolean;
+	onSelect: (chosen: boolean) => void;
+	onChange: (values: Partial<DrivingCheckClass>) => void;
+}) {
+	const { t } = useTranslate();
+	const id = useId();
+	return (
+		<div className="rounded-md border p-3">
+			<label className="flex items-center gap-2 font-medium">
+				<input
+					type="checkbox"
+					checked={chosen}
+					onChange={(event) => onSelect(event.target.checked)}
+				/>
+				{inspected.code}
+			</label>
+			{chosen && (
+				<div className="mt-3 grid gap-3 sm:grid-cols-3">
+					<label className="space-y-1 text-sm" htmlFor={`${id}-result`}>
+						<span>{t("drivingLicence.check.result", "Result")}</span>
+						<select
+							id={`${id}-result`}
+							className="h-9 w-full rounded-md border bg-background px-2 focus-visible:ring-2 focus-visible:ring-ring"
+							value={inspected.result}
+							onChange={(event) =>
+								onChange({ result: event.target.value as CheckResult })
+							}
+						>
+							<option value="successful">
+								{t("drivingLicence.result.successful", "Successful")}
+							</option>
+							<option value="unsuccessful">
+								{t("drivingLicence.result.unsuccessful", "Unsuccessful")}
+							</option>
+							<option value="inconclusive">
+								{t("drivingLicence.result.inconclusive", "Inconclusive")}
+							</option>
+						</select>
+					</label>
+					<label className="space-y-1 text-sm" htmlFor={`${id}-expiry`}>
+						<span>
+							{t(
+								"drivingLicence.check.classExpiry",
+								"Class expiry (if applicable)",
+							)}
+						</span>
+						<Input
+							id={`${id}-expiry`}
+							name={`${inspected.code}-expiry`}
+							autoComplete="off"
+							type="date"
+							value={inspected.expiryDate ?? ""}
+							onChange={(event) =>
+								onChange({ expiryDate: event.target.value || null })
+							}
+						/>
+					</label>
+					<label className="space-y-1 text-sm" htmlFor={`${id}-restrictions`}>
+						<span>
+							{t(
+								"drivingLicence.check.restrictions",
+								"Necessary driving restrictions",
+							)}
+						</span>
+						<Input
+							id={`${id}-restrictions`}
+							name={`${inspected.code}-restrictions`}
+							autoComplete="off"
+							maxLength={300}
+							value={inspected.restrictions}
+							onChange={(event) =>
+								onChange({ restrictions: event.target.value })
+							}
+						/>
+					</label>
+				</div>
+			)}
+		</div>
+	);
+}
+
+function InspectionConfirmation({
+	checked,
+	onChange,
+	label,
+	required,
+}: {
+	checked: boolean;
+	onChange: (checked: boolean) => void;
+	label: string;
+	required?: boolean;
+}) {
+	return (
+		<label className="flex items-start gap-3 text-sm">
+			<input
+				type="checkbox"
+				required={required}
+				className="mt-1"
+				checked={checked}
+				onChange={(event) => onChange(event.target.checked)}
+			/>
+			{label}
+		</label>
 	);
 }

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { db } from "@/db";
@@ -52,7 +52,7 @@ const calendarDate = z
 		}
 	});
 export const originalCheckInput = z
-	.object({
+	.strictObject({
 		employeeId: z.uuid(),
 		commandId: z.uuid(),
 		originalInspected: z.boolean(),
@@ -63,20 +63,18 @@ export const originalCheckInput = z
 		documentExpiresOn: calendarDate,
 		classes: z
 			.array(
-				z
-					.object({
-						code: z.enum(LICENCE_CLASSES),
-						result: z.enum(["successful", "unsuccessful", "inconclusive"]),
-						expiryDate: calendarDate.nullable(),
-						restrictions: z.string().trim().max(300),
-					})
-					.strict(),
+				z.strictObject({
+					code: z.enum(LICENCE_CLASSES),
+					result: z.enum(["successful", "unsuccessful", "inconclusive"]),
+					expiryDate: calendarDate.nullable(),
+					restrictions: z.string().trim().max(300),
+				}),
 			)
 			.min(1)
 			.max(LICENCE_CLASSES.length),
 		failureScope: z.enum(["classes", "document", "person"]).default("classes"),
 	})
-	.strict()
+
 	.superRefine((value, ctx) => {
 		if (new Set(value.classes.map((c) => c.code)).size !== value.classes.length)
 			ctx.addIssue({
@@ -192,9 +190,18 @@ export async function currentDrivingEmployment(
 			id: employee.id,
 			userId: employee.userId,
 			hasAccess: employeeHasOrganizationAccess(now),
+			periodId: employeeEmploymentPeriod.id,
 			lastDepartureAt: sql<Date | null>`(SELECT max(d.cutoff_at) FROM employee_departure d WHERE d.organization_id=${organizationId} AND d.employee_id=${employeeId} AND d.status='effective')`,
 		})
 		.from(employee)
+		.leftJoin(
+			employeeEmploymentPeriod,
+			and(
+				eq(employeeEmploymentPeriod.employeeId, employee.id),
+				eq(employeeEmploymentPeriod.organizationId, employee.organizationId),
+				eq(employeeEmploymentPeriod.status, "open"),
+			),
+		)
 		.where(
 			and(
 				eq(employee.organizationId, organizationId),
@@ -202,18 +209,7 @@ export async function currentDrivingEmployment(
 			),
 		)
 		.limit(1);
-	const [period] = await database
-		.select({ id: employeeEmploymentPeriod.id })
-		.from(employeeEmploymentPeriod)
-		.where(
-			and(
-				eq(employeeEmploymentPeriod.organizationId, organizationId),
-				eq(employeeEmploymentPeriod.employeeId, employeeId),
-				eq(employeeEmploymentPeriod.status, "open"),
-			),
-		)
-		.limit(1);
-	return target ? { ...target, periodId: period?.id ?? null } : null;
+	return target ?? null;
 }
 export async function readEffectiveDrivingAuthorization(
 	database: DrivingLicenceDatabase,
@@ -397,6 +393,7 @@ export async function completeDrivingLicenceCheck(
 			employeeId: input.employeeId,
 			now,
 		});
+		// One PostgreSQL transaction has one connection: keep its queries ordered.
 		const [policy] = await tx
 			.select()
 			.from(drivingLicencePolicy)
@@ -449,14 +446,13 @@ export async function completeDrivingLicenceCheck(
 			now,
 			input.employeeId,
 		);
-		const [targetIdentity] = await tx
-			.select({ name: user.name })
+		const identities = await tx
+			.select({ id: user.id, name: user.name })
 			.from(user)
-			.where(eq(user.id, employment.userId));
-		const [verifierIdentity] = await tx
-			.select({ name: user.name })
-			.from(user)
-			.where(eq(user.id, actor.userId));
+			.where(inArray(user.id, [employment.userId, actor.userId]));
+		const namesById = new Map(
+			identities.map((identity) => [identity.id, identity.name]),
+		);
 		const [check] = await tx
 			.insert(drivingLicenceCheck)
 			.values({
@@ -465,8 +461,8 @@ export async function completeDrivingLicenceCheck(
 				employmentPeriodId: employment.periodId,
 				verifierEmployeeId: actor.employeeId,
 				verifierUserId: actor.userId,
-				employeeName: targetIdentity?.name ?? input.employeeId,
-				verifierName: verifierIdentity?.name ?? actor.userId,
+				employeeName: namesById.get(employment.userId) ?? input.employeeId,
+				verifierName: namesById.get(actor.userId) ?? actor.userId,
 				controlledAt: dateFromInstant(now),
 				commandId: input.commandId,
 				policyVersion: policy.version,
