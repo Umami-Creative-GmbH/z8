@@ -5,10 +5,17 @@ import { db } from "@/db";
 import { stripeEvent, subscription } from "@/db/schema";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
+import { monthlyRecurringRevenueCents, SEAT_PRICES_CENTS } from "@/lib/billing/seat-prices";
 
-// Prices in EUR (net)
-const MONTHLY_PRICE = 4;
-const YEARLY_PRICE_PER_MONTH = 3;
+/** A seat price in EUR (net), from the shared seat price table. */
+function seatPricing(type: keyof typeof SEAT_PRICES_CENTS) {
+	const prices = SEAT_PRICES_CENTS[type];
+	return {
+		monthly: prices.month / 100,
+		yearlyPerMonth: prices.yearPerMonth / 100,
+		yearlyTotal: (prices.yearPerMonth * 12) / 100,
+	};
+}
 
 /**
  * Get platform billing metrics for superadmin dashboard
@@ -87,20 +94,21 @@ export async function GET() {
 			.select({
 				billingInterval: subscription.billingInterval,
 				totalSeats: sql<number>`COALESCE(SUM(${subscription.currentSeats}), 0)`,
+				kioskSeats: sql<number>`COALESCE(SUM(${subscription.currentKioskSeats}), 0)`,
 			})
 			.from(subscription)
 			.where(eq(subscription.status, "active"))
 			.groupBy(subscription.billingInterval);
 
-		let mrr = 0;
-		for (const row of revenueBreakdown) {
-			const seats = Number(row.totalSeats) || 0;
-			if (row.billingInterval === "year") {
-				mrr += seats * YEARLY_PRICE_PER_MONTH;
-			} else {
-				mrr += seats * MONTHLY_PRICE;
-			}
-		}
+		// Full seats and kiosk seats at their own prices (#886); summing per interval keeps the total.
+		const mrrCents = monthlyRecurringRevenueCents(
+			revenueBreakdown.map((row) => ({
+				billingInterval: row.billingInterval,
+				currentSeats: Number(row.totalSeats) || 0,
+				currentKioskSeats: Number(row.kioskSeats) || 0,
+			})),
+		);
+		const mrr = mrrCents / 100;
 
 		// Trial conversion rate (last 30 days)
 		const thirtyDaysAgo = new Date();
@@ -131,7 +139,7 @@ export async function GET() {
 		const paymentFailureCount = paymentFailures?.count ?? 0;
 
 		// Calculate ARR (Annual Recurring Revenue)
-		const arr = mrr * 12;
+		const arr = (mrrCents * 12) / 100;
 
 		// Yearly subscribers breakdown
 		const [yearlyData] = await db
@@ -176,9 +184,8 @@ export async function GET() {
 
 				// Pricing reference
 				pricing: {
-					monthly: MONTHLY_PRICE,
-					yearlyPerMonth: YEARLY_PRICE_PER_MONTH,
-					yearlyTotal: YEARLY_PRICE_PER_MONTH * 12,
+					...seatPricing("full"),
+					kiosk: seatPricing("kiosk"),
 					currency: "EUR",
 				},
 			},

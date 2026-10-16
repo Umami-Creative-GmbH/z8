@@ -52,6 +52,8 @@
       "monthlyBilling": "Monthly billing",
       "yearlyBilling": "Yearly billing"
     },
+    "kioskSeatPriceMonthly": "Kiosk seats (kiosk-only employees): €{price}/seat/month",
+    "kioskSeatPriceYearly": "Kiosk seats (kiosk-only employees): €{price}/seat/month, €{total}/seat billed annually",
     "manageBilling": "Manage Billing",
     "monthlyCost": "Monthly Cost",
     "nextBilling": "Next Billing",

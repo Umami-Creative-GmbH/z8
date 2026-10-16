@@ -6,7 +6,7 @@ icon: CreditCard
 
 ## Overview
 
-z8 uses a seat-based subscription model powered by Stripe. Each active employee in your organization counts as one seat. Organization administrators can manage their subscription, view billing details, and access invoices from the billing settings page.
+z8 uses a seat-based subscription model powered by Stripe. Each member of your organization counts as one seat: a full seat, or a cheaper kiosk seat for employees who only clock at kiosks. Organization administrators can manage their subscription, view billing details, and access invoices from the billing settings page.
 
 <Callout type="info">
 Billing is only available when enabled for your z8 instance. Self-hosted deployments can operate without billing by leaving the `BILLING_ENABLED` flag disabled.
@@ -16,17 +16,33 @@ Billing is only available when enabled for your z8 instance. Self-hosted deploym
 
 z8 offers two billing cycles with per-seat pricing:
 
-| Plan | Price per Seat | Billing Cycle | Savings |
-|------|---------------|---------------|---------|
-| **Monthly** | €4 / month | Billed monthly | - |
-| **Yearly** | €3 / month | Billed annually | 25% discount |
+| Plan | Full Seat | Kiosk Seat | Billing Cycle | Savings |
+|------|-----------|------------|---------------|---------|
+| **Monthly** | €4 / month | €2 / month | Billed monthly | - |
+| **Yearly** | €3 / month (€36 / year) | €1.50 / month (€18 / year) | Billed annually | 25% discount |
+
+Prices are net prices; VAT is added where applicable.
 
 ### What Counts as a Seat
 
-- Each **active employee** in your organization counts as one seat
-- Deactivated employees do not count toward your seat total
+- Each **approved member** of your organization counts as one seat
+- Demo accounts do not count
+- Employees who have left do not count once their departure takes effect or their last day has passed
 - Seat counts are automatically synchronized when employees are added or removed
 - The billing amount adjusts automatically based on your current seat count
+
+### Kiosk Seats
+
+A **kiosk-only employee** has no sign-in and clocks only at kiosks. Their seat is a **kiosk seat**, billed at the kiosk seat price: €2 per month, or €1.50 per month billed yearly. Every other seat is a **full seat** at the ordinary price.
+
+- z8 recognizes kiosk-only employees by the reserved placeholder address z8 gives them instead of an email. You don't mark kiosk seats yourself.
+- Kiosk seats and full seats are separate lines on the same subscription and invoice, and both follow your billing cycle.
+- **Adding a real email to a kiosk-only employee makes them a full seat at once**, as soon as you save the email, not when they accept their invitation. Stripe prorates the difference.
+- The billing page lists full seats and kiosk seats with their prices, and the total matches your invoice.
+
+<Callout type="info">
+Kiosk seats are available once both kiosk seat prices are configured (`STRIPE_PRICE_KIOSK_MONTHLY_ID` and `STRIPE_PRICE_KIOSK_YEARLY_ID`, on the web app and the worker). Until then, every seat is billed as a full seat and the kiosk seat price is not shown. On a deployment that already has subscriptions, run `pnpm billing:reconcile-kiosk-seats` once after setting both prices, so existing subscriptions move their kiosk-only employees to kiosk seats. The deployment README (`deploy/README.md`) describes this step.
+</Callout>
 
 ## Free Trial
 
@@ -46,6 +62,7 @@ New organizations receive a **14-day free trial** when billing is enabled:
 2. View your current subscription details:
    - Current plan (Monthly or Yearly)
    - Number of active seats
+   - Full seats and kiosk seats, each with its price and subtotal
    - Monthly cost
    - Next billing date
    - Trial status (if applicable)
@@ -111,6 +128,7 @@ z8 automatically keeps your seat count in sync with Stripe:
 
 - When you **add an employee**, the seat count increases and billing adjusts pro-rata
 - When you **deactivate an employee**, the seat count decreases at the next billing cycle
+- When you **add an email to a kiosk-only employee**, one kiosk seat becomes a full seat
 - The **current seat count** is always visible on the billing page
 
 ## Platform Administration
@@ -123,7 +141,7 @@ Platform administrators have access to a billing overview dashboard at **Admin >
 
 | Metric | Description |
 |--------|-------------|
-| **Monthly Recurring Revenue** | Total MRR across all organizations |
+| **Monthly Recurring Revenue** | Total MRR across all organizations, with full seats and kiosk seats at their own prices |
 | **Licensed Seats** | Total seats across all active subscriptions |
 | **Active Subscriptions** | Number of organizations with active subscriptions |
 | **Past Due** | Organizations with failed payments |
@@ -146,4 +164,4 @@ No. Self-hosted z8 deployments can disable billing entirely. All features are av
 
 ### How are seats counted for part-time employees?
 
-All active employees count as one seat regardless of hours worked or employment type. Only deactivated employees are excluded from the count.
+Every employee counts as one seat regardless of hours worked or employment type. The only price difference is between full seats and kiosk seats: an employee who only clocks at kiosks and has no sign-in is a kiosk seat.

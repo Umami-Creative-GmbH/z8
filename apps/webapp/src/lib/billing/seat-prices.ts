@@ -59,3 +59,43 @@ export function seatCost(input: {
 export function formatEuroCents(cents: number): string {
 	return (cents / 100).toFixed(2);
 }
+
+/**
+ * Euro cents as a display amount: whole euros without decimals ("2", "18"),
+ * anything else with two ("1.50"), never "1.5". Format before passing to a
+ * translation placeholder.
+ */
+export function formatEuroAmount(cents: number, locale = "en"): string {
+	const fractionDigits = cents % 100 === 0 ? 0 : 2;
+	return new Intl.NumberFormat(locale, {
+		minimumFractionDigits: fractionDigits,
+		maximumFractionDigits: fractionDigits,
+	}).format(cents / 100);
+}
+
+/** A stored subscription's seat counts: `currentSeats` is the total, `currentKioskSeats` the kiosk part. */
+export type SubscriptionSeats = {
+	billingInterval: string | null;
+	currentSeats: number;
+	currentKioskSeats: number;
+};
+
+/**
+ * Monthly recurring revenue of subscriptions, in cents: each subscription's
+ * full seats and kiosk seats at its interval's prices. Any interval other than
+ * "year" bills monthly. Rows written while kiosk seats are off have no kiosk
+ * seats, so every seat prices as a full seat.
+ */
+export function monthlyRecurringRevenueCents(subscriptions: readonly SubscriptionSeats[]): number {
+	return subscriptions.reduce((sum, subscription) => {
+		const kioskSeats = subscription.currentKioskSeats;
+		return (
+			sum +
+			seatCost({
+				interval: subscription.billingInterval === "year" ? "year" : "month",
+				fullSeats: subscription.currentSeats - kioskSeats,
+				kioskSeats,
+			}).totalPerMonthCents
+		);
+	}, 0);
+}

@@ -52,6 +52,8 @@
       "monthlyBilling": "Monatliche Abrechnung",
       "yearlyBilling": "Jährliche Abrechnung"
     },
+    "kioskSeatPriceMonthly": "Kiosk-Sitzplätze (Nur-Kiosk-Mitarbeitende): €{price}/Sitzplatz/Monat",
+    "kioskSeatPriceYearly": "Kiosk-Sitzplätze (Nur-Kiosk-Mitarbeitende): €{price}/Sitzplatz/Monat, €{total}/Sitzplatz jährlich abgerechnet",
     "manageBilling": "Abrechnung verwalten",
     "monthlyCost": "Monatliche Kosten",
     "nextBilling": "Nächste Abrechnung",

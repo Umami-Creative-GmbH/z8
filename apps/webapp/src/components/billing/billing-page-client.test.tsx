@@ -281,6 +281,57 @@ describe("BillingPageClient", () => {
 		});
 	});
 
+	describe("kiosk seat prices in the pricing cards (#886)", () => {
+		const localTrial = {
+			id: "sub_123",
+			hasStripeCustomer: false,
+			hasStripeSubscription: false,
+			status: "trialing",
+			isActive: true,
+			isTrialing: true,
+			isPastDue: false,
+			currentSeats: 4,
+			trialEnd: "2026-06-01T00:00:00.000Z",
+			currentPeriodEnd: null,
+			billingInterval: null,
+			cancelAt: null,
+		};
+
+		it("shows the kiosk seat price on both cards before the first subscription", () => {
+			render(
+				<BillingPageClient
+					subscription={null}
+					accessResult={{ canAccess: true }}
+					isOwner={true}
+					kioskSeatsEnabled={true}
+				/>,
+			);
+
+			expect(screen.getAllByText(/^Kiosk seats \(kiosk-only employees\)/)).toHaveLength(2);
+		});
+
+		it("shows the kiosk seat price on the trial upgrade cards", () => {
+			render(
+				<BillingPageClient
+					subscription={localTrial}
+					accessResult={{ canAccess: true, status: "trialing" }}
+					isOwner={true}
+					kioskSeatsEnabled={true}
+				/>,
+			);
+
+			expect(screen.getAllByText(/^Kiosk seats \(kiosk-only employees\)/)).toHaveLength(2);
+		});
+
+		it("hides the kiosk seat price while kiosk seats are off", () => {
+			render(
+				<BillingPageClient subscription={null} accessResult={{ canAccess: true }} isOwner={true} />,
+			);
+
+			expect(screen.queryByText(/^Kiosk seats \(kiosk-only employees\)/)).toBeNull();
+		});
+	});
+
 	it("uses localized checkout keys and fallbacks", () => {
 		const source = readFileSync(
 			join(

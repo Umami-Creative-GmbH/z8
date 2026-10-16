@@ -14,6 +14,7 @@ import { BillingPricingCards } from "./pricing-cards";
 function BillingPageClientContent({
 	subscription,
 	accessResult,
+	kioskSeatsEnabled = false,
 }: BillingPageClientProps) {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
@@ -69,6 +70,7 @@ function BillingPageClientContent({
 								"Choose a billing cadence now. Your paid subscription starts only after the remaining trial period.",
 							)}
 							isLoading={isCheckoutLoading}
+							kioskSeatsEnabled={kioskSeatsEnabled}
 							onSubscribe={startCheckout}
 							title={t("billing.choosePlan", "Choose Your Plan")}
 						/>
@@ -82,6 +84,7 @@ function BillingPageClientContent({
 							yearly: t("billing.startTrial", "Start Free Trial"),
 						}}
 						isLoading={isCheckoutLoading}
+						kioskSeatsEnabled={kioskSeatsEnabled}
 						onSubscribe={startCheckout}
 					/>
 					<p className="text-center text-sm text-muted-foreground">

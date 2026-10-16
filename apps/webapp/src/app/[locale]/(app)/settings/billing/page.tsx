@@ -71,6 +71,7 @@ async function BillingSettingsContent() {
 		trialEndsAt: accessResult.trialEndsAt?.toISOString() ?? null,
 		status: accessResult.status,
 	};
+	const kioskSeatsOn = kioskSeatsEnabled(stripeConfigFromEnv());
 
 	return (
 		<BillingPageClient
@@ -86,7 +87,7 @@ async function BillingSettingsContent() {
 							isPastDue: subscription.isPastDue,
 							currentSeats: subscription.currentSeats,
 							currentKioskSeats: subscription.currentKioskSeats,
-							kioskSeatsEnabled: kioskSeatsEnabled(stripeConfigFromEnv()),
+							kioskSeatsEnabled: kioskSeatsOn,
 							trialEnd: subscription.trialEnd?.toISOString() ?? null,
 							currentPeriodEnd:
 								subscription.currentPeriodEnd?.toISOString() ?? null,
@@ -97,6 +98,7 @@ async function BillingSettingsContent() {
 			}
 			accessResult={serializedAccessResult}
 			isOwner={memberRecord?.role === "owner"}
+			kioskSeatsEnabled={kioskSeatsOn}
 		/>
 	);
 }

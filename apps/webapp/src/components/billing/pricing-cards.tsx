@@ -2,11 +2,12 @@
 
 import { IconCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { SEAT_PRICES_CENTS } from "@/lib/billing/seat-prices";
+import { formatEuroAmount, SEAT_PRICES_CENTS } from "@/lib/billing/seat-prices";
 
 export const MONTHLY_PRICE = SEAT_PRICES_CENTS.full.month / 100;
 export const YEARLY_PRICE_PER_MONTH = SEAT_PRICES_CENTS.full.yearPerMonth / 100;
@@ -16,6 +17,8 @@ interface BillingPricingCardsProps {
 	buttonLabels: { monthly: string; yearly: string };
 	description?: string;
 	isLoading: boolean;
+	/** Whether kiosk seats are on (both kiosk prices configured); only then the kiosk seat price shows. */
+	kioskSeatsEnabled?: boolean;
 	onSubscribe: (interval: "month" | "year") => void;
 	title?: string;
 }
@@ -24,10 +27,14 @@ export function BillingPricingCards({
 	buttonLabels,
 	description,
 	isLoading,
+	kioskSeatsEnabled = false,
 	onSubscribe,
 	title,
 }: BillingPricingCardsProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	// Formatted before translation so the yearly kiosk price reads "1.50" (or "1,50"), never "1.5".
+	const kioskPrice = (cents: number) => formatEuroAmount(cents, locale);
 
 	return (
 		<Card>
@@ -56,6 +63,15 @@ export function BillingPricingCards({
 								<span className="text-muted-foreground">
 									{t("billing.perSeatMonth", "/seat/month")}
 								</span>
+								{kioskSeatsEnabled ? (
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"billing.kioskSeatPriceMonthly",
+											"Kiosk seats (kiosk-only employees): €{price}/seat/month",
+											{ price: kioskPrice(SEAT_PRICES_CENTS.kiosk.month) },
+										)}
+									</p>
+								) : null}
 							</div>
 							<ul className="space-y-2 text-sm">
 								<li className="flex items-center gap-2">
@@ -101,6 +117,18 @@ export function BillingPricingCards({
 										price: YEARLY_PRICE_TOTAL,
 									})}
 								</p>
+								{kioskSeatsEnabled ? (
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"billing.kioskSeatPriceYearly",
+											"Kiosk seats (kiosk-only employees): €{price}/seat/month, €{total}/seat billed annually",
+											{
+												price: kioskPrice(SEAT_PRICES_CENTS.kiosk.yearPerMonth),
+												total: kioskPrice(SEAT_PRICES_CENTS.kiosk.yearPerMonth * 12),
+											},
+										)}
+									</p>
+								) : null}
 							</div>
 							<ul className="space-y-2 text-sm">
 								<li className="flex items-center gap-2">
