@@ -287,3 +287,7 @@ _Avoid_: Work location (that is office, home or remote), location supervisor
 **Pairing code**:
 A single-use, short-lived code with which an admin enrols a kiosk.
 _Avoid_: Activation code, link code
+
+**Offline kiosk clocking**:
+Kiosk clocking captured while the kiosk cannot reach Z8, kept on the kiosk as frozen clock commands and confirmed only once they reach Z8, where the kiosk PIN is checked. Only kiosks switched to offline mode in adopted organizations clock offline.
+_Avoid_: Offline mode (alone), queued kiosk clocking, offline employee
