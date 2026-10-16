@@ -1,12 +1,13 @@
 /**
  * Integrations category of a personal data export (#811, #1170): calendar
  * connections (provider and account), the employee's own calendar feeds,
- * linked Slack, Teams, Telegram and Discord accounts, and whether a kiosk PIN
- * is set. No withheld data: both kinds of export hold the same rows.
+ * linked Slack, Teams, Telegram and Discord accounts, whether a kiosk PIN is
+ * set, and the kiosk PIN attempts and unlocks its lockout is judged from
+ * (#1288). No withheld data: both kinds of export hold the same rows.
  *
  * Never exported: calendar tokens and OAuth details, sync errors, synced
- * events, calendar feed secret digests, team feeds, PIN hashes and lockout
- * counters, OAuth state, link codes, chat conversations and bot messages.
+ * events, calendar feed secret digests, team feeds, PIN hashes, OAuth state,
+ * link codes, chat conversations and bot messages.
  */
 
 import { and, asc, eq } from "drizzle-orm";
@@ -14,6 +15,7 @@ import {
 	calendarConnection,
 	discordUserMapping,
 	employeeKioskPin,
+	employeeKioskPinEvent,
 	icsFeed,
 	slackUserMapping,
 	teamsUserMapping,
@@ -52,6 +54,8 @@ const ICS_FEED_COLUMNS = [
 	"revoked_at",
 ] as const;
 
+const KIOSK_PIN_EVENT_COLUMNS = ["event", "occurred_at", "offline"] as const;
+
 const CHAT_ACCOUNT_COLUMNS = [
 	"platform",
 	"account_id",
@@ -77,7 +81,7 @@ async function collectIntegrations(
 	const { organizationId, employeeId } = scope;
 	await loadSubjectEmployee(database, scope);
 
-	const [calendars, feeds, { pin, pinSetters }, chatAccounts] = await Promise.all([
+	const [calendars, feeds, { pin, pinSetters }, chatAccounts, pinEvents] = await Promise.all([
 		database
 			.select({
 				provider: calendarConnection.provider,
@@ -134,6 +138,20 @@ async function collectIntegrations(
 			return { pin, pinSetters };
 		})(),
 		chatAccountRows(database, scope),
+		database
+			.select({
+				kind: employeeKioskPinEvent.kind,
+				occurredAt: employeeKioskPinEvent.occurredAt,
+				offline: employeeKioskPinEvent.offline,
+			})
+			.from(employeeKioskPinEvent)
+			.where(
+				and(
+					eq(employeeKioskPinEvent.organizationId, organizationId),
+					eq(employeeKioskPinEvent.employeeId, employeeId),
+				),
+			)
+			.orderBy(asc(employeeKioskPinEvent.occurredAt), asc(employeeKioskPinEvent.sequence)),
 	]);
 
 	return {
@@ -172,6 +190,15 @@ async function collectIntegrations(
 				set_at: instantText(pin?.updatedAt),
 				set_by: nameOf(pinSetters, pin?.setByUserId),
 			}),
+			tablePart(
+				"kiosk_pin_events",
+				KIOSK_PIN_EVENT_COLUMNS,
+				pinEvents.map((row) => ({
+					event: row.kind,
+					occurred_at: instantText(row.occurredAt),
+					offline: row.offline,
+				})),
+			),
 		],
 	};
 }
