@@ -38,6 +38,46 @@ const styles = StyleSheet.create({
 		color: "#64748b",
 	},
 });
+const evidenceLabels: Readonly<Record<string, string>> = {
+	authorized: "Authorization granted",
+	suspended: "Authorization suspended",
+	global_suspension: "All driving authorization suspended",
+	reinstated: "Authorization explicitly reinstated after a new check",
+	impediment_reported: "Driving impediment reported",
+	impediment_resolved: "Reported impediment explicitly resolved",
+	ended: "Driving authorization ended",
+	policy_interval_changed: "Authorization deadline changed by interval policy",
+	policy_recalculated: "Authorization deadline recalculated by policy",
+	documentIssuedOn: "Document issue date",
+	documentExpiresOn: "Document expiry date",
+	classExpiry: "Class expiry date",
+	classRestrictions: "Driving restrictions",
+	classResult: "Inspected class outcome",
+	recording_error: "Recording error",
+	missing_detail: "Missing detail",
+	check_overdue: "Routine check overdue",
+	document_expired: "Document expired",
+	class_expired: "Class expired",
+	evidence_corrected:
+		"Corrected evidence requires a new check and explicit reinstatement",
+	check_unsuccessful: "Inspected class unsuccessful",
+	check_inconclusive: "Inspected class inconclusive",
+	person_impediment: "Person-wide impediment",
+	document_impediment: "Document-wide impediment",
+	employment_ended: "Employment ended",
+	new_original_and_impediment_resolved:
+		"New original check and impediment explicitly resolved",
+};
+const evidenceLabel = (value: string) =>
+	evidenceLabels[value] ?? value.replaceAll("_", " ");
+function reasonLabel(value: string | null) {
+	if (!value) return "None recorded";
+	if (value.startsWith("reported_impediment:"))
+		return `Reported impediment reference: ${value.slice("reported_impediment:".length)}`;
+	if (value.startsWith("policy_version:"))
+		return `Policy version ${value.slice("policy_version:".length)}`;
+	return evidenceLabel(value);
+}
 const yes = (value: boolean) => (value ? "Confirmed" : "Not confirmed");
 const context = (inPeriod: boolean) =>
 	inPeriod
@@ -130,9 +170,9 @@ export async function renderDrivingLicenceEvidencePdf(
 						<Text>
 							Recorded: {s.recordedAt} | Author: {s.authorName}
 						</Text>
-						<Text>Reason: {s.reason}</Text>
+						<Text>Reason: {evidenceLabel(s.reason)}</Text>
 						<Text>
-							Correction: {s.correction.field}
+							Correction: {evidenceLabel(s.correction.field)}
 							{"classCode" in s.correction
 								? ` (class ${s.correction.classCode})`
 								: ""}
@@ -151,7 +191,7 @@ export async function renderDrivingLicenceEvidencePdf(
 				{history.events.map((e) => (
 					<View key={e.id} style={styles.block} wrap={false}>
 						<Text style={styles.label}>
-							{e.kind} -{" "}
+							{evidenceLabel(e.kind)} -{" "}
 							{e.classCode ? `class ${e.classCode}` : "Person / document"}
 						</Text>
 						<Text style={styles.context}>{context(e.inPeriod)}</Text>
@@ -165,7 +205,7 @@ export async function renderDrivingLicenceEvidencePdf(
 								? (actorNames.get(e.actorUserId) ?? "Unknown actor")
 								: "System"}
 						</Text>
-						<Text>Reason / linked report: {e.reason ?? "None recorded"}</Text>
+						<Text>Reason / linked report: {reasonLabel(e.reason)}</Text>
 						<Text>Supporting check: {e.checkId ?? "None"}</Text>
 					</View>
 				))}

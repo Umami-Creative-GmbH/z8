@@ -59,6 +59,7 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	deletePrivateObject: async () => {},
 	deletePrivateObjectVersions: async () => {},
 }));
+const retention = await import("./retention-actions");
 const impediments = await import("./impediment-actions");
 const checks = await import("./check-actions");
 const policy = await import("./policy-actions");
@@ -241,6 +242,31 @@ it("includes retained driving evidence in the real employee and former-employee 
 	});
 	if (!report.success) throw new Error(report.error);
 	harness.userId = verifier.userId;
+	harness.userId = fixture.ownerUserId;
+	const hold = await retention.placeDrivingLicenceHoldAction({
+		checkId,
+		caseReference: "CASE-2026-1319",
+		preservationReason:
+			"Preserve inspection evidence for the specific contested vehicle incident",
+	});
+	if (!hold.success) throw new Error(hold.error);
+	const released = await retention.placeDrivingLicenceHoldAction({
+		checkId,
+		caseReference: "CASE-2026-CLOSED",
+		preservationReason:
+			"Preserve inspection evidence until the specific dispute has been resolved",
+	});
+	if (!released.success) throw new Error(released.error);
+	expect(
+		(
+			await retention.releaseDrivingLicenceHoldAction({
+				holdId: released.data.holdId,
+				releaseReason:
+					"The specific dispute has been resolved and preservation is no longer needed",
+			})
+		).success,
+	).toBe(true);
+	harness.userId = verifier.userId;
 	const { drivingLicenceCheck } = await import(
 		"@/db/schema/driving-licence-checks"
 	);
@@ -338,6 +364,29 @@ it("includes retained driving evidence in the real employee and former-employee 
 				resolved_at: null,
 			}),
 		]);
+		expect(data.retention).toEqual([
+			expect.objectContaining({
+				check_id: checkId,
+				retention_started_at: "2026-01-31T11:00:00Z",
+			}),
+		]);
+		expect(data.legal_holds).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					id: hold.data.holdId,
+					case_reference: "CASE-2026-1319",
+					placed_by: "Lifecycle",
+					released_at: null,
+				}),
+				expect.objectContaining({
+					id: released.data.holdId,
+					case_reference: "CASE-2026-CLOSED",
+					released_by: "Lifecycle",
+					release_reason:
+						"The specific dispute has been resolved and preservation is no longer needed",
+				}),
+			]),
+		);
 		expect(data.reminder_tasks).toEqual([
 			expect.objectContaining({
 				kind: "personal_reminder",
@@ -501,10 +550,12 @@ it("includes period corrections, report resolution and explicit reinstatement wi
 	const bytes = new Uint8Array(await response.arrayBuffer());
 	const text = pdfText(bytes);
 	expect(text).toContain("Earlier context supporting the selected period");
-	expect(text).toContain("impediment_reported");
-	expect(text).toContain("impediment_resolved");
-	expect(text).toContain("reinstated");
-	expect(text).toContain("documentIssuedOn: 2020-05-02");
+	expect(text).toContain("Driving impediment reported");
+	expect(text).toContain("Reported impediment explicitly resolved");
+	expect(text).toContain(
+		"Authorization explicitly reinstated after a new check",
+	);
+	expect(text).toContain("Document issue date: 2020-05-02");
 	expect(text).toContain("Document issued: 2020-05-01");
 	expect(text).not.toContain("2019-09-09");
 	expect(text).not.toContain("Unrelated Secret Person");

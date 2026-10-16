@@ -2,6 +2,38 @@ import type { PersonalDataFieldGuide } from "../collector";
 
 export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 	const fields = {
+		retention_started_at: t(
+			"personalDataExport.readme.fields.drivingLicence.retentionStartedAt",
+			"When this retained check stopped supporting active driving authorization; the organization's justified retention period runs from this UTC instant, and an active case hold postpones deletion.",
+		),
+		case_reference: t(
+			"personalDataExport.readme.fields.drivingLicence.caseReference",
+			"The reference of the specific legal case requiring preservation of this check.",
+		),
+		preservation_reason: t(
+			"personalDataExport.readme.fields.drivingLicence.preservationReason",
+			"The documented reason why this specific case requires preservation of the check.",
+		),
+		placed_at: t(
+			"personalDataExport.readme.fields.drivingLicence.placedAt",
+			"When this legal hold was placed, as a UTC instant.",
+		),
+		placed_by: t(
+			"personalDataExport.readme.fields.drivingLicence.placedBy",
+			"The name of the administrator who placed this case hold.",
+		),
+		released_at: t(
+			"personalDataExport.readme.fields.drivingLicence.releasedAt",
+			"When this case hold was released; empty while it remains active.",
+		),
+		released_by: t(
+			"personalDataExport.readme.fields.drivingLicence.releasedBy",
+			"The name of the administrator who released this case hold.",
+		),
+		release_reason: t(
+			"personalDataExport.readme.fields.drivingLicence.releaseReason",
+			"The documented reason this case hold was released; release resumes ordinary policy-governed deletion.",
+		),
 		occasion_key: t(
 			"personalDataExport.readme.fields.drivingLicence.occasionKey",
 			"The occurrence this reminder or task concerns; it identifies the employment, class deadline or suspension without copying the check.",
@@ -252,6 +284,20 @@ export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 		),
 	};
 	return {
+		retention: {
+			summary: t(
+				"personalDataExport.readme.fields.drivingLicence.retention.summary",
+				"The retention starting point of each retained check; empty while the check still supports active authorization. Exporting does not extend retention.",
+			),
+			fields,
+		},
+		legal_holds: {
+			summary: t(
+				"personalDataExport.readme.fields.drivingLicence.legalHolds.summary",
+				"Specific-case preservation holds on your retained checks, including attribution, release and justification.",
+			),
+			fields,
+		},
 		reminder_tasks: {
 			summary: t(
 				"personalDataExport.readme.fields.drivingLicence.reminderTasks.summary",

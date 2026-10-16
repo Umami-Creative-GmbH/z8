@@ -12,6 +12,10 @@ import {
 	drivingLicencePolicyRevision,
 } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceReminderDelivery } from "@/db/schema/driving-licence-reminders";
+import {
+	drivingLicenceHold,
+	drivingLicenceRetention,
+} from "@/db/schema/driving-licence-retention";
 import { drivingLicenceTask } from "@/db/schema/driving-licence-tasks";
 import { drivingLicenceVerifierGrant } from "@/db/schema/driving-licence-verifiers";
 import { type PersonalDataCollector, tablePart } from "../collector";
@@ -152,6 +156,34 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 					)
 					.orderBy(asc(drivingLicencePolicyRevision.version))
 			: [];
+		const retention = await database
+			.select({
+				checkId: drivingLicenceRetention.checkId,
+				retentionStartedAt: drivingLicenceRetention.retentionStartedAt,
+			})
+			.from(drivingLicenceRetention)
+			.innerJoin(
+				drivingLicenceCheck,
+				and(
+					eq(drivingLicenceCheck.id, drivingLicenceRetention.checkId),
+					eq(drivingLicenceCheck.organizationId, organizationId),
+					eq(drivingLicenceCheck.employeeId, employeeId),
+				),
+			)
+			.where(eq(drivingLicenceRetention.organizationId, organizationId));
+		const holds = await database
+			.select({ hold: drivingLicenceHold })
+			.from(drivingLicenceHold)
+			.innerJoin(
+				drivingLicenceCheck,
+				and(
+					eq(drivingLicenceCheck.id, drivingLicenceHold.checkId),
+					eq(drivingLicenceCheck.organizationId, organizationId),
+					eq(drivingLicenceCheck.employeeId, employeeId),
+				),
+			)
+			.where(eq(drivingLicenceHold.organizationId, organizationId))
+			.orderBy(asc(drivingLicenceHold.placedAt));
 		const tasks = await database
 			.select()
 			.from(drivingLicenceTask)
@@ -188,6 +220,7 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 			)
 			.orderBy(asc(drivingLicenceReminderDelivery.createdAt));
 		const name = await userNameLookup(database, [
+			...holds.flatMap(({ hold }) => [hold.placedBy, hold.releasedBy]),
 			...tasks.map((t) => t.completedBy),
 			...deliveries.map((d) => d.recipientUserId),
 			...events.map((e) => e.actorUserId),
@@ -199,6 +232,39 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 		return {
 			category: "driving_licence",
 			parts: [
+				tablePart(
+					"retention",
+					["check_id", "retention_started_at"],
+					retention.map((r) => ({
+						check_id: r.checkId,
+						retention_started_at: instantText(r.retentionStartedAt),
+					})),
+				),
+				tablePart(
+					"legal_holds",
+					[
+						"id",
+						"check_id",
+						"case_reference",
+						"preservation_reason",
+						"placed_at",
+						"placed_by",
+						"released_at",
+						"released_by",
+						"release_reason",
+					],
+					holds.map(({ hold: h }) => ({
+						id: h.id,
+						check_id: h.checkId,
+						case_reference: h.caseReference,
+						preservation_reason: h.preservationReason,
+						placed_at: instantText(h.placedAt),
+						placed_by: name(h.placedBy),
+						released_at: instantText(h.releasedAt),
+						released_by: name(h.releasedBy),
+						release_reason: h.releaseReason,
+					})),
+				),
 				tablePart(
 					"reminder_tasks",
 					[
