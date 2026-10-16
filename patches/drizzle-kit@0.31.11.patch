@@ -1,0 +1,280 @@
+diff --git a/api.js b/api.js
+index f4ecb91959f62fc938416a0585458c0a710af161..41a646b043a5a945516c42027907cf16998d7b2f 100644
+--- a/api.js
++++ b/api.js
+@@ -19049,10 +19049,11 @@ var init_snapshotsDiffer = __esm({
+       jsonStatements.push(...jsonTableAlternations);
+       jsonStatements.push(...jsonAddedCompositePKs);
+       jsonStatements.push(...jsonAddColumnsStatemets);
+-      jsonStatements.push(...jsonCreateReferencesForCreatedTables);
++      // PostgreSQL requires referenced unique indexes before foreign keys.
+       jsonStatements.push(...jsonCreateIndexesForCreatedTables);
+-      jsonStatements.push(...jsonCreatedReferencesForAlteredTables);
+       jsonStatements.push(...jsonCreateIndexesFoAlteredTables);
++      jsonStatements.push(...jsonCreateReferencesForCreatedTables);
++      jsonStatements.push(...jsonCreatedReferencesForAlteredTables);
+       jsonStatements.push(...jsonDropColumnsStatemets);
+       jsonStatements.push(...jsonAlteredCompositePKs);
+       jsonStatements.push(...jsonAddedUniqueConstraints);
+@@ -23174,12 +23175,16 @@ WHERE
+             const checkConstraints = {};
+             const tableResponse = await getColumnsInfoQuery({ schema: tableSchema, table: tableName, db });
+             const tableConstraints = await db.query(
+-              `SELECT c.column_name, c.data_type, constraint_type, constraint_name, constraint_schema
++              `SELECT c.column_name, c.data_type, tc.constraint_type, tc.constraint_name, tc.constraint_schema
+       FROM information_schema.table_constraints tc
+-      JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name)
+-      JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema
+-        AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
+-      WHERE tc.table_name = '${tableName}' and constraint_schema = '${tableSchema}';`
++      JOIN information_schema.key_column_usage AS kcu
++        ON kcu.constraint_catalog = tc.constraint_catalog
++        AND kcu.constraint_schema = tc.constraint_schema AND kcu.constraint_name = tc.constraint_name
++        AND kcu.table_schema = tc.table_schema AND kcu.table_name = tc.table_name
++      JOIN information_schema.columns AS c ON c.table_schema = tc.table_schema
++        AND c.table_name = tc.table_name AND c.column_name = kcu.column_name
++      WHERE tc.table_name = '${tableName}' and tc.constraint_schema = '${tableSchema}'
++      ORDER BY tc.constraint_name, kcu.ordinal_position;`
+             );
+             const tableChecks = await db.query(`SELECT 
+ 						tc.constraint_name,
+@@ -23236,16 +23241,18 @@ WHERE
+             pg_catalog.pg_constraint con
+             JOIN pg_catalog.pg_class rel ON rel.oid = con.conrelid
+             JOIN pg_catalog.pg_namespace nsp ON nsp.oid = con.connamespace
+-            LEFT JOIN pg_catalog.pg_attribute att ON att.attnum = ANY (con.conkey)
++            JOIN LATERAL unnest(con.conkey, con.confkey) WITH ORDINALITY AS key_columns(source_attnum, target_attnum, ordinality) ON true
++            LEFT JOIN pg_catalog.pg_attribute att ON att.attnum = key_columns.source_attnum
+               AND att.attrelid = con.conrelid
+             LEFT JOIN pg_catalog.pg_class frel ON frel.oid = con.confrelid
+             LEFT JOIN pg_catalog.pg_namespace fnsp ON fnsp.oid = frel.relnamespace
+-            LEFT JOIN pg_catalog.pg_attribute fatt ON fatt.attnum = ANY (con.confkey)
++            LEFT JOIN pg_catalog.pg_attribute fatt ON fatt.attnum = key_columns.target_attnum
+               AND fatt.attrelid = con.confrelid
+           WHERE
+             nsp.nspname = '${tableSchema}'
+             AND rel.relname = '${tableName}'
+-            AND con.contype IN ('f');`
++            AND con.contype IN ('f')
++          ORDER BY con.conname, key_columns.ordinality;`
+             );
+             foreignKeysCount += tableForeignKeys.length;
+             if (progressCallback) {
+@@ -23452,7 +23459,7 @@ WHERE
+             ON i.indrelid = a.attrelid AND k.attnum = a.attnum
+           JOIN pg_namespace c on c.oid = t.relnamespace
+         LEFT JOIN pg_am AS am ON ic.relam = am.oid
+-        JOIN pg_opclass opc ON opc.oid = ANY(i.indclass)
++        JOIN pg_opclass opc ON opc.oid = i.indclass[k.i-1]
+       WHERE
+       c.nspname = '${tableSchema}' AND
+       t.relname = '${tableName}';`
+@@ -23466,7 +23473,7 @@ WHERE
+         FROM
+           pg_stat_user_indexes idx
+         LEFT JOIN
+-          pg_constraint con ON con.conindid = idx.indexrelid
++          pg_constraint con ON con.conindid = idx.indexrelid AND con.contype IN ('p', 'u', 'x')
+         WHERE idx.relname = '${tableName}' and schemaname = '${tableSchema}'
+         group by index_name, table_name,schemaname, generated_by_constraint;`
+             );
+diff --git a/api.mjs b/api.mjs
+index a940272dfb05accf57a472c46c52652ec9ad0080..c50d5e17aa249ac939fba4d718f9b38ccfd48637 100644
+--- a/api.mjs
++++ b/api.mjs
+@@ -19054,10 +19054,11 @@ var init_snapshotsDiffer = __esm({
+       jsonStatements.push(...jsonTableAlternations);
+       jsonStatements.push(...jsonAddedCompositePKs);
+       jsonStatements.push(...jsonAddColumnsStatemets);
+-      jsonStatements.push(...jsonCreateReferencesForCreatedTables);
++      // PostgreSQL requires referenced unique indexes before foreign keys.
+       jsonStatements.push(...jsonCreateIndexesForCreatedTables);
+-      jsonStatements.push(...jsonCreatedReferencesForAlteredTables);
+       jsonStatements.push(...jsonCreateIndexesFoAlteredTables);
++      jsonStatements.push(...jsonCreateReferencesForCreatedTables);
++      jsonStatements.push(...jsonCreatedReferencesForAlteredTables);
+       jsonStatements.push(...jsonDropColumnsStatemets);
+       jsonStatements.push(...jsonAlteredCompositePKs);
+       jsonStatements.push(...jsonAddedUniqueConstraints);
+@@ -23190,12 +23191,16 @@ WHERE
+             const checkConstraints = {};
+             const tableResponse = await getColumnsInfoQuery({ schema: tableSchema, table: tableName, db });
+             const tableConstraints = await db.query(
+-              `SELECT c.column_name, c.data_type, constraint_type, constraint_name, constraint_schema
++              `SELECT c.column_name, c.data_type, tc.constraint_type, tc.constraint_name, tc.constraint_schema
+       FROM information_schema.table_constraints tc
+-      JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name)
+-      JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema
+-        AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
+-      WHERE tc.table_name = '${tableName}' and constraint_schema = '${tableSchema}';`
++      JOIN information_schema.key_column_usage AS kcu
++        ON kcu.constraint_catalog = tc.constraint_catalog
++        AND kcu.constraint_schema = tc.constraint_schema AND kcu.constraint_name = tc.constraint_name
++        AND kcu.table_schema = tc.table_schema AND kcu.table_name = tc.table_name
++      JOIN information_schema.columns AS c ON c.table_schema = tc.table_schema
++        AND c.table_name = tc.table_name AND c.column_name = kcu.column_name
++      WHERE tc.table_name = '${tableName}' and tc.constraint_schema = '${tableSchema}'
++      ORDER BY tc.constraint_name, kcu.ordinal_position;`
+             );
+             const tableChecks = await db.query(`SELECT 
+ 						tc.constraint_name,
+@@ -23252,16 +23257,18 @@ WHERE
+             pg_catalog.pg_constraint con
+             JOIN pg_catalog.pg_class rel ON rel.oid = con.conrelid
+             JOIN pg_catalog.pg_namespace nsp ON nsp.oid = con.connamespace
+-            LEFT JOIN pg_catalog.pg_attribute att ON att.attnum = ANY (con.conkey)
++            JOIN LATERAL unnest(con.conkey, con.confkey) WITH ORDINALITY AS key_columns(source_attnum, target_attnum, ordinality) ON true
++            LEFT JOIN pg_catalog.pg_attribute att ON att.attnum = key_columns.source_attnum
+               AND att.attrelid = con.conrelid
+             LEFT JOIN pg_catalog.pg_class frel ON frel.oid = con.confrelid
+             LEFT JOIN pg_catalog.pg_namespace fnsp ON fnsp.oid = frel.relnamespace
+-            LEFT JOIN pg_catalog.pg_attribute fatt ON fatt.attnum = ANY (con.confkey)
++            LEFT JOIN pg_catalog.pg_attribute fatt ON fatt.attnum = key_columns.target_attnum
+               AND fatt.attrelid = con.confrelid
+           WHERE
+             nsp.nspname = '${tableSchema}'
+             AND rel.relname = '${tableName}'
+-            AND con.contype IN ('f');`
++            AND con.contype IN ('f')
++          ORDER BY con.conname, key_columns.ordinality;`
+             );
+             foreignKeysCount += tableForeignKeys.length;
+             if (progressCallback) {
+@@ -23468,7 +23475,7 @@ WHERE
+             ON i.indrelid = a.attrelid AND k.attnum = a.attnum
+           JOIN pg_namespace c on c.oid = t.relnamespace
+         LEFT JOIN pg_am AS am ON ic.relam = am.oid
+-        JOIN pg_opclass opc ON opc.oid = ANY(i.indclass)
++        JOIN pg_opclass opc ON opc.oid = i.indclass[k.i-1]
+       WHERE
+       c.nspname = '${tableSchema}' AND
+       t.relname = '${tableName}';`
+@@ -23482,7 +23489,7 @@ WHERE
+         FROM
+           pg_stat_user_indexes idx
+         LEFT JOIN
+-          pg_constraint con ON con.conindid = idx.indexrelid
++          pg_constraint con ON con.conindid = idx.indexrelid AND con.contype IN ('p', 'u', 'x')
+         WHERE idx.relname = '${tableName}' and schemaname = '${tableSchema}'
+         group by index_name, table_name,schemaname, generated_by_constraint;`
+             );
+diff --git a/bin.cjs b/bin.cjs
+index c28f3e4732f0d911237dc1eb1bc466cefaa1b976..1d8f5c82e3608225aa9b412f72ab0912abb9e2ba 100644
+--- a/bin.cjs
++++ b/bin.cjs
+@@ -17732,12 +17732,16 @@ WHERE
+             const checkConstraints = {};
+             const tableResponse = await getColumnsInfoQuery({ schema: tableSchema, table: tableName, db });
+             const tableConstraints = await db.query(
+-              `SELECT c.column_name, c.data_type, constraint_type, constraint_name, constraint_schema
++              `SELECT c.column_name, c.data_type, tc.constraint_type, tc.constraint_name, tc.constraint_schema
+       FROM information_schema.table_constraints tc
+-      JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name)
+-      JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema
+-        AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
+-      WHERE tc.table_name = '${tableName}' and constraint_schema = '${tableSchema}';`
++      JOIN information_schema.key_column_usage AS kcu
++        ON kcu.constraint_catalog = tc.constraint_catalog
++        AND kcu.constraint_schema = tc.constraint_schema AND kcu.constraint_name = tc.constraint_name
++        AND kcu.table_schema = tc.table_schema AND kcu.table_name = tc.table_name
++      JOIN information_schema.columns AS c ON c.table_schema = tc.table_schema
++        AND c.table_name = tc.table_name AND c.column_name = kcu.column_name
++      WHERE tc.table_name = '${tableName}' and tc.constraint_schema = '${tableSchema}'
++      ORDER BY tc.constraint_name, kcu.ordinal_position;`
+             );
+             const tableChecks = await db.query(`SELECT 
+ 						tc.constraint_name,
+@@ -17794,16 +17798,18 @@ WHERE
+             pg_catalog.pg_constraint con
+             JOIN pg_catalog.pg_class rel ON rel.oid = con.conrelid
+             JOIN pg_catalog.pg_namespace nsp ON nsp.oid = con.connamespace
+-            LEFT JOIN pg_catalog.pg_attribute att ON att.attnum = ANY (con.conkey)
++            JOIN LATERAL unnest(con.conkey, con.confkey) WITH ORDINALITY AS key_columns(source_attnum, target_attnum, ordinality) ON true
++            LEFT JOIN pg_catalog.pg_attribute att ON att.attnum = key_columns.source_attnum
+               AND att.attrelid = con.conrelid
+             LEFT JOIN pg_catalog.pg_class frel ON frel.oid = con.confrelid
+             LEFT JOIN pg_catalog.pg_namespace fnsp ON fnsp.oid = frel.relnamespace
+-            LEFT JOIN pg_catalog.pg_attribute fatt ON fatt.attnum = ANY (con.confkey)
++            LEFT JOIN pg_catalog.pg_attribute fatt ON fatt.attnum = key_columns.target_attnum
+               AND fatt.attrelid = con.confrelid
+           WHERE
+             nsp.nspname = '${tableSchema}'
+             AND rel.relname = '${tableName}'
+-            AND con.contype IN ('f');`
++            AND con.contype IN ('f')
++          ORDER BY con.conname, key_columns.ordinality;`
+             );
+             foreignKeysCount += tableForeignKeys.length;
+             if (progressCallback) {
+@@ -18010,7 +18016,7 @@ WHERE
+             ON i.indrelid = a.attrelid AND k.attnum = a.attnum
+           JOIN pg_namespace c on c.oid = t.relnamespace
+         LEFT JOIN pg_am AS am ON ic.relam = am.oid
+-        JOIN pg_opclass opc ON opc.oid = ANY(i.indclass)
++        JOIN pg_opclass opc ON opc.oid = i.indclass[k.i-1]
+       WHERE
+       c.nspname = '${tableSchema}' AND
+       t.relname = '${tableName}';`
+@@ -18024,7 +18030,7 @@ WHERE
+         FROM
+           pg_stat_user_indexes idx
+         LEFT JOIN
+-          pg_constraint con ON con.conindid = idx.indexrelid
++          pg_constraint con ON con.conindid = idx.indexrelid AND con.contype IN ('p', 'u', 'x')
+         WHERE idx.relname = '${tableName}' and schemaname = '${tableSchema}'
+         group by index_name, table_name,schemaname, generated_by_constraint;`
+             );
+@@ -29038,10 +29044,11 @@ var init_snapshotsDiffer = __esm({
+       jsonStatements.push(...jsonTableAlternations);
+       jsonStatements.push(...jsonAddedCompositePKs);
+       jsonStatements.push(...jsonAddColumnsStatemets);
+-      jsonStatements.push(...jsonCreateReferencesForCreatedTables);
++      // PostgreSQL requires referenced unique indexes before foreign keys.
+       jsonStatements.push(...jsonCreateIndexesForCreatedTables);
+-      jsonStatements.push(...jsonCreatedReferencesForAlteredTables);
+       jsonStatements.push(...jsonCreateIndexesFoAlteredTables);
++      jsonStatements.push(...jsonCreateReferencesForCreatedTables);
++      jsonStatements.push(...jsonCreatedReferencesForAlteredTables);
+       jsonStatements.push(...jsonDropColumnsStatemets);
+       jsonStatements.push(...jsonAlteredCompositePKs);
+       jsonStatements.push(...jsonAddedUniqueConstraints);
+@@ -83403,16 +83410,18 @@ WHERE
+ 					    pg_catalog.pg_constraint con
+ 					    JOIN pg_catalog.pg_class rel ON rel.oid = con.conrelid
+ 					    JOIN pg_catalog.pg_namespace nsp ON nsp.oid = con.connamespace
+-					    LEFT JOIN pg_catalog.pg_attribute att ON att.attnum = ANY (con.conkey)
++					    JOIN LATERAL unnest(con.conkey, con.confkey) WITH ORDINALITY AS key_columns(source_attnum, target_attnum, ordinality) ON true
++            LEFT JOIN pg_catalog.pg_attribute att ON att.attnum = key_columns.source_attnum
+ 					      AND att.attrelid = con.conrelid
+ 					    LEFT JOIN pg_catalog.pg_class frel ON frel.oid = con.confrelid
+ 					    LEFT JOIN pg_catalog.pg_namespace fnsp ON fnsp.oid = frel.relnamespace
+-					    LEFT JOIN pg_catalog.pg_attribute fatt ON fatt.attnum = ANY (con.confkey)
++					    LEFT JOIN pg_catalog.pg_attribute fatt ON fatt.attnum = key_columns.target_attnum
+ 					      AND fatt.attrelid = con.confrelid
+ 					  WHERE
+ 					    nsp.nspname = '${tableSchema}'
+ 					    AND rel.relname = '${tableName}'
+-					    AND con.contype IN ('f');`
++					    AND con.contype IN ('f')
++          ORDER BY con.conname, key_columns.ordinality;`
+             );
+             foreignKeysCount += tableForeignKeys.length;
+             if (progressCallback) {
+@@ -83594,7 +83603,7 @@ WHERE
+             ON i.indrelid = a.attrelid AND k.attnum = a.attnum
+           JOIN pg_namespace c on c.oid = t.relnamespace
+         LEFT JOIN pg_am AS am ON ic.relam = am.oid
+-        JOIN pg_opclass opc ON opc.oid = ANY(i.indclass)
++        JOIN pg_opclass opc ON opc.oid = i.indclass[k.i-1]
+       WHERE
+       c.nspname = '${tableSchema}' AND
+       t.relname = '${tableName}';`
+@@ -83608,7 +83617,7 @@ WHERE
+         FROM
+           pg_stat_user_indexes idx
+         LEFT JOIN
+-          pg_constraint con ON con.conindid = idx.indexrelid
++          pg_constraint con ON con.conindid = idx.indexrelid AND con.contype IN ('p', 'u', 'x')
+         WHERE idx.relname = '${tableName}' and schemaname = '${tableSchema}'
+         group by index_name, table_name,schemaname, generated_by_constraint;`
+             );

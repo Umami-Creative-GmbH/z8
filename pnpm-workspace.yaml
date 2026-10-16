@@ -58,3 +58,6 @@ overrides:
   pako: 1.0.11
   # ExcelJS and BotBuilder still request versions affected by GHSA-w5hq-g745-h8pq.
   uuid: 14.0.0
+
+patchedDependencies:
+  drizzle-kit@0.31.11: patches/drizzle-kit@0.31.11.patch
