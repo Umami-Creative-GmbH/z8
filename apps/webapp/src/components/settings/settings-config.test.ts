@@ -26,6 +26,7 @@ describe("settings visibility tiers", () => {
 			"wellness",
 			"position-stamps",
 			"my-data",
+			"my-driving-licence",
 		]);
 	});
 
