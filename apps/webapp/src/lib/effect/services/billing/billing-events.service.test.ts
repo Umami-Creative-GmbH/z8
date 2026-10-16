@@ -11,6 +11,7 @@ import { BillingEventsService, BillingEventsServiceLive } from "./billing-events
 import { SeatSyncService } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
 import {
+	type CreateSubscriptionParams,
 	SubscriptionService,
 	type UpdateSubscriptionFromStripeParams,
 } from "./subscription.service";
@@ -83,6 +84,9 @@ describe("BillingEventsService", () => {
 	const getCustomer = vi.fn();
 	const getInvoiceForPaymentIntent = vi.fn();
 	const updateFromStripe = vi.fn((_: UpdateSubscriptionFromStripeParams) => Effect.void);
+	const getSubscription = vi.fn();
+	const createSubscription = vi.fn((_: CreateSubscriptionParams) => Effect.void);
+	const syncSeatsForOrganization = vi.fn((_: string) => Effect.succeed(1));
 	const appLayer = Layer.mergeAll(
 		DatabaseServiceLive,
 		Layer.succeed(
@@ -100,7 +104,7 @@ describe("BillingEventsService", () => {
 				getCustomer,
 				createCheckoutSession: vi.fn(),
 				createPortalSession: vi.fn(),
-				getSubscription: vi.fn(),
+				getSubscription,
 				updateSubscription: vi.fn(),
 				cancelSubscription: vi.fn(),
 				getInvoiceForPaymentIntent,
@@ -115,7 +119,7 @@ describe("BillingEventsService", () => {
 				getByStripeSubscriptionId: vi.fn(),
 				requireActiveSubscription: vi.fn(),
 				ensureLocalTrial: vi.fn(),
-				create: vi.fn(),
+				create: createSubscription,
 				updateFromStripe,
 				updateSeatCount: vi.fn(),
 				setStripeCustomerId: vi.fn(),
@@ -125,7 +129,7 @@ describe("BillingEventsService", () => {
 		Layer.succeed(
 			SeatSyncService,
 			SeatSyncService.of({
-				syncSeatsForOrganization: vi.fn(),
+				syncSeatsForOrganization,
 				handleMemberAdded: vi.fn(),
 				handleMemberRemoved: vi.fn(),
 				getCurrentSeatCount: vi.fn(),
@@ -534,12 +538,133 @@ describe("BillingEventsService", () => {
 		});
 	});
 
+	describe("full seat item found by price", () => {
+		/** An add-on at a price billing does not know, listed before the seat item. */
+		const unknownItem = {
+			id: "si_addon_123",
+			object: "subscription_item",
+			quantity: 9,
+			current_period_start: 1_700_000_000,
+			current_period_end: 1_700_086_400,
+			price: { id: "price_addon_123", object: "price", recurring: { interval: "month" } },
+		} as Stripe.SubscriptionItem;
+		const yearlySeatItem = {
+			id: "si_seat_123",
+			object: "subscription_item",
+			quantity: 4,
+			current_period_start: 1_769_472_000,
+			current_period_end: 1_801_008_000,
+			price: { id: "price_yearly_123", object: "price", recurring: { interval: "year" } },
+		} as Stripe.SubscriptionItem;
+		const withItems = (...data: Stripe.SubscriptionItem[]) =>
+			createStripeSubscription({
+				items: {
+					object: "list",
+					data,
+					has_more: false,
+					url: "/v1/subscription_items?subscription=sub_test_123",
+				},
+			});
+
+		it("reads price, interval and period of an updated subscription from the seat item", async () => {
+			await processEvent({
+				type: "customer.subscription.updated",
+				stripeSub: withItems(unknownItem, yearlySeatItem),
+			});
+
+			expect(updateFromStripe).toHaveBeenCalledWith(
+				expect.objectContaining({
+					stripePriceId: "price_yearly_123",
+					billingInterval: "year",
+					currentPeriodStart: new Date(1_769_472_000 * 1000),
+					currentPeriodEnd: new Date(1_801_008_000 * 1000),
+				}),
+			);
+		});
+
+		it("reads the period of a deleted subscription from the seat item", async () => {
+			await processEvent({
+				type: "customer.subscription.deleted",
+				stripeSub: withItems(unknownItem, yearlySeatItem),
+			});
+
+			expect(updateFromStripe).toHaveBeenCalledWith(
+				expect.objectContaining({
+					status: "canceled",
+					currentPeriodStart: new Date(1_769_472_000 * 1000),
+					currentPeriodEnd: new Date(1_801_008_000 * 1000),
+				}),
+			);
+		});
+
+		it("reads the period of a resumed subscription from the seat item", async () => {
+			await processEvent({
+				type: "customer.subscription.resumed",
+				stripeSub: withItems(unknownItem, yearlySeatItem),
+			});
+
+			expect(setValues).toHaveBeenCalledWith(
+				expect.objectContaining({
+					status: "active",
+					currentPeriodStart: new Date(1_769_472_000 * 1000),
+					currentPeriodEnd: new Date(1_801_008_000 * 1000),
+				}),
+			);
+		});
+
+		it("creates the local subscription from the seat item on checkout", async () => {
+			getSubscription.mockReturnValue(Effect.succeed(withItems(unknownItem, yearlySeatItem)));
+
+			await processEvent({
+				type: "checkout.session.completed",
+				object: {
+					id: "cs_test_123",
+					object: "checkout.session",
+					metadata: { organizationId: "org_123" },
+					subscription: "sub_test_123",
+					customer: "cus_test_123",
+				} as Stripe.Checkout.Session,
+			});
+
+			expect(getSubscription).toHaveBeenCalledWith("sub_test_123");
+			expect(createSubscription).toHaveBeenCalledWith(
+				expect.objectContaining({
+					organizationId: "org_123",
+					stripePriceId: "price_yearly_123",
+					billingInterval: "year",
+					currentPeriodStart: new Date(1_769_472_000 * 1000),
+					currentPeriodEnd: new Date(1_801_008_000 * 1000),
+					seats: 4,
+				}),
+			);
+			expect(syncSeatsForOrganization).toHaveBeenCalledWith("org_123");
+		});
+
+		it("treats a subscription without a seat item like one without items", async () => {
+			await processEvent({ type: "customer.subscription.updated", stripeSub: withItems() });
+			await processEvent({
+				type: "customer.subscription.updated",
+				stripeSub: withItems(unknownItem),
+			});
+
+			const [withoutItems, unknownOnly] = updateFromStripe.mock.calls.map(([params]) => params);
+			expect(unknownOnly).toMatchObject({ stripePriceId: undefined, billingInterval: "month" });
+			expect(unknownOnly.currentPeriodStart).not.toEqual(new Date(1_700_000_000 * 1000));
+			expect({ ...unknownOnly, currentPeriodStart: null, currentPeriodEnd: null }).toEqual({
+				...withoutItems,
+				currentPeriodStart: null,
+				currentPeriodEnd: null,
+			});
+		});
+	});
+
 	async function processEvent({
 		type,
 		stripeSub,
 		object = stripeSub,
 	}: {
 		type:
+			| "checkout.session.completed"
 			| "customer.subscription.updated"
 			| "customer.subscription.deleted"
 			| "customer.subscription.trial_will_end"
@@ -550,7 +675,7 @@ describe("BillingEventsService", () => {
 			| "invoice.finalized"
 			| "payment_intent.payment_failed";
 		stripeSub?: Stripe.Subscription;
-		object?: Stripe.Subscription | Stripe.Invoice | Stripe.PaymentIntent;
+		object?: Stripe.Subscription | Stripe.Invoice | Stripe.PaymentIntent | Stripe.Checkout.Session;
 	}) {
 		await Effect.runPromise(
 			Effect.gen(function* () {

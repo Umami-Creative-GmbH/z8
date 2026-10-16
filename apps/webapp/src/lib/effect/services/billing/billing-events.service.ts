@@ -13,6 +13,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import type { DatabaseError, StripeError } from "@/lib/effect/errors";
 import { withStripeSubscriptionMutation } from "@/lib/effect/services/billing/billing-configuration";
+import { findFullSeatItem } from "@/lib/effect/services/billing/seat-items";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import {
@@ -269,8 +270,9 @@ export const BillingEventsServiceLive = Layer.effect(
 				// Fetch subscription details from Stripe
 				const stripeSub = yield* stripeService.getSubscription(subscriptionId);
 
-				// Determine billing interval
-				const priceInterval = stripeSub.items.data[0]?.price?.recurring?.interval;
+				// Interval, period, price and seats come from the full seat item
+				const item = findFullSeatItem(stripeSub, stripeService.config);
+				const priceInterval = item?.price?.recurring?.interval;
 				const billingInterval = priceInterval === "year" ? "year" : "month";
 
 				// Get customer ID
@@ -282,17 +284,17 @@ export const BillingEventsServiceLive = Layer.effect(
 					organizationId,
 					stripeCustomerId: customerId,
 					stripeSubscriptionId: stripeSub.id,
-					stripePriceId: stripeSub.items.data[0]?.price?.id ?? "",
+					stripePriceId: item?.price?.id ?? "",
 					status: stripeSub.status,
 					billingInterval,
 					trialEnd: stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null,
-					currentPeriodStart: stripeSub.items.data[0]?.current_period_start
-						? new Date(stripeSub.items.data[0].current_period_start * 1000)
+					currentPeriodStart: item?.current_period_start
+						? new Date(item.current_period_start * 1000)
 						: new Date(),
-					currentPeriodEnd: stripeSub.items.data[0]?.current_period_end
-						? new Date(stripeSub.items.data[0].current_period_end * 1000)
+					currentPeriodEnd: item?.current_period_end
+						? new Date(item.current_period_end * 1000)
 						: new Date(),
-					seats: stripeSub.items.data[0]?.quantity ?? 1,
+					seats: item?.quantity ?? 1,
 				});
 
 				// Sync initial seat count
@@ -312,8 +314,8 @@ export const BillingEventsServiceLive = Layer.effect(
 			stripeSub: Stripe.Subscription,
 		): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
-				const priceInterval = stripeSub.items.data[0]?.price?.recurring?.interval;
-				const item = stripeSub.items.data[0];
+				const item = findFullSeatItem(stripeSub, stripeService.config);
+				const priceInterval = item?.price?.recurring?.interval;
 
 				yield* subscriptionService.updateFromStripe({
 					stripeSubscriptionId: stripeSub.id,
@@ -340,7 +342,7 @@ export const BillingEventsServiceLive = Layer.effect(
 			stripeSub: Stripe.Subscription,
 		): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
-				const item = stripeSub.items.data[0];
+				const item = findFullSeatItem(stripeSub, stripeService.config);
 
 				yield* subscriptionService.updateFromStripe({
 					stripeSubscriptionId: stripeSub.id,
@@ -506,7 +508,7 @@ export const BillingEventsServiceLive = Layer.effect(
 			stripeSub: Stripe.Subscription,
 		): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
-				const item = stripeSub.items.data[0];
+				const item = findFullSeatItem(stripeSub, stripeService.config);
 				const customerEmail = yield* resolveCustomerEmail(stripeSub.customer);
 
 				yield* dbService.query("billingEvents.resumeSubscription", async () => {
