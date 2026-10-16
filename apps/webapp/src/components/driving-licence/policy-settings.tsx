@@ -12,11 +12,13 @@ import {
 	TFormLabel,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
+import type { AuthorizationStatus } from "@/lib/organization/driving-licence/check-types";
 import type { DrivingLicencePolicyInput } from "@/lib/organization/driving-licence/policy";
 import {
 	enrollDrivingLicenceEmployeeAction,
 	saveDrivingLicencePolicyAction,
 } from "@/lib/organization/driving-licence/policy-actions";
+import { DrivingStatusLabel } from "./check-evidence";
 export interface DrivingLicenceSettingsData {
 	policy: DrivingLicencePolicyInput | null;
 	employees: {
@@ -24,7 +26,7 @@ export interface DrivingLicenceSettingsData {
 		firstName: string | null;
 		lastName: string | null;
 	}[];
-	participants: { employeeId: string }[];
+	participants: { employeeId: string; status?: AuthorizationStatus }[];
 }
 export function DrivingLicenceSettings({
 	data,
@@ -380,10 +382,14 @@ function DriverEnrollment({
 								<span className="min-w-0 break-words font-medium">{name}</span>
 								{enrolled.has(employee.id) ? (
 									<span className="rounded-md bg-muted px-3 py-1 text-sm">
-										{t(
-											"drivingLicence.notChecked",
-											"Not yet checked — no driving authorization",
-										)}
+										<DrivingStatusLabel
+											status={
+												data.participants.find(
+													(participant) =>
+														participant.employeeId === employee.id,
+												)?.status ?? "not_yet_checked"
+											}
+										/>
 									</span>
 								) : (
 									<Button
