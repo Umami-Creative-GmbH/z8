@@ -137,6 +137,12 @@ export function QuickBreakPopover({
 								setMinutes(event.target.value);
 								setError(null);
 							}}
+							onKeyDown={(event) => {
+								if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+									event.preventDefault();
+									void handleApply();
+								}
+							}}
 							aria-invalid={!!error}
 							aria-describedby={error ? errorId : undefined}
 							disabled={controlsDisabled}

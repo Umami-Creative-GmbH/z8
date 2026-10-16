@@ -33,6 +33,47 @@ describe("QuickBreakPopover", () => {
 		await waitFor(() => expect(onAddBreak).toHaveBeenCalledWith(30));
 	});
 
+	it("submits the entered duration once when Enter is pressed", async () => {
+		const pending = deferredResult();
+		const onAddBreak = vi.fn().mockReturnValue(pending.promise);
+
+		render(
+			<QuickBreakPopover onAddBreak={onAddBreak} isAddingBreak={false} isDisabled={false} t={t} />,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Add break" }));
+		const input = screen.getByLabelText("Break duration in minutes");
+		fireEvent.change(input, { target: { value: "15" } });
+		fireEvent.keyDown(input, { key: "Enter" });
+		fireEvent.keyDown(input, { key: "Enter" });
+
+		expect(onAddBreak).toHaveBeenCalledExactlyOnceWith(15);
+
+		pending.resolve({ success: true });
+		await waitFor(() =>
+			expect(screen.queryByText("Record a break ending now and stay clocked in.")).toBeNull(),
+		);
+	});
+
+	it("validates the duration when Enter is pressed", async () => {
+		const onAddBreak = vi.fn().mockResolvedValue({ success: true });
+
+		render(
+			<QuickBreakPopover onAddBreak={onAddBreak} isAddingBreak={false} isDisabled={false} t={t} />,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Add break" }));
+		const input = screen.getByLabelText("Break duration in minutes");
+		fireEvent.change(input, { target: { value: "0" } });
+		fireEvent.keyDown(input, { key: "Enter" });
+
+		expect(await screen.findByRole("alert")).toHaveProperty(
+			"textContent",
+			"Enter a break duration of at least 1 minute.",
+		);
+		expect(onAddBreak).not.toHaveBeenCalled();
+	});
+
 	it("renders an icon-only trigger with an accessible label", () => {
 		render(
 			<QuickBreakPopover
