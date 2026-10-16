@@ -1695,6 +1695,13 @@
       "when": 1805558400000,
       "tag": "0241_vehicle_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 243,
+      "version": "7",
+      "when": 1805731200000,
+      "tag": "20261016_driving_licence_verifiers",
+      "breakpoints": true
     }
   ]
 }
