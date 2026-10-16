@@ -244,6 +244,63 @@ describe("kiosk seats through seat sync", () => {
 		]);
 	});
 
+	it("moves one seat from kiosk to full when a kiosk-only employee gets an email, and audits it", async () => {
+		const { organizationId, kioskOnly } = await subscribedOrganization({
+			ordinary: 2,
+			kioskOnly: 3,
+		});
+		const state: StripeState = { interval: "month", full: 2, kiosk: 3, updates: [] };
+		const stripe = fakeStripe(state);
+		await run(stripe, (service) => service.syncSeatsForOrganization(organizationId));
+		const upgraded = kioskOnly[0] as SeededEmployee;
+		await fixture.pool.query(`update "user" set email = $2 where id = $1`, [
+			upgraded.userId,
+			`upgraded-${randomUUID()}@example.com`,
+		]);
+
+		await run(stripe, (service) =>
+			service.handleKioskSeatUpgraded(organizationId, upgraded.memberId, upgraded.userId),
+		);
+
+		expect(state.updates.map((update) => update.params.items)).toEqual([
+			[
+				{ id: "si_full", quantity: 3 },
+				{ id: "si_kiosk", quantity: 2 },
+			],
+		]);
+		expect(await localSeats(organizationId)).toEqual({ current_seats: 5, current_kiosk_seats: 2 });
+		expect(await audits(organizationId)).toEqual([
+			{
+				action: "kiosk_seat_upgraded",
+				previous_seats: 5,
+				new_seats: 5,
+				previous_kiosk_seats: 3,
+				new_kiosk_seats: 2,
+				stripe_reported: true,
+			},
+		]);
+	});
+
+	it("leaves Stripe and the seat audit alone on an email upgrade while kiosk seats are off", async () => {
+		const { organizationId, kioskOnly } = await subscribedOrganization({
+			ordinary: 2,
+			kioskOnly: 1,
+		});
+		const state: StripeState = { interval: "month", full: 3, kiosk: null, updates: [] };
+		const upgraded = kioskOnly[0] as SeededEmployee;
+		await fixture.pool.query(`update "user" set email = $2 where id = $1`, [
+			upgraded.userId,
+			`upgraded-${randomUUID()}@example.com`,
+		]);
+
+		await run(fakeStripe(state, { ...PRICES, priceKioskMonthlyId: "" }), (service) =>
+			service.handleKioskSeatUpgraded(organizationId, upgraded.memberId, upgraded.userId),
+		);
+
+		expect(state.updates).toEqual([]);
+		expect(await audits(organizationId)).toEqual([]);
+	});
+
 	it("bills every seat as a full seat while either kiosk price is unset", async () => {
 		const { organizationId } = await subscribedOrganization({ ordinary: 3, kioskOnly: 5 });
 		const state: StripeState = { interval: "month", full: 3, kiosk: null, updates: [] };

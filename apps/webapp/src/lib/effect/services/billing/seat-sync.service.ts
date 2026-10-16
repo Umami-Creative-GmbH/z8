@@ -57,6 +57,18 @@ export class SeatSyncService extends Context.Service<
 		) => Effect.Effect<void, DatabaseError | StripeError>;
 
 		/**
+		 * Handle a kiosk-only employee gaining a real email (#886): their seat
+		 * moves from kiosk to full at once. Syncs both quantities to Stripe and
+		 * audits the move. Does nothing while kiosk seats are off, since every
+		 * seat is then already a full seat.
+		 */
+		readonly handleKioskSeatUpgraded: (
+			organizationId: string,
+			memberId: string,
+			userId: string,
+		) => Effect.Effect<void, DatabaseError | StripeError>;
+
+		/**
 		 * Get current seat count for an organization without syncing
 		 */
 		readonly getCurrentSeatCount: (organizationId: string) => Effect.Effect<number, DatabaseError>;
@@ -149,13 +161,25 @@ export const SeatSyncServiceLive = Layer.effect(
 				countBillableSeats(dbService.db, organizationId),
 			);
 
+		const auditQueryName = {
+			member_added: "seatSync.auditMemberAdded",
+			member_removed: "seatSync.auditMemberRemoved",
+			kiosk_seat_upgraded: "seatSync.auditKioskSeatUpgraded",
+		} as const;
+
+		const auditLogMessage = {
+			member_added: "Member added, seats synced",
+			member_removed: "Member removed, seats synced",
+			kiosk_seat_upgraded: "Kiosk seat upgraded to a full seat, seats synced",
+		} as const;
+
 		/**
-		 * Syncs seats after a membership change and audits it. "Previous" is the
-		 * seat count last recorded on the subscription (total and kiosk part),
-		 * read before the sync records the new one.
+		 * Syncs seats after a membership or seat type change and audits it.
+		 * "Previous" is the seat count last recorded on the subscription (total
+		 * and kiosk part), read before the sync records the new one.
 		 */
 		const syncAndAudit = (
-			action: "member_added" | "member_removed",
+			action: keyof typeof auditQueryName,
 			organizationId: string,
 			memberId: string,
 			userId: string,
@@ -174,26 +198,23 @@ export const SeatSyncServiceLive = Layer.effect(
 				const newSeats = outcome.seats;
 				const newKioskSeats = outcome.kioskSeats ?? 0;
 
-				yield* dbService.query(
-					action === "member_added" ? "seatSync.auditMemberAdded" : "seatSync.auditMemberRemoved",
-					async () => {
-						await dbService.db.insert(billingSeatAudit).values({
-							organizationId,
-							action,
-							previousSeats,
-							newSeats,
-							previousKioskSeats,
-							newKioskSeats,
-							memberId,
-							userId,
-							stripeReported: config.enabled && !!recorded?.stripeSubscriptionId,
-						});
-					},
-				);
+				yield* dbService.query(auditQueryName[action], async () => {
+					await dbService.db.insert(billingSeatAudit).values({
+						organizationId,
+						action,
+						previousSeats,
+						newSeats,
+						previousKioskSeats,
+						newKioskSeats,
+						memberId,
+						userId,
+						stripeReported: config.enabled && !!recorded?.stripeSubscriptionId,
+					});
+				});
 
 				logger.info(
 					{ organizationId, memberId, previousSeats, newSeats, previousKioskSeats, newKioskSeats },
-					action === "member_added" ? "Member added, seats synced" : "Member removed, seats synced",
+					auditLogMessage[action],
 				);
 			});
 
@@ -208,6 +229,11 @@ export const SeatSyncServiceLive = Layer.effect(
 
 			handleMemberRemoved: (organizationId, memberId, userId) =>
 				syncAndAudit("member_removed", organizationId, memberId, userId),
+
+			handleKioskSeatUpgraded: (organizationId, memberId, userId) =>
+				kioskSeats
+					? syncAndAudit("kiosk_seat_upgraded", organizationId, memberId, userId)
+					: Effect.void,
 		});
 	}),
 );
