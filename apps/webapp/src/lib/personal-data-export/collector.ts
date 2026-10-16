@@ -100,7 +100,6 @@ export type PersonalDataExportReader = Pick<
 /** The categories of a personal data export, in README and archive order. */
 export const PERSONAL_DATA_CATEGORIES = [
 	"employment",
-	"driving_licence",
 	"time",
 	"absences",
 	"planning",
@@ -111,6 +110,7 @@ export const PERSONAL_DATA_CATEGORIES = [
 	"notifications",
 	"integrations",
 	"audit_log",
+	"driving_licence",
 	"account",
 ] as const;
 export type PersonalDataCategoryKey = (typeof PERSONAL_DATA_CATEGORIES)[number];

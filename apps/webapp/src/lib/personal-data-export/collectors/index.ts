@@ -19,7 +19,6 @@ import { travelExpensesCollector } from "./travel-expenses";
  */
 export const PERSONAL_DATA_COLLECTORS: readonly PersonalDataCollector[] = [
 	employmentCollector,
-	drivingLicenceCollector,
 	timeCollector,
 	absencesCollector,
 	planningCollector,
@@ -30,5 +29,6 @@ export const PERSONAL_DATA_COLLECTORS: readonly PersonalDataCollector[] = [
 	notificationsCollector,
 	integrationsCollector,
 	auditLogCollector,
+	drivingLicenceCollector,
 	accountCollector,
 ];
