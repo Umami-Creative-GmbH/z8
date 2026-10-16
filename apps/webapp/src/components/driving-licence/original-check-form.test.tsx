@@ -10,6 +10,11 @@ import {
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("@/lib/organization/driving-licence/history-actions", () => ({
+	getDrivingLicenceHistoryAction: async () => ({ success: false }),
+	supplementDrivingLicenceCheckAction: vi.fn(),
+}));
 const remote = vi.hoisted(() => ({ completed: false, submitted: vi.fn() }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({

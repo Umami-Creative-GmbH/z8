@@ -23,9 +23,12 @@ async function action<T>(run: () => Promise<T>): Promise<Result<T>> {
 			error instanceof z.ZodError
 				? "invalid_policy"
 				: error instanceof Error &&
-						["forbidden", "timezone_fixed", "not_enabled"].includes(
-							error.message,
-						)
+						[
+							"forbidden",
+							"timezone_fixed",
+							"not_enabled",
+							"interval_preview_required",
+						].includes(error.message)
 					? error.message
 					: "save_failed";
 		return { success: false, error: code };
