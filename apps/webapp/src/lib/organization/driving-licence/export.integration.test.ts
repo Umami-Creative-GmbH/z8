@@ -241,6 +241,45 @@ it("includes retained driving evidence in the real employee and former-employee 
 	});
 	if (!report.success) throw new Error(report.error);
 	harness.userId = verifier.userId;
+	const { drivingLicenceCheck } = await import(
+		"@/db/schema/driving-licence-checks"
+	);
+	const { eq } = await import("drizzle-orm");
+	const [seedCheck] = await fixture.db
+		.select()
+		.from(drivingLicenceCheck)
+		.where(eq(drivingLicenceCheck.id, checkId));
+	const unrelated = await fixture.seedEmployee();
+	const unrelatedCheckId = crypto.randomUUID();
+	await fixture.db
+		.insert(drivingLicenceCheck)
+		.values({
+			...seedCheck,
+			id: unrelatedCheckId,
+			commandId: crypto.randomUUID(),
+			employeeId: unrelated.employeeId,
+			employmentPeriodId: unrelated.employmentPeriodId,
+			employeeName: "Unrelated archive secret",
+		});
+	const foreignOrg = await fixture.createOrganization();
+	const foreign = await fixture.seedEmployee({ organizationId: foreignOrg });
+	const foreignVerifier = await fixture.seedEmployee({
+		organizationId: foreignOrg,
+	});
+	const foreignCheckId = crypto.randomUUID();
+	await fixture.db
+		.insert(drivingLicenceCheck)
+		.values({
+			...seedCheck,
+			id: foreignCheckId,
+			commandId: crypto.randomUUID(),
+			organizationId: foreignOrg,
+			employeeId: foreign.employeeId,
+			employmentPeriodId: foreign.employmentPeriodId,
+			verifierEmployeeId: foreignVerifier.employeeId,
+			verifierUserId: foreignVerifier.userId,
+			employeeName: "Foreign archive secret",
+		});
 	await fixture.pool.query(
 		"insert into driving_licence_task (organization_id,employee_id,employment_period_id,occasion_key,kind,state,created_at,completed_at,completed_by) values ($1,$2,$3,'export-fixture','personal_reminder','completed',$4,$4,$5)",
 		[
@@ -317,6 +356,10 @@ it("includes retained driving evidence in the real employee and former-employee 
 			}),
 		]);
 		expect(text).toContain("I confirm that no known driving ban");
+		expect(text).not.toContain(unrelatedCheckId);
+		expect(text).not.toContain(foreignCheckId);
+		expect(text).not.toContain("Unrelated archive secret");
+		expect(text).not.toContain("Foreign archive secret");
 		expect(text).not.toContain("commandId");
 		expect(text).not.toContain(verifier.userId);
 		expect(await zip.file("README.txt")?.async("string")).toContain(
@@ -478,4 +521,17 @@ it("includes period corrections, report resolution and explicit reinstatement wi
 			)
 		).status,
 	).toBe(404);
+});
+
+it("normalizes explicit offset period boundaries to UTC in the evidence header", async () => {
+	const response = await GET(
+		url(
+			fixture.employeeId,
+			"&from=2026-01-01T00:00:00%2B02:00&to=2026-02-01T00:00:00%2B02:00",
+		),
+	);
+	expect(response.status).toBe(200);
+	const text = pdfText(new Uint8Array(await response.arrayBuffer()));
+	expect(text).toContain("From (inclusive): 2025-12-31T22:00:00Z");
+	expect(text).toContain("Before (exclusive): 2026-01-31T22:00:00Z");
 });

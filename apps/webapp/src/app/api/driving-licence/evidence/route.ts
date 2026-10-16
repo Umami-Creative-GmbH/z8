@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { assertDrivingLicenceRecordAccess } from "@/lib/organization/driving-licence/access";
 import { requireDrivingLicenceActor } from "@/lib/organization/driving-licence/context";
 import {
@@ -16,9 +16,16 @@ const privateHeaders = {
 /** Regenerated for every request. No public URL, storage object or cached selection can outlive scope. */
 export async function GET(request: Request) {
 	try {
-		const input = historyQueryInput.parse(
+		const selected = historyQueryInput.parse(
 			Object.fromEntries(new URL(request.url).searchParams),
 		);
+		const input = {
+			employeeId: selected.employeeId,
+			...(selected.from
+				? { from: parseInstant(selected.from).toString() }
+				: {}),
+			...(selected.to ? { to: parseInstant(selected.to).toString() } : {}),
+		};
 		const actor = await requireDrivingLicenceActor();
 		const history = await readDrivingLicenceHistory(actor, input);
 		const { renderDrivingLicenceEvidencePdf } = await import(
