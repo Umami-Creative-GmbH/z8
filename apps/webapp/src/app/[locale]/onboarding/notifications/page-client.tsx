@@ -56,7 +56,7 @@ type TranslationFunction = ReturnType<typeof useTranslate>["t"];
 
 function NotificationsHeader({ t }: { t: TranslationFunction }) {
 	return (
-		<div className="mb-8 text-center">
+		<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
 			<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
 				<IconBell className="size-8 text-primary" />
 			</div>
@@ -140,12 +140,15 @@ function PushNotificationsCard({
 								{t("onboarding.notifications.enable", "Enable")}
 							</Button>
 						) : (
-							<div className="flex items-center gap-2 text-green-600">
-								<IconBell className="size-5" />
-								<span className="text-sm font-medium">
-									{t("common.enabled", "Enabled")}
-								</span>
-							</div>
+							<Button
+								type="button"
+								variant="outline"
+								disabled
+								className="text-green-700 disabled:opacity-100 dark:text-green-400"
+							>
+								<IconBell aria-hidden="true" className="size-4" />
+								{t("common.enabled", "Enabled")}
+							</Button>
 						)}
 					</div>
 				) : (
@@ -181,7 +184,7 @@ function PreferenceToggle({
 }) {
 	return (
 		<div
-			className={`flex flex-row items-center justify-between gap-4 rounded-lg border ${compact ? "p-3" : "p-4"}`}
+			className={`flex flex-row items-center justify-between gap-4 rounded-lg border bg-white dark:bg-background ${compact ? "p-3" : "p-4"}`}
 		>
 			<div className="min-w-0 space-y-0.5">
 				<Label htmlFor={id} className={compact ? undefined : "text-base"}>

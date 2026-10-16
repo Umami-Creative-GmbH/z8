@@ -88,7 +88,7 @@ function OrganizationSetupHeader({
 	t: (key: string, defaultValue: string) => string;
 }) {
 	return (
-		<div className="mb-8 text-center">
+		<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
 			<h1 className="mb-4 text-3xl font-bold tracking-tight">
 				{t("onboarding.organization.title", "Set up your organization")}
 			</h1>

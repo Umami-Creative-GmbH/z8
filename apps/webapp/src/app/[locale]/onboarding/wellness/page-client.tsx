@@ -75,7 +75,7 @@ const WATER_PRESET_COPY: Record<
 
 function WellnessHeader({ t }: { t: Translate }) {
 	return (
-		<div className="mb-8 text-center">
+		<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
 			<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
 				<IconDroplet className="size-8 text-blue-600 dark:text-blue-400" />
 			</div>
@@ -398,7 +398,7 @@ export default function WellnessPage() {
 							{/* Enable Toggle */}
 							<form.Field name="enableWaterReminder">
 								{(field) => (
-									<div className="flex flex-row items-center justify-between gap-4 rounded-lg border p-4">
+									<div className="flex flex-row items-center justify-between gap-4 rounded-lg border bg-white dark:bg-background p-4">
 										<div className="min-w-0 space-y-0.5">
 											<Label
 												htmlFor="wellness-enable-reminder"

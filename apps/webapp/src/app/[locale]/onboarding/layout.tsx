@@ -1,3 +1,4 @@
+import "./glass-panels.css";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { AuthBackgroundImage } from "@/components/auth-background-image";
@@ -77,7 +78,7 @@ async function OnboardingLayoutContent({
 					<LanguageSwitcher />
 				</div>
 
-				<main className="onboarding-glass-scope flex flex-1 items-center justify-center py-8 sm:py-10 [&_[data-slot=card]]:border-white/30 [&_[data-slot=card]]:bg-white/20 [&_[data-slot=card]]:shadow-xl [&_[data-slot=card]]:shadow-black/5 [&_[data-slot=card]]:backdrop-blur-[40px] [&_[data-slot=card]_.text-muted-foreground]:text-foreground/75 dark:[&_[data-slot=card]]:border-white/10 dark:[&_[data-slot=card]]:bg-slate-950/20 dark:[&_[data-slot=card]]:shadow-black/30">
+				<main className="onboarding-glass-scope flex flex-1 items-center justify-center py-8 sm:py-10 [&_[data-slot=card]]:border-white/30 [&_[data-slot=card]]:bg-white/20 [&_[data-slot=card]]:shadow-xl [&_[data-slot=card]]:shadow-black/5 [&_[data-slot=card]]:backdrop-blur-[40px] [&_[data-slot=card]]:pt-0 [&_[data-slot=card-header]]:rounded-t-[inherit] [&_[data-slot=card-header]]:border-b [&_[data-slot=card-header]]:border-white/30 [&_[data-slot=card-header]]:bg-white/40 [&_[data-slot=card-header]]:gap-1 [&_[data-slot=card-header]]:py-3 dark:[&_[data-slot=card-header]]:border-white/10 dark:[&_[data-slot=card-header]]:bg-white/10 [&_[data-slot=card]_.text-muted-foreground]:text-foreground/75 dark:[&_[data-slot=card]]:border-white/10 dark:[&_[data-slot=card]]:bg-slate-950/20 dark:[&_[data-slot=card]]:shadow-black/30">
 					<div className="w-full max-w-5xl">{children}</div>
 				</main>
 

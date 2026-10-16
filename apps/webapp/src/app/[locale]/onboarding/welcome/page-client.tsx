@@ -51,7 +51,7 @@ export function WelcomePageClient() {
 			<ProgressIndicator currentStep="welcome" />
 
 			<div className="mx-auto max-w-3xl text-center">
-				<div className="mb-8">
+				<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
 					<div className="mb-4 inline-flex size-20 items-center justify-center rounded-full bg-primary/10">
 						<IconBuilding className="size-10 text-primary" />
 					</div>
