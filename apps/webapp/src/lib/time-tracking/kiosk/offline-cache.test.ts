@@ -121,6 +121,72 @@ describe("kiosk offline cache (#1291)", () => {
 		expect(storage.keys()).toEqual([]);
 	});
 
+	describe("offline kiosk clocking (#1292)", () => {
+		const offlineContact = {
+			contact: { serverTime: "2026-10-16T07:45:00Z", proof: "cHJvb2Y" },
+			sealingKey: {
+				kid: "k1",
+				alg: "ECDH-P256+HKDF-SHA256+A256GCM" as const,
+				jwk: { kty: "EC" as const, crv: "P-256" as const, x: "eA", y: "eQ" },
+			},
+		};
+		const vehicleUse = {
+			mode: "asked" as const,
+			vehicles: [],
+			suggestedVehicleIds: [],
+			lastEndKmByVehicleId: {},
+			vehiclesOnOtherLiveWork: [],
+			live: null,
+		};
+
+		it("keeps each employee's vehicle-use context beside their state", async () => {
+			const { cache: offline } = cache();
+			await offline.rememberKiosk(kiosk);
+
+			await offline.rememberEmployees(kiosk.id, {
+				...listed,
+				offline: listed.offline && { ...listed.offline, vehicleUse: { [anna.id]: vehicleUse } },
+			});
+
+			const employees = await offline.readEmployees(kiosk.id);
+			expect(employees?.[0]?.vehicleUse).toEqual(vehicleUse);
+			expect(employees?.[1]).not.toHaveProperty("vehicleUse");
+		});
+
+		it("keeps the latest contact and sealing key for its kiosk only, and forgets them with the cache", async () => {
+			const { cache: offline, storage } = cache();
+			await offline.rememberKiosk(kiosk);
+
+			await offline.rememberContact(kiosk.id, offlineContact);
+
+			expect(await offline.readContact(kiosk.id)).toEqual(offlineContact);
+			expect(await offline.readContact("33333333-3333-4333-8333-333333333333")).toBeNull();
+			await offline.rememberContact(kiosk.id, undefined);
+			expect(await offline.readContact(kiosk.id)).toBeNull();
+
+			await offline.rememberContact(kiosk.id, offlineContact);
+			await offline.rememberKiosk({ ...kiosk, offlineMode: false });
+			expect(storage.keys()).toEqual([]);
+		});
+
+		it("holds the per-kiosk PIN attempt limit across reloads", async () => {
+			const { cache: offline, storage } = cache();
+			await offline.rememberKiosk(kiosk);
+			const start = Date.parse("2026-10-16T08:00:00Z");
+
+			for (let attempt = 0; attempt < 30; attempt += 1) {
+				expect(await offline.takePinAttempt(start + attempt * 100)).toEqual({ allowed: true });
+			}
+			const reloaded = createKioskOfflineCache(() => storage);
+			expect(await reloaded.takePinAttempt(start + 5_000)).toEqual({
+				allowed: false,
+				retryAfterSeconds: 55,
+			});
+			// The first attempt leaves the minute's window.
+			expect(await reloaded.takePinAttempt(start + 60_001)).toEqual({ allowed: true });
+		});
+	});
+
 	it("reads as empty, and never throws, when the storage fails", async () => {
 		const failing = createKioskOfflineCache(() => {
 			throw new Error("IndexedDB blocked");

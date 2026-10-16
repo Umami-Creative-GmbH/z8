@@ -1,9 +1,12 @@
 import { KIOSK_CACHE_STORE, kioskDatabaseMayExist, kioskTransaction } from "./kiosk-database";
+import { type KioskPinAttemptVerdict, takeKioskPinAttempt } from "./pin-attempt-limit";
 import type {
 	KioskDeviceInfo,
 	KioskEmployeeListing,
 	KioskEmployeeState,
 	KioskEmployeesResponse,
+	KioskOfflineContact,
+	KioskVehicleUse,
 } from "./protocol";
 
 /**
@@ -18,12 +21,20 @@ import type {
  * list replaces the old one, so an unassigned employee is gone; a revoked or
  * unpaired kiosk forgets everything. The cache is best effort: storage that
  * fails reads as empty and is never an error.
+ *
+ * For offline kiosk clocking (#1292) it also keeps each employee's vehicle-use
+ * context, the latest contact anchor and Z8's sealing key (from the session's
+ * `offline`), and the instants of the PIN attempts made offline (the per-kiosk
+ * limit). The queued commands are not here (`offline-queue.ts`): clearing the
+ * cache never drops them.
  */
 
 /** A cached employee: their state as of `learnedAt` (a UTC ISO instant from the server). */
 export type CachedKioskEmployee = KioskEmployeeListing & {
 	state: KioskEmployeeState;
 	learnedAt: string;
+	/** What the vehicle step asks (#1123), cached for offline clocking; absent asks nothing. */
+	vehicleUse?: KioskVehicleUse;
 };
 
 export type KioskOfflineCache = {
@@ -35,6 +46,15 @@ export type KioskOfflineCache = {
 	rememberKiosk(kiosk: KioskDeviceInfo): Promise<void>;
 	/** A contact's employee list: replaces the cached one; without states it is deleted. */
 	rememberEmployees(kioskId: string, listed: KioskEmployeesResponse): Promise<void>;
+	/** The kiosk's latest contact anchor and sealing key; null when none is cached for it. */
+	readContact(kioskId: string): Promise<KioskOfflineContact | null>;
+	/** A contact's `offline` answer: kept for the kiosk, or deleted when absent. */
+	rememberContact(kioskId: string, offline: KioskOfflineContact | undefined): Promise<void>;
+	/**
+	 * One offline PIN attempt at `now` (epoch ms) against the per-kiosk limit;
+	 * kept across reloads. Storage that fails allows it (the attempt is not lost).
+	 */
+	takePinAttempt(now: number): Promise<KioskPinAttemptVerdict>;
 	/** Deletes everything this cache holds (revoked or unpaired kiosk). */
 	forget(): Promise<void>;
 };
@@ -48,9 +68,12 @@ export type KioskCacheStorage = {
 
 const KIOSK_KEY = "kiosk";
 const EMPLOYEES_KEY = "employees";
-const ALL_KEYS = [KIOSK_KEY, EMPLOYEES_KEY] as const;
+const CONTACT_KEY = "contact";
+const PIN_ATTEMPTS_KEY = "pinAttempts";
+const ALL_KEYS = [KIOSK_KEY, EMPLOYEES_KEY, CONTACT_KEY, PIN_ATTEMPTS_KEY] as const;
 
 type CachedEmployees = { kioskId: string; employees: CachedKioskEmployee[] };
+type CachedContact = { kioskId: string; offline: KioskOfflineContact };
 
 export function createKioskOfflineCache(storage: () => KioskCacheStorage): KioskOfflineCache {
 	async function attempt<T>(run: (store: KioskCacheStorage) => Promise<T>, fallback: T) {
@@ -79,7 +102,9 @@ export function createKioskOfflineCache(storage: () => KioskCacheStorage): Kiosk
 			if (!kiosk.offlineMode) return forget();
 			await attempt(async (store) => {
 				const cached = await store.get<KioskDeviceInfo>(KIOSK_KEY);
-				if (cached && cached.id !== kiosk.id) await store.delete([EMPLOYEES_KEY]);
+				if (cached && cached.id !== kiosk.id) {
+					await store.delete([EMPLOYEES_KEY, CONTACT_KEY, PIN_ATTEMPTS_KEY]);
+				}
 				await store.put(KIOSK_KEY, kiosk);
 			}, undefined);
 		},
@@ -90,13 +115,46 @@ export function createKioskOfflineCache(storage: () => KioskCacheStorage): Kiosk
 				if (!offline) return store.delete([EMPLOYEES_KEY]);
 				const employees = listed.employees.flatMap((employee): CachedKioskEmployee[] => {
 					const state = offline.states[employee.id];
+					const vehicleUse = offline.vehicleUse?.[employee.id];
 					return state
-						? [{ id: employee.id, name: employee.name, state, learnedAt: offline.learnedAt }]
+						? [
+								{
+									id: employee.id,
+									name: employee.name,
+									state,
+									learnedAt: offline.learnedAt,
+									...(vehicleUse ? { vehicleUse } : {}),
+								},
+							]
 						: [];
 				});
 				await store.put(EMPLOYEES_KEY, { kioskId, employees } satisfies CachedEmployees);
 			}, undefined);
 		},
+
+		readContact: (kioskId) =>
+			attempt(async (store) => {
+				const cached = await store.get<CachedContact>(CONTACT_KEY);
+				return cached?.kioskId === kioskId ? cached.offline : null;
+			}, null),
+
+		async rememberContact(kioskId, offline) {
+			await attempt(async (store) => {
+				if (!offline) return store.delete([CONTACT_KEY]);
+				await store.put(CONTACT_KEY, { kioskId, offline } satisfies CachedContact);
+			}, undefined);
+		},
+
+		takePinAttempt: (now) =>
+			attempt<KioskPinAttemptVerdict>(
+				async (store) => {
+					const earlier = (await store.get<number[]>(PIN_ATTEMPTS_KEY)) ?? [];
+					const { verdict, attempts } = takeKioskPinAttempt(earlier, now);
+					await store.put(PIN_ATTEMPTS_KEY, attempts);
+					return verdict;
+				},
+				{ allowed: true },
+			),
 
 		forget,
 	};

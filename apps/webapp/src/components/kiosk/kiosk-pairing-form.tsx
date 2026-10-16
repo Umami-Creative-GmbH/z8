@@ -13,11 +13,11 @@ import {
 	TFormLabel,
 } from "@/components/ui/tanstack-form";
 import { type KioskPairingResult, pairKioskDevice } from "@/lib/time-tracking/kiosk/device";
-import type { KioskDeviceInfo } from "@/lib/time-tracking/kiosk/protocol";
+import type { KioskDeviceInfo, KioskOfflineContact } from "@/lib/time-tracking/kiosk/protocol";
 
 interface KioskPairingFormProps {
 	initialCode: string;
-	onPaired: (token: string, kiosk: KioskDeviceInfo) => void;
+	onPaired: (token: string, kiosk: KioskDeviceInfo, offline?: KioskOfflineContact) => void;
 }
 
 type PairingFailure = Exclude<KioskPairingResult["status"], "paired">;
@@ -36,7 +36,7 @@ export function KioskPairingForm({ initialCode, onPaired }: KioskPairingFormProp
 			const result = await pairKioskDevice(value.code);
 			setPairing(false);
 			if (result.status === "paired") {
-				onPaired(result.token, result.kiosk);
+				onPaired(result.token, result.kiosk, result.offline);
 				return;
 			}
 			setFailure(result.status);

@@ -6,7 +6,8 @@
  *   `{ token, kiosk }`. It stores the token in `localStorage` under
  *   `KIOSK_TOKEN_STORAGE_KEY`. Without offline mode it stores nothing else
  *   about the kiosk; with offline mode (#1291) it also caches the kiosk, its
- *   employees and their states in its own IndexedDB (`offline-cache.ts`).
+ *   employees and their states in its own IndexedDB (`offline-cache.ts`), and
+ *   queues frozen kiosk commands there while offline (`offline-queue.ts`, #1292).
  * - Every later kiosk request sends the token in the `x-kiosk-token` header
  *   (never `Authorization: Bearer`, which Better Auth's bearer plugin consumes).
  * - A refused token is answered with 401 and `{ code }`: `kiosk_unknown` (pair
@@ -186,6 +187,12 @@ export type KioskEmployeeListing = { id: string; name: string };
 export type KioskOfflineStates = {
 	learnedAt: string;
 	states: Record<string, KioskEmployeeState>;
+	/**
+	 * The vehicle use each listed employee is asked (#1292), keyed by employee id,
+	 * only for those whose vehicle use is asked or expected: what the vehicle step
+	 * needs offline, where no live PIN check can fetch it. Absent when nobody has one.
+	 */
+	vehicleUse?: Record<string, KioskVehicleUse>;
 };
 
 /**

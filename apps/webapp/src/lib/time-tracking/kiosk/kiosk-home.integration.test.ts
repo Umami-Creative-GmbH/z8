@@ -266,6 +266,46 @@ describe("kiosk home screen on PostgreSQL", () => {
 			expect(Object.values(body.offline.states)).toEqual([{ status: "clocked_out" }]);
 		});
 
+		it("adds the vehicle use each employee is asked, so the vehicle step works offline (#1292)", async () => {
+			const offKiosk = await kioskToken(store, { offlineMode: true });
+			expect((await readEmployees(offKiosk)).body.offline).not.toHaveProperty("vehicleUse");
+
+			await fixture.pool.query(
+				`insert into vehicle_use_setting (organization_id, enabled) values ($1, true)
+				 on conflict (organization_id) do update set enabled = excluded.enabled`,
+				[organizationId],
+			);
+			await fixture.pool.query(
+				`insert into vehicle_use_assignment (organization_id, assignment_type, priority, mode, created_by)
+				 values ($1, 'organization', 0, 'asked', $2)`,
+				[organizationId, fixture.ownerUserId],
+			);
+			try {
+				const { body } = await readEmployees(await kioskToken(store, { offlineMode: true }));
+				const asked = {
+					mode: "asked",
+					vehicles: [],
+					suggestedVehicleIds: [],
+					lastEndKmByVehicleId: {},
+					vehiclesOnOtherLiveWork: [],
+					live: null,
+				};
+				expect(body.offline.vehicleUse).toEqual({
+					[anna.employeeId]: asked,
+					[ben.employeeId]: asked,
+				});
+				// Kiosks without offline mode never get it without a PIN.
+				expect((await readEmployees(await kioskToken(store))).body).not.toHaveProperty("offline");
+			} finally {
+				await fixture.pool.query("delete from vehicle_use_assignment where organization_id = $1", [
+					organizationId,
+				]);
+				await fixture.pool.query("delete from vehicle_use_setting where organization_id = $1", [
+					organizationId,
+				]);
+			}
+		});
+
 		it("adds no state while the switch is off or the organization is not adopted", async () => {
 			const off = await readEmployees(await kioskToken(store));
 			const legacy = await readEmployees(
