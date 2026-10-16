@@ -147,6 +147,13 @@ const icsFeedConfig = { requests: 120, seconds: 3600 };
 const icsFeedMissConfig = { requests: 30, seconds: 600 };
 
 const limiters = {
+	/** Photo decoding per authenticated organization and user: twenty-file batches plus retries. */
+	vehiclePhotoUpload: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(60, "60 s"),
+		prefix: "ratelimit:vehicle-photo-upload",
+		analytics: false,
+	}),
 	/** Auth endpoints: configurable via RATE_LIMIT_AUTH (default: 10 requests per 60 seconds) */
 	auth: new Ratelimit({
 		redis,
@@ -264,6 +271,7 @@ export interface RateLimitResult {
 
 // Legacy config export for backwards compatibility (uses env var values)
 export const RATE_LIMIT_CONFIGS = {
+	vehiclePhotoUpload: { maxRequests: 60, windowSeconds: 60 },
 	auth: { maxRequests: authConfig.requests, windowSeconds: authConfig.seconds },
 	signUp: {
 		maxRequests: signUpConfig.requests,

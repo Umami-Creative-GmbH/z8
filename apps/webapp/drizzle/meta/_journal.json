@@ -1688,6 +1688,13 @@
       "when": 1805472000000,
       "tag": "0240_supplemental_report_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 241,
+      "version": "7",
+      "when": 1805558400000,
+      "tag": "0241_vehicle_photos",
+      "breakpoints": true
     }
   ]
 }

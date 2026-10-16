@@ -26,6 +26,10 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("@/app/[locale]/(app)/settings/vehicles/actions", () => ({
 	changeVehicles: changeMock,
 }));
+vi.mock("@/app/[locale]/(app)/settings/vehicles/photo-actions", () => ({
+	listVehiclePhotos: vi.fn(),
+	initiateVehiclePhotoUpload: vi.fn(),
+}));
 vi.mock("sonner", () => ({ toast: toastMock }));
 // The real picker loads selected employees through React Query.
 vi.mock("@/components/employee-select", () => ({
@@ -46,7 +50,14 @@ function vehicle(overrides: Partial<OrganizationVehicleView> = {}): Organization
 function data(vehicles: OrganizationVehicleView[]): VehicleSettingsData {
 	return {
 		vehicles,
-		employees: [{ id: "e-1", name: "Max Member", email: "max@example.test", isActive: true }],
+		employees: [
+			{
+				id: "e-1",
+				name: "Max Member",
+				email: "max@example.test",
+				isActive: true,
+			},
+		],
 		teams: [{ id: "t-1", name: "Field service" }],
 	};
 }
@@ -79,7 +90,12 @@ describe("VehicleSettings", () => {
 							teams: [{ id: "t-1", name: "Field service" }],
 						},
 					}),
-					vehicle({ id: "b", name: "Old car", licencePlate: "B-X 1", archived: true }),
+					vehicle({
+						id: "b",
+						name: "Old car",
+						licencePlate: "B-X 1",
+						archived: true,
+					}),
 				])}
 			/>,
 		);
@@ -109,8 +125,15 @@ describe("VehicleSettings", () => {
 	});
 
 	it("creates a vehicle from the dialog", async () => {
-		const created = vehicle({ id: "new", name: "Van 2", licencePlate: "M-XY 2" });
-		changeMock.mockResolvedValue({ success: true, data: { ok: true, vehicles: [created] } });
+		const created = vehicle({
+			id: "new",
+			name: "Van 2",
+			licencePlate: "M-XY 2",
+		});
+		changeMock.mockResolvedValue({
+			success: true,
+			data: { ok: true, vehicles: [created] },
+		});
 		render(<VehicleSettings initialData={data([])} />);
 
 		await userEvent.click(screen.getByRole("button", { name: "Add vehicle" }));
@@ -154,7 +177,10 @@ describe("VehicleSettings", () => {
 
 	it("offers archiving when a vehicle recorded on work cannot be deleted", async () => {
 		changeMock
-			.mockResolvedValueOnce({ success: true, data: { ok: false, reason: "vehicle_used" } })
+			.mockResolvedValueOnce({
+				success: true,
+				data: { ok: false, reason: "vehicle_used" },
+			})
 			.mockResolvedValueOnce({
 				success: true,
 				data: { ok: true, vehicles: [vehicle({ archived: true })] },
@@ -164,10 +190,16 @@ describe("VehicleSettings", () => {
 		await userEvent.click(screen.getByRole("button", { name: "Delete Van" }));
 		await userEvent.click(screen.getByRole("button", { name: "Delete vehicle" }));
 
-		expect(changeMock).toHaveBeenCalledWith({ kind: "delete", vehicleId: "v-1" });
+		expect(changeMock).toHaveBeenCalledWith({
+			kind: "delete",
+			vehicleId: "v-1",
+		});
 		await userEvent.click(await screen.findByRole("button", { name: "Archive instead" }));
 
-		expect(changeMock).toHaveBeenLastCalledWith({ kind: "archive", vehicleId: "v-1" });
+		expect(changeMock).toHaveBeenLastCalledWith({
+			kind: "archive",
+			vehicleId: "v-1",
+		});
 		await waitFor(() =>
 			expect(
 				within(screen.getByRole("list", { name: "Archived vehicles" })).getByText("Van"),
