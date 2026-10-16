@@ -1697,6 +1697,13 @@
       "breakpoints": true
     },
     {
+      "idx": 242,
+      "version": "7",
+      "when": 1805644800000,
+      "tag": "20261016_driving_licence_policy",
+      "breakpoints": true
+    },
+    {
       "idx": 243,
       "version": "7",
       "when": 1805731200000,
