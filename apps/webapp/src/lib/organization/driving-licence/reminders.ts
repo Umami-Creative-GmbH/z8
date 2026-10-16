@@ -294,7 +294,7 @@ function reminderParams(
 		},
 	};
 }
-export async function runDrivingLicenceReminders(clock: Clock = systemClock) {
+export async function runDrivingLicenceReminders(clock: Clock) {
 	const organizations = await db
 		.select({ organizationId: drivingLicencePolicy.organizationId })
 		.from(drivingLicencePolicy)
