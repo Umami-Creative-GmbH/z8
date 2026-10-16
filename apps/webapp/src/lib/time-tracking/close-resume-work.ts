@@ -200,6 +200,8 @@ export async function closeAndResumeWork(
 			eventInstant: input.close.instant,
 			capture: input.close.capture,
 			...(input.closingVehicleUse ? { closingVehicleUse: input.closingVehicleUse } : {}),
+			// A break never asks for a task: it marks a missing required one (#884).
+			marksMissingTask: true,
 		},
 		// A fresh server identity: nothing can hold it yet.
 		randomUUID(),

@@ -79,6 +79,7 @@ const periodColumns = {
 	projectId: workPeriod.projectId,
 	taskId: workPeriod.taskId,
 	isBillable: workPeriod.isBillable,
+	missingTask: workPeriod.missingTask,
 	workCategoryId: workPeriod.workCategoryId,
 	workLocationType: workPeriod.workLocationType,
 	vehicleKind: workPeriod.vehicleKind,
@@ -234,6 +235,7 @@ export async function readHistoricalWorkEvidence(
 				costCenterId: timeRecordAllocation.costCenterId,
 				weightPercent: timeRecordAllocation.weightPercent,
 				isBillable: timeRecordAllocation.isBillable,
+				missingTask: timeRecordAllocation.missingTask,
 			})
 			.from(timeRecordAllocation)
 			.where(
@@ -343,6 +345,7 @@ export async function readHistoricalWorkEvidence(
 				projectId: row.projectId,
 				taskId: row.taskId,
 				isBillable: row.isBillable,
+				missingTask: row.missingTask,
 				workCategoryId: row.workCategoryId,
 				workLocationType: row.workLocationType,
 				vehicleKind: row.vehicleKind,

@@ -101,6 +101,30 @@ describe("calendar work event", () => {
 		},
 	);
 
+	it("badges work missing a task with a hint to add one (#884)", () => {
+		render(
+			<CalendarTimeGridEvent
+				calendarEvent={{
+					title: "Work",
+					_eventData: { type: "work_period", metadata: { missingTask: true } },
+				}}
+			/>,
+		);
+
+		const badge = screen.getByRole("img", { name: "Missing task" });
+		expect(badge.closest("[title]")?.getAttribute("title")).toBe("Missing task: add a task");
+	});
+
+	it("shows no missing-task badge on work that is not marked", () => {
+		render(
+			<CalendarTimeGridEvent
+				calendarEvent={{ title: "Work", _eventData: { type: "work_period", metadata: {} } }}
+			/>,
+		);
+
+		expect(screen.queryByRole("img", { name: "Missing task" })).toBeNull();
+	});
+
 	it("does not invent an office location for an unrecorded entry", () => {
 		render(
 			<CalendarTimeGridEvent

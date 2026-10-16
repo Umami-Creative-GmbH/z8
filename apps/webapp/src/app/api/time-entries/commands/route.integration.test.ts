@@ -1358,6 +1358,18 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 
 			expect(closed.status).toBe(201);
 			expect(await bookedTask(start.operationId)).toEqual({ period: null, allocation: null });
+			// Accepted and marked as missing a task, in both records and the receipt (#1295).
+			const { rows } = await admin.query<{ period: boolean; allocation: boolean }>(
+				`select wp.missing_task as period, a.missing_task as allocation
+				 from work_period wp
+				 join time_record_allocation a
+				   on a.record_id = wp.canonical_record_id and a.organization_id = wp.organization_id
+				  and a.allocation_kind = 'project'
+				 where wp.clock_in_id = $1`,
+				[start.operationId],
+			);
+			expect(rows).toEqual([{ period: true, allocation: true }]);
+			expect(closed.body.receipt.result.attribution).toMatchObject({ missingTask: true });
 		});
 
 		it("books the task of a clock-out in the exact shape the desktop freezes (#882)", async () => {

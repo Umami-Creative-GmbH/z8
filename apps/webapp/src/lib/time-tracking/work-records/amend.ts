@@ -453,6 +453,7 @@ async function writeAmendedPair(
 			projectId: columns.projectId,
 			taskId: columns.taskId,
 			isBillable: columns.isBillable,
+			missingTask: columns.missingTask,
 			workCategoryId: columns.workCategoryId,
 			workLocationType: columns.workLocationType,
 			vehicleKind: columns.vehicleKind,

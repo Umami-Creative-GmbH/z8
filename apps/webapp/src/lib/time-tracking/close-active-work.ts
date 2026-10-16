@@ -28,6 +28,7 @@ import type { WorkPeriodPostCommitDescriptor } from "@/lib/approvals/server/work
 import type { BotPlatform } from "@/lib/bot-platform/types";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
+import { readActiveTaskRequirement } from "@/lib/projects/task-requirement-reads";
 import {
 	commitAutomaticBreakIntent,
 	isClosureCarriedByAutomaticBreak,
@@ -302,6 +303,8 @@ export type CloseActiveWorkResult = {
 		isBillable?: boolean;
 		/** Present only when the closure left a task (#873). */
 		taskId?: string;
+		/** Present only when the closure marked the work missing a task (#884). */
+		missingTask?: true;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 	};
@@ -486,6 +489,15 @@ export type CloseActiveWorkInput = {
 	 * under its lock (#1122): undefined keeps the live work's.
 	 */
 	closingVehicleUse?: ClosingVehicleUse;
+	/**
+	 * Whether nobody at this closure could pick a task (#884, Projects ADR 0002):
+	 * automatic, departure, kiosk, bot, legacy-route and frozen clock-outs, and a
+	 * break closing running work. Such a closure is accepted without a task and
+	 * marks the work missing a task while its project's requirement is active.
+	 * Left out, the closure never marks: a writer that can pick a task refused
+	 * before the transaction instead.
+	 */
+	marksMissingTask?: boolean;
 };
 
 /** Decides the closed work's vehicle use from the live work's; undefined keeps it. */
@@ -611,6 +623,7 @@ export async function closeActiveWorkGraph(
 		projectId,
 		current: { projectId: period.projectId, taskId: period.taskId },
 	});
+	const missingTask = await closesMissingTask(tx, input, { projectId, taskId });
 	const workCategoryId = await resolveWorkCategory(
 		tx,
 		organizationId,
@@ -644,6 +657,7 @@ export async function closeActiveWorkGraph(
 			billable: isBillable,
 			workCategoryId,
 			...(vehicleUse === undefined ? {} : { vehicleUse }),
+			...(missingTask ? { missingTask } : {}),
 		},
 		recordedBy: input.actorUserId,
 		actorUserId: humanActorUserId(completing),
@@ -707,6 +721,7 @@ export async function closeActiveWorkGraph(
 			projectId,
 			isBillable,
 			...recordedTaskId(taskId),
+			...(missingTask ? { missingTask } : {}),
 			workCategoryId,
 			workLocationType: period.workLocationType ?? null,
 		},
@@ -729,6 +744,27 @@ export async function closeActiveWorkGraph(
 		entry: appended.entry,
 		surchargeSnapshot,
 	};
+}
+
+/**
+ * Whether the closed work is missing a task (#884, Projects ADR 0002): a closure
+ * where nobody could pick a task books its project without one while the
+ * project's task requirement is active. Read under the work transaction; the
+ * decision is made once, as the closure sets the booking's project, and never
+ * revisited when the requirement changes later.
+ */
+async function closesMissingTask(
+	tx: WorkTransactionContext["db"],
+	input: Pick<CloseActiveWorkInput, "organizationId" | "marksMissingTask">,
+	booking: { projectId: string | null; taskId: string | null },
+): Promise<boolean> {
+	if (!input.marksMissingTask || booking.projectId === null || booking.taskId !== null) {
+		return false;
+	}
+	return readActiveTaskRequirement(
+		{ organizationId: input.organizationId, projectId: booking.projectId },
+		tx,
+	);
 }
 
 /**

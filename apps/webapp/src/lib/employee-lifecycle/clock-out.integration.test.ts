@@ -175,6 +175,48 @@ describe("departure clock-out", () => {
 		]);
 	});
 
+	// Nobody at a departure picks a task (#884, Projects ADR 0002): accepted and marked (#1295).
+	it("closes work without a task on a project that requires one and marks it", async () => {
+		const target = await fixture.seedEmployee();
+		const projectId = randomUUID();
+		await fixture.pool.query(
+			`insert into project (id, organization_id, name, status, is_active, requires_task, created_by, updated_at)
+			 values ($1, $2, 'Requires a task', 'active', true, true, $3, now())`,
+			[projectId, fixture.organizationId, fixture.ownerUserId],
+		);
+		await fixture.pool.query(
+			`insert into project_task (id, organization_id, project_id, name, state, created_by, updated_at)
+			 values ($1, $2, $3, 'Design', 'open', $4, now())`,
+			[randomUUID(), fixture.organizationId, projectId, fixture.ownerUserId],
+		);
+		const periodId = await clockIn(target, "2026-09-14T20:00:00Z");
+		await fixture.pool.query("update work_period set project_id = $2 where id = $1", [
+			periodId,
+			projectId,
+		]);
+
+		await execute(await scheduleAt(target));
+
+		expect(
+			await row(
+				`select wp.is_active, wp.project_id, wp.task_id, wp.missing_task,
+				        a.missing_task as allocation_missing_task
+				 from work_period wp
+				 join time_record_allocation a
+				   on a.record_id = wp.canonical_record_id and a.organization_id = wp.organization_id
+				  and a.allocation_kind = 'project'
+				 where wp.id = $1`,
+				[periodId],
+			),
+		).toEqual({
+			is_active: false,
+			project_id: projectId,
+			task_id: null,
+			missing_task: true,
+			allocation_missing_task: true,
+		});
+	});
+
 	// #476 decision 8: offboarding is never blocked by a lapsed subscription.
 	it("closes running work although billing refuses mutations", async () => {
 		const target = await fixture.seedEmployee();
