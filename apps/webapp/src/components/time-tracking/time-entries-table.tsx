@@ -98,7 +98,8 @@ export function TimeEntriesTable({
 		timeFormat,
 		hasManager,
 		showBillable: billableTimeEnabled,
-		isDrivingDetailsMissing: (workPeriodId) => drivingDetailsMissingIds.includes(workPeriodId),
+		isDrivingDetailsMissing: (workPeriodId) =>
+			drivingDetailsMissingIds.includes(workPeriodId),
 		renderAdminAction: canApproveTimeEntries
 			? (period) => (
 					<TimeEntryAdminMenu
@@ -120,7 +121,7 @@ export function TimeEntriesTable({
 
 	return (
 		<Card>
-			<CardHeader className="flex flex-row items-center justify-between gap-3 gap-y-0 pb-4">
+			<CardHeader className="flex min-w-0 flex-col items-start justify-between gap-3 pb-4 sm:flex-row sm:items-center">
 				<CardTitle>{t("timeTracking.table.title", "Time Entries")}</CardTitle>
 				<div className="flex items-center gap-2">
 					<Button asChild variant="outline" size="sm">
@@ -139,6 +140,7 @@ export function TimeEntriesTable({
 			</CardHeader>
 			<CardContent>
 				<DataTable
+					mobileLayout="stacked"
 					columns={columns}
 					data={workPeriods}
 					emptyMessage={t(

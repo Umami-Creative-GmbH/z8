@@ -87,10 +87,10 @@ export function DataTableToolbar({
 	};
 
 	return (
-		<div className="flex items-center justify-between gap-2">
-			<div className="flex flex-1 items-center gap-2">
+		<div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
 				{onSearchChange && (
-					<div className="relative w-full max-w-sm">
+					<div className="relative w-full min-w-0 sm:max-w-sm sm:flex-1">
 						<IconSearch className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
 						<Input
 							placeholder={searchPlaceholder ?? t("table.searchPlaceholder", "Search...")}
@@ -126,7 +126,7 @@ export function DataTableToolbar({
 						<SelectContent>
 							{filter.options.map((option) => (
 								<SelectItem key={option.value} value={option.value}>
-									<div className="flex items-center gap-2">
+									<div className="flex flex-wrap items-center gap-2">
 										{option.icon && <option.icon className="size-4 text-muted-foreground" />}
 										{option.label}
 									</div>
@@ -144,7 +144,7 @@ export function DataTableToolbar({
 				)}
 			</div>
 
-			<div className="flex items-center gap-2">
+			<div className="flex flex-wrap items-center gap-2">
 				{bulkActions}
 				{actions}
 			</div>

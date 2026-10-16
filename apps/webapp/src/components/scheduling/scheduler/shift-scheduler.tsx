@@ -3,7 +3,7 @@
 // Temporal polyfill must be imported before Schedule-X
 import "temporal-polyfill/global";
 
-import { createViewMonthGrid, createViewWeek } from "@schedule-x/calendar";
+import { createViewDay, createViewMonthGrid, createViewWeek } from "@schedule-x/calendar";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
 import { useTranslate } from "@tolgee/react";
@@ -180,7 +180,8 @@ function PlannerShiftScheduler({
 
 	// Create calendar
 	const calendar = useCalendarApp({
-		views: [createViewWeek(), createViewMonthGrid()],
+		views: [createViewDay(), createViewWeek(), createViewMonthGrid()],
+		defaultView: "week",
 		selectedDate: initialView.selectedDate,
 		timezone: organizationTimezone,
 		firstDayOfWeek: scheduleXFirstDayOfWeek(weekStartDay),
@@ -252,7 +253,7 @@ function PlannerShiftScheduler({
 	}, [calendar, isDark]);
 
 	return (
-		<div className="flex flex-col gap-4 h-[calc(100vh-200px)]">
+		<div className="flex min-w-0 flex-col gap-4 lg:h-[calc(100vh-200px)]">
 			{isManager && <ScheduleComplianceBanner summary={complianceSummary} />}
 
 			{/* Coverage summary bar and toggle for managers */}
@@ -280,13 +281,13 @@ function PlannerShiftScheduler({
 				/>
 			)}
 
-			<div className="flex gap-4 flex-1 min-h-0">
+			<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row">
 				{/* Template sidebar for managers */}
 				{isManager && <TemplateSidebar templates={templates} onTemplateDrop={handleTemplateDrop} />}
 
 				{/* Main calendar */}
 				{/* `isolate` keeps Schedule-X's z-indexes (sticky header 100) below dialogs and sheets. */}
-				<div className="flex-1 relative isolate h-full overflow-hidden">
+				<div className="relative isolate h-[32rem] min-w-0 overflow-hidden lg:h-full lg:flex-1">
 					<ScheduleXCalendar calendarApp={calendar} />
 					{/* Over the calendar, not instead of it, so it stays mounted while a new range loads. */}
 					{shiftsLoading && (

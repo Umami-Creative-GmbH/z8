@@ -5,21 +5,27 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
+function Tabs({
+	className,
+	...props
+}: React.ComponentProps<typeof TabsPrimitive.Root>) {
 	return (
 		<TabsPrimitive.Root
-			className={cn("flex flex-col gap-2", className)}
+			className={cn("flex min-w-0 flex-col gap-2", className)}
 			data-slot="tabs"
 			{...props}
 		/>
 	);
 }
 
-function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
+function TabsList({
+	className,
+	...props
+}: React.ComponentProps<typeof TabsPrimitive.List>) {
 	return (
 		<TabsPrimitive.List
 			className={cn(
-				"inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted-foreground/5 p-[3px] text-muted-foreground",
+				"inline-flex h-9 w-fit max-w-full shrink-0 items-center justify-start overflow-x-auto rounded-lg bg-muted-foreground/5 p-[3px] text-muted-foreground",
 				className,
 			)}
 			data-slot="tabs-list"
@@ -28,7 +34,9 @@ function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimi
 	);
 }
 
-type TabsTriggerProps = React.ComponentProps<typeof TabsPrimitive.Tab> & { asChild?: boolean };
+type TabsTriggerProps = React.ComponentProps<typeof TabsPrimitive.Tab> & {
+	asChild?: boolean;
+};
 type PreventableMouseEvent = React.MouseEvent<HTMLElement> & {
 	baseUIHandlerPrevented?: boolean;
 	preventBaseUIHandler?: () => void;
@@ -46,7 +54,14 @@ function TabsTrigger({
 	...props
 }: TabsTriggerProps) {
 	const suppressNextClickRef = React.useRef(false);
-	const baseRender = asChild && React.isValidElement(children) ? children : render;
+	// Server Component children can arrive as lazy Flight wrappers.
+	const resolvedChild = asChild ? React.Children.toArray(children)[0] : null;
+	const child = React.isValidElement<{ children?: React.ReactNode }>(
+		resolvedChild,
+	)
+		? resolvedChild
+		: null;
+	const baseRender = child ?? render;
 	const activateOnMouseDown = !asChild && nativeButton !== false;
 
 	function handleClick(event: PreventableMouseEvent) {
@@ -60,7 +75,9 @@ function TabsTrigger({
 	}
 
 	function handleMouseDown(event: PreventableMouseEvent) {
-		onMouseDown?.(event as Parameters<NonNullable<TabsTriggerProps["onMouseDown"]>>[0]);
+		onMouseDown?.(
+			event as Parameters<NonNullable<TabsTriggerProps["onMouseDown"]>>[0],
+		);
 
 		if (
 			!activateOnMouseDown ||
@@ -91,15 +108,18 @@ function TabsTrigger({
 			render={baseRender}
 			{...props}
 		>
-			{asChild ? null : children}
+			{child ? child.props.children : children}
 		</TabsPrimitive.Tab>
 	);
 }
 
-function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Panel>) {
+function TabsContent({
+	className,
+	...props
+}: React.ComponentProps<typeof TabsPrimitive.Panel>) {
 	return (
 		<TabsPrimitive.Panel
-			className={cn("flex-1 outline-none", className)}
+			className={cn("min-w-0 flex-1 outline-none", className)}
 			data-slot="tabs-content"
 			{...props}
 		/>

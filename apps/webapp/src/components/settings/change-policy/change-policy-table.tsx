@@ -298,7 +298,7 @@ export function ChangePolicyTable({
 					) : null}
 				</div>
 			) : (
-				<DataTable columns={columns} data={filteredPolicies} />
+				<DataTable mobileLayout="stacked" columns={columns} data={filteredPolicies} />
 			)}
 
 			<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

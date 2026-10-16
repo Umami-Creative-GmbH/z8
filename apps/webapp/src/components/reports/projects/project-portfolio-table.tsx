@@ -306,7 +306,7 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 					)}
 				/>
 
-				<DataTable
+				<DataTable mobileLayout="stacked"
 					columns={columns}
 					data={filteredProjects}
 					emptyMessage={

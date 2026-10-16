@@ -126,9 +126,9 @@ function ClockodoStepIndicator({
 	];
 	const currentIndex = steps.findIndex((step) => step.key === currentStep);
 	return (
-		<div className="flex items-center justify-between">
+		<div className="flex min-w-0 items-center justify-between gap-1 overflow-x-auto pb-1">
 			{steps.map((step, index) => (
-				<div key={step.key} className="flex items-center">
+				<div key={step.key} className="flex min-w-0 flex-1 items-center last:flex-none">
 					<div className="flex items-center gap-2">
 						<div
 							className={`flex size-8 items-center justify-center rounded-full text-xs font-medium ${index < currentIndex ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : index === currentIndex ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
@@ -146,7 +146,7 @@ function ClockodoStepIndicator({
 						</span>
 					</div>
 					{index < steps.length - 1 && (
-						<div className="mx-2 h-px w-8 bg-border sm:w-12" />
+						<div className="mx-1 h-px min-w-1 flex-1 bg-border sm:mx-2 sm:w-12 sm:flex-none" />
 					)}
 				</div>
 			))}

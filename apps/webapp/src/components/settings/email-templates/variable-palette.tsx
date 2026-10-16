@@ -19,7 +19,7 @@ export function VariablePalette({ variables, onInsert }: VariablePaletteProps) {
 			className="rounded-xl border bg-muted/25 p-4"
 			aria-labelledby="email-template-variables"
 		>
-			<div className="flex items-start justify-between gap-3">
+			<div className="flex flex-col items-start gap-3">
 				<div className="space-y-1">
 					<h2 id="email-template-variables" className="font-semibold text-sm">
 						{t(

@@ -265,7 +265,7 @@ function EmployeeWorkHoursCard({
 						)}
 					</div>
 				) : (
-					<Table>
+					<Table mobileLayout="stacked">
 						<MetricsTableHeader
 							name={t("analytics.common.employee", "Employee")}
 							metrics={[

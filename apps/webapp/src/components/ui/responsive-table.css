@@ -1,0 +1,110 @@
+@media (max-width: 639px) {
+	[data-mobile-layout="stacked"] {
+		display: block;
+		min-width: 0;
+		width: 100%;
+	}
+
+	[data-mobile-layout="stacked"] > thead,
+	[data-mobile-layout="stacked"] > thead > tr {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+		border: 0;
+	}
+
+	/* Keep column semantics while exposing sorting and selection controls. */
+	[data-mobile-layout="stacked"]
+		> thead
+		th:not(:has(button, [role="checkbox"], input)) {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	[data-mobile-layout="stacked"]
+		> thead
+		th:has(button, [role="checkbox"], input) {
+		display: block;
+		position: static;
+		height: auto;
+		max-width: 100%;
+		padding: 0.25rem;
+		white-space: normal;
+	}
+
+	[data-mobile-layout="stacked"] > tbody {
+		display: grid;
+		gap: 0.75rem;
+		padding: 0.5rem;
+	}
+
+	[data-mobile-layout="stacked"] > tbody > tr {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		min-width: 0;
+		border: 1px solid var(--border);
+		border-radius: 0.5rem;
+		background: var(--card);
+	}
+
+	[data-mobile-layout="stacked"] > tbody > tr > td {
+		display: block;
+		position: static;
+		min-width: 0;
+		max-width: 100%;
+		border-bottom: 1px solid var(--border);
+		padding: 0.5rem 0.75rem;
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+
+	[data-mobile-layout="stacked"] > tbody > tr > td::before {
+		display: block;
+		margin-bottom: 0.25rem;
+		content: attr(data-label);
+		color: var(--muted-foreground);
+		font-size: 0.75rem;
+		line-height: 1.5;
+	}
+
+	[data-mobile-layout="stacked"] [data-slot="table-cell-value"],
+	[data-mobile-layout="stacked"] [data-slot="table-cell-value"] * {
+		min-width: 0;
+		max-width: 100%;
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+
+	[data-mobile-layout="stacked"] > tbody > tr > td[data-label=""],
+	[data-mobile-layout="stacked"] > tbody > tr > td:not([data-label]) {
+		display: block;
+	}
+
+	[data-mobile-layout="stacked"] > tbody > tr > td[data-label=""]::before,
+	[data-mobile-layout="stacked"] > tbody > tr > td:not([data-label])::before {
+		content: none;
+	}
+
+	[data-mobile-layout="stacked"] [data-slot="table-cell-value"] > .flex {
+		flex-wrap: wrap;
+	}
+
+	[data-mobile-layout="stacked"] > tbody > tr > td:first-child,
+	[data-mobile-layout="stacked"] > tbody > tr > td:last-child,
+	[data-mobile-layout="stacked"]
+		> tbody
+		> tr
+		> td:first-child:has([role="checkbox"])
+		+ td {
+		grid-column: 1 / -1;
+	}
+
+	[data-mobile-layout="stacked"] > tbody > tr > td:last-child {
+		border-bottom: 0;
+	}
+}

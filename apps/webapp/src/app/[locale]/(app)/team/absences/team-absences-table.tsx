@@ -326,7 +326,7 @@ function TeamAbsencesRowsTable({
 	return (
 		<div className="rounded-lg border bg-card">
 			<div className="overflow-x-auto">
-				<Table className="min-w-[760px]">
+				<Table mobileLayout="stacked" className="min-w-[760px]">
 					<TableHeader>
 						<TableRow>
 							<SortableAbsenceTableHead

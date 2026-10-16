@@ -26,7 +26,7 @@
 .schedule-x-container .sx__view-container {
 	flex: 1;
 	min-height: 0;
-	overflow-y: auto;
+	overflow: auto;
 }
 
 /* Week/time grid sizing */
@@ -40,6 +40,13 @@
 /* Fix: Remove overflow from week-wrapper so sticky works relative to view-container */
 .schedule-x-container .sx__week-wrapper {
 	overflow: visible;
+}
+
+/* Keep all seven days reachable instead of clipping the final columns on phones. */
+@media (max-width: 767px) {
+	.schedule-x-container .is-week-view .sx__week-wrapper {
+		min-width: 42rem;
+	}
 }
 
 /* Sticky day headers for week and day views */

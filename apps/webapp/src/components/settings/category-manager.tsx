@@ -271,7 +271,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 					}
 				/>
 
-				<DataTable
+				<DataTable mobileLayout="stacked"
 					columns={columns}
 					data={filteredCategories}
 					isFetching={isFetching}

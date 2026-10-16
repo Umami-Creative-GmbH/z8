@@ -125,7 +125,7 @@ export function EmailTemplateEditor({
 				/>
 			</div>
 
-			<div className="grid gap-3">
+			<div className="grid min-w-0 grid-cols-1 gap-3">
 				<div className="space-y-1">
 					<p
 						id="email-template-body-label"
@@ -143,11 +143,11 @@ export function EmailTemplateEditor({
 						)}
 					</p>
 				</div>
-				<div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
+				<div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
 					<fieldset
 						aria-labelledby="email-template-body-label"
 						aria-describedby="email-template-body-description"
-						className="rounded-xl border bg-background p-2"
+						className="min-w-0 rounded-xl border bg-background p-2"
 					>
 						<ReactEmailEditor
 							ref={bodyEditorRef}
@@ -156,7 +156,7 @@ export function EmailTemplateEditor({
 								"settings.emailTemplates.editor.bodyPlaceholder",
 								"Write the operational email body...",
 							)}
-							className="min-h-64 [&_.ProseMirror]:min-h-64 [&_.ProseMirror]:!bg-background [&_.ProseMirror]:p-3 [&_.ProseMirror]:text-foreground [&_.ProseMirror]:caret-foreground [&_.ProseMirror]:outline-none dark:[&_.ProseMirror]:!bg-card"
+							className="min-h-64 min-w-0 max-w-full [&_.ProseMirror]:max-w-full [&_.node-container]:max-w-full [&_.ProseMirror]:min-h-64 [&_.ProseMirror]:!bg-background [&_.ProseMirror]:p-3 [&_.ProseMirror]:text-foreground [&_.ProseMirror]:caret-foreground [&_.ProseMirror]:outline-none dark:[&_.ProseMirror]:!bg-card"
 							onUpdate={async (editorRef: EmailEditorRef) => {
 								const updateVersion = updateVersionRef.current + 1;
 								updateVersionRef.current = updateVersion;

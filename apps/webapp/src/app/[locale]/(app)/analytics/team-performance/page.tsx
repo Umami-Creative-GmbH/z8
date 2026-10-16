@@ -254,7 +254,7 @@ export default function TeamPerformancePage() {
 									)}
 								</div>
 							) : (
-								<Table>
+								<Table mobileLayout="stacked">
 									<MetricsTableHeader
 										name={t("analytics.common.team", "Team")}
 										metrics={[

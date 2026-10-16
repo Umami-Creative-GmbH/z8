@@ -367,7 +367,7 @@ function NotificationsInboxView({
 
 	return (
 		<Card className="gap-0 overflow-hidden">
-			<CardHeader className="border-b">
+			<CardHeader className="flex flex-col gap-4 border-b sm:grid">
 				<div className="space-y-1.5">
 					<div className="flex flex-wrap items-center gap-2">
 						<CardTitle className="text-2xl">
@@ -388,7 +388,7 @@ function NotificationsInboxView({
 						)}
 					</CardDescription>
 				</div>
-				<CardAction className="flex items-center gap-2">
+				<CardAction className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
 					<Button
 						disabled={isFetching}
 						onClick={refresh}

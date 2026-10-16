@@ -242,7 +242,7 @@ export function NotificationItem({
 	return (
 		<div
 			className={cn(
-				"group flex items-start gap-3 p-3 transition-colors",
+				"group grid min-w-0 grid-cols-1 gap-2 p-3 transition-colors sm:flex sm:items-start sm:gap-3",
 				"hover:bg-muted/50",
 				!notification.isRead && "bg-muted/30",
 			)}
@@ -253,14 +253,14 @@ export function NotificationItem({
 				className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 			>
 				{/* Icon */}
-				<span className={cn("flex shrink-0 items-center justify-center rounded-full p-2", bgColor)}>
+				<span className={cn("hidden shrink-0 items-center justify-center rounded-full p-2 sm:flex", bgColor)}>
 					<span className={iconColor}>{icon}</span>
 				</span>
 
 				{/* Content */}
 				<span className="min-w-0 flex-1">
 					<span className="flex items-start justify-between gap-2">
-						<span className={cn("text-sm line-clamp-1", !notification.isRead && "font-medium")}>
+						<span className={cn("text-sm line-clamp-2 sm:line-clamp-1", !notification.isRead && "font-medium")}>
 							{localized.title}
 						</span>
 						{!notification.isRead && (
@@ -269,7 +269,7 @@ export function NotificationItem({
 							</span>
 						)}
 					</span>
-					<span className="text-muted-foreground text-xs line-clamp-2 mt-0.5 block">
+					<span className="mt-0.5 line-clamp-3 text-muted-foreground text-xs sm:line-clamp-2">
 						{localized.message}
 					</span>
 					<span className="text-muted-foreground text-xs mt-1 block">{localized.timeAgo}</span>
@@ -278,7 +278,7 @@ export function NotificationItem({
 
 			{/* Actions show on hover or focus, and always on touch screens, which cannot hover (#846).
 				Button grows each hit area to 44 px there; the gap keeps neighbouring areas apart. */}
-			<div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:gap-4 pointer-coarse:opacity-100">
+			<div className="flex shrink-0 items-center justify-end gap-3 transition-opacity sm:gap-1 sm:opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:gap-4 pointer-coarse:opacity-100">
 				{!notification.isRead && (
 					<Button
 						size="icon"

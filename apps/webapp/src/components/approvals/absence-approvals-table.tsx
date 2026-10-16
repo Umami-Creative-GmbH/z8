@@ -328,7 +328,7 @@ export function AbsenceApprovalsTable() {
 					}
 				/>
 
-				<DataTable
+				<DataTable mobileLayout="stacked"
 					columns={columns}
 					data={filteredApprovals}
 					isFetching={isFetching}

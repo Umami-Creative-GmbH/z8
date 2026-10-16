@@ -61,7 +61,7 @@ export function EmailTemplateList({
 				"settings.emailTemplates.emailTemplates",
 				"Email templates",
 			)}
-			className="space-y-5"
+			className="max-h-80 min-w-0 space-y-5 overflow-y-auto pr-1 lg:max-h-none lg:overflow-visible lg:pr-0"
 		>
 			{Object.entries(groups).map(([category, entries]) => (
 				<section
@@ -92,7 +92,7 @@ export function EmailTemplateList({
 									variant="ghost"
 									aria-current={selected ? "true" : undefined}
 									className={cn(
-										"h-auto min-h-14 w-full justify-start rounded-xl border px-3 py-3 text-left",
+										"h-auto min-h-14 w-full min-w-0 justify-start rounded-xl border px-3 py-3 text-left",
 										"hover:bg-muted/60 focus-visible:ring-ring/50",
 										selected
 											? "border-primary/45 bg-primary/5 shadow-xs"
@@ -101,7 +101,7 @@ export function EmailTemplateList({
 									onClick={() => onSelect(definition.key)}
 								>
 									<span className="flex w-full min-w-0 items-start justify-between gap-3">
-										<span className="min-w-0 space-y-1">
+										<span className="min-w-0 flex-1 space-y-1">
 											<span className="block truncate font-medium text-sm">
 												{definition.label}
 											</span>

@@ -375,7 +375,7 @@ function ProjectManagementTable({
 	| "setTemplateSourceId"
 >) {
 	return (
-		<Table>
+		<Table mobileLayout="stacked">
 			<TableHeader>
 				<TableRow>
 					<TableHead>{t("settings.projects.column.name", "Name")}</TableHead>

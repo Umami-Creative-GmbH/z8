@@ -1,0 +1,1579 @@
+{
+  "date": "2026-10-16",
+  "browser": "Connected Chrome",
+  "source": "Y:/Codex/Worktrees/faa6/z8",
+  "branch": "ai/1275-mobile-usability-fixes",
+  "notes": "CSS viewport overrides. Settled samples only; navigation/loading snapshots excluded. Repeated samples include iterative verification.",
+  "specificChecks": {
+    "scheduler": {
+      "at390": 348,
+      "at320": 278,
+      "at1440": 840,
+      "desktopView": "Week"
+    },
+    "payrollExport": {
+      "at320": {
+        "listClient": 288,
+        "listScroll": 691,
+        "overflowX": "auto",
+        "lastTabOpened": "History"
+      }
+    },
+    "calendarWeek": {
+      "horizontalScrollVerified": true,
+      "scrollLeft": 316,
+      "client": 356,
+      "scrollWidth": 672,
+      "sundayVisible": true
+    },
+    "importSteps": {
+      "at320": {
+        "lastStepLeft": 264,
+        "lastStepRight": 296
+      }
+    },
+    "notifications": {
+      "at320": {
+        "settingsLeft": 140.296875,
+        "settingsRight": 235.78125
+      }
+    },
+    "locationDetail": {
+      "at390": {
+        "deleteLeft": 150.40625,
+        "deleteRight": 247.40625
+      }
+    }
+  },
+  "samples": [
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Employees",
+        "Employees"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 306,
+          "labels": [
+            "Employee",
+            "Personnel number",
+            "Position",
+            "Team",
+            "Role",
+            "Contract",
+            "Status",
+            "Actions"
+          ],
+          "mode": "stacked",
+          "rows": 16,
+          "scroll": 306,
+          "width": 306
+        }
+      ],
+      "tabs": [
+        {
+          "client": 351,
+          "names": [
+            "Employees",
+            "Members",
+            "Invitations",
+            "Invite Codes"
+          ],
+          "overflow": "auto",
+          "scroll": 351
+        }
+      ],
+      "url": "/en/settings/employees",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [
+        {
+          "client": 298,
+          "scroll": 298,
+          "width": 298
+        },
+        {
+          "client": 298,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "documentWidth": 390,
+      "headings": [
+        "Analytics",
+        "Analytics"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [
+        {
+          "client": 338,
+          "names": [
+            "Overview",
+            "Team Performance",
+            "Vacation Trends",
+            "Work Hours",
+            "Overtime Burn-Down"
+          ],
+          "overflow": "auto",
+          "scroll": 586
+        }
+      ],
+      "url": "/en/analytics",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [
+        {
+          "client": 298,
+          "scroll": 298,
+          "width": 298
+        },
+        {
+          "client": 298,
+          "scroll": 298,
+          "width": 298
+        },
+        {
+          "client": 298,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "documentWidth": 390,
+      "headings": [
+        "Analytics",
+        "Analytics"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 298,
+          "labels": [
+            "Employee",
+            "Total Hours",
+            "Expected Hours",
+            "Variance",
+            "Status"
+          ],
+          "mode": "stacked",
+          "rows": 16,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "tabs": [
+        {
+          "client": 348,
+          "names": [
+            "Overview",
+            "Team Performance",
+            "Vacation Trends",
+            "Work Hours",
+            "Overtime Burn-Down"
+          ],
+          "overflow": "auto",
+          "scroll": 736
+        }
+      ],
+      "url": "/en/analytics/work-hours",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [
+        {
+          "client": 298,
+          "scroll": 298,
+          "width": 298
+        },
+        {
+          "client": 298,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "documentWidth": 390,
+      "headings": [
+        "Analytics",
+        "Analytics"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 298,
+          "labels": [
+            "Employee",
+            "Allocated",
+            "Taken",
+            "Remaining",
+            "Utilization"
+          ],
+          "mode": "stacked",
+          "rows": 16,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "tabs": [
+        {
+          "client": 348,
+          "names": [
+            "Overview",
+            "Team Performance",
+            "Vacation Trends",
+            "Work Hours",
+            "Overtime Burn-Down"
+          ],
+          "overflow": "auto",
+          "scroll": 736
+        }
+      ],
+      "url": "/en/analytics/vacation-trends",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [
+        {
+          "client": 298,
+          "scroll": 298,
+          "width": 298
+        },
+        {
+          "client": 298,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "documentWidth": 390,
+      "headings": [
+        "Analytics",
+        "Analytics"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 298,
+          "labels": [
+            "Team",
+            "Total Hours",
+            "Avg per Employee",
+            "Employee Count",
+            "Status"
+          ],
+          "mode": "stacked",
+          "rows": 4,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "tabs": [
+        {
+          "client": 348,
+          "names": [
+            "Overview",
+            "Team Performance",
+            "Vacation Trends",
+            "Work Hours",
+            "Overtime Burn-Down"
+          ],
+          "overflow": "auto",
+          "scroll": 736
+        }
+      ],
+      "url": "/en/analytics/team-performance",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [
+        {
+          "client": 298,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "documentWidth": 390,
+      "headings": [
+        "Analytics",
+        "Analytics",
+        "Overtime Burn-Down"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 298,
+          "labels": [
+            "Team",
+            "Current Overtime",
+            "Previous Overtime",
+            "Week-over-Week",
+            "Trend Direction"
+          ],
+          "mode": "stacked",
+          "rows": 4,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "tabs": [
+        {
+          "client": 348,
+          "names": [
+            "Overview",
+            "Team Performance",
+            "Vacation Trends",
+            "Work Hours",
+            "Overtime Burn-Down"
+          ],
+          "overflow": "auto",
+          "scroll": 736
+        }
+      ],
+      "url": "/en/analytics/overtime-burn-down",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Time Tracking"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 296,
+          "labels": [
+            "Date",
+            "Clock InRecorded local time",
+            "Clock OutRecorded local time",
+            "Duration",
+            "Description",
+            ""
+          ],
+          "mode": "stacked",
+          "rows": 10,
+          "scroll": 296,
+          "width": 296
+        }
+      ],
+      "tabs": [],
+      "url": "/en/time-tracking",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Email",
+        "Email"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [
+        {
+          "client": 196,
+          "names": [
+            "Delivery",
+            "Email Templates"
+          ],
+          "overflow": "auto",
+          "scroll": 196
+        }
+      ],
+      "url": "/en/settings/enterprise/email",
+      "viewport": 390,
+      "wideCards": [
+        {
+          "client": 346,
+          "scroll": 642,
+          "text": "Email verificationSent when a user needs to verify their email ad",
+          "width": 348
+        }
+      ]
+    },
+    {
+      "charts": [],
+      "documentWidth": 380,
+      "headings": [
+        "System Email Templates"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [],
+      "url": "/en/platform-admin/system-email-templates",
+      "viewport": 380,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Absences",
+        "Absences"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 298,
+          "labels": [
+            "Employee",
+            "Full allowance",
+            "Prorated allowance",
+            "Overdrawn"
+          ],
+          "mode": "stacked",
+          "rows": 2,
+          "scroll": 298,
+          "width": 298
+        },
+        {
+          "client": 296,
+          "labels": [
+            "Name",
+            "Start Date",
+            "Valid Until",
+            "Annual Days",
+            "Accrual",
+            "Carryover",
+            "Status",
+            ""
+          ],
+          "mode": "stacked",
+          "rows": 1,
+          "scroll": 296,
+          "width": 296
+        }
+      ],
+      "tabs": [
+        {
+          "client": 240,
+          "names": [
+            "Vacation Management",
+            "Holidays"
+          ],
+          "overflow": "auto",
+          "scroll": 240
+        },
+        {
+          "client": 255,
+          "names": [
+            "Policies",
+            "Categories",
+            "Assignments"
+          ],
+          "overflow": "auto",
+          "scroll": 255
+        }
+      ],
+      "url": "/en/settings/vacation",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Absences",
+        "Absences"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [
+        {
+          "client": 240,
+          "names": [
+            "Vacation Management",
+            "Holidays"
+          ],
+          "overflow": "auto",
+          "scroll": 240
+        },
+        {
+          "client": 348,
+          "names": [
+            "Holiday Presets",
+            "Assignments",
+            "Custom Holidays",
+            "Categories"
+          ],
+          "overflow": "auto",
+          "scroll": 432
+        }
+      ],
+      "url": "/en/settings/vacation",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 320,
+      "headings": [
+        "Notifications"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [],
+      "url": "/en/notifications",
+      "viewport": 320,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Calendar"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [
+        {
+          "client": 358,
+          "names": [
+            "Day",
+            "Week",
+            "Month",
+            "Year"
+          ],
+          "overflow": "auto",
+          "scroll": 358
+        }
+      ],
+      "url": "/en/calendar",
+      "viewport": 390,
+      "wideCards": [],
+      "view": "Week",
+      "horizontalScrollVerified": true,
+      "sundayVisible": true
+    },
+    {
+      "charts": [],
+      "documentWidth": 320,
+      "headings": [
+        "Import Data",
+        "Import Data"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [
+        {
+          "client": 148,
+          "names": [
+            "Clockodo",
+            "Clockin"
+          ],
+          "overflow": "auto",
+          "scroll": 148
+        }
+      ],
+      "url": "/en/settings/import",
+      "viewport": 320,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 380,
+      "headings": [
+        "Platform Settings"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [],
+      "url": "/en/platform-admin/settings",
+      "viewport": 380,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Payroll Readiness",
+        "Payroll Readiness"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 298,
+          "labels": [
+            "Employee",
+            "Personnel number"
+          ],
+          "mode": "stacked",
+          "rows": 16,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "tabs": [],
+      "url": "/en/settings/payroll-readiness",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Locations",
+        "Locations"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 346,
+          "labels": [
+            "Name",
+            "Address",
+            "Subareas",
+            "Supervisors",
+            "Status"
+          ],
+          "mode": "stacked",
+          "rows": 3,
+          "scroll": 346,
+          "width": 346
+        }
+      ],
+      "tabs": [],
+      "url": "/en/settings/locations",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Locations",
+        "Demo - Downtown Branch",
+        "Locations"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [],
+      "url": "/en/settings/locations/0009d714-db62-479b-8390-716bc282a9ea",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Approvals",
+        "Approvals"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 296,
+          "labels": [
+            "Employee",
+            "Dates",
+            "Type",
+            "Days",
+            "Notes",
+            ""
+          ],
+          "mode": "stacked",
+          "rows": 4,
+          "scroll": 296,
+          "width": 296
+        }
+      ],
+      "tabs": [
+        {
+          "client": 264,
+          "names": [
+            "Absence Requests",
+            "Time Corrections"
+          ],
+          "overflow": "auto",
+          "scroll": 264
+        }
+      ],
+      "url": "/en/approvals",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Approvals",
+        "Approvals"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 296,
+          "labels": [
+            "Employee",
+            "Date",
+            "Original",
+            "Requested",
+            "Reason",
+            ""
+          ],
+          "mode": "stacked",
+          "rows": 4,
+          "scroll": 296,
+          "width": 296
+        }
+      ],
+      "tabs": [
+        {
+          "client": 264,
+          "names": [
+            "Absence Requests",
+            "Time Corrections"
+          ],
+          "overflow": "auto",
+          "scroll": 264
+        }
+      ],
+      "url": "/en/approvals",
+      "viewport": 390,
+      "wideCards": [],
+      "view": "Time Corrections"
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Team Absences",
+        "Team absences"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 346,
+          "labels": [
+            "Employee",
+            "Team or Position",
+            "Allowance",
+            "Used",
+            "Pending",
+            "Left",
+            "Sick",
+            "Actions"
+          ],
+          "mode": "stacked",
+          "rows": 16,
+          "scroll": 346,
+          "width": 346
+        }
+      ],
+      "tabs": [],
+      "url": "/en/team/absences",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Driving Details",
+        "Driving details missing"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 346,
+          "labels": [
+            "Employee",
+            "Date",
+            "Recorded local time",
+            "Missing",
+            "Calendar"
+          ],
+          "mode": "stacked",
+          "rows": 64,
+          "scroll": 346,
+          "width": 346
+        }
+      ],
+      "tabs": [],
+      "url": "/en/team/driving",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Work Policies",
+        "Work Policies"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 346,
+          "labels": [
+            "Name",
+            "Self-Service",
+            "Approval Window",
+            "Notification",
+            ""
+          ],
+          "mode": "stacked",
+          "rows": 2,
+          "scroll": 346,
+          "width": 346
+        }
+      ],
+      "tabs": [
+        {
+          "client": 226,
+          "names": [
+            "Work Policies",
+            "Change Policies"
+          ],
+          "overflow": "auto",
+          "scroll": 226
+        },
+        {
+          "client": 170,
+          "names": [
+            "Policies",
+            "Assignments"
+          ],
+          "overflow": "auto",
+          "scroll": 170
+        }
+      ],
+      "url": "/en/settings/work-policies",
+      "viewport": 390,
+      "wideCards": [],
+      "view": "Change Policies"
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Work Policies",
+        "Work Policies"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 356,
+          "labels": [
+            "Name",
+            "Features",
+            "Weekly Hours",
+            "Break Rules",
+            ""
+          ],
+          "mode": "stacked",
+          "rows": 1,
+          "scroll": 356,
+          "width": 356
+        }
+      ],
+      "tabs": [
+        {
+          "client": 226,
+          "names": [
+            "Work Policies",
+            "Change Policies"
+          ],
+          "overflow": "auto",
+          "scroll": 226
+        },
+        {
+          "client": 358,
+          "names": [
+            "Policies",
+            "Assignments",
+            "Import Presets",
+            "Compliance"
+          ],
+          "overflow": "auto",
+          "scroll": 374
+        }
+      ],
+      "url": "/en/settings/work-policies",
+      "viewport": 390,
+      "wideCards": [],
+      "view": "Work Policies"
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Work Categories",
+        "Work Categories"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 298,
+          "labels": [
+            "Color",
+            "Name",
+            "Factor",
+            "Used in Sets",
+            "Actions"
+          ],
+          "mode": "stacked",
+          "rows": 8,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "tabs": [
+        {
+          "client": 296,
+          "names": [
+            "Categories",
+            "Category Sets",
+            "Assignments"
+          ],
+          "overflow": "auto",
+          "scroll": 296
+        }
+      ],
+      "url": "/en/settings/work-categories",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Projects",
+        "Projects"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 298,
+          "labels": [
+            "Name",
+            "Status",
+            "Customer",
+            "Budget",
+            "Deadline",
+            "Team",
+            "Tasks",
+            ""
+          ],
+          "mode": "stacked",
+          "rows": 6,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "tabs": [
+        {
+          "client": 156,
+          "names": [
+            "Projects",
+            "Templates"
+          ],
+          "overflow": "auto",
+          "scroll": 156
+        }
+      ],
+      "url": "/en/settings/projects",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Absences",
+        "Employee Allowances"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 298,
+          "labels": [
+            "Employee",
+            "Full allowance",
+            "Prorated allowance",
+            "Overdrawn"
+          ],
+          "mode": "stacked",
+          "rows": 2,
+          "scroll": 298,
+          "width": 298
+        },
+        {
+          "client": 296,
+          "labels": [
+            "Employee",
+            "Policy",
+            "Team",
+            "Managers",
+            "Default Days",
+            "Custom Days",
+            "Allowance",
+            "Carryover",
+            "Adjustments",
+            "Accrued",
+            "Total Available",
+            "Actions"
+          ],
+          "mode": "stacked",
+          "rows": 16,
+          "scroll": 296,
+          "width": 296
+        }
+      ],
+      "tabs": [],
+      "url": "/en/settings/vacation/employees",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Audit",
+        "Audit"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 298,
+          "labels": [
+            "Timestamp",
+            "Action",
+            "User",
+            "Entity",
+            "IP Address",
+            "Details"
+          ],
+          "mode": "stacked",
+          "rows": 5,
+          "scroll": 298,
+          "width": 298
+        }
+      ],
+      "tabs": [
+        {
+          "client": 293,
+          "names": [
+            "Activity",
+            "Configuration",
+            "Audit Packages"
+          ],
+          "overflow": "auto",
+          "scroll": 293
+        }
+      ],
+      "url": "/en/settings/audit-export",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Project Reports",
+        "Project Reports"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 296,
+          "labels": [
+            "Project",
+            "Customer",
+            "Status",
+            "Hours",
+            "Budget",
+            "Deadline",
+            "Team",
+            ""
+          ],
+          "mode": "stacked",
+          "rows": 6,
+          "scroll": 296,
+          "width": 296
+        }
+      ],
+      "tabs": [
+        {
+          "client": 252,
+          "names": [
+            "Portfolio Overview",
+            "Project Details"
+          ],
+          "overflow": "auto",
+          "scroll": 252
+        }
+      ],
+      "url": "/en/reports/projects",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Organization Management"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 340,
+          "labels": [
+            "Organization",
+            "Employees",
+            "Members",
+            "Status",
+            "Created",
+            "Actions"
+          ],
+          "mode": "stacked",
+          "rows": 1,
+          "scroll": 340,
+          "width": 340
+        }
+      ],
+      "tabs": [],
+      "url": "/en/platform-admin/organizations",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 380,
+      "headings": [
+        "User Management"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 330,
+          "labels": [
+            "User",
+            "Organizations",
+            "Role",
+            "Status",
+            "Created",
+            "Actions"
+          ],
+          "mode": "stacked",
+          "rows": 16,
+          "scroll": 330,
+          "width": 330
+        }
+      ],
+      "tabs": [],
+      "url": "/en/platform-admin/users",
+      "viewport": 380,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 380,
+      "headings": [
+        "Worker Queue"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 250,
+          "labels": [
+            "Job Name",
+            "Schedule",
+            "Default",
+            "Next Run",
+            "Actions"
+          ],
+          "mode": "stacked",
+          "rows": 39,
+          "scroll": 250,
+          "width": 250
+        }
+      ],
+      "tabs": [],
+      "url": "/en/platform-admin/worker-queue",
+      "viewport": 380,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 380,
+      "headings": [
+        "z8"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 294,
+          "labels": [
+            "Package",
+            "License",
+            "Links"
+          ],
+          "mode": "stacked",
+          "rows": 123,
+          "scroll": 294,
+          "width": 294
+        }
+      ],
+      "tabs": [],
+      "url": "/en/licenses",
+      "viewport": 380,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Email",
+        "Email"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [
+        {
+          "client": 196,
+          "names": [
+            "Delivery",
+            "Email Templates"
+          ],
+          "overflow": "auto",
+          "scroll": 196
+        }
+      ],
+      "url": "/en/settings/enterprise/email",
+      "viewport": 390,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 320,
+      "headings": [
+        "Email",
+        "Email"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [
+        {
+          "client": 196,
+          "names": [
+            "Delivery",
+            "Email Templates"
+          ],
+          "overflow": "auto",
+          "scroll": 196
+        }
+      ],
+      "url": "/en/settings/enterprise/email",
+      "viewport": 320,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 320,
+      "headings": [
+        "Email",
+        "Email"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [
+        {
+          "client": 196,
+          "names": [
+            "Delivery",
+            "Email Templates"
+          ],
+          "overflow": "auto",
+          "scroll": 196
+        }
+      ],
+      "url": "/en/settings/enterprise/email",
+      "viewport": 320,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 320,
+      "headings": [
+        "Employees",
+        "Employees"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 226,
+          "labels": [
+            "Employee",
+            "Personnel number",
+            "Position",
+            "Team",
+            "Role",
+            "Contract",
+            "Status",
+            "Actions"
+          ],
+          "mode": "stacked",
+          "rows": 16,
+          "scroll": 226,
+          "width": 226
+        }
+      ],
+      "tabs": [
+        {
+          "client": 278,
+          "names": [
+            "Employees",
+            "Members",
+            "Invitations",
+            "Invite Codes"
+          ],
+          "overflow": "auto",
+          "scroll": 278
+        }
+      ],
+      "url": "/en/settings/employees",
+      "viewport": 320,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 1440,
+      "headings": [
+        "Employees",
+        "Employees"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 794,
+          "labels": [
+            "Employee",
+            "Personnel number",
+            "Position",
+            "Team",
+            "Role",
+            "Contract",
+            "Status",
+            "Actions"
+          ],
+          "mode": "stacked",
+          "rows": 16,
+          "scroll": 1041,
+          "width": 1041
+        }
+      ],
+      "tabs": [
+        {
+          "client": 351,
+          "names": [
+            "Employees",
+            "Members",
+            "Invitations",
+            "Invite Codes"
+          ],
+          "overflow": "auto",
+          "scroll": 351
+        }
+      ],
+      "url": "/en/settings/employees",
+      "viewport": 1440,
+      "wideCards": [],
+      "check": "Desktop employee table"
+    },
+    {
+      "charts": [
+        {
+          "client": 1036,
+          "scroll": 1036,
+          "width": 1036
+        },
+        {
+          "client": 1036,
+          "scroll": 1036,
+          "width": 1036
+        },
+        {
+          "client": 1036,
+          "scroll": 1036,
+          "width": 1036
+        }
+      ],
+      "documentWidth": 1440,
+      "headings": [
+        "Analytics",
+        "Analytics"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 1036,
+          "labels": [
+            "Employee",
+            "Total Hours",
+            "Expected Hours",
+            "Variance",
+            "Status"
+          ],
+          "mode": "stacked",
+          "rows": 16,
+          "scroll": 1036,
+          "width": 1036
+        }
+      ],
+      "tabs": [
+        {
+          "client": 736,
+          "names": [
+            "Overview",
+            "Team Performance",
+            "Vacation Trends",
+            "Work Hours",
+            "Overtime Burn-Down"
+          ],
+          "overflow": "auto",
+          "scroll": 736
+        }
+      ],
+      "url": "/en/analytics/work-hours",
+      "viewport": 1440,
+      "wideCards": [],
+      "check": "Desktop analytics"
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Work Categories",
+        "Work Categories"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 296,
+          "labels": [
+            "Name",
+            "Description",
+            "Categories",
+            ""
+          ],
+          "mode": "stacked",
+          "rows": 2,
+          "scroll": 296,
+          "width": 296
+        }
+      ],
+      "tabs": [
+        {
+          "client": 296,
+          "names": [
+            "Categories",
+            "Category Sets",
+            "Assignments"
+          ],
+          "overflow": "auto",
+          "scroll": 296
+        }
+      ],
+      "url": "/en/settings/work-categories",
+      "viewport": 390,
+      "wideCards": [],
+      "view": "Category Sets hydrated"
+    },
+    {
+      "charts": [
+        {
+          "client": 228,
+          "scroll": 228,
+          "width": 228
+        },
+        {
+          "client": 228,
+          "scroll": 228,
+          "width": 228
+        }
+      ],
+      "documentWidth": 320,
+      "headings": [
+        "Analytics",
+        "Analytics"
+      ],
+      "loading": false,
+      "tables": [],
+      "tabs": [
+        {
+          "client": 278,
+          "names": [
+            "Overview",
+            "Team Performance",
+            "Vacation Trends",
+            "Work Hours",
+            "Overtime Burn-Down"
+          ],
+          "overflow": "auto",
+          "scroll": 736
+        }
+      ],
+      "url": "/en/analytics",
+      "viewport": 320,
+      "wideCards": []
+    },
+    {
+      "charts": [],
+      "documentWidth": 390,
+      "headings": [
+        "Absences",
+        "Absences"
+      ],
+      "loading": false,
+      "tables": [
+        {
+          "client": 356,
+          "labels": [
+            ""
+          ],
+          "mode": "stacked",
+          "rows": 1,
+          "scroll": 356,
+          "width": 356
+        }
+      ],
+      "tabs": [
+        {
+          "client": 240,
+          "names": [
+            "Vacation Management",
+            "Holidays"
+          ],
+          "overflow": "auto",
+          "scroll": 240
+        },
+        {
+          "client": 358,
+          "names": [
+            "Holiday Presets",
+            "Assignments",
+            "Custom Holidays",
+            "Categories"
+          ],
+          "overflow": "auto",
+          "scroll": 432
+        }
+      ],
+      "url": "/en/settings/vacation",
+      "viewport": 390,
+      "wideCards": [],
+      "view": "Holiday Categories (empty)"
+    }
+  ]
+}

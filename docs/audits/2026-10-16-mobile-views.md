@@ -6,6 +6,8 @@ Date: 16 October 2026. Browser: connected Chrome. Main viewport: 390 × 844 CSS 
 
 The inventory accounts for all **161 route patterns** (142 static, 19 dynamic). This is an available-state browser audit, not full coverage of every role, data state, locale or interaction. Gated routes and missing fixtures are explicitly listed below; they are not passes.
 
+Implementation status and post-fix Chrome evidence: [Mobile fixes](./2026-10-16-mobile-fixes.md). The findings below preserve the original observations.
+
 ## Primary findings
 
 | ID | Priority | Routes / view | Observed problem | Evidence | Suggested direction |
