@@ -1,22 +1,18 @@
-import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
-import { Data, Effect, Result } from "effect";
-import { billingSeatDelivery, subscription } from "@/db/schema";
-import type { DatabaseError } from "@/lib/effect/errors";
-import { kioskSeatsEnabled } from "@/lib/effect/services/billing/seat-items";
+import { and, asc, desc, eq, inArray, isNotNull, notInArray } from "drizzle-orm";
+import { Effect, Result } from "effect";
+import { billingSeatAudit, billingSeatDelivery, subscription } from "@/db/schema";
+import { type DatabaseError, KioskSeatsNotConfiguredError } from "@/lib/effect/errors";
+import { ENDED_SUBSCRIPTION_STATUSES } from "@/lib/effect/services/billing/seat-delivery";
+import {
+	KIOSK_SEATS_NOT_CONFIGURED_MESSAGE,
+	kioskSeatReconcileConfigured,
+} from "@/lib/effect/services/billing/seat-items";
 import { SeatSyncService } from "@/lib/effect/services/billing/seat-sync.service";
 import { StripeService } from "@/lib/effect/services/billing/stripe.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("KioskSeatReconcile");
-
-/** The reconcile refused because billing or either kiosk seat price is not configured. */
-export class KioskSeatsNotConfiguredError extends Data.TaggedError("KioskSeatsNotConfiguredError")<{
-	message: string;
-}> {}
-
-const KIOSK_SEATS_NOT_CONFIGURED_MESSAGE =
-	"Kiosk seats are not configured: set BILLING_ENABLED=true, STRIPE_PRICE_KIOSK_MONTHLY_ID and STRIPE_PRICE_KIOSK_YEARLY_ID on the webapp and the worker first. Nothing was changed.";
 
 /**
  * One organization's result. `updated`: Stripe got a new full and kiosk seat
@@ -42,13 +38,13 @@ function describeFailure(error: unknown): string {
 
 /**
  * The one-time move of existing subscriptions to kiosk seats (#886): billing
- * seat sync for every organization with a Stripe subscription (or only those
- * named), one at a time. Seat sync adds the kiosk seat item, lowers the full
- * seat quantity and lets Stripe prorate the credit. Running it again changes
- * nothing, because seat sync leaves Stripe alone when it already bills the
- * split. Refuses before any Stripe call unless billing and both kiosk seat
- * prices are configured. One organization's failure is reported and the
- * others still run.
+ * seat sync for every organization with a Stripe subscription that has not
+ * ended (or only those named), one at a time. Seat sync adds the kiosk seat
+ * item, lowers the full seat quantity and lets Stripe prorate the credit; the
+ * seat audit then records the new split. Running it again changes nothing,
+ * because seat sync leaves Stripe alone when it already bills the split.
+ * Refuses before any Stripe call unless billing and both kiosk seat prices are
+ * configured. One organization's failure is reported and the others still run.
  */
 export const reconcileKioskSeats = (
 	options: { organizationIds?: readonly string[] } = {},
@@ -59,7 +55,7 @@ export const reconcileKioskSeats = (
 > =>
 	Effect.gen(function* () {
 		const { config } = yield* StripeService;
-		if (!config.enabled || !kioskSeatsEnabled(config)) {
+		if (!kioskSeatReconcileConfigured(config)) {
 			return yield* Effect.fail(
 				new KioskSeatsNotConfiguredError({ message: KIOSK_SEATS_NOT_CONFIGURED_MESSAGE }),
 			);
@@ -74,6 +70,7 @@ export const reconcileKioskSeats = (
 				.where(
 					and(
 						isNotNull(subscription.stripeSubscriptionId),
+						notInArray(subscription.status, [...ENDED_SUBSCRIPTION_STATUSES]),
 						options.organizationIds
 							? inArray(subscription.organizationId, [...options.organizationIds])
 							: undefined,
@@ -111,15 +108,56 @@ export const reconcileKioskSeats = (
 					.where(eq(subscription.organizationId, organizationId));
 				return row;
 			});
+			const totalSeats = seats?.currentSeats ?? 0;
 			const kioskSeats = seats?.currentKioskSeats ?? 0;
+			yield* auditSplitChange(dbService, organizationId, { totalSeats, kioskSeats });
 			reports.push({
 				organizationId,
 				outcome: after > before ? "updated" : "unchanged",
-				fullSeats: (seats?.currentSeats ?? 0) - kioskSeats,
+				fullSeats: totalSeats - kioskSeats,
 				kioskSeats,
 			});
 		}
 		return reports;
+	});
+
+/**
+ * Brings the seat audit in line with the reconciled split: seat history (the
+ * platform analytics MRR series) reads the latest audit row, which predates
+ * kiosk seats. Writes a `kiosk_seat_reconciled` row only when that latest row
+ * disagrees with the recorded seats; without seat history the recorded seats
+ * already serve, and a second run finds the row in agreement.
+ */
+const auditSplitChange = (
+	dbService: typeof DatabaseService.Service,
+	organizationId: string,
+	recorded: { totalSeats: number; kioskSeats: number },
+) =>
+	dbService.query("kioskSeatReconcile.auditSplit", async () => {
+		const [latest] = await dbService.db
+			.select({
+				newSeats: billingSeatAudit.newSeats,
+				newKioskSeats: billingSeatAudit.newKioskSeats,
+			})
+			.from(billingSeatAudit)
+			.where(eq(billingSeatAudit.organizationId, organizationId))
+			.orderBy(desc(billingSeatAudit.createdAt))
+			.limit(1);
+		if (
+			!latest ||
+			(latest.newSeats === recorded.totalSeats && latest.newKioskSeats === recorded.kioskSeats)
+		) {
+			return;
+		}
+		await dbService.db.insert(billingSeatAudit).values({
+			organizationId,
+			action: "kiosk_seat_reconciled",
+			previousSeats: latest.newSeats,
+			newSeats: recorded.totalSeats,
+			previousKioskSeats: latest.newKioskSeats,
+			newKioskSeats: recorded.kioskSeats,
+			stripeReported: true,
+		});
 	});
 
 /**

@@ -27,6 +27,25 @@ export type SeatCost = {
 	totalPerYearCents: number | null;
 };
 
+/** A stored billing interval as a seat price interval: anything but "year" bills monthly. */
+export function seatInterval(billingInterval: string | null): "month" | "year" {
+	return billingInterval === "year" ? "year" : "month";
+}
+
+/** One seat type's prices in euros: monthly, monthly when billed yearly, and the yearly total. */
+export function seatPriceEuros(type: SeatType): {
+	monthly: number;
+	yearlyPerMonth: number;
+	yearlyTotal: number;
+} {
+	const prices = SEAT_PRICES_CENTS[type];
+	return {
+		monthly: prices.month / 100,
+		yearlyPerMonth: prices.yearPerMonth / 100,
+		yearlyTotal: (prices.yearPerMonth * 12) / 100,
+	};
+}
+
 /** The monthly price of one seat of `type` at `interval`, in cents. */
 export function seatPricePerMonthCents(type: SeatType, interval: "month" | "year"): number {
 	return interval === "year" ? SEAT_PRICES_CENTS[type].yearPerMonth : SEAT_PRICES_CENTS[type].month;
@@ -53,11 +72,6 @@ export function seatCost(input: {
 		totalPerMonthCents,
 		totalPerYearCents: input.interval === "year" ? totalPerMonthCents * 12 : null,
 	};
-}
-
-/** Euro cents as a plain amount with two decimals ("1.50"), for translation placeholders. */
-export function formatEuroCents(cents: number): string {
-	return (cents / 100).toFixed(2);
 }
 
 /**
@@ -92,7 +106,7 @@ export function monthlyRecurringRevenueCents(subscriptions: readonly Subscriptio
 		return (
 			sum +
 			seatCost({
-				interval: subscription.billingInterval === "year" ? "year" : "month",
+				interval: seatInterval(subscription.billingInterval),
 				fullSeats: subscription.currentSeats - kioskSeats,
 				kioskSeats,
 			}).totalPerMonthCents

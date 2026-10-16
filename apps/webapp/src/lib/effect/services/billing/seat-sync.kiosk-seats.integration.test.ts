@@ -8,6 +8,7 @@ import { randomUUID } from "node:crypto";
 import { Effect, Layer } from "effect";
 import type Stripe from "stripe";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { generateReservedEmail } from "@/lib/auth/reserved-email";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -94,7 +95,7 @@ describe("kiosk seats through seat sync", () => {
 	async function makeKioskOnly(target: SeededEmployee) {
 		await fixture.pool.query(`update "user" set email = $2 where id = $1`, [
 			target.userId,
-			`kiosk-${randomUUID().replaceAll("-", "")}@kiosk.invalid`,
+			generateReservedEmail(),
 		]);
 		return target;
 	}
@@ -124,7 +125,7 @@ describe("kiosk seats through seat sync", () => {
 		return Effect.runPromise(
 			Effect.flatMap(SeatSyncService, use).pipe(
 				Effect.provide(SeatSyncServiceLive),
-				Effect.provide(Layer.mergeAll(stripe, SubscriptionServiceLive)),
+				Effect.provide(SubscriptionServiceLive.pipe(Layer.provideMerge(stripe))),
 				Effect.provide(DatabaseServiceLive),
 			),
 		);
@@ -280,6 +281,58 @@ describe("kiosk seats through seat sync", () => {
 			},
 		]);
 	});
+
+	it("writes no upgrade audit when the upgraded employee holds no billable seat", async () => {
+		const { organizationId, kioskOnly } = await subscribedOrganization({
+			ordinary: 2,
+			kioskOnly: 2,
+		});
+		const state: StripeState = { interval: "month", full: 2, kiosk: 2, updates: [] };
+		const stripe = fakeStripe(state);
+		const departed = kioskOnly[0] as SeededEmployee;
+		await fixture.pool.query(`update employee set is_active = false where id = $1`, [
+			departed.employeeId,
+		]);
+		await fixture.pool.query(`update member set status = 'pending' where id = $1`, [
+			departed.memberId,
+		]);
+		await run(stripe, (service) => service.syncSeatsForOrganization(organizationId));
+		const updatesBefore = state.updates.length;
+		await fixture.pool.query(`update "user" set email = $2 where id = $1`, [
+			departed.userId,
+			`upgraded-${randomUUID()}@example.com`,
+		]);
+
+		await run(stripe, (service) =>
+			service.handleKioskSeatUpgraded(organizationId, departed.memberId, departed.userId),
+		);
+
+		expect(state.updates).toHaveLength(updatesBefore);
+		expect(await localSeats(organizationId)).toEqual({ current_seats: 3, current_kiosk_seats: 1 });
+		expect(await audits(organizationId)).toEqual([]);
+	});
+
+	it.each(["canceled", "incomplete_expired"])(
+		"records the seats of an ended (%s) subscription locally but leaves Stripe alone",
+		async (status) => {
+			const { organizationId } = await subscribedOrganization({ ordinary: 3, kioskOnly: 5 });
+			await fixture.pool.query(`update subscription set status = $2 where organization_id = $1`, [
+				organizationId,
+				status,
+			]);
+			const state: StripeState = { interval: "month", full: 8, kiosk: null, updates: [] };
+
+			await expect(
+				run(fakeStripe(state), (service) => service.syncSeatsForOrganization(organizationId)),
+			).resolves.toBe(8);
+
+			expect(state.updates).toEqual([]);
+			expect(await localSeats(organizationId)).toEqual({
+				current_seats: 8,
+				current_kiosk_seats: 5,
+			});
+		},
+	);
 
 	it("leaves Stripe and the seat audit alone on an email upgrade while kiosk seats are off", async () => {
 		const { organizationId, kioskOnly } = await subscribedOrganization({

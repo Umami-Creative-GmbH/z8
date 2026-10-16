@@ -53,6 +53,12 @@ export class SeatDeliveryUncertainError extends Error {
 	}
 }
 
+/**
+ * Stripe subscription statuses that have ended for good: Stripe refuses any
+ * update to them and they bill nothing, so seat delivery leaves Stripe alone.
+ */
+export const ENDED_SUBSCRIPTION_STATUSES: readonly string[] = ["canceled", "incomplete_expired"];
+
 const LOCK_NAMESPACE = "billing-seat-sync:";
 
 /**
@@ -125,13 +131,21 @@ export async function deliverOrganizationSeats(input: {
 		});
 		const seats = split.full + split.kiosk;
 		const counted = kioskSeats ? { seats, kioskSeats: split.kiosk } : { seats };
-		const subscription = await client.query<{ stripe_subscription_id: string | null }>(
+		const subscription = await client.query<{
+			stripe_subscription_id: string | null;
+			status: string;
+		}>(
 			`UPDATE subscription
 			 SET current_seats = $2, current_kiosk_seats = $3, last_seat_reported_at = now(), updated_at = now()
-			 WHERE organization_id = $1 RETURNING stripe_subscription_id`,
+			 WHERE organization_id = $1 RETURNING stripe_subscription_id, status`,
 			[input.organizationId, seats, split.kiosk],
 		);
-		const subscriptionId = subscription.rows[0]?.stripe_subscription_id ?? null;
+		const local = subscription.rows[0];
+		// An ended Stripe subscription is no subscription to deliver to.
+		const subscriptionId =
+			local && !ENDED_SUBSCRIPTION_STATUSES.includes(local.status)
+				? local.stripe_subscription_id
+				: null;
 		if (!input.stripe) return { ...counted, local: "updated", external: "skipped_disabled" };
 		if (!subscriptionId) {
 			return { ...counted, local: "updated", external: "skipped_no_subscription" };

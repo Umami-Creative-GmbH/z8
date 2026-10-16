@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { memoryAdapter } from "better-auth/adapters/memory";
 import { betterAuth } from "better-auth/minimal";
 import { admin } from "better-auth/plugins/admin";
@@ -65,6 +67,23 @@ async function setup() {
 }
 
 describe("reserved-email guard is billing-critical (#886): no user create or update sets a reserved address", () => {
+	it("is a plugin of z8's own auth configuration, not only of this test's", () => {
+		// The cases below run the plugin in a minimal Better Auth; this pins that the
+		// production configuration carries it too. auth-composition.test.ts checks the
+		// loaded plugin ids (`z8-reserved-email-guard`) and their order.
+		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
+		const authStart = source.indexOf("export const auth = betterAuth(");
+		const pluginsStart = source.indexOf("plugins: [", authStart);
+		expect(authStart).toBeGreaterThanOrEqual(0);
+		expect(pluginsStart).toBeGreaterThan(authStart);
+		const plugins = source.slice(pluginsStart);
+
+		expect(plugins).toMatch(/^\s*reservedEmailGuard\(\),/m);
+		expect(source).toMatch(
+			/^import \{ reservedEmailGuard \} from "@\/lib\/auth\/reserved-email-guard";$/m,
+		);
+	});
+
 	it("refuses /change-email to a reserved address and keeps the ordinary one", async () => {
 		const { auth, signedInUser, storedEmail } = await setup();
 		// Unverified, so without the guard the address would change at once.

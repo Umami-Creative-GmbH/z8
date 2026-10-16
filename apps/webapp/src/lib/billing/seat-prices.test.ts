@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
 	formatEuroAmount,
-	formatEuroCents,
 	monthlyRecurringRevenueCents,
 	seatCost,
+	seatInterval,
+	seatPriceEuros,
 } from "./seat-prices";
 
 describe("seat prices", () => {
@@ -37,9 +38,16 @@ describe("seat prices", () => {
 		});
 	});
 
-	it("formats euro cents with two decimals", () => {
-		expect(formatEuroCents(150)).toBe("1.50");
-		expect(formatEuroCents(2200)).toBe("22.00");
+	it("bills any stored interval but a year monthly", () => {
+		expect(seatInterval("year")).toBe("year");
+		expect(seatInterval("month")).toBe("month");
+		expect(seatInterval(null)).toBe("month");
+		expect(seatInterval("week")).toBe("month");
+	});
+
+	it("gives each seat type's prices in euros", () => {
+		expect(seatPriceEuros("full")).toEqual({ monthly: 4, yearlyPerMonth: 3, yearlyTotal: 36 });
+		expect(seatPriceEuros("kiosk")).toEqual({ monthly: 2, yearlyPerMonth: 1.5, yearlyTotal: 18 });
 	});
 
 	describe("monthly recurring revenue", () => {
