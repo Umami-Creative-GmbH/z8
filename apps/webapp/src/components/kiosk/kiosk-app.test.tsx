@@ -26,6 +26,7 @@ const kiosk: KioskDeviceInfo = {
 	timezone: "Europe/Berlin",
 	boardEnabled: false,
 	language: "en",
+	offlineMode: false,
 };
 
 type Route = (request: { url: string; init: RequestInit | undefined }) => Response;

@@ -1452,7 +1452,8 @@
         "invalidTimezone": "Choose a time zone.",
         "kioskNotFound": "This kiosk was not found.",
         "kioskRevoked": "This kiosk is revoked.",
-        "locationNotFound": "Choose an active location of this organization."
+        "locationNotFound": "Choose an active location of this organization.",
+        "offlineNeedsAdoption": "Offline mode needs coordinated clock commands, which this organization does not use yet."
       },
       "fields": {
         "board": "Who-is-in board",
@@ -1462,6 +1463,9 @@
         "locationPlaceholder": "Choose a location",
         "name": "Name",
         "namePlaceholder": "e.g. Staff entrance",
+        "offlineMode": "Offline mode",
+        "offlineModeDescription": "The kiosk keeps clocking without a connection. Its clockings are confirmed, and their PINs checked, once it reconnects.",
+        "offlineModeUnavailable": "Offline mode needs coordinated clock commands, which this organization does not use yet.",
         "timezone": "Time zone",
         "timezoneDescription": "Clock events recorded at this kiosk use this zone."
       },
@@ -1471,6 +1475,8 @@
       "loadFailed": "Kiosks could not be loaded.",
       "neverSeen": "Never",
       "noLocations": "Create a location first: every kiosk belongs to one location.",
+      "offlineOn": "Offline mode on",
+      "offlineOnNotInEffect": "Offline mode on, not in effect for this organization",
       "pairAgain": "Pair again",
       "pairFailed": "A new pairing code could not be issued",
       "pairingCodeLabel": "Pairing code",

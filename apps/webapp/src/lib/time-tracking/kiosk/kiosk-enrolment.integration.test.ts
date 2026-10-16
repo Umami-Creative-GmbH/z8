@@ -277,6 +277,8 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				timezone: "Europe/Berlin",
 				boardEnabled: false,
 				language: "en",
+				// #1287: offline mode is off for a new kiosk.
+				offlineMode: false,
 			},
 		});
 		const resolved = await resolveKioskFromRequest(
@@ -486,6 +488,162 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				code: "admin_only",
 			});
 		}
+	});
+
+	describe("offline mode (#1287)", () => {
+		async function setAdmission(mode: "active" | "inactive") {
+			await pool.query(
+				`insert into time_entry_append_control (organization_id, mode) values ($1, $2)
+				 on conflict (organization_id) do update set mode = excluded.mode`,
+				[ids.organization, mode],
+			);
+		}
+
+		async function sessionKiosk(token: string) {
+			const response = await session(token);
+			expect(response.status).toBe(200);
+			return ((await response.json()) as { kiosk: { offlineMode: boolean } }).kiosk;
+		}
+
+		it("is off for a new kiosk, in its listing and in its session", async () => {
+			await setAdmission("active");
+			const created = await createdKiosk();
+			const token = await pairedToken(created.pairingCode);
+
+			expect((await adminKiosks())[0]).toMatchObject({ offlineModeEnabled: false });
+			expect(await sessionKiosk(token)).toMatchObject({ offlineMode: false });
+		});
+
+		it("tells the settings whether the organization is adopted", async () => {
+			actAs(ids.adminUser);
+			expect(await admin.getKioskAdminDataAction()).toMatchObject({
+				success: true,
+				data: { organizationAdopted: false },
+			});
+
+			await setAdmission("active");
+			expect(await admin.getKioskAdminDataAction()).toMatchObject({
+				success: true,
+				data: { organizationAdopted: true },
+			});
+		});
+
+		it("lets owners and admins switch it on in an adopted organization, and the session reports it", async () => {
+			await setAdmission("active");
+			const created = await createdKiosk();
+			const token = await pairedToken(created.pairingCode);
+
+			for (const userId of [ids.ownerUser, ids.adminUser]) {
+				actAs(userId);
+				expect(
+					await admin.updateKioskAction({ kioskId: created.kioskId, offlineModeEnabled: false }),
+				).toMatchObject({ success: true });
+				expect(
+					await admin.updateKioskAction({ kioskId: created.kioskId, offlineModeEnabled: true }),
+				).toMatchObject({ success: true });
+				expect((await adminKiosks(userId))[0]).toMatchObject({ offlineModeEnabled: true });
+			}
+			expect(await sessionKiosk(token)).toMatchObject({ offlineMode: true });
+		});
+
+		it("refuses to switch it on in a legacy organization", async () => {
+			const created = await createdKiosk();
+			const token = await pairedToken(created.pairingCode);
+
+			actAs(ids.ownerUser);
+			const refused = await admin.updateKioskAction({
+				kioskId: created.kioskId,
+				offlineModeEnabled: true,
+			});
+
+			expect(refused).toMatchObject({ success: false, code: "offline_needs_adoption" });
+			expect((await adminKiosks())[0]).toMatchObject({ offlineModeEnabled: false });
+			expect(await sessionKiosk(token)).toMatchObject({ offlineMode: false });
+		});
+
+		it("refuses a switch that is not on or off", async () => {
+			await setAdmission("active");
+			const created = await createdKiosk();
+
+			actAs(ids.adminUser);
+			const refused = await admin.updateKioskAction({
+				kioskId: created.kioskId,
+				offlineModeEnabled: "yes" as unknown as boolean,
+			});
+
+			expect(refused).toMatchObject({ success: false, code: "invalid_selection" });
+			expect((await adminKiosks())[0]).toMatchObject({ offlineModeEnabled: false });
+		});
+
+		it("does not let managers, members or another organization's admin switch it", async () => {
+			await setAdmission("active");
+			const created = await createdKiosk();
+
+			for (const userId of [ids.managerUser, ids.memberUser]) {
+				actAs(userId);
+				expect(
+					await admin.updateKioskAction({ kioskId: created.kioskId, offlineModeEnabled: true }),
+				).toMatchObject({ success: false, code: "admin_only" });
+			}
+			actAs(ids.foreignUser, ids.otherOrganization);
+			expect(
+				await admin.updateKioskAction({ kioskId: created.kioskId, offlineModeEnabled: true }),
+			).toMatchObject({ success: false, code: "kiosk_not_found" });
+			expect((await adminKiosks())[0]).toMatchObject({ offlineModeEnabled: false });
+		});
+
+		it("is reported off at the kiosk's next contact after it is switched off", async () => {
+			await setAdmission("active");
+			const created = await createdKiosk();
+			const token = await pairedToken(created.pairingCode);
+			actAs(ids.adminUser);
+			await admin.updateKioskAction({ kioskId: created.kioskId, offlineModeEnabled: true });
+			expect(await sessionKiosk(token)).toMatchObject({ offlineMode: true });
+
+			actAs(ids.adminUser);
+			expect(
+				await admin.updateKioskAction({ kioskId: created.kioskId, offlineModeEnabled: false }),
+			).toMatchObject({ success: true });
+
+			expect(await sessionKiosk(token)).toMatchObject({ offlineMode: false });
+		});
+
+		it("is reported off when the organization returns to legacy, and can still be switched off there", async () => {
+			await setAdmission("active");
+			const created = await createdKiosk();
+			const token = await pairedToken(created.pairingCode);
+			actAs(ids.adminUser);
+			await admin.updateKioskAction({ kioskId: created.kioskId, offlineModeEnabled: true });
+
+			// A pilot rollback returns the organization to legacy; the stored switch stays on.
+			await setAdmission("inactive");
+
+			expect(await sessionKiosk(token)).toMatchObject({ offlineMode: false });
+			actAs(ids.adminUser);
+			expect(
+				await admin.updateKioskAction({ kioskId: created.kioskId, name: "Renamed" }),
+			).toMatchObject({ success: true });
+			expect(
+				await admin.updateKioskAction({ kioskId: created.kioskId, offlineModeEnabled: false }),
+			).toMatchObject({ success: true });
+			expect((await adminKiosks())[0]).toMatchObject({ offlineModeEnabled: false });
+		});
+
+		it("audits switching it", async () => {
+			await setAdmission("active");
+			const created = await createdKiosk();
+			actAs(ids.adminUser);
+			await admin.updateKioskAction({ kioskId: created.kioskId, offlineModeEnabled: true });
+
+			const { rows } = await pool.query<{ changes: string }>(
+				`select changes from audit_log where organization_id = $1 and entity_id = $2
+				 and action = 'kiosk.updated'`,
+				[ids.organization, created.kioskId],
+			);
+			expect(rows.map((row) => JSON.parse(row.changes))).toEqual([
+				{ from: { offlineModeEnabled: false }, to: { offlineModeEnabled: true } },
+			]);
+		});
 	});
 
 	it("audits creating, pairing, configuring, rotating and revoking", async () => {

@@ -140,6 +140,13 @@ export type KioskDeviceInfo = {
 	boardEnabled: boolean;
 	/** The organization's default language (#862); the kiosk opens in it. */
 	language: string;
+	/**
+	 * Whether the kiosk works offline (#1287, spec #885): its offline-mode switch
+	 * is on and its organization is adopted. Read at every contact (session and
+	 * pairing), so switching it off reaches the kiosk at its next request. While
+	 * false the kiosk caches and queues nothing and refuses clocking offline.
+	 */
+	offlineMode: boolean;
 };
 
 /** One employee on the kiosk home screen (#862). */

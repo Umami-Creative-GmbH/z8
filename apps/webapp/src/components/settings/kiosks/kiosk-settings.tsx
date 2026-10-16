@@ -131,6 +131,7 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 					) : (
 						<KioskTable
 							kiosks={data.kiosks}
+							organizationAdopted={data.organizationAdopted}
 							onEdit={setEditing}
 							onPair={(kiosk) => setConfirmation({ kind: "pair", kiosk })}
 							onRevoke={(kiosk) => setConfirmation({ kind: "revoke", kiosk })}
@@ -160,6 +161,7 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 					}}
 					locations={data.locations}
 					kiosk={editing}
+					organizationAdopted={data.organizationAdopted}
 					onSaved={() => {
 						setEditing(null);
 						router.refresh();
@@ -236,11 +238,13 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 
 function KioskTable({
 	kiosks,
+	organizationAdopted,
 	onEdit,
 	onPair,
 	onRevoke,
 }: {
 	kiosks: KioskData[];
+	organizationAdopted: boolean;
 	onEdit: (kiosk: KioskData) => void;
 	onPair: (kiosk: KioskData) => void;
 	onRevoke: (kiosk: KioskData) => void;
@@ -271,6 +275,16 @@ function KioskTable({
 									{kiosk.timezone}
 									{kiosk.boardEnabled
 										? ` · ${t("settings.kiosks.boardOn", "Who-is-in board on")}`
+										: ""}
+									{kiosk.offlineModeEnabled
+										? ` · ${
+												organizationAdopted
+													? t("settings.kiosks.offlineOn", "Offline mode on")
+													: t(
+															"settings.kiosks.offlineOnNotInEffect",
+															"Offline mode on, not in effect for this organization",
+														)
+											}`
 										: ""}
 								</div>
 							</TableCell>
