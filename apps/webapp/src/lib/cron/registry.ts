@@ -254,6 +254,18 @@ export interface SlackEscalationResult {
  * - defaultJobOptions: BullMQ options for retry, priority, etc.
  */
 export const CRON_JOBS = {
+	"cron:driving-licence-retention": {
+		schedule: "15 2 * * *",
+		description:
+			"Delete due driving licence evidence under its dedicated policy and specific-case holds",
+		processor: async () => {
+			const { runDrivingLicenceRetentionJob } = await import(
+				"@/lib/jobs/driving-licence-retention"
+			);
+			return runDrivingLicenceRetentionJob();
+		},
+		defaultJobOptions: { attempts: 3, priority: 5 },
+	},
 	"cron:driving-licence-reminders": {
 		schedule: "*/15 * * * *",
 		description:

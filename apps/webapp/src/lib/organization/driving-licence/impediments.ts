@@ -1,3 +1,7 @@
+import {
+	beginDrivingLicenceRetentionChange,
+	finishDrivingLicenceRetentionChange,
+} from "./retention-state";
 import "server-only";
 import { and, eq, gte, isNull } from "drizzle-orm";
 import { z } from "zod";
@@ -40,6 +44,11 @@ export async function reportDrivingImpediment(
 	return db.transaction(async (tx) => {
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
 		const now = systemClock.nowInstant();
+		const retentionBefore = await beginDrivingLicenceRetentionChange(
+			tx,
+			actor.organizationId,
+			now,
+		);
 		const employment = await currentDrivingEmployment(
 			tx,
 			actor.organizationId,
@@ -139,6 +148,12 @@ export async function reportDrivingImpediment(
 			recordedAt: dateFromInstant(now),
 			actorUserId: actor.userId,
 		});
+		await finishDrivingLicenceRetentionChange(
+			tx,
+			actor.organizationId,
+			now,
+			retentionBefore,
+		);
 		return { reportId: report.id };
 	});
 }
@@ -245,6 +260,11 @@ export async function reinstateDrivingAuthorization(
 	return db.transaction(async (tx) => {
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
 		const now = systemClock.nowInstant();
+		const retentionBefore = await beginDrivingLicenceRetentionChange(
+			tx,
+			actor.organizationId,
+			now,
+		);
 		await tx
 			.select({ id: drivingLicenceVerifierGrant.id })
 			.from(drivingLicenceVerifierGrant)
@@ -441,6 +461,12 @@ export async function reinstateDrivingAuthorization(
 				actorUserId: actor.userId,
 			});
 		}
+		await finishDrivingLicenceRetentionChange(
+			tx,
+			actor.organizationId,
+			now,
+			retentionBefore,
+		);
 		return { checkId: check.id, reinstatedClasses: input.classCodes };
 	});
 }

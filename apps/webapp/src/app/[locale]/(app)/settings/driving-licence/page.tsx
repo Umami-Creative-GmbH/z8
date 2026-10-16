@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { DrivingLicenceSettings } from "@/components/driving-licence/policy-settings";
+import { DrivingLicenceRetentionSettings } from "@/components/driving-licence/retention-settings";
 import { VerifierSettings } from "@/components/driving-licence/verifier-settings";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getDrivingLicenceAdminDataAction } from "@/lib/organization/driving-licence/policy-actions";
@@ -38,6 +39,7 @@ async function DrivingLicenceSettingsContent() {
 				</p>
 			)}
 			<VerifierSettings />
+			<DrivingLicenceRetentionSettings />
 		</div>
 	);
 }

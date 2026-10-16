@@ -1,3 +1,7 @@
+import {
+	beginDrivingLicenceRetentionChange,
+	finishDrivingLicenceRetentionChange,
+} from "./retention-state";
 import "server-only";
 import { createHash } from "node:crypto";
 import { and, asc, eq } from "drizzle-orm";
@@ -166,6 +170,11 @@ export async function applyDrivingLicenceInterval(
 	return db.transaction(async (tx) => {
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
 		const now = systemClock.nowInstant();
+		const retentionBefore = await beginDrivingLicenceRetentionChange(
+			tx,
+			actor.organizationId,
+			now,
+		);
 		const current = await impact(
 			tx,
 			actor.organizationId,
@@ -269,6 +278,12 @@ export async function applyDrivingLicenceInterval(
 				actorUserId: actor.userId,
 			});
 		}
+		await finishDrivingLicenceRetentionChange(
+			tx,
+			actor.organizationId,
+			now,
+			retentionBefore,
+		);
 		return current.preview;
 	});
 }
