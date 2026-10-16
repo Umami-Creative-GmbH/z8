@@ -12,6 +12,10 @@ import {
 import { employee } from "@/db/schema/organization";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import {
+	materializeExpiredDrivingAuthorizations,
+	readEffectiveDrivingAuthorization,
+} from "./checks";
 import type { DrivingLicenceActor } from "./context";
 export const drivingLicencePolicyInput = z
 	.strictObject({
@@ -70,7 +74,13 @@ export async function saveDrivingLicencePolicy(
 			.where(eq(drivingLicencePolicy.organizationId, actor.organizationId));
 		if (previous && previous.timezone !== policy.timezone)
 			throw new Error("timezone_fixed");
-		const changedAt = dateFromInstant(systemClock.nowInstant());
+		const now = systemClock.nowInstant();
+		await materializeExpiredDrivingAuthorizations(
+			tx,
+			actor.organizationId,
+			now,
+		);
+		const changedAt = dateFromInstant(now);
 		const version = (previous?.version ?? 0) + 1;
 		await tx
 			.insert(drivingLicencePolicy)
@@ -180,10 +190,19 @@ export async function listDrivingLicenceParticipants(organizationId: string) {
 		})
 		.from(drivingLicenceParticipant)
 		.where(eq(drivingLicenceParticipant.organizationId, organizationId));
-	return rows.map((row) => ({
-		...row,
-		enrolledAt: row.enrolledAt.toISOString(),
-		status: "not_yet_checked" as const,
-		authorizedClasses: [] as string[],
-	}));
+	return Promise.all(
+		rows.map(async (row) => {
+			const status = await readEffectiveDrivingAuthorization(
+				db,
+				organizationId,
+				row.employeeId,
+			);
+			return {
+				...row,
+				enrolledAt: row.enrolledAt.toISOString(),
+				status: status.status,
+				authorizedClasses: status.authorizedClasses,
+			};
+		}),
+	);
 }

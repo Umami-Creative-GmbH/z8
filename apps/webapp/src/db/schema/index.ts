@@ -156,3 +156,4 @@ export * from "./work-policy";
 export * from "./works-council";
 export * from "./driving-licence-policy";
 export * from "./driving-licence-verifiers";
+export * from "./driving-licence-checks";

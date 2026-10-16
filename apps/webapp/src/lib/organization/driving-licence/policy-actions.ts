@@ -1,5 +1,7 @@
 "use server";
 import { z } from "zod";
+import { db } from "@/db";
+import { readEffectiveDrivingAuthorization } from "./checks";
 import {
 	requireDrivingLicenceActor,
 	requireDrivingLicenceAdministrator,
@@ -56,16 +58,18 @@ export async function getDrivingLicenceAdminDataAction() {
 export async function getOwnDrivingLicenceStatusAction() {
 	return action(async () => {
 		const actor = await requireDrivingLicenceActor();
-		const [policy, participants] = await Promise.all([
-			readDrivingLicencePolicy(actor.organizationId),
-			listDrivingLicenceParticipants(actor.organizationId),
-		]);
-		const own = participants.find((p) => p.employeeId === actor.employeeId);
-		return {
-			enrolled: !!own,
-			status: own ? ("not_yet_checked" as const) : ("not_enrolled" as const),
-			authorizedClasses: [] as string[],
-			timezone: policy?.timezone ?? null,
-		};
+		if (!actor.employeeId)
+			return {
+				enrolled: false,
+				status: "not_enrolled" as const,
+				authorizedClasses: [] as string[],
+				classes: [],
+				timezone: null,
+			};
+		return readEffectiveDrivingAuthorization(
+			db,
+			actor.organizationId,
+			actor.employeeId,
+		);
 	});
 }
