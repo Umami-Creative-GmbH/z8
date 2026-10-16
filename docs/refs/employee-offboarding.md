@@ -232,6 +232,9 @@ English and German.
 
 ## Operational checks
 
+- If a local database was created with `drizzle-kit push`, install the access
+  functions before running setup. See [schema push and repair](database-schema.md#commands).
+
 - Real-PostgreSQL suites: `pnpm --filter webapp test:approval-workflow-repository:integration`
   (includes `acceptance.integration.test.ts` with the ten cross-system scenarios).
 - A departure stuck *pending* past its cutoff already denies access and the paid
