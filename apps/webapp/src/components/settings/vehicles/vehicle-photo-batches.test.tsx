@@ -330,4 +330,26 @@ describe("vehicle photo batch uploads", () => {
 		);
 		expect(initiateUpload).toHaveBeenCalledTimes(2);
 	});
+
+	it("lets keyboard users focus and scroll saved upload results without retry buttons", async () => {
+		const keyboard = userEvent.setup();
+		let next = 0;
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => success(`saved-${++next}`, next)),
+		);
+		render(<VehiclePhotosDialog vehicle={vehicle} />);
+		await open();
+		const input = screen.getByLabelText("Add photo");
+		await keyboard.upload(
+			input,
+			Array.from({ length: 8 }, (_, index) => file(`photo-${index}.png`)),
+		);
+		await screen.findByRole("button", { name: "View photo 8 of Van" });
+		const results = screen.getByRole("list", { name: "Photo upload results" });
+		expect(within(results).queryAllByRole("button")).toHaveLength(0);
+		input.focus();
+		await keyboard.tab();
+		expect(document.activeElement).toBe(results);
+	});
 });

@@ -1,5 +1,14 @@
+import { createHash } from "node:crypto";
 import sharp from "sharp";
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -9,6 +18,46 @@ const harness = vi.hoisted(() => ({
 	failDelete: false,
 	failStore: false,
 	beforeStore: null as null | (() => Promise<void>),
+	redisScripts: new Map<string, string>(),
+	redisCounts: new Map<string, number>(),
+}));
+vi.mock("@/env", async (original) => {
+	const actual = await original<typeof import("@/env")>();
+	return { ...actual, env: { ...actual.env, RATE_LIMIT_DISABLED: "false" } };
+});
+vi.mock("@/lib/redis", () => ({
+	ensureRedisReady: async () => true,
+	secondaryStorage: {
+		get: async () => null,
+		set: async () => {},
+		delete: async () => {},
+	},
+	redis: {
+		get: async () => null,
+		set: async () => "OK",
+		eval: async (script: string, numKeys: number, ...values: string[]) => {
+			harness.redisScripts.set(
+				createHash("sha1").update(script).digest("hex"),
+				script,
+			);
+			const key = values[0],
+				limit = Number(values[numKeys]),
+				count = harness.redisCounts.get(key) ?? 0;
+			if (count >= limit) return [-1, limit];
+			harness.redisCounts.set(key, count + 1);
+			return [limit - count - 1, limit];
+		},
+		evalsha: async (sha: string, numKeys: number, ...values: string[]) => {
+			if (!harness.redisScripts.has(sha))
+				throw new Error("NOSCRIPT No matching script. Please use EVAL.");
+			const key = values[0],
+				limit = Number(values[numKeys]),
+				count = harness.redisCounts.get(key) ?? 0;
+			if (count >= limit) return [-1, limit];
+			harness.redisCounts.set(key, count + 1);
+			return [limit - count - 1, limit];
+		},
+	},
 }));
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
@@ -128,6 +177,7 @@ beforeEach(async () => {
 	harness.failDelete = false;
 	harness.failStore = false;
 	harness.beforeStore = null;
+	harness.redisCounts.clear();
 	await admin.query(
 		"insert into organization(id,name,slug,created_at) values ('photo-org','Photos','photo-org',now()),('photo-other','Other','photo-other',now())",
 	);
@@ -161,6 +211,7 @@ beforeEach(async () => {
 	vehicleId = result.data.vehicles[0].id;
 });
 afterAll(cleanup);
+afterEach(() => vi.restoreAllMocks());
 describe("private vehicle photos through actions and routes", () => {
 	it("saves an optimized private photo immediately and serves it only through the authorized route", async () => {
 		const id = await start();
@@ -597,3 +648,105 @@ it("keeps the durable object reference when an audit failure rolls back attachme
 	expect(await runVehiclePhotoCleanupJob()).toMatchObject({ deleted: 1 });
 	expect(harness.objects.size).toBe(0);
 });
+
+it("rate limits expensive uploads before reading invalid content without changing the upload, and recovers after the window", async () => {
+	const now = Date.now();
+	const clock = vi.spyOn(Date, "now").mockReturnValue(now);
+	const saved = await start();
+	expect((await upload(saved, await image())).status).toBe(200);
+	const pending = await start();
+	harness.failStore = true;
+	// The sixty-request allowance supports a full twenty-photo selection and retries.
+	for (let attempt = 0; attempt < 59; attempt++)
+		expect((await upload(pending, await image())).status).toBe(503);
+	const before = (
+		await admin.query(
+			"select row_to_json(u) as state from organization_vehicle_photo_upload u where id=$1",
+			[pending],
+		)
+	).rows;
+	const request = new Request(
+		`${origin}/api/organization/vehicles/${vehicleId}/photos/${pending}`,
+		{
+			method: "POST",
+			headers: { origin, "content-type": "image/png" },
+			body: "not a decodable image",
+		},
+	);
+	const limited = await POST(request, {
+		params: Promise.resolve({ vehicleId, photoId: pending }),
+	});
+	expect(limited.status).toBe(429);
+	expect(Number(limited.headers.get("retry-after"))).toBeGreaterThan(0);
+	expect(limited.headers.get("cache-control")).toBe("private, no-store");
+	expect(request.bodyUsed).toBe(false);
+	expect(
+		(
+			await admin.query(
+				"select row_to_json(u) as state from organization_vehicle_photo_upload u where id=$1",
+				[pending],
+			)
+		).rows,
+	).toEqual(before);
+	expect((await gallery()).photos).toHaveLength(1);
+	expect(harness.objects.size).toBe(1);
+	// Already-attached reconciliation remains cheap and available while throttled.
+	expect((await upload(saved, Buffer.alloc(0))).status).toBe(200);
+	harness.userId = "photo-admin";
+	harness.failStore = false;
+	expect((await upload(await start(), await image())).status).toBe(200);
+	harness.userId = "photo-owner";
+	await admin.query(
+		"insert into member(id,organization_id,user_id,role,status,created_at) values('photo-limit-other-owner','photo-other','photo-owner','owner','approved',now())",
+	);
+	harness.organizationId = "photo-other";
+	const other = await changeVehicles({
+		kind: "create",
+		name: "Rate limit other van",
+		licencePlate: "RATE 2",
+		drivers: { employeeIds: [], teamIds: [] },
+	});
+	if (!other.success || !other.data.ok)
+		throw new Error("Other vehicle missing");
+	const otherId = other.data.vehicles[0].id;
+	expect(
+		(await upload(await start(otherId), await image(), "image/png", otherId))
+			.status,
+	).toBe(200);
+	harness.organizationId = "photo-org";
+	clock.mockReturnValue(now + 121000);
+	try {
+		expect((await upload(pending, await image())).status).toBe(200);
+	} finally {
+		clock.mockRestore();
+	}
+	expect((await gallery()).photos).toHaveLength(3);
+});
+
+it.each(["cleanup_required", "cleaned", "expired"])(
+	"refuses %s upload identities before reading invalid content",
+	async (status) => {
+		const id = await start();
+		await admin.query(
+			"update organization_vehicle_photo_upload set status=$2,next_attempt_at=now()-interval '1 second' where id=$1",
+			[id, status === "expired" ? "pending" : status],
+		);
+		const request = new Request(
+			`${origin}/api/organization/vehicles/${vehicleId}/photos/${id}`,
+			{
+				method: "POST",
+				headers: { origin, "content-type": "image/png" },
+				body: "not an image",
+			},
+		);
+		expect(
+			(
+				await POST(request, {
+					params: Promise.resolve({ vehicleId, photoId: id }),
+				})
+			).status,
+		).toBe(409);
+		expect(request.bodyUsed).toBe(false);
+		expect(harness.objects.size).toBe(0);
+	},
+);

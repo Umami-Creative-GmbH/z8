@@ -1,4 +1,9 @@
 import { db } from "@/db";
+import {
+	compareInstants,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { runServerActionSafe } from "@/lib/effect/result";
 import { vehiclePhotosActor } from "@/lib/organization/vehicles/vehicle-photo-actor";
 import {
@@ -15,11 +20,13 @@ import {
 	pinPhotoStorage,
 	rejectPhotoUpload,
 } from "@/lib/organization/vehicles/vehicle-photos";
+import { checkRateLimit, createRateLimitResponse } from "@/lib/rate-limit";
 import {
 	getStorageConfig,
 	readPrivateObject,
 	uploadPrivateObject,
 } from "@/lib/storage/export-s3-client";
+
 const privateHeaders = {
 	"Cache-Control": "private, no-store",
 	"X-Content-Type-Options": "nosniff",
@@ -84,6 +91,24 @@ export async function POST(request: Request, context: Context) {
 				{ ok: true, photo: photoView(already) },
 				{ headers: privateHeaders },
 			);
+		if (
+			intent.status !== "pending" ||
+			compareInstants(
+				instantFromDate(intent.nextAttemptAt),
+				systemClock.nowInstant(),
+			) <= 0
+		)
+			return failure("Upload expired", 409, "upload_expired");
+		const rateLimit = await checkRateLimit(
+			JSON.stringify([actor.data.organizationId, actor.data.userId]),
+			"vehiclePhotoUpload",
+		);
+		if (!rateLimit.allowed) {
+			const response = createRateLimitResponse(rateLimit);
+			for (const [name, value] of Object.entries(privateHeaders))
+				response.headers.set(name, value);
+			return response;
+		}
 		const image = await processVehiclePhoto(
 			await readPhotoBody(request),
 			request.headers.get("content-type")?.split(";")[0] ?? null,
