@@ -272,6 +272,14 @@ _Avoid_: Password, passcode
 An employee who has no sign-in and clocks only at kiosks.
 _Avoid_: Terminal user, offline employee
 
+**Kiosk seat**:
+A billable seat held by a kiosk-only employee, charged at the cheaper kiosk seat price on the organization's subscription.
+_Avoid_: Kiosk license, terminal seat
+
+**Full seat**:
+A billable seat held by anyone who is not a kiosk-only employee, charged at the ordinary seat price.
+_Avoid_: Normal seat, standard license
+
 **Assigned location**:
 A location an employee works at. A kiosk accepts only employees assigned to its location.
 _Avoid_: Work location (that is office, home or remote), location supervisor
