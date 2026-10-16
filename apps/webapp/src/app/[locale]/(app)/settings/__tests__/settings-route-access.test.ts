@@ -296,9 +296,7 @@ describe("org-admin settings route access", () => {
 		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(pageSource.includes("requireOrgAdminSettingsAccess(")).toBe(false);
 		expect(pageSource.includes('accessTier === "member"')).toBe(true);
-		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(
-			true,
-		);
+		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(true);
 		expect(actionsSource.includes("requireOrgAdminSurchargeActor(")).toBe(true);
 		expect(actionsSource.includes("projectManager")).toBe(true);
 		expect(actionsSource.includes("locationEmployee")).toBe(true);
@@ -645,9 +643,9 @@ describe("org-admin settings route access", () => {
 		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(pageSource.includes("requireOrgAdminSettingsAccess(")).toBe(false);
 		expect(pageSource.includes('accessTier === "member"')).toBe(true);
-		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(
-			true,
-		);
+		expect(
+			pageSource.includes('redirectWithLocale("/settings/work-policies?tab=changes")'),
+		).toBe(true);
 		expect(actionsSource.includes("getEmployeeSettingsActorContext(")).toBe(
 			true,
 		);
