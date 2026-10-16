@@ -75,6 +75,11 @@ export interface ProjectWithDetails {
 	deletedCustomerName: string | null;
 	/** Whether new work on the project starts as billable work (#900). */
 	billableDefault: boolean;
+	/**
+	 * The task requirement setting (#884). It applies only while the project has
+	 * an open task: readers use `lib/projects/task-requirement*` for that.
+	 */
+	requiresTask: boolean;
 	isActive: boolean;
 	createdAt: Date;
 	createdBy: string;
@@ -159,6 +164,15 @@ function keepTypedMutationError(error: DatabaseError) {
 		: error;
 }
 
+/** The requested task requirement (#884): undefined when not sent; anything but a boolean is invalid. */
+function projectRequiresTaskInput(requested: unknown) {
+	return requested === undefined || typeof requested === "boolean"
+		? Effect.succeed(requested)
+		: Effect.fail(
+				new ValidationError({ message: "Invalid task requirement", field: "requiresTask" }),
+			);
+}
+
 export interface CreateProjectInput {
 	organizationId: string;
 	name: string;
@@ -171,6 +185,8 @@ export interface CreateProjectInput {
 	customerId?: string;
 	/** Billable default (#900); only a project with a customer can have it on. */
 	billableDefault?: boolean;
+	/** Task requirement (#884); omitted = off. */
+	requiresTask?: boolean;
 	/** The dialog's custom field values (#818); required fields are enforced when present. */
 	customFieldValues?: CustomFieldValuesInput;
 }
@@ -186,6 +202,8 @@ export interface UpdateProjectInput {
 	customerId?: string | null;
 	/** Billable default (#900); never changes existing work. */
 	billableDefault?: boolean;
+	/** Task requirement (#884); never marks existing work. */
+	requiresTask?: boolean;
 	/** The dialog's custom field values (#818); required fields are enforced when present. */
 	customFieldValues?: CustomFieldValuesInput;
 }
@@ -371,6 +389,7 @@ export async function getProjects(
 						customerName: hasActiveCustomer ? (ownCustomer?.name ?? null) : null,
 						deletedCustomerName: hasActiveCustomer ? null : (ownCustomer?.name ?? null),
 						billableDefault: p.billableDefault,
+						requiresTask: p.requiresTask,
 						isActive: p.isActive,
 						createdAt: p.createdAt,
 						createdBy: p.createdBy,
@@ -460,6 +479,7 @@ export async function createProject(
 					current: false,
 					customerId: input.customerId || null,
 				});
+				const requiresTask = yield* projectRequiresTaskInput(input.requiresTask);
 
 				const created = yield* dbService
 					.query("project.create", async () => {
@@ -475,6 +495,7 @@ export async function createProject(
 								deadline: input.deadline || null,
 								customerId: input.customerId || null,
 								billableDefault,
+								requiresTask: requiresTask ?? false,
 								createdBy: session.user.id,
 							});
 
@@ -641,6 +662,9 @@ async function saveProjectChanges(
 				if (billableDefault !== existingProject.billableDefault) {
 					updateData.billableDefault = billableDefault;
 				}
+				// Whoever may edit the project may change its task requirement (#884).
+				const requiresTask = yield* projectRequiresTaskInput(input.requiresTask);
+				if (requiresTask !== undefined) updateData.requiresTask = requiresTask;
 
 				// Validate customerId if changing to a new customer
 				if (input.customerId) {

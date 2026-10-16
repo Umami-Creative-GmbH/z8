@@ -82,6 +82,8 @@ interface FormValues {
 	customerId: string;
 	/** Billable Time (#900): whether new work on the project starts as billable. */
 	billableDefault: boolean;
+	/** Task requirement (#884); a project from a template takes the template's. */
+	requiresTask: boolean;
 }
 
 function useProjectDialogController({
@@ -140,6 +142,7 @@ function useProjectDialogController({
 			: "",
 		customerId: project?.customerId || "",
 		billableDefault: project?.billableDefault ?? false,
+		requiresTask: project?.requiresTask ?? false,
 	};
 
 	const form = useForm({
@@ -167,6 +170,7 @@ function useProjectDialogController({
 					deadline: deadline ?? null,
 					customerId: customerId ?? null,
 					...billableDefault,
+					requiresTask: value.requiresTask,
 					customFieldValues,
 				}).catch(() => null);
 
@@ -228,6 +232,7 @@ function useProjectDialogController({
 				deadline,
 				customerId,
 				...billableDefault,
+				requiresTask: value.requiresTask,
 				customFieldValues,
 			}).catch(() => null);
 
@@ -530,6 +535,33 @@ function ProjectDialogForm({
 						)}
 					</form.Subscribe>
 				) : null}
+
+				{/* Task requirement (#884); a project from a template takes the template's. */}
+				{!fromTemplate && (
+					<form.Field name="requiresTask">
+						{(field) => (
+							<div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+								<div className="space-y-0.5">
+									<Label htmlFor="requiresTask">
+										{t("settings.projects.field.requiresTask", "Require a task")}
+									</Label>
+									<p id="requiresTaskHelp" className="text-sm text-muted-foreground">
+										{t(
+											"settings.projects.field.requiresTaskHelp",
+											"Time booked to this project must name one of its tasks. It applies only while the project has an open task.",
+										)}
+									</p>
+								</div>
+								<Switch
+									id="requiresTask"
+									aria-describedby="requiresTaskHelp"
+									checked={field.state.value}
+									onCheckedChange={(checked) => field.handleChange(checked)}
+								/>
+							</div>
+						)}
+					</form.Field>
+				)}
 
 				{/* Status */}
 				<form.Field name="status">

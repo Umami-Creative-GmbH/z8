@@ -150,6 +150,7 @@ export async function getProjectTemplate(
 			color: projectTemplate.color,
 			budgetHours: projectTemplate.budgetHours,
 			deadlineOffsetDays: projectTemplate.deadlineOffsetDays,
+			requiresTask: projectTemplate.requiresTask,
 			createdAt: projectTemplate.createdAt,
 			updatedAt: projectTemplate.updatedAt,
 		})
@@ -405,6 +406,7 @@ export async function writeProjectTemplate(
 		color: input.color,
 		budgetHours: input.budgetHours,
 		deadlineOffsetDays: input.deadlineOffsetDays,
+		requiresTask: input.requiresTask,
 	};
 	let templateId: string;
 	if (scope.templateId) {
