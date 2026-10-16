@@ -165,6 +165,8 @@ const billingEventsLayer = BillingEventsServiceLive.pipe(
 			Layer.succeed(
 				StripeService,
 				StripeService.of({
+					// Billing finds the full seat item by its configured price (#1279)
+					config: { priceMonthlyId: "price_t317", priceYearlyId: "price_t317_year" },
 					getCustomer: () => Effect.succeed({ email: null }),
 					getSubscription: () => Effect.succeed(stripeSubscription("active")),
 				} as never),
