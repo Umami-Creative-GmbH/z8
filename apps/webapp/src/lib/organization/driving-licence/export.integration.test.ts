@@ -146,6 +146,11 @@ beforeEach(async () => {
 });
 afterEach(async () => {
 	await fixture?.close();
+	if (fixture)
+		await fixture.pool.query(
+			"delete from personal_data_export_file_cleanup where organization_id=$1",
+			[fixture.organizationId],
+		);
 });
 it("downloads a private readable PDF of the selected employee evidence", async () => {
 	const response = await GET(
@@ -180,7 +185,18 @@ it("allows employee evidence but denies foreign identifiers, revoked verifier sc
 		)
 	).rows[0].user_id;
 	expect((await GET(url(fixture.employeeId))).status).toBe(200);
-	expect((await GET(url(crypto.randomUUID()))).status).toBe(404);
+	const foreignOrganization = await fixture.createOrganization();
+	const foreign = await fixture.seedEmployee({
+		organizationId: foreignOrganization,
+	});
+	expect((await GET(url(foreign.employeeId))).status).toBe(404);
+	await fixture.pool.query("update employee set is_active=false where id=$1", [
+		fixture.employeeId,
+	]);
+	expect((await GET(url(fixture.employeeId))).status).toBe(404);
+	await fixture.pool.query("update employee set is_active=true where id=$1", [
+		fixture.employeeId,
+	]);
 	harness.userId = fixture.ownerUserId;
 	expect((await GET(url(fixture.employeeId))).status).toBe(404);
 	const adminData = await grants.getDrivingLicenceVerifierAdminDataAction();
@@ -225,6 +241,26 @@ it("includes retained driving evidence in the real employee and former-employee 
 	});
 	if (!report.success) throw new Error(report.error);
 	harness.userId = verifier.userId;
+	await fixture.pool.query(
+		"insert into driving_licence_task (organization_id,employee_id,employment_period_id,occasion_key,kind,state,created_at,completed_at,completed_by) values ($1,$2,$3,'export-fixture','personal_reminder','completed',$4,$4,$5)",
+		[
+			fixture.organizationId,
+			fixture.employeeId,
+			fixture.employmentPeriodId,
+			harness.now,
+			verifier.userId,
+		],
+	);
+	await fixture.pool.query(
+		"insert into driving_licence_reminder_delivery (organization_id,employee_id,employment_period_id,occasion_key,recipient_user_id,email_state,created_at) values ($1,$2,$3,'export-fixture',$4,'unavailable',$5)",
+		[
+			fixture.organizationId,
+			fixture.employeeId,
+			fixture.employmentPeriodId,
+			verifier.userId,
+			harness.now,
+		],
+	);
 	for (const kind of ["employee", "admin"] as const) {
 		if (kind === "admin")
 			await fixture.pool.query(
@@ -265,6 +301,19 @@ it("includes retained driving evidence in the real employee and former-employee 
 				id: report.data.reportId,
 				scope: "person",
 				resolved_at: null,
+			}),
+		]);
+		expect(data.reminder_tasks).toEqual([
+			expect.objectContaining({
+				kind: "personal_reminder",
+				state: "completed",
+				completed_by: "Lifecycle",
+			}),
+		]);
+		expect(data.reminder_deliveries).toEqual([
+			expect.objectContaining({
+				email_state: "unavailable",
+				recipient_name: "Lifecycle",
 			}),
 		]);
 		expect(text).toContain("I confirm that no known driving ban");

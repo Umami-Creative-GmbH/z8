@@ -2,6 +2,38 @@ import type { PersonalDataFieldGuide } from "../collector";
 
 export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 	const fields = {
+		occasion_key: t(
+			"personalDataExport.readme.fields.drivingLicence.occasionKey",
+			"The occurrence this reminder or task concerns; it identifies the employment, class deadline or suspension without copying the check.",
+		),
+		created_at: t(
+			"personalDataExport.readme.fields.drivingLicence.createdAt",
+			"When this task or delivery was first recorded, as a UTC instant.",
+		),
+		completed_at: t(
+			"personalDataExport.readme.fields.drivingLicence.completedAt",
+			"When a verifier marked the personal reminder completed; empty for an uncompleted task.",
+		),
+		completed_by: t(
+			"personalDataExport.readme.fields.drivingLicence.completedBy",
+			"The name of the person who marked the reminder completed; this does not establish direct delivery or a read receipt.",
+		),
+		recipient_name: t(
+			"personalDataExport.readme.fields.drivingLicence.recipientName",
+			"The name of the person to whom this reminder about your check was addressed.",
+		),
+		notification_id: t(
+			"personalDataExport.readme.fields.drivingLicence.notificationId",
+			"The app notification linked to this reminder; empty when none was created.",
+		),
+		email_state: t(
+			"personalDataExport.readme.fields.drivingLicence.emailState",
+			"Whether email delivery was pending, sent, suppressed, obsolete or unavailable; this is not a read receipt.",
+		),
+		emailed_at: t(
+			"personalDataExport.readme.fields.drivingLicence.emailedAt",
+			"When this reminder's email was sent; empty when no email was sent.",
+		),
 		reported_at: t(
 			"personalDataExport.readme.fields.drivingLicence.reportedAt",
 			"When you reported a person-wide driving impediment, as a UTC instant.",
@@ -120,7 +152,7 @@ export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 		),
 		kind: t(
 			"personalDataExport.readme.fields.drivingLicence.kind",
-			"The recorded authorization event or person-wide or document-wide suspension kind.",
+			"The authorization event, suspension or task kind; tasks are personal_reminder or reassignment.",
 		),
 		effective_at: t(
 			"personalDataExport.readme.fields.drivingLicence.effective_at",
@@ -156,7 +188,7 @@ export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 		),
 		state: t(
 			"personalDataExport.readme.fields.drivingLicence.state",
-			"The stored class authorization state: active, suspended or ended; events explain its history.",
+			"The stored class authorization state (active, suspended, ended) or reminder task state (pending, completed, obsolete); history explains the changes.",
 		),
 		suspended_at: t(
 			"personalDataExport.readme.fields.drivingLicence.suspended_at",
@@ -168,7 +200,7 @@ export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 		),
 		scope: t(
 			"personalDataExport.readme.fields.drivingLicence.scope",
-			"Whether your verifier responsibility covers all employees or specific employees and teams.",
+			"The scope of a person-wide report (person), or whether your verifier responsibility covers all employees or specific employees and teams.",
 		),
 		team_ids: t(
 			"personalDataExport.readme.fields.drivingLicence.team_ids",
@@ -220,6 +252,27 @@ export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 		),
 	};
 	return {
+		reminder_tasks: {
+			summary: t(
+				"personalDataExport.readme.fields.drivingLicence.reminderTasks.summary",
+				"Personal-reminder and reassignment tasks concerning your checks, including their recorded completion; completion does not establish direct delivery or reading.",
+			),
+			fields,
+		},
+		reminder_tasks_completed: {
+			summary: t(
+				"personalDataExport.readme.fields.drivingLicence.reminderTasksCompleted.summary",
+				"Reminder tasks you completed for other employees, limited to opaque IDs, task kind and completion time.",
+			),
+			fields,
+		},
+		reminder_deliveries: {
+			summary: t(
+				"personalDataExport.readme.fields.drivingLicence.reminderDeliveries.summary",
+				"The reminder delivery records concerning your checks, without email addresses, transport retries or read receipts.",
+			),
+			fields,
+		},
 		impediment_reports: {
 			summary: t(
 				"personalDataExport.readme.fields.drivingLicence.impedimentReports.summary",

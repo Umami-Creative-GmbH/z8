@@ -11,6 +11,8 @@ import {
 	drivingLicenceParticipant,
 	drivingLicencePolicyRevision,
 } from "@/db/schema/driving-licence-policy";
+import { drivingLicenceReminderDelivery } from "@/db/schema/driving-licence-reminders";
+import { drivingLicenceTask } from "@/db/schema/driving-licence-tasks";
 import { drivingLicenceVerifierGrant } from "@/db/schema/driving-licence-verifiers";
 import { type PersonalDataCollector, tablePart } from "../collector";
 import { instantText, loadSubjectEmployee, userNameLookup } from "../values";
@@ -150,7 +152,44 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 					)
 					.orderBy(asc(drivingLicencePolicyRevision.version))
 			: [];
+		const tasks = await database
+			.select()
+			.from(drivingLicenceTask)
+			.where(
+				and(
+					eq(drivingLicenceTask.organizationId, organizationId),
+					eq(drivingLicenceTask.employeeId, employeeId),
+				),
+			)
+			.orderBy(asc(drivingLicenceTask.createdAt));
+		const completedTasks = await database
+			.select({
+				id: drivingLicenceTask.id,
+				employeeId: drivingLicenceTask.employeeId,
+				kind: drivingLicenceTask.kind,
+				completedAt: drivingLicenceTask.completedAt,
+			})
+			.from(drivingLicenceTask)
+			.where(
+				and(
+					eq(drivingLicenceTask.organizationId, organizationId),
+					eq(drivingLicenceTask.completedBy, scope.userId),
+					ne(drivingLicenceTask.employeeId, employeeId),
+				),
+			);
+		const deliveries = await database
+			.select()
+			.from(drivingLicenceReminderDelivery)
+			.where(
+				and(
+					eq(drivingLicenceReminderDelivery.organizationId, organizationId),
+					eq(drivingLicenceReminderDelivery.employeeId, employeeId),
+				),
+			)
+			.orderBy(asc(drivingLicenceReminderDelivery.createdAt));
 		const name = await userNameLookup(database, [
+			...tasks.map((t) => t.completedBy),
+			...deliveries.map((d) => d.recipientUserId),
 			...events.map((e) => e.actorUserId),
 			...reports.flatMap((r) => [r.reporterUserId, r.resolvedByUserId]),
 			...policies.map((p) => p.changedBy),
@@ -160,6 +199,62 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 		return {
 			category: "driving_licence",
 			parts: [
+				tablePart(
+					"reminder_tasks",
+					[
+						"id",
+						"employment_period_id",
+						"occasion_key",
+						"kind",
+						"state",
+						"created_at",
+						"completed_at",
+						"completed_by",
+					],
+					tasks.map((t) => ({
+						id: t.id,
+						employment_period_id: t.employmentPeriodId,
+						occasion_key: t.occasionKey,
+						kind: t.kind,
+						state: t.state,
+						created_at: instantText(t.createdAt),
+						completed_at: instantText(t.completedAt),
+						completed_by: name(t.completedBy),
+					})),
+				),
+				tablePart(
+					"reminder_tasks_completed",
+					["id", "employee_id", "kind", "completed_at"],
+					completedTasks.map((t) => ({
+						id: t.id,
+						employee_id: t.employeeId,
+						kind: t.kind,
+						completed_at: instantText(t.completedAt),
+					})),
+				),
+				tablePart(
+					"reminder_deliveries",
+					[
+						"id",
+						"employment_period_id",
+						"occasion_key",
+						"recipient_name",
+						"notification_id",
+						"email_state",
+						"created_at",
+						"emailed_at",
+					],
+					deliveries.map((d) => ({
+						id: d.id,
+						employment_period_id: d.employmentPeriodId,
+						occasion_key: d.occasionKey,
+						recipient_name: name(d.recipientUserId),
+						notification_id: d.notificationId,
+						email_state: d.emailState,
+						created_at: instantText(d.createdAt),
+						emailed_at: instantText(d.emailedAt),
+					})),
+				),
 				tablePart(
 					"checks",
 					[
