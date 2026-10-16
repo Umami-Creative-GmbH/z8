@@ -7,7 +7,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const remote = vi.hoisted(() => ({
 	status: vi.fn(),
@@ -26,10 +26,24 @@ vi.mock("@/lib/auth-client", () => ({
 		},
 	}),
 }));
-vi.mock("@/lib/organization/driving-licence/operational-actions", () => ({
-	getDrivingAuthorizationStatusAction: remote.status,
-	getOperationalDrivingEmployeesAction: remote.employeeList,
-}));
+beforeEach(() =>
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (input: string) => {
+			const url = new URL(input, "http://localhost");
+			if (url.pathname.endsWith("operational-employees"))
+				return Response.json(
+					await remote.employeeList({
+						search: url.searchParams.get("search") ?? "",
+					}),
+				);
+			const employeeId = url.searchParams.get("employeeId");
+			return Response.json(
+				await remote.status(employeeId ? { employeeId } : {}),
+			);
+		}),
+	),
+);
 vi.mock("@/components/time-tracking/use-clock-in-out-widget", () => ({
 	useClockInOutWidget: () => ({
 		t: (_key: string, fallback: string) => fallback,
@@ -71,6 +85,7 @@ import {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
+	vi.unstubAllGlobals();
 	remote.identity = { organizationId: "org-a", userId: "user-a" };
 });
 function client() {

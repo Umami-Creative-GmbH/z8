@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "@/lib/auth-client";
-import {
-	getDrivingAuthorizationStatusAction,
-	getOperationalDrivingEmployeesAction,
-} from "@/lib/organization/driving-licence/operational-actions";
 import { DrivingStatusLabel } from "./check-evidence";
+import {
+	loadDrivingAuthorizationStatus,
+	loadOperationalDrivingEmployees,
+} from "./operational-client";
 
 /** This query never participates in clock commands, vehicle context loading or button admission. */
 export function DrivingAuthorizationAdvisory({
@@ -30,8 +30,8 @@ export function DrivingAuthorizationAdvisory({
 			userId,
 			employeeId ?? "self",
 		],
-		queryFn: () =>
-			getDrivingAuthorizationStatusAction(employeeId ? { employeeId } : {}),
+		queryFn: ({ signal }) =>
+			loadDrivingAuthorizationStatus(organizationId ?? "", employeeId, signal),
 		enabled: !!organizationId && !!userId,
 		staleTime: 0,
 		refetchInterval: 60_000,
@@ -142,8 +142,8 @@ function OperationalDrivingEmployees({
 			userId,
 			deferredSearch,
 		],
-		queryFn: () =>
-			getOperationalDrivingEmployeesAction({ search: deferredSearch }),
+		queryFn: ({ signal }) =>
+			loadOperationalDrivingEmployees(organizationId, deferredSearch, signal),
 		placeholderData: (previous) => previous,
 		refetchInterval: 60_000,
 		retry: false,

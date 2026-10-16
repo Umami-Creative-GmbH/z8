@@ -306,3 +306,70 @@ it("rechecks explicit grants, active membership and both tenant boundaries on ev
 		(await operational.getDrivingAuthorizationStatusAction()).success,
 	).toBe(false);
 });
+
+it("serves operational GET reads privately with the same current permission and tenant boundary", async () => {
+	const { GET: status } = await import(
+		"@/app/api/driving-licence/status/route"
+	);
+	const { GET: employees } = await import(
+		"@/app/api/driving-licence/operational-employees/route"
+	);
+	session.userId = planner.userId;
+	const response = await status(
+		new Request(
+			`http://localhost/api/driving-licence/status?organizationId=${fixture.organizationId}&employeeId=${fixture.employeeId}`,
+		),
+	);
+	expect(response.status).toBe(200);
+	expect(response.headers.get("cache-control")).toBe(
+		"private, no-store, max-age=0",
+	);
+	expect(await response.json()).toEqual({
+		success: true,
+		data: {
+			employeeId: fixture.employeeId,
+			status: "not_enrolled",
+			authorizedClasses: [],
+			classes: [],
+		},
+	});
+	const roster = await employees(
+		new Request(
+			`http://localhost/api/driving-licence/operational-employees?organizationId=${fixture.organizationId}`,
+		),
+	);
+	expect(roster.status).toBe(200);
+	expect(roster.headers.get("cache-control")).toContain("no-store");
+	const foreignOrg = await fixture.createOrganization();
+	expect(
+		(
+			await status(
+				new Request(
+					`http://localhost/api/driving-licence/status?organizationId=${foreignOrg}&employeeId=${fixture.employeeId}`,
+				),
+			)
+		).status,
+	).toBe(404);
+	await fixture.pool.query(
+		`delete from employee_custom_role where custom_role_id=$1`,
+		[roleId],
+	);
+	expect(
+		(
+			await status(
+				new Request(
+					`http://localhost/api/driving-licence/status?organizationId=${fixture.organizationId}&employeeId=${fixture.employeeId}`,
+				),
+			)
+		).status,
+	).toBe(404);
+	expect(
+		(
+			await employees(
+				new Request(
+					`http://localhost/api/driving-licence/operational-employees?organizationId=${fixture.organizationId}`,
+				),
+			)
+		).status,
+	).toBe(404);
+});
