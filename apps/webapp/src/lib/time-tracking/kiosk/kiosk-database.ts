@@ -4,17 +4,22 @@
  * clock queue; opening that one at another version would close its readers.
  *
  * Version 1 has one store, `cache`: what an offline-mode kiosk learned at its
- * last contact (`offline-cache.ts`). Later slices add their stores (#1292: the
- * queued commands and the clock anchor) by raising `KIOSK_DATABASE_VERSION`
+ * last contact (`offline-cache.ts`). Version 2 (#1292) adds `commands`: the
+ * queued frozen kiosk commands (`offline-queue.ts`), keyed by an increasing
+ * `sequence`. Later slices add their stores by raising `KIOSK_DATABASE_VERSION`
  * and adding one `oldVersion < n` step to `upgradeKioskDatabase`; clearing the
  * cache never touches them.
  */
 export const KIOSK_DATABASE_NAME = "z8-kiosk";
-export const KIOSK_DATABASE_VERSION = 1;
+export const KIOSK_DATABASE_VERSION = 2;
 export const KIOSK_CACHE_STORE = "cache";
+export const KIOSK_COMMANDS_STORE = "commands";
 
 export function upgradeKioskDatabase(database: IDBDatabase, oldVersion: number): void {
 	if (oldVersion < 1) database.createObjectStore(KIOSK_CACHE_STORE);
+	if (oldVersion < 2) {
+		database.createObjectStore(KIOSK_COMMANDS_STORE, { keyPath: "sequence", autoIncrement: true });
+	}
 }
 
 /** False only when the browser can list its databases and the kiosk's is not among them. */

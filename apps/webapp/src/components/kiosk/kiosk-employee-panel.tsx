@@ -89,6 +89,8 @@ interface KioskEmployeePanelProps {
 	pending: KioskPanelAction | null;
 	disabled: boolean;
 	error: string | null;
+	/** Offline (#1292): that what the employee does is saved on this kiosk, not yet confirmed. */
+	notice?: string | null;
 	onAction: (action: KioskPanelAction) => void;
 	onBack: () => void;
 }
@@ -106,6 +108,7 @@ export function KioskEmployeePanel({
 	pending,
 	disabled,
 	error,
+	notice = null,
 	onAction,
 	onBack,
 }: KioskEmployeePanelProps) {
@@ -148,6 +151,11 @@ export function KioskEmployeePanel({
 								duration: formatKioskDuration(snapshot.dayTotal.minutes, locale),
 							})}
 				</p>
+				{notice ? (
+					<p className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-lg text-amber-900 dark:text-amber-100">
+						{notice}
+					</p>
+				) : null}
 			</div>
 			{error ? (
 				<p

@@ -158,7 +158,8 @@
         "resume": "Back to work",
         "returning": "Back to the start in {seconds} s",
         "startBreak": "Break started",
-        "title": "Done"
+        "title": "Done",
+        "unconfirmed": "Saved on this kiosk, not yet confirmed. Your PIN is checked when the kiosk is back online."
       },
       "employee": {
         "asOf": "As of {time}",
@@ -177,7 +178,11 @@
       "loading": "Starting kiosk…",
       "offline": {
         "banner": "The kiosk is offline. Clocking is not possible until the connection is back.",
-        "refused": "The kiosk is offline. Nothing was recorded; clocking works only while online."
+        "notSaved": "This could not be saved on the kiosk. Nothing was recorded.",
+        "queueBanner": "The kiosk is offline. Clockings are saved on this kiosk and confirmed when the connection is back.",
+        "refused": "The kiosk is offline. Nothing was recorded; clocking works only while online.",
+        "stateNote": "The kiosk is offline. What you do now is saved on this kiosk and not yet confirmed.",
+        "stateQueued": "The kiosk is offline. This includes clockings saved on this kiosk that are not yet confirmed."
       },
       "pairing": {
         "codeDescription": "The code works once and expires 10 minutes after it was issued.",
@@ -202,6 +207,19 @@
         "rateLimited": "Too many PIN attempts at this kiosk. Try again in {seconds} seconds.",
         "submit": "OK",
         "wrong": "That PIN is not correct. Try again."
+      },
+      "queue": {
+        "dismiss": "Dismiss",
+        "reason": {
+          "kiosk": "The kiosk was no longer paired at that time.",
+          "locked": "The PIN was locked.",
+          "notAssigned": "The employee cannot clock at this kiosk.",
+          "other": "Ask your manager.",
+          "pin": "The PIN was not accepted.",
+          "time": "Its time could not be accepted."
+        },
+        "refused": "{name}: {action} at {time}, saved while offline, was not accepted. {reason}",
+        "title": "Offline clockings not accepted"
       },
       "refusal": {
         "alreadyClockedIn": "You are already clocked in.",
