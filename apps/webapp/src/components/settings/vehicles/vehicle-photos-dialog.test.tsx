@@ -32,6 +32,7 @@ vi.mock("@/app/[locale]/(app)/settings/vehicles/actions", () => ({
 vi.mock("@/app/[locale]/(app)/settings/vehicles/photo-actions", () => ({
 	listVehiclePhotos: listPhotos,
 	initiateVehiclePhotoUpload: initiateUpload,
+	initiateVehiclePhotoBatchUpload: initiateUpload,
 }));
 vi.mock("@/components/employee-select", () => ({
 	EmployeeMultiSelect: ({ label }: { label: string }) => <p>{label}</p>,
@@ -78,7 +79,7 @@ describe("vehicle photo settings", () => {
 		});
 		initiateUpload.mockResolvedValue({
 			success: true,
-			data: { ok: true, uploadId: "upload-1" },
+			data: { ok: true, uploadIds: ["upload-1"] },
 		});
 	});
 	afterEach(() => {

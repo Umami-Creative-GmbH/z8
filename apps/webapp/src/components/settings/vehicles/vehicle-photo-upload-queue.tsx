@@ -3,7 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import { useId, useRef, useState } from "react";
 import {
-	initiateVehiclePhotoUpload,
+	initiateVehiclePhotoBatchUpload,
 	reconcileVehiclePhotoUpload,
 } from "@/app/[locale]/(app)/settings/vehicles/photo-actions";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ type UploadEntry = {
 	id: string;
 	file: File;
 	uploadId?: string;
+	batchIds: string[];
 	status: "queued" | "uploading" | "saved" | "failed";
 	message?: string;
 	photo?: VehiclePhotoView;
@@ -151,44 +152,8 @@ export function useVehiclePhotoUploadQueue({
 			update(entry, { status: "failed", message: error() });
 		}
 	}
-	async function reserve(entry: UploadEntry) {
-		try {
-			const result = await initiateVehiclePhotoUpload(vehicleId);
-			if (!result.success || !result.data.ok) {
-				update(entry, {
-					status: "failed",
-					message: error(
-						result.success && !result.data.ok
-							? result.data.reason
-							: !result.success &&
-									["AuthenticationError", "AuthorizationError"].includes(
-										result.code ?? "",
-									)
-								? "forbidden"
-								: undefined,
-					),
-				});
-				return;
-			}
-			update(entry, { uploadId: result.data.uploadId });
-			void transfer(entry);
-		} catch {
-			update(entry, { status: "failed", message: error() });
-		}
-	}
-	async function retry(snapshot: UploadEntry) {
-		const entry = queue.current.find(
-			(candidate) => candidate.id === snapshot.id,
-		);
-		if (!entry) return;
-		if (entry.status !== "failed") return;
-		update(entry, { status: "queued", message: undefined });
-		if (!entry.uploadId) {
-			reservations.current = (reservations.current ?? Promise.resolve()).then(
-				() => reserve(entry),
-			);
-			return;
-		}
+	async function resume(entry: UploadEntry) {
+		if (!entry.uploadId) return;
 		try {
 			const result = await reconcileVehiclePhotoUpload(
 				vehicleId,
@@ -204,11 +169,7 @@ export function useVehiclePhotoUploadQueue({
 								)
 							? "forbidden"
 							: undefined;
-				update(entry, {
-					status: "failed",
-					message: error(reason),
-					retryable: reason !== "upload_expired",
-				});
+				fail(entry, reason);
 				return;
 			}
 			if (result.data.photo) {
@@ -224,13 +185,78 @@ export function useVehiclePhotoUploadQueue({
 						(other.status === "queued" || other.status === "uploading"),
 				).length;
 			if (occupied >= MAX_VEHICLE_PHOTOS) {
-				update(entry, { status: "failed", message: error("photo_limit") });
+				fail(entry, "photo_limit");
 				return;
 			}
 			await transfer(entry);
 		} catch {
-			update(entry, { status: "failed", message: error() });
+			fail(entry);
 		}
+	}
+	async function reserve(
+		batch: UploadEntry[],
+		targets = batch,
+		reconcile = false,
+	) {
+		try {
+			const result = await initiateVehiclePhotoBatchUpload(
+				vehicleId,
+				batch.map((entry) => entry.id),
+			);
+			if (!result.success || !result.data.ok) {
+				const reason =
+					result.success && !result.data.ok
+						? result.data.reason
+						: !result.success &&
+								["AuthenticationError", "AuthorizationError"].includes(
+									result.code ?? "",
+								)
+							? "forbidden"
+							: undefined;
+				for (const entry of targets) {
+					fail(entry, reason);
+					if (
+						result.success &&
+						!result.data.ok &&
+						result.data.remaining !== undefined
+					)
+						update(entry, {
+							message: t(
+								"settings.vehicles.photos.capacityChanged",
+								"The gallery changed. {count} photo slots remain. Reopen it and choose fewer photos.",
+								{ count: result.data.remaining },
+							),
+						});
+				}
+				return;
+			}
+			for (const [index, entry] of batch.entries())
+				update(entry, { uploadId: result.data.uploadIds[index] });
+			for (const entry of targets) {
+				if (reconcile) void resume(entry);
+				else void transfer(entry);
+			}
+		} catch {
+			for (const entry of targets) fail(entry);
+		}
+	}
+	async function retry(snapshot: UploadEntry) {
+		const entry = queue.current.find(
+			(candidate) => candidate.id === snapshot.id,
+		);
+		if (entry?.status !== "failed") return;
+		update(entry, { status: "queued", message: undefined });
+		if (!entry.uploadId) {
+			const batchIds = new Set(entry.batchIds);
+			const batch = queue.current.filter((candidate) =>
+				batchIds.has(candidate.id),
+			);
+			reservations.current = (reservations.current ?? Promise.resolve()).then(
+				() => reserve(batch, [entry], true),
+			);
+			return;
+		}
+		await resume(entry);
 	}
 	function select(files: File[]) {
 		setSelectionError(null);
@@ -248,10 +274,11 @@ export function useVehiclePhotoUploadQueue({
 			);
 			return;
 		}
-		const selected = files.map((file) => ({
+		const selected: UploadEntry[] = files.map((file) => ({
 			id: crypto.randomUUID(),
 			file,
 			status: "queued" as const,
+			batchIds: [],
 		}));
 		queue.current.push(...selected);
 		setEntries(queue.current.map((entry) => ({ ...entry })));
@@ -268,10 +295,15 @@ export function useVehiclePhotoUploadQueue({
 					message: error("photo_too_large"),
 					retryable: false,
 				});
-			else
-				reservations.current = (reservations.current ?? Promise.resolve()).then(
-					() => reserve(entry),
-				);
+		}
+		const eligible = selected.filter((entry) => entry.status === "queued");
+		if (eligible.length) {
+			const batchIds = eligible.map((entry) => entry.id);
+			for (const entry of eligible) entry.batchIds = batchIds;
+			// Serialize ordered reservations across picker events; binary transfers stay independent.
+			reservations.current = (reservations.current ?? Promise.resolve()).then(
+				() => reserve(eligible),
+			);
 		}
 	}
 	return {

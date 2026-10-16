@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
@@ -115,52 +115,110 @@ export async function listPhotos(
 export type InitiatePhotoResult =
 	| { ok: true; uploadId: string }
 	| { ok: false; reason: VehiclePhotoRefusal };
+export type InitiatePhotoBatchResult =
+	| { ok: true; uploadIds: string[] }
+	| { ok: false; reason: VehiclePhotoRefusal; remaining?: number };
+class PhotoUploadIdentityConflict extends Error {}
 export async function initiatePhotoUpload(
 	database: Database,
 	actor: PhotoActor,
 	vehicleId: string,
 ): Promise<InitiatePhotoResult> {
-	return database.transaction(async (tx) => {
-		const [vehicle] = await tx
-			.select()
-			.from(organizationVehicle)
-			.where(vehicleScope(actor.organizationId, vehicleId))
-			.for("update");
-		if (!(await currentActor(tx, actor)))
+	const result = await initiatePhotoBatchUpload(database, actor, vehicleId, [
+		randomUUID(),
+	]);
+	return result.ok ? { ok: true, uploadId: result.uploadIds[0] } : result;
+}
+/** Reserve one complete ordered selection. Replaying its client-known identities is read-only. */
+export async function initiatePhotoBatchUpload(
+	database: Database,
+	actor: PhotoActor,
+	vehicleId: string,
+	uploadIds: string[],
+): Promise<InitiatePhotoBatchResult> {
+	try {
+		return await database.transaction(
+			async (tx): Promise<InitiatePhotoBatchResult> => {
+				const [vehicle] = await tx
+					.select()
+					.from(organizationVehicle)
+					.where(vehicleScope(actor.organizationId, vehicleId))
+					.for("update");
+				if (!(await currentActor(tx, actor)))
+					return { ok: false, reason: "forbidden" };
+				if (!vehicle) return { ok: false, reason: "vehicle_not_found" };
+				const existing = await tx
+					.select()
+					.from(upload)
+					.where(
+						and(
+							eq(upload.organizationId, actor.organizationId),
+							inArray(upload.id, uploadIds),
+						),
+					);
+				if (existing.length) {
+					if (
+						existing.length !== uploadIds.length ||
+						existing.some(
+							(intent) =>
+								intent.vehicleId !== vehicleId ||
+								intent.uploadedBy !== actor.userId,
+						)
+					)
+						return { ok: false, reason: "forbidden" };
+					return { ok: true, uploadIds };
+				}
+				if (vehicle.archivedAt)
+					return { ok: false, reason: "vehicle_archived" };
+				const [{ count }] = await tx
+					.select({ count: sql<number>`count(*)::int` })
+					.from(photo)
+					.where(photoScope(actor.organizationId, vehicleId));
+				if (count + uploadIds.length > MAX_VEHICLE_PHOTOS)
+					return {
+						ok: false,
+						reason: "photo_limit",
+						remaining: Math.max(0, MAX_VEHICLE_PHOTOS - count),
+					};
+				const [{ last }] = await tx
+					.select({
+						last: sql<number>`coalesce(max(${upload.uploadOrder}),0)::int`,
+					})
+					.from(upload)
+					.where(
+						and(
+							eq(upload.organizationId, actor.organizationId),
+							eq(upload.vehicleId, vehicleId),
+						),
+					);
+				const now = systemClock.nowInstant();
+				const inserted = await tx
+					.insert(upload)
+					.values(
+						uploadIds.map((id, index) => ({
+							id,
+							organizationId: actor.organizationId,
+							vehicleId,
+							uploadedBy: actor.userId,
+							uploadOrder: last + index + 1,
+							storageKey: `vehicle-photos/${actor.organizationId}/${vehicleId}/${id}.webp`,
+							createdAt: dateFromInstant(now),
+							nextAttemptAt: dateFromInstant(now.add({ hours: 1 })),
+						})),
+					)
+					.onConflictDoNothing({ target: upload.id })
+					.returning({ id: upload.id });
+				// A collision outside this scope must roll back every identity in the selection.
+				if (inserted.length !== uploadIds.length)
+					throw new PhotoUploadIdentityConflict();
+				return { ok: true, uploadIds };
+			},
+		);
+	} catch (error) {
+		if (error instanceof PhotoUploadIdentityConflict)
 			return { ok: false, reason: "forbidden" };
-		if (!vehicle) return { ok: false, reason: "vehicle_not_found" };
-		if (vehicle.archivedAt) return { ok: false, reason: "vehicle_archived" };
-		const [{ count }] = await tx
-			.select({ count: sql<number>`count(*)::int` })
-			.from(photo)
-			.where(photoScope(actor.organizationId, vehicleId));
-		if (count >= MAX_VEHICLE_PHOTOS)
-			return { ok: false, reason: "photo_limit" };
-		const [{ last }] = await tx
-			.select({
-				last: sql<number>`coalesce(max(${upload.uploadOrder}),0)::int`,
-			})
-			.from(upload)
-			.where(
-				and(
-					eq(upload.organizationId, actor.organizationId),
-					eq(upload.vehicleId, vehicleId),
-				),
-			);
-		const id = randomUUID();
-		const now = systemClock.nowInstant();
-		await tx.insert(upload).values({
-			id,
-			organizationId: actor.organizationId,
-			vehicleId,
-			uploadedBy: actor.userId,
-			uploadOrder: last + 1,
-			storageKey: `vehicle-photos/${actor.organizationId}/${vehicleId}/${id}.webp`,
-			createdAt: dateFromInstant(now),
-			nextAttemptAt: dateFromInstant(now.add({ hours: 1 })),
-		});
-		return { ok: true, uploadId: id };
-	});
+		throw error;
+	}
 }
 export async function findPhoto(
 	database: Database,

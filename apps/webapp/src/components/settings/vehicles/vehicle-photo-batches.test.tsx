@@ -27,6 +27,7 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("@/app/[locale]/(app)/settings/vehicles/photo-actions", () => ({
 	listVehiclePhotos: listPhotos,
 	initiateVehiclePhotoUpload: initiateUpload,
+	initiateVehiclePhotoBatchUpload: initiateUpload,
 	reconcileVehiclePhotoUpload: reconcile,
 }));
 const vehicle = {
@@ -65,10 +66,12 @@ describe("vehicle photo batch uploads", () => {
 			data: { photos: [], archived: false },
 		});
 		let next = 0;
-		initiateUpload.mockImplementation(async () => ({
-			success: true,
-			data: { ok: true, uploadId: `upload-${++next}` },
-		}));
+		initiateUpload.mockImplementation(
+			async (_vehicleId: string, ids: string[]) => ({
+				success: true,
+				data: { ok: true, uploadIds: ids.map(() => `upload-${++next}`) },
+			}),
+		);
 	});
 	afterEach(() => {
 		cleanup();
@@ -170,7 +173,7 @@ describe("vehicle photo batch uploads", () => {
 			"/api/organization/vehicles/van/photos/upload-2",
 			"/api/organization/vehicles/van/photos/upload-2",
 		]);
-		expect(initiateUpload).toHaveBeenCalledTimes(2);
+		expect(initiateUpload).toHaveBeenCalledTimes(1);
 	});
 	it("reconciles a completed upload after a lost response without transferring its body again", async () => {
 		const request = vi.fn().mockRejectedValueOnce(new Error("response lost"));
@@ -287,5 +290,44 @@ describe("vehicle photo batch uploads", () => {
 		expect(
 			screen.getByRole("button", { name: "View photo 2 of Van" }),
 		).toBeTruthy();
+	});
+	it("retries a lost initiation response with the whole original selection and preserves order when retried in reverse", async () => {
+		initiateUpload
+			.mockRejectedValueOnce(new Error("initiation response lost"))
+			.mockResolvedValueOnce({
+				success: true,
+				data: { ok: true, uploadIds: ["upload-1", "upload-2"] },
+			});
+		reconcile.mockResolvedValue({
+			success: true,
+			data: { ok: true, photo: null },
+		});
+		const request = vi
+			.fn()
+			.mockResolvedValueOnce(success("second", 2))
+			.mockResolvedValueOnce(success("first", 1));
+		vi.stubGlobal("fetch", request);
+		render(<VehiclePhotosDialog vehicle={vehicle} />);
+		await open();
+		await userEvent.upload(screen.getByLabelText("Add photo"), [
+			file("first.png"),
+			file("second.png"),
+		]);
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Retry second.png" }),
+		);
+		await screen.findByText("Saved second.png.");
+		await userEvent.click(
+			screen.getByRole("button", { name: "Retry first.png" }),
+		);
+		await screen.findByText("Saved first.png.");
+		expect(
+			screen.getAllByRole("img").map((img) => img.getAttribute("src")),
+		).toEqual(["/photos/first", "/photos/second"]);
+		expect(initiateUpload.mock.calls[0][1]).toHaveLength(2);
+		expect(initiateUpload.mock.calls[1][1]).toEqual(
+			initiateUpload.mock.calls[0][1],
+		);
+		expect(initiateUpload).toHaveBeenCalledTimes(2);
 	});
 });

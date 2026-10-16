@@ -64,6 +64,7 @@ const { changeVehicles } = await import("./actions");
 const {
 	listVehiclePhotos,
 	initiateVehiclePhotoUpload,
+	initiateVehiclePhotoBatchUpload,
 	reconcileVehiclePhotoUpload,
 } = await import("./photo-actions");
 const { runVehiclePhotoCleanupJob } = await import(
@@ -222,6 +223,22 @@ describe("vehicle photo batch reconciliation", () => {
 		const bytes = await image();
 		for (let index = 0; index < 19; index++)
 			expect((await upload(await start(), bytes)).status).toBe(200);
+		expect(
+			await initiateVehiclePhotoBatchUpload(vehicleId, [
+				"12710000-0000-4000-8000-000000000005",
+				"12710000-0000-4000-8000-000000000006",
+			]),
+		).toMatchObject({
+			success: true,
+			data: { ok: false, reason: "photo_limit", remaining: 1 },
+		});
+		expect(
+			(
+				await admin.query(
+					"select id from organization_vehicle_photo_upload where organization_id='batch-org'",
+				)
+			).rowCount,
+		).toBe(19);
 		const ids = [await start(), await start(), await start()];
 		const outcomes = await Promise.all(ids.map((id) => upload(id, bytes)));
 		expect(outcomes.map((outcome) => outcome.status).sort()).toEqual([
@@ -340,5 +357,100 @@ describe("vehicle photo batch reconciliation", () => {
 				)
 			).rows,
 		).toEqual([{ status: "cleaned" }, { status: "cleaned" }]);
+	});
+	it("reserves a selection atomically and recovers the same identities and order after a lost initiation response", async () => {
+		const ids = [
+			"12710000-0000-4000-8000-000000000001",
+			"12710000-0000-4000-8000-000000000002",
+		];
+		expect(await initiateVehiclePhotoBatchUpload(vehicleId, ids)).toMatchObject(
+			{ success: true, data: { ok: true, uploadIds: ids } },
+		);
+		expect(await initiateVehiclePhotoBatchUpload(vehicleId, ids)).toMatchObject(
+			{ success: true, data: { ok: true, uploadIds: ids } },
+		);
+		expect((await upload(ids[1], await image())).status).toBe(200);
+		expect((await upload(ids[0], await image())).status).toBe(200);
+		expect((await gallery()).photos.map((photo) => photo.id)).toEqual(ids);
+		expect(
+			(
+				await admin.query(
+					"select id from organization_vehicle_photo_upload where organization_id='batch-org'",
+				)
+			).rowCount,
+		).toBe(2);
+	});
+	it("rejects unrelated or cross-organization upload identities atomically", async () => {
+		const existing = await start();
+		const fresh = "12710000-0000-4000-8000-000000000003";
+		harness.userId = "batch-admin";
+		expect(
+			await initiateVehiclePhotoBatchUpload(vehicleId, [existing]),
+		).toMatchObject({
+			success: true,
+			data: { ok: false, reason: "forbidden" },
+		});
+		expect(
+			await initiateVehiclePhotoBatchUpload(vehicleId, [existing, fresh]),
+		).toMatchObject({
+			success: true,
+			data: { ok: false, reason: "forbidden" },
+		});
+		harness.userId = "batch-owner";
+		harness.organizationId = "batch-other";
+		await admin.query(
+			"insert into member(id,organization_id,user_id,role,status,created_at) values('batch-cross-owner','batch-other','batch-owner','owner','approved',now())",
+		);
+		const created = await changeVehicles({
+			kind: "create",
+			name: "Other organization van",
+			licencePlate: "BATCH 2",
+			drivers: { employeeIds: [], teamIds: [] },
+		});
+		if (!created.success || !created.data.ok)
+			throw new Error("Vehicle creation failed");
+		expect(
+			await initiateVehiclePhotoBatchUpload(created.data.vehicles[0].id, [
+				fresh,
+				existing,
+			]),
+		).toMatchObject({
+			success: true,
+			data: { ok: false, reason: "forbidden" },
+		});
+		expect(
+			(
+				await admin.query(
+					"select id from organization_vehicle_photo_upload where organization_id='batch-other'",
+				)
+			).rowCount,
+		).toBe(0);
+		expect(
+			(
+				await admin.query(
+					"select id from organization_vehicle_photo_upload where organization_id='batch-org'",
+				)
+			).rows,
+		).toEqual([{ id: existing }]);
+	});
+	it("refuses invalid selection identities before creating any intent", async () => {
+		const id = "12710000-0000-4000-8000-000000000004";
+		expect(await initiateVehiclePhotoBatchUpload(vehicleId, [])).toMatchObject({
+			success: false,
+			code: "ValidationError",
+		});
+		expect(
+			await initiateVehiclePhotoBatchUpload(vehicleId, [id, id]),
+		).toMatchObject({ success: false, code: "ValidationError" });
+		expect(
+			await initiateVehiclePhotoBatchUpload(vehicleId, ["invalid"]),
+		).toMatchObject({ success: false, code: "ValidationError" });
+		expect(
+			(
+				await admin.query(
+					"select id from organization_vehicle_photo_upload where organization_id='batch-org'",
+				)
+			).rowCount,
+		).toBe(0);
 	});
 });
