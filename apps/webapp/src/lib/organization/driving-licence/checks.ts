@@ -1,3 +1,7 @@
+import {
+	beginDrivingLicenceRetentionChange,
+	finishDrivingLicenceRetentionChange,
+} from "./retention-state";
 import "server-only";
 import { and, asc, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
@@ -400,6 +404,11 @@ export async function completeDrivingLicenceCheck(
 	return db.transaction(async (tx) => {
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
 		const now = systemClock.nowInstant();
+		const retentionBefore = await beginDrivingLicenceRetentionChange(
+			tx,
+			actor.organizationId,
+			now,
+		);
 		// A row lock serializes completion with grant revocation/replacement.
 		await tx
 			.select({ id: drivingLicenceVerifierGrant.id })
@@ -684,6 +693,12 @@ export async function completeDrivingLicenceCheck(
 				recordedAt: dateFromInstant(now),
 				actorUserId: actor.userId,
 			});
+		await finishDrivingLicenceRetentionChange(
+			tx,
+			actor.organizationId,
+			now,
+			retentionBefore,
+		);
 		return { checkId: check.id };
 	});
 }
