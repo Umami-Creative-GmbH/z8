@@ -512,6 +512,43 @@ describe("TimeClockPopover", () => {
 			);
 		});
 
+		it("requires a task for a project that requires one, without a 'No task' choice", async () => {
+			projectsMock = [
+				{
+					id: "project-1",
+					name: "Project One",
+					requiresTask: true,
+					tasks: [{ id: "task-1", name: "Design" }],
+				},
+			];
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			fireEvent.click(await screen.findByRole("combobox", { name: "Task (required)" }));
+
+			expect(await screen.findByRole("option", { name: "Design" })).toBeTruthy();
+			expect(screen.queryByRole("option", { name: "No task" })).toBeNull();
+		});
+
+		it("words a clock-out refused for want of a task", async () => {
+			clockOutMock.mockResolvedValue({
+				success: false,
+				error: "Cannot book time to this task",
+				code: "task_required",
+			});
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+
+			await waitFor(() =>
+				expect(toastMocks.error).toHaveBeenCalledWith(
+					"This project requires a task. Choose one and try again.",
+					{ description: undefined },
+				),
+			);
+		});
+
 		it("offers no task while the clock-out is only saved for review", async () => {
 			captureMode = "local-review";
 			render(<TimeClockPopover />);

@@ -30,16 +30,17 @@ vi.mock("@/components/time-tracking/task-selector", () => ({
 		currentTask?: { id: string; name: string; projectId: string } | null;
 		onValueChange: (value: string | undefined) => void;
 		projectId: string | undefined;
-		projects: { id: string; tasks: { id: string; name: string }[] }[];
+		projects: { id: string; requiresTask?: boolean; tasks: { id: string; name: string }[] }[];
 		value?: string;
 	}) => {
-		const tasks = [...(projects.find((project) => project.id === projectId)?.tasks ?? [])];
+		const project = projects.find((choice) => choice.id === projectId);
+		const tasks = [...(project?.tasks ?? [])];
 		if (currentTask && currentTask.projectId === projectId && currentTask.id === value) {
 			tasks.unshift(currentTask);
 		}
 		return tasks.length === 0 ? null : (
 			<select
-				aria-label="Task"
+				aria-label={project?.requiresTask ? "Task (required)" : "Task"}
 				onChange={(event) => onValueChange(event.target.value || undefined)}
 				value={value ?? ""}
 			>
@@ -139,6 +140,17 @@ describe("ClockOutOnBehalfDialog task (#874)", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
 
 		expect(onConfirm).toHaveBeenCalledWith({ taskId: null });
+	});
+
+	it("hands the picker the project's task requirement (#884)", async () => {
+		const required = choices(null);
+		getClockOutOnBehalfTaskChoices.mockResolvedValue({
+			...required,
+			data: { ...required.data, requiresTask: true },
+		});
+		renderDialog();
+
+		expect(await screen.findByLabelText("Task (required)")).toBeTruthy();
 	});
 
 	it("still clocks out when the task choices cannot be loaded", async () => {

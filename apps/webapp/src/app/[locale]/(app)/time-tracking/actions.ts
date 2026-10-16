@@ -138,6 +138,7 @@ type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 		| "deadline"
 		| "customerId"
 		| "billableDefault"
+		| "requiresTask"
 	> | null;
 };
 
@@ -703,6 +704,11 @@ export interface AssignedProject {
 	billableDefault: boolean;
 	/** The project's open tasks, by name (#874); empty when it has none. */
 	tasks: ProjectTaskChoice[];
+	/**
+	 * The task requirement setting (#884). With open tasks it is active and a
+	 * booking must name one; pickers decide with `isTaskRequirementActive`.
+	 */
+	requiresTask: boolean;
 }
 
 /**
@@ -758,6 +764,7 @@ export async function getAssignedProjects(): Promise<
 				deadline: Date | null;
 				customerId: string | null;
 				billableDefault: boolean;
+				requiresTask: boolean;
 			}
 		>();
 
@@ -782,6 +789,7 @@ export async function getAssignedProjects(): Promise<
 					deadline: proj.deadline,
 					customerId: proj.customerId,
 					billableDefault: proj.billableDefault,
+					requiresTask: proj.requiresTask,
 				});
 			}
 		}
@@ -848,6 +856,7 @@ export async function getAssignedProjects(): Promise<
 				hasCustomer: withActiveCustomer.has(proj.id),
 				billableDefault: withActiveCustomer.has(proj.id) && proj.billableDefault,
 				tasks: tasksByProjectId.get(proj.id) ?? [],
+				requiresTask: proj.requiresTask,
 			});
 		}
 

@@ -29,6 +29,7 @@ import {
 import {
 	type ProjectTaskIneligibility,
 	projectTaskIneligibility,
+	taskRequirementIneligibility,
 } from "@/lib/time-tracking/project-eligibility";
 import {
 	type BillableWorkRefusal,
@@ -327,6 +328,13 @@ export async function prepareManualWork(
 		);
 		if (ineligibility) return { ok: false, rejection: { reason: ineligibility } };
 	}
+	// A project's active task requirement refuses an entry without a task (#884).
+	const missingTask = await taskRequirementIneligibility(tx, {
+		organizationId: target.organizationId,
+		projectId: command.projectId,
+		taskId: command.taskId ?? null,
+	});
+	if (missingTask) return { ok: false, rejection: { reason: missingTask } };
 	if (command.workCategoryId) {
 		const category = await validateWorkCategoryAssignment(
 			target.id,
