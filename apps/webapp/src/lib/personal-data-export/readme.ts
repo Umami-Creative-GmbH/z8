@@ -180,6 +180,7 @@ export type PayrollCoverage = "all" | "employee" | "team";
 
 /** The people of the organization who can access the employee's data, besides the employee. */
 export interface PersonalDataReadmeAccess {
+	drivingLicenceVerifiers?: readonly { name: string }[];
 	ownersAndAdmins: readonly { name: string; role: "owner" | "admin" }[];
 	/** Direct managers, and people whose team permissions cover the employee's teams. */
 	managers: readonly { name: string; via: "direct" | "team" }[];
@@ -393,6 +394,13 @@ function renderAccess(
 	);
 	group(
 		t(
+			"personalDataExport.readme.accessDrivingLicenceVerifiers",
+			"Driving licence verifiers (your check evidence and PDF exports):",
+		),
+		(access.drivingLicenceVerifiers ?? []).map((person) => person.name),
+	);
+	group(
+		t(
 			"personalDataExport.readme.accessManagers",
 			"Managers (your time, absences, schedules and requests, as their role allows):",
 		),
@@ -481,6 +489,13 @@ function renderRetention(
 	const { t, retention } = input;
 	heading(
 		t("personalDataExport.readme.retentionTitle", "How long your data is kept"),
+	);
+	lines.push(
+		t(
+			"personalDataExport.readme.drivingLicenceRetention",
+			"Driving licence evidence follows the organization's justified check-retention period once it no longer supports an active authorization. A documented hold for a specific legal case postpones deletion. Refer to the driving_licence policy, retention and hold records for the applicable context; generating an export does not extend evidence retention in Z8.",
+		),
+		"",
 	);
 	lines.push(
 		t(

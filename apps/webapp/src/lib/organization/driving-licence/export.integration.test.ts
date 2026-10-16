@@ -251,35 +251,31 @@ it("includes retained driving evidence in the real employee and former-employee 
 		.where(eq(drivingLicenceCheck.id, checkId));
 	const unrelated = await fixture.seedEmployee();
 	const unrelatedCheckId = crypto.randomUUID();
-	await fixture.db
-		.insert(drivingLicenceCheck)
-		.values({
-			...seedCheck,
-			id: unrelatedCheckId,
-			commandId: crypto.randomUUID(),
-			employeeId: unrelated.employeeId,
-			employmentPeriodId: unrelated.employmentPeriodId,
-			employeeName: "Unrelated archive secret",
-		});
+	await fixture.db.insert(drivingLicenceCheck).values({
+		...seedCheck,
+		id: unrelatedCheckId,
+		commandId: crypto.randomUUID(),
+		employeeId: unrelated.employeeId,
+		employmentPeriodId: unrelated.employmentPeriodId,
+		employeeName: "Unrelated archive secret",
+	});
 	const foreignOrg = await fixture.createOrganization();
 	const foreign = await fixture.seedEmployee({ organizationId: foreignOrg });
 	const foreignVerifier = await fixture.seedEmployee({
 		organizationId: foreignOrg,
 	});
 	const foreignCheckId = crypto.randomUUID();
-	await fixture.db
-		.insert(drivingLicenceCheck)
-		.values({
-			...seedCheck,
-			id: foreignCheckId,
-			commandId: crypto.randomUUID(),
-			organizationId: foreignOrg,
-			employeeId: foreign.employeeId,
-			employmentPeriodId: foreign.employmentPeriodId,
-			verifierEmployeeId: foreignVerifier.employeeId,
-			verifierUserId: foreignVerifier.userId,
-			employeeName: "Foreign archive secret",
-		});
+	await fixture.db.insert(drivingLicenceCheck).values({
+		...seedCheck,
+		id: foreignCheckId,
+		commandId: crypto.randomUUID(),
+		organizationId: foreignOrg,
+		employeeId: foreign.employeeId,
+		employmentPeriodId: foreign.employmentPeriodId,
+		verifierEmployeeId: foreignVerifier.employeeId,
+		verifierUserId: foreignVerifier.userId,
+		employeeName: "Foreign archive secret",
+	});
 	await fixture.pool.query(
 		"insert into driving_licence_task (organization_id,employee_id,employment_period_id,occasion_key,kind,state,created_at,completed_at,completed_by) values ($1,$2,$3,'export-fixture','personal_reminder','completed',$4,$4,$5)",
 		[
@@ -362,8 +358,10 @@ it("includes retained driving evidence in the real employee and former-employee 
 		expect(text).not.toContain("Foreign archive secret");
 		expect(text).not.toContain("commandId");
 		expect(text).not.toContain(verifier.userId);
-		expect(await zip.file("README.txt")?.async("string")).toContain(
-			"Driving licence",
+		const readme = await zip.file("README.txt")?.async("string");
+		expect(readme).toContain("Driving licence");
+		expect(readme).toContain(
+			"Driving licence verifiers (your check evidence and PDF exports):\n  - Lifecycle",
 		);
 	}
 });
