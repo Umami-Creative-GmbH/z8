@@ -13,6 +13,9 @@ vi.mock("server-only", () => ({}));
 
 const {
 	issueKioskPin,
+	judgeKioskPinAttempt,
+	pruneKioskPinEvents,
+	readKioskPinLockout,
 	readKioskPinStatus,
 	resetKioskPin,
 	setOwnKioskPin,
@@ -308,11 +311,15 @@ describe("kiosk PIN store on PostgreSQL", () => {
 		const wrong = pin === "000000" ? "111111" : "000000";
 		for (let attempt = 1; attempt <= 5; attempt += 1) await verify(wrong, clock);
 
-		await unlockKioskPin(db, {
-			organizationId: org,
-			actorUserId: ids.managerUser,
-			employeeId: ids.worker,
-		});
+		await unlockKioskPin(
+			db,
+			{
+				organizationId: org,
+				actorUserId: ids.managerUser,
+				employeeId: ids.worker,
+			},
+			clock,
+		);
 
 		await expect(verify(pin, clock)).resolves.toEqual({ status: "verified" });
 		await expect(
@@ -343,6 +350,194 @@ describe("kiosk PIN store on PostgreSQL", () => {
 				setOwnKioskPin(db, { organizationId: org, userId: ids.foreignUser, pin: "4821" }),
 			),
 		).toBe("employee_not_found");
+	});
+
+	describe("lockout replayed in the order attempts happened (#1288)", () => {
+		/** An attempt judged at the instant it happened, as a queued kiosk command arriving late. */
+		const judgeLate = (pin: string | (() => Promise<string>), at: string, clock: Clock) =>
+			db.transaction((tx) =>
+				judgeKioskPinAttempt(
+					tx,
+					{
+						organizationId: org,
+						employeeId: ids.worker,
+						at: parseInstant(at),
+						offline: true,
+						pin,
+					},
+					clock,
+				),
+			);
+		const lockedUntilAt = async (at: string, organizationId: string = org) =>
+			(
+				await readKioskPinLockout(db, { organizationId, employeeId: ids.worker }, parseInstant(at))
+			).lockedUntil?.toString() ?? null;
+		const storedEvents = async () =>
+			(
+				await pool.query(
+					"select kind, offline from employee_kiosk_pin_event where employee_id = $1 order by occurred_at, sequence",
+					[ids.worker],
+				)
+			).rows;
+
+		async function issuedPin() {
+			const { pin } = await issueFor(ids.ownerUser);
+			return { pin, wrong: pin === "000000" ? "111111" : "000000" };
+		}
+
+		it("counts late failures from another kiosk with online ones, in the order they happened", async () => {
+			const clock = fixedClock("2026-03-02T08:00:00Z");
+			const { pin, wrong } = await issuedPin();
+			for (const at of ["08:00", "08:02", "08:04"]) {
+				clock.set(`2026-03-02T${at}:00Z`);
+				await expect(verify(wrong, clock)).resolves.toEqual({ status: "wrong_pin" });
+			}
+
+			clock.set("2026-03-02T08:30:00Z");
+			await expect(judgeLate(wrong, "2026-03-02T08:01:00Z", clock)).resolves.toEqual({
+				status: "wrong_pin",
+			});
+			await expect(judgeLate(wrong, "2026-03-02T08:03:00Z", clock)).resolves.toEqual({
+				status: "wrong_pin",
+			});
+
+			// The online failure at 08:04 turns out to have been the fifth.
+			expect(await lockedUntilAt("2026-03-02T08:03:59Z")).toBeNull();
+			expect(await lockedUntilAt("2026-03-02T08:04:00Z")).toBe("2026-03-02T08:19:00Z");
+			const late = await judgeLate(pin, "2026-03-02T08:10:00Z", clock);
+			expect(late.status === "locked" && late.until.toString()).toBe("2026-03-02T08:19:00Z");
+			await expect(verify(pin, clock)).resolves.toEqual({ status: "verified" });
+			expect(await lockedUntilAt("2026-03-02T08:04:00Z", ids.otherOrganization)).toBeNull();
+		});
+
+		it("refuses a correct PIN within 15 minutes after the fifth failure and accepts it after", async () => {
+			const clock = fixedClock("2026-03-02T09:00:00Z");
+			const { pin, wrong } = await issuedPin();
+			for (const minute of ["00", "01", "02", "03"]) {
+				await expect(judgeLate(wrong, `2026-03-02T08:${minute}:00Z`, clock)).resolves.toEqual({
+					status: "wrong_pin",
+				});
+			}
+			const fifth = await judgeLate(wrong, "2026-03-02T08:04:00Z", clock);
+			expect(fifth.status === "locked" && fifth.until.toString()).toBe("2026-03-02T08:19:00Z");
+
+			await expect(judgeLate(pin, "2026-03-02T08:18:59Z", clock)).resolves.toMatchObject({
+				status: "locked",
+			});
+			await expect(judgeLate(pin, "2026-03-02T08:19:00Z", clock)).resolves.toEqual({
+				status: "verified",
+			});
+		});
+
+		it("never lets failures from a past lock lock the employee now", async () => {
+			const clock = fixedClock("2026-03-02T09:00:00Z");
+			const { pin, wrong } = await issuedPin();
+			for (const minute of ["00", "01", "02", "03", "04"]) {
+				await judgeLate(wrong, `2026-03-02T08:${minute}:00Z`, clock);
+			}
+
+			await expect(verify(pin, clock)).resolves.toEqual({ status: "verified" });
+			await expect(
+				readKioskPinStatus(
+					db,
+					{ organizationId: org, actorUserId: ids.ownerUser, employeeId: ids.worker },
+					clock,
+				),
+			).resolves.toEqual({ hasPin: true, lockedUntil: null });
+		});
+
+		it("honours an unlock from the instant it happened", async () => {
+			const clock = fixedClock("2026-03-02T08:00:00Z");
+			const { pin, wrong } = await issuedPin();
+			for (let attempt = 1; attempt <= 5; attempt += 1) await verify(wrong, clock);
+			clock.set("2026-03-02T08:10:00Z");
+			await unlockKioskPin(
+				db,
+				{ organizationId: org, actorUserId: ids.managerUser, employeeId: ids.worker },
+				clock,
+			);
+
+			clock.set("2026-03-02T08:30:00Z");
+			await expect(judgeLate(pin, "2026-03-02T08:05:00Z", clock)).resolves.toMatchObject({
+				status: "locked",
+			});
+			await expect(judgeLate(pin, "2026-03-02T08:11:00Z", clock)).resolves.toEqual({
+				status: "verified",
+			});
+		});
+
+		it("neither reads the PIN nor stores the attempt inside a lock", async () => {
+			const clock = fixedClock("2026-03-02T08:00:00Z");
+			const { wrong } = await issuedPin();
+			for (let attempt = 1; attempt <= 5; attempt += 1) await verify(wrong, clock);
+
+			const neverOpened = vi.fn(async () => wrong);
+			await expect(judgeLate(neverOpened, "2026-03-02T08:05:00Z", clock)).resolves.toMatchObject({
+				status: "locked",
+			});
+			expect(neverOpened).not.toHaveBeenCalled();
+			expect(await storedEvents()).toEqual(
+				Array.from({ length: 5 }, () => ({ kind: "failure", offline: false })),
+			);
+		});
+
+		it("stores failed and correct attempts with their instants, but never the PIN", async () => {
+			const clock = fixedClock("2026-03-02T08:00:00Z");
+			const { pin, wrong } = await issuedPin();
+			await verify(wrong, clock);
+			await judgeLate(pin, "2026-03-02T07:55:00Z", clock);
+
+			const { rows } = await pool.query(
+				"select * from employee_kiosk_pin_event where employee_id = $1 order by occurred_at",
+				[ids.worker],
+			);
+			expect(rows).toEqual([
+				expect.objectContaining({
+					organization_id: org,
+					kind: "success",
+					offline: true,
+					occurred_at: new Date("2026-03-02T07:55:00Z"),
+				}),
+				expect.objectContaining({
+					organization_id: org,
+					kind: "failure",
+					offline: false,
+					occurred_at: new Date("2026-03-02T08:00:00Z"),
+				}),
+			]);
+			for (const row of rows) {
+				expect(Object.keys(row).sort()).toEqual([
+					"employee_id",
+					"id",
+					"kind",
+					"occurred_at",
+					"offline",
+					"organization_id",
+					"recorded_at",
+					"sequence",
+				]);
+			}
+		});
+
+		it("prunes stored events once they can no longer affect any check", async () => {
+			const clock = fixedClock("2026-03-02T08:00:00Z");
+			const { wrong } = await issuedPin();
+			for (let attempt = 1; attempt <= 3; attempt += 1) await verify(wrong, clock);
+
+			// Seven days of delayed admission plus the 15-minute lock.
+			clock.set("2026-03-09T08:15:00Z");
+			await expect(verify(wrong, clock)).resolves.toEqual({ status: "wrong_pin" });
+			expect(await storedEvents()).toHaveLength(4);
+
+			clock.set("2026-03-09T08:15:01Z");
+			await expect(verify(wrong, clock)).resolves.toEqual({ status: "wrong_pin" });
+			expect(await storedEvents()).toHaveLength(2);
+
+			await expect(
+				pruneKioskPinEvents(db, parseInstant("2026-03-16T08:30:02Z")),
+			).resolves.toBeGreaterThanOrEqual(2);
+			expect(await storedEvents()).toEqual([]);
+		});
 	});
 
 	it("records issue, reset and unlock in the audit log", async () => {

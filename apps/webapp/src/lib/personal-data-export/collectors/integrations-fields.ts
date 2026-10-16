@@ -150,5 +150,25 @@ export const integrationsFieldGuide: PersonalDataFieldGuide = (t) => {
 				),
 			},
 		},
+		kiosk_pin_events: {
+			summary: t(
+				"personalDataExport.readme.fields.integrations.kioskPinEvents.summary",
+				"Your recent kiosk PIN attempts and PIN unlocks, kept for about a week to decide whether you are locked out after five wrong PINs in a row. The PINs entered are never stored.",
+			),
+			fields: {
+				event: t(
+					"personalDataExport.readme.fields.integrations.kioskPinEvents.event",
+					"failure for a wrong PIN, success for a correct one, cleared when your PIN was unlocked, reset or changed.",
+				),
+				occurred_at: t(
+					"personalDataExport.readme.fields.integrations.kioskPinEvents.occurredAt",
+					"When the PIN was entered or the lockout cleared (UTC).",
+				),
+				offline: t(
+					"personalDataExport.readme.fields.integrations.kioskPinEvents.offline",
+					"Whether the PIN was entered at a kiosk without a connection and checked when it reconnected.",
+				),
+			},
+		},
 	};
 };
