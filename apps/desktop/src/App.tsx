@@ -267,6 +267,8 @@ function Companion({
 								});
 							}}
 							onClockOut={async () => {
+								// Desktop's only enforcement of a required task (#1297).
+								if (attribution.taskMissing) return;
 								await timezone.run(async () => {
 									const vehicleUse = vehicleSent(vehicle.clockOut);
 									const done = await present(
@@ -295,6 +297,7 @@ function Companion({
 							onEndDay={endDay}
 							isLoading={busy}
 							disabled={!clock.canClock}
+							clockOutBlocked={attribution.taskMissing}
 						/>
 						{context && clock.isClockedIn && (
 							<ClosingAttributionFields

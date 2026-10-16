@@ -1,4 +1,4 @@
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { attributionAvailability } from "../lib/attribution-availability";
 import type {
 	AttributionIntent,
@@ -23,9 +23,9 @@ function intent(value: string): AttributionIntent {
 export function offeredTasks(
 	context: DesktopContext | undefined,
 	projectValue: string,
-): { tasks: ProjectTask[]; keepsProject: boolean } {
+): { tasks: ProjectTask[]; keepsProject: boolean; taskRequired: boolean } {
 	if (!attributionAvailability(context).project)
-		return { tasks: [], keepsProject: false };
+		return { tasks: [], keepsProject: false, taskRequired: false };
 	const current = context?.liveWork?.projectId ?? null;
 	const projectId =
 		projectValue === "preserve"
@@ -36,10 +36,34 @@ export function offeredTasks(
 	const project = projectId
 		? context?.projects.find((candidate) => candidate.id === projectId)
 		: undefined;
+	const tasks = project?.tasks ?? [];
 	return {
-		tasks: project?.tasks ?? [],
+		tasks,
 		keepsProject: !!projectId && projectId === current,
+		// The server flags only a project with an open task (#1297); without one
+		// to pick, nothing is required.
+		taskRequired: project?.taskRequired === true && tasks.length > 0,
 	};
+}
+
+/**
+ * Whether the closing work would end without a task on a project that
+ * requires one (#1297): no offered open task is picked, and the running
+ * work's task is not kept. The picker is desktop's only enforcement.
+ */
+export function taskMissing(
+	context: DesktopContext | undefined,
+	values: { project: string; task: string },
+): boolean {
+	const offered = offeredTasks(context, values.project);
+	if (!offered.taskRequired) return false;
+	if (offered.tasks.some((candidate) => candidate.id === values.task))
+		return false;
+	const keepsCurrentTask =
+		values.task === "" &&
+		offered.keepsProject &&
+		!!context?.liveWork?.currentTask;
+	return !keepsCurrentTask;
 }
 
 export function useClosingAttribution(context?: DesktopContext) {
@@ -47,8 +71,13 @@ export function useClosingAttribution(context?: DesktopContext) {
 		// task "" sends no task: it follows the project on the server.
 		defaultValues: { project: "preserve", workCategory: "preserve", task: "" },
 	});
+	const missing = useStore(form.store, (state) =>
+		taskMissing(context, state.values),
+	);
 	return {
 		form,
+		/** True while the clock-out must wait for a task (#1297). */
+		taskMissing: missing,
 		value: (
 			current: DesktopContext | undefined = context,
 		): ClosingAttribution => {
