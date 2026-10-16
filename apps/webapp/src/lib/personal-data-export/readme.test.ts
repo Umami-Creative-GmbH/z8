@@ -108,7 +108,8 @@ describe("renderPersonalDataExportReadme", () => {
 		);
 
 		expect(section).toContain("Personnel file officers");
-		expect(section.match(/- Nobody\./g)).toHaveLength(5);
+		expect(section).toContain("Driving licence verifiers");
+		expect(section.match(/- Nobody\./g)).toHaveLength(6);
 	});
 
 	it("lists the configured retention period per document category and the audit log lifetime", () => {

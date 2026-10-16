@@ -15,7 +15,10 @@
  */
 
 import { createLogger } from "@/lib/logger";
-import { DOCUMENT_CATEGORIES, type DocumentCategory } from "@/lib/personnel-file/document.types";
+import {
+	DOCUMENT_CATEGORIES,
+	type DocumentCategory,
+} from "@/lib/personnel-file/document.types";
 import { loadNamespaces, TolgeeBase } from "@/tolgee/shared";
 import type {
 	CollectedCategory,
@@ -34,14 +37,20 @@ export type ReadmeTranslate = (
 ) => string;
 
 /** Tolgee's `t` in `locale`; every text falls back to its English default. */
-export async function loadReadmeTranslator(locale: string): Promise<ReadmeTranslate> {
+export async function loadReadmeTranslator(
+	locale: string,
+): Promise<ReadmeTranslate> {
 	try {
 		const staticData = await loadNamespaces(locale, ["common"]);
 		const tolgee = TolgeeBase().init({ language: locale, staticData });
 		await tolgee.run();
-		return (key, defaultValue, params) => tolgee.t({ key, defaultValue, params });
+		return (key, defaultValue, params) =>
+			tolgee.t({ key, defaultValue, params });
 	} catch (error) {
-		logger.warn({ locale, error }, "README translations unavailable; writing English defaults");
+		logger.warn(
+			{ locale, error },
+			"README translations unavailable; writing English defaults",
+		);
 		return fallbackReadmeTranslator;
 	}
 }
@@ -50,7 +59,11 @@ export async function loadReadmeTranslator(locale: string): Promise<ReadmeTransl
  * English defaults with `{param}` placeholders and simple ICU plurals
  * (`{n, plural, one {# year} other {# years}}`) filled in.
  */
-export const fallbackReadmeTranslator: ReadmeTranslate = (_key, defaultValue, params) =>
+export const fallbackReadmeTranslator: ReadmeTranslate = (
+	_key,
+	defaultValue,
+	params,
+) =>
 	defaultValue
 		.replace(
 			/\{(\w+), plural, one \{([^{}]*)\} other \{([^{}]*)\}\}/g,
@@ -76,6 +89,11 @@ function categoryDescription(
 				"personalDataExport.readme.category.employment",
 				"Your employee record and profile, employment periods and departure, employment terms with your hourly wage and its history, teams, managers, locations, skills, project assignments, roles, groups, cost centre and every policy assigned to you.",
 			);
+		case "driving_licence":
+			return t(
+				"personalDataExport.readme.category.drivingLicence",
+				"Driving licence checks, original confirmations and declarations, attributed supplements, class authorizations and their history, enrolment and your verifier responsibility. Retained evidence only; no licence scans, document numbers or medical notes.",
+			);
 		case "time":
 			return t(
 				"personalDataExport.readme.category.time",
@@ -87,7 +105,10 @@ function categoryDescription(
 				"Your absences, vacation allowances and vacation adjustments.",
 			);
 		case "planning":
-			return t("personalDataExport.readme.category.planning", "Your shifts and shift requests.");
+			return t(
+				"personalDataExport.readme.category.planning",
+				"Your shifts and shift requests.",
+			);
 		case "approvals":
 			return t(
 				"personalDataExport.readme.category.approvals",
@@ -109,7 +130,10 @@ function categoryDescription(
 				"Your position stamps, your consent history and who viewed your positions.",
 			);
 		case "notifications":
-			return t("personalDataExport.readme.category.notifications", "Your notification history.");
+			return t(
+				"personalDataExport.readme.category.notifications",
+				"Your notification history.",
+			);
 		case "integrations":
 			return t(
 				"personalDataExport.readme.category.integrations",
@@ -156,6 +180,7 @@ export type PayrollCoverage = "all" | "employee" | "team";
 
 /** The people of the organization who can access the employee's data, besides the employee. */
 export interface PersonalDataReadmeAccess {
+	drivingLicenceVerifiers?: readonly { name: string }[];
 	ownersAndAdmins: readonly { name: string; role: "owner" | "admin" }[];
 	/** Direct managers, and people whose team permissions cover the employee's teams. */
 	managers: readonly { name: string; via: "direct" | "team" }[];
@@ -234,7 +259,9 @@ export function readmeContentsOf(
 }
 
 /** Every `category/part` or `category/part.field` of the archive its guide does not explain. */
-export function findUnexplainedFields(contents: PersonalDataReadmeContents): string[] {
+export function findUnexplainedFields(
+	contents: PersonalDataReadmeContents,
+): string[] {
 	const missing: string[] = [];
 	for (const [category, entry] of Object.entries(contents)) {
 		if (!entry) continue;
@@ -246,25 +273,44 @@ export function findUnexplainedFields(contents: PersonalDataReadmeContents): str
 				continue;
 			}
 			for (const field of part.fields) {
-				if (!partGuide.fields[field]) missing.push(`${category}/${part.key}.${field}`);
+				if (!partGuide.fields[field])
+					missing.push(`${category}/${part.key}.${field}`);
 			}
 		}
 	}
 	return missing;
 }
 
-function documentCategoryName(category: DocumentCategory, t: ReadmeTranslate): string {
+function documentCategoryName(
+	category: DocumentCategory,
+	t: ReadmeTranslate,
+): string {
 	switch (category) {
 		case "contract":
-			return t("personalDataExport.readme.documentCategory.contract", "Contracts");
+			return t(
+				"personalDataExport.readme.documentCategory.contract",
+				"Contracts",
+			);
 		case "payslip":
-			return t("personalDataExport.readme.documentCategory.payslip", "Payslips");
+			return t(
+				"personalDataExport.readme.documentCategory.payslip",
+				"Payslips",
+			);
 		case "certificate":
-			return t("personalDataExport.readme.documentCategory.certificate", "Certificates");
+			return t(
+				"personalDataExport.readme.documentCategory.certificate",
+				"Certificates",
+			);
 		case "sick_note":
-			return t("personalDataExport.readme.documentCategory.sickNote", "Sick notes");
+			return t(
+				"personalDataExport.readme.documentCategory.sickNote",
+				"Sick notes",
+			);
 		case "other":
-			return t("personalDataExport.readme.documentCategory.other", "Other documents");
+			return t(
+				"personalDataExport.readme.documentCategory.other",
+				"Other documents",
+			);
 	}
 }
 
@@ -294,7 +340,9 @@ function renderFields(
 			lines.push(partGuide?.summary ? `${label}: ${partGuide.summary}` : label);
 			for (const field of part.fields) {
 				const explanation = partGuide?.fields[field];
-				lines.push(explanation ? `  - ${field}: ${explanation}` : `  - ${field}`);
+				lines.push(
+					explanation ? `  - ${field}: ${explanation}` : `  - ${field}`,
+				);
 			}
 			lines.push("");
 		}
@@ -307,7 +355,9 @@ function renderAccess(
 	input: PersonalDataReadmeInput,
 ): void {
 	const { t, access } = input;
-	heading(t("personalDataExport.readme.accessTitle", "Who can access your data"));
+	heading(
+		t("personalDataExport.readme.accessTitle", "Who can access your data"),
+	);
 	lines.push(
 		t(
 			"personalDataExport.readme.accessIntro",
@@ -319,7 +369,9 @@ function renderAccess(
 	const group = (title: string, entries: readonly string[]) => {
 		lines.push(title);
 		if (entries.length === 0) {
-			lines.push(`  - ${t("personalDataExport.readme.accessNobody", "Nobody.")}`);
+			lines.push(
+				`  - ${t("personalDataExport.readme.accessNobody", "Nobody.")}`,
+			);
 		}
 		for (const entry of entries) lines.push(`  - ${entry}`);
 		lines.push("");
@@ -342,14 +394,25 @@ function renderAccess(
 	);
 	group(
 		t(
+			"personalDataExport.readme.accessDrivingLicenceVerifiers",
+			"Driving licence verifiers (your check evidence and PDF exports):",
+		),
+		(access.drivingLicenceVerifiers ?? []).map((person) => person.name),
+	);
+	group(
+		t(
 			"personalDataExport.readme.accessManagers",
 			"Managers (your time, absences, schedules and requests, as their role allows):",
 		),
 		access.managers.map((person) =>
 			person.via === "direct"
-				? t("personalDataExport.readme.accessManagerDirect", "{name} (your manager)", {
-						name: person.name,
-					})
+				? t(
+						"personalDataExport.readme.accessManagerDirect",
+						"{name} (your manager)",
+						{
+							name: person.name,
+						},
+					)
 				: t(
 						"personalDataExport.readme.accessManagerTeam",
 						"{name} (team permissions for your team)",
@@ -381,7 +444,10 @@ function renderAccess(
 				coverage === "all"
 					? t("personalDataExport.readme.accessPayrollAll", "all employees")
 					: coverage === "employee"
-						? t("personalDataExport.readme.accessPayrollEmployee", "you by name")
+						? t(
+								"personalDataExport.readme.accessPayrollEmployee",
+								"you by name",
+							)
 						: t("personalDataExport.readme.accessPayrollTeam", "your team"),
 			);
 			return `${person.name} (${covers.join(", ")})`;
@@ -394,12 +460,20 @@ function renderAccess(
 		),
 		access.expenseOfficers.map((person) => {
 			const can = [
-				t("personalDataExport.readme.accessExpenseRead", "read approved reports"),
+				t(
+					"personalDataExport.readme.accessExpenseRead",
+					"read approved reports",
+				),
 				...(person.canExport
 					? [t("personalDataExport.readme.accessExpenseExport", "export them")]
 					: []),
 				...(person.canRecordReimbursements
-					? [t("personalDataExport.readme.accessExpenseReimburse", "record reimbursements")]
+					? [
+							t(
+								"personalDataExport.readme.accessExpenseReimburse",
+								"record reimbursements",
+							),
+						]
 					: []),
 			];
 			return `${person.name}: ${can.join(", ")}`;
@@ -413,7 +487,16 @@ function renderRetention(
 	input: PersonalDataReadmeInput,
 ): void {
 	const { t, retention } = input;
-	heading(t("personalDataExport.readme.retentionTitle", "How long your data is kept"));
+	heading(
+		t("personalDataExport.readme.retentionTitle", "How long your data is kept"),
+	);
+	lines.push(
+		t(
+			"personalDataExport.readme.drivingLicenceRetention",
+			"Driving licence evidence follows the organization's justified check-retention period once it no longer supports an active authorization. A documented hold for a specific legal case postpones deletion. Refer to the driving_licence policy, retention and hold records for the applicable context; generating an export does not extend evidence retention in Z8.",
+		),
+		"",
+	);
 	lines.push(
 		t(
 			"personalDataExport.readme.retentionDocuments",
@@ -507,15 +590,22 @@ function renderRights(
 }
 
 /** The README's plain text. */
-export function renderPersonalDataExportReadme(input: PersonalDataReadmeInput): string {
+export function renderPersonalDataExportReadme(
+	input: PersonalDataReadmeInput,
+): string {
 	const { t } = input;
 	const lines: string[] = [];
-	const heading = (text: string) => lines.push(text, "=".repeat(text.length), "");
+	const heading = (text: string) =>
+		lines.push(text, "=".repeat(text.length), "");
 
 	heading(
-		t("personalDataExport.readme.title", "Your personal data from {organization}", {
-			organization: input.organizationName,
-		}),
+		t(
+			"personalDataExport.readme.title",
+			"Your personal data from {organization}",
+			{
+				organization: input.organizationName,
+			},
+		),
 	);
 	lines.push(
 		t(
@@ -530,7 +620,10 @@ export function renderPersonalDataExportReadme(input: PersonalDataReadmeInput): 
 	);
 	lines.push(
 		input.kind === "employee"
-			? t("personalDataExport.readme.kindEmployee", "You requested this export yourself.")
+			? t(
+					"personalDataExport.readme.kindEmployee",
+					"You requested this export yourself.",
+				)
 			: t(
 					"personalDataExport.readme.kindAdmin",
 					"An administrator of {organization} created this export on your behalf.",
@@ -540,9 +633,14 @@ export function renderPersonalDataExportReadme(input: PersonalDataReadmeInput): 
 	);
 
 	heading(t("personalDataExport.readme.filesTitle", "Files"));
-	const csvCategories = input.csvCategories ? new Set(input.csvCategories) : null;
+	const csvCategories = input.csvCategories
+		? new Set(input.csvCategories)
+		: null;
 	for (const category of input.categories) {
-		lines.push(`${category}.json`, `  ${categoryDescription(category, input.kind, t)}`);
+		lines.push(
+			`${category}.json`,
+			`  ${categoryDescription(category, input.kind, t)}`,
+		);
 		if (csvCategories && !csvCategories.has(category)) continue;
 		lines.push(
 			`  ${t(
