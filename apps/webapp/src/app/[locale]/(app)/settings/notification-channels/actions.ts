@@ -174,6 +174,7 @@ export async function updateSlackNotificationChannelSettings(
 		.set(validation.data)
 		.where(eq(slackWorkspaceConfig.organizationId, organizationId));
 	revalidatePath("/settings/slack");
+	revalidatePath("/settings/notification-channels");
 
 	return { success: true, data: undefined };
 }
@@ -193,6 +194,7 @@ export async function updateDiscordNotificationChannelSettings(
 		.set(validation.data)
 		.where(eq(discordBotConfig.organizationId, organizationId));
 	revalidatePath("/settings/discord");
+	revalidatePath("/settings/notification-channels");
 
 	return { success: true, data: undefined };
 }
@@ -212,6 +214,7 @@ export async function updateTeamsNotificationChannelSettings(
 		.set(validation.data)
 		.where(eq(teamsTenantConfig.organizationId, organizationId));
 	revalidatePath("/settings/teams-notifications");
+	revalidatePath("/settings/notification-channels");
 
 	return { success: true, data: undefined };
 }

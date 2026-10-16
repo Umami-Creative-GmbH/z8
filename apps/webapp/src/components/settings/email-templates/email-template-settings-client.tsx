@@ -280,9 +280,9 @@ export function EmailTemplateSettingsClient({
 								"Operational communications",
 							)}
 						</p>
-						<h1 className="font-semibold text-2xl tracking-tight">
+						<h2 className="font-semibold text-lg tracking-tight">
 							{t("settings.emailTemplates.title", "Email Templates")}
-						</h1>
+						</h2>
 						<p className="max-w-3xl text-muted-foreground text-sm leading-6">
 							{t(
 								"settings.emailTemplates.description",

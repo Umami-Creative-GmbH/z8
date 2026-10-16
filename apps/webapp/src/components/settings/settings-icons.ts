@@ -30,6 +30,7 @@ import {
 	IconLock,
 	IconMail,
 	IconMapPin,
+	IconMessages,
 	IconPercentage,
 	IconReceipt,
 	IconServer,
@@ -51,6 +52,7 @@ export const SETTINGS_ICON_MAP: Record<
 	SettingsIconName,
 	React.ComponentType<{ className?: string }>
 > = {
+	messages: IconMessages,
 	"address-book": IconAddressBook,
 	lock: IconLock,
 	"user-circle": IconUserCircle,

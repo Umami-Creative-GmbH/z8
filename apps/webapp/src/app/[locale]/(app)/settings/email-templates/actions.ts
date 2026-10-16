@@ -184,6 +184,7 @@ export async function saveEmailTemplate(
 		});
 
 	revalidatePath(EMAIL_TEMPLATE_SETTINGS_PATH);
+	revalidatePath("/settings/enterprise/email");
 
 	return { success: true };
 }
@@ -209,6 +210,7 @@ export async function resetEmailTemplate(
 		);
 
 	revalidatePath(EMAIL_TEMPLATE_SETTINGS_PATH);
+	revalidatePath("/settings/enterprise/email");
 
 	return { success: true };
 }

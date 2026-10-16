@@ -1,12 +1,13 @@
 import "server-only";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidateWorkBalancePaths } from "@/app/[locale]/(app)/settings/employees/work-balance-paths";
 import { revalidateWorkDataCache } from "@/lib/analytics/cache";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { createLogger } from "@/lib/logger";
 import { processWorkBalanceRebuildIntents } from "@/lib/work-balance/rebuild-intents";
 import { refreshEmployeeWorkBalanceFromPeriods } from "@/lib/work-balance/service";
-import { revalidateWorkBalancePaths } from "@/app/[locale]/(app)/settings/employees/work-balance-paths";
 import type { TrackingDateImpact } from "./tracking-date-review-types";
+
 const logger = createLogger("TrackingDateActions");
 export async function refreshTrackingDateResults(
 	organizationId: string,
@@ -40,6 +41,7 @@ export async function refreshTrackingDateResults(
 		revalidateWorkBalancePaths(impact.employees.map((row) => row.employeeId));
 		for (const path of [
 			"/settings/organizations",
+			"/settings/clocking",
 			"/calendar",
 			"/dashboard",
 			"/reports",

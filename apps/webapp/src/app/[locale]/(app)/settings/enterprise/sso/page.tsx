@@ -1,6 +1,16 @@
+import { Suspense } from "react";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
-// SSO settings have been moved to the domains page
-export default async function SSOProvidersPage() {
-	return redirectWithLocale("/settings/enterprise/domains");
+async function RedirectContent() {
+	await requireOrgAdminSettingsAccess();
+	return redirectWithLocale("/settings/enterprise/identity-setup?tab=sso");
+}
+
+export default function SSOProvidersPage() {
+	return (
+		<Suspense fallback={null}>
+			<RedirectContent />
+		</Suspense>
+	);
 }

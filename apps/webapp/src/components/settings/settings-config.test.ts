@@ -22,10 +22,10 @@ describe("settings visibility tiers", () => {
 		expect(entries.map((entry) => entry.id)).toEqual([
 			"profile",
 			"security",
+			"notifications",
 			"wellness",
 			"position-stamps",
 			"my-data",
-			"notifications",
 		]);
 	});
 
@@ -44,8 +44,8 @@ describe("settings visibility tiers", () => {
 		expect(entries.some((entry) => entry.id === "absences")).toBe(true);
 		expect(entries.some((entry) => entry.id === "work-categories")).toBe(true);
 		expect(entries.some((entry) => entry.id === "work-policies")).toBe(true);
-		expect(entries.some((entry) => entry.id === "shift-templates")).toBe(true);
-		expect(entries.some((entry) => entry.id === "coverage-rules")).toBe(true);
+		expect(entries.some((entry) => entry.id === "shift-planning")).toBe(true);
+		expect(entries.some((entry) => entry.id === "coverage-rules")).toBe(false);
 		expect(entries.some((entry) => entry.id === "projects")).toBe(true);
 		expect(entries.some((entry) => entry.id === "customers")).toBe(true);
 		expect(entries.some((entry) => entry.id === "surcharges")).toBe(true);
@@ -113,28 +113,25 @@ describe("settings visibility tiers", () => {
 			"employees",
 			"teams",
 			"roles",
+			"identity-access",
 			"locations",
 			"vehicles",
+			"personnel-files",
 			"custom-fields",
+			"custom-domains",
 			"implementation-checklist",
 			"billing",
 		]);
 	});
 
-	it("shows email templates only for org admins", () => {
+	it("shows combined email settings only for org admins", () => {
 		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
 		const managerEntries = getVisibleSettings("manager", true);
 		const memberEntries = getVisibleSettings("member", true);
 
-		expect(
-			orgAdminEntries.some((entry) => entry.id === "email-templates"),
-		).toBe(true);
-		expect(managerEntries.some((entry) => entry.id === "email-templates")).toBe(
-			false,
-		);
-		expect(memberEntries.some((entry) => entry.id === "email-templates")).toBe(
-			false,
-		);
+		expect(orgAdminEntries.some((entry) => entry.id === "email")).toBe(true);
+		expect(managerEntries.some((entry) => entry.id === "email")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "email")).toBe(false);
 	});
 
 	it("shows implementation checklist only for org admins", () => {
@@ -275,7 +272,7 @@ describe("settings visibility tiers", () => {
 			(entry) => entry.group === "organization",
 		).map((entry) => entry.id);
 		expect(organizationIds.indexOf("custom-fields")).toBe(
-			organizationIds.indexOf("vehicles") + 1,
+			organizationIds.indexOf("personnel-files") + 1,
 		);
 		expect(
 			filterSettingsByFeatureFlags(orgAdminEntries, {
@@ -305,7 +302,7 @@ describe("settings visibility tiers", () => {
 			entries
 				.filter((entry) => entry.group === "policies")
 				.map((entry) => entry.id),
-		).toEqual(["work-policies", "absences", "approval", "travel-expenses"]);
+		).toEqual(["work-policies", "absences", "travel-expenses", "approval"]);
 		expect(entries.find((entry) => entry.id === "approval")).toMatchObject({
 			titleDefault: "Approval",
 			href: "/settings/approval-policies",
@@ -343,33 +340,74 @@ describe("settings visibility tiers", () => {
 		).toBe(false);
 	});
 
-	it("groups notification preferences and channel configuration together", () => {
+	it("separates personal notification preferences from organization delivery settings", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
-		const notificationEntries = entries.filter(
-			(entry) => entry.group === "notifications",
+		expect(
+			entries
+				.filter((entry) => entry.group === "notifications")
+				.map((entry) => entry.id),
+		).toEqual(["email", "chat-integrations"]);
+		expect(entries.find((entry) => entry.id === "notifications")).toMatchObject(
+			{
+				group: "account",
+				minimumTier: "member",
+				href: "/settings/notifications",
+			},
 		);
-
-		expect(notificationEntries.map((entry) => entry.id)).toEqual([
-			"notifications",
-			"email-config",
-			"email-templates",
-			"telegram",
-			"slack",
-			"discord",
-			"teams-notifications",
-		]);
+		for (const tier of ["member", "manager"] as const)
+			expect(
+				getVisibleSettings(tier, true).some(
+					(entry) => entry.group === "notifications",
+				),
+			).toBe(false);
+	});
+	it("keeps identity, branding and personnel files with organization setup", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
 		expect(
-			notificationEntries.find((entry) => entry.id === "notifications"),
-		).toMatchObject({
-			minimumTier: "member",
-			href: "/settings/notifications",
-		});
+			entries.find((entry) => entry.id === "identity-access"),
+		).toMatchObject({ group: "organization", minimumTier: "orgAdmin" });
+		expect(entries.find((entry) => entry.id === "custom-domains")?.group).toBe(
+			"organization",
+		);
 		expect(
-			notificationEntries.find((entry) => entry.id === "telegram"),
-		).toMatchObject({
+			entries
+				.filter((entry) => entry.group === "integrations")
+				.map((entry) => entry.id),
+		).toEqual(["calendar", "developer-access"]);
+		const personnel = entries.find((entry) => entry.id === "personnel-files");
+		expect(personnel).toMatchObject({
+			group: "organization",
 			minimumTier: "orgAdmin",
-			href: "/settings/telegram",
+			requiredFeature: "personnelFilesEnabled",
 		});
+		expect(
+			filterSettingsByFeatureFlags(entries, { personnelFilesEnabled: false }),
+		).not.toContain(personnel);
+		expect(
+			filterSettingsByFeatureFlags(entries, { personnelFilesEnabled: true }),
+		).toContain(personnel);
+		expect(
+			entries.find((entry) => entry.id === "scheduled-exports"),
+		).toMatchObject({ group: "data", minimumTier: "orgAdmin" });
+		expect(entries.find((entry) => entry.id === "clocking")).toMatchObject({
+			group: "time-tracking",
+			minimumTier: "orgAdmin",
+		});
+		expect(
+			entries.some((entry) =>
+				[
+					"email-templates",
+					"email-config",
+					"slack",
+					"discord",
+					"telegram",
+					"teams-notifications",
+					"webhooks",
+					"audit-log",
+					"coverage-rules",
+				].includes(entry.id),
+			),
+		).toBe(false);
 	});
 
 	it("derives visible groups from the remaining visible entries", () => {
@@ -384,8 +422,7 @@ describe("settings visibility tiers", () => {
 			"scheduling",
 			"projects",
 			"payroll",
-			"notifications",
-			"enterprise",
+			"integrations",
 			"data",
 		]);
 	});

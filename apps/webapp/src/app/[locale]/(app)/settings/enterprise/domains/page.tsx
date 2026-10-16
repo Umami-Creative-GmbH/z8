@@ -1,28 +1,28 @@
 import { eq } from "drizzle-orm";
+import { Suspense } from "react";
 import { DomainsAndBrandingTabs } from "@/components/settings/enterprise/domains-branding-tabs";
+import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { getOrganizationPlatformOrigins } from "@/lib/auth-domain-config";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { getTranslate } from "@/tolgee/server";
-import {
-	getBrandingAction,
-	listDomainsAction,
-	listSocialOAuthConfigsAction,
-	listSSOProvidersAction,
-} from "../actions";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { getBrandingAction, listDomainsAction } from "../actions";
 
-export default async function CustomDomainsPage() {
-	const [{ organizationId }, t] = await Promise.all([
-		requireOrgAdminSettingsAccess(),
-		getTranslate(),
-	]);
+async function DomainSettingsContent({
+	searchParams,
+}: {
+	searchParams: Promise<{ tab?: string }>;
+}) {
+	const { organizationId } = await requireOrgAdminSettingsAccess();
 
-	const [domains, branding, providers, socialOAuthConfigs, organizationRecord] = await Promise.all([
+	const { tab } = await searchParams;
+	if (tab === "sso" || tab === "social-oauth")
+		return redirectWithLocale(`/settings/enterprise/identity-setup?tab=${tab}`);
+	const [domains, branding, organizationRecord] = await Promise.all([
 		listDomainsAction(),
 		getBrandingAction(),
-		listSSOProvidersAction(),
-		listSocialOAuthConfigsAction(),
+
 		db.query.organization.findFirst({
 			where: eq(organization.id, organizationId),
 			columns: { id: true, slug: true },
@@ -34,28 +34,30 @@ export default async function CustomDomainsPage() {
 	});
 
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-4xl">
-				<div className="mb-6">
-					<h1 className="text-2xl font-semibold">
-						{t("settings.enterprise.domains.title", "Custom Domain & Branding")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.enterprise.domains.description",
-							"Configure your organization's custom login domain, branding, and SSO providers.",
-						)}
-					</p>
-				</div>
-				<DomainsAndBrandingTabs
-					initialDomains={domains as any}
-					initialBranding={branding}
-					initialProviders={providers as any}
-					initialSocialOAuthConfigs={socialOAuthConfigs}
-					organizationId={organizationId}
-					defaultUrls={{ canonical: canonicalDefaultUrl }}
+		<DomainsAndBrandingTabs
+			initialDomains={domains}
+			initialBranding={branding}
+			organizationId={organizationId}
+			defaultUrls={{ canonical: canonicalDefaultUrl }}
+		/>
+	);
+}
+
+export default function CustomDomainsPage(props: {
+	searchParams: Promise<{ tab?: string }>;
+}) {
+	return (
+		<Suspense
+			fallback={
+				<SettingsPageSkeleton
+					label={{
+						labelKey: "settings.loading",
+						labelDefault: "Loading settings",
+					}}
 				/>
-			</div>
-		</div>
+			}
+		>
+			<DomainSettingsContent {...props} />
+		</Suspense>
 	);
 }

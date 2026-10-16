@@ -148,6 +148,10 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/settings/discord": ["common", "settings/generic", "settings/integrations"],
 	"/settings/employees": ["common", "settings/generic", "settings/people"],
 	"/settings/enterprise": ["common", "settings/generic", "settings/enterprise"],
+	"/settings/enterprise/email": ["common", "settings/generic", "settings/enterprise", "settings/integrations"],
+	"/settings/enterprise/api-keys": ["common", "settings/generic", "settings/enterprise", "webhooks"],
+	"/settings/clocking": ["common", "settings/generic", "settings/enterprise", "settings/workPolicies"],
+	"/settings/notification-channels": ["common", "settings/generic", "settings/integrations"],
 	"/settings/holidays": ["common", "settings/generic", "settings/holidays"],
 	"/settings/permissions": ["common", "settings/generic", "settings/people"],
 	// `payroll`: the payroll run discard dialog (#852) is shared with the payroll workspace.

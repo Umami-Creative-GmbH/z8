@@ -1,8 +1,11 @@
 import { Suspense } from "react";
+import { EmailTemplateSettingsClient } from "@/components/settings/email-templates/email-template-settings-client";
 import { EmailConfigForm } from "@/components/settings/enterprise/email-config-form";
+import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
+import { listEmailTemplates } from "../../email-templates/actions";
 import { getEmailConfig, getSecretStoreConnectionStatus } from "./actions";
 
 async function EmailConfigContent() {
@@ -13,35 +16,54 @@ async function EmailConfigContent() {
 	const secretStoreStatusPromise = authContextPromise.then(
 		({ organizationId }) => getSecretStoreConnectionStatus(organizationId),
 	);
-	const [{ organizationId }, t, emailConfig, secretStoreStatus] =
+	const [{ organizationId }, t, emailConfig, secretStoreStatus, templates] =
 		await Promise.all([
 			authContextPromise,
 			getTranslate(),
 			emailConfigPromise,
 			secretStoreStatusPromise,
+			authContextPromise.then(() => listEmailTemplates()),
 		]);
 
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-4xl">
-				<div className="mb-6">
-					<h1 className="text-2xl font-semibold">
-						{t("settings.enterprise.email.title", "Email Configuration")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.enterprise.email.description",
-							"Configure a custom email provider for your organization. All organization emails will use this configuration instead of the system default.",
-						)}
-					</p>
-				</div>
-				<EmailConfigForm
-					organizationId={organizationId}
-					initialConfig={emailConfig}
-					secretStoreStatus={secretStoreStatus}
-				/>
-			</div>
-		</div>
+		<SettingsTabbedPage
+			key={organizationId}
+			title={t("settings.navigation.email.title", "Email")}
+			defaultTab="delivery"
+			tabs={[
+				{
+					value: "delivery",
+					label: t("settings.navigation.email.delivery", "Delivery"),
+					description: t(
+						"settings.enterprise.email.description",
+						"Configure a custom email provider for your organization. All organization emails will use this configuration instead of the system default.",
+					),
+					panel: (
+						<EmailConfigForm
+							organizationId={organizationId}
+							initialConfig={emailConfig}
+							secretStoreStatus={secretStoreStatus}
+						/>
+					),
+				},
+				{
+					value: "templates",
+					label: t("settings.emailTemplates.title", "Email Templates"),
+					description: t(
+						"settings.emailTemplates.description",
+						"Customize the emails your organization sends",
+					),
+					panel: (
+						<EmailTemplateSettingsClient
+							templates={templates.map(({ override, ...definition }) => ({
+								definition,
+								override,
+							}))}
+						/>
+					),
+				},
+			]}
+		/>
 	);
 }
 

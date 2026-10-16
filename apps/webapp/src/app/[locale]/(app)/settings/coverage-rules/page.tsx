@@ -1,12 +1,8 @@
 import { Suspense } from "react";
-import { CoverageRulesManagement } from "@/components/settings/coverage-rules-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
-import {
-	getSchedulingSettingsAccessContext,
-	getScopedSchedulingLocationsForSettings,
-} from "@/lib/settings-scheduling-access";
+import { getSchedulingSettingsAccessContext } from "@/lib/settings-scheduling-access";
 
 async function CoverageRulesSettingsContent() {
 	const accessContext = await getSchedulingSettingsAccessContext();
@@ -15,23 +11,7 @@ async function CoverageRulesSettingsContent() {
 		return redirectWithLocale("/settings");
 	}
 
-	const locations = await getScopedSchedulingLocationsForSettings({
-		organizationId: accessContext.organizationId,
-		manageableSubareaIds: accessContext.manageableSubareaIds,
-	});
-
-	return (
-		<CoverageRulesManagement
-			organizationId={accessContext.organizationId}
-			locations={locations}
-			manageableSubareaIds={
-				accessContext.manageableSubareaIds
-					? [...accessContext.manageableSubareaIds]
-					: null
-			}
-			canManageCoverageSettings={accessContext.canManageCoverageSettings}
-		/>
-	);
+	return redirectWithLocale("/settings/shifts?tab=coverage");
 }
 
 function CoverageRulesSettingsLoading() {

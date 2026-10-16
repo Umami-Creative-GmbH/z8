@@ -497,13 +497,13 @@ function ApiKeyPageView({
 	const { canCreateMore, keyCount, setCreateDialogOpen, t } = viewModel;
 
 	return (
-		<div className="p-6">
+		<div className="min-w-0">
 			<div className="mx-auto max-w-4xl">
 				<div className="mb-6 flex items-start justify-between">
 					<div>
-						<h1 className="text-2xl font-semibold">
+						<h2 className="text-lg font-semibold">
 							{t("settings.apiKeys.title", "API Keys")}
-						</h1>
+						</h2>
 						<p className="text-muted-foreground">
 							{t(
 								"settings.apiKeys.description",

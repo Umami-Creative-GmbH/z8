@@ -107,19 +107,7 @@ export function ShiftTemplateManagement({
 	});
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.shiftTemplates.title", "Shift Templates")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.shiftTemplates.description",
-						"Create reusable shift templates like Morning Shift, Night Shift, etc. These templates can be quickly applied when scheduling shifts.",
-					)}
-				</p>
-			</div>
-
+		<div className="flex flex-col gap-4">
 			<ShiftTemplateList
 				templates={controller.templates}
 				isLoading={controller.isLoading}

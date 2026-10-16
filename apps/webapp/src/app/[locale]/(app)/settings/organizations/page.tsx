@@ -10,10 +10,6 @@ import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
-import { loadOrganizationTrackingSettings } from "@/lib/organization/tracking-settings";
-import { loadAutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/settings";
-import { loadClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings";
-import { loadPeriodSubmissionSettings } from "@/lib/time-tracking/period-submissions/settings";
 import { getTranslate } from "@/tolgee/server";
 
 async function OrganizationsPageContent() {
@@ -43,11 +39,7 @@ async function OrganizationsPageContent() {
 		currentMember,
 		memberCountRows,
 		organizationNotificationSettingsRecord,
-		autoClockOutSettings,
 		billableTimeSettings,
-		clockingReminderSettings,
-		periodSubmissionSettings,
-		trackingSettings,
 	] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(authSchema.organization.id, organizationId),
@@ -73,11 +65,7 @@ async function OrganizationsPageContent() {
 			),
 			columns: { defaultLanguage: true },
 		}),
-		loadAutoClockOutSettings(db, organizationId),
 		getBillableTimeSettings(organizationId, db),
-		loadClockingReminderSettings(db, organizationId),
-		loadPeriodSubmissionSettings(db, organizationId, { clock: systemClock }),
-		loadOrganizationTrackingSettings(db, organizationId),
 	]);
 
 	const [currentMemberRecord] = currentMember;
@@ -105,11 +93,7 @@ async function OrganizationsPageContent() {
 
 	return (
 		<OrganizationsPageClient
-			trackingSettings={trackingSettings}
 			trackingSuggestedAt={systemClock.nowInstant().toString()}
-			autoClockOutSettings={autoClockOutSettings}
-			clockingReminderSettings={clockingReminderSettings}
-			periodSubmissionSettings={periodSubmissionSettings}
 			organization={organization}
 			memberCount={memberCountRows[0]?.value ?? 0}
 			currentMemberRole={
