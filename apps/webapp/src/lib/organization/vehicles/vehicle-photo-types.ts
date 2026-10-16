@@ -10,6 +10,7 @@ export interface VehiclePhotoView {
 	imageUrl: string;
 }
 export type VehiclePhotoRefusal =
+	| "photo_not_found"
 	| "vehicle_not_found"
 	| "vehicle_archived"
 	| "photo_limit"

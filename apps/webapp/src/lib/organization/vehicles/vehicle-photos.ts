@@ -364,3 +364,70 @@ export async function notePhotoUploadFailure(
 			and(uploadScope(actor, vehicleId, id), eq(upload.status, "pending")),
 		);
 }
+
+export type RemovePhotoResult =
+	| { ok: true; removed: boolean }
+	| { ok: false; reason: VehiclePhotoRefusal };
+/** The vehicle lock serializes removal with attachment and vehicle lifecycle writes. */
+export async function removePhoto(
+	database: Database,
+	actor: PhotoActor,
+	vehicleId: string,
+	photoId: string,
+): Promise<RemovePhotoResult> {
+	return database.transaction(async (tx) => {
+		const [vehicle] = await tx
+			.select()
+			.from(organizationVehicle)
+			.where(vehicleScope(actor.organizationId, vehicleId))
+			.for("update");
+		if (!(await currentActor(tx, actor)))
+			return { ok: false, reason: "forbidden" };
+		if (!vehicle) return { ok: false, reason: "vehicle_not_found" };
+		if (vehicle.archivedAt) return { ok: false, reason: "vehicle_archived" };
+		const [existing] = await tx
+			.select()
+			.from(photo)
+			.where(
+				and(
+					eq(photo.organizationId, actor.organizationId),
+					eq(photo.vehicleId, vehicleId),
+					eq(photo.id, photoId),
+				),
+			);
+		if (!existing) {
+			const [removed] = await tx
+				.select({ status: upload.status })
+				.from(upload)
+				.where(
+					and(
+						eq(upload.organizationId, actor.organizationId),
+						eq(upload.vehicleId, vehicleId),
+						eq(upload.id, photoId),
+					),
+				);
+			return removed && ["cleanup_required", "cleaned"].includes(removed.status)
+				? { ok: true, removed: false }
+				: { ok: false, reason: "photo_not_found" };
+		}
+		// The database DELETE trigger retains the object identity in the durable ledger.
+		await tx
+			.delete(photo)
+			.where(
+				and(
+					eq(photo.organizationId, actor.organizationId),
+					eq(photo.vehicleId, vehicleId),
+					eq(photo.id, photoId),
+				),
+			);
+		await tx.insert(auditLog).values({
+			organizationId: actor.organizationId,
+			entityType: "vehicle",
+			entityId: vehicleId,
+			performedBy: actor.userId,
+			action: AuditAction.VEHICLE_PHOTO_REMOVED,
+			changes: JSON.stringify({ photoId }),
+		});
+		return { ok: true, removed: true };
+	});
+}

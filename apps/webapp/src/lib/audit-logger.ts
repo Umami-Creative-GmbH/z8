@@ -327,6 +327,7 @@ export enum AuditAction {
 	VEHICLE_RESTORED = "vehicle.restored",
 	VEHICLE_DELETED = "vehicle.deleted",
 	VEHICLE_PHOTO_ADDED = "vehicle.photo_added",
+	VEHICLE_PHOTO_REMOVED = "vehicle.photo_removed",
 
 	// Scheduled exports (#988): the schedule lifecycle and one entry per run. Automatic
 	// actions are attributed to the schedule owner.

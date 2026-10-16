@@ -1,12 +1,8 @@
 "use client";
 
-import {
-	IconChevronLeft,
-	IconChevronRight,
-	IconPhoto,
-} from "@tabler/icons-react";
+import { IconPhoto } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
 	initiateVehiclePhotoUpload,
 	listVehiclePhotos,
@@ -27,6 +23,7 @@ import {
 	type VehiclePhotoView,
 } from "@/lib/organization/vehicles/vehicle-photo-types";
 import type { OrganizationVehicleView } from "@/lib/organization/vehicles/vehicles";
+import { VehiclePhotoBrowser } from "./vehicle-photo-browser";
 
 export function VehiclePhotosDialog({
 	vehicle,
@@ -276,139 +273,15 @@ function VehiclePhotoGallery({
 					) : null}
 				</div>
 			)}
-			<VehiclePhotoBrowser vehicle={vehicle} photos={photos} />
+			<VehiclePhotoBrowser
+				vehicle={vehicle}
+				photos={photos}
+				archived={archived}
+				onRemoved={(id) =>
+					setPhotos((current) => current.filter((photo) => photo.id !== id))
+				}
+				onArchived={() => setArchived(true)}
+			/>
 		</DialogContent>
-	);
-}
-
-function VehiclePhotoBrowser({
-	vehicle,
-	photos,
-}: {
-	vehicle: OrganizationVehicleView;
-	photos: VehiclePhotoView[];
-}) {
-	const { t } = useTranslate();
-	const [selected, setSelected] = useState<number | null>(null);
-	const thumbnail = useRef<HTMLButtonElement | null>(null);
-	const current = selected === null ? null : photos[selected];
-	function previous() {
-		setSelected((index) => (index === null ? null : Math.max(0, index - 1)));
-	}
-	function next() {
-		setSelected((index) =>
-			index === null ? null : Math.min(photos.length - 1, index + 1),
-		);
-	}
-
-	return (
-		<Dialog
-			open={selected !== null}
-			onOpenChange={(open) => {
-				if (!open) setSelected(null);
-			}}
-		>
-			<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-				{photos.map((photo, index) => (
-					<button
-						key={photo.id}
-						type="button"
-						className="overflow-hidden rounded-lg border bg-muted transition-colors hover:bg-accent outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-						aria-label={t(
-							"settings.vehicles.photos.viewNamed",
-							"View photo {number} of {name}",
-							{
-								number: index + 1,
-								name: vehicle.name,
-							},
-						)}
-						onClick={(event) => {
-							thumbnail.current = event.currentTarget;
-							setSelected(index);
-						}}
-					>
-						<img
-							src={photo.imageUrl}
-							alt={t(
-								"settings.vehicles.photos.imageNamed",
-								"{name}, photo {number}",
-								{
-									name: vehicle.name,
-									number: index + 1,
-								},
-							)}
-							width={photo.width}
-							height={photo.height}
-							loading="lazy"
-							className="aspect-[4/3] w-full object-contain"
-						/>
-					</button>
-				))}
-			</div>
-			{current ? (
-				<DialogContent
-					className="overscroll-contain sm:max-w-5xl"
-					finalFocus={thumbnail}
-					onKeyDown={(event) => {
-						if (event.key === "ArrowLeft") {
-							event.preventDefault();
-							previous();
-						}
-						if (event.key === "ArrowRight") {
-							event.preventDefault();
-							next();
-						}
-					}}
-				>
-					<DialogHeader>
-						<DialogTitle>
-							{t(
-								"settings.vehicles.photos.position",
-								"Photo {number} of {count}",
-								{
-									number: (selected ?? 0) + 1,
-									count: photos.length,
-								},
-							)}
-						</DialogTitle>
-						<DialogDescription>
-							{vehicle.name} · {vehicle.licencePlate}
-						</DialogDescription>
-					</DialogHeader>
-					<img
-						src={current.imageUrl}
-						alt={t(
-							"settings.vehicles.photos.imageNamed",
-							"{name}, photo {number}",
-							{
-								name: vehicle.name,
-								number: (selected ?? 0) + 1,
-							},
-						)}
-						width={current.width}
-						height={current.height}
-						className="max-h-[65dvh] w-full object-contain"
-					/>
-					<div className="flex justify-between gap-3">
-						<Button
-							variant="outline"
-							onClick={previous}
-							disabled={selected === 0}
-						>
-							<IconChevronLeft aria-hidden="true" />
-							{t("settings.vehicles.photos.previous", "Previous photo")}
-						</Button>
-						<Button
-							variant="outline"
-							onClick={next}
-							disabled={selected === photos.length - 1}
-						>
-							{t("settings.vehicles.photos.next", "Next photo")}
-							<IconChevronRight aria-hidden="true" />
-						</Button>
-					</div>
-				</DialogContent>
-			) : null}
-		</Dialog>
 	);
 }
