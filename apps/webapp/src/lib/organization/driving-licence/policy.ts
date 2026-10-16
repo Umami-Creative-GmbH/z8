@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { db } from "@/db";
@@ -13,6 +13,7 @@ import { employee } from "@/db/schema/organization";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import {
+	lockDrivingLicenceOrganization,
 	materializeExpiredDrivingAuthorizations,
 	readEffectiveDrivingAuthorization,
 } from "./checks";
@@ -64,14 +65,14 @@ export async function saveDrivingLicencePolicy(
 ) {
 	const policy = drivingLicencePolicyInput.parse(raw);
 	return db.transaction(async (tx) => {
-		// Serialize configuration and enrollment for this tenant, including its first policy.
-		await tx.execute(
-			sql`select pg_advisory_xact_lock(hashtextextended(${`driving-licence:${actor.organizationId}`}, 0))`,
-		);
+		// Serialize configuration with checks, reports and lifecycle transitions.
+		await lockDrivingLicenceOrganization(tx, actor.organizationId);
 		const [previous] = await tx
 			.select()
 			.from(drivingLicencePolicy)
 			.where(eq(drivingLicencePolicy.organizationId, actor.organizationId));
+		if (previous && previous.intervalMonths !== policy.intervalMonths)
+			throw new Error("interval_preview_required");
 		if (previous && previous.timezone !== policy.timezone)
 			throw new Error("timezone_fixed");
 		const now = systemClock.nowInstant();
@@ -139,9 +140,7 @@ export async function enrollDrivingLicenceEmployee(
 ) {
 	const { employeeId } = z.strictObject({ employeeId: z.uuid() }).parse(raw);
 	return db.transaction(async (tx) => {
-		await tx.execute(
-			sql`select pg_advisory_xact_lock(hashtextextended(${`driving-licence:${actor.organizationId}`}, 0))`,
-		);
+		await lockDrivingLicenceOrganization(tx, actor.organizationId);
 		const [policy] = await tx
 			.select()
 			.from(drivingLicencePolicy)

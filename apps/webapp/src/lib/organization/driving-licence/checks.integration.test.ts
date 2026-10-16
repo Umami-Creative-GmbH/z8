@@ -422,16 +422,16 @@ it("keeps an elapsed deadline suspended after policy extension and a successful 
 	).toBe(true);
 	harness.now = "2026-03-01T00:00:00Z";
 	signIn(fixture.ownerUserId);
+	const intervals = await import("./interval-actions");
+	const preview = await intervals.previewDrivingLicenceIntervalAction({
+		intervalMonths: 12,
+	});
+	if (!preview.success) throw new Error(preview.error);
 	expect(
 		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: true,
+			await intervals.applyDrivingLicenceIntervalAction({
 				intervalMonths: 12,
-				timezone: "Europe/Berlin",
-				reminderLeadDays: [30, 7],
-				retentionMonths: 36,
-				retentionJustification:
-					"Evidence retained for organization driving checks",
+				previewToken: preview.data.previewToken,
 			})
 		).success,
 	).toBe(true);
