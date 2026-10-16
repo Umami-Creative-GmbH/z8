@@ -14,8 +14,9 @@ import {
 	StripeService,
 	SubscriptionService,
 } from "@/lib/effect/services/billing";
-import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
+import { countBillableSeatsByType } from "@/lib/effect/services/billing/billable-seat-count";
 import { getDaysRemaining } from "@/lib/effect/services/billing/billing-access";
+import { checkoutSeatLines, kioskSeatsEnabled } from "@/lib/effect/services/billing/seat-items";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("BillingCheckout");
@@ -86,9 +87,14 @@ export async function POST(request: NextRequest) {
 			return yield* Effect.fail(new Error("Organization not found"));
 		}
 
-		// Initial seats use the shared billable-seat definition (at least one seat).
-		const billableSeats = yield* Effect.promise(() => countBillableSeats(db, organizationId));
-		const seatCount = Math.max(billableSeats, 1);
+		// Initial seats use the shared billable-seat definition, split into full and
+		// kiosk seats while kiosk seats are on (#886).
+		const seats = yield* Effect.promise(() =>
+			countBillableSeatsByType(db, organizationId, {
+				kioskSeats: kioskSeatsEnabled(stripeService.config),
+			}),
+		);
+		const lines = checkoutSeatLines(stripeService.config, interval, seats);
 
 		// Create or get Stripe customer
 		let customerId: string;
@@ -106,13 +112,7 @@ export async function POST(request: NextRequest) {
 			yield* subscriptionService.setStripeCustomerId(organizationId, customerId);
 		}
 
-		// Determine price ID
-		const priceId =
-			interval === "year"
-				? stripeService.config.priceYearlyId
-				: stripeService.config.priceMonthlyId;
-
-		if (!priceId) {
+		if (!lines.full.priceId) {
 			return yield* Effect.fail(new Error("Price not configured"));
 		}
 
@@ -124,15 +124,25 @@ export async function POST(request: NextRequest) {
 		// Create checkout session, preserving only remaining local trial time.
 		const checkoutSession = yield* stripeService.createCheckoutSession({
 			customerId,
-			priceId,
+			priceId: lines.full.priceId,
 			organizationId: org.id,
-			quantity: seatCount,
+			quantity: lines.full.quantity,
+			kiosk: lines.kiosk,
 			successUrl: `${appUrl}/settings/billing?success=true`,
 			cancelUrl: `${appUrl}/settings/billing?canceled=true`,
 			trialPeriodDays,
 		});
 
-		logger.info({ organizationId, customerId, interval, seatCount }, "Checkout session created");
+		logger.info(
+			{
+				organizationId,
+				customerId,
+				interval,
+				seatCount: lines.full.quantity,
+				kioskSeatCount: lines.kiosk?.quantity ?? 0,
+			},
+			"Checkout session created",
+		);
 
 		return { url: checkoutSession.url };
 	});

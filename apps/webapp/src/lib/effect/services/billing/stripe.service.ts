@@ -58,6 +58,8 @@ export class StripeService extends Context.Service<
 			priceId: string;
 			organizationId: string;
 			quantity: number;
+			/** The kiosk seat line item (#886), sent after the full seat line. Omit it for no kiosk seats. */
+			kiosk?: { priceId: string; quantity: number };
 			successUrl: string;
 			cancelUrl: string;
 			trialPeriodDays?: number;
@@ -168,7 +170,8 @@ export const StripeServiceLive = Layer.effect(
 				}),
 
 			createCheckoutSession: (params) =>
-				params.priceId.startsWith("price_")
+				params.priceId.startsWith("price_") &&
+				(!params.kiosk || params.kiosk.priceId.startsWith("price_"))
 					? Effect.tryPromise({
 							try: async () => {
 								if (!stripe) {
@@ -190,6 +193,9 @@ export const StripeServiceLive = Layer.effect(
 											price: params.priceId,
 											quantity: params.quantity,
 										},
+										...(params.kiosk
+											? [{ price: params.kiosk.priceId, quantity: params.kiosk.quantity }]
+											: []),
 									],
 									success_url: params.successUrl,
 									cancel_url: params.cancelUrl,

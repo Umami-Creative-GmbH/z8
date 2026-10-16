@@ -183,6 +183,59 @@ describe("StripeService", () => {
 		expect(checkoutSessionsCreate).not.toHaveBeenCalled();
 	});
 
+	describe("kiosk seat line item (#886)", () => {
+		const createSession = (kiosk?: { priceId: string; quantity: number }) =>
+			Effect.runPromise(
+				Effect.gen(function* () {
+					const stripeService = yield* StripeService;
+
+					return yield* stripeService.createCheckoutSession({
+						customerId: "cus_test_123",
+						priceId: "price_monthly_123",
+						organizationId: "org_123",
+						quantity: 2,
+						kiosk,
+						successUrl: "https://app.test/settings/billing?success=true",
+						cancelUrl: "https://app.test/settings/billing?canceled=true",
+					});
+				}).pipe(Effect.provide(StripeServiceLive), Effect.result),
+			);
+
+		it("sends the kiosk seat line item after the full seat line item", async () => {
+			await createSession({ priceId: "price_kiosk_monthly_123", quantity: 4 });
+
+			expect(checkoutSessionsCreate).toHaveBeenCalledWith(
+				expect.objectContaining({
+					line_items: [
+						{ price: "price_monthly_123", quantity: 2 },
+						{ price: "price_kiosk_monthly_123", quantity: 4 },
+					],
+				}),
+			);
+		});
+
+		it("sends only the full seat line item without a kiosk line", async () => {
+			await createSession();
+
+			expect(checkoutSessionsCreate).toHaveBeenCalledWith(
+				expect.objectContaining({
+					line_items: [{ price: "price_monthly_123", quantity: 2 }],
+				}),
+			);
+		});
+
+		it("rejects a kiosk product id before creating checkout sessions", async () => {
+			const result = await createSession({ priceId: "prod_kiosk", quantity: 4 });
+
+			expect(result._tag).toBe("Failure");
+			expect(result._tag === "Failure" ? result.failure : null).toMatchObject({
+				message: "Stripe checkout price must be a Price ID starting with price_",
+				operation: "createCheckoutSession",
+			});
+			expect(checkoutSessionsCreate).not.toHaveBeenCalled();
+		});
+	});
+
 	it("checkout route computes remaining trial days instead of starting a fresh trial", () => {
 		const routeSource = readFileSync(
 			join(process.cwd(), "src/app/api/billing/checkout/route.ts"),

@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import type { SeatsByType } from "./billable-seat-count";
 import type { StripeConfig } from "./stripe.service";
 
 /** The configured prices a full seat is billed at. */
@@ -56,3 +57,28 @@ export const kioskSeatPriceFor = (
 	(fullSeatItem.price?.id === prices.priceYearlyId
 		? prices.priceKioskYearlyId
 		: prices.priceKioskMonthlyId) ?? "";
+
+/** One seat line item on a new subscription: the price and how many seats it bills. */
+export type CheckoutSeatLine = { priceId: string; quantity: number };
+
+/**
+ * The seat line items checkout sends for `interval`: the full seat line (at least
+ * one seat, an empty full price when it is not configured) and, only while kiosk
+ * seats are on and the organization has some, the kiosk seat line at the kiosk
+ * price for the same interval. Without kiosk seats, seat sync adds the kiosk item
+ * later, the first time a kiosk seat appears.
+ */
+export const checkoutSeatLines = (
+	prices: FullSeatPrices & KioskSeatPrices,
+	interval: "month" | "year",
+	seats: SeatsByType,
+): { full: CheckoutSeatLine; kiosk?: CheckoutSeatLine } => {
+	const full = {
+		priceId: interval === "year" ? prices.priceYearlyId : prices.priceMonthlyId,
+		quantity: Math.max(seats.full, 1),
+	};
+	if (!kioskSeatsEnabled(prices) || seats.kiosk <= 0) return { full };
+	const kioskPriceId =
+		(interval === "year" ? prices.priceKioskYearlyId : prices.priceKioskMonthlyId) ?? "";
+	return { full, kiosk: { priceId: kioskPriceId, quantity: seats.kiosk } };
+};
