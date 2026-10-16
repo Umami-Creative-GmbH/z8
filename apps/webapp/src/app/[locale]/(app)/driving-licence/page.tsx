@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { DrivingLicenceEvidence } from "@/components/driving-licence/check-evidence";
 import { DrivingLicenceVerifierWorklist } from "@/components/driving-licence/check-worklist";
+import { DrivingLicenceHistoryPanel } from "@/components/driving-licence/history-panel";
 import { ReportDrivingImpediment } from "@/components/driving-licence/report-impediment";
 import { VerifierResponsibility } from "@/components/driving-licence/verifier-settings";
 import { getDrivingLicenceEmployeeRecordAction } from "@/lib/organization/driving-licence/check-actions";
@@ -25,6 +26,12 @@ async function OwnDrivingLicenceContent() {
 			{record?.success ? (
 				<>
 					<DrivingLicenceEvidence record={record.data} />
+					{actor.employeeId && (
+						<DrivingLicenceHistoryPanel
+							key={`${actor.organizationId}:${actor.userId}:${actor.employeeId}`}
+							employeeId={actor.employeeId}
+						/>
+					)}
 					{record.data.enrolled && (
 						<ReportDrivingImpediment
 							key={`${actor.organizationId}:${actor.userId}`}

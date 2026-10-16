@@ -254,6 +254,18 @@ export interface SlackEscalationResult {
  * - defaultJobOptions: BullMQ options for retry, priority, etc.
  */
 export const CRON_JOBS = {
+	"cron:driving-licence-reminders": {
+		schedule: "*/15 * * * *",
+		description:
+			"Deliver mandatory driving licence deadline and suspension notices to current employees and scoped verifiers",
+		processor: async () => {
+			const { runDrivingLicenceRemindersJob } = await import(
+				"@/lib/jobs/driving-licence-reminders"
+			);
+			return runDrivingLicenceRemindersJob();
+		},
+		defaultJobOptions: { attempts: 3, priority: 5 },
+	},
 	"cron:vacation": {
 		schedule: "0 0 * * *", // Daily at midnight
 		description: "Vacation automation (carryover, expiry, accrual)",
