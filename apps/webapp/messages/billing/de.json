@@ -71,6 +71,12 @@
     "priceSeatMonth": "€{price}/Sitzplatz/Monat",
     "priceSeatMonthYearly": "€{price}/Sitzplatz/Monat (jährlich abgerechnet)",
     "seatBilledAnnually": "€{price}/Sitzplatz jährlich abgerechnet",
+    "seatLines": {
+      "full": "Volle Sitzplätze",
+      "kiosk": "Kiosk-Sitzplätze",
+      "perMonth": "/Monat",
+      "total": "Gesamt"
+    },
     "starting": "Wird gestartet...",
     "startTrial": "Kostenlose Testversion starten",
     "status": {

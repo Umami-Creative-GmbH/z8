@@ -15,6 +15,8 @@ import {
 	type SubscriptionInfo,
 	SubscriptionService,
 } from "@/lib/effect/services/billing";
+import { kioskSeatsEnabled } from "@/lib/effect/services/billing/seat-items";
+import { stripeConfigFromEnv } from "@/lib/effect/services/billing/stripe.service";
 import { createLogger } from "@/lib/logger";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
@@ -83,6 +85,8 @@ async function BillingSettingsContent() {
 							isTrialing: subscription.isTrialing,
 							isPastDue: subscription.isPastDue,
 							currentSeats: subscription.currentSeats,
+							currentKioskSeats: subscription.currentKioskSeats,
+							kioskSeatsEnabled: kioskSeatsEnabled(stripeConfigFromEnv()),
 							trialEnd: subscription.trialEnd?.toISOString() ?? null,
 							currentPeriodEnd:
 								subscription.currentPeriodEnd?.toISOString() ?? null,

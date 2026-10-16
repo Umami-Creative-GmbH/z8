@@ -71,6 +71,12 @@
     "priceSeatMonth": "€{price}/seat/mo",
     "priceSeatMonthYearly": "€{price}/seat/mo (billed yearly)",
     "seatBilledAnnually": "€{price}/seat billed annually",
+    "seatLines": {
+      "full": "Full seats",
+      "kiosk": "Kiosk seats",
+      "perMonth": "/mo",
+      "total": "Total"
+    },
     "starting": "Starting...",
     "startTrial": "Start Free Trial",
     "status": {

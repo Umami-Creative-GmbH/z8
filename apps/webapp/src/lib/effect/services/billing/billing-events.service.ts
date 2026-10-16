@@ -13,7 +13,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import type { DatabaseError, StripeError } from "@/lib/effect/errors";
 import { withStripeSubscriptionMutation } from "@/lib/effect/services/billing/billing-configuration";
-import { findFullSeatItem } from "@/lib/effect/services/billing/seat-items";
+import { findFullSeatItem, findKioskSeatItem } from "@/lib/effect/services/billing/seat-items";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import {
@@ -274,6 +274,8 @@ export const BillingEventsServiceLive = Layer.effect(
 				const item = findFullSeatItem(stripeSub, stripeService.config);
 				const priceInterval = item?.price?.recurring?.interval;
 				const billingInterval = priceInterval === "year" ? "year" : "month";
+				// The kiosk seat item, found by kiosk price, holds the kiosk seats (#886)
+				const kioskSeats = findKioskSeatItem(stripeSub, stripeService.config)?.quantity ?? 0;
 
 				// Get customer ID
 				const customerId =
@@ -294,7 +296,8 @@ export const BillingEventsServiceLive = Layer.effect(
 					currentPeriodEnd: item?.current_period_end
 						? new Date(item.current_period_end * 1000)
 						: new Date(),
-					seats: item?.quantity ?? 1,
+					seats: (item?.quantity ?? 1) + kioskSeats,
+					kioskSeats,
 				});
 
 				// Sync initial seat count

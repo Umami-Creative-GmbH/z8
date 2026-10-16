@@ -205,6 +205,82 @@ describe("BillingPageClient", () => {
 		expect(screen.queryByText("Jun 15, 2026")).toBeNull();
 	});
 
+	describe("seat lines (#886)", () => {
+		const activeSubscription = {
+			id: "sub_123",
+			hasStripeCustomer: true,
+			hasStripeSubscription: true,
+			status: "active",
+			isActive: true,
+			isTrialing: false,
+			isPastDue: false,
+			currentSeats: 8,
+			trialEnd: null,
+			currentPeriodEnd: "2026-06-15T00:00:00.000Z",
+			cancelAt: null,
+		};
+
+		it("shows full and kiosk seat lines that add up to the monthly total", () => {
+			render(
+				<BillingPageClient
+					subscription={{
+						...activeSubscription,
+						billingInterval: "month",
+						currentKioskSeats: 5,
+						kioskSeatsEnabled: true,
+					}}
+					accessResult={{ canAccess: true, status: "active" }}
+					isOwner={true}
+				/>,
+			);
+
+			const full = screen.getByRole("listitem", { name: "Full seats" });
+			expect(full.textContent).toContain("3 × €4.00");
+			expect(full.textContent).toContain("€12.00");
+			const kiosk = screen.getByRole("listitem", { name: "Kiosk seats" });
+			expect(kiosk.textContent).toContain("5 × €2.00");
+			expect(kiosk.textContent).toContain("€10.00");
+			expect(screen.getByRole("listitem", { name: "Total" }).textContent).toContain("€22.00");
+			expect(screen.getByText("€22.00", { selector: "p" })).toBeTruthy();
+		});
+
+		it("prices yearly kiosk seats at €1.50 per month", () => {
+			render(
+				<BillingPageClient
+					subscription={{
+						...activeSubscription,
+						billingInterval: "year",
+						currentKioskSeats: 5,
+						kioskSeatsEnabled: true,
+					}}
+					accessResult={{ canAccess: true, status: "active" }}
+					isOwner={true}
+				/>,
+			);
+
+			const kiosk = screen.getByRole("listitem", { name: "Kiosk seats" });
+			expect(kiosk.textContent).toContain("5 × €1.50");
+			expect(kiosk.textContent).toContain("€7.50");
+			expect(screen.getByRole("listitem", { name: "Total" }).textContent).toContain("€16.50");
+		});
+
+		it("shows only the full seat line while kiosk seats are off", () => {
+			render(
+				<BillingPageClient
+					subscription={{ ...activeSubscription, billingInterval: "month", currentKioskSeats: 0 }}
+					accessResult={{ canAccess: true, status: "active" }}
+					isOwner={true}
+				/>,
+			);
+
+			expect(screen.getByRole("listitem", { name: "Full seats" }).textContent).toContain(
+				"8 × €4.00",
+			);
+			expect(screen.queryByRole("listitem", { name: "Kiosk seats" })).toBeNull();
+			expect(screen.getByText("€32.00", { selector: "p" })).toBeTruthy();
+		});
+	});
+
 	it("uses localized checkout keys and fallbacks", () => {
 		const source = readFileSync(
 			join(

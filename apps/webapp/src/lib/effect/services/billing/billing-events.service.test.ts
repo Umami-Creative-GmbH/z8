@@ -656,13 +656,88 @@ describe("BillingEventsService", () => {
 				currentPeriodEnd: null,
 			});
 		});
+
+		describe("kiosk seat item (#886)", () => {
+			const kioskSeatItem = {
+				id: "si_kiosk_123",
+				object: "subscription_item",
+				quantity: 5,
+				current_period_start: 1_769_472_000,
+				current_period_end: 1_801_008_000,
+				price: { id: "price_kiosk_yearly_123", object: "price", recurring: { interval: "year" } },
+			} as Stripe.SubscriptionItem;
+			const kioskStripeLayer = Layer.succeed(
+				StripeService,
+				StripeService.of({
+					client: null,
+					config: {
+						secretKey: "",
+						webhookSecret: "",
+						priceMonthlyId: "price_monthly_123",
+						priceYearlyId: "price_yearly_123",
+						priceKioskMonthlyId: "price_kiosk_monthly_123",
+						priceKioskYearlyId: "price_kiosk_yearly_123",
+						enabled: false,
+					},
+					createCustomer: vi.fn(),
+					getCustomer,
+					createCheckoutSession: vi.fn(),
+					createPortalSession: vi.fn(),
+					getSubscription,
+					updateSubscription: vi.fn(),
+					cancelSubscription: vi.fn(),
+					getInvoiceForPaymentIntent,
+					constructWebhookEvent: vi.fn(),
+				}),
+			);
+			const checkoutCompleted = {
+				id: "cs_test_123",
+				object: "checkout.session",
+				metadata: { organizationId: "org_123" },
+				subscription: "sub_test_123",
+				customer: "cus_test_123",
+			} as Stripe.Checkout.Session;
+
+			it("reads the kiosk item by price as the kiosk quantity on checkout", async () => {
+				getSubscription.mockReturnValue(
+					Effect.succeed(withItems(kioskSeatItem, unknownItem, yearlySeatItem)),
+				);
+
+				await processEvent({
+					type: "checkout.session.completed",
+					object: checkoutCompleted,
+					stripeLayer: kioskStripeLayer,
+				});
+
+				expect(createSubscription).toHaveBeenCalledWith(
+					expect.objectContaining({
+						stripePriceId: "price_yearly_123",
+						billingInterval: "year",
+						seats: 9,
+						kioskSeats: 5,
+					}),
+				);
+			});
+
+			it("does not count a kiosk price item as seats while kiosk seats are off", async () => {
+				getSubscription.mockReturnValue(Effect.succeed(withItems(kioskSeatItem, yearlySeatItem)));
+
+				await processEvent({ type: "checkout.session.completed", object: checkoutCompleted });
+
+				expect(createSubscription).toHaveBeenCalledWith(
+					expect.objectContaining({ seats: 4, kioskSeats: 0 }),
+				);
+			});
+		});
 	});
 
 	async function processEvent({
 		type,
 		stripeSub,
 		object = stripeSub,
+		stripeLayer,
 	}: {
+		stripeLayer?: Layer.Layer<StripeService>;
 		type:
 			| "checkout.session.completed"
 			| "customer.subscription.updated"
@@ -686,7 +761,10 @@ describe("BillingEventsService", () => {
 					type,
 					data: { object },
 				} as Stripe.Event);
-			}).pipe(Effect.provide(BillingEventsServiceLive), Effect.provide(appLayer)),
+			}).pipe(
+				Effect.provide(BillingEventsServiceLive),
+				Effect.provide(stripeLayer ? Layer.merge(appLayer, stripeLayer) : appLayer),
+			),
 		);
 	}
 });

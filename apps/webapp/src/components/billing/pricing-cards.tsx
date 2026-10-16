@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const MONTHLY_PRICE = 4;
-export const YEARLY_PRICE_PER_MONTH = 3;
-export const YEARLY_PRICE_TOTAL = 36;
+import { SEAT_PRICES_CENTS } from "@/lib/billing/seat-prices";
+
+export const MONTHLY_PRICE = SEAT_PRICES_CENTS.full.month / 100;
+export const YEARLY_PRICE_PER_MONTH = SEAT_PRICES_CENTS.full.yearPerMonth / 100;
+export const YEARLY_PRICE_TOTAL = (SEAT_PRICES_CENTS.full.yearPerMonth * 12) / 100;
 
 interface BillingPricingCardsProps {
 	buttonLabels: { monthly: string; yearly: string };

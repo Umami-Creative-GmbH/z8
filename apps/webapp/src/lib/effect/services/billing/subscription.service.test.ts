@@ -22,8 +22,10 @@ const {
 	eqMock,
 	notLikeMock,
 	countBillableSeats,
+	countBillableSeatsByType,
 } = vi.hoisted(() => ({
 	countBillableSeats: vi.fn(),
+	countBillableSeatsByType: vi.fn(),
 	findFirst: vi.fn(),
 	insertValues: vi.fn(),
 	onConflictDoNothing: vi.fn(),
@@ -62,7 +64,10 @@ vi.mock("@/db", () => {
 });
 
 // Seat semantics are covered by billable-seat-count.integration.test.ts.
-vi.mock("@/lib/effect/services/billing/billable-seat-count", () => ({ countBillableSeats }));
+vi.mock("@/lib/effect/services/billing/billable-seat-count", () => ({
+	countBillableSeats,
+	countBillableSeatsByType,
+}));
 
 vi.mock("drizzle-orm", async (importOriginal) => ({
 	...(await importOriginal<typeof import("drizzle-orm")>()),
@@ -168,6 +173,54 @@ describe("SubscriptionService", () => {
 			currentSeats: 3,
 		});
 		expect(countBillableSeats).toHaveBeenCalledWith(expect.anything(), "org_123");
+	});
+
+	it("returns the live kiosk seat part while both kiosk prices are configured (#886)", async () => {
+		const kioskEnv = env as {
+			STRIPE_PRICE_KIOSK_MONTHLY_ID?: string;
+			STRIPE_PRICE_KIOSK_YEARLY_ID?: string;
+		};
+		kioskEnv.STRIPE_PRICE_KIOSK_MONTHLY_ID = "price_kiosk_monthly_123";
+		kioskEnv.STRIPE_PRICE_KIOSK_YEARLY_ID = "price_kiosk_yearly_123";
+		countBillableSeatsByType.mockResolvedValueOnce({ full: 3, kiosk: 5 });
+
+		try {
+			const result = await Effect.runPromise(
+				Effect.gen(function* () {
+					const subscriptionService = yield* SubscriptionService;
+
+					return yield* subscriptionService.getByOrganization("org_123");
+				}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+			);
+
+			expect(result).toMatchObject({ currentSeats: 8, currentKioskSeats: 5 });
+			expect(countBillableSeatsByType).toHaveBeenCalledWith(expect.anything(), "org_123", {
+				kioskSeats: true,
+			});
+		} finally {
+			kioskEnv.STRIPE_PRICE_KIOSK_MONTHLY_ID = undefined;
+			kioskEnv.STRIPE_PRICE_KIOSK_YEARLY_ID = undefined;
+		}
+	});
+
+	it("reports no kiosk seats while a kiosk price is missing (#886)", async () => {
+		(env as { STRIPE_PRICE_KIOSK_MONTHLY_ID?: string }).STRIPE_PRICE_KIOSK_MONTHLY_ID =
+			"price_kiosk_monthly_123";
+
+		try {
+			const result = await Effect.runPromise(
+				Effect.gen(function* () {
+					const subscriptionService = yield* SubscriptionService;
+
+					return yield* subscriptionService.getByOrganization("org_123");
+				}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+			);
+
+			expect(result).toMatchObject({ currentSeats: 3, currentKioskSeats: 0 });
+			expect(countBillableSeatsByType).not.toHaveBeenCalled();
+		} finally {
+			(env as { STRIPE_PRICE_KIOSK_MONTHLY_ID?: string }).STRIPE_PRICE_KIOSK_MONTHLY_ID = undefined;
+		}
 	});
 
 	it("creates a local trial without a Stripe customer using current organization seats", async () => {

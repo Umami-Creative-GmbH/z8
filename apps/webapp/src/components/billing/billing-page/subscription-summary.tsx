@@ -5,7 +5,8 @@ import { useLocale } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MONTHLY_PRICE, YEARLY_PRICE_PER_MONTH, YEARLY_PRICE_TOTAL } from "../pricing-cards";
+import { formatEuroCents, seatCost } from "@/lib/billing/seat-prices";
+import { MONTHLY_PRICE, YEARLY_PRICE_PER_MONTH } from "../pricing-cards";
 import type { SubscriptionInfo } from "./types";
 
 interface SubscriptionSummaryProps {
@@ -31,6 +32,13 @@ export function SubscriptionSummary({
 		if (!subscription.trialEnd) return 0;
 		return Math.max(0, Math.ceil(DateTime.fromISO(subscription.trialEnd).diff(DateTime.now(), "days").days));
 	};
+	// Kiosk seats off: every seat is a full seat and only the full seat line shows.
+	const kioskSeats = subscription.kioskSeatsEnabled ? (subscription.currentKioskSeats ?? 0) : null;
+	const cost = seatCost({
+		interval: subscription.billingInterval === "year" ? "year" : "month",
+		fullSeats: subscription.currentSeats - (kioskSeats ?? 0),
+		kioskSeats,
+	});
 	const statusBadge = (() => {
 		switch (subscription.status) {
 			case "trialing":
@@ -82,13 +90,15 @@ export function SubscriptionSummary({
 						<div>
 							<p className="text-sm text-muted-foreground">{t("billing.activeSeats", "Active Seats")}</p>
 							<p className="text-2xl font-bold">{subscription.currentSeats}</p>
-							<p className="text-xs text-muted-foreground">
-								{subscription.billingInterval === "year"
-									? t("billing.priceSeatMonthYearly", "€{price}/seat/mo (billed yearly)", {
-											price: YEARLY_PRICE_PER_MONTH,
-										})
-									: t("billing.priceSeatMonth", "€{price}/seat/mo", { price: MONTHLY_PRICE })}
-							</p>
+							{kioskSeats === null ? (
+								<p className="text-xs text-muted-foreground">
+									{subscription.billingInterval === "year"
+										? t("billing.priceSeatMonthYearly", "€{price}/seat/mo (billed yearly)", {
+												price: YEARLY_PRICE_PER_MONTH,
+											})
+										: t("billing.priceSeatMonth", "€{price}/seat/mo", { price: MONTHLY_PRICE })}
+								</p>
+							) : null}
 						</div>
 					</div>
 					<div className="flex items-start gap-3">
@@ -125,22 +135,51 @@ export function SubscriptionSummary({
 						</div>
 						<div>
 							<p className="text-sm text-muted-foreground">{t("billing.monthlyCost", "Monthly Cost")}</p>
-							<p className="text-2xl font-bold">
-								€
-								{subscription.billingInterval === "year"
-									? (subscription.currentSeats * YEARLY_PRICE_PER_MONTH).toFixed(2)
-									: (subscription.currentSeats * MONTHLY_PRICE).toFixed(2)}
-							</p>
+							<p className="text-2xl font-bold">€{formatEuroCents(cost.totalPerMonthCents)}</p>
 							<p className="text-xs text-muted-foreground">
-								{subscription.billingInterval === "year"
+								{cost.totalPerYearCents !== null
 									? t("billing.yearTotal", "€{amount}/year total", {
-											amount: (subscription.currentSeats * YEARLY_PRICE_TOTAL).toFixed(2),
+											amount: formatEuroCents(cost.totalPerYearCents),
 										})
 									: t("billing.billedMonthly", "billed monthly")}
 							</p>
 						</div>
 					</div>
 				</div>
+				<ul className="mt-6 space-y-1 border-t pt-4 text-sm">
+					{cost.lines.map((line) => {
+						const label =
+							line.type === "kiosk"
+								? t("billing.seatLines.kiosk", "Kiosk seats")
+								: t("billing.seatLines.full", "Full seats");
+						return (
+							<li
+								key={line.type}
+								aria-label={label}
+								className="flex items-center justify-between gap-4"
+							>
+								<span>
+									<span className="font-medium">{label}</span>{" "}
+									<span className="text-muted-foreground tabular-nums">
+										{line.seats} × €{formatEuroCents(line.pricePerMonthCents)}
+										{t("billing.seatLines.perMonth", "/mo")}
+									</span>
+								</span>
+								<span className="tabular-nums">€{formatEuroCents(line.subtotalPerMonthCents)}</span>
+							</li>
+						);
+					})}
+					<li
+						aria-label={t("billing.seatLines.total", "Total")}
+						className="flex items-center justify-between gap-4 font-medium"
+					>
+						<span>{t("billing.seatLines.total", "Total")}</span>
+						<span className="tabular-nums">
+							€{formatEuroCents(cost.totalPerMonthCents)}
+							{t("billing.seatLines.perMonth", "/mo")}
+						</span>
+					</li>
+				</ul>
 			</CardContent>
 		</Card>
 	);
