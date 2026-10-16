@@ -161,6 +161,7 @@
         "title": "Done"
       },
       "employee": {
+        "asOf": "As of {time}",
         "back": "Cancel",
         "endDayHint": "Ending the day now ends your work at the start of your break.",
         "today": "Today: {duration}"
