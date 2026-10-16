@@ -19,6 +19,7 @@ vi.mock("@/lib/organization/driving-licence/impediment-actions", () => ({
 	reportDrivingImpedimentAction: remote.report,
 }));
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReportDrivingImpediment } from "./report-impediment";
 
 afterEach(() => {
@@ -30,7 +31,11 @@ it("reports inability without a private reason and announces immediate suspensio
 		success: true,
 		data: { reportId: "report" },
 	});
-	render(<ReportDrivingImpediment />);
+	render(
+		<QueryClientProvider client={new QueryClient()}>
+			<ReportDrivingImpediment />
+		</QueryClientProvider>,
+	);
 	expect(screen.queryByRole("textbox")).toBeNull();
 	fireEvent.click(
 		screen.getByRole("button", { name: "Report that I cannot drive" }),

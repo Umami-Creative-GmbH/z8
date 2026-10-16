@@ -11,6 +11,9 @@ const api = vi.hoisted(() => ({
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
+vi.mock("@tanstack/react-query", () => ({
+	useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+}));
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({ refresh: api.refresh }),
 }));

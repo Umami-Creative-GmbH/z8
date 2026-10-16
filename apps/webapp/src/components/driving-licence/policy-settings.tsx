@@ -1,5 +1,6 @@
 "use client";
 import { useForm } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -36,6 +37,7 @@ export function DrivingLicenceSettings({
 }) {
 	const { t } = useTranslate();
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [message, setMessage] = useState("");
 	const [error, setError] = useState("");
 	const [enabled, setEnabled] = useState(data.policy?.enabled ?? false);
@@ -78,6 +80,9 @@ export function DrivingLicenceSettings({
 			}
 			setEnabled(value.enabled);
 			setMessage(t("drivingLicence.saved", "Policy saved"));
+			void queryClient.invalidateQueries({
+				queryKey: ["driving-authorization-status"],
+			});
 			router.refresh();
 		},
 	});
@@ -334,6 +339,7 @@ function DriverEnrollment({
 }) {
 	const { t } = useTranslate();
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [enrolled, setEnrolled] = useState(
 		() => new Set(data.participants.map((p) => p.employeeId)),
 	);
@@ -352,6 +358,9 @@ function DriverEnrollment({
 				return;
 			}
 			setEnrolled((previous) => new Set([...previous, employeeId]));
+			void queryClient.invalidateQueries({
+				queryKey: ["driving-authorization-status"],
+			});
 			router.refresh();
 		});
 	}

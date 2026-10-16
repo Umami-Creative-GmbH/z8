@@ -69,6 +69,7 @@ export type OrganizationSubject =
 	| "ScheduledExport" // Scheduled exports
 	| "WorksCouncil" // Works council review portal
 	| "TravelExpenseFinance" // Travel expense finance queue, exports and settlement
+	| "DrivingAuthorization" // Explicit minimal operational driving view
 	| "PositionStamp" // Position stamps (#831): granted explicitly, never by a role; see position-capture/viewer.ts
 	| "DemoData"; // Demo data management
 
@@ -95,7 +96,11 @@ export type WorkforceSubject =
 /**
  * All subjects combined
  */
-export type Subject = PlatformSubject | OrganizationSubject | WorkforceSubject | "all";
+export type Subject =
+	| PlatformSubject
+	| OrganizationSubject
+	| WorkforceSubject
+	| "all";
 
 // ============================================
 // PRINCIPAL CONTEXT
@@ -226,6 +231,7 @@ export type SubjectTypeMap = {
 	ScheduledExport: OrgScopedSubject;
 	WorksCouncil: OrgScopedSubject;
 	TravelExpenseFinance: OrgScopedSubject;
+	DrivingAuthorization: OrgScopedSubject;
 	PositionStamp: OrgScopedSubject;
 	DemoData: OrgScopedSubject;
 
@@ -250,7 +256,11 @@ export type SubjectTypeMap = {
 	all: "all";
 };
 
-export type DatabaseSubjectName = "Employee" | "TimeEntry" | "Absence" | "Approval";
+export type DatabaseSubjectName =
+	| "Employee"
+	| "TimeEntry"
+	| "Absence"
+	| "Approval";
 
 export interface EmployeeAuthorizationSubject extends EmployeeScopedSubject {
 	id: string;
