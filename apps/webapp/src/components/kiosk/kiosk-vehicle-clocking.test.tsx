@@ -39,6 +39,7 @@ const kiosk: KioskDeviceInfo = {
 	timezone: "Europe/Berlin",
 	boardEnabled: false,
 	language: "en",
+	offlineMode: false,
 };
 
 const anna = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", name: "Anna Berger" };

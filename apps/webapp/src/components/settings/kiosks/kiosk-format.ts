@@ -51,6 +51,11 @@ export function kioskSettingsErrorMessage(
 			return t("settings.kiosks.errors.kioskNotFound", "This kiosk was not found.");
 		case "kiosk_revoked":
 			return t("settings.kiosks.errors.kioskRevoked", "This kiosk is revoked.");
+		case "offline_needs_adoption":
+			return t(
+				"settings.kiosks.errors.offlineNeedsAdoption",
+				"Offline mode needs coordinated clock commands, which this organization does not use yet.",
+			);
 		case "invalid_selection":
 			return t("settings.kiosks.errors.invalidSelection", "Check your input and try again.");
 		default:
