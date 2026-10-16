@@ -15,7 +15,23 @@ export interface StripeConfig {
 	webhookSecret: string;
 	priceMonthlyId: string;
 	priceYearlyId: string;
+	/** Kiosk seat prices (#886). Kiosk seats exist only when both are set (`kioskSeatsEnabled`). */
+	priceKioskMonthlyId?: string;
+	priceKioskYearlyId?: string;
 	enabled: boolean;
+}
+
+/** The Stripe configuration from the environment. */
+export function stripeConfigFromEnv(): StripeConfig {
+	return {
+		secretKey: env.STRIPE_SECRET_KEY || "",
+		webhookSecret: env.STRIPE_WEBHOOK_SECRET || "",
+		priceMonthlyId: env.STRIPE_PRICE_MONTHLY_ID || "",
+		priceYearlyId: env.STRIPE_PRICE_YEARLY_ID || "",
+		priceKioskMonthlyId: env.STRIPE_PRICE_KIOSK_MONTHLY_ID || "",
+		priceKioskYearlyId: env.STRIPE_PRICE_KIOSK_YEARLY_ID || "",
+		enabled: env.BILLING_ENABLED === "true",
+	};
 }
 
 /**
@@ -98,13 +114,7 @@ function stripeClientFor(secretKey: string): Stripe {
 export const StripeServiceLive = Layer.effect(
 	StripeService,
 	Effect.sync(() => {
-		const config: StripeConfig = {
-			secretKey: env.STRIPE_SECRET_KEY || "",
-			webhookSecret: env.STRIPE_WEBHOOK_SECRET || "",
-			priceMonthlyId: env.STRIPE_PRICE_MONTHLY_ID || "",
-			priceYearlyId: env.STRIPE_PRICE_YEARLY_ID || "",
-			enabled: env.BILLING_ENABLED === "true",
-		};
+		const config = stripeConfigFromEnv();
 
 		const stripe = config.enabled && config.secretKey ? stripeClientFor(config.secretKey) : null;
 

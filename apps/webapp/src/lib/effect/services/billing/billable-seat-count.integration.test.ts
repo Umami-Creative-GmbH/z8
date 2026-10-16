@@ -10,7 +10,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { countBillableSeats } from "./billable-seat-count";
+import { countBillableSeats, countBillableSeatsByType } from "./billable-seat-count";
 
 const NOW = parseInstant("2026-09-15T12:00:00Z");
 
@@ -162,5 +162,103 @@ describe("billable seat count", () => {
 				now: NOW,
 			}),
 		).toBe(6);
+	});
+
+	describe("kiosk and full seats (#886)", () => {
+		async function makeKioskOnly(target: SeededEmployee) {
+			await fixture.pool.query(`update "user" set email = $2 where id = $1`, [
+				target.userId,
+				`kiosk-${randomUUID().replaceAll("-", "")}@kiosk.invalid`,
+			]);
+			return target;
+		}
+
+		async function staffedOrganization(input: { ordinary: number; kioskOnly: number }) {
+			const organizationId = await fixture.createOrganization();
+			const kioskOnly: SeededEmployee[] = [];
+			for (let index = 0; index < input.ordinary; index += 1) {
+				await fixture.seedEmployee({ organizationId, role: index === 0 ? "owner" : "member" });
+			}
+			for (let index = 0; index < input.kioskOnly; index += 1) {
+				kioskOnly.push(await makeKioskOnly(await fixture.seedEmployee({ organizationId })));
+			}
+			return { organizationId, kioskOnly };
+		}
+
+		it("splits billable seats into full and kiosk seats by reserved email", async () => {
+			const { organizationId } = await staffedOrganization({ ordinary: 3, kioskOnly: 5 });
+
+			expect(
+				await countBillableSeatsByType(fixture.db, organizationId, {
+					kioskSeats: true,
+					requireActiveEmployee: true,
+					now: NOW,
+				}),
+			).toEqual({ full: 3, kiosk: 5 });
+		});
+
+		it("counts every seat as a full seat while kiosk seats are off", async () => {
+			const { organizationId } = await staffedOrganization({ ordinary: 3, kioskOnly: 5 });
+
+			expect(
+				await countBillableSeatsByType(fixture.db, organizationId, {
+					kioskSeats: false,
+					requireActiveEmployee: true,
+					now: NOW,
+				}),
+			).toEqual({ full: 8, kiosk: 0 });
+		});
+
+		it("applies departure and offboarding rules to kiosk seats as to full seats", async () => {
+			const { organizationId, kioskOnly } = await staffedOrganization({
+				ordinary: 1,
+				kioskOnly: 4,
+			});
+			const [departed, offboarded, scheduledLater] = kioskOnly;
+			const owner = await fixture.pool.query<{ user_id: string }>(
+				`select user_id from member where organization_id = $1 and role = 'owner'`,
+				[organizationId],
+			);
+			const createdBy = owner.rows[0]?.user_id ?? "";
+			await departure(departed as SeededEmployee, organizationId, {
+				status: "pending",
+				cutoff: "2026-09-15T00:00:00Z",
+				createdBy,
+			});
+			await fixture.pool.query(`update employee set is_active = false where id = $1`, [
+				offboarded?.employeeId,
+			]);
+			await departure(scheduledLater as SeededEmployee, organizationId, {
+				status: "pending",
+				cutoff: "2026-09-30T22:00:00Z",
+				createdBy,
+			});
+
+			const options = { kioskSeats: true, requireActiveEmployee: true, now: NOW };
+			// Kiosk seats: the scheduled-later departure and the untouched one.
+			expect(await countBillableSeatsByType(fixture.db, organizationId, options)).toEqual({
+				full: 1,
+				kiosk: 2,
+			});
+			expect(
+				await countBillableSeats(fixture.db, organizationId, {
+					requireActiveEmployee: true,
+					now: NOW,
+				}),
+			).toBe(3);
+		});
+
+		it("counts nothing from other tenants", async () => {
+			const { organizationId } = await staffedOrganization({ ordinary: 1, kioskOnly: 2 });
+			await staffedOrganization({ ordinary: 4, kioskOnly: 6 });
+
+			expect(
+				await countBillableSeatsByType(fixture.db, organizationId, {
+					kioskSeats: true,
+					requireActiveEmployee: true,
+					now: NOW,
+				}),
+			).toEqual({ full: 1, kiosk: 2 });
+		});
 	});
 });
