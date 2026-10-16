@@ -11,7 +11,6 @@ export type SettingsGroup =
 	| "scheduling"
 	| "policies"
 	| "projects"
-	| "travel"
 	| "payroll"
 	| "notifications"
 	| "enterprise"
@@ -143,11 +142,6 @@ export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
 		id: "projects",
 		labelKey: "settings.projects.title",
 		labelDefault: "Projects",
-	},
-	{
-		id: "travel",
-		labelKey: "nav.travel-expenses",
-		labelDefault: "Travel Expenses",
 	},
 	{
 		id: "payroll",
@@ -288,6 +282,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/locations",
 		icon: "map-pin",
 		minimumTier: "manager",
+		group: "organization",
+	},
+	{
+		id: "vehicles",
+		titleKey: "settings.vehicles.title",
+		titleDefault: "Vehicles",
+		descriptionKey: "settings.vehicles.description",
+		descriptionDefault:
+			"Vehicles your employees drive for work, and their assigned drivers",
+		href: "/settings/vehicles",
+		icon: "car",
+		minimumTier: "orgAdmin",
 		group: "organization",
 	},
 	{
@@ -534,30 +540,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		minimumTier: "orgAdmin",
 		group: "projects",
 		requiredFeature: "projectsEnabled",
-	},
-	{
-		id: "vehicles",
-		titleKey: "settings.vehicles.title",
-		titleDefault: "Vehicles",
-		descriptionKey: "settings.vehicles.description",
-		descriptionDefault:
-			"Vehicles your employees drive for work, and their assigned drivers",
-		href: "/settings/vehicles",
-		icon: "car",
-		minimumTier: "orgAdmin",
-		group: "travel",
-	},
-	{
-		id: "vehicle-use",
-		titleKey: "settings.vehicleUse.title",
-		titleDefault: "Vehicle use",
-		descriptionKey: "settings.vehicleUse.description",
-		descriptionDefault:
-			"Who is asked to record the vehicle they drove and its odometer readings",
-		href: "/settings/vehicle-use",
-		icon: "car",
-		minimumTier: "orgAdmin",
-		group: "travel",
 	},
 	{
 		id: "payroll-access",

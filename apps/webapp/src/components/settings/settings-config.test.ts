@@ -114,6 +114,7 @@ describe("settings visibility tiers", () => {
 			"teams",
 			"roles",
 			"locations",
+			"vehicles",
 			"custom-fields",
 			"implementation-checklist",
 			"billing",
@@ -203,25 +204,12 @@ describe("settings visibility tiers", () => {
 		});
 	});
 
-	it("shows vehicle use enablement in travel expenses to org admins only", () => {
-		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
-		const managerEntries = getVisibleSettings("manager", true);
-		const memberEntries = getVisibleSettings("member", true);
-
+	it("has no separate vehicle-use navigation entry", () => {
 		expect(
-			orgAdminEntries.find((entry) => entry.id === "vehicle-use"),
-		).toMatchObject({
-			href: "/settings/vehicle-use",
-			icon: "car",
-			minimumTier: "orgAdmin",
-			group: "travel",
-		});
-		expect(managerEntries.some((entry) => entry.id === "vehicle-use")).toBe(
-			false,
-		);
-		expect(memberEntries.some((entry) => entry.id === "vehicle-use")).toBe(
-			false,
-		);
+			getVisibleSettings("orgAdmin", true).some(
+				(entry) => entry.id === "vehicle-use",
+			),
+		).toBe(false);
 	});
 
 	it("shows kiosks in time tracking to org admins only", () => {
@@ -241,7 +229,7 @@ describe("settings visibility tiers", () => {
 		expect(memberEntries.some((entry) => entry.id === "kiosks")).toBe(false);
 	});
 
-	it("shows vehicles to org admins next to vehicle use", () => {
+	it("shows the combined Vehicles entry next to organization locations", () => {
 		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
 		const managerEntries = getVisibleSettings("manager", true);
 		const memberEntries = getVisibleSettings("member", true);
@@ -252,12 +240,14 @@ describe("settings visibility tiers", () => {
 			href: "/settings/vehicles",
 			icon: "car",
 			minimumTier: "orgAdmin",
-			group: "travel",
+			group: "organization",
 		});
-		const travelIds = SETTINGS_ENTRIES.filter(
-			(entry) => entry.group === "travel",
+		const organizationIds = SETTINGS_ENTRIES.filter(
+			(entry) => entry.group === "organization",
 		).map((entry) => entry.id);
-		expect(travelIds).toEqual(["vehicles", "vehicle-use"]);
+		expect(organizationIds.indexOf("vehicles")).toBe(
+			organizationIds.indexOf("locations") + 1,
+		);
 		expect(managerEntries.some((entry) => entry.id === "vehicles")).toBe(false);
 		expect(memberEntries.some((entry) => entry.id === "vehicles")).toBe(false);
 		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/vehicles")).toBe(
@@ -268,7 +258,7 @@ describe("settings visibility tiers", () => {
 		);
 	});
 
-	it("shows custom fields to org admins after organization locations", () => {
+	it("shows custom fields to org admins after organization vehicles", () => {
 		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
 		const managerEntries = getVisibleSettings("manager", true);
 		const memberEntries = getVisibleSettings("member", true);
@@ -285,7 +275,7 @@ describe("settings visibility tiers", () => {
 			(entry) => entry.group === "organization",
 		).map((entry) => entry.id);
 		expect(organizationIds.indexOf("custom-fields")).toBe(
-			organizationIds.indexOf("locations") + 1,
+			organizationIds.indexOf("vehicles") + 1,
 		);
 		expect(
 			filterSettingsByFeatureFlags(orgAdminEntries, {
