@@ -1,5 +1,6 @@
 import { env } from "@/env";
 import { getOrgSecret } from "@/lib/vault";
+import { getDevelopmentTurnstileKeys } from "./development-keys";
 
 interface TurnstileVerifyResponse {
 	success: boolean;
@@ -29,6 +30,9 @@ export async function verifyTurnstileToken(
 	expectedHostname?: string,
 ): Promise<TurnstileVerifyResult> {
 	try {
+		const developmentKeys = !isEnterprise
+			? getDevelopmentTurnstileKeys(expectedHostname)
+			: null;
 		// Determine which secret key to use
 		let secretKey: string | null = null;
 
@@ -43,7 +47,8 @@ export async function verifyTurnstileToken(
 			}
 		} else {
 			// Global/main platform: use environment variable
-			secretKey = env.TURNSTILE_SECRET_KEY ?? null;
+			secretKey =
+				developmentKeys?.secretKey ?? env.TURNSTILE_SECRET_KEY ?? null;
 			if (!secretKey) {
 				// Fail closed - if Turnstile is expected but not configured, reject
 				return {
@@ -61,15 +66,18 @@ export async function verifyTurnstileToken(
 		);
 
 		try {
-			const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					secret: secretKey,
-					response: token,
-				}),
-				signal: controller.signal,
-			});
+			const response = await fetch(
+				"https://challenges.cloudflare.com/turnstile/v0/siteverify",
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						secret: secretKey,
+						response: token,
+					}),
+					signal: controller.signal,
+				},
+			);
 
 			clearTimeout(timeoutId);
 
@@ -84,7 +92,9 @@ export async function verifyTurnstileToken(
 
 			if (data.success === true) {
 				if (
+					// Dummy tokens have a synthetic hostname rather than the request host.
 					expectedHostname &&
+					!developmentKeys &&
 					data.hostname?.toLowerCase() !== expectedHostname.toLowerCase()
 				) {
 					return { success: false, error: "Turnstile hostname mismatch" };

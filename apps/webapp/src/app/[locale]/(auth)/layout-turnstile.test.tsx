@@ -99,7 +99,10 @@ vi.mock("@/components/turnstile-widget", () => ({
 }));
 
 describe("auth layout and login Turnstile policy agreement", () => {
-	afterEach(cleanup);
+	afterEach(() => {
+		cleanup();
+		vi.unstubAllEnvs();
+	});
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mocks.env.APP_URL = undefined;
@@ -116,6 +119,30 @@ describe("auth layout and login Turnstile policy agreement", () => {
 			error: { status: 400, message: "Test auth response" },
 		});
 	});
+
+	it.each(["development", "production"])(
+		"keeps the local widget and auth policy aligned in %s",
+		async (mode) => {
+			vi.stubEnv("NODE_ENV", mode);
+			mocks.env.APP_URL = "https://z8.localhost";
+			mocks.env.TURNSTILE_SITE_KEY =
+				mode === "development" ? undefined : "global-site";
+			mocks.headers.mockResolvedValue(new Headers({ host: "z8.localhost" }));
+			render(await AuthLayoutContent({ children: <LoginFormContent /> }));
+			expect(
+				screen
+					.getByRole("button", { name: "Complete verification" })
+					.getAttribute("data-site-key"),
+			).toBe(
+				mode === "development" ? "1x00000000000000000000AA" : "global-site",
+			);
+			expect(await resolveTurnstileAuthPolicy("z8.localhost")).toMatchObject({
+				enabled: true,
+				isEnterprise: false,
+				hostname: "z8.localhost",
+			});
+		},
+	);
 
 	it.each(["APP_URL", "BETTER_AUTH_URL", "NEXT_PUBLIC_APP_URL"] as const)(
 		"%s-only deployment renders the global widget and submits its token to login",
