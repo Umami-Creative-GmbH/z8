@@ -7,6 +7,7 @@ CREATE TABLE "driving_impediment_report" (
  "scope" text DEFAULT 'person' NOT NULL,
  "reported_at" timestamp with time zone NOT NULL,
  "reporter_user_id" text NOT NULL,
+ "retention_started_at" timestamp with time zone,
  "resolved_at" timestamp with time zone,
  "resolved_by_user_id" text,
  "resolution_check_id" uuid,

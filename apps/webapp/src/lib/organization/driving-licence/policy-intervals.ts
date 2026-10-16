@@ -30,6 +30,7 @@ import {
 	materializeExpiredDrivingAuthorizations,
 } from "./checks";
 import type { DrivingLicenceActor } from "./context";
+import { drivingAuthorizationDeadline } from "./deadlines";
 import type { DrivingLicenceTransaction } from "./verifiers";
 
 const intervalInput = z.strictObject({
@@ -81,22 +82,14 @@ async function impact(
 	const classes = rows.flatMap(
 		({ authorization: row, firstName, lastName }) => {
 			if (!row.lastSuccessfulAt || row.state === "ended") return [];
-			const routineValidThrough = instantFromDate(row.lastSuccessfulAt)
-				.toZonedDateTimeISO(row.deadlineTimezone)
-				.toPlainDate()
-				.add({ months: intervalMonths })
-				.toString();
-			const validThrough = [
-				routineValidThrough,
-				row.documentValidThrough,
-				row.classValidThrough,
-			]
-				.filter((value): value is string => value !== null)
-				.sort()[0];
-			const expires = Temporal.PlainDate.from(validThrough)
-				.add({ days: 1 })
-				.toZonedDateTime({ timeZone: row.deadlineTimezone, plainTime: "00:00" })
-				.toInstant();
+			const { routineValidThrough, validThrough, expires } =
+				drivingAuthorizationDeadline({
+					successfulAt: instantFromDate(row.lastSuccessfulAt),
+					intervalMonths,
+					timezone: row.deadlineTimezone,
+					documentValidThrough: row.documentValidThrough,
+					classValidThrough: row.classValidThrough,
+				});
 			const suspended =
 				row.state !== "active" ||
 				instantFromDate(row.expiresAt).epochNanoseconds <=

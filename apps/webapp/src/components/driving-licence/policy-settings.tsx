@@ -66,15 +66,20 @@ export function DrivingLicenceSettings({
 			});
 			if (!result.success) {
 				setError(
-					result.error === "timezone_fixed"
+					result.error === "retention_required"
 						? t(
-								"drivingLicence.zoneFixedError",
-								"The calendar timezone is fixed. Existing deadlines must keep their original meaning.",
+								"drivingLicence.retentionRequiredError",
+								"Keep a finite, justified retention period when disabling licence control. Existing evidence remains subject to cleanup.",
 							)
-						: t(
-								"drivingLicence.saveError",
-								"The policy could not be saved. Check the interval, timezone, reminders and justified retention period.",
-							),
+						: result.error === "timezone_fixed"
+							? t(
+									"drivingLicence.zoneFixedError",
+									"The calendar timezone is fixed. Existing deadlines must keep their original meaning.",
+								)
+							: t(
+									"drivingLicence.saveError",
+									"The policy could not be saved. Check the interval, timezone, reminders and justified retention period.",
+								),
 				);
 				return;
 			}
@@ -261,7 +266,7 @@ export function DrivingLicenceSettings({
 									<TFormDescription>
 										{t(
 											"drivingLicence.retentionHelp",
-											"Required for activation: 1–120 months after evidence no longer supports any active class authorization. Choose a period appropriate to your organization.",
+											"Required for activation: 1–120 months after evidence no longer supports any active class authorization. Keep a justified finite period when disabling licence control; cleanup continues.",
 										)}
 									</TFormDescription>
 								</TFormItem>

@@ -1,25 +1,29 @@
 import "server-only";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { member, user } from "@/db/auth-schema";
 import {
 	drivingAuthorization,
+	drivingAuthorizationEvent,
 	drivingLicenceCheck,
 	drivingLicenceSubject,
 } from "@/db/schema/driving-licence-checks";
+import { drivingImpedimentReport } from "@/db/schema/driving-licence-impediments";
 import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import {
 	drivingLicenceCleanupRun,
 	drivingLicenceHold,
 	drivingLicenceRetention,
 } from "@/db/schema/driving-licence-retention";
+import { employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
 import { employee } from "@/db/schema/organization";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
@@ -84,6 +88,7 @@ async function list(
 	const records = await tx
 		.select({
 			checkId: drivingLicenceCheck.id,
+			employmentPeriodId: drivingLicenceCheck.employmentPeriodId,
 			employeeId: drivingLicenceCheck.employeeId,
 			employeeName: user.name,
 			controlledAt: drivingLicenceCheck.controlledAt,
@@ -114,7 +119,7 @@ async function list(
 		.select()
 		.from(drivingLicenceHold)
 		.where(eq(drivingLicenceHold.organizationId, organizationId));
-	return records.map((r) => {
+	const metadata = records.map((r) => {
 		const deleteAfter =
 			r.retentionStartedAt && policy?.retentionMonths
 				? instantFromDate(r.retentionStartedAt)
@@ -125,6 +130,7 @@ async function list(
 		const recordHolds = holds.filter((h) => h.checkId === r.checkId);
 		return {
 			checkId: r.checkId,
+			employmentPeriodId: r.employmentPeriodId,
 			employeeId: r.employeeId,
 			employeeName: r.employeeName,
 			controlledAt: r.controlledAt.toISOString(),
@@ -141,6 +147,190 @@ async function list(
 			})),
 		};
 	});
+	// A case preserving report context must preserve the check and event that establish its resolution too.
+	const reports = await tx
+		.select({
+			resolutionCheckId: drivingImpedimentReport.resolutionCheckId,
+			employeeId: drivingImpedimentReport.employeeId,
+			employmentPeriodId: drivingImpedimentReport.employmentPeriodId,
+		})
+		.from(drivingImpedimentReport)
+		.where(eq(drivingImpedimentReport.organizationId, organizationId));
+	return metadata.map((record) => {
+		const contexts = reports.filter(
+			(report) => report.resolutionCheckId === record.checkId,
+		);
+		const contextRecords = metadata.filter((source) =>
+			contexts.some(
+				(report) =>
+					source.employeeId === report.employeeId &&
+					source.employmentPeriodId === report.employmentPeriodId,
+			),
+		);
+		const contextHolds = contextRecords
+			.flatMap((source) => source.holds)
+			.filter((hold) => !hold.releasedAt);
+		return {
+			...record,
+			holds: [
+				...new Map(
+					[...record.holds, ...contextHolds].map((hold) => [hold.id, hold]),
+				).values(),
+			],
+		};
+	});
+}
+/** Report proof shares its period's case context, but current unresolved causes remain operational. */
+async function listReports(
+	tx: DrivingLicenceTransaction,
+	organizationId: string,
+	now: Instant,
+	records: Awaited<ReturnType<typeof list>>,
+) {
+	const [policy] = await tx
+		.select()
+		.from(drivingLicencePolicy)
+		.where(eq(drivingLicencePolicy.organizationId, organizationId));
+	const reports = await tx
+		.select({
+			report: drivingImpedimentReport,
+			employeeName: user.name,
+			endedAt: employeeEmploymentPeriod.endedAt,
+		})
+		.from(drivingImpedimentReport)
+		.innerJoin(
+			employee,
+			and(
+				eq(employee.id, drivingImpedimentReport.employeeId),
+				eq(employee.organizationId, organizationId),
+			),
+		)
+		.innerJoin(user, eq(user.id, employee.userId))
+		.leftJoin(
+			employeeEmploymentPeriod,
+			and(
+				eq(
+					employeeEmploymentPeriod.id,
+					drivingImpedimentReport.employmentPeriodId,
+				),
+				eq(employeeEmploymentPeriod.organizationId, organizationId),
+				eq(
+					employeeEmploymentPeriod.employeeId,
+					drivingImpedimentReport.employeeId,
+				),
+			),
+		)
+		.where(eq(drivingImpedimentReport.organizationId, organizationId));
+	const checks = await tx
+		.select({
+			id: drivingLicenceCheck.id,
+			employeeId: drivingLicenceCheck.employeeId,
+			employmentPeriodId: drivingLicenceCheck.employmentPeriodId,
+		})
+		.from(drivingLicenceCheck)
+		.where(eq(drivingLicenceCheck.organizationId, organizationId));
+	const departures = await tx.execute<{
+		employee_id: string;
+		employment_period_id: string | null;
+		cutoff_at: Date | string;
+	}>(
+		sql`SELECT employee_id, employment_period_id, cutoff_at FROM employee_departure d WHERE d.organization_id=${organizationId} AND d.cutoff_at<=${dateFromInstant(now)} AND (d.status='effective' OR (d.status='pending' AND employee_departure_denies_access(d.organization_id,d.employee_id,${dateFromInstant(now)})))`,
+	);
+	const result = [];
+	const recordById = new Map(records.map((record) => [record.checkId, record]));
+	for (const { report, employeeName, endedAt } of reports) {
+		const periodEnd = [
+			...(endedAt ? [instantFromDate(endedAt)] : []),
+			...departures.rows
+				.filter(
+					(d) =>
+						d.employee_id === report.employeeId &&
+						(d.employment_period_id === report.employmentPeriodId ||
+							(report.employmentPeriodId === null &&
+								instantFromDate(new Date(d.cutoff_at)).epochNanoseconds >=
+									instantFromDate(report.reportedAt).epochNanoseconds)),
+				)
+				.map((d) => instantFromDate(new Date(d.cutoff_at))),
+		]
+			.filter((at) => at.epochNanoseconds <= now.epochNanoseconds)
+			.reduce<Instant | null>(
+				(a, b) => (!a || b.epochNanoseconds < a.epochNanoseconds ? b : a),
+				null,
+			);
+		const resolution = report.resolutionCheckId
+			? recordById.get(report.resolutionCheckId)
+			: undefined;
+		const resolutionStart = resolution?.retentionStartedAt
+			? parseInstant(resolution.retentionStartedAt)
+			: null;
+		const resolved = report.resolvedAt
+			? instantFromDate(report.resolvedAt)
+			: null;
+		// A resolved report still explains its resolution check while that proof supports permission.
+		const resolvedStart =
+			resolved && !resolution?.protected
+				? resolutionStart &&
+					resolutionStart.epochNanoseconds > resolved.epochNanoseconds
+					? resolutionStart
+					: report.retentionStartedAt
+						? instantFromDate(report.retentionStartedAt)
+						: resolved
+				: null;
+		const start =
+			periodEnd &&
+			(!resolvedStart ||
+				periodEnd.epochNanoseconds < resolvedStart.epochNanoseconds)
+				? periodEnd
+				: resolvedStart;
+		const saved = report.retentionStartedAt
+			? instantFromDate(report.retentionStartedAt)
+			: null;
+		if (saved?.epochNanoseconds !== start?.epochNanoseconds)
+			await tx
+				.update(drivingImpedimentReport)
+				.set({ retentionStartedAt: start ? dateFromInstant(start) : null })
+				.where(
+					and(
+						eq(drivingImpedimentReport.organizationId, organizationId),
+						eq(drivingImpedimentReport.id, report.id),
+					),
+				);
+		const deleteAfter =
+			start && policy?.retentionMonths
+				? start
+						.toZonedDateTimeISO(policy.timezone)
+						.add({ months: policy.retentionMonths })
+						.toInstant()
+				: null;
+		const relatedIds = new Set(
+			checks
+				.filter(
+					(c) =>
+						c.employeeId === report.employeeId &&
+						c.employmentPeriodId === report.employmentPeriodId,
+				)
+				.map((c) => c.id),
+		);
+		const holds = records
+			.filter((r) => relatedIds.has(r.checkId))
+			.flatMap((r) => r.holds)
+			.filter((h) => !h.releasedAt);
+		result.push({
+			reportId: report.id,
+			employeeId: report.employeeId,
+			employeeName,
+			reportedAt: report.reportedAt.toISOString(),
+			retentionStartedAt:
+				start?.toString({ smallestUnit: "millisecond" }) ?? null,
+			deleteAfter:
+				deleteAfter?.toString({ smallestUnit: "millisecond" }) ?? null,
+			protected: !start,
+			due:
+				!!deleteAfter && deleteAfter.epochNanoseconds <= now.epochNanoseconds,
+			holds,
+		});
+	}
+	return result;
 }
 export async function readDrivingLicenceRetention(actor: DrivingLicenceActor) {
 	return db.transaction(async (tx) => {
@@ -151,6 +341,12 @@ export async function readDrivingLicenceRetention(actor: DrivingLicenceActor) {
 			actor.organizationId,
 			systemClock.nowInstant(),
 		);
+		const reports = await listReports(
+			tx,
+			actor.organizationId,
+			systemClock.nowInstant(),
+			records,
+		);
 		const runs = await tx
 			.select()
 			.from(drivingLicenceCleanupRun)
@@ -160,6 +356,7 @@ export async function readDrivingLicenceRetention(actor: DrivingLicenceActor) {
 		return {
 			organizationId: actor.organizationId,
 			records,
+			reports,
 			runs: runs.map((r) => ({
 				...r,
 				completedAt: r.completedAt.toISOString(),
@@ -268,7 +465,35 @@ export async function cleanupDrivingLicenceEvidence(
 		const now = systemClock.nowInstant();
 		await materializeExpiredDrivingAuthorizations(tx, organizationId, now);
 		const records = await list(tx, organizationId, now);
+		const reports = await listReports(tx, organizationId, now, records);
 		let deletedCount = 0;
+		for (const report of reports) {
+			if (report.protected || !report.due || report.holds.length) continue;
+			await tx
+				.delete(drivingAuthorizationEvent)
+				.where(
+					and(
+						eq(drivingAuthorizationEvent.organizationId, organizationId),
+						eq(drivingAuthorizationEvent.employeeId, report.employeeId),
+						or(
+							eq(drivingAuthorizationEvent.id, report.reportId),
+							eq(
+								drivingAuthorizationEvent.reason,
+								`reported_impediment:${report.reportId}`,
+							),
+						),
+					),
+				);
+			await tx
+				.delete(drivingImpedimentReport)
+				.where(
+					and(
+						eq(drivingImpedimentReport.organizationId, organizationId),
+						eq(drivingImpedimentReport.id, report.reportId),
+					),
+				);
+			deletedCount++;
+		}
 		for (const record of records) {
 			if (
 				record.protected ||
@@ -312,9 +537,12 @@ export async function cleanupDrivingLicenceEvidence(
 		}
 		const result = {
 			deletedCount,
-			heldCount: records.filter((r) => r.holds.some((h) => !h.releasedAt))
-				.length,
-			protectedCount: records.filter((r) => r.protected).length,
+			heldCount:
+				records.filter((r) => r.holds.some((h) => !h.releasedAt)).length +
+				reports.filter((r) => r.holds.length > 0).length,
+			protectedCount:
+				records.filter((r) => r.protected).length +
+				reports.filter((r) => r.protected).length,
 		};
 		await tx.insert(drivingLicenceCleanupRun).values({
 			organizationId,

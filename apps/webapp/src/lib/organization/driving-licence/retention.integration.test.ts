@@ -618,3 +618,374 @@ it("uses a due departure's actual cutoff before its worker runs and permits due 
 	});
 	expect((await adminRetention()).records).toHaveLength(0);
 });
+
+it("requires finite justified retention when disabling an established policy, keeps evidence due and honors its hold", async () => {
+	harness.userId = fixture.ownerUserId;
+	const hold = await retention.placeDrivingLicenceHoldAction({
+		checkId,
+		caseReference: "CASE-disable",
+		preservationReason: "Preserve the evidence during the pending case.",
+	});
+	if (!hold.success) throw new Error(hold.error);
+	expect(
+		await policy.saveDrivingLicencePolicyAction({
+			enabled: false,
+			intervalMonths: 1,
+			timezone: "Europe/Berlin",
+			reminderLeadDays: [30, 7],
+			retentionMonths: null,
+			retentionJustification: null,
+		}),
+	).toMatchObject({ success: false, error: "retention_required" });
+	expect(
+		(
+			await policy.saveDrivingLicencePolicyAction({
+				enabled: false,
+				intervalMonths: 1,
+				timezone: "Europe/Berlin",
+				reminderLeadDays: [30, 7],
+				retentionMonths: 1,
+				retentionJustification:
+					"Necessary evidence for organization driving checks",
+			})
+		).success,
+	).toBe(true);
+	harness.now = "2026-04-01T12:00:00Z";
+	expect((await adminRetention()).records[0]).toMatchObject({
+		deleteAfter: "2026-03-31T22:00:00.000Z",
+		due: true,
+	});
+	expect((await retention.cleanupDrivingLicenceEvidenceAction()).success).toBe(
+		true,
+	);
+	expect((await adminRetention()).runs[0].heldCount).toBeGreaterThanOrEqual(1);
+	expect((await ownHistory()).checks).toHaveLength(1);
+	harness.userId = fixture.ownerUserId;
+	expect(
+		(
+			await retention.releaseDrivingLicenceHoldAction({
+				holdId: hold.data.holdId,
+				releaseReason: "The case ended and preservation is no longer needed.",
+			})
+		).success,
+	).toBe(true);
+	expect(
+		(await jobs.runDrivingLicenceRetentionJob()).deletedCount,
+	).toBeGreaterThanOrEqual(1);
+	expect((await ownHistory()).checks).toEqual([]);
+});
+
+async function reportOwnImpediment() {
+	harness.userId = (
+		await fixture.pool.query("select user_id from employee where id=$1", [
+			fixture.employeeId,
+		])
+	).rows[0].user_id;
+	const result = await reinstatement.reportDrivingImpedimentAction({
+		commandId: crypto.randomUUID(),
+	});
+	if (!result.success) throw new Error(result.error);
+	harness.userId = verifier.userId;
+	return result.data.reportId;
+}
+async function causes() {
+	const result = await reinstatement.getDrivingImpedimentStateAction({
+		employeeId: fixture.employeeId,
+	});
+	if (!result.success) throw new Error(result.error);
+	return result.data;
+}
+it("deletes resolved impediment evidence and its report event after finite retention, preserving evidence under an existing check case hold", async () => {
+	harness.now = "2026-02-01T12:00:00Z";
+	const reportId = await reportOwnImpediment();
+	harness.now = "2026-02-02T12:00:00Z";
+	const resolutionCheckId = await checkAgain();
+	const snapshot = await causes();
+	expect(
+		(
+			await reinstatement.reinstateDrivingAuthorizationAction({
+				employeeId: fixture.employeeId,
+				checkId: resolutionCheckId,
+				classCodes: ["B"],
+				expectedReportIds: [reportId],
+				expectedSuspension: snapshot.suspension,
+				impedimentResolved: true,
+			})
+		).success,
+	).toBe(true);
+	harness.userId = fixture.ownerUserId;
+	const hold = await retention.placeDrivingLicenceHoldAction({
+		checkId,
+		caseReference: "CASE-report",
+		preservationReason:
+			"Preserve related original evidence during the specific case.",
+	});
+	if (!hold.success) throw new Error(hold.error);
+	harness.now = "2026-04-03T12:00:00Z";
+	await jobs.runDrivingLicenceRetentionJob();
+	expect((await adminRetention()).reports).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				reportId,
+				retentionStartedAt: "2026-03-02T23:00:00.000Z",
+				deleteAfter: "2026-04-02T22:00:00.000Z",
+				due: true,
+			}),
+		]),
+	);
+	expect((await ownHistory()).events.some((e) => e.id === reportId)).toBe(true);
+	const heldProof = await ownHistory();
+	expect(heldProof.checks.some((check) => check.id === resolutionCheckId)).toBe(
+		true,
+	);
+	expect(
+		heldProof.events.some(
+			(event) => event.reason === `reported_impediment:${reportId}`,
+		),
+	).toBe(true);
+
+	harness.userId = fixture.ownerUserId;
+	expect(
+		(
+			await retention.releaseDrivingLicenceHoldAction({
+				holdId: hold.data.holdId,
+				releaseReason:
+					"The legal case has ended; preservation is no longer needed.",
+			})
+		).success,
+	).toBe(true);
+	await jobs.runDrivingLicenceRetentionJob();
+	expect((await adminRetention()).reports).toEqual([]);
+	expect(
+		(await ownHistory()).events.filter(
+			(e) =>
+				e.id === reportId || e.reason === `reported_impediment:${reportId}`,
+		),
+	).toEqual([]);
+	expect((await causes()).reports).toEqual([]);
+	expect((await jobs.runDrivingLicenceRetentionJob()).deletedCount).toBe(0);
+});
+
+it("keeps resolved report proof throughout a long active resolution check, then ages it from the final support end", async () => {
+	await interval(6);
+	harness.now = "2026-02-01T12:00:00Z";
+	const reportId = await reportOwnImpediment();
+	harness.now = "2026-02-02T12:00:00Z";
+	const resolutionCheckId = await checkAgain();
+	const snapshot = await causes();
+	expect(
+		(
+			await reinstatement.reinstateDrivingAuthorizationAction({
+				employeeId: fixture.employeeId,
+				checkId: resolutionCheckId,
+				classCodes: ["B"],
+				expectedReportIds: [reportId],
+				expectedSuspension: snapshot.suspension,
+				impedimentResolved: true,
+			})
+		).success,
+	).toBe(true);
+	harness.now = "2026-04-03T12:00:00Z";
+	await jobs.runDrivingLicenceRetentionJob();
+	expect((await adminRetention()).reports).toMatchObject([
+		{ reportId, protected: true, retentionStartedAt: null, deleteAfter: null },
+	]);
+	expect((await ownHistory()).events.some((e) => e.id === reportId)).toBe(true);
+	harness.now = "2026-08-03T12:00:00Z";
+	await jobs.runDrivingLicenceRetentionJob();
+	expect((await adminRetention()).reports).toMatchObject([
+		{
+			reportId,
+			protected: false,
+			retentionStartedAt: "2026-08-02T22:00:00.000Z",
+			deleteAfter: "2026-09-02T22:00:00.000Z",
+		},
+	]);
+	harness.now = "2026-09-02T22:00:00Z";
+	await jobs.runDrivingLicenceRetentionJob();
+	expect((await adminRetention()).reports).toEqual([]);
+	expect(
+		(await ownHistory()).events.filter(
+			(e) =>
+				e.id === reportId || e.reason === `reported_impediment:${reportId}`,
+		),
+	).toEqual([]);
+});
+it("ages unresolved former-period report evidence from the effective departure cutoff without resolving or deleting a rehired employee's current cause", async () => {
+	harness.now = "2026-02-01T12:00:00Z";
+	const oldReportId = await reportOwnImpediment();
+	const { createDepartureCommands } = await import(
+		"@/lib/employee-lifecycle/commands"
+	);
+	const { parseInstant } = await import("@/lib/datetime/temporal-core");
+	const commands = createDepartureCommands({
+		db: fixture.db,
+		clock: { nowInstant: () => parseInstant(harness.now) },
+		clockOut: { close: async () => ({ kind: "not_running" }) },
+	});
+	const owner = {
+		organizationId: fixture.organizationId,
+		userId: fixture.ownerUserId,
+	};
+	await fixture.pool.query(
+		"update organization set timezone='Europe/Berlin' where id=$1",
+		[fixture.organizationId],
+	);
+	const departure = await commands.scheduleDeparture(owner, {
+		employeeId: fixture.employeeId,
+		requestId: crypto.randomUUID(),
+		expectedRevision: null,
+		lastWorkingDay: "2026-02-05",
+		replacementEmployeeId: null,
+		acknowledgeUnassignedDuties: true,
+	});
+	harness.now = "2026-02-05T23:00:00Z";
+	expect((await adminRetention()).reports).toMatchObject([
+		{
+			reportId: oldReportId,
+			retentionStartedAt: "2026-02-05T23:00:00.000Z",
+			deleteAfter: "2026-03-05T23:00:00.000Z",
+		},
+	]);
+	await commands.executeDeparture({
+		organizationId: fixture.organizationId,
+		employeeId: fixture.employeeId,
+		employmentPeriodId: fixture.employmentPeriodId,
+		departureId: departure.departureId,
+		revision: departure.revision,
+	});
+	const workPolicy = await fixture.pool.query(
+		"insert into work_policy (organization_id,name,created_by,updated_at) values ($1,'Returning',$2,now()) returning id",
+		[fixture.organizationId, fixture.ownerUserId],
+	);
+	harness.now = "2026-02-07T12:00:00Z";
+	await commands.rehireEmployee(owner, {
+		employeeId: fixture.employeeId,
+		requestId: crypto.randomUUID(),
+		previousEmploymentPeriodId: fixture.employmentPeriodId,
+		role: "employee",
+		teamId: null,
+		primaryManagerId: fixture.ownerEmployeeId,
+		workPolicyId: workPolicy.rows[0].id,
+		weeklyContractMinutes: 2400,
+		contractType: "fixed",
+		workModel: "onsite",
+		hourlyRate: null,
+		currency: "EUR",
+		probationStartsOn: null,
+		probationEndsOn: null,
+		changeReason: "Returning",
+	});
+	harness.userId = verifier.userId;
+	const freshCheckId = await checkAgain();
+	harness.userId = fixture.ownerUserId;
+	expect(
+		(
+			await retention.placeDrivingLicenceHoldAction({
+				checkId: freshCheckId,
+				caseReference: "CASE-new-period",
+				preservationReason:
+					"Preserve this new employment period check for its own case.",
+			})
+		).success,
+	).toBe(true);
+	harness.now = "2026-02-08T12:00:00Z";
+	const currentReportId = await reportOwnImpediment();
+	harness.now = "2026-03-06T12:00:00Z";
+	const { CRON_JOBS } = await import("@/lib/cron/registry");
+	await CRON_JOBS["cron:driving-licence-retention"].processor();
+	const rows = (await adminRetention()).reports;
+	expect(rows.map((r) => r.reportId)).toEqual([currentReportId]);
+	harness.userId = verifier.userId;
+	expect((await causes()).reports).toMatchObject([{ id: currentReportId }]);
+	expect((await ownHistory()).authorization.authorizedClasses).toEqual([]);
+	expect((await ownHistory()).events.some((e) => e.id === oldReportId)).toBe(
+		false,
+	);
+	const foreign = await createLifecycleDatabaseFixture();
+	try {
+		harness.organizationId = foreign.organizationId;
+		harness.userId = foreign.ownerUserId;
+		expect(await retention.getDrivingLicenceRetentionAction()).toMatchObject({
+			success: true,
+			data: { reports: [] },
+		});
+		expect(
+			(
+				await history.getDrivingLicenceHistoryAction({
+					employeeId: fixture.employeeId,
+				})
+			).success,
+		).toBe(false);
+		expect(
+			(await retention.cleanupDrivingLicenceEvidenceAction()).success,
+		).toBe(true);
+	} finally {
+		await foreign.close();
+		harness.organizationId = fixture.organizationId;
+		harness.userId = verifier.userId;
+	}
+	await CRON_JOBS["cron:driving-licence-retention"].processor();
+	expect((await causes()).reports).toMatchObject([{ id: currentReportId }]);
+});
+
+it("starts unversioned legacy report retention at its first subsequent explicit departure cutoff", async () => {
+	const legacy = await fixture.seedEmployee({ withPeriod: false });
+	harness.userId = fixture.ownerUserId;
+	expect(
+		(
+			await policy.enrollDrivingLicenceEmployeeAction({
+				employeeId: legacy.employeeId,
+			})
+		).success,
+	).toBe(true);
+	harness.userId = legacy.userId;
+	harness.now = "2026-02-01T12:00:00Z";
+	const report = await reinstatement.reportDrivingImpedimentAction({
+		commandId: crypto.randomUUID(),
+	});
+	if (!report.success) throw new Error(report.error);
+	const { createDepartureCommands } = await import(
+		"@/lib/employee-lifecycle/commands"
+	);
+	const { parseInstant } = await import("@/lib/datetime/temporal-core");
+	const commands = createDepartureCommands({
+		db: fixture.db,
+		clock: { nowInstant: () => parseInstant(harness.now) },
+		clockOut: { close: async () => ({ kind: "not_running" }) },
+	});
+	await fixture.pool.query(
+		"update organization set timezone='Europe/Berlin' where id=$1",
+		[fixture.organizationId],
+	);
+	await commands.scheduleDeparture(
+		{ organizationId: fixture.organizationId, userId: fixture.ownerUserId },
+		{
+			employeeId: legacy.employeeId,
+			requestId: crypto.randomUUID(),
+			expectedRevision: null,
+			lastWorkingDay: "2026-02-05",
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: true,
+		},
+	);
+	harness.now = "2026-02-05T23:00:00Z";
+	expect((await adminRetention()).reports).toMatchObject([
+		{
+			reportId: report.data.reportId,
+			protected: false,
+			retentionStartedAt: "2026-02-05T23:00:00.000Z",
+		},
+	]);
+	harness.now = "2026-03-05T23:00:00Z";
+	await jobs.runDrivingLicenceRetentionJob();
+	expect((await adminRetention()).reports).toEqual([]);
+	harness.userId = verifier.userId;
+	const evidence = await history.getDrivingLicenceHistoryAction({
+		employeeId: legacy.employeeId,
+	});
+	expect(
+		evidence.success &&
+			evidence.data.events.some((e) => e.id === report.data.reportId),
+	).toBe(false);
+});

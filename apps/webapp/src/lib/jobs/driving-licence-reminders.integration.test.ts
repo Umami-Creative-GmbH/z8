@@ -181,7 +181,7 @@ it("persists mandatory unread inbox reminders on the exact organization-zone lea
 	expect(await inbox()).toHaveLength(1);
 });
 
-it("emails in each recipient's saved language and retries delivery failure without duplicating persisted inbox notifications", async () => {
+it("persists an uncertain email attempt before provider acceptance and never blindly retries an ambiguous outcome", async () => {
 	expect(
 		(await checks.completeDrivingLicenceCheckAction(original())).success,
 	).toBe(true);
@@ -190,22 +190,44 @@ it("emails in each recipient's saved language and retries delivery failure witho
 		[subjectUserId],
 	);
 	harness.now = "2026-02-21T10:00:00Z";
-	harness.mail.mockRejectedValueOnce(new Error("provider offline"));
+	let durableAttempts: unknown;
+	harness.mail.mockImplementationOnce(async () => {
+		const attempts = await fixture.pool.query(
+			"select email_state,email_attempts,emailed_at from driving_licence_reminder_delivery where organization_id=$1 and email_state='attempted'",
+			[fixture.organizationId],
+		);
+		durableAttempts = attempts.rows;
+		// SMTP accepted this message, but the response was lost before the caller knew.
+		throw new Error("connection lost after acceptance");
+	});
 	const first = await runDrivingLicenceRemindersJob();
+	expect(durableAttempts).toMatchObject([
+		{ email_state: "attempted", email_attempts: 1, emailed_at: null },
+	]);
 	expect(first.emailFailed).toBe(1);
 	expect(first.emailSent).toBe(1);
+	harness.userId = harness.mail.mock.calls[0][0].to.replace(
+		"@lifecycle.test",
+		"",
+	);
+	expect(
+		await checks.getDrivingLicenceEmployeeRecordAction({
+			employeeId: fixture.employeeId,
+		}),
+	).toMatchObject({ success: true, data: { uncertainEmailCount: 1 } });
+
 	expect(await inbox()).toHaveLength(1);
 	expect(await inbox(verifier.userId)).toHaveLength(1);
 	const second = await runDrivingLicenceRemindersJob();
-	expect(second.emailSent).toBe(1);
-	expect(harness.mail).toHaveBeenCalledTimes(3);
+	expect(second.emailSent).toBe(0);
+	expect(harness.mail).toHaveBeenCalledTimes(2);
 	const german = harness.mail.mock.calls
 		.map((args) => args[0])
 		.find((mail) => mail.to === `${subjectUserId}@lifecycle.test`);
 	expect(german?.html).toContain('lang="de"');
 	expect(german?.html).toContain("28. Feb. 2026");
 	await runDrivingLicenceRemindersJob();
-	expect(harness.mail).toHaveBeenCalledTimes(3);
+	expect(harness.mail).toHaveBeenCalledTimes(2);
 	expect(await inbox()).toHaveLength(1);
 });
 
@@ -475,4 +497,64 @@ it("honors the configured 30- and 7-day routine thresholds exactly in the saved 
 	await runDrivingLicenceRemindersJob();
 	expect(await inbox()).toHaveLength(2);
 	expect(harness.mail).toHaveBeenCalledTimes(4);
+});
+
+it("does not resend provider-accepted email when recording its success rolls back", async () => {
+	expect(
+		(await checks.completeDrivingLicenceCheckAction(original())).success,
+	).toBe(true);
+	harness.now = "2026-02-21T10:00:00Z";
+	const functionName = `driving_email_commit_loss_${crypto.randomUUID().replaceAll("-", "")}`;
+	const triggerName = `${functionName}_trigger`;
+	await fixture.pool.query(
+		`create function ${functionName}() returns trigger language plpgsql as $$ begin if NEW.organization_id='${fixture.organizationId}' and NEW.email_state='sent' then raise exception 'simulated result commit failure'; end if; return NEW; end $$`,
+	);
+	await fixture.pool.query(
+		`create constraint trigger ${triggerName} after update on driving_licence_reminder_delivery deferrable initially deferred for each row execute function ${functionName}()`,
+	);
+	const { CRON_JOBS } = await import("@/lib/cron/registry");
+	try {
+		await expect(
+			CRON_JOBS["cron:driving-licence-reminders"].processor(),
+		).rejects.toThrow();
+		expect(harness.mail).toHaveBeenCalledTimes(1);
+	} finally {
+		await fixture.pool.query(
+			`drop trigger ${triggerName} on driving_licence_reminder_delivery`,
+		);
+		await fixture.pool.query(`drop function ${functionName}()`);
+	}
+	await CRON_JOBS["cron:driving-licence-reminders"].processor();
+	expect(harness.mail).toHaveBeenCalledTimes(2); // Only the other recipient's previously unattempted message.
+	expect(await inbox()).toMatchObject([{ isRead: false, readAt: null }]);
+	expect(await inbox(verifier.userId)).toMatchObject([
+		{ isRead: false, readAt: null },
+	]);
+	await CRON_JOBS["cron:driving-licence-reminders"].processor();
+	expect(harness.mail).toHaveBeenCalledTimes(2);
+});
+
+it("distinguishes an unavailable transport from recorded success and an uncertain thrown outcome", async () => {
+	expect(
+		(await checks.completeDrivingLicenceCheckAction(original())).success,
+	).toBe(true);
+	harness.now = "2026-02-21T10:00:00Z";
+	harness.mail.mockImplementationOnce(async () => ({
+		success: false,
+		unavailable: true,
+	}));
+	const first = await runDrivingLicenceRemindersJob();
+	expect(first).toMatchObject({ emailSent: 1, emailFailed: 0 });
+	harness.userId = harness.mail.mock.calls[0][0].to.replace(
+		"@lifecycle.test",
+		"",
+	);
+	expect(
+		await checks.getDrivingLicenceEmployeeRecordAction({
+			employeeId: fixture.employeeId,
+		}),
+	).toMatchObject({ success: true, data: { uncertainEmailCount: 0 } });
+	await runDrivingLicenceRemindersJob();
+	expect(harness.mail).toHaveBeenCalledTimes(2);
+	expect(await inbox()).toMatchObject([{ isRead: false, readAt: null }]);
 });

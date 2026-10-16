@@ -4,7 +4,6 @@ import {
 } from "./retention-state";
 import "server-only";
 import { and, asc, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
-import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -20,6 +19,7 @@ import {
 	drivingLicenceParticipant,
 	drivingLicencePolicy,
 } from "@/db/schema/driving-licence-policy";
+import { drivingLicenceReminderDelivery } from "@/db/schema/driving-licence-reminders";
 import { drivingLicenceVerifierGrant } from "@/db/schema/driving-licence-verifiers";
 import {
 	dateFromInstant,
@@ -40,6 +40,7 @@ import {
 	LICENCE_CLASSES,
 } from "./check-types";
 import type { DrivingLicenceActor } from "./context";
+import { drivingAuthorizationDeadline } from "./deadlines";
 import { lockDrivingLicenceOrganization } from "./locks";
 
 export { lockDrivingLicenceOrganization } from "./locks";
@@ -335,7 +336,7 @@ export async function readDrivingLicenceEmployeeRecord(
 		employeeId,
 		now,
 	});
-	const [status, checks, events] = await Promise.all([
+	const [status, checks, events, uncertainEmails] = await Promise.all([
 		readEffectiveDrivingAuthorization(
 			db,
 			actor.organizationId,
@@ -368,9 +369,24 @@ export async function readDrivingLicenceEmployeeRecord(
 				asc(drivingAuthorizationEvent.effectiveAt),
 				asc(drivingAuthorizationEvent.id),
 			),
+		db
+			.select({ id: drivingLicenceReminderDelivery.id })
+			.from(drivingLicenceReminderDelivery)
+			.where(
+				and(
+					eq(
+						drivingLicenceReminderDelivery.organizationId,
+						actor.organizationId,
+					),
+					eq(drivingLicenceReminderDelivery.employeeId, employeeId),
+					eq(drivingLicenceReminderDelivery.recipientUserId, actor.userId),
+					eq(drivingLicenceReminderDelivery.emailState, "attempted"),
+				),
+			),
 	]);
 	return {
 		...status,
+		uncertainEmailCount: uncertainEmails.length,
 		checks: checks.map((row) => ({
 			...row,
 			controlledAt: row.controlledAt.toISOString(),
@@ -571,20 +587,14 @@ export async function completeDrivingLicenceCheck(
 					),
 				);
 			const samePeriod = previous?.employmentPeriodId === employment.periodId;
-			const routineValidThrough = localDate
-				.add({ months: policy.intervalMonths })
-				.toString();
-			const validThrough = [
-				routineValidThrough,
-				input.documentExpiresOn,
-				inspected.expiryDate,
-			]
-				.filter((value): value is string => value !== null)
-				.sort()[0];
-			const expires = Temporal.PlainDate.from(validThrough)
-				.add({ days: 1 })
-				.toZonedDateTime({ timeZone: policy.timezone, plainTime: "00:00" })
-				.toInstant();
+			const { routineValidThrough, validThrough, expires } =
+				drivingAuthorizationDeadline({
+					successfulAt: now,
+					intervalMonths: policy.intervalMonths,
+					timezone: policy.timezone,
+					documentValidThrough: input.documentExpiresOn,
+					classValidThrough: inspected.expiryDate,
+				});
 			const suspendedAlready = samePeriod && previous?.state !== "active";
 			const globalActive = global?.employmentPeriodId === employment.periodId;
 			const successful = inspected.result === "successful";

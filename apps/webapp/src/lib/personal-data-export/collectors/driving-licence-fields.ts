@@ -3,8 +3,8 @@ import type { PersonalDataFieldGuide } from "../collector";
 export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 	const fields = {
 		retention_started_at: t(
-			"personalDataExport.readme.fields.drivingLicence.retentionStartedAt",
-			"When this retained check stopped supporting active driving authorization; the organization's justified retention period runs from this UTC instant, and an active case hold postpones deletion.",
+			"personalDataExport.readme.fields.drivingLicence.retentionStartedAtEvidence",
+			"When check evidence stopped supporting active authorization, or report evidence became inactive after resolution and final resolution-check support or employment end. The organization's justified retention period runs from this UTC instant; a case hold postpones deletion.",
 		),
 		case_reference: t(
 			"personalDataExport.readme.fields.drivingLicence.caseReference",
@@ -59,12 +59,12 @@ export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 			"The app notification linked to this reminder; empty when none was created.",
 		),
 		email_state: t(
-			"personalDataExport.readme.fields.drivingLicence.emailState",
-			"Whether email delivery was pending, sent, suppressed, obsolete or unavailable; this is not a read receipt.",
+			"personalDataExport.readme.fields.drivingLicence.emailStateWithUncertainAttempts",
+			"Email delivery state: pending, attempted (uncertain provider outcome; never automatically resent), sent (provider success recorded), suppressed, obsolete or unavailable. No state confirms reading.",
 		),
 		emailed_at: t(
-			"personalDataExport.readme.fields.drivingLicence.emailedAt",
-			"When this reminder's email was sent; empty when no email was sent.",
+			"personalDataExport.readme.fields.drivingLicence.emailedAtProviderSuccess",
+			"When provider success was recorded for this email. Empty also covers uncertain attempts; it does not prove the email was not sent or that it was read.",
 		),
 		reported_at: t(
 			"personalDataExport.readme.fields.drivingLicence.reportedAt",

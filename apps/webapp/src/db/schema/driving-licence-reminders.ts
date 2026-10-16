@@ -28,8 +28,16 @@ export const drivingLicenceReminderDelivery = pgTable(
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
 		notificationId: uuid("notification_id"),
+		// attempted means the provider outcome is uncertain; never automatically resend it.
 		emailState: text("email_state")
-			.$type<"pending" | "sent" | "suppressed" | "obsolete" | "unavailable">()
+			.$type<
+				| "pending"
+				| "attempted"
+				| "sent"
+				| "suppressed"
+				| "obsolete"
+				| "unavailable"
+			>()
 			.default("pending")
 			.notNull(),
 		emailAttempts: integer("email_attempts").default(0).notNull(),
@@ -49,7 +57,7 @@ export const drivingLicenceReminderDelivery = pgTable(
 		}).onDelete("cascade"),
 		check(
 			"driving_reminder_email_state",
-			sql`${t.emailState} IN ('pending','sent','suppressed','obsolete','unavailable')`,
+			sql`${t.emailState} IN ('pending','attempted','sent','suppressed','obsolete','unavailable')`,
 		),
 	],
 );

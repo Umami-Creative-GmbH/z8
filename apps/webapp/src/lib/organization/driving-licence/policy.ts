@@ -71,6 +71,13 @@ export async function saveDrivingLicencePolicy(
 			.select()
 			.from(drivingLicencePolicy)
 			.where(eq(drivingLicencePolicy.organizationId, actor.organizationId));
+		// Once established, a finite policy survives deactivation and cannot be erased.
+		if (
+			previous?.retentionMonths &&
+			(policy.retentionMonths === null ||
+				(policy.retentionJustification?.length ?? 0) < 10)
+		)
+			throw new Error("retention_required");
 		if (previous && previous.intervalMonths !== policy.intervalMonths)
 			throw new Error("interval_preview_required");
 		if (previous && previous.timezone !== policy.timezone)

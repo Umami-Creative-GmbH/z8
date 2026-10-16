@@ -30,6 +30,7 @@ vi.mock("@/lib/organization/driving-licence/retention-actions", () => ({
 		success: true,
 		data: {
 			organizationId: "org",
+			reports: [],
 			records: remote.cleaned
 				? []
 				: [
