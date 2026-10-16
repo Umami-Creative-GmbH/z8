@@ -8,6 +8,7 @@ import { type Clock, dateFromInstant, systemClock } from "@/lib/datetime/tempora
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
+import { readAppendAdmission } from "../work-transaction";
 import {
 	formatPairingCode,
 	generateDeviceToken,
@@ -40,6 +41,8 @@ export type KioskListing = {
 	locationName: string;
 	timezone: string;
 	boardEnabled: boolean;
+	/** The stored switch; it takes effect only while the organization is adopted. */
+	offlineModeEnabled: boolean;
 	status: KioskStatus;
 	pairingCodeExpiresAt: Date | null;
 	pairedAt: Date | null;
@@ -116,6 +119,7 @@ export async function listKiosks(
 			locationName: location.name,
 			timezone: kiosk.timezone,
 			boardEnabled: kiosk.boardEnabled,
+			offlineModeEnabled: kiosk.offlineModeEnabled,
 			hasToken: kiosk.tokenHash,
 			pairingCodeExpiresAt: kiosk.pairingCodeExpiresAt,
 			pairedAt: kiosk.pairedAt,
@@ -171,7 +175,7 @@ export async function createKiosk(
 		actorUserId: input.actorUserId,
 		changes: {
 			from: null,
-			to: { name, locationId: site.id, timezone, boardEnabled: false },
+			to: { name, locationId: site.id, timezone, boardEnabled: false, offlineModeEnabled: false },
 		},
 	});
 
@@ -186,6 +190,7 @@ async function lockManagedKiosk(tx: KioskClient, organizationId: string, kioskId
 			locationId: kiosk.locationId,
 			timezone: kiosk.timezone,
 			boardEnabled: kiosk.boardEnabled,
+			offlineModeEnabled: kiosk.offlineModeEnabled,
 			tokenHash: kiosk.tokenHash,
 			revokedAt: kiosk.revokedAt,
 		})
@@ -203,9 +208,16 @@ export type KioskConfigurationChange = Partial<{
 	locationId: string;
 	timezone: unknown;
 	boardEnabled: boolean;
+	offlineModeEnabled: boolean;
 }>;
 
-/** Renames a kiosk, moves it to another location of the organization, changes its zone or board. */
+/**
+ * Renames a kiosk, moves it to another location of the organization, changes
+ * its zone, board or offline mode. Offline mode can be switched on only while
+ * the organization is adopted (`append` admission, ADR 0002); switching it off
+ * is always allowed, also after a pilot rollback returned the organization to
+ * `legacy`.
+ */
 export async function updateKiosk(
 	tx: KioskClient,
 	audit: AuditTrail,
@@ -222,10 +234,30 @@ export async function updateKiosk(
 				? current.locationId
 				: (await requireOrganizationLocation(tx, input.organizationId, change.locationId)).id,
 		boardEnabled: change.boardEnabled === undefined ? current.boardEnabled : change.boardEnabled,
+		offlineModeEnabled:
+			change.offlineModeEnabled === undefined
+				? current.offlineModeEnabled
+				: change.offlineModeEnabled,
 	};
+	if (
+		next.offlineModeEnabled &&
+		!current.offlineModeEnabled &&
+		(await readAppendAdmission(tx, input.organizationId)) !== "append"
+	) {
+		throw new KioskSettingsRefusal(
+			"offline_needs_adoption",
+			"Offline mode needs an adopted organization.",
+		);
+	}
 	const from: Record<string, unknown> = {};
 	const to: Record<string, unknown> = {};
-	for (const key of ["name", "timezone", "locationId", "boardEnabled"] as const) {
+	for (const key of [
+		"name",
+		"timezone",
+		"locationId",
+		"boardEnabled",
+		"offlineModeEnabled",
+	] as const) {
 		if (next[key] !== current[key]) {
 			from[key] = current[key];
 			to[key] = next[key];
@@ -328,25 +360,35 @@ export type PairedKiosk = {
 	boardEnabled: boolean;
 };
 
-/** What the device may show about the kiosk it authenticated as. */
+/**
+ * What the device may show about the kiosk it authenticated as. It is read
+ * afresh at every contact, so a changed setting reaches the kiosk at its next
+ * request.
+ */
 export async function readKioskDeviceInfo(
 	client: KioskClient,
 	authenticated: PairedKiosk,
 ): Promise<KioskDeviceInfo> {
-	const [site] = await client
-		.select({ name: location.name, language: organizationNotificationSettings.defaultLanguage })
-		.from(location)
-		.leftJoin(
-			organizationNotificationSettings,
-			eq(organizationNotificationSettings.organizationId, location.organizationId),
-		)
-		.where(
-			and(
-				eq(location.organizationId, authenticated.organizationId),
-				eq(location.id, authenticated.locationId),
-			),
-		)
-		.limit(1);
+	const [[site], offlineMode] = await Promise.all([
+		client
+			.select({ name: location.name, language: organizationNotificationSettings.defaultLanguage })
+			.from(location)
+			.leftJoin(
+				organizationNotificationSettings,
+				eq(organizationNotificationSettings.organizationId, location.organizationId),
+			)
+			.where(
+				and(
+					eq(location.organizationId, authenticated.organizationId),
+					eq(location.id, authenticated.locationId),
+				),
+			)
+			.limit(1),
+		readKioskOfflineMode(client, {
+			organizationId: authenticated.organizationId,
+			kioskId: authenticated.kioskId,
+		}),
+	]);
 	return {
 		id: authenticated.kioskId,
 		name: authenticated.name,
@@ -355,7 +397,27 @@ export async function readKioskDeviceInfo(
 		timezone: authenticated.timezone,
 		boardEnabled: authenticated.boardEnabled,
 		language: kioskLanguage(site?.language),
+		offlineMode,
 	};
+}
+
+/**
+ * Whether a kiosk works offline (#1287): its offline-mode switch is on AND its
+ * organization is adopted (`append` admission, ADR 0002). A pilot rollback that
+ * returns the organization to `legacy` turns offline mode off for its kiosks
+ * while their switches stay stored. A kiosk of another organization reads as off.
+ */
+export async function readKioskOfflineMode(
+	client: Pick<KioskClient, "select">,
+	input: { organizationId: string; kioskId: string },
+): Promise<boolean> {
+	const [found] = await client
+		.select({ enabled: kiosk.offlineModeEnabled })
+		.from(kiosk)
+		.where(and(eq(kiosk.organizationId, input.organizationId), eq(kiosk.id, input.kioskId)))
+		.limit(1);
+	if (!found?.enabled) return false;
+	return (await readAppendAdmission(client, input.organizationId)) === "append";
 }
 
 /** The kiosk opens in its organization's default language (#862), English when none is usable. */

@@ -26,6 +26,11 @@ import { location } from "./organization";
  *   SHA-256 is stored, together with its expiry and the admin who issued it.
  * - `timezone` is the kiosk's IANA zone, the device zone of its clock commands.
  * - `board_enabled` switches the who-is-in board on the kiosk (off by default).
+ * - `offline_mode_enabled` (#1287, spec #885) lets the kiosk keep clocking
+ *   through an outage (off by default). It takes effect only while the
+ *   organization is adopted (`append` admission, ADR 0002): switching it on in a
+ *   `legacy` organization is refused, and a pilot rollback leaves it stored but
+ *   ineffective.
  */
 export const kiosk = pgTable(
 	"kiosk",
@@ -38,6 +43,7 @@ export const kiosk = pgTable(
 		name: text("name").notNull(),
 		timezone: text("timezone").notNull(),
 		boardEnabled: boolean("board_enabled").default(false).notNull(),
+		offlineModeEnabled: boolean("offline_mode_enabled").default(false).notNull(),
 		tokenHash: text("token_hash"),
 		pairedAt: timestamp("paired_at", { withTimezone: true }),
 		pairingCodeHash: text("pairing_code_hash"),

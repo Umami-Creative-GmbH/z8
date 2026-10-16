@@ -1700,7 +1700,14 @@
       "idx": 242,
       "version": "7",
       "when": 1805644800000,
-      "tag": "0242_kiosk_pin_lockout_events",
+      "tag": "0242_kiosk_offline_mode",
+      "breakpoints": true
+    },
+    {
+      "idx": 243,
+      "version": "7",
+      "when": 1805731200000,
+      "tag": "0243_kiosk_pin_lockout_events",
       "breakpoints": true
     }
   ]

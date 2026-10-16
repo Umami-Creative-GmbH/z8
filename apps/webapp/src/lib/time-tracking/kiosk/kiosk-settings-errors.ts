@@ -11,6 +11,8 @@ export type KioskSettingsErrorCode =
 	| "location_not_found"
 	| "kiosk_not_found"
 	| "kiosk_revoked"
+	/** Offline mode was switched on in a `legacy` organization (#1287, ADR 0002). */
+	| "offline_needs_adoption"
 	/** Anything unexpected: the action failed for a reason the user cannot act on. */
 	| "failed";
 

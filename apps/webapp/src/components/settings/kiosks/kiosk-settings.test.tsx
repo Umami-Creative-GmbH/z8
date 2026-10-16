@@ -51,6 +51,7 @@ function kiosk(overrides: Partial<KioskData> = {}): KioskData {
 		locationName: store.name,
 		timezone: "Europe/Berlin",
 		boardEnabled: false,
+		offlineModeEnabled: false,
 		status: "paired",
 		pairingCodeExpiresAt: null,
 		pairedAt: "2026-10-01T08:00:00.000Z",
@@ -60,11 +61,12 @@ function kiosk(overrides: Partial<KioskData> = {}): KioskData {
 	};
 }
 
-function renderSettings(kiosks: KioskData[] = []) {
+function renderSettings(kiosks: KioskData[] = [], options: { organizationAdopted?: boolean } = {}) {
 	const data: KioskAdminData = {
 		kiosks,
 		locations: [store],
 		organizationTimezone: "America/New_York",
+		organizationAdopted: options.organizationAdopted ?? false,
 	};
 	return render(<KioskSettings data={data} />);
 }
@@ -150,6 +152,86 @@ describe("KioskSettings", () => {
 			expect(mocks.revokeKioskAction).toHaveBeenCalledWith({ kioskId: kiosk().id }),
 		);
 		expect(mocks.refresh).toHaveBeenCalled();
+	});
+
+	describe("offline mode (#1287)", () => {
+		it("lets an admin of an adopted organization switch it on", async () => {
+			mocks.updateKioskAction.mockResolvedValue({ success: true, data: { kioskId: kiosk().id } });
+			renderSettings([kiosk()], { organizationAdopted: true });
+
+			fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+			const offline = screen.getByRole("switch", { name: "Offline mode" });
+			expect(offline.getAttribute("aria-checked")).toBe("false");
+			expect((offline as HTMLButtonElement).disabled).toBe(false);
+			fireEvent.click(offline);
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			await waitFor(() =>
+				expect(mocks.updateKioskAction).toHaveBeenCalledWith(
+					expect.objectContaining({ kioskId: kiosk().id, offlineModeEnabled: true }),
+				),
+			);
+		});
+
+		it("cannot be switched on in a legacy organization, and says why", () => {
+			renderSettings([kiosk()], { organizationAdopted: false });
+
+			fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+
+			const offline = screen.getByRole("switch", { name: "Offline mode" });
+			expect((offline as HTMLButtonElement).disabled).toBe(true);
+			expect(screen.getByText(/does not use yet/)).toBeTruthy();
+		});
+
+		it("can still be switched off after the organization returned to legacy", async () => {
+			mocks.updateKioskAction.mockResolvedValue({ success: true, data: { kioskId: kiosk().id } });
+			renderSettings([kiosk({ offlineModeEnabled: true })], { organizationAdopted: false });
+
+			fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+			const offline = screen.getByRole("switch", { name: "Offline mode" });
+			expect((offline as HTMLButtonElement).disabled).toBe(false);
+			fireEvent.click(offline);
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			await waitFor(() =>
+				expect(mocks.updateKioskAction).toHaveBeenCalledWith(
+					expect.objectContaining({ offlineModeEnabled: false }),
+				),
+			);
+		});
+
+		it("shows in the list which kiosks have it on, and when it is not in effect", () => {
+			renderSettings(
+				[
+					kiosk({ offlineModeEnabled: true }),
+					kiosk({ id: "44444444-4444-4444-8444-444444444444", name: "Back door" }),
+				],
+				{ organizationAdopted: false },
+			);
+
+			const on = screen.getByRole("row", { name: /Front door/ });
+			expect(within(on).getByText(/Offline mode on, not in effect/)).toBeTruthy();
+			const off = screen.getByRole("row", { name: /Back door/ });
+			expect(within(off).queryByText(/Offline mode/)).toBeNull();
+		});
+
+		it("explains a refusal for an organization that is not adopted", async () => {
+			const { toast } = await import("sonner");
+			mocks.updateKioskAction.mockResolvedValue({
+				success: false,
+				error: "Offline mode needs an adopted organization.",
+				code: "offline_needs_adoption",
+			});
+			renderSettings([kiosk()], { organizationAdopted: true });
+
+			fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+			fireEvent.click(screen.getByRole("switch", { name: "Offline mode" }));
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			await waitFor(() =>
+				expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/does not use yet/)),
+			);
+		});
 	});
 
 	it("offers no management for a revoked kiosk", () => {

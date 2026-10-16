@@ -54,7 +54,13 @@ type KioskFormDialogProps = {
 			defaultTimezone: string;
 			onCreated: (issued: IssuedPairingCodeData, kioskName: string) => void;
 	  }
-	| { mode: "edit"; kiosk: KioskData; onSaved: () => void }
+	| {
+			mode: "edit";
+			kiosk: KioskData;
+			/** Whether the organization is adopted: only then can offline mode be switched on. */
+			organizationAdopted: boolean;
+			onSaved: () => void;
+	  }
 );
 
 type KioskFormValues = {
@@ -62,9 +68,13 @@ type KioskFormValues = {
 	locationId: string;
 	timezone: string;
 	boardEnabled: boolean;
+	offlineModeEnabled: boolean;
 };
 
-/** Creates a kiosk, or edits one: name, location, zone and (when editing) the who-is-in board. */
+/**
+ * Creates a kiosk, or edits one: name, location, zone and (when editing) the
+ * who-is-in board and offline mode.
+ */
 export function KioskFormDialog(props: KioskFormDialogProps) {
 	// Remount per opening so a reopened dialog starts from fresh defaults.
 	const key = props.mode === "edit" ? `edit:${props.kiosk.id}` : `create:${String(props.open)}`;
@@ -83,6 +93,7 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 			// A new kiosk starts in the organization's zone, never the admin's browser zone.
 			timezone: props.mode === "edit" ? props.kiosk.timezone : props.defaultTimezone,
 			boardEnabled: editing?.boardEnabled ?? false,
+			offlineModeEnabled: editing?.offlineModeEnabled ?? false,
 		} satisfies KioskFormValues,
 		onSubmit: async ({ value }) => {
 			setSaving(true);
@@ -110,6 +121,7 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 					locationId: value.locationId,
 					timezone: value.timezone,
 					boardEnabled: value.boardEnabled,
+					offlineModeEnabled: value.offlineModeEnabled,
 				});
 				if (!result.success) {
 					toast.error(
@@ -251,6 +263,38 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 									<TFormControl>
 										<Switch
 											checked={field.state.value}
+											onCheckedChange={(checked) => field.handleChange(checked === true)}
+										/>
+									</TFormControl>
+								</TFormItem>
+							)}
+						</form.Field>
+					) : null}
+					{props.mode === "edit" ? (
+						<form.Field name="offlineModeEnabled">
+							{(field) => (
+								<TFormItem className="flex flex-row items-center justify-between gap-4 rounded-md border p-3">
+									<div className="space-y-1">
+										<TFormLabel>
+											{t("settings.kiosks.fields.offlineMode", "Offline mode")}
+										</TFormLabel>
+										<TFormDescription>
+											{props.organizationAdopted
+												? t(
+														"settings.kiosks.fields.offlineModeDescription",
+														"The kiosk keeps clocking without a connection. Its clockings are confirmed, and their PINs checked, once it reconnects.",
+													)
+												: t(
+														"settings.kiosks.fields.offlineModeUnavailable",
+														"Offline mode needs coordinated clock commands, which this organization does not use yet.",
+													)}
+										</TFormDescription>
+									</div>
+									<TFormControl>
+										<Switch
+											checked={field.state.value}
+											// Switching off stays possible after a rollback to legacy.
+											disabled={!props.organizationAdopted && !field.state.value}
 											onCheckedChange={(checked) => field.handleChange(checked === true)}
 										/>
 									</TFormControl>
