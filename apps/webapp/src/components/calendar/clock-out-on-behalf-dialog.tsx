@@ -142,7 +142,7 @@ function ClockOutOnBehalfForm({
 			{choices && projectId ? (
 				<TaskSelectorView
 					projectId={projectId}
-					projects={[{ id: projectId, tasks: choices.tasks }]}
+					projects={[{ id: projectId, tasks: choices.tasks, requiresTask: choices.requiresTask }]}
 					value={taskId}
 					onValueChange={setTaskId}
 					currentTask={choices.currentTask}

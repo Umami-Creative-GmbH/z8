@@ -4,6 +4,7 @@ import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { project, projectAssignment, projectTask } from "@/db/schema";
 import { activeProjectCustomerIdSql } from "@/lib/billable-time/project-customer";
+import { readActiveTaskRequirement } from "@/lib/projects/task-requirement-reads";
 import { isProjectTaskId } from "./task-attribution";
 
 /** Project statuses that accept booked time. */
@@ -36,6 +37,8 @@ export type EligibleProject = Pick<
 	// Billable Time (#900): a recording form prefills billability from these.
 	| "customerId"
 	| "billableDefault"
+	// The task requirement setting (#884); active only while the project has an open task.
+	| "requiresTask"
 >;
 
 export async function listEligibleProjects(
@@ -60,6 +63,7 @@ export async function listEligibleProjects(
 			// A deleted customer leaves the project without customer (#768).
 			customerId: activeProjectCustomerIdSql(),
 			billableDefault: project.billableDefault,
+			requiresTask: project.requiresTask,
 		})
 		.from(project)
 		.innerJoin(
@@ -95,13 +99,17 @@ export async function isProjectEligible(
  * - `task_not_found`: no such task in the target's organization;
  * - `task_other_project`: the task belongs to another project than the booking's;
  * - `task_done`: the task is done;
- * - `project_not_bookable`: the booking's project is not eligible for the target.
+ * - `project_not_bookable`: the booking's project is not eligible for the target;
+ * - `task_required`: the booking names no task, but its project's task
+ *   requirement is active (#884). Only writers where someone can pick a task
+ *   refuse with it (Projects ADR 0002).
  */
 export type ProjectTaskIneligibility =
 	| "task_not_found"
 	| "task_other_project"
 	| "task_done"
-	| "project_not_bookable";
+	| "project_not_bookable"
+	| "task_required";
 
 /** The established English wording of each task refusal, for adapters without their own. */
 export const PROJECT_TASK_INELIGIBILITY_MESSAGES: Record<ProjectTaskIneligibility, string> = {
@@ -109,7 +117,28 @@ export const PROJECT_TASK_INELIGIBILITY_MESSAGES: Record<ProjectTaskIneligibilit
 	task_other_project: "This task belongs to another project",
 	task_done: "This task is done, so no time can be booked to it",
 	project_not_bookable: "Cannot assign to this project",
+	task_required: "This project requires a task. Choose one and try again.",
 };
+
+/**
+ * The task requirement half of the booking rule (#884, Projects ADR 0002): a
+ * booking on a project whose task requirement is active must name a task.
+ * Returns `task_required` for a booking with a project and without a task on
+ * such a project, else null. Only writers where someone is present and can
+ * pick a task call this; the others accept the booking without one. A
+ * protected operation passes its transaction.
+ */
+export async function taskRequirementIneligibility(
+	reader: Pick<typeof db, "select">,
+	booking: { organizationId: string; projectId: string | null; taskId: string | null },
+): Promise<"task_required" | null> {
+	if (!booking.projectId || booking.taskId) return null;
+	const active = await readActiveTaskRequirement(
+		{ organizationId: booking.organizationId, projectId: booking.projectId },
+		reader,
+	);
+	return active ? "task_required" : null;
+}
 
 export type TaskBookingOptions = {
 	/**
@@ -129,7 +158,7 @@ export async function taskBookingIneligibility(
 	reader: Pick<typeof db, "select">,
 	booking: { organizationId: string; projectId: string | null; taskId: string },
 	options: TaskBookingOptions = {},
-): Promise<Exclude<ProjectTaskIneligibility, "project_not_bookable"> | null> {
+): Promise<Exclude<ProjectTaskIneligibility, "project_not_bookable" | "task_required"> | null> {
 	if (!isProjectTaskId(booking.taskId)) return "task_not_found";
 	const query = reader
 		.select({ projectId: projectTask.projectId, state: projectTask.state })

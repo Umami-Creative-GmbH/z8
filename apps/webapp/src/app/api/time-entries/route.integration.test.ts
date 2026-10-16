@@ -599,6 +599,19 @@ describe("legacy direct clock writer in adopted organizations on PostgreSQL", ()
 			expect(await bookedTask()).toEqual({ project: project.a, task: null });
 		});
 
+		// Nobody at an old desktop or extension build can pick a task (#884, Projects ADR 0002).
+		it("accepts a clock-out without a task on a project that requires one", async () => {
+			await admin.query("update project set requires_task = true where id = $1", [project.a]);
+
+			const clockOut = await post({
+				...desktopClock("clock_out", "2026-07-22T10:00:00Z"),
+				projectId: project.a,
+			});
+
+			expect(clockOut).toMatchObject({ status: 201, body: { entry: { type: "clock_out" } } });
+			expect(await bookedTask()).toEqual({ project: project.a, task: null });
+		});
+
 		it.each([
 			["a done task", tasks.done, "task_done"],
 			["another project's task", tasks.otherProject, "task_other_project"],

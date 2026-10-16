@@ -2,7 +2,7 @@
 
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { workPeriod } from "@/db/schema";
+import { project, workPeriod } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { BookedProjectTask, ProjectTaskChoice } from "@/lib/projects/project-task-model";
 import { findProjectTask, listOpenTasksByProject } from "@/lib/projects/project-tasks";
@@ -20,6 +20,11 @@ export interface OnBehalfClockOutTaskChoices {
 	tasks: ProjectTaskChoice[];
 	/** The task the running work carries now, which may be done by now. */
 	currentTask: BookedProjectTask | null;
+	/**
+	 * The project's task requirement setting (#884). With open tasks it is
+	 * active: the clock-out must name a task.
+	 */
+	requiresTask: boolean;
 }
 
 /**
@@ -68,13 +73,21 @@ export async function getClockOutOnBehalfTaskChoices(
 			.limit(1);
 		if (!period) return { success: false, error: "Work period is no longer running" };
 		if (!period.projectId) {
-			return { success: true, data: { projectId: null, tasks: [], currentTask: null } };
+			return {
+				success: true,
+				data: { projectId: null, tasks: [], currentTask: null, requiresTask: false },
+			};
 		}
 
 		const target = { employeeId: subject.id, teamId: subject.teamId, organizationId };
-		const [bookable, current] = await Promise.all([
+		const [bookable, current, [setting]] = await Promise.all([
 			isProjectEligible(target, period.projectId),
 			period.taskId ? findProjectTask({ organizationId, taskId: period.taskId }) : null,
+			db
+				.select({ requiresTask: project.requiresTask })
+				.from(project)
+				.where(and(eq(project.id, period.projectId), eq(project.organizationId, organizationId)))
+				.limit(1),
 		]);
 		const tasks = bookable
 			? ((
@@ -98,6 +111,7 @@ export async function getClockOutOnBehalfTaskChoices(
 							projectId: current.projectId,
 						}
 					: null,
+				requiresTask: setting?.requiresTask ?? false,
 			},
 		};
 	} catch (error) {

@@ -16,9 +16,20 @@ import { project, projectTask } from "@/db/schema";
 export type TaskRequirementReader = Pick<typeof db, "select">;
 
 // Aliased, so the rule can sit inside any query, also one that selects from
-// `project` itself, without its columns binding to the outer row.
-const requiringProject = alias(project, "task_requirement_project");
-const openTask = alias(projectTask, "task_requirement_open_task");
+// `project` itself, without its columns binding to the outer row. Built on
+// first use: importers (booking eligibility) load this module where unit tests
+// mock the schema without these tables.
+function buildAliases() {
+	return {
+		requiringProject: alias(project, "task_requirement_project"),
+		openTask: alias(projectTask, "task_requirement_open_task"),
+	};
+}
+let aliases: ReturnType<typeof buildAliases> | undefined;
+function requirementAliases() {
+	aliases ??= buildAliases();
+	return aliases;
+}
 
 /**
  * Whether the given project's task requirement is active, as a boolean SQL
@@ -30,6 +41,7 @@ export function activeTaskRequirementSql(target: {
 	projectId: AnyPgColumn | SQL | string;
 	organizationId: AnyPgColumn | SQL | string;
 }): SQL<boolean> {
+	const { requiringProject, openTask } = requirementAliases();
 	// Nested once: in a single-table select list Drizzle drops the table name of
 	// top-level column chunks, which would rebind them inside the subqueries.
 	return sql<boolean>`${sql`exists (

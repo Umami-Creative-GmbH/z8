@@ -152,6 +152,7 @@ export async function listManualEntryProjectChoices(
 			hasCustomer: project.customerId !== null,
 			billableDefault: project.customerId !== null && project.billableDefault,
 			tasks: tasksByProjectId.get(project.id) ?? [],
+			requiresTask: project.requiresTask,
 		}))
 		.sort((left, right) => left.name.localeCompare(right.name));
 }

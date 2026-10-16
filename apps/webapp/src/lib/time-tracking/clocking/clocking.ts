@@ -29,9 +29,13 @@ import {
 } from "../close-active-work";
 import { type CloseResumeWorkResult, isCloseResumeStanding } from "../close-resume-work";
 import { monthClosedRefusalOf } from "../closed-months/refusal";
-import { isProjectEligible, projectTaskIneligibility } from "../project-eligibility";
+import {
+	isProjectEligible,
+	projectTaskIneligibility,
+	taskRequirementIneligibility,
+} from "../project-eligibility";
 import { findStandingStart, type StartLiveWorkResult } from "../start-live-work";
-import { attributionAfter } from "../task-attribution";
+import { attributionAfter, taskIdFollowingProject } from "../task-attribution";
 import { TimeEntryAppendReviewRequiredError } from "../time-entry-append";
 import {
 	resolveFallbackTimezoneCapture,
@@ -89,6 +93,7 @@ import type { ClockFollowUps, ClockOutAdvice, ClosedLiveWork } from "./follow-up
 import { FrozenCommandNotAcceptedError } from "./frozen";
 import { LegacyCommandNotAcceptedError } from "./legacy-command";
 import { stampExecutedClockEvent } from "./position-stamp";
+import { clockOutCanPickTask } from "./task-choice";
 import type { ClockTransactions } from "./transactions";
 import type {
 	BreakCommand,
@@ -497,6 +502,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				deletedAt: workPeriod.deletedAt,
 				workLocationType: workPeriod.workLocationType,
 				projectId: workPeriod.projectId,
+				taskId: workPeriod.taskId,
 				breakStartedAt: workPeriod.breakStartedAt,
 				breakStartedZone: workPeriod.breakStartedZone,
 			})
@@ -529,6 +535,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			start: instantFromDate(period.startTime),
 			workLocationType: (period.workLocationType as WorkLocationType | null) ?? null,
 			projectId: period.projectId,
+			taskId: period.taskId,
 			// The open break a closure ends at (#861); re-checked under the work transaction.
 			breakInProgress:
 				period.breakStartedAt && period.breakStartedZone
@@ -556,6 +563,16 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			const reason = await projectTaskIneligibility(eligibilityTarget, {
 				projectId: attributionAfter(project, target.projectId),
 				taskId: task.id,
+			});
+			if (reason) return { code: "task_not_allowed", reason };
+		}
+		// An active task requirement refuses only where someone can pick a task (#884).
+		if (clockOutCanPickTask(command)) {
+			const projectId = attributionAfter(project, target.projectId);
+			const reason = await taskRequirementIneligibility(db, {
+				organizationId: subject.organizationId,
+				projectId,
+				taskId: taskIdFollowingProject({ task, projectId, current: target }),
 			});
 			if (reason) return { code: "task_not_allowed", reason };
 		}

@@ -327,6 +327,8 @@ export type ClockOutTarget = {
 	workLocationType: WorkLocationType | null;
 	/** The work's project when the target was resolved; a task check reads it. */
 	projectId: string | null;
+	/** The work's task when the target was resolved; the task requirement check reads it (#884). */
+	taskId: string | null;
 };
 
 /**

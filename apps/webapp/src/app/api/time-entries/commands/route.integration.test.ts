@@ -1343,6 +1343,23 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			expect(await bookedTask(start.operationId)).toEqual({ period: null, allocation: null });
 		});
 
+		// A frozen command is replayed after the moment of choice (#884, Projects ADR 0002).
+		it("accepts a clock-out without a task on a project that requires one", async () => {
+			await admin.query("update project set requires_task = true where id = $1", [ids.projectA]);
+			const start = clockInCommand();
+			await submit(start);
+			harness.now = now.add({ hours: 1 });
+			const closed = await submit(
+				clockOutCommand(
+					{ clockInOperationId: start.operationId },
+					{ occurredAt: harness.now.toString(), project: { kind: "replace", id: ids.projectA } },
+				),
+			);
+
+			expect(closed.status).toBe(201);
+			expect(await bookedTask(start.operationId)).toEqual({ period: null, allocation: null });
+		});
+
 		it("books the task of a clock-out in the exact shape the desktop freezes (#882)", async () => {
 			// Keys and value formats come from the desktop's pinned wire fixture. Only the
 			// identities, context and instants belong to this test.
