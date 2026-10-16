@@ -2,7 +2,7 @@
 	"name": "@z8-target/db-seed",
 	"private": true,
 	"type": "module",
-	"packageManager": "pnpm@12.8.1",
+	"packageManager": "pnpm@12.13.0",
 	"dependencies": {
 		"@opentelemetry/api": "^1.9.1",
 		"@t3-oss/env-nextjs": "^0.13.11",
