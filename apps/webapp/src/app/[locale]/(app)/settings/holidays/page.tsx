@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { HolidayManagement } from "@/components/settings/holiday/holiday-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
@@ -19,12 +18,7 @@ async function HolidaySettingsPageContent() {
 		return redirectWithLocale("/settings");
 	}
 
-	return (
-		<HolidayManagement
-			organizationId={organizationId}
-			canManage={accessTier === "orgAdmin"}
-		/>
-	);
+	return redirectWithLocale("/settings/vacation?tab=holidays");
 }
 
 function HolidaySettingsPageLoading() {

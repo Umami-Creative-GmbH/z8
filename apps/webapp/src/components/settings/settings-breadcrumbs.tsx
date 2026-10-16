@@ -51,7 +51,7 @@ function buildSettingsBreadcrumbs(pathname: string, t: ReturnType<typeof useTran
 		} else if (segment === "holidays") {
 			label = t("settings.holidays.title", "Holidays");
 		} else if (segment === "vacation") {
-			label = t("settings.vacation.title", "Vacation");
+			label = t("nav.absences", "Absences");
 		} else if (segment === "teams") {
 			label = t("settings.teams.title", "Teams");
 		} else if (segment === "employees") {

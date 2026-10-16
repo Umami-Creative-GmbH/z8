@@ -7,7 +7,6 @@ export type SettingsGroup =
 	| "account"
 	| "organization"
 	| "time-tracking"
-	| "absences"
 	| "scheduling"
 	| "policies"
 	| "projects"
@@ -127,11 +126,6 @@ export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
 		id: "time-tracking",
 		labelKey: "nav.time-tracking",
 		labelDefault: "Time Tracking",
-	},
-	{
-		id: "absences",
-		labelKey: "nav.absences",
-		labelDefault: "Absences",
 	},
 	{
 		id: "scheduling",
@@ -345,13 +339,13 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "policies",
 	},
 	{
-		id: "vacation",
-		titleKey: "settings.vacation.title",
-		titleDefault: "Vacation",
-		descriptionKey: "settings.vacation.description",
-		descriptionDefault: "Manage vacation policies and allowances",
+		id: "absences",
+		titleKey: "nav.absences",
+		titleDefault: "Absences",
+		descriptionKey: "settings.holidays.description",
+		descriptionDefault: "Configure organization holidays and time off",
 		href: "/settings/vacation",
-		icon: "beach",
+		icon: "calendar-event",
 		minimumTier: "manager",
 		group: "policies",
 	},
@@ -426,17 +420,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		icon: "shield-check",
 		minimumTier: "orgAdmin",
 		group: "time-tracking",
-	},
-	{
-		id: "holidays",
-		titleKey: "settings.holidays.title",
-		titleDefault: "Holidays",
-		descriptionKey: "settings.holidays.description",
-		descriptionDefault: "Configure organization holidays and time off",
-		href: "/settings/holidays",
-		icon: "calendar-event",
-		minimumTier: "manager",
-		group: "absences",
 	},
 	{
 		id: "skills",

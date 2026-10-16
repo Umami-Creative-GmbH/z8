@@ -165,7 +165,7 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/settings/teams-notifications": ["common", "settings/generic", "settings/integrations"],
 	"/settings/telegram": ["common", "settings/generic", "settings/integrations"],
 	"/settings/travel-expenses": ["common", "settings/generic", "travelExpenses"],
-	"/settings/vacation": ["common", "settings/generic", "settings/vacation"],
+	"/settings/vacation": ["common", "settings/generic", "settings/vacation", "settings/holidays", "settings/rules", "settings/people"],
 	"/settings/webhooks": ["common", "settings/generic", "webhooks"],
 	"/settings/work-categories": ["common", "settings/generic", "settings/rules"],
 	"/settings/vehicles": ["common", "settings/generic", "settings/workPolicies"],

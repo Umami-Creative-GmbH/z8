@@ -38,10 +38,10 @@ describe("settings visibility tiers", () => {
 		expect(entries.some((entry) => entry.id === "calendar")).toBe(true);
 		expect(entries.some((entry) => entry.id === "change-policies")).toBe(false);
 		expect(entries.some((entry) => entry.id === "employees")).toBe(true);
-		expect(entries.some((entry) => entry.id === "holidays")).toBe(true);
+		expect(entries.some((entry) => entry.id === "holidays")).toBe(false);
 		expect(entries.some((entry) => entry.id === "locations")).toBe(true);
 		expect(entries.some((entry) => entry.id === "skills")).toBe(true);
-		expect(entries.some((entry) => entry.id === "vacation")).toBe(true);
+		expect(entries.some((entry) => entry.id === "absences")).toBe(true);
 		expect(entries.some((entry) => entry.id === "work-categories")).toBe(true);
 		expect(entries.some((entry) => entry.id === "work-policies")).toBe(true);
 		expect(entries.some((entry) => entry.id === "shift-templates")).toBe(true);
@@ -305,7 +305,7 @@ describe("settings visibility tiers", () => {
 			entries
 				.filter((entry) => entry.group === "policies")
 				.map((entry) => entry.id),
-		).toEqual(["work-policies", "vacation", "approval", "travel-expenses"]);
+		).toEqual(["work-policies", "absences", "approval", "travel-expenses"]);
 		expect(entries.find((entry) => entry.id === "approval")).toMatchObject({
 			titleDefault: "Approval",
 			href: "/settings/approval-policies",
@@ -326,6 +326,21 @@ describe("settings visibility tiers", () => {
 			},
 		);
 		expect(entries.some((entry) => entry.id === "change-policies")).toBe(false);
+	});
+
+	it("combines holidays and vacation in one Absences entry under Policies", () => {
+		const entries = getVisibleSettings("manager", false);
+		expect(entries.find((entry) => entry.id === "absences")).toMatchObject({
+			group: "policies",
+			titleDefault: "Absences",
+			href: "/settings/vacation",
+			minimumTier: "manager",
+		});
+		expect(
+			entries.some(
+				(entry) => entry.id === "holidays" || entry.id === "vacation",
+			),
+		).toBe(false);
 	});
 
 	it("groups notification preferences and channel configuration together", () => {
@@ -366,7 +381,6 @@ describe("settings visibility tiers", () => {
 			"organization",
 			"policies",
 			"time-tracking",
-			"absences",
 			"scheduling",
 			"projects",
 			"payroll",
