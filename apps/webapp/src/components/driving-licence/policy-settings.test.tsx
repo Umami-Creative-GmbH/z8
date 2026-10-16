@@ -25,6 +25,11 @@ vi.mock("@/lib/organization/driving-licence/policy-actions", () => ({
 	enrollDrivingLicenceEmployeeAction: api.enroll,
 }));
 
+vi.mock("@/lib/organization/driving-licence/interval-actions", () => ({
+	previewDrivingLicenceIntervalAction: vi.fn(),
+	applyDrivingLicenceIntervalAction: vi.fn(),
+}));
+
 import { DrivingLicenceSettings } from "./policy-settings";
 
 beforeEach(() => {
@@ -77,4 +82,31 @@ it("lets an administrator choose retention, save a policy, and enroll an employe
 		).toBeTruthy(),
 	);
 	expect(api.enroll).toHaveBeenCalledWith({ employeeId: "e1311" });
+});
+it("routes an existing policy's interval edits to impact preview", () => {
+	render(
+		<DrivingLicenceSettings
+			data={{
+				policy: {
+					enabled: true,
+					intervalMonths: 6,
+					timezone: "Europe/Berlin",
+					reminderLeadDays: [7],
+					retentionMonths: 36,
+					retentionJustification: "Organization evidence retention",
+				},
+				employees: [],
+				participants: [],
+			}}
+		/>,
+	);
+	expect(
+		screen.getByLabelText("Routine check interval (months)"),
+	).toHaveProperty("readOnly", true);
+	expect(
+		screen.getByRole("button", { name: "Preview interval impact" }),
+	).toBeTruthy();
+	expect(
+		screen.queryByRole("button", { name: "Apply interval change" }),
+	).toBeNull();
 });

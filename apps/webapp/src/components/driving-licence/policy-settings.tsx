@@ -19,6 +19,7 @@ import {
 	saveDrivingLicencePolicyAction,
 } from "@/lib/organization/driving-licence/policy-actions";
 import { DrivingStatusLabel } from "./check-evidence";
+import { DrivingLicenceIntervalSettings } from "./interval-settings";
 export interface DrivingLicenceSettingsData {
 	policy: DrivingLicencePolicyInput | null;
 	employees: {
@@ -52,6 +53,7 @@ export function DrivingLicenceSettings({
 			setError("");
 			const result = await saveDrivingLicencePolicyAction({
 				...value,
+				intervalMonths: data.policy?.intervalMonths ?? value.intervalMonths,
 				reminderLeadDays: value.reminderLeadDays
 					.split(",")
 					.map((s) => Number(s.trim())),
@@ -155,7 +157,8 @@ export function DrivingLicenceSettings({
 											max={120}
 											step={1}
 											required
-											value={field.state.value}
+											value={data.policy?.intervalMonths ?? field.state.value}
+											readOnly={data.policy !== null}
 											onChange={(event) =>
 												field.handleChange(Number(event.target.value))
 											}
@@ -300,6 +303,12 @@ export function DrivingLicenceSettings({
 						)}
 					</form.Subscribe>
 				</form>
+				{data.policy ? (
+					<DrivingLicenceIntervalSettings
+						key={data.policy.intervalMonths}
+						intervalMonths={data.policy.intervalMonths}
+					/>
+				) : null}
 			</section>
 			<p role="status" className="text-sm" aria-live="polite">
 				{message}
