@@ -1,0 +1,150 @@
+{
+  "date": "2026-10-16",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "complete": false,
+  "findings": [
+    {
+      "id": "M01",
+      "route": "/settings/employees",
+      "severity": "Medium",
+      "issue": "Employee directory requires extensive horizontal scrolling to reach the row actions.",
+      "evidence": "At 390 px viewport width, the table is 1041 px wide inside a 306 px scrolling container. The populated state contains 16 employee rows. Team, role, contract, status and actions are off the initial screen.",
+      "fix": "Use employee cards at phone widths or keep the employee name and row action visible while allowing optional columns to scroll.",
+      "source": "apps/webapp/src/app/[locale]/(app)/settings/employees/employees-page-client.tsx:446"
+    },
+    {
+      "id": "M02",
+      "route": "/time-tracking",
+      "severity": "Medium",
+      "issue": "Time-entry history keeps a desktop table at phone widths.",
+      "evidence": "At 390 px viewport width, the history table is 639 px wide inside a 296 px scrolling container. Ten rows are populated. Reading both clock endpoints, duration and description requires horizontal scrolling.",
+      "fix": "Offer a stacked work-period row on mobile, with both endpoints and duration visible and details behind an explicit expansion.",
+      "source": "apps/webapp/src/components/time-tracking/time-entries-table.tsx:141"
+    }
+  ],
+  "measurements": [
+    {
+      "route": "/settings/employees",
+      "viewportWidth": 390,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "tableRows": [
+        {
+          "headers": [
+            "Employee",
+            "Personnel number",
+            "Position",
+            "Team",
+            "Role",
+            "Contract",
+            "Status",
+            "Actions"
+          ],
+          "rows": 16
+        }
+      ],
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 306,
+          "scrollWidth": 1041,
+          "overflow": "auto"
+        }
+      ]
+    },
+    {
+      "route": "/time-tracking",
+      "viewportWidth": 390,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "tableRows": [
+        {
+          "headers": [
+            "Date",
+            "Clock In\nRecorded local time",
+            "Clock Out\nRecorded local time",
+            "Duration",
+            "Description",
+            ""
+          ],
+          "rows": 10
+        }
+      ],
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 296,
+          "scrollWidth": 639,
+          "overflow": "auto"
+        },
+        {
+          "tag": "SPAN",
+          "width": 200,
+          "scrollWidth": 206,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "SPAN",
+          "width": 200,
+          "scrollWidth": 206,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "SPAN",
+          "width": 200,
+          "scrollWidth": 305,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "SPAN",
+          "width": 200,
+          "scrollWidth": 250,
+          "overflow": "hidden"
+        }
+      ]
+    },
+    {
+      "route": "/calendar",
+      "viewportWidth": 390,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "tableRows": [],
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 356,
+          "scrollWidth": 384,
+          "overflow": "hidden"
+        }
+      ]
+    },
+    {
+      "route": "/notifications",
+      "viewportWidth": 390,
+      "documentWidth": 390,
+      "mainWidth": 390,
+      "mainScroll": 390,
+      "tableRows": [],
+      "scrollContainers": [
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 364,
+          "overflow": "hidden"
+        },
+        {
+          "tag": "DIV",
+          "width": 346,
+          "scrollWidth": 364,
+          "overflow": "visible"
+        }
+      ]
+    }
+  ]
+}
