@@ -41,7 +41,7 @@ A **kiosk-only employee** has no sign-in and clocks only at kiosks. Their seat i
 - The billing page lists full seats and kiosk seats with their prices, and the total matches your invoice.
 
 <Callout type="info">
-Kiosk seats are available once both kiosk seat prices are configured (`STRIPE_PRICE_KIOSK_MONTHLY_ID` and `STRIPE_PRICE_KIOSK_YEARLY_ID`, on the web app and the worker). Until then, every seat is billed as a full seat and the kiosk seat price is not shown.
+Kiosk seats are available once both kiosk seat prices are configured (`STRIPE_PRICE_KIOSK_MONTHLY_ID` and `STRIPE_PRICE_KIOSK_YEARLY_ID`, on the web app and the worker). Until then, every seat is billed as a full seat and the kiosk seat price is not shown. On a deployment that already has subscriptions, run `pnpm billing:reconcile-kiosk-seats` once after setting both prices, so existing subscriptions move their kiosk-only employees to kiosk seats. The deployment README (`deploy/README.md`) describes this step.
 </Callout>
 
 ## Free Trial
