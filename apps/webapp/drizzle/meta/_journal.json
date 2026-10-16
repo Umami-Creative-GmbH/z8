@@ -1744,6 +1744,13 @@
       "when": 1806249600000,
       "tag": "20261017_driving_licence_supplements",
       "breakpoints": true
+    },
+    {
+      "idx": 251,
+      "version": "7",
+      "when": 1806422400000,
+      "tag": "20261017_driving_licence_retention",
+      "breakpoints": true
     }
   ]
 }
