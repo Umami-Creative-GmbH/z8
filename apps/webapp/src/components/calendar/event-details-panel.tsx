@@ -212,6 +212,15 @@ function WorkPeriodDetails({
 					}
 				/>
 			)}
+			{projectsEnabled && metadata.projectName && metadata.missingTask && (
+				<DetailValue
+					label={t("calendar.details.task", "Task")}
+					value={t(
+						"calendar.details.missingTask",
+						"Missing task. This project requires one: edit the booking to add it.",
+					)}
+				/>
+			)}
 			<WorkDurationDetails t={t} hasSurcharge={hasSurcharge} metadata={metadata} />
 			{metadata.surchargeBreakdown && metadata.surchargeBreakdown.length > 0 && (
 				<div>

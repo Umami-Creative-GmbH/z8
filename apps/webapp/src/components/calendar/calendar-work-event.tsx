@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCoin } from "@tabler/icons-react";
+import { IconCoin, IconListCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { WorkLocationIndicator } from "@/components/time-tracking/work-location-indicator";
@@ -19,7 +19,11 @@ interface CalendarWorkEventProps {
 		end?: { hour?: number; minute?: number };
 		_eventData?: {
 			type: string;
-			metadata: { workLocationType?: string | null; isBillable?: boolean };
+			metadata: {
+				workLocationType?: string | null;
+				isBillable?: boolean;
+				missingTask?: true;
+			};
 		};
 	};
 }
@@ -69,6 +73,19 @@ function CalendarWorkEvent({
 					role="img"
 					aria-label={t("calendar.workPeriod.billable", "Billable")}
 				/>
+			) : null}
+			{calendarEvent._eventData?.type === "work_period" &&
+			calendarEvent._eventData.metadata.missingTask ? (
+				<span
+					className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-400"
+					title={t("calendar.workPeriod.missingTaskHint", "Missing task: add a task")}
+				>
+					<IconListCheck
+						className="size-3"
+						role="img"
+						aria-label={t("calendar.workPeriod.missingTask", "Missing task")}
+					/>
+				</span>
 			) : null}
 			<div className="min-w-0 flex-1">
 				{html ? (

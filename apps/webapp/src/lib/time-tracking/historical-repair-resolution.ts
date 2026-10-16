@@ -33,8 +33,8 @@ export type HistoricalRepairResolution = {
 
 /**
  * The resolution an explicit field repair names. A repaired project takes the
- * task and billability the canonical record already allocates to it (#873,
- * #900); otherwise the task follows the project (kept on the same project,
+ * task, missing-task marker and billability the canonical record already
+ * allocates to it (#873, #884, #900); otherwise the task follows the project (kept on the same project,
  * cleared on another) and a new project's billable default applies.
  * Record endpoints name the interval; work records requires them to be the
  * period's own, since a repair never moves an endpoint.
@@ -67,6 +67,8 @@ export function fieldRepairResolution(
 				if (allocated) {
 					attribution.task = allocated.taskId;
 					attribution.billable = allocated.isBillable;
+					// The missing-task marker travels with the task (#884).
+					attribution.missingTask = allocated.missingTask;
 				}
 				break;
 			}

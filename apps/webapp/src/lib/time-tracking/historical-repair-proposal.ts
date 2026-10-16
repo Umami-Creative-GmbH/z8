@@ -473,9 +473,14 @@ function applyToEvidence(
 							: null;
 				const billable =
 					resolution.attribution?.billable ?? (sameProject ? (period.isBillable ?? false) : false);
+				// The missing-task marker travels with the task (#884).
+				const missingTask =
+					task === null &&
+					(resolution.attribution?.missingTask ?? (sameProject && (period.missingTask ?? false)));
 				changedPeriod.projectId = projectId;
 				changedPeriod.taskId = task;
 				changedPeriod.isBillable = billable;
+				changedPeriod.missingTask = missingTask;
 				if (changedRecord) {
 					changedRecord.allocations = [
 						...changedRecord.allocations.filter(
@@ -488,6 +493,7 @@ function applyToEvidence(
 							costCenterId: null,
 							weightPercent: 100,
 							isBillable: billable,
+							missingTask,
 						},
 					];
 				}

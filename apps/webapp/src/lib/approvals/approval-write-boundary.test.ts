@@ -4649,7 +4649,7 @@ export function wrongCompletedPeriodOwner() {
 export function writeAmendedPair() {
   return db.update(workPeriod).set({
     clockInId, clockOutId, startTime, endTime, durationMinutes, approvalStatus, pendingChanges,
-    projectId, taskId, isBillable, workCategoryId, workLocationType,
+    projectId, taskId, isBillable, missingTask, workCategoryId, workLocationType,
     vehicleKind, vehicleId, odometerStartKm, odometerEndKm, drivenDistanceKm, graphRevision,
   });
 }

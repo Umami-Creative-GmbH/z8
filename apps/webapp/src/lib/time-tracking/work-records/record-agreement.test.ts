@@ -95,6 +95,23 @@ describe("recordAgreement", () => {
 		});
 	});
 
+	it("compares the missing-task marker as part of the task (#884)", () => {
+		const untasked = { ...period, taskId: null };
+		const marked = { ...untasked, missingTask: true };
+		const allocation = (missingTask: boolean) =>
+			withProjectAllocations({ taskId: null, missingTask } as Partial<typeof projectAllocation>);
+
+		expect(recordAgreement(marked, allocation(true))).toEqual({ agrees: true, disagreements: [] });
+		expect(recordAgreement(marked, allocation(false))).toEqual({
+			agrees: false,
+			disagreements: ["task"],
+		});
+		expect(recordAgreement({ ...untasked, missingTask: false }, allocation(true))).toEqual({
+			agrees: false,
+			disagreements: ["task"],
+		});
+	});
+
 	it("agrees on work without a project and without vehicle use", () => {
 		const unbooked = {
 			...period,

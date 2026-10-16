@@ -341,6 +341,44 @@ describe("kiosk clocking on PostgreSQL", () => {
 			expect(only(rows)).toEqual({ work_location_type: "office" });
 		});
 
+		// Nobody at a kiosk picks a task (#884, Projects ADR 0002): accepted and marked (#1295).
+		it("clocks out without a task on a project that requires one and marks the work", async () => {
+			const projectId = randomUUID();
+			await admin.query(
+				`insert into project (id, organization_id, name, status, is_active, requires_task, created_by, updated_at)
+				 values ($1, $2, 'Requires a task', 'active', true, true, $3, now())`,
+				[projectId, ids.organization, ids.managerUser],
+			);
+			await admin.query(
+				`insert into project_task (id, organization_id, project_id, name, state, created_by, updated_at)
+				 values ($1, $2, $3, 'Design', 'open', $4, now())`,
+				[randomUUID(), ids.organization, projectId, ids.managerUser],
+			);
+			await clock({ action: "clock_in" });
+			await admin.query("update work_period set project_id = $2 where employee_id = $1", [
+				ids.worker,
+				projectId,
+			]);
+			now = parseInstant("2026-07-22T10:00:00Z");
+
+			await expect(clock({ action: "clock_out" })).resolves.toMatchObject({
+				status: 200,
+				body: { outcome: "executed" },
+			});
+			const { rows } = await admin.query(
+				`select p.project_id, p.task_id, p.missing_task, a.missing_task as allocation_missing_task
+				 from work_period p
+				 join time_record_allocation a
+				   on a.record_id = p.canonical_record_id and a.organization_id = p.organization_id
+				  and a.allocation_kind = 'project'
+				 where p.employee_id = $1`,
+				[ids.worker],
+			);
+			expect(rows).toEqual([
+				{ project_id: projectId, task_id: null, missing_task: true, allocation_missing_task: true },
+			]);
+		});
+
 		it("takes a break and clocks out, recording the kiosk on every entry and receipt", async () => {
 			const { service, followUps } = newService();
 			const run = async (body: Record<string, unknown>) => {
