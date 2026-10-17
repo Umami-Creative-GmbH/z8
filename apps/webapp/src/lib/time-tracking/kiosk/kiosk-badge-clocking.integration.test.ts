@@ -839,6 +839,210 @@ describe("kiosk badge clocking on PostgreSQL", () => {
 		});
 	});
 
+	/**
+	 * #1367: the same badges read with the kiosk's camera. The kiosk says which
+	 * input read the badge (`badgeInput: "camera"`; without it, the attached
+	 * scanner), and each input counts only while its own switch is on.
+	 */
+	describe("camera input (#1367)", () => {
+		async function setInputs(inputs: { scanner: boolean; camera: boolean }) {
+			await admin.query(
+				`update kiosk set badge_scanner_enabled = $2, badge_camera_enabled = $3
+				 where organization_id = $4 and id = $1`,
+				[ids.kiosk, inputs.scanner, inputs.camera, ids.organization],
+			);
+		}
+
+		async function cameraScan(badge: string, token?: string) {
+			return answer(
+				await newService().service.status(
+					kioskRequest("employee-status", { badge, badgeInput: "camera" }, token),
+				),
+			);
+		}
+
+		const DISABLED = { status: 403, body: { code: "badge_input_disabled" } };
+
+		async function switchKiosk(change: {
+			badgeScannerEnabled?: boolean;
+			badgeCameraEnabled?: boolean;
+		}) {
+			await withAuditTrail((audit) =>
+				db.transaction((tx) =>
+					updateKiosk(tx, audit, {
+						organizationId: ids.organization,
+						actorUserId: ids.managerUser,
+						kioskId: ids.kiosk,
+						change,
+					}),
+				),
+			);
+		}
+
+		describe.each([
+			["legacy", "inactive"],
+			["append", "active"],
+		] as const)("%s admission", (_admission, mode) => {
+			beforeEach(async () => {
+				await setAdmission(mode);
+				await setInputs({ scanner: false, camera: true });
+			});
+
+			it("identifies the employee from a camera-read badge, then clocks on an explicit action", async () => {
+				const scanned = await cameraScan(worker());
+				expect(scanned).toMatchObject({
+					status: 200,
+					body: {
+						employee: { id: ids.worker, name: "Wanda Worker" },
+						state: { status: "clocked_out" },
+					},
+				});
+				expect(await work()).toEqual(nothing);
+				expect(pinAttempts).toEqual([]);
+				expect(badgeAttempts).toEqual([ids.kiosk]);
+
+				const operationId = randomUUID();
+				const clocked = await act(worker(), {
+					badgeInput: "camera",
+					employeeId: ids.worker,
+					action: "clock_in",
+					operationId,
+				});
+				expect(clocked).toMatchObject({
+					status: 200,
+					body: { outcome: "executed", at: { instant: "2026-07-22T06:00:00Z", zone: KIOSK_ZONE } },
+				});
+				expect((await entries()).map((entry) => [entry.type, entry.device_info])).toEqual([
+					["clock_in", `kiosk:${ids.kiosk}`],
+				]);
+				// The #1363 recovery contract holds for camera actions too.
+				expect(await outcome({ operationId, employeeId: ids.worker, action: "clock_in" })).toEqual({
+					status: 200,
+					body: { outcome: "committed", action: "clock_in", at: clocked.body.at },
+				});
+			});
+
+			it("rechecks a camera badge inside the work transaction while a revocation is committing", async () => {
+				const holder = await admin.connect();
+				try {
+					await holder.query("begin");
+					await holder.query(
+						`update employee_kiosk_badge set revoked_at = now(), revoked_reason = 'revoked'
+						 where employee_id = $1 and revoked_at is null`,
+						[ids.worker],
+					);
+					const { rows } = await holder.query<{ pid: number }>("select pg_backend_pid() as pid");
+					const action = act(worker(), {
+						badgeInput: "camera",
+						action: "clock_in",
+						operationId: randomUUID(),
+					});
+					await waitForWaiter(only(rows).pid);
+					await holder.query("commit");
+
+					await expect(action).resolves.toEqual(NOT_ACCEPTED);
+				} finally {
+					holder.release();
+				}
+				expect(await work()).toEqual(nothing);
+			});
+		});
+
+		describe("its switch", () => {
+			beforeEach(async () => {
+				await setAdmission("active");
+			});
+
+			it("accepts each input only while its own switch is on", async () => {
+				await setInputs({ scanner: false, camera: true });
+				expect(await scan(worker())).toEqual(DISABLED);
+				expect((await cameraScan(worker())).status).toBe(200);
+
+				await setInputs({ scanner: true, camera: false });
+				expect(await cameraScan(worker())).toEqual(DISABLED);
+				expect(
+					await act(worker(), {
+						badgeInput: "camera",
+						action: "clock_in",
+						operationId: randomUUID(),
+					}),
+				).toEqual(DISABLED);
+				expect((await scan(worker())).status).toBe(200);
+				expect(await work()).toEqual(nothing);
+
+				await setInputs({ scanner: false, camera: false });
+				expect(await cameraScan(worker())).toEqual(DISABLED);
+				expect(await scan(worker())).toEqual(DISABLED);
+			});
+
+			it("refuses a camera action after the camera was switched off since the scan, while the scanner keeps working", async () => {
+				await setInputs({ scanner: true, camera: true });
+				expect((await cameraScan(worker())).status).toBe(200);
+				await switchKiosk({ badgeCameraEnabled: false });
+
+				expect(
+					await act(worker(), {
+						badgeInput: "camera",
+						action: "clock_in",
+						operationId: randomUUID(),
+					}),
+				).toEqual(DISABLED);
+				expect(await work()).toEqual(nothing);
+				expect(
+					await act(worker(), { action: "clock_in", operationId: randomUUID() }),
+				).toMatchObject({ status: 200, body: { outcome: "executed" } });
+			});
+
+			it("keeps refusing what a badge does not prove, whichever input read it", async () => {
+				await setInputs({ scanner: false, camera: true });
+				for (const badge of [
+					`K8B${"2".repeat(53)}`,
+					badges[ids.foreign] ?? "",
+					badges[ids.stranger] ?? "",
+				]) {
+					expect(await cameraScan(badge)).toEqual(NOT_ACCEPTED);
+				}
+				expect(
+					await act(worker(), {
+						badgeInput: "camera",
+						employeeId: ids.kioskOnly,
+						action: "clock_in",
+						operationId: randomUUID(),
+					}),
+				).toEqual(NOT_ACCEPTED);
+				for (const employeeId of [ids.worker, ids.kioskOnly, ids.stranger, ids.foreign]) {
+					expect(await work(employeeId)).toEqual(nothing);
+				}
+			});
+
+			it("refuses an input it does not know", async () => {
+				await setInputs({ scanner: true, camera: true });
+				for (const badgeInput of ["photo", "nfc", 1]) {
+					expect(
+						await answer(
+							await newService().service.status(
+								kioskRequest("employee-status", { badge: worker(), badgeInput }),
+							),
+						),
+					).toEqual({ status: 400, body: { code: "invalid_request" } });
+				}
+				// A PIN call names no badge input.
+				expect(
+					await answer(
+						await newService().service.status(
+							kioskRequest("employee-status", {
+								employeeId: ids.worker,
+								pin: PIN,
+								badgeInput: "camera",
+							}),
+						),
+					),
+				).toEqual({ status: 400, body: { code: "invalid_request" } });
+				expect(badgeAttempts).toEqual([]);
+			});
+		});
+	});
+
 	describe("Clocking's own badge authorization", () => {
 		beforeEach(async () => {
 			await setAdmission("active");
@@ -896,6 +1100,28 @@ describe("kiosk badge clocking on PostgreSQL", () => {
 			});
 			if (proven.status !== "verified") throw new Error(proven.status);
 			await revokeKioskBadge(db, manage(ids.worker), clockPort);
+
+			await expect(clockIn(principal(proven.proof))).resolves.toEqual({
+				outcome: "refused",
+				failure: { code: "access_denied" },
+			});
+			expect(await work()).toEqual(nothing);
+		});
+
+		it("refuses a camera badge proof once the kiosk's camera input is off, even without the endpoint (#1367)", async () => {
+			await admin.query(
+				"update kiosk set badge_scanner_enabled = true, badge_camera_enabled = true where id = $1",
+				[ids.kiosk],
+			);
+			const proven = await proveKioskBadge(db, {
+				organizationId: ids.organization,
+				kioskId: ids.kiosk,
+				credential: worker(),
+				input: "camera",
+				now,
+			});
+			if (proven.status !== "verified") throw new Error(proven.status);
+			await admin.query("update kiosk set badge_camera_enabled = false where id = $1", [ids.kiosk]);
 
 			await expect(clockIn(principal(proven.proof))).resolves.toEqual({
 				outcome: "refused",

@@ -645,6 +645,9 @@ importers:
       ioredis:
         specifier: ^6.0.0
         version: 6.0.0(supports-color@8.1.1)
+      jsqr:
+        specifier: 1.4.0
+        version: 1.4.0
       jszip:
         specifier: ^3.10.2
         version: 3.10.2
@@ -832,9 +835,6 @@ importers:
       jsdom:
         specifier: ^30.1.2
         version: 30.1.2(@noble/hashes@2.4.0)
-      jsqr:
-        specifier: 1.4.0
-        version: 1.4.0
       portless:
         specifier: 0.15.7
         version: 0.15.7

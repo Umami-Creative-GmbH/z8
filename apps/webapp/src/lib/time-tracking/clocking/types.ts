@@ -2,6 +2,7 @@ import type { employee, timeEntry } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import type { AttributionIntent, ClockChannel, CloseActiveWorkResult } from "../close-active-work";
+import type { KioskBadgeInput } from "../kiosk/protocol";
 import type { ProjectTaskIneligibility } from "../project-eligibility";
 import type { BreakVehicleUse, ClockVehicleUse } from "../vehicle-use/clock-vehicle-use";
 import type { WorkLocationType } from "../work-location";
@@ -89,8 +90,12 @@ export type KioskPinProof = {
 	readonly badge?: KioskBadgeProof;
 };
 
-/** The badge a badge proof was issued for; never its credential. */
-export type KioskBadgeProof = { readonly badgeId: string };
+/**
+ * The badge a badge proof was issued for; never its credential. `input` is the
+ * kiosk input that read it (#1367); absent, the attached scanner (#1366). The
+ * proof authorizes only while that input's switch is on.
+ */
+export type KioskBadgeProof = { readonly badgeId: string; readonly input?: KioskBadgeInput };
 
 /**
  * Where a frozen kiosk command's instant came from (#1289): the server time of

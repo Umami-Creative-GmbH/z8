@@ -54,7 +54,19 @@ export type KioskRefusalCode = "kiosk_unknown" | "kiosk_revoked";
  * inactive or unassigned employee, or another `employeeId`; it names nobody),
  * 429 `rate_limited` (the kiosk's own badge limit, never the PIN's). A badge
  * action whose authority ended after the scan is refused the same way.
+ *
+ * Camera (#1367): a badge the kiosk read with its own camera is sent the same
+ * way with `badgeInput: "camera"`; without `badgeInput` (or with `"scanner"`) it
+ * came from the attached scanner. Each input counts only while its own switch
+ * is on (`badgeScannerEnabled`, `badgeCameraEnabled`); the other input's call is
+ * answered 403 `badge_input_disabled`. Only the decoded text is sent: no image
+ * ever leaves the device.
  */
+export const KIOSK_BADGE_INPUTS = ["scanner", "camera"] as const;
+
+/** Which of a kiosk's badge inputs read a badge (#1366, #1367). */
+export type KioskBadgeInput = (typeof KIOSK_BADGE_INPUTS)[number];
+
 export const KIOSK_CLOCK_ACTIONS = [
 	"clock_in",
 	"clock_out",
@@ -199,6 +211,12 @@ export type KioskDeviceInfo = {
 	 * answer) reads as off. Badge clocking always needs a connection.
 	 */
 	badgeScannerEnabled?: boolean;
+	/**
+	 * Whether the kiosk's home screen offers "Scan badge" with its own camera
+	 * (#1367), off by default and independent of the scanner. Read at every
+	 * contact; absent reads as off.
+	 */
+	badgeCameraEnabled?: boolean;
 };
 
 /**

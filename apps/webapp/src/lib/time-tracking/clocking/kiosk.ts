@@ -11,6 +11,7 @@ import {
 	kioskClockWriter,
 	liveClockOutWriter,
 } from "../close-active-work";
+import { kioskAcceptsBadgeInput } from "../kiosk/badge-input";
 import { lockActiveKioskBadge, resolveActiveKioskBadge } from "../kiosk/badge-store";
 import { claimKioskClockAttempt } from "../kiosk/clock-attempt";
 import {
@@ -18,7 +19,7 @@ import {
 	type KioskPinJudgment,
 	type QueuedKioskPinAttempt,
 } from "../kiosk/pin-store";
-import type { KioskClockAction } from "../kiosk/protocol";
+import type { KioskBadgeInput, KioskClockAction } from "../kiosk/protocol";
 import { type KioskPinVerification, verifyKioskPin } from "../kiosk/verify-kiosk-pin";
 import { kioskDeviceInfo } from "../receipt-actor";
 import { isValidIanaTimezone } from "../timezone-capture";
@@ -95,7 +96,14 @@ export async function proveKioskPin(
  */
 export async function proveKioskBadge(
 	client: Parameters<typeof resolveActiveKioskBadge>[0],
-	input: { organizationId: string; kioskId: string; credential: unknown; now: Instant },
+	input: {
+		organizationId: string;
+		kioskId: string;
+		credential: unknown;
+		/** The kiosk input that read the badge (#1367); absent, the attached scanner. */
+		input?: KioskBadgeInput;
+		now: Instant;
+	},
 ): Promise<{ status: "verified"; proof: KioskPinProof } | { status: "not_accepted" }> {
 	const badge = await resolveActiveKioskBadge(client, {
 		organizationId: input.organizationId,
@@ -107,7 +115,11 @@ export async function proveKioskBadge(
 		organizationId: input.organizationId,
 		kioskId: input.kioskId,
 		employeeId: badge.employeeId,
-		badge: Object.freeze({ badgeId: badge.badgeId }),
+		badge: Object.freeze(
+			input.input === "camera"
+				? { badgeId: badge.badgeId, input: "camera" as const }
+				: { badgeId: badge.badgeId },
+		),
 	});
 	issuedProofs.set(proof, performance.now());
 	return { status: "verified", proof };
@@ -242,7 +254,8 @@ type KioskStepClient = Parameters<typeof claimKioskClockAttempt>[0] &
 /**
  * The protected write boundary of a badge action (#1366): inside its work
  * transaction, which holds the employee key, the kiosk must still be active and
- * accept badges, the badge still active for the employee (access at `now`
+ * accept badges from the input that read this one (#1367: scanner or camera,
+ * each by its own switch), the badge still active for the employee (access at `now`
  * included), and the employee still assigned to the kiosk's active location.
  * Each row is locked (kiosk and assignment `FOR KEY SHARE`, the badge `FOR
  * UPDATE`), so a kiosk change, an unassignment or a badge change either
@@ -255,11 +268,16 @@ async function recheckKioskBadge(
 		kioskId: string;
 		employeeId: string;
 		badgeId: string;
+		input?: KioskBadgeInput;
 		now: Instant;
 	},
 ): Promise<void> {
 	const [active] = await tx
-		.select({ locationId: kiosk.locationId, badgeScannerEnabled: kiosk.badgeScannerEnabled })
+		.select({
+			locationId: kiosk.locationId,
+			badgeScannerEnabled: kiosk.badgeScannerEnabled,
+			badgeCameraEnabled: kiosk.badgeCameraEnabled,
+		})
 		.from(kiosk)
 		.where(
 			and(
@@ -271,7 +289,9 @@ async function recheckKioskBadge(
 		)
 		.for("key share")
 		.limit(1);
-	if (!active?.badgeScannerEnabled) throw new KioskAuthorityWithdrawnError();
+	if (!active || !kioskAcceptsBadgeInput(active, input.input)) {
+		throw new KioskAuthorityWithdrawnError();
+	}
 	if (!(await lockActiveKioskBadge(tx, input))) throw new KioskAuthorityWithdrawnError();
 	const [assigned] = await tx
 		.select({ id: employeeAssignedLocation.id })
@@ -328,6 +348,7 @@ export async function claimExecutedKioskAttempt<Result extends { disposition: st
 			kioskId: principal.kioskId,
 			employeeId: command.subject.employeeId,
 			badgeId: principal.pin.badge.badgeId,
+			input: principal.pin.badge.input,
 			now: claim.now,
 		});
 	}
@@ -439,6 +460,7 @@ export async function authorizedKioskSubject(
 			locationId: kiosk.locationId,
 			timezone: kiosk.timezone,
 			badgeScannerEnabled: kiosk.badgeScannerEnabled,
+			badgeCameraEnabled: kiosk.badgeCameraEnabled,
 		})
 		.from(kiosk)
 		.where(
@@ -451,8 +473,11 @@ export async function authorizedKioskSubject(
 		)
 		.limit(1);
 	if (!active || !isKioskCommandZone(query, principal.pin, active.timezone)) return null;
-	// A badge proves the employee only at a kiosk that accepts badges (#1366).
-	if (principal.pin.badge && !active.badgeScannerEnabled) return null;
+	// A badge proves the employee only at a kiosk that accepts badges (#1366) from
+	// the input that read it (#1367).
+	if (principal.pin.badge && !kioskAcceptsBadgeInput(active, principal.pin.badge.input)) {
+		return null;
+	}
 	const assigned = await isEmployeeActivelyAssignedToLocation(db, {
 		organizationId: query.organizationId,
 		employeeId: row.id,

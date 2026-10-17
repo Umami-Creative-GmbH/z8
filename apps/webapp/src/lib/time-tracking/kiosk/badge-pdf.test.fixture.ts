@@ -50,6 +50,16 @@ export function pdfTexts(pdf: Buffer): string[] {
 
 /** What the PDF's (single) RGB image decodes to as a QR code, or null when it decodes to nothing. */
 export function pdfQrCodeText(pdf: Buffer): string | null {
+	const { data, width, height } = pdfQrImage(pdf);
+	return jsQR(data, width, height)?.data ?? null;
+}
+
+/** The PDF's (single) RGB image as RGBA pixels, as a camera frame drawn on a canvas holds them (#1367). */
+export function pdfQrImage(pdf: Buffer): {
+	data: Uint8ClampedArray;
+	width: number;
+	height: number;
+} {
 	const images = streamsOf(pdf).filter(
 		(stream) =>
 			/\/Subtype \/Image/.test(stream.dictionary) && /\/DeviceRGB/.test(stream.dictionary),
@@ -71,5 +81,5 @@ export function pdfQrCodeText(pdf: Buffer): string | null {
 		rgba[pixel * 4 + 2] = image.data[pixel * 3 + 2] ?? 0;
 		rgba[pixel * 4 + 3] = 255;
 	}
-	return jsQR(rgba, width, height)?.data ?? null;
+	return { data: rgba, width, height };
 }

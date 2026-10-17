@@ -37,6 +37,10 @@ import { employee, location } from "./organization";
  *   place of the PIN (off by default). It grants nothing on its own: every badge
  *   action still needs the active kiosk, a current badge and an assigned,
  *   active employee.
+ * - `badge_camera_enabled` (#1367, spec #889) accepts the same badges read with
+ *   the kiosk's own camera ("Scan badge" on the home screen), off by default and
+ *   independent of the scanner switch. Frames are decoded on the device and
+ *   never leave it.
  */
 export const kiosk = pgTable(
 	"kiosk",
@@ -51,6 +55,7 @@ export const kiosk = pgTable(
 		boardEnabled: boolean("board_enabled").default(false).notNull(),
 		offlineModeEnabled: boolean("offline_mode_enabled").default(false).notNull(),
 		badgeScannerEnabled: boolean("badge_scanner_enabled").default(false).notNull(),
+		badgeCameraEnabled: boolean("badge_camera_enabled").default(false).notNull(),
 		tokenHash: text("token_hash"),
 		pairedAt: timestamp("paired_at", { withTimezone: true }),
 		pairingCodeHash: text("pairing_code_hash"),

@@ -158,6 +158,18 @@
         "rateLimited": "Zu viele Ausweis-Scans an diesem Kiosk. Versuchen Sie es in {seconds} Sekunden erneut oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
         "unreadable": "Dieser Code ist kein Kiosk-Ausweis. Es wurde nichts erfasst."
       },
+      "camera": {
+        "title": "Halten Sie Ihren Kiosk-Ausweis vor die Kamera",
+        "hint": "Halten Sie den QR-Code im Rahmen. Der Code wird auf diesem Kiosk gelesen; es wird kein Bild gespeichert.",
+        "preview": "Kameravorschau",
+        "starting": "Kamera wird gestartet…",
+        "notBadge": "Dieser Code ist kein Kiosk-Ausweis. Halten Sie Ihren Kiosk-Ausweis vor die Kamera.",
+        "cancel": "Scannen abbrechen",
+        "denied": "Der Kiosk darf die Kamera nicht verwenden. Erlauben Sie den Kamerazugriff für diese Seite im Browser, oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "missing": "Dieser Kiosk hat keine Kamera zum Scannen. Tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "unsupported": "Dieser Browser kann Ausweise nicht mit der Kamera scannen. Tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "failed": "Die Kamera konnte nicht gestartet werden. Versuchen Sie es erneut, oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden."
+      },
       "board": {
         "empty": "Derzeit ist niemand eingestempelt.",
         "title": "Wer ist anwesend"
@@ -186,6 +198,7 @@
         "loading": "Namen werden geladen…",
         "noMatch": "Kein Name entspricht Ihrer Suche.",
         "scanHint": "Oder scannen Sie Ihren Kiosk-Ausweis am Scanner.",
+        "scanBadge": "Ausweis scannen",
         "search": "Finden Sie Ihren Namen",
         "title": "Tippen Sie auf Ihren Namen, um sich ein- oder auszustempeln"
       },

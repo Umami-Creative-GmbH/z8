@@ -30,15 +30,18 @@ import {
 	kioskRefusalResponse,
 	resolveKioskFromRequest,
 } from "./authenticate";
+import { kioskAcceptsBadgeInput } from "./badge-input";
 import {
 	KioskAttemptClosedError,
 	type KioskAttemptResolution,
 	resolveKioskClockAttempt,
 } from "./clock-attempt";
 import { readKioskEmployeeState } from "./employee-state";
-import { readKioskBadgeScanner } from "./kiosk-store";
+import { readKioskBadgeInputs } from "./kiosk-store";
 import {
+	KIOSK_BADGE_INPUTS,
 	KIOSK_CLOCK_ACTIONS,
+	type KioskBadgeInput,
 	type KioskClockAction,
 	type KioskClockAttemptOutcome,
 	type KioskClockResult,
@@ -99,14 +102,17 @@ const pinProofFields = {
 	employeeId: z.string().uuid(),
 	pin: z.string().min(1).max(32),
 	badge: z.never().optional(),
+	badgeInput: z.never().optional(),
 };
 
 /**
  * A scanned kiosk badge instead (#1366): the badge names the employee. An
- * `employeeId` beside it may only repeat the badge's own employee.
+ * `employeeId` beside it may only repeat the badge's own employee. `badgeInput`
+ * says which kiosk input read it (#1367); absent, the attached scanner.
  */
 const badgeProofFields = {
 	badge: z.string().min(1).max(256),
+	badgeInput: z.enum(KIOSK_BADGE_INPUTS).optional(),
 	employeeId: z.string().uuid().optional(),
 	pin: z.never().optional(),
 };
@@ -263,17 +269,23 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 
 	/**
 	 * The employee a scanned badge proves (#1366): at a kiosk that accepts
-	 * badges, within its badge attempt limit, an active badge of the kiosk's
-	 * organization whose employee is active and assigned to the kiosk's location.
-	 * Every other badge reads alike (`badge_not_accepted`) and names nobody; a
-	 * named employee other than the badge's is refused the same way. Never a PIN
-	 * attempt.
+	 * badges from the input that read it (#1367: the scanner or the camera, each
+	 * by its own switch), within its badge attempt limit, an active badge of the
+	 * kiosk's organization whose employee is active and assigned to the kiosk's
+	 * location. Every other badge reads alike (`badge_not_accepted`) and names
+	 * nobody; a named employee other than the badge's is refused the same way.
+	 * Never a PIN attempt.
+	 *
+	 * The input is the kiosk's own word: the server cannot tell a camera read
+	 * from a scanner read, as both yield the same text. It is no security
+	 * boundary (the badge, the device token and the kiosk are), but it holds an
+	 * honest kiosk to what its admin switched on, through the turn's every action.
 	 */
 	async function admitBadge(
-		body: { badge: string; employeeId?: string },
+		body: { badge: string; badgeInput?: KioskBadgeInput; employeeId?: string },
 		kiosk: AuthenticatedKiosk,
 	): Promise<Admission> {
-		if (!(await readKioskBadgeScanner(db, kiosk))) {
+		if (!kioskAcceptsBadgeInput(await readKioskBadgeInputs(db, kiosk), body.badgeInput)) {
 			return { response: json({ code: "badge_input_disabled" }, 403) };
 		}
 		const limit = await limitBadgeAttempts(kiosk.kioskId);
@@ -287,6 +299,7 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			organizationId: kiosk.organizationId,
 			kioskId: kiosk.kioskId,
 			credential: body.badge,
+			...(body.badgeInput ? { input: body.badgeInput } : {}),
 			now: deps.clock.nowInstant(),
 		});
 		if (proven.status !== "verified") return refused;

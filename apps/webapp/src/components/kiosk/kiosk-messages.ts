@@ -16,7 +16,8 @@ export const KIOSK_PIN_REFUSALS: ReadonlySet<string> = new Set([
 
 /**
  * What the home screen says about a badge (#1366): why a scan opened no turn,
- * or why a badge turn ended without its action. Never names anyone, and always
+ * why a badge turn ended without its action, or (#1367) why the camera could
+ * not scan. Never names anyone, and always
  * points to the name-and-PIN way where it can help.
  */
 export function useKioskHomeNoticeMessage(offlineMode: boolean) {
@@ -64,6 +65,26 @@ export function useKioskHomeNoticeMessage(offlineMode: boolean) {
 				return t(
 					"timeTracking.kiosk.badge.notRecorded",
 					"Your action was not recorded. Scan your badge again to choose it again.",
+				);
+			case "camera_denied":
+				return t(
+					"timeTracking.kiosk.camera.denied",
+					"The kiosk may not use the camera. Allow camera access for this page in the browser, or tap your name to use your PIN.",
+				);
+			case "camera_missing":
+				return t(
+					"timeTracking.kiosk.camera.missing",
+					"This kiosk has no camera that can scan. Tap your name to use your PIN.",
+				);
+			case "camera_unsupported":
+				return t(
+					"timeTracking.kiosk.camera.unsupported",
+					"This browser cannot scan badges with the camera. Tap your name to use your PIN.",
+				);
+			case "camera_failed":
+				return t(
+					"timeTracking.kiosk.camera.failed",
+					"The camera could not be started. Try again, or tap your name to use your PIN.",
 				);
 		}
 	};

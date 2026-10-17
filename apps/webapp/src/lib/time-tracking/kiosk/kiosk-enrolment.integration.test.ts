@@ -281,6 +281,8 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				offlineMode: false,
 				// #1366: so is the attached-scanner badge input.
 				badgeScannerEnabled: false,
+				// #1367: and the camera badge input.
+				badgeCameraEnabled: false,
 			},
 		});
 		const resolved = await resolveKioskFromRequest(
@@ -707,6 +709,107 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				}),
 			).toMatchObject({ success: false, code: "invalid_selection" });
 			expect((await adminKiosks())[0]).toMatchObject({ badgeScannerEnabled: false });
+		});
+	});
+
+	describe("camera badge input (#1367)", () => {
+		type Inputs = { badgeScannerEnabled: boolean; badgeCameraEnabled: boolean };
+		async function sessionInputs(token: string): Promise<Inputs> {
+			const response = await session(token);
+			expect(response.status).toBe(200);
+			const { kiosk } = (await response.json()) as { kiosk: Inputs };
+			return {
+				badgeScannerEnabled: kiosk.badgeScannerEnabled,
+				badgeCameraEnabled: kiosk.badgeCameraEnabled,
+			};
+		}
+
+		it("is off for a new kiosk, and owners and admins switch it separately from the scanner", async () => {
+			const created = await createdKiosk();
+			const token = await pairedToken(created.pairingCode);
+			expect((await adminKiosks())[0]).toMatchObject({ badgeCameraEnabled: false });
+			expect(await sessionInputs(token)).toEqual({
+				badgeScannerEnabled: false,
+				badgeCameraEnabled: false,
+			});
+
+			for (const userId of [ids.ownerUser, ids.adminUser]) {
+				actAs(userId);
+				expect(
+					await admin.updateKioskAction({ kioskId: created.kioskId, badgeCameraEnabled: true }),
+				).toMatchObject({ success: true });
+				// The camera alone: the scanner stays off.
+				expect((await adminKiosks(userId))[0]).toMatchObject({
+					badgeScannerEnabled: false,
+					badgeCameraEnabled: true,
+				});
+				expect(await sessionInputs(token)).toEqual({
+					badgeScannerEnabled: false,
+					badgeCameraEnabled: true,
+				});
+				actAs(userId);
+				await admin.updateKioskAction({ kioskId: created.kioskId, badgeScannerEnabled: true });
+				actAs(userId);
+				// Switching the scanner off again leaves the camera on, and the other way round.
+				await admin.updateKioskAction({ kioskId: created.kioskId, badgeScannerEnabled: false });
+				expect(await sessionInputs(token)).toEqual({
+					badgeScannerEnabled: false,
+					badgeCameraEnabled: true,
+				});
+				actAs(userId);
+				await admin.updateKioskAction({ kioskId: created.kioskId, badgeScannerEnabled: true });
+				actAs(userId);
+				await admin.updateKioskAction({ kioskId: created.kioskId, badgeCameraEnabled: false });
+				expect(await sessionInputs(token)).toEqual({
+					badgeScannerEnabled: true,
+					badgeCameraEnabled: false,
+				});
+				actAs(userId);
+				await admin.updateKioskAction({ kioskId: created.kioskId, badgeScannerEnabled: false });
+			}
+
+			const { rows } = await pool.query<{ changes: string }>(
+				`select changes from audit_log where organization_id = $1 and entity_id = $2
+				 and action = 'kiosk.updated' order by timestamp`,
+				[ids.organization, created.kioskId],
+			);
+			expect(rows.map((row) => JSON.parse(row.changes))[0]).toEqual({
+				from: { badgeCameraEnabled: false },
+				to: { badgeCameraEnabled: true },
+			});
+			const { rows: creation } = await pool.query<{ changes: string }>(
+				`select changes from audit_log where organization_id = $1 and entity_id = $2
+				 and action = 'kiosk.created'`,
+				[ids.organization, created.kioskId],
+			);
+			expect(creation).toHaveLength(1);
+			expect(JSON.parse(creation[0]?.changes ?? "{}").to).toMatchObject({
+				badgeScannerEnabled: false,
+				badgeCameraEnabled: false,
+			});
+		});
+
+		it("does not let managers, members or another organization's admin switch it, nor a value that is not on or off", async () => {
+			const created = await createdKiosk();
+
+			for (const userId of [ids.managerUser, ids.memberUser]) {
+				actAs(userId);
+				expect(
+					await admin.updateKioskAction({ kioskId: created.kioskId, badgeCameraEnabled: true }),
+				).toMatchObject({ success: false, code: "admin_only" });
+			}
+			actAs(ids.foreignUser, ids.otherOrganization);
+			expect(
+				await admin.updateKioskAction({ kioskId: created.kioskId, badgeCameraEnabled: true }),
+			).toMatchObject({ success: false, code: "kiosk_not_found" });
+			actAs(ids.adminUser);
+			expect(
+				await admin.updateKioskAction({
+					kioskId: created.kioskId,
+					badgeCameraEnabled: "yes" as unknown as boolean,
+				}),
+			).toMatchObject({ success: false, code: "invalid_selection" });
+			expect((await adminKiosks())[0]).toMatchObject({ badgeCameraEnabled: false });
 		});
 	});
 
