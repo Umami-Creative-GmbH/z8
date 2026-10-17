@@ -19,36 +19,45 @@ import { Button } from "@/components/ui/button";
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
+	SelectLabel,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { TFormControl, TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
+import {
+	TFormControl,
+	TFormDescription,
+	TFormItem,
+	TFormLabel,
+} from "@/components/ui/tanstack-form";
+import {
+	closeScopeFromValue,
+	closeScopeValue,
+} from "@/lib/time-tracking/closed-months/close-scope";
 import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
-import type { CloseMonthBlocker, CloseMonthScope } from "@/lib/time-tracking/closed-months/store";
+import type { CloseMonthBlocker } from "@/lib/time-tracking/closed-months/store";
 import { useRouter } from "@/navigation";
 import { CloseMonthWarnings } from "./close-month-warnings";
 
-const ORGANIZATION = "__organization";
-
-function toCloseScope(value: string): CloseMonthScope {
-	return value === ORGANIZATION ? { kind: "organization" } : { kind: "team", teamId: value };
-}
+const ORGANIZATION = closeScopeValue({ kind: "organization" });
 
 /**
- * Closes one month for the organization or a team (#762). A refused close
- * lists what blocks it; nothing is closed then.
+ * Closes one month for the organization, a team (#762) or a location (#836). A
+ * refused close lists what blocks it; nothing is closed then.
  */
 export function CloseMonthPanel({
 	open,
 	month,
 	teams,
+	locations,
 	onOpenChange,
 	onClosed,
 }: {
 	open: boolean;
 	month: string | null;
 	teams: Array<{ id: string; name: string }>;
+	locations: Array<{ id: string; name: string }>;
 	onOpenChange: (open: boolean) => void;
 	/** Called after a successful close, besides refreshing the page. */
 	onClosed?: () => void;
@@ -60,8 +69,9 @@ export function CloseMonthPanel({
 	const form = useForm({
 		defaultValues: { scope: ORGANIZATION },
 		onSubmit: async ({ value }) => {
-			if (!month) return;
-			const result = await closeMonthAction({ month, scope: toCloseScope(value.scope) });
+			const scope = closeScopeFromValue(value.scope);
+			if (!month || !scope) return;
+			const result = await closeMonthAction({ month, scope });
 			if (!result.success) {
 				toast.error(result.error);
 				return;
@@ -96,6 +106,11 @@ export function CloseMonthPanel({
 					return;
 				case "team_not_found":
 					toast.error(t("settings.closedMonths.teamNotFound", "This team no longer exists."));
+					return;
+				case "location_not_found":
+					toast.error(
+						t("settings.closedMonths.locationNotFound", "This location no longer exists."),
+					);
 					return;
 			}
 		},
@@ -154,22 +169,59 @@ export function CloseMonthPanel({
 											<SelectItem value={ORGANIZATION}>
 												{t("settings.closedMonths.scope.organization", "Organization")}
 											</SelectItem>
-											{teams.map((team) => (
-												<SelectItem key={team.id} value={team.id}>
-													{team.name}
-												</SelectItem>
-											))}
+											{teams.length > 0 ? (
+												<SelectGroup>
+													<SelectLabel>
+														{t("settings.closedMonths.scope.teams", "Teams")}
+													</SelectLabel>
+													{teams.map((team) => (
+														<SelectItem
+															key={team.id}
+															value={closeScopeValue({ kind: "team", teamId: team.id })}
+														>
+															{team.name}
+														</SelectItem>
+													))}
+												</SelectGroup>
+											) : null}
+											{locations.length > 0 ? (
+												<SelectGroup>
+													<SelectLabel>
+														{t("settings.closedMonths.scope.locations", "Locations")}
+													</SelectLabel>
+													{locations.map((location) => (
+														<SelectItem
+															key={location.id}
+															value={closeScopeValue({
+																kind: "location",
+																locationId: location.id,
+															})}
+														>
+															{location.name}
+														</SelectItem>
+													))}
+												</SelectGroup>
+											) : null}
 										</SelectContent>
 									</Select>
+									{closeScopeFromValue(field.state.value)?.kind === "location" ? (
+										<TFormDescription>
+											{t(
+												"settings.closedMonths.scope.locationHelp",
+												"Closes the whole month for everyone assigned to this location now, including former employees. Their work at other locations is frozen too. Employees assigned later are not covered.",
+											)}
+										</TFormDescription>
+									) : null}
 								</TFormItem>
 							)}
 						</form.Field>
 						{blockers.length > 0 ? <CloseBlockers blockers={blockers} /> : null}
 						{open ? (
 							<form.Subscribe<string> selector={(state) => state.values.scope}>
-								{(scope: string) => (
-									<CloseMonthWarnings month={month} scope={toCloseScope(scope)} />
-								)}
+								{(value: string) => {
+									const scope = closeScopeFromValue(value);
+									return scope ? <CloseMonthWarnings month={month} scope={scope} /> : null;
+								}}
 							</form.Subscribe>
 						) : null}
 					</ActionPanelBody>

@@ -277,7 +277,13 @@ describe("skill expiry date (#1142)", () => {
 
 			expect(result.isQualified).toBe(false);
 			expect(result.expiredSkills).toEqual([
-				{ id: firstAid, name: "First aid", expiresAt: LAST_VALID_DAY, certificateOnFile: false },
+				{
+					id: firstAid,
+					name: "First aid",
+					expiresAt: LAST_VALID_DAY,
+					certificateOnFile: false,
+					isRequired: true,
+				},
 			]);
 		});
 
@@ -328,7 +334,7 @@ describe("skill expiry date (#1142)", () => {
 	});
 
 	describe("shift save warning", () => {
-		async function saveShift(person: SeededEmployee, day: string) {
+		async function saveShift(person: SeededEmployee, day: string, skillOverrideReason?: string) {
 			return run(
 				Effect.gen(function* () {
 					const service = yield* ShiftService;
@@ -340,6 +346,7 @@ describe("skill expiry date (#1142)", () => {
 						timezone: org.timezone,
 						startTime: "08:00",
 						endTime: "16:00",
+						skillOverrideReason,
 						createdBy: org.creator.userId,
 					});
 				}),
@@ -354,10 +361,16 @@ describe("skill expiry date (#1142)", () => {
 
 		it("warns about a skill that expires before a shift planned next month", async () => {
 			// The skill is valid today (2026-10); the shift is planned after its last valid day.
-			const saved = await saveShift(holder, DAY_AFTER);
+			const saved = await saveShift(holder, DAY_AFTER, "Renewal booked");
 
 			expect(saved.metadata.skillWarning?.expiredSkills).toEqual([
-				{ id: firstAid, name: "First aid", expiresAt: LAST_VALID_DAY, certificateOnFile: false },
+				{
+					id: firstAid,
+					name: "First aid",
+					expiresAt: LAST_VALID_DAY,
+					certificateOnFile: false,
+					isRequired: true,
+				},
 			]);
 		});
 	});

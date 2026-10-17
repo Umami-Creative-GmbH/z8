@@ -9,6 +9,16 @@ import {
 	ShiftRequestServiceLive,
 } from "./shift-request.service";
 
+// The fake transaction serializes request mutations only; the skill override
+// check runs against PostgreSQL in skill-override.integration.test.ts (#893).
+vi.mock("@/lib/scheduling/skill-override", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/scheduling/skill-override")>()),
+	decideSkillOverride: async () => ({ decision: { kind: "none" } }),
+}));
+vi.mock("@/lib/timezone/load-organization-timezone", () => ({
+	loadOrganizationTimezone: async () => "UTC",
+}));
+
 type EmployeeRow = {
 	id: string;
 	userId: string;

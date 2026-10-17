@@ -1,8 +1,16 @@
 "use client";
 
 import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useEffectEvent, useState, useTransition } from "react";
+import {
+	useEffect,
+	useEffectEvent,
+	useId,
+	useState,
+	useTransition,
+} from "react";
 import { toast } from "sonner";
 import {
 	deleteMappingAction,
@@ -53,6 +61,11 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
+	TFormControl,
+	TFormItem,
+	TFormLabel,
+} from "@/components/ui/tanstack-form";
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -96,6 +109,8 @@ interface MappingDraft {
 	lexwareName: string;
 	sageCode: string;
 	sageName: string;
+	successFactorsCode: string;
+	successFactorsName: string;
 }
 const EMPTY_DRAFT: MappingDraft = {
 	sourceType: "work_category",
@@ -108,6 +123,8 @@ const EMPTY_DRAFT: MappingDraft = {
 	lexwareName: "",
 	sageCode: "",
 	sageName: "",
+	successFactorsCode: "",
+	successFactorsName: "",
 };
 
 export function WageTypeMappings({
@@ -122,12 +139,64 @@ export function WageTypeMappings({
 		[],
 	);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
-	const [draft, setDraft] = useState<MappingDraft>(EMPTY_DRAFT);
-	const updateDraft = <K extends keyof MappingDraft>(
-		key: K,
-		value: MappingDraft[K],
-	) => setDraft((current) => ({ ...current, [key]: value }));
-	const resetForm = () => setDraft(EMPTY_DRAFT);
+	const form = useForm({
+		defaultValues: EMPTY_DRAFT,
+		onSubmit: ({ value }) => saveMapping(value),
+	});
+	const draft = useStore(form.store, (state) => state.values);
+	const updateDraft = (key: keyof MappingDraft, value: string) => {
+		if (key === "sourceType") {
+			if (
+				value === "work_category" ||
+				value === "absence_category" ||
+				value === "special"
+			) {
+				form.setFieldValue("sourceType", value);
+				form.setFieldValue("workCategoryId", "");
+				form.setFieldValue("absenceCategoryId", "");
+				form.setFieldValue("specialCategory", "");
+			}
+			return;
+		}
+		if (
+			key === "workCategoryId" ||
+			key === "absenceCategoryId" ||
+			key === "specialCategory"
+		) {
+			const existing = mappings.find((mapping) => mapping[key] === value);
+			const next: MappingDraft = {
+				...EMPTY_DRAFT,
+				sourceType: form.state.values.sourceType,
+				[key]: value,
+				datevCode: existing?.datevWageTypeCode ?? "",
+				datevName: existing?.datevWageTypeName ?? "",
+				lexwareCode: existing?.lexwareWageTypeCode ?? "",
+				lexwareName: existing?.lexwareWageTypeName ?? "",
+				sageCode: existing?.sageWageTypeCode ?? "",
+				sageName: existing?.sageWageTypeName ?? "",
+				successFactorsCode: existing?.successFactorsTimeTypeCode ?? "",
+				successFactorsName: existing?.successFactorsTimeTypeName ?? "",
+			};
+			for (const field of [
+				"workCategoryId",
+				"absenceCategoryId",
+				"specialCategory",
+				"datevCode",
+				"datevName",
+				"lexwareCode",
+				"lexwareName",
+				"sageCode",
+				"sageName",
+				"successFactorsCode",
+				"successFactorsName",
+			] as const) {
+				form.setFieldValue(field, next[field]);
+			}
+			return;
+		}
+		form.setFieldValue(key, value);
+	};
+	const resetForm = () => form.reset();
 	const refreshData = async (throwOnError = false) => {
 		let failure: unknown;
 		try {
@@ -139,7 +208,11 @@ export function WageTypeMappings({
 			if (mappingsResult.success) setMappings(mappingsResult.data);
 			if (workResult.success) setWorkCategories(workResult.data);
 			if (absenceResult.success) setAbsenceCategories(absenceResult.data);
-			if (!mappingsResult.success || !workResult.success || !absenceResult.success) {
+			if (
+				!mappingsResult.success ||
+				!workResult.success ||
+				!absenceResult.success
+			) {
 				failure = new Error("Failed to refresh wage type mappings");
 			}
 		} catch (error) {
@@ -148,7 +221,10 @@ export function WageTypeMappings({
 		if (failure) {
 			if (throwOnError) throw failure;
 			toast.error(
-				t("settings.payrollExport.mappings.loadFailed", "Failed to load wage type mappings"),
+				t(
+					"settings.payrollExport.mappings.loadFailed",
+					"Failed to load wage type mappings",
+				),
 			);
 		}
 	};
@@ -164,7 +240,7 @@ export function WageTypeMappings({
 	useEffect(() => {
 		if (hasMappingFormat) loadData();
 	}, [hasMappingFormat]);
-	const saveMapping = () => {
+	const saveMapping = (draft: MappingDraft) => {
 		if (!hasMappingFormat) return;
 		startTransition(async () => {
 			const result = await saveMappingAction({
@@ -183,6 +259,8 @@ export function WageTypeMappings({
 				lexwareWageTypeName: draft.lexwareName || null,
 				sageWageTypeCode: draft.sageCode || null,
 				sageWageTypeName: draft.sageName || null,
+				successFactorsTimeTypeCode: draft.successFactorsCode || null,
+				successFactorsTimeTypeName: draft.successFactorsName || null,
 			});
 			if (result.success) {
 				toast.success(
@@ -244,7 +322,7 @@ export function WageTypeMappings({
 					</CardTitle>
 					<CardDescription>
 						{t(
-							"settings.payrollExport.mappings.description",
+							"settings.payrollExport.mappings.subtitle",
 							"Map your work categories and absence types to payroll wage type codes",
 						)}
 					</CardDescription>
@@ -258,7 +336,7 @@ export function WageTypeMappings({
 					absenceCategories={absenceCategories}
 					isPending={isPending}
 					onReset={resetForm}
-					onSave={saveMapping}
+					onSave={() => void form.handleSubmit()}
 					t={t}
 				/>
 			</CardHeader>
@@ -289,10 +367,7 @@ function MappingPanel({
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	draft: MappingDraft;
-	updateDraft: <K extends keyof MappingDraft>(
-		key: K,
-		value: MappingDraft[K],
-	) => void;
+	updateDraft: (key: keyof MappingDraft, value: string) => void;
 	workCategories: WorkCategory[];
 	absenceCategories: AbsenceCategory[];
 	isPending: boolean;
@@ -300,24 +375,11 @@ function MappingPanel({
 	onSave: () => void;
 	t: Translate;
 }) {
+	const sourceTypeId = useId();
 	const specialCategories = [
 		{
 			id: "overtime",
 			name: t("settings.payrollExport.specialCategory.overtime", "Overtime"),
-		},
-		{
-			id: "holiday_compensation",
-			name: t(
-				"settings.payrollExport.specialCategory.holidayCompensation",
-				"Holiday Compensation",
-			),
-		},
-		{
-			id: "overtime_reduction",
-			name: t(
-				"settings.payrollExport.specialCategory.overtimeReduction",
-				"Overtime Reduction",
-			),
 		},
 	];
 	const sourceMissing =
@@ -328,7 +390,10 @@ function MappingPanel({
 				: !draft.specialCategory;
 	const disabled =
 		isPending ||
-		(!draft.datevCode && !draft.lexwareCode && !draft.sageCode) ||
+		(!draft.datevCode &&
+			!draft.lexwareCode &&
+			!draft.sageCode &&
+			!draft.successFactorsCode) ||
 		sourceMissing;
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
@@ -361,7 +426,7 @@ function MappingPanel({
 				</ActionPanelHeader>
 				<ActionPanelBody className="space-y-4">
 					<div className="space-y-2">
-						<Label>
+						<Label htmlFor={sourceTypeId}>
 							{t("settings.payrollExport.mappings.sourceType", "Source Type")}
 						</Label>
 						<Select
@@ -370,7 +435,7 @@ function MappingPanel({
 								updateDraft("sourceType", value as SourceType)
 							}
 						>
-							<SelectTrigger>
+							<SelectTrigger id={sourceTypeId}>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
@@ -477,6 +542,16 @@ function MappingPanel({
 						onNameChange={(value) => updateDraft("sageName", value)}
 						t={t}
 					/>
+					<WageTypeFields
+						format="SAP SuccessFactors"
+						code={draft.successFactorsCode}
+						name={draft.successFactorsName}
+						codePlaceholder="ATTENDANCE"
+						namePlaceholder="Attendance"
+						onCodeChange={(value) => updateDraft("successFactorsCode", value)}
+						onNameChange={(value) => updateDraft("successFactorsName", value)}
+						t={t}
+					/>
 				</ActionPanelBody>
 				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -511,11 +586,12 @@ function CategorySelect({
 	items: Array<{ id: string; name: string }>;
 	onChange: (value: string) => void;
 }) {
+	const inputId = useId();
 	return (
 		<div className="space-y-2">
-			<Label>{label}</Label>
+			<Label htmlFor={inputId}>{label}</Label>
 			<Select value={value} onValueChange={onChange}>
-				<SelectTrigger>
+				<SelectTrigger id={inputId}>
 					<SelectValue placeholder={placeholder} />
 				</SelectTrigger>
 				<SelectContent>
@@ -550,35 +626,44 @@ function WageTypeFields({
 	t: Translate;
 }) {
 	return (
-		<div className="space-y-2 rounded-lg border p-3">
-			<Badge variant="outline" className="font-mono text-xs">
-				{format}
-			</Badge>
+		<fieldset className="space-y-2 rounded-lg border p-3">
+			<legend className="px-1">
+				<Badge variant="outline" className="font-mono text-xs">
+					{format}
+				</Badge>
+			</legend>
 			<div className="grid grid-cols-2 gap-2">
-				<div className="space-y-1">
-					<Label className="text-xs">
+				<TFormItem>
+					<TFormLabel className="text-xs">
 						{t("settings.payrollExport.mappings.code", "Code")}
-					</Label>
-					<Input
-						placeholder={codePlaceholder}
-						value={code}
-						onChange={(event) => onCodeChange(event.target.value)}
-						autoComplete="off"
-					/>
-				</div>
-				<div className="space-y-1">
-					<Label className="text-xs">
+					</TFormLabel>
+					<TFormControl>
+						<Input
+							name={format + "Code"}
+							placeholder={codePlaceholder}
+							value={code}
+							onChange={(event) => onCodeChange(event.target.value)}
+							autoComplete="off"
+							spellCheck={false}
+						/>
+					</TFormControl>
+				</TFormItem>
+				<TFormItem>
+					<TFormLabel className="text-xs">
 						{t("settings.payrollExport.mappings.description", "Description")}
-					</Label>
-					<Input
-						placeholder={namePlaceholder}
-						value={name}
-						onChange={(event) => onNameChange(event.target.value)}
-						autoComplete="off"
-					/>
-				</div>
+					</TFormLabel>
+					<TFormControl>
+						<Input
+							name={format + "Name"}
+							placeholder={namePlaceholder}
+							value={name}
+							onChange={(event) => onNameChange(event.target.value)}
+							autoComplete="off"
+						/>
+					</TFormControl>
+				</TFormItem>
 			</div>
-		</div>
+		</fieldset>
 	);
 }
 
@@ -628,6 +713,12 @@ function MappingsTable({
 						<TableHead>
 							{t("settings.payrollExport.mappings.table.sage", "Sage")}
 						</TableHead>
+						<TableHead>
+							{t(
+								"settings.payrollExport.mappings.table.successFactors",
+								"SAP SuccessFactors",
+							)}
+						</TableHead>
 						<TableHead className="w-[100px]" />
 					</TableRow>
 				</TableHeader>
@@ -651,6 +742,10 @@ function MappingsTable({
 							<WageCodeCell
 								code={mapping.sageWageTypeCode}
 								name={mapping.sageWageTypeName}
+							/>
+							<WageCodeCell
+								code={mapping.successFactorsTimeTypeCode}
+								name={mapping.successFactorsTimeTypeName}
 							/>
 							<TableCell>
 								<DeleteMappingButton

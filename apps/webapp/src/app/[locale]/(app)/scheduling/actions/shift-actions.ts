@@ -166,6 +166,7 @@ export async function upsertShift(
 			endTime: input.endTime,
 			notes: input.notes,
 			color: input.color,
+			skillOverrideReason: input.skillOverrideReason,
 			createdBy: session.user.id,
 		});
 	});
