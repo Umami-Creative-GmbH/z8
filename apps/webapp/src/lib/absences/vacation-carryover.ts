@@ -64,20 +64,22 @@ export async function commitAnnualVacationCarryover(
 	const toYear = fromYear + 1;
 	const results: CarryoverResult[] = [];
 	const errors: CarryoverSummary["errors"] = [];
-	const employees = await db
-		.select({ id: employee.id, userId: employee.userId, name: user.name })
-		.from(employee)
-		.innerJoin(user, eq(user.id, employee.userId))
-		.where(
-			and(
-				eq(employee.organizationId, organizationId),
-				eq(employee.isActive, true),
+	const [employees, actor] = await Promise.all([
+		db
+			.select({ id: employee.id, userId: employee.userId, name: user.name })
+			.from(employee)
+			.innerJoin(user, eq(user.id, employee.userId))
+			.where(
+				and(
+					eq(employee.organizationId, organizationId),
+					eq(employee.isActive, true),
+				),
 			),
-		);
-	const actor = await db.query.user.findFirst({
-		where: eq(user.id, performedBy),
-		columns: { id: true },
-	});
+		db.query.user.findFirst({
+			where: eq(user.id, performedBy),
+			columns: { id: true },
+		}),
+	]);
 	for (const person of employees) {
 		try {
 			const result = await db.transaction(async (tx) => {

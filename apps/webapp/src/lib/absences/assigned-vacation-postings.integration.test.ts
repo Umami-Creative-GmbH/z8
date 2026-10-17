@@ -27,6 +27,11 @@ describe("assigned vacation postings (#1371)", () => {
 	let fixture: LifecycleDatabaseFixture;
 	beforeEach(async () => {
 		fixture = await createLifecycleDatabaseFixture();
+		// These scenarios describe reviewed 2026/2027 history, independent of the database clock.
+		await fixture.pool.query(
+			"update vacation_policy_rollout set baseline_date=DATE '2026-01-01' where organization_id=$1",
+			[fixture.organizationId],
+		);
 	});
 	afterEach(async () => {
 		if (fixture)

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
-import { vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
+import { vacationAllowance } from "@/db/schema";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -10,6 +10,7 @@ import { calculateAnnualCarryover } from "./vacation.service";
 import { accrueVacationPeriods } from "./vacation-accrual";
 import { loadVacationBalances } from "./vacation-balance-store";
 import { vacationPolicyCalculationsEnabled } from "./vacation-policy-rollout";
+import { writeVacationPolicyAssignment } from "./vacation-policy-assignment-write";
 
 describe("integrated vacation policy activation", () => {
 	let fixture: LifecycleDatabaseFixture;
@@ -58,12 +59,13 @@ describe("integrated vacation policy activation", () => {
 				},
 			])
 			.returning();
-		await fixture.db.insert(vacationPolicyAssignment).values({
+		await writeVacationPolicyAssignment(fixture.db, {
 			organizationId: fixture.organizationId,
 			policyId: assigned.id,
 			employeeId: fixture.employeeId,
 			assignmentType: "employee",
-			effectiveStartDate: "2027-01-01",
+			effectiveFrom: "2027-01-01",
+			reviewedBackdate: true,
 			createdBy: fixture.ownerUserId,
 		});
 		expect(
