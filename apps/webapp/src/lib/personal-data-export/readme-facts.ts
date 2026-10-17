@@ -43,13 +43,18 @@ import {
 	travelExpenseClaim,
 	travelExpenseReport,
 } from "@/db/schema";
+import { drivingLicenceVerifierGrant } from "@/db/schema/driving-licence-verifiers";
 import { AUDIT_LOG_RETENTION_DAYS } from "@/lib/audit/retention";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { resolveDrivingLicenceEmployeeAccess } from "@/lib/organization/driving-licence/access";
 import { managedCategoriesFor } from "@/lib/personnel-file/access";
-import { loadEmployeeRef, resolvePersonnelFileAccess } from "@/lib/personnel-file/access-store";
+import {
+	loadEmployeeRef,
+	resolvePersonnelFileAccess,
+} from "@/lib/personnel-file/access-store";
 import { DOCUMENT_CATEGORIES } from "@/lib/personnel-file/document.types";
 import { listActivePersonnelFileOfficers } from "@/lib/personnel-file/officer-grant-store";
 import { loadRetentionPeriods } from "@/lib/personnel-file/retention-store";
@@ -84,11 +89,16 @@ export async function loadPersonalDataReadmeFacts(
 		organizationId,
 		employeeId,
 	});
-	if (!subject) throw new Error("The export's employee no longer exists in its organization");
+	if (!subject)
+		throw new Error(
+			"The export's employee no longer exists in its organization",
+		);
 	const teamIds = [...subject.teamIds];
 
 	/** Employees of the organization with access now, with their names; never the subject. */
-	const people = async (employeeIds: Iterable<string>): Promise<Map<string, Person>> => {
+	const people = async (
+		employeeIds: Iterable<string>,
+	): Promise<Map<string, Person>> => {
 		const ids = [...new Set(employeeIds)].filter((id) => id !== employeeId);
 		if (ids.length === 0) return new Map();
 		const rows = await database
@@ -154,6 +164,12 @@ export async function loadPersonalDataReadmeFacts(
 		}),
 		loadRetentionPeriods(database, organizationId),
 	]);
+	const drivingLicenceVerifiers = await loadDrivingLicenceVerifiers(database, {
+		organizationId,
+		employeeId,
+		now,
+		people,
+	});
 	return {
 		access: {
 			ownersAndAdmins,
@@ -161,6 +177,7 @@ export async function loadPersonalDataReadmeFacts(
 			personnelFileOfficers,
 			payrollOfficers,
 			expenseOfficers,
+			drivingLicenceVerifiers,
 		},
 		retention: { documentYears, auditLogDays: AUDIT_LOG_RETENTION_DAYS },
 	};
@@ -184,9 +201,17 @@ async function loadOwnersAndAdmins(
 		.innerJoin(user, eq(user.id, member.userId))
 		.leftJoin(
 			employee,
-			and(eq(employee.userId, member.userId), eq(employee.organizationId, input.organizationId)),
+			and(
+				eq(employee.userId, member.userId),
+				eq(employee.organizationId, input.organizationId),
+			),
 		)
-		.where(and(eq(member.organizationId, input.organizationId), eq(member.status, "approved")));
+		.where(
+			and(
+				eq(member.organizationId, input.organizationId),
+				eq(member.status, "approved"),
+			),
+		);
 	return byName(
 		rows.flatMap((row) => {
 			// A member without an employee record keeps access; one whose employment ended does not.
@@ -228,7 +253,9 @@ async function loadManagers(
 					eq(teamPermissions.organizationId, organizationId),
 					or(
 						isNull(teamPermissions.teamId),
-						teamIds.length > 0 ? inArray(teamPermissions.teamId, teamIds) : undefined,
+						teamIds.length > 0
+							? inArray(teamPermissions.teamId, teamIds)
+							: undefined,
 					),
 					or(
 						eq(teamPermissions.canManageTeamMembers, true),
@@ -239,11 +266,16 @@ async function loadManagers(
 			),
 	]);
 	const directIds = new Set(direct.map((row) => row.managerId));
-	const found = await input.people([...directIds, ...permitted.map((row) => row.employeeId)]);
+	const found = await input.people([
+		...directIds,
+		...permitted.map((row) => row.employeeId),
+	]);
 	return byName(
 		[...found.values()].map((person) => ({
 			name: person.name,
-			via: directIds.has(person.employeeId ?? "") ? ("direct" as const) : ("team" as const),
+			via: directIds.has(person.employeeId ?? "")
+				? ("direct" as const)
+				: ("team" as const),
 		})),
 	);
 }
@@ -260,7 +292,9 @@ async function loadPersonnelFileOfficers(
 	const officers = await listActivePersonnelFileOfficers(database, {
 		organizationId,
 	});
-	const candidates = officers.filter((officer) => officer.grant.officerEmployeeId !== subject.id);
+	const candidates = officers.filter(
+		(officer) => officer.grant.officerEmployeeId !== subject.id,
+	);
 	if (candidates.length === 0) return [];
 	// The resolver applies the toggle, membership, departure cutoff and own-file rule.
 	const resolved = await Promise.all(
@@ -274,11 +308,15 @@ async function loadPersonnelFileOfficers(
 			const managed = managedCategoriesFor(
 				{
 					...access,
-					grants: access.grants.filter((grant) => grant.source === "officer_grant"),
+					grants: access.grants.filter(
+						(grant) => grant.source === "officer_grant",
+					),
 				},
 				subject,
 			);
-			const categories = DOCUMENT_CATEGORIES.filter((category) => managed.has(category));
+			const categories = DOCUMENT_CATEGORIES.filter((category) =>
+				managed.has(category),
+			);
 			return categories.length > 0
 				? { employeeId: officer.grant.officerEmployeeId, categories }
 				: null;
@@ -422,7 +460,10 @@ async function loadExpenseOfficers(
 	]);
 	// The employee's current teams cover future reports; recorded teams cover approved ones.
 	const teamIds = [
-		...new Set([...input.teamIds, ...[...reports, ...claims].flatMap((row) => row.teamIds ?? [])]),
+		...new Set([
+			...input.teamIds,
+			...[...reports, ...claims].flatMap((row) => row.teamIds ?? []),
+		]),
 	];
 	const teams =
 		teamIds.length === 0
@@ -436,7 +477,9 @@ async function loadExpenseOfficers(
 							inArray(expenseOfficerTeam.teamId, teamIds),
 						),
 					);
-	const coveringGrantIds = new Set([...named, ...teams].map((row) => row.grantId));
+	const coveringGrantIds = new Set(
+		[...named, ...teams].map((row) => row.grantId),
+	);
 	const covering = grants.filter(
 		(grant) => grant.scope === "all" || coveringGrantIds.has(grant.id),
 	);
@@ -455,4 +498,37 @@ async function loadExpenseOfficers(
 				: [];
 		}),
 	);
+}
+
+/** Uses the same current-record scope boundary as history and PDF downloads, including former subjects. */
+async function loadDrivingLicenceVerifiers(
+	database: PersonalDataExportDatabase,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		now?: Instant;
+		people: People;
+	},
+): Promise<{ name: string }[]> {
+	const grants = await database
+		.select({ employeeId: drivingLicenceVerifierGrant.verifierEmployeeId })
+		.from(drivingLicenceVerifierGrant)
+		.where(
+			and(
+				eq(drivingLicenceVerifierGrant.organizationId, input.organizationId),
+				isNull(drivingLicenceVerifierGrant.revokedAt),
+			),
+		);
+	const candidates = await input.people(grants.map((g) => g.employeeId));
+	const verifiers: { name: string }[] = [];
+	for (const person of candidates.values()) {
+		const access = await resolveDrivingLicenceEmployeeAccess(database, {
+			organizationId: input.organizationId,
+			userId: person.userId,
+			employeeId: input.employeeId,
+			now: input.now,
+		});
+		if (access.canRead) verifiers.push({ name: person.name });
+	}
+	return byName(verifiers);
 }

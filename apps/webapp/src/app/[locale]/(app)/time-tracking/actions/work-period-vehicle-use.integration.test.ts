@@ -14,6 +14,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { seedSuspendedDrivingParticipant } from "@/lib/organization/driving-licence/testing/recording.test.fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -26,7 +27,9 @@ const harness = vi.hoisted(() => ({
 		| { type: "forbidden"; daysBack: number },
 }));
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
@@ -75,10 +78,19 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => ({
 			)
 			.limit(1);
 		return {
-			user: { id: harness.userId, name: harness.userId, email: `${harness.userId}@example.test` },
+			user: {
+				id: harness.userId,
+				name: harness.userId,
+				email: `${harness.userId}@example.test`,
+			},
 			session: { activeOrganizationId: harness.organizationId },
 			employee: row
-				? { id: row.id, organizationId: row.organizationId, role: row.role, teamId: row.teamId }
+				? {
+						id: row.id,
+						organizationId: row.organizationId,
+						role: row.role,
+						teamId: row.teamId,
+					}
 				: null,
 		};
 	},
@@ -104,7 +116,13 @@ vi.mock("./shared", async (importOriginal) => {
 	const quiet = () => {};
 	return {
 		...original,
-		logger: { ...original.logger, error: quiet, warn: quiet, info: quiet, debug: quiet },
+		logger: {
+			...original.logger,
+			error: quiet,
+			warn: quiet,
+			info: quiet,
+			debug: quiet,
+		},
 	};
 });
 
@@ -114,13 +132,19 @@ const { getWorkPeriodTimeEditContext, updateWorkPeriodTimes } = await import(
 	"./work-period-time-edit"
 );
 await import("@/lib/approvals/init");
-const { approveApprovalInboxItem } = await import("@/lib/approvals/inbox/decision-service");
-const { getApprovalInboxDetail } = await import("@/lib/approvals/inbox/read-service");
+const { approveApprovalInboxItem } = await import(
+	"@/lib/approvals/inbox/decision-service"
+);
+const { getApprovalInboxDetail } = await import(
+	"@/lib/approvals/inbox/read-service"
+);
 const { submitPeriodSubmission } = await import(
 	"@/lib/time-tracking/period-submissions/submission-service"
 );
 const { createManualTimeEntry } = await import("../actions");
-const { getWorkPeriodsForMonth } = await import("@/lib/calendar/work-period-service");
+const { getWorkPeriodsForMonth } = await import(
+	"@/lib/calendar/work-period-service"
+);
 
 const ORG = "t1120-org";
 const OTHER_ORG = "t1120-other-org";
@@ -148,7 +172,9 @@ function actAs(person: Person, roles: { isOrgAdmin?: boolean } = {}) {
 }
 
 async function cleanup() {
-	await admin.query("delete from organization where id = any($1::text[])", [[ORG, OTHER_ORG]]);
+	await admin.query("delete from organization where id = any($1::text[])", [
+		[ORG, OTHER_ORG],
+	]);
 	await admin.query('delete from "user" where id like $1', ["t1120-%"]);
 }
 
@@ -160,7 +186,10 @@ async function setAdmission(mode: "active" | "inactive") {
 	);
 }
 
-async function setVehicleUse(mode: "off" | "asked" | "expected", enabled = true) {
+async function setVehicleUse(
+	mode: "off" | "asked" | "expected",
+	enabled = true,
+) {
 	await admin.query(
 		`insert into vehicle_use_setting (organization_id, enabled) values ($1, $2)
 		 on conflict (organization_id) do update set enabled = excluded.enabled`,
@@ -258,7 +287,9 @@ async function recordWork(person: Person, start = WORK_START, end = WORK_END) {
 	return id;
 }
 
-type VehicleUseInput = NonNullable<Parameters<typeof updateWorkPeriodTimes>[0]["vehicleUse"]>;
+type VehicleUseInput = NonNullable<
+	Parameters<typeof updateWorkPeriodTimes>[0]["vehicleUse"]
+>;
 
 function editVehicleUse(
 	person: Person,
@@ -328,7 +359,9 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 			const workPeriodId = await recordWork("admin");
 			await setAdmission(admission);
 
-			await expect(editVehicleUse("admin", workPeriodId, vanUse)).resolves.toMatchObject({
+			await expect(
+				editVehicleUse("admin", workPeriodId, vanUse),
+			).resolves.toMatchObject({
 				success: true,
 				data: { status: "applied" },
 			});
@@ -346,16 +379,59 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 				detail_distance: 85,
 			});
 			if (admission === "active") {
-				const { rows } = await admin.query<{ result: { changes: Record<string, unknown> } }>(
+				const { rows } = await admin.query<{
+					result: { changes: Record<string, unknown> };
+				}>(
 					`select result from completed_work_operation
 					 where organization_id = $1 and kind = 'amend_completed_work' and work_period_id = $2`,
 					[ORG, workPeriodId],
 				);
-				expect(rows[0]?.result.changes).toMatchObject({ vehicleUse: true, clockIn: false });
+				expect(rows[0]?.result.changes).toMatchObject({
+					vehicleUse: true,
+					clockIn: false,
+				});
 			}
 		},
 	);
 
+	it.each(["absent", "suspended"] as const)(
+		"truthfully attributes and corrects a vehicle used with %s driving authorization",
+		async (drivingState) => {
+			if (drivingState === "suspended")
+				await seedSuspendedDrivingParticipant(admin, {
+					organizationId: ORG,
+					employeeId: ids.requester,
+					userId: userOf("requester"),
+					at: new Date(WORK_START.epochMilliseconds),
+				});
+			const workPeriodId = await recordWork("requester");
+			expect(
+				await editVehicleUse("requester", workPeriodId, vanUse),
+			).toMatchObject({ success: true, data: { status: "applied" } });
+			expect(
+				await editVehicleUse("requester", workPeriodId, {
+					...vanUse,
+					endKm: 12090,
+				}),
+			).toMatchObject({ success: true, data: { status: "applied" } });
+			expect(await vehicleColumns(workPeriodId)).toMatchObject({
+				vehicle_id: ids.van,
+				odometer_end_km: 12090,
+				driven_distance_km: 90,
+				detail_vehicle_id: ids.van,
+				detail_end: 12090,
+				detail_distance: 90,
+			});
+			expect(
+				(
+					await admin.query(
+						`select class_code from driving_authorization where organization_id=$1 and employee_id=$2 and state='active'`,
+						[ORG, ids.requester],
+					)
+				).rows,
+			).toEqual([]);
+		},
+	);
 	it("takes a directly entered distance only while the start reading is missing", async () => {
 		const workPeriodId = await recordWork("requester");
 
@@ -383,7 +459,11 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 		const before = await workRows();
 
 		await expect(
-			editVehicleUse("admin", workPeriodId, { ...vanUse, startKm: 12_000, endKm: 11_999 }),
+			editVehicleUse("admin", workPeriodId, {
+				...vanUse,
+				startKm: 12_000,
+				endKm: 11_999,
+			}),
 		).resolves.toMatchObject({ success: false, code: "end_before_start" });
 		expect(await workRows()).toEqual(before);
 	});
@@ -394,7 +474,9 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 			const workPeriodId = await recordWork("requester");
 			await setAdmission(admission);
 
-			await expect(editVehicleUse("requester", workPeriodId, vanUse)).resolves.toMatchObject({
+			await expect(
+				editVehicleUse("requester", workPeriodId, vanUse),
+			).resolves.toMatchObject({
 				success: true,
 				data: { status: "applied" },
 			});
@@ -416,7 +498,10 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 			);
 			const workPeriodId = await recordWork("requester");
 			await expect(
-				editVehicleUse("requester", workPeriodId, { vehicle: { kind: "own" }, distanceKm: 30 }),
+				editVehicleUse("requester", workPeriodId, {
+					vehicle: { kind: "own" },
+					distanceKm: 30,
+				}),
 			).resolves.toMatchObject({ success: true });
 			harness.capability = { type: "approval_required" };
 
@@ -444,7 +529,9 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 				approverId: ids.manager,
 			});
 			const vehicleRow = detail.sections
-				.flatMap((section) => (section.type === "key_value" ? section.rows : []))
+				.flatMap((section) =>
+					section.type === "key_value" ? section.rows : [],
+				)
 				.find((row) => row.label.key === "approvals:approvals.vehicleUse");
 			expect(vehicleRow?.value).toEqual({
 				kind: "change",
@@ -462,7 +549,11 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 					kind: "vehicle_use",
 					value: {
 						state: "recorded",
-						vehicle: { kind: "organization", id: ids.van, label: "Van (B-VN 100)" },
+						vehicle: {
+							kind: "organization",
+							id: ids.van,
+							label: "Van (B-VN 100)",
+						},
 						startKm: 12_000,
 						endKm: 12_085,
 						distanceKm: 85,
@@ -486,7 +577,9 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 	);
 
 	it("keeps a vehicle an open time correction requests from being deleted", async () => {
-		const { changeOrganizationVehicles } = await import("@/lib/organization/vehicles/vehicles");
+		const { changeOrganizationVehicles } = await import(
+			"@/lib/organization/vehicles/vehicles"
+		);
 		const spare = "e1120000-0000-4000-8000-000000000024";
 		const workPeriodId = await recordWork("requester");
 		harness.capability = { type: "approval_required" };
@@ -506,7 +599,10 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 			});
 
 		// Approving would need the van: it can only be archived meanwhile.
-		await expect(remove(ids.van)).resolves.toEqual({ ok: false, reason: "vehicle_used" });
+		await expect(remove(ids.van)).resolves.toEqual({
+			ok: false,
+			reason: "vehicle_used",
+		});
 		// A vehicle no open correction names is still deleted.
 		await expect(remove(spare)).resolves.toMatchObject({ ok: true });
 
@@ -519,18 +615,24 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 			actorEmployeeId: ids.manager,
 			organizationId: ORG,
 		});
-		expect(await vehicleColumns(workPeriodId)).toMatchObject({ vehicle_id: ids.van });
+		expect(await vehicleColumns(workPeriodId)).toMatchObject({
+			vehicle_id: ids.van,
+		});
 	});
 
 	it("refuses an own change outside the approval window", async () => {
 		const workPeriodId = await recordWork("requester");
 		harness.capability = { type: "forbidden", daysBack: 14 };
 
-		await expect(editVehicleUse("requester", workPeriodId, vanUse)).resolves.toMatchObject({
+		await expect(
+			editVehicleUse("requester", workPeriodId, vanUse),
+		).resolves.toMatchObject({
 			success: false,
 			code: "beyond_approval_window",
 		});
-		expect(await vehicleColumns(workPeriodId)).toMatchObject({ vehicle_kind: null });
+		expect(await vehicleColumns(workPeriodId)).toMatchObject({
+			vehicle_kind: null,
+		});
 	});
 
 	it.each(["active", "inactive"] as const)(
@@ -553,19 +655,27 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 				);
 			}
 
-			await expect(editVehicleUse("admin", adminWork, vanUse)).resolves.toMatchObject({
+			await expect(
+				editVehicleUse("admin", adminWork, vanUse),
+			).resolves.toMatchObject({
 				success: false,
 				code: "month_closed",
 			});
-			await expect(editVehicleUse("requester", requesterWork, vanUse)).resolves.toMatchObject({
+			await expect(
+				editVehicleUse("requester", requesterWork, vanUse),
+			).resolves.toMatchObject({
 				success: false,
 			});
 			harness.capability = { type: "approval_required" };
 			await expect(
 				editVehicleUse("requester", requesterWork, vanUse, "Drove the van"),
 			).resolves.toMatchObject({ success: false });
-			expect(await vehicleColumns(adminWork)).toMatchObject({ vehicle_kind: null });
-			expect(await vehicleColumns(requesterWork)).toMatchObject({ vehicle_kind: null });
+			expect(await vehicleColumns(adminWork)).toMatchObject({
+				vehicle_kind: null,
+			});
+			expect(await vehicleColumns(requesterWork)).toMatchObject({
+				vehicle_kind: null,
+			});
 			const { rows } = await admin.query(
 				"select id from approval_request where organization_id = $1",
 				[ORG],
@@ -585,17 +695,30 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 			);
 			const workPeriodId = await recordWork("requester");
 			const submitted = await submitPeriodSubmission(
-				{ organizationId: ORG, userId: userOf("requester"), periodStartDate: "2026-07-20" },
-				{ database: db, clock: { nowInstant: () => parseInstant("2026-07-26T12:00:00Z") } },
+				{
+					organizationId: ORG,
+					userId: userOf("requester"),
+					periodStartDate: "2026-07-20",
+				},
+				{
+					database: db,
+					clock: { nowInstant: () => parseInstant("2026-07-26T12:00:00Z") },
+				},
 			);
-			if (submitted.kind !== "submitted") throw new Error(`not submitted: ${submitted.reason}`);
+			if (submitted.kind !== "submitted")
+				throw new Error(`not submitted: ${submitted.reason}`);
 			await setAdmission(admission);
 
-			await expect(editVehicleUse("requester", workPeriodId, vanUse)).resolves.toMatchObject({
+			await expect(
+				editVehicleUse("requester", workPeriodId, vanUse),
+			).resolves.toMatchObject({
 				success: true,
 			});
 
-			const { rows } = await admin.query<{ status: string; closed_cause: string | null }>(
+			const { rows } = await admin.query<{
+				status: string;
+				closed_cause: string | null;
+			}>(
 				"select status, closed_cause from period_submission where organization_id = $1 and id = $2",
 				[ORG, submitted.submissionId],
 			);
@@ -613,7 +736,14 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 			data: {
 				vehicleUse: {
 					mode: "asked",
-					vehicles: [{ id: ids.van, name: "Van", licencePlate: "B-VN 100", archived: false }],
+					vehicles: [
+						{
+							id: ids.van,
+							name: "Van",
+							licencePlate: "B-VN 100",
+							archived: false,
+						},
+					],
 				},
 			},
 		});
@@ -630,16 +760,19 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 		).resolves.toMatchObject({ success: false, code: "vehicle_archived" });
 
 		// A vehicle archived after it was recorded stays, and its readings can still change.
-		await expect(editVehicleUse("admin", workPeriodId, vanUse)).resolves.toMatchObject({
+		await expect(
+			editVehicleUse("admin", workPeriodId, vanUse),
+		).resolves.toMatchObject({
 			success: true,
 		});
 		// A vehicle recorded on work can no longer be deleted (#1118 refuses it as `vehicle_used`).
 		await expect(
 			admin.query("delete from organization_vehicle where id = $1", [ids.van]),
 		).rejects.toMatchObject({ code: "23503" });
-		await admin.query("update organization_vehicle set archived_at = now() where id = $1", [
-			ids.van,
-		]);
+		await admin.query(
+			"update organization_vehicle set archived_at = now() where id = $1",
+			[ids.van],
+		);
 		await expect(
 			editVehicleUse("admin", workPeriodId, { ...vanUse, endKm: 12_090 }),
 		).resolves.toMatchObject({ success: true });
@@ -652,7 +785,9 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 		expect(recorded).toMatchObject({
 			success: true,
 			data: {
-				values: { vehicleUse: { vehicle: { kind: "organization", vehicleId: ids.van } } },
+				values: {
+					vehicleUse: { vehicle: { kind: "organization", vehicleId: ids.van } },
+				},
 				vehicleUse: { vehicles: [{ id: ids.van, archived: true }] },
 			},
 		});
@@ -703,7 +838,11 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 				targetEmployeeId: ids.requester,
 				date: "2026-07-22",
 				clockIn: { time: "08:00", occurrence: null, displayedOffsetMinutes: 0 },
-				clockOut: { time: "12:00", occurrence: null, displayedOffsetMinutes: 0 },
+				clockOut: {
+					time: "12:00",
+					occurrence: null,
+					displayedOffsetMinutes: 0,
+				},
 				zone: { basis: "target", timezone: "UTC" },
 				browserTimezone: "UTC",
 				reason: "Forgot to clock in",
@@ -757,7 +896,9 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 				detail_vehicle_id: ids.van,
 				detail_distance: 40,
 			});
-			const { rows } = await admin.query<{ result: { attribution: Record<string, unknown> } }>(
+			const { rows } = await admin.query<{
+				result: { attribution: Record<string, unknown> };
+			}>(
 				`select result from completed_work_operation
 				 where organization_id = $1 and kind = 'create_completed_work'`,
 				[ORG],
@@ -774,7 +915,9 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 			await setAdmission("inactive");
 			actAs("requester");
 			await expect(
-				createManualTimeEntry(legacyEntry({ vehicle: { kind: "own" }, distanceKm: 12 })),
+				createManualTimeEntry(
+					legacyEntry({ vehicle: { kind: "own" }, distanceKm: 12 }),
+				),
 			).resolves.toMatchObject({ success: true });
 
 			expect(await vehicleColumns(await manualPeriod())).toMatchObject({
@@ -802,12 +945,16 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 			});
 			await setAdmission("inactive");
 			await expect(
-				createManualTimeEntry(legacyEntry({ vehicle: { kind: "own" }, startKm: 500, endKm: 400 })),
+				createManualTimeEntry(
+					legacyEntry({ vehicle: { kind: "own" }, startKm: 500, endKm: 400 }),
+				),
 			).resolves.toMatchObject({ success: false, code: "end_before_start" });
 
 			await setVehicleUse("off");
 			await expect(
-				createManualTimeEntry(legacyEntry({ vehicle: { kind: "own" }, distanceKm: 3 })),
+				createManualTimeEntry(
+					legacyEntry({ vehicle: { kind: "own" }, distanceKm: 3 }),
+				),
 			).resolves.toMatchObject({ success: false, code: "vehicle_use_off" });
 			await setAdmission("active");
 			await expect(
@@ -833,7 +980,9 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 
 	it("keeps existing vehicle use read-only while the organization switch is off", async () => {
 		const workPeriodId = await recordWork("admin");
-		await expect(editVehicleUse("admin", workPeriodId, vanUse)).resolves.toMatchObject({
+		await expect(
+			editVehicleUse("admin", workPeriodId, vanUse),
+		).resolves.toMatchObject({
 			success: true,
 		});
 		await setVehicleUse("asked", false);
@@ -841,7 +990,9 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 		await expect(
 			editVehicleUse("admin", workPeriodId, { ...vanUse, endKm: 12_100 }),
 		).resolves.toMatchObject({ success: false, code: "vehicle_use_off" });
-		await expect(editVehicleUse("admin", workPeriodId, null)).resolves.toMatchObject({
+		await expect(
+			editVehicleUse("admin", workPeriodId, null),
+		).resolves.toMatchObject({
 			success: false,
 			code: "vehicle_use_off",
 		});

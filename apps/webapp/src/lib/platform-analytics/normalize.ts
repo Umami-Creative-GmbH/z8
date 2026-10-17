@@ -1,5 +1,6 @@
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 
+import { instantFromDate, type PlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import type {
 	PlatformAnalyticsAggregateRow,
 	PlatformAnalyticsBucketInfo,
@@ -7,6 +8,9 @@ import type {
 	PlatformAnalyticsMetricKey,
 	PlatformAnalyticsPoint,
 } from "./types";
+
+// Bucket keys are UTC calendar dates, matching range.ts and the SQL bucketing.
+const BUCKET_TIME_ZONE = "UTC";
 
 type PlatformAnalyticsRows = Record<PlatformAnalyticsMetricKey, PlatformAnalyticsAggregateRow[]>;
 type CurrentPlatformAnalyticsTotals = Pick<
@@ -79,12 +83,9 @@ function findBucketKey(
 	bucket: PlatformAnalyticsAggregateRow["bucket"],
 	buckets: PlatformAnalyticsBucketInfo[],
 ) {
-	const date =
-		bucket instanceof Date
-			? DateTime.fromJSDate(bucket, { zone: "utc" })
-			: DateTime.fromISO(bucket, { zone: "utc" });
+	const date = parseBucketDate(bucket);
 
-	if (!date.isValid) {
+	if (!date) {
 		return null;
 	}
 
@@ -93,8 +94,39 @@ function findBucketKey(
 	);
 }
 
-function formatRowKey(date: DateTime, bucketKey: string) {
-	return bucketKey.length === 7 ? date.toFormat("yyyy-MM") : (date.toISODate() ?? "");
+/**
+ * The UTC calendar date a bucket row starts on. node-postgres hands raw `sql`
+ * selections back as Postgres text: `2026-10-16 00:00:00` for `timestamp`
+ * (UTC wall time) and `2026-10-16 00:00:00+00` for `timestamptz`.
+ */
+function parseBucketDate(bucket: PlatformAnalyticsAggregateRow["bucket"]): PlainDate | null {
+	if (bucket instanceof Date) {
+		return Number.isFinite(bucket.getTime())
+			? plainDateAt(instantFromDate(bucket), BUCKET_TIME_ZONE)
+			: null;
+	}
+
+	try {
+		return plainDateAt(Temporal.Instant.from(bucket), BUCKET_TIME_ZONE);
+	} catch {
+		// No offset: the source columns store UTC wall time.
+	}
+
+	try {
+		return Temporal.PlainDateTime.from(bucket).toPlainDate();
+	} catch {
+		// Not a date-time; may be a bare year-month.
+	}
+
+	try {
+		return Temporal.PlainYearMonth.from(bucket).toPlainDate({ day: 1 });
+	} catch {
+		return null;
+	}
+}
+
+function formatRowKey(date: PlainDate, bucketKey: string) {
+	return bucketKey.length === 7 ? date.toPlainYearMonth().toString() : date.toString();
 }
 
 function normalizeValue(value: PlatformAnalyticsAggregateRow["value"]) {

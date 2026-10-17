@@ -12,7 +12,8 @@ day after the last working day in the organization's timezone, frozen on the
 departure when it is scheduled (or the command instant for *Offboard now*). At
 the cutoff access ends, the running timer is closed at the cutoff, the paid seat
 is released, the employee's expense officer, payroll access and personnel file
-officer grants are revoked, and the employee's pending approval duties are handed over. The
+officer grants are revoked, all driving authorizations and held driving licence verifier
+grants end, and the employee's pending approval duties are handed over. The
 departure is *effective* even while follow-up work (billing, session sign-out,
 timer post-processing, approval handover, notifications) is still pending or has
 failed; follow-up never decides whether someone has left. A **rehire** starts a
@@ -136,6 +137,23 @@ the departure's transaction (#750, #866). Each revocation is audited as
 other officers that *name* the departed employee in their scope are untouched,
 so that employee's last reports can still be reimbursed and their personnel
 file stays manageable (the departed employee keeps no access to it).
+
+## Driving licence control
+
+Driving authorizations, including suspended classes and person-wide suspension
+state, end at the departure cutoff. Held driving licence verifier grants are
+revoked at that same cutoff. Current verifier scope still permits reading an
+ended employee's retained evidence; it never permits a new check while the
+employee is departed. Employees lose their own access at the cutoff, including
+when departure processing is delayed.
+
+Check records and their supplements follow the driving licence policy's own
+finite retention and legal-case holds. Departure does not delete them immediately
+or apply Personnel File document retention. Rehire restores neither class
+authorization nor verifier responsibility: a new original check and a separately
+issued verifier grant are required. An old departure retry cannot affect the new
+employment period. Old impediment reports remain historical evidence, rather
+than being represented as resolved or applied to the new employment period.
 
 ## Absence deputies
 

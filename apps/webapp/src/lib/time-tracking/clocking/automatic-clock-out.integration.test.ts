@@ -4,12 +4,22 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { workPeriod } from "@/db/schema";
 import { dateFromInstant, parseInstant } from "@/lib/datetime/temporal-core";
 import { createLifecycleDatabaseFixture } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { seedSuspendedDrivingParticipant } from "@/lib/organization/driving-licence/testing/recording.test.fixture";
 import type { AutoClockOutDecision } from "../automatic-clock-out/types";
-import { createClockingService, createDatabaseClockingStore } from "../clocking-core";
-import { runWorkTransaction, type WorkTransactionScope } from "../work-transaction";
+import {
+	createClockingService,
+	createDatabaseClockingStore,
+} from "../clocking-core";
+import {
+	runWorkTransaction,
+	type WorkTransactionScope,
+} from "../work-transaction";
 import { createClocking } from "./clocking";
 import { recordingFollowUps } from "./follow-ups";
-import { automaticClockOutTransactions, coordinatedTransactions } from "./transactions";
+import {
+	automaticClockOutTransactions,
+	coordinatedTransactions,
+} from "./transactions";
 import type { ClockCommand, ClockOutCommand } from "./types";
 
 // Any browser-session lookup or billing gate would make the system closure fail.
@@ -48,7 +58,8 @@ describe("automatic Clocking authority in PostgreSQL", () => {
 		const organizationId = await fixture.createOrganization();
 		const employee = await fixture.seedEmployee({ organizationId });
 		const service = createClockingService({
-			transaction: (body) => fixture.db.transaction((tx) => body(createDatabaseClockingStore(tx))),
+			transaction: (body) =>
+				fixture.db.transaction((tx) => body(createDatabaseClockingStore(tx))),
 		});
 		const opened = await service.clockIn({
 			organizationId,
@@ -160,16 +171,44 @@ describe("automatic Clocking authority in PostgreSQL", () => {
 
 	for (const admission of ["legacy", "append"] as const) {
 		describe(admission, () => {
+			it.each(["absent", "suspended"] as const)(
+				"automatically records the actual cutoff with %s driving authorization",
+				async (drivingState) => {
+					const { decision, employee } = await seed(admission);
+					if (drivingState === "suspended")
+						await seedSuspendedDrivingParticipant(fixture.pool, {
+							organizationId: decision.organizationId,
+							employeeId: employee.employeeId,
+							userId: employee.userId,
+							employmentPeriodId: employee.employmentPeriodId,
+							at: dateFromInstant(start),
+						});
+					await enlist(decision, employee.userId, async (scope) => {
+						const { clock } = clocking(
+							automaticClockOutTransactions(scope, decision),
+						);
+						expect(await clock.run(command(decision))).toMatchObject({
+							outcome: "executed",
+							durationMinutes: 720,
+							result: { timestamp: dateFromInstant(cutoff) },
+						});
+					});
+				},
+			);
 			it("refuses automatic authority outside its bound work transaction", async () => {
 				const { decision, employee } = await seed(admission);
-				const refusedOutsideScope = await clocking().clock.run(command(decision));
+				const refusedOutsideScope = await clocking().clock.run(
+					command(decision),
+				);
 				expect(refusedOutsideScope).toMatchObject({
 					outcome: "refused",
 					failure: { code: "access_denied" },
 				});
 				// Even a principal naming the employee's own user is not human authority.
 				expect(
-					await clocking().clock.run(command({ ...decision, provenanceUserId: employee.userId })),
+					await clocking().clock.run(
+						command({ ...decision, provenanceUserId: employee.userId }),
+					),
 				).toMatchObject({
 					outcome: "refused",
 					failure: { code: "access_denied" },
@@ -179,7 +218,9 @@ describe("automatic Clocking authority in PostgreSQL", () => {
 			it("refuses every change to the bound closure and refuses human commands in its scope", async () => {
 				const { decision, employee } = await seed(admission);
 				await enlist(decision, employee.userId, async (scope) => {
-					const { clock } = clocking(automaticClockOutTransactions(scope, decision));
+					const { clock } = clocking(
+						automaticClockOutTransactions(scope, decision),
+					);
 					const valid = command(decision);
 					const attempts: ClockCommand[] = [
 						{ ...valid, organizationId: fixture.organizationId },
@@ -271,7 +312,9 @@ describe("automatic Clocking authority in PostgreSQL", () => {
 					[decision.organizationId, decision.employeeId],
 				);
 				await enlist(decision, employee.userId, async (scope) => {
-					const { clock, followUps } = clocking(automaticClockOutTransactions(scope, decision));
+					const { clock, followUps } = clocking(
+						automaticClockOutTransactions(scope, decision),
+					);
 					const result = await clock.run(command(decision));
 					expect(result).toMatchObject({
 						outcome: "executed",

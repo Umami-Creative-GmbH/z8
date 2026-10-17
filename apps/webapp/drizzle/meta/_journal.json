@@ -1714,7 +1714,63 @@
       "idx": 244,
       "version": "7",
       "when": 1805817600000,
-      "tag": "0244_kiosk_seats",
+      "tag": "20261016_driving_licence_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 245,
+      "version": "7",
+      "when": 1805904000000,
+      "tag": "20261016_driving_licence_verifiers",
+      "breakpoints": true
+    },
+    {
+      "idx": 246,
+      "version": "7",
+      "when": 1805990400000,
+      "tag": "20261016_driving_licence_checks",
+      "breakpoints": true
+    },
+    {
+      "idx": 247,
+      "version": "7",
+      "when": 1806076800000,
+      "tag": "20261017_driving_impediment_reports",
+      "breakpoints": true
+    },
+    {
+      "idx": 248,
+      "version": "7",
+      "when": 1806163200000,
+      "tag": "20261017_driving_licence_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 249,
+      "version": "7",
+      "when": 1806249600000,
+      "tag": "20261017_driving_licence_tasks",
+      "breakpoints": true
+    },
+    {
+      "idx": 250,
+      "version": "7",
+      "when": 1806336000000,
+      "tag": "20261017_driving_licence_supplements",
+      "breakpoints": true
+    },
+    {
+      "idx": 251,
+      "version": "7",
+      "when": 1806422400000,
+      "tag": "20261017_driving_licence_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 252,
+      "version": "7",
+      "when": 1806508800000,
+      "tag": "0252_kiosk_seats",
       "breakpoints": true
     }
   ]

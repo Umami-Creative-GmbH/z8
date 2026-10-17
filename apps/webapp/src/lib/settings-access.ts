@@ -42,6 +42,7 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/kiosks",
 	"/settings/custom-fields",
 	"/settings/vehicles",
+	"/settings/driving-licence",
 	"/settings/vehicle-use",
 ] as const;
 
