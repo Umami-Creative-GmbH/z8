@@ -14,7 +14,7 @@ import { employeeEmploymentPeriod } from "./employee-lifecycle";
 import { employee } from "./organization";
 
 /**
- * An employee's kiosk badge (#889, ADR 0012, Time Tracking glossary): the
+ * An employee's kiosk badge (#889, ADR 0013, Time Tracking glossary): the
  * credential in a printed QR code that proves at an online kiosk which employee
  * is clocking, instead of their kiosk PIN. It belongs to the employee, so to
  * one organization, and to the employment period it was issued in: a rehire

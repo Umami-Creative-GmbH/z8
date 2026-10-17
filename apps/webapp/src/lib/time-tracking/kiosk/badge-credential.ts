@@ -1,5 +1,5 @@
 /**
- * The format of a kiosk badge credential (#889, ADR 0012): what its QR code
+ * The format of a kiosk badge credential (#889, ADR 0013): what its QR code
  * holds and what a kiosk may submit. Shared by the server and the kiosk client,
  * so this file has no server-only imports; generating and hashing a credential
  * is the badge store's (`badge-store.ts`).

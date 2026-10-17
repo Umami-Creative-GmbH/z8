@@ -157,7 +157,7 @@ than being represented as resolved or applied to the new employment period.
 
 ## Kiosk badges
 
-A kiosk badge (#889, Time Tracking ADR 0012) belongs to the employment period
+A kiosk badge (#889, Time Tracking ADR 0013) belongs to the employment period
 it was issued in. Kiosks stop accepting it at the departure cutoff through the
 employment access rule, also while departure processing is delayed; a scheduled
 departure ends nothing early, and an edit or cancellation before the cutoff is
