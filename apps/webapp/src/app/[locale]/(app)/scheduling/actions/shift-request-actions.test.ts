@@ -126,12 +126,28 @@ describe("shift request action trusted context", () => {
 			"org-trusted",
 			"request-approve",
 			"employee-trusted",
+			{ skillOverrideReason: undefined },
 		);
 		expect(state.rejectRequest).toHaveBeenCalledWith(
 			"org-trusted",
 			"request-reject",
 			"employee-trusted",
 			"No coverage",
+		);
+	});
+
+	it("forwards only the skill override reason from the client, never an approver (#893)", async () => {
+		await approveShiftRequest("request-approve", {
+			skillOverrideReason: "Short-staffed",
+			// A spoofed approver from the client is not part of the contract.
+			approverId: "employee-spoofed",
+		} as never);
+
+		expect(state.approveRequest).toHaveBeenCalledWith(
+			"org-trusted",
+			"request-approve",
+			"employee-trusted",
+			{ skillOverrideReason: "Short-staffed" },
 		);
 	});
 

@@ -238,6 +238,10 @@ export const shiftTemplateSkillRequirement = pgTable(
  * Skill requirement override log
  * Records when a manager assigns an unqualified employee with an override reason.
  * Used for audit trails and compliance reporting.
+ *
+ * Written only in the transaction that assigns the employee (#893): a shift save
+ * or a shift request approval. The assignment context (shift date, subarea,
+ * template) is the one the override covered; rows from before #893 have none.
  */
 export const skillRequirementOverride = pgTable(
 	"skill_requirement_override",
@@ -256,6 +260,12 @@ export const skillRequirementOverride = pgTable(
 
 		// What skills were missing (JSON array of skill IDs)
 		missingSkillIds: text("missing_skill_ids").notNull(),
+
+		// The assignment context the override covered (#893): `shift.date` as stored,
+		// the subarea and the template. A later save in the same context needs no new override.
+		shiftDate: timestamp("shift_date"),
+		subareaId: uuid("subarea_id").references(() => locationSubarea.id, { onDelete: "set null" }),
+		templateId: uuid("template_id").references(() => shiftTemplate.id, { onDelete: "set null" }),
 
 		// Override details
 		overrideReason: text("override_reason").notNull(),

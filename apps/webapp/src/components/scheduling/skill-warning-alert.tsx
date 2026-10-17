@@ -44,7 +44,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 		return null;
 	}
 
-	if (validation.isQualified) {
+	if (validation.missingSkills.length === 0 && validation.expiredSkills.length === 0) {
 		return null;
 	}
 
@@ -60,7 +60,8 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 	}
 
 	const hasExpired = validation.expiredSkills.length > 0;
-	const hasBlockingIssues = requiredMissing.length > 0 || hasExpired;
+	// An expired required skill is also a missing one. Preferred skills never block (#893).
+	const hasBlockingIssues = requiredMissing.length > 0;
 
 	return (
 		<Alert variant={hasBlockingIssues ? "destructive" : "default"}>
@@ -122,7 +123,13 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 							<ul className="space-y-1 pl-5">
 								{validation.expiredSkills.map((skill) => (
 									<li key={skill.id} className="text-sm flex items-center gap-2">
-										<span className="size-1.5 rounded-full bg-destructive" />
+										<span
+											className={
+												skill.isRequired
+													? "size-1.5 rounded-full bg-destructive"
+													: "size-1.5 rounded-full bg-muted-foreground"
+											}
+										/>
 										{skill.name}
 										<span className="text-xs text-muted-foreground">
 											{t("scheduling:scheduling.skills.expiredOn", "(Expired {date})", {
@@ -145,8 +152,8 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 					{hasBlockingIssues && (
 						<p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
 							{t(
-								"scheduling:scheduling.skills.warningMessage",
-								"You can still assign this shift, but it will be logged as an override.",
+								"scheduling:scheduling.skills.overrideReasonNotice",
+								"You can still assign this shift with a reason. The reason is logged as a skill override.",
 							)}
 						</p>
 					)}
@@ -166,15 +173,13 @@ export function SkillWarningBadge({
 }) {
 	const { t } = useTranslate();
 
-	if (!validation || validation.isQualified) {
+	// Expired skills are also missing ones, so this counts each gap once.
+	const totalIssues = validation?.missingSkills.length ?? 0;
+	if (!validation || totalIssues === 0) {
 		return null;
 	}
 
-	const hasMissingRequired = validation.missingSkills.some((s) => s.isRequired);
-	const hasExpired = validation.expiredSkills.length > 0;
-	const totalIssues = validation.missingSkills.length + validation.expiredSkills.length;
-
-	if (hasMissingRequired || hasExpired) {
+	if (!validation.isQualified) {
 		return (
 			<Badge variant="destructive" className="text-xs">
 				<IconAlertTriangle className="mr-1 size-3" aria-hidden="true" />
