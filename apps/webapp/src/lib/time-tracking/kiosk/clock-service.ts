@@ -15,7 +15,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { isEmployeeActivelyAssignedToLocation } from "@/lib/time-tracking/assigned-locations/queries";
 import type { Clocking } from "@/lib/time-tracking/clocking/clocking";
-import { proveKioskPin } from "@/lib/time-tracking/clocking/kiosk";
+import { proveKioskBadge, proveKioskPin } from "@/lib/time-tracking/clocking/kiosk";
 import type { ClockPrincipal } from "@/lib/time-tracking/clocking/types";
 import type { KioskPinVerification } from "@/lib/time-tracking/kiosk/verify-kiosk-pin";
 import {
@@ -36,6 +36,7 @@ import {
 	resolveKioskClockAttempt,
 } from "./clock-attempt";
 import { readKioskEmployeeState } from "./employee-state";
+import { readKioskBadgeScanner } from "./kiosk-store";
 import {
 	KIOSK_CLOCK_ACTIONS,
 	type KioskClockAction,
@@ -56,12 +57,22 @@ export type EmployeeCalendar = { timezone: string; weekStartDay: WeekStartDay };
  * Order: the kiosk (token), the request, the kiosk's PIN attempt limit, the
  * employee's assignment to the kiosk's location, the PIN, then Clocking, which
  * authorizes the whole again. A wrong or locked PIN never reaches Clocking.
+ * A scanned kiosk badge (#1366) replaces employee and PIN at a kiosk that
+ * accepts badges: its own attempt limit, then the badge names the employee, who
+ * must be assigned to the kiosk's location; Clocking checks badge, kiosk and
+ * assignment again inside the work transaction.
  */
 export type KioskClockServiceDeps = {
 	clocking: Clocking;
 	clock: Clock;
 	/** The per-kiosk PIN attempt limit (spec "Rate limit"); every PIN-carrying call counts. */
 	limitPinAttempts(kioskId: string): Promise<{ allowed: boolean; retryAfter: number }>;
+	/**
+	 * The per-kiosk badge attempt limit (#1366); every badge-carrying call counts,
+	 * never toward the PIN limit or lockout. Production wires its own limiter
+	 * (`kiosk-clock.ts`); without one, badge calls are not limited.
+	 */
+	limitBadgeAttempts?(kioskId: string): Promise<{ allowed: boolean; retryAfter: number }>;
 	verifyPin?: (
 		organizationId: string,
 		employeeId: string,
@@ -76,14 +87,31 @@ export type KioskClockServiceDeps = {
 
 type KioskEmployee = { id: string; userId: string; name: string };
 
+/** A request's verified employee (`badge`: proven by a kiosk badge, #1366), or the refusal. */
+type Admission =
+	| { response: Response }
+	| { principal: ClockPrincipal; employee: KioskEmployee; badge: boolean };
+
 const NO_STORE = { "Cache-Control": "no-store" };
 
-const employeeRequest = z.object({
+/** The employee and their kiosk PIN (#860). */
+const pinProofFields = {
 	employeeId: z.string().uuid(),
 	pin: z.string().min(1).max(32),
-});
+	badge: z.never().optional(),
+};
 
-const clockRequest = employeeRequest.extend({
+/**
+ * A scanned kiosk badge instead (#1366): the badge names the employee. An
+ * `employeeId` beside it may only repeat the badge's own employee.
+ */
+const badgeProofFields = {
+	badge: z.string().min(1).max(256),
+	employeeId: z.string().uuid().optional(),
+	pin: z.never().optional(),
+};
+
+const actionFields = {
 	action: z.enum(KIOSK_CLOCK_ACTIONS),
 	operationId: z.string().uuid().optional(),
 	breakMinutes: z
@@ -94,7 +122,17 @@ const clockRequest = employeeRequest.extend({
 		.optional(),
 	/** Read leniently per action (#1123): a malformed one is dropped, never refused. */
 	vehicleUse: z.unknown().optional(),
-});
+};
+
+const employeeRequest = z.union([z.object(pinProofFields), z.object(badgeProofFields)]);
+
+const clockRequest = z.union([
+	z.object({ ...pinProofFields, ...actionFields }),
+	z.object({ ...badgeProofFields, ...actionFields }),
+]);
+
+type EmployeeRequest = z.infer<typeof employeeRequest>;
+type ClockRequest = z.infer<typeof clockRequest>;
 
 const outcomeRequest = z.object({
 	operationId: z.string().uuid(),
@@ -175,18 +213,18 @@ function eventTime(
 export function createKioskClockService(deps: KioskClockServiceDeps) {
 	const verifyPin = deps.verifyPin;
 	const employeeCalendar = deps.employeeCalendar ?? settingsCalendar;
+	const limitBadgeAttempts =
+		deps.limitBadgeAttempts ?? (async () => ({ allowed: true, retryAfter: 0 }));
 
-	/** The kiosk's employee behind a verified PIN, or the refusal to answer. */
-	async function admit(
-		body: { employeeId: string; pin: string },
+	/**
+	 * The kiosk's employee by id, when active and assigned to the kiosk's
+	 * location; another organization's employee, an inactive one and an
+	 * unassigned one read alike (null).
+	 */
+	async function assignedEmployee(
 		kiosk: AuthenticatedKiosk,
-	): Promise<{ response: Response } | { principal: ClockPrincipal; employee: KioskEmployee }> {
-		const limit = await deps.limitPinAttempts(kiosk.kioskId);
-		if (!limit.allowed) {
-			return {
-				response: json({ code: "rate_limited", retryAfter: limit.retryAfter }, 429),
-			};
-		}
+		employeeId: string,
+	): Promise<KioskEmployee | null> {
 		const [subject] = await db
 			.select({
 				id: employee.id,
@@ -197,11 +235,8 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			})
 			.from(employee)
 			.innerJoin(user, eq(user.id, employee.userId))
-			.where(
-				and(eq(employee.id, body.employeeId), eq(employee.organizationId, kiosk.organizationId)),
-			)
+			.where(and(eq(employee.id, employeeId), eq(employee.organizationId, kiosk.organizationId)))
 			.limit(1);
-		// Another organization's employee, an inactive one and an unassigned one read alike.
 		if (
 			!subject ||
 			!(await isEmployeeActivelyAssignedToLocation(db, {
@@ -211,8 +246,73 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 				now: deps.clock.nowInstant(),
 			}))
 		) {
-			return { response: json({ code: "employee_not_assigned" }, 403) };
+			return null;
 		}
+		return {
+			id: subject.id,
+			userId: subject.userId,
+			// The same name as on the kiosk's list (`readKioskEmployees`).
+			name: buildDerivedUserName(subject.firstName ?? "", subject.lastName ?? "", subject.name),
+		};
+	}
+
+	/** The kiosk's employee behind a verified PIN or badge, or the refusal to answer. */
+	function admit(body: EmployeeRequest, kiosk: AuthenticatedKiosk): Promise<Admission> {
+		return body.badge === undefined ? admitPin(body, kiosk) : admitBadge(body, kiosk);
+	}
+
+	/**
+	 * The employee a scanned badge proves (#1366): at a kiosk that accepts
+	 * badges, within its badge attempt limit, an active badge of the kiosk's
+	 * organization whose employee is active and assigned to the kiosk's location.
+	 * Every other badge reads alike (`badge_not_accepted`) and names nobody; a
+	 * named employee other than the badge's is refused the same way. Never a PIN
+	 * attempt.
+	 */
+	async function admitBadge(
+		body: { badge: string; employeeId?: string },
+		kiosk: AuthenticatedKiosk,
+	): Promise<Admission> {
+		if (!(await readKioskBadgeScanner(db, kiosk))) {
+			return { response: json({ code: "badge_input_disabled" }, 403) };
+		}
+		const limit = await limitBadgeAttempts(kiosk.kioskId);
+		if (!limit.allowed) {
+			return {
+				response: json({ code: "rate_limited", retryAfter: limit.retryAfter }, 429),
+			};
+		}
+		const refused = { response: json({ code: "badge_not_accepted" }, 403) };
+		const proven = await proveKioskBadge(db, {
+			organizationId: kiosk.organizationId,
+			kioskId: kiosk.kioskId,
+			credential: body.badge,
+			now: deps.clock.nowInstant(),
+		});
+		if (proven.status !== "verified") return refused;
+		const { proof } = proven;
+		if (body.employeeId !== undefined && body.employeeId !== proof.employeeId) return refused;
+		const subject = await assignedEmployee(kiosk, proof.employeeId);
+		if (!subject) return refused;
+		return {
+			principal: { kind: "kiosk", kioskId: kiosk.kioskId, userId: subject.userId, pin: proof },
+			employee: subject,
+			badge: true,
+		};
+	}
+
+	async function admitPin(
+		body: { employeeId: string; pin: string },
+		kiosk: AuthenticatedKiosk,
+	): Promise<Admission> {
+		const limit = await deps.limitPinAttempts(kiosk.kioskId);
+		if (!limit.allowed) {
+			return {
+				response: json({ code: "rate_limited", retryAfter: limit.retryAfter }, 429),
+			};
+		}
+		const subject = await assignedEmployee(kiosk, body.employeeId);
+		if (!subject) return { response: json({ code: "employee_not_assigned" }, 403) };
 		const verification = await proveKioskPin(
 			{
 				organizationId: kiosk.organizationId,
@@ -240,12 +340,8 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 				userId: subject.userId,
 				pin: verification.proof,
 			},
-			employee: {
-				id: subject.id,
-				userId: subject.userId,
-				// The same name as on the kiosk's list (`readKioskEmployees`).
-				name: buildDerivedUserName(subject.firstName ?? "", subject.lastName ?? "", subject.name),
-			},
+			employee: subject,
+			badge: false,
 		};
 	}
 
@@ -270,7 +366,7 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 		kiosk: AuthenticatedKiosk,
 		principal: ClockPrincipal,
 		employeeId: string,
-		body: z.infer<typeof clockRequest>,
+		body: ClockRequest,
 	) {
 		const command = {
 			organizationId: kiosk.organizationId,
@@ -348,6 +444,10 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			const outcome = await runAction(kiosk, admitted.principal, admitted.employee.id, body);
 			const after = await snapshot(kiosk, admitted.employee);
 			if (outcome.outcome === "refused") {
+				// A badge whose authority ended before the work could commit names nobody (#1366).
+				if (admitted.badge && outcome.failure.code === "access_denied") {
+					return json({ code: "badge_not_accepted" }, 403);
+				}
 				const detail = isAttemptClosed(outcome.failure)
 					? { code: "attempt_closed" }
 					: kioskRefusalDetail(outcome.failure as { code: string });

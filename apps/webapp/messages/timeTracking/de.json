@@ -147,6 +147,17 @@
         "resume": "Arbeit fortsetzen",
         "startBreak": "Pause starten"
       },
+      "badge": {
+        "checking": "Ihr Ausweis wird geprüft…",
+        "failed": "Der Ausweis konnte nicht geprüft werden. Es wurde nichts erfasst. Scannen Sie ihn erneut oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "inputDisabled": "Das Scannen von Ausweisen ist an diesem Kiosk ausgeschaltet. Tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "notAccepted": "Dieser Ausweis wird an diesem Kiosk nicht angenommen. Es wurde nichts erfasst. Tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden, oder wenden Sie sich an Ihre Führungskraft.",
+        "notRecorded": "Ihre Aktion wurde nicht erfasst. Scannen Sie Ihren Ausweis erneut, um sie noch einmal zu wählen.",
+        "offline": "Stempeln mit Ausweis braucht eine Verbindung. Es wurde nichts erfasst.",
+        "offlinePin": "Stempeln mit Ausweis braucht eine Verbindung. Es wurde nichts erfasst. Tippen Sie auf Ihren Namen, um mit Ihrer PIN zu stempeln.",
+        "rateLimited": "Zu viele Ausweis-Scans an diesem Kiosk. Versuchen Sie es in {seconds} Sekunden erneut oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "unreadable": "Dieser Code ist kein Kiosk-Ausweis. Es wurde nichts erfasst."
+      },
       "board": {
         "empty": "Derzeit ist niemand eingestempelt.",
         "title": "Wer ist anwesend"
@@ -174,6 +185,7 @@
         "loadFailed": "Die Namen konnten nicht geladen werden. Überprüfen Sie die Netzwerkverbindung.",
         "loading": "Namen werden geladen…",
         "noMatch": "Kein Name entspricht Ihrer Suche.",
+        "scanHint": "Oder scannen Sie Ihren Kiosk-Ausweis am Scanner.",
         "search": "Finden Sie Ihren Namen",
         "title": "Tippen Sie auf Ihren Namen, um sich ein- oder auszustempeln"
       },

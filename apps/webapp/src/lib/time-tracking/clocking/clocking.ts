@@ -94,7 +94,11 @@ import {
 } from "./clock-out";
 import type { ClockFollowUps, ClockOutAdvice, ClosedLiveWork } from "./follow-ups";
 import { FrozenCommandNotAcceptedError } from "./frozen";
-import { breakStartEntrySource, claimExecutedKioskAttempt } from "./kiosk";
+import {
+	breakStartEntrySource,
+	claimExecutedKioskAttempt,
+	KioskAuthorityWithdrawnError,
+} from "./kiosk";
 import { LegacyCommandNotAcceptedError } from "./legacy-command";
 import { stampExecutedClockEvent } from "./position-stamp";
 import { clockOutCanPickTask } from "./task-choice";
@@ -252,6 +256,8 @@ function transactionRefusal(error: unknown) {
 	) {
 		return { code: "collision" as const, cause: error };
 	}
+	// A badge action whose authority ended before it could commit (#1366).
+	if (error instanceof KioskAuthorityWithdrawnError) return { code: "access_denied" as const };
 	if (error instanceof TimeEntryAppendReviewRequiredError) {
 		return { code: "append_review_required" as const, requirement: error.requirement };
 	}
@@ -676,7 +682,11 @@ export function createClocking(ports: ClockingPorts): Clocking {
 							eventInstant,
 							entryIdOf: (executed) => executed.entry.id,
 						}),
-						{ action: "clock_out", at: (executed) => entryEventTime(executed.entry) },
+						{
+							action: "clock_out",
+							at: (executed) => entryEventTime(executed.entry),
+							now: eventInstant,
+						},
 					);
 				},
 			);
@@ -787,7 +797,11 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						),
 						(started) => started.entry.id,
 					),
-					{ action: "clock_in", at: (started) => entryEventTime(started.entry) },
+					{
+						action: "clock_in",
+						at: (started) => entryEventTime(started.entry),
+						now: eventInstant,
+					},
 				),
 			);
 		} catch (error) {
@@ -889,6 +903,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 							action: command.resumesBreakInProgress ? "resume_break" : "break",
 							// The break ends where the work resumes, in the zone of the device.
 							at: (executed) => ({ instant: executed.result.start, zone: null }),
+							now: eventInstant,
 						},
 					);
 				},
@@ -1044,6 +1059,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		}
 		if (error instanceof BreakStartCollisionError) return { code: "collision" };
 		if (error instanceof KioskAttemptClosedError) return { code: "collision", cause: error };
+		if (error instanceof KioskAuthorityWithdrawnError) return { code: "access_denied" };
 		if (error instanceof FrozenCommandNotAcceptedError) return { code: "frozen_not_accepted" };
 		if (error instanceof ClockingConflictError) return { code: "not_clocked_in" };
 		return { code: "unconfirmed", cause: error };
@@ -1111,6 +1127,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						{
 							action: "start_break",
 							at: (executed) => ({ instant: executed.result.start, zone: null }),
+							now: instant,
 						},
 					),
 			);

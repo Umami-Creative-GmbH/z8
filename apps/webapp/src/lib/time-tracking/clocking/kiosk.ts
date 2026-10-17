@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { type employee, kiosk } from "@/db/schema";
+import { type employee, employeeAssignedLocation, kiosk, location } from "@/db/schema";
 import { type Clock, compareInstants, type Instant } from "@/lib/datetime/temporal-core";
 import { isEmployeeActivelyAssignedToLocation } from "../assigned-locations/queries";
 import {
@@ -11,6 +11,7 @@ import {
 	kioskClockWriter,
 	liveClockOutWriter,
 } from "../close-active-work";
+import { lockActiveKioskBadge, resolveActiveKioskBadge } from "../kiosk/badge-store";
 import { claimKioskClockAttempt } from "../kiosk/clock-attempt";
 import {
 	judgeKioskPinAttempt,
@@ -45,7 +46,9 @@ type Employee = typeof employee.$inferSelect;
  * their instant) and take the kiosk's zone as their device zone, except frozen
  * kiosk commands (#1289, offline kiosk clocking): queued on an offline kiosk,
  * they carry their occurred instant and payload, and their PIN is checked when
- * they arrive (ADR 0011).
+ * they arrive (ADR 0011). A kiosk badge (#1366, ADR 0012) can stand in for the
+ * PIN online: its proof names the badge, which is checked again, with the kiosk
+ * and the assignment, inside the work transaction.
  */
 
 /** How long a PIN proof authorizes commands: one request's worth. */
@@ -76,6 +79,35 @@ export async function proveKioskPin(
 		organizationId: input.organizationId,
 		kioskId: input.kioskId,
 		employeeId: input.employeeId,
+	});
+	issuedProofs.set(proof, performance.now());
+	return { status: "verified", proof };
+}
+
+/**
+ * Checks a scanned kiosk badge at a kiosk (#1366, ADR 0012) and, when it is an
+ * active badge of the kiosk's organization, issues the proof a kiosk principal
+ * carries for the badge's employee. The credential stays here: the proof names
+ * only the badge. A badge that does not prove anyone never counts toward a PIN
+ * lockout; the per-kiosk badge attempt limit is the caller's. Whether the kiosk
+ * accepts badges and the employee may clock there is checked by the caller and,
+ * again, inside the work transaction.
+ */
+export async function proveKioskBadge(
+	client: Parameters<typeof resolveActiveKioskBadge>[0],
+	input: { organizationId: string; kioskId: string; credential: unknown; now: Instant },
+): Promise<{ status: "verified"; proof: KioskPinProof } | { status: "not_accepted" }> {
+	const badge = await resolveActiveKioskBadge(client, {
+		organizationId: input.organizationId,
+		credential: input.credential,
+		now: input.now,
+	});
+	if (!badge) return { status: "not_accepted" };
+	const proof: KioskPinProof = Object.freeze({
+		organizationId: input.organizationId,
+		kioskId: input.kioskId,
+		employeeId: badge.employeeId,
+		badge: Object.freeze({ badgeId: badge.badgeId }),
 	});
 	issuedProofs.set(proof, performance.now());
 	return { status: "verified", proof };
@@ -191,33 +223,115 @@ export function kioskReceiptEvidence(command: { principal: ClockPrincipal }): {
 type Executed<Result> = Result & { disposition: "executed" };
 
 /**
- * Claims the kiosk clock attempt of an executed online kiosk command (#1363):
- * inside the command's work transaction, after its writes, in both admissions.
- * Only immediate kiosk commands under the kiosk's own (client) operation identity
- * claim one; frozen commands have their own lookup and a server identity cannot
- * be asked about. A replay never claims: its original did. Throws
- * `KioskAttemptClosedError` when the kiosk's outcome lookup closed the attempt
- * first, which rolls the work back. Returns the result unchanged.
+ * A kiosk badge action's authority ended before its work transaction could
+ * commit (#1366): the badge was replaced, revoked or ended by a departure, the
+ * employee lost access or their assignment to the kiosk's location, or the
+ * kiosk was revoked or stopped accepting badges. The work rolls back.
+ */
+export class KioskAuthorityWithdrawnError extends Error {
+	constructor() {
+		super("The kiosk badge no longer authorizes this action");
+		this.name = "KioskAuthorityWithdrawnError";
+	}
+}
+
+/** The transaction client of a kiosk command's in-transaction steps. */
+type KioskStepClient = Parameters<typeof claimKioskClockAttempt>[0] &
+	Parameters<typeof lockActiveKioskBadge>[0];
+
+/**
+ * The protected write boundary of a badge action (#1366): inside its work
+ * transaction, which holds the employee key, the kiosk must still be active and
+ * accept badges, the badge still active for the employee (access at `now`
+ * included), and the employee still assigned to the kiosk's active location.
+ * Each row is locked (kiosk and assignment `FOR KEY SHARE`, the badge `FOR
+ * UPDATE`), so a kiosk change, an unassignment or a badge change either
+ * committed before and is seen here, or waits for this transaction.
+ */
+async function recheckKioskBadge(
+	tx: KioskStepClient,
+	input: {
+		organizationId: string;
+		kioskId: string;
+		employeeId: string;
+		badgeId: string;
+		now: Instant;
+	},
+): Promise<void> {
+	const [active] = await tx
+		.select({ locationId: kiosk.locationId, badgeScannerEnabled: kiosk.badgeScannerEnabled })
+		.from(kiosk)
+		.where(
+			and(
+				eq(kiosk.id, input.kioskId),
+				eq(kiosk.organizationId, input.organizationId),
+				isNull(kiosk.revokedAt),
+				isNotNull(kiosk.tokenHash),
+			),
+		)
+		.for("key share")
+		.limit(1);
+	if (!active?.badgeScannerEnabled) throw new KioskAuthorityWithdrawnError();
+	if (!(await lockActiveKioskBadge(tx, input))) throw new KioskAuthorityWithdrawnError();
+	const [assigned] = await tx
+		.select({ id: employeeAssignedLocation.id })
+		.from(employeeAssignedLocation)
+		.innerJoin(
+			location,
+			and(
+				eq(location.id, employeeAssignedLocation.locationId),
+				eq(location.organizationId, employeeAssignedLocation.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(employeeAssignedLocation.organizationId, input.organizationId),
+				eq(employeeAssignedLocation.employeeId, input.employeeId),
+				eq(employeeAssignedLocation.locationId, active.locationId),
+				eq(location.isActive, true),
+			),
+		)
+		.for("key share", { of: employeeAssignedLocation })
+		.limit(1);
+	if (!assigned) throw new KioskAuthorityWithdrawnError();
+}
+
+/**
+ * The in-transaction step of an executed online kiosk command, after its
+ * writes, in both admissions. A badge action (#1366) has its authority checked
+ * again first (`recheckKioskBadge`), whatever its identity; it throws
+ * `KioskAuthorityWithdrawnError` when that ended, which rolls the work back.
+ * Then the kiosk clock attempt is claimed (#1363): only immediate kiosk commands
+ * under the kiosk's own (client) operation identity claim one; frozen commands
+ * have their own lookup and a server identity cannot be asked about. A replay
+ * never claims: its original did. Throws `KioskAttemptClosedError` when the
+ * kiosk's outcome lookup closed the attempt first, which rolls the work back.
+ * Returns the result unchanged.
  */
 export async function claimExecutedKioskAttempt<Result extends { disposition: string }>(
-	tx: Parameters<typeof claimKioskClockAttempt>[0],
+	tx: KioskStepClient,
 	command: Pick<ClockCommand, "organizationId" | "principal" | "subject" | "identity" | "zone">,
 	result: Result,
 	claim: {
 		action: KioskClockAction;
 		/** When the executed action took effect, and the zone its entry captured, if any. */
 		at: (executed: Executed<Result>) => { instant: Instant; zone: string | null };
+		/** The command's own instant: a badge's authority is checked as of then. */
+		now: Instant;
 	},
 ): Promise<Result> {
 	const { principal } = command;
-	if (
-		result.disposition !== "executed" ||
-		principal.kind !== "kiosk" ||
-		principal.pin.frozen ||
-		command.identity.origin !== "client"
-	) {
-		return result;
+	if (result.disposition !== "executed" || principal.kind !== "kiosk") return result;
+	if (principal.pin.badge) {
+		await recheckKioskBadge(tx, {
+			organizationId: command.organizationId,
+			kioskId: principal.kioskId,
+			employeeId: command.subject.employeeId,
+			badgeId: principal.pin.badge.badgeId,
+			now: claim.now,
+		});
 	}
+	if (principal.pin.frozen || command.identity.origin !== "client") return result;
 	const at = claim.at(result as Executed<Result>);
 	await claimKioskClockAttempt(tx, {
 		organizationId: command.organizationId,
@@ -321,7 +435,11 @@ export async function authorizedKioskSubject(
 		return null;
 	}
 	const [active] = await db
-		.select({ locationId: kiosk.locationId, timezone: kiosk.timezone })
+		.select({
+			locationId: kiosk.locationId,
+			timezone: kiosk.timezone,
+			badgeScannerEnabled: kiosk.badgeScannerEnabled,
+		})
 		.from(kiosk)
 		.where(
 			and(
@@ -333,6 +451,8 @@ export async function authorizedKioskSubject(
 		)
 		.limit(1);
 	if (!active || !isKioskCommandZone(query, principal.pin, active.timezone)) return null;
+	// A badge proves the employee only at a kiosk that accepts badges (#1366).
+	if (principal.pin.badge && !active.badgeScannerEnabled) return null;
 	const assigned = await isEmployeeActivelyAssignedToLocation(db, {
 		organizationId: query.organizationId,
 		employeeId: row.id,

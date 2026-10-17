@@ -1,6 +1,6 @@
 ---
 title: Kiosks
-description: Shared clocking devices at a location, where employees clock with their kiosk PIN
+description: Shared clocking devices at a location, where employees clock with their kiosk PIN or kiosk badge
 icon: Clock
 ---
 
@@ -45,11 +45,7 @@ After five wrong PINs in a row the employee's PIN is locked for 15 minutes. A ki
 
 ## Kiosk Badges
 
-A kiosk badge is a printed QR code that identifies an employee at a kiosk instead of their PIN. It never signs anyone in to Z8, and the employee's kiosk PIN keeps working alongside it.
-
-<Callout type="info" title="Scanning Not Yet Available">
-Kiosks cannot scan badges yet. You can already issue and print them; they start working once badge scanning is available and switched on for a kiosk.
-</Callout>
+A kiosk badge is a printed QR code that identifies an employee at a kiosk instead of their PIN. It never signs anyone in to Z8, and the employee's kiosk PIN keeps working alongside it. A kiosk reads badges only when its badge scanner is switched on (see [Clocking with a Badge](#clocking-with-a-badge)).
 
 Owners, admins and the employee's direct manager manage badges in the **Kiosk access** card on the employee's page in **Settings -> Employees**, one employee at a time. Only active employees, including kiosk-only employees, can receive a badge.
 
@@ -82,6 +78,27 @@ A rehire never brings an old badge back: every copy of it stays invalid. To let 
 5. A confirmation shows the action and its time, then the kiosk returns to the home screen.
 
 The kiosk keeps an employee's PIN, state and day total only for their turn. It does not show history, corrections, projects or work categories.
+
+### Clocking with a Badge
+
+A kiosk can read kiosk badges with a QR scanner attached to the device, the kind that types what it reads like a keyboard (often called a keyboard or "wedge" scanner, connected by USB or Bluetooth). Owners and admins switch this on per kiosk with **Badge scanner** in the kiosk's **Edit** dialog; it is off for every kiosk until you switch it on. The kiosks list shows "Badge scanner on" for those kiosks.
+
+Set the scanner up as a keyboard that ends each scan with Enter (most scanners do by default). Badges use only digits and capital letters without Y and Z, so they read correctly whatever keyboard layout the scanner or the device uses.
+
+With the badge scanner on:
+
+1. The employee scans their badge at the kiosk's home screen. They do not tap their name or enter a PIN, and the scan alone records nothing.
+2. The kiosk shows their state, today's day total and the actions that fit, as after a PIN.
+3. They choose the action; vehicle questions and the confirmation follow as usual, and the kiosk returns to the home screen.
+
+Things to know:
+
+- **Only the home screen reads badges.** A scan during someone's turn, on a confirmation or while the kiosk checks an action is ignored: it cannot switch the employee or press anything. Typing a name into the search works as before.
+- **Every action checks the badge again.** If the badge was replaced or revoked, the employee's departure took effect, they are no longer assigned to the kiosk's location, the kiosk was revoked or its badge scanner switched off since the scan, the action is refused and nothing is recorded.
+- **Refused badges name nobody.** An unknown, replaced, revoked or foreign badge, or one of an employee who cannot clock at this kiosk, shows the same message. A code that is not a kiosk badge (a link, a product barcode) is never opened.
+- **Badge clocking needs a connection.** Offline, the kiosk says so and records and saves nothing for the badge. The employee can tap their name and use their PIN; with offline mode on, that PIN clocking is saved on the kiosk as usual.
+- **PIN and badge are independent.** Wrong badges never count toward an employee's PIN lockout. A kiosk accepts at most 60 badge requests per minute (a scan and its action are two).
+- **A lost answer is checked, never repeated.** If the connection drops after the employee chose an action, the kiosk shows "Checking whether your action was recorded" and offers nothing else until Z8 answers, also after a reload. If the action was recorded, the kiosk shows its original time. If Z8 confirms nothing was recorded, the kiosk asks the employee to scan their badge again (or use their PIN) and choose the action again; it never sends the old action on its own.
 
 ---
 

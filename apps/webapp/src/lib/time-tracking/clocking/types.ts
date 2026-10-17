@@ -65,10 +65,11 @@ export function principalCausingUserId(principal: ClockPrincipal): string | null
 }
 
 /**
- * Proof that this request verified an employee's kiosk PIN at a kiosk. Only the
- * kiosk PIN checks (`proveKioskPin`, `proveFrozenKioskPin`) issue one; a proof
- * built any other way is refused, and each proof expires shortly after it was
- * issued.
+ * Proof that this request verified the employee at a kiosk: their kiosk PIN,
+ * or (`badge`, #1366) their kiosk badge. Only the kiosk checks
+ * (`proveKioskPin`, `proveFrozenKioskPin`, `proveKioskBadge`) issue one; a
+ * proof built any other way is refused, and each proof expires shortly after it
+ * was issued.
  */
 export type KioskPinProof = {
 	readonly organizationId: string;
@@ -80,7 +81,16 @@ export type KioskPinProof = {
 	 * instant. Such a proof authorizes that one command only.
 	 */
 	readonly frozen?: KioskFrozenPinProof;
+	/**
+	 * Set only when a scanned kiosk badge proved the employee (#1366, ADR 0012):
+	 * which badge, so the work transaction can check it again under its lock.
+	 * Never frozen: badge clocking is online only.
+	 */
+	readonly badge?: KioskBadgeProof;
 };
+
+/** The badge a badge proof was issued for; never its credential. */
+export type KioskBadgeProof = { readonly badgeId: string };
 
 /**
  * Where a frozen kiosk command's instant came from (#1289): the server time of

@@ -22,6 +22,7 @@ import {
 	rememberUncertainAction,
 } from "@/lib/time-tracking/kiosk/uncertain-action";
 import { KIOSK_ACTION_REQUEST } from "./kiosk-action-request";
+import { KioskBadgeCheck } from "./kiosk-badge-check";
 import { KioskConfirmation } from "./kiosk-confirmation";
 import {
 	KioskEmployeePanel,
@@ -37,9 +38,12 @@ import {
 	actedFlow,
 	actingFlow,
 	actingOfflineFlow,
+	badgeCheckedFlow,
 	isKioskFlowBusy,
 	type KioskFlow,
 	type KioskTurnConfirmation,
+	type KioskTurnProof,
+	kioskProofBody,
 	type OfflineTurn,
 	pinCheckedFlow,
 	queueOfflineAction,
@@ -49,6 +53,7 @@ import {
 } from "./kiosk-turn-flow";
 import { KioskUncertainScreen } from "./kiosk-uncertain-screen";
 import { KioskVehicleUseStep } from "./kiosk-vehicle-use-step";
+import { useKioskBadgeScanner } from "./use-kiosk-badge-scanner";
 import { useKioskOfflineMode } from "./use-kiosk-offline-mode";
 
 /** The confirmation returns home on its own after about this long. */
@@ -88,6 +93,11 @@ interface KioskPairedScreenProps {
  * (`offline-queue.ts`) and refusals show as notices on the home screen. The
  * contact itself, and what it keeps or deletes, is `useKioskOfflineMode`; the
  * screens of a turn and how they follow each other are `kiosk-turn-flow.ts`.
+ *
+ * A kiosk that accepts badges (#1366) also opens a turn from a badge read on
+ * the home screen (`identifyBadge`, fed by the attached scanner through
+ * `KioskHome`); the badge then stands in for the PIN for that turn only, online
+ * only, and is never stored. Scans anywhere else are swallowed.
  */
 export function KioskPairedScreen({
 	token,
@@ -130,6 +140,12 @@ export function KioskPairedScreen({
 		language.reset();
 	}
 
+	/** The next screen; a turn that ends on the home screen (with a note) resets the language. */
+	function next(flow: KioskFlow) {
+		setFlow(flow);
+		if (flow.step === "home") language.reset();
+	}
+
 	// Every screen of an employee's turn returns home on its own; a touch restarts the wait.
 	const returnHome = useEffectEvent(() => goHome());
 	const busy = isKioskFlowBusy(flow);
@@ -140,6 +156,43 @@ export function KioskPairedScreen({
 		const timer = window.setTimeout(() => returnHome(), timeout);
 		return () => window.clearTimeout(timer);
 	}, [flow, busy, activity]);
+
+	// A note on the home screen (#1366) clears itself like a confirmation.
+	const homeNotice = flow.step === "home" ? (flow.notice ?? null) : null;
+	useEffect(() => {
+		if (!homeNotice) return;
+		const timer = window.setTimeout(
+			() => setFlow((current) => (current.step === "home" ? { step: "home" } : current)),
+			KIOSK_CONFIRMATION_MS,
+		);
+		return () => window.clearTimeout(timer);
+	}, [homeNotice]);
+
+	// Attached-scanner badges (#1366): read on the home screen (`KioskHome`), and kept
+	// away from every other screen, so no scan switches or changes an employee's turn.
+	const scanner = kiosk.badgeScannerEnabled === true;
+	useKioskBadgeScanner({ mode: scanner && flow.step !== "home" ? "guard" : "off" });
+
+	/**
+	 * A badge read on the home screen (#1366), by whatever input read it: the
+	 * badge's employee, state, day total and actions, or why not. Records nothing.
+	 * Badge clocking needs a connection; offline nothing is sent or queued.
+	 */
+	async function identifyBadge(badge: string) {
+		if (!contact.online) {
+			setFlow({ step: "home", notice: { code: "badge_offline" } });
+			return;
+		}
+		setFlow({ step: "badge" });
+		const result = await kioskPost<KioskEmployeeSnapshot>(
+			token,
+			"/api/kiosk/employee-status",
+			{ badge },
+			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
+		);
+		if (result.kind === "kiosk") return kioskRefused(result.code);
+		setFlow(badgeCheckedFlow({ badge, result, contactLost: contact.contactLost }));
+	}
 
 	async function verifyPin(employee: KioskEmployeeListing, attempt: number, pin: string) {
 		setFlow({ step: "pin", employee, attempt, busy: true, error: null });
@@ -161,12 +214,12 @@ export function KioskPairedScreen({
 	}
 
 	async function act(
-		pin: string,
+		proof: KioskTurnProof,
 		snapshot: KioskEmployeeSnapshot,
 		action: KioskPanelAction,
 		vehicle?: VehicleAnswer,
 	) {
-		setFlow(actingFlow(pin, snapshot, action, vehicle));
+		setFlow(actingFlow(proof, snapshot, action, vehicle));
 		const vehicleUse = vehicle?.answer.vehicleUse;
 		// One identity per explicit action, kept before it is sent, so a lost reply
 		// resolves this action instead of making a second one (#1363).
@@ -178,14 +231,15 @@ export function KioskPairedScreen({
 			action,
 			request: KIOSK_ACTION_REQUEST[action],
 			submittedAt: new Date().toISOString(),
+			// Only that a badge proved the employee (#1366), never the badge itself.
+			...(proof.badge !== undefined ? { via: "badge" as const } : {}),
 		};
 		rememberUncertainAction(attempt);
 		const result = await kioskPost<KioskClockResult>(
 			token,
 			"/api/kiosk/clock",
 			{
-				employeeId: snapshot.employee.id,
-				pin,
+				...kioskProofBody(proof, snapshot.employee.id),
 				action: attempt.request,
 				operationId: attempt.operationId,
 				...(vehicleUse ? { vehicleUse } : {}),
@@ -197,9 +251,9 @@ export function KioskPairedScreen({
 			forgetUncertainAction(attempt.operationId);
 			return kioskRefused(result.code);
 		}
-		const next = actedFlow({ pin, snapshot, action, attempt, vehicle, result });
-		if (next.step !== "uncertain") forgetUncertainAction(attempt.operationId);
-		setFlow(next);
+		const acted = actedFlow({ proof, snapshot, action, attempt, vehicle, result });
+		if (acted.step !== "uncertain") forgetUncertainAction(attempt.operationId);
+		next(acted);
 	}
 
 	/** Asks Z8 once what became of the uncertain action (#1363); never sends the action again. */
@@ -216,15 +270,17 @@ export function KioskPairedScreen({
 		);
 		// The device token was refused: the action stays unresolved for after pairing again.
 		if (result.kind === "kiosk") return kioskRefused(result.code);
-		const next = resolvedFlow(attempt, result);
-		if (next.step !== "uncertain" || next.check === "conflict") {
+		const resolved = resolvedFlow(attempt, result);
+		if (resolved.step !== "uncertain" || resolved.check === "conflict") {
 			forgetUncertainAction(attempt.operationId);
 		}
 		setFlow((current) =>
 			current.step === "uncertain" && current.attempt.operationId === attempt.operationId
-				? next
+				? resolved
 				: current,
 		);
+		// A badge turn closed as not recorded ends on the home screen (#1366).
+		if (resolved.step === "home") language.reset();
 	});
 
 	const uncertain = flow.step === "uncertain" && flow.check !== "conflict" ? flow : null;
@@ -250,13 +306,17 @@ export function KioskPairedScreen({
 	}
 
 	/** An action's button: the vehicle step first when the action asks vehicle use (#1123). */
-	function choose(pin: string, snapshot: KioskEmployeeSnapshot, action: KioskPanelAction) {
+	function choose(
+		proof: KioskTurnProof,
+		snapshot: KioskEmployeeSnapshot,
+		action: KioskPanelAction,
+	) {
 		const ask = vehicleAskOf(action, snapshot.vehicleUse);
 		if (ask) {
-			setFlow({ step: "vehicle", pin, snapshot, action, ask, pending: false });
+			setFlow({ step: "vehicle", proof, snapshot, action, ask, pending: false });
 			return;
 		}
-		void act(pin, snapshot, action);
+		void act(proof, snapshot, action);
 	}
 
 	function chooseOffline(turn: OfflineTurn, action: KioskPanelAction) {
@@ -289,6 +349,14 @@ export function KioskPairedScreen({
 						contacts={contact.contacts}
 						offline={kiosk.offlineMode && offlineNow}
 						locale={language.locale}
+						notice={flow.notice ?? null}
+						{...(scanner
+							? {
+									onBadge: (badge: string) => void identifyBadge(badge),
+									onBadgeUnreadable: () =>
+										setFlow({ step: "home", notice: { code: "badge_unreadable" } }),
+								}
+							: {})}
 						onChooseLanguage={language.choose}
 						onPick={(employee) =>
 							setFlow({
@@ -312,7 +380,7 @@ export function KioskPairedScreen({
 					onHome={goHome}
 					onVerifyPin={(employee, attempt, pin) => void verifyPin(employee, attempt, pin)}
 					onChoose={choose}
-					onAct={(pin, snapshot, action, vehicle) => void act(pin, snapshot, action, vehicle)}
+					onAct={(proof, snapshot, action, vehicle) => void act(proof, snapshot, action, vehicle)}
 					onChooseOffline={chooseOffline}
 					onActOffline={(turn, action, vehicle) => void actOffline(turn, action, vehicle)}
 				/>
@@ -364,9 +432,13 @@ function KioskTurnScreen({
 	onFlow: (flow: KioskFlow) => void;
 	onHome: () => void;
 	onVerifyPin: (employee: KioskEmployeeListing, attempt: number, pin: string) => void;
-	onChoose: (pin: string, snapshot: KioskEmployeeSnapshot, action: KioskPanelAction) => void;
+	onChoose: (
+		proof: KioskTurnProof,
+		snapshot: KioskEmployeeSnapshot,
+		action: KioskPanelAction,
+	) => void;
 	onAct: (
-		pin: string,
+		proof: KioskTurnProof,
 		snapshot: KioskEmployeeSnapshot,
 		action: KioskPanelAction,
 		vehicle: VehicleAnswer,
@@ -391,6 +463,8 @@ function KioskTurnScreen({
 					onBack={onHome}
 				/>
 			);
+		case "badge":
+			return <KioskBadgeCheck key="badge" />;
 		case "employee":
 			return (
 				<KioskEmployeePanel
@@ -401,7 +475,7 @@ function KioskTurnScreen({
 					pending={flow.pending}
 					disabled={!online}
 					error={flow.error ? message(flow.error) : null}
-					onAction={(action) => onChoose(flow.pin, flow.snapshot, action)}
+					onAction={(action) => onChoose(flow.proof, flow.snapshot, action)}
 					onBack={onHome}
 				/>
 			);
@@ -416,7 +490,7 @@ function KioskTurnScreen({
 					pending={flow.pending}
 					disabled={!online}
 					onConfirm={(answer) =>
-						onAct(flow.pin, flow.snapshot, flow.action, {
+						onAct(flow.proof, flow.snapshot, flow.action, {
 							ask: flow.ask,
 							answer,
 						})
@@ -424,7 +498,7 @@ function KioskTurnScreen({
 					onBack={() =>
 						onFlow({
 							step: "employee",
-							pin: flow.pin,
+							proof: flow.proof,
 							snapshot: flow.snapshot,
 							pending: null,
 							error: null,

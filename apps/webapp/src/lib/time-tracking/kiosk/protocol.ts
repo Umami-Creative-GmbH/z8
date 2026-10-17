@@ -43,6 +43,17 @@ export type KioskRefusalCode = "kiosk_unknown" | "kiosk_revoked";
  *
  * Refusals are `{ code, ... }` (`KioskClockRefusal`). A wrong or locked PIN is
  * answered without clocking.
+ *
+ * Badges (#1366, spec #889): at a kiosk whose `badgeScannerEnabled` is on, both
+ * calls take `{ badge }` (the scanned credential, `badge-credential.ts`) instead
+ * of `{ employeeId, pin }`; the badge names the employee. `clock` may repeat
+ * the snapshot's `employeeId` beside it, which must be the badge's own. A badge
+ * is never stored on the device and never queued offline. Badge refusals: 403
+ * `badge_input_disabled` (the kiosk does not accept badges), 403
+ * `badge_not_accepted` (unknown, replaced, revoked, foreign or ended badge, an
+ * inactive or unassigned employee, or another `employeeId`; it names nobody),
+ * 429 `rate_limited` (the kiosk's own badge limit, never the PIN's). A badge
+ * action whose authority ended after the scan is refused the same way.
  */
 export const KIOSK_CLOCK_ACTIONS = [
 	"clock_in",
@@ -181,6 +192,13 @@ export type KioskDeviceInfo = {
 	 * false the kiosk caches and queues nothing and refuses clocking offline.
 	 */
 	offlineMode: boolean;
+	/**
+	 * Whether the kiosk accepts employee kiosk badges from an attached
+	 * keyboard-style QR scanner on its home screen (#1366, spec #889), off by
+	 * default. Read at every contact. Absent (a device that cached an older
+	 * answer) reads as off. Badge clocking always needs a connection.
+	 */
+	badgeScannerEnabled?: boolean;
 };
 
 /**

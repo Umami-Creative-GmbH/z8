@@ -147,6 +147,17 @@
         "resume": "Resume work",
         "startBreak": "Start break"
       },
+      "badge": {
+        "checking": "Checking your badge…",
+        "failed": "The badge could not be checked. Nothing was recorded. Scan it again, or tap your name to use your PIN.",
+        "inputDisabled": "Badge scanning is switched off at this kiosk. Tap your name to use your PIN.",
+        "notAccepted": "This badge is not accepted at this kiosk. Nothing was recorded. Tap your name to use your PIN, or ask your manager.",
+        "notRecorded": "Your action was not recorded. Scan your badge again to choose it again.",
+        "offline": "Badge clocking needs a connection. Nothing was recorded.",
+        "offlinePin": "Badge clocking needs a connection. Nothing was recorded. Tap your name to clock with your PIN.",
+        "rateLimited": "Too many badge scans at this kiosk. Try again in {seconds} seconds, or tap your name to use your PIN.",
+        "unreadable": "This code is not a kiosk badge. Nothing was recorded."
+      },
       "board": {
         "empty": "Nobody is clocked in right now.",
         "title": "Who is in"
@@ -174,6 +185,7 @@
         "loadFailed": "The names could not be loaded. Check the network connection.",
         "loading": "Loading names…",
         "noMatch": "No name matches your search.",
+        "scanHint": "Or scan your kiosk badge at the scanner.",
         "search": "Find your name",
         "title": "Tap your name to clock in or out"
       },

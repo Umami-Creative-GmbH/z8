@@ -1471,6 +1471,7 @@
     },
     "kiosks": {
       "add": "Kiosk hinzufügen",
+      "badgeScannerOn": "Ausweis-Scanner an",
       "boardOn": "Anwesenheitsübersicht an",
       "columns": {
         "actions": "Aktionen",
@@ -1500,6 +1501,8 @@
         "offlineNeedsAdoption": "Der Offlinemodus erfordert koordinierte Stempelbefehle, die von dieser Organisation noch nicht verwendet werden."
       },
       "fields": {
+        "badgeScanner": "Ausweis-Scanner",
+        "badgeScannerDescription": "Mitarbeitende scannen ihren Kiosk-Ausweis mit einem an diesen Kiosk angeschlossenen QR-Scanner, statt ihre PIN einzugeben. Stempeln mit Ausweis braucht eine Verbindung; Name und PIN funktionieren weiter.",
         "board": "Anwesenheitsübersicht",
         "boardDescription": "Zeigt am Kiosk mit Vorname und erstem Buchstaben des Nachnamens an, wer anwesend ist oder Pause macht.",
         "location": "Standort",
