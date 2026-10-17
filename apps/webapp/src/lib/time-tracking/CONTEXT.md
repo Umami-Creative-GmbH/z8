@@ -161,6 +161,10 @@ _Avoid_: Timesheet period, pay period
 An organization's choice of week or calendar month as its submission period, with the day its weeks start for a weekly cadence. Organizations without one do not collect period submissions.
 _Avoid_: Submission frequency, timesheet interval
 
+**Submission readiness**:
+Whether an employee's submission period currently meets every precondition for submission, including its timing, submission status, undecided requests, live work and an eligible approver. Being ready does not confirm that the employee's records are complete or correct, and readiness can change before they submit.
+_Avoid_: Completeness check, payroll readiness, period approval
+
 **Sent back after a change**:
 A submitted period whose work, work attribution or absences changed afterwards, or whose work's approval state was decided again, by any writer, even in part; notes do not count. A pending period submission is withdrawn automatically (its approval is cancelled); an approved one goes out of date, and its approval stays as history. Either way the period awaits submission again, and the employee is told once.
 _Avoid_: Rejected (an approver's decision), reopened (a closed month's term), invalidated
