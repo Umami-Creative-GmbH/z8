@@ -1877,6 +1877,34 @@
       "when": 1807804800000,
       "tag": "0267_activate_vacation_policy_calculations",
       "breakpoints": true
+    },
+    {
+      "idx": 268,
+      "version": "7",
+      "when": 1807891200000,
+      "tag": "0268_kiosk_clock_attempt",
+      "breakpoints": true
+    },
+    {
+      "idx": 269,
+      "version": "7",
+      "when": 1807977600000,
+      "tag": "0269_employee_kiosk_badge",
+      "breakpoints": true
+    },
+    {
+      "idx": 270,
+      "version": "7",
+      "when": 1808064000000,
+      "tag": "0270_kiosk_badge_scanner",
+      "breakpoints": true
+    },
+    {
+      "idx": 271,
+      "version": "7",
+      "when": 1808150400000,
+      "tag": "0271_kiosk_badge_camera",
+      "breakpoints": true
     }
   ]
 }

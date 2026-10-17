@@ -2,11 +2,13 @@
 
 import { IconWifiOff } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { kioskAcceptsBadgeInput } from "@/lib/time-tracking/kiosk/badge-input";
 import { kioskPost } from "@/lib/time-tracking/kiosk/device";
 import { formatKioskTime } from "@/lib/time-tracking/kiosk/display";
 import type { KioskOfflineEmployeeView } from "@/lib/time-tracking/kiosk/offline-command";
 import type {
+	KioskClockAttemptOutcome,
 	KioskClockResult,
 	KioskDeviceInfo,
 	KioskEmployeeListing,
@@ -14,7 +16,15 @@ import type {
 	KioskOfflineContact,
 	KioskRefusalCode,
 } from "@/lib/time-tracking/kiosk/protocol";
+import {
+	forgetUncertainAction,
+	type KioskUncertainAction,
+	readUncertainActions,
+	rememberUncertainAction,
+} from "@/lib/time-tracking/kiosk/uncertain-action";
 import { KIOSK_ACTION_REQUEST } from "./kiosk-action-request";
+import { KioskBadgeCheck } from "./kiosk-badge-check";
+import { KioskCameraScan } from "./kiosk-camera-scan";
 import { KioskConfirmation } from "./kiosk-confirmation";
 import {
 	KioskEmployeePanel,
@@ -30,22 +40,39 @@ import {
 	actedFlow,
 	actingFlow,
 	actingOfflineFlow,
+	badgeCheckedFlow,
+	heldFlow,
 	isKioskFlowBusy,
 	type KioskFlow,
 	type KioskTurnConfirmation,
+	type KioskTurnProof,
+	kioskBadgeBody,
+	kioskProofBody,
 	type OfflineTurn,
 	pinCheckedFlow,
 	queueOfflineAction,
+	resolvedFlow,
 	type VehicleAnswer,
 	vehicleAskOf,
 } from "./kiosk-turn-flow";
+import { KioskUncertainScreen } from "./kiosk-uncertain-screen";
 import { KioskVehicleUseStep } from "./kiosk-vehicle-use-step";
+import { useKioskBadgeScanner } from "./use-kiosk-badge-scanner";
 import { useKioskOfflineMode } from "./use-kiosk-offline-mode";
 
 /** The confirmation returns home on its own after about this long. */
 export const KIOSK_CONFIRMATION_MS = 10_000;
 /** A PIN pad or employee screen nobody touches returns home after this long. */
 export const KIOSK_IDLE_MS = 30_000;
+/** An online action (or outcome question) without an answer after this long is uncertain (#1363). */
+export const KIOSK_ACTION_TIMEOUT_MS = 20_000;
+/** The first question about an uncertain action waits this long (#1363). */
+export const KIOSK_OUTCOME_FIRST_CHECK_MS = 3_000;
+/** While Z8 cannot answer, the kiosk asks again this often (#1363). */
+export const KIOSK_OUTCOME_RETRY_MS = 5_000;
+
+/** An action whose reply was lost (#1363), and whether Z8 could be asked about it yet. */
+type PendingAction = { attempt: KioskUncertainAction; check: "checking" | "unavailable" };
 
 interface KioskPairedScreenProps {
 	token: string;
@@ -73,6 +100,14 @@ interface KioskPairedScreenProps {
  * (`offline-queue.ts`) and refusals show as notices on the home screen. The
  * contact itself, and what it keeps or deletes, is `useKioskOfflineMode`; the
  * screens of a turn and how they follow each other are `kiosk-turn-flow.ts`.
+ *
+ * A kiosk that accepts badges (#1366) also opens a turn from a badge read on
+ * the home screen (`identifyBadge`, fed by the attached scanner through
+ * `KioskHome`); the badge then stands in for the PIN for that turn only, online
+ * only, and is never stored. Scans anywhere else are swallowed. A kiosk whose
+ * camera input is on (#1367) also offers "Scan badge" there: the camera step
+ * reads the badge on the device and feeds the same `identifyBadge`; the camera
+ * runs only while that step shows.
  */
 export function KioskPairedScreen({
 	token,
@@ -88,6 +123,20 @@ export function KioskPairedScreen({
 	const [kiosk, setKiosk] = useState(initialKiosk);
 	const language = useKioskLanguage(kiosk.language);
 	const [flow, setFlow] = useState<KioskFlow>({ step: "home" });
+	// The screen showing now, for answers that arrive after an await (#1363).
+	const shownFlow = useRef(flow);
+	useEffect(() => {
+		shownFlow.current = flow;
+	});
+	// Actions whose reply was lost, also before a reload or remount (#1363). Each holds only
+	// its own employee; the kiosk keeps checking while everyone else clocks.
+	const [pending, setPending] = useState<PendingAction[]>(() =>
+		readUncertainActions(initialKiosk.id).map((attempt) => ({ attempt, check: "checking" })),
+	);
+	const pendingNow = useRef(pending);
+	useEffect(() => {
+		pendingNow.current = pending;
+	});
 	const [activity, setActivity] = useState(0);
 
 	function kioskRefused(code: KioskRefusalCode) {
@@ -106,9 +155,35 @@ export function KioskPairedScreen({
 	});
 	const offlineNow = contact.connection !== "online";
 
+	/** The next screen; a turn that ends on the home screen (with a note) resets the language. */
+	function show(flow: KioskFlow) {
+		setFlow(flow);
+		if (flow.step === "home") language.reset();
+	}
+
 	function goHome() {
-		setFlow({ step: "home" });
-		language.reset();
+		show({ step: "home" });
+	}
+
+	/** The unresolved action of this employee, if any (#1363). */
+	function pendingFor(employeeId: string): PendingAction | undefined {
+		return pendingNow.current.find((entry) => entry.attempt.employee.id === employeeId);
+	}
+
+	/** Forgets an answered action, once its answer is shown or it needs no showing. */
+	function settle(operationId: string) {
+		forgetUncertainAction(operationId);
+		setPending((entries) => entries.filter((entry) => entry.attempt.operationId !== operationId));
+	}
+
+	/**
+	 * An employee identified again while an action of theirs is unresolved: the
+	 * answer Z8 gave meanwhile (once), or that the kiosk is still checking. They
+	 * get no PIN pad and no action until it resolves.
+	 */
+	function hold(entry: PendingAction, badgeTurn?: Extract<KioskFlow, { step: "employee" }>) {
+		if (entry.attempt.resolved) settle(entry.attempt.operationId);
+		show(heldFlow(entry.attempt, entry.check, badgeTurn));
 	}
 
 	// Every screen of an employee's turn returns home on its own; a touch restarts the wait.
@@ -121,6 +196,65 @@ export function KioskPairedScreen({
 		const timer = window.setTimeout(() => returnHome(), timeout);
 		return () => window.clearTimeout(timer);
 	}, [flow, busy, activity]);
+
+	// A note on the home screen (#1366) clears itself like a confirmation.
+	const homeNotice = flow.step === "home" ? (flow.notice ?? null) : null;
+	useEffect(() => {
+		if (!homeNotice) return;
+		const timer = window.setTimeout(
+			() => setFlow((current) => (current.step === "home" ? { step: "home" } : current)),
+			KIOSK_CONFIRMATION_MS,
+		);
+		return () => window.clearTimeout(timer);
+	}, [homeNotice]);
+
+	// Attached-scanner badges (#1366): read on the home screen (`KioskHome`), and kept
+	// away from every other screen, so no scan switches or changes an employee's turn.
+	// The camera scan screen counts as such a screen too (#1367).
+	const scanner = kioskAcceptsBadgeInput(kiosk, "scanner");
+	useKioskBadgeScanner({ mode: scanner && flow.step !== "home" ? "guard" : "off" });
+
+	// Camera badges (#1367): "Scan badge" on the home screen opens the camera step.
+	// An admin who switches the camera input off meanwhile closes it.
+	const camera = kioskAcceptsBadgeInput(kiosk, "camera");
+	const cameraOpen = flow.step === "camera";
+	useEffect(() => {
+		if (cameraOpen && !camera) {
+			setFlow((current) => (current.step === "camera" ? { step: "home" } : current));
+		}
+	}, [cameraOpen, camera]);
+
+	/** "Scan badge" (#1367): the camera only online, since a badge turn needs a connection. */
+	function scanWithCamera() {
+		setFlow(
+			contact.online ? { step: "camera" } : { step: "home", notice: { code: "badge_offline" } },
+		);
+	}
+
+	/**
+	 * A badge read on the home screen (#1366), by whatever input read it (the
+	 * attached scanner, or #1367 the camera): the badge's employee, state, day
+	 * total and actions, or why not. Records nothing. Badge clocking needs a
+	 * connection; offline nothing is sent or queued.
+	 */
+	async function identifyBadge(badge: string, input?: "camera") {
+		if (!contact.online) {
+			setFlow({ step: "home", notice: { code: "badge_offline" } });
+			return;
+		}
+		setFlow({ step: "badge" });
+		const result = await kioskPost<KioskEmployeeSnapshot>(
+			token,
+			"/api/kiosk/employee-status",
+			kioskBadgeBody(badge, input),
+			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
+		);
+		if (result.kind === "kiosk") return kioskRefused(result.code);
+		const checked = badgeCheckedFlow({ badge, input, result, contactLost: contact.contactLost });
+		const held = checked.step === "employee" ? pendingFor(checked.snapshot.employee.id) : undefined;
+		if (held && checked.step === "employee") hold(held, checked);
+		else show(checked);
+	}
 
 	async function verifyPin(employee: KioskEmployeeListing, attempt: number, pin: string) {
 		setFlow({ step: "pin", employee, attempt, busy: true, error: null });
@@ -142,23 +276,135 @@ export function KioskPairedScreen({
 	}
 
 	async function act(
-		pin: string,
+		proof: KioskTurnProof,
 		snapshot: KioskEmployeeSnapshot,
 		action: KioskPanelAction,
 		vehicle?: VehicleAnswer,
 	) {
-		setFlow(actingFlow(pin, snapshot, action, vehicle));
+		setFlow(actingFlow(proof, snapshot, action, vehicle));
 		const vehicleUse = vehicle?.answer.vehicleUse;
-		const result = await kioskPost<KioskClockResult>(token, "/api/kiosk/clock", {
-			employeeId: snapshot.employee.id,
-			pin,
-			action: KIOSK_ACTION_REQUEST[action],
+		// One identity per explicit action, kept before it is sent, so a lost reply
+		// resolves this action instead of making a second one (#1363).
+		const attempt: KioskUncertainAction = {
+			version: 1,
+			kioskId: kiosk.id,
 			operationId: crypto.randomUUID(),
-			...(vehicleUse ? { vehicleUse } : {}),
-		});
-		if (result.kind === "kiosk") return kioskRefused(result.code);
-		setFlow(actedFlow({ pin, snapshot, action, vehicle, result }));
+			employee: { id: snapshot.employee.id, name: snapshot.employee.name },
+			action,
+			request: KIOSK_ACTION_REQUEST[action],
+			// Only that a badge proved the employee (#1366), never the badge itself.
+			...(proof.badge !== undefined ? { via: "badge" as const } : {}),
+			// Known before sending, so a recovered confirmation can still warn (#1123).
+			...(vehicle?.answer.leftOut ? { vehicleUseLeftOut: true as const } : {}),
+		};
+		rememberUncertainAction(attempt);
+		const result = await kioskPost<KioskClockResult>(
+			token,
+			"/api/kiosk/clock",
+			{
+				...kioskProofBody(proof, snapshot.employee.id),
+				action: attempt.request,
+				operationId: attempt.operationId,
+				...(vehicleUse ? { vehicleUse } : {}),
+			},
+			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
+		);
+		if (result.kind === "kiosk") {
+			// Refused with the device token: the action never ran.
+			forgetUncertainAction(attempt.operationId);
+			return kioskRefused(result.code);
+		}
+		const acted = actedFlow({ proof, snapshot, action, attempt, vehicle, result });
+		if (acted.step === "uncertain") {
+			setPending((entries) => [
+				...entries.filter((entry) => entry.attempt.operationId !== attempt.operationId),
+				{ attempt, check: "checking" },
+			]);
+		} else {
+			forgetUncertainAction(attempt.operationId);
+		}
+		show(acted);
 	}
+
+	/**
+	 * Asks Z8 once what became of an unresolved action (#1363); never sends the
+	 * action again. While its screen shows, the answer replaces it. Otherwise
+	 * (the employee went home, someone else is clocking) a committed or
+	 * conflicting answer is kept for when they identify again, and a definitive
+	 * "not recorded" simply frees them to act afresh.
+	 */
+	const checkUncertain = useEffectEvent(async (attempt: KioskUncertainAction) => {
+		const result = await kioskPost<KioskClockAttemptOutcome>(
+			token,
+			"/api/kiosk/clock/outcome",
+			{
+				operationId: attempt.operationId,
+				employeeId: attempt.employee.id,
+				action: attempt.request,
+			},
+			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
+		);
+		// The device token was refused: the action stays unresolved for after pairing again.
+		if (result.kind === "kiosk") return kioskRefused(result.code);
+		const current = shownFlow.current;
+		const onScreen =
+			current.step === "uncertain" && current.attempt.operationId === attempt.operationId;
+		const answer = result.kind === "ok" ? result.body.outcome : null;
+		if (answer !== "committed" && answer !== "not_recorded" && answer !== "conflict") {
+			// Not answered yet: ask again later.
+			setPending((entries) =>
+				entries.map((entry) =>
+					entry.attempt.operationId === attempt.operationId
+						? { attempt: entry.attempt, check: "unavailable" }
+						: entry,
+				),
+			);
+			// A changed screen only: an unchanged one keeps its idle timeout running.
+			if (onScreen && current.check === "checking") {
+				show({ step: "uncertain", attempt, check: "unavailable" });
+			}
+			return;
+		}
+		if (onScreen) {
+			settle(attempt.operationId);
+			show(resolvedFlow(attempt, result));
+			return;
+		}
+		// Kept, across reloads too, until the employee identifies again.
+		const resolved: KioskUncertainAction = {
+			...attempt,
+			resolved:
+				result.kind === "ok" && result.body.outcome === "committed"
+					? { outcome: "committed", at: result.body.at }
+					: { outcome: answer === "not_recorded" ? "not_recorded" : "conflict" },
+		};
+		rememberUncertainAction(resolved);
+		setPending((entries) =>
+			entries.map((entry) =>
+				entry.attempt.operationId === attempt.operationId
+					? { attempt: resolved, check: entry.check }
+					: entry,
+			),
+		);
+	});
+
+	// Waits a little before the first question, so a slow original can still answer itself,
+	// then asks again while Z8 cannot answer, and as soon as the kiosk is back online. Each
+	// unresolved action is asked about on its own, whatever the screen shows.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: coming back online restarts the wait
+	useEffect(() => {
+		const timers = pending
+			.filter((entry) => !entry.attempt.resolved)
+			.map((entry) =>
+				window.setTimeout(
+					() => void checkUncertain(entry.attempt),
+					entry.check === "checking" ? KIOSK_OUTCOME_FIRST_CHECK_MS : KIOSK_OUTCOME_RETRY_MS,
+				),
+			);
+		return () => {
+			for (const timer of timers) window.clearTimeout(timer);
+		};
+	}, [pending, contact.online]);
 
 	/** An offline action (#1292): frozen and queued on this kiosk, confirmed by Z8 later. */
 	async function actOffline(turn: OfflineTurn, action: KioskPanelAction, vehicle?: VehicleAnswer) {
@@ -171,13 +417,17 @@ export function KioskPairedScreen({
 	}
 
 	/** An action's button: the vehicle step first when the action asks vehicle use (#1123). */
-	function choose(pin: string, snapshot: KioskEmployeeSnapshot, action: KioskPanelAction) {
+	function choose(
+		proof: KioskTurnProof,
+		snapshot: KioskEmployeeSnapshot,
+		action: KioskPanelAction,
+	) {
 		const ask = vehicleAskOf(action, snapshot.vehicleUse);
 		if (ask) {
-			setFlow({ step: "vehicle", pin, snapshot, action, ask, pending: false });
+			setFlow({ step: "vehicle", proof, snapshot, action, ask, pending: false });
 			return;
 		}
-		void act(pin, snapshot, action);
+		void act(proof, snapshot, action);
 	}
 
 	function chooseOffline(turn: OfflineTurn, action: KioskPanelAction) {
@@ -210,16 +460,21 @@ export function KioskPairedScreen({
 						contacts={contact.contacts}
 						offline={kiosk.offlineMode && offlineNow}
 						locale={language.locale}
+						notice={flow.notice ?? null}
+						{...(scanner
+							? {
+									onBadge: (badge: string) => void identifyBadge(badge),
+									onBadgeUnreadable: () =>
+										setFlow({ step: "home", notice: { code: "badge_unreadable" } }),
+								}
+							: {})}
+						{...(camera ? { onScanBadge: scanWithCamera } : {})}
 						onChooseLanguage={language.choose}
-						onPick={(employee) =>
-							setFlow({
-								step: "pin",
-								employee,
-								attempt: 0,
-								busy: false,
-								error: null,
-							})
-						}
+						onPick={(employee) => {
+							const held = pendingFor(employee.id);
+							if (held) hold(held);
+							else setFlow({ step: "pin", employee, attempt: 0, busy: false, error: null });
+						}}
 						onKioskRefused={kioskRefused}
 					/>
 				</>
@@ -231,9 +486,10 @@ export function KioskPairedScreen({
 					locale={language.locale}
 					onFlow={setFlow}
 					onHome={goHome}
+					onCameraBadge={(badge) => void identifyBadge(badge, "camera")}
 					onVerifyPin={(employee, attempt, pin) => void verifyPin(employee, attempt, pin)}
 					onChoose={choose}
-					onAct={(pin, snapshot, action, vehicle) => void act(pin, snapshot, action, vehicle)}
+					onAct={(proof, snapshot, action, vehicle) => void act(proof, snapshot, action, vehicle)}
 					onChooseOffline={chooseOffline}
 					onActOffline={(turn, action, vehicle) => void actOffline(turn, action, vehicle)}
 				/>
@@ -272,6 +528,7 @@ function KioskTurnScreen({
 	locale,
 	onFlow,
 	onHome,
+	onCameraBadge,
 	onVerifyPin,
 	onChoose,
 	onAct,
@@ -284,10 +541,16 @@ function KioskTurnScreen({
 	locale: string;
 	onFlow: (flow: KioskFlow) => void;
 	onHome: () => void;
+	/** A badge the camera step read (#1367). */
+	onCameraBadge: (badge: string) => void;
 	onVerifyPin: (employee: KioskEmployeeListing, attempt: number, pin: string) => void;
-	onChoose: (pin: string, snapshot: KioskEmployeeSnapshot, action: KioskPanelAction) => void;
+	onChoose: (
+		proof: KioskTurnProof,
+		snapshot: KioskEmployeeSnapshot,
+		action: KioskPanelAction,
+	) => void;
 	onAct: (
-		pin: string,
+		proof: KioskTurnProof,
 		snapshot: KioskEmployeeSnapshot,
 		action: KioskPanelAction,
 		vehicle: VehicleAnswer,
@@ -312,6 +575,17 @@ function KioskTurnScreen({
 					onBack={onHome}
 				/>
 			);
+		case "camera":
+			return (
+				<KioskCameraScan
+					key="camera"
+					onBadge={onCameraBadge}
+					onProblem={(problem) => onFlow({ step: "home", notice: { code: problem } })}
+					onCancel={onHome}
+				/>
+			);
+		case "badge":
+			return <KioskBadgeCheck key="badge" />;
 		case "employee":
 			return (
 				<KioskEmployeePanel
@@ -322,7 +596,7 @@ function KioskTurnScreen({
 					pending={flow.pending}
 					disabled={!online}
 					error={flow.error ? message(flow.error) : null}
-					onAction={(action) => onChoose(flow.pin, flow.snapshot, action)}
+					onAction={(action) => onChoose(flow.proof, flow.snapshot, action)}
 					onBack={onHome}
 				/>
 			);
@@ -337,7 +611,7 @@ function KioskTurnScreen({
 					pending={flow.pending}
 					disabled={!online}
 					onConfirm={(answer) =>
-						onAct(flow.pin, flow.snapshot, flow.action, {
+						onAct(flow.proof, flow.snapshot, flow.action, {
 							ask: flow.ask,
 							answer,
 						})
@@ -345,7 +619,7 @@ function KioskTurnScreen({
 					onBack={() =>
 						onFlow({
 							step: "employee",
-							pin: flow.pin,
+							proof: flow.proof,
 							snapshot: flow.snapshot,
 							pending: null,
 							error: null,
@@ -409,6 +683,16 @@ function KioskTurnScreen({
 							error: null,
 						})
 					}
+				/>
+			);
+		case "uncertain":
+			return (
+				<KioskUncertainScreen
+					key="uncertain"
+					attempt={flow.attempt}
+					actionLabel={labels.buttons[flow.attempt.action]}
+					check={flow.check}
+					onHome={onHome}
 				/>
 			);
 		case "done":

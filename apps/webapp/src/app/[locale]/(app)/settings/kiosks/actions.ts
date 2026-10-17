@@ -37,6 +37,10 @@ export type KioskData = {
 	boardEnabled: boolean;
 	/** The stored switch (#1287); it takes effect only while the organization is adopted. */
 	offlineModeEnabled: boolean;
+	/** Whether badges read by an attached QR scanner identify employees (#1366). */
+	badgeScannerEnabled: boolean;
+	/** Whether badges read with the kiosk's own camera identify employees (#1367). */
+	badgeCameraEnabled: boolean;
 	status: KioskStatus;
 	/** ISO instants. */
 	pairingCodeExpiresAt: string | null;
@@ -95,6 +99,8 @@ export type UpdateKioskInput = {
 	timezone?: string;
 	boardEnabled?: boolean;
 	offlineModeEnabled?: boolean;
+	badgeScannerEnabled?: boolean;
+	badgeCameraEnabled?: boolean;
 };
 
 const SETTINGS_PATH = "/settings/kiosks";
@@ -124,6 +130,8 @@ export async function getKioskAdminDataAction(): Promise<
 				timezone: row.timezone,
 				boardEnabled: row.boardEnabled,
 				offlineModeEnabled: row.offlineModeEnabled,
+				badgeScannerEnabled: row.badgeScannerEnabled,
+				badgeCameraEnabled: row.badgeCameraEnabled,
 				status: row.status,
 				pairingCodeExpiresAt: row.pairingCodeExpiresAt?.toISOString() ?? null,
 				pairedAt: row.pairedAt?.toISOString() ?? null,
@@ -184,6 +192,15 @@ export async function updateKioskAction(
 		if (input?.offlineModeEnabled !== undefined && typeof input.offlineModeEnabled !== "boolean") {
 			throw new KioskSettingsRefusal("invalid_selection", "Offline mode must be on or off.");
 		}
+		if (
+			input?.badgeScannerEnabled !== undefined &&
+			typeof input.badgeScannerEnabled !== "boolean"
+		) {
+			throw new KioskSettingsRefusal("invalid_selection", "Scanner input must be on or off.");
+		}
+		if (input?.badgeCameraEnabled !== undefined && typeof input.badgeCameraEnabled !== "boolean") {
+			throw new KioskSettingsRefusal("invalid_selection", "Camera input must be on or off.");
+		}
 		await withAuditTrail((audit) =>
 			db.transaction((tx) =>
 				updateKiosk(tx, audit, {
@@ -196,6 +213,8 @@ export async function updateKioskAction(
 						timezone: input.timezone,
 						boardEnabled: input.boardEnabled,
 						offlineModeEnabled: input.offlineModeEnabled,
+						badgeScannerEnabled: input.badgeScannerEnabled,
+						badgeCameraEnabled: input.badgeCameraEnabled,
 					},
 				}),
 			),

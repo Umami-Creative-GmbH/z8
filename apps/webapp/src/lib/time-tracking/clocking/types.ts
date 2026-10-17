@@ -2,6 +2,7 @@ import type { employee, timeEntry } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import type { AttributionIntent, ClockChannel, CloseActiveWorkResult } from "../close-active-work";
+import type { KioskBadgeInput } from "../kiosk/protocol";
 import type { ProjectTaskIneligibility } from "../project-eligibility";
 import type { BreakVehicleUse, ClockVehicleUse } from "../vehicle-use/clock-vehicle-use";
 import type { WorkLocationType } from "../work-location";
@@ -50,11 +51,12 @@ export type ClockPrincipal =
 			workPeriodId: string;
 	  }
 	/**
-	 * Kiosk clocking (#860): a kiosk, together with the employee's kiosk PIN
-	 * verified in this request, runs the employee's own clocking. `userId` is the
-	 * employee's user: creator provenance only, never human authority.
+	 * Kiosk clocking (#860): a kiosk, together with the employee's kiosk PIN (or,
+	 * #1366, their kiosk badge) verified in this request, runs the employee's own
+	 * clocking. `userId` is the employee's user: creator provenance only, never
+	 * human authority.
 	 */
-	| { kind: "kiosk"; kioskId: string; userId: string; pin: KioskPinProof };
+	| { kind: "kiosk"; kioskId: string; userId: string; proof: KioskEmployeeProof };
 
 /**
  * The human whose action a clocking is: the signed-in user, or the one who recorded a departure.
@@ -65,22 +67,46 @@ export function principalCausingUserId(principal: ClockPrincipal): string | null
 }
 
 /**
- * Proof that this request verified an employee's kiosk PIN at a kiosk. Only the
- * kiosk PIN checks (`proveKioskPin`, `proveFrozenKioskPin`) issue one; a proof
- * built any other way is refused, and each proof expires shortly after it was
- * issued.
+ * Proof that this request verified the employee at a kiosk: their kiosk PIN
+ * (`kind: "pin"`), or (#1366) their kiosk badge (`kind: "badge"`). Only the
+ * kiosk checks (`proveKioskPin`, `proveFrozenKioskPin`, `proveKioskBadge`)
+ * issue one; a proof built any other way is refused, and each proof expires
+ * shortly after it was issued.
  */
-export type KioskPinProof = {
-	readonly organizationId: string;
-	readonly kioskId: string;
-	readonly employeeId: string;
-	/**
-	 * Set only on the proof of a frozen kiosk clock command (#1289, ADR 0011): the
-	 * PIN the kiosk sealed offline was checked on arrival, at the command's own
-	 * instant. Such a proof authorizes that one command only.
-	 */
-	readonly frozen?: KioskFrozenPinProof;
-};
+export type KioskEmployeeProof =
+	| {
+			readonly kind: "pin";
+			readonly organizationId: string;
+			readonly kioskId: string;
+			readonly employeeId: string;
+			/**
+			 * Set only on the proof of a frozen kiosk clock command (#1289, ADR 0011):
+			 * the PIN the kiosk sealed offline was checked on arrival, at the command's
+			 * own instant. Such a proof authorizes that one command only.
+			 */
+			readonly frozen?: KioskFrozenPinProof;
+			readonly badge?: never;
+	  }
+	| {
+			readonly kind: "badge";
+			readonly organizationId: string;
+			readonly kioskId: string;
+			readonly employeeId: string;
+			/**
+			 * Which badge proved the employee (#1366, ADR 0013), so the work
+			 * transaction can check it again under its lock.
+			 */
+			readonly badge: KioskBadgeProof;
+			/** Never frozen: badge clocking is online only. */
+			readonly frozen?: never;
+	  };
+
+/**
+ * The badge a badge proof was issued for; never its credential. `input` is the
+ * kiosk input that read it (#1366 attached scanner, #1367 camera). The proof
+ * authorizes only while that input's switch is on.
+ */
+export type KioskBadgeProof = { readonly badgeId: string; readonly input: KioskBadgeInput };
 
 /**
  * Where a frozen kiosk command's instant came from (#1289): the server time of

@@ -43,7 +43,30 @@ export type KioskRefusalCode = "kiosk_unknown" | "kiosk_revoked";
  *
  * Refusals are `{ code, ... }` (`KioskClockRefusal`). A wrong or locked PIN is
  * answered without clocking.
+ *
+ * Badges (#1366, spec #889): at a kiosk whose `badgeScannerEnabled` is on, both
+ * calls take `{ badge }` (the scanned credential, `badge-credential.ts`) instead
+ * of `{ employeeId, pin }`; the badge names the employee. `clock` may repeat
+ * the snapshot's `employeeId` beside it, which must be the badge's own. A badge
+ * is never stored on the device and never queued offline. Badge refusals: 403
+ * `badge_input_disabled` (the kiosk does not accept badges), 403
+ * `badge_not_accepted` (unknown, replaced, revoked, foreign or ended badge, an
+ * inactive or unassigned employee, or another `employeeId`; it names nobody),
+ * 429 `rate_limited` (the kiosk's own badge limit, never the PIN's). A badge
+ * action whose authority ended after the scan is refused the same way.
+ *
+ * Camera (#1367): a badge the kiosk read with its own camera is sent the same
+ * way with `badgeInput: "camera"`; without `badgeInput` (or with `"scanner"`) it
+ * came from the attached scanner. Each input counts only while its own switch
+ * is on (`badgeScannerEnabled`, `badgeCameraEnabled`); the other input's call is
+ * answered 403 `badge_input_disabled`. Only the decoded text is sent: no image
+ * ever leaves the device.
  */
+export const KIOSK_BADGE_INPUTS = ["scanner", "camera"] as const;
+
+/** Which of a kiosk's badge inputs read a badge (#1366, #1367). */
+export type KioskBadgeInput = (typeof KIOSK_BADGE_INPUTS)[number];
+
 export const KIOSK_CLOCK_ACTIONS = [
 	"clock_in",
 	"clock_out",
@@ -118,6 +141,33 @@ export type KioskClockResult = KioskEmployeeSnapshot & {
 };
 
 /**
+ * Resolving an uncertain online action (#1363, spec #889). Every explicit
+ * action gets one `operationId`, made before it is sent and never replaced for
+ * that action. When its reply is lost (no answer, a 5xx, an answer that is not
+ * Z8's), the device must not act again or claim that nothing was recorded; it
+ * asks `POST /api/kiosk/clock/outcome` with `{ operationId, employeeId, action }`
+ * (the action as it was sent) and only the device token, no PIN or badge:
+ *
+ * - `committed`: the action was recorded; `at` is its original event time, as
+ *   its own reply would have said. Show it once.
+ * - `not_recorded`: nothing was recorded, and the attempt is now closed for
+ *   good: the original request can never commit later. Only a fresh, explicit
+ *   action (under current authorization) may follow; never resend the old one.
+ * - `conflict`: the operation was recorded for another employee or action.
+ *   Nothing about it is disclosed.
+ *
+ * Any other answer (401, 5xx, no connection) settles nothing: keep the turn
+ * unresolved and ask again. The lookup never runs, retries or queues an action.
+ * Asking while the original is still in flight can close it as not recorded
+ * (safe, never false), so the device waits a few seconds before it asks.
+ * A refused original then answers 409 `attempt_closed`.
+ */
+export type KioskClockAttemptOutcome =
+	| { outcome: "committed"; action: KioskClockAction; at: KioskEventTime }
+	| { outcome: "not_recorded" }
+	| { outcome: "conflict" };
+
+/**
  * Why a kiosk call did nothing. HTTP status: 400 `invalid_request` (and Clocking's
  * `invalid_command`, `invalid_break_duration`), 401
  * `kiosk_unknown`/`kiosk_revoked`, 403 `employee_not_assigned`, `wrong_pin`,
@@ -125,7 +175,9 @@ export type KioskClockResult = KioskEmployeeSnapshot & {
  * `billing_required`, 503 `failed`/`unconfirmed` (only `unconfirmed` may have
  * saved work), and 409 for every other Clocking refusal (for example
  * `already_clocked_in`, `not_clocked_in`, `already_on_break`, `on_break`,
- * `no_break_in_progress`, `holiday_blocked`), which also carries the state.
+ * `no_break_in_progress`, `holiday_blocked`, and `attempt_closed`: the kiosk's
+ * outcome lookup already closed this operation as not recorded), which also
+ * carries the state.
  */
 export type KioskClockRefusal =
 	| {
@@ -152,6 +204,19 @@ export type KioskDeviceInfo = {
 	 * false the kiosk caches and queues nothing and refuses clocking offline.
 	 */
 	offlineMode: boolean;
+	/**
+	 * Whether the kiosk accepts employee kiosk badges from an attached
+	 * keyboard-style QR scanner on its home screen (#1366, spec #889), off by
+	 * default. Read at every contact. Absent (a device that cached an older
+	 * answer) reads as off. Badge clocking always needs a connection.
+	 */
+	badgeScannerEnabled?: boolean;
+	/**
+	 * Whether the kiosk's home screen offers "Scan badge" with its own camera
+	 * (#1367), off by default and independent of the scanner. Read at every
+	 * contact; absent reads as off.
+	 */
+	badgeCameraEnabled?: boolean;
 };
 
 /**

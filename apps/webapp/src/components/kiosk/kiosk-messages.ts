@@ -3,6 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import { formatKioskTime } from "@/lib/time-tracking/kiosk/display";
 import type { KioskClockRefusal } from "@/lib/time-tracking/kiosk/protocol";
+import type { KioskHomeNotice } from "./kiosk-turn-flow";
 
 /** Refusals about the PIN or the employee: the kiosk asks for the PIN again. */
 export const KIOSK_PIN_REFUSALS: ReadonlySet<string> = new Set([
@@ -14,6 +15,82 @@ export const KIOSK_PIN_REFUSALS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * What the home screen says about a badge (#1366): why a scan opened no turn,
+ * why a badge turn ended without its action, or (#1367) why the camera could
+ * not scan. Never names anyone, and always
+ * points to the name-and-PIN way where it can help.
+ */
+export function useKioskHomeNoticeMessage(offlineMode: boolean) {
+	const { t } = useTranslate();
+
+	return function message(notice: KioskHomeNotice): string {
+		switch (notice.code) {
+			case "badge_not_accepted":
+				return t(
+					"timeTracking.kiosk.badge.notAccepted",
+					"This badge is not accepted at this kiosk. Nothing was recorded. Tap your name to use your PIN, or ask your manager.",
+				);
+			case "badge_input_disabled":
+				return t(
+					"timeTracking.kiosk.badge.inputDisabled",
+					"Badge scanning is switched off at this kiosk. Tap your name to use your PIN.",
+				);
+			case "badge_unreadable":
+				return t(
+					"timeTracking.kiosk.badge.unreadable",
+					"This code is not a kiosk badge. Nothing was recorded. Scan your kiosk badge, or tap your name to use your PIN.",
+				);
+			case "badge_offline":
+				return offlineMode
+					? t(
+							"timeTracking.kiosk.badge.offlinePin",
+							"Badge clocking needs a connection. Nothing was recorded. Tap your name to clock with your PIN.",
+						)
+					: t(
+							"timeTracking.kiosk.badge.offline",
+							"Badge clocking needs a connection. Nothing was recorded.",
+						);
+			case "badge_failed":
+				return t(
+					"timeTracking.kiosk.badge.failed",
+					"The badge could not be checked. Nothing was recorded. Scan it again, or tap your name to use your PIN.",
+				);
+			case "badge_rate_limited":
+				return t(
+					"timeTracking.kiosk.badge.rateLimited",
+					"Too many badge scans at this kiosk. Try again in {seconds} seconds, or tap your name to use your PIN.",
+					{ seconds: Math.max(1, Math.ceil(notice.retryAfter)) },
+				);
+			case "badge_not_recorded":
+				return t(
+					"timeTracking.kiosk.badge.notRecorded",
+					"Your action was not recorded. Scan your badge again to choose it again.",
+				);
+			case "camera_denied":
+				return t(
+					"timeTracking.kiosk.camera.denied",
+					"The kiosk may not use the camera. Allow camera access for this page in the browser, or tap your name to use your PIN.",
+				);
+			case "camera_missing":
+				return t(
+					"timeTracking.kiosk.camera.missing",
+					"This kiosk has no camera that can scan. Tap your name to use your PIN.",
+				);
+			case "camera_unsupported":
+				return t(
+					"timeTracking.kiosk.camera.unsupported",
+					"This browser cannot scan badges with the camera. Tap your name to use your PIN.",
+				);
+			case "camera_failed":
+				return t(
+					"timeTracking.kiosk.camera.failed",
+					"The camera could not be started. Try again, or tap your name to use your PIN.",
+				);
+		}
+	};
+}
+
+/**
  * What the kiosk says when a call did nothing (#862). PIN messages say only
  * what the person must know (wrong, locked until when, none set up), never how
  * many attempts are left or anything about other employees.
@@ -22,6 +99,7 @@ export function useKioskRefusalMessage(zone: string, locale: string) {
 	const { t } = useTranslate();
 
 	return function message(refusal: KioskClockRefusal | "offline"): string {
+		// Only a call the kiosk never sent: one whose reply was lost is uncertain (#1363).
 		if (refusal === "offline") {
 			return t(
 				"timeTracking.kiosk.offline.refused",
@@ -91,6 +169,17 @@ export function useKioskRefusalMessage(zone: string, locale: string) {
 				return t(
 					"timeTracking.kiosk.refusal.billing",
 					"Clocking is not available for your organization right now. Contact your admin.",
+				);
+			case "not_recorded":
+				// Z8 closed the earlier action as not recorded (#1363): only a fresh one may follow.
+				return t(
+					"timeTracking.kiosk.refusal.notRecorded",
+					"Your action was not recorded. Enter your PIN to choose it again.",
+				);
+			case "attempt_closed":
+				return t(
+					"timeTracking.kiosk.refusal.attemptClosed",
+					"This action was not recorded. Choose it again if you still want it.",
 				);
 			case "unconfirmed":
 				return t(

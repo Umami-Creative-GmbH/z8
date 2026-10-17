@@ -200,6 +200,9 @@ const EMPLOYEE_EXPORT_ACTIONS: ReadonlySet<string> = new Set<string>([
 	AuditAction.KIOSK_PIN_CHANGED,
 	AuditAction.KIOSK_ONLY_EMPLOYEE_CREATED,
 	AuditAction.KIOSK_ONLY_EMPLOYEE_EMAIL_ADDED,
+	AuditAction.KIOSK_BADGE_ISSUED,
+	AuditAction.KIOSK_BADGE_REPLACED,
+	AuditAction.KIOSK_BADGE_REVOKED,
 ]);
 
 /** Older writers record a generic verb; allowed per entity type (`entity_type:action`). */

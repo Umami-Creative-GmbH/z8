@@ -32,6 +32,15 @@ import { employee, location } from "./organization";
  *   organization is adopted (`append` admission, ADR 0002): switching it on in a
  *   `legacy` organization is refused, and a pilot rollback leaves it stored but
  *   ineffective.
+ * - `badge_scanner_enabled` (#1366, spec #889) accepts employee kiosk badges
+ *   from an attached keyboard-style QR scanner on the kiosk's home screen, in
+ *   place of the PIN (off by default). It grants nothing on its own: every badge
+ *   action still needs the active kiosk, a current badge and an assigned,
+ *   active employee.
+ * - `badge_camera_enabled` (#1367, spec #889) accepts the same badges read with
+ *   the kiosk's own camera ("Scan badge" on the home screen), off by default and
+ *   independent of the scanner switch. Frames are decoded on the device and
+ *   never leave it.
  */
 export const kiosk = pgTable(
 	"kiosk",
@@ -45,6 +54,8 @@ export const kiosk = pgTable(
 		timezone: text("timezone").notNull(),
 		boardEnabled: boolean("board_enabled").default(false).notNull(),
 		offlineModeEnabled: boolean("offline_mode_enabled").default(false).notNull(),
+		badgeScannerEnabled: boolean("badge_scanner_enabled").default(false).notNull(),
+		badgeCameraEnabled: boolean("badge_camera_enabled").default(false).notNull(),
 		tokenHash: text("token_hash"),
 		pairedAt: timestamp("paired_at", { withTimezone: true }),
 		pairingCodeHash: text("pairing_code_hash"),
@@ -224,5 +235,85 @@ export const kioskFrozenRefusal = pgTable(
 			table.refusedAt,
 		),
 		index("kioskFrozenRefusal_employee_idx").on(table.employeeId),
+	],
+);
+
+/**
+ * The actions and states a kiosk clock attempt may record. The actions mirror
+ * `KIOSK_CLOCK_ACTIONS` (`lib/time-tracking/kiosk/protocol.ts`); a unit test
+ * keeps them equal.
+ */
+export const KIOSK_ATTEMPT_ACTIONS = [
+	"clock_in",
+	"clock_out",
+	"break",
+	"start_break",
+	"resume_break",
+] as const;
+export const KIOSK_ATTEMPT_STATES = ["committed", "not_recorded"] as const;
+
+/**
+ * How an online kiosk clock attempt ended (#1363, spec #889), once per kiosk and
+ * operation: the terminal record that lets a kiosk which lost an action's reply
+ * learn what became of it without running anything again.
+ *
+ * - `committed`: written by Clocking inside the action's own work transaction
+ *   (both admissions), so it exists exactly when the work does. It keeps the
+ *   employee, the action and the event's time (`event_at` in `event_zone`) as the
+ *   reply named them.
+ * - `not_recorded`: written by the kiosk's outcome lookup when no attempt is
+ *   recorded yet. It closes the operation for good: the original request, should
+ *   it still be on its way, finds the row and rolls back. Whichever writes the
+ *   row first wins; the unique index makes the other wait for it.
+ *
+ * Holds no PIN, badge or command, nothing that could run the action again.
+ */
+export const kioskClockAttempt = pgTable(
+	"kiosk_clock_attempt",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		kioskId: uuid("kiosk_id").notNull(),
+		operationId: uuid("operation_id").notNull(),
+		state: text("state", { enum: KIOSK_ATTEMPT_STATES }).notNull(),
+		employeeId: uuid("employee_id"),
+		action: text("action", { enum: KIOSK_ATTEMPT_ACTIONS }),
+		eventAt: timestamp("event_at", { withTimezone: true }),
+		eventZone: text("event_zone"),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		check(
+			"kiosk_clock_attempt_state_check",
+			sql.raw(`"state" in (${sqlList(KIOSK_ATTEMPT_STATES)})`),
+		),
+		check(
+			"kiosk_clock_attempt_action_check",
+			sql.raw(`"action" is null or "action" in (${sqlList(KIOSK_ATTEMPT_ACTIONS)})`),
+		),
+		check(
+			"kiosk_clock_attempt_committed_check",
+			sql.raw(
+				`"state" <> 'committed' or ("employee_id" is not null and "action" is not null and "event_at" is not null and "event_zone" is not null)`,
+			),
+		),
+		foreignKey({
+			name: "kiosk_clock_attempt_kiosk_fk",
+			columns: [table.kioskId, table.organizationId],
+			foreignColumns: [kiosk.id, kiosk.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "kiosk_clock_attempt_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		uniqueIndex("kioskClockAttempt_operation_idx").on(
+			table.organizationId,
+			table.kioskId,
+			table.operationId,
+		),
+		index("kioskClockAttempt_employee_idx").on(table.employeeId),
 	],
 );

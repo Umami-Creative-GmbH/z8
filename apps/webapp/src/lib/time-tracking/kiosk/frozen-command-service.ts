@@ -24,7 +24,7 @@ import { CLOCK_COMMAND_ADMISSION_WINDOWS, CLOCK_COMMAND_OPERATION_ID } from "../
 import type { StartBreakRefusal } from "../clocking/break-in-progress";
 import type { Clocking } from "../clocking/clocking";
 import { proveFrozenKioskPin } from "../clocking/kiosk";
-import type { ClockRefusal, ClockTarget, KioskPinProof } from "../clocking/types";
+import type { ClockRefusal, ClockTarget, KioskEmployeeProof } from "../clocking/types";
 import { readAppendAdmission } from "../work-transaction";
 import {
 	type AuthenticatedKiosk,
@@ -299,7 +299,7 @@ export function createKioskFrozenCommandService(deps: KioskFrozenCommandServiceD
 		kiosk: AuthenticatedKiosk,
 		command: KioskFrozenCommand,
 		subject: { id: string; userId: string },
-		proof: KioskPinProof,
+		proof: KioskEmployeeProof,
 		now: Instant,
 	) {
 		const window = CLOCK_COMMAND_ADMISSION_WINDOWS.delayed;
@@ -309,7 +309,7 @@ export function createKioskFrozenCommandService(deps: KioskFrozenCommandServiceD
 				kind: "kiosk" as const,
 				kioskId: kiosk.kioskId,
 				userId: subject.userId,
-				pin: proof,
+				proof,
 			},
 			subject: { employeeId: subject.id },
 			identity: { origin: "client" as const, id: command.operationId },

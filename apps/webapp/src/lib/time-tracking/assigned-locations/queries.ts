@@ -74,12 +74,24 @@ export async function listActiveEmployeesAssignedToLocation(
 		.orderBy(asc(sql`lower(${displayName})`), asc(employee.id));
 }
 
-/** True when the employee is actively assigned to the location in the organization. */
+/**
+ * True when the employee is actively assigned to the location in the
+ * organization. With `lock` (inside a work transaction, #1366), the assignment
+ * and location rows are held `FOR SHARE` until it ends, so an unassignment or a
+ * location deactivation either committed before this read or waits for the
+ * transaction.
+ */
 export async function isEmployeeActivelyAssignedToLocation(
 	client: AssignedLocationReadClient,
-	input: { organizationId: string; employeeId: string; locationId: string; now?: Instant },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		locationId: string;
+		now?: Instant;
+		lock?: boolean;
+	},
 ): Promise<boolean> {
-	const [row] = await client
+	const query = client
 		.select({ id: employeeAssignedLocation.id })
 		.from(employeeAssignedLocation)
 		.innerJoin(
@@ -104,7 +116,9 @@ export async function isEmployeeActivelyAssignedToLocation(
 				eq(location.isActive, true),
 				employeeHasOrganizationAccess(input.now),
 			),
-		)
-		.limit(1);
+		);
+	const [row] = await (input.lock
+		? query.for("share", { of: [employeeAssignedLocation, location] }).limit(1)
+		: query.limit(1));
 	return row !== undefined;
 }
