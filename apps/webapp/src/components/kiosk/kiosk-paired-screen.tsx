@@ -3,33 +3,22 @@
 import { IconWifiOff } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useState } from "react";
-import { useOnlineStatus } from "@/hooks/use-online-status";
-import { kioskFetch, kioskPost, kioskRefusalOf } from "@/lib/time-tracking/kiosk/device";
+import { isKioskCallUnreachable, kioskPost } from "@/lib/time-tracking/kiosk/device";
 import { formatKioskTime } from "@/lib/time-tracking/kiosk/display";
-import {
-	type KioskContactAnchor,
-	type KioskFrozenSubmission,
-	parseKioskFrozenSubmission,
-	type SealedKioskPin,
-} from "@/lib/time-tracking/kiosk/frozen-command";
+import type { KioskContactAnchor, SealedKioskPin } from "@/lib/time-tracking/kiosk/frozen-command";
 import type { CachedKioskEmployee } from "@/lib/time-tracking/kiosk/offline-cache";
 import { kioskOfflineClock } from "@/lib/time-tracking/kiosk/offline-clock";
 import {
-	buildKioskOfflineCommand,
+	freezeKioskOfflineSubmission,
 	type KioskOfflineEmployeeView,
 	kioskOfflineEmployeeView,
 } from "@/lib/time-tracking/kiosk/offline-command";
 import {
 	readOfflineContact,
 	readOfflineEmployees,
-	rememberKioskContact,
 	takeOfflinePinAttempt,
 } from "@/lib/time-tracking/kiosk/offline-device";
-import {
-	frozenCommandOf,
-	type KioskQueueNotice,
-	kioskOfflineQueue,
-} from "@/lib/time-tracking/kiosk/offline-queue";
+import { frozenCommandOf, kioskOfflineQueue } from "@/lib/time-tracking/kiosk/offline-queue";
 import { sealKioskPin } from "@/lib/time-tracking/kiosk/pin-seal";
 import type {
 	KioskClockRefusal,
@@ -55,15 +44,12 @@ import { KioskPinPad } from "./kiosk-pin-pad";
 import { KioskQueueNotices } from "./kiosk-queue-notices";
 import { type KioskVehicleQuestion, kioskVehicleQuestion } from "./kiosk-vehicle-use";
 import { type KioskVehicleUseAnswer, KioskVehicleUseStep } from "./kiosk-vehicle-use-step";
+import { useKioskOfflineMode } from "./use-kiosk-offline-mode";
 
-/** How often a paired kiosk checks in, so revocation shows and "last seen" stays current. */
-const KIOSK_HEARTBEAT_MS = 60_000;
 /** The confirmation returns home on its own after about this long. */
 export const KIOSK_CONFIRMATION_MS = 10_000;
 /** A PIN pad or employee screen nobody touches returns home after this long. */
 export const KIOSK_IDLE_MS = 30_000;
-/** Notices about refused offline clockings disappear on their own after this long. */
-const KIOSK_NOTICE_MS = 5 * 60_000;
 
 interface KioskPairedScreenProps {
 	token: string;
@@ -171,19 +157,6 @@ function confirmationOf(
 	};
 }
 
-/** The kiosk as the server describes it now, from the heartbeat; null when unreadable. */
-async function kioskInfoOf(
-	response: Response,
-): Promise<{ kiosk: KioskDeviceInfo; offline?: KioskOfflineContact } | null> {
-	if (!response.ok) return null;
-	const body = (await response.json().catch(() => null)) as {
-		kiosk?: KioskDeviceInfo;
-		offline?: KioskOfflineContact;
-	} | null;
-	if (!body?.kiosk || typeof body.kiosk.boardEnabled !== "boolean") return null;
-	return { kiosk: body.kiosk, ...(body.offline ? { offline: body.offline } : {}) };
-}
-
 /**
  * A paired kiosk (#862): the home screen, then one employee's turn (PIN,
  * state and actions, confirmation), then home again. An employee's data (PIN,
@@ -196,7 +169,8 @@ async function kioskInfoOf(
  * through an outage. Offline (#1292) an employee's PIN is sealed for Z8 and
  * their action is queued as a frozen kiosk command; the confirmation says it is
  * saved on this kiosk and not yet confirmed. At each contact the queue is sent
- * (`offline-queue.ts`) and refusals show as notices on the home screen.
+ * (`offline-queue.ts`) and refusals show as notices on the home screen. The
+ * contact itself, and what it keeps or deletes, is `useKioskOfflineMode`.
  */
 export function KioskPairedScreen({
 	token,
@@ -207,7 +181,6 @@ export function KioskPairedScreen({
 	onUnpaired,
 }: KioskPairedScreenProps) {
 	const { t } = useTranslate();
-	const online = useOnlineStatus();
 	// The heartbeat keeps the kiosk current, so an admin's change (the board switched on) shows
 	// without reloading the page.
 	const [kiosk, setKiosk] = useState(pairedKiosk);
@@ -216,83 +189,28 @@ export function KioskPairedScreen({
 	const labels = useKioskActionLabels();
 	const [flow, setFlow] = useState<Flow>({ step: "home" });
 	const [activity, setActivity] = useState(0);
-	// Whether the last contact failed; an offline-mode kiosk opened from its cache starts so.
-	const [contactLost, setContactLost] = useState(cached);
-	// Counts an offline-mode kiosk's successful contacts, so its employee cache refreshes at each.
-	const [contacts, setContacts] = useState(0);
-	// Whether this kiosk can queue offline: a contact anchor and sealing key are cached (#1292).
-	const [canQueue, setCanQueue] = useState(false);
-	const [notices, setNotices] = useState<KioskQueueNotice[]>([]);
-	const offlineNow = !online || (kiosk.offlineMode && contactLost);
 
 	function kioskRefused(code: KioskRefusalCode) {
 		if (code === "kiosk_revoked") onRevoked();
 		else onUnpaired();
 	}
 
+	const contact = useKioskOfflineMode({
+		token,
+		kiosk,
+		onKiosk: setKiosk,
+		cached,
+		openingContact,
+		locale: language.locale,
+		onKioskRefused: kioskRefused,
+	});
+	const { online } = contact;
+	const offlineNow = contact.connection !== "online";
+
 	function goHome() {
 		setFlow({ step: "home" });
 		language.reset();
 	}
-
-	/** Whether the kiosk can queue offline: a contact anchor and sealing key are cached. */
-	async function refreshCanQueue(current: KioskDeviceInfo) {
-		setCanQueue(current.offlineMode && (await readOfflineContact(current.id)) !== null);
-	}
-
-	/** Sends the queued commands; answers whether any was settled. */
-	async function sendQueue(): Promise<boolean> {
-		const report = await kioskOfflineQueue.send(token);
-		if (report.refused.length > 0) setNotices((shown) => [...shown, ...report.refused]);
-		return report.settled > 0;
-	}
-
-	const checkIn = useEffectEvent(async () => {
-		const response = await kioskFetch(token, "/api/kiosk/session").catch(() => null);
-		if (!response) {
-			setContactLost(true);
-			return;
-		}
-		const refusal = await kioskRefusalOf(response);
-		if (refusal) return kioskRefused(refusal);
-		const current = await kioskInfoOf(response);
-		if (!current) {
-			setContactLost(true);
-			return;
-		}
-		setKiosk(current.kiosk);
-		setContactLost(false);
-		await rememberKioskContact(current.kiosk, language.locale, current.offline);
-		await refreshCanQueue(current.kiosk);
-		const settled = await sendQueue();
-		if (current.kiosk.offlineMode || settled) setContacts((count) => count + 1);
-	});
-
-	// The kiosk the page opened on came from the server: that was a contact too.
-	const rememberOpening = useEffectEvent(async () => {
-		if (!cached) await rememberKioskContact(pairedKiosk, language.locale, openingContact);
-		await refreshCanQueue(pairedKiosk);
-		if (cached) return;
-		if (await sendQueue()) setContacts((count) => count + 1);
-	});
-
-	useEffect(() => {
-		void rememberOpening();
-		const timer = window.setInterval(() => void checkIn(), KIOSK_HEARTBEAT_MS);
-		return () => window.clearInterval(timer);
-	}, []);
-
-	// An offline-mode kiosk checks in as soon as the connection is back.
-	useEffect(() => {
-		if (online && kiosk.offlineMode && contactLost) void checkIn();
-	}, [online, kiosk.offlineMode, contactLost]);
-
-	// Notices about refused offline clockings go away on their own after a while.
-	useEffect(() => {
-		if (notices.length === 0) return;
-		const timer = window.setTimeout(() => setNotices([]), KIOSK_NOTICE_MS);
-		return () => window.clearTimeout(timer);
-	}, [notices]);
 
 	// Every screen of an employee's turn returns home on its own; a touch restarts the wait.
 	const returnHome = useEffectEvent(() => goHome());
@@ -350,13 +268,20 @@ export function KioskPairedScreen({
 			setFlow({ step: "cached", employee: cachedEmployee });
 			return;
 		}
-		const queued = (await kioskOfflineQueue.commands())
+		// Commands Z8 confirmed stay applied until a cached state learned after them arrives.
+		const [confirmed, queued] = await Promise.all([
+			kioskOfflineQueue.confirmed(),
+			kioskOfflineQueue.commands(),
+		]);
+		const own = [...confirmed, ...queued]
 			.filter((record) => record.kioskId === kiosk.id)
-			.map(frozenCommandOf);
+			.sort((a, b) => a.sequence - b.sequence);
 		setFlow({
 			step: "offline",
 			turn: {
-				view: kioskOfflineEmployeeView(cachedEmployee, queued),
+				view: kioskOfflineEmployeeView(cachedEmployee, own.map(frozenCommandOf), {
+					confirmed: new Set(confirmed.map((record) => record.operationId)),
+				}),
 				operationId,
 				pin: sealed,
 				contact: contact.contact,
@@ -383,7 +308,10 @@ export function KioskPairedScreen({
 			});
 			return;
 		}
-		if (result.kind === "offline" && kiosk.offlineMode) {
+		// An offline-mode kiosk that does not reach Z8 (no network, or a server or portal that is not
+		// Z8 answering) clocks offline.
+		if (kiosk.offlineMode && isKioskCallUnreachable(result)) {
+			if (result.kind !== "offline") contact.contactLost();
 			const cachedEmployee = (await readOfflineEmployees(kiosk.id))?.find(
 				(candidate) => candidate.id === employee.id,
 			);
@@ -460,34 +388,6 @@ export function KioskPairedScreen({
 		});
 	}
 
-	/** The submission an offline action freezes; vehicle use Z8 would not read is left out. */
-	function offlineSubmission(
-		turn: OfflineTurn,
-		action: KioskPanelAction,
-		answer: KioskVehicleUseAnswer | undefined,
-	): { submission: KioskFrozenSubmission; vehicleUseLeftOut: boolean } | null {
-		const { occurredAt, timeSource } = kioskOfflineClock.now();
-		const build = (withVehicleUse: boolean) => {
-			const command = buildKioskOfflineCommand({
-				view: turn.view,
-				action,
-				operationId: turn.operationId,
-				kioskId: kiosk.id,
-				timezone: kiosk.timezone,
-				occurredAt,
-				timeSource,
-				...(withVehicleUse && answer?.vehicleUse ? { vehicleUse: answer.vehicleUse } : {}),
-			});
-			if (!command) return null;
-			const submission = { command, pin: turn.pin, contact: turn.contact };
-			return parseKioskFrozenSubmission(submission).ok ? submission : null;
-		};
-		const full = build(true);
-		if (full) return { submission: full, vehicleUseLeftOut: answer?.leftOut ?? false };
-		const without = answer?.vehicleUse ? build(false) : null;
-		return without ? { submission: without, vehicleUseLeftOut: true } : null;
-	}
-
 	/** An offline action (#1292): frozen and queued on this kiosk, confirmed by Z8 later. */
 	async function actOffline(
 		turn: OfflineTurn,
@@ -499,7 +399,17 @@ export function KioskPairedScreen({
 				? { step: "offline-vehicle", turn, action, ask: vehicle.ask, pending: true }
 				: { step: "offline", turn, pending: action, error: null },
 		);
-		const frozen = offlineSubmission(turn, action, vehicle?.answer);
+		const frozen = freezeKioskOfflineSubmission({
+			view: turn.view,
+			action,
+			operationId: turn.operationId,
+			kioskId: kiosk.id,
+			timezone: kiosk.timezone,
+			...kioskOfflineClock.now(),
+			pin: turn.pin,
+			contact: turn.contact,
+			...(vehicle ? { answer: vehicle.answer } : {}),
+		});
 		const failed = t(
 			"timeTracking.kiosk.offline.notSaved",
 			"This could not be saved on the kiosk. Nothing was recorded.",
@@ -513,6 +423,7 @@ export function KioskPairedScreen({
 				submission: frozen.submission,
 				employeeName: turn.view.employee.name,
 				action,
+				token,
 			});
 		} catch {
 			setFlow({ step: "offline", turn, pending: null, error: failed });
@@ -578,7 +489,7 @@ export function KioskPairedScreen({
 					className="flex items-center gap-3 rounded-xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-lg text-amber-900 dark:text-amber-100"
 				>
 					<IconWifiOff className="size-6 shrink-0" aria-hidden="true" />
-					{kiosk.offlineMode && canQueue
+					{contact.connection === "queueing"
 						? t(
 								"timeTracking.kiosk.offline.queueBanner",
 								"The kiosk is offline. Clockings are saved on this kiosk and confirmed when the connection is back.",
@@ -592,15 +503,15 @@ export function KioskPairedScreen({
 			{flow.step === "home" ? (
 				<>
 					<KioskQueueNotices
-						notices={notices}
+						notices={contact.notices}
 						zone={kiosk.timezone}
 						locale={language.locale}
-						onDismiss={() => setNotices([])}
+						onDismiss={contact.dismissNotices}
 					/>
 					<KioskHome
 						token={token}
 						kiosk={kiosk}
-						contacts={contacts}
+						contacts={contact.contacts}
 						offline={kiosk.offlineMode && offlineNow}
 						locale={language.locale}
 						onChooseLanguage={language.choose}

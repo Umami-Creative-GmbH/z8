@@ -1,3 +1,4 @@
+import { type Instant, instantToCanonicalString, parseInstant } from "@/lib/datetime/temporal-core";
 import { KIOSK_CACHE_STORE, kioskDatabaseMayExist, kioskTransaction } from "./kiosk-database";
 import { type KioskPinAttemptVerdict, takeKioskPinAttempt } from "./pin-attempt-limit";
 import type {
@@ -51,10 +52,10 @@ export type KioskOfflineCache = {
 	/** A contact's `offline` answer: kept for the kiosk, or deleted when absent. */
 	rememberContact(kioskId: string, offline: KioskOfflineContact | undefined): Promise<void>;
 	/**
-	 * One offline PIN attempt at `now` (epoch ms) against the per-kiosk limit;
-	 * kept across reloads. Storage that fails allows it (the attempt is not lost).
+	 * One offline PIN attempt at `now` against the per-kiosk limit; kept across
+	 * reloads. Storage that fails allows it (the attempt is not lost).
 	 */
-	takePinAttempt(now: number): Promise<KioskPinAttemptVerdict>;
+	takePinAttempt(now: Instant): Promise<KioskPinAttemptVerdict>;
 	/** Deletes everything this cache holds (revoked or unpaired kiosk). */
 	forget(): Promise<void>;
 };
@@ -71,6 +72,16 @@ const EMPLOYEES_KEY = "employees";
 const CONTACT_KEY = "contact";
 const PIN_ATTEMPTS_KEY = "pinAttempts";
 const ALL_KEYS = [KIOSK_KEY, EMPLOYEES_KEY, CONTACT_KEY, PIN_ATTEMPTS_KEY] as const;
+
+/** A stored attempt instant (UTC ISO), or nothing for a value that is none. */
+function storedInstant(value: unknown): Instant[] {
+	if (typeof value !== "string") return [];
+	try {
+		return [parseInstant(value)];
+	} catch {
+		return [];
+	}
+}
 
 type CachedEmployees = { kioskId: string; employees: CachedKioskEmployee[] };
 type CachedContact = { kioskId: string; offline: KioskOfflineContact };
@@ -148,9 +159,9 @@ export function createKioskOfflineCache(storage: () => KioskCacheStorage): Kiosk
 		takePinAttempt: (now) =>
 			attempt<KioskPinAttemptVerdict>(
 				async (store) => {
-					const earlier = (await store.get<number[]>(PIN_ATTEMPTS_KEY)) ?? [];
-					const { verdict, attempts } = takeKioskPinAttempt(earlier, now);
-					await store.put(PIN_ATTEMPTS_KEY, attempts);
+					const stored = (await store.get<readonly unknown[]>(PIN_ATTEMPTS_KEY)) ?? [];
+					const { verdict, attempts } = takeKioskPinAttempt(stored.flatMap(storedInstant), now);
+					await store.put(PIN_ATTEMPTS_KEY, attempts.map(instantToCanonicalString));
 					return verdict;
 				},
 				{ allowed: true },

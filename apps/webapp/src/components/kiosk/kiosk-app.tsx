@@ -10,8 +10,11 @@ import {
 	loadKioskSession,
 	readKioskToken,
 } from "@/lib/time-tracking/kiosk/device";
-import { forgetKioskOfflineData, readOfflineKiosk } from "@/lib/time-tracking/kiosk/offline-device";
-import { kioskOfflineQueue } from "@/lib/time-tracking/kiosk/offline-queue";
+import {
+	forgetKioskOfflineData,
+	readOfflineKiosk,
+	retireKioskToken,
+} from "@/lib/time-tracking/kiosk/offline-device";
 import type { KioskDeviceInfo, KioskOfflineContact } from "@/lib/time-tracking/kiosk/protocol";
 import { KioskPairedScreen } from "./kiosk-paired-screen";
 import { KioskPairingForm } from "./kiosk-pairing-form";
@@ -53,8 +56,9 @@ function takePairingCodeFromUrl(): string {
  * cache (#1291), and any other kiosk on "Kiosk offline" as before.
  *
  * Before a revoked or unknown token is given up, the kiosk sends its queued
- * commands with it once (#1292), so Z8 refuses and lists them; while they
- * cannot be sent, an unknown token is kept and the kiosk says it is offline.
+ * commands with it once (#1292, `retireKioskToken`), so Z8 refuses and lists
+ * them; while they cannot be sent, an unknown token is kept and the kiosk says
+ * it is offline, and the commands keep their token for a later contact.
  */
 async function screenFor(session: KioskSession, initialCode: string): Promise<KioskScreen> {
 	switch (session.state) {
@@ -67,17 +71,17 @@ async function screenFor(session: KioskSession, initialCode: string): Promise<Ki
 				...(session.offline ? { offline: session.offline } : {}),
 			};
 		case "unpaired":
-			if (session.staleToken) {
-				const { sent } = await kioskOfflineQueue.sendBeforeForgetting(session.staleToken);
-				if (!sent) return { state: "unreachable" };
+			if (!session.staleToken) {
+				await forgetKioskOfflineData();
+			} else {
+				if (!(await retireKioskToken(session.staleToken))) return { state: "unreachable" };
 				forgetKioskToken();
 			}
-			await forgetKioskOfflineData();
 			return { state: "pairing", initialCode };
 		case "revoked": {
 			const token = readKioskToken();
-			if (token) await kioskOfflineQueue.sendBeforeForgetting(token);
-			await forgetKioskOfflineData();
+			if (token) await retireKioskToken(token);
+			else await forgetKioskOfflineData();
 			return { state: "revoked" };
 		}
 		case "unreachable": {
@@ -114,17 +118,15 @@ export function KioskApp() {
 
 	function revoked(token: string) {
 		setScreen({ state: "revoked" });
-		void kioskOfflineQueue.sendBeforeForgetting(token).then(() => forgetKioskOfflineData());
+		void retireKioskToken(token);
 	}
 
 	async function unpaired(token: string) {
-		const { sent } = await kioskOfflineQueue.sendBeforeForgetting(token);
-		if (!sent) {
+		if (!(await retireKioskToken(token))) {
 			setScreen({ state: "unreachable" });
 			return;
 		}
 		forgetKioskToken();
-		void forgetKioskOfflineData();
 		setScreen({ state: "pairing", initialCode: "" });
 	}
 

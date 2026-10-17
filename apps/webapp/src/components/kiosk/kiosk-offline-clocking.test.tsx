@@ -250,9 +250,9 @@ describe("offline kiosk clocking (#1292)", () => {
 		expect(screen.getByText(/saved on this kiosk and not yet confirmed/)).toBeTruthy();
 		expect(screen.queryByText(/Today:/)).toBeNull();
 
-		// 15 minutes after the contact, whatever the device clock says.
+		// 15 minutes after the contact, whatever the device clock was set back to.
 		clocks.monotonic = 15 * 60_000;
-		clocks.device = "2031-01-01T00:00:00Z";
+		clocks.device = "2020-01-01T00:00:00Z";
 		fireEvent.click(screen.getByRole("button", { name: "Clock out" }));
 
 		expect(await screen.findByText("Clocked out")).toBeTruthy();
@@ -326,9 +326,14 @@ describe("offline kiosk clocking (#1292)", () => {
 		const stored = (await queued()).map((record) => record.body);
 		expect(stored).toHaveLength(2);
 
+		// The states Z8 reads after the queue was sent show what it confirmed.
+		const refreshed = {
+			...listed,
+			offline: { ...listed.offline, learnedAt: "2026-10-16T09:00:00Z" },
+		};
 		const calls = stubFetch({
 			"/api/kiosk/session": () => Response.json(session),
-			"/api/kiosk/employees": () => Response.json(listed),
+			"/api/kiosk/employees": () => Response.json(refreshed),
 			"POST /api/kiosk/commands": (call) => {
 				const { command } = submissionOf(call.body ?? "{}");
 				return command.employeeId === anna.id
@@ -352,15 +357,17 @@ describe("offline kiosk clocking (#1292)", () => {
 		const sent = calls.filter((call) => call.url === "/api/kiosk/commands");
 		expect(sent.map((call) => call.body)).toEqual(stored);
 		expect(sent.every((call) => call.token === "z8k_device-token")).toBe(true);
-		expect(await queued()).toEqual([]);
+		// The confirmed clock-in is kept for the offline view until those later states arrive.
+		await waitFor(async () => expect(await queued()).toEqual([]));
 		expect(screen.queryByText(/Clockings are saved on this kiosk/)).toBeNull();
 	});
 
 	it("holds the per-kiosk PIN attempt limit offline", async () => {
 		await restartOffline();
+		// Thirty attempts a second ago by the kiosk's clock (the device clock after a restart).
 		await stores.cache?.put(
 			"pinAttempts",
-			Array.from({ length: 30 }, () => Date.now() - 1_000),
+			Array.from({ length: 30 }, () => "2026-10-16T08:29:59Z"),
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: /Anna Berger/ }));
@@ -398,6 +405,26 @@ describe("offline kiosk clocking (#1292)", () => {
 		expect(sent.map((call) => call.token)).toEqual(["z8k_device-token"]);
 		expect(window.localStorage.getItem(KIOSK_TOKEN_STORAGE_KEY)).toBeNull();
 		expect(await queued()).toEqual([]);
+	});
+
+	it("clocks offline when Z8 answers with a server error or a page that is not Z8's", async () => {
+		await openOnline();
+		stubFetch({
+			"/api/kiosk/session": () => Response.json(session),
+			"/api/kiosk/employees": () => Response.json(listed),
+			// A proxy in front of a server that is down.
+			"POST /api/kiosk/employee-status": () => new Response("Bad gateway", { status: 502 }),
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: /Anna Berger/ }));
+		await enterPin("2468");
+
+		expect(await screen.findByText(/saved on this kiosk and not yet confirmed/)).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Clock out" }));
+		expect(await screen.findByText(/Saved on this kiosk, not yet confirmed/)).toBeTruthy();
+		const [record] = await queued();
+		expect(record).toMatchObject({ employeeId: anna.id, action: "clock_out" });
+		expect(record?.token).toBe("z8k_device-token");
 	});
 
 	it("still refuses clocking offline once offline mode is off", async () => {

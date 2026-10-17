@@ -1506,9 +1506,11 @@
         "reasons": {
           "clockUntrusted": "Kiosk clock not trusted",
           "conflict": "Conflicts with other recorded time",
+          "contactUnverifiable": "Last connection could not be confirmed",
           "holiday": "Holiday without time recording",
           "kioskRetired": "Kiosk revoked or paired again",
           "monthClosed": "Month closed",
+          "noPin": "No kiosk PIN set",
           "notAdopted": "Offline clocking not accepted by the organization",
           "notAssigned": "Not assigned to the location",
           "other": "Could not be accepted",

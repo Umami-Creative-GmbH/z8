@@ -211,6 +211,7 @@
       "queue": {
         "dismiss": "Dismiss",
         "reason": {
+          "contact": "The kiosk's last connection could not be confirmed.",
           "kiosk": "The kiosk was no longer paired at that time.",
           "locked": "The PIN was locked.",
           "notAssigned": "The employee cannot clock at this kiosk.",

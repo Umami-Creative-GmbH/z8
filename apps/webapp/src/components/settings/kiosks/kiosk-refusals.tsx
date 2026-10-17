@@ -13,7 +13,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type { KioskFrozenAction } from "@/lib/time-tracking/kiosk/frozen-command";
+import type { KioskTimeSource } from "@/lib/time-tracking/clocking/types";
+import type {
+	KioskFrozenAction,
+	KioskFrozenRefusalReason,
+} from "@/lib/time-tracking/kiosk/frozen-command";
 import { kioskRefusalExplanation } from "@/lib/time-tracking/kiosk/frozen-refusal-reasons";
 import { formatKioskInstant } from "./kiosk-format";
 
@@ -32,22 +36,32 @@ function actionLabel(t: Translate, action: KioskFrozenAction): string {
 	}
 }
 
-function timeSourceLabel(t: Translate, timeSource: string): string {
-	return timeSource === "device_clock"
-		? t("settings.kiosks.refusals.timeSources.deviceClock", "Device clock")
-		: t("settings.kiosks.refusals.timeSources.serverAnchor", "Server time");
+function timeSourceLabel(t: Translate, timeSource: KioskTimeSource): string {
+	switch (timeSource) {
+		case "device_clock":
+			return t("settings.kiosks.refusals.timeSources.deviceClock", "Device clock");
+		case "server_anchor":
+			return t("settings.kiosks.refusals.timeSources.serverAnchor", "Server time");
+	}
 }
 
-function reasonLabel(t: Translate, reason: string): string {
+function reasonLabel(t: Translate, reason: KioskFrozenRefusalReason): string {
 	switch (kioskRefusalExplanation(reason)) {
 		case "wrong_pin":
 			return t("settings.kiosks.refusals.reasons.wrongPin", "Wrong PIN");
 		case "pin_locked":
 			return t("settings.kiosks.refusals.reasons.pinLocked", "PIN locked");
+		case "no_pin":
+			return t("settings.kiosks.refusals.reasons.noPin", "No kiosk PIN set");
 		case "pin_unchecked":
 			return t("settings.kiosks.refusals.reasons.pinUnchecked", "PIN could not be checked");
 		case "kiosk_retired":
 			return t("settings.kiosks.refusals.reasons.kioskRetired", "Kiosk revoked or paired again");
+		case "contact_unverifiable":
+			return t(
+				"settings.kiosks.refusals.reasons.contactUnverifiable",
+				"Last connection could not be confirmed",
+			);
 		case "outside_window":
 			return t("settings.kiosks.refusals.reasons.outsideWindow", "Arrived too late");
 		case "clock_untrusted":
@@ -72,7 +86,7 @@ function reasonLabel(t: Translate, reason: string): string {
 
 /**
  * Owner/admin list of clockings that offline kiosks queued and Z8 refused on
- * arrival (#1290): who, what, when it claims (in the kiosk's zone), which clock
+ * arrival (#1290): who, what, when it claims (in the zone the kiosk recorded), which clock
  * timed it and why. The employee, or a kiosk-only employee's managers, were
  * notified when Z8 refused it.
  */
@@ -128,7 +142,7 @@ export function KioskRefusalList({ refusals }: { refusals: KioskRefusalData[] })
 										</TableCell>
 										<TableCell>{actionLabel(t, refusal.action)}</TableCell>
 										<TableCell className="text-sm">
-											{formatKioskInstant(locale, refusal.claimedAt, refusal.kioskTimezone)}
+											{formatKioskInstant(locale, refusal.claimedAt, refusal.timezone)}
 										</TableCell>
 										<TableCell>{timeSourceLabel(t, refusal.timeSource)}</TableCell>
 										<TableCell>{reasonLabel(t, refusal.reason)}</TableCell>

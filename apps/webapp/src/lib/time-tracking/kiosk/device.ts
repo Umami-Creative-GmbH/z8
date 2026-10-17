@@ -62,12 +62,22 @@ export async function kioskRefusalOf(response: Response): Promise<KioskRefusalCo
  * What a kiosk call came back with (#862): the answer, a refusal with its
  * `code`, a refused device token (`kiosk`), or no connection (`offline`). A
  * call made while the browser reports itself offline is never sent.
+ *
+ * A refusal Z8 itself did not give is `unavailable`: a server error (5xx, e.g.
+ * a proxy in front of a server that is down) or an answer that is not a Z8
+ * answer (a captive portal's page). An offline-mode kiosk treats it as being
+ * offline (#885); every other kiosk shows it as a failure, as before.
  */
 export type KioskCallResult<T> =
 	| { kind: "ok"; body: T }
-	| { kind: "refused"; status: number; refusal: KioskClockRefusal }
+	| { kind: "refused"; status: number; refusal: KioskClockRefusal; unavailable: boolean }
 	| { kind: "kiosk"; code: KioskRefusalCode }
 	| { kind: "offline" };
+
+/** Whether a call did not reach Z8 in a way that answered it: offline, or not Z8's answer. */
+export function isKioskCallUnreachable(result: KioskCallResult<unknown>): boolean {
+	return result.kind === "offline" || (result.kind === "refused" && result.unavailable);
+}
 
 export async function kioskCall<T>(
 	token: string,
@@ -85,11 +95,16 @@ export async function kioskCall<T>(
 	if (kioskRefusal) return { kind: "kiosk", code: kioskRefusal };
 	const body = (await response.json().catch(() => null)) as unknown;
 	if (response.ok && body !== null) return { kind: "ok", body: body as T };
-	const refusal =
-		body && typeof body === "object" && typeof (body as { code?: unknown }).code === "string"
-			? (body as KioskClockRefusal)
-			: { code: "failed" };
-	return { kind: "refused", status: response.status, refusal };
+	const answered =
+		body !== null &&
+		typeof body === "object" &&
+		typeof (body as { code?: unknown }).code === "string";
+	return {
+		kind: "refused",
+		status: response.status,
+		refusal: answered ? (body as KioskClockRefusal) : { code: "failed" },
+		unavailable: response.status >= 500 || !answered,
+	};
 }
 
 /** A kiosk call with a JSON body. */

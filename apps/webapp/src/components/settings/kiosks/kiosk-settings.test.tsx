@@ -70,7 +70,7 @@ function refusal(overrides: Partial<KioskRefusalData> = {}): KioskRefusalData {
 		id: "55555555-5555-4555-8555-555555555555",
 		kioskId: kiosk().id,
 		kioskName: "Front door",
-		kioskTimezone: "Europe/Berlin",
+		timezone: "Europe/Berlin",
 		employeeName: "Wanda Worker",
 		action: "clock_in",
 		claimedAt: "2026-10-10T05:00:00.000Z",

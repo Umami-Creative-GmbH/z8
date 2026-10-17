@@ -14,6 +14,7 @@
  * Plain JavaScript, served as-is like `sw.js`.
  */
 
+// Kept equal to KIOSK_SHELL_CACHE_PREFIX and KIOSK_DEVELOPMENT_BUILD in kiosk-worker.ts (tested).
 const KIOSK_SHELL_PREFIX = "kiosk-shell-";
 const KIOSK_SHELL_CACHE =
 	KIOSK_SHELL_PREFIX + (new URL(self.location.href).searchParams.get("v") || "development");
