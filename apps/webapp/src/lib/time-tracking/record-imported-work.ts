@@ -19,8 +19,23 @@
  * (#1223), which the legacy import-review committer uses as well; the import
  * worker loads its `server-only` modules through the worker preload.
  */
-import { and, asc, eq, gt, isNull, lt, notExists, or, type SQL } from "drizzle-orm";
-import { completedWorkOperation, employee, timeRecord, workPeriod } from "@/db/schema";
+import {
+	and,
+	asc,
+	eq,
+	gt,
+	isNull,
+	lt,
+	notExists,
+	or,
+	type SQL,
+} from "drizzle-orm";
+import {
+	completedWorkOperation,
+	employee,
+	timeRecord,
+	workPeriod,
+} from "@/db/schema";
 import type { CompletedWorkOperationKind } from "@/db/schema/completed-work";
 import {
 	dateFromInstant,
@@ -46,13 +61,21 @@ import {
 	interpretImportedWorkInterval,
 } from "./imported-work-interval";
 import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
-import { resolveFallbackTimezoneCapture, type TimeEntryTimezoneCapture } from "./timezone-capture";
+import {
+	resolveFallbackTimezoneCapture,
+	type TimeEntryTimezoneCapture,
+} from "./timezone-capture";
+import type { WorkVehicleUse } from "./vehicle-use/work-vehicle-use";
 import {
 	BillableWorkRefusedError,
 	readProjectBillability,
 	resolveWorkBillability,
 } from "./work-billability";
-import { applyWorkRecordChange, type NewWorkCreation, orRefuse } from "./work-records";
+import {
+	applyWorkRecordChange,
+	type NewWorkCreation,
+	orRefuse,
+} from "./work-records";
 import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const IMPORTED_WORK_COMMAND_VERSION = 1;
@@ -162,7 +185,11 @@ const IMPORT_KINDS: readonly CompletedWorkOperationKind[] = [
 
 /** One committed operation per provider source and organization. */
 export function importedWorkSourceKey(source: ImportedWorkSource): string {
-	return JSON.stringify([source.provider, source.entityType, source.providerSourceId]);
+	return JSON.stringify([
+		source.provider,
+		source.entityType,
+		source.providerSourceId,
+	]);
 }
 
 /**
@@ -173,7 +200,11 @@ export function importedWorkSourceKey(source: ImportedWorkSource): string {
  */
 export async function replayImportedWork(
 	scope: SealedWorkTransactionScope,
-	input: { organizationId: string; employeeId: string; command: ImportedWorkCommand },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		command: ImportedWorkCommand;
+	},
 ): Promise<ImportedWorkOutcome | null> {
 	scope.assertEmployee(input.organizationId, input.employeeId);
 	const [receipt] = await scope.db
@@ -187,7 +218,10 @@ export async function replayImportedWork(
 		)
 		.limit(1);
 	if (!receipt) return null;
-	const collision: ImportedWorkOutcome = { kind: "held", hold: { reason: "operation_collision" } };
+	const collision: ImportedWorkOutcome = {
+		kind: "held",
+		hold: { reason: "operation_collision" },
+	};
 	if (
 		receipt.employeeId !== input.employeeId ||
 		receipt.writer !== "reviewed_import" ||
@@ -220,7 +254,8 @@ export async function replayImportedWork(
 		!period ||
 		period.deletedAt !== null ||
 		period.clockInId !== result.clockInEntryId ||
-		(result.clockOutEntryId !== null && period.clockOutId !== result.clockOutEntryId)
+		(result.clockOutEntryId !== null &&
+			period.clockOutId !== result.clockOutEntryId)
 	) {
 		return collision;
 	}
@@ -238,16 +273,25 @@ export async function recordImportedWork(
 	const { organizationId, employeeId, command } = input;
 	scope.assertEmployee(organizationId, employeeId);
 	if (scope.admission !== "append") {
-		throw new Error("Reviewed imports use the operation only in adopted organizations");
+		throw new Error(
+			"Reviewed imports use the operation only in adopted organizations",
+		);
 	}
 	const tx = scope.db;
 	const [owner] = await tx
 		.select({ id: employee.id })
 		.from(employee)
-		.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)))
+		.where(
+			and(
+				eq(employee.id, employeeId),
+				eq(employee.organizationId, organizationId),
+			),
+		)
 		.limit(1);
 	if (!owner) {
-		throw new Error(`Employee ${employeeId} does not belong to organization ${organizationId}`);
+		throw new Error(
+			`Employee ${employeeId} does not belong to organization ${organizationId}`,
+		);
 	}
 
 	const interval = interpretImportedWorkInterval({
@@ -257,7 +301,11 @@ export async function recordImportedWork(
 		now: input.now,
 	});
 	if (interval.kind === "held") return interval;
-	const attribution = await resolveImportedAttribution(tx, organizationId, command.attribution);
+	const attribution = await resolveImportedAttribution(
+		tx,
+		organizationId,
+		command.attribution,
+	);
 	if (attribution.kind === "held") return attribution;
 	const { recorded } = attribution;
 
@@ -273,10 +321,18 @@ export async function recordImportedWork(
 		)
 		.limit(1);
 	if (earlier)
-		return { kind: "held", hold: { reason: "source_collision", operationId: earlier.id } };
+		return {
+			kind: "held",
+			hold: { reason: "source_collision", operationId: earlier.id },
+		};
 
 	const outcome = await (interval.kind === "completed"
-		? recordCompletedImport(scope, input, { start: interval.start, end: interval.end }, recorded)
+		? recordCompletedImport(
+				scope,
+				input,
+				{ start: interval.start, end: interval.end },
+				recorded,
+			)
 		: recordOpenImport(scope, input, interval.start, recorded));
 	if (outcome.kind === "held") return outcome;
 	const { written, followUps } = outcome;
@@ -293,7 +349,10 @@ export async function recordImportedWork(
 		canonicalRecordId: written.canonicalRecordId,
 		segment: {
 			startAt: instantToCanonicalString(interval.start),
-			endAt: interval.kind === "completed" ? instantToCanonicalString(interval.end) : null,
+			endAt:
+				interval.kind === "completed"
+					? instantToCanonicalString(interval.end)
+					: null,
 			durationMinutes: written.durationMinutes,
 			...importedCapture(interval.start),
 		},
@@ -314,7 +373,10 @@ export async function recordImportedWork(
 		id: command.operationId,
 		organizationId,
 		employeeId,
-		kind: interval.kind === "completed" ? "import_completed_work" : "import_open_work",
+		kind:
+			interval.kind === "completed"
+				? "import_completed_work"
+				: "import_open_work",
 		writer: "reviewed_import",
 		writerVersion: REVIEWED_IMPORT_WRITER_VERSION,
 		commandVersion: command.version,
@@ -378,29 +440,53 @@ export async function createImportedCompletedWork(
 		end: Instant;
 		/** The resolved project attribution (`resolveImportedAttribution`); null records none. */
 		recorded: { projectId: string; isBillable: boolean } | null;
+		captures?: {
+			start: TimeEntryTimezoneCapture;
+			end: TimeEntryTimezoneCapture;
+		};
+		vehicleUse?: WorkVehicleUse | null;
 	},
 ): Promise<
-	{ kind: "created"; creation: NewWorkCreation } | { kind: "held"; hold: ImportedWorkHold }
+	| { kind: "created"; creation: NewWorkCreation }
+	| { kind: "held"; hold: ImportedWorkHold }
 > {
 	const created = await applyWorkRecordChange(scope, {
 		kind: "create_new",
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
-		start: { at: input.start, notes: null, capture: importedCapture(input.start) },
-		end: { at: input.end, notes: null, capture: importedCapture(input.end) },
-		...(input.recorded
-			? {
-					attribution: {
-						project: { projectId: input.recorded.projectId, billableDefault: false },
+		start: {
+			at: input.start,
+			notes: null,
+			capture: input.captures?.start ?? importedCapture(input.start),
+		},
+		end: {
+			at: input.end,
+			notes: null,
+			capture: input.captures?.end ?? importedCapture(input.end),
+		},
+		attribution: {
+			...(input.recorded
+				? {
+						project: {
+							projectId: input.recorded.projectId,
+							billableDefault: false,
+						},
 						billable: input.recorded.isBillable,
-					},
-				}
-			: {}),
+					}
+				: {}),
+			...(input.vehicleUse !== undefined
+				? { vehicleUse: input.vehicleUse }
+				: {}),
+		},
 		approval: { state: "approved" },
 		origin: "import",
 		recordedBy: input.importerUserId,
 		actorUserId: input.importerUserId,
-		entries: { createdBy: input.importerUserId, ipAddress: null, deviceInfo: null },
+		entries: {
+			createdBy: input.importerUserId,
+			ipAddress: null,
+			deviceInfo: null,
+		},
 		appendOperation: "reviewed_import",
 	});
 	switch (created.kind) {
@@ -413,19 +499,30 @@ export async function createImportedCompletedWork(
 						kind: occupant.kind,
 						id: occupant.id,
 						startAt: instantToCanonicalString(occupant.startAt),
-						endAt: occupant.endAt ? instantToCanonicalString(occupant.endAt) : null,
+						endAt: occupant.endAt
+							? instantToCanonicalString(occupant.endAt)
+							: null,
 					})),
 				},
 			};
 		case "month_closed":
-			return { kind: "held", hold: { reason: "month_closed", month: created.month } };
+			return {
+				kind: "held",
+				hold: { reason: "month_closed", month: created.month },
+			};
 		case "append_review_required":
 			return {
 				kind: "held",
-				hold: { reason: "append_review_required", reasons: created.requirement.reasons },
+				hold: {
+					reason: "append_review_required",
+					reasons: created.requirement.reasons,
+				},
 			};
 		case "interval_invalid":
-			return { kind: "held", hold: { reason: "invalid_interval", detail: "non_positive" } };
+			return {
+				kind: "held",
+				hold: { reason: "invalid_interval", detail: "non_positive" },
+			};
 	}
 	return { kind: "created", creation: orRefuse<NewWorkCreation>(created) };
 }
@@ -477,7 +574,12 @@ async function recordOpenImport(
 ): Promise<RecordedImport> {
 	const tx = scope.db;
 	const { organizationId, employeeId } = input;
-	const occupants = await findOccupants(tx, { organizationId, employeeId }, start, null);
+	const occupants = await findOccupants(
+		tx,
+		{ organizationId, employeeId },
+		start,
+		null,
+	);
 	if (occupants.length > 0) {
 		return { kind: "held", hold: { reason: "occupancy_conflict", occupants } };
 	}
@@ -486,7 +588,11 @@ async function recordOpenImport(
 		[{ start, end: null }],
 		await closedRangesForEmployee(tx, { organizationId, employeeId }),
 	);
-	if (closed) return { kind: "held", hold: { reason: "month_closed", month: closed.month } };
+	if (closed)
+		return {
+			kind: "held",
+			hold: { reason: "month_closed", month: closed.month },
+		};
 	const entryInput: ClockingInput = {
 		employeeId,
 		organizationId,
@@ -505,7 +611,10 @@ async function recordOpenImport(
 		if (!(error instanceof TimeEntryAppendReviewRequiredError)) throw error;
 		return {
 			kind: "held",
-			hold: { reason: "append_review_required", reasons: error.requirement.reasons },
+			hold: {
+				reason: "append_review_required",
+				reasons: error.requirement.reasons,
+			},
 		};
 	}
 	const [clockIn] = appended;
@@ -558,11 +667,18 @@ export async function resolveImportedAttribution(
 	organizationId: string,
 	requested: ImportedWorkAttribution | undefined,
 ): Promise<
-	| { kind: "resolved"; recorded: { projectId: string; isBillable: boolean } | null }
+	| {
+			kind: "resolved";
+			recorded: { projectId: string; isBillable: boolean } | null;
+	  }
 	| { kind: "held"; hold: ImportedWorkHold }
 > {
 	if (!requested) return { kind: "resolved", recorded: null };
-	const facts = await readProjectBillability(tx, organizationId, requested.projectId);
+	const facts = await readProjectBillability(
+		tx,
+		organizationId,
+		requested.projectId,
+	);
 	if (!facts) {
 		return {
 			kind: "held",
@@ -576,13 +692,22 @@ export async function resolveImportedAttribution(
 			current: false,
 			requested: requested.billable,
 		});
-		return { kind: "resolved", recorded: { projectId: facts.projectId, isBillable } };
+		return {
+			kind: "resolved",
+			recorded: { projectId: facts.projectId, isBillable },
+		};
 	} catch (error) {
 		if (!(error instanceof BillableWorkRefusedError)) throw error;
 		if (requested.nonBillableWhenRefused) {
-			return { kind: "resolved", recorded: { projectId: facts.projectId, isBillable: false } };
+			return {
+				kind: "resolved",
+				recorded: { projectId: facts.projectId, isBillable: false },
+			};
 		}
-		return { kind: "held", hold: { reason: "attribution_not_allowed", detail: error.reason } };
+		return {
+			kind: "held",
+			hold: { reason: "attribution_not_allowed", detail: error.reason },
+		};
 	}
 }
 
@@ -608,7 +733,11 @@ async function findOccupants(
 		or(isNull(endColumn), gt(endColumn, startAt)) as SQL,
 	];
 	const periods = await tx
-		.select({ id: workPeriod.id, startAt: workPeriod.startTime, endAt: workPeriod.endTime })
+		.select({
+			id: workPeriod.id,
+			startAt: workPeriod.startTime,
+			endAt: workPeriod.endTime,
+		})
 		.from(workPeriod)
 		.where(
 			and(
@@ -620,7 +749,11 @@ async function findOccupants(
 		)
 		.orderBy(asc(workPeriod.startTime), asc(workPeriod.id));
 	const records = await tx
-		.select({ id: timeRecord.id, startAt: timeRecord.startAt, endAt: timeRecord.endAt })
+		.select({
+			id: timeRecord.id,
+			startAt: timeRecord.startAt,
+			endAt: timeRecord.endAt,
+		})
 		.from(timeRecord)
 		.where(
 			and(
@@ -643,15 +776,27 @@ async function findOccupants(
 		)
 		.orderBy(asc(timeRecord.startAt), asc(timeRecord.id));
 	return [
-		...periods.map((row) => ({ kind: "work_period" as const, ...occupantInterval(row) })),
-		...records.map((row) => ({ kind: "time_record" as const, ...occupantInterval(row) })),
+		...periods.map((row) => ({
+			kind: "work_period" as const,
+			...occupantInterval(row),
+		})),
+		...records.map((row) => ({
+			kind: "time_record" as const,
+			...occupantInterval(row),
+		})),
 	];
 }
 
-function occupantInterval(row: { id: string; startAt: Date; endAt: Date | null }) {
+function occupantInterval(row: {
+	id: string;
+	startAt: Date;
+	endAt: Date | null;
+}) {
 	return {
 		id: row.id,
 		startAt: instantToCanonicalString(instantFromDate(row.startAt)),
-		endAt: row.endAt ? instantToCanonicalString(instantFromDate(row.endAt)) : null,
+		endAt: row.endAt
+			? instantToCanonicalString(instantFromDate(row.endAt))
+			: null,
 	};
 }
