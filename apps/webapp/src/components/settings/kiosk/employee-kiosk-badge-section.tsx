@@ -47,7 +47,7 @@ function BadgeStatus({ badge, t }: { badge: EmployeeKioskBadgeState; t: Translat
 	if (badge.lastRevokedAt && badge.lastRevokedReason === "employee_departure") {
 		return t(
 			"settings.employees.kioskBadge.endedByDeparture",
-			"No active kiosk badge. The last one ended with the employee's departure on {date}.",
+			"No active kiosk badge. The last one ended with the employee's departure on {date}. Old copies never work again, not even after a rehire.",
 			{ date: dateLabel(badge.lastRevokedAt) },
 		);
 	}
@@ -178,12 +178,23 @@ export function KioskBadgeSection({
 				</p>
 			)}
 
+			{!badge.activeIssuedAt && !badge.canIssue && (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.employees.kioskBadge.notEligible",
+						"A new badge can be issued only while the employee is active. After a rehire, issue a new badge.",
+					)}
+				</p>
+			)}
+
 			<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
 				{!badge.activeIssuedAt ? (
-					<Button onClick={() => issueMutation.mutate("issue")} disabled={busy}>
-						{issueMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-						{t("settings.employees.kioskBadge.issue", "Issue badge")}
-					</Button>
+					badge.canIssue && (
+						<Button onClick={() => issueMutation.mutate("issue")} disabled={busy}>
+							{issueMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+							{t("settings.employees.kioskBadge.issue", "Issue badge")}
+						</Button>
+					)
 				) : confirming ? (
 					<>
 						<Button variant="outline" onClick={() => setConfirming(null)} disabled={busy}>
@@ -203,9 +214,11 @@ export function KioskBadgeSection({
 					</>
 				) : (
 					<>
-						<Button variant="outline" onClick={() => setConfirming("replace")} disabled={busy}>
-							{t("settings.employees.kioskBadge.replace", "Replace badge")}
-						</Button>
+						{badge.canIssue && (
+							<Button variant="outline" onClick={() => setConfirming("replace")} disabled={busy}>
+								{t("settings.employees.kioskBadge.replace", "Replace badge")}
+							</Button>
+						)}
 						<Button variant="outline" onClick={() => setConfirming("revoke")} disabled={busy}>
 							<IconShieldOff className="mr-2 size-4" aria-hidden="true" />
 							{t("settings.employees.kioskBadge.revoke", "Revoke badge")}

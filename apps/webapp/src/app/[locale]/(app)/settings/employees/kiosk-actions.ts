@@ -54,6 +54,8 @@ export type EmployeeKioskBadgeState = {
 	activeIssuedAt: string | null;
 	lastRevokedAt: string | null;
 	lastRevokedReason: KioskBadgeRevokedReason | null;
+	/** Whether a new badge can be issued (or the active one replaced) now (#1365). */
+	canIssue: boolean;
 };
 
 /**
@@ -113,6 +115,7 @@ export async function getEmployeeKioskStateAction(
 					? instantToCanonicalString(badge.lastRevoked.revokedAt)
 					: null,
 				lastRevokedReason: badge.lastRevoked?.reason ?? null,
+				canIssue: badge.canIssue,
 			},
 		};
 	});
