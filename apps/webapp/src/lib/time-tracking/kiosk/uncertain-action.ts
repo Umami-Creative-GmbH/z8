@@ -22,6 +22,12 @@ export type KioskUncertainAction = {
 	request: KioskClockAction;
 	/** When the device sent it (UTC ISO), for support only. */
 	submittedAt: string;
+	/**
+	 * Set when a kiosk badge proved the employee (#1366): the badge is gone with
+	 * the turn, so after a definitive `not_recorded` the employee scans again
+	 * (or uses their PIN) to choose a fresh action. Absent for a PIN turn.
+	 */
+	via?: "badge";
 };
 
 export const KIOSK_UNCERTAIN_ACTION_STORAGE_KEY = "z8.kiosk.uncertainAction";
@@ -59,7 +65,8 @@ function parse(text: string | null): KioskUncertainAction | null {
 		typeof employee.name !== "string" ||
 		!PANEL_ACTIONS.includes(record.action as KioskAction) ||
 		!(KIOSK_CLOCK_ACTIONS as readonly unknown[]).includes(record.request) ||
-		!isString(record.submittedAt)
+		!isString(record.submittedAt) ||
+		(record.via !== undefined && record.via !== "badge")
 	) {
 		return null;
 	}
@@ -71,6 +78,7 @@ function parse(text: string | null): KioskUncertainAction | null {
 		action: record.action as KioskAction,
 		request: record.request as KioskClockAction,
 		submittedAt: record.submittedAt,
+		...(record.via === "badge" ? { via: "badge" as const } : {}),
 	};
 }
 

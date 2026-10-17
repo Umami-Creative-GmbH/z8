@@ -3,6 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import { formatKioskTime } from "@/lib/time-tracking/kiosk/display";
 import type { KioskClockRefusal } from "@/lib/time-tracking/kiosk/protocol";
+import type { KioskHomeNotice } from "./kiosk-turn-flow";
 
 /** Refusals about the PIN or the employee: the kiosk asks for the PIN again. */
 export const KIOSK_PIN_REFUSALS: ReadonlySet<string> = new Set([
@@ -12,6 +13,61 @@ export const KIOSK_PIN_REFUSALS: ReadonlySet<string> = new Set([
 	"employee_not_assigned",
 	"rate_limited",
 ]);
+
+/**
+ * What the home screen says about a badge (#1366): why a scan opened no turn,
+ * or why a badge turn ended without its action. Never names anyone, and always
+ * points to the name-and-PIN way where it can help.
+ */
+export function useKioskHomeNoticeMessage(offlineMode: boolean) {
+	const { t } = useTranslate();
+
+	return function message(notice: KioskHomeNotice): string {
+		switch (notice.code) {
+			case "badge_not_accepted":
+				return t(
+					"timeTracking.kiosk.badge.notAccepted",
+					"This badge is not accepted at this kiosk. Nothing was recorded. Tap your name to use your PIN, or ask your manager.",
+				);
+			case "badge_input_disabled":
+				return t(
+					"timeTracking.kiosk.badge.inputDisabled",
+					"Badge scanning is switched off at this kiosk. Tap your name to use your PIN.",
+				);
+			case "badge_unreadable":
+				return t(
+					"timeTracking.kiosk.badge.unreadable",
+					"This code is not a kiosk badge. Nothing was recorded.",
+				);
+			case "badge_offline":
+				return offlineMode
+					? t(
+							"timeTracking.kiosk.badge.offlinePin",
+							"Badge clocking needs a connection. Nothing was recorded. Tap your name to clock with your PIN.",
+						)
+					: t(
+							"timeTracking.kiosk.badge.offline",
+							"Badge clocking needs a connection. Nothing was recorded.",
+						);
+			case "badge_failed":
+				return t(
+					"timeTracking.kiosk.badge.failed",
+					"The badge could not be checked. Nothing was recorded. Scan it again, or tap your name to use your PIN.",
+				);
+			case "badge_rate_limited":
+				return t(
+					"timeTracking.kiosk.badge.rateLimited",
+					"Too many badge scans at this kiosk. Try again in {seconds} seconds, or tap your name to use your PIN.",
+					{ seconds: Math.max(1, Math.ceil(notice.retryAfter)) },
+				);
+			case "badge_not_recorded":
+				return t(
+					"timeTracking.kiosk.badge.notRecorded",
+					"Your action was not recorded. Scan your badge again to choose it again.",
+				);
+		}
+	};
+}
 
 /**
  * What the kiosk says when a call did nothing (#862). PIN messages say only

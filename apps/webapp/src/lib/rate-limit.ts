@@ -222,6 +222,17 @@ const limiters = {
 		prefix: "ratelimit:kiosk-pin",
 		analytics: false,
 	}),
+	/**
+	 * Kiosk badge calls per kiosk (#1366): 60 per minute, every badge-carrying call
+	 * counts (a scan and its action are two). Separate from the PIN limit: a
+	 * badge never counts as a PIN attempt.
+	 */
+	kioskBadgeAttempts: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(60, "60 s"),
+		prefix: "ratelimit:kiosk-badge",
+		analytics: false,
+	}),
 	/** ICS feed fetches, keyed by feed id (120 per hour) */
 	icsFeed: new Ratelimit({
 		redis,
@@ -295,6 +306,7 @@ export const RATE_LIMIT_CONFIGS = {
 		maxRequests: KIOSK_PIN_ATTEMPT_LIMIT.attempts,
 		windowSeconds: KIOSK_PIN_ATTEMPT_LIMIT.windowSeconds,
 	},
+	kioskBadgeAttempts: { maxRequests: 60, windowSeconds: 60 },
 	icsFeed: {
 		maxRequests: icsFeedConfig.requests,
 		windowSeconds: icsFeedConfig.seconds,

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash, randomInt } from "node:crypto";
-import { and, desc, eq, isNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, lte, or, type SQL, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import { employee, employeeKioskBadge } from "@/db/schema";
@@ -526,6 +526,38 @@ export async function resolveActiveKioskBadge(
 ): Promise<ActiveKioskBadge | null> {
 	const credential = normalizeKioskBadgeCredential(input.credential);
 	if (!credential) return null;
+	return activeKioskBadge(
+		client,
+		eq(employeeKioskBadge.credentialHash, hashKioskBadgeCredential(credential)),
+		input,
+	);
+}
+
+/**
+ * The badge a kiosk badge proof names (#1366), at the protected write boundary:
+ * inside the clocking work transaction, which holds the employee key, the badge
+ * row is locked `FOR UPDATE` and must still be active for the same employee, by
+ * the same rules as `resolveActiveKioskBadge`. Null otherwise.
+ */
+export function lockActiveKioskBadge(
+	tx: Pick<Transaction, "select">,
+	input: { organizationId: string; badgeId: string; employeeId: string; now: Instant },
+): Promise<ActiveKioskBadge | null> {
+	return activeKioskBadge(
+		tx,
+		and(
+			eq(employeeKioskBadge.id, input.badgeId),
+			eq(employeeKioskBadge.employeeId, input.employeeId),
+		),
+		{ ...input, lock: true },
+	);
+}
+
+async function activeKioskBadge(
+	client: Pick<Transaction, "select">,
+	badge: SQL | undefined,
+	input: { organizationId: string; now: Instant; lock?: boolean },
+): Promise<ActiveKioskBadge | null> {
 	const query = client
 		.select({
 			badgeId: employeeKioskBadge.id,
@@ -551,7 +583,7 @@ export async function resolveActiveKioskBadge(
 		)
 		.where(
 			and(
-				eq(employeeKioskBadge.credentialHash, hashKioskBadgeCredential(credential)),
+				badge,
 				eq(employeeKioskBadge.organizationId, input.organizationId),
 				isNull(employeeKioskBadge.revokedAt),
 				employeeHasOrganizationAccess(input.now),

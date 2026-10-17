@@ -71,8 +71,58 @@ export type OfflineTurn = {
 	contact: KioskContactAnchor;
 };
 
+/**
+ * What proves the employee on an online turn: the PIN they entered, or (#1366)
+ * the kiosk badge they scanned. Kept only in the turn's state and sent with each
+ * call; never stored on the device.
+ */
+export type KioskTurnProof = { pin: string; badge?: never } | { badge: string; pin?: never };
+
+/** The proof's part of a kiosk call's body. */
+export function kioskProofBody(proof: KioskTurnProof, employeeId: string) {
+	return proof.badge === undefined
+		? { employeeId, pin: proof.pin }
+		: { employeeId, badge: proof.badge };
+}
+
+/**
+ * Why the home screen shows a note (#1366): a badge scan that did not open a
+ * turn, or a badge turn that ended without its action. Never names anyone.
+ */
+export type KioskHomeNotice =
+	| {
+			code:
+				| "badge_not_accepted"
+				| "badge_input_disabled"
+				| "badge_unreadable"
+				| "badge_offline"
+				| "badge_failed"
+				| "badge_not_recorded";
+	  }
+	| { code: "badge_rate_limited"; retryAfter: number };
+
+/** Refusals of a badge call: the turn (if any) ends and the home screen says why. */
+const KIOSK_BADGE_REFUSALS: ReadonlySet<string> = new Set([
+	"badge_not_accepted",
+	"badge_input_disabled",
+	"rate_limited",
+]);
+
+function badgeRefusalNotice(refusal: KioskClockRefusal): KioskHomeNotice {
+	if (refusal.code === "rate_limited") {
+		return {
+			code: "badge_rate_limited",
+			retryAfter:
+				"retryAfter" in refusal && typeof refusal.retryAfter === "number" ? refusal.retryAfter : 60,
+		};
+	}
+	return {
+		code: refusal.code === "badge_input_disabled" ? "badge_input_disabled" : "badge_not_accepted",
+	};
+}
+
 export type KioskFlow =
-	| { step: "home" }
+	| { step: "home"; notice?: KioskHomeNotice }
 	| {
 			step: "pin";
 			employee: KioskEmployeeListing;
@@ -81,8 +131,12 @@ export type KioskFlow =
 			error: KioskClockRefusal | "offline" | null;
 	  }
 	| {
+			/** A scanned badge is being checked (#1366); nothing is shown about anyone yet. */
+			step: "badge";
+	  }
+	| {
 			step: "employee";
-			pin: string;
+			proof: KioskTurnProof;
 			snapshot: KioskEmployeeSnapshot;
 			pending: KioskPanelAction | null;
 			error: KioskClockRefusal | "offline" | null;
@@ -90,7 +144,7 @@ export type KioskFlow =
 	| {
 			/** Vehicle use asked between the action's button and the action (#1123). */
 			step: "vehicle";
-			pin: string;
+			proof: KioskTurnProof;
 			snapshot: KioskEmployeeSnapshot;
 			action: KioskPanelAction;
 			ask: VehicleAsk;
@@ -140,6 +194,8 @@ export function isKioskFlowBusy(flow: KioskFlow): boolean {
 	switch (flow.step) {
 		case "pin":
 			return flow.busy;
+		case "badge":
+			return true;
 		case "employee":
 		case "offline":
 			return flow.pending !== null;
@@ -259,7 +315,7 @@ export async function pinCheckedFlow(input: {
 	if (result.kind === "ok") {
 		return {
 			step: "employee",
-			pin,
+			proof: { pin },
 			snapshot: result.body,
 			pending: null,
 			error: null,
@@ -281,9 +337,41 @@ export async function pinCheckedFlow(input: {
 	};
 }
 
+/**
+ * The screen after a badge scan's check (#1366): the badge's employee with
+ * their state, day total and actions, or the home screen again with why not.
+ * Badge clocking needs a connection: an unreachable Z8 never opens an offline
+ * turn, and nothing is queued. Identification itself recorded nothing.
+ */
+export function badgeCheckedFlow(input: {
+	badge: string;
+	result: AnsweredCall<KioskEmployeeSnapshot>;
+	/** A call found Z8 unreachable while the browser had a network. */
+	contactLost: () => void;
+}): KioskFlow {
+	const { result } = input;
+	if (result.kind === "ok") {
+		return {
+			step: "employee",
+			proof: { badge: input.badge },
+			snapshot: result.body,
+			pending: null,
+			error: null,
+		};
+	}
+	if (result.kind === "refused" && KIOSK_BADGE_REFUSALS.has(result.refusal.code)) {
+		return { step: "home", notice: badgeRefusalNotice(result.refusal) };
+	}
+	if (isKioskCallUnreachable(result) && result.kind !== "offline") input.contactLost();
+	return {
+		step: "home",
+		notice: { code: result.kind === "offline" && !result.sent ? "badge_offline" : "badge_failed" },
+	};
+}
+
 /** The screen while an online action is sent: the vehicle step or the employee panel, pending. */
 export function actingFlow(
-	pin: string,
+	proof: KioskTurnProof,
 	snapshot: KioskEmployeeSnapshot,
 	action: KioskPanelAction,
 	vehicle?: VehicleAnswer,
@@ -291,30 +379,31 @@ export function actingFlow(
 	return vehicle
 		? {
 				step: "vehicle",
-				pin,
+				proof,
 				snapshot,
 				action,
 				ask: vehicle.ask,
 				pending: true,
 			}
-		: { step: "employee", pin, snapshot, pending: action, error: null };
+		: { step: "employee", proof, snapshot, pending: action, error: null };
 }
 
 /**
  * The screen after an online action: the confirmation, the uncertain step when
  * the reply leaves open whether Z8 recorded it (#1363), the PIN pad again when
- * Z8 refused the PIN, or the employee panel with the refusal (and the state Z8
+ * Z8 refused the PIN, the home screen with why when Z8 no longer accepts the
+ * badge (#1366), or the employee panel with the refusal (and the state Z8
  * reported with it). Only a call that was never sent says the kiosk is offline.
  */
 export function actedFlow(input: {
-	pin: string;
+	proof: KioskTurnProof;
 	snapshot: KioskEmployeeSnapshot;
 	action: KioskPanelAction;
 	attempt: KioskUncertainAction;
 	vehicle?: VehicleAnswer;
 	result: AnsweredCall<KioskClockResult>;
 }): KioskFlow {
-	const { pin, snapshot, action, result } = input;
+	const { proof, snapshot, action, result } = input;
 	if (result.kind === "ok") {
 		return {
 			step: "done",
@@ -324,7 +413,11 @@ export function actedFlow(input: {
 	if (isKioskCallUncertain(result)) {
 		return { step: "uncertain", attempt: input.attempt, check: "checking" };
 	}
-	if (result.kind === "refused" && KIOSK_PIN_REFUSALS.has(result.refusal.code)) {
+	if (proof.badge !== undefined) {
+		if (result.kind === "refused" && KIOSK_BADGE_REFUSALS.has(result.refusal.code)) {
+			return { step: "home", notice: badgeRefusalNotice(result.refusal) };
+		}
+	} else if (result.kind === "refused" && KIOSK_PIN_REFUSALS.has(result.refusal.code)) {
 		const employee = { id: snapshot.employee.id, name: snapshot.employee.name };
 		return {
 			step: "pin",
@@ -341,7 +434,7 @@ export function actedFlow(input: {
 			: snapshot;
 	return {
 		step: "employee",
-		pin,
+		proof,
 		snapshot: after,
 		pending: null,
 		error: refusal,
@@ -374,6 +467,8 @@ export function resolvedFlow(
 		};
 	}
 	if (answer.outcome === "not_recorded") {
+		// The badge left with the turn (#1366): a fresh action starts with a new scan or the PIN.
+		if (attempt.via === "badge") return { step: "home", notice: { code: "badge_not_recorded" } };
 		return {
 			step: "pin",
 			employee: attempt.employee,

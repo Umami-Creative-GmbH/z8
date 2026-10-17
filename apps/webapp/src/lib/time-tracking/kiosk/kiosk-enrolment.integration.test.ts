@@ -279,6 +279,8 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				language: "en",
 				// #1287: offline mode is off for a new kiosk.
 				offlineMode: false,
+				// #1366: so is the attached-scanner badge input.
+				badgeScannerEnabled: false,
 			},
 		});
 		const resolved = await resolveKioskFromRequest(
@@ -643,6 +645,68 @@ describe("kiosk enrolment on PostgreSQL", () => {
 			expect(rows.map((row) => JSON.parse(row.changes))).toEqual([
 				{ from: { offlineModeEnabled: false }, to: { offlineModeEnabled: true } },
 			]);
+		});
+	});
+
+	describe("attached-scanner badge input (#1366)", () => {
+		async function sessionKiosk(token: string) {
+			const response = await session(token);
+			expect(response.status).toBe(200);
+			return ((await response.json()) as { kiosk: { badgeScannerEnabled: boolean } }).kiosk;
+		}
+
+		it("is off for a new kiosk, and owners and admins switch it on and off; the session reports it", async () => {
+			const created = await createdKiosk();
+			const token = await pairedToken(created.pairingCode);
+			expect((await adminKiosks())[0]).toMatchObject({ badgeScannerEnabled: false });
+			expect(await sessionKiosk(token)).toMatchObject({ badgeScannerEnabled: false });
+
+			for (const userId of [ids.ownerUser, ids.adminUser]) {
+				actAs(userId);
+				expect(
+					await admin.updateKioskAction({ kioskId: created.kioskId, badgeScannerEnabled: true }),
+				).toMatchObject({ success: true });
+				expect((await adminKiosks(userId))[0]).toMatchObject({ badgeScannerEnabled: true });
+				expect(await sessionKiosk(token)).toMatchObject({ badgeScannerEnabled: true });
+				actAs(userId);
+				expect(
+					await admin.updateKioskAction({ kioskId: created.kioskId, badgeScannerEnabled: false }),
+				).toMatchObject({ success: true });
+				expect(await sessionKiosk(token)).toMatchObject({ badgeScannerEnabled: false });
+			}
+
+			const { rows } = await pool.query<{ changes: string }>(
+				`select changes from audit_log where organization_id = $1 and entity_id = $2
+				 and action = 'kiosk.updated' order by timestamp`,
+				[ids.organization, created.kioskId],
+			);
+			expect(rows.map((row) => JSON.parse(row.changes))[0]).toEqual({
+				from: { badgeScannerEnabled: false },
+				to: { badgeScannerEnabled: true },
+			});
+		});
+
+		it("does not let managers, members or another organization's admin switch it, nor a value that is not on or off", async () => {
+			const created = await createdKiosk();
+
+			for (const userId of [ids.managerUser, ids.memberUser]) {
+				actAs(userId);
+				expect(
+					await admin.updateKioskAction({ kioskId: created.kioskId, badgeScannerEnabled: true }),
+				).toMatchObject({ success: false, code: "admin_only" });
+			}
+			actAs(ids.foreignUser, ids.otherOrganization);
+			expect(
+				await admin.updateKioskAction({ kioskId: created.kioskId, badgeScannerEnabled: true }),
+			).toMatchObject({ success: false, code: "kiosk_not_found" });
+			actAs(ids.adminUser);
+			expect(
+				await admin.updateKioskAction({
+					kioskId: created.kioskId,
+					badgeScannerEnabled: "yes" as unknown as boolean,
+				}),
+			).toMatchObject({ success: false, code: "invalid_selection" });
+			expect((await adminKiosks())[0]).toMatchObject({ badgeScannerEnabled: false });
 		});
 	});
 

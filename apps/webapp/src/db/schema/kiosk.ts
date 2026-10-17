@@ -32,6 +32,11 @@ import { employee, location } from "./organization";
  *   organization is adopted (`append` admission, ADR 0002): switching it on in a
  *   `legacy` organization is refused, and a pilot rollback leaves it stored but
  *   ineffective.
+ * - `badge_scanner_enabled` (#1366, spec #889) accepts employee kiosk badges
+ *   from an attached keyboard-style QR scanner on the kiosk's home screen, in
+ *   place of the PIN (off by default). It grants nothing on its own: every badge
+ *   action still needs the active kiosk, a current badge and an assigned,
+ *   active employee.
  */
 export const kiosk = pgTable(
 	"kiosk",
@@ -45,6 +50,7 @@ export const kiosk = pgTable(
 		timezone: text("timezone").notNull(),
 		boardEnabled: boolean("board_enabled").default(false).notNull(),
 		offlineModeEnabled: boolean("offline_mode_enabled").default(false).notNull(),
+		badgeScannerEnabled: boolean("badge_scanner_enabled").default(false).notNull(),
 		tokenHash: text("token_hash"),
 		pairedAt: timestamp("paired_at", { withTimezone: true }),
 		pairingCodeHash: text("pairing_code_hash"),

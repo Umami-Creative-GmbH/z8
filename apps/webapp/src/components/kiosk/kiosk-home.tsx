@@ -1,8 +1,8 @@
 "use client";
 
-import { IconLoader2, IconMapPin, IconRefresh, IconSearch } from "@tabler/icons-react";
+import { IconLoader2, IconMapPin, IconQrcode, IconRefresh, IconSearch } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { kioskCall } from "@/lib/time-tracking/kiosk/device";
@@ -17,7 +17,10 @@ import type {
 	KioskRefusalCode,
 } from "@/lib/time-tracking/kiosk/protocol";
 import { KioskLanguageSwitch } from "./kiosk-language";
+import { useKioskHomeNoticeMessage } from "./kiosk-messages";
+import type { KioskHomeNotice } from "./kiosk-turn-flow";
 import { KioskWhoIsInBoard } from "./kiosk-who-is-in-board";
+import { useKioskBadgeScanner } from "./use-kiosk-badge-scanner";
 
 type EmployeeList =
 	| { state: "loading" }
@@ -78,6 +81,15 @@ interface KioskHomeProps {
 	/** An offline-mode kiosk without a connection: no language switch, whose page may not be cached. */
 	offline?: boolean;
 	locale: string;
+	/** Why the last badge scan or badge turn did not go through (#1366). */
+	notice?: KioskHomeNotice | null;
+	/**
+	 * A badge read on this screen (#1366). Given only while the kiosk accepts
+	 * badges; the attached scanner feeds it, as any later badge input would.
+	 */
+	onBadge?: (credential: string) => void;
+	/** A scanned code that is no kiosk badge. */
+	onBadgeUnreadable?: () => void;
 	onChooseLanguage: (language: string) => void;
 	onPick: (employee: KioskEmployeeListing) => void;
 	onKioskRefused: (code: KioskRefusalCode) => void;
@@ -97,13 +109,28 @@ export function KioskHome({
 	contacts = 0,
 	offline = false,
 	locale,
+	notice = null,
+	onBadge,
+	onBadgeUnreadable,
 	onChooseLanguage,
 	onPick,
 	onKioskRefused,
 }: KioskHomeProps) {
 	const { t } = useTranslate();
+	const noticeMessage = useKioskHomeNoticeMessage(kiosk.offlineMode);
 	const [list, setList] = useState<EmployeeList>({ state: "loading" });
 	const [query, setQuery] = useState("");
+	// What the search said before a scan's keys may have reached it (#1366).
+	const queryBeforeScan = useRef("");
+	useKioskBadgeScanner({
+		mode: onBadge ? "read" : "off",
+		onBadge,
+		onUnreadable: onBadgeUnreadable,
+		onScanStart: () => {
+			queryBeforeScan.current = query;
+		},
+		onScanEnd: () => setQuery(queryBeforeScan.current),
+	});
 
 	function show(outcome: EmployeeListOutcome) {
 		if (outcome.state === "refused") onKioskRefused(outcome.code);
@@ -146,6 +173,20 @@ export function KioskHome({
 					<h2 id="kiosk-employees" className="text-xl font-semibold">
 						{t("timeTracking.kiosk.home.title", "Tap your name to clock in or out")}
 					</h2>
+					{onBadge ? (
+						<p className="-mt-2 flex items-center gap-2 text-lg text-muted-foreground">
+							<IconQrcode className="size-6 shrink-0" aria-hidden="true" />
+							{t("timeTracking.kiosk.home.scanHint", "Or scan your kiosk badge at the scanner.")}
+						</p>
+					) : null}
+					{notice ? (
+						<p
+							role="alert"
+							className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-lg text-amber-900 dark:text-amber-100"
+						>
+							{noticeMessage(notice)}
+						</p>
+					) : null}
 					<div className="relative">
 						<IconSearch
 							className="pointer-events-none absolute top-1/2 left-4 size-6 -translate-y-1/2 text-muted-foreground"
