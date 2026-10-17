@@ -130,12 +130,17 @@ const KIOSK_BADGE_REFUSALS: ReadonlySet<string> = new Set([
 	"rate_limited",
 ]);
 
+/** A limited badge call's wait when Z8 names none: the badge limit's window. */
+const BADGE_RETRY_FALLBACK_SECONDS = 60;
+
 function badgeRefusalNotice(refusal: KioskClockRefusal): KioskHomeNotice {
 	if (refusal.code === "rate_limited") {
 		return {
 			code: "badge_rate_limited",
 			retryAfter:
-				"retryAfter" in refusal && typeof refusal.retryAfter === "number" ? refusal.retryAfter : 60,
+				"retryAfter" in refusal && typeof refusal.retryAfter === "number"
+					? refusal.retryAfter
+					: BADGE_RETRY_FALLBACK_SECONDS,
 		};
 	}
 	return {
@@ -205,9 +210,10 @@ export type KioskFlow =
 	| {
 			/**
 			 * An online action whose reply was lost (#1363): the kiosk asks Z8 what
-			 * became of it and offers nothing to do until Z8 answers. `checking` until a
-			 * question fails, then `unavailable`; `conflict` when Z8 recorded the
-			 * operation for another employee or action and the kiosk cannot tell more.
+			 * became of it and offers its employee nothing to do until Z8 answers;
+			 * everyone else keeps using the kiosk (user decision 2026-10-17). `checking`
+			 * until a question fails, then `unavailable`; `conflict` when Z8 recorded
+			 * the operation for another employee or action, or elsewhere.
 			 */
 			step: "uncertain";
 			attempt: KioskUncertainAction;
@@ -231,9 +237,8 @@ export function isKioskFlowBusy(flow: KioskFlow): boolean {
 		case "vehicle":
 		case "offline-vehicle":
 			return flow.pending;
-		case "uncertain":
-			// An unresolved action holds the screen; only a conflict may time out.
-			return flow.check !== "conflict";
+		// An unresolved action holds only its employee (user decision 2026-10-17): its
+		// screen returns home like any other, and the kiosk keeps checking meanwhile.
 		default:
 			return false;
 	}
@@ -485,19 +490,7 @@ export function resolvedFlow(
 ): KioskFlow {
 	if (result.kind !== "ok") return { step: "uncertain", attempt, check: "unavailable" };
 	const answer = result.body;
-	if (answer.outcome === "committed") {
-		return {
-			step: "done",
-			confirmation: {
-				name: attempt.employee.name,
-				action: attempt.action,
-				at: answer.at.instant,
-				zone: answer.at.zone,
-				vehicleUseLeftOut: false,
-				unconfirmed: false,
-			},
-		};
-	}
+	if (answer.outcome === "committed") return committedFlow(attempt, answer.at);
 	if (answer.outcome === "not_recorded") {
 		// The badge left with the turn (#1366): a fresh action starts with a new scan or the PIN.
 		if (attempt.via === "badge") return { step: "home", notice: { code: "badge_not_recorded" } };
@@ -511,6 +504,55 @@ export function resolvedFlow(
 	}
 	if (answer.outcome === "conflict") return { step: "uncertain", attempt, check: "conflict" };
 	return { step: "uncertain", attempt, check: "unavailable" };
+}
+
+/** The original action's confirmation, once Z8 confirmed it was recorded (#1363). */
+function committedFlow(
+	attempt: KioskUncertainAction,
+	at: { instant: string; zone: string },
+): KioskFlow {
+	return {
+		step: "done",
+		confirmation: {
+			name: attempt.employee.name,
+			action: attempt.action,
+			at: at.instant,
+			zone: at.zone,
+			// What the device knew when it sent the action; never claimed otherwise.
+			vehicleUseLeftOut: attempt.vehicleUseLeftOut === true,
+			unconfirmed: false,
+		},
+	};
+}
+
+/**
+ * The screen for an employee who identifies again (by name, or by badge with
+ * the badge turn that opened) while an action of theirs is unresolved, or was
+ * answered while they were away (#1363, user decision 2026-10-17): the original
+ * action's confirmation once; after "not recorded", a fresh turn that says so
+ * (the PIN pad for a name, the badge turn's actions for a badge); that it
+ * cannot be checked here; or that the kiosk is still checking, with no PIN pad
+ * and no action, so each employee has at most one unresolved action.
+ */
+export function heldFlow(
+	attempt: KioskUncertainAction,
+	check: "checking" | "unavailable",
+	badgeTurn?: Extract<KioskFlow, { step: "employee" }>,
+): KioskFlow {
+	const resolved = attempt.resolved;
+	if (resolved?.outcome === "committed") return committedFlow(attempt, resolved.at);
+	if (resolved?.outcome === "not_recorded") {
+		if (badgeTurn) return { ...badgeTurn, error: { code: "attempt_closed" } };
+		return {
+			step: "pin",
+			employee: attempt.employee,
+			attempt: 0,
+			busy: false,
+			error: { code: "not_recorded" },
+		};
+	}
+	if (resolved?.outcome === "conflict") return { step: "uncertain", attempt, check: "conflict" };
+	return { step: "uncertain", attempt, check };
 }
 
 /** The screen while an offline action is queued: the vehicle step or the employee panel, pending. */

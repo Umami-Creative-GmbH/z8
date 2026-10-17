@@ -1,5 +1,5 @@
 /**
- * #1365 (spec #889, ADR 0012): a kiosk badge ends with the employee's
+ * #1365 (spec #889, ADR 0013): a kiosk badge ends with the employee's
  * departure. Driven through the public departure and rehire commands; the
  * badge is observed only through its public contract, `resolveActiveKioskBadge`
  * (what kiosks verify) and `readKioskBadgeStatus` (what managers see).
@@ -127,7 +127,7 @@ describe("kiosk badges across departure and rehire", () => {
 			hasPin: true,
 		});
 		expect(await holder(credential)).toBeNull();
-		expect(await status(worker.employeeId)).toEqual({
+		expect(await status(worker.employeeId)).toMatchObject({
 			active: null,
 			lastRevoked: {
 				revokedAt: parseInstant("2026-09-14T09:30:00Z"),
@@ -220,7 +220,7 @@ describe("kiosk badges across departure and rehire", () => {
 			// The worker is late: nothing processed the departure yet.
 			now = cutoff;
 			expect(await holder(credential)).toBeNull();
-			expect(await status(worker.employeeId)).toEqual({
+			expect(await status(worker.employeeId)).toMatchObject({
 				active: null,
 				lastRevoked: { revokedAt: cutoff, reason: "employee_departure" },
 				canIssue: false,
@@ -231,7 +231,7 @@ describe("kiosk badges across departure and rehire", () => {
 				status: "effective",
 			});
 			expect(await holder(credential)).toBeNull();
-			expect(await status(worker.employeeId)).toEqual({
+			expect(await status(worker.employeeId)).toMatchObject({
 				active: null,
 				lastRevoked: { revokedAt: cutoff, reason: "employee_departure" },
 				canIssue: false,
@@ -241,6 +241,82 @@ describe("kiosk badges across departure and rehire", () => {
 				departureId: scheduled.departureId,
 				employmentPeriodId: worker.employmentPeriodId,
 			});
+		} finally {
+			await fixture.pool.query("update organization set timezone = $2 where id = $1", [
+				fixture.organizationId,
+				original.rows[0]?.timezone ?? null,
+			]);
+		}
+	});
+
+	it("shows a badge as active while kiosks accept it, when a pending departure past its cutoff would no longer take effect", async () => {
+		const admin = await fixture.seedEmployee({ role: "admin" });
+		const worker = await fixture.seedEmployee();
+		now = parseInstant("2026-09-14T08:00:00Z");
+		const credential = await issueBadge(worker.employeeId);
+		await commands().scheduleDeparture(
+			{ userId: admin.userId, organizationId: fixture.organizationId },
+			{
+				employeeId: worker.employeeId,
+				requestId: randomUUID(),
+				expectedRevision: null,
+				lastWorkingDay: "2026-09-20",
+				replacementEmployeeId: null,
+				acknowledgeUnassignedDuties: true,
+			},
+		);
+		// The initiator lost the right to offboard: the access rule no longer applies the departure.
+		await fixture.pool.query("update member set role = 'member' where id = $1", [admin.memberId]);
+
+		now = parseInstant("2026-09-25T08:00:00Z");
+		expect(await holder(credential)).toBe(worker.employeeId);
+		const shown = await status(worker.employeeId);
+		expect(shown.lastRevoked).toBeNull();
+		expect(shown.active?.issuedAt).toEqual(parseInstant("2026-09-14T08:00:00Z"));
+		expect(shown.active?.badgeId).toEqual(expect.any(String));
+		expect(shown.canIssue).toBe(true);
+	});
+
+	it("names the employee's last working day, not the cutoff, for a badge a departure ended", async () => {
+		const original = await fixture.pool.query<{ timezone: string | null }>(
+			"select timezone from organization where id = $1",
+			[fixture.organizationId],
+		);
+		await fixture.pool.query("update organization set timezone = 'Europe/Berlin' where id = $1", [
+			fixture.organizationId,
+		]);
+		try {
+			const scheduledWorker = await fixture.seedEmployee();
+			const offboarded = await fixture.seedEmployee();
+			now = parseInstant("2026-09-14T08:00:00Z");
+			await issueBadge(scheduledWorker.employeeId);
+			await issueBadge(offboarded.employeeId);
+			await schedule(scheduledWorker, "2026-09-30");
+
+			// Before processing (cutoff 2026-09-30T22:00Z) and after it, the day is 30 September.
+			now = parseInstant("2026-10-01T06:00:00Z");
+			expect(
+				(await status(scheduledWorker.employeeId)).lastRevoked?.lastWorkingDay?.toString(),
+			).toBe("2026-09-30");
+			const departure = await fixture.pool.query<{ id: string; revision: number }>(
+				"select id, revision from employee_departure where employee_id = $1",
+				[scheduledWorker.employeeId],
+			);
+			await commands().executeDeparture(
+				identityOf(scheduledWorker, {
+					departureId: departure.rows[0]?.id ?? "",
+					revision: departure.rows[0]?.revision ?? 0,
+				}),
+			);
+			expect(
+				(await status(scheduledWorker.employeeId)).lastRevoked?.lastWorkingDay?.toString(),
+			).toBe("2026-09-30");
+
+			// Offboarded now, just after midnight in Berlin (still 2 October in UTC): the Berlin day.
+			await offboardNow(offboarded, "2026-10-02T22:30:00Z");
+			expect((await status(offboarded.employeeId)).lastRevoked?.lastWorkingDay?.toString()).toBe(
+				"2026-10-03",
+			);
 		} finally {
 			await fixture.pool.query("update organization set timezone = $2 where id = $1", [
 				fixture.organizationId,
@@ -326,7 +402,7 @@ describe("kiosk badges across departure and rehire", () => {
 		expect(newPeriodId).not.toBe(worker.employmentPeriodId);
 
 		expect(await holder(old)).toBeNull();
-		expect(await status(worker.employeeId)).toEqual({
+		expect(await status(worker.employeeId)).toMatchObject({
 			active: null,
 			lastRevoked: {
 				revokedAt: parseInstant("2026-10-01T00:00:00Z"),
@@ -346,7 +422,7 @@ describe("kiosk badges across departure and rehire", () => {
 			employmentPeriodId: newPeriodId,
 		});
 		expect(await holder(old)).toBeNull();
-		expect(await status(worker.employeeId)).toEqual({
+		expect(await status(worker.employeeId)).toMatchObject({
 			active: { issuedAt: now },
 			lastRevoked: null,
 			canIssue: true,

@@ -1,4 +1,4 @@
--- #1364 (spec #889, ADR 0012): an employee's kiosk badge. Only the SHA-256 of
+-- #1364 (spec #889, ADR 0013): an employee's kiosk badge. Only the SHA-256 of
 -- the credential is stored, so a badge cannot be shown or downloaded again.
 -- At most one active badge per employee, no expiry; revoked rows stay as
 -- lifecycle history. Bound to the employment period it was issued in, so a

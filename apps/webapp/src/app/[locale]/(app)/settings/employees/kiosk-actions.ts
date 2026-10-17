@@ -33,6 +33,7 @@ import {
 	resetKioskPin,
 	unlockKioskPin,
 } from "@/lib/time-tracking/kiosk/pin-store";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { isUuid } from "@/lib/validations/uuid";
 import { getTranslate } from "@/tolgee/server";
 
@@ -49,11 +50,20 @@ export type EmployeeKioskState = {
 	badge: EmployeeKioskBadgeState | null;
 };
 
-/** Non-secret lifecycle facts about an employee's kiosk badge (ISO instants). */
+/** Non-secret lifecycle facts about an employee's kiosk badge (ISO instants and dates). */
 export type EmployeeKioskBadgeState = {
+	/** The active badge's id: replace and revoke name it, so a change made meanwhile is refused. */
+	activeBadgeId: string | null;
 	activeIssuedAt: string | null;
 	lastRevokedAt: string | null;
 	lastRevokedReason: KioskBadgeRevokedReason | null;
+	/**
+	 * When the last badge ended with a departure: the employee's last working day
+	 * (ISO date, the departure's own calendar day), never a viewer-zone date.
+	 */
+	departureLastWorkingDay: string | null;
+	/** The organization's zone, in which the instants above are shown. */
+	timezone: string;
 	/** Whether a new badge can be issued (or the active one replaced) now (#1365). */
 	canIssue: boolean;
 };
@@ -100,9 +110,13 @@ export async function getEmployeeKioskStateAction(
 		]);
 		const kioskOnly = isReservedEmail(target.email);
 		if (!canManagePin && !(kioskOnly && isAdmin)) return null;
-		const [status, badge] = canManagePin
-			? await Promise.all([readKioskPinStatus(db, input), readKioskBadgeStatus(db, input)])
-			: [{ hasPin: false, lockedUntil: null }, null];
+		const [status, badge, timezone] = canManagePin
+			? await Promise.all([
+					readKioskPinStatus(db, input),
+					readKioskBadgeStatus(db, input),
+					loadOrganizationTimezone(db, actor.organizationId),
+				])
+			: [{ hasPin: false, lockedUntil: null }, null, "UTC"];
 		return {
 			canManagePin,
 			hasPin: status.hasPin,
@@ -110,11 +124,14 @@ export async function getEmployeeKioskStateAction(
 			kioskOnly,
 			canAddEmail: kioskOnly && isAdmin,
 			badge: badge && {
+				activeBadgeId: badge.active?.badgeId ?? null,
 				activeIssuedAt: badge.active ? instantToCanonicalString(badge.active.issuedAt) : null,
 				lastRevokedAt: badge.lastRevoked
 					? instantToCanonicalString(badge.lastRevoked.revokedAt)
 					: null,
 				lastRevokedReason: badge.lastRevoked?.reason ?? null,
+				departureLastWorkingDay: badge.lastRevoked?.lastWorkingDay?.toString() ?? null,
+				timezone,
 				canIssue: badge.canIssue,
 			},
 		};
@@ -148,11 +165,19 @@ async function renderBadgeFor(badge: KioskBadgeDelivery): Promise<IssuedKioskBad
 	return { filename: badgeFilename(badge.employeeName), pdf: pdf.toString("base64") };
 }
 
-function badgeInput(actor: OrganizationActor, employeeId: unknown) {
+function badgeManagementInput(actor: OrganizationActor, employeeId: unknown) {
 	return {
 		organizationId: actor.organizationId,
 		actorUserId: actor.userId,
 		employeeId: employeeIdOf(employeeId),
+	};
+}
+
+/** A replacement or revocation names the active badge the issuer saw (`activeBadgeId`). */
+function badgeChangeInput(actor: OrganizationActor, employeeId: unknown, expectedBadgeId: unknown) {
+	return {
+		...badgeManagementInput(actor, employeeId),
+		expectedBadgeId: typeof expectedBadgeId === "string" ? expectedBadgeId : "",
 	};
 }
 
@@ -164,30 +189,44 @@ export async function issueEmployeeKioskBadgeAction(
 	employeeId: string,
 ): Promise<KioskBadgeActionResult<IssuedKioskBadgePdf>> {
 	return runKioskBadgeAction("kiosk.issueBadge", async (db, actor) => {
-		const issued = await issueKioskBadge(db, badgeInput(actor, employeeId), renderBadgeFor);
+		const issued = await issueKioskBadge(
+			db,
+			badgeManagementInput(actor, employeeId),
+			renderBadgeFor,
+		);
 		return issued.delivery;
 	});
 }
 
 /**
- * Replaces the employee's kiosk badge: every copy of the old one stops working.
- * The new badge's PDF is in the result once and nowhere else.
+ * Replaces the employee's kiosk badge the issuer saw (`expectedBadgeId`): every
+ * copy of it stops working. Refused with `badge_changed` when another change
+ * got there first. The new badge's PDF is in the result once and nowhere else.
  */
 export async function replaceEmployeeKioskBadgeAction(
 	employeeId: string,
+	expectedBadgeId: string,
 ): Promise<KioskBadgeActionResult<IssuedKioskBadgePdf>> {
 	return runKioskBadgeAction("kiosk.replaceBadge", async (db, actor) => {
-		const issued = await replaceKioskBadge(db, badgeInput(actor, employeeId), renderBadgeFor);
+		const issued = await replaceKioskBadge(
+			db,
+			badgeChangeInput(actor, employeeId, expectedBadgeId),
+			renderBadgeFor,
+		);
 		return issued.delivery;
 	});
 }
 
-/** Revokes the employee's kiosk badge without a replacement; their kiosk PIN is unchanged. */
+/**
+ * Revokes the employee's kiosk badge the issuer saw (`expectedBadgeId`) without
+ * a replacement; their kiosk PIN is unchanged. `badge_changed` as for replace.
+ */
 export async function revokeEmployeeKioskBadgeAction(
 	employeeId: string,
+	expectedBadgeId: string,
 ): Promise<KioskBadgeActionResult<{ revoked: true }>> {
 	return runKioskBadgeAction("kiosk.revokeBadge", async (db, actor) => {
-		await revokeKioskBadge(db, badgeInput(actor, employeeId));
+		await revokeKioskBadge(db, badgeChangeInput(actor, employeeId, expectedBadgeId));
 		return { revoked: true as const };
 	});
 }

@@ -103,8 +103,17 @@ export function KioskCameraScan({ onBadge, onProblem, onCancel }: KioskCameraSca
 
 		async function start() {
 			const media = typeof navigator === "undefined" ? undefined : navigator.mediaDevices;
-			const decoder =
-				typeof media?.getUserMedia === "function" ? await createKioskQrDecoder() : null;
+			let decoder: KioskQrDecoder | null;
+			try {
+				decoder = typeof media?.getUserMedia === "function" ? await createKioskQrDecoder() : null;
+			} catch {
+				// The QR reader could not load (a failed chunk): say so now, with the PIN way.
+				if (!over) {
+					over = true;
+					failed("camera_failed");
+				}
+				return;
+			}
 			if (over) return;
 			if (!media || !decoder) {
 				over = true;
@@ -203,7 +212,7 @@ export function KioskCameraScan({ onBadge, onProblem, onCancel }: KioskCameraSca
 				<output className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-lg text-amber-900 dark:text-amber-100">
 					{t(
 						"timeTracking.kiosk.camera.notBadge",
-						"This code is not a kiosk badge. Hold up your kiosk badge.",
+						"This code is not a kiosk badge. Hold up your kiosk badge, or cancel and tap your name to use your PIN.",
 					)}
 				</output>
 			) : null}

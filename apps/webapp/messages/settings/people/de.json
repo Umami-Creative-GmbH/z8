@@ -162,31 +162,6 @@
         "description": "Mitglieder einladen und ausstehende Beitrittsanfragen prüfen",
         "title": "Einladungen"
       },
-      "kioskBadge": {
-        "active": "Aktiv seit {date}.",
-        "confirmReplace": "Ausweis ersetzen",
-        "confirmReplaceText": "Beim Ersetzen entsteht ein neuer Ausweis. Jede Kopie des bisherigen Ausweises funktioniert sofort nicht mehr.",
-        "confirmRevoke": "Ausweis widerrufen",
-        "confirmRevokeText": "Jede Kopie dieses Ausweises funktioniert endgültig nicht mehr. Die Kiosk-PIN des Mitarbeiters funktioniert weiter.",
-        "description": "Ein gedruckter QR-Code, den der Mitarbeiter an einem Kiosk mit Verbindung scannt, statt seine PIN einzugeben. Er meldet niemanden an.",
-        "done": "Fertig",
-        "download": "PDF herunterladen",
-        "endedByDeparture": "Kein aktiver Kiosk-Ausweis. Der letzte endete mit dem Austritt am {date}. Alte Kopien funktionieren nie wieder, auch nicht nach einer Wiedereinstellung.",
-        "heading": "Kiosk-Ausweis",
-        "issue": "Ausweis ausstellen",
-        "none": "Noch kein Kiosk-Ausweis.",
-        "notEligible": "Ein neuer Ausweis kann nur für aktive Mitarbeiter ausgestellt werden. Stellen Sie nach einer Wiedereinstellung einen neuen Ausweis aus.",
-        "openToPrint": "Zum Drucken öffnen",
-        "pdf": {
-          "instructions": "Schneiden Sie den Ausweis an der gestrichelten Linie aus. Wer eine Kopie hat, kann an den Kiosken der Organisation als dieser Mitarbeiter stempeln. Bewahren Sie ihn deshalb wie einen Schlüssel auf. Geht er verloren, lassen Sie ihn ersetzen: Dann funktioniert keine Kopie dieses Ausweises mehr.",
-          "title": "Kiosk-Ausweis"
-        },
-        "replace": "Ausweis ersetzen",
-        "revoke": "Ausweis widerrufen",
-        "revoked": "Kiosk-Ausweis widerrufen",
-        "revokedOn": "Kein aktiver Kiosk-Ausweis. Der letzte wurde am {date} widerrufen.",
-        "saveNow": "Speichern Sie das PDF jetzt: Z8 kann diesen Ausweis nicht noch einmal anzeigen. Eine gespeicherte Kopie können Sie erneut drucken. Gehen Datei oder Ausweis verloren, ersetzen Sie den Ausweis."
-      },
       "kioskPin": {
         "addEmailDescription": "Die Person erhält eine Einladung, ein Passwort festzulegen, und kann sich danach anmelden. Kiosk-PIN und Verlauf bleiben unverändert.",
         "addEmailHeading": "E-Mail-Adresse hinzufügen",

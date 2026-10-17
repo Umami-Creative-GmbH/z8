@@ -147,29 +147,6 @@
         "resume": "Resume work",
         "startBreak": "Start break"
       },
-      "badge": {
-        "checking": "Checking your badge…",
-        "failed": "The badge could not be checked. Nothing was recorded. Scan it again, or tap your name to use your PIN.",
-        "inputDisabled": "Badge scanning is switched off at this kiosk. Tap your name to use your PIN.",
-        "notAccepted": "This badge is not accepted at this kiosk. Nothing was recorded. Tap your name to use your PIN, or ask your manager.",
-        "notRecorded": "Your action was not recorded. Scan your badge again to choose it again.",
-        "offline": "Badge clocking needs a connection. Nothing was recorded.",
-        "offlinePin": "Badge clocking needs a connection. Nothing was recorded. Tap your name to clock with your PIN.",
-        "rateLimited": "Too many badge scans at this kiosk. Try again in {seconds} seconds, or tap your name to use your PIN.",
-        "unreadable": "This code is not a kiosk badge. Nothing was recorded."
-      },
-      "camera": {
-        "title": "Hold your kiosk badge up to the camera",
-        "hint": "Keep the QR code inside the frame. The code is read on this kiosk; no picture is saved.",
-        "preview": "Camera preview",
-        "starting": "Starting the camera…",
-        "notBadge": "This code is not a kiosk badge. Hold up your kiosk badge.",
-        "cancel": "Cancel scanning",
-        "denied": "The kiosk may not use the camera. Allow camera access for this page in the browser, or tap your name to use your PIN.",
-        "missing": "This kiosk has no camera that can scan. Tap your name to use your PIN.",
-        "unsupported": "This browser cannot scan badges with the camera. Tap your name to use your PIN.",
-        "failed": "The camera could not be started. Try again, or tap your name to use your PIN."
-      },
       "board": {
         "empty": "Nobody is clocked in right now.",
         "title": "Who is in"
@@ -197,8 +174,6 @@
         "loadFailed": "The names could not be loaded. Check the network connection.",
         "loading": "Loading names…",
         "noMatch": "No name matches your search.",
-        "scanHint": "Or scan your kiosk badge at the scanner.",
-        "scanBadge": "Scan badge",
         "search": "Find your name",
         "title": "Tap your name to clock in or out"
       },
@@ -251,14 +226,12 @@
       },
       "refusal": {
         "alreadyClockedIn": "You are already clocked in.",
-        "attemptClosed": "This action was not recorded. Choose it again if you still want it.",
         "billing": "Clocking is not available for your organization right now. Contact your admin.",
         "generic": "That did not work. Nothing was recorded. Try again or ask your manager.",
         "holiday": "Clocking is blocked today because of a holiday. Ask your manager.",
         "monthClosed": "This time is in a closed month and cannot be changed. Ask your manager.",
         "noBreak": "You are not on a break.",
         "notClockedIn": "You are not clocked in.",
-        "notRecorded": "Your action was not recorded. Enter your PIN to choose it again.",
         "onBreak": "You are already on a break.",
         "unconfirmed": "The kiosk could not confirm whether this was saved. Check your status before you try again.",
         "underReview": "Your time for today is under review. Ask your manager."
@@ -273,14 +246,6 @@
         "clockedIn": "Clocked in since {time}",
         "clockedOut": "Not clocked in",
         "onBreak": "On break since {time}"
-      },
-      "uncertain": {
-        "action": "{name}: {action}",
-        "back": "Back",
-        "conflict": "This action could not be checked on this kiosk. Check your status with your manager before you clock again.",
-        "title": "Checking whether your action was recorded",
-        "unavailable": "Z8 cannot be reached right now. The kiosk keeps checking.",
-        "wait": "Please wait. Do not clock again: the kiosk shows the result as soon as Z8 answers."
       },
       "unreachableDescription": "The kiosk cannot reach the server. Check the network connection; clocking works only while online.",
       "unreachableTitle": "Kiosk offline",

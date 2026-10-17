@@ -12,6 +12,8 @@ export type KioskBadgeErrorCode =
 	| "employee_inactive"
 	| "badge_exists"
 	| "no_badge"
+	/** The badge the issuer saw was replaced or revoked meanwhile; they should reload (#889). */
+	| "badge_changed"
 	/** Anything unexpected: the action failed for a reason the user cannot act on. */
 	| "failed";
 

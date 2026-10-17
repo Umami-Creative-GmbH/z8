@@ -20,10 +20,6 @@ import { db } from "@/db";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { integrationAdminPool } from "@/test/integration-database";
 
-const harness = vi.hoisted(() => ({
-	billing: { canAccess: true } as { canAccess: boolean; reason?: string },
-}));
-
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
@@ -32,17 +28,18 @@ vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
 vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: async () => null } } }));
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => harness.billing,
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 const { createClocking } = await import("@/lib/time-tracking/clocking/clocking");
 const { recordingFollowUps } = await import("@/lib/time-tracking/clocking/follow-ups");
 const { coordinatedTransactions } = await import("@/lib/time-tracking/clocking/transactions");
 const { proveKioskBadge } = await import("@/lib/time-tracking/clocking/kiosk");
 const { setOwnKioskPin } = await import("@/lib/time-tracking/kiosk/pin-store");
-const { issueKioskBadge, replaceKioskBadge, revokeKioskBadge } = await import("./badge-store");
+const { issueKioskBadge, readKioskBadgeStatus, replaceKioskBadge, revokeKioskBadge } = await import(
+	"./badge-store"
+);
 const { renderKioskBadgePdf } = await import("./badge-pdf");
 const { pdfQrCodeText } = await import("./badge-pdf.test.fixture");
 const { hashKioskSecret } = await import("./credentials");
@@ -51,7 +48,7 @@ const { createKioskClockService } = await import("./clock-service");
 const { withAuditTrail } = await import("@/lib/audit-trail");
 const { updateKiosk } = await import("./kiosk-store");
 type ClockPrincipal = import("@/lib/time-tracking/clocking/types").ClockPrincipal;
-type KioskPinProof = import("@/lib/time-tracking/clocking/types").KioskPinProof;
+type KioskEmployeeProof = import("@/lib/time-tracking/clocking/types").KioskEmployeeProof;
 
 const ids = {
 	organization: "t1366-kiosk-org",
@@ -127,6 +124,7 @@ describe("kiosk badge clocking on PostgreSQL", () => {
 				badgeAttempts.push(kioskId);
 				return options.badgeLimit ?? { allowed: true, retryAfter: 0 };
 			},
+			limitOutcomeLookups: async () => ({ allowed: true, retryAfter: 0 }),
 		});
 		return { service, followUps };
 	}
@@ -216,6 +214,12 @@ describe("kiosk badge clocking on PostgreSQL", () => {
 		organizationId: ids.organization,
 		actorUserId: ids.managerUser,
 		employeeId,
+	});
+	/** A replacement or revocation names the badge the manager's employee page shows. */
+	const change = async (employeeId: string) => ({
+		...manage(employeeId),
+		expectedBadgeId:
+			(await readKioskBadgeStatus(db, manage(employeeId), clockPort)).active?.badgeId ?? "",
 	});
 
 	async function cleanup() {
@@ -372,7 +376,6 @@ describe("kiosk badge clocking on PostgreSQL", () => {
 	}
 
 	beforeEach(async () => {
-		harness.billing = { canAccess: true };
 		now = parseInstant("2026-07-22T06:00:00Z");
 		pinAttempts = [];
 		badgeAttempts = [];
@@ -529,7 +532,7 @@ describe("kiosk badge clocking on PostgreSQL", () => {
 
 		it("refuses an action whose badge was revoked after the scan, without recording work", async () => {
 			expect((await scan(worker())).status).toBe(200);
-			await revokeKioskBadge(db, manage(ids.worker), clockPort);
+			await revokeKioskBadge(db, await change(ids.worker), clockPort);
 
 			expect(await act(worker(), { action: "clock_in", operationId: randomUUID() })).toEqual(
 				NOT_ACCEPTED,
@@ -603,7 +606,7 @@ describe("kiosk badge clocking on PostgreSQL", () => {
 		it("accepts the credential the issued PDF's QR code carries", async () => {
 			const replaced = await replaceKioskBadge(
 				db,
-				manage(ids.worker),
+				await change(ids.worker),
 				({ credential, employeeName, organizationName }) =>
 					renderKioskBadgePdf({
 						credential,
@@ -812,7 +815,7 @@ describe("kiosk badge clocking on PostgreSQL", () => {
 		it("answers a committed badge action with its original time, also after the badge was revoked", async () => {
 			const operationId = randomUUID();
 			const original = await act(worker(), { action: "clock_in", operationId });
-			await revokeKioskBadge(db, manage(ids.worker), clockPort);
+			await revokeKioskBadge(db, await change(ids.worker), clockPort);
 			now = parseInstant("2026-07-22T06:05:00Z");
 
 			const recovered = await outcome({ operationId, employeeId: ids.worker, action: "clock_in" });
@@ -1065,11 +1068,11 @@ describe("kiosk badge clocking on PostgreSQL", () => {
 			});
 		}
 
-		const principal = (proof: KioskPinProof): ClockPrincipal => ({
+		const principal = (proof: KioskEmployeeProof): ClockPrincipal => ({
 			kind: "kiosk",
 			kioskId: ids.kiosk,
 			userId: ids.workerUser,
-			pin: proof,
+			proof,
 		});
 
 		it("refuses a badge proof built without the badge check", async () => {
@@ -1078,10 +1081,11 @@ describe("kiosk badge clocking on PostgreSQL", () => {
 				[ids.worker],
 			);
 			const forged = {
+				kind: "badge" as const,
 				organizationId: ids.organization,
 				kioskId: ids.kiosk,
 				employeeId: ids.worker,
-				badge: { badgeId: only(rows).id },
+				badge: { badgeId: only(rows).id, input: "scanner" as const },
 			};
 
 			await expect(clockIn(principal(forged))).resolves.toEqual({
@@ -1096,10 +1100,11 @@ describe("kiosk badge clocking on PostgreSQL", () => {
 				organizationId: ids.organization,
 				kioskId: ids.kiosk,
 				credential: worker(),
+				input: "scanner",
 				now,
 			});
 			if (proven.status !== "verified") throw new Error(proven.status);
-			await revokeKioskBadge(db, manage(ids.worker), clockPort);
+			await revokeKioskBadge(db, await change(ids.worker), clockPort);
 
 			await expect(clockIn(principal(proven.proof))).resolves.toEqual({
 				outcome: "refused",
@@ -1184,6 +1189,42 @@ describe("kiosk badge clocking on PostgreSQL", () => {
 			expect(await act(worker(), { action: "clock_out", operationId: randomUUID() })).toEqual({
 				status: 403,
 				body: { code: "badge_input_disabled" },
+			});
+		});
+
+		it("holds a location deactivation until an action already past its recheck has committed", async () => {
+			await setAdmission("active");
+			await admin.query(
+				`create or replace function t1366_park_claim() returns trigger language plpgsql as $$
+				 begin perform pg_advisory_xact_lock(${PARK_KEY}); return new; end $$`,
+			);
+			await admin.query(
+				`create trigger t1366_park_claim after insert on kiosk_clock_attempt
+				 for each row when (new.state = 'committed') execute function t1366_park_claim()`,
+			);
+			parked = await admin.connect();
+			await parked.query("begin");
+			await parked.query("select pg_advisory_xact_lock($1)", [PARK_KEY]);
+			const { rows } = await parked.query<{ pid: number }>("select pg_backend_pid() as pid");
+
+			const action = act(worker(), { action: "clock_in", operationId: randomUUID() });
+			const actionPid = await waitForWaiter(only(rows).pid);
+			// A plain update, as the location settings write it.
+			const deactivation = admin.query("update location set is_active = false where id = $1", [
+				ids.store,
+			]);
+			// The deactivation waits for the action's location lock.
+			await waitForWaiter(actionPid);
+			await parked.query("commit");
+			parked.release();
+			parked = null;
+
+			await expect(action).resolves.toMatchObject({ status: 200, body: { outcome: "executed" } });
+			await deactivation;
+			expect(await entries()).toHaveLength(1);
+			expect(await act(worker(), { action: "clock_out", operationId: randomUUID() })).toEqual({
+				status: 403,
+				body: { code: "badge_not_accepted" },
 			});
 		});
 	});

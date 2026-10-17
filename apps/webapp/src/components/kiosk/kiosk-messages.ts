@@ -38,7 +38,7 @@ export function useKioskHomeNoticeMessage(offlineMode: boolean) {
 			case "badge_unreadable":
 				return t(
 					"timeTracking.kiosk.badge.unreadable",
-					"This code is not a kiosk badge. Nothing was recorded.",
+					"This code is not a kiosk badge. Nothing was recorded. Scan your kiosk badge, or tap your name to use your PIN.",
 				);
 			case "badge_offline":
 				return offlineMode

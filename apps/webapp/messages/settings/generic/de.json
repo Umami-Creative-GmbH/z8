@@ -1439,17 +1439,6 @@
       },
       "title": "Daten importieren"
     },
-    "kioskBadge": {
-      "errors": {
-        "badgeExists": "Dieser Mitarbeiter hat bereits einen Kiosk-Ausweis. Ersetzen Sie ihn stattdessen.",
-        "employeeInactive": "Nur aktive Mitarbeiter können einen Kiosk-Ausweis erhalten.",
-        "employeeNotFound": "Dieser Mitarbeiter wurde nicht gefunden.",
-        "failed": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
-        "noBadge": "Dieser Mitarbeiter hat keinen Kiosk-Ausweis.",
-        "notAllowed": "Sie sind nicht berechtigt, dies zu tun.",
-        "signInRequired": "Melden Sie sich an, um fortzufahren."
-      }
-    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Diese Adresse wird bereits von einem anderen Konto verwendet.",
@@ -1471,8 +1460,6 @@
     },
     "kiosks": {
       "add": "Kiosk hinzufügen",
-      "badgeScannerOn": "Ausweis-Scanner an",
-      "badgeCameraOn": "Ausweis-Kamera an",
       "boardOn": "Anwesenheitsübersicht an",
       "columns": {
         "actions": "Aktionen",
@@ -1502,10 +1489,6 @@
         "offlineNeedsAdoption": "Der Offlinemodus erfordert koordinierte Stempelbefehle, die von dieser Organisation noch nicht verwendet werden."
       },
       "fields": {
-        "badgeScanner": "Ausweis-Scanner",
-        "badgeScannerDescription": "Mitarbeitende scannen ihren Kiosk-Ausweis mit einem an diesen Kiosk angeschlossenen QR-Scanner, statt ihre PIN einzugeben. Stempeln mit Ausweis braucht eine Verbindung; Name und PIN funktionieren weiter.",
-        "badgeCamera": "Ausweis-Kamera",
-        "badgeCameraDescription": "Mitarbeitende tippen auf „Ausweis scannen“ und halten ihren Kiosk-Ausweis vor die Kamera dieses Kiosks, statt ihre PIN einzugeben. Der Code wird auf dem Gerät gelesen; es wird kein Bild hochgeladen oder gespeichert. Der Browser fragt einmal nach dem Kamerazugriff. Stempeln mit Ausweis braucht eine Verbindung; Name und PIN funktionieren weiter.",
         "board": "Anwesenheitsübersicht",
         "boardDescription": "Zeigt am Kiosk mit Vorname und erstem Buchstaben des Nachnamens an, wer anwesend ist oder Pause macht.",
         "location": "Standort",

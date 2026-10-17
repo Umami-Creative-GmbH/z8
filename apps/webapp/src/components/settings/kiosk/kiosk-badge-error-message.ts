@@ -23,6 +23,11 @@ export function kioskBadgeErrorMessage(t: Translate, code: KioskBadgeErrorCode):
 			);
 		case "no_badge":
 			return t("settings.kioskBadge.errors.noBadge", "This employee has no kiosk badge.");
+		case "badge_changed":
+			return t(
+				"settings.kioskBadge.errors.badgeChanged",
+				"Someone else changed this kiosk badge in the meantime. Check its status and try again.",
+			);
 		default:
 			return t("settings.kioskBadge.errors.failed", "Something went wrong. Please try again.");
 	}
