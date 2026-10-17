@@ -4,6 +4,7 @@ import {
 	type EmployeeEmploymentHistory,
 	employee,
 	employeeEmploymentHistory,
+	employeeEmploymentPeriod,
 	workPolicy,
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -24,6 +25,7 @@ import {
 import { loadTermsInForceOn } from "./load-terms-in-force";
 import { utcMidnight } from "./terms-in-force";
 import { adjustConfirmedTimeline } from "./timeline";
+import { removeTermsPolicy, syncTermsPolicy } from "./assignment-sync";
 
 /**
  * The one command that writes employment terms, and with them every hourly
@@ -180,6 +182,10 @@ async function adjustNeighbours(
 					eq(employeeEmploymentHistory.organizationId, scope.organizationId),
 				),
 			);
+		const previous = existing.find((row) => row.id === update.id);
+		if (previous) {
+			await syncTermsPolicy(tx, scope, { ...previous, validUntil: update.validUntil });
+		}
 	}
 	return adjusted.next;
 }
@@ -254,6 +260,7 @@ async function insertTerms(
 	if (!inserted) throw new Error("Employment history insert returned no row");
 
 	await projectCurrentTerms(tx, scope, inserted);
+	await syncTermsPolicy(tx, scope, inserted);
 	return inserted;
 }
 
@@ -299,6 +306,9 @@ export async function confirmEmploymentTerms(
 		});
 	}
 	requireHourlyWage(target);
+	if (target.workPolicyId) {
+		await requireOrganizationWorkPolicy(tx, scope.organizationId, target.workPolicyId);
+	}
 
 	const employmentPeriodId = await requireTermsEmploymentPeriod(tx, {
 		organizationId: scope.organizationId,
@@ -339,6 +349,7 @@ export async function confirmEmploymentTerms(
 	if (!updated) throw new Error("Employment history update returned no row");
 
 	await projectCurrentTerms(tx, scope, updated);
+	await syncTermsPolicy(tx, scope, updated);
 	return updated;
 }
 
@@ -387,4 +398,135 @@ export async function changeHourlyWage(
 		changeReason: input.changeReason,
 		reviewState: input.reviewState,
 	});
+}
+
+export function canCancelEmploymentHistoryRow(
+	row: Pick<EmployeeEmploymentHistory, "reviewState" | "validFrom">,
+	now: Date = currentTimestamp(),
+) {
+	return (
+		row.reviewState !== "confirmed" ||
+		compareInstants(instantFromDate(row.validFrom), instantFromDate(now)) > 0
+	);
+}
+
+/** Cancels proposed/future terms and their projection in the caller's transaction. */
+export async function cancelEmploymentTerms(
+	tx: TermsWriteClient,
+	input: TermsWriteScope & { termsId: string },
+): Promise<EmployeeEmploymentHistory> {
+	const scope = { ...input, now: input.now ?? currentTimestamp() };
+	await lockEmployee(tx, scope);
+	const termsScope = and(
+		eq(employeeEmploymentHistory.employeeId, scope.employeeId),
+		eq(employeeEmploymentHistory.organizationId, scope.organizationId),
+	);
+	const existing = await tx
+		.select()
+		.from(employeeEmploymentHistory)
+		.where(termsScope);
+	const target = existing.find((row) => row.id === input.termsId);
+	if (!target)
+		throw new NotFoundError({
+			message: "Employment history not found",
+			entityType: "employment_history",
+			entityId: input.termsId,
+		});
+	if (!canCancelEmploymentHistoryRow(target, scope.now)) {
+		throw new ValidationError({
+			message: "Employment history has already taken effect",
+			field: "validFrom",
+		});
+	}
+	await tx
+		.delete(employeeEmploymentHistory)
+		.where(and(termsScope, eq(employeeEmploymentHistory.id, target.id)));
+	if (target.reviewState !== "confirmed") return target;
+
+	await removeTermsPolicy(tx, scope, target);
+	const [period] = target.employmentPeriodId
+		? await tx
+				.select({ status: employeeEmploymentPeriod.status })
+				.from(employeeEmploymentPeriod)
+				.where(
+					and(
+						eq(employeeEmploymentPeriod.id, target.employmentPeriodId),
+						eq(employeeEmploymentPeriod.organizationId, scope.organizationId),
+						eq(employeeEmploymentPeriod.employeeId, scope.employeeId),
+					),
+				)
+		: [];
+	if (target.employmentPeriodId && period?.status !== "open") return target;
+	const confirmed = existing
+		.filter(
+			(row) =>
+				row.id !== target.id &&
+				row.reviewState === "confirmed" &&
+				row.employmentPeriodId === target.employmentPeriodId &&
+				(!row.validUntil ||
+					compareInstants(
+						instantFromDate(row.validUntil),
+						instantFromDate(row.validFrom),
+					) > 0),
+		)
+		.sort((a, b) =>
+			compareInstants(
+				instantFromDate(a.validFrom),
+				instantFromDate(b.validFrom),
+			),
+		);
+	// A superseded same-start row owns no interval. Its cancellation must not
+	// remove a replacement that happens to carry the same policy/natural key.
+	const replacement = confirmed.find(
+		(row) =>
+			compareInstants(
+				instantFromDate(row.validFrom),
+				instantFromDate(target.validFrom),
+			) === 0,
+	);
+	if (replacement) {
+		await syncTermsPolicy(tx, scope, replacement);
+		return target;
+	}
+	if (
+		target.validUntil &&
+		compareInstants(
+			instantFromDate(target.validUntil),
+			instantFromDate(target.validFrom),
+		) <= 0
+	)
+		return target;
+
+	const previous = confirmed
+		.filter(
+			(row) =>
+				compareInstants(
+					instantFromDate(row.validFrom),
+					instantFromDate(target.validFrom),
+				) < 0,
+		)
+		.at(-1);
+	// Only undo a boundary introduced by these terms; do not bridge a pre-existing gap.
+	if (
+		!previous?.validUntil ||
+		compareInstants(
+			instantFromDate(previous.validUntil),
+			instantFromDate(target.validFrom),
+		) !== 0
+	)
+		return target;
+	const next = confirmed.find(
+		(row) =>
+			compareInstants(
+				instantFromDate(row.validFrom),
+				instantFromDate(target.validFrom),
+			) > 0,
+	);
+	const validUntil = next?.validFrom ?? null;
+	await tx
+		.update(employeeEmploymentHistory)
+		.set({ validUntil, updatedBy: scope.actorUserId, updatedAt: scope.now })
+		.where(and(termsScope, eq(employeeEmploymentHistory.id, previous.id)));
+	await syncTermsPolicy(tx, scope, { ...previous, validUntil });
+	return target;
 }

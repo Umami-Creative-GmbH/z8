@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { employee, employeeManagers, workPolicyAssignment } from "@/db/schema";
+import { employee, employeeManagers } from "@/db/schema";
 import {
 	employeeDeparture,
 	employeeDepartureEvent,
@@ -665,20 +665,6 @@ async function rehireEmployee(
 				reviewState: "confirmed",
 			},
 		});
-		await tx.insert(workPolicyAssignment).values({
-			policyId: input.workPolicyId,
-			organizationId: actor.organizationId,
-			assignmentType: "employee",
-			employeeId: target.id,
-			priority: 2,
-			effectiveFrom: nowDate,
-			effectiveUntil: null,
-			isActive: true,
-			createdBy: actor.userId,
-			createdAt: nowDate,
-			updatedAt: nowDate,
-		});
-
 		await tx.delete(employeeManagers).where(eq(employeeManagers.employeeId, target.id));
 		if (input.primaryManagerId) {
 			await tx.insert(employeeManagers).values({
