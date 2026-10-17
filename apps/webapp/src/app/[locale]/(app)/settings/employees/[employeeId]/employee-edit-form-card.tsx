@@ -166,10 +166,9 @@ export function EmployeeEditFormCard({
 								"settings.employees.detailView.employeeNumberPlaceholder",
 								"e.g., EMP-001",
 							)}
-							description={t(
-								personnelNumberManagedByScim ? "settings.employees.detailView.personnelNumberManagedByIdp" : "settings.employees.detailView.personnelNumberDescription",
-								personnelNumberManagedByScim ? "Managed by your identity provider. Change the personnel number there." : "Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.",
-							)}
+							description={personnelNumberManagedByScim
+								? t("settings.employees.detailView.personnelNumberManagedByIdp", "Managed by your identity provider. Change the personnel number there.")
+								: t("settings.employees.detailView.personnelNumberDescription", "Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.")}
 							disabled={!canEditOrgAdminFields || isUpdating}
 						/>
 						<form.Field name="startDate">

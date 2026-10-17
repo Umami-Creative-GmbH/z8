@@ -85,40 +85,57 @@ async function sourcesFor(
 }
 
 type UserMethod = "GET" | "POST" | "PUT" | "PATCH";
+type NumberPatchTarget =
+	| { kind: "attribute"; value: unknown }
+	| { kind: "enterprise" | "pathless"; extension: JsonObject; value: unknown }
+	| { kind: "remove-extension" }
+	| { kind: "unrelated" };
 
-function hasNumber(value: unknown): boolean {
+function hasNumber(value: unknown): value is JsonObject {
 	return (
 		record(value) &&
 		Object.keys(value).some((key) => key.toLowerCase() === "employeenumber")
 	);
 }
 
-function suppliesNumber(body: unknown, method: UserMethod): boolean {
-	if (method !== "PATCH") return hasNumber(field(body, SCIM_ENTERPRISE_USER));
-	const operations = field(body, "Operations");
-	if (!Array.isArray(operations)) return false;
-	return operations.some((operation: unknown) => {
-		if (!record(operation)) return false;
-		const path =
-			typeof operation.path === "string"
-				? operation.path.toLowerCase()
-				: undefined;
-		if (path === `${SCIM_ENTERPRISE_USER}:employeeNumber`.toLowerCase())
-			return true;
-		if (path === SCIM_ENTERPRISE_USER.toLowerCase())
-			return (
-				String(operation.op).toLowerCase() === "remove" ||
-				hasNumber(operation.value)
-			);
-		return (
-			path === undefined &&
-			hasNumber(field(operation.value, SCIM_ENTERPRISE_USER))
-		);
-	});
+/** Match upstream's trimming and empty-path handling once for every interpretation. */
+function numberPatchTarget(operation: JsonObject): NumberPatchTarget {
+	const path =
+		typeof operation.path === "string"
+			? operation.path.trim().toLowerCase() || undefined
+			: undefined;
+	if (path === `${SCIM_ENTERPRISE_USER}:employeeNumber`.toLowerCase())
+		return { kind: "attribute", value: operation.value };
+	if (path === SCIM_ENTERPRISE_USER.toLowerCase()) {
+		if (String(operation.op).toLowerCase() === "remove")
+			return { kind: "remove-extension" };
+		return hasNumber(operation.value)
+			? {
+					kind: "enterprise",
+					extension: operation.value,
+					value: field(operation.value, "employeeNumber"),
+				}
+			: { kind: "unrelated" };
+	}
+	const extension =
+		path === undefined
+			? field(operation.value, SCIM_ENTERPRISE_USER)
+			: undefined;
+	return hasNumber(extension)
+		? { kind: "pathless", extension, value: field(extension, "employeeNumber") }
+		: { kind: "unrelated" };
+}
+
+/** Match upstream's single-valued scalar wrapper used by Microsoft Entra. */
+function numberScalar(value: unknown): unknown {
+	return Array.isArray(value) && value.length === 1 ? value[0] : value;
 }
 
 function emptyNumber(value: unknown) {
-	return value === null || (typeof value === "string" && value.trim() === "");
+	const scalar = numberScalar(value);
+	return (
+		scalar === null || (typeof scalar === "string" && scalar.trim() === "")
+	);
 }
 
 function withoutNumber(value: JsonObject): JsonObject {
@@ -129,67 +146,60 @@ function withoutNumber(value: JsonObject): JsonObject {
 	);
 }
 
-/** Translate Z8's blank-as-clear rule before upstream's non-empty string validation. */
-function normalizeEmptyNumbers(body: unknown, method: UserMethod): unknown {
-	if (!record(body)) return body;
+/** Preserve raw update intent and values while translating blank-as-clear for upstream. */
+function preparePersonnelNumberInput(body: unknown, method: UserMethod) {
+	const values: unknown[] = [];
+	let supplied = false;
+	if (!record(body) || method === "GET") return { body, supplied, values };
 	if (method !== "PATCH") {
 		const extension = field(body, SCIM_ENTERPRISE_USER);
-		return hasNumber(extension) &&
-			emptyNumber(field(extension, "employeeNumber")) &&
-			record(extension)
-			? { ...body, [SCIM_ENTERPRISE_USER]: withoutNumber(extension) }
-			: body;
+		supplied = hasNumber(extension);
+		if (supplied) values.push(numberScalar(field(extension, "employeeNumber")));
+		return {
+			body:
+				hasNumber(extension) && emptyNumber(field(extension, "employeeNumber"))
+					? { ...body, [SCIM_ENTERPRISE_USER]: withoutNumber(extension) }
+					: body,
+			supplied,
+			values,
+		};
 	}
 	const operations = field(body, "Operations");
-	if (!Array.isArray(operations)) return body;
-	return {
-		...body,
-		Operations: operations.flatMap((operation: unknown) => {
-			if (
-				!record(operation) ||
-				!["add", "replace"].includes(String(operation.op).toLowerCase())
-			)
-				return [operation];
-			const path =
-				typeof operation.path === "string"
-					? operation.path.toLowerCase()
-					: undefined;
-			const numberPath = `${SCIM_ENTERPRISE_USER}:employeeNumber`;
-			if (path === numberPath.toLowerCase() && emptyNumber(operation.value))
-				return [{ op: "remove", path: numberPath }];
-			const extension =
-				path === SCIM_ENTERPRISE_USER.toLowerCase()
-					? operation.value
-					: path === undefined
-						? field(operation.value, SCIM_ENTERPRISE_USER)
-						: undefined;
-			if (
-				!record(extension) ||
-				!hasNumber(extension) ||
-				!emptyNumber(field(extension, "employeeNumber"))
-			)
-				return [operation];
-			const value =
-				path === undefined && record(operation.value)
-					? {
-							...operation.value,
-							[SCIM_ENTERPRISE_USER]: withoutNumber(extension),
-						}
-					: withoutNumber(extension);
-			return [
-				{ ...operation, value },
-				{ op: "remove", path: numberPath },
-			];
-		}),
-	};
+	if (!Array.isArray(operations)) return { body, supplied, values };
+	const prepared = operations.flatMap((operation: unknown) => {
+		if (!record(operation)) return [operation];
+		const target = numberPatchTarget(operation);
+		if (target.kind === "unrelated") return [operation];
+		supplied = true;
+		if (
+			target.kind === "remove-extension" ||
+			!["add", "replace"].includes(String(operation.op).toLowerCase())
+		)
+			return [operation];
+		values.push(numberScalar(target.value));
+		if (!emptyNumber(target.value)) return [operation];
+		const remove = {
+			op: "remove",
+			path: `${SCIM_ENTERPRISE_USER}:employeeNumber`,
+		};
+		if (target.kind === "attribute") return [remove];
+		const value =
+			target.kind === "pathless" && record(operation.value)
+				? {
+						...operation.value,
+						[SCIM_ENTERPRISE_USER]: withoutNumber(target.extension),
+					}
+				: withoutNumber(target.extension);
+		return [{ ...operation, value }, remove];
+	});
+	return { body: { ...body, Operations: prepared }, supplied, values };
 }
 async function savePersonnelNumber(
 	adapter: DBAdapter,
 	resource: JsonObject,
-	input: EndpointInput,
+	supplied: boolean,
 	method: UserMethod,
 ) {
-	const supplied = suppliesNumber(input.body, method);
 	if (!supplied && method !== "PUT") return;
 	const [source] = await sourcesFor(adapter, [resource]);
 	if (!source) throw new Error("SCIM personnel number source is unavailable");
@@ -330,9 +340,10 @@ export function withSCIMPersonnelNumber<
 	return new Proxy(endpoint, {
 		async apply(target, thisArg, args) {
 			const input = args[0] as EndpointInput;
+			const intent = preparePersonnelNumberInput(input.body, method);
 			const run = async () => {
 				const result: unknown = await Reflect.apply(target, thisArg, [
-					{ ...input, body: normalizeEmptyNumbers(input.body, method) },
+					{ ...input, body: intent.body },
 					...args.slice(1),
 				]);
 				const responseEnvelope =
@@ -353,11 +364,19 @@ export function withSCIMPersonnelNumber<
 							? result.response
 							: result;
 				if (!record(payload)) return result;
+				for (const value of intent.values) {
+					if (!personnelNumberSchema.safeParse(value).success)
+						throw scimError(
+							"BAD_REQUEST",
+							"invalidValue",
+							"Personnel number must be text of at most 50 characters",
+						);
+				}
 				if (method !== "GET")
 					await savePersonnelNumber(
 						input.context.adapter,
 						payload,
-						input,
+						intent.supplied,
 						method,
 					);
 				const projected = await projectNumbers(

@@ -243,6 +243,106 @@ describe("managed SCIM protocol PostgreSQL contract", () => {
 		};
 	}
 
+	it("normalizes whitespace-qualified personnel number PATCH paths", async () => {
+		const extension =
+			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+		const graph = await setup("spec-whitespace");
+		const externalId = `spec-whitespace-${runId}`;
+		const userId = await bindUser(graph, externalId);
+		const created = await request(
+			graph.token,
+			"/Users",
+			"POST",
+			user(externalId),
+		);
+		const resource = await created.json();
+		const response = await request(
+			graph.token,
+			`/Users/${resource.id}`,
+			"PATCH",
+			{
+				schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+				Operations: [
+					{
+						op: "replace",
+						path: ` ${extension}:employeeNumber `,
+						value: [" SPACE-42 "],
+					},
+				],
+			},
+		);
+		expect(response.status).toBe(200);
+		expect((await response.json())[extension]?.employeeNumber).toBe("SPACE-42");
+		const result = await pool.query(
+			"select employee_number,personnel_number_managed_by_scim from employee where organization_id = $1 and user_id = $2",
+			[graph.organizationId, userId],
+		);
+		expect(result.rows).toEqual([
+			{ employee_number: "SPACE-42", personnel_number_managed_by_scim: true },
+		]);
+		const cleared = await request(
+			graph.token,
+			`/Users/${resource.id}`,
+			"PATCH",
+			{
+				schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+				Operations: [
+					{
+						op: "replace",
+						path: "  ",
+						value: { [extension]: { employeeNumber: [null] } },
+					},
+				],
+			},
+		);
+		expect(cleared.status).toBe(200);
+		expect(
+			(
+				await pool.query(
+					"select employee_number, personnel_number_managed_by_scim from employee where organization_id = $1 and user_id = $2",
+					[graph.organizationId, userId],
+				)
+			).rows,
+		).toEqual([
+			{ employee_number: null, personnel_number_managed_by_scim: true },
+		]);
+	});
+	it("rejects an invalid intermediate personnel number even when a later operation clears it", async () => {
+		const extension =
+			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+		const graph = await setup("spec-invalid");
+		const externalId = `spec-invalid-${runId}`;
+		await bindUser(graph, externalId);
+		const created = await request(
+			graph.token,
+			"/Users",
+			"POST",
+			user(externalId),
+		);
+		const resource = await created.json();
+		const response = await request(
+			graph.token,
+			`/Users/${resource.id}`,
+			"PATCH",
+			{
+				schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+				Operations: [
+					{ op: "replace", path: "displayName", value: "Should roll back" },
+					{
+						op: "replace",
+						path: `${extension}:employeeNumber`,
+						value: "X".repeat(51),
+					},
+					{ op: "remove", path: `${extension}:employeeNumber` },
+				],
+			},
+		);
+		expect(response.status).toBe(400);
+		const read = await request(graph.token, `/Users/${resource.id}`);
+		expect(await read.json()).toMatchObject({
+			displayName: resource.displayName,
+		});
+	});
 	it("synchronizes the enterprise personnel number with the organization employee", async () => {
 		const extension =
 			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
