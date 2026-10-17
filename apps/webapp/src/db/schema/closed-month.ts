@@ -21,7 +21,7 @@ import { currentTimestamp } from "./timestamp";
 // ============================================
 
 /**
- * One close of a calendar month, for the organization or one team. The
+ * One close of a calendar month, for the organization, one team or one location. The
  * employees it covers, with their fixed ranges, are `closed_month_employee`.
  * An organization close also covers employees added later
  * (`covers_new_employees`), until the month is reopened for everything.
@@ -35,9 +35,13 @@ export const closedMonth = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 		/** The first day of the calendar month. */
 		month: date("month").notNull(),
-		scope: text("scope", { enum: ["organization", "team"] }).notNull(),
+		scope: text("scope", { enum: ["organization", "team", "location"] }).notNull(),
 		/** The team of a team close. History keeps it after the team is deleted. */
 		teamId: uuid("team_id"),
+		/** The location of a location close (#836). History keeps it after the location is deleted. */
+		locationId: uuid("location_id"),
+		/** The location's name at close, for history after a rename or deletion. */
+		locationName: text("location_name"),
 		coversNewEmployees: boolean("covers_new_employees").default(false).notNull(),
 		actorKind: text("actor_kind", { enum: ["user", "system"] }).notNull(),
 		closedBy: text("closed_by").references(() => user.id, { onDelete: "set null" }),
@@ -48,7 +52,7 @@ export const closedMonth = pgTable(
 		check("closed_month_month_first_day_check", sql`extract(day from ${table.month}) = 1`),
 		check(
 			"closed_month_scope_check",
-			sql`(${table.scope} = 'organization' AND ${table.teamId} IS NULL) OR (${table.scope} = 'team' AND ${table.teamId} IS NOT NULL AND NOT ${table.coversNewEmployees})`,
+			sql`(${table.scope} = 'organization' AND ${table.teamId} IS NULL AND ${table.locationId} IS NULL AND ${table.locationName} IS NULL) OR (${table.scope} = 'team' AND ${table.teamId} IS NOT NULL AND ${table.locationId} IS NULL AND ${table.locationName} IS NULL AND NOT ${table.coversNewEmployees}) OR (${table.scope} = 'location' AND ${table.locationId} IS NOT NULL AND ${table.locationName} IS NOT NULL AND ${table.teamId} IS NULL AND NOT ${table.coversNewEmployees})`,
 		),
 		check(
 			"closed_month_actor_check",
