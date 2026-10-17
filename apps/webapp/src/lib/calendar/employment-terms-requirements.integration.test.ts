@@ -204,16 +204,16 @@ describe("employment terms calendar-day ownership", () => {
 	);
 
 	it("honors an explicit employee calendar override without activated tracking", async () => {
-		const subject = await scenario("Asia/Tokyo");
+		const subject = await scenario("America/New_York");
 		await fixture.db.delete(organizationTrackingSettings)
 			.where(eq(organizationTrackingSettings.organizationId, subject.org.organizationId));
 
 		const result = await getDailyWorkRequirementsForEmployee({
 			...subject.scope,
-			startDate: dayStart("2026-01-14", "America/New_York"),
-			endDate: dayStart("2026-01-15", "America/New_York"),
+			startDate: dayStart("2026-01-14", "Asia/Tokyo"),
+			endDate: dayStart("2026-01-15", "Asia/Tokyo"),
 			timezone: "Europe/Berlin",
-			employeeTimezoneOverride: "America/New_York",
+			employeeTimezoneOverride: "Asia/Tokyo",
 		}, fixture.db);
 
 		expect(minutesByDay(result)).toEqual({ "2026-01-14": 480, "2026-01-15": 240 });
