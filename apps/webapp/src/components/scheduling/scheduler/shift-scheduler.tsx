@@ -18,6 +18,7 @@ import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { PlainDate, ZonedDateTime } from "@/lib/datetime/temporal-core";
+import { ShiftRequestsReview } from "../shift-requests/shift-requests-panel";
 import { ShiftDialog } from "../shifts/shift-dialog";
 import { EmployeeShiftSchedule } from "./employee-shift-schedule";
 import {
@@ -66,7 +67,7 @@ export function ShiftScheduler(props: ShiftSchedulerProps) {
 function PlannerShiftScheduler({
 	organizationId,
 	organizationTimezone,
-	employeeId: _employeeId,
+	employeeId,
 	isManager,
 	focusEmployeeId,
 	focusDate,
@@ -258,12 +259,16 @@ function PlannerShiftScheduler({
 
 			{/* Coverage summary bar and toggle for managers */}
 			{isManager && (
-				<div className="flex items-center gap-4">
+				<div className="flex flex-wrap items-center gap-4">
 					<CoverageHeatmapOverlay
 						organizationId={organizationId}
 						dateRange={dateRange}
 						visible={showCoverageOverlay}
 						onToggle={() => setShowCoverageOverlay((v) => !v)}
+					/>
+					<ShiftRequestsReview
+						approverId={employeeId}
+						organizationTimezone={organizationTimezone}
 					/>
 				</div>
 			)}

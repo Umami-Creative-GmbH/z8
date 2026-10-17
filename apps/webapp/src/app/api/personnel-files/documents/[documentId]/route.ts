@@ -5,7 +5,7 @@ import { AuditAction } from "@/lib/audit-logger";
 import { createLogger } from "@/lib/logger";
 import { getAuditContextFromRequest } from "@/lib/middleware/audit-context";
 import { isOwnDocument } from "@/lib/personnel-file/access";
-import { writeDocumentAudit } from "@/lib/personnel-file/audit";
+import { writeDocumentReadAudit } from "@/lib/personnel-file/audit";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import { isPersonnelDocumentMime } from "@/lib/personnel-file/document.types";
 import { readVerifiedDocumentObject } from "@/lib/personnel-file/document-object";
@@ -77,7 +77,7 @@ export async function GET(
 
 		if (!isOwnDocument(access, document.employeeId)) {
 			const auditContext = getAuditContextFromRequest(request);
-			await writeDocumentAudit(db, {
+			await writeDocumentReadAudit(db, {
 				action: download
 					? AuditAction.PERSONNEL_FILE_DOCUMENT_DOWNLOADED
 					: AuditAction.PERSONNEL_FILE_DOCUMENT_VIEWED,

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, gte, inArray, isNull, lt, or, type SQL } from "drizzle-orm";
+import { gt, and, eq, inArray, isNull, lt, or, type SQL } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
 import { employee, workPolicyAssignment } from "@/db/schema";
@@ -83,7 +83,7 @@ export async function loadWorkingDaysForEmployees(
 				),
 				or(
 					isNull(workPolicyAssignment.effectiveUntil),
-					gte(workPolicyAssignment.effectiveUntil, rangeStart),
+					gt(workPolicyAssignment.effectiveUntil, rangeStart),
 				),
 			),
 			columns: {

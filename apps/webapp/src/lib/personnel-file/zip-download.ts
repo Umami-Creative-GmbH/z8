@@ -7,6 +7,8 @@ import { createLogger } from "@/lib/logger";
 import { createStoredZipStream } from "@/lib/storage/stored-zip-stream";
 import { managedCategoriesFor, type PersonnelFileAccess } from "./access";
 import { listManagedEmployees, loadEmployeeRef, type ManagedEmployee } from "./access-store";
+import { lockPurgedDocumentIds, PERSONNEL_FILE_ZIP_AUDIT_ENTITY_TYPE } from "./audit";
+import { zipAuditWithoutDescriptions } from "./audit-minimisation";
 import { DOCUMENT_CATEGORIES, type DocumentCategory } from "./document.types";
 import { readVerifiedDocumentObject } from "./document-object";
 import { personnelFileZipEntryNames } from "./zip-entries";
@@ -26,8 +28,6 @@ const logger = createLogger("PersonnelFileZip");
 
 type Database = typeof appDb;
 type DocumentRow = typeof employeeDocument.$inferSelect;
-
-export const PERSONNEL_FILE_ZIP_AUDIT_ENTITY_TYPE = "employee_personnel_file";
 
 export interface PersonnelFileZipPlan {
 	organizationId: string;
@@ -82,6 +82,51 @@ export async function planPersonnelFileZip(
 	};
 }
 
+/**
+ * The metadata of a ZIP record from a plan read without locks, written in the
+ * transaction that locks the named documents (#923): the entries of documents
+ * a purge removed meanwhile are written without their descriptions.
+ */
+async function insertZipAudit(
+	database: Database,
+	input: {
+		id: string;
+		action:
+			| AuditAction.PERSONNEL_FILE_ZIP_DOWNLOADED
+			| AuditAction.PERSONNEL_FILE_ZIP_DOWNLOAD_ABORTED;
+		actorUserId: string;
+		plan: PersonnelFileZipPlan;
+		documentIds: string[];
+		metadata: Record<string, unknown>;
+		ipAddress?: string | null;
+		userAgent?: string | null;
+	},
+): Promise<void> {
+	const { plan } = input;
+	await database.transaction(async (tx) => {
+		const purged = await lockPurgedDocumentIds(tx, {
+			organizationId: plan.organizationId,
+			documentIds: input.documentIds,
+		});
+		const metadata =
+			purged.size > 0
+				? zipAuditWithoutDescriptions(input.metadata, purged).metadata
+				: input.metadata;
+		await tx.insert(auditLog).values({
+			id: input.id,
+			organizationId: plan.organizationId,
+			entityType: PERSONNEL_FILE_ZIP_AUDIT_ENTITY_TYPE,
+			entityId: plan.employee.id,
+			action: input.action,
+			performedBy: input.actorUserId,
+			employeeId: plan.employee.id,
+			metadata: JSON.stringify(metadata),
+			ipAddress: input.ipAddress ?? null,
+			userAgent: input.userAgent ?? null,
+		});
+	});
+}
+
 /** The one audit record of a ZIP download, listing every included document. */
 export async function writePersonnelFileZipAudit(
 	database: Database,
@@ -94,15 +139,12 @@ export async function writePersonnelFileZipAudit(
 ): Promise<string> {
 	const id = randomUUID();
 	const { plan } = input;
-	await database.insert(auditLog).values({
+	await insertZipAudit(database, {
+		...input,
 		id,
-		organizationId: plan.organizationId,
-		entityType: PERSONNEL_FILE_ZIP_AUDIT_ENTITY_TYPE,
-		entityId: plan.employee.id,
 		action: AuditAction.PERSONNEL_FILE_ZIP_DOWNLOADED,
-		performedBy: input.actorUserId,
-		employeeId: plan.employee.id,
-		metadata: JSON.stringify({
+		documentIds: plan.entries.map(({ document }) => document.id),
+		metadata: {
 			sharedOnly: plan.sharedOnly,
 			categories: plan.categories,
 			formerEmployee: !plan.employee.isActive,
@@ -116,9 +158,7 @@ export async function writePersonnelFileZipAudit(
 				sizeBytes: document.sizeBytes,
 				entryName,
 			})),
-		}),
-		ipAddress: input.ipAddress ?? null,
-		userAgent: input.userAgent ?? null,
+		},
 	});
 	return id;
 }
@@ -145,21 +185,16 @@ export async function writePersonnelFileZipAbortAudit(
 		userAgent?: string | null;
 	},
 ): Promise<void> {
-	await database.insert(auditLog).values({
+	await insertZipAudit(database, {
+		...input,
 		id: randomUUID(),
-		organizationId: input.plan.organizationId,
-		entityType: PERSONNEL_FILE_ZIP_AUDIT_ENTITY_TYPE,
-		entityId: input.plan.employee.id,
 		action: AuditAction.PERSONNEL_FILE_ZIP_DOWNLOAD_ABORTED,
-		performedBy: input.actorUserId,
-		employeeId: input.plan.employee.id,
-		metadata: JSON.stringify({
+		documentIds: [input.abort.failedDocument.id],
+		metadata: {
 			downloadAuditId: input.downloadAuditId,
 			failedDocument: input.abort.failedDocument,
 			deliveredDocumentIds: input.abort.deliveredDocumentIds,
-		}),
-		ipAddress: input.ipAddress ?? null,
-		userAgent: input.userAgent ?? null,
+		},
 	});
 }
 

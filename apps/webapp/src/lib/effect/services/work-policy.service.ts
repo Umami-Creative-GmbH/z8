@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNull, lte, or, type SQL, type sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNull, lte, or, type SQL, type sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	employee,
@@ -482,7 +482,7 @@ export const WorkPolicyServiceLive = Layer.effect(
 						),
 						or(
 							isNull(workPolicyAssignment.effectiveUntil),
-							gte(workPolicyAssignment.effectiveUntil, at),
+							gt(workPolicyAssignment.effectiveUntil, at),
 						),
 					),
 					with: {

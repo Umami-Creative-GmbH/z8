@@ -15,6 +15,7 @@ export const NOTIFICATION_TYPES = [
 	"absence_request_submitted",
 	"absence_request_approved",
 	"absence_request_rejected",
+	"approved_absence_cancelled",
 	"team_member_added",
 	"team_member_removed",
 	"password_changed",

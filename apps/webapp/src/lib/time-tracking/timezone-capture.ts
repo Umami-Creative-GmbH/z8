@@ -8,7 +8,8 @@ export type TimeEntryTimezoneSource =
 	| "manager_target_user_setting"
 	| "system_target_user_setting"
 	| "historical_inference"
-	| "backfill";
+	| "backfill"
+	| "csv_import";
 
 export interface TimeEntryTimezoneCapture {
 	utcOffsetMinutes: number;
@@ -16,25 +17,34 @@ export interface TimeEntryTimezoneCapture {
 	timezoneSource: TimeEntryTimezoneSource;
 }
 
-export function isValidIanaTimezone(timezone: string | null | undefined): timezone is string {
+export function isValidIanaTimezone(
+	timezone: string | null | undefined,
+): timezone is string {
 	return isValidIanaTimeZone(timezone);
 }
 
 /** The zone an entry was captured in, or its captured offset as a fixed zone. */
-export function capturedZone(entry: { timezone: string | null; utcOffsetMinutes: number }): string {
+export function capturedZone(entry: {
+	timezone: string | null;
+	utcOffsetMinutes: number;
+}): string {
 	return isValidIanaTimezone(entry.timezone)
 		? entry.timezone
 		: offsetMinutesToTimeZoneId(entry.utcOffsetMinutes);
 }
 
-export function getUtcOffsetMinutesForZone(timestamp: Date, timezone: string): number {
+export function getUtcOffsetMinutesForZone(
+	timestamp: Date,
+	timezone: string,
+): number {
 	if (!isValidIanaTimezone(timezone)) {
 		return 0;
 	}
 
 	try {
 		return (
-			instantFromDate(timestamp).toZonedDateTimeISO(timezone).offsetNanoseconds / 60_000_000_000
+			instantFromDate(timestamp).toZonedDateTimeISO(timezone)
+				.offsetNanoseconds / 60_000_000_000
 		);
 	} catch {
 		return 0;
@@ -91,7 +101,8 @@ export function resolveTimeEntryTimezoneCapture({
 		: isValidIanaTimezone(fallbackTimezone)
 			? fallbackTimezone
 			: "UTC";
-	const timezoneSource = timezone === browserTimezone ? browserSource : fallbackSource;
+	const timezoneSource =
+		timezone === browserTimezone ? browserSource : fallbackSource;
 
 	return {
 		timezone,

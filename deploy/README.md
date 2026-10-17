@@ -278,6 +278,34 @@ Locally: `pnpm --dir apps/webapp billing:reconcile-kiosk-seats [--organization-i
   it, the hourly seat reconciliation moves the subscriptions within the hour, but nobody gets a
   report.
 
+### After Deploying #923: Minimise Audit Records of Purged Personnel File Documents (once)
+
+Since #923 a confirmed purge removes the purged document's title, file name, ZIP entry names,
+title-change values and free-text reasons from every audit record about it. Purges before this
+release left them in place. **Run once after the release**, from the worker image of the same
+release, with the worker's environment:
+
+```bash
+docker run --rm \
+  --entrypoint tsx \
+  --env-file "$PRODUCTION_WORKER_ENV_FILE" \
+  --network "$PRODUCTION_WORKER_NETWORK" \
+  "$WORKER_IMAGE" \
+  --import ./src/worker-preload.mjs scripts/minimise-purged-document-audits.ts
+```
+
+Locally: `pnpm --dir apps/webapp personnel-files:minimise-purged-audits [--organization-id <org-id>] [--json]`.
+
+- Only a purge record (`personnel_file.document_purged`) counts as evidence. Documents deleted by
+  hand keep their audit records as before.
+- Audit rows, ids and timestamps stay, so the 365-day audit-log cleanup is unchanged. Records that
+  cleanup already removed are not reconstructed.
+- Batches commit one at a time. It is safe to rerun: a second run changes nothing and finishes
+  what an interrupted run left.
+- The report lists per organization what was minimised and every record it could not process
+  (unreadable JSON, a purge record naming no employee, or a purge record whose document still
+  exists). If any are listed, the run exits non-zero. Review them and run again.
+
 ## Services
 
 | Service | Port | Description |

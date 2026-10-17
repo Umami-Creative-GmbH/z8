@@ -27,3 +27,68 @@ The import quality review step highlights issues such as:
 ## Clockodo Imports
 
 If your organization imports from Clockodo, verify employee and project matching before applying the batch. Do not treat imported data as final until quality review is complete.
+
+## CSV completed work
+
+Organization admins and owners can open **Settings → Import Data → CSV work** and download the Z8 template. Each row represents one completed work period. Represent breaks as gaps between separate rows; an empty end time does not create live work.
+
+Files use UTF-8, comma separators and the exact template headers. A UTF-8 byte-order mark is accepted. The limit is **500 KB and 1,000 rows** per upload. Optional columns may be left blank or omitted; duplicate, unknown or missing required headers are file errors.
+
+| Column | Required | Meaning |
+| --- | --- | --- |
+| `personnel_number` | Yes | An existing employee's personnel number in this organization. |
+| `starts_at` | Yes | Full ISO start date and time, with an offset or the selected upload timezone. |
+| `ends_at` | Yes | Full ISO end date and time, later than the start. |
+| `vehicle_kind` | When vehicle details are supplied | `organization` or `own`. |
+| `licence_plate` | For `organization` | An existing active organization vehicle's plate. Leave blank for `own`. |
+| `odometer_start_km` | No | Start reading in non-negative whole kilometres. |
+| `odometer_end_km` | No | End reading in non-negative whole kilometres, not below the start. |
+| `distance_km` | No | Directly entered distance when there is no start reading. |
+
+For example, these two periods leave a 30-minute break:
+
+```csv
+personnel_number,starts_at,ends_at,vehicle_kind,licence_plate,odometer_start_km,odometer_end_km,distance_km
+0042,2026-07-22T08:00:00+02:00,2026-07-22T12:00:00+02:00,organization,M-AB 1234,10000,10045,
+0042,2026-07-22T12:30:00+02:00,2026-07-22T16:00:00+02:00,own,,,,30
+```
+
+### Match employees and vehicles
+
+Personnel numbers are compared without surrounding whitespace or case differences. Leading zeros matter: `0042` and `42` are different numbers. Keep personnel numbers as text when editing the CSV in a spreadsheet. Names are never used to guess an employee.
+
+Organization vehicles are matched by plate without spaces, hyphens, dots or case differences. An unknown personnel number or plate needs review. Choose its source value and an existing employee or active vehicle in the mapping form, or reject the affected rows. Mappings apply only to that batch, and the original source values are retained. Imports never create employees or vehicles.
+
+An archived vehicle cannot be newly imported. Supplied vehicle data is also held when vehicle use is off for the employee. Restore or configure it through the normal settings if appropriate, then recheck the unresolved rows; importing does not change those settings.
+
+### Interpret timestamps
+
+Use full ISO date-times such as `2026-07-22T08:00:00+02:00` or `2026-07-22T06:00:00Z`. Millisecond precision is supported. Each explicit offset belongs to that endpoint, so a period may start and end at different offsets.
+
+For local values such as `2026-07-22T08:00`, explicitly select a named timezone such as `Europe/Berlin` before uploading. The selected timezone applies only to timestamps without an offset. The preview displays the interpreted event-local endpoints; your browser timezone is never used implicitly.
+
+Ambiguous or nonexistent local times at daylight-saving transitions are held for correction. Supply an explicit offset to identify an occurrence of a repeated local time. Correct a nonexistent time in the source; Z8 never silently shifts it. Always supply the end date for overnight work. Non-positive intervals and future timestamps cannot be imported.
+
+Z8 stores UTC instants together with each endpoint's supplied or derived event-local offset. Worked duration is the difference between the UTC instants.
+
+### Record vehicle details
+
+All vehicle data may be omitted. Incomplete readings stay incomplete; the importer never fills historical readings from a vehicle's current odometer. Missing expected driving details and the usual plausibility checks remain warnings.
+
+When both readings are present, driven distance is their difference. A supplied `distance_km` must agree with that difference. Without a start reading, distance may be entered directly. Supplying a start reading and direct distance without an end reading is contradictory and needs correction. Readings are limited to 9,999,999 km and driven distance to 99,999 km, as in manual work entry.
+
+Vehicle use is work attribution. It does not create a mileage reimbursement or a tax-compliant logbook.
+
+### Review, commit and correct
+
+1. Inspect the source values, interpreted times, vehicle details, warnings and row errors.
+2. Resolve mappings or reject rows you do not want to import. Changing a mapping or rechecking resets acceptance on uncommitted rows.
+3. Select the valid rows and choose **Accept selected valid rows**.
+4. Choose **Commit accepted rows**. Valid accepted rows can be imported while other rows remain unresolved.
+5. Check the imported, skipped-duplicate, rejected and unresolved counts. Accepted rows remain unresolved until their commit finishes.
+
+Identical work within a file or already recorded in Z8 is skipped safely. Existing work is never overwritten, merged or deleted. Overlapping intervals or conflicting vehicle details need review; adjacent periods are allowed. Checks run again during commit, so another change after preview can hold a row. Closed months still require reopening through the normal process.
+
+Correct malformed numbers or timestamps in the CSV and re-upload it. Already imported work is skipped even if the filename or row order changes. If some rows fail during commit, successful rows remain imported. Use **Recheck unresolved rows**, accept the corrected or newly eligible rows and commit again.
+
+This first version does not import projects, tasks, work categories, billability, absences, raw clock events or employee records, and it does not offer arbitrary column mapping or a spreadsheet editor.

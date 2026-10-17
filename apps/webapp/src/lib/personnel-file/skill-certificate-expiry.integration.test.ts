@@ -432,12 +432,12 @@ describe("skill certificates set the skill expiry date (#1145)", () => {
 
 			signIn("owner");
 			expect(
-				await retentionActions.purgeDueDocumentsAction({ documentIds: [later], reason: null }),
+				await retentionActions.purgeDueDocumentsAction({ documentIds: [later] }),
 			).toMatchObject({ success: true, data: { purged: [later] } });
 			expect(await expiryOf(ids.caraForklift)).toBe("2027-03-31");
 
 			expect(
-				await retentionActions.purgeDueDocumentsAction({ documentIds: [earlier], reason: null }),
+				await retentionActions.purgeDueDocumentsAction({ documentIds: [earlier] }),
 			).toMatchObject({ success: true, data: { purged: [earlier] } });
 			expect(await expiryOf(ids.caraForklift)).toBe("2027-03-31");
 		});

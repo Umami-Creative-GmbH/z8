@@ -8,7 +8,10 @@ import { costRate, employee } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { type Instant, type PlainDate, systemClock } from "@/lib/datetime/temporal-core";
-import { loadTermsInForceOn } from "@/lib/employment-history/load-terms-in-force";
+import {
+	loadCurrentContractTypes,
+	loadTermsInForceOn,
+} from "@/lib/employment-history/load-terms-in-force";
 import { loadOrganizationDay } from "@/lib/personnel-file/organization-day";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import {
@@ -329,6 +332,10 @@ export async function listEmployeeCostRates(
 			.where(eq(costRate.organizationId, organizationId))
 			.orderBy(desc(costRate.effectiveFrom)),
 	]);
+	const contractTypes = await loadCurrentContractTypes(reader, {
+		organizationId,
+		employees,
+	});
 	const periodsByEmployee = new Map<string, CostRatePeriodView[]>();
 	for (const row of rates) {
 		const periods = periodsByEmployee.get(row.employeeId) ?? [];
@@ -339,7 +346,7 @@ export async function listEmployeeCostRates(
 		.map((row) => ({
 			employeeId: row.id,
 			name: buildAuthUserDisplayName(row) || row.id,
-			contractType: row.contractType,
+			contractType: contractTypes.get(row.id) ?? row.contractType,
 			isActive: row.isActive,
 			periods: periodsByEmployee.get(row.id) ?? [],
 		}))

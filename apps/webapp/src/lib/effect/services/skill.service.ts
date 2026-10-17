@@ -10,6 +10,7 @@ import {
 	type skillRequirementOverride as OverrideTable,
 	type skill as SkillTable,
 	type subareaSkillRequirement as SubareaSkillReqTable,
+	shift,
 	shiftTemplate,
 	shiftTemplateSkillRequirement,
 	skill,
@@ -26,6 +27,7 @@ import {
 	parseSkillExpiryDate,
 	type SkillExpiryRefusal,
 } from "@/lib/scheduling/skill-expiry";
+import { insertSkillOverride, overrideReasonOf } from "@/lib/scheduling/skill-override";
 import { loadSkillReminderWindow } from "@/lib/scheduling/skill-reminder-store";
 import {
 	loadSkillValidation,
@@ -267,10 +269,13 @@ export class SkillService extends Context.Service<
 			shiftDate: string,
 		) => Effect.Effect<SkillValidationResult, ValidationError | NotFoundError | DatabaseError>;
 
-		// Override recording
+		/**
+		 * Records an override for the shift as it is stored. Assignments do not call this: they
+		 * decide and record in their own transaction (`@/lib/scheduling/skill-override`, #893).
+		 */
 		readonly recordOverride: (
 			input: RecordOverrideInput,
-		) => Effect.Effect<SkillOverride, ValidationError | DatabaseError>;
+		) => Effect.Effect<SkillOverride, ValidationError | NotFoundError | DatabaseError>;
 
 		readonly getOverrideHistory: (
 			organizationId: string,
@@ -1009,7 +1014,7 @@ export const SkillServiceLive = Layer.effect(
 			recordOverride: (input) =>
 				Effect.gen(function* () {
 					if (input.missingSkillIds.length === 0) {
-						yield* Effect.fail(
+						return yield* Effect.fail(
 							new ValidationError({
 								message: "At least one missing skill ID is required",
 								field: "missingSkillIds",
@@ -1017,8 +1022,9 @@ export const SkillServiceLive = Layer.effect(
 						);
 					}
 
-					if (!input.overrideReason.trim()) {
-						yield* Effect.fail(
+					const reason = overrideReasonOf(input.overrideReason);
+					if (!reason) {
+						return yield* Effect.fail(
 							new ValidationError({
 								message: "Override reason is required",
 								field: "overrideReason",
@@ -1026,22 +1032,45 @@ export const SkillServiceLive = Layer.effect(
 						);
 					}
 
-					const override = yield* dbService.query("recordOverride", async () => {
-						const [result] = await dbService.db
-							.insert(skillRequirementOverride)
-							.values({
-								organizationId: input.organizationId,
-								shiftId: input.shiftId,
-								employeeId: input.employeeId,
-								missingSkillIds: JSON.stringify(input.missingSkillIds),
-								overrideReason: input.overrideReason,
-								overriddenBy: input.overriddenBy,
-							})
-							.returning();
-						return result;
+					// The shift, the employee and every skill must belong to the organization.
+					yield* requireOrganizationEmployee(input.organizationId, input.employeeId);
+					yield* requireOrganizationSkillIds(input.organizationId, input.missingSkillIds);
+					const scopedShift = yield* dbService.query("verifyShiftInOrganization", async () => {
+						return await dbService.db.query.shift.findFirst({
+							where: and(
+								eq(shift.id, input.shiftId),
+								eq(shift.organizationId, input.organizationId),
+							),
+							columns: { id: true, date: true, subareaId: true, templateId: true },
+						});
 					});
+					if (!scopedShift) {
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Shift not found",
+								entityType: "shift",
+								entityId: input.shiftId,
+							}),
+						);
+					}
 
-					return override;
+					return yield* dbService.query("recordOverride", () =>
+						dbService.db.transaction((tx) =>
+							insertSkillOverride(tx, {
+								organizationId: input.organizationId,
+								shiftId: scopedShift.id,
+								context: {
+									employeeId: input.employeeId,
+									shiftDate: scopedShift.date,
+									subareaId: scopedShift.subareaId,
+									templateId: scopedShift.templateId,
+								},
+								missingSkillIds: [...new Set(input.missingSkillIds)],
+								reason,
+								overriddenBy: input.overriddenBy,
+							}),
+						),
+					);
 				}),
 
 			getOverrideHistory: (organizationId, options) =>

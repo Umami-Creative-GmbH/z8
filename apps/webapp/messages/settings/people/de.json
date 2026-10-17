@@ -65,6 +65,7 @@
         "managers": "Vorgesetzte",
         "noScheduleAssigned": "Kein Arbeitsplan zugewiesen",
         "personnelNumber": "Personalnummer",
+        "personnelNumberManagedByIdp": "Wird von Ihrem Identitätsanbieter verwaltet. Ändern Sie die Personalnummer dort.",
         "personnelNumberDescription": "Die organisationsinterne Nummer für diesen Mitarbeiter, die bei Lohnexporten verwendet wird. Sie muss eindeutig sein, auch gegenüber ehemaligen Mitarbeitern.",
         "position": "Position",
         "positionDescription": "Berufsbezeichnung oder Rolle",

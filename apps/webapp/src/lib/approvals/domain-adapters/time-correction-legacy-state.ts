@@ -137,6 +137,7 @@ interface CanonicalWorkSnapshot {
 }
 
 const TIMEZONE_SOURCES = new Set<TimeEntryTimezoneSource>([
+	"csv_import",
 	"browser",
 	"user_setting",
 	"manager_target_user_setting",

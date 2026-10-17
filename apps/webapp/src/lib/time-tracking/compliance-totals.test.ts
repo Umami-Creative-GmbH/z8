@@ -13,11 +13,11 @@ function period(start: string, end: string | null, durationMinutes: number | nul
 	} satisfies ComplianceTotalsPeriod;
 }
 
-// Wednesday 2026-09-23 in New York (UTC-4); its Sunday week starts on the 20th.
+// Wednesday 2026-09-23 in New York (UTC-4); its compliance week starts on Monday the 21st.
 const zone = "America/New_York";
 const ranges = {
 	day: localDayRange("2026-09-23", zone),
-	week: localWeekRange("2026-09-23", zone, "sunday"),
+	week: localWeekRange("2026-09-23", zone, "monday"),
 };
 
 describe("complianceTotalsOf", () => {
