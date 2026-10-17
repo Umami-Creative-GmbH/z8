@@ -70,9 +70,34 @@ jobs:
         run: pnpm --filter webapp generate-licenses
       - name: Typecheck
         run: pnpm --filter webapp typecheck
+      - name: Trace build serialization failure
+        run: |
+          cat > "${RUNNER_TEMP}/trace-build-stringify.cjs" <<'JS'
+          Error.stackTraceLimit = 50;
+          const stringify = JSON.stringify;
+          JSON.stringify = function (...args) {
+            try {
+              return Reflect.apply(stringify, this, args);
+            } catch (error) {
+              if (error instanceof RangeError && error.message === "Invalid string length") {
+                const value = args[0];
+                const shape = Array.isArray(value)
+                  ? "array length " + value.length
+                  : value && typeof value === "object"
+                    ? "object with " + Object.keys(value).length + " keys"
+                    : typeof value;
+                process.stderr.write(
+                  "BUILD_STRINGIFY_FAILURE pid=" + process.pid + " input=" + shape + "\n" +
+                  new Error("JSON.stringify caller").stack + "\n"
+                );
+              }
+              throw error;
+            }
+          };
+          JS
       - name: Production build
         if: ${{ !cancelled() }}
-        run: pnpm --filter webapp build
+        run: NODE_OPTIONS="--require=${RUNNER_TEMP}/trace-build-stringify.cjs --stack-trace-limit=50" pnpm --filter webapp build
 
   biome:
     name: Employment terms changed-file Biome
