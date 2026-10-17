@@ -113,7 +113,8 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/approvals": ["common", "approvals"],
 	"/my-requests": ["common", "myRequests"],
 	"/my-documents": ["common", "settings/people"],
-	"/driving-licence": ["common"],
+	// settings/generic: the verifier responsibility panel (settings.drivingLicence.verifiers).
+	"/driving-licence": ["common", "settings/generic"],
 	"/personnel-files": ["common", "settings/people"],
 	// travelExpenses: confirming a payroll run as paid (#853).
 	// settings/payrollExport: payroll line kind labels in payroll readiness (#854).

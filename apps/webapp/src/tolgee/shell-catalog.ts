@@ -48,6 +48,21 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"drivingLicence.class.active",
 		"drivingLicence.class.suspended",
 		"drivingLicence.class.ended",
+		// The header clock's status panel, its roster search and class evidence.
+		"drivingLicence.operational.title",
+		"drivingLicence.operational.search",
+		"drivingLicence.operational.searchHelp",
+		"drivingLicence.operational.noEmployees",
+		"drivingLicence.delivery.uncertain",
+		"drivingLicence.class.validThrough",
+		"drivingLicence.class.overdue",
+		"drivingLicence.class.recheck",
+		"drivingLicence.class.restrictions",
+		"drivingLicence.evidence",
+		"drivingLicence.declaration.text",
+		"drivingLicence.result",
+		// The organization MFA requirement banner is shown above every app route.
+		"mfa.banner",
 		// Settings search and navigation entries for driving licence control.
 		"drivingLicence.title",
 		"drivingLicence.settingsDescription",
