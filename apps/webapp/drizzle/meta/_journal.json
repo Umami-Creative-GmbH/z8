@@ -1842,6 +1842,13 @@
       "when": 1807372800000,
       "tag": "0262_scim_personnel_number_ownership",
       "breakpoints": true
+    },
+    {
+      "idx": 263,
+      "version": "7",
+      "when": 1807459200000,
+      "tag": "0263_vacation_policy_history",
+      "breakpoints": true
     }
   ]
 }

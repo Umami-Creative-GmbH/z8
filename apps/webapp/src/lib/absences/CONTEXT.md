@@ -34,6 +34,18 @@ _Avoid_: full-time allowance, organization allowance
 The absence days an employee may take as vacation in a year, before carryover and adjustments. For a part-time employee it is already reduced to their working days, because absence days count only the days they work. In a year the employee joins or leaves, it is their prorated allowance.
 _Avoid_: vacation entitlement, annual hours
 
+**Vacation policy period**:
+The organization-local calendar dates during which the same vacation policy applies to an employee. Their direct assignment takes precedence over their applicable teams, then an organization assignment, then the company default. Matching team policies count once; differing team policies are a configuration conflict.
+_Avoid_: current team policy, latest policy
+
+**Vacation team eligibility**:
+The dates during which an employee belongs to a team for vacation policy selection. Leaving a team preserves its earlier eligibility; today's team does not establish unknown earlier membership.
+_Avoid_: compatibility team, reconstructed membership
+
+**Policy coverage gap**:
+Dates for which no applicable vacation policy is known. An unknown allowance needs review and cannot be treated as zero days or filled with an unrelated policy.
+_Avoid_: zero allowance, no vacation
+
 **Custom allowance**:
 A vacation allowance an admin sets for one employee and one year in place of their policy's. It is final: it is never prorated.
 _Avoid_: override, manual allowance
@@ -59,7 +71,7 @@ Vacation an employee has already taken beyond their prorated allowance. It is sh
 _Avoid_: negative balance, vacation debt
 
 **Vacation balance**:
-An employee's vacation allowance plus carryover and adjustments, minus the absence days of their approved and pending vacation in that year. On an accrual policy it starts at 0 instead of the allowance, and the accrual adjustments carry the allowance. Every page reads the same balance, from the organization's company default policy for the year: of the defaults in effect during the year, the one that started last.
+An employee's vacation allowance plus carryover and adjustments, minus the absence days of their approved and pending vacation in that year. On an accrual policy it starts at 0 instead of the allowance, and the accrual adjustments carry the allowance. The policy applicable to the employee supplies their allowance; a missing policy or conflicting team policies require review.
 _Avoid_: remaining vacation, leave account
 
 **Accrual policy**:

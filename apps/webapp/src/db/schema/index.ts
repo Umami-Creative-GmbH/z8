@@ -90,6 +90,7 @@ export * from "./kiosk-pin";
 export * from "./notification";
 // Domain tables
 export * from "./organization";
+export * from "./organization-mfa";
 export * from "./organization-notification-settings";
 export * from "./organization-time-tracking-settings";
 export * from "./organization-tracking-settings";
@@ -150,6 +151,7 @@ export * from "./travel-expense-settlement";
 export * from "./types";
 export * from "./user-settings";
 export * from "./vacation";
+export * from "./vacation-policy-history";
 export * from "./vacation-reconciliation";
 // Organization vehicles and their assigned drivers (#1118, spec #807)
 export * from "./vehicle";
@@ -162,4 +164,3 @@ export * from "./wellness";
 export * from "./work-category";
 export * from "./work-policy";
 export * from "./works-council";
-export * from "./organization-mfa";
