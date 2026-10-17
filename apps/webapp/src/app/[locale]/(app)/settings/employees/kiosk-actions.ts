@@ -4,9 +4,21 @@ import { and, asc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { user } from "@/db/auth-schema";
 import { employee, location } from "@/db/schema";
+import type { OrganizationActor } from "@/lib/auth/current-organization-actor";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
 import { isOrganizationAdmin } from "@/lib/authorization/organization-admin";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
+import type { KioskBadgeActionResult } from "@/lib/time-tracking/kiosk/badge-errors";
+import { runKioskBadgeAction } from "@/lib/time-tracking/kiosk/badge-action";
+import { renderKioskBadgePdf } from "@/lib/time-tracking/kiosk/badge-pdf";
+import {
+	issueKioskBadge,
+	type KioskBadgeDelivery,
+	type KioskBadgeRevokedReason,
+	readKioskBadgeStatus,
+	replaceKioskBadge,
+	revokeKioskBadge,
+} from "@/lib/time-tracking/kiosk/badge-store";
 import { kioskOnlyEmailUpgradeDeps } from "@/lib/time-tracking/kiosk/kiosk-only-email-upgrade";
 import {
 	addEmailToKioskOnlyEmployee,
@@ -22,6 +34,7 @@ import {
 	unlockKioskPin,
 } from "@/lib/time-tracking/kiosk/pin-store";
 import { isUuid } from "@/lib/validations/uuid";
+import { getTranslate } from "@/tolgee/server";
 
 export type EmployeeKioskState = {
 	/** Whether the viewer may issue, reset or unlock this employee's PIN. */
@@ -32,6 +45,25 @@ export type EmployeeKioskState = {
 	kioskOnly: boolean;
 	/** Whether the viewer may add a real email (owners and admins, kiosk-only employees only). */
 	canAddEmail: boolean;
+	/** The employee's kiosk badge, for those who may manage it (#1364); never the credential. */
+	badge: EmployeeKioskBadgeState | null;
+};
+
+/** Non-secret lifecycle facts about an employee's kiosk badge (ISO instants). */
+export type EmployeeKioskBadgeState = {
+	activeIssuedAt: string | null;
+	lastRevokedAt: string | null;
+	lastRevokedReason: KioskBadgeRevokedReason | null;
+};
+
+/**
+ * A just-issued badge's printable PDF: the only time it exists. Nothing can
+ * fetch it, or the credential in its QR code, again.
+ */
+export type IssuedKioskBadgePdf = {
+	filename: string;
+	/** The PDF, base64. */
+	pdf: string;
 };
 
 const EMPLOYEES_PATH = "/settings/employees";
@@ -66,16 +98,94 @@ export async function getEmployeeKioskStateAction(
 		]);
 		const kioskOnly = isReservedEmail(target.email);
 		if (!canManagePin && !(kioskOnly && isAdmin)) return null;
-		const status = canManagePin
-			? await readKioskPinStatus(db, input)
-			: { hasPin: false, lockedUntil: null };
+		const [status, badge] = canManagePin
+			? await Promise.all([readKioskPinStatus(db, input), readKioskBadgeStatus(db, input)])
+			: [{ hasPin: false, lockedUntil: null }, null];
 		return {
 			canManagePin,
 			hasPin: status.hasPin,
 			lockedUntil: status.lockedUntil ? instantToCanonicalString(status.lockedUntil) : null,
 			kioskOnly,
 			canAddEmail: kioskOnly && isAdmin,
+			badge: badge && {
+				activeIssuedAt: badge.active ? instantToCanonicalString(badge.active.issuedAt) : null,
+				lastRevokedAt: badge.lastRevoked
+					? instantToCanonicalString(badge.lastRevoked.revokedAt)
+					: null,
+				lastRevokedReason: badge.lastRevoked?.reason ?? null,
+			},
 		};
+	});
+}
+
+/** The PDF's file name: ASCII letters and digits of the employee's name. */
+function badgeFilename(employeeName: string): string {
+	const slug = employeeName
+		.normalize("NFKD")
+		.replace(/\p{M}/gu, "")
+		.replace(/[^A-Za-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "")
+		.toLowerCase()
+		.slice(0, 60);
+	return slug ? `kiosk-badge-${slug}.pdf` : "kiosk-badge.pdf";
+}
+
+async function renderBadgeFor(badge: KioskBadgeDelivery): Promise<IssuedKioskBadgePdf> {
+	const t = await getTranslate();
+	const pdf = await renderKioskBadgePdf({
+		...badge,
+		labels: {
+			title: t("settings.employees.kioskBadge.pdf.title", "Kiosk badge"),
+			instructions: t(
+				"settings.employees.kioskBadge.pdf.instructions",
+				"Cut out the badge along the dashed line. Whoever holds a copy can clock as this employee at the organization's kiosks, so keep it like a key. If it is lost, ask for a replacement: every copy of this badge then stops working.",
+			),
+		},
+	});
+	return { filename: badgeFilename(badge.employeeName), pdf: pdf.toString("base64") };
+}
+
+function badgeInput(actor: OrganizationActor, employeeId: unknown) {
+	return {
+		organizationId: actor.organizationId,
+		actorUserId: actor.userId,
+		employeeId: employeeIdOf(employeeId),
+	};
+}
+
+/**
+ * Issues a kiosk badge (#1364). The printable PDF is in the result once and
+ * nowhere else: the server keeps only a hash of the credential.
+ */
+export async function issueEmployeeKioskBadgeAction(
+	employeeId: string,
+): Promise<KioskBadgeActionResult<IssuedKioskBadgePdf>> {
+	return runKioskBadgeAction("kiosk.issueBadge", async (db, actor) => {
+		const issued = await issueKioskBadge(db, badgeInput(actor, employeeId), renderBadgeFor);
+		return issued.delivery;
+	});
+}
+
+/**
+ * Replaces the employee's kiosk badge: every copy of the old one stops working.
+ * The new badge's PDF is in the result once and nowhere else.
+ */
+export async function replaceEmployeeKioskBadgeAction(
+	employeeId: string,
+): Promise<KioskBadgeActionResult<IssuedKioskBadgePdf>> {
+	return runKioskBadgeAction("kiosk.replaceBadge", async (db, actor) => {
+		const issued = await replaceKioskBadge(db, badgeInput(actor, employeeId), renderBadgeFor);
+		return issued.delivery;
+	});
+}
+
+/** Revokes the employee's kiosk badge without a replacement; their kiosk PIN is unchanged. */
+export async function revokeEmployeeKioskBadgeAction(
+	employeeId: string,
+): Promise<KioskBadgeActionResult<{ revoked: true }>> {
+	return runKioskBadgeAction("kiosk.revokeBadge", async (db, actor) => {
+		await revokeKioskBadge(db, badgeInput(actor, employeeId));
+		return { revoked: true as const };
 	});
 }
 

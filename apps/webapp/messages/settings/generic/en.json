@@ -1439,6 +1439,17 @@
       },
       "title": "Import Data"
     },
+    "kioskBadge": {
+      "errors": {
+        "badgeExists": "This employee already has a kiosk badge. Replace it instead.",
+        "employeeInactive": "Only active employees can receive a kiosk badge.",
+        "employeeNotFound": "This employee was not found.",
+        "failed": "Something went wrong. Please try again.",
+        "noBadge": "This employee has no kiosk badge.",
+        "notAllowed": "You are not allowed to do this.",
+        "signInRequired": "Sign in to continue."
+      }
+    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Another account already uses this address.",

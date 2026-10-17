@@ -1821,6 +1821,13 @@
       "when": 1807113600000,
       "tag": "0259_audit_log_text_entity_id",
       "breakpoints": true
+    },
+    {
+      "idx": 260,
+      "version": "7",
+      "when": 1807200000000,
+      "tag": "0260_employee_kiosk_badge",
+      "breakpoints": true
     }
   ]
 }

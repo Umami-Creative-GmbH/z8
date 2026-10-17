@@ -312,6 +312,11 @@ export enum AuditAction {
 	KIOSK_ONLY_EMPLOYEE_CREATED = "kiosk_only_employee.created",
 	KIOSK_ONLY_EMPLOYEE_EMAIL_ADDED = "kiosk_only_employee.email_added",
 
+	// Kiosk badges (#1364); never the credential or the PDF
+	KIOSK_BADGE_ISSUED = "kiosk_badge.issued",
+	KIOSK_BADGE_REPLACED = "kiosk_badge.replaced",
+	KIOSK_BADGE_REVOKED = "kiosk_badge.revoked",
+
 	// Kiosk enrolment (#859)
 	KIOSK_CREATED = "kiosk.created",
 	KIOSK_UPDATED = "kiosk.updated",
@@ -420,6 +425,7 @@ export interface AuditLogEntry {
 		| "employee_assigned_location"
 		| "user"
 		| "kiosk_pin"
+		| "kiosk_badge"
 		| "audit_pack_request"
 		| "works_council_settings"
 		| "works_council_export"
