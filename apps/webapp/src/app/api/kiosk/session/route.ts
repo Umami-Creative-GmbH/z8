@@ -3,7 +3,7 @@ import {
 	kioskRefusalResponse,
 	resolveKioskFromRequest,
 } from "@/lib/time-tracking/kiosk/authenticate";
-import { readKioskSession } from "@/lib/time-tracking/kiosk/offline-contact";
+import { readKioskSession } from "@/lib/time-tracking/kiosk/kiosk-session.server";
 import { KIOSK_TOKEN_HEADER } from "@/lib/time-tracking/kiosk/protocol";
 
 /**

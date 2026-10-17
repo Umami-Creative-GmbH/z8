@@ -232,6 +232,8 @@ export async function takeBreak(
 		endpoints: BreakEndpoints;
 		/** The closed work's vehicle use, decided from the live work's (#1122). */
 		closingVehicleUse?: ClosingVehicleUse;
+		/** The source evidence of the entry at the break's start; the writer's by default (#885). */
+		closeEntrySource?: { ipAddress: string | null; deviceInfo: string };
 	},
 ): Promise<BreakClosure> {
 	const { plan, target, endpoints } = input;
@@ -256,6 +258,7 @@ export async function takeBreak(
 		close: endpoints.close,
 		resume: endpoints.resume,
 		...(input.closingVehicleUse ? { closingVehicleUse: input.closingVehicleUse } : {}),
+		...(input.closeEntrySource ? { closeEntrySource: input.closeEntrySource } : {}),
 	});
 	const { close } = executed.result;
 	return {

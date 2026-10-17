@@ -6,6 +6,7 @@ import { location } from "@/db/schema";
 import { withAuditTrail } from "@/lib/audit-trail";
 import { requireOrganizationAdmin } from "@/lib/auth/current-organization-actor";
 import { runRefusalAction } from "@/lib/effect/refusal-action";
+import type { KioskTimeSource } from "@/lib/time-tracking/clocking/types";
 import type {
 	KioskFrozenAction,
 	KioskFrozenRefusalReason,
@@ -65,14 +66,14 @@ export type KioskRefusalData = {
 	id: string;
 	kioskId: string;
 	kioskName: string;
-	/** The kiosk's current zone: the claimed instant is shown in it. */
-	kioskTimezone: string;
 	/** Null when the command named no employee of the organization. */
 	employeeName: string | null;
 	action: KioskFrozenAction;
 	/** ISO instants. */
 	claimedAt: string;
-	timeSource: string;
+	/** The zone the kiosk recorded the command in: the claimed instant is shown in it. */
+	timezone: string;
+	timeSource: KioskTimeSource;
 	reason: KioskFrozenRefusalReason;
 	refusedAt: string;
 };

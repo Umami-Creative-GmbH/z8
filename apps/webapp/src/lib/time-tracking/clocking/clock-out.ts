@@ -345,6 +345,8 @@ export async function closeClockOut(
 		capture: TimeEntryTimezoneCapture;
 		/** The closed work's vehicle use, decided from the live work's (#1122). */
 		closingVehicleUse?: ClosingVehicleUse;
+		/** The clock-out entry's source evidence when it ends at a break's start; the writer's by default. */
+		entrySource?: { ipAddress: string | null; deviceInfo: string };
 	},
 ): Promise<ClockOutClosure> {
 	const { plan, replayable } = input;
@@ -381,6 +383,7 @@ export async function closeClockOut(
 		eventInstant: input.eventInstant,
 		capture: input.capture,
 		...(input.closingVehicleUse ? { closingVehicleUse: input.closingVehicleUse } : {}),
+		...(input.entrySource ? { entrySource: input.entrySource } : {}),
 	};
 	const closed = legacy
 		? await closeActiveWorkGraph(coordination, closure, plan.command.identity.id, {

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import { buildKioskFrozenRefusalNotification } from "./frozen-refusal-notification";
+import {
+	buildKioskFrozenRefusalNotification,
+	resolveIcuSelects,
+} from "./frozen-refusal-notification";
 
 const base = {
 	organizationId: "org-1",
@@ -8,13 +11,13 @@ const base = {
 	operationId: "op-1",
 	userId: "user-1",
 	kioskName: "Front door",
-	kioskTimezone: "Europe/Berlin",
+	timezone: "Europe/Berlin",
 	employeeName: "Wanda Worker",
 	claimedAt: parseInstant("2026-08-03T07:00:00Z"),
 };
 
 describe("buildKioskFrozenRefusalNotification", () => {
-	it("tells the employee the action, the claimed time in the kiosk's zone and the reason", () => {
+	it("tells the employee the action, the claimed time in the recorded zone and the reason", () => {
 		const notification = buildKioskFrozenRefusalNotification({
 			...base,
 			action: "start_break",
@@ -88,5 +91,47 @@ describe("buildKioskFrozenRefusalNotification", () => {
 		});
 		expect(other.message).toContain("Your return from break at");
 		expect(other.message).toContain("was not recorded: Z8 could not accept it.");
+	});
+
+	it("explains a missing PIN and an unconfirmed connection in their own words", () => {
+		const noPin = buildKioskFrozenRefusalNotification({
+			...base,
+			action: "clock_in",
+			reason: "no_pin",
+			recipient: "employee",
+		});
+		expect(noPin.message).toContain(
+			"was not recorded: there was no kiosk PIN to check it against.",
+		);
+		const contact = buildKioskFrozenRefusalNotification({
+			...base,
+			action: "clock_in",
+			reason: "contact_unverifiable",
+			recipient: "employee",
+		});
+		expect(contact.message).toContain(
+			"was not recorded: Z8 could not confirm the kiosk's last connection.",
+		);
+		expect(contact.metadata?.i18n).toMatchObject({ params: { reason: "contact_unverifiable" } });
+	});
+
+	it("shows the claimed time in the zone the kiosk recorded", () => {
+		const notification = buildKioskFrozenRefusalNotification({
+			...base,
+			timezone: "Europe/London",
+			action: "clock_in",
+			reason: "wrong_pin",
+			recipient: "employee",
+		});
+		expect(notification.message).toContain("at Aug 3, 2026, 8:00 AM (Europe/London)");
+	});
+});
+
+describe("resolveIcuSelects", () => {
+	it("picks each select's branch, falls back to other and keeps other placeholders", () => {
+		const template =
+			"{a, select, x {ex {name}} other {fallback}} and {b, select, y {why} other {else}} for {name}";
+		expect(resolveIcuSelects(template, { a: "x", b: "z" })).toBe("ex {name} and else for {name}");
+		expect(resolveIcuSelects("no selects {here}", {})).toBe("no selects {here}");
 	});
 });

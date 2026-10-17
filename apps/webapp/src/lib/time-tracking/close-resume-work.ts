@@ -33,8 +33,8 @@ import {
 	closeActiveWorkGraph,
 	findStandingClosure,
 } from "./close-active-work";
-import { findStandingStart, type StartLiveWorkResult, startLiveWorkGraph } from "./start-live-work";
 import { receiptActorColumns, writerActor } from "./receipt-actor";
+import { findStandingStart, type StartLiveWorkResult, startLiveWorkGraph } from "./start-live-work";
 import { recordedTaskId } from "./task-attribution";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
@@ -95,6 +95,11 @@ export type CloseResumeWorkInput = {
 	resume: Endpoint;
 	/** The closed work's vehicle use, decided from the live work's (#1122). */
 	closingVehicleUse?: ClosingVehicleUse;
+	/**
+	 * The source evidence of the clock-out entry at the break's start; the writer's
+	 * by default. A kiosk break keeps its start's own time source there (#885).
+	 */
+	closeEntrySource?: { ipAddress: string | null; deviceInfo: string };
 };
 
 /**
@@ -200,6 +205,7 @@ export async function closeAndResumeWork(
 			eventInstant: input.close.instant,
 			capture: input.close.capture,
 			...(input.closingVehicleUse ? { closingVehicleUse: input.closingVehicleUse } : {}),
+			...(input.closeEntrySource ? { entrySource: input.closeEntrySource } : {}),
 		},
 		// A fresh server identity: nothing can hold it yet.
 		randomUUID(),

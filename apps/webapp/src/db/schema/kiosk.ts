@@ -109,6 +109,51 @@ export const kioskRetiredToken = pgTable(
 );
 
 /**
+ * The values a refused frozen kiosk command may record. They mirror
+ * `KIOSK_FROZEN_ACTIONS`, `KIOSK_TIME_SOURCES` and `KIOSK_FROZEN_REFUSAL_REASONS`
+ * (`lib/time-tracking/kiosk/frozen-command.ts`); a unit test keeps them equal.
+ */
+export const KIOSK_REFUSAL_ACTIONS = [
+	"clock_in",
+	"clock_out",
+	"start_break",
+	"resume_break",
+] as const;
+export const KIOSK_REFUSAL_TIME_SOURCES = ["server_anchor", "device_clock"] as const;
+export const KIOSK_REFUSAL_REASONS = [
+	"kiosk_revoked",
+	"kiosk_rotated",
+	"contact_unverifiable",
+	"not_adopted",
+	"admission_window",
+	"clock_out_of_bounds",
+	"employee_not_assigned",
+	"pin_unsealable",
+	"no_pin",
+	"wrong_pin",
+	"pin_locked",
+	"already_clocked_in",
+	"occupancy_conflict",
+	"not_clocked_in",
+	"target_unknown",
+	"target_not_active",
+	"already_on_break",
+	"on_break",
+	"no_break_in_progress",
+	"invalid_interval",
+	"under_review",
+	"holiday_blocked",
+	"month_closed",
+	"append_review_required",
+	"billing_required",
+	"collision",
+	"access_denied",
+	"invalid_command",
+] as const;
+
+const sqlList = (values: readonly string[]) => values.map((value) => `'${value}'`).join(", ");
+
+/**
  * A frozen kiosk clock command Z8 refused on arrival (#1290, spec #885): kept
  * once per kiosk and operation, so a resend is answered from it (no second PIN
  * check) and the kiosk's lookup can say it was refused. Owners and admins see
@@ -118,9 +163,13 @@ export const kioskRetiredToken = pgTable(
  *
  * - `employee_id` is set when the command named an employee of the
  *   organization (the claimed id is in `command`).
- * - `claimed_at` is the instant the command claims; `refused_at` when Z8
+ * - `claimed_at` is the instant the command claims, `timezone` the zone the
+ *   kiosk recorded it in (it is shown in that zone); `refused_at` when Z8
  *   refused it. `reason` is a `KioskFrozenRefusalReason`, `detail` its details
  *   as the kiosk was answered.
+ * - `notified_at` is set once the notification was handed over (or nobody was
+ *   to be told); while it is null, the kiosk's next question about the command
+ *   sends it again.
  */
 export const kioskFrozenRefusal = pgTable(
 	"kiosk_frozen_refusal",
@@ -132,15 +181,29 @@ export const kioskFrozenRefusal = pgTable(
 		kioskId: uuid("kiosk_id").notNull(),
 		operationId: uuid("operation_id").notNull(),
 		employeeId: uuid("employee_id"),
-		action: text("action").notNull(),
+		action: text("action", { enum: KIOSK_REFUSAL_ACTIONS }).notNull(),
 		claimedAt: timestamp("claimed_at", { withTimezone: true }).notNull(),
-		timeSource: text("time_source").notNull(),
-		reason: text("reason").notNull(),
+		timezone: text("timezone").notNull(),
+		timeSource: text("time_source", { enum: KIOSK_REFUSAL_TIME_SOURCES }).notNull(),
+		reason: text("reason", { enum: KIOSK_REFUSAL_REASONS }).notNull(),
 		detail: jsonb("detail").$type<Record<string, unknown>>().default({}).notNull(),
 		command: jsonb("command").$type<unknown>().notNull(),
 		refusedAt: timestamp("refused_at", { withTimezone: true }).notNull(),
+		notifiedAt: timestamp("notified_at", { withTimezone: true }),
 	},
 	(table) => [
+		check(
+			"kiosk_frozen_refusal_action_check",
+			sql.raw(`"action" in (${sqlList(KIOSK_REFUSAL_ACTIONS)})`),
+		),
+		check(
+			"kiosk_frozen_refusal_time_source_check",
+			sql.raw(`"time_source" in (${sqlList(KIOSK_REFUSAL_TIME_SOURCES)})`),
+		),
+		check(
+			"kiosk_frozen_refusal_reason_check",
+			sql.raw(`"reason" in (${sqlList(KIOSK_REFUSAL_REASONS)})`),
+		),
 		foreignKey({
 			name: "kiosk_frozen_refusal_kiosk_fk",
 			columns: [table.kioskId, table.organizationId],

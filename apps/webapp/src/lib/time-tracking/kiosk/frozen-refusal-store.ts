@@ -1,24 +1,30 @@
 import "server-only";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, kiosk, kioskFrozenRefusal } from "@/db/schema";
 import { buildDerivedUserName } from "@/lib/auth/derived-user-name";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
-import { dateFromInstant } from "@/lib/datetime/temporal-core";
+import {
+	type Clock,
+	dateFromInstant,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
+import type { KioskTimeSource } from "../clocking/types";
 import type { KioskFrozenAction, KioskFrozenRefusalReason } from "./frozen-command";
 import { buildKioskFrozenRefusalNotification } from "./frozen-refusal-notification";
 import type {
-	KioskFrozenRefusal,
 	KioskFrozenRefusalLedger,
+	KioskFrozenRefusalNotice,
 	RecordedKioskFrozenRefusal,
 } from "./frozen-refusals";
 
-type RefusalClient = Pick<typeof db, "select" | "insert">;
+type RefusalClient = Pick<typeof db, "select" | "insert" | "update">;
 
 const logger = createLogger("KioskFrozenRefusals");
 
@@ -32,7 +38,7 @@ const displayName = (row: { firstName: string | null; lastName: string | null; n
  * admins still see it in the kiosk settings.
  */
 export async function notifyKioskFrozenRefusal(
-	refusal: KioskFrozenRefusal,
+	refusal: KioskFrozenRefusalNotice,
 	options: {
 		client?: Pick<typeof db, "select">;
 		send?: (notification: CreateNotificationParams) => Promise<unknown>;
@@ -42,7 +48,7 @@ export async function notifyKioskFrozenRefusal(
 	const client = options.client ?? db;
 	const [[device], [person]] = await Promise.all([
 		client
-			.select({ name: kiosk.name, timezone: kiosk.timezone })
+			.select({ name: kiosk.name })
 			.from(kiosk)
 			.where(and(eq(kiosk.id, refusal.kioskId), eq(kiosk.organizationId, refusal.organizationId)))
 			.limit(1),
@@ -65,7 +71,7 @@ export async function notifyKioskFrozenRefusal(
 			operationId: refusal.operationId,
 			userId: refusal.employee.userId,
 			kioskName: device.name,
-			kioskTimezone: device.timezone,
+			timezone: refusal.timezone,
 			employeeName: displayName(person),
 			action: refusal.action,
 			claimedAt: refusal.claimedAt,
@@ -76,18 +82,62 @@ export async function notifyKioskFrozenRefusal(
 	);
 }
 
+/** The refusal's notification could not be handed over; it is sent again when the kiosk asks. */
+export class KioskRefusalNotificationError extends Error {
+	constructor(cause: unknown) {
+		super("Could not notify about a refused kiosk command", { cause });
+	}
+}
+
 /**
  * The refusal ledger of frozen kiosk commands (#1290) on PostgreSQL: one row
  * per organization, kiosk and operation. A refusal is recorded once; recording
  * it again (a concurrent resend judged twice) keeps the first and tells nobody
- * again. Only a newly recorded refusal notifies, and a failed notification
- * never undoes the record.
+ * again.
+ *
+ * Nobody may walk away believing they clocked, so the notification is owed
+ * until it was handed over (`notified_at`): a failed one never undoes the
+ * record, but answers the kiosk `unknown`, and every later question of the
+ * kiosk about the command (a resend or its lookup, `recall`) sends it again
+ * before answering. The notification's idempotency key keeps a retry that
+ * races another from telling anyone twice.
  */
 export function createKioskFrozenRefusalLedger(
-	deps: { client?: RefusalClient; notify?: (refusal: KioskFrozenRefusal) => Promise<void> } = {},
+	deps: {
+		client?: RefusalClient;
+		notify?: (refusal: KioskFrozenRefusalNotice) => Promise<void>;
+		clock?: Clock;
+	} = {},
 ): KioskFrozenRefusalLedger {
 	const client = deps.client ?? db;
+	const clock = deps.clock ?? systemClock;
 	const notify = deps.notify ?? ((refusal) => notifyKioskFrozenRefusal(refusal, { client }));
+	const recordKey = (
+		refusal: Pick<KioskFrozenRefusalNotice, "organizationId" | "kioskId" | "operationId">,
+	) =>
+		and(
+			eq(kioskFrozenRefusal.organizationId, refusal.organizationId),
+			eq(kioskFrozenRefusal.kioskId, refusal.kioskId),
+			eq(kioskFrozenRefusal.operationId, refusal.operationId),
+		);
+
+	/** Hands the owed notification over and marks it sent; throws when it cannot. */
+	async function deliver(refusal: KioskFrozenRefusalNotice) {
+		try {
+			await notify(refusal);
+		} catch (error) {
+			logger.error(
+				{ error, operationId: refusal.operationId, kioskId: refusal.kioskId },
+				"Could not notify about a refused kiosk command",
+			);
+			throw new KioskRefusalNotificationError(error);
+		}
+		await client
+			.update(kioskFrozenRefusal)
+			.set({ notifiedAt: dateFromInstant(clock.nowInstant()) })
+			.where(and(recordKey(refusal), isNull(kioskFrozenRefusal.notifiedAt)));
+	}
+
 	return {
 		async recall({ organizationId, kioskId, operationId }) {
 			const [row] = await client
@@ -95,19 +145,39 @@ export function createKioskFrozenRefusalLedger(
 					reason: kioskFrozenRefusal.reason,
 					detail: kioskFrozenRefusal.detail,
 					command: kioskFrozenRefusal.command,
+					action: kioskFrozenRefusal.action,
+					claimedAt: kioskFrozenRefusal.claimedAt,
+					timezone: kioskFrozenRefusal.timezone,
+					notifiedAt: kioskFrozenRefusal.notifiedAt,
+					employeeId: employee.id,
+					userId: employee.userId,
 				})
 				.from(kioskFrozenRefusal)
-				.where(
+				.leftJoin(
+					employee,
 					and(
-						eq(kioskFrozenRefusal.organizationId, organizationId),
-						eq(kioskFrozenRefusal.kioskId, kioskId),
-						eq(kioskFrozenRefusal.operationId, operationId),
+						eq(employee.id, kioskFrozenRefusal.employeeId),
+						eq(employee.organizationId, kioskFrozenRefusal.organizationId),
 					),
 				)
+				.where(recordKey({ organizationId, kioskId, operationId }))
 				.limit(1);
 			if (!row) return null;
+			if (row.notifiedAt === null) {
+				await deliver({
+					organizationId,
+					kioskId,
+					operationId,
+					employee:
+						row.employeeId && row.userId ? { id: row.employeeId, userId: row.userId } : null,
+					action: row.action,
+					claimedAt: instantFromDate(row.claimedAt),
+					timezone: row.timezone,
+					reason: row.reason,
+				});
+			}
 			return {
-				reason: row.reason as KioskFrozenRefusalReason,
+				reason: row.reason,
 				detail: row.detail ?? {},
 				command: row.command,
 			} satisfies RecordedKioskFrozenRefusal;
@@ -123,11 +193,14 @@ export function createKioskFrozenRefusalLedger(
 					employeeId: refusal.employee?.id ?? null,
 					action: refusal.action,
 					claimedAt: dateFromInstant(refusal.claimedAt),
+					timezone: refusal.timezone,
 					timeSource: refusal.timeSource,
 					reason: refusal.reason,
 					detail: refusal.detail,
 					command: refusal.command,
 					refusedAt: dateFromInstant(refusal.refusedAt),
+					// Nobody to tell about a command naming no employee of the organization.
+					notifiedAt: refusal.employee ? null : dateFromInstant(refusal.refusedAt),
 				})
 				.onConflictDoNothing({
 					target: [
@@ -137,15 +210,8 @@ export function createKioskFrozenRefusalLedger(
 					],
 				})
 				.returning({ id: kioskFrozenRefusal.id });
-			if (inserted.length === 0) return;
-			try {
-				await notify(refusal);
-			} catch (error) {
-				logger.error(
-					{ error, operationId: refusal.operationId, kioskId: refusal.kioskId },
-					"Could not notify about a refused kiosk command",
-				);
-			}
+			if (inserted.length === 0 || !refusal.employee) return;
+			await deliver(refusal);
 		},
 	};
 }
@@ -155,12 +221,13 @@ export type ListedKioskFrozenRefusal = {
 	id: string;
 	kioskId: string;
 	kioskName: string;
-	kioskTimezone: string;
 	/** Null when the command named no employee of the organization. */
 	employeeName: string | null;
 	action: KioskFrozenAction;
 	claimedAt: Date;
-	timeSource: string;
+	/** The zone the kiosk recorded the command in; the claimed time is shown in it. */
+	timezone: string;
+	timeSource: KioskTimeSource;
 	reason: KioskFrozenRefusalReason;
 	refusedAt: Date;
 };
@@ -177,12 +244,12 @@ export async function listKioskFrozenRefusals(
 			id: kioskFrozenRefusal.id,
 			kioskId: kioskFrozenRefusal.kioskId,
 			kioskName: kiosk.name,
-			kioskTimezone: kiosk.timezone,
 			userName: user.name,
 			userFirstName: user.firstName,
 			userLastName: user.lastName,
 			action: kioskFrozenRefusal.action,
 			claimedAt: kioskFrozenRefusal.claimedAt,
+			timezone: kioskFrozenRefusal.timezone,
 			timeSource: kioskFrozenRefusal.timeSource,
 			reason: kioskFrozenRefusal.reason,
 			refusedAt: kioskFrozenRefusal.refusedAt,
@@ -210,7 +277,6 @@ export async function listKioskFrozenRefusals(
 		id: row.id,
 		kioskId: row.kioskId,
 		kioskName: row.kioskName,
-		kioskTimezone: row.kioskTimezone,
 		employeeName:
 			row.userName === null
 				? null
@@ -219,10 +285,11 @@ export async function listKioskFrozenRefusals(
 						lastName: row.userLastName,
 						name: row.userName,
 					}),
-		action: row.action as KioskFrozenAction,
+		action: row.action,
 		claimedAt: row.claimedAt,
+		timezone: row.timezone,
 		timeSource: row.timeSource,
-		reason: row.reason as KioskFrozenRefusalReason,
+		reason: row.reason,
 		refusedAt: row.refusedAt,
 	}));
 }

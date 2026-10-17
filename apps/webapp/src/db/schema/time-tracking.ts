@@ -201,6 +201,12 @@ export const workPeriod = pgTable(
 		breakStartedAt: timestamp("break_started_at", { withTimezone: true }),
 		breakStartedZone: text("break_started_zone"),
 		breakStartedOperationId: uuid("break_started_operation_id"),
+		// Where an offline kiosk's queued break start took its instant from (#885):
+		// `server_anchor` or `device_clock`. Null for every other start. The entry the
+		// break's closure writes at its start keeps it as its time source.
+		breakStartedTimeSource: text("break_started_time_source", {
+			enum: ["server_anchor", "device_clock"],
+		}),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
@@ -275,6 +281,10 @@ export const workPeriod = pgTable(
 		check(
 			"workPeriod_break_in_progress_chk",
 			sql`(${table.breakStartedAt} IS NULL) = (${table.breakStartedZone} IS NULL) AND (${table.breakStartedAt} IS NULL OR ${table.breakStartedOperationId} IS NOT NULL)`,
+		),
+		check(
+			"workPeriod_break_time_source_chk",
+			sql`${table.breakStartedTimeSource} IS NULL OR (${table.breakStartedAt} IS NOT NULL AND ${table.breakStartedTimeSource} IN ('server_anchor', 'device_clock'))`,
 		),
 		uniqueIndex("workPeriod_org_breakStartedOperation_idx")
 			.on(table.organizationId, table.breakStartedOperationId)

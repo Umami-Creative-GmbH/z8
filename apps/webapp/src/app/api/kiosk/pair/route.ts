@@ -1,9 +1,10 @@
 import { db } from "@/db";
 import { withAuditTrail } from "@/lib/audit-trail";
-import { normalizePairingCode } from "@/lib/time-tracking/kiosk/credentials";
-import { pairKiosk } from "@/lib/time-tracking/kiosk/kiosk-store";
-import { readKioskSession } from "@/lib/time-tracking/kiosk/offline-contact";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
+import { normalizePairingCode } from "@/lib/time-tracking/kiosk/credentials";
+import { readKioskSession } from "@/lib/time-tracking/kiosk/kiosk-session.server";
+import { pairKiosk } from "@/lib/time-tracking/kiosk/kiosk-store";
+import type { KioskPairResponse } from "@/lib/time-tracking/kiosk/protocol";
 
 const NO_STORE = { "Cache-Control": "no-store" };
 
@@ -44,8 +45,9 @@ export async function POST(request: Request) {
 		);
 	}
 
-	return Response.json(
-		{ token: outcome.token, ...(await readKioskSession(db, outcome.kiosk, outcome.token)) },
-		{ headers: NO_STORE },
-	);
+	const paired: KioskPairResponse = {
+		token: outcome.token,
+		...(await readKioskSession(db, outcome.kiosk, outcome.token)),
+	};
+	return Response.json(paired, { headers: NO_STORE });
 }
