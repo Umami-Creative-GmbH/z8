@@ -93,79 +93,80 @@ async function collectIntegrations(
 	const { organizationId, employeeId } = scope;
 	await loadSubjectEmployee(database, scope);
 
-	const [calendars, feeds, { pin, pinSetters }, chatAccounts, pinEvents] = await Promise.all([
-		database
-			.select({
-				provider: calendarConnection.provider,
-				account: calendarConnection.providerAccountId,
-				calendarId: calendarConnection.calendarId,
-				isActive: calendarConnection.isActive,
-				pushEnabled: calendarConnection.pushEnabled,
-				conflictDetectionEnabled: calendarConnection.conflictDetectionEnabled,
-				lastSyncAt: calendarConnection.lastSyncAt,
-				createdAt: calendarConnection.createdAt,
-				updatedAt: calendarConnection.updatedAt,
-			})
-			.from(calendarConnection)
-			.where(
-				and(
-					eq(calendarConnection.organizationId, organizationId),
-					eq(calendarConnection.employeeId, employeeId),
-				),
-			)
-			.orderBy(asc(calendarConnection.createdAt), asc(calendarConnection.id)),
-
-		database
-			.select({
-				includeApproved: icsFeed.includeApproved,
-				includePending: icsFeed.includePending,
-				createdAt: icsFeed.createdAt,
-				lastUsedAt: icsFeed.lastUsedAt,
-				revokedAt: icsFeed.revokedAt,
-			})
-			.from(icsFeed)
-			.where(
-				and(
-					eq(icsFeed.organizationId, organizationId),
-					eq(icsFeed.employeeId, employeeId),
-					eq(icsFeed.feedType, "user"),
-				),
-			)
-			.orderBy(asc(icsFeed.createdAt), asc(icsFeed.id)),
-		(async () => {
-			const [pin] = await database
+	const [calendars, feeds, { pin, pinSetters }, chatAccounts, pinEvents, refusals] =
+		await Promise.all([
+			database
 				.select({
-					updatedAt: employeeKioskPin.updatedAt,
-					setByUserId: employeeKioskPin.setByUserId,
+					provider: calendarConnection.provider,
+					account: calendarConnection.providerAccountId,
+					calendarId: calendarConnection.calendarId,
+					isActive: calendarConnection.isActive,
+					pushEnabled: calendarConnection.pushEnabled,
+					conflictDetectionEnabled: calendarConnection.conflictDetectionEnabled,
+					lastSyncAt: calendarConnection.lastSyncAt,
+					createdAt: calendarConnection.createdAt,
+					updatedAt: calendarConnection.updatedAt,
 				})
-				.from(employeeKioskPin)
+				.from(calendarConnection)
 				.where(
 					and(
-						eq(employeeKioskPin.organizationId, organizationId),
-						eq(employeeKioskPin.employeeId, employeeId),
+						eq(calendarConnection.organizationId, organizationId),
+						eq(calendarConnection.employeeId, employeeId),
 					),
 				)
-				.limit(1);
-			const pinSetters = await loadUserNames(database, [pin?.setByUserId]);
-			return { pin, pinSetters };
-		})(),
-		chatAccountRows(database, scope),
-		database
-			.select({
-				kind: employeeKioskPinEvent.kind,
-				occurredAt: employeeKioskPinEvent.occurredAt,
-				offline: employeeKioskPinEvent.offline,
-			})
-			.from(employeeKioskPinEvent)
-			.where(
-				and(
-					eq(employeeKioskPinEvent.organizationId, organizationId),
-					eq(employeeKioskPinEvent.employeeId, employeeId),
-				),
-			)
-			.orderBy(asc(employeeKioskPinEvent.occurredAt), asc(employeeKioskPinEvent.sequence)),
-	]);
-	const refusals = await kioskRefusalRows(database, scope);
+				.orderBy(asc(calendarConnection.createdAt), asc(calendarConnection.id)),
+
+			database
+				.select({
+					includeApproved: icsFeed.includeApproved,
+					includePending: icsFeed.includePending,
+					createdAt: icsFeed.createdAt,
+					lastUsedAt: icsFeed.lastUsedAt,
+					revokedAt: icsFeed.revokedAt,
+				})
+				.from(icsFeed)
+				.where(
+					and(
+						eq(icsFeed.organizationId, organizationId),
+						eq(icsFeed.employeeId, employeeId),
+						eq(icsFeed.feedType, "user"),
+					),
+				)
+				.orderBy(asc(icsFeed.createdAt), asc(icsFeed.id)),
+			(async () => {
+				const [pin] = await database
+					.select({
+						updatedAt: employeeKioskPin.updatedAt,
+						setByUserId: employeeKioskPin.setByUserId,
+					})
+					.from(employeeKioskPin)
+					.where(
+						and(
+							eq(employeeKioskPin.organizationId, organizationId),
+							eq(employeeKioskPin.employeeId, employeeId),
+						),
+					)
+					.limit(1);
+				const pinSetters = await loadUserNames(database, [pin?.setByUserId]);
+				return { pin, pinSetters };
+			})(),
+			chatAccountRows(database, scope),
+			database
+				.select({
+					kind: employeeKioskPinEvent.kind,
+					occurredAt: employeeKioskPinEvent.occurredAt,
+					offline: employeeKioskPinEvent.offline,
+				})
+				.from(employeeKioskPinEvent)
+				.where(
+					and(
+						eq(employeeKioskPinEvent.organizationId, organizationId),
+						eq(employeeKioskPinEvent.employeeId, employeeId),
+					),
+				)
+				.orderBy(asc(employeeKioskPinEvent.occurredAt), asc(employeeKioskPinEvent.sequence)),
+			kioskRefusalRows(database, scope),
+		]);
 
 	return {
 		category: "integrations",

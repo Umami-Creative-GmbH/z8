@@ -19,6 +19,9 @@ export default {
 				files: [
 					"**/components/settings/vacation/proration-notice.tsx",
 					"**/components/settings/vehicle-use/vehicle-use-settings.tsx",
+					// API key and audit package tables share a 7-column header shape, not columns or domain.
+					"**/components/enterprise/api-key-page-client.tsx",
+					"**/components/settings/audit-export/audit-packages-table.tsx",
 				],
 				rules: ["react-doctor/duplicate-jsx-subtree"],
 			},
@@ -90,8 +93,38 @@ export default {
 					"**/src/lib/personnel-file/expiry-reminders.ts",
 					"**/src/lib/personnel-file/retention-reminders.ts",
 					"**/src/lib/scheduling/skill-expiry-reminders.ts",
+					"**/src/lib/jobs/driving-licence-retention.ts",
 				],
 				rules: ["react-doctor/async-await-in-loop"],
+			},
+			{
+				// Deadline materialization opens one FOR UPDATE transaction per window over an unbounded
+				// set and must finish before due notices are selected; notices are delivered one at a time.
+				// Offline kiosk vehicle-use context is read one employee after another so a large location
+				// does not take every pooled connection at once.
+				files: [
+					"**/src/lib/organization-mfa/delivery.ts",
+					"**/src/lib/time-tracking/kiosk/home.ts",
+				],
+				rules: ["react-doctor/async-await-in-loop"],
+			},
+			{
+				// The MFA revision is read before the credential hash. A password change bumps the revision
+				// atomically, so a hash read after the revision snapshot can never be recorded against a
+				// newer revision; running them in parallel would reopen that race.
+				// The departure-access installer checks out a pooled client only after the SQL file is read,
+				// so a read failure cannot leak a connection.
+				files: [
+					"**/src/lib/organization-mfa/authentication-plugin.ts",
+					"**/src/db/install-employee-departure-access.ts",
+				],
+				rules: ["react-doctor/server-sequential-independent-await"],
+			},
+			{
+				// Server-only PDF renderer, loaded on demand through `await import(...)` by its only consumer,
+				// the Node-runtime evidence route handler; @react-pdf/renderer never ships to clients.
+				files: ["**/src/lib/organization/driving-licence/evidence-pdf.tsx"],
+				rules: ["react-doctor/prefer-dynamic-import"],
 			},
 
 			{
@@ -179,6 +212,38 @@ export default {
 					"**/src/lib/timezone/user-timezone-change.ts",
 					"**/src/lib/travel-expenses/receipt-upload.ts",
 					"**/src/lib/work-balance/rebuild-intents.ts",
+					// Driving-licence services run on the caller's `tx` (helpers typed as a select-only
+					// database receive it too) under org, advisory, FOR UPDATE and FOR SHARE locks; loops
+					// write each row update before its evidence event.
+					"**/src/lib/organization/driving-licence/access.ts",
+					"**/src/lib/organization/driving-licence/checks.ts",
+					"**/src/lib/organization/driving-licence/history.ts",
+					"**/src/lib/organization/driving-licence/impediments.ts",
+					"**/src/lib/organization/driving-licence/operational.ts",
+					"**/src/lib/organization/driving-licence/policy-intervals.ts",
+					"**/src/lib/organization/driving-licence/reminders.ts",
+					"**/src/lib/organization/driving-licence/retention-state.ts",
+					"**/src/lib/organization/driving-licence/retention.ts",
+					"**/src/lib/organization/driving-licence/tasks.ts",
+					"**/src/lib/organization/driving-licence/verifiers.ts",
+					// Organization MFA writes take the user FOR UPDATE and org advisory lock before FOR SHARE
+					// session and membership reads; readiness checks short-circuit inside that transaction.
+					"**/src/lib/organization-mfa/policy-service.ts",
+					"**/src/lib/organization-mfa/store.ts",
+					// Vehicle photo attachment locks vehicle then upload; cleanup holds each upload's
+					// FOR UPDATE SKIP LOCKED row while deleting its object and recording retry state.
+					"**/src/lib/organization/vehicles/vehicle-photos.ts",
+					"**/src/lib/jobs/vehicle-photo-cleanup.ts",
+					// Work-records pair writer: every statement runs on the sealed work transaction under the
+					// coordinator's locks (FOR UPDATE canonical rows, append chain, read-your-writes).
+					"**/src/lib/time-tracking/work-records/amend.ts",
+					"**/src/lib/time-tracking/work-records/divide.ts",
+					"**/src/lib/time-tracking/work-records/pair-writer.ts",
+					"**/src/lib/time-tracking/work-records/repair.ts",
+					// Kiosk-only employee creation inserts and audits on one tx under the identity lock;
+					// clock-out reads break state on the coordinator's tx before closing on it.
+					"**/src/lib/time-tracking/kiosk/kiosk-only-employee.ts",
+					"**/src/lib/time-tracking/clocking/clocking.ts",
 				],
 				rules: [
 					"react-doctor/async-await-in-loop",

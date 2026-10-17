@@ -12,19 +12,10 @@ import {
 } from "@/app/[locale]/(app)/settings/holidays/actions";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { queryKeys } from "@/lib/query";
+import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 
 interface HolidayCategory {
 	id: string;
@@ -271,7 +262,8 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 					}
 				/>
 
-				<DataTable mobileLayout="stacked"
+				<DataTable
+					mobileLayout="stacked"
 					columns={columns}
 					data={filteredCategories}
 					isFetching={isFetching}
@@ -289,35 +281,18 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 				/>
 			</div>
 
-			<AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.holidays.categories.delete.title", "Delete Category")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.holidays.categories.delete.description",
-								'Are you sure you want to delete "{name}"? This action cannot be undone. Categories in use by holidays cannot be deleted.',
-								{ name: categoryToDelete?.name || "" },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleteMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDeleteConfirm}
-							disabled={deleteMutation.isPending}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DeleteConfirmDialog
+				open={deleteConfirmOpen}
+				onOpenChange={setDeleteConfirmOpen}
+				title={t("settings.holidays.categories.delete.title", "Delete Category")}
+				description={t(
+					"settings.holidays.categories.delete.description",
+					'Are you sure you want to delete "{name}"? This action cannot be undone. Categories in use by holidays cannot be deleted.',
+					{ name: categoryToDelete?.name || "" },
+				)}
+				isDeleting={deleteMutation.isPending}
+				onConfirm={handleDeleteConfirm}
+			/>
 		</>
 	);
 }

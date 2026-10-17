@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { KioskFrozenCommand, KioskFrozenSubmission } from "./frozen-command";
-import { createKioskOfflineQueue } from "./offline-queue";
+import {
+	createKioskOfflineQueue,
+	frozenCommandOf,
+	frozenCommandsOf,
+	readFrozenCommand,
+} from "./offline-queue";
 import { memoryKioskQueueStorage } from "./offline-queue.test.fixture";
 
 /**
@@ -376,5 +381,48 @@ describe("offline kiosk queue (#1292)", () => {
 
 		expect(await queue.sendBeforeForgetting("z8k_token")).toMatchObject({ sent: true });
 		expect(sent).toEqual([]);
+	});
+});
+
+describe("reading a queued record's frozen command", () => {
+	async function queued(body?: string) {
+		const { queue } = queueWith(server({}).fetch);
+		const frozen = await enqueue(queue, anna);
+		const [record] = await queue.commands();
+		if (!record) throw new Error("nothing queued");
+		return { frozen, record: body === undefined ? record : { ...record, body } };
+	}
+
+	it("reads the command of the stored submission bytes", async () => {
+		const { frozen, record } = await queued();
+
+		expect(readFrozenCommand(record)).toEqual(frozen.command);
+		expect(frozenCommandOf(record)).toEqual(frozen.command);
+		expect(frozenCommandsOf([record])).toEqual([frozen.command]);
+	});
+
+	it.each([
+		["bytes that are not JSON", "{not json"],
+		["JSON that is not an object", "null"],
+		["a submission without a command", JSON.stringify({ pin: {}, contact: {} })],
+		[
+			"a command of another shape",
+			JSON.stringify({
+				...submission(anna),
+				command: { version: 1, operationId: "not-a-uuid" },
+			}),
+		],
+	])("treats %s as unreadable", async (_, body) => {
+		const { record } = await queued(body);
+
+		expect(readFrozenCommand(record)).toBeNull();
+		expect(frozenCommandsOf([record])).toEqual([]);
+		expect(() => frozenCommandOf(record)).toThrow(/unreadable/);
+	});
+
+	it("leaves out unreadable records and keeps the readable ones in order", async () => {
+		const { frozen, record } = await queued();
+
+		expect(frozenCommandsOf([{ ...record, body: "{not json" }, record])).toEqual([frozen.command]);
 	});
 });

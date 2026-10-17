@@ -6,10 +6,11 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import type {
-	KioskFrozenCommand,
-	KioskFrozenRefusalReason,
-	KioskFrozenSubmission,
+import {
+	type KioskFrozenCommand,
+	type KioskFrozenRefusalReason,
+	type KioskFrozenSubmission,
+	parseKioskFrozenSubmission,
 } from "./frozen-command";
 import type { KioskAction } from "./kiosk-actions";
 import { KIOSK_COMMANDS_STORE, kioskDatabaseMayExist, kioskTransaction } from "./kiosk-database";
@@ -141,9 +142,35 @@ export type KioskOfflineQueue = {
 	sendRetired(current: string): Promise<KioskQueueSendReport>;
 };
 
-/** The frozen command a queued record carries. */
+/**
+ * The frozen command a queued record carries, or null when its stored bytes are
+ * not a submission this kiosk could have frozen (corrupt storage). Such a record
+ * is still sent unchanged: Z8 refuses it as `invalid_request` and it is dropped.
+ */
+export function readFrozenCommand(record: QueuedKioskCommand): KioskFrozenCommand | null {
+	let body: unknown;
+	try {
+		body = JSON.parse(record.body);
+	} catch {
+		return null;
+	}
+	const parsed = parseKioskFrozenSubmission(body);
+	return parsed.ok ? parsed.submission.command : null;
+}
+
+/** The frozen commands queued records carry, in order, leaving out unreadable ones. */
+export function frozenCommandsOf(records: readonly QueuedKioskCommand[]): KioskFrozenCommand[] {
+	return records.flatMap((record) => {
+		const command = readFrozenCommand(record);
+		return command ? [command] : [];
+	});
+}
+
+/** The frozen command a queued record carries; throws when its stored bytes are unreadable. */
 export function frozenCommandOf(record: QueuedKioskCommand): KioskFrozenCommand {
-	return (JSON.parse(record.body) as KioskFrozenSubmission).command;
+	const command = readFrozenCommand(record);
+	if (!command) throw new Error(`Queued kiosk command ${record.operationId} is unreadable`);
+	return command;
 }
 
 const COMMANDS_PATH = "/api/kiosk/commands";

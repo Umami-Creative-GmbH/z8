@@ -6,16 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import { toast } from "sonner";
 import { getCustomersForSelection } from "@/app/[locale]/(app)/settings/customers/actions";
-import {
-	createProject,
-	type ProjectStatus,
-	type ProjectWithDetails,
-	updateProject,
+import type {
+	ProjectStatus,
+	ProjectWithDetails,
 } from "@/app/[locale]/(app)/settings/projects/actions";
 import {
-	createProjectFromTemplate,
 	getProjectTemplateChoices,
 	getProjectTemplatePreview,
 } from "@/app/[locale]/(app)/settings/projects/from-template-actions";
@@ -29,7 +25,6 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -39,13 +34,19 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { CustomFieldDraftsSection } from "./custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "./custom-fields/use-custom-field-drafts";
-import { ProjectColorPicker } from "./project-color-picker";
+import {
+	ProjectBillableDefaultField,
+	ProjectCustomerField,
+	ProjectPlanningFields,
+	ProjectRequiresTaskField,
+	ProjectTemplateChoiceField,
+} from "./project-dialog-fields";
+import { projectFormDefaults, submitProjectForm } from "./project-dialog-submit";
 import {
 	ProjectTemplatePreview,
 	useNotCopiedMessage,
@@ -66,25 +67,6 @@ const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
 	{ value: "completed", label: "Completed" },
 	{ value: "archived", label: "Archived" },
 ];
-
-const NO_CUSTOMER_VALUE = "__none__";
-const BLANK_PROJECT_VALUE = "__blank__";
-
-interface FormValues {
-	/** The template to start from; empty for a blank project. */
-	templateId: string;
-	name: string;
-	description: string;
-	status: ProjectStatus;
-	color: string;
-	budgetHours: string;
-	deadline: string;
-	customerId: string;
-	/** Billable Time (#900): whether new work on the project starts as billable. */
-	billableDefault: boolean;
-	/** Task requirement (#884); a project from a template takes the template's. */
-	requiresTask: boolean;
-}
 
 function useProjectDialogController({
 	organizationId,
@@ -130,135 +112,24 @@ function useProjectDialogController({
 		enabled: open && !isEditing,
 	});
 
-	const defaultValues: FormValues = {
-		templateId: "",
-		name: project?.name || "",
-		description: project?.description || "",
-		status: project?.status || "planned",
-		color: project?.color || "",
-		budgetHours: project?.budgetHours || "",
-		deadline: project?.deadline
-			? new Date(project.deadline).toISOString().split("T")[0]
-			: "",
-		customerId: project?.customerId || "",
-		billableDefault: project?.billableDefault ?? false,
-		requiresTask: project?.requiresTask ?? false,
-	};
+	const defaultValues = projectFormDefaults(project);
 
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
-			const budgetHours = value.budgetHours
-				? parseFloat(value.budgetHours)
-				: undefined;
-			const deadline = value.deadline ? new Date(value.deadline) : undefined;
-			const customerId = value.customerId || undefined;
-			// Only a project with a customer has a billable default; the module hides it otherwise.
-			const billableDefault = billableTimeEnabled
-				? { billableDefault: customerId ? value.billableDefault : false }
-				: {};
-			const customFieldValues = customFields.values();
-
-			if (isEditing && project) {
-				const result = await updateProject(project.id, {
-					name: value.name,
-					description: value.description || undefined,
-					status: value.status,
-					color: value.color || undefined,
-					budgetHours: budgetHours ?? null,
-					deadline: deadline ?? null,
-					customerId: customerId ?? null,
-					...billableDefault,
-					// Sent only when changed here, so a dialog opened before someone else
-					// changed the requirement never undoes that change.
-					...(value.requiresTask === defaultValues.requiresTask
-						? {}
-						: { requiresTask: value.requiresTask }),
-					customFieldValues,
-				}).catch(() => null);
-
-				if (!result) {
-					toast.error(
-						t("settings.projects.updateFailed", "Failed to update project"),
-					);
-					setIsSubmitting(false);
-					return;
-				}
-
-				if (result.success) {
-					toast.success(t("settings.projects.updated", "Project updated"));
-					succeed();
-				} else {
-					toast.error(
-						result.error ||
-							t("settings.projects.updateFailed", "Failed to update project"),
-					);
-				}
-				setIsSubmitting(false);
-				return;
-			}
-
-			if (value.templateId) {
-				const result = await createProjectFromTemplate({
-					templateId: value.templateId,
-					name: value.name,
-					description: value.description.trim() || null,
-					status: value.status,
-					customerId: customerId ?? null,
-					...billableDefault,
-					customFieldValues,
-				}).catch(() => null);
-
-				if (result?.success) {
-					toast.success(t("settings.projects.created", "Project created"));
-					if (result.data.skipped.length > 0) {
-						toast.warning(skippedMembersMessage(result.data.skipped));
-					}
-					succeed();
-				} else {
-					toast.error(
-						result?.error ||
-							t("settings.projects.createFailed", "Failed to create project"),
-					);
-				}
-				setIsSubmitting(false);
-				return;
-			}
-
-			const result = await createProject({
+			// Promise#finally rather than try/finally: the React Compiler cannot
+			// compile try statements without a catch clause.
+			await submitProjectForm(value, {
 				organizationId,
-				name: value.name,
-				description: value.description || undefined,
-				status: value.status,
-				color: value.color || undefined,
-				budgetHours,
-				deadline,
-				customerId,
-				...billableDefault,
-				requiresTask: value.requiresTask,
-				customFieldValues,
-			}).catch(() => null);
-
-			if (!result) {
-				toast.error(
-					t("settings.projects.createFailed", "Failed to create project"),
-				);
-				setIsSubmitting(false);
-				return;
-			}
-
-			if (result.success) {
-				toast.success(t("settings.projects.created", "Project created"));
-				succeed();
-			} else {
-				toast.error(
-					result.error ||
-						t("settings.projects.createFailed", "Failed to create project"),
-				);
-			}
-
-			setIsSubmitting(false);
+				project,
+				defaultValues,
+				billableTimeEnabled,
+				customFieldValues: customFields.values,
+				skippedMembersMessage,
+				t,
+				succeed,
+			}).finally(() => setIsSubmitting(false));
 		},
 	});
 
@@ -290,7 +161,7 @@ function useProjectDialogController({
 	};
 }
 
-type ProjectDialogController = ReturnType<typeof useProjectDialogController>;
+export type ProjectDialogController = ReturnType<typeof useProjectDialogController>;
 
 export function ProjectDialog(props: ProjectDialogProps) {
 	const controller = useProjectDialogController(props);
@@ -366,40 +237,7 @@ function ProjectDialogForm({
 			<ActionPanelBody className="grid gap-4">
 				{/* Start from a template (#880) */}
 				{!isEditing && templateChoices.length > 0 && (
-					<form.Field name="templateId">
-						{(field) => (
-							<div className="grid gap-2">
-								<Label htmlFor="templateId">
-									{t("settings.projects.fromTemplate.startFrom", "Start from")}
-								</Label>
-								<Select
-									value={field.state.value || BLANK_PROJECT_VALUE}
-									onValueChange={(value) =>
-										field.handleChange(
-											value === BLANK_PROJECT_VALUE ? "" : value,
-										)
-									}
-								>
-									<SelectTrigger id="templateId">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value={BLANK_PROJECT_VALUE}>
-											{t(
-												"settings.projects.fromTemplate.blank",
-												"Blank project",
-											)}
-										</SelectItem>
-										{templateChoices.map((template) => (
-											<SelectItem key={template.id} value={template.id}>
-												{template.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-						)}
-					</form.Field>
+					<ProjectTemplateChoiceField controller={controller} />
 				)}
 
 				{/* Name */}
@@ -447,124 +285,17 @@ function ProjectDialogForm({
 
 				{/* Customer */}
 				{(customers.length > 0 || deletedCustomerName) && (
-					<form.Field name="customerId">
-						{(field) => (
-							<div className="grid gap-2">
-								<Label htmlFor={customers.length > 0 ? "customerId" : undefined}>
-									{t("settings.projects.field.customer", "Customer")}
-								</Label>
-								{customers.length > 0 && (
-									<Select
-										value={field.state.value || NO_CUSTOMER_VALUE}
-										onValueChange={(value) =>
-											field.handleChange(value === NO_CUSTOMER_VALUE ? "" : value)
-										}
-									>
-										<SelectTrigger
-										id="customerId"
-										aria-describedby={
-											deletedCustomerName && !field.state.value
-												? "customerDeletedHint"
-												: undefined
-										}
-									>
-											<SelectValue
-												placeholder={t(
-													"settings.projects.field.customerPlaceholder",
-													"Select a customer",
-												)}
-											/>
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value={NO_CUSTOMER_VALUE}>
-												{t("settings.projects.field.noCustomer", "No customer")}
-											</SelectItem>
-											{customers.map((c) => (
-												<SelectItem key={c.id} value={c.id}>
-													{c.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								)}
-								{deletedCustomerName && !field.state.value && (
-									<p
-										id="customerDeletedHint"
-										className="text-sm text-muted-foreground"
-									>
-										{t(
-											"settings.projects.field.customerDeleted",
-											"{name} was deleted. Pick another customer or keep the project without one.",
-											{ name: deletedCustomerName },
-										)}
-									</p>
-								)}
-							</div>
-						)}
-					</form.Field>
+					<ProjectCustomerField controller={controller} />
 				)}
 
 				{/* Billable default (#900): only for a project with a customer */}
 				{billableTimeEnabled ? (
-					<form.Subscribe selector={(state) => state.values.customerId}>
-						{(customerId) => (
-							<form.Field name="billableDefault">
-								{(field) => (
-									<div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-										<div className="space-y-0.5">
-											<Label htmlFor="billableDefault">
-												{t("settings.projects.field.billableDefault", "Billable by default")}
-											</Label>
-											<p className="text-sm text-muted-foreground">
-												{customerId
-													? t(
-															"settings.projects.field.billableDefaultHelp",
-															"New work on this project starts as billable. Existing work keeps its billability.",
-														)
-													: t(
-															"settings.projects.field.billableDefaultNeedsCustomer",
-															"Choose a customer to make new work billable by default.",
-														)}
-											</p>
-										</div>
-										<Switch
-											id="billableDefault"
-											checked={Boolean(customerId) && field.state.value}
-											onCheckedChange={(checked) => field.handleChange(checked)}
-											disabled={!customerId}
-										/>
-									</div>
-								)}
-							</form.Field>
-						)}
-					</form.Subscribe>
+					<ProjectBillableDefaultField controller={controller} />
 				) : null}
 
 				{/* Task requirement (#884); a project from a template takes the template's. */}
 				{!fromTemplate && (
-					<form.Field name="requiresTask">
-						{(field) => (
-							<div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-								<div className="space-y-0.5">
-									<Label htmlFor="requiresTask">
-										{t("settings.projects.field.requiresTask", "Require a task")}
-									</Label>
-									<p id="requiresTaskHelp" className="text-sm text-muted-foreground">
-										{t(
-											"settings.projects.field.requiresTaskHelp",
-											"Time booked to this project must name one of its tasks. It applies only while the project has an open task.",
-										)}
-									</p>
-								</div>
-								<Switch
-									id="requiresTask"
-									aria-describedby="requiresTaskHelp"
-									checked={field.state.value}
-									onCheckedChange={(checked) => field.handleChange(checked)}
-								/>
-							</div>
-						)}
-					</form.Field>
+					<ProjectRequiresTaskField controller={controller} />
 				)}
 
 				{/* Status */}
@@ -601,64 +332,7 @@ function ProjectDialogForm({
 
 				{/* Colour, budget and deadline come from the template when there is one. */}
 				{!fromTemplate && (
-					<>
-						{/* Color */}
-						<form.Field name="color">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label>{t("settings.projects.field.color", "Color")}</Label>
-									<ProjectColorPicker value={field.state.value} onChange={field.handleChange} />
-								</div>
-							)}
-						</form.Field>
-
-						{/* Budget Hours */}
-						<form.Field name="budgetHours">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor="budgetHours">
-										{t("settings.projects.field.budget", "Budget (hours)")}
-									</Label>
-									<Input
-										id="budgetHours"
-										type="number"
-										step="0.5"
-										min="0"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										onBlur={field.handleBlur}
-										placeholder={t(
-											"settings.projects.field.budgetPlaceholder",
-											"e.g., 100",
-										)}
-									/>
-									<p className="text-xs text-muted-foreground">
-										{t(
-											"settings.projects.field.budgetHelp",
-											"Leave empty for unlimited budget",
-										)}
-									</p>
-								</div>
-							)}
-						</form.Field>
-
-						{/* Deadline */}
-						<form.Field name="deadline">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor="deadline">
-										{t("settings.projects.field.deadline", "Deadline")}
-									</Label>
-									<DatePicker
-										id="deadline"
-										value={field.state.value}
-										onChange={field.handleChange}
-										onBlur={field.handleBlur}
-									/>
-								</div>
-							)}
-						</form.Field>
-					</>
+					<ProjectPlanningFields controller={controller} />
 				)}
 
 				<CustomFieldDraftsSection drafts={customFields} disabled={isSubmitting} />

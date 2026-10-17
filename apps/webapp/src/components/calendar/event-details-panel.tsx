@@ -187,63 +187,11 @@ function WorkPeriodDetails({
 				value={metadata.employeeName}
 			/>
 			{projectsEnabled && metadata.projectName && (
-				<div>
-					<span className="text-sm text-muted-foreground">
-						{t("calendar.details.project", "Project")}
-					</span>
-					<div className="flex items-center gap-2 mt-0.5">
-						{metadata.projectColor && (
-							<div
-								className="size-3 rounded-full"
-								style={{ backgroundColor: metadata.projectColor }}
-							/>
-						)}
-						<p className="font-medium">{metadata.projectName}</p>
-					</div>
-				</div>
-			)}
-			{projectsEnabled && metadata.projectName && metadata.taskName && (
-				<DetailValue
-					label={t("calendar.details.task", "Task")}
-					value={
-						metadata.taskState === "done"
-							? t("calendar.details.taskDone", "{name} (done)", { name: metadata.taskName })
-							: metadata.taskName
-					}
-				/>
-			)}
-			{projectsEnabled && metadata.projectName && metadata.missingTask && (
-				<DetailValue
-					label={t("calendar.details.task", "Task")}
-					value={t(
-						"calendar.details.missingTask",
-						"Missing task. This project requires one: edit the booking to add it.",
-					)}
-				/>
+				<WorkPeriodProjectDetails metadata={metadata} projectName={metadata.projectName} t={t} />
 			)}
 			<WorkDurationDetails t={t} hasSurcharge={hasSurcharge} metadata={metadata} />
 			{metadata.surchargeBreakdown && metadata.surchargeBreakdown.length > 0 && (
-				<div>
-					<span className="text-sm text-muted-foreground">
-						{t("calendar.details.surchargeBreakdown", "Surcharge Breakdown")}
-					</span>
-					<div className="mt-1 space-y-1">
-						{metadata.surchargeBreakdown.map((rule) => (
-							<div
-								key={`${rule.ruleName}-${rule.percentage}-${rule.surchargeMinutes}`}
-								className="flex justify-between text-sm bg-muted/50 rounded px-2 py-1"
-							>
-								<span>
-									{rule.ruleName}{" "}
-									<span className="text-muted-foreground">({rule.percentage}%)</span>
-								</span>
-								<span className="tabular-nums text-emerald-600 dark:text-emerald-400">
-									+{formatDuration(rule.surchargeMinutes)}
-								</span>
-							</div>
-						))}
-					</div>
-				</div>
+				<SurchargeBreakdownDetails breakdown={metadata.surchargeBreakdown} t={t} />
 			)}
 			{metadata.startTime && metadata.endTime && (
 				<DetailValue
@@ -252,23 +200,11 @@ function WorkPeriodDetails({
 				/>
 			)}
 			{metadata.automaticClockOut && (
-				<div className="space-y-3 rounded-md border p-3">
-					<Badge variant="secondary">
-						{t("calendar.details.automaticClockOut", "Automatically clocked out")}
-					</Badge>
-					<DetailValue
-						label={t("calendar.details.source", "Source")}
-						value={t("calendar.details.system", "System")}
-					/>
-					<DetailValue
-						label={t("calendar.details.automaticLimit", "Uninterrupted work limit")}
-						value={formatDuration(metadata.automaticClockOut.limitMinutes)}
-					/>
-					<DetailValue
-						label={t("calendar.details.automaticCutoff", "Clock-out cutoff")}
-						value={formatAutomaticCutoff(metadata)}
-					/>
-				</div>
+				<AutomaticClockOutDetails
+					metadata={metadata}
+					limitMinutes={metadata.automaticClockOut.limitMinutes}
+					t={t}
+				/>
 			)}
 			{metadata.editedByName && (
 				<DetailValue
@@ -276,6 +212,118 @@ function WorkPeriodDetails({
 					value={metadata.editedByName}
 				/>
 			)}
+		</div>
+	);
+}
+
+/** The project of a work period, with its task (or the task it still lacks). */
+function WorkPeriodProjectDetails({
+	metadata,
+	projectName,
+	t,
+}: {
+	metadata: WorkPeriodEvent["metadata"];
+	projectName: string;
+	t: Translate;
+}) {
+	return (
+		<>
+			<div>
+				<span className="text-sm text-muted-foreground">
+					{t("calendar.details.project", "Project")}
+				</span>
+				<div className="flex items-center gap-2 mt-0.5">
+					{metadata.projectColor && (
+						<div
+							className="size-3 rounded-full"
+							style={{ backgroundColor: metadata.projectColor }}
+						/>
+					)}
+					<p className="font-medium">{projectName}</p>
+				</div>
+			</div>
+			{metadata.taskName && (
+				<DetailValue
+					label={t("calendar.details.task", "Task")}
+					value={
+						metadata.taskState === "done"
+							? t("calendar.details.taskDone", "{name} (done)", {
+									name: metadata.taskName,
+								})
+							: metadata.taskName
+					}
+				/>
+			)}
+			{metadata.missingTask && (
+				<DetailValue
+					label={t("calendar.details.task", "Task")}
+					value={t(
+						"calendar.details.missingTask",
+						"Missing task. This project requires one: edit the booking to add it.",
+					)}
+				/>
+			)}
+		</>
+	);
+}
+
+function SurchargeBreakdownDetails({
+	breakdown,
+	t,
+}: {
+	breakdown: NonNullable<WorkPeriodEvent["metadata"]["surchargeBreakdown"]>;
+	t: Translate;
+}) {
+	return (
+		<div>
+			<span className="text-sm text-muted-foreground">
+				{t("calendar.details.surchargeBreakdown", "Surcharge Breakdown")}
+			</span>
+			<div className="mt-1 space-y-1">
+				{breakdown.map((rule) => (
+					<div
+						key={`${rule.ruleName}-${rule.percentage}-${rule.surchargeMinutes}`}
+						className="flex justify-between text-sm bg-muted/50 rounded px-2 py-1"
+					>
+						<span>
+							{rule.ruleName} <span className="text-muted-foreground">({rule.percentage}%)</span>
+						</span>
+						<span className="tabular-nums text-emerald-600 dark:text-emerald-400">
+							+{formatDuration(rule.surchargeMinutes)}
+						</span>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+function AutomaticClockOutDetails({
+	metadata,
+	limitMinutes,
+	t,
+}: {
+	metadata: WorkPeriodEvent["metadata"];
+	limitMinutes: number;
+	t: Translate;
+}) {
+	return (
+		<div className="space-y-3 rounded-md border p-3">
+			<Badge variant="secondary">
+				{t("calendar.details.automaticClockOut", "Automatically clocked out")}
+			</Badge>
+			<DetailValue
+				label={t("calendar.details.source", "Source")}
+				value={t("calendar.details.system", "System")}
+			/>
+			<DetailValue
+				label={t("calendar.details.automaticLimit", "Uninterrupted work limit")}
+				value={formatDuration(limitMinutes)}
+			/>
+			<DetailValue
+				label={t("calendar.details.automaticCutoff", "Clock-out cutoff")}
+				value={formatAutomaticCutoff(metadata)}
+			/>
 		</div>
 	);
 }

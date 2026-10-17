@@ -2,7 +2,7 @@
 
 import { IconLoader2, IconWifiOff } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	forgetKioskToken,
@@ -102,13 +102,12 @@ async function screenFor(session: KioskSession, initialCode: string): Promise<Ki
 export function KioskApp() {
 	const [screen, setScreen] = useState<KioskScreen>({ state: "loading" });
 
-	const start = useEffectEvent(async () => {
-		const initialCode = takePairingCodeFromUrl();
-		setScreen(await screenFor(await loadKioskSession(), initialCode));
-	});
-
+	// The first screen waits for the session answer, so it is set from the promise, not during the Effect.
 	useEffect(() => {
-		void start();
+		const initialCode = takePairingCodeFromUrl();
+		void loadKioskSession()
+			.then((session) => screenFor(session, initialCode))
+			.then(setScreen);
 	}, []);
 
 	async function retry() {

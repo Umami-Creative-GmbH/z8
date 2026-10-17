@@ -54,14 +54,10 @@ export async function sealKioskPin(
 	subtle: SubtleCrypto = globalThis.crypto.subtle,
 ): Promise<SealedKioskPin> {
 	const curve = { name: "ECDH", namedCurve: "P-256" } as const;
-	const serverKey = await subtle.importKey(
-		"jwk",
-		{ ...input.sealingKey.jwk, ext: true },
-		curve,
-		false,
-		[],
-	);
-	const ephemeral = await subtle.generateKey(curve, true, ["deriveBits"]);
+	const [serverKey, ephemeral] = await Promise.all([
+		subtle.importKey("jwk", { ...input.sealingKey.jwk, ext: true }, curve, false, []),
+		subtle.generateKey(curve, true, ["deriveBits"]),
+	]);
 	const shared = await subtle.deriveBits(
 		{ name: "ECDH", public: serverKey },
 		ephemeral.privateKey,

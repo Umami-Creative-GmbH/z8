@@ -146,6 +146,7 @@ export async function loadPersonalDataReadmeFacts(
 		payrollOfficers,
 		expenseOfficers,
 		documentYears,
+		drivingLicenceVerifiers,
 	] = await Promise.all([
 		loadOwnersAndAdmins(database, { organizationId, employeeId, now }),
 		loadManagers(database, { organizationId, employeeId, teamIds, people }),
@@ -163,13 +164,13 @@ export async function loadPersonalDataReadmeFacts(
 			people,
 		}),
 		loadRetentionPeriods(database, organizationId),
+		loadDrivingLicenceVerifiers(database, {
+			organizationId,
+			employeeId,
+			now,
+			people,
+		}),
 	]);
-	const drivingLicenceVerifiers = await loadDrivingLicenceVerifiers(database, {
-		organizationId,
-		employeeId,
-		now,
-		people,
-	});
 	return {
 		access: {
 			ownersAndAdmins,
