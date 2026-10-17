@@ -172,7 +172,6 @@ const absenceRecordedCopy = {
 	messageDefault: "{managerName} recorded {absenceType} for {dateRange} on your behalf.",
 } as const satisfies NotificationCopy;
 
-// Keeps the trigger's type until #1136 gives the cancellation its own one.
 const approvedAbsenceCancelledCopy = {
 	titleKey: "common:notifications.content.approvedAbsenceCancelled.title",
 	titleDefault: "Approved absence cancelled",
@@ -340,7 +339,7 @@ export async function onApprovedAbsenceCancelledByEmployee(
 		await createNotification({
 			userId: params.managerUserId,
 			organizationId: params.organizationId,
-			type: "absence_request_approved",
+			type: "approved_absence_cancelled",
 			title: content.title,
 			message: content.message,
 			entityType: "absence_entry",
