@@ -20,7 +20,11 @@ import {
 } from "@/lib/datetime/temporal-core";
 import type { PersonnelFileAccess } from "./access";
 import { managedDocumentsCondition } from "./access-store";
-import { writeDocumentAudit } from "./audit";
+import {
+	minimisePurgedDocumentAudits,
+	type UnprocessableAuditRecord,
+	writeDocumentAudit,
+} from "./audit";
 import { DOCUMENT_CATEGORIES, type DocumentCategory, type PayPeriod } from "./document.types";
 import { loadOrganizationDay } from "./organization-day";
 import {
@@ -347,26 +351,38 @@ export interface PurgeResult {
 	skipped: string[];
 }
 
-export const PURGE_REASON_MAX_LENGTH = 1000;
+/** A purge was refused because audit records about a purged document cannot be minimised. */
+export class PurgeAuditMinimisationError extends Error {
+	constructor(readonly unprocessable: UnprocessableAuditRecord[]) {
+		super(
+			`Cannot remove the purged documents' descriptions from audit records ${unprocessable
+				.map((record) => record.auditId)
+				.join(", ")}`,
+		);
+		this.name = "PurgeAuditMinimisationError";
+	}
+}
 
 /**
  * Purges the confirmed documents that are still due for deletion, or whose
  * retention start is unknown (decision B: reviewed by hand), and in the
  * actor's scope and categories, each with an audit record that survives it
- * (actor, employee, category, document date, pay period, reason; no title or
- * file). The deletion trigger hands each stored object to the cleanup ledger
- * in the same transaction. Everything else requested is skipped.
+ * (actor, employee, category, document date, pay period, retention facts; no
+ * title, file or reason). The purged documents' descriptions are removed from
+ * the earlier audit records about them in the same transaction (#923); when a
+ * record cannot be minimised, the whole purge fails. The deletion trigger
+ * hands each stored object to the cleanup ledger in the same transaction.
+ * Everything else requested is skipped.
  */
 export async function purgeDueDocuments(
 	database: Database,
 	access: PersonnelFileAccess,
-	input: { documentIds: readonly string[]; reason: string | null },
+	input: { documentIds: readonly string[] },
 	now: Instant = systemClock.nowInstant(),
 ): Promise<PurgeResult> {
 	const requested = [...new Set(input.documentIds)];
 	if (requested.length === 0) return { purged: [], skipped: [] };
 	const at = dateFromInstant(now);
-	const reason = input.reason?.trim().slice(0, PURGE_REASON_MAX_LENGTH) || null;
 	return database.transaction(async (tx) => {
 		const locked = await tx
 			.select({ id: employeeDocument.id, employeeId: employeeDocument.employeeId })
@@ -407,6 +423,7 @@ export async function purgeDueDocuments(
 			[...documents, ...unknownStart].map((document) => [document.id, document]),
 		);
 		const purged: string[] = [];
+		const purgedRows: Array<{ id: string; employeeId: string }> = [];
 		const unlinkedSkillIds: string[] = [];
 		for (const documentId of requested) {
 			const document = due.get(documentId);
@@ -444,13 +461,11 @@ export async function purgeDueDocuments(
 				metadata:
 					"dueOn" in document
 						? {
-								reason,
 								retentionStart: document.retentionStart,
 								dueOn: document.dueOn,
 								retentionYears: document.retentionYears,
 							}
 						: {
-								reason,
 								retentionStartUnknown: true,
 								retentionStart: null,
 								dueOn: null,
@@ -458,7 +473,15 @@ export async function purgeDueDocuments(
 							},
 			});
 			purged.push(documentId);
+			purgedRows.push({ id: row.id, employeeId: row.employeeId });
 			if (row.employeeSkillId) unlinkedSkillIds.push(row.employeeSkillId);
+		}
+		const minimisation = await minimisePurgedDocumentAudits(tx, {
+			organizationId: access.organizationId,
+			documents: purgedRows,
+		});
+		if (minimisation.unprocessable.length > 0) {
+			throw new PurgeAuditMinimisationError(minimisation.unprocessable);
 		}
 		// Purged skill certificates no longer set the skill expiry date (#1145).
 		await recomputeCertificateSkillExpiry(tx, {

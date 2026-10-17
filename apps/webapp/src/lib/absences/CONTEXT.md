@@ -16,11 +16,19 @@ _Avoid_: adjustment (reserved for vacation balances), direct edit, sick-day corr
 A day the employee's work policy in effect on that day schedules them to work, and that isn't a public holiday for them. An employee whose policy has no schedule works Monday to Friday.
 _Avoid_: business day, weekday, workday
 
+**Working days per week**:
+The number of distinct days an employee's effective work policy schedules them to work each week, before public holidays are excluded and regardless of hours per day. With no schedule, it is five.
+_Avoid_: weekly hours, full-time equivalent
+
 **Absence days**:
 How many working days an absence takes. Each working day counts 1, and a morning or afternoon half counts ½, however many hours the day has.
 _Avoid_: business days, vacation hours, calendar days
 
 ### Vacation
+
+**Reference allowance**:
+The vacation days a policy grants for a full year on a five-day working week. The employee's vacation allowance converts it to their scheduled working days per week, with each scheduled day counting equally regardless of hours and without reducing the week for public holidays.
+_Avoid_: full-time allowance, organization allowance
 
 **Vacation allowance**:
 The absence days an employee may take as vacation in a year, before carryover and adjustments. For a part-time employee it is already reduced to their working days, because absence days count only the days they work. In a year the employee joins or leaves, it is their prorated allowance.
@@ -43,7 +51,7 @@ The first six months of an employment. Each rehire starts a new one.
 _Avoid_: probation, probationary period
 
 **Statutory minimum**:
-The fewest vacation days a policy's employees are legally owed in a full year. The prorated allowance never cuts below it once the waiting period is complete, unless the employee leaves by 30 June.
+A policy's minimum annual vacation allowance, stated for a five-day working week and converted to the employee's working days per week. The prorated allowance never cuts below it once the waiting period is complete, unless the employee leaves by 30 June.
 _Avoid_: legal allowance, minimum vacation
 
 **Overdrawn vacation**:

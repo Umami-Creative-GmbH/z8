@@ -121,6 +121,16 @@ export interface UpsertShiftInput {
 	endTime: string;
 	notes?: string;
 	color?: string;
+	/**
+	 * Why the employee is assigned without every required skill (#893). The server decides
+	 * whether one is needed and refuses with `skill_override_reason_required` when it is.
+	 */
+	skillOverrideReason?: string;
+}
+
+export interface ApproveShiftRequestInput {
+	/** Why the employee is assigned without every required skill (#893). */
+	skillOverrideReason?: string;
 }
 
 export interface ShiftQuery {

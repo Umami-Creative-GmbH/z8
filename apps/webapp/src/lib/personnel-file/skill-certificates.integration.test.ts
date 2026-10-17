@@ -573,6 +573,7 @@ describe("skill certificates (#1144)", () => {
 					timezone: "UTC",
 					startTime: "08:00",
 					endTime: "16:00",
+					skillOverrideReason: "Renewal in progress",
 					createdBy: userOf("owner"),
 				}),
 			);
@@ -582,6 +583,7 @@ describe("skill certificates (#1144)", () => {
 					name: "Forklift licence",
 					expiresAt: "2026-01-31",
 					certificateOnFile: true,
+					isRequired: true,
 				},
 			]);
 		});
