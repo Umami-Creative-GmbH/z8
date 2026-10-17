@@ -214,10 +214,11 @@ documents is due while they are employed again. A former employee whose
 employment end was never recorded (no employment period, or only a legacy
 period without an end) has no retention start: their documents are listed
 separately as *retention start unknown*, never counted by the daily reminder,
-and purged only when an officer reviews and confirms them. A purge also removes the document's title, file name, ZIP entry names and
-free-text reasons from every audit record about it (#923). The records themselves, with
-the actor, the employee, the category, the dates and their timestamps, stay until the
-365-day audit-log cleanup.
+and purged only when an officer reviews and confirms them. A purge also
+removes the document's descriptions (title, file name, ZIP entry names and
+free-text reasons) from every audit record about it (#923). The records
+themselves, with the actor, the employee, the category, the dates and their
+timestamps, stay until the 365-day audit-log cleanup.
 
 ## Billing reconciliation
 

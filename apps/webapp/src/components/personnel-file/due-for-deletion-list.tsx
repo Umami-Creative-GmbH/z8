@@ -87,7 +87,7 @@ function PurgeDialog({
 					</AlertDialogTitle>
 					<AlertDialogDescription>
 						{t(
-							"settings.personnelFiles.due.confirmDescriptionMinimised",
+							"settings.personnelFiles.due.purgeAuditDescription",
 							"The documents and their files are deleted for good. The audit log keeps who purged them, the employee, category, document date and pay period. Titles and file names are also removed from the documents' earlier audit records.",
 						)}
 					</AlertDialogDescription>

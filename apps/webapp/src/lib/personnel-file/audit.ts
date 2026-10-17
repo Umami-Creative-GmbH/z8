@@ -24,7 +24,7 @@ import {
 type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Writer = Database | Pick<Transaction, "insert">;
-type Locker = Pick<Transaction, "select" | "update">;
+type ReadWriteTransaction = Pick<Transaction, "select" | "update">;
 
 export const PERSONNEL_FILE_AUDIT_ENTITY_TYPE = "employee_document";
 /** ZIP downloads of a personnel file (#871): one record per download, about the employee. */
@@ -170,6 +170,12 @@ export async function writePayslipBatchAudit(
 	return id;
 }
 
+/** The audit records of confirmed purges: the only evidence that a document was purged. */
+export const purgeRecordCondition = and(
+	eq(auditLog.entityType, PERSONNEL_FILE_AUDIT_ENTITY_TYPE),
+	eq(auditLog.action, AuditAction.PERSONNEL_FILE_DOCUMENT_PURGED),
+);
+
 /**
  * Of the given documents of the organization, those a confirmed purge removed:
  * gone, with a purge record as explicit evidence (a document that is merely
@@ -203,8 +209,7 @@ export async function lockPurgedDocumentIds(
 		.where(
 			and(
 				eq(auditLog.organizationId, input.organizationId),
-				eq(auditLog.entityType, PERSONNEL_FILE_AUDIT_ENTITY_TYPE),
-				eq(auditLog.action, AuditAction.PERSONNEL_FILE_DOCUMENT_PURGED),
+				purgeRecordCondition,
 				inArray(auditLog.entityId, missing),
 			),
 		);
@@ -233,7 +238,7 @@ export interface PurgedDocumentAuditMinimisation {
  * transaction; records that cannot be read are reported, not changed.
  */
 export async function minimisePurgedDocumentAudits(
-	tx: Locker,
+	tx: ReadWriteTransaction,
 	input: {
 		organizationId: string;
 		documents: ReadonlyArray<{ id: string; employeeId: string | null }>;
@@ -286,7 +291,7 @@ export async function minimisePurgedDocumentAudits(
 					.orderBy(asc(auditLog.id))
 					.for("update");
 
-	const apply = async (
+	const saveMinimisation = async (
 		record: (typeof documentRecords)[number],
 		entityType: string,
 		minimised: AuditMinimisation,
@@ -308,10 +313,14 @@ export async function minimisePurgedDocumentAudits(
 		result.minimised += 1;
 	};
 	for (const record of documentRecords) {
-		await apply(record, PERSONNEL_FILE_AUDIT_ENTITY_TYPE, minimiseDocumentAudit(record));
+		await saveMinimisation(record, PERSONNEL_FILE_AUDIT_ENTITY_TYPE, minimiseDocumentAudit(record));
 	}
 	for (const record of zipRecords) {
-		await apply(record, PERSONNEL_FILE_ZIP_AUDIT_ENTITY_TYPE, minimiseZipAudit(record, purged));
+		await saveMinimisation(
+			record,
+			PERSONNEL_FILE_ZIP_AUDIT_ENTITY_TYPE,
+			minimiseZipAudit(record, purged),
+		);
 	}
 	return result;
 }

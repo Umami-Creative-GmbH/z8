@@ -176,8 +176,21 @@ async function auditRows(where: string, values: unknown[]): Promise<AuditRow[]> 
 	return rows;
 }
 
+/** Waits until at least `count` sessions of the test database wait on a lock. */
+async function waiting(count: number) {
+	for (let attempt = 0; attempt < 200; attempt += 1) {
+		const { rows } = await admin.query(
+			`select count(*)::int as count from pg_stat_activity
+			 where datname = current_database() and wait_event_type = 'Lock'`,
+		);
+		if (rows[0].count >= count) return;
+		await new Promise((resolve) => setTimeout(resolve, 25));
+	}
+	throw new Error(`fewer than ${count} sessions waiting on a lock`);
+}
+
 const docs = {} as Record<
-	"purged" | "kept" | "broken" | "second" | "zipped" | "late" | "raced",
+	"purged" | "kept" | "broken" | "second" | "zipped" | "late" | "raced" | "readFirst",
 	string
 >;
 
@@ -231,6 +244,12 @@ beforeAll(async () => {
 		title: "Payslip Dora raced-title-923",
 		documentDate: "2018-07-31",
 		fileName: "dora-raced-923.pdf",
+	});
+	docs.readFirst = await seedDocument({
+		category: "payslip",
+		title: "Payslip Dora read-first-title-923",
+		documentDate: "2018-06-30",
+		fileName: "dora-read-first-923.pdf",
 	});
 	const saved = await saveRetentionPeriods(db, {
 		organizationId: ORG,
@@ -605,17 +624,6 @@ describe("audit records written after a purge from a stale snapshot", () => {
 		const holder = await admin.connect();
 		try {
 			await holder.query("select pg_advisory_lock($1)", [lockKey]);
-			const waiting = async (count: number) => {
-				for (let attempt = 0; attempt < 200; attempt += 1) {
-					const { rows } = await admin.query(
-						`select count(*)::int as count from pg_stat_activity
-						 where datname = current_database() and wait_event_type = 'Lock'`,
-					);
-					if (rows[0].count >= count) return;
-					await new Promise((resolve) => setTimeout(resolve, 25));
-				}
-				throw new Error(`fewer than ${count} sessions waiting on a lock`);
-			};
 
 			const purge = purgeDueDocuments(db, access, { documentIds: [docs.raced] }, NOW);
 			await waiting(1);
@@ -657,6 +665,54 @@ describe("audit records written after a purge from a stale snapshot", () => {
 			"personnel_file.zip_download_aborted",
 		]);
 		expect(JSON.stringify(records)).not.toContain("raced-title-923");
+	}, 30_000);
+});
+describe("a view recorded while it holds the document", () => {
+	it("makes the purge wait, and the purge then minimises the view's record", async () => {
+		const access = await ownerAccess();
+		const stale = await loadDocument(docs.readFirst);
+		const lockKey = 923_924;
+		// Park the view's insert after it locked the document.
+		await admin.query(`
+			create or replace function t923_park_view() returns trigger language plpgsql as $$
+			begin perform pg_advisory_xact_lock(${lockKey}); return new; end $$`);
+		await admin.query(`
+			create trigger t923_park_view before insert on audit_log for each row
+			when (new.entity_id = '${docs.readFirst}' and new.action = 'personnel_file.document_downloaded')
+			execute function t923_park_view()`);
+		const holder = await admin.connect();
+		try {
+			await holder.query("select pg_advisory_lock($1)", [lockKey]);
+			const read = writeDocumentReadAudit(db, {
+				action: AuditAction.PERSONNEL_FILE_DOCUMENT_DOWNLOADED,
+				actorUserId: userOf("owner"),
+				document: stale,
+				metadata: { variant: "original" },
+			});
+			await waiting(1);
+			const purge = purgeDueDocuments(db, access, { documentIds: [docs.readFirst] }, NOW);
+			await waiting(2);
+			await holder.query("select pg_advisory_unlock($1)", [lockKey]);
+			await read;
+			expect((await purge).purged).toEqual([docs.readFirst]);
+		} finally {
+			// Destroyed, not returned to the pool: it may still hold the session lock.
+			holder.release(true);
+			await admin.query("drop trigger if exists t923_park_view on audit_log");
+			await admin.query("drop function if exists t923_park_view()");
+		}
+
+		const records = await auditRows("organization_id = $1 and entity_id = $2", [
+			ORG,
+			docs.readFirst,
+		]);
+		expect(records.map((row) => row.action).toSorted()).toEqual([
+			"personnel_file.document_downloaded",
+			"personnel_file.document_purged",
+		]);
+		const downloaded = records.find((row) => row.action === "personnel_file.document_downloaded");
+		expect(JSON.parse(downloaded?.metadata as string)).toMatchObject({ descriptionsRemoved: true });
+		expect(JSON.stringify(records)).not.toContain("read-first-title-923");
 	}, 30_000);
 });
 describe("the historical backfill", () => {

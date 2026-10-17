@@ -193,10 +193,19 @@ describe("minimiseZipAudit", () => {
 		expect(minimiseZipAudit(abort, new Set([KEPT]))).toEqual({ kind: "unchanged" });
 	});
 
-	it("reports a record whose JSON cannot be read", () => {
-		expect(minimiseZipAudit({ changes: null, metadata: "nope" }, new Set([PURGED]))).toEqual({
-			kind: "unprocessable",
-			reason: "invalid_json",
-		});
+	it("reports an unreadable record only when it may name a purged document", () => {
+		expect(
+			minimiseZipAudit(
+				{ changes: null, metadata: `{"documents":[{"id":"${PURGED}"` },
+				new Set([PURGED]),
+			),
+		).toEqual({ kind: "unprocessable", reason: "invalid_json" });
+		// Another employee download that never listed the purged document does not block its purge.
+		expect(
+			minimiseZipAudit(
+				{ changes: null, metadata: `{"documents":[{"id":"${KEPT}"` },
+				new Set([PURGED]),
+			),
+		).toEqual({ kind: "unchanged" });
 	});
 });

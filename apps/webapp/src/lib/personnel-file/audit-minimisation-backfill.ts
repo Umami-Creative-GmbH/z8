@@ -1,10 +1,9 @@
 import { and, asc, eq, gt, inArray } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { auditLog, employeeDocument } from "@/db/schema";
-import { AuditAction } from "@/lib/audit-logger";
 import {
 	minimisePurgedDocumentAudits,
-	PERSONNEL_FILE_AUDIT_ENTITY_TYPE,
+	purgeRecordCondition,
 	type UnprocessableAuditRecord,
 } from "./audit";
 
@@ -42,11 +41,6 @@ export interface PurgedDocumentAuditBackfillReport {
 
 const DEFAULT_BATCH_SIZE = 100;
 
-const purgeEvidence = and(
-	eq(auditLog.entityType, PERSONNEL_FILE_AUDIT_ENTITY_TYPE),
-	eq(auditLog.action, AuditAction.PERSONNEL_FILE_DOCUMENT_PURGED),
-);
-
 async function backfillOrganization(
 	database: Database,
 	organizationId: string,
@@ -74,7 +68,7 @@ async function backfillOrganization(
 				.where(
 					and(
 						eq(auditLog.organizationId, organizationId),
-						purgeEvidence,
+						purgeRecordCondition,
 						cursor ? gt(auditLog.id, cursor) : undefined,
 					),
 				)
@@ -131,7 +125,7 @@ export async function backfillPurgedDocumentAudits(
 			await database
 				.selectDistinct({ organizationId: auditLog.organizationId })
 				.from(auditLog)
-				.where(purgeEvidence)
+				.where(purgeRecordCondition)
 				.orderBy(asc(auditLog.organizationId))
 		).map((row) => row.organizationId);
 	const reports: PurgedDocumentAuditBackfillReport[] = [];

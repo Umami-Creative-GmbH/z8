@@ -139,7 +139,13 @@ export function minimiseZipAudit(
 	purgedDocumentIds: ReadonlySet<string>,
 ): AuditMinimisation {
 	const metadata = parseFields(record.metadata);
-	if (metadata === undefined) return UNPROCESSABLE;
+	if (metadata === undefined) {
+		// An unreadable record of the employee that cannot name a purged document is not its concern.
+		const text = record.metadata ?? "";
+		return [...purgedDocumentIds].some((id) => text.includes(id))
+			? UNPROCESSABLE
+			: { kind: "unchanged" };
+	}
 	if (metadata === null) return { kind: "unchanged" };
 	const result = zipAuditWithoutDescriptions(metadata, purgedDocumentIds);
 	if (!result.removed) return { kind: "unchanged" };
