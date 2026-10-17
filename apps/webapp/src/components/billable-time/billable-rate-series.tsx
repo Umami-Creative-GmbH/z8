@@ -1,9 +1,7 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
 import {
 	type BillableRateHistory,
 	endBillableRate,
@@ -18,11 +16,10 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
-import type { BillableRatePeriodView, BillableRateTarget } from "@/lib/billable-time/rate-target";
+import type { BillableRateTarget } from "@/lib/billable-time/rate-target";
 import { billableRateTargetIds } from "@/lib/billable-time/rate-target";
-import type { ServerActionResult } from "@/lib/effect/result";
 import { queryKeys } from "@/lib/query/keys";
-import { type RateChangeResult, RateHistoryCard } from "./rate-history-card";
+import { RateSeries } from "./rate-series";
 
 function rateHistoryKey(target: BillableRateTarget) {
 	const ids = billableRateTargetIds(target);
@@ -84,65 +81,30 @@ export function BillableRateSeries({
 	onChanged,
 }: BillableRateSeriesProps) {
 	const { t } = useTranslate();
-	const queryClient = useQueryClient();
-	const queryKey = rateHistoryKey(target);
 	const emptyText = useFallbackText(target.level);
 
-	const history = useQuery({
-		queryKey,
-		queryFn: async (): Promise<BillableRateHistory> => {
-			const result = await getBillableRateHistory({ target });
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
-	});
-
-	const applyChange = async (
-		change: Promise<ServerActionResult<{ changed: boolean; periods: BillableRatePeriodView[] }>>,
-	): Promise<RateChangeResult> => {
-		const result = await change.catch(() => null);
-		if (!result) {
-			const message = t("common.unexpectedError", "An unexpected error occurred");
-			toast.error(message);
-			return message;
-		}
-		if (!result.success) {
-			toast.error(result.error);
-			return result.error;
-		}
-		queryClient.setQueryData<BillableRateHistory>(queryKey, (previous) =>
-			previous ? { ...previous, periods: result.data.periods } : previous,
-		);
-		toast.success(
-			result.data.changed
-				? t("settings.billableTime.rates.saved", "Billable rate saved")
-				: t("settings.billableTime.rates.unchanged", "That rate already applies"),
-		);
-		if (result.data.changed) onChanged?.();
-		return null;
-	};
-
-	if (history.isError) {
-		return (
-			<p className="text-sm text-destructive" role="alert">
-				{history.error.message ||
-					t("settings.billableTime.rates.loadError", "Billable rates could not be loaded")}
-			</p>
-		);
-	}
-
 	return (
-		<RateHistoryCard
+		<RateSeries<BillableRateHistory>
 			title={title}
 			description={description}
-			currency={history.data?.currency ?? ""}
-			periods={history.data?.periods ?? []}
-			isLoading={history.isPending}
-			canEdit={history.isSuccess}
-			emptyText={emptyText}
 			bare={bare}
-			onSetRate={(input) => applyChange(setBillableRate({ target, ...input }))}
-			onEndRate={(input) => applyChange(endBillableRate({ target, ...input }))}
+			onChanged={onChanged}
+			queryKey={rateHistoryKey(target)}
+			loadHistory={() => getBillableRateHistory({ target })}
+			setRate={(input) => setBillableRate({ target, ...input })}
+			endRate={(input) => endBillableRate({ target, ...input })}
+			emptyText={emptyText}
+			messages={{
+				saved: t("settings.billableTime.rates.saved", "Billable rate saved"),
+				unchanged: t(
+					"settings.billableTime.rates.unchanged",
+					"That rate already applies",
+				),
+				loadError: t(
+					"settings.billableTime.rates.loadError",
+					"Billable rates could not be loaded",
+				),
+			}}
 		/>
 	);
 }
@@ -168,11 +130,18 @@ export function BillableRateActionPanel({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{title}</ActionPanelTitle>
-					{description && <ActionPanelDescription>{description}</ActionPanelDescription>}
+					{description && (
+						<ActionPanelDescription>{description}</ActionPanelDescription>
+					)}
 				</ActionPanelHeader>
 				<ActionPanelBody>
 					{open && target && (
-						<BillableRateSeries target={target} title={null} bare onChanged={onChanged} />
+						<BillableRateSeries
+							target={target}
+							title={null}
+							bare
+							onChanged={onChanged}
+						/>
 					)}
 				</ActionPanelBody>
 			</ActionPanelContent>
