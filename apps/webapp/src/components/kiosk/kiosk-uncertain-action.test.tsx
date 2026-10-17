@@ -41,6 +41,7 @@ const kiosk: KioskDeviceInfo = {
 };
 
 const anna = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", name: "Anna Berger" };
+const ben = { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", name: "Ben Özdemir" };
 const CHECKING = "Checking whether your action was recorded";
 const UNCERTAIN_KEY = "z8.kiosk.uncertainAction";
 
@@ -227,7 +228,7 @@ describe("kiosk uncertain action (#1363)", () => {
 		expect(fresh?.body?.operationId).not.toBe(first?.body?.operationId);
 	});
 
-	it("keeps checking while Z8 cannot answer, never returns home on its own, and resolves after reconnecting", async () => {
+	it("keeps checking while Z8 cannot answer, and resolves after reconnecting", async () => {
 		const calls = stubFetch(
 			kioskRoutes({
 				"/api/kiosk/clock": lostReply,
@@ -255,26 +256,56 @@ describe("kiosk uncertain action (#1363)", () => {
 		expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1);
 	});
 
-	it("holds the turn past the idle timeout while the action is unresolved", async () => {
+	it("holds only that employee: the kiosk returns home, keeps checking, and everyone else clocks", async () => {
 		const calls = stubFetch(
 			kioskRoutes({
-				"/api/kiosk/clock": lostReply,
+				"/api/kiosk/employees": () => Response.json({ employees: [anna, ben] }),
+				"/api/kiosk/employee-status": ({ body }) =>
+					Response.json(body?.employeeId === ben.id ? { ...clockedOut, employee: ben } : clockedOut),
+				// Anna's reply is lost; Ben's action goes through.
+				"/api/kiosk/clock": ({ body }) => {
+					if (body?.employeeId === anna.id) lostReply();
+					return Response.json({
+						...clockedOut,
+						employee: ben,
+						state: { status: "clocked_in", workPeriodId: "wp-2", since: "2026-10-10T06:40:00Z" },
+						outcome: "executed",
+						action: "clock_in",
+						at: { instant: "2026-10-10T06:40:00Z", zone: "Europe/Berlin" },
+					});
+				},
 				"/api/kiosk/clock/outcome": () => Response.json({ code: "failed" }, { status: 503 }),
 			}),
 		);
 		await clockIn();
 		await screen.findByRole("heading", { name: CHECKING });
 
+		// The kiosk returns home on its own after the idle timeout, and keeps asking.
 		for (let second = 0; second < 35; second += 5) await advance(5_000);
+		expect(await screen.findByRole("searchbox", { name: "Find your name" })).toBeTruthy();
+		const asked = urls(calls, "/api/kiosk/clock/outcome").length;
+		expect(asked).toBeGreaterThan(3);
 
-		expect(screen.getByRole("heading", { name: CHECKING })).toBeTruthy();
-		expect(screen.queryByRole("searchbox", { name: "Find your name" })).toBeNull();
+		fireEvent.click(screen.getByRole("button", { name: /Ben Özdemir/ }));
+		await screen.findByRole("heading", { name: "Ben Özdemir" });
+		await enterPin("1357");
+		fireEvent.click(await screen.findByRole("button", { name: "Clock in" }));
+		expect(await screen.findByRole("status", { name: "Done" })).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: /Done|Back|OK/ }));
+
+		// Anna, by contrast, gets no PIN pad and no second action while hers is unresolved.
+		fireEvent.click(await screen.findByRole("button", { name: /Anna Berger/ }));
+		expect(await screen.findByRole("heading", { name: CHECKING })).toBeTruthy();
 		expectNothingToRepeat();
-		expect(urls(calls, "/api/kiosk/clock/outcome").length).toBeGreaterThan(3);
-		expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1);
+		await advance(5_500);
+		expect(urls(calls, "/api/kiosk/clock/outcome").length).toBeGreaterThan(asked);
+		expect(urls(calls, "/api/kiosk/clock").map((call) => call.body?.employeeId)).toEqual([
+			anna.id,
+			ben.id,
+		]);
 	});
 
-	it("keeps the action's identity through a page reload, without the PIN, and resolves it there", async () => {
+	it("keeps the action's identity through a page reload, without the PIN, and shows its answer once when the employee comes back", async () => {
 		const calls = stubFetch(
 			kioskRoutes({
 				// The page goes away while the action is on its way.
@@ -286,27 +317,112 @@ describe("kiosk uncertain action (#1363)", () => {
 		await vi.waitFor(() => expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1));
 		const stored = window.localStorage.getItem(UNCERTAIN_KEY) ?? "";
 		// Only what names the action: never the PIN or a command that could be sent again.
-		expect(Object.keys(JSON.parse(stored)).sort()).toEqual(
-			["action", "employee", "kioskId", "operationId", "request", "submittedAt", "version"].sort(),
+		expect(Object.keys(JSON.parse(stored)[0]).sort()).toEqual(
+			["action", "employee", "kioskId", "operationId", "request", "version"].sort(),
 		);
 		expect(stored).not.toContain("2468");
 
 		cleanup();
 		render(<KioskApp />);
 
-		expect(await screen.findByRole("heading", { name: CHECKING })).toBeTruthy();
-		expectNothingToRepeat();
+		// The kiosk opens for everyone and resolves the action in the background.
+		expect(await screen.findByRole("searchbox", { name: "Find your name" })).toBeTruthy();
 		await advance(3_500);
-
-		const confirmation = await screen.findByRole("status", { name: "Done" });
-		expect(within(confirmation).getByText("Anna Berger")).toBeTruthy();
-		expect(within(confirmation).getByText(/^8:30\sAM$/)).toBeTruthy();
+		await vi.waitFor(() => expect(urls(calls, "/api/kiosk/clock/outcome")).toHaveLength(1));
 		const [sent] = urls(calls, "/api/kiosk/clock");
 		expect(urls(calls, "/api/kiosk/clock/outcome")[0]?.body?.operationId).toBe(
 			sent?.body?.operationId,
 		);
-		expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1);
+		expect(window.localStorage.getItem(UNCERTAIN_KEY)).not.toBeNull();
+
+		fireEvent.click(screen.getByRole("button", { name: /Anna Berger/ }));
+		const confirmation = await screen.findByRole("status", { name: "Done" });
+		expect(within(confirmation).getByText("Anna Berger")).toBeTruthy();
+		expect(within(confirmation).getByText(/^8:30\sAM$/)).toBeTruthy();
 		expect(window.localStorage.getItem(UNCERTAIN_KEY)).toBeNull();
+
+		// Shown once: next time Anna starts an ordinary turn.
+		await advance(10_500);
+		fireEvent.click(await screen.findByRole("button", { name: /Anna Berger/ }));
+		expect(await screen.findByRole("button", { name: "OK" })).toBeTruthy();
+		expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1);
+		expect(urls(calls, "/api/kiosk/clock/outcome")).toHaveLength(1);
+	});
+
+	it("tells an employee who comes back that their action was not recorded, and lets them choose afresh", async () => {
+		const calls = stubFetch(
+			kioskRoutes({
+				"/api/kiosk/clock": () => new Promise<Response>(() => undefined),
+				"/api/kiosk/clock/outcome": () =>
+					Response.json({ outcome: "not_recorded" } satisfies KioskClockAttemptOutcome),
+			}),
+		);
+		await clockIn();
+		await vi.waitFor(() => expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1));
+		cleanup();
+		render(<KioskApp />);
+		await screen.findByRole("searchbox", { name: "Find your name" });
+		await advance(3_500);
+		await vi.waitFor(() => expect(urls(calls, "/api/kiosk/clock/outcome")).toHaveLength(1));
+
+		fireEvent.click(screen.getByRole("button", { name: /Anna Berger/ }));
+
+		expect(
+			await screen.findByText("Your action was not recorded. Enter your PIN to choose it again."),
+		).toBeTruthy();
+		expect(window.localStorage.getItem(UNCERTAIN_KEY)).toBeNull();
+		expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1);
+	});
+
+	it("shows a recovered action's vehicle-use warning", async () => {
+		// The record the device kept before a reload: Anna's clock-in, sent without its vehicle use.
+		window.localStorage.setItem(
+			UNCERTAIN_KEY,
+			JSON.stringify([
+				{
+					version: 1,
+					kioskId: kiosk.id,
+					operationId: "33333333-3333-4333-8333-333333333333",
+					employee: anna,
+					action: "clock_in",
+					request: "clock_in",
+					vehicleUseLeftOut: true,
+				},
+			]),
+		);
+		stubFetch(
+			kioskRoutes({
+				"/api/kiosk/clock/outcome": () => Response.json(committed("2026-10-10T06:30:00Z")),
+			}),
+		);
+		render(<KioskApp />);
+		await screen.findByRole("searchbox", { name: "Find your name" });
+		await advance(3_500);
+		fireEvent.click(await screen.findByRole("button", { name: /Anna Berger/ }));
+
+		const confirmation = await screen.findByRole("status", { name: "Done" });
+		expect(within(confirmation).getByText("Vehicle use was not recorded")).toBeTruthy();
+	});
+
+	it("keeps checking after a rate-limited question, without settling anything", async () => {
+		const calls = stubFetch(
+			kioskRoutes({
+				"/api/kiosk/clock": lostReply,
+				"/api/kiosk/clock/outcome": answers(
+					() => Response.json({ code: "rate_limited", retryAfter: 30 }, { status: 429 }),
+					() => Response.json(committed("2026-10-10T06:30:00Z")),
+				),
+			}),
+		);
+		await clockIn();
+		await screen.findByRole("heading", { name: CHECKING });
+		await advance(3_500);
+
+		expect(await screen.findByText(/cannot be reached right now/)).toBeTruthy();
+		expect(screen.queryByText(/not recorded/)).toBeNull();
+		await advance(5_500);
+		expect(await screen.findByRole("status", { name: "Done" })).toBeTruthy();
+		expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1);
 	});
 
 	it("says when the action cannot be checked here and lets the employee go back", async () => {

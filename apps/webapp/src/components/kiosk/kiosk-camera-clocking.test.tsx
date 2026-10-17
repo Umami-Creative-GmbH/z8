@@ -290,7 +290,9 @@ describe("kiosk badge clocking with the kiosk camera (#1367)", () => {
 
 		decoder.frames.push("https://example.test/en/kiosk?code=ABCDE-FGHJK");
 		expect(
-			await screen.findByText("This code is not a kiosk badge. Hold up your kiosk badge."),
+			await screen.findByText(
+				"This code is not a kiosk badge. Hold up your kiosk badge, or cancel and tap your name to use your PIN.",
+			),
 		).toBeTruthy();
 		expect(camera.running()).toBe(true);
 		expect(urls(calls, "/api/kiosk/employee-status")).toEqual([]);
@@ -544,7 +546,7 @@ describe("kiosk badge clocking with the kiosk camera (#1367)", () => {
 			await screen.findByRole("heading", { name: "Checking whether your action was recorded" }),
 		).toBeTruthy();
 		const stored = window.localStorage.getItem(UNCERTAIN_KEY) ?? "";
-		expect(JSON.parse(stored)).toMatchObject({ via: "badge", employee: anna });
+		expect(JSON.parse(stored)).toEqual([expect.objectContaining({ via: "badge", employee: anna })]);
 		expect(stored).not.toContain(BADGE);
 		await advance(3_500);
 

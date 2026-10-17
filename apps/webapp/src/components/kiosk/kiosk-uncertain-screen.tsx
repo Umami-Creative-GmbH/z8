@@ -16,8 +16,10 @@ interface KioskUncertainScreenProps {
 /**
  * An online action whose reply was lost (#1363): the kiosk is checking with Z8
  * whether it was recorded. Nothing here lets the employee act again or switch
- * to another way of clocking: the turn waits for Z8's answer. Only an action Z8
- * cannot tell about (a conflict) offers a way back.
+ * to another way of clocking. The block is theirs alone (user decision
+ * 2026-10-17): Back (or the idle timeout) returns the kiosk to everyone else
+ * while it keeps checking, and the employee sees the answer when they identify
+ * again.
  */
 export function KioskUncertainScreen({
 	attempt,
@@ -55,7 +57,7 @@ export function KioskUncertainScreen({
 					<p className="text-lg text-muted-foreground">
 						{t(
 							"timeTracking.kiosk.uncertain.wait",
-							"Please wait. Do not clock again: the kiosk shows the result as soon as Z8 answers.",
+							"Do not clock again. The kiosk keeps checking and shows you the result as soon as Z8 answers, also if you come back later.",
 						)}
 					</p>
 				)}
@@ -69,22 +71,20 @@ export function KioskUncertainScreen({
 				) : null}
 			</div>
 			{conflict ? (
-				<>
-					<p
-						role="alert"
-						className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-lg text-destructive"
-					>
-						{t(
-							"timeTracking.kiosk.uncertain.conflict",
-							"This action could not be checked on this kiosk. Check your status with your manager before you clock again.",
-						)}
-					</p>
-					<Button size="lg" variant="outline" className="h-14 min-w-48 text-lg" onClick={onHome}>
-						<IconArrowLeft className="size-6" aria-hidden="true" />
-						{t("timeTracking.kiosk.uncertain.back", "Back")}
-					</Button>
-				</>
+				<p
+					role="alert"
+					className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-lg text-destructive"
+				>
+					{t(
+						"timeTracking.kiosk.uncertain.conflict",
+						"This action could not be checked on this kiosk. Check your status with your manager before you clock again.",
+					)}
+				</p>
 			) : null}
+			<Button size="lg" variant="outline" className="h-14 min-w-48 text-lg" onClick={onHome}>
+				<IconArrowLeft className="size-6" aria-hidden="true" />
+				{t("timeTracking.kiosk.uncertain.back", "Back")}
+			</Button>
 		</div>
 	);
 }

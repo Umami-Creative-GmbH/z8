@@ -280,7 +280,7 @@ An employee's personal QR credential that proves at an online kiosk which employ
 _Avoid_: QR login, access card, pairing code
 
 **Kiosk clock attempt**:
-One explicit online action at a kiosk, named by the operation identity the kiosk gave it before sending it. It ends exactly once: committed with its work, or closed as not recorded by the kiosk's outcome lookup, after which it can never commit. A lost reply leaves it unresolved until then.
+One explicit online action at a kiosk, named by the operation identity the kiosk gave it before sending it. It ends exactly once: committed with its work, or closed as not recorded by the kiosk's outcome lookup, after which it can never commit. A lost reply leaves it unresolved until then; while it is unresolved, only its employee is held (no second action), never the kiosk.
 _Avoid_: Retry, pending action
 
 **Kiosk-only employee**:

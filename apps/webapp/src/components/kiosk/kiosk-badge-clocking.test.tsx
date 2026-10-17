@@ -199,7 +199,9 @@ describe("kiosk badge clocking with an attached scanner (#1366)", () => {
 		scanKeys("4006381333931");
 
 		expect(
-			await screen.findByText("This code is not a kiosk badge. Nothing was recorded."),
+			await screen.findByText(
+				"This code is not a kiosk badge. Nothing was recorded. Scan your kiosk badge, or tap your name to use your PIN.",
+			),
 		).toBeTruthy();
 		expect(search.value).toBe("Be");
 		expect(screen.getByRole("button", { name: /Ben Özdemir/ })).toBeTruthy();
@@ -234,7 +236,9 @@ describe("kiosk badge clocking with an attached scanner (#1366)", () => {
 		scanKeys("https://example.test/en/kiosk?code=ABCDE-FGHJK");
 
 		expect(
-			await screen.findByText("This code is not a kiosk badge. Nothing was recorded."),
+			await screen.findByText(
+				"This code is not a kiosk badge. Nothing was recorded. Scan your kiosk badge, or tap your name to use your PIN.",
+			),
 		).toBeTruthy();
 		expect(urls(calls, "/api/kiosk/employee-status")).toEqual([]);
 		expect(`${window.location.pathname}${window.location.search}`).toBe("/en/kiosk");
@@ -285,6 +289,7 @@ describe("kiosk badge clocking with an attached scanner (#1366)", () => {
 		fireEvent.keyDown(window, { key: "2" });
 		await advance(200);
 		fireEvent.keyDown(window, { key: "4" });
+		await advance(200);
 
 		scanKeys(BADGE);
 		await advance(500);
@@ -302,6 +307,80 @@ describe("kiosk badge clocking with an attached scanner (#1366)", () => {
 		expect(urls(calls, "/api/kiosk/employee-status").map((call) => call.body)).toEqual([
 			{ employeeId: anna.id, pin: "2468" },
 		]);
+	});
+
+	it("keeps any scanned code out of the PIN pad: a product barcode and its Enter enter and submit nothing", async () => {
+		const calls = stubFetch(kioskRoutes());
+		await openHome();
+		fireEvent.click(screen.getByRole("button", { name: /Anna Berger/ }));
+		await screen.findByText("Enter your kiosk PIN");
+
+		scanKeys("4006381333931");
+		await advance(500);
+
+		expect(screen.getByRole("status", { name: "0 digits entered" })).toBeTruthy();
+		expect(urls(calls, "/api/kiosk/employee-status")).toEqual([]);
+
+		// The pad is untouched: the person's own PIN is all it holds.
+		for (const key of ["2", "4", "6", "8"]) {
+			fireEvent.keyDown(window, { key });
+			await advance(200);
+		}
+		fireEvent.keyDown(window, { key: "Enter" });
+		await screen.findByRole("button", { name: "Clock in" });
+		expect(urls(calls, "/api/kiosk/employee-status").map((call) => call.body)).toEqual([
+			{ employeeId: anna.id, pin: "2468" },
+		]);
+	});
+
+	it("keeps any scanned code from pressing a focused action button", async () => {
+		const calls = stubFetch(kioskRoutes());
+		await openHome();
+		scanKeys(BADGE);
+		await screen.findByRole("heading", { name: "Anna Berger" });
+		await advance(500);
+
+		const action = screen.getByRole("button", { name: "Clock in" });
+		const reached: string[] = [];
+		action.addEventListener("keydown", (event) => {
+			// Shift, which the scanner presses for capitals, types nothing.
+			if (event.key !== "Shift") reached.push(event.key);
+		});
+		action.focus();
+		scanKeys("4006381333931");
+		scanKeys("https://example.test/a b", "Tab");
+		await advance(500);
+
+		expect(screen.getByRole("heading", { name: "Anna Berger" })).toBeTruthy();
+		expect(urls(calls, "/api/kiosk/clock")).toEqual([]);
+		// Not one key of either scan, Enter and Tab included, reached the button.
+		expect(reached).toEqual([]);
+		expect(document.activeElement).toBe(action);
+	});
+
+	it("keeps a scan on the home screen from the focused control: the language stays as it is", async () => {
+		const calls = stubFetch(kioskRoutes());
+		await openHome();
+		const language = screen.getByRole("combobox", { name: "Select language" });
+		const reached: string[] = [];
+		language.addEventListener("keydown", (event) => {
+			// Shift, which the scanner presses for capitals, types nothing.
+			if (event.key !== "Shift") reached.push(event.key);
+		});
+		language.focus();
+
+		scanKeys("DE-4006381333931");
+		await advance(500);
+
+		expect(
+			await screen.findByText(
+				"This code is not a kiosk badge. Nothing was recorded. Scan your kiosk badge, or tap your name to use your PIN.",
+			),
+		).toBeTruthy();
+		expect(navigation.replace).not.toHaveBeenCalled();
+		// No typeahead: the scan's keys never reached the language switch.
+		expect(reached).toEqual([]);
+		expect(urls(calls, "/api/kiosk/employee-status")).toEqual([]);
 	});
 
 	it("says a refused badge names nobody and lets the next scan try again", async () => {
@@ -414,7 +493,7 @@ describe("kiosk badge clocking with an attached scanner (#1366)", () => {
 
 			expect(await screen.findByRole("heading", { name: CHECKING })).toBeTruthy();
 			const stored = window.localStorage.getItem(UNCERTAIN_KEY) ?? "";
-			expect(JSON.parse(stored)).toMatchObject({ via: "badge", employee: anna });
+			expect(JSON.parse(stored)).toEqual([expect.objectContaining({ via: "badge", employee: anna })]);
 			expect(stored).not.toContain(BADGE);
 			for (const name of ["Clock in", "OK", "1"]) {
 				expect(screen.queryByRole("button", { name })).toBeNull();
@@ -435,10 +514,12 @@ describe("kiosk badge clocking with an attached scanner (#1366)", () => {
 			expect(urls(calls, "/api/kiosk/employee-status")).toHaveLength(1);
 		});
 
-		it("sends the employee back to scan again once Z8 confirms nothing was recorded, also after a reload", async () => {
+		it("sends the employee back to scan again once Z8 confirms nothing was recorded", async () => {
 			const calls = stubFetch(
 				kioskRoutes({
-					"/api/kiosk/clock": () => new Promise<Response>(() => undefined),
+					"/api/kiosk/clock": () => {
+						throw new TypeError("Failed to fetch");
+					},
 					"/api/kiosk/clock/outcome": () =>
 						Response.json({ outcome: "not_recorded" } satisfies KioskClockAttemptOutcome),
 				}),
@@ -446,11 +527,6 @@ describe("kiosk badge clocking with an attached scanner (#1366)", () => {
 			await openHome();
 			scanKeys(BADGE);
 			fireEvent.click(await screen.findByRole("button", { name: "Clock in" }));
-			await vi.waitFor(() => expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1));
-
-			// The page goes away while the action is on its way, and comes back.
-			cleanup();
-			render(<KioskApp />);
 			expect(await screen.findByRole("heading", { name: CHECKING })).toBeTruthy();
 			await advance(3_500);
 
@@ -466,6 +542,65 @@ describe("kiosk badge clocking with an attached scanner (#1366)", () => {
 			expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1);
 			expect(urls(calls, "/api/kiosk/employee-status")).toHaveLength(1);
 			expect(window.localStorage.getItem(UNCERTAIN_KEY)).toBeNull();
+		});
+
+		it("after a reload, tells the employee who scans again that the action was not recorded, and lets them choose afresh", async () => {
+			const calls = stubFetch(
+				kioskRoutes({
+					"/api/kiosk/clock": () => new Promise<Response>(() => undefined),
+					"/api/kiosk/clock/outcome": () =>
+						Response.json({ outcome: "not_recorded" } satisfies KioskClockAttemptOutcome),
+				}),
+			);
+			await openHome();
+			scanKeys(BADGE);
+			fireEvent.click(await screen.findByRole("button", { name: "Clock in" }));
+			await vi.waitFor(() => expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1));
+
+			// The page goes away while the action is on its way, and comes back for everyone.
+			cleanup();
+			render(<KioskApp />);
+			await screen.findByRole("button", { name: /Anna Berger/ });
+			await advance(3_500);
+			await vi.waitFor(() => expect(urls(calls, "/api/kiosk/clock/outcome")).toHaveLength(1));
+			expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1);
+
+			scanKeys(BADGE);
+
+			expect(
+				await screen.findByText("This action was not recorded. Choose it again if you still want it."),
+			).toBeTruthy();
+			expect(screen.getByRole("button", { name: "Clock in" })).toBeTruthy();
+			expect(window.localStorage.getItem(UNCERTAIN_KEY)).toBeNull();
+			expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1);
+		});
+
+		it("holds only the badge's employee while their action is unresolved", async () => {
+			const calls = stubFetch(
+				kioskRoutes({
+					"/api/kiosk/clock": () => {
+						throw new TypeError("Failed to fetch");
+					},
+					"/api/kiosk/clock/outcome": () => Response.json({ code: "failed" }, { status: 503 }),
+				}),
+			);
+			await openHome();
+			scanKeys(BADGE);
+			fireEvent.click(await screen.findByRole("button", { name: "Clock in" }));
+			await screen.findByRole("heading", { name: CHECKING });
+			fireEvent.click(screen.getByRole("button", { name: "Back" }));
+			await screen.findByRole("searchbox", { name: "Find your name" });
+			await advance(500);
+
+			// Anna scans again: still checking, no actions; by name, no PIN pad either.
+			scanKeys(BADGE);
+			expect(await screen.findByRole("heading", { name: CHECKING })).toBeTruthy();
+			expect(screen.queryByRole("button", { name: "Clock in" })).toBeNull();
+			fireEvent.click(screen.getByRole("button", { name: "Back" }));
+			fireEvent.click(await screen.findByRole("button", { name: /Anna Berger/ }));
+			expect(await screen.findByRole("heading", { name: CHECKING })).toBeTruthy();
+			expect(screen.queryByRole("button", { name: "OK" })).toBeNull();
+			expect(urls(calls, "/api/kiosk/clock")).toHaveLength(1);
 		});
 	});
 });
