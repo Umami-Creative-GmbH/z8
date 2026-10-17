@@ -288,11 +288,11 @@ describe("merged organization settings", () => {
 	});
 	it("puts guided identity setup, SSO and social login together using the organization callback origin", async () => {
 		const page = await content(IdentityPage);
-		expect(tabs(page)).toEqual(["setup", "sso", "social-oauth"]);
-		expect(page.props.tabs[1].panel.props.callbackBaseUrl).toBe(
+		expect(tabs(page)).toEqual(["local-mfa", "setup", "sso", "social-oauth"]);
+		expect(page.props.tabs[2].panel.props.callbackBaseUrl).toBe(
 			"https://org-1.example.com",
 		);
-		expect(page.props.tabs[2].panel.props.callbackBaseUrl).toBe(
+		expect(page.props.tabs[3].panel.props.callbackBaseUrl).toBe(
 			"https://org-1.example.com",
 		);
 	});

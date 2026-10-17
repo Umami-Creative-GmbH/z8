@@ -14,14 +14,19 @@ import { integrationAdminPool } from "@/test/integration-database";
 const { sessions } = await vi.hoisted(async () => {
 	const { AsyncLocalStorage } = await import("node:async_hooks");
 	return {
-		sessions: new AsyncLocalStorage<{ userId: string; organizationId: string }>(),
+		sessions: new AsyncLocalStorage<{
+			userId: string;
+			organizationId: string;
+		}>(),
 	};
 });
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
@@ -46,22 +51,30 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+	),
 );
 
 vi.mock("@/tolgee/server", async () => ({
 	getTranslate: async () =>
-		(await import("@/lib/organization/custom-fields/refusal-messages")).englishDefaults,
+		(await import("@/lib/organization/custom-fields/refusal-messages"))
+			.englishDefaults,
 }));
 
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
@@ -71,7 +84,12 @@ vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 
 vi.mock("@/lib/logger", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/logger")>();
-	const quiet = { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} };
+	const quiet = {
+		error: () => {},
+		warn: () => {},
+		info: () => {},
+		debug: () => {},
+	};
 	return {
 		...original,
 		logger: { ...original.logger, ...quiet },
@@ -79,15 +97,22 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 	};
 });
 
-const { getCustomFieldSection, getOwnCustomFieldValues } = await import("./value-actions");
-const { updateEmployee, listEmployees } = await import("../employees/actions");
-const { archiveProject, createProject, updateProject, getProjects } = await import(
-	"../projects/actions"
+const { getCustomFieldSection, getOwnCustomFieldValues } = await import(
+	"./value-actions"
 );
-const { createProjectFromTemplate } = await import("../projects/from-template-actions");
-const { createCustomer, updateCustomer, getCustomers } = await import("../customers/actions");
+const { updateEmployee, listEmployees } = await import("../employees/actions");
+const { archiveProject, createProject, updateProject, getProjects } =
+	await import("../projects/actions");
+const { createProjectFromTemplate } = await import(
+	"../projects/from-template-actions"
+);
+const { createCustomer, updateCustomer, getCustomers } = await import(
+	"../customers/actions"
+);
 const { db } = await import("@/db");
-const { changeCustomFields } = await import("@/lib/organization/custom-fields/definitions");
+const { changeCustomFields } = await import(
+	"@/lib/organization/custom-fields/definitions"
+);
 
 const ids = {
 	organization: "t818-org",
@@ -119,7 +144,10 @@ const users = [
 	ids.otherUser,
 ];
 
-type Fields = Record<string, { id: string; options: { id: string; label: string }[] }>;
+type Fields = Record<
+	string,
+	{ id: string; options: { id: string; label: string }[] }
+>;
 
 describe("custom field values in the settings actions on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -131,16 +159,22 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 	}
 
 	async function ok<T>(
-		result: Promise<{ success: true; data: T } | { success: false; error: string }>,
+		result: Promise<
+			{ success: true; data: T } | { success: false; error: string }
+		>,
 	) {
 		const settled = await result;
 		if (!settled.success) throw new Error(`action failed: ${settled.error}`);
 		return settled.data;
 	}
 
-	async function failure(result: Promise<{ success: boolean; error?: string; code?: string }>) {
+	async function failure(
+		result: Promise<{ success: boolean; error?: string; code?: string }>,
+	) {
 		const settled = await result;
-		return settled.success ? "accepted" : { error: settled.error, code: settled.code };
+		return settled.success
+			? "accepted"
+			: { error: settled.error, code: settled.code };
 	}
 
 	async function define(change: Record<string, unknown>) {
@@ -156,7 +190,9 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			},
 		});
 		if (!outcome.ok) throw new Error(`define refused: ${outcome.reason}`);
-		const field = outcome.fields.find((f) => f.name === change.name && !f.archived);
+		const field = outcome.fields.find(
+			(f) => f.name === change.name && !f.archived,
+		);
 		if (!field) throw new Error("field missing");
 		return field;
 	}
@@ -311,8 +347,10 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 
 	afterAll(cleanup);
 
-	const section = (entity: "employee" | "project" | "customer", recordId: string | null) =>
-		getCustomFieldSection({ entity, recordId });
+	const section = (
+		entity: "employee" | "project" | "customer",
+		recordId: string | null,
+	) => getCustomFieldSection({ entity, recordId });
 
 	describe("org admins", () => {
 		it("set, change and clear values on an employee through the detail save", async () => {
@@ -331,7 +369,9 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 					),
 				),
 			);
-			let read = await actAs(ids.ownerUser, () => ok(section("employee", ids.employee)));
+			let read = await actAs(ids.ownerUser, () =>
+				ok(section("employee", ids.employee)),
+			);
 			expect(read.fields.map((f) => [f.name, f.editable])).toEqual([
 				["Payroll id", true],
 				["Desk", true],
@@ -359,7 +399,9 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 					),
 				),
 			);
-			read = await actAs(ids.ownerUser, () => ok(section("employee", ids.employee)));
+			read = await actAs(ids.ownerUser, () =>
+				ok(section("employee", ids.employee)),
+			);
 			expect(read.values).toEqual({
 				[fields.payrollId.id]: { type: "text", value: "P-100" },
 				[fields.shirt.id]: { type: "select", value: medium.id },
@@ -380,12 +422,20 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				"custom_field_value.set",
 				"custom_field_value.set",
 			]);
-			expect(new Set(rows.map((row) => row.entity_id))).toEqual(new Set([ids.employee]));
+			expect(new Set(rows.map((row) => row.entity_id))).toEqual(
+				new Set([ids.employee]),
+			);
 		});
 
 		it("refuse an employee save with a missing required value and roll the save back", async () => {
 			const result = await actAs(ids.ownerUser, () =>
-				failure(updateEmployee(ids.employee, { position: "Lead" }, { [fields.desk.id]: "1" })),
+				failure(
+					updateEmployee(
+						ids.employee,
+						{ position: "Lead" },
+						{ [fields.desk.id]: "1" },
+					),
+				),
 			);
 			expect(result).toEqual({
 				error: 'Custom field "Payroll id": This field is required.',
@@ -396,7 +446,9 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				[ids.employee],
 			);
 			expect(rows[0].position).toBeNull();
-			const read = await actAs(ids.ownerUser, () => ok(section("employee", ids.employee)));
+			const read = await actAs(ids.ownerUser, () =>
+				ok(section("employee", ids.employee)),
+			);
 			expect(read.values).toEqual({});
 		});
 
@@ -406,22 +458,31 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 					createProject({
 						organizationId: ids.organization,
 						name: "Harbour",
-						customFieldValues: { [fields.po.id]: "PO-7", [fields.budgetCode.id]: "42" },
+						customFieldValues: {
+							[fields.po.id]: "PO-7",
+							[fields.budgetCode.id]: "42",
+						},
 					}),
 				),
 			);
-			expect((await actAs(ids.ownerUser, () => ok(section("project", created.id)))).values).toEqual(
-				{
-					[fields.po.id]: { type: "text", value: "PO-7" },
-					[fields.budgetCode.id]: { type: "number", value: "42" },
-				},
-			);
+			expect(
+				(await actAs(ids.ownerUser, () => ok(section("project", created.id))))
+					.values,
+			).toEqual({
+				[fields.po.id]: { type: "text", value: "PO-7" },
+				[fields.budgetCode.id]: { type: "number", value: "42" },
+			});
 			await actAs(ids.ownerUser, () =>
-				ok(updateProject(created.id, { customFieldValues: { [fields.budgetCode.id]: "" } })),
+				ok(
+					updateProject(created.id, {
+						customFieldValues: { [fields.budgetCode.id]: "" },
+					}),
+				),
 			);
-			expect((await actAs(ids.ownerUser, () => ok(section("project", created.id)))).values).toEqual(
-				{ [fields.po.id]: { type: "text", value: "PO-7" } },
-			);
+			expect(
+				(await actAs(ids.ownerUser, () => ok(section("project", created.id))))
+					.values,
+			).toEqual({ [fields.po.id]: { type: "text", value: "PO-7" } });
 
 			const customer = await actAs(ids.ownerUser, () =>
 				ok(
@@ -436,10 +497,15 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				),
 			);
 			await actAs(ids.ownerUser, () =>
-				ok(updateCustomer(customer.id, { customFieldValues: { [fields.customerNo.id]: "C-2" } })),
+				ok(
+					updateCustomer(customer.id, {
+						customFieldValues: { [fields.customerNo.id]: "C-2" },
+					}),
+				),
 			);
 			expect(
-				(await actAs(ids.ownerUser, () => ok(section("customer", customer.id)))).values,
+				(await actAs(ids.ownerUser, () => ok(section("customer", customer.id))))
+					.values,
 			).toEqual({
 				[fields.customerNo.id]: { type: "text", value: "C-2" },
 				[fields.startedOn.id]: { type: "date", value: "2024-02-29" },
@@ -455,7 +521,11 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				visibility: "manager",
 				editLevel: "manager",
 			});
-			const add = (validFrom: string, value: string) => ({ op: "add", validFrom, value });
+			const add = (validFrom: string, value: string) => ({
+				op: "add",
+				validFrom,
+				value,
+			});
 
 			// A required tracked field whose only value starts in the future is missing today.
 			expect(
@@ -488,7 +558,9 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 					}),
 				),
 			);
-			let read = await actAs(ids.ownerUser, () => ok(section("customer", customer.id)));
+			let read = await actAs(ids.ownerUser, () =>
+				ok(section("customer", customer.id)),
+			);
 			expect(read.values[rateClass.id]).toEqual({ type: "text", value: "R1" });
 			const [first] = read.history[rateClass.id];
 
@@ -498,7 +570,12 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 						customFieldValues: {
 							[rateClass.id]: {
 								history: [
-									{ op: "correct", entryId: first.id, validFrom: "2020-01-01", value: "R0" },
+									{
+										op: "correct",
+										entryId: first.id,
+										validFrom: "2020-01-01",
+										value: "R0",
+									},
 									add("2999-01-01", "R2"),
 								],
 							},
@@ -506,9 +583,16 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 					}),
 				),
 			);
-			read = await actAs(ids.ownerUser, () => ok(section("customer", customer.id)));
+			read = await actAs(ids.ownerUser, () =>
+				ok(section("customer", customer.id)),
+			);
 			expect(read.values[rateClass.id]).toEqual({ type: "text", value: "R0" });
-			expect(read.history[rateClass.id].map((entry) => [entry.validFrom, entry.value])).toEqual([
+			expect(
+				read.history[rateClass.id].map((entry) => [
+					entry.validFrom,
+					entry.value,
+				]),
+			).toEqual([
 				["2999-01-01", { type: "text", value: "R2" }],
 				["2020-01-01", { type: "text", value: "R0" }],
 			]);
@@ -519,7 +603,9 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 					failure(
 						updateCustomer(customer.id, {
 							customFieldValues: {
-								[rateClass.id]: { history: [{ op: "delete", entryId: first.id }] },
+								[rateClass.id]: {
+									history: [{ op: "delete", entryId: first.id }],
+								},
 							},
 						}),
 					),
@@ -531,10 +617,15 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			// A plain value for a tracked field is refused.
 			expect(
 				await actAs(ids.ownerUser, () =>
-					failure(updateCustomer(customer.id, { customFieldValues: { [rateClass.id]: "R9" } })),
+					failure(
+						updateCustomer(customer.id, {
+							customFieldValues: { [rateClass.id]: "R9" },
+						}),
+					),
 				),
 			).toEqual({
-				error: 'Custom field "Rate class": This field keeps a history. Add a dated change instead.',
+				error:
+					'Custom field "Rate class": This field keeps a history. Add a dated change instead.',
 				code: "ValidationError",
 			});
 		});
@@ -574,7 +665,10 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 						createProject({
 							organizationId: ids.organization,
 							name: "Bad code",
-							customFieldValues: { [fields.po.id]: "PO-1", [fields.budgetCode.id]: "1.5" },
+							customFieldValues: {
+								[fields.po.id]: "PO-1",
+								[fields.budgetCode.id]: "1.5",
+							},
 						}),
 					),
 				),
@@ -603,9 +697,11 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			expect(rows).toEqual([]);
 
 			// Paths other than the forms (archiving a project) are not held to required fields.
-			expect(await actAs(ids.ownerUser, () => failure(archiveProject(ids.unmanagedProject)))).toBe(
-				"accepted",
-			);
+			expect(
+				await actAs(ids.ownerUser, () =>
+					failure(archiveProject(ids.unmanagedProject)),
+				),
+			).toBe("accepted");
 			// A template creation with the required value goes through.
 			const fromTemplate = await actAs(ids.ownerUser, () =>
 				ok(
@@ -617,7 +713,11 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				),
 			);
 			expect(
-				(await actAs(ids.ownerUser, () => ok(section("project", fromTemplate.id)))).values,
+				(
+					await actAs(ids.ownerUser, () =>
+						ok(section("project", fromTemplate.id)),
+					)
+				).values,
 			).toEqual({ [fields.po.id]: { type: "text", value: "PO-T" } });
 		});
 
@@ -634,20 +734,37 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			).toEqual(required("Payroll id"));
 			expect(
 				await actAs(ids.ownerUser, () =>
-					failure(createProject({ organizationId: ids.organization, name: "No section" })),
+					failure(
+						createProject({
+							organizationId: ids.organization,
+							name: "No section",
+						}),
+					),
 				),
 			).toEqual(required("PO number"));
 			expect(
 				await actAs(ids.ownerUser, () =>
-					failure(createProjectFromTemplate({ templateId: ids.template, name: "No section" })),
+					failure(
+						createProjectFromTemplate({
+							templateId: ids.template,
+							name: "No section",
+						}),
+					),
 				),
 			).toEqual(required("PO number"));
 			expect(
-				await actAs(ids.ownerUser, () => failure(updateProject(ids.project, { name: "Renamed" }))),
+				await actAs(ids.ownerUser, () =>
+					failure(updateProject(ids.project, { name: "Renamed" })),
+				),
 			).toEqual(required("PO number"));
 			expect(
 				await actAs(ids.ownerUser, () =>
-					failure(createCustomer({ organizationId: ids.organization, name: "No section" })),
+					failure(
+						createCustomer({
+							organizationId: ids.organization,
+							name: "No section",
+						}),
+					),
 				),
 			).toEqual(required("Customer number"));
 			expect(
@@ -668,19 +785,35 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				ok(updateEmployee(ids.employee, {}, { [fields.payrollId.id]: "P-1" })),
 			);
 			await actAs(ids.ownerUser, () =>
-				ok(updateProject(ids.project, { customFieldValues: { [fields.po.id]: "PO-1" } })),
+				ok(
+					updateProject(ids.project, {
+						customFieldValues: { [fields.po.id]: "PO-1" },
+					}),
+				),
 			);
 			await actAs(ids.ownerUser, () =>
-				ok(updateCustomer(ids.customer, { customFieldValues: { [fields.customerNo.id]: "C-1" } })),
+				ok(
+					updateCustomer(ids.customer, {
+						customFieldValues: { [fields.customerNo.id]: "C-1" },
+					}),
+				),
 			);
-			await actAs(ids.ownerUser, () => ok(updateEmployee(ids.employee, { position: "Lead" })));
-			await actAs(ids.ownerUser, () => ok(updateProject(ids.project, { name: "Renamed" })));
-			await actAs(ids.ownerUser, () => ok(updateCustomer(ids.customer, { name: "Renamed" })));
+			await actAs(ids.ownerUser, () =>
+				ok(updateEmployee(ids.employee, { position: "Lead" })),
+			);
+			await actAs(ids.ownerUser, () =>
+				ok(updateProject(ids.project, { name: "Renamed" })),
+			);
+			await actAs(ids.ownerUser, () =>
+				ok(updateCustomer(ids.customer, { name: "Renamed" })),
+			);
 		});
 
 		it("mark employees, projects and customers with missing required values in the lists", async () => {
 			// An employee created by SCIM has no values and is saved anyway; it shows up as missing.
-			const employees = await actAs(ids.ownerUser, () => ok(listEmployees({ status: "active" })));
+			const employees = await actAs(ids.ownerUser, () =>
+				ok(listEmployees({ status: "active" })),
+			);
 			const flagged = Object.fromEntries(
 				employees.employees.map((row) => [
 					row.id,
@@ -696,14 +829,27 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			await actAs(ids.ownerUser, () =>
 				ok(updateEmployee(ids.scim, {}, { [fields.payrollId.id]: "P-9" })),
 			);
-			const after = await actAs(ids.ownerUser, () => ok(listEmployees({ status: "active" })));
+			const after = await actAs(ids.ownerUser, () =>
+				ok(listEmployees({ status: "active" })),
+			);
 			const scimRow = after.employees.find((row) => row.id === ids.scim);
-			expect(scimRow?.kind === "employee" && scimRow.missingRequiredCustomFields).toBe(false);
+			expect(
+				scimRow?.kind === "employee" && scimRow.missingRequiredCustomFields,
+			).toBe(false);
 
-			const projects = await actAs(ids.ownerUser, () => ok(getProjects(ids.organization)));
-			expect(projects.find((p) => p.id === ids.project)?.missingRequiredCustomFields).toBe(true);
-			const customers = await actAs(ids.ownerUser, () => ok(getCustomers(ids.organization)));
-			expect(customers.find((c) => c.id === ids.customer)?.missingRequiredCustomFields).toBe(true);
+			const projects = await actAs(ids.ownerUser, () =>
+				ok(getProjects(ids.organization)),
+			);
+			expect(
+				projects.find((p) => p.id === ids.project)?.missingRequiredCustomFields,
+			).toBe(true);
+			const customers = await actAs(ids.ownerUser, () =>
+				ok(getCustomers(ids.organization)),
+			);
+			expect(
+				customers.find((c) => c.id === ids.customer)
+					?.missingRequiredCustomFields,
+			).toBe(true);
 		});
 	});
 
@@ -721,18 +867,24 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 					),
 				),
 			);
-			const read = await actAs(ids.managerUser, () => ok(section("employee", ids.employee)));
+			const read = await actAs(ids.managerUser, () =>
+				ok(section("employee", ids.employee)),
+			);
 			expect(read.fields.map((f) => [f.name, f.editable])).toEqual([
 				["Desk", true],
 				["Shirt size", true],
 				["Badge", false],
 			]);
-			expect(read.values).toEqual({ [fields.badge.id]: { type: "boolean", value: true } });
+			expect(read.values).toEqual({
+				[fields.badge.id]: { type: "boolean", value: true },
+			});
 			expect(JSON.stringify(read)).not.toContain("P-SECRET");
 			expect(read.missingRequiredFieldIds).toEqual([]);
 
 			expect(
-				await actAs(ids.managerUser, () => failure(section("employee", ids.unmanaged))),
+				await actAs(ids.managerUser, () =>
+					failure(section("employee", ids.unmanaged)),
+				),
 			).toMatchObject({ code: "AuthorizationError" });
 
 			// The admin-only required field doesn't block a manager's save.
@@ -741,7 +893,9 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			);
 			expect(
 				await actAs(ids.managerUser, () =>
-					failure(updateEmployee(ids.employee, {}, { [fields.payrollId.id]: "P-1" })),
+					failure(
+						updateEmployee(ids.employee, {}, { [fields.payrollId.id]: "P-1" }),
+					),
 				),
 			).toEqual({
 				error: 'Custom field "Payroll id": You can\'t change this field.',
@@ -749,7 +903,9 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			});
 			expect(
 				await actAs(ids.managerUser, () =>
-					failure(updateEmployee(ids.employee, {}, { [fields.badge.id]: false })),
+					failure(
+						updateEmployee(ids.employee, {}, { [fields.badge.id]: false }),
+					),
 				),
 			).toMatchObject({ code: "ValidationError" });
 			expect(
@@ -765,34 +921,54 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 		});
 
 		it("see and edit manager fields on projects and customers they can see only", async () => {
-			const read = await actAs(ids.managerUser, () => ok(section("project", ids.project)));
-			expect(read.fields.map((f) => [f.name, f.editable])).toEqual([["PO number", true]]);
+			const read = await actAs(ids.managerUser, () =>
+				ok(section("project", ids.project)),
+			);
+			expect(read.fields.map((f) => [f.name, f.editable])).toEqual([
+				["PO number", true],
+			]);
 			expect(read.missingRequiredFieldIds).toEqual([fields.po.id]);
 
 			await actAs(ids.managerUser, () =>
-				ok(updateProject(ids.project, { customFieldValues: { [fields.po.id]: "PO-M" } })),
+				ok(
+					updateProject(ids.project, {
+						customFieldValues: { [fields.po.id]: "PO-M" },
+					}),
+				),
 			);
 			expect(
 				await actAs(ids.managerUser, () =>
 					failure(
-						updateProject(ids.project, { customFieldValues: { [fields.budgetCode.id]: "5" } }),
+						updateProject(ids.project, {
+							customFieldValues: { [fields.budgetCode.id]: "5" },
+						}),
 					),
 				),
 			).toMatchObject({ code: "ValidationError" });
 			expect(
-				await actAs(ids.managerUser, () => failure(section("project", ids.unmanagedProject))),
+				await actAs(ids.managerUser, () =>
+					failure(section("project", ids.unmanagedProject)),
+				),
 			).toMatchObject({ code: "AuthorizationError" });
 			expect(
-				await actAs(ids.managerUser, () => failure(section("project", ids.otherProject))),
+				await actAs(ids.managerUser, () =>
+					failure(section("project", ids.otherProject)),
+				),
 			).toMatchObject({ code: "AuthorizationError" });
 
-			const customer = await actAs(ids.managerUser, () => ok(section("customer", ids.customer)));
+			const customer = await actAs(ids.managerUser, () =>
+				ok(section("customer", ids.customer)),
+			);
 			expect(customer.fields.map((f) => [f.name, f.editable])).toEqual([
 				["Customer number", true],
 				["Customer since", false],
 			]);
 			await actAs(ids.managerUser, () =>
-				ok(updateCustomer(ids.customer, { customFieldValues: { [fields.customerNo.id]: "C-M" } })),
+				ok(
+					updateCustomer(ids.customer, {
+						customFieldValues: { [fields.customerNo.id]: "C-M" },
+					}),
+				),
 			);
 			expect(
 				await actAs(ids.managerUser, () =>
@@ -804,10 +980,12 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				),
 			).toMatchObject({ code: "ValidationError" });
 
-			const projects = await actAs(ids.managerUser, () => ok(getProjects(ids.organization)));
-			expect(projects.map((p) => [p.id, p.missingRequiredCustomFields])).toEqual([
-				[ids.project, false],
-			]);
+			const projects = await actAs(ids.managerUser, () =>
+				ok(getProjects(ids.organization)),
+			);
+			expect(
+				projects.map((p) => [p.id, p.missingRequiredCustomFields]),
+			).toEqual([[ids.project, false]]);
 		});
 	});
 
@@ -827,24 +1005,34 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 					),
 				),
 			);
-			const own = await actAs(ids.employeeUser, () => ok(getOwnCustomFieldValues()));
+			const own = await actAs(ids.employeeUser, () =>
+				ok(getOwnCustomFieldValues()),
+			);
 			expect(own.fields.map((f) => [f.name, f.editable])).toEqual([
 				["Shirt size", false],
 				["Badge", false],
 			]);
-			expect(own.values).toEqual({ [fields.shirt.id]: { type: "select", value: small.id } });
+			expect(own.values).toEqual({
+				[fields.shirt.id]: { type: "select", value: small.id },
+			});
 			expect(JSON.stringify(own)).not.toContain("P-SECRET");
 			expect(JSON.stringify(own)).not.toContain("4.12");
 
 			expect(
-				await actAs(ids.employeeUser, () => failure(section("employee", ids.employee))),
-			).toMatchObject({ code: "AuthorizationError" });
-			expect(
-				await actAs(ids.employeeUser, () => failure(section("employee", ids.unmanaged))),
+				await actAs(ids.employeeUser, () =>
+					failure(section("employee", ids.employee)),
+				),
 			).toMatchObject({ code: "AuthorizationError" });
 			expect(
 				await actAs(ids.employeeUser, () =>
-					failure(updateEmployee(ids.employee, {}, { [fields.shirt.id]: small.id })),
+					failure(section("employee", ids.unmanaged)),
+				),
+			).toMatchObject({ code: "AuthorizationError" });
+			expect(
+				await actAs(ids.employeeUser, () =>
+					failure(
+						updateEmployee(ids.employee, {}, { [fields.shirt.id]: small.id }),
+					),
 				),
 			).toMatchObject({ code: "AuthorizationError" });
 		});

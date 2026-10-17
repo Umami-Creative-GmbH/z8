@@ -71,7 +71,7 @@ export function OrganizationSwitcher({
 
 		if (!response.ok) {
 			const error = await response.json().catch(() => null);
-			if (error?.code === "SSO_REQUIRED") {
+			if (error?.code === "SSO_REQUIRED" || error?.code === "MFA_REQUIRED") {
 				window.location.assign(
 					`/init?organizationId=${encodeURIComponent(organizationId)}`,
 				);

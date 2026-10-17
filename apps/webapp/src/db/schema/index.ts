@@ -162,3 +162,4 @@ export * from "./wellness";
 export * from "./work-category";
 export * from "./work-policy";
 export * from "./works-council";
+export * from "./organization-mfa";

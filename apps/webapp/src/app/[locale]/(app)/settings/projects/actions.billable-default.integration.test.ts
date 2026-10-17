@@ -15,7 +15,10 @@ import { integrationAdminPool } from "@/test/integration-database";
 const { sessions } = await vi.hoisted(async () => {
 	const { AsyncLocalStorage } = await import("node:async_hooks");
 	return {
-		sessions: new AsyncLocalStorage<{ userId: string; organizationId: string }>(),
+		sessions: new AsyncLocalStorage<{
+			userId: string;
+			organizationId: string;
+		}>(),
 	};
 });
 
@@ -23,7 +26,9 @@ const { sessions } = await vi.hoisted(async () => {
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
@@ -48,15 +53,22 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/auth-helpers")>();
 	const { db } = await import("@/db");
-	const { loadOrganizationPrincipalContext } = await import("@/lib/authorization/principal-loader");
+	const { loadOrganizationPrincipalContext } = await import(
+		"@/lib/authorization/principal-loader"
+	);
 	return {
 		...original,
 		getPrincipalContext: async () => {
@@ -71,7 +83,9 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+	),
 );
 
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
@@ -81,7 +95,12 @@ vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 
 vi.mock("@/lib/logger", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/logger")>();
-	const quiet = { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} };
+	const quiet = {
+		error: () => {},
+		warn: () => {},
+		info: () => {},
+		debug: () => {},
+	};
 	return {
 		...original,
 		logger: { ...original.logger, ...quiet },
@@ -91,7 +110,9 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 
 const projects = await import("./actions");
 const customers = await import("../customers/actions");
-const { getProjectTotalHours } = await import("@/lib/notifications/project-notification-triggers");
+const { getProjectTotalHours } = await import(
+	"@/lib/notifications/project-notification-triggers"
+);
 
 const ids = {
 	organization: "t900-default-org",
@@ -137,7 +158,9 @@ describe("project billable default on PostgreSQL", () => {
 	}
 
 	async function cleanup() {
-		await admin.query("delete from organization where id = $1", [ids.organization]);
+		await admin.query("delete from organization where id = $1", [
+			ids.organization,
+		]);
 		await admin.query('delete from "user" where id = any($1::text[])', [users]);
 	}
 
@@ -163,7 +186,13 @@ describe("project billable default on PostgreSQL", () => {
 			 ($2 || '-member', $1, $2, 'owner', 'approved', $5),
 			 ($3 || '-member', $1, $3, 'member', 'approved', $5),
 			 ($4 || '-member', $1, $4, 'member', 'approved', $5)`,
-			[ids.organization, ids.ownerUser, ids.projectManagerUser, ids.employeeUser, timestamp],
+			[
+				ids.organization,
+				ids.ownerUser,
+				ids.projectManagerUser,
+				ids.employeeUser,
+				timestamp,
+			],
 		);
 		await admin.query(
 			`insert into employee (id, user_id, organization_id, role, updated_at) values
@@ -207,7 +236,11 @@ describe("project billable default on PostgreSQL", () => {
 		await admin.query(
 			`insert into project_manager (project_id, employee_id, assigned_by)
 			 select project_id, $2, $3 from unnest($1::uuid[]) as project_id`,
-			[[ids.customerProject, ids.internalProject], ids.projectManager, ids.ownerUser],
+			[
+				[ids.customerProject, ids.internalProject],
+				ids.projectManager,
+				ids.ownerUser,
+			],
 		);
 		// Existing work on the customer's project: one billable, one not.
 		for (const [entry, period, billable, hour] of [
@@ -219,14 +252,29 @@ describe("project billable default on PostgreSQL", () => {
 				`insert into time_entry (id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
 				   timezone, timezone_source, hash, created_by)
 				 values ($1, $2, $3, 'clock_in', $4, 0, 'UTC', 'user_setting', $5, $6)`,
-				[entry, ids.employee, ids.organization, start, `t900-hash-${entry}`, ids.employeeUser],
+				[
+					entry,
+					ids.employee,
+					ids.organization,
+					start,
+					`t900-hash-${entry}`,
+					ids.employeeUser,
+				],
 			);
 			await withCanonicalRecords(admin, (client) =>
 				client.query(
 					`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
 					   duration_minutes, is_active, project_id, is_billable, updated_at)
 					 values ($1, $2, $3, $4, $5, $5::timestamp + interval '1 hour', 60, false, $6, $7, now())`,
-					[period, ids.employee, ids.organization, entry, start, ids.customerProject, billable],
+					[
+						period,
+						ids.employee,
+						ids.organization,
+						entry,
+						start,
+						ids.customerProject,
+						billable,
+					],
 				),
 			);
 		}
@@ -247,9 +295,12 @@ describe("project billable default on PostgreSQL", () => {
 
 		expect(result).toEqual({ success: true, data: undefined });
 		expect(await billableDefault(ids.customerProject)).toBe(true);
-		const listed = await actAs(ids.ownerUser, () => projects.getProjects(ids.organization));
+		const listed = await actAs(ids.ownerUser, () =>
+			projects.getProjects(ids.organization),
+		);
 		expect(
-			listed.success && listed.data.find((project) => project.id === ids.customerProject),
+			listed.success &&
+				listed.data.find((project) => project.id === ids.customerProject),
 		).toMatchObject({ billableDefault: true });
 	});
 
@@ -321,14 +372,19 @@ describe("project billable default on PostgreSQL", () => {
 		);
 
 		await expect(
-			actAs(ids.ownerUser, () => projects.updateProject(ids.customerProject, { customerId: null })),
+			actAs(ids.ownerUser, () =>
+				projects.updateProject(ids.customerProject, { customerId: null }),
+			),
 		).resolves.toMatchObject({ success: true });
 		expect(await billableDefault(ids.customerProject)).toBe(false);
 	});
 
 	it("never changes existing work when the billable default changes", async () => {
 		const before = await workBillability();
-		expect(before).toEqual({ [ids.billableWork]: true, [ids.nonBillableWork]: false });
+		expect(before).toEqual({
+			[ids.billableWork]: true,
+			[ids.nonBillableWork]: false,
+		});
 
 		await actAs(ids.ownerUser, () =>
 			projects.updateProject(ids.customerProject, { billableDefault: true }),
@@ -341,7 +397,9 @@ describe("project billable default on PostgreSQL", () => {
 	});
 
 	it("treats a project whose customer was deleted as a project without customer", async () => {
-		await admin.query("update customer set is_active = false where id = $1", [ids.customer]);
+		await admin.query("update customer set is_active = false where id = $1", [
+			ids.customer,
+		]);
 
 		await expect(
 			actAs(ids.ownerUser, () =>
@@ -351,12 +409,15 @@ describe("project billable default on PostgreSQL", () => {
 		expect(await billableDefault(ids.customerProject)).toBe(false);
 
 		// Another edit switches a default left on from before the deletion off.
-		await admin.query("update project set billable_default = true where id = $1", [
-			ids.unmanagedProject,
-		]);
+		await admin.query(
+			"update project set billable_default = true where id = $1",
+			[ids.unmanagedProject],
+		);
 		await expect(
 			actAs(ids.ownerUser, () =>
-				projects.updateProject(ids.unmanagedProject, { description: "Still running" }),
+				projects.updateProject(ids.unmanagedProject, {
+					description: "Still running",
+				}),
 			),
 		).resolves.toMatchObject({ success: true });
 		expect(await billableDefault(ids.unmanagedProject)).toBe(false);
@@ -365,16 +426,22 @@ describe("project billable default on PostgreSQL", () => {
 	it("lists a project whose customer was deleted without customer, naming the deleted one (#938)", async () => {
 		await actAs(ids.ownerUser, () => customers.deleteCustomer(ids.customer));
 
-		const listed = await actAs(ids.ownerUser, () => projects.getProjects(ids.organization));
+		const listed = await actAs(ids.ownerUser, () =>
+			projects.getProjects(ids.organization),
+		);
 
 		expect(listed.success).toBe(true);
 		if (!listed.success) return;
-		expect(listed.data.find((project) => project.id === ids.customerProject)).toMatchObject({
+		expect(
+			listed.data.find((project) => project.id === ids.customerProject),
+		).toMatchObject({
 			customerId: null,
 			customerName: null,
 			deletedCustomerName: "Acme",
 		});
-		expect(listed.data.find((project) => project.id === ids.internalProject)).toMatchObject({
+		expect(
+			listed.data.find((project) => project.id === ids.internalProject),
+		).toMatchObject({
 			customerId: null,
 			customerName: null,
 			deletedCustomerName: null,
@@ -382,11 +449,18 @@ describe("project billable default on PostgreSQL", () => {
 	});
 
 	it("lists a project with an active customer under that customer (#938)", async () => {
-		const listed = await actAs(ids.ownerUser, () => projects.getProjects(ids.organization));
+		const listed = await actAs(ids.ownerUser, () =>
+			projects.getProjects(ids.organization),
+		);
 
 		expect(
-			listed.success && listed.data.find((project) => project.id === ids.customerProject),
-		).toMatchObject({ customerId: ids.customer, customerName: "Acme", deletedCustomerName: null });
+			listed.success &&
+				listed.data.find((project) => project.id === ids.customerProject),
+		).toMatchObject({
+			customerId: ids.customer,
+			customerName: "Acme",
+			deletedCustomerName: null,
+		});
 	});
 
 	it("switches the billable default off on the customer's projects when the customer is deleted", async () => {
@@ -408,9 +482,10 @@ describe("project billable default on PostgreSQL", () => {
 		await actAs(ids.ownerUser, () =>
 			projects.updateProject(ids.customerProject, { billableDefault: true }),
 		);
-		await admin.query("update organization set billable_time_enabled = false where id = $1", [
-			ids.organization,
-		]);
+		await admin.query(
+			"update organization set billable_time_enabled = false where id = $1",
+			[ids.organization],
+		);
 
 		await expect(
 			actAs(ids.ownerUser, () =>
@@ -432,7 +507,9 @@ describe("project billable default on PostgreSQL", () => {
 		// Other edits still work and keep the default, which new work keeps taking.
 		await expect(
 			actAs(ids.ownerUser, () =>
-				projects.updateProject(ids.customerProject, { description: "Edited while off" }),
+				projects.updateProject(ids.customerProject, {
+					description: "Edited while off",
+				}),
 			),
 		).resolves.toMatchObject({ success: true });
 		expect(await billableDefault(ids.customerProject)).toBe(true);
@@ -459,16 +536,23 @@ describe("project billable default on PostgreSQL", () => {
 			),
 		);
 
-		const listed = await actAs(ids.ownerUser, () => projects.getProjects(ids.organization));
+		const listed = await actAs(ids.ownerUser, () =>
+			projects.getProjects(ids.organization),
+		);
 		expect(
-			listed.success && listed.data.find((project) => project.id === ids.customerProject),
+			listed.success &&
+				listed.data.find((project) => project.id === ids.customerProject),
 		).toMatchObject({ totalHoursBooked: 2 });
-		await expect(getProjectTotalHours(ids.customerProject, ids.organization)).resolves.toBe(2);
+		await expect(
+			getProjectTotalHours(ids.customerProject, ids.organization),
+		).resolves.toBe(2);
 	});
 
 	it("refuses a billable default that is not a boolean", async () => {
 		const result = await actAs(ids.ownerUser, () =>
-			projects.updateProject(ids.customerProject, { billableDefault: "yes" as never }),
+			projects.updateProject(ids.customerProject, {
+				billableDefault: "yes" as never,
+			}),
 		);
 
 		expect(result).toMatchObject({ success: false });

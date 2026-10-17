@@ -2,10 +2,15 @@ import { headers } from "next/headers";
 import { connection, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
+import { mfaAccessHold } from "@/lib/organization-mfa/http";
 import { CLOCK_COMMAND_OPERATION_ID } from "@/lib/time-tracking/clock-command";
 import { clocking } from "@/lib/time-tracking/clocking";
 import { ClockingAccessError } from "@/lib/time-tracking/clocking-service";
-import { type FrozenCommandActor, lookupQuery, requireCommandActor } from "../frozen-clock-command";
+import {
+	type FrozenCommandActor,
+	lookupQuery,
+	requireCommandActor,
+} from "../frozen-clock-command";
 
 const logger = createLogger("ClockCommandLookup");
 const noStore = { "Cache-Control": "no-store" };
@@ -29,6 +34,8 @@ export async function GET(
 		);
 	}
 	const session = await auth.api.getSession({ headers: await headers() });
+	const mfaHold = mfaAccessHold(session, operationId);
+	if (mfaHold) return mfaHold;
 	if (!session?.user) {
 		return NextResponse.json(
 			{ outcome: "rejected", code: "unauthorized" },

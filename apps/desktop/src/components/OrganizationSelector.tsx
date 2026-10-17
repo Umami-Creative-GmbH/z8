@@ -117,18 +117,25 @@ export function OrganizationSelector({
 								key={org.id}
 								className="org-dropdown-item"
 								disabled={
-									isSwitching || org.ssoRequired || !org.hasEmployeeRecord
+									isSwitching ||
+									org.ssoRequired ||
+									org.mfaRequired ||
+									!org.hasEmployeeRecord
 								}
 								onClick={() => select(org.id)}
 							>
 								<span className="org-dropdown-item-content">
 									<span>{org.name}</span>
-									{(org.ssoRequired || !org.hasEmployeeRecord) && (
+									{(org.ssoRequired ||
+										org.mfaRequired ||
+										!org.hasEmployeeRecord) && (
 										<span className="org-role">
 											{t(
-												org.ssoRequired
-													? "SSO sign-in required"
-													: "No employee access",
+												org.mfaRequired
+													? "Authenticator verification required"
+													: org.ssoRequired
+														? "SSO sign-in required"
+														: "No employee access",
 											)}
 										</span>
 									)}

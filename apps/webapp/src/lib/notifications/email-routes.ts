@@ -74,6 +74,7 @@ const NOTIFICATION_EMAIL_ROUTES: {
 	two_factor_disabled: dedicated("two_factor_disabled"),
 
 	// Shared layout only.
+	organization_mfa_notice: layout("/mfa"),
 	automatic_clock_out: layout("/calendar/"),
 	travel_expense_reimbursed: layout("/travel-expenses/"),
 	travel_expense_partially_reimbursed: layout("/travel-expenses/"),

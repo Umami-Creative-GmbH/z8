@@ -25,7 +25,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -49,10 +51,15 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/logger", () => {
 	const record =
@@ -81,7 +88,11 @@ vi.mock("@/lib/logger", () => {
 
 vi.mock("@/lib/vault", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/vault")>()),
-	storeOrgSecret: async (organizationId: string, key: string, value: string) => {
+	storeOrgSecret: async (
+		organizationId: string,
+		key: string,
+		value: string,
+	) => {
 		harness.secrets.set(`${organizationId}|${key}`, value);
 	},
 	getOrgSecret: async (organizationId: string, key: string) =>
@@ -92,19 +103,27 @@ vi.mock("@/lib/vault", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/billable-time/accounting/registry", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/billable-time/accounting/registry")>()),
+	...(await importOriginal<
+		typeof import("@/lib/billable-time/accounting/registry")
+	>()),
 	getAccountingProviderRegistry: () => {
 		if (!harness.registry) throw new Error("No registry");
 		return harness.registry;
 	},
 }));
 
-const { connectAccountingTool, listAccountingContactPersons } = await import("./actions");
+const { connectAccountingTool, listAccountingContactPersons } = await import(
+	"./actions"
+);
 const { createAccountingProviderRegistry } = await import(
 	"@/lib/billable-time/accounting/registry"
 );
-const { createSevdeskConnector } = await import("@/lib/billable-time/accounting/sevdesk/connector");
-const fixtures = await import("@/lib/billable-time/accounting/sevdesk/fixtures");
+const { createSevdeskConnector } = await import(
+	"@/lib/billable-time/accounting/sevdesk/connector"
+);
+const fixtures = await import(
+	"@/lib/billable-time/accounting/sevdesk/fixtures"
+);
 const { openAccountingProvider, defaultAccountingDependencies } = await import(
 	"@/lib/billable-time/accounting/connection-store"
 );
@@ -137,7 +156,9 @@ describe("sevdesk connection on PostgreSQL", () => {
 			createSevdeskConnector({
 				fetch: http.fetch,
 				sleep: async () => undefined,
-				clock: { nowInstant: () => Temporal.Instant.from("2026-10-09T08:00:00Z") },
+				clock: {
+					nowInstant: () => Temporal.Instant.from("2026-10-09T08:00:00Z"),
+				},
 			}),
 		]);
 	}
@@ -238,7 +259,10 @@ describe("sevdesk connection on PostgreSQL", () => {
 			}),
 		);
 
-		const persons = await listAccountingContactPersons({ providerKind: "sevdesk", apiKey: TOKEN });
+		const persons = await listAccountingContactPersons({
+			providerKind: "sevdesk",
+			apiKey: TOKEN,
+		});
 		expect(persons).toEqual({
 			success: true,
 			data: [
@@ -260,10 +284,15 @@ describe("sevdesk connection on PostgreSQL", () => {
 			providerKind: "sevdesk",
 			apiKeyStored: true,
 			providerAvailable: true,
-			capabilities: { supportedCurrencies: ["EUR", "CHF", "USD", "GBP"], draftStatusCheck: true },
+			capabilities: {
+				supportedCurrencies: ["EUR", "CHF", "USD", "GBP"],
+				draftStatusCheck: true,
+			},
 		});
 		expect(harness.secrets).toEqual(
-			new Map([[`${ids.organization}|accounting/${result.data.id}/api_key`, TOKEN]]),
+			new Map([
+				[`${ids.organization}|accounting/${result.data.id}/api_key`, TOKEN],
+			]),
 		);
 		expect(await connectionRows()).toEqual([
 			expect.objectContaining({
@@ -281,7 +310,8 @@ describe("sevdesk connection on PostgreSQL", () => {
 		]);
 		expect(await databaseRowsContaining(TOKEN)).toEqual([]);
 		expect(harness.logs.join("\n")).not.toContain(TOKEN);
-		for (const request of http.requests) expect(request.query.toString()).not.toContain(TOKEN);
+		for (const request of http.requests)
+			expect(request.query.toString()).not.toContain(TOKEN);
 	});
 
 	it("creates drafts with the stored contact person and hour unit through the opened provider", async () => {
@@ -293,7 +323,11 @@ describe("sevdesk connection on PostgreSQL", () => {
 		});
 		if (!connected.success) throw new Error(connected.error);
 		useSevdesk([
-			{ method: "GET", path: "/Invoice", responses: [{ status: 200, body: { objects: [] } }] },
+			{
+				method: "GET",
+				path: "/Invoice",
+				responses: [{ status: 200, body: { objects: [] } }],
+			},
 			{
 				method: "POST",
 				path: "/Invoice/Factory/saveInvoice",
@@ -341,12 +375,20 @@ describe("sevdesk connection on PostgreSQL", () => {
 		if (!draft.ok) throw new Error(draft.problem);
 
 		await expect(
-			opened.provider.createInvoiceDraft(draft.draft, { idempotencyKey: "t905-handoff-1" }),
+			opened.provider.createInvoiceDraft(draft.draft, {
+				idempotencyKey: "t905-handoff-1",
+			}),
 		).resolves.toEqual({ externalId: "9001", externalUrl: null });
 		const [save] = http.to("POST", "/Invoice/Factory/saveInvoice");
 		const body = JSON.parse(save.bodyText ?? "{}");
-		expect(body.invoice.contactPerson).toEqual({ id: 501, objectName: "SevUser" });
-		expect(body.invoicePosSave[0].unity).toEqual({ id: 9, objectName: "Unity" });
+		expect(body.invoice.contactPerson).toEqual({
+			id: 501,
+			objectName: "SevUser",
+		});
+		expect(body.invoicePosSave[0].unity).toEqual({
+			id: 9,
+			objectName: "Unity",
+		});
 		expect(save.headers.authorization).toBe(TOKEN);
 	});
 
@@ -357,7 +399,12 @@ describe("sevdesk connection on PostgreSQL", () => {
 			{ netPrices: true },
 			"sevdesk-Update 2.0",
 		],
-		["gross prices", fixtures.setupRoutes(), { netPrices: false }, "net prices"],
+		[
+			"gross prices",
+			fixtures.setupRoutes(),
+			{ netPrices: false },
+			"net prices",
+		],
 		[
 			"several users and no choice",
 			fixtures.setupRoutes({
@@ -369,7 +416,12 @@ describe("sevdesk connection on PostgreSQL", () => {
 			{ netPrices: true },
 			"contact person",
 		],
-		["no hour unit", fixtures.setupRoutes({ withHour: false }), { netPrices: true }, "hour unit"],
+		[
+			"no hour unit",
+			fixtures.setupRoutes({ withHour: false }),
+			{ netPrices: true },
+			"hour unit",
+		],
 	] as const)(
 		"refuses an account with %s and stores nothing",
 		async (_case, routes, settings, message) => {
@@ -382,7 +434,10 @@ describe("sevdesk connection on PostgreSQL", () => {
 				settings: { ...settings },
 			});
 
-			expect(result).toMatchObject({ success: false, error: expect.stringContaining(message) });
+			expect(result).toMatchObject({
+				success: false,
+				error: expect.stringContaining(message),
+			});
 			expect(harness.secrets.size).toBe(0);
 			expect(await connectionRows()).toEqual([]);
 		},
@@ -398,7 +453,10 @@ describe("sevdesk connection on PostgreSQL", () => {
 			settings: { netPrices: true },
 		});
 
-		expect(result).toMatchObject({ success: true, data: { providerKind: "sevdesk" } });
+		expect(result).toMatchObject({
+			success: true,
+			data: { providerKind: "sevdesk" },
+		});
 		expect(await connectionRows(ids.chfOrganization)).toEqual([
 			expect.objectContaining({ provider_kind: "sevdesk", status: "active" }),
 		]);
@@ -425,10 +483,16 @@ describe("sevdesk connection on PostgreSQL", () => {
 				defaultTaxTreatment: standard,
 				settings: { netPrices: true },
 			}),
-		).resolves.toMatchObject({ success: false, error: "The accounting tool refused this API key" });
+		).resolves.toMatchObject({
+			success: false,
+			error: "The accounting tool refused this API key",
+		});
 		await expect(
 			listAccountingContactPersons({ providerKind: "sevdesk", apiKey: TOKEN }),
-		).resolves.toMatchObject({ success: false, error: "The accounting tool refused this API key" });
+		).resolves.toMatchObject({
+			success: false,
+			error: "The accounting tool refused this API key",
+		});
 		expect(harness.secrets.size).toBe(0);
 	});
 

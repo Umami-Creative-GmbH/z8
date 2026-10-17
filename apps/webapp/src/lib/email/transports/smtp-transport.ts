@@ -49,7 +49,9 @@ function getSmtpErrorSummary(error: unknown): {
 	return summary;
 }
 
-function smtpFamilyForIpMode(ipMode: SmtpIpMode | undefined): 4 | 6 | undefined {
+function smtpFamilyForIpMode(
+	ipMode: SmtpIpMode | undefined,
+): 4 | 6 | undefined {
 	if (ipMode === "ipv4") {
 		return 4;
 	}
@@ -105,6 +107,11 @@ export class SmtpTransport implements EmailTransport {
 			const from = message.from || this.formatFrom();
 
 			const info = await this.transporter.sendMail({
+				...(message.idempotencyKey
+					? {
+							messageId: `<${message.idempotencyKey}@notifications.z8.invalid>`,
+						}
+					: {}),
 				from,
 				to: message.to,
 				subject: message.subject,
@@ -122,7 +129,8 @@ export class SmtpTransport implements EmailTransport {
 				messageId: info.messageId,
 			};
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : "Unknown error";
+			const errorMessage =
+				error instanceof Error ? error.message : "Unknown error";
 			logger.error(
 				{ error: getSmtpErrorSummary(error), to: maskEmailAddress(message.to) },
 				"Failed to send email via SMTP",
@@ -139,8 +147,12 @@ export class SmtpTransport implements EmailTransport {
 		try {
 			await this.transporter.verify();
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : "Unknown error";
-			logger.error({ error: getSmtpErrorSummary(error) }, "SMTP connection verification failed");
+			const errorMessage =
+				error instanceof Error ? error.message : "Unknown error";
+			logger.error(
+				{ error: getSmtpErrorSummary(error) },
+				"SMTP connection verification failed",
+			);
 			return {
 				success: false,
 				error: `Connection failed: ${errorMessage}`,

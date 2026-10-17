@@ -240,6 +240,7 @@ const TYPE_LABELS: Record<
 	Exclude<NotificationType, StaticallyLabelledType>,
 	string
 > = {
+	organization_mfa_notice: "Required organization authentication",
 	automatic_clock_out: "Automatic clock-out",
 	approval_request_submitted: "Request submitted",
 	approval_request_approved: "Request approved",

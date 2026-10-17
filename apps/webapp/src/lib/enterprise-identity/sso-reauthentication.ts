@@ -22,7 +22,7 @@ export async function startOrganizationSsoReauthentication(
 	if (!(await dependencies.getMembership(input.userId, input.organizationId)))
 		throw new Error("Organization membership required");
 	const policy = await dependencies.getPolicy(input.organizationId);
-	if (!policy.required || !policy.providerId)
+	if (!policy.providerId)
 		throw new Error(
 			"Organization SSO is not available. Contact your administrator.",
 		);

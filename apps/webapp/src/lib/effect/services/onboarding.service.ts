@@ -180,8 +180,14 @@ export class OnboardingService extends Context.Service<
 export const OnboardingServiceLive = Layer.effect(
 	OnboardingService,
 	Effect.gen(function* () {
-		const authService = yield* AuthService;
+		const authentication = yield* AuthService;
 		const dbService = yield* DatabaseService;
+		const authService = {
+			getSession: (organizationId?: string) =>
+				authentication
+					.getSession(organizationId)
+					.pipe(Effect.provideService(DatabaseService, dbService)),
+		};
 		const requireWorkTemplateAdmin = (
 			userId: string,
 			activeOrganizationId: string | null,

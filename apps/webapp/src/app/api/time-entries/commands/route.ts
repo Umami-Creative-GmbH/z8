@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { resolvePublicRequestOrigin } from "@/lib/domain/request-origin";
 import { createLogger } from "@/lib/logger";
+import { mfaAccessHold } from "@/lib/organization-mfa/http";
 import {
 	CLOCK_COMMAND_ADMISSION_WINDOWS,
 	CLOCK_COMMAND_VERSIONS,
@@ -14,7 +15,10 @@ import {
 	verifyClockCommandContext,
 } from "@/lib/time-tracking/clock-command";
 import { type ClockOutAdvice, clocking } from "@/lib/time-tracking/clocking";
-import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
+import {
+	ClockingAccessError,
+	clockingService,
+} from "@/lib/time-tracking/clocking-service";
 import { readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import {
 	adapterRejectionReply,
@@ -49,18 +53,28 @@ async function serverOrigin(request: Request): Promise<string | null> {
 export async function GET(request: Request) {
 	await connection();
 	const session = await auth.api.getSession({ headers: await headers() });
+	const mfaHold = mfaAccessHold(session);
+	if (mfaHold) return mfaHold;
 	if (!session?.user) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: noStore });
+		return NextResponse.json(
+			{ error: "Unauthorized" },
+			{ status: 401, headers: noStore },
+		);
 	}
 	try {
 		const actor = await clockingService.requireActor({
 			userId: session.user.id,
 			activeOrganizationId: session.session.activeOrganizationId,
 		});
-		const adopted = (await readAppendAdmission(db, actor.organizationId)) === "append";
-		const windowSeconds = (mode: keyof typeof CLOCK_COMMAND_ADMISSION_WINDOWS) => ({
-			pastSeconds: CLOCK_COMMAND_ADMISSION_WINDOWS[mode].pastMilliseconds / 1000,
-			futureSeconds: CLOCK_COMMAND_ADMISSION_WINDOWS[mode].futureMilliseconds / 1000,
+		const adopted =
+			(await readAppendAdmission(db, actor.organizationId)) === "append";
+		const windowSeconds = (
+			mode: keyof typeof CLOCK_COMMAND_ADMISSION_WINDOWS,
+		) => ({
+			pastSeconds:
+				CLOCK_COMMAND_ADMISSION_WINDOWS[mode].pastMilliseconds / 1000,
+			futureSeconds:
+				CLOCK_COMMAND_ADMISSION_WINDOWS[mode].futureMilliseconds / 1000,
 		});
 		return NextResponse.json(
 			{
@@ -73,7 +87,10 @@ export async function GET(request: Request) {
 				// Online fallback requires the context checks in the direct route.
 				onlineSubmit: adopted ? "unavailable" : "available",
 				lookup: "available",
-				admission: { immediate: windowSeconds("immediate"), delayed: windowSeconds("delayed") },
+				admission: {
+					immediate: windowSeconds("immediate"),
+					delayed: windowSeconds("delayed"),
+				},
 				context: {
 					userId: actor.userId,
 					organizationId: actor.organizationId,
@@ -85,14 +102,26 @@ export async function GET(request: Request) {
 		);
 	} catch (error) {
 		if (error instanceof ClockingAccessError) {
-			return NextResponse.json({ error: error.message }, { status: 403, headers: noStore });
+			return NextResponse.json(
+				{ error: error.message },
+				{ status: 403, headers: noStore },
+			);
 		}
 		logger.error({ error }, "Clock command capabilities failed");
-		return NextResponse.json({ error: "Internal server error" }, { status: 500, headers: noStore });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500, headers: noStore },
+		);
 	}
 }
 
-function reply({ status, body }: { status: number; body: Record<string, unknown> }) {
+function reply({
+	status,
+	body,
+}: {
+	status: number;
+	body: Record<string, unknown>;
+}) {
 	return NextResponse.json(body, { status, headers: noStore });
 }
 
@@ -118,13 +147,22 @@ export async function POST(request: Request) {
 	if (!parsed.ok) {
 		return NextResponse.json(
 			{ outcome: "rejected", code: parsed.code },
-			{ status: parsed.code === "unsupported_version" ? 422 : 400, headers: noStore },
+			{
+				status: parsed.code === "unsupported_version" ? 422 : 400,
+				headers: noStore,
+			},
 		);
 	}
 	const session = await auth.api.getSession({ headers: await headers() });
+	const mfaHold = mfaAccessHold(session, parsed.command.operationId);
+	if (mfaHold) return mfaHold;
 	if (!session?.user) {
 		return NextResponse.json(
-			{ outcome: "rejected", code: "unauthorized", operationId: parsed.command.operationId },
+			{
+				outcome: "rejected",
+				code: "unauthorized",
+				operationId: parsed.command.operationId,
+			},
 			{ status: 401, headers: noStore },
 		);
 	}
@@ -136,7 +174,9 @@ export async function POST(request: Request) {
 			actor = await requireCommandActor(session);
 		} catch (error) {
 			if (error instanceof ClockingAccessError) {
-				return reply(adapterRejectionReply(operationId, { code: "access_denied" }));
+				return reply(
+					adapterRejectionReply(operationId, { code: "access_denied" }),
+				);
 			}
 			throw error;
 		}
@@ -146,17 +186,24 @@ export async function POST(request: Request) {
 		});
 		if (mismatched.length > 0) {
 			return reply(
-				adapterRejectionReply(operationId, { code: "context_mismatch", fields: mismatched }),
+				adapterRejectionReply(operationId, {
+					code: "context_mismatch",
+					fields: mismatched,
+				}),
 			);
 		}
 		// A property of the frozen bytes alone, so no committed command ever failed it.
-		const discontinuity = command.kind === "break" ? checkBreakClockContinuity(command) : null;
-		if (discontinuity) return reply(adapterRejectionReply(operationId, discontinuity));
+		const discontinuity =
+			command.kind === "break" ? checkBreakClockContinuity(command) : null;
+		if (discontinuity)
+			return reply(adapterRejectionReply(operationId, discontinuity));
 
 		const outcome = await clocking.run(
 			toClockingCommand(command, actor, {
 				now: systemClock.nowInstant(),
-				fallbackZone: await getUserTimezone(actor.userId).catch(() => command.timezone),
+				fallbackZone: await getUserTimezone(actor.userId).catch(
+					() => command.timezone,
+				),
 				// Version 3 positions come only from the browser's session cookie; the
 				// desktop and other bearer clients never stamp (#826 D5).
 				acceptsPosition: !request.headers.has("authorization"),
@@ -165,13 +212,18 @@ export async function POST(request: Request) {
 		if (outcome.outcome === "refused") {
 			const { failure } = outcome;
 			if (failure.code === "unconfirmed" || failure.code === "failed") {
-				logger.error({ error: failure.cause, operationId }, "Clock command failed");
+				logger.error(
+					{ error: failure.cause, operationId },
+					"Clock command failed",
+				);
 			}
 			return reply(refusalReply(operationId, failure));
 		}
 		const committed = await clocking.lookup(lookupQuery(actor, operationId));
 		if (committed.outcome !== "committed") {
-			throw new Error(`Committed clock command lookup answered ${committed.outcome}`);
+			throw new Error(
+				`Committed clock command lookup answered ${committed.outcome}`,
+			);
 		}
 		// An executed closure (clock-out or break) carries its follow-ups' advice.
 		const closure =

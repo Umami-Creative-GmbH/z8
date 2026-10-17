@@ -1,3 +1,7 @@
+vi.mock("@/components/organization-mfa/deadline-banner", () => ({
+	MfaDeadlineBanner: () => null,
+}));
+
 import { renderToReadableStream } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AppLayout from "./layout";
@@ -79,7 +83,9 @@ vi.mock("@/components/store-app/get-the-app-banner", () => ({
 }));
 
 vi.mock("@/components/notifications/push-permission-provider", () => ({
-	PushPermissionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	PushPermissionProvider: ({ children }: { children: React.ReactNode }) => (
+		<>{children}</>
+	),
 }));
 
 vi.mock("@/components/organization/organization-deletion-banner", () => ({
@@ -97,7 +103,11 @@ vi.mock("@/components/posthog-provider", () => ({
 }));
 
 vi.mock("@/components/providers/organization-settings-provider", () => ({
-	OrganizationSettingsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	OrganizationSettingsProvider: ({
+		children,
+	}: {
+		children: React.ReactNode;
+	}) => <>{children}</>,
 }));
 
 vi.mock("@/components/providers/user-preferences-provider", () => ({
@@ -112,7 +122,11 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 		timeFormat: string;
 		timezone: string;
 	}) => (
-		<div data-week-start={weekStartDay} data-time-format={timeFormat} data-timezone={timezone}>
+		<div
+			data-week-start={weekStartDay}
+			data-time-format={timeFormat}
+			data-timezone={timezone}
+		>
 			{children}
 		</div>
 	),
@@ -127,12 +141,24 @@ vi.mock("@/components/site-header", () => ({
 }));
 
 vi.mock("@/components/ui/sidebar", () => ({
-	Sidebar: ({ children }: { children: React.ReactNode }) => <aside>{children}</aside>,
-	SidebarContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	SidebarFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	SidebarHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	SidebarInset: ({ children }: { children: React.ReactNode }) => <main>{children}</main>,
-	SidebarProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	Sidebar: ({ children }: { children: React.ReactNode }) => (
+		<aside>{children}</aside>
+	),
+	SidebarContent: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	SidebarFooter: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	SidebarHeader: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	SidebarInset: ({ children }: { children: React.ReactNode }) => (
+		<main>{children}</main>
+	),
+	SidebarProvider: ({ children }: { children: React.ReactNode }) => (
+		<>{children}</>
+	),
 }));
 
 vi.mock("@/components/ui/skeleton", () => ({
@@ -246,23 +272,33 @@ describe("authenticated app layout gates", () => {
 		async (locale) => {
 			mockState.findUserSettings.mockResolvedValue({ locale });
 			const { errors } = await serverRender("/en/time-tracking");
-			expect(mockState.redirect).toHaveBeenCalledWith(`/${locale}/time-tracking`);
+			expect(mockState.redirect).toHaveBeenCalledWith(
+				`/${locale}/time-tracking`,
+			);
 			expect(errors).toEqual([
-				expect.objectContaining({ message: `TEST_REDIRECT:/${locale}/time-tracking` }),
+				expect.objectContaining({
+					message: `TEST_REDIRECT:/${locale}/time-tracking`,
+				}),
 			]);
 			expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
-			expect(mockState.getOrganizationSettings).toHaveBeenCalledWith("organization-1", "user-1");
+			expect(mockState.getOrganizationSettings).toHaveBeenCalledWith(
+				"organization-1",
+				"user-1",
+			);
 		},
 	);
 
-	it.each([null, "", "invalid", "en"])("does not redirect saved locale %j", async (locale) => {
-		mockState.findUserSettings.mockResolvedValue({ locale });
-		const { errors } = await serverRender("/en/time-tracking");
-		expect(errors).toEqual([]);
-		expect(mockState.redirect).not.toHaveBeenCalled();
-		expect(mockState.checkBillingAccess).toHaveBeenCalledOnce();
-		expect(mockState.findUserSettings).toHaveBeenCalledOnce();
-	});
+	it.each([null, "", "invalid", "en"])(
+		"does not redirect saved locale %j",
+		async (locale) => {
+			mockState.findUserSettings.mockResolvedValue({ locale });
+			const { errors } = await serverRender("/en/time-tracking");
+			expect(errors).toEqual([]);
+			expect(mockState.redirect).not.toHaveBeenCalled();
+			expect(mockState.checkBillingAccess).toHaveBeenCalledOnce();
+			expect(mockState.findUserSettings).toHaveBeenCalledOnce();
+		},
+	);
 
 	it("passes exact saved preferences and explicit false consent to providers", async () => {
 		mockState.findUserSettings.mockResolvedValue({
@@ -293,7 +329,10 @@ describe("authenticated app layout gates", () => {
 		expect(html).toContain('data-week-start="sunday"');
 		expect(html).toContain('data-time-format="24h"');
 		expect(html).toContain('data-timezone="UTC"');
-		expect(mockState.getOrganizationSettings).toHaveBeenCalledWith(null, "user-1");
+		expect(mockState.getOrganizationSettings).toHaveBeenCalledWith(
+			null,
+			"user-1",
+		);
 		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
 	});
 
@@ -324,7 +363,9 @@ describe("authenticated app layout gates", () => {
 			session: { activeOrganizationId: "organization-1" },
 			user: { id: "user-1" },
 		});
-		mockState.checkBillingAccess.mockRejectedValue(new Error("billing unavailable"));
+		mockState.checkBillingAccess.mockRejectedValue(
+			new Error("billing unavailable"),
+		);
 
 		const { errors } = await serverRender("/en/settings/profile");
 
@@ -338,6 +379,25 @@ describe("authenticated app layout gates", () => {
 		expect(mockState.protectedChildRender).not.toHaveBeenCalled();
 	});
 
+	it("redirects an MFA-held identity before protected children or organization loaders", async () => {
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: { activeOrganizationId: null },
+			mfaRequired: {
+				organizationId: "organization-1",
+				deadline: "2026-01-01T00:00:00Z",
+			},
+		});
+		const { errors } = await serverRender("/en/settings/profile");
+		expect(errors).toHaveLength(1);
+		expect(mockState.redirect).toHaveBeenCalledWith(
+			expect.stringContaining("/mfa?organizationId=organization-1"),
+		);
+		expect(mockState.protectedChildRender).not.toHaveBeenCalled();
+		expect(mockState.findUserSettings).not.toHaveBeenCalled();
+		expect(mockState.getOrganizationSettings).not.toHaveBeenCalled();
+		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
+	});
 	it("renders protected children after all authorization gates succeed", async () => {
 		mockState.getSession.mockResolvedValue({
 			session: { activeOrganizationId: "organization-1" },
@@ -371,14 +431,18 @@ describe("authenticated app layout gates", () => {
 		const { html } = await serverRender("/en/time-tracking");
 
 		expect(html).toContain('data-testid="get-the-app-banner"');
-		expect(html).toContain('data-ios="https://apps.apple.com/app/z8/id1234567890"');
+		expect(html).toContain(
+			'data-ios="https://apps.apple.com/app/z8/id1234567890"',
+		);
 		expect(html).toContain('data-android="null"');
 	});
 
 	it("pads the page end by the get-the-app banner's height while it shows", async () => {
 		const { html } = await serverRender("/en/time-tracking");
 
-		const scrollArea = /<div class="([^"]*overflow-y-auto[^"]*)"/.exec(html)?.[1];
+		const scrollArea = /<div class="([^"]*overflow-y-auto[^"]*)"/.exec(
+			html,
+		)?.[1];
 		expect(scrollArea).toContain(
 			"pb-[max(env(safe-area-inset-bottom),var(--app-banner-height,0px))]",
 		);

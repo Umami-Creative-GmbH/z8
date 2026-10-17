@@ -7,7 +7,7 @@ import { organization } from "@/db/auth-schema";
 import { employee, userSettings, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
+import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
 import { withOpenTasks } from "@/lib/projects/project-tasks";
 import { listActiveTaskRequirements } from "@/lib/projects/task-requirement-reads";
 import { getAvailableCategoriesForEmployee } from "@/lib/query/work-category.queries";
@@ -34,9 +34,7 @@ export async function GET() {
 				{ error: "Select an organization" },
 				{ status: 400 },
 			);
-		if (
-			!(await canAccessOrganizationWithSso(session.session, organizationId))
-		) {
+		if (!(await canAccessOrganization(session.session, organizationId))) {
 			return NextResponse.json(
 				{ error: "Organization SSO required" },
 				{ status: 403 },
@@ -128,7 +126,9 @@ export async function GET() {
 		const [projectsWithTasks, taskRequired] = await Promise.all([
 			withOpenTasks(
 				organizationId,
-				projects.map(({ id, name }) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name)),
+				projects
+					.map(({ id, name }) => ({ id, name }))
+					.sort((a, b) => a.name.localeCompare(b.name)),
 			),
 			listActiveTaskRequirements({
 				organizationId,
@@ -136,7 +136,9 @@ export async function GET() {
 			}),
 		]);
 		const offeredProjects = projectsWithTasks.map((project) =>
-			taskRequired.has(project.id) ? { ...project, taskRequired: true as const } : project,
+			taskRequired.has(project.id)
+				? { ...project, taskRequired: true as const }
+				: project,
 		);
 		return NextResponse.json(
 			{

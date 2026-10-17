@@ -69,7 +69,43 @@ function denySso(): never {
 /** Runs for both HTTP and auth.api calls, independently of session cookie/Redis caching. */
 export function createSsoEnforcementPlugin(
 	store: SessionSsoStore,
+	mfaGate?: (
+		session: { id: string; userId: string; impersonatedBy?: string | null },
+		organizationId: string,
+	) => Promise<{ allowed: boolean; deadline?: string | null }>,
 ): BetterAuthPlugin {
+	type ScopeDecision =
+		| { allowed: true }
+		| { allowed: false; reason: "SSO_REQUIRED" }
+		| { allowed: false; reason: "MFA_REQUIRED"; deadline: string | null };
+	const checkScope = async (
+		subject:
+			| { id: string; userId: string; impersonatedBy?: string | null }
+			| null
+			| undefined,
+		organizationId: string,
+	): Promise<ScopeDecision> => {
+		if (!(await canAccessOrganizationWithSso(store, subject, organizationId)))
+			return { allowed: false, reason: "SSO_REQUIRED" };
+		if (!mfaGate) return { allowed: true };
+		if (!subject) return { allowed: false, reason: "SSO_REQUIRED" };
+		const decision = await mfaGate(subject, organizationId);
+		return decision.allowed
+			? { allowed: true }
+			: {
+					allowed: false,
+					reason: "MFA_REQUIRED",
+					deadline: decision.deadline ?? null,
+				};
+	};
+	const canAccessScoped = async (
+		_store: SessionSsoStore,
+		subject:
+			| { id: string; userId: string; impersonatedBy?: string | null }
+			| null
+			| undefined,
+		organizationId: string,
+	) => (await checkScope(subject, organizationId)).allowed;
 	return {
 		id: "z8-sso-enforcement",
 		hooks: {
@@ -182,16 +218,34 @@ export function createSsoEnforcementPlugin(
 						}
 						if (switching && scopes.size === 0 && typeof activeId === "string")
 							scopes.add(activeId);
-						const allowed = await Promise.all(
-							[...scopes].map((organizationId) =>
-								canAccessOrganizationWithSso(
-									store,
-									session.session,
-									organizationId,
-								),
-							),
+						const decisions = await Promise.all(
+							[...scopes].map(async (organizationId) => ({
+								organizationId,
+								decision: await checkScope(session.session, organizationId),
+							})),
 						);
-						if (allowed.includes(false)) denySso();
+						if (
+							decisions.some(
+								({ decision }) =>
+									!decision.allowed && decision.reason === "SSO_REQUIRED",
+							)
+						)
+							denySso();
+						const denied = decisions.find(
+							({ decision }) =>
+								!decision.allowed && decision.reason === "MFA_REQUIRED",
+						);
+						if (
+							denied &&
+							!denied.decision.allowed &&
+							denied.decision.reason === "MFA_REQUIRED"
+						)
+							throw new APIError("FORBIDDEN", {
+								code: "MFA_REQUIRED",
+								message: "Verify an authenticator to access this organization",
+								organizationId: denied.organizationId,
+								deadline: denied.decision.deadline,
+							});
 					}),
 				},
 			],
@@ -229,7 +283,7 @@ export function createSsoEnforcementPlugin(
 								result.providers.map(
 									async (provider) =>
 										!provider.organizationId ||
-										(await canAccessOrganizationWithSso(
+										(await canAccessScoped(
 											store,
 											session?.session,
 											provider.organizationId,
@@ -254,7 +308,7 @@ export function createSsoEnforcementPlugin(
 								result.map(
 									async (resource) =>
 										typeof resource.organizationId === "string" &&
-										(await canAccessOrganizationWithSso(
+										(await canAccessScoped(
 											store,
 											session?.session,
 											resource.organizationId,
@@ -268,11 +322,15 @@ export function createSsoEnforcementPlugin(
 						const organizationId = session.activeOrganizationId;
 						if (typeof organizationId !== "string") return;
 						if (
-							await canAccessOrganizationWithSso(
+							await canAccessScoped(
 								store,
 								{
 									id: String(session.id ?? ""),
 									userId: String(session.userId ?? ""),
+									impersonatedBy:
+										typeof session.impersonatedBy === "string"
+											? session.impersonatedBy
+											: null,
 								},
 								organizationId,
 							)
@@ -282,7 +340,35 @@ export function createSsoEnforcementPlugin(
 						// but never expose an unauthorized active tenant to application API consumers.
 						return ctx.json({
 							...returned,
-							ssoRequired: true,
+							...(mfaGate &&
+							(await canAccessOrganizationWithSso(
+								store,
+								{
+									id: String(session.id ?? ""),
+									userId: String(session.userId ?? ""),
+								},
+								organizationId,
+							))
+								? {
+										mfaRequired: {
+											organizationId,
+											deadline:
+												(
+													await mfaGate(
+														{
+															id: String(session.id ?? ""),
+															userId: String(session.userId ?? ""),
+															impersonatedBy:
+																typeof session.impersonatedBy === "string"
+																	? session.impersonatedBy
+																	: null,
+														},
+														organizationId,
+													)
+												).deadline ?? null,
+										},
+									}
+								: { ssoRequired: true }),
 							session: {
 								...session,
 								activeOrganizationId: null,

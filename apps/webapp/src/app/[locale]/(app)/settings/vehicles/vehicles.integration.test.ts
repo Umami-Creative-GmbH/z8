@@ -19,7 +19,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -43,10 +45,15 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
@@ -54,7 +61,12 @@ vi.mock("@/lib/logger", () => ({
 		warn: () => {},
 		info: () => {},
 		debug: () => {},
-		child: () => ({ error: () => {}, warn: () => {}, info: () => {}, debug: () => {} }),
+		child: () => ({
+			error: () => {},
+			warn: () => {},
+			info: () => {},
+			debug: () => {},
+		}),
 	}),
 }));
 
@@ -89,7 +101,9 @@ const users = [
 ];
 
 type Change = Parameters<typeof changeVehicles>[0];
-type Settings = Awaited<ReturnType<typeof getVehicleSettings>> & { success: true };
+type Settings = Awaited<ReturnType<typeof getVehicleSettings>> & {
+	success: true;
+};
 type Vehicle = Settings["data"]["vehicles"][number];
 
 const noDrivers = { employeeIds: [], teamIds: [] };
@@ -115,7 +129,8 @@ describe("organization vehicles on PostgreSQL", () => {
 	async function apply(change: Change): Promise<Vehicle[]> {
 		const result = await changeVehicles(change);
 		if (!result.success) throw new Error(`action failed: ${result.error}`);
-		if (!result.data.ok) throw new Error(`change refused: ${result.data.reason}`);
+		if (!result.data.ok)
+			throw new Error(`change refused: ${result.data.reason}`);
 		return result.data.vehicles;
 	}
 
@@ -130,7 +145,12 @@ describe("organization vehicles on PostgreSQL", () => {
 		licencePlate: string,
 		drivers: { employeeIds: string[]; teamIds: string[] } = noDrivers,
 	): Promise<Vehicle> {
-		const vehicles = await apply({ kind: "create", name, licencePlate, drivers });
+		const vehicles = await apply({
+			kind: "create",
+			name,
+			licencePlate,
+			drivers,
+		});
 		const created = vehicles.find((vehicle) => vehicle.name === name);
 		if (!created) throw new Error("created vehicle missing");
 		return created;
@@ -155,7 +175,10 @@ describe("organization vehicles on PostgreSQL", () => {
 			 order by timestamp, action, entity_id`,
 			[organizationId],
 		);
-		return rows.map((row) => ({ ...row, changes: row.changes ? JSON.parse(row.changes) : null }));
+		return rows.map((row) => ({
+			...row,
+			changes: row.changes ? JSON.parse(row.changes) : null,
+		}));
 	}
 
 	beforeEach(async () => {
@@ -249,9 +272,16 @@ describe("organization vehicles on PostgreSQL", () => {
 				},
 			});
 			const settings = (await getVehicleSettings()) as Settings;
-			expect(settings.data.teams.map((t) => t.name)).toEqual(["Field service", "Office"]);
+			expect(settings.data.teams.map((t) => t.name)).toEqual([
+				"Field service",
+				"Office",
+			]);
 			expect(settings.data.employees.map((e) => e.id).toSorted()).toEqual(
-				[ids.managerEmployee, ids.memberEmployee, ids.employeeAdminEmployee].toSorted(),
+				[
+					ids.managerEmployee,
+					ids.memberEmployee,
+					ids.employeeAdminEmployee,
+				].toSorted(),
 			);
 			expect(await auditEntries()).toEqual([
 				{
@@ -263,7 +293,10 @@ describe("organization vehicles on PostgreSQL", () => {
 						after: {
 							name: "Van 1",
 							licencePlate: "M-AB 1234",
-							drivers: { employeeIds: [ids.memberEmployee], teamIds: [ids.fieldTeam] },
+							drivers: {
+								employeeIds: [ids.memberEmployee],
+								teamIds: [ids.fieldTeam],
+							},
 						},
 					},
 				},
@@ -281,7 +314,10 @@ describe("organization vehicles on PostgreSQL", () => {
 				vehicleId: van.id,
 				name: "Van 1",
 				licencePlate: "M-XY 9",
-				drivers: { employeeIds: [ids.managerEmployee], teamIds: [ids.fieldTeam] },
+				drivers: {
+					employeeIds: [ids.managerEmployee],
+					teamIds: [ids.fieldTeam],
+				},
 			});
 
 			expect(vehicles.find((v) => v.id === van.id)).toMatchObject({
@@ -292,15 +328,24 @@ describe("organization vehicles on PostgreSQL", () => {
 				},
 			});
 			const entries = await auditEntries();
-			expect(entries.map((e) => e.action)).toEqual(["vehicle.created", "vehicle.updated"]);
+			expect(entries.map((e) => e.action)).toEqual([
+				"vehicle.created",
+				"vehicle.updated",
+			]);
 			expect(entries[1].changes).toEqual({
 				before: {
 					licencePlate: "M-AB 1234",
-					drivers: { employeeIds: [ids.memberEmployee], teamIds: [ids.fieldTeam] },
+					drivers: {
+						employeeIds: [ids.memberEmployee],
+						teamIds: [ids.fieldTeam],
+					},
 				},
 				after: {
 					licencePlate: "M-XY 9",
-					drivers: { employeeIds: [ids.managerEmployee], teamIds: [ids.fieldTeam] },
+					drivers: {
+						employeeIds: [ids.managerEmployee],
+						teamIds: [ids.fieldTeam],
+					},
 				},
 			});
 
@@ -309,7 +354,10 @@ describe("organization vehicles on PostgreSQL", () => {
 				vehicleId: van.id,
 				name: "Van 1",
 				licencePlate: "m-xy 9",
-				drivers: { employeeIds: [ids.managerEmployee], teamIds: [ids.fieldTeam] },
+				drivers: {
+					employeeIds: [ids.managerEmployee],
+					teamIds: [ids.fieldTeam],
+				},
 			});
 			expect(await auditEntries()).toHaveLength(2);
 		});
@@ -318,9 +366,13 @@ describe("organization vehicles on PostgreSQL", () => {
 			const van = await create("Van 1", "M-AB 1234");
 			const car = await create("Car", "B-C 1");
 
-			expect(await refusal({ kind: "create", name: "Twin", licencePlate: "m ab-1234" })).toBe(
-				"licence_plate_taken",
-			);
+			expect(
+				await refusal({
+					kind: "create",
+					name: "Twin",
+					licencePlate: "m ab-1234",
+				}),
+			).toBe("licence_plate_taken");
 			expect(
 				await refusal({
 					kind: "update",
@@ -331,12 +383,18 @@ describe("organization vehicles on PostgreSQL", () => {
 				}),
 			).toBe("licence_plate_taken");
 			await apply({ kind: "archive", vehicleId: van.id });
-			expect(await refusal({ kind: "create", name: "Twin", licencePlate: "M-AB-1234" })).toBe(
-				"licence_plate_taken",
-			);
+			expect(
+				await refusal({
+					kind: "create",
+					name: "Twin",
+					licencePlate: "M-AB-1234",
+				}),
+			).toBe("licence_plate_taken");
 
 			actAs(ids.otherOwnerUser, ids.otherOrganization);
-			expect((await create("Their van", "M-AB 1234")).licencePlate).toBe("M-AB 1234");
+			expect((await create("Their van", "M-AB 1234")).licencePlate).toBe(
+				"M-AB 1234",
+			);
 		});
 
 		it("archives and restores a vehicle; an archived vehicle is listed last and not edited", async () => {
@@ -361,7 +419,9 @@ describe("organization vehicles on PostgreSQL", () => {
 			const restored = await apply({ kind: "restore", vehicleId: van.id });
 			expect(restored.find((v) => v.id === van.id)?.archived).toBe(false);
 			expect(
-				(await auditEntries()).filter((e) => e.entity_id === van.id).map((e) => e.action),
+				(await auditEntries())
+					.filter((e) => e.entity_id === van.id)
+					.map((e) => e.action),
 			).toEqual(["vehicle.created", "vehicle.archived", "vehicle.restored"]);
 		});
 
@@ -400,10 +460,16 @@ describe("organization vehicles on PostgreSQL", () => {
 				[van.id, ids.organization],
 			);
 
-			expect(await refusal({ kind: "delete", vehicleId: van.id })).toBe("vehicle_used");
+			expect(await refusal({ kind: "delete", vehicleId: van.id })).toBe(
+				"vehicle_used",
+			);
 			expect((await listed()).map((v) => v.id)).toEqual([van.id]);
-			expect((await auditEntries()).map((e) => e.action)).toEqual(["vehicle.created"]);
-			expect((await apply({ kind: "archive", vehicleId: van.id }))[0].archived).toBe(true);
+			expect((await auditEntries()).map((e) => e.action)).toEqual([
+				"vehicle.created",
+			]);
+			expect(
+				(await apply({ kind: "archive", vehicleId: van.id }))[0].archived,
+			).toBe(true);
 		});
 
 		it("drops a team's driver assignment when the team is deleted", async () => {
@@ -423,31 +489,45 @@ describe("organization vehicles on PostgreSQL", () => {
 	describe("permissions", () => {
 		it("lets owners and admins manage vehicles", async () => {
 			actAs(ids.ownerUser);
-			expect(await refusal({ kind: "create", name: "Van", licencePlate: "M-AB 1" })).toBe(
-				"accepted",
-			);
+			expect(
+				await refusal({ kind: "create", name: "Van", licencePlate: "M-AB 1" }),
+			).toBe("accepted");
 			expect((await getVehicleSettings()).success).toBe(true);
 		});
 
 		it("refuses managers, employee-role admins and employees", async () => {
-			for (const user of [ids.managerUser, ids.employeeAdminUser, ids.memberUser]) {
+			for (const user of [
+				ids.managerUser,
+				ids.employeeAdminUser,
+				ids.memberUser,
+			]) {
 				actAs(user);
 				expect(await getVehicleSettings()).toMatchObject({
 					success: false,
 					code: "AuthorizationError",
 				});
 				expect(
-					await changeVehicles({ kind: "create", name: "Van", licencePlate: "M-AB 1" }),
+					await changeVehicles({
+						kind: "create",
+						name: "Van",
+						licencePlate: "M-AB 1",
+					}),
 				).toMatchObject({ success: false, code: "AuthorizationError" });
 			}
-			const { rows } = await admin.query("select count(*)::int as count from organization_vehicle");
+			const { rows } = await admin.query(
+				"select count(*)::int as count from organization_vehicle",
+			);
 			expect(rows[0].count).toBe(0);
 		});
 
 		it("refuses an admin acting in an organization where they are only a member", async () => {
 			actAs(ids.adminUser, ids.otherOrganization);
 			expect(
-				await changeVehicles({ kind: "create", name: "Van", licencePlate: "M-AB 1" }),
+				await changeVehicles({
+					kind: "create",
+					name: "Van",
+					licencePlate: "M-AB 1",
+				}),
 			).toMatchObject({ success: false, code: "AuthorizationError" });
 		});
 	});
@@ -464,7 +544,9 @@ describe("organization vehicles on PostgreSQL", () => {
 			await create("Own", "O-X 1");
 			const settings = (await getVehicleSettings()) as Settings;
 			expect(settings.data.vehicles.map((v) => v.name)).toEqual(["Own"]);
-			expect(settings.data.employees.map((e) => e.id)).not.toContain(ids.otherEmployee);
+			expect(settings.data.employees.map((e) => e.id)).not.toContain(
+				ids.otherEmployee,
+			);
 			expect(settings.data.teams.map((t) => t.id)).not.toContain(ids.otherTeam);
 
 			const update = {
@@ -475,9 +557,15 @@ describe("organization vehicles on PostgreSQL", () => {
 				drivers: noDrivers,
 			} as const;
 			expect(await refusal(update)).toBe("vehicle_not_found");
-			expect(await refusal({ kind: "archive", vehicleId: foreign.id })).toBe("vehicle_not_found");
-			expect(await refusal({ kind: "restore", vehicleId: foreign.id })).toBe("vehicle_not_found");
-			expect(await refusal({ kind: "delete", vehicleId: foreign.id })).toBe("vehicle_not_found");
+			expect(await refusal({ kind: "archive", vehicleId: foreign.id })).toBe(
+				"vehicle_not_found",
+			);
+			expect(await refusal({ kind: "restore", vehicleId: foreign.id })).toBe(
+				"vehicle_not_found",
+			);
+			expect(await refusal({ kind: "delete", vehicleId: foreign.id })).toBe(
+				"vehicle_not_found",
+			);
 
 			actAs(ids.otherOwnerUser, ids.otherOrganization);
 			expect(await listed()).toEqual([foreign]);

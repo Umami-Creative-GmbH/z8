@@ -185,7 +185,7 @@ function resolveTeamSettingsActor(
 	sessionUser: { id: string; name: string },
 	organizationId: string,
 	options?: { includeEmployeeUser?: boolean },
-): Effect.Effect<TeamSettingsActor, AnyAppError, AuthService> {
+): Effect.Effect<TeamSettingsActor, AnyAppError, AuthService | DatabaseService> {
 	return Effect.gen(function* () {
 		const authService = yield* AuthService;
 		yield* authService.getSession(organizationId);

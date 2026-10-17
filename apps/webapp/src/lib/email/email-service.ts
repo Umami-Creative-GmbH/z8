@@ -48,13 +48,19 @@ function getSystemTransport(): EmailTransport {
 	if (!systemTransport) {
 		if (env.EMAIL_PROVIDER === "resend") {
 			systemTransport = createSystemResendTransport() ?? new ConsoleTransport();
-			logger.info({ transport: systemTransport.getName() }, "System email transport initialized");
+			logger.info(
+				{ transport: systemTransport.getName() },
+				"System email transport initialized",
+			);
 			return systemTransport;
 		}
 
 		if (env.EMAIL_PROVIDER === "smtp") {
 			systemTransport = createSystemSmtpTransport() ?? new ConsoleTransport();
-			logger.info({ transport: systemTransport.getName() }, "System email transport initialized");
+			logger.info(
+				{ transport: systemTransport.getName() },
+				"System email transport initialized",
+			);
 			return systemTransport;
 		}
 
@@ -62,7 +68,10 @@ function getSystemTransport(): EmailTransport {
 		const resendTransport = createSystemResendTransport();
 		if (resendTransport) {
 			systemTransport = resendTransport;
-			logger.info({ transport: systemTransport.getName() }, "System email transport initialized");
+			logger.info(
+				{ transport: systemTransport.getName() },
+				"System email transport initialized",
+			);
 			return systemTransport;
 		}
 
@@ -70,7 +79,10 @@ function getSystemTransport(): EmailTransport {
 		const smtpTransport = createSystemSmtpTransport();
 		if (smtpTransport) {
 			systemTransport = smtpTransport;
-			logger.info({ transport: systemTransport.getName() }, "System email transport initialized");
+			logger.info(
+				{ transport: systemTransport.getName() },
+				"System email transport initialized",
+			);
 			return systemTransport;
 		}
 
@@ -112,7 +124,8 @@ async function getTransportForOrg(
 		if (config.transportType === "resend") {
 			const apiKey = await getOrgSecret(organizationId, "email/resend_api_key");
 			if (!apiKey) {
-				if (options.throwOnError) throw new Error("email_transport_secret_unavailable");
+				if (options.throwOnError)
+					throw new Error("email_transport_secret_unavailable");
 				logger.warn(
 					{ organizationId },
 					"Resend API key not found in Vault, falling back to system default",
@@ -131,9 +144,13 @@ async function getTransportForOrg(
 		}
 
 		if (config.transportType === "smtp") {
-			const password = await getOrgSecret(organizationId, "email/smtp_password");
+			const password = await getOrgSecret(
+				organizationId,
+				"email/smtp_password",
+			);
 			if (!password) {
-				if (options.throwOnError) throw new Error("email_transport_secret_unavailable");
+				if (options.throwOnError)
+					throw new Error("email_transport_secret_unavailable");
 				logger.warn(
 					{ organizationId },
 					"SMTP password not found in Vault, falling back to system default",
@@ -142,8 +159,12 @@ async function getTransportForOrg(
 			}
 
 			if (!config.smtpHost || !config.smtpPort || !config.smtpUsername) {
-				if (options.throwOnError) throw new Error("email_transport_config_incomplete");
-				logger.warn({ organizationId }, "Incomplete SMTP config, falling back to system default");
+				if (options.throwOnError)
+					throw new Error("email_transport_config_incomplete");
+				logger.warn(
+					{ organizationId },
+					"Incomplete SMTP config, falling back to system default",
+				);
 				return getSystemTransport();
 			}
 
@@ -171,7 +192,10 @@ async function getTransportForOrg(
 		return getSystemTransport();
 	} catch (error) {
 		if (options.throwOnError) throw error;
-		logger.error({ error, organizationId }, "Error getting org transport, using system default");
+		logger.error(
+			{ error, organizationId },
+			"Error getting org transport, using system default",
+		);
 		return getSystemTransport();
 	}
 }
@@ -186,6 +210,7 @@ export interface SendEmailParams {
 	from?: string;
 	actionUrl?: string; // Optional URL for verification, reset, etc.
 	organizationId?: string; // Optional org ID to use org-specific config
+	idempotencyKey?: string;
 }
 
 /**
@@ -195,18 +220,34 @@ export interface SendEmailParams {
  * it will be used. Otherwise, falls back to system default.
  */
 export async function sendEmail(
-	{ to, subject, html, from, actionUrl, organizationId }: SendEmailParams,
+	{
+		to,
+		subject,
+		html,
+		from,
+		actionUrl,
+		organizationId,
+		idempotencyKey,
+	}: SendEmailParams,
 	options: { durable?: boolean } = {},
 ): Promise<EmailTransportResult> {
 	// Kiosk-only employees' placeholder addresses are never delivered (ADR 0006).
 	// Durable callers read `unavailable` as "this channel cannot reach them".
 	if (isReservedEmail(to)) {
-		logger.info({ organizationId }, "Skipped email to a reserved kiosk-only address");
+		logger.info(
+			{ organizationId },
+			"Skipped email to a reserved kiosk-only address",
+		);
 		return { success: false, unavailable: true, error: "reserved_recipient" };
 	}
-	const transport = await getTransportForOrg(organizationId, { throwOnError: options.durable });
+	const transport = await getTransportForOrg(organizationId, {
+		throwOnError: options.durable,
+	});
 	// Check the actual selected transport; a planning-time check can become stale.
-	if (options.durable && transport.getName().toLowerCase().startsWith("console")) {
+	if (
+		options.durable &&
+		transport.getName().toLowerCase().startsWith("console")
+	) {
 		return { success: false, unavailable: true };
 	}
 
@@ -220,6 +261,7 @@ export async function sendEmail(
 	);
 
 	const message: EmailMessage = {
+		...(idempotencyKey ? { idempotencyKey } : {}),
 		to,
 		subject,
 		html,
@@ -262,10 +304,14 @@ export async function sendBulkEmail(
 	organizationId?: string,
 ): Promise<{ successful: number; failed: number; total: number }> {
 	const results = await Promise.allSettled(
-		recipients.map((to) => sendEmail({ to, subject, html, from, organizationId })),
+		recipients.map((to) =>
+			sendEmail({ to, subject, html, from, organizationId }),
+		),
 	);
 
-	const successful = results.filter((r) => r.status === "fulfilled" && r.value.success).length;
+	const successful = results.filter(
+		(r) => r.status === "fulfilled" && r.value.success,
+	).length;
 	const failed = results.length - successful;
 
 	return { successful, failed, total: recipients.length };

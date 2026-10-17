@@ -1,3 +1,4 @@
+import { Link } from "@/navigation";
 import { eq } from "drizzle-orm";
 import { PasskeyManagement } from "@/components/settings/auth/passkey-management";
 import { PasswordChangeForm } from "@/components/settings/auth/password-change-form";
@@ -58,6 +59,27 @@ export default async function SecuritySettingsPage() {
 					</p>
 				</div>
 				<div className="space-y-6">
+					<Link href="/mfa" className="underline">
+						{t(
+							"mfa.security.link",
+							"Verify authentication and review organization requirements",
+						)}
+					</Link>
+					<p>
+						{t(
+							"mfa.security.factorWarning",
+							"Removing a factor can block access to organizations that require it. Verify a replacement first; removing the last factor does not grant new grace.",
+						)}
+					</p>
+					<Link
+						href="/settings/enterprise/identity-setup?tab=local-mfa"
+						className="underline"
+					>
+						{t(
+							"mfa.security.policyLink",
+							"Organization authentication policy (owners/admins)",
+						)}
+					</Link>
 					<PasswordChangeForm />
 					<TwoFactorSetup
 						isEnabled={userRecord?.twoFactorEnabled ?? false}

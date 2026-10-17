@@ -26,7 +26,15 @@ import { admin as adminPlugin } from "better-auth/plugins/admin";
 import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
 import type { PoolClient } from "pg";
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -42,7 +50,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -66,7 +76,9 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/auth-helpers")>();
 	const { db } = await import("@/db");
-	const { loadOrganizationPrincipalContext } = await import("@/lib/authorization/principal-loader");
+	const { loadOrganizationPrincipalContext } = await import(
+		"@/lib/authorization/principal-loader"
+	);
 	return {
 		...original,
 		getPrincipalContext: async () =>
@@ -80,10 +92,15 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 });
 
 // The mocked session has no stored SSO provenance to admit.
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
@@ -102,7 +119,9 @@ vi.mock("@/lib/redis", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+	),
 );
 
 vi.mock("./approvals", async (importOriginal) => ({
@@ -113,30 +132,39 @@ vi.mock("./approvals", async (importOriginal) => ({
 
 vi.mock("@/lib/logger", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/logger")>();
-	const quiet = { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} };
+	const quiet = {
+		error: () => {},
+		warn: () => {},
+		info: () => {},
+		debug: () => {},
+	};
 	return { ...original, createLogger: () => quiet };
 });
 
 const { createManualTimeEntry } = await import("../actions");
 const { db } = await import("@/db");
-const { captureAuthTransactions, runCoordinatedAuthMutation, UncoordinatedAuthMutationError } =
-	await import("@/lib/auth/auth-transaction");
+const {
+	captureAuthTransactions,
+	runCoordinatedAuthMutation,
+	UncoordinatedAuthMutationError,
+} = await import("@/lib/auth/auth-transaction");
 const {
 	authMutationCoordinationPlugin,
 	createCoordinatedOrganizationHooks,
 	handleCoordinatedAuthRequest,
 } = await import("@/lib/auth/auth-mutation-coordination");
-const { assignSsoOrganizationByVerifiedDomain, provisionSsoProviderOrganization } = await import(
-	"@/lib/auth/sso-organization-provisioning"
-);
+const {
+	assignSsoOrganizationByVerifiedDomain,
+	provisionSsoProviderOrganization,
+} = await import("@/lib/auth/sso-organization-provisioning");
 const { authDatabaseSchema } = await import("@/lib/auth-database-schema");
-const { createSCIMCallbackModelRegistration, createZ8SCIMPlugin } = await import(
-	"@/lib/scim/auth-configuration"
+const { createSCIMCallbackModelRegistration, createZ8SCIMPlugin } =
+	await import("@/lib/scim/auth-configuration");
+const { guardSCIMSubjectAcquisitions, SCIMProjectionGuardOrderError } =
+	await import("@/lib/scim/projection-guards");
+const { getSCIMCredentialExpiresAt, SCIM_SCOPES } = await import(
+	"@/lib/scim/constants"
 );
-const { guardSCIMSubjectAcquisitions, SCIMProjectionGuardOrderError } = await import(
-	"@/lib/scim/projection-guards"
-);
-const { getSCIMCredentialExpiresAt, SCIM_SCOPES } = await import("@/lib/scim/constants");
 
 const origin = "http://localhost:3000";
 const ids = {
@@ -166,13 +194,23 @@ const members = [ids.ownerUser, ids.adminUser, ids.employeeUser];
 const token = (userId: string) => `${userId}-session-token`;
 const memberId = (userId: string) => `m-${userId}`;
 
-const organizationGuard = JSON.stringify(["work-organization-configuration", ids.organization]);
-const userGuard = (userId: string) => JSON.stringify(["work-user-configuration-access", userId]);
+const organizationGuard = JSON.stringify([
+	"work-organization-configuration",
+	ids.organization,
+]);
+const userGuard = (userId: string) =>
+	JSON.stringify(["work-user-configuration-access", userId]);
 
-const at = (time: string) => ({ time, occurrence: null, displayedOffsetMinutes: 120 });
+const at = (time: string) => ({
+	time,
+	occurrence: null,
+	displayedOffsetMinutes: 120,
+});
 
 /** An on-behalf Berlin summer entry for the employee, by the organization admin. */
-function manualCommand(overrides: Partial<ManualTimeEntryCommand> = {}): ManualTimeEntryCommand {
+function manualCommand(
+	overrides: Partial<ManualTimeEntryCommand> = {},
+): ManualTimeEntryCommand {
 	return {
 		version: 2,
 		submissionId: randomUUID(),
@@ -191,7 +229,12 @@ function manualCommand(overrides: Partial<ManualTimeEntryCommand> = {}): ManualT
 
 /** The key the manual transaction takes after its protection and employee coordination. */
 const submissionIdentity = (command: ManualTimeEntryCommand) =>
-	JSON.stringify([ids.organization, "manual_time_submission", "time_entry", command.submissionId]);
+	JSON.stringify([
+		ids.organization,
+		"manual_time_submission",
+		"time_entry",
+		command.submissionId,
+	]);
 
 describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -246,7 +289,8 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 		],
 	});
 
-	const as = (userId: string) => new Headers({ authorization: `Bearer ${token(userId)}` });
+	const as = (userId: string) =>
+		new Headers({ authorization: `Bearer ${token(userId)}` });
 	const coordinated = <T>(mutation: () => Promise<T>) =>
 		runCoordinatedAuthMutation(auth.$context, mutation);
 	const post = (path: string, userId: string, body: unknown) =>
@@ -336,7 +380,8 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 	async function guardedUsers(userIds: string[]) {
 		const guarded: string[] = [];
 		for (const userId of userIds) {
-			if ((await advisoryLocks(userGuard(userId), true)) > 0) guarded.push(userId);
+			if ((await advisoryLocks(userGuard(userId), true)) > 0)
+				guarded.push(userId);
 		}
 		return guarded;
 	}
@@ -357,7 +402,10 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 	 * Starts a submission and pauses it on its identity key, after it holds its
 	 * shared configuration/access protection and employee coordination.
 	 */
-	async function pausedSubmission(command: ManualTimeEntryCommand, actor: string) {
+	async function pausedSubmission(
+		command: ManualTimeEntryCommand,
+		actor: string,
+	) {
 		const identity = await holdAdvisoryLock(submissionIdentity(command));
 		const pending = submit(command, actor);
 		await waitForWaiterOn(submissionIdentity(command));
@@ -389,18 +437,25 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 	}
 
 	async function cleanup() {
-		await admin.query("delete from scim_group where provisioning_domain_id = $1", [
+		await admin.query(
+			"delete from scim_group where provisioning_domain_id = $1",
+			[ids.organization],
+		);
+		await admin.query(
+			"delete from scim_connection_binding where provisioning_domain_id = $1",
+			[ids.organization],
+		);
+		await admin.query(
+			"delete from scim_managed_connection where provisioning_domain_id = $1",
+			[ids.organization],
+		);
+		await admin.query("delete from organization where id = $1", [
 			ids.organization,
 		]);
-		await admin.query("delete from scim_connection_binding where provisioning_domain_id = $1", [
-			ids.organization,
-		]);
-		await admin.query("delete from scim_managed_connection where provisioning_domain_id = $1", [
-			ids.organization,
-		]);
-		await admin.query("delete from organization where id = $1", [ids.organization]);
 		await admin.query('delete from "user" where id = any($1::text[])', [users]);
-		await admin.query("drop trigger if exists t314_fail_employee_update on employee");
+		await admin.query(
+			"drop trigger if exists t314_fail_employee_update on employee",
+		);
 		await admin.query("drop function if exists t314_fail_employee_update()");
 	}
 
@@ -481,7 +536,13 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			`insert into scim_provider_config (organization_id, creation_request_id, connection_id, state,
 				auto_activate_users, deprovision_action, default_role_template_id, created_at, created_by, updated_at)
 			 values ($1, 't314-scim-request', $2, 'active', true, 'suspend', $3, $4, $5, $4)`,
-			[ids.organization, ids.connection, ids.roleTemplate, timestamp, ids.ownerUser],
+			[
+				ids.organization,
+				ids.connection,
+				ids.roleTemplate,
+				timestamp,
+				ids.ownerUser,
+			],
 		);
 		await admin.query(
 			`insert into scim_subject (id, user_id, revision, created_at, updated_at)
@@ -532,7 +593,13 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			`insert into scim_provider_config (organization_id, creation_request_id, connection_id, state,
 				auto_activate_users, deprovision_action, default_role_template_id, created_at, created_by, updated_at)
 			 values ($1, 't429-scim-request', $2, 'active', true, 'suspend', $3, $4, $5, $4)`,
-			[ids.organization, connectionId, ids.roleTemplate, timestamp, ids.ownerUser],
+			[
+				ids.organization,
+				connectionId,
+				ids.roleTemplate,
+				timestamp,
+				ids.ownerUser,
+			],
 		);
 		for (const userId of scimMembers) {
 			await admin.query(
@@ -563,7 +630,10 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 		auth.handler(
 			new Request(`${origin}/api/auth/scim/v2${path}`, {
 				method: "POST",
-				headers: { authorization: `Bearer ${token}`, "content-type": "application/scim+json" },
+				headers: {
+					authorization: `Bearer ${token}`,
+					"content-type": "application/scim+json",
+				},
 				body: JSON.stringify(body),
 			}),
 		);
@@ -589,7 +659,9 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 	});
 
 	it("lets an organization admin create on behalf of the employee before any mutation", async () => {
-		await expect(submit(manualCommand(), ids.adminUser)).resolves.toMatchObject({ success: true });
+		await expect(submit(manualCommand(), ids.adminUser)).resolves.toMatchObject(
+			{ success: true },
+		);
 		expect(await workFor(ids.employee)).toHaveLength(1);
 	});
 
@@ -611,7 +683,9 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			expect(await membership(ids.adminUser)).toMatchObject({ role: "admin" });
 
 			await submission.release();
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(demotion).resolves.toMatchObject({ role: "member" });
 			expect(await membership(ids.adminUser)).toMatchObject({ role: "member" });
 			expect(await workFor(ids.employee)).toHaveLength(1);
@@ -656,16 +730,22 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			await waitForWaiterOn(userGuard(ids.adminUser));
 			await submission.release();
 
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			expect((await demotion).status).toBe(200);
 			expect(await membership(ids.adminUser)).toMatchObject({ role: "member" });
 
 			// A member may not change roles: the request fails and writes nothing.
-			const refused = await post("/organization/update-member-role", ids.employeeUser, {
-				organizationId: ids.organization,
-				memberId: memberId(ids.adminUser),
-				role: "admin",
-			});
+			const refused = await post(
+				"/organization/update-member-role",
+				ids.employeeUser,
+				{
+					organizationId: ids.organization,
+					memberId: memberId(ids.adminUser),
+					role: "admin",
+				},
+			);
 			expect(refused.status).toBe(403);
 			expect(await membership(ids.adminUser)).toMatchObject({ role: "member" });
 		});
@@ -683,7 +763,10 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			).rejects.toBeInstanceOf(UncoordinatedAuthMutationError);
 			await expect(
 				auth.api.removeMember({
-					body: { organizationId: ids.organization, memberIdOrEmail: memberId(ids.employeeUser) },
+					body: {
+						organizationId: ids.organization,
+						memberIdOrEmail: memberId(ids.employeeUser),
+					},
 					headers: as(ids.ownerUser),
 				}),
 			).rejects.toBeInstanceOf(UncoordinatedAuthMutationError);
@@ -695,7 +778,9 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			).rejects.toBeInstanceOf(UncoordinatedAuthMutationError);
 
 			expect(await membership(ids.adminUser)).toMatchObject({ role: "admin" });
-			expect(await membership(ids.employeeUser)).toMatchObject({ status: "approved" });
+			expect(await membership(ids.employeeUser)).toMatchObject({
+				status: "approved",
+			});
 		});
 	});
 
@@ -705,7 +790,10 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 
 			const removal = coordinated(() =>
 				auth.api.removeMember({
-					body: { organizationId: ids.organization, memberIdOrEmail: memberId(ids.employeeUser) },
+					body: {
+						organizationId: ids.organization,
+						memberIdOrEmail: memberId(ids.employeeUser),
+					},
 					headers: as(ids.ownerUser),
 				}),
 			);
@@ -713,14 +801,17 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			expect(await membership(ids.employeeUser)).not.toBeNull();
 
 			await submission.release();
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(removal).resolves.toBeTruthy();
 			expect(await membership(ids.employeeUser)).toBeNull();
 			expect(await employeeActive(ids.employeeUser)).toBe(false);
 			expect(harness.billingReconciled).toEqual([ids.organization]);
-			const { rows } = await admin.query("select id from session where user_id = $1", [
-				ids.employeeUser,
-			]);
+			const { rows } = await admin.query(
+				"select id from session where user_id = $1",
+				[ids.employeeUser],
+			);
 			expect(rows).toEqual([]);
 		});
 
@@ -737,13 +828,18 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			await expect(
 				coordinated(() =>
 					auth.api.removeMember({
-						body: { organizationId: ids.organization, memberIdOrEmail: memberId(ids.employeeUser) },
+						body: {
+							organizationId: ids.organization,
+							memberIdOrEmail: memberId(ids.employeeUser),
+						},
 						headers: as(ids.ownerUser),
 					}),
 				),
 			).rejects.toBeTruthy();
 
-			expect(await membership(ids.employeeUser)).toMatchObject({ status: "approved" });
+			expect(await membership(ids.employeeUser)).toMatchObject({
+				status: "approved",
+			});
 			expect(await employeeActive(ids.employeeUser)).toBe(true);
 			expect(harness.billingReconciled).toEqual([]);
 		});
@@ -766,7 +862,9 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			});
 
 			expect(removal.status).toBe(500);
-			expect(await membership(ids.employeeUser)).toMatchObject({ status: "approved" });
+			expect(await membership(ids.employeeUser)).toMatchObject({
+				status: "approved",
+			});
 			expect(await employeeActive(ids.employeeUser)).toBe(true);
 			expect(harness.billingReconciled).toEqual([]);
 		});
@@ -780,7 +878,9 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			await waitForWaiterOn(userGuard(ids.employeeUser));
 			await submission.release();
 
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			expect((await leaving).status).toBe(200);
 			expect(await membership(ids.employeeUser)).toBeNull();
 			expect(await employeeActive(ids.employeeUser)).toBe(false);
@@ -793,19 +893,30 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			await admin.query(
 				`insert into invitation (id, organization_id, email, role, status, expires_at, inviter_id)
 				 values ($1, $2, $3, 'member', 'pending', now() + interval '1 day', $4)`,
-				[ids.invitation, ids.organization, `${ids.inviteeUser}@t314.example.test`, ids.ownerUser],
+				[
+					ids.invitation,
+					ids.organization,
+					`${ids.inviteeUser}@t314.example.test`,
+					ids.ownerUser,
+				],
 			);
 			const guard = await holdAdvisoryLock(userGuard(ids.inviteeUser));
 
-			const acceptance = post("/organization/accept-invitation", ids.inviteeUser, {
-				invitationId: ids.invitation,
-			});
+			const acceptance = post(
+				"/organization/accept-invitation",
+				ids.inviteeUser,
+				{
+					invitationId: ids.invitation,
+				},
+			);
 			await waitForWaiterOn(userGuard(ids.inviteeUser));
 			expect(await membership(ids.inviteeUser)).toBeNull();
 			await guard.release();
 
 			expect((await acceptance).status).toBe(200);
-			expect(await membership(ids.inviteeUser)).toMatchObject({ role: "member" });
+			expect(await membership(ids.inviteeUser)).toMatchObject({
+				role: "member",
+			});
 			expect(harness.provisioned).toEqual([`accepted:${ids.inviteeUser}`]);
 		});
 
@@ -822,7 +933,10 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			await guard.release();
 
 			await provisioning;
-			expect(await membership(ids.ssoUser)).toMatchObject({ role: "admin", status: "approved" });
+			expect(await membership(ids.ssoUser)).toMatchObject({
+				role: "admin",
+				status: "approved",
+			});
 			// The organization does not require SSO approval.
 			expect(await employeeActive(ids.ssoUser)).toBe(true);
 		});
@@ -858,7 +972,9 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			await waitForWaiterOn(userGuard(ids.employeeUser));
 			await submission.release();
 
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(ban).resolves.toBeTruthy();
 			const { rows } = await admin.query<{ banned: boolean }>(
 				'select banned from "user" where id = $1',
@@ -870,14 +986,20 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 		it("holds an admin role change on the user's protection", async () => {
 			const submission = await pausedSubmission(manualCommand(), ids.adminUser);
 
-			const change = post(adminPlugin().endpoints.setRole.path, ids.platformAdminUser, {
-				userId: ids.adminUser,
-				role: "admin",
-			});
+			const change = post(
+				adminPlugin().endpoints.setRole.path,
+				ids.platformAdminUser,
+				{
+					userId: ids.adminUser,
+					role: "admin",
+				},
+			);
 			await waitForWaiterOn(userGuard(ids.adminUser));
 			await submission.release();
 
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			expect((await change).status).toBe(200);
 		});
 	});
@@ -894,15 +1016,22 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			expect(await employeeActive(ids.employeeUser)).toBe(true);
 
 			await submission.release();
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await replay;
-			expect(await membership(ids.employeeUser)).toMatchObject({ status: "suspended" });
+			expect(await membership(ids.employeeUser)).toMatchObject({
+				status: "suspended",
+			});
 			expect(await employeeActive(ids.employeeUser)).toBe(false);
 		});
 
 		it("makes a submission wait for an in-flight deprovisioning and then refuses it", async () => {
 			await seedScimDeprovisioning();
-			const row = await hold("select id from employee where id = $1 for update", [ids.employee]);
+			const row = await hold(
+				"select id from employee where id = $1 for update",
+				[ids.employee],
+			);
 			const replay = auth.api.reconcileSCIMProjection({
 				body: { provisioningDomainId: ids.organization },
 			});
@@ -922,11 +1051,17 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 				const scim = await seedScimManagedSources();
 				expect([ids.employeeUser, ids.adminUser].sort()).toEqual(scimMembers);
 				// Pauses the group change on the first member it projects, the employee.
-				const row = await hold("select id from employee where id = $1 for update", [ids.employee]);
+				const row = await hold(
+					"select id from employee where id = $1 for update",
+					[ids.employee],
+				);
 				const groupChange = scimRequest(scim.token, "/Groups", {
 					schemas: ["urn:ietf:params:scim:schemas:core:2.0:Group"],
 					displayName: "T429 descending members",
-					members: [{ value: scimSource(ids.employeeUser) }, { value: scimSource(ids.adminUser) }],
+					members: [
+						{ value: scimSource(ids.employeeUser) },
+						{ value: scimSource(ids.adminUser) },
+					],
 				});
 				await waitForRowWaiter();
 				const guardedDuringFirstProjection = await guardedUsers(scimMembers);
@@ -947,7 +1082,8 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 				const scim = await seedScimManagedSources();
 				// Taking the admin's guard now would wait here instead of failing.
 				const adminGuard = await holdAdvisoryLock(userGuard(ids.adminUser));
-				const reconcileUser = createZ8SCIMPlugin("s".repeat(32)).options.projection?.reconcileUser;
+				const reconcileUser = createZ8SCIMPlugin("s".repeat(32)).options
+					.projection?.reconcileUser;
 				const { adapter } = await auth.$context;
 
 				const projection = coordinated(async () => {
@@ -978,9 +1114,13 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 					);
 				});
 
-				await expect(projection).rejects.toBeInstanceOf(SCIMProjectionGuardOrderError);
+				await expect(projection).rejects.toBeInstanceOf(
+					SCIMProjectionGuardOrderError,
+				);
 				await adminGuard.release();
-				expect(await membership(ids.adminUser)).toMatchObject({ status: "approved" });
+				expect(await membership(ids.adminUser)).toMatchObject({
+					status: "approved",
+				});
 				const { rows: subjects } = await admin.query<{ revision: number }>(
 					"select revision from scim_subject where user_id = $1",
 					[ids.employeeUser],
@@ -995,7 +1135,10 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 
 			it("holds every replayed user's guard before projecting the first", async () => {
 				await seedScimManagedSources();
-				const row = await hold("select id from employee where id = $1 for update", [ids.admin]);
+				const row = await hold(
+					"select id from employee where id = $1 for update",
+					[ids.admin],
+				);
 				const replay = auth.api.reconcileSCIMProjection({
 					body: { provisioningDomainId: ids.organization },
 				});
@@ -1016,9 +1159,10 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 					members: scimMembers.map((userId) => ({ value: scimSource(userId) })),
 				});
 				expect(grouped.status).toBe(201);
-				const row = await hold("select id from member where id = $1 for update", [
-					memberId(ids.adminUser),
-				]);
+				const row = await hold(
+					"select id from member where id = $1 for update",
+					[memberId(ids.adminUser)],
+				);
 				const decommission = auth.api.decommissionSCIMManagedConnection({
 					body: {
 						connectionId: scim.connectionId,
@@ -1032,8 +1176,12 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 
 				await decommission;
 				expect(guardedDuringFirstProjection).toEqual(scimMembers);
-				expect(await membership(ids.adminUser)).toMatchObject({ status: "suspended" });
-				expect(await membership(ids.employeeUser)).toMatchObject({ status: "suspended" });
+				expect(await membership(ids.adminUser)).toMatchObject({
+					status: "suspended",
+				});
+				expect(await membership(ids.employeeUser)).toMatchObject({
+					status: "suspended",
+				});
 			});
 		});
 	});
@@ -1048,18 +1196,22 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 				organizationId: ids.organization,
 			});
 			await waitForWaiterOn(organizationGuard);
-			const { rows: before } = await admin.query("select id from organization where id = $1", [
-				ids.organization,
-			]);
+			const { rows: before } = await admin.query(
+				"select id from organization where id = $1",
+				[ids.organization],
+			);
 			expect(before).toHaveLength(1);
 			await guard.release();
 
 			expect((await deletion).status).toBe(500);
-			const { rows: after } = await admin.query("select id from organization where id = $1", [
-				ids.organization,
-			]);
+			const { rows: after } = await admin.query(
+				"select id from organization where id = $1",
+				[ids.organization],
+			);
 			expect(after).toHaveLength(1);
-			expect(await membership(ids.employeeUser)).toMatchObject({ status: "approved" });
+			expect(await membership(ids.employeeUser)).toMatchObject({
+				status: "approved",
+			});
 		});
 	});
 });

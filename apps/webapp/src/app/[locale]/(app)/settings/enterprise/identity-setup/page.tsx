@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { Suspense } from "react";
+import { OrganizationMfaPolicyPanel } from "@/components/organization-mfa/settings";
 import { IdentitySetupWizard } from "@/components/settings/enterprise/identity-setup-wizard";
 import { SocialOAuthManagement } from "@/components/settings/enterprise/social-oauth-management";
 import { SSOProviderManagement } from "@/components/settings/enterprise/sso-provider-management";
@@ -43,6 +44,15 @@ async function IdentitySettingsContent() {
 			title={t("settings.navigation.identityAccess.title", "Identity & Access")}
 			defaultTab="setup"
 			tabs={[
+				{
+					value: "local-mfa",
+					label: t("mfa.policy.tab", "Local MFA"),
+					description: t(
+						"mfa.policy.tabDescription",
+						"Require verified local authentication with controlled enrollment deadlines",
+					),
+					panel: <OrganizationMfaPolicyPanel organizationId={organizationId} />,
+				},
 				{
 					value: "setup",
 					label: t(

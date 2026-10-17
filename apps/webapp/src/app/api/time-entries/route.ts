@@ -1,3 +1,4 @@
+import { mfaAccessHold } from "@/lib/organization-mfa/http";
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
@@ -28,7 +29,10 @@ import {
 	type ClockOutResult,
 	clocking,
 } from "@/lib/time-tracking/clocking";
-import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
+import {
+	ClockingAccessError,
+	clockingService,
+} from "@/lib/time-tracking/clocking-service";
 import { PROJECT_TASK_INELIGIBILITY_MESSAGES } from "@/lib/time-tracking/project-eligibility";
 import { isProjectTaskId } from "@/lib/time-tracking/task-attribution";
 import { readClockVehicleUse } from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
@@ -84,7 +88,10 @@ export async function GET(request: NextRequest) {
 		// Get current user's employee record for the active organization
 		const activeOrgId = session.session.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 		await clockingService.requireActor({
 			userId: session.user.id,
@@ -149,7 +156,10 @@ export async function GET(request: NextRequest) {
 				.limit(1);
 
 			if (!targetEmployee) {
-				return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+				return NextResponse.json(
+					{ error: "Employee not found" },
+					{ status: 404 },
+				);
 			}
 
 			if (
@@ -183,7 +193,10 @@ export async function GET(request: NextRequest) {
 
 		return NextResponse.json({ entries });
 	} catch (_error) {
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -196,19 +209,30 @@ const ACTION_ID_PATTERN = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
  * review. Only complete replay evidence that would pass the accepted-replay
  * checks qualifies; it never becomes a time entry here.
  */
-async function preserveRefusedReplay(userId: string, organizationId: string, body: any) {
+async function preserveRefusedReplay(
+	userId: string,
+	organizationId: string,
+	body: any,
+) {
 	if (body?.replay !== true) return;
 	const { id, type, timestamp, browserTimezone, utcOffsetMinutes } = body;
 	if (typeof id !== "string" || !ACTION_ID_PATTERN.test(id)) return;
 	if (type !== "clock_in" && type !== "clock_out") return;
-	if (!timestamp || !isValidIanaTimezone(browserTimezone) || !Number.isInteger(utcOffsetMinutes)) {
+	if (
+		!timestamp ||
+		!isValidIanaTimezone(browserTimezone) ||
+		!Number.isInteger(utcOffsetMinutes)
+	) {
 		return;
 	}
 	const capturedAt = new Date(timestamp);
 	if (Number.isNaN(capturedAt.getTime())) return;
 	const ageMs = Date.now() - capturedAt.getTime();
 	if (ageMs < -5 * 60_000 || ageMs > REPLAY_MAX_AGE_MS) return;
-	if (getUtcOffsetMinutesForZone(capturedAt, browserTimezone) !== utcOffsetMinutes) return;
+	if (
+		getUtcOffsetMinutesForZone(capturedAt, browserTimezone) !== utcOffsetMinutes
+	)
+		return;
 	await preserveLateClockEvidence(db, {
 		organizationId,
 		userId,
@@ -224,7 +248,9 @@ async function preserveRefusedReplay(userId: string, organizationId: string, bod
 /** Omitted attribution preserves the period's; `null` or an empty ID clears it. */
 function attributionOf(value: unknown): AttributionIntent {
 	if (value === undefined) return { kind: "preserve" };
-	return typeof value === "string" && value ? { kind: "replace", id: value } : { kind: "clear" };
+	return typeof value === "string" && value
+		? { kind: "replace", id: value }
+		: { kind: "clear" };
 }
 
 /**
@@ -233,10 +259,15 @@ function attributionOf(value: unknown): AttributionIntent {
  * malformed ID, a number, a boolean) is refused as an unknown task before
  * anything runs.
  */
-function taskAttributionOf(value: unknown): { ok: true; task?: AttributionIntent } | { ok: false } {
+function taskAttributionOf(
+	value: unknown,
+): { ok: true; task?: AttributionIntent } | { ok: false } {
 	if (value === undefined) return { ok: true };
-	if (value === null || value === "") return { ok: true, task: { kind: "clear" } };
-	return isProjectTaskId(value) ? { ok: true, task: { kind: "replace", id: value } } : { ok: false };
+	if (value === null || value === "")
+		return { ok: true, task: { kind: "clear" } };
+	return isProjectTaskId(value)
+		? { ok: true, task: { kind: "replace", id: value } }
+		: { ok: false };
 }
 
 type LegacyClockFailure = ClockInRefusal["code"] | ClockOutRefusal["code"];
@@ -289,7 +320,10 @@ const FAILURE_REPLIES: Record<
 		error: "Cannot assign to this work category",
 	},
 	// The legacy route never chooses billability, so this only guards the table.
-	billable_not_allowed: { status: 400, error: "Billable work needs a project with a customer" },
+	billable_not_allowed: {
+		status: 400,
+		error: "Billable work needs a project with a customer",
+	},
 	invalid_interval: { status: 409, error: "Clock-out precedes clock-in" },
 	failed: { status: 500, error: "Internal server error" },
 	unconfirmed: { status: 500, error: "Internal server error" },
@@ -334,7 +368,8 @@ function refusedResponse(failure: ClockInRefusal | ClockOutRefusal) {
 
 /** The entry alone, as legacy consumers read it; closure advice stays with the web. */
 function entryOf(result: ClockOutResult) {
-	const { complianceWarnings, breakAdjustment, pendingApproval, ...entry } = result;
+	const { complianceWarnings, breakAdjustment, pendingApproval, ...entry } =
+		result;
 	return entry;
 }
 
@@ -356,7 +391,10 @@ export async function POST(request: NextRequest) {
 		// Await headers and body in parallel
 		[resolvedHeaders, body] = await Promise.all([headers(), request.json()]);
 	} catch {
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 
 	return fenceLegacyClockConsumerResponse(
@@ -365,7 +403,11 @@ export async function POST(request: NextRequest) {
 	);
 }
 
-async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, request: NextRequest) {
+async function runLegacyClockCommand(
+	resolvedHeaders: Headers,
+	body: any,
+	request: NextRequest,
+) {
 	try {
 		// With Bearer plugin, getSession handles both cookie and Bearer token auth
 		const session = await auth.api.getSession({ headers: resolvedHeaders });
@@ -374,7 +416,10 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 		if (body && typeof body === "object" && "employeeId" in body) {
-			return NextResponse.json({ error: "employeeId is server-derived" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "employeeId is server-derived" },
+				{ status: 400 },
+			);
 		}
 
 		const {
@@ -400,10 +445,16 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 
 		const activeOrgId = session.session.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 		const activeMembership = await db.query.member.findFirst({
-			where: and(eq(member.userId, session.user.id), eq(member.organizationId, activeOrgId)),
+			where: and(
+				eq(member.userId, session.user.id),
+				eq(member.organizationId, activeOrgId),
+			),
 			columns: { id: true },
 		});
 		if (!activeMembership) {
@@ -413,7 +464,10 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 			);
 		}
 		if (organizationId !== undefined) {
-			return NextResponse.json({ error: "organizationId is server-derived" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "organizationId is server-derived" },
+				{ status: 400 },
+			);
 		}
 		// Authentication; the Clocking module authorizes the command.
 		let actor: Awaited<ReturnType<typeof clockingService.requireActor>>;
@@ -453,9 +507,14 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 		const isReplay = replay === true;
 		// Postgres compares UUIDs case-insensitively; the module's identities are lowercase.
 		const actionId =
-			typeof id === "string" && ACTION_ID_PATTERN.test(id) ? id.toLowerCase() : undefined;
-		const requestBrowserTimezone = isValidIanaTimezone(browserTimezone) ? browserTimezone : null;
-		const hasCapturedEvidence = actionId !== undefined || utcOffsetMinutes !== undefined;
+			typeof id === "string" && ACTION_ID_PATTERN.test(id)
+				? id.toLowerCase()
+				: undefined;
+		const requestBrowserTimezone = isValidIanaTimezone(browserTimezone)
+			? browserTimezone
+			: null;
+		const hasCapturedEvidence =
+			actionId !== undefined || utcOffsetMinutes !== undefined;
 		if (isReplay && !actionId) {
 			return NextResponse.json(
 				{ error: "Replay requires an extension action id" },
@@ -464,13 +523,21 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 		}
 		if (
 			hasCapturedEvidence &&
-			(!timestamp || !requestBrowserTimezone || !Number.isInteger(utcOffsetMinutes))
+			(!timestamp ||
+				!requestBrowserTimezone ||
+				!Number.isInteger(utcOffsetMinutes))
 		) {
-			return NextResponse.json({ error: "Clock timezone evidence is incomplete" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Clock timezone evidence is incomplete" },
+				{ status: 400 },
+			);
 		}
 		const entryTime = timestamp ? new Date(timestamp) : null;
 		if (entryTime && Number.isNaN(entryTime.getTime())) {
-			return NextResponse.json({ error: "Invalid clock instant" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Invalid clock instant" },
+				{ status: 400 },
+			);
 		}
 		// Historical committed recovery precedes fresh age admission (#275): an
 		// action id that already committed in this scope replays through the
@@ -498,7 +565,10 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 					{ status: 400 },
 				);
 			}
-			if (getUtcOffsetMinutesForZone(entryTime, requestBrowserTimezone!) !== utcOffsetMinutes) {
+			if (
+				getUtcOffsetMinutesForZone(entryTime, requestBrowserTimezone!) !==
+				utcOffsetMinutes
+			) {
 				return NextResponse.json(
 					{ error: "Timezone offset does not match instant" },
 					{ status: 400 },
@@ -526,7 +596,10 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 		};
 		const task = taskAttributionOf(taskId);
 		if (type === "clock_out" && !task.ok) {
-			return refusedResponse({ code: "task_not_allowed", reason: "task_not_found" });
+			return refusedResponse({
+				code: "task_not_allowed",
+				reason: "task_not_found",
+			});
 		}
 		// The desktop's online vehicle use (#1124) rides beside the body. Malformed
 		// vehicle use is dropped, never refused; the module records what it may.
@@ -554,12 +627,18 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 					});
 		if (outcome.outcome === "refused") return refusedResponse(outcome.failure);
 		// A replayed command answers as it did when it was first saved.
-		return NextResponse.json({ entry: entryOf(outcome.result) }, { status: 201 });
+		return NextResponse.json(
+			{ entry: entryOf(outcome.result) },
+			{ status: 201 },
+		);
 	} catch (error) {
 		if (error instanceof ClockingAccessError) {
 			return NextResponse.json({ error: error.message }, { status: 403 });
 		}
 		logger.error({ error }, "Legacy clock command failed");
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

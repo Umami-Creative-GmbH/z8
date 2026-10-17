@@ -11,8 +11,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth/request-session", () => ({
 	getRequestSession: mocks.session,
 }));
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
-	canAccessOrganizationWithSso: mocks.sso,
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	canAccessOrganization: mocks.sso,
 }));
 vi.mock("@/db", () => ({
 	db: {
@@ -28,8 +28,12 @@ vi.mock("@/lib/time-tracking/clocking-reminders/settings", () => ({
 
 // The shared runtime over the real DatabaseServiceLive, which reads the mocked db.
 vi.mock("@/lib/effect/runtime", async () => {
-	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(DatabaseServiceLive);
+	const { DatabaseServiceLive } = await import(
+		"@/lib/effect/services/database.service"
+	);
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		DatabaseServiceLive,
+	);
 });
 
 import { updateClockingReminderSettings } from "./clocking-reminder-actions";
@@ -66,25 +70,41 @@ describe("updateClockingReminderSettings", () => {
 		"lets an approved %s save the active organization's settings",
 		async (role) => {
 			mocks.member.mockResolvedValue({ role, status: "approved" });
-			expect(await updateClockingReminderSettings(input)).toEqual({ success: true, data: saved });
-			const sql = new PgDialect().sqlToQuery(mocks.member.mock.calls[0][0].where);
+			expect(await updateClockingReminderSettings(input)).toEqual({
+				success: true,
+				data: saved,
+			});
+			const sql = new PgDialect().sqlToQuery(
+				mocks.member.mock.calls[0][0].where,
+			);
 			expect(sql.params).toEqual(["user-1", "org-1", "approved"]);
 			expect(mocks.save).toHaveBeenCalledWith(
 				input,
-				expect.objectContaining({ database: expect.anything(), clock: expect.anything() }),
+				expect.objectContaining({
+					database: expect.anything(),
+					clock: expect.anything(),
+				}),
 			);
 		},
 	);
 
-	it.each(["member", "manager"])("refuses a %s without writing", async (role) => {
-		mocks.member.mockResolvedValue({ role, status: "approved" });
-		expect((await updateClockingReminderSettings(input)).success).toBe(false);
-		expect(mocks.save).not.toHaveBeenCalled();
-	});
+	it.each(["member", "manager"])(
+		"refuses a %s without writing",
+		async (role) => {
+			mocks.member.mockResolvedValue({ role, status: "approved" });
+			expect((await updateClockingReminderSettings(input)).success).toBe(false);
+			expect(mocks.save).not.toHaveBeenCalled();
+		},
+	);
 
 	it("refuses a submitted organization different from the active organization", async () => {
 		expect(
-			(await updateClockingReminderSettings({ ...input, organizationId: "org-other" })).success,
+			(
+				await updateClockingReminderSettings({
+					...input,
+					organizationId: "org-other",
+				})
+			).success,
 		).toBe(false);
 		expect(mocks.member).not.toHaveBeenCalled();
 		expect(mocks.save).not.toHaveBeenCalled();

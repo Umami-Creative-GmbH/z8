@@ -9,6 +9,7 @@ export interface Organization {
 	memberRole: string;
 	hasEmployeeRecord: boolean;
 	ssoRequired?: boolean;
+	mfaRequired?: boolean;
 }
 interface OrganizationsResponse {
 	cached?: boolean;
@@ -32,6 +33,7 @@ export function useOrganizations({
 		enabled: isAuthenticated && !!serverUrl,
 		staleTime: 30000,
 		refetchOnWindowFocus: true,
+		refetchInterval: 30000,
 	});
 	const mutation = useMutation({
 		mutationFn: (organizationId: string) =>

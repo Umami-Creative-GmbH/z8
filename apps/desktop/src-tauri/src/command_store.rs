@@ -429,6 +429,7 @@ impl CommandStore {
                     org["id"].as_str() == Some(&context.organization_id)
                         && org["hasEmployeeRecord"].as_bool() == Some(true)
                         && org["ssoRequired"].as_bool() != Some(true)
+                        && org["mfaRequired"].as_bool() != Some(true)
                 })
             });
         if !employee_access {

@@ -10,7 +10,9 @@ const mockState = vi.hoisted(() => ({
 	deleteCommand: vi.fn(),
 	ssoAllowed: vi.fn(async () => true),
 }));
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({ canAccessOrganizationWithSso: mockState.ssoAllowed }));
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	canAccessOrganization: mockState.ssoAllowed,
+}));
 
 vi.mock("next/headers", () => ({
 	headers: vi.fn(() => Promise.resolve(new Headers())),
@@ -114,7 +116,9 @@ vi.mock("@/lib/storage/avatar-storage", () => ({
 }));
 
 vi.mock("file-type", () => ({
-	fileTypeFromBuffer: vi.fn(() => Promise.resolve({ ext: "png", mime: "image/png" })),
+	fileTypeFromBuffer: vi.fn(() =>
+		Promise.resolve({ ext: "png", mime: "image/png" }),
+	),
 }));
 
 vi.mock("sharp", () => ({
@@ -136,7 +140,10 @@ describe("image upload processing", () => {
 			if (command.type === "get") {
 				return Promise.resolve({
 					ContentLength: 4,
-					Body: { transformToByteArray: () => Promise.resolve(new Uint8Array([1, 2, 3, 4])) },
+					Body: {
+						transformToByteArray: () =>
+							Promise.resolve(new Uint8Array([1, 2, 3, 4])),
+					},
 				});
 			}
 
@@ -172,7 +179,13 @@ describe("image upload processing", () => {
 
 	it("blocks branding uploads for a nonactive SSO org before S3 or organization writes", async () => {
 		mockState.ssoAllowed.mockResolvedValueOnce(false);
-		const response = await POST({ json: async () => ({ tusFileKey: "upload", uploadType: "branding-logo", organizationId: "locked" }) } as never);
+		const response = await POST({
+			json: async () => ({
+				tusFileKey: "upload",
+				uploadType: "branding-logo",
+				organizationId: "locked",
+			}),
+		} as never);
 		expect(response.status).toBe(403);
 		expect(mockState.s3Send).not.toHaveBeenCalled();
 		expect(mockState.updateOrganization).not.toHaveBeenCalled();
@@ -252,7 +265,9 @@ describe("image upload processing", () => {
 	});
 
 	it("returns a generic error without leaking internal storage details", async () => {
-		const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => undefined);
 		mockState.s3Send.mockRejectedValueOnce(
 			new Error("S3 provider failed with secret access-key internal-bucket"),
 		);
@@ -266,7 +281,9 @@ describe("image upload processing", () => {
 		} as never);
 
 		expect(response.status).toBe(500);
-		await expect(response.json()).resolves.toEqual({ error: "Processing failed" });
+		await expect(response.json()).resolves.toEqual({
+			error: "Processing failed",
+		});
 		expect(consoleError).toHaveBeenCalledWith(
 			"Process upload error:",
 			expect.objectContaining({

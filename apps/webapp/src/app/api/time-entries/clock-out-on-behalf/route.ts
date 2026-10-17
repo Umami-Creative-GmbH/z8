@@ -6,7 +6,7 @@ import {
 } from "@/app/[locale]/(app)/time-tracking/actions/clock-out-on-behalf";
 import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import { auth } from "@/lib/auth";
-import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
+import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
 import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
 import { parseOnBehalfClockOutRequest } from "@/lib/time-tracking/on-behalf-clock-out-request";
 import { PROJECT_TASK_INELIGIBILITY_MESSAGES } from "@/lib/time-tracking/project-eligibility";
@@ -27,11 +27,20 @@ const REJECTIONS: Record<
 	>,
 	{ status: number; error: string }
 > = {
-	access_denied: { status: 403, error: "Not authorized to clock out this employee" },
-	invalid_command: { status: 400, error: "This clock-out request is not valid" },
+	access_denied: {
+		status: 403,
+		error: "Not authorized to clock out this employee",
+	},
+	invalid_command: {
+		status: 400,
+		error: "This clock-out request is not valid",
+	},
 	target_unknown: { status: 404, error: "Work period not found" },
 	target_not_active: { status: 409, error: "Work period is no longer running" },
-	collision: { status: 409, error: "This clock-out request conflicts with another one" },
+	collision: {
+		status: 409,
+		error: "This clock-out request conflicts with another one",
+	},
 	invalid_interval: { status: 409, error: "Clock-out must be after clock-in" },
 	append_review_required: {
 		status: 409,
@@ -39,7 +48,10 @@ const REJECTIONS: Record<
 	},
 };
 
-async function rejected(rejection: OnBehalfClockOutRejection, operationId: string | null) {
+async function rejected(
+	rejection: OnBehalfClockOutRejection,
+	operationId: string | null,
+) {
 	if (rejection.code === "month_closed") {
 		// The work touches a closed month (#762).
 		return NextResponse.json(
@@ -59,7 +71,10 @@ async function rejected(rejection: OnBehalfClockOutRejection, operationId: strin
 			{ status: 402 },
 		);
 	}
-	if (rejection.code === "attribution_not_allowed" && rejection.field === "taskId") {
+	if (
+		rejection.code === "attribution_not_allowed" &&
+		rejection.field === "taskId"
+	) {
 		// A refused task names its stable reason (#873, #874).
 		return NextResponse.json(
 			{
@@ -87,7 +102,10 @@ async function rejected(rejection: OnBehalfClockOutRejection, operationId: strin
 		);
 	}
 	const { status, error } = REJECTIONS[rejection.code];
-	return NextResponse.json({ error, code: rejection.code, operationId }, { status });
+	return NextResponse.json(
+		{ error, code: rejection.code, operationId },
+		{ status },
+	);
 }
 
 /** The work may or may not have committed; resending the same identity replays it. */
@@ -110,7 +128,9 @@ export async function POST(request: NextRequest) {
 	const parsed = parseOnBehalfClockOutRequest(body);
 	if (!parsed) {
 		return NextResponse.json(
-			{ error: "workPeriodId is required; operationId must be a lowercase UUID" },
+			{
+				error: "workPeriodId is required; operationId must be a lowercase UUID",
+			},
 			{ status: 400 },
 		);
 	}
@@ -121,11 +141,17 @@ export async function POST(request: NextRequest) {
 	}
 	const activeOrganizationId = session.session.activeOrganizationId;
 	if (!activeOrganizationId) {
-		return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		return NextResponse.json(
+			{ error: "No active organization" },
+			{ status: 400 },
+		);
 	}
 	// Authentication: an organization that requires SSO admits only SSO sessions.
-	if (!(await canAccessOrganizationWithSso(session.session, activeOrganizationId))) {
-		return await rejected({ code: "access_denied" }, parsed.operationId ?? null);
+	if (!(await canAccessOrganization(session.session, activeOrganizationId))) {
+		return await rejected(
+			{ code: "access_denied" },
+			parsed.operationId ?? null,
+		);
 	}
 
 	try {
@@ -133,12 +159,15 @@ export async function POST(request: NextRequest) {
 			request: parsed,
 			session: { userId: session.user.id, activeOrganizationId },
 		});
-		if (result.outcome === "rejected") return await rejected(result, result.operationId);
+		if (result.outcome === "rejected")
+			return await rejected(result, result.operationId);
 		if (result.outcome === "unknown") {
 			logger.error({ error: result.cause }, "On-behalf clock-out failed");
 			return unknownOutcome(result.operationId);
 		}
-		return NextResponse.json(result, { status: result.outcome === "executed" ? 201 : 200 });
+		return NextResponse.json(result, {
+			status: result.outcome === "executed" ? 201 : 200,
+		});
 	} catch (error) {
 		logger.error({ error }, "On-behalf clock-out failed");
 		return unknownOutcome(parsed.operationId ?? null);
