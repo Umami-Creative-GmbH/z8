@@ -152,6 +152,7 @@ export const employee = pgTable(
 		// Job information
 		role: roleEnum("role").default("employee").notNull(),
 		employeeNumber: text("employee_number"),
+		personnelNumberManagedByScim: boolean("personnel_number_managed_by_scim").default(false).notNull(),
 		position: text("position"),
 		startDate: timestamp("start_date"),
 		endDate: timestamp("end_date"),

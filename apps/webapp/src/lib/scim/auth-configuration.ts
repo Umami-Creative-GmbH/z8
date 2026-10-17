@@ -20,6 +20,7 @@ import {
 	scimRoleProjection,
 } from "./projection-reconciler";
 import { SCIM_MODELS } from "./transaction-store";
+import { withSCIMPersonnelNumber } from "./personnel-number-endpoints";
 
 const optionalString = { type: "string", required: false } as const;
 const optionalNumber = { type: "number", required: false } as const;
@@ -44,6 +45,8 @@ const scimCallbackModelSchema = {
 			id: optionalString,
 			organizationId: optionalString,
 			userId: optionalString,
+			employeeNumber: optionalString,
+			personnelNumberManagedByScim: optionalBoolean,
 			role: optionalString,
 			isActive: optionalBoolean,
 		},
@@ -253,7 +256,7 @@ async function releaseSCIMDeprovisionedDeputy(input: {
 }
 
 export function createZ8SCIMPlugin(credentialHashSecret: string) {
-	return scim({
+	const plugin = scim({
 		connections: [],
 		managedConnections: { credentialHashSecret },
 		compatibility: {
@@ -267,4 +270,15 @@ export function createZ8SCIMPlugin(credentialHashSecret: string) {
 			reconcileUser: reconcileSCIMProjectedUser,
 		},
 	});
+	return {
+		...plugin,
+		endpoints: {
+			...plugin.endpoints,
+			createSCIMUser: withSCIMPersonnelNumber(plugin.endpoints.createSCIMUser, "POST"),
+			patchSCIMUser: withSCIMPersonnelNumber(plugin.endpoints.patchSCIMUser, "PATCH"),
+			replaceSCIMUser: withSCIMPersonnelNumber(plugin.endpoints.replaceSCIMUser, "PUT"),
+			getSCIMUser: withSCIMPersonnelNumber(plugin.endpoints.getSCIMUser, "GET"),
+			listSCIMUsers: withSCIMPersonnelNumber(plugin.endpoints.listSCIMUsers, "GET"),
+		},
+	};
 }

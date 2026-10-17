@@ -6,7 +6,15 @@
  */
 import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -18,7 +26,12 @@ vi.mock("@/lib/logger", () => ({
 		warn: () => {},
 		info: () => {},
 		debug: () => {},
-		child: () => ({ error: () => {}, warn: () => {}, info: () => {}, debug: () => {} }),
+		child: () => ({
+			error: () => {},
+			warn: () => {},
+			info: () => {},
+			debug: () => {},
+		}),
 	}),
 }));
 
@@ -33,10 +46,10 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 	let holderId: string;
 
 	async function setNumber(employeeId: string, employeeNumber: string | null) {
-		await fixture.pool.query("update employee set employee_number = $2 where id = $1", [
-			employeeId,
-			employeeNumber,
-		]);
+		await fixture.pool.query(
+			"update employee set employee_number = $2 where id = $1",
+			[employeeId, employeeNumber],
+		);
 	}
 
 	const inviteeUserIds: string[] = [];
@@ -108,7 +121,9 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 
 	afterAll(async () => {
 		await fixture?.close();
-		await fixture?.pool.query(`delete from "user" where id = any($1::text[])`, [inviteeUserIds]);
+		await fixture?.pool.query(`delete from "user" where id = any($1::text[])`, [
+			inviteeUserIds,
+		]);
 	});
 
 	it("creates the employee without a number taken in the meantime and audits the drop", async () => {
@@ -117,7 +132,10 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 
 		const employee = await accept(invitee.userId, invitationId);
 
-		expect(employee).toMatchObject({ userId: invitee.userId, employeeNumber: null });
+		expect(employee).toMatchObject({
+			userId: invitee.userId,
+			employeeNumber: null,
+		});
 		expect(await droppedNumberAudits(employee?.id as string)).toEqual([
 			{
 				entity_type: "employee",
@@ -135,9 +153,15 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 	});
 
 	it("reactivates an inactive employee who keeps their own number when the draft's is taken", async () => {
-		const former = await fixture.seedEmployee({ isActive: false, withPeriod: false });
+		const former = await fixture.seedEmployee({
+			isActive: false,
+			withPeriod: false,
+		});
 		await setNumber(former.employeeId, "OWN-1");
-		const { invitationId } = await invite(`${former.userId}@lifecycle.test`, "E-42");
+		const { invitationId } = await invite(
+			`${former.userId}@lifecycle.test`,
+			"E-42",
+		);
 
 		const employee = await accept(former.userId, invitationId);
 
@@ -167,9 +191,10 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 		const concurrent: PoolClient = await fixture.pool.connect();
 		try {
 			await concurrent.query("begin");
-			await concurrent.query("update employee set employee_number = 'r-1' where id = $1", [
-				holderId,
-			]);
+			await concurrent.query(
+				"update employee set employee_number = 'r-1' where id = $1",
+				[holderId],
+			);
 
 			const accepting = accept(invitee.userId, invitationId);
 			await vi.waitFor(
@@ -185,7 +210,10 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 			await concurrent.query("commit");
 
 			const employee = await accepting;
-			expect(employee).toMatchObject({ userId: invitee.userId, employeeNumber: null });
+			expect(employee).toMatchObject({
+				userId: invitee.userId,
+				employeeNumber: null,
+			});
 			expect(await droppedNumberAudits(employee?.id as string)).toEqual([
 				expect.objectContaining({
 					metadata: expect.objectContaining({
@@ -199,6 +227,25 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 		}
 	});
 
+	it("preserves an IdP-owned number when accepting an invitation for an inactive employee", async () => {
+		const former = await fixture.seedEmployee({
+			isActive: false,
+			withPeriod: false,
+		});
+		await fixture.pool.query(
+			"update employee set employee_number = 'IDP-INVITE', personnel_number_managed_by_scim = true where id = $1",
+			[former.employeeId],
+		);
+		const { invitationId } = await invite(
+			`${former.userId}@lifecycle.test`,
+			"LOCAL-INVITE",
+		);
+		const employee = await accept(former.userId, invitationId);
+		expect(employee).toMatchObject({
+			employeeNumber: "IDP-INVITE",
+			personnelNumberManagedByScim: true,
+		});
+	});
 	it("copies a draft number that is still free, trimmed", async () => {
 		const invitee = await createInvitee();
 		const { invitationId } = await invite(invitee.email, " N-7 ");
@@ -210,9 +257,15 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 	});
 
 	it("gives the reactivated employee the draft's number, also when it is already theirs", async () => {
-		const former = await fixture.seedEmployee({ isActive: false, withPeriod: false });
+		const former = await fixture.seedEmployee({
+			isActive: false,
+			withPeriod: false,
+		});
 		await setNumber(former.employeeId, "OWN-2");
-		const { invitationId } = await invite(`${former.userId}@lifecycle.test`, "own-2");
+		const { invitationId } = await invite(
+			`${former.userId}@lifecycle.test`,
+			"own-2",
+		);
 
 		const employee = await accept(former.userId, invitationId);
 

@@ -133,7 +133,7 @@ describe("personnel number uniqueness on PostgreSQL", () => {
 
 	beforeEach(async () => {
 		await fixture.pool.query(
-			"update employee set employee_number = null, is_active = true where organization_id = $1",
+			"update employee set employee_number = null, personnel_number_managed_by_scim = false, is_active = true where organization_id = $1",
 			[fixture.organizationId],
 		);
 	});
@@ -142,6 +142,31 @@ describe("personnel number uniqueness on PostgreSQL", () => {
 		await fixture?.close();
 	});
 
+	it("refuses local changes to an IdP-owned number while allowing unrelated saves", async () => {
+		await fixture.pool.query(
+			"update employee set employee_number = 'IDP-7', personnel_number_managed_by_scim = true where id = $1",
+			[fixture.employeeId],
+		);
+		for (const employeeNumber of ["LOCAL-1", ""]) {
+			await expect(
+				save(fixture.employeeId, employeeNumber),
+			).resolves.toMatchObject({
+				success: false,
+				code: "ValidationError",
+				refusal: "personnel_number_managed_by_idp",
+			});
+		}
+		await expect(
+			updateEmployeeAction(fixture.employeeId, {
+				position: "Lead",
+				employeeNumber: "IDP-7",
+			}),
+		).resolves.toMatchObject({ success: true });
+		await expect(
+			updateEmployeeAction(fixture.employeeId, { position: "Director" }),
+		).resolves.toMatchObject({ success: true });
+		expect(await numberOf(fixture.employeeId)).toBe("IDP-7");
+	});
 	it("refuses a number another employee holds, ignoring case and surrounding spaces", async () => {
 		await setNumber(holderId, "E-42");
 
