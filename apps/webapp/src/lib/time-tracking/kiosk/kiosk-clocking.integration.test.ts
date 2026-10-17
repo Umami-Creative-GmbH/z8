@@ -45,7 +45,7 @@ const { proveKioskPin } = await import("@/lib/time-tracking/clocking/kiosk");
 const { createNotification } = await import("@/lib/notifications/notification-service");
 type ClockPrincipal = import("@/lib/time-tracking/clocking/types").ClockPrincipal;
 type ClockInCommand = import("@/lib/time-tracking/clocking/types").ClockInCommand;
-type KioskPinProof = import("@/lib/time-tracking/clocking/types").KioskPinProof;
+type KioskEmployeeProof = import("@/lib/time-tracking/clocking/types").KioskEmployeeProof;
 
 const ids = {
 	organization: "t860-kiosk-org",
@@ -109,6 +109,8 @@ describe("kiosk clocking on PostgreSQL", () => {
 			clocking,
 			clock,
 			limitPinAttempts: async () => ({ allowed: true, retryAfter: 0 }),
+			limitBadgeAttempts: async () => ({ allowed: true, retryAfter: 0 }),
+			limitOutcomeLookups: async () => ({ allowed: true, retryAfter: 0 }),
 		});
 		return { service, followUps };
 	}
@@ -581,6 +583,8 @@ describe("kiosk clocking on PostgreSQL", () => {
 					expect(kioskId).toBe(ids.kiosk);
 					return { allowed: false, retryAfter: 42 };
 				},
+				limitBadgeAttempts: async () => ({ allowed: true, retryAfter: 0 }),
+				limitOutcomeLookups: async () => ({ allowed: true, retryAfter: 0 }),
 			});
 			const response = await limited.clock(
 				kioskRequest("clock", { employeeId: ids.worker, pin: PIN, action: "clock_in" }),
@@ -620,11 +624,14 @@ describe("kiosk clocking on PostgreSQL", () => {
 				return proven.proof;
 			}
 
-			const kioskPrincipal = (pin: KioskPinProof, kioskId: string = ids.kiosk): ClockPrincipal => ({
+			const kioskPrincipal = (
+				proof: KioskEmployeeProof,
+				kioskId: string = ids.kiosk,
+			): ClockPrincipal => ({
 				kind: "kiosk",
 				kioskId,
 				userId: ids.workerUser,
-				pin,
+				proof,
 			});
 			const denied = { outcome: "refused", failure: { code: "access_denied" } };
 
@@ -636,6 +643,7 @@ describe("kiosk clocking on PostgreSQL", () => {
 
 			it("refuses a proof built without the PIN check", async () => {
 				const forged = {
+					kind: "pin" as const,
 					organizationId: ids.organization,
 					kioskId: ids.kiosk,
 					employeeId: ids.worker,

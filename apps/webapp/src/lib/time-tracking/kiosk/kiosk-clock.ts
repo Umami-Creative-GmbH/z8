@@ -10,11 +10,13 @@ import { createKioskClockService } from "./clock-service";
  * instance (coordinated work transactions, follow-ups after commit, as for web
  * clocking) and the per-kiosk PIN attempt limit, which fails open like every
  * limiter here; the per-employee lockout (#857) always holds. Badge calls
- * (#1366) count against their own per-kiosk limit, never the PIN's.
+ * (#1366) count against their own per-kiosk limit, never the PIN's, and
+ * outcome questions (#1363) against theirs.
  */
 export const kioskClockService = createKioskClockService({
 	clocking,
 	clock: systemClock,
 	limitPinAttempts: (kioskId) => checkRateLimit(`kiosk:${kioskId}`, "kioskPinAttempts"),
 	limitBadgeAttempts: (kioskId) => checkRateLimit(`kiosk:${kioskId}`, "kioskBadgeAttempts"),
+	limitOutcomeLookups: (kioskId) => checkRateLimit(`kiosk:${kioskId}`, "kioskOutcomeLookups"),
 });

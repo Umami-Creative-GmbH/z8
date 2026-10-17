@@ -72,10 +72,15 @@ export type KioskClockServiceDeps = {
 	limitPinAttempts(kioskId: string): Promise<{ allowed: boolean; retryAfter: number }>;
 	/**
 	 * The per-kiosk badge attempt limit (#1366); every badge-carrying call counts,
-	 * never toward the PIN limit or lockout. Production wires its own limiter
-	 * (`kiosk-clock.ts`); without one, badge calls are not limited.
+	 * never toward the PIN limit or lockout.
 	 */
-	limitBadgeAttempts?(kioskId: string): Promise<{ allowed: boolean; retryAfter: number }>;
+	limitBadgeAttempts(kioskId: string): Promise<{ allowed: boolean; retryAfter: number }>;
+	/**
+	 * The per-kiosk limit on outcome questions (#1363): each one may write a
+	 * closed attempt, so a kiosk cannot grow that table without bound. A kiosk
+	 * treats the refusal as "not answered yet" and asks again later.
+	 */
+	limitOutcomeLookups(kioskId: string): Promise<{ allowed: boolean; retryAfter: number }>;
 	verifyPin?: (
 		organizationId: string,
 		employeeId: string,
@@ -112,7 +117,7 @@ const pinProofFields = {
  */
 const badgeProofFields = {
 	badge: z.string().min(1).max(256),
-	badgeInput: z.enum(KIOSK_BADGE_INPUTS).optional(),
+	badgeInput: z.enum(KIOSK_BADGE_INPUTS).default("scanner"),
 	employeeId: z.string().uuid().optional(),
 	pin: z.never().optional(),
 };
@@ -219,8 +224,6 @@ function eventTime(
 export function createKioskClockService(deps: KioskClockServiceDeps) {
 	const verifyPin = deps.verifyPin;
 	const employeeCalendar = deps.employeeCalendar ?? settingsCalendar;
-	const limitBadgeAttempts =
-		deps.limitBadgeAttempts ?? (async () => ({ allowed: true, retryAfter: 0 }));
 
 	/**
 	 * The kiosk's employee by id, when active and assigned to the kiosk's
@@ -282,13 +285,13 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 	 * honest kiosk to what its admin switched on, through the turn's every action.
 	 */
 	async function admitBadge(
-		body: { badge: string; badgeInput?: KioskBadgeInput; employeeId?: string },
+		body: { badge: string; badgeInput: KioskBadgeInput; employeeId?: string },
 		kiosk: AuthenticatedKiosk,
 	): Promise<Admission> {
 		if (!kioskAcceptsBadgeInput(await readKioskBadgeInputs(db, kiosk), body.badgeInput)) {
 			return { response: json({ code: "badge_input_disabled" }, 403) };
 		}
-		const limit = await limitBadgeAttempts(kiosk.kioskId);
+		const limit = await deps.limitBadgeAttempts(kiosk.kioskId);
 		if (!limit.allowed) {
 			return {
 				response: json({ code: "rate_limited", retryAfter: limit.retryAfter }, 429),
@@ -299,7 +302,7 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			organizationId: kiosk.organizationId,
 			kioskId: kiosk.kioskId,
 			credential: body.badge,
-			...(body.badgeInput ? { input: body.badgeInput } : {}),
+			input: body.badgeInput,
 			now: deps.clock.nowInstant(),
 		});
 		if (proven.status !== "verified") return refused;
@@ -308,7 +311,7 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 		const subject = await assignedEmployee(kiosk, proof.employeeId);
 		if (!subject) return refused;
 		return {
-			principal: { kind: "kiosk", kioskId: kiosk.kioskId, userId: subject.userId, pin: proof },
+			principal: { kind: "kiosk", kioskId: kiosk.kioskId, userId: subject.userId, proof },
 			employee: subject,
 			badge: true,
 		};
@@ -351,7 +354,7 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 				kind: "kiosk",
 				kioskId: kiosk.kioskId,
 				userId: subject.userId,
-				pin: verification.proof,
+				proof: verification.proof,
 			},
 			employee: subject,
 			badge: false,
@@ -482,7 +485,9 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 		 * assignment, since it reveals only the kiosk's own attempt and runs nothing.
 		 * Answers `committed` with the original action and time, or `not_recorded`
 		 * once the attempt is closed for good; a committed attempt of another employee
-		 * or action is `conflict`. Anything else (401, 503) leaves it unresolved.
+		 * or action, and an operation Z8 knows outside this kiosk, is `conflict`
+		 * (and names nothing of it). Anything else (401, 429, 503) leaves it
+		 * unresolved.
 		 */
 		async outcome(request: Request): Promise<Response> {
 			const authentication = await resolveKioskFromRequest(request, { clock: deps.clock });
@@ -490,6 +495,10 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			const { kiosk } = authentication;
 			const body = await readBody(request, outcomeRequest);
 			if (!body) return json({ code: "invalid_request" }, 400);
+			const limit = await deps.limitOutcomeLookups(kiosk.kioskId);
+			if (!limit.allowed) {
+				return json({ code: "rate_limited", retryAfter: limit.retryAfter }, 429);
+			}
 			let resolution: KioskAttemptResolution;
 			try {
 				resolution = await resolveKioskClockAttempt(db, {
@@ -503,7 +512,11 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			if (resolution.state === "not_recorded") {
 				return json({ outcome: "not_recorded" } satisfies KioskClockAttemptOutcome);
 			}
-			if (resolution.employeeId !== body.employeeId || resolution.action !== body.action) {
+			if (
+				resolution.state === "foreign" ||
+				resolution.employeeId !== body.employeeId ||
+				resolution.action !== body.action
+			) {
 				return json({ outcome: "conflict" } satisfies KioskClockAttemptOutcome);
 			}
 			return json({

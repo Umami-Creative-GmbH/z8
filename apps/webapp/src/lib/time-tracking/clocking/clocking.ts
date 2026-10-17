@@ -1038,7 +1038,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 	/** A frozen kiosk start's time source (#885), kept for the entry its closure writes at it. */
 	function frozenTimeSourceOf(command: BreakInProgressCommand): { timeSource?: KioskTimeSource } {
 		const timeSource =
-			command.principal.kind === "kiosk" ? command.principal.pin.frozen?.timeSource : undefined;
+			command.principal.kind === "kiosk" ? command.principal.proof.frozen?.timeSource : undefined;
 		return timeSource ? { timeSource } : {};
 	}
 

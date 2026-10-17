@@ -19,10 +19,6 @@ import { db } from "@/db";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { integrationAdminPool } from "@/test/integration-database";
 
-const harness = vi.hoisted(() => ({
-	billing: { canAccess: true } as { canAccess: boolean; reason?: string },
-}));
-
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
@@ -31,10 +27,9 @@ vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
 vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: async () => null } } }));
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => harness.billing,
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 const { createClocking } = await import("@/lib/time-tracking/clocking/clocking");
 const { recordingFollowUps } = await import("@/lib/time-tracking/clocking/follow-ups");
@@ -84,8 +79,13 @@ describe("kiosk clock recovery on PostgreSQL", () => {
 	const admin = integrationAdminPool();
 	let now: Instant = parseInstant("2026-07-22T06:00:00Z");
 
+	const unlimited = async () => ({ allowed: true, retryAfter: 0 });
+
 	function newService(
-		options: { employeeCalendar?: (input: { userId: string }) => Promise<EmployeeCalendar> } = {},
+		options: {
+			employeeCalendar?: (input: { userId: string }) => Promise<EmployeeCalendar>;
+			limitOutcomeLookups?: (kioskId: string) => Promise<{ allowed: boolean; retryAfter: number }>;
+		} = {},
 	) {
 		const clock = { nowInstant: () => now };
 		const clocking = createClocking({
@@ -96,7 +96,9 @@ describe("kiosk clock recovery on PostgreSQL", () => {
 		return createKioskClockService({
 			clocking,
 			clock,
-			limitPinAttempts: async () => ({ allowed: true, retryAfter: 0 }),
+			limitPinAttempts: unlimited,
+			limitBadgeAttempts: unlimited,
+			limitOutcomeLookups: unlimited,
 			...options,
 		});
 	}
@@ -279,7 +281,6 @@ describe("kiosk clock recovery on PostgreSQL", () => {
 	}
 
 	beforeEach(async () => {
-		harness.billing = { canAccess: true };
 		now = parseInstant("2026-07-22T06:00:00Z");
 		await seed();
 	});
@@ -570,23 +571,86 @@ describe("kiosk clock recovery on PostgreSQL", () => {
 			await setAdmission("active");
 		});
 
-		it("reveals an attempt only to the kiosk that made it", async () => {
+		it("reveals an attempt only to the kiosk that made it, and refuses anyone else's question about it", async () => {
 			const operationId = randomUUID();
 			await clock({ action: "clock_in", operationId });
 
-			// Another kiosk of the organization, and another organization's kiosk, see nothing of it.
+			// Another kiosk of the organization, and another organization's kiosk, learn nothing of
+			// it, and are never told it was not recorded (#889 "unauthorized lookup is refused").
 			const back = await outcome({ operationId, action: "clock_in" }, tokens.back);
 			const foreign = await outcome(
 				{ operationId, employeeId: ids.foreign, action: "clock_in" },
 				tokens.foreign,
 			);
 
-			expect(back).toEqual({ status: 200, body: { outcome: "not_recorded" } });
-			expect(foreign).toEqual({ status: 200, body: { outcome: "not_recorded" } });
+			expect(back).toEqual({ status: 200, body: { outcome: "conflict" } });
+			expect(foreign).toEqual({ status: 200, body: { outcome: "conflict" } });
 			expect((await outcome({ operationId, action: "clock_in" })).body).toMatchObject({
 				outcome: "committed",
 			});
 			expect(await entries()).toHaveLength(1);
+			// The refused questions wrote nothing.
+			const { rows } = await admin.query(
+				"select kiosk_id, state from kiosk_clock_attempt where operation_id = $1",
+				[operationId],
+			);
+			expect(rows).toEqual([{ kiosk_id: ids.kiosk, state: "committed" }]);
+		});
+
+		it("refuses a question about an operation another kiosk closed, or that recorded work without a kiosk attempt", async () => {
+			const closed = randomUUID();
+			expect((await outcome({ operationId: closed, action: "clock_in" })).body).toEqual({
+				outcome: "not_recorded",
+			});
+			await expect(
+				outcome({ operationId: closed, action: "clock_in" }, tokens.back),
+			).resolves.toEqual({ status: 200, body: { outcome: "conflict" } });
+
+			// Work recorded under an operation id that no kiosk attempt holds (a server identity).
+			await clock({ action: "clock_in" });
+			const { rows } = await admin.query<{ id: string }>(
+				"select id from completed_work_operation where organization_id = $1",
+				[ids.organization],
+			);
+			const recorded = only(rows).id;
+			await expect(outcome({ operationId: recorded, action: "clock_in" })).resolves.toEqual({
+				status: 200,
+				body: { outcome: "conflict" },
+			});
+			const { rows: attempts } = await admin.query(
+				"select state from kiosk_clock_attempt where operation_id = $1",
+				[recorded],
+			);
+			expect(attempts).toEqual([]);
+		});
+
+		it("limits outcome questions per kiosk without settling or writing anything", async () => {
+			const limited = newService({
+				limitOutcomeLookups: async () => ({ allowed: false, retryAfter: 42 }),
+			});
+			const operationId = randomUUID();
+
+			const refused = await answer(
+				await limited.outcome(
+					kioskRequest("clock/outcome", {
+						operationId,
+						employeeId: ids.worker,
+						action: "clock_in",
+					}),
+				),
+			);
+
+			expect(refused).toEqual({ status: 429, body: { code: "rate_limited", retryAfter: 42 } });
+			const { rows } = await admin.query(
+				"select state from kiosk_clock_attempt where operation_id = $1",
+				[operationId],
+			);
+			expect(rows).toEqual([]);
+			// The original can still commit, and is then answered as committed.
+			expect(await clock({ action: "clock_in", operationId })).toMatchObject({ status: 200 });
+			expect((await outcome({ operationId, action: "clock_in" })).body).toMatchObject({
+				outcome: "committed",
+			});
 		});
 
 		it("answers a committed attempt asked about for another employee or action as a conflict", async () => {

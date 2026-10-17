@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, eq } from "drizzle-orm";
-import { kioskClockAttempt } from "@/db/schema";
+import { completedWorkOperation, kioskClockAttempt, timeEntry } from "@/db/schema";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { WorkTransactionClient } from "../work-transaction";
 import type { KioskClockAction } from "./protocol";
@@ -40,7 +40,9 @@ export type KioskAttemptResolution =
 			action: KioskClockAction;
 			at: KioskAttemptEventTime;
 	  }
-	| { state: "not_recorded" };
+	| { state: "not_recorded" }
+	/** The operation is known outside the asking kiosk (#889): answered as a conflict. */
+	| { state: "foreign" };
 
 /** The attempt was closed as not recorded before it could commit; its work rolls back. */
 export class KioskAttemptClosedError extends Error {
@@ -101,21 +103,8 @@ export async function claimKioskClockAttempt(
 	if (claimed.length === 0) throw new KioskAttemptClosedError();
 }
 
-/**
- * The terminal outcome of an attempt at its kiosk: its committed record, or,
- * when nothing claimed it, `not_recorded`, written first so that the attempt
- * can never commit afterwards. Waits for an in-flight claim of the same attempt.
- * Never runs, retries or changes work.
- */
-export async function resolveKioskClockAttempt(
-	database: AttemptWriter & AttemptReader,
-	scope: KioskAttemptScope,
-): Promise<KioskAttemptResolution> {
-	await database
-		.insert(kioskClockAttempt)
-		.values({ ...scope, state: "not_recorded" })
-		.onConflictDoNothing({ target: uniqueTarget() });
-	const [row] = await database
+function readAttempt(database: AttemptReader, scope: KioskAttemptScope) {
+	return database
 		.select({
 			state: kioskClockAttempt.state,
 			employeeId: kioskClockAttempt.employeeId,
@@ -126,6 +115,60 @@ export async function resolveKioskClockAttempt(
 		.from(kioskClockAttempt)
 		.where(scopeOf(scope))
 		.limit(1);
+}
+
+/**
+ * Whether Z8 knows the operation outside this kiosk's own attempts: another
+ * kiosk's or organization's attempt, or work recorded under it (receipts and
+ * entries are keyed by the global operation id, as `Clocking.lookup` reads
+ * them). Called only when the kiosk has no attempt of its own under it.
+ */
+async function isKnownElsewhere(database: AttemptReader, operationId: string): Promise<boolean> {
+	const [attempt] = await database
+		.select({ id: kioskClockAttempt.id })
+		.from(kioskClockAttempt)
+		.where(eq(kioskClockAttempt.operationId, operationId))
+		.limit(1);
+	if (attempt) return true;
+	const [receipt] = await database
+		.select({ id: completedWorkOperation.id })
+		.from(completedWorkOperation)
+		.where(eq(completedWorkOperation.id, operationId))
+		.limit(1);
+	if (receipt) return true;
+	const [entry] = await database
+		.select({ id: timeEntry.id })
+		.from(timeEntry)
+		.where(eq(timeEntry.id, operationId))
+		.limit(1);
+	return entry !== undefined;
+}
+
+/**
+ * The terminal outcome of an attempt at its kiosk: its committed record, or,
+ * when nothing claimed it, `not_recorded`, written first so that the attempt
+ * can never commit afterwards. Waits for an in-flight claim of the same attempt.
+ * An operation Z8 already knows outside this kiosk (#889: an unauthorized
+ * lookup is refused, never a false "nothing recorded") is `foreign`: nothing is
+ * written and nothing of it is told. Never runs, retries or changes work.
+ */
+export async function resolveKioskClockAttempt(
+	database: AttemptWriter & AttemptReader,
+	scope: KioskAttemptScope,
+): Promise<KioskAttemptResolution> {
+	let [row] = await readAttempt(database, scope);
+	if (!row && (await isKnownElsewhere(database, scope.operationId))) {
+		// This kiosk's own original may have committed meanwhile (its receipt is then the one seen).
+		[row] = await readAttempt(database, scope);
+		if (!row) return { state: "foreign" };
+	}
+	if (!row) {
+		await database
+			.insert(kioskClockAttempt)
+			.values({ ...scope, state: "not_recorded" })
+			.onConflictDoNothing({ target: uniqueTarget() });
+		[row] = await readAttempt(database, scope);
+	}
 	if (!row) throw new Error("The kiosk clock attempt was not resolved");
 	if (row.state !== "committed") return { state: "not_recorded" };
 	if (!row.employeeId || !row.action || !row.eventAt || !row.eventZone) {
