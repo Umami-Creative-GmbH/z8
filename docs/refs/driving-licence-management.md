@@ -234,3 +234,87 @@ interval or retention period into a universally sufficient legal rule.
 - [Section 3 StVG](https://www.gesetze-im-internet.de/stvg/__3.html), [section 20 FeV](https://www.gesetze-im-internet.de/fev_2010/__20.html) and [section 25 StVG](https://www.gesetze-im-internet.de/stvg/__25.html) explain why withdrawal, renewed entitlement and the end of a ban require different verification.
 - The [Hessian data protection authority's 53rd activity report, section I.7.5, pages 116–118](https://starweb.hessen.de/cache/hessen/datenschutzbericht2025%2853%29.pdf) supports necessary checks and minimal evidence rather than document copies. It names identity, class, issue date and confirmation among the evidence and discusses data minimization and storage limitation.
 - [Sections 195](https://www.gesetze-im-internet.de/bgb/__195.html) and [199 BGB](https://www.gesetze-im-internet.de/bgb/__199.html) concern civil limitation periods; they are not by themselves a fixed retention rule for every inspection record.
+
+## Operating evidence retention and legal-case holds
+
+Organization administrators manage retention under **Settings → Driving licence
+control → Evidence retention and legal-case holds**. The list identifies retained
+records and their inactivity/deletion times, without giving administrators the
+inspection declarations, outcomes or document details. Reading that evidence still
+requires the employee's own access or a current scoped verifier grant.
+
+A record is protected while any active class authorization relies on it. Its
+retention age begins only when the last such support ends, using the actual
+expiry or transition instant rather than the time a delayed worker notices it.
+Months follow the explicitly configured organization calendar zone. Changing
+settings or releasing a hold does not restart inactivity age. If a fresh record
+is explicitly reinstated and supports active authorization, it becomes protected
+again; its next inactivity period starts when that support ends.
+
+To preserve a record for a specific legal case, choose the record, enter the
+case reference and explain why that case currently requires preservation. Record
+only the necessary case reference and preservation purpose, without medical or
+personal background. Review the continuing need for each hold through the
+organization's case process. When preservation is no longer required, enter the
+release reason and release the hold. Placement and release retain the acting
+administrator and UTC time until the associated evidence is lawfully deleted.
+A released record that was already due becomes eligible for the next cleanup;
+release does not add another full retention period.
+
+The registered `cron:driving-licence-retention` job runs daily at 02:15 in the
+scheduler's timezone. Administrators can also run due cleanup from the same
+panel. Recent results show the time, actor (or scheduled processing), and counts
+of deleted, held and active-protected records. Cleanup continues under the saved
+retention policy when licence control is disabled. The job rechecks protection
+and holds under the same organization lock used for check, suspension and
+reinstatement commands. It deletes due originals together with their personal
+supplements and linked evidence events; generic audit cleanup does not control
+this evidence's lifetime. Current suspension or unresolved impediment state
+remains operational and cannot turn deletion into new driving permission.
+
+**Deletion is irreversible through the application.** A cleanup result contains
+aggregate counts, not a replacement archive of deleted evidence. Set the finite
+period and documented preservation holds before records become due; restoring a
+previous application version cannot restore deleted records. The configured
+period expresses the organization's justified policy and is no universal legal
+retention guarantee.
+
+### Ambiguous optional email outcomes
+
+Mandatory inbox creation and reminder identity are transactional and deduplicated.
+Before calling SMTP, the worker commits an `attempted` delivery state. It rechecks
+the current organization, recipient authority, preferences and occasion against a
+fresh clock while holding the organization lock for dispatch. SMTP has no reliable
+idempotency contract: a lost response or failed result commit can leave acceptance
+unknown. `attempted` therefore means uncertain, never sent or read, and the worker
+never automatically resends it. A recorded provider success becomes `sent`;
+unavailable transport becomes `unavailable`; current opt-outs and obsolete occasions
+become `suppressed` and `obsolete`. An uncertain optional email does not affect the
+mandatory inbox reminder, deadline or authorization. The recipient's employee record
+shows their uncertain-email count; personal-data exports explain the same states.
+This prevents blind duplicate retries; it does not promise exactly-once SMTP delivery.
+
+### Retention of reported impediments
+
+Once a finite, justified retention policy has been established, disabling licence
+control cannot clear that policy. An unconfigured disabled draft remains possible.
+Cleanup continues under the saved policy without restarting evidence inactivity.
+
+A current unresolved report remains an operational suspension cause. Cleanup never
+marks it resolved or grants permission. A resolved report continues to explain its
+resolution check while that check supports any active class. Its retention starts
+when that final support ends, no earlier than explicit resolution. For a departed
+employment period, the effective departure cutoff (including a due departure before
+worker processing), or its recorded period end, starts retention even if the report
+was never resolved. Where both cutoffs apply, the earlier operational end governs.
+Legacy employment uses its explicitly recorded departure cutoff. Rehire does not
+carry an old report into the new employment period.
+
+The ordinary configured calendar-month policy applies to that inactivity instant.
+Report retention metadata preserves it after linked check deletion. A specific-case
+hold on any check of the same employee and employment period conservatively protects
+that period's report context and its resolution check/events too. The panel shows this scope and the related case
+reference; a new employment period's hold does not retain unrelated old reports.
+Releasing the last such hold does not restart retention. Due cleanup deletes the
+obsolete report and its associated reported/resolved events together, without a
+replacement archive. Current unresolved report state remains protected.

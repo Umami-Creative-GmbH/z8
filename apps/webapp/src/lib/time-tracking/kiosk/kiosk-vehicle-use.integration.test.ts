@@ -15,24 +15,36 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { seedSuspendedDrivingParticipant } from "@/lib/organization/driving-licence/testing/recording.test.fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
-vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: async () => null } } }));
+vi.mock("@/lib/auth", () => ({
+	auth: { api: { getSession: async () => null } },
+}));
 vi.mock("@/lib/billing/guard", () => ({
 	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
+	isBillingMutationAllowed: (access: { canAccess: boolean }) =>
+		access.canAccess,
 }));
 
-const { createClocking } = await import("@/lib/time-tracking/clocking/clocking");
-const { recordingFollowUps } = await import("@/lib/time-tracking/clocking/follow-ups");
-const { coordinatedTransactions } = await import("@/lib/time-tracking/clocking/transactions");
+const { createClocking } = await import(
+	"@/lib/time-tracking/clocking/clocking"
+);
+const { recordingFollowUps } = await import(
+	"@/lib/time-tracking/clocking/follow-ups"
+);
+const { coordinatedTransactions } = await import(
+	"@/lib/time-tracking/clocking/transactions"
+);
 const { setOwnKioskPin } = await import("@/lib/time-tracking/kiosk/pin-store");
 const { hashKioskSecret } = await import("./credentials");
 const { KIOSK_TOKEN_HEADER } = await import("./protocol");
@@ -76,7 +88,11 @@ const none: Columns = {
 	driven_distance_km: null,
 };
 
-function van(start: number | null, end: number | null = null, distance: number | null = null) {
+function van(
+	start: number | null,
+	end: number | null = null,
+	distance: number | null = null,
+) {
 	return {
 		vehicle_kind: "organization",
 		vehicle_id: ids.van,
@@ -110,12 +126,18 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 	function kioskRequest(path: string, body: unknown) {
 		return new Request(`http://localhost/api/kiosk/${path}`, {
 			method: "POST",
-			headers: { "content-type": "application/json", [KIOSK_TOKEN_HEADER]: TOKEN },
+			headers: {
+				"content-type": "application/json",
+				[KIOSK_TOKEN_HEADER]: TOKEN,
+			},
 			body: JSON.stringify(body),
 		});
 	}
 
-	async function clock(body: Record<string, unknown>, employeeId: string = ids.driver) {
+	async function clock(
+		body: Record<string, unknown>,
+		employeeId: string = ids.driver,
+	) {
 		const response = await newService().clock(
 			kioskRequest("clock", { employeeId, pin: PIN, ...body }),
 		);
@@ -131,7 +153,9 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 
 	/** The driver's work periods' vehicle columns, oldest first, with their canonical records'. */
 	async function periods(employeeId: string = ids.driver) {
-		const { rows } = await admin.query<Columns & { is_active: boolean; record: Columns | null }>(
+		const { rows } = await admin.query<
+			Columns & { is_active: boolean; record: Columns | null }
+		>(
 			`select p.is_active, p.vehicle_kind, p.vehicle_id, p.odometer_start_km, p.odometer_end_km,
 			        p.driven_distance_km,
 			        case when w.record_id is null then null else json_build_object(
@@ -159,15 +183,19 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 		);
 	}
 
-	async function setVehicleUse(mode: "off" | "asked" | "expected", enabled = true) {
+	async function setVehicleUse(
+		mode: "off" | "asked" | "expected",
+		enabled = true,
+	) {
 		await admin.query(
 			`insert into vehicle_use_setting (organization_id, enabled) values ($1, $2)
 			 on conflict (organization_id) do update set enabled = excluded.enabled`,
 			[ids.organization, enabled],
 		);
-		await admin.query("delete from vehicle_use_assignment where organization_id = $1", [
-			ids.organization,
-		]);
+		await admin.query(
+			"delete from vehicle_use_assignment where organization_id = $1",
+			[ids.organization],
+		);
 		await admin.query(
 			`insert into vehicle_use_assignment (organization_id, assignment_type, priority, mode, created_by)
 			 values ($1, 'organization', 0, $2, $3)`,
@@ -214,7 +242,13 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 			await admin.query(
 				`insert into employee (id, user_id, organization_id, role, is_active, updated_at)
 				 values ($1, $2, $3, $4, true, $5)`,
-				[employee, user, ids.organization, role === "admin" ? "admin" : "employee", timestamp],
+				[
+					employee,
+					user,
+					ids.organization,
+					role === "admin" ? "admin" : "employee",
+					timestamp,
+				],
 			);
 			await admin.query(
 				`insert into user_settings (user_id, timezone, updated_at) values ($1, 'UTC', $2)`,
@@ -246,7 +280,11 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 			[ids.organization, ids.driver, ids.colleague, ids.depot],
 		);
 		for (const userId of [ids.driverUser, ids.colleagueUser]) {
-			await setOwnKioskPin(db, { organizationId: ids.organization, userId, pin: PIN });
+			await setOwnKioskPin(db, {
+				organizationId: ids.organization,
+				userId,
+				pin: PIN,
+			});
 		}
 		await admin.query(
 			`insert into organization_vehicle (id, organization_id, name, licence_plate, archived_at) values
@@ -254,7 +292,14 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 			 ($2, $5, 'Truck', 'M-TR 2', null),
 			 ($3, $5, 'Old van', 'M-VW 3', now()),
 			 ($4, $6, 'Foreign van', 'B-XX 1', null)`,
-			[ids.van, ids.truck, ids.archived, ids.foreign, ids.organization, ids.otherOrganization],
+			[
+				ids.van,
+				ids.truck,
+				ids.archived,
+				ids.foreign,
+				ids.organization,
+				ids.otherOrganization,
+			],
 		);
 		// The driver is the truck's assigned driver.
 		await admin.query(
@@ -283,74 +328,143 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 			await setAdmission(admission);
 		});
 
-		it("records the clock-in's vehicle and start reading and the clock-out's end reading", async () => {
-			const started = await clock({
+		it.each(["absent", "suspended"] as const)(
+			"records clock events and actual vehicle use with %s driving authorization",
+			async (drivingState) => {
+				if (drivingState === "suspended")
+					await seedSuspendedDrivingParticipant(admin, {
+						organizationId: ids.organization,
+						employeeId: ids.driver,
+						userId: ids.driverUser,
+						at: new Date(startAt.epochMilliseconds),
+					});
+				const started = await clock({
+					action: "clock_in",
+					vehicleUse: { vehicle: vanChoice, startKm: 12_000 },
+				});
+				expect(started).toMatchObject({
+					status: 200,
+					body: { outcome: "executed" },
+				});
+				expect(await periods()).toEqual([
+					{ active: true, period: van(12_000), record: null },
+				]);
+
+				now = now.add({ hours: 4 });
+				const ended = await clock({
+					action: "clock_out",
+					vehicleUse: { endKm: 12_085 },
+				});
+
+				expect(ended).toMatchObject({
+					status: 200,
+					body: { outcome: "executed" },
+				});
+				expect(await periods()).toEqual([
+					{
+						active: false,
+						period: van(12_000, 12_085, 85),
+						record: van(12_000, 12_085, 85),
+					},
+				]);
+			},
+		);
+
+		it("records the reading given on resuming a break as the closed work's end and the resumed work's start", async () => {
+			await clock({
 				action: "clock_in",
 				vehicleUse: { vehicle: vanChoice, startKm: 12_000 },
 			});
-			expect(started).toMatchObject({ status: 200, body: { outcome: "executed" } });
-			expect(await periods()).toEqual([{ active: true, period: van(12_000), record: null }]);
-
-			now = now.add({ hours: 4 });
-			const ended = await clock({ action: "clock_out", vehicleUse: { endKm: 12_085 } });
-
-			expect(ended).toMatchObject({ status: 200, body: { outcome: "executed" } });
-			expect(await periods()).toEqual([
-				{ active: false, period: van(12_000, 12_085, 85), record: van(12_000, 12_085, 85) },
-			]);
-		});
-
-		it("records the reading given on resuming a break as the closed work's end and the resumed work's start", async () => {
-			await clock({ action: "clock_in", vehicleUse: { vehicle: vanChoice, startKm: 12_000 } });
 			now = now.add({ hours: 3 });
 			await clock({ action: "start_break" });
 			now = now.add({ minutes: 30 });
 
-			const resumed = await clock({ action: "resume_break", vehicleUse: { readingKm: 12_040 } });
+			const resumed = await clock({
+				action: "resume_break",
+				vehicleUse: { readingKm: 12_040 },
+			});
 
-			expect(resumed).toMatchObject({ status: 200, body: { outcome: "executed" } });
+			expect(resumed).toMatchObject({
+				status: 200,
+				body: { outcome: "executed" },
+			});
 			expect(await periods()).toEqual([
-				{ active: false, period: van(12_000, 12_040, 40), record: van(12_000, 12_040, 40) },
+				{
+					active: false,
+					period: van(12_000, 12_040, 40),
+					record: van(12_000, 12_040, 40),
+				},
 				{ active: true, period: van(12_040), record: null },
 			]);
 		});
 
 		it("records the end reading of a day ended on a break", async () => {
-			await clock({ action: "clock_in", vehicleUse: { vehicle: vanChoice, startKm: 12_000 } });
+			await clock({
+				action: "clock_in",
+				vehicleUse: { vehicle: vanChoice, startKm: 12_000 },
+			});
 			now = now.add({ hours: 3 });
 			await clock({ action: "start_break" });
 			now = now.add({ minutes: 30 });
 
-			const ended = await clock({ action: "clock_out", vehicleUse: { endKm: 12_050 } });
+			const ended = await clock({
+				action: "clock_out",
+				vehicleUse: { endKm: 12_050 },
+			});
 
-			expect(ended).toMatchObject({ status: 200, body: { outcome: "executed" } });
+			expect(ended).toMatchObject({
+				status: 200,
+				body: { outcome: "executed" },
+			});
 			expect(await periods()).toEqual([
-				{ active: false, period: van(12_000, 12_050, 50), record: van(12_000, 12_050, 50) },
+				{
+					active: false,
+					period: van(12_000, 12_050, 50),
+					record: van(12_000, 12_050, 50),
+				},
 			]);
 		});
 
 		it("clocks without vehicle use while vehicle use is expected, and carries the vehicle over a break", async () => {
 			await setVehicleUse("expected");
-			await expect(clock({ action: "clock_in" })).resolves.toMatchObject({ status: 200 });
+			await expect(clock({ action: "clock_in" })).resolves.toMatchObject({
+				status: 200,
+			});
 			now = now.add({ hours: 1 });
-			await expect(clock({ action: "clock_out" })).resolves.toMatchObject({ status: 200 });
+			await expect(clock({ action: "clock_out" })).resolves.toMatchObject({
+				status: 200,
+			});
 			now = now.add({ hours: 1 });
-			await clock({ action: "clock_in", vehicleUse: { vehicle: vanChoice, startKm: 100 } });
+			await clock({
+				action: "clock_in",
+				vehicleUse: { vehicle: vanChoice, startKm: 100 },
+			});
 			now = now.add({ hours: 1 });
 			await clock({ action: "start_break" });
 			now = now.add({ minutes: 15 });
-			await expect(clock({ action: "resume_break" })).resolves.toMatchObject({ status: 200 });
+			await expect(clock({ action: "resume_break" })).resolves.toMatchObject({
+				status: 200,
+			});
 			now = now.add({ hours: 1 });
-			await expect(clock({ action: "clock_out" })).resolves.toMatchObject({ status: 200 });
+			await expect(clock({ action: "clock_out" })).resolves.toMatchObject({
+				status: 200,
+			});
 
-			expect((await periods()).map(({ period }) => period)).toEqual([none, van(100), van(null)]);
+			expect((await periods()).map(({ period }) => period)).toEqual([
+				none,
+				van(100),
+				van(null),
+			]);
 		});
 	});
 
 	it("records the whole vehicle use at clock-out when none was given at clock-in", async () => {
 		await clock({ action: "clock_in" });
 		now = now.add({ hours: 2 });
-		await clock({ action: "clock_out", vehicleUse: { vehicle: { kind: "own" }, distanceKm: 37 } });
+		await clock({
+			action: "clock_out",
+			vehicleUse: { vehicle: { kind: "own" }, distanceKm: 37 },
+		});
 
 		expect(await periods()).toEqual([
 			{
@@ -363,32 +477,49 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 
 	it("clocks but drops vehicle use that cannot be recorded: malformed, foreign or archived vehicles, readings below the start", async () => {
 		await expect(
-			clock({ action: "clock_in", vehicleUse: { vehicle: { kind: "bicycle" }, startKm: -1 } }),
+			clock({
+				action: "clock_in",
+				vehicleUse: { vehicle: { kind: "bicycle" }, startKm: -1 },
+			}),
 		).resolves.toMatchObject({ status: 200, body: { outcome: "executed" } });
 		now = now.add({ hours: 1 });
 		await clock({ action: "clock_out", vehicleUse: "nonsense" });
 		now = now.add({ hours: 1 });
 		await clock({
 			action: "clock_in",
-			vehicleUse: { vehicle: { kind: "organization", vehicleId: ids.foreign }, startKm: 5 },
+			vehicleUse: {
+				vehicle: { kind: "organization", vehicleId: ids.foreign },
+				startKm: 5,
+			},
 		});
 		now = now.add({ hours: 1 });
 		await clock({ action: "clock_out" });
 		now = now.add({ hours: 1 });
 		await clock({
 			action: "clock_in",
-			vehicleUse: { vehicle: { kind: "organization", vehicleId: ids.archived }, startKm: 5 },
+			vehicleUse: {
+				vehicle: { kind: "organization", vehicleId: ids.archived },
+				startKm: 5,
+			},
 		});
 		now = now.add({ hours: 1 });
 		await clock({ action: "clock_out" });
 		now = now.add({ hours: 1 });
-		await clock({ action: "clock_in", vehicleUse: { vehicle: vanChoice, startKm: 500 } });
+		await clock({
+			action: "clock_in",
+			vehicleUse: { vehicle: vanChoice, startKm: 500 },
+		});
 		now = now.add({ hours: 1 });
-		await expect(clock({ action: "clock_out", vehicleUse: { endKm: 400 } })).resolves.toMatchObject(
-			{ status: 200, body: { outcome: "executed" } },
-		);
+		await expect(
+			clock({ action: "clock_out", vehicleUse: { endKm: 400 } }),
+		).resolves.toMatchObject({ status: 200, body: { outcome: "executed" } });
 
-		expect((await periods()).map(({ period }) => period)).toEqual([none, none, none, van(500)]);
+		expect((await periods()).map(({ period }) => period)).toEqual([
+			none,
+			none,
+			none,
+			van(500),
+		]);
 	});
 
 	it("records nothing and asks nothing while vehicle use is off", async () => {
@@ -398,9 +529,15 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 		expect(before.status).toBe(200);
 		expect(before.body).not.toHaveProperty("vehicleUse");
 
-		await clock({ action: "clock_in", vehicleUse: { vehicle: vanChoice, startKm: 12_000 } });
+		await clock({
+			action: "clock_in",
+			vehicleUse: { vehicle: vanChoice, startKm: 12_000 },
+		});
 		now = now.add({ hours: 1 });
-		const ended = await clock({ action: "clock_out", vehicleUse: { endKm: 12_010 } });
+		const ended = await clock({
+			action: "clock_out",
+			vehicleUse: { endKm: 12_010 },
+		});
 
 		expect(ended).toMatchObject({ status: 200, body: { outcome: "executed" } });
 		expect(ended.body).not.toHaveProperty("vehicleUse");
@@ -409,18 +546,27 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 
 	it("tells a clocked-out employee what to ask: vehicles with the assigned one first, last end readings and vehicles on colleagues' live work", async () => {
 		// Earlier work recorded the van's and the truck's readings.
-		await clock({ action: "clock_in", vehicleUse: { vehicle: vanChoice, startKm: 12_000 } });
+		await clock({
+			action: "clock_in",
+			vehicleUse: { vehicle: vanChoice, startKm: 12_000 },
+		});
 		now = now.add({ hours: 2 });
 		await clock({ action: "clock_out", vehicleUse: { endKm: 12_085 } });
 		await clock({
 			action: "clock_in",
-			vehicleUse: { vehicle: { kind: "organization", vehicleId: ids.truck }, startKm: 300 },
+			vehicleUse: {
+				vehicle: { kind: "organization", vehicleId: ids.truck },
+				startKm: 300,
+			},
 		});
 		now = now.add({ hours: 1 });
 		await clock({ action: "clock_out", vehicleUse: { endKm: 340 } });
 		// A colleague is out with the van now.
 		await clock(
-			{ action: "clock_in", vehicleUse: { vehicle: vanChoice, startKm: 12_085 } },
+			{
+				action: "clock_in",
+				vehicleUse: { vehicle: vanChoice, startKm: 12_085 },
+			},
 			ids.colleague,
 		);
 
@@ -430,7 +576,12 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 		expect(snapshot.body.vehicleUse).toEqual({
 			mode: "asked",
 			vehicles: [
-				{ id: ids.truck, name: "Truck", licencePlate: "M-TR 2", archived: false },
+				{
+					id: ids.truck,
+					name: "Truck",
+					licencePlate: "M-TR 2",
+					archived: false,
+				},
 				{ id: ids.van, name: "Van", licencePlate: "M-VW 1", archived: false },
 			],
 			suggestedVehicleIds: [ids.truck],
@@ -442,10 +593,16 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 
 	it("tells a clocked-in employee their live work's vehicle use and the readings before it started", async () => {
 		await setVehicleUse("expected");
-		await clock({ action: "clock_in", vehicleUse: { vehicle: vanChoice, startKm: 12_000 } });
+		await clock({
+			action: "clock_in",
+			vehicleUse: { vehicle: vanChoice, startKm: 12_000 },
+		});
 		now = now.add({ hours: 2 });
 		await clock({ action: "clock_out", vehicleUse: { endKm: 12_085 } });
-		await clock({ action: "clock_in", vehicleUse: { vehicle: vanChoice, startKm: 12_085 } });
+		await clock({
+			action: "clock_in",
+			vehicleUse: { vehicle: vanChoice, startKm: 12_085 },
+		});
 		now = now.add({ hours: 1 });
 
 		const snapshot = await status();
@@ -466,9 +623,9 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 	it("never answers another organization's vehicles", async () => {
 		const snapshot = await status();
 
-		const vehicleIds = (snapshot.body.vehicleUse.vehicles as { id: string }[]).map(
-			(vehicle) => vehicle.id,
-		);
+		const vehicleIds = (
+			snapshot.body.vehicleUse.vehicles as { id: string }[]
+		).map((vehicle) => vehicle.id);
 		expect(vehicleIds).not.toContain(ids.foreign);
 		expect(vehicleIds).not.toContain(ids.archived);
 	});

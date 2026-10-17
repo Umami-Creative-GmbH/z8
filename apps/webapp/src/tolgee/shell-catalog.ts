@@ -2,7 +2,10 @@ import type { CatalogSlice } from "./catalog-slices";
 import type { Namespace, TreeTranslationsData } from "./shared";
 
 export type ShellCatalogKey = { namespace: Namespace; path: readonly string[] };
-function keys(namespace: Namespace, paths: readonly string[]): ShellCatalogKey[] {
+function keys(
+	namespace: Namespace,
+	paths: readonly string[],
+): ShellCatalogKey[] {
 	return paths.map((path) => ({ namespace, path: path.split(".") }));
 }
 
@@ -33,6 +36,18 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"user",
 		"userAvatar",
 		"billing.trialBanner",
+		// Minimal driving status is also shown in the header clock on every route.
+		"drivingLicence.operational.advisory",
+		"drivingLicence.operational.loading",
+		"drivingLicence.operational.refresh",
+		"drivingLicence.operational.unavailable",
+		"drivingLicence.operational.recordingHelp",
+		"drivingLicence.status",
+		"drivingLicence.notEnrolled",
+		"drivingLicence.notChecked",
+		"drivingLicence.class.active",
+		"drivingLicence.class.suspended",
+		"drivingLicence.class.ended",
 	]),
 	...keys("timeTracking", [
 		"timeTracking.errors",
@@ -295,7 +310,10 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.telegram.description",
 		"settings.telegram.title",
 	]),
-	...keys("settings/demo", ["settings.demoData.description", "settings.demoData.title"]),
+	...keys("settings/demo", [
+		"settings.demoData.description",
+		"settings.demoData.title",
+	]),
 	...keys("settings/people", [
 		"settings.permissions.title",
 		"settings.employees.details",
@@ -309,7 +327,10 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.teams.description",
 		"settings.teams.title",
 	]),
-	...keys("settings/holidays", ["settings.holidays.description", "settings.holidays.title"]),
+	...keys("settings/holidays", [
+		"settings.holidays.description",
+		"settings.holidays.title",
+	]),
 	...keys("settings/payrollExport", [
 		"settings.payrollExport.description",
 		"settings.payrollExport.title",
@@ -334,7 +355,8 @@ function readPath(
 	path: readonly string[],
 ): TreeTranslationsData | string | undefined {
 	let value: TreeTranslationsData | string | undefined = tree;
-	for (const key of path) value = typeof value === "object" ? value[key] : undefined;
+	for (const key of path)
+		value = typeof value === "object" ? value[key] : undefined;
 	return value;
 }
 function copyPath(
