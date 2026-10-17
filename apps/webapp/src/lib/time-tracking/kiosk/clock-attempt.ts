@@ -61,11 +61,14 @@ function scopeOf(scope: KioskAttemptScope) {
 	);
 }
 
-const uniqueTarget = [
-	kioskClockAttempt.organizationId,
-	kioskClockAttempt.kioskId,
-	kioskClockAttempt.operationId,
-];
+// Built per call: reading schema columns at module load breaks minimal @/db/schema mocks.
+function uniqueTarget() {
+	return [
+		kioskClockAttempt.organizationId,
+		kioskClockAttempt.kioskId,
+		kioskClockAttempt.operationId,
+	];
+}
 
 /**
  * Claims an executed attempt as committed, inside its work transaction. Throws
@@ -92,7 +95,7 @@ export async function claimKioskClockAttempt(
 			eventAt: dateFromInstant(claim.at.instant),
 			eventZone: claim.at.zone,
 		})
-		.onConflictDoNothing({ target: uniqueTarget })
+		.onConflictDoNothing({ target: uniqueTarget() })
 		.returning({ id: kioskClockAttempt.id });
 	// An executed attempt never finds its own claim: a retry of a committed one replays.
 	if (claimed.length === 0) throw new KioskAttemptClosedError();
@@ -111,7 +114,7 @@ export async function resolveKioskClockAttempt(
 	await database
 		.insert(kioskClockAttempt)
 		.values({ ...scope, state: "not_recorded" })
-		.onConflictDoNothing({ target: uniqueTarget });
+		.onConflictDoNothing({ target: uniqueTarget() });
 	const [row] = await database
 		.select({
 			state: kioskClockAttempt.state,
