@@ -329,6 +329,7 @@
       "duration": "Durată",
       "editedBy": "Editat de",
       "employee": "Angajat",
+      "missingTask": "Sarcină lipsă. Acest proiect necesită una: editați rezervarea pentru a o adăuga.",
       "notes": "Note",
       "pendingApproval": "În așteptarea aprobării",
       "pendingApprovalDescription": "Această perioadă de lucru este în așteptarea aprobării managerului. Orele înregistrate se pot modifica în caz de respingere.",
@@ -517,7 +518,9 @@
     },
     "workPeriod": {
       "billable": "Facturabil",
-      "editedBy": "(editat de {name} la {date})"
+      "editedBy": "(editat de {name} la {date})",
+      "missingTask": "Sarcină lipsă",
+      "missingTaskHint": "Sarcină lipsă: adăugați o sarcină"
     },
     "workStatus": {
       "overRequirement": "peste cerință",

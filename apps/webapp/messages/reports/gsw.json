@@ -299,6 +299,8 @@
         "estimateProgress": "{booked}h vo {estimate}h ({percent})",
         "hours": "Stunde",
         "hoursValue": "{hours}h",
+        "missingTaskCount": "{count} ohni Ufgab",
+        "missingTaskHint": "Buechige uf däm Projekt, wo ohni di erforderlichi Ufgab cho sind. Füeg jedere Buechig im Kaländer en Ufgab hinzue.",
         "noTask": "Kä Ufgab",
         "noTime": "I dere Periode isch kei Ziit uf das Projekt buecht worde",
         "share": "Teile",

@@ -117,6 +117,17 @@
       "actionFallback": "Se il pulsante non funziona, apri questo link:",
       "footer": "Questa email è stata inviata da Z8."
     },
+    "mfa": {
+      "codesChanged": "Codice di ripristino utilizzato o sostituito",
+      "deadlineMessage": "{organization} richiede un autenticatore entro {deadline}. Dopo questa esatta scadenza, verifica un autenticatore TOTP o una passkey con PIN/dati biometrici prima di accedere a questa organizzazione. La sola registrazione non è sufficiente. Usa Verifica di sicurezza per registrarti o effettuare la verifica; la password abbinata a un codice di backup consente solo la registrazione sostitutiva.",
+      "deadlineTitle": "Autenticazione dell'organizzazione richiesta",
+      "factorChanged": "Autenticatore modificato",
+      "factorRemoved": "Autenticatore rimosso",
+      "passwordChanged": "Password modificata",
+      "securityMessage": "{event} per {organization}. La verifica precedente potrebbe non consentire più l'accesso all'organizzazione. Verifica un autenticatore rimanente o sostitutivo in Verifica di sicurezza. Se non hai apportato tu questa modifica, proteggi subito il tuo account.",
+      "securityTitle": "Sicurezza di autenticazione modificata",
+      "suspended": "Il requisito è attualmente sospeso. La riattivazione ripristina la scadenza assegnata."
+    },
     "notification": {
       "openAction": "Apri Z8"
     },

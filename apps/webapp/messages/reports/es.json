@@ -299,6 +299,8 @@
         "estimateProgress": "{booked}h de {estimate}h ({percent})",
         "hours": "Horas",
         "hoursValue": "{hours}h",
+        "missingTaskCount": "{count} sin tarea asignada",
+        "missingTaskHint": "Reservas en este proyecto que llegaron sin la tarea requerida. Añada una tarea a cada reserva en el calendario.",
         "noTask": "Sin tarea",
         "noTime": "No se registró tiempo en este proyecto en este período",
         "share": "Compartir",

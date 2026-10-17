@@ -329,6 +329,7 @@
       "duration": "Duração",
       "editedBy": "Editado por",
       "employee": "Funcionário",
+      "missingTask": "Tarefa em falta. Este projeto requer uma: edite a reserva para a adicionar.",
       "notes": "Notas",
       "pendingApproval": "Aprovação pendente",
       "pendingApprovalDescription": "Este período de trabalho está aguardando aprovação do gestor. Os horários registrados podem ser alterados se for rejeitado.",
@@ -517,7 +518,9 @@
     },
     "workPeriod": {
       "billable": "Faturável",
-      "editedBy": "(editado por {name} em {date})"
+      "editedBy": "(editado por {name} em {date})",
+      "missingTask": "Tarefa em falta",
+      "missingTaskHint": "Tarefa em falta: adicionar uma tarefa"
     },
     "workStatus": {
       "overRequirement": "acima do requisito",

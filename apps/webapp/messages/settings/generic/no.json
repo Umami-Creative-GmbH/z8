@@ -845,6 +845,39 @@
       },
       "title": "Dataeksport"
     },
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Tildel kontrolløransvar",
+        "all": "Alle ansatte i denne organisasjonen",
+        "allDescription": "Ansvar følger nåværende organisasjonsmedlemskap. Kontrollører kan aldri verifisere seg selv.",
+        "attribution": "Tildelt av {actor} {time}",
+        "description": "Tildel ansvar separat fra sjåførregistrering, linjeledelse og tilgang til personalmapper. Administrasjon av disse tildelingene gir ikke tillatelse til å lese kontrollrapporter. Egenverifisering er alltid forbudt.",
+        "editor": "Kontrolløromfang",
+        "empty": "Ingen kontrolløransvar tildelt",
+        "expiry": "Utløper {time}",
+        "history": "Ansvarshistorikk",
+        "historyEntry": "Tildelt av {grantor} {granted}; tilbakekalt av {revoker} {revoked}",
+        "loadFailed": "Kunne ikke laste inn kontrolløransvar",
+        "myAll": "Du er ansvarlig for kontroller i hele organisasjonen. Du kan ikke verifisere deg selv.",
+        "mySelected": "Du er ansvarlig for {teams} valgte team og {employees} navngitte ansatte. Gjeldende teammedlemskap avgjør tilgangen. Du kan ikke verifisere deg selv.",
+        "myTitle": "Ditt kontrolløransvar",
+        "none": "Du har for øyeblikket ikke ansvar for kontroll av førerkort.",
+        "noTeams": "Ingen team tilgjengelig",
+        "person": "Kontrollør",
+        "revoked": "Kontrolløransvar tilbakekalt",
+        "revokeDescription": "Kontrolløren mister umiddelbart tilgang til kontroller i dette omfanget. En ny tildeling kreves for å gjenopprette ansvaret.",
+        "revokeFailed": "Kunne ikke tilbakekalle ansvar. Prøv igjen.",
+        "revokeTitle": "Tilbakekalle kontrolløransvar?",
+        "saved": "Kontrolløransvar lagret",
+        "scope": "Ansvar",
+        "select": "Velg en ansatt",
+        "selected": "{teams} team, {employees} navngitte ansatte",
+        "selectEmployees": "Velg ansatte",
+        "specific": "Valgte team og ansatte",
+        "specificDescription": "Inkluderer navngitte ansatte og gjeldende medlemmer av valgte team. Teamendringer trer i kraft umiddelbart.",
+        "title": "Førerkortkontrollører"
+      }
+    },
     "emailTemplates": {
       "actions": {
         "reset": "Tilbakestill til systemmal",
@@ -1452,7 +1485,8 @@
         "invalidTimezone": "Velg en tidssone.",
         "kioskNotFound": "Fant ikke denne kiosken.",
         "kioskRevoked": "Denne kiosken er tilbakekalt.",
-        "locationNotFound": "Velg en aktiv lokasjon for denne organisasjonen."
+        "locationNotFound": "Velg en aktiv lokasjon for denne organisasjonen.",
+        "offlineNeedsAdoption": "Frakoblet modus krever koordinerte stemplingskommandoer, som denne organisasjonen ikke bruker ennå."
       },
       "fields": {
         "board": "Hvem er på jobb-tavle",
@@ -1462,6 +1496,9 @@
         "locationPlaceholder": "Velg en lokasjon",
         "name": "Navn",
         "namePlaceholder": "f.eks. Personalinngang",
+        "offlineMode": "Frakoblet modus",
+        "offlineModeDescription": "Kiosken fortsetter å stemple uten tilkobling. Stemplingene bekreftes, og PIN-kodene deres kontrolleres, så snart den kobles til igjen.",
+        "offlineModeUnavailable": "Frakoblet modus krever koordinerte stemplingskommandoer, som denne organisasjonen ikke bruker ennå.",
         "timezone": "Tidssone",
         "timezoneDescription": "Stemplinger registrert på denne kiosken bruker denne tidssonen."
       },
@@ -1471,6 +1508,8 @@
       "loadFailed": "Kunne ikke laste inn kiosker.",
       "neverSeen": "Aldri",
       "noLocations": "Opprett en lokasjon først: hver kiosk tilhører én lokasjon.",
+      "offlineOn": "Frakoblet modus på",
+      "offlineOnNotInEffect": "Frakoblet modus på, ikke i kraft for denne organisasjonen",
       "pairAgain": "Parkoble på nytt",
       "pairFailed": "Kunne ikke utstede en ny parkoblingskode",
       "pairingCodeLabel": "Sammenkoblingskode",
@@ -1480,6 +1519,46 @@
       "pairPairedDescription": "Enhetstokenet roteres: Den parkoblede enheten slutter å fungere umiddelbart og må parkobles på nytt med den nye koden.",
       "pairTitle": "Parkoble {name} på nytt?",
       "pairUnpairedDescription": "En ny sammenkoblingskode erstatter den forrige.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Stemple inn",
+          "clockOut": "Stemple ut",
+          "resumeBreak": "Gjenoppta",
+          "startBreak": "Start pause"
+        },
+        "columns": {
+          "action": "Handling",
+          "claimedAt": "Oppgitt tid",
+          "employee": "Ansatt",
+          "kiosk": "Kiosk",
+          "reason": "Årsak",
+          "timeSource": "Tidskilde"
+        },
+        "description": "Stemplinger lagret på en kiosk mens den var frakoblet, som ikke ble registrert da den koblet til igjen. Den ansatte, eller lederne til en ansatt uten innlogging, ble varslet.",
+        "empty": "Ingen frakoblede stemplinger ble avvist.",
+        "reasons": {
+          "clockUntrusted": "Kioskens klokke er ikke pålitelig",
+          "conflict": "I konflikt med annen registrert tid",
+          "contactUnverifiable": "Siste tilkobling kunne ikke bekreftes",
+          "holiday": "Helligdag uten tidsregistrering",
+          "kioskRetired": "Kiosk tilbakekalt eller paret på nytt",
+          "monthClosed": "Måned stengt",
+          "noPin": "Ingen kiosk-PIN angitt",
+          "notAdopted": "Frakoblet stempling godtas ikke av organisasjonen",
+          "notAssigned": "Ikke tilordnet lokasjonen",
+          "other": "Kunne ikke godtas",
+          "outsideWindow": "Ankom for sent",
+          "pinLocked": "PIN-kode låst",
+          "pinUnchecked": "PIN-koden kunne ikke kontrolleres",
+          "wrongPin": "Feil PIN-kode"
+        },
+        "timeSources": {
+          "deviceClock": "Enhetsklokke",
+          "serverAnchor": "Servertid"
+        },
+        "title": "Avviste frakoblede stemplinger",
+        "unknownEmployee": "Ikke en ansatt"
+      },
       "revoke": "Tilbakekall",
       "revokeConfirm": "Tilbakekall kiosk",
       "revoked": "Kiosk tilbakekalt",
@@ -1487,6 +1566,7 @@
       "revokeFailed": "Kiosken kunne ikke tilbakekalles",
       "revokeTitle": "Tilbakekalle {name}?",
       "rotateConfirm": "Roter token og koble sammen på nytt",
+      "rotateOfflineWarning": "Denne kiosken har frakoblet modus på. Stemplinger som ble lagret mens den var frakoblet og som ennå ikke er sendt, avvises når den kobler til igjen, og oppføres under avviste frakoblede stemplinger.",
       "save": "Lagre",
       "saved": "Kiosk lagret",
       "saveFailed": "Kiosken kunne ikke lagres",
@@ -1960,6 +2040,8 @@
         "name": "Navn",
         "namePlaceholder": "Skriv inn prosjektnavn",
         "noCustomer": "Ingen kunde",
+        "requiresTask": "Krev en oppgave",
+        "requiresTaskHelp": "Tid ført på dette prosjektet må oppgi en av oppgavene. Dette gjelder bare så lenge prosjektet har en åpen oppgave.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -1973,6 +2055,7 @@
         "reasonAdminOnly": "kun organisasjonsadministratorer tildeler prosjektledere",
         "reasonDeparted": "forlot organisasjonen",
         "reasonRemoved": "finnes ikke lenger",
+        "requiresTask": "Krever en oppgave",
         "skipped": "Ikke kopiert: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2118,7 +2201,9 @@
           "name": "Navn",
           "namePlaceholder": "f.eks. relansering av nettside",
           "nameRequired": "Skriv inn et malnavn",
-          "noIcon": "Ingen ikon"
+          "noIcon": "Ingen ikon",
+          "requiresTask": "Krev en oppgave",
+          "requiresTaskHelp": "Prosjekter opprettet fra denne malen starter med denne innstillingen."
         },
         "icons": {
           "briefcase": "Dokumentmappe",

@@ -299,6 +299,8 @@
         "estimateProgress": "{booked} Std. von {estimate} Std. ({percent})",
         "hours": "Stunden",
         "hoursValue": "{hours} Std.",
+        "missingTaskCount": "{count} ohne Aufgabe",
+        "missingTaskHint": "Buchungen für dieses Projekt, die ohne die erforderliche Aufgabe eingegangen sind. Fügen Sie jeder Buchung im Kalender eine Aufgabe hinzu.",
         "noTask": "Keine Aufgabe",
         "noTime": "In diesem Zeitraum wurde keine Zeit auf dieses Projekt gebucht",
         "share": "Teilen",

@@ -13,6 +13,7 @@
       "successDescription": "Ваша подписка активирована. Спасибо за подписку!",
       "successTitle": "Успешно!"
     },
+    "amount": "€{amount}",
     "bestValue": "Самый выгодный",
     "billedMonthly": "оплата помесячно",
     "cancelsOn": "Отмена {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Ежемесячная оплата",
       "yearlyBilling": "Ежегодная оплата"
     },
+    "kioskSeatPriceMonthly": "Места Kiosk (сотрудники только с доступом к киоску): €{price}/место/мес.",
+    "kioskSeatPriceYearly": "Места Kiosk (сотрудники только с доступом к киоску): €{price}/место/мес., €{total}/место при ежегодной оплате",
     "manageBilling": "Управление платежами",
     "monthlyCost": "Ежемесячная стоимость",
     "nextBilling": "Следующий платеж",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/место/мес.",
     "priceSeatMonthYearly": "€{price}/место/мес. (при ежегодной оплате)",
     "seatBilledAnnually": "€{price}/место при ежегодной оплате",
+    "seatLines": {
+      "full": "Места с полным доступом",
+      "kiosk": "Места Kiosk",
+      "seatsAtPrice": "{seats} × €{price}/мес.",
+      "total": "Итого",
+      "totalPerMonth": "€{amount}/мес."
+    },
     "starting": "Запуск...",
     "startTrial": "Начать бесплатный пробный период",
     "status": {

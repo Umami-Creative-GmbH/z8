@@ -99,6 +99,7 @@
       "breakPendingCorrection": "Ya hay una aprobación de corrección de tiempo pendiente para este período de trabajo. Agregue el descanso una vez que se haya resuelto.",
       "breakRetry": "No se pudo agregar el descanso. Inténtelo de nuevo.",
       "breakTooLong": "La duración del descanso debe ser menor que la de su sesión actual.",
+      "chooseTaskInClock": "Abra el reloj en la parte superior de la página, elija una tarea y luego registre la salida.",
       "clockAttributionNotAllowed": "El proyecto o categoría seleccionado no está disponible",
       "clockCommandRejected": "El servidor no aceptó esta acción de registro",
       "clockConnectionRequired": "El registro de jornada requiere conexión en esta organización. Vuelve a conectarte e inténtalo de nuevo.",
@@ -135,6 +136,7 @@
       "taskNotFound": "Esta tarea ya no existe",
       "taskOtherProject": "Esta tarea pertenece a otro proyecto",
       "taskProjectNotBookable": "Ya no se puede registrar tiempo en el proyecto de esta tarea",
+      "taskRequired": "Este proyecto requiere una tarea. Elija una e inténtelo de nuevo.",
       "workCategoryNotAllowed": "No se puede asignar a esta categoría de trabajo"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Volver al trabajo",
         "returning": "Volver al inicio en {seconds} s",
         "startBreak": "Descanso iniciado",
-        "title": "Listo"
+        "title": "Listo",
+        "unconfirmed": "Guardado en este quiosco, aún sin confirmar. Su PIN se verificará cuando el quiosco vuelva a estar conectado."
       },
       "employee": {
+        "asOf": "A las {time}",
         "back": "Cancelar",
         "endDayHint": "Finalizar la jornada ahora dará por terminado tu trabajo al inicio de tu descanso.",
         "today": "Hoy: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Iniciando el quiosco…",
       "offline": {
         "banner": "El quiosco está sin conexión. No es posible registrar la jornada hasta que se restablezca la conexión.",
-        "refused": "El quiosco está sin conexión. No se ha registrado nada; solo se puede registrar la jornada con conexión."
+        "notSaved": "No se pudo guardar en el quiosco. No se registró nada.",
+        "queueBanner": "El quiosco está sin conexión. Los fichajes se guardan en este quiosco y se confirmarán cuando se restablezca la conexión.",
+        "refused": "El quiosco está sin conexión. No se ha registrado nada; solo se puede registrar la jornada con conexión.",
+        "stateNote": "El quiosco está sin conexión. Lo que haga ahora se guardará en este quiosco y aún no está confirmado.",
+        "stateQueued": "El quiosco está sin conexión. Esto incluye los fichajes guardados en este quiosco que aún no están confirmados."
       },
       "pairing": {
         "codeDescription": "El código es de un solo uso y caduca 10 minutos después de haberse emitido.",
@@ -201,6 +209,20 @@
         "rateLimited": "Demasiados intentos de PIN en este quiosco. Inténtalo de nuevo en {seconds} segundos.",
         "submit": "Aceptar",
         "wrong": "Ese PIN no es correcto. Inténtalo de nuevo."
+      },
+      "queue": {
+        "dismiss": "Descartar",
+        "reason": {
+          "contact": "No se pudo confirmar la última conexión del quiosco.",
+          "kiosk": "El quiosco ya no estaba emparejado en ese momento.",
+          "locked": "El PIN estaba bloqueado.",
+          "notAssigned": "El empleado no puede fichar en este quiosco.",
+          "other": "Consulte con su responsable.",
+          "pin": "No se aceptó el PIN.",
+          "time": "No se pudo aceptar su hora."
+        },
+        "refused": "{name}: {action} a las {time}, guardado sin conexión, no se aceptó. {reason}",
+        "title": "Fichajes sin conexión no aceptados"
       },
       "refusal": {
         "alreadyClockedIn": "Ya has registrado tu entrada.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Faltan detalles de conducción",
       "duration": "Duración",
       "emptyState": "No se encontraron entradas de tiempo para esta semana.",
+      "missingTask": "Falta la tarea",
+      "missingTaskHint": "Este proyecto requiere una tarea: añada una a este registro en el calendario.",
       "recordedLocalTime": "Hora local registrada",
       "rowActions": "Acciones de entrada de tiempo",
       "title": "Entradas de tiempo",
       "viewCalendar": "Ver calendario"
     },
     "taskPicker": {
+      "choose": "Elija una tarea",
       "doneTask": "{name} (completada)",
       "empty": "No se encontró ninguna tarea",
       "label": "Tarea",
       "none": "Sin tarea",
+      "requiredLabel": "Tarea (obligatoria)",
       "search": "Buscar tareas…"
     },
     "timeline": {

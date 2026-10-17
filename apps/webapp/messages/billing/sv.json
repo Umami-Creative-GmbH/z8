@@ -13,6 +13,7 @@
       "successDescription": "Din prenumeration har aktiverats. Tack för att du prenumererar!",
       "successTitle": "Lyckades!"
     },
+    "amount": "€{amount}",
     "bestValue": "Mest prisvärd",
     "billedMonthly": "faktureras månadsvis",
     "cancelsOn": "Avslutas den {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Månadsvis fakturering",
       "yearlyBilling": "Årsvis fakturering"
     },
+    "kioskSeatPriceMonthly": "Kioskplatser (endast kioskanställda): €{price}/plats/månad",
+    "kioskSeatPriceYearly": "Kioskplatser (endast kioskanställda): €{price}/plats/månad, €{total}/plats faktureras årligen",
     "manageBilling": "Hantera fakturering",
     "monthlyCost": "Månadskostnad",
     "nextBilling": "Nästa fakturering",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/plats/mån",
     "priceSeatMonthYearly": "€{price}/plats/mån (faktureras årligen)",
     "seatBilledAnnually": "€{price}/plats faktureras årligen",
+    "seatLines": {
+      "full": "Fullständiga platser",
+      "kiosk": "Kioskplatser",
+      "seatsAtPrice": "{seats} × €{price}/mån",
+      "total": "Totalt",
+      "totalPerMonth": "€{amount}/mån"
+    },
     "starting": "Startar...",
     "startTrial": "Starta gratis provperiod",
     "status": {

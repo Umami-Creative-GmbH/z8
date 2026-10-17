@@ -845,6 +845,39 @@
       },
       "title": "Exportación de datos"
     },
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Conceder responsabilidad de verificador",
+        "all": "Todos los empleados de esta organización",
+        "allDescription": "La responsabilidad sigue la pertenencia actual a la organización. Los verificadores nunca pueden verificarse a sí mismos.",
+        "attribution": "Concedido por {actor} a las {time}",
+        "description": "Otorgue la responsabilidad de forma independiente a la inscripción de conductores, la gestión jerárquica y el acceso al expediente del personal. La gestión de estas concesiones no permite leer los registros de inspección. La autoverificación está siempre prohibida.",
+        "editor": "Alcance del verificador",
+        "empty": "No hay responsabilidades de verificador asignadas",
+        "expiry": "Caduca a las {time}",
+        "history": "Historial de responsabilidades",
+        "historyEntry": "Otorgado por {grantor} el {granted}; revocado por {revoker} el {revoked}",
+        "loadFailed": "No se pudieron cargar las responsabilidades de verificador",
+        "myAll": "Usted es responsable de las comprobaciones en toda esta organización. No puede verificarse a sí mismo.",
+        "mySelected": "Usted es responsable de {teams} equipos seleccionados y {employees} empleados designados. La pertenencia actual al equipo determina el acceso. No puede verificarse a sí mismo.",
+        "myTitle": "Su responsabilidad de verificador",
+        "none": "Actualmente no tiene ninguna responsabilidad de verificador de permisos de conducir.",
+        "noTeams": "No hay equipos disponibles",
+        "person": "Verificador",
+        "revoked": "Responsabilidad de verificador revocada",
+        "revokeDescription": "El verificador pierde inmediatamente el acceso a las comprobaciones dentro de este alcance. Se requiere una nueva concesión para restaurar la responsabilidad.",
+        "revokeFailed": "No se pudo revocar la responsabilidad. Inténtelo de nuevo.",
+        "revokeTitle": "¿Revocar la responsabilidad de verificador?",
+        "saved": "Responsabilidad de verificador guardada",
+        "scope": "Responsabilidad",
+        "select": "Seleccionar un empleado",
+        "selected": "{teams} equipos, {employees} empleados designados",
+        "selectEmployees": "Seleccionar empleados",
+        "specific": "Equipos y empleados seleccionados",
+        "specificDescription": "Incluye a los empleados designados y a los miembros actuales de los equipos seleccionados. Los cambios en los equipos surten efecto de inmediato.",
+        "title": "Verificadores de permisos de conducir"
+      }
+    },
     "emailTemplates": {
       "actions": {
         "reset": "Restablecer a la plantilla del sistema",
@@ -1452,7 +1485,8 @@
         "invalidTimezone": "Elige una zona horaria.",
         "kioskNotFound": "No se encontró este quiosco.",
         "kioskRevoked": "Este quiosco está revocado.",
-        "locationNotFound": "Elige una ubicación activa de esta organización."
+        "locationNotFound": "Elige una ubicación activa de esta organización.",
+        "offlineNeedsAdoption": "El modo sin conexión requiere comandos de fichaje coordinados, los cuales esta organización aún no utiliza."
       },
       "fields": {
         "board": "Panel de presencia",
@@ -1462,6 +1496,9 @@
         "locationPlaceholder": "Elige una ubicación",
         "name": "Nombre",
         "namePlaceholder": "p. ej., Entrada de personal",
+        "offlineMode": "Modo sin conexión",
+        "offlineModeDescription": "El quiosco sigue registrando fichajes sin conexión. Sus fichajes se confirman y sus PIN se comprueban una vez que vuelve a conectarse.",
+        "offlineModeUnavailable": "El modo sin conexión requiere comandos de fichaje coordinados, los cuales esta organización aún no utiliza.",
         "timezone": "Zona horaria",
         "timezoneDescription": "Los registros de fichaje de este quiosco utilizan esta zona."
       },
@@ -1471,6 +1508,8 @@
       "loadFailed": "No se pudieron cargar los quioscos.",
       "neverSeen": "Nunca",
       "noLocations": "Crea una ubicación primero: cada quiosco pertenece a una ubicación.",
+      "offlineOn": "Modo sin conexión activado",
+      "offlineOnNotInEffect": "Modo sin conexión activado, no aplicable para esta organización",
       "pairAgain": "Vincular de nuevo",
       "pairFailed": "No se pudo emitir un nuevo código de vinculación",
       "pairingCodeLabel": "Código de vinculación",
@@ -1480,6 +1519,46 @@
       "pairPairedDescription": "El token del dispositivo se renovará: el dispositivo vinculado dejará de funcionar inmediatamente y deberá vincularse de nuevo con el nuevo código.",
       "pairTitle": "¿Vincular {name} de nuevo?",
       "pairUnpairedDescription": "Un nuevo código de vinculación sustituye al anterior.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Fichar entrada",
+          "clockOut": "Fichar salida",
+          "resumeBreak": "Reanudar",
+          "startBreak": "Iniciar descanso"
+        },
+        "columns": {
+          "action": "Acción",
+          "claimedAt": "Hora declarada",
+          "employee": "Empleado",
+          "kiosk": "Quiosco",
+          "reason": "Motivo",
+          "timeSource": "Origen de la hora"
+        },
+        "description": "Fichajes guardados en un quiosco mientras estaba sin conexión que no se registraron al volver a conectarse. Se notificó al empleado o a los responsables de un empleado sin inicio de sesión.",
+        "empty": "No se rechazó ningún fichaje sin conexión.",
+        "reasons": {
+          "clockUntrusted": "Reloj del quiosco no fiable",
+          "conflict": "Conflicto con otra hora registrada",
+          "contactUnverifiable": "No se pudo confirmar la última conexión",
+          "holiday": "Festivo sin registro de horas",
+          "kioskRetired": "Quiosco revocado o emparejado de nuevo",
+          "monthClosed": "Mes cerrado",
+          "noPin": "No se ha configurado el PIN del quiosco",
+          "notAdopted": "Fichajes sin conexión no aceptados por la organización",
+          "notAssigned": "No asignado a la ubicación",
+          "other": "No se pudo aceptar",
+          "outsideWindow": "Llegó demasiado tarde",
+          "pinLocked": "PIN bloqueado",
+          "pinUnchecked": "No se pudo verificar el PIN",
+          "wrongPin": "PIN incorrecto"
+        },
+        "timeSources": {
+          "deviceClock": "Reloj del dispositivo",
+          "serverAnchor": "Hora del servidor"
+        },
+        "title": "Fichajes sin conexión rechazados",
+        "unknownEmployee": "No es un empleado"
+      },
       "revoke": "Revocar",
       "revokeConfirm": "Revocar quiosco",
       "revoked": "Quiosco revocado",
@@ -1487,6 +1566,7 @@
       "revokeFailed": "No se pudo revocar el quiosco",
       "revokeTitle": "¿Revocar {name}?",
       "rotateConfirm": "Rotar token y volver a vincular",
+      "rotateOfflineWarning": "Este quiosco tiene activado el modo sin conexión. Los fichajes guardados mientras estaba sin conexión y aún no enviados se rechazarán cuando vuelva a conectarse y aparecerán en la lista de fichajes sin conexión rechazados.",
       "save": "Guardar",
       "saved": "Quiosco guardado",
       "saveFailed": "No se pudo guardar el quiosco",
@@ -1960,6 +2040,8 @@
         "name": "Nombre",
         "namePlaceholder": "Introducir nombre del proyecto",
         "noCustomer": "Sin cliente",
+        "requiresTask": "Requerir una tarea",
+        "requiresTaskHelp": "El tiempo registrado en este proyecto debe especificar una de sus tareas. Solo se aplica mientras el proyecto tenga una tarea abierta.",
         "status": "Estado"
       },
       "fromTemplate": {
@@ -1973,6 +2055,7 @@
         "reasonAdminOnly": "solo los administradores de la organización asignan responsables de proyecto",
         "reasonDeparted": "abandonó la organización",
         "reasonRemoved": "ya no existe",
+        "requiresTask": "Requiere una tarea",
         "skipped": "No copiado: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2118,7 +2201,9 @@
           "name": "Nombre",
           "namePlaceholder": "p. ej., Relanzamiento del sitio web",
           "nameRequired": "Introduce un nombre de plantilla",
-          "noIcon": "Sin icono"
+          "noIcon": "Sin icono",
+          "requiresTask": "Requerir una tarea",
+          "requiresTaskHelp": "Los proyectos creados a partir de esta plantilla comenzarán con esta configuración."
         },
         "icons": {
           "briefcase": "Maletín",

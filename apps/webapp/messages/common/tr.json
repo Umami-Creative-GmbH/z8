@@ -227,6 +227,7 @@
     "duplicate": "Çoğalt",
     "durationMinutes": "{count} dk.",
     "edit": "Düzenle",
+    "employees": "Çalışanlar",
     "enabled": "Etkin",
     "error": "Hata",
     "error-occurred": "Bir hata oluştu",
@@ -318,6 +319,7 @@
     "name": "Ad",
     "new": "Yeni",
     "next": "İleri",
+    "no": "Hayır",
     "notApplicable": "N/A",
     "not-available": "Mevcut değil",
     "notifications": {
@@ -382,6 +384,7 @@
     "removing": "Kaldırılıyor...",
     "reset": "Sıfırla",
     "retry": "Yeniden dene",
+    "revoke": "Geri al",
     "save": "Kaydet",
     "saveChanges": "Değişiklikleri Kaydet",
     "saving": "Kaydediliyor...",
@@ -407,6 +410,7 @@
         "title": "Güncelleme mevcut"
       }
     },
+    "teams": "Ekipler",
     "timeInput": {
       "openTimePicker": "Saat seçiciyi aç",
       "switchPeriod": "{period} dönemine geç"
@@ -533,7 +537,277 @@
         "title": "Araç kullanımı",
         "vehiclesTitle": "Organizasyon araçları"
       }
-    }
+    },
+    "yes": "Evet"
+  },
+  "drivingLicence": {
+    "activate": "Sürücü belgesi kontrolünü etkinleştir",
+    "activationHelp": "Kayıt, araç kullanma yetkisi vermez. Yetkili bir doğrulayıcı öncelikle orijinal sürücü belgesini kontrol etmelidir.",
+    "applyingInterval": "Uygulanıyor…",
+    "applyInterval": "Aralık değişikliğini uygula",
+    "check": {
+      "attestations": "Şahsen inceleme ve beyanlar",
+      "chooseClasses": "Fiilen incelediğiniz sınıfları seçin.",
+      "classes": "Fiilen incelenen sınıflar",
+      "classExpiry": "Sınıf geçerlilik bitişi (varsa)",
+      "documentDates": "Orijinal belge tarihleri",
+      "employeeDeclaration": "Çalışan yukarıda gösterilen beyanı bu kontrol sırasında bizzat yapmıştır; bu beyanı onaylıyorum.",
+      "expiryDate": "Belge son geçerlilik tarihi",
+      "failureScope": "Başarısız veya sonuçsuz bir kontrolün kapsamı",
+      "identity": "Orijinal belgenin bu çalışana ait olduğunu doğruladım.",
+      "issueDate": "Belge düzenlenme tarihi",
+      "original": "Orijinal sürücü belgesini çalışanın huzurunda bizzat inceledim.",
+      "privacy": "Yalnızca belge tarihlerini, incelenen sınıfları ve gerekli sürüş kısıtlamalarını kaydedin. Sürücü belgesi numarası, adres, tıbbi açıklamalar veya kişisel geçmiş bilgileri girmeyin.",
+      "restrictions": "Gerekli sürüş kısıtlamaları",
+      "result": "Sonuç",
+      "saving": "Kontrol kaydediliyor…",
+      "scopeClasses": "Yalnızca etkilenen incelenmiş sınıflar",
+      "scopeDocument": "Belgeye dayalı tüm yetkilendirmeler",
+      "scopePerson": "Çalışanın tüm araç kullanma yetkisi",
+      "submit": "Orijinal kontrolü kaydet",
+      "suspensionNotice": "Yeniden yapılan başarılı bir kontrol, askıya alınan yetkiyi otomatik olarak geri yüklemez. Yeni bir kontrol ve açık bir yeniden etkinleştirme kararı gereklidir.",
+      "title": "{name} adlı kişinin orijinal sürücü belgesini incele",
+      "verifier": "Kaydedilen bilgilerin ve münferit sınıf sonuçlarının incelememi yansıttığını onaylıyorum."
+    },
+    "class": {
+      "active": "Yetkilendirildi",
+      "ended": "Sona erdi",
+      "overdue": "Rutin kontrolün süresi geçti. Bu kurumsal bir askıya alma işlemidir; yasal araç kullanma hakkının geri alındığı anlamına gelmez.",
+      "recheck": "Yeni bir orijinal kontrol ve açık bir yeniden etkinleştirme gereklidir.",
+      "restrictions": "Sürüş kısıtlamaları: {restrictions}",
+      "suspended": "Askıya alındı",
+      "validThrough": "{date} ({timezone}) tarihine kadar geçerli"
+    },
+    "declaration": {
+      "text": "Amaçlanan sürüşü engelleyen bilinen herhangi bir sürüş yasağı, hak mahrumiyeti veya başka bir engel bulunmadığını ve geçerli sürüş kısıtlamalarını karşıladığımı onaylıyorum."
+    },
+    "delivery": {
+      "uncertain": "Size gönderilen isteğe bağlı hatırlatma e-postalarının teslimat durumu belirsiz ({count}). Bunlar otomatik olarak tekrar gönderilmeyecektir. Uygulama içi hatırlatıcılarınız kullanılabilir durumda kalır; e-postanın teslim edilmesi okunduğu anlamına gelmez."
+    },
+    "earlierLimit": "Daha önceki belge/sınıf sınırı",
+    "enroll": "Kaydet",
+    "enrollError": "Çalışan kaydedilemedi. Önce politikayı etkinleştirin ve erişiminizi kontrol edin.",
+    "enrollmentHelp": "Araç kullanması planlanan çalışanları kaydedin. Araç atamaları ve geçmişteki araç kullanımları asla yetki oluşturmaz.",
+    "enrollmentTitle": "Planlanan sürücüler",
+    "enrollName": "{name} adlı kişiyi kaydet",
+    "evidence": {
+      "confirmation": "Doğrulayıcı onayı {version} politika sürümüyle kaydedildi; son tarihler için {timezone} kullanılır.",
+      "declarationConfirmed": "Çalışan beyanı bizzat yaptı; doğrulayıcı bunu kontrol anında tasdik etti.",
+      "declarationUnconfirmed": "Çalışan beyanı doğrulanamadı.",
+      "document": "Belge veriliş tarihi: {issued}; geçerlilik bitişi: {expiry}",
+      "empty": "Hiçbir orijinal kontrol tamamlanmadı.",
+      "originalConfirmed": "Orijinal belge bizzat incelendi ve çalışan kimliği doğrulandı.",
+      "originalUnconfirmed": "Orijinal inceleme veya çalışan kimliği doğrulanamadı.",
+      "title": "Orijinal kontrol kanıtı",
+      "verifier": "Orijinal kontrol {name} tarafından kaydedildi"
+    },
+    "history": {
+      "allClasses": "Tüm sınıflar",
+      "apply": "Dönemi uygula",
+      "authorized": "Yetki verildi",
+      "chooseOutcome": "Sonuç seçin",
+      "class": "Kontrol edilen sınıf",
+      "classExpired": "Sınıfın süresi doldu",
+      "classExpiry": "Sınıf geçerlilik bitiş tarihi",
+      "classRestrictions": "Sürüş kısıtlamaları",
+      "classResult": "İncelenen sınıf sonucu",
+      "context": "Seçilen dönemin dışındaki bağlam",
+      "decision": "Yetkilendirme kararı",
+      "declarationConfirmed": "Çalışan beyanı orijinal kontrolde doğrulandı",
+      "declarationUnconfirmed": "Çalışan beyanı doğrulanmadı",
+      "documentExpired": "Belgenin süresi doldu",
+      "documentExpiry": "Belge geçerlilik bitiş tarihi",
+      "documentImpediment": "Belge genelindeki engel",
+      "documentIssued": "Belge veriliş tarihi",
+      "downloadPdf": "Kanıt PDF'ini indir",
+      "employmentEnded": "İstihdam sona erdi",
+      "empty": "Bu dönemde herhangi bir kontrol veya yetkilendirme kararı yok.",
+      "ended": "Sürüş yetkisi sona erdi",
+      "evidenceCorrected": "Düzeltilen kanıt, yeni bir kontrol ve açıkça yeniden yürürlüğe koyma gerektirir",
+      "failed": "İncelenen sınıf başarısız",
+      "field": "Düzeltilen alan",
+      "from": "Başlangıç tarihi (UTC)",
+      "globalSuspension": "Tüm sürüş yetkileri askıya alındı",
+      "help": "Orijinal onaylar, tarihli ekler ve yürürlükteki yetkilendirme kararları ayrı kalır. Seçilen dönemi anlamak için gereken önceki kanıtlar bağlam olarak etiketlenir. Aşağıdaki tüm etkinlik zamanları ve dönem sınırları UTC kullanır.",
+      "impedimentReported": "Sürüş engeli bildirildi",
+      "impedimentResolved": "Bildirilen engel açıkça çözüldü",
+      "inconclusive": "İncelenen sınıf sonuçsuz",
+      "linkedOriginal": "Bağlantılı orijinal kontrol: {date}",
+      "loading": "Geçmiş yükleniyor…",
+      "minimalEvidence": "Yalnızca gerekli sürüş kanıtlarını kaydedin. Belge numaralarını, tıbbi açıklamaları veya kişisel geçmişi girmeyin.",
+      "missingDetail": "Eksik ayrıntı",
+      "none": "Kayıt yok",
+      "openSupplement": "{date} tarihli orijinal kontrole ekleme yap",
+      "original": "Orijinal kontrol ve onay",
+      "originalConfirmed": "Orijinal ve kimlik doğrulandı",
+      "originalUnconfirmed": "Orijinal veya kimlik doğrulanmadı",
+      "overdue": "Rutin kontrolün süresi geçti",
+      "personImpediment": "Kişi genelinde engel",
+      "policyContext": "Politika sürümü {version}; aralık {months} ay",
+      "policyIntervalChanged": "Yetkilendirme son tarihi aralık politikasıyla değiştirildi",
+      "policyRecalculated": "Yetkilendirme son tarihi politika tarafından yeniden hesaplandı",
+      "reason": "Ekleme gerekçesi",
+      "recorded": "{date} tarihinde kaydedildi",
+      "recordingError": "Kayıt hatası",
+      "reinstated": "Yetkilendirme, yeni bir kontrolden sonra açıkça yeniden etkinleştirildi",
+      "save": "Ek kaydı kaydet",
+      "saveError": "Ek kaydedilemedi. Geçerli sorumluluğunuzu ve düzeltme ayrıntılarını kontrol edin.",
+      "snapshot": "Politika {version}; aralık {months} ay; son tarih saat dilimi {timezone}",
+      "supplementBy": "{name} tarafından yapılan ekleme",
+      "supplementHelp": "Bu işlem, kimliğinizle birlikte tarihli bir düzeltme ekler. Orijinal onay değişmeden kalır. Önceki sınırlar, başarısız sonuçlar ve yeni kısıtlamalar etkilenen geçerli izni askıya alır; ek bir kayıt yetkilendirmeyi hiçbir zaman yenilemez veya yeniden etkinleştirmez.",
+      "supplementTitle": "{date} tarihli orijinal kontrole ekleme yap",
+      "suspended": "Yetkilendirme askıya alındı",
+      "title": "Kontrol ve yetkilendirme geçmişi",
+      "to": "Tarihinden önce (UTC)",
+      "unavailable": "Geçmiş kullanılamıyor. Dönemi ve geçerli erişiminizi kontrol edin.",
+      "value": "Düzeltilmiş değer",
+      "verifierConfirmation": "Doğrulayıcı onayı, orijinal kontrol zamanında kaydedildi"
+    },
+    "impediment": {
+      "newCheckRequired": "Yeniden etkinleştirmeden önce askıya alınan sınıflar için başarılı yeni bir orijinal kontrol kaydedin.",
+      "reinstate": "Seçilen sınıfları yeniden etkinleştir",
+      "reinstated": "Seçilen sınıflar açıkça yeniden etkinleştirildi.",
+      "reinstateFailed": "Yeniden etkinleştirme reddedildi. Yenileyin ve geçerli kaydı, sorumluluğunuzu ve yeni bir orijinal kontrolü gözden geçirin.",
+      "reinstateHelp": "Askıya alma işleminden sonra önce yeni bir şahsi orijinal kontrol kaydedin. Tüm engellerin çözüldüğünden emin olun; Z8 dışındaki gerekli tüm destekleyici kanıtları inceleyin. Yalnızca ehliyet kartını görmek yetersiz olabilir. Yalnızca başarıyla kontrol edilmiş seçili sınıflar yeniden etkinleştirilecektir.",
+      "reinstateTitle": "Sürüş yetkisini açıkça yeniden etkinleştir",
+      "reinstating": "Yeniden etkinleştirme kaydediliyor…",
+      "report": "Araç kullanamadığımı bildir",
+      "reported": "Tüm sınıf yetkilendirmeleriniz askıya alındı. Engel çözüldükten sonra yeni bir orijinal kontrol ve açıkça yeniden etkinleştirme için sorumlu doğrulayıcınızla iletişime geçin.",
+      "reportFailed": "Bildirim kaydedilemedi. Yeniden deneyin veya sorumlu doğrulayıcınızla hemen iletişime geçin.",
+      "reportHelp": "Şu anda araç kullanamadığınızı bildirin. Tüm sınıf yetkilendirmeleri derhal askıya alınacaktır. Kişisel nedenler belirtmeniz gerekmez.",
+      "reporting": "Bildirim kaydediliyor…",
+      "resolutionConfirmation": "Kişi genelindeki, belge genelindeki ve bildirilen tüm engellerin çözüldüğünü tespit ettim, Z8 dışındaki gerekli destekleyici kanıtları inceledim ve seçilen sınıfları açıkça yeniden yetkilendiriyorum.",
+      "selectClasses": "Son orijinal kontrolden yeniden etkinleştirilecek sınıflar",
+      "title": "Araç kullanamıyor musunuz?",
+      "unresolvedReport": "Çalışan tarafından bildirilen kişi genelindeki bir engelin hâlâ çözülmesi gerekiyor."
+    },
+    "interval": "Rutin kontrol aralığı (ay)",
+    "intervalAnchorHelp": "Her sınıfın son başarılı kontrolünden hesaplanır.",
+    "intervalApplied": "Aralık uygulandı. Mevcut askıya alma işlemleri geçerliliğini korur.",
+    "intervalChangeHelp": "Uygulamadan önce her sınıfın yeniden hesaplanan tarihlerini önizleyin. Önceki belge ve sınıf sınırları geçerliliğini korur. Aralığı uzatmak askıya alınmış bir yetkilendirmeyi asla yeniden etkinleştirmez.",
+    "intervalChangeTitle": "Rutin aralığı değiştir",
+    "intervalHelp": "Kontrol edilen her sınıf, rutin kontrol dayanağı olarak kendi son başarılı kontrolünü kullanır.",
+    "intervalImpact": "Aralık etkisi",
+    "intervalImpactHelp": "Etkilenen her sınıf için yeni rutin tarihi ve önceki geçerli sınırı gözden geçirin. Tarihler belirtilen takvim saat dilimini kullanır.",
+    "intervalPreviewError": "Etki yüklenemedi. Erişiminizi kontrol edin ve 1 ile 120 ay arasında bir aralık seçin.",
+    "intervalStale": "Politika veya sürüş yetkisi değişti ya da erişiminiz kullanılamıyor. Uygulamadan önce mevcut etkiyi tekrar önizleyin.",
+    "justification": "Saklama gerekçesi",
+    "justificationHelp": "Bu belirli sürenin neden gerekli olduğunu açıklayın (en az 10 karakter). Özel veya tıbbi ayrıntıları dahil etmeyin.",
+    "loadError": "Sürücü belgesi kontrolü yüklenemedi. Kuruluş erişiminizi kontrol edin.",
+    "myDescription": "Sürücü belgesi kontrol durumunuzu görüntüleyin",
+    "myTitle": "Sürüş yetkim",
+    "newInterval": "Yeni rutin aralığı (ay)",
+    "newlyOverdue": "Yeni gecikmiş — askıya alınacak",
+    "newRoutineDate": "Sonraki rutin kontrol",
+    "noEmployeeRecord": "Bu kuruluşta kullanılabilir çalışan sürücü belgesi kaydı yok.",
+    "noEmployees": "Kaydedilecek aktif çalışan yok.",
+    "noIntervalClasses": "Mevcut sınıf yetkilerinden hiçbirinin yeniden hesaplanması gerekmiyor.",
+    "notChecked": "Henüz kontrol edilmedi — sürüş yetkisi yok",
+    "notEnrolled": "Kaydedilmedi — sürüş yetkisi yok",
+    "operational": {
+      "advisory": "Sürüş yetkisi",
+      "loading": "Sürüş yetkisi yükleniyor…",
+      "noEmployees": "Eşleşen çalışan yok.",
+      "recordingHelp": "Çalışma süresini ve fiili araç kullanımını her zaman kaydedebilirsiniz. Bir araç seçmek sürüş yetkisi vermez; kontrol edilen sınıflar her araç için uygunluğu belirlemez.",
+      "refresh": "Sürüş durumunu yenile",
+      "search": "Çalışan bul",
+      "searchHelp": "En fazla 50 çalışan gösterilir. Başka bir çalışan bulmak için aramayı daraltın. Bu görünüm denetim kaydı içermez.",
+      "title": "Planlama için sürüş durumu",
+      "unavailable": "Sürüş yetkisi durumu kullanılamıyor."
+    },
+    "policyIntro": "Almanya öncelikli orijinal ehliyet kontrolleri. Etkinleştirmeden önce rutin aralığını seçin ve belirli bir kanıt saklama süresi için gerekçe belirtin.",
+    "policyTitle": "Kuruluş politikası",
+    "previewingInterval": "Etki yükleniyor…",
+    "previewInterval": "Aralık etkisini önizle",
+    "reminders": "Hatırlatıcı ön bildirim günleri",
+    "remindersHelp": "Son tarihten önce 0 ile 365 arasında virgülle ayrılmış tam günler. İlk öneriler 30 ve 7 gündür.",
+    "result": {
+      "inconclusive": "Sonuçsuz",
+      "successful": "Başarılı",
+      "unsuccessful": "Başarısız"
+    },
+    "retention": "Saklama süresi (ay)",
+    "retention.case": "Belirli hukuki vaka referansı",
+    "retention.check": "Kontrol kaydı",
+    "retention.choose": "Saklanan bir kayıt seçin",
+    "retention.cleaning": "Süresi dolan kayıtlar denetleniyor…",
+    "retention.cleanup": "Süresi dolan kanıt temizliğini çalıştır",
+    "retention.confirmDelete": "Süresi dolan kanıtları sil",
+    "retention.confirmDescription": "Bu işlem, saklama süresi sona eren kanıtları kalıcı olarak kaldırır. Mevcut aktif yetkiler ve hukuki dava alıkoymaları korunmaya devam eder. Silinen asıllar ve ekler uygulama üzerinden kurtarılamaz.",
+    "retention.confirmTitle": "Süresi dolan kanıtlar silinsin mi?",
+    "retention.deadline": "Saklama {start} tarihinde başladı. {end} tarihinden itibaren silinmeye uygundur.",
+    "retention.empty": "Saklanan kontrol kaydı yok.",
+    "retention.error": "Saklama yönetimi tamamlanamadı. Sayfayı yenileyip erişiminizi ve vaka ayrıntılarını kontrol edin.",
+    "retention.help": "Saklama, bir kontrol artık herhangi bir aktif sınıfı desteklemediğinde başlar. Alıkoyma, belirli bir hukuki vaka gerektirir; aynı istihdam dönemine ait ilgili rapor kanıtlarını da korur ve saklama artık gerekmediğinde kaldırılmalıdır. Bu kontroller denetim erişimi sağlamaz. Tıbbi veya kişisel geçmiş ayrıntılarını girmeyin.",
+    "retentionHelp": "Etkinleştirme için gereklidir: Kanıtın herhangi bir aktif sınıf yetkilendirmesini desteklemeyi bırakmasından 1–120 ay sonra. Ehliyet kontrolünü devre dışı bırakırken gerekçeli ve belirli bir süre belirleyin; temizleme devam eder.",
+    "retention.holdDetails": "Vaka {case}: {reason}. {actor} tarafından {time} zamanında uygulandı.",
+    "retention.loading": "Saklama kayıtları yükleniyor…",
+    "retention.place": "Belirli bir vaka için alıkoyma uygula",
+    "retention.protected": "Aktif bir sınıf yetkisi ile korunuyor",
+    "retention.reason": "Bu vakanın neden saklama gerektirdiği",
+    "retention.record": "{employee} · Kontrol: {date}",
+    "retention.release": "Alıkoymayı kaldır",
+    "retention.released": "{actor} tarafından {time} zamanında kaldırıldı: {reason}",
+    "retention.releaseError": "Alıkoyma kaldırılamadı. Erişim yetkinizi ve kaldırma nedenini kontrol edin.",
+    "retention.releaseReason": "Saklamanın neden artık gerekmediği",
+    "retention.report": "{employee} · Rapor: {date}",
+    "retention.reportHeld": "Bu çalışma dönemine ait ilgili kontrol kanıtındaki {case} vakası tarafından korunuyor. Saklama artık gerekli olmadığında o kontroldeki alıkoymayı kaldırın.",
+    "retention.reportProtected": "Mevcut rapor çözümlenmediği veya çözüm kontrolü aktif yetkilendirmeyi desteklediği sürece korunur.",
+    "retention.reportsTitle": "Engel raporu saklama",
+    "retentionRequiredError": "Ehliyet kontrolünü devre dışı bırakırken belirli ve gerekçeli bir saklama süresi belirleyin. Mevcut kanıtlar temizlenmeye tabi olmaya devam eder.",
+    "retention.run": "{time}: {deleted} silindi, {held} alıkondu, {protected} korundu. İşlemi yapan: {actor}",
+    "retention.runs": "Son temizleme sonuçları",
+    "retention.saveError": "Alıkoyma kaydedilemedi. Vaka ayrıntılarını ve erişim yetkinizi kontrol edin.",
+    "retention.scheduled": "Zamanlanmış işleme",
+    "retention.title": "Kanıt saklama ve adli vaka alıkoymaları",
+    "save": "Politikayı kaydet",
+    "saved": "Politika kaydedildi",
+    "saveError": "Politika kaydedilemedi. Aralığı, saat dilimini, hatırlatıcıları ve gerekçeli saklama süresini kontrol edin.",
+    "saving": "Kaydediliyor…",
+    "settingsDescription": "Orijinal kontrolleri yapılandırın ve hedeflenen sürücüleri kaydedin",
+    "status": {
+      "active": "Sürüş yetkisi aktif",
+      "ended": "Sürüş yetkisi sona erdi",
+      "explanation": "Kuruluş sürüş yetkisi, listelenen sınıfları ve kısıtlamaları kapsar. Her araç için uygunluk tesis etmez. Çalışma süresini ve fiili araç kullanımını kaydetmeye devam edebilirsiniz.",
+      "partial": "Bazı sürüş sınıfları askıya alındı",
+      "suspended": "Sürüş yetkisi askıya alındı"
+    },
+    "staysCurrent": "Güncelliğini koruyor",
+    "staysSuspended": "Askıda kalmaya devam ediyor",
+    "subtitle": "Orijinal kontrolleri yapılandırın ve hedeflenen sürücüleri kaydedin. Sürüş yetkisi, kontrol edilen sınıflara ve kısıtlamalara özeldir.",
+    "tasks": {
+      "assign": "Sorumluluk ata",
+      "assigned": "Sorumluluk atandı",
+      "assignmentBoundary": "Bu görev herhangi bir denetim hakkı tanımaz ve hiçbir son tarihi uzatmaz.",
+      "class": "Sınıf {classCode}",
+      "complete": "Kişisel hatırlatıcıyı tamamlandı olarak işaretle",
+      "completeError": "Bu görev tamamlanamadı. Mevcut doğrulayıcı sorumluluğunuzu kontrol edin.",
+      "completing": "Tamamlanıyor…",
+      "deadline": "Orijinal kontrol tarihi geldi",
+      "directUnavailable": "Çalışana doğrudan bildirim yapılamadı. Bu çalışana şahsen hatırlatın.",
+      "initialCheck": "İlk orijinal kontrol gerekli",
+      "loadError": "Sürücü belgesi görevleri yüklenemedi. Kuruluş erişiminizi kontrol edin.",
+      "loading": "Sürücü belgesi görevleri yükleniyor…",
+      "noDeliveryReceipt": "Görevin tamamlanması doğrudan teslimatı veya çalışanın okuduğunu doğrulamaz. Hiçbir son tarih uzatılmaz.",
+      "noVerifier": "Bu çalışan için sorumlu uygun bir doğrulayıcı yok.",
+      "personalCompleted": "Kişisel hatırlatıcı tamamlandı",
+      "personalTitle": "Kişisel hatırlatıcı görevleri",
+      "reassignmentTitle": "Doğrulayıcı sorumluluğu görevleri",
+      "refresh": "Sorumluluğu yeniden kontrol et",
+      "suspension": "Sürüş yetkisi askıya alındı",
+      "validThrough": "Kontrolün kayıtlı son tarih saat dilimine göre {date} tarihine kadar geçerlidir"
+    },
+    "timezone": "Sabit takvim saat dilimi",
+    "title": "Sürücü belgesi kontrolü",
+    "unnamedEmployee": "Çalışan",
+    "worklist": {
+      "help": "Yalnızca geçerli doğrulayıcı sorumluluğunuz kapsamındaki kayıtlı çalışanlar burada görünür.",
+      "open": "{name} kontrol et",
+      "title": "Orijinal kontrol iş listeniz",
+      "viewEnded": "{name} için sona eren kaydı görüntüle"
+    },
+    "zoneFixedError": "Takvim saat dilimi sabittir. Mevcut son tarihler orijinal anlamlarını korumalıdır.",
+    "zoneHelp": "Yalnızca tarih içeren sınırlar, bu saat diliminde gösterilen günün tamamını kapsar. İlk kaydedildiğinde sabitlenir; görüntüleyenin saat dilimi son tarihi asla değiştirmez."
   },
   "employeeSelect": {
     "countSelected": "{count} çalışan seçildi",
@@ -617,6 +891,101 @@
     "setup": "Kurulum yükleniyor",
     "teamAbsences": "Ekip izinleri tablosu yükleniyor",
     "workerQueue": "İşçi kuyruğu yükleniyor"
+  },
+  "mfa": {
+    "banner": {
+      "action": "Gereksinimleri inceleyin ve doğrulayın",
+      "requirement": "Bu kuruluş, {deadline} tarihinden itibaren doğrulanmış kimlik doğrulaması gerektirir."
+    },
+    "code": {
+      "label": "Kimlik doğrulayıcı kodu",
+      "verify": "Kimlik doğrulayıcıyı doğrula"
+    },
+    "continue": "Doğrulamadan sonra devam et",
+    "coverage": {
+      "access": "Uygunluk sağlayan son kuruluş erişimi",
+      "deadline": "Atanan son tarih",
+      "enforced": "Zorunlu kılındı",
+      "failed": "Kuruluş kimlik doğrulama kapsamı yüklenemedi",
+      "kiosk": "Yalnızca kiosk · kapsam dışı",
+      "loading": "Kuruluş kimlik doğrulaması yükleniyor…",
+      "member": "Üye",
+      "methods": "Kayıtlı yöntemler",
+      "none": "Yok",
+      "title": "Üye kaydı ve kuruluş doğrulaması",
+      "unproven": "Kaydedilmiş uygun erişim yok"
+    },
+    "deadline": {
+      "enforced": "Kuruluş erişiminden önce bir kimlik doğrulayıcı doğrulanmalıdır.",
+      "grace": "Kayıt penceresi devam ediyor. Bu son tarihten önce bir kimlik doğrulayıcı doğrulayın.",
+      "required": "Şimdi doğrulama gerekiyor"
+    },
+    "enrollment": {
+      "title": "Bir kimlik doğrulayıcı kaydedin veya değiştirin",
+      "warning": "Bir faktör eklemek veya değiştirmek beş dakika içinde doğrulama gerektirir. Eski faktörü kaldırmadan önce yenisini doğrulayın. Son faktörünüzü iptal etmeye izin verilir ve yukarıda listelenen kuruluşlara erişimi engelleyebilir; bu yeni bir kayıt penceresi sağlamaz."
+    },
+    "organization": {
+      "select": "Başka bir kuruluş seçin"
+    },
+    "page": {
+      "context": "Kuruluş erişimi doğrulama gerektirirken kişisel kayıt, kurtarma ve kuruluş seçimi kullanılabilir kalır.",
+      "title": "Güvenlik doğrulaması"
+    },
+    "passkey": {
+      "verify": "Geçiş anahtarıyla doğrula"
+    },
+    "password": {
+      "failed": "Parola doğrulaması başarısız oldu",
+      "label": "Mevcut parola",
+      "verified": "Parola doğrulandı. Aşağıda ilk kimlik doğrulayıcınızı kaydedebilir ya da mevcut bir kimlik doğrulayıcıyı veya yedekleme kodunu doğrulayabilirsiniz.",
+      "verify": "Parolayı doğrula"
+    },
+    "policy": {
+      "activation": "Değişiklikler için sahip/yönetici yetkisi ve beş dakika içinde kabul edilmiş kimlik doğrulaması gerekir. Kurtarma yöntemi ve tercihen çalışan bir oturum açma yolunu kanıtlamış başka bir yönetici ayarlayın; tek başına kayıt bunu kanıtlamaz.",
+      "days": "{days} gün (her biri 24 saat)",
+      "description": "Her gerçek üyenin yerel kuruluş erişimi için parola artı TOTP veya PIN/biyometri ile doğrulanmış bir geçiş anahtarı zorunlu tutun. Senkronize edilen geçiş anahtarları uygundur. Bu ilke tüm planlarda mevcuttur.",
+      "enable": "Yerel oturum açmalar için kimlik doğrulayıcı zorunlu kıl",
+      "failed": "İlke güncellemesi reddedildi",
+      "grace": "Gelecekteki atamalar için kayıt penceresi",
+      "lockoutAck": "Başka hiçbir yöneticinin onaylanmış bir yolu yoksa tüm kimlik doğrulama ve kurtarma yollarını kaybetmenin, bu kuruluşu bir yönetici veya destek atlama yolu olmaksızın kilitli bırakacağını kabul ediyorum.",
+      "lockoutLabel": "Tüm yönetici kimlik doğrulama yollarını kaybetme riskini kabul edin",
+      "recoveryAck": "Oturum açma yolumu doğruladım ve kurtarma yöntemini ayarladım.",
+      "save": "İlkeyi kaydet",
+      "saving": "Kaydediliyor…",
+      "sso": "Bu kuruluşun geçerli SSO sağlayıcısı üzerinden yapılan doğrulanmış oturum açma, yerel MFA temelinin dışındadır. Kuruluş, kimlik sağlayıcısında MFA'yı zorunlu kılar; Z8, IdP MFA güvencesini doğrulamaz. SSO Zorunluluğu ayrı kalır ve yerel bir yedekleme mekanizmasına sahip değildir.",
+      "tab": "Yerel MFA",
+      "tabDescription": "Kontrollü kayıt süre sınırları ile doğrulanmış yerel kimlik doğrulaması gerektir",
+      "title": "Kuruluş kimlik doğrulaması",
+      "verify": "Bu ilkeyi değiştirmeden önce kimlik doğrulamanızı teyit edin",
+      "windows": "Mevcut süre sınırları asla değişmez. Devre dışı bırakmak zorunlu uygulamayı askıya alır; yeniden etkinleştirmek, süresi dolmuş olanlar da dahil olmak üzere atanmış süre sınırlarını geri yükler. Bireysel muafiyet yoktur."
+    },
+    "recovery": {
+      "action": "Yedek kod ile kurtar",
+      "description": "Kurtarma için yukarıdaki şifrenizi doğrulayın ve ardından kullanılmamış bir yedek kod girin. Bu işlem, kuruluşlarınız genelindeki önceki yerel doğrulamaları temizler.",
+      "label": "Yedek kod",
+      "lockout": "Tek yönetici tüm kimlik doğrulama ve kurtarma yollarını kaybederse kuruluş kilitli kalır. Yönetici veya destek atlama yolu yoktur.",
+      "success": "Kurtarma yalnızca yeni yedek kayda izin verir. Kuruluşunuza dönmeden önce bir kimlik doğrulayıcıyı doğrulayın."
+    },
+    "security": {
+      "factorWarning": "Bir faktörü kaldırmak, bunu gerektiren kuruluşlara erişimi engelleyebilir. Önce bir yedek faktör doğrulayın; son faktörü kaldırmak yeni bir ek süre tanımaz.",
+      "link": "Kimlik doğrulamasını teyit edin ve kuruluş gereksinimlerini gözden geçirin",
+      "policyLink": "Kuruluş kimlik doğrulama ilkesi (sahipler/yöneticiler)"
+    },
+    "signout": "Oturumu kapat",
+    "social": {
+      "verify": "{provider} ile mevcut oturum açma işlemini doğrulayın"
+    },
+    "sso": {
+      "failed": "Kuruluş SSO'su başlatılamadı",
+      "verify": "Kuruluş SSO'su ile doğrula"
+    },
+    "verification": {
+      "failed": "Doğrulama başarısız oldu"
+    },
+    "verify": {
+      "description": "Kuruluşunuza dönmek için bir kimlik doğrulayıcıyı doğrulayın. Yalnızca kayıt olmak ve hatırlanan cihaza güvenmek gereksinimi karşılamaz.",
+      "title": "Oturum açma işleminizi doğrulayın"
+    }
   },
   "nav": {
     "absences": "İzinler",
@@ -812,12 +1181,28 @@
         "message": "{employeeName} bir {exceptionType, select, rest_period {dinlenme süresi} overtime_daily {günlük fazla mesai} overtime_weekly {haftalık fazla mesai} overtime_monthly {aylık fazla mesai} other {uyumluluk}} istisnası talep etti: \"{reason}\"",
         "title": "Uyumluluk istisnası talep edildi"
       },
+      "drivingAuthorizationSuspended": {
+        "message": "{employeeName} ({classes}) için sürüş yetkisi askıya alındı. Araç kullanmadan önce yeni bir kontrol ve açıkça yeniden yetkilendirme yapılması gerekir.",
+        "title": "Sürüş yetkisi askıya alındı"
+      },
       "drivingDetailsMissingReminderMany": {
         "message": "{dates} tarihinden {count} çalışma döneminde araç veya kilometre sayacı bilgisi eksik. Bunları çalışma dönemlerine ekleyin."
       },
       "drivingDetailsMissingReminder": {
         "message": "{date} tarihindeki çalışmanızda araç veya kilometre sayacı bilgisi eksik. Bunları çalışma dönemine ekleyin.",
         "title": "Sürüş ayrıntılarınızı ekleyin"
+      },
+      "drivingLicenceAssignment": {
+        "message": "{employeeName} için uygun bir doğrulayıcı ayarlayın. Bu görev herhangi bir denetim hakkı tanımaz ve süre sınırını uzatmaz.",
+        "title": "Sürücü belgesi doğrulayıcı sorumluluğu ata"
+      },
+      "drivingLicencePersonalTask": {
+        "message": "{employeeName} adlı çalışana orijinal sürücü belgesi kontrolü ayarlamasını hatırlatın. Doğrudan çalışan bildirimi kullanılamıyordu. Görevin tamamlanması doğrudan teslim veya okundu anlamına gelmez.",
+        "title": "Çalışana bizzat hatırlatın"
+      },
+      "drivingLicenceReminder": {
+        "message": "{employeeName} için {classes} sınıfı orijinal sürücü belgesi kontrolünü en geç {deadline} tarihine kadar ayarlayın.",
+        "title": "Sürücü belgesi kontrolünün süresi geldi"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Onay görevleri için bir vekil gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
@@ -830,6 +1215,11 @@
       "forgottenClockOutReminder": {
         "message": "Vardiyanız {endTime} ({timezone}) saatinde sona erdi. Çalışmayı bitirdiyseniz çıkış yapın.",
         "title": "Hâlâ giriş yapmış durumdasınız"
+      },
+      "kioskCommandRefused": {
+        "forwardedMessage": "{employeeName} tarafından {time} saatinde {kioskName} kioskunda yapılan bir {action, select, clock_in {giriş kaydı} clock_out {çıkış kaydı} start_break {mola başlangıcı kaydı} resume_break {moladan dönüş kaydı} other {zaman kaydı}} kaydedilmedi: {reason, select, wrong_pin {PIN yanlıştı} pin_locked {kiosk PIN'i çok fazla hatalı deneme nedeniyle kilitlendi} no_pin {karşılaştırma yapılacak bir kiosk PIN'i yoktu} pin_unchecked {PIN kontrol edilemedi} kiosk_retired {kiosk yeniden bağlanmadan önce iptal edildi veya yeniden eşleştirildi} contact_unverifiable {Z8 kiosk'un son bağlantısını doğrulayamadı} outside_window {saati Z8'in kabul ettiği aralığın dışındaydı} clock_untrusted {bunun için kiosk saatine güvenilemedi} not_assigned {çalışan kiosk'un konumuna atanmamış} not_adopted {kuruluş çevrimdışı kiosk kayıtlarını kabul etmiyor} month_closed {ay kapatıldı} holiday {gün zaman kaydı yapılmayan bir tatil} conflict {kaydedilmiş başka bir zamanla çakışıyor} other {Z8 bunu kabul edemedi}}. Zamanı onlar için kaydedin veya kendileriyle kontrol edin.",
+        "message": "{kioskName} kioskunda {time} saatinde yaptığınız {action, select, clock_in {giriş kaydı} clock_out {çıkış kaydı} start_break {mola başlangıcı kaydı} resume_break {moladan dönüş kaydı} other {zaman kaydı}} kaydedilmedi: {reason, select, wrong_pin {PIN yanlıştı} pin_locked {kiosk PIN'i çok fazla hatalı deneme nedeniyle kilitlendi} no_pin {karşılaştırma yapılacak bir kiosk PIN'i yoktu} pin_unchecked {PIN kontrol edilemedi} kiosk_retired {kiosk yeniden bağlanmadan önce iptal edildi veya yeniden eşleştirildi} contact_unverifiable {Z8 kiosk'un son bağlantısını doğrulayamadı} outside_window {saati Z8'in kabul ettiği aralığın dışındaydı} clock_untrusted {bunun için kiosk saatine güvenilemedi} not_assigned {çalışan kiosk'un konumuna atanmamış} not_adopted {kuruluş çevrimdışı kiosk kayıtlarını kabul etmiyor} month_closed {ay kapatıldı} holiday {gün zaman kaydı yapılmayan bir tatil} conflict {kaydedilmiş başka bir zamanla çakışıyor} other {Z8 bunu kabul edemedi}}. Zamanınızı tekrar kaydedin veya yöneticinizden düzeltmesini isteyin.",
+        "title": "Kiosk zaman kaydı kaydedilmedi"
       },
       "manualEntryApproved": {
         "message": "Manuel zaman bildiriminiz {approverName} tarafından onaylandı.",
@@ -1250,8 +1640,11 @@
         "approval_cover_return_summary": "Vekiliniz tarafından karara bağlandı",
         "approval_cover_started": "İzin vekilliği başladı",
         "break_due_reminder": "Mola vakti",
+        "driving_authorization_suspended": "Sürüş yetkisi askıya alındı",
         "driving_details_missing_reminder": "Sürüş ayrıntıları eksik",
+        "driving_licence_reminder": "Sürücü belgesi kontrolünün süresi geldi",
         "forgotten_clock_out_reminder": "Unutulan çıkış",
+        "kiosk_command_refused": "Kiosk zaman kaydı kaydedilmedi",
         "missed_clock_in_reminder": "Kaçırılan giriş",
         "period_submission_decided": "Gönderilen süre onaylandı veya reddedildi",
         "period_submission_reminder": "Çalışma sürenizi gönderin",
@@ -1344,6 +1737,7 @@
   "personalDataExport": {
     "readme": {
       "accessAdmin": "{name} (yönetici)",
+      "accessDrivingLicenceVerifiers": "Sürücü belgesi doğrulayıcıları (kontrol kanıtlarınız ve PDF dışa aktarımlarınız):",
       "accessExpenseExport": "bunları dışa aktar",
       "accessExpenseOfficers": "Masraf sorumluları (onaylanan seyahat masrafı raporlarınız ve makbuzları):",
       "accessExpenseRead": "onaylanan raporları görüntüle",
@@ -1367,6 +1761,7 @@
         "accountAdmin": "Kullanıcı hesabınızın adı ve e-posta adresi.",
         "approvals": "Kendi talepleriniz ve dönem gönderimleriniz ile diğer kişilerin talepleri hakkında verdiğiniz kararlar.",
         "auditLog": "Hakkınızdaki denetim günlüğü kayıtları ve gerçekleştirdiğiniz işlemler.",
+        "drivingLicence": "Sürücü belgesi kontrolleri, orijinal onaylar ve beyanlar, ilişkili ekler, sınıf yetkilendirmeleri ve geçmişleri, kayıt ve doğrulayıcı sorumluluğunuz. Yalnızca saklanan kanıtlar; ehliyet taramaları, belge numaraları veya tıbbi notlar içermez.",
         "employment": "Çalışan kaydınız ve profiliniz, çalışma dönemleriniz ve ayrılışınız, saatlik ücretiniz ve geçmişiyle birlikte çalışma koşullarınız, ekipler, yöneticiler, konumlar, beceriler, proje görevlendirmeleri, roller, gruplar, masraf merkezi ve size atanan tüm politikalar.",
         "integrations": "Takvim bağlantılarınız, takvim akışınız, bağlı sohbet hesaplarınız ve kiosk PIN durumunuz.",
         "notifications": "Bildirim geçmişiniz.",
@@ -1386,6 +1781,7 @@
         "payslip": "Bordrolar",
         "sickNote": "Hastalık raporları"
       },
+      "drivingLicenceRetention": "Sürücü belgesi kanıtı, artık aktif bir yetkilendirmeyi desteklemediğinde kuruluşun gerekçelendirilmiş kontrol saklama süresine tabi olur. Belirli bir yasal dava için belgelenmiş bir alıkoyma silme işlemini erteler. Geçerli bağlam için driving_licence ilkesine, saklama ve alıkoyma kayıtlarına başvurun; dışa aktarma oluşturmak Z8'deki kanıt saklama süresini uzatmaz.",
       "fields": {
         "absences": {
           "absences": {
@@ -1696,6 +2092,129 @@
           "updatedAt": "Kaydın en son ne zaman değiştirildiği.",
           "updatedBy": "Kaydı en son kimin değiştirdiği."
         },
+        "drivingLicence": {
+          "actor_name": "Bu eylemi gerçekleştiren kişinin adı; bir sistem eylemi veya işlem yapan kişi mevcut değilse boştur.",
+          "authorization_events": {
+            "summary": "Engel bildirimleri, çözümler ve açıkça yeniden yetkilendirmeler dahil olmak üzere sürüş yetkisi geçmişiniz."
+          },
+          "authorizations": {
+            "summary": "Kayıtlı sınıfa özel yetkilendirme kayıtlarınız; olay geçmişi değişiklikleri ve geçerlilik zamanlarını açıklar."
+          },
+          "author_name": "Bu eki ekleyen kişinin kayıtlı adı.",
+          "caseReference": "Bu kontrolün muhafaza edilmesini gerektiren belirli yasal davanın referansı.",
+          "changed_at": "Bu kuruluş ilkesi sürümünün kaydedildiği an (UTC olarak).",
+          "checked_classes": {
+            "summary": "Açıkça denetlenen sınıflar ve kaydedilen sonuçları, kısıtlamaları ve son geçerlilik tarihleri."
+          },
+          "check_id": "Bu sınıfın, ekin veya yetkilendirmenin başvurduğu orijinal kontrol.",
+          "checks_performed": {
+            "summary": "Diğer çalışanlar üzerinde gerçekleştirdiğiniz kontroller: yalnızca belirsiz kişi ve kayıt kimlikleri ile inceleme zamanı."
+          },
+          "checks": {
+            "summary": "Tam beyan ve inceleme onaylarıyla birlikte sürücü belgesi orijinal kontrol kayıtları."
+          },
+          "class_code": "Açıkça denetlenen sürücü belgesi sınıfı; kişi geneli veya belge geneli olaylarda boştur.",
+          "class_valid_through": "Bu sınıfın geçerlilik süresinin kapsadığı son takvim günü; sınıf için son kullanma tarihi kaydedilmediğinde boştur.",
+          "completedAt": "Bir doğrulayıcının kişisel hatırlatıcıyı tamamlandı olarak işaretlediği an; tamamlanmamış bir görev için boştur.",
+          "completedBy": "Hatırlatıcıyı tamamlandı olarak işaretleyen kişinin adı; bu, doğrudan teslimatı veya okundu bilgisini doğrulamaz.",
+          "controlled_at": "Orijinal sürücü belgesinin bizzat ne zaman denetlendiği (UTC anı olarak).",
+          "createdAt": "Bu görevin veya teslimatın ilk kaydedildiği zaman (UTC anı olarak).",
+          "deadline_timezone": "Politikanın son tarihleri için kullanılan açık takvim saat dilimi.",
+          "declaration_text": "Orijinal denetim sırasında kaydedilen tam beyan metni.",
+          "document_expires_on": "Belgenin, münferit sınıfların geçerlilik süresinden ayrı olan son geçerlilik tarihi.",
+          "document_issued_on": "Saat veya saat dilimi olmaksızın belgenin veriliş tarihi.",
+          "document_valid_through": "Belgenin geçerliliği kapsamındaki son takvim günü.",
+          "effective_at": "Yetkilendirme olayının ne zaman yürürlüğe girdiği (UTC anı olarak).",
+          "emailedAtProviderSuccess": "Bu e-posta için sağlayıcı başarısının ne zaman kaydedildiği. Boş olması belirsiz denemeleri de kapsar; e-postanın gönderilmediğini veya okunduğunu kanıtlamaz.",
+          "emailStateWithUncertainAttempts": "E-posta teslimat durumu: beklemede, denendi (sağlayıcı sonucu belirsiz; hiçbir zaman otomatik olarak yeniden gönderilmez), gönderildi (sağlayıcı başarısı kaydedildi), engellendi, güncelliğini yitirmiş veya kullanılamıyor. Hiçbir durum okunduğunu doğrulamaz.",
+          "employee_declaration": "Denetim sırasında beyanınızın onaylanıp onaylanmadığı.",
+          "employee_id": "Kaydı üzerinde işlem yaptığınız başka bir çalışanın opak kimliği; kontrol içerikleri hariç tutulmuştur.",
+          "employee_ids": "JSON dizisi olarak kodlanmış, belirli doğrulayıcı kapsamınızdaki opak çalışan kimlikleri.",
+          "employment_period_id": "Bu kanıtın ait olduğu istihdam dönemi; eski istihdam için boştur.",
+          "enabled": "Referans verilen kuruluş kontrol politikasının etkinleştirilip etkinleştirilmediği.",
+          "enrolled_at": "Kuruluşun sürücü belgesi kontrollerine ne zaman kaydedildiğiniz.",
+          "expires_at": "Bu yetkilendirmenin veya doğrulayıcı yetkisinin sona erdiği UTC anı.",
+          "expiry_date": "Denetimde kaydedilen sınıf son geçerlilik tarihi; hiçbiri kaydedilmediyse boştur.",
+          "failure_scope": "Başarısız bir denetimin sınıflarla mı, belgeyle mi yoksa kişiyle mi ilgili olduğu.",
+          "field": "Düzeltilmiş kanıt alanı; orijinal kontrol korunur.",
+          "granted_at": "Doğrulayıcı sorumluluğunuzun ne zaman verildiği (UTC anı olarak).",
+          "granted_by": "Doğrulayıcı sorumluluğunuzu veren kişinin adı.",
+          "id": "Diğer dosyaların başvurabilmesi için kaydın uygulamadaki kimliği.",
+          "identity_confirmed": "Doğrulayıcının orijinalin kimliğinizle eşleştiğini onaylayıp onaylamadığı.",
+          "impedimentReports": {
+            "summary": "Tıbbi açıklamalar veya özel nedenler olmaksızın, asgari sürüş engeli bildirimleriniz ve bunların açık çözümü."
+          },
+          "interval_months": "Bu politika kapsamındaki rutin kontroller arasındaki takvim ayı sayısı.",
+          "kind": "Yetkilendirme olayı, askıya alma veya görev türü; görevler personal_reminder veya reassignment şeklindedir.",
+          "last_successful_at": "Bu sınıfın en son ne zaman başarılı bir orijinal denetimden geçtiği.",
+          "legalHolds": {
+            "summary": "İlişkilendirme, serbest bırakma ve gerekçe dahil olmak üzere, saklanan kontrollerinizdeki özel durum koruma alıkoymaları."
+          },
+          "notificationId": "Bu hatırlatıcıya bağlı uygulama bildirimi; hiçbiri oluşturulmadığında boştur.",
+          "occasionKey": "Bu hatırlatıcının veya görevin ilgili olduğu durum; kontrolü kopyalamadan istihdamı, sınıf son tarihini veya askıya almayı tanımlar.",
+          "original_inspected": "Doğrulayıcının orijinal belgeyi bizzat denetlediğini onaylayıp onaylamadığı.",
+          "participation": {
+            "summary": "Kuruluşun sürücü belgesi kontrollerine kaydınız."
+          },
+          "placedAt": "Bu yasal alıkoymanın ne zaman uygulandığı (UTC anı olarak).",
+          "placedBy": "Bu vaka alıkoymasını uygulayan yöneticinin adı.",
+          "policies": {
+            "summary": "Saklama bağlamları da dahil olmak üzere, kontrolleriniz ve yetkilendirme geçmişiniz tarafından başvurulan politika sürümleri. Kanıtlar bu saklama politikasını takip eder; bu dışa aktarma uygulamadaki saklama süresini uzatmaz."
+          },
+          "policy_version": "Kuruluşun sürücü belgesi kontrol politikasının sürümü.",
+          "preservationReason": "Bu özel vakanın neden kontrolün korunmasını gerektirdiğinin belgelenmiş nedeni.",
+          "reason": "Ek veya yetkilendirme olayının yapılandırılmış nedeni; rapor referansları bir olay kimliğine bağlanır.",
+          "recipientName": "Kontrolünüzle ilgili bu hatırlatıcının gönderildiği kişinin adı.",
+          "recorded_at": "Ekin veya olayın ne zaman kaydedildiği (UTC anı olarak).",
+          "releasedAt": "Bu vaka alıkoymasının ne zaman kaldırıldığı; etkin kaldığı sürece boştur.",
+          "releasedBy": "Bu vaka alıkoymasını kaldıran yöneticinin adı.",
+          "releaseReason": "Bu vaka alıkoymasının kaldırılmasının belgelenmiş nedeni; kaldırma işlemi politikaya tabi olağan silme sürecini devam ettirir.",
+          "reminderDeliveries": {
+            "summary": "E-posta adresleri, aktarım yeniden denemeleri veya okundu bilgileri olmaksızın, kontrollerinizle ilgili hatırlatıcı teslimat kayıtları."
+          },
+          "reminder_lead_days": "JSON dizisi olarak kodlanmış, takvim günü cinsinden yapılandırılmış hatırlatıcı ön süreleri.",
+          "reminderTasksCompleted": {
+            "summary": "Diğer çalışanlar için tamamladığınız, opak kimlikler, görev türü ve tamamlanma zamanı ile sınırlı hatırlatıcı görevleri."
+          },
+          "reminderTasks": {
+            "summary": "Kaydedilen tamamlanma durumları dahil olmak üzere, kontrollerinizle ilgili kişisel hatırlatıcı ve yeniden atama görevleri; tamamlanma, doğrudan teslimatı veya okumayı doğrulamaz."
+          },
+          "reportedAt": "Kişi genelinde bir sürüş engelini ne zaman bildirdiğiniz (UTC anı olarak).",
+          "reporterName": "Engeli bildiren kişinin adı.",
+          "resolvedAt": "Bir doğrulayıcının bu bildirimi açıkça çözümlediği zaman; çözümlenmemiş bildirimler için boştur.",
+          "resolvedBy": "Bu bildirimi açıkça çözümleyen doğrulayıcının adı.",
+          "restrictions": "Bu sınıf için kaydedilmiş ilgili sürüş kısıtlamaları.",
+          "result": "Denetlenen bu sınıf için sonuç: başarılı, başarısız veya sonuçsuz.",
+          "retention_justification": "Kuruluşun kanıt saklama süresi için belgelenmiş gerekçesi.",
+          "retention_months": "Kanıtın etkin yetkilendirmeyi artık desteklemediği andan itibaren kuruluşun ay cinsinden gerekçelendirilmiş saklama süresi.",
+          "retentionStartedAtEvidence": "Denetim kanıtının etkin yetkilendirmeyi desteklemeyi bıraktığı veya çözümleme ve nihai çözümleme denetimi desteği ya da iş akdinin feshedilmesinden sonra bildirim kanıtının devre dışı kaldığı zaman. Kuruluşun gerekçelendirilmiş saklama süresi bu UTC anından itibaren başlar; bir dava alıkoyması silme işlemini erteler.",
+          "retention": {
+            "summary": "Saklanan her bir denetimin saklama başlangıç noktası; denetim etkin yetkilendirmeyi desteklemeye devam ettiği sürece boştur. Dışa aktarma, saklama süresini uzatmaz."
+          },
+          "revoked_at": "Doğrulayıcı sorumluluğunuzun geri alındığı zaman; geri alınmadığı sürece boştur.",
+          "revoked_by": "Doğrulayıcı sorumluluğunuzu geri alan kişinin adı.",
+          "routine_valid_through": "Rutin denetim aralığının kapsadığı son takvim günü.",
+          "scope": "Kişi genelindeki bir bildirimin kapsamı (kişi) veya doğrulayıcı sorumluluğunuzun tüm çalışanları mı yoksa belirli çalışan ve ekipleri mi kapsadığı.",
+          "state": "Kayıtlı sınıf yetkilendirme durumu (etkin, askıya alınmış, sonlandırılmış) veya anımsatıcı görevi durumu (beklemede, tamamlandı, geçersiz); geçmiş değişiklikleri açıklar.",
+          "supplements_authored": {
+            "summary": "Diğer çalışanların kanıt değerleri olmadan, bu çalışanların kayıtlarına yazdığınız eklemeler."
+          },
+          "supplements": {
+            "summary": "Her orijinal denetimle birlikte tutulan tarihli, ilişkilendirilmiş, yazılı düzeltmeler."
+          },
+          "suspended_at": "Yetkilendirmenin askıya alındığı an (UTC olarak).",
+          "suspension": {
+            "summary": "Mevcut kişi genelinde veya belge genelindeki sürüş yetkilendirmesi askıya alma kaydınız."
+          },
+          "team_ids": "Belirli doğrulayıcı kapsamınızdaki, bir JSON dizisi olarak kodlanmış opak ekip kimlikleri.",
+          "valid_through": "Bu sınıf onayının geçerli en erken son takvim günü.",
+          "value": "Bu ek tarafından sağlanan değer; boş olması isteğe bağlı sınıf geçerlilik süresinin temizlendiği anlamına gelir.",
+          "verifier_confirmed": "Doğrulayıcının denetim kaydını onaylayıp onaylamadığı.",
+          "verifier_grants": {
+            "summary": "Geçmiş ve geri alınmış sorumluluklar da dâhil olmak üzere kendi doğrulayıcı yetkileriniz."
+          },
+          "verifier_name": "Orijinal ehliyetinizi denetleyen kişinin kayıtlı adı."
+        },
         "employment": {
           "assignedLocations": {
             "city": "Konumun şehri.",
@@ -1924,11 +2443,26 @@
             "revokedAt": "Bağlantının kapatıldığı zaman (UTC).",
             "summary": "Bir takvim uygulamasının devamsızlıklarınıza abone olmasını sağlayan takvim akışı bağlantılarınız. Gizli bağlantının kendisi asla dahil edilmez."
           },
+          "kioskPinEvents": {
+            "event": "yanlış bir PIN için failure, doğru bir PIN için success; PIN kilidiniz açıldığında, sıfırlandığında veya değiştirildiğinde temizlenir.",
+            "occurredAt": "PIN'in girildiği veya kilidin kaldırıldığı zaman (UTC).",
+            "offline": "PIN'in bağlantısı olmayan bir kiosktan girilip girilmediği ve yeniden bağlandığında denetlenip denetlenmediği.",
+            "summary": "Üst üste beş yanlış PIN'den sonra kilitlenip kilitlenmeyeceğinizi belirlemek için yaklaşık bir hafta saklanan son kiosk PIN denemeleriniz ve PIN kilit açma işlemleriniz. Girilen PIN'ler hiçbir zaman saklanmaz."
+          },
           "kioskPin": {
             "pinSet": "Sizin için bir bilgi noktası PIN kodunun ayarlanıp ayarlanmadığı.",
             "setAt": "PIN kodunun en son ne zaman ayarlandığı (UTC).",
             "setBy": "PIN kodunu ayarlayan kişi.",
             "summary": "Bir bilgi noktası terminalinde giriş yapmak için bir PIN kodunuzun olup olmadığı. PIN kodunun kendisi asla okunabilir şekilde saklanmaz ve dahil edilmez."
+          },
+          "kioskRefusedClockings": {
+            "action": "clock_in, clock_out, start_break veya resume_break.",
+            "claimedAt": "Kioskun kaydettiği şekliyle kiosktan zaman kaydı yaptığınız an (UTC).",
+            "kiosk": "Zaman kaydı yaptığınız kiosk.",
+            "reason": "Zaman kaydının neden kaydedilmediği (örneğin wrong_pin veya kiosk_rotated).",
+            "refusedAt": "Kioskun yeniden bağlandığı ve zaman kaydının reddedildiği an (UTC).",
+            "summary": "Bağlantısı olmayan bir kiosktan yaptığınız, kiosk yeniden bağlandığında kaydedilmeyen zaman kayıtları ve nedenleri.",
+            "timeSource": "Kiosk zamanı son bağlantısındaki sunucu saatine göre belirlediğinde server_anchor, kendi saatine göre belirlediğinde device_clock."
           },
           "shared": {
             "isActive": "Bağlantının kullanımda olup olmadığı."

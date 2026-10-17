@@ -13,6 +13,7 @@
       "successDescription": "Sua assinatura foi ativada. Obrigado por assinar!",
       "successTitle": "Sucesso!"
     },
+    "amount": "€{amount}",
     "bestValue": "Melhor valor",
     "billedMonthly": "cobrado mensalmente",
     "cancelsOn": "Cancela em {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Faturamento mensal",
       "yearlyBilling": "Faturamento anual"
     },
+    "kioskSeatPriceMonthly": "Lugares Kiosk (funcionários apenas de quiosque): €{price}/lugar/mês",
+    "kioskSeatPriceYearly": "Lugares Kiosk (funcionários apenas de quiosque): €{price}/lugar/mês, €{total}/lugar faturado anualmente",
     "manageBilling": "Gerenciar faturamento",
     "monthlyCost": "Custo Mensal",
     "nextBilling": "Próxima Fatura",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/assento/mês",
     "priceSeatMonthYearly": "€{price}/assento/mês (cobrado anualmente)",
     "seatBilledAnnually": "€{price}/assento cobrado anualmente",
+    "seatLines": {
+      "full": "Lugares completos",
+      "kiosk": "Lugares Kiosk",
+      "seatsAtPrice": "{seats} × €{price}/mês",
+      "total": "Total",
+      "totalPerMonth": "€{amount}/mês"
+    },
     "starting": "Iniciando...",
     "startTrial": "Iniciar Teste Grátis",
     "status": {

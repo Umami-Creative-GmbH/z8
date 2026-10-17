@@ -117,6 +117,17 @@
       "actionFallback": "Dacă butonul nu funcționează, accesați acest link:",
       "footer": "Acest e-mail a fost trimis de Z8."
     },
+    "mfa": {
+      "codesChanged": "Cod de recuperare utilizat sau înlocuit",
+      "deadlineMessage": "{organization} solicită un autentificator până la {deadline}. După acest termen exact, verificați un autentificator TOTP sau o cheie de acces (passkey) cu PIN/biometrie înainte de a accesa această organizație. Înscrierea singură nu este suficientă. Utilizați Verificare de securitate pentru a vă înscrie sau verifica; parola plus un cod de rezervă permite doar înscrierea pentru înlocuire.",
+      "deadlineTitle": "Este necesară autentificarea pentru organizație",
+      "factorChanged": "Autentificator modificat",
+      "factorRemoved": "Autentificator eliminat",
+      "passwordChanged": "Parolă modificată",
+      "securityMessage": "{event} pentru {organization}. Este posibil ca verificarea anterioară să nu mai permită accesul la organizație. Verificați un autentificator rămas sau de înlocuire la Verificare de securitate. Dacă nu ați făcut această modificare, securizați-vă contul acum.",
+      "securityTitle": "Securitatea autentificării a fost modificată",
+      "suspended": "Cerința este suspendată în prezent. Reactivarea acesteia restabilește termenul alocat."
+    },
     "notification": {
       "openAction": "Deschideți Z8"
     },

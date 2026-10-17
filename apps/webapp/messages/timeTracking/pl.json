@@ -99,6 +99,7 @@
       "breakPendingCorrection": "Dla tego okresu pracy oczekuje już zatwierdzenie korekty czasu. Dodaj przerwę po jego rozpatrzeniu.",
       "breakRetry": "Nie udało się dodać przerwy. Spróbuj ponownie.",
       "breakTooLong": "Czas trwania przerwy musi być krótszy niż Twoja bieżąca sesja.",
+      "chooseTaskInClock": "Otwórz zegar na górze strony, wybierz zadanie, a następnie zarejestruj wyjście.",
       "clockAttributionNotAllowed": "Wybrany projekt lub kategoria jest niedostępna",
       "clockCommandRejected": "Serwer nie zaakceptował tej operacji rejestracji czasu",
       "clockConnectionRequired": "Rejestracja czasu pracy wymaga połączenia w tej organizacji. Połącz się ponownie i spróbuj jeszcze raz.",
@@ -135,6 +136,7 @@
       "taskNotFound": "To zadanie już nie istnieje",
       "taskOtherProject": "To zadanie należy do innego projektu",
       "taskProjectNotBookable": "Nie można już rejestrować czasu w projekcie tego zadania",
+      "taskRequired": "Ten projekt wymaga zadania. Wybierz je i spróbuj ponownie.",
       "workCategoryNotAllowed": "Nie można przypisać do tej kategorii pracy"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Powrót do pracy",
         "returning": "Powrót do początku za {seconds} s",
         "startBreak": "Rozpoczęto przerwę",
-        "title": "Gotowe"
+        "title": "Gotowe",
+        "unconfirmed": "Zapisano na tym kiosku, jeszcze nie potwierdzono. Twój PIN zostanie zweryfikowany po ponownym przejściu kiosku do trybu online."
       },
       "employee": {
+        "asOf": "Stan na {time}",
         "back": "Anuluj",
         "endDayHint": "Zakończenie dnia teraz spowoduje zakończenie pracy w momencie rozpoczęcia przerwy.",
         "today": "Dzisiaj: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Uruchamianie kiosku…",
       "offline": {
         "banner": "Kiosk jest w trybie offline. Rejestracja czasu pracy nie jest możliwa do momentu przywrócenia połączenia.",
-        "refused": "Kiosk jest w trybie offline. Nic nie zostało zarejestrowane; rejestracja czasu pracy działa tylko w trybie online."
+        "notSaved": "Nie udało się zapisać tego na kiosku. Nic nie zostało zarejestrowane.",
+        "queueBanner": "Kiosk działa w trybie offline. Rejestracje są zapisywane na tym kiosku i zostaną potwierdzone po przywróceniu połączenia.",
+        "refused": "Kiosk jest w trybie offline. Nic nie zostało zarejestrowane; rejestracja czasu pracy działa tylko w trybie online.",
+        "stateNote": "Kiosk działa w trybie offline. Wprowadzone teraz czynności są zapisywane na tym kiosku i nie zostały jeszcze potwierdzone.",
+        "stateQueued": "Kiosk działa w trybie offline. Obejmuje to rejestracje zapisane na tym kiosku, które nie zostały jeszcze potwierdzone."
       },
       "pairing": {
         "codeDescription": "Kod jest jednorazowy i wygasa po 10 minutach od momentu wygenerowania.",
@@ -201,6 +209,20 @@
         "rateLimited": "Zbyt wiele prób wprowadzenia kodu PIN na tym kiosku. Spróbuj ponownie za {seconds} s.",
         "submit": "OK",
         "wrong": "Ten PIN jest nieprawidłowy. Spróbuj ponownie."
+      },
+      "queue": {
+        "dismiss": "Odrzuć",
+        "reason": {
+          "contact": "Nie udało się potwierdzić ostatniego połączenia kiosku.",
+          "kiosk": "W tym czasie kiosk nie był już sparowany.",
+          "locked": "PIN został zablokowany.",
+          "notAssigned": "Pracownik nie może rejestrować czasu na tym kiosku.",
+          "other": "Skontaktuj się ze swoim menedżerem.",
+          "pin": "PIN nie został zaakceptowany.",
+          "time": "Nie udało się zaakceptować tego czasu."
+        },
+        "refused": "{name}: {action} o {time}, zapisano w trybie offline, nie zostało zaakceptowane. {reason}",
+        "title": "Rejestracje offline nie są akceptowane"
       },
       "refusal": {
         "alreadyClockedIn": "Masz już zarejestrowane wejście.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Brak szczegółów dotyczących jazdy",
       "duration": "Czas trwania",
       "emptyState": "Brak wpisów czasu dla tego tygodnia.",
+      "missingTask": "Brak zadania",
+      "missingTaskHint": "Ten projekt wymaga zadania: dodaj je do tego wpisu w kalendarzu.",
       "recordedLocalTime": "Zarejestrowany czas lokalny",
       "rowActions": "Akcje wpisu czasu",
       "title": "Wpisy czasu",
       "viewCalendar": "Zobacz kalendarz"
     },
     "taskPicker": {
+      "choose": "Wybierz zadanie",
       "doneTask": "{name} (ukończone)",
       "empty": "Nie znaleziono zadania",
       "label": "Zadanie",
       "none": "Brak zadania",
+      "requiredLabel": "Zadanie (wymagane)",
       "search": "Szukaj zadań…"
     },
     "timeline": {

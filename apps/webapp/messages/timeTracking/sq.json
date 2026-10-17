@@ -99,6 +99,7 @@
       "breakPendingCorrection": "Një miratim për korrigjimin e kohës është tashmë në pritje për këtë periudhë pune. Shtojeni pushimin pasi të jetë zgjidhur.",
       "breakRetry": "Shtimi i pushimit dështoi. Ju lutemi provoni përsëri.",
       "breakTooLong": "Kohëzgjatja e pushimit duhet të jetë më e shkurtër se seanca juaj aktuale.",
+      "chooseTaskInClock": "Hapni orën në krye të faqes, zgjidhni një detyrë, pastaj regjistroni daljen.",
       "clockAttributionNotAllowed": "Projekti ose kategoria e zgjedhur nuk është e disponueshme",
       "clockCommandRejected": "Serveri nuk e pranoi këtë veprim regjistrimi të orarit",
       "clockConnectionRequired": "Regjistrimi i orarit kërkon lidhje në këtë organizatë. Rilidhuni dhe provoni përsëri.",
@@ -135,6 +136,7 @@
       "taskNotFound": "Kjo detyrë nuk ekziston më",
       "taskOtherProject": "Kjo detyrë i përket një projekti tjetër",
       "taskProjectNotBookable": "Nuk mund të regjistrohet më kohë për projektin e kësaj detyre",
+      "taskRequired": "Ky projekt kërkon një detyrë. Zgjidhni një dhe provoni përsëri.",
       "workCategoryNotAllowed": "Nuk mund të caktohet në këtë kategori pune"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Kthehu në punë",
         "returning": "Kthimi në fillim pas {seconds} s",
         "startBreak": "Pushimi filloi",
-        "title": "U krye"
+        "title": "U krye",
+        "unconfirmed": "Ruajtur në këtë kiosk, ende e pakonfirmuar. PIN-i juaj kontrollohet kur kiosku të jetë sërish në linjë."
       },
       "employee": {
+        "asOf": "Që nga {time}",
         "back": "Anulo",
         "endDayHint": "Përfundimi i ditës tani e përfundon punën tuaj në fillim të pushimit tuaj.",
         "today": "Sot: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Po niset kioska…",
       "offline": {
         "banner": "Kioska është jashtë linje. Regjistrimi i orarit nuk është i mundur derisa të rikthehet lidhja.",
-        "refused": "Kioska është jashtë linje. Nuk u regjistrua asgjë; regjistrimi i orarit funksionon vetëm kur jeni në linjë."
+        "notSaved": "Kjo nuk mund të ruhej në kiosk. Nuk u regjistrua asgjë.",
+        "queueBanner": "Kiosku është pa lidhje. Regjistrimet ruhen në këtë kiosk dhe konfirmohen kur të rikthehet lidhja.",
+        "refused": "Kioska është jashtë linje. Nuk u regjistrua asgjë; regjistrimi i orarit funksionon vetëm kur jeni në linjë.",
+        "stateNote": "Kiosku është pa lidhje. Veprimet tuaja tani ruhen në këtë kiosk dhe nuk janë konfirmuar ende.",
+        "stateQueued": "Kiosku është pa lidhje. Kjo përfshin regjistrimet e ruajtura në këtë kiosk që nuk janë konfirmuar ende."
       },
       "pairing": {
         "codeDescription": "Kodi funksionon vetëm një herë dhe skadon 10 minuta pas lëshimit të tij.",
@@ -201,6 +209,20 @@
         "rateLimited": "Shumë përpjekje me PIN në këtë kiosk. Provoni përsëri pas {seconds} sekondash.",
         "submit": "OK",
         "wrong": "Ky PIN nuk është i saktë. Provoni përsëri."
+      },
+      "queue": {
+        "dismiss": "Mbyll",
+        "reason": {
+          "contact": "Lidhja e fundit e kiosk-ut nuk mund të konfirmohej.",
+          "kiosk": "Kiosku nuk ishte më i çiftuar në atë kohë.",
+          "locked": "PIN-i ishte i bllokuar.",
+          "notAssigned": "Punonjësi nuk mund të regjistrohet në këtë kiosk.",
+          "other": "Pyesni menaxherin tuaj.",
+          "pin": "PIN-i nuk u pranua.",
+          "time": "Koha e tij nuk mund të pranohej."
+        },
+        "refused": "{name}: {action} në {time}, ruajtur ndërsa ishte pa lidhje, nuk u pranua. {reason}",
+        "title": "Regjistrimet pa lidhje nuk pranohen"
       },
       "refusal": {
         "alreadyClockedIn": "Tashmë jeni regjistruar në hyrje.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Mungojnë detajet e drejtimit",
       "duration": "Kohëzgjatja",
       "emptyState": "Nuk u gjet asnjë regjistrim kohe për këtë javë.",
+      "missingTask": "Mungon detyra",
+      "missingTaskHint": "Ky projekt kërkon një detyrë: shtoni një te ky regjistrim në kalendar.",
       "recordedLocalTime": "Ora lokale e regjistruar",
       "rowActions": "Veprimet e regjistrimit të kohës",
       "title": "Regjistrimet e kohës",
       "viewCalendar": "Shiko kalendarin"
     },
     "taskPicker": {
+      "choose": "Zgjidhni një detyrë",
       "doneTask": "{name} (përfunduar)",
       "empty": "Nuk u gjet asnjë detyrë",
       "label": "Detyrë",
       "none": "Pa detyrë",
+      "requiredLabel": "Detyra (e detyrueshme)",
       "search": "Kërko detyrat…"
     },
     "timeline": {

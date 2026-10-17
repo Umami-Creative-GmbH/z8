@@ -329,6 +329,7 @@
       "duration": "Duur",
       "editedBy": "Bearbeitet vo",
       "employee": "Aagstellte",
+      "missingTask": "Ufgab fehlt. Das Projekt bruucht eini: Bearbeite d'Buechig, zum si hinzuezfüege.",
       "notes": "Notize",
       "pendingApproval": "Gnähmigung usstehend",
       "pendingApprovalDescription": "Die Arbetsziit wartet uf d Gnähmigung dur d Fuehrigskraft. Di erfasste Ziite chönd sich ändere, wänn si abglehnt wird.",
@@ -517,7 +518,9 @@
     },
     "workPeriod": {
       "billable": "Verrechebar",
-      "editedBy": "(bearbeitet vo {name} am {date})"
+      "editedBy": "(bearbeitet vo {name} am {date})",
+      "missingTask": "Fählendi Ufgab",
+      "missingTaskHint": "Fählendi Ufgab: Füeg e Ufgab dezue"
     },
     "workStatus": {
       "overRequirement": "über Anforderung",

@@ -99,6 +99,7 @@
       "breakPendingCorrection": "E Gnähmigung für d Zitchorrektur isch für dä Arbetszytruum scho hängig. Füeg d Pause dezue, sobald das erledigt isch.",
       "breakRetry": "D Pause het nid chönne hinzuegfüegt wärde. Bitte probier's nomal.",
       "breakTooLong": "D Pauseduur mues chürzer sy als dini aktuelli Sitzig.",
+      "chooseTaskInClock": "Mach d Uhr oben uf de Siite uf, wähl en Ufgab us und stämpel dänn us.",
       "clockAttributionNotAllowed": "S usgwählte Projekt oder die Kategorie isch nid verfügbar",
       "clockCommandRejected": "De Server het die Stämpelaktion nid akzeptiert",
       "clockConnectionRequired": "Fürs Stämpfle bruucht's e Verbindig i dere Organisation. Bitte neu verbinde und nomol probiere.",
@@ -135,6 +136,7 @@
       "taskNotFound": "Die Ufgab git s nüme",
       "taskOtherProject": "Die Ufgab ghört zu me andere Projekt",
       "taskProjectNotBookable": "Uf s Projekt vo dere Ufgab cha kei Ziit meh buecht werde",
+      "taskRequired": "Das Projekt bruucht en Ufgab. Wähl eini us und probier's nomal.",
       "workCategoryNotAllowed": "Chan dere Arbetskategorie nöd zuegordnet werde"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Zrugg zur Arbet",
         "returning": "Zrugg zum Start in {seconds} s",
         "startBreak": "Pause gstartet",
-        "title": "Fertig"
+        "title": "Fertig",
+        "unconfirmed": "Uf däm Kiosk gspicheret, no nöd bestätigt. Din PIN wird überprüeft, sobald de Kiosk wider online isch."
       },
       "employee": {
+        "asOf": "Stand {time}",
         "back": "Abbräche",
         "endDayHint": "Wenn de Tag jetzt beändisch, hört dini Arbet am Aafang vo de Pause uf.",
         "today": "Hüt: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Kiosk wird gstartet…",
       "offline": {
         "banner": "De Kiosk isch offline. Stämple isch erscht wider möglich, wenn d Verbindig zrugg isch.",
-        "refused": "De Kiosk isch offline. Es isch nüt erfasst worde; Stämple funktioniert nume online."
+        "notSaved": "Das hät uf däm Kiosk nöd chönne gspicheret wärde. Es isch nüüt erfasst worde.",
+        "queueBanner": "De Kiosk isch offline. Stämplige wärded uf däm Kiosk gspicheret und bestätigt, sobald d Verbindig wider da isch.",
+        "refused": "De Kiosk isch offline. Es isch nüt erfasst worde; Stämple funktioniert nume online.",
+        "stateNote": "De Kiosk isch offline. Was du jetzt machsch, wird uf däm Kiosk gspicheret und isch no nöd bestätigt.",
+        "stateQueued": "De Kiosk isch offline. Das beinhaltet Stämplige, wo uf däm Kiosk gspicheret und no nöd bestätigt sind."
       },
       "pairing": {
         "codeDescription": "De Code funktioniert eimol und lauft 10 Minute noch de Usgab ab.",
@@ -201,6 +209,20 @@
         "rateLimited": "Z vill PIN-Versüech a däm Kiosk. Probier's in {seconds} Sekunde nomol.",
         "submit": "OK",
         "wrong": "Dieser PIN ist nicht korrekt. Versuchen Sie es erneut."
+      },
+      "queue": {
+        "dismiss": "Verwärfe",
+        "reason": {
+          "contact": "Di letscht Verbindig vom Kiosk hät nöd chönne bestätigt wärde.",
+          "kiosk": "De Kiosk isch zu däm Ziitpunkt nümme kopplet gsi.",
+          "locked": "De PIN isch gsperrt gsi.",
+          "notAssigned": "De Mitarbeiter cha a däm Kiosk nöd stämple.",
+          "other": "Frög din Vorgesetzte.",
+          "pin": "De PIN isch nöd akzeptiert worde.",
+          "time": "D Ziit dervo hät nöd chönne akzeptiert wärde."
+        },
+        "refused": "{name}: {action} um {time}, offline gspicheret, isch nöd akzeptiert worde. {reason}",
+        "title": "Offline-Stämplige nöd akzeptiert"
       },
       "refusal": {
         "alreadyClockedIn": "Sie sind bereits eingestempelt.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Fahrtdetails fähled",
       "duration": "Duur",
       "emptyState": "Kei Ziit-Iiträg für die Wuche gfunde.",
+      "missingTask": "Fählendi Ufgab",
+      "missingTaskHint": "Das Projekt bruucht en Ufgab: Fueg dere Buechig im Kaländer eini hinzue.",
       "recordedLocalTime": "Erfassti Lokalziit",
       "rowActions": "Aktione für Ziitiiträg",
       "title": "Ziit-Iiträg",
       "viewCalendar": "Kaländer aaluege"
     },
     "taskPicker": {
+      "choose": "Wähl en Ufgab us",
       "doneTask": "{name} (erledigt)",
       "empty": "Kei Ufgab gfunde",
       "label": "Ufgab",
       "none": "Kei Ufgab",
+      "requiredLabel": "Ufgab (erforderlich)",
       "search": "Ufgabe sueche…"
     },
     "timeline": {

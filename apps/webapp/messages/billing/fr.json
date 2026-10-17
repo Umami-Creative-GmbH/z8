@@ -13,6 +13,7 @@
       "successDescription": "Votre abonnement a été activé. Merci de vous être abonné !",
       "successTitle": "Succès !"
     },
+    "amount": "{amount} €",
     "bestValue": "Meilleur rapport qualité-prix",
     "billedMonthly": "facturé mensuellement",
     "cancelsOn": "Annule le {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Facturation mensuelle",
       "yearlyBilling": "Facturation annuelle"
     },
+    "kioskSeatPriceMonthly": "Places kiosque (employés kiosque uniquement) : {price} €/place/mois",
+    "kioskSeatPriceYearly": "Places kiosque (employés kiosque uniquement) : {price} €/place/mois, {total} €/place facturé annuellement",
     "manageBilling": "Gérer la facturation",
     "monthlyCost": "Coût mensuel",
     "nextBilling": "Prochaine facturation",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/siège/mois",
     "priceSeatMonthYearly": "€{price}/siège/mois (facturé annuellement)",
     "seatBilledAnnually": "€{price}/siège facturé annuellement",
+    "seatLines": {
+      "full": "Places complètes",
+      "kiosk": "Places kiosque",
+      "seatsAtPrice": "{seats} × {price} €/mois",
+      "total": "Total",
+      "totalPerMonth": "{amount} €/mois"
+    },
     "starting": "Démarrage...",
     "startTrial": "Commencer l'essai gratuit",
     "status": {
