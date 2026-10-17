@@ -1,11 +1,8 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
 import {
-	type CostRateChangeResult,
 	type CostRateHistory,
 	endCostRate,
 	getCostRateHistory,
@@ -19,9 +16,8 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
-import type { ServerActionResult } from "@/lib/effect/result";
 import { queryKeys } from "@/lib/query/keys";
-import { type RateChangeResult, RateHistoryCard } from "./rate-history-card";
+import { RateSeries } from "./rate-series";
 
 export interface CostRateSeriesProps {
 	employeeId: string;
@@ -47,62 +43,28 @@ export function CostRateSeries({
 	onChanged,
 }: CostRateSeriesProps) {
 	const { t } = useTranslate();
-	const queryClient = useQueryClient();
-	const queryKey = queryKeys.billableTime.costRateHistory(employeeId);
-
-	const history = useQuery({
-		queryKey,
-		queryFn: async (): Promise<CostRateHistory> => {
-			const result = await getCostRateHistory({ employeeId });
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
-	});
-
-	const applyChange = async (
-		change: Promise<ServerActionResult<CostRateChangeResult>>,
-	): Promise<RateChangeResult> => {
-		const result = await change.catch(() => null);
-		if (!result) {
-			const message = t("common.unexpectedError", "An unexpected error occurred");
-			toast.error(message);
-			return message;
-		}
-		if (!result.success) {
-			toast.error(result.error);
-			return result.error;
-		}
-		queryClient.setQueryData<CostRateHistory>(queryKey, (previous) =>
-			previous ? { ...previous, periods: result.data.periods } : previous,
-		);
-		toast.success(
-			result.data.changed
-				? t("settings.billableTime.costRates.saved", "Cost rate saved")
-				: t("settings.billableTime.costRates.unchanged", "That cost rate already applies"),
-		);
-		if (result.data.changed) onChanged?.();
-		return null;
-	};
-
-	if (history.isError) {
-		return (
-			<p className="text-sm text-destructive" role="alert">
-				{history.error.message ||
-					t("settings.billableTime.costRates.loadError", "Cost rates could not be loaded")}
-			</p>
-		);
-	}
-
-	const suggestedWage = history.data?.suggestedWage ?? null;
 
 	return (
-		<RateHistoryCard
+		<RateSeries<CostRateHistory>
 			title={title}
 			description={description}
-			currency={history.data?.currency ?? ""}
-			periods={history.data?.periods ?? []}
-			isLoading={history.isPending}
-			canEdit={history.isSuccess}
+			bare={bare}
+			onChanged={onChanged}
+			queryKey={queryKeys.billableTime.costRateHistory(employeeId)}
+			loadHistory={() => getCostRateHistory({ employeeId })}
+			setRate={(input) => setCostRate({ employeeId, ...input })}
+			endRate={(input) => endCostRate({ employeeId, ...input })}
+			messages={{
+				saved: t("settings.billableTime.costRates.saved", "Cost rate saved"),
+				unchanged: t(
+					"settings.billableTime.costRates.unchanged",
+					"That cost rate already applies",
+				),
+				loadError: t(
+					"settings.billableTime.costRates.loadError",
+					"Cost rates could not be loaded",
+				),
+			}}
 			emptyText={t(
 				"settings.billableTime.costRates.empty",
 				"No cost rate yet. Margin for this employee's work shows as cost unknown.",
@@ -111,20 +73,19 @@ export function CostRateSeries({
 				"settings.billableTime.costRates.setRateHelp",
 				"The new cost rate applies from this date until the next change. It never changes the wage, payroll or hourly earnings.",
 			)}
-			suggestion={
-				suggestedWage
+			suggestion={(history) =>
+				history?.suggestedWage
 					? {
-							rate: suggestedWage.hourlyRate,
+							rate: history.suggestedWage.hourlyRate,
 							label: (rate) =>
-								t("settings.billableTime.costRates.useWage", "Start from the wage of {rate}", {
-									rate,
-								}),
+								t(
+									"settings.billableTime.costRates.useWage",
+									"Start from the wage of {rate}",
+									{ rate },
+								),
 						}
 					: null
 			}
-			bare={bare}
-			onSetRate={(input) => applyChange(setCostRate({ employeeId, ...input }))}
-			onEndRate={(input) => applyChange(endCostRate({ employeeId, ...input }))}
 		/>
 	);
 }
@@ -150,11 +111,18 @@ export function CostRateActionPanel({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{title}</ActionPanelTitle>
-					{description && <ActionPanelDescription>{description}</ActionPanelDescription>}
+					{description && (
+						<ActionPanelDescription>{description}</ActionPanelDescription>
+					)}
 				</ActionPanelHeader>
 				<ActionPanelBody>
 					{open && employeeId && (
-						<CostRateSeries employeeId={employeeId} title={null} bare onChanged={onChanged} />
+						<CostRateSeries
+							employeeId={employeeId}
+							title={null}
+							bare
+							onChanged={onChanged}
+						/>
 					)}
 				</ActionPanelBody>
 			</ActionPanelContent>
