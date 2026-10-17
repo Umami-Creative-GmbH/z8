@@ -8,6 +8,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { db } from "@/db";
+import { user } from "@/db/auth-schema";
 import {
 	drivingAuthorization,
 	drivingAuthorizationEvent,
@@ -53,8 +54,7 @@ async function impact(
 	const rows = await tx
 		.select({
 			authorization: drivingAuthorization,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
+			name: user.name,
 		})
 		.from(drivingAuthorization)
 		.innerJoin(
@@ -64,6 +64,7 @@ async function impact(
 				eq(employee.organizationId, drivingAuthorization.organizationId),
 			),
 		)
+		.innerJoin(user, eq(user.id, employee.userId))
 		.where(
 			and(
 				eq(drivingAuthorization.organizationId, organizationId),
@@ -80,7 +81,7 @@ async function impact(
 		.where(eq(drivingLicenceSubject.organizationId, organizationId))
 		.orderBy(asc(drivingLicenceSubject.employeeId));
 	const classes = rows.flatMap(
-		({ authorization: row, firstName, lastName }) => {
+		({ authorization: row, name }) => {
 			if (!row.lastSuccessfulAt || row.state === "ended") return [];
 			const { routineValidThrough, validThrough, expires } =
 				drivingAuthorizationDeadline({
@@ -103,8 +104,7 @@ async function impact(
 			return [
 				{
 					employeeId: row.employeeId,
-					employeeName:
-						[firstName, lastName].filter(Boolean).join(" ") || row.employeeId,
+					employeeName: name.trim() || row.employeeId,
 					classCode: row.classCode,
 					previousValidThrough: row.validThrough,
 					routineValidThrough,

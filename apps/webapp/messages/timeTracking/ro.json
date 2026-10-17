@@ -99,6 +99,7 @@
       "breakPendingCorrection": "O solicitare de corecție a timpului este deja în așteptare pentru această perioadă de lucru. Adăugați pauza după ce este soluționată.",
       "breakRetry": "Nu s-a putut adăuga pauza. Vă rugăm să încercați din nou.",
       "breakTooLong": "Durata pauzei trebuie să fie mai scurtă decât sesiunea dvs. curentă.",
+      "chooseTaskInClock": "Deschideți ceasul din partea de sus a paginii, alegeți o sarcină, apoi pontați ieșirea.",
       "clockAttributionNotAllowed": "Proiectul sau categoria selectată nu este disponibilă",
       "clockCommandRejected": "Serverul nu a acceptat această acțiune de pontare",
       "clockConnectionRequired": "Pontarea necesită o conexiune în această organizație. Reconectează-te și încearcă din nou.",
@@ -135,6 +136,7 @@
       "taskNotFound": "Această sarcină nu mai există",
       "taskOtherProject": "Această sarcină aparține altui proiect",
       "taskProjectNotBookable": "Nu se mai poate înregistra timp pentru proiectul acestei sarcini",
+      "taskRequired": "Acest proiect necesită o sarcină. Alegeți una și încercați din nou.",
       "workCategoryNotAllowed": "Nu se poate atribui la această categorie de lucru"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Înapoi la muncă",
         "returning": "Înapoi la început în {seconds} s",
         "startBreak": "Pauză începută",
-        "title": "Gata"
+        "title": "Gata",
+        "unconfirmed": "Salvat pe acest chioșc, neconfirmat încă. PIN-ul dvs. este verificat când chioșcul revine online."
       },
       "employee": {
+        "asOf": "La {time}",
         "back": "Anulare",
         "endDayHint": "Încheierea zilei acum îți finalizează activitatea la începutul pauzei.",
         "today": "Astăzi: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Se pornește chioșcul…",
       "offline": {
         "banner": "Chioșcul este offline. Pontarea nu este posibilă până la restabilirea conexiunii.",
-        "refused": "Chioșcul este offline. Nu s-a înregistrat nimic; pontarea funcționează doar online."
+        "notSaved": "Nu s-a putut salva pe chioșc. Nu s-a înregistrat nimic.",
+        "queueBanner": "Chioșcul este offline. Pontările sunt salvate pe acest chioșc și confirmate când conexiunea revine.",
+        "refused": "Chioșcul este offline. Nu s-a înregistrat nimic; pontarea funcționează doar online.",
+        "stateNote": "Chioșcul este offline. Ceea ce faceți acum este salvat pe acest chioșc și nu este încă confirmat.",
+        "stateQueued": "Chioșcul este offline. Aceasta include pontările salvate pe acest chioșc care nu sunt încă confirmate."
       },
       "pairing": {
         "codeDescription": "Codul este de unică folosință și expiră la 10 minute după emitere.",
@@ -201,6 +209,20 @@
         "rateLimited": "Prea multe încercări de PIN la acest chioșc. Încearcă din nou în {seconds} secunde.",
         "submit": "OK",
         "wrong": "Codul PIN este incorect. Încearcă din nou."
+      },
+      "queue": {
+        "dismiss": "Închide",
+        "reason": {
+          "contact": "Ultima conexiune a chioșcului nu a putut fi confirmată.",
+          "kiosk": "Chioșcul nu mai era asociat la acel moment.",
+          "locked": "PIN-ul a fost blocat.",
+          "notAssigned": "Angajatul nu se poate ponta la acest chioșc.",
+          "other": "Adresați-vă managerului dvs.",
+          "pin": "PIN-ul nu a fost acceptat.",
+          "time": "Ora nu a putut fi acceptată."
+        },
+        "refused": "{name}: {action} la {time}, salvat în modul offline, nu a fost acceptat. {reason}",
+        "title": "Pontările offline nu sunt acceptate"
       },
       "refusal": {
         "alreadyClockedIn": "Ești deja pontat la intrare.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Lipsesc detalii despre deplasare",
       "duration": "Durată",
       "emptyState": "Nu s-au găsit înregistrări de timp pentru această săptămână.",
+      "missingTask": "Sarcină lipsă",
+      "missingTaskHint": "Acest proiect necesită o sarcină: adăugați una la această înregistrare în calendar.",
       "recordedLocalTime": "Ora locală înregistrată",
       "rowActions": "Acțiuni privind înregistrarea timpului",
       "title": "Înregistrări de timp",
       "viewCalendar": "Vizualizare calendar"
     },
     "taskPicker": {
+      "choose": "Alegeți o sarcină",
       "doneTask": "{name} (finalizată)",
       "empty": "Nicio sarcină găsită",
       "label": "Sarcină",
       "none": "Nicio sarcină",
+      "requiredLabel": "Sarcină (obligatorie)",
       "search": "Caută sarcini…"
     },
     "timeline": {

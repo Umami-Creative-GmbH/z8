@@ -845,6 +845,39 @@
       },
       "title": "Data Export"
     },
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Grant verifier responsibility",
+        "all": "All employees in this organization",
+        "allDescription": "Responsibility follows current organization membership. Verifiers can never verify themselves.",
+        "attribution": "Granted by {actor} at {time}",
+        "description": "Grant responsibility separately from driver enrollment, line management and personnel file access. Managing these grants does not permit reading inspection records. Self-verification is always prohibited.",
+        "editor": "Verifier scope",
+        "empty": "No verifier responsibilities assigned",
+        "expiry": "Expires at {time}",
+        "history": "Responsibility history",
+        "historyEntry": "Granted by {grantor} at {granted}; revoked by {revoker} at {revoked}",
+        "loadFailed": "Could not load verifier responsibilities",
+        "myAll": "You are responsible for checks across this organization. You cannot verify yourself.",
+        "mySelected": "You are responsible for {teams} selected teams and {employees} named employees. Current team membership determines access. You cannot verify yourself.",
+        "myTitle": "Your verifier responsibility",
+        "none": "You have no current driving licence verifier responsibility.",
+        "noTeams": "No teams available",
+        "person": "Verifier",
+        "revoked": "Verifier responsibility revoked",
+        "revokeDescription": "The verifier immediately loses access to checks in this scope. A new grant is required to restore responsibility.",
+        "revokeFailed": "Could not revoke responsibility. Try again.",
+        "revokeTitle": "Revoke verifier responsibility?",
+        "saved": "Verifier responsibility saved",
+        "scope": "Responsibility",
+        "select": "Select an employee",
+        "selected": "{teams} teams, {employees} named employees",
+        "selectEmployees": "Select employees",
+        "specific": "Selected teams and employees",
+        "specificDescription": "Includes named employees and current members of selected teams. Team changes take effect immediately.",
+        "title": "Driving licence verifiers"
+      }
+    },
     "emailTemplates": {
       "actions": {
         "reset": "Reset to system template",
@@ -2007,6 +2040,8 @@
         "name": "Name",
         "namePlaceholder": "Enter project name",
         "noCustomer": "No customer",
+        "requiresTask": "Require a task",
+        "requiresTaskHelp": "Time booked to this project must name one of its tasks. It applies only while the project has an open task.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -2020,6 +2055,7 @@
         "reasonAdminOnly": "only organization admins assign project managers",
         "reasonDeparted": "left the organization",
         "reasonRemoved": "no longer exists",
+        "requiresTask": "Requires a task",
         "skipped": "Not copied: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2165,7 +2201,9 @@
           "name": "Name",
           "namePlaceholder": "e.g., Website relaunch",
           "nameRequired": "Enter a template name",
-          "noIcon": "No icon"
+          "noIcon": "No icon",
+          "requiresTask": "Require a task",
+          "requiresTaskHelp": "Projects created from this template start with this setting."
         },
         "icons": {
           "briefcase": "Briefcase",

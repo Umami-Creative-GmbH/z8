@@ -13,6 +13,7 @@
       "successDescription": "Η συνδρομή σας έχει ενεργοποιηθεί. Σας ευχαριστούμε για την εγγραφή σας!",
       "successTitle": "Επιτυχία!"
     },
+    "amount": "€{amount}",
     "bestValue": "Καλύτερη αξία",
     "billedMonthly": "μηνιαία χρέωση",
     "cancelsOn": "Ακυρώνεται στις {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Μηνιαία χρέωση",
       "yearlyBilling": "Ετήσια χρέωση"
     },
+    "kioskSeatPriceMonthly": "Θέσεις Kiosk (εργαζόμενοι μόνο σε kiosk): €{price}/θέση/μήνα",
+    "kioskSeatPriceYearly": "Θέσεις Kiosk (εργαζόμενοι μόνο σε kiosk): €{price}/θέση/μήνα, €{total}/θέση με ετήσια χρέωση",
     "manageBilling": "Διαχείριση Χρέωσης",
     "monthlyCost": "Μηνιαίο Κόστος",
     "nextBilling": "Επόμενη Χρέωση",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/θέση/μήνα",
     "priceSeatMonthYearly": "€{price}/θέση/μήνα (ετήσια χρέωση)",
     "seatBilledAnnually": "€{price}/θέση με ετήσια χρέωση",
+    "seatLines": {
+      "full": "Πλήρεις θέσεις",
+      "kiosk": "Θέσεις Kiosk",
+      "seatsAtPrice": "{seats} × €{price}/μήνα",
+      "total": "Σύνολο",
+      "totalPerMonth": "€{amount}/μήνα"
+    },
     "starting": "Εκκίνηση...",
     "startTrial": "Έναρξη Δωρεάν Δοκιμής",
     "status": {

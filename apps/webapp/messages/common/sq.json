@@ -227,6 +227,7 @@
     "duplicate": "Dubliko",
     "durationMinutes": "{count} min",
     "edit": "Ndrysho",
+    "employees": "Punonjësit",
     "enabled": "Aktivizuar",
     "error": "Gabim",
     "error-occurred": "Ndodhi një gabim",
@@ -318,6 +319,7 @@
     "name": "Emri",
     "new": "I ri",
     "next": "Tjetra",
+    "no": "Jo",
     "notApplicable": "N/A",
     "not-available": "E padisponueshme",
     "notifications": {
@@ -382,6 +384,7 @@
     "removing": "Duke hequr...",
     "reset": "Rivendos",
     "retry": "Provo përsëri",
+    "revoke": "Revoko",
     "save": "Ruaj",
     "saveChanges": "Ruaj ndryshimet",
     "saving": "Duke ruajtur...",
@@ -407,6 +410,7 @@
         "title": "Përditësim i disponueshëm"
       }
     },
+    "teams": "Ekipet",
     "timeInput": {
       "openTimePicker": "Hap zgjedhësin e orës",
       "switchPeriod": "Kalo te {period}"
@@ -533,7 +537,277 @@
         "title": "Përdorimi i automjetit",
         "vehiclesTitle": "Automjetet e organizatës"
       }
-    }
+    },
+    "yes": "Po"
+  },
+  "drivingLicence": {
+    "activate": "Aktivizo kontrollin e lejes së drejtimit",
+    "activationHelp": "Regjistrimi nuk jep autorizim për drejtim automjeti. Një verifikues i autorizuar duhet fillimisht të kontrollojë lejen origjinale.",
+    "applyingInterval": "Duke zbatuar…",
+    "applyInterval": "Zbato ndryshimin e intervalit",
+    "check": {
+      "attestations": "Inspektimi personal dhe deklaratat",
+      "chooseClasses": "Zgjidhni kategoritë që keni inspektuar realisht.",
+      "classes": "Kategoritë e inspektuara realisht",
+      "classExpiry": "Skadimi i kategorisë (nëse zbatohet)",
+      "documentDates": "Datat e dokumentit origjinal",
+      "employeeDeclaration": "Punonjësi bëri personalisht deklaratën e paraqitur më sipër gjatë këtij kontrolli; unë e vërtetoj atë deklaratë.",
+      "expiryDate": "Data e skadimit të dokumentit",
+      "failureScope": "Fusha e veprimit e një kontrolli të pasuksesshëm ose jo përfundimtar",
+      "identity": "Konfirmova se dokumenti origjinal i përket këtij punonjësi.",
+      "issueDate": "Data e lëshimit të dokumentit",
+      "original": "Kam inspektuar personalisht lejen origjinale të drejtimit në prani të punonjësit.",
+      "privacy": "Regjistroni vetëm datat e dokumentit, kategoritë e inspektuara dhe kufizimet e nevojshme të drejtimit. Mos vendosni numrin e lejes, adresën, shpjegimet mjekësore ose të dhënat personale.",
+      "restrictions": "Kufizimet e nevojshme të drejtimit",
+      "result": "Rezultati",
+      "saving": "Duke regjistruar kontrollin…",
+      "scopeClasses": "Vetëm kategoritë e prekura të inspektuara",
+      "scopeDocument": "Çdo autorizim i bazuar në dokument",
+      "scopePerson": "Të gjitha autorizimet e drejtimit për punonjësin",
+      "submit": "Regjistro kontrollin origjinal",
+      "suspensionNotice": "Një rikontroll i suksesshëm nuk e rikthen automatikisht një autorizim të pezulluar. Kërkohet një kontroll i ri dhe një vendim i qartë rikthimi.",
+      "title": "Inspekto lejen origjinale të {name}",
+      "verifier": "Konfirmoj se faktet e regjistruara dhe rezultatet individuale të kategorive pasqyrojnë inspektimin tim."
+    },
+    "class": {
+      "active": "I autorizuar",
+      "ended": "Përfunduar",
+      "overdue": "Kontrolli rutinë ka kaluar afatin. Ky është një pezullim organizativ, jo një deklaratë se e drejta ligjore e drejtimit është hequr.",
+      "recheck": "Kërkohet një kontroll i ri origjinal dhe një rikthim i qartë.",
+      "restrictions": "Kufizimet e drejtimit: {restrictions}",
+      "suspended": "Pezulluar",
+      "validThrough": "E vlefshme deri më {date} ({timezone})"
+    },
+    "declaration": {
+      "text": "Konfirmoj se asnjë ndalim drejtimi i njohur, heqje apo pengesë tjetër nuk pengon drejtimin e synuar dhe se plotësoj kufizimet e zbatueshme të drejtimit."
+    },
+    "delivery": {
+      "uncertain": "Email-et opsionale të kujtesës për ju kanë një rezultat të pasigurt dërgimi ({count}). Ato nuk do të dërgohen më automatikisht. Kujtesat tuaja në aplikacion mbeten të disponueshme; dërgimi i email-it nuk konfirmon leximin."
+    },
+    "earlierLimit": "Kufiri më i hershëm i dokumentit/kategorisë",
+    "enroll": "Regjistro",
+    "enrollError": "Punonjësi nuk mund të regjistrohej. Aktivizoni më parë rregulloren dhe kontrolloni të drejtat tuaja të qasjes.",
+    "enrollmentHelp": "Regjistroni punonjësit që parashikohen të ngasin automjete. Caktimet e automjeteve dhe përdorimi i mëparshëm i automjeteve nuk krijojnë kurrë autorizim.",
+    "enrollmentTitle": "Drejtuesit e parashikuar",
+    "enrollName": "Regjistro {name}",
+    "evidence": {
+      "confirmation": "Konfirmimi i verifikuesit u regjistrua me versionin e rregullores {version}; afatet përdorin {timezone}.",
+      "declarationConfirmed": "Punonjësi e bëri deklaratën personalisht; verifikuesi e vërtetoi atë në kohën e kontrollit.",
+      "declarationUnconfirmed": "Deklarata e punonjësit nuk mund të konfirmohej.",
+      "document": "Dokumenti u lëshua më {issued}; skadon më {expiry}",
+      "empty": "Nuk është përfunduar asnjë kontroll origjinal.",
+      "originalConfirmed": "Origjinali u inspektua personalisht dhe identiteti i punonjësit u konfirmua.",
+      "originalUnconfirmed": "Inspektimi origjinal ose identiteti i punonjësit nuk mund të konfirmohej.",
+      "title": "Provat e kontrollit origjinal",
+      "verifier": "Kontrolli origjinal u regjistrua nga {name}"
+    },
+    "history": {
+      "allClasses": "Të gjitha kategoritë",
+      "apply": "Zbato periudhën",
+      "authorized": "Autorizimi u dha",
+      "chooseOutcome": "Zgjidhni rezultatin",
+      "class": "Kategoria e kontrolluar",
+      "classExpired": "Kategoria ka skaduar",
+      "classExpiry": "Data e skadimit të kategorisë",
+      "classRestrictions": "Kufizimet e drejtimit të automjetit",
+      "classResult": "Rezultati i kategorisë së inspektuar",
+      "context": "Kontekst jashtë periudhës së zgjedhur",
+      "decision": "Vendimi i autorizimit",
+      "declarationConfirmed": "Deklarata e punonjësit u konfirmua në kontrollin origjinal",
+      "declarationUnconfirmed": "Deklarata e punonjësit nuk u konfirmua",
+      "documentExpired": "Dokumenti ka skaduar",
+      "documentExpiry": "Data e skadimit të dokumentit",
+      "documentImpediment": "Pengesë në të gjithë dokumentin",
+      "documentIssued": "Data e lëshimit të dokumentit",
+      "downloadPdf": "Shkarko PDF-në e provave",
+      "employmentEnded": "Marrëdhënia e punës ka përfunduar",
+      "empty": "Nuk ka kontrolle ose vendime autorizimi në këtë periudhë.",
+      "ended": "Autorizimi i drejtimit të automjetit përfundoi",
+      "evidenceCorrected": "Provat e korrigjuara kërkojnë një kontroll të ri dhe rikthim të shprehur në fuqi",
+      "failed": "Kategoria e inspektuar e pasuksesshme",
+      "field": "Fusha e korrigjuar",
+      "from": "Nga data (UTC)",
+      "globalSuspension": "I gjithë autorizimi i drejtimit të automjetit është pezulluar",
+      "help": "Konfirmimet origjinale, shtesat e datuara dhe vendimet efektive të autorizimit mbeten të ndara. Provat e mëparshme të nevojshme për të kuptuar periudhën e zgjedhur etiketohen si kontekst. Të gjitha oraret e ngjarjeve dhe kufijtë e periudhave më poshtë përdorin UTC.",
+      "impedimentReported": "U raportua pengesë për drejtim automjeti",
+      "impedimentResolved": "Pengesa e raportuar u zgjidh shprehimisht",
+      "inconclusive": "Kategoria e inspektuar pa përfundim",
+      "linkedOriginal": "Kontrolli origjinal i lidhur: {date}",
+      "loading": "Po ngarkohet historiku…",
+      "minimalEvidence": "Regjistroni vetëm provat e nevojshme të drejtimit të automjetit. Mos vendosni numra dokumentesh, shpjegime mjekësore apo të dhëna personale.",
+      "missingDetail": "Detaj që mungon",
+      "none": "Asnjë e regjistruar",
+      "openSupplement": "Plotëso kontrollin origjinal {date}",
+      "original": "Kontrolli origjinal dhe konfirmimi",
+      "originalConfirmed": "Origjinali dhe identiteti u konfirmuan",
+      "originalUnconfirmed": "Origjinali ose identiteti nuk u konfirmuan",
+      "overdue": "Kontrolli rutinë ka kaluar afatin",
+      "personImpediment": "Pengesë në nivel personi",
+      "policyContext": "Versioni i politikës {version}; intervali {months} muaj",
+      "policyIntervalChanged": "Afati i autorizimit u ndryshua nga politika e intervalit",
+      "policyRecalculated": "Afati i autorizimit u rillogarit nga politika",
+      "reason": "Arsyeja e plotësimit",
+      "recorded": "Regjistruar më {date}",
+      "recordingError": "Gabim gjatë regjistrimit",
+      "reinstated": "Autorizimi u rikthye shprehimisht pas një kontrolli të ri",
+      "save": "Ruaj plotësimin",
+      "saveError": "Plotësimi nuk mund të ruhej. Kontrolloni përgjegjësinë tuaj aktuale dhe detajet e korrigjimit.",
+      "snapshot": "Politika {version}; intervali {months} muaj; zona kohore e afatit {timezone}",
+      "supplementBy": "Plotësuar nga {name}",
+      "supplementHelp": "Kjo shton një korrigjim me datë së bashku me identitetin tuaj. Konfirmimi origjinal mbetet i pandryshuar. Kufizimet e mëparshme, rezultatet e dështuara dhe kufizimet e reja pezullojnë lejen aktuale përkatëse; një plotësim nuk e rinovon dhe nuk e rikthen kurrë autorizimin.",
+      "supplementTitle": "Plotëso kontrollin origjinal {date}",
+      "suspended": "Autorizimi u pezullua",
+      "title": "Historiku i kontrollit dhe autorizimit",
+      "to": "Përpara datës (UTC)",
+      "unavailable": "Historiku nuk është i disponueshëm. Kontrolloni periudhën dhe qasjen tuaj aktuale.",
+      "value": "Vlera e korrigjuar",
+      "verifierConfirmation": "Konfirmimi i verifikuesit i regjistruar në kohën e kontrollit origjinal"
+    },
+    "impediment": {
+      "newCheckRequired": "Regjistroni një kontroll të ri origjinal të suksesshëm për kategoritë e pezulluara përpara rikthimit.",
+      "reinstate": "Rikthe kategoritë e zgjedhura",
+      "reinstated": "Kategoritë e përzgjedhura u rikthyen shprehimisht.",
+      "reinstateFailed": "Rikthimi u refuzua. Rifreskoni dhe rishikoni regjistrimin aktual, përgjegjësinë tuaj dhe një kontroll të ri origjinal.",
+      "reinstateHelp": "Së pari regjistroni një kontroll të ri origjinal personal pas pezullimit. Verifikoni që çdo pengesë është zgjidhur; shqyrtoni çdo provë mbështetëse të nevojshme jashtë Z8. Vetëm shikimi i kartës së patentës mund të jetë i pamjaftueshëm. Vetëm kategoritë e zgjedhura të kontrolluara me sukses do të rikthehen.",
+      "reinstateTitle": "Rikthe shprehimisht autorizimin e drejtimit të mjetit",
+      "reinstating": "Po ruhet rikthimi…",
+      "report": "Raporto se nuk mund të drejtoj mjetin",
+      "reported": "Të gjitha autorizimet tuaja të kategorive janë pezulluar. Kontaktoni verifikuesin tuaj përgjegjës për një kontroll të ri origjinal dhe rikthim të shprehur pasi të jetë zgjidhur pengesa.",
+      "reportFailed": "Raporti nuk mund të ruhej. Provoni përsëri ose kontaktoni menjëherë verifikuesin tuaj përgjegjës.",
+      "reportHelp": "Raportoni një paaftësi aktuale për të drejtuar mjetin. Të gjitha autorizimet e kategorive do të pezullohen menjëherë. Nuk keni nevojë të jepni arsye personale.",
+      "reporting": "Po ruhet raporti…",
+      "resolutionConfirmation": "Kam konstatuar se të gjitha pengesat në nivel personi, dokumenti dhe të raportuara janë zgjidhur, kam shqyrtuar provat mbështetëse të nevojshme jashtë Z8 dhe autorizoj shprehimisht përsëri kategoritë e zgjedhura.",
+      "selectClasses": "Kategoritë për t'u rikthyer nga kontrolli origjinal më i fundit",
+      "title": "Nuk jeni në gjendje të drejtoni mjetin?",
+      "unresolvedReport": "Një pengesë në nivel personi e raportuar nga punonjësi kërkon ende zgjidhje."
+    },
+    "interval": "Intervali i kontrollit rutinë (muaj)",
+    "intervalAnchorHelp": "Llogaritur nga kontrolli i fundit i suksesshëm i secilës kategori.",
+    "intervalApplied": "Intervali u zbatua. Pezullimet ekzistuese mbeten në fuqi.",
+    "intervalChangeHelp": "Shikoni paraprakisht datat e rillogaritura të secilës kategori përpara se t'i zbatoni. Kufijtë e mëparshëm të dokumenteve dhe kategorive zbatohen ende. Zgjatja e intervalit nuk e rikthen kurrë një autorizim të pezulluar.",
+    "intervalChangeTitle": "Ndrysho intervalin rutinë",
+    "intervalHelp": "Secila kategori e kontrolluar përdor kontrollin e saj të fundit të suksesshëm si pikë referimi për kontrollin rutinë.",
+    "intervalImpact": "Ndikimi i intervalit",
+    "intervalImpactHelp": "Rishikoni datën e re rutinë dhe kufirin e mëparshëm në fuqi për çdo kategori të prekur. Datat përdorin zonën kohore të specifikuar të kalendarit.",
+    "intervalPreviewError": "Ndikimi nuk mund të ngarkohej. Kontrolloni qasjen tuaj dhe zgjidhni një interval nga 1 deri në 120 muaj.",
+    "intervalStale": "Politika ose autorizimi i drejtimit ka ndryshuar, ose qasja juaj nuk është e disponueshme. Shikoni sërish paraprakisht ndikimin aktual përpara se ta zbatoni.",
+    "justification": "Arsyetimi i ruajtjes",
+    "justificationHelp": "Shpjegoni pse kjo periudhë e kufizuar është e nevojshme (të paktën 10 karaktere). Mos përfshini detaje private ose mjekësore.",
+    "loadError": "Kontrolli i lejes së drejtimit nuk mund të ngarkohej. Kontrolloni qasjen e organizatës suaj.",
+    "myDescription": "Shikoni statusin e kontrollit të lejes suaj të drejtimit",
+    "myTitle": "Autorizimi im i drejtimit",
+    "newInterval": "Intervali i ri rutinor (muaj)",
+    "newlyOverdue": "Sapo ka skaduar afati — do të pezullohet",
+    "newRoutineDate": "Kontrolli i ardhshëm rutinor",
+    "noEmployeeRecord": "Nuk ka asnjë regjistrim të lejes së drejtimit të punonjësve në këtë organizatë.",
+    "noEmployees": "Nuk ka punonjës aktivë për t'u regjistruar.",
+    "noIntervalClasses": "Asnjë autorizim ekzistues i kategorisë nuk ka nevojë për rillogaritje.",
+    "notChecked": "Ende i pakontrolluar — nuk ka autorizim drejtimi",
+    "notEnrolled": "I paregjistruar — nuk ka autorizim drejtimi",
+    "operational": {
+      "advisory": "Autorizimi i drejtimit",
+      "loading": "Po ngarkohet autorizimi i drejtimit…",
+      "noEmployees": "Nuk ka punonjës që përputhen.",
+      "recordingHelp": "Mund të regjistroni gjithmonë kohën e punës dhe përdorimin aktual të mjetit. Zgjedhja e një automjeti nuk jep autorizim drejtimi; kategoritë e kontrolluara nuk përcaktojnë përshtatshmërinë për çdo automjet.",
+      "refresh": "Rifresko statusin e drejtimit",
+      "search": "Gjej punonjësin",
+      "searchHelp": "Shfaqen deri në 50 punonjës. Ngushtoni kërkimin për të gjetur një punonjës tjetër. Kjo pamje nuk përmban regjistrime inspektimi.",
+      "title": "Statusi i drejtimit për planifikim",
+      "unavailable": "Statusi i autorizimit të drejtimit nuk është i disponueshëm."
+    },
+    "policyIntro": "Kontrollet fillestare të lejes origjinale të drejtimit sipas modelit të Gjermanisë. Zgjidhni intervalin rutinor dhe arsyetoni një periudhë të kufizuar të ruajtjes së provave përpara aktivizimit.",
+    "policyTitle": "Politika e organizatës",
+    "previewingInterval": "Po ngarkohet ndikimi…",
+    "previewInterval": "Parashiko ndikimin e intervalit",
+    "reminders": "Ditët e paralajmërimit për rikujtesë",
+    "remindersHelp": "Ditë të plota të ndara me presje para një afati, nga 0 deri në 365. Sugjerimet fillestare janë 30 dhe 7 ditë.",
+    "result": {
+      "inconclusive": "I papërcaktuar",
+      "successful": "I suksesshëm",
+      "unsuccessful": "I pasuksesshëm"
+    },
+    "retention": "Periudha e ruajtjes (muaj)",
+    "retention.case": "Referencë specifike e çështjes ligjore",
+    "retention.check": "Regjistrimi i kontrollit",
+    "retention.choose": "Zgjidhni një regjistrim të ruajtur",
+    "retention.cleaning": "Po kontrollohen regjistrimet me afat të skaduar…",
+    "retention.cleanup": "Ekzekuto pastrimin e provave me afat të skaduar",
+    "retention.confirmDelete": "Fshi provat me afat të skaduar",
+    "retention.confirmDescription": "Kjo heq përfundimisht provat periudha e ruajtjes së të cilave ka përfunduar. Autorizimet aktive aktuale dhe pezullimet për çështje ligjore mbeten të mbrojtura. Origjinalet dhe shtesat e fshira nuk mund të rikthehen përmes aplikacionit.",
+    "retention.confirmTitle": "Të fshihen provat me afat të skaduar?",
+    "retention.deadline": "Ruajtja filloi më {start}. E përshtatshme për fshirje nga {end}.",
+    "retention.empty": "Nuk ka regjistrime të ruajtura të kontrollit.",
+    "retention.error": "Administrimi i ruajtjes nuk mund të përfundohej. Rifreskoni dhe kontrolloni qasjen tuaj dhe detajet e çështjes.",
+    "retention.help": "Ruajtja fillon kur një kontroll nuk mbështet më asnjë kategori aktive. Një bllokim kërkon një çështje specifike ligjore, mbron gjithashtu provat e raporteve përkatëse nga e njëjta periudhë punësimi dhe duhet të hiqet kur ruajtja nuk kërkohet më. Këto kontrolle nuk japin qasje inspektimi. Mos vendosni të dhëna mjekësore ose të historikut personal.",
+    "retentionHelp": "Kërkohet për aktivizim: 1–120 muaj pasi provat nuk mbështesin më asnjë autorizim aktiv klase. Mbani një periudhë të caktuar e të justifikuar kur çaktivizoni kontrollin e patentës; pastrimi vazhdon.",
+    "retention.holdDetails": "Çështja {case}: {reason}. Vendosur nga {actor} më {time}.",
+    "retention.loading": "Po ngarkohen regjistrimet e ruajtjes…",
+    "retention.place": "Vendos një bllokim për rast specifik",
+    "retention.protected": "E mbrojtur nga një autorizim aktiv i kategorisë",
+    "retention.reason": "Pse ky rast kërkon ruajtje",
+    "retention.record": "{employee} · Kontrolli {date}",
+    "retention.release": "Liro mbajtjen",
+    "retention.released": "Liruar nga {actor} në {time}: {reason}",
+    "retention.releaseError": "Mbajtja nuk mund të lirohej. Kontrolloni qasjen tuaj dhe arsyen e lirimit.",
+    "retention.releaseReason": "Pse ruajtja nuk kërkohet më",
+    "retention.report": "{employee} · Raporti {date}",
+    "retention.reportHeld": "Mbrojtur nga rasti {case} mbi provat e lidhura të kontrollit nga kjo periudhë punësimi. Lironi mbajtjen në atë kontroll kur ruajtja nuk kërkohet më.",
+    "retention.reportProtected": "E mbrojtur për sa kohë që raporti aktual mbetet i pazgjidhur ose kontrolli i zgjidhjes së tij mbështet autorizimin aktiv.",
+    "retention.reportsTitle": "Ruajtja e raportit të pengesave",
+    "retentionRequiredError": "Mbani një periudhë ruajtjeje të caktuar dhe të justifikuar kur çaktivizoni kontrollin e patentës. Provat ekzistuese mbeten subjekt i pastrimit.",
+    "retention.run": "{time}: {deleted} të fshira, {held} të mbajtura, {protected} të mbrojtura. Vepruesi: {actor}",
+    "retention.runs": "Rezultatet e fundit të pastrimit",
+    "retention.saveError": "Mbajtja nuk mund të ruhej. Kontrolloni detajet e rastit dhe qasjen tuaj.",
+    "retention.scheduled": "Përpunimi i planifikuar",
+    "retention.title": "Ruajtja e provave dhe mbajtjet për çështje ligjore",
+    "save": "Ruaj politikën",
+    "saved": "Politika u ruajt",
+    "saveError": "Politika nuk mund të ruhej. Kontrolloni intervalin, zonën kohore, kujtuesit dhe periudhën e justifikuar të ruajtjes.",
+    "saving": "Duke ruajtur…",
+    "settingsDescription": "Konfiguroni kontrollet origjinale dhe regjistroni shoferët e synuar",
+    "status": {
+      "active": "Autorizimi i drejtimit aktiv",
+      "ended": "Autorizimi i drejtimit ka përfunduar",
+      "explanation": "Autorizimi i drejtimit të organizatës mbulon klasat dhe kufizimet e listuara. Ai nuk përcakton përshtatshmërinë për çdo automjet. Mund të vazhdoni të regjistroni kohën e punës dhe përdorimin aktual të automjetit.",
+      "partial": "Disa klasa drejtimi janë pezulluar",
+      "suspended": "Autorizimi i drejtimit është pezulluar"
+    },
+    "staysCurrent": "Mbetet aktual",
+    "staysSuspended": "Mbetet i pezulluar",
+    "subtitle": "Konfiguroni kontrollet origjinale dhe regjistroni shoferët e synuar. Autorizimi i drejtimit është specifik për klasat dhe kufizimet e kontrolluara.",
+    "tasks": {
+      "assign": "Cakto përgjegjësinë",
+      "assigned": "Përgjegjësia u caktua",
+      "assignmentBoundary": "Kjo detyrë nuk jep të drejta inspektimi dhe nuk zgjat asnjë afat.",
+      "class": "Klasa {classCode}",
+      "complete": "Shëno kujtuesin personal si të përfunduar",
+      "completeError": "Kjo detyrë nuk mund të përfundohej. Kontrolloni përgjegjësinë tuaj aktuale të verifikuesit.",
+      "completing": "Duke përfunduar…",
+      "deadline": "Kontrolli origjinal ka arritur afatin",
+      "directUnavailable": "Njoftimi i drejtpërdrejtë i punonjësit nuk ishte i disponueshëm. Kujtojini këtij punonjësi personalisht.",
+      "initialCheck": "Kërkohet kontrolli fillestar origjinal",
+      "loadError": "Detyrat e patentës së shoferit nuk mund të ngarkoheshin. Kontrolloni qasjen tuaj në organizatë.",
+      "loading": "Duke ngarkuar detyrat e patentës së shoferit…",
+      "noDeliveryReceipt": "Përfundimi i detyrës nuk konfirmon dorëzimin e drejtpërdrejtë ose leximin nga punonjësi. Asnjë afat nuk zgjatet.",
+      "noVerifier": "Asnjë verifikues i disponueshëm nuk është përgjegjës për këtë punonjës.",
+      "personalCompleted": "Kujtuesi personal u përfundua",
+      "personalTitle": "Detyrat e kujtuesit personal",
+      "reassignmentTitle": "Detyrat e përgjegjësisë së verifikuesit",
+      "refresh": "Rikontrollo përgjegjësinë",
+      "suspension": "Autorizimi i drejtimit është pezulluar",
+      "validThrough": "E vlefshme deri më {date} në zonën kohore të afatit të ruajtur të kontrollit"
+    },
+    "timezone": "Zona kohore fikse e kalendarit",
+    "title": "Kontrolli i lejes së drejtimit",
+    "unnamedEmployee": "Punonjës",
+    "worklist": {
+      "help": "Këtu shfaqen vetëm punonjësit e regjistruar brenda përgjegjësisë suaj aktuale të verifikuesit.",
+      "open": "Kontrollo {name}",
+      "title": "Lista juaj e punës e kontrolleve origjinale",
+      "viewEnded": "Shikoni regjistrimin e përfunduar për {name}"
+    },
+    "zoneFixedError": "Zona kohore e kalendarit është fikse. Afatet ekzistuese duhet të ruajnë kuptimin e tyre origjinal.",
+    "zoneHelp": "Kufijtë vetëm me datë përfshijnë të gjithë ditën e shfaqur në këtë zonë kohore. Ajo fiksohet kur ruhet për herë të parë; zona kohore e shikuesit nuk e ndryshon kurrë një afat."
   },
   "employeeSelect": {
     "countSelected": "{count} punonjës të përzgjedhur",
@@ -617,6 +891,101 @@
     "setup": "Duke ngarkuar konfigurimin",
     "teamAbsences": "Duke ngarkuar tabelën e mungesave të ekipit",
     "workerQueue": "Duke ngarkuar radhën e punëtorëve"
+  },
+  "mfa": {
+    "banner": {
+      "action": "Rishikoni kërkesat dhe verifikoni",
+      "requirement": "Kjo organizatë kërkon autentifikim të verifikuar që nga {deadline}."
+    },
+    "code": {
+      "label": "Kodi i autentifikuesit",
+      "verify": "Verifiko autentifikuesin"
+    },
+    "continue": "Vazhdo pas verifikimit",
+    "coverage": {
+      "access": "Qasja e fundit e kualifikuar në organizatë",
+      "deadline": "Afati i caktuar",
+      "enforced": "E zbatuar",
+      "failed": "Mbulimi i autentifikimit të organizatës nuk mund të ngarkohej",
+      "kiosk": "Vetëm kioskë · jashtë fushëveprimit",
+      "loading": "Po ngarkohet autentifikimi i organizatës…",
+      "member": "Anëtar",
+      "methods": "Metodat e regjistruara",
+      "none": "Asnjë",
+      "title": "Regjistrimi i anëtarëve dhe verifikimi i organizatës",
+      "unproven": "Nuk është regjistruar asnjë qasje e kualifikuar"
+    },
+    "deadline": {
+      "enforced": "Një autentifikues duhet të verifikohet përpara qasjes në organizatë.",
+      "grace": "Periudha e regjistrimit është në proces. Verifikoni një autentifikues përpara këtij afati.",
+      "required": "Verifikimi kërkohet tani"
+    },
+    "enrollment": {
+      "title": "Regjistroni ose zëvendësoni një autentifikues",
+      "warning": "Shtimi ose zëvendësimi i një faktori kërkon verifikim brenda pesë minutave. Verifikoni zëvendësimin përpara se të hiqni faktorin e vjetër. Revokimi i faktorit tuaj të fundit lejohet dhe mund të bllokojë qasjen në organizatat e listuara më sipër; ai nuk jep një periudhë të re regjistrimi."
+    },
+    "organization": {
+      "select": "Zgjidhni një organizatë tjetër"
+    },
+    "page": {
+      "context": "Regjistrimi personal, rikuperimi dhe zgjedhja e organizatës mbeten të disponueshme ndërsa qasja në organizatë kërkon verifikim.",
+      "title": "Verifikimi i sigurisë"
+    },
+    "passkey": {
+      "verify": "Verifiko me një passkey"
+    },
+    "password": {
+      "failed": "Verifikimi i fjalëkalimit dështoi",
+      "label": "Fjalëkalimi aktual",
+      "verified": "Fjalëkalimi u verifikua. Mund të regjistroni autentifikuesin tuaj të parë, ose të verifikoni një autentifikues ekzistues apo kod rezervë më poshtë.",
+      "verify": "Verifiko fjalëkalimin"
+    },
+    "policy": {
+      "activation": "Ndryshimet kërkojnë autoritet pronari/administratori dhe autentifikim të pranuar brenda pesë minutave. Caktoni rikuperimin dhe mundësisht një administrator tjetër që ka demonstruar një rrugë funksionale identifikimi; vetëm regjistrimi nuk e provon këtë.",
+      "days": "{days} ditë (nga 24 orë secila)",
+      "description": "Kërko fjalëkalim plus TOTP, ose një passkey të verifikuar me PIN/biometrikë, për qasjen lokale të çdo anëtari në organizatë. Passkey-t e sinkronizuara kualifikohen. Kjo politikë është e disponueshme në çdo plan.",
+      "enable": "Kërko një autentifikues për identifikimet lokale",
+      "failed": "Përditësimi i politikës u refuzua",
+      "grace": "Periudha e regjistrimit për caktimet e ardhshme",
+      "lockoutAck": "Nëse asnjë administrator tjetër nuk ka një rrugë të konfirmuar, pranoj se humbja e çdo rruge autentifikimi dhe rikuperimi e lë këtë organizatë të kyçur, pa mundësi anashkalimi nga administratori ose mbështetja teknike.",
+      "lockoutLabel": "Prano rrezikun e humbjes së çdo rruge autentifikimi të administratorit",
+      "recoveryAck": "Kam verifikuar rrugën time të identifikimit dhe kam rregulluar rikuperimin.",
+      "save": "Ruaj politikën",
+      "saving": "Po ruhet…",
+      "sso": "Identifikimi i verifikuar përmes ofruesit aktual SSO të kësaj organizate është jashtë bazës lokale MFA. Organizata zbaton MFA-në te ofruesi i saj i identitetit; Z8 nuk verifikon sigurinë e MFA-së së IdP-së. Kërkesa për SSO mbetet e veçantë dhe nuk ka alternativë lokale rikthimi.",
+      "tab": "MFA lokale",
+      "tabDescription": "Kërko autentifikim lokal të verifikuar me afate të kontrolluara regjistrimi",
+      "title": "Autentifikimi i organizatës",
+      "verify": "Verifikoni autentifikimin tuaj përpara se të ndryshoni këtë politikë",
+      "windows": "Afatet ekzistuese nuk ndryshojnë kurrë. Çaktivizimi pezullon zbatimin; riaktivizimi rikthen afatet e caktuara, përfshirë ato të skaduara. Nuk ka përjashtime individuale."
+    },
+    "recovery": {
+      "action": "Rikthe me kod rezervë",
+      "description": "Për rikthim, verifikoni fjalëkalimin tuaj më lart dhe më pas vendosni një kod rezervë të papërdorur. Kjo fshin verifikimin e mëparshëm lokal në të gjitha organizatat tuaja.",
+      "label": "Kodi rezervë",
+      "lockout": "Nëse administratori i vetëm humb çdo rrugë autentifikimi dhe rikthimi, organizata mbetet e bllokuar. Nuk ka anashkalim nga administratori ose mbështetja teknike.",
+      "success": "Rikthimi lejon vetëm regjistrimin e zëvendësimit. Verifikoni një autentifikues përpara se të ktheheni te organizata juaj."
+    },
+    "security": {
+      "factorWarning": "Heqja e një faktori mund të bllokojë hyrjen në organizatat që e kërkojnë atë. Verifikoni një zëvendësues më parë; heqja e faktorit të fundit nuk jep periudhë të re faljeje.",
+      "link": "Verifikoni autentifikimin dhe rishikoni kërkesat e organizatës",
+      "policyLink": "Politika e autentifikimit të organizatës (pronarët/administratorët)"
+    },
+    "signout": "Dilni",
+    "social": {
+      "verify": "Verifikoni hyrjen ekzistuese me {provider}"
+    },
+    "sso": {
+      "failed": "SSO-ja e organizatës nuk mund të nisej",
+      "verify": "Verifikoni me SSO-në e organizatës"
+    },
+    "verification": {
+      "failed": "Verifikimi dështoi"
+    },
+    "verify": {
+      "description": "Verifikoni një autentifikues për t'u kthyer te organizata juaj. Vetëm regjistrimi dhe besimi i pajisjes së memorizuar nuk e përmbushin kërkesën.",
+      "title": "Verifikoni hyrjen tuaj"
+    }
   },
   "nav": {
     "absences": "Mungesat",
@@ -812,12 +1181,28 @@
         "message": "{employeeName} kërkoi një përjashtim për {exceptionType, select, rest_period {periudhë pushimi} overtime_daily {orë shtesë ditore} overtime_weekly {orë shtesë javore} overtime_monthly {orë shtesë mujore} other {pajtueshmëri}}: \"{reason}\"",
         "title": "U kërkua përjashtim për pajtueshmëri"
       },
+      "drivingAuthorizationSuspended": {
+        "message": "Autorizimi i drejtimit të mjetit për {employeeName} ({classes}) është pezulluar. Kërkohet një kontroll i ri dhe rikthim i qartë në fuqi përpara drejtimit të mjetit.",
+        "title": "Autorizimi i drejtimit të mjetit u pezullua"
+      },
       "drivingDetailsMissingReminderMany": {
         "message": "{count} periudhave të punës nga {dates} u mungon automjeti ose leximi i odometrit. Shtojini ato në periudhat e punës."
       },
       "drivingDetailsMissingReminder": {
         "message": "Në punën tuaj më {date} mungon automjeti ose leximi i odometrit. Shtojini ato në periudhën e punës.",
         "title": "Shtoni detajet tuaja të drejtimit"
+      },
+      "drivingLicenceAssignment": {
+        "message": "Caktoni një verifikues të disponueshëm për {employeeName}. Kjo detyrë nuk jep të drejta inspektimi dhe nuk zgjat asnjë afat.",
+        "title": "Cakto përgjegjësinë e verifikuesit të patentë shoferit"
+      },
+      "drivingLicencePersonalTask": {
+        "message": "Kujtojini {employeeName} të organizojë kontrollin e patentë shoferit origjinal. Njoftimi i drejtpërdrejtë i punonjësit nuk ishte i disponueshëm. Përfundimi i detyrës nuk përbën dorëzim të drejtpërdrejtë ose lexim.",
+        "title": "Kujtojani punonjësit personalisht"
+      },
+      "drivingLicenceReminder": {
+        "message": "Organizoni një kontroll të patentë shoferit origjinal për {employeeName}, kategoria {classes}, deri më {deadline}.",
+        "title": "Afati i kontrollit të patentë shoferit"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Detyrat e miratimit kanë nevojë për një zëvendësues (largimi hyn në fuqi më {cutoff}, {timezone}).",
@@ -830,6 +1215,11 @@
       "forgottenClockOutReminder": {
         "message": "Turni juaj përfundoi në {endTime} ({timezone}). Regjistroni daljen nëse keni përfunduar punën.",
         "title": "Jeni ende i regjistruar në punë"
+      },
+      "kioskCommandRefused": {
+        "forwardedMessage": "Një {action, select, clock_in {hyrje} clock_out {dalje} start_break {fillim pushimi} resume_break {kthim nga pushimi} other {regjistrim orari}} nga {employeeName} në orën {time} në kioskën {kioskName} nuk u regjistrua: {reason, select, wrong_pin {PIN-i ishte i pasaktë} pin_locked {PIN-i i kioskës u bllokua pas shumë tentativave të pasakta} no_pin {nuk kishte PIN kioske me të cilin të krahasohej} pin_unchecked {PIN-i nuk mund të kontrollohej} kiosk_retired {kioska u shfuqizua ose u çiftua përsëri para se të rilidhej} contact_unverifiable {Z8 nuk mundi të konfirmonte lidhjen e fundit të kioskës} outside_window {ora e saj ishte jashtë dritares kohore që pranon Z8} clock_untrusted {ora e kioskës nuk mund të konsiderohej e besueshme për këtë} not_assigned {punonjësi nuk është caktuar në vendndodhjen e kioskës} not_adopted {organizata nuk pranon regjistrime orari jashtë linje nga kioska} month_closed {muaji është i mbyllur} holiday {dita është festë pa regjistrim orari} conflict {bie në konflikt me orë të tjera të regjistruara} other {Z8 nuk mundi ta pranonte}}. Regjistroni orarin për ta ose kontrollojeni me ta.",
+        "message": "{action, select, clock_in {Hyrja juaj} clock_out {Dalja juaj} start_break {Fillimi juaj i pushimit} resume_break {Kthimi juaj nga pushimi} other {Regjistrimi juaj i orarit}} në orën {time} në kioskën {kioskName} nuk u regjistrua: {reason, select, wrong_pin {PIN-i ishte i pasaktë} pin_locked {PIN-i i kioskës u bllokua pas shumë tentativave të pasakta} no_pin {nuk kishte PIN kioske me të cilin të krahasohej} pin_unchecked {PIN-i nuk mund të kontrollohej} kiosk_retired {kioska u shfuqizua ose u çiftua përsëri para se të rilidhej} contact_unverifiable {Z8 nuk mundi të konfirmonte lidhjen e fundit të kioskës} outside_window {ora e saj ishte jashtë dritares kohore që pranon Z8} clock_untrusted {ora e kioskës nuk mund të konsiderohej e besueshme për këtë} not_assigned {punonjësi nuk është caktuar në vendndodhjen e kioskës} not_adopted {organizata nuk pranon regjistrime orari jashtë linje nga kioska} month_closed {muaji është i mbyllur} holiday {dita është festë pa regjistrim orari} conflict {bie në konflikt me orë të tjera të regjistruara} other {Z8 nuk mundi ta pranonte}}. Regjistroni orarin tuaj përsëri ose kërkojini menaxherit tuaj ta korrigjojë atë.",
+        "title": "Regjistrimi i orarit në kioskë nuk u regjistrua"
       },
       "manualEntryApproved": {
         "message": "Dorëzimi juaj manual i kohës u miratua nga {approverName}.",
@@ -1250,8 +1640,11 @@
         "approval_cover_return_summary": "Vendosur nga zëvendësuesi juaj",
         "approval_cover_started": "Zëvendësimi gjatë mungesës filloi",
         "break_due_reminder": "Koha për pushim",
+        "driving_authorization_suspended": "Autorizimi i drejtimit të mjetit u pezullua",
         "driving_details_missing_reminder": "Mungojnë detajet e drejtimit të automjetit",
+        "driving_licence_reminder": "Afati i kontrollit të patentë shoferit",
         "forgotten_clock_out_reminder": "Dalje e harruar",
+        "kiosk_command_refused": "Regjistrimi i orarit në kioskë nuk u regjistrua",
         "missed_clock_in_reminder": "Hyrje e paregjistruar",
         "period_submission_decided": "Koha e dorëzuar u miratua ose u refuzua",
         "period_submission_reminder": "Dorëzoni kohën tuaj",
@@ -1344,6 +1737,7 @@
   "personalDataExport": {
     "readme": {
       "accessAdmin": "{name} (administrator)",
+      "accessDrivingLicenceVerifiers": "Verifikuesit e patentë shoferit (provat tuaja të kontrollit dhe eksportet në PDF):",
       "accessExpenseExport": "t'i eksportojnë ato",
       "accessExpenseOfficers": "Zyrtarët e shpenzimeve (raportet tuaja të miratuara të shpenzimeve të udhëtimit dhe faturat e tyre):",
       "accessExpenseRead": "të lexojnë raportet e miratuara",
@@ -1367,6 +1761,7 @@
         "accountAdmin": "Emri dhe adresa e email-it e llogarisë suaj të përdoruesit.",
         "approvals": "Kërkesat tuaja dhe dorëzimet e periudhave, si dhe vendimet që keni marrë për kërkesat e personave të tjerë.",
         "auditLog": "Regjistrimet e auditimit rreth jush dhe veprimet e kryera nga ju.",
+        "drivingLicence": "Kontrollet e patentë shoferit, konfirmimet dhe deklaratat origjinale, plotësimet e bashkëngjitura, autorizimet e kategorive dhe historia e tyre, regjistrimi dhe përgjegjësia juaj si verifikues. Vetëm provat e ruajtura; pa skanime të patentës, numra dokumentesh ose shënime mjekësore.",
         "employment": "Të dhënat dhe profili juaj si punonjës, periudhat e punësimit dhe largimi, kushtet e punësimit me pagën tuaj për orë dhe historikun e saj, ekipet, menaxherët, vendndodhjet, aftësitë, caktimet në projekte, rolet, grupet, qendra e kostos dhe çdo politikë e caktuar për ju.",
         "integrations": "Lidhjet e kalendarit tuaj, furnizimi i kalendarit, llogaritë e lidhura të bisedës dhe statusi i PIN-it të kioskës.",
         "notifications": "Historiku juaj i njoftimeve.",
@@ -1386,6 +1781,7 @@
         "payslip": "Fletëpagat",
         "sickNote": "Raportet mjekësore"
       },
+      "drivingLicenceRetention": "Provat e patentë shoferit ndjekin periudhën e justifikuar të ruajtjes së kontrolleve të organizatës pasi të mos mbështesin më një autorizim aktiv. Një pezullim i dokumentuar fshirjeje për një çështje ligjore specifike e shtyn fshirjen. Referojuni politikës driving_licence, regjistrave të ruajtjes dhe pezullimit për kontekstin e zbatueshëm; gjenerimi i një eksporti nuk e zgjat ruajtjen e provave në Z8.",
       "fields": {
         "absences": {
           "absences": {
@@ -1696,6 +2092,129 @@
           "updatedAt": "Kur është ndryshuar për herë të fundit regjistrimi.",
           "updatedBy": "Kush e ka ndryshuar për herë të fundit regjistrimin."
         },
+        "drivingLicence": {
+          "actor_name": "Emri i personit që kreu këtë veprim; bosh për një veprim të sistemit ose një aktor të padisponueshëm.",
+          "authorization_events": {
+            "summary": "Historia e autorizimit tuaj të drejtimit të mjetit, përfshirë raportet e pengesave, zgjidhjet dhe rikthimet e qarta në fuqi."
+          },
+          "authorizations": {
+            "summary": "Regjistrimet tuaja të ruajtura të autorizimit sipas kategorive; historia e ngjarjeve shpjegon ndryshimet dhe kohët efektive."
+          },
+          "author_name": "Emri i regjistruar i personit që shtoi këtë plotësim.",
+          "caseReference": "Referenca e çështjes specifike ligjore që kërkon ruajtjen e këtij kontrolli.",
+          "changed_at": "Koha kur u regjistrua ky version i politikës së organizatës, si çast UTC.",
+          "checked_classes": {
+            "summary": "Kategoritë e inspektuara shprehimisht dhe rezultatet, kufizimet dhe datat e tyre të skadimit të regjistruara."
+          },
+          "check_id": "Kontrolli origjinal të cilit i referohet kjo kategori, plotësim ose autorizim.",
+          "checks_performed": {
+            "summary": "Kontrollet që keni kryer mbi punonjësit e tjerë: vetëm ID-të e errëta të subjektit dhe regjistrimit dhe koha e inspektimit."
+          },
+          "checks": {
+            "summary": "Regjistrimet e kontrollit origjinal të patentë shoferit, me deklaratën e saktë dhe konfirmimet e inspektimit."
+          },
+          "class_code": "Kategoria e patentës e inspektuar shprehimisht; bosh për një ngjarje në nivel personi ose dokumenti.",
+          "class_valid_through": "Dita e fundit kalendarike e mbuluar nga vlefshmëria e kësaj kategorie; bosh kur nuk është regjistruar skadim i kategorisë.",
+          "completedAt": "Koha kur një verifikues e shënoi kujtesën personale si të përfunduar; bosh për një detyrë të papërfunduar.",
+          "completedBy": "Emri i personit që e shënoi kujtuesin si të përfunduar; kjo nuk vërteton dërgimin e drejtpërdrejtë apo një konfirmim leximi.",
+          "controlled_at": "Koha kur patenta origjinale u inspektua personalisht, si një çast UTC.",
+          "createdAt": "Koha kur kjo detyrë ose dërgim u regjistrua për herë të parë, si një çast UTC.",
+          "deadline_timezone": "Zona e qartë kohore e kalendarit e përdorur për datat e afateve të politikës.",
+          "declaration_text": "Teksti i saktë i deklaratës i regjistruar gjatë inspektimit origjinal.",
+          "document_expires_on": "Data e skadimit të dokumentit, e ndarë nga skadimi i kategorive individuale.",
+          "document_issued_on": "Data e lëshimit të dokumentit, pa orë ose zonë kohore.",
+          "document_valid_through": "Dita e fundit kalendarike e mbuluar nga vlefshmëria e dokumentit.",
+          "effective_at": "Koha kur ngjarja e autorizimit hyri në fuqi, si një çast UTC.",
+          "emailedAtProviderSuccess": "Koha kur u regjistrua suksesi i ofruesit për këtë email. Nëse është bosh, mbulon gjithashtu tentativat e pasigurta; kjo nuk provon që email-i nuk u dërgua apo që u lexua.",
+          "emailStateWithUncertainAttempts": "Gjendja e dërgimit të email-it: në pritje, tentuar (rezultat i pasigurt nga ofruesi; nuk ridërgohet kurrë automatikisht), dërguar (suksesi i ofruesit i regjistruar), ndaluar, i vjetruar ose i padisponueshëm. Asnjë gjendje nuk konfirmon leximin.",
+          "employee_declaration": "Nëse deklarata juaj u konfirmua gjatë inspektimit.",
+          "employee_id": "ID-ja e errët e një punonjësi tjetër mbi të dhënat e të cilit keni vepruar; përmbajtja e kontrolleve të tyre përjashtohet.",
+          "employee_ids": "ID-të e errëta të punonjësve në fushëveprimin tuaj specifik si verifikues, të koduara si një varg JSON.",
+          "employment_period_id": "Periudha e punësimit së cilës i përket kjo provë; bosh për punësimet e mëparshme.",
+          "enabled": "Nëse politika e referuar e kontrollit të organizatës ishte e aktivizuar.",
+          "enrolled_at": "Koha kur u regjistruat në kontrollet e patentë shoferit të organizatës.",
+          "expires_at": "Çasti UTC kur skadon ky autorizim ose e drejtë verifikuesi.",
+          "expiry_date": "Data e skadimit të kategorisë e regjistruar gjatë inspektimit; bosh nëse nuk është regjistruar asnjë.",
+          "failure_scope": "Nëse një inspektim i pasuksesshëm kishte të bënte me kategoritë, dokumentin apo personin.",
+          "field": "Fusha e korrigjuar e provës; kontrolli origjinal ruhet.",
+          "granted_at": "Koha kur ju dha përgjegjësia e verifikuesit, si një çast UTC.",
+          "granted_by": "Emri i personit që ju dha përgjegjësinë e verifikuesit.",
+          "id": "ID-ja e regjistrimit në aplikacion, në mënyrë që skedarët e tjerë të mund t'i referohen asaj.",
+          "identity_confirmed": "Nëse verifikuesi konfirmoi që origjinali përputhej me identitetin tuaj.",
+          "impedimentReports": {
+            "summary": "Raportet tuaja minimale të pengesave në drejtimin e mjetit dhe zgjidhja e tyre e qartë, pa shpjegime mjekësore apo arsye private."
+          },
+          "interval_months": "Numri i muajve kalendarikë ndërmjet kontrolleve rutinë sipas kësaj politike.",
+          "kind": "Ngjarja e autorizimit, pezullimi ose lloji i detyrës; detyrat janë personal_reminder ose reassignment.",
+          "last_successful_at": "Koha kur kjo kategori kaloi për herë të fundit me sukses një inspektim origjinal.",
+          "legalHolds": {
+            "summary": "Pezullimet për ruajtje për raste specifike mbi kontrollet tuaja të mbajtura, duke përfshirë atribuimin, lirimin dhe arsyetimin."
+          },
+          "notificationId": "Njoftimi i aplikacionit i lidhur me këtë kujtues; bosh kur nuk është krijuar asnjë.",
+          "occasionKey": "Rasti me të cilin lidhet ky kujtues ose detyrë; ai identifikon punësimin, afatin e kategorisë ose pezullimin pa kopjuar kontrollin.",
+          "original_inspected": "Nëse verifikuesi konfirmoi inspektimin personal të dokumentit origjinal.",
+          "participation": {
+            "summary": "Regjistrimi juaj në kontrollet e patentë shoferit të organizatës."
+          },
+          "placedAt": "Koha kur u vendos kjo bllokadë ligjore, si një çast UTC.",
+          "placedBy": "Emri i administratorit që vendosi këtë bllokadë rasti.",
+          "policies": {
+            "summary": "Versionet e politikave të referuara nga kontrollet dhe historiku juaj i autorizimeve, duke përfshirë kontekstin e ruajtjes së tyre. Provat ndjekin këtë politikë ruajtjeje; ky eksportim nuk e zgjat ruajtjen në aplikacion."
+          },
+          "policy_version": "Versioni i politikës së kontrollit të patentë shoferit të organizatës.",
+          "preservationReason": "Arsyeja e dokumentuar pse ky rast specifik kërkon ruajtjen e kontrollit.",
+          "reason": "Arsyeja e strukturuar për shtesën ose ngjarjen e autorizimit; referencat e raportit lidhen me një ID ngjarjeje.",
+          "recipientName": "Emri i personit të cilit iu adresua ky kujtues për kontrollin tuaj.",
+          "recorded_at": "Koha kur u regjistrua shtesa ose ngjarja, si një çast UTC.",
+          "releasedAt": "Koha kur u hoq kjo bllokadë rasti; bosh për sa kohë ajo mbetet aktive.",
+          "releasedBy": "Emri i administratorit që hoqi këtë bllokadë rasti.",
+          "releaseReason": "Arsyeja e dokumentuar e heqjes së kësaj bllokade rasti; heqja rifillon fshirjen e zakonshme të rregulluar me politikë.",
+          "reminderDeliveries": {
+            "summary": "Regjistrimet e dërgimit të kujtuesve në lidhje me kontrollet tuaja, pa adresa email-i, ritentime transmetimi apo konfirmime leximi."
+          },
+          "reminder_lead_days": "Koha paraprake e konfiguruar e kujtuesve në ditë kalendarike, e koduar si një varg JSON.",
+          "reminderTasksCompleted": {
+            "summary": "Detyrat e kujtuesve që keni përfunduar për punonjësit e tjerë, të kufizuara në ID të errëta, llojin e detyrës dhe kohën e përfundimit."
+          },
+          "reminderTasks": {
+            "summary": "Detyrat e kujtuesit personal dhe të ricaktimit në lidhje me kontrollet tuaja, duke përfshirë përfundimin e tyre të regjistruar; përfundimi nuk vërteton dërgimin e drejtpërdrejtë apo leximin."
+          },
+          "reportedAt": "Koha kur keni raportuar një pengesë drejtimi në nivel personi, si një çast UTC.",
+          "reporterName": "Emri i personit që raportoi pengesën.",
+          "resolvedAt": "Kur një verifikues e zgjidhi shprehimisht këtë raport; bosh për një raport të pazgjidhur.",
+          "resolvedBy": "Emri i verifikuesit që e zgjidhi shprehimisht këtë raport.",
+          "restrictions": "Kufizimet përkatëse të drejtimit të mjetit të regjistruara për këtë kategori.",
+          "result": "Përfundimi për këtë kategori të inspektuar: i suksesshëm, i pasuksesshëm ose i papërfunduar.",
+          "retention_justification": "Arsyeja e dokumentuar e organizatës për periudhën e saj të ruajtjes së provave.",
+          "retention_months": "Periudha e justifikuar e ruajtjes së organizatës në muaj pasi provat nuk mbështesin më autorizimin aktiv.",
+          "retentionStartedAtEvidence": "Kur provat e kontrollit ndaluan së mbështeturi autorizimin aktiv, ose provat e raportit u bënë joaktive pas zgjidhjes dhe mbështetjes përfundimtare të kontrollit të zgjidhjes ose përfundimit të punësimit. Periudha e justifikuar e ruajtjes së organizatës fillon nga ky çast UTC; pezullimi i rastit e shtyn fshirjen.",
+          "retention": {
+            "summary": "Pika e fillimit të ruajtjes së çdo kontrolli të mbajtur; bosh për sa kohë kontrolli mbështet ende autorizimin aktiv. Eksportimi nuk e zgjat ruajtjen."
+          },
+          "revoked_at": "Kur përgjegjësia juaj si verifikues u revokua; bosh për sa kohë nuk është revokuar.",
+          "revoked_by": "Emri i personit që revokoi përgjegjësinë tuaj si verifikues.",
+          "routine_valid_through": "Dita e fundit kalendarike e mbuluar nga intervali i kontrolleve rutinë.",
+          "scope": "Fusha e veprimit e një raporti në shkallë personi (person), ose nëse përgjegjësia juaj si verifikues mbulon të gjithë punonjësit apo punonjës dhe ekipe specifike.",
+          "state": "Gjendja e ruajtur e autorizimit të kategorisë (aktive, e pezulluar, e përfunduar) ose gjendja e detyrës së kujtesës (në pritje, e përfunduar, e vjetëruar); historiku shpjegon ndryshimet.",
+          "supplements_authored": {
+            "summary": "Plotësimet e krijuara nga ju në të dhënat e punonjësve të tjerë, pa vlerat e provave të atyre punonjësve."
+          },
+          "supplements": {
+            "summary": "Korrigjime me datë, autor dhe lloj të ruajtura përkrah çdo kontrolli origjinal."
+          },
+          "suspended_at": "Kur autorizimi u pezullua, si një çast UTC.",
+          "suspension": {
+            "summary": "Regjistrimi juaj aktual i pezullimit të autorizimit të drejtimit në shkallë personi ose dokumenti."
+          },
+          "team_ids": "ID-të opake të ekipeve në fushën tuaj specifike të verifikuesit, të koduara si një varg JSON.",
+          "valid_through": "Dita e fundit kalendarike më e hershme e zbatueshme e këtij miratimi të kategorisë.",
+          "value": "Vlera e dhënë nga ky plotësim; bosh do të thotë se skadimi opsional i kategorisë u pastrua.",
+          "verifier_confirmed": "Nëse verifikuesi e konfirmoi regjistrimin e inspektimit.",
+          "verifier_grants": {
+            "summary": "Të drejtat tuaja të verifikuesit, përfshirë përgjegjësitë historike dhe ato të revokuara."
+          },
+          "verifier_name": "Emri i regjistruar i personit që inspektoi patentën tuaj origjinale."
+        },
         "employment": {
           "assignedLocations": {
             "city": "Qyteti i vendndodhjes.",
@@ -1924,11 +2443,26 @@
             "revokedAt": "Kur u çaktivizua lidhja (UTC).",
             "summary": "Lidhjet e burimit të kalendarit tuaj, të cilat lejojnë një aplikacion kalendari të abonohet në mungesat tuaja. Vetë lidhja sekrete nuk përfshihet kurrë."
           },
+          "kioskPinEvents": {
+            "event": "dështim për një PIN të pasaktë, sukses për një të saktë, i pastruar kur PIN-i juaj u zhbllokua, u rivendos ose u ndryshua.",
+            "occurredAt": "Kur u fut PIN-i ose u pastrua bllokimi (UTC).",
+            "offline": "Nëse PIN-i u fut në një kioskë pa lidhje dhe u kontrollua kur u rilidh.",
+            "summary": "Përpjekjet tuaja të fundit për PIN në kioskë dhe zhbllokimet e PIN-it, të ruajtura për rreth një javë për të përcaktuar nëse jeni të bllokuar pas pesë PIN-eve të pasakta radhazi. PIN-et e futura nuk ruhen kurrë."
+          },
           "kioskPin": {
             "pinSet": "Nëse është caktuar një PIN kioske për ju.",
             "setAt": "Kur u caktua PIN-i për herë të fundit (UTC).",
             "setBy": "Kush e caktoi PIN-in.",
             "summary": "Nëse keni një PIN për regjistrimin e hyrjes në një terminal kioske. Vetë PIN-i nuk ruhet kurrë në mënyrë të lexueshme dhe nuk përfshihet."
+          },
+          "kioskRefusedClockings": {
+            "action": "clock_in, clock_out, start_break ose resume_break.",
+            "claimedAt": "Kur regjistruat orarin në kioskë, sipas regjistrimit të bërë nga kioska (UTC).",
+            "kiosk": "Kioska ku regjistruat orarin.",
+            "reason": "Pse nuk u regjistrua orari, për shembull wrong_pin ose kiosk_rotated.",
+            "refusedAt": "Kur kioska u rilidh dhe regjistrimi i orarit u refuzua (UTC).",
+            "summary": "Regjistrimet e orarit që keni bërë në një kioskë pa lidhje, të cilat nuk u regjistruan kur kioska u rilidh, dhe arsyeja.",
+            "timeSource": "server_anchor kur kioska mati kohën nga ora e serverit në lidhjen e fundit, device_clock kur e mati nga ora e vetë pajisjes."
           },
           "shared": {
             "isActive": "Nëse lidhja është në përdorim."

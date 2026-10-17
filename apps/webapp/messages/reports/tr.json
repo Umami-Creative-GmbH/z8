@@ -299,6 +299,8 @@
         "estimateProgress": "{estimate} sa / {booked} sa ({percent})",
         "hours": "Saat",
         "hoursValue": "{hours} sa",
+        "missingTaskCount": "{count} görevi eksik",
+        "missingTaskHint": "Bu projede gerektirdiği görev olmadan gelen rezervasyonlar. Takvimdeki her rezervasyona bir görev ekleyin.",
         "noTask": "Görev yok",
         "noTime": "Bu dönemde bu projeye hiç zaman kaydedilmedi",
         "share": "Paylaş",

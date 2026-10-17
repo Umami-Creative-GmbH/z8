@@ -299,6 +299,8 @@
         "estimateProgress": "{booked}h din {estimate}h ({percent})",
         "hours": "Ore",
         "hoursValue": "{hours}h",
+        "missingTaskCount": "{count} fără sarcină asociată",
+        "missingTaskHint": "Rezervări pentru acest proiect care au fost primite fără sarcina necesară. Adăugați o sarcină la fiecare rezervare din calendar.",
         "noTask": "Fără sarcină",
         "noTime": "Nu a fost înregistrat timp pentru acest proiect în această perioadă",
         "share": "Distribuie",

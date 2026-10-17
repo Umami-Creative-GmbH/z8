@@ -99,6 +99,7 @@
       "breakPendingCorrection": "A time correction approval is already pending for this work period. Add the break once it is resolved.",
       "breakRetry": "Failed to add break. Please try again.",
       "breakTooLong": "Break duration must be shorter than your current session.",
+      "chooseTaskInClock": "Open the clock at the top of the page, choose a task, then clock out.",
       "clockAttributionNotAllowed": "The selected project or category is not available",
       "clockCommandRejected": "The server did not accept this clock action",
       "clockConnectionRequired": "Clocking needs a connection in this organization. Reconnect and try again.",
@@ -135,6 +136,7 @@
       "taskNotFound": "This task no longer exists",
       "taskOtherProject": "This task belongs to another project",
       "taskProjectNotBookable": "Time can no longer be booked to this task's project",
+      "taskRequired": "This project requires a task. Choose one and try again.",
       "workCategoryNotAllowed": "Cannot assign to this work category"
     },
     "kiosk": {
@@ -424,16 +426,20 @@
       "drivingDetailsMissing": "Driving details missing",
       "duration": "Duration",
       "emptyState": "No time entries found for this week.",
+      "missingTask": "Missing task",
+      "missingTaskHint": "This project requires a task: add one to this booking in the calendar.",
       "recordedLocalTime": "Recorded local time",
       "rowActions": "Time entry actions",
       "title": "Time Entries",
       "viewCalendar": "View Calendar"
     },
     "taskPicker": {
+      "choose": "Choose a task",
       "doneTask": "{name} (done)",
       "empty": "No task found",
       "label": "Task",
       "none": "No task",
+      "requiredLabel": "Task (required)",
       "search": "Search tasks…"
     },
     "timeline": {

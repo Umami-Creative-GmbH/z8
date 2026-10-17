@@ -299,6 +299,8 @@
         "estimateProgress": "{booked}t av {estimate}t ({percent})",
         "hours": "Timer",
         "hoursValue": "{hours}t",
+        "missingTaskCount": "{count} mangler en oppgave",
+        "missingTaskHint": "Bestillinger på dette prosjektet som kom inn uten oppgaven det krever. Legg til en oppgave for hver bestilling i kalenderen.",
         "noTask": "Ingen oppgave",
         "noTime": "Ingen tid ble ført på dette prosjektet i denne perioden",
         "share": "Del",

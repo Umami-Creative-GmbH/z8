@@ -299,6 +299,8 @@
         "estimateProgress": "{booked}h z {estimate}h ({percent})",
         "hours": "Godziny",
         "hoursValue": "{hours}h",
+        "missingTaskCount": "{count} bez zadania",
+        "missingTaskHint": "Rezerwacje w tym projekcie, które wpłynęły bez wymaganego zadania. Dodaj zadanie do każdej rezerwacji w kalendarzu.",
         "noTask": "Brak zadania",
         "noTime": "W tym okresie nie zarejestrowano czasu dla tego projektu",
         "share": "Udostępnij",

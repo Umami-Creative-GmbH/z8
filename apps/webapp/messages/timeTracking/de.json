@@ -99,6 +99,7 @@
       "breakPendingCorrection": "Für diese Arbeitsperiode steht bereits eine Genehmigung zur Zeitkorrektur aus. Fügen Sie die Pause hinzu, sobald dies geklärt ist.",
       "breakRetry": "Pause konnte nicht hinzugefügt werden. Bitte versuchen Sie es erneut.",
       "breakTooLong": "Die Pausendauer muss kürzer sein als Ihre aktuelle Sitzung.",
+      "chooseTaskInClock": "Öffnen Sie die Zeiterfassung oben auf der Seite, wählen Sie eine Aufgabe aus und stempeln Sie dann aus.",
       "clockAttributionNotAllowed": "Das ausgewählte Projekt oder die ausgewählte Kategorie ist nicht verfügbar",
       "clockCommandRejected": "Der Server hat diese Stempelaktion nicht akzeptiert",
       "clockConnectionRequired": "Die Zeiterfassung erfordert in dieser Organisation eine Internetverbindung. Stellen Sie die Verbindung wieder her und versuchen Sie es erneut.",
@@ -135,6 +136,7 @@
       "taskNotFound": "Diese Aufgabe existiert nicht mehr",
       "taskOtherProject": "Diese Aufgabe gehört zu einem anderen Projekt",
       "taskProjectNotBookable": "Auf das Projekt dieser Aufgabe kann keine Zeit mehr gebucht werden",
+      "taskRequired": "Dieses Projekt erfordert eine Aufgabe. Wählen Sie eine aus und versuchen Sie es erneut.",
       "workCategoryNotAllowed": "Zuweisung zu dieser Tätigkeitskategorie nicht möglich"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Zurück zur Arbeit",
         "returning": "Zurück zum Start in {seconds} s",
         "startBreak": "Pause gestartet",
-        "title": "Fertig"
+        "title": "Fertig",
+        "unconfirmed": "Auf diesem Kiosk gespeichert, noch nicht bestätigt. Ihre PIN wird überprüft, sobald der Kiosk wieder online ist."
       },
       "employee": {
+        "asOf": "Stand: {time}",
         "back": "Abbrechen",
         "endDayHint": "Wenn Sie den Arbeitstag jetzt beenden, endet Ihre Arbeitszeit mit Beginn Ihrer Pause.",
         "today": "Heute: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Kiosk wird gestartet…",
       "offline": {
         "banner": "Der Kiosk ist offline. Stempeln ist erst wieder möglich, wenn die Verbindung wiederhergestellt ist.",
-        "refused": "Der Kiosk ist offline. Es wurde nichts erfasst; Stempeln funktioniert nur online."
+        "notSaved": "Dies konnte auf dem Kiosk nicht gespeichert werden. Es wurde nichts erfasst.",
+        "queueBanner": "Der Kiosk ist offline. Stempelungen werden auf diesem Kiosk gespeichert und bestätigt, sobald wieder eine Verbindung besteht.",
+        "refused": "Der Kiosk ist offline. Es wurde nichts erfasst; Stempeln funktioniert nur online.",
+        "stateNote": "Der Kiosk ist offline. Ihre aktuellen Eingaben werden auf diesem Kiosk gespeichert und sind noch nicht bestätigt.",
+        "stateQueued": "Der Kiosk ist offline. Dies umfasst Stempelungen, die auf diesem Kiosk gespeichert und noch nicht bestätigt sind."
       },
       "pairing": {
         "codeDescription": "Der Code ist einmalig gültig und läuft 10 Minuten nach der Erstellung ab.",
@@ -201,6 +209,20 @@
         "rateLimited": "Zu viele PIN-Versuche an diesem Kiosk. Versuchen Sie es in {seconds} Sekunden erneut.",
         "submit": "OK",
         "wrong": "Diese PIN ist nicht korrekt. Versuchen Sie es erneut."
+      },
+      "queue": {
+        "dismiss": "Verwerfen",
+        "reason": {
+          "contact": "Die letzte Verbindung des Kiosks konnte nicht bestätigt werden.",
+          "kiosk": "Der Kiosk war zu diesem Zeitpunkt nicht mehr gekoppelt.",
+          "locked": "Die PIN war gesperrt.",
+          "notAssigned": "Der Mitarbeiter kann an diesem Kiosk nicht stempeln.",
+          "other": "Wenden Sie sich an Ihre Führungskraft.",
+          "pin": "Die PIN wurde nicht akzeptiert.",
+          "time": "Die Uhrzeit konnte nicht akzeptiert werden."
+        },
+        "refused": "{name}: {action} um {time}, offline gespeichert, wurde nicht akzeptiert. {reason}",
+        "title": "Offline-Stempelungen nicht akzeptiert"
       },
       "refusal": {
         "alreadyClockedIn": "Sie sind bereits eingestempelt.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Fahrtdetails fehlen",
       "duration": "Dauer",
       "emptyState": "Keine Zeiteinträge für diese Woche gefunden.",
+      "missingTask": "Fehlende Aufgabe",
+      "missingTaskHint": "Dieses Projekt erfordert eine Aufgabe: Fügen Sie dieser Buchung im Kalender eine hinzu.",
       "recordedLocalTime": "Erfasste Ortszeit",
       "rowActions": "Aktionen für Zeiteinträge",
       "title": "Zeiteinträge",
       "viewCalendar": "Kalender anzeigen"
     },
     "taskPicker": {
+      "choose": "Aufgabe auswählen",
       "doneTask": "{name} (erledigt)",
       "empty": "Keine Aufgabe gefunden",
       "label": "Aufgabe",
       "none": "Keine Aufgabe",
+      "requiredLabel": "Aufgabe (erforderlich)",
       "search": "Aufgaben suchen…"
     },
     "timeline": {

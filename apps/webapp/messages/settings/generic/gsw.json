@@ -845,6 +845,39 @@
       },
       "title": "Date-Export"
     },
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Prüefer-Verantwortig vergeh",
+        "all": "Alli Mitarbeiter i däre Organisation",
+        "allDescription": "D Verantwortig richtet sich nach de aktuelle Organisations-Mitglidschaft. Prüefer chönd sich nie sälber überprüefe.",
+        "attribution": "Vergeh dur {actor} am {time}",
+        "description": "Verantwortig separat vo de Fahreraamäldig, Liniefüehrig und em Zuegriff uf d Personalakte vergää. D Verwaltig vo dene Berächtigunge git kei Erlaubnis zum Prüefprotokoll läse. Sälber überprüefe isch immer verbote.",
+        "editor": "Prüfer-Beriich",
+        "empty": "Kei Prüfer-Verantwortige zuegwise",
+        "expiry": "Lauft ab um {time}",
+        "history": "Verlauf vo de Verantwortig",
+        "historyEntry": "Vergää dur {grantor} am {granted}; widerzoge dur {revoker} am {revoked}",
+        "loadFailed": "Prüfer-Verantwortige händ nöd chönne glade wärde",
+        "myAll": "Du bisch verantwortlich für Überprüefige i dere Organisation. Du chasch dich nöd sälber überprüefe.",
+        "mySelected": "Du bisch verantwortlich für {teams} uswählti Teams und {employees} gnannti Mitarbeiter. Di aktuelli Team-Mitglidschaft bestimmt de Zuegriff. Du chasch dich nöd sälber überprüefe.",
+        "myTitle": "Dini Prüfer-Verantwortig",
+        "none": "Du häsch aktuell kei Verantwortig für d Fahruuswiis-Prüefig.",
+        "noTeams": "Kei Teams verfüegbar",
+        "person": "Prüfer",
+        "revoked": "Prüfer-Verantwortig widerzoge",
+        "revokeDescription": "De Prüfer verlüürt sofort de Zuegriff uf Überprüefige i dem Beriich. Es brucht e neui Zueordnig, zum d Verantwortig widerherzstelle.",
+        "revokeFailed": "Verantwortig hät nöd chönne widerzoge wärde. Probier's nomal.",
+        "revokeTitle": "Prüfer-Verantwortig widerrüefe?",
+        "saved": "Prüfer-Verantwortig gspicheret",
+        "scope": "Verantwortig",
+        "select": "En Mitarbeiter uswähle",
+        "selected": "{teams} Teams, {employees} gnannti Mitarbeiter",
+        "selectEmployees": "Mitarbeiter uswähle",
+        "specific": "Uswählti Teams und Mitarbeiter",
+        "specificDescription": "Umfasst gnannti Mitarbeiter und aktuelli Mitglider vo uswählte Teams. Team-Apassige wärded sofort wirksam.",
+        "title": "Fahruuswiis-Prüfer"
+      }
+    },
     "emailTemplates": {
       "actions": {
         "reset": "Uf System-Vorlage zruggsetze",
@@ -1452,7 +1485,8 @@
         "invalidTimezone": "Wähl e Ziitzone uus.",
         "kioskNotFound": "Dä Kiosk isch nöd gfunde worde.",
         "kioskRevoked": "Dä Kiosk isch widerruefe worde.",
-        "locationNotFound": "Wähl en aktive Standort vo dere Organisation uus."
+        "locationNotFound": "Wähl en aktive Standort vo dere Organisation uus.",
+        "offlineNeedsAdoption": "De Offline-Modus brucht koordinierti Stämpel-Befehl, wo die Organisation no nöd brucht."
       },
       "fields": {
         "board": "«Wer isch da»-Board",
@@ -1462,6 +1496,9 @@
         "locationPlaceholder": "En Standort uswähle",
         "name": "Name",
         "namePlaceholder": "z. B. Personaliigang",
+        "offlineMode": "Offline-Modus",
+        "offlineModeDescription": "De Kiosk stämpflet ohni Verbindig wiiter. Sini Stämpelige wärded bestätigt und d PINs überprüft, sobald er wider verbunde isch.",
+        "offlineModeUnavailable": "De Offline-Modus brucht koordinierti Stämpel-Befehl, wo die Organisation no nöd brucht.",
         "timezone": "Ziitzone",
         "timezoneDescription": "Stämpeleiträg, wo a däm Kiosk erfasst werded, bruched die Ziitzone."
       },
@@ -1471,6 +1508,8 @@
       "loadFailed": "Kiosks händ nöd chönne glade werde.",
       "neverSeen": "Nie",
       "noLocations": "Erstell zerst en Standort: Jede Kiosk ghört zu eim Standort.",
+      "offlineOn": "Offline-Modus ii",
+      "offlineOnNotInEffect": "Offline-Modus ii, gilt nöd für die Organisation",
       "pairAgain": "Nomol kopple",
       "pairFailed": "Es hät kei neue Koppligscode chönne erstellt werde",
       "pairingCodeLabel": "Koppligscode",
@@ -1480,6 +1519,46 @@
       "pairPairedDescription": "De Gräte-Token wird gwächslet: Das kopplete Grät funktioniert sofort nüme und muess mit em neue Code nomol kopplet werde.",
       "pairTitle": "{name} nomol kopple?",
       "pairUnpairedDescription": "En neue Koppligscode ersetzt de bisherig.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Iistämpfle",
+          "clockOut": "Usstämpfle",
+          "resumeBreak": "Wiitermache",
+          "startBreak": "Pause aafange"
+        },
+        "columns": {
+          "action": "Aktion",
+          "claimedAt": "Aagäbeni Ziit",
+          "employee": "Mitarbeiter",
+          "kiosk": "Kiosk",
+          "reason": "Grund",
+          "timeSource": "Ziitquälle"
+        },
+        "description": "Stämpelige, wo uf em Kiosk gspicheret worde sind, während er offline gsi isch, und bim Widerverbinde nöd erfasst worde sind. De Mitarbeiter oder d Vorgesetzte vomene Mitarbeiter ohni Login sind benachrichtigt worde.",
+        "empty": "Kei Offline-Stämpelig isch abglehnt worde.",
+        "reasons": {
+          "clockUntrusted": "Kiosk-Uhr nöd vertrauenswürdig",
+          "conflict": "Kollidiert mit anderne erfasste Ziite",
+          "contactUnverifiable": "Letschti Verbindig hät nöd chönne bestätigt wärde",
+          "holiday": "Fiirtig ohni Ziiterfassig",
+          "kioskRetired": "Kiosk widerzoge oder nomal kopplet",
+          "monthClosed": "Monet abgschlosse",
+          "noPin": "Kei Kiosk-PIN gsetzt",
+          "notAdopted": "Offline-Stämple wird vo de Organisation nöd akzeptiert",
+          "notAssigned": "Em Standort nöd zuegwise",
+          "other": "Hät nöd chönne akzeptiert wärde",
+          "outsideWindow": "Z spaat achoo",
+          "pinLocked": "PIN gsperrt",
+          "pinUnchecked": "PIN hät nöd chönne überprüeft wärde",
+          "wrongPin": "Falsche PIN"
+        },
+        "timeSources": {
+          "deviceClock": "Gräte-Uhr",
+          "serverAnchor": "Serverziit"
+        },
+        "title": "Abglehnti Offline-Stämplige",
+        "unknownEmployee": "Kä Mitarbeiter"
+      },
       "revoke": "Widerruefe",
       "revokeConfirm": "Kiosk widerruefe",
       "revoked": "Kiosk widerruefe",
@@ -1487,6 +1566,7 @@
       "revokeFailed": "De Kiosk hät nöd chönne widerruefe werde",
       "revokeTitle": "{name} widerruefe?",
       "rotateConfirm": "Token rotiere und nomol kopple",
+      "rotateOfflineWarning": "Bi däm Kiosk isch de Offline-Modus aktiv. Stämplige, wo offline gspicheret und no nöd gschickt worde sind, wärded bi de erneute Verbindig abglehnt und under «Abglehnti Offline-Stämplige» ufgfüehrt.",
       "save": "Speichere",
       "saved": "Kiosk gspeicheret",
       "saveFailed": "De Kiosk hät nöd chönne gspeicheret werde",
@@ -1960,6 +2040,8 @@
         "name": "Name",
         "namePlaceholder": "Projektname iigä",
         "noCustomer": "Kei Chunde",
+        "requiresTask": "En Ufgab verlange",
+        "requiresTaskHelp": "Ziit, wo uf das Projekt buecht wird, muess en Ufgab dervo aagee. Das gilt nur, solang s Projekt en offnigi Ufgab hät.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -1973,6 +2055,7 @@
         "reasonAdminOnly": "Nur Organisations-Admins teiled Projektmanager zue",
         "reasonDeparted": "hät d'Organisation verlaa",
         "reasonRemoved": "git's nümme",
+        "requiresTask": "Bruucht en Ufgab",
         "skipped": "Nöd kopiert: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2118,7 +2201,9 @@
           "name": "Name",
           "namePlaceholder": "z. B. Website-Relaunch",
           "nameRequired": "Vorlagename igeh",
-          "noIcon": "Keis Icon"
+          "noIcon": "Keis Icon",
+          "requiresTask": "En Ufgab verlange",
+          "requiresTaskHelp": "Projekt, wo us dere Vorlag erstellt wärded, startit mit dere Iistellig."
         },
         "icons": {
           "briefcase": "Aktetäsche",

@@ -845,6 +845,39 @@
       },
       "title": "Exportação de Dados"
     },
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Conceder responsabilidade de verificador",
+        "all": "Todos os funcionários nesta organização",
+        "allDescription": "A responsabilidade segue a filiação atual à organização. Os verificadores nunca podem verificar a si mesmos.",
+        "attribution": "Concedido por {actor} em {time}",
+        "description": "Conceda a responsabilidade separadamente do cadastro de motoristas, da gestão direta e do acesso aos registros de pessoal. O gerenciamento dessas concessões não permite a visualização de registros de inspeção. A autoverificação é sempre proibida.",
+        "editor": "Escopo do verificador",
+        "empty": "Nenhuma responsabilidade de verificador atribuída",
+        "expiry": "Expira às {time}",
+        "history": "Histórico de responsabilidades",
+        "historyEntry": "Concedido por {grantor} em {granted}; revogado por {revoker} em {revoked}",
+        "loadFailed": "Não foi possível carregar as responsabilidades do verificador",
+        "myAll": "Você é responsável pelas verificações em toda esta organização. Você não pode verificar a si mesmo.",
+        "mySelected": "Você é responsável por {teams} equipes selecionadas e {employees} funcionários nomeados. A participação atual na equipe determina o acesso. Você não pode verificar a si mesmo.",
+        "myTitle": "Sua responsabilidade de verificador",
+        "none": "Você não tem nenhuma responsabilidade ativa de verificação de carteira de motorista.",
+        "noTeams": "Nenhuma equipe disponível",
+        "person": "Verificador",
+        "revoked": "Responsabilidade do verificador revogada",
+        "revokeDescription": "O verificador perde imediatamente o acesso às verificações neste escopo. É necessária uma nova concessão para restaurar a responsabilidade.",
+        "revokeFailed": "Não foi possível revogar a responsabilidade. Tente novamente.",
+        "revokeTitle": "Revogar responsabilidade do verificador?",
+        "saved": "Responsabilidade do verificador salva",
+        "scope": "Responsabilidade",
+        "select": "Selecione um funcionário",
+        "selected": "{teams} equipes, {employees} funcionários nomeados",
+        "selectEmployees": "Selecionar funcionários",
+        "specific": "Equipes e funcionários selecionados",
+        "specificDescription": "Inclui funcionários nomeados e membros atuais das equipes selecionadas. As alterações na equipe entram em vigor imediatamente.",
+        "title": "Verificadores de carteira de motorista"
+      }
+    },
     "emailTemplates": {
       "actions": {
         "reset": "Redefinir para o modelo do sistema",
@@ -1452,7 +1485,8 @@
         "invalidTimezone": "Escolha um fuso horário.",
         "kioskNotFound": "Este quiosque não foi encontrado.",
         "kioskRevoked": "Este quiosque foi revogado.",
-        "locationNotFound": "Escolha um local ativo desta organização."
+        "locationNotFound": "Escolha um local ativo desta organização.",
+        "offlineNeedsAdoption": "O modo offline precisa de comandos de ponto coordenados, que esta organização ainda não utiliza."
       },
       "fields": {
         "board": "Painel de presença",
@@ -1462,6 +1496,9 @@
         "locationPlaceholder": "Escolha um local",
         "name": "Nome",
         "namePlaceholder": "ex.: Entrada de funcionários",
+        "offlineMode": "Modo offline",
+        "offlineModeDescription": "O quiosque continua registrando o ponto sem conexão. Seus registros são confirmados e os PINs verificados assim que ele se reconectar.",
+        "offlineModeUnavailable": "O modo offline precisa de comandos de ponto coordenados, que esta organização ainda não utiliza.",
         "timezone": "Fuso horário",
         "timezoneDescription": "Os registros de ponto feitos neste quiosque usam este fuso horário."
       },
@@ -1471,6 +1508,8 @@
       "loadFailed": "Não foi possível carregar os quiosques.",
       "neverSeen": "Nunca",
       "noLocations": "Crie um local primeiro: cada quiosque pertence a um local.",
+      "offlineOn": "Modo offline ativado",
+      "offlineOnNotInEffect": "Modo offline ativado, não vigente para esta organização",
       "pairAgain": "Parear novamente",
       "pairFailed": "Não foi possível emitir um novo código de pareamento",
       "pairingCodeLabel": "Código de pareamento",
@@ -1480,6 +1519,46 @@
       "pairPairedDescription": "O token do dispositivo é rotacionado: o dispositivo pareado para de funcionar imediatamente e deve ser pareado novamente com o novo código.",
       "pairTitle": "Parear {name} novamente?",
       "pairUnpairedDescription": "Um novo código de pareamento substitui o anterior.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Registrar entrada",
+          "clockOut": "Registrar saída",
+          "resumeBreak": "Retomar",
+          "startBreak": "Iniciar pausa"
+        },
+        "columns": {
+          "action": "Ação",
+          "claimedAt": "Horário informado",
+          "employee": "Funcionário",
+          "kiosk": "Quiosque",
+          "reason": "Motivo",
+          "timeSource": "Origem da hora"
+        },
+        "description": "Registros de ponto salvos em um quiosque enquanto estava offline que não foram gravados quando ele se reconectou. O funcionário, ou os gestores de um funcionário sem login, foram notificados.",
+        "empty": "Nenhum registro de ponto offline foi recusado.",
+        "reasons": {
+          "clockUntrusted": "Relógio do quiosque não confiável",
+          "conflict": "Conflita com outro horário registrado",
+          "contactUnverifiable": "Não foi possível confirmar a última conexão",
+          "holiday": "Feriado sem registro de ponto",
+          "kioskRetired": "Quiosque revogado ou emparelhado novamente",
+          "monthClosed": "Mês encerrado",
+          "noPin": "Nenhum PIN do quiosque definido",
+          "notAdopted": "Registro de ponto offline não aceito pela organização",
+          "notAssigned": "Não atribuído ao local",
+          "other": "Não pôde ser aceito",
+          "outsideWindow": "Chegou tarde demais",
+          "pinLocked": "PIN bloqueado",
+          "pinUnchecked": "Não foi possível verificar o PIN",
+          "wrongPin": "PIN incorreto"
+        },
+        "timeSources": {
+          "deviceClock": "Relógio do dispositivo",
+          "serverAnchor": "Hora do servidor"
+        },
+        "title": "Marcações offline recusadas",
+        "unknownEmployee": "Não é um funcionário"
+      },
       "revoke": "Revogar",
       "revokeConfirm": "Revogar quiosque",
       "revoked": "Quiosque revogado",
@@ -1487,6 +1566,7 @@
       "revokeFailed": "Não foi possível revogar o quiosque",
       "revokeTitle": "Revogar {name}?",
       "rotateConfirm": "Rotacionar token e parear novamente",
+      "rotateOfflineWarning": "Este quiosque está com o modo offline ativado. As marcações salvas offline e ainda não enviadas são recusadas quando ele reconecta, e listadas em marcações offline recusadas.",
       "save": "Salvar",
       "saved": "Quiosque salvo",
       "saveFailed": "Não foi possível salvar o quiosque",
@@ -1960,6 +2040,8 @@
         "name": "Nome",
         "namePlaceholder": "Insira o nome do projeto",
         "noCustomer": "Sem cliente",
+        "requiresTask": "Exigir uma tarefa",
+        "requiresTaskHelp": "O tempo registrado neste projeto deve indicar uma de suas tarefas. Isso se aplica apenas enquanto o projeto tiver uma tarefa aberta.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -1973,6 +2055,7 @@
         "reasonAdminOnly": "apenas administradores da organização atribuem gerentes de projeto",
         "reasonDeparted": "saiu da organização",
         "reasonRemoved": "não existe mais",
+        "requiresTask": "Requer uma tarefa",
         "skipped": "Não copiados: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2118,7 +2201,9 @@
           "name": "Nome",
           "namePlaceholder": "ex.: Relançamento do site",
           "nameRequired": "Digite o nome do modelo",
-          "noIcon": "Sem ícone"
+          "noIcon": "Sem ícone",
+          "requiresTask": "Exigir uma tarefa",
+          "requiresTaskHelp": "Projetos criados a partir deste modelo começam com esta configuração."
         },
         "icons": {
           "briefcase": "Maleta",

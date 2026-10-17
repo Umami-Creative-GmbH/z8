@@ -13,6 +13,7 @@
       "successDescription": "Dis Abo isch aktiviert worde. Danke fürs Abonniere!",
       "successTitle": "Erfolg!"
     },
+    "amount": "€{amount}",
     "bestValue": "Bescht Priis-Leistig",
     "billedMonthly": "monatlich abgrächnet",
     "cancelsOn": "Gchündigt am {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Monatlichi Abrechnig",
       "yearlyBilling": "Jährlichi Abrechnig"
     },
+    "kioskSeatPriceMonthly": "Kiosk-Plätz (nur Kiosk-Mitarbeitendi): €{price}/Platz/Monet",
+    "kioskSeatPriceYearly": "Kiosk-Plätz (nur Kiosk-Mitarbeitendi): €{price}/Platz/Monet, €{total}/Platz jährlich abgrechnet",
     "manageBilling": "Abrechnig verwalte",
     "monthlyCost": "Monatlichi Chöschte",
     "nextBilling": "Nächsti Abrechnig",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/Nutzer/Monat",
     "priceSeatMonthYearly": "€{price}/Nutzer/Monat (jährlich abgrächnet)",
     "seatBilledAnnually": "€{price}/Nutzer jährlich abgrächnet",
+    "seatLines": {
+      "full": "Voll-Plätz",
+      "kiosk": "Kiosk-Plätz",
+      "seatsAtPrice": "{seats} × €{price}/Mt.",
+      "total": "Total",
+      "totalPerMonth": "€{amount}/Mt."
+    },
     "starting": "Startet...",
     "startTrial": "Choschtelos teste",
     "status": {

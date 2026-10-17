@@ -99,6 +99,7 @@
       "breakPendingCorrection": "En godkjenning av tidskorrigering venter allerede for denne arbeidsperioden. Legg til pausen når den er avklart.",
       "breakRetry": "Kunne ikke legge til pause. Prøv på nytt.",
       "breakTooLong": "Pausevarigheten må være kortere enn den nåværende økten din.",
+      "chooseTaskInClock": "Åpne klokken øverst på siden, velg en oppgave og stemple ut.",
       "clockAttributionNotAllowed": "Det valgte prosjektet eller den valgte kategorien er ikke tilgjengelig",
       "clockCommandRejected": "Serveren godtok ikke denne stemplingshandlingen",
       "clockConnectionRequired": "Stempling krever tilkobling i denne organisasjonen. Koble til på nytt og prøv igjen.",
@@ -135,6 +136,7 @@
       "taskNotFound": "Denne oppgaven finnes ikke lenger",
       "taskOtherProject": "Denne oppgaven tilhører et annet prosjekt",
       "taskProjectNotBookable": "Tid kan ikke lenger føres på denne oppgavens prosjekt",
+      "taskRequired": "Dette prosjektet krever en oppgave. Velg en og prøv igjen.",
       "workCategoryNotAllowed": "Kan ikke tilordne til denne arbeidskategorien"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Tilbake på jobb",
         "returning": "Tilbake til start om {seconds} s",
         "startBreak": "Pause startet",
-        "title": "Ferdig"
+        "title": "Ferdig",
+        "unconfirmed": "Lagret på denne kiosken, ennå ikke bekreftet. PIN-koden din kontrolleres når kiosken er på nett igjen."
       },
       "employee": {
+        "asOf": "Per {time}",
         "back": "Avbryt",
         "endDayHint": "Hvis du avslutter dagen nå, avsluttes arbeidet ved starten av pausen.",
         "today": "I dag: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Starter kiosk …",
       "offline": {
         "banner": "Kiosken er frakoblet. Stempling er ikke mulig før tilkoblingen er tilbake.",
-        "refused": "Kiosken er frakoblet. Ingenting ble registrert; stempling fungerer bare når du er tilkoblet."
+        "notSaved": "Dette kunne ikke lagres på kiosken. Ingenting ble registrert.",
+        "queueBanner": "Kiosken er frakoblet. Stemplinger lagres på denne kiosken og bekreftes når tilkoblingen er tilbake.",
+        "refused": "Kiosken er frakoblet. Ingenting ble registrert; stempling fungerer bare når du er tilkoblet.",
+        "stateNote": "Kiosken er frakoblet. Det du gjør nå lagres på denne kiosken og er ennå ikke bekreftet.",
+        "stateQueued": "Kiosken er frakoblet. Dette inkluderer stemplinger lagret på denne kiosken som ennå ikke er bekreftet."
       },
       "pairing": {
         "codeDescription": "Koden fungerer én gang og utløper 10 minutter etter at den ble opprettet.",
@@ -201,6 +209,20 @@
         "rateLimited": "For mange PIN-forsøk på denne kiosken. Prøv igjen om {seconds} sekunder.",
         "submit": "OK",
         "wrong": "PIN-koden er feil. Prøv igjen."
+      },
+      "queue": {
+        "dismiss": "Avvis",
+        "reason": {
+          "contact": "Kioskens siste tilkobling kunne ikke bekreftes.",
+          "kiosk": "Kiosken var ikke lenger sammenkoblet på det tidspunktet.",
+          "locked": "PIN-koden var låst.",
+          "notAssigned": "Den ansatte kan ikke stemple på denne kiosken.",
+          "other": "Spør lederen din.",
+          "pin": "PIN-koden ble ikke godtatt.",
+          "time": "Tidspunktet kunne ikke godtas."
+        },
+        "refused": "{name}: {action} kl. {time}, lagret i frakoblet modus, ble ikke godtatt. {reason}",
+        "title": "Frakoblede stemplinger godtas ikke"
       },
       "refusal": {
         "alreadyClockedIn": "Du er allerede stemplet inn.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Kjøredetaljer mangler",
       "duration": "Varighet",
       "emptyState": "Ingen timeregistreringer funnet for denne uken.",
+      "missingTask": "Mangler oppgave",
+      "missingTaskHint": "Dette prosjektet krever en oppgave: legg til en i denne registreringen i kalenderen.",
       "recordedLocalTime": "Registrert lokal tid",
       "rowActions": "Handlinger for timeføring",
       "title": "Timeregistreringer",
       "viewCalendar": "Vis kalender"
     },
     "taskPicker": {
+      "choose": "Velg en oppgave",
       "doneTask": "{name} (fullført)",
       "empty": "Ingen oppgave funnet",
       "label": "Oppgave",
       "none": "Ingen oppgave",
+      "requiredLabel": "Oppgave (påkrevd)",
       "search": "Søk etter oppgaver…"
     },
     "timeline": {

@@ -383,7 +383,7 @@ describe.each(["legacy", "canonical"] as const)(
 			);
 			expect(switches).toEqual([{ performed_by: userOf("anna") }]);
 			const { rows: uploads } = await admin.query<{ metadata: string }>(
-				"select metadata from audit_log where entity_id = any($1::uuid[]) and action = 'personnel_file.document_uploaded'",
+				"select metadata from audit_log where entity_id = any($1::text[]) and action = 'personnel_file.document_uploaded'",
 				[notes.map((note) => note.id)],
 			);
 			expect(uploads).toHaveLength(2);

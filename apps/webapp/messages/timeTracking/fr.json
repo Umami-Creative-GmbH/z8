@@ -99,6 +99,7 @@
       "breakPendingCorrection": "Une approbation de correction d'heures est déjà en attente pour cette période de travail. Ajoutez la pause une fois la situation résolue.",
       "breakRetry": "Échec de l'ajout de la pause. Veuillez réessayer.",
       "breakTooLong": "La durée de la pause doit être inférieure à celle de votre session actuelle.",
+      "chooseTaskInClock": "Ouvrez l'horloge en haut de la page, choisissez une tâche, puis dépointez.",
       "clockAttributionNotAllowed": "Le projet ou la catégorie sélectionné(e) n'est pas disponible",
       "clockCommandRejected": "Le serveur n'a pas accepté cette action de pointage",
       "clockConnectionRequired": "Le pointage nécessite une connexion dans cette organisation. Reconnectez-vous et réessayez.",
@@ -135,6 +136,7 @@
       "taskNotFound": "Cette tâche n'existe plus",
       "taskOtherProject": "Cette tâche appartient à un autre projet",
       "taskProjectNotBookable": "Il n'est plus possible d'enregistrer du temps sur le projet de cette tâche",
+      "taskRequired": "Ce projet nécessite une tâche. Choisissez-en une et réessayez.",
       "workCategoryNotAllowed": "Impossible d'affecter à cette catégorie de travail"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Retour au travail",
         "returning": "Retour au début dans {seconds} s",
         "startBreak": "Pause commencée",
-        "title": "Terminé"
+        "title": "Terminé",
+        "unconfirmed": "Enregistré sur cette borne, pas encore confirmé. Votre code PIN est vérifié lorsque la borne est de nouveau en ligne."
       },
       "employee": {
+        "asOf": "À {time}",
         "back": "Annuler",
         "endDayHint": "Terminer la journée maintenant met fin à votre travail au début de votre pause.",
         "today": "Aujourd'hui : {duration}"
@@ -176,7 +180,11 @@
       "loading": "Démarrage de la borne…",
       "offline": {
         "banner": "La borne est hors ligne. Le pointage est impossible tant que la connexion n'est pas rétablie.",
-        "refused": "La borne est hors ligne. Rien n'a été enregistré ; le pointage fonctionne uniquement en ligne."
+        "notSaved": "Impossible d'enregistrer sur la borne. Rien n'a été enregistré.",
+        "queueBanner": "La borne est hors ligne. Les pointages sont enregistrés sur cette borne et confirmés dès le retour de la connexion.",
+        "refused": "La borne est hors ligne. Rien n'a été enregistré ; le pointage fonctionne uniquement en ligne.",
+        "stateNote": "La borne est hors ligne. Ce que vous faites maintenant est enregistré sur cette borne et n'est pas encore confirmé.",
+        "stateQueued": "La borne est hors ligne. Cela inclut les pointages enregistrés sur cette borne qui ne sont pas encore confirmés."
       },
       "pairing": {
         "codeDescription": "Le code n'est valable qu'une seule fois et expire 10 minutes après son émission.",
@@ -201,6 +209,20 @@
         "rateLimited": "Trop de tentatives de code PIN sur cette borne. Réessayez dans {seconds} secondes.",
         "submit": "OK",
         "wrong": "Ce code PIN est incorrect. Réessayez."
+      },
+      "queue": {
+        "dismiss": "Ignorer",
+        "reason": {
+          "contact": "La dernière connexion de la borne n'a pas pu être confirmée.",
+          "kiosk": "La borne n'était plus associée à ce moment-là.",
+          "locked": "Le code PIN était verrouillé.",
+          "notAssigned": "L'employé ne peut pas pointer sur cette borne.",
+          "other": "Demandez à votre responsable.",
+          "pin": "Le code PIN n'a pas été accepté.",
+          "time": "Son heure n'a pas pu être acceptée."
+        },
+        "refused": "{name} : {action} à {time}, enregistré hors ligne, n'a pas été accepté. {reason}",
+        "title": "Pointages hors ligne non acceptés"
       },
       "refusal": {
         "alreadyClockedIn": "Vous avez déjà pointé.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Détails de conduite manquants",
       "duration": "Durée",
       "emptyState": "Aucune entrée de temps trouvée pour cette semaine.",
+      "missingTask": "Tâche manquante",
+      "missingTaskHint": "Ce projet nécessite une tâche : ajoutez-en une à cette saisie dans le calendrier.",
       "recordedLocalTime": "Heure locale enregistrée",
       "rowActions": "Actions sur les entrées de temps",
       "title": "Entrées de temps",
       "viewCalendar": "Voir le calendrier"
     },
     "taskPicker": {
+      "choose": "Choisir une tâche",
       "doneTask": "{name} (terminée)",
       "empty": "Aucune tâche trouvée",
       "label": "Tâche",
       "none": "Aucune tâche",
+      "requiredLabel": "Tâche (obligatoire)",
       "search": "Rechercher des tâches…"
     },
     "timeline": {

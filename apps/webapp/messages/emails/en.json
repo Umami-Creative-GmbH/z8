@@ -117,6 +117,17 @@
       "actionFallback": "If the button does not work, open this link:",
       "footer": "This email was sent by Z8."
     },
+    "mfa": {
+      "codesChanged": "Recovery code used or replaced",
+      "deadlineMessage": "{organization} requires an authenticator by {deadline}. After this exact deadline, verify a TOTP authenticator or a passkey with PIN/biometrics before accessing this organization. Enrollment alone is insufficient. Use Security verification to enroll or verify; password plus a backup code permits replacement enrollment only.",
+      "deadlineTitle": "Organization authentication required",
+      "factorChanged": "Authenticator changed",
+      "factorRemoved": "Authenticator removed",
+      "passwordChanged": "Password changed",
+      "securityMessage": "{event} for {organization}. Prior verification may no longer permit organization access. Verify a remaining or replacement authenticator at Security verification. If you did not make this change, secure your account now.",
+      "securityTitle": "Authentication security changed",
+      "suspended": "The requirement is currently suspended. Re-enabling it restores the assigned deadline."
+    },
     "notification": {
       "openAction": "Open Z8"
     },

@@ -329,6 +329,7 @@
       "duration": "Durée",
       "editedBy": "Modifié par",
       "employee": "Employé",
+      "missingTask": "Tâche manquante. Ce projet en requiert une : modifiez la réservation pour l'ajouter.",
       "notes": "Notes",
       "pendingApproval": "En attente d'approbation",
       "pendingApprovalDescription": "Cette période de travail est en attente de l'approbation d'un responsable. Les heures enregistrées peuvent être modifiées en cas de refus.",
@@ -517,7 +518,9 @@
     },
     "workPeriod": {
       "billable": "Facturable",
-      "editedBy": "(modifié par {name} à {date})"
+      "editedBy": "(modifié par {name} à {date})",
+      "missingTask": "Tâche manquante",
+      "missingTaskHint": "Tâche manquante : ajouter une tâche"
     },
     "workStatus": {
       "overRequirement": "au-dessus de l'exigence",

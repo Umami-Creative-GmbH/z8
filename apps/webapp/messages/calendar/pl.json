@@ -329,6 +329,7 @@
       "duration": "Czas trwania",
       "editedBy": "Edytowane przez",
       "employee": "Pracownik",
+      "missingTask": "Brak zadania. Ten projekt wymaga zadania: edytuj rezerwację, aby je dodać.",
       "notes": "Notatki",
       "pendingApproval": "Oczekuje na zatwierdzenie",
       "pendingApprovalDescription": "Ten okres pracy oczekuje na zatwierdzenie przez menedżera. Zarejestrowane godziny mogą ulec zmianie w przypadku odrzucenia.",
@@ -517,7 +518,9 @@
     },
     "workPeriod": {
       "billable": "Rozliczalne",
-      "editedBy": "(edytowane przez {name}, {date})"
+      "editedBy": "(edytowane przez {name}, {date})",
+      "missingTask": "Brak zadania",
+      "missingTaskHint": "Brak zadania: dodaj zadanie"
     },
     "workStatus": {
       "overRequirement": "powyżej wymogu",

@@ -329,6 +329,7 @@
       "duration": "Varighet",
       "editedBy": "Redigert av",
       "employee": "Ansatt",
+      "missingTask": "Mangler oppgave. Dette prosjektet krever en: rediger bookingen for å legge den til.",
       "notes": "Notater",
       "pendingApproval": "Venter på godkjenning",
       "pendingApprovalDescription": "Denne arbeidsperioden venter på godkjenning fra leder. De registrerte tidene kan endres hvis den avvises.",
@@ -517,7 +518,9 @@
     },
     "workPeriod": {
       "billable": "Fakturerbar",
-      "editedBy": "(redigert av {name} {date})"
+      "editedBy": "(redigert av {name} {date})",
+      "missingTask": "Mangler oppgave",
+      "missingTaskHint": "Mangler oppgave: legg til en oppgave"
     },
     "workStatus": {
       "overRequirement": "over kravet",

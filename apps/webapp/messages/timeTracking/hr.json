@@ -99,6 +99,7 @@
       "breakPendingCorrection": "Zahtjev za odobrenje ispravka vremena već je na čekanju za ovo razdoblje rada. Dodajte pauzu nakon što se riješi.",
       "breakRetry": "Dodavanje pauze nije uspjelo. Pokušajte ponovno.",
       "breakTooLong": "Trajanje pauze mora biti kraće od vaše trenutne sesije.",
+      "chooseTaskInClock": "Otvorite sat na vrhu stranice, odaberite zadatak, a zatim se odjavite.",
       "clockAttributionNotAllowed": "Odabrani projekt ili kategorija nisu dostupni",
       "clockCommandRejected": "Poslužitelj nije prihvatio ovu radnju evidentiranja vremena",
       "clockConnectionRequired": "Za evidenciju radnog vremena u ovoj organizaciji potrebna je veza. Ponovno se povežite i pokušajte ponovno.",
@@ -135,6 +136,7 @@
       "taskNotFound": "Ovaj zadatak više ne postoji",
       "taskOtherProject": "Ovaj zadatak pripada drugom projektu",
       "taskProjectNotBookable": "Vrijeme se više ne može bilježiti na projekt ovog zadatka",
+      "taskRequired": "Ovaj projekt zahtijeva zadatak. Odaberite ga i pokušajte ponovno.",
       "workCategoryNotAllowed": "Nije moguće dodijeliti ovoj kategoriji rada"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Povratak na posao",
         "returning": "Povratak na početak za {seconds} s",
         "startBreak": "Pauza započeta",
-        "title": "Gotovo"
+        "title": "Gotovo",
+        "unconfirmed": "Spremljeno na ovom kiosku, još nije potvrđeno. Vaš se PIN provjerava kada kiosk ponovno bude na mreži."
       },
       "employee": {
+        "asOf": "Zaključno s {time}",
         "back": "Odustani",
         "endDayHint": "Završavanjem radnog dana sada vaš rad završava na početku pauze.",
         "today": "Danas: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Pokretanje kioska…",
       "offline": {
         "banner": "Kiosk je izvan mreže. Prijava i odjava nisu moguće dok se veza ponovno ne uspostavi.",
-        "refused": "Kiosk je izvan mreže. Ništa nije zabilježeno; prijava i odjava rade samo na mreži."
+        "notSaved": "Ovo se nije moglo spremiti na kiosku. Ništa nije zabilježeno.",
+        "queueBanner": "Kiosk je izvan mreže. Registracije se spremaju na ovom kiosku i potvrđuju se kada se veza vrati.",
+        "refused": "Kiosk je izvan mreže. Ništa nije zabilježeno; prijava i odjava rade samo na mreži.",
+        "stateNote": "Kiosk je izvan mreže. Ono što sada napravite sprema se na ovom kiosku i još nije potvrđeno.",
+        "stateQueued": "Kiosk je izvan mreže. To uključuje registracije spremljene na ovom kiosku koje još nisu potvrđene."
       },
       "pairing": {
         "codeDescription": "Kod vrijedi jednokratno i istječe 10 minuta nakon izdavanja.",
@@ -201,6 +209,20 @@
         "rateLimited": "Previše pokušaja unosa PIN-a na ovom kiosku. Pokušajte ponovno za {seconds} sekundi.",
         "submit": "U redu",
         "wrong": "Taj PIN nije točan. Pokušajte ponovno."
+      },
+      "queue": {
+        "dismiss": "Odbaci",
+        "reason": {
+          "contact": "Zadnje povezivanje kioska nije se moglo potvrditi.",
+          "kiosk": "Kiosk u to vrijeme više nije bio uparen.",
+          "locked": "PIN je bio zaključan.",
+          "notAssigned": "Zaposlenik se ne može evidentirati na ovom kiosku.",
+          "other": "Obratite se svojem voditelju.",
+          "pin": "PIN nije prihvaćen.",
+          "time": "Njegovo vrijeme nije se moglo prihvatiti."
+        },
+        "refused": "{name}: {action} u {time}, spremljeno dok je uređaj bio izvan mreže, nije prihvaćeno. {reason}",
+        "title": "Izvanmrežne registracije nisu prihvaćene"
       },
       "refusal": {
         "alreadyClockedIn": "Već ste prijavljeni.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Nedostaju podaci o vožnji",
       "duration": "Trajanje",
       "emptyState": "Nema pronađenih unosa vremena za ovaj tjedan.",
+      "missingTask": "Nedostaje zadatak",
+      "missingTaskHint": "Ovaj projekt zahtijeva zadatak: dodajte ga ovom unosu u kalendaru.",
       "recordedLocalTime": "Zabilježeno lokalno vrijeme",
       "rowActions": "Radnje nad unosom radnog vremena",
       "title": "Unosi vremena",
       "viewCalendar": "Prikaži kalendar"
     },
     "taskPicker": {
+      "choose": "Odaberite zadatak",
       "doneTask": "{name} (dovršeno)",
       "empty": "Zadatak nije pronađen",
       "label": "Zadatak",
       "none": "Nema zadatka",
+      "requiredLabel": "Zadatak (obavezno)",
       "search": "Pretraži zadatke…"
     },
     "timeline": {

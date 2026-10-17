@@ -299,6 +299,8 @@
         "estimateProgress": "{booked}h su {estimate}h ({percent})",
         "hours": "Ore",
         "hoursValue": "{hours}h",
+        "missingTaskCount": "{count} senza attività",
+        "missingTaskHint": "Prenotazioni per questo progetto pervenute senza l'attività richiesta. Aggiungi un'attività a ciascuna prenotazione nel calendario.",
         "noTask": "Nessuna attività",
         "noTime": "Non sono state registrate ore per questo progetto in questo periodo",
         "share": "Condividi",

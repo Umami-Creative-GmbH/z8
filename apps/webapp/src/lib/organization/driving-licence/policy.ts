@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
+import { member, user } from "@/db/auth-schema";
 import {
 	drivingLicenceParticipant,
 	drivingLicencePolicy,
@@ -122,8 +122,7 @@ export async function listDrivingLicenceEmployees(organizationId: string) {
 	return db
 		.select({
 			id: employee.id,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
+			name: user.name,
 		})
 		.from(employee)
 		.innerJoin(
@@ -134,6 +133,7 @@ export async function listDrivingLicenceEmployees(organizationId: string) {
 				eq(member.status, "approved"),
 			),
 		)
+		.innerJoin(user, eq(user.id, employee.userId))
 		.where(
 			and(
 				eq(employee.organizationId, organizationId),

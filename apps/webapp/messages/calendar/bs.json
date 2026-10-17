@@ -329,6 +329,7 @@
       "duration": "Trajanje",
       "editedBy": "Uredio/la",
       "employee": "Zaposlenik",
+      "missingTask": "Nedostaje zadatak. Ovaj projekat ga zahtijeva: uredite rezervaciju da biste ga dodali.",
       "notes": "Bilješke",
       "pendingApproval": "Čeka odobrenje",
       "pendingApprovalDescription": "Ovaj radni period čeka odobrenje menadžera. Zabilježeno vrijeme se može promijeniti ako bude odbijeno.",
@@ -517,7 +518,9 @@
     },
     "workPeriod": {
       "billable": "Naplativo",
-      "editedBy": "(uredio/la {name} dana {date})"
+      "editedBy": "(uredio/la {name} dana {date})",
+      "missingTask": "Nedostaje zadatak",
+      "missingTaskHint": "Nedostaje zadatak: dodajte zadatak"
     },
     "workStatus": {
       "overRequirement": "preko zahtjeva",

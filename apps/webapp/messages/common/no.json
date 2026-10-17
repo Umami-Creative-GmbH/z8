@@ -227,6 +227,7 @@
     "duplicate": "Dupliser",
     "durationMinutes": "{count} min",
     "edit": "Rediger",
+    "employees": "Ansatte",
     "enabled": "Aktivert",
     "error": "Feil",
     "error-occurred": "Det oppsto en feil",
@@ -318,6 +319,7 @@
     "name": "Navn",
     "new": "Ny",
     "next": "Neste",
+    "no": "Nei",
     "notApplicable": "N/A",
     "not-available": "Ikke tilgjengelig",
     "notifications": {
@@ -382,6 +384,7 @@
     "removing": "Fjerner...",
     "reset": "Tilbakestill",
     "retry": "Prøv på nytt",
+    "revoke": "Tilbakekall",
     "save": "Lagre",
     "saveChanges": "Lagre endringer",
     "saving": "Lagrer...",
@@ -407,6 +410,7 @@
         "title": "Oppdatering tilgjengelig"
       }
     },
+    "teams": "Team",
     "timeInput": {
       "openTimePicker": "Åpne tidsvelger",
       "switchPeriod": "Bytt til {period}"
@@ -533,7 +537,277 @@
         "title": "Kjøretøybruk",
         "vehiclesTitle": "Organisasjonskjøretøy"
       }
-    }
+    },
+    "yes": "Ja"
+  },
+  "drivingLicence": {
+    "activate": "Aktiver førerkortkontroll",
+    "activationHelp": "Registrering gir ikke kjøretillatelse. En autorisert kontrollør må først kontrollere det originale førerkortet.",
+    "applyingInterval": "Bruker…",
+    "applyInterval": "Bruk intervallendring",
+    "check": {
+      "attestations": "Personlig kontroll og erklæringer",
+      "chooseClasses": "Velg klassene du faktisk kontrollerte.",
+      "classes": "Klasser som faktisk ble kontrollert",
+      "classExpiry": "Klassens utløpsdato (hvis aktuelt)",
+      "documentDates": "Datoer på originaldokument",
+      "employeeDeclaration": "Den ansatte ga personlig erklæringen vist ovenfor under denne kontrollen; jeg bekrefter denne erklæringen.",
+      "expiryDate": "Dokumentets utløpsdato",
+      "failureScope": "Omfang av en mislykket eller uavklart kontroll",
+      "identity": "Jeg bekreftet at originaldokumentet tilhører denne ansatte.",
+      "issueDate": "Dokumentets utstedelsesdato",
+      "original": "Jeg kontrollerte det originale førerkortet personlig i den ansattes nærvær.",
+      "privacy": "Registrer kun dokumentdatoer, kontrollerte klasser og nødvendige kjørebegrensninger. Ikke skriv inn førerkortnummer, adresse, medisinske forklaringer eller personlig bakgrunn.",
+      "restrictions": "Nødvendige kjørebegrensninger",
+      "result": "Resultat",
+      "saving": "Registrerer kontroll…",
+      "scopeClasses": "Kun de berørte kontrollerte klassene",
+      "scopeDocument": "Alle tillatelser basert på dokumentet",
+      "scopePerson": "All kjøretillatelse for den ansatte",
+      "submit": "Registrer originalkontroll",
+      "suspensionNotice": "En vellykket ny kontroll gjenoppretter ikke automatisk en suspendert tillatelse. En ny kontroll og en eksplisitt gjenopprettingsbeslutning kreves.",
+      "title": "Kontroller {name}s originale førerkort",
+      "verifier": "Jeg bekrefter at de registrerte faktaene og individuelle klasseresultatene gjenspeiler min kontroll."
+    },
+    "class": {
+      "active": "Autorisert",
+      "ended": "Avsluttet",
+      "overdue": "Rutinekontroll er forfalt. Dette er en organisatorisk suspensjon, ikke en erklæring om at den juridiske førerretten er inndratt.",
+      "recheck": "En ny originalkontroll og eksplisitt gjenoppretting kreves.",
+      "restrictions": "Kjørebegrensninger: {restrictions}",
+      "suspended": "Suspendert",
+      "validThrough": "Gyldig til og med {date} ({timezone})"
+    },
+    "declaration": {
+      "text": "Jeg bekrefter at ingen kjente kjøreforbud, inndragelser eller andre hindringer forhindrer den tiltenkte kjøringen, og at jeg oppfyller gjeldende kjørebegrensninger."
+    },
+    "delivery": {
+      "uncertain": "Valgfrie påminnelser på e-post til deg har et usikkert leveringsresultat ({count}). De vil ikke bli sendt på nytt automatisk. Påminnelsene dine i appen er fortsatt tilgjengelige; e-postlevering bekrefter ikke at de er lest."
+    },
+    "earlierLimit": "Tidligere dokument-/klassegrense",
+    "enroll": "Registrer",
+    "enrollError": "Den ansatte kunne ikke registreres. Aktiver retningslinjen først og kontroller tilgangen din.",
+    "enrollmentHelp": "Registrer ansatte som skal kjøre. Kjøretøytildelinger og tidligere kjøretøybruk gir aldri autorisasjon.",
+    "enrollmentTitle": "Tiltenkte sjåfører",
+    "enrollName": "Registrer {name}",
+    "evidence": {
+      "confirmation": "Kontrollørbekreftelse registrert med retningslinjeversjon {version}; tidsfrister bruker {timezone}.",
+      "declarationConfirmed": "Den ansatte avga egenerklæringen personlig; kontrolløren attesterte den på kontrolltidspunktet.",
+      "declarationUnconfirmed": "Den ansattes egenerklæring kunne ikke bekreftes.",
+      "document": "Dokument utstedt {issued}; utløper {expiry}",
+      "empty": "Ingen originalkontroll er fullført.",
+      "originalConfirmed": "Originalen er personlig kontrollert og den ansattes identitet er bekreftet.",
+      "originalUnconfirmed": "Originalkontroll eller den ansattes identitet kunne ikke bekreftes.",
+      "title": "Dokumentasjon på originalkontroll",
+      "verifier": "Originalkontroll registrert av {name}"
+    },
+    "history": {
+      "allClasses": "Alle klasser",
+      "apply": "Bruk periode",
+      "authorized": "Autorisasjon innvilget",
+      "chooseOutcome": "Velg resultat",
+      "class": "Kontrollert klasse",
+      "classExpired": "Klasse utløpt",
+      "classExpiry": "Utløpsdato for klasse",
+      "classRestrictions": "Kjørebegrensninger",
+      "classResult": "Resultat for kontrollert klasse",
+      "context": "Kontekst utenfor valgt periode",
+      "decision": "Autorisasjonsbeslutning",
+      "declarationConfirmed": "Den ansattes egenerklæring bekreftet ved originalkontroll",
+      "declarationUnconfirmed": "Den ansattes egenerklæring ikke bekreftet",
+      "documentExpired": "Dokument utløpt",
+      "documentExpiry": "Dokumentets utløpsdato",
+      "documentImpediment": "Dokumentomfattende hindring",
+      "documentIssued": "Dokumentets utstedelsesdato",
+      "downloadPdf": "Last ned dokumentasjons-PDF",
+      "employmentEnded": "Arbeidsforhold avsluttet",
+      "empty": "Ingen kontroller eller autorisasjonsbeslutninger i denne perioden.",
+      "ended": "Kjøreautorisasjon opphørt",
+      "evidenceCorrected": "Korrigert dokumentasjon krever en ny kontroll og uttrykkelig gjenoppretting",
+      "failed": "Kontrollert klasse ikke godkjent",
+      "field": "Korrigert felt",
+      "from": "Fra-dato (UTC)",
+      "globalSuspension": "All kjøreautorisasjon suspendert",
+      "help": "Opprinnelige bekreftelser, daterte tillegg og gjeldende autorisasjonsbeslutninger holdes atskilt. Tidligere dokumentasjon som er nødvendig for å forstå den valgte perioden, er merket som kontekst. Alle hendelsestidspunkter og periodebegrensninger nedenfor bruker UTC.",
+      "impedimentReported": "Kjørehindring rapportert",
+      "impedimentResolved": "Rapportert hindring uttrykkelig løst",
+      "inconclusive": "Kontrollert klasse uavklart",
+      "linkedOriginal": "Tilknyttet originalkontroll: {date}",
+      "loading": "Laster inn historikk …",
+      "minimalEvidence": "Registrer kun nødvendig kjøredokumentasjon. Ikke oppgi dokumentnumre, medisinske forklaringer eller personlig bakgrunn.",
+      "missingDetail": "Manglende detalj",
+      "none": "Ingen registrert",
+      "openSupplement": "Suppler opprinnelig kontroll {date}",
+      "original": "Opprinnelig kontroll og bekreftelse",
+      "originalConfirmed": "Original og identitet bekreftet",
+      "originalUnconfirmed": "Original eller identitet ikke bekreftet",
+      "overdue": "Rutinekontroll forfalt",
+      "personImpediment": "Personomfattende hindring",
+      "policyContext": "Retningslinjeversjon {version}; intervall {months} måneder",
+      "policyIntervalChanged": "Autorisasjonsfrist endret av intervallretningslinje",
+      "policyRecalculated": "Autorisasjonsfrist omberegnet i henhold til retningslinje",
+      "reason": "Årsak til supplement",
+      "recorded": "Registrert {date}",
+      "recordingError": "Registreringsfeil",
+      "reinstated": "Autorisasjon eksplisitt gjenopprettet etter en ny kontroll",
+      "save": "Lagre supplement",
+      "saveError": "Supplementet kunne ikke lagres. Kontroller ditt gjeldende ansvarsområde og korrigeringsdetaljer.",
+      "snapshot": "Retningslinje {version}; intervall {months} måneder; tidssone for frist {timezone}",
+      "supplementBy": "Supplement av {name}",
+      "supplementHelp": "Dette legger til en datert korreksjon med din identitet. Den opprinnelige bekreftelsen forblir uendret. Tidligere grenser, mislykkede utfall og nye restriksjoner suspenderer berørt gjeldende klarering; et supplement fornyer eller gjenoppretter aldri autorisasjon.",
+      "supplementTitle": "Suppler opprinnelig kontroll {date}",
+      "suspended": "Autorisasjon suspendert",
+      "title": "Kontroll- og autorisasjonshistorikk",
+      "to": "Før dato (UTC)",
+      "unavailable": "Historikken er utilgjengelig. Kontroller perioden og din gjeldende tilgang.",
+      "value": "Korrigert verdi",
+      "verifierConfirmation": "Kontrollørbekreftelse registrert på tidspunktet for den opprinnelige kontrollen"
+    },
+    "impediment": {
+      "newCheckRequired": "Registrer en ny vellykket originalkontroll for de suspenderte klassene før gjenoppretting.",
+      "reinstate": "Gjenopprett valgte klasser",
+      "reinstated": "De valgte klassene ble eksplisitt gjenopprettet.",
+      "reinstateFailed": "Gjenoppretting ble avvist. Oppdater og gå gjennom gjeldende oppføring, ditt ansvarsområde og en ny originalkontroll.",
+      "reinstateHelp": "Registrer først en ny personlig originalkontroll etter suspensjonen. Fastslå at enhver hindring er løst; undersøk eventuell nødvendig dokumentasjon utenfor Z8. Å kun se førerkortet kan være utilstrekkelig. Bare de valgte, vellykket kontrollerte klassene vil bli gjenopprettet.",
+      "reinstateTitle": "Gjenopprett kjøreautorisasjon eksplisitt",
+      "reinstating": "Lagrer gjenoppretting…",
+      "report": "Meld fra om at jeg ikke kan kjøre",
+      "reported": "Alle dine klasseautorisasjoner er suspendert. Kontakt din ansvarlige kontrollør for en ny originalkontroll og eksplisitt gjenoppretting etter at hindringen er løst.",
+      "reportFailed": "Meldingen kunne ikke lagres. Prøv igjen eller kontakt din ansvarlige kontrollør umiddelbart.",
+      "reportHelp": "Meld fra om manglende kjøreevne. Alle klasseautorisasjoner suspenderes umiddelbart. Du trenger ikke å oppgi personlige årsaker.",
+      "reporting": "Lagrer melding…",
+      "resolutionConfirmation": "Jeg har fastslått at alle personomfattende, dokumentomfattende og rapporterte hindringer er løst, undersøkt nødvendig dokumentasjon utenfor Z8, og autoriserer eksplisitt de valgte klassene på nytt.",
+      "selectClasses": "Klasser som skal gjenopprettes fra den nyeste originalkontrollen",
+      "title": "Ikke i stand til å kjøre?",
+      "unresolvedReport": "En personomfattende hindring rapportert av en ansatt krever fortsatt løsning."
+    },
+    "interval": "Intervall for rutinekontroll (måneder)",
+    "intervalAnchorHelp": "Beregnet fra hver klasses siste vellykkede kontroll.",
+    "intervalApplied": "Intervall tatt i bruk. Eksisterende suspensjoner forblir gjeldende.",
+    "intervalChangeHelp": "Forhåndsvis hver klasses omberegnede datoer før du tar dem i bruk. Tidligere dokument- og klassegrenser gjelder fortsatt. Forlengelse av intervallet gjenoppretter aldri en suspendert autorisasjon.",
+    "intervalChangeTitle": "Endre rutineintervallet",
+    "intervalHelp": "Hver kontrollerte klasse bruker sin egen siste vellykkede kontroll som anker for rutinekontrollen.",
+    "intervalImpact": "Intervallpåvirkning",
+    "intervalImpactHelp": "Gå gjennom den nye rutinedatoen og den tidligere gjeldende grensen for hver berørte klasse. Datoer bruker den oppgitte kalendertidssonen.",
+    "intervalPreviewError": "Kunne ikke laste inn konsekvensene. Sjekk tilgangen din og velg et intervall fra 1 til 120 måneder.",
+    "intervalStale": "Retningslinjen eller kjøretillatelsen er endret, eller tilgangen din er utilgjengelig. Forhåndsvis gjeldende konsekvenser på nytt før du tar dem i bruk.",
+    "justification": "Begrunnelse for oppbevaring",
+    "justificationHelp": "Forklar hvorfor denne avgrensede perioden er nødvendig (minst 10 tegn). Ikke oppgi private eller medisinske opplysninger.",
+    "loadError": "Kunne ikke laste inn førerkortkontroll. Sjekk organisasjonstilgangen din.",
+    "myDescription": "Se status for førerkortkontroll",
+    "myTitle": "Min kjøretillatelse",
+    "newInterval": "Nytt rutineintervall (måneder)",
+    "newlyOverdue": "Nylig forfalt – vil bli suspendert",
+    "newRoutineDate": "Neste rutinekontroll",
+    "noEmployeeRecord": "Ingen førerkortoppføring for ansatte er tilgjengelig i denne organisasjonen.",
+    "noEmployees": "Det er ingen aktive ansatte å registrere.",
+    "noIntervalClasses": "Ingen eksisterende klassetillatelser krever omberegning.",
+    "notChecked": "Ikke kontrollert ennå – ingen kjøretillatelse",
+    "notEnrolled": "Ikke registrert – ingen kjøretillatelse",
+    "operational": {
+      "advisory": "Kjøretillatelse",
+      "loading": "Laster inn kjøretillatelse …",
+      "noEmployees": "Ingen matchende ansatte.",
+      "recordingHelp": "Du kan alltid registrere arbeidstid og faktisk kjøretøybruk. Å velge et kjøretøy gir ingen kjøretillatelse; kontrollerte førerkortklasser fastslår ikke egnethet for alle kjøretøy.",
+      "refresh": "Oppdater kjørestatus",
+      "search": "Finn ansatt",
+      "searchHelp": "Opptil 50 ansatte vises. Avgrens søket for å finne en annen ansatt. Denne visningen inneholder ingen kontrolloppføringer.",
+      "title": "Kjørestatus for planlegging",
+      "unavailable": "Status for kjøretillatelse er utilgjengelig."
+    },
+    "policyIntro": "Kontroll av førerkortoriginaler med Tyskland først. Velg rutineintervall og begrunn en tidsbegrenset oppbevaringsperiode for dokumentasjon før aktivering.",
+    "policyTitle": "Organisasjonens retningslinje",
+    "previewingInterval": "Laster inn konsekvenser …",
+    "previewInterval": "Forhåndsvis intervallkonsekvenser",
+    "reminders": "Varslingsdager i forkant",
+    "remindersHelp": "Kommaseparerte hele dager før en frist, fra 0 til 365. De opprinnelige forslagene er 30 og 7 dager.",
+    "result": {
+      "inconclusive": "Uavklart",
+      "successful": "Vellykket",
+      "unsuccessful": "Mislykket"
+    },
+    "retention": "Oppbevaringsperiode (måneder)",
+    "retention.case": "Referanse til spesifikk juridisk sak",
+    "retention.check": "Kontrolloppføring",
+    "retention.choose": "Velg en oppbevart oppføring",
+    "retention.cleaning": "Sjekker forfalte oppføringer …",
+    "retention.cleanup": "Kjør opprydding av forfalt dokumentasjon",
+    "retention.confirmDelete": "Slett forfalt dokumentasjon",
+    "retention.confirmDescription": "Dette sletter dokumentasjon permanent der oppbevaringsperioden er utløpt. Gjeldende aktive autorisasjoner og sperringer knyttet til juridiske saker forblir beskyttet. Slettede originaler og vedlegg kan ikke gjenopprettes via applikasjonen.",
+    "retention.confirmTitle": "Slette forfalt dokumentasjon?",
+    "retention.deadline": "Oppbevaring startet {start}. Kan slettes fra {end}.",
+    "retention.empty": "Ingen oppbevarte kontrolloppføringer.",
+    "retention.error": "Oppbevaringsadministrasjon kunne ikke fullføres. Oppdater og sjekk tilgangen din og saksdetaljene.",
+    "retention.help": "Oppbevaring starter når en kontroll ikke lenger understøtter en aktiv førerkortklasse. En sperring krever en spesifikk juridisk sak, beskytter også relatert rapportdokumentasjon fra samme ansettelsesperiode, og må oppheves når bevaring ikke lenger er nødvendig. Disse kontrollene gir ikke innsynstilgang. Ikke oppgi medisinske detaljer eller personlig bakgrunnsinformasjon.",
+    "retentionHelp": "Påkrevd for aktivering: 1–120 måneder etter at bevis ikke lenger støtter noen aktiv klasseautorisasjon. Behold en begrunnet, tidsbegrenset periode når du deaktiverer førerkortkontroll; opprydding fortsetter.",
+    "retention.holdDetails": "Sak {case}: {reason}. Lagt inn av {actor} {time}.",
+    "retention.loading": "Laster inn oppbevarte oppføringer …",
+    "retention.place": "Opprett sperring for en spesifikk sak",
+    "retention.protected": "Beskyttet av en aktiv klassetillatelse",
+    "retention.reason": "Hvorfor denne saken krever bevaring",
+    "retention.record": "{employee} · Kontroll {date}",
+    "retention.release": "Opphev sperre",
+    "retention.released": "Opphevet av {actor} kl. {time}: {reason}",
+    "retention.releaseError": "Sperren kunne ikke oppheves. Kontroller tilgangen din og årsaken til oppheving.",
+    "retention.releaseReason": "Hvorfor bevaring ikke lenger er nødvendig",
+    "retention.report": "{employee} · Rapport {date}",
+    "retention.reportHeld": "Beskyttet av sak {case} på relatert kontrollbevis fra denne ansettelsesperioden. Opphev sperren på denne kontrollen når bevaring ikke lenger er nødvendig.",
+    "retention.reportProtected": "Beskyttet så lenge den gjeldende rapporten er uløst eller løsningskontrollen støtter aktiv autorisasjon.",
+    "retention.reportsTitle": "Oppbevaring av hindringsrapport",
+    "retentionRequiredError": "Behold en tidsbegrenset, begrunnet oppbevaringsperiode når du deaktiverer førerkortkontroll. Eksisterende bevis forblir underlagt opprydding.",
+    "retention.run": "{time}: {deleted} slettet, {held} sperret, {protected} beskyttet. Aktør: {actor}",
+    "retention.runs": "Nylige oppryddingsresultater",
+    "retention.saveError": "Sperren kunne ikke lagres. Kontroller saksdetaljene og tilgangen din.",
+    "retention.scheduled": "Planlagt behandling",
+    "retention.title": "Oppbevaring av bevis og juridiske sperrer",
+    "save": "Lagre retningslinje",
+    "saved": "Retningslinje lagret",
+    "saveError": "Retningslinjen kunne ikke lagres. Kontroller intervall, tidssone, påminnelser og begrunnet oppbevaringsperiode.",
+    "saving": "Lagrer…",
+    "settingsDescription": "Konfigurer originalkontroller og registrer tiltenkte sjåfører",
+    "status": {
+      "active": "Kjøretillatelse aktiv",
+      "ended": "Kjøretillatelse opphørt",
+      "explanation": "Organisasjonens kjøretillatelse dekker de oppførte klassene og begrensningene. Den fastslår ikke egnethet for ethvert kjøretøy. Du kan fortsette å registrere arbeidstid og faktisk bruk av kjøretøy.",
+      "partial": "Enkelte førerkortklasser er suspendert",
+      "suspended": "Kjøretillatelse suspendert"
+    },
+    "staysCurrent": "Forblir gjeldende",
+    "staysSuspended": "Forblir suspendert",
+    "subtitle": "Konfigurer originalkontroller og registrer tiltenkte sjåfører. Kjøretillatelse er spesifikk for kontrollerte klasser og begrensninger.",
+    "tasks": {
+      "assign": "Tildel ansvar",
+      "assigned": "Ansvar tildelt",
+      "assignmentBoundary": "Denne oppgaven gir ingen inspeksjonsrettigheter og forlenger ingen frist.",
+      "class": "Klasse {classCode}",
+      "complete": "Merk personlig påminnelse som fullført",
+      "completeError": "Kunne ikke fullføre denne oppgaven. Kontroller ditt nåværende kontrolløransvar.",
+      "completing": "Fullfører…",
+      "deadline": "Originalkontroll forfaller",
+      "directUnavailable": "Direkte ansattvarsling var ikke tilgjengelig. Minn denne ansatte på personlig.",
+      "initialCheck": "Innledende originalkontroll kreves",
+      "loadError": "Kunne ikke laste inn førerkortoppgaver. Kontroller organisasjonstilgangen din.",
+      "loading": "Laster inn førerkortoppgaver…",
+      "noDeliveryReceipt": "Fullføring av oppgaven bekrefter ikke direkte levering eller at den ansatte har lest varselet. Ingen frist forlenges.",
+      "noVerifier": "Ingen tilgjengelig kontrollør har ansvar for denne ansatte.",
+      "personalCompleted": "Personlig påminnelse fullført",
+      "personalTitle": "Personlige påminnelsesoppgaver",
+      "reassignmentTitle": "Oppgaver for kontrolløransvar",
+      "refresh": "Kontroller ansvar på nytt",
+      "suspension": "Kjøretillatelse suspendert",
+      "validThrough": "Gyldig til og med {date} i kontrollens lagrede tidssone for frist"
+    },
+    "timezone": "Fast tidssone for kalender",
+    "title": "Førerkortkontroll",
+    "unnamedEmployee": "Ansatt",
+    "worklist": {
+      "help": "Bare registrerte ansatte innenfor ditt nåværende kontrollansvar vises her.",
+      "open": "Kontroller {name}",
+      "title": "Arbeidslisten din for opprinnelig kontroll",
+      "viewEnded": "Vis avsluttet oppføring for {name}"
+    },
+    "zoneFixedError": "Kalenderens tidssone er fast. Eksisterende frister må beholde sin opprinnelige betydning.",
+    "zoneHelp": "Grenser med bare dato inkluderer hele den viste dagen i denne tidssonen. Den fastsettes ved første lagring; seerens tidssone endrer aldri en frist."
   },
   "employeeSelect": {
     "countSelected": "{count} ansatte valgt",
@@ -617,6 +891,101 @@
     "setup": "Laster inn oppsett",
     "teamAbsences": "Laster inn tabell for teamfravær",
     "workerQueue": "Laster inn arbeidskø"
+  },
+  "mfa": {
+    "banner": {
+      "action": "Gjennomgå krav og verifiser",
+      "requirement": "Denne organisasjonen krever verifisert autentisering fra {deadline}."
+    },
+    "code": {
+      "label": "Autentiseringskode",
+      "verify": "Verifiser autentiseringsmetode"
+    },
+    "continue": "Fortsett etter verifisering",
+    "coverage": {
+      "access": "Siste kvalifiserende organisasjonstilgang",
+      "deadline": "Tildelt frist",
+      "enforced": "Håndhevet",
+      "failed": "Kunne ikke laste inn organisasjonens autentiseringsdekning",
+      "kiosk": "Kun kiosk · utenfor omfang",
+      "loading": "Laster inn organisasjonsautentisering…",
+      "member": "Medlem",
+      "methods": "Registrerte metoder",
+      "none": "Ingen",
+      "title": "Medlemsregistrering og organisasjonsverifisering",
+      "unproven": "Ingen kvalifiserende tilgang registrert"
+    },
+    "deadline": {
+      "enforced": "En autentiseringsmetode må verifiseres før organisasjonstilgang.",
+      "grace": "Registreringsvindu pågår. Verifiser en autentiseringsmetode før denne fristen.",
+      "required": "Verifisering kreves nå"
+    },
+    "enrollment": {
+      "title": "Registrer eller erstatt en autentiseringsmetode",
+      "warning": "Å legge til eller erstatte en faktor krever verifisering innen fem minutter. Verifiser erstatningen før du fjerner den gamle faktoren. Det er tillatt å tilbakekalle den siste faktoren din, og dette kan blokkere tilgangen til organisasjonene oppført ovenfor; det gir ikke et nytt registreringsvindu."
+    },
+    "organization": {
+      "select": "Velg en annen organisasjon"
+    },
+    "page": {
+      "context": "Personlig registrering, gjenoppretting og organisasjonsvalg forblir tilgjengelig mens organisasjonstilgang krever verifisering.",
+      "title": "Sikkerhetsverifisering"
+    },
+    "passkey": {
+      "verify": "Verifiser med en passnøkkel"
+    },
+    "password": {
+      "failed": "Passordverifisering mislyktes",
+      "label": "Nåværende passord",
+      "verified": "Passord verifisert. Du kan registrere din første autentiseringsmetode, eller verifisere en eksisterende autentiseringsmetode eller reservekode nedenfor.",
+      "verify": "Verifiser passord"
+    },
+    "policy": {
+      "activation": "Endringer krever eier-/administratorrettigheter og godkjent autentisering innen fem minutter. Sørg for gjenoppretting og fortrinnsvis en annen administrator som har påvist en fungerende påloggingsvei; registrering alene beviser ikke dette.",
+      "days": "{days} dager (24 timer hver)",
+      "description": "Krev passord pluss TOTP, eller en passnøkkel verifisert med PIN/biometri, for alle menneskelige medlemmers lokale organisasjonstilgang. Synkroniserte passnøkler kvalifiserer. Denne policyen er tilgjengelig på alle abonnementer.",
+      "enable": "Krev en autentiseringsmetode for lokale pålogginger",
+      "failed": "Policyoppdatering avvist",
+      "grace": "Registreringsvindu for fremtidige tildelinger",
+      "lockoutAck": "Hvis ingen annen administrator har en bekreftet vei, godtar jeg at tap av enhver autentiserings- og gjenopprettingsvei gjør at denne organisasjonen forblir låst, uten mulighet for omgåelse via administrator eller brukerstøtte.",
+      "lockoutLabel": "Godta risikoen for å miste enhver autentiseringsvei for administrator",
+      "recoveryAck": "Jeg har verifisert påloggingsveien min og ordnet gjenoppretting.",
+      "save": "Lagre policy",
+      "saving": "Lagrer…",
+      "sso": "Verifisert pålogging gjennom denne organisasjonens nåværende SSO-leverandør er utenfor den lokale MFA-grunnlinjen. Organisasjonen håndhever MFA hos sin identitetsleverandør; Z8 verifiserer ikke IdP MFA-sikring. Krav om SSO forblir atskilt og har ingen lokal reserve.",
+      "tab": "Lokal MFA",
+      "tabDescription": "Krev bekreftet lokal autentisering med kontrollerte registreringsfrister",
+      "title": "Organisasjonsautentisering",
+      "verify": "Bekreft autentiseringen din før du endrer denne policyen",
+      "windows": "Eksisterende frister flyttes aldri. Deaktivering pauser håndhevingen; reaktivering gjenoppretter tildelte frister, inkludert utløpte. Det finnes ingen individuelle unntak."
+    },
+    "recovery": {
+      "action": "Gjenopprett med reservekode",
+      "description": "For gjenoppretting må du bekrefte passordet ditt ovenfor og deretter angi én ubrukt reservekode. Dette fjerner tidligere lokal bekreftelse på tvers av organisasjonene dine.",
+      "label": "Reservekode",
+      "lockout": "Hvis en eneadministrator mister alle autentiserings- og gjenopprettingsmetoder, forblir organisasjonen låst. Det finnes ingen overstyring for administrator eller kundestøtte.",
+      "success": "Gjenoppretting tillater kun erstatningsregistrering. Bekreft en autentikator før du går tilbake til organisasjonen din."
+    },
+    "security": {
+      "factorWarning": "Fjerning av en faktor kan blokkere tilgangen til organisasjoner som krever den. Bekreft en erstatning først; fjerning av den siste faktoren gir ingen ny respittid.",
+      "link": "Bekreft autentisering og se over organisasjonskravene",
+      "policyLink": "Policy for organisasjonsautentisering (eiere/administratorer)"
+    },
+    "signout": "Logg ut",
+    "social": {
+      "verify": "Bekreft eksisterende pålogging med {provider}"
+    },
+    "sso": {
+      "failed": "Organisasjons-SSO kunne ikke startes",
+      "verify": "Bekreft med organisasjons-SSO"
+    },
+    "verification": {
+      "failed": "Bekreftelsen mislyktes"
+    },
+    "verify": {
+      "description": "Bekreft en autentikator for å gå tilbake til organisasjonen din. Registrering og godkjenning av husket enhet alene oppfyller ikke kravet.",
+      "title": "Bekreft påloggingen din"
+    }
   },
   "nav": {
     "absences": "Fravær",
@@ -812,12 +1181,28 @@
         "message": "{employeeName} ba om et unntak for {exceptionType, select, rest_period {hvileperiode} overtime_daily {daglig overtid} overtime_weekly {ukentlig overtid} overtime_monthly {månedlig overtid} other {samsvar}}: \"{reason}\"",
         "title": "Samsvarsunntak forespurt"
       },
+      "drivingAuthorizationSuspended": {
+        "message": "Kjøretillatelse for {employeeName} ({classes}) er suspendert. En ny kontroll og eksplisitt gjenoppretting kreves før kjøring.",
+        "title": "Kjøretillatelse suspendert"
+      },
       "drivingDetailsMissingReminderMany": {
         "message": "{count} arbeidsperioder fra {dates} mangler kjøretøy eller kilometerstand. Legg dem til i arbeidsperiodene."
       },
       "drivingDetailsMissingReminder": {
         "message": "Arbeidet ditt {date} mangler kjøretøy eller kilometerstand. Legg dem til i arbeidsperioden.",
         "title": "Legg til kjøredetaljer"
+      },
+      "drivingLicenceAssignment": {
+        "message": "Finn en tilgjengelig kontrollør for {employeeName}. Denne oppgaven gir ingen inspeksjonsrettigheter og forlenger ingen frister.",
+        "title": "Tildel ansvar som førerkortkontrollør"
+      },
+      "drivingLicencePersonalTask": {
+        "message": "Minn {employeeName} på å avtale en kontroll av originalt førerkort. Direkte varsling til den ansatte var ikke tilgjengelig. Fullføring av oppgaven er ikke direkte levering eller lesing.",
+        "title": "Minn den ansatte på personlig"
+      },
+      "drivingLicenceReminder": {
+        "message": "Avtal en kontroll av originalt førerkort for {employeeName}, klasse {classes}, innen {deadline}.",
+        "title": "Førerkortkontroll forfaller"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Godkjenningsoppgaver trenger en stedfortreder (fratredelse gjelder fra {cutoff}, {timezone}).",
@@ -830,6 +1215,11 @@
       "forgottenClockOutReminder": {
         "message": "Vakten din var ferdig kl. {endTime} ({timezone}). Stemple ut hvis du er ferdig med å jobbe.",
         "title": "Du er fortsatt stemplet inn"
+      },
+      "kioskCommandRefused": {
+        "forwardedMessage": "En {action, select, clock_in {innstempling} clock_out {utstempling} start_break {start på pause} resume_break {retur fra pause} other {stempling}} av {employeeName} kl. {time} på kiosken {kioskName} ble ikke registrert: {reason, select, wrong_pin {PIN-koden var feil} pin_locked {kiosk-PIN-koden ble låst etter for mange feil forsøk} no_pin {det var ingen kiosk-PIN-kode å kontrollere mot} pin_unchecked {PIN-koden kunne ikke kontrolleres} kiosk_retired {kiosken ble tilbakekalt eller koblet til på nytt før den koblet til igjen} contact_unverifiable {Z8 kunne ikke bekrefte kioskens forrige tilkobling} outside_window {tidspunktet var utenfor tidsvinduet Z8 godtar} clock_untrusted {kioskklokken kunne ikke stoles på for dette} not_assigned {den ansatte er ikke tilknyttet kioskens plassering} not_adopted {organisasjonen godtar ikke frakoblede kioskstemplinger} month_closed {måneden er stengt} holiday {dagen er en helligdag uten tidsregistrering} conflict {den er i konflikt med annen registrert tid} other {Z8 kunne ikke godta det}}. Registrer tiden for vedkommende eller kontroller den med dem.",
+        "message": "Din {action, select, clock_in {innstempling} clock_out {utstempling} start_break {start på pause} resume_break {retur fra pause} other {stempling}} kl. {time} på kiosken {kioskName} ble ikke registrert: {reason, select, wrong_pin {PIN-koden var feil} pin_locked {kiosk-PIN-koden ble låst etter for mange feil forsøk} no_pin {det var ingen kiosk-PIN-kode å kontrollere mot} pin_unchecked {PIN-koden kunne ikke kontrolleres} kiosk_retired {kiosken ble tilbakekalt eller koblet til på nytt før den koblet til igjen} contact_unverifiable {Z8 kunne ikke bekrefte kioskens forrige tilkobling} outside_window {tidspunktet var utenfor tidsvinduet Z8 godtar} clock_untrusted {kioskklokken kunne ikke stoles på for dette} not_assigned {den ansatte er ikke tilknyttet kioskens plassering} not_adopted {organisasjonen godtar ikke frakoblede kioskstemplinger} month_closed {måneden er stengt} holiday {dagen er en helligdag uten tidsregistrering} conflict {den er i konflikt med annen registrert tid} other {Z8 kunne ikke godta det}}. Registrer tiden din på nytt eller be lederen din om å korrigere den.",
+        "title": "Kioskstempling ikke registrert"
       },
       "manualEntryApproved": {
         "message": "Den manuelle tidsregistreringen din ble godkjent av {approverName}.",
@@ -1250,8 +1640,11 @@
         "approval_cover_return_summary": "Avgjort av din stedfortreder",
         "approval_cover_started": "Fraværsdekning startet",
         "break_due_reminder": "Tid for pause",
+        "driving_authorization_suspended": "Kjøretillatelse suspendert",
         "driving_details_missing_reminder": "Kjøredetaljer mangler",
+        "driving_licence_reminder": "Førerkortkontroll forfaller",
         "forgotten_clock_out_reminder": "Glemt utstempling",
+        "kiosk_command_refused": "Kioskstempling ikke registrert",
         "missed_clock_in_reminder": "Manglende innstempling",
         "period_submission_decided": "Innsendte timer godkjent eller avvist",
         "period_submission_reminder": "Send inn timene dine",
@@ -1344,6 +1737,7 @@
   "personalDataExport": {
     "readme": {
       "accessAdmin": "{name} (administrator)",
+      "accessDrivingLicenceVerifiers": "Førerkortkontrollører (dine kontrollbevis og PDF-eksporter):",
       "accessExpenseExport": "eksporter dem",
       "accessExpenseOfficers": "Utgiftsansvarlige (dine godkjente reiseoppgjør og kvitteringer):",
       "accessExpenseRead": "lese godkjente rapporter",
@@ -1367,6 +1761,7 @@
         "accountAdmin": "Navnet og e-postadressen til brukerkontoen din.",
         "approvals": "Dine egne forespørsler og periodeinnsendinger, og beslutningene du har tatt om andres forespørsler.",
         "auditLog": "Revisjonsloggoppføringer om deg og oppføringer du har utført.",
+        "drivingLicence": "Førerkortkontroller, originale bekreftelser og egenerklæringer, tilordnede tillegg, klassetillatelser og deres historikk, registrering og ditt kontrolløransvar. Kun bevarte bevis; ingen førerkortskanninger, dokumentnumre eller helseopplysninger.",
         "employment": "Din ansattpost og profil, ansettelsesperioder og fratredelse, ansettelsesvilkår med timelønn og historikk, team, ledere, lokasjoner, ferdigheter, prosjekttildelinger, roller, grupper, kostnadssted og alle retningslinjer tildelt deg.",
         "integrations": "Dine kalendertilkoblinger, kalenderfeed, tilknyttede chat-kontoer og kiosk-PIN-status.",
         "notifications": "Varslingshistorikken din.",
@@ -1386,6 +1781,7 @@
         "payslip": "Lønnsslipper",
         "sickNote": "Sykmeldinger"
       },
+      "drivingLicenceRetention": "Førerkortbevis følger organisasjonens begrunnede oppbevaringsperiode for kontroller når de ikke lenger understøtter en aktiv tillatelse. En dokumentert sperre for en spesifikk rettssak utsetter sletting. Se policyen for førerkort (driving_licence), oppbevarings- og sperreposter for gjeldende kontekst; generering av en eksport forlenger ikke oppbevaringstiden for bevis i Z8.",
       "fields": {
         "absences": {
           "absences": {
@@ -1696,6 +2092,129 @@
           "updatedAt": "Når oppføringen sist ble endret.",
           "updatedBy": "Hvem som sist endret oppføringen."
         },
+        "drivingLicence": {
+          "actor_name": "Navnet på personen som utførte denne handlingen; tomt for en systemhandling eller utilgjengelig aktør.",
+          "authorization_events": {
+            "summary": "Din historikk for kjøretillatelser, inkludert hindringsrapporter, løsninger og eksplisitte gjenopprettinger."
+          },
+          "authorizations": {
+            "summary": "Dine lagrede klassespesifikke autorisasjonsposter; hendelseshistorikken forklarer endringer og ikrafttredelsestidspunkter."
+          },
+          "author_name": "Det registrerte navnet på personen som la til dette tillegget.",
+          "caseReference": "Referansen til den spesifikke rettssaken som krever bevaring av denne kontrollen.",
+          "changed_at": "Når denne versjonen av organisasjonspolicyen ble registrert, som et UTC-tidspunkt.",
+          "checked_classes": {
+            "summary": "De eksplisitt kontrollerte klassene og deres registrerte resultater, begrensninger og utløpsdatoer."
+          },
+          "check_id": "Den opprinnelige kontrollen denne klassen, dette tillegget eller denne autorisasjonen refererer til.",
+          "checks_performed": {
+            "summary": "Kontroller du har utført på andre ansatte: kun ugjennomsiktige person- og post-ID-er samt inspeksjonstidspunktet."
+          },
+          "checks": {
+            "summary": "Poster for original førerkortkontroll, med nøyaktig egenerklæring og inspeksjonsbekreftelser."
+          },
+          "class_code": "Den eksplisitt kontrollerte førerkortklassen; tomt for en hendelse som gjelder hele personen eller hele dokumentet.",
+          "class_valid_through": "Den siste kalenderdagen som dekkes av denne klassens gyldighet; tomt når ingen klasseutløpsdato ble registrert.",
+          "completedAt": "Når en kontrollør merket den personlige påminnelsen som fullført; tomt for en ufullført oppgave.",
+          "completedBy": "Navnet på personen som markerte påminnelsen som fullført; dette bekrefter ikke direkte levering eller lesebekreftelse.",
+          "controlled_at": "Når det originale førerkortet ble personlig kontrollert, som et UTC-tidspunkt.",
+          "createdAt": "Når denne oppgaven eller leveringen først ble registrert, som et UTC-tidspunkt.",
+          "deadline_timezone": "Den eksplisitte kalendertidssonen som brukes for retningslinjens fristdatoer.",
+          "declaration_text": "Den nøyaktige erklæringsteksten som ble registrert under den opprinnelige kontrollen.",
+          "document_expires_on": "Dokumentets utløpsdato, uavhengig av utløpsdato for individuelle klasser.",
+          "document_issued_on": "Dokumentets utstedelsesdato, uten klokkeslett eller tidssone.",
+          "document_valid_through": "Den siste kalenderdagen som dekkes av dokumentets gyldighet.",
+          "effective_at": "Når autorisasjonshendelsen trådte i kraft, som et UTC-tidspunkt.",
+          "emailedAtProviderSuccess": "Når leverandørsuksess ble registrert for denne e-posten. Tomt felt dekker også usikre forsøk; det beviser ikke at e-posten ikke ble sendt eller at den ble lest.",
+          "emailStateWithUncertainAttempts": "E-postleveringsstatus: venter, forsøkt (usikkert leverandørresultat; sendes aldri på nytt automatisk), sendt (leverandørsuksess registrert), undertrykt, foreldet eller utilgjengelig. Ingen status bekrefter lesing.",
+          "employee_declaration": "Hvorvidt erklæringen din ble bekreftet under kontrollen.",
+          "employee_id": "Den ugjennomsiktige ID-en til en annen ansatt hvis post du handlet på; kontrollinnholdet deres er utelatt.",
+          "employee_ids": "De ugjennomsiktige ansatt-ID-ene innenfor ditt spesifikke kontrolløromfang, kodet som en JSON-matrise.",
+          "employment_period_id": "Ansettelsesperioden dette beviset tilhører; tomt for eldre ansettelser.",
+          "enabled": "Hvorvidt den refererte retningslinjen for organisasjonskontroll var aktivert.",
+          "enrolled_at": "Når du ble registrert i organisasjonens førerkortkontroller.",
+          "expires_at": "UTC-tidspunktet når denne autorisasjonen eller kontrollørtildelingen utløper.",
+          "expiry_date": "Klassens utløpsdato registrert ved kontroll; tomt hvis ingen ble registrert.",
+          "failure_scope": "Hvorvidt en mislykket kontroll gjaldt klasser, dokumentet eller personen.",
+          "field": "Det korrigerte bevisfeltet; den opprinnelige kontrollen bevares.",
+          "granted_at": "Når kontrolløransvaret ditt ble tildelt, som et UTC-tidspunkt.",
+          "granted_by": "Navnet på personen som tildelte deg kontrolløransvar.",
+          "id": "Postens ID i appen, slik at de andre filene kan referere til den.",
+          "identity_confirmed": "Hvorvidt kontrolløren bekreftet at originalen samsvarte med identiteten din.",
+          "impedimentReports": {
+            "summary": "Dine minimale rapporter om kjørehindringer og deres eksplisitte løsning, uten medisinske forklaringer eller private årsaker."
+          },
+          "interval_months": "Antall kalendermåneder mellom rutinekontroller i henhold til denne retningslinjen.",
+          "kind": "Autorisasjonshendelsen, suspensjonen eller oppgavetypen; oppgaver er personal_reminder eller reassignment.",
+          "last_successful_at": "Når denne klassen sist besto en vellykket originalkontroll.",
+          "legalHolds": {
+            "summary": "Sakspesifikke oppbevaringssperrer på dine beholdte kontroller, inkludert tilskrivelse, oppheving og begrunnelse."
+          },
+          "notificationId": "App-varselet som er koblet til denne påminnelsen; tomt når ingen ble opprettet.",
+          "occasionKey": "Forekomsten denne påminnelsen eller oppgaven gjelder; den identifiserer ansettelsen, klassefristen eller suspensjonen uten å kopiere kontrollen.",
+          "original_inspected": "Hvorvidt kontrolløren bekreftet å ha inspisert originaldokumentet personlig.",
+          "participation": {
+            "summary": "Din registrering i organisasjonens førerkortkontroller."
+          },
+          "placedAt": "Når denne juridiske oppbevaringssperren ble iverksatt, som et UTC-tidspunkt.",
+          "placedBy": "Navnet på administratoren som iverksatte denne sakssperren.",
+          "policies": {
+            "summary": "Retningslinjeversjoner referert av kontrollene dine og autorisasjonshistorikken, inkludert oppbevaringskonteksten. Bevis følger denne oppbevaringspolicyen; denne eksporten utvider ikke oppbevaringen i applikasjonen."
+          },
+          "policy_version": "Versjonen av organisasjonens retningslinje for førerkortkontroll.",
+          "preservationReason": "Den dokumenterte årsaken til at denne spesifikke saken krever bevaring av kontrollen.",
+          "reason": "Den strukturerte årsaken til tillegget eller autorisasjonshendelsen; rapportreferanser lenker til en hendelses-ID.",
+          "recipientName": "Navnet på personen som denne påminnelsen om kontrollen din ble sendt til.",
+          "recorded_at": "Når tillegget eller hendelsen ble registrert, som et UTC-tidspunkt.",
+          "releasedAt": "Når denne sakssperren ble opphevet; tomt så lenge den forblir aktiv.",
+          "releasedBy": "Navnet på administratoren som opphevet denne sakssperren.",
+          "releaseReason": "Den dokumenterte årsaken til at denne sakssperren ble opphevet; oppheving gjenopptar vanlig policy-styrt sletting.",
+          "reminderDeliveries": {
+            "summary": "Leveringspostene for påminnelser knyttet til kontrollene dine, uten e-postadresser, transportforsøk eller lesebekreftelser."
+          },
+          "reminder_lead_days": "De konfigurerte varslingstidene for påminnelser i kalenderdager, kodet som en JSON-matrise.",
+          "reminderTasksCompleted": {
+            "summary": "Påminnelsesoppgaver du fullførte for andre ansatte, begrenset til ugjennomsiktige ID-er, oppgavetype og fullføringstidspunkt."
+          },
+          "reminderTasks": {
+            "summary": "Personlige påminnelses- og omfordelingsoppgaver knyttet til kontrollene dine, inkludert registrert fullføring; fullføring bekrefter ikke direkte levering eller lesing."
+          },
+          "reportedAt": "Når du rapporterte en personomfattende kjørehindring, som et UTC-tidspunkt.",
+          "reporterName": "Navnet på personen som rapporterte hindringen.",
+          "resolvedAt": "Når en kontrollør eksplisitt løste denne rapporten; tomt for en uløst rapport.",
+          "resolvedBy": "Navnet på kontrolløren som eksplisitt løste denne rapporten.",
+          "restrictions": "De relevante kjørebegrensningene registrert for denne klassen.",
+          "result": "Resultatet for denne kontrollerte klassen: vellykket, mislykket eller uavklart.",
+          "retention_justification": "Organisasjonens dokumenterte begrunnelse for oppbevaringsperioden for bevis.",
+          "retention_months": "Organisasjonens begrunnede oppbevaringsperiode i måneder etter at bevis ikke lenger støtter aktiv autorisasjon.",
+          "retentionStartedAtEvidence": "Når kontrollbevis opphørte å støtte aktiv autorisasjon, eller rapportbevis ble inaktivt etter løsning og endelig støtte for løsningskontroll eller ansettelsesslutt. Organisasjonens begrunnede oppbevaringsperiode løper fra dette UTC-tidspunktet; sakssperring utsetter sletting.",
+          "retention": {
+            "summary": "Oppbevaringsstartpunktet for hver oppbevarte kontroll; tomt så lenge kontrollen fortsatt støtter aktiv autorisasjon. Eksportering forlenger ikke oppbevaringstiden."
+          },
+          "revoked_at": "Når kontrolløransvaret ditt ble tilbakekalt; tomt så lenge det ikke har blitt tilbakekalt.",
+          "revoked_by": "Navnet på personen som tilbakekalte kontrolløransvaret ditt.",
+          "routine_valid_through": "Den siste kalenderdagen som dekkes av det rutinemessige kontrollintervallet.",
+          "scope": "Omfanget av en personomfattende rapport (person), eller om kontrolløransvaret ditt dekker alle ansatte eller bestemte ansatte og team.",
+          "state": "Den lagrede klassens autorisasjonsstatus (aktiv, suspendert, avsluttet) eller påminnelsesoppgavestatus (ventende, fullført, foreldet); historikk forklarer endringene.",
+          "supplements_authored": {
+            "summary": "Tillegg du har opprettet i andre ansattes oppføringer, uten disse ansattes bevisverdier."
+          },
+          "supplements": {
+            "summary": "Daterte, tilskrevne, typebestemte korrigeringer beholdt sammen med hver opprinnelige kontroll."
+          },
+          "suspended_at": "Når autorisasjonen ble suspendert, som et UTC-tidspunkt.",
+          "suspension": {
+            "summary": "Din gjeldende personomfattende eller dokumentomfattende suspensjonsoppføring for kjøreautorisasjon."
+          },
+          "team_ids": "De ugjennomsiktige team-ID-ene i ditt spesifikke kontrolløromfang, kodet som en JSON-matrise.",
+          "valid_through": "Den tidligste gjeldende siste kalenderdagen for denne klassegodkjenningen.",
+          "value": "Verdien oppgitt av dette tillegget; tomt betyr at den valgfrie klasseutløpsdatoen ble fjernet.",
+          "verifier_confirmed": "Hvorvidt kontrolløren bekreftet inspeksjonsoppføringen.",
+          "verifier_grants": {
+            "summary": "Dine egne kontrollørtildelinger, inkludert historisk og tilbakekalt ansvar."
+          },
+          "verifier_name": "Det registrerte navnet på personen som kontrollerte det opprinnelige førerkortet ditt."
+        },
         "employment": {
           "assignedLocations": {
             "city": "Lokasjonens by.",
@@ -1924,11 +2443,26 @@
             "revokedAt": "Når lenken ble slått av (UTC).",
             "summary": "Lenkene til kalenderfeeden din, som lar en kalenderapp abonnere på fraværet ditt. Selve den hemmelige lenken er aldri inkludert."
           },
+          "kioskPinEvents": {
+            "event": "failure for feil PIN-kode, success for riktig, fjernet når PIN-koden ble låst opp, tilbakestilt eller endret.",
+            "occurredAt": "Når PIN-koden ble tastet inn eller utestengelsen ble opphevet (UTC).",
+            "offline": "Hvorvidt PIN-koden ble tastet inn på en kiosk uten tilkobling og sjekket da den koblet til igjen.",
+            "summary": "Dine nylige forsøk med PIN-kode og PIN-opplåsinger på kiosk, beholdt i omtrent en uke for å avgjøre om du er utestengt etter fem feil PIN-koder på rad. Inntastede PIN-koder lagres aldri."
+          },
           "kioskPin": {
             "pinSet": "Hvorvidt en kiosk-PIN er angitt for deg.",
             "setAt": "Når PIN-koden sist ble angitt (UTC).",
             "setBy": "Hvem som angav PIN-koden.",
             "summary": "Hvorvidt du har en PIN-kode for innstempling ved en kioskterminal. Selve PIN-koden lagres aldri i lesbar form og er ikke inkludert."
+          },
+          "kioskRefusedClockings": {
+            "action": "clock_in, clock_out, start_break eller resume_break.",
+            "claimedAt": "Når du stemplet på kiosken, slik kiosken registrerte det (UTC).",
+            "kiosk": "Kiosken du stemplet på.",
+            "reason": "Hvorfor stemplingen ikke ble registrert, for eksempel wrong_pin eller kiosk_rotated.",
+            "refusedAt": "Når kiosken koblet til igjen og stemplingen ble avvist (UTC).",
+            "summary": "Stemplinger du utførte på en kiosk uten tilkobling som ikke ble registrert da kiosken koblet til igjen, og hvorfor.",
+            "timeSource": "server_anchor når kiosken tidsfestet det basert på serverens klokkeslett ved forrige tilkobling, device_clock når det var fra dens egen klokke."
           },
           "shared": {
             "isActive": "Hvorvidt tilkoblingen er i bruk."

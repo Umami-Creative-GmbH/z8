@@ -329,6 +329,7 @@
       "duration": "Duration",
       "editedBy": "Edited by",
       "employee": "Employee",
+      "missingTask": "Missing task. This project requires one: edit the booking to add it.",
       "notes": "Notes",
       "pendingApproval": "Pending Approval",
       "pendingApprovalDescription": "This work period is awaiting manager approval. The recorded times may change if rejected.",
@@ -517,7 +518,9 @@
     },
     "workPeriod": {
       "billable": "Billable",
-      "editedBy": "(edited by {name} at {date})"
+      "editedBy": "(edited by {name} at {date})",
+      "missingTask": "Missing task",
+      "missingTaskHint": "Missing task: add a task"
     },
     "workStatus": {
       "overRequirement": "over requirement",

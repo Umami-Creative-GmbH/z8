@@ -59,15 +59,16 @@ export type CrashableConnection = {
 	close(): Promise<void>;
 };
 
-export async function createLifecycleDatabaseFixture(): Promise<LifecycleDatabaseFixture> {
+export async function createLifecycleDatabaseFixture(
+	input: { organizationId?: string } = {},
+): Promise<LifecycleDatabaseFixture> {
 	const pool = integrationAdminPool();
 	const db = drizzle({ client: pool, schema: combinedSchema });
 	const organizationIds: string[] = [];
 	const userIds: string[] = [];
 	const createdAt = new Date("2026-01-01T00:00:00Z");
 
-	async function createOrganization() {
-		const id = randomUUID();
+	async function createOrganization(id: string = randomUUID()) {
 		await pool.query(
 			`insert into organization (id, name, slug, created_at) values ($1, $2, $3, $4)`,
 			[id, `Lifecycle ${id}`, `lifecycle-${id}`, createdAt],
@@ -118,7 +119,7 @@ export async function createLifecycleDatabaseFixture(): Promise<LifecycleDatabas
 		return { userId, memberId, employeeId, employmentPeriodId };
 	}
 
-	const organizationId = await createOrganization();
+	const organizationId = await createOrganization(input.organizationId);
 	const owner = await seedEmployee({ role: "owner" });
 	const target = await seedEmployee();
 

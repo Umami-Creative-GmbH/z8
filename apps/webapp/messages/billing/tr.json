@@ -13,6 +13,7 @@
       "successDescription": "Aboneliğiniz etkinleştirildi. Abone olduğunuz için teşekkürler!",
       "successTitle": "Başarılı!"
     },
+    "amount": "€{amount}",
     "bestValue": "En İyi Fiyat",
     "billedMonthly": "aylık faturalandırılır",
     "cancelsOn": "{date} tarihinde iptal edilir",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Aylık faturalandırma",
       "yearlyBilling": "Yıllık faturalandırma"
     },
+    "kioskSeatPriceMonthly": "Kiosk koltukları (yalnızca kiosk çalışanları): €{price}/koltuk/ay",
+    "kioskSeatPriceYearly": "Kiosk koltukları (yalnızca kiosk çalışanları): €{price}/koltuk/ay, yıllık faturalandırmada €{total}/koltuk",
     "manageBilling": "Faturalandırmayı Yönet",
     "monthlyCost": "Aylık Maliyet",
     "nextBilling": "Sonraki Fatura",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/kullanıcı/ay",
     "priceSeatMonthYearly": "€{price}/kullanıcı/ay (yıllık faturalandırılır)",
     "seatBilledAnnually": "Yıllık faturalandırılan €{price}/kullanıcı",
+    "seatLines": {
+      "full": "Tam koltuklar",
+      "kiosk": "Kiosk koltukları",
+      "seatsAtPrice": "{seats} × €{price}/ay",
+      "total": "Toplam",
+      "totalPerMonth": "€{amount}/ay"
+    },
     "starting": "Başlatılıyor...",
     "startTrial": "Ücretsiz Denemeyi Başlat",
     "status": {

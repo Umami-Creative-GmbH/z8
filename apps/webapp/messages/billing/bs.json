@@ -13,6 +13,7 @@
       "successDescription": "Vaša pretplata je aktivirana. Hvala vam na pretplati!",
       "successTitle": "Uspješno!"
     },
+    "amount": "€{amount}",
     "bestValue": "Najbolja vrijednost",
     "billedMonthly": "naplaćuje se mjesečno",
     "cancelsOn": "Otkazuje se {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Mjesečna naplata",
       "yearlyBilling": "Godišnja naplata"
     },
+    "kioskSeatPriceMonthly": "Kiosk mjesta (zaposlenici samo na kiosku): €{price}/mjestu/mjesečno",
+    "kioskSeatPriceYearly": "Kiosk mjesta (zaposlenici samo na kiosku): €{price}/mjestu/mjesečno, €{total}/mjestu naplaćeno godišnje",
     "manageBilling": "Upravljanje naplatom",
     "monthlyCost": "Mjesečni trošak",
     "nextBilling": "Sljedeća naplata",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/korisnik/mj.",
     "priceSeatMonthYearly": "€{price}/korisnik/mj. (naplaćuje se godišnje)",
     "seatBilledAnnually": "€{price}/korisnik naplaćuje se godišnje",
+    "seatLines": {
+      "full": "Puna mjesta",
+      "kiosk": "Kiosk mjesta",
+      "seatsAtPrice": "{seats} × €{price}/mj.",
+      "total": "Ukupno",
+      "totalPerMonth": "€{amount}/mj."
+    },
     "starting": "Pokretanje...",
     "startTrial": "Započnite besplatni probni period",
     "status": {

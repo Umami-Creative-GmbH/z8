@@ -845,6 +845,39 @@
       },
       "title": "Dataexport"
     },
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Tilldela granskaransvar",
+        "all": "Alla anställda i denna organisation",
+        "allDescription": "Ansvaret följer aktuellt medlemskap i organisationen. Granskare kan aldrig granska sig själva.",
+        "attribution": "Tilldelad av {actor} {time}",
+        "description": "Tilldela ansvar separat från förarregistrering, linjeansvar och åtkomst till personalakter. Att hantera dessa tilldelningar ger inte behörighet att läsa kontrollrapporter. Självverifiering är alltid förbjuden.",
+        "editor": "Verifierarens omfattning",
+        "empty": "Inget verifieraransvar tilldelat",
+        "expiry": "Löper ut {time}",
+        "history": "Ansvarshistorik",
+        "historyEntry": "Beviljades av {grantor} {granted}; återkallades av {revoker} {revoked}",
+        "loadFailed": "Kunde inte läsa in verifieraransvar",
+        "myAll": "Du ansvarar för kontroller inom hela denna organisation. Du kan inte verifiera dig själv.",
+        "mySelected": "Du ansvarar för {teams} valda team och {employees} namngivna medarbetare. Aktuellt teammedlemskap avgör åtkomsten. Du kan inte verifiera dig själv.",
+        "myTitle": "Ditt verifieraransvar",
+        "none": "Du har för närvarande inget ansvar för verifiering av körkort.",
+        "noTeams": "Inga team tillgängliga",
+        "person": "Verifierare",
+        "revoked": "Verifieraransvar återkallat",
+        "revokeDescription": "Verifieraren förlorar omedelbart åtkomst till kontroller inom denna omfattning. En ny tilldelning krävs för att återställa ansvaret.",
+        "revokeFailed": "Kunde inte återkalla ansvaret. Försök igen.",
+        "revokeTitle": "Vill du återkalla verifieraransvaret?",
+        "saved": "Verifieraransvar sparat",
+        "scope": "Ansvar",
+        "select": "Välj en medarbetare",
+        "selected": "{teams} team, {employees} namngivna medarbetare",
+        "selectEmployees": "Välj medarbetare",
+        "specific": "Valda team och medarbetare",
+        "specificDescription": "Inkluderar namngivna medarbetare och nuvarande medlemmar i valda team. Teamändringar träder i kraft omedelbart.",
+        "title": "Körkortsverifierare"
+      }
+    },
     "emailTemplates": {
       "actions": {
         "reset": "Återställ till systemmall",
@@ -1452,7 +1485,8 @@
         "invalidTimezone": "Välj en tidszon.",
         "kioskNotFound": "Denna kiosk hittades inte.",
         "kioskRevoked": "Denna kiosk har återkallats.",
-        "locationNotFound": "Välj en aktiv plats för denna organisation."
+        "locationNotFound": "Välj en aktiv plats för denna organisation.",
+        "offlineNeedsAdoption": "Offlineläge kräver samordnade stämplingskommandon, vilket denna organisation inte använder ännu."
       },
       "fields": {
         "board": "Närvarotavla",
@@ -1462,6 +1496,9 @@
         "locationPlaceholder": "Välj en plats",
         "name": "Namn",
         "namePlaceholder": "t.ex. Personalingång",
+        "offlineMode": "Offlineläge",
+        "offlineModeDescription": "Kiosken fortsätter stämpla utan anslutning. Dess stämplingar bekräftas och deras PIN-koder kontrolleras så snart den återansluter.",
+        "offlineModeUnavailable": "Offlineläge kräver samordnade stämplingskommandon, vilket denna organisation inte använder ännu.",
         "timezone": "Tidszon",
         "timezoneDescription": "Stämplingar som registreras på denna kiosk använder denna tidszon."
       },
@@ -1471,6 +1508,8 @@
       "loadFailed": "Det gick inte att läsa in kiosker.",
       "neverSeen": "Aldrig",
       "noLocations": "Skapa en plats först: varje kiosk tillhör en plats.",
+      "offlineOn": "Offlineläge på",
+      "offlineOnNotInEffect": "Offlineläge på, gäller inte för denna organisation",
       "pairAgain": "Parkoppla igen",
       "pairFailed": "En ny parkopplingskod kunde inte skapas",
       "pairingCodeLabel": "Parkopplingskod",
@@ -1480,6 +1519,46 @@
       "pairPairedDescription": "Enhetstoken roteras: den parkopplade enheten slutar omedelbart att fungera och måste parkopplas igen med den nya koden.",
       "pairTitle": "Parkoppla {name} igen?",
       "pairUnpairedDescription": "En ny parkopplingskod ersätter den tidigare.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Stämpla in",
+          "clockOut": "Stämpla ut",
+          "resumeBreak": "Återuppta",
+          "startBreak": "Starta rast"
+        },
+        "columns": {
+          "action": "Åtgärd",
+          "claimedAt": "Angiven tid",
+          "employee": "Medarbetare",
+          "kiosk": "Kiosk",
+          "reason": "Orsak",
+          "timeSource": "Tidskälla"
+        },
+        "description": "Stämplingar som sparades på en kiosk medan den var offline och som inte registrerades när den återanslöt. Medarbetaren, eller cheferna för en medarbetare utan inloggning, har meddelats.",
+        "empty": "Ingen offlinestämpling avvisades.",
+        "reasons": {
+          "clockUntrusted": "Kioskens klocka är inte betrodd",
+          "conflict": "I konflikt med annan registrerad tid",
+          "contactUnverifiable": "Senaste anslutningen kunde inte bekräftas",
+          "holiday": "Helgdag utan tidsregistrering",
+          "kioskRetired": "Kiosken har återkallats eller parkopplats igen",
+          "monthClosed": "Månad stängd",
+          "noPin": "Ingen PIN-kod för kiosk inställd",
+          "notAdopted": "Offline-stämpling accepteras inte av organisationen",
+          "notAssigned": "Inte tilldelad till platsen",
+          "other": "Kunde inte accepteras",
+          "outsideWindow": "Inkom för sent",
+          "pinLocked": "PIN låst",
+          "pinUnchecked": "PIN-koden kunde inte kontrolleras",
+          "wrongPin": "Fel PIN-kod"
+        },
+        "timeSources": {
+          "deviceClock": "Enhetens klocka",
+          "serverAnchor": "Servertid"
+        },
+        "title": "Avvisade offline-stämplingar",
+        "unknownEmployee": "Inte en anställd"
+      },
       "revoke": "Återkalla",
       "revokeConfirm": "Återkalla kiosk",
       "revoked": "Kiosk återkallad",
@@ -1487,6 +1566,7 @@
       "revokeFailed": "Kiosken kunde inte återkallas",
       "revokeTitle": "Återkalla {name}?",
       "rotateConfirm": "Rotera token och parkoppla igen",
+      "rotateOfflineWarning": "Denna kiosk har offlineläge på. Stämplingar som sparats i offlineläge och ännu inte skickats avvisas när den återansluter och visas under avvisade offline-stämplingar.",
       "save": "Spara",
       "saved": "Kiosk sparad",
       "saveFailed": "Kiosken kunde inte sparas",
@@ -1960,6 +2040,8 @@
         "name": "Namn",
         "namePlaceholder": "Ange projektnamn",
         "noCustomer": "Ingen kund",
+        "requiresTask": "Kräv en uppgift",
+        "requiresTaskHelp": "Tid som bokas på detta projekt måste ange en av dess uppgifter. Det gäller endast så länge projektet har en öppen uppgift.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -1973,6 +2055,7 @@
         "reasonAdminOnly": "endast organisationsadministratörer tilldelar projektledare",
         "reasonDeparted": "har lämnat organisationen",
         "reasonRemoved": "finns inte längre",
+        "requiresTask": "Kräver en uppgift",
         "skipped": "Kopierades inte: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2118,7 +2201,9 @@
           "name": "Namn",
           "namePlaceholder": "t.ex. Nylansering av webbplats",
           "nameRequired": "Ange ett mallnamn",
-          "noIcon": "Ingen ikon"
+          "noIcon": "Ingen ikon",
+          "requiresTask": "Kräv en uppgift",
+          "requiresTaskHelp": "Projekt som skapas från denna mall startar med denna inställning."
         },
         "icons": {
           "briefcase": "Portfölj",

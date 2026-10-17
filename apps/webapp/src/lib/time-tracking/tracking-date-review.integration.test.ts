@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
-import {withCanonicalRecords} from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -63,7 +63,9 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 	beforeEach(async () => {
 		vi.useFakeTimers({ toFake: ["Date"] });
 		vi.setSystemTime(new Date("2026-06-01T10:00:00Z"));
-		fixture = await createLifecycleDatabaseFixture();
+		fixture = await createLifecycleDatabaseFixture({
+			organizationId: `tracking-review-${randomUUID()}`,
+		});
 		employeeId = fixture.employeeId;
 		harness.userId = fixture.ownerUserId;
 		harness.organizationId = fixture.organizationId;
@@ -196,10 +198,13 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 			trackingStartDate: "2026-05-26",
 		});
 		const audit = await fixture.pool.query(
-			`select performed_by,metadata::jsonb->>'reason' as reason from audit_log where organization_id=$1 and action='organization.tracking_dates_changed'`,
+			`select entity_type,entity_id,performed_by,metadata::jsonb->>'reason' as reason from audit_log where organization_id=$1 and action='organization.tracking_dates_changed'`,
 			[fixture.organizationId],
 		);
 		expect(audit.rows).toHaveLength(2);
+		for (const row of audit.rows) {
+			expect(row).toMatchObject({ entity_type: "organization", entity_id: fixture.organizationId });
+		}
 		expect(audit.rows[1]).toMatchObject({
 			performed_by: fixture.ownerUserId,
 			reason: "Reviewed actual rollout",

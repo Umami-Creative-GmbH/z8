@@ -117,6 +117,17 @@
       "actionFallback": "Jeśli przycisk nie działa, otwórz ten link:",
       "footer": "Ta wiadomość e-mail została wysłana przez Z8."
     },
+    "mfa": {
+      "codesChanged": "Kod odzyskiwania został użyty lub zastąpiony",
+      "deadlineMessage": "Organizacja {organization} wymaga skonfigurowania uwierzytelniania do {deadline}. Po upływie tego dokładnego terminu przed uzyskaniem dostępu do tej organizacji konieczna będzie weryfikacja za pomocą aplikacji TOTP lub klucza dostępu (passkey) z kodem PIN/biometrią. Sama rejestracja nie wystarczy. Użyj opcji Weryfikacja bezpieczeństwa, aby zarejestrować lub zweryfikować tożsamość; hasło wraz z kodem zapasowym umożliwia wyłącznie rejestrację zastępczą.",
+      "deadlineTitle": "Wymagane uwierzytelnienie w organizacji",
+      "factorChanged": "Zmieniono uwierzytelniacz",
+      "factorRemoved": "Usunięto uwierzytelniacz",
+      "passwordChanged": "Hasło zostało zmienione",
+      "securityMessage": "{event} dla organizacji {organization}. Wcześniejsza weryfikacja może już nie zezwalać na dostęp do organizacji. Zweryfikuj pozostały lub zastępczy uwierzytelniacz w sekcji Weryfikacja bezpieczeństwa. Jeśli ta zmiana nie została wprowadzona przez Ciebie, natychmiast zabezpiecz swoje konto.",
+      "securityTitle": "Zmieniono zabezpieczenia uwierzytelniania",
+      "suspended": "Wymóg jest obecnie zawieszony. Jego ponowne włączenie przywróci wyznaczony termin."
+    },
     "notification": {
       "openAction": "Otwórz Z8"
     },

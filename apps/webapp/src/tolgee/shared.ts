@@ -113,7 +113,8 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/approvals": ["common", "approvals"],
 	"/my-requests": ["common", "myRequests"],
 	"/my-documents": ["common", "settings/people"],
-	"/driving-licence": ["common"],
+	// settings/generic: the verifier responsibility panel (settings.drivingLicence.verifiers).
+	"/driving-licence": ["common", "settings/generic"],
 	"/personnel-files": ["common", "settings/people"],
 	// travelExpenses: confirming a payroll run as paid (#853).
 	// settings/payrollExport: payroll line kind labels in payroll readiness (#854).
@@ -163,24 +164,23 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/settings/demo": ["common", "settings/generic", "settings/demo"],
 	"/settings/discord": ["common", "settings/generic", "settings/integrations"],
 	"/settings/employees": ["common", "settings/generic", "settings/people"],
-	"/settings/enterprise": ["common", "settings/generic", "settings/enterprise"],
-	"/settings/enterprise/email": [
-		"common",
-		"settings/generic",
-		"settings/enterprise",
-		"settings/integrations",
-	],
-	"/settings/enterprise/api-keys": [
+	// One boundary (enterprise/layout.tsx) serves every enterprise page; nested
+	// scopes would ship the enterprise catalog twice. webhooks: the API key pages
+	// embed the webhook management client.
+	"/settings/enterprise": [
 		"common",
 		"settings/generic",
 		"settings/enterprise",
 		"webhooks",
 	],
+	// organization: the tracking-date, period-submission, reminder and automatic
+	// clock-out panels moved here from the organization page.
 	"/settings/clocking": [
 		"common",
 		"settings/generic",
 		"settings/enterprise",
 		"settings/workPolicies",
+		"organization",
 	],
 	"/settings/notification-channels": [
 		"common",

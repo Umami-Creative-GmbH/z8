@@ -845,6 +845,39 @@
       },
       "title": "Exportation de données"
     },
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Accorder la responsabilité de vérificateur",
+        "all": "Tous les employés de cette organisation",
+        "allDescription": "La responsabilité dépend de l'appartenance actuelle à l'organisation. Les vérificateurs ne peuvent jamais se vérifier eux-mêmes.",
+        "attribution": "Accordé par {actor} à {time}",
+        "description": "Attribuez cette responsabilité indépendamment de l'inscription des conducteurs, du management hiérarchique et de l'accès aux dossiers du personnel. La gestion de ces autorisations ne permet pas de consulter les rapports d'inspection. L'auto-vérification est systématiquement interdite.",
+        "editor": "Périmètre du vérificateur",
+        "empty": "Aucune responsabilité de vérificateur attribuée",
+        "expiry": "Expire à {time}",
+        "history": "Historique des responsabilités",
+        "historyEntry": "Accordé par {grantor} à {granted} ; révoqué par {revoker} à {revoked}",
+        "loadFailed": "Impossible de charger les responsabilités de vérificateur",
+        "myAll": "Vous êtes responsable des vérifications pour l'ensemble de cette organisation. Vous ne pouvez pas vous vérifier vous-même.",
+        "mySelected": "Vous êtes responsable de {teams} équipes sélectionnées et de {employees} employés nommés. L'appartenance actuelle aux équipes détermine l'accès. Vous ne pouvez pas vous vérifier vous-même.",
+        "myTitle": "Votre responsabilité de vérificateur",
+        "none": "Vous n'avez actuellement aucune responsabilité de vérificateur de permis de conduire.",
+        "noTeams": "Aucune équipe disponible",
+        "person": "Vérificateur",
+        "revoked": "Responsabilité de vérificateur révoquée",
+        "revokeDescription": "Le vérificateur perd immédiatement l'accès aux vérifications dans ce périmètre. Une nouvelle attribution est requise pour rétablir la responsabilité.",
+        "revokeFailed": "Impossible de révoquer la responsabilité. Réessayez.",
+        "revokeTitle": "Révoquer la responsabilité de vérificateur ?",
+        "saved": "Responsabilité de vérificateur enregistrée",
+        "scope": "Responsabilité",
+        "select": "Sélectionner un employé",
+        "selected": "{teams} équipes, {employees} employés nommés",
+        "selectEmployees": "Sélectionner des employés",
+        "specific": "Équipes et employés sélectionnés",
+        "specificDescription": "Comprend les employés nommés et les membres actuels des équipes sélectionnées. Les changements d'équipe prennent effet immédiatement.",
+        "title": "Vérificateurs de permis de conduire"
+      }
+    },
     "emailTemplates": {
       "actions": {
         "reset": "Réinitialiser au modèle système",
@@ -1452,7 +1485,8 @@
         "invalidTimezone": "Choisissez un fuseau horaire.",
         "kioskNotFound": "Cette borne est introuvable.",
         "kioskRevoked": "Cette borne est révoquée.",
-        "locationNotFound": "Choisissez un emplacement actif de cette organisation."
+        "locationNotFound": "Choisissez un emplacement actif de cette organisation.",
+        "offlineNeedsAdoption": "Le mode hors ligne nécessite des commandes de pointage coordonnées, que cette organisation n'utilise pas encore."
       },
       "fields": {
         "board": "Tableau des présences",
@@ -1462,6 +1496,9 @@
         "locationPlaceholder": "Choisir un emplacement",
         "name": "Nom",
         "namePlaceholder": "Ex. : Entrée du personnel",
+        "offlineMode": "Mode hors ligne",
+        "offlineModeDescription": "La borne continue d'enregistrer les pointages sans connexion. Ses pointages sont confirmés, et leurs codes PIN vérifiés, dès qu'elle se reconnecte.",
+        "offlineModeUnavailable": "Le mode hors ligne nécessite des commandes de pointage coordonnées, que cette organisation n'utilise pas encore.",
         "timezone": "Fuseau horaire",
         "timezoneDescription": "Les pointages enregistrés sur cette borne utilisent ce fuseau horaire."
       },
@@ -1471,6 +1508,8 @@
       "loadFailed": "Impossible de charger les bornes.",
       "neverSeen": "Jamais",
       "noLocations": "Créez d'abord un emplacement : chaque borne appartient à un emplacement.",
+      "offlineOn": "Mode hors ligne activé",
+      "offlineOnNotInEffect": "Mode hors ligne activé, non effectif pour cette organisation",
       "pairAgain": "Associer à nouveau",
       "pairFailed": "Impossible de générer un nouveau code d'association",
       "pairingCodeLabel": "Code de jumelage",
@@ -1480,6 +1519,46 @@
       "pairPairedDescription": "Le jeton de l'appareil est renouvelé : l'appareil associé cesse immédiatement de fonctionner et doit être associé à nouveau avec le nouveau code.",
       "pairTitle": "Associer à nouveau {name} ?",
       "pairUnpairedDescription": "Un nouveau code de jumelage remplace le précédent.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Pointer l'arrivée",
+          "clockOut": "Pointer le départ",
+          "resumeBreak": "Reprendre",
+          "startBreak": "Prendre une pause"
+        },
+        "columns": {
+          "action": "Action",
+          "claimedAt": "Heure déclarée",
+          "employee": "Employé",
+          "kiosk": "Borne",
+          "reason": "Motif",
+          "timeSource": "Source de l'heure"
+        },
+        "description": "Pointages enregistrés sur une borne lorsqu'elle était hors ligne et qui n'ont pas été comptabilisés lors de sa reconnexion. L'employé, ou les responsables d'un employé sans compte de connexion, ont été avertis.",
+        "empty": "Aucun pointage hors ligne n'a été refusé.",
+        "reasons": {
+          "clockUntrusted": "Horloge de la borne non fiable",
+          "conflict": "Entre en conflit avec d'autres heures enregistrées",
+          "contactUnverifiable": "Impossible de confirmer la dernière connexion",
+          "holiday": "Jour férié sans enregistrement des heures",
+          "kioskRetired": "Borne révoquée ou jumelée de nouveau",
+          "monthClosed": "Mois clôturé",
+          "noPin": "Aucun code PIN de borne défini",
+          "notAdopted": "Pointage hors ligne non accepté par l'organisation",
+          "notAssigned": "Non affecté à l'emplacement",
+          "other": "N'a pas pu être accepté",
+          "outsideWindow": "Arrivé trop tard",
+          "pinLocked": "Code PIN verrouillé",
+          "pinUnchecked": "Impossible de vérifier le code PIN",
+          "wrongPin": "Code PIN incorrect"
+        },
+        "timeSources": {
+          "deviceClock": "Horloge de l'appareil",
+          "serverAnchor": "Heure du serveur"
+        },
+        "title": "Pointages hors ligne refusés",
+        "unknownEmployee": "N'est pas un employé"
+      },
       "revoke": "Révoquer",
       "revokeConfirm": "Révoquer la borne",
       "revoked": "Borne révoquée",
@@ -1487,6 +1566,7 @@
       "revokeFailed": "Impossible de révoquer la borne",
       "revokeTitle": "Révoquer {name} ?",
       "rotateConfirm": "Renouveler le jeton et jumeler à nouveau",
+      "rotateOfflineWarning": "Le mode hors ligne est activé sur cette borne. Les pointages enregistrés hors ligne et pas encore envoyés sont refusés lors de la reconnexion et répertoriés dans les pointages hors ligne refusés.",
       "save": "Enregistrer",
       "saved": "Borne enregistrée",
       "saveFailed": "Impossible d'enregistrer la borne",
@@ -1960,6 +2040,8 @@
         "name": "Nom",
         "namePlaceholder": "Saisir le nom du projet",
         "noCustomer": "Aucun client",
+        "requiresTask": "Exiger une tâche",
+        "requiresTaskHelp": "Le temps enregistré sur ce projet doit spécifier l'une de ses tâches. Cela s'applique uniquement lorsque le projet comporte une tâche ouverte.",
         "status": "Statut"
       },
       "fromTemplate": {
@@ -1973,6 +2055,7 @@
         "reasonAdminOnly": "seuls les administrateurs de l'organisation assignent les chefs de projet",
         "reasonDeparted": "a quitté l'organisation",
         "reasonRemoved": "n'existe plus",
+        "requiresTask": "Nécessite une tâche",
         "skipped": "Non copié : {members}",
         "skippedMember": "{name} : {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2118,7 +2201,9 @@
           "name": "Nom",
           "namePlaceholder": "ex. : Relance du site web",
           "nameRequired": "Saisissez un nom de modèle",
-          "noIcon": "Aucune icône"
+          "noIcon": "Aucune icône",
+          "requiresTask": "Exiger une tâche",
+          "requiresTaskHelp": "Les projets créés à partir de ce modèle commencent avec ce paramètre."
         },
         "icons": {
           "briefcase": "Mallette",

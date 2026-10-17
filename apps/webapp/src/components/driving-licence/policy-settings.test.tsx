@@ -44,7 +44,7 @@ it("lets an administrator choose retention, save a policy, and enroll an employe
 		<DrivingLicenceSettings
 			data={{
 				policy: null,
-				employees: [{ id: "e1311", firstName: "Dana", lastName: "Driver" }],
+				employees: [{ id: "e1311", name: "Dana Driver" }],
 				participants: [],
 			}}
 		/>,

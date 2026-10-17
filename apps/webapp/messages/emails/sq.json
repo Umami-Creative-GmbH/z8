@@ -117,6 +117,17 @@
       "actionFallback": "Nëse butoni nuk funksionon, hapni këtë lidhje:",
       "footer": "Ky email u dërgua nga Z8."
     },
+    "mfa": {
+      "codesChanged": "Kodi i rikuperimit u përdor ose u zëvendësua",
+      "deadlineMessage": "{organization} kërkon një autentifikues deri më {deadline}. Pas këtij afati të saktë, verifikoni një autentifikues TOTP ose një çelës kalimi me PIN/biometrikë përpara se të aksesoni këtë organizatë. Vetëm regjistrimi nuk mjafton. Përdorni Verifikimin e sigurisë për t'u regjistruar ose verifikuar; fjalëkalimi plus një kod rezervë lejon vetëm regjistrimin e zëvendësimit.",
+      "deadlineTitle": "Kërkohet autentifikimi i organizatës",
+      "factorChanged": "Autentifikuesi u ndryshua",
+      "factorRemoved": "Autentifikuesi u hoq",
+      "passwordChanged": "Fjalëkalimi u ndryshua",
+      "securityMessage": "{event} për {organization}. Verifikimi i mëparshëm mund të mos lejojë më aksesin në organizatë. Verifikoni një autentifikues të mbetur ose zëvendësues te Verifikimi i sigurisë. Nëse nuk e keni bërë ju këtë ndryshim, sigurojeni llogarinë tuaj tani.",
+      "securityTitle": "Siguria e autentifikimit u ndryshua",
+      "suspended": "Kërkesa është aktualisht e pezulluar. Riaktivizimi i saj rikthen afatin e caktuar."
+    },
     "notification": {
       "openAction": "Hap Z8"
     },

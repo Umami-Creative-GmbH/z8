@@ -299,6 +299,8 @@
         "estimateProgress": "{booked}h av {estimate}h ({percent})",
         "hours": "Timmar",
         "hoursValue": "{hours}h",
+        "missingTaskCount": "{count} saknar en uppgift",
+        "missingTaskHint": "Bokningar i detta projekt som kom in utan den uppgift som krävs. Lägg till en uppgift för varje bokning i kalendern.",
         "noTask": "Ingen uppgift",
         "noTime": "Ingen tid bokades på detta projekt under denna period",
         "share": "Dela",

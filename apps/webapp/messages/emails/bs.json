@@ -117,6 +117,17 @@
       "actionFallback": "Ako dugme ne radi, otvorite ovaj link:",
       "footer": "Ovaj email je poslao Z8."
     },
+    "mfa": {
+      "codesChanged": "Kôd za oporavak iskorišten ili zamijenjen",
+      "deadlineMessage": "{organization} zahtijeva autentifikator do {deadline}. Nakon ovog tačnog roka, potvrdite TOTP autentifikator ili pristupni ključ (passkey) s PIN-om/biometrijom prije pristupanja ovoj organizaciji. Sama registracija nije dovoljna. Koristite Sigurnosnu verifikaciju za registraciju ili verifikaciju; lozinka i rezervni kôd omogućavaju samo registraciju zamjene.",
+      "deadlineTitle": "Potrebna je autentifikacija organizacije",
+      "factorChanged": "Autentifikator je promijenjen",
+      "factorRemoved": "Autentifikator je uklonjen",
+      "passwordChanged": "Lozinka je promijenjena",
+      "securityMessage": "{event} za organizaciju {organization}. Prethodna verifikacija možda više ne dozvoljava pristup organizaciji. Potvrdite preostali ili zamjenski autentifikator u odjeljku Sigurnosna verifikacija. Ako niste izvršili ovu promjenu, osigurajte svoj račun odmah.",
+      "securityTitle": "Sigurnost autentifikacije je promijenjena",
+      "suspended": "Zahtjev je trenutno suspendovan. Ponovno omogućavanje vraća dodijeljeni rok."
+    },
     "notification": {
       "openAction": "Otvori Z8"
     },

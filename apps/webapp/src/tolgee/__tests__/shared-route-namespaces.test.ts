@@ -81,6 +81,7 @@ describe("route namespaces", () => {
 			"common",
 			"settings/generic",
 			"settings/enterprise",
+			"webhooks",
 		]);
 		expect(getNamespacesForRoute("/settings/holidays")).toEqual([
 			"common",

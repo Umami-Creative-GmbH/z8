@@ -26,11 +26,7 @@ const EXTRA_SCOPES: Record<string, Namespace[]> = {
 	"/settings/security": ["common", "settings/generic", "auth", "setup"],
 	"/settings/skills": ["common", "settings/generic", "settings/people"],
 	// The enterprise ancestor supplies its own catalog; this page only needs audit-log copy.
-	"/settings/enterprise/audit-log": [
-		"common",
-		"settings/generic",
-		"settings/auditExport",
-	],
+	"/settings/enterprise/audit-log": ["common", "settings/auditExport"],
 };
 const AUTH_ROUTES = [
 	"/sign-in",
