@@ -4,9 +4,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { queryKeys } from "@/lib/query";
+import { queryKeys } from "@/lib/query/keys";
 import { AbsenceCategoriesTable } from "../absence-category/absence-categories-table";
-import { VacationAssignmentDialog } from "./vacation-assignment-dialog";
+import {
+	VacationAssignmentDialog,
+	type VacationAssignmentType,
+} from "./vacation-assignment-dialog";
 import { VacationAssignmentManager } from "./vacation-assignment-manager";
 
 interface VacationManagementProps {
@@ -33,15 +36,25 @@ export function VacationManagement({
 
 	// Assignment dialog state
 	const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
-	const [assignmentType, setAssignmentType] = useState<"team" | "employee">("team");
+	const [assignmentTargetId, setAssignmentTargetId] = useState<string>();
+	const [assignmentType, setAssignmentType] =
+		useState<VacationAssignmentType>("team");
 
 	// Assignment handlers
-	const handleAssignClick = (type: "team" | "employee") => {
-		if (!allowedAssignmentTypes.includes(type)) {
+	const handleAssignClick = (
+		type: VacationAssignmentType,
+		targetId?: string,
+	) => {
+		if (
+			type === "organization"
+				? !allowedAssignmentTypes.includes("team")
+				: !allowedAssignmentTypes.includes(type)
+		) {
 			return;
 		}
 
 		setAssignmentType(type);
+		setAssignmentTargetId(targetId);
 		setAssignmentDialogOpen(true);
 	};
 
@@ -90,6 +103,8 @@ export function VacationManagement({
 			</Tabs>
 
 			<VacationAssignmentDialog
+				key={`${assignmentType}:${assignmentTargetId ?? "new"}:${assignmentDialogOpen}`}
+				initialTargetId={assignmentTargetId}
 				open={assignmentDialogOpen}
 				onOpenChange={setAssignmentDialogOpen}
 				organizationId={organizationId}

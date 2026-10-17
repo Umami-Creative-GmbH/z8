@@ -5,16 +5,28 @@
  */
 
 import { eq } from "drizzle-orm";
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { getEnhancedVacationBalance, getVacationSummary } from "@/lib/absences/vacation.service";
+import {
+	type EmployeeEmployments,
+	type EmployeeVacationOverride,
+	loadEmployeeEmployments,
+	loadEmployeeVacationOverrides,
+} from "@/lib/absences/prorated-allowance-store";
+import type { VacationBalanceConfiguration } from "@/lib/absences/types";
+import { getVacationSummary } from "@/lib/absences/vacation.service";
+import {
+	accruingEmployments,
+	policyPeriodMonthlyAccrualDays,
+} from "@/lib/absences/vacation-accrual";
+import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
 import { isAccrualPolicy } from "@/lib/absences/vacation-policy-settings";
 import { format } from "@/lib/datetime/luxon-utils";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import {
 	getEmployeesWithExpiringCarryover,
 	getPendingVacationRequests,
-	getVacationAllowance,
 } from "@/lib/query/vacation.queries";
 
 export interface TeamVacationCalendarEntry {
@@ -27,20 +39,79 @@ export interface TeamVacationCalendarEntry {
 }
 
 export interface IndividualBalanceReport {
+	/** Frozen transfer timezone, or the organization zone for legacy carryover. */
+	timezone?: string;
 	employeeId: string;
 	employeeName: string;
 	email: string;
-	totalAllowance: number;
-	carryover: number;
-	adjustments: number;
-	used: number;
-	pending: number;
-	remaining: number;
+	configuration: VacationBalanceConfiguration | null;
+	totalAllowance: number | null;
+	carryover: number | null;
+	adjustments: number | null;
+	used: number | null;
+	pending: number | null;
+	remaining: number | null;
 	carryoverExpiryDate: Date | null;
-	utilizationRate: number;
+	utilizationRate: number | null;
+}
+
+function configurationLabel(
+	configuration: VacationBalanceConfiguration | null,
+): string {
+	switch (configuration?.status) {
+		case "resolved":
+			return "Resolved";
+		case "legacy":
+			return "Legacy";
+		case "missing":
+			return "Missing vacation policy";
+		case "conflict":
+			return "Conflicting vacation policies";
+		default:
+			return "Vacation balance unavailable";
+	}
+}
+
+function reportTotals(reports: IndividualBalanceReport[]) {
+	const available = reports.filter((report) => report.totalAllowance !== null);
+	return {
+		unavailable: reports.length - available.length,
+		totalAllowance: available.reduce(
+			(sum, report) => sum + (report.totalAllowance ?? 0),
+			0,
+		),
+		totalUsed: available.reduce((sum, report) => sum + (report.used ?? 0), 0),
+		totalPending: available.reduce(
+			(sum, report) => sum + (report.pending ?? 0),
+			0,
+		),
+		totalRemaining: available.reduce(
+			(sum, report) => sum + (report.remaining ?? 0),
+			0,
+		),
+	};
+}
+
+function csvText(value: string): string {
+	return `"${value.replaceAll('"', '""')}"`;
+}
+
+function htmlText(value: string): string {
+	return value
+		.replaceAll("&", "&amp;")
+		.replaceAll("<", "&lt;")
+		.replaceAll(">", "&gt;")
+		.replaceAll('"', "&quot;")
+		.replaceAll("'", "&#39;");
+}
+
+function reportNumber(value: number | null): string {
+	return value === null ? "N/A" : value.toFixed(1);
 }
 
 export interface ExpirationReport {
+	/** Frozen transfer timezone, or the organization zone for legacy carryover. */
+	timezone?: string;
 	employeeId: string;
 	employeeName: string;
 	carryoverDays: number;
@@ -110,6 +181,7 @@ export async function generateIndividualBalanceReport(
 		employeeId: emp.employeeId,
 		employeeName: emp.employeeName,
 		email: "", // Would need to join with user table for email
+		configuration: emp.configuration,
 		totalAllowance: emp.totalAllowance,
 		carryover: emp.carryover,
 		adjustments: emp.adjustments,
@@ -117,10 +189,13 @@ export async function generateIndividualBalanceReport(
 		pending: emp.pending,
 		remaining: emp.remaining,
 		carryoverExpiryDate: emp.carryoverExpiryDate,
+		timezone: emp.timezone,
 		utilizationRate:
-			emp.totalAllowance > 0
-				? Math.round(((emp.used + emp.pending) / emp.totalAllowance) * 100)
-				: 0,
+			emp.totalAllowance === null || emp.used === null || emp.pending === null
+				? null
+				: emp.totalAllowance > 0
+					? Math.round(((emp.used + emp.pending) / emp.totalAllowance) * 100)
+					: 0,
 	}));
 }
 
@@ -132,15 +207,25 @@ export async function generateExpirationReport(
 	year: number,
 	daysAhead: number = 90,
 ): Promise<ExpirationReport[]> {
-	const expiring = await getEmployeesWithExpiringCarryover(organizationId, year, daysAhead);
+	const expiring = await getEmployeesWithExpiringCarryover(
+		organizationId,
+		year,
+		daysAhead,
+	);
 
 	return expiring.map((emp) => ({
 		employeeId: emp.employeeId,
 		employeeName: emp.employeeName,
 		carryoverDays: emp.carryoverDays,
 		expiresAt: emp.expiresAt,
+		timezone: emp.timezone,
 		daysUntilExpiry: emp.daysUntilExpiry,
-		urgency: emp.daysUntilExpiry <= 7 ? "critical" : emp.daysUntilExpiry <= 30 ? "warning" : "info",
+		urgency:
+			emp.daysUntilExpiry <= 7
+				? "critical"
+				: emp.daysUntilExpiry <= 30
+					? "warning"
+					: "info",
 	}));
 }
 
@@ -152,64 +237,97 @@ export async function generateAccrualProjection(
 	year: number,
 	organizationId: string,
 ): Promise<AccrualProjection[]> {
-	const policy = await getVacationAllowance(organizationId, year);
+	return (
+		await generateAccrualProjectionResult(employeeId, year, organizationId)
+	).projections;
+}
 
-	if (!policy) {
-		return [];
-	}
-
+/** A policy gap or conflict remains visible to callers that display projection availability. */
+export async function generateAccrualProjectionResult(
+	employeeId: string,
+	year: number,
+	organizationId: string,
+): Promise<{
+	configuration: VacationBalanceConfiguration | null;
+	projections: AccrualProjection[];
+}> {
 	const org = await db.query.organization.findFirst({
 		where: eq(organization.id, organizationId),
 		columns: { timezone: true },
 	});
-	const timezone = org?.timezone || "UTC";
-
-	const balance = await getEnhancedVacationBalance({
-		employeeId,
+	const result = await loadVacationBalances(db, {
+		organizationId,
+		employeeIds: [employeeId],
 		year,
-		timezone,
+		timezone: org?.timezone || "UTC",
 	});
+	const configuration = result.configurations.get(employeeId) ?? null;
+	const policy = result.policies.get(employeeId);
+	const balance = result.balances.get(employeeId);
+	if (!policy || !balance) return { configuration, projections: [] };
 
-	// An accrual policy's balance holds only the accrual so far (#1106), so it projects the
-	// policy allowance instead.
-	const annualDays = isAccrualPolicy(policy)
-		? parseFloat(policy.defaultAnnualDays)
-		: balance?.totalDays || parseFloat(policy.defaultAnnualDays);
-	const currentUsed = balance?.usedDays || 0;
-	const currentPending = balance?.pendingDays || 0;
-
-	const projections: AccrualProjection[] = [];
+	const accrual = isAccrualPolicy(policy);
+	const [employments, overrides] = accrual
+		? await Promise.all([
+				configuration?.status === "resolved"
+					? loadEmployeeEmployments(db, {
+							organizationId,
+							employeeIds: [employeeId],
+						})
+					: new Map<string, EmployeeEmployments>(),
+				loadEmployeeVacationOverrides(db, {
+					organizationId,
+					employeeIds: [employeeId],
+					year,
+				}),
+			])
+		: [
+				new Map<string, EmployeeEmployments>(),
+				new Map<string, EmployeeVacationOverride>(),
+			];
+	const employment = employments.get(employeeId);
+	const stints = employment ? accruingEmployments(employment) : [];
+	const customAnnualDays = overrides.get(employeeId)?.customAnnualDays;
+	const annualDays = accrual
+		? Number(customAnnualDays ?? policy.defaultAnnualDays)
+		: configuration?.status === "legacy"
+			? balance.totalDays
+			: balance.allowanceDays;
+	const projectedUsed = balance.usedDays + balance.pendingDays;
 	let cumulativeAccrued = 0;
-	const projectedUsed = currentUsed + currentPending;
-
-	// Calculate monthly accrual based on policy type
-	const monthlyAccrual =
-		policy.accrualType === "monthly"
-			? annualDays / 12
-			: policy.accrualType === "biweekly"
-				? (annualDays / 26) * 2
-				: annualDays / 12; // Default to monthly
-
+	const projections: AccrualProjection[] = [];
 	for (let month = 1; month <= 12; month++) {
-		const monthDT = DateTime.utc(year, month, 1);
-
-		if (!isAccrualPolicy(policy) && month === policy.accrualStartMonth) {
+		const monthStart = Temporal.PlainDate.from({ year, month, day: 1 });
+		let accrued = annualDays / 12;
+		if (accrual) {
+			// Before rollout, preserve the existing full-month projection; the custom allowance still applies.
+			accrued =
+				configuration?.status === "legacy"
+					? policy.accrualType === "biweekly"
+						? (annualDays / 26) * 2
+						: annualDays / 12
+					: (policyPeriodMonthlyAccrualDays({
+							periods: result.periods.get(employeeId) ?? [],
+							customAnnualDays,
+							year,
+							month,
+							employments: stints,
+						}) ?? 0);
+			cumulativeAccrued += accrued;
+		} else if (month === policy.accrualStartMonth) {
 			cumulativeAccrued = annualDays;
-		} else if (isAccrualPolicy(policy)) {
-			cumulativeAccrued += monthlyAccrual;
 		}
-
 		projections.push({
 			month,
-			monthName: monthDT.toFormat("MMMM"),
-			accrued: monthlyAccrual,
+			monthName: monthStart.toLocaleString("en-US", { month: "long" }),
+			accrued,
 			cumulativeAccrued: Math.round(cumulativeAccrued * 10) / 10,
 			projectedUsed: Math.round(projectedUsed * 10) / 10,
-			projectedBalance: Math.round((cumulativeAccrued - projectedUsed) * 10) / 10,
+			projectedBalance:
+				Math.round((cumulativeAccrued - projectedUsed) * 10) / 10,
 		});
 	}
-
-	return projections;
+	return { configuration, projections };
 }
 
 /**
@@ -228,35 +346,44 @@ export function exportVacationBalanceAsCsv(
 
 	// Column headers
 	lines.push(
-		"Employee,Total Allowance,Carryover,Adjustments,Used,Pending,Remaining,Utilization %,Carryover Expires",
+		"Employee,Status,Total Allowance,Carryover,Adjustments,Used,Pending,Remaining,Utilization %,Carryover Expires",
 	);
 
 	// Data rows
 	for (const report of reports) {
 		const expiryStr = report.carryoverExpiryDate
-			? format(report.carryoverExpiryDate, "yyyy-MM-dd")
+			? instantFromDate(report.carryoverExpiryDate)
+					.toZonedDateTimeISO(report.timezone ?? "UTC")
+					.toPlainDate()
+					.toString()
 			: "N/A";
 
 		lines.push(
-			`"${report.employeeName}",${report.totalAllowance.toFixed(1)},${report.carryover.toFixed(1)},${report.adjustments.toFixed(1)},${report.used.toFixed(1)},${report.pending.toFixed(1)},${report.remaining.toFixed(1)},${report.utilizationRate}%,${expiryStr}`,
+			`${csvText(report.employeeName)},${configurationLabel(report.configuration)},${reportNumber(report.totalAllowance)},${reportNumber(report.carryover)},${reportNumber(report.adjustments)},${reportNumber(report.used)},${reportNumber(report.pending)},${reportNumber(report.remaining)},${report.utilizationRate === null ? "N/A" : `${report.utilizationRate}%`},${expiryStr}`,
 		);
 	}
 
 	// Summary
 	lines.push("");
 	lines.push("Summary");
-	const totalAllowance = reports.reduce((sum, r) => sum + r.totalAllowance, 0);
-	const totalUsed = reports.reduce((sum, r) => sum + r.used, 0);
-	const totalPending = reports.reduce((sum, r) => sum + r.pending, 0);
-	const totalRemaining = reports.reduce((sum, r) => sum + r.remaining, 0);
+	const {
+		totalAllowance,
+		totalUsed,
+		totalPending,
+		totalRemaining,
+		unavailable,
+	} = reportTotals(reports);
 
 	lines.push(`Total Employees,${reports.length}`);
+	lines.push(`Employees Requiring Policy Review,${unavailable}`);
+	if (unavailable > 0)
+		lines.push("Totals include employees with resolved balances only");
 	lines.push(`Total Allowance,${totalAllowance.toFixed(1)}`);
 	lines.push(`Total Used,${totalUsed.toFixed(1)}`);
 	lines.push(`Total Pending,${totalPending.toFixed(1)}`);
 	lines.push(`Total Remaining,${totalRemaining.toFixed(1)}`);
 	lines.push(
-		`Average Utilization,${(((totalUsed + totalPending) / totalAllowance) * 100).toFixed(1)}%`,
+		`Average Utilization,${(totalAllowance > 0 ? ((totalUsed + totalPending) / totalAllowance) * 100 : 0).toFixed(1)}%`,
 	);
 
 	return lines.join("\n");
@@ -265,7 +392,9 @@ export function exportVacationBalanceAsCsv(
 /**
  * Export expiration report as CSV
  */
-export function exportExpirationReportAsCsv(reports: ExpirationReport[]): string {
+export function exportExpirationReportAsCsv(
+	reports: ExpirationReport[],
+): string {
 	const lines: string[] = [];
 
 	// Header
@@ -279,7 +408,12 @@ export function exportExpirationReportAsCsv(reports: ExpirationReport[]): string
 	// Data rows
 	for (const report of reports) {
 		lines.push(
-			`"${report.employeeName}",${report.carryoverDays.toFixed(1)},${format(report.expiresAt, "yyyy-MM-dd")},${report.daysUntilExpiry},${report.urgency}`,
+			`"${report.employeeName}",${report.carryoverDays.toFixed(1)},${instantFromDate(
+				report.expiresAt,
+			)
+				.toZonedDateTimeISO(report.timezone ?? "UTC")
+				.toPlainDate()
+				.toString()},${report.daysUntilExpiry},${report.urgency}`,
 		);
 	}
 
@@ -290,8 +424,12 @@ export function exportExpirationReportAsCsv(reports: ExpirationReport[]): string
 	lines.push(
 		`Total Days Expiring,${reports.reduce((sum, r) => sum + r.carryoverDays, 0).toFixed(1)}`,
 	);
-	lines.push(`Critical (7 days or less),${reports.filter((r) => r.urgency === "critical").length}`);
-	lines.push(`Warning (30 days or less),${reports.filter((r) => r.urgency === "warning").length}`);
+	lines.push(
+		`Critical (7 days or less),${reports.filter((r) => r.urgency === "critical").length}`,
+	);
+	lines.push(
+		`Warning (30 days or less),${reports.filter((r) => r.urgency === "warning").length}`,
+	);
 
 	return lines.join("\n");
 }
@@ -304,12 +442,17 @@ export function formatVacationBalanceAsHtml(
 	year: number,
 	organizationName: string,
 ): string {
-	const totalAllowance = reports.reduce((sum, r) => sum + r.totalAllowance, 0);
-	const totalUsed = reports.reduce((sum, r) => sum + r.used, 0);
-	const totalPending = reports.reduce((sum, r) => sum + r.pending, 0);
-	const totalRemaining = reports.reduce((sum, r) => sum + r.remaining, 0);
+	const {
+		totalAllowance,
+		totalUsed,
+		totalPending,
+		totalRemaining,
+		unavailable,
+	} = reportTotals(reports);
 	const avgUtilization =
-		totalAllowance > 0 ? ((totalUsed + totalPending) / totalAllowance) * 100 : 0;
+		totalAllowance > 0
+			? ((totalUsed + totalPending) / totalAllowance) * 100
+			: 0;
 
 	let html = `
 <!DOCTYPE html>
@@ -332,7 +475,7 @@ export function formatVacationBalanceAsHtml(
 </head>
 <body>
   <h1>Vacation Balance Report</h1>
-  <p><strong>${organizationName}</strong> - Year ${year}</p>
+  <p><strong>${htmlText(organizationName)}</strong> - Year ${year}</p>
   <p>Generated: ${format(new Date(), "MMMM d, yyyy 'at' HH:mm")}</p>
 
   <div class="summary">
@@ -358,10 +501,12 @@ export function formatVacationBalanceAsHtml(
     </div>
   </div>
 
+  ${unavailable > 0 ? `<p>${unavailable} employees require policy review. Totals include employees with resolved balances only.</p>` : ""}
   <h2>Employee Balances</h2>
   <table>
     <tr>
       <th>Employee</th>
+      <th>Status</th>
       <th>Total</th>
       <th>Carryover</th>
       <th>Used</th>
@@ -371,17 +516,19 @@ export function formatVacationBalanceAsHtml(
     </tr>`;
 
 	for (const report of reports) {
-		const rowClass = report.remaining <= 2 ? "low-balance" : "";
+		const rowClass =
+			report.remaining !== null && report.remaining <= 2 ? "low-balance" : "";
 
 		html += `
     <tr class="${rowClass}">
-      <td>${report.employeeName}</td>
-      <td>${report.totalAllowance.toFixed(1)}</td>
-      <td>${report.carryover.toFixed(1)}</td>
-      <td>${report.used.toFixed(1)}</td>
-      <td>${report.pending.toFixed(1)}</td>
-      <td>${report.remaining.toFixed(1)}</td>
-      <td>${report.utilizationRate}%</td>
+      <td>${htmlText(report.employeeName)}</td>
+      <td>${configurationLabel(report.configuration)}</td>
+      <td>${reportNumber(report.totalAllowance)}</td>
+      <td>${reportNumber(report.carryover)}</td>
+      <td>${reportNumber(report.used)}</td>
+      <td>${reportNumber(report.pending)}</td>
+      <td>${reportNumber(report.remaining)}</td>
+      <td>${report.utilizationRate === null ? "N/A" : `${report.utilizationRate}%`}</td>
     </tr>`;
 	}
 
@@ -433,7 +580,16 @@ export function formatExpirationWarningEmail(
 		for (const report of critical) {
 			html += `
   <div class="critical">
-    <strong>${report.employeeName}</strong> - ${report.carryoverDays.toFixed(1)} days expiring on ${format(report.expiresAt, "MMMM d, yyyy")} (${report.daysUntilExpiry} days remaining)
+    <strong>${report.employeeName}</strong> - ${report.carryoverDays.toFixed(1)} days expiring on ${instantFromDate(
+			report.expiresAt,
+		)
+			.toZonedDateTimeISO(report.timezone ?? "UTC")
+			.toPlainDate()
+			.toLocaleString("en-US", {
+				year: "numeric",
+				month: "long",
+				day: "numeric",
+			})} (${report.daysUntilExpiry} days remaining)
   </div>`;
 		}
 	}
@@ -444,7 +600,16 @@ export function formatExpirationWarningEmail(
 		for (const report of warning) {
 			html += `
   <div class="warning">
-    <strong>${report.employeeName}</strong> - ${report.carryoverDays.toFixed(1)} days expiring on ${format(report.expiresAt, "MMMM d, yyyy")} (${report.daysUntilExpiry} days remaining)
+    <strong>${report.employeeName}</strong> - ${report.carryoverDays.toFixed(1)} days expiring on ${instantFromDate(
+			report.expiresAt,
+		)
+			.toZonedDateTimeISO(report.timezone ?? "UTC")
+			.toPlainDate()
+			.toLocaleString("en-US", {
+				year: "numeric",
+				month: "long",
+				day: "numeric",
+			})} (${report.daysUntilExpiry} days remaining)
   </div>`;
 		}
 	}

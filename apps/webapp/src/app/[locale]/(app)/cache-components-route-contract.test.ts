@@ -29,6 +29,7 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 	"src/app/[locale]/(setup)/setup/page.tsx",
 	"src/app/[locale]/(share)/share/[token]/page.tsx",
 	"src/app/[locale]/onboarding/layout.tsx",
+	"src/app/[locale]/onboarding/organization/page.tsx",
 ] as const;
 
 const PENDING_CONNECTION_FILES = [] as const;
@@ -1379,7 +1380,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(18);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(19);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
@@ -1395,6 +1396,28 @@ describe("App Router connection escape hatches", () => {
 
 		expect(overlap).toEqual([]);
 		expect([...retainedFiles, ...pendingFiles].sort()).toEqual(actualFiles);
+	});
+
+	it("keeps the onboarding clock behind a request boundary and parent Suspense", () => {
+		const source = readFileSync(
+			appPath("src/app/[locale]/onboarding/organization/page.tsx"),
+			"utf8",
+		).replace(/\r\n/g, "\n");
+		const layoutSource = readFileSync(
+			appPath("src/app/[locale]/onboarding/layout.tsx"),
+			"utf8",
+		);
+
+		expect(hasImportedConnectionCall(source)).toBe(true);
+		expect(findNamedFunctionBody(source, "OrganizationPage")).toContain(
+			"await connection();\n\tconst trackingSuggestedAt = systemClock.nowInstant().toString();",
+		);
+		expect(
+			hasDefaultExportFocusedSuspenseBoundary(layoutSource, {
+				fallbackComponent: "OnboardingLayoutLoading",
+				contentComponent: "OnboardingLayoutContent",
+			}),
+		).toBe(true);
 	});
 
 	it("lists only files that exist", () => {

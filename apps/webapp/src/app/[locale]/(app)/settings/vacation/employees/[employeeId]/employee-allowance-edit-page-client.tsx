@@ -1,22 +1,29 @@
 "use client";
-import { HistoricalVacationUsageCard } from "@/components/absences/historical-vacation-usage-card";
-import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 
 import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { use, useEffect, useId, useRef, useState, useCallback } from "react";
+import { use, useCallback, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import { HistoricalVacationUsageCard } from "@/components/absences/historical-vacation-usage-card";
+import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 import {
 	OverdrawnVacationBadge,
 	VacationAllowanceExplanation,
 } from "@/components/absences/vacation-allowance-explanation";
+import { VacationPolicyConfigurationMessage } from "@/components/absences/vacation-policy-configuration-message";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -31,8 +38,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import type { VacationBalance } from "@/lib/absences/types";
-import { parseInstant } from "@/lib/datetime/temporal-core";
-import { formatInstant } from "@/lib/datetime/temporal-format";
+import { instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
+import { formatInstant, formatPlainDate } from "@/lib/datetime/temporal-format";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 import {
@@ -42,7 +49,6 @@ import {
 	getEmployeeAdjustmentSummary,
 	getEmployeeAllowance,
 	getEmployeeVacationBalance,
-	getVacationPolicies,
 	updateEmployeeAllowance,
 } from "../../actions";
 import {
@@ -100,16 +106,16 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [historicalAdminOrganizationId, setHistoricalAdminOrganizationId] = useState<string | null>(
-		null,
-	);
+	const [historicalAdminOrganizationId, setHistoricalAdminOrganizationId] =
+		useState<string | null>(null);
 	const [employee, setEmployee] = useState<EmployeeAllowanceView | null>(null);
-	const [orgPolicy, setOrgPolicy] = useState<VacationPolicyOption | null>(null);
 	const [policies, setPolicies] = useState<VacationPolicyOption[]>([]);
-	const [currentAssignment, setCurrentAssignment] = useState<EmployeePolicyAssignment | null>(null);
+	const [currentAssignment, setCurrentAssignment] =
+		useState<EmployeePolicyAssignment | null>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
 	// The balance and its year come from the server, in the organization's timezone (#1111).
-	const [balanceView, setBalanceView] = useState<EmployeeVacationBalanceView | null>(null);
+	const [balanceView, setBalanceView] =
+		useState<EmployeeVacationBalanceView | null>(null);
 	const currentYear = balanceView?.year ?? null;
 	const [adjustmentSummary, setAdjustmentSummary] =
 		useState<EmployeeAdjustmentSummary>(EMPTY_ADJUSTMENT_SUMMARY);
@@ -122,7 +128,10 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				async () => {
 					try {
 						const currentPolicyId = currentAssignment?.policyId || "";
-						const newPolicyId = value.policyId === DEFAULT_POLICY_VALUE ? "" : value.policyId || "";
+						const newPolicyId =
+							value.policyId === DEFAULT_POLICY_VALUE
+								? ""
+								: value.policyId || "";
 
 						if (currentPolicyId !== newPolicyId) {
 							const assignmentResult = await setEmployeePolicyAssignment(
@@ -142,10 +151,14 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 						}
 
 						if (value.customAnnualDays || value.customCarryoverDays) {
-							const result = await updateEmployeeAllowance(employeeId, currentYear, {
-								customAnnualDays: value.customAnnualDays || undefined,
-								customCarryoverDays: value.customCarryoverDays || undefined,
-							});
+							const result = await updateEmployeeAllowance(
+								employeeId,
+								currentYear,
+								{
+									customAnnualDays: value.customAnnualDays || undefined,
+									customCarryoverDays: value.customCarryoverDays || undefined,
+								},
+							);
 							if (!result.success) {
 								toast.error(
 									result.error ||
@@ -212,20 +225,21 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				return;
 			}
 
-			setHistoricalAdminOrganizationId(current.role === "admin" ? current.organizationId : null);
+			setHistoricalAdminOrganizationId(
+				current.role === "admin" ? current.organizationId : null,
+			);
 			const balanceResult = await getEmployeeVacationBalance(employeeId);
-			if (generation !== loadGeneration.current || !balanceResult.success) return;
+			if (generation !== loadGeneration.current || !balanceResult.success)
+				return;
 			const { year } = balanceResult.data;
 
 			const [
 				empResult,
-				policyResult,
 				policiesResult,
 				assignmentResult,
 				adjustmentSummaryResult,
 			] = await Promise.all([
 				getEmployeeAllowance(employeeId, year),
-				getVacationPolicies(current.organizationId),
 				getAssignmentPolicies(current.organizationId),
 				getEmployeePolicyAssignment(employeeId),
 				getEmployeeAdjustmentSummary(employeeId, year),
@@ -238,8 +252,8 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				if (!background || !form.store.state.isDirty) {
 					const allowance = empResult.data.vacationAllowances[0];
 					const policyId = assignmentResult.success
-					? assignmentResult.data?.policyId || DEFAULT_POLICY_VALUE
-					: DEFAULT_POLICY_VALUE;
+						? assignmentResult.data?.policyId || DEFAULT_POLICY_VALUE
+						: DEFAULT_POLICY_VALUE;
 					form.reset(
 						{
 							policyId,
@@ -253,19 +267,17 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				}
 			}
 
-			if (policyResult.success && policyResult.data) {
-				const defaultPolicy = policyResult.data.find((policy) =>
-					Boolean(policy.isCompanyDefault && policy.isActive),
-				);
-				setOrgPolicy(defaultPolicy || policyResult.data[0] || null);
-			}
 			if (policiesResult.success && policiesResult.data) {
 				setPolicies(
-					policiesResult.data.filter((policy) => policy.isActive) as VacationPolicyOption[],
+					policiesResult.data.filter(
+						(policy) => policy.isActive,
+					) as VacationPolicyOption[],
 				);
 			}
 			if (assignmentResult.success) {
-				setCurrentAssignment(assignmentResult.data as EmployeePolicyAssignment | null);
+				setCurrentAssignment(
+					assignmentResult.data as EmployeePolicyAssignment | null,
+				);
 			}
 			if (adjustmentSummaryResult.success)
 				setAdjustmentSummary(adjustmentSummaryResult.data);
@@ -295,12 +307,13 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 		form,
 		loading,
 		noEmployee,
-		orgPolicy,
 		policies,
 	};
 }
 
-type EmployeeAllowanceEditorState = ReturnType<typeof useEmployeeAllowanceEditor>;
+type EmployeeAllowanceEditorState = ReturnType<
+	typeof useEmployeeAllowanceEditor
+>;
 type EmployeeAllowanceFormApi = EmployeeAllowanceEditorState["form"];
 
 export function EmployeeAllowanceEditPageClient({
@@ -323,7 +336,6 @@ export function EmployeeAllowanceEditPageClient({
 		form,
 		loading,
 		noEmployee,
-		orgPolicy,
 		policies,
 		historicalAdminOrganizationId,
 		reload,
@@ -352,9 +364,8 @@ export function EmployeeAllowanceEditPageClient({
 		);
 	}
 
-	const defaultDays = orgPolicy?.defaultAnnualDays || "0";
-	// The server-side balance (#1111): the same numbers as the employee's Absences page. Without a
-	// company default policy for the year there is none.
+	const defaultDays = balanceView?.policy?.defaultAnnualDays ?? "—";
+	// Use the same balance and effective employee policy as the employee's Absences page.
 	const balance = balanceView?.balance ?? null;
 
 	return (
@@ -362,7 +373,10 @@ export function EmployeeAllowanceEditPageClient({
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.vacation.employees.edit.title", "Edit Vacation Allowance")}
+						{t(
+							"settings.vacation.employees.edit.title",
+							"Edit Vacation Allowance",
+						)}
 					</h1>
 					<p className="text-sm text-muted-foreground">
 						{t(
@@ -414,19 +428,24 @@ export function EmployeeAllowanceEditPageClient({
 									accrued={adjustmentSummary.accrual}
 									adjustments={adjustmentSummary.manual}
 								/>
+								<CarryoverExpiryNotice
+									balance={balance}
+									timezone={balanceView?.timezone ?? "UTC"}
+								/>
 								<div className="-mt-4 mb-6 flex flex-wrap items-center gap-2">
-									<VacationAllowanceExplanation allowance={balance.allowance} year={currentYear} />
-									<OverdrawnVacationBadge overdrawnDays={balance.overdrawnDays} />
+									<VacationAllowanceExplanation
+										allowance={balance.allowance}
+										year={currentYear}
+									/>
+									<OverdrawnVacationBadge
+										overdrawnDays={balance.overdrawnDays}
+									/>
 								</div>
 							</>
 						) : (
-							<p className="mb-6 text-sm text-muted-foreground">
-								{t(
-									"settings.vacation.employees.detail.noPolicyForYear",
-									"No company default vacation policy applies in {year}, so there is no balance yet.",
-									{ year: currentYear },
-								)}
-							</p>
+							<VacationPostingConfigurationNotice
+								configuration={balanceView?.configuration ?? null}
+							/>
 						)}
 
 						<PreviouslyTakenVacationExplanation
@@ -448,9 +467,15 @@ export function EmployeeAllowanceEditPageClient({
 								{(field) => (
 									<div className="space-y-2">
 										<Label htmlFor={assignedPolicyId}>
-											{t("settings.vacation.employees.detail.assignedPolicy", "Assigned Policy")}
+											{t(
+												"settings.vacation.employees.detail.assignedPolicy",
+												"Assigned Policy",
+											)}
 										</Label>
-										<Select onValueChange={field.handleChange} value={field.state.value}>
+										<Select
+											onValueChange={field.handleChange}
+											value={field.state.value}
+										>
 											<SelectTrigger id={assignedPolicyId}>
 												<SelectValue
 													placeholder={t(
@@ -461,7 +486,10 @@ export function EmployeeAllowanceEditPageClient({
 											</SelectTrigger>
 											<SelectContent>
 												<SelectItem value={DEFAULT_POLICY_VALUE}>
-													{t("settings.vacation.employees.detail.useDefault", "Use default")}
+													{t(
+														"settings.vacation.employees.detail.useDefault",
+														"Use default",
+													)}
 												</SelectItem>
 												{policies.map((policy) => (
 													<SelectItem key={policy.id} value={policy.id}>
@@ -521,13 +549,15 @@ export function EmployeeAllowanceEditPageClient({
 										/>
 										<p className="text-sm text-muted-foreground">
 											{t(
-												"settings.vacation.employees.detail.overrideOrganizationDefault",
-												"Override the organization default ({days} days) for this employee",
+												"settings.vacation.employees.detail.overrideEffectivePolicy",
+												"Override the assigned policy allowance ({days} days) for this employee",
 												{ days: defaultDays },
 											)}
 										</p>
 										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+											<p className="text-sm text-destructive">
+												{field.state.meta.errors[0]}
+											</p>
 										)}
 									</div>
 								)}
@@ -558,7 +588,9 @@ export function EmployeeAllowanceEditPageClient({
 											)}
 										</p>
 										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+											<p className="text-sm text-destructive">
+												{field.state.meta.errors[0]}
+											</p>
 										)}
 									</div>
 								)}
@@ -578,9 +610,14 @@ export function EmployeeAllowanceEditPageClient({
 									{t("settings.vacation.employees.detail.cancel", "Cancel")}
 								</Button>
 								<Button type="submit" disabled={loading}>
-									{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+									{loading && (
+										<IconLoader2 className="mr-2 size-4 animate-spin" />
+									)}
 									<IconDeviceFloppy className="mr-2 size-4" />
-									{t("settings.vacation.employees.detail.saveChanges", "Save Changes")}
+									{t(
+										"settings.vacation.employees.detail.saveChanges",
+										"Save Changes",
+									)}
 								</Button>
 							</div>
 						</form>
@@ -603,7 +640,10 @@ function EmployeeInformationCard({
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{t("settings.vacation.employees.detail.employeeInformation", "Employee Information")}
+					{t(
+						"settings.vacation.employees.detail.employeeInformation",
+						"Employee Information",
+					)}
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-4">
@@ -617,7 +657,9 @@ function EmployeeInformationCard({
 					/>
 					<div>
 						<div className="font-medium">{employee.user.name}</div>
-						<div className="text-sm text-muted-foreground">{employee.user.email}</div>
+						<div className="text-sm text-muted-foreground">
+							{employee.user.email}
+						</div>
 					</div>
 				</div>
 
@@ -655,7 +697,10 @@ function EmployeeInformationCard({
 										<span className="text-sm">{manager.manager.user.name}</span>
 										{manager.isPrimary && (
 											<Badge variant="secondary" className="text-xs">
-												{t("settings.vacation.employees.detail.primary", "Primary")}
+												{t(
+													"settings.vacation.employees.detail.primary",
+													"Primary",
+												)}
 											</Badge>
 										)}
 									</div>
@@ -707,7 +752,10 @@ function AllowanceBalanceSummary({
 			{showAccrued && (
 				<div className="space-y-1">
 					<div className="text-sm text-muted-foreground">
-						{t("settings.vacation.employees.detail.accruedToDate", "Accrued to Date")}
+						{t(
+							"settings.vacation.employees.detail.accruedToDate",
+							"Accrued to Date",
+						)}
 					</div>
 					<div className="text-2xl font-bold">{accrued}</div>
 					{accrualPolicy && balance.allowance && (
@@ -733,7 +781,11 @@ function AllowanceBalanceSummary({
 				</div>
 				<div
 					className={`text-2xl font-bold ${
-						adjustments > 0 ? "text-green-600" : adjustments < 0 ? "text-red-600" : ""
+						adjustments > 0
+							? "text-green-600"
+							: adjustments < 0
+								? "text-red-600"
+								: ""
 					}`}
 				>
 					{adjustments > 0 ? "+" : ""}
@@ -742,7 +794,10 @@ function AllowanceBalanceSummary({
 			</div>
 			<div className="space-y-1">
 				<div className="text-sm text-muted-foreground">
-					{t("settings.vacation.employees.detail.totalAvailable", "Total Available")}
+					{t(
+						"settings.vacation.employees.detail.totalAvailable",
+						"Total Available",
+					)}
 				</div>
 				<div className="text-2xl font-bold">{balance.totalDays}</div>
 			</div>
@@ -763,7 +818,10 @@ function ManualAdjustmentHistory({
 	return (
 		<div className="mb-6 space-y-2">
 			<h3 className="text-sm font-medium">
-				{t("settings.vacation.employees.detail.adjustmentHistory", "Adjustment History")}
+				{t(
+					"settings.vacation.employees.detail.adjustmentHistory",
+					"Adjustment History",
+				)}
 			</h3>
 			{adjustments.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
@@ -820,7 +878,10 @@ function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
 	return (
 		<div className="space-y-4">
 			<h3 className="text-lg font-semibold">
-				{t("settings.vacation.employees.detail.addManualAdjustment", "Add Manual Adjustment")}
+				{t(
+					"settings.vacation.employees.detail.addManualAdjustment",
+					"Add Manual Adjustment",
+				)}
 			</h3>
 			<p className="text-sm text-muted-foreground">
 				{t(
@@ -833,7 +894,10 @@ function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
 				{(field) => (
 					<div className="space-y-2">
 						<Label htmlFor={adjustmentDaysId}>
-							{t("settings.vacation.employees.detail.adjustmentDays", "Adjustment Days")}
+							{t(
+								"settings.vacation.employees.detail.adjustmentDays",
+								"Adjustment Days",
+							)}
 						</Label>
 						<Input
 							id={adjustmentDaysId}
@@ -854,7 +918,9 @@ function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
 							)}
 						</p>
 						{field.state.meta.errors.length > 0 && (
-							<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+							<p className="text-sm text-destructive">
+								{field.state.meta.errors[0]}
+							</p>
 						)}
 					</div>
 				)}
@@ -864,7 +930,10 @@ function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
 				{(field) => (
 					<div className="space-y-2">
 						<Label htmlFor={adjustmentReasonId}>
-							{t("settings.vacation.employees.detail.reasonForAdjustment", "Reason for Adjustment")}
+							{t(
+								"settings.vacation.employees.detail.reasonForAdjustment",
+								"Reason for Adjustment",
+							)}
 						</Label>
 						<Textarea
 							id={adjustmentReasonId}
@@ -883,11 +952,75 @@ function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
 							)}
 						</p>
 						{field.state.meta.errors.length > 0 && (
-							<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+							<p className="text-sm text-destructive">
+								{field.state.meta.errors[0]}
+							</p>
 						)}
 					</div>
 				)}
 			</form.Field>
+		</div>
+	);
+}
+
+function CarryoverExpiryNotice({
+	balance,
+	timezone,
+}: {
+	balance: VacationBalance;
+	timezone: string;
+}) {
+	const { t } = useTranslate();
+	const displayContext = useDisplayContext();
+	const carryoverTimezone = balance.carryoverExpiryTimezone ?? timezone;
+	if (!balance.carryoverExpiryDate) {
+		return balance.carryoverDays && balance.carryoverDays > 0 ? (
+			<p className="mb-6 text-sm text-muted-foreground">
+				{t(
+					"settings.vacation.employees.detail.carryoverNoExpiry",
+					"Carryover has no expiry date.",
+				)}
+			</p>
+		) : null;
+	}
+	return (
+		<p className="mb-6 text-sm text-muted-foreground">
+			{t(
+				"settings.vacation.employees.detail.carryoverExpiry",
+				"Carryover expires on {date} ({timezone}).",
+				{
+					date: formatPlainDate(
+						instantFromDate(balance.carryoverExpiryDate)
+							.toZonedDateTimeISO(carryoverTimezone)
+							.toPlainDate(),
+						displayContext.locale,
+						"dateMedium",
+					),
+					timezone: carryoverTimezone,
+				},
+			)}
+		</p>
+	);
+}
+
+function VacationPostingConfigurationNotice({
+	configuration,
+}: {
+	configuration: EmployeeVacationBalanceView["configuration"];
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="mb-6 space-y-1 text-sm text-muted-foreground">
+			<VacationPolicyConfigurationMessage configuration={configuration} />
+			{(configuration?.status === "missing" ||
+				configuration?.status === "conflict") && (
+				<p>
+					{t(
+						"settings.vacation.employees.detail.postingsSkipped",
+						"Automatic vacation postings are skipped until the policy configuration is resolved.",
+					)}
+				</p>
+			)}
 		</div>
 	);
 }

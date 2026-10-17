@@ -5,19 +5,24 @@ import {
 	mondayToFriday,
 } from "@/lib/absences/absence-days";
 import type { ProratedAllowance } from "@/lib/absences/prorated-allowance";
-import type { AbsenceWithCategory, VacationBalance } from "@/lib/absences/types";
+import type {
+	AbsenceWithCategory,
+	VacationBalance,
+	VacationBalanceConfiguration,
+} from "@/lib/absences/types";
 
 export interface ManagerAbsenceMetrics {
-	vacationAllowance: number;
-	usedVacationDays: number;
+	vacationAllowance: number | null;
+	usedVacationDays: number | null;
 	previouslyTakenVacationDays?: number;
-	pendingVacationDays: number;
-	remainingVacationDays: number;
+	pendingVacationDays: number | null;
+	remainingVacationDays: number | null;
 	/** Approved vacation beyond the allowance (overdrawn vacation, #1111); never deducted. */
-	overdrawnVacationDays: number;
+	overdrawnVacationDays: number | null;
 	sickDays: number;
 	/** The vacation allowance and why it is prorated (#1111); absent without a policy. */
 	proratedAllowance?: ProratedAllowance;
+	vacationConfiguration?: VacationBalanceConfiguration | null;
 }
 
 /**
@@ -28,12 +33,16 @@ export function calculateManagerAbsenceMetrics(input: {
 	year: number;
 	/** The employee's vacation balance for the year; undefined without a policy. */
 	balance: VacationBalance | undefined;
+	configuration?: VacationBalanceConfiguration | null;
 	absences: AbsenceWithCategory[];
 	/** The employee's working days in the year; defaults to Monday to Friday. */
 	isWorkingDay?: IsWorkingDay;
 }): ManagerAbsenceMetrics {
 	const isWorkingDay = input.isWorkingDay ?? mondayToFriday;
-	const year = { startDate: `${input.year}-01-01`, endDate: `${input.year}-12-31` };
+	const year = {
+		startDate: `${input.year}-01-01`,
+		endDate: `${input.year}-12-31`,
+	};
 	const sickDays = input.absences.reduce((total, absence) => {
 		if (absence.status !== "approved" || absence.category.type !== "sick") {
 			return total;
@@ -46,16 +55,18 @@ export function calculateManagerAbsenceMetrics(input: {
 	const { balance } = input;
 	if (!balance) {
 		return {
-			vacationAllowance: 0,
-			usedVacationDays: 0,
-			pendingVacationDays: 0,
-			remainingVacationDays: 0,
-			overdrawnVacationDays: 0,
+			vacationAllowance: null,
+			usedVacationDays: null,
+			pendingVacationDays: null,
+			remainingVacationDays: null,
+			overdrawnVacationDays: null,
 			sickDays,
+			vacationConfiguration: input.configuration,
 		};
 	}
 
 	return {
+		vacationConfiguration: input.configuration,
 		vacationAllowance: balance.totalDays,
 		usedVacationDays: balance.usedDays,
 		...(balance.previouslyTakenDays
