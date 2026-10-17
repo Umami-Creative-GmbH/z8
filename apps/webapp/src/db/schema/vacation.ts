@@ -4,6 +4,7 @@ import {
 	check,
 	date,
 	decimal,
+	foreignKey,
 	index,
 	integer,
 	pgTable,
@@ -64,7 +65,9 @@ export const vacationAllowance = pgTable(
 
 		// Proration (#1104): prorate the allowance in a year the employee joins or leaves.
 		// Only annual policies are prorated; monthly and biweekly accrual already covers part years.
-		prorateInStartAndExitYear: boolean("prorate_in_start_and_exit_year").default(true).notNull(),
+		prorateInStartAndExitYear: boolean("prorate_in_start_and_exit_year")
+			.default(true)
+			.notNull(),
 		// Floor of the prorated allowance once the waiting period is complete. Between 0 and
 		// defaultAnnualDays; new policies get min(20, defaultAnnualDays) (defaultStatutoryMinimumDays).
 		statutoryMinimumDays: decimal("statutory_minimum_days").notNull(),
@@ -87,7 +90,9 @@ export const vacationAllowance = pgTable(
 		// Only one company default per org at a time (active and not superseded)
 		uniqueIndex("vacationAllowance_org_company_default_idx")
 			.on(table.organizationId)
-			.where(sql`is_company_default = true AND is_active = true AND valid_until IS NULL`),
+			.where(
+				sql`is_company_default = true AND is_active = true AND valid_until IS NULL`,
+			),
 	],
 );
 
@@ -112,7 +117,10 @@ export const employeeVacationAllowance = pgTable(
 	},
 	(table) => [
 		index("employeeVacationAllowance_employeeId_idx").on(table.employeeId),
-		index("employeeVacationAllowance_employeeId_year_idx").on(table.employeeId, table.year),
+		index("employeeVacationAllowance_employeeId_year_idx").on(
+			table.employeeId,
+			table.year,
+		),
 	],
 );
 
@@ -133,7 +141,10 @@ export const vacationAdjustment = pgTable(
 		year: integer("year").notNull(),
 		days: decimal("days", { precision: 5, scale: 2 }).notNull(), // +/- days adjustment
 		reason: text("reason").notNull(),
-		kind: text("kind").$type<VacationAdjustmentKind>().default("manual").notNull(),
+		kind: text("kind")
+			.$type<VacationAdjustmentKind>()
+			.default("manual")
+			.notNull(),
 		// The calendar month (1-12) of `year` an accrual row covers; null on manual rows. Unique per
 		// employee and year, so the accrual job can retry and catch up without duplicates. Null
 		// only on a legacy duplicate accrual row the 0214 backfill could not give a month.
@@ -157,7 +168,10 @@ export const vacationAdjustment = pgTable(
 			"vacation_adjustment_historical_check",
 			sql`${table.kind} <> 'historical_usage' OR (${table.days} <= 0 AND mod(${table.days}, 0.5) = 0 AND ${table.historicalCoverageStart} IS NOT NULL AND ${table.historicalCoverageEnd} IS NOT NULL AND ${table.historicalTrackingStart} IS NOT NULL AND ${table.historicalTimezone} IS NOT NULL AND ${table.historicalCoverageStart} <= ${table.historicalCoverageEnd} AND ${table.historicalCoverageEnd} < ${table.historicalTrackingStart} AND extract(year from ${table.historicalCoverageStart}) = ${table.year} AND extract(year from ${table.historicalCoverageEnd}) = ${table.year})`,
 		),
-		index("vacationAdjustment_employee_year_idx").on(table.employeeId, table.year),
+		index("vacationAdjustment_employee_year_idx").on(
+			table.employeeId,
+			table.year,
+		),
 		uniqueIndex("vacationAdjustment_accrual_period_idx")
 			.on(table.employeeId, table.year, table.accrualMonth)
 			.where(sql`${table.kind} = 'accrual'`),
@@ -188,13 +202,16 @@ export const vacationPolicyAssignment = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
+		assignmentType:
+			holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
 		teamId: uuid("team_id"),
 		employeeId: uuid("employee_id").references(() => employee.id, {
 			onDelete: "cascade",
 		}),
 		priority: integer("priority").default(0).notNull(), // 0=org, 1=team, 2=employee
-		effectiveStartDate: date("effective_start_date").default(sql`NULL`).notNull(),
+		effectiveStartDate: date("effective_start_date")
+			.default(sql`NULL`)
+			.notNull(),
 		effectiveEndDate: date("effective_end_date"),
 		legacyBaseline: boolean("legacy_baseline").default(false).notNull(),
 		reviewedBackdate: boolean("reviewed_backdate").default(false).notNull(),
@@ -211,9 +228,67 @@ export const vacationPolicyAssignment = pgTable(
 	},
 	(table) => [
 		index("vacationPolicyAssignment_policyId_idx").on(table.policyId),
-		index("vacationPolicyAssignment_organizationId_idx").on(table.organizationId),
+		index("vacationPolicyAssignment_organizationId_idx").on(
+			table.organizationId,
+		),
 		index("vacationPolicyAssignment_teamId_idx").on(table.teamId),
 		index("vacationPolicyAssignment_employeeId_idx").on(table.employeeId),
 		// Overlaps are prevented by date-range exclusion constraints in migration 0263.
+	],
+);
+
+/** One committed year-end decision, including zero days and explicit no-expiry.
+ * Legacy allowance rows remain untouched and need no inferred expiry. */
+export const vacationCarryoverTransfer = pgTable(
+	"vacation_carryover_transfer",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		sourceYear: integer("source_year").notNull(),
+		allowanceId: uuid("allowance_id").references(
+			() => employeeVacationAllowance.id,
+			{ onDelete: "set null" },
+		),
+		outcome: text("outcome")
+			.$type<"generated" | "legacy_preserved">()
+			.notNull(),
+		days: decimal("days").notNull(),
+		originalDays: decimal("original_days").notNull(),
+		expiryDate: timestamp("expiry_date", { withTimezone: true }),
+		timezone: text("timezone").notNull(),
+		sourcePolicyId: uuid("source_policy_id"),
+		receivingPolicyId: uuid("receiving_policy_id"),
+		performedBy: text("performed_by").notNull(),
+		reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+		expiredBy: text("expired_by"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		expiredAt: timestamp("expired_at", { withTimezone: true }),
+	},
+	(table) => [
+		uniqueIndex("vacation_carryover_transfer_employee_source_idx").on(
+			table.employeeId,
+			table.sourceYear,
+		),
+		index("vacation_carryover_transfer_org_idx").on(
+			table.organizationId,
+			table.sourceYear,
+		),
+		foreignKey({
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		check(
+			"vacation_carryover_transfer_outcome_check",
+			sql`${table.outcome} IN ('generated','legacy_preserved')`,
+		),
+		check(
+			"vacation_carryover_transfer_days_check",
+			sql`${table.days} >= 0 AND ${table.originalDays} >= 0`,
+		),
 	],
 );

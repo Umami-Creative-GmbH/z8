@@ -30,7 +30,8 @@ export interface VacationBalance {
 	 */
 	overdrawnDays: number;
 	carryoverDays?: number; // From previous year
-	carryoverExpiryDate?: Date; // When carryover expires
+	carryoverExpiryDate?: Date;
+	carryoverExpiryTimezone?: string; // When carryover expires
 	/** The vacation allowance in `totalDays` and why it is prorated or full (#1110). */
 	allowance?: ProratedAllowance;
 }

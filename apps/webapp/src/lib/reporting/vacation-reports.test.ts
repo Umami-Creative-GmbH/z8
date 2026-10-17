@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+	exportExpirationReportAsCsv,
 	exportVacationBalanceAsCsv,
+	formatExpirationWarningEmail,
 	formatVacationBalanceAsHtml,
 	type IndividualBalanceReport,
 } from "./vacation-reports";
@@ -77,5 +79,62 @@ describe("vacation balance exports", () => {
 		expect(html).toContain("Alice &quot;A&quot; &lt;Admin&gt;");
 		expect(html).toContain("Example &amp; Co");
 		expect(html).not.toContain("null");
+	});
+});
+
+describe("carryover expiration report timezone", () => {
+	it("exports the organization-local frozen expiry day independently of viewer timezone", () => {
+		const csv = exportExpirationReportAsCsv([
+			{
+				employeeId: "employee-1",
+				employeeName: "West Coast Employee",
+				carryoverDays: 4,
+				expiresAt: new Date("2027-04-01T06:59:59.999Z"),
+				timezone: "America/Los_Angeles",
+				daysUntilExpiry: 5,
+				urgency: "critical",
+			},
+		]);
+		expect(csv).toContain('"West Coast Employee",4.0,2027-03-31,5,critical');
+	});
+});
+
+describe("carryover expiration email timezone", () => {
+	it.each(["critical", "warning"] as const)(
+		"formats %s expiry in its frozen transfer zone",
+		(urgency) => {
+			const html = formatExpirationWarningEmail(
+				[
+					{
+						employeeId: "employee-1",
+						employeeName: "West Coast Employee",
+						carryoverDays: 4,
+						expiresAt: new Date("2027-04-01T06:59:59.999Z"),
+						timezone: "America/Los_Angeles",
+						daysUntilExpiry: 5,
+						urgency,
+					},
+				],
+				"Example Co",
+			);
+			expect(html).toContain("days expiring on March 31, 2027");
+		},
+	);
+});
+
+describe("balance report carryover expiry timezone", () => {
+	it("exports the frozen calendar day in the balance expiry column", () => {
+		const csv = exportVacationBalanceAsCsv(
+			[
+				{
+					...resolved,
+					carryover: 4,
+					carryoverExpiryDate: new Date("2027-04-01T06:59:59.999Z"),
+					timezone: "America/Los_Angeles",
+				},
+			],
+			2027,
+		);
+		expect(csv).toContain("20%,2027-03-31");
 	});
 });

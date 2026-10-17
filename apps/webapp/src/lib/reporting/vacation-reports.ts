@@ -23,6 +23,7 @@ import {
 import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
 import { isAccrualPolicy } from "@/lib/absences/vacation-policy-settings";
 import { format } from "@/lib/datetime/luxon-utils";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import {
 	getEmployeesWithExpiringCarryover,
 	getPendingVacationRequests,
@@ -38,6 +39,8 @@ export interface TeamVacationCalendarEntry {
 }
 
 export interface IndividualBalanceReport {
+	/** Frozen transfer timezone, or the organization zone for legacy carryover. */
+	timezone?: string;
 	employeeId: string;
 	employeeName: string;
 	email: string;
@@ -107,6 +110,8 @@ function reportNumber(value: number | null): string {
 }
 
 export interface ExpirationReport {
+	/** Frozen transfer timezone, or the organization zone for legacy carryover. */
+	timezone?: string;
 	employeeId: string;
 	employeeName: string;
 	carryoverDays: number;
@@ -184,6 +189,7 @@ export async function generateIndividualBalanceReport(
 		pending: emp.pending,
 		remaining: emp.remaining,
 		carryoverExpiryDate: emp.carryoverExpiryDate,
+		timezone: emp.timezone,
 		utilizationRate:
 			emp.totalAllowance === null || emp.used === null || emp.pending === null
 				? null
@@ -212,6 +218,7 @@ export async function generateExpirationReport(
 		employeeName: emp.employeeName,
 		carryoverDays: emp.carryoverDays,
 		expiresAt: emp.expiresAt,
+		timezone: emp.timezone,
 		daysUntilExpiry: emp.daysUntilExpiry,
 		urgency:
 			emp.daysUntilExpiry <= 7
@@ -376,7 +383,10 @@ export function exportVacationBalanceAsCsv(
 	// Data rows
 	for (const report of reports) {
 		const expiryStr = report.carryoverExpiryDate
-			? format(report.carryoverExpiryDate, "yyyy-MM-dd")
+			? instantFromDate(report.carryoverExpiryDate)
+					.toZonedDateTimeISO(report.timezone ?? "UTC")
+					.toPlainDate()
+					.toString()
 			: "N/A";
 
 		lines.push(
@@ -429,7 +439,12 @@ export function exportExpirationReportAsCsv(
 	// Data rows
 	for (const report of reports) {
 		lines.push(
-			`"${report.employeeName}",${report.carryoverDays.toFixed(1)},${format(report.expiresAt, "yyyy-MM-dd")},${report.daysUntilExpiry},${report.urgency}`,
+			`"${report.employeeName}",${report.carryoverDays.toFixed(1)},${instantFromDate(
+				report.expiresAt,
+			)
+				.toZonedDateTimeISO(report.timezone ?? "UTC")
+				.toPlainDate()
+				.toString()},${report.daysUntilExpiry},${report.urgency}`,
 		);
 	}
 
@@ -596,7 +611,16 @@ export function formatExpirationWarningEmail(
 		for (const report of critical) {
 			html += `
   <div class="critical">
-    <strong>${report.employeeName}</strong> - ${report.carryoverDays.toFixed(1)} days expiring on ${format(report.expiresAt, "MMMM d, yyyy")} (${report.daysUntilExpiry} days remaining)
+    <strong>${report.employeeName}</strong> - ${report.carryoverDays.toFixed(1)} days expiring on ${instantFromDate(
+			report.expiresAt,
+		)
+			.toZonedDateTimeISO(report.timezone ?? "UTC")
+			.toPlainDate()
+			.toLocaleString("en-US", {
+				year: "numeric",
+				month: "long",
+				day: "numeric",
+			})} (${report.daysUntilExpiry} days remaining)
   </div>`;
 		}
 	}
@@ -607,7 +631,16 @@ export function formatExpirationWarningEmail(
 		for (const report of warning) {
 			html += `
   <div class="warning">
-    <strong>${report.employeeName}</strong> - ${report.carryoverDays.toFixed(1)} days expiring on ${format(report.expiresAt, "MMMM d, yyyy")} (${report.daysUntilExpiry} days remaining)
+    <strong>${report.employeeName}</strong> - ${report.carryoverDays.toFixed(1)} days expiring on ${instantFromDate(
+			report.expiresAt,
+		)
+			.toZonedDateTimeISO(report.timezone ?? "UTC")
+			.toPlainDate()
+			.toLocaleString("en-US", {
+				year: "numeric",
+				month: "long",
+				day: "numeric",
+			})} (${report.daysUntilExpiry} days remaining)
   </div>`;
 		}
 	}

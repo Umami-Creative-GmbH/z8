@@ -1503,6 +1503,8 @@ export async function getEmployeeAdjustmentSummary(
 }
 
 export type EmployeeVacationBalanceView = {
+	/** Organization calendar zone for reviewing the stored carryover expiry. */
+	timezone: string;
 	/** The organization's current calendar year, the year the admin page edits. */
 	year: number;
 	/** Null when policy periods cannot produce a reliable balance. */
@@ -1555,6 +1557,7 @@ export async function getEmployeeVacationBalance(
 			);
 			const policy = policies.get(employeeId);
 			return {
+				timezone,
 				year,
 				balance: balances.get(employeeId) ?? null,
 				configuration: configurations.get(employeeId) ?? null,

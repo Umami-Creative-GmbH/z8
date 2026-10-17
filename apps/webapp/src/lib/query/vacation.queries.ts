@@ -5,6 +5,7 @@
  */
 
 import { and, asc, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import {
@@ -22,9 +23,13 @@ import {
 	type IsWorkingDay,
 	mondayToFriday,
 } from "@/lib/absences/absence-days";
-import { getAbsenceDaysByAbsenceId, loadWorkingDays } from "@/lib/absences/absence-days-resolver";
+import {
+	getAbsenceDaysByAbsenceId,
+	loadWorkingDays,
+} from "@/lib/absences/absence-days-resolver";
 import { calculateCarryoverExpiryDate } from "@/lib/absences/date-utils";
 import type { DayPeriod } from "@/lib/absences/types";
+import { loadFrozenCarryoverTerms } from "@/lib/absences/vacation-carryover-terms";
 import { loadCompanyDefaultVacationPolicy } from "@/lib/absences/vacation-policy-store";
 
 export interface VacationAllowanceRecord {
@@ -127,7 +132,10 @@ export async function getCompanyDefaultPolicy(
 			eq(vacationAllowance.isCompanyDefault, true),
 			eq(vacationAllowance.isActive, true),
 			lte(vacationAllowance.startDate, asOfDate),
-			or(isNull(vacationAllowance.validUntil), gte(vacationAllowance.validUntil, asOfDate)),
+			or(
+				isNull(vacationAllowance.validUntil),
+				gte(vacationAllowance.validUntil, asOfDate),
+			),
 		),
 		orderBy: desc(vacationAllowance.startDate),
 	});
@@ -168,7 +176,10 @@ export async function getActivePolicyForDate(
 			eq(vacationAllowance.organizationId, organizationId),
 			eq(vacationAllowance.isActive, true),
 			lte(vacationAllowance.startDate, date),
-			or(isNull(vacationAllowance.validUntil), gte(vacationAllowance.validUntil, date)),
+			or(
+				isNull(vacationAllowance.validUntil),
+				gte(vacationAllowance.validUntil, date),
+			),
 		),
 		orderBy: desc(vacationAllowance.startDate),
 	});
@@ -192,7 +203,10 @@ export async function getPoliciesInDateRange(
 			// Policy started before range ended
 			lte(vacationAllowance.startDate, endDate),
 			// Policy ended after range started (or hasn't ended)
-			or(isNull(vacationAllowance.validUntil), gte(vacationAllowance.validUntil, startDate)),
+			or(
+				isNull(vacationAllowance.validUntil),
+				gte(vacationAllowance.validUntil, startDate),
+			),
 		),
 		orderBy: asc(vacationAllowance.startDate),
 	});
@@ -222,7 +236,10 @@ export async function getVacationAllowance(
 	organizationId: string,
 	year: number,
 ): Promise<VacationAllowanceRecord | null> {
-	const policy = await loadCompanyDefaultVacationPolicy(db, { organizationId, year });
+	const policy = await loadCompanyDefaultVacationPolicy(db, {
+		organizationId,
+		year,
+	});
 	return (policy as VacationAllowanceRecord | undefined) ?? null;
 }
 
@@ -252,6 +269,10 @@ export async function getEmployeeVacationAllowance(
 			eq(employeeVacationAllowance.employeeId, employeeId),
 			eq(employeeVacationAllowance.year, year),
 		),
+		orderBy: [
+			desc(employeeVacationAllowance.updatedAt),
+			desc(employeeVacationAllowance.id),
+		],
 	});
 
 	return result as EmployeeVacationAllowanceRecord | null;
@@ -289,7 +310,10 @@ export async function getAllEmployeeVacationAllowances(
 		.innerJoin(employee, eq(employeeVacationAllowance.employeeId, employee.id))
 		.innerJoin(user, eq(employee.userId, user.id))
 		.where(
-			and(eq(employee.organizationId, organizationId), eq(employeeVacationAllowance.year, year)),
+			and(
+				eq(employee.organizationId, organizationId),
+				eq(employeeVacationAllowance.year, year),
+			),
 		);
 
 	return results as (EmployeeVacationAllowanceRecord & {
@@ -308,15 +332,20 @@ export async function upsertEmployeeVacationAllowance(input: {
 	customAnnualDays?: number | null;
 	customCarryoverDays?: number | null;
 }): Promise<EmployeeVacationAllowanceRecord> {
-	const existing = await getEmployeeVacationAllowance(input.employeeId, input.year);
+	const existing = await getEmployeeVacationAllowance(
+		input.employeeId,
+		input.year,
+	);
 
 	if (existing) {
 		// Update existing record
 		const [updated] = await db
 			.update(employeeVacationAllowance)
 			.set({
-				customAnnualDays: input.customAnnualDays?.toString() ?? existing.customAnnualDays,
-				customCarryoverDays: input.customCarryoverDays?.toString() ?? existing.customCarryoverDays,
+				customAnnualDays:
+					input.customAnnualDays?.toString() ?? existing.customAnnualDays,
+				customCarryoverDays:
+					input.customCarryoverDays?.toString() ?? existing.customCarryoverDays,
 			})
 			.where(eq(employeeVacationAllowance.id, existing.id))
 			.returning();
@@ -349,7 +378,9 @@ export async function getVacationTakenInYear(
 	const startOfYear = `${year}-01-01`;
 	const endOfYear = `${year}-12-31`;
 
-	const emp = await db.query.employee.findFirst({ where: eq(employee.id, employeeId) });
+	const emp = await db.query.employee.findFirst({
+		where: eq(employee.id, employeeId),
+	});
 	if (!emp) return { totalDays: 0, entries: [], isWorkingDay: mondayToFriday };
 	const [entries, isWorkingDay] = await Promise.all([
 		db
@@ -363,7 +394,10 @@ export async function getVacationTakenInYear(
 				countsAgainstVacation: absenceCategory.countsAgainstVacation,
 			})
 			.from(absenceEntry)
-			.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
+			.innerJoin(
+				absenceCategory,
+				eq(absenceEntry.categoryId, absenceCategory.id),
+			)
 			.where(
 				and(
 					eq(absenceEntry.employeeId, employeeId),
@@ -373,7 +407,10 @@ export async function getVacationTakenInYear(
 					),
 					eq(absenceCategory.organizationId, emp.organizationId),
 					options.includePending
-						? or(eq(absenceEntry.status, "approved"), eq(absenceEntry.status, "pending"))
+						? or(
+								eq(absenceEntry.status, "approved"),
+								eq(absenceEntry.status, "pending"),
+							)
 						: eq(absenceEntry.status, "approved"),
 					eq(absenceCategory.countsAgainstVacation, true),
 					lte(absenceEntry.startDate, endOfYear),
@@ -389,7 +426,10 @@ export async function getVacationTakenInYear(
 	]);
 
 	const result = entries.map((entry) => {
-		const clipped = clipAbsenceDayRange(entry, { startDate: startOfYear, endDate: endOfYear });
+		const clipped = clipAbsenceDayRange(entry, {
+			startDate: startOfYear,
+			endDate: endOfYear,
+		});
 		const days = clipped ? countAbsenceDays(clipped, isWorkingDay) : 0;
 		return {
 			id: entry.id,
@@ -433,6 +473,28 @@ export async function getCarryoverBalance(
 		return { balance: 0, expiresAt: null, isExpired: false };
 	}
 
+	const frozen = (
+		await loadFrozenCarryoverTerms(db, {
+			organizationId: emp.organizationId,
+			employeeIds: [employeeId],
+			year,
+		})
+	).get(employeeId);
+	if (frozen && frozen.allowanceId === allowance.id) {
+		const expiresAt = frozen.expiryDate;
+		const isExpired =
+			Boolean(frozen.expiredAt) ||
+			(expiresAt !== null &&
+				Temporal.Instant.compare(
+					Temporal.Instant.from(currentDate.toISOString()),
+					Temporal.Instant.from(expiresAt.toISOString()),
+				) > 0);
+		return {
+			balance: isExpired ? 0 : Number(allowance.customCarryoverDays),
+			expiresAt,
+			isExpired,
+		};
+	}
 	const policy = await getVacationAllowance(emp.organizationId, year);
 	const carryoverDays = parseFloat(allowance.customCarryoverDays);
 
@@ -488,12 +550,17 @@ export async function getPendingVacationRequests(
 		)
 		.orderBy(absenceEntry.startDate);
 
-	const absenceDays = await getAbsenceDaysByAbsenceId(db, { organizationId, absences: results });
+	const absenceDays = await getAbsenceDaysByAbsenceId(db, {
+		organizationId,
+		absences: results,
+	});
 
 	return results.map((r) => ({
 		id: r.id,
 		employeeId: r.employeeId,
-		employeeName: [r.employeeFirstName, r.employeeLastName].filter(Boolean).join(" ") || "Unknown",
+		employeeName:
+			[r.employeeFirstName, r.employeeLastName].filter(Boolean).join(" ") ||
+			"Unknown",
 		startDate: r.startDate,
 		startPeriod: r.startPeriod,
 		endDate: r.endDate,
@@ -521,8 +588,15 @@ export async function getEmployeesWithVacationData(
 > {
 	const [employees, allowances] = await Promise.all([
 		db.query.employee.findMany({
-			where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-			with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
+			where: and(
+				eq(employee.organizationId, organizationId),
+				eq(employee.isActive, true),
+			),
+			with: {
+				user: {
+					columns: { firstName: true, lastName: true, name: true, email: true },
+				},
+			},
 		}),
 		getAllEmployeeVacationAllowances(organizationId, year),
 	]);
@@ -548,58 +622,83 @@ export async function getEmployeesWithExpiringCarryover(
 	organizationId: string,
 	year: number,
 	daysUntilExpiry: number = 30,
+	currentDate: Date = new Date(),
 ): Promise<
 	Array<{
 		employeeId: string;
 		employeeName: string;
 		carryoverDays: number;
 		expiresAt: Date;
+		timezone: string;
 		daysUntilExpiry: number;
 	}>
 > {
-	const policy = await getVacationAllowance(organizationId, year);
-
-	if (!policy?.allowCarryover || !policy.carryoverExpiryMonths) {
-		return [];
-	}
-
-	const org = await db.query.organization.findFirst({
-		where: eq(organization.id, organizationId),
-		columns: { timezone: true },
-	});
+	const [policy, org, allowances] = await Promise.all([
+		getVacationAllowance(organizationId, year),
+		db.query.organization.findFirst({
+			where: eq(organization.id, organizationId),
+			columns: { timezone: true },
+		}),
+		getAllEmployeeVacationAllowances(organizationId, year),
+	]);
 	const timezone = org?.timezone || "UTC";
-	const expiresAt = calculateCarryoverExpiryDate(
+	const canonical = new Map<string, (typeof allowances)[number]>();
+	for (const allowance of allowances.toSorted(
+		(a, b) =>
+			b.updatedAt.getTime() - a.updatedAt.getTime() || b.id.localeCompare(a.id),
+	))
+		if (!canonical.has(allowance.employeeId))
+			canonical.set(allowance.employeeId, allowance);
+	const frozen = await loadFrozenCarryoverTerms(db, {
+		organizationId,
+		employeeIds: [...canonical.keys()],
 		year,
-		policy.carryoverExpiryMonths,
-		timezone,
-	).toJSDate();
-
-	const now = new Date();
-	const maxDate = new Date(now);
-	maxDate.setDate(maxDate.getDate() + daysUntilExpiry);
-
-	// If expiry is not within the window, return empty
-	if (expiresAt > maxDate || expiresAt < now) {
-		return [];
-	}
-
-	const allowances = await getAllEmployeeVacationAllowances(organizationId, year);
-
-	return allowances.flatMap((a) => {
-		const carryoverDays = parseFloat(a.customCarryoverDays || "0");
-		return a.customCarryoverDays && carryoverDays > 0
-			? [
-					{
-						employeeId: a.employeeId,
-						employeeName: a.employeeName || "Unknown",
-						carryoverDays,
-						expiresAt,
-						daysUntilExpiry: Math.ceil(
-							(expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-						),
-					},
-				]
-			: [];
+	});
+	const now = Temporal.Instant.from(currentDate.toISOString());
+	const end = now
+		.toZonedDateTimeISO(timezone)
+		.add({ days: daysUntilExpiry })
+		.toInstant();
+	return [...canonical.values()].flatMap((allowance) => {
+		const terms = frozen.get(allowance.employeeId);
+		const selected = terms?.allowanceId === allowance.id ? terms : undefined;
+		const expiresAt = selected
+			? selected.expiryDate
+			: policy?.allowCarryover && policy.carryoverExpiryMonths
+				? calculateCarryoverExpiryDate(
+						year,
+						policy.carryoverExpiryMonths,
+						timezone,
+					).toJSDate()
+				: null;
+		const days = Number(allowance.customCarryoverDays ?? 0);
+		if (!expiresAt || selected?.expiredAt || days <= 0) return [];
+		const expiry = Temporal.Instant.from(expiresAt.toISOString());
+		if (
+			Temporal.Instant.compare(expiry, now) < 0 ||
+			Temporal.Instant.compare(expiry, end) > 0
+		)
+			return [];
+		return [
+			{
+				employeeId: allowance.employeeId,
+				employeeName: allowance.employeeName || "Unknown",
+				carryoverDays: days,
+				expiresAt,
+				timezone: selected?.timezone ?? timezone,
+				daysUntilExpiry: Math.ceil(
+					now
+						.toZonedDateTimeISO(selected?.timezone ?? timezone)
+						.until(expiry.toZonedDateTimeISO(selected?.timezone ?? timezone))
+						.total({
+							unit: "days",
+							relativeTo: now.toZonedDateTimeISO(
+								selected?.timezone ?? timezone,
+							),
+						}),
+				),
+			},
+		];
 	});
 }
 
@@ -632,7 +731,10 @@ export async function getVacationAuditTrail(
 		.from(absenceEntry)
 		.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
 		.where(
-			and(eq(absenceEntry.employeeId, employeeId), eq(absenceCategory.countsAgainstVacation, true)),
+			and(
+				eq(absenceEntry.employeeId, employeeId),
+				eq(absenceCategory.countsAgainstVacation, true),
+			),
 		)
 		.orderBy(desc(absenceEntry.createdAt))
 		.limit(limit);
@@ -673,7 +775,9 @@ export async function getVacationAuditTrail(
 	}
 
 	// Sort by date descending
-	return trail.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, limit);
+	return trail
+		.sort((a, b) => b.date.getTime() - a.date.getTime())
+		.slice(0, limit);
 }
 
 // ============================================

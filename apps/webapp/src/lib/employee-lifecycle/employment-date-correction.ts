@@ -216,6 +216,7 @@ export async function loadEmploymentDateCorrectionImpact(
 	const vacationPolicies: unknown[] = [];
 	const years = new Set([
 		...refresh.accrualSums.keys(),
+		...refresh.policyEvidence.filter((row) => row.year >= 2026).map((row) => row.year),
 		...refresh.carryovers.map((row) => row.year),
 	]);
 	for (let year = firstYear; year <= currentYear; year++) years.add(year);
@@ -320,6 +321,7 @@ export async function loadEmploymentDateCorrectionImpact(
 				accrualSums: [...refresh.accrualSums],
 				carryovers: refresh.carryovers,
 				carryoverEvidence: refresh.carryoverEvidence,
+				policyEvidence: refresh.policyEvidence,
 			},
 		}),
 	};

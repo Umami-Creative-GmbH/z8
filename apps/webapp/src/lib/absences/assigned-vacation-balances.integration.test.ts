@@ -347,6 +347,7 @@ describe("assigned vacation balances (#1370)", () => {
 				effectiveStartDate: "2027-07-01",
 				createdBy: fixture.ownerUserId,
 			});
+		await fixture.pool.query("update vacation_policy_rollout set calculations_enabled=false where organization_id=$1", [fixture.organizationId]);
 		const input = {
 			organizationId: fixture.organizationId,
 			employeeIds: [fixture.employeeId],
