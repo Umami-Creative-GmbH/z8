@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: employment-terms-1159-repair-${{ github.ref }}
+  group: employment-terms-1159-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -18,7 +18,6 @@ env:
 
 jobs:
   unit:
-    if: false # Diagnostic repair pass only; restored before final verification.
     name: Employment terms unit tests (shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -95,33 +94,7 @@ jobs:
           cache: pnpm
       - name: Install webapp dependencies
         run: pnpm --filter webapp... install --frozen-lockfile
-      - name: Apply safe formatting fixes for connector review
-        working-directory: apps/webapp
-        run: >-
-          pnpm exec biome check --write --max-diagnostics=100
-          src/lib/calendar/employment-terms-requirements.integration.test.ts
-          src/lib/calendar/work-policy-requirements.test.ts
-          src/lib/calendar/work-policy-requirements.ts
-          src/lib/employment-history/load-terms-in-force.ts
-          src/lib/scheduling/staffing/load-staffing-facts.ts
-      - name: Emit formatted source for connector repair
-        if: ${{ !cancelled() }}
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFileSync } from 'node:fs';
-          const paths = [
-            'apps/webapp/src/lib/calendar/employment-terms-requirements.integration.test.ts',
-            'apps/webapp/src/lib/calendar/work-policy-requirements.test.ts',
-            'apps/webapp/src/lib/calendar/work-policy-requirements.ts',
-            'apps/webapp/src/lib/employment-history/load-terms-in-force.ts',
-            'apps/webapp/src/lib/scheduling/staffing/load-staffing-facts.ts',
-          ];
-          for (const path of paths) console.log('CODEX_FORMATTED_FILE ' + JSON.stringify({ path, content: readFileSync(path, 'utf8') }));
-          NODE
-      - name: Require formatting fixes to be committed
-        run: git diff --exit-code -- apps/webapp/src/lib/calendar apps/webapp/src/lib/employment-history/load-terms-in-force.ts apps/webapp/src/lib/scheduling/staffing/load-staffing-facts.ts
       - name: Check changed TypeScript files
-        if: ${{ !cancelled() }}
         working-directory: apps/webapp
         run: >-
           pnpm exec biome ci --max-diagnostics=100
@@ -132,7 +105,6 @@ jobs:
           src/lib/scheduling/staffing/load-staffing-facts.ts
 
   postgres:
-    if: false # The original run already verified these suites; final run repeats them.
     name: Employment terms PostgreSQL regressions
     runs-on: ubuntu-latest
     timeout-minutes: 20

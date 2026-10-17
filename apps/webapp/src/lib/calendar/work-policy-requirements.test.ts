@@ -13,7 +13,9 @@ const source = readFileSync(
 	"utf8",
 );
 
-function basePolicy(schedule: EffectiveWorkPolicy["schedule"]): EffectiveWorkPolicy {
+function basePolicy(
+	schedule: EffectiveWorkPolicy["schedule"],
+): EffectiveWorkPolicy {
 	return {
 		policyId: "policy-1",
 		policyName: "Standard Hours",
@@ -266,21 +268,30 @@ describe("buildShiftDailyWorkRequirements", () => {
 		{ timezone: "Europe/Berlin", stored: "2026-10-08T22:00:00.000Z" },
 		{ timezone: "America/New_York", stored: "2026-10-09T04:00:00.000Z" },
 		{ timezone: "UTC", stored: "2026-10-09T00:00:00.000Z" },
-	])("keys a $timezone organization's shift by its calendar date", ({ timezone, stored }) => {
-		const requirements = buildShiftDailyWorkRequirements({
-			shifts: [{ date: new Date(stored), startTime: "08:00", endTime: "16:00" }],
-			organizationTimezone: timezone,
-		});
+	])(
+		"keys a $timezone organization's shift by its calendar date",
+		({ timezone, stored }) => {
+			const requirements = buildShiftDailyWorkRequirements({
+				shifts: [
+					{ date: new Date(stored), startTime: "08:00", endTime: "16:00" },
+				],
+				organizationTimezone: timezone,
+			});
 
-		expect(Object.keys(requirements)).toEqual(["2026-10-09"]);
-		expect(requirements["2026-10-09"]?.requiredMinutes).toBe(480);
-	});
+			expect(Object.keys(requirements)).toEqual(["2026-10-09"]);
+			expect(requirements["2026-10-09"]?.requiredMinutes).toBe(480);
+		},
+	);
 
 	it("measures a shift across the organization's DST change by its wall times", () => {
 		const requirements = buildShiftDailyWorkRequirements({
 			// Berlin 2026-10-24 22:00 to 06:00, across the night clocks go back an hour.
 			shifts: [
-				{ date: new Date("2026-10-23T22:00:00.000Z"), startTime: "22:00", endTime: "06:00" },
+				{
+					date: new Date("2026-10-23T22:00:00.000Z"),
+					startTime: "22:00",
+					endTime: "06:00",
+				},
 			],
 			organizationTimezone: "Europe/Berlin",
 		});
@@ -302,12 +313,16 @@ describe("getDailyWorkRequirementsForEmployee", () => {
 	});
 
 	it("clamps generated requirements to account creation unless imported work predates it", () => {
-		expect(source).toContain("columns: { id: true, startDate: true, contractType: true }");
+		expect(source).toContain(
+			"columns: { id: true, startDate: true, contractType: true }",
+		);
 		expect(source).toContain("user: { columns: { createdAt: true } }");
 		expect(source).toContain("getFirstCompletedWorkPeriodBeforeAccount");
 		expect(source).toContain("scopedEmployee.user.createdAt");
 		expect(source).toContain("const effectiveStartDate");
-		expect(source).toContain("if (effectiveStartDate > params.endDate) return {};");
+		expect(source).toContain(
+			"if (effectiveStartDate > params.endDate) return {};",
+		);
 		expect(source).toContain("startDate: effectiveStartDate");
 	});
 });

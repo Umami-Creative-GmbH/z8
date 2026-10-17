@@ -1,6 +1,9 @@
 import { and, asc, eq, inArray, lt } from "drizzle-orm";
 import type { db as appDb } from "@/db";
-import { type EmployeeEmploymentHistory, employeeEmploymentHistory } from "@/db/schema";
+import {
+	type EmployeeEmploymentHistory,
+	employeeEmploymentHistory,
+} from "@/db/schema";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
@@ -44,11 +47,16 @@ async function loadConfirmedTermsRows(
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
 				lt(
 					employeeEmploymentHistory.validFrom,
-					utcMidnight(input.range.toExclusive.add({ days: STORED_DATE_MARGIN_DAYS })),
+					utcMidnight(
+						input.range.toExclusive.add({ days: STORED_DATE_MARGIN_DAYS }),
+					),
 				),
 			),
 		)
-		.orderBy(asc(employeeEmploymentHistory.validFrom), asc(employeeEmploymentHistory.createdAt));
+		.orderBy(
+			asc(employeeEmploymentHistory.validFrom),
+			asc(employeeEmploymentHistory.createdAt),
+		);
 }
 
 /**
@@ -66,20 +74,30 @@ export async function loadConfirmedTermsSpans(
 		timezone?: string;
 	},
 ): Promise<TermsSpan<EmployeeEmploymentHistory>[]> {
-	const timezone = input.timezone ?? (await loadOrganizationTimezone(reader, input.organizationId));
+	const timezone =
+		input.timezone ??
+		(await loadOrganizationTimezone(reader, input.organizationId));
 	const rows = await loadConfirmedTermsRows(reader, {
 		organizationId: input.organizationId,
 		employeeIds: [input.employeeId],
 		range: input.range,
 	});
 
-	return termsSpansOverlapping(confirmedTermsSpans(rows, timezone), input.range);
+	return termsSpansOverlapping(
+		confirmedTermsSpans(rows, timezone),
+		input.range,
+	);
 }
 
 /** The employee's confirmed terms in force on `date`, read for one organization. */
 export async function loadTermsInForceOn(
 	reader: Reader,
-	input: { organizationId: string; employeeId: string; date: PlainDate; timezone?: string },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		date: PlainDate;
+		timezone?: string;
+	},
 ): Promise<EmployeeEmploymentHistory | null> {
 	const [span] = await loadConfirmedTermsSpans(reader, {
 		organizationId: input.organizationId,
@@ -101,7 +119,9 @@ export async function loadTermsInForceOnByEmployee(
 	},
 ): Promise<Map<string, EmployeeEmploymentHistory>> {
 	if (input.employeeIds.length === 0) return new Map();
-	const timezone = input.timezone ?? (await loadOrganizationTimezone(reader, input.organizationId));
+	const timezone =
+		input.timezone ??
+		(await loadOrganizationTimezone(reader, input.organizationId));
 	const rows = await loadConfirmedTermsRows(reader, {
 		organizationId: input.organizationId,
 		employeeIds: input.employeeIds,
