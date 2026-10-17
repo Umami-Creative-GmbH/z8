@@ -108,6 +108,8 @@ const server = createServer(async (request, response) => {
 					name: "Client project",
 					// Open tasks, as the #875 context lists them (#882 picker QA).
 					tasks: [{ id: "d7800000-0000-4000-8000-000000000004", name: "Design" }],
+					// An active task requirement (#1297 picker QA).
+					taskRequired: true,
 				},
 				{ id: "d7800000-0000-4000-8000-000000000005", name: "Internal", tasks: [] },
 			],

@@ -182,4 +182,32 @@ describe("getTimeEntriesColumns", () => {
 
 		expect(screen.queryByText("Driving details missing") !== null).toBe(marked);
 	});
+	it.each([
+		[true, true],
+		[false, false],
+	])("badges work missing a task with a hint (marked %s) (#884)", (missingTask, shown) => {
+		const columns = getTimeEntriesColumns({
+			t,
+			locale: "en-US",
+			employeeTimezone: "Europe/Berlin",
+			timeFormat: "24h",
+			hasManager: false,
+			renderEditAction: vi.fn(),
+		});
+		const description = columns.find((column) => column.id === "description");
+
+		render(
+			typeof description?.cell === "function"
+				? description.cell({ row: { original: { ...workPeriod, missingTask } } } as never)
+				: null,
+		);
+
+		const badge = screen.queryByText("Missing task");
+		expect(badge !== null).toBe(shown);
+		if (badge) {
+			expect(badge.getAttribute("title")).toBe(
+				"This project requires a task: add one to this booking in the calendar.",
+			);
+		}
+	});
 });

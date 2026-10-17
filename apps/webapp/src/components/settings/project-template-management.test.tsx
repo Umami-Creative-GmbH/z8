@@ -116,6 +116,7 @@ function details(overrides: Partial<ProjectTemplate> = {}): ProjectTemplate {
 		color: "#3b82f6",
 		budgetHours: "120.00",
 		deadlineOffsetDays: 30,
+		requiresTask: false,
 		createdAt: new Date("2026-01-01T00:00:00Z"),
 		updatedAt: new Date("2026-01-01T00:00:00Z"),
 		tasks: [{ id: "tt-1", name: "Design", description: "Wireframes", estimateHours: "12.50" }],
@@ -221,6 +222,7 @@ describe("ProjectTemplateManagement", () => {
 			color: null,
 			budgetHours: 40,
 			deadlineOffsetDays: 14,
+			requiresTask: false,
 			tasks: [{ name: "Support", description: null, estimateHours: 8 }],
 			managerEmployeeIds: ["emp-2"],
 			assignments: [
@@ -267,11 +269,51 @@ describe("ProjectTemplateManagement", () => {
 			color: "#3b82f6",
 			budgetHours: 120,
 			deadlineOffsetDays: 30,
+			requiresTask: false,
 			tasks: [{ name: "Design", description: "Wireframes", estimateHours: 12.5 }],
 			managerEmployeeIds: ["emp-left"],
 			assignments: [{ type: "team", targetId: "team-1" }],
 		});
 		expect(toast.success).toHaveBeenCalledWith("Template updated");
+	});
+
+	it("creates a template that requires a task (#884)", async () => {
+		const user = userEvent.setup();
+		renderManagement();
+
+		await user.click(await screen.findByRole("button", { name: "Create template" }));
+		const form = await screen.findByRole("form", { name: "Create project template" });
+		await user.type(within(form).getByLabelText(/^Name/), "Strict");
+		const requirement = within(form).getByRole("switch", { name: "Require a task" });
+		expect(requirement.getAttribute("aria-checked")).toBe("false");
+		await user.click(requirement);
+		await user.click(within(form).getByRole("button", { name: "Create template" }));
+
+		expect(templateActions.createProjectTemplate).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "Strict", requiresTask: true }),
+		);
+	});
+
+	it("shows a template's task requirement and keeps it when saving (#884)", async () => {
+		const user = userEvent.setup();
+		templateActions.getProjectTemplateDetails.mockResolvedValue({
+			success: true,
+			data: details({ requiresTask: true }),
+		});
+		renderManagement();
+
+		await user.click(await screen.findByRole("button", { name: "Edit Website relaunch" }));
+		const form = await screen.findByRole("form", { name: "Edit Website relaunch" });
+		await within(form).findByDisplayValue("Design");
+		expect(
+			within(form).getByRole("switch", { name: "Require a task" }).getAttribute("aria-checked"),
+		).toBe("true");
+		await user.click(within(form).getByRole("button", { name: "Save changes" }));
+
+		expect(templateActions.updateProjectTemplate).toHaveBeenCalledWith(
+			"template-1",
+			expect.objectContaining({ requiresTask: true }),
+		);
 	});
 
 	it("reports a refused template", async () => {

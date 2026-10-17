@@ -859,6 +859,23 @@ describe("assessHistoricalWork record agreement (#1217)", () => {
 		);
 	});
 
+	it("reports a missing-task marker only one side records as a task conflict (#884)", () => {
+		const fixture = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
+			period: { projectId: project, missingTask: true },
+			record: { allocations: [projectAllocation(project)] },
+		});
+
+		const findings = assessHistoricalWork(evidence([fixture]), july).findings;
+
+		expect(facetsOf(findings)).toEqual([["metadata_conflict", "task"]]);
+		expect(findings[0]?.details).toEqual({
+			facet: "task",
+			field: "missing_task",
+			periodValue: true,
+			canonicalValue: false,
+		});
+	});
+
 	it("reports billability as missing where the record lost its project, not as a conflict", () => {
 		const lostProject = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
 			period: { projectId: project, isBillable: true },

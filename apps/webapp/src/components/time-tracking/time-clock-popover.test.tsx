@@ -553,6 +553,96 @@ describe("TimeClockPopover", () => {
 			);
 		});
 
+		it("requires a task for a project that requires one, without a 'No task' choice", async () => {
+			projectsMock = [
+				{
+					id: "project-1",
+					name: "Project One",
+					requiresTask: true,
+					tasks: [{ id: "task-1", name: "Design" }],
+				},
+			];
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			fireEvent.click(await screen.findByRole("combobox", { name: "Task (required)" }));
+
+			expect(await screen.findByRole("option", { name: "Design" })).toBeTruthy();
+			expect(screen.queryByRole("option", { name: "No task" })).toBeNull();
+		});
+
+		describe("on a project that requires a task (#884)", () => {
+			beforeEach(() => {
+				projectsMock = [
+					{
+						id: "project-1",
+						name: "Project One",
+						requiresTask: true,
+						tasks: [{ id: "task-1", name: "Design" }],
+					},
+				];
+			});
+
+			it("holds the clock-out until a task is chosen", async () => {
+				render(<TimeClockPopover />);
+				fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+				expect(getPopoverClockButton("Clock Out").hasAttribute("disabled")).toBe(true);
+				fireEvent.click(await screen.findByRole("combobox", { name: "Task (required)" }));
+				fireEvent.click(await screen.findByRole("option", { name: "Design" }));
+				expect(getPopoverClockButton("Clock Out").hasAttribute("disabled")).toBe(false);
+				fireEvent.click(getPopoverClockButton("Clock Out"));
+
+				await waitFor(() =>
+					expect(clockOutMock).toHaveBeenCalledWith(
+						expect.objectContaining({ projectId: "project-1", taskId: "task-1" }),
+					),
+				);
+			});
+
+			it("lets the running work's task satisfy it", async () => {
+				activeWorkPeriodMock = {
+					startTime: "2026-05-18T08:00:00.000Z",
+					currentTask: { id: "task-1", name: "Design", state: "open", projectId: "project-1" },
+				};
+				render(<TimeClockPopover />);
+				fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+				await screen.findByRole("combobox", { name: "Task (required)" });
+				expect(getPopoverClockButton("Clock Out").hasAttribute("disabled")).toBe(false);
+			});
+
+			it("does not hold a clock-out saved on this device, which is accepted without a task", async () => {
+				captureMode = "local-queue";
+				render(<TimeClockPopover />);
+				fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+				await screen.findByRole("combobox", { name: "Task (required)" });
+				expect(
+					screen.getByRole("button", { name: "Save clock-out" }).hasAttribute("disabled"),
+				).toBe(false);
+			});
+		});
+
+		it("words a clock-out refused for want of a task", async () => {
+			clockOutMock.mockResolvedValue({
+				success: false,
+				error: "Cannot book time to this task",
+				code: "task_required",
+			});
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+
+			await waitFor(() =>
+				expect(toastMocks.error).toHaveBeenCalledWith(
+					"This project requires a task. Choose one and try again.",
+					{ description: undefined },
+				),
+			);
+		});
+
 		it("offers no task while the clock-out is only saved for review", async () => {
 			captureMode = "local-review";
 			render(<TimeClockPopover />);

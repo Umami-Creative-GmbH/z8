@@ -139,6 +139,30 @@ describe("project and task details (#874)", () => {
 		expect(screen.getByText("Website")).toBeTruthy();
 		expect(screen.queryByText("Task")).toBeNull();
 	});
+
+	it("names a missing task and how to add one (#884)", () => {
+		settings.projectsEnabled = true;
+		render(
+			<EventDetailsPanel
+				event={{
+					...booked,
+					metadata: {
+						...booked.metadata,
+						taskId: undefined,
+						taskName: undefined,
+						taskState: undefined,
+						missingTask: true,
+					},
+				}}
+				onClose={() => {}}
+			/>,
+		);
+
+		expect(screen.getByText("Task")).toBeTruthy();
+		expect(
+			screen.getByText("Missing task. This project requires one: edit the booking to add it."),
+		).toBeTruthy();
+	});
 });
 
 describe("absence details", () => {

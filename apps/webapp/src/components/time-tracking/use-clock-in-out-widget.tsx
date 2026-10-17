@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
 import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { useComplianceStatus } from "@/hooks/use-compliance-status";
+import { projectTaskRefusalMessage } from "@/lib/projects/project-task-model";
 import { type TimeClockState, useElapsedTimer, useTimeClock } from "@/lib/query";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
@@ -238,11 +239,18 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		}
 
 		const holidayName = "holidayName" in result ? result.holidayName : undefined;
+		// A refused task names its stable reason (#873, #884), worded like every
+		// booking surface words it. The widget has no task picker; the clock has.
+		const taskRefusal = projectTaskRefusalMessage(
+			"code" in result && typeof result.code === "string" ? result.code : null,
+		);
 		const errorMessage = holidayName
 			? t("timeTracking.errors.holidayBlocked", "Cannot clock out on {holidayName}", {
 					holidayName,
 				})
-			: result.error || t("timeTracking.errors.clockOutFailed", "Failed to clock out");
+			: taskRefusal
+				? t(taskRefusal[0], taskRefusal[1])
+				: result.error || t("timeTracking.errors.clockOutFailed", "Failed to clock out");
 
 		toastClockCommandError(result, errorMessage, {
 			description: holidayName
@@ -250,7 +258,12 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 						"timeTracking.errors.holidayBlockedDesc",
 						"This day is marked as a holiday and time entries are not allowed",
 					)
-				: undefined,
+				: taskRefusal
+					? t(
+							"timeTracking.errors.chooseTaskInClock",
+							"Open the clock at the top of the page, choose a task, then clock out.",
+						)
+					: undefined,
 		});
 	}
 

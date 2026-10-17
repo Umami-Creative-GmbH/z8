@@ -87,6 +87,8 @@ export interface HistoricalPeriodEvidence extends WorkVehicleUseColumns {
 	taskId: string | null;
 	/** Billable work (#900); absent reads as non-billable. */
 	isBillable?: boolean;
+	/** Missing task (#884); absent reads as unmarked. */
+	missingTask?: boolean;
 	workCategoryId: string | null;
 	workLocationType: WorkLocationType | null;
 	canonicalRecordId: string | null;
@@ -1016,6 +1018,7 @@ export function agreementPeriodOf(period: HistoricalPeriodEvidence): AgreementWo
 		projectId: period.projectId,
 		taskId: period.taskId,
 		isBillable: period.isBillable ?? false,
+		missingTask: period.missingTask ?? false,
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
 		...vehicleColumnsOf(period),
@@ -1134,8 +1137,26 @@ function facetFindings(
 					recordProjectIds(record),
 				),
 			];
-		case "task":
-			return [assignmentFinding("task", period.taskId, canonicalProject?.taskId ?? null)];
+		case "task": {
+			const canonicalTaskId = canonicalProject?.taskId ?? null;
+			if (period.taskId === canonicalTaskId) {
+				// Same task, so the sides disagree on the missing-task marker (#884): a
+				// conflict for review, never a value to fill in.
+				return [
+					{
+						kind: "metadata_conflict",
+						shape: "conflicting",
+						details: {
+							field: "missing_task",
+							periodValue: period.missingTask ?? false,
+							canonicalValue: canonicalProject?.missingTask ?? false,
+						},
+						discriminator: "missing_task",
+					},
+				];
+			}
+			return [assignmentFinding("task", period.taskId, canonicalTaskId)];
+		}
 		case "billable": {
 			// Billability travels with the project (#900). Where only one side books a
 			// project, its billability is missing or canonical-only with it; where both

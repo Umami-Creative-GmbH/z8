@@ -22,6 +22,7 @@ describe("normalizeProjectTemplateInput", () => {
 				color: null,
 				budgetHours: "10.01",
 				deadlineOffsetDays: 14,
+				requiresTask: false,
 				tasks: [{ name: "Design", description: "Wireframes", estimateHours: "1.23" }],
 				managerEmployeeIds: [],
 				teamIds: [],
@@ -76,6 +77,23 @@ describe("normalizeProjectTemplateInput", () => {
 		expect(
 			normalizeProjectTemplateInput({ name: "x", icon: " rocket ", color: "blue" }),
 		).toMatchObject({ ok: true, value: { icon: "rocket", color: "blue" } });
+	});
+
+	it("keeps the task requirement, off unless asked for (#884)", () => {
+		expect(normalizeProjectTemplateInput({ name: "x", requiresTask: true })).toMatchObject({
+			ok: true,
+			value: { requiresTask: true },
+		});
+		expect(normalizeProjectTemplateInput({ name: "x" })).toMatchObject({
+			ok: true,
+			value: { requiresTask: false },
+		});
+	});
+
+	it("refuses a task requirement that is not a boolean (#884)", () => {
+		expect(
+			normalizeProjectTemplateInput({ name: "x", requiresTask: "yes" as unknown as boolean }),
+		).toEqual({ ok: false, problem: "requiresTaskInvalid" });
 	});
 
 	it("accepts a deadline on the day of creation", () => {

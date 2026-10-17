@@ -388,7 +388,8 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 		 */
 		describe("query budget", () => {
 			const before1222 = {
-				legacy: { preserve: 63, project: 67, onBehalf: 70, vehicle: 69 },
+				// A web clock-out booking a project also reads its task requirement once (#884): 67 + 1.
+				legacy: { preserve: 63, project: 68, onBehalf: 70, vehicle: 69 },
 				append: { preserve: 68, project: 73, onBehalf: 75, vehicle: 74 },
 			};
 

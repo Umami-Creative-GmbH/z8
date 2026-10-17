@@ -346,6 +346,8 @@ async function takeLegacyBreak(
 			capture: endpoints.close.capture,
 			entrySource: { ipAddress: request.ipAddress, deviceInfo: request.userAgent },
 			...(input.closingVehicleUse ? { closingVehicleUse: input.closingVehicleUse } : {}),
+			// A break never asks for a task: it marks a missing required one (#884).
+			marksMissingTask: true,
 		},
 		// The break's clock-out gets a fresh server identity.
 		randomUUID(),

@@ -599,6 +599,41 @@ describe("legacy direct clock writer in adopted organizations on PostgreSQL", ()
 			expect(await bookedTask()).toEqual({ project: project.a, task: null });
 		});
 
+		/** The missing-task marker on the booking and on its canonical project allocation (#1295). */
+		async function missingTask() {
+			const { rows } = await admin.query<{ period: boolean; allocation: boolean | null }>(
+				`select wp.missing_task as period, a.missing_task as allocation
+				 from work_period wp
+				 left join time_record_allocation a
+				   on a.record_id = wp.canonical_record_id and a.organization_id = wp.organization_id
+				  and a.allocation_kind = 'project'
+				 where wp.employee_id = $1`,
+				[ids.requester],
+			);
+			return only(rows);
+		}
+
+		// Nobody at an old desktop or extension build can pick a task (#884, Projects ADR 0002).
+		it("accepts a clock-out without a task on a project that requires one", async () => {
+			await admin.query("update project set requires_task = true where id = $1", [project.a]);
+
+			const clockOut = await post({
+				...desktopClock("clock_out", "2026-07-22T10:00:00Z"),
+				projectId: project.a,
+			});
+
+			expect(clockOut).toMatchObject({ status: 201, body: { entry: { type: "clock_out" } } });
+			expect(await bookedTask()).toEqual({ project: project.a, task: null });
+			// Accepted and marked as missing a task, in both records (#1295).
+			expect(await missingTask()).toEqual({ period: true, allocation: true });
+		});
+
+		it("leaves a clock-out without a task unmarked while the project requires none (#1295)", async () => {
+			await post({ ...desktopClock("clock_out", "2026-07-22T10:00:00Z"), projectId: project.a });
+
+			expect(await missingTask()).toEqual({ period: false, allocation: false });
+		});
+
 		it.each([
 			["a done task", tasks.done, "task_done"],
 			["another project's task", tasks.otherProject, "task_other_project"],

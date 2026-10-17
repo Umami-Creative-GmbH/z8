@@ -186,6 +186,9 @@ export const timeRecordAllocation = pgTable(
 		// Billable work (#900): carried on the project allocation, so billability
 		// without a project is impossible; mirrors `work_period.is_billable`.
 		isBillable: boolean("is_billable").default(false).notNull(),
+		// Missing task (#884): booked to the project without the task its active
+		// requirement asked for; mirrors `work_period.missing_task`.
+		missingTask: boolean("missing_task").default(false).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [
@@ -226,6 +229,10 @@ export const timeRecordAllocation = pgTable(
 		check(
 			"timeRecordAllocation_task_project_chk",
 			sql`${table.taskId} IS NULL OR (${table.allocationKind} = 'project' AND ${table.projectId} IS NOT NULL)`,
+		),
+		check(
+			"timeRecordAllocation_missing_task_chk",
+			sql`NOT ${table.missingTask} OR (${table.allocationKind} = 'project' AND ${table.taskId} IS NULL)`,
 		),
 	],
 );
