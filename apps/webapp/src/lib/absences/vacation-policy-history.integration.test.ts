@@ -1,5 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { team, teamMembership, vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
+import {
+	team,
+	teamMembership,
+	vacationAllowance,
+	vacationPolicyAssignment,
+} from "@/db/schema";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -12,7 +17,9 @@ import {
 import { loadCompanyDefaultVacationPolicy } from "./vacation-policy-store";
 
 const session = vi.hoisted(() => ({ userId: "", organizationId: "" }));
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -36,7 +43,9 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/notifications/triggers", async (original) =>
 	(await import("@/test/integration-harness")).notificationTriggers(original),
 );
-const { addTeamMember } = await import("@/app/[locale]/(app)/settings/teams/actions");
+const { addTeamMember } = await import(
+	"@/app/[locale]/(app)/settings/teams/actions"
+);
 const { createVacationPolicy, updateVacationPolicy } = await import(
 	"@/app/[locale]/(app)/settings/vacation/actions"
 );
@@ -130,7 +139,9 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				effectiveFrom: "2027-07-01",
 			}),
 		).toMatchObject({ success: true });
-		expect(await previewEmployeeVacationPolicy(fixture.employeeId, "2027-06-30")).toMatchObject({
+		expect(
+			await previewEmployeeVacationPolicy(fixture.employeeId, "2027-06-30"),
+		).toMatchObject({
 			success: true,
 			data: {
 				status: "resolved",
@@ -138,7 +149,9 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				policy: { id: oldPolicy.id },
 			},
 		});
-		expect(await previewEmployeeVacationPolicy(fixture.employeeId, "2027-07-01")).toMatchObject({
+		expect(
+			await previewEmployeeVacationPolicy(fixture.employeeId, "2027-07-01"),
+		).toMatchObject({
 			success: true,
 			data: {
 				status: "resolved",
@@ -225,6 +238,24 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				date: "2026-12-31",
 			}),
 		).toMatchObject({ status: "conflict", reason: "incompatible_transition" });
+		const crossYear = await loadEmployeeVacationPolicyPeriods(fixture.db, {
+			organizationId: fixture.organizationId,
+			employeeIds: [target.employeeId],
+			startDate: "2026-12-31",
+			endDate: "2027-01-01",
+		});
+		expect(crossYear.get(target.employeeId)).toMatchObject([
+			{
+				startDate: "2026-12-31",
+				endDate: "2026-12-31",
+				resolution: { status: "conflict", reason: "incompatible_transition" },
+			},
+			{
+				startDate: "2027-01-01",
+				endDate: "2027-01-01",
+				resolution: { status: "resolved", policy: { accrualType: "monthly" } },
+			},
+		]);
 	});
 	it("rejects changing calculation method across an unconfigured gap in the same year", async () => {
 		const gap = await createLifecycleDatabaseFixture();
@@ -311,7 +342,9 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				reviewedBackdate: true,
 			}),
 		).toMatchObject({ success: true });
-		expect(await previewEmployeeVacationPolicy(target.employeeId, "2026-01-01")).toMatchObject({
+		expect(
+			await previewEmployeeVacationPolicy(target.employeeId, "2026-01-01"),
+		).toMatchObject({
 			success: true,
 			data: {
 				status: "resolved",
@@ -320,7 +353,10 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 			},
 		});
 		expect(
-			await previewEmployeeVacationPolicy(fixture.ownerEmployeeId, "2026-01-01"),
+			await previewEmployeeVacationPolicy(
+				fixture.ownerEmployeeId,
+				"2026-01-01",
+			),
 		).toMatchObject({ success: true, data: { status: "legacy" } });
 	});
 	it("rejects a team membership change that introduces a midyear method transition", async () => {
@@ -350,11 +386,15 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				reviewedBackdate: true,
 			}),
 		).toMatchObject({ success: true });
-		expect(await addTeamMember(targetTeam.id, target.employeeId)).toMatchObject({
-			success: false,
-			error: expect.stringContaining("1 January"),
-		});
-		expect(await previewEmployeeVacationPolicy(target.employeeId, "2026-12-31")).toMatchObject({
+		expect(await addTeamMember(targetTeam.id, target.employeeId)).toMatchObject(
+			{
+				success: false,
+				error: expect.stringContaining("1 January"),
+			},
+		);
+		expect(
+			await previewEmployeeVacationPolicy(target.employeeId, "2026-12-31"),
+		).toMatchObject({
 			success: true,
 			data: { status: "resolved", source: "company_default" },
 		});
@@ -397,7 +437,9 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				}),
 			).toMatchObject({ success: true });
 		}
-		expect(await previewEmployeeVacationPolicy(target.employeeId, "2030-06-30")).toMatchObject({
+		expect(
+			await previewEmployeeVacationPolicy(target.employeeId, "2030-06-30"),
+		).toMatchObject({
 			success: true,
 			data: {
 				status: "resolved",
@@ -413,7 +455,9 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				effectiveFrom: "2030-07-01",
 			}),
 		).toMatchObject({ success: true });
-		expect(await previewEmployeeVacationPolicy(target.employeeId, "2030-07-01")).toMatchObject({
+		expect(
+			await previewEmployeeVacationPolicy(target.employeeId, "2030-07-01"),
+		).toMatchObject({
 			success: true,
 			data: {
 				status: "conflict",
@@ -425,7 +469,9 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				effectiveFrom: "2030-07-01",
 			}),
 		).toMatchObject({ success: true });
-		expect(await previewEmployeeVacationPolicy(target.employeeId, "2030-07-01")).toMatchObject({
+		expect(
+			await previewEmployeeVacationPolicy(target.employeeId, "2030-07-01"),
+		).toMatchObject({
 			success: true,
 			data: {
 				status: "resolved",
@@ -452,12 +498,19 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 			})
 			.returning();
 		expect(
-			await previewEmployeeVacationPolicy(foreignEmployee.employeeId, "2027-01-01"),
+			await previewEmployeeVacationPolicy(
+				foreignEmployee.employeeId,
+				"2027-01-01",
+			),
 		).toMatchObject({ success: false });
 		expect(
-			await setEmployeePolicyAssignment(fixture.ownerEmployeeId, foreignPolicy.id, {
-				effectiveFrom: "2031-01-01",
-			}),
+			await setEmployeePolicyAssignment(
+				fixture.ownerEmployeeId,
+				foreignPolicy.id,
+				{
+					effectiveFrom: "2031-01-01",
+				},
+			),
 		).toMatchObject({ success: false });
 		expect(
 			await loadEmployeeVacationPolicy(fixture.db, {
@@ -477,7 +530,9 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				createdBy: fixture.ownerUserId,
 			})
 			.returning();
-		expect(await deleteVacationPolicyAssignment(foreignAssignment.id, "2031-07-01")).toMatchObject({
+		expect(
+			await deleteVacationPolicyAssignment(foreignAssignment.id, "2031-07-01"),
+		).toMatchObject({
 			success: false,
 			code: "NotFoundError",
 		});
@@ -485,7 +540,10 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 		session.userId = actor.userId;
 		try {
 			expect(
-				await previewEmployeeVacationPolicy(fixture.ownerEmployeeId, "2027-01-01"),
+				await previewEmployeeVacationPolicy(
+					fixture.ownerEmployeeId,
+					"2027-01-01",
+				),
 			).toMatchObject({ success: false });
 		} finally {
 			session.userId = fixture.ownerUserId;
@@ -544,13 +602,19 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 			}),
 		).toMatchObject({ success: true });
 		expect(
-			await previewEmployeeVacationPolicy(fixture.ownerEmployeeId, "2031-12-31"),
+			await previewEmployeeVacationPolicy(
+				fixture.ownerEmployeeId,
+				"2031-12-31",
+			),
 		).toMatchObject({
 			success: true,
 			data: { status: "resolved", policy: { accrualType: "annual" } },
 		});
 		expect(
-			await previewEmployeeVacationPolicy(fixture.ownerEmployeeId, "2032-01-01"),
+			await previewEmployeeVacationPolicy(
+				fixture.ownerEmployeeId,
+				"2032-01-01",
+			),
 		).toMatchObject({
 			success: true,
 			data: { status: "resolved", policy: { accrualType: "monthly" } },
@@ -580,7 +644,9 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 			}),
 		).toMatchObject({ success: true });
 		const target = await fixture.seedEmployee();
-		expect(await previewEmployeeVacationPolicy(target.employeeId, "2032-12-31")).toMatchObject({
+		expect(
+			await previewEmployeeVacationPolicy(target.employeeId, "2032-12-31"),
+		).toMatchObject({
 			success: true,
 			data: {
 				status: "resolved",
@@ -588,7 +654,9 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				policy: { defaultAnnualDays: "30" },
 			},
 		});
-		expect(await previewEmployeeVacationPolicy(target.employeeId, "2033-01-01")).toMatchObject({
+		expect(
+			await previewEmployeeVacationPolicy(target.employeeId, "2033-01-01"),
+		).toMatchObject({
 			success: true,
 			data: {
 				status: "resolved",
@@ -629,9 +697,15 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				effectiveFrom: "2034-01-01",
 			});
 			expect(result).toMatchObject({ success: true });
-			expect(await previewEmployeeVacationPolicy(managed.employeeId, "2034-01-01")).toMatchObject({
+			expect(
+				await previewEmployeeVacationPolicy(managed.employeeId, "2034-01-01"),
+			).toMatchObject({
 				success: true,
-				data: { status: "resolved", source: "employee", policy: { id: policy.id } },
+				data: {
+					status: "resolved",
+					source: "employee",
+					policy: { id: policy.id },
+				},
 			});
 			expect(
 				await createVacationPolicyAssignment({
@@ -641,9 +715,9 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 					effectiveFrom: "2034-01-01",
 				}),
 			).toMatchObject({ success: false, code: "AuthorizationError" });
-			expect(await previewEmployeeVacationPolicy(unmanaged.employeeId, "2034-01-01")).toMatchObject(
-				{ success: false, code: "AuthorizationError" },
-			);
+			expect(
+				await previewEmployeeVacationPolicy(unmanaged.employeeId, "2034-01-01"),
+			).toMatchObject({ success: false, code: "AuthorizationError" });
 			expect(
 				await setEmployeePolicyAssignment(managed.employeeId, policy.id, {
 					effectiveFrom: "2026-01-01",
@@ -675,24 +749,50 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 		});
 		expect(assigned).toMatchObject({ success: true });
 		if (!assigned.success) throw new Error(assigned.error);
-		expect(await previewEmployeeVacationPolicy(target.employeeId, "2034-12-31")).toMatchObject({
+		expect(
+			await previewEmployeeVacationPolicy(target.employeeId, "2034-12-31"),
+		).toMatchObject({
 			success: true,
-			data: { status: "resolved", source: "company_default", policy: { defaultAnnualDays: "22" } },
+			data: {
+				status: "resolved",
+				source: "company_default",
+				policy: { defaultAnnualDays: "22" },
+			},
 		});
-		expect(await previewEmployeeVacationPolicy(target.employeeId, "2035-01-01")).toMatchObject({
+		expect(
+			await previewEmployeeVacationPolicy(target.employeeId, "2035-01-01"),
+		).toMatchObject({
 			success: true,
-			data: { status: "resolved", source: "organization", policy: { id: policy.id } },
+			data: {
+				status: "resolved",
+				source: "organization",
+				policy: { id: policy.id },
+			},
 		});
-		expect(await deleteVacationPolicyAssignment(assigned.data.id, "2035-07-01")).toMatchObject({
+		expect(
+			await deleteVacationPolicyAssignment(assigned.data.id, "2035-07-01"),
+		).toMatchObject({
 			success: true,
 		});
-		expect(await previewEmployeeVacationPolicy(target.employeeId, "2035-06-30")).toMatchObject({
+		expect(
+			await previewEmployeeVacationPolicy(target.employeeId, "2035-06-30"),
+		).toMatchObject({
 			success: true,
-			data: { status: "resolved", source: "organization", policy: { id: policy.id } },
+			data: {
+				status: "resolved",
+				source: "organization",
+				policy: { id: policy.id },
+			},
 		});
-		expect(await previewEmployeeVacationPolicy(target.employeeId, "2035-07-01")).toMatchObject({
+		expect(
+			await previewEmployeeVacationPolicy(target.employeeId, "2035-07-01"),
+		).toMatchObject({
 			success: true,
-			data: { status: "resolved", source: "company_default", policy: { defaultAnnualDays: "22" } },
+			data: {
+				status: "resolved",
+				source: "company_default",
+				policy: { defaultAnnualDays: "22" },
+			},
 		});
 	});
 	it("applies the same January boundary to the joiner/leaver proration switch", async () => {
@@ -714,7 +814,10 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 			await setEmployeePolicyAssignment(target.employeeId, policy.id, {
 				effectiveFrom: "2036-07-01",
 			}),
-		).toMatchObject({ success: false, error: expect.stringContaining("1 January") });
+		).toMatchObject({
+			success: false,
+			error: expect.stringContaining("1 January"),
+		});
 		expect(
 			await setEmployeePolicyAssignment(target.employeeId, policy.id, {
 				effectiveFrom: "2036-01-01",

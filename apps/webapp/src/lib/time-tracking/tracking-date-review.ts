@@ -23,14 +23,20 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { readOpeningBalanceInEffect } from "@/lib/work-balance/adjustments/ledger";
-import type { WorkBalanceDatabase, WorkBalanceDbClient } from "@/lib/work-balance/db-client";
+import type {
+	WorkBalanceDatabase,
+	WorkBalanceDbClient,
+} from "@/lib/work-balance/db-client";
 import { computeEmployeePeriodBalance } from "@/lib/work-balance/period-aggregation";
 import { recordWorkBalanceRebuildIntent } from "@/lib/work-balance/rebuild-intents";
 import {
 	computeEmployeeWorkBalanceSnapshotAtEndOfDay,
 	type WorkBalanceSnapshot,
 } from "@/lib/work-balance/service";
-import { loadTrackingReviewEvidence, trackingReviewFingerprint } from "./tracking-date-evidence";
+import {
+	loadTrackingReviewEvidence,
+	trackingReviewFingerprint,
+} from "./tracking-date-evidence";
 import {
 	type TrackingDateImpact,
 	TrackingDateRefusal,
@@ -44,14 +50,20 @@ import {
 } from "./work-transaction";
 import { acquireExclusiveOrganizationConfigurationGuard } from "./work-transaction/ranks";
 
-export type ReviewScope = { organizationId: string; actorUserId: string; now: Instant };
+export type ReviewScope = {
+	organizationId: string;
+	actorUserId: string;
+	now: Instant;
+};
 export type OrganizationTrackingProposal = { trackingStartDate: string };
 
 export function parseTrackingProposal(
 	input: OrganizationTrackingProposal,
 ): OrganizationTrackingProposal {
 	try {
-		return { trackingStartDate: parsePlainDate(input?.trackingStartDate).toString() };
+		return {
+			trackingStartDate: parsePlainDate(input?.trackingStartDate).toString(),
+		};
 	} catch {
 		throw new TrackingDateRefusal(
 			"invalid_input",
@@ -66,12 +78,19 @@ export async function assertTrackingDateAdministrator(
 	input: ReviewScope,
 ): Promise<void> {
 	const [actor] = await client
-		.select({ role: member.role, active: employee.isActive, banned: user.banned })
+		.select({
+			role: member.role,
+			active: employee.isActive,
+			banned: user.banned,
+		})
 		.from(member)
 		.innerJoin(user, eq(user.id, member.userId))
 		.leftJoin(
 			employee,
-			and(eq(employee.userId, member.userId), eq(employee.organizationId, member.organizationId)),
+			and(
+				eq(employee.userId, member.userId),
+				eq(employee.organizationId, member.organizationId),
+			),
 		)
 		.where(
 			and(
@@ -84,7 +103,8 @@ export async function assertTrackingDateAdministrator(
 		!actor ||
 		actor.active === false ||
 		actor.banned ||
-		(!hasOrganizationRole(actor.role, "owner") && !hasOrganizationRole(actor.role, "admin"))
+		(!hasOrganizationRole(actor.role, "owner") &&
+			!hasOrganizationRole(actor.role, "admin"))
 	) {
 		throw new TrackingDateRefusal(
 			"not_permitted",
@@ -122,14 +142,23 @@ export async function loadTrackingDateImpact(
 		},
 ): Promise<TrackingDateImpact> {
 	const [org] = await client
-		.select({ timezone: organization.timezone, createdAt: organization.createdAt })
+		.select({
+			timezone: organization.timezone,
+			createdAt: organization.createdAt,
+		})
 		.from(organization)
 		.where(eq(organization.id, input.organizationId));
-	if (!org) throw new TrackingDateRefusal("not_permitted", "The organization is not available.");
+	if (!org)
+		throw new TrackingDateRefusal(
+			"not_permitted",
+			"The organization is not available.",
+		);
 	const [settings] = await client
 		.select()
 		.from(organizationTrackingSettings)
-		.where(eq(organizationTrackingSettings.organizationId, input.organizationId));
+		.where(
+			eq(organizationTrackingSettings.organizationId, input.organizationId),
+		);
 	const rows = await client
 		.select({
 			id: employee.id,
@@ -170,13 +199,17 @@ export async function loadTrackingDateImpact(
 	const organizationTimezone = resolveEffectiveTimezone(null, org.timezone);
 	for (const row of rows) {
 		const timezone = resolveEffectiveTimezone(row.userTimezone, org.timezone);
-		const throughDate = plainDateAt(input.now, timezone).subtract({ days: 1 }).toString();
+		const throughDate = plainDateAt(input.now, timezone)
+			.subtract({ days: 1 })
+			.toString();
 		const target = { id: row.id, startDate: row.startDate, timezone };
 		const scope = { organizationId: input.organizationId, employeeId: row.id };
 		const projection = {
 			trackingStartDateOverride: input.trackingStartDate,
-			employeeTrackingStartDateOverride: input.employeeTrackingStartDateOverride,
-			employeeEmploymentStartDateOverride: input.employeeEmploymentStartDateOverride,
+			employeeTrackingStartDateOverride:
+				input.employeeTrackingStartDateOverride,
+			employeeEmploymentStartDateOverride:
+				input.employeeEmploymentStartDateOverride,
 		};
 		const exception =
 			input.employeeTrackingStartDateOverride === undefined
@@ -184,10 +217,13 @@ export async function loadTrackingDateImpact(
 				: input.employeeTrackingStartDateOverride;
 		const employmentStart =
 			input.employeeEmploymentStartDateOverride ??
-			(row.startDate ? plainDateAt(instantFromDate(row.startDate), "UTC").toString() : null);
+			(row.startDate
+				? plainDateAt(instantFromDate(row.startDate), "UTC").toString()
+				: null);
 		if (
 			exception &&
-			(exception < input.trackingStartDate || (employmentStart && exception < employmentStart))
+			(exception < input.trackingStartDate ||
+				(employmentStart && exception < employmentStart))
 		)
 			blockers.push({
 				employeeId: row.id,
@@ -203,8 +239,13 @@ export async function loadTrackingDateImpact(
 			...scope,
 			...projection,
 		});
-		if (!afterContext) throw new Error("A proposed tracking context could not be resolved");
-		const snapshot = (day: string, proposed: boolean, snapshotTimezone = timezone) =>
+		if (!afterContext)
+			throw new Error("A proposed tracking context could not be resolved");
+		const snapshot = (
+			day: string,
+			proposed: boolean,
+			snapshotTimezone = timezone,
+		) =>
 			computeEmployeeWorkBalanceSnapshotAtEndOfDay(
 				{
 					organizationId: input.organizationId,
@@ -233,14 +274,19 @@ export async function loadTrackingDateImpact(
 			months.add(cursor.toPlainYearMonth().toString());
 			cursor = cursor.add({ months: 1 });
 		}
-		const employeeClosures = closures.filter((closure) => closure.employeeId === row.id);
-		for (const closure of employeeClosures) months.add(closure.month.slice(0, 7));
+		const employeeClosures = closures.filter(
+			(closure) => closure.employeeId === row.id,
+		);
+		for (const closure of employeeClosures)
+			months.add(closure.month.slice(0, 7));
 		const periods: TrackingEmployeeImpact["periods"] = [];
 		for (const month of [...months].sort()) {
 			const start = parsePlainDate(`${month}-01`);
 			const end = start.add({ months: 1 }).subtract({ days: 1 }).toString();
 			const day = end > throughDate ? throughDate : end;
-			const closedRange = employeeClosures.find((closure) => closure.month.slice(0, 7) === month);
+			const closedRange = employeeClosures.find(
+				(closure) => closure.month.slice(0, 7) === month,
+			);
 			const periodTimezone = closedRange?.timezone ?? timezone;
 			const ending = await Promise.all([
 				snapshot(day, false, periodTimezone),
@@ -259,7 +305,10 @@ export async function loadTrackingDateImpact(
 					isClosed: false,
 					...(proposed ? projection : {}),
 				});
-			const monthly = await Promise.all([monthFor(ending[0], false), monthFor(ending[1], true)]);
+			const monthly = await Promise.all([
+				monthFor(ending[0], false),
+				monthFor(ending[1], true),
+			]);
 			const prior = {
 				...ending[0],
 				actualMinutes: monthly[0].actualMinutes,
@@ -276,8 +325,15 @@ export async function loadTrackingDateImpact(
 				prior.balanceMinutes !== proposed.balanceMinutes;
 			const closed = !!closedRange;
 			if (changed) {
-				periods.push({ month, timezone: periodTimezone, before: prior, after: proposed, closed });
-				if (closed) blockers.push({ employeeId: row.id, kind: "month_closed", month });
+				periods.push({
+					month,
+					timezone: periodTimezone,
+					before: prior,
+					after: proposed,
+					closed,
+				});
+				if (closed)
+					blockers.push({ employeeId: row.id, kind: "month_closed", month });
 			}
 		}
 		const vacation: TrackingEmployeeImpact["vacation"] = [];
@@ -294,12 +350,12 @@ export async function loadTrackingDateImpact(
 				currentDate: dateFromInstant(input.now),
 			});
 			const balance = result.balances.get(row.id);
-			if (balance)
-				vacation.push({
-					year,
-					allowanceDays: balance.allowanceDays,
-					remainingDays: balance.remainingDays,
-				});
+			vacation.push({
+				year,
+				allowanceDays: balance?.allowanceDays ?? null,
+				remainingDays: balance?.remainingDays ?? null,
+				configuration: result.configurations.get(row.id),
+			});
 		}
 		employees.push({
 			employeeId: row.id,
@@ -316,19 +372,26 @@ export async function loadTrackingDateImpact(
 		});
 	}
 	const impact = {
-		kind: settings?.activatedAt ? ("date_change" as const) : ("activation" as const),
+		kind: settings?.activatedAt
+			? ("date_change" as const)
+			: ("activation" as const),
 		currentDate: settings?.activatedAt ? settings.trackingStartDate : null,
 		proposedDate: input.trackingStartDate,
 		employees,
 		blockers,
 	};
-	const evidence = await loadTrackingReviewEvidence(client, input.organizationId);
+	const evidence = await loadTrackingReviewEvidence(
+		client,
+		input.organizationId,
+	);
 	const fingerprint = trackingReviewFingerprint({
 		version: 1,
 		proposal: {
 			employeeId: input.employeeId ?? null,
-			employeeTrackingStartDateOverride: input.employeeTrackingStartDateOverride,
-			employeeEmploymentStartDateOverride: input.employeeEmploymentStartDateOverride,
+			employeeTrackingStartDateOverride:
+				input.employeeTrackingStartDateOverride,
+			employeeEmploymentStartDateOverride:
+				input.employeeEmploymentStartDateOverride,
 		},
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
@@ -344,11 +407,15 @@ export async function loadTrackingDateImpact(
  * Reusable commit scope for tracking and personnel-date corrections: guards, current authority,
  * reviewed evidence and blockers, the caller's atomic mutation, and a durable projection reset.
  */
-export async function commitReviewedTrackingChange<T extends TrackingDateImpact>(
+export async function commitReviewedTrackingChange<
+	T extends TrackingDateImpact,
+>(
 	database: WorkBalanceDatabase,
 	input: ReviewScope & {
 		fingerprint: string;
-		plan: (client: Parameters<Parameters<WorkBalanceDatabase["transaction"]>[0]>[0]) => Promise<T>;
+		plan: (
+			client: Parameters<Parameters<WorkBalanceDatabase["transaction"]>[0]>[0],
+		) => Promise<T>;
 		write: (
 			client: Parameters<Parameters<WorkBalanceDatabase["transaction"]>[0]>[0],
 			impact: T,
@@ -362,7 +429,10 @@ export async function commitReviewedTrackingChange<T extends TrackingDateImpact>
 		result = await database.transaction(
 			async (tx) => {
 				await acquireAdoptionGate(tx, input.organizationId);
-				await acquireExclusiveOrganizationConfigurationGuard(tx, input.organizationId);
+				await acquireExclusiveOrganizationConfigurationGuard(
+					tx,
+					input.organizationId,
+				);
 				const employees = await tx
 					.select({ id: employee.id, userId: employee.userId })
 					.from(employee)
@@ -387,7 +457,9 @@ export async function commitReviewedTrackingChange<T extends TrackingDateImpact>
 				if (impact.blockers.length)
 					throw new TrackingDateRefusal(
 						"blocked",
-						impact.blockers.some((blocker) => blocker.kind === "employee_exception_conflict")
+						impact.blockers.some(
+							(blocker) => blocker.kind === "employee_exception_conflict",
+						)
 							? "Resolve the conflicting employee tracking exception before saving this change."
 							: "Reopen the affected closed months before saving this change.",
 					);
@@ -419,17 +491,24 @@ export async function commitReviewedTrackingChange<T extends TrackingDateImpact>
 
 export async function commitOrganizationTrackingDate(
 	database: WorkBalanceDatabase,
-	input: ReviewScope & OrganizationTrackingProposal & { fingerprint: string; reason: string },
+	input: ReviewScope &
+		OrganizationTrackingProposal & { fingerprint: string; reason: string },
 ): Promise<TrackingDateImpact> {
 	const proposal = parseTrackingProposal(input);
-	if (typeof input.fingerprint !== "string" || !/^[a-f0-9]{64}$/.test(input.fingerprint))
+	if (
+		typeof input.fingerprint !== "string" ||
+		!/^[a-f0-9]{64}$/.test(input.fingerprint)
+	)
 		throw new TrackingDateRefusal(
 			"invalid_input",
 			"Review this tracking-date change before saving.",
 		);
 	const reason = typeof input.reason === "string" ? input.reason.trim() : "";
 	if (!reason || reason.length > 1000)
-		throw new TrackingDateRefusal("invalid_input", "Enter a reason of at most 1,000 characters.");
+		throw new TrackingDateRefusal(
+			"invalid_input",
+			"Enter a reason of at most 1,000 characters.",
+		);
 	return commitReviewedTrackingChange(database, {
 		...input,
 		plan: (client) => loadTrackingDateImpact(client, { ...input, ...proposal }),
@@ -463,10 +542,17 @@ export async function commitOrganizationTrackingDate(
 				targetId: input.organizationId,
 				action: AuditAction.ORGANIZATION_TRACKING_DATES_CHANGED,
 				changes: {
-					from: { active: impact.kind !== "activation", trackingStartDate: impact.currentDate },
+					from: {
+						active: impact.kind !== "activation",
+						trackingStartDate: impact.currentDate,
+					},
 					to: { active: true, trackingStartDate: proposal.trackingStartDate },
 				},
-				metadata: { reason, fingerprint: input.fingerprint, source: "reviewed_tracking_dates" },
+				metadata: {
+					reason,
+					fingerprint: input.fingerprint,
+					source: "reviewed_tracking_dates",
+				},
 			});
 		},
 	});

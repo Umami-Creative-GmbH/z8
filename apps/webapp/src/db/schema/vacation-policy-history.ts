@@ -1,4 +1,13 @@
-import { boolean, date, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	date,
+	index,
+	jsonb,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { organization } from "../auth-schema";
 import { employee } from "./organization";
 import { vacationAllowance } from "./vacation";
@@ -10,6 +19,8 @@ export const vacationPolicyRollout = pgTable("vacation_policy_rollout", {
 		.references(() => organization.id, { onDelete: "cascade" }),
 	baselineDate: date("baseline_date").notNull(),
 	reviewedFrom: date("reviewed_from"),
+	/** Enabled only when balance readers and automated postings share the dated contract. */
+	calculationsEnabled: boolean("calculations_enabled").default(false).notNull(),
 });
 
 /** Vacation-only eligibility survives deletion of the live membership and team. */
@@ -31,7 +42,10 @@ export const vacationTeamEligibility = pgTable(
 		legacyBaseline: boolean("legacy_baseline").default(false).notNull(),
 	},
 	(table) => [
-		index("vacation_team_eligibility_employee_idx").on(table.organizationId, table.employeeId),
+		index("vacation_team_eligibility_employee_idx").on(
+			table.organizationId,
+			table.employeeId,
+		),
 	],
 );
 
@@ -52,6 +66,9 @@ export const vacationPolicyRevision = pgTable(
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [
-		index("vacation_policy_revision_policy_idx").on(table.organizationId, table.policyId),
+		index("vacation_policy_revision_policy_idx").on(
+			table.organizationId,
+			table.policyId,
+		),
 	],
 );

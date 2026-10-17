@@ -5,6 +5,7 @@ const mockState = vi.hoisted(() => ({
 	getAbsenceEntries: vi.fn(),
 	getHolidays: vi.fn(),
 	getVacationBalance: vi.fn(),
+	getVacationBalanceResult: vi.fn(),
 	findOrganization: vi.fn(),
 }));
 
@@ -26,6 +27,7 @@ vi.mock("./queries", () => ({
 	getAbsenceEntries: mockState.getAbsenceEntries,
 	getHolidays: mockState.getHolidays,
 	getVacationBalance: mockState.getVacationBalance,
+	getVacationBalanceResult: mockState.getVacationBalanceResult,
 }));
 
 vi.mock("./mutations", () => ({
@@ -104,6 +106,39 @@ describe("absence action wrappers", () => {
 		expect(mockState.getVacationBalance).toHaveBeenCalledWith(
 			"emp-current",
 			2026,
+		);
+	});
+
+	it("does not expose policy configuration for another employee", async () => {
+		expect(await actions.getVacationBalanceResult("emp-other", 2026)).toEqual({
+			balance: null,
+			configuration: null,
+		});
+		expect(mockState.getVacationBalanceResult).not.toHaveBeenCalled();
+	});
+
+	it("returns missing and conflicting policy configuration without a numeric balance", async () => {
+		for (const status of ["missing", "conflict"]) {
+			const result = {
+				balance: null,
+				configuration: {
+					status,
+					periods: [{ startDate: "2026-01-01", endDate: "2026-12-31" }],
+				},
+			};
+			mockState.getVacationBalanceResult.mockResolvedValueOnce(result);
+			expect(
+				await actions.getVacationBalanceResult(
+					"emp-current",
+					2026,
+					"Europe/Berlin",
+				),
+			).toEqual(result);
+		}
+		expect(mockState.getVacationBalanceResult).toHaveBeenLastCalledWith(
+			"emp-current",
+			2026,
+			"Europe/Berlin",
 		);
 	});
 

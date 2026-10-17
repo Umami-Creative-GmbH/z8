@@ -2,7 +2,11 @@ import type { ProratedAllowance } from "./prorated-allowance";
 
 // Legacy half-day compatibility period for absence forms and stored requests.
 export type DayPeriod = "full_day" | "am" | "pm";
-export type SickDetail = "child_sick" | "with_certificate" | "without_certificate" | "other";
+export type SickDetail =
+	| "child_sick"
+	| "with_certificate"
+	| "without_certificate"
+	| "other";
 
 export type AbsenceDurationKind = "full_day" | "partial_day";
 
@@ -93,4 +97,26 @@ export interface Holiday {
 	startDate: Date;
 	endDate: Date;
 	categoryId: string;
+}
+
+/** Whether the required employee policy periods can produce a reliable balance. */
+export type VacationBalanceConfiguration =
+	| { status: "resolved" | "legacy" }
+	| {
+			status: "missing" | "conflict";
+			periods: {
+				startDate: string;
+				endDate: string;
+				policyIds?: string[];
+				reason?: "incompatible_transition";
+			}[];
+	  };
+
+/** Human-readable refusal for reviewed operations that require a known allowance. */
+export function vacationConfigurationProblem(
+	configuration: VacationBalanceConfiguration | undefined | null,
+): string {
+	return configuration?.status === "conflict"
+		? "Conflicting vacation policies require review for the selected year."
+		: "Missing vacation policy coverage requires review for the selected year.";
 }

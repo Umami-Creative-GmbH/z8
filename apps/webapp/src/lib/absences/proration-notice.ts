@@ -6,13 +6,17 @@
  * Pure and client-safe: a row is plain data.
  */
 
-import { FIRST_PRORATED_YEAR, type ProratedAllowance } from "./prorated-allowance";
-import type { VacationBalance } from "./types";
+import {
+	FIRST_PRORATED_YEAR,
+	type ProratedAllowance,
+} from "./prorated-allowance";
+import type { VacationBalance, VacationBalanceConfiguration } from "./types";
 
 /** The year the notice lists: the first prorated year (#1104 rule 11). */
 export const PRORATION_NOTICE_YEAR = FIRST_PRORATED_YEAR;
 
-export interface ProrationNoticeRow {
+interface CalculatedProrationNoticeRow {
+	configuration?: VacationBalanceConfiguration;
 	employeeId: string;
 	name: string;
 	/** The policy's allowance for a full year. */
@@ -24,6 +28,21 @@ export interface ProrationNoticeRow {
 	/** The prorated allowance with its reason, for the row's explanation (#1111). */
 	allowance: ProratedAllowance;
 }
+
+export type ProrationNoticeRow =
+	| CalculatedProrationNoticeRow
+	| {
+			employeeId: string;
+			name: string;
+			configuration: Extract<
+				VacationBalanceConfiguration,
+				{ status: "missing" | "conflict" }
+			>;
+			fullAllowance: null;
+			proratedAllowance: null;
+			overdrawnDays: null;
+			allowance: null;
+	  };
 
 /**
  * The notice row of an employee, from their vacation balance of the notice year: null unless the
@@ -37,7 +56,10 @@ export function prorationNoticeRow(input: {
 }): ProrationNoticeRow | null {
 	const allowance = input.balance?.allowance;
 	if (!input.balance || !allowance) return null;
-	if (allowance.reason.kind !== "prorated" || allowance.days >= allowance.fullAllowance) {
+	if (
+		allowance.reason.kind !== "prorated" ||
+		allowance.days >= allowance.fullAllowance
+	) {
 		return null;
 	}
 	return {

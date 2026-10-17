@@ -4,6 +4,7 @@ import type {
 	AbsenceDurationKind,
 	DayPeriod,
 	SickDetail,
+	VacationBalanceConfiguration,
 } from "@/lib/absences/types";
 
 export type ManagerAbsenceRole = "admin" | "manager" | "employee";
@@ -58,16 +59,17 @@ export interface ManagerAbsenceEmployeeRow {
 	position: string | null;
 	role: ManagerAbsenceRole;
 	teamName: string | null;
-	vacationAllowance: number;
-	usedVacationDays: number;
+	vacationAllowance: number | null;
+	usedVacationDays: number | null;
 	previouslyTakenVacationDays?: number;
-	pendingVacationDays: number;
-	remainingVacationDays: number;
+	pendingVacationDays: number | null;
+	remainingVacationDays: number | null;
 	/** Approved vacation beyond the allowance (overdrawn vacation, #1111); never deducted. */
-	overdrawnVacationDays: number;
+	overdrawnVacationDays: number | null;
 	sickDays: number;
 	/** The vacation allowance and why it is prorated (#1111). */
 	proratedAllowance?: ProratedAllowance;
+	vacationConfiguration?: VacationBalanceConfiguration | null;
 	absences?: ManagerAbsenceRowAbsence[];
 }
 

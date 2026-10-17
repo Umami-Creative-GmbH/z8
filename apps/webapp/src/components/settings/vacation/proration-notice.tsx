@@ -9,8 +9,15 @@ import {
 	OverdrawnVacationBadge,
 	VacationAllowanceExplanation,
 } from "@/components/absences/vacation-allowance-explanation";
+import { VacationPolicyConfigurationMessage } from "@/components/absences/vacation-policy-configuration-message";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -19,7 +26,10 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { PRORATION_NOTICE_YEAR, type ProrationNoticeRow } from "@/lib/absences/proration-notice";
+import {
+	PRORATION_NOTICE_YEAR,
+	type ProrationNoticeRow,
+} from "@/lib/absences/proration-notice";
 import { Link } from "@/navigation";
 
 /**
@@ -71,12 +81,20 @@ export function ProrationNotice({ rows }: { rows: ProrationNoticeRow[] }) {
 				<Table mobileLayout="stacked">
 					<TableHeader>
 						<TableRow>
-							<TableHead>{t("settings.vacation.prorationNotice.employee", "Employee")}</TableHead>
-							<TableHead className="text-right">
-								{t("settings.vacation.prorationNotice.fullAllowance", "Full allowance")}
+							<TableHead>
+								{t("settings.vacation.prorationNotice.employee", "Employee")}
 							</TableHead>
 							<TableHead className="text-right">
-								{t("settings.vacation.prorationNotice.proratedAllowance", "Prorated allowance")}
+								{t(
+									"settings.vacation.prorationNotice.fullAllowance",
+									"Full allowance",
+								)}
+							</TableHead>
+							<TableHead className="text-right">
+								{t(
+									"settings.vacation.prorationNotice.proratedAllowance",
+									"Prorated allowance",
+								)}
 							</TableHead>
 							<TableHead className="text-right">
 								{t("settings.vacation.prorationNotice.overdrawn", "Overdrawn")}
@@ -93,36 +111,49 @@ export function ProrationNotice({ rows }: { rows: ProrationNoticeRow[] }) {
 									>
 										{row.name}
 									</Link>
+									<VacationPolicyConfigurationMessage
+										configuration={row.configuration}
+										className="mt-1 text-xs text-muted-foreground"
+									/>
 									<VacationAllowanceExplanation
-										allowance={row.allowance}
+										allowance={row.allowance ?? undefined}
 										year={PRORATION_NOTICE_YEAR}
 										className="mt-1 text-xs"
 									/>
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
-									{t(
-										"settings.vacation.prorationNotice.days",
-										"{days, plural, one {# day} other {# days}}",
-										{
-											days: row.fullAllowance,
-										},
-									)}
+									{row.fullAllowance === null
+										? "—"
+										: t(
+												"settings.vacation.prorationNotice.days",
+												"{days, plural, one {# day} other {# days}}",
+												{
+													days: row.fullAllowance,
+												},
+											)}
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
-									{t(
-										"settings.vacation.prorationNotice.days",
-										"{days, plural, one {# day} other {# days}}",
-										{
-											days: row.proratedAllowance,
-										},
-									)}
+									{row.proratedAllowance === null
+										? "—"
+										: t(
+												"settings.vacation.prorationNotice.days",
+												"{days, plural, one {# day} other {# days}}",
+												{
+													days: row.proratedAllowance,
+												},
+											)}
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
-									{row.overdrawnDays > 0 ? (
+									{row.overdrawnDays === null ? (
+										"—"
+									) : row.overdrawnDays > 0 ? (
 										<OverdrawnVacationBadge overdrawnDays={row.overdrawnDays} />
 									) : (
 										<span className="text-muted-foreground">
-											{t("settings.vacation.prorationNotice.notOverdrawn", "None")}
+											{t(
+												"settings.vacation.prorationNotice.notOverdrawn",
+												"None",
+											)}
 										</span>
 									)}
 								</TableCell>
@@ -131,13 +162,21 @@ export function ProrationNotice({ rows }: { rows: ProrationNoticeRow[] }) {
 					</TableBody>
 				</Table>
 				<div className="flex justify-end">
-					<Button type="button" variant="outline" onClick={dismiss} disabled={isPending}>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={dismiss}
+						disabled={isPending}
+					>
 						{isPending ? (
 							<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 						) : (
 							<IconX aria-hidden="true" className="size-4" />
 						)}
-						{t("settings.vacation.prorationNotice.dismiss", "Dismiss for everyone")}
+						{t(
+							"settings.vacation.prorationNotice.dismiss",
+							"Dismiss for everyone",
+						)}
 					</Button>
 				</div>
 			</CardContent>
