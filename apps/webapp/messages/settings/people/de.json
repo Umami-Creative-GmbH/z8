@@ -170,10 +170,11 @@
         "description": "Ein gedruckter QR-Code, den der Mitarbeiter an einem Kiosk mit Verbindung scannt, statt seine PIN einzugeben. Er meldet niemanden an.",
         "done": "Fertig",
         "download": "PDF herunterladen",
-        "endedByDeparture": "Kein aktiver Kiosk-Ausweis. Der letzte endete mit dem Austritt am {date}.",
+        "endedByDeparture": "Kein aktiver Kiosk-Ausweis. Der letzte endete mit dem Austritt am {date}. Alte Kopien funktionieren nie wieder, auch nicht nach einer Wiedereinstellung.",
         "heading": "Kiosk-Ausweis",
         "issue": "Ausweis ausstellen",
         "none": "Noch kein Kiosk-Ausweis.",
+        "notEligible": "Ein neuer Ausweis kann nur für aktive Mitarbeiter ausgestellt werden. Stellen Sie nach einer Wiedereinstellung einen neuen Ausweis aus.",
         "openToPrint": "Zum Drucken öffnen",
         "pdf": {
           "instructions": "Schneiden Sie den Ausweis an der gestrichelten Linie aus. Wer eine Kopie hat, kann an den Kiosken der Organisation als dieser Mitarbeiter stempeln. Bewahren Sie ihn deshalb wie einen Schlüssel auf. Geht er verloren, lassen Sie ihn ersetzen: Dann funktioniert keine Kopie dieses Ausweises mehr.",

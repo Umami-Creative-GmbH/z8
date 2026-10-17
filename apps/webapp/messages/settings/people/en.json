@@ -170,10 +170,11 @@
         "description": "A printed QR code the employee scans at an online kiosk instead of entering their PIN. It never signs anyone in.",
         "done": "Done",
         "download": "Download PDF",
-        "endedByDeparture": "No active kiosk badge. The last one ended with the employee's departure on {date}.",
+        "endedByDeparture": "No active kiosk badge. The last one ended with the employee's departure on {date}. Old copies never work again, not even after a rehire.",
         "heading": "Kiosk badge",
         "issue": "Issue badge",
         "none": "No kiosk badge yet.",
+        "notEligible": "A new badge can be issued only while the employee is active. After a rehire, issue a new badge.",
         "openToPrint": "Open to print",
         "pdf": {
           "instructions": "Cut out the badge along the dashed line. Whoever holds a copy can clock as this employee at the organization's kiosks, so keep it like a key. If it is lost, ask for a replacement: every copy of this badge then stops working.",

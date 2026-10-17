@@ -1,11 +1,11 @@
 import "server-only";
 
 import { createHash, randomInt } from "node:crypto";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, lte, or, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import { employee, employeeKioskBadge } from "@/db/schema";
-import { employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
+import { employeeDeparture, employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
 import { AuditAction } from "@/lib/audit-logger";
 import { type AuditTrail, withAuditTrail } from "@/lib/audit-trail";
 import { buildDerivedUserName } from "@/lib/auth/derived-user-name";
@@ -61,6 +61,12 @@ export type KioskBadgeStatus = {
 	active: { issuedAt: Instant } | null;
 	/** The most recent badge when none is active: when and why it stopped working. */
 	lastRevoked: { revokedAt: Instant; reason: KioskBadgeRevokedReason } | null;
+	/**
+	 * Whether a new badge (issued or replacing the active one) can be given now:
+	 * the employee has organization access. After a departure that is only once
+	 * a rehire started a new employment period; the old badge never returns.
+	 */
+	canIssue: boolean;
 };
 
 /** What a badge's printable PDF is made of; handed to `deliver` once, during issuance. */
@@ -358,30 +364,146 @@ export async function revokeKioskBadge(
 	);
 }
 
-/** The employee's badge status for those who may manage it: lifecycle facts only. */
+/**
+ * Ends the badges of the employment period a departure closes (#1365), inside
+ * the departure's work transaction, which already holds the employee key. Only
+ * badges bound to that period are touched, so a delayed or retried departure
+ * can never end a badge issued after a rehire. The badge stopped proving the
+ * employee at the cutoff (the access rule denies it from then on), so that is
+ * when it is recorded as ended, never before it was issued. Audited under the
+ * departure's initiator; the caller does not forward the entries, because the
+ * work transaction may be retried.
+ */
+export async function revokeKioskBadgesForDeparture(
+	tx: Pick<Transaction, "update" | "insert">,
+	audit: AuditTrail,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		employmentPeriodId: string;
+		departureId: string;
+		actorUserId: string;
+		cutoff: Instant;
+	},
+): Promise<void> {
+	const cutoff = dateFromInstant(input.cutoff);
+	const revoked = await tx
+		.update(employeeKioskBadge)
+		.set({
+			revokedAt: sql`greatest(${employeeKioskBadge.issuedAt}, ${cutoff}::timestamptz)`,
+			revokedByUserId: input.actorUserId,
+			revokedReason: "employee_departure",
+		})
+		.where(
+			and(
+				employeeBadges(input),
+				eq(employeeKioskBadge.employmentPeriodId, input.employmentPeriodId),
+				isNull(employeeKioskBadge.revokedAt),
+			),
+		)
+		.returning({ id: employeeKioskBadge.id });
+	for (const badge of revoked) {
+		await auditBadge(audit, tx, AuditAction.KIOSK_BADGE_REVOKED, {
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			employeeId: input.employeeId,
+			badgeId: badge.id,
+			metadata: {
+				reason: "employee_departure",
+				departureId: input.departureId,
+				employmentPeriodId: input.employmentPeriodId,
+			},
+		});
+	}
+}
+
+/**
+ * The cutoff of the departure that already ended this badge's employment
+ * period, even when the departure has not been processed yet: a pending one
+ * past its cutoff (which the access rule enforces) or an effective one.
+ */
+async function departureCutoffEndingBadge(
+	db: Pick<Database, "select">,
+	input: { organizationId: string; employeeId: string; employmentPeriodId: string; now: Instant },
+): Promise<Date | null> {
+	const [departure] = await db
+		.select({ cutoffAt: employeeDeparture.cutoffAt })
+		.from(employeeDeparture)
+		.where(
+			and(
+				eq(employeeDeparture.organizationId, input.organizationId),
+				eq(employeeDeparture.employeeId, input.employeeId),
+				eq(employeeDeparture.employmentPeriodId, input.employmentPeriodId),
+				or(
+					eq(employeeDeparture.status, "effective"),
+					and(eq(employeeDeparture.status, "pending"), isNull(employeeDeparture.blockedReason)),
+				),
+				lte(employeeDeparture.cutoffAt, dateFromInstant(input.now)),
+			),
+		)
+		.orderBy(desc(employeeDeparture.cutoffAt))
+		.limit(1);
+	return departure?.cutoffAt ?? null;
+}
+
+/**
+ * The employee's badge status for those who may manage it: lifecycle facts
+ * only. A badge whose employee's departure is past its cutoff shows as ended
+ * by the departure even before the departure is processed, because kiosks
+ * already refuse it. `canIssue` says whether a new badge can be issued now:
+ * only while the employee has organization access, so after a departure only
+ * once a rehire opened a new employment period.
+ */
 export async function readKioskBadgeStatus(
 	db: Database,
 	input: KioskBadgeManagementInput,
+	clock: Clock = systemClock,
 ): Promise<KioskBadgeStatus> {
 	await requireKioskBadgeManager(db, input);
-	const [latest] = await db
-		.select({
-			issuedAt: employeeKioskBadge.issuedAt,
-			revokedAt: employeeKioskBadge.revokedAt,
-			revokedReason: employeeKioskBadge.revokedReason,
-		})
-		.from(employeeKioskBadge)
-		.where(employeeBadges(input))
-		.orderBy(desc(employeeKioskBadge.issuedAt), desc(employeeKioskBadge.id))
-		.limit(1);
-	if (!latest) return { active: null, lastRevoked: null };
-	if (!latest.revokedAt || !latest.revokedReason) {
-		return { active: { issuedAt: instantFromDate(latest.issuedAt) }, lastRevoked: null };
+	const now = clock.nowInstant();
+	const [[latest], [eligible]] = await Promise.all([
+		db
+			.select({
+				issuedAt: employeeKioskBadge.issuedAt,
+				employmentPeriodId: employeeKioskBadge.employmentPeriodId,
+				revokedAt: employeeKioskBadge.revokedAt,
+				revokedReason: employeeKioskBadge.revokedReason,
+			})
+			.from(employeeKioskBadge)
+			.where(employeeBadges(input))
+			.orderBy(desc(employeeKioskBadge.issuedAt), desc(employeeKioskBadge.id))
+			.limit(1),
+		db
+			.select({ id: employee.id })
+			.from(employee)
+			.where(
+				and(
+					eq(employee.id, input.employeeId),
+					eq(employee.organizationId, input.organizationId),
+					employeeHasOrganizationAccess(now),
+				),
+			)
+			.limit(1),
+	]);
+	const canIssue = Boolean(eligible);
+	if (!latest) return { active: null, lastRevoked: null, canIssue };
+	if (latest.revokedAt && latest.revokedReason) {
+		return {
+			active: null,
+			lastRevoked: { revokedAt: instantFromDate(latest.revokedAt), reason: latest.revokedReason },
+			canIssue,
+		};
 	}
-	return {
-		active: null,
-		lastRevoked: { revokedAt: instantFromDate(latest.revokedAt), reason: latest.revokedReason },
-	};
+	const endedAt = await departureCutoffEndingBadge(db, { ...input, ...latest, now });
+	if (endedAt) {
+		const revokedAt = endedAt.getTime() > latest.issuedAt.getTime() ? endedAt : latest.issuedAt;
+		return {
+			active: null,
+			lastRevoked: { revokedAt: instantFromDate(revokedAt), reason: "employee_departure" },
+			canIssue,
+		};
+	}
+	return { active: { issuedAt: instantFromDate(latest.issuedAt) }, lastRevoked: null, canIssue };
 }
 
 /**

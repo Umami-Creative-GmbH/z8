@@ -65,6 +65,12 @@ Z8 keeps only a fingerprint of the badge, never the badge itself, so it cannot s
 
 Whoever holds a copy of a badge can use it, so treat it like a key. Cut it out along the dashed line; it fits a standard card sleeve.
 
+### Badges and Departures
+
+A badge ends with the employee's departure. It keeps working until the departure's cutoff, the start of the day after the last working day in the organization's timezone, and stops working at that moment, even if Z8 has not finished processing the departure yet. Scheduling a departure does not end the badge early; if you move or cancel the departure before its cutoff, the badge follows the current date. The card then shows that the last badge ended with the departure.
+
+A rehire never brings an old badge back: every copy of it stays invalid. To let a rehired employee use a badge again, issue a new one. Until the rehire, Z8 offers no new badge. The employee's kiosk PIN is not changed by a departure or a rehire.
+
 ---
 
 ## Clocking at a Kiosk

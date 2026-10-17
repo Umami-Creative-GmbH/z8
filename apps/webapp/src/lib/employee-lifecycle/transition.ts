@@ -20,6 +20,7 @@ import { lockDrivingLicenceOrganization } from "@/lib/organization/driving-licen
 import { endDrivingLicenceEmployment } from "@/lib/organization/driving-licence/lifecycle";
 import { revokePayrollAccessGrantHeldBy } from "@/lib/payroll-access/grant-store";
 import { revokePersonnelFileOfficerGrantHeldBy } from "@/lib/personnel-file/officer-grant-store";
+import { revokeKioskBadgesForDeparture } from "@/lib/time-tracking/kiosk/badge-store";
 import { WorkTransactionProtocolViolation } from "@/lib/time-tracking/work-transaction";
 import { revokeExpenseOfficerGrantHeldBy } from "@/lib/travel-expenses/expense-officer-grant-store";
 import { captureApprovalHandoverDuties } from "./approval-handover";
@@ -149,6 +150,11 @@ export async function executeDepartureInTransaction(
 			AND is_active = true
 	`);
 	await revokeHeldAccessGrants(tx, identity, departure.createdBy);
+	await revokeKioskBadgesForDeparture(tx, new AuditTrail(), {
+		...identity,
+		actorUserId: departure.createdBy,
+		cutoff,
+	});
 	await releaseHeldDeputyAssignments(tx, identity, cutoff, departure.createdBy);
 
 	const clockResult = await closeRunningPeriod(scope, identity, clockOut, {

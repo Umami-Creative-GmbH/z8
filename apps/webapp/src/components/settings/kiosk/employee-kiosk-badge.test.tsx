@@ -27,7 +27,12 @@ vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/app/[locale]/(app)/settings/employees/kiosk-actions", () => actions);
 
 const employeeId = "d1364000-0000-4000-8000-000000000005";
-const noBadge = { activeIssuedAt: null, lastRevokedAt: null, lastRevokedReason: null };
+const noBadge = {
+	activeIssuedAt: null as string | null,
+	lastRevokedAt: null as string | null,
+	lastRevokedReason: null as string | null,
+	canIssue: true,
+};
 const activeBadge = { ...noBadge, activeIssuedAt: "2026-10-17T08:00:00Z" };
 const state = (badge: typeof noBadge | null) => ({
 	success: true,
@@ -149,6 +154,46 @@ describe("Kiosk badge on the employee page (#1364)", () => {
 		).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Issue badge" })).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Revoke badge" })).toBeNull();
+	});
+
+	it("explains that a departure ended the badge and offers no new one until the employee is active again (#1365)", async () => {
+		const ended = {
+			...noBadge,
+			lastRevokedAt: "2026-09-30T22:00:00Z",
+			lastRevokedReason: "employee_departure",
+			canIssue: false,
+		};
+		actions.getEmployeeKioskStateAction.mockResolvedValue(state(ended));
+		renderCard();
+
+		expect(
+			await screen.findByText(
+				/The last one ended with the employee's departure on .+\. Old copies never work again, not even after a rehire\./,
+			),
+		).toBeTruthy();
+		expect(
+			screen.getByText(
+				"A new badge can be issued only while the employee is active. After a rehire, issue a new badge.",
+			),
+		).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Issue badge" })).toBeNull();
+		cleanup();
+
+		// Rehired: the old badge stays ended, a new one can be issued.
+		actions.getEmployeeKioskStateAction.mockResolvedValue(state({ ...ended, canIssue: true }));
+		renderCard();
+		expect(await screen.findByRole("button", { name: "Issue badge" })).toBeTruthy();
+		expect(screen.getByText(/Old copies never work again, not even after a rehire\./)).toBeTruthy();
+	});
+
+	it("offers only revocation for an active badge of an employee who cannot receive a new one", async () => {
+		actions.getEmployeeKioskStateAction.mockResolvedValue(
+			state({ ...activeBadge, canIssue: false }),
+		);
+		renderCard();
+
+		expect(await screen.findByRole("button", { name: "Revoke badge" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Replace badge" })).toBeNull();
 	});
 
 	it("shows a refusal without a PDF", async () => {
