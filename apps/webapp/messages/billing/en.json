@@ -13,6 +13,7 @@
       "successDescription": "Your subscription has been activated. Thank you for subscribing!",
       "successTitle": "Success!"
     },
+    "amount": "€{amount}",
     "bestValue": "Best Value",
     "billedMonthly": "billed monthly",
     "cancelsOn": "Cancels on {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Monthly billing",
       "yearlyBilling": "Yearly billing"
     },
+    "kioskSeatPriceMonthly": "Kiosk seats (kiosk-only employees): €{price}/seat/month",
+    "kioskSeatPriceYearly": "Kiosk seats (kiosk-only employees): €{price}/seat/month, €{total}/seat billed annually",
     "manageBilling": "Manage Billing",
     "monthlyCost": "Monthly Cost",
     "nextBilling": "Next Billing",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/seat/mo",
     "priceSeatMonthYearly": "€{price}/seat/mo (billed yearly)",
     "seatBilledAnnually": "€{price}/seat billed annually",
+    "seatLines": {
+      "full": "Full seats",
+      "kiosk": "Kiosk seats",
+      "seatsAtPrice": "{seats} × €{price}/mo",
+      "total": "Total",
+      "totalPerMonth": "€{amount}/mo"
+    },
     "starting": "Starting...",
     "startTrial": "Start Free Trial",
     "status": {

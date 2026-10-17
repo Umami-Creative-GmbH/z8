@@ -15,6 +15,8 @@ import {
 	type SubscriptionInfo,
 	SubscriptionService,
 } from "@/lib/effect/services/billing";
+import { kioskSeatsEnabled } from "@/lib/effect/services/billing/seat-items";
+import { stripeConfigFromEnv } from "@/lib/effect/services/billing/stripe.service";
 import { createLogger } from "@/lib/logger";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
@@ -69,7 +71,6 @@ async function BillingSettingsContent() {
 		trialEndsAt: accessResult.trialEndsAt?.toISOString() ?? null,
 		status: accessResult.status,
 	};
-
 	return (
 		<BillingPageClient
 			subscription={
@@ -83,6 +84,7 @@ async function BillingSettingsContent() {
 							isTrialing: subscription.isTrialing,
 							isPastDue: subscription.isPastDue,
 							currentSeats: subscription.currentSeats,
+							currentKioskSeats: subscription.currentKioskSeats,
 							trialEnd: subscription.trialEnd?.toISOString() ?? null,
 							currentPeriodEnd:
 								subscription.currentPeriodEnd?.toISOString() ?? null,
@@ -93,6 +95,7 @@ async function BillingSettingsContent() {
 			}
 			accessResult={serializedAccessResult}
 			isOwner={memberRecord?.role === "owner"}
+			kioskSeatsEnabled={kioskSeatsEnabled(stripeConfigFromEnv())}
 		/>
 	);
 }

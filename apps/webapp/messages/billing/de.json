@@ -13,6 +13,7 @@
       "successDescription": "Ihr Abonnement wurde aktiviert. Vielen Dank für Ihr Abonnement!",
       "successTitle": "Erfolgreich!"
     },
+    "amount": "€{amount}",
     "bestValue": "Beste Preis-Leistung",
     "billedMonthly": "monatlich abgerechnet",
     "cancelsOn": "Kündigt am {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Monatliche Abrechnung",
       "yearlyBilling": "Jährliche Abrechnung"
     },
+    "kioskSeatPriceMonthly": "Kiosk-Sitzplätze (Nur-Kiosk-Mitarbeitende): €{price}/Sitzplatz/Monat",
+    "kioskSeatPriceYearly": "Kiosk-Sitzplätze (Nur-Kiosk-Mitarbeitende): €{price}/Sitzplatz/Monat, €{total}/Sitzplatz jährlich abgerechnet",
     "manageBilling": "Abrechnung verwalten",
     "monthlyCost": "Monatliche Kosten",
     "nextBilling": "Nächste Abrechnung",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/Sitzplatz/Monat",
     "priceSeatMonthYearly": "€{price}/Sitzplatz/Monat (jährlich abgerechnet)",
     "seatBilledAnnually": "€{price}/Sitzplatz jährlich abgerechnet",
+    "seatLines": {
+      "full": "Volle Sitzplätze",
+      "kiosk": "Kiosk-Sitzplätze",
+      "seatsAtPrice": "{seats} × €{price}/Monat",
+      "total": "Gesamt",
+      "totalPerMonth": "€{amount}/Monat"
+    },
     "starting": "Wird gestartet...",
     "startTrial": "Kostenlose Testversion starten",
     "status": {

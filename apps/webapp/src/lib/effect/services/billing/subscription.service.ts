@@ -4,7 +4,12 @@ import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { type DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
+import {
+	countBillableSeats,
+	countBillableSeatsByType,
+} from "@/lib/effect/services/billing/billable-seat-count";
+import { kioskSeatsEnabled } from "@/lib/effect/services/billing/seat-items";
+import { StripeService } from "@/lib/effect/services/billing/stripe.service";
 import {
 	provisionLocalTrial,
 	withOrganizationBillingMutation,
@@ -20,7 +25,10 @@ export interface SubscriptionInfo {
 	isActive: boolean;
 	isTrialing: boolean;
 	isPastDue: boolean;
+	/** Every billable seat, full and kiosk. */
 	currentSeats: number;
+	/** The kiosk seat part of `currentSeats` (#886); 0 while kiosk seats are off. */
+	currentKioskSeats: number;
 	trialStart: Date | null;
 	trialEnd: Date | null;
 	currentPeriodEnd: Date | null;
@@ -38,7 +46,10 @@ export interface CreateSubscriptionParams {
 	trialEnd: Date | null;
 	currentPeriodStart: Date;
 	currentPeriodEnd: Date;
+	/** Every seat on the subscription, full and kiosk. */
 	seats: number;
+	/** The kiosk seat part of `seats` (#886). */
+	kioskSeats?: number;
 }
 
 export interface UpdateSubscriptionFromStripeParams {
@@ -112,6 +123,7 @@ function mapToSubscriptionInfo(sub: typeof subscription.$inferSelect): Subscript
 		isTrialing: sub.status === "trialing",
 		isPastDue: sub.status === "past_due",
 		currentSeats: sub.currentSeats,
+		currentKioskSeats: sub.currentKioskSeats ?? 0,
 		trialStart: sub.trialStart,
 		trialEnd: sub.trialEnd,
 		currentPeriodEnd: sub.currentPeriodEnd,
@@ -124,6 +136,8 @@ export const SubscriptionServiceLive = Layer.effect(
 	SubscriptionService,
 	Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
+		// Kiosk seats are on or off by the same Stripe configuration seat sync, checkout and webhooks use.
+		const kioskSeats = kioskSeatsEnabled((yield* StripeService).config);
 
 		return SubscriptionService.of({
 			getByOrganization: (organizationId) =>
@@ -133,8 +147,18 @@ export const SubscriptionServiceLive = Layer.effect(
 					});
 
 					if (!sub) return null;
-					const currentSeats = await countBillableSeats(dbService.db, organizationId);
-					return mapToSubscriptionInfo({ ...sub, currentSeats });
+					if (!kioskSeats) {
+						const currentSeats = await countBillableSeats(dbService.db, organizationId);
+						return mapToSubscriptionInfo({ ...sub, currentSeats, currentKioskSeats: 0 });
+					}
+					const seats = await countBillableSeatsByType(dbService.db, organizationId, {
+						kioskSeats: true,
+					});
+					return mapToSubscriptionInfo({
+						...sub,
+						currentSeats: seats.full + seats.kiosk,
+						currentKioskSeats: seats.kiosk,
+					});
 				}),
 
 			getByStripeCustomerId: (stripeCustomerId) =>
@@ -207,6 +231,7 @@ export const SubscriptionServiceLive = Layer.effect(
 									currentPeriodStart: params.currentPeriodStart,
 									currentPeriodEnd: params.currentPeriodEnd,
 									currentSeats: params.seats,
+									currentKioskSeats: params.kioskSeats ?? 0,
 									updatedAt: new Date(),
 								})
 								.where(eq(subscription.organizationId, params.organizationId));
@@ -225,6 +250,7 @@ export const SubscriptionServiceLive = Layer.effect(
 							currentPeriodStart: params.currentPeriodStart,
 							currentPeriodEnd: params.currentPeriodEnd,
 							currentSeats: params.seats,
+							currentKioskSeats: params.kioskSeats ?? 0,
 						});
 					}),
 				),

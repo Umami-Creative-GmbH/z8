@@ -42,8 +42,10 @@ export const subscription = pgTable(
 		currentPeriodStart: timestamp("current_period_start", { withTimezone: true }),
 		currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
 
-		// Seat tracking
+		// Seat tracking: currentSeats is the TOTAL of billable seats; currentKioskSeats is the
+		// kiosk seat part of it (#886), so full seats = currentSeats - currentKioskSeats.
 		currentSeats: integer("current_seats").default(0).notNull(),
+		currentKioskSeats: integer("current_kiosk_seats").default(0).notNull(),
 		lastSeatReportedAt: timestamp("last_seat_reported_at", { withTimezone: true }),
 
 		// Cancellation
@@ -117,9 +119,12 @@ export const billingSeatAudit = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 
 		// Change details
-		action: text("action").notNull(), // member_added, member_removed, stripe_reported
+		action: text("action").notNull(), // member_added, member_removed, kiosk_seat_upgraded, kiosk_seat_reconciled, stripe_reported
+		// Seat totals; the kiosk columns are the kiosk seat part of each total (#886).
 		previousSeats: integer("previous_seats").notNull(),
 		newSeats: integer("new_seats").notNull(),
+		previousKioskSeats: integer("previous_kiosk_seats").default(0).notNull(),
+		newKioskSeats: integer("new_kiosk_seats").default(0).notNull(),
 
 		// Member context (if applicable)
 		memberId: text("member_id"),

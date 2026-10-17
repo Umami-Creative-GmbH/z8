@@ -1770,35 +1770,42 @@
       "idx": 252,
       "version": "7",
       "when": 1806508800000,
-      "tag": "0252_kiosk_offline_mode",
+      "tag": "0252_kiosk_seats",
       "breakpoints": true
     },
     {
       "idx": 253,
       "version": "7",
       "when": 1806595200000,
-      "tag": "0253_kiosk_pin_lockout_events",
+      "tag": "0253_kiosk_offline_mode",
       "breakpoints": true
     },
     {
       "idx": 254,
       "version": "7",
       "when": 1806681600000,
-      "tag": "0254_kiosk_retired_token",
+      "tag": "0254_kiosk_pin_lockout_events",
       "breakpoints": true
     },
     {
       "idx": 255,
       "version": "7",
       "when": 1806768000000,
-      "tag": "0255_kiosk_frozen_refusal",
+      "tag": "0255_kiosk_retired_token",
       "breakpoints": true
     },
     {
       "idx": 256,
       "version": "7",
       "when": 1806854400000,
-      "tag": "0256_work_period_break_time_source",
+      "tag": "0256_kiosk_frozen_refusal",
+      "breakpoints": true
+    },
+    {
+      "idx": 257,
+      "version": "7",
+      "when": 1806940800000,
+      "tag": "0257_work_period_break_time_source",
       "breakpoints": true
     }
   ]

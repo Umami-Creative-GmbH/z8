@@ -241,6 +241,10 @@ const parsedEnv = createEnv({
 		STRIPE_WEBHOOK_SECRET: z.string().optional(),
 		STRIPE_PRICE_MONTHLY_ID: z.string().optional(),
 		STRIPE_PRICE_YEARLY_ID: z.string().optional(),
+		// Kiosk seats (#886) exist only when both are set. Set them on webapp AND worker together:
+		// mismatched config flips subscriptions between split and all-full seats every hour.
+		STRIPE_PRICE_KIOSK_MONTHLY_ID: z.string().optional(),
+		STRIPE_PRICE_KIOSK_YEARLY_ID: z.string().optional(),
 
 		AUDIT_SERVICE: z.string().optional(),
 		AUDIT_ENDPOINT: z.string().optional(),
@@ -446,6 +450,8 @@ const parsedEnv = createEnv({
 		STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
 		STRIPE_PRICE_MONTHLY_ID: process.env.STRIPE_PRICE_MONTHLY_ID,
 		STRIPE_PRICE_YEARLY_ID: process.env.STRIPE_PRICE_YEARLY_ID,
+		STRIPE_PRICE_KIOSK_MONTHLY_ID: process.env.STRIPE_PRICE_KIOSK_MONTHLY_ID,
+		STRIPE_PRICE_KIOSK_YEARLY_ID: process.env.STRIPE_PRICE_KIOSK_YEARLY_ID,
 		AUDIT_SERVICE: process.env.AUDIT_SERVICE,
 		AUDIT_ENDPOINT: process.env.AUDIT_ENDPOINT,
 		AUDIT_API_KEY: process.env.AUDIT_API_KEY,

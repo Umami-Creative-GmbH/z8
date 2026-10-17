@@ -3,14 +3,24 @@
  * One billable-seat definition shared by every billing entry point.
  */
 import { randomUUID } from "node:crypto";
+import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+	generateReservedEmail,
+	isReservedEmail,
+	RESERVED_EMAIL_DOMAIN,
+} from "@/lib/auth/reserved-email";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { countBillableSeats } from "./billable-seat-count";
+import {
+	countBillableSeats,
+	countBillableSeatsByType,
+	reservedEmailSql,
+} from "./billable-seat-count";
 
 const NOW = parseInstant("2026-09-15T12:00:00Z");
 
@@ -162,5 +172,151 @@ describe("billable seat count", () => {
 				now: NOW,
 			}),
 		).toBe(6);
+	});
+
+	describe("kiosk and full seats (#886)", () => {
+		async function makeKioskOnly(target: SeededEmployee) {
+			await fixture.pool.query(`update "user" set email = $2 where id = $1`, [
+				target.userId,
+				generateReservedEmail(),
+			]);
+			return target;
+		}
+
+		async function staffedOrganization(input: { ordinary: number; kioskOnly: number }) {
+			const organizationId = await fixture.createOrganization();
+			const kioskOnly: SeededEmployee[] = [];
+			for (let index = 0; index < input.ordinary; index += 1) {
+				await fixture.seedEmployee({ organizationId, role: index === 0 ? "owner" : "member" });
+			}
+			for (let index = 0; index < input.kioskOnly; index += 1) {
+				kioskOnly.push(await makeKioskOnly(await fixture.seedEmployee({ organizationId })));
+			}
+			return { organizationId, kioskOnly };
+		}
+
+		it("splits billable seats into full and kiosk seats by reserved email", async () => {
+			const { organizationId } = await staffedOrganization({ ordinary: 3, kioskOnly: 5 });
+
+			expect(
+				await countBillableSeatsByType(fixture.db, organizationId, {
+					kioskSeats: true,
+					requireActiveEmployee: true,
+					now: NOW,
+				}),
+			).toEqual({ full: 3, kiosk: 5 });
+		});
+
+		it("counts every seat as a full seat while kiosk seats are off", async () => {
+			const { organizationId } = await staffedOrganization({ ordinary: 3, kioskOnly: 5 });
+
+			expect(
+				await countBillableSeatsByType(fixture.db, organizationId, {
+					kioskSeats: false,
+					requireActiveEmployee: true,
+					now: NOW,
+				}),
+			).toEqual({ full: 8, kiosk: 0 });
+		});
+
+		it("applies departure and offboarding rules to kiosk seats as to full seats", async () => {
+			const { organizationId, kioskOnly } = await staffedOrganization({
+				ordinary: 1,
+				kioskOnly: 4,
+			});
+			const [departed, offboarded, scheduledLater] = kioskOnly;
+			const owner = await fixture.pool.query<{ user_id: string }>(
+				`select user_id from member where organization_id = $1 and role = 'owner'`,
+				[organizationId],
+			);
+			const createdBy = owner.rows[0]?.user_id ?? "";
+			await departure(departed as SeededEmployee, organizationId, {
+				status: "pending",
+				cutoff: "2026-09-15T00:00:00Z",
+				createdBy,
+			});
+			await fixture.pool.query(`update employee set is_active = false where id = $1`, [
+				offboarded?.employeeId,
+			]);
+			await departure(scheduledLater as SeededEmployee, organizationId, {
+				status: "pending",
+				cutoff: "2026-09-30T22:00:00Z",
+				createdBy,
+			});
+
+			const options = { kioskSeats: true, requireActiveEmployee: true, now: NOW };
+			// Kiosk seats: the scheduled-later departure and the untouched one.
+			expect(await countBillableSeatsByType(fixture.db, organizationId, options)).toEqual({
+				full: 1,
+				kiosk: 2,
+			});
+			expect(
+				await countBillableSeats(fixture.db, organizationId, {
+					requireActiveEmployee: true,
+					now: NOW,
+				}),
+			).toBe(3);
+		});
+
+		describe("the SQL reserved-email test agrees with isReservedEmail", () => {
+			const reserved = generateReservedEmail();
+			const local = `x-${randomUUID()}`;
+			it.each([
+				{ email: reserved, expected: true },
+				{ email: reserved.toUpperCase(), expected: true },
+				{ email: `${local}@Kiosk.Invalid`, expected: true },
+				{ email: ` ${reserved} `, expected: true },
+				{ email: `\t${reserved}\n`, expected: true },
+				{ email: `\r\v\f${reserved}`, expected: true },
+				{ email: ` ${reserved}﻿`, expected: true },
+				{ email: ` ${reserved}　`, expected: true },
+				{ email: `a@b@${RESERVED_EMAIL_DOMAIN}`, expected: true },
+				{ email: `${local}@not${RESERVED_EMAIL_DOMAIN}`, expected: false },
+				{ email: `${local}@${RESERVED_EMAIL_DOMAIN}.example`, expected: false },
+				{ email: `${local}@sub.${RESERVED_EMAIL_DOMAIN}`, expected: false },
+				{ email: `@${RESERVED_EMAIL_DOMAIN}`, expected: false },
+				{ email: ` @${RESERVED_EMAIL_DOMAIN}`, expected: false },
+				{ email: `${local}@${RESERVED_EMAIL_DOMAIN} x`, expected: false },
+				{ email: `${local}@example.com`, expected: false },
+			])("$email is reserved: $expected", async ({ email, expected }) => {
+				const result = await fixture.db.execute<{ reserved: boolean }>(
+					sql`select ${reservedEmailSql(sql`${email}::text`)} as reserved`,
+				);
+
+				expect(isReservedEmail(email)).toBe(expected);
+				expect(result.rows[0]?.reserved).toBe(expected);
+			});
+
+			it("counts a reserved address stored in another case and with whitespace as a kiosk seat", async () => {
+				const organizationId = await fixture.createOrganization();
+				await fixture.seedEmployee({ organizationId, role: "owner" });
+				const kioskOnly = await fixture.seedEmployee({ organizationId });
+				await fixture.pool.query(`update "user" set email = $2 where id = $1`, [
+					kioskOnly.userId,
+					`\t${generateReservedEmail().toUpperCase()}\n`,
+				]);
+
+				expect(
+					await countBillableSeatsByType(fixture.db, organizationId, {
+						kioskSeats: true,
+						requireActiveEmployee: true,
+						now: NOW,
+					}),
+				).toEqual({ full: 1, kiosk: 1 });
+			});
+		});
+
+		it("counts nothing from other tenants", async () => {
+			const { organizationId } = await staffedOrganization({ ordinary: 1, kioskOnly: 2 });
+			await staffedOrganization({ ordinary: 4, kioskOnly: 6 });
+
+			expect(
+				await countBillableSeatsByType(fixture.db, organizationId, {
+					kioskSeats: true,
+					requireActiveEmployee: true,
+					now: NOW,
+				}),
+			).toEqual({ full: 1, kiosk: 2 });
+		});
 	});
 });

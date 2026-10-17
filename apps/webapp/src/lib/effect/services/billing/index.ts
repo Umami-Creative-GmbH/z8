@@ -24,6 +24,6 @@ export const BillingServicesLive = Layer.mergeAll(
 	BillingEventsServiceLive,
 	BillingEnforcementServiceLive,
 ).pipe(
-	Layer.provideMerge(SeatSyncServiceLive),
-	Layer.provideMerge(Layer.mergeAll(StripeServiceLive, SubscriptionServiceLive)),
+	Layer.provideMerge(Layer.mergeAll(SeatSyncServiceLive, SubscriptionServiceLive)),
+	Layer.provideMerge(StripeServiceLive),
 );
