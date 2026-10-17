@@ -39,6 +39,7 @@ function getUsageColor(percentage: number) {
 export function VacationBalanceWidget() {
 	const { t } = useTranslate();
 	const { data, loading, refreshing, refetch } = useWidgetData<{
+		year: number;
 		balance: VacationBalance | null;
 		configuration: VacationBalanceConfiguration | null;
 	}>(getVacationBalanceResult, {
@@ -66,13 +67,13 @@ export function VacationBalanceWidget() {
 		<DashboardWidget id="vacation-balance">
 			<WidgetCard
 				title={t("dashboard.vacation.title", "Vacation Balance")}
-				description={t(
-					"dashboard.vacation.description",
-					"{year} vacation days",
-					{
-						year: new Date().getFullYear(),
-					},
-				)}
+				description={
+					data
+						? t("dashboard.vacation.description", "{year} vacation days", {
+								year: data.year,
+							})
+						: ""
+				}
 				icon={<IconBeach className="size-4 text-amber-500" />}
 				loading={loading}
 				refreshing={refreshing}

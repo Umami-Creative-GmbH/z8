@@ -18,7 +18,7 @@ import type { VacationBalanceConfiguration } from "@/lib/absences/types";
 import { getVacationSummary } from "@/lib/absences/vacation.service";
 import {
 	accruingEmployments,
-	monthlyAccrualDays,
+	policyPeriodMonthlyAccrualDays,
 } from "@/lib/absences/vacation-accrual";
 import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
 import { isAccrualPolicy } from "@/lib/absences/vacation-policy-settings";
@@ -298,7 +298,6 @@ export async function generateAccrualProjectionResult(
 	const projections: AccrualProjection[] = [];
 	for (let month = 1; month <= 12; month++) {
 		const monthStart = Temporal.PlainDate.from({ year, month, day: 1 });
-		const monthEnd = monthStart.with({ day: monthStart.daysInMonth });
 		let accrued = annualDays / 12;
 		if (accrual) {
 			// Before rollout, preserve the existing full-month projection; the custom allowance still applies.
@@ -307,43 +306,13 @@ export async function generateAccrualProjectionResult(
 					? policy.accrualType === "biweekly"
 						? (annualDays / 26) * 2
 						: annualDays / 12
-					: 0;
-			// Each dated policy contributes only its employed days in this calendar month.
-
-			for (const period of configuration?.status === "resolved"
-				? (result.periods.get(employeeId) ?? [])
-				: []) {
-				if (!("policy" in period.resolution) || !period.resolution.policy)
-					continue;
-				const terms = period.resolution.policy;
-				const start = Temporal.PlainDate.from(period.startDate);
-				const end = Temporal.PlainDate.from(period.endDate);
-				if (
-					Temporal.PlainDate.compare(start, monthEnd) > 0 ||
-					Temporal.PlainDate.compare(end, monthStart) < 0
-				)
-					continue;
-				const coveredStints = stints.map((stint) => ({
-					startDate:
-						stint.startDate &&
-						Temporal.PlainDate.compare(stint.startDate, start) > 0
-							? stint.startDate
-							: start,
-					lastWorkingDay:
-						stint.lastWorkingDay &&
-						Temporal.PlainDate.compare(stint.lastWorkingDay, end) < 0
-							? stint.lastWorkingDay
-							: end,
-				}));
-				accrued +=
-					monthlyAccrualDays({
-						accrualType: terms.accrualType,
-						annualDays: Number(customAnnualDays ?? terms.defaultAnnualDays),
-						year,
-						month,
-						employments: coveredStints,
-					}) ?? 0;
-			}
+					: (policyPeriodMonthlyAccrualDays({
+							periods: result.periods.get(employeeId) ?? [],
+							customAnnualDays,
+							year,
+							month,
+							employments: stints,
+						}) ?? 0);
 			cumulativeAccrued += accrued;
 		} else if (month === policy.accrualStartMonth) {
 			cumulativeAccrued = annualDays;

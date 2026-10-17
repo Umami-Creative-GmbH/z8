@@ -24,6 +24,10 @@ describe("frozen carryover expiry readers", () => {
 		noExpiryEmployeeId?: string,
 	) {
 		await target.pool.query(
+			"update vacation_policy_rollout set baseline_date=DATE '2026-01-01' where organization_id=$1",
+			[target.organizationId],
+		);
+		await target.pool.query(
 			"update organization set timezone='Europe/Berlin' where id=$1",
 			[target.organizationId],
 		);

@@ -466,7 +466,11 @@ export function VacationAssignmentManager({
 												<div className="flex items-center gap-3">
 													<IconUsers className="size-4 text-muted-foreground" />
 													<span className="font-medium">
-														{assignment.team?.name}
+														{assignment.team?.name ??
+															t(
+																"settings.vacation.history.deletedTeam",
+																"Deleted team",
+															)}
 													</span>
 												</div>
 												{canManageTeamAssignments ? (
@@ -481,7 +485,13 @@ export function VacationAssignmentManager({
 																	assignment.teamId ?? undefined,
 																)
 															}
-															aria-label={`${t("settings.vacation.history.replaceAction", "Replace assignment")}: ${assignment.team?.name ?? ""}`}
+															disabled={!assignment.team}
+															aria-describedby={
+																!assignment.team
+																	? `deleted-team-${assignment.id}`
+																	: undefined
+															}
+															aria-label={`${t("settings.vacation.history.replaceAction", "Replace assignment")}: ${assignment.team?.name ?? t("settings.vacation.history.deletedTeam", "Deleted team")}`}
 														>
 															{t(
 																"settings.vacation.history.replace",
@@ -499,13 +509,24 @@ export function VacationAssignmentManager({
 																	assignment.effectiveEndDate <=
 																		historyContext.data.today)
 															}
-															aria-label={`${t("settings.vacation.history.endAction", "End assignment")}: ${assignment.team?.name ?? assignment.policy.name}`}
+															aria-label={`${t("settings.vacation.history.endAction", "End assignment")}: ${assignment.team?.name ?? t("settings.vacation.history.deletedTeam", "Deleted team")}`}
 														>
 															<IconCalendarX className="size-4" />
 														</Button>
 													</div>
 												) : null}
 											</div>
+											{!assignment.team && (
+												<p
+													id={`deleted-team-${assignment.id}`}
+													className="mt-2 text-sm text-muted-foreground"
+												>
+													{t(
+														"settings.vacation.history.deletedTeamDescription",
+														"This team has been deleted. You can end this assignment or assign a policy to another team.",
+													)}
+												</p>
+											)}
 											<div className="mt-2 ml-7 space-y-1">
 												<div className="flex items-center gap-2 text-sm">
 													<Badge variant="outline" className="text-xs">

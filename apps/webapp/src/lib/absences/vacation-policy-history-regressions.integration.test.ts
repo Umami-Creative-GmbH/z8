@@ -2,8 +2,14 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "temporal-polyfill";
 import { organization } from "@/db/auth-schema";
-import { team, teamMembership, vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
+import {
+	team,
+	teamMembership,
+	vacationAllowance,
+	vacationPolicyAssignment,
+} from "@/db/schema";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -12,9 +18,12 @@ import {
 	loadEmployeeVacationPolicy,
 	loadEmployeeVacationPolicyPeriods,
 } from "./vacation-policy-history";
+import { loadVacationBalances } from "./vacation-balance-store";
 
 const session = vi.hoisted(() => ({ userId: "", organizationId: "" }));
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -38,18 +47,146 @@ vi.mock("@/lib/auth", () => ({
 const { deleteVacationPolicyAssignment } = await import(
 	"@/app/[locale]/(app)/settings/vacation/assignment-actions"
 );
+const { updateVacationPolicy } = await import(
+	"@/app/[locale]/(app)/settings/vacation/actions"
+);
 /** Public resolver regressions for dated history written through database compatibility paths. */
 describe("vacation policy history compatibility", () => {
 	let fixture: LifecycleDatabaseFixture;
 	beforeEach(async () => {
 		fixture = await createLifecycleDatabaseFixture();
+		// These scenarios describe reviewed 2026/2027 history, independent of the database clock.
+		await fixture.pool.query(
+			"update vacation_policy_rollout set baseline_date=DATE '2026-01-01' where organization_id=$1",
+			[fixture.organizationId],
+		);
 		session.userId = fixture.ownerUserId;
 		session.organizationId = fixture.organizationId;
 	});
 	afterEach(async () => {
+		vi.restoreAllMocks();
 		await fixture?.close();
 	});
+	it("extends a policy through the public edit without leaving its new dates uncovered", async () => {
+		const [policy] = await fixture.db
+			.insert(vacationAllowance)
+			.values({
+				organizationId: fixture.organizationId,
+				name: "Extended policy",
+				startDate: "2027-01-01",
+				validUntil: "2027-06-30",
+				defaultAnnualDays: "25",
+				statutoryMinimumDays: "20",
+				accrualType: "annual",
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
+		await fixture.db.insert(vacationPolicyAssignment).values({
+			organizationId: fixture.organizationId,
+			policyId: policy.id,
+			assignmentType: "employee",
+			employeeId: fixture.employeeId,
+			effectiveStartDate: "2027-01-01",
+			createdBy: fixture.ownerUserId,
+		});
+		vi.spyOn(Temporal.Now, "plainDateISO").mockReturnValue(
+			Temporal.PlainDate.from("2027-06-30"),
+		);
+		expect(
+			await updateVacationPolicy(policy.id, {
+				name: policy.name,
+				startDate: policy.startDate,
+				validUntil: "2027-12-31",
+				isCompanyDefault: false,
+				defaultAnnualDays: "25",
+				accrualType: "annual",
+				allowCarryover: false,
+			}),
+		).toMatchObject({ success: true });
+		expect(
+			await loadEmployeeVacationPolicy(fixture.db, {
+				organizationId: fixture.organizationId,
+				employeeId: fixture.employeeId,
+				date: "2027-07-01",
+			}),
+		).toMatchObject({
+			status: "resolved",
+			policy: { id: policy.id, defaultAnnualDays: "25" },
+		});
+		expect(
+			(
+				await loadVacationBalances(fixture.db, {
+					organizationId: fixture.organizationId,
+					employeeIds: [fixture.employeeId],
+					year: 2027,
+					timezone: "UTC",
+				})
+			).balances.get(fixture.employeeId),
+		).toMatchObject({ totalDays: 25 });
+	});
 
+	it("stores combined end-date and amount edits from their effective date while preserving earlier terms", async () => {
+		const [policy] = await fixture.db
+			.insert(vacationAllowance)
+			.values({
+				organizationId: fixture.organizationId,
+				name: "Edited terms",
+				startDate: "2027-01-01",
+				defaultAnnualDays: "30",
+				statutoryMinimumDays: "20",
+				accrualType: "annual",
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
+		await fixture.db.insert(vacationPolicyAssignment).values({
+			organizationId: fixture.organizationId,
+			policyId: policy.id,
+			assignmentType: "employee",
+			employeeId: fixture.employeeId,
+			effectiveStartDate: "2027-01-01",
+			createdBy: fixture.ownerUserId,
+		});
+		vi.spyOn(Temporal.Now, "plainDateISO").mockReturnValue(
+			Temporal.PlainDate.from("2027-07-01"),
+		);
+		expect(
+			await updateVacationPolicy(policy.id, {
+				name: policy.name,
+				startDate: policy.startDate,
+				validUntil: "2027-12-31",
+				isCompanyDefault: false,
+				defaultAnnualDays: "24",
+				accrualType: "annual",
+				allowCarryover: false,
+			}),
+		).toMatchObject({ success: true });
+		for (const [date, days] of [
+			["2027-06-30", "30"],
+			["2027-07-01", "24"],
+			["2027-12-31", "24"],
+		]) {
+			expect(
+				await loadEmployeeVacationPolicy(fixture.db, {
+					organizationId: fixture.organizationId,
+					employeeId: fixture.employeeId,
+					date,
+				}),
+			).toMatchObject({
+				status: "resolved",
+				policy: { id: policy.id, defaultAnnualDays: days },
+			});
+		}
+		expect(
+			(
+				await loadVacationBalances(fixture.db, {
+					organizationId: fixture.organizationId,
+					employeeIds: [fixture.employeeId],
+					year: 2027,
+					timezone: "UTC",
+				})
+			).balances.get(fixture.employeeId),
+		).toMatchObject({ totalDays: 27 });
+	});
 	it("interprets legacy UTC assignment instants in the organization zone independently of the database session", async () => {
 		await fixture.db
 			.update(organization)
@@ -125,7 +262,9 @@ describe("vacation policy history compatibility", () => {
 			effectiveStartDate: "2027-01-01",
 		});
 		await fixture.db.transaction(async (tx) => {
-			await tx.execute(sql`select set_config('z8.vacation_effective_date', '2027-10-01', true)`);
+			await tx.execute(
+				sql`select set_config('z8.vacation_effective_date', '2027-10-01', true)`,
+			);
 			await tx
 				.update(vacationAllowance)
 				.set({ name: "Renamed expired policy" })
@@ -195,7 +334,9 @@ describe("vacation policy history compatibility", () => {
 			policy: { id: newer.id },
 		});
 		await fixture.db.transaction(async (tx) => {
-			await tx.execute(sql`select set_config('z8.vacation_effective_date', '2028-10-01', true)`);
+			await tx.execute(
+				sql`select set_config('z8.vacation_effective_date', '2028-10-01', true)`,
+			);
 			await tx
 				.update(vacationAllowance)
 				.set({ name: "Renamed older default" })
@@ -247,7 +388,9 @@ describe("vacation policy history compatibility", () => {
 			effectiveStartDate: "2027-01-01",
 		});
 		const membership = await fixture.db.transaction(async (tx) => {
-			await tx.execute(sql`select set_config('z8.vacation_effective_date', '2027-01-01', true)`);
+			await tx.execute(
+				sql`select set_config('z8.vacation_effective_date', '2027-01-01', true)`,
+			);
 			const [row] = await tx
 				.insert(teamMembership)
 				.values({
@@ -334,7 +477,9 @@ describe("vacation policy history compatibility", () => {
 			effectiveStartDate: "2027-01-01",
 		});
 		const membership = await fixture.db.transaction(async (tx) => {
-			await tx.execute(sql`select set_config('z8.vacation_effective_date', '2027-01-01', true)`);
+			await tx.execute(
+				sql`select set_config('z8.vacation_effective_date', '2027-01-01', true)`,
+			);
 			const [row] = await tx
 				.insert(teamMembership)
 				.values({
@@ -346,8 +491,12 @@ describe("vacation policy history compatibility", () => {
 			return row;
 		});
 		await fixture.db.transaction(async (tx) => {
-			await tx.execute(sql`select set_config('z8.vacation_effective_date', '2027-07-01', true)`);
-			await tx.delete(teamMembership).where(eq(teamMembership.id, membership.id));
+			await tx.execute(
+				sql`select set_config('z8.vacation_effective_date', '2027-07-01', true)`,
+			);
+			await tx
+				.delete(teamMembership)
+				.where(eq(teamMembership.id, membership.id));
 		});
 		const expected = [
 			["2027-01-01", "2027-06-30", policy.id],
@@ -365,7 +514,9 @@ describe("vacation policy history compatibility", () => {
 				?.map(({ startDate, endDate, resolution }) => [
 					startDate,
 					endDate,
-					resolution.status === "resolved" ? resolution.policy.id : resolution.status,
+					resolution.status === "resolved"
+						? resolution.policy.id
+						: resolution.status,
 				]);
 		}
 		expect(await observedPeriods()).toEqual(expected);
@@ -381,7 +532,9 @@ describe("vacation policy history compatibility", () => {
 				),
 			);
 		if (backfills.length === 0)
-			throw new Error("Vacation history migration must expose its data backfill statements");
+			throw new Error(
+				"Vacation history migration must expose its data backfill statements",
+			);
 		for (let attempt = 0; attempt < 2; attempt++) {
 			await fixture.db.transaction(async (tx) => {
 				for (const statement of backfills) await tx.execute(sql.raw(statement));
@@ -413,10 +566,14 @@ describe("vacation policy history compatibility", () => {
 				effectiveStartDate: "2027-01-01",
 			})
 			.returning();
-		expect(await deleteVacationPolicyAssignment(assignment.id, "2027-07-01")).toMatchObject({
+		expect(
+			await deleteVacationPolicyAssignment(assignment.id, "2027-07-01"),
+		).toMatchObject({
 			success: true,
 		});
-		expect(await deleteVacationPolicyAssignment(assignment.id, "2027-08-01")).toMatchObject({
+		expect(
+			await deleteVacationPolicyAssignment(assignment.id, "2027-08-01"),
+		).toMatchObject({
 			success: true,
 		});
 		expect(
@@ -463,7 +620,9 @@ describe("vacation policy history compatibility", () => {
 				.delete(vacationPolicyAssignment)
 				.where(eq(vacationPolicyAssignment.id, assignment.id)),
 		).rejects.toThrow();
-		const { deleteNonAdminEmployeesData } = await import("@/lib/demo/delete-non-admin");
+		const { deleteNonAdminEmployeesData } = await import(
+			"@/lib/demo/delete-non-admin"
+		);
 		await expect(
 			deleteNonAdminEmployeesData(fixture.organizationId, fixture.ownerUserId),
 		).resolves.toMatchObject({ employeesDeleted: 1 });

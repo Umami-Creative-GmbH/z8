@@ -105,6 +105,52 @@ function renderManager(
 	);
 }
 describe("vacation history settings", () => {
+	it("identifies retained deleted-team history and prevents replacing the deleted target while allowing its end", async () => {
+		const user = userEvent.setup();
+		vi.mocked(getVacationPolicyAssignments).mockResolvedValue({
+			success: true,
+			data: [
+				{
+					id: "deleted-team-assignment",
+					policyId: "policy-1",
+					assignmentType: "team",
+					teamId: "deleted-team",
+					employeeId: null,
+					effectiveStartDate: "2026-01-01",
+					effectiveEndDate: null,
+					isActive: true,
+					policy: {
+						id: "policy-1",
+						name: "Retained policy",
+						defaultAnnualDays: "25",
+						allowCarryover: false,
+					},
+					team: null,
+					employee: null,
+				},
+			],
+		});
+		const onAssignClick = vi.fn();
+		renderManager(onAssignClick);
+		expect(await screen.findByText("Deleted team")).toBeTruthy();
+		const replace = screen.getByRole("button", {
+			name: "Replace assignment: Deleted team",
+		});
+		expect(replace.hasAttribute("disabled")).toBe(true);
+		expect(replace.getAttribute("aria-describedby")).toBe(
+			screen.getByText(
+				"This team has been deleted. You can end this assignment or assign a policy to another team.",
+			).id,
+		);
+		await user.click(replace);
+		expect(onAssignClick).not.toHaveBeenCalled();
+		await user.click(
+			screen.getByRole("button", { name: "End assignment: Deleted team" }),
+		);
+		expect(await screen.findByLabelText("End assignment on")).toBeTruthy();
+		expect(screen.getByText("Retained policy, 25 days")).toBeTruthy();
+	});
+
 	it("allows admins to schedule organization assignments without exposing that action to managers", async () => {
 		const user = userEvent.setup();
 		const onAssignClick = vi.fn();

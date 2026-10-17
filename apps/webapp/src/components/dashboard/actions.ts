@@ -34,6 +34,7 @@ import type { VacationBalanceConfiguration } from "@/lib/absences/types";
 import { getEnhancedVacationBalanceResult } from "@/lib/absences/vacation.service";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
 import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
+import { calendarYearAt, instantFromDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import {
 	runServerActionSafe,
@@ -1357,6 +1358,7 @@ export async function getVacationBalance(): Promise<
 /** Includes explicit policy configuration when no reliable balance is available. */
 export async function getVacationBalanceResult(): Promise<
 	ServerActionResult<{
+		year: number;
 		balance: DashboardVacationBalance | null;
 		configuration: VacationBalanceConfiguration | null;
 	}>
@@ -1400,9 +1402,10 @@ export async function getVacationBalanceResult(): Promise<
 			},
 		);
 		const timezone = org?.timezone || "UTC";
-		const currentYear = DateTime.fromJSDate(currentTimestamp()).setZone(
+		const currentYear = calendarYearAt(
+			instantFromDate(currentTimestamp()),
 			timezone,
-		).year;
+		);
 
 		const { balance, configuration } = yield* dbService.query(
 			"getVacationBalance:balance",
@@ -1415,6 +1418,7 @@ export async function getVacationBalanceResult(): Promise<
 				}),
 		);
 		return {
+			year: currentYear,
 			configuration,
 			balance: balance
 				? {

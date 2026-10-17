@@ -501,11 +501,13 @@ export async function getVacationSummary(
 		timezone: string;
 	}>
 > {
-	const org = await db.query.organization.findFirst({
-		where: eq(organization.id, organizationId),
-		columns: { timezone: true },
-	});
-	const employees = await getEmployeesWithVacationData(organizationId, year);
+	const [org, employees] = await Promise.all([
+		db.query.organization.findFirst({
+			where: eq(organization.id, organizationId),
+			columns: { timezone: true },
+		}),
+		getEmployeesWithVacationData(organizationId, year),
+	]);
 	const result = await loadVacationBalances(db, {
 		organizationId,
 		employeeIds: employees.map((emp) => emp.id),

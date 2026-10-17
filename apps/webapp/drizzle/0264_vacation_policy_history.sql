@@ -97,8 +97,12 @@ DECLARE change_date date; BEGIN
  IF NEW.accrual_type<>OLD.accrual_type OR NEW.prorate_in_start_and_exit_year<>OLD.prorate_in_start_and_exit_year THEN
   IF to_char(change_date,'MM-DD')<>'01-01' THEN RAISE EXCEPTION 'Vacation calculation method and joiner/leaver proration may change only on 1 January'; END IF;
  END IF;
- -- Closing a superseded definition ends its previous snapshot without changing its historical default flag.
- IF NEW.valid_until IS DISTINCT FROM OLD.valid_until AND NEW.valid_until IS NOT NULL AND (NOT NEW.is_company_default OR NEW.is_active=OLD.is_active) THEN
+ -- A pure close may demote a superseded default without changing its historical default flag.
+ -- Extensions and edits to other terms must create the new effective snapshot below.
+ IF NEW.valid_until IS DISTINCT FROM OLD.valid_until AND NEW.valid_until IS NOT NULL
+    AND (OLD.valid_until IS NULL OR NEW.valid_until < OLD.valid_until)
+    AND (NEW.is_company_default = OLD.is_company_default OR NOT NEW.is_company_default)
+    AND (to_jsonb(NEW) - ARRAY['valid_until','is_company_default','updated_at']) = (to_jsonb(OLD) - ARRAY['valid_until','is_company_default','updated_at']) THEN
   UPDATE vacation_policy_revision SET effective_end_date=least(coalesce(effective_end_date,NEW.valid_until+1),NEW.valid_until+1) WHERE policy_id=NEW.id AND organization_id=NEW.organization_id AND effective_start_date<=NEW.valid_until;
   DELETE FROM vacation_policy_revision WHERE policy_id=NEW.id AND organization_id=NEW.organization_id AND effective_start_date>NEW.valid_until;
   RETURN NEW;

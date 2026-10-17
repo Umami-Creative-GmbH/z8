@@ -8,14 +8,14 @@ import {
 	endVacationPolicyAssignment,
 	loadVacationPolicyHistoryContext,
 	type VacationAssignmentDates,
-	VacationPolicyConfigurationError,
+	vacationPolicyWriteFailure,
 	writeVacationPolicyAssignment,
 } from "@/lib/absences/vacation-policy-assignment-write";
 import {
 	loadEmployeeVacationPolicy,
 	type VacationPolicyResolution,
 } from "@/lib/absences/vacation-policy-history";
-import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -278,7 +278,7 @@ export async function createVacationPolicyAssignment(
 					createdBy: actor.session.user.id,
 				});
 			})
-			.pipe(Effect.mapError(vacationConfigurationFailure));
+			.pipe(Effect.mapError(vacationPolicyWriteFailure));
 
 		return newAssignment;
 	});
@@ -394,7 +394,7 @@ export async function setEmployeePolicyAssignment(
 					assignmentType: "employee",
 				}),
 			)
-			.pipe(Effect.mapError(vacationConfigurationFailure));
+			.pipe(Effect.mapError(vacationPolicyWriteFailure));
 	});
 	return runServerActionSafe(effect);
 }
@@ -469,7 +469,7 @@ export async function deleteVacationPolicyAssignment(
 					effectiveOn,
 				});
 			})
-			.pipe(Effect.mapError(vacationConfigurationFailure));
+			.pipe(Effect.mapError(vacationPolicyWriteFailure));
 	});
 
 	return runServerActionSafe(effect);
@@ -541,28 +541,6 @@ export async function getCompanyDefaultPolicies(organizationId: string): Promise
 	});
 
 	return runServerActionSafe(effect);
-}
-
-function vacationConfigurationFailure(error: DatabaseError) {
-	let cause: unknown = error.cause;
-	while (cause && typeof cause === "object" && "cause" in cause && cause.cause) cause = cause.cause;
-	if (cause instanceof VacationPolicyConfigurationError)
-		return new ValidationError({
-			message: cause.message,
-			field: "effectiveFrom",
-		});
-	if (
-		cause &&
-		typeof cause === "object" &&
-		"message" in cause &&
-		typeof cause.message === "string" &&
-		cause.message.startsWith("Vacation ")
-	)
-		return new ValidationError({
-			message: cause.message,
-			field: "effectiveFrom",
-		});
-	return error;
 }
 
 export async function previewEmployeeVacationPolicy(

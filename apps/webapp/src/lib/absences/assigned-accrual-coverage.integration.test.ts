@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
 	employeeVacationAllowance,
@@ -22,6 +22,11 @@ describe("assigned accrual coverage (#1371)", () => {
 	let fixture: LifecycleDatabaseFixture;
 	beforeEach(async () => {
 		fixture = await createLifecycleDatabaseFixture();
+		// These scenarios describe reviewed 2026/2027 history, independent of the database clock.
+		await fixture.pool.query(
+			"update vacation_policy_rollout set baseline_date=DATE '2026-01-01' where organization_id=$1",
+			[fixture.organizationId],
+		);
 	});
 	afterEach(async () => {
 		await fixture?.close();
@@ -80,6 +85,10 @@ describe("assigned accrual coverage (#1371)", () => {
 		const missing = await fixture.seedEmployee();
 		const conflict = await fixture.seedEmployee();
 		const foreignOrganizationId = await fixture.createOrganization();
+		await fixture.pool.query(
+			"update vacation_policy_rollout set baseline_date=DATE '2026-01-01' where organization_id=$1",
+			[foreignOrganizationId],
+		);
 		const foreign = await fixture.seedEmployee({
 			organizationId: foreignOrganizationId,
 		});
@@ -111,10 +120,13 @@ describe("assigned accrual coverage (#1371)", () => {
 					name: selected.name,
 				})
 				.returning();
-			await fixture.db.insert(teamMembership).values({
-				organizationId: fixture.organizationId,
-				employeeId: conflict.employeeId,
-				teamId: targetTeam.id,
+			await fixture.db.transaction(async (tx) => {
+				await tx.execute(sql`select set_config('z8.vacation_effective_date', '2026-01-01', true)`);
+				await tx.insert(teamMembership).values({
+					organizationId: fixture.organizationId,
+					employeeId: conflict.employeeId,
+					teamId: targetTeam.id,
+				});
 			});
 			await fixture.db.insert(vacationPolicyAssignment).values({
 				organizationId: fixture.organizationId,

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	employeeVacationAllowance,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { loadVacationBalances } from "./vacation-balance-store";
 
+const clock = vi.hoisted(() => ({ now: "2027-06-01T12:00:00Z" }));
 const session = vi.hoisted(() => ({ userId: "", organizationId: "" }));
 vi.mock("next/headers", async () =>
 	(await import("@/test/integration-harness")).nextHeaders(),
@@ -41,13 +43,13 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 	return {
 		...mod,
 		systemClock: {
-			nowInstant: () => mod.instantFromDate(new Date("2027-06-01T12:00:00Z")),
+			nowInstant: () => mod.instantFromDate(new Date(clock.now)),
 		},
 	};
 });
 vi.mock("@/lib/datetime/drizzle-adapter", async (original) => ({
 	...(await original<typeof import("@/lib/datetime/drizzle-adapter")>()),
-	currentTimestamp: () => new Date("2027-06-01T12:00:00Z"),
+	currentTimestamp: () => new Date(clock.now),
 }));
 const { getVacationBalanceResult: getDashboardVacationBalance } = await import(
 	"@/components/dashboard/actions"
@@ -70,11 +72,67 @@ describe("assigned vacation balances (#1370)", () => {
 	let fixture: LifecycleDatabaseFixture;
 	beforeEach(async () => {
 		fixture = await createLifecycleDatabaseFixture();
+		// These scenarios describe reviewed 2026/2027 history, independent of the database clock.
+		await fixture.pool.query(
+			"update vacation_policy_rollout set baseline_date=DATE '2026-01-01' where organization_id=$1",
+			[fixture.organizationId],
+		);
+		clock.now = "2027-06-01T12:00:00Z";
 		session.userId = fixture.ownerUserId;
 		session.organizationId = fixture.organizationId;
 	});
 	afterEach(async () => {
 		await fixture?.close();
+	});
+	it("returns the organization year at New Year for missing and configured dashboard balances", async () => {
+		clock.now = "2026-12-31T23:30:00Z";
+		await fixture.pool.query(
+			"update organization set timezone='Europe/Berlin' where id=$1",
+			[fixture.organizationId],
+		);
+		expect(await getDashboardVacationBalance()).toMatchObject({
+			success: true,
+			data: { year: 2027, balance: null, configuration: { status: "missing" } },
+		});
+		await fixture.db.insert(vacationAllowance).values([
+			{
+				organizationId: fixture.organizationId,
+				name: "2026 annual",
+				startDate: "2026-01-01",
+				validUntil: "2026-12-31",
+				isCompanyDefault: true,
+				defaultAnnualDays: "24",
+				statutoryMinimumDays: "20",
+				accrualType: "annual" as const,
+				createdBy: fixture.ownerUserId,
+			},
+			{
+				organizationId: fixture.organizationId,
+				name: "2027 annual",
+				startDate: "2027-01-01",
+				isCompanyDefault: true,
+				defaultAnnualDays: "30",
+				statutoryMinimumDays: "20",
+				accrualType: "annual" as const,
+				createdBy: fixture.ownerUserId,
+			},
+		]);
+		expect(await getDashboardVacationBalance()).toMatchObject({
+			success: true,
+			data: {
+				year: 2027,
+				balance: { totalDays: 30 },
+				configuration: { status: "resolved" },
+			},
+		});
+		await fixture.pool.query(
+			"update organization set timezone='America/Los_Angeles' where id=$1",
+			[fixture.organizationId],
+		);
+		expect(await getDashboardVacationBalance()).toMatchObject({
+			success: true,
+			data: { year: 2026, balance: { totalDays: 24 } },
+		});
 	});
 	it("uses the team's 25 days instead of the company default's 30 for a covered 2027 year", async () => {
 		const [, assigned] = await fixture.db
@@ -96,20 +154,22 @@ describe("assigned vacation balances (#1370)", () => {
 			.insert(team)
 			.values({ organizationId: fixture.organizationId, name: "Assigned team" })
 			.returning();
-		await fixture.db
-			.insert(teamMembership)
-			.values({
+		await fixture.db.transaction(async (tx) => {
+			await tx.execute(sql`select set_config('z8.vacation_effective_date', '2026-01-01', true)`);
+			await tx.insert(teamMembership).values({
 				organizationId: fixture.organizationId,
 				teamId: targetTeam.id,
 				employeeId: fixture.employeeId,
 			});
-		await fixture.db
-			.insert(teamMembership)
-			.values({
+		});
+		await fixture.db.transaction(async (tx) => {
+			await tx.execute(sql`select set_config('z8.vacation_effective_date', '2026-01-01', true)`);
+			await tx.insert(teamMembership).values({
 				organizationId: fixture.organizationId,
 				teamId: targetTeam.id,
 				employeeId: fixture.ownerEmployeeId,
 			});
+		});
 		await fixture.db
 			.insert(vacationPolicyAssignment)
 			.values({
@@ -117,6 +177,7 @@ describe("assigned vacation balances (#1370)", () => {
 				policyId: assigned.id,
 				assignmentType: "team",
 				teamId: targetTeam.id,
+				effectiveStartDate: "2026-01-01",
 				createdBy: fixture.ownerUserId,
 			});
 		await fixture.pool.query(
@@ -210,13 +271,14 @@ describe("assigned vacation balances (#1370)", () => {
 					name: `Conflict ${index}`,
 				})
 				.returning();
-			await fixture.db
-				.insert(teamMembership)
-				.values({
+			await fixture.db.transaction(async (tx) => {
+				await tx.execute(sql`select set_config('z8.vacation_effective_date', '2026-01-01', true)`);
+				await tx.insert(teamMembership).values({
 					organizationId: fixture.organizationId,
 					employeeId: conflict.employeeId,
 					teamId: targetTeam.id,
 				});
+			});
 			await fixture.db
 				.insert(vacationPolicyAssignment)
 				.values({
