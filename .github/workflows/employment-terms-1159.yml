@@ -141,6 +141,7 @@ jobs:
         working-directory: apps/webapp
         run: >-
           pnpm exec biome ci --max-diagnostics=100
+          next.config.ts
           "src/app/[locale]/(app)/cache-components-route-contract.test.ts"
           "src/app/[locale]/onboarding/organization/page.tsx"
           "src/app/[locale]/onboarding/organization/page.server.test.tsx"
