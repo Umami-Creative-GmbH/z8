@@ -74,20 +74,41 @@ export type OfflineTurn = {
 /**
  * What proves the employee on an online turn: the PIN they entered, or (#1366)
  * the kiosk badge they scanned. Kept only in the turn's state and sent with each
- * call; never stored on the device.
+ * call; never stored on the device. A badge read with the kiosk's camera
+ * (#1367) says so (`input: "camera"`), so Z8 holds every call of the turn to
+ * the camera's switch; without it, the attached scanner.
  */
-export type KioskTurnProof = { pin: string; badge?: never } | { badge: string; pin?: never };
+export type KioskTurnProof =
+	| { pin: string; badge?: never; input?: never }
+	| { badge: string; input?: "camera"; pin?: never };
+
+/** A badge call's body: the badge, and which input read it when that was the camera (#1367). */
+export function kioskBadgeBody(badge: string, input?: "camera") {
+	return input === "camera" ? { badge, badgeInput: "camera" as const } : { badge };
+}
 
 /** The proof's part of a kiosk call's body. */
 export function kioskProofBody(proof: KioskTurnProof, employeeId: string) {
 	return proof.badge === undefined
 		? { employeeId, pin: proof.pin }
-		: { employeeId, badge: proof.badge };
+		: { employeeId, ...kioskBadgeBody(proof.badge, proof.input) };
 }
 
 /**
+ * Why the kiosk's camera could not scan (#1367): access refused by the person
+ * or the browser, no camera, a browser that cannot read QR codes live, or a
+ * camera that would not start (or stopped).
+ */
+export type KioskCameraProblem =
+	| "camera_denied"
+	| "camera_missing"
+	| "camera_unsupported"
+	| "camera_failed";
+
+/**
  * Why the home screen shows a note (#1366): a badge scan that did not open a
- * turn, or a badge turn that ended without its action. Never names anyone.
+ * turn, a badge turn that ended without its action, or (#1367) why the camera
+ * could not scan. Never names anyone.
  */
 export type KioskHomeNotice =
 	| {
@@ -97,7 +118,8 @@ export type KioskHomeNotice =
 				| "badge_unreadable"
 				| "badge_offline"
 				| "badge_failed"
-				| "badge_not_recorded";
+				| "badge_not_recorded"
+				| KioskCameraProblem;
 	  }
 	| { code: "badge_rate_limited"; retryAfter: number };
 
@@ -129,6 +151,13 @@ export type KioskFlow =
 			attempt: number;
 			busy: boolean;
 			error: KioskClockRefusal | "offline" | null;
+	  }
+	| {
+			/**
+			 * The kiosk's camera looks for a badge (#1367), opened by "Scan badge" on
+			 * the home screen. Leaving this step, by whatever way, stops the camera.
+			 */
+			step: "camera";
 	  }
 	| {
 			/** A scanned badge is being checked (#1366); nothing is shown about anyone yet. */
@@ -345,6 +374,8 @@ export async function pinCheckedFlow(input: {
  */
 export function badgeCheckedFlow(input: {
 	badge: string;
+	/** The camera read the badge (#1367); otherwise the attached scanner. */
+	input?: "camera";
 	result: AnsweredCall<KioskEmployeeSnapshot>;
 	/** A call found Z8 unreachable while the browser had a network. */
 	contactLost: () => void;
@@ -353,7 +384,8 @@ export function badgeCheckedFlow(input: {
 	if (result.kind === "ok") {
 		return {
 			step: "employee",
-			proof: { badge: input.badge },
+			proof:
+				input.input === "camera" ? { badge: input.badge, input: "camera" } : { badge: input.badge },
 			snapshot: result.body,
 			pending: null,
 			error: null,

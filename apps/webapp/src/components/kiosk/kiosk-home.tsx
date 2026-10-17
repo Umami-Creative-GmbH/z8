@@ -1,6 +1,13 @@
 "use client";
 
-import { IconLoader2, IconMapPin, IconQrcode, IconRefresh, IconSearch } from "@tabler/icons-react";
+import {
+	IconCamera,
+	IconLoader2,
+	IconMapPin,
+	IconQrcode,
+	IconRefresh,
+	IconSearch,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -90,6 +97,11 @@ interface KioskHomeProps {
 	onBadge?: (credential: string) => void;
 	/** A scanned code that is no kiosk badge. */
 	onBadgeUnreadable?: () => void;
+	/**
+	 * "Scan badge" with the kiosk's camera (#1367). Given only while the kiosk's
+	 * camera input is on; the camera opens from this button alone.
+	 */
+	onScanBadge?: () => void;
 	onChooseLanguage: (language: string) => void;
 	onPick: (employee: KioskEmployeeListing) => void;
 	onKioskRefused: (code: KioskRefusalCode) => void;
@@ -112,6 +124,7 @@ export function KioskHome({
 	notice = null,
 	onBadge,
 	onBadgeUnreadable,
+	onScanBadge,
 	onChooseLanguage,
 	onPick,
 	onKioskRefused,
@@ -173,6 +186,12 @@ export function KioskHome({
 					<h2 id="kiosk-employees" className="text-xl font-semibold">
 						{t("timeTracking.kiosk.home.title", "Tap your name to clock in or out")}
 					</h2>
+					{onScanBadge ? (
+						<Button size="lg" className="h-16 self-start px-6 text-xl" onClick={onScanBadge}>
+							<IconCamera className="size-6" aria-hidden="true" />
+							{t("timeTracking.kiosk.home.scanBadge", "Scan badge")}
+						</Button>
+					) : null}
 					{onBadge ? (
 						<p className="-mt-2 flex items-center gap-2 text-lg text-muted-foreground">
 							<IconQrcode className="size-6 shrink-0" aria-hidden="true" />

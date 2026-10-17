@@ -65,6 +65,49 @@ describe("proxy matcher", () => {
 		},
 	);
 
+	describe("camera permission (#1367)", () => {
+		const policy = async (path: string, cookie?: string) => {
+			platform.configured = true;
+			try {
+				const response = await proxy(
+					new NextRequest(`https://app.example.com${path}`, cookie ? { headers: { cookie } } : {}),
+				);
+				expect(response.headers.get("location")).toBeNull();
+				return response.headers.get("permissions-policy");
+			} finally {
+				platform.configured = false;
+			}
+		};
+
+		it.each(["/en/kiosk", "/de/kiosk?code=ABCDE-FGHJK", "/gsw/kiosk", "/uk/kiosk"])(
+			"lets the kiosk page %s use the camera, never the microphone",
+			async (path) => {
+				expect(await policy(path)).toBe("camera=(self), microphone=(), geolocation=(self)");
+			},
+		);
+
+		it.each(["/en/sign-in", "/gsw/sign-in", "/en/licenses"])(
+			"keeps the camera blocked on the public page %s",
+			async (path) => {
+				expect(await policy(path)).toBe("camera=(), microphone=(), geolocation=(self)");
+			},
+		);
+
+		it.each([
+			"/en/settings/kiosks",
+			"/de/time-tracking",
+			"/gsw/settings/employees",
+			"/en/kiosk-board",
+		])(
+			"keeps the camera blocked on the signed-in page %s",
+			async (path) => {
+				expect(await policy(path, "better-auth.session_token=session")).toBe(
+					"camera=(), microphone=(), geolocation=(self)",
+				);
+			},
+		);
+	});
+
 	it("does not locale-prefix PostHog ingest proxy requests", () => {
 		expect(matchesProxy("/ingest/flags")).toBe(false);
 		expect(matchesProxy("/ingest/static/array.js")).toBe(false);

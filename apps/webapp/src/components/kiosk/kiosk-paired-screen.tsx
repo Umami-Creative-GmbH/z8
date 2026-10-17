@@ -3,6 +3,7 @@
 import { IconWifiOff } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useState } from "react";
+import { kioskAcceptsBadgeInput } from "@/lib/time-tracking/kiosk/badge-input";
 import { kioskPost } from "@/lib/time-tracking/kiosk/device";
 import { formatKioskTime } from "@/lib/time-tracking/kiosk/display";
 import type { KioskOfflineEmployeeView } from "@/lib/time-tracking/kiosk/offline-command";
@@ -23,6 +24,7 @@ import {
 } from "@/lib/time-tracking/kiosk/uncertain-action";
 import { KIOSK_ACTION_REQUEST } from "./kiosk-action-request";
 import { KioskBadgeCheck } from "./kiosk-badge-check";
+import { KioskCameraScan } from "./kiosk-camera-scan";
 import { KioskConfirmation } from "./kiosk-confirmation";
 import {
 	KioskEmployeePanel,
@@ -43,6 +45,7 @@ import {
 	type KioskFlow,
 	type KioskTurnConfirmation,
 	type KioskTurnProof,
+	kioskBadgeBody,
 	kioskProofBody,
 	type OfflineTurn,
 	pinCheckedFlow,
@@ -97,7 +100,10 @@ interface KioskPairedScreenProps {
  * A kiosk that accepts badges (#1366) also opens a turn from a badge read on
  * the home screen (`identifyBadge`, fed by the attached scanner through
  * `KioskHome`); the badge then stands in for the PIN for that turn only, online
- * only, and is never stored. Scans anywhere else are swallowed.
+ * only, and is never stored. Scans anywhere else are swallowed. A kiosk whose
+ * camera input is on (#1367) also offers "Scan badge" there: the camera step
+ * reads the badge on the device and feeds the same `identifyBadge`; the camera
+ * runs only while that step shows.
  */
 export function KioskPairedScreen({
 	token,
@@ -170,15 +176,34 @@ export function KioskPairedScreen({
 
 	// Attached-scanner badges (#1366): read on the home screen (`KioskHome`), and kept
 	// away from every other screen, so no scan switches or changes an employee's turn.
-	const scanner = kiosk.badgeScannerEnabled === true;
+	// The camera scan screen counts as such a screen too (#1367).
+	const scanner = kioskAcceptsBadgeInput(kiosk, "scanner");
 	useKioskBadgeScanner({ mode: scanner && flow.step !== "home" ? "guard" : "off" });
 
+	// Camera badges (#1367): "Scan badge" on the home screen opens the camera step.
+	// An admin who switches the camera input off meanwhile closes it.
+	const camera = kioskAcceptsBadgeInput(kiosk, "camera");
+	const cameraOpen = flow.step === "camera";
+	useEffect(() => {
+		if (cameraOpen && !camera) {
+			setFlow((current) => (current.step === "camera" ? { step: "home" } : current));
+		}
+	}, [cameraOpen, camera]);
+
+	/** "Scan badge" (#1367): the camera only online, since a badge turn needs a connection. */
+	function scanWithCamera() {
+		setFlow(
+			contact.online ? { step: "camera" } : { step: "home", notice: { code: "badge_offline" } },
+		);
+	}
+
 	/**
-	 * A badge read on the home screen (#1366), by whatever input read it: the
-	 * badge's employee, state, day total and actions, or why not. Records nothing.
-	 * Badge clocking needs a connection; offline nothing is sent or queued.
+	 * A badge read on the home screen (#1366), by whatever input read it (the
+	 * attached scanner, or #1367 the camera): the badge's employee, state, day
+	 * total and actions, or why not. Records nothing. Badge clocking needs a
+	 * connection; offline nothing is sent or queued.
 	 */
-	async function identifyBadge(badge: string) {
+	async function identifyBadge(badge: string, input?: "camera") {
 		if (!contact.online) {
 			setFlow({ step: "home", notice: { code: "badge_offline" } });
 			return;
@@ -187,11 +212,11 @@ export function KioskPairedScreen({
 		const result = await kioskPost<KioskEmployeeSnapshot>(
 			token,
 			"/api/kiosk/employee-status",
-			{ badge },
+			kioskBadgeBody(badge, input),
 			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
 		);
 		if (result.kind === "kiosk") return kioskRefused(result.code);
-		setFlow(badgeCheckedFlow({ badge, result, contactLost: contact.contactLost }));
+		setFlow(badgeCheckedFlow({ badge, input, result, contactLost: contact.contactLost }));
 	}
 
 	async function verifyPin(employee: KioskEmployeeListing, attempt: number, pin: string) {
@@ -357,6 +382,7 @@ export function KioskPairedScreen({
 										setFlow({ step: "home", notice: { code: "badge_unreadable" } }),
 								}
 							: {})}
+						{...(camera ? { onScanBadge: scanWithCamera } : {})}
 						onChooseLanguage={language.choose}
 						onPick={(employee) =>
 							setFlow({
@@ -378,6 +404,7 @@ export function KioskPairedScreen({
 					locale={language.locale}
 					onFlow={setFlow}
 					onHome={goHome}
+					onCameraBadge={(badge) => void identifyBadge(badge, "camera")}
 					onVerifyPin={(employee, attempt, pin) => void verifyPin(employee, attempt, pin)}
 					onChoose={choose}
 					onAct={(proof, snapshot, action, vehicle) => void act(proof, snapshot, action, vehicle)}
@@ -419,6 +446,7 @@ function KioskTurnScreen({
 	locale,
 	onFlow,
 	onHome,
+	onCameraBadge,
 	onVerifyPin,
 	onChoose,
 	onAct,
@@ -431,6 +459,8 @@ function KioskTurnScreen({
 	locale: string;
 	onFlow: (flow: KioskFlow) => void;
 	onHome: () => void;
+	/** A badge the camera step read (#1367). */
+	onCameraBadge: (badge: string) => void;
 	onVerifyPin: (employee: KioskEmployeeListing, attempt: number, pin: string) => void;
 	onChoose: (
 		proof: KioskTurnProof,
@@ -461,6 +491,15 @@ function KioskTurnScreen({
 					error={flow.error ? message(flow.error) : null}
 					onSubmit={(pin) => onVerifyPin(flow.employee, flow.attempt, pin)}
 					onBack={onHome}
+				/>
+			);
+		case "camera":
+			return (
+				<KioskCameraScan
+					key="camera"
+					onBadge={onCameraBadge}
+					onProblem={(problem) => onFlow({ step: "home", notice: { code: problem } })}
+					onCancel={onHome}
 				/>
 			);
 		case "badge":

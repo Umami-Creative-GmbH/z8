@@ -1472,6 +1472,7 @@
     "kiosks": {
       "add": "Add kiosk",
       "badgeScannerOn": "Badge scanner on",
+      "badgeCameraOn": "Badge camera on",
       "boardOn": "Who-is-in board on",
       "columns": {
         "actions": "Actions",
@@ -1503,6 +1504,8 @@
       "fields": {
         "badgeScanner": "Badge scanner",
         "badgeScannerDescription": "Employees scan their kiosk badge with a QR scanner attached to this kiosk instead of entering their PIN. Badge clocking needs a connection; name and PIN keep working.",
+        "badgeCamera": "Badge camera",
+        "badgeCameraDescription": "Employees tap Scan badge and hold their kiosk badge to this kiosk's camera instead of entering their PIN. The code is read on the device; no image is uploaded or stored. The browser asks once for camera access. Badge clocking needs a connection; name and PIN keep working.",
         "board": "Who-is-in board",
         "boardDescription": "Shows on the kiosk who is in or on break, by first name and last initial.",
         "location": "Location",
