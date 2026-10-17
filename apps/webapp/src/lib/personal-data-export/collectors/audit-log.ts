@@ -29,7 +29,7 @@
  * record (where it has one) before it counts as being about them.
  */
 
-import { and, asc, eq, inArray, isNotNull, ne, or, type SQLWrapper } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, ne, or, sql, type SQLWrapper } from "drizzle-orm";
 import type { AnyPgColumn, PgTable } from "drizzle-orm/pg-core";
 import {
 	absenceEntry,
@@ -469,7 +469,7 @@ function ownedRecordSources(
 		types,
 		ownedBy: (employeeId) =>
 			database
-				.select({ id: columns.id })
+				.select({ id: sql<string>`${columns.id}::text` })
 				.from(table)
 				.where(and(eq(columns.organizationId, organizationId), eq(columns.owner, employeeId))),
 		owners: async (ids) =>
@@ -492,7 +492,7 @@ function ownedRecordSources(
 			types: ["absence_entry", "absence"],
 			ownedBy: (employeeId) =>
 				database
-					.select({ id: absenceEntry.id })
+					.select({ id: sql<string>`${absenceEntry.id}::text` })
 					.from(absenceEntry)
 					.innerJoin(employee, absenceInOrganization)
 					.where(eq(absenceEntry.employeeId, employeeId)),
