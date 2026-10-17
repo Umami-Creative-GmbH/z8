@@ -8,7 +8,7 @@ import { sso } from "@better-auth/sso";
 import { betterAuth } from "better-auth/minimal";
 import { organization } from "better-auth/plugins/organization";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { captureAuthTransactions } from "@/lib/auth/auth-transaction";
 import { authDatabaseSchema } from "@/lib/auth-database-schema";
 import { integrationAdminPool } from "@/test/integration-database";
@@ -27,6 +27,7 @@ import { guardSCIMSubjectAcquisitions } from "./projection-guards";
 const runId = randomUUID();
 const organizationIds: string[] = [];
 const connectionIds: string[] = [];
+const seededUserIds: string[] = [];
 
 type SCIMResource = { id: string; externalId?: string; active?: boolean };
 
@@ -96,6 +97,8 @@ describe("managed SCIM protocol PostgreSQL contract", () => {
 					organizationId,
 				]);
 			}
+			for (const userId of seededUserIds)
+				await pool.query('delete from "user" where id = $1', [userId]);
 		} finally {
 		}
 	});
@@ -129,6 +132,7 @@ describe("managed SCIM protocol PostgreSQL contract", () => {
 		const now = new Date("2026-08-26T12:00:00.000Z");
 		const credentialExpiresAt = getSCIMCredentialExpiresAt();
 		organizationIds.push(organizationId);
+		seededUserIds.push(actorId);
 		await pool.query(
 			`insert into "user" (id, name, email, email_verified, created_at, updated_at)
 			 values ($1, 'SCIM Protocol Actor', $2, true, $3, $3)`,
@@ -207,6 +211,7 @@ describe("managed SCIM protocol PostgreSQL contract", () => {
 		email = `${externalId}@example.test`,
 	) {
 		const userId = `scim-protocol-user-${externalId}-${runId}`;
+		seededUserIds.push(userId);
 		const now = new Date("2026-08-26T12:00:00.000Z");
 		await pool.query(
 			`insert into "user" (id, name, email, email_verified, created_at, updated_at) values ($1, $2, $3, true, $4, $4)`,
@@ -218,13 +223,7 @@ describe("managed SCIM protocol PostgreSQL contract", () => {
 		);
 		await pool.query(
 			`insert into account (id, account_id, provider_id, user_id, created_at, updated_at) values ($1, $2, $3, $4, $5, $5)`,
-			[
-				randomUUID(),
-				externalId,
-				graph.providerId,
-				userId,
-				now,
-			],
+			[randomUUID(), externalId, graph.providerId, userId, now],
 		);
 		return userId;
 	}
@@ -244,6 +243,558 @@ describe("managed SCIM protocol PostgreSQL contract", () => {
 		};
 	}
 
+	it("synchronizes the enterprise personnel number with the organization employee", async () => {
+		const extension =
+			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+		const graph = await setup("personnel-create");
+		const userId = await bindUser(graph, `personnel-create-${runId}`);
+		const created = await request(graph.token, "/Users", "POST", {
+			...user(`personnel-create-${runId}`),
+			schemas: ["urn:ietf:params:scim:schemas:core:2.0:User", extension],
+			[extension]: { employeeNumber: " E-0042 " },
+		});
+		expect(created.status).toBe(201);
+		const resource = await created.json();
+		expect(resource[extension]).toMatchObject({ employeeNumber: "E-0042" });
+		const stored = await pool.query(
+			"select employee_number from employee where organization_id = $1 and user_id = $2",
+			[graph.organizationId, userId],
+		);
+		expect(stored.rows).toEqual([{ employee_number: "E-0042" }]);
+		const read = await request(graph.token, `/Users/${resource.id}`);
+		expect((await read.json())[extension]).toMatchObject({
+			employeeNumber: "E-0042",
+		});
+	});
+	it("keeps personnel number updates and clears under IdP ownership", async () => {
+		const extension =
+			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+		const graph = await setup("personnel-patch");
+		const externalId = `personnel-patch-${runId}`;
+		const userId = await bindUser(graph, externalId);
+		const created = await request(
+			graph.token,
+			"/Users",
+			"POST",
+			user(externalId),
+		);
+		expect(created.status).toBe(201);
+		const resource = await created.json();
+		const patch = async (Operations: unknown[]) =>
+			request(graph.token, `/Users/${resource.id}`, "PATCH", {
+				schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+				Operations,
+			});
+		const changed = await patch([
+			{ op: "add", path: `${extension}:employeeNumber`, value: " 0042 " },
+		]);
+		expect(changed.status).toBe(200);
+		expect((await changed.json())[extension]).toMatchObject({
+			employeeNumber: "0042",
+		});
+		const current = async () =>
+			(
+				await pool.query(
+					"select employee_number, personnel_number_managed_by_scim from employee where organization_id = $1 and user_id = $2",
+					[graph.organizationId, userId],
+				)
+			).rows[0];
+		expect(await current()).toEqual({
+			employee_number: "0042",
+			personnel_number_managed_by_scim: true,
+		});
+		const pathless = await patch([
+			{ op: "replace", value: { [extension]: { employeeNumber: " E-7 " } } },
+		]);
+		expect(pathless.status).toBe(200);
+		expect((await pathless.json())[extension]).toMatchObject({
+			employeeNumber: "E-7",
+		});
+		expect((await current()).employee_number).toBe("E-7");
+		const unrelated = await patch([
+			{ op: "replace", path: "displayName", value: "Renamed" },
+		]);
+		expect(unrelated.status).toBe(200);
+		expect((await current()).employee_number).toBe("E-7");
+		const removed = await patch([
+			{ op: "remove", path: `${extension}:employeeNumber` },
+		]);
+		expect(removed.status).toBe(200);
+		expect(await current()).toEqual({
+			employee_number: null,
+			personnel_number_managed_by_scim: true,
+		});
+		const replaced = await request(
+			graph.token,
+			`/Users/${resource.id}`,
+			"PUT",
+			{
+				...user(externalId),
+				schemas: ["urn:ietf:params:scim:schemas:core:2.0:User", extension],
+				[extension]: { employeeNumber: " R-9 " },
+			},
+		);
+		expect(replaced.status).toBe(200);
+		expect((await replaced.json())[extension]).toMatchObject({
+			employeeNumber: "R-9",
+		});
+		const omitted = await request(
+			graph.token,
+			`/Users/${resource.id}`,
+			"PUT",
+			user(externalId),
+		);
+		expect(omitted.status).toBe(200);
+		expect(await current()).toEqual({
+			employee_number: null,
+			personnel_number_managed_by_scim: true,
+		});
+	});
+	it("rolls back conflicting personnel number creates, replacements and multi-operation patches", async () => {
+		const extension =
+			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+		const graph = await setup("personnel-conflict");
+		const holder = `personnel-holder-${runId}`;
+		const target = `personnel-target-${runId}`;
+		const holderUserId = await bindUser(graph, holder);
+		const targetUserId = await bindUser(graph, target);
+		const withNumber = (externalId: string, employeeNumber: unknown) => ({
+			...user(externalId),
+			schemas: ["urn:ietf:params:scim:schemas:core:2.0:User", extension],
+			[extension]: { employeeNumber },
+		});
+		expect(
+			(await request(graph.token, "/Users", "POST", withNumber(holder, "E-42")))
+				.status,
+		).toBe(201);
+		await pool.query(
+			"update employee set is_active = false where organization_id = $1 and user_id = $2",
+			[graph.organizationId, holderUserId],
+		);
+		const conflict = await request(
+			graph.token,
+			"/Users",
+			"POST",
+			withNumber(target, " e-42 "),
+		);
+		await expectSafeSCIMError(conflict, 409, []).then((error) =>
+			expect(error).toMatchObject({ scimType: "uniqueness" }),
+		);
+		expect(
+			(
+				await pool.query(
+					"select id from employee where organization_id = $1 and user_id = $2",
+					[graph.organizationId, targetUserId],
+				)
+			).rows,
+		).toEqual([]);
+		expect(
+			(
+				await pool.query(
+					"select status from member where organization_id = $1 and user_id = $2",
+					[graph.organizationId, targetUserId],
+				)
+			).rows,
+		).toEqual([{ status: "pending" }]);
+		const listed = await request(
+			graph.token,
+			`/Users?filter=${encodeURIComponent(`externalId eq "${target}"`)}`,
+		);
+		expect(await listed.json()).toMatchObject({ totalResults: 0 });
+		const created = await request(graph.token, "/Users", "POST", user(target));
+		expect(created.status).toBe(201);
+		const resource = await created.json();
+		const before = (
+			await pool.query(
+				"select * from employee where organization_id = $1 and user_id = $2",
+				[graph.organizationId, targetUserId],
+			)
+		).rows;
+		const replacement = await request(
+			graph.token,
+			`/Users/${resource.id}`,
+			"PUT",
+			{ ...withNumber(target, "e-42"), displayName: "Rejected replacement" },
+		);
+		await expectSafeSCIMError(replacement, 409, []).then((error) =>
+			expect(error).toMatchObject({ scimType: "uniqueness" }),
+		);
+		const patch = await request(graph.token, `/Users/${resource.id}`, "PATCH", {
+			schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+			Operations: [
+				{ op: "replace", path: "displayName", value: "Rejected patch" },
+				{ op: "add", path: `${extension}:employeeNumber`, value: "E-42" },
+			],
+		});
+		await expectSafeSCIMError(patch, 409, []).then((error) =>
+			expect(error).toMatchObject({ scimType: "uniqueness" }),
+		);
+		const read = await request(graph.token, `/Users/${resource.id}`);
+		expect(await read.json()).toMatchObject({
+			displayName: resource.displayName,
+		});
+		expect(
+			(
+				await pool.query(
+					"select * from employee where organization_id = $1 and user_id = $2",
+					[graph.organizationId, targetUserId],
+				)
+			).rows,
+		).toEqual(before);
+	});
+
+	it("claims ownership for explicit empty values and validates personnel number length atomically", async () => {
+		const extension =
+			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+		const graph = await setup("personnel-empty");
+		for (const [index, value] of [null, "", "   "].entries()) {
+			const externalId = `personnel-empty-${index}-${runId}`;
+			const userId = await bindUser(graph, externalId);
+			const response = await request(graph.token, "/Users", "POST", {
+				...user(externalId),
+				schemas: ["urn:ietf:params:scim:schemas:core:2.0:User", extension],
+				[extension]: { employeeNumber: value },
+			});
+			expect(response.status).toBe(201);
+			expect(
+				(
+					await pool.query(
+						"select employee_number, personnel_number_managed_by_scim from employee where organization_id = $1 and user_id = $2",
+						[graph.organizationId, userId],
+					)
+				).rows,
+			).toEqual([
+				{ employee_number: null, personnel_number_managed_by_scim: true },
+			]);
+		}
+		for (const [index, value] of ["X".repeat(51), 123].entries()) {
+			const externalId = `personnel-invalid-${index}-${runId}`;
+			const userId = await bindUser(graph, externalId);
+			const response = await request(graph.token, "/Users", "POST", {
+				...user(externalId),
+				schemas: ["urn:ietf:params:scim:schemas:core:2.0:User", extension],
+				[extension]: { employeeNumber: value },
+			});
+			await expectSafeSCIMError(response, 400, []);
+			expect(
+				(
+					await pool.query(
+						"select id from employee where organization_id = $1 and user_id = $2",
+						[graph.organizationId, userId],
+					)
+				).rows,
+			).toEqual([]);
+		}
+	});
+
+	it("keeps local personnel numbers unowned until explicitly supplied and returns canonical list values", async () => {
+		const extension =
+			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+		const graph = await setup("personnel-local");
+		const externalId = `personnel-local-${runId}`;
+		const userId = await bindUser(graph, externalId);
+		const created = await request(
+			graph.token,
+			"/Users",
+			"POST",
+			user(externalId),
+		);
+		expect(created.status).toBe(201);
+		const resource = await created.json();
+		await pool.query(
+			"update employee set employee_number = 'LOCAL-0042' where organization_id = $1 and user_id = $2",
+			[graph.organizationId, userId],
+		);
+		expect(
+			(
+				await request(
+					graph.token,
+					`/Users/${resource.id}`,
+					"PUT",
+					user(externalId),
+				)
+			).status,
+		).toBe(200);
+		const list = await request(graph.token, "/Users");
+		expect(await list.json()).toMatchObject({
+			Resources: [
+				{ id: resource.id, [extension]: { employeeNumber: "LOCAL-0042" } },
+			],
+		});
+		const excluded = await request(
+			graph.token,
+			`/Users/${resource.id}?excludedAttributes=${encodeURIComponent(`${extension}:employeeNumber`)}`,
+		);
+		expect((await excluded.json())[extension]?.employeeNumber).toBeUndefined();
+		const selected = await request(
+			graph.token,
+			`/Users/${resource.id}?attributes=userName`,
+		);
+		expect((await selected.json())[extension]).toBeUndefined();
+		expect(
+			(
+				await pool.query(
+					"select employee_number, personnel_number_managed_by_scim from employee where organization_id = $1 and user_id = $2",
+					[graph.organizationId, userId],
+				)
+			).rows,
+		).toEqual([
+			{
+				employee_number: "LOCAL-0042",
+				personnel_number_managed_by_scim: false,
+			},
+		]);
+		const cleared = await request(
+			graph.token,
+			`/Users/${resource.id}`,
+			"PATCH",
+			{
+				schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+				Operations: [{ op: "remove", path: extension }],
+			},
+		);
+		expect(cleared.status).toBe(200);
+		expect(
+			(
+				await pool.query(
+					"select employee_number, personnel_number_managed_by_scim from employee where organization_id = $1 and user_id = $2",
+					[graph.organizationId, userId],
+				)
+			).rows,
+		).toEqual([
+			{ employee_number: null, personnel_number_managed_by_scim: true },
+		]);
+	});
+	it("maps a concurrent personnel number index conflict to SCIM uniqueness and rolls back ownership", async () => {
+		const extension =
+			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+		const graph = await setup("personnel-race");
+		const holder = `race-holder-${runId}`;
+		const target = `race-target-${runId}`;
+		const holderId = await bindUser(graph, holder);
+		const targetId = await bindUser(graph, target);
+		expect(
+			(await request(graph.token, "/Users", "POST", user(holder))).status,
+		).toBe(201);
+		const created = await request(graph.token, "/Users", "POST", user(target));
+		expect(created.status).toBe(201);
+		const source = await created.json();
+		const concurrent = await pool.connect();
+		try {
+			await concurrent.query("begin");
+			await concurrent.query(
+				"update employee set employee_number = 'RACE-1' where organization_id = $1 and user_id = $2",
+				[graph.organizationId, holderId],
+			);
+			const pending = request(graph.token, `/Users/${source.id}`, "PATCH", {
+				schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+				Operations: [
+					{ op: "add", path: `${extension}:employeeNumber`, value: "race-1" },
+				],
+			});
+			await vi.waitFor(
+				async () => {
+					const blockers = await pool.query(
+						"select 1 from pg_stat_activity where datname = current_database() and wait_event_type = 'Lock' and query ilike '%update%employee%'",
+					);
+					expect(blockers.rows.length).toBeGreaterThan(0);
+				},
+				{ timeout: 10_000 },
+			);
+			await concurrent.query("commit");
+			await expectSafeSCIMError(await pending, 409, []).then((error) =>
+				expect(error).toMatchObject({ scimType: "uniqueness" }),
+			);
+			expect(
+				(
+					await pool.query(
+						"select employee_number, personnel_number_managed_by_scim from employee where organization_id = $1 and user_id = $2",
+						[graph.organizationId, targetId],
+					)
+				).rows,
+			).toEqual([
+				{ employee_number: null, personnel_number_managed_by_scim: false },
+			]);
+			const read = await request(graph.token, `/Users/${source.id}`);
+			expect((await read.json())[extension]?.employeeNumber).toBeUndefined();
+		} finally {
+			await concurrent.query("rollback");
+			concurrent.release();
+		}
+	}, 20_000);
+
+	it("keeps one user's personnel number and ownership independent across organizations", async () => {
+		const extension =
+			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+		const first = await setup("personnel-org-a");
+		const second = await setup("personnel-org-b");
+		const externalId = `two-organizations-${runId}`;
+		const userId = await bindUser(first, externalId);
+		await pool.query(
+			"insert into member (id, organization_id, user_id, role, status, created_at) values ($1, $2, $3, 'member', 'pending', now())",
+			[randomUUID(), second.organizationId, userId],
+		);
+		await pool.query(
+			"insert into account (id, account_id, provider_id, user_id, created_at, updated_at) values ($1, $2, $3, $4, now(), now())",
+			[randomUUID(), externalId, second.providerId, userId],
+		);
+		const numbered = {
+			...user(externalId),
+			schemas: ["urn:ietf:params:scim:schemas:core:2.0:User", extension],
+			[extension]: { employeeNumber: "SAME-42" },
+		};
+		const firstResponse = await request(
+			first.token,
+			"/Users",
+			"POST",
+			numbered,
+		);
+		expect(firstResponse.status).toBe(201);
+		const firstSource = await firstResponse.json();
+		const secondResponse = await request(
+			second.token,
+			"/Users",
+			"POST",
+			user(externalId),
+		);
+		expect(secondResponse.status).toBe(201);
+		const secondSource = await secondResponse.json();
+		const before = await pool.query(
+			"select organization_id, personnel_number_managed_by_scim from employee where user_id = $1 order by organization_id",
+			[userId],
+		);
+		expect(before.rows).toEqual([
+			{
+				organization_id: first.organizationId,
+				personnel_number_managed_by_scim: true,
+			},
+			{
+				organization_id: second.organizationId,
+				personnel_number_managed_by_scim: false,
+			},
+		]);
+		expect(
+			(
+				await request(
+					second.token,
+					`/Users/${secondSource.id}`,
+					"PUT",
+					numbered,
+				)
+			).status,
+		).toBe(200);
+		const forbidden = await request(
+			first.token,
+			`/Users/${secondSource.id}`,
+			"PUT",
+			{ ...numbered, [extension]: { employeeNumber: "FORBIDDEN" } },
+		);
+		expect(forbidden.status).toBe(404);
+		const readA = await request(first.token, `/Users/${firstSource.id}`);
+		const readB = await request(second.token, `/Users/${secondSource.id}`);
+		expect((await readA.json())[extension]).toMatchObject({
+			employeeNumber: "SAME-42",
+		});
+		expect((await readB.json())[extension]).toMatchObject({
+			employeeNumber: "SAME-42",
+		});
+	});
+
+	it("preserves personnel number ownership through credential rotation and projection replay", async () => {
+		const extension =
+			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+		const graph = await setup("personnel-rotation");
+		const externalId = `personnel-rotation-${runId}`;
+		const userId = await bindUser(graph, externalId);
+		const created = await request(graph.token, "/Users", "POST", {
+			...user(externalId),
+			schemas: ["urn:ietf:params:scim:schemas:core:2.0:User", extension],
+			[extension]: { employeeNumber: "ROT-42" },
+		});
+		expect(created.status).toBe(201);
+		const source = await created.json();
+		const rotated = await auth.api.rotateSCIMManagedCredential({
+			body: {
+				connectionId: graph.connectionId,
+				provisioningDomainId: graph.organizationId,
+				actorId: graph.actorId,
+				scopes: SCIM_SCOPES,
+				expiresAt: getSCIMCredentialExpiresAt(),
+			},
+		});
+		await auth.api.reconcileSCIMProjection({
+			body: { provisioningDomainId: graph.organizationId },
+		});
+		const read = await request(rotated.token, `/Users/${source.id}`);
+		expect((await read.json())[extension]).toMatchObject({
+			employeeNumber: "ROT-42",
+		});
+		expect(
+			(
+				await pool.query(
+					"select personnel_number_managed_by_scim from employee where organization_id = $1 and user_id = $2",
+					[graph.organizationId, userId],
+				)
+			).rows,
+		).toEqual([{ personnel_number_managed_by_scim: true }]);
+	});
+
+	it("updates the personnel number without reactivating employment ended by an effective departure", async () => {
+		const extension =
+			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+		const graph = await setup("personnel-departure");
+		const externalId = `personnel-departure-${runId}`;
+		const userId = await bindUser(graph, externalId);
+		const created = await request(
+			graph.token,
+			"/Users",
+			"POST",
+			user(externalId),
+		);
+		expect(created.status).toBe(201);
+		const source = await created.json();
+		const patch = (Operations: unknown[]) =>
+			request(graph.token, `/Users/${source.id}`, "PATCH", {
+				schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+				Operations,
+			});
+		expect(
+			(await patch([{ op: "replace", path: "active", value: false }])).status,
+		).toBe(200);
+		const employeeId = (
+			await pool.query(
+				"select id from employee where organization_id = $1 and user_id = $2",
+				[graph.organizationId, userId],
+			)
+		).rows[0].id;
+		const periodId = randomUUID();
+		await pool.query(
+			"insert into employee_employment_period (id, organization_id, employee_id, status, started_at, ended_at, start_provenance) values ($1, $2, $3, 'closed', '2025-01-01Z', '2026-01-01Z', 'recorded')",
+			[periodId, graph.organizationId, employeeId],
+		);
+		await pool.query(
+			"insert into employee_departure (organization_id, employee_id, employment_period_id, mode, timezone, cutoff_at, revision, status, created_by, request_id, request_fingerprint, effective_at) values ($1, $2, $3, 'immediate', 'UTC', '2026-01-01Z', 1, 'effective', $4, $5, 'personnel-number-regression', '2026-01-01Z')",
+			[graph.organizationId, employeeId, periodId, graph.actorId, randomUUID()],
+		);
+		const updated = await patch([
+			{ op: "replace", path: "active", value: true },
+			{ op: "add", path: `${extension}:employeeNumber`, value: "FORMER-42" },
+		]);
+		expect(updated.status).toBe(200);
+		expect((await updated.json())[extension]).toMatchObject({
+			employeeNumber: "FORMER-42",
+		});
+		expect(
+			(
+				await pool.query(
+					"select id, is_active, employee_number from employee where organization_id = $1 and user_id = $2",
+					[graph.organizationId, userId],
+				)
+			).rows,
+		).toEqual([
+			{ id: employeeId, is_active: false, employee_number: "FORMER-42" },
+		]);
+	});
 	it("serves managed SCIM protocol resources, authorization errors, and Entra groups", async () => {
 		const graph = await setup("protocol");
 		await bindUser(graph, "protocol-user");
@@ -283,12 +834,17 @@ describe("managed SCIM protocol PostgreSQL contract", () => {
 			id: source.id,
 			externalId: "replacement",
 		});
-		const updatedProfile = await request(graph.token, `/Users/${source.id}`, "PUT", {
-			...user("replacement"),
-			userName: "unrelated-profile@example.invalid",
-			name: { formatted: "Updated Profile" },
-			emails: [{ value: "unrelated-profile@example.invalid", primary: true }],
-		});
+		const updatedProfile = await request(
+			graph.token,
+			`/Users/${source.id}`,
+			"PUT",
+			{
+				...user("replacement"),
+				userName: "unrelated-profile@example.invalid",
+				name: { formatted: "Updated Profile" },
+				emails: [{ value: "unrelated-profile@example.invalid", primary: true }],
+			},
+		);
 		expect(updatedProfile.status).toBe(200);
 		expect((await updatedProfile.json()) as SCIMResource).toMatchObject({
 			id: source.id,

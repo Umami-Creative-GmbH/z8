@@ -28,6 +28,7 @@ import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/va
 import { personnelNumberKey } from "@/lib/organization/personnel-number";
 import {
 	assertPersonnelNumberFree,
+	assertPersonnelNumberLocallyEditable,
 	findPersonnelNumberHolder,
 	keepPersonnelNumberRefusal,
 } from "@/lib/organization/personnel-number-uniqueness";
@@ -319,6 +320,11 @@ export async function updateEmployeeAction(
           throw new ValidationError({message:"Review the actual employment start correction before saving it.",field:"startDate"});
          }
         }
+								await assertPersonnelNumberLocallyEditable(tx, {
+									organizationId: targetEmployee.organizationId,
+									employeeId,
+									personnelNumber: employeeUpdateData.employeeNumber,
+								});
 								if (personnelNumber !== null) {
 									await assertPersonnelNumberFree(tx, {
 										...personnelNumberScope,

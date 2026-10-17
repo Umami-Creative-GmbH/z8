@@ -48,6 +48,7 @@ export function EmployeeEditFormCard({
 	t = defaultTranslate,
 	customFields = null,
 	hasCustomFieldChanges = false,
+	personnelNumberManagedByScim = false,
 }: {
 	form: EmployeeDetailFormApi;
 	canEditManagerFields: boolean;
@@ -60,6 +61,7 @@ export function EmployeeEditFormCard({
 	customFields?: ReactNode;
 	/** Custom field drafts count as changes for the save button. */
 	hasCustomFieldChanges?: boolean;
+	personnelNumberManagedByScim?: boolean;
 }) {
 	return (
 		<Card className="lg:col-span-2">
@@ -157,15 +159,16 @@ export function EmployeeEditFormCard({
 						/>
 						<TextField
 							form={form}
-							name="employeeNumber"
+							readOnly={personnelNumberManagedByScim}
+						name="employeeNumber"
 							label={t("settings.employees.detailView.personnelNumber", "Personnel number")}
 							placeholder={t(
 								"settings.employees.detailView.employeeNumberPlaceholder",
 								"e.g., EMP-001",
 							)}
 							description={t(
-								"settings.employees.detailView.personnelNumberDescription",
-								"Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.",
+								personnelNumberManagedByScim ? "settings.employees.detailView.personnelNumberManagedByIdp" : "settings.employees.detailView.personnelNumberDescription",
+								personnelNumberManagedByScim ? "Managed by your identity provider. Change the personnel number there." : "Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.",
 							)}
 							disabled={!canEditOrgAdminFields || isUpdating}
 						/>
