@@ -179,6 +179,60 @@ describe("employment terms calendar-day ownership", () => {
 		expect(minutesByDay(boundaryOnly)).toEqual({ "2026-01-15": 240 });
 	});
 
+	it.each(["missing", "inactive", "disabled"] as const)(
+		"uses the employee calendar when tracking is %s",
+		async (mode) => {
+			const subject = await scenario("Asia/Tokyo", { organizationTimezone: "Europe/Berlin" });
+			if (mode === "missing") {
+				await fixture.db.delete(organizationTrackingSettings)
+					.where(eq(organizationTrackingSettings.organizationId, subject.org.organizationId));
+			} else if (mode === "inactive") {
+				await fixture.db.update(organizationTrackingSettings)
+					.set({ activatedAt: null })
+					.where(eq(organizationTrackingSettings.organizationId, subject.org.organizationId));
+			}
+			const result = await getDailyWorkRequirementsForEmployee({
+				...subject.scope,
+				startDate: dayStart("2026-01-14", "Asia/Tokyo"),
+				endDate: dayStart("2026-01-15", "Asia/Tokyo"),
+				timezone: "America/New_York",
+				...(mode === "disabled" ? { trackingStartDateOverride: null } : {}),
+			}, fixture.db);
+
+			expect(minutesByDay(result)).toEqual({ "2026-01-14": 480, "2026-01-15": 240 });
+		},
+	);
+
+	it("honors an explicit employee calendar override without activated tracking", async () => {
+		const subject = await scenario("Asia/Tokyo");
+		await fixture.db.delete(organizationTrackingSettings)
+			.where(eq(organizationTrackingSettings.organizationId, subject.org.organizationId));
+
+		const result = await getDailyWorkRequirementsForEmployee({
+			...subject.scope,
+			startDate: dayStart("2026-01-14", "America/New_York"),
+			endDate: dayStart("2026-01-15", "America/New_York"),
+			timezone: "Europe/Berlin",
+			employeeTimezoneOverride: "America/New_York",
+		}, fixture.db);
+
+		expect(minutesByDay(result)).toEqual({ "2026-01-14": 480, "2026-01-15": 240 });
+	});
+
+	it("does not revive superseded terms or the policy fallback in a calendar gap", async () => {
+		const subject = await scenario("Europe/Berlin");
+		await fixture.db.update(employeeEmploymentHistory)
+			.set({ validUntil: null })
+			.where(eq(employeeEmploymentHistory.id, subject.oldTermsId));
+		await fixture.db.update(employeeEmploymentHistory)
+			.set({ validUntil: new Date("2026-01-16T00:00:00Z") })
+			.where(eq(employeeEmploymentHistory.id, subject.newTermsId));
+
+		expect(minutesByDay(await requirements(subject, "2026-01-14", "2026-02-01")))
+			.toEqual({ "2026-01-14": 480, "2026-01-15": 240 });
+		expect(await requirements(subject, "2026-02-01")).toEqual({});
+	});
+
 	it("uses the employee calendar when organization and viewer timezones differ", async () => {
 		const subject = await scenario("America/New_York", { organizationTimezone: "Asia/Tokyo" });
 

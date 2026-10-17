@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, asc, eq, inArray, lt } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { type EmployeeEmploymentHistory, employeeEmploymentHistory } from "@/db/schema";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
@@ -32,6 +32,8 @@ async function loadConfirmedTermsRows(
 	},
 ): Promise<EmployeeEmploymentHistory[]> {
 	if (input.employeeIds.length === 0) return [];
+	// Ended terms still suppress older overlapping rows. Filtering by validUntil
+	// before resolving precedence would resurrect an older open-ended row.
 	return reader
 		.select()
 		.from(employeeEmploymentHistory)
@@ -43,13 +45,6 @@ async function loadConfirmedTermsRows(
 				lt(
 					employeeEmploymentHistory.validFrom,
 					utcMidnight(input.range.toExclusive.add({ days: STORED_DATE_MARGIN_DAYS })),
-				),
-				or(
-					isNull(employeeEmploymentHistory.validUntil),
-					gt(
-						employeeEmploymentHistory.validUntil,
-						utcMidnight(input.range.from.subtract({ days: STORED_DATE_MARGIN_DAYS })),
-					),
 				),
 			),
 		)

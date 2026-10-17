@@ -5,6 +5,7 @@ import {
 	absenceCategory,
 	absenceEntry,
 	employee,
+	employeeEmploymentHistory,
 	shift,
 	workPeriod,
 	workPolicy,
@@ -33,6 +34,7 @@ import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
+import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import {
 	type ApprovedAbsenceRange,
 	applyAbsenceAdjustmentsToRequirements,
@@ -410,7 +412,23 @@ async function buildEmploymentHistoryDailyRequirements(params: {
 			}),
 		),
 	);
-	if (spans.length === 0) return null;
+	if (spans.length === 0) {
+		// Only employees without confirmed terms use the legacy policy fallback.
+		// A gap in an established terms timeline must not manufacture required time.
+		const anyTerms = await Effect.runPromise(
+			params.database.query("calendarRequirements.hasConfirmedTerms", () =>
+				params.database.db.query.employeeEmploymentHistory.findFirst({
+					where: and(
+						eq(employeeEmploymentHistory.organizationId, params.organizationId),
+						eq(employeeEmploymentHistory.employeeId, params.employeeId),
+						eq(employeeEmploymentHistory.reviewState, "confirmed"),
+					),
+					columns: { id: true },
+				}),
+			),
+		);
+		return anyTerms ? {} : null;
+	}
 
 	const requirements: DailyWorkRequirements = {};
 	const sliceRequirements = await Promise.all(
@@ -509,10 +527,23 @@ export function loadDailyWorkRequirementsForEmployee(params: DailyWorkRequiremen
 					eq(employee.organizationId, params.organizationId),
 				),
 				columns: { id: true, startDate: true, contractType: true },
-				with: { user: { columns: { createdAt: true } } },
+				with: {
+					user: { columns: { createdAt: true } },
+					userSettings: { columns: { timezone: true } },
+					organization: { columns: { timezone: true } },
+				},
 			});
 		});
 		if (!scopedEmployee) return {};
+		params = {
+			...params,
+			timezone:
+				params.employeeTimezoneOverride ??
+				resolveEffectiveTimezone(
+					scopedEmployee.userSettings?.timezone,
+					scopedEmployee.organization?.timezone,
+				),
+		};
 
 		// This is the balance requirement projection. Historical policy-at-date and published
 		// shift readers above remain unbounded, so rollout never rewrites schedule history.
