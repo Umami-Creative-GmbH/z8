@@ -19,3 +19,11 @@ _Avoid_: rerun, correction export, delta export
 **Payroll comparison**:
 The additions, removals and changes between a baseline export and its current preview for the supported payroll lines. It shows old and new values and their signed differences, with excluded line kinds stated explicitly.
 _Avoid_: reconciliation (Time Tracking uses record agreement and historical repair for a different concern), payroll adjustment
+
+**Comparison evidence**:
+The historical facts retained from a successful payroll export so its supported lines can be compared later, including the destination, scope, period boundaries, exported values and their source contributions. It represents the export as it happened, independently of whether its downloadable file still exists.
+_Avoid_: work input (that is only part of the evidence), regenerated export
+
+**Payroll impact**:
+A change to the supported values or identifiers the payroll target would receive, at that target's grouping and precision. A change between wage codes can have payroll impact even when an employee's total hours are unchanged.
+_Avoid_: balance change, net hours change
