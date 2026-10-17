@@ -492,7 +492,7 @@ export async function resolvePolicyClockOutSurchargeSnapshotInTransaction(input:
 				where assignment.organization_id = ${input.organizationId}
 					and assignment.is_active = true
 					and (assignment.effective_from is null or assignment.effective_from <= ${dateFromInstant(input.endTime)})
-					and (assignment.effective_until is null or assignment.effective_until >= ${dateFromInstant(input.endTime)})
+					and (assignment.effective_until is null or assignment.effective_until > ${dateFromInstant(input.endTime)})
 					and (
 						(assignment.assignment_type = 'employee' and assignment.employee_id = employee_row.id)
 						or (assignment.assignment_type = 'team' and assignment.team_id = employee_row."teamId")

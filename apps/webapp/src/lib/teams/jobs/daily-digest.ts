@@ -5,7 +5,7 @@
  * Runs every 15 minutes to check for digests due to be sent.
  */
 
-import { and, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { gt, and, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { DateTime } from "luxon";
 import { db } from "@/db";
@@ -110,7 +110,7 @@ export async function shouldSkipDigestForManager(
 		),
 		or(
 			isNull(workPolicyAssignment.effectiveUntil),
-			gte(workPolicyAssignment.effectiveUntil, nowDate),
+			gt(workPolicyAssignment.effectiveUntil, nowDate),
 		),
 	);
 	const [emp, employeeAssignment] = await Promise.all([

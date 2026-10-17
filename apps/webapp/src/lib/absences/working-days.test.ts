@@ -240,4 +240,24 @@ describe("workingDaysFrom", () => {
 		});
 		expect(workingDaysOfWeek(isWorkingDay)).toEqual(["2026-10-12", "2026-10-15", "2026-10-16"]);
 	});
+	it("releases an employee schedule at its exclusive end boundary", () => {
+		const isWorkingDay = workingDaysFrom({
+			assignments: [
+				assignment({
+					schedule: {
+						scheduleType: "simple",
+						workingDaysPreset: "weekends",
+						days: [],
+					},
+					effectiveUntil: Temporal.Instant.from("2026-10-12T00:00:00Z"),
+				}),
+				assignment({
+					assignmentType: "organization",
+					schedule: mondayToFridaySchedule,
+				}),
+			],
+			holidays: [],
+		});
+		expect(isWorkingDay(Temporal.PlainDate.from("2026-10-12"))).toBe(true);
+	});
 });
