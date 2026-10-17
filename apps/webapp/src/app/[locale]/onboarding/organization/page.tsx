@@ -11,11 +11,13 @@ export const metadata: Metadata = {
 };
 
 export default async function OrganizationPage() {
+	// The onboarding tracking suggestion must use the current request time.
 	await connection();
+	const trackingSuggestedAt = systemClock.nowInstant().toString();
 	return (
 		<OrganizationPageClient
 			canCreateOrganizations={!isOrganizationCreationDisabled()}
-			trackingSuggestedAt={systemClock.nowInstant().toString()}
+			trackingSuggestedAt={trackingSuggestedAt}
 		/>
 	);
 }
