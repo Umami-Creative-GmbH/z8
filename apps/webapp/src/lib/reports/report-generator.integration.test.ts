@@ -6,7 +6,8 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "temporal-polyfill";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -155,6 +156,20 @@ describe("employee report on PostgreSQL", () => {
 		);
 	});
 	afterAll(cleanup);
+	afterEach(() => vi.restoreAllMocks());
+
+	it("shows the current organization-local contract type in the report header", async () => {
+		await admin.query("update organization set timezone = 'Europe/Berlin' where id = $1", [
+			ids.organization,
+		]);
+		await terms({ from: "2026-01-01", until: "2026-03-10" });
+		await terms({ from: "2026-03-10", contractType: "fixed", wage: null });
+		vi.spyOn(Temporal.Now, "instant").mockReturnValue(
+			Temporal.Instant.from("2026-03-09T23:00:00Z"),
+		);
+
+		expect((await report()).employee.contractType).toBe("fixed");
+	});
 
 	it("excludes deleted and live work from work hours, home office hours and earnings", async () => {
 		await terms({ from: "2026-01-01" });
