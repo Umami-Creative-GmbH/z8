@@ -12,7 +12,7 @@ import {
 } from "./skill-validation";
 
 /**
- * **Skill requirement overrides** (#893): assigning an employee to a shift while a required
+ * **Skill overrides** (#893): assigning an employee to a shift while a required
  * skill is missing or expired on the shift date takes the planner's reason, and records it in
  * the transaction that assigns the employee. Every assignment path decides through
  * `decideSkillOverride` inside its own transaction, so the check runs at commit time and the
@@ -21,8 +21,6 @@ import {
 
 type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-
-export { SKILL_OVERRIDE_REASON_REQUIRED };
 
 /**
  * Who works the shift, when and where. Changing any part is a new assignment context, which
@@ -64,7 +62,7 @@ export function sameAssignmentContext(
 }
 
 /** Refuses an assignment whose unmet required skills got no reason. */
-export function skillOverrideReasonRequired(missingSkillIds: readonly string[]) {
+export function skillOverrideReasonRequiredError(missingSkillIds: readonly string[]) {
 	return new ValidationError({
 		message: "Give a reason to assign an employee without every required skill",
 		field: "skillOverrideReason",

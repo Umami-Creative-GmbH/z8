@@ -20,7 +20,7 @@ import {
 	type AssignmentContext,
 	decideSkillOverride,
 	insertSkillOverride,
-	skillOverrideReasonRequired,
+	skillOverrideReasonRequiredError,
 } from "@/lib/scheduling/skill-override";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { DatabaseService } from "./database.service";
@@ -474,7 +474,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 						reason: options?.skillOverrideReason,
 					});
 					if (decision.kind === "reason_required") {
-						abort(skillOverrideReasonRequired(decision.missingSkillIds));
+						abort(skillOverrideReasonRequiredError(decision.missingSkillIds));
 					}
 
 					const expectedAssignment =

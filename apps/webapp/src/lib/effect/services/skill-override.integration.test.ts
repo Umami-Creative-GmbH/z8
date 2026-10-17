@@ -8,7 +8,7 @@ import { Effect, Layer } from "effect";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { SeededEmployee } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
-import { SKILL_OVERRIDE_REASON_REQUIRED } from "@/lib/scheduling/skill-override";
+import { SKILL_OVERRIDE_REASON_REQUIRED } from "@/lib/scheduling/skill-override-refusal";
 import {
 	createShiftDatabaseFixture,
 	SHIFT_DAY,

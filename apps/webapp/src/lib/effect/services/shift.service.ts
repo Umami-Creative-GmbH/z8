@@ -21,7 +21,7 @@ import {
 	type AssignmentContext,
 	decideSkillOverride,
 	insertSkillOverride,
-	skillOverrideReasonRequired,
+	skillOverrideReasonRequiredError,
 } from "@/lib/scheduling/skill-override";
 import type { SkillValidationResult } from "@/lib/scheduling/skill-validation";
 import { DatabaseService } from "./database.service";
@@ -602,7 +602,7 @@ export const ShiftServiceLive = Layer.effect(
 					}
 					if (outcome.kind === "reason_required") {
 						return yield* Effect.fail(
-							skillOverrideReasonRequired(outcome.decision.missingSkillIds),
+							skillOverrideReasonRequiredError(outcome.decision.missingSkillIds),
 						);
 					}
 

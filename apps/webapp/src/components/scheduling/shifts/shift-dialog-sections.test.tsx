@@ -103,9 +103,10 @@ describe("ShiftDialogSections skill override reason (#893)", () => {
 		expect(screen.queryByLabelText("Reason for the skill override")).toBeNull();
 
 		fireEvent.click(screen.getAllByRole("button", { name: "Assign {name}" })[0]);
-		fireEvent.change(screen.getByLabelText("Reason for the skill override"), {
-			target: { value: "Only one on duty" },
-		});
+		const reason = screen.getByLabelText("Reason for the skill override") as HTMLTextAreaElement;
+		// The server decides: an override already recorded for this assignment needs no new reason.
+		expect(reason.required).toBe(false);
+		fireEvent.change(reason, { target: { value: "Only one on duty" } });
 
 		expect(screen.getByTestId("reason-value").textContent).toBe("Only one on duty");
 	});

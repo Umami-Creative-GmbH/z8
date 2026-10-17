@@ -364,7 +364,6 @@ export function ShiftDialogSections({
 									</Label>
 									<Textarea
 										id="shift-dialog-skill-override-reason"
-										required
 										className="resize-none"
 										value={field.state.value}
 										onChange={(event) => field.handleChange(event.target.value)}

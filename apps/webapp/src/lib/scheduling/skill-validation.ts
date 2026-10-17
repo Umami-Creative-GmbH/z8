@@ -49,7 +49,7 @@ export interface SkillValidationResult {
 
 /**
  * The required skills missing or expired on the shift date, each once: assigning the employee
- * anyway is a skill requirement override (#893).
+ * anyway is a skill override (#893).
  */
 export function unmetRequiredSkillIds(validation: SkillValidationResult): string[] {
 	return validation.missingSkills.flatMap((entry) => (entry.isRequired ? [entry.id] : []));
