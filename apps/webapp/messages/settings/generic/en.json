@@ -1439,17 +1439,6 @@
       },
       "title": "Import Data"
     },
-    "kioskBadge": {
-      "errors": {
-        "badgeExists": "This employee already has a kiosk badge. Replace it instead.",
-        "employeeInactive": "Only active employees can receive a kiosk badge.",
-        "employeeNotFound": "This employee was not found.",
-        "failed": "Something went wrong. Please try again.",
-        "noBadge": "This employee has no kiosk badge.",
-        "notAllowed": "You are not allowed to do this.",
-        "signInRequired": "Sign in to continue."
-      }
-    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Another account already uses this address.",
@@ -1471,8 +1460,6 @@
     },
     "kiosks": {
       "add": "Add kiosk",
-      "badgeScannerOn": "Badge scanner on",
-      "badgeCameraOn": "Badge camera on",
       "boardOn": "Who-is-in board on",
       "columns": {
         "actions": "Actions",
@@ -1502,10 +1489,6 @@
         "offlineNeedsAdoption": "Offline mode needs coordinated clock commands, which this organization does not use yet."
       },
       "fields": {
-        "badgeScanner": "Badge scanner",
-        "badgeScannerDescription": "Employees scan their kiosk badge with a QR scanner attached to this kiosk instead of entering their PIN. Badge clocking needs a connection; name and PIN keep working.",
-        "badgeCamera": "Badge camera",
-        "badgeCameraDescription": "Employees tap Scan badge and hold their kiosk badge to this kiosk's camera instead of entering their PIN. The code is read on the device; no image is uploaded or stored. The browser asks once for camera access. Badge clocking needs a connection; name and PIN keep working.",
         "board": "Who-is-in board",
         "boardDescription": "Shows on the kiosk who is in or on break, by first name and last initial.",
         "location": "Location",
