@@ -98,6 +98,7 @@ export function ClosedMonthsSettings({ overview }: { overview: ClosedMonthsOverv
 				open={panel?.kind === "close"}
 				month={panel?.kind === "close" ? panel.month.month : null}
 				teams={overview.teams}
+				locations={overview.locations}
 				onOpenChange={(open) => !open && setPanel(null)}
 			/>
 			<ReopenMonthPanel
@@ -287,7 +288,13 @@ function historyScope(
 			return t("settings.closedMonths.scope.all", "Everything");
 		case "employees":
 			return t("settings.closedMonths.scope.employees", "Selected employees");
-		default:
+		case "location":
+			return entry.locationName
+				? t("settings.closedMonths.scope.locationNamed", "Location {name}", {
+						name: entry.locationName,
+					})
+				: t("settings.closedMonths.scope.deletedLocation", "Deleted location");
+		case "team":
 			return entry.teamName ?? t("settings.closedMonths.scope.deletedTeam", "Deleted team");
 	}
 }
