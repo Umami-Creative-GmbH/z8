@@ -16,15 +16,35 @@ _Avoid_: adjustment (reserved for vacation balances), direct edit, sick-day corr
 A day the employee's work policy in effect on that day schedules them to work, and that isn't a public holiday for them. An employee whose policy has no schedule works Monday to Friday.
 _Avoid_: business day, weekday, workday
 
+**Working days per week**:
+The number of distinct days an employee's effective work policy schedules them to work each week, before public holidays are excluded and regardless of hours per day. With no schedule, it is five.
+_Avoid_: weekly hours, full-time equivalent
+
 **Absence days**:
 How many working days an absence takes. Each working day counts 1, and a morning or afternoon half counts ½, however many hours the day has.
 _Avoid_: business days, vacation hours, calendar days
 
 ### Vacation
 
+**Reference allowance**:
+The vacation days a policy grants for a full year on a five-day working week. The employee's vacation allowance converts it to their scheduled working days per week, with each scheduled day counting equally regardless of hours and without reducing the week for public holidays.
+_Avoid_: full-time allowance, organization allowance
+
 **Vacation allowance**:
 The absence days an employee may take as vacation in a year, before carryover and adjustments. For a part-time employee it is already reduced to their working days, because absence days count only the days they work. In a year the employee joins or leaves, it is their prorated allowance.
 _Avoid_: vacation entitlement, annual hours
+
+**Vacation policy period**:
+The organization-local calendar dates during which the same vacation policy applies to an employee. Their direct assignment takes precedence over their applicable teams, then an organization assignment, then the company default. Matching team policies count once; differing team policies are a configuration conflict.
+_Avoid_: current team policy, latest policy
+
+**Vacation team eligibility**:
+The dates during which an employee belongs to a team for vacation policy selection. Leaving a team preserves its earlier eligibility; today's team does not establish unknown earlier membership.
+_Avoid_: compatibility team, reconstructed membership
+
+**Policy coverage gap**:
+Dates for which no applicable vacation policy is known. An unknown allowance needs review and cannot be treated as zero days or filled with an unrelated policy.
+_Avoid_: zero allowance, no vacation
 
 **Custom allowance**:
 A vacation allowance an admin sets for one employee and one year in place of their policy's. It is final: it is never prorated.
@@ -43,7 +63,7 @@ The first six months of an employment. Each rehire starts a new one.
 _Avoid_: probation, probationary period
 
 **Statutory minimum**:
-The fewest vacation days a policy's employees are legally owed in a full year. The prorated allowance never cuts below it once the waiting period is complete, unless the employee leaves by 30 June.
+A policy's minimum annual vacation allowance, stated for a five-day working week and converted to the employee's working days per week. The prorated allowance never cuts below it once the waiting period is complete, unless the employee leaves by 30 June.
 _Avoid_: legal allowance, minimum vacation
 
 **Overdrawn vacation**:
@@ -51,7 +71,7 @@ Vacation an employee has already taken beyond their prorated allowance. It is sh
 _Avoid_: negative balance, vacation debt
 
 **Vacation balance**:
-An employee's vacation allowance plus carryover and adjustments, minus the absence days of their approved and pending vacation in that year. On an accrual policy it starts at 0 instead of the allowance, and the accrual adjustments carry the allowance. Every page reads the same balance, from the organization's company default policy for the year: of the defaults in effect during the year, the one that started last.
+An employee's vacation allowance plus carryover and adjustments, minus the absence days of their approved and pending vacation in that year. On an accrual policy it starts at 0 instead of the allowance, and the accrual adjustments carry the allowance. The policy applicable to the employee supplies their allowance; a missing policy or conflicting team policies require review.
 _Avoid_: remaining vacation, leave account
 
 **Accrual policy**:

@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { deleteShift, upsertShift } from "@/app/[locale]/(app)/scheduling/actions";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
@@ -14,10 +15,29 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { queryKeys } from "@/lib/query/keys";
+import { SKILL_OVERRIDE_REASON_REQUIRED } from "@/lib/scheduling/skill-override-refusal";
 import { ShiftDialogFooterActions, ShiftDialogSections } from "./shift-dialog-sections";
 import { useShiftDialogData } from "./use-shift-dialog-data";
 import { type ShiftDialogFormValues, useShiftDialogForm } from "./use-shift-dialog-form";
 import { getStaffingShiftInput, useStaffingSuggestions } from "./use-staffing-suggestions";
+
+/** The server wants a skill override reason for this assignment context (#893). */
+class SkillOverrideReasonRequired extends Error {
+	constructor(readonly assignmentContext: string) {
+		super("Skill override reason required");
+	}
+}
+
+function assignmentContextOf(
+	values: Pick<ShiftDialogFormValues, "employeeId" | "date" | "subareaId" | "templateId">,
+) {
+	return [
+		values.employeeId ?? "",
+		values.date ?? "",
+		values.subareaId ?? "",
+		values.templateId ?? "",
+	].join("|");
+}
 
 interface ShiftDialogProps {
 	open: boolean;
@@ -54,6 +74,13 @@ export function ShiftDialog({
 				"Fill in the details for the new shift",
 			);
 
+	// The assignment context the server last refused for want of a skill override reason (#893).
+	const [reasonRefusedFor, setReasonRefusedFor] = useState<string | null>(null);
+	const handleOpenChange = (next: boolean) => {
+		if (!next) setReasonRefusedFor(null);
+		onOpenChange(next);
+	};
+
 	const upsertMutation = useMutation({
 		mutationFn: async (values: ShiftDialogFormValues) => {
 			const result = await upsertShift({
@@ -66,8 +93,14 @@ export function ShiftDialog({
 				endTime: values.endTime,
 				notes: values.notes,
 				color: values.color,
+				skillOverrideReason: values.skillOverrideReason?.trim() || undefined,
 			});
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) {
+				if (result.refusal === SKILL_OVERRIDE_REASON_REQUIRED) {
+					throw new SkillOverrideReasonRequired(assignmentContextOf(values));
+				}
+				throw new Error(result.error);
+			}
 			return result.data;
 		},
 		onSuccess: (result) => {
@@ -119,9 +152,14 @@ export function ShiftDialog({
 				);
 			}
 			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
-			onOpenChange(false);
+			handleOpenChange(false);
 		},
 		onError: (error) => {
+			// Not a failure: the dialog asks for the reason next to the skill warning.
+			if (error instanceof SkillOverrideReasonRequired) {
+				setReasonRefusedFor(error.assignmentContext);
+				return;
+			}
 			toast.error(t("scheduling:scheduling.shiftDialog.saveFailed", "Failed to save shift"), {
 				description: error.message,
 			});
@@ -166,7 +204,7 @@ export function ShiftDialog({
 		onSuccess: () => {
 			toast.success(t("scheduling:scheduling.shiftDialog.deleted", "Shift deleted"));
 			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
-			onOpenChange(false);
+			handleOpenChange(false);
 		},
 		onError: (error) => {
 			toast.error(t("scheduling:scheduling.shiftDialog.deleteFailed", "Failed to delete shift"), {
@@ -176,7 +214,7 @@ export function ShiftDialog({
 	});
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{title}</ActionPanelTitle>
@@ -211,6 +249,9 @@ export function ShiftDialog({
 										}
 									: null
 							}
+							skillOverrideReasonRequested={
+								reasonRefusedFor !== null && reasonRefusedFor === assignmentContextOf(formValues)
+							}
 						/>
 					</ActionPanelBody>
 
@@ -222,7 +263,7 @@ export function ShiftDialog({
 								status={deleteMutation.isPending ? "deleting" : upsertMutation.isPending ? "saving" : "idle"}
 								canManage
 								onDelete={deleteMutation.mutate}
-								onCancel={() => onOpenChange(false)}
+								onCancel={() => handleOpenChange(false)}
 							/>
 						) : (
 							<ShiftDialogFooterActions
@@ -230,7 +271,7 @@ export function ShiftDialog({
 								mode="create"
 								status={upsertMutation.isPending ? "saving" : "idle"}
 								canManage
-								onCancel={() => onOpenChange(false)}
+								onCancel={() => handleOpenChange(false)}
 							/>
 						)
 					) : (
@@ -239,7 +280,7 @@ export function ShiftDialog({
 							mode={shift ? "edit" : "create"}
 							status="idle"
 							canManage={false}
-							onCancel={() => onOpenChange(false)}
+							onCancel={() => handleOpenChange(false)}
 						/>
 					)}
 				</form>

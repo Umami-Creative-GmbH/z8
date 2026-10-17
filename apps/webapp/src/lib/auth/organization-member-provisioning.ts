@@ -132,6 +132,7 @@ type DroppedPersonnelNumber = {
 	droppedPersonnelNumber: string;
 	/** Null when the employee who won a concurrent save can no longer be found. */
 	heldByEmployeeId: string | null;
+	reason?: "personnel_number_managed_by_idp";
 };
 
 /**
@@ -149,6 +150,7 @@ async function writeWithDraftPersonnelNumber<T>(
 		personnelNumber: string | null;
 		/** The reactivated employee, whose own number is no clash. */
 		exceptEmployeeId?: string;
+		personnelNumberManagedByScim?: boolean;
 	},
 	write: (
 		client: EmployeeProvisioningTransaction,
@@ -167,6 +169,10 @@ async function writeWithDraftPersonnelNumber<T>(
 		dropped: { droppedPersonnelNumber: personnelNumber, heldByEmployeeId },
 	});
 
+	if (input.personnelNumberManagedByScim) return {
+		written: await write(tx, {}),
+		dropped: { droppedPersonnelNumber: personnelNumber, heldByEmployeeId: null, reason: "personnel_number_managed_by_idp" },
+	};
 	const holder = await findPersonnelNumberHolder(tx, scope);
 	if (holder) return dropWith(holder.employeeId);
 	try {
@@ -204,7 +210,7 @@ function recordDroppedPersonnelNumber(
 		employeeId: input.employee.id,
 		metadata: {
 			...input.dropped,
-			reason: "personnel_number_taken",
+			reason: input.dropped.reason ?? "personnel_number_taken",
 			outcome: input.outcome,
 			invitationId: input.draft.invitationId,
 			draftId: input.draft.id,
@@ -384,6 +390,7 @@ export async function ensureEmployeeForOrganizationMember(
 						organizationId: input.organizationId,
 						personnelNumber: draftPersonnelNumber,
 						exceptEmployeeId: existingEmployee.id,
+						personnelNumberManagedByScim: existingEmployee.personnelNumberManagedByScim && existingEmployee.employeeNumber !== draftPersonnelNumber,
 					},
 					(client, personnelNumber) =>
 						client

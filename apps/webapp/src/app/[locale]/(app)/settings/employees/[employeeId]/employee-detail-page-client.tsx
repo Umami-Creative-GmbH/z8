@@ -250,6 +250,7 @@ export function EmployeeDetailPageClient({
 						form={form}
 						canEditManagerFields={canManageEmployeeDetails}
 						canEditOrgAdminFields={accessTier === "orgAdmin"}
+					personnelNumberManagedByScim={employee.kind === "employee" && employee.personnelNumberManagedByScim}
 						contract={
 							employee.kind === "invitationDraft"
 								? { kind: "draft" }

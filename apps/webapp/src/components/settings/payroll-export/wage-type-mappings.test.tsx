@@ -1,11 +1,20 @@
 /* @vitest-environment jsdom */
 
-import { act, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 let refreshHandler: (() => unknown) | undefined;
 vi.mock("@/components/providers/view-refresh-provider", () => ({
-	useViewRefresh: (handler: () => unknown) => { refreshHandler = handler; },
+	useViewRefresh: (handler: () => unknown) => {
+		refreshHandler = handler;
+	},
 }));
 
 const {
@@ -24,7 +33,10 @@ const {
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback?: string) => fallback ?? _key,
+		t: (key: string, fallback?: string) =>
+			key === "settings.payrollExport.mappings.description"
+				? "Description"
+				: (fallback ?? key),
 	}),
 }));
 
@@ -74,6 +86,12 @@ describe("WageTypeMappings", () => {
 					sageWageTypeCode: null,
 					sageWageTypeName: null,
 				},
+				{
+					id: "mapping-holiday",
+					specialCategory: "holiday_compensation",
+					datevWageTypeCode: "3000",
+					datevWageTypeName: "Holiday compensation",
+				},
 			],
 		});
 		getWorkCategoriesActionMock.mockResolvedValue({ success: true, data: [] });
@@ -115,10 +133,158 @@ describe("WageTypeMappings", () => {
 	it("reports unsuccessful header refresh actions and keeps current mappings", async () => {
 		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
 		await screen.findByText("First category");
-		getMappingsActionMock.mockResolvedValue({ success: false, error: "Unavailable" });
+		getMappingsActionMock.mockResolvedValue({
+			success: false,
+			error: "Unavailable",
+		});
 		await act(async () => {
-			await expect(refreshHandler?.()).rejects.toThrow("Failed to refresh wage type mappings");
+			await expect(refreshHandler?.()).rejects.toThrow(
+				"Failed to refresh wage type mappings",
+			);
 		});
 		expect(screen.getByText("First category")).toBeTruthy();
+	});
+
+	it("offers only supported special categories while retaining saved unsupported mappings", async () => {
+		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
+		await screen.findByRole("cell", { name: "Overtime Reduction" });
+		expect(
+			screen.getByRole("cell", { name: "Holiday Compensation" }),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Add Mapping" }));
+		const panel = within(screen.getByRole("dialog"));
+		fireEvent.click(panel.getAllByRole("combobox")[0]);
+		fireEvent.click(
+			await screen.findByRole("option", { name: "Special Category" }),
+		);
+		fireEvent.click(panel.getAllByRole("combobox")[1]);
+		expect(
+			await screen.findByRole("option", { name: "Overtime", exact: true }),
+		).toBeTruthy();
+		expect(
+			screen.queryByRole("option", { name: "Overtime Reduction" }),
+		).toBeNull();
+		expect(
+			screen.queryByRole("option", { name: "Holiday Compensation" }),
+		).toBeNull();
+		expect(saveMappingActionMock).not.toHaveBeenCalled();
+		expect(deleteMappingActionMock).not.toHaveBeenCalled();
+	});
+
+	it("saves and displays a SuccessFactors-only mapping without changing saved unsupported rows", async () => {
+		getWorkCategoriesActionMock.mockResolvedValue({
+			success: true,
+			data: [{ id: "work-2", name: "New category" }],
+		});
+		const initial = await getMappingsActionMock();
+		saveMappingActionMock.mockImplementation(async (input) => {
+			const mapping = {
+				...input,
+				id: "mapping-3",
+				workCategoryName: "New category",
+			};
+			getMappingsActionMock.mockResolvedValue({
+				success: true,
+				data: [...initial.data, mapping],
+			});
+			return { success: true, data: mapping };
+		});
+		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
+		await screen.findByText("First category");
+		fireEvent.click(screen.getByRole("button", { name: "Add Mapping" }));
+		const panel = within(screen.getByRole("dialog"));
+		fireEvent.click(panel.getAllByRole("combobox")[1]);
+		fireEvent.click(
+			await screen.findByRole("option", { name: "New category" }),
+		);
+		const fields = within(
+			panel.getByRole("group", { name: "SAP SuccessFactors" }),
+		);
+		fireEvent.change(fields.getByLabelText("Code"), {
+			target: { value: "SF-WORK" },
+		});
+		fireEvent.change(fields.getByLabelText("Description"), {
+			target: { value: "Attendance" },
+		});
+		fireEvent.click(panel.getByRole("button", { name: "Save", exact: true }));
+		await screen.findByRole("cell", { name: "SF-WORK" });
+		expect(saveMappingActionMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org_123",
+				workCategoryId: "work-2",
+				datevWageTypeCode: null,
+				lexwareWageTypeCode: null,
+				sageWageTypeCode: null,
+				successFactorsTimeTypeCode: "SF-WORK",
+				successFactorsTimeTypeName: "Attendance",
+			}),
+		);
+		expect(
+			screen.getByRole("cell", { name: "Overtime Reduction" }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("cell", { name: "Holiday Compensation" }),
+		).toBeTruthy();
+		expect(deleteMappingActionMock).not.toHaveBeenCalled();
+	});
+
+	it("prefills an existing source so clearing SuccessFactors preserves the other format codes", async () => {
+		const initial = await getMappingsActionMock();
+		initial.data[0].successFactorsTimeTypeCode = "SF-WORK";
+		initial.data[0].successFactorsTimeTypeName = "Attendance";
+		getMappingsActionMock.mockResolvedValue(initial);
+		getWorkCategoriesActionMock.mockResolvedValue({
+			success: true,
+			data: [{ id: "work-1", name: "First category" }],
+		});
+		saveMappingActionMock.mockResolvedValue({ success: true, data: {} });
+		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
+		await screen.findByText("First category");
+		fireEvent.click(screen.getByRole("button", { name: "Add Mapping" }));
+		const panel = within(screen.getByRole("dialog"));
+		fireEvent.click(panel.getAllByRole("combobox")[1]);
+		fireEvent.click(
+			await screen.findByRole("option", { name: "First category" }),
+		);
+		const fields = within(
+			panel.getByRole("group", { name: "SAP SuccessFactors" }),
+		);
+		expect(fields.getByDisplayValue("SF-WORK")).toBeTruthy();
+		expect(panel.getByDisplayValue("1000")).toBeTruthy();
+		fireEvent.change(fields.getByLabelText("Code"), { target: { value: "" } });
+		fireEvent.change(fields.getByLabelText("Description"), {
+			target: { value: "" },
+		});
+		fireEvent.click(panel.getByRole("button", { name: "Save", exact: true }));
+		await waitFor(() =>
+			expect(saveMappingActionMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					workCategoryId: "work-1",
+					datevWageTypeCode: "1000",
+					datevWageTypeName: "First wage type",
+					successFactorsTimeTypeCode: null,
+					successFactorsTimeTypeName: null,
+				}),
+			),
+		);
+	});
+
+	it("uses distinct translated text for the subtitle and format description labels", async () => {
+		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
+		await screen.findByText("First category");
+		expect(
+			screen.getByText(
+				"Map your work categories and absence types to payroll wage type codes",
+			),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Add Mapping" }));
+		const panel = within(screen.getByRole("dialog"));
+		for (const format of ["DATEV", "Lexware", "Sage", "SAP SuccessFactors"]) {
+			expect(
+				within(panel.getByRole("group", { name: format })).getByLabelText(
+					"Description",
+				),
+			).toBeTruthy();
+		}
 	});
 });

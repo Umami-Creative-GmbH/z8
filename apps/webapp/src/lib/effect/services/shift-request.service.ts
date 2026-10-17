@@ -9,6 +9,7 @@ import {
 	shift,
 	shiftRequest,
 } from "@/db/schema";
+import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -16,6 +17,13 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import {
+	type AssignmentContext,
+	decideSkillOverride,
+	insertSkillOverride,
+	skillOverrideReasonRequiredError,
+} from "@/lib/scheduling/skill-override";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { DatabaseService } from "./database.service";
 
 type Shift = typeof ShiftTable.$inferSelect;
@@ -35,6 +43,14 @@ const SAFE_EMPLOYEE_RELATION = {
 		id: true,
 		firstName: true,
 		lastName: true,
+	},
+} as const;
+
+/** What a planner reads to decide a pending request: names come from the user record. */
+const PLANNER_EMPLOYEE_RELATION = {
+	...SAFE_EMPLOYEE_RELATION,
+	with: {
+		user: { columns: { name: true, firstName: true, lastName: true } },
 	},
 } as const;
 
@@ -186,30 +202,37 @@ export interface SwapRequestInput {
 	notes?: string;
 }
 
+export interface ApproveRequestOptions {
+	/** The approver's reason for assigning an employee without every required skill. */
+	skillOverrideReason?: string | null;
+}
+
 export interface PickupRequestInput {
 	shiftId: string;
 	requesterId: string;
 	notes?: string;
 }
 
+interface ShiftRequestEmployee {
+	id: string;
+	firstName: string | null;
+	lastName: string | null;
+	/** Only on pending requests, for the planner: the user's display name fields. */
+	user?: AuthUserDisplayNameInput | null;
+}
+
 export interface ShiftRequestWithRelations extends ShiftRequest {
 	shift: Shift & {
-		employee?: {
+		employee?: ShiftRequestEmployee | null;
+		/** Only on pending requests, for the planner. */
+		subarea?: {
 			id: string;
-			firstName: string | null;
-			lastName: string | null;
+			name: string;
+			location: { id: string; name: string };
 		} | null;
 	};
-	requester: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-	};
-	targetEmployee?: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-	} | null;
+	requester: ShiftRequestEmployee;
+	targetEmployee?: ShiftRequestEmployee | null;
 }
 
 type MutationError = ShiftRequestDomainError | DatabaseError;
@@ -225,10 +248,15 @@ export class ShiftRequestService extends Context.Service<
 			organizationId: string,
 			input: PickupRequestInput,
 		) => Effect.Effect<ShiftRequest, MutationError>;
+		/**
+		 * Assigns the shift. When the assigned employee lacks a required skill on the shift
+		 * date, `skillOverrideReason` is required and recorded as a skill override (#893).
+		 */
 		readonly approveRequest: (
 			organizationId: string,
 			requestId: string,
 			approverId: string,
+			options?: ApproveRequestOptions,
 		) => Effect.Effect<ShiftRequest, MutationError>;
 		readonly rejectRequest: (
 			organizationId: string,
@@ -394,7 +422,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 			requestPickup: (organizationId, input) =>
 				createRequest(organizationId, input, "pickup"),
 
-			approveRequest: (organizationId, requestId, approverId) =>
+			approveRequest: (organizationId, requestId, approverId, options) =>
 				runTransaction("approveShiftRequest", async (tx) => {
 					const initial = await getScopedRequest(tx, organizationId, requestId);
 					if (!initial) {
@@ -412,7 +440,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 					}
 					requirePublishedShift(current.shift);
 					if (current.status !== "pending") abort(staleRequest(current.status));
-					await requireApprover(tx, organizationId, approverId, "approve");
+					const approver = await requireApprover(tx, organizationId, approverId, "approve");
 					await requireActiveRequestParticipants(tx, organizationId, current);
 
 					if (current.type === "swap" && !current.targetEmployeeId) {
@@ -437,6 +465,27 @@ export const ShiftRequestServiceLive = Layer.effect(
 								conflictType: "missing_target_employee",
 							}),
 						);
+					}
+
+					// Assigning someone without a required skill takes the approver's reason, recorded
+					// with the approval (#893). Checked under the shift lock, at commit time.
+					const context: AssignmentContext = {
+						employeeId: assignedEmployeeId,
+						shiftDate: current.shift.date,
+						subareaId: current.shift.subareaId,
+						templateId: current.shift.templateId,
+					};
+					const { decision } = await decideSkillOverride(tx, {
+						organizationId,
+						organizationTimezone: await loadOrganizationTimezone(tx, organizationId),
+						shiftId: current.shiftId,
+						context,
+						// The request always assigns someone new to the shift.
+						previous: null,
+						reason: options?.skillOverrideReason,
+					});
+					if (decision.kind === "reason_required") {
+						abort(skillOverrideReasonRequiredError(decision.missingSkillIds));
 					}
 
 					const expectedAssignment =
@@ -475,6 +524,17 @@ export const ShiftRequestServiceLive = Layer.effect(
 						)
 						.returning();
 					if (!approved) abort(staleRequest());
+
+					if (decision.kind === "record") {
+						await insertSkillOverride(tx, {
+							organizationId,
+							shiftId: current.shiftId,
+							context,
+							missingSkillIds: decision.missingSkillIds,
+							reason: decision.reason,
+							overriddenBy: approver.userId,
+						});
+					}
 
 					if (current.type === "pickup") {
 						await tx
@@ -629,9 +689,17 @@ export const ShiftRequestServiceLive = Layer.effect(
 								),
 							),
 							with: {
-								shift: { with: { employee: SAFE_EMPLOYEE_RELATION } },
-								requester: SAFE_EMPLOYEE_RELATION,
-								targetEmployee: SAFE_EMPLOYEE_RELATION,
+								shift: {
+									with: {
+										employee: PLANNER_EMPLOYEE_RELATION,
+										subarea: {
+											columns: { id: true, name: true },
+											with: { location: { columns: { id: true, name: true } } },
+										},
+									},
+								},
+								requester: PLANNER_EMPLOYEE_RELATION,
+								targetEmployee: PLANNER_EMPLOYEE_RELATION,
 							},
 							orderBy: (request, { desc }) => [desc(request.createdAt)],
 						}),

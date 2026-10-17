@@ -362,7 +362,14 @@ describe("employment periods", () => {
 				[target.employeeId, policyId],
 			),
 		).toEqual({ effective_from: rehiredAt, effective_until: null });
-		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
+		expect(
+      await row(
+        `select count(*)::int as count from work_policy_assignment
+         where employee_id = $1 and organization_id = $2 and assignment_type = 'employee' and is_active = true`,
+        [target.employeeId, fixture.organizationId],
+      ),
+    ).toEqual({ count: 1 });
+    expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
 			is_active: true,
 		});
 		expect(

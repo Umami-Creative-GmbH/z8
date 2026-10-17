@@ -71,7 +71,7 @@ function inForceOn(assignment: WorkingDayPolicyAssignment, day: Temporal.PlainDa
 	const nextDayStart = day.add({ days: 1 }).toZonedDateTime("UTC").epochMilliseconds;
 	return (
 		(!assignment.effectiveFrom || assignment.effectiveFrom.epochMilliseconds < nextDayStart) &&
-		(!assignment.effectiveUntil || assignment.effectiveUntil.epochMilliseconds >= dayStart)
+		(!assignment.effectiveUntil || assignment.effectiveUntil.epochMilliseconds > dayStart)
 	);
 }
 

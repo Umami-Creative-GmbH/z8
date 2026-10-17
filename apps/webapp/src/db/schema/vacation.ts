@@ -214,6 +214,6 @@ export const vacationPolicyAssignment = pgTable(
 		index("vacationPolicyAssignment_organizationId_idx").on(table.organizationId),
 		index("vacationPolicyAssignment_teamId_idx").on(table.teamId),
 		index("vacationPolicyAssignment_employeeId_idx").on(table.employeeId),
-		// Overlaps are prevented by date-range exclusion constraints in migration 0261.
+		// Overlaps are prevented by date-range exclusion constraints in migration 0263.
 	],
 );

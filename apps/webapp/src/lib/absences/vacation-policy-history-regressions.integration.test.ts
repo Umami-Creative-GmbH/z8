@@ -391,7 +391,7 @@ describe("vacation policy history compatibility", () => {
 		}
 		expect(await observedPeriods()).toEqual(expected);
 		const backfills = readFileSync(
-			path.join(process.cwd(), "drizzle/0261_vacation_policy_history.sql"),
+			path.join(process.cwd(), "drizzle/0263_vacation_policy_history.sql"),
 			"utf8",
 		)
 			.split("--> statement-breakpoint")

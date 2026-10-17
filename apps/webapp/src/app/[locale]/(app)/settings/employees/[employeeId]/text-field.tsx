@@ -19,6 +19,7 @@ export function TextField({
 	autoComplete = "off",
 	description,
 	disabled,
+	readOnly = false,
 }: {
 	form: EmployeeDetailFormApi;
 	name: "firstName" | "lastName" | "position" | "employeeNumber";
@@ -27,6 +28,7 @@ export function TextField({
 	autoComplete?: string;
 	description?: string;
 	disabled: boolean;
+	readOnly?: boolean;
 }) {
 	return (
 		<form.Field name={name}>
@@ -42,6 +44,7 @@ export function TextField({
 							onChange={(event) => field.handleChange(event.target.value)}
 							onBlur={field.handleBlur}
 							disabled={disabled}
+						readOnly={readOnly}
 						/>
 					</TFormControl>
 					{description ? <TFormDescription>{description}</TFormDescription> : null}
