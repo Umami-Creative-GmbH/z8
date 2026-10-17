@@ -1,4 +1,8 @@
-import { isKioskCallUnreachable, type KioskCallResult } from "@/lib/time-tracking/kiosk/device";
+import {
+	isKioskCallUncertain,
+	isKioskCallUnreachable,
+	type KioskCallResult,
+} from "@/lib/time-tracking/kiosk/device";
 import type { KioskContactAnchor, SealedKioskPin } from "@/lib/time-tracking/kiosk/frozen-command";
 import type { CachedKioskEmployee } from "@/lib/time-tracking/kiosk/offline-cache";
 import { kioskOfflineClock } from "@/lib/time-tracking/kiosk/offline-clock";
@@ -15,6 +19,7 @@ import {
 import { frozenCommandsOf, kioskOfflineQueue } from "@/lib/time-tracking/kiosk/offline-queue";
 import { sealKioskPin } from "@/lib/time-tracking/kiosk/pin-seal";
 import type {
+	KioskClockAttemptOutcome,
 	KioskClockRefusal,
 	KioskClockResult,
 	KioskDeviceInfo,
@@ -22,6 +27,7 @@ import type {
 	KioskEmployeeSnapshot,
 	KioskVehicleUse,
 } from "@/lib/time-tracking/kiosk/protocol";
+import type { KioskUncertainAction } from "@/lib/time-tracking/kiosk/uncertain-action";
 import type { KioskPanelAction } from "./kiosk-employee-panel";
 import { KIOSK_PIN_REFUSALS } from "./kiosk-messages";
 import { type KioskVehicleQuestion, kioskVehicleQuestion } from "./kiosk-vehicle-use";
@@ -113,6 +119,17 @@ export type KioskFlow =
 			ask: VehicleAsk;
 			pending: boolean;
 	  }
+	| {
+			/**
+			 * An online action whose reply was lost (#1363): the kiosk asks Z8 what
+			 * became of it and offers nothing to do until Z8 answers. `checking` until a
+			 * question fails, then `unavailable`; `conflict` when Z8 recorded the
+			 * operation for another employee or action and the kiosk cannot tell more.
+			 */
+			step: "uncertain";
+			attempt: KioskUncertainAction;
+			check: "checking" | "unavailable" | "conflict";
+	  }
 	| { step: "done"; confirmation: KioskTurnConfirmation };
 
 /** A kiosk call's answer other than a refused device token, which ends the kiosk's session. */
@@ -129,6 +146,9 @@ export function isKioskFlowBusy(flow: KioskFlow): boolean {
 		case "vehicle":
 		case "offline-vehicle":
 			return flow.pending;
+		case "uncertain":
+			// An unresolved action holds the screen; only a conflict may time out.
+			return flow.check !== "conflict";
 		default:
 			return false;
 	}
@@ -281,14 +301,16 @@ export function actingFlow(
 }
 
 /**
- * The screen after an online action: the confirmation, the PIN pad again when
+ * The screen after an online action: the confirmation, the uncertain step when
+ * the reply leaves open whether Z8 recorded it (#1363), the PIN pad again when
  * Z8 refused the PIN, or the employee panel with the refusal (and the state Z8
- * reported with it).
+ * reported with it). Only a call that was never sent says the kiosk is offline.
  */
 export function actedFlow(input: {
 	pin: string;
 	snapshot: KioskEmployeeSnapshot;
 	action: KioskPanelAction;
+	attempt: KioskUncertainAction;
 	vehicle?: VehicleAnswer;
 	result: AnsweredCall<KioskClockResult>;
 }): KioskFlow {
@@ -298,6 +320,9 @@ export function actedFlow(input: {
 			step: "done",
 			confirmation: confirmationOf(action, result.body, input.vehicle?.answer.leftOut ?? false),
 		};
+	}
+	if (isKioskCallUncertain(result)) {
+		return { step: "uncertain", attempt: input.attempt, check: "checking" };
 	}
 	if (result.kind === "refused" && KIOSK_PIN_REFUSALS.has(result.refusal.code)) {
 		const employee = { id: snapshot.employee.id, name: snapshot.employee.name };
@@ -321,6 +346,44 @@ export function actedFlow(input: {
 		pending: null,
 		error: refusal,
 	};
+}
+
+/**
+ * The screen after asking what became of an uncertain action (#1363): its
+ * original confirmation once, when Z8 recorded it; the PIN pad for a fresh,
+ * explicit action once Z8 has closed it as not recorded; otherwise still
+ * uncertain. Never the old action again.
+ */
+export function resolvedFlow(
+	attempt: KioskUncertainAction,
+	result: AnsweredCall<KioskClockAttemptOutcome>,
+): KioskFlow {
+	if (result.kind !== "ok") return { step: "uncertain", attempt, check: "unavailable" };
+	const answer = result.body;
+	if (answer.outcome === "committed") {
+		return {
+			step: "done",
+			confirmation: {
+				name: attempt.employee.name,
+				action: attempt.action,
+				at: answer.at.instant,
+				zone: answer.at.zone,
+				vehicleUseLeftOut: false,
+				unconfirmed: false,
+			},
+		};
+	}
+	if (answer.outcome === "not_recorded") {
+		return {
+			step: "pin",
+			employee: attempt.employee,
+			attempt: 0,
+			busy: false,
+			error: { code: "not_recorded" },
+		};
+	}
+	if (answer.outcome === "conflict") return { step: "uncertain", attempt, check: "conflict" };
+	return { step: "uncertain", attempt, check: "unavailable" };
 }
 
 /** The screen while an offline action is queued: the vehicle step or the employee panel, pending. */

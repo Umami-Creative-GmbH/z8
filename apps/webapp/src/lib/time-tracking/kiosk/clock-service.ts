@@ -30,10 +30,16 @@ import {
 	kioskRefusalResponse,
 	resolveKioskFromRequest,
 } from "./authenticate";
+import {
+	KioskAttemptClosedError,
+	type KioskAttemptResolution,
+	resolveKioskClockAttempt,
+} from "./clock-attempt";
 import { readKioskEmployeeState } from "./employee-state";
 import {
 	KIOSK_CLOCK_ACTIONS,
 	type KioskClockAction,
+	type KioskClockAttemptOutcome,
 	type KioskClockResult,
 	type KioskEmployeeSnapshot,
 	type KioskEventTime,
@@ -89,6 +95,17 @@ const clockRequest = employeeRequest.extend({
 	/** Read leniently per action (#1123): a malformed one is dropped, never refused. */
 	vehicleUse: z.unknown().optional(),
 });
+
+const outcomeRequest = z.object({
+	operationId: z.string().uuid(),
+	employeeId: z.string().uuid(),
+	action: z.enum(KIOSK_CLOCK_ACTIONS),
+});
+
+/** A refusal because the kiosk's outcome lookup closed the attempt first (#1363). */
+function isAttemptClosed(failure: { code: string; cause?: unknown }) {
+	return failure.code === "collision" && failure.cause instanceof KioskAttemptClosedError;
+}
 
 /** The action's vehicle use beside its body (#1123), when it carried one Clocking can read. */
 function clockVehicleUseOf(value: unknown) {
@@ -331,7 +348,9 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			const outcome = await runAction(kiosk, admitted.principal, admitted.employee.id, body);
 			const after = await snapshot(kiosk, admitted.employee);
 			if (outcome.outcome === "refused") {
-				const detail = kioskRefusalDetail(outcome.failure as { code: string });
+				const detail = isAttemptClosed(outcome.failure)
+					? { code: "attempt_closed" }
+					: kioskRefusalDetail(outcome.failure as { code: string });
 				const status = refusalStatus(detail.code);
 				return json(status === 409 ? { ...detail, ...after } : detail, status);
 			}
@@ -342,6 +361,46 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 				...after,
 			};
 			return json(result);
+		},
+
+		/**
+		 * `POST /api/kiosk/clock/outcome` (#1363): what became of an action whose reply
+		 * the kiosk lost. Needs only the kiosk's own token: no PIN, badge or current
+		 * assignment, since it reveals only the kiosk's own attempt and runs nothing.
+		 * Answers `committed` with the original action and time, or `not_recorded`
+		 * once the attempt is closed for good; a committed attempt of another employee
+		 * or action is `conflict`. Anything else (401, 503) leaves it unresolved.
+		 */
+		async outcome(request: Request): Promise<Response> {
+			const authentication = await resolveKioskFromRequest(request, { clock: deps.clock });
+			if (!authentication.ok) return kioskRefusalResponse(authentication.reason);
+			const { kiosk } = authentication;
+			const body = await readBody(request, outcomeRequest);
+			if (!body) return json({ code: "invalid_request" }, 400);
+			let resolution: KioskAttemptResolution;
+			try {
+				resolution = await resolveKioskClockAttempt(db, {
+					organizationId: kiosk.organizationId,
+					kioskId: kiosk.kioskId,
+					operationId: body.operationId,
+				});
+			} catch {
+				return json({ code: "failed" }, 503);
+			}
+			if (resolution.state === "not_recorded") {
+				return json({ outcome: "not_recorded" } satisfies KioskClockAttemptOutcome);
+			}
+			if (resolution.employeeId !== body.employeeId || resolution.action !== body.action) {
+				return json({ outcome: "conflict" } satisfies KioskClockAttemptOutcome);
+			}
+			return json({
+				outcome: "committed",
+				action: resolution.action,
+				at: {
+					instant: instantToCanonicalString(resolution.at.instant),
+					zone: resolution.at.zone,
+				},
+			} satisfies KioskClockAttemptOutcome);
 		},
 	};
 }

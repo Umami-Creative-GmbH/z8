@@ -11,16 +11,19 @@ import {
 	kioskClockWriter,
 	liveClockOutWriter,
 } from "../close-active-work";
+import { claimKioskClockAttempt } from "../kiosk/clock-attempt";
 import {
 	judgeKioskPinAttempt,
 	type KioskPinJudgment,
 	type QueuedKioskPinAttempt,
 } from "../kiosk/pin-store";
+import type { KioskClockAction } from "../kiosk/protocol";
 import { type KioskPinVerification, verifyKioskPin } from "../kiosk/verify-kiosk-pin";
 import { kioskDeviceInfo } from "../receipt-actor";
 import { isValidIanaTimezone } from "../timezone-capture";
 import type {
 	BreakStart,
+	ClockCommand,
 	ClockCommandAt,
 	ClockCommandFreshness,
 	ClockCommandZone,
@@ -182,6 +185,50 @@ export function kioskReceiptEvidence(command: { principal: ClockPrincipal }): {
 	kioskId?: string;
 } {
 	return command.principal.kind === "kiosk" ? { kioskId: command.principal.kioskId } : {};
+}
+
+/** A result's executed variant, also when one variant spans several dispositions. */
+type Executed<Result> = Result & { disposition: "executed" };
+
+/**
+ * Claims the kiosk clock attempt of an executed online kiosk command (#1363):
+ * inside the command's work transaction, after its writes, in both admissions.
+ * Only immediate kiosk commands under the kiosk's own (client) operation identity
+ * claim one; frozen commands have their own lookup and a server identity cannot
+ * be asked about. A replay never claims: its original did. Throws
+ * `KioskAttemptClosedError` when the kiosk's outcome lookup closed the attempt
+ * first, which rolls the work back. Returns the result unchanged.
+ */
+export async function claimExecutedKioskAttempt<Result extends { disposition: string }>(
+	tx: Parameters<typeof claimKioskClockAttempt>[0],
+	command: Pick<ClockCommand, "organizationId" | "principal" | "subject" | "identity" | "zone">,
+	result: Result,
+	claim: {
+		action: KioskClockAction;
+		/** When the executed action took effect, and the zone its entry captured, if any. */
+		at: (executed: Executed<Result>) => { instant: Instant; zone: string | null };
+	},
+): Promise<Result> {
+	const { principal } = command;
+	if (
+		result.disposition !== "executed" ||
+		principal.kind !== "kiosk" ||
+		principal.pin.frozen ||
+		command.identity.origin !== "client"
+	) {
+		return result;
+	}
+	const at = claim.at(result as Executed<Result>);
+	await claimKioskClockAttempt(tx, {
+		organizationId: command.organizationId,
+		kioskId: principal.kioskId,
+		operationId: command.identity.id,
+		employeeId: command.subject.employeeId,
+		action: claim.action,
+		// The zone the kiosk's reply names: the entry's own, else the kiosk's.
+		at: { instant: at.instant, zone: at.zone ?? command.zone.device ?? command.zone.fallback },
+	});
+	return result;
 }
 
 /** What the kiosk branch of authorization reads of a command, besides its subject. */

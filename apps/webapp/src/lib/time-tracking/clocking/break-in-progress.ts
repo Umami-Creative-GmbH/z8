@@ -65,12 +65,15 @@ export type StartBreakRefusal =
 	| { code: "admission_window"; reason: "too_old" | "in_future" }
 	| { code: "under_review"; review: "approval" | "time_correction" }
 	| { code: "failed" | "unconfirmed"; cause?: unknown }
+	/**
+	 * The identity started another employee's break, or (`cause` a
+	 * `KioskAttemptClosedError`, #1363) its kiosk attempt was resolved as not recorded.
+	 */
+	| { code: "collision"; cause?: unknown }
 	| {
 			code:
 				| "access_denied"
 				| "invalid_command"
-				/** The identity started another employee's break. */
-				| "collision"
 				| "not_clocked_in"
 				/** A break in progress is already open on the live work. */
 				| "already_on_break"

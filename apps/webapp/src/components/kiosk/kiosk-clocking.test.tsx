@@ -323,7 +323,9 @@ describe("kiosk clocking screen (#862)", () => {
 		expect(clockActions(calls)).toEqual([]);
 	});
 
-	it("refuses clocking when the connection drops during the turn, and never queues it", async () => {
+	// #1363 deliberately changed this: a sent action whose reply was lost may have been
+	// recorded, so the kiosk checks instead of claiming that nothing was (kiosk-uncertain-action.test.tsx).
+	it("checks an action whose connection dropped during the turn, and never queues it", async () => {
 		const calls = stubFetch(
 			kioskRoutes({
 				"/api/kiosk/employee-status": () => Response.json(snapshot({ status: "clocked_out" })),
@@ -337,7 +339,11 @@ describe("kiosk clocking screen (#862)", () => {
 		await enterPin("2468");
 		fireEvent.click(await screen.findByRole("button", { name: "Clock in" }));
 
-		expect(await screen.findByText(/offline\. Nothing was recorded/)).toBeTruthy();
+		expect(
+			await screen.findByRole("heading", { name: "Checking whether your action was recorded" }),
+		).toBeTruthy();
+		expect(screen.queryByText(/Nothing was recorded/)).toBeNull();
+		expect(screen.queryByRole("button", { name: "Clock in" })).toBeNull();
 		expect(screen.queryByRole("status", { name: "Done" })).toBeNull();
 		expect(clockActions(calls)).toEqual(["clock_in"]);
 	});

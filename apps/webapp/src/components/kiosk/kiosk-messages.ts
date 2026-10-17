@@ -22,6 +22,7 @@ export function useKioskRefusalMessage(zone: string, locale: string) {
 	const { t } = useTranslate();
 
 	return function message(refusal: KioskClockRefusal | "offline"): string {
+		// Only a call the kiosk never sent: one whose reply was lost is uncertain (#1363).
 		if (refusal === "offline") {
 			return t(
 				"timeTracking.kiosk.offline.refused",
@@ -91,6 +92,17 @@ export function useKioskRefusalMessage(zone: string, locale: string) {
 				return t(
 					"timeTracking.kiosk.refusal.billing",
 					"Clocking is not available for your organization right now. Contact your admin.",
+				);
+			case "not_recorded":
+				// Z8 closed the earlier action as not recorded (#1363): only a fresh one may follow.
+				return t(
+					"timeTracking.kiosk.refusal.notRecorded",
+					"Your action was not recorded. Enter your PIN to choose it again.",
+				);
+			case "attempt_closed":
+				return t(
+					"timeTracking.kiosk.refusal.attemptClosed",
+					"This action was not recorded. Choose it again if you still want it.",
 				);
 			case "unconfirmed":
 				return t(
