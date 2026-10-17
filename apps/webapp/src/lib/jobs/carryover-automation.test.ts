@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const findManyOrganizationsMock = vi.fn();
 const getVacationAllowanceMock = vi.fn();
@@ -54,7 +54,10 @@ beforeEach(() => {
 	accrueDueVacationPeriodsMock.mockReset();
 	expireCarryoverDaysMock.mockReset();
 	logAuditMock.mockReset();
-	getVacationAllowanceMock.mockResolvedValue({ allowCarryover: true, accrualType: "monthly" });
+	getVacationAllowanceMock.mockResolvedValue({
+		allowCarryover: true,
+		accrualType: "monthly",
+	});
 	calculateAnnualCarryoverMock.mockResolvedValue({
 		organizationId: "org-1",
 		fromYear: 2025,
@@ -69,11 +72,13 @@ beforeEach(() => {
 		employeesProcessed: 1,
 		totalDaysAccrued: 2.5,
 		rowsWritten: 1,
+		skippedEmployees: [],
 	});
 	accrueDueVacationPeriodsMock.mockResolvedValue({
 		employeesProcessed: 1,
 		totalDaysAccrued: 2.5,
 		rowsWritten: 1,
+		skippedEmployees: [],
 		year: 2026,
 		throughMonth: 1,
 	});
@@ -85,9 +90,13 @@ beforeEach(() => {
 	logAuditMock.mockResolvedValue(undefined);
 });
 
+afterEach(() => vi.useRealTimers());
+
 describe("runAnnualCarryover calendar-year scheduling", () => {
 	it("does not process organizations after January 1 when no target year is supplied", async () => {
-		findManyOrganizationsMock.mockResolvedValue([{ id: "org-1", name: "Calendar Org" }]);
+		findManyOrganizationsMock.mockResolvedValue([
+			{ id: "org-1", name: "Calendar Org" },
+		]);
 
 		const { runAnnualCarryover } = await import("./carryover-automation");
 		await runAnnualCarryover();
@@ -105,7 +114,6 @@ describe("runAnnualCarryover calendar-year scheduling", () => {
 		const { runAnnualCarryover } = await import("./carryover-automation");
 		await runAnnualCarryover();
 
-		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-1", 2025);
 		expect(calculateAnnualCarryoverMock).toHaveBeenCalledWith(
 			"org-1",
 			2025,
@@ -123,7 +131,6 @@ describe("runAnnualCarryover calendar-year scheduling", () => {
 		const { runAnnualCarryover } = await import("./carryover-automation");
 		await runAnnualCarryover();
 
-		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-1", 2025);
 		expect(calculateAnnualCarryoverMock).toHaveBeenCalledWith(
 			"org-1",
 			2025,
@@ -133,12 +140,13 @@ describe("runAnnualCarryover calendar-year scheduling", () => {
 	});
 
 	it("treats targetYear as an explicit calendar year override", async () => {
-		findManyOrganizationsMock.mockResolvedValue([{ id: "org-1", name: "Calendar Org" }]);
+		findManyOrganizationsMock.mockResolvedValue([
+			{ id: "org-1", name: "Calendar Org" },
+		]);
 
 		const { runAnnualCarryover } = await import("./carryover-automation");
 		await runAnnualCarryover(2024);
 
-		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-1", 2024);
 		expect(calculateAnnualCarryoverMock).toHaveBeenCalledWith(
 			"org-1",
 			2024,
@@ -179,8 +187,13 @@ describe("runVacationAutomation calendar-year scheduling", () => {
 	it("delegates annual carryover to January 1 gating", async () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-01-01T10:00:00.000Z"));
-		findManyOrganizationsMock.mockResolvedValue([{ id: "org-1", name: "Calendar Org" }]);
-		getVacationAllowanceMock.mockResolvedValue({ allowCarryover: true, accrualType: "annual" });
+		findManyOrganizationsMock.mockResolvedValue([
+			{ id: "org-1", name: "Calendar Org" },
+		]);
+		getVacationAllowanceMock.mockResolvedValue({
+			allowCarryover: true,
+			accrualType: "annual",
+		});
 
 		const { runVacationAutomation } = await import("./carryover-automation");
 		await runVacationAutomation();
@@ -204,11 +217,13 @@ describe("runVacationAutomation calendar-year scheduling", () => {
 		const { runVacationAutomation } = await import("./carryover-automation");
 		await runVacationAutomation();
 
-		const calls = accrueDueVacationPeriodsMock.mock.calls.map(([organizationId, input]) => [
-			organizationId,
-			input.timezone,
-			input.now.toString(),
-		]);
+		const calls = accrueDueVacationPeriodsMock.mock.calls.map(
+			([organizationId, input]) => [
+				organizationId,
+				input.timezone,
+				input.now.toString(),
+			],
+		);
 		expect(calls).toEqual([
 			["org-1", "Europe/Berlin", "2026-10-13T10:00:00Z"],
 			["org-2", "America/New_York", "2026-10-13T10:00:00Z"],
@@ -218,16 +233,20 @@ describe("runVacationAutomation calendar-year scheduling", () => {
 });
 
 describe("runMonthlyAccrual calendar-year labels", () => {
-	it("uses the requested calendar year for policy lookup and accrual", async () => {
+	it("uses the requested calendar year for accrual", async () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-03-01T10:00:00.000Z"));
-		findManyOrganizationsMock.mockResolvedValue([{ id: "org-1", name: "Calendar Org" }]);
+		findManyOrganizationsMock.mockResolvedValue([
+			{ id: "org-1", name: "Calendar Org" },
+		]);
 
 		const { runMonthlyAccrual } = await import("./carryover-automation");
 		await runMonthlyAccrual(3, 2026);
 
-		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-1", 2026);
-		expect(accrueVacationPeriodsMock).toHaveBeenCalledWith("org-1", { year: 2026, months: [3] });
+		expect(accrueVacationPeriodsMock).toHaveBeenCalledWith("org-1", {
+			year: 2026,
+			months: [3],
+		});
 		expect(accrueDueVacationPeriodsMock).not.toHaveBeenCalled();
 	});
 
@@ -242,12 +261,151 @@ describe("runMonthlyAccrual calendar-year labels", () => {
 		const { runMonthlyAccrual } = await import("./carryover-automation");
 		const result = await runMonthlyAccrual();
 
-		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-1", 2026);
-		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-2", 2025);
 		expect(
-			accrueDueVacationPeriodsMock.mock.calls.map(([organizationId]) => organizationId),
+			accrueDueVacationPeriodsMock.mock.calls.map(
+				([organizationId]) => organizationId,
+			),
 		).toEqual(["org-1", "org-2"]);
 		expect(result.month).toBe(1);
 		expect(result.year).toBe(2026);
+	});
+});
+describe("employee-effective vacation posting eligibility", () => {
+	it.each([null, { accrualType: "annual" }])(
+		"accrues assigned employees independently of company default %j",
+		async (policy) => {
+			findManyOrganizationsMock.mockResolvedValue([
+				{ id: "org-assigned", name: "Assigned Org" },
+			]);
+			getVacationAllowanceMock.mockResolvedValue(policy);
+
+			const { runMonthlyAccrual } = await import("./carryover-automation");
+			const result = await runMonthlyAccrual(3, 2026);
+
+			expect(result).toMatchObject({
+				success: true,
+				organizationsProcessed: 1,
+				totalEmployeesProcessed: 1,
+				totalDaysAccrued: 2.5,
+			});
+		},
+	);
+});
+describe("employee-effective carryover eligibility", () => {
+	it.each([null, { allowCarryover: false }])(
+		"carries assigned employees independently of company default %j",
+		async (policy) => {
+			findManyOrganizationsMock.mockResolvedValue([
+				{ id: "org-assigned", name: "Assigned Org" },
+			]);
+			getVacationAllowanceMock.mockResolvedValue(policy);
+			calculateAnnualCarryoverMock.mockResolvedValue({
+				organizationId: "org-assigned",
+				fromYear: 2026,
+				toYear: 2027,
+				employeesProcessed: 1,
+				totalDaysCarriedOver: 4,
+				results: [],
+				errors: [],
+			});
+
+			const { runAnnualCarryover } = await import("./carryover-automation");
+			const result = await runAnnualCarryover(2026);
+
+			expect(result.results).toEqual([
+				{
+					organizationId: "org-assigned",
+					organizationName: "Assigned Org",
+					carryover: expect.objectContaining({
+						employeesProcessed: 1,
+						totalDaysCarriedOver: 4,
+					}),
+				},
+			]);
+		},
+	);
+});
+describe("accrual configuration diagnostics", () => {
+	it.each(["missing", "conflict"] as const)(
+		"reports %s employees with organization scope while healthy organizations continue",
+		async (status) => {
+			findManyOrganizationsMock.mockResolvedValue([
+				{ id: "org-missing", name: "Missing Org" },
+				{ id: "org-healthy", name: "Healthy Org" },
+			]);
+			const configuration = {
+				status,
+				periods: [{ startDate: "2026-03-01", endDate: "2026-03-31" }],
+			};
+			accrueVacationPeriodsMock.mockResolvedValueOnce({
+				employeesProcessed: 0,
+				totalDaysAccrued: 0,
+				rowsWritten: 0,
+				skippedEmployees: [{ employeeId: "employee-missing", configuration }],
+			});
+
+			const { runMonthlyAccrual } = await import("./carryover-automation");
+			const result = await runMonthlyAccrual(3, 2026);
+
+			expect(result).toMatchObject({
+				success: true,
+				organizationsProcessed: 2,
+				totalEmployeesProcessed: 1,
+				totalDaysAccrued: 2.5,
+				skippedEmployees: [
+					{
+						organizationId: "org-missing",
+						employeeId: "employee-missing",
+						configuration,
+					},
+				],
+			});
+		},
+	);
+});
+
+describe("vacation posting failure isolation", () => {
+	it("continues accrual after one organization fails", async () => {
+		findManyOrganizationsMock.mockResolvedValue([
+			{ id: "org-failed", name: "Failed Org" },
+			{ id: "org-healthy", name: "Healthy Org" },
+		]);
+		accrueVacationPeriodsMock.mockRejectedValueOnce(
+			new Error("Posting unavailable"),
+		);
+		const { runMonthlyAccrual } = await import("./carryover-automation");
+		const result = await runMonthlyAccrual(3, 2026);
+		expect(result).toMatchObject({
+			success: false,
+			organizationsProcessed: 1,
+			totalEmployeesProcessed: 1,
+			totalDaysAccrued: 2.5,
+			skippedEmployees: [],
+			errors: ["Failed Org: Posting unavailable"],
+		});
+	});
+
+	it("continues carryover after one organization fails", async () => {
+		findManyOrganizationsMock.mockResolvedValue([
+			{ id: "org-failed", name: "Failed Org" },
+			{ id: "org-healthy", name: "Healthy Org" },
+		]);
+		calculateAnnualCarryoverMock.mockRejectedValueOnce(
+			new Error("Transfer unavailable"),
+		);
+		const { runAnnualCarryover } = await import("./carryover-automation");
+		const result = await runAnnualCarryover(2026);
+		expect(result).toMatchObject({
+			success: false,
+			organizationsProcessed: 2,
+			errors: ["Failed Org: Transfer unavailable"],
+			results: [
+				{ organizationId: "org-failed", error: "Transfer unavailable" },
+				{
+					organizationId: "org-healthy",
+					carryover: expect.objectContaining({ employeesProcessed: 0 }),
+				},
+			],
+		});
 	});
 });

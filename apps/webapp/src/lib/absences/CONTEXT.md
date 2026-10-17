@@ -83,8 +83,16 @@ A vacation policy that grants its allowance in monthly or biweekly shares instea
 _Avoid_: accrual type monthly (in prose)
 
 **Adjustment**:
-A signed number of vacation days added to one employee's balance for one year. A **manual adjustment** is made by an admin or manager and appears in the adjustment history. An **accrual adjustment** is one month's share of an accrual policy's allowance for the days of the month the employee is employed, leavers included, written by the system on the month's first day; an employee has at most one per month, and together they are the employee's accrual to date.
+A signed number of vacation days added to one employee's balance for one year. A **manual adjustment** is made by an admin or manager and appears in the adjustment history. An **accrual adjustment** is one month's share of the employee's effective accrual-policy periods for the days of the month they are employed, leavers included, written by the system on the month's first day; an employee has at most one per month, and together they are the employee's accrual to date. Amount changes within the month are weighted by the month's actual calendar days; a custom allowance supplies the final annual rate. A posted share stays unchanged on automatic retries or later assignment changes.
 _Avoid_: correction, bonus days
+
+**Carryover**:
+The unused vacation transferred from one year to the next. The policy effective on 31 December of the source year supplies permission and the cap; the policy effective on 1 January of the receiving year supplies expiry. A newly committed transfer keeps its amount and expiry through later policy or assignment changes, including a committed zero transfer or an explicit absence of expiry. Earlier stored carryover retains its prior expiry treatment unless explicitly reviewed.
+_Avoid_: recalculated carryover, current-policy carryover
+
+**Posting configuration problem**:
+Missing or conflicting vacation policies for dates needed to calculate an automatic accrual or carryover. The affected employee is skipped with the dates and configuration state visible for review; correctly configured colleagues still process. An unknown allowance is never a zero-day posting.
+_Avoid_: zero allowance, organization-wide failure
 
 ### Cover
 
@@ -100,6 +108,10 @@ A deputy is not the escalation **backup manager** (who takes over one overdue ap
 
 ## Vacation policy calculation rollout
 
-Dated readers and automated postings share the organization-scoped `vacation_policy_rollout.calculations_enabled` gate. It defaults to false while the posting slice is staged. Admission activates the period contract for 2026 onward; dates before the organization's known/reviewed eligibility baseline retain legacy company-default selection. Earlier years retain the legacy result. Each employee returns an independent resolved, legacy, missing, or conflicting configuration; an unavailable balance is never presented as a zero allowance. Employee, dashboard, manager, admin, reporting and proration-notice readers use the shared balance store.
+Dated readers and automated postings share the organization-scoped `vacation_policy_rollout.calculations_enabled` gate. Admission activates the period contract for 2026 onward only when both reader and posting consumers are ready. Dates before the organization's known or reviewed eligibility baseline retain legacy company-default selection, and earlier years retain their existing result. Each employee returns an independent resolved, legacy, missing, or conflicting configuration; an unavailable balance is never presented as a zero allowance. Employee, dashboard, manager, admin, reporting and proration-notice readers use the shared balance store.
 
-Stored accrual and carryover are not rewritten by admission or assignment changes. Existing carryover keeps its legacy company-default permission and expiry treatment independently of the weighted annual policy. The posting slice supplies frozen terms for new transfers. Reviewed historical usage, absence reconciliation and employment-date correction keep their preview overrides; configuration gaps require review before a correction that needs an allowance can commit.
+Automatic accrual resolves the employee's required unposted months. Annual carryover resolves the source balance, source-year-end permission and cap, and receiving-year-start expiry. Jobs delegate employee eligibility to these consumers rather than filtering whole organizations by their company default. Missing or conflicting required coverage produces an employee-specific skipped reason while other employees continue. All calendar boundaries use the organization's timezone.
+
+Admission, policy history and assignment changes never rewrite posted accrual or stored carryover. New carryover commits an immutable outcome, including zero or disallowed carryover, and freezes its expiry or explicit no-expiry terms. Later policy changes cannot create an extra transfer or alter those terms. Legacy carryover retains its prior company-default expiry treatment without inferred snapshots. Balances, expiry processing, reports and the admin detail honor the stored terms. A dated expiry remains valid through its final millisecond; expiry applies after that instant.
+
+Reviewed historical usage, absence reconciliation and employment-date correction retain their preview overrides. Only an explicit reviewed correction may change eligible stored amounts; assignment changes and scheduled jobs never invoke that correction path. Employment-date correction includes policy resolution evidence in its preview fingerprint so stale configuration requires another review. Configuration gaps require review before a correction that needs an allowance can commit. See [ADR 0005](docs/adr/0005-vacation-postings-preserve-committed-amounts-and-expiry.md).

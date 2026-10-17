@@ -22,6 +22,7 @@ import {
 
 /** An employee's `employee_vacation_allowance` overrides for a year. */
 export interface EmployeeVacationOverride {
+	allowanceId?: string;
 	customAnnualDays: string | null;
 	customCarryoverDays: string | null;
 }
@@ -45,6 +46,7 @@ export async function loadEmployeeVacationOverrides(
 	const rows = await database
 		.select({
 			employeeId: employeeVacationAllowance.employeeId,
+			allowanceId: employeeVacationAllowance.id,
 			customAnnualDays: employeeVacationAllowance.customAnnualDays,
 			customCarryoverDays: employeeVacationAllowance.customCarryoverDays,
 		})
@@ -57,7 +59,10 @@ export async function loadEmployeeVacationOverrides(
 				eq(employeeVacationAllowance.year, input.year),
 			),
 		)
-		.orderBy(desc(employeeVacationAllowance.updatedAt));
+		.orderBy(
+			desc(employeeVacationAllowance.updatedAt),
+			desc(employeeVacationAllowance.id),
+		);
 
 	const overrides = new Map<string, EmployeeVacationOverride>();
 	for (const { employeeId, ...override } of rows) {

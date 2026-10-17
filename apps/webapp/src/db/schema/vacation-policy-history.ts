@@ -20,7 +20,7 @@ export const vacationPolicyRollout = pgTable("vacation_policy_rollout", {
 	baselineDate: date("baseline_date").notNull(),
 	reviewedFrom: date("reviewed_from"),
 	/** Enabled only when balance readers and automated postings share the dated contract. */
-	calculationsEnabled: boolean("calculations_enabled").default(false).notNull(),
+	calculationsEnabled: boolean("calculations_enabled").default(true).notNull(),
 });
 
 /** Vacation-only eligibility survives deletion of the live membership and team. */

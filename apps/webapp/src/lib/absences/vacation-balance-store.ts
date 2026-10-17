@@ -23,6 +23,7 @@ import {
 	vacationAdjustmentTotal,
 } from "./vacation-adjustments";
 import { calculateVacationBalance } from "./vacation-calculator";
+import { loadFrozenCarryoverTerms } from "./vacation-carryover-terms";
 import {
 	type EmployeeVacationPolicyPeriod,
 	loadEmployeeVacationPolicyPeriods,
@@ -167,8 +168,8 @@ export async function loadVacationBalances(
 			customCarryoverDays: days,
 		});
 	}
-	const [allowances, absences, workingDays, adjustmentSums] = await Promise.all(
-		[
+	const [allowances, absences, workingDays, adjustmentSums, frozenCarryovers] =
+		await Promise.all([
 			// Only employees of the organization get an allowance, and so a balance.
 			loadProratedVacationAllowances(database, {
 				organizationId,
@@ -202,8 +203,8 @@ export async function loadVacationBalances(
 				employeeIds,
 				year,
 			}),
-		],
-	);
+			loadFrozenCarryoverTerms(database, { organizationId, employeeIds, year }),
+		]);
 
 	const effectiveAbsences: AbsenceWithCategory[] = (
 		absences as unknown as AbsenceWithCategory[]
@@ -234,6 +235,12 @@ export async function loadVacationBalances(
 		balances.set(
 			employeeId,
 			calculateVacationBalance({
+				frozenCarryover:
+					frozenCarryovers.get(employeeId)?.allowanceId ===
+						overrides.get(employeeId)?.allowanceId &&
+					frozenCarryovers.has(employeeId)
+						? frozenCarryovers.get(employeeId)
+						: undefined,
 				organizationAllowance: {
 					...employeePolicy,
 					allowCarryover: policy?.allowCarryover ?? false,

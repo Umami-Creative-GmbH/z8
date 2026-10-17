@@ -38,8 +38,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import type { VacationBalance } from "@/lib/absences/types";
-import { parseInstant } from "@/lib/datetime/temporal-core";
-import { formatInstant } from "@/lib/datetime/temporal-format";
+import { instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
+import { formatInstant, formatPlainDate } from "@/lib/datetime/temporal-format";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 import {
@@ -428,6 +428,10 @@ export function EmployeeAllowanceEditPageClient({
 									accrued={adjustmentSummary.accrual}
 									adjustments={adjustmentSummary.manual}
 								/>
+								<CarryoverExpiryNotice
+									balance={balance}
+									timezone={balanceView?.timezone ?? "UTC"}
+								/>
 								<div className="-mt-4 mb-6 flex flex-wrap items-center gap-2">
 									<VacationAllowanceExplanation
 										allowance={balance.allowance}
@@ -439,9 +443,8 @@ export function EmployeeAllowanceEditPageClient({
 								</div>
 							</>
 						) : (
-							<VacationPolicyConfigurationMessage
-								configuration={balanceView?.configuration}
-								className="mb-6 text-sm text-muted-foreground"
+							<VacationPostingConfigurationNotice
+								configuration={balanceView?.configuration ?? null}
 							/>
 						)}
 
@@ -956,6 +959,68 @@ function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
 					</div>
 				)}
 			</form.Field>
+		</div>
+	);
+}
+
+function CarryoverExpiryNotice({
+	balance,
+	timezone,
+}: {
+	balance: VacationBalance;
+	timezone: string;
+}) {
+	const { t } = useTranslate();
+	const displayContext = useDisplayContext();
+	const carryoverTimezone = balance.carryoverExpiryTimezone ?? timezone;
+	if (!balance.carryoverExpiryDate) {
+		return balance.carryoverDays && balance.carryoverDays > 0 ? (
+			<p className="mb-6 text-sm text-muted-foreground">
+				{t(
+					"settings.vacation.employees.detail.carryoverNoExpiry",
+					"Carryover has no expiry date.",
+				)}
+			</p>
+		) : null;
+	}
+	return (
+		<p className="mb-6 text-sm text-muted-foreground">
+			{t(
+				"settings.vacation.employees.detail.carryoverExpiry",
+				"Carryover expires on {date} ({timezone}).",
+				{
+					date: formatPlainDate(
+						instantFromDate(balance.carryoverExpiryDate)
+							.toZonedDateTimeISO(carryoverTimezone)
+							.toPlainDate(),
+						displayContext.locale,
+						"dateMedium",
+					),
+					timezone: carryoverTimezone,
+				},
+			)}
+		</p>
+	);
+}
+
+function VacationPostingConfigurationNotice({
+	configuration,
+}: {
+	configuration: EmployeeVacationBalanceView["configuration"];
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="mb-6 space-y-1 text-sm text-muted-foreground">
+			<VacationPolicyConfigurationMessage configuration={configuration} />
+			{(configuration?.status === "missing" ||
+				configuration?.status === "conflict") && (
+				<p>
+					{t(
+						"settings.vacation.employees.detail.postingsSkipped",
+						"Automatic vacation postings are skipped until the policy configuration is resolved.",
+					)}
+				</p>
+			)}
 		</div>
 	);
 }
