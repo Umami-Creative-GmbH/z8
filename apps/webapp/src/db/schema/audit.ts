@@ -20,7 +20,8 @@ export const auditLog = pgTable(
 
 		// What was changed
 		entityType: text("entity_type").notNull(),
-		entityId: uuid("entity_id").notNull(),
+		// Targets include auth entities (text IDs) as well as UUID-backed records.
+		entityId: text("entity_id").notNull(),
 		action: text("action").notNull(), // "create", "update", "delete", "approve", "reject"
 
 		// Who made the change

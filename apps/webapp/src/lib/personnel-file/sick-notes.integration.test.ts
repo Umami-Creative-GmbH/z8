@@ -594,7 +594,7 @@ describe.each(["legacy", "canonical"] as const)("sick notes on absences (#982, %
 		// The deletion trigger queued both files; the immediate cleanup removed them.
 		expect(keys.some((key) => harness.objects.has(key.storage_key))).toBe(false);
 		const { rows: audits } = await admin.query<{ performed_by: string; metadata: string }>(
-			"select performed_by, metadata from audit_log where entity_id = any($1::uuid[]) and action = 'personnel_file.document_deleted'",
+			"select performed_by, metadata from audit_log where entity_id = any($1::text[]) and action = 'personnel_file.document_deleted'",
 			[notes],
 		);
 		expect(audits).toHaveLength(2);

@@ -398,7 +398,7 @@ const columns = [
 	column("audit_log", "id", "uuid", true, "gen_random_uuid()"),
 	column("audit_log", "organization_id", "text"),
 	column("audit_log", "entity_type", "text"),
-	column("audit_log", "entity_id", "uuid"),
+	column("audit_log", "entity_id", "text"),
 	column("audit_log", "action", "text"),
 	column("audit_log", "performed_by", "text"),
 	column("audit_log", "employee_id", "uuid", false),
