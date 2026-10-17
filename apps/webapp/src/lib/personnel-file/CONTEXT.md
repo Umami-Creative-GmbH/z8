@@ -81,5 +81,5 @@ Said of an employee document whose retention period has passed since its retenti
 _Avoid_: expired (that is the expiry date), overdue
 
 **Purge**:
-The confirmed, irreversible deletion of an employee document that is due for deletion.
+The confirmed, irreversible deletion of an employee document that is due for deletion. Every audit record about the document stays, but loses the document's title, file name, ZIP entry names and any free-text reason. Who did what and when, the employee, the document category, the document date and the pay period remain.
 _Avoid_: cleanup, archive
