@@ -4493,6 +4493,7 @@ db.delete(approvalOutbox);`,
 			"src/lib/time-tracking/work-records/pair-writer.ts#insertAllocations",
 			"src/lib/time-tracking/work-records/pair-writer.ts#replaceProjectAllocation",
 			"src/lib/time-tracking/work-records/pair-writer.ts#writeCanonicalDetail",
+			"src/lib/time-tracking/work-records/project-missing-tasks.ts#clearProjectMissingTasks",
 			"src/lib/time-tracking/work-records/repair.ts#attachWorkRecord",
 			"src/lib/time-tracking/work-records/repair.ts#insertDetail",
 			"src/lib/time-tracking/work-records/repair.ts#repairWorkRecord",
@@ -4649,7 +4650,7 @@ export function wrongCompletedPeriodOwner() {
 export function writeAmendedPair() {
   return db.update(workPeriod).set({
     clockInId, clockOutId, startTime, endTime, durationMinutes, approvalStatus, pendingChanges,
-    projectId, taskId, isBillable, workCategoryId, workLocationType,
+    projectId, taskId, isBillable, missingTask, workCategoryId, workLocationType,
     vehicleKind, vehicleId, odometerStartKm, odometerEndKm, drivenDistanceKm, graphRevision,
   });
 }

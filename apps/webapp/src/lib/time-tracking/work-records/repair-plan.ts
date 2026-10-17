@@ -40,7 +40,8 @@ function resolvedFacets(resolution: PlannableRepair): Set<RecordAgreementFacet> 
 			facets.add(facet);
 		}
 	}
-	if (patch.task !== undefined) facets.add("task");
+	// The missing-task marker is part of the task facet (#884).
+	if (patch.task !== undefined || patch.missingTask !== undefined) facets.add("task");
 	if (patch.billable !== undefined) facets.add("billable");
 	if (patch.workCategoryId !== undefined) facets.add("work_category");
 	if (patch.workLocationType !== undefined) facets.add("work_location");

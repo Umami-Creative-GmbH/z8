@@ -226,6 +226,56 @@ describe("useClockInOutWidget", () => {
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 	});
 
+	it("words a clock-out refused for a missing required task and points to the task picker", async () => {
+		mocks.userTimezone = "America/New_York";
+		mocks.clockOut.mockResolvedValue({
+			success: false,
+			code: "task_required",
+			error: "Cannot book time to this task",
+		});
+		const { result } = renderHook(() =>
+			useClockInOutWidget({
+				id: "period-1",
+				startTime: new Date("2026-05-18T08:00:00Z"),
+				endTime: null,
+			}),
+		);
+
+		await act(async () => {
+			await result.current.handleClockOut();
+		});
+
+		expect(mocks.toastError).toHaveBeenCalledWith(
+			"This project requires a task. Choose one and try again.",
+			{ description: "Open the clock at the top of the page, choose a task, then clock out." },
+		);
+	});
+
+	it("words a clock-out refused for its task", async () => {
+		mocks.userTimezone = "America/New_York";
+		mocks.clockOut.mockResolvedValue({
+			success: false,
+			code: "task_done",
+			error: "Cannot book time to this task",
+		});
+		const { result } = renderHook(() =>
+			useClockInOutWidget({
+				id: "period-1",
+				startTime: new Date("2026-05-18T08:00:00Z"),
+				endTime: null,
+			}),
+		);
+
+		await act(async () => {
+			await result.current.handleClockOut();
+		});
+
+		expect(mocks.toastError).toHaveBeenCalledWith(
+			"This task is done, so no time can be booked to it",
+			{ description: "Open the clock at the top of the page, choose a task, then clock out." },
+		);
+	});
+
 	it("adds a break and shows the success toast", async () => {
 		mocks.addBreak.mockResolvedValue({ success: true });
 

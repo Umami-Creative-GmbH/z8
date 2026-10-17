@@ -335,6 +335,57 @@ describe("desktop context project tasks on PostgreSQL (#875)", () => {
 			},
 		]);
 	});
+
+	it("flags only the projects whose task requirement is active (#1297)", async () => {
+		// Beta requires a task but has no open task, so its requirement has lapsed.
+		await admin.query("update project set requires_task = true where id in ($1, $2)", [
+			ids.projectA,
+			ids.projectB,
+		]);
+
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		const [alpha, beta] = context.body.projects;
+		expect(alpha).toMatchObject({ id: ids.projectA, taskRequired: true });
+		expect(beta.id).toBe(ids.projectB);
+		expect(beta).not.toHaveProperty("taskRequired");
+	});
+
+	it("leaves the flag off once a requiring project has no open task (#1297)", async () => {
+		await admin.query("update project set requires_task = true where id = $1", [ids.projectA]);
+		await admin.query(
+			"update project_task set state = 'done', done_at = now(), done_by = $2 where project_id = $1",
+			[ids.projectA, ids.user],
+		);
+
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		for (const project of context.body.projects) expect(project).not.toHaveProperty("taskRequired");
+	});
+
+	it("leaves the flag off for every project that does not require a task (#1297)", async () => {
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		for (const project of context.body.projects) expect(project).not.toHaveProperty("taskRequired");
+	});
+
+	it("reads the requirement in the active organization only (#1297)", async () => {
+		await admin.query("update project set requires_task = true where id = $1", [
+			ids.otherOrganizationProject,
+		]);
+
+		const own = await read();
+		harness.organizationId = ids.otherOrganization;
+		const other = await read();
+
+		for (const project of own.body.projects) expect(project).not.toHaveProperty("taskRequired");
+		expect(other.body.projects).toEqual([
+			expect.objectContaining({ id: ids.otherOrganizationProject, taskRequired: true }),
+		]);
+	});
 });
 
 describe("desktop context vehicle use on PostgreSQL (#1124)", () => {

@@ -24,6 +24,14 @@ _Avoid_: Sub-project, activity, service, work category
 An open task can be booked to; a done task keeps what was booked to it but takes no new bookings until it is reopened.
 _Avoid_: Archived task, closed task
 
+**Task requirement**:
+A project's rule that time booked to it must name one of its tasks. It applies only while the project has an open task. Templates carry it like any other project content.
+_Avoid_: Mandatory task, task enforcement
+
+**Missing task**:
+A booking accepted without a task although its project had a task requirement, because whoever recorded it could not pick a task (for example an automatic clock-out or a bot). Imported work is never a missing task. It is decided when the booking's project is set, never for bookings made before the requirement, and it ends when a task is added, the project changes or the requirement is turned off.
+_Avoid_: Untasked booking (when only the "No task" report row is meant), task violation
+
 **Task estimate**:
 The hours a task is expected to take, compared with the hours booked to it. Unlike the project budget, it never raises budget alerts.
 _Avoid_: Task budget

@@ -311,6 +311,56 @@ describe("the project report's By task section on PostgreSQL", () => {
 		expect(report.taskBreakdown.at(-1)?.taskId).toBeNull();
 	});
 
+	it("counts the No task row's bookings missing a task in the period (#884)", async () => {
+		const own = { organizationId: ids.organization, employeeId: ids.owner, userId: ids.ownerUser };
+		// A second booking missing a task in the period and one before it, all marked.
+		await book({
+			...own,
+			projectId: ids.project,
+			taskId: null,
+			start: "2026-01-09T08:00:00Z",
+			minutes: 15,
+		});
+		await book({
+			...own,
+			projectId: ids.project,
+			taskId: null,
+			start: "2026-01-02T10:00:00Z",
+			minutes: 15,
+		});
+		await admin.query(
+			`update work_period set missing_task = true
+			 where organization_id = $1 and project_id = $2 and task_id is null`,
+			[ids.organization, ids.project],
+		);
+
+		const result = await actAs(ids.ownerUser, () =>
+			reports.getProjectDetailedReport(ids.project, rangeStart, rangeEnd),
+		);
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		const byTask = new Map(result.data.taskBreakdown.map((row) => [row.taskId, row]));
+		expect(byTask.get(null)).toMatchObject({
+			totalMinutes: 45,
+			workPeriodCount: 2,
+			missingTaskCount: 2,
+		});
+		expect(byTask.get(ids.design)).not.toHaveProperty("missingTaskCount");
+	});
+
+	it("gives the No task row no missing-task count when none is marked (#884)", async () => {
+		const result = await actAs(ids.ownerUser, () =>
+			reports.getProjectDetailedReport(ids.project, rangeStart, rangeEnd),
+		);
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		const noTask = result.data.taskBreakdown.find((row) => row.taskId === null);
+		expect(noTask).toMatchObject({ totalMinutes: 30 });
+		expect(noTask).not.toHaveProperty("missingTaskCount");
+	});
+
 	it("shows estimate progress only for a task with an estimate, from all its booked hours", async () => {
 		const result = await actAs(ids.ownerUser, () =>
 			reports.getProjectDetailedReport(ids.project, rangeStart, rangeEnd),

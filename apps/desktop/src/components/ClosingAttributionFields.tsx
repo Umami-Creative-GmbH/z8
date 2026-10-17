@@ -1,5 +1,6 @@
 import {
 	offeredTasks,
+	taskMissing,
 	type useClosingAttribution,
 } from "../hooks/useClosingAttribution";
 import { attributionAvailability } from "../lib/attribution-availability";
@@ -65,7 +66,10 @@ export function ClosingAttributionFields({
 				))}
 			<form.Subscribe selector={(state) => state.values.project}>
 				{(project) => {
-					const { tasks, keepsProject } = offeredTasks(context, project);
+					const { tasks, keepsProject, taskRequired } = offeredTasks(
+						context,
+						project,
+					);
 					const currentTask = keepsProject
 						? context.liveWork?.currentTask
 						: null;
@@ -73,29 +77,41 @@ export function ClosingAttributionFields({
 					return (
 						<form.Field name="task">
 							{(field) => (
-								<label className="form-field">
-									{t("Task")}
-									<select
-										name={field.name}
-										value={field.state.value}
-										disabled={disabled}
-										onChange={(event) => field.handleChange(event.target.value)}
-									>
-										<option value="">
-											{currentTask
-												? `${t("Keep current task:")} ${currentTask.name}`
-												: t("No task")}
-										</option>
-										{keepsProject && (
-											<option value="clear">{t("No task")}</option>
-										)}
-										{tasks.map((task) => (
-											<option key={task.id} value={task.id}>
-												{task.name}
+								<>
+									<label className="form-field">
+										{t("Task")}
+										<select
+											name={field.name}
+											value={field.state.value}
+											disabled={disabled}
+											onChange={(event) =>
+												field.handleChange(event.target.value)
+											}
+										>
+											<option value="">
+												{currentTask
+													? `${t("Keep current task:")} ${currentTask.name}`
+													: t(taskRequired ? "Task required" : "No task")}
 											</option>
-										))}
-									</select>
-								</label>
+											{keepsProject && !taskRequired && (
+												<option value="clear">{t("No task")}</option>
+											)}
+											{tasks.map((task) => (
+												<option key={task.id} value={task.id}>
+													{task.name}
+												</option>
+											))}
+										</select>
+									</label>
+									{taskMissing(context, {
+										project,
+										task: field.state.value,
+									}) && (
+										<p className="field-hint" role="status">
+											{t("Choose a task to clock out.")}
+										</p>
+									)}
+								</>
 							)}
 						</form.Field>
 					);

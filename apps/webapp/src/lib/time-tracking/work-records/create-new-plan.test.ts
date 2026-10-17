@@ -84,6 +84,8 @@ describe("planNewWork (#1223)", () => {
 				costCenterId: null,
 				weightPercent: 100,
 				isBillable: true,
+				// New work is never missing a task (#884).
+				missingTask: false,
 			},
 		]);
 		expect(recordAgreement(completed.period, completed.canonical)).toEqual({

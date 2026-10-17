@@ -1700,7 +1700,21 @@
       "idx": 242,
       "version": "7",
       "when": 1805644800000,
-      "tag": "0242_kiosk_seats",
+      "tag": "0242_project_task_requirement",
+      "breakpoints": true
+    },
+    {
+      "idx": 243,
+      "version": "7",
+      "when": 1805731200000,
+      "tag": "0243_work_missing_task",
+      "breakpoints": true
+    },
+    {
+      "idx": 244,
+      "version": "7",
+      "when": 1805817600000,
+      "tag": "0244_kiosk_seats",
       "breakpoints": true
     }
   ]

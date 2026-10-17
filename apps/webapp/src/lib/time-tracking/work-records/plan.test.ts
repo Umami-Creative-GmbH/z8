@@ -116,6 +116,34 @@ describe("planChange: divide at an instant", () => {
 		}
 	});
 
+	it("keeps the missing-task marker on both halves (#884)", () => {
+		const pair = agreeingPair();
+		const missingTaskParts = { taskId: null, missingTask: true };
+		const marked: WorkRecordPair = {
+			period: { ...pair.period, ...missingTaskParts },
+			canonical: {
+				...pair.canonical,
+				allocations: pair.canonical.allocations.map((allocation) =>
+					allocation.allocationKind === "project"
+						? { ...allocation, ...missingTaskParts }
+						: { ...allocation, missingTask: false },
+				),
+			},
+		};
+
+		const plan = planChange(marked, divide(parseInstant("2026-03-02T11:00:00Z")));
+
+		expect(plan.kind).toBe("divide");
+		if (plan.kind !== "divide") return;
+		for (const half of [plan.retained, plan.generated]) {
+			expect(half.period).toMatchObject({ projectId: PROJECT, taskId: null, missingTask: true });
+			expect(half.canonical.allocations).toContainEqual(
+				expect.objectContaining({ allocationKind: "project", taskId: null, missingTask: true }),
+			);
+			expect(recordAgreement(half.period, half.canonical).agrees).toBe(true);
+		}
+	});
+
 	it("keeps a positive half that rounds to zero minutes", () => {
 		// 07:00:20 to 07:00:40 is 20 seconds.
 		const plan = planChange(agreeingPair(), divide(parseInstant("2026-03-02T07:00:40Z")));

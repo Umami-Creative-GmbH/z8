@@ -30,6 +30,8 @@ export interface NewProjectValues {
 	customerId: string | null;
 	/** Billable Time (#900): whether new work starts billable; needs a customer. Absent is off. */
 	billableDefault?: boolean;
+	/** Task requirement (#884). Absent is off. */
+	requiresTask?: boolean;
 	createdBy: string;
 }
 

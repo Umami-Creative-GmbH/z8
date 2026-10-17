@@ -67,6 +67,8 @@ const german: Record<string, string> = {
 	Task: "Aufgabe",
 	"Keep current task:": "Aktuelle Aufgabe beibehalten:",
 	"No task": "Keine Aufgabe",
+	"Task required": "Aufgabe erforderlich",
+	"Choose a task to clock out.": "Wählen Sie eine Aufgabe, um auszustempeln.",
 	"The chosen task was marked done.":
 		"Die gewählte Aufgabe wurde als erledigt markiert.",
 	"The chosen task belongs to another project.":

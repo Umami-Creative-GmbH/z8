@@ -36,6 +36,8 @@ import {
 	insertProjectManagers,
 } from "@/lib/projects/project-creation";
 import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
+// The narrow module, not the work records index: this action needs nothing else of it.
+import { clearProjectMissingTasks } from "@/lib/time-tracking/work-records/project-missing-tasks";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	projectBillableDefault,
@@ -75,6 +77,11 @@ export interface ProjectWithDetails {
 	deletedCustomerName: string | null;
 	/** Whether new work on the project starts as billable work (#900). */
 	billableDefault: boolean;
+	/**
+	 * The task requirement setting (#884). It applies only while the project has
+	 * an open task: readers use `lib/projects/task-requirement*` for that.
+	 */
+	requiresTask: boolean;
 	isActive: boolean;
 	createdAt: Date;
 	createdBy: string;
@@ -159,6 +166,15 @@ function keepTypedMutationError(error: DatabaseError) {
 		: error;
 }
 
+/** The requested task requirement (#884): undefined when not sent; anything but a boolean is invalid. */
+function projectRequiresTaskInput(requested: unknown) {
+	return requested === undefined || typeof requested === "boolean"
+		? Effect.succeed(requested)
+		: Effect.fail(
+				new ValidationError({ message: "Invalid task requirement", field: "requiresTask" }),
+			);
+}
+
 export interface CreateProjectInput {
 	organizationId: string;
 	name: string;
@@ -171,6 +187,8 @@ export interface CreateProjectInput {
 	customerId?: string;
 	/** Billable default (#900); only a project with a customer can have it on. */
 	billableDefault?: boolean;
+	/** Task requirement (#884); omitted = off. */
+	requiresTask?: boolean;
 	/** The dialog's custom field values (#818); required fields are enforced when present. */
 	customFieldValues?: CustomFieldValuesInput;
 }
@@ -186,6 +204,8 @@ export interface UpdateProjectInput {
 	customerId?: string | null;
 	/** Billable default (#900); never changes existing work. */
 	billableDefault?: boolean;
+	/** Task requirement (#884); never marks existing work. */
+	requiresTask?: boolean;
 	/** The dialog's custom field values (#818); required fields are enforced when present. */
 	customFieldValues?: CustomFieldValuesInput;
 }
@@ -371,6 +391,7 @@ export async function getProjects(
 						customerName: hasActiveCustomer ? (ownCustomer?.name ?? null) : null,
 						deletedCustomerName: hasActiveCustomer ? null : (ownCustomer?.name ?? null),
 						billableDefault: p.billableDefault,
+						requiresTask: p.requiresTask,
 						isActive: p.isActive,
 						createdAt: p.createdAt,
 						createdBy: p.createdBy,
@@ -460,6 +481,7 @@ export async function createProject(
 					current: false,
 					customerId: input.customerId || null,
 				});
+				const requiresTask = yield* projectRequiresTaskInput(input.requiresTask);
 
 				const created = yield* dbService
 					.query("project.create", async () => {
@@ -475,6 +497,7 @@ export async function createProject(
 								deadline: input.deadline || null,
 								customerId: input.customerId || null,
 								billableDefault,
+								requiresTask: requiresTask ?? false,
 								createdBy: session.user.id,
 							});
 
@@ -641,6 +664,13 @@ async function saveProjectChanges(
 				if (billableDefault !== existingProject.billableDefault) {
 					updateData.billableDefault = billableDefault;
 				}
+				// Whoever may edit the project may change its task requirement (#884).
+				const requiresTask = yield* projectRequiresTaskInput(input.requiresTask);
+				if (requiresTask !== undefined) updateData.requiresTask = requiresTask;
+				// Turning it off ends every missing-task marker on the project; turning it
+				// back on later restores none (#884, Projects ADR 0002). Whether this save
+				// turns it off is decided inside the guarded write, from the stored row.
+				const mayTurnTaskRequirementOff = requiresTask === false;
 
 				// Validate customerId if changing to a new customer
 				if (input.customerId) {
@@ -690,19 +720,36 @@ async function saveProjectChanges(
 							eq(project.id, projectId),
 							eq(project.organizationId, existingProject.organizationId),
 						);
-						if (input.status === undefined) {
+						if (input.status === undefined && !mayTurnTaskRequirementOff) {
 							await dbService.db.transaction(async (tx) => {
 								await tx.update(project).set(updateData).where(scopedProject);
 								await saveCustomFieldValues(tx);
 							});
 							return;
 						}
-						// The bookable lifecycle decides manual eligibility (#315).
+						// The bookable lifecycle decides manual eligibility (#315). The exclusive
+						// guard also drains every work transaction that could still mark work
+						// on this project before its markers are cleared (#884).
 						await withOrganizationConfigurationMutation(
 							db,
 							existingProject.organizationId,
 							async (tx) => {
+								// Decided from the row this write locks, never from the read before
+								// the guard: a concurrent save may have turned the requirement on.
+								const [stored] = mayTurnTaskRequirementOff
+									? await tx
+											.select({ requiresTask: project.requiresTask })
+											.from(project)
+											.where(scopedProject)
+											.for("no key update")
+									: [];
 								await tx.update(project).set(updateData).where(scopedProject);
+								if (stored?.requiresTask) {
+									await clearProjectMissingTasks(tx, {
+										organizationId: existingProject.organizationId,
+										projectId,
+									});
+								}
 								await saveCustomFieldValues(tx);
 							},
 						);

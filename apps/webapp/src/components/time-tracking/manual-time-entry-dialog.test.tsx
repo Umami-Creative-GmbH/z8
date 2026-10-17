@@ -139,13 +139,14 @@ vi.mock("@/components/time-tracking/task-selector", () => ({
 	}: {
 		onValueChange: (value: string | undefined) => void;
 		projectId: string | undefined;
-		projects: { id: string; tasks: { id: string; name: string }[] }[];
+		projects: { id: string; requiresTask?: boolean; tasks: { id: string; name: string }[] }[];
 		value?: string;
 	}) => {
-		const tasks = projects.find((project) => project.id === projectId)?.tasks ?? [];
+		const project = projects.find((choice) => choice.id === projectId);
+		const tasks = project?.tasks ?? [];
 		return tasks.length === 0 ? null : (
 			<select
-				aria-label="Task"
+				aria-label={project?.requiresTask ? "Task (required)" : "Task"}
 				onChange={(event) => onValueChange(event.target.value || undefined)}
 				value={value ?? ""}
 			>
@@ -1740,6 +1741,58 @@ describe("ManualTimeEntryDialog task picker (#874)", () => {
 		).toBeTruthy();
 		expect((screen.getByLabelText("Project") as HTMLSelectElement).value).toBe("project-1");
 		expect(screen.queryByLabelText("Task")).toBeNull();
+	});
+
+	describe("for a project that requires a task (#884)", () => {
+		function renderRequiring(manualCommandVersion: 1 | 2 = 1) {
+			const context = buildTargetContext(undefined, { manualCommandVersion });
+			return renderDialog(
+				{
+					open: true,
+					hideTrigger: true,
+					defaultDate: "2026-05-12",
+					defaultClockInTime: "09:00",
+					defaultClockOutTime: "12:00",
+				},
+				{
+					manualCommandVersion,
+					projects: context.projects.map((project) =>
+						project.id === "project-1" ? { ...project, requiresTask: true } : project,
+					),
+				},
+			);
+		}
+
+		it("marks the task field required", () => {
+			renderRequiring();
+
+			fireEvent.change(screen.getByLabelText("Project"), { target: { value: "project-1" } });
+
+			expect(screen.getByLabelText("Task (required)")).toBeTruthy();
+		});
+
+		it.each([1, 2] as const)(
+			"words an entry refused for want of a task for command version %s",
+			async (manualCommandVersion) => {
+				// As both commands answer it; version 2 also names the rejection.
+				createManualTimeEntry.mockResolvedValue({
+					success: false,
+					error: "Server wording",
+					code: "task_required",
+					...(manualCommandVersion === 2 ? { rejection: { reason: "task_required" } } : {}),
+				});
+				renderRequiring(manualCommandVersion);
+
+				fireEvent.change(screen.getByLabelText("Project"), { target: { value: "project-1" } });
+				submit();
+
+				await waitFor(() =>
+					expect(toastError).toHaveBeenCalledWith(
+						"This project requires a task. Choose one and try again.",
+					),
+				);
+			},
+		);
 	});
 });
 describe("ManualTimeEntryDialog vehicle use pre-fill and warnings (#1121)", () => {

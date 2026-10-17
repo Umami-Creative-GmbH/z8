@@ -484,6 +484,8 @@ export async function getWorkPeriodsForMonth(
 							taskName: bookedTask.name,
 							taskState: bookedTask.state,
 						}),
+						// Missing task (#884): accepted without the task its project required.
+						...(proj && period.missingTask && { missingTask: true as const }),
 						// Surcharge fields (only included if surcharge calculation exists)
 						...(surcharge && {
 							surchargeMinutes,

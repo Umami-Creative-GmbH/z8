@@ -11,6 +11,7 @@ const periodColumns = {
 	projectId: PROJECT,
 	taskId: TASK,
 	isBillable: true,
+	missingTask: false,
 	workCategoryId: CATEGORY,
 	workLocationType: "home" as const,
 	vehicleKind: "organization" as const,
@@ -37,6 +38,7 @@ const projectAllocation = {
 	costCenterId: null,
 	weightPercent: 100,
 	isBillable: true,
+	missingTask: false,
 };
 
 describe("WorkAttribution round trip", () => {
@@ -104,6 +106,7 @@ describe("WorkAttribution canonical shape", () => {
 		costCenterId: COST_CENTER,
 		weightPercent: 40,
 		isBillable: false,
+		missingTask: false,
 	};
 
 	it("stores category, location and vehicle use on the canonical detail", () => {
@@ -139,6 +142,7 @@ describe("WorkAttribution canonical shape", () => {
 				costCenterId: null,
 				weightPercent: 100,
 				isBillable: true,
+				missingTask: false,
 			},
 		]);
 		expect(allocations[0]).toBe(costCenterAllocation);
@@ -356,6 +360,7 @@ describe("WorkAttribution equality", () => {
 			projectId: null,
 			taskId: null,
 			isBillable: false,
+			missingTask: false,
 			workCategoryId: null,
 			workLocationType: null,
 			vehicleKind: null,
@@ -373,5 +378,83 @@ describe("WorkAttribution equality", () => {
 			"work_location",
 			"vehicle_use",
 		]);
+	});
+});
+
+describe("WorkAttribution missing task (#884)", () => {
+	const OTHER_PROJECT = "00000000-0000-4000-8000-0000000000cc";
+	const withoutTask = { ...periodColumns, taskId: null, missingTask: false };
+	const marked = { ...withoutTask, missingTask: true };
+	const markedAllocation = { ...projectAllocation, taskId: null, missingTask: true };
+
+	it("reads the marker from both representations and writes it back", () => {
+		const fromPeriod = WorkAttribution.fromWorkPeriod(marked);
+
+		expect(fromPeriod.missingTask).toBe(true);
+		expect(fromPeriod.workPeriodColumns()).toEqual(marked);
+		expect(fromPeriod.canonicalAllocations([])).toEqual([markedAllocation]);
+		expect(
+			WorkAttribution.fromCanonical(canonicalDetail, [markedAllocation]).equals(fromPeriod),
+		).toBe(true);
+	});
+
+	it("counts a marker disagreement as a task difference", () => {
+		const fromPeriod = WorkAttribution.fromWorkPeriod(marked);
+		const unmarkedCanonical = WorkAttribution.fromCanonical(canonicalDetail, [
+			{ ...markedAllocation, missingTask: false },
+		]);
+
+		expect(fromPeriod.differences(unmarkedCanonical)).toEqual(["task"]);
+	});
+
+	it("marks project work without a task when the patch says so", () => {
+		expect(
+			WorkAttribution.fromWorkPeriod(withoutTask).apply({ missingTask: true }).missingTask,
+		).toBe(true);
+	});
+
+	it("never marks work with a task or without a project", () => {
+		const tasked = WorkAttribution.fromWorkPeriod({ ...periodColumns, missingTask: false });
+		expect(tasked.apply({ missingTask: true }).missingTask).toBe(false);
+		const unbooked = WorkAttribution.fromWorkPeriod({
+			...withoutTask,
+			projectId: null,
+			isBillable: false,
+		});
+		expect(unbooked.apply({ missingTask: true }).missingTask).toBe(false);
+	});
+
+	it("keeps the marker through writes that keep the project and leave the task out", () => {
+		const base = WorkAttribution.fromWorkPeriod(marked);
+
+		expect(base.apply({}).missingTask).toBe(true);
+		expect(base.apply({ billable: false, workCategoryId: null }).missingTask).toBe(true);
+		expect(
+			base.apply({ project: { projectId: PROJECT, billableDefault: false } }).missingTask,
+		).toBe(true);
+	});
+
+	it("clears the marker once a task is booked or the project changes or clears", () => {
+		const base = WorkAttribution.fromWorkPeriod(marked);
+
+		expect(base.apply({ task: TASK }).missingTask).toBe(false);
+		expect(
+			base.apply({ project: { projectId: OTHER_PROJECT, billableDefault: false } }).missingTask,
+		).toBe(false);
+		expect(base.apply({ project: null, billable: false }).missingTask).toBe(false);
+		expect(base.apply({ missingTask: false }).missingTask).toBe(false);
+	});
+
+	it("refuses a stored marker on work with a task or without a project", () => {
+		expect(() => WorkAttribution.fromWorkPeriod({ ...periodColumns, missingTask: true })).toThrow(
+			expect.objectContaining({ reason: "missing_task_with_task" }),
+		);
+		expect(() =>
+			WorkAttribution.fromWorkPeriod({
+				...marked,
+				projectId: null,
+				isBillable: false,
+			}),
+		).toThrow(expect.objectContaining({ reason: "missing_task_without_project" }));
 	});
 });

@@ -1067,6 +1067,32 @@ describe("CalendarView", () => {
 		expect(screen.getByRole("heading", { name: "Clock out employee?" })).toBeTruthy();
 	});
 
+	it("words an on-behalf clock-out refused for want of a task (#884)", async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(
+			new Response(
+				JSON.stringify({
+					error: "Server wording",
+					code: "attribution_not_allowed",
+					field: "taskId",
+					reason: "task_required",
+				}),
+				{ status: 422, headers: { "Content-Type": "application/json" } },
+			),
+		);
+
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+
+		await waitFor(() => {
+			expect(toastError).toHaveBeenCalledWith(
+				"This project requires a task. Choose one and try again.",
+			);
+		});
+		expect(screen.getByRole("heading", { name: "Clock out employee?" })).toBeTruthy();
+	});
+
 	it("resends the same closure identity when retrying after a failed response", async () => {
 		vi.mocked(fetch)
 			.mockResolvedValueOnce(

@@ -875,6 +875,7 @@ async function reviewedAllocations(
 			costCenterId: timeRecordAllocation.costCenterId,
 			weightPercent: timeRecordAllocation.weightPercent,
 			isBillable: timeRecordAllocation.isBillable,
+			missingTask: timeRecordAllocation.missingTask,
 		})
 		.from(timeRecordAllocation)
 		.where(

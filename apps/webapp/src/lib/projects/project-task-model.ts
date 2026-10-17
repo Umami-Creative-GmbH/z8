@@ -45,7 +45,9 @@ export type ProjectTaskRefusalReason =
 	| "task_not_found"
 	| "task_other_project"
 	| "task_done"
-	| "project_not_bookable";
+	| "project_not_bookable"
+	/** The project's task requirement is active and the booking names no task (#884). */
+	| "task_required";
 
 /** The Tolgee key and English default each surface shows for a task refusal. */
 const PROJECT_TASK_REFUSAL_MESSAGES = {
@@ -58,6 +60,10 @@ const PROJECT_TASK_REFUSAL_MESSAGES = {
 	project_not_bookable: [
 		"timeTracking.errors.taskProjectNotBookable",
 		"Time can no longer be booked to this task's project",
+	],
+	task_required: [
+		"timeTracking.errors.taskRequired",
+		"This project requires a task. Choose one and try again.",
 	],
 } as const satisfies Record<ProjectTaskRefusalReason, readonly [string, string]>;
 
