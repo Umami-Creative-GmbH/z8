@@ -5,9 +5,11 @@ vi.mock("next/server", () => ({
 }));
 
 vi.mock("./organization-page-client", () => ({
-	default: ({ canCreateOrganizations }: { canCreateOrganizations: boolean }) => (
-		<div data-can-create-organizations={String(canCreateOrganizations)} />
-	),
+	default: ({
+		canCreateOrganizations,
+	}: {
+		canCreateOrganizations: boolean;
+	}) => <div data-can-create-organizations={String(canCreateOrganizations)} />,
 }));
 
 async function renderPageWithOrganizationCreationFlag(
