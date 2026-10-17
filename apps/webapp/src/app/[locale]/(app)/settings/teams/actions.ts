@@ -7,6 +7,7 @@ import { revalidateTag } from "next/cache";
 import * as z from "zod";
 import { type user as authUser, member } from "@/db/auth-schema";
 import { employee, team, teamMembership, teamPermissions } from "@/db/schema";
+import { vacationPolicyWriteFailure } from "@/lib/absences/vacation-policy-assignment-write";
 import type { TeamPermissions as ScopedPermissions } from "@/lib/authorization";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { CACHE_TAGS } from "@/lib/cache/tags";
@@ -14,6 +15,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
 	type AnyAppError,
 	AuthorizationError,
+	DatabaseError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
@@ -658,7 +660,10 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 				// organization, so it takes the organization-wide protection.
 				const deleted = yield* dbService.query("deleteTeam", () =>
 					withAuthorizationMutation(
-						{ organizationId: targetTeam.organizationId, organizationWide: true },
+						{
+							organizationId: targetTeam.organizationId,
+							organizationWide: true,
+						},
 						async (tx) => {
 							const members = await tx.query.teamMembership.findMany({
 								where: and(
@@ -717,11 +722,11 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 /**
  * Get team details with members
  */
-export async function getTeam(
-	teamId: string,
-): Promise<
+export async function getTeam(teamId: string): Promise<
 	ServerActionResult<
-		ScopedTeam & { employees?: Array<typeof employee.$inferSelect & { user: unknown }> }
+		ScopedTeam & {
+			employees?: Array<typeof employee.$inferSelect & { user: unknown }>;
+		}
 	>
 > {
 	const effect = Effect.gen(function* () {
@@ -1034,7 +1039,10 @@ export async function addTeamMember(
 				// the employee's configuration/access protection.
 				yield* dbService.query("addTeamMembership", () =>
 					withAuthorizationMutation(
-						{ organizationId: targetTeam.organizationId, employeeIds: [targetEmployee.id] },
+						{
+							organizationId: targetTeam.organizationId,
+							employeeIds: [targetEmployee.id],
+						},
 						async (tx) => {
 							await tx
 								.insert(teamMembership)
@@ -1087,7 +1095,11 @@ export async function addTeamMember(
 							message: String(error),
 						});
 						logger.error({ error, teamId, employeeId }, "Failed to add team member");
-						return yield* Effect.fail(error as AnyAppError);
+						return yield* Effect.fail(
+							error instanceof DatabaseError
+								? vacationPolicyWriteFailure(error)
+								: (error as AnyAppError),
+						);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -1191,7 +1203,10 @@ export async function removeTeamMember(
 
 				yield* dbService.query("removeTeamMembership", () =>
 					withAuthorizationMutation(
-						{ organizationId: targetTeam.organizationId, employeeIds: [employeeId] },
+						{
+							organizationId: targetTeam.organizationId,
+							employeeIds: [employeeId],
+						},
 						async (tx) => {
 							await tx
 								.delete(teamMembership)
@@ -1267,7 +1282,11 @@ export async function removeTeamMember(
 							message: String(error),
 						});
 						logger.error({ error, teamId, employeeId }, "Failed to remove team member");
-						return yield* Effect.fail(error as AnyAppError);
+						return yield* Effect.fail(
+							error instanceof DatabaseError
+								? vacationPolicyWriteFailure(error)
+								: (error as AnyAppError),
+						);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),

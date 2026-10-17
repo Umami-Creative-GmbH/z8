@@ -12,12 +12,11 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "./timestamp";
-
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
 import { holidayPresetAssignmentTypeEnum } from "./enums";
-import { employee, team } from "./organization";
+import { employee } from "./organization";
+import { currentTimestamp } from "./timestamp";
 
 // ============================================
 // VACATION ALLOWANCE MANAGEMENT
@@ -190,11 +189,15 @@ export const vacationPolicyAssignment = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
-		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
+		teamId: uuid("team_id"),
 		employeeId: uuid("employee_id").references(() => employee.id, {
 			onDelete: "cascade",
 		}),
 		priority: integer("priority").default(0).notNull(), // 0=org, 1=team, 2=employee
+		effectiveStartDate: date("effective_start_date").default(sql`NULL`).notNull(),
+		effectiveEndDate: date("effective_end_date"),
+		legacyBaseline: boolean("legacy_baseline").default(false).notNull(),
+		reviewedBackdate: boolean("reviewed_backdate").default(false).notNull(),
 		effectiveFrom: timestamp("effective_from"),
 		effectiveUntil: timestamp("effective_until"),
 		isActive: boolean("is_active").default(true).notNull(),
@@ -211,17 +214,6 @@ export const vacationPolicyAssignment = pgTable(
 		index("vacationPolicyAssignment_organizationId_idx").on(table.organizationId),
 		index("vacationPolicyAssignment_teamId_idx").on(table.teamId),
 		index("vacationPolicyAssignment_employeeId_idx").on(table.employeeId),
-		// One org default per organization per policy
-		uniqueIndex("vacationPolicyAssignment_org_default_idx")
-			.on(table.organizationId, table.assignmentType)
-			.where(sql`assignment_type = 'organization' AND is_active = true`),
-		// One policy assignment per team
-		uniqueIndex("vacationPolicyAssignment_team_idx")
-			.on(table.teamId)
-			.where(sql`team_id IS NOT NULL AND is_active = true`),
-		// One policy assignment per employee
-		uniqueIndex("vacationPolicyAssignment_employee_idx")
-			.on(table.employeeId)
-			.where(sql`employee_id IS NOT NULL AND is_active = true`),
+		// Overlaps are prevented by date-range exclusion constraints in migration 0261.
 	],
 );
