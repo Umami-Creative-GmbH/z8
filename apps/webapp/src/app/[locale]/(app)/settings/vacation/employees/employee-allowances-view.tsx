@@ -1,12 +1,19 @@
-import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 import { IconEdit, IconUser } from "@tabler/icons-react";
+import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 import {
 	OverdrawnVacationBadge,
 	VacationAllowanceExplanation,
 } from "@/components/absences/vacation-allowance-explanation";
+import { VacationPolicyConfigurationMessage } from "@/components/absences/vacation-policy-configuration-message";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -16,7 +23,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
-import type { VacationBalance } from "@/lib/absences/types";
+import type {
+	VacationBalance,
+	VacationBalanceConfiguration,
+} from "@/lib/absences/types";
 import type { VacationAdjustmentSums } from "@/lib/absences/vacation-adjustments";
 import { Link } from "@/navigation";
 import type { getTranslate } from "@/tolgee/server";
@@ -48,7 +58,9 @@ interface EmployeeWithAllowance {
 	team: { name: string } | null;
 	vacationAllowances: EmployeeAllowance[];
 	managers?: EmployeeManager[];
-	/** The server-side balance of the year (#1111); null without a company default policy. */
+	vacationConfiguration?: VacationBalanceConfiguration | null;
+	vacationPolicy?: { name: string; defaultAnnualDays: string } | null;
+	/** The server-side balance of the year (#1111); null when policy configuration is unavailable. */
 	vacationBalance: VacationBalance | null;
 	/** The balance's manual and accrual adjustments; null without a balance. */
 	vacationAdjustments: VacationAdjustmentSums | null;
@@ -160,9 +172,13 @@ function EmployeeAllowancesCard({
 						</CardDescription>
 					</div>
 					<Badge variant="secondary">
-						{t("settings.vacation.employees.employeeCount", "{count} employees", {
-							count: employees.length,
-						})}
+						{t(
+							"settings.vacation.employees.employeeCount",
+							"{count} employees",
+							{
+								count: employees.length,
+							},
+						)}
 					</Badge>
 				</div>
 			</CardHeader>
@@ -220,13 +236,29 @@ function EmployeeAllowancesTable({
 		["settings.vacation.employees.table.policy", "Policy", ""],
 		["settings.vacation.employees.table.team", "Team", ""],
 		["settings.vacation.employees.table.managers", "Managers", ""],
-		["settings.vacation.employees.table.defaultDays", "Default Days", "text-right"],
-		["settings.vacation.employees.table.customDays", "Custom Days", "text-right"],
+		[
+			"settings.vacation.employees.table.defaultDays",
+			"Default Days",
+			"text-right",
+		],
+		[
+			"settings.vacation.employees.table.customDays",
+			"Custom Days",
+			"text-right",
+		],
 		["settings.vacation.employees.table.allowance", "Allowance", "text-right"],
 		["settings.vacation.employees.table.carryover", "Carryover", "text-right"],
-		["settings.vacation.employees.table.adjustments", "Adjustments", "text-right"],
+		[
+			"settings.vacation.employees.table.adjustments",
+			"Adjustments",
+			"text-right",
+		],
 		["settings.vacation.employees.table.accrued", "Accrued", "text-right"],
-		["settings.vacation.employees.table.totalAvailable", "Total Available", "text-right"],
+		[
+			"settings.vacation.employees.table.totalAvailable",
+			"Total Available",
+			"text-right",
+		],
 		["settings.vacation.employees.table.actions", "Actions", "text-right"],
 	] as const;
 
@@ -278,8 +310,7 @@ function EmployeeAllowanceRow({
 	const customDays = allowance?.customAnnualDays
 		? Number.parseFloat(allowance.customAnnualDays)
 		: null;
-	// The server-side balance (#1111): the same numbers as the employee's Absences page. Without a
-	// company default policy for the year there is none, and its columns stay empty.
+	// Unavailable policy configuration never substitutes a zero-day allowance.
 	const balance = employee.vacationBalance;
 	const adjustments = employee.vacationAdjustments;
 
@@ -296,26 +327,29 @@ function EmployeeAllowanceRow({
 					/>
 					<div>
 						<div className="font-medium">{employee.user.name}</div>
-						<div className="text-xs text-muted-foreground">{employee.user.email}</div>
+						<div className="text-xs text-muted-foreground">
+							{employee.user.email}
+						</div>
 					</div>
 				</div>
 			</TableCell>
 			<TableCell>
-				{policyAssignment ? (
-					<Badge variant="outline">{policyAssignment.policy?.name}</Badge>
-				) : (
-					<span className="text-muted-foreground text-sm">
-						{t("settings.vacation.employees.defaultPolicy", "Default")}
-					</span>
-				)}
+				<EmployeeVacationPolicy
+					employee={employee}
+					policyAssignment={policyAssignment}
+					t={t}
+				/>
 			</TableCell>
 			<TableCell>{employee.team?.name || "—"}</TableCell>
 			<TableCell>
 				<EmployeeManagers managers={employee.managers} t={t} />
 			</TableCell>
 			<TableCell className="text-right tabular-nums">
-				<span className={`text-muted-foreground${customDays === null ? "" : " line-through"}`}>
-					{defaultDays}
+				<span
+					className={`text-muted-foreground${customDays === null ? "" : " line-through"}`}
+				>
+					{employee.vacationPolicy?.defaultAnnualDays ??
+						(employee.vacationConfiguration ? "—" : defaultDays)}
 				</span>
 			</TableCell>
 			<TableCell className="text-right tabular-nums">
@@ -354,7 +388,9 @@ function EmployeeAllowanceRow({
 			</TableCell>
 			<TableCell className="text-right font-semibold tabular-nums">
 				{balance ? balance.totalDays : <EmptyCell />}
-				<PreviouslyTakenVacationExplanation days={balance?.previouslyTakenDays} />
+				<PreviouslyTakenVacationExplanation
+					days={balance?.previouslyTakenDays}
+				/>
 				{balance && balance.overdrawnDays > 0 && (
 					<div className="mt-1 font-normal">
 						<OverdrawnVacationBadge overdrawnDays={balance.overdrawnDays} />
@@ -373,6 +409,33 @@ function EmployeeAllowanceRow({
 	);
 }
 
+function EmployeeVacationPolicy({
+	employee,
+	policyAssignment,
+	t,
+}: Pick<EmployeeAllowanceRowProps, "employee" | "policyAssignment" | "t">) {
+	const configuration = employee.vacationConfiguration;
+	if (
+		configuration?.status === "missing" ||
+		configuration?.status === "conflict"
+	) {
+		return (
+			<VacationPolicyConfigurationMessage
+				configuration={configuration}
+				className="whitespace-normal text-xs text-muted-foreground"
+			/>
+		);
+	}
+	const name = employee.vacationPolicy?.name ?? policyAssignment?.policy?.name;
+	return name ? (
+		<Badge variant="outline">{name}</Badge>
+	) : (
+		<span className="text-muted-foreground text-sm">
+			{t("settings.vacation.employees.defaultPolicy", "Default")}
+		</span>
+	);
+}
+
 function EmptyCell() {
 	return <span className="text-muted-foreground">—</span>;
 }
@@ -388,7 +451,13 @@ function SignedDays({ days }: { days: number }) {
 	);
 }
 
-function EmployeeManagers({ managers, t }: { managers?: EmployeeManager[]; t: Translate }) {
+function EmployeeManagers({
+	managers,
+	t,
+}: {
+	managers?: EmployeeManager[];
+	t: Translate;
+}) {
 	if (!managers || managers.length === 0) {
 		return <span className="text-muted-foreground">—</span>;
 	}

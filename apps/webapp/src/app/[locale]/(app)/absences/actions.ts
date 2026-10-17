@@ -15,6 +15,7 @@ import {
 	getAbsenceEntries as getAbsenceEntriesAction,
 	getHolidays as getHolidaysAction,
 	getVacationBalance as getVacationBalanceAction,
+	getVacationBalanceResult as getVacationBalanceResultAction,
 } from "./queries";
 import {
 	requestAbsenceEffect as requestAbsenceAction,
@@ -111,6 +112,18 @@ export async function getVacationBalance(
 	return timezone === undefined
 		? getVacationBalanceAction(employeeId, year)
 		: getVacationBalanceAction(employeeId, year, timezone);
+}
+
+export async function getVacationBalanceResult(
+	employeeId: string,
+	year: number,
+	timezone?: string,
+) {
+	const currentEmployee = await getCurrentEmployeeAction();
+	if (!currentEmployee || currentEmployee.id !== employeeId) {
+		return { balance: null, configuration: null };
+	}
+	return getVacationBalanceResultAction(employeeId, year, timezone);
 }
 
 export async function getAbsencePlanPreview(

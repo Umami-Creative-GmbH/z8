@@ -2,7 +2,10 @@
 
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { VacationBalance } from "@/lib/absences/types";
+import type {
+	VacationBalance,
+	VacationBalanceConfiguration,
+} from "@/lib/absences/types";
 import { render } from "@/test/render-with-translations";
 import { EmployeeAllowancesView } from "./employee-allowances-view";
 
@@ -14,7 +17,9 @@ vi.mock("@/navigation", () => ({
 vi.mock("@/components/user-avatar", () => ({ UserAvatar: () => null }));
 
 const t = ((_key: string, fallback: string, params?: Record<string, unknown>) =>
-	fallback.replace(/\{(\w+)\}/g, (_match, name: string) => String(params?.[name] ?? ""))) as never;
+	fallback.replace(/\{(\w+)\}/g, (_match, name: string) =>
+		String(params?.[name] ?? ""),
+	)) as never;
 
 const balance: VacationBalance = {
 	year: 2026,
@@ -25,11 +30,16 @@ const balance: VacationBalance = {
 	remainingDays: 23,
 	overdrawnDays: 0,
 	carryoverDays: 1,
-	allowance: { fullAllowance: 20, days: 20, reason: { kind: "none", cause: "full_year" } },
+	allowance: {
+		fullAllowance: 20,
+		days: 20,
+		reason: { kind: "none", cause: "full_year" },
+	},
 };
 
 function renderRow(input: {
 	vacationBalance: VacationBalance | null;
+	vacationConfiguration?: VacationBalanceConfiguration;
 	vacationAdjustments: { manual: number; accrual: number } | null;
 }) {
 	render(
@@ -72,11 +82,47 @@ describe("EmployeeAllowancesView", () => {
 		expect(cell("Total Available")).toBe("23");
 	});
 
-	it("shows no balance figures without a company default policy for the year", () => {
-		const cell = renderRow({ vacationBalance: null, vacationAdjustments: null });
+	it("shows no balance figures when policy configuration is unavailable", () => {
+		const cell = renderRow({
+			vacationBalance: null,
+			vacationAdjustments: null,
+		});
 
-		for (const column of ["Allowance", "Carryover", "Adjustments", "Accrued", "Total Available"]) {
+		for (const column of [
+			"Allowance",
+			"Carryover",
+			"Adjustments",
+			"Accrued",
+			"Total Available",
+		]) {
 			expect(cell(column)).toBe("—");
 		}
 	});
+	it.each(["missing", "conflict"] as const)(
+		"shows %s policy configuration without vacation figures",
+		(status) => {
+			const cell = renderRow({
+				vacationBalance: null,
+				vacationConfiguration: {
+					status,
+					periods: [{ startDate: "2026-01-01", endDate: "2026-12-31" }],
+				},
+				vacationAdjustments: null,
+			});
+			expect(cell("Policy")).toContain(
+				status === "missing"
+					? "Missing vacation policy"
+					: "Conflicting vacation policies",
+			);
+			for (const column of [
+				"Allowance",
+				"Carryover",
+				"Adjustments",
+				"Accrued",
+				"Total Available",
+			]) {
+				expect(cell(column)).toBe("—");
+			}
+		},
+	);
 });

@@ -1849,6 +1849,34 @@
       "when": 1807459200000,
       "tag": "0263_approved_absence_cancelled",
       "breakpoints": true
+    },
+    {
+      "idx": 264,
+      "version": "7",
+      "when": 1807545600000,
+      "tag": "0264_vacation_policy_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 265,
+      "version": "7",
+      "when": 1807632000000,
+      "tag": "0265_vacation_policy_calculation_gate",
+      "breakpoints": true
+    },
+    {
+      "idx": 266,
+      "version": "7",
+      "when": 1807718400000,
+      "tag": "0266_vacation_carryover_transfer",
+      "breakpoints": true
+    },
+    {
+      "idx": 267,
+      "version": "7",
+      "when": 1807804800000,
+      "tag": "0267_activate_vacation_policy_calculations",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { ProratedAllowance } from "@/lib/absences/prorated-allowance";
+import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
+import { workingDaysFrom } from "@/lib/absences/working-days";
 import {
 	getManagerAbsenceCalendar,
 	getManagerAbsenceEmployees,
@@ -17,18 +20,25 @@ import {
 	validateManagerAbsenceSickDetail,
 	validateRecordAbsenceDateRange,
 } from "./manager-absence-action-helpers";
-import type { ProratedAllowance } from "@/lib/absences/prorated-allowance";
-import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
-import { workingDaysFrom } from "@/lib/absences/working-days";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
-import { canActorManageTarget, canUseManagerAbsencePage } from "./manager-absence-permissions";
+import {
+	canActorManageTarget,
+	canUseManagerAbsencePage,
+} from "./manager-absence-permissions";
 import type { ManagerAbsenceListParams } from "./manager-absence-types";
 
 /** The manager row metrics over the balance every reader computes (`calculateVacationBalance`). */
 function managerMetricsFor(
-	input: Omit<Parameters<typeof calculateManagerAbsenceMetrics>[0], "balance"> & {
-		allowance: Parameters<typeof calculateVacationBalance>[0]["organizationAllowance"] | null;
-		employeeAllowance: Parameters<typeof calculateVacationBalance>[0]["employeeAllowance"];
+	input: Omit<
+		Parameters<typeof calculateManagerAbsenceMetrics>[0],
+		"balance"
+	> & {
+		allowance:
+			| Parameters<typeof calculateVacationBalance>[0]["organizationAllowance"]
+			| null;
+		employeeAllowance: Parameters<
+			typeof calculateVacationBalance
+		>[0]["employeeAllowance"];
 		proratedAllowance?: ProratedAllowance;
 		adjustmentTotal?: number;
 	},
@@ -242,7 +252,9 @@ describe("manager absence server action helpers", () => {
 			year: 1999,
 		});
 
-		expect(normalizeManagerAbsenceListParams({ page: 2, pageSize: 50 })).toMatchObject({
+		expect(
+			normalizeManagerAbsenceListParams({ page: 2, pageSize: 50 }),
+		).toMatchObject({
 			page: 2,
 			pageSize: 50,
 		});
@@ -334,7 +346,9 @@ describe("manager absence server action helpers", () => {
 				startTime: "",
 				endTime: "",
 			}),
-		).toBe("Cannot end in the morning if starting in the afternoon on the same day");
+		).toBe(
+			"Cannot end in the morning if starting in the afternoon on the same day",
+		);
 	});
 
 	it("builds approved canonical absence record values", () => {
@@ -386,8 +400,12 @@ describe("manager absence server action helpers", () => {
 			createdBy: "user-1",
 		});
 
-		expect(values.timeRecord.startAt.toISOString()).toBe("2026-05-15T22:00:00.000Z");
-		expect(values.timeRecord.endAt.toISOString()).toBe("2026-05-16T02:00:00.000Z");
+		expect(values.timeRecord.startAt.toISOString()).toBe(
+			"2026-05-15T22:00:00.000Z",
+		);
+		expect(values.timeRecord.endAt.toISOString()).toBe(
+			"2026-05-16T02:00:00.000Z",
+		);
 		expect(values.timeRecord.durationMinutes).toBe(240);
 		expect(values.timeRecordAbsence).toMatchObject({
 			startPeriod: "am",
@@ -396,7 +414,9 @@ describe("manager absence server action helpers", () => {
 	});
 
 	it("uses deterministic employee advisory lock keys and conflict messages", () => {
-		expect(managerAbsenceAdvisoryLockKey("employee-1")).toBe("manager_absence:employee-1");
+		expect(managerAbsenceAdvisoryLockKey("employee-1")).toBe(
+			"manager_absence:employee-1",
+		);
 		expect(getAbsenceOverlapConflictMessage("pending")).toBe(
 			"Absence request overlaps with an existing pending request",
 		);
@@ -406,8 +426,12 @@ describe("manager absence server action helpers", () => {
 	});
 
 	it("clamps requested pages after total rows are known", () => {
-		expect(clampManagerAbsencePage({ requestedPage: 4, pageSize: 10, total: 21 })).toBe(3);
-		expect(clampManagerAbsencePage({ requestedPage: 2, pageSize: 10, total: 0 })).toBe(1);
+		expect(
+			clampManagerAbsencePage({ requestedPage: 4, pageSize: 10, total: 21 }),
+		).toBe(3);
+		expect(
+			clampManagerAbsencePage({ requestedPage: 2, pageSize: 10, total: 0 }),
+		).toBe(1);
 	});
 
 	it("clears inaccessible team selections while preserving visible metadata", () => {
@@ -421,7 +445,9 @@ describe("manager absence server action helpers", () => {
 		});
 
 		expect(
-			buildInaccessibleTeamAbsenceListResult(normalized, [{ id: "team-ops", name: "Operations" }]),
+			buildInaccessibleTeamAbsenceListResult(normalized, [
+				{ id: "team-ops", name: "Operations" },
+			]),
 		).toEqual({
 			rows: [],
 			teams: [{ id: "team-ops", name: "Operations" }],
@@ -449,9 +475,12 @@ describe("manager absence server action helpers", () => {
 
 describe("manager sick absence detail validation", () => {
 	it("requires sick detail for manager-recorded sick absence", () => {
-		expect(validateManagerAbsenceSickDetail({ categoryType: "sick", sickDetail: undefined })).toBe(
-			"Sick detail is required for sick absences",
-		);
+		expect(
+			validateManagerAbsenceSickDetail({
+				categoryType: "sick",
+				sickDetail: undefined,
+			}),
+		).toBe("Sick detail is required for sick absences");
 	});
 
 	it("rejects sick detail for manager-recorded vacation", () => {
@@ -885,7 +914,7 @@ describe("manager absence metrics", () => {
 		});
 	});
 
-	it("returns zero vacation metrics without an allowance while retaining sick metrics", () => {
+	it("returns unavailable vacation metrics without an allowance while retaining sick metrics", () => {
 		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: null,
@@ -916,11 +945,11 @@ describe("manager absence metrics", () => {
 		});
 
 		expect(metrics).toEqual({
-			vacationAllowance: 0,
-			usedVacationDays: 0,
-			pendingVacationDays: 0,
-			remainingVacationDays: 0,
-			overdrawnVacationDays: 0,
+			vacationAllowance: null,
+			usedVacationDays: null,
+			pendingVacationDays: null,
+			remainingVacationDays: null,
+			overdrawnVacationDays: null,
 			sickDays: 1,
 		});
 	});

@@ -5,20 +5,21 @@
  * Designed to run via cron (Vercel Cron, external scheduler, etc.)
  */
 
-import { DateTime } from "luxon";
 import { db } from "@/db";
+import type { VacationBalanceConfiguration } from "@/lib/absences/types";
 import {
 	type CarryoverSummary,
 	calculateAnnualCarryover,
 	type ExpiryResult,
 	expireCarryoverDays,
 } from "@/lib/absences/vacation.service";
-import { accrueDueVacationPeriods, accrueVacationPeriods } from "@/lib/absences/vacation-accrual";
-import { isAccrualPolicy } from "@/lib/absences/vacation-policy-settings";
+import {
+	accrueDueVacationPeriods,
+	accrueVacationPeriods,
+} from "@/lib/absences/vacation-accrual";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
-import { getVacationAllowance } from "@/lib/query/vacation.queries";
 
 const logger = createLogger("carryover-automation");
 
@@ -49,6 +50,11 @@ export interface AccrualJobResult {
 	organizationsProcessed: number;
 	totalEmployeesProcessed: number;
 	totalDaysAccrued: number;
+	skippedEmployees: Array<{
+		organizationId: string;
+		employeeId: string;
+		configuration: VacationBalanceConfiguration;
+	}>;
 	errors: string[];
 }
 
@@ -56,9 +62,11 @@ export interface AccrualJobResult {
  * Run annual carryover for all organizations
  * Should be scheduled to run on January 1st
  */
-export async function runAnnualCarryover(targetYear?: number): Promise<CarryoverJobResult> {
+export async function runAnnualCarryover(
+	targetYear?: number,
+): Promise<CarryoverJobResult> {
 	const startedAt = new Date();
-	const currentDate = DateTime.fromJSDate(startedAt);
+	const currentDate = instantFromDate(startedAt);
 	const fromYear = targetYear;
 
 	logger.info({ fromYear }, "Starting annual carryover job");
@@ -72,76 +80,57 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 
 		const organizationResults = await Promise.all(
 			organizations.map(async (org) => {
-			try {
-				const timezone = org.timezone || "UTC";
-				const zonedCurrentDate = currentDate.setZone(timezone);
-				const isCalendarYearStart = zonedCurrentDate.month === 1 && zonedCurrentDate.day === 1;
-				const organizationFromYear = fromYear ?? zonedCurrentDate.year - 1;
-				logger.info(
-					{ organizationId: org.id, organizationName: org.name },
-					"Processing organization",
-				);
+				try {
+					const timezone = org.timezone || "UTC";
+					const zonedCurrentDate = currentDate.toZonedDateTimeISO(timezone);
+					const isCalendarYearStart =
+						zonedCurrentDate.month === 1 && zonedCurrentDate.day === 1;
+					const organizationFromYear = fromYear ?? zonedCurrentDate.year - 1;
+					logger.info(
+						{ organizationId: org.id, organizationName: org.name },
+						"Processing organization",
+					);
 
-				if (!fromYear && !isCalendarYearStart) {
-					logger.info({ organizationId: org.id }, "Carryover not due for organization");
-					return null;
-				}
+					if (!fromYear && !isCalendarYearStart) {
+						logger.info(
+							{ organizationId: org.id },
+							"Carryover not due for organization",
+						);
+						return null;
+					}
 
-				// Check if organization has a vacation policy
-				const policy = await getVacationAllowance(org.id, organizationFromYear);
+					// Resolve carryover terms independently for each employee in the service.
+					// Run carryover calculation
+					const carryoverResult = await calculateAnnualCarryover(
+						org.id,
+						organizationFromYear,
+						SYSTEM_USER_ID,
+						timezone,
+					);
 
-				if (!policy) {
-					logger.info({ organizationId: org.id }, "No vacation policy found, skipping");
 					return {
 						result: {
 							organizationId: org.id,
 							organizationName: org.name,
-							error: "No vacation policy found",
+							carryover: carryoverResult,
 						},
 					};
-				}
-
-				if (!policy.allowCarryover) {
-					logger.info({ organizationId: org.id }, "Carryover not allowed by policy, skipping");
+				} catch (error) {
+					const errorMessage =
+						error instanceof Error ? error.message : "Unknown error";
+					logger.error(
+						{ organizationId: org.id, error: errorMessage },
+						"Failed to process organization",
+					);
 					return {
+						error: `${org.name}: ${errorMessage}`,
 						result: {
 							organizationId: org.id,
 							organizationName: org.name,
-							error: "Carryover not allowed by policy",
+							error: errorMessage,
 						},
 					};
 				}
-
-				// Run carryover calculation
-				const carryoverResult = await calculateAnnualCarryover(
-					org.id,
-					organizationFromYear,
-					SYSTEM_USER_ID,
-					timezone,
-				);
-
-				return {
-					result: {
-						organizationId: org.id,
-						organizationName: org.name,
-						carryover: carryoverResult,
-					},
-				};
-			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : "Unknown error";
-				logger.error(
-					{ organizationId: org.id, error: errorMessage },
-					"Failed to process organization",
-				);
-				return {
-					error: `${org.name}: ${errorMessage}`,
-					result: {
-						organizationId: org.id,
-						organizationName: org.name,
-						error: errorMessage,
-					},
-				};
-			}
 			}),
 		);
 
@@ -180,7 +169,8 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 			errors,
 		};
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : "Unknown error";
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
 		logger.error({ error: errorMessage }, "Annual carryover job failed");
 
 		return {
@@ -212,32 +202,36 @@ export async function runCarryoverExpiry(): Promise<CarryoverJobResult> {
 
 		const organizationResults = await Promise.all(
 			organizations.map(async (org) => {
-			try {
-				const timezone = org.timezone || "UTC";
-				const orgCurrentDate = DateTime.fromJSDate(currentDate).setZone(timezone).toJSDate();
-				const expiryResult = await expireCarryoverDays(
-					org.id,
-					SYSTEM_USER_ID,
-					orgCurrentDate,
-					timezone,
-				);
+				try {
+					const timezone = org.timezone || "UTC";
+					const orgCurrentDate = currentDate;
+					const expiryResult = await expireCarryoverDays(
+						org.id,
+						SYSTEM_USER_ID,
+						orgCurrentDate,
+						timezone,
+					);
 
-				if (expiryResult.employeesAffected > 0) {
-					return {
-						result: {
-							organizationId: org.id,
-							organizationName: org.name,
-							expiry: expiryResult,
-						},
-					};
+					if (expiryResult.employeesAffected > 0) {
+						return {
+							result: {
+								organizationId: org.id,
+								organizationName: org.name,
+								expiry: expiryResult,
+							},
+						};
+					}
+
+					return null;
+				} catch (error) {
+					const errorMessage =
+						error instanceof Error ? error.message : "Unknown error";
+					logger.error(
+						{ organizationId: org.id, error: errorMessage },
+						"Failed to process expiry",
+					);
+					return { error: `${org.name}: ${errorMessage}` };
 				}
-
-				return null;
-			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : "Unknown error";
-				logger.error({ organizationId: org.id, error: errorMessage }, "Failed to process expiry");
-				return { error: `${org.name}: ${errorMessage}` };
-			}
 			}),
 		);
 
@@ -262,7 +256,8 @@ export async function runCarryoverExpiry(): Promise<CarryoverJobResult> {
 			errors,
 		};
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : "Unknown error";
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
 		logger.error({ error: errorMessage }, "Carryover expiry job failed");
 
 		return {
@@ -277,22 +272,29 @@ export async function runCarryoverExpiry(): Promise<CarryoverJobResult> {
 }
 
 /**
- * Run vacation accrual for all organizations on a monthly or biweekly policy.
+ * Run monthly or biweekly accrual using each employee's effective vacation policy.
  *
  * The scheduled run (no arguments) runs daily and accrues every month of each organization's
  * current year up to and including the current month in its timezone. Months already accrued are
  * skipped, so it accrues a new month on its first day and catches up any month an earlier run
  * missed, from 2026 on (#1106). An explicit month and year accrue just that month, also only once.
  */
-export async function runMonthlyAccrual(month?: number, year?: number): Promise<AccrualJobResult> {
+export async function runMonthlyAccrual(
+	month?: number,
+	year?: number,
+): Promise<AccrualJobResult> {
 	const startedAt = new Date();
-	const fallbackDate = DateTime.fromJSDate(startedAt).setZone("UTC");
+	const fallbackDate = instantFromDate(startedAt).toZonedDateTimeISO("UTC");
 	let resultMonth = month ?? fallbackDate.month;
 	let resultYear = year ?? fallbackDate.year;
 
-	logger.info({ month: month ?? null, year: year ?? null }, "Starting monthly accrual job");
+	logger.info(
+		{ month: month ?? null, year: year ?? null },
+		"Starting monthly accrual job",
+	);
 
 	const errors: string[] = [];
+	const skippedEmployees: AccrualJobResult["skippedEmployees"] = [];
 	let totalEmployeesProcessed = 0;
 	let totalDaysAccrued = 0;
 	let organizationsProcessed = 0;
@@ -303,10 +305,12 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 		for (const org of organizations) {
 			try {
 				const timezone = org.timezone || "UTC";
-				const zonedDate = DateTime.fromJSDate(startedAt).setZone(timezone);
+				const zonedDate =
+					instantFromDate(startedAt).toZonedDateTimeISO(timezone);
 				const targetMonth = month ?? zonedDate.month;
 				const targetYear = year ?? zonedDate.year;
-				const isImplicitScheduledRun = month === undefined && year === undefined;
+				const isImplicitScheduledRun =
+					month === undefined && year === undefined;
 
 				// For implicit per-organization dates, report the first organization as the job summary.
 				if (organizationsProcessed === 0 && errors.length === 0) {
@@ -314,24 +318,34 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 					resultYear = targetYear;
 				}
 
-				// Check if organization uses monthly/biweekly accrual
-				const policy = await getVacationAllowance(org.id, targetYear);
-
-				if (!policy || !isAccrualPolicy(policy)) {
-					continue;
-				}
-
+				// Employee-effective policies determine posting eligibility inside the accrual service.
 				// Accrual rows are system rows without an adjusting employee, one per month (#1106).
 				const result = isImplicitScheduledRun
-					? await accrueDueVacationPeriods(org.id, { timezone, now: instantFromDate(startedAt) })
-					: await accrueVacationPeriods(org.id, { year: targetYear, months: [targetMonth] });
+					? await accrueDueVacationPeriods(org.id, {
+							timezone,
+							now: instantFromDate(startedAt),
+						})
+					: await accrueVacationPeriods(org.id, {
+							year: targetYear,
+							months: [targetMonth],
+						});
 
+				skippedEmployees.push(
+					...result.skippedEmployees.map((employee) => ({
+						organizationId: org.id,
+						...employee,
+					})),
+				);
 				totalEmployeesProcessed += result.employeesProcessed;
 				totalDaysAccrued += result.totalDaysAccrued;
 				organizationsProcessed++;
 			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : "Unknown error";
-				logger.error({ organizationId: org.id, error: errorMessage }, "Failed to process accrual");
+				const errorMessage =
+					error instanceof Error ? error.message : "Unknown error";
+				logger.error(
+					{ organizationId: org.id, error: errorMessage },
+					"Failed to process accrual",
+				);
 				errors.push(`${org.name}: ${errorMessage}`);
 			}
 		}
@@ -347,10 +361,12 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 			organizationsProcessed,
 			totalEmployeesProcessed,
 			totalDaysAccrued,
+			skippedEmployees,
 			errors,
 		};
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : "Unknown error";
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
 		logger.error({ error: errorMessage }, "Monthly accrual job failed");
 
 		return {
@@ -362,6 +378,7 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 			organizationsProcessed: 0,
 			totalEmployeesProcessed: 0,
 			totalDaysAccrued: 0,
+			skippedEmployees,
 			errors: [errorMessage],
 		};
 	}

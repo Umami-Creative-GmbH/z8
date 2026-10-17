@@ -3,8 +3,16 @@ import "server-only";
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
-import { employee, type VacationAccrualType, vacationAdjustment } from "@/db/schema";
-import { type Instant, type PlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import {
+	employee,
+	type VacationAccrualType,
+	vacationAdjustment,
+} from "@/db/schema";
+import {
+	type Instant,
+	type PlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import type { EmploymentStint } from "./prorated-allowance";
 import {
@@ -12,8 +20,10 @@ import {
 	loadEmployeeEmployments,
 	loadEmployeeVacationOverrides,
 } from "./prorated-allowance-store";
+import type { VacationBalanceConfiguration } from "./types";
+import { loadVacationBalances } from "./vacation-balance-store";
+import type { EmployeeVacationPolicyPeriod } from "./vacation-policy-history";
 import { isAccrualPolicy } from "./vacation-policy-settings";
-import { loadCompanyDefaultVacationPolicy } from "./vacation-policy-store";
 
 const logger = createLogger("vacation-accrual");
 
@@ -43,6 +53,10 @@ const MONTH_NAMES = [
 const INSERT_CHUNK_SIZE = 500;
 
 export type VacationAccrualResult = {
+	skippedEmployees: Array<{
+		employeeId: string;
+		configuration: VacationBalanceConfiguration;
+	}>;
 	employeesProcessed: number;
 	/** The days of the accrual rows this run wrote. */
 	totalDaysAccrued: number;
@@ -51,6 +65,7 @@ export type VacationAccrualResult = {
 };
 
 const NOTHING_ACCRUED: VacationAccrualResult = {
+	skippedEmployees: [],
 	employeesProcessed: 0,
 	totalDaysAccrued: 0,
 	rowsWritten: 0,
@@ -69,10 +84,16 @@ export function monthlyAccrualDays(input: {
 	month: number;
 	employments: readonly EmploymentStint[];
 }): number | null {
-	const monthStart = Temporal.PlainDate.from({ year: input.year, month: input.month, day: 1 });
+	const monthStart = Temporal.PlainDate.from({
+		year: input.year,
+		month: input.month,
+		day: 1,
+	});
 	const monthEnd = monthStart.with({ day: monthStart.daysInMonth });
 	const share =
-		input.accrualType === "monthly" ? input.annualDays / 12 : (input.annualDays / 26) * 2;
+		input.accrualType === "monthly"
+			? input.annualDays / 12
+			: (input.annualDays / 26) * 2;
 
 	let daysEmployed = 0;
 	for (const employment of input.employments) {
@@ -85,6 +106,108 @@ export function monthlyAccrualDays(input: {
 	if (daysEmployed === 0) return null;
 	if (daysEmployed >= monthStart.daysInMonth) return share;
 	return (share / monthStart.daysInMonth) * daysEmployed;
+}
+
+/** Existing monthly/biweekly cadence, intersected with dated policy and employment coverage.
+ * Callers require resolved configuration before using this numeric calculation. */
+export function policyPeriodMonthlyAccrualDays(input: {
+	periods: readonly EmployeeVacationPolicyPeriod[];
+	customAnnualDays?: string | null;
+	year: number;
+	month: number;
+	employments: readonly EmploymentStint[];
+}): number | null {
+	let total = 0;
+	let covered = false;
+	for (const period of input.periods) {
+		const resolution = period.resolution;
+		if (resolution.status !== "resolved" && resolution.status !== "legacy")
+			continue;
+		const policy = resolution.policy;
+		if (!policy || !isAccrualPolicy(policy)) continue;
+		const employments = input.employments.map((employment) => ({
+			startDate: latest(
+				employment.startDate ?? Temporal.PlainDate.from(period.startDate),
+				Temporal.PlainDate.from(period.startDate),
+			),
+			lastWorkingDay: earliest(
+				employment.lastWorkingDay ?? Temporal.PlainDate.from(period.endDate),
+				Temporal.PlainDate.from(period.endDate),
+			),
+		}));
+		const days = monthlyAccrualDays({
+			accrualType: policy.accrualType,
+			annualDays: Number(input.customAnnualDays ?? policy.defaultAnnualDays),
+			year: input.year,
+			month: input.month,
+			employments,
+		});
+		if (days !== null) {
+			total += days;
+			covered = true;
+		}
+	}
+	return covered ? total : null;
+}
+
+/** Only due, unposted employment coverage needs a policy; unrelated annual gaps stay visible in balances. */
+function requiredAccrualConfiguration(
+	periods: readonly EmployeeVacationPolicyPeriod[],
+	input: {
+		year: number;
+		month: number;
+		employments: readonly EmploymentStint[];
+	},
+): VacationBalanceConfiguration {
+	const monthStart = Temporal.PlainDate.from({
+		year: input.year,
+		month: input.month,
+		day: 1,
+	});
+	const monthEnd = monthStart.with({ day: monthStart.daysInMonth });
+	const problems: Array<{
+		startDate: string;
+		endDate: string;
+		policyIds?: string[];
+		reason?: "incompatible_transition";
+	}> = [];
+	let conflict = false;
+	for (const employment of input.employments) {
+		const from = latest(employment.startDate ?? monthStart, monthStart);
+		const through = earliest(employment.lastWorkingDay ?? monthEnd, monthEnd);
+		if (Temporal.PlainDate.compare(from, through) > 0) continue;
+		let cursor = from;
+		for (const period of periods) {
+			const start = latest(Temporal.PlainDate.from(period.startDate), from);
+			const end = earliest(Temporal.PlainDate.from(period.endDate), through);
+			if (Temporal.PlainDate.compare(start, end) > 0) continue;
+			if (Temporal.PlainDate.compare(cursor, start) < 0)
+				problems.push({
+					startDate: cursor.toString(),
+					endDate: start.subtract({ days: 1 }).toString(),
+				});
+			const resolution = period.resolution;
+			if (resolution.status === "conflict") {
+				conflict = true;
+				problems.push({
+					startDate: start.toString(),
+					endDate: end.toString(),
+					policyIds: resolution.policyIds,
+					reason: resolution.reason,
+				});
+			} else if (resolution.status === "missing" || !resolution.policy)
+				problems.push({ startDate: start.toString(), endDate: end.toString() });
+			cursor = end.add({ days: 1 });
+		}
+		if (Temporal.PlainDate.compare(cursor, through) <= 0)
+			problems.push({
+				startDate: cursor.toString(),
+				endDate: through.toString(),
+			});
+	}
+	return problems.length
+		? { status: conflict ? "conflict" : "missing", periods: problems }
+		: { status: "resolved" };
 }
 
 function latest(left: PlainDate, right: PlainDate): PlainDate {
@@ -100,10 +223,14 @@ function earliest(left: PlainDate, right: PlainDate): PlainDate {
  * employments with a known last working day of one who is no longer active, so a leaver accrues
  * the months they were still employed. An inactive employee without a recorded end accrues nothing.
  */
-export function accruingEmployments(employee: EmployeeEmployments): EmploymentStint[] {
+export function accruingEmployments(
+	employee: EmployeeEmployments,
+): EmploymentStint[] {
 	return employee.isActive
 		? employee.employments
-		: employee.employments.filter((employment) => employment.lastWorkingDay !== null);
+		: employee.employments.filter(
+				(employment) => employment.lastWorkingDay !== null,
+			);
 }
 
 /**
@@ -118,20 +245,19 @@ export async function accrueVacationPeriods(
 	organizationId: string,
 	input: { year: number; months: readonly number[] },
 ): Promise<VacationAccrualResult> {
-	const months = [...new Set(input.months)].filter((month) => month >= 1 && month <= 12);
+	const months = [...new Set(input.months)].filter(
+		(month) => month >= 1 && month <= 12,
+	);
 	if (months.length === 0) return NOTHING_ACCRUED;
 
-	const policy = await loadCompanyDefaultVacationPolicy(db, { organizationId, year: input.year });
-	if (!policy || !isAccrualPolicy(policy)) return NOTHING_ACCRUED;
-
-	const employees = [...(await loadEmployeeEmployments(db, { organizationId }))].flatMap(
-		([id, employee]) => {
-			const employments = accruingEmployments(employee);
-			return employments.length > 0 ? [{ id, employments }] : [];
-		},
-	);
+	const employees = [
+		...(await loadEmployeeEmployments(db, { organizationId })),
+	].flatMap(([id, employee]) => {
+		const employments = accruingEmployments(employee);
+		return employments.length > 0 ? [{ id, employments }] : [];
+	});
 	if (employees.length === 0) return NOTHING_ACCRUED;
-	const [overrides, accrued] = await Promise.all([
+	const [overrides, accrued, resolved] = await Promise.all([
 		loadEmployeeVacationOverrides(db, {
 			organizationId,
 			employeeIds: employees.map((emp) => emp.id),
@@ -154,19 +280,57 @@ export async function accrueVacationPeriods(
 					inArray(vacationAdjustment.accrualMonth, months),
 				),
 			),
+		loadVacationBalances(db, {
+			organizationId,
+			employeeIds: employees.map((emp) => emp.id),
+			year: input.year,
+			timezone: "UTC",
+		}),
 	]);
-	const accruedKeys = new Set(accrued.map((row) => `${row.employeeId}:${row.month}`));
+	const accruedKeys = new Set(
+		accrued.map((row) => `${row.employeeId}:${row.month}`),
+	);
 
 	const rows: (typeof vacationAdjustment.$inferInsert)[] = [];
+	const skippedEmployees: VacationAccrualResult["skippedEmployees"] = [];
 	for (const emp of employees) {
 		const customAnnualDays = overrides.get(emp.id)?.customAnnualDays;
-		const annualDays = Number.parseFloat(customAnnualDays || policy.defaultAnnualDays);
 
 		for (const month of months) {
 			if (accruedKeys.has(`${emp.id}:${month}`)) continue;
-			const share = monthlyAccrualDays({
-				accrualType: policy.accrualType,
-				annualDays,
+			const configuration = requiredAccrualConfiguration(
+				resolved.periods.get(emp.id) ?? [],
+				{ year: input.year, month, employments: emp.employments },
+			);
+			if (
+				configuration.status === "missing" ||
+				configuration.status === "conflict"
+			) {
+				const existing = skippedEmployees.find(
+					(row) => row.employeeId === emp.id,
+				);
+				if (
+					existing &&
+					(existing.configuration.status === "missing" ||
+						existing.configuration.status === "conflict")
+				)
+					existing.configuration = {
+						status:
+							existing.configuration.status === "conflict" ||
+							configuration.status === "conflict"
+								? "conflict"
+								: "missing",
+						periods: [
+							...existing.configuration.periods,
+							...configuration.periods,
+						],
+					};
+				else skippedEmployees.push({ employeeId: emp.id, configuration });
+				continue;
+			}
+			const share = policyPeriodMonthlyAccrualDays({
+				periods: resolved.periods.get(emp.id) ?? [],
+				customAnnualDays,
 				year: input.year,
 				month,
 				employments: emp.employments,
@@ -194,15 +358,29 @@ export async function accrueVacationPeriods(
 			.onConflictDoNothing()
 			.returning({ days: vacationAdjustment.days });
 		rowsWritten += written.length;
-		totalDaysAccrued += written.reduce((sum, row) => sum + Number.parseFloat(row.days), 0);
+		totalDaysAccrued += written.reduce(
+			(sum, row) => sum + Number.parseFloat(row.days),
+			0,
+		);
 	}
 
 	logger.info(
-		{ organizationId, year: input.year, months, employeesProcessed: employees.length, rowsWritten },
+		{
+			organizationId,
+			year: input.year,
+			months,
+			employeesProcessed: employees.length,
+			rowsWritten,
+		},
 		"Vacation accrual complete",
 	);
 
-	return { employeesProcessed: employees.length, totalDaysAccrued, rowsWritten };
+	return {
+		employeesProcessed: employees.length,
+		totalDaysAccrued,
+		rowsWritten,
+		skippedEmployees,
+	};
 }
 
 /**
@@ -217,8 +395,15 @@ export async function accrueDueVacationPeriods(
 ): Promise<VacationAccrualResult & { year: number; throughMonth: number }> {
 	const today = plainDateAt(input.now, input.timezone);
 	const due = { year: today.year, throughMonth: today.month };
-	if (today.year < FIRST_ACCRUAL_CATCH_UP_YEAR) return { ...NOTHING_ACCRUED, ...due };
+	if (today.year < FIRST_ACCRUAL_CATCH_UP_YEAR)
+		return { ...NOTHING_ACCRUED, ...due };
 
 	const months = Array.from({ length: today.month }, (_, index) => index + 1);
-	return { ...(await accrueVacationPeriods(organizationId, { year: today.year, months })), ...due };
+	return {
+		...(await accrueVacationPeriods(organizationId, {
+			year: today.year,
+			months,
+		})),
+		...due,
+	};
 }

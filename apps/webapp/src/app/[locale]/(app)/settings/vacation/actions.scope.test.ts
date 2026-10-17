@@ -71,6 +71,7 @@ const mockState = vi.hoisted(() => {
 				}) ?? null
 			);
 		}),
+		assignmentRow: null as Record<string, unknown> | null,
 		selectQueue: [] as Array<any>,
 		teamQueue: [] as Array<any>,
 		insertQueue: [] as Array<any>,
@@ -163,6 +164,7 @@ vi.mock("@/db/schema", () => ({
 		startDate: "startDate",
 		name: "name",
 	},
+	vacationPolicyRollout: { organizationId: "organizationId", reviewedFrom: "reviewedFrom" },
 	vacationPolicyAssignment: {
 		id: "id",
 		organizationId: "organizationId",
@@ -187,8 +189,9 @@ vi.mock("@/lib/audit-logger", () => ({
 
 vi.mock("../employees/employee-action-utils", async () => {
 	const { Effect } = await import("effect");
-	const { AuthorizationError, NotFoundError, ValidationError } =
-		await import("@/lib/effect/errors");
+	const { AuthorizationError, NotFoundError, ValidationError } = await import(
+		"@/lib/effect/errors"
+	);
 
 	return {
 		getEmployeeSettingsActorContext: vi.fn(() => Effect.succeed(mockState.actor)),
@@ -332,11 +335,13 @@ vi.mock("@/lib/effect/runtime", async () => {
 				findMany: vi.fn(async () => mockState.absenceCategoryRows),
 				findFirst: mockState.absenceCategoryFindFirst,
 			},
+			vacationPolicyRollout: { findFirst: vi.fn(async () => ({ baselineDate: "2026-01-01" })) },
+			vacationPolicyAssignment: { findFirst: vi.fn(async () => mockState.assignmentRow) },
 			employeeVacationAllowance: {
 				findFirst: vi.fn(async () => null),
 			},
 		},
-		select: vi.fn(() => ({
+		select: vi.fn((selection?: Record<string, unknown>) => ({
 			from: vi.fn(() => ({
 				innerJoin: vi.fn(() => ({
 					where: vi.fn((where: any) => {
@@ -352,7 +357,14 @@ vi.mock("@/lib/effect/runtime", async () => {
 
 					return {
 						for: mockState.selectFor,
-						limit: vi.fn(async () => mockState.selectQueue.shift() ?? []),
+						// biome-ignore lint/suspicious/noThenProperty: Drizzle select builders are intentionally awaitable and also expose limit/for.
+						then: (resolve: (value: unknown) => unknown) =>
+							Promise.resolve(mockState.selectQueue.shift() ?? []).then(resolve),
+						limit: vi.fn(async () =>
+							selection && "timezone" in selection
+								? [{ timezone: "UTC" }]
+								: (mockState.selectQueue.shift() ?? []),
+						),
 					};
 				}),
 				orderBy: vi.fn(async () => mockState.selectQueue.shift() ?? []),
@@ -407,8 +419,9 @@ vi.mock("@/lib/effect/result", async () => {
 	};
 });
 
-const { getEmployeeSettingsActorContext, requireOrgAdminEmployeeSettingsAccess } =
-	await import("../employees/employee-action-utils");
+const { getEmployeeSettingsActorContext, requireOrgAdminEmployeeSettingsAccess } = await import(
+	"../employees/employee-action-utils"
+);
 const {
 	getVacationPolicies,
 	createVacationPolicy,
@@ -421,8 +434,9 @@ const {
 	deleteAbsenceCategory,
 	deleteVacationPolicy,
 } = await import("./actions");
-const { createVacationPolicyAssignment, deleteVacationPolicyAssignment } =
-	await import("./assignment-actions");
+const { createVacationPolicyAssignment, deleteVacationPolicyAssignment } = await import(
+	"./assignment-actions"
+);
 
 describe("vacation settings scope actions", () => {
 	beforeEach(() => {
@@ -438,7 +452,10 @@ describe("vacation settings scope actions", () => {
 			organizationId: "org-1",
 			role: "employee",
 		};
-		mockState.policyRows = [{ id: "policy-1", organizationId: "org-1", name: "Standard" }];
+		mockState.policyRows = [
+			{ id: "policy-1", organizationId: "org-1", name: "Standard", isActive: true },
+		];
+		mockState.assignmentRow = null;
 		mockState.absenceCategoryRows = [
 			{
 				id: "absence-category-1",
@@ -1243,6 +1260,12 @@ describe("vacation settings scope actions", () => {
 		});
 
 		it("soft-deletes a policy assignment only within the actor's organization", async () => {
+			mockState.assignmentRow = {
+				id: "assignment-1",
+				organizationId: "org-1",
+				effectiveStartDate: "2026-01-01",
+				effectiveEndDate: null,
+			};
 			mockState.selectQueue = [
 				[
 					{

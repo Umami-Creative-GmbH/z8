@@ -1,3 +1,4 @@
+import type { VacationBalanceConfiguration } from "@/lib/absences/types";
 import type { TrackingDateImpact } from "@/lib/time-tracking/tracking-date-review-types";
 export interface EmploymentDateCorrectionImpact extends TrackingDateImpact {
 	employeeId: string;
@@ -8,6 +9,8 @@ export interface EmploymentDateCorrectionImpact extends TrackingDateImpact {
 	vacation: Array<{
 		year: number;
 		before: VacationCorrectionBalance | null;
+		beforeConfiguration?: VacationBalanceConfiguration;
+		afterConfiguration?: VacationBalanceConfiguration;
 		after: VacationCorrectionBalance | null;
 	}>;
 }

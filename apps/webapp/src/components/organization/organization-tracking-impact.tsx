@@ -3,6 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { type ReactNode, useMemo } from "react";
+import { VacationPolicyConfigurationMessage } from "@/components/absences/vacation-policy-configuration-message";
 import type { TrackingDateImpact } from "@/lib/time-tracking/tracking-date-review-types";
 import { Link } from "@/navigation";
 
@@ -153,15 +154,18 @@ export function OrganizationTrackingImpact({
 							</p>
 						) : null}
 						{row.vacation.map((vacation) => (
-							<p key={vacation.year} className="text-sm text-muted-foreground">
-								{vacation.year} ·{" "}
-								{t(
-									"organization.tracking.vacation-unchanged",
-									"Vacation allowance and balance unchanged:",
-								)}{" "}
-								{vacation.allowanceDays} / {vacation.remainingDays}{" "}
-								{t("organization.tracking.day-unit", "days")}
-							</p>
+							<div key={vacation.year} className="text-sm text-muted-foreground">
+								<span>{vacation.year} · </span>
+								{vacation.allowanceDays === null || vacation.remainingDays === null ? (
+									<VacationPolicyConfigurationMessage configuration={vacation.configuration} />
+								) : (
+									<span>
+										{t("organization.tracking.vacation-unchanged", "Vacation allowance and balance unchanged:")}{" "}
+										{vacation.allowanceDays} / {vacation.remainingDays}{" "}
+										{t("organization.tracking.day-unit", "days")}
+									</span>
+								)}
+							</div>
 						))}
 						{row.periods.length > 0 ? (
 							<details className="text-sm">

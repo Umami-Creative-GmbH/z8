@@ -4,27 +4,28 @@ import {
 	IconAlertTriangle,
 	IconBuilding,
 	IconCalendarDollar,
+	IconCalendarX,
 	IconChevronRight,
 	IconLoader2,
 	IconPlus,
 	IconStar,
-	IconTrash,
 	IconUser,
 	IconUsers,
 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import {
 	deleteVacationPolicyAssignment,
 	getCompanyDefaultPolicies,
 	getVacationPolicyAssignments,
 } from "@/app/[locale]/(app)/settings/vacation/assignment-actions";
+import { useAppLocale } from "@/components/providers/app-locale-provider";
 import {
 	AlertDialog,
-	AlertDialogAction,
 	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
@@ -34,15 +35,31 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { queryKeys } from "@/lib/query";
+import {
+	TFormControl,
+	TFormDescription,
+	TFormItem,
+	TFormLabel,
+} from "@/components/ui/tanstack-form";
+import { queryKeys } from "@/lib/query/keys";
 import { getVacationAssignmentSectionVisibility } from "../policy-assignment-surface";
+import { useVacationPolicyHistoryContext } from "./use-vacation-policy-history-context";
+import type { VacationAssignmentType } from "./vacation-assignment-dialog";
+import { VacationPolicyPreview } from "./vacation-policy-preview";
 
 interface VacationAssignmentManagerProps {
 	organizationId: string;
 	allowedAssignmentTypes: readonly ("team" | "employee")[];
-	onAssignClick: (type: "team" | "employee") => void;
+	onAssignClick: (type: VacationAssignmentType, targetId?: string) => void;
 }
 
 interface PolicyData {
@@ -65,6 +82,8 @@ interface VacationPolicyAssignmentData {
 	employeeId: string | null;
 	priority: number;
 	effectiveFrom: Date | null;
+	effectiveStartDate: string | null;
+	effectiveEndDate: string | null;
 	effectiveUntil: Date | null;
 	isActive: boolean;
 	createdAt: Date;
@@ -85,14 +104,14 @@ interface CompanyDefaultPolicies {
 	next: PolicyData | null;
 }
 
-// Helper to format date for display
-const formatDate = (dateStr: string) => {
-	return DateTime.fromISO(dateStr).toFormat("LLL d, yyyy");
-};
-
 // Helper to format policy summary
-const formatPolicySummary = (policy: PolicyData, t: ReturnType<typeof useTranslate>["t"]) => {
-	const parts = [`${policy.defaultAnnualDays} ${t("settings.vacation.days", "days")}`];
+const formatPolicySummary = (
+	policy: PolicyData,
+	t: ReturnType<typeof useTranslate>["t"],
+) => {
+	const parts = [
+		`${policy.defaultAnnualDays} ${t("settings.vacation.days", "days")}`,
+	];
 	if (policy.allowCarryover) {
 		parts.push(t("settings.vacation.carryover", "Carryover"));
 	}
@@ -106,11 +125,18 @@ export function VacationAssignmentManager({
 	onAssignClick,
 }: VacationAssignmentManagerProps) {
 	const { t } = useTranslate();
+	const locale = useAppLocale();
+	const formatDate = (date: string) =>
+		Temporal.PlainDate.from(date).toLocaleString(locale, {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+		});
 	const queryClient = useQueryClient();
-	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [selectedAssignment, setSelectedAssignment] = useState<VacationPolicyAssignmentData | null>(
-		null,
-	);
+	const historyContext = useVacationPolicyHistoryContext(organizationId);
+	const [endDialogOpen, setEndDialogOpen] = useState(false);
+	const [selectedAssignment, setSelectedAssignment] =
+		useState<VacationPolicyAssignmentData | null>(null);
 
 	// Fetch company default policies (current and next)
 	const { data: companyDefaults, isLoading: defaultsLoading } = useQuery({
@@ -118,7 +144,9 @@ export function VacationAssignmentManager({
 		queryFn: async () => {
 			const result = await getCompanyDefaultPolicies(organizationId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch company default policies");
+				throw new Error(
+					result.error || "Failed to fetch company default policies",
+				);
 			}
 			return result.data as CompanyDefaultPolicies;
 		},
@@ -141,53 +169,89 @@ export function VacationAssignmentManager({
 	});
 
 	// Delete assignment mutation
-	const deleteMutation = useMutation({
-		mutationFn: (assignmentId: string) => deleteVacationPolicyAssignment(assignmentId),
+	const endMutation = useMutation({
+		mutationFn: ({ id, effectiveOn }: { id: string; effectiveOn: string }) =>
+			deleteVacationPolicyAssignment(id, effectiveOn),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.vacation.assignments.deleted", "Policy assignment removed"));
+				toast.success(
+					t(
+						"settings.vacation.history.ended",
+						"Policy assignment end date saved",
+					),
+				);
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.vacationPolicyAssignments.list(organizationId),
 				});
-				setDeleteDialogOpen(false);
+				setEndDialogOpen(false);
 				setSelectedAssignment(null);
 			} else {
 				toast.error(
 					result.error ||
-						t("settings.vacation.assignments.deleteFailed", "Failed to remove policy assignment"),
+						t(
+							"settings.vacation.history.endFailed",
+							"Failed to end policy assignment",
+						),
 				);
 			}
 		},
 		onError: () => {
 			toast.error(
-				t("settings.vacation.assignments.deleteFailed", "Failed to remove policy assignment"),
+				t(
+					"settings.vacation.history.endFailed",
+					"Failed to end policy assignment",
+				),
 			);
 		},
 	});
 
-	const handleDeleteClick = (assignment: VacationPolicyAssignmentData) => {
+	const endForm = useForm({
+		defaultValues: { effectiveOn: "" },
+		onSubmit: async ({ value }) => {
+			if (selectedAssignment && historyContext.data)
+				endMutation.mutate({
+					id: selectedAssignment.id,
+					effectiveOn:
+						value.effectiveOn || minimumEndDate || historyContext.data.today,
+				});
+		},
+	});
+	const handleEndClick = (assignment: VacationPolicyAssignmentData) => {
+		endForm.reset();
 		setSelectedAssignment(assignment);
-		setDeleteDialogOpen(true);
+		setEndDialogOpen(true);
 	};
-
-	const handleDeleteConfirm = () => {
-		if (selectedAssignment) {
-			deleteMutation.mutate(selectedAssignment.id);
-		}
-	};
-
+	const selectedStart = selectedAssignment?.effectiveStartDate;
+	const firstEndDate = selectedStart
+		? Temporal.PlainDate.from(selectedStart).add({ days: 1 }).toString()
+		: "2026-01-01";
+	const minimumEndDate =
+		historyContext.data &&
+		firstEndDate &&
+		firstEndDate > historyContext.data.today
+			? firstEndDate
+			: historyContext.data?.today;
 	// Group assignments by type (filter out organization type - handled by isCompanyDefault)
 	const policyAssignments = assignments || [];
-	const teamAssignments = policyAssignments.filter((a) => a.assignmentType === "team");
-	const employeeAssignments = policyAssignments.filter((a) => a.assignmentType === "employee");
+	const organizationAssignments = policyAssignments.filter(
+		(assignment) => assignment.assignmentType === "organization",
+	);
+	const teamAssignments = policyAssignments.filter(
+		(a) => a.assignmentType === "team",
+	);
+	const employeeAssignments = policyAssignments.filter(
+		(a) => a.assignmentType === "employee",
+	);
 	const canManageTeamAssignments = allowedAssignmentTypes.includes("team");
-	const canManageEmployeeAssignments = allowedAssignmentTypes.includes("employee");
-	const { showTeamSection, showEmployeeSection } = getVacationAssignmentSectionVisibility({
-		canManageTeamAssignments,
-		teamAssignmentsCount: teamAssignments.length,
-		canManageEmployeeAssignments,
-		employeeAssignmentsCount: employeeAssignments.length,
-	});
+	const canManageEmployeeAssignments =
+		allowedAssignmentTypes.includes("employee");
+	const { showTeamSection, showEmployeeSection } =
+		getVacationAssignmentSectionVisibility({
+			canManageTeamAssignments,
+			teamAssignmentsCount: teamAssignments.length,
+			canManageEmployeeAssignments,
+			employeeAssignmentsCount: employeeAssignments.length,
+		});
 
 	const isLoading = defaultsLoading || assignmentsLoading;
 
@@ -214,7 +278,10 @@ export function VacationAssignmentManager({
 			<Card>
 				<CardContent className="py-8 text-center">
 					<p className="text-destructive">
-						{t("settings.vacation.assignments.loadError", "Failed to load policy assignments")}
+						{t(
+							"settings.vacation.assignments.loadError",
+							"Failed to load policy assignments",
+						)}
 					</p>
 				</CardContent>
 			</Card>
@@ -229,13 +296,21 @@ export function VacationAssignmentManager({
 					<CardContent className="py-4">
 						<p className="text-sm text-muted-foreground">
 							{t(
-								"settings.vacation.assignments.inheritanceInfo",
-								"Policies are applied in priority order: Employee overrides take precedence over Team overrides, which take precedence over the Company Default. Create overrides only when needed.",
+								"settings.vacation.history.inheritanceInfo",
+								"Policies apply in priority order: Employee, Team, Organization, then Company Default. Create assignments only when needed.",
 							)}
 						</p>
 					</CardContent>
 				</Card>
 
+				<VacationPolicyPreview organizationId={organizationId} />
+				<VacationOrganizationAssignments
+					assignments={organizationAssignments}
+					canManage={canManageTeamAssignments}
+					today={historyContext.data?.today}
+					onAssignClick={onAssignClick}
+					onEnd={handleEndClick}
+				/>
 				{/* Company Default Level (Read-only) */}
 				<Card>
 					<CardHeader>
@@ -243,7 +318,10 @@ export function VacationAssignmentManager({
 							<IconBuilding className="size-5 text-muted-foreground" />
 							<div className="flex-1">
 								<CardTitle className="text-base flex items-center gap-2">
-									{t("settings.vacation.assignments.companyDefault", "Company Default")}
+									{t(
+										"settings.vacation.assignments.companyDefault",
+										"Company Default",
+									)}
 									<Badge variant="default" className="bg-primary">
 										<IconStar className="mr-1 size-3" />
 										{t("settings.vacation.required", "Required")}
@@ -264,7 +342,10 @@ export function VacationAssignmentManager({
 								<IconAlertTriangle className="size-5 text-destructive" />
 								<div>
 									<p className="font-medium text-destructive">
-										{t("settings.vacation.noDefaultPolicy", "No Company Default Policy")}
+										{t(
+											"settings.vacation.noDefaultPolicy",
+											"No Company Default Policy",
+										)}
 									</p>
 									<p className="text-sm text-muted-foreground">
 										{t(
@@ -290,7 +371,9 @@ export function VacationAssignmentManager({
 									<div className="flex items-center gap-3">
 										<IconCalendarDollar className="size-4 text-primary" />
 										<div>
-											<span className="font-medium">{companyDefaults.current.name}</span>
+											<span className="font-medium">
+												{companyDefaults.current.name}
+											</span>
 											<span className="text-sm text-muted-foreground ml-2">
 												({formatPolicySummary(companyDefaults.current, t)})
 											</span>
@@ -314,7 +397,9 @@ export function VacationAssignmentManager({
 										<div className="flex items-center gap-3">
 											<IconCalendarDollar className="size-4 text-muted-foreground" />
 											<div>
-												<span className="font-medium">{companyDefaults.next.name}</span>
+												<span className="font-medium">
+													{companyDefaults.next.name}
+												</span>
 												<span className="text-sm text-muted-foreground ml-2">
 													({formatPolicySummary(companyDefaults.next, t)})
 												</span>
@@ -335,7 +420,10 @@ export function VacationAssignmentManager({
 								<IconUsers className="size-5 text-muted-foreground" />
 								<div className="flex-1">
 									<CardTitle className="text-base">
-										{t("settings.vacation.assignments.teamLevel", "Team Overrides")}
+										{t(
+											"settings.vacation.assignments.teamLevel",
+											"Team Overrides",
+										)}
 										{teamAssignments.length > 0 && (
 											<Badge variant="secondary" className="ml-2">
 												{teamAssignments.length}
@@ -354,9 +442,16 @@ export function VacationAssignmentManager({
 						<CardContent>
 							{canManageTeamAssignments ? (
 								<div className="flex justify-end mb-4">
-									<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
+									<Button
+										onClick={() => onAssignClick("team")}
+										size="sm"
+										variant="outline"
+									>
 										<IconPlus className="mr-2 size-4" />
-										{t("settings.vacation.assignments.assignTeam", "Assign to Team")}
+										{t(
+											"settings.vacation.assignments.assignTeam",
+											"Assign to Team",
+										)}
 									</Button>
 								</div>
 							) : null}
@@ -370,44 +465,122 @@ export function VacationAssignmentManager({
 											<div className="flex items-center justify-between">
 												<div className="flex items-center gap-3">
 													<IconUsers className="size-4 text-muted-foreground" />
-													<span className="font-medium">{assignment.team?.name}</span>
+													<span className="font-medium">
+														{assignment.team?.name ??
+															t(
+																"settings.vacation.history.deletedTeam",
+																"Deleted team",
+															)}
+													</span>
 												</div>
 												{canManageTeamAssignments ? (
-													<Button
-														variant="ghost"
-														size="icon"
-														className="size-8 text-muted-foreground hover:text-destructive"
-														onClick={() => handleDeleteClick(assignment)}
-														aria-label={`${t("common.remove", "Remove")}: ${assignment.team?.name ?? assignment.policy.name}`}
-													>
-														<IconTrash className="size-4" />
-													</Button>
+													<div className="flex items-center gap-2">
+														<Button
+															type="button"
+															size="sm"
+															variant="outline"
+															onClick={() =>
+																onAssignClick(
+																	"team",
+																	assignment.teamId ?? undefined,
+																)
+															}
+															disabled={!assignment.team}
+															aria-describedby={
+																!assignment.team
+																	? `deleted-team-${assignment.id}`
+																	: undefined
+															}
+															aria-label={`${t("settings.vacation.history.replaceAction", "Replace assignment")}: ${assignment.team?.name ?? t("settings.vacation.history.deletedTeam", "Deleted team")}`}
+														>
+															{t(
+																"settings.vacation.history.replace",
+																"Replace",
+															)}
+														</Button>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="size-8 text-muted-foreground hover:text-destructive"
+															onClick={() => handleEndClick(assignment)}
+															disabled={
+																!historyContext.data ||
+																(!!assignment.effectiveEndDate &&
+																	assignment.effectiveEndDate <=
+																		historyContext.data.today)
+															}
+															aria-label={`${t("settings.vacation.history.endAction", "End assignment")}: ${assignment.team?.name ?? t("settings.vacation.history.deletedTeam", "Deleted team")}`}
+														>
+															<IconCalendarX className="size-4" />
+														</Button>
+													</div>
 												) : null}
 											</div>
+											{!assignment.team && (
+												<p
+													id={`deleted-team-${assignment.id}`}
+													className="mt-2 text-sm text-muted-foreground"
+												>
+													{t(
+														"settings.vacation.history.deletedTeamDescription",
+														"This team has been deleted. You can end this assignment or assign a policy to another team.",
+													)}
+												</p>
+											)}
 											<div className="mt-2 ml-7 space-y-1">
 												<div className="flex items-center gap-2 text-sm">
 													<Badge variant="outline" className="text-xs">
-														{t("settings.vacation.current", "Current")}
+														{!assignment.effectiveStartDate
+															? t(
+																	"settings.vacation.history.legacyAssignment",
+																	"Legacy",
+																)
+															: assignment.effectiveEndDate &&
+																	historyContext.data &&
+																	assignment.effectiveEndDate <=
+																		historyContext.data.today
+																? t(
+																		"settings.vacation.history.endedStatus",
+																		"Ended",
+																	)
+																: historyContext.data &&
+																		assignment.effectiveStartDate >
+																			historyContext.data.today
+																	? t(
+																			"settings.vacation.history.scheduledStatus",
+																			"Scheduled",
+																		)
+																	: t("settings.vacation.current", "Current")}
 													</Badge>
 													<span className="text-muted-foreground">
-														{assignment.policy.name}, {assignment.policy.defaultAnnualDays}{" "}
+														{assignment.policy.name},{" "}
+														{assignment.policy.defaultAnnualDays}{" "}
 														{t("settings.vacation.days", "days")}
 													</span>
 													<span className="text-xs text-muted-foreground">
 														({t("settings.vacation.since", "since")}{" "}
-														{formatDate(assignment.policy.startDate)})
+														{assignment.effectiveStartDate
+															? formatDate(assignment.effectiveStartDate)
+															: t(
+																	"settings.vacation.history.legacyStart",
+																	"Legacy start",
+																)}
+														)
 													</span>
 												</div>
-												{assignment.policy.validUntil && (
+												{assignment.effectiveEndDate && (
 													<div className="flex items-center gap-2 text-sm text-amber-600">
-														<Badge variant="outline" className="text-xs border-amber-300">
-															{t("settings.vacation.expires", "Expires")}
+														<Badge
+															variant="outline"
+															className="text-xs border-amber-300"
+														>
+															{t("settings.vacation.history.ends", "Ends")}
 														</Badge>
 														<span>
-															{formatDate(assignment.policy.validUntil)} →{" "}
+															{formatDate(assignment.effectiveEndDate)} →{" "}
 															{t(
-																"settings.vacation.fallsBackToDefault",
-																"Falls back to company default",
+																"settings.vacation.history.nextApplicablePolicy",
+																"Next applicable policy",
 															)}
 														</span>
 													</div>
@@ -436,7 +609,10 @@ export function VacationAssignmentManager({
 								<IconUser className="size-5 text-muted-foreground" />
 								<div className="flex-1">
 									<CardTitle className="text-base">
-										{t("settings.vacation.assignments.employeeLevel", "Employee Overrides")}
+										{t(
+											"settings.vacation.assignments.employeeLevel",
+											"Employee Overrides",
+										)}
 										{employeeAssignments.length > 0 && (
 											<Badge variant="secondary" className="ml-2">
 												{employeeAssignments.length}
@@ -455,9 +631,16 @@ export function VacationAssignmentManager({
 						<CardContent>
 							{canManageEmployeeAssignments ? (
 								<div className="flex justify-end mb-4">
-									<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
+									<Button
+										onClick={() => onAssignClick("employee")}
+										size="sm"
+										variant="outline"
+									>
 										<IconPlus className="mr-2 size-4" />
-										{t("settings.vacation.assignments.assignEmployee", "Assign to Employee")}
+										{t(
+											"settings.vacation.assignments.assignEmployee",
+											"Assign to Employee",
+										)}
 									</Button>
 								</div>
 							) : null}
@@ -472,45 +655,101 @@ export function VacationAssignmentManager({
 												<div className="flex items-center gap-3">
 													<IconUser className="size-4 text-muted-foreground" />
 													<span className="font-medium">
-														{assignment.employee?.firstName} {assignment.employee?.lastName}
+														{assignment.employee?.firstName}{" "}
+														{assignment.employee?.lastName}
 													</span>
 												</div>
 												{canManageEmployeeAssignments ? (
-													<Button
-														variant="ghost"
-														size="icon"
-														className="size-8 text-muted-foreground hover:text-destructive"
-														onClick={() => handleDeleteClick(assignment)}
-														aria-label={`${t("common.remove", "Remove")}: ${assignment.employee?.firstName ?? ""} ${assignment.employee?.lastName ?? ""}`}
-													>
-														<IconTrash className="size-4" />
-													</Button>
+													<div className="flex items-center gap-2">
+														<Button
+															type="button"
+															size="sm"
+															variant="outline"
+															onClick={() =>
+																onAssignClick(
+																	"employee",
+																	assignment.employeeId ?? undefined,
+																)
+															}
+															aria-label={`${t("settings.vacation.history.replaceAction", "Replace assignment")}: ${assignment.employee?.firstName ?? ""} ${assignment.employee?.lastName ?? ""}`}
+														>
+															{t(
+																"settings.vacation.history.replace",
+																"Replace",
+															)}
+														</Button>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="size-8 text-muted-foreground hover:text-destructive"
+															onClick={() => handleEndClick(assignment)}
+															disabled={
+																!historyContext.data ||
+																(!!assignment.effectiveEndDate &&
+																	assignment.effectiveEndDate <=
+																		historyContext.data.today)
+															}
+															aria-label={`${t("settings.vacation.history.endAction", "End assignment")}: ${assignment.employee?.firstName ?? ""} ${assignment.employee?.lastName ?? ""}`}
+														>
+															<IconCalendarX className="size-4" />
+														</Button>
+													</div>
 												) : null}
 											</div>
 											<div className="mt-2 ml-7 space-y-1">
 												<div className="flex items-center gap-2 text-sm">
 													<Badge variant="outline" className="text-xs">
-														{t("settings.vacation.current", "Current")}
+														{!assignment.effectiveStartDate
+															? t(
+																	"settings.vacation.history.legacyAssignment",
+																	"Legacy",
+																)
+															: assignment.effectiveEndDate &&
+																	historyContext.data &&
+																	assignment.effectiveEndDate <=
+																		historyContext.data.today
+																? t(
+																		"settings.vacation.history.endedStatus",
+																		"Ended",
+																	)
+																: historyContext.data &&
+																		assignment.effectiveStartDate >
+																			historyContext.data.today
+																	? t(
+																			"settings.vacation.history.scheduledStatus",
+																			"Scheduled",
+																		)
+																	: t("settings.vacation.current", "Current")}
 													</Badge>
 													<span className="text-muted-foreground">
-														{assignment.policy.name}, {assignment.policy.defaultAnnualDays}{" "}
+														{assignment.policy.name},{" "}
+														{assignment.policy.defaultAnnualDays}{" "}
 														{t("settings.vacation.days", "days")}
 													</span>
 													<span className="text-xs text-muted-foreground">
 														({t("settings.vacation.since", "since")}{" "}
-														{formatDate(assignment.policy.startDate)})
+														{assignment.effectiveStartDate
+															? formatDate(assignment.effectiveStartDate)
+															: t(
+																	"settings.vacation.history.legacyStart",
+																	"Legacy start",
+																)}
+														)
 													</span>
 												</div>
-												{assignment.policy.validUntil && (
+												{assignment.effectiveEndDate && (
 													<div className="flex items-center gap-2 text-sm text-amber-600">
-														<Badge variant="outline" className="text-xs border-amber-300">
-															{t("settings.vacation.expires", "Expires")}
+														<Badge
+															variant="outline"
+															className="text-xs border-amber-300"
+														>
+															{t("settings.vacation.history.ends", "Ends")}
 														</Badge>
 														<span>
-															{formatDate(assignment.policy.validUntil)} →{" "}
+															{formatDate(assignment.effectiveEndDate)} →{" "}
 															{t(
-																"settings.vacation.fallsBackToTeamOrDefault",
-																"Falls back to team or company default",
+																"settings.vacation.history.nextApplicablePolicy",
+																"Next applicable policy",
 															)}
 														</span>
 													</div>
@@ -532,51 +771,200 @@ export function VacationAssignmentManager({
 				) : null}
 			</div>
 
-			{/* Delete Confirmation Dialog */}
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+			<AlertDialog open={endDialogOpen} onOpenChange={setEndDialogOpen}>
 				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.vacation.assignments.deleteTitle", "Remove Policy Assignment?")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{selectedAssignment?.assignmentType === "team" &&
-								t(
-									"settings.vacation.assignments.deleteTeamDescription",
-									'This will remove the policy from team "{team}". They will use the company default.',
-									{ team: selectedAssignment.team?.name },
+					<form
+						className="space-y-4"
+						onSubmit={(event) => {
+							event.preventDefault();
+							void endForm.handleSubmit();
+						}}
+					>
+						<AlertDialogHeader>
+							<AlertDialogTitle>
+								{t(
+									"settings.vacation.history.endTitle",
+									"End policy assignment",
 								)}
-							{selectedAssignment?.assignmentType === "employee" &&
-								t(
-									"settings.vacation.assignments.deleteEmployeeDescription",
-									'This will remove the override for "{name}". They will use their team or company default.',
-									{
-										name: `${selectedAssignment.employee?.firstName} ${selectedAssignment.employee?.lastName}`,
-									},
+							</AlertDialogTitle>
+							<AlertDialogDescription>
+								{t(
+									"settings.vacation.history.endDescription",
+									"Earlier history is preserved. From the end date, the employee or team uses the next applicable policy.",
 								)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleteMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDeleteConfirm}
-							disabled={deleteMutation.isPending}
-							className="bg-destructive hover:bg-destructive/90"
-						>
-							{deleteMutation.isPending ? (
-								<>
-									<IconLoader2 className="mr-2 size-4 animate-spin" />
-									{t("common.removing", "Removing...")}
-								</>
-							) : (
-								t("common.remove", "Remove")
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<endForm.Field name="effectiveOn">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel>
+										{t("settings.vacation.history.endOn", "End assignment on")}
+									</TFormLabel>
+									<TFormControl>
+										<Input
+											type="date"
+											name="effectiveOn"
+											autoComplete="off"
+											required
+											min={minimumEndDate}
+											value={field.state.value || minimumEndDate || ""}
+											onChange={(event) =>
+												field.handleChange(event.target.value)
+											}
+											onBlur={field.handleBlur}
+										/>
+									</TFormControl>
+									<TFormDescription>
+										{t(
+											"settings.vacation.history.endExclusive",
+											"The assignment no longer applies on this date.",
+										)}
+									</TFormDescription>
+								</TFormItem>
 							)}
-						</AlertDialogAction>
-					</AlertDialogFooter>
+						</endForm.Field>
+						<AlertDialogFooter>
+							<AlertDialogCancel disabled={endMutation.isPending}>
+								{t("common.cancel", "Cancel")}
+							</AlertDialogCancel>
+							<Button
+								type="submit"
+								disabled={endMutation.isPending || !historyContext.data}
+							>
+								{endMutation.isPending ? (
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
+								) : null}
+								{t("settings.vacation.history.saveEnd", "Save end date")}
+							</Button>
+						</AlertDialogFooter>
+					</form>
 				</AlertDialogContent>
 			</AlertDialog>
 		</>
+	);
+}
+
+function VacationOrganizationAssignments({
+	assignments,
+	canManage,
+	today,
+	onAssignClick,
+	onEnd,
+}: {
+	assignments: VacationPolicyAssignmentData[];
+	canManage: boolean;
+	today: string | undefined;
+	onAssignClick: (type: VacationAssignmentType, targetId?: string) => void;
+	onEnd: (assignment: VacationPolicyAssignmentData) => void;
+}) {
+	const { t } = useTranslate();
+	const locale = useAppLocale();
+	if (!canManage && !assignments.length) return null;
+	const formatDate = (date: string) =>
+		Temporal.PlainDate.from(date).toLocaleString(locale, {
+			dateStyle: "medium",
+		});
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle className="text-base">
+					{t(
+						"settings.vacation.history.organizationLevel",
+						"Organization Assignments",
+					)}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.vacation.history.organizationLevelDescription",
+						"Organization assignments take precedence over the company default. Employee and team assignments still apply first.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-3">
+				{canManage ? (
+					<div className="flex justify-end">
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => onAssignClick("organization")}
+						>
+							<IconPlus aria-hidden="true" className="mr-2 size-4" />
+							{t(
+								"settings.vacation.history.assignOrganization",
+								"Assign Organization Policy",
+							)}
+						</Button>
+					</div>
+				) : null}
+				{assignments.map((assignment) => (
+					<div key={assignment.id} className="rounded-lg border p-4">
+						<div className="flex flex-wrap items-center justify-between gap-3">
+							<div className="min-w-0 space-y-1">
+								<p className="break-words font-medium">
+									{assignment.policy.name}
+								</p>
+								<p className="text-sm text-muted-foreground">
+									{assignment.effectiveStartDate
+										? formatDate(assignment.effectiveStartDate)
+										: t(
+												"settings.vacation.history.legacyStart",
+												"Legacy start",
+											)}{" "}
+									→{" "}
+									{assignment.effectiveEndDate
+										? formatDate(assignment.effectiveEndDate)
+										: t("settings.vacation.history.openEnd", "No end date")}
+								</p>
+								<Badge variant="outline">
+									{assignment.effectiveEndDate &&
+									today &&
+									assignment.effectiveEndDate <= today
+										? t("settings.vacation.history.endedStatus", "Ended")
+										: assignment.effectiveStartDate &&
+												today &&
+												assignment.effectiveStartDate > today
+											? t(
+													"settings.vacation.history.scheduledStatus",
+													"Scheduled",
+												)
+											: t("settings.vacation.current", "Current")}
+								</Badge>
+							</div>
+							{canManage ? (
+								<div className="flex gap-2">
+									<Button
+										size="sm"
+										variant="outline"
+										onClick={() => onAssignClick("organization")}
+									>
+										{t("settings.vacation.history.replace", "Replace")}
+									</Button>
+									<Button
+										size="sm"
+										variant="outline"
+										disabled={
+											!today ||
+											(!!assignment.effectiveEndDate &&
+												assignment.effectiveEndDate <= today)
+										}
+										onClick={() => onEnd(assignment)}
+									>
+										{t("settings.vacation.history.endAction", "End assignment")}
+									</Button>
+								</div>
+							) : null}
+						</div>
+					</div>
+				))}
+				{!assignments.length ? (
+					<p className="py-4 text-center text-sm text-muted-foreground">
+						{t(
+							"settings.vacation.history.noOrganizationAssignments",
+							"No organization assignments. The company default applies.",
+						)}
+					</p>
+				) : null}
+			</CardContent>
+		</Card>
 	);
 }

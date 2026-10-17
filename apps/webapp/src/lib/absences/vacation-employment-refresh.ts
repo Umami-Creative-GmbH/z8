@@ -1,6 +1,12 @@
 import "server-only";
 import { and, desc, eq, isNotNull } from "drizzle-orm";
-import { auditLog, employee, employeeVacationAllowance, vacationAdjustment } from "@/db/schema";
+import {
+	auditLog,
+	employee,
+	employeeVacationAllowance,
+	vacationAdjustment,
+	vacationCarryoverTransfer,
+} from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import type { AuditTrail } from "@/lib/audit-trail";
 import {
@@ -10,21 +16,41 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import type { AbsenceDaysDatabase } from "./absence-days-resolver";
-import { loadEmployeeEmployments, loadEmployeeVacationOverrides } from "./prorated-allowance-store";
+import {
+	loadEmployeeEmployments,
+	loadEmployeeVacationOverrides,
+} from "./prorated-allowance-store";
+import type { VacationBalanceConfiguration } from "./types";
 import {
 	accruingEmployments,
 	FIRST_ACCRUAL_CATCH_UP_YEAR,
-	monthlyAccrualDays,
+	policyPeriodMonthlyAccrualDays,
 } from "./vacation-accrual";
 import { loadVacationBalances } from "./vacation-balance-store";
 import { calculateCarryoverDays } from "./vacation-calculator";
+import type { EmployeeVacationPolicyPeriod } from "./vacation-policy-history";
 import { isAccrualPolicy } from "./vacation-policy-settings";
-import { loadCompanyDefaultVacationPolicy } from "./vacation-policy-store";
+
 export type EmploymentVacationRefresh = {
-	accruals: Array<{ id: string | null; year: number; month: number; days: string | null }>;
+	accruals: Array<{
+		id: string | null;
+		year: number;
+		month: number;
+		days: string | null;
+	}>;
 	accrualSums: Map<number, number>;
-	carryovers: Array<{ id: string; year: number; days: string }>;
+	carryovers: Array<{
+		id: string;
+		year: number;
+		days: string;
+		transferId: string | null;
+	}>;
 	carryoverEvidence: unknown[];
+	policyEvidence: Array<{
+		year: number;
+		configuration: VacationBalanceConfiguration | undefined;
+		periods: EmployeeVacationPolicyPeriod[];
+	}>;
 };
 /** Reuses the scheduled job's grant rule; only derived period grants may change. */
 export async function planEmploymentVacationRefresh(
@@ -69,6 +95,7 @@ export async function planEmploymentVacationRefresh(
 		accrualSums: new Map(),
 		carryovers: [],
 		carryoverEvidence: [],
+		policyEvidence: [],
 	};
 	if (!person) return result;
 	for (
@@ -76,31 +103,42 @@ export async function planEmploymentVacationRefresh(
 		year <= Math.max(today.year, ...existing.map((row) => row.year));
 		year++
 	) {
-		const policy = await loadCompanyDefaultVacationPolicy(client, {
+		const resolved = await loadVacationBalances(client, {
 			organizationId: input.organizationId,
+			employeeIds: [input.employeeId],
 			year,
+			timezone: input.timezone,
+			currentDate: dateFromInstant(input.now),
+			employeeEmploymentStartDateOverrides: new Map([
+				[input.employeeId, input.employmentStartDate],
+			]),
 		});
+		const configuration = resolved.configurations.get(input.employeeId);
+		const periods = resolved.periods.get(input.employeeId) ?? [];
+		result.policyEvidence.push({ year, configuration, periods });
+		const policy = resolved.policies.get(input.employeeId);
 		if (!policy || !isAccrualPolicy(policy)) continue;
 		const overrides = await loadEmployeeVacationOverrides(client, {
 			organizationId: input.organizationId,
 			employeeIds: [input.employeeId],
 			year,
 		});
-		const annualDays = Number(
-			overrides.get(input.employeeId)?.customAnnualDays || policy.defaultAnnualDays,
-		);
+
 		const months = new Set(
-			existing.flatMap((row) => (row.year === year && row.month !== null ? [row.month] : [])),
+			existing.flatMap((row) =>
+				row.year === year && row.month !== null ? [row.month] : [],
+			),
 		);
-		const throughMonth = year < today.year ? 12 : year === today.year ? today.month : 0;
+		const throughMonth =
+			year < today.year ? 12 : year === today.year ? today.month : 0;
 		for (let month = 1; month <= throughMonth; month++) months.add(month);
 		let sum = existing
 			.filter((row) => row.year === year && row.month === null)
 			.reduce((total, row) => total + Number(row.days), 0);
 		for (const month of [...months].sort((a, b) => a - b)) {
-			const share = monthlyAccrualDays({
-				accrualType: policy.accrualType,
-				annualDays,
+			const share = policyPeriodMonthlyAccrualDays({
+				periods,
+				customAnnualDays: overrides.get(input.employeeId)?.customAnnualDays,
 				year,
 				month,
 				employments: accruingEmployments(person),
@@ -108,7 +146,9 @@ export async function planEmploymentVacationRefresh(
 			const days = share === null ? null : share.toFixed(2);
 			sum += Number(days ?? 0);
 			result.accruals.push({
-				id: existing.find((row) => row.year === year && row.month === month)?.id ?? null,
+				id:
+					existing.find((row) => row.year === year && row.month === month)
+						?.id ?? null,
 				year,
 				month,
 				days,
@@ -127,7 +167,10 @@ export async function planEmploymentVacationRefresh(
 		.from(employeeVacationAllowance)
 		.innerJoin(employee, eq(employee.id, employeeVacationAllowance.employeeId))
 		.where(
-			and(eq(employee.organizationId, input.organizationId), eq(employee.id, input.employeeId)),
+			and(
+				eq(employee.organizationId, input.organizationId),
+				eq(employee.id, input.employeeId),
+			),
 		)
 		.orderBy(employeeVacationAllowance.year);
 	const logs = await client
@@ -141,30 +184,56 @@ export async function planEmploymentVacationRefresh(
 			),
 		)
 		.orderBy(desc(auditLog.timestamp));
-	result.carryoverEvidence = logs;
+	const transfers = await client
+		.select()
+		.from(vacationCarryoverTransfer)
+		.where(
+			and(
+				eq(vacationCarryoverTransfer.organizationId, input.organizationId),
+				eq(vacationCarryoverTransfer.employeeId, input.employeeId),
+			),
+		)
+		.orderBy(vacationCarryoverTransfer.sourceYear);
+	result.carryoverEvidence = [...logs, ...transfers];
 	const carryoverOverrides = new Map<number, string>();
 	for (const allowance of allowances) {
 		if (allowance.days === null || allowance.year > today.year) continue;
-		const source = logs.find((log) => {
-			try {
-				const meta = JSON.parse(log.metadata ?? "null");
-				return meta?.toYear === allowance.year;
-			} catch {
-				return false;
-			}
-		});
-		if (!source || allowance.updatedAt.getTime() > source.timestamp.getTime()) continue;
-		const metadata = JSON.parse(source.metadata ?? "{}");
-		// Only a proven untouched job result is derived. Missing provenance or any later edit stays final.
-		if (Number(metadata.carryoverApplied) !== Number(allowance.days)) continue;
+		const transfer = transfers.find(
+			(row) =>
+				row.sourceYear === allowance.year - 1 && row.outcome === "generated",
+		);
+		if (transfer) {
+			// The durable system record proves only the last untouched derived amount.
+			const derivedAt = transfer.reviewedAt ?? transfer.createdAt;
+			if (
+				transfer.expiredAt ||
+				transfer.allowanceId !== allowance.id ||
+				Number(transfer.days) !== Number(allowance.days) ||
+				allowance.updatedAt.getTime() > derivedAt.getTime()
+			)
+				continue;
+		} else {
+			const source = logs.find((log) => {
+				try {
+					const meta = JSON.parse(log.metadata ?? "null");
+					return meta?.toYear === allowance.year;
+				} catch {
+					return false;
+				}
+			});
+			if (!source || allowance.updatedAt.getTime() > source.timestamp.getTime())
+				continue;
+			const metadata = JSON.parse(source.metadata ?? "{}");
+			// Legacy rows need audit provenance; later manual edits stay final.
+			if (Number(metadata.carryoverApplied) !== Number(allowance.days))
+				continue;
+		}
 		const fromYear = allowance.year - 1;
-		const policy = await loadCompanyDefaultVacationPolicy(client, {
-			organizationId: input.organizationId,
-			year: fromYear,
-		});
-		if (!policy?.allowCarryover) continue;
+
 		const currentDate = dateFromInstant(
-			parsePlainDate(`${fromYear}-12-31`).toZonedDateTime(input.timezone).toInstant(),
+			parsePlainDate(`${fromYear}-12-31`)
+				.toZonedDateTime(input.timezone)
+				.toInstant(),
 		);
 		const balances = await loadVacationBalances(client, {
 			organizationId: input.organizationId,
@@ -182,15 +251,38 @@ export async function planEmploymentVacationRefresh(
 				? new Map([[input.employeeId, carryoverOverrides.get(fromYear) ?? "0"]])
 				: undefined,
 		});
-		const balance = balances.balances.get(input.employeeId);
-		if (!balance) continue;
-		const value = calculateCarryoverDays({
-			totalAllowance: balance.totalDays,
-			usedDays: balance.usedDays - (balance.previouslyTakenDays ?? 0),
-			previouslyTakenDays: balance.previouslyTakenDays ?? 0,
-			maxCarryoverDays: policy.maxCarryoverDays,
+		const sourcePeriods = balances.periods.get(input.employeeId) ?? [];
+		result.policyEvidence.push({
+			year: fromYear,
+			configuration: balances.configurations.get(input.employeeId),
+			periods: sourcePeriods,
 		});
-		result.carryovers.push({ id: allowance.id, year: allowance.year, days: String(value.applied) });
+		const sourceResolution = sourcePeriods.find(
+			(period) =>
+				period.startDate <= `${fromYear}-12-31` &&
+				period.endDate >= `${fromYear}-12-31`,
+		)?.resolution;
+		const policy =
+			sourceResolution?.status === "resolved" ||
+			sourceResolution?.status === "legacy"
+				? sourceResolution.policy
+				: undefined;
+		const balance = balances.balances.get(input.employeeId);
+		if (!balance || !policy) continue;
+		const value = policy.allowCarryover
+			? calculateCarryoverDays({
+					totalAllowance: balance.totalDays,
+					usedDays: balance.usedDays - (balance.previouslyTakenDays ?? 0),
+					previouslyTakenDays: balance.previouslyTakenDays ?? 0,
+					maxCarryoverDays: policy.maxCarryoverDays,
+				})
+			: { applied: 0 };
+		result.carryovers.push({
+			id: allowance.id,
+			year: allowance.year,
+			days: String(value.applied),
+			transferId: transfer?.id ?? null,
+		});
 		carryoverOverrides.set(allowance.year, String(value.applied));
 	}
 	return result;
@@ -211,7 +303,10 @@ export async function applyEmploymentVacationRefresh(
 		.select({ id: employee.id })
 		.from(employee)
 		.where(
-			and(eq(employee.organizationId, input.organizationId), eq(employee.id, input.employeeId)),
+			and(
+				eq(employee.organizationId, input.organizationId),
+				eq(employee.id, input.employeeId),
+			),
 		);
 	if (!target) throw new Error("Employee outside organization");
 	for (const row of input.plan.accruals) {
@@ -222,7 +317,8 @@ export async function applyEmploymentVacationRefresh(
 				eq(vacationAdjustment.kind, "accrual"),
 				isNotNull(vacationAdjustment.accrualMonth),
 			);
-			if (row.days === null) await client.delete(vacationAdjustment).where(scope);
+			if (row.days === null)
+				await client.delete(vacationAdjustment).where(scope);
 			else
 				await client
 					.update(vacationAdjustment)
@@ -245,7 +341,10 @@ export async function applyEmploymentVacationRefresh(
 	for (const row of input.plan.carryovers) {
 		await client
 			.update(employeeVacationAllowance)
-			.set({ customCarryoverDays: row.days, updatedAt: dateFromInstant(input.now) })
+			.set({
+				customCarryoverDays: row.days,
+				updatedAt: dateFromInstant(input.now),
+			})
 			.where(
 				and(
 					eq(employeeVacationAllowance.id, row.id),
@@ -253,6 +352,18 @@ export async function applyEmploymentVacationRefresh(
 					eq(employeeVacationAllowance.year, row.year),
 				),
 			);
+		if (row.transferId)
+			await client
+				.update(vacationCarryoverTransfer)
+				.set({ days: row.days, reviewedAt: dateFromInstant(input.now) })
+				.where(
+					and(
+						eq(vacationCarryoverTransfer.id, row.transferId),
+						eq(vacationCarryoverTransfer.organizationId, input.organizationId),
+						eq(vacationCarryoverTransfer.employeeId, input.employeeId),
+						eq(vacationCarryoverTransfer.outcome, "generated"),
+					),
+				);
 		await input.audit.record(client, {
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
@@ -265,6 +376,7 @@ export async function applyEmploymentVacationRefresh(
 				fromYear: row.year - 1,
 				toYear: row.year,
 				carryoverApplied: Number(row.days),
+				transferId: row.transferId,
 			},
 		});
 	}

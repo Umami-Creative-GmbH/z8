@@ -1,9 +1,9 @@
 "use server";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import { revalidateTag } from "next/cache";
+import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
 import {
 	absenceCategory,
@@ -19,7 +19,10 @@ import {
 import type { LocaleTranslationMap } from "@/db/schema/absence";
 import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
-import type { VacationBalance } from "@/lib/absences/types";
+import type {
+	VacationBalance,
+	VacationBalanceConfiguration,
+} from "@/lib/absences/types";
 import {
 	loadManualVacationAdjustments,
 	loadVacationAdjustmentSums,
@@ -27,6 +30,7 @@ import {
 	type VacationAdjustmentSums,
 } from "@/lib/absences/vacation-adjustments";
 import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
+import { vacationPolicyWriteFailure } from "@/lib/absences/vacation-policy-assignment-write";
 import {
 	checkStatutoryMinimumDays,
 	defaultStatutoryMinimumDays,
@@ -42,8 +46,12 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
@@ -97,10 +105,13 @@ function normalizeTranslationMap(value: unknown) {
 	}
 
 	const entries = Object.entries(value).flatMap(([locale, translation]) => {
-		if (typeof locale !== "string" || typeof translation !== "string") return [];
+		if (typeof locale !== "string" || typeof translation !== "string")
+			return [];
 		const trimmedLocale = locale.trim();
 		const trimmedTranslation = translation.trim();
-		return trimmedLocale && trimmedTranslation && !isUnsafeTranslationKey(trimmedLocale)
+		return trimmedLocale &&
+			trimmedTranslation &&
+			!isUnsafeTranslationKey(trimmedLocale)
 			? [[trimmedLocale, trimmedTranslation] as const]
 			: [];
 	});
@@ -115,12 +126,17 @@ function normalizeAbsenceCategoryData(data: AbsenceCategoryWriteData) {
 		name,
 		description: normalizeOptionalText(data.description),
 		nameTranslations: normalizeTranslationMap(data.nameTranslations),
-		descriptionTranslations: normalizeTranslationMap(data.descriptionTranslations),
+		descriptionTranslations: normalizeTranslationMap(
+			data.descriptionTranslations,
+		),
 		drawsOnWorkBalance: data.drawsOnWorkBalance ?? false,
 		color: normalizeOptionalText(data.color),
 		// Sick leave never requires a deputy (#1011).
 		...(data.deputyRequired !== undefined || data.type === "sick"
-			? { deputyRequired: canRequireDeputy(data.type) && data.deputyRequired === true }
+			? {
+					deputyRequired:
+						canRequireDeputy(data.type) && data.deputyRequired === true,
+				}
 			: {}),
 	};
 }
@@ -128,14 +144,18 @@ function normalizeAbsenceCategoryData(data: AbsenceCategoryWriteData) {
 const STATUTORY_MINIMUM_DAYS_MESSAGES = {
 	not_a_number: "The statutory minimum must be a number",
 	negative: "The statutory minimum cannot be negative",
-	above_annual_days: "The statutory minimum cannot exceed the policy's annual days",
+	above_annual_days:
+		"The statutory minimum cannot exceed the policy's annual days",
 } as const;
 
 function rejectInvalidStatutoryMinimumDays(
 	statutoryMinimumDays: string,
 	defaultAnnualDays: string,
 ) {
-	const problem = checkStatutoryMinimumDays(statutoryMinimumDays, defaultAnnualDays);
+	const problem = checkStatutoryMinimumDays(
+		statutoryMinimumDays,
+		defaultAnnualDays,
+	);
 	if (!problem) return Effect.void;
 	return Effect.fail(
 		new ValidationError({
@@ -171,7 +191,8 @@ function rejectConflictingAbsenceCategoryRules(
 }
 
 type AbsenceCategoryReferenceQueryable =
-	typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+	| typeof db
+	| Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 async function hasAbsenceCategoryAbsenceReferences(
 	dbClient: AbsenceCategoryReferenceQueryable,
@@ -222,7 +243,9 @@ export async function getVacationPolicy(
 	policyId: string,
 ): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect | null>> {
 	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({ queryName: "getVacationPolicy:actor" });
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "getVacationPolicy:actor",
+		});
 		const dbService = yield* DatabaseService;
 
 		const policy = yield* dbService.query("getVacationPolicy", async () => {
@@ -281,20 +304,23 @@ export async function getCompanyDefaultVacationPolicy(
 		// Step 3: Get current company default policy
 		const dbService = yield* DatabaseService;
 
-		const policy = yield* dbService.query("getCompanyDefaultPolicy", async () => {
-			// Get the active company default where startDate <= today and (validUntil is null or >= today)
-			return await dbService.db.query.vacationAllowance.findFirst({
-				where: and(
-					eq(vacationAllowance.organizationId, organizationId),
-					eq(vacationAllowance.isCompanyDefault, true),
-					eq(vacationAllowance.isActive, true),
-				),
-				with: {
-					creator: true,
-				},
-				orderBy: desc(vacationAllowance.startDate),
-			});
-		});
+		const policy = yield* dbService.query(
+			"getCompanyDefaultPolicy",
+			async () => {
+				// Get the active company default where startDate <= today and (validUntil is null or >= today)
+				return await dbService.db.query.vacationAllowance.findFirst({
+					where: and(
+						eq(vacationAllowance.organizationId, organizationId),
+						eq(vacationAllowance.isCompanyDefault, true),
+						eq(vacationAllowance.isActive, true),
+					),
+					with: {
+						creator: true,
+					},
+					orderBy: desc(vacationAllowance.startDate),
+				});
+			},
+		);
 
 		return policy || null;
 	});
@@ -334,76 +360,69 @@ export async function createVacationPolicy(data: {
 		});
 
 		const statutoryMinimumDays =
-			data.statutoryMinimumDays ?? defaultStatutoryMinimumDays(data.defaultAnnualDays);
-		yield* rejectInvalidStatutoryMinimumDays(statutoryMinimumDays, data.defaultAnnualDays);
+			data.statutoryMinimumDays ??
+			defaultStatutoryMinimumDays(data.defaultAnnualDays);
+		yield* rejectInvalidStatutoryMinimumDays(
+			statutoryMinimumDays,
+			data.defaultAnnualDays,
+		);
 
 		const dbService = yield* DatabaseService;
-
-		// Step 4: If this is a company default, close the previous default
-		if (data.isCompanyDefault) {
-			yield* dbService.query("closePreviousDefault", async () => {
-				// Find current active default
-				const currentDefault = await dbService.db.query.vacationAllowance.findFirst({
-					where: and(
-						eq(vacationAllowance.organizationId, data.organizationId),
-						eq(vacationAllowance.isCompanyDefault, true),
-						eq(vacationAllowance.isActive, true),
-					),
-				});
-
-				if (currentDefault && !currentDefault.validUntil) {
-					// Calculate validUntil as day before new policy starts
-					const newStartDate = new Date(data.startDate);
-					newStartDate.setDate(newStartDate.getDate() - 1);
-					const validUntil = newStartDate.toISOString().split("T")[0];
-
-					// Update the old policy
-					await dbService.db
-						.update(vacationAllowance)
-						.set({
-							validUntil,
-							isCompanyDefault: false,
-						})
-						.where(eq(vacationAllowance.id, currentDefault.id));
-				}
-			});
-		}
 
 		// Step 5: Create vacation policy
 		const [policy] = yield* dbService
 			.query("createVacationPolicy", async () => {
-				return await dbService.db
-					.insert(vacationAllowance)
-					.values({
-						organizationId: data.organizationId,
-						name: data.name,
-						startDate: data.startDate,
-						validUntil: data.validUntil || null,
-						isCompanyDefault: data.isCompanyDefault || false,
-						isActive: true,
-						defaultAnnualDays: data.defaultAnnualDays,
-						accrualType: data.accrualType,
-						accrualStartMonth: data.accrualStartMonth,
-						allowCarryover: data.allowCarryover,
-						maxCarryoverDays: data.maxCarryoverDays,
-						carryoverExpiryMonths: data.carryoverExpiryMonths,
-						prorateInStartAndExitYear: data.prorateInStartAndExitYear ?? true,
-						statutoryMinimumDays,
-						createdBy: actor.session.user.id,
-					})
-					.returning();
+				return await dbService.db.transaction(async (tx) => {
+					await acquireExclusiveOrganizationConfigurationGuard(
+						tx,
+						data.organizationId,
+					);
+					if (data.isCompanyDefault) {
+						const currentDefault = await tx.query.vacationAllowance.findFirst({
+							where: and(
+								eq(vacationAllowance.organizationId, data.organizationId),
+								eq(vacationAllowance.isCompanyDefault, true),
+								eq(vacationAllowance.isActive, true),
+							),
+						});
+						if (currentDefault && !currentDefault.validUntil) {
+							const validUntil = Temporal.PlainDate.from(data.startDate)
+								.subtract({ days: 1 })
+								.toString();
+							await tx
+								.update(vacationAllowance)
+								.set({ validUntil, isCompanyDefault: false })
+								.where(
+									and(
+										eq(vacationAllowance.id, currentDefault.id),
+										eq(vacationAllowance.organizationId, data.organizationId),
+									),
+								);
+						}
+					}
+					return await tx
+						.insert(vacationAllowance)
+						.values({
+							organizationId: data.organizationId,
+							name: data.name,
+							startDate: data.startDate,
+							validUntil: data.validUntil || null,
+							isCompanyDefault: data.isCompanyDefault || false,
+							isActive: true,
+							defaultAnnualDays: data.defaultAnnualDays,
+							accrualType: data.accrualType,
+							accrualStartMonth: data.accrualStartMonth,
+							allowCarryover: data.allowCarryover,
+							maxCarryoverDays: data.maxCarryoverDays,
+							carryoverExpiryMonths: data.carryoverExpiryMonths,
+							prorateInStartAndExitYear: data.prorateInStartAndExitYear ?? true,
+							statutoryMinimumDays,
+							createdBy: actor.session.user.id,
+						})
+						.returning();
+				});
 			})
-			.pipe(
-				Effect.mapError(
-					(error) =>
-						new DatabaseError({
-							message: "Failed to create vacation policy",
-							operation: "insert",
-							table: "vacation_allowance",
-							cause: error,
-						}),
-				),
-			);
+			.pipe(Effect.mapError(vacationPolicyWriteFailure));
 
 		revalidateTag(CACHE_TAGS.VACATION_POLICY(data.organizationId), "max");
 
@@ -473,60 +492,62 @@ export async function updateVacationPolicy(
 			data.defaultAnnualDays,
 		);
 
-		// Step 5: If setting as company default, unset previous default
-		if (data.isCompanyDefault && !policy.isCompanyDefault) {
-			yield* dbService.query("unsetPreviousDefault", async () => {
-				await dbService.db
-					.update(vacationAllowance)
-					.set({ isCompanyDefault: false })
-					.where(
-						and(
-							eq(vacationAllowance.organizationId, policy.organizationId),
-							eq(vacationAllowance.isCompanyDefault, true),
-							eq(vacationAllowance.isActive, true),
-						),
-					);
-			});
-		}
-
 		// Step 6: Update vacation policy
 		const [updated] = yield* dbService
 			.query("updateVacationPolicy", async () => {
-				return await dbService.db
-					.update(vacationAllowance)
-					.set({
-						name: data.name,
-						startDate: data.startDate,
-						validUntil: data.validUntil,
-						isCompanyDefault: data.isCompanyDefault,
-						defaultAnnualDays: data.defaultAnnualDays,
-						accrualType: data.accrualType,
-						accrualStartMonth: data.accrualStartMonth,
-						allowCarryover: data.allowCarryover,
-						maxCarryoverDays: data.maxCarryoverDays,
-						carryoverExpiryMonths: data.carryoverExpiryMonths,
-						prorateInStartAndExitYear: data.prorateInStartAndExitYear,
-						statutoryMinimumDays: data.statutoryMinimumDays,
-					})
-					.where(
-						and(
-							eq(vacationAllowance.id, policyId),
-							eq(vacationAllowance.organizationId, policy.organizationId),
-						),
-					)
-					.returning();
+				return await dbService.db.transaction(async (tx) => {
+					await acquireExclusiveOrganizationConfigurationGuard(
+						tx,
+						policy.organizationId,
+					);
+					const timezone = await loadOrganizationTimezone(
+						tx,
+						policy.organizationId,
+					);
+					const today = Temporal.Now.plainDateISO(timezone).toString();
+					const effectiveStart = data.startDate ?? policy.startDate;
+					const effectiveDate = effectiveStart > today ? effectiveStart : today;
+					await tx.execute(
+						sql`select set_config('z8.vacation_effective_date',${effectiveDate},true)`,
+					);
+					if (data.isCompanyDefault && !policy.isCompanyDefault) {
+						await tx
+							.update(vacationAllowance)
+							.set({ isCompanyDefault: false })
+							.where(
+								and(
+									eq(vacationAllowance.organizationId, policy.organizationId),
+									eq(vacationAllowance.isCompanyDefault, true),
+									eq(vacationAllowance.isActive, true),
+								),
+							);
+					}
+					return await tx
+						.update(vacationAllowance)
+						.set({
+							name: data.name,
+							startDate: data.startDate,
+							validUntil: data.validUntil,
+							isCompanyDefault: data.isCompanyDefault,
+							defaultAnnualDays: data.defaultAnnualDays,
+							accrualType: data.accrualType,
+							accrualStartMonth: data.accrualStartMonth,
+							allowCarryover: data.allowCarryover,
+							maxCarryoverDays: data.maxCarryoverDays,
+							carryoverExpiryMonths: data.carryoverExpiryMonths,
+							prorateInStartAndExitYear: data.prorateInStartAndExitYear,
+							statutoryMinimumDays: data.statutoryMinimumDays,
+						})
+						.where(
+							and(
+								eq(vacationAllowance.id, policyId),
+								eq(vacationAllowance.organizationId, policy.organizationId),
+							),
+						)
+						.returning();
+				});
 			})
-			.pipe(
-				Effect.mapError(
-					(error) =>
-						new DatabaseError({
-							message: "Failed to update vacation policy",
-							operation: "update",
-							table: "vacation_allowance",
-							cause: error,
-						}),
-				),
-			);
+			.pipe(Effect.mapError(vacationPolicyWriteFailure));
 
 		revalidateTag(CACHE_TAGS.VACATION_POLICY(policy.organizationId), "max");
 
@@ -549,35 +570,56 @@ export async function getEmployeesWithAllowances(
 			queryName: "getEmployeesWithAllowances:actor",
 		});
 		const dbService = yield* DatabaseService;
-		const managedEmployeeIds = yield* getManagedEmployeeIdsForSettingsActor(actor);
-		const employees = yield* dbService.query("getEmployeesWithAllowances", async () => {
-			const records = await dbService.db.query.employee.findMany({
-				where: eq(employee.organizationId, organizationId),
-				with: {
-					user: true,
-					team: true,
-					vacationAllowances: {
-						where: eq(employeeVacationAllowance.year, year),
+		const managedEmployeeIds =
+			yield* getManagedEmployeeIdsForSettingsActor(actor);
+		const employees = yield* dbService.query(
+			"getEmployeesWithAllowances",
+			async () => {
+				const records = await dbService.db.query.employee.findMany({
+					where: eq(employee.organizationId, organizationId),
+					with: {
+						user: true,
+						team: true,
+						vacationAllowances: {
+							where: eq(employeeVacationAllowance.year, year),
+						},
 					},
-				},
-			});
-			const visible = managedEmployeeIds
-				? records.filter((employeeRecord) => managedEmployeeIds.has(employeeRecord.id))
-				: records;
-			// The same server-side balance as the employee's Absences page (#1111).
-			const { balances, adjustments } = await loadVacationBalances(dbService.db, {
-				organizationId,
-				employeeIds: visible.map((employeeRecord) => employeeRecord.id),
-				year,
-				timezone: await loadOrganizationTimezone(dbService.db, organizationId),
-			});
-			return visible.map((employeeRecord) => ({
-				...employeeRecord,
-				vacationBalance: balances.get(employeeRecord.id) ?? null,
-				// The balance's manual and accrual adjustments for the year (#1105, #1106).
-				vacationAdjustments: adjustments.get(employeeRecord.id) ?? null,
-			}));
-		});
+				});
+				const visible = managedEmployeeIds
+					? records.filter((employeeRecord) =>
+							managedEmployeeIds.has(employeeRecord.id),
+						)
+					: records;
+				// The same server-side balance as the employee's Absences page (#1111).
+				const { balances, adjustments, configurations, policies } =
+					await loadVacationBalances(dbService.db, {
+						organizationId,
+						employeeIds: visible.map((employeeRecord) => employeeRecord.id),
+						year,
+						timezone: await loadOrganizationTimezone(
+							dbService.db,
+							organizationId,
+						),
+					});
+				return visible.map((employeeRecord) => {
+					const policy = policies.get(employeeRecord.id);
+					return {
+						...employeeRecord,
+						vacationBalance: balances.get(employeeRecord.id) ?? null,
+						vacationConfiguration:
+							configurations.get(employeeRecord.id) ?? null,
+						vacationPolicy: policy
+							? {
+									name: policy.name,
+									defaultAnnualDays: policy.defaultAnnualDays,
+								}
+							: null,
+						// The balance's manual and accrual adjustments for the year (#1105, #1106).
+						vacationAdjustments: adjustments.get(employeeRecord.id) ?? null,
+					};
+				});
+			},
+		);
 
 		return employees;
 	});
@@ -658,7 +700,10 @@ export async function updateEmployeeAllowance(
 		});
 		const dbService = yield* DatabaseService;
 
-		const emp = yield* getTargetEmployee(employeeId, "updateEmployeeAllowance:getTargetEmployee");
+		const emp = yield* getTargetEmployee(
+			employeeId,
+			"updateEmployeeAllowance:getTargetEmployee",
+		);
 		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
 			message: "Insufficient permissions",
 			resource: "employee_allowance",
@@ -666,14 +711,17 @@ export async function updateEmployeeAllowance(
 		});
 
 		// Step 6: Check if allowance exists
-		const existing = yield* dbService.query("checkExistingAllowance", async () => {
-			return await dbService.db.query.employeeVacationAllowance.findFirst({
-				where: and(
-					eq(employeeVacationAllowance.employeeId, employeeId),
-					eq(employeeVacationAllowance.year, year),
-				),
-			});
-		});
+		const existing = yield* dbService.query(
+			"checkExistingAllowance",
+			async () => {
+				return await dbService.db.query.employeeVacationAllowance.findFirst({
+					where: and(
+						eq(employeeVacationAllowance.employeeId, employeeId),
+						eq(employeeVacationAllowance.year, year),
+					),
+				});
+			},
+		);
 
 		// Step 7: Update or create allowance
 		const allowance = yield* dbService
@@ -831,7 +879,10 @@ export async function getVacationPolicies(
 				with: {
 					creator: true,
 				},
-				orderBy: (table, { desc: descOrder, asc }) => [descOrder(table.startDate), asc(table.name)],
+				orderBy: (table, { desc: descOrder, asc }) => [
+					descOrder(table.startDate),
+					asc(table.name),
+				],
 			});
 		});
 
@@ -983,7 +1034,10 @@ export async function updateAbsenceCategory(
 		const updateResult = yield* dbService
 			.query("updateAbsenceCategory", async () => {
 				return await dbService.db.transaction(async (tx) => {
-					await acquireExclusiveOrganizationConfigurationGuard(tx, actor.organizationId);
+					await acquireExclusiveOrganizationConfigurationGuard(
+						tx,
+						actor.organizationId,
+					);
 					const [category] = await tx
 						.select()
 						.from(absenceCategory)
@@ -999,13 +1053,17 @@ export async function updateAbsenceCategory(
 						return { type: "not_found" as const };
 					}
 
-					const hasAbsenceReferences = await hasAbsenceCategoryAbsenceReferences(
-						tx,
-						category.id,
-						actor.organizationId,
-					);
+					const hasAbsenceReferences =
+						await hasAbsenceCategoryAbsenceReferences(
+							tx,
+							category.id,
+							actor.organizationId,
+						);
 
-					if (hasAbsenceReferences && hasOperationalAbsenceCategoryChanges(category, normalized)) {
+					if (
+						hasAbsenceReferences &&
+						hasOperationalAbsenceCategoryChanges(category, normalized)
+					) {
 						return { type: "conflict" as const };
 					}
 
@@ -1022,7 +1080,8 @@ export async function updateAbsenceCategory(
 							countsAgainstVacation: normalized.countsAgainstVacation,
 							drawsOnWorkBalance: normalized.drawsOnWorkBalance,
 							// Changing it never affects existing absences until their deputy changes.
-							deputyRequired: normalized.deputyRequired ?? category.deputyRequired,
+							deputyRequired:
+								normalized.deputyRequired ?? category.deputyRequired,
 							color: normalized.color,
 							isActive: data.isActive,
 						})
@@ -1186,16 +1245,18 @@ export async function deleteAbsenceCategory(
 						return { type: "not_found" as const };
 					}
 
-					const hasAbsenceReferences = await hasAbsenceCategoryAbsenceReferences(
-						tx,
-						category.id,
-						actor.organizationId,
-					);
+					const hasAbsenceReferences =
+						await hasAbsenceCategoryAbsenceReferences(
+							tx,
+							category.id,
+							actor.organizationId,
+						);
 
 					if (hasAbsenceReferences) {
 						return {
 							type: "conflict" as const,
-							message: "Deactivate this category instead because it is used by existing absences.",
+							message:
+								"Deactivate this category instead because it is used by existing absences.",
 						};
 					}
 
@@ -1205,7 +1266,10 @@ export async function deleteAbsenceCategory(
 						.where(
 							and(
 								eq(approvalPolicyCondition.absenceCategoryId, category.id),
-								eq(approvalPolicyCondition.organizationId, actor.organizationId),
+								eq(
+									approvalPolicyCondition.organizationId,
+									actor.organizationId,
+								),
 							),
 						)
 						.limit(1);
@@ -1301,7 +1365,9 @@ export async function getVacationPolicyYears(
 /**
  * Delete a vacation policy using Effect pattern (soft delete - sets isActive=false)
  */
-export async function deleteVacationPolicy(policyId: string): Promise<ServerActionResult<void>> {
+export async function deleteVacationPolicy(
+	policyId: string,
+): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* () {
 		const actor = yield* getEmployeeSettingsActorContext({
 			queryName: "deleteVacationPolicy:actor",
@@ -1337,15 +1403,18 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 		// Step 5: Prevent deleting the only active company default
 		if (policy.isCompanyDefault) {
 			// Check if there's another active company default
-			const otherDefaults = yield* dbService.query("checkOtherDefaults", async () => {
-				return await dbService.db.query.vacationAllowance.findMany({
-					where: and(
-						eq(vacationAllowance.organizationId, policy.organizationId),
-						eq(vacationAllowance.isCompanyDefault, true),
-						eq(vacationAllowance.isActive, true),
-					),
-				});
-			});
+			const otherDefaults = yield* dbService.query(
+				"checkOtherDefaults",
+				async () => {
+					return await dbService.db.query.vacationAllowance.findMany({
+						where: and(
+							eq(vacationAllowance.organizationId, policy.organizationId),
+							eq(vacationAllowance.isCompanyDefault, true),
+							eq(vacationAllowance.isActive, true),
+						),
+					});
+				},
+			);
 
 			if (otherDefaults.length <= 1) {
 				yield* Effect.fail(
@@ -1372,17 +1441,7 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 						),
 					);
 			})
-			.pipe(
-				Effect.mapError(
-					(error) =>
-						new DatabaseError({
-							message: "Failed to delete vacation policy",
-							operation: "update",
-							table: "vacation_allowance",
-							cause: error,
-						}),
-				),
-			);
+			.pipe(Effect.mapError(vacationPolicyWriteFailure));
 
 		revalidateTag(CACHE_TAGS.VACATION_POLICY(policy.organizationId), "max");
 	});
@@ -1392,7 +1451,9 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 
 export type EmployeeAdjustmentSummary = VacationAdjustmentSums & {
 	/** Manual adjustments only, newest first; accrual rows are summed in `accrual` (#1106). */
-	manualAdjustments: Array<Omit<ManualVacationAdjustment, "createdAt"> & { createdAt: string }>;
+	manualAdjustments: Array<
+		Omit<ManualVacationAdjustment, "createdAt"> & { createdAt: string }
+	>;
 };
 
 /**
@@ -1422,7 +1483,10 @@ export async function getEmployeeAdjustmentSummary(
 		const scope = { organizationId: emp.organizationId, employeeId, year };
 		return yield* dbService.query("getEmployeeAdjustmentSummary", async () => {
 			const [sums, manualAdjustments] = await Promise.all([
-				loadVacationAdjustmentSums(dbService.db, { ...scope, employeeIds: [employeeId] }),
+				loadVacationAdjustmentSums(dbService.db, {
+					...scope,
+					employeeIds: [employeeId],
+				}),
 				loadManualVacationAdjustments(dbService.db, scope),
 			]);
 			return {
@@ -1439,10 +1503,14 @@ export async function getEmployeeAdjustmentSummary(
 }
 
 export type EmployeeVacationBalanceView = {
+	/** Organization calendar zone for reviewing the stored carryover expiry. */
+	timezone: string;
 	/** The organization's current calendar year, the year the admin page edits. */
 	year: number;
-	/** Null without a company default policy for the year. */
+	/** Null when policy periods cannot produce a reliable balance. */
 	balance: VacationBalance | null;
+	configuration: VacationBalanceConfiguration | null;
+	policy: { name: string; defaultAnnualDays: string } | null;
 	/** The policy grants its allowance monthly or biweekly through accrual (#1106). */
 	accrualPolicy: boolean;
 };
@@ -1473,17 +1541,29 @@ export async function getEmployeeVacationBalance(
 		});
 
 		return yield* dbService.query("getEmployeeVacationBalance", async () => {
-			const timezone = await loadOrganizationTimezone(dbService.db, emp.organizationId);
+			const timezone = await loadOrganizationTimezone(
+				dbService.db,
+				emp.organizationId,
+			);
 			const year = calendarYearAt(systemClock.nowInstant(), timezone);
-			const { policy, balances } = await loadVacationBalances(dbService.db, {
-				organizationId: emp.organizationId,
-				employeeIds: [employeeId],
-				year,
-				timezone,
-			});
+			const { policies, balances, configurations } = await loadVacationBalances(
+				dbService.db,
+				{
+					organizationId: emp.organizationId,
+					employeeIds: [employeeId],
+					year,
+					timezone,
+				},
+			);
+			const policy = policies.get(employeeId);
 			return {
+				timezone,
 				year,
 				balance: balances.get(employeeId) ?? null,
+				configuration: configurations.get(employeeId) ?? null,
+				policy: policy
+					? { name: policy.name, defaultAnnualDays: policy.defaultAnnualDays }
+					: null,
 				accrualPolicy: policy ? isAccrualPolicy(policy) : false,
 			};
 		});
