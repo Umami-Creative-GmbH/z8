@@ -845,6 +845,39 @@
       },
       "title": "Izvoz podataka"
     },
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Dodijeli odgovornost verifikatora",
+        "all": "Svi zaposlenici u ovoj organizaciji",
+        "allDescription": "Odgovornost prati trenutno članstvo u organizaciji. Verifikatori nikada ne mogu verificirati sami sebe.",
+        "attribution": "Dodijelio/la {actor} u {time}",
+        "description": "Dodijelite odgovornost odvojeno od upisa vozača, linijskog upravljanja i pristupa osobnim dosjeima. Upravljanje ovim dodjelama ne dopušta čitanje evidencije pregleda. Samostalna provjera uvijek je zabranjena.",
+        "editor": "Doseg provjeritelja",
+        "empty": "Nisu dodijeljene odgovornosti provjeritelja",
+        "expiry": "Istječe u {time}",
+        "history": "Povijest odgovornosti",
+        "historyEntry": "Dodijelio {grantor} u {granted}; opozvao {revoker} u {revoked}",
+        "loadFailed": "Nije bilo moguće učitati odgovornosti provjeritelja",
+        "myAll": "Odgovorni ste za provjere u cijeloj ovoj organizaciji. Ne možete provjeriti sami sebe.",
+        "mySelected": "Odgovorni ste za {teams} odabranih timova i {employees} imenovanih zaposlenika. Trenutačno članstvo u timu određuje pristup. Ne možete provjeriti sami sebe.",
+        "myTitle": "Vaša odgovornost provjeritelja",
+        "none": "Trenutačno nemate odgovornost provjeritelja vozačkih dozvola.",
+        "noTeams": "Nema dostupnih timova",
+        "person": "Provjeritelj",
+        "revoked": "Odgovornost provjeritelja je opozvana",
+        "revokeDescription": "Provjeritelj odmah gubi pristup provjerama u ovom dosegu. Za vraćanje odgovornosti potrebna je nova dodjela.",
+        "revokeFailed": "Nije bilo moguće opozvati odgovornost. Pokušajte ponovno.",
+        "revokeTitle": "Opozvati odgovornost provjeritelja?",
+        "saved": "Odgovornost provjeritelja je spremljena",
+        "scope": "Odgovornost",
+        "select": "Odaberite zaposlenika",
+        "selected": "{teams} timova, {employees} imenovanih zaposlenika",
+        "selectEmployees": "Odaberite zaposlenike",
+        "specific": "Odabrani timovi i zaposlenici",
+        "specificDescription": "Uključuje imenovane zaposlenike i trenutačne članove odabranih timova. Promjene u timu stupaju na snagu odmah.",
+        "title": "Provjeritelji vozačkih dozvola"
+      }
+    },
     "emailTemplates": {
       "actions": {
         "reset": "Vrati na sistemski predložak",
@@ -1452,7 +1485,8 @@
         "invalidTimezone": "Odaberite vremensku zonu.",
         "kioskNotFound": "Ovaj kiosk nije pronađen.",
         "kioskRevoked": "Ovaj je kiosk opozvan.",
-        "locationNotFound": "Odaberite aktivnu lokaciju ove organizacije."
+        "locationNotFound": "Odaberite aktivnu lokaciju ove organizacije.",
+        "offlineNeedsAdoption": "Za izvanmrežni način rada potrebne su koordinirane naredbe za evidenciju radnog vremena, koje ova organizacija još ne upotrebljava."
       },
       "fields": {
         "board": "Pregled prisutnosti",
@@ -1462,6 +1496,9 @@
         "locationPlaceholder": "Odaberite lokaciju",
         "name": "Naziv",
         "namePlaceholder": "npr. Ulaz za osoblje",
+        "offlineMode": "Izvanmrežni način rada",
+        "offlineModeDescription": "Kiosk nastavlja bilježiti radno vrijeme bez veze. Njegove evidencije radnog vremena potvrđuju se, a njihovi PIN-ovi provjeravaju čim se ponovno poveže.",
+        "offlineModeUnavailable": "Za izvanmrežni način rada potrebne su koordinirane naredbe za evidenciju radnog vremena, koje ova organizacija još ne upotrebljava.",
         "timezone": "Vremenska zona",
         "timezoneDescription": "Događaji evidencije radnog vremena zabilježeni na ovom kiosku koriste ovu zonu."
       },
@@ -1471,6 +1508,8 @@
       "loadFailed": "Nije moguće učitati kioske.",
       "neverSeen": "Nikada",
       "noLocations": "Prvo izradite lokaciju: svaki kiosk pripada jednoj lokaciji.",
+      "offlineOn": "Izvanmrežni način rada uključen",
+      "offlineOnNotInEffect": "Izvanmrežni način rada uključen, nije na snazi za ovu organizaciju",
       "pairAgain": "Ponovno upari",
       "pairFailed": "Nije moguće izdati novi kod za uparivanje",
       "pairingCodeLabel": "Kod za uparivanje",
@@ -1480,6 +1519,46 @@
       "pairPairedDescription": "Token uređaja se obnavlja: upareni uređaj odmah prestaje s radom i mora se ponovno upariti novim kodom.",
       "pairTitle": "Ponovno upariti {name}?",
       "pairUnpairedDescription": "Novi kod za uparivanje zamjenjuje prethodni.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Prijava rada",
+          "clockOut": "Odjava rada",
+          "resumeBreak": "Nastavi",
+          "startBreak": "Započni pauzu"
+        },
+        "columns": {
+          "action": "Radnja",
+          "claimedAt": "Prijavljeno vrijeme",
+          "employee": "Zaposlenik",
+          "kiosk": "Kiosk",
+          "reason": "Razlog",
+          "timeSource": "Izvor vremena"
+        },
+        "description": "Evidencije spremljene na kiosku dok je bio izvan mreže, a koje nisu zabilježene nakon ponovnog povezivanja. Zaposlenik ili voditelji zaposlenika bez prijave su obaviješteni.",
+        "empty": "Nijedna izvanmrežna evidencija rada nije odbijena.",
+        "reasons": {
+          "clockUntrusted": "Sat kioska nije pouzdan",
+          "conflict": "U sukobu s drugim zabilježenim vremenom",
+          "contactUnverifiable": "Posljednje povezivanje nije se moglo potvrditi",
+          "holiday": "Praznik bez evidentiranja vremena",
+          "kioskRetired": "Kiosk je opozvan ili ponovno uparen",
+          "monthClosed": "Mjesec je zatvoren",
+          "noPin": "PIN za kiosk nije postavljen",
+          "notAdopted": "Organizacija ne prihvaća izvanmrežno evidentiranje radnog vremena",
+          "notAssigned": "Nije dodijeljeno lokaciji",
+          "other": "Nije se moglo prihvatiti",
+          "outsideWindow": "Stiglo prekasno",
+          "pinLocked": "PIN je zaključan",
+          "pinUnchecked": "PIN se nije mogao provjeriti",
+          "wrongPin": "Pogrešan PIN"
+        },
+        "timeSources": {
+          "deviceClock": "Sat uređaja",
+          "serverAnchor": "Vrijeme poslužitelja"
+        },
+        "title": "Odbijene izvanmrežne registracije",
+        "unknownEmployee": "Nije zaposlenik"
+      },
       "revoke": "Opozovi",
       "revokeConfirm": "Opozovi kiosk",
       "revoked": "Kiosk je opozvan",
@@ -1487,6 +1566,7 @@
       "revokeFailed": "Nije moguće opozvati kiosk",
       "revokeTitle": "Opozvati {name}?",
       "rotateConfirm": "Obnovi token i ponovno upari",
+      "rotateOfflineWarning": "Ovaj kiosk ima uključen izvanmrežni način rada. Registracije spremljene dok je bio izvan mreže koje još nisu poslane odbijaju se pri ponovnom povezivanju te se navode pod odbijenim izvanmrežnim registracijama.",
       "save": "Spremi",
       "saved": "Kiosk je spremljen",
       "saveFailed": "Nije moguće spremiti kiosk",
@@ -1960,6 +2040,8 @@
         "name": "Naziv",
         "namePlaceholder": "Unesite naziv projekta",
         "noCustomer": "Nema klijenta",
+        "requiresTask": "Zahtijevaj zadatak",
+        "requiresTaskHelp": "Vrijeme zabilježeno na ovom projektu mora navesti jedan od njegovih zadataka. To vrijedi samo dok projekt ima otvoren zadatak.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -1973,6 +2055,7 @@
         "reasonAdminOnly": "samo administratori organizacije dodjeljuju voditelje projekata",
         "reasonDeparted": "napustio/la organizaciju",
         "reasonRemoved": "više ne postoji",
+        "requiresTask": "Zahtijeva zadatak",
         "skipped": "Nije kopirano: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2118,7 +2201,9 @@
           "name": "Naziv",
           "namePlaceholder": "npr. Redizajn web-stranice",
           "nameRequired": "Unesite naziv predloška",
-          "noIcon": "Bez ikone"
+          "noIcon": "Bez ikone",
+          "requiresTask": "Zahtijevaj zadatak",
+          "requiresTaskHelp": "Projekti izrađeni iz ovog predloška započinju s ovom postavkom."
         },
         "icons": {
           "briefcase": "Aktovka",

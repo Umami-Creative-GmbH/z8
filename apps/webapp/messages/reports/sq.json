@@ -299,6 +299,8 @@
         "estimateProgress": "{booked}h nga {estimate}h ({percent})",
         "hours": "Orë",
         "hoursValue": "{hours}h",
+        "missingTaskCount": "{count} pa një detyrë",
+        "missingTaskHint": "Rezervimet në këtë projekt që kanë ardhur pa detyrën e kërkuar. Shtoni një detyrë për çdo rezervim në kalendar.",
         "noTask": "Pa detyrë",
         "noTime": "Nuk është regjistruar kohë për këtë projekt gjatë kësaj periudhe",
         "share": "Shpërndaj",

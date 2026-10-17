@@ -13,6 +13,7 @@
       "successDescription": "Вашу підписку активовано. Дякуємо за підписку!",
       "successTitle": "Успішно!"
     },
+    "amount": "€{amount}",
     "bestValue": "Найвигідніший",
     "billedMonthly": "щомісячна оплата",
     "cancelsOn": "Скасовується {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Щомісячна оплата",
       "yearlyBilling": "Річна оплата"
     },
+    "kioskSeatPriceMonthly": "Місця кіоску (лише для працівників кіоску): €{price}/місце/місяць",
+    "kioskSeatPriceYearly": "Місця кіоску (лише для працівників кіоску): €{price}/місце/місяць, €{total}/місце при щорічній оплаті",
     "manageBilling": "Керувати оплатою",
     "monthlyCost": "Щомісячна вартість",
     "nextBilling": "Наступне списання",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/місце/міс.",
     "priceSeatMonthYearly": "€{price}/місце/міс. (оплата за рік)",
     "seatBilledAnnually": "€{price}/місце при оплаті за рік",
+    "seatLines": {
+      "full": "Повні місця",
+      "kiosk": "Місця кіоску",
+      "seatsAtPrice": "{seats} × €{price}/міс.",
+      "total": "Разом",
+      "totalPerMonth": "€{amount}/міс."
+    },
     "starting": "Запуск...",
     "startTrial": "Почати безкоштовний пробний період",
     "status": {

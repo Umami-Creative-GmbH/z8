@@ -329,6 +329,7 @@
       "duration": "Varaktighet",
       "editedBy": "Redigerad av",
       "employee": "Anställd",
+      "missingTask": "Uppgift saknas. Detta projekt kräver en: redigera bokningen för att lägga till den.",
       "notes": "Anteckningar",
       "pendingApproval": "Väntar på godkännande",
       "pendingApprovalDescription": "Denna arbetsperiod väntar på godkännande från chef. De registrerade tiderna kan ändras om den avvisas.",
@@ -517,7 +518,9 @@
     },
     "workPeriod": {
       "billable": "Debiterbar",
-      "editedBy": "(redigerad av {name} {date})"
+      "editedBy": "(redigerad av {name} {date})",
+      "missingTask": "Uppgift saknas",
+      "missingTaskHint": "Uppgift saknas: lägg till en uppgift"
     },
     "workStatus": {
       "overRequirement": "över kravet",

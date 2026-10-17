@@ -329,6 +329,7 @@
       "duration": "Süre",
       "editedBy": "Düzenleyen",
       "employee": "Çalışan",
+      "missingTask": "Eksik görev. Bu proje bir görev gerektiriyor: eklemek için rezervasyonu düzenleyin.",
       "notes": "Notlar",
       "pendingApproval": "Onay Bekliyor",
       "pendingApprovalDescription": "Bu çalışma dönemi yönetici onayı bekliyor. Reddedilirse kaydedilen saatler değişebilir.",
@@ -517,7 +518,9 @@
     },
     "workPeriod": {
       "billable": "Faturalandırılabilir",
-      "editedBy": "({name} tarafından {date} tarihinde düzenlendi)"
+      "editedBy": "({name} tarafından {date} tarihinde düzenlendi)",
+      "missingTask": "Eksik görev",
+      "missingTaskHint": "Eksik görev: bir görev ekleyin"
     },
     "workStatus": {
       "overRequirement": "gereksinimin üzerinde",

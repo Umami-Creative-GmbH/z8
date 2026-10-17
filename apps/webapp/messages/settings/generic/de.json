@@ -845,6 +845,39 @@
       },
       "title": "Datenexport"
     },
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Prüferzuständigkeit erteilen",
+        "all": "Alle Mitarbeiter in dieser Organisation",
+        "allDescription": "Die Zuständigkeit richtet sich nach der aktuellen Organisationsmitgliedschaft. Prüfer können sich niemals selbst überprüfen.",
+        "attribution": "Erteilt von {actor} am {time}",
+        "description": "Zuständigkeit unabhängig von Fahrerregistrierung, Linienmanagement und Personalaktenzugriff erteilen. Die Verwaltung dieser Zuweisungen berechtigt nicht zur Einsicht in Prüfprotokolle. Eine Selbstprüfung ist grundsätzlich unzulässig.",
+        "editor": "Prüferbereich",
+        "empty": "Keine Prüferzuständigkeiten zugewiesen",
+        "expiry": "Läuft um {time} ab",
+        "history": "Zuständigkeitshistorie",
+        "historyEntry": "Erteilt von {grantor} am {granted}; widerrufen von {revoker} am {revoked}",
+        "loadFailed": "Prüferzuständigkeiten konnten nicht geladen werden",
+        "myAll": "Sie sind für Prüfungen in dieser gesamten Organisation zuständig. Sie können sich nicht selbst prüfen.",
+        "mySelected": "Sie sind für {teams} ausgewählte Teams und {employees} namentlich genannte Mitarbeiter zuständig. Die aktuelle Teamzugehörigkeit bestimmt den Zugriff. Sie können sich nicht selbst prüfen.",
+        "myTitle": "Ihre Prüferzuständigkeit",
+        "none": "Sie haben derzeit keine Zuständigkeit für die Führerscheinprüfung.",
+        "noTeams": "Keine Teams verfügbar",
+        "person": "Prüfer",
+        "revoked": "Prüferzuständigkeit widerrufen",
+        "revokeDescription": "Der Prüfer verliert sofort den Zugriff auf Prüfungen in diesem Bereich. Um die Zuständigkeit wiederherzustellen, ist eine erneute Zuweisung erforderlich.",
+        "revokeFailed": "Zuständigkeit konnte nicht widerrufen werden. Bitte versuchen Sie es erneut.",
+        "revokeTitle": "Prüferzuständigkeit widerrufen?",
+        "saved": "Prüferzuständigkeit gespeichert",
+        "scope": "Zuständigkeit",
+        "select": "Mitarbeiter auswählen",
+        "selected": "{teams} Teams, {employees} namentlich genannte Mitarbeiter",
+        "selectEmployees": "Mitarbeiter auswählen",
+        "specific": "Ausgewählte Teams und Mitarbeiter",
+        "specificDescription": "Umfasst namentlich genannte Mitarbeiter und aktuelle Mitglieder ausgewählter Teams. Teamänderungen werden sofort wirksam.",
+        "title": "Führerscheinprüfer"
+      }
+    },
     "emailTemplates": {
       "actions": {
         "reset": "Auf Systemvorlage zurücksetzen",
@@ -1452,7 +1485,8 @@
         "invalidTimezone": "Wählen Sie eine Zeitzone aus.",
         "kioskNotFound": "Dieser Kiosk wurde nicht gefunden.",
         "kioskRevoked": "Dieser Kiosk wurde widerrufen.",
-        "locationNotFound": "Wählen Sie einen aktiven Standort dieser Organisation aus."
+        "locationNotFound": "Wählen Sie einen aktiven Standort dieser Organisation aus.",
+        "offlineNeedsAdoption": "Der Offlinemodus erfordert koordinierte Stempelbefehle, die von dieser Organisation noch nicht verwendet werden."
       },
       "fields": {
         "board": "Anwesenheitsübersicht",
@@ -1462,6 +1496,9 @@
         "locationPlaceholder": "Standort auswählen",
         "name": "Name",
         "namePlaceholder": "z. B. Personaleingang",
+        "offlineMode": "Offlinemodus",
+        "offlineModeDescription": "Der Kiosk erfasst Stempelungen auch ohne Verbindung weiter. Seine Buchungen werden bestätigt und die PINs geprüft, sobald wieder eine Verbindung besteht.",
+        "offlineModeUnavailable": "Der Offlinemodus erfordert koordinierte Stempelbefehle, die von dieser Organisation noch nicht verwendet werden.",
         "timezone": "Zeitzone",
         "timezoneDescription": "An diesem Kiosk erfasste Stempelzeiten verwenden diese Zeitzone."
       },
@@ -1471,6 +1508,8 @@
       "loadFailed": "Kioske konnten nicht geladen werden.",
       "neverSeen": "Nie",
       "noLocations": "Erstellen Sie zuerst einen Standort: Jeder Kiosk gehört zu einem Standort.",
+      "offlineOn": "Offlinemodus ein",
+      "offlineOnNotInEffect": "Offlinemodus ein, für diese Organisation nicht wirksam",
       "pairAgain": "Erneut koppeln",
       "pairFailed": "Es konnte kein neuer Kopplungscode ausgestellt werden",
       "pairingCodeLabel": "Kopplungscode",
@@ -1480,6 +1519,46 @@
       "pairPairedDescription": "Das Geräte-Token wird erneuert: Das gekoppelte Gerät funktioniert ab sofort nicht mehr und muss mit dem neuen Code erneut gekoppelt werden.",
       "pairTitle": "{name} erneut koppeln?",
       "pairUnpairedDescription": "Ein neuer Kopplungscode ersetzt den vorherigen.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Einstempeln",
+          "clockOut": "Ausstempeln",
+          "resumeBreak": "Fortsetzen",
+          "startBreak": "Pause beginnen"
+        },
+        "columns": {
+          "action": "Aktion",
+          "claimedAt": "Angegebene Zeit",
+          "employee": "Mitarbeiter",
+          "kiosk": "Kiosk",
+          "reason": "Grund",
+          "timeSource": "Zeitquelle"
+        },
+        "description": "Auf einem Kiosk im Offlinemodus gespeicherte Stempelungen, die bei erneuter Verbindung nicht erfasst wurden. Der Mitarbeiter oder die Vorgesetzten eines Mitarbeiters ohne Login wurden benachrichtigt.",
+        "empty": "Es wurde keine Offline-Stempelung abgelehnt.",
+        "reasons": {
+          "clockUntrusted": "Kioskuhr nicht vertrauenswürdig",
+          "conflict": "Konflikt mit anderer erfasster Zeit",
+          "contactUnverifiable": "Letzte Verbindung konnte nicht bestätigt werden",
+          "holiday": "Feiertag ohne Zeiterfassung",
+          "kioskRetired": "Kiosk widerrufen oder erneut gekoppelt",
+          "monthClosed": "Monat abgeschlossen",
+          "noPin": "Keine Kiosk-PIN festgelegt",
+          "notAdopted": "Offline-Stempelungen werden von der Organisation nicht akzeptiert",
+          "notAssigned": "Dem Standort nicht zugewiesen",
+          "other": "Konnte nicht akzeptiert werden",
+          "outsideWindow": "Zu spät eingetroffen",
+          "pinLocked": "PIN gesperrt",
+          "pinUnchecked": "PIN konnte nicht überprüft werden",
+          "wrongPin": "Falsche PIN"
+        },
+        "timeSources": {
+          "deviceClock": "Gerätezeit",
+          "serverAnchor": "Serverzeit"
+        },
+        "title": "Abgelehnte Offline-Stempelungen",
+        "unknownEmployee": "Kein Mitarbeiter"
+      },
       "revoke": "Widerrufen",
       "revokeConfirm": "Kiosk widerrufen",
       "revoked": "Kiosk widerrufen",
@@ -1487,6 +1566,7 @@
       "revokeFailed": "Der Kiosk konnte nicht widerrufen werden",
       "revokeTitle": "{name} widerrufen?",
       "rotateConfirm": "Token rotieren und erneut koppeln",
+      "rotateOfflineWarning": "Auf diesem Kiosk ist der Offline-Modus aktiviert. Offline gespeicherte und noch nicht übermittelte Stempelungen werden bei erneuter Verbindung abgelehnt und unter „Abgelehnte Offline-Stempelungen“ aufgeführt.",
       "save": "Speichern",
       "saved": "Kiosk gespeichert",
       "saveFailed": "Der Kiosk konnte nicht gespeichert werden",
@@ -1960,6 +2040,8 @@
         "name": "Name",
         "namePlaceholder": "Projektnamen eingeben",
         "noCustomer": "Kein Kunde",
+        "requiresTask": "Aufgabe voraussetzen",
+        "requiresTaskHelp": "Auf dieses Projekt gebuchte Zeiten müssen einer seiner Aufgaben zugeordnet werden. Dies gilt nur, solange das Projekt eine offene Aufgabe hat.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -1973,6 +2055,7 @@
         "reasonAdminOnly": "nur Organisationsadministratoren weisen Projektmanager zu",
         "reasonDeparted": "hat die Organisation verlassen",
         "reasonRemoved": "existiert nicht mehr",
+        "requiresTask": "Erfordert eine Aufgabe",
         "skipped": "Nicht kopiert: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2118,7 +2201,9 @@
           "name": "Name",
           "namePlaceholder": "z. B. Website-Relaunch",
           "nameRequired": "Vorlagennamen eingeben",
-          "noIcon": "Kein Symbol"
+          "noIcon": "Kein Symbol",
+          "requiresTask": "Aufgabe voraussetzen",
+          "requiresTaskHelp": "Aus dieser Vorlage erstellte Projekte beginnen mit dieser Einstellung."
         },
         "icons": {
           "briefcase": "Aktentasche",

@@ -99,6 +99,7 @@
       "breakPendingCorrection": "È già presente un'approvazione di rettifica oraria in sospeso per questo periodo di lavoro. Aggiungi la pausa dopo la risoluzione.",
       "breakRetry": "Impossibile aggiungere la pausa. Riprova.",
       "breakTooLong": "La durata della pausa deve essere inferiore a quella della sessione corrente.",
+      "chooseTaskInClock": "Apri l'orologio nella parte superiore della pagina, scegli un'attività, quindi timbra l'uscita.",
       "clockAttributionNotAllowed": "Il progetto o la categoria selezionata non è disponibile",
       "clockCommandRejected": "Il server non ha accettato questa timbratura",
       "clockConnectionRequired": "La timbratura richiede una connessione in questa organizzazione. Riconnettiti e riprova.",
@@ -135,6 +136,7 @@
       "taskNotFound": "Questa attività non esiste più",
       "taskOtherProject": "Questa attività appartiene a un altro progetto",
       "taskProjectNotBookable": "Non è più possibile registrare tempo per il progetto di questa attività",
+      "taskRequired": "Questo progetto richiede un'attività. Selezionane una e riprova.",
       "workCategoryNotAllowed": "Impossibile assegnare a questa categoria di lavoro"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Torna al lavoro",
         "returning": "Ritorno all'inizio tra {seconds} s",
         "startBreak": "Pausa iniziata",
-        "title": "Fatto"
+        "title": "Fatto",
+        "unconfirmed": "Salvato su questo chiosco, non ancora confermato. Il PIN verrà verificato quando il chiosco tornerà online."
       },
       "employee": {
+        "asOf": "Alle {time}",
         "back": "Annulla",
         "endDayHint": "Terminando la giornata adesso, il lavoro si concluderà all'inizio della pausa.",
         "today": "Oggi: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Avvio del chiosco in corso…",
       "offline": {
         "banner": "Il chiosco è offline. La timbratura non è possibile finché non viene ripristinata la connessione.",
-        "refused": "Il chiosco è offline. Non è stato registrato nulla; la timbratura funziona solo online."
+        "notSaved": "Impossibile salvare sul chiosco. Non è stato registrato nulla.",
+        "queueBanner": "Il chiosco è offline. Le timbrature vengono salvate su questo chiosco e confermate al ripristino della connessione.",
+        "refused": "Il chiosco è offline. Non è stato registrato nulla; la timbratura funziona solo online.",
+        "stateNote": "Il chiosco è offline. Le azioni eseguite ora vengono salvate su questo chiosco e non sono ancora confermate.",
+        "stateQueued": "Il chiosco è offline. Sono incluse le timbrature salvate su questo chiosco che non sono ancora confermate."
       },
       "pairing": {
         "codeDescription": "Il codice è monouso e scade 10 minuti dopo l'emissione.",
@@ -201,6 +209,20 @@
         "rateLimited": "Troppi tentativi di inserimento del PIN su questo chiosco. Riprova tra {seconds} secondi.",
         "submit": "OK",
         "wrong": "Il PIN non è corretto. Riprova."
+      },
+      "queue": {
+        "dismiss": "Ignora",
+        "reason": {
+          "contact": "Impossibile confermare l'ultima connessione del chiosco.",
+          "kiosk": "In quel momento il chiosco non era più associato.",
+          "locked": "Il PIN era bloccato.",
+          "notAssigned": "Il dipendente non può timbrare su questo chiosco.",
+          "other": "Rivolgiti al tuo responsabile.",
+          "pin": "Il PIN non è stato accettato.",
+          "time": "Non è stato possibile accettare l'orario."
+        },
+        "refused": "{name}: {action} alle {time}, salvata offline, non è stata accettata. {reason}",
+        "title": "Timbrature offline non accettate"
       },
       "refusal": {
         "alreadyClockedIn": "Hai già timbrato l'entrata.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Dettagli di guida mancanti",
       "duration": "Durata",
       "emptyState": "Nessuna voce oraria trovata per questa settimana.",
+      "missingTask": "Attività mancante",
+      "missingTaskHint": "Questo progetto richiede un'attività: aggiungine una a questa registrazione nel calendario.",
       "recordedLocalTime": "Ora locale registrata",
       "rowActions": "Azioni voce di tempo",
       "title": "Voci orarie",
       "viewCalendar": "Visualizza calendario"
     },
     "taskPicker": {
+      "choose": "Scegli un'attività",
       "doneTask": "{name} (completata)",
       "empty": "Nessuna attività trovata",
       "label": "Attività",
       "none": "Nessuna attività",
+      "requiredLabel": "Attività (obbligatoria)",
       "search": "Cerca attività…"
     },
     "timeline": {

@@ -53,8 +53,8 @@
       "monthlyBilling": "Monatliche Abrechnung",
       "yearlyBilling": "Jährliche Abrechnung"
     },
-    "kioskSeatPriceMonthly": "Kiosk-Sitzplätze (Nur-Kiosk-Mitarbeitende): €{price}/Sitzplatz/Monat",
-    "kioskSeatPriceYearly": "Kiosk-Sitzplätze (Nur-Kiosk-Mitarbeitende): €{price}/Sitzplatz/Monat, €{total}/Sitzplatz jährlich abgerechnet",
+    "kioskSeatPriceMonthly": "Kiosk-Plätze (nur Kiosk-Mitarbeiter): €{price}/Platz/Monat",
+    "kioskSeatPriceYearly": "Kiosk-Plätze (nur Kiosk-Mitarbeiter): €{price}/Platz/Monat, €{total}/Platz bei jährlicher Abrechnung",
     "manageBilling": "Abrechnung verwalten",
     "monthlyCost": "Monatliche Kosten",
     "nextBilling": "Nächste Abrechnung",
@@ -75,8 +75,8 @@
     "priceSeatMonthYearly": "€{price}/Sitzplatz/Monat (jährlich abgerechnet)",
     "seatBilledAnnually": "€{price}/Sitzplatz jährlich abgerechnet",
     "seatLines": {
-      "full": "Volle Sitzplätze",
-      "kiosk": "Kiosk-Sitzplätze",
+      "full": "Vollzugriff-Plätze",
+      "kiosk": "Kiosk-Plätze",
       "seatsAtPrice": "{seats} × €{price}/Monat",
       "total": "Gesamt",
       "totalPerMonth": "€{amount}/Monat"

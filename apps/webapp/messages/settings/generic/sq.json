@@ -845,6 +845,39 @@
       },
       "title": "Eksportimi i të dhënave"
     },
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Jep përgjegjësinë e verifikuesit",
+        "all": "Të gjithë punonjësit në këtë organizatë",
+        "allDescription": "Përgjegjësia ndjek anëtarësimin aktual në organizatë. Verifikuesit nuk mund të verifikojnë kurrë veten e tyre.",
+        "attribution": "Dhënë nga {actor} më {time}",
+        "description": "Jepni përgjegjësi veçmas nga regjistrimi i shoferit, menaxhimi i linjës dhe aksesi në dosjen e personelit. Menaxhimi i këtyre autorizimeve nuk lejon leximin e të dhënave të inspektimit. Vetë-verifikimi është gjithmonë i ndaluar.",
+        "editor": "Fusha e verifikuesit",
+        "empty": "Nuk janë caktuar përgjegjësi verifikuesi",
+        "expiry": "Skadon më {time}",
+        "history": "Historiku i përgjegjësive",
+        "historyEntry": "Dhënë nga {grantor} më {granted}; revokuar nga {revoker} më {revoked}",
+        "loadFailed": "Nuk mund të ngarkoheshin përgjegjësitë e verifikuesit",
+        "myAll": "Ju jeni përgjegjës për kontrollet në të gjithë këtë organizatë. Nuk mund të verifikoni veten.",
+        "mySelected": "Ju jeni përgjegjës për {teams} ekipe të zgjedhura dhe {employees} punonjës të emërtuar. Anëtarësimi aktual në ekip përcakton aksesin. Nuk mund të verifikoni veten.",
+        "myTitle": "Përgjegjësia juaj si verifikues",
+        "none": "Aktualisht nuk keni asnjë përgjegjësi verifikuesi të patentë shoferit.",
+        "noTeams": "Nuk ka ekipe të disponueshme",
+        "person": "Verifikuesi",
+        "revoked": "Përgjegjësia e verifikuesit u revokua",
+        "revokeDescription": "Verifikuesi humbet menjëherë aksesin në kontrollet brenda kësaj fushe. Kërkohet një autorizim i ri për të rikthyer përgjegjësinë.",
+        "revokeFailed": "Nuk mund të revokohej përgjegjësia. Provoni përsëri.",
+        "revokeTitle": "Të revokohet përgjegjësia e verifikuesit?",
+        "saved": "Përgjegjësia e verifikuesit u ruajt",
+        "scope": "Përgjegjësia",
+        "select": "Zgjidhni një punonjës",
+        "selected": "{teams} ekipe, {employees} punonjës të emërtuar",
+        "selectEmployees": "Zgjidhni punonjësit",
+        "specific": "Ekipet dhe punonjësit e përzgjedhur",
+        "specificDescription": "Përfshin punonjësit e emërtuar dhe anëtarët aktualë të ekipeve të përzgjedhura. Ndryshimet në ekip hyjnë në fuqi menjëherë.",
+        "title": "Verifikuesit e patentë shoferit"
+      }
+    },
     "emailTemplates": {
       "actions": {
         "reset": "Rivendos te shablloni i sistemit",
@@ -1452,7 +1485,8 @@
         "invalidTimezone": "Zgjidhni një brez orar.",
         "kioskNotFound": "Kjo kioskë nuk u gjet.",
         "kioskRevoked": "Kjo kioskë është revokuar.",
-        "locationNotFound": "Zgjidhni një vendndodhje aktive të kësaj organizate."
+        "locationNotFound": "Zgjidhni një vendndodhje aktive të kësaj organizate.",
+        "offlineNeedsAdoption": "Modaliteti jashtë linje ka nevojë për komanda të koordinuara të orës, të cilat kjo organizatë nuk i përdor ende."
       },
       "fields": {
         "board": "Tabela «Kush është brenda»",
@@ -1462,6 +1496,9 @@
         "locationPlaceholder": "Zgjidhni një vendndodhje",
         "name": "Emri",
         "namePlaceholder": "p.sh. Hyrja e stafit",
+        "offlineMode": "Modaliteti jashtë linje",
+        "offlineModeDescription": "Kioska vazhdon regjistrimin e orarit pa lidhje. Regjistrimet e saj konfirmohen, dhe kodet PIN të tyre kontrollohen, sapo të rilidhet.",
+        "offlineModeUnavailable": "Modaliteti jashtë linje ka nevojë për komanda të koordinuara të orës, të cilat kjo organizatë nuk i përdor ende.",
         "timezone": "Brezi orar",
         "timezoneDescription": "Regjistrimet e orarit të kryera në këtë kioskë përdorin këtë brez orar."
       },
@@ -1471,6 +1508,8 @@
       "loadFailed": "Kioskat nuk mund të ngarkoheshin.",
       "neverSeen": "Kurrë",
       "noLocations": "Krijoni fillimisht një vendndodhje: çdo kioskë i përket një vendndodhjeje.",
+      "offlineOn": "Modaliteti jashtë linje aktiv",
+      "offlineOnNotInEffect": "Modaliteti jashtë linje aktiv, jo në fuqi për këtë organizatë",
       "pairAgain": "Çifto përsëri",
       "pairFailed": "Nuk mund të lëshohej një kod i ri çiftimi",
       "pairingCodeLabel": "Kodi i çiftimit",
@@ -1480,6 +1519,46 @@
       "pairPairedDescription": "Tokeni i pajisjes ndërrohet: pajisja e çiftuar pushon së funksionuari menjëherë dhe duhet të çiftohet përsëri me kodin e ri.",
       "pairTitle": "Të çiftohet përsëri {name}?",
       "pairUnpairedDescription": "Një kod i ri çiftimi zëvendëson kodin e mëparshëm.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Regjistro hyrjen",
+          "clockOut": "Regjistro daljen",
+          "resumeBreak": "Rifillo",
+          "startBreak": "Fillo pushimin"
+        },
+        "columns": {
+          "action": "Veprimi",
+          "claimedAt": "Koha e deklaruar",
+          "employee": "Punonjësi",
+          "kiosk": "Kioska",
+          "reason": "Arsyeja",
+          "timeSource": "Burimi i kohës"
+        },
+        "description": "Regjistrimet e orarit të ruajtura në një kioskë ndërsa ishte jashtë linje që nuk u regjistruan kur u rilidh. Punonjësi, ose menaxherët e një punonjësi pa identifikim, u njoftuan.",
+        "empty": "Asnjë regjistrim orari jashtë linje nuk u refuzua.",
+        "reasons": {
+          "clockUntrusted": "Ora e kioskës nuk është e besueshme",
+          "conflict": "Bie në konflikt me një kohë tjetër të regjistruar",
+          "contactUnverifiable": "Lidhja e fundit nuk mund të konfirmohej",
+          "holiday": "Ditë pushimi pa regjistrim kohe",
+          "kioskRetired": "Kioska është revokuar ose çiftuar përsëri",
+          "monthClosed": "Muaji i mbyllur",
+          "noPin": "Nuk është caktuar PIN për kioskën",
+          "notAdopted": "Regjistrimi pa lidhje nuk pranohet nga organizata",
+          "notAssigned": "Nuk është caktuar në këtë vendndodhje",
+          "other": "Nuk mund të pranohej",
+          "outsideWindow": "Mbërriti shumë vonë",
+          "pinLocked": "PIN-i është bllokuar",
+          "pinUnchecked": "PIN-i nuk mund të verifikohej",
+          "wrongPin": "PIN i pasaktë"
+        },
+        "timeSources": {
+          "deviceClock": "Ora e pajisjes",
+          "serverAnchor": "Ora e serverit"
+        },
+        "title": "Regjistrime pa lidhje të refuzuara",
+        "unknownEmployee": "Nuk është punonjës"
+      },
       "revoke": "Revoko",
       "revokeConfirm": "Revoko kioskën",
       "revoked": "Kioska u revokua",
@@ -1487,6 +1566,7 @@
       "revokeFailed": "Kioska nuk mund të revokohej",
       "revokeTitle": "Të revokohet {name}?",
       "rotateConfirm": "Rrotullo tokenin dhe çifto përsëri",
+      "rotateOfflineWarning": "Ky kiosk ka të aktivizuar modalitetin pa lidhje. Regjistrimet e ruajtura ndërsa ishte pa lidhje dhe ende të padërguara refuzohen kur rilidhet, dhe listohen te regjistrimet e refuzuara pa lidhje.",
       "save": "Ruaj",
       "saved": "Kioska u ruajt",
       "saveFailed": "Kioska nuk mund të ruhej",
@@ -1960,6 +2040,8 @@
         "name": "Emri",
         "namePlaceholder": "Vendosni emrin e projektit",
         "noCustomer": "Pa klient",
+        "requiresTask": "Kërko një detyrë",
+        "requiresTaskHelp": "Koha e regjistruar për këtë projekt duhet të përcaktojë një nga detyrat e tij. Kjo zbatohet vetëm për sa kohë projekti ka një detyrë të hapur.",
         "status": "Statusi"
       },
       "fromTemplate": {
@@ -1973,6 +2055,7 @@
         "reasonAdminOnly": "vetëm administratorët e organizatës caktojnë menaxherë projekti",
         "reasonDeparted": "u largua nga organizata",
         "reasonRemoved": "nuk ekziston më",
+        "requiresTask": "Kërkon një detyrë",
         "skipped": "Nuk u kopjuan: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2118,7 +2201,9 @@
           "name": "Emri",
           "namePlaceholder": "p.sh., Rilançimi i faqes së internetit",
           "nameRequired": "Vendos një emër shablloni",
-          "noIcon": "Pa ikonë"
+          "noIcon": "Pa ikonë",
+          "requiresTask": "Kërko një detyrë",
+          "requiresTaskHelp": "Projektet e krijuara nga ky shabllon nisin me këtë cilësim."
         },
         "icons": {
           "briefcase": "Çantë dokumentesh",

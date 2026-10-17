@@ -13,6 +13,7 @@
       "successDescription": "Abonamentul dvs. a fost activat. Vă mulțumim pentru abonare!",
       "successTitle": "Succes!"
     },
+    "amount": "€{amount}",
     "bestValue": "Cea mai bună ofertă",
     "billedMonthly": "facturat lunar",
     "cancelsOn": "Se anulează la {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Facturare lunară",
       "yearlyBilling": "Facturare anuală"
     },
+    "kioskSeatPriceMonthly": "Locuri Kiosk (angajați doar pe kiosk): €{price}/loc/lună",
+    "kioskSeatPriceYearly": "Locuri Kiosk (angajați doar pe kiosk): €{price}/loc/lună, €{total}/loc facturat anual",
     "manageBilling": "Gestionați facturarea",
     "monthlyCost": "Cost lunar",
     "nextBilling": "Următoarea facturare",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/loc/lună",
     "priceSeatMonthYearly": "€{price}/loc/lună (facturat anual)",
     "seatBilledAnnually": "€{price}/loc facturat anual",
+    "seatLines": {
+      "full": "Locuri complete",
+      "kiosk": "Locuri Kiosk",
+      "seatsAtPrice": "{seats} × €{price}/lună",
+      "total": "Total",
+      "totalPerMonth": "€{amount}/lună"
+    },
     "starting": "Se inițializează...",
     "startTrial": "Începe perioada de probă gratuită",
     "status": {

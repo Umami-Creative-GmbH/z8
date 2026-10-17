@@ -117,6 +117,17 @@
       "actionFallback": "Wänn de Button nöd funktioniert, mach dä Link uf:",
       "footer": "Die E-Mail isch vo Z8 gschickt worde."
     },
+    "mfa": {
+      "codesChanged": "Widerherstelligs-Code brucht oder ersetzt",
+      "deadlineMessage": "{organization} verlangt en Authentifikator bis am {deadline}. Nach däre genaue Frischt muesch en TOTP-Authentifikator oder en Passkey mit PIN/Biometrie bestätige, bevor du uf die Organisation zuegriffe chasch. Registrierig ällei längt nöd. Bruuch d Sicherheitsüberprüefig zum registriere oder bestätige; Passwort plus en Backup-Code erloubt nume e Ersatzregistrierig.",
+      "deadlineTitle": "Organisations-Authentifizierig erforderlich",
+      "factorChanged": "Authentifikator gänderet",
+      "factorRemoved": "Authentifikator entfernt",
+      "passwordChanged": "Passwort gänderet",
+      "securityMessage": "{event} für {organization}. E früeheri Bestätigung erloubt villicht kein Zuegriff meh uf d Organisation. Bestätig en verblibene oder Ersatz-Authentifikator bi de Sicherheitsüberprüefig. Wänn du die Änderig nöd gmacht häsch, sichere dis Konto jetzt.",
+      "securityTitle": "Authentifizierigs-Sicherheit gänderet",
+      "suspended": "D Aaforderig isch zurzit usgsetzt. S erneute Aktiviere stellt di zuegwiseni Frischt wider här."
+    },
     "notification": {
       "openAction": "Z8 öffne"
     },

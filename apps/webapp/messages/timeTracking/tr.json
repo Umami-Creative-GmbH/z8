@@ -99,6 +99,7 @@
       "breakPendingCorrection": "Bu çalışma dönemi için zaten bekleyen bir zaman düzeltme onayı var. Sonuçlandıktan sonra molayı ekleyin.",
       "breakRetry": "Mola eklenemedi. Lütfen tekrar deneyin.",
       "breakTooLong": "Mola süresi geçerli oturumunuzdan daha kısa olmalıdır.",
+      "chooseTaskInClock": "Sayfanın üst kısmındaki saati açın, bir görev seçin ve ardından çıkış yapın.",
       "clockAttributionNotAllowed": "Seçilen proje veya kategori mevcut değil",
       "clockCommandRejected": "Sunucu bu giriş/çıkış işlemini kabul etmedi",
       "clockConnectionRequired": "Bu kuruluşta mesai kaydı için bağlantı gerekiyor. Yeniden bağlanıp tekrar deneyin.",
@@ -135,6 +136,7 @@
       "taskNotFound": "Bu görev artık mevcut değil",
       "taskOtherProject": "Bu görev başka bir projeye ait",
       "taskProjectNotBookable": "Bu görevin projesine artık süre kaydedilemez",
+      "taskRequired": "Bu proje bir görev gerektiriyor. Birini seçin ve tekrar deneyin.",
       "workCategoryNotAllowed": "Bu çalışma kategorisine atama yapılamaz"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "İşe dön",
         "returning": "{seconds} sn içinde başa dön",
         "startBreak": "Mola başladı",
-        "title": "Tamam"
+        "title": "Tamam",
+        "unconfirmed": "Bu kioska kaydedildi, henüz onaylanmadı. Kiosk tekrar çevrimiçi olduğunda PIN kodunuz kontrol edilir."
       },
       "employee": {
+        "asOf": "{time} itibarıyla",
         "back": "İptal",
         "endDayHint": "Günü şimdi sonlandırmak, çalışmanızı molanızın başladığı saatte bitirir.",
         "today": "Bugün: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Kiosk başlatılıyor…",
       "offline": {
         "banner": "Kiosk çevrimdışı. Bağlantı tekrar kurulana kadar giriş/çıkış yapılamaz.",
-        "refused": "Kiosk çevrimdışı. Hiçbir şey kaydedilmedi; giriş/çıkış yalnızca çevrim içi iken çalışır."
+        "notSaved": "Bu işlem kioska kaydedilemedi. Hiçbir kayıt yapılmadı.",
+        "queueBanner": "Kiosk çevrimdışı. Giriş/çıkışlar bu kioska kaydedilir ve bağlantı yeniden kurulduğunda onaylanır.",
+        "refused": "Kiosk çevrimdışı. Hiçbir şey kaydedilmedi; giriş/çıkış yalnızca çevrim içi iken çalışır.",
+        "stateNote": "Kiosk çevrimdışı. Şimdi yaptığınız işlemler bu kioska kaydedilir ve henüz onaylanmamıştır.",
+        "stateQueued": "Kiosk çevrimdışı. Bu, kioska kaydedilmiş ve henüz onaylanmamış giriş/çıkışları içerir."
       },
       "pairing": {
         "codeDescription": "Kod tek kullanımlıktır ve oluşturulduktan 10 dakika sonra süresi dolar.",
@@ -201,6 +209,20 @@
         "rateLimited": "Bu kiosktan çok fazla PIN denemesi yapıldı. {seconds} saniye sonra tekrar deneyin.",
         "submit": "Tamam",
         "wrong": "PIN doğru değil. Tekrar deneyin."
+      },
+      "queue": {
+        "dismiss": "Kapat",
+        "reason": {
+          "contact": "Kioskun son bağlantısı doğrulanamadı.",
+          "kiosk": "Kiosk o sırada artık eşlenmiş durumda değildi.",
+          "locked": "PIN kilitlendi.",
+          "notAssigned": "Çalışan bu kiosktan giriş/çıkış yapamaz.",
+          "other": "Yöneticinize danışın.",
+          "pin": "PIN kabul edilmedi.",
+          "time": "Zamanı kabul edilemedi."
+        },
+        "refused": "{name}: {time} zamanında çevrimdışıyken kaydedilen {action} kabul edilmedi. {reason}",
+        "title": "Çevrimdışı giriş/çıkışlar kabul edilmiyor"
       },
       "refusal": {
         "alreadyClockedIn": "Zaten giriş yaptınız.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Sürüş ayrıntıları eksik",
       "duration": "Süre",
       "emptyState": "Bu hafta için zaman kaydı bulunamadı.",
+      "missingTask": "Eksik görev",
+      "missingTaskHint": "Bu proje bir görev gerektiriyor: takvimdeki bu kayda bir görev ekleyin.",
       "recordedLocalTime": "Kaydedilen yerel saat",
       "rowActions": "Zaman girişi eylemleri",
       "title": "Zaman Kayıtları",
       "viewCalendar": "Takvimi Görüntüle"
     },
     "taskPicker": {
+      "choose": "Bir görev seçin",
       "doneTask": "{name} (tamamlandı)",
       "empty": "Görev bulunamadı",
       "label": "Görev",
       "none": "Görev yok",
+      "requiredLabel": "Görev (zorunlu)",
       "search": "Görevleri ara…"
     },
     "timeline": {

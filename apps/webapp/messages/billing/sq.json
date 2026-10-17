@@ -13,6 +13,7 @@
       "successDescription": "Abonimi juaj është aktivizuar. Faleminderit që u abonuat!",
       "successTitle": "Sukses!"
     },
+    "amount": "€{amount}",
     "bestValue": "Vlera më e mirë",
     "billedMonthly": "faturuar çdo muaj",
     "cancelsOn": "Anulohet më {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Faturimi mujor",
       "yearlyBilling": "Faturimi vjetor"
     },
+    "kioskSeatPriceMonthly": "Vende kioske (punonjës vetëm për kioskë): €{price}/vend/muaj",
+    "kioskSeatPriceYearly": "Vende kioske (punonjës vetëm për kioskë): €{price}/vend/muaj, €{total}/vend faturuar çdo vit",
     "manageBilling": "Menaxho faturimin",
     "monthlyCost": "Kostoja mujore",
     "nextBilling": "Faturimi i ardhshëm",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/vend/muaj",
     "priceSeatMonthYearly": "€{price}/vend/muaj (faturuar çdo vit)",
     "seatBilledAnnually": "€{price}/vend faturuar çdo vit",
+    "seatLines": {
+      "full": "Vende të plota",
+      "kiosk": "Vende kioske",
+      "seatsAtPrice": "{seats} × €{price}/muaj",
+      "total": "Totali",
+      "totalPerMonth": "€{amount}/muaj"
+    },
     "starting": "Po nis...",
     "startTrial": "Fillo provën falas",
     "status": {

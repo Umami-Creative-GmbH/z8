@@ -117,6 +117,17 @@
       "actionFallback": "Om knappen inte fungerar, öppna denna länk:",
       "footer": "Detta e-postmeddelande skickades av Z8."
     },
+    "mfa": {
+      "codesChanged": "Återställningskod använd eller ersatt",
+      "deadlineMessage": "{organization} kräver en autentiserare senast {deadline}. Efter denna exakta tidsfrist måste du verifiera en TOTP-autentiserare eller en passkey med PIN-kod/biometri innan du kan få åtkomst till denna organisation. Enbart registrering räcker inte. Använd Säkerhetsverifiering för att registrera eller verifiera; lösenord och en reservkod tillåter endast ersättningsregistrering.",
+      "deadlineTitle": "Autentisering krävs för organisationen",
+      "factorChanged": "Autentiserare ändrad",
+      "factorRemoved": "Autentiserare borttagen",
+      "passwordChanged": "Lösenord ändrat",
+      "securityMessage": "{event} för {organization}. Tidigare verifiering tillåter eventuellt inte längre åtkomst till organisationen. Verifiera en återstående eller ersättande autentiserare under Säkerhetsverifiering. Om du inte har gjort denna ändring bör du skydda ditt konto nu.",
+      "securityTitle": "Autentiseringssäkerhet ändrad",
+      "suspended": "Kravet är för närvarande inaktiverat. Om det återaktiveras återställs den tilldelade tidsfristen."
+    },
     "notification": {
       "openAction": "Öppna Z8"
     },

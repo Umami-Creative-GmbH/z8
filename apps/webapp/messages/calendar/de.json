@@ -329,6 +329,7 @@
       "duration": "Dauer",
       "editedBy": "Bearbeitet von",
       "employee": "Mitarbeiter",
+      "missingTask": "Fehlende Aufgabe. Dieses Projekt erfordert eine: Bearbeiten Sie die Buchung, um eine hinzuzufügen.",
       "notes": "Notizen",
       "pendingApproval": "Genehmigung ausstehend",
       "pendingApprovalDescription": "Dieser Arbeitszeitraum wartet auf die Genehmigung durch eine Führungskraft. Die erfassten Zeiten können sich ändern, falls er abgelehnt wird.",
@@ -517,7 +518,9 @@
     },
     "workPeriod": {
       "billable": "Abrechenbar",
-      "editedBy": "(bearbeitet von {name} am {date})"
+      "editedBy": "(bearbeitet von {name} am {date})",
+      "missingTask": "Fehlende Aufgabe",
+      "missingTaskHint": "Fehlende Aufgabe: Aufgabe hinzufügen"
     },
     "workStatus": {
       "overRequirement": "über der Anforderung",

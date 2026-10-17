@@ -227,6 +227,7 @@
     "duplicate": "Dupliziere",
     "durationMinutes": "{count} min",
     "edit": "Bearbeite",
+    "employees": "Mitarbeitendi",
     "enabled": "Aktiviert",
     "error": "Fehler",
     "error-occurred": "Es isch en Fehler ufträtte",
@@ -318,6 +319,7 @@
     "name": "Name",
     "new": "Neu",
     "next": "Wiiter",
+    "no": "Nei",
     "notApplicable": "n. v.",
     "not-available": "Nöd verfüegbar",
     "notifications": {
@@ -382,6 +384,7 @@
     "removing": "Am Entfärne...",
     "reset": "Zruggsetze",
     "retry": "Widerhole",
+    "revoke": "Widerrüefe",
     "save": "Spichere",
     "saveChanges": "Änderige spichere",
     "saving": "Am Spichere...",
@@ -407,6 +410,7 @@
         "title": "Update verfügbar"
       }
     },
+    "teams": "Teams",
     "timeInput": {
       "openTimePicker": "Ziituswahl öffne",
       "switchPeriod": "Uf {period} wechsle"
@@ -533,7 +537,277 @@
         "title": "Fahrzügnutzig",
         "vehiclesTitle": "Organisationsfahrzeuge"
       }
-    }
+    },
+    "yes": "Ja"
+  },
+  "drivingLicence": {
+    "activate": "Fahruuswiis-Kontrolle aktiviere",
+    "activationHelp": "D'Erfassig git no kei Fahrberechtigung. E befuegti Person muess zersch s'Original vom Fahruuswiis kontrolliere.",
+    "applyingInterval": "Wird aagwändet…",
+    "applyInterval": "Intervall-Anderig aawände",
+    "check": {
+      "attestations": "Persönlichi Prüefig und Erchlärige",
+      "chooseClasses": "Wähl d'Kategorie uus, wo du tatsächlich prüeft häsch.",
+      "classes": "Tatsächlich prüefti Kategorie",
+      "classExpiry": "Ablauf vo de Kategori (falls zuetreffend)",
+      "documentDates": "Date vom Originaldokumänt",
+      "employeeDeclaration": "D'Mitarbeiterperson hät die Erchlärig obedra während dere Kontrolle persönlich abgee; ich bestätige die Erchlärig.",
+      "expiryDate": "Ablaufdatum vom Dokumänt",
+      "failureScope": "Umfang vonere nöd erfolgriiche oder unchläre Prüefig",
+      "identity": "Ich han bestätigt, dass s'Originaldokumänt zu dere Mitarbeiterperson ghört.",
+      "issueDate": "Usschtelligsdatum vom Dokumänt",
+      "original": "Ich han de originali Fahruuswiis im Bysii vor Mitarbeiterperson persönlich prüeft.",
+      "privacy": "Erfass nur d'Dokumäntedate, prüefti Kategorie und nötigi Fahriischränkige. Träg kei Uuswiisnummere, Adrässe, medizinischi Begründige oder persönliche Hindergrund ii.",
+      "restrictions": "Nötigi Fahriischränkige",
+      "result": "Ergebnis",
+      "saving": "Kontrolle wird erfasst…",
+      "scopeClasses": "Nur die betroffne prüefte Kategorie",
+      "scopeDocument": "Jedi Berechtigung basierend uf em Dokumänt",
+      "scopePerson": "Alli Fahrberechtigunge für d'Mitarbeiterperson",
+      "submit": "Originalprüefig erfasse",
+      "suspensionNotice": "E erfolgriichi Nachprüefig setzt e suschpendierti Berechtigung nöd automatisch wider ii. Es bruucht e neui Prüefig und en explizite Entscheid zur Wideriisetzig.",
+      "title": "Original-Uuswiis vo {name} überprüefe",
+      "verifier": "Ich bestätige, dass die erfasste Date und d'Ergebnis vo de einzelne Kategorie miner Prüefig entspräched."
+    },
+    "class": {
+      "active": "Berechtigt",
+      "ended": "Beändet",
+      "overdue": "Routineprüefig überfällig. Das isch e organisatorischi Suschpendierig und kei Uussag drüber, dass die gsetzlichi Fahrberechtigung entzoge worde wär.",
+      "recheck": "E neui Originalprüefig und en expliziti Wideriisetzig sind erforderlich.",
+      "restrictions": "Fahriischränkige: {restrictions}",
+      "suspended": "Suschpendiert",
+      "validThrough": "Gültig bis {date} ({timezone})"
+    },
+    "declaration": {
+      "text": "Ich bestätige, dass kei bekannts Fahrverbot, Entzug oder suschtigs Hindernis em planten Fahre im Wäg staht und dass ich die geltende Fahriischränkige iihalte."
+    },
+    "delivery": {
+      "uncertain": "Optionali Erinnerigs-Mails an Sie händ en unsichere Zuestelligsstatus ({count}). Si wärded nöd nomal automatisch gschickt. Ihri In-App-Erinnerige bliibed verfüegbar; d E-Mail-Zuestellig bestätigt s Läse nöd."
+    },
+    "earlierLimit": "Früecheri Dokumänt-/Klassebeschränkig",
+    "enroll": "Aamälde",
+    "enrollError": "De Mitarbeiter hät nöd chönne aagmäldet wärde. Aktiviered Si zerst d Richtlinie und überprüefed Si Ihre Zuegang.",
+    "enrollmentHelp": "Mitarbeiter aamälde, wo fahre sölled. Fahrzüügzuewiisige und früecheri Fahrzüügnutzig erstelled nie e Berächtigig.",
+    "enrollmentTitle": "Vorgsehni Fahrer",
+    "enrollName": "{name} aamälde",
+    "evidence": {
+      "confirmation": "Prüefer-Bestätigung mit Richtlinie-Version {version} erfasst; Friste verwänded {timezone}.",
+      "declarationConfirmed": "De Mitarbeiter hät d Erchlärig persönlich abgee; de Prüefer hät si zum Kontrollziitpunkt bestätigt.",
+      "declarationUnconfirmed": "D Mitarbeitererchlärig hät nöd chönne bestätigt wärde.",
+      "document": "Dokumänt uusgstellt am {issued}; lauft ab am {expiry}",
+      "empty": "Es isch kei Originalprüefig abgschlosse worde.",
+      "originalConfirmed": "Original persönlich prüeft und Mitarbeiteridentität bestätigt.",
+      "originalUnconfirmed": "Originalprüefig oder Mitarbeiteridentität hät nöd chönne bestätigt wärde.",
+      "title": "Originalprüefigs-Nawiis",
+      "verifier": "Originalprüefig erfasst dur {name}"
+    },
+    "history": {
+      "allClasses": "Alli Klasse",
+      "apply": "Zitruum aawände",
+      "authorized": "Berächtigig erteilt",
+      "chooseOutcome": "Ergebnis uswähle",
+      "class": "Prüefti Klass",
+      "classExpired": "Klass abgloffe",
+      "classExpiry": "Ablaufdatum vor Klass",
+      "classRestrictions": "Fahrischränkige",
+      "classResult": "Ergebnis vor prüefte Klass",
+      "context": "Kontext usserhalb vom uswählte Zitruum",
+      "decision": "Berächtigigsenttscheid",
+      "declarationConfirmed": "Mitarbeitererchlärig bi de Originalprüefig bestätigt",
+      "declarationUnconfirmed": "Mitarbeitererchlärig nöd bestätigt",
+      "documentExpired": "Dokumänt abgloffe",
+      "documentExpiry": "Ablaufdatum vom Dokumänt",
+      "documentImpediment": "Dokumäntwits Hindernis",
+      "documentIssued": "Uusstelligsdatum vom Dokumänt",
+      "downloadPdf": "Nawiis-PDF abelade",
+      "employmentEnded": "Aastellig beändet",
+      "empty": "Kei Prüefige oder Berächtigigsenttscheid i däm Zitruum.",
+      "ended": "Fahrberächtigig beändet",
+      "evidenceCorrected": "Korrigierte Nawiis bruucht e neui Prüefig und en expliziti Wideriisetzig",
+      "failed": "Prüefti Klass nöd erfolgriich",
+      "field": "Korrigierts Fäld",
+      "from": "Vo-Datum (UTC)",
+      "globalSuspension": "Alli Fahrberächtigunge suschpendiert",
+      "help": "Originalbestätigunge, datierti Ergänzige und wirksami Berächtigigsenttscheid bliibed trennt. Früecheri Nawiis, wo für s Verständnis vom uswählte Zitruum nötig sind, wärded als Kontext kennzeichnet. Alli Eräignisziite und Zitruumgränze unte verwänded UTC.",
+      "impedimentReported": "Fahrhindernis gmäldet",
+      "impedimentResolved": "Gmäldets Hindernis explizit glöst",
+      "inconclusive": "Prüefti Klass nöd eidütig",
+      "linkedOriginal": "Verchnüpfti Originalprüefig: {date}",
+      "loading": "Verlauf wird glade…",
+      "minimalEvidence": "Erfassed Si nur notwendigi Fahrnawiis. Träged Si kei Dokumäntenummere, medizinischi Erchlärige oder persönliche Hindergrund ii.",
+      "missingDetail": "Fählends Detail",
+      "none": "Keine erfasst",
+      "openSupplement": "Originalprüfung {date} ergänzen",
+      "original": "Originalprüfung und Bestätigung",
+      "originalConfirmed": "Original und Identität bestätigt",
+      "originalUnconfirmed": "Original oder Identität nicht bestätigt",
+      "overdue": "Routineprüfung überfällig",
+      "personImpediment": "Personenbezogenes Hindernis",
+      "policyContext": "Richtlinienversion {version}; Intervall {months} Monate",
+      "policyIntervalChanged": "Berechtigungsfrist durch Intervallrichtlinie geändert",
+      "policyRecalculated": "Berechtigungsfrist durch Richtlinie neu berechnet",
+      "reason": "Grund für die Ergänzung",
+      "recorded": "Erfasst am {date}",
+      "recordingError": "Erfassungsfehler",
+      "reinstated": "Berechtigung nach neuer Prüfung ausdrücklich wieder erteilt",
+      "save": "Ergänzung speichern",
+      "saveError": "Die Ergänzung konnte nicht gespeichert werden. Überprüfen Sie Ihre aktuelle Zuständigkeit und die Korrekturangaben.",
+      "snapshot": "Richtlinie {version}; Intervall {months} Monate; Zeitzone der Frist {timezone}",
+      "supplementBy": "Ergänzung durch {name}",
+      "supplementHelp": "Dies fügt eine datierte Korrektur mit Ihrer Identität hinzu. Die ursprüngliche Bestätigung bleibt unverändert. Frühere Befristungen, negative Prüfergebnisse und neue Einschränkungen sistieren die betroffene aktuelle Freigabe; eine Ergänzung erneuert oder reaktiviert eine Berechtigung nie.",
+      "supplementTitle": "Originalprüfung {date} ergänzen",
+      "suspended": "Berechtigung gesperrt",
+      "title": "Prüf- und Berechtigungsverlauf",
+      "to": "Vor dem Datum (UTC)",
+      "unavailable": "Verlauf ist nicht verfügbar. Überprüfen Sie den Zeitraum und Ihre aktuellen Zugriffsrechte.",
+      "value": "Korrigierter Wert",
+      "verifierConfirmation": "Bestätigung der Prüfperson zum Zeitpunkt der Originalprüfung erfasst"
+    },
+    "impediment": {
+      "newCheckRequired": "Erfassen Sie vor der Reaktivierung eine neue erfolgreiche Originalprüfung für die gesperrten Kategorien.",
+      "reinstate": "Ausgewählte Kategorien reaktivieren",
+      "reinstated": "Die ausgewählten Kategorien wurden ausdrücklich wieder erteilt.",
+      "reinstateFailed": "Reaktivierung wurde abgelehnt. Aktualisieren und überprüfen Sie den aktuellen Datensatz, Ihre Zuständigkeit und eine neue Originalprüfung.",
+      "reinstateHelp": "Erfassen Sie nach der Sistierung zuerst eine neue persönliche Originalprüfung. Stellen Sie sicher, dass jedes Hindernis behoben wurde; prüfen Sie allfällige erforderliche Nachweise ausserhalb von Z8. Die Einsicht in den Führerausweis allein reicht möglicherweise nicht aus. Nur die ausgewählten, erfolgreich geprüften Kategorien werden reaktiviert.",
+      "reinstateTitle": "Fahrberechtigung ausdrücklich wieder erteilen",
+      "reinstating": "Reaktivierung wird gespeichert…",
+      "report": "Melden, dass ich nicht fahren kann",
+      "reported": "Alle Ihre Kategorieberechtigungen sind gesperrt. Wenden Sie sich an Ihre zuständige Prüfperson für eine neue Originalprüfung und die ausdrückliche Reaktivierung, sobald das Hindernis behoben ist.",
+      "reportFailed": "Die Meldung konnte nicht gespeichert werden. Versuchen Sie es erneut oder kontaktieren Sie umgehend Ihre zuständige Prüfperson.",
+      "reportHelp": "Melden Sie eine aktuelle Fahruntauglichkeit. Alle Kategorieberechtigungen werden unverzüglich gesperrt. Sie müssen keine persönlichen Gründe angeben.",
+      "reporting": "Meldung wird gespeichert…",
+      "resolutionConfirmation": "Ich habe festgestellt, dass alle personenbezogenen, dokumentweiten und gemeldeten Hindernisse behoben sind, habe die erforderlichen Nachweise ausserhalb von Z8 geprüft und erteile die ausgewählten Kategorien hiermit ausdrücklich wieder.",
+      "selectClasses": "Aus der letzten Originalprüfung zu reaktivierende Kategorien",
+      "title": "Fahruntauglich?",
+      "unresolvedReport": "Ein von Mitarbeitenden gemeldetes personenbezogenes Hindernis muss noch behoben werden."
+    },
+    "interval": "Intervall der Routineprüfung (Monate)",
+    "intervalAnchorHelp": "Berechnet ab der letzten erfolgreichen Prüfung der jeweiligen Kategorie.",
+    "intervalApplied": "Intervall angewendet. Bestehende Sperrungen bleiben in Kraft.",
+    "intervalChangeHelp": "Prüfen Sie die neu berechneten Daten für jede Kategorie vor der Anwendung in der Vorschau. Frühere Dokument- und Kategoriebefristungen gelten weiterhin. Eine Verlängerung des Intervalls reaktiviert eine gesperrte Berechtigung nie.",
+    "intervalChangeTitle": "Routineintervall ändern",
+    "intervalHelp": "Jede geprüfte Kategorie verwendet ihre eigene letzte erfolgreiche Prüfung als Bezugspunkt für die Routineprüfung.",
+    "intervalImpact": "Auswirkungen des Intervalls",
+    "intervalImpactHelp": "Überprüfen Sie das neue Routinedatum und die frühere massgebliche Befristung für jede betroffene Kategorie. Datumsangaben verwenden die angegebene Kalender-Zeitzone.",
+    "intervalPreviewError": "Die Auswirkung konnte nicht geladen werden. Überprüfen Sie Ihren Zugriff und wählen Sie ein Intervall von 1 bis 120 Monaten.",
+    "intervalStale": "Die Richtlinie oder Fahrberechtigung hat sich geändert, oder Ihr Zugriff ist nicht verfügbar. Zeigen Sie die aktuelle Auswirkung vor dem Anwenden nochmals in der Vorschau an.",
+    "justification": "Aufbewahrungsbegründung",
+    "justificationHelp": "Erklären Sie, warum diese befristete Dauer erforderlich ist (mindestens 10 Zeichen). Geben Sie keine privaten oder medizinischen Details an.",
+    "loadError": "Führerausweiskontrolle konnte nicht geladen werden. Überprüfen Sie den Zugriff Ihrer Organisation.",
+    "myDescription": "Status Ihrer Führerausweisprüfung anzeigen",
+    "myTitle": "Meine Fahrberechtigung",
+    "newInterval": "Neues Routineintervall (Monate)",
+    "newlyOverdue": "Neu überfällig – wird sistiert",
+    "newRoutineDate": "Nächste Routineprüfung",
+    "noEmployeeRecord": "In dieser Organisation ist kein Führerausweisdatensatz für Mitarbeitende verfügbar.",
+    "noEmployees": "Es sind keine aktiven Mitarbeitenden zum Erfassen vorhanden.",
+    "noIntervalClasses": "Keine bestehenden Klassenberechtigungen erfordern eine Neuberechnung.",
+    "notChecked": "Noch nicht geprüft – keine Fahrberechtigung",
+    "notEnrolled": "Nicht erfasst – keine Fahrberechtigung",
+    "operational": {
+      "advisory": "Fahrberechtigung",
+      "loading": "Fahrberechtigung wird geladen…",
+      "noEmployees": "Keine übereinstimmenden Mitarbeitenden.",
+      "recordingHelp": "Sie können Arbeitszeit und tatsächliche Fahrzeugnutzung jederzeit erfassen. Die Auswahl eines Fahrzeugs gewährt keine Fahrberechtigung; geprüfte Klassen begründen nicht die Eignung für jedes Fahrzeug.",
+      "refresh": "Fahrstatus aktualisieren",
+      "search": "Mitarbeitende suchen",
+      "searchHelp": "Es werden bis zu 50 Mitarbeitende angezeigt. Grenzen Sie die Suche ein, um andere Mitarbeitende zu finden. Diese Ansicht enthält keine Kontrolldatensätze.",
+      "title": "Fahrstatus für Planung",
+      "unavailable": "Status der Fahrberechtigung ist nicht verfügbar."
+    },
+    "policyIntro": "Prüfungen von Originalausweisen gemäss Vorgaben für Deutschland. Wählen Sie das Routineintervall und begründen Sie eine befristete Nachweisaufbewahrung vor der Aktivierung.",
+    "policyTitle": "Organisationsrichtlinie",
+    "previewingInterval": "Auswirkungen werden geladen…",
+    "previewInterval": "Intervall-Auswirkungen in der Vorschau anzeigen",
+    "reminders": "Erinnerungsvorlauf (Tage)",
+    "remindersHelp": "Kommagetrennte ganze Tage vor einer Frist, von 0 bis 365. Die anfänglichen Vorschläge sind 30 und 7 Tage.",
+    "result": {
+      "inconclusive": "Nicht eindeutig",
+      "successful": "Erfolgreich",
+      "unsuccessful": "Nicht erfolgreich"
+    },
+    "retention": "Aufbewahrungsdauer (Monate)",
+    "retention.case": "Spezifische Rechtsfall-Referenz",
+    "retention.check": "Datensatz prüfen",
+    "retention.choose": "Aufbewahrten Datensatz auswählen",
+    "retention.cleaning": "Fällige Datensätze werden geprüft…",
+    "retention.cleanup": "Bereinigung fälliger Nachweise ausführen",
+    "retention.confirmDelete": "Fällige Nachweise löschen",
+    "retention.confirmDescription": "Dadurch werden Nachweise endgültig gelöscht, deren Aufbewahrungsfrist abgelaufen ist. Aktuell gültige Berechtigungen und Sperren aufgrund von Rechtsfällen bleiben geschützt. Gelöschte Originale und Ergänzungen können über die Anwendung nicht wiederhergestellt werden.",
+    "retention.confirmTitle": "Fällige Nachweise löschen?",
+    "retention.deadline": "Aufbewahrung begann am {start}. Zur Löschung bereit ab {end}.",
+    "retention.empty": "Keine aufbewahrten Prüfdatensätze.",
+    "retention.error": "Aufbewahrungsverwaltung konnte nicht abgeschlossen werden. Aktualisieren Sie und überprüfen Sie Ihren Zugriff sowie die Falldetails.",
+    "retention.help": "Die Aufbewahrung beginnt, wenn eine Prüfung keine aktive Klasse mehr unterstützt. Eine Sperre erfordert einen konkreten Rechtsfall, schützt auch zugehörige Berichtsbelege aus demselben Anstellungsverhältnis und muss aufgehoben werden, sobald die Aufbewahrung nicht mehr erforderlich ist. Diese Kontrollen gewähren keinen Einsichtszugriff. Geben Sie keine medizinischen oder persönlichen Hintergrundinformationen ein.",
+    "retentionHelp": "Erforderlich für die Aktivierung: 1–120 Monate, nachdem Nachweise keine aktive Kategorienberechtigung mehr unterstützen. Behalten Sie eine begründete, befristete Dauer bei, wenn Sie die Führerausweiskontrolle deaktivieren; die Bereinigung wird fortgesetzt.",
+    "retention.holdDetails": "Fall {case}: {reason}. Gesetzt durch {actor} um {time}.",
+    "retention.loading": "Aufbewahrungsdatensätze werden geladen…",
+    "retention.place": "Fallspezifische Sperre setzen",
+    "retention.protected": "Geschützt durch eine aktive Klassenberechtigung",
+    "retention.reason": "Warum dieser Fall eine Aufbewahrung erfordert",
+    "retention.record": "{employee} · Prüfung {date}",
+    "retention.release": "Aufbewahrung aufheben",
+    "retention.released": "Aufgehoben durch {actor} um {time}: {reason}",
+    "retention.releaseError": "Die Aufbewahrung konnte nicht aufgehoben werden. Prüfen Sie Ihren Zugriff und den Aufhebungsgrund.",
+    "retention.releaseReason": "Warum die Aufbewahrung nicht mehr erforderlich ist",
+    "retention.report": "{employee} · Meldung {date}",
+    "retention.reportHeld": "Geschützt durch Fall {case} bei zugehörigen Prüfnachweisen aus dieser Anstellungsperiode. Heben Sie die Aufbewahrung für diese Prüfung auf, wenn die Aufbewahrung nicht mehr erforderlich ist.",
+    "retention.reportProtected": "Geschützt, solange die aktuelle Meldung ungelöst bleibt oder ihre Klärungsprüfung eine aktive Berechtigung unterstützt.",
+    "retention.reportsTitle": "Aufbewahrung von Hindernismeldungen",
+    "retentionRequiredError": "Behalten Sie eine befristete, begründete Aufbewahrungsdauer bei, wenn Sie die Führerausweiskontrolle deaktivieren. Bestehende Nachweise unterliegen weiterhin der Bereinigung.",
+    "retention.run": "{time}: {deleted} gelöscht, {held} zurückbehalten, {protected} geschützt. Akteur: {actor}",
+    "retention.runs": "Kürzliche Bereinigungsergebnisse",
+    "retention.saveError": "Die Aufbewahrung konnte nicht gespeichert werden. Prüfen Sie die Falldetails und Ihren Zugriff.",
+    "retention.scheduled": "Geplante Verarbeitung",
+    "retention.title": "Nachweisaufbewahrung und Aufbewahrungssperren für Rechtsfälle",
+    "save": "Richtlinie speichern",
+    "saved": "Richtlinie gespeichert",
+    "saveError": "Die Richtlinie konnte nicht gespeichert werden. Prüfen Sie das Intervall, die Zeitzone, Erinnerungen und die begründete Aufbewahrungsdauer.",
+    "saving": "Wird gespeichert…",
+    "settingsDescription": "Originalprüfungen konfigurieren und vorgesehene Fahrer registrieren",
+    "status": {
+      "active": "Fahrberechtigung aktiv",
+      "ended": "Fahrberechtigung beendet",
+      "explanation": "Die betriebliche Fahrberechtigung umfasst die aufgeführten Kategorien und Einschränkungen. Sie begründet keine Eignung für jedes Fahrzeug. Sie können die Arbeitszeit und die tatsächliche Fahrzeugnutzung weiterhin erfassen.",
+      "partial": "Einige Führerausweiskategorien sind ausgesetzt",
+      "suspended": "Fahrberechtigung ausgesetzt"
+    },
+    "staysCurrent": "Bleibt aktuell",
+    "staysSuspended": "Bleibt ausgesetzt",
+    "subtitle": "Originalprüfungen konfigurieren und vorgesehene Fahrer registrieren. Die Fahrberechtigung gilt spezifisch für die geprüften Kategorien und Einschränkungen.",
+    "tasks": {
+      "assign": "Zuständigkeit zuweisen",
+      "assigned": "Zuständigkeit zugewiesen",
+      "assignmentBoundary": "Diese Aufgabe gewährt keine Prüfungsrechte und verlängert keine Frist.",
+      "class": "Kategorie {classCode}",
+      "complete": "Persönliche Erinnerung als erledigt markieren",
+      "completeError": "Diese Aufgabe konnte nicht abgeschlossen werden. Prüfen Sie Ihre aktuelle Prüferzuständigkeit.",
+      "completing": "Wird abgeschlossen…",
+      "deadline": "Originalprüfung fällig",
+      "directUnavailable": "Die direkte Benachrichtigung des Mitarbeitenden war nicht verfügbar. Erinnern Sie diesen Mitarbeitenden persönlich.",
+      "initialCheck": "Erste Originalprüfung erforderlich",
+      "loadError": "Führerausweis-Aufgaben konnten nicht geladen werden. Prüfen Sie Ihren Organisationszugriff.",
+      "loading": "Führerausweis-Aufgaben werden geladen…",
+      "noDeliveryReceipt": "Der Aufgabenabschluss bestätigt weder die direkte Zustellung noch die Kenntnisnahme durch den Mitarbeitenden. Es wird keine Frist verlängert.",
+      "noVerifier": "Für diesen Mitarbeitenden ist kein verfügbarer Prüfer zuständig.",
+      "personalCompleted": "Persönliche Erinnerung erledigt",
+      "personalTitle": "Aufgaben für persönliche Erinnerungen",
+      "reassignmentTitle": "Aufgaben zur Prüferzuständigkeit",
+      "refresh": "Zuständigkeit erneut prüfen",
+      "suspension": "Fahrberechtigung ausgesetzt",
+      "validThrough": "Gültig bis {date} in der für die Prüfung gespeicherten Frist-Zeitzone"
+    },
+    "timezone": "Feschti Kaländer-Zitzone",
+    "title": "Fahruuswis-Kontrolle",
+    "unnamedEmployee": "Mitarbeiter",
+    "worklist": {
+      "help": "Numä registrierti Mitarbeiter innerhalb vo dinere aktuelle Prüefer-Verantwortig werded da aazeigt.",
+      "open": "{name} überprüefe",
+      "title": "Dini Original-Prüefigs-Arbetslischte",
+      "viewEnded": "Beendete Iitrag für {name} aaluege"
+    },
+    "zoneFixedError": "D'Kaländer-Zitzone isch feschtgleit. Bestahndi Frischte müend iri ursprünglechi Bedütig bhalte.",
+    "zoneHelp": "Reini Datumsgränze beinhalted de ganz aazeigti Tag i dere Zitzone. Si wird bim erschte Spychere feschtgleit; d'Zitzone vom Betrachter änderet e Frist nie."
   },
   "employeeSelect": {
     "countSelected": "{count} Aagstellti usgwählt",
@@ -617,6 +891,101 @@
     "setup": "Iirichtig wird glade",
     "teamAbsences": "Team-Absänzetabelle wird glade",
     "workerQueue": "Worker-Warteschlanga wird glade"
+  },
+  "mfa": {
+    "banner": {
+      "action": "Aafordrige überprüefe und bestätige",
+      "requirement": "Die Organisation verlangt e bestätigti Authentifizierig ab {deadline}."
+    },
+    "code": {
+      "label": "Authenticator-Code",
+      "verify": "Authenticator bestätige"
+    },
+    "continue": "Nach de Bestätigung wiitermache",
+    "coverage": {
+      "access": "Letschte qualifizierende Zuegang zur Organisation",
+      "deadline": "Zuegwiseni Frist",
+      "enforced": "Erzwunge",
+      "failed": "Authentifizierigs-Abdeckig vo de Organisation hät nöd chönne glade werde",
+      "kiosk": "Nur Kiosk · usserhalb vom Geltigsbereich",
+      "loading": "Organisations-Authentifizierig wird glade…",
+      "member": "Mitgliid",
+      "methods": "Registrierti Methode",
+      "none": "Keini",
+      "title": "Mitgliider-Registrierig und Organisations-Bestätigung",
+      "unproven": "Kein qualifizierende Zuegang erfasst"
+    },
+    "deadline": {
+      "enforced": "En Authenticator muess vor em Zuegang zur Organisation bestätigt werde.",
+      "grace": "Registrierigsfäischter lauft. Bestätig en Authenticator vor dere Frist.",
+      "required": "Bestätigung jetzt erforderlich"
+    },
+    "enrollment": {
+      "title": "En Authenticator registriere oder ersetze",
+      "warning": "S'Hinzuefüege oder Ersetze vome Faktor brucht e Bestätigung innerhalb vo fünf Minute. Bestätig de Ersatz, bevor du de alti Faktor entfersch. S'Widerruefe vom letschte Faktor isch erlaubt und chan de Zuegang zu de obe ufgfüehrte Organisatione blockiere; es git keis neus Registrierigsfäischter."
+    },
+    "organization": {
+      "select": "En anderi Organisation uswähle"
+    },
+    "page": {
+      "context": "Persönlechi Registrierig, Widerherstellig und d'Organisationsuswahl bliibed verfüegbar, während de Organisationszuegang e Bestätigung brucht.",
+      "title": "Sicherheitsüberprüefig"
+    },
+    "passkey": {
+      "verify": "Mit eme Passkey bestätige"
+    },
+    "password": {
+      "failed": "Passwort-Bestätigung fählgschlage",
+      "label": "Aktuells Passwort",
+      "verified": "Passwort bestätigt. Du chasch din erschte Authenticator registriere oder unte en bestahnde Authenticator oder Backup-Code bestätige.",
+      "verify": "Passwort bestätige"
+    },
+    "policy": {
+      "activation": "Änderige bruched Inhaber-/Admin-Berechtigunge und e akzeptierti Authentifizierig innerhalb vo fünf Minute. Richte e Widerherstellig ii und am beschte en wiitere Administrator, wo en funktionierende Aamäldeweg vorgwise hät; d'Registrierig ellei biwiist das nonig.",
+      "days": "{days} Täg (je 24 Schtunde)",
+      "description": "Passwort plus TOTP oder en mit PIN/Biometrie bestätigte Passkey für jede lokale Organisationszuegang vo menschleche Mitgliider vorussetze. Synchronisierti Passkeys sind zuelässig. Die Richtlinie isch i jedem Plan verfüegbar.",
+      "enable": "En Authenticator für lokali Aamäldige vorschriibe",
+      "failed": "Richtlinie-Aktualisierig abglehnt",
+      "grace": "Registrierigsfäischter für zuekünftigi Zuewiisige",
+      "lockoutAck": "Wänn kein andere Administrator en bestätigte Wäg hät, akzeptier ich, dass de Verluscht vo allne Authentifizierigs- und Widerherstelligswäg die Organisation gsperrt laht, ohni Administrator- oder Support-Bypass.",
+      "lockoutLabel": "S'Risiko akzeptiere, alli Administrator-Authentifizierigswäg z'verlüüre",
+      "recoveryAck": "Ich han min Aamäldeweg überprüft und d'Widerherstellig iigrichtet.",
+      "save": "Richtlinie spychere",
+      "saving": "Wird gspycheret…",
+      "sso": "E bestätigti Aamäldig über de aktuelli SSO-Aabieter vo dere Organisation liit usserhalb vo de lokale MFA-Baseline. D'Organisation erzwingt MFA bi irem Identity Provider; Z8 überprüft d'IdP-MFA-Zuesicherig nöd. SSO erzwinge bliibt separat und hät kein lokale Fallback.",
+      "tab": "Lokali MFA",
+      "tabDescription": "Verifizierti lokali Authentisierig mit kontrollierte Registrierigsfrischte verlange",
+      "title": "Organisations-Authentisierig",
+      "verify": "Verifizier dini Authentisierig, bevor du die Richtlinie änderisch",
+      "windows": "Bestehendi Frischte verschiebed sich nie. S Deaktiviere setzt d Durchsetzig us; s Wideraktiviere stellt d Zuegwisene Frischte wider her, au die abglaufene. Es git keini individuelle Usnahme."
+    },
+    "recovery": {
+      "action": "Mit Backup-Code widerherstelle",
+      "description": "Für d Widerherstellig verifizier dis Passwort obedra und gib dänn en unbruuchte Backup-Code ii. Das löscht die bisherig lokali Verifizierig über all dini Organisatione.",
+      "label": "Backup-Code",
+      "lockout": "Wänn en einzige Administrator alli Authentisierigs- und Widerherstelligswääg verlüürt, bliibt d Organisation gsperrt. Es git kei Umgahig dur Administratore oder de Support.",
+      "success": "D Widerherstellig erlaubt nur e Ersatzregistrierig. Verifizier en Authentifikator, bevor du zu dinere Organisation zruggchehrsch."
+    },
+    "security": {
+      "factorWarning": "S Entfärne vome Faktor chan de Zuegang zu Organisatione blockiere, wo ihn verlanged. Verifizier zerscht en Ersatz; s Entfärne vom letschte Faktor gwährt keini neui Fristverlengerig.",
+      "link": "Authentisierig verifiziere und Organisationsaaforderige überprüefe",
+      "policyLink": "Organisations-Authentisierigsrichtlinie (Inhaber/Admins)"
+    },
+    "signout": "Abmälde",
+    "social": {
+      "verify": "Bestehendi Aamäldig mit {provider} verifiziere"
+    },
+    "sso": {
+      "failed": "Organisations-SSO hät nöd chönne gstartet werde",
+      "verify": "Mit Organisations-SSO verifiziere"
+    },
+    "verification": {
+      "failed": "Verifizierig fählgschlage"
+    },
+    "verify": {
+      "description": "Verifizier en Authentifikator, zum zu dinere Organisation zruggzchehre. D Registrierig und s Vertroue dur gmerkti Grät elai erfüllt d Aaforderig nöd.",
+      "title": "Verifizier dini Aamäldig"
+    }
   },
   "nav": {
     "absences": "Abweseheite",
@@ -812,12 +1181,28 @@
         "message": "{employeeName} hat eine Ausnahme für {exceptionType, select, rest_period {Ruhezeit} overtime_daily {tägliche Überstunden} overtime_weekly {wöchentliche Überstunden} overtime_monthly {monatliche Überstunden} other {Compliance}} beantragt: \"{reason}\"",
         "title": "Compliance-Uusnahm aagforderet"
       },
+      "drivingAuthorizationSuspended": {
+        "message": "D Fahrbewilligung für {employeeName} ({classes}) isch suschpendiert. Vor em Fahre isch e neui Überprüefig und en expliziti Wideriisetzig erforderlich.",
+        "title": "Fahrbewilligung suschpendiert"
+      },
       "drivingDetailsMissingReminderMany": {
         "message": "Bi {count} Arbetsperiode vo {dates} fählt s Fahrzüüg oder en Kilometerstand. Füeg si zu de Arbetsperiode dezue."
       },
       "drivingDetailsMissingReminder": {
         "message": "Bi dinere Arbet am {date} fählt s Fahrzüüg oder en Kilometerstand. Füeg si zur Arbetsperiode dezue.",
         "title": "Dini Fahragabe hinzuefüege"
+      },
+      "drivingLicenceAssignment": {
+        "message": "Organisier e verfüegbari Prüefperson für {employeeName}. Die Ufgab git keini Iisichtsrächt und verlengeret kei Frischt.",
+        "title": "Verantwortig für d Fahruuswiis-Prüefig zueordne"
+      },
+      "drivingLicencePersonalTask": {
+        "message": "Erinnere {employeeName} dra, e Prüefig vom Original-Fahruuswiis z organisiere. E diräkti Benachrichtigung vo de Person isch nöd verfüegbar gsi. S Abschlüüsse vo de Ufgab gilt nöd als diräkti Zuestellig oder Läsigsbestätigung.",
+        "title": "Mitarbeitendi Person persönlich erinnere"
+      },
+      "drivingLicenceReminder": {
+        "message": "Organisier e Prüefig vom Original-Fahruuswiis für {employeeName}, Kategori {classes}, bis {deadline}.",
+        "title": "Fahruuswiis-Prüefig fällig"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Genehmigungsaufgaben erfordern eine Stellvertretung (Austritt wirksam {cutoff}, {timezone}).",
@@ -830,6 +1215,11 @@
       "forgottenClockOutReminder": {
         "message": "Dini Schicht het um {endTime} ({timezone}) gändet. Stämpfel us, wänn du fertig gschaffet häsch.",
         "title": "Du bisch immer no yygstämpflet"
+      },
+      "kioskCommandRefused": {
+        "forwardedMessage": "E {action, select, clock_in {Iistämplig} clock_out {Usstämplig} start_break {Pause-Aafang} resume_break {Ruckchehr us de Pause} other {Stämplig}} vo {employeeName} um {time} am Kiosk {kioskName} isch nöd erfasst worde: {reason, select, wrong_pin {de PIN isch falsch gsi} pin_locked {de Kiosk-PIN isch nach z vill falsche Versüech gsperrt worde} no_pin {es hät kei Kiosk-PIN zum Vergliiche geh} pin_unchecked {de PIN hät nöd chönne überprüft werde} kiosk_retired {de Kiosk isch widerruefe oder neu kopplet worde, bevor er sich wider verbunde hät} contact_unverifiable {Z8 hät die letscht Verbindig vom Kiosk nöd chönne bestätige} outside_window {d Ziit isch usserhalb vom Ziitfänschter gsi, wo Z8 akzeptiert} clock_untrusted {d Uhr vom Kiosk isch defür nöd vertrauenswürdig gsi} not_assigned {d Person isch em Standort vom Kiosk nöd zuegwise} not_adopted {d Organisation akzeptiert keini Offline-Kiosk-Stämplige} month_closed {de Monet isch abgschlosse} holiday {de Tag isch en Fiertig ohni Ziterfassig} conflict {es kollidiert mit anderi erfassti Ziite} other {Z8 hät das nöd chönne aanee}}. Trag d Ziit für si ii oder überprüef si mit ine.",
+        "message": "Dis {action, select, clock_in {Iistämple} clock_out {Usstämple} start_break {Pause aafange} resume_break {Zruggcho us de Pause} other {Stämple}} um {time} am Kiosk {kioskName} isch nöd erfasst worde: {reason, select, wrong_pin {de PIN isch falsch gsi} pin_locked {de Kiosk-PIN isch nach z vill falsche Versüech gsperrt worde} no_pin {es hät kei Kiosk-PIN zum Vergliiche geh} pin_unchecked {de PIN hät nöd chönne überprüft werde} kiosk_retired {de Kiosk isch widerruefe oder neu kopplet worde, bevor er sich wider verbunde hät} contact_unverifiable {Z8 hät die letscht Verbindig vom Kiosk nöd chönne bestätige} outside_window {d Ziit isch usserhalb vom Ziitfänschter gsi, wo Z8 akzeptiert} clock_untrusted {d Uhr vom Kiosk isch defür nöd vertrauenswürdig gsi} not_assigned {du bisch em Standort vom Kiosk nöd zuegwise} not_adopted {d Organisation akzeptiert keini Offline-Kiosk-Stämplige} month_closed {de Monet isch abgschlosse} holiday {de Tag isch en Fiertig ohni Ziterfassig} conflict {es kollidiert mit anderi erfassti Ziite} other {Z8 hät das nöd chönne aanee}}. Trag dini Ziit nomal ii oder bitte dini Füehrigschraft, das z korrigiere.",
+        "title": "Kiosk-Stämplig nöd erfasst"
       },
       "manualEntryApproved": {
         "message": "Dini manuelli Ziterfassig isch vo {approverName} gnämigt worde.",
@@ -1250,8 +1640,11 @@
         "approval_cover_return_summary": "Vo dinere Stellvertretig entschide",
         "approval_cover_started": "Abwäseheitsvertretig gstartet",
         "break_due_reminder": "Pause fällig",
+        "driving_authorization_suspended": "Fahrbewilligung suschpendiert",
         "driving_details_missing_reminder": "Fahrtdetails fähled",
+        "driving_licence_reminder": "Fahruuswiis-Prüefig fällig",
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
+        "kiosk_command_refused": "Kiosk-Stämplig nöd erfasst",
         "missed_clock_in_reminder": "Verpasstes Einstempeln",
         "period_submission_decided": "Iigreichti Ziit gnähmigt oder abglehnt",
         "period_submission_reminder": "Riich dini Ziit ii",
@@ -1344,6 +1737,7 @@
   "personalDataExport": {
     "readme": {
       "accessAdmin": "{name} (Administrator)",
+      "accessDrivingLicenceVerifiers": "Fahruuswiis-Prüefpersone (dini Prüefnachwiis und PDF-Export):",
       "accessExpenseExport": "\"sie exportiere\"",
       "accessExpenseOfficers": "Spesenverantwortliche (Ihre genehmigten Reisespesenabrechnungen und deren Belege):",
       "accessExpenseRead": "genehmigti Bricht läse",
@@ -1367,6 +1761,7 @@
         "accountAdmin": "De Name und d E-Mail-Adresse vo dim Benutzerkonto.",
         "approvals": "Ihre eigenen Anträge und Periodeneinreichungen sowie die Entscheide, die Sie zu Anträgen anderer Personen getroffen haben.",
         "auditLog": "Audit-Log-Iiträg über dich und Iiträg, wo du usgfüehrt häsch.",
+        "drivingLicence": "Fahruuswiis-Prüefige, Originalbestätigunge und Erchlärige, zuegordneti Ergänzige, Kategori-Bewilligunge und iri Historie, Registrierig und dini Prüefverantwortig. Nur zruggbhalteni Nachwiis; keini Fahruuswiis-Scans, Dokumentenummere oder medizinische Notize.",
         "employment": "Dini Personalakte und dis Profil, Aastelligszitruum und Ustritt, Aastelligsbedingige mit dim Stundelohn und sinere Historie, Teams, Vorgesetzti, Standört, Fähigkeite, Projektzueordnige, Rolle, Gruppe, Choschtästell und jedi Richtlinie, wo dir zuegwise isch.",
         "integrations": "Dini Kaländerverbindige, din Kaländer-Feed, verchnüpfti Chat-Konti und de Kiosk-PIN-Status.",
         "notifications": "Din Benachrichtigungsverlauf.",
@@ -1386,6 +1781,7 @@
         "payslip": "Lohnabrechnige",
         "sickNote": "Arztzeugnisse"
       },
+      "drivingLicenceRetention": "Fahruuswiis-Nachwiis folged de grechtfertigte Prüefigs-Ufbewahrigsfrischt vo de Organisation, sobald si kei aktivi Bewilligung me understützed. E dokumentierti Sperri für en spezifische Rächtsfall verschiebt s Lösche. Lugg i d driving_licence-Richtlinie, Ufbewahrigs- und Sperriiträg für de zuträffendi Kontext; s Generiere vome Export verlengeret d Nachwiis-Ufbewahrig in Z8 nöd.",
       "fields": {
         "absences": {
           "absences": {
@@ -1696,6 +2092,129 @@
           "updatedAt": "Wänn de Datensatz zletscht gänderet worde isch.",
           "updatedBy": "Wär de Datensatz zletscht gänderet hät."
         },
+        "drivingLicence": {
+          "actor_name": "De Name vo de Person, wo die Aktion usgfüehrt hät; läär bi nere Systemaktion oder wänn d Person nöd verfüegbar isch.",
+          "authorization_events": {
+            "summary": "D Historie vo dinere Fahrbewilligung, inklusiv Hindernis-Mäldige, Lösige und explizite Wideriisetzige."
+          },
+          "authorizations": {
+            "summary": "Dini gspycherete kategorispezifische Bewilligigsiiträg; d Ereignishistorie erchlärt Änderige und Gültigkeitsziite."
+          },
+          "author_name": "De erfassti Name vo de Person, wo die Ergänzig hinzuegfüegt hät.",
+          "caseReference": "D Referänz vom spezifische Rächtsfall, wo d Ufbewahrig vo dere Überprüefig erfordert.",
+          "changed_at": "Wänn die Version vo de Organisationsrichtlinie erfasst worde isch, als UTC-Ziitpunkt.",
+          "checked_classes": {
+            "summary": "Die explizit überprüefte Kategorie und iri erfasste Ergäbnis, Iischränkige und Ablaufdate."
+          },
+          "check_id": "Die ursprünglichi Überprüefig, woruf sich die Kategori, Ergänzig oder Bewilligung bezieht.",
+          "checks_performed": {
+            "summary": "Überprüefige, wo du bi andere Mitarbeitende durzgfüehrt häsch: nur anonymi Person- und Datensatz-IDs sowie de Prüefziitpunkt."
+          },
+          "checks": {
+            "summary": "Originalprüefigs-Iiträg vom Fahruuswiis mit de genaue Erchlärugs- und Überprüefigsbestätigunge."
+          },
+          "class_code": "Die explizit überprüefti Fahruuswiis-Kategori; läär bi nere personewiite oder dokumentewiite Handlig.",
+          "class_valid_through": "De letscht Kaländertag, wo dur d Gültigkeit vo dere Kategori abdeckt isch; läär, wänn keis Kategori-Ablaufdatum erfasst worde isch.",
+          "completedAt": "Wänn e Prüefperson die persönlichi Erinnerig als erledigt markiert hät; läär bi nere unerledigte Ufgab.",
+          "completedBy": "De Name vo de Person, wo d Erinnerig als erledigt markiert hät; das bestätigt keini diräkti Zuistellig oder e Lesebestätigung.",
+          "controlled_at": "Wänn s Original vom Fahruuswiis persönlich prüeft worde isch, als UTC-Zitpunkt.",
+          "createdAt": "Wänn die Ufgab oder Zuistellig s erscht Mal erfasst worde isch, als UTC-Zitpunkt.",
+          "deadline_timezone": "Die expliziti Kaländer-Zitzone, wo für d Frischt-Date vo de Richtlinie verwändet wird.",
+          "declaration_text": "De gnaui Deklarationstext, wo während de ursprüngliche Überprüefig erfasst worde isch.",
+          "document_expires_on": "S Ablaufdatum vom Dokumänt, unabhängig vom Ablauf vo einzelne Kategorie.",
+          "document_issued_on": "S Usstelligsdatum vom Dokumänt, ohni Uhrzit oder Zitzone.",
+          "document_valid_through": "De letscht Kaländertag, wo d Gültigkeit vom Dokumänt abdeckt.",
+          "effective_at": "Wänn s Autorisierigsereignis in Chraft trätte isch, als UTC-Zitpunkt.",
+          "emailedAtProviderSuccess": "Wänn de Provider-Erfolg für die E-Mail erfasst worde isch. Läär deckt au uusicherigi Versüech ab; es biwyst nöd, dass d E-Mail nöd gschickt oder dass sie gläse worde isch.",
+          "emailStateWithUncertainAttempts": "E-Mail-Zuistellstatus: usstehend, probiert (uusicherigs Provider-Ergebnis; wird nie automatisch nomal gschickt), gschickt (Provider-Erfolg erfasst), unterdrückt, veraltet oder nöd verfügbar. Kein Status bestätigt s Läse.",
+          "employee_declaration": "Öb dini Deklaration während de Überprüefig bestätigt worde isch.",
+          "employee_id": "Die anonymisierti ID vomenen andere Mitarbeiter, wo du sin Iitrag bearbeitet häsch; d Inhält vo sinere Überprüefig sind usgschlosse.",
+          "employee_ids": "Die anonymisierte Mitarbeiter-IDs i dim spezifische Prüefer-Beriich, codiert als JSON-Array.",
+          "employment_period_id": "D Aastelligsperiode, wo zu däm Nachwiis ghört; läär bi früenere Aastellige.",
+          "enabled": "Öb die referenziert Überprüefigsrichtlinie vo de Organisation aktiviert gsi isch.",
+          "enrolled_at": "Wänn du für d Fahruuswiis-Überprüefige vo de Organisation aagmäldet worde bisch.",
+          "expires_at": "De UTC-Zitpunkt, wänn die Autorisierig oder Prüefer-Berächtigung ablauft.",
+          "expiry_date": "S bi de Überprüefig erfasste Ablaufdatum vo de Kategori; läär, wänn keis erfasst worde isch.",
+          "failure_scope": "Öb e nöd erfolgriichi Überprüefig d Kategorie, s Dokumänt oder d Person betroffe hät.",
+          "field": "S korrigierte Nachwiisfäld; die ursprünglichi Überprüefig bliibt erhalte.",
+          "granted_at": "Wänn dir d Prüefer-Verantwortig erteilt worde isch, als UTC-Zitpunkt.",
+          "granted_by": "De Name vo de Person, wo dir d Prüefer-Verantwortig erteilt hät.",
+          "id": "D ID vom Datensatz i de App, damit anderi Dateie druf verwiise chönd.",
+          "identity_confirmed": "Öb de Prüefer bestätigt hät, dass s Original mit dinere Identität überiigstimmt hät.",
+          "impedimentReports": {
+            "summary": "Dini minimale Fahrverhinderigsmäldige und ihri expliziti Lösig, ohni medizinischi Erklärige oder privati Gründ."
+          },
+          "interval_months": "D Aazahl vo Kaländermönet zwüschet Routineüberprüefige gmäss dere Richtlinie.",
+          "kind": "S Autorisierigsereignis, d Suspendierig oder d Ufgabenart; Ufgabe sind personal_reminder oder reassignment.",
+          "last_successful_at": "Wänn die Kategori s letscht Mal en erfolgriichi Originalüberprüefig bestande hät.",
+          "legalHolds": {
+            "summary": "Fallspezifischi Ufbewahrigssperrene für dini zruggbhaltene Überprüefige, inklusive Zueordnig, Freigaab und Begründig."
+          },
+          "notificationId": "D App-Benachrichtigung, wo mit dere Erinnerig verchnüpft isch; läär, wänn keini erstellt worde isch.",
+          "occasionKey": "S Ereignis, wo die Erinnerig oder Ufgab betrifft; es identifiziert d Aastellig, d Kategoriefrischt oder d Suspendierig, ohni d Überprüefig z kopiere.",
+          "original_inspected": "Öb de Prüefer bestätigt hät, s Originaldokumänt persönlich prüeft z ha.",
+          "participation": {
+            "summary": "Dini Aamäldig für d Fahruuswiis-Überprüefige vo de Organisation."
+          },
+          "placedAt": "Wänn die gsetzlichi Ufbewahrigssperre gsetzt worde isch, als UTC-Zitpunkt.",
+          "placedBy": "De Name vom Administrator, wo die Fallsperre gsetzt hät.",
+          "policies": {
+            "summary": "Richtlinieversione, wo vo dine Überprüefige und dinere Autorisierigshistorie referenziert wärded, inklusive ihrem Ufbewahrigskontext. Nachwiise folged dere Ufbewahrigsrichtlinie; dä Export verlängert d Ufbewahrig i de Aawändig nöd."
+          },
+          "policy_version": "D Version vo de Fahruuswiis-Überprüefigsrichtlinie vo de Organisation.",
+          "preservationReason": "De dokumentierti Grund, warum dä spezifischi Fall d Ufbewahrig vo de Überprüefig erfordert.",
+          "reason": "De strukturierti Grund für d Ergänzig oder s Autorisierigsereignis; Brichtsreferänze verwiised uf en Ereignis-ID.",
+          "recipientName": "De Name vo de Person, wo die Erinnerig a dini Überprüefig adressiert gsi isch.",
+          "recorded_at": "Wänn d Ergänzig oder s Ereignis erfasst worde isch, als UTC-Zitpunkt.",
+          "releasedAt": "Wänn die Fallsperre ufghobe worde isch; läär, solang sie aktiv bliibt.",
+          "releasedBy": "De Name vom Administrator, wo die Fallsperre ufghobe hät.",
+          "releaseReason": "De dokumentierti Grund, warum die Fallsperre ufghobe worde isch; d Ufhebig nimmt s normals, richtliniengstüürte Lösche wider uuf.",
+          "reminderDeliveries": {
+            "summary": "D Erinnerigs-Zuistellprotokoll bezüglich dine Überprüefige, ohni E-Mail-Adrässe, Transportwiderholige oder Lesebestätigunge."
+          },
+          "reminder_lead_days": "D konfigurierti Erinnerigsvorlaufzit in Kaländertäg, codiert als JSON-Array.",
+          "reminderTasksCompleted": {
+            "summary": "Erinnerigsufgabe, wo du für anderi Mitarbeiter erledigt häsch, beschränkt uf anonymisierti IDs, d Ufgabenart und de Abschlusszitpunkt."
+          },
+          "reminderTasks": {
+            "summary": "Persönlichi Erinnerigs- und Neuzueordnigsufgabe bezüglich dine Überprüefige, inklusive ihrem erfasste Abschluss; de Abschluss bestätigt keini diräkti Zuistellig oder s Läse."
+          },
+          "reportedAt": "Wänn du e personewiiti Fahrverhinderig gmäldet häsch, als UTC-Zitpunkt.",
+          "reporterName": "De Name vo de Person, wo s Hindernis gmolde hät.",
+          "resolvedAt": "Wänn en Prüefer de Bricht explizit glöst hät; leer bi me unglöste Bricht.",
+          "resolvedBy": "De Name vom Prüefer, wo de Bricht explizit glöst hät.",
+          "restrictions": "Di relevante Fahriischränkige, wo für die Chlass erfasst worde sind.",
+          "result": "S Ergebnis für die prüefti Chlass: erfolgriich, nöd erfolgriich oder nöd eidütig.",
+          "retention_justification": "De dokumentierti Grund vo de Organisation für ihri Nawiis-Ufbewahrigsfrischt.",
+          "retention_months": "Di grechtfertigti Ufbewahrigsfrischt vo de Organisation i Mönet, nachdäm d Nawiis kei aktivi Berächtigung me unterstützed.",
+          "retentionStartedAtEvidence": "Wänn Prüefnawiis ufghört händ, en aktivi Berächtigung z unterstütze, oder Brichtsnawiis nach de Lösig und de letschte Lösigsprüefig oder em Aastelligsändi inaktiv worde sind. Di grechtfertigti Ufbewahrigsfrischt vo de Organisation lauft ab däm UTC-Zitpunkt; en Fall-Stopp verschiebt d Löschig.",
+          "retention": {
+            "summary": "De Ufbewahrigs-Startpunkt vo jedere bhaltene Prüefig; leer, solang d Prüefig no en aktivi Berächtigung unterstützt. En Export verlengeret d Ufbewahrig nöd."
+          },
+          "revoked_at": "Wänn dini Prüefer-Verantwortig widerruefe worde isch; leer, solang si nöd widerruefe worde isch.",
+          "revoked_by": "De Name vo de Person, wo dini Prüefer-Verantwortig widerruefe hät.",
+          "routine_valid_through": "De letscht Kalendertag, wo vom Routine-Prüefintervall abdeckt wird.",
+          "scope": "De Beriich vome personewiite Bricht (Person), oder öb dini Prüefer-Verantwortig alli Mitarbeiter oder bestimmti Mitarbeiter und Teams abdeckt.",
+          "state": "De gspeicherti Chlasse-Berächtigigszuestand (aktiv, suschpendiert, beendet) oder Erinnerigsufgabe-Zuestand (hängig, erledigt, veraltet); d Historie erklärt d Änderige.",
+          "supplements_authored": {
+            "summary": "Ergänzige, wo du bi Datensätz vo andere Mitarbeiter verfasst häsch, ohni d Nawiiswärte vo däne Mitarbeiter."
+          },
+          "supplements": {
+            "summary": "Datierti, zuegordneti und typisierti Korrekture, wo näbed jedere ursprüngliche Prüefig ufbewahrt wärded."
+          },
+          "suspended_at": "Wänn d Berächtigung suschpendiert worde isch, als UTC-Zitpunkt.",
+          "suspension": {
+            "summary": "Din aktuelle persone- oder dokumäntewiiti Fahrdüchtigkeits-Suschpendierigsiitrag."
+          },
+          "team_ids": "Di opake Team-IDs i dim spezifische Prüeferberiich, codiert als JSON-Array.",
+          "valid_through": "De früehnerschti aawändbari letschti Kalendertag vo däre Chlasse-Freigaab.",
+          "value": "De Wärt, wo dur die Ergänzig gliferet wird; leer bedütet, dass s optionale Chlasse-Ablaufdatum glöscht worde isch.",
+          "verifier_confirmed": "Öb de Prüefer de Kontrolliitrag bestätigt hät.",
+          "verifier_grants": {
+            "summary": "Dini eigene Prüefer-Zuelassige, inklusiv historischi und widerruefeni Verantwortig."
+          },
+          "verifier_name": "De erfassti Name vo de Person, wo din Original-Führerschiin prüeft hät."
+        },
         "employment": {
           "assignedLocations": {
             "city": "D'Stadt vom Standort.",
@@ -1924,11 +2443,26 @@
             "revokedAt": "Wenn de Link deaktiviert worde isch (UTC).",
             "summary": "Dini Kaländer-Feed-Links, womit e Kaländer-App dini Abweseheite aboniere cha. De gheim Link selber isch nie debii."
           },
+          "kioskPinEvents": {
+            "event": "failure binere falsche PIN, success binere richtige, glöscht wänn dini PIN entsperrt, zrugggsetzt oder gänderet worde isch.",
+            "occurredAt": "Wänn d PIN igeh oder d Sperri ufghobe worde isch (UTC).",
+            "offline": "Öb d PIN a me Kiosk ohni Verbindig igeh und bim erneute Verbinde prüeft worde isch.",
+            "summary": "Dini letschte Kiosk-PIN-Versuech und PIN-Entsperrige, wo für öppe e Wuche gspeicheret wärded, zum entscheide, öb du nach föif falsche PINs hinterenand gsperrt wirsch. Di igehne PINs wärded nie gspeicheret."
+          },
           "kioskPin": {
             "pinSet": "Öb en Kiosk-PIN für dich gsetzt isch.",
             "setAt": "Wenn de PIN zletscht gsetzt worde isch (UTC).",
             "setBy": "Wer de PIN gsetzt hät.",
             "summary": "Öb du en PIN zum Iistämpfle amene Kiosk-Terminal häsch. De PIN selber wird nie läsbar gspycheret und isch nöd debii."
+          },
+          "kioskRefusedClockings": {
+            "action": "clock_in, clock_out, start_break oder resume_break.",
+            "claimedAt": "Wänn du di am Kiosk igstämplet häsch, wie s de Kiosk erfasst hät (UTC).",
+            "kiosk": "De Kiosk, wo du di igstämplet häsch.",
+            "reason": "Warumb d Stämplig nöd erfasst worde isch, zum Biispiil wrong_pin oder kiosk_rotated.",
+            "refusedAt": "Wänn sich de Kiosk wider verbunde hät und d Stämplig abglehnt worde isch (UTC).",
+            "summary": "Stämplige, wo du a me Kiosk ohni Verbindig gmacht häsch und wo bim erneute Verbinde nöd erfasst worde sind, und warumb.",
+            "timeSource": "server_anchor wänn de Kiosk d Zit vo de Serverzit bim letschte Verbindigsufbau gno hät, device_clock wänn vo de eigene Uhr."
           },
           "shared": {
             "isActive": "Öb d Verbindig aktiv isch."

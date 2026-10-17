@@ -117,6 +117,17 @@
       "actionFallback": "Hvis knappen ikke fungerer, åpne denne lenken:",
       "footer": "Denne e-posten ble sendt av Z8."
     },
+    "mfa": {
+      "codesChanged": "Gjenopprettingskode brukt eller erstattet",
+      "deadlineMessage": "{organization} krever en autentiseringsmetode innen {deadline}. Etter denne nøyaktige fristen må du verifisere en TOTP-autentiseringsmetode eller en passnøkkel med PIN/biometri før du får tilgang til denne organisasjonen. Registrering alene er ikke tilstrekkelig. Bruk Sikkerhetsverifisering for å registrere eller verifisere; passord pluss en reservekode tillater kun erstatningsregistrering.",
+      "deadlineTitle": "Organisasjonsautentisering kreves",
+      "factorChanged": "Autentiseringsmetode endret",
+      "factorRemoved": "Autentiseringsmetode fjernet",
+      "passwordChanged": "Passord endret",
+      "securityMessage": "{event} for {organization}. Tidligere verifisering gir kanskje ikke lenger tilgang til organisasjonen. Verifiser en gjenværende eller ny autentiseringsmetode under Sikkerhetsverifisering. Hvis du ikke har gjort denne endringen, må du sikre kontoen din nå.",
+      "securityTitle": "Autentiseringssikkerhet endret",
+      "suspended": "Kravet er for øyeblikket suspendert. Hvis du aktiverer det på nytt, gjenopprettes den tildelte fristen."
+    },
     "notification": {
       "openAction": "Åpne Z8"
     },

@@ -845,6 +845,39 @@
       },
       "title": "Eksport danych"
     },
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Nadaj uprawnienia weryfikatora",
+        "all": "Wszyscy pracownicy w tej organizacji",
+        "allDescription": "Uprawnienia zależą od bieżącego członkostwa w organizacji. Weryfikatorzy nigdy nie mogą weryfikować samych siebie.",
+        "attribution": "Nadane przez: {actor} o {time}",
+        "description": "Przyznawaj uprawnienia niezależnie od rejestracji kierowców, zarządzania bezpośredniego i dostępu do akt osobowych. Zarządzanie tymi uprawnieniami nie pozwala na wgląd w protokoły kontroli. Weryfikacja samego siebie jest zawsze zabroniona.",
+        "editor": "Zakres weryfikatora",
+        "empty": "Brak przypisanych uprawnień weryfikatora",
+        "expiry": "Wygasa o {time}",
+        "history": "Historia uprawnień",
+        "historyEntry": "Przyznano przez {grantor} o {granted}; odebrano przez {revoker} o {revoked}",
+        "loadFailed": "Nie udało się załadować uprawnień weryfikatora",
+        "myAll": "Odpowiadasz za kontrole w całej organizacji. Nie możesz weryfikować samego siebie.",
+        "mySelected": "Odpowiadasz za {teams} wybranych zespołów i {employees} wskazanych pracowników. Dostęp zależy od aktualnej przynależności do zespołu. Nie możesz weryfikować samego siebie.",
+        "myTitle": "Twoje uprawnienia weryfikatora",
+        "none": "Nie masz obecnie uprawnień weryfikatora praw jazdy.",
+        "noTeams": "Brak dostępnych zespołów",
+        "person": "Weryfikator",
+        "revoked": "Odebrano uprawnienia weryfikatora",
+        "revokeDescription": "Weryfikator natychmiast traci dostęp do kontroli w tym zakresie. Przywrócenie uprawnień wymaga ich ponownego nadania.",
+        "revokeFailed": "Nie udało się odebrać uprawnień. Spróbuj ponownie.",
+        "revokeTitle": "Odebrać uprawnienia weryfikatora?",
+        "saved": "Zapisano uprawnienia weryfikatora",
+        "scope": "Uprawnienia",
+        "select": "Wybierz pracownika",
+        "selected": "{teams} zespołów, {employees} wskazanych pracowników",
+        "selectEmployees": "Wybierz pracowników",
+        "specific": "Wybrane zespoły i pracownicy",
+        "specificDescription": "Obejmuje wskazanych pracowników oraz bieżących członków wybranych zespołów. Zmiany w zespołach wchodzą w życie natychmiast.",
+        "title": "Weryfikatorzy praw jazdy"
+      }
+    },
     "emailTemplates": {
       "actions": {
         "reset": "Przywróć szablon systemowy",
@@ -1452,7 +1485,8 @@
         "invalidTimezone": "Wybierz strefę czasową.",
         "kioskNotFound": "Nie znaleziono tego kiosku.",
         "kioskRevoked": "Ten kiosk jest unieważniony.",
-        "locationNotFound": "Wybierz aktywną lokalizację tej organizacji."
+        "locationNotFound": "Wybierz aktywną lokalizację tej organizacji.",
+        "offlineNeedsAdoption": "Tryb offline wymaga skoordynowanych poleceń zegara, których ta organizacja jeszcze nie używa."
       },
       "fields": {
         "board": "Tablica obecności",
@@ -1462,6 +1496,9 @@
         "locationPlaceholder": "Wybierz lokalizację",
         "name": "Nazwa",
         "namePlaceholder": "np. Wejście dla personelu",
+        "offlineMode": "Tryb offline",
+        "offlineModeDescription": "Kiosk kontynuuje rejestrację czasu pracy bez połączenia. Rejestracje są potwierdzane, a kody PIN sprawdzane po ponownym połączeniu.",
+        "offlineModeUnavailable": "Tryb offline wymaga skoordynowanych poleceń zegara, których ta organizacja jeszcze nie używa.",
         "timezone": "Strefa czasowa",
         "timezoneDescription": "Zdarzenia rejestracji czasu zarejestrowane na tym kiosku korzystają z tej strefy."
       },
@@ -1471,6 +1508,8 @@
       "loadFailed": "Nie udało się załadować kiosków.",
       "neverSeen": "Nigdy",
       "noLocations": "Najpierw utwórz lokalizację: każdy kiosk należy do jednej lokalizacji.",
+      "offlineOn": "Tryb offline włączony",
+      "offlineOnNotInEffect": "Tryb offline włączony, nieaktywny dla tej organizacji",
       "pairAgain": "Sparuj ponownie",
       "pairFailed": "Nie udało się wygenerować nowego kodu parowania",
       "pairingCodeLabel": "Kod parowania",
@@ -1480,6 +1519,46 @@
       "pairPairedDescription": "Token urządzenia zostanie zmieniony: sparowane urządzenie natychmiast przestanie działać i należy je sparować ponownie za pomocą nowego kodu.",
       "pairTitle": "Sparować {name} ponownie?",
       "pairUnpairedDescription": "Nowy kod parowania zastępuje poprzedni.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Rozpocznij pracę",
+          "clockOut": "Zakończ pracę",
+          "resumeBreak": "Wznów",
+          "startBreak": "Rozpocznij przerwę"
+        },
+        "columns": {
+          "action": "Akcja",
+          "claimedAt": "Deklarowany czas",
+          "employee": "Pracownik",
+          "kiosk": "Kiosk",
+          "reason": "Powód",
+          "timeSource": "Źródło czasu"
+        },
+        "description": "Rejestracje czasu zapisane na kiosku w trybie offline, które nie zostały zarejestrowane po ponownym połączeniu. Pracownik lub menedżerowie pracownika bez konta logowania zostali powiadomieni.",
+        "empty": "Żadna rejestracja offline nie została odrzucona.",
+        "reasons": {
+          "clockUntrusted": "Zegar kiosku nie jest zaufany",
+          "conflict": "Konflikt z innym zarejestrowanym czasem",
+          "contactUnverifiable": "Nie udało się potwierdzić ostatniego połączenia",
+          "holiday": "Dzień wolny bez rejestracji czasu",
+          "kioskRetired": "Kiosk unieważniony lub sparowany ponownie",
+          "monthClosed": "Miesiąc zamknięty",
+          "noPin": "Brak ustawionego kodu PIN kiosku",
+          "notAdopted": "Rejestracja w trybie offline nie jest akceptowana przez organizację",
+          "notAssigned": "Nie przypisano do lokalizacji",
+          "other": "Nie udało się zaakceptować",
+          "outsideWindow": "Dotarło zbyt późno",
+          "pinLocked": "PIN zablokowany",
+          "pinUnchecked": "Nie udało się zweryfikować kodu PIN",
+          "wrongPin": "Nieprawidłowy PIN"
+        },
+        "timeSources": {
+          "deviceClock": "Zegar urządzenia",
+          "serverAnchor": "Czas serwera"
+        },
+        "title": "Odrzucone rejestracje w trybie offline",
+        "unknownEmployee": "Nie jest pracownikiem"
+      },
       "revoke": "Unieważnij",
       "revokeConfirm": "Unieważnij kiosk",
       "revoked": "Kiosk został unieważniony",
@@ -1487,6 +1566,7 @@
       "revokeFailed": "Nie udało się unieważnić kiosku",
       "revokeTitle": "Unieważnić {name}?",
       "rotateConfirm": "Wygeneruj nowy token i sparuj ponownie",
+      "rotateOfflineWarning": "Ten kiosk ma włączony tryb offline. Rejestracje zapisane w trybie offline i jeszcze niewysłane zostaną odrzucone po ponownym połączeniu i wyświetlone na liście odrzuconych rejestracji offline.",
       "save": "Zapisz",
       "saved": "Zapisano kiosk",
       "saveFailed": "Nie udało się zapisać kiosku",
@@ -1960,6 +2040,8 @@
         "name": "Nazwa",
         "namePlaceholder": "Wprowadź nazwę projektu",
         "noCustomer": "Brak klienta",
+        "requiresTask": "Wymagaj zadania",
+        "requiresTaskHelp": "Czas zarejestrowany w tym projekcie musi wskazywać jedno z jego zadań. Ma to zastosowanie tylko wtedy, gdy projekt ma otwarte zadanie.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -1973,6 +2055,7 @@
         "reasonAdminOnly": "tylko administratorzy organizacji przypisują menedżerów projektów",
         "reasonDeparted": "opuścił(a) organizację",
         "reasonRemoved": "już nie istnieje",
+        "requiresTask": "Wymaga zadania",
         "skipped": "Nie skopiowano: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2118,7 +2201,9 @@
           "name": "Nazwa",
           "namePlaceholder": "np. Nowa odsłona strony",
           "nameRequired": "Wprowadź nazwę szablonu",
-          "noIcon": "Brak ikony"
+          "noIcon": "Brak ikony",
+          "requiresTask": "Wymagaj zadania",
+          "requiresTaskHelp": "Projekty utworzone na podstawie tego szablonu domyślnie korzystają z tego ustawienia."
         },
         "icons": {
           "briefcase": "Teczka",

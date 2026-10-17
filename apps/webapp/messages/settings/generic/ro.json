@@ -845,6 +845,39 @@
       },
       "title": "Export de date"
     },
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Acordă responsabilitatea de verificator",
+        "all": "Toți angajații din această organizație",
+        "allDescription": "Responsabilitatea urmează calitatea actuală de membru al organizației. Verificatorii nu se pot verifica niciodată pe ei înșiși.",
+        "attribution": "Acordat de {actor} la {time}",
+        "description": "Acordați responsabilitatea separat de înscrierea șoferului, managementul direct și accesul la dosarul de personal. Gestionarea acestor acordări nu permite citirea înregistrărilor de inspecție. Autoverificarea este întotdeauna interzisă.",
+        "editor": "Domeniu de competență al verificatorului",
+        "empty": "Nicio responsabilitate de verificator atribuită",
+        "expiry": "Expiră la {time}",
+        "history": "Istoric responsabilități",
+        "historyEntry": "Acordată de {grantor} la {granted}; revocată de {revoker} la {revoked}",
+        "loadFailed": "Nu s-au putut încărca responsabilitățile de verificator",
+        "myAll": "Sunteți responsabil pentru verificări în întreaga organizație. Nu vă puteți verifica pe dvs. înșivă.",
+        "mySelected": "Sunteți responsabil pentru {teams} echipe selectate și {employees} angajați nominalizați. Apartenența curentă la echipă determină accesul. Nu vă puteți verifica pe dvs. înșivă.",
+        "myTitle": "Responsabilitatea dvs. de verificator",
+        "none": "Nu aveți nicio responsabilitate curentă de verificare a permiselor de conducere.",
+        "noTeams": "Nicio echipă disponibilă",
+        "person": "Verificator",
+        "revoked": "Responsabilitatea de verificator a fost revocată",
+        "revokeDescription": "Verificatorul pierde imediat accesul la verificările din acest domeniu. Este necesară o nouă acordare pentru a restabili responsabilitatea.",
+        "revokeFailed": "Nu s-a putut revoca responsabilitatea. Încercați din nou.",
+        "revokeTitle": "Revocați responsabilitatea de verificator?",
+        "saved": "Responsabilitatea de verificator a fost salvată",
+        "scope": "Responsabilitate",
+        "select": "Selectați un angajat",
+        "selected": "{teams} echipe, {employees} angajați nominalizați",
+        "selectEmployees": "Selectați angajați",
+        "specific": "Echipe și angajați selectați",
+        "specificDescription": "Include angajații nominalizați și membrii actuali ai echipelor selectate. Modificările aduse echipelor intră în vigoare imediat.",
+        "title": "Verificatori permise de conducere"
+      }
+    },
     "emailTemplates": {
       "actions": {
         "reset": "Resetare la șablonul de sistem",
@@ -1452,7 +1485,8 @@
         "invalidTimezone": "Alegeți un fus orar.",
         "kioskNotFound": "Acest chioșc nu a fost găsit.",
         "kioskRevoked": "Acest chioșc este revocat.",
-        "locationNotFound": "Alegeți o locație activă a acestei organizații."
+        "locationNotFound": "Alegeți o locație activă a acestei organizații.",
+        "offlineNeedsAdoption": "Modul offline necesită comenzi de pontare coordonate, pe care această organizație nu le utilizează încă."
       },
       "fields": {
         "board": "Panou de prezență",
@@ -1462,6 +1496,9 @@
         "locationPlaceholder": "Alegeți o locație",
         "name": "Nume",
         "namePlaceholder": "de ex. Intrare personal",
+        "offlineMode": "Mod offline",
+        "offlineModeDescription": "Kiosk-ul continuă pontarea fără conexiune. Pontările sale sunt confirmate, iar codurile PIN verificate, odată ce se reconectează.",
+        "offlineModeUnavailable": "Modul offline necesită comenzi de pontare coordonate, pe care această organizație nu le utilizează încă.",
         "timezone": "Fus orar",
         "timezoneDescription": "Evenimentele de pontaj înregistrate la acest chioșc utilizează acest fus orar."
       },
@@ -1471,6 +1508,8 @@
       "loadFailed": "Chioșcurile nu au putut fi încărcate.",
       "neverSeen": "Niciodată",
       "noLocations": "Creați mai întâi o locație: fiecare chioșc aparține unei locații.",
+      "offlineOn": "Mod offline activat",
+      "offlineOnNotInEffect": "Mod offline activat, nu se aplică pentru această organizație",
       "pairAgain": "Asociați din nou",
       "pairFailed": "Nu s-a putut emite un nou cod de asociere",
       "pairingCodeLabel": "Cod de asociere",
@@ -1480,6 +1519,46 @@
       "pairPairedDescription": "Tokenul dispozitivului este rotit: dispozitivul asociat încetează să funcționeze imediat și trebuie asociat din nou cu noul cod.",
       "pairTitle": "Asociați din nou {name}?",
       "pairUnpairedDescription": "Un nou cod de asociere îl înlocuiește pe cel anterior.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Pontare intrare",
+          "clockOut": "Pontare ieșire",
+          "resumeBreak": "Reluare",
+          "startBreak": "Începere pauză"
+        },
+        "columns": {
+          "action": "Acțiune",
+          "claimedAt": "Timp declarat",
+          "employee": "Angajat",
+          "kiosk": "Kiosk",
+          "reason": "Motiv",
+          "timeSource": "Sursă timp"
+        },
+        "description": "Pontări salvate pe un kiosk în timp ce era offline, care nu au fost înregistrate la reconectare. Angajatul sau managerii unui angajat fără autentificare au fost notificați.",
+        "empty": "Nicio pontare offline nu a fost refuzată.",
+        "reasons": {
+          "clockUntrusted": "Ceasul kiosk-ului nu este de încredere",
+          "conflict": "Conflict cu alt timp înregistrat",
+          "contactUnverifiable": "Ultima conexiune nu a putut fi confirmată",
+          "holiday": "Sărbătoare fără înregistrare a timpului",
+          "kioskRetired": "Kiosk revocat sau asociat din nou",
+          "monthClosed": "Lună închisă",
+          "noPin": "Niciun PIN de kiosk setat",
+          "notAdopted": "Pontarea offline nu este acceptată de organizație",
+          "notAssigned": "Neatribuit locației",
+          "other": "Nu a putut fi acceptat",
+          "outsideWindow": "A sosit prea târziu",
+          "pinLocked": "PIN blocat",
+          "pinUnchecked": "PIN-ul nu a putut fi verificat",
+          "wrongPin": "PIN incorect"
+        },
+        "timeSources": {
+          "deviceClock": "Ceasul dispozitivului",
+          "serverAnchor": "Ora serverului"
+        },
+        "title": "Pontări offline refuzate",
+        "unknownEmployee": "Nu este angajat"
+      },
       "revoke": "Revocați",
       "revokeConfirm": "Revocați chioșcul",
       "revoked": "Chioșc revocat",
@@ -1487,6 +1566,7 @@
       "revokeFailed": "Chioșcul nu a putut fi revocat",
       "revokeTitle": "Revocați {name}?",
       "rotateConfirm": "Rotiți tokenul și asociați din nou",
+      "rotateOfflineWarning": "Acest chioșc are modul offline activat. Pontările salvate în modul offline și netrimise încă sunt refuzate la reconectare și listate la pontări offline refuzate.",
       "save": "Salvați",
       "saved": "Chioșc salvat",
       "saveFailed": "Chioșcul nu a putut fi salvat",
@@ -1960,6 +2040,8 @@
         "name": "Nume",
         "namePlaceholder": "Introdu numele proiectului",
         "noCustomer": "Fără client",
+        "requiresTask": "Solicită o sarcină",
+        "requiresTaskHelp": "Timpul înregistrat pentru acest proiect trebuie să indice una dintre sarcinile sale. Se aplică doar cât timp proiectul are o sarcină deschisă.",
         "status": "Stare"
       },
       "fromTemplate": {
@@ -1973,6 +2055,7 @@
         "reasonAdminOnly": "doar administratorii organizației atribuie manageri de proiect",
         "reasonDeparted": "a părăsit organizația",
         "reasonRemoved": "nu mai există",
+        "requiresTask": "Necesită o sarcină",
         "skipped": "Nu s-au copiat: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2118,7 +2201,9 @@
           "name": "Nume",
           "namePlaceholder": "de ex., Relansare site web",
           "nameRequired": "Introduceți un nume de șablon",
-          "noIcon": "Fără pictogramă"
+          "noIcon": "Fără pictogramă",
+          "requiresTask": "Solicită o sarcină",
+          "requiresTaskHelp": "Proiectele create din acest șablon pornesc cu această setare."
         },
         "icons": {
           "briefcase": "Servietă",

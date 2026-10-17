@@ -227,6 +227,7 @@
     "duplicate": "Duplicar",
     "durationMinutes": "{count} min",
     "edit": "Editar",
+    "employees": "Empleados",
     "enabled": "Habilitado",
     "error": "Error",
     "error-occurred": "Ocurrió un error",
@@ -318,6 +319,7 @@
     "name": "Nombre",
     "new": "Nuevo",
     "next": "Siguiente",
+    "no": "No",
     "notApplicable": "N/D",
     "not-available": "No disponible",
     "notifications": {
@@ -382,6 +384,7 @@
     "removing": "Eliminando...",
     "reset": "Restablecer",
     "retry": "Reintentar",
+    "revoke": "Revocar",
     "save": "Guardar",
     "saveChanges": "Guardar cambios",
     "saving": "Guardando...",
@@ -407,6 +410,7 @@
         "title": "Actualización disponible"
       }
     },
+    "teams": "Equipos",
     "timeInput": {
       "openTimePicker": "Abrir selector de hora",
       "switchPeriod": "Cambiar a {period}"
@@ -533,7 +537,277 @@
         "title": "Uso del vehículo",
         "vehiclesTitle": "Vehículos de la organización"
       }
-    }
+    },
+    "yes": "Sí"
+  },
+  "drivingLicence": {
+    "activate": "Activar el control del permiso de conducir",
+    "activationHelp": "La inscripción no concede autorización para conducir. Un verificador autorizado debe comprobar primero el permiso original.",
+    "applyingInterval": "Aplicando…",
+    "applyInterval": "Aplicar cambio de intervalo",
+    "check": {
+      "attestations": "Inspección personal y declaraciones",
+      "chooseClasses": "Seleccione las clases que realmente inspeccionó.",
+      "classes": "Clases realmente inspeccionadas",
+      "classExpiry": "Caducidad de la clase (si procede)",
+      "documentDates": "Fechas del documento original",
+      "employeeDeclaration": "El empleado realizó personalmente la declaración mostrada arriba durante esta comprobación; doy fe de dicha declaración.",
+      "expiryDate": "Fecha de caducidad del documento",
+      "failureScope": "Alcance de una comprobación no satisfactoria o no concluyente",
+      "identity": "He confirmado que el documento original pertenece a este empleado.",
+      "issueDate": "Fecha de expedición del documento",
+      "original": "Inspeccioné personalmente el permiso de conducir original en presencia del empleado.",
+      "privacy": "Registre únicamente las fechas del documento, las clases inspeccionadas y las restricciones de conducción necesarias. No introduzca el número de permiso, dirección, explicaciones médicas ni antecedentes personales.",
+      "restrictions": "Restricciones de conducción necesarias",
+      "result": "Resultado",
+      "saving": "Registrando comprobación…",
+      "scopeClasses": "Solo las clases inspeccionadas afectadas",
+      "scopeDocument": "Todas las autorizaciones basadas en el documento",
+      "scopePerson": "Todas las autorizaciones de conducción del empleado",
+      "submit": "Registrar comprobación original",
+      "suspensionNotice": "Una nueva comprobación satisfactoria no restablece automáticamente una autorización suspendida. Se requiere una nueva comprobación y una decisión explícita de restablecimiento.",
+      "title": "Inspeccionar el permiso original de {name}",
+      "verifier": "Confirmo que los datos registrados y los resultados de cada clase individual reflejan mi inspección."
+    },
+    "class": {
+      "active": "Autorizado",
+      "ended": "Finalizado",
+      "overdue": "Comprobación rutinaria vencida. Se trata de una suspensión organizativa, no de una declaración de retirada del derecho legal a conducir.",
+      "recheck": "Se requiere una nueva comprobación original y un restablecimiento explícito.",
+      "restrictions": "Restricciones de conducción: {restrictions}",
+      "suspended": "Suspendido",
+      "validThrough": "Válido hasta el {date} ({timezone})"
+    },
+    "declaration": {
+      "text": "Confirmo que ninguna prohibición de conducir, retirada u otro impedimento conocido impide la conducción prevista, y que cumplo las restricciones de conducción aplicables."
+    },
+    "delivery": {
+      "uncertain": "Los correos electrónicos de recordatorio opcionales enviados a usted tienen un resultado de entrega incierto ({count}). No se volverán a enviar automáticamente. Sus recordatorios en la aplicación siguen disponibles; la entrega por correo electrónico no confirma la lectura."
+    },
+    "earlierLimit": "Límite de documento/clase anterior",
+    "enroll": "Inscribir",
+    "enrollError": "No se pudo inscribir al empleado. Active la directiva primero y verifique su acceso.",
+    "enrollmentHelp": "Inscriba a los empleados que vayan a conducir. Las asignaciones de vehículos y el uso previo de vehículos nunca generan autorización.",
+    "enrollmentTitle": "Conductores previstos",
+    "enrollName": "Inscribir a {name}",
+    "evidence": {
+      "confirmation": "Confirmación del verificador registrada con la versión de directiva {version}; las fechas límite usan {timezone}.",
+      "declarationConfirmed": "El empleado realizó la declaración en persona; el verificador la atestiguó en el momento del control.",
+      "declarationUnconfirmed": "No se pudo confirmar la declaración del empleado.",
+      "document": "Documento emitido: {issued}; vence: {expiry}",
+      "empty": "No se ha completado ninguna comprobación original.",
+      "originalConfirmed": "Original inspeccionado personalmente e identidad del empleado confirmada.",
+      "originalUnconfirmed": "No se pudo confirmar la inspección del original o la identidad del empleado.",
+      "title": "Evidencia de comprobación original",
+      "verifier": "Comprobación original registrada por {name}"
+    },
+    "history": {
+      "allClasses": "Todas las clases",
+      "apply": "Aplicar período",
+      "authorized": "Autorización concedida",
+      "chooseOutcome": "Elegir resultado",
+      "class": "Clase comprobada",
+      "classExpired": "Clase vencida",
+      "classExpiry": "Fecha de vencimiento de la clase",
+      "classRestrictions": "Restricciones de conducción",
+      "classResult": "Resultado de la clase inspeccionada",
+      "context": "Contexto fuera del período seleccionado",
+      "decision": "Decisión de autorización",
+      "declarationConfirmed": "Declaración del empleado confirmada en la comprobación original",
+      "declarationUnconfirmed": "Declaración del empleado no confirmada",
+      "documentExpired": "Documento vencido",
+      "documentExpiry": "Fecha de vencimiento del documento",
+      "documentImpediment": "Impedimento en todo el documento",
+      "documentIssued": "Fecha de emisión del documento",
+      "downloadPdf": "Descargar PDF de evidencias",
+      "employmentEnded": "Empleo finalizado",
+      "empty": "No hay comprobaciones ni decisiones de autorización en este período.",
+      "ended": "Autorización de conducción finalizada",
+      "evidenceCorrected": "La evidencia corregida requiere una nueva comprobación y un restablecimiento explícito",
+      "failed": "Clase inspeccionada incorrecta",
+      "field": "Campo corregido",
+      "from": "Desde la fecha (UTC)",
+      "globalSuspension": "Toda autorización de conducción suspendida",
+      "help": "Las confirmaciones originales, los suplementos con fecha y las decisiones de autorización efectivas se mantienen separados. La evidencia anterior necesaria para comprender el período seleccionado se etiqueta como contexto. Todas las horas de eventos y límites de período a continuación usan UTC.",
+      "impedimentReported": "Impedimento de conducción notificado",
+      "impedimentResolved": "Impedimento notificado resuelto explícitamente",
+      "inconclusive": "Clase inspeccionada no concluyente",
+      "linkedOriginal": "Comprobación original vinculada: {date}",
+      "loading": "Cargando historial…",
+      "minimalEvidence": "Registre únicamente la evidencia de conducción necesaria. No introduzca números de documento, explicaciones médicas ni antecedentes personales.",
+      "missingDetail": "Detalle faltante",
+      "none": "Ninguno registrado",
+      "openSupplement": "Complementar verificación original {date}",
+      "original": "Verificación original y confirmación",
+      "originalConfirmed": "Original e identidad confirmadas",
+      "originalUnconfirmed": "Original o identidad no confirmados",
+      "overdue": "Verificación de rutina vencida",
+      "personImpediment": "Impedimento a nivel de persona",
+      "policyContext": "Versión de la política {version}; intervalo de {months} meses",
+      "policyIntervalChanged": "Fecha límite de autorización modificada por la política de intervalos",
+      "policyRecalculated": "Fecha límite de autorización recalculada según la política",
+      "reason": "Motivo del complemento",
+      "recorded": "Registrado el {date}",
+      "recordingError": "Error de registro",
+      "reinstated": "Autorización restablecida explícitamente tras una nueva verificación",
+      "save": "Guardar complemento",
+      "saveError": "No se pudo guardar el complemento. Compruebe su responsabilidad actual y los detalles de la corrección.",
+      "snapshot": "Política {version}; intervalo de {months} meses; zona horaria de la fecha límite {timezone}",
+      "supplementBy": "Complemento por {name}",
+      "supplementHelp": "Esto añade una corrección fechada con su identidad. La confirmación original permanece sin cambios. Los límites anteriores, los resultados fallidos y las nuevas restricciones suspenden la habilitación actual afectada; un complemento nunca renueva ni restablece la autorización.",
+      "supplementTitle": "Complementar verificación original {date}",
+      "suspended": "Autorización suspendida",
+      "title": "Historial de verificaciones y autorizaciones",
+      "to": "Antes de la fecha (UTC)",
+      "unavailable": "El historial no está disponible. Compruebe el período y su acceso actual.",
+      "value": "Valor corregido",
+      "verifierConfirmation": "Confirmación del verificador registrada en el momento de la verificación original"
+    },
+    "impediment": {
+      "newCheckRequired": "Registre una nueva verificación original satisfactoria para las clases suspendidas antes del restablecimiento.",
+      "reinstate": "Restablecer clases seleccionadas",
+      "reinstated": "Las clases seleccionadas se restablecieron explícitamente.",
+      "reinstateFailed": "Se denegó el restablecimiento. Actualice y revise el registro actual, su responsabilidad y una nueva verificación original.",
+      "reinstateHelp": "Primero registre una nueva verificación original personal tras la suspensión. Asegúrese de que se haya resuelto todo impedimento; inspeccione cualquier prueba documental necesaria fuera de Z8. Ver solo el carné de conducir puede no ser suficiente. Solo se restablecerán las clases seleccionadas verificadas satisfactoriamente.",
+      "reinstateTitle": "Restablecer explícitamente la autorización de conducción",
+      "reinstating": "Guardando restablecimiento…",
+      "report": "Notificar que no puedo conducir",
+      "reported": "Todas sus autorizaciones de clase están suspendidas. Póngase en contacto con su verificador responsable para una nueva verificación original y el restablecimiento explícito una vez resuelto el impedimento.",
+      "reportFailed": "No se pudo guardar la notificación. Reinténtelo o comuníquese de inmediato con su verificador responsable.",
+      "reportHelp": "Notifique una incapacidad actual para conducir. Se suspenderán de inmediato todas las autorizaciones de clase. No es necesario que proporcione motivos personales.",
+      "reporting": "Guardando notificación…",
+      "resolutionConfirmation": "He comprobado que se han resuelto todos los impedimentos a nivel de persona, a nivel de documento y notificados, he examinado las pruebas documentales necesarias fuera de Z8 y autorizo de nuevo explícitamente las clases seleccionadas.",
+      "selectClasses": "Clases para restablecer a partir de la última verificación original",
+      "title": "¿No puede conducir?",
+      "unresolvedReport": "Un impedimento a nivel de persona notificado por el empleado aún requiere resolución."
+    },
+    "interval": "Intervalo de verificación de rutina (meses)",
+    "intervalAnchorHelp": "Calculado a partir de la última verificación satisfactoria de cada clase.",
+    "intervalApplied": "Intervalo aplicado. Las suspensiones existentes permanecen en vigor.",
+    "intervalChangeHelp": "Obtenga una vista previa de las fechas recalculadas de cada clase antes de aplicar. Siguen vigentes los límites anteriores del documento y de la clase. Ampliar el intervalo nunca restablece una autorización suspendida.",
+    "intervalChangeTitle": "Cambiar el intervalo de rutina",
+    "intervalHelp": "Cada clase verificada utiliza su propia última verificación satisfactoria como punto de referencia para la verificación de rutina.",
+    "intervalImpact": "Impacto del intervalo",
+    "intervalImpactHelp": "Revise la nueva fecha de rutina y el límite efectivo anterior para cada clase afectada. Las fechas utilizan la zona horaria del calendario indicada.",
+    "intervalPreviewError": "No se pudo cargar el impacto. Compruebe su acceso y elija un intervalo de 1 a 120 meses.",
+    "intervalStale": "La política o la autorización de conducción han cambiado, o su acceso no está disponible. Obtenga una vista previa del impacto actual nuevamente antes de aplicar.",
+    "justification": "Justificación de la retención",
+    "justificationHelp": "Explique por qué es necesario este período determinado (al menos 10 caracteres). No incluya datos privados ni médicos.",
+    "loadError": "No se pudo cargar el control del permiso de conducir. Compruebe el acceso de su organización.",
+    "myDescription": "Ver el estado de verificación de su permiso de conducir",
+    "myTitle": "Mi autorización de conducción",
+    "newInterval": "Nuevo intervalo de rutina (meses)",
+    "newlyOverdue": "Recién vencido — se suspenderá",
+    "newRoutineDate": "Próxima verificación de rutina",
+    "noEmployeeRecord": "No hay ningún registro de permiso de conducir de empleados disponible en esta organización.",
+    "noEmployees": "No hay empleados activos para registrar.",
+    "noIntervalClasses": "Ninguna autorización de clase existente necesita recalcularse.",
+    "notChecked": "Aún no verificado — sin autorización de conducción",
+    "notEnrolled": "No registrado — sin autorización de conducción",
+    "operational": {
+      "advisory": "Autorización de conducción",
+      "loading": "Cargando autorización de conducción…",
+      "noEmployees": "No hay empleados coincidentes.",
+      "recordingHelp": "Siempre puede registrar el tiempo de trabajo y el uso real del vehículo. Seleccionar un vehículo no otorga autorización de conducción; las clases verificadas no determinan la idoneidad para cada vehículo.",
+      "refresh": "Actualizar estado de conducción",
+      "search": "Buscar empleado",
+      "searchHelp": "Se muestran hasta 50 empleados. Ajuste la búsqueda para encontrar a otro empleado. Esta vista no contiene registros de inspección.",
+      "title": "Estado de conducción para la planificación",
+      "unavailable": "El estado de la autorización de conducción no está disponible."
+    },
+    "policyIntro": "Verificaciones de permisos originales con prioridad en Alemania. Elija el intervalo de rutina y justifique un período de retención de pruebas determinado antes de la activación.",
+    "policyTitle": "Política de la organización",
+    "previewingInterval": "Cargando impacto…",
+    "previewInterval": "Vista previa del impacto del intervalo",
+    "reminders": "Días de antelación del recordatorio",
+    "remindersHelp": "Días enteros separados por comas antes de una fecha límite, de 0 a 365. Las sugerencias iniciales son 30 y 7 días.",
+    "result": {
+      "inconclusive": "No concluyente",
+      "successful": "Correcto",
+      "unsuccessful": "Incorrecto"
+    },
+    "retention": "Período de retención (meses)",
+    "retention.case": "Referencia a un caso legal específico",
+    "retention.check": "Registro de verificación",
+    "retention.choose": "Elegir un registro retenido",
+    "retention.cleaning": "Comprobando registros vencidos…",
+    "retention.cleanup": "Ejecutar limpieza de pruebas vencidas",
+    "retention.confirmDelete": "Eliminar pruebas vencidas",
+    "retention.confirmDescription": "Esto elimina permanentemente las pruebas cuyo período de retención ha finalizado. Las autorizaciones activas actuales y las retenciones por casos legales permanecen protegidas. Los originales y complementos eliminados no se pueden recuperar a través de la aplicación.",
+    "retention.confirmTitle": "¿Eliminar pruebas vencidas?",
+    "retention.deadline": "La retención comenzó el {start}. Apto para su eliminación a partir del {end}.",
+    "retention.empty": "No hay registros de verificación retenidos.",
+    "retention.error": "No se pudo completar la administración de retención. Actualice y compruebe su acceso y los detalles del caso.",
+    "retention.help": "La retención comienza cuando una verificación ya no respalda ninguna clase activa. Una retención cautelar requiere un caso legal específico, también protege las pruebas de informes relacionadas del mismo período laboral y debe levantarse cuando ya no se requiera su conservación. Estos controles no otorgan acceso de inspección. No introduzca detalles médicos ni antecedentes personales.",
+    "retentionHelp": "Requerido para la activación: 1–120 meses después de que las pruebas dejen de respaldar cualquier autorización de clase activa. Mantenga un periodo finito justificado al desactivar el control de permisos; la limpieza continuará.",
+    "retention.holdDetails": "Caso {case}: {reason}. Aplicado por {actor} el {time}.",
+    "retention.loading": "Cargando registros de retención…",
+    "retention.place": "Aplicar una retención por caso específico",
+    "retention.protected": "Protegido por una autorización de clase activa",
+    "retention.reason": "Por qué este caso requiere conservación",
+    "retention.record": "{employee} · Verificación {date}",
+    "retention.release": "Liberar retención",
+    "retention.released": "Liberado por {actor} a las {time}: {reason}",
+    "retention.releaseError": "No se pudo liberar la retención. Compruebe su acceso y el motivo de la liberación.",
+    "retention.releaseReason": "Por qué ya no se requiere la conservación",
+    "retention.report": "{employee} · Informe {date}",
+    "retention.reportHeld": "Protegido por el caso {case} en las pruebas de verificación relacionadas de este periodo de empleo. Libere la retención de esa verificación cuando ya no se requiera la conservación.",
+    "retention.reportProtected": "Protegido mientras el informe actual permanezca sin resolver o su verificación de resolución respalde una autorización activa.",
+    "retention.reportsTitle": "Retención de informes de impedimento",
+    "retentionRequiredError": "Mantenga un periodo de retención finito y justificado al desactivar el control de permisos. Las pruebas existentes seguirán sujetas a limpieza.",
+    "retention.run": "{time}: {deleted} eliminados, {held} retenidos, {protected} protegidos. Actor: {actor}",
+    "retention.runs": "Resultados de limpieza recientes",
+    "retention.saveError": "No se pudo guardar la retención. Compruebe los detalles del caso y su acceso.",
+    "retention.scheduled": "Procesamiento programado",
+    "retention.title": "Retención de pruebas y retenciones por casos legales",
+    "save": "Guardar política",
+    "saved": "Política guardada",
+    "saveError": "No se pudo guardar la política. Compruebe el intervalo, la zona horaria, los recordatorios y el periodo de retención justificado.",
+    "saving": "Guardando…",
+    "settingsDescription": "Configurar verificaciones originales e inscribir a los conductores previstos",
+    "status": {
+      "active": "Autorización de conducción activa",
+      "ended": "Autorización de conducción finalizada",
+      "explanation": "La autorización de conducción de la organización cubre las clases y restricciones indicadas. No determina la idoneidad para cada vehículo. Puede continuar registrando el tiempo de trabajo y el uso real del vehículo.",
+      "partial": "Algunas clases de conducción están suspendidas",
+      "suspended": "Autorización de conducción suspendida"
+    },
+    "staysCurrent": "Sigue vigente",
+    "staysSuspended": "Sigue suspendida",
+    "subtitle": "Configure las verificaciones originales e inscriba a los conductores previstos. La autorización de conducción es específica para las clases y restricciones verificadas.",
+    "tasks": {
+      "assign": "Asignar responsabilidad",
+      "assigned": "Responsabilidad asignada",
+      "assignmentBoundary": "Esta tarea no otorga derechos de inspección ni amplía ningún plazo.",
+      "class": "Clase {classCode}",
+      "complete": "Marcar recordatorio personal como completado",
+      "completeError": "No se pudo completar esta tarea. Compruebe su responsabilidad de verificador actual.",
+      "completing": "Completando…",
+      "deadline": "Verificación original pendiente",
+      "directUnavailable": "La notificación directa al empleado no estaba disponible. Recuerde a este empleado en persona.",
+      "initialCheck": "Se requiere verificación original inicial",
+      "loadError": "No se pudieron cargar las tareas de permisos de conducir. Compruebe su acceso a la organización.",
+      "loading": "Cargando tareas de permisos de conducir…",
+      "noDeliveryReceipt": "Completar la tarea no confirma la entrega directa ni la lectura por parte del empleado. No se amplía ningún plazo.",
+      "noVerifier": "Ningún verificador disponible es responsable de este empleado.",
+      "personalCompleted": "Recordatorio personal completado",
+      "personalTitle": "Tareas de recordatorio personal",
+      "reassignmentTitle": "Tareas de responsabilidad del verificador",
+      "refresh": "Revisar responsabilidad",
+      "suspension": "Autorización de conducción suspendida",
+      "validThrough": "Válido hasta el {date} en la zona horaria del plazo guardado de la verificación"
+    },
+    "timezone": "Zona horaria del calendario fijada",
+    "title": "Control del permiso de conducir",
+    "unnamedEmployee": "Empleado",
+    "worklist": {
+      "help": "Solo aparecen aquí los empleados inscritos dentro de su responsabilidad de verificación actual.",
+      "open": "Comprobar {name}",
+      "title": "Su lista de trabajo de comprobación original",
+      "viewEnded": "Ver registro finalizado de {name}"
+    },
+    "zoneFixedError": "La zona horaria del calendario es fija. Las fechas límite existentes deben conservar su significado original.",
+    "zoneHelp": "Los límites basados únicamente en fechas incluyen todo el día mostrado en esta zona horaria. Se fija la primera vez que se guarda; la zona horaria del visor nunca cambia una fecha límite."
   },
   "employeeSelect": {
     "countSelected": "{count} empleados seleccionados",
@@ -617,6 +891,101 @@
     "setup": "Cargando configuración",
     "teamAbsences": "Cargando tabla de ausencias del equipo",
     "workerQueue": "Cargando cola de tareas"
+  },
+  "mfa": {
+    "banner": {
+      "action": "Revisar requisitos y verificar",
+      "requirement": "Esta organización requiere autenticación verificada a partir del {deadline}."
+    },
+    "code": {
+      "label": "Código del autenticador",
+      "verify": "Verificar autenticador"
+    },
+    "continue": "Continuar tras la verificación",
+    "coverage": {
+      "access": "Último acceso válido a la organización",
+      "deadline": "Fecha límite asignada",
+      "enforced": "Obligatorio",
+      "failed": "No se pudo cargar la cobertura de autenticación de la organización",
+      "kiosk": "Solo quiosco · fuera de alcance",
+      "loading": "Cargando autenticación de la organización…",
+      "member": "Miembro",
+      "methods": "Métodos registrados",
+      "none": "Ninguno",
+      "title": "Registro de miembros y verificación de la organización",
+      "unproven": "No hay ningún acceso válido registrado"
+    },
+    "deadline": {
+      "enforced": "Se debe verificar un autenticador antes de acceder a la organización.",
+      "grace": "Plazo de registro en curso. Verifique un autenticador antes de esta fecha límite.",
+      "required": "Verificación obligatoria ahora"
+    },
+    "enrollment": {
+      "title": "Registrar o sustituir un autenticador",
+      "warning": "Añadir o sustituir un factor requiere verificación en un plazo de cinco minutos. Verifique el de sustitución antes de eliminar el factor anterior. Se permite revocar su último factor y puede bloquear el acceso a las organizaciones indicadas arriba; no concede un nuevo plazo de registro."
+    },
+    "organization": {
+      "select": "Seleccionar otra organización"
+    },
+    "page": {
+      "context": "El registro personal, la recuperación y la selección de organizaciones siguen estando disponibles mientras el acceso a la organización requiera verificación.",
+      "title": "Verificación de seguridad"
+    },
+    "passkey": {
+      "verify": "Verificar con una llave de acceso"
+    },
+    "password": {
+      "failed": "Error al verificar la contraseña",
+      "label": "Contraseña actual",
+      "verified": "Contraseña verificada. Puede registrar su primer autenticador, o verificar a continuación un autenticador existente o un código de respaldo.",
+      "verify": "Verificar contraseña"
+    },
+    "policy": {
+      "activation": "Los cambios requieren permisos de propietario/administrador y una autenticación aceptada en un plazo de cinco minutos. Configure la recuperación y, preferiblemente, otro administrador que haya demostrado una vía de inicio de sesión operativa; el registro por sí solo no garantiza que funcione.",
+      "days": "{days} días (de 24 horas cada uno)",
+      "description": "Exigir contraseña más TOTP, o una llave de acceso verificada con PIN/biometría, para el acceso local a la organización de cada miembro humano. Las llaves de acceso sincronizadas son válidas. Esta política está disponible en todos los planes.",
+      "enable": "Exigir un autenticador para los inicios de sesión locales",
+      "failed": "Actualización de política rechazada",
+      "grace": "Plazo de registro para futuras asignaciones",
+      "lockoutAck": "Si ningún otro administrador tiene una vía confirmada, acepto que perder todas las vías de autenticación y recuperación dejará bloqueada esta organización, sin posibilidad de anulación por parte de un administrador o de soporte técnico.",
+      "lockoutLabel": "Aceptar el riesgo de perder todas las vías de autenticación de administrador",
+      "recoveryAck": "He verificado mi vía de inicio de sesión y configurado la recuperación.",
+      "save": "Guardar política",
+      "saving": "Guardando…",
+      "sso": "El inicio de sesión verificado a través del proveedor de SSO actual de esta organización queda fuera de la base local de MFA. La organización exige MFA en su proveedor de identidades; Z8 no comprueba la garantía de MFA del IdP. Exigir SSO se mantiene independiente y no dispone de alternativa local.",
+      "tab": "MFA local",
+      "tabDescription": "Requerir autenticación local verificada con plazos de registro controlados",
+      "title": "Autenticación de la organización",
+      "verify": "Verifique su autenticación antes de cambiar esta directiva",
+      "windows": "Los plazos existentes nunca se modifican. Al deshabilitarla se suspende su aplicación; al volver a habilitarla se restablecen los plazos asignados, incluidos los vencidos. No existen excepciones individuales."
+    },
+    "recovery": {
+      "action": "Recuperar con código de respaldo",
+      "description": "Para la recuperación, verifique su contraseña arriba e introduzca un código de respaldo no utilizado. Esto borrará la verificación local previa en todas sus organizaciones.",
+      "label": "Código de respaldo",
+      "lockout": "Si un único administrador pierde todas las vías de autenticación y recuperación, la organización permanecerá bloqueada. No existe una vía de omisión para administradores o soporte técnico.",
+      "success": "La recuperación solo permite el registro de sustitución. Verifique un autenticador antes de volver a su organización."
+    },
+    "security": {
+      "factorWarning": "Eliminar un factor puede bloquear el acceso a las organizaciones que lo requieren. Verifique primero un factor de sustitución; eliminar el último factor no concede un nuevo período de gracia.",
+      "link": "Verificar autenticación y revisar los requisitos de la organización",
+      "policyLink": "Directiva de autenticación de la organización (propietarios/administradores)"
+    },
+    "signout": "Cerrar sesión",
+    "social": {
+      "verify": "Verificar inicio de sesión existente con {provider}"
+    },
+    "sso": {
+      "failed": "No se pudo iniciar el SSO de la organización",
+      "verify": "Verificar con el SSO de la organización"
+    },
+    "verification": {
+      "failed": "Error de verificación"
+    },
+    "verify": {
+      "description": "Verifique un autenticador para volver a su organización. El registro y la confianza en dispositivos recordados por sí solos no satisfacen el requisito.",
+      "title": "Verifique su inicio de sesión"
+    }
   },
   "nav": {
     "absences": "Ausencias",
@@ -812,12 +1181,28 @@
         "message": "{employeeName} solicitó una excepción de {exceptionType, select, rest_period {período de descanso} overtime_daily {horas extras diarias} overtime_weekly {horas extras semanales} overtime_monthly {horas extras mensuales} other {cumplimiento}}: \"{reason}\"",
         "title": "Excepción de cumplimiento solicitada"
       },
+      "drivingAuthorizationSuspended": {
+        "message": "La autorización de conducción para {employeeName} ({classes}) está suspendida. Se requiere una nueva comprobación y un restablecimiento explícito antes de conducir.",
+        "title": "Autorización de conducción suspendida"
+      },
       "drivingDetailsMissingReminderMany": {
         "message": "A {count} períodos de trabajo del {dates} les falta el vehículo o una lectura del odómetro. Agrégalos a los períodos de trabajo."
       },
       "drivingDetailsMissingReminder": {
         "message": "A tu jornada del {date} le falta el vehículo o una lectura del odómetro. Agrégalos al período de trabajo.",
         "title": "Agrega tus detalles de conducción"
+      },
+      "drivingLicenceAssignment": {
+        "message": "Asigne un verificador disponible para {employeeName}. Esta tarea no concede derechos de inspección ni amplía ningún plazo.",
+        "title": "Asignar responsabilidad de verificador de permisos de conducir"
+      },
+      "drivingLicencePersonalTask": {
+        "message": "Recuerde a {employeeName} que programe una comprobación del permiso de conducir original. La notificación directa al empleado no estuvo disponible. Completar la tarea no implica la entrega directa ni su lectura.",
+        "title": "Recordar al empleado en persona"
+      },
+      "drivingLicenceReminder": {
+        "message": "Programe una comprobación del permiso de conducir original para {employeeName}, clase {classes}, antes del {deadline}.",
+        "title": "Comprobación del permiso de conducir pendiente"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Las tareas de aprobación requieren un sustituto (salida efectiva el {cutoff}, {timezone}).",
@@ -830,6 +1215,11 @@
       "forgottenClockOutReminder": {
         "message": "Tu turno terminó a las {endTime} ({timezone}). Registra tu salida si has terminado de trabajar.",
         "title": "Aún tienes la entrada registrada"
+      },
+      "kioskCommandRefused": {
+        "forwardedMessage": "Un {action, select, clock_in {fichaje de entrada} clock_out {fichaje de salida} start_break {inicio de descanso} resume_break {retorno de descanso} other {fichaje}} de {employeeName} a las {time} en el quiosco {kioskName} no se registró: {reason, select, wrong_pin {el PIN era incorrecto} pin_locked {el PIN del quiosco se bloqueó tras demasiados intentos fallidos} no_pin {no había ningún PIN de quiosco con el que cotejarlo} pin_unchecked {no se pudo verificar el PIN} kiosk_retired {el quiosco se revocó o se emparejó de nuevo antes de reconectarse} contact_unverifiable {Z8 no pudo confirmar la última conexión del quiosco} outside_window {su hora estaba fuera del intervalo que Z8 acepta} clock_untrusted {no se pudo confiar en el reloj del quiosco para registrarlo} not_assigned {el empleado no está asignado a la ubicación del quiosco} not_adopted {la organización no acepta fichajes de quiosco sin conexión} month_closed {el mes está cerrado} holiday {el día es festivo sin registro de horas} conflict {entra en conflicto con otro registro horario} other {Z8 no pudo aceptarlo}}. Registre la hora en su lugar o revísela con esta persona.",
+        "message": "Su {action, select, clock_in {fichaje de entrada} clock_out {fichaje de salida} start_break {inicio de descanso} resume_break {retorno de descanso} other {fichaje}} a las {time} en el quiosco {kioskName} no se registró: {reason, select, wrong_pin {el PIN era incorrecto} pin_locked {el PIN del quiosco se bloqueó tras demasiados intentos fallidos} no_pin {no había ningún PIN de quiosco con el que cotejarlo} pin_unchecked {no se pudo verificar el PIN} kiosk_retired {el quiosco se revocó o se emparejó de nuevo antes de reconectarse} contact_unverifiable {Z8 no pudo confirmar la última conexión del quiosco} outside_window {su hora estaba fuera del intervalo que Z8 acepta} clock_untrusted {no se pudo confiar en el reloj del quiosco para registrarlo} not_assigned {no está asignado a la ubicación del quiosco} not_adopted {la organización no acepta fichajes de quiosco sin conexión} month_closed {el mes está cerrado} holiday {el día es festivo sin registro de horas} conflict {entra en conflicto con otro registro horario} other {Z8 no pudo aceptarlo}}. Registre su hora de nuevo o pida a su responsable que la corrija.",
+        "title": "Fichaje de quiosco no registrado"
       },
       "manualEntryApproved": {
         "message": "Tu envío manual de horas fue aprobado por {approverName}.",
@@ -1250,8 +1640,11 @@
         "approval_cover_return_summary": "Decidido por tu sustituto",
         "approval_cover_started": "Cobertura de ausencia iniciada",
         "break_due_reminder": "Descanso pendiente",
+        "driving_authorization_suspended": "Autorización de conducción suspendida",
         "driving_details_missing_reminder": "Faltan datos de conducción",
+        "driving_licence_reminder": "Comprobación del permiso de conducir pendiente",
         "forgotten_clock_out_reminder": "Registro de salida olvidado",
+        "kiosk_command_refused": "Fichaje de quiosco no registrado",
         "missed_clock_in_reminder": "Registro de entrada omitido",
         "period_submission_decided": "Horas enviadas aprobadas o rechazadas",
         "period_submission_reminder": "Envía tus horas",
@@ -1344,6 +1737,7 @@
   "personalDataExport": {
     "readme": {
       "accessAdmin": "{name} (administrador)",
+      "accessDrivingLicenceVerifiers": "Verificadores de permisos de conducir (sus pruebas de comprobación y exportaciones en PDF):",
       "accessExpenseExport": "exportarlos",
       "accessExpenseOfficers": "Responsables de gastos (sus informes de gastos de viaje aprobados y sus recibos):",
       "accessExpenseRead": "leer informes aprobados",
@@ -1367,6 +1761,7 @@
         "accountAdmin": "El nombre y la dirección de correo electrónico de su cuenta de usuario.",
         "approvals": "Sus propias solicitudes y envíos de periodos, y las decisiones que tomó sobre las solicitudes de otras personas.",
         "auditLog": "Entradas del registro de auditoría sobre usted y entradas que usted realizó.",
+        "drivingLicence": "Comprobaciones de permisos de conducir, confirmaciones y declaraciones originales, suplementos atribuidos, autorizaciones de clases y su historial, registro y su responsabilidad de verificador. Solo pruebas conservadas; sin escaneos de permisos, números de documento ni notas médicas.",
         "employment": "Su ficha y perfil de empleado, periodos de empleo y cese, condiciones laborales con su salario por hora y su historial, equipos, responsables, ubicaciones, habilidades, asignaciones de proyectos, roles, grupos, centro de costes y cada política que tenga asignada.",
         "integrations": "Sus conexiones de calendario, feed de calendario, cuentas de chat vinculadas y estado del PIN de quiosco.",
         "notifications": "Su historial de notificaciones.",
@@ -1386,6 +1781,7 @@
         "payslip": "Nóminas",
         "sickNote": "Bajas médicas"
       },
+      "drivingLicenceRetention": "Las pruebas del permiso de conducir siguen el período justificado de retención de comprobaciones de la organización una vez que ya no respaldan una autorización activa. Una retención documentada para un caso legal específico pospone la eliminación. Consulte la directiva driving_licence, los registros de retención y de retención legal para conocer el contexto aplicable; generar una exportación no amplía la retención de pruebas en Z8.",
       "fields": {
         "absences": {
           "absences": {
@@ -1696,6 +2092,129 @@
           "updatedAt": "Cuándo se modificó el registro por última vez.",
           "updatedBy": "Quién modificó el registro por última vez."
         },
+        "drivingLicence": {
+          "actor_name": "El nombre de la persona que realizó esta acción; vacío si se trata de una acción del sistema o si el autor no está disponible.",
+          "authorization_events": {
+            "summary": "Su historial de autorización de conducción, incluidos informes de impedimentos, resoluciones y restablecimientos explícitos."
+          },
+          "authorizations": {
+            "summary": "Sus registros de autorización específicos por clase almacenados; el historial de eventos explica los cambios y las fechas de entrada en vigor."
+          },
+          "author_name": "El nombre registrado de la persona que añadió este suplemento.",
+          "caseReference": "La referencia del caso legal específico que requiere la conservación de esta comprobación.",
+          "changed_at": "Cuándo se registró esta versión de la directiva de la organización, como instante UTC.",
+          "checked_classes": {
+            "summary": "Las clases inspeccionadas explícitamente y sus resultados registrados, restricciones y fechas de caducidad."
+          },
+          "check_id": "La comprobación original a la que hace referencia esta clase, suplemento o autorización.",
+          "checks_performed": {
+            "summary": "Comprobaciones que realizó a otros empleados: solo identificadores opacos de sujeto y registro y la fecha y hora de la inspección."
+          },
+          "checks": {
+            "summary": "Registros de comprobación original del permiso de conducir, con la declaración exacta y las confirmaciones de inspección."
+          },
+          "class_code": "La clase de permiso inspeccionada explícitamente; vacío en caso de tratarse de un evento general de la persona o del documento.",
+          "class_valid_through": "El último día natural cubierto por la validez de esta clase; vacío si no se registró ninguna fecha de caducidad de clase.",
+          "completedAt": "Cuándo un verificador marcó el recordatorio personal como completado; vacío en caso de ser una tarea no completada.",
+          "completedBy": "El nombre de la persona que marcó el recordatorio como completado; esto no confirma la entrega directa ni un acuse de recibo.",
+          "controlled_at": "Momento en el que se inspeccionó personalmente la licencia original, como un instante UTC.",
+          "createdAt": "Momento en el que se registró por primera vez esta tarea o entrega, como un instante UTC.",
+          "deadline_timezone": "La zona horaria explícita del calendario utilizada para las fechas límite de la política.",
+          "declaration_text": "El texto exacto de la declaración registrado durante la inspección original.",
+          "document_expires_on": "La fecha de caducidad del documento, independiente de la caducidad de las categorías individuales.",
+          "document_issued_on": "La fecha de emisión del documento, sin hora ni zona horaria.",
+          "document_valid_through": "El último día natural cubierto por la validez del documento.",
+          "effective_at": "Momento en el que entró en vigor el evento de autorización, como un instante UTC.",
+          "emailedAtProviderSuccess": "Momento en el que el proveedor registró la entrega correcta de este correo electrónico. Si está vacío, también abarca intentos inciertos; no demuestra que el correo no se haya enviado o que se haya leído.",
+          "emailStateWithUncertainAttempts": "Estado de entrega del correo electrónico: pendiente, intentado (resultado del proveedor incierto; nunca se reenvía automáticamente), enviado (éxito registrado por el proveedor), suprimido, obsoleto o no disponible. Ningún estado confirma la lectura.",
+          "employee_declaration": "Indica si su declaración se confirmó durante la inspección.",
+          "employee_id": "El identificador opaco de otro empleado sobre cuyo registro actuó; se excluye el contenido de sus verificaciones.",
+          "employee_ids": "Los identificadores opacos de los empleados dentro de su ámbito de verificación específico, codificados como una matriz JSON.",
+          "employment_period_id": "El periodo de empleo al que pertenece esta prueba; vacío para empleos anteriores.",
+          "enabled": "Indica si la política de verificación de la organización a la que se hace referencia estaba habilitada.",
+          "enrolled_at": "Momento en el que se le inscribió en las verificaciones de licencias de conducir de la organización.",
+          "expires_at": "El instante UTC en el que expira esta autorización o concesión de verificador.",
+          "expiry_date": "La fecha de caducidad de la categoría registrada durante la inspección; vacía si no se registró ninguna.",
+          "failure_scope": "Indica si una inspección insatisfactoria estuvo relacionada con las categorías, el documento o la persona.",
+          "field": "El campo de la prueba corregida; la verificación original se conserva.",
+          "granted_at": "Momento en el que se le otorgó la responsabilidad de verificador, como un instante UTC.",
+          "granted_by": "El nombre de la persona que le otorgó la responsabilidad de verificador.",
+          "id": "El identificador del registro en la aplicación, para que los demás archivos puedan hacer referencia a él.",
+          "identity_confirmed": "Indica si el verificador confirmó que el original coincidía con su identidad.",
+          "impedimentReports": {
+            "summary": "Sus informes mínimos de impedimentos para conducir y su resolución explícita, sin explicaciones médicas ni motivos privados."
+          },
+          "interval_months": "El número de meses naturales entre las comprobaciones rutinarias en virtud de esta política.",
+          "kind": "El tipo de evento de autorización, suspensión o tarea; las tareas son personal_reminder o reassignment.",
+          "last_successful_at": "Momento en el que esta categoría superó con éxito por última vez una inspección original.",
+          "legalHolds": {
+            "summary": "Retenciones por conservación para casos específicos en sus verificaciones retenidas, incluidas la atribución, la liberación y la justificación."
+          },
+          "notificationId": "La notificación de la aplicación vinculada a este recordatorio; vacía si no se creó ninguna.",
+          "occasionKey": "La incidencia a la que se refiere este recordatorio o tarea; identifica el empleo, la fecha límite de la categoría o la suspensión sin duplicar la verificación.",
+          "original_inspected": "Indica si el verificador confirmó haber inspeccionado personalmente el documento original.",
+          "participation": {
+            "summary": "Su inscripción en las verificaciones de licencias de conducir de la organización."
+          },
+          "placedAt": "Momento en el que se aplicó esta retención legal, como un instante UTC.",
+          "placedBy": "El nombre del administrador que aplicó la retención de este caso.",
+          "policies": {
+            "summary": "Versiones de la política a las que hacen referencia sus verificaciones y el historial de autorización, incluido su contexto de retención. Las pruebas siguen esta política de retención; esta exportación no prolonga la retención en la aplicación."
+          },
+          "policy_version": "La versión de la política de verificación de licencias de conducir de la organización.",
+          "preservationReason": "El motivo documentado por el cual este caso específico requiere la conservación de la verificación.",
+          "reason": "El motivo estructurado del anexo o del evento de autorización; las referencias de los informes enlazan a un identificador de evento.",
+          "recipientName": "El nombre de la persona a quien se dirigió este recordatorio sobre su verificación.",
+          "recorded_at": "Momento en el que se registró el anexo o evento, como un instante UTC.",
+          "releasedAt": "Momento en el que se liberó la retención de este caso; vacío mientras permanezca activa.",
+          "releasedBy": "El nombre del administrador que liberó la retención de este caso.",
+          "releaseReason": "El motivo documentado por el cual se liberó la retención de este caso; la liberación reanuda la eliminación ordinaria regida por la política.",
+          "reminderDeliveries": {
+            "summary": "Los registros de entrega de recordatorios correspondientes a sus verificaciones, sin direcciones de correo electrónico, reintentos de transporte ni acuses de recibo."
+          },
+          "reminder_lead_days": "Los plazos de antelación de los recordatorios configurados en días naturales, codificados como una matriz JSON.",
+          "reminderTasksCompleted": {
+            "summary": "Tareas de recordatorio que completó para otros empleados, limitadas a identificadores opacos, tipo de tarea y hora de finalización."
+          },
+          "reminderTasks": {
+            "summary": "Tareas de recordatorio personal y reasignación relativas a sus verificaciones, incluida su finalización registrada; la finalización no confirma la entrega directa ni la lectura."
+          },
+          "reportedAt": "Momento en el que notificó un impedimento para conducir a nivel personal, como un instante UTC.",
+          "reporterName": "El nombre de la persona que notificó el impedimento.",
+          "resolvedAt": "Cuándo un verificador resolvió explícitamente este informe; vacío si no se ha resuelto.",
+          "resolvedBy": "El nombre del verificador que resolvió explícitamente este informe.",
+          "restrictions": "Las restricciones de conducción pertinentes registradas para esta clase.",
+          "result": "El resultado para esta clase inspeccionada: exitoso, no exitoso o no concluyente.",
+          "retention_justification": "El motivo documentado de la organización para su período de retención de pruebas.",
+          "retention_months": "El período de retención justificado de la organización en meses después de que las pruebas ya no respalden la autorización activa.",
+          "retentionStartedAtEvidence": "Momento en el que la prueba de comprobación dejó de respaldar la autorización activa, o la prueba del informe quedó inactiva tras la resolución y la comprobación de resolución final o el fin del empleo. El período de retención justificado de la organización comienza a partir de este instante UTC; una suspensión de caso pospone la eliminación.",
+          "retention": {
+            "summary": "El punto de inicio de retención de cada comprobación conservada; vacío mientras la comprobación aún respalde una autorización activa. La exportación no amplía la retención."
+          },
+          "revoked_at": "Cuándo se revocó su responsabilidad de verificador; vacío si no se ha revocado.",
+          "revoked_by": "El nombre de la persona que revocó su responsabilidad de verificador.",
+          "routine_valid_through": "El último día natural cubierto por el intervalo de comprobación rutinaria.",
+          "scope": "El alcance de un informe a nivel de persona (persona), o si su responsabilidad de verificador cubre a todos los empleados o a empleados y equipos específicos.",
+          "state": "El estado de autorización de clase almacenado (activo, suspendido, finalizado) o el estado de la tarea de recordatorio (pendiente, completada, obsoleta); el historial explica los cambios.",
+          "supplements_authored": {
+            "summary": "Complementos de los que es autor en los registros de otros empleados, sin los valores de prueba de dichos empleados."
+          },
+          "supplements": {
+            "summary": "Correcciones fechadas, atribuidas y tipificadas que se conservan junto a cada comprobación original."
+          },
+          "suspended_at": "Cuándo se suspendió la autorización, como un instante UTC.",
+          "suspension": {
+            "summary": "Su registro actual de suspensión de la autorización de conducción a nivel de persona o de documento."
+          },
+          "team_ids": "Los ID de equipo opacos en su ámbito de verificación específico, codificados como un array JSON.",
+          "valid_through": "El primer día natural final aplicable de esta autorización de clase.",
+          "value": "El valor proporcionado por este complemento; vacío significa que se eliminó el vencimiento opcional de la clase.",
+          "verifier_confirmed": "Si el verificador confirmó el registro de inspección.",
+          "verifier_grants": {
+            "summary": "Sus propias concesiones de verificador, incluidas las responsabilidades históricas y revocadas."
+          },
+          "verifier_name": "El nombre registrado de la persona que inspeccionó su licencia original."
+        },
         "employment": {
           "assignedLocations": {
             "city": "La ciudad de la ubicación.",
@@ -1924,11 +2443,26 @@
             "revokedAt": "Cuándo se desactivó el enlace (UTC).",
             "summary": "Los enlaces del feed de tu calendario, que permiten que una aplicación de calendario se suscriba a tus ausencias. El enlace secreto en sí nunca se incluye."
           },
+          "kioskPinEvents": {
+            "event": "failure para un PIN incorrecto, success para uno correcto; se borra cuando su PIN se desbloqueó, restableció o cambió.",
+            "occurredAt": "Cuándo se introdujo el PIN o se eliminó el bloqueo (UTC).",
+            "offline": "Si el PIN se introdujo en un quiosco sin conexión y se comprobó cuando se volvió a conectar.",
+            "summary": "Sus intentos recientes de PIN en el quiosco y desbloqueos de PIN, conservados durante aproximadamente una semana para determinar si se le bloquea tras cinco PIN incorrectos seguidos. Los PIN introducidos nunca se almacenan."
+          },
           "kioskPin": {
             "pinSet": "Si se ha establecido un PIN de quiosco para ti.",
             "setAt": "Cuándo se estableció el PIN por última vez (UTC).",
             "setBy": "Quién estableció el PIN.",
             "summary": "Si tienes un PIN para fichar en un terminal de quiosco. El PIN en sí nunca se almacena de forma legible y no se incluye."
+          },
+          "kioskRefusedClockings": {
+            "action": "clock_in, clock_out, start_break o resume_break.",
+            "claimedAt": "Cuándo fichó en el quiosco, según lo registró el quiosco (UTC).",
+            "kiosk": "El quiosco en el que fichó.",
+            "reason": "Por qué no se registró el fichaje, por ejemplo wrong_pin o kiosk_rotated.",
+            "refusedAt": "Cuándo se volvió a conectar el quiosco y se rechazó el fichaje (UTC).",
+            "summary": "Fichajes que realizó en un quiosco sin conexión que no se registraron cuando el quiosco se volvió a conectar, y el motivo.",
+            "timeSource": "server_anchor cuando el quiosco calculó la hora a partir de la hora del servidor en su última conexión, device_clock cuando lo hizo desde su propio reloj."
           },
           "shared": {
             "isActive": "Si la conexión está en uso."

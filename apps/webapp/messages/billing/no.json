@@ -13,6 +13,7 @@
       "successDescription": "Abonnementet ditt er aktivert. Takk for at du abonnerer!",
       "successTitle": "Vellykket!"
     },
+    "amount": "€{amount}",
     "bestValue": "Beste verdi",
     "billedMonthly": "faktureres månedlig",
     "cancelsOn": "Kanselleres {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Månedlig fakturering",
       "yearlyBilling": "Årlig fakturering"
     },
+    "kioskSeatPriceMonthly": "Kiosk-plasser (kun kiosk-ansatte): €{price}/plass/måned",
+    "kioskSeatPriceYearly": "Kiosk-plasser (kun kiosk-ansatte): €{price}/plass/måned, €{total}/plass fakturert årlig",
     "manageBilling": "Administrer fakturering",
     "monthlyCost": "Månedlig kostnad",
     "nextBilling": "Neste fakturering",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "€{price}/sete/mnd.",
     "priceSeatMonthYearly": "€{price}/sete/mnd. (fakturert årlig)",
     "seatBilledAnnually": "€{price}/sete fakturert årlig",
+    "seatLines": {
+      "full": "Fullverdige plasser",
+      "kiosk": "Kiosk-plasser",
+      "seatsAtPrice": "{seats} × €{price}/mnd",
+      "total": "Totalt",
+      "totalPerMonth": "€{amount}/mnd"
+    },
     "starting": "Starter...",
     "startTrial": "Start gratis prøveperiode",
     "status": {
