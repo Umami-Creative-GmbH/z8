@@ -32,6 +32,19 @@ vi.mock("@/app/[locale]/(app)/absences/sick-note-actions", () => ({
 	discardStagedSickNoteUploadsAction: vi.fn(),
 }));
 
+// The dialog's sick-note uploader would create a real Uppy instance, whose constructor
+// schedules an online-status check that destroy() never clears; it fires after the
+// environment is torn down. These tests never upload.
+vi.mock("@/hooks/use-tus-file-upload", () => ({
+	useTusFileUpload: () => ({
+		addFile: vi.fn(),
+		progress: 0,
+		isUploading: false,
+		isProcessing: false,
+		reset: vi.fn(),
+	}),
+}));
+
 vi.mock("@/app/[locale]/(app)/absences/deputy-actions", () => ({
 	getDeputyCandidates: vi.fn().mockResolvedValue({
 		success: true,
