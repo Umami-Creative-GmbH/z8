@@ -153,6 +153,51 @@ describe("ClockOutOnBehalfDialog task (#874)", () => {
 		expect(await screen.findByLabelText("Task (required)")).toBeTruthy();
 	});
 
+	it("holds the clock-out until a required task is chosen (#884)", async () => {
+		const required = choices(null);
+		getClockOutOnBehalfTaskChoices.mockResolvedValue({
+			...required,
+			data: { ...required.data, requiresTask: true },
+		});
+		const { onConfirm } = renderDialog();
+
+		const task = await screen.findByLabelText("Task (required)");
+		expect(screen.getByRole("button", { name: "Clock Out" }).hasAttribute("disabled")).toBe(true);
+		fireEvent.change(task, { target: { value: "task-build" } });
+		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+
+		expect(onConfirm).toHaveBeenCalledWith({ taskId: "task-build" });
+	});
+
+	it("lets the running work's task satisfy a required task (#884)", async () => {
+		const kept = choices({ id: "task-build", name: "Build", state: "open" });
+		getClockOutOnBehalfTaskChoices.mockResolvedValue({
+			...kept,
+			data: { ...kept.data, requiresTask: true },
+		});
+		renderDialog();
+
+		await screen.findByLabelText("Task (required)");
+		expect(screen.getByRole("button", { name: "Clock Out" }).hasAttribute("disabled")).toBe(false);
+	});
+
+	it("does not hold the clock-out when the project offers no open task (#884)", async () => {
+		getClockOutOnBehalfTaskChoices.mockResolvedValue({
+			success: true,
+			data: { projectId: "project-1", tasks: [], currentTask: null, requiresTask: true },
+		});
+		const { onConfirm } = renderDialog();
+
+		await waitFor(() => expect(getClockOutOnBehalfTaskChoices).toHaveBeenCalled());
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Clock Out" }).hasAttribute("disabled")).toBe(
+				false,
+			),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+		expect(onConfirm).toHaveBeenCalledWith({});
+	});
+
 	it("still clocks out when the task choices cannot be loaded", async () => {
 		getClockOutOnBehalfTaskChoices.mockResolvedValue({ success: false, error: "Nope" });
 		const { onConfirm } = renderDialog();

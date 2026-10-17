@@ -267,7 +267,7 @@ function Companion({
 								});
 							}}
 							onClockOut={async () => {
-								// Desktop's only enforcement of a required task (#1297).
+								// Desktop's only check for a required task (#1297).
 								if (attribution.taskMissing) return;
 								await timezone.run(async () => {
 									const vehicleUse = vehicleSent(vehicle.clockOut);

@@ -22,9 +22,10 @@ import "server-only";
  *
  * All run only on a sealed work-transaction scope; the Approvals finalizer's
  * database handle becomes one through `workRecordScopeForFinalizer`. The one
- * exception is `clearProjectMissingTasks` (#884), which ends a project's
- * missing-task markers across employees inside the organization configuration
- * mutation that turns its task requirement off. Work
+ * exception is `clearProjectMissingTasks` (#884, imported from
+ * `./project-missing-tasks`), which ends a project's missing-task markers
+ * across employees inside the organization configuration mutation that turns
+ * its task requirement off. Work
  * records never opens a transaction and never takes guards (ADR 0001); it
  * takes row locks only, in
  * `WORK_RECORD_LOCK_ORDER`.
@@ -96,10 +97,6 @@ export type {
 	OwedBreakTakenBefore,
 } from "./owed-break";
 export type { AppendedEntryEvidence } from "./pair-writer";
-export {
-	clearProjectMissingTasks,
-	type ProjectMissingTasksCleared,
-} from "./project-missing-tasks";
 export { readWorkRecord, type WorkRecord } from "./read";
 export {
 	CompletedWorkReviewRequiredError,

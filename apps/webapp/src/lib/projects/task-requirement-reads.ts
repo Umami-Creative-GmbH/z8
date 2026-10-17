@@ -1,7 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray, type SQL, sql } from "drizzle-orm";
-import { type AnyPgColumn, alias } from "drizzle-orm/pg-core";
+import { and, eq, exists, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { project, projectTask } from "@/db/schema";
 
@@ -15,59 +14,24 @@ import { project, projectTask } from "@/db/schema";
 
 export type TaskRequirementReader = Pick<typeof db, "select">;
 
-// Aliased, so the rule can sit inside any query, also one that selects from
-// `project` itself, without its columns binding to the outer row. Built on
-// first use: importers (booking eligibility) load this module where unit tests
-// mock the schema without these tables.
-function buildAliases() {
-	return {
-		requiringProject: alias(project, "task_requirement_project"),
-		openTask: alias(projectTask, "task_requirement_open_task"),
-	};
-}
-let aliases: ReturnType<typeof buildAliases> | undefined;
-function requirementAliases() {
-	aliases ??= buildAliases();
-	return aliases;
-}
-
-/**
- * Whether the given project's task requirement is active, as a boolean SQL
- * expression for any query: pass the booking's or project's columns, e.g.
- * `{ projectId: workPeriod.projectId, organizationId: workPeriod.organizationId }`,
- * or plain values. A null project id is false.
- */
-export function activeTaskRequirementSql(target: {
-	projectId: AnyPgColumn | SQL | string;
-	organizationId: AnyPgColumn | SQL | string;
-}): SQL<boolean> {
-	const { requiringProject, openTask } = requirementAliases();
-	// Nested once: in a single-table select list Drizzle drops the table name of
-	// top-level column chunks, which would rebind them inside the subqueries.
-	return sql<boolean>`${sql`exists (
-		select 1 from ${project} ${requiringProject}
-		where ${requiringProject.id} = ${target.projectId}
-			and ${requiringProject.organizationId} = ${target.organizationId}
-			and ${requiringProject.requiresTask}
-			and exists (
-				select 1 from ${projectTask} ${openTask}
-				where ${openTask.organizationId} = ${requiringProject.organizationId}
-					and ${openTask.projectId} = ${requiringProject.id}
-					and ${openTask.state} = 'open'
-			)
-	)`}`;
-}
+export type TaskRequirementReadOptions = {
+	/**
+	 * `share` reads the project row `FOR SHARE`, so a concurrent change of its
+	 * setting waits for the caller's transaction to end, or the read waits for
+	 * that change and sees its result (the missing-task marker of a closure).
+	 */
+	lock?: "share";
+};
 
 /** Whether one project of the organization has an active task requirement. */
 export async function readActiveTaskRequirement(
 	scope: { organizationId: string; projectId: string },
 	reader: TaskRequirementReader = db,
+	options: TaskRequirementReadOptions = {},
 ): Promise<boolean> {
-	const active = await listActiveTaskRequirements(
-		{ organizationId: scope.organizationId, projectIds: [scope.projectId] },
-		reader,
-	);
-	return active.has(scope.projectId);
+	const query = activeRequirementQuery(reader, scope.organizationId, [scope.projectId]).limit(1);
+	const rows = await (options.lock ? query.for(options.lock, { of: project }) : query);
+	return rows.length > 0;
 }
 
 /** The projects among `projectIds` of the organization whose task requirement is active. */
@@ -77,15 +41,35 @@ export async function listActiveTaskRequirements(
 ): Promise<Set<string>> {
 	const projectIds = [...new Set(scope.projectIds)];
 	if (projectIds.length === 0) return new Set();
-	const rows = await reader
+	const rows = await activeRequirementQuery(reader, scope.organizationId, projectIds);
+	return new Set(rows.map((row) => row.id));
+}
+
+function activeRequirementQuery(
+	reader: TaskRequirementReader,
+	organizationId: string,
+	projectIds: readonly string[],
+) {
+	return reader
 		.select({ id: project.id })
 		.from(project)
 		.where(
 			and(
-				eq(project.organizationId, scope.organizationId),
-				inArray(project.id, projectIds),
-				activeTaskRequirementSql({ projectId: project.id, organizationId: project.organizationId }),
+				eq(project.organizationId, organizationId),
+				inArray(project.id, [...projectIds]),
+				eq(project.requiresTask, true),
+				exists(
+					reader
+						.select({ one: sql`1` })
+						.from(projectTask)
+						.where(
+							and(
+								eq(projectTask.organizationId, project.organizationId),
+								eq(projectTask.projectId, project.id),
+								eq(projectTask.state, "open"),
+							),
+						),
+				),
 			),
 		);
-	return new Set(rows.map((row) => row.id));
 }

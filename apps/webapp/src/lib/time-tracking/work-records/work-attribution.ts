@@ -243,14 +243,12 @@ export class WorkAttribution {
 			(projectChanged
 				? (patch.project?.billableDefault ?? false)
 				: (this.project?.billable ?? false));
-		const project = projectOf(projectId, taskId, billable);
-		const missingTask =
-			project !== null &&
-			project.taskId === null &&
-			(patch.missingTask ?? (!projectChanged && this.missingTask));
 		return new WorkAttribution({
-			project,
-			missingTask,
+			project: projectOf(projectId, taskId, billable),
+			missingTask: resultingMissingTask(
+				{ projectId, taskId },
+				{ decided: patch.missingTask, current: this.missingTask, projectStays: !projectChanged },
+			),
 			workCategoryId:
 				patch.workCategoryId === undefined ? this.workCategoryId : patch.workCategoryId,
 			workLocationType:
@@ -307,14 +305,28 @@ export class WorkAttribution {
 	}
 }
 
+/**
+ * The missing-task marker rule (#884, Projects ADR 0002), the one place it is
+ * stated: only work booked to a project without a task carries the marker. A
+ * decision (`decided`) sets or clears it; left undecided, the current marker
+ * survives only while the project stays.
+ */
+export function resultingMissingTask(
+	booking: { projectId: string | null; taskId: string | null },
+	marker: { decided?: boolean; current?: boolean; projectStays?: boolean },
+): boolean {
+	if (booking.projectId === null || booking.taskId !== null) return false;
+	return marker.decided ?? ((marker.projectStays ?? false) && (marker.current ?? false));
+}
+
 /** A stored marker, refused where it cannot be: without a project or with a task. */
 function storedMissingTask(project: WorkAttributionProject | null, missingTask: boolean): boolean {
 	if (!missingTask) return false;
-	if (project === null) {
-		throw new UnrepresentableWorkAttributionError("missing_task_without_project");
-	}
-	if (project.taskId !== null) {
-		throw new UnrepresentableWorkAttributionError("missing_task_with_task");
+	const booking = { projectId: project?.projectId ?? null, taskId: project?.taskId ?? null };
+	if (!resultingMissingTask(booking, { decided: true })) {
+		throw new UnrepresentableWorkAttributionError(
+			project === null ? "missing_task_without_project" : "missing_task_with_task",
+		);
 	}
 	return true;
 }

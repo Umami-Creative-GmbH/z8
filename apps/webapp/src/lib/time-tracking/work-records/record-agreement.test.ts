@@ -96,8 +96,8 @@ describe("recordAgreement", () => {
 	});
 
 	it("compares the missing-task marker as part of the task (#884)", () => {
-		const untasked = { ...period, taskId: null };
-		const marked = { ...untasked, missingTask: true };
+		const withoutTask = { ...period, taskId: null };
+		const marked = { ...withoutTask, missingTask: true };
 		const allocation = (missingTask: boolean) =>
 			withProjectAllocations({ taskId: null, missingTask } as Partial<typeof projectAllocation>);
 
@@ -106,7 +106,7 @@ describe("recordAgreement", () => {
 			agrees: false,
 			disagreements: ["task"],
 		});
-		expect(recordAgreement({ ...untasked, missingTask: false }, allocation(true))).toEqual({
+		expect(recordAgreement({ ...withoutTask, missingTask: false }, allocation(true))).toEqual({
 			agrees: false,
 			disagreements: ["task"],
 		});

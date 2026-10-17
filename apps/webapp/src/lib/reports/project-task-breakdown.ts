@@ -19,8 +19,8 @@ export function buildProjectTaskBreakdown(input: {
 	periods: ReadonlyArray<{
 		taskId: string | null;
 		durationMinutes: number | null;
-		/** Booked without the task its project required (#884). */
-		missingTask?: boolean;
+		/** Booked without the task its project required (#884); present only when marked. */
+		missingTask?: true;
 	}>;
 	tasks: ReadonlyArray<BreakdownTask>;
 	bookedMinutesToDate: ReadonlyMap<string, number>;

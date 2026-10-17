@@ -383,8 +383,8 @@ describe("WorkAttribution equality", () => {
 
 describe("WorkAttribution missing task (#884)", () => {
 	const OTHER_PROJECT = "00000000-0000-4000-8000-0000000000cc";
-	const untasked = { ...periodColumns, taskId: null, missingTask: false };
-	const marked = { ...untasked, missingTask: true };
+	const withoutTask = { ...periodColumns, taskId: null, missingTask: false };
+	const marked = { ...withoutTask, missingTask: true };
 	const markedAllocation = { ...projectAllocation, taskId: null, missingTask: true };
 
 	it("reads the marker from both representations and writes it back", () => {
@@ -407,17 +407,17 @@ describe("WorkAttribution missing task (#884)", () => {
 		expect(fromPeriod.differences(unmarkedCanonical)).toEqual(["task"]);
 	});
 
-	it("marks untasked project work when the patch says so", () => {
-		expect(WorkAttribution.fromWorkPeriod(untasked).apply({ missingTask: true }).missingTask).toBe(
-			true,
-		);
+	it("marks project work without a task when the patch says so", () => {
+		expect(
+			WorkAttribution.fromWorkPeriod(withoutTask).apply({ missingTask: true }).missingTask,
+		).toBe(true);
 	});
 
 	it("never marks work with a task or without a project", () => {
 		const tasked = WorkAttribution.fromWorkPeriod({ ...periodColumns, missingTask: false });
 		expect(tasked.apply({ missingTask: true }).missingTask).toBe(false);
 		const unbooked = WorkAttribution.fromWorkPeriod({
-			...untasked,
+			...withoutTask,
 			projectId: null,
 			isBillable: false,
 		});

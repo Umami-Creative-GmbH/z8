@@ -54,7 +54,10 @@ export function TaskSelectorView({
 
 	const project = projects.find((choice) => choice.id === projectId);
 	const openTasks = project?.tasks ?? [];
-	const required = taskRequiredFor({ requiresTask: project?.requiresTask, tasks: openTasks });
+	const required = isTaskRequirementActive({
+		requiresTask: project?.requiresTask ?? false,
+		hasOpenTask: openTasks.length > 0,
+	});
 	const label = required
 		? t("timeTracking.taskPicker.requiredLabel", "Task (required)")
 		: t("timeTracking.taskPicker.label", "Task");
@@ -103,18 +106,4 @@ export function TaskSelectorView({
 			/>
 		</div>
 	);
-}
-
-/**
- * Whether a booking on the project must name a task: its task requirement is
- * active (#884). The project choices carry its open tasks, so the rule reads them.
- */
-export function taskRequiredFor(
-	project: { requiresTask?: boolean; tasks: readonly unknown[] } | undefined,
-): boolean {
-	if (!project) return false;
-	return isTaskRequirementActive({
-		requiresTask: project.requiresTask ?? false,
-		hasOpenTask: project.tasks.length > 0,
-	});
 }

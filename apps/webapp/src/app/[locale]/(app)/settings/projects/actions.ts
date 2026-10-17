@@ -668,8 +668,9 @@ async function saveProjectChanges(
 				const requiresTask = yield* projectRequiresTaskInput(input.requiresTask);
 				if (requiresTask !== undefined) updateData.requiresTask = requiresTask;
 				// Turning it off ends every missing-task marker on the project; turning it
-				// back on later restores none (#884, Projects ADR 0002).
-				const turnsTaskRequirementOff = requiresTask === false && existingProject.requiresTask;
+				// back on later restores none (#884, Projects ADR 0002). Whether this save
+				// turns it off is decided inside the guarded write, from the stored row.
+				const mayTurnTaskRequirementOff = requiresTask === false;
 
 				// Validate customerId if changing to a new customer
 				if (input.customerId) {
@@ -719,7 +720,7 @@ async function saveProjectChanges(
 							eq(project.id, projectId),
 							eq(project.organizationId, existingProject.organizationId),
 						);
-						if (input.status === undefined && !turnsTaskRequirementOff) {
+						if (input.status === undefined && !mayTurnTaskRequirementOff) {
 							await dbService.db.transaction(async (tx) => {
 								await tx.update(project).set(updateData).where(scopedProject);
 								await saveCustomFieldValues(tx);
@@ -733,8 +734,17 @@ async function saveProjectChanges(
 							db,
 							existingProject.organizationId,
 							async (tx) => {
+								// Decided from the row this write locks, never from the read before
+								// the guard: a concurrent save may have turned the requirement on.
+								const [stored] = mayTurnTaskRequirementOff
+									? await tx
+											.select({ requiresTask: project.requiresTask })
+											.from(project)
+											.where(scopedProject)
+											.for("no key update")
+									: [];
 								await tx.update(project).set(updateData).where(scopedProject);
-								if (turnsTaskRequirementOff) {
+								if (stored?.requiresTask) {
 									await clearProjectMissingTasks(tx, {
 										organizationId: existingProject.organizationId,
 										projectId,

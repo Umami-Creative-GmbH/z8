@@ -217,6 +217,73 @@ describe("departure clock-out", () => {
 		});
 	});
 
+	// A departure holds no organization guard, so the project row fences it against
+	// turning the requirement off (#884): it waits and reads the requirement as off.
+	it("leaves work unmarked when the requirement is turned off while it closes", async () => {
+		const target = await fixture.seedEmployee();
+		const projectId = randomUUID();
+		await fixture.pool.query(
+			`insert into project (id, organization_id, name, status, is_active, requires_task, created_by, updated_at)
+			 values ($1, $2, 'Requirement turned off', 'active', true, true, $3, now())`,
+			[projectId, fixture.organizationId, fixture.ownerUserId],
+		);
+		await fixture.pool.query(
+			`insert into project_task (id, organization_id, project_id, name, state, created_by, updated_at)
+			 values ($1, $2, $3, 'Design', 'open', $4, now())`,
+			[randomUUID(), fixture.organizationId, projectId, fixture.ownerUserId],
+		);
+		const periodId = await clockIn(target, "2026-09-14T20:00:00Z");
+		await fixture.pool.query("update work_period set project_id = $2 where id = $1", [
+			periodId,
+			projectId,
+		]);
+		const identity = await scheduleAt(target);
+
+		// The turn-off holds the project row until it commits.
+		const turnOff = await fixture.pool.connect();
+		try {
+			await turnOff.query("begin");
+			await turnOff.query("update project set requires_task = false where id = $1", [projectId]);
+			const departure = execute(identity);
+			await parkedOrSettled(departure);
+			await turnOff.query("commit");
+			await departure;
+		} finally {
+			await turnOff.query("rollback").catch(() => undefined);
+			turnOff.release();
+		}
+
+		expect(
+			await row(`select is_active, project_id, missing_task from work_period where id = $1`, [
+				periodId,
+			]),
+		).toEqual({ is_active: false, project_id: projectId, missing_task: false });
+	});
+
+	/** Resolves once `pending` waits on a lock, or has settled without waiting. */
+	async function parkedOrSettled(pending: Promise<unknown>) {
+		let settled = false;
+		pending.then(
+			() => {
+				settled = true;
+			},
+			() => {
+				settled = true;
+			},
+		);
+		for (let attempt = 0; attempt < 400; attempt++) {
+			if (settled) return;
+			const waiting = await row<{ count: number }>(
+				`select count(*)::int as count from pg_stat_activity
+				 where datname = current_database() and wait_event_type = 'Lock'`,
+				[],
+			);
+			if (waiting.count > 0) return;
+			await new Promise((resolve) => setTimeout(resolve, 25));
+		}
+		throw new Error("The departure neither waited nor finished");
+	}
+
 	// #476 decision 8: offboarding is never blocked by a lapsed subscription.
 	it("closes running work although billing refuses mutations", async () => {
 		const target = await fixture.seedEmployee();

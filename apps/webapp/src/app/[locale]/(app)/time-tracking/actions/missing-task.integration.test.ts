@@ -663,6 +663,86 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 		},
 	);
 
+	describe.each(["legacy", "adopted"] as const)(
+		"racing a turn-off of the requirement in a %s organization",
+		(admission) => {
+			beforeEach(async () => {
+				await setAdmission(admission);
+				await requireTasks();
+			});
+
+			/** How many backends of this database wait on a lock. */
+			async function lockWaiters() {
+				const { rows } = await admin.query<{ waiting: number }>(
+					`select count(*)::int as waiting from pg_stat_activity
+					 where datname = current_database() and wait_event_type = 'Lock'`,
+				);
+				return only(rows).waiting;
+			}
+
+			/** Resolves once `pending` waits on a lock, or has settled without waiting. */
+			async function parkedOrSettled(pending: Promise<unknown>) {
+				let settled = false;
+				pending.then(
+					() => {
+						settled = true;
+					},
+					() => {
+						settled = true;
+					},
+				);
+				for (let attempt = 0; attempt < 400; attempt++) {
+					if (settled || (await lockWaiters()) > 0) return;
+					await new Promise((resolve) => setTimeout(resolve, 25));
+				}
+				throw new Error("The concurrent writer neither waited nor finished");
+			}
+
+			/**
+			 * Runs `concurrent` while another transaction holds the project row after
+			 * turning its requirement on, then commits that change.
+			 */
+			async function whileRequirementTurnsOn(concurrent: () => Promise<unknown>) {
+				const client = await admin.connect();
+				let open = false;
+				try {
+					await client.query("begin");
+					open = true;
+					await client.query(
+						"update project set requires_task = true where organization_id = $1 and id = $2",
+						[ids.organization, ids.project],
+					);
+					const pending = concurrent();
+					await parkedOrSettled(pending);
+					await client.query("commit");
+					open = false;
+					return await pending;
+				} finally {
+					if (open) await client.query("rollback");
+					client.release();
+				}
+			}
+
+			// A departure closure racing the turn-off has its case in the departure clock-out suite.
+			it("a turn-off saved after a stale read still clears a marker set since", async () => {
+				await botWork(ids.project);
+				// The save reads the requirement as off; a concurrent save turns it on.
+				await admin.query(
+					"update project set requires_task = false where organization_id = $1 and id = $2",
+					[ids.organization, ids.project],
+				);
+
+				const saved = await whileRequirementTurnsOn(() => {
+					actAs(ids.ownerUser);
+					return projectSettings.updateProject(ids.project, { requiresTask: false });
+				});
+
+				expect(saved).toMatchObject({ success: true });
+				expect(await markers()).toEqual([unmarked(ids.project)]);
+			});
+		},
+	);
+
 	describe("the canonical divergence check in an adopted organization", () => {
 		beforeEach(async () => {
 			await setAdmission("adopted");
