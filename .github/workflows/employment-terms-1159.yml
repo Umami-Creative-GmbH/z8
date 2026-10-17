@@ -74,6 +74,24 @@ jobs:
         run: |
           cat > "${RUNNER_TEMP}/trace-build-stringify.cjs" <<'JS'
           Error.stackTraceLimit = 50;
+          function report(error) {
+            if (error instanceof RangeError && error.message === "Invalid string length") {
+              process.stderr.write("BUILD_RANGE_ERROR pid=" + process.pid + "\n" + error.stack + "\n");
+            }
+          }
+          process.on("uncaughtExceptionMonitor", report);
+          if (process.send) {
+            const send = process.send;
+            process.send = function (...args) {
+              try {
+                return Reflect.apply(send, this, args);
+              } catch (error) {
+                report(error);
+                process.stderr.write(new Error("process.send caller").stack + "\n");
+                throw error;
+              }
+            };
+          }
           const stringify = JSON.stringify;
           JSON.stringify = function (...args) {
             try {
