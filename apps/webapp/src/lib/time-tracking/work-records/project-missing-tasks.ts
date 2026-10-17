@@ -12,23 +12,32 @@ import "server-only";
  * guard does not cover the marker column.
  *
  * It spans every employee's work, so it runs on no employee's work scope. The
- * caller runs it inside `withOrganizationConfigurationMutation`, whose
- * exclusive organization configuration guard drains every work transaction
- * holding the shared guard: no closure that read the requirement as active can
- * mark work after this clear commits. A departure's work transaction holds no
- * organization guard (ADR 0003) and is not fenced by it.
+ * caller runs it inside `withOrganizationConfigurationMutation`, after it
+ * updated the project row in the same transaction:
+ * - the exclusive organization configuration guard drains every work
+ *   transaction holding the shared guard, so no split or amendment copies a
+ *   marker past this clear;
+ * - the project row's update lock fences every closure, departures included
+ *   (they hold no organization guard, ADR 0003): a closure reads the
+ *   requirement with the project row `FOR SHARE` (`closesMissingTask`), so it
+ *   either commits its marker before the turn-off locks the row, and this
+ *   clear ends it, or waits and reads the requirement as off.
+ *
+ * Lock order: organization configuration guard, then the project row, then the
+ * marked work rows. A departure closure takes the project row after its own
+ * work rows (configuration reads come after the pair in
+ * `WORK_RECORD_LOCK_ORDER`); the work it closes is live and unmarked, so this
+ * clear never waits on it, and the two cannot wait on each other in a cycle.
  */
 import { and, eq } from "drizzle-orm";
 import { timeRecordAllocation, workPeriod } from "@/db/schema";
 import type { WorkTransactionClient } from "../work-transaction";
 
-export type ProjectMissingTasksCleared = { workPeriods: number; allocations: number };
-
 export async function clearProjectMissingTasks(
 	transaction: WorkTransactionClient,
 	scope: { organizationId: string; projectId: string },
-): Promise<ProjectMissingTasksCleared> {
-	const periods = await transaction
+): Promise<void> {
+	await transaction
 		.update(workPeriod)
 		.set({ missingTask: false })
 		.where(
@@ -37,9 +46,8 @@ export async function clearProjectMissingTasks(
 				eq(workPeriod.projectId, scope.projectId),
 				eq(workPeriod.missingTask, true),
 			),
-		)
-		.returning({ id: workPeriod.id });
-	const allocations = await transaction
+		);
+	await transaction
 		.update(timeRecordAllocation)
 		.set({ missingTask: false })
 		.where(
@@ -49,7 +57,5 @@ export async function clearProjectMissingTasks(
 				eq(timeRecordAllocation.allocationKind, "project"),
 				eq(timeRecordAllocation.missingTask, true),
 			),
-		)
-		.returning({ id: timeRecordAllocation.id });
-	return { workPeriods: periods.length, allocations: allocations.length };
+		);
 }

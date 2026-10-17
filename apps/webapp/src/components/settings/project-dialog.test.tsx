@@ -405,6 +405,20 @@ describe("ProjectDialog, task requirement (#884)", () => {
 		);
 	});
 
+	it("leaves the requirement out of a save that did not change it", async () => {
+		// A dialog opened before someone else turned the requirement on must not turn it off.
+		const user = userEvent.setup();
+		renderDialog(editedProject());
+
+		await screen.findByRole("switch", { name: "Require a task" });
+		await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+		expect(projectActions.updateProject).toHaveBeenCalledWith(
+			"project-1",
+			expect.not.objectContaining({ requiresTask: expect.anything() }),
+		);
+	});
+
 	it("creates a blank project that requires a task", async () => {
 		const user = userEvent.setup();
 		renderDialog();

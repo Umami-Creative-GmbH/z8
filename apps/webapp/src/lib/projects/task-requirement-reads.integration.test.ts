@@ -1,19 +1,13 @@
 /**
- * #884: the active task requirement read from PostgreSQL. The SQL rule and the
- * query helpers must agree with the pure rule: a project requires a task AND
+ * #884: the active task requirement read from PostgreSQL. The query helpers
+ * must agree with the pure rule: a project requires a task AND
  * has at least one open task, within its own organization only.
  */
 
-import { asc, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { project } from "@/db/schema";
 import { integrationAdminPool } from "@/test/integration-database";
-import {
-	activeTaskRequirementSql,
-	listActiveTaskRequirements,
-	readActiveTaskRequirement,
-} from "./task-requirement-reads";
+import { listActiveTaskRequirements, readActiveTaskRequirement } from "./task-requirement-reads";
 
 const ids = {
 	organization: "t884r-org",
@@ -129,25 +123,14 @@ describe("active task requirement on PostgreSQL", () => {
 		).toEqual(new Set());
 	});
 
-	it("gives the same rule as a SQL expression for any query, also one over projects", async () => {
-		const rows = await db
-			.select({
-				id: project.id,
-				active: activeTaskRequirementSql({
-					projectId: project.id,
-					organizationId: project.organizationId,
-				}),
-			})
-			.from(project)
-			.where(eq(project.organizationId, ids.organization))
-			.orderBy(asc(project.id));
+	it("reads one project with its row share-locked inside a transaction", async () => {
+		const active = await db.transaction((tx) =>
+			readActiveTaskRequirement({ organizationId: ids.organization, projectId: ids.required }, tx, {
+				lock: "share",
+			}),
+		);
 
-		expect(Object.fromEntries(rows.map((row) => [row.id, row.active]))).toEqual({
-			[ids.required]: true,
-			[ids.requiredNoTasks]: false,
-			[ids.requiredOnlyDone]: false,
-			[ids.notRequired]: false,
-		});
+		expect(active).toBe(true);
 	});
 
 	it("lapses when the last open task is done, and applies again when it reopens", async () => {

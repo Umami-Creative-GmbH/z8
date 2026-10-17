@@ -74,6 +74,7 @@ import {
 	orRefuse,
 	readWorkRecord,
 } from "./work-records";
+import { resultingMissingTask } from "./work-records/work-attribution";
 import type { SealedWorkTransactionScope, WorkTransactionAdmission } from "./work-transaction";
 
 // Work records' invariants, which Clocking's receipts share (moved there to break the cycle).
@@ -490,14 +491,15 @@ export type CloseActiveWorkInput = {
 	 */
 	closingVehicleUse?: ClosingVehicleUse;
 	/**
-	 * Whether nobody at this closure could pick a task (#884, Projects ADR 0002):
-	 * automatic, departure, kiosk, bot, legacy-route and frozen clock-outs, and a
-	 * break closing running work. Such a closure is accepted without a task and
-	 * marks the work missing a task while its project's requirement is active.
-	 * Left out, the closure never marks: a writer that can pick a task refused
-	 * before the transaction instead.
+	 * Whether no task could be picked at this closure (#884, Projects ADR 0002):
+	 * automatic, departure, kiosk, bot, legacy-route and frozen clock-outs, a
+	 * break closing running work, and a clock-out keeping a project its owner
+	 * can no longer book. Such a closure is accepted without a task and marks the
+	 * work missing a task while its project's requirement is active. False where
+	 * someone could pick a task: that writer refused before the transaction.
+	 * Every closure decides it.
 	 */
-	marksMissingTask?: boolean;
+	marksMissingTask: boolean;
 };
 
 /** Decides the closed work's vehicle use from the live work's; undefined keeps it. */
@@ -752,18 +754,26 @@ export async function closeActiveWorkGraph(
  * project's task requirement is active. Read under the work transaction; the
  * decision is made once, as the closure sets the booking's project, and never
  * revisited when the requirement changes later.
+ *
+ * The project row is read `FOR SHARE`, after the closure's own work rows (a
+ * configuration read in `WORK_RECORD_LOCK_ORDER`). It fences the closure
+ * against turning the requirement off, also for a departure, which holds no
+ * organization guard: the turn-off's update of the row either waits for this
+ * closure and then clears its marker, or this read waits for the turn-off and
+ * reads the requirement as off (`clearProjectMissingTasks`).
  */
 async function closesMissingTask(
 	tx: WorkTransactionContext["db"],
 	input: Pick<CloseActiveWorkInput, "organizationId" | "marksMissingTask">,
 	booking: { projectId: string | null; taskId: string | null },
 ): Promise<boolean> {
-	if (!input.marksMissingTask || booking.projectId === null || booking.taskId !== null) {
+	if (!input.marksMissingTask || !resultingMissingTask(booking, { decided: true })) {
 		return false;
 	}
 	return readActiveTaskRequirement(
-		{ organizationId: input.organizationId, projectId: booking.projectId },
+		{ organizationId: input.organizationId, projectId: booking.projectId as string },
 		tx,
+		{ lock: "share" },
 	);
 }
 

@@ -313,7 +313,7 @@ describe("the project report's By task section on PostgreSQL", () => {
 
 	it("counts the No task row's bookings missing a task in the period (#884)", async () => {
 		const own = { organizationId: ids.organization, employeeId: ids.owner, userId: ids.ownerUser };
-		// A second untasked booking in the period and one before it, all marked.
+		// A second booking missing a task in the period and one before it, all marked.
 		await book({
 			...own,
 			projectId: ids.project,

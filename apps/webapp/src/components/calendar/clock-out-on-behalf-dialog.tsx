@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/lib/calendar/types";
+import { isTaskRequirementActive } from "@/lib/projects/task-requirement";
 import { queryKeys } from "@/lib/query/keys";
 import { namedTaskId, taskIdToSend } from "@/lib/time-tracking/task-attribution";
 
@@ -127,6 +128,15 @@ function ClockOutOnBehalfForm({
 	const initialTaskId = choices?.currentTask?.id;
 	const [taskId, setTaskId] = useState<string | undefined>(initialTaskId);
 	const projectId = choices?.projectId ?? undefined;
+	// An active task requirement holds the clock-out until a task is chosen or
+	// kept (#884); the server refusal stays the backstop.
+	const needsTask =
+		choices !== null &&
+		isTaskRequirementActive({
+			requiresTask: choices.requiresTask,
+			hasOpenTask: choices.tasks.length > 0,
+		}) &&
+		!taskId;
 
 	const confirm = () =>
 		// An unchanged task is left to the server, which keeps it with the project.
@@ -158,7 +168,7 @@ function ClockOutOnBehalfForm({
 			) : null}
 			<AlertDialogFooter>
 				<AlertDialogCancel disabled={isPending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-				<Button type="button" disabled={isPending} onClick={confirm}>
+				<Button type="button" disabled={isPending || needsTask} onClick={confirm}>
 					{isPending ? (
 						<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 					) : null}

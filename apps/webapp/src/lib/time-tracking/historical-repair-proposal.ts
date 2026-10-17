@@ -51,6 +51,7 @@ import {
 	type WorkFindingTreatment,
 } from "./historical-work-diagnostics";
 import { isWorkLocationType, type WorkLocationType } from "./work-location";
+import { resultingMissingTask } from "./work-records/work-attribution";
 
 export const HISTORICAL_REPAIR_PROPOSAL_VERSION = 1;
 
@@ -474,9 +475,14 @@ function applyToEvidence(
 				const billable =
 					resolution.attribution?.billable ?? (sameProject ? (period.isBillable ?? false) : false);
 				// The missing-task marker travels with the task (#884).
-				const missingTask =
-					task === null &&
-					(resolution.attribution?.missingTask ?? (sameProject && (period.missingTask ?? false)));
+				const missingTask = resultingMissingTask(
+					{ projectId, taskId: task },
+					{
+						decided: resolution.attribution?.missingTask,
+						current: period.missingTask ?? false,
+						projectStays: sameProject,
+					},
+				);
 				changedPeriod.projectId = projectId;
 				changedPeriod.taskId = task;
 				changedPeriod.isBillable = billable;

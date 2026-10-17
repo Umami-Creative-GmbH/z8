@@ -170,7 +170,11 @@ function useProjectDialogController({
 					deadline: deadline ?? null,
 					customerId: customerId ?? null,
 					...billableDefault,
-					requiresTask: value.requiresTask,
+					// Sent only when changed here, so a dialog opened before someone else
+					// changed the requirement never undoes that change.
+					...(value.requiresTask === defaultValues.requiresTask
+						? {}
+						: { requiresTask: value.requiresTask }),
 					customFieldValues,
 				}).catch(() => null);
 

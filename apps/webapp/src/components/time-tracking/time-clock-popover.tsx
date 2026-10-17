@@ -17,6 +17,7 @@ import {
 	type BookedProjectTask,
 	projectTaskRefusalMessage,
 } from "@/lib/projects/project-task-model";
+import { isTaskRequirementActive } from "@/lib/projects/task-requirement";
 import { useElapsedTimer, useTimeClock } from "@/lib/query";
 import type { AssignedProject } from "@/lib/query/use-assigned-projects";
 import { namedTaskId, taskIdToSend } from "@/lib/time-tracking/task-attribution";
@@ -139,6 +140,8 @@ interface ClockControlsViewProps {
 	workLocationType: WorkLocationType;
 	/** Vehicle use asked at this clock event (#1122). */
 	vehicleUse: ClockVehicleUseState;
+	/** The chosen project requires a task and none is chosen or kept (#884). */
+	clockOutNeedsTask: boolean;
 }
 
 function ClockControlsView({
@@ -175,6 +178,7 @@ function ClockControlsView({
 	workCategoriesIsLoading,
 	workLocationType,
 	vehicleUse,
+	clockOutNeedsTask,
 }: ClockControlsViewProps) {
 	// Offline controls cannot trust the last server status, so both ends stay open.
 	const isLocalCapture = captureMode !== "server";
@@ -267,6 +271,7 @@ function ClockControlsView({
 				isClockedIn={isClockedIn}
 				onClockAction={onClockAction}
 				isClockingOut={isClockingOut}
+				clockOutNeedsTask={clockOutNeedsTask}
 				t={t}
 			/>
 		</>
@@ -314,6 +319,21 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 		currentTask !== null &&
 		currentTask.projectId === uiState.selectedProjectId;
 	const shownTaskId = followsCurrentTask ? currentTask?.id : (uiState.selectedTaskId ?? undefined);
+	// A project with an active task requirement holds a server clock-out until a
+	// task is chosen or kept (#884); the server refusal stays the backstop. A
+	// clock-out saved on this device is accepted without one, and so is a break.
+	const chosenProject = assignedProjects.projects.find(
+		(project) => project.id === uiState.selectedProjectId,
+	);
+	const clockOutNeedsTask =
+		isClockedIn &&
+		captureMode === "server" &&
+		chosenProject !== undefined &&
+		isTaskRequirementActive({
+			requiresTask: chosenProject.requiresTask,
+			hasOpenTask: chosenProject.tasks.length > 0,
+		}) &&
+		!shownTaskId;
 
 	// Separate timer hook to isolate per-second re-renders to this component only
 	const elapsedSeconds = useElapsedTimer(activeWorkPeriod?.startTime ?? null);
@@ -483,6 +503,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 		handleAddBreak,
 		isAddingBreak,
 		vehicleUse,
+		clockOutNeedsTask,
 	};
 }
 
@@ -516,6 +537,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 		handleAddBreak,
 		isAddingBreak,
 		vehicleUse,
+		clockOutNeedsTask,
 	} = useTimeClockPopoverController({ timeFormat });
 	if (isLoading) {
 		return (
@@ -611,6 +633,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 								workCategoriesIsLoading={availableWorkCategories.isLoading}
 								workLocationType={uiState.workLocationType}
 								vehicleUse={vehicleUse}
+								clockOutNeedsTask={clockOutNeedsTask}
 							/>
 						)}
 					</div>
@@ -641,6 +664,7 @@ function ClockActionButtons({
 	isClockedIn,
 	onClockAction,
 	isClockingOut,
+	clockOutNeedsTask,
 	t,
 }: Pick<
 	Parameters<typeof ClockControlsView>[0],
@@ -651,6 +675,7 @@ function ClockActionButtons({
 	| "isClockedIn"
 	| "onClockAction"
 	| "isClockingOut"
+	| "clockOutNeedsTask"
 	| "t"
 >) {
 	return (
@@ -665,7 +690,7 @@ function ClockActionButtons({
 					size="default"
 					variant={isClockedIn ? "destructive" : "default"}
 					onClick={onClockAction}
-					disabled={isMutating}
+					disabled={isMutating || clockOutNeedsTask}
 					className="w-full"
 				>
 					{isMutating ? (

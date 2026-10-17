@@ -49,7 +49,7 @@ export function offeredTasks(
 /**
  * Whether the closing work would end without a task on a project that
  * requires one (#1297): no offered open task is picked, and the running
- * work's task is not kept. The picker is desktop's only enforcement.
+ * work's task is not kept. The picker is desktop's only check for it.
  */
 export function taskMissing(
 	context: DesktopContext | undefined,

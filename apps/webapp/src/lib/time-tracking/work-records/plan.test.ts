@@ -118,14 +118,14 @@ describe("planChange: divide at an instant", () => {
 
 	it("keeps the missing-task marker on both halves (#884)", () => {
 		const pair = agreeingPair();
-		const untasked = { taskId: null, missingTask: true };
+		const missingTaskParts = { taskId: null, missingTask: true };
 		const marked: WorkRecordPair = {
-			period: { ...pair.period, ...untasked },
+			period: { ...pair.period, ...missingTaskParts },
 			canonical: {
 				...pair.canonical,
 				allocations: pair.canonical.allocations.map((allocation) =>
 					allocation.allocationKind === "project"
-						? { ...allocation, ...untasked }
+						? { ...allocation, ...missingTaskParts }
 						: { ...allocation, missingTask: false },
 				),
 			},

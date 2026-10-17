@@ -122,7 +122,9 @@ vi.mock("./shared", async (importOriginal) => {
 	};
 });
 
-const { createManualTimeEntry, getAssignedProjects } = await import("../actions");
+const { createManualTimeEntry, getAssignedProjects, updateWorkPeriodBillability } = await import(
+	"../actions"
+);
 const { getManualEntryTargetContext } = await import("./manual-entry-context");
 const { getClockOutOnBehalfTaskChoices } = await import("./on-behalf-task-choices");
 const { clockIn, clockOut, clockOutAs } = await import("./clocking");
@@ -150,6 +152,7 @@ const ids = {
 	secondTask: "e1294000-0000-4000-8000-000000000031",
 	lapsedDoneTask: "e1294000-0000-4000-8000-000000000032",
 	plainTask: "e1294000-0000-4000-8000-000000000033",
+	customer: "e1294000-0000-4000-8000-000000000040",
 } as const;
 const users = [ids.employeeUser, ids.ownerUser];
 
@@ -343,6 +346,39 @@ describe("refusing bookings without a task on PostgreSQL (#1294)", () => {
 		return only(rows);
 	}
 
+	/** Whether the work ended, its project and task, and whether it is marked missing a task. */
+	async function closedWork(workPeriodId: string) {
+		const { rows } = await admin.query<{
+			ended: boolean;
+			project_id: string | null;
+			task_id: string | null;
+			missing_task: boolean;
+		}>(
+			`select end_time is not null as ended, project_id, task_id, missing_task
+			 from work_period where organization_id = $1 and id = $2`,
+			[ids.organization, workPeriodId],
+		);
+		return only(rows);
+	}
+
+	/**
+	 * Makes the requiring project unbookable for the employee while it keeps its
+	 * open tasks: nobody can pick one of them for the employee's work.
+	 */
+	async function makeProjectUnbookable(how: "unassigned" | "archived") {
+		if (how === "unassigned") {
+			await admin.query(
+				"delete from project_assignment where organization_id = $1 and project_id = $2",
+				[ids.organization, ids.project],
+			);
+			return;
+		}
+		await admin.query(
+			"update project set status = 'archived' where organization_id = $1 and id = $2",
+			[ids.organization, ids.project],
+		);
+	}
+
 	describe("the pickers' project choices", () => {
 		beforeEach(async () => {
 			await requireTasks();
@@ -393,6 +429,21 @@ describe("refusing bookings without a task on PostgreSQL (#1294)", () => {
 			expect(result).toMatchObject({
 				success: true,
 				data: { projectId: ids.project, requiresTask: true },
+			});
+		});
+
+		it("offer no task for a clock-out on behalf once the project is not bookable", async () => {
+			const workPeriodId = await clockInEmployee();
+			await bookRunning(workPeriodId, ids.project, null);
+			await makeProjectUnbookable("unassigned");
+			actAs(ids.ownerUser);
+
+			const result = await getClockOutOnBehalfTaskChoices(workPeriodId);
+
+			// No open task to choose, so the dialog asks for none; the server accepts it.
+			expect(result).toMatchObject({
+				success: true,
+				data: { projectId: ids.project, tasks: [] },
 			});
 		});
 	});
@@ -479,6 +530,26 @@ describe("refusing bookings without a task on PostgreSQL (#1294)", () => {
 				expect(await period(workPeriodId)).toMatchObject({ project_id: projectId, task_id: null });
 			});
 
+			it.each([
+				["no longer assigned to the employee", "unassigned"],
+				["archived", "archived"],
+			] as const)(
+				"accepts and marks a clock-out keeping a project %s, where no task can be picked",
+				async (_case, how) => {
+					const workPeriodId = await clockInEmployee();
+					await bookRunning(workPeriodId, ids.project, null);
+					await makeProjectUnbookable(how);
+
+					await expect(clockOutEmployee(undefined)).resolves.toMatchObject({ success: true });
+					expect(await closedWork(workPeriodId)).toEqual({
+						ended: true,
+						project_id: ids.project,
+						task_id: null,
+						missing_task: true,
+					});
+				},
+			);
+
 			it("accepts a bot clock-out without a task", async () => {
 				const workPeriodId = await clockInEmployee();
 				await bookRunning(workPeriodId, ids.project, null);
@@ -556,6 +627,46 @@ describe("refusing bookings without a task on PostgreSQL (#1294)", () => {
 				});
 				expect(await period(workPeriodId)).toMatchObject({ task_id: ids.task });
 			});
+
+			it.each([
+				["a project whose requirement lapsed", ids.lapsedProject],
+				["a project without the requirement", ids.plainProject],
+			])("clocks out without a task on %s", async (_case, projectId) => {
+				const workPeriodId = await clockInEmployee();
+				await bookRunning(workPeriodId, projectId, null);
+
+				await expect(closeOnBehalf(workPeriodId)).resolves.toMatchObject({
+					outcome: "executed",
+				});
+				expect(await closedWork(workPeriodId)).toEqual({
+					ended: true,
+					project_id: projectId,
+					task_id: null,
+					missing_task: false,
+				});
+			});
+
+			it.each([
+				["no longer assigned to the employee", "unassigned"],
+				["archived", "archived"],
+			] as const)(
+				"accepts and marks a clock-out keeping a project %s, where no task can be picked",
+				async (_case, how) => {
+					const workPeriodId = await clockInEmployee();
+					await bookRunning(workPeriodId, ids.project, null);
+					await makeProjectUnbookable(how);
+
+					await expect(closeOnBehalf(workPeriodId)).resolves.toMatchObject({
+						outcome: "executed",
+					});
+					expect(await closedWork(workPeriodId)).toEqual({
+						ended: true,
+						project_id: ids.project,
+						task_id: null,
+						missing_task: true,
+					});
+				},
+			);
 		},
 	);
 
@@ -724,7 +835,40 @@ describe("refusing bookings without a task on PostgreSQL (#1294)", () => {
 				});
 			});
 
-			it("still edits the time of an untasked booking on such a project", async () => {
+			it("still changes the billability of a booking without a task on such a project", async () => {
+				await admin.query(
+					"update organization set projects_enabled = true, billable_time_enabled = true where id = $1",
+					[ids.organization],
+				);
+				await admin.query(
+					"insert into billable_time_settings (organization_id, billable_currency) values ($1, 'EUR')",
+					[ids.organization],
+				);
+				await admin.query(
+					`insert into customer (id, organization_id, name, created_by, updated_at)
+					 values ($1, $2, 'T1294 customer', $3, now())`,
+					[ids.customer, ids.organization, ids.ownerUser],
+				);
+				await admin.query("update project set customer_id = $2 where id = $1", [
+					ids.project,
+					ids.customer,
+				]);
+				const workPeriodId = await bookedWork(admission, ids.project);
+				await requireTasks();
+
+				actAs(ids.employeeUser);
+				await expect(updateWorkPeriodBillability(workPeriodId, true)).resolves.toEqual({
+					success: true,
+					data: { workPeriodId, isBillable: true },
+				});
+				const { rows } = await admin.query(
+					"select is_billable, project_id, task_id from work_period where id = $1",
+					[workPeriodId],
+				);
+				expect(rows).toEqual([{ is_billable: true, project_id: ids.project, task_id: null }]);
+			});
+
+			it("still edits the time of a booking without a task on such a project", async () => {
 				const workPeriodId = await bookedWork(admission, ids.project);
 				await requireTasks();
 

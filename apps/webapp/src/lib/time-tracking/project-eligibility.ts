@@ -140,6 +140,29 @@ export async function taskRequirementIneligibility(
 	return active ? "task_required" : null;
 }
 
+/**
+ * The task requirement at a clock-out where someone is present to pick a task
+ * (#884, Projects ADR 0002). A task can be picked only from a project the
+ * target may book: once the work's project is no longer bookable for them
+ * (unassigned, archived …), none of its tasks can be named, so the clock-out
+ * is accepted and the work is marked missing a task instead of being refused.
+ * - `task_required`: refuse; the project is bookable, so a task can be picked;
+ * - `missing_task`: accept without a task and mark the work;
+ * - null: no requirement applies.
+ */
+export async function clockOutTaskRequirement(
+	target: ProjectEligibilityTarget,
+	booking: { projectId: string | null; taskId: string | null },
+	reader: Pick<typeof db, "select"> = db,
+): Promise<"task_required" | "missing_task" | null> {
+	const reason = await taskRequirementIneligibility(reader, {
+		organizationId: target.organizationId,
+		...booking,
+	});
+	if (!reason || !booking.projectId) return null;
+	return (await isProjectEligible(target, booking.projectId, reader)) ? reason : "missing_task";
+}
+
 export type TaskBookingOptions = {
 	/**
 	 * `share` locks the task row until the caller's transaction ends, so a

@@ -35,7 +35,11 @@ export interface WorkPeriodData {
 	autoAdjustmentReason?: WorkPeriodAutoAdjustmentReason | null;
 	/** Billable Time (#900): whether the work is billable. */
 	isBillable?: boolean;
-	/** Missing task (#884): accepted without the task its project required. */
+	/**
+	 * Missing task (#884): accepted without the task its project required. The
+	 * stored `work_period` column, like `isBillable`; read models built from it
+	 * (calendar, reports) carry `missingTask?: true` instead.
+	 */
 	missingTask?: boolean;
 }
 
