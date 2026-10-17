@@ -14,7 +14,9 @@ const harness = vi.hoisted(() => ({
 	organizationId: "t902-org",
 }));
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
@@ -42,10 +44,15 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
@@ -57,14 +64,23 @@ vi.mock("@/lib/logger", () => ({
 		warn: () => {},
 		info: () => {},
 		debug: () => {},
-		child: () => ({ error: () => {}, warn: () => {}, info: () => {}, debug: () => {} }),
+		child: () => ({
+			error: () => {},
+			warn: () => {},
+			info: () => {},
+			debug: () => {},
+		}),
 	}),
 }));
 
-const { getCustomerBillableReport, getProjectDetailedReport, getProjectsOverview } = await import(
-	"./actions"
+const {
+	getCustomerBillableReport,
+	getProjectDetailedReport,
+	getProjectsOverview,
+} = await import("./actions");
+const { exportReportDocumentToCSV } = await import(
+	"@/lib/reports/exporters/report-document-csv"
 );
-const { exportReportDocumentToCSV } = await import("@/lib/reports/exporters/report-document-csv");
 const {
 	buildCustomerReportDocument,
 	buildProjectReportDocument,
@@ -91,7 +107,13 @@ const ids = {
 	internal: "90200000-0000-4000-8000-0000000000a3",
 	foreignProject: "90200000-0000-4000-8000-0000000000a4",
 } as const;
-const users = [ids.ownerUser, ids.pmUser, ids.teamManagerUser, ids.workerUser, ids.otherUser];
+const users = [
+	ids.ownerUser,
+	ids.pmUser,
+	ids.teamManagerUser,
+	ids.workerUser,
+	ids.otherUser,
+];
 // The project reports take the report's calendar days as ISO dates.
 const fromDay = "2026-03-01";
 const toDay = "2026-04-30";
@@ -102,7 +124,9 @@ function actAs(userId: string) {
 }
 
 async function unwrap<T>(
-	result: Promise<{ success: true; data: T } | { success: false; error: string }>,
+	result: Promise<
+		{ success: true; data: T } | { success: false; error: string }
+	>,
 ) {
 	const settled = await result;
 	if (!settled.success) throw new Error(settled.error);
@@ -115,11 +139,16 @@ describe("billable project reports on PostgreSQL", () => {
 
 	async function cleanup() {
 		for (const organizationId of [ids.organization, ids.otherOrganization]) {
-			await admin.query("delete from approval_request where organization_id = $1", [
+			await admin.query(
+				"delete from approval_request where organization_id = $1",
+				[organizationId],
+			);
+			await admin.query("delete from work_period where organization_id = $1", [
 				organizationId,
 			]);
-			await admin.query("delete from work_period where organization_id = $1", [organizationId]);
-			await admin.query("delete from time_entry where organization_id = $1", [organizationId]);
+			await admin.query("delete from time_entry where organization_id = $1", [
+				organizationId,
+			]);
 		}
 		await admin.query("delete from organization where id = any($1::text[])", [
 			[ids.organization, ids.otherOrganization],
@@ -285,7 +314,12 @@ describe("billable project reports on PostgreSQL", () => {
 			 ($1, 'project', $2, 100.00, '2026-01-01', '2026-04-01'),
 			 ($1, 'project', $2, 120.00, '2026-04-01', null),
 			 ($3, 'project', $4, 999.00, '2026-01-01', null)`,
-			[ids.organization, ids.website, ids.otherOrganization, ids.foreignProject],
+			[
+				ids.organization,
+				ids.website,
+				ids.otherOrganization,
+				ids.foreignProject,
+			],
 		);
 		await admin.query(
 			`insert into cost_rate (organization_id, employee_id, hourly_rate, effective_from) values ($1, $2, 50.00, '2026-01-01')`,
@@ -334,7 +368,11 @@ describe("billable project reports on PostgreSQL", () => {
 			minutes: 180,
 			deleted: true,
 		});
-		await work({ employeeId: ids.worker, projectId: ids.website, start: "2026-03-20T08:00:00Z" });
+		await work({
+			employeeId: ids.worker,
+			projectId: ids.website,
+			start: "2026-03-20T08:00:00Z",
+		});
 		await work({
 			employeeId: ids.worker,
 			projectId: ids.website,
@@ -394,7 +432,9 @@ describe("billable project reports on PostgreSQL", () => {
 	it("gives owners revenue, cost and margin per project, with unpriced work and unknown cost flagged", async () => {
 		actAs(ids.ownerUser);
 		const overview = await unwrap(getProjectsOverview(fromDay, toDay));
-		const byId = new Map(overview.projects.map((summary) => [summary.id, summary]));
+		const byId = new Map(
+			overview.projects.map((summary) => [summary.id, summary]),
+		);
 
 		expect(byId.get(ids.website)).toMatchObject({
 			totalMinutes: 480,
@@ -433,9 +473,14 @@ describe("billable project reports on PostgreSQL", () => {
 
 	it("keys the detail report on the employee-local day of each start, with per-employee figures", async () => {
 		actAs(ids.ownerUser);
-		const report = await unwrap(getProjectDetailedReport(ids.website, fromDay, toDay));
+		const report = await unwrap(
+			getProjectDetailedReport(ids.website, fromDay, toDay),
+		);
 
-		expect(report.summary).toMatchObject({ totalMinutes: 480, billable: websiteFull });
+		expect(report.summary).toMatchObject({
+			totalMinutes: 480,
+			billable: websiteFull,
+		});
 		expect(report.timeSeries.map(({ date, hours }) => [date, hours])).toEqual([
 			["2026-03-01", 1],
 			["2026-03-10", 1],
@@ -453,50 +498,74 @@ describe("billable project reports on PostgreSQL", () => {
 	it("gives project managers hours and revenue for their projects, with no cost or margin field", async () => {
 		actAs(ids.pmUser);
 		const overview = await unwrap(getProjectsOverview(fromDay, toDay));
-		const report = await unwrap(getProjectDetailedReport(ids.website, fromDay, toDay));
+		const report = await unwrap(
+			getProjectDetailedReport(ids.website, fromDay, toDay),
+		);
 		const customers = await unwrap(getCustomerBillableReport(fromDay, toDay));
 
-		expect(overview.projects.map((summary) => summary.id)).toEqual([ids.website]);
+		expect(overview.projects.map((summary) => summary.id)).toEqual([
+			ids.website,
+		]);
 		expect(overview.projects[0]?.billable).toMatchObject({
 			access: "revenue",
 			billableHours: 7,
 			nonBillableHours: 1,
 			revenue: "740.00",
 		});
-		expect(report.summary.billable).toMatchObject({ access: "revenue", revenue: "740.00" });
-		expect(customers.customers.map((row) => row.projects.map((p) => p.project.id))).toEqual([
-			[ids.website],
-		]);
+		expect(report.summary.billable).toMatchObject({
+			access: "revenue",
+			revenue: "740.00",
+		});
+		expect(
+			customers.customers.map((row) => row.projects.map((p) => p.project.id)),
+		).toEqual([[ids.website]]);
 		for (const data of [overview, report, customers]) {
 			expect(JSON.stringify(data)).not.toMatch(
 				/"(cost|margin|marginPercent|costUnknownWorkCount)"/,
 			);
 		}
 		// Their exports are built from the same data, so they carry no cost or margin either.
-		const context = { labels: DEFAULT_PROJECT_REPORT_EXPORT_LABELS, generatedAt: "now" };
+		const context = {
+			labels: DEFAULT_PROJECT_REPORT_EXPORT_LABELS,
+			generatedAt: "now",
+		};
 		for (const csv of [
 			exportReportDocumentToCSV(buildProjectReportDocument(report, context)),
-			exportReportDocumentToCSV(buildCustomerReportDocument(customers, context)),
+			exportReportDocumentToCSV(
+				buildCustomerReportDocument(customers, context),
+			),
 		]) {
 			expect(csv).toContain("Revenue (EUR)");
 			expect(csv).not.toMatch(/cost|margin/i);
 		}
 
-		const otherProject = await getProjectDetailedReport(ids.support, fromDay, toDay);
+		const otherProject = await getProjectDetailedReport(
+			ids.support,
+			fromDay,
+			toDay,
+		);
 		expect(otherProject.success).toBe(false);
 	});
 
 	it("shows team managers who manage no project nothing more than hours", async () => {
 		actAs(ids.teamManagerUser);
 		const overview = await unwrap(getProjectsOverview(fromDay, toDay));
-		const report = await unwrap(getProjectDetailedReport(ids.website, fromDay, toDay));
+		const report = await unwrap(
+			getProjectDetailedReport(ids.website, fromDay, toDay),
+		);
 
 		expect(overview.projects).toHaveLength(3);
-		expect(overview.projects.every((summary) => summary.billable === undefined)).toBe(true);
+		expect(
+			overview.projects.every((summary) => summary.billable === undefined),
+		).toBe(true);
 		expect(overview.totals.billable).toBeUndefined();
 		expect(report.summary.billable).toBeUndefined();
-		expect(JSON.stringify([overview, report])).not.toMatch(/revenue|billableHours/);
-		expect((await getCustomerBillableReport(fromDay, toDay)).success).toBe(false);
+		expect(JSON.stringify([overview, report])).not.toMatch(
+			/revenue|billableHours/,
+		);
+		expect((await getCustomerBillableReport(fromDay, toDay)).success).toBe(
+			false,
+		);
 	});
 
 	it("rolls figures up per customer, its totals the sum of its projects", async () => {
@@ -504,7 +573,10 @@ describe("billable project reports on PostgreSQL", () => {
 		const view = await unwrap(getCustomerBillableReport(fromDay, toDay));
 
 		expect(view.access).toBe("full");
-		expect(view.period).toEqual({ startDate: "2026-03-01", endDate: "2026-04-30" });
+		expect(view.period).toEqual({
+			startDate: "2026-03-01",
+			endDate: "2026-04-30",
+		});
 		for (const [from, to] of [
 			["2026-02-30", "2026-04-30"],
 			["2026-04-30", "2026-03-01"],
@@ -517,7 +589,10 @@ describe("billable project reports on PostgreSQL", () => {
 		expect(view.customers).toHaveLength(1);
 		const [acme] = view.customers;
 		expect(acme?.customer).toEqual({ id: ids.customer, name: "Acme" });
-		expect(acme?.projects.map((row) => row.project.id)).toEqual([ids.support, ids.website]);
+		expect(acme?.projects.map((row) => row.project.id)).toEqual([
+			ids.support,
+			ids.website,
+		]);
 		expect(acme?.billable).toMatchObject({
 			billableHours: 9,
 			nonBillableHours: 1,
@@ -532,7 +607,9 @@ describe("billable project reports on PostgreSQL", () => {
 			(acme?.projects ?? []).reduce((sum, row) => sum + row.totalMinutes, 0),
 		);
 		// Billable work on Internal (no customer) is listed apart, never under a customer.
-		expect(view.withoutCustomer?.projects.map((row) => row.project.id)).toEqual([ids.internal]);
+		expect(view.withoutCustomer?.projects.map((row) => row.project.id)).toEqual(
+			[ids.internal],
+		);
 		expect(view.withoutCustomer?.billable).toMatchObject({
 			billableHours: 0,
 			withoutCustomerHours: 1,
@@ -547,11 +624,15 @@ describe("billable project reports on PostgreSQL", () => {
 	});
 
 	it("treats a deleted customer's projects as without customer", async () => {
-		await admin.query("update customer set is_active = false where id = $1", [ids.customer]);
+		await admin.query("update customer set is_active = false where id = $1", [
+			ids.customer,
+		]);
 		actAs(ids.ownerUser);
 
 		const overview = await unwrap(getProjectsOverview(fromDay, toDay));
-		const website = overview.projects.find((summary) => summary.id === ids.website);
+		const website = overview.projects.find(
+			(summary) => summary.id === ids.website,
+		);
 		expect(website?.customer).toBeNull();
 		expect(website?.billable).toMatchObject({
 			billableHours: 0,
@@ -561,33 +642,44 @@ describe("billable project reports on PostgreSQL", () => {
 
 		const view = await unwrap(getCustomerBillableReport(fromDay, toDay));
 		expect(view.customers).toEqual([]);
-		expect(view.withoutCustomer?.projects.map((row) => row.project.id)).toEqual([
-			ids.internal,
-			ids.support,
-			ids.website,
-		]);
+		expect(view.withoutCustomer?.projects.map((row) => row.project.id)).toEqual(
+			[ids.internal, ids.support, ids.website],
+		);
 	});
 
 	it("shows no Billable Time figures while the module is off", async () => {
-		await admin.query("update organization set billable_time_enabled = false where id = $1", [
-			ids.organization,
-		]);
+		await admin.query(
+			"update organization set billable_time_enabled = false where id = $1",
+			[ids.organization],
+		);
 		actAs(ids.ownerUser);
 		const overview = await unwrap(getProjectsOverview(fromDay, toDay));
-		const report = await unwrap(getProjectDetailedReport(ids.website, fromDay, toDay));
+		const report = await unwrap(
+			getProjectDetailedReport(ids.website, fromDay, toDay),
+		);
 
-		expect(overview.projects.every((summary) => summary.billable === undefined)).toBe(true);
+		expect(
+			overview.projects.every((summary) => summary.billable === undefined),
+		).toBe(true);
 		expect(report.summary.billable).toBeUndefined();
 		expect(report.billableTime).toBeUndefined();
-		expect((await getCustomerBillableReport(fromDay, toDay)).success).toBe(false);
+		expect((await getCustomerBillableReport(fromDay, toDay)).success).toBe(
+			false,
+		);
 	});
 
 	it("never reads another organization's projects", async () => {
 		actAs(ids.ownerUser);
-		const foreign = await getProjectDetailedReport(ids.foreignProject, fromDay, toDay);
+		const foreign = await getProjectDetailedReport(
+			ids.foreignProject,
+			fromDay,
+			toDay,
+		);
 		const overview = await unwrap(getProjectsOverview(fromDay, toDay));
 
 		expect(foreign.success).toBe(false);
-		expect(overview.projects.map((summary) => summary.id)).not.toContain(ids.foreignProject);
+		expect(overview.projects.map((summary) => summary.id)).not.toContain(
+			ids.foreignProject,
+		);
 	});
 });

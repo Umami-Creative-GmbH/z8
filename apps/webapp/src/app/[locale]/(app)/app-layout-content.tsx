@@ -1,3 +1,5 @@
+import { mfaChallengeFromSession } from "@/lib/organization-mfa/http";
+import { MfaDeadlineBanner } from "@/components/organization-mfa/deadline-banner";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
@@ -44,7 +46,9 @@ const billingCheckFailedAccess: BillingAccessResult = {
 };
 
 /** Billing runs on the shared runtime; it is imported only once billing is enabled. */
-async function checkBillingAccess(organizationId: string): Promise<BillingAccessResult> {
+async function checkBillingAccess(
+	organizationId: string,
+): Promise<BillingAccessResult> {
 	const { BillingEnforcementService, BillingServicesLive } = await import(
 		"@/lib/effect/services/billing"
 	);
@@ -73,7 +77,10 @@ function SiteHeaderLoading() {
 	);
 }
 
-export async function AuthenticatedAppContent({ children, params }: AuthenticatedAppContentProps) {
+export async function AuthenticatedAppContent({
+	children,
+	params,
+}: AuthenticatedAppContentProps) {
 	// Auth database instrumentation uses random trace IDs and must run per request.
 	await connection();
 	// Centralized auth check protects all routes in the (app) group.
@@ -92,13 +99,24 @@ export async function AuthenticatedAppContent({ children, params }: Authenticate
 		redirect(sessionExpiredUrl);
 	}
 
+	const mfaChallenge = mfaChallengeFromSession(session);
+	if (mfaChallenge)
+		return redirectWithLocale(
+			`/mfa?organizationId=${encodeURIComponent(mfaChallenge.organizationId)}`,
+		);
 	const activeOrganizationId = session.session?.activeOrganizationId;
 	// Sync DB locale preference on load (null = user hasn't set preference, respect browser/cookie)
 	const [preferences, organizationSettings] = await Promise.all([
 		getRenderUserPreferences(session.user.id),
 		getOrganizationSettings(activeOrganizationId, session.user.id),
 	]);
-	const { locale: dbLocale, weekStartDay, timeFormat, timezone, helpImproveProduct } = preferences;
+	const {
+		locale: dbLocale,
+		weekStartDay,
+		timeFormat,
+		timezone,
+		helpImproveProduct,
+	} = preferences;
 	if (dbLocale && dbLocale !== locale) {
 		// User has a saved locale preference that differs from current URL - redirect
 		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
@@ -107,8 +125,12 @@ export async function AuthenticatedAppContent({ children, params }: Authenticate
 	}
 
 	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
-	const { billingAccess, trialDaysRemaining, canManageBilling, showTrialBanner } =
-		await loadAppBillingStatus(activeOrganizationId, session.user.id);
+	const {
+		billingAccess,
+		trialDaysRemaining,
+		canManageBilling,
+		showTrialBanner,
+	} = await loadAppBillingStatus(activeOrganizationId, session.user.id);
 	const isBillingRecoveryPath =
 		pathname === `/${locale}/settings/billing` ||
 		pathname.startsWith(`/${locale}/settings/billing/`) ||
@@ -149,6 +171,12 @@ export async function AuthenticatedAppContent({ children, params }: Authenticate
 								</Suspense>
 								{/* In flow so recovery status never covers header clock controls. */}
 								<OfflineBanner />
+								<Suspense fallback={null}>
+									<MfaDeadlineBanner
+										userId={session.user.id}
+										organizationId={activeOrganizationId}
+									/>
+								</Suspense>
 								<AppTrialBanner
 									showTrialBanner={showTrialBanner}
 									trialDaysRemaining={trialDaysRemaining}
@@ -220,7 +248,10 @@ async function loadAppBillingStatus(
 		activeOrganizationId && billingEnabled
 			? await Promise.all([
 					db.query.member.findFirst({
-						where: and(eq(member.userId, userId), eq(member.organizationId, activeOrganizationId)),
+						where: and(
+							eq(member.userId, userId),
+							eq(member.organizationId, activeOrganizationId),
+						),
 					}),
 					db.query.subscription.findFirst({
 						where: eq(subscription.organizationId, activeOrganizationId),
@@ -229,17 +260,25 @@ async function loadAppBillingStatus(
 			: [null, null];
 
 	const trialDaysRemaining =
-		typeof billingAccess.daysRemaining === "number" && billingAccess.daysRemaining > 0
+		typeof billingAccess.daysRemaining === "number" &&
+		billingAccess.daysRemaining > 0
 			? billingAccess.daysRemaining
 			: null;
 	const membershipRole = membershipRecord?.role;
-	const canManageBilling = membershipRole === "owner" || membershipRole === "admin";
+	const canManageBilling =
+		membershipRole === "owner" || membershipRole === "admin";
 	const hasPreparedTrialSubscription =
-		subscriptionRow?.status === "trialing" && Boolean(subscriptionRow?.stripeSubscriptionId);
+		subscriptionRow?.status === "trialing" &&
+		Boolean(subscriptionRow?.stripeSubscriptionId);
 	const showTrialBanner =
 		billingAccess.state === "trialing" &&
 		trialDaysRemaining !== null &&
 		!hasPreparedTrialSubscription;
 
-	return { billingAccess, trialDaysRemaining, canManageBilling, showTrialBanner };
+	return {
+		billingAccess,
+		trialDaysRemaining,
+		canManageBilling,
+		showTrialBanner,
+	};
 }

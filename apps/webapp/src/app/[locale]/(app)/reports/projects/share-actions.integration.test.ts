@@ -14,7 +14,9 @@ const harness = vi.hoisted(() => ({
 	organizationId: "t806-org",
 }));
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
@@ -42,10 +44,15 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
@@ -57,13 +64,17 @@ vi.mock("@/lib/logger", () => ({
 		warn: () => {},
 		info: () => {},
 		debug: () => {},
-		child: () => ({ error: () => {}, warn: () => {}, info: () => {}, debug: () => {} }),
+		child: () => ({
+			error: () => {},
+			warn: () => {},
+			info: () => {},
+			debug: () => {},
+		}),
 	}),
 }));
 
-const { createReportShareLink, listReportShareLinks, revokeReportShareLink } = await import(
-	"./share-actions"
-);
+const { createReportShareLink, listReportShareLinks, revokeReportShareLink } =
+	await import("./share-actions");
 
 const fixture = shareLinkFixture("t806", "8060");
 const { ids } = fixture;
@@ -75,7 +86,9 @@ function actAs(userId: string, organizationId: string = ids.organization) {
 }
 
 async function unwrap<T>(
-	result: Promise<{ success: true; data: T } | { success: false; error: string }>,
+	result: Promise<
+		{ success: true; data: T } | { success: false; error: string }
+	>,
 ) {
 	const settled = await result;
 	if (!settled.success) throw new Error(settled.error);
@@ -98,7 +111,10 @@ describe("report share links on PostgreSQL", () => {
 
 	afterAll(() => fixture.cleanup(admin));
 
-	function projectLink(projectId: string, overrides: Record<string, unknown> = {}) {
+	function projectLink(
+		projectId: string,
+		overrides: Record<string, unknown> = {},
+	) {
 		return {
 			kind: "project" as const,
 			projectId,
@@ -111,22 +127,27 @@ describe("report share links on PostgreSQL", () => {
 	}
 
 	async function storedLink(id: string) {
-		const { rows } = await admin.query("select * from report_share_link where id = $1", [id]);
+		const { rows } = await admin.query(
+			"select * from report_share_link where id = $1",
+			[id],
+		);
 		return rows[0];
 	}
 
 	it("lets a project manager share only their own projects and nobody without report access", async () => {
 		actAs(ids.pmUser);
-		const created = await unwrap(createReportShareLink(projectLink(ids.website)));
-		expect(created.path).toMatch(/^\/share\/[A-Za-z0-9_-]{43}$/);
-		await expect(refusal(createReportShareLink(projectLink(ids.portal)))).resolves.toMatch(
-			/permission/i,
+		const created = await unwrap(
+			createReportShareLink(projectLink(ids.website)),
 		);
+		expect(created.path).toMatch(/^\/share\/[A-Za-z0-9_-]{43}$/);
+		await expect(
+			refusal(createReportShareLink(projectLink(ids.portal))),
+		).resolves.toMatch(/permission/i);
 
 		actAs(ids.workerUser);
-		await expect(refusal(createReportShareLink(projectLink(ids.website)))).resolves.toMatch(
-			/permission/i,
-		);
+		await expect(
+			refusal(createReportShareLink(projectLink(ids.website))),
+		).resolves.toMatch(/permission/i);
 	});
 
 	it("puts exactly one customer's projects into a customer link", async () => {
@@ -149,7 +170,10 @@ describe("report share links on PostgreSQL", () => {
 		expect(json).toContain("Support");
 		expect(json).not.toContain("Globex");
 		expect(json).not.toContain("Portal");
-		expect(link.snapshot.customer).toMatchObject({ totalMinutes: 600, workPeriodCount: 2 });
+		expect(link.snapshot.customer).toMatchObject({
+			totalMinutes: 600,
+			workPeriodCount: 2,
+		});
 	});
 
 	it("leaves cost, margin, unpriced and pending figures out of an owner's snapshot", async () => {
@@ -159,7 +183,10 @@ describe("report share links on PostgreSQL", () => {
 		);
 
 		const { snapshot } = await storedLink(created.id);
-		expect(snapshot.summary.billable).toMatchObject({ access: "shared", revenue: "0.00" });
+		expect(snapshot.summary.billable).toMatchObject({
+			access: "shared",
+			revenue: "0.00",
+		});
 		const json = JSON.stringify(snapshot);
 		for (const key of [
 			"cost",
@@ -176,42 +203,63 @@ describe("report share links on PostgreSQL", () => {
 		// An employee-role manager sees every project's hours but no money.
 		actAs(ids.teamManagerUser);
 		await expect(
-			refusal(createReportShareLink(projectLink(ids.website, { figures: "revenue" }))),
+			refusal(
+				createReportShareLink(projectLink(ids.website, { figures: "revenue" })),
+			),
 		).resolves.toMatch(/revenue/i);
-		await unwrap(createReportShareLink(projectLink(ids.website, { figures: "hours" })));
+		await unwrap(
+			createReportShareLink(projectLink(ids.website, { figures: "hours" })),
+		);
 	});
 
 	it("expires a link after 30 days by default and refuses more than 90 days or no expiry", async () => {
 		actAs(ids.pmUser);
-		const created = await unwrap(createReportShareLink(projectLink(ids.website)));
+		const created = await unwrap(
+			createReportShareLink(projectLink(ids.website)),
+		);
 		const link = await storedLink(created.id);
-		expect(link.expires_at.getTime() - link.created_at.getTime()).toBe(30 * 24 * 3600 * 1000);
+		expect(link.expires_at.getTime() - link.created_at.getTime()).toBe(
+			30 * 24 * 3600 * 1000,
+		);
 
 		await expect(
-			refusal(createReportShareLink(projectLink(ids.website, { expiresInDays: 91 }))),
+			refusal(
+				createReportShareLink(projectLink(ids.website, { expiresInDays: 91 })),
+			),
 		).resolves.toMatch(/90 days/);
 		await expect(
-			refusal(createReportShareLink(projectLink(ids.website, { expiresInDays: null }))),
+			refusal(
+				createReportShareLink(
+					projectLink(ids.website, { expiresInDays: null }),
+				),
+			),
 		).resolves.toMatch(/expires/i);
 	});
 
 	it("stores only a digest of the token, so the database cannot give back a working URL", async () => {
 		actAs(ids.pmUser);
-		const created = await unwrap(createReportShareLink(projectLink(ids.website)));
+		const created = await unwrap(
+			createReportShareLink(projectLink(ids.website)),
+		);
 		const token = created.path.slice("/share/".length);
 
 		const link = await storedLink(created.id);
-		expect(link.token_digest).toBe(createHash("sha256").update(token).digest("hex"));
+		expect(link.token_digest).toBe(
+			createHash("sha256").update(token).digest("hex"),
+		);
 		expect(JSON.stringify(link)).not.toContain(token);
-		const { rows } = await admin.query("select * from audit_log where organization_id = $1", [
-			ids.organization,
-		]);
+		const { rows } = await admin.query(
+			"select * from audit_log where organization_id = $1",
+			[ids.organization],
+		);
 		expect(JSON.stringify(rows)).not.toContain(token);
 	});
 
 	it("audits creating and revoking a link, deletes the snapshot and keeps the link record", async () => {
 		actAs(ids.pmUser);
-		const created = await unwrap(createReportShareLink(projectLink(ids.website)));
+		const created = await unwrap(
+			createReportShareLink(projectLink(ids.website)),
+		);
 		actAs(ids.ownerUser);
 		await unwrap(revokeReportShareLink(created.id));
 
@@ -227,8 +275,16 @@ describe("report share links on PostgreSQL", () => {
 			[ids.organization],
 		);
 		expect(rows).toEqual([
-			{ action: "report_share_link.created", performed_by: ids.pmUser, entity_id: created.id },
-			{ action: "report_share_link.revoked", performed_by: ids.ownerUser, entity_id: created.id },
+			{
+				action: "report_share_link.created",
+				performed_by: ids.pmUser,
+				entity_id: created.id,
+			},
+			{
+				action: "report_share_link.revoked",
+				performed_by: ids.ownerUser,
+				entity_id: created.id,
+			},
 		]);
 
 		actAs(ids.pmUser);
@@ -246,10 +302,14 @@ describe("report share links on PostgreSQL", () => {
 
 	it("lets only the creator or an owner revoke a link", async () => {
 		actAs(ids.pmUser);
-		const created = await unwrap(createReportShareLink(projectLink(ids.website)));
+		const created = await unwrap(
+			createReportShareLink(projectLink(ids.website)),
+		);
 
 		actAs(ids.teamManagerUser);
-		await expect(refusal(revokeReportShareLink(created.id))).resolves.toMatch(/permission/i);
+		await expect(refusal(revokeReportShareLink(created.id))).resolves.toMatch(
+			/permission/i,
+		);
 		expect(await listReportShareLinks()).toEqual({ success: true, data: [] });
 
 		actAs(ids.pmUser);
@@ -258,12 +318,18 @@ describe("report share links on PostgreSQL", () => {
 
 	it("never lists or revokes one organization's links from another", async () => {
 		actAs(ids.ownerUser);
-		const created = await unwrap(createReportShareLink(projectLink(ids.website)));
+		const created = await unwrap(
+			createReportShareLink(projectLink(ids.website)),
+		);
 
 		actAs(ids.otherUser, ids.otherOrganization);
 		expect(await listReportShareLinks()).toEqual({ success: true, data: [] });
-		await expect(refusal(revokeReportShareLink(created.id))).resolves.toMatch(/not found/i);
-		await expect(refusal(createReportShareLink(projectLink(ids.website)))).resolves.toBeTruthy();
+		await expect(refusal(revokeReportShareLink(created.id))).resolves.toMatch(
+			/not found/i,
+		);
+		await expect(
+			refusal(createReportShareLink(projectLink(ids.website))),
+		).resolves.toBeTruthy();
 		expect((await storedLink(created.id)).revoked_at).toBeNull();
 	});
 });

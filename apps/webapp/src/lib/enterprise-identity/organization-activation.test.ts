@@ -47,3 +47,10 @@ describe("organization activation reauthentication", () => {
 		).rejects.toThrow("Access denied");
 	});
 });
+it("routes a local MFA challenge to verification without starting an IdP flow",async()=>{
+ const request=vi.fn(async()=>Response.json({code:"MFA_REQUIRED"},{status:403}));
+ const result=await activateOrganization("locked","/reports",request);
+ expect(result.kind).toBe("mfa");
+ if(result.kind==="mfa")expect(result.url).toBe("/mfa?organizationId=locked&callbackUrl=%2Freports");
+ expect(request).toHaveBeenCalledTimes(1);
+});

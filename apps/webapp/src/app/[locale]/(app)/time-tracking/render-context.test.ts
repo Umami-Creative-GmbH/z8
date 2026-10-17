@@ -13,8 +13,8 @@ const state = vi.hoisted(() => ({
 vi.mock("@/lib/auth/request-session", () => ({
 	getRequestSession: state.getSession,
 }));
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
-	canAccessOrganizationWithSso: state.canAccessSso,
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	canAccessOrganization: state.canAccessSso,
 }));
 vi.mock("@/db", () => ({
 	db: {

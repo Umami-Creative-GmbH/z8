@@ -1807,6 +1807,13 @@
       "when": 1806940800000,
       "tag": "0257_work_period_break_time_source",
       "breakpoints": true
+    },
+    {
+      "idx": 258,
+      "version": "7",
+      "when": 1807027200000,
+      "tag": "0258_organization_local_mfa",
+      "breakpoints": true
     }
   ]
 }

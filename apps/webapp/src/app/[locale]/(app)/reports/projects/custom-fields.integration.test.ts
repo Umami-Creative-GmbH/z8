@@ -10,7 +10,9 @@ import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({ userId: null as string | null }));
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
@@ -38,10 +40,15 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
@@ -53,13 +60,22 @@ vi.mock("@/lib/logger", () => ({
 		warn: () => {},
 		info: () => {},
 		debug: () => {},
-		child: () => ({ error: () => {}, warn: () => {}, info: () => {}, debug: () => {} }),
+		child: () => ({
+			error: () => {},
+			warn: () => {},
+			info: () => {},
+			debug: () => {},
+		}),
 	}),
 }));
 
 const { db } = await import("@/db");
-const { changeCustomFields } = await import("@/lib/organization/custom-fields/definitions");
-const { writeCustomFieldValues } = await import("@/lib/organization/custom-fields/values");
+const { changeCustomFields } = await import(
+	"@/lib/organization/custom-fields/definitions"
+);
+const { writeCustomFieldValues } = await import(
+	"@/lib/organization/custom-fields/values"
+);
 const { getProjectDetailedReport } = await import("./actions");
 
 const ids = {
@@ -86,7 +102,8 @@ async function report(userId: string, projectId: string, end = "2026-03-31") {
 	return result.data;
 }
 
-const names = (fields: { name: string }[] | undefined) => fields?.map((field) => field.name);
+const names = (fields: { name: string }[] | undefined) =>
+	fields?.map((field) => field.name);
 
 describe("project report custom fields on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -119,7 +136,10 @@ describe("project report custom fields on PostgreSQL", () => {
 		});
 		if (!outcome.ok) throw new Error(`define refused: ${outcome.reason}`);
 		const field = outcome.fields.find(
-			(f) => f.name === change.name && f.entity === (change.entity ?? "project") && !f.archived,
+			(f) =>
+				f.name === change.name &&
+				f.entity === (change.entity ?? "project") &&
+				!f.archived,
 		);
 		if (!field) throw new Error("field missing");
 		return field;
@@ -161,7 +181,14 @@ describe("project report custom fields on PostgreSQL", () => {
 			 ('t820p-m-manager', $1, $4, 'member', 'approved', now()),
 			 ('t820p-m-pm', $1, $5, 'member', 'approved', now()),
 			 ('t820p-m-other', $2, $6, 'owner', 'approved', now())`,
-			[ids.organization, ids.other, ids.ownerUser, ids.managerUser, ids.pmUser, ids.otherUser],
+			[
+				ids.organization,
+				ids.other,
+				ids.ownerUser,
+				ids.managerUser,
+				ids.pmUser,
+				ids.otherUser,
+			],
 		);
 		await admin.query(
 			`insert into employee (id, user_id, organization_id, role, updated_at) values
@@ -191,7 +218,13 @@ describe("project report custom fields on PostgreSQL", () => {
 			`insert into project (id, organization_id, name, status, customer_id, created_by, updated_at) values
 			 ($1, $3, 'Website', 'active', $4, $5, now()),
 			 ($2, $3, 'Internal', 'active', null, $5, now())`,
-			[ids.website, ids.internal, ids.organization, ids.customer, ids.ownerUser],
+			[
+				ids.website,
+				ids.internal,
+				ids.organization,
+				ids.customer,
+				ids.ownerUser,
+			],
 		);
 		await admin.query(
 			`insert into project_manager (project_id, employee_id, assigned_by) values ($1, $2, $3)`,
@@ -223,7 +256,10 @@ describe("project report custom fields on PostgreSQL", () => {
 			visibility: "admin",
 			editLevel: "admin",
 		});
-		const region = await define(ids.organization, { entity: "customer", name: "Region" });
+		const region = await define(ids.organization, {
+			entity: "customer",
+			name: "Region",
+		});
 		await define(ids.other, { name: "Foreign field", visibility: "employee" });
 		await write("project", ids.website, {
 			[budgetCode.id]: "BC-9",
@@ -231,7 +267,10 @@ describe("project report custom fields on PostgreSQL", () => {
 			[kickoff.id]: "2026-02-02",
 			[retired.id]: "old",
 		});
-		await write("customer", ids.customer, { [accountTier.id]: "A", [region.id]: "DACH" });
+		await write("customer", ids.customer, {
+			[accountTier.id]: "A",
+			[region.id]: "DACH",
+		});
 		await changeCustomFields(db, {
 			organizationId: ids.organization,
 			actorUserId: ids.ownerUser,
@@ -241,19 +280,39 @@ describe("project report custom fields on PostgreSQL", () => {
 		const ownerView = await report(ids.ownerUser, ids.website);
 		expect(ownerView.project.customer?.name).toBe("Acme");
 		expect(ownerView.project.customFields).toEqual([
-			{ fieldId: budgetCode.id, name: "Budget code", type: "text", value: "BC-9" },
+			{
+				fieldId: budgetCode.id,
+				name: "Budget code",
+				type: "text",
+				value: "BC-9",
+			},
 			{ fieldId: phase.id, name: "Phase", type: "select", value: "Delivery" },
-			{ fieldId: kickoff.id, name: "Kickoff", type: "date", value: "2026-02-02" },
+			{
+				fieldId: kickoff.id,
+				name: "Kickoff",
+				type: "date",
+				value: "2026-02-02",
+			},
 		]);
 		expect(ownerView.project.customer?.customFields).toEqual([
-			{ fieldId: accountTier.id, name: "Account tier", type: "text", value: "A" },
+			{
+				fieldId: accountTier.id,
+				name: "Account tier",
+				type: "text",
+				value: "A",
+			},
 			{ fieldId: region.id, name: "Region", type: "text", value: "DACH" },
 		]);
 
 		// A manager never sees admin-only fields.
 		const managerView = await report(ids.managerUser, ids.website);
-		expect(names(managerView.project.customFields)).toEqual(["Phase", "Kickoff"]);
-		expect(names(managerView.project.customer?.customFields)).toEqual(["Region"]);
+		expect(names(managerView.project.customFields)).toEqual([
+			"Phase",
+			"Kickoff",
+		]);
+		expect(names(managerView.project.customer?.customFields)).toEqual([
+			"Region",
+		]);
 
 		// A project manager whose base role is employee sees employee-visible fields only.
 		const pmView = await report(ids.pmUser, ids.website);
@@ -273,7 +332,10 @@ describe("project report custom fields on PostgreSQL", () => {
 	});
 
 	it("reads tracked values as of the period's last day", async () => {
-		const stage = await define(ids.organization, { name: "Stage", tracked: true });
+		const stage = await define(ids.organization, {
+			name: "Stage",
+			tracked: true,
+		});
 		// The tracked value's history (#819): "Draft" from March 1st, "Live" from March 20th.
 		await write("project", ids.website, {
 			[stage.id]: {
@@ -284,11 +346,15 @@ describe("project report custom fields on PostgreSQL", () => {
 			},
 		});
 
-		expect((await report(ids.ownerUser, ids.website, "2026-03-15")).project.customFields).toEqual([
+		expect(
+			(await report(ids.ownerUser, ids.website, "2026-03-15")).project
+				.customFields,
+		).toEqual([
 			{ fieldId: stage.id, name: "Stage", type: "text", value: "Draft" },
 		]);
-		expect((await report(ids.ownerUser, ids.website)).project.customFields?.[0]?.value).toBe(
-			"Live",
-		);
+		expect(
+			(await report(ids.ownerUser, ids.website)).project.customFields?.[0]
+				?.value,
+		).toBe("Live");
 	});
 });

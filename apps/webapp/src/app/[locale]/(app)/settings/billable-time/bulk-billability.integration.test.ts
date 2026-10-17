@@ -24,7 +24,8 @@ const harness = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/datetime/temporal-core")>();
+	const original =
+		await importOriginal<typeof import("@/lib/datetime/temporal-core")>();
 	return {
 		...original,
 		systemClock: Object.freeze({
@@ -36,7 +37,9 @@ vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
@@ -62,7 +65,9 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/auth-helpers")>();
 	const { db } = await import("@/db");
-	const { loadOrganizationPrincipalContext } = await import("@/lib/authorization/principal-loader");
+	const { loadOrganizationPrincipalContext } = await import(
+		"@/lib/authorization/principal-loader"
+	);
 	return {
 		...original,
 		getPrincipalContext: async () =>
@@ -75,22 +80,35 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+	),
 );
 
-const { clockIn, clockOut } = await import("../../time-tracking/actions/clocking");
-const { updateWorkPeriodBillability } = await import("../../time-tracking/actions");
-const { applyBulkBillability, previewBulkBillability } = await import("./bulk-billability-actions");
+const { clockIn, clockOut } = await import(
+	"../../time-tracking/actions/clocking"
+);
+const { updateWorkPeriodBillability } = await import(
+	"../../time-tracking/actions"
+);
+const { applyBulkBillability, previewBulkBillability } = await import(
+	"./bulk-billability-actions"
+);
 
 const ids = {
 	organization: "t901-bulk-org",
@@ -125,7 +143,11 @@ const users = [
 	ids.projectManagerUser,
 ];
 
-const range = { projectId: ids.project, fromDay: "2026-07-02", toDay: "2026-07-12" } as const;
+const range = {
+	projectId: ids.project,
+	fromDay: "2026-07-02",
+	toDay: "2026-07-12",
+} as const;
 
 type Attribution = {
 	id: string;
@@ -143,7 +165,11 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-function expectSuccess<T>(result: { success: boolean; data?: T; error?: string }): T {
+function expectSuccess<T>(result: {
+	success: boolean;
+	data?: T;
+	error?: string;
+}): T {
 	expect(result).toMatchObject({ success: true });
 	return (result as { data: T }).data;
 }
@@ -184,7 +210,9 @@ describe("bulk billability change on PostgreSQL", () => {
 		const period = await attributionOf(periodId);
 		expect(period.is_billable).toBe(billable);
 		expect(period.canonical_record_id).not.toBeNull();
-		expect(period.allocations).toEqual([{ projectId: period.project_id, isBillable: billable }]);
+		expect(period.allocations).toEqual([
+			{ projectId: period.project_id, isBillable: billable },
+		]);
 	}
 
 	async function workState() {
@@ -226,9 +254,12 @@ describe("bulk billability change on PostgreSQL", () => {
 	): Promise<string> {
 		actAs(userId);
 		harness.now = parseInstant(end).add({ hours: 1 });
-		expect(await clockIn("office", { instant: parseInstant(start), browserTimezone })).toEqual(
-			expect.objectContaining({ success: true }),
-		);
+		expect(
+			await clockIn("office", {
+				instant: parseInstant(start),
+				browserTimezone,
+			}),
+		).toEqual(expect.objectContaining({ success: true }));
 		const { rows } = await admin.query<{ id: string }>(
 			"select id from work_period where employee_id = $1 and end_time is null and deleted_at is null",
 			[employeeId],
@@ -292,7 +323,13 @@ describe("bulk billability change on PostgreSQL", () => {
 			   from unnest($1::uuid[], $2::text[], $3::text[]) as t(employee_id, user_id, role)`,
 			[
 				[ids.owner, ids.employee, ids.second, ids.manager, ids.projectManager],
-				[ids.ownerUser, ids.employeeUser, ids.secondUser, ids.managerUser, ids.projectManagerUser],
+				[
+					ids.ownerUser,
+					ids.employeeUser,
+					ids.secondUser,
+					ids.managerUser,
+					ids.projectManagerUser,
+				],
 				["admin", "employee", "employee", "manager", "manager"],
 				ids.organization,
 				timestamp,
@@ -432,7 +469,9 @@ describe("bulk billability change on PostgreSQL", () => {
 			),
 		};
 		actAs(ids.adminUser);
-		await expect(updateWorkPeriodBillability(work.alreadyBillable, true)).resolves.toMatchObject({
+		await expect(
+			updateWorkPeriodBillability(work.alreadyBillable, true),
+		).resolves.toMatchObject({
 			success: true,
 		});
 		await admin.query(
@@ -500,18 +539,27 @@ describe("bulk billability change on PostgreSQL", () => {
 			const work = await seedMixedRange();
 
 			actAs(ids.adminUser);
-			const preview = expectSuccess(await previewBulkBillability({ ...range, billable: true }));
+			const preview = expectSuccess(
+				await previewBulkBillability({ ...range, billable: true }),
+			);
 			const expectedSummary = {
 				billable: true,
 				change: { count: 2, minutes: 240 + 90 },
 				alreadyInTarget: { count: 1, minutes: 120 },
 				// Invoiced work is never changed in bulk (#903).
-				skipped: { invoiced: { count: 1, minutes: 120 }, held_back: { count: 1, minutes: 60 } },
+				skipped: {
+					invoiced: { count: 1, minutes: 120 },
+					held_back: { count: 1, minutes: 60 },
+				},
 			};
 			expect(preview.summary).toEqual(expectedSummary);
 
 			const applied = expectSuccess(
-				await applyBulkBillability({ ...range, billable: true, fingerprint: preview.fingerprint }),
+				await applyBulkBillability({
+					...range,
+					billable: true,
+					fingerprint: preview.fingerprint,
+				}),
 			);
 			expect(applied).toEqual({
 				status: "applied",
@@ -531,7 +579,9 @@ describe("bulk billability change on PostgreSQL", () => {
 				  where organization_id = $1 and work_period_id = $2`,
 				[ids.organization, work.invoiced],
 			);
-			expect(invoicedRows).toEqual([{ changed_after_invoicing_at: null, released_at: null }]);
+			expect(invoicedRows).toEqual([
+				{ changed_after_invoicing_at: null, released_at: null },
+			]);
 			await expectBillable(work.outsideRange, false);
 			await expectBillable(work.nextLocalDay, false);
 
@@ -545,7 +595,10 @@ describe("bulk billability change on PostgreSQL", () => {
 						work_period_id: workPeriodId,
 						result: expect.objectContaining({
 							authority: "organization_admin",
-							changes: expect.objectContaining({ billable: true, project: false }),
+							changes: expect.objectContaining({
+								billable: true,
+								project: false,
+							}),
 						}),
 					})),
 				);
@@ -556,7 +609,11 @@ describe("bulk billability change on PostgreSQL", () => {
 			// Re-running with the same input changes nothing more.
 			const before = await workState();
 			const retried = expectSuccess(
-				await applyBulkBillability({ ...range, billable: true, fingerprint: preview.fingerprint }),
+				await applyBulkBillability({
+					...range,
+					billable: true,
+					fingerprint: preview.fingerprint,
+				}),
 			);
 			if (admission === "append") {
 				// The committed receipts replay: the retry reports the same result.
@@ -570,27 +627,40 @@ describe("bulk billability change on PostgreSQL", () => {
 			expect(await workState()).toEqual(before);
 			expect(await bulkReceipts()).toHaveLength(receipts.length);
 
-			const again = expectSuccess(await previewBulkBillability({ ...range, billable: true }));
+			const again = expectSuccess(
+				await previewBulkBillability({ ...range, billable: true }),
+			);
 			expect(again.summary).toEqual({
 				billable: true,
 				change: { count: 0, minutes: 0 },
 				alreadyInTarget: { count: 3, minutes: 240 + 90 + 120 },
-				skipped: { invoiced: { count: 1, minutes: 120 }, held_back: { count: 1, minutes: 60 } },
+				skipped: {
+					invoiced: { count: 1, minutes: 120 },
+					held_back: { count: 1, minutes: 60 },
+				},
 			});
 		});
 
 		it("refuses to apply a preview the work no longer matches and writes nothing", async () => {
 			const work = await seedMixedRange();
 			actAs(ids.adminUser);
-			const preview = expectSuccess(await previewBulkBillability({ ...range, billable: true }));
+			const preview = expectSuccess(
+				await previewBulkBillability({ ...range, billable: true }),
+			);
 
-			await expect(updateWorkPeriodBillability(work.changes, true)).resolves.toMatchObject({
+			await expect(
+				updateWorkPeriodBillability(work.changes, true),
+			).resolves.toMatchObject({
 				success: true,
 			});
 			const before = await workState();
 
 			const stale = expectSuccess(
-				await applyBulkBillability({ ...range, billable: true, fingerprint: preview.fingerprint }),
+				await applyBulkBillability({
+					...range,
+					billable: true,
+					fingerprint: preview.fingerprint,
+				}),
 			);
 			expect(stale).toMatchObject({
 				status: "stale",
@@ -603,18 +673,30 @@ describe("bulk billability change on PostgreSQL", () => {
 		it("marks work non-billable", async () => {
 			const work = await seedMixedRange();
 			actAs(ids.adminUser);
-			const preview = expectSuccess(await previewBulkBillability({ ...range, billable: false }));
+			const preview = expectSuccess(
+				await previewBulkBillability({ ...range, billable: false }),
+			);
 			expect(preview.summary).toEqual({
 				billable: false,
 				change: { count: 1, minutes: 120 },
 				// The invoiced work is non-billable already: nothing to change.
 				alreadyInTarget: { count: 4, minutes: 240 + 60 + 90 + 120 },
-				skipped: { invoiced: { count: 0, minutes: 0 }, held_back: { count: 0, minutes: 0 } },
+				skipped: {
+					invoiced: { count: 0, minutes: 0 },
+					held_back: { count: 0, minutes: 0 },
+				},
 			});
 			const applied = expectSuccess(
-				await applyBulkBillability({ ...range, billable: false, fingerprint: preview.fingerprint }),
+				await applyBulkBillability({
+					...range,
+					billable: false,
+					fingerprint: preview.fingerprint,
+				}),
 			);
-			expect(applied).toMatchObject({ status: "applied", summary: preview.summary });
+			expect(applied).toMatchObject({
+				status: "applied",
+				summary: preview.summary,
+			});
 			await expectBillable(work.alreadyBillable, false);
 		});
 	});
@@ -652,7 +734,9 @@ describe("bulk billability change on PostgreSQL", () => {
 		it("lets the organization owner run it", async () => {
 			await seedMixedRange();
 			actAs(ids.ownerUser);
-			const preview = expectSuccess(await previewBulkBillability({ ...range, billable: true }));
+			const preview = expectSuccess(
+				await previewBulkBillability({ ...range, billable: true }),
+			);
 			expect(preview.summary.change.count).toBe(2);
 		});
 
@@ -663,15 +747,23 @@ describe("bulk billability change on PostgreSQL", () => {
 		])("refuses %s and writes nothing", async (_who, userId) => {
 			await seedMixedRange();
 			actAs(ids.adminUser);
-			const preview = expectSuccess(await previewBulkBillability({ ...range, billable: true }));
+			const preview = expectSuccess(
+				await previewBulkBillability({ ...range, billable: true }),
+			);
 			const before = await workState();
 
 			actAs(userId);
-			await expect(previewBulkBillability({ ...range, billable: true })).resolves.toMatchObject({
+			await expect(
+				previewBulkBillability({ ...range, billable: true }),
+			).resolves.toMatchObject({
 				success: false,
 			});
 			await expect(
-				applyBulkBillability({ ...range, billable: true, fingerprint: preview.fingerprint }),
+				applyBulkBillability({
+					...range,
+					billable: true,
+					fingerprint: preview.fingerprint,
+				}),
 			).resolves.toMatchObject({ success: false });
 			expect(await workState()).toEqual(before);
 		});
@@ -679,7 +771,11 @@ describe("bulk billability change on PostgreSQL", () => {
 		it("never reaches another organization's project", async () => {
 			actAs(ids.adminUser);
 			await expect(
-				previewBulkBillability({ ...range, projectId: ids.foreignProject, billable: true }),
+				previewBulkBillability({
+					...range,
+					projectId: ids.foreignProject,
+					billable: true,
+				}),
 			).resolves.toMatchObject({ success: false });
 		});
 
@@ -688,7 +784,11 @@ describe("bulk billability change on PostgreSQL", () => {
 			async (billable) => {
 				actAs(ids.adminUser);
 				await expect(
-					previewBulkBillability({ ...range, projectId: ids.internalProject, billable }),
+					previewBulkBillability({
+						...range,
+						projectId: ids.internalProject,
+						billable,
+					}),
 				).resolves.toMatchObject({ success: false });
 			},
 		);
@@ -698,15 +798,26 @@ describe("bulk billability change on PostgreSQL", () => {
 			async (billable) => {
 				await seedMixedRange();
 				actAs(ids.adminUser);
-				const preview = expectSuccess(await previewBulkBillability({ ...range, billable }));
-				await admin.query("update customer set is_active = false where id = $1", [ids.customer]);
+				const preview = expectSuccess(
+					await previewBulkBillability({ ...range, billable }),
+				);
+				await admin.query(
+					"update customer set is_active = false where id = $1",
+					[ids.customer],
+				);
 				const before = await workState();
 
-				await expect(previewBulkBillability({ ...range, billable })).resolves.toMatchObject({
+				await expect(
+					previewBulkBillability({ ...range, billable }),
+				).resolves.toMatchObject({
 					success: false,
 				});
 				await expect(
-					applyBulkBillability({ ...range, billable, fingerprint: preview.fingerprint }),
+					applyBulkBillability({
+						...range,
+						billable,
+						fingerprint: preview.fingerprint,
+					}),
 				).resolves.toMatchObject({ success: false });
 				expect(await workState()).toEqual(before);
 			},
@@ -715,21 +826,33 @@ describe("bulk billability change on PostgreSQL", () => {
 		it("changes work flipped back after an apply again when that apply is retried, and reports it truthfully", async () => {
 			const work = await seedMixedRange();
 			actAs(ids.adminUser);
-			const preview = expectSuccess(await previewBulkBillability({ ...range, billable: true }));
+			const preview = expectSuccess(
+				await previewBulkBillability({ ...range, billable: true }),
+			);
 			const applied = expectSuccess(
-				await applyBulkBillability({ ...range, billable: true, fingerprint: preview.fingerprint }),
+				await applyBulkBillability({
+					...range,
+					billable: true,
+					fingerprint: preview.fingerprint,
+				}),
 			);
 			const receipts = await bulkReceipts();
 
 			// Someone marks one of the changed work periods non-billable again.
-			await expect(updateWorkPeriodBillability(work.changes, false)).resolves.toMatchObject({
+			await expect(
+				updateWorkPeriodBillability(work.changes, false),
+			).resolves.toMatchObject({
 				success: true,
 			});
 
 			// The retry plans the same work and outcomes; it changes that period again
 			// in a new operation instead of replaying the earlier receipt.
 			const retried = expectSuccess(
-				await applyBulkBillability({ ...range, billable: true, fingerprint: preview.fingerprint }),
+				await applyBulkBillability({
+					...range,
+					billable: true,
+					fingerprint: preview.fingerprint,
+				}),
 			);
 			expect(retried).toEqual(applied);
 			await expectBillable(work.changes, true);
@@ -752,11 +875,14 @@ describe("bulk billability change on PostgreSQL", () => {
 		});
 
 		it("refuses while Billable Time is switched off", async () => {
-			await admin.query("update organization set billable_time_enabled = false where id = $1", [
-				ids.organization,
-			]);
+			await admin.query(
+				"update organization set billable_time_enabled = false where id = $1",
+				[ids.organization],
+			);
 			actAs(ids.adminUser);
-			await expect(previewBulkBillability({ ...range, billable: true })).resolves.toMatchObject({
+			await expect(
+				previewBulkBillability({ ...range, billable: true }),
+			).resolves.toMatchObject({
 				success: false,
 			});
 		});

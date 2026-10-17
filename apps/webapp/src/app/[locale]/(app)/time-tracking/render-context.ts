@@ -3,7 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { isAccountBanned } from "@/lib/auth/account-ban";
 import { getRenderSession } from "@/lib/auth/render-session";
-import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
+import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
@@ -32,7 +32,8 @@ export const getTimeTrackingRenderContext = cache(
 		if (
 			!session?.user ||
 			isAccountBanned(session.user) ||
-			("ssoRequired" in session && session.ssoRequired === true)
+			("ssoRequired" in session && session.ssoRequired === true) ||
+			("mfaRequired" in session && !!session.mfaRequired)
 		) {
 			return null;
 		}
@@ -40,10 +41,7 @@ export const getTimeTrackingRenderContext = cache(
 		const activeOrganizationId = session.session?.activeOrganizationId;
 		if (
 			activeOrganizationId &&
-			!(await canAccessOrganizationWithSso(
-				session.session,
-				activeOrganizationId,
-			))
+			!(await canAccessOrganization(session.session, activeOrganizationId))
 		) {
 			return null;
 		}

@@ -16,7 +16,10 @@ import { integrationAdminPool } from "@/test/integration-database";
 const { sessions } = await vi.hoisted(async () => {
 	const { AsyncLocalStorage } = await import("node:async_hooks");
 	return {
-		sessions: new AsyncLocalStorage<{ userId: string; organizationId: string }>(),
+		sessions: new AsyncLocalStorage<{
+			userId: string;
+			organizationId: string;
+		}>(),
 	};
 });
 
@@ -24,7 +27,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -50,14 +55,24 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/logger", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/logger")>();
-	const quiet = { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} };
+	const quiet = {
+		error: () => {},
+		warn: () => {},
+		info: () => {},
+		debug: () => {},
+	};
 	return {
 		...original,
 		logger: { ...original.logger, ...quiet },
@@ -120,7 +135,14 @@ describe("the project report's By task section on PostgreSQL", () => {
 				id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
 				timezone, timezone_source, hash, created_by, created_at
 			 ) values ($1, $2, $3, 'clock_in', $4, 0, 'UTC', 'backfill', $6, $5, $4)`,
-			[clockInId, input.employeeId, input.organizationId, start, input.userId, `t876-${clockInId}`],
+			[
+				clockInId,
+				input.employeeId,
+				input.organizationId,
+				start,
+				input.userId,
+				`t876-${clockInId}`,
+			],
 		);
 		await withCanonicalRecords(admin, (client) =>
 			client.query(
@@ -221,7 +243,11 @@ describe("the project report's By task section on PostgreSQL", () => {
 			],
 		);
 
-		const own = { organizationId: ids.organization, employeeId: ids.owner, userId: ids.ownerUser };
+		const own = {
+			organizationId: ids.organization,
+			employeeId: ids.owner,
+			userId: ids.ownerUser,
+		};
 		// In the report period: two tasks plus untasked time on the project.
 		await book({
 			...own,
@@ -295,7 +321,9 @@ describe("the project report's By task section on PostgreSQL", () => {
 		if (!result.success) return;
 		const report = result.data;
 		expect(report.summary.totalMinutes).toBe(240);
-		expect(report.taskBreakdown.reduce((sum, row) => sum + row.totalMinutes, 0)).toBe(240);
+		expect(
+			report.taskBreakdown.reduce((sum, row) => sum + row.totalMinutes, 0),
+		).toBe(240);
 		expect(
 			report.taskBreakdown.map((row) => [
 				row.taskName,
@@ -312,7 +340,11 @@ describe("the project report's By task section on PostgreSQL", () => {
 	});
 
 	it("counts the No task row's bookings missing a task in the period (#884)", async () => {
-		const own = { organizationId: ids.organization, employeeId: ids.owner, userId: ids.ownerUser };
+		const own = {
+			organizationId: ids.organization,
+			employeeId: ids.owner,
+			userId: ids.ownerUser,
+		};
 		// A second booking missing a task in the period and one before it, all marked.
 		await book({
 			...own,
@@ -340,7 +372,9 @@ describe("the project report's By task section on PostgreSQL", () => {
 
 		expect(result.success).toBe(true);
 		if (!result.success) return;
-		const byTask = new Map(result.data.taskBreakdown.map((row) => [row.taskId, row]));
+		const byTask = new Map(
+			result.data.taskBreakdown.map((row) => [row.taskId, row]),
+		);
 		expect(byTask.get(null)).toMatchObject({
 			totalMinutes: 45,
 			workPeriodCount: 2,
@@ -368,7 +402,9 @@ describe("the project report's By task section on PostgreSQL", () => {
 
 		expect(result.success).toBe(true);
 		if (!result.success) return;
-		const byTask = new Map(result.data.taskBreakdown.map((row) => [row.taskId, row]));
+		const byTask = new Map(
+			result.data.taskBreakdown.map((row) => [row.taskId, row]),
+		);
 		expect(byTask.get(ids.design)?.estimate).toEqual({
 			estimateHours: 10,
 			bookedHours: 4.5,

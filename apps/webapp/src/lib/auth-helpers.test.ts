@@ -46,11 +46,11 @@ const mockState = vi.hoisted(() => ({
 	selectResults: [] as unknown[][],
 	getSession: vi.fn(),
 	connection: vi.fn(async () => undefined),
-	canAccessOrganizationWithSso: vi.fn(async () => true),
+	canAccessOrganization: vi.fn(async () => true),
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
-	canAccessOrganizationWithSso: mockState.canAccessOrganizationWithSso,
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	canAccessOrganization: mockState.canAccessOrganization,
 }));
 
 function queryBuilder(result: unknown[]) {
@@ -59,8 +59,10 @@ function queryBuilder(result: unknown[]) {
 		innerJoin: vi.fn(() => builder),
 		where: vi.fn(() => builder),
 		limit: vi.fn(async () => result),
-		then: (resolve: (value: unknown[]) => unknown, reject?: (reason: unknown) => unknown) =>
-			Promise.resolve(result).then(resolve, reject),
+		then: (
+			resolve: (value: unknown[]) => unknown,
+			reject?: (reason: unknown) => unknown,
+		) => Promise.resolve(result).then(resolve, reject),
 	};
 	return builder;
 }
@@ -92,9 +94,19 @@ const { getPrincipalContext, getSettingsAccessInputForUser, isOrgAdminCasl } =
 
 describe("SSO-required organization authorization boundaries", () => {
 	beforeEach(() => {
-		mockState.getSession.mockResolvedValue({ user: { id: "user-1", role: "admin" }, session: { id: "session-1", userId: "user-1", activeOrganizationId: "org-1" } });
-		mockState.canAccessOrganizationWithSso.mockResolvedValue(false);
-		mockState.selectResults = [[{ id: "member-1", role: "owner" }], [{ id: "employee-1", role: "admin", isActive: true }]];
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1", role: "admin" },
+			session: {
+				id: "session-1",
+				userId: "user-1",
+				activeOrganizationId: "org-1",
+			},
+		});
+		mockState.canAccessOrganization.mockResolvedValue(false);
+		mockState.selectResults = [
+			[{ id: "member-1", role: "owner" }],
+			[{ id: "employee-1", role: "admin", isActive: true }],
+		];
 	});
 
 	it("does not expose active org context or platform-admin abilities without SSO proof", async () => {
@@ -104,25 +116,38 @@ describe("SSO-required organization authorization boundaries", () => {
 	});
 
 	it("denies membership and admin/owner checks for a nonactive SSO organization", async () => {
-		const { verifyOrgMembership, getVerifiedOrgContext, isOrgOwnerCasl } = await import("./auth-helpers");
-		expect(await verifyOrgMembership("org-other")).toMatchObject({ isValid: false });
+		const { verifyOrgMembership, getVerifiedOrgContext, isOrgOwnerCasl } =
+			await import("./auth-helpers");
+		expect(await verifyOrgMembership("org-other")).toMatchObject({
+			isValid: false,
+		});
 		expect(await getVerifiedOrgContext("org-other")).toBeNull();
 		expect(await isOrgAdminCasl("org-other")).toBe(false);
 		expect(await isOrgOwnerCasl("org-other")).toBe(false);
 	});
 
 	it("does not derive settings authorization from membership alone", async () => {
-		expect(await getSettingsAccessInputForUser("user-1", "org-other")).toMatchObject({ membershipRole: null, employeeRole: null });
+		expect(
+			await getSettingsAccessInputForUser("user-1", "org-other"),
+		).toMatchObject({ membershipRole: null, employeeRole: null });
 	});
 
 	it("does not turn a quarantined platform-admin session into unrestricted global abilities", async () => {
-		mockState.getSession.mockResolvedValue({ user: { id: "user-1", role: "admin" }, session: { id: "session-1", userId: "user-1", activeOrganizationId: null }, ssoRequired: true });
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1", role: "admin" },
+			session: {
+				id: "session-1",
+				userId: "user-1",
+				activeOrganizationId: null,
+			},
+			ssoRequired: true,
+		});
 		expect(await getPrincipalContext()).toBeNull();
 	});
 });
 
 beforeEach(() => {
-	mockState.canAccessOrganizationWithSso.mockResolvedValue(true);
+	mockState.canAccessOrganization.mockResolvedValue(true);
 });
 
 describe("getAuthContext", () => {
@@ -182,7 +207,10 @@ describe("getAuthContext", () => {
 		]) {
 			const start = source.indexOf(marker);
 			const nextExport = source.indexOf("export ", start + marker.length);
-			const body = source.slice(start, nextExport === -1 ? undefined : nextExport);
+			const body = source.slice(
+				start,
+				nextExport === -1 ? undefined : nextExport,
+			);
 			expect(body).toContain('eq(member.status, "approved")');
 		}
 
@@ -190,7 +218,9 @@ describe("getAuthContext", () => {
 			source.indexOf("export async function getSettingsAccessInputForUser"),
 			source.indexOf("export async function getSettingsAccessTierForUser"),
 		);
-		expect(settingsAccessBody).toContain("membershipRecord && !employeeIsInactive");
+		expect(settingsAccessBody).toContain(
+			"membershipRecord && !employeeIsInactive",
+		);
 	});
 });
 
@@ -299,7 +329,9 @@ describe("getSettingsAccessInputForUser", () => {
 		async (role) => {
 			mockState.selectResults = [[{ role }], []];
 
-			await expect(getSettingsAccessInputForUser("user-1", "org-1")).resolves.toEqual({
+			await expect(
+				getSettingsAccessInputForUser("user-1", "org-1"),
+			).resolves.toEqual({
 				activeOrganizationId: "org-1",
 				membershipRole: role,
 				employeeRole: null,
@@ -312,7 +344,9 @@ describe("getSettingsAccessInputForUser", () => {
 		async () => {
 			mockState.selectResults = [[], [{ role: "admin", isActive: true }]];
 
-			await expect(getSettingsAccessInputForUser("user-1", "org-1")).resolves.toEqual({
+			await expect(
+				getSettingsAccessInputForUser("user-1", "org-1"),
+			).resolves.toEqual({
 				activeOrganizationId: "org-1",
 				membershipRole: null,
 				employeeRole: null,
@@ -326,7 +360,9 @@ describe("getSettingsAccessInputForUser", () => {
 			[{ role: "admin", isActive: false }],
 		];
 
-		await expect(getSettingsAccessInputForUser("user-1", "org-1")).resolves.toEqual({
+		await expect(
+			getSettingsAccessInputForUser("user-1", "org-1"),
+		).resolves.toEqual({
 			activeOrganizationId: "org-1",
 			membershipRole: null,
 			employeeRole: null,
@@ -339,7 +375,9 @@ describe("getSettingsAccessInputForUser", () => {
 			[{ role: "manager", isActive: true }],
 		];
 
-		await expect(getSettingsAccessInputForUser("user-1", "org-1")).resolves.toEqual({
+		await expect(
+			getSettingsAccessInputForUser("user-1", "org-1"),
+		).resolves.toEqual({
 			activeOrganizationId: "org-1",
 			membershipRole: "member",
 			employeeRole: "manager",
@@ -364,10 +402,7 @@ describe("isOrgAdminCasl explicit organization suspension", () => {
 				user: { id: "user-1", role: "user" },
 				session: { activeOrganizationId },
 			});
-			mockState.selectResults = [
-				[{ role: "admin" }],
-				[{ isActive: false }],
-			];
+			mockState.selectResults = [[{ role: "admin" }], [{ isActive: false }]];
 
 			await expect(isOrgAdminCasl("org-1")).resolves.toBe(false);
 		},
@@ -376,13 +411,16 @@ describe("isOrgAdminCasl explicit organization suspension", () => {
 	it.each([
 		["an active employee", [{ isActive: true }]],
 		["a bootstrap admin without an employee", []],
-	] as const)("allows approved admin access with %s", async (_case, employeeRows) => {
-		mockState.getSession.mockResolvedValue({
-			user: { id: "user-1", role: "user" },
-			session: { activeOrganizationId: "org-other" },
-		});
-		mockState.selectResults = [[{ role: "member,admin" }], [...employeeRows]];
+	] as const)(
+		"allows approved admin access with %s",
+		async (_case, employeeRows) => {
+			mockState.getSession.mockResolvedValue({
+				user: { id: "user-1", role: "user" },
+				session: { activeOrganizationId: "org-other" },
+			});
+			mockState.selectResults = [[{ role: "member,admin" }], [...employeeRows]];
 
-		await expect(isOrgAdminCasl("org-1")).resolves.toBe(true);
-	});
+			await expect(isOrgAdminCasl("org-1")).resolves.toBe(true);
+		},
+	);
 });

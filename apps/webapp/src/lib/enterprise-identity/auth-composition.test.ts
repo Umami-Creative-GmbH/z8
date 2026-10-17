@@ -86,6 +86,20 @@ vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
 	},
 }));
 
+// This SSO fixture replaces database persistence; local-MFA behavior is exercised
+// through the real database and authentication endpoints in organization-mfa/*.integration.test.ts.
+vi.mock("@/lib/organization-mfa/auth-store", () => ({
+	mfaAuthStore: { revision: async () => 0, savePrimary: async () => {} },
+}));
+vi.mock("@/lib/organization-mfa/store", () => ({
+	getOrganizationMfaRequirement: async () => ({
+		allowed: true,
+		reason: "disabled",
+	}),
+}));
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	organizationSsoVerification: async () => null,
+}));
 // Import the actual factory result. No plugin factory, middleware, or provisionUser is mocked.
 import { auth as productionAuth } from "@/lib/auth";
 
@@ -273,6 +287,7 @@ describe("production auth plugin composition with installed Better Auth", () => 
 			"z8-sso-verified-domain-membership",
 			"z8-auth-mutation-coordination",
 			"api-key",
+			"z8-mfa-authentication",
 			"z8-sso-enforcement",
 			"z8-enterprise-identity-invitation-resend",
 			"z8-store-app-session",

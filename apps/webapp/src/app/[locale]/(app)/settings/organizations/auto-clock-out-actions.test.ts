@@ -11,8 +11,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth/request-session", () => ({
 	getRequestSession: mocks.session,
 }));
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
-	canAccessOrganizationWithSso: mocks.sso,
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	canAccessOrganization: mocks.sso,
 }));
 vi.mock("@/db", () => ({
 	db: {
@@ -28,8 +28,12 @@ vi.mock("@/lib/time-tracking/automatic-clock-out/settings", () => ({
 
 // The shared runtime over the real DatabaseServiceLive, which reads the mocked db.
 vi.mock("@/lib/effect/runtime", async () => {
-	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(DatabaseServiceLive);
+	const { DatabaseServiceLive } = await import(
+		"@/lib/effect/services/database.service"
+	);
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		DatabaseServiceLive,
+	);
 });
 
 import { updateAutoClockOutSettings } from "./auto-clock-out-actions";
@@ -67,7 +71,9 @@ describe("updateAutoClockOutSettings", () => {
 					revision: 1,
 				},
 			});
-			const sql = new PgDialect().sqlToQuery(mocks.member.mock.calls[0][0].where);
+			const sql = new PgDialect().sqlToQuery(
+				mocks.member.mock.calls[0][0].where,
+			);
 			expect(sql.params).toEqual(["user-1", "org-1", "approved"]);
 			expect(mocks.save).toHaveBeenCalledWith(
 				input,

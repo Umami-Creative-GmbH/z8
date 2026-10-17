@@ -15,7 +15,10 @@ import { integrationAdminPool } from "@/test/integration-database";
 const { sessions } = await vi.hoisted(async () => {
 	const { AsyncLocalStorage } = await import("node:async_hooks");
 	return {
-		sessions: new AsyncLocalStorage<{ userId: string; organizationId: string }>(),
+		sessions: new AsyncLocalStorage<{
+			userId: string;
+			organizationId: string;
+		}>(),
 	};
 });
 
@@ -25,7 +28,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -51,10 +56,15 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/audit-logger")>()),
@@ -63,7 +73,12 @@ vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 
 vi.mock("@/lib/logger", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/logger")>();
-	const quiet = { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} };
+	const quiet = {
+		error: () => {},
+		warn: () => {},
+		info: () => {},
+		debug: () => {},
+	};
 	return {
 		...original,
 		logger: { ...original.logger, ...quiet },
@@ -75,7 +90,9 @@ const templates = await import("./template-actions");
 const { getProjectTemplate, listProjectTemplates } = await import(
 	"@/lib/projects/project-templates"
 );
-const { listEligibleProjects } = await import("@/lib/time-tracking/project-eligibility");
+const { listEligibleProjects } = await import(
+	"@/lib/time-tracking/project-eligibility"
+);
 const { getProjects } = await import("./actions");
 
 const ids = {
@@ -164,7 +181,13 @@ describe("project templates on PostgreSQL", () => {
 		await admin.query(
 			`insert into team (id, organization_id, name, updated_at) values
 			 ($1, $4, 'Design team', now()), ($2, $4, 'Build team', now()), ($3, $5, 'Foreign team', now())`,
-			[ids.team, ids.secondTeam, ids.otherTeam, ids.organization, ids.otherOrganization],
+			[
+				ids.team,
+				ids.secondTeam,
+				ids.otherTeam,
+				ids.organization,
+				ids.otherOrganization,
+			],
 		);
 		const employees: Array<[string, string, string, string, boolean?]> = [
 			[ids.owner, ids.ownerUser, ids.organization, "admin"],
@@ -174,7 +197,13 @@ describe("project templates on PostgreSQL", () => {
 			[ids.departed, ids.departedUser, ids.organization, "employee", false],
 			[ids.otherEmployee, ids.otherUser, ids.otherOrganization, "admin"],
 		];
-		for (const [id, userId, organizationId, role, isActive = true] of employees) {
+		for (const [
+			id,
+			userId,
+			organizationId,
+			role,
+			isActive = true,
+		] of employees) {
 			await admin.query(
 				`insert into employee (id, user_id, organization_id, role, is_active, updated_at)
 				 values ($1, $2, $3, $4, $6, $5)`,
@@ -213,7 +242,10 @@ describe("project templates on PostgreSQL", () => {
 		color: "#3b82f6",
 		budgetHours: 120.555,
 		deadlineOffsetDays: 30,
-		tasks: [{ name: "Design", description: "Wireframes", estimateHours: 12.5 }, { name: "Build" }],
+		tasks: [
+			{ name: "Design", description: "Wireframes", estimateHours: 12.5 },
+			{ name: "Build" },
+		],
 		managerEmployeeIds: [ids.projectManager],
 		assignments: [
 			{ type: "team" as const, targetId: ids.team },
@@ -223,7 +255,9 @@ describe("project templates on PostgreSQL", () => {
 
 	describe("an org admin", () => {
 		it("creates a template with tasks, budget, deadline offset, managers and assignments", async () => {
-			const created = await actAs(ids.ownerUser, () => templates.createProjectTemplate(fullInput));
+			const created = await actAs(ids.ownerUser, () =>
+				templates.createProjectTemplate(fullInput),
+			);
 			expect(created.success).toBe(true);
 			if (!created.success) return;
 
@@ -243,10 +277,18 @@ describe("project templates on PostgreSQL", () => {
 					deadlineOffsetDays: 30,
 					tasks: [
 						{ name: "Build", description: null, estimateHours: null },
-						{ name: "Design", description: "Wireframes", estimateHours: "12.50" },
+						{
+							name: "Design",
+							description: "Wireframes",
+							estimateHours: "12.50",
+						},
 					],
 					managers: [
-						{ employeeId: ids.projectManager, name: "T878 Pm User", availability: "available" },
+						{
+							employeeId: ids.projectManager,
+							name: "T878 Pm User",
+							availability: "available",
+						},
 					],
 					assignments: [
 						{
@@ -293,7 +335,9 @@ describe("project templates on PostgreSQL", () => {
 				deadlineOffsetDays: 0,
 				tasks: [{ name: "Launch", estimateHours: "2.00" }],
 				managers: [{ employeeId: ids.employee }],
-				assignments: [{ type: "team", teamId: ids.secondTeam, name: "Build team" }],
+				assignments: [
+					{ type: "team", teamId: ids.secondTeam, name: "Build team" },
+				],
 			});
 			expect((await readTemplate(id))?.managers).toHaveLength(1);
 			expect((await readTemplate(id))?.tasks).toHaveLength(1);
@@ -302,7 +346,9 @@ describe("project templates on PostgreSQL", () => {
 		it("deletes a template with everything it holds", async () => {
 			const id = await createTemplate(ids.ownerUser, fullInput);
 
-			const deleted = await actAs(ids.ownerUser, () => templates.deleteProjectTemplate(id));
+			const deleted = await actAs(ids.ownerUser, () =>
+				templates.deleteProjectTemplate(id),
+			);
 
 			expect(deleted).toEqual({ success: true, data: undefined });
 			expect(await readTemplate(id)).toBe(null);
@@ -319,12 +365,20 @@ describe("project templates on PostgreSQL", () => {
 			const relaunch = await createTemplate(ids.ownerUser, fullInput);
 			const audit = await createTemplate(ids.adminUser, { name: "audit" });
 
-			const listed = await actAs(ids.adminUser, () => templates.getProjectTemplates());
+			const listed = await actAs(ids.adminUser, () =>
+				templates.getProjectTemplates(),
+			);
 
 			expect(listed).toMatchObject({
 				success: true,
 				data: [
-					{ id: audit, name: "audit", taskCount: 0, managerCount: 0, assignmentCount: 0 },
+					{
+						id: audit,
+						name: "audit",
+						taskCount: 0,
+						managerCount: 0,
+						assignmentCount: 0,
+					},
 					{
 						id: relaunch,
 						name: "Website relaunch",
@@ -373,7 +427,10 @@ describe("project templates on PostgreSQL", () => {
 					 values ($1, ' RELAUNCH ', $2, now())`,
 					[ids.organization, ids.ownerUser],
 				),
-			).rejects.toMatchObject({ code: "23505", constraint: "projectTemplate_org_name_unique_idx" });
+			).rejects.toMatchObject({
+				code: "23505",
+				constraint: "projectTemplate_org_name_unique_idx",
+			});
 			await expect(
 				admin.query(
 					`insert into project_template_task (organization_id, template_id, name)
@@ -390,7 +447,9 @@ describe("project templates on PostgreSQL", () => {
 			await createTemplate(ids.ownerUser, { name: "Foreign template" });
 
 			expect(await templateNames()).toEqual(["Foreign template"]);
-			expect(await templateNames(ids.otherOrganization)).toEqual(["Foreign template"]);
+			expect(await templateNames(ids.otherOrganization)).toEqual([
+				"Foreign template",
+			]);
 		});
 	});
 
@@ -399,9 +458,18 @@ describe("project templates on PostgreSQL", () => {
 			const results = await actAs(ids.ownerUser, () =>
 				Promise.all([
 					templates.createProjectTemplate({ name: "   " }),
-					templates.createProjectTemplate({ name: "Zero budget", budgetHours: 0 }),
-					templates.createProjectTemplate({ name: "Late", deadlineOffsetDays: -1 }),
-					templates.createProjectTemplate({ name: "Fraction", deadlineOffsetDays: 1.5 }),
+					templates.createProjectTemplate({
+						name: "Zero budget",
+						budgetHours: 0,
+					}),
+					templates.createProjectTemplate({
+						name: "Late",
+						deadlineOffsetDays: -1,
+					}),
+					templates.createProjectTemplate({
+						name: "Fraction",
+						deadlineOffsetDays: 1.5,
+					}),
 					templates.createProjectTemplate({
 						name: "Twice",
 						tasks: [{ name: "Design" }, { name: " design " }],
@@ -409,7 +477,13 @@ describe("project templates on PostgreSQL", () => {
 				]),
 			);
 
-			expect(results.map((result) => result.success)).toEqual([false, false, false, false, false]);
+			expect(results.map((result) => result.success)).toEqual([
+				false,
+				false,
+				false,
+				false,
+				false,
+			]);
 			expect(await templateNames()).toEqual([]);
 		});
 	});
@@ -433,7 +507,11 @@ describe("project templates on PostgreSQL", () => {
 				]),
 			);
 
-			expect(results.map((result) => result.success)).toEqual([false, false, false]);
+			expect(results.map((result) => result.success)).toEqual([
+				false,
+				false,
+				false,
+			]);
 			expect(await templateNames()).toEqual([]);
 		});
 
@@ -445,7 +523,10 @@ describe("project templates on PostgreSQL", () => {
 				}),
 			);
 
-			expect(result).toMatchObject({ success: false, error: expect.stringMatching(/left/i) });
+			expect(result).toMatchObject({
+				success: false,
+				error: expect.stringMatching(/left/i),
+			});
 			expect(await templateNames()).toEqual([]);
 		});
 
@@ -455,7 +536,9 @@ describe("project templates on PostgreSQL", () => {
 				managerEmployeeIds: [ids.employee],
 				assignments: [{ type: "employee", targetId: ids.employee }],
 			});
-			await admin.query("update employee set is_active = false where id = $1", [ids.employee]);
+			await admin.query("update employee set is_active = false where id = $1", [
+				ids.employee,
+			]);
 
 			expect(await readTemplate(id)).toMatchObject({
 				managers: [{ employeeId: ids.employee, availability: "departed" }],
@@ -488,9 +571,20 @@ describe("project templates on PostgreSQL", () => {
 			await admin.query("delete from employee where id = $1", [ids.employee]);
 
 			expect(await readTemplate(id)).toMatchObject({
-				managers: [{ employeeId: null, name: "T878 Employee User", availability: "removed" }],
+				managers: [
+					{
+						employeeId: null,
+						name: "T878 Employee User",
+						availability: "removed",
+					},
+				],
 				assignments: [
-					{ type: "team", teamId: null, name: "Design team", availability: "removed" },
+					{
+						type: "team",
+						teamId: null,
+						name: "Design team",
+						availability: "removed",
+					},
 					{
 						type: "employee",
 						employeeId: null,
@@ -501,7 +595,10 @@ describe("project templates on PostgreSQL", () => {
 			});
 
 			const resaved = await actAs(ids.ownerUser, () =>
-				templates.updateProjectTemplate(id, { name: "Relaunch", tasks: [{ name: "Design" }] }),
+				templates.updateProjectTemplate(id, {
+					name: "Relaunch",
+					tasks: [{ name: "Design" }],
+				}),
 			);
 			expect(resaved.success).toBe(true);
 			expect(await readTemplate(id)).toMatchObject({
@@ -516,12 +613,20 @@ describe("project templates on PostgreSQL", () => {
 		it("an org admin without a manager role may", async () => {
 			const id = await createTemplate(ids.adminUser, fullInput);
 			const results = [
-				await actAs(ids.adminUser, () => templates.updateProjectTemplate(id, { name: "Renamed" })),
-				await actAs(ids.adminUser, () => templates.getProjectTemplateDetails(id)),
+				await actAs(ids.adminUser, () =>
+					templates.updateProjectTemplate(id, { name: "Renamed" }),
+				),
+				await actAs(ids.adminUser, () =>
+					templates.getProjectTemplateDetails(id),
+				),
 				await actAs(ids.adminUser, () => templates.deleteProjectTemplate(id)),
 			];
 
-			expect(results.map((result) => result.success)).toEqual([true, true, true]);
+			expect(results.map((result) => result.success)).toEqual([
+				true,
+				true,
+				true,
+			]);
 		});
 
 		it("a project manager and a plain employee are refused every template action", async () => {
@@ -556,15 +661,25 @@ describe("project templates on PostgreSQL", () => {
 			const results = await actAs(ids.ownerUser, () =>
 				Promise.all([
 					templates.getProjectTemplateDetails(ids.otherTemplate),
-					templates.updateProjectTemplate(ids.otherTemplate, { name: "Renamed" }),
+					templates.updateProjectTemplate(ids.otherTemplate, {
+						name: "Renamed",
+					}),
 					templates.deleteProjectTemplate(ids.otherTemplate),
 				]),
 			);
-			const listed = await actAs(ids.ownerUser, () => templates.getProjectTemplates());
+			const listed = await actAs(ids.ownerUser, () =>
+				templates.getProjectTemplates(),
+			);
 
-			expect(results.map((result) => result.success)).toEqual([false, false, false]);
+			expect(results.map((result) => result.success)).toEqual([
+				false,
+				false,
+				false,
+			]);
 			expect(listed).toEqual({ success: true, data: [] });
-			expect(await templateNames(ids.otherOrganization)).toEqual(["Foreign template"]);
+			expect(await templateNames(ids.otherOrganization)).toEqual([
+				"Foreign template",
+			]);
 			expect(audit.logAudit).not.toHaveBeenCalled();
 		});
 
@@ -573,7 +688,9 @@ describe("project templates on PostgreSQL", () => {
 
 			expect(await readTemplate(ids.otherTemplate)).toBe(null);
 			expect(
-				(await listProjectTemplates({ organizationId: ids.organization })).map((t) => t.name),
+				(await listProjectTemplates({ organizationId: ids.organization })).map(
+					(t) => t.name,
+				),
 			).toEqual(["Mine"]);
 		});
 	});
@@ -593,19 +710,24 @@ describe("project templates on PostgreSQL", () => {
 					{ type: "team", targetId: ids.team },
 				],
 			});
-			await admin.query("update employee set team_id = $1 where id = $2", [ids.team, ids.employee]);
+			await admin.query("update employee set team_id = $1 where id = $2", [
+				ids.team,
+				ids.employee,
+			]);
 
 			const eligible = await listEligibleProjects({
 				employeeId: ids.employee,
 				teamId: ids.team,
 				organizationId: ids.organization,
 			});
-			const projectList = await actAs(ids.ownerUser, () => getProjects(ids.organization));
+			const projectList = await actAs(ids.ownerUser, () =>
+				getProjects(ids.organization),
+			);
 
 			expect(eligible.map((project) => project.name)).toEqual(["T878 project"]);
-			expect(projectList.success && projectList.data.map((project) => project.name)).toEqual([
-				"T878 project",
-			]);
+			expect(
+				projectList.success && projectList.data.map((project) => project.name),
+			).toEqual(["T878 project"]);
 		});
 	});
 
@@ -613,12 +735,18 @@ describe("project templates on PostgreSQL", () => {
 		userId: string,
 		input: Parameters<typeof templates.createProjectTemplate>[0],
 	) {
-		const result = await actAs(userId, () => templates.createProjectTemplate(input));
-		if (!result.success) throw new Error(`Template creation failed: ${result.error}`);
+		const result = await actAs(userId, () =>
+			templates.createProjectTemplate(input),
+		);
+		if (!result.success)
+			throw new Error(`Template creation failed: ${result.error}`);
 		return result.data.id;
 	}
 
-	function readTemplate(templateId: string, organizationId: string = ids.organization) {
+	function readTemplate(
+		templateId: string,
+		organizationId: string = ids.organization,
+	) {
 		return getProjectTemplate({ organizationId, templateId });
 	}
 });

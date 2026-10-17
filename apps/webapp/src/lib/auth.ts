@@ -1,3 +1,10 @@
+import {
+	createMfaAuthenticationPlugin,
+	recordVerifiedMfaPasskey,
+} from "@/lib/organization-mfa/authentication-plugin";
+import { mfaAuthStore } from "@/lib/organization-mfa/auth-store";
+import { getOrganizationMfaRequirement } from "@/lib/organization-mfa/store";
+import { organizationSsoVerification } from "@/lib/organization-mfa/organization-access";
 import { apiKey } from "@better-auth/api-key";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { passkey } from "@better-auth/passkey";
@@ -62,7 +69,10 @@ import {
 } from "@/lib/enterprise-identity/sso-enforcement-plugin";
 import { notifySecurityAlert } from "@/lib/notifications/security-alert-notifier";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
-import { API_KEY_HTTP_PATHS, API_KEY_PLUGIN_OPTIONS } from "@/lib/public-api/keys/plugin-config";
+import {
+	API_KEY_HTTP_PATHS,
+	API_KEY_PLUGIN_OPTIONS,
+} from "@/lib/public-api/keys/plugin-config";
 import {
 	createSCIMCallbackModelRegistration,
 	createZ8SCIMPlugin,
@@ -687,6 +697,8 @@ export const auth = betterAuth({
 		}),
 		passkey({
 			rpName: "Z8",
+			authenticatorSelection: { userVerification: "required" },
+			authentication: { afterVerification: recordVerifiedMfaPasskey },
 			// rpID must be a static string - passkeys are domain-bound by WebAuthn spec.
 			// Users accessing via custom domains will need to register separate passkeys.
 			// For multi-tenant with custom domains, consider using the origin option instead.
@@ -735,7 +747,16 @@ export const auth = betterAuth({
 		// `permissions`, the key creator in metadata for attribution only (ADR 0001).
 		// The plugin verifies keys and enforces their per-key rate limit.
 		apiKey(API_KEY_PLUGIN_OPTIONS),
-		createSsoEnforcementPlugin(sessionSsoStore),
+		createMfaAuthenticationPlugin(mfaAuthStore),
+		createSsoEnforcementPlugin(
+			sessionSsoStore,
+			async (subject, organizationId) =>
+				getOrganizationMfaRequirement(
+					subject,
+					organizationId,
+					!!(await organizationSsoVerification(subject, organizationId)),
+				),
+		),
 		enterpriseIdentityInvitationResendPlugin(),
 		// Server-only: hands an exchanged store app session to the web view (#842).
 		storeAppSessionPlugin(),

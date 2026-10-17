@@ -4,7 +4,12 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { cache } from "react";
 import { db } from "@/db";
-import { user as authUser, invitation, member, organization } from "@/db/auth-schema";
+import {
+	user as authUser,
+	invitation,
+	member,
+	organization,
+} from "@/db/auth-schema";
 import { employee, userSettings } from "@/db/schema";
 import {
 	type AuthContextUser,
@@ -21,7 +26,7 @@ import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-
 import { runtime } from "@/lib/effect/runtime";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
-import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
+import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import {
 	hasSettingsAccessTier,
@@ -72,7 +77,8 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
 
 	if (
 		!session?.user ||
-		("ssoRequired" in session && session.ssoRequired === true)
+		("ssoRequired" in session && session.ssoRequired === true) ||
+		("mfaRequired" in session && !!session.mfaRequired)
 	) {
 		return null;
 	}
@@ -80,7 +86,7 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
 	const activeOrganizationId = session.session?.activeOrganizationId || null;
 	if (
 		activeOrganizationId &&
-		!(await canAccessOrganizationWithSso(session.session, activeOrganizationId))
+		!(await canAccessOrganization(session.session, activeOrganizationId))
 	)
 		return null;
 
@@ -187,7 +193,9 @@ export async function isAdmin(): Promise<boolean> {
  */
 export async function isManagerOrAbove(): Promise<boolean> {
 	const context = await getAuthContext();
-	return context?.employee?.role === "admin" || context?.employee?.role === "manager";
+	return (
+		context?.employee?.role === "admin" || context?.employee?.role === "manager"
+	);
 }
 
 /**
@@ -256,7 +264,9 @@ export async function getUserOrganizations(): Promise<UserOrganization[]> {
 		);
 
 	// O(1) lookup with Set
-	const orgsWithEmployee = new Set(employeeRecords.map((e) => e.organizationId));
+	const orgsWithEmployee = new Set(
+		employeeRecords.map((e) => e.organizationId),
+	);
 
 	// Map without additional queries
 	return memberships.map(({ organization: org, member: mbr }) => ({
@@ -271,7 +281,8 @@ export async function getUserOrganizations(): Promise<UserOrganization[]> {
 		surchargesEnabled: org.surchargesEnabled ?? false,
 		demoDataEnabled: org.demoDataEnabled ?? true,
 		worksCouncilEnabled: org.worksCouncilEnabled ?? false,
-		billableTimeEnabled: (org.billableTimeEnabled ?? false) && (org.projectsEnabled ?? false),
+		billableTimeEnabled:
+			(org.billableTimeEnabled ?? false) && (org.projectsEnabled ?? false),
 		personnelFilesEnabled: org.personnelFilesEnabled ?? false,
 	}));
 }
@@ -295,7 +306,10 @@ export async function isManagerOf(targetEmployeeId: string): Promise<boolean> {
 	// Check manager relationship using ManagerService
 	const effect = Effect.gen(function* () {
 		const managerService = yield* ManagerService;
-		return yield* managerService.isManagerOf(context.employee!.id, targetEmployeeId);
+		return yield* managerService.isManagerOf(
+			context.employee!.id,
+			targetEmployeeId,
+		);
 	});
 
 	try {
@@ -310,7 +324,9 @@ export async function isManagerOf(targetEmployeeId: string): Promise<boolean> {
  * Check if current employee can approve requests for the specified employee
  * This combines admin role check with manager relationship check
  */
-export async function canApproveFor(targetEmployeeId: string): Promise<boolean> {
+export async function canApproveFor(
+	targetEmployeeId: string,
+): Promise<boolean> {
 	const context = await getAuthContext();
 
 	if (!context?.employee) {
@@ -442,7 +458,7 @@ export async function verifyOrgMembership(
 
 	if (
 		!requestedOrgId ||
-		!(await canAccessOrganizationWithSso(session.session, requestedOrgId))
+		!(await canAccessOrganization(session.session, requestedOrgId))
 	) {
 		return {
 			isValid: false,
@@ -558,7 +574,9 @@ export async function requireOrgMembership(
  * // Use context.organizationId - guaranteed to be authorized
  * ```
  */
-export async function getVerifiedOrgContext(requestedOrgId: string | null): Promise<{
+export async function getVerifiedOrgContext(
+	requestedOrgId: string | null,
+): Promise<{
 	user: AuthContext["user"];
 	organizationId: string;
 	employeeId: string | null;
@@ -609,7 +627,8 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 
 	if (
 		!session?.user ||
-		("ssoRequired" in session && session.ssoRequired === true)
+		("ssoRequired" in session && session.ssoRequired === true) ||
+		("mfaRequired" in session && !!session.mfaRequired)
 	) {
 		return null;
 	}
@@ -619,7 +638,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 	const activeOrganizationId = session.session?.activeOrganizationId || null;
 	if (
 		activeOrganizationId &&
-		!(await canAccessOrganizationWithSso(session.session, activeOrganizationId))
+		!(await canAccessOrganization(session.session, activeOrganizationId))
 	)
 		return null;
 
@@ -671,7 +690,7 @@ export async function getSettingsAccessInputForUser(
 	const session = await getRequestSession();
 	if (
 		session?.user.id !== userId ||
-		!(await canAccessOrganizationWithSso(session.session, activeOrganizationId))
+		!(await canAccessOrganization(session.session, activeOrganizationId))
 	) {
 		return { activeOrganizationId, membershipRole: null, employeeRole: null };
 	}
@@ -690,7 +709,10 @@ export async function getSettingsAccessInputForUser(
 			.limit(1)
 			.then((records) => records[0] ?? null),
 		db
-			.select({ role: employee.role, isActive: employeeHasOrganizationAccess() })
+			.select({
+				role: employee.role,
+				isActive: employeeHasOrganizationAccess(),
+			})
 			.from(employee)
 			.where(
 				and(
@@ -706,7 +728,8 @@ export async function getSettingsAccessInputForUser(
 	return {
 		activeOrganizationId,
 		membershipRole:
-			!employeeIsInactive && isSettingsAccessMembershipRole(membershipRecord?.role)
+			!employeeIsInactive &&
+			isSettingsAccessMembershipRole(membershipRecord?.role)
 				? membershipRecord.role
 				: null,
 		employeeRole:
@@ -725,18 +748,20 @@ export async function getSettingsAccessTierForUser(
 	);
 }
 
-export const getCurrentSettingsAccessTier = cache(async (): Promise<SettingsAccessTier | null> => {
-	const session = await getRequestSession();
+export const getCurrentSettingsAccessTier = cache(
+	async (): Promise<SettingsAccessTier | null> => {
+		const session = await getRequestSession();
 
-	if (!session?.user) {
-		return null;
-	}
+		if (!session?.user) {
+			return null;
+		}
 
-	return getSettingsAccessTierForUser(
-		session.user.id,
-		session.session?.activeOrganizationId || null,
-	);
-});
+		return getSettingsAccessTierForUser(
+			session.user.id,
+			session.session?.activeOrganizationId || null,
+		);
+	},
+);
 
 export const getCurrentSettingsRouteContext = cache(
 	async (): Promise<{
@@ -850,7 +875,7 @@ export async function isOrgAdminCasl(organizationId: string): Promise<boolean> {
 	const session = await getRequestSession();
 	if (
 		!session?.user ||
-		!(await canAccessOrganizationWithSso(session.session, organizationId))
+		!(await canAccessOrganization(session.session, organizationId))
 	) {
 		return false;
 	}
@@ -923,7 +948,7 @@ export async function isOrgOwnerCasl(organizationId: string): Promise<boolean> {
 	const session = await getRequestSession();
 	if (
 		!session?.user ||
-		!(await canAccessOrganizationWithSso(session.session, organizationId))
+		!(await canAccessOrganization(session.session, organizationId))
 	) {
 		return false;
 	}
@@ -934,7 +959,12 @@ export async function isOrgOwnerCasl(organizationId: string): Promise<boolean> {
 		const [memberRecord] = await db
 			.select()
 			.from(member)
-			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
+			.where(
+				and(
+					eq(member.userId, session.user.id),
+					eq(member.organizationId, organizationId),
+				),
+			)
 			.limit(1);
 
 		return memberRecord?.role === "owner";
@@ -962,7 +992,9 @@ export async function isOrgOwnerCasl(organizationId: string): Promise<boolean> {
  * // User is confirmed to be admin/owner
  * ```
  */
-export async function requireOrgAdminCasl(organizationId: string): Promise<void> {
+export async function requireOrgAdminCasl(
+	organizationId: string,
+): Promise<void> {
 	const isAdmin = await isOrgAdminCasl(organizationId);
 	if (!isAdmin) {
 		throw new Error("Organization admin access required");

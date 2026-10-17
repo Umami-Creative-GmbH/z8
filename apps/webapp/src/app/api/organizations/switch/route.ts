@@ -10,7 +10,7 @@ import { auth } from "@/lib/auth";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { getAuthRequestDiagnostics } from "@/lib/diagnostics";
 import { SsoRequiredError } from "@/lib/enterprise-identity/session-sso";
-import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
+import { getOrganizationAccessRequirement } from "@/lib/organization-mfa/organization-access";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("OrganizationSwitchRoute");
@@ -25,12 +25,14 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
 	];
 
 	// Use the origin if it's in the allowlist, otherwise use the app URL
-	const allowOrigin = origin && allowedOrigins.includes(origin) ? origin : appUrl;
+	const allowOrigin =
+		origin && allowedOrigins.includes(origin) ? origin : appUrl;
 
 	return {
 		"Access-Control-Allow-Origin": allowOrigin,
 		"Access-Control-Allow-Methods": "POST, OPTIONS",
-		"Access-Control-Allow-Headers": "Content-Type, Authorization, X-Z8-App-Type",
+		"Access-Control-Allow-Headers":
+			"Content-Type, Authorization, X-Z8-App-Type",
 		"Access-Control-Allow-Credentials": "true",
 	};
 }
@@ -58,7 +60,10 @@ export async function POST(request: NextRequest) {
 					"Organization switch requested without an authenticated session",
 				);
 			}
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401, headers: corsHeaders },
+			);
 		}
 
 		const body = await request.json();
@@ -90,9 +95,9 @@ export async function POST(request: NextRequest) {
 				{ status: 403, headers: corsHeaders },
 			);
 		}
-		if (
-			!(await canAccessOrganizationWithSso(session.session, organizationId))
-		) {
+		const access=await getOrganizationAccessRequirement(session.session,organizationId);
+if(!access.allowed){
+ if(access.reason==="MFA_REQUIRED")return NextResponse.json({error:"Verify an authenticator to access this organization",code:"MFA_REQUIRED",organizationId,deadline:access.deadline},{status:403,headers:corsHeaders});
 			const error = new SsoRequiredError();
 			return NextResponse.json(
 				{ error: error.message, code: error.code },
@@ -160,7 +165,10 @@ export async function POST(request: NextRequest) {
 		);
 	} catch (error) {
 		if (shouldLogAuthDiagnostics) {
-			logger.error({ error, requestOrigin: origin }, "Failed to switch organization");
+			logger.error(
+				{ error, requestOrigin: origin },
+				"Failed to switch organization",
+			);
 		}
 		return NextResponse.json(
 			{ error: "Failed to switch organization" },

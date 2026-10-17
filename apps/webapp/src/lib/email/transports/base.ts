@@ -8,6 +8,7 @@
  * Email message structure
  */
 export interface EmailMessage {
+	idempotencyKey?: string;
 	to: string;
 	subject: string;
 	html: string;
@@ -82,4 +83,7 @@ export interface ConsoleTransportConfig {
 	fromName?: string;
 }
 
-export type TransportConfig = ResendTransportConfig | SmtpTransportConfig | ConsoleTransportConfig;
+export type TransportConfig =
+	| ResendTransportConfig
+	| SmtpTransportConfig
+	| ConsoleTransportConfig;

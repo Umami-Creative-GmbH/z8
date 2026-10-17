@@ -16,7 +16,15 @@
 
 import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -30,7 +38,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -53,7 +63,9 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/auth-helpers")>();
 	const { db } = await import("@/db");
-	const { loadOrganizationPrincipalContext } = await import("@/lib/authorization/principal-loader");
+	const { loadOrganizationPrincipalContext } = await import(
+		"@/lib/authorization/principal-loader"
+	);
 	return {
 		...original,
 		getPrincipalContext: async () =>
@@ -67,17 +79,24 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 });
 
 // The mocked session has no stored SSO provenance to admit.
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+	),
 );
 
 vi.mock("./approvals", async (importOriginal) => ({
@@ -88,7 +107,12 @@ vi.mock("./approvals", async (importOriginal) => ({
 
 vi.mock("@/lib/logger", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/logger")>();
-	const quiet = { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} };
+	const quiet = {
+		error: () => {},
+		warn: () => {},
+		info: () => {},
+		debug: () => {},
+	};
 	return { ...original, createLogger: () => quiet };
 });
 
@@ -99,12 +123,17 @@ const { assignManagersAction, updateEmployeeAction } = await import(
 const { deactivateEmployeeAction } = await import(
 	"../../settings/employees/employee-lifecycle.actions"
 );
-const { addTeamMember, deleteTeam } = await import("../../settings/teams/actions");
-const { assignRoleToEmployee, deleteCustomRole, setRolePermissions } = await import(
-	"../../settings/roles/actions"
+const { addTeamMember, deleteTeam } = await import(
+	"../../settings/teams/actions"
 );
-const { grantTeamPermissions } = await import("../../settings/permissions/actions");
-const { createProductionDepartureCommands } = await import("@/lib/employee-lifecycle/runtime");
+const { assignRoleToEmployee, deleteCustomRole, setRolePermissions } =
+	await import("../../settings/roles/actions");
+const { grantTeamPermissions } = await import(
+	"../../settings/permissions/actions"
+);
+const { createProductionDepartureCommands } = await import(
+	"@/lib/employee-lifecycle/runtime"
+);
 
 const ids = {
 	organization: "t313-auth-org",
@@ -135,13 +164,23 @@ const users = [
 	ids.peerUser,
 ];
 
-const organizationGuard = JSON.stringify(["work-organization-configuration", ids.organization]);
-const userGuard = (userId: string) => JSON.stringify(["work-user-configuration-access", userId]);
+const organizationGuard = JSON.stringify([
+	"work-organization-configuration",
+	ids.organization,
+]);
+const userGuard = (userId: string) =>
+	JSON.stringify(["work-user-configuration-access", userId]);
 
-const at = (time: string) => ({ time, occurrence: null, displayedOffsetMinutes: 120 });
+const at = (time: string) => ({
+	time,
+	occurrence: null,
+	displayedOffsetMinutes: 120,
+});
 
 /** An on-behalf Berlin summer entry for the employee. */
-function manualCommand(overrides: Partial<ManualTimeEntryCommand> = {}): ManualTimeEntryCommand {
+function manualCommand(
+	overrides: Partial<ManualTimeEntryCommand> = {},
+): ManualTimeEntryCommand {
 	return {
 		version: 2,
 		submissionId: randomUUID(),
@@ -160,7 +199,12 @@ function manualCommand(overrides: Partial<ManualTimeEntryCommand> = {}): ManualT
 
 /** The key the manual transaction takes after its protection and employee coordination. */
 const submissionIdentity = (command: ManualTimeEntryCommand) =>
-	JSON.stringify([ids.organization, "manual_time_submission", "time_entry", command.submissionId]);
+	JSON.stringify([
+		ids.organization,
+		"manual_time_submission",
+		"time_entry",
+		command.submissionId,
+	]);
 
 describe("organization authorization mutations on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -252,7 +296,9 @@ describe("organization authorization mutations on PostgreSQL", () => {
 	}
 
 	async function cleanup() {
-		await admin.query("delete from organization where id = $1", [ids.organization]);
+		await admin.query("delete from organization where id = $1", [
+			ids.organization,
+		]);
 		await admin.query('delete from "user" where id = any($1::text[])', [users]);
 	}
 
@@ -380,19 +426,24 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			});
 			// Sorted acquisition reaches the target's protection first.
 			await waitForWaiterOn(userGuard(ids.employeeUser));
-			expect(await managerLinks()).toEqual([ids.manager, ids.secondManager].sort());
+			expect(await managerLinks()).toEqual(
+				[ids.manager, ids.secondManager].sort(),
+			);
 
 			await submission.release();
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(revocation).resolves.toMatchObject({ success: true });
 			expect(await managerLinks()).toEqual([ids.secondManager]);
 			expect(await workFor(ids.employee)).toHaveLength(1);
 		});
 
 		it("makes a submission wait for an in-flight revocation and then refuses it", async () => {
-			const link = await hold("select id from employee_managers where id = $1 for update", [
-				ids.managerLink,
-			]);
+			const link = await hold(
+				"select id from employee_managers where id = $1 for update",
+				[ids.managerLink],
+			);
 			actAs(ids.ownerUser);
 			const revocation = assignManagersAction(ids.employee, {
 				managers: [{ managerId: ids.secondManager, isPrimary: true }],
@@ -414,7 +465,9 @@ describe("organization authorization mutations on PostgreSQL", () => {
 		});
 
 		it("holds an absent assignment's insertion until an in-flight submission for its target commits", async () => {
-			await expect(submit(manualCommand(), ids.outsiderUser)).resolves.toMatchObject({
+			await expect(
+				submit(manualCommand(), ids.outsiderUser),
+			).resolves.toMatchObject({
 				success: false,
 				code: "target_not_authorized",
 			});
@@ -434,7 +487,9 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			expect(await managerLinks()).not.toContain(ids.outsider);
 			await submission.release();
 
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(grant).resolves.toMatchObject({ success: true });
 			await expect(
 				submit(manualCommand({ date: "2026-09-03" }), ids.outsiderUser),
@@ -443,8 +498,14 @@ describe("organization authorization mutations on PostgreSQL", () => {
 
 		it("never broadens a manager's scope to team members who are not direct reports", async () => {
 			await expect(
-				submit(manualCommand({ targetEmployeeId: ids.outsider }), ids.managerUser),
-			).resolves.toMatchObject({ success: false, code: "target_not_authorized" });
+				submit(
+					manualCommand({ targetEmployeeId: ids.outsider }),
+					ids.managerUser,
+				),
+			).resolves.toMatchObject({
+				success: false,
+				code: "target_not_authorized",
+			});
 
 			const command = manualCommand({ targetEmployeeId: ids.peer });
 			const submission = await pausedSubmission(command, ids.ownerUser);
@@ -452,19 +513,30 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const joining = addTeamMember(ids.team, ids.peer);
 			await waitForWaiterOn(userGuard(ids.peerUser));
 			await submission.release();
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(joining).resolves.toMatchObject({ success: true });
 
 			// Sharing the manager's team grants nothing.
 			await expect(
-				submit(manualCommand({ targetEmployeeId: ids.peer, date: "2026-09-02" }), ids.managerUser),
-			).resolves.toMatchObject({ success: false, code: "target_not_authorized" });
+				submit(
+					manualCommand({ targetEmployeeId: ids.peer, date: "2026-09-02" }),
+					ids.managerUser,
+				),
+			).resolves.toMatchObject({
+				success: false,
+				code: "target_not_authorized",
+			});
 		});
 	});
 
 	describe("employee role and target state", () => {
 		it("refuses a submission that waited for its actor's role demotion", async () => {
-			const manager = await hold("select id from employee where id = $1 for update", [ids.manager]);
+			const manager = await hold(
+				"select id from employee where id = $1 for update",
+				[ids.manager],
+			);
 			actAs(ids.ownerUser);
 			const demotion = updateEmployeeAction(ids.manager, { role: "employee" });
 			await waitForRowWaiter();
@@ -488,7 +560,9 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			await waitForWaiterOn(userGuard(ids.ownerUser));
 			await submission.release();
 
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(promotion).resolves.toMatchObject({ success: true });
 			await expect(
 				submit(manualCommand({ date: "2026-09-02" }), ids.ownerUser),
@@ -496,7 +570,10 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			// An ordinary colleague still may not create for the employee.
 			await expect(
 				submit(manualCommand({ date: "2026-09-03" }), ids.peerUser),
-			).resolves.toMatchObject({ success: false, code: "target_not_authorized" });
+			).resolves.toMatchObject({
+				success: false,
+				code: "target_not_authorized",
+			});
 		});
 
 		it("holds the target's deactivation until an in-flight submission commits", async () => {
@@ -507,7 +584,9 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			await waitForWaiterOn(userGuard(ids.employeeUser));
 			await submission.release();
 
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(deactivation).resolves.toMatchObject({ success: true });
 			await expect(
 				submit(manualCommand({ date: "2026-09-02" }), ids.managerUser),
@@ -532,7 +611,9 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			await waitForWaiterOn(userGuard(ids.employeeUser));
 			await submission.release();
 
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(departure).resolves.toBeDefined();
 		});
 	});
@@ -548,10 +629,15 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			]);
 			await waitForWaiterOn(organizationGuard);
 			await submission.release();
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(replacement).resolves.toMatchObject({ success: true });
 
-			const second = await pausedSubmission(manualCommand({ date: "2026-09-02" }), ids.managerUser);
+			const second = await pausedSubmission(
+				manualCommand({ date: "2026-09-02" }),
+				ids.managerUser,
+			);
 			actAs(ids.ownerUser);
 			const deletion = deleteCustomRole(ids.customRole);
 			await waitForWaiterOn(organizationGuard);
@@ -575,7 +661,9 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			await waitForWaiterOn(userGuard(ids.managerUser), 2);
 			await submission.release();
 
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(assignment).resolves.toMatchObject({ success: true });
 			await expect(grant).resolves.toMatchObject({ success: true });
 		});
@@ -588,7 +676,9 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			await waitForWaiterOn(organizationGuard);
 			await submission.release();
 
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(deletion).resolves.toMatchObject({ success: true });
 		});
 	});

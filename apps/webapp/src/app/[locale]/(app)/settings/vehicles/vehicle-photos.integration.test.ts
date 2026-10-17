@@ -85,11 +85,11 @@ vi.mock("@/lib/auth", () => ({
 		},
 	},
 }));
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (original) => ({
+vi.mock("@/lib/organization-mfa/organization-access", async (original) => ({
 	...(await original<
-		typeof import("@/lib/enterprise-identity/session-sso-store")
+		typeof import("@/lib/organization-mfa/organization-access")
 	>()),
-	canAccessOrganizationWithSso: async () => true,
+	canAccessOrganization: async () => true,
 }));
 vi.mock("@/lib/storage/export-s3-client", () => ({
 	getStorageConfig: async () => ({ bucket: "private" }),

@@ -15,7 +15,10 @@ import { integrationAdminPool } from "@/test/integration-database";
 const { sessions } = await vi.hoisted(async () => {
 	const { AsyncLocalStorage } = await import("node:async_hooks");
 	return {
-		sessions: new AsyncLocalStorage<{ userId: string; organizationId: string }>(),
+		sessions: new AsyncLocalStorage<{
+			userId: string;
+			organizationId: string;
+		}>(),
 	};
 });
 
@@ -23,7 +26,9 @@ const { sessions } = await vi.hoisted(async () => {
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
@@ -48,15 +53,22 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/auth-helpers")>();
 	const { db } = await import("@/db");
-	const { loadOrganizationPrincipalContext } = await import("@/lib/authorization/principal-loader");
+	const { loadOrganizationPrincipalContext } = await import(
+		"@/lib/authorization/principal-loader"
+	);
 	return {
 		...original,
 		getPrincipalContext: async () => {
@@ -71,7 +83,9 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+	),
 );
 
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
@@ -81,7 +95,12 @@ vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 
 vi.mock("@/lib/logger", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/logger")>();
-	const quiet = { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} };
+	const quiet = {
+		error: () => {},
+		warn: () => {},
+		info: () => {},
+		debug: () => {},
+	};
 	return {
 		...original,
 		logger: { ...original.logger, ...quiet },
@@ -108,7 +127,12 @@ const ids = {
 	unmanagedProject: "e8840000-0000-4000-8000-000000000021",
 	foreignProject: "e8840000-0000-4000-8000-000000000022",
 } as const;
-const users = [ids.ownerUser, ids.projectManagerUser, ids.employeeUser, ids.otherUser];
+const users = [
+	ids.ownerUser,
+	ids.projectManagerUser,
+	ids.employeeUser,
+	ids.otherUser,
+];
 
 describe("project task requirement on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -228,9 +252,12 @@ describe("project task requirement on PostgreSQL", () => {
 				),
 			).resolves.toEqual({ success: true, data: undefined });
 			expect(await requiresTask(ids.managedProject)).toBe(true);
-			const listed = await actAs(ids.ownerUser, () => projects.getProjects(ids.organization));
+			const listed = await actAs(ids.ownerUser, () =>
+				projects.getProjects(ids.organization),
+			);
 			expect(
-				listed.success && listed.data.find((project) => project.id === ids.managedProject),
+				listed.success &&
+					listed.data.find((project) => project.id === ids.managedProject),
 			).toMatchObject({ requiresTask: true });
 
 			await expect(
@@ -301,7 +328,9 @@ describe("project task requirement on PostgreSQL", () => {
 		it("refuses a requirement that is not a boolean", async () => {
 			await expect(
 				actAs(ids.ownerUser, () =>
-					projects.updateProject(ids.managedProject, { requiresTask: "yes" as never }),
+					projects.updateProject(ids.managedProject, {
+						requiresTask: "yes" as never,
+					}),
 				),
 			).resolves.toMatchObject({ success: false });
 			await expect(
@@ -315,28 +344,43 @@ describe("project task requirement on PostgreSQL", () => {
 			).resolves.toMatchObject({ success: false });
 
 			expect(await requiresTask(ids.managedProject)).toBe(false);
-			const { rows } = await admin.query("select id from project where name = 'Not a boolean'");
+			const { rows } = await admin.query(
+				"select id from project where name = 'Not a boolean'",
+			);
 			expect(rows).toEqual([]);
 		});
 	});
 
 	describe("on a project template", () => {
-		async function createTemplate(input: Parameters<typeof templates.createProjectTemplate>[0]) {
-			const result = await actAs(ids.ownerUser, () => templates.createProjectTemplate(input));
-			if (!result.success) throw new Error(`Template creation failed: ${result.error}`);
+		async function createTemplate(
+			input: Parameters<typeof templates.createProjectTemplate>[0],
+		) {
+			const result = await actAs(ids.ownerUser, () =>
+				templates.createProjectTemplate(input),
+			);
+			if (!result.success)
+				throw new Error(`Template creation failed: ${result.error}`);
 			return result.data.id;
 		}
 
 		it("stores the requirement, shows it, and changes it with the template", async () => {
-			const templateId = await createTemplate({ name: "Strict", requiresTask: true });
+			const templateId = await createTemplate({
+				name: "Strict",
+				requiresTask: true,
+			});
 
 			expect(await templateRequiresTask(templateId)).toBe(true);
 			await expect(
-				actAs(ids.ownerUser, () => templates.getProjectTemplateDetails(templateId)),
+				actAs(ids.ownerUser, () =>
+					templates.getProjectTemplateDetails(templateId),
+				),
 			).resolves.toMatchObject({ success: true, data: { requiresTask: true } });
 
 			await actAs(ids.ownerUser, () =>
-				templates.updateProjectTemplate(templateId, { name: "Strict", requiresTask: false }),
+				templates.updateProjectTemplate(templateId, {
+					name: "Strict",
+					requiresTask: false,
+				}),
 			);
 			expect(await templateRequiresTask(templateId)).toBe(false);
 		});
@@ -349,21 +393,30 @@ describe("project task requirement on PostgreSQL", () => {
 			});
 
 			const created = await actAs(ids.ownerUser, () =>
-				fromTemplate.createProjectFromTemplate({ templateId, name: "From strict" }),
+				fromTemplate.createProjectFromTemplate({
+					templateId,
+					name: "From strict",
+				}),
 			);
 			if (!created.success) throw new Error(created.error);
 			expect(await requiresTask(created.data.id)).toBe(true);
 
 			// No live link either way.
 			await actAs(ids.ownerUser, () =>
-				templates.updateProjectTemplate(templateId, { name: "Strict", requiresTask: false }),
+				templates.updateProjectTemplate(templateId, {
+					name: "Strict",
+					requiresTask: false,
+				}),
 			);
 			expect(await requiresTask(created.data.id)).toBe(true);
 			await actAs(ids.ownerUser, () =>
 				projects.updateProject(created.data.id, { requiresTask: false }),
 			);
 			await actAs(ids.ownerUser, () =>
-				templates.updateProjectTemplate(templateId, { name: "Strict", requiresTask: true }),
+				templates.updateProjectTemplate(templateId, {
+					name: "Strict",
+					requiresTask: true,
+				}),
 			);
 			expect(await requiresTask(created.data.id)).toBe(false);
 		});
@@ -372,7 +425,10 @@ describe("project task requirement on PostgreSQL", () => {
 			const templateId = await createTemplate({ name: "Relaxed" });
 
 			const created = await actAs(ids.ownerUser, () =>
-				fromTemplate.createProjectFromTemplate({ templateId, name: "From relaxed" }),
+				fromTemplate.createProjectFromTemplate({
+					templateId,
+					name: "From relaxed",
+				}),
 			);
 
 			if (!created.success) throw new Error(created.error);
@@ -380,15 +436,20 @@ describe("project task requirement on PostgreSQL", () => {
 		});
 
 		it("keeps the project's requirement when the project is saved as a template", async () => {
-			await admin.query("update project set requires_task = true where id = $1", [
-				ids.managedProject,
-			]);
+			await admin.query(
+				"update project set requires_task = true where id = $1",
+				[ids.managedProject],
+			);
 
 			const strict = await actAs(ids.ownerUser, () =>
-				fromTemplate.saveProjectAsTemplate(ids.managedProject, { name: "From managed" }),
+				fromTemplate.saveProjectAsTemplate(ids.managedProject, {
+					name: "From managed",
+				}),
 			);
 			const relaxed = await actAs(ids.ownerUser, () =>
-				fromTemplate.saveProjectAsTemplate(ids.unmanagedProject, { name: "From unmanaged" }),
+				fromTemplate.saveProjectAsTemplate(ids.unmanagedProject, {
+					name: "From unmanaged",
+				}),
 			);
 
 			if (!strict.success) throw new Error(strict.error);
@@ -399,7 +460,10 @@ describe("project task requirement on PostgreSQL", () => {
 
 		it("refuses a template requirement that is not a boolean", async () => {
 			const result = await actAs(ids.ownerUser, () =>
-				templates.createProjectTemplate({ name: "Odd", requiresTask: "yes" as never }),
+				templates.createProjectTemplate({
+					name: "Odd",
+					requiresTask: "yes" as never,
+				}),
 			);
 
 			expect(result).toMatchObject({ success: false });

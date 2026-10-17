@@ -120,6 +120,7 @@ export const NOTIFICATION_TYPES = [
 	"driving_authorization_suspended",
 	// A clocking queued on an offline kiosk was refused on arrival (#1290)
 	"kiosk_command_refused",
+	"organization_mfa_notice",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -127,6 +128,7 @@ export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 /** System closure evidence is always delivered to the employee's inbox. */
 export function hasMandatoryInbox(type: NotificationType): boolean {
 	return (
+		type === "organization_mfa_notice" ||
 		type === "automatic_clock_out" ||
 		type === "driving_licence_reminder" ||
 		type === "driving_authorization_suspended"

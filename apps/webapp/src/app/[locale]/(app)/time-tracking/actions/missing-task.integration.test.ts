@@ -40,7 +40,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -65,10 +67,15 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 // Project settings (#1296) check the session's SSO proof and write an audit record.
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/audit-logger")>()),
@@ -78,7 +85,9 @@ vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/auth-helpers")>();
 	const { db } = await import("@/db");
-	const { loadOrganizationPrincipalContext } = await import("@/lib/authorization/principal-loader");
+	const { loadOrganizationPrincipalContext } = await import(
+		"@/lib/authorization/principal-loader"
+	);
 	const { employee } = await import("@/db/schema");
 	const { and, eq } = await import("drizzle-orm");
 	return {
@@ -97,10 +106,19 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 				)
 				.limit(1);
 			return {
-				user: { id: harness.userId, name: harness.userId, email: `${harness.userId}@example.test` },
+				user: {
+					id: harness.userId,
+					name: harness.userId,
+					email: `${harness.userId}@example.test`,
+				},
 				session: { activeOrganizationId: harness.organizationId },
 				employee: row
-					? { id: row.id, organizationId: row.organizationId, role: row.role, teamId: row.teamId }
+					? {
+							id: row.id,
+							organizationId: row.organizationId,
+							role: row.role,
+							teamId: row.teamId,
+						}
 					: null,
 			};
 		},
@@ -119,7 +137,9 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+	),
 );
 
 vi.mock("./shared", async (importOriginal) => {
@@ -137,7 +157,9 @@ vi.mock("./shared", async (importOriginal) => {
 });
 
 const { splitWorkPeriod } = await import("../actions");
-const { clockIn, clockOutAs, addBreakToActiveSession } = await import("./clocking");
+const { clockIn, clockOutAs, addBreakToActiveSession } = await import(
+	"./clocking"
+);
 const { editSameDayTimeEntry } = await import("./corrections");
 const { updateWorkPeriodProject } = await import("./mutations");
 const { applyAdminWorkPeriodTimeEdit } = await import(
@@ -192,9 +214,10 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 	}
 
 	async function setAdmission(admission: Admission) {
-		await admin.query("delete from time_entry_append_control where organization_id = $1", [
-			ids.organization,
-		]);
+		await admin.query(
+			"delete from time_entry_append_control where organization_id = $1",
+			[ids.organization],
+		);
 		if (admission === "adopted") {
 			await admin.query(
 				"insert into time_entry_append_control (organization_id, mode) values ($1, 'active')",
@@ -212,7 +235,9 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 	}
 
 	async function cleanup() {
-		await admin.query("delete from organization where id = $1", [ids.organization]);
+		await admin.query("delete from organization where id = $1", [
+			ids.organization,
+		]);
 		await admin.query('delete from "user" where id = any($1::text[])', [users]);
 	}
 
@@ -238,7 +263,14 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 		await admin.query(
 			`insert into employee (id, user_id, organization_id, role, updated_at) values
 			 ($1, $2, $5, 'employee', $6), ($3, $4, $5, 'admin', $6)`,
-			[ids.employee, ids.employeeUser, ids.owner, ids.ownerUser, ids.organization, timestamp],
+			[
+				ids.employee,
+				ids.employeeUser,
+				ids.owner,
+				ids.ownerUser,
+				ids.organization,
+				timestamp,
+			],
 		);
 		await admin.query(
 			`insert into user_settings (user_id, timezone, updated_at) values
@@ -258,9 +290,19 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 			 ($1, $4, 'T1295 required', 'active', true, false, $5, now()),
 			 ($2, $4, 'T1295 lapsed', 'active', true, true, $5, now()),
 			 ($3, $4, 'T1295 plain', 'active', true, false, $5, now())`,
-			[ids.project, ids.lapsedProject, ids.plainProject, ids.organization, ids.ownerUser],
+			[
+				ids.project,
+				ids.lapsedProject,
+				ids.plainProject,
+				ids.organization,
+				ids.ownerUser,
+			],
 		);
-		for (const projectId of [ids.project, ids.lapsedProject, ids.plainProject]) {
+		for (const projectId of [
+			ids.project,
+			ids.lapsedProject,
+			ids.plainProject,
+		]) {
 			await admin.query(
 				`insert into project_assignment (project_id, organization_id, assignment_type, employee_id, created_by)
 				 values ($1, $2, 'employee', $3, $4)`,
@@ -322,10 +364,17 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 
 	/** A bot clock-out of the employee's running work, keeping its project. */
 	async function botClockOut(instant: Instant) {
-		const [subject] = await db.select().from(employee).where(eq(employee.id, ids.employee));
+		const [subject] = await db
+			.select()
+			.from(employee)
+			.where(eq(employee.id, ids.employee));
 		if (!subject) throw new Error("The employee is missing");
 		const result = await clockOutAs(
-			{ userId: ids.employeeUser, employee: subject, resolveTimezone: async () => "Europe/Berlin" },
+			{
+				userId: ids.employeeUser,
+				employee: subject,
+				resolveTimezone: async () => "Europe/Berlin",
+			},
 			undefined,
 			undefined,
 			{
@@ -344,7 +393,9 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 	 * `laterDays` after the first work day.
 	 */
 	async function botWork(projectId: string, laterDays = 0) {
-		const workPeriodId = await clockInEmployee(workStart.add({ hours: 24 * laterDays }));
+		const workPeriodId = await clockInEmployee(
+			workStart.add({ hours: 24 * laterDays }),
+		);
 		await bookRunning(workPeriodId, projectId);
 		await botClockOut(workEnd.add({ hours: 24 * laterDays }));
 		return workPeriodId;
@@ -371,8 +422,18 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 		return rows;
 	}
 
-	const marked = { project: ids.project, task: null, period: true, allocation: true };
-	const unmarked = (project: string) => ({ project, task: null, period: false, allocation: false });
+	const marked = {
+		project: ids.project,
+		task: null,
+		period: true,
+		allocation: true,
+	};
+	const unmarked = (project: string) => ({
+		project,
+		task: null,
+		period: false,
+		allocation: false,
+	});
 
 	describe.each(["legacy", "adopted"] as const)(
 		"writers where nobody can pick a task in a %s organization",
@@ -391,29 +452,41 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 
 			it("marks the work a break closes, not the resumed work", async () => {
 				await requireTasks();
-				const workPeriodId = await clockInEmployee(systemClock.nowInstant().subtract({ hours: 2 }));
+				const workPeriodId = await clockInEmployee(
+					systemClock.nowInstant().subtract({ hours: 2 }),
+				);
 				await bookRunning(workPeriodId, ids.project);
 
 				actAs(ids.employeeUser);
 				await expect(
-					addBreakToActiveSession(15, { submissionId: randomUUID(), browserTimezone: "UTC" }),
+					addBreakToActiveSession(15, {
+						submissionId: randomUUID(),
+						browserTimezone: "UTC",
+					}),
 				).resolves.toMatchObject({ success: true });
 
 				const [closed, resumed] = await markers();
 				expect(closed).toEqual(marked);
 				// The resumed work is live: no marker and no canonical record yet.
-				expect(resumed).toMatchObject({ task: null, period: false, allocation: null });
+				expect(resumed).toMatchObject({
+					task: null,
+					period: false,
+					allocation: null,
+				});
 			});
 
 			it.each([
 				["the requirement is off", ids.project],
 				["the requirement lapsed with no open task", ids.lapsedProject],
 				["the project requires no task", ids.plainProject],
-			])("leaves a bot clock-out unmarked while %s", async (_case, projectId) => {
-				await botWork(projectId);
+			])(
+				"leaves a bot clock-out unmarked while %s",
+				async (_case, projectId) => {
+					await botWork(projectId);
 
-				expect(await markers()).toEqual([unmarked(projectId)]);
-			});
+					expect(await markers()).toEqual([unmarked(projectId)]);
+				},
+			);
 
 			it("never marks bookings made before the requirement was turned on", async () => {
 				await botWork(ids.project);
@@ -470,10 +543,13 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 				).resolves.toEqual({ success: true, data: { workPeriodId } });
 
 				expect(await markers()).toEqual([marked]);
-				const { rows } = await admin.query("select start_time from work_period where id = $1", [
-					workPeriodId,
+				const { rows } = await admin.query(
+					"select start_time from work_period where id = $1",
+					[workPeriodId],
+				);
+				expect(rows).toEqual([
+					{ start_time: new Date("2026-07-22T05:30:00Z") },
 				]);
-				expect(rows).toEqual([{ start_time: new Date("2026-07-22T05:30:00Z") }]);
 			});
 
 			it("an admin time edit keeps the marker", async () => {
@@ -523,7 +599,9 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 					"select end_time from work_period where id = $1",
 					[workPeriodId],
 				);
-				expect(edited).toEqual([{ end_time: new Date("2026-07-22T11:00:00Z") }]);
+				expect(edited).toEqual([
+					{ end_time: new Date("2026-07-22T11:00:00Z") },
+				]);
 			});
 		},
 	);
@@ -536,7 +614,11 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 				await requireTasks();
 			});
 
-			function changeProject(workPeriodId: string, projectId: string, taskId?: string) {
+			function changeProject(
+				workPeriodId: string,
+				projectId: string,
+				taskId?: string,
+			) {
 				actAs(ids.employeeUser);
 				return updateWorkPeriodProject(workPeriodId, projectId, taskId);
 			}
@@ -556,7 +638,10 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 			}
 
 			async function revisions() {
-				const { rows } = await admin.query<{ id: string; graph_revision: number }>(
+				const { rows } = await admin.query<{
+					id: string;
+					graph_revision: number;
+				}>(
 					`select id, graph_revision from work_period
 					 where organization_id = $1 and deleted_at is null order by start_time`,
 					[ids.organization],
@@ -567,19 +652,28 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 			it("adding a task to a marked booking clears its marker", async () => {
 				const workPeriodId = await botWork(ids.project);
 
-				await expect(changeProject(workPeriodId, ids.project, ids.task)).resolves.toMatchObject({
+				await expect(
+					changeProject(workPeriodId, ids.project, ids.task),
+				).resolves.toMatchObject({
 					success: true,
 				});
 
 				expect(await markers()).toEqual([
-					{ project: ids.project, task: ids.task, period: false, allocation: false },
+					{
+						project: ids.project,
+						task: ids.task,
+						period: false,
+						allocation: false,
+					},
 				]);
 			});
 
 			it("changing a marked booking's project clears its marker", async () => {
 				const workPeriodId = await botWork(ids.project);
 
-				await expect(changeProject(workPeriodId, ids.plainProject)).resolves.toMatchObject({
+				await expect(
+					changeProject(workPeriodId, ids.plainProject),
+				).resolves.toMatchObject({
 					success: true,
 				});
 
@@ -593,7 +687,9 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 				await botWork(ids.project, 2);
 				const before = await revisions();
 
-				await expect(saveRequirement(ids.project, false)).resolves.toMatchObject({
+				await expect(
+					saveRequirement(ids.project, false),
+				).resolves.toMatchObject({
 					success: true,
 				});
 
@@ -607,13 +703,17 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 
 			it("turning the requirement back on does not bring cleared markers back", async () => {
 				await botWork(ids.project);
-				await expect(saveRequirement(ids.project, false)).resolves.toMatchObject({
+				await expect(
+					saveRequirement(ids.project, false),
+				).resolves.toMatchObject({
 					success: true,
 				});
 
-				await expect(saveRequirement(ids.project, true)).resolves.toMatchObject({
-					success: true,
-				});
+				await expect(saveRequirement(ids.project, true)).resolves.toMatchObject(
+					{
+						success: true,
+					},
+				);
 
 				expect(await markers()).toEqual([unmarked(ids.project)]);
 			});
@@ -632,7 +732,9 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 					[ids.organization, only(rows).id, ids.employee],
 				);
 
-				await expect(saveRequirement(ids.project, false)).resolves.toMatchObject({
+				await expect(
+					saveRequirement(ids.project, false),
+				).resolves.toMatchObject({
 					success: true,
 				});
 
@@ -644,20 +746,31 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 
 				actAs(ids.ownerUser);
 				for (const taskId of [ids.task, ids.secondTask]) {
-					await expect(projectTasks.markProjectTaskDone(taskId)).resolves.toMatchObject({
+					await expect(
+						projectTasks.markProjectTaskDone(taskId),
+					).resolves.toMatchObject({
 						success: true,
 					});
 				}
 				expect(await markers()).toEqual([marked]);
 
-				await expect(projectTasks.reopenProjectTask(ids.task)).resolves.toMatchObject({
+				await expect(
+					projectTasks.reopenProjectTask(ids.task),
+				).resolves.toMatchObject({
 					success: true,
 				});
-				await expect(changeProject(workPeriodId, ids.project, ids.task)).resolves.toMatchObject({
+				await expect(
+					changeProject(workPeriodId, ids.project, ids.task),
+				).resolves.toMatchObject({
 					success: true,
 				});
 				expect(await markers()).toEqual([
-					{ project: ids.project, task: ids.task, period: false, allocation: false },
+					{
+						project: ids.project,
+						task: ids.task,
+						period: false,
+						allocation: false,
+					},
 				]);
 			});
 		},
@@ -702,7 +815,9 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 			 * Runs `concurrent` while another transaction holds the project row after
 			 * turning its requirement on, then commits that change.
 			 */
-			async function whileRequirementTurnsOn(concurrent: () => Promise<unknown>) {
+			async function whileRequirementTurnsOn(
+				concurrent: () => Promise<unknown>,
+			) {
 				const client = await admin.connect();
 				let open = false;
 				try {
@@ -734,7 +849,9 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 
 				const saved = await whileRequirementTurnsOn(() => {
 					actAs(ids.ownerUser);
-					return projectSettings.updateProject(ids.project, { requiresTask: false });
+					return projectSettings.updateProject(ids.project, {
+						requiresTask: false,
+					});
 				});
 
 				expect(saved).toMatchObject({ success: true });
@@ -749,7 +866,11 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 			await requireTasks();
 		});
 
-		function changeProject(workPeriodId: string, projectId: string, taskId: string) {
+		function changeProject(
+			workPeriodId: string,
+			projectId: string,
+			taskId: string,
+		) {
 			actAs(ids.employeeUser);
 			return updateWorkPeriodProject(workPeriodId, projectId, taskId);
 		}
@@ -763,7 +884,9 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 				[ids.organization, workPeriodId],
 			);
 
-			await expect(changeProject(workPeriodId, ids.project, ids.task)).resolves.toMatchObject({
+			await expect(
+				changeProject(workPeriodId, ids.project, ids.task),
+			).resolves.toMatchObject({
 				success: false,
 				code: "completed_work_review_required",
 			});
@@ -792,7 +915,9 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 			});
 
 			expect(edited).toMatchObject({ success: false });
-			expect(await markers()).toEqual([{ ...unmarked(ids.plainProject), allocation: true }]);
+			expect(await markers()).toEqual([
+				{ ...unmarked(ids.plainProject), allocation: true },
+			]);
 		});
 	});
 });

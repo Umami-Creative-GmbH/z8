@@ -28,7 +28,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -52,10 +54,15 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/logger", () => {
 	const record =
@@ -84,7 +91,11 @@ vi.mock("@/lib/logger", () => {
 
 vi.mock("@/lib/vault", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/vault")>()),
-	storeOrgSecret: async (organizationId: string, key: string, value: string) => {
+	storeOrgSecret: async (
+		organizationId: string,
+		key: string,
+		value: string,
+	) => {
 		harness.secrets.set(`${organizationId}|${key}`, value);
 	},
 	getOrgSecret: async (organizationId: string, key: string) =>
@@ -95,7 +106,9 @@ vi.mock("@/lib/vault", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/billable-time/accounting/registry", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/billable-time/accounting/registry")>()),
+	...(await importOriginal<
+		typeof import("@/lib/billable-time/accounting/registry")
+	>()),
 	getAccountingProviderRegistry: () => {
 		if (!harness.registry) throw new Error("No fake registry");
 		return harness.registry;
@@ -113,12 +126,10 @@ const {
 	unlinkCustomerContact,
 	updateAccountingDefaults,
 } = await import("./actions");
-const { createFakeAccountingTool, fakeAccountingProviderRegistry } = await import(
-	"@/lib/billable-time/accounting/fake-provider"
-);
-const { getCustomerContactLink, getEffectiveCustomerTaxTreatment } = await import(
-	"@/lib/billable-time/accounting/customer-accounting"
-);
+const { createFakeAccountingTool, fakeAccountingProviderRegistry } =
+	await import("@/lib/billable-time/accounting/fake-provider");
+const { getCustomerContactLink, getEffectiveCustomerTaxTreatment } =
+	await import("@/lib/billable-time/accounting/customer-accounting");
 const { openAccountingProvider, defaultAccountingDependencies } = await import(
 	"@/lib/billable-time/accounting/connection-store"
 );
@@ -139,7 +150,12 @@ const ids = {
 	beta: "90300000-0000-4000-8000-000000000002",
 	foreignCustomer: "90300000-0000-4000-8000-000000000003",
 } as const;
-const users = [ids.ownerUser, ids.adminUser, ids.memberUser, ids.otherOwnerUser];
+const users = [
+	ids.ownerUser,
+	ids.adminUser,
+	ids.memberUser,
+	ids.otherOwnerUser,
+];
 
 const lexwareContacts = [
 	{
@@ -149,7 +165,13 @@ const lexwareContacts = [
 		address: "Hauptstr. 1\n10115 Berlin",
 		vatId: "DE123456789",
 	},
-	{ id: "lx-c-2", customerNumber: "10002", name: "Acme Holding AG", address: null, vatId: null },
+	{
+		id: "lx-c-2",
+		customerNumber: "10002",
+		name: "Acme Holding AG",
+		address: null,
+		vatId: null,
+	},
 ];
 
 const standard = { kind: "domestic_standard", rate: "19" } as const;
@@ -247,7 +269,13 @@ describe("accounting connection on PostgreSQL", () => {
 			kind: "sevdesk",
 			apiKey: SEVDESK_KEY,
 			contacts: [
-				{ id: "4711", customerNumber: "K-1", name: "Acme GmbH", address: null, vatId: null },
+				{
+					id: "4711",
+					customerNumber: "K-1",
+					name: "Acme GmbH",
+					address: null,
+					vatId: null,
+				},
 			],
 			accountRef: "sevdesk-client-1",
 			accountLabel: null,
@@ -316,7 +344,9 @@ describe("accounting connection on PostgreSQL", () => {
 				capabilities: { maxDraftLines: 300, supportedCurrencies: ["EUR"] },
 			});
 			expect(harness.secrets).toEqual(
-				new Map([[`${ids.organization}|accounting/${view.id}/api_key`, LEXWARE_KEY]]),
+				new Map([
+					[`${ids.organization}|accounting/${view.id}/api_key`, LEXWARE_KEY],
+				]),
 			);
 			expect(await connections()).toEqual([
 				expect.objectContaining({
@@ -335,7 +365,10 @@ describe("accounting connection on PostgreSQL", () => {
 					entity_id: view.id,
 					changes: expect.objectContaining({
 						providerKind: { from: null, to: "lexware_office" },
-						defaultTaxTreatment: { from: null, to: { kind: "domestic_standard", rate: "19.00" } },
+						defaultTaxTreatment: {
+							from: null,
+							to: { kind: "domestic_standard", rate: "19.00" },
+						},
 					}),
 				}),
 			]);
@@ -351,8 +384,18 @@ describe("accounting connection on PostgreSQL", () => {
 						{ kind: "sevdesk", available: true },
 					],
 					customers: [
-						{ customerId: ids.acme, name: "Acme", contactLink: null, taxOverride: null },
-						{ customerId: ids.beta, name: "Beta", contactLink: null, taxOverride: null },
+						{
+							customerId: ids.acme,
+							name: "Acme",
+							contactLink: null,
+							taxOverride: null,
+						},
+						{
+							customerId: ids.beta,
+							name: "Beta",
+							contactLink: null,
+							taxOverride: null,
+						},
 					],
 				},
 			});
@@ -365,7 +408,10 @@ describe("accounting connection on PostgreSQL", () => {
 				defaultAccountingDependencies(),
 				ids.organization,
 			);
-			expect(opened).toMatchObject({ ok: true, connection: { providerKind: "lexware_office" } });
+			expect(opened).toMatchObject({
+				ok: true,
+				connection: { providerKind: "lexware_office" },
+			});
 			expect(lexware.openedWithKeys()).toEqual([LEXWARE_KEY]);
 		});
 
@@ -421,7 +467,10 @@ describe("accounting connection on PostgreSQL", () => {
 					apiKey: SEVDESK_KEY,
 					defaultTaxTreatment: standard,
 				}),
-			).resolves.toMatchObject({ success: false, error: "Choose an accounting tool" });
+			).resolves.toMatchObject({
+				success: false,
+				error: "Choose an accounting tool",
+			});
 			expect(harness.secrets.size).toBe(0);
 			expect(await connections()).toEqual([]);
 			expect(await auditEntries()).toEqual([]);
@@ -429,7 +478,9 @@ describe("accounting connection on PostgreSQL", () => {
 
 		it("refuses a tool without a connector in this installation", async () => {
 			harness.registry = fakeAccountingProviderRegistry(sevdesk);
-			await expect(connectLexware()).rejects.toThrow("This accounting tool can't be connected yet");
+			await expect(connectLexware()).rejects.toThrow(
+				"This accounting tool can't be connected yet",
+			);
 			await expect(getAccountingSettings()).resolves.toMatchObject({
 				success: true,
 				data: {
@@ -450,14 +501,25 @@ describe("accounting connection on PostgreSQL", () => {
 			});
 			if (!second.success) throw new Error(second.error);
 
-			expect((await connections()).map((row) => [row.id, row.provider_kind, row.status])).toEqual([
+			expect(
+				(await connections()).map((row) => [
+					row.id,
+					row.provider_kind,
+					row.status,
+				]),
+			).toEqual([
 				[first.id, "lexware_office", "replaced"],
 				[second.data.id, "sevdesk", "active"],
 			]);
 			expect([...harness.secrets.entries()]).toEqual([
-				[`${ids.organization}|accounting/${second.data.id}/api_key`, SEVDESK_KEY],
+				[
+					`${ids.organization}|accounting/${second.data.id}/api_key`,
+					SEVDESK_KEY,
+				],
 			]);
-			expect((await auditEntries("accounting_connection")).at(-1)).toMatchObject({
+			expect(
+				(await auditEntries("accounting_connection")).at(-1),
+			).toMatchObject({
 				action: "billable_time.accounting_connection_replaced",
 				entity_id: second.data.id,
 				changes: {
@@ -503,10 +565,13 @@ describe("accounting connection on PostgreSQL", () => {
 				}),
 			).resolves.toMatchObject({
 				success: true,
-				data: { defaultTaxTreatment: { kind: "third_country_service", rate: "0.00" } },
+				data: {
+					defaultTaxTreatment: { kind: "third_country_service", rate: "0.00" },
+				},
 			});
 			const updates = (await auditEntries("accounting_connection")).filter(
-				(entry) => entry.action === "billable_time.accounting_connection_updated",
+				(entry) =>
+					entry.action === "billable_time.accounting_connection_updated",
 			);
 			expect(updates).toEqual([
 				expect.objectContaining({
@@ -522,13 +587,19 @@ describe("accounting connection on PostgreSQL", () => {
 
 		it("removes the connection, deletes its key and audits it", async () => {
 			const view = await connectLexware();
-			await expect(removeAccountingTool({ connectionId: view.id })).resolves.toEqual({
+			await expect(
+				removeAccountingTool({ connectionId: view.id }),
+			).resolves.toEqual({
 				success: true,
 				data: { removed: true },
 			});
 			expect(harness.secrets.size).toBe(0);
-			expect((await connections()).map((row) => row.status)).toEqual(["removed"]);
-			expect((await auditEntries("accounting_connection")).at(-1)).toMatchObject({
+			expect((await connections()).map((row) => row.status)).toEqual([
+				"removed",
+			]);
+			expect(
+				(await auditEntries("accounting_connection")).at(-1),
+			).toMatchObject({
 				action: "billable_time.accounting_connection_removed",
 				entity_id: view.id,
 			});
@@ -540,7 +611,9 @@ describe("accounting connection on PostgreSQL", () => {
 				success: false,
 				error: "Connect an accounting tool first",
 			});
-			await expect(removeAccountingTool({ connectionId: view.id })).resolves.toMatchObject({
+			await expect(
+				removeAccountingTool({ connectionId: view.id }),
+			).resolves.toMatchObject({
 				success: false,
 			});
 		});
@@ -560,7 +633,9 @@ describe("accounting connection on PostgreSQL", () => {
 			lexware.failNext("searchContacts", "not_performed");
 			await expect(searchContacts({ query: "acme" })).resolves.toMatchObject({
 				success: false,
-				error: expect.stringContaining("The accounting tool could not be reached"),
+				error: expect.stringContaining(
+					"The accounting tool could not be reached",
+				),
 			});
 		});
 
@@ -573,7 +648,11 @@ describe("accounting connection on PostgreSQL", () => {
 				data: {
 					customer: {
 						customerId: ids.acme,
-						contactLink: { contactId: "lx-c-1", contactName: "Acme GmbH", contactNumber: "10001" },
+						contactLink: {
+							contactId: "lx-c-1",
+							contactName: "Acme GmbH",
+							contactNumber: "10001",
+						},
 					},
 					connection: { providerKind: "lexware_office" },
 				},
@@ -581,7 +660,9 @@ describe("accounting connection on PostgreSQL", () => {
 			// The same contact again changes nothing.
 			await linkCustomerContact({ customerId: ids.acme, contactId: "lx-c-1" });
 			await linkCustomerContact({ customerId: ids.acme, contactId: "lx-c-2" });
-			await expect(unlinkCustomerContact({ customerId: ids.acme })).resolves.toMatchObject({
+			await expect(
+				unlinkCustomerContact({ customerId: ids.acme }),
+			).resolves.toMatchObject({
 				success: true,
 				data: { customer: { contactLink: null } },
 			});
@@ -596,21 +677,32 @@ describe("accounting connection on PostgreSQL", () => {
 				{
 					action: "billable_time.contact_link_set",
 					entity: ids.acme,
-					contact: { from: null, to: { contactId: "lx-c-1", name: "Acme GmbH", number: "10001" } },
+					contact: {
+						from: null,
+						to: { contactId: "lx-c-1", name: "Acme GmbH", number: "10001" },
+					},
 				},
 				{
 					action: "billable_time.contact_link_set",
 					entity: ids.acme,
 					contact: {
 						from: { contactId: "lx-c-1", name: "Acme GmbH", number: "10001" },
-						to: { contactId: "lx-c-2", name: "Acme Holding AG", number: "10002" },
+						to: {
+							contactId: "lx-c-2",
+							name: "Acme Holding AG",
+							number: "10002",
+						},
 					},
 				},
 				{
 					action: "billable_time.contact_link_removed",
 					entity: ids.acme,
 					contact: {
-						from: { contactId: "lx-c-2", name: "Acme Holding AG", number: "10002" },
+						from: {
+							contactId: "lx-c-2",
+							name: "Acme Holding AG",
+							number: "10002",
+						},
 						to: null,
 					},
 				},
@@ -629,7 +721,10 @@ describe("accounting connection on PostgreSQL", () => {
 				code: "NotFoundError",
 			});
 			await expect(
-				linkCustomerContact({ customerId: ids.foreignCustomer, contactId: "lx-c-1" }),
+				linkCustomerContact({
+					customerId: ids.foreignCustomer,
+					contactId: "lx-c-1",
+				}),
 			).resolves.toMatchObject({ success: false, code: "NotFoundError" });
 			await expect(
 				getCustomerAccounting({ customerId: ids.foreignCustomer }),
@@ -650,7 +745,9 @@ describe("accounting connection on PostgreSQL", () => {
 
 			// A rotated key of the same Lexware account keeps the link.
 			await connectLexware(LEXWARE_KEY_ROTATED);
-			await expect(getCustomerContactLink(db, ids.organization, ids.acme)).resolves.toMatchObject({
+			await expect(
+				getCustomerContactLink(db, ids.organization, ids.acme),
+			).resolves.toMatchObject({
 				contactId: "lx-c-1",
 			});
 
@@ -660,10 +757,14 @@ describe("accounting connection on PostgreSQL", () => {
 				apiKey: SEVDESK_KEY,
 				defaultTaxTreatment: standard,
 			});
-			await expect(getCustomerContactLink(db, ids.organization, ids.acme)).resolves.toBeNull();
+			await expect(
+				getCustomerContactLink(db, ids.organization, ids.acme),
+			).resolves.toBeNull();
 
 			await connectLexware();
-			await expect(getCustomerContactLink(db, ids.organization, ids.acme)).resolves.toMatchObject({
+			await expect(
+				getCustomerContactLink(db, ids.organization, ids.acme),
+			).resolves.toMatchObject({
 				contactId: "lx-c-1",
 			});
 		});
@@ -687,7 +788,11 @@ describe("accounting connection on PostgreSQL", () => {
 				}),
 			).resolves.toMatchObject({
 				success: true,
-				data: { customer: { taxOverride: { kind: "eu_reverse_charge", rate: "0.00" } } },
+				data: {
+					customer: {
+						taxOverride: { kind: "eu_reverse_charge", rate: "0.00" },
+					},
+				},
 			});
 			await expect(
 				getEffectiveCustomerTaxTreatment(db, ids.organization, ids.acme),
@@ -700,8 +805,14 @@ describe("accounting connection on PostgreSQL", () => {
 				getEffectiveCustomerTaxTreatment(db, ids.organization, ids.beta),
 			).resolves.toMatchObject({ source: "connection" });
 
-			await setCustomerTaxTreatment({ customerId: ids.acme, taxTreatment: null });
-			await setCustomerTaxTreatment({ customerId: ids.acme, taxTreatment: null });
+			await setCustomerTaxTreatment({
+				customerId: ids.acme,
+				taxTreatment: null,
+			});
+			await setCustomerTaxTreatment({
+				customerId: ids.acme,
+				taxTreatment: null,
+			});
 			await expect(
 				getEffectiveCustomerTaxTreatment(db, ids.organization, ids.acme),
 			).resolves.toMatchObject({ source: "connection" });
@@ -714,11 +825,19 @@ describe("accounting connection on PostgreSQL", () => {
 			).toEqual([
 				[
 					"billable_time.customer_tax_treatment_set",
-					{ customerId: ids.acme, from: null, to: { kind: "eu_reverse_charge", rate: "0.00" } },
+					{
+						customerId: ids.acme,
+						from: null,
+						to: { kind: "eu_reverse_charge", rate: "0.00" },
+					},
 				],
 				[
 					"billable_time.customer_tax_treatment_cleared",
-					{ customerId: ids.acme, from: { kind: "eu_reverse_charge", rate: "0.00" }, to: null },
+					{
+						customerId: ids.acme,
+						from: { kind: "eu_reverse_charge", rate: "0.00" },
+						to: null,
+					},
 				],
 			]);
 		});
@@ -755,15 +874,26 @@ describe("accounting connection on PostgreSQL", () => {
 				}),
 			).resolves.toMatchObject(refused);
 			await expect(
-				updateAccountingDefaults({ connectionId: view.id, defaultTaxTreatment: standard }),
+				updateAccountingDefaults({
+					connectionId: view.id,
+					defaultTaxTreatment: standard,
+				}),
 			).resolves.toMatchObject(refused);
-			await expect(removeAccountingTool({ connectionId: view.id })).resolves.toMatchObject(refused);
-			await expect(searchContacts({ query: "acme" })).resolves.toMatchObject(refused);
-			await expect(getCustomerAccounting({ customerId: ids.acme })).resolves.toMatchObject(refused);
+			await expect(
+				removeAccountingTool({ connectionId: view.id }),
+			).resolves.toMatchObject(refused);
+			await expect(searchContacts({ query: "acme" })).resolves.toMatchObject(
+				refused,
+			);
+			await expect(
+				getCustomerAccounting({ customerId: ids.acme }),
+			).resolves.toMatchObject(refused);
 			await expect(
 				linkCustomerContact({ customerId: ids.acme, contactId: "lx-c-1" }),
 			).resolves.toMatchObject(refused);
-			await expect(unlinkCustomerContact({ customerId: ids.acme })).resolves.toMatchObject(refused);
+			await expect(
+				unlinkCustomerContact({ customerId: ids.acme }),
+			).resolves.toMatchObject(refused);
 			await expect(
 				setCustomerTaxTreatment({ customerId: ids.acme, taxTreatment: null }),
 			).resolves.toMatchObject(refused);
@@ -774,21 +904,29 @@ describe("accounting connection on PostgreSQL", () => {
 			actAs(ids.otherOwnerUser, ids.otherOrganization);
 			await expect(getAccountingSettings()).resolves.toMatchObject({
 				success: true,
-				data: { connection: null, customers: [{ customerId: ids.foreignCustomer }] },
+				data: {
+					connection: null,
+					customers: [{ customerId: ids.foreignCustomer }],
+				},
 			});
-			await expect(removeAccountingTool({ connectionId: view.id })).resolves.toMatchObject({
+			await expect(
+				removeAccountingTool({ connectionId: view.id }),
+			).resolves.toMatchObject({
 				success: false,
 			});
 			await expect(
 				setCustomerTaxTreatment({ customerId: ids.acme, taxTreatment: null }),
 			).resolves.toMatchObject({ success: false, code: "NotFoundError" });
-			expect((await connections()).map((row) => row.status)).toEqual(["active"]);
+			expect((await connections()).map((row) => row.status)).toEqual([
+				"active",
+			]);
 		});
 
 		it("refuses everything while the module is off", async () => {
-			await admin.query("update organization set billable_time_enabled = false where id = $1", [
-				ids.organization,
-			]);
+			await admin.query(
+				"update organization set billable_time_enabled = false where id = $1",
+				[ids.organization],
+			);
 			const off = { success: false, error: "Billable Time is switched off" };
 			await expect(getAccountingSettings()).resolves.toMatchObject(off);
 			await expect(
@@ -832,10 +970,21 @@ describe("accounting connection on PostgreSQL", () => {
 
 		// Positive controls: the scanners do find what is stored and logged.
 		expect(await databaseRowsContaining("lexware-org-1")).toEqual(
-			expect.arrayContaining(["accounting_connection", "accounting_contact_link", "audit_log"]),
+			expect.arrayContaining([
+				"accounting_connection",
+				"accounting_contact_link",
+				"audit_log",
+			]),
 		);
-		expect(harness.logs.some((line) => line.includes(sevdeskView.data.id))).toBe(true);
-		for (const key of [LEXWARE_KEY, LEXWARE_KEY_ROTATED, SEVDESK_KEY, "sd-SECRET-wrong"]) {
+		expect(
+			harness.logs.some((line) => line.includes(sevdeskView.data.id)),
+		).toBe(true);
+		for (const key of [
+			LEXWARE_KEY,
+			LEXWARE_KEY_ROTATED,
+			SEVDESK_KEY,
+			"sd-SECRET-wrong",
+		]) {
 			expect(await databaseRowsContaining(key)).toEqual([]);
 			expect(harness.logs.filter((line) => line.includes(key))).toEqual([]);
 		}

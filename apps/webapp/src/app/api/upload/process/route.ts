@@ -7,16 +7,25 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
-import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
+import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
 import {
 	createAvatarStorageKey,
 	createOrganizationLogoStorageKey,
 } from "@/lib/storage/avatar-storage";
-import { getPublicUrl, S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
+import {
+	getPublicUrl,
+	S3_PUBLIC_BUCKET,
+	s3Client,
+} from "@/lib/storage/s3-client";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
 const MAX_FILE_SIZE = Number(env.IMAGE_MAX_UPLOAD_SIZE_BYTES);
-const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const ALLOWED_MIME_TYPES = [
+	"image/jpeg",
+	"image/png",
+	"image/webp",
+	"image/gif",
+];
 
 function formatFileSize(bytes: number): string {
 	const units = ["bytes", "KB", "MB", "GB"];
@@ -52,15 +61,30 @@ export async function POST(request: NextRequest) {
 		const { tusFileKey, uploadType, organizationId } = body;
 
 		if (!tusFileKey) {
-			return NextResponse.json({ error: "Missing tusFileKey" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Missing tusFileKey" },
+				{ status: 400 },
+			);
 		}
 
-		const validUploadTypes = ["avatar", "org-logo", "branding-logo", "branding-background"];
+		const validUploadTypes = [
+			"avatar",
+			"org-logo",
+			"branding-logo",
+			"branding-background",
+		];
 		if (!uploadType || !validUploadTypes.includes(uploadType)) {
-			return NextResponse.json({ error: "Invalid uploadType" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Invalid uploadType" },
+				{ status: 400 },
+			);
 		}
 
-		const requiresOrgId = ["org-logo", "branding-logo", "branding-background"].includes(uploadType);
+		const requiresOrgId = [
+			"org-logo",
+			"branding-logo",
+			"branding-background",
+		].includes(uploadType);
 		if (requiresOrgId && !organizationId) {
 			return NextResponse.json(
 				{ error: `Missing organizationId for ${uploadType}` },
@@ -70,9 +94,7 @@ export async function POST(request: NextRequest) {
 
 		// For org-logo and branding images, verify user is owner of the organization.
 		if (requiresOrgId && organizationId) {
-			if (
-				!(await canAccessOrganizationWithSso(session.session, organizationId))
-			)
+			if (!(await canAccessOrganization(session.session, organizationId)))
 				return NextResponse.json(
 					{ error: "SSO authentication required", code: "SSO_REQUIRED" },
 					{ status: 403 },
@@ -115,7 +137,10 @@ export async function POST(request: NextRequest) {
 
 		const byteArray = await getResponse.Body?.transformToByteArray();
 		if (!byteArray) {
-			return NextResponse.json({ error: "Failed to read file from S3" }, { status: 500 });
+			return NextResponse.json(
+				{ error: "Failed to read file from S3" },
+				{ status: 500 },
+			);
 		}
 		const buffer = Buffer.from(byteArray);
 
@@ -133,7 +158,9 @@ export async function POST(request: NextRequest) {
 		const fileType = await fileTypeFromBuffer(buffer);
 		if (!fileType || !ALLOWED_MIME_TYPES.includes(fileType.mime)) {
 			return NextResponse.json(
-				{ error: `Invalid file type. Allowed: ${ALLOWED_MIME_TYPES.join(", ")}` },
+				{
+					error: `Invalid file type. Allowed: ${ALLOWED_MIME_TYPES.join(", ")}`,
+				},
 				{ status: 400 },
 			);
 		}

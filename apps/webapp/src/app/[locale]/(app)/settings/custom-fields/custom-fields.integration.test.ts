@@ -18,7 +18,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -42,10 +44,15 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
@@ -53,12 +60,21 @@ vi.mock("@/lib/logger", () => ({
 		warn: () => {},
 		info: () => {},
 		debug: () => {},
-		child: () => ({ error: () => {}, warn: () => {}, info: () => {}, debug: () => {} }),
+		child: () => ({
+			error: () => {},
+			warn: () => {},
+			info: () => {},
+			debug: () => {},
+		}),
 	}),
 }));
 
-const { changeCustomFields, getCustomFieldDefinitions } = await import("./actions");
-const { listActiveCustomFields } = await import("@/lib/organization/custom-fields/definitions");
+const { changeCustomFields, getCustomFieldDefinitions } = await import(
+	"./actions"
+);
+const { listActiveCustomFields } = await import(
+	"@/lib/organization/custom-fields/definitions"
+);
 const { db } = await import("@/db");
 
 const ids = {
@@ -81,7 +97,9 @@ const users = [
 ];
 
 type Change = Parameters<typeof changeCustomFields>[0];
-type Fields = Awaited<ReturnType<typeof getCustomFieldDefinitions>> & { success: true };
+type Fields = Awaited<ReturnType<typeof getCustomFieldDefinitions>> & {
+	success: true;
+};
 
 const field = (overrides: Record<string, unknown> = {}) =>
 	({
@@ -116,7 +134,8 @@ describe("custom field definitions on PostgreSQL", () => {
 	async function apply(change: Change) {
 		const result = await changeCustomFields(change);
 		if (!result.success) throw new Error(`action failed: ${result.error}`);
-		if (!result.data.ok) throw new Error(`change refused: ${result.data.reason}`);
+		if (!result.data.ok)
+			throw new Error(`change refused: ${result.data.reason}`);
 		return result.data.fields;
 	}
 
@@ -130,7 +149,9 @@ describe("custom field definitions on PostgreSQL", () => {
 		const fields = await apply(field(overrides));
 		const name = (overrides.name as string | undefined) ?? "Personnel number";
 		const entity = (overrides.entity as string | undefined) ?? "employee";
-		const created = fields.find((f) => f.name === name && f.entity === entity && !f.archived);
+		const created = fields.find(
+			(f) => f.name === name && f.entity === entity && !f.archived,
+		);
 		if (!created) throw new Error("created field missing");
 		return created;
 	}
@@ -148,7 +169,10 @@ describe("custom field definitions on PostgreSQL", () => {
 			 order by timestamp, action, entity_id`,
 			[organizationId],
 		);
-		return rows.map((row) => ({ ...row, changes: row.changes ? JSON.parse(row.changes) : null }));
+		return rows.map((row) => ({
+			...row,
+			changes: row.changes ? JSON.parse(row.changes) : null,
+		}));
 	}
 
 	beforeEach(async () => {
@@ -216,15 +240,29 @@ describe("custom field definitions on PostgreSQL", () => {
 					number: { integerOnly: true, min: "0", max: "99" },
 				});
 				await create({ entity, name: "Date", type: "date", required: true });
-				await create({ entity, name: "Select", type: "select", options: ["Gold", "Silver"] });
-				await create({ entity, name: "Boolean", type: "boolean", tracked: true });
+				await create({
+					entity,
+					name: "Select",
+					type: "select",
+					options: ["Gold", "Silver"],
+				});
+				await create({
+					entity,
+					name: "Boolean",
+					type: "boolean",
+					tracked: true,
+				});
 			}
 
 			const result = (await getCustomFieldDefinitions()) as Fields;
 			expect(result.success).toBe(true);
 			expect(result.data).toHaveLength(15);
 
-			const projectFields = await listActiveCustomFields(db, ids.organization, "project");
+			const projectFields = await listActiveCustomFields(
+				db,
+				ids.organization,
+				"project",
+			);
 			expect(projectFields.map((f) => [f.name, f.type, f.position])).toEqual([
 				["Text", "text", 0],
 				["Number", "number", 1],
@@ -240,11 +278,16 @@ describe("custom field definitions on PostgreSQL", () => {
 				editLevel: "admin",
 			});
 			expect(projectFields[2]).toMatchObject({ required: true, number: null });
-			expect(projectFields[3].options.map((o) => [o.label, o.archived])).toEqual([
+			expect(
+				projectFields[3].options.map((o) => [o.label, o.archived]),
+			).toEqual([
 				["Gold", false],
 				["Silver", false],
 			]);
-			expect(projectFields[4]).toMatchObject({ tracked: true, required: false });
+			expect(projectFields[4]).toMatchObject({
+				tracked: true,
+				required: false,
+			});
 		});
 
 		it("renames a field and changes its configuration, with audit entries", async () => {
@@ -277,7 +320,10 @@ describe("custom field definitions on PostgreSQL", () => {
 				expect.objectContaining({
 					action: "custom_field.renamed",
 					entity_id: created.id,
-					changes: { before: { name: "Personnel number" }, after: { name: "Payroll number" } },
+					changes: {
+						before: { name: "Personnel number" },
+						after: { name: "Payroll number" },
+					},
 				}),
 				expect.objectContaining({
 					action: "custom_field.updated",
@@ -311,7 +357,9 @@ describe("custom field definitions on PostgreSQL", () => {
 				editLevel: "admin",
 			} as Change);
 
-			expect((await auditEntries()).map((e) => e.action)).toEqual(["custom_field.created"]);
+			expect((await auditEntries()).map((e) => e.action)).toEqual([
+				"custom_field.created",
+			]);
 		});
 
 		it("rejects changing the type or tracked flag after creation", async () => {
@@ -325,18 +373,24 @@ describe("custom field definitions on PostgreSQL", () => {
 				editLevel: "admin",
 			};
 
-			expect(await refusal({ ...update, type: "number" } as Change)).toBe("type_fixed");
-			expect(await refusal({ ...update, tracked: true } as Change)).toBe("tracked_fixed");
-			expect(await refusal({ ...update, type: "text", tracked: false } as Change)).toBe("accepted");
+			expect(await refusal({ ...update, type: "number" } as Change)).toBe(
+				"type_fixed",
+			);
+			expect(await refusal({ ...update, tracked: true } as Change)).toBe(
+				"tracked_fixed",
+			);
+			expect(
+				await refusal({ ...update, type: "text", tracked: false } as Change),
+			).toBe("accepted");
 		});
 
 		it("rejects an edit level broader than the visibility, and an edit level of employee", async () => {
-			expect(await refusal(field({ visibility: "admin", editLevel: "manager" }))).toBe(
-				"edit_level_broader_than_visibility",
-			);
-			expect(await refusal(field({ visibility: "employee", editLevel: "employee" }))).toBe(
-				"employees_never_edit",
-			);
+			expect(
+				await refusal(field({ visibility: "admin", editLevel: "manager" })),
+			).toBe("edit_level_broader_than_visibility");
+			expect(
+				await refusal(field({ visibility: "employee", editLevel: "employee" })),
+			).toBe("employees_never_edit");
 			const created = await create();
 			expect(
 				await refusal({
@@ -358,7 +412,9 @@ describe("custom field definitions on PostgreSQL", () => {
 
 		it("refuses a second active field with the same name on one entity", async () => {
 			await create();
-			expect(await refusal(field({ name: " personnel NUMBER " }))).toBe("name_taken");
+			expect(await refusal(field({ name: " personnel NUMBER " }))).toBe(
+				"name_taken",
+			);
 			expect(await refusal(field({ entity: "project" }))).toBe("accepted");
 		});
 	});
@@ -366,15 +422,22 @@ describe("custom field definitions on PostgreSQL", () => {
 	describe("the active-field cap", () => {
 		it("rejects a 26th active field for an entity, and archiving one frees a place", async () => {
 			const created = [];
-			for (let i = 1; i <= 25; i++) created.push(await create({ name: `Field ${i}` }));
+			for (let i = 1; i <= 25; i++)
+				created.push(await create({ name: `Field ${i}` }));
 
-			expect(await refusal(field({ name: "Field 26" }))).toBe("too_many_fields");
-			expect(await refusal(field({ name: "Field 26", entity: "customer" }))).toBe("accepted");
+			expect(await refusal(field({ name: "Field 26" }))).toBe(
+				"too_many_fields",
+			);
+			expect(
+				await refusal(field({ name: "Field 26", entity: "customer" })),
+			).toBe("accepted");
 
 			await apply({ kind: "archive", fieldId: created[0].id });
 			expect(await refusal(field({ name: "Field 26" }))).toBe("accepted");
 
-			expect(await refusal({ kind: "restore", fieldId: created[0].id })).toBe("too_many_fields");
+			expect(await refusal({ kind: "restore", fieldId: created[0].id })).toBe(
+				"too_many_fields",
+			);
 		});
 	});
 
@@ -384,10 +447,16 @@ describe("custom field definitions on PostgreSQL", () => {
 			const b = await create({ name: "B" });
 			const c = await create({ name: "C" });
 
-			await apply({ kind: "reorder", entity: "employee", fieldIds: [c.id, a.id, b.id] });
+			await apply({
+				kind: "reorder",
+				entity: "employee",
+				fieldIds: [c.id, a.id, b.id],
+			});
 
 			expect(
-				(await listActiveCustomFields(db, ids.organization, "employee")).map((f) => f.name),
+				(await listActiveCustomFields(db, ids.organization, "employee")).map(
+					(f) => f.name,
+				),
 			).toEqual(["C", "A", "B"]);
 			const reordered = (await auditEntries())
 				.filter((e) => e.action === "custom_field.reordered")
@@ -408,9 +477,13 @@ describe("custom field definitions on PostgreSQL", () => {
 			const archived = await create({ name: "Old" });
 			await apply({ kind: "archive", fieldId: archived.id });
 
-			expect(await refusal({ kind: "reorder", entity: "employee", fieldIds: [b.id] })).toBe(
-				"stale_order",
-			);
+			expect(
+				await refusal({
+					kind: "reorder",
+					entity: "employee",
+					fieldIds: [b.id],
+				}),
+			).toBe("stale_order");
 			expect(
 				await refusal({
 					kind: "reorder",
@@ -418,9 +491,13 @@ describe("custom field definitions on PostgreSQL", () => {
 					fieldIds: [b.id, a.id, archived.id],
 				}),
 			).toBe("stale_order");
-			expect(await refusal({ kind: "reorder", entity: "employee", fieldIds: [b.id, a.id] })).toBe(
-				"accepted",
-			);
+			expect(
+				await refusal({
+					kind: "reorder",
+					entity: "employee",
+					fieldIds: [b.id, a.id],
+				}),
+			).toBe("accepted");
 		});
 	});
 
@@ -430,9 +507,13 @@ describe("custom field definitions on PostgreSQL", () => {
 			const b = await create({ name: "B" });
 
 			const fields = await apply({ kind: "archive", fieldId: a.id });
-			expect(fields.find((f) => f.id === a.id)).toMatchObject({ archived: true });
+			expect(fields.find((f) => f.id === a.id)).toMatchObject({
+				archived: true,
+			});
 			expect(
-				(await listActiveCustomFields(db, ids.organization, "employee")).map((f) => f.name),
+				(await listActiveCustomFields(db, ids.organization, "employee")).map(
+					(f) => f.name,
+				),
 			).toEqual(["B"]);
 			expect(
 				await refusal({
@@ -447,12 +528,20 @@ describe("custom field definitions on PostgreSQL", () => {
 
 			await apply({ kind: "restore", fieldId: a.id });
 			expect(
-				(await listActiveCustomFields(db, ids.organization, "employee")).map((f) => f.name),
+				(await listActiveCustomFields(db, ids.organization, "employee")).map(
+					(f) => f.name,
+				),
 			).toEqual(["B", "A"]);
 			expect(b.position).toBe(1);
 			expect(
-				(await auditEntries()).filter((e) => e.entity_id === a.id).map((e) => e.action),
-			).toEqual(["custom_field.created", "custom_field.archived", "custom_field.restored"]);
+				(await auditEntries())
+					.filter((e) => e.entity_id === a.id)
+					.map((e) => e.action),
+			).toEqual([
+				"custom_field.created",
+				"custom_field.archived",
+				"custom_field.restored",
+			]);
 		});
 
 		it("refuses to restore a field whose name an active field now has", async () => {
@@ -460,7 +549,9 @@ describe("custom field definitions on PostgreSQL", () => {
 			await apply({ kind: "archive", fieldId: a.id });
 			await create({ name: "a" });
 
-			expect(await refusal({ kind: "restore", fieldId: a.id })).toBe("name_taken");
+			expect(await refusal({ kind: "restore", fieldId: a.id })).toBe(
+				"name_taken",
+			);
 		});
 
 		it("refuses to archive a payroll identifier field, also of an inactive configuration", async () => {
@@ -486,14 +577,19 @@ describe("custom field definitions on PostgreSQL", () => {
 				],
 			);
 
-			const outcome = await changeCustomFields({ kind: "archive", fieldId: payrollId.id });
+			const outcome = await changeCustomFields({
+				kind: "archive",
+				fieldId: payrollId.id,
+			});
 
 			expect(outcome).toEqual({
 				success: true,
 				data: {
 					ok: false,
 					reason: "used_as_payroll_identifier",
-					configurations: [formats.find((format) => format.id === "sage_lohn")?.name],
+					configurations: [
+						formats.find((format) => format.id === "sage_lohn")?.name,
+					],
 				},
 			});
 		});
@@ -501,33 +597,61 @@ describe("custom field definitions on PostgreSQL", () => {
 
 	describe("select options", () => {
 		it("adds, renames, reorders, archives and restores options", async () => {
-			const select = await create({ name: "Tier", type: "select", options: ["Gold"] });
+			const select = await create({
+				name: "Tier",
+				type: "select",
+				options: ["Gold"],
+			});
 			const gold = select.options[0];
 
-			let fields = await apply({ kind: "addOption", fieldId: select.id, label: "Silver" });
+			let fields = await apply({
+				kind: "addOption",
+				fieldId: select.id,
+				label: "Silver",
+			});
 			const silver = fields
 				.find((f) => f.id === select.id)
 				?.options.find((o) => o.label === "Silver");
 			if (!silver) throw new Error("option missing");
 
-			await apply({ kind: "renameOption", optionId: silver.id, label: "Platinum" });
-			await apply({ kind: "reorderOptions", fieldId: select.id, optionIds: [silver.id, gold.id] });
+			await apply({
+				kind: "renameOption",
+				optionId: silver.id,
+				label: "Platinum",
+			});
+			await apply({
+				kind: "reorderOptions",
+				fieldId: select.id,
+				optionIds: [silver.id, gold.id],
+			});
 			fields = await apply({ kind: "archiveOption", optionId: gold.id });
 
-			const [tier] = await listActiveCustomFields(db, ids.organization, "employee");
+			const [tier] = await listActiveCustomFields(
+				db,
+				ids.organization,
+				"employee",
+			);
 			expect(tier.options.map((o) => [o.label, o.archived])).toEqual([
 				["Platinum", false],
 				["Gold", true],
 			]);
-			expect(await refusal({ kind: "archiveOption", optionId: silver.id })).toBe(
-				"last_active_option",
-			);
-			expect(await refusal({ kind: "addOption", fieldId: select.id, label: "platinum" })).toBe(
-				"duplicate_option_label",
-			);
+			expect(
+				await refusal({ kind: "archiveOption", optionId: silver.id }),
+			).toBe("last_active_option");
+			expect(
+				await refusal({
+					kind: "addOption",
+					fieldId: select.id,
+					label: "platinum",
+				}),
+			).toBe("duplicate_option_label");
 
 			await apply({ kind: "restoreOption", optionId: gold.id });
-			const [restored] = await listActiveCustomFields(db, ids.organization, "employee");
+			const [restored] = await listActiveCustomFields(
+				db,
+				ids.organization,
+				"employee",
+			);
 			expect(restored.options.map((o) => [o.label, o.archived])).toEqual([
 				["Platinum", false],
 				["Gold", false],
@@ -550,7 +674,9 @@ describe("custom field definitions on PostgreSQL", () => {
 
 		it("refuses option changes on a field that is not a select field", async () => {
 			const text = await create();
-			expect(await refusal({ kind: "addOption", fieldId: text.id, label: "A" })).toBe("not_select");
+			expect(
+				await refusal({ kind: "addOption", fieldId: text.id, label: "A" }),
+			).toBe("not_select");
 		});
 	});
 
@@ -562,7 +688,11 @@ describe("custom field definitions on PostgreSQL", () => {
 		});
 
 		it("refuses managers, employee-role admins and employees", async () => {
-			for (const user of [ids.managerUser, ids.employeeAdminUser, ids.memberUser]) {
+			for (const user of [
+				ids.managerUser,
+				ids.employeeAdminUser,
+				ids.memberUser,
+			]) {
 				actAs(user);
 				expect(await getCustomFieldDefinitions()).toMatchObject({
 					success: false,
@@ -587,14 +717,20 @@ describe("custom field definitions on PostgreSQL", () => {
 	describe("organization scoping", () => {
 		it("never reads or writes another organization's definitions", async () => {
 			actAs(ids.otherOwnerUser, ids.otherOrganization);
-			const foreign = await create({ name: "Foreign", type: "select", options: ["X", "Y"] });
+			const foreign = await create({
+				name: "Foreign",
+				type: "select",
+				options: ["X", "Y"],
+			});
 			const foreignOption = foreign.options[0];
 
 			actAs(ids.adminUser);
 			const own = await create({ name: "Own" });
 			const result = (await getCustomFieldDefinitions()) as Fields;
 			expect(result.data.map((f) => f.name)).toEqual(["Own"]);
-			expect(await listActiveCustomFields(db, ids.organization, "employee")).toHaveLength(1);
+			expect(
+				await listActiveCustomFields(db, ids.organization, "employee"),
+			).toHaveLength(1);
 
 			const update = {
 				kind: "update",
@@ -605,17 +741,25 @@ describe("custom field definitions on PostgreSQL", () => {
 				editLevel: "admin",
 			} as Change;
 			expect(await refusal(update)).toBe("field_not_found");
-			expect(await refusal({ kind: "archive", fieldId: foreign.id })).toBe("field_not_found");
-			expect(await refusal({ kind: "restore", fieldId: foreign.id })).toBe("field_not_found");
-			expect(await refusal({ kind: "addOption", fieldId: foreign.id, label: "Z" })).toBe(
+			expect(await refusal({ kind: "archive", fieldId: foreign.id })).toBe(
+				"field_not_found",
+			);
+			expect(await refusal({ kind: "restore", fieldId: foreign.id })).toBe(
 				"field_not_found",
 			);
 			expect(
-				await refusal({ kind: "renameOption", optionId: foreignOption.id, label: "Hijacked" }),
+				await refusal({ kind: "addOption", fieldId: foreign.id, label: "Z" }),
+			).toBe("field_not_found");
+			expect(
+				await refusal({
+					kind: "renameOption",
+					optionId: foreignOption.id,
+					label: "Hijacked",
+				}),
 			).toBe("option_not_found");
-			expect(await refusal({ kind: "archiveOption", optionId: foreignOption.id })).toBe(
-				"option_not_found",
-			);
+			expect(
+				await refusal({ kind: "archiveOption", optionId: foreignOption.id }),
+			).toBe("option_not_found");
 			expect(
 				await refusal({
 					kind: "reorder",
@@ -625,7 +769,11 @@ describe("custom field definitions on PostgreSQL", () => {
 			).toBe("stale_order");
 
 			actAs(ids.otherOwnerUser, ids.otherOrganization);
-			const [untouched] = await listActiveCustomFields(db, ids.otherOrganization, "employee");
+			const [untouched] = await listActiveCustomFields(
+				db,
+				ids.otherOrganization,
+				"employee",
+			);
 			expect(untouched).toMatchObject({ name: "Foreign", position: 0 });
 			expect(untouched.options.map((o) => [o.label, o.archived])).toEqual([
 				["X", false],
@@ -636,7 +784,11 @@ describe("custom field definitions on PostgreSQL", () => {
 
 		it("refuses an option that points at another organization's field in the database", async () => {
 			actAs(ids.otherOwnerUser, ids.otherOrganization);
-			const foreign = await create({ name: "Foreign", type: "select", options: ["X"] });
+			const foreign = await create({
+				name: "Foreign",
+				type: "select",
+				options: ["X"],
+			});
 
 			await expect(
 				admin.query(

@@ -45,6 +45,29 @@ function createRequest(url: string): NextRequest {
 
 describe("GET /api/auth/app-login", () => {
 	afterEach(() => vi.restoreAllMocks());
+	it.each(["desktop", "mobile"])(
+		"preserves the %s PKCE continuation while requiring organization verification",
+		async (app) => {
+			mockState.getSession.mockResolvedValue({
+				user: { id: "user-1" },
+				session: { token: "session-token" },
+				mfaRequired: {
+					organizationId: "org-1",
+					deadline: "2026-01-01T00:00:00Z",
+				},
+			});
+			const scheme = app === "desktop" ? "z8" : "z8mobile";
+			const url = `https://app.example.com/api/auth/app-login?app=${app}&redirect=${scheme}://auth/callback&challenge=PKCE-CHALLENGE`;
+			const response = await GET(createRequest(url));
+			const target = new URL(response.headers.get("location") ?? "");
+			expect(target.pathname).toBe("/mfa");
+			expect(target.searchParams.get("organizationId")).toBe("org-1");
+			expect(target.searchParams.get("callbackUrl")).toBe(
+				new URL(url).pathname + new URL(url).search,
+			);
+			expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
+		},
+	);
 
 	it("identifies a session lookup failure without logging its request or cause", async () => {
 		const error = Object.assign(new Error("fixture-cookie-secret"), {
@@ -313,7 +336,9 @@ describe("GET /api/auth/app-login", () => {
 		expect(response.status).toBe(200);
 		expect(response.headers.get("cache-control")).toBe("private, no-store");
 		const html = await response.text();
-		expect(html).toContain('href="z8mobile://auth/callback?code=ONE-TIME-CODE"');
+		expect(html).toContain(
+			'href="z8mobile://auth/callback?code=ONE-TIME-CODE"',
+		);
 		expect(html).toContain("We are opening the Z8 app");
 		expect(html).not.toContain("session-token");
 	});
@@ -325,11 +350,16 @@ describe("GET /api/auth/app-login", () => {
 		const request = createRequest(
 			"https://app.example.com/api/auth/app-login?app=mobile&redirect=z8mobile://auth/callback&challenge=CODE-CHALLENGE",
 		);
-		request.headers.set("cookie", "__Secure-better-auth.session_token=revoked.signature");
+		request.headers.set(
+			"cookie",
+			"__Secure-better-auth.session_token=revoked.signature",
+		);
 
 		const response = await GET(request);
 
-		expect(new URL(response.headers.get("location") ?? "").pathname).toBe("/sign-in");
+		expect(new URL(response.headers.get("location") ?? "").pathname).toBe(
+			"/sign-in",
+		);
 		const cleared = response.headers
 			.getSetCookie()
 			.find((entry) => entry.startsWith("__Secure-better-auth.session_token="));
@@ -342,11 +372,16 @@ describe("GET /api/auth/app-login", () => {
 		const request = createRequest(
 			"https://app.example.com/api/auth/app-login?app=desktop&redirect=z8://auth/callback&challenge=CODE-CHALLENGE",
 		);
-		request.headers.set("cookie", "__Secure-better-auth.session_token=revoked.signature");
+		request.headers.set(
+			"cookie",
+			"__Secure-better-auth.session_token=revoked.signature",
+		);
 
 		const response = await GET(request);
 
-		expect(new URL(response.headers.get("location") ?? "").pathname).toBe("/sign-in");
+		expect(new URL(response.headers.get("location") ?? "").pathname).toBe(
+			"/sign-in",
+		);
 		expect(response.headers.getSetCookie()).toEqual([]);
 	});
 });

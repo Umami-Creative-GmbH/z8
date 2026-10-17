@@ -808,6 +808,18 @@ export const CRON_JOBS = {
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
 	},
+	"cron:organization-mfa-notices": {
+		schedule: "* * * * *",
+		description:
+			"Deliver mandatory organization MFA enrollment, reminder and security notices",
+		processor: async () => {
+			const { deliverMfaNotices } = await import(
+				"@/lib/organization-mfa/delivery"
+			);
+			return deliverMfaNotices();
+		},
+		defaultJobOptions: { attempts: 2, priority: 5 },
+	},
 } as const satisfies Record<string, CronJobDefinition>;
 
 // ============================================
