@@ -58,9 +58,10 @@ vi.mock("./use-shift-dialog-form", () => ({
 				handleSubmit: vi.fn(),
 			},
 			formValues: {
-				employeeId: "",
+				employeeId: "employee-1",
 				templateId: "",
-				subareaId: "",
+				subareaId: "subarea-1",
+				date: "2026-02-01",
 			},
 		};
 	},
@@ -72,7 +73,11 @@ vi.mock("./shift-dialog-sections", async () => {
 
 	return {
 		...actual,
-		ShiftDialogSections: () => <div>sections</div>,
+		ShiftDialogSections: ({
+			skillOverrideReasonRequested,
+		}: {
+			skillOverrideReasonRequested?: boolean;
+		}) => <div>{skillOverrideReasonRequested ? "reason requested" : "sections"}</div>,
 	};
 });
 
@@ -277,6 +282,42 @@ describe("ShiftDialog", () => {
 		const [, options] = toastWarningMock.mock.calls[0] as [string, { description: string }];
 		expect(options.description).toContain("Certificate on file: Forklift licence");
 		expect(options.description).not.toContain("First aid");
+	});
+
+	it("sends the planner's skill override reason with the shift (#893)", async () => {
+		renderShiftDialogWithLocalOpenState();
+
+		submitted.onSubmit?.({
+			employeeId: "employee-1",
+			subareaId: "subarea-1",
+			date: "2026-02-01",
+			skillOverrideReason: "Only one on duty",
+		});
+
+		await waitFor(() =>
+			expect(upsertShiftMock).toHaveBeenCalledWith(
+				expect.objectContaining({ skillOverrideReason: "Only one on duty" }),
+			),
+		);
+	});
+
+	it("asks for the reason when the server requires one instead of failing (#893)", async () => {
+		upsertShiftMock.mockResolvedValue({
+			success: false,
+			error: "Give a reason to assign an employee without every required skill",
+			refusal: "skill_override_reason_required",
+		});
+		renderShiftDialogWithLocalOpenState();
+
+		submitted.onSubmit?.({
+			employeeId: "employee-1",
+			templateId: "",
+			subareaId: "subarea-1",
+			date: "2026-02-01",
+		});
+
+		await waitFor(() => expect(screen.getByText("reason requested")).toBeTruthy());
+		expect(toastErrorMock).not.toHaveBeenCalled();
 	});
 });
 

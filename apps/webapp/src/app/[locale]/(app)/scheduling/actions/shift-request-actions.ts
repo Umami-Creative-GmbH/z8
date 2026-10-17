@@ -5,7 +5,7 @@ import {
 	ShiftRequestService,
 	type ShiftRequestWithRelations,
 } from "@/lib/effect/services/shift-request.service";
-import type { ShiftRequest, SwapRequestInput } from "../types";
+import type { ApproveShiftRequestInput, ShiftRequest, SwapRequestInput } from "../types";
 import {
 	requireCurrentEmployee,
 	requireManagerEmployee,
@@ -59,6 +59,7 @@ export async function requestShiftPickup(
 
 export async function approveShiftRequest(
 	requestId: string,
+	input: ApproveShiftRequestInput = {},
 ): Promise<SchedulingActionResult<ShiftRequest>> {
 	const effect = Effect.gen(function* () {
 		const shiftRequestService = yield* ShiftRequestService;
@@ -72,6 +73,8 @@ export async function approveShiftRequest(
 			currentEmployee.organizationId,
 			requestId,
 			currentEmployee.id,
+			// Only the reason comes from the client; the approver is the session's employee.
+			{ skillOverrideReason: input.skillOverrideReason },
 		);
 	});
 

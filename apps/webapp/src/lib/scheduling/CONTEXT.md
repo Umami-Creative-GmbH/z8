@@ -44,6 +44,14 @@ _Avoid_: expires at, valid until
 An employee skill whose skill expiry date is before the day in question: the shift date when planning a shift, the organization's today for reminders.
 _Avoid_: invalid skill, lapsed skill
 
+**Required skill** / **Preferred skill**:
+A skill a subarea or shift template asks for. Without a required skill, assigning the employee is a skill override; a missing or expired preferred skill is only shown. When the subarea and the template both name a skill, required wins.
+_Avoid_: hard/soft requirement, optional skill
+
+**Skill override**:
+Assigning an employee to a shift while a required skill is missing or expired on the shift date. The planner gives a reason, and the override is recorded with the assignment in one transaction: by a shift save or a shift request approval. A save that keeps the employee, shift date, subarea and template needs no new override (`scheduling/skill-override.ts`).
+_Avoid_: exception, waiver, skill warning (the warning is what the planner sees before deciding)
+
 ### Staffing
 
 **Staffing suggestion**:

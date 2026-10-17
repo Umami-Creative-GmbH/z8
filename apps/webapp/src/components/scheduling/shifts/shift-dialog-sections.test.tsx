@@ -4,6 +4,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { AppLocaleProvider } from "@/components/providers/app-locale-provider";
+import type { SkillValidationResult } from "@/lib/scheduling/skill-validation";
 import type { StaffingSuggestion } from "@/lib/scheduling/staffing/types";
 import { ShiftDialogSections } from "./shift-dialog-sections";
 import { useShiftDialogForm } from "./use-shift-dialog-form";
@@ -23,15 +24,31 @@ const suggestion: StaffingSuggestion = {
 	remainingContractedMinutes: null,
 };
 
+const forkliftMissing: SkillValidationResult = {
+	isQualified: false,
+	missingSkills: [{ id: "skill-1", name: "Forklift", category: "equipment", isRequired: true }],
+	expiredSkills: [],
+};
+
+const frenchMissing: SkillValidationResult = {
+	isQualified: true,
+	missingSkills: [{ id: "skill-2", name: "French", category: "language", isRequired: false }],
+	expiredSkills: [],
+};
+
 function Sections({
 	defaultDate,
 	isManager = true,
 	staffing = null,
+	skillValidation = null,
+	skillOverrideReasonRequested = false,
 	onSubmit = vi.fn(),
 }: {
 	defaultDate: string;
 	isManager?: boolean;
 	staffing?: ComponentProps<typeof ShiftDialogSections>["staffing"];
+	skillValidation?: SkillValidationResult | null;
+	skillOverrideReasonRequested?: boolean;
 	onSubmit?: () => void;
 }) {
 	const { form, formValues } = useShiftDialogForm({
@@ -52,17 +69,81 @@ function Sections({
 				templates={[]}
 				locations={[]}
 				employees={[]}
-				skillValidation={null}
+				skillValidation={skillValidation ?? undefined}
 				isValidatingSkills={false}
 				isEditing={false}
 				shift={null}
 				staffing={staffing}
+				skillOverrideReasonRequested={skillOverrideReasonRequested}
 			/>
 			<output data-testid="date-value">{formValues.date}</output>
 			<output data-testid="employee-value">{formValues.employeeId ?? "open"}</output>
+			<output data-testid="reason-value">{formValues.skillOverrideReason}</output>
 		</>
 	);
 }
+
+const secondSuggestion: StaffingSuggestion = {
+	...suggestion,
+	employeeId: "employee-8",
+	displayName: "Ben Ott",
+};
+
+describe("ShiftDialogSections skill override reason (#893)", () => {
+	const staffing = {
+		suggestions: [suggestion, secondSuggestion],
+		isLoading: false,
+		isError: false,
+	};
+
+	it("asks for a reason once an employee without a required skill is picked", () => {
+		render(
+			<Sections defaultDate="2026-10-23" staffing={staffing} skillValidation={forkliftMissing} />,
+		);
+		expect(screen.queryByLabelText("Reason for the skill override")).toBeNull();
+
+		fireEvent.click(screen.getAllByRole("button", { name: "Assign {name}" })[0]);
+		fireEvent.change(screen.getByLabelText("Reason for the skill override"), {
+			target: { value: "Only one on duty" },
+		});
+
+		expect(screen.getByTestId("reason-value").textContent).toBe("Only one on duty");
+	});
+
+	it("drops the reason when another employee is picked", () => {
+		render(
+			<Sections defaultDate="2026-10-23" staffing={staffing} skillValidation={forkliftMissing} />,
+		);
+		const [first, second] = screen.getAllByRole("button", { name: "Assign {name}" });
+		fireEvent.click(first);
+		fireEvent.change(screen.getByLabelText("Reason for the skill override"), {
+			target: { value: "Only one on duty" },
+		});
+
+		fireEvent.click(second);
+
+		expect(screen.getByTestId("reason-value").textContent).toBe("");
+	});
+
+	it("asks for no reason when only a preferred skill is missing", () => {
+		render(
+			<Sections defaultDate="2026-10-23" staffing={staffing} skillValidation={frenchMissing} />,
+		);
+		fireEvent.click(screen.getAllByRole("button", { name: "Assign {name}" })[0]);
+
+		expect(screen.queryByLabelText("Reason for the skill override")).toBeNull();
+	});
+
+	it("asks for the reason the server requires, even when the check here passed", () => {
+		render(<Sections defaultDate="2026-10-23" staffing={staffing} skillOverrideReasonRequested />);
+		fireEvent.click(screen.getAllByRole("button", { name: "Assign {name}" })[0]);
+
+		expect(screen.getByLabelText("Reason for the skill override")).toBeTruthy();
+		expect(
+			screen.getByText("Give a reason to assign an employee without every required skill."),
+		).toBeTruthy();
+	});
+});
 
 describe("ShiftDialogSections date", () => {
 	it("shows the shift date in the app language", () => {

@@ -17,8 +17,13 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
-import { loadSkillValidation, type SkillValidationResult } from "@/lib/scheduling/skill-validation";
+import {
+	type AssignmentContext,
+	decideSkillOverride,
+	insertSkillOverride,
+	skillOverrideReasonRequired,
+} from "@/lib/scheduling/skill-override";
+import type { SkillValidationResult } from "@/lib/scheduling/skill-validation";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -57,6 +62,12 @@ export interface UpsertShiftInput {
 	endTime: string;
 	notes?: string;
 	color?: string;
+	/**
+	 * The planner's reason for assigning an employee without every required skill (#893).
+	 * Needed only when the server finds an unmet required skill; ignored otherwise.
+	 */
+	skillOverrideReason?: string | null;
+	/** The acting user, from the session: creates the shift and records any skill override. */
 	createdBy: string;
 }
 
@@ -459,102 +470,148 @@ export const ShiftServiceLive = Layer.effect(
 						});
 					}
 
-					// Check skill requirements if employee is assigned
-					let skillWarning: SkillWarning | undefined;
-					if (input.employeeId) {
-						const empId = input.employeeId;
-						const validation = yield* dbService.query("getSkillValidationOnShiftDate", () =>
-							loadSkillValidation(dbService.db, {
-								organizationId: input.organizationId,
-								employeeId: empId,
-								subareaId: input.subareaId,
-								templateId: input.templateId,
-								// Skills count on the shift date, not today (#1142).
-								shiftDate: shiftCalendarDate(input.date, input.timezone).toString(),
+					// The skill check, any skill override and the write share one transaction, so the
+					// check runs at commit time and the override commits with the assignment (#893).
+					const outcome = yield* dbService.query("saveShift", () =>
+						dbService.db.transaction(async (tx) => {
+							const existing = input.id
+								? await tx
+										.select()
+										.from(shift)
+										.where(
+											and(
+												eq(shift.id, input.id),
+												eq(shift.organizationId, input.organizationId),
+											),
+										)
+										.for("update")
+										.then((rows) => rows[0])
+								: undefined;
+							if (input.id && !existing) return { kind: "not_found" } as const;
+
+							// Fields left out keep their stored value.
+							const employeeId =
+								input.employeeId === undefined
+									? (existing?.employeeId ?? null)
+									: input.employeeId;
+							const templateId =
+								input.templateId === undefined
+									? (existing?.templateId ?? null)
+									: input.templateId;
+
+							let skillWarning: SkillWarning | undefined;
+							let override:
+								| { context: AssignmentContext; missingSkillIds: string[]; reason: string }
+								| undefined;
+							if (employeeId) {
+								const context: AssignmentContext = {
+									employeeId,
+									shiftDate: input.date,
+									subareaId: input.subareaId,
+									templateId,
+								};
+								const previous: AssignmentContext | null =
+									existing?.employeeId
+										? {
+												employeeId: existing.employeeId,
+												shiftDate: existing.date,
+												subareaId: existing.subareaId,
+												templateId: existing.templateId,
+											}
+										: null;
+								const { validation, decision } = await decideSkillOverride(tx, {
+									organizationId: input.organizationId,
+									organizationTimezone: input.timezone,
+									shiftId: existing?.id ?? null,
+									context,
+									previous,
+									reason: input.skillOverrideReason,
+								});
+								if (decision.kind === "reason_required") {
+									return { kind: "reason_required", decision } as const;
+								}
+								if (decision.kind === "record") {
+									override = { context, ...decision };
+								}
+								if (validation.missingSkills.length > 0 || validation.expiredSkills.length > 0) {
+									skillWarning = { employeeId, ...validation };
+								}
+							}
+
+							const [saved] = existing
+								? await tx
+										.update(shift)
+										.set({
+											employeeId,
+											templateId,
+											subareaId: input.subareaId,
+											date: input.date,
+											startTime: input.startTime,
+											endTime: input.endTime,
+											notes: input.notes,
+											color: input.color,
+										})
+										.where(
+											and(
+												eq(shift.id, existing.id),
+												eq(shift.organizationId, input.organizationId),
+											),
+										)
+										.returning()
+								: await tx
+										.insert(shift)
+										.values({
+											organizationId: input.organizationId,
+											employeeId,
+											templateId,
+											subareaId: input.subareaId,
+											date: input.date,
+											startTime: input.startTime,
+											endTime: input.endTime,
+											notes: input.notes,
+											color: input.color,
+											status: "draft",
+											createdBy: input.createdBy,
+											updatedAt: new Date(),
+										})
+										.returning();
+
+							if (override) {
+								await insertSkillOverride(tx, {
+									organizationId: input.organizationId,
+									shiftId: saved.id,
+									context: override.context,
+									missingSkillIds: override.missingSkillIds,
+									reason: override.reason,
+									overriddenBy: input.createdBy,
+								});
+							}
+
+							return { kind: "saved", shift: saved, skillWarning } as const;
+						}),
+					);
+
+					if (outcome.kind === "not_found") {
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Shift not found",
+								entityType: "shift",
+								entityId: input.id ?? "",
 							}),
 						);
-
-						if (validation.missingSkills.length > 0 || validation.expiredSkills.length > 0) {
-							skillWarning = { employeeId: empId, ...validation };
-						}
 					}
-
-					let createdShift: Shift;
-
-					if (input.id) {
-						const shiftId = input.id;
-						// Update existing shift
-						const existing = yield* dbService.query("getShiftById", async () => {
-							return await dbService.db.query.shift.findFirst({
-								where: and(
-									eq(shift.id, shiftId),
-									eq(shift.organizationId, input.organizationId),
-								),
-							});
-						});
-
-						if (!existing) {
-							yield* Effect.fail(
-								new NotFoundError({
-									message: "Shift not found",
-									entityType: "shift",
-									entityId: input.id,
-								}),
-							);
-						}
-
-						createdShift = yield* dbService.query("updateShift", async () => {
-							const [s] = await dbService.db
-								.update(shift)
-								.set({
-									employeeId: input.employeeId,
-									templateId: input.templateId,
-									subareaId: input.subareaId,
-									date: input.date,
-									startTime: input.startTime,
-									endTime: input.endTime,
-									notes: input.notes,
-									color: input.color,
-								})
-								.where(
-									and(
-										eq(shift.id, shiftId),
-										eq(shift.organizationId, input.organizationId),
-									),
-								)
-								.returning();
-							return s;
-						});
-					} else {
-						// Create new shift
-						createdShift = yield* dbService.query("createShift", async () => {
-							const [s] = await dbService.db
-								.insert(shift)
-								.values({
-									organizationId: input.organizationId,
-									employeeId: input.employeeId,
-									templateId: input.templateId,
-									subareaId: input.subareaId,
-									date: input.date,
-									startTime: input.startTime,
-									endTime: input.endTime,
-									notes: input.notes,
-									color: input.color,
-									status: "draft",
-									createdBy: input.createdBy,
-									updatedAt: new Date(),
-								})
-								.returning();
-							return s;
-						});
+					if (outcome.kind === "reason_required") {
+						return yield* Effect.fail(
+							skillOverrideReasonRequired(outcome.decision.missingSkillIds),
+						);
 					}
 
 					return {
-						shift: createdShift,
+						shift: outcome.shift,
 						metadata: {
 							hasOverlap: overlappingShifts.length > 0,
 							overlappingShifts,
-							skillWarning,
+							skillWarning: outcome.skillWarning,
 						},
 					};
 				}),
