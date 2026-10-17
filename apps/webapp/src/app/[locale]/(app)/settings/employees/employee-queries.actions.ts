@@ -14,7 +14,10 @@ import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import type { DatabaseClient, DatabaseQuery } from "@/lib/effect/services/database.service";
-import { loadTermsInForceOn } from "@/lib/employment-history/load-terms-in-force";
+import {
+	loadCurrentContractTypes,
+	loadTermsInForceOn,
+} from "@/lib/employment-history/load-terms-in-force";
 import { findRecordsMissingRequiredValues } from "@/lib/organization/custom-fields/values";
 import { loadOrganizationDay } from "@/lib/personnel-file/organization-day";
 import type {
@@ -153,10 +156,10 @@ function sortEmployeeDirectoryRows(rows: EmployeeDirectoryRow[]) {
 }
 
 /**
- * Marks the employee rows with a missing required custom field value among the
- * fields the actor sees (#818). Invitation drafts have no values.
+ * Enriches the authorized directory page with visible missing custom fields
+ * (#818) and current contract types (#1161). Invitation drafts keep their prepared data.
  */
-function markMissingRequiredCustomFields(
+function enrichEmployeeDirectoryRows(
 	actor: {
 		organizationId: string;
 		session: { user: { id: string } };
@@ -165,18 +168,32 @@ function markMissingRequiredCustomFields(
 	rows: EmployeeDirectoryRow[],
 ) {
 	return Effect.gen(function* () {
-		const employeeIds = rows.filter((row) => row.kind === "employee").map((row) => row.id);
-		const missing = yield* actor.dbService.query("customFields.employeesMissingRequired", () =>
-			findRecordsMissingRequiredValues(actor.dbService.db, {
-				organizationId: actor.organizationId,
-				entity: "employee",
-				recordIds: employeeIds,
-				viewer: { kind: "actor", userId: actor.session.user.id },
-			}),
-		);
+		const employees = rows.filter((row) => row.kind === "employee");
+		const [missing, contractTypes] = yield* Effect.all([
+			actor.dbService.query("customFields.employeesMissingRequired", () =>
+				findRecordsMissingRequiredValues(actor.dbService.db, {
+					organizationId: actor.organizationId,
+					entity: "employee",
+					recordIds: employees.map((row) => row.id),
+					viewer: { kind: "actor", userId: actor.session.user.id },
+				}),
+			),
+			actor.dbService.query("employeeContracts.current", () =>
+				loadCurrentContractTypes(actor.dbService.db, {
+					organizationId: actor.organizationId,
+					employees,
+				}),
+			),
+		]);
 		return rows.map(
 			(row): EmployeeDirectoryRow =>
-				row.kind === "employee" ? { ...row, missingRequiredCustomFields: missing.has(row.id) } : row,
+				row.kind === "employee"
+					? {
+							...row,
+							contractType: contractTypes.get(row.id) ?? row.contractType,
+							missingRequiredCustomFields: missing.has(row.id),
+						}
+					: row,
 		);
 	});
 }
@@ -246,7 +263,7 @@ function loadEmployeePage(params: EmployeeListParams) {
 
 			const total = totalResult[0]?.total ?? 0;
 			return {
-				employees: yield* markMissingRequiredCustomFields(actor, rows.map(mapEmployeeRow)),
+				employees: yield* enrichEmployeeDirectoryRows(actor, rows.map(mapEmployeeRow)),
 				total,
 				hasMore: offset + rows.length < total,
 			};
@@ -297,7 +314,7 @@ function loadEmployeePage(params: EmployeeListParams) {
 		const pagedEmployees = employees.slice(offset, offset + limit);
 
 		return {
-			employees: yield* markMissingRequiredCustomFields(actor, pagedEmployees),
+			employees: yield* enrichEmployeeDirectoryRows(actor, pagedEmployees),
 			total: employees.length,
 			hasMore: offset + pagedEmployees.length < employees.length,
 		};

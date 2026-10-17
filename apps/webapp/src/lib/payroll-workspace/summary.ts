@@ -1,5 +1,5 @@
-import { and, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 import { createHash } from "node:crypto";
+import { and, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import { organization, user } from "@/db/auth-schema";
@@ -19,6 +19,7 @@ import {
 	findOpenDepartureClockRepairs,
 	type OpenDepartureClockRepair,
 } from "@/lib/employee-lifecycle/reviews";
+import { loadCurrentContractTypes } from "@/lib/employment-history/load-terms-in-force";
 import {
 	allocateProtectedMinutes,
 	employeePayrollWindow,
@@ -38,14 +39,14 @@ import { buildPayrollQueryEnvelope } from "@/lib/payroll-export/calendar-boundar
 import { payrollIdentifierCustomFieldId } from "@/lib/payroll-export/personnel-identifier";
 import { readPersonnelIdentifierValues } from "@/lib/payroll-export/personnel-identifier-store";
 import {
-	classifyPayrollRunCandidates,
-	exportIsPayrollRun,
-} from "@/lib/travel-expenses/payroll-run";
-import {
 	assertCanonicalAbsencesReady,
 	assertCanonicalCutoverReady,
 } from "@/lib/time-record/migration/cutover-state";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import {
+	classifyPayrollRunCandidates,
+	exportIsPayrollRun,
+} from "@/lib/travel-expenses/payroll-run";
 import { buildPayrollAbsenceDetails, payrollAbsenceDetailDays } from "./absence-details";
 import { filterDismissedPayrollBlockerCandidates } from "./blocker-dismissal-loader";
 import type {
@@ -553,12 +554,17 @@ async function getEmployeeRows(
 			),
 		);
 
+	const contractTypes = await loadCurrentContractTypes(db, {
+		organizationId,
+		employees: rows,
+	});
+
 	return rows.map((row) => ({
 		id: row.id,
 		name: formatEmployeeDisplayName(row.userName, row.employeeNumber, row.id),
 		employeeNumber: row.employeeNumber,
 		teamName: row.teamName,
-		contractType: row.contractType,
+		contractType: contractTypes.get(row.id) ?? row.contractType,
 	}));
 }
 

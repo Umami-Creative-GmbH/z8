@@ -1,12 +1,15 @@
-import { and, asc, eq, gt, isNull, lt, or } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, lt, or } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { type EmployeeEmploymentHistory, employeeEmploymentHistory } from "@/db/schema";
-import type { PlainDate } from "@/lib/datetime/temporal-core";
+import { type Instant, type PlainDate, systemClock } from "@/lib/datetime/temporal-core";
+import { loadOrganizationDay } from "@/lib/personnel-file/organization-day";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import type { ContractType } from "@/lib/validations/employee";
 import {
 	type CalendarDateRange,
 	confirmedTermsSpans,
 	type TermsSpan,
+	termsInForceOn,
 	termsSpansOverlapping,
 	utcMidnight,
 } from "./terms-in-force";
@@ -38,13 +41,30 @@ export async function loadConfirmedTermsSpans(
 	},
 ): Promise<TermsSpan<EmployeeEmploymentHistory>[]> {
 	const timezone = input.timezone ?? (await loadOrganizationTimezone(reader, input.organizationId));
-	const rows = await reader
+	const rows = await loadConfirmedTermsRows(reader, {
+		...input,
+		employeeIds: [input.employeeId],
+	});
+	return termsSpansOverlapping(confirmedTermsSpans(rows, timezone), input.range);
+}
+
+/** The same coarse storage window for single-employee and batched calendar reads. */
+async function loadConfirmedTermsRows(
+	reader: Reader,
+	input: {
+		organizationId: string;
+		employeeIds: readonly string[];
+		range: CalendarDateRange;
+	},
+): Promise<EmployeeEmploymentHistory[]> {
+	if (input.employeeIds.length === 0) return [];
+	return reader
 		.select()
 		.from(employeeEmploymentHistory)
 		.where(
 			and(
 				eq(employeeEmploymentHistory.organizationId, input.organizationId),
-				eq(employeeEmploymentHistory.employeeId, input.employeeId),
+				inArray(employeeEmploymentHistory.employeeId, [...input.employeeIds]),
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
 				lt(
 					employeeEmploymentHistory.validFrom,
@@ -60,8 +80,6 @@ export async function loadConfirmedTermsSpans(
 			),
 		)
 		.orderBy(asc(employeeEmploymentHistory.validFrom), asc(employeeEmploymentHistory.createdAt));
-
-	return termsSpansOverlapping(confirmedTermsSpans(rows, timezone), input.range);
 }
 
 /** The employee's confirmed terms in force on `date`, read for one organization. */
@@ -76,4 +94,59 @@ export async function loadTermsInForceOn(
 		timezone: input.timezone,
 	});
 	return span?.terms ?? null;
+}
+
+type EmployeeContractSource = { id: string; contractType: ContractType };
+
+/**
+ * Effective contract types on a calendar date (#1161). Confirmed terms win;
+ * without applicable terms the stored employee type is a compatibility fallback,
+ * not authoritative historical evidence. One terms query serves the whole list.
+ * Callers supply employees they have already authorized in this organization.
+ */
+export async function loadContractTypesOn(
+	reader: Reader,
+	input: {
+		organizationId: string;
+		employees: readonly EmployeeContractSource[];
+		date: PlainDate;
+		timezone?: string;
+	},
+): Promise<Map<string, ContractType>> {
+	const types = new Map(input.employees.map((row) => [row.id, row.contractType]));
+	if (types.size === 0) return types;
+	const timezone = input.timezone ?? (await loadOrganizationTimezone(reader, input.organizationId));
+	const rows = await loadConfirmedTermsRows(reader, {
+		organizationId: input.organizationId,
+		employeeIds: [...types.keys()],
+		range: { from: input.date, toExclusive: input.date.add({ days: 1 }) },
+	});
+	const byEmployee = new Map<string, EmployeeEmploymentHistory[]>();
+	for (const row of rows) {
+		const employeeRows = byEmployee.get(row.employeeId) ?? [];
+		employeeRows.push(row);
+		byEmployee.set(row.employeeId, employeeRows);
+	}
+	for (const [employeeId, employeeRows] of byEmployee) {
+		const terms = termsInForceOn(employeeRows, input.date, timezone);
+		if (terms) types.set(employeeId, terms.contractType);
+	}
+	return types;
+}
+
+/** A fresh read on today's organization-local date; no cross-request cache. */
+export async function loadCurrentContractTypes(
+	reader: Reader,
+	input: {
+		organizationId: string;
+		employees: readonly EmployeeContractSource[];
+		now?: Instant;
+	},
+): Promise<Map<string, ContractType>> {
+	if (input.employees.length === 0) return new Map();
+	const { timezone, today } = await loadOrganizationDay(reader, {
+		organizationId: input.organizationId,
+		now: input.now ?? systemClock.nowInstant(),
+	});
+	return loadContractTypesOn(reader, { ...input, date: today, timezone });
 }
