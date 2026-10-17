@@ -16,24 +16,30 @@ const actions = vi.hoisted(() => ({
 	revokeEmployeeKioskBadgeAction: vi.fn(),
 }));
 const toastMock = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn() }));
+const ui = vi.hoisted(() => ({ language: "en" }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, defaultValue?: string, values?: Record<string, string>) =>
 			(defaultValue ?? _key).replace(/\{(\w+)\}/g, (_, name: string) => values?.[name] ?? ""),
 	}),
+	useTolgee: () => ({ getLanguage: () => ui.language }),
 }));
 vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/app/[locale]/(app)/settings/employees/kiosk-actions", () => actions);
 
 const employeeId = "d1364000-0000-4000-8000-000000000005";
 const noBadge = {
+	activeBadgeId: null as string | null,
 	activeIssuedAt: null as string | null,
 	lastRevokedAt: null as string | null,
 	lastRevokedReason: null as string | null,
+	departureLastWorkingDay: null as string | null,
+	timezone: "Europe/Berlin",
 	canIssue: true,
 };
-const activeBadge = { ...noBadge, activeIssuedAt: "2026-10-17T08:00:00Z" };
+const badgeId = "e1364000-0000-4000-8000-000000000001";
+const activeBadge = { ...noBadge, activeBadgeId: badgeId, activeIssuedAt: "2026-10-17T08:00:00Z" };
 const state = (badge: typeof noBadge | null) => ({
 	success: true,
 	data: {
@@ -67,6 +73,7 @@ describe("Kiosk badge on the employee page (#1364)", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		ui.language = "en";
 		Object.assign(URL, { createObjectURL, revokeObjectURL });
 	});
 	afterEach(cleanup);
@@ -117,7 +124,7 @@ describe("Kiosk badge on the employee page (#1364)", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Replace the badge" }));
 
 		expect(await screen.findByRole("link", { name: "Download PDF" })).toBeTruthy();
-		expect(actions.replaceEmployeeKioskBadgeAction).toHaveBeenCalledWith(employeeId);
+		expect(actions.replaceEmployeeKioskBadgeAction).toHaveBeenCalledWith(employeeId, badgeId);
 	});
 
 	it("revokes a badge after confirmation and keeps the PIN", async () => {
@@ -137,7 +144,7 @@ describe("Kiosk badge on the employee page (#1364)", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Revoke the badge" }));
 
 		await waitFor(() =>
-			expect(actions.revokeEmployeeKioskBadgeAction).toHaveBeenCalledWith(employeeId),
+			expect(actions.revokeEmployeeKioskBadgeAction).toHaveBeenCalledWith(employeeId, badgeId),
 		);
 		await waitFor(() => expect(toastMock.success).toHaveBeenCalledWith("Kiosk badge revoked"));
 		expect(screen.queryByRole("link", { name: "Download PDF" })).toBeNull();
@@ -184,6 +191,63 @@ describe("Kiosk badge on the employee page (#1364)", () => {
 		renderCard();
 		expect(await screen.findByRole("button", { name: "Issue badge" })).toBeTruthy();
 		expect(screen.getByText(/Old copies never work again, not even after a rehire\./)).toBeTruthy();
+	});
+
+	it.each([
+		["en", "Sep 30, 2026"],
+		["de", "30.09.2026"],
+	])("dates a departure by the last working day in the %s UI language, not the cutoff after it", async (language, day) => {
+		ui.language = language;
+		actions.getEmployeeKioskStateAction.mockResolvedValue(
+			state({
+				...noBadge,
+				// The cutoff is midnight after 30 September in Berlin.
+				lastRevokedAt: "2026-09-30T22:00:00Z",
+				lastRevokedReason: "employee_departure",
+				departureLastWorkingDay: "2026-09-30",
+				canIssue: false,
+			}),
+		);
+		renderCard();
+
+		expect(
+			await screen.findByText(new RegExp(`employee's departure on ${day}\\.`)),
+		).toBeTruthy();
+	});
+
+	it("dates other badge events in the organization's zone, not the viewer's", async () => {
+		actions.getEmployeeKioskStateAction.mockResolvedValue(
+			state({
+				...noBadge,
+				// 23:30 on 15 October in UTC, already 16 October in Berlin.
+				lastRevokedAt: "2026-10-15T23:30:00Z",
+				lastRevokedReason: "revoked",
+			}),
+		);
+		renderCard();
+
+		expect(await screen.findByText(/The last one was revoked on Oct 16, 2026\./)).toBeTruthy();
+	});
+
+	it("refuses to change a badge someone else changed meanwhile and shows its current state", async () => {
+		actions.getEmployeeKioskStateAction.mockResolvedValue(state(activeBadge));
+		actions.revokeEmployeeKioskBadgeAction.mockResolvedValue({
+			success: false,
+			error: "changed",
+			code: "badge_changed",
+		});
+		renderCard();
+
+		fireEvent.click(await screen.findByRole("button", { name: "Revoke badge" }));
+		fireEvent.click(screen.getByRole("button", { name: "Revoke the badge" }));
+
+		await waitFor(() =>
+			expect(toastMock.error).toHaveBeenCalledWith(
+				"Someone else changed this kiosk badge in the meantime. Check its status and try again.",
+			),
+		);
+		await waitFor(() => expect(actions.getEmployeeKioskStateAction).toHaveBeenCalledTimes(2));
+		expect(toastMock.success).not.toHaveBeenCalled();
 	});
 
 	it("offers only revocation for an active badge of an employee who cannot receive a new one", async () => {

@@ -1,22 +1,27 @@
 import "server-only";
 
 import { createHash, randomInt } from "node:crypto";
-import { and, desc, eq, isNull, lte, or, type SQL, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, type SQL, sql } from "drizzle-orm";
+import type { Temporal } from "temporal-polyfill";
 import type { db as rootDatabase } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import { employee, employeeKioskBadge } from "@/db/schema";
-import { employeeDeparture, employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
+import { employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
 import { AuditAction } from "@/lib/audit-logger";
 import { type AuditTrail, withAuditTrail } from "@/lib/audit-trail";
 import { buildDerivedUserName } from "@/lib/auth/derived-user-name";
 import {
 	type Clock,
+	compareInstants,
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import {
+	departureEndingEmploymentPeriod,
+	employeeHasOrganizationAccess,
+} from "@/lib/employee-lifecycle/access";
 import { resolveCurrentEmploymentPeriod } from "@/lib/employee-lifecycle/employment-periods";
 import { employeeCoordinationGuard, holdGuard } from "@/lib/time-tracking/work-transaction/ranks";
 import { isUuid } from "@/lib/validations/uuid";
@@ -30,7 +35,7 @@ import { KioskBadgeRefusal } from "./badge-errors";
 import { canManageEmployeeKioskPin, type KioskPinManagementInput } from "./pin-store";
 
 /**
- * The kiosk badge store (#1364, spec #889, ADR 0012): issue, replace and revoke
+ * The kiosk badge store (#1364, spec #889, ADR 0013): issue, replace and revoke
  * an employee's badge, read its non-secret status, and resolve a scanned
  * credential to the active badge for kiosk verification (#1366).
  *
@@ -51,16 +56,34 @@ type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export type KioskBadgeManagementInput = KioskPinManagementInput;
 
+/**
+ * A replacement or revocation: also the id of the active badge the issuer saw
+ * (`KioskBadgeStatus.active.badgeId`), so a change made meanwhile is refused
+ * instead of overwritten.
+ */
+export type KioskBadgeChangeInput = KioskBadgeManagementInput & { expectedBadgeId: string };
+
 export type KioskBadgeRevokedReason = NonNullable<
 	(typeof employeeKioskBadge.$inferSelect)["revokedReason"]
 >;
 
 /** What may be shown about an employee's badge: lifecycle facts, never the credential. */
 export type KioskBadgeStatus = {
-	/** The active badge, if any. */
-	active: { issuedAt: Instant } | null;
-	/** The most recent badge when none is active: when and why it stopped working. */
-	lastRevoked: { revokedAt: Instant; reason: KioskBadgeRevokedReason } | null;
+	/**
+	 * The active badge, if any. Its id is not secret (audit entries carry it);
+	 * replace and revoke name it, so a change made meanwhile is refused.
+	 */
+	active: { badgeId: string; issuedAt: Instant } | null;
+	/**
+	 * The most recent badge when none is active: when and why it stopped working.
+	 * Ended by a departure, also the employee's last working day, which is what
+	 * people call the departure date (the cutoff is the start of the next day).
+	 */
+	lastRevoked: {
+		revokedAt: Instant;
+		reason: KioskBadgeRevokedReason;
+		lastWorkingDay?: Temporal.PlainDate;
+	} | null;
 	/**
 	 * Whether a new badge (issued or replacing the active one) can be given now:
 	 * the employee has organization access. After a departure that is only once
@@ -105,7 +128,7 @@ function hashKioskBadgeCredential(credential: string): string {
 
 /**
  * Whether the actor may issue, replace and revoke this employee's badge: the
- * same people who manage the employee's kiosk PIN (ADR 0012), an owner or
+ * same people who manage the employee's kiosk PIN (ADR 0013), an owner or
  * admin of the organization or the employee's direct manager.
  */
 export function canManageEmployeeKioskBadge(
@@ -158,16 +181,83 @@ function employeeBadges(input: { organizationId: string; employeeId: string }) {
 	);
 }
 
-async function hasActiveBadge(
+async function activeBadgeIdOf(
 	client: Pick<Transaction, "select">,
 	input: { organizationId: string; employeeId: string },
-): Promise<boolean> {
+): Promise<string | null> {
 	const [row] = await client
 		.select({ id: employeeKioskBadge.id })
 		.from(employeeKioskBadge)
 		.where(and(employeeBadges(input), isNull(employeeKioskBadge.revokedAt)))
 		.limit(1);
-	return Boolean(row);
+	return row?.id ?? null;
+}
+
+async function hasActiveBadge(
+	client: Pick<Transaction, "select">,
+	input: { organizationId: string; employeeId: string },
+): Promise<boolean> {
+	return (await activeBadgeIdOf(client, input)) !== null;
+}
+
+function badgeChanged() {
+	return new KioskBadgeRefusal(
+		"badge_changed",
+		"The employee's kiosk badge changed meanwhile. Reload and try again.",
+	);
+}
+
+/**
+ * Refuses a replacement or revocation of anything but the badge the issuer saw
+ * (`expectedBadgeId`). Another active badge, or the seen one revoked meanwhile,
+ * is `badge_changed`; an employee who never had that badge and has none active
+ * is `no_badge`.
+ */
+async function requireExpectedActiveBadge(
+	client: Pick<Transaction, "select">,
+	input: KioskBadgeChangeInput,
+): Promise<void> {
+	const active = await activeBadgeIdOf(client, input);
+	if (active && active === input.expectedBadgeId) return;
+	if (active) throw badgeChanged();
+	const [seen] = isUuid(input.expectedBadgeId)
+		? await client
+				.select({ id: employeeKioskBadge.id })
+				.from(employeeKioskBadge)
+				.where(and(employeeBadges(input), eq(employeeKioskBadge.id, input.expectedBadgeId)))
+				.limit(1)
+		: [];
+	if (seen) throw badgeChanged();
+	throw new KioskBadgeRefusal("no_badge", "This employee has no kiosk badge.");
+}
+
+/**
+ * Revokes the badge the issuer saw, if it is still the active one
+ * (compare-and-swap on its id). Returns its id, or refuses with `no_badge` /
+ * `badge_changed`, so a concurrent change is never silently overwritten.
+ */
+async function revokeExpectedBadge(
+	tx: Transaction,
+	input: KioskBadgeChangeInput,
+	set: { revokedAt: Date; revokedReason: "replaced" | "revoked" },
+): Promise<string> {
+	const [revoked] = isUuid(input.expectedBadgeId)
+		? await tx
+				.update(employeeKioskBadge)
+				.set({ ...set, revokedByUserId: input.actorUserId })
+				.where(
+					and(
+						employeeBadges(input),
+						eq(employeeKioskBadge.id, input.expectedBadgeId),
+						isNull(employeeKioskBadge.revokedAt),
+					),
+				)
+				.returning({ id: employeeKioskBadge.id })
+		: [];
+	if (revoked) return revoked.id;
+	await requireExpectedActiveBadge(tx, input);
+	// Unreachable: the seen badge is active, so the update above changed it.
+	throw badgeChanged();
 }
 
 /**
@@ -220,22 +310,20 @@ function auditBadge(
 
 async function issue<T>(
 	db: Database,
-	input: KioskBadgeManagementInput,
-	kind: "issue" | "replace",
+	input: KioskBadgeManagementInput | KioskBadgeChangeInput,
 	deliver: (badge: KioskBadgeDelivery) => Promise<T>,
 	clock: Clock,
 ): Promise<IssuedKioskBadge<T>> {
+	const replacing = "expectedBadgeId" in input ? input : null;
 	const names = await requireKioskBadgeManager(db, input);
 	// Refuse the obvious cases before rendering; the transaction decides.
-	const active = await hasActiveBadge(db, input);
-	if (kind === "issue" && active) {
+	if (replacing) {
+		await requireExpectedActiveBadge(db, replacing);
+	} else if (await hasActiveBadge(db, input)) {
 		throw new KioskBadgeRefusal(
 			"badge_exists",
 			"This employee already has a kiosk badge. Replace it instead.",
 		);
-	}
-	if (kind === "replace" && !active) {
-		throw new KioskBadgeRefusal("no_badge", "This employee has no kiosk badge. Issue one instead.");
 	}
 
 	const credential = generateKioskBadgeCredential();
@@ -250,23 +338,11 @@ async function issue<T>(
 			const employmentPeriodId = await requireBadgeEmploymentPeriod(tx, input, now);
 
 			let replacedBadgeId: string | null = null;
-			if (kind === "replace") {
-				const [replaced] = await tx
-					.update(employeeKioskBadge)
-					.set({
-						revokedAt: dateFromInstant(now),
-						revokedByUserId: input.actorUserId,
-						revokedReason: "replaced",
-					})
-					.where(and(employeeBadges(input), isNull(employeeKioskBadge.revokedAt)))
-					.returning({ id: employeeKioskBadge.id });
-				if (!replaced) {
-					throw new KioskBadgeRefusal(
-						"no_badge",
-						"This employee has no kiosk badge. Issue one instead.",
-					);
-				}
-				replacedBadgeId = replaced.id;
+			if (replacing) {
+				replacedBadgeId = await revokeExpectedBadge(tx, replacing, {
+					revokedAt: dateFromInstant(now),
+					revokedReason: "replaced",
+				});
 			} else if (await hasActiveBadge(tx, input)) {
 				throw new KioskBadgeRefusal(
 					"badge_exists",
@@ -290,9 +366,11 @@ async function issue<T>(
 			await auditBadge(
 				audit,
 				tx,
-				kind === "issue" ? AuditAction.KIOSK_BADGE_ISSUED : AuditAction.KIOSK_BADGE_REPLACED,
+				replacing ? AuditAction.KIOSK_BADGE_REPLACED : AuditAction.KIOSK_BADGE_ISSUED,
 				{
-					...input,
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					employeeId: input.employeeId,
 					badgeId: created.id,
 					metadata: replacedBadgeId ? { replacedBadgeId } : undefined,
 				},
@@ -313,52 +391,50 @@ export function issueKioskBadge<T>(
 	deliver: (badge: KioskBadgeDelivery) => Promise<T>,
 	clock: Clock = systemClock,
 ): Promise<IssuedKioskBadge<T>> {
-	return issue(db, input, "issue", deliver, clock);
+	const { organizationId, actorUserId, employeeId } = input;
+	return issue(db, { organizationId, actorUserId, employeeId }, deliver, clock);
 }
 
 /**
  * Replaces the employee's active badge with a new one in one transaction: every
- * copy of the old badge stops working as the new one is stored. `deliver` as
- * for `issueKioskBadge`.
+ * copy of the old badge stops working as the new one is stored. Only the badge
+ * the issuer saw (`expectedBadgeId`) is replaced; once another change got there
+ * first the replacement is refused with `badge_changed` and no PDF is made.
+ * `deliver` as for `issueKioskBadge`.
  */
 export function replaceKioskBadge<T>(
 	db: Database,
-	input: KioskBadgeManagementInput,
+	input: KioskBadgeChangeInput,
 	deliver: (badge: KioskBadgeDelivery) => Promise<T>,
 	clock: Clock = systemClock,
 ): Promise<IssuedKioskBadge<T>> {
-	return issue(db, input, "replace", deliver, clock);
+	return issue(db, input, deliver, clock);
 }
 
 /**
- * Revokes the employee's active badge for good, without a replacement. The
- * employee's kiosk PIN is not touched. Works whether or not the employee is
+ * Revokes the employee's active badge for good, without a replacement, when it
+ * is still the one the issuer saw (`expectedBadgeId`; else `badge_changed`).
+ * The employee's kiosk PIN is not touched. Works whether or not the employee is
  * still active.
  */
 export async function revokeKioskBadge(
 	db: Database,
-	input: KioskBadgeManagementInput,
+	input: KioskBadgeChangeInput,
 	clock: Clock = systemClock,
 ): Promise<void> {
 	await requireKioskBadgeManager(db, input);
 	await withAuditTrail((audit) =>
 		db.transaction(async (tx) => {
 			await holdGuard(tx, employeeCoordinationGuard(input.employeeId));
-			const [revoked] = await tx
-				.update(employeeKioskBadge)
-				.set({
-					revokedAt: dateFromInstant(clock.nowInstant()),
-					revokedByUserId: input.actorUserId,
-					revokedReason: "revoked",
-				})
-				.where(and(employeeBadges(input), isNull(employeeKioskBadge.revokedAt)))
-				.returning({ id: employeeKioskBadge.id });
-			if (!revoked) {
-				throw new KioskBadgeRefusal("no_badge", "This employee has no kiosk badge.");
-			}
+			const badgeId = await revokeExpectedBadge(tx, input, {
+				revokedAt: dateFromInstant(clock.nowInstant()),
+				revokedReason: "revoked",
+			});
 			await auditBadge(audit, tx, AuditAction.KIOSK_BADGE_REVOKED, {
-				...input,
-				badgeId: revoked.id,
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				employeeId: input.employeeId,
+				badgeId,
 			});
 		}),
 	);
@@ -418,41 +494,14 @@ export async function revokeKioskBadgesForDeparture(
 }
 
 /**
- * The cutoff of the departure that already ended this badge's employment
- * period, even when the departure has not been processed yet: a pending one
- * past its cutoff (which the access rule enforces) or an effective one.
- */
-async function departureCutoffEndingBadge(
-	db: Pick<Database, "select">,
-	input: { organizationId: string; employeeId: string; employmentPeriodId: string; now: Instant },
-): Promise<Date | null> {
-	const [departure] = await db
-		.select({ cutoffAt: employeeDeparture.cutoffAt })
-		.from(employeeDeparture)
-		.where(
-			and(
-				eq(employeeDeparture.organizationId, input.organizationId),
-				eq(employeeDeparture.employeeId, input.employeeId),
-				eq(employeeDeparture.employmentPeriodId, input.employmentPeriodId),
-				or(
-					eq(employeeDeparture.status, "effective"),
-					and(eq(employeeDeparture.status, "pending"), isNull(employeeDeparture.blockedReason)),
-				),
-				lte(employeeDeparture.cutoffAt, dateFromInstant(input.now)),
-			),
-		)
-		.orderBy(desc(employeeDeparture.cutoffAt))
-		.limit(1);
-	return departure?.cutoffAt ?? null;
-}
-
-/**
  * The employee's badge status for those who may manage it: lifecycle facts
  * only. A badge whose employee's departure is past its cutoff shows as ended
  * by the departure even before the departure is processed, because kiosks
- * already refuse it. `canIssue` says whether a new badge can be issued now:
- * only while the employee has organization access, so after a departure only
- * once a rehire opened a new employment period.
+ * already refuse it; whether a departure ends it is the same live access rule
+ * kiosks apply (`departureEndingEmploymentPeriod`). `canIssue` says whether a
+ * new badge can be issued now: only while the employee has organization
+ * access, so after a departure only once a rehire opened a new employment
+ * period.
  */
 export async function readKioskBadgeStatus(
 	db: Database,
@@ -464,6 +513,7 @@ export async function readKioskBadgeStatus(
 	const [[latest], [eligible]] = await Promise.all([
 		db
 			.select({
+				id: employeeKioskBadge.id,
 				issuedAt: employeeKioskBadge.issuedAt,
 				employmentPeriodId: employeeKioskBadge.employmentPeriodId,
 				revokedAt: employeeKioskBadge.revokedAt,
@@ -487,23 +537,41 @@ export async function readKioskBadgeStatus(
 	]);
 	const canIssue = Boolean(eligible);
 	if (!latest) return { active: null, lastRevoked: null, canIssue };
+	const ending =
+		latest.revokedReason === null || latest.revokedReason === "employee_departure"
+			? await departureEndingEmploymentPeriod(db, {
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					employmentPeriodId: latest.employmentPeriodId,
+					now,
+				})
+			: null;
 	if (latest.revokedAt && latest.revokedReason) {
 		return {
 			active: null,
-			lastRevoked: { revokedAt: instantFromDate(latest.revokedAt), reason: latest.revokedReason },
+			lastRevoked: {
+				revokedAt: instantFromDate(latest.revokedAt),
+				reason: latest.revokedReason,
+				...(ending && latest.revokedReason === "employee_departure"
+					? { lastWorkingDay: ending.lastWorkingDay }
+					: {}),
+			},
 			canIssue,
 		};
 	}
-	const endedAt = await departureCutoffEndingBadge(db, { ...input, ...latest, now });
-	if (endedAt) {
-		const revokedAt = endedAt.getTime() > latest.issuedAt.getTime() ? endedAt : latest.issuedAt;
+	const issuedAt = instantFromDate(latest.issuedAt);
+	if (ending) {
 		return {
 			active: null,
-			lastRevoked: { revokedAt: instantFromDate(revokedAt), reason: "employee_departure" },
+			lastRevoked: {
+				revokedAt: compareInstants(ending.cutoff, issuedAt) > 0 ? ending.cutoff : issuedAt,
+				reason: "employee_departure",
+				lastWorkingDay: ending.lastWorkingDay,
+			},
 			canIssue,
 		};
 	}
-	return { active: { issuedAt: instantFromDate(latest.issuedAt) }, lastRevoked: null, canIssue };
+	return { active: { badgeId: latest.id, issuedAt }, lastRevoked: null, canIssue };
 }
 
 /**

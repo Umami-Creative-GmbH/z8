@@ -8,7 +8,7 @@ import {
 	IconShieldOff,
 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
-import type { useTranslate } from "@tolgee/react";
+import { type useTranslate, useTolgee } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
@@ -28,9 +28,20 @@ type Translate = ReturnType<typeof useTranslate>["t"];
 /** A just-issued badge PDF as a local file; it lives only in this component's state. */
 type IssuedFile = { url: string; filename: string };
 
-function dateLabel(iso: string): string {
-	return Temporal.Instant.from(iso).toLocaleString(undefined, { dateStyle: "medium" });
+/** An instant's date in the organization's zone, in the UI language. */
+function dateLabel(iso: string, zone: string, locale: string): string {
+	return Temporal.Instant.from(iso)
+		.toZonedDateTimeISO(zone)
+		.toPlainDate()
+		.toLocaleString(locale, { dateStyle: "medium" });
 }
+
+/** A calendar day (ISO date) as it is, in the UI language. */
+function dayLabel(day: string, locale: string): string {
+	return Temporal.PlainDate.from(day).toLocaleString(locale, { dateStyle: "medium" });
+}
+
+const SPINNER = "mr-2 size-4 animate-spin motion-reduce:animate-none";
 
 function pdfFile(issued: IssuedKioskBadgePdf): IssuedFile {
 	const bytes = Uint8Array.from(atob(issued.pdf), (character) => character.charCodeAt(0));
@@ -38,31 +49,44 @@ function pdfFile(issued: IssuedKioskBadgePdf): IssuedFile {
 	return { url, filename: issued.filename };
 }
 
-function BadgeStatus({ badge, t }: { badge: EmployeeKioskBadgeState; t: Translate }) {
+function BadgeStatus({
+	badge,
+	locale,
+	t,
+}: {
+	badge: EmployeeKioskBadgeState;
+	locale: string;
+	t: Translate;
+}) {
 	if (badge.activeIssuedAt) {
 		return t("settings.employees.kioskBadge.active", "Active since {date}.", {
-			date: dateLabel(badge.activeIssuedAt),
+			date: dateLabel(badge.activeIssuedAt, badge.timezone, locale),
 		});
 	}
 	if (badge.lastRevokedAt && badge.lastRevokedReason === "employee_departure") {
 		return t(
 			"settings.employees.kioskBadge.endedByDeparture",
 			"No active kiosk badge. The last one ended with the employee's departure on {date}. Old copies never work again, not even after a rehire.",
-			{ date: dateLabel(badge.lastRevokedAt) },
+			{
+				// The departure date people know is the last working day, not the cutoff after it.
+				date: badge.departureLastWorkingDay
+					? dayLabel(badge.departureLastWorkingDay, locale)
+					: dateLabel(badge.lastRevokedAt, badge.timezone, locale),
+			},
 		);
 	}
 	if (badge.lastRevokedAt) {
 		return t(
 			"settings.employees.kioskBadge.revokedOn",
 			"No active kiosk badge. The last one was revoked on {date}.",
-			{ date: dateLabel(badge.lastRevokedAt) },
+			{ date: dateLabel(badge.lastRevokedAt, badge.timezone, locale) },
 		);
 	}
 	return t("settings.employees.kioskBadge.none", "No kiosk badge yet.");
 }
 
 /**
- * The employee's kiosk badge (#1364, ADR 0012) for owners, admins and their
+ * The employee's kiosk badge (#1364, ADR 0013) for owners, admins and their
  * direct manager: issue, replace and revoke. An issued badge's PDF exists only
  * here, until Done or leaving the page; the server cannot produce it again.
  */
@@ -77,6 +101,7 @@ export function KioskBadgeSection({
 	onChanged: () => Promise<unknown>;
 	t: Translate;
 }) {
+	const locale = useTolgee(["language"]).getLanguage() ?? "en";
 	const [issued, setIssued] = useState<IssuedFile | null>(null);
 	const [confirming, setConfirming] = useState<"replace" | "revoke" | null>(null);
 
@@ -89,15 +114,19 @@ export function KioskBadgeSection({
 	const refused = <T,>(result: KioskBadgeActionResult<T>) => {
 		if (result.success) return false;
 		toast.error(kioskBadgeErrorMessage(t, result.code));
+		// Someone else changed the badge: show what is true now.
+		if (result.code === "badge_changed") void onChanged();
 		return true;
 	};
 	const failed = () => toast.error(kioskBadgeErrorMessage(t, "failed"));
 
+	// Replace and revoke name the badge this card shows, so a change made meanwhile is refused.
+	const shownBadgeId = badge.activeBadgeId ?? "";
 	const issueMutation = useMutation({
 		mutationFn: (kind: "issue" | "replace") =>
 			kind === "issue"
 				? issueEmployeeKioskBadgeAction(employeeId)
-				: replaceEmployeeKioskBadgeAction(employeeId),
+				: replaceEmployeeKioskBadgeAction(employeeId, shownBadgeId),
 		onSuccess: (result) => {
 			setConfirming(null);
 			if (refused(result) || !result.success) return;
@@ -106,12 +135,20 @@ export function KioskBadgeSection({
 		},
 		onError: failed,
 	});
+	const { reset: forgetIssued } = issueMutation;
+	// The mutation keeps the PDF (and so the credential) in its result until reset:
+	// Done and leaving the page drop it from client memory too.
+	useEffect(() => forgetIssued, [forgetIssued]);
+	function done() {
+		setIssued(null);
+		forgetIssued();
+	}
 	const revokeMutation = useMutation({
-		mutationFn: () => revokeEmployeeKioskBadgeAction(employeeId),
+		mutationFn: () => revokeEmployeeKioskBadgeAction(employeeId, shownBadgeId),
 		onSuccess: (result) => {
 			setConfirming(null);
 			if (refused(result)) return;
-			setIssued(null);
+			done();
 			toast.success(t("settings.employees.kioskBadge.revoked", "Kiosk badge revoked"));
 			void onChanged();
 		},
@@ -133,7 +170,7 @@ export function KioskBadgeSection({
 				)}
 			</p>
 			<p className="text-sm" aria-live="polite">
-				<BadgeStatus badge={badge} t={t} />
+				<BadgeStatus badge={badge} locale={locale} t={t} />
 			</p>
 
 			{issued && (
@@ -157,7 +194,7 @@ export function KioskBadgeSection({
 								{t("settings.employees.kioskBadge.openToPrint", "Open to print")}
 							</a>
 						</Button>
-						<Button variant="ghost" onClick={() => setIssued(null)}>
+						<Button variant="ghost" onClick={done}>
 							{t("settings.employees.kioskBadge.done", "Done")}
 						</Button>
 					</div>
@@ -191,7 +228,7 @@ export function KioskBadgeSection({
 				{!badge.activeIssuedAt ? (
 					badge.canIssue && (
 						<Button onClick={() => issueMutation.mutate("issue")} disabled={busy}>
-							{issueMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+							{issueMutation.isPending && <IconLoader2 className={SPINNER} aria-hidden="true" />}
 							{t("settings.employees.kioskBadge.issue", "Issue badge")}
 						</Button>
 					)
@@ -202,12 +239,12 @@ export function KioskBadgeSection({
 						</Button>
 						{confirming === "replace" ? (
 							<Button onClick={() => issueMutation.mutate("replace")} disabled={busy}>
-								{issueMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+								{issueMutation.isPending && <IconLoader2 className={SPINNER} aria-hidden="true" />}
 								{t("settings.employees.kioskBadge.confirmReplace", "Replace the badge")}
 							</Button>
 						) : (
 							<Button variant="destructive" onClick={() => revokeMutation.mutate()} disabled={busy}>
-								{revokeMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+								{revokeMutation.isPending && <IconLoader2 className={SPINNER} aria-hidden="true" />}
 								{t("settings.employees.kioskBadge.confirmRevoke", "Revoke the badge")}
 							</Button>
 						)}

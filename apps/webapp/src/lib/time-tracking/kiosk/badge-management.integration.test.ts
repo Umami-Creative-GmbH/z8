@@ -93,6 +93,17 @@ function codeOf(result: { success: boolean; code?: string }) {
 	return result.success ? "success" : result.code;
 }
 
+/** The active badge the signed-in issuer's employee page shows (what replace and revoke name). */
+async function activeBadgeId(employeeId: string): Promise<string> {
+	const state = await getEmployeeKioskStateAction(employeeId);
+	const id = state.success ? state.data?.badge?.activeBadgeId : null;
+	if (!id) throw new Error("Expected an active badge on the employee page");
+	return id;
+}
+
+/** A badge id that names no badge. */
+const UNSEEN_BADGE = "d1364000-0000-4000-8000-0000000000ff";
+
 async function badgeHolder(credential: string, organizationId: string = org, at = now) {
 	const badge = await resolveActiveKioskBadge(db, { organizationId, credential, now: at });
 	return badge?.employeeId ?? null;
@@ -239,27 +250,35 @@ describe("kiosk badge management on PostgreSQL", () => {
 		signIn(ids.managerUser);
 		credentialOf(await issueEmployeeKioskBadgeAction(ids.worker));
 		signIn(ids.adminUser);
-		credentialOf(await replaceEmployeeKioskBadgeAction(ids.worker));
+		credentialOf(
+			await replaceEmployeeKioskBadgeAction(ids.worker, await activeBadgeId(ids.worker)),
+		);
 		signIn(ids.ownerUser);
-		credentialOf(await replaceEmployeeKioskBadgeAction(ids.worker));
+		const current = await activeBadgeId(ids.worker);
+		credentialOf(await replaceEmployeeKioskBadgeAction(ids.worker, current));
+		const shown = await activeBadgeId(ids.worker);
 
 		for (const actor of [ids.otherManagerUser, ids.workerUser, ids.kioskOnlyUser]) {
 			signIn(actor);
-			expect(codeOf(await replaceEmployeeKioskBadgeAction(ids.worker))).toBe("not_allowed");
-			expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker))).toBe("not_allowed");
+			expect(codeOf(await replaceEmployeeKioskBadgeAction(ids.worker, shown))).toBe("not_allowed");
+			expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker, shown))).toBe("not_allowed");
 			expect(codeOf(await issueEmployeeKioskBadgeAction(ids.manager))).toBe("not_allowed");
 			expect(await getEmployeeKioskStateAction(ids.worker)).toEqual({ success: true, data: null });
 		}
 
 		// A foreign owner reaches neither through their own organization nor through ours.
 		signIn(ids.foreignUser, ids.otherOrganization);
-		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker))).toBe("employee_not_found");
+		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker, shown))).toBe(
+			"employee_not_found",
+		);
 		signIn(ids.foreignUser, org);
-		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker))).toBe("not_allowed");
+		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker, shown))).toBe("not_allowed");
 		signIn(ids.ownerUser);
 		expect(codeOf(await issueEmployeeKioskBadgeAction(ids.foreign))).toBe("employee_not_found");
 		session.current = null;
-		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker))).toBe("sign_in_required");
+		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker, shown))).toBe(
+			"sign_in_required",
+		);
 	});
 
 	it("gives kiosk-only employees a badge and refuses inactive employees", async () => {
@@ -279,10 +298,16 @@ describe("kiosk badge management on PostgreSQL", () => {
 		signIn(ids.ownerUser);
 		const first = credentialOf(await issueEmployeeKioskBadgeAction(ids.worker));
 		expect(codeOf(await issueEmployeeKioskBadgeAction(ids.worker))).toBe("badge_exists");
-		expect(codeOf(await replaceEmployeeKioskBadgeAction(ids.manager))).toBe("no_badge");
-		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.manager))).toBe("no_badge");
+		expect(codeOf(await replaceEmployeeKioskBadgeAction(ids.manager, UNSEEN_BADGE))).toBe(
+			"no_badge",
+		);
+		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.manager, UNSEEN_BADGE))).toBe(
+			"no_badge",
+		);
 
-		const second = credentialOf(await replaceEmployeeKioskBadgeAction(ids.worker));
+		const second = credentialOf(
+			await replaceEmployeeKioskBadgeAction(ids.worker, await activeBadgeId(ids.worker)),
+		);
 
 		expect(second).not.toBe(first);
 		expect(await badgeHolder(first)).toBeNull();
@@ -318,7 +343,9 @@ describe("kiosk badge management on PostgreSQL", () => {
 		signIn(ids.managerUser);
 		const revokedCredential = credentialOf(await issueEmployeeKioskBadgeAction(ids.worker));
 
-		expect(await revokeEmployeeKioskBadgeAction(ids.worker)).toEqual({
+		expect(
+			await revokeEmployeeKioskBadgeAction(ids.worker, await activeBadgeId(ids.worker)),
+		).toEqual({
 			success: true,
 			data: { revoked: true },
 		});
@@ -363,34 +390,73 @@ describe("kiosk badge management on PostgreSQL", () => {
 			"success",
 		]);
 
+		// Five issuers replace the badge they all saw: one wins, the others are told it changed
+		// and get no PDF, so nobody walks away with a badge that is already dead.
+		const seen = await activeBadgeId(ids.worker);
 		const replacements = await Promise.all(
-			Array.from({ length: 5 }, () => replaceEmployeeKioskBadgeAction(ids.worker)),
+			Array.from({ length: 5 }, () => replaceEmployeeKioskBadgeAction(ids.worker, seen)),
 		);
-		expect(replacements.every((result) => result.success)).toBe(true);
-		const holders = await Promise.all(
-			[...issues.filter((result) => result.success), ...replacements].map((result) =>
-				badgeHolder(credentialOf(result)),
-			),
-		);
-		expect(holders.filter((holder) => holder === ids.worker)).toHaveLength(1);
-
-		await Promise.all([
-			replaceEmployeeKioskBadgeAction(ids.worker),
-			revokeEmployeeKioskBadgeAction(ids.worker),
-			replaceEmployeeKioskBadgeAction(ids.worker),
-			issueEmployeeKioskBadgeAction(ids.worker),
+		expect(replacements.map(codeOf).sort()).toEqual([
+			"badge_changed",
+			"badge_changed",
+			"badge_changed",
+			"badge_changed",
+			"success",
 		]);
+		const winner = replacements.find((result) => result.success);
+		if (!winner) throw new Error("Expected one replacement to succeed");
+		expect(await badgeHolder(credentialOf(winner))).toBe(ids.worker);
+		const [issued] = issues.filter((result) => result.success);
+		if (!issued) throw new Error("Expected one issue to succeed");
+		expect(await badgeHolder(credentialOf(issued))).toBeNull();
+
+		// A replacement racing a revocation of the same badge: exactly one of them applies.
+		const current = await activeBadgeId(ids.worker);
+		const raced = await Promise.all([
+			replaceEmployeeKioskBadgeAction(ids.worker, current),
+			revokeEmployeeKioskBadgeAction(ids.worker, current),
+			replaceEmployeeKioskBadgeAction(ids.worker, current),
+		]);
+		expect(raced.map(codeOf).filter((code) => code === "success")).toHaveLength(1);
+		expect(raced.map(codeOf).filter((code) => code === "badge_changed")).toHaveLength(2);
+		const [replaced] = raced.filter((result, index) => result.success && index !== 1);
+		if (replaced) {
+			expect(await badgeHolder(credentialOf(replaced as IssueResult))).toBe(ids.worker);
+		}
 		const active = await pool.query(
 			`select count(*)::int as count from employee_kiosk_badge
 			 where employee_id = $1 and revoked_at is null`,
 			[ids.worker],
 		);
-		expect(active.rows[0].count).toBeLessThanOrEqual(1);
+		expect(active.rows[0].count).toBe(replaced ? 1 : 0);
+	});
+
+	it("refuses to replace or revoke a badge other than the one the issuer saw", async () => {
+		signIn(ids.ownerUser);
+		credentialOf(await issueEmployeeKioskBadgeAction(ids.worker));
+		const seen = await activeBadgeId(ids.worker);
+		// Another manager replaced it meanwhile.
+		signIn(ids.managerUser);
+		const newer = credentialOf(await replaceEmployeeKioskBadgeAction(ids.worker, seen));
+
+		signIn(ids.ownerUser);
+		expect(codeOf(await replaceEmployeeKioskBadgeAction(ids.worker, seen))).toBe("badge_changed");
+		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker, seen))).toBe("badge_changed");
+		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker, "not-a-badge"))).toBe(
+			"badge_changed",
+		);
+		expect(await badgeHolder(newer)).toBe(ids.worker);
+		// After reloading, the issuer acts on the badge that is active now.
+		const reloaded = await activeBadgeId(ids.worker);
+		expect(reloaded).not.toBe(seen);
+		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker, reloaded))).toBe("success");
+		expect(await badgeHolder(newer)).toBeNull();
 	});
 
 	it("never expires a badge and never accepts it in another organization or after access ends", async () => {
 		signIn(ids.ownerUser);
 		const credential = credentialOf(await issueEmployeeKioskBadgeAction(ids.worker));
+		const shown = await activeBadgeId(ids.worker);
 
 		expect(await badgeHolder(credential, org, parseInstant("2076-10-17T08:00:00Z"))).toBe(
 			ids.worker,
@@ -402,6 +468,6 @@ describe("kiosk badge management on PostgreSQL", () => {
 		await pool.query("update employee set is_active = false where id = $1", [ids.worker]);
 		expect(await badgeHolder(credential)).toBeNull();
 		// Revocation still works for an employee who is no longer active.
-		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker))).toBe("success");
+		expect(codeOf(await revokeEmployeeKioskBadgeAction(ids.worker, shown))).toBe("success");
 	});
 });
