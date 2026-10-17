@@ -17,4 +17,11 @@ Personal QR badges (#889) should make kiosk clocking faster than selecting a nam
 - Name-and-PIN clocking stays available as the fallback, including its existing offline behavior under ADR 0011 and the adopted-organization restriction of ADR 0002.
 - Badge authorization must remain valid when the employee submits an action; scanning is identification, not a committed clock command.
 - The kiosk keeps its own device identity and the kiosk channel. Clocking still owns both admissions and all work changes; the badge supplies the employee's proof rather than a new way of writing time data.
-- Enrollment, replacement, permitted issuers and scan inputs are being scoped separately in the ongoing interview on #889. This decision records only the confirmed authorization, connectivity and explicit-action rules.
+
+## Badge lifecycle and scan inputs
+
+Owners, admins and the employee's direct manager may issue, replace and revoke kiosk badges, matching kiosk PIN management permissions. Employees receive their badge from these people; the first version has no employee self-service issuance.
+
+An employee has at most one active badge, without scheduled expiry. Replacement immediately invalidates every copy of the old badge. Losing or revoking a badge does not disable the employee's separate PIN fallback.
+
+The first version supports tablet-camera scanning and attached scanners that enter QR contents as keyboard input in the kiosk browser interface. Native mobile-shell scanning is outside #889. Camera access must be enabled specifically for kiosks and supported devices verified; existing receipt-photo capture does not establish live QR scanning support.
