@@ -347,6 +347,8 @@ export async function closeClockOut(
 		capture: TimeEntryTimezoneCapture;
 		/** The closed work's vehicle use, decided from the live work's (#1122). */
 		closingVehicleUse?: ClosingVehicleUse;
+		/** The clock-out entry's source evidence when it ends at a break's start; the writer's by default. */
+		entrySource?: { ipAddress: string | null; deviceInfo: string };
 		/**
 		 * Whether a missing required task is marked, not refused (#884): where
 		 * nobody can pick a task, or where the work's project is no longer
@@ -389,6 +391,7 @@ export async function closeClockOut(
 		eventInstant: input.eventInstant,
 		capture: input.capture,
 		...(input.closingVehicleUse ? { closingVehicleUse: input.closingVehicleUse } : {}),
+		...(input.entrySource ? { entrySource: input.entrySource } : {}),
 		marksMissingTask: input.marksMissingTask,
 	};
 	const closed = legacy

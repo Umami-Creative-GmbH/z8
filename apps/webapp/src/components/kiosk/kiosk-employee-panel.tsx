@@ -12,15 +12,11 @@ import { useTranslate } from "@tolgee/react";
 import type { ComponentType, SVGProps } from "react";
 import { Button } from "@/components/ui/button";
 import { formatKioskDuration, formatKioskTime } from "@/lib/time-tracking/kiosk/display";
+import { type KioskAction, kioskActionsFor } from "@/lib/time-tracking/kiosk/kiosk-actions";
 import type { KioskClockAction, KioskEmployeeSnapshot } from "@/lib/time-tracking/kiosk/protocol";
 
-/** What the panel offers; `end_day` is a clock-out while on a break (it ends at the break's start). */
-export type KioskPanelAction =
-	| "clock_in"
-	| "start_break"
-	| "clock_out"
-	| "resume_break"
-	| "end_day";
+/** What the panel offers: the kiosk's one action union (`kiosk-actions.ts`). */
+export type KioskPanelAction = KioskAction;
 
 export const KIOSK_ACTION_REQUEST: Record<KioskPanelAction, KioskClockAction> = {
 	clock_in: "clock_in",
@@ -29,18 +25,6 @@ export const KIOSK_ACTION_REQUEST: Record<KioskPanelAction, KioskClockAction> = 
 	resume_break: "resume_break",
 	end_day: "clock_out",
 };
-
-/** Only the actions valid for the employee's state. */
-function actionsFor(state: KioskEmployeeSnapshot["state"]): KioskPanelAction[] {
-	switch (state.status) {
-		case "clocked_out":
-			return ["clock_in"];
-		case "clocked_in":
-			return ["start_break", "clock_out"];
-		case "on_break":
-			return ["resume_break", "end_day"];
-	}
-}
 
 const ACTION_ICONS: Record<KioskPanelAction, ComponentType<SVGProps<SVGSVGElement>>> = {
 	clock_in: IconLogin2,
@@ -70,22 +54,36 @@ export function useKioskActionLabels() {
 	};
 }
 
+/**
+ * What the panel shows: after a live PIN check the state and today's day
+ * total; on an offline-mode kiosk without a connection (#1291) the cached
+ * state `asOf` the instant the server last told it, and never a day total.
+ */
+export type KioskPanelSnapshot = Pick<KioskEmployeeSnapshot, "employee" | "state"> &
+	(
+		| { dayTotal: KioskEmployeeSnapshot["dayTotal"]; asOf?: never }
+		| { asOf: string; dayTotal?: never }
+	);
+
 interface KioskEmployeePanelProps {
-	snapshot: KioskEmployeeSnapshot;
+	snapshot: KioskPanelSnapshot;
 	zone: string;
 	locale: string;
 	/** The action being sent, if any. */
 	pending: KioskPanelAction | null;
 	disabled: boolean;
 	error: string | null;
+	/** Offline (#1292): that what the employee does is saved on this kiosk, not yet confirmed. */
+	notice?: string | null;
 	onAction: (action: KioskPanelAction) => void;
 	onBack: () => void;
 }
 
 /**
  * An employee's turn after a verified PIN (#862): their state and today's day
- * total, and only the actions valid for that state. No history, corrections,
- * projects or work categories.
+ * total (or, offline, "as of" when the state was learned, #1291), and only the
+ * actions valid for that state. No history, corrections, projects or work
+ * categories.
  */
 export function KioskEmployeePanel({
 	snapshot,
@@ -94,6 +92,7 @@ export function KioskEmployeePanel({
 	pending,
 	disabled,
 	error,
+	notice = null,
 	onAction,
 	onBack,
 }: KioskEmployeePanelProps) {
@@ -128,10 +127,19 @@ export function KioskEmployeePanel({
 				<h1 className="text-3xl font-semibold break-words">{snapshot.employee.name}</h1>
 				<p className="text-2xl">{stateText}</p>
 				<p className="text-lg text-muted-foreground">
-					{t("timeTracking.kiosk.employee.today", "Today: {duration}", {
-						duration: formatKioskDuration(snapshot.dayTotal.minutes, locale),
-					})}
+					{snapshot.asOf !== undefined
+						? t("timeTracking.kiosk.employee.asOf", "As of {time}", {
+								time: formatKioskTime(snapshot.asOf, zone, locale),
+							})
+						: t("timeTracking.kiosk.employee.today", "Today: {duration}", {
+								duration: formatKioskDuration(snapshot.dayTotal.minutes, locale),
+							})}
 				</p>
+				{notice ? (
+					<p className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-lg text-amber-900 dark:text-amber-100">
+						{notice}
+					</p>
+				) : null}
 			</div>
 			{error ? (
 				<p
@@ -142,7 +150,7 @@ export function KioskEmployeePanel({
 				</p>
 			) : null}
 			<div className="grid gap-4 sm:grid-cols-2">
-				{actionsFor(state).map((action, index) => {
+				{kioskActionsFor(state).map((action, index) => {
 					const Icon = ACTION_ICONS[action];
 					return (
 						<Button

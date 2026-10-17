@@ -1,6 +1,13 @@
 "use client";
 
-import { IconBan, IconDeviceTablet, IconPencil, IconPlus, IconQrcode } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconBan,
+	IconDeviceTablet,
+	IconPencil,
+	IconPlus,
+	IconQrcode,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
@@ -38,6 +45,7 @@ import {
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { KioskFormDialog } from "./kiosk-form-dialog";
 import { formatKioskInstant, kioskSettingsErrorMessage } from "./kiosk-format";
+import { KioskRefusalList } from "./kiosk-refusals";
 import { PairingCodeDialog } from "./pairing-code-dialog";
 
 interface KioskSettingsProps {
@@ -131,6 +139,7 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 					) : (
 						<KioskTable
 							kiosks={data.kiosks}
+							organizationAdopted={data.organizationAdopted}
 							onEdit={setEditing}
 							onPair={(kiosk) => setConfirmation({ kind: "pair", kiosk })}
 							onRevoke={(kiosk) => setConfirmation({ kind: "revoke", kiosk })}
@@ -138,6 +147,10 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 					)}
 				</CardContent>
 			</Card>
+
+			{data.refusals.length > 0 || data.kiosks.some((kiosk) => kiosk.offlineModeEnabled) ? (
+				<KioskRefusalList refusals={data.refusals} />
+			) : null}
 
 			<KioskFormDialog
 				mode="create"
@@ -160,6 +173,7 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 					}}
 					locations={data.locations}
 					kiosk={editing}
+					organizationAdopted={data.organizationAdopted}
 					onSaved={() => {
 						setEditing(null);
 						router.refresh();
@@ -210,6 +224,17 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 											"A new pairing code replaces the previous one.",
 										)}
 							</AlertDialogDescription>
+							{confirmation?.kiosk.status === "paired" &&
+							confirmation.kiosk.offlineModeEnabled &&
+							data.organizationAdopted ? (
+								<p className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+									<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+									{t(
+										"settings.kiosks.rotateOfflineWarning",
+										"This kiosk has offline mode on. Clockings it saved while offline and not yet sent are refused when it reconnects, and listed under refused offline clockings.",
+									)}
+								</p>
+							) : null}
 						</AlertDialogHeader>
 					)}
 					<AlertDialogFooter>
@@ -236,11 +261,13 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 
 function KioskTable({
 	kiosks,
+	organizationAdopted,
 	onEdit,
 	onPair,
 	onRevoke,
 }: {
 	kiosks: KioskData[];
+	organizationAdopted: boolean;
 	onEdit: (kiosk: KioskData) => void;
 	onPair: (kiosk: KioskData) => void;
 	onRevoke: (kiosk: KioskData) => void;
@@ -271,6 +298,16 @@ function KioskTable({
 									{kiosk.timezone}
 									{kiosk.boardEnabled
 										? ` · ${t("settings.kiosks.boardOn", "Who-is-in board on")}`
+										: ""}
+									{kiosk.offlineModeEnabled
+										? ` · ${
+												organizationAdopted
+													? t("settings.kiosks.offlineOn", "Offline mode on")
+													: t(
+															"settings.kiosks.offlineOnNotInEffect",
+															"Offline mode on, not in effect for this organization",
+														)
+											}`
 										: ""}
 								</div>
 							</TableCell>

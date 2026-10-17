@@ -452,7 +452,12 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 	// A break in progress on live work (#861); work records clears it when the work completes.
 	"src/lib/time-tracking/clocking/break-in-progress.ts": [
 		{
-			columns: ["break_started_at", "break_started_operation_id", "break_started_zone"],
+			columns: [
+				"break_started_at",
+				"break_started_operation_id",
+				"break_started_time_source",
+				"break_started_zone",
+			],
 			functionName: "recordBreakInProgress",
 			operation: "update",
 			semantic: "live_work",
@@ -612,6 +617,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			columns: [
 				"approval_status",
 				"break_started_at",
+				"break_started_time_source",
 				"break_started_zone",
 				"canonical_record_id",
 				"clock_out_id",

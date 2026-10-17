@@ -1452,7 +1452,8 @@
         "invalidTimezone": "Choose a time zone.",
         "kioskNotFound": "This kiosk was not found.",
         "kioskRevoked": "This kiosk is revoked.",
-        "locationNotFound": "Choose an active location of this organization."
+        "locationNotFound": "Choose an active location of this organization.",
+        "offlineNeedsAdoption": "Offline mode needs coordinated clock commands, which this organization does not use yet."
       },
       "fields": {
         "board": "Who-is-in board",
@@ -1462,6 +1463,9 @@
         "locationPlaceholder": "Choose a location",
         "name": "Name",
         "namePlaceholder": "e.g. Staff entrance",
+        "offlineMode": "Offline mode",
+        "offlineModeDescription": "The kiosk keeps clocking without a connection. Its clockings are confirmed, and their PINs checked, once it reconnects.",
+        "offlineModeUnavailable": "Offline mode needs coordinated clock commands, which this organization does not use yet.",
         "timezone": "Time zone",
         "timezoneDescription": "Clock events recorded at this kiosk use this zone."
       },
@@ -1471,6 +1475,8 @@
       "loadFailed": "Kiosks could not be loaded.",
       "neverSeen": "Never",
       "noLocations": "Create a location first: every kiosk belongs to one location.",
+      "offlineOn": "Offline mode on",
+      "offlineOnNotInEffect": "Offline mode on, not in effect for this organization",
       "pairAgain": "Pair again",
       "pairFailed": "A new pairing code could not be issued",
       "pairingCodeLabel": "Pairing code",
@@ -1480,6 +1486,46 @@
       "pairPairedDescription": "The device token is rotated: the paired device stops working immediately and must be paired again with the new code.",
       "pairTitle": "Pair {name} again?",
       "pairUnpairedDescription": "A new pairing code replaces the previous one.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Clock in",
+          "clockOut": "Clock out",
+          "resumeBreak": "Resume",
+          "startBreak": "Start break"
+        },
+        "columns": {
+          "action": "Action",
+          "claimedAt": "Claimed time",
+          "employee": "Employee",
+          "kiosk": "Kiosk",
+          "reason": "Reason",
+          "timeSource": "Time source"
+        },
+        "description": "Clockings saved on a kiosk while it was offline that were not recorded when it reconnected. The employee, or the managers of an employee without a sign-in, were notified.",
+        "empty": "No offline clocking was refused.",
+        "reasons": {
+          "clockUntrusted": "Kiosk clock not trusted",
+          "conflict": "Conflicts with other recorded time",
+          "contactUnverifiable": "Last connection could not be confirmed",
+          "holiday": "Holiday without time recording",
+          "kioskRetired": "Kiosk revoked or paired again",
+          "monthClosed": "Month closed",
+          "noPin": "No kiosk PIN set",
+          "notAdopted": "Offline clocking not accepted by the organization",
+          "notAssigned": "Not assigned to the location",
+          "other": "Could not be accepted",
+          "outsideWindow": "Arrived too late",
+          "pinLocked": "PIN locked",
+          "pinUnchecked": "PIN could not be checked",
+          "wrongPin": "Wrong PIN"
+        },
+        "timeSources": {
+          "deviceClock": "Device clock",
+          "serverAnchor": "Server time"
+        },
+        "title": "Refused offline clockings",
+        "unknownEmployee": "Not an employee"
+      },
       "revoke": "Revoke",
       "revokeConfirm": "Revoke kiosk",
       "revoked": "Kiosk revoked",
@@ -1487,6 +1533,7 @@
       "revokeFailed": "The kiosk could not be revoked",
       "revokeTitle": "Revoke {name}?",
       "rotateConfirm": "Rotate token and pair again",
+      "rotateOfflineWarning": "This kiosk has offline mode on. Clockings it saved while offline and not yet sent are refused when it reconnects, and listed under refused offline clockings.",
       "save": "Save",
       "saved": "Kiosk saved",
       "saveFailed": "The kiosk could not be saved",

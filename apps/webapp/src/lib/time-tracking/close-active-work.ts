@@ -34,6 +34,7 @@ import {
 	isClosureCarriedByAutomaticBreak,
 } from "./automatic-break-intent";
 import { canonicalJson } from "./canonical-json";
+import type { KioskTimeSource } from "./clocking/types";
 import {
 	ClockingConflictError,
 	ClockingOrganizationError,
@@ -221,12 +222,18 @@ export const AUTOMATIC_CLOCK_OUT_WRITER = {
 	ipAddress: null,
 } as const satisfies CloseActiveWorkWriter;
 
-/** The receipt writer of a kiosk's clock commands (#860): its entries carry the kiosk. */
-export function kioskClockWriter(kioskId: string): CloseActiveWorkWriter {
+/**
+ * The receipt writer of a kiosk's clock commands (#860): its entries carry the
+ * kiosk, and those of a frozen kiosk command (#1289) also its time source.
+ */
+export function kioskClockWriter(
+	kioskId: string,
+	offlineTimeSource?: KioskTimeSource,
+): CloseActiveWorkWriter {
 	return {
 		writer: "kiosk_clock",
 		writerVersion: KIOSK_CLOCK_WRITER_VERSION,
-		deviceInfo: kioskDeviceInfo(kioskId),
+		deviceInfo: kioskDeviceInfo(kioskId, offlineTimeSource),
 		ipAddress: null,
 		kioskId,
 	};

@@ -9,6 +9,7 @@ import {
 	IconCircleFilled,
 	IconClock,
 	IconDatabaseExport,
+	IconDeviceTablet,
 	IconShield,
 	IconUserMinus,
 	IconUserShare,
@@ -57,6 +58,14 @@ function getNotificationStyle(type: NotificationType): {
 				icon: <IconClock className="size-4" />,
 				bgColor: "bg-sky-100 dark:bg-sky-900/30",
 				iconColor: "text-sky-600 dark:text-sky-400",
+			};
+
+		// A clocking queued on an offline kiosk was refused (#1290)
+		case "kiosk_command_refused":
+			return {
+				icon: <IconDeviceTablet className="size-4" />,
+				bgColor: "bg-red-100 dark:bg-red-900/30",
+				iconColor: "text-red-600 dark:text-red-400",
 			};
 
 		// Skill expiry reminders (#1143)

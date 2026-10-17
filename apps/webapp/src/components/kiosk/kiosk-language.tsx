@@ -77,14 +77,17 @@ export function useKioskLanguage(organizationLanguage: string) {
 
 export function KioskLanguageSwitch({
 	locale,
+	disabled = false,
 	onChoose,
 }: {
 	locale: string;
+	/** An offline-mode kiosk without a connection (#1291) may not have another language's page cached. */
+	disabled?: boolean;
 	onChoose: (language: string) => void;
 }) {
 	const { t } = useTranslate();
 	return (
-		<Select value={locale} onValueChange={onChoose}>
+		<Select value={locale} onValueChange={onChoose} disabled={disabled}>
 			<SelectTrigger
 				aria-label={t("common.select-language", "Select language")}
 				className="h-12 min-w-40 text-base"

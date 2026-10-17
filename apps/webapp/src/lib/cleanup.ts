@@ -8,6 +8,7 @@ import { deleteOldAuditLogs } from "@/lib/audit/cleanup";
 import { AUDIT_LOG_RETENTION_DAYS } from "@/lib/audit/retention";
 import { cleanupExpiredExports } from "@/lib/export/export-service";
 import { runClockingReminderOccasionRetention } from "@/lib/jobs/clocking-reminder-occasion-retention";
+import { runKioskPinEventRetention } from "@/lib/jobs/kiosk-pin-event-retention";
 import { runPositionRecordRetention } from "@/lib/jobs/position-record-retention";
 import { runKeyRequestLogRetention } from "@/lib/jobs/public-api-request-log-retention";
 import { runReportShareLinkViewRetention } from "@/lib/jobs/report-share-links";
@@ -53,6 +54,13 @@ export async function runCleanup(data: CleanupJobData): Promise<{
 				"Cleaned up key request log entries past retention",
 			);
 			deletedCount += deletedKeyRequestCount;
+			// Kiosk PIN events are kept only while they can affect a lockout check (#1288).
+			const deletedKioskPinEventCount = await runKioskPinEventRetention();
+			logger.info(
+				{ count: deletedKioskPinEventCount },
+				"Cleaned up kiosk PIN events past the lockout replay window",
+			);
+			deletedCount += deletedKioskPinEventCount;
 			break;
 		}
 

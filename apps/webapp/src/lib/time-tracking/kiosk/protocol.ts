@@ -4,13 +4,18 @@
  *
  * - The device pairs at `POST /api/kiosk/pair` with `{ code }` and receives
  *   `{ token, kiosk }`. It stores the token in `localStorage` under
- *   `KIOSK_TOKEN_STORAGE_KEY` and nothing else about the kiosk.
+ *   `KIOSK_TOKEN_STORAGE_KEY`. Without offline mode it stores nothing else
+ *   about the kiosk; with offline mode (#1291) it also caches the kiosk, its
+ *   employees and their states in its own IndexedDB (`offline-cache.ts`), and
+ *   queues frozen kiosk commands there while offline (`offline-queue.ts`, #1292).
  * - Every later kiosk request sends the token in the `x-kiosk-token` header
  *   (never `Authorization: Bearer`, which Better Auth's bearer plugin consumes).
  * - A refused token is answered with 401 and `{ code }`: `kiosk_unknown` (pair
  *   again) or `kiosk_revoked` (show the revoked screen).
  */
 import type { WorkVehicleOption, WorkVehicleUse } from "../vehicle-use/work-vehicle-use";
+import type { KioskContactAnchor } from "./frozen-command";
+import type { KioskSealingKey } from "./pin-seal";
 
 export const KIOSK_TOKEN_HEADER = "x-kiosk-token";
 
@@ -140,17 +145,66 @@ export type KioskDeviceInfo = {
 	boardEnabled: boolean;
 	/** The organization's default language (#862); the kiosk opens in it. */
 	language: string;
+	/**
+	 * Whether the kiosk works offline (#1287, spec #885): its offline-mode switch
+	 * is on and its organization is adopted. Read at every contact (session and
+	 * pairing), so switching it off reaches the kiosk at its next request. While
+	 * false the kiosk caches and queues nothing and refuses clocking offline.
+	 */
+	offlineMode: boolean;
 };
+
+/**
+ * What a kiosk needs to queue frozen kiosk commands while offline (#1289, spec
+ * #885). `GET /api/kiosk/session` and `POST /api/kiosk/pair` answer it as
+ * `offline` beside `kiosk`, only while `kiosk.offlineMode` is true:
+ * - `contact`: the signed anchor of this contact. `contact.serverTime` is Z8's
+ *   time now (UTC ISO); the kiosk measures elapsed time from it with a monotonic
+ *   clock (`server_anchor`) and returns the latest anchor with every command it
+ *   queues until its next contact.
+ * - `sealingKey`: Z8's public key to seal each entered PIN with (`pin-seal.ts`).
+ * Frozen commands go to `POST /api/kiosk/commands`; see `frozen-command.ts`.
+ */
+export type KioskOfflineContact = {
+	contact: KioskContactAnchor;
+	sealingKey: KioskSealingKey;
+};
+
+/** `GET /api/kiosk/session`. */
+export type KioskSessionResponse = { kiosk: KioskDeviceInfo; offline?: KioskOfflineContact };
+
+/** `POST /api/kiosk/pair`. */
+export type KioskPairResponse = KioskSessionResponse & { token: string };
 
 /** One employee on the kiosk home screen (#862). */
 export type KioskEmployeeListing = { id: string; name: string };
 
 /**
- * `GET /api/kiosk/employees` (#862): the active employees assigned to the
- * kiosk's location, ordered by name. The device keeps the list only while its
- * home screen shows.
+ * What an offline-mode kiosk caches at each contact (#1291, spec #885): each
+ * listed employee's state, keyed by employee id, and the server instant it was
+ * read at (UTC ISO), shown offline as "as of HH:MM". Never a day total.
  */
-export type KioskEmployeesResponse = { employees: KioskEmployeeListing[] };
+export type KioskOfflineStates = {
+	learnedAt: string;
+	states: Record<string, KioskEmployeeState>;
+	/**
+	 * The vehicle use each listed employee is asked (#1292), keyed by employee id,
+	 * only for those whose vehicle use is asked or expected: what the vehicle step
+	 * needs offline, where no live PIN check can fetch it. Absent when nobody has one.
+	 */
+	vehicleUse?: Record<string, KioskVehicleUse>;
+};
+
+/**
+ * `GET /api/kiosk/employees` (#862): the active employees assigned to the
+ * kiosk's location, ordered by name. A kiosk without offline mode keeps the
+ * list only while its home screen shows. An offline-mode kiosk (#1291) also
+ * gets `offline`, and keeps both until its next contact replaces or clears them.
+ */
+export type KioskEmployeesResponse = {
+	employees: KioskEmployeeListing[];
+	offline?: KioskOfflineStates;
+};
 
 /**
  * `GET /api/kiosk/board` (#863): who of the location's assigned employees is

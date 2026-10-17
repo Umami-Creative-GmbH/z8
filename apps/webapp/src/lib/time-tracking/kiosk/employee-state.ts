@@ -8,7 +8,7 @@ import {
 	type Instant,
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
-import { readClockPresence } from "@/lib/time-tracking/clock-presence";
+import { type ClockPresence, readClockPresence } from "@/lib/time-tracking/clock-presence";
 import { buildDayTotalBasis, summarizeDayTotals } from "@/lib/time-tracking/day-totals";
 import type { WorkTransactionClient } from "@/lib/time-tracking/web-clock-out-transaction";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
@@ -67,19 +67,21 @@ export async function readKioskEmployeeState(
 		minutes: summarizeDayTotals(basis, now).todayMinutes,
 	};
 
-	if (!presence) return { state: { status: "clocked_out" }, dayTotal };
+	return { state: kioskStateOf(presence), dayTotal };
+}
+
+/** An employee's kiosk state from their clock presence; no presence is clocked out. */
+export function kioskStateOf(presence: ClockPresence | undefined): KioskEmployeeState {
+	if (!presence) return { status: "clocked_out" };
 	const since = instantToCanonicalString(presence.workSince);
 	if (presence.state === "on_break" && presence.breakSince && presence.breakZone) {
 		return {
-			state: {
-				status: "on_break",
-				workPeriodId: presence.workPeriodId,
-				since,
-				breakSince: instantToCanonicalString(presence.breakSince),
-				breakZone: presence.breakZone,
-			},
-			dayTotal,
+			status: "on_break",
+			workPeriodId: presence.workPeriodId,
+			since,
+			breakSince: instantToCanonicalString(presence.breakSince),
+			breakZone: presence.breakZone,
 		};
 	}
-	return { state: { status: "clocked_in", workPeriodId: presence.workPeriodId, since }, dayTotal };
+	return { status: "clocked_in", workPeriodId: presence.workPeriodId, since };
 }

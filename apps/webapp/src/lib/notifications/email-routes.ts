@@ -89,6 +89,8 @@ const NOTIFICATION_EMAIL_ROUTES: {
 	driving_details_missing_reminder: layout("/time-tracking"),
 	driving_licence_reminder: layout("/driving-licence"),
 	driving_authorization_suspended: layout("/driving-licence"),
+	// Record the refused kiosk clocking again (#1290).
+	kiosk_command_refused: layout("/time-tracking"),
 	personnel_file_document_shared: layout("/my-documents"),
 	personnel_file_employee_upload: layout("/personnel-files/"),
 	// Officers get the employee's personnel file, the employee My documents (#869).

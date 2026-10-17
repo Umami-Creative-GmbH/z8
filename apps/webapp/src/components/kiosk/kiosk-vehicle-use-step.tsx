@@ -46,7 +46,8 @@ export type KioskVehicleUseAnswer = {
 
 interface KioskVehicleUseStepProps {
 	question: KioskVehicleQuestion;
-	snapshot: KioskEmployeeSnapshot;
+	/** Whose turn it is and their state (offline, as the kiosk believes it, #1292). */
+	snapshot: Pick<KioskEmployeeSnapshot, "employee" | "state">;
 	/** The snapshot's vehicle use; the kiosk asks only while it is on. */
 	context: KioskVehicleUse;
 	/** The action's button label, e.g. "Clock in". */

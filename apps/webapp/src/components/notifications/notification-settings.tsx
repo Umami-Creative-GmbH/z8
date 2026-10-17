@@ -79,6 +79,7 @@ const NOTIFICATION_CATEGORIES = [
 			"time_correction_rejected",
 			"period_submission_decided",
 			"automatic_clock_out",
+			"kiosk_command_refused",
 			"month_closed_automatically",
 			"month_close_blocked",
 			"month_reopened",
@@ -231,7 +232,8 @@ type StaticallyLabelledType =
 	| "skill_expiry_upcoming"
 	| "skill_expired_today"
 	| "driving_licence_reminder"
-	| "driving_authorization_suspended";
+	| "driving_authorization_suspended"
+	| "kiosk_command_refused";
 
 // Human-readable labels for the other notification types, looked up by a computed key.
 const TYPE_LABELS: Record<
@@ -459,6 +461,11 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.driving_details_missing_reminder",
 					"Driving details missing",
+				);
+			case "kiosk_command_refused":
+				return t(
+					"common:notifications.preferences.types.kiosk_command_refused",
+					"Kiosk clocking not recorded",
 				);
 			case "period_submission_reminder":
 				return t(

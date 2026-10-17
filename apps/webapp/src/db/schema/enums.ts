@@ -326,6 +326,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"driving_details_missing_reminder",
 	"driving_licence_reminder",
 	"driving_authorization_suspended",
+	// A clocking queued on an offline kiosk was refused on arrival (#1290)
+	"kiosk_command_refused",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

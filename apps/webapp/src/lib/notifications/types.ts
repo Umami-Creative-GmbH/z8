@@ -118,6 +118,8 @@ export const NOTIFICATION_TYPES = [
 	"driving_details_missing_reminder",
 	"driving_licence_reminder",
 	"driving_authorization_suspended",
+	// A clocking queued on an offline kiosk was refused on arrival (#1290)
+	"kiosk_command_refused",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

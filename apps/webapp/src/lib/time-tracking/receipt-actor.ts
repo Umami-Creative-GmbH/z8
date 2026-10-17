@@ -1,4 +1,5 @@
 import type { CompletedWorkActorKind } from "@/db/schema";
+import type { KioskTimeSource } from "./clocking/types";
 
 /**
  * Who a completed-work receipt records as acting (#860). A human acts for
@@ -14,9 +15,14 @@ export type ReceiptActor =
 /** The receipt writer of kiosk clock commands; replay only matches the same writer. */
 export const KIOSK_CLOCK_WRITER_VERSION = 1;
 
-/** The device evidence kiosk clock entries carry: the kiosk's identity. */
-export function kioskDeviceInfo(kioskId: string) {
-	return `kiosk:${kioskId}`;
+/**
+ * The device evidence kiosk clock entries carry: the kiosk's identity, and for a
+ * frozen kiosk command (#1289, offline kiosk clocking) also where its instant
+ * came from, `kiosk:<kioskId>:offline:<timeSource>`. Live kiosk entries keep
+ * `kiosk:<kioskId>`.
+ */
+export function kioskDeviceInfo(kioskId: string, offlineTimeSource?: KioskTimeSource) {
+	return offlineTimeSource ? `kiosk:${kioskId}:offline:${offlineTimeSource}` : `kiosk:${kioskId}`;
 }
 
 /** The actor a writer's receipt records: a kiosk writer records its kiosk. */
