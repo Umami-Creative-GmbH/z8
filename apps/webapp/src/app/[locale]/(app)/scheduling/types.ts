@@ -55,25 +55,7 @@ export interface ShiftWithRelations extends Shift {
 	recurrence?: ShiftRecurrence | null;
 }
 
-export interface ShiftRequestWithRelations extends ShiftRequest {
-	shift: Shift & {
-		employee?: {
-			id: string;
-			firstName: string | null;
-			lastName: string | null;
-		} | null;
-	};
-	requester: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-	};
-	targetEmployee?: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-	} | null;
-}
+export type { ShiftRequestWithRelations } from "@/lib/effect/services/shift-request.service";
 
 /** The shift save warning, the same skill check scheduling shows elsewhere. */
 export type SkillWarningInfo = SkillValidationResult;

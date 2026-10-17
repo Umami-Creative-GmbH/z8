@@ -22,6 +22,10 @@ _Avoid_: unassigned shift, vacant shift
 An employee's request to be assigned a published open shift, which a planner approves or rejects.
 _Avoid_: claim, shift application
 
+**Swap request**:
+An employee's request to hand their published shift to a named colleague, which a planner approves or rejects. Approving assigns the colleague.
+_Avoid_: shift trade, exchange
+
 **Planner**:
 An employee with the manager or admin role who creates shifts and assigns employees to them.
 _Avoid_: scheduler, shift manager
