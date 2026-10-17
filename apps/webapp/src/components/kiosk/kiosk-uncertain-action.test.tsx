@@ -261,7 +261,9 @@ describe("kiosk uncertain action (#1363)", () => {
 			kioskRoutes({
 				"/api/kiosk/employees": () => Response.json({ employees: [anna, ben] }),
 				"/api/kiosk/employee-status": ({ body }) =>
-					Response.json(body?.employeeId === ben.id ? { ...clockedOut, employee: ben } : clockedOut),
+					Response.json(
+						body?.employeeId === ben.id ? { ...clockedOut, employee: ben } : clockedOut,
+					),
 				// Anna's reply is lost; Ben's action goes through.
 				"/api/kiosk/clock": ({ body }) => {
 					if (body?.employeeId === anna.id) lostReply();

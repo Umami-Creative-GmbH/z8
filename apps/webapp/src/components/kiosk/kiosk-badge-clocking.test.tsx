@@ -493,7 +493,9 @@ describe("kiosk badge clocking with an attached scanner (#1366)", () => {
 
 			expect(await screen.findByRole("heading", { name: CHECKING })).toBeTruthy();
 			const stored = window.localStorage.getItem(UNCERTAIN_KEY) ?? "";
-			expect(JSON.parse(stored)).toEqual([expect.objectContaining({ via: "badge", employee: anna })]);
+			expect(JSON.parse(stored)).toEqual([
+				expect.objectContaining({ via: "badge", employee: anna }),
+			]);
 			expect(stored).not.toContain(BADGE);
 			for (const name of ["Clock in", "OK", "1"]) {
 				expect(screen.queryByRole("button", { name })).toBeNull();
@@ -568,7 +570,9 @@ describe("kiosk badge clocking with an attached scanner (#1366)", () => {
 			scanKeys(BADGE);
 
 			expect(
-				await screen.findByText("This action was not recorded. Choose it again if you still want it."),
+				await screen.findByText(
+					"This action was not recorded. Choose it again if you still want it.",
+				),
 			).toBeTruthy();
 			expect(screen.getByRole("button", { name: "Clock in" })).toBeTruthy();
 			expect(window.localStorage.getItem(UNCERTAIN_KEY)).toBeNull();

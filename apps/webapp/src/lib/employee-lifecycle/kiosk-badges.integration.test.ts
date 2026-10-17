@@ -295,9 +295,9 @@ describe("kiosk badges across departure and rehire", () => {
 
 			// Before processing (cutoff 2026-09-30T22:00Z) and after it, the day is 30 September.
 			now = parseInstant("2026-10-01T06:00:00Z");
-			expect((await status(scheduledWorker.employeeId)).lastRevoked?.lastWorkingDay?.toString()).toBe(
-				"2026-09-30",
-			);
+			expect(
+				(await status(scheduledWorker.employeeId)).lastRevoked?.lastWorkingDay?.toString(),
+			).toBe("2026-09-30");
 			const departure = await fixture.pool.query<{ id: string; revision: number }>(
 				"select id, revision from employee_departure where employee_id = $1",
 				[scheduledWorker.employeeId],
@@ -308,9 +308,9 @@ describe("kiosk badges across departure and rehire", () => {
 					revision: departure.rows[0]?.revision ?? 0,
 				}),
 			);
-			expect((await status(scheduledWorker.employeeId)).lastRevoked?.lastWorkingDay?.toString()).toBe(
-				"2026-09-30",
-			);
+			expect(
+				(await status(scheduledWorker.employeeId)).lastRevoked?.lastWorkingDay?.toString(),
+			).toBe("2026-09-30");
 
 			// Offboarded now, just after midnight in Berlin (still 2 October in UTC): the Berlin day.
 			await offboardNow(offboarded, "2026-10-02T22:30:00Z");

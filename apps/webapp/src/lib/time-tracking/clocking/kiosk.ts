@@ -153,7 +153,8 @@ export async function proveFrozenKioskPin(
 		judgeClock,
 	) => db.transaction((tx) => judgeKioskPinAttempt(tx, input, judgeClock)),
 ): Promise<
-	{ status: "verified"; proof: KioskEmployeeProof } | Exclude<KioskPinJudgment, { status: "verified" }>
+	| { status: "verified"; proof: KioskEmployeeProof }
+	| Exclude<KioskPinJudgment, { status: "verified" }>
 > {
 	const verification = await judge(
 		{

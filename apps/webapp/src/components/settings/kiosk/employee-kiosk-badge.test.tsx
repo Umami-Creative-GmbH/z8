@@ -196,24 +196,25 @@ describe("Kiosk badge on the employee page (#1364)", () => {
 	it.each([
 		["en", "Sep 30, 2026"],
 		["de", "30.09.2026"],
-	])("dates a departure by the last working day in the %s UI language, not the cutoff after it", async (language, day) => {
-		ui.language = language;
-		actions.getEmployeeKioskStateAction.mockResolvedValue(
-			state({
-				...noBadge,
-				// The cutoff is midnight after 30 September in Berlin.
-				lastRevokedAt: "2026-09-30T22:00:00Z",
-				lastRevokedReason: "employee_departure",
-				departureLastWorkingDay: "2026-09-30",
-				canIssue: false,
-			}),
-		);
-		renderCard();
+	])(
+		"dates a departure by the last working day in the %s UI language, not the cutoff after it",
+		async (language, day) => {
+			ui.language = language;
+			actions.getEmployeeKioskStateAction.mockResolvedValue(
+				state({
+					...noBadge,
+					// The cutoff is midnight after 30 September in Berlin.
+					lastRevokedAt: "2026-09-30T22:00:00Z",
+					lastRevokedReason: "employee_departure",
+					departureLastWorkingDay: "2026-09-30",
+					canIssue: false,
+				}),
+			);
+			renderCard();
 
-		expect(
-			await screen.findByText(new RegExp(`employee's departure on ${day}\\.`)),
-		).toBeTruthy();
-	});
+			expect(await screen.findByText(new RegExp(`employee's departure on ${day}\\.`))).toBeTruthy();
+		},
+	);
 
 	it("dates other badge events in the organization's zone, not the viewer's", async () => {
 		actions.getEmployeeKioskStateAction.mockResolvedValue(

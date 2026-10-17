@@ -8,7 +8,7 @@ import {
 	IconShieldOff,
 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
-import { type useTranslate, useTolgee } from "@tolgee/react";
+import { useTolgee, type useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
