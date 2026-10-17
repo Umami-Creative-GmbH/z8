@@ -27,6 +27,7 @@ import {
 	updateImportBatchStatus,
 } from "@/lib/import-review/repository";
 import type {
+	ImportApiProvider,
 	ImportDateRange,
 	ImportEmployeeMapping,
 	ImportEntityType,
@@ -47,10 +48,11 @@ const MAX_REVIEW_PAGE_OFFSET = 100_000;
 const MAX_DECISION_REASON_LENGTH = 1_000;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SAFE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GENERIC_SCAN_START_ERROR = "Failed to start import review scan";
 const GENERIC_COMMIT_START_ERROR = "Failed to start import commit";
-function isImportProvider(value: string): value is ImportProvider {
+function isImportProvider(value: string): value is ImportApiProvider {
 	return value === "clockodo" || value === "clockin";
 }
 
@@ -87,7 +89,7 @@ function isImportEntityType(value: string): value is ImportEntityType {
 
 export interface StartImportReviewScanInput {
 	organizationId: string;
-	provider: ImportProvider;
+	provider: ImportApiProvider;
 	credential: string;
 	selectedScope: Record<string, unknown>;
 	dateRange: ImportDateRange;
@@ -374,7 +376,7 @@ function validateStartImportReviewScanInput(
 
 	return {
 		organizationId: input.organizationId,
-		provider: input.provider as ImportProvider,
+		provider: input.provider as ImportApiProvider,
 		credential,
 		selectedScope: input.selectedScope,
 		dateRange: { startDate, endDate },

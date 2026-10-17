@@ -94,6 +94,13 @@ vi.mock("@/lib/import-review/repository", () => ({
 	listImportReviewRows: mockState.listImportReviewRows,
 }));
 
+vi.mock("@/lib/import-review/csv-work-import", () => ({
+	getCsvWorkReview: vi.fn(),
+}));
+vi.mock("@/components/settings/import/csv-work-review", () => ({
+	CsvWorkReview: () => <div data-testid="csv-work-review" />,
+}));
+
 const { default: ImportReviewRoute } = await import("./page");
 
 async function renderRequestContent(

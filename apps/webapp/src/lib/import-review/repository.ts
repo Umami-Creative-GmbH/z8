@@ -65,9 +65,9 @@ function commitDependencyGroup(entityType: ImportEntityType): number {
 	return COMMIT_OPERATIONAL_ENTITIES.has(entityType) ? 1 : 0;
 }
 
-export function readyCommitJobsFromJobs<T extends { entityType: string; status: ImportJobStatus }>(
-	jobs: T[],
-): T[] {
+export function readyCommitJobsFromJobs<
+	T extends { entityType: string; status: ImportJobStatus },
+>(jobs: T[]): T[] {
 	if (jobs.some((job) => job.status === "failed")) return [];
 
 	const commitJobs = jobs.toSorted(
@@ -104,7 +104,9 @@ function stableStringify(value: unknown): string {
 }
 
 function sourcePayloadHash(row: NormalizedImportRow): string {
-	return createHash("sha256").update(stableStringify(row.sourcePayload)).digest("hex");
+	return createHash("sha256")
+		.update(stableStringify(row.sourcePayload))
+		.digest("hex");
 }
 
 export async function createImportBatch(input: {
@@ -135,7 +137,8 @@ export async function updateImportBatchStatus(input: {
 		eq(importBatch.id, input.batchId),
 		eq(importBatch.organizationId, input.organizationId),
 	];
-	if (input.expectedStatus) conditions.push(eq(importBatch.status, input.expectedStatus));
+	if (input.expectedStatus)
+		conditions.push(eq(importBatch.status, input.expectedStatus));
 
 	const [batch] = await db
 		.update(importBatch)
@@ -154,7 +157,11 @@ export async function createImportBatchJob(input: {
 	entityType: ImportEntityType;
 	partitionKey: string;
 }) {
-	const [job] = await db.insert(importBatchJob).values(input).onConflictDoNothing().returning();
+	const [job] = await db
+		.insert(importBatchJob)
+		.values(input)
+		.onConflictDoNothing()
+		.returning();
 	if (job) return job;
 
 	return db.query.importBatchJob.findFirst({
@@ -185,7 +192,8 @@ export async function updateImportBatchJob(input: {
 	if ("processedRows" in input) update.processedRows = input.processedRows;
 	if ("errorMessage" in input) update.errorMessage = input.errorMessage;
 	if (input.status === "running") update.startedAt = new Date();
-	if (input.status === "completed" || input.status === "failed") update.completedAt = new Date();
+	if (input.status === "completed" || input.status === "failed")
+		update.completedAt = new Date();
 
 	await db
 		.update(importBatchJob)
@@ -231,7 +239,30 @@ export async function advanceImportBatchAfterJob(input: {
 	]);
 
 	if (!batch) return null;
-	const nextStatus = nextBatchStatusAfterJobs(batch.status as ImportBatchStatus, jobs);
+	const relevantJobs =
+		batch.provider === "csv" &&
+		input.kind === "commit" &&
+		typeof batch.selectedScope.commitJobId === "string"
+			? jobs.filter((job) => job.id === batch.selectedScope.commitJobId)
+			: jobs;
+	let nextStatus = nextBatchStatusAfterJobs(
+		batch.status as ImportBatchStatus,
+		relevantJobs,
+	);
+	if (batch.provider === "csv" && nextStatus === "completed") {
+		const [unresolved] = await db
+			.select({ id: importStagedRow.id })
+			.from(importStagedRow)
+			.where(
+				and(
+					eq(importStagedRow.organizationId, input.organizationId),
+					eq(importStagedRow.batchId, input.batchId),
+					sql`${importStagedRow.rowStatus} NOT IN ('committed', 'rejected')`,
+				),
+			)
+			.limit(1);
+		if (unresolved) nextStatus = "needs_review";
+	}
 	if (nextStatus === batch.status) return batch;
 
 	return updateImportBatchStatus({
@@ -260,7 +291,10 @@ export async function saveImportJobSecret(input: {
 	return secret;
 }
 
-export async function getImportJobSecret(input: { secretId: string; organizationId: string }) {
+export async function getImportJobSecret(input: {
+	secretId: string;
+	organizationId: string;
+}) {
 	return db.query.importJobSecret.findFirst({
 		where: and(
 			eq(importJobSecret.id, input.secretId),
@@ -323,7 +357,10 @@ export async function insertImportIssues(input: {
 		.returning();
 }
 
-export async function getImportReviewSummary(input: { batchId: string; organizationId: string }) {
+export async function getImportReviewSummary(input: {
+	batchId: string;
+	organizationId: string;
+}) {
 	const rowBaseWhere = and(
 		eq(importStagedRow.batchId, input.batchId),
 		eq(importStagedRow.organizationId, input.organizationId),
@@ -373,7 +410,8 @@ export async function listImportReviewRows(input: {
 		eq(importStagedRow.organizationId, input.organizationId),
 	];
 
-	if (input.status) conditions.push(eq(importStagedRow.rowStatus, input.status));
+	if (input.status)
+		conditions.push(eq(importStagedRow.rowStatus, input.status));
 
 	return db
 		.select()
@@ -420,14 +458,23 @@ export async function applyImportRowDecision(input: {
 				.select({ id: customer.id })
 				.from(customer)
 				.where(
-					and(eq(customer.id, choice.targetId), eq(customer.organizationId, input.organizationId)),
+					and(
+						eq(customer.id, choice.targetId),
+						eq(customer.organizationId, input.organizationId),
+					),
 				)
 				.limit(1);
-			if (!target) throw new Error("The chosen customer does not exist in this organization");
+			if (!target)
+				throw new Error(
+					"The chosen customer does not exist in this organization",
+				);
 		}
 
 		const rows = await tx
-			.select({ id: importStagedRow.id, issueSeverity: importStagedRow.issueSeverity })
+			.select({
+				id: importStagedRow.id,
+				issueSeverity: importStagedRow.issueSeverity,
+			})
 			.from(importStagedRow)
 			.where(
 				and(
@@ -471,11 +518,13 @@ export async function applyImportRowDecision(input: {
 			return { updatedCount: updated.length };
 		}
 
-		const blockingRows = rows.flatMap((row: { issueSeverity: ImportIssueSeverity; id: string }) =>
-			row.issueSeverity === "blocking" ? [row.id] : [],
+		const blockingRows = rows.flatMap(
+			(row: { issueSeverity: ImportIssueSeverity; id: string }) =>
+				row.issueSeverity === "blocking" ? [row.id] : [],
 		);
-		const acceptedRows = rows.flatMap((row: { issueSeverity: ImportIssueSeverity; id: string }) =>
-			row.issueSeverity !== "blocking" ? [row.id] : [],
+		const acceptedRows = rows.flatMap(
+			(row: { issueSeverity: ImportIssueSeverity; id: string }) =>
+				row.issueSeverity !== "blocking" ? [row.id] : [],
 		);
 		const [acceptedUpdated, blockedUpdated] = await Promise.all([
 			updateRows(acceptedRows, "accepted"),
@@ -525,6 +574,8 @@ export async function createCommitJobsForAcceptedRows(input: {
 	if (batch?.status !== "needs_review") {
 		throw new Error("Import batch is not ready to commit");
 	}
+	if (batch.provider === "csv")
+		throw new Error("Commit CSV work through its CSV review screen");
 
 	const entityTypes = await db
 		.selectDistinct({ entityType: importStagedRow.entityType })
@@ -540,7 +591,10 @@ export async function createCommitJobsForAcceptedRows(input: {
 
 	const sortedEntityTypes = entityTypes
 		.map((row) => row.entityType as ImportEntityType)
-		.sort((left, right) => commitEntitySortIndex(left) - commitEntitySortIndex(right));
+		.sort(
+			(left, right) =>
+				commitEntitySortIndex(left) - commitEntitySortIndex(right),
+		);
 	const jobs = await Promise.all(
 		sortedEntityTypes.map((entityType) =>
 			createImportBatchJob({
@@ -563,6 +617,9 @@ export async function recordRejectedExport(input: {
 	rowCount: number;
 	fileName: string;
 }) {
-	const [record] = await db.insert(importRejectedExport).values(input).returning();
+	const [record] = await db
+		.insert(importRejectedExport)
+		.values(input)
+		.returning();
 	return record;
 }

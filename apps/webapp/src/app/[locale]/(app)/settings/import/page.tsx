@@ -30,8 +30,8 @@ async function ImportPageContent() {
 					</h1>
 					<p className="text-muted-foreground">
 						{t(
-							"settings.import.description",
-							"Import data from supported providers like Clockodo and Clockin.",
+							"settings.import.supportedSources",
+							"Import work from CSV files or connect supported providers such as Clockodo and Clockin.",
 						)}
 					</p>
 				</div>

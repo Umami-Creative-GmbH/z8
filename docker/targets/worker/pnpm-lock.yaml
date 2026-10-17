@@ -273,6 +273,9 @@ importers:
       nodemailer:
         specifier: ^10.1.0
         version: 10.1.0
+      papaparse:
+        specifier: ^5.7.0
+        version: 5.7.0
       pg:
         specifier: ^8.23.1
         version: 8.23.1
@@ -2487,6 +2490,9 @@ packages:
 
   pako@1.0.11:
     resolution: {integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==}
+
+  papaparse@5.7.0:
+    resolution: {integrity: sha512-qBGxg/7Q3Kl9Wfhrz2Z74UnvnHTXLNG6jmKJFeBvP2+y4lV7So+7SR62+Zd47JvdrCkX+nDcnr0ObPzek/+6RA==}
 
   parse-srcset@1.0.2:
     resolution: {integrity: sha512-/2qh0lav6CmI15FzA3i/2Bzk2zCgQhGMkvhOhKNcBVQ1ldgpbfiNTVslmooUmWJcADi1f1kIeynbDRVzNlfR6Q==}
@@ -5071,6 +5077,8 @@ snapshots:
       p-finally: 1.0.0
 
   pako@1.0.11: {}
+
+  papaparse@5.7.0: {}
 
   parse-srcset@1.0.2: {}
 
