@@ -38,7 +38,7 @@ export function KioskConfirmation({
 	onHome,
 }: KioskConfirmationProps) {
 	const { t } = useTranslate();
-	const [secondsLeft, setSecondsLeft] = useState(Math.ceil(returnsInMs / 1000));
+	const [secondsLeft, setSecondsLeft] = useState(() => Math.ceil(returnsInMs / 1000));
 
 	// Counted from a deadline, so a throttled timer never lets the countdown drift from the return.
 	useEffect(() => {

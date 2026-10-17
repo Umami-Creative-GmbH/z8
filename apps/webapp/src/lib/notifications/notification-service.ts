@@ -571,15 +571,21 @@ async function forwardNotification(
 			"Kiosk-only employee notification has no manager to receive it",
 		);
 	}
-	let first: Notification | null = null;
-	for (const userId of recipients.userIds) {
-		const created = await createNotification(
-			forwardedNotification(params, employee, userId),
-			options,
-		);
-		first ??= created;
+	// Each manager's copy is independent (own row, own idempotency key, pool queries
+	// outside any transaction), so every one is attempted before a failure is reported.
+	const results = await Promise.allSettled(
+		recipients.userIds.map((userId) =>
+			createNotification(forwardedNotification(params, employee, userId), options),
+		),
+	);
+	const failure = results.find(
+		(result): result is PromiseRejectedResult => result.status === "rejected",
+	);
+	if (failure) throw failure.reason;
+	for (const result of results) {
+		if (result.status === "fulfilled" && result.value) return result.value;
 	}
-	return first;
+	return null;
 }
 
 /**

@@ -141,8 +141,14 @@ function toInput(values: TemplateFormValues): ProjectTemplateInput {
 		})),
 		managerEmployeeIds: values.managerEmployeeIds,
 		assignments: [
-			...values.teamIds.map((targetId) => ({ type: "team" as const, targetId })),
-			...values.employeeIds.map((targetId) => ({ type: "employee" as const, targetId })),
+			...values.teamIds.map((targetId) => ({
+				type: "team" as const,
+				targetId,
+			})),
+			...values.employeeIds.map((targetId) => ({
+				type: "employee" as const,
+				targetId,
+			})),
 		],
 	};
 }
@@ -187,7 +193,10 @@ function useProjectTemplateForm({
 		known.set(option.id, { name: option.name, availability: "available" });
 	}
 	const held = [
-		...(template?.managers ?? []).map((manager) => ({ ...manager, id: manager.employeeId })),
+		...(template?.managers ?? []).map((manager) => ({
+			...manager,
+			id: manager.employeeId,
+		})),
 		...(template?.assignments ?? []).map((assignment) => ({
 			...assignment,
 			id: assignment.teamId ?? assignment.employeeId,
@@ -306,7 +315,9 @@ export function ProjectTemplateForm({
 		<form
 			aria-label={
 				template
-					? t("settings.projects.templates.editLabel", "Edit {name}", { name: template.name })
+					? t("settings.projects.templates.editLabel", "Edit {name}", {
+							name: template.name,
+						})
 					: t("settings.projects.templates.createLabel", "Create project template")
 			}
 			noValidate
@@ -317,266 +328,20 @@ export function ProjectTemplateForm({
 			}}
 		>
 			<ActionPanelBody className="grid gap-5">
-				<form.Field
-					name="name"
-					validators={{
-						onSubmit: ({ value }) =>
-							value.trim()
-								? undefined
-								: t("settings.projects.templates.field.nameRequired", "Enter a template name"),
-					}}
-				>
-					{(field) => (
-						<TFormItem>
-							<TFormLabel hasError={fieldHasError(field)} required>
-								{t("settings.projects.templates.field.name", "Name")}
-							</TFormLabel>
-							<TFormControl hasError={fieldHasError(field)}>
-								<Input
-									value={field.state.value}
-									maxLength={PROJECT_TEMPLATE_NAME_MAX_LENGTH}
-									onChange={(event) => field.handleChange(event.target.value)}
-									onBlur={field.handleBlur}
-									placeholder={t(
-										"settings.projects.templates.field.namePlaceholder",
-										"e.g., Website relaunch",
-									)}
-								/>
-							</TFormControl>
-							<TFormMessage field={field} />
-						</TFormItem>
-					)}
-				</form.Field>
-
-				<form.Field name="description">
-					{(field) => (
-						<TFormItem>
-							<TFormLabel>
-								{t("settings.projects.templates.field.description", "Description")}
-							</TFormLabel>
-							<TFormControl>
-								<Textarea
-									value={field.state.value}
-									maxLength={PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH}
-									rows={2}
-									onChange={(event) => field.handleChange(event.target.value)}
-									onBlur={field.handleBlur}
-								/>
-							</TFormControl>
-						</TFormItem>
-					)}
-				</form.Field>
-
-				<div className="grid gap-4 sm:grid-cols-2">
-					<form.Field name="icon">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel>{t("settings.projects.templates.field.icon", "Icon")}</TFormLabel>
-								<div className="flex items-center gap-2">
-									<span className="flex size-9 shrink-0 items-center justify-center rounded-md border">
-										<TemplateIcon icon={field.state.value} className="size-4" />
-									</span>
-									<Select
-										value={field.state.value || NO_ICON_VALUE}
-										onValueChange={(value) =>
-											field.handleChange(value === NO_ICON_VALUE ? "" : value)
-										}
-									>
-										<SelectTrigger
-											aria-label={t("settings.projects.templates.field.icon", "Icon")}
-											className="flex-1"
-										>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value={NO_ICON_VALUE}>
-												{t("settings.projects.templates.field.noIcon", "No icon")}
-											</SelectItem>
-											{(Object.keys(PROJECT_ICON_OPTIONS) as ProjectIconName[]).map((icon) => (
-												<SelectItem key={icon} value={icon}>
-													{iconLabels[icon]}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-							</TFormItem>
-						)}
-					</form.Field>
-
-					<form.Field name="color">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel>{t("settings.projects.templates.field.color", "Color")}</TFormLabel>
-								<ProjectColorPicker value={field.state.value} onChange={field.handleChange} />
-							</TFormItem>
-						)}
-					</form.Field>
-				</div>
-
-				<div className="grid gap-4 sm:grid-cols-2">
-					<form.Field
-						name="budgetHours"
-						validators={{
-							onSubmit: ({ value }) =>
-								positiveHoursText(value.trim() || null, PROJECT_TEMPLATE_BUDGET_MAX_HOURS).ok
-									? undefined
-									: t(
-											"settings.projects.templates.field.budgetInvalid",
-											"Enter a positive number of hours",
-										),
-						}}
-					>
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>
-									{t("settings.projects.templates.field.budget", "Budget (hours)")}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(field)}>
-									<Input
-										type="number"
-										inputMode="decimal"
-										min="0.01"
-										step="0.5"
-										value={field.state.value}
-										onChange={(event) => field.handleChange(event.target.value)}
-										onBlur={field.handleBlur}
-									/>
-								</TFormControl>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
-
-					<form.Field
-						name="deadlineOffsetDays"
-						validators={{
-							onSubmit: ({ value }) => {
-								if (!value.trim()) return undefined;
-								const days = Number(value);
-								return Number.isInteger(days) &&
-									days >= 0 &&
-									days <= PROJECT_TEMPLATE_MAX_DEADLINE_OFFSET_DAYS
-									? undefined
-									: t(
-											"settings.projects.templates.field.deadlineOffsetInvalid",
-											"Enter whole days from 0 to {max}",
-											{ max: PROJECT_TEMPLATE_MAX_DEADLINE_OFFSET_DAYS },
-										);
-							},
-						}}
-					>
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>
-									{t(
-										"settings.projects.templates.field.deadlineOffset",
-										"Deadline (days after creation)",
-									)}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(field)}>
-									<Input
-										type="number"
-										inputMode="numeric"
-										min="0"
-										max={PROJECT_TEMPLATE_MAX_DEADLINE_OFFSET_DAYS}
-										step="1"
-										value={field.state.value}
-										onChange={(event) => field.handleChange(event.target.value)}
-										onBlur={field.handleBlur}
-									/>
-								</TFormControl>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
-				</div>
-				<p className="-mt-3 text-xs text-muted-foreground">
-					{t(
-						"settings.projects.templates.field.budgetDeadlineHelp",
-						"Leave empty for an unlimited budget or no deadline.",
-					)}
-				</p>
-
-				<form.Field name="requiresTask">
-					{(field) => (
-						<div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-							<div className="space-y-0.5">
-								<Label htmlFor="templateRequiresTask">
-									{t("settings.projects.templates.field.requiresTask", "Require a task")}
-								</Label>
-								<p id="templateRequiresTaskHelp" className="text-xs text-muted-foreground">
-									{t(
-										"settings.projects.templates.field.requiresTaskHelp",
-										"Projects created from this template start with this setting.",
-									)}
-								</p>
-							</div>
-							<Switch
-								id="templateRequiresTask"
-								aria-describedby="templateRequiresTaskHelp"
-								checked={field.state.value}
-								onCheckedChange={(checked) => field.handleChange(checked)}
-							/>
-						</div>
-					)}
-				</form.Field>
-
+				<TemplateDetailsFields form={form} t={t} iconLabels={iconLabels} />
+				<TemplateLimitFields form={form} t={t} />
 				<TemplateTaskFields form={form} t={t} taskRules={taskRules} />
-
-				<form.Field name="managerEmployeeIds" mode="array">
-					{(field) => (
-						<ManagerOrAssignmentField
-							title={t("settings.projects.templates.managers.title", "Project managers")}
-							pickerLabel={t(
-								"settings.projects.templates.managers.picker",
-								"Project manager to add",
-							)}
-							placeholder={t("settings.projects.templates.selectEmployee", "Select an employee")}
-							emptyText={t("settings.projects.templates.managers.empty", "No project managers")}
-							items={items(field.state.value, removedManagers, field.removeValue)}
-							options={employees.filter((employee) => !field.state.value.includes(employee.id))}
-							onAdd={(id) => field.pushValue(id)}
-						/>
-					)}
-				</form.Field>
-
-				<form.Field name="teamIds" mode="array">
-					{(field) => (
-						<ManagerOrAssignmentField
-							title={t("settings.projects.templates.teams.title", "Teams")}
-							pickerLabel={t("settings.projects.templates.teams.picker", "Team to assign")}
-							placeholder={t("settings.projects.templates.selectTeam", "Select a team")}
-							emptyText={t("settings.projects.templates.teams.empty", "No teams assigned")}
-							items={items(field.state.value, removedTeams, field.removeValue)}
-							options={teams.filter((team) => !field.state.value.includes(team.id))}
-							onAdd={(id) => field.pushValue(id)}
-						/>
-					)}
-				</form.Field>
-
-				<form.Field name="employeeIds" mode="array">
-					{(field) => (
-						<ManagerOrAssignmentField
-							title={t("settings.projects.templates.employees.title", "Employees")}
-							pickerLabel={t("settings.projects.templates.employees.picker", "Employee to assign")}
-							placeholder={t("settings.projects.templates.selectEmployee", "Select an employee")}
-							emptyText={t("settings.projects.templates.employees.empty", "No employees assigned")}
-							items={items(field.state.value, removedEmployees, field.removeValue)}
-							options={employees.filter((employee) => !field.state.value.includes(employee.id))}
-							onAdd={(id) => field.pushValue(id)}
-						/>
-					)}
-				</form.Field>
-
-				{hasRemoved && (
-					<p className="text-xs text-muted-foreground">
-						{t(
-							"settings.projects.templates.member.removedHelp",
-							"Teams and employees that no longer exist are dropped when you save.",
-						)}
-					</p>
-				)}
+				<TemplateMemberFields
+					form={form}
+					t={t}
+					items={items}
+					employees={employees}
+					teams={teams}
+					removedManagers={removedManagers}
+					removedTeams={removedTeams}
+					removedEmployees={removedEmployees}
+					hasRemoved={hasRemoved}
+				/>
 			</ActionPanelBody>
 
 			<ActionPanelFooter>
@@ -597,6 +362,311 @@ export function ProjectTemplateForm({
 				</form.Subscribe>
 			</ActionPanelFooter>
 		</form>
+	);
+}
+
+/** Name, description, icon and colour of the template. */
+function TemplateDetailsFields({
+	form,
+	t,
+	iconLabels,
+}: Pick<ReturnType<typeof useProjectTemplateForm>, "form" | "t" | "iconLabels">) {
+	return (
+		<>
+			<form.Field
+				name="name"
+				validators={{
+					onSubmit: ({ value }) =>
+						value.trim()
+							? undefined
+							: t("settings.projects.templates.field.nameRequired", "Enter a template name"),
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)} required>
+							{t("settings.projects.templates.field.name", "Name")}
+						</TFormLabel>
+						<TFormControl hasError={fieldHasError(field)}>
+							<Input
+								value={field.state.value}
+								maxLength={PROJECT_TEMPLATE_NAME_MAX_LENGTH}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								placeholder={t(
+									"settings.projects.templates.field.namePlaceholder",
+									"e.g., Website relaunch",
+								)}
+							/>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<form.Field name="description">
+				{(field) => (
+					<TFormItem>
+						<TFormLabel>
+							{t("settings.projects.templates.field.description", "Description")}
+						</TFormLabel>
+						<TFormControl>
+							<Textarea
+								value={field.state.value}
+								maxLength={PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH}
+								rows={2}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+							/>
+						</TFormControl>
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<div className="grid gap-4 sm:grid-cols-2">
+				<form.Field name="icon">
+					{(field) => (
+						<TFormItem>
+							<TFormLabel>{t("settings.projects.templates.field.icon", "Icon")}</TFormLabel>
+							<div className="flex items-center gap-2">
+								<span className="flex size-9 shrink-0 items-center justify-center rounded-md border">
+									<TemplateIcon icon={field.state.value} className="size-4" />
+								</span>
+								<Select
+									value={field.state.value || NO_ICON_VALUE}
+									onValueChange={(value) =>
+										field.handleChange(value === NO_ICON_VALUE ? "" : value)
+									}
+								>
+									<SelectTrigger
+										aria-label={t("settings.projects.templates.field.icon", "Icon")}
+										className="flex-1"
+									>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value={NO_ICON_VALUE}>
+											{t("settings.projects.templates.field.noIcon", "No icon")}
+										</SelectItem>
+										{(Object.keys(PROJECT_ICON_OPTIONS) as ProjectIconName[]).map((icon) => (
+											<SelectItem key={icon} value={icon}>
+												{iconLabels[icon]}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						</TFormItem>
+					)}
+				</form.Field>
+
+				<form.Field name="color">
+					{(field) => (
+						<TFormItem>
+							<TFormLabel>{t("settings.projects.templates.field.color", "Color")}</TFormLabel>
+							<ProjectColorPicker value={field.state.value} onChange={field.handleChange} />
+						</TFormItem>
+					)}
+				</form.Field>
+			</div>
+		</>
+	);
+}
+
+/** Budget, deadline offset and task requirement a new project starts with. */
+function TemplateLimitFields({
+	form,
+	t,
+}: Pick<ReturnType<typeof useProjectTemplateForm>, "form" | "t">) {
+	return (
+		<>
+			<div className="grid gap-4 sm:grid-cols-2">
+				<form.Field
+					name="budgetHours"
+					validators={{
+						onSubmit: ({ value }) =>
+							positiveHoursText(value.trim() || null, PROJECT_TEMPLATE_BUDGET_MAX_HOURS).ok
+								? undefined
+								: t(
+										"settings.projects.templates.field.budgetInvalid",
+										"Enter a positive number of hours",
+									),
+					}}
+				>
+					{(field) => (
+						<TFormItem>
+							<TFormLabel hasError={fieldHasError(field)}>
+								{t("settings.projects.templates.field.budget", "Budget (hours)")}
+							</TFormLabel>
+							<TFormControl hasError={fieldHasError(field)}>
+								<Input
+									type="number"
+									inputMode="decimal"
+									min="0.01"
+									step="0.5"
+									value={field.state.value}
+									onChange={(event) => field.handleChange(event.target.value)}
+									onBlur={field.handleBlur}
+								/>
+							</TFormControl>
+							<TFormMessage field={field} />
+						</TFormItem>
+					)}
+				</form.Field>
+
+				<form.Field
+					name="deadlineOffsetDays"
+					validators={{
+						onSubmit: ({ value }) => {
+							if (!value.trim()) return undefined;
+							const days = Number(value);
+							return Number.isInteger(days) &&
+								days >= 0 &&
+								days <= PROJECT_TEMPLATE_MAX_DEADLINE_OFFSET_DAYS
+								? undefined
+								: t(
+										"settings.projects.templates.field.deadlineOffsetInvalid",
+										"Enter whole days from 0 to {max}",
+										{ max: PROJECT_TEMPLATE_MAX_DEADLINE_OFFSET_DAYS },
+									);
+						},
+					}}
+				>
+					{(field) => (
+						<TFormItem>
+							<TFormLabel hasError={fieldHasError(field)}>
+								{t(
+									"settings.projects.templates.field.deadlineOffset",
+									"Deadline (days after creation)",
+								)}
+							</TFormLabel>
+							<TFormControl hasError={fieldHasError(field)}>
+								<Input
+									type="number"
+									inputMode="numeric"
+									min="0"
+									max={PROJECT_TEMPLATE_MAX_DEADLINE_OFFSET_DAYS}
+									step="1"
+									value={field.state.value}
+									onChange={(event) => field.handleChange(event.target.value)}
+									onBlur={field.handleBlur}
+								/>
+							</TFormControl>
+							<TFormMessage field={field} />
+						</TFormItem>
+					)}
+				</form.Field>
+			</div>
+			<p className="-mt-3 text-xs text-muted-foreground">
+				{t(
+					"settings.projects.templates.field.budgetDeadlineHelp",
+					"Leave empty for an unlimited budget or no deadline.",
+				)}
+			</p>
+
+			<form.Field name="requiresTask">
+				{(field) => (
+					<div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+						<div className="space-y-0.5">
+							<Label htmlFor="templateRequiresTask">
+								{t("settings.projects.templates.field.requiresTask", "Require a task")}
+							</Label>
+							<p id="templateRequiresTaskHelp" className="text-xs text-muted-foreground">
+								{t(
+									"settings.projects.templates.field.requiresTaskHelp",
+									"Projects created from this template start with this setting.",
+								)}
+							</p>
+						</div>
+						<Switch
+							id="templateRequiresTask"
+							aria-describedby="templateRequiresTaskHelp"
+							checked={field.state.value}
+							onCheckedChange={(checked) => field.handleChange(checked)}
+						/>
+					</div>
+				)}
+			</form.Field>
+		</>
+	);
+}
+
+/** The project managers, teams and employees a new project copies. */
+function TemplateMemberFields({
+	form,
+	t,
+	items,
+	employees,
+	teams,
+	removedManagers,
+	removedTeams,
+	removedEmployees,
+	hasRemoved,
+}: Pick<
+	ReturnType<typeof useProjectTemplateForm>,
+	| "form"
+	| "t"
+	| "items"
+	| "employees"
+	| "teams"
+	| "removedManagers"
+	| "removedTeams"
+	| "removedEmployees"
+	| "hasRemoved"
+>) {
+	return (
+		<>
+			<form.Field name="managerEmployeeIds" mode="array">
+				{(field) => (
+					<ManagerOrAssignmentField
+						title={t("settings.projects.templates.managers.title", "Project managers")}
+						pickerLabel={t("settings.projects.templates.managers.picker", "Project manager to add")}
+						placeholder={t("settings.projects.templates.selectEmployee", "Select an employee")}
+						emptyText={t("settings.projects.templates.managers.empty", "No project managers")}
+						items={items(field.state.value, removedManagers, field.removeValue)}
+						options={employees.filter((employee) => !field.state.value.includes(employee.id))}
+						onAdd={(id) => field.pushValue(id)}
+					/>
+				)}
+			</form.Field>
+
+			<form.Field name="teamIds" mode="array">
+				{(field) => (
+					<ManagerOrAssignmentField
+						title={t("settings.projects.templates.teams.title", "Teams")}
+						pickerLabel={t("settings.projects.templates.teams.picker", "Team to assign")}
+						placeholder={t("settings.projects.templates.selectTeam", "Select a team")}
+						emptyText={t("settings.projects.templates.teams.empty", "No teams assigned")}
+						items={items(field.state.value, removedTeams, field.removeValue)}
+						options={teams.filter((team) => !field.state.value.includes(team.id))}
+						onAdd={(id) => field.pushValue(id)}
+					/>
+				)}
+			</form.Field>
+
+			<form.Field name="employeeIds" mode="array">
+				{(field) => (
+					<ManagerOrAssignmentField
+						title={t("settings.projects.templates.employees.title", "Employees")}
+						pickerLabel={t("settings.projects.templates.employees.picker", "Employee to assign")}
+						placeholder={t("settings.projects.templates.selectEmployee", "Select an employee")}
+						emptyText={t("settings.projects.templates.employees.empty", "No employees assigned")}
+						items={items(field.state.value, removedEmployees, field.removeValue)}
+						options={employees.filter((employee) => !field.state.value.includes(employee.id))}
+						onAdd={(id) => field.pushValue(id)}
+					/>
+				)}
+			</form.Field>
+
+			{hasRemoved && (
+				<p className="text-xs text-muted-foreground">
+					{t(
+						"settings.projects.templates.member.removedHelp",
+						"Teams and employees that no longer exist are dropped when you save.",
+					)}
+				</p>
+			)}
+		</>
 	);
 }
 

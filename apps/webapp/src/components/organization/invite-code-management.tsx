@@ -37,12 +37,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { EditDeleteMenu } from "@/components/ui/edit-delete-menu";
 import {
 	Table,
 	TableBody,
@@ -142,28 +137,10 @@ function InviteCodeMobileCard({
 					)}
 				</div>
 
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button
-							variant="ghost"
-							size="sm"
-							aria-label={t("common.moreActions", "More actions")}
-						>
-							•••
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						<DropdownMenuItem onClick={() => onEdit(code)}>
-							{t("common.edit", "Edit")}
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							onClick={() => onDelete(code)}
-							className="text-destructive"
-						>
-							{t("common.delete", "Delete")}
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
+				<EditDeleteMenu
+					onEdit={() => onEdit(code)}
+					onDelete={() => onDelete(code)}
+				/>
 			</div>
 
 			<div className="mt-4 grid grid-cols-2 gap-3 text-sm">
@@ -375,28 +352,10 @@ function InviteCodeDesktopTable({
 											{t("settings.inviteCodes.qrCode", "QR Code")}
 										</TooltipContent>
 									</Tooltip>
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<Button
-												variant="ghost"
-												size="sm"
-												aria-label={t("common.moreActions", "More actions")}
-											>
-												•••
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem onClick={() => onEdit(code)}>
-												{t("common.edit", "Edit")}
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => onDelete(code)}
-												className="text-destructive"
-											>
-												{t("common.delete", "Delete")}
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
+									<EditDeleteMenu
+										onEdit={() => onEdit(code)}
+										onDelete={() => onDelete(code)}
+									/>
 								</div>
 							</TableCell>
 						</TableRow>

@@ -31,12 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { EditDeleteMenu } from "@/components/ui/edit-delete-menu";
 import {
 	Table,
 	TableBody,
@@ -377,30 +372,10 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 											</Badge>
 										</TableCell>
 										<TableCell className="text-right">
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<Button
-														variant="ghost"
-														size="sm"
-														aria-label={t("common.moreActions", "More actions")}
-													>
-														•••
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end">
-													<DropdownMenuItem
-														onClick={() => setEditingKey(apiKey)}
-													>
-														{t("common.edit", "Edit")}
-													</DropdownMenuItem>
-													<DropdownMenuItem
-														onClick={() => setDeleteDialogKey(apiKey)}
-														className="text-destructive"
-													>
-														{t("common.delete", "Delete")}
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
+											<EditDeleteMenu
+												onEdit={() => setEditingKey(apiKey)}
+												onDelete={() => setDeleteDialogKey(apiKey)}
+											/>
 										</TableCell>
 									</TableRow>
 								);

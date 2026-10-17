@@ -13,18 +13,10 @@ import type { ComponentType, SVGProps } from "react";
 import { Button } from "@/components/ui/button";
 import { formatKioskDuration, formatKioskTime } from "@/lib/time-tracking/kiosk/display";
 import { type KioskAction, kioskActionsFor } from "@/lib/time-tracking/kiosk/kiosk-actions";
-import type { KioskClockAction, KioskEmployeeSnapshot } from "@/lib/time-tracking/kiosk/protocol";
+import type { KioskEmployeeSnapshot } from "@/lib/time-tracking/kiosk/protocol";
 
 /** What the panel offers: the kiosk's one action union (`kiosk-actions.ts`). */
 export type KioskPanelAction = KioskAction;
-
-export const KIOSK_ACTION_REQUEST: Record<KioskPanelAction, KioskClockAction> = {
-	clock_in: "clock_in",
-	start_break: "start_break",
-	clock_out: "clock_out",
-	resume_break: "resume_break",
-	end_day: "clock_out",
-};
 
 const ACTION_ICONS: Record<KioskPanelAction, ComponentType<SVGProps<SVGSVGElement>>> = {
 	clock_in: IconLogin2,

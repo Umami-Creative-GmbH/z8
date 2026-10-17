@@ -1,45 +1,53 @@
 "use client";
 
-import { IconCheck, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ColumnDef } from "@tanstack/react-table";
+import { IconLoader2, IconRefresh } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import { toast } from "sonner";
 import {
 	type ApprovalWithAbsence,
-	approveAbsence,
 	getPendingApprovals,
-	rejectAbsence,
 } from "@/app/[locale]/(app)/approvals/actions";
-import { CategoryBadge } from "@/components/absences/category-badge";
-import {
-	SICK_NOTE_MARKER_LINK_CLASS,
-	SickNoteMarker,
-	SickNoteMarkerLabel,
-} from "@/components/absences/sick-notes/sick-note-marker";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
-import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/user-avatar";
 import { formatDateRange } from "@/lib/absences/date-utils";
-import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
-import { personnelFilePath } from "@/lib/personnel-file/paths";
 import { queryKeys } from "@/lib/query";
-import { Link } from "@/navigation";
+import { buildAbsenceApprovalColumns, formatAbsenceDays } from "./absence-approval-columns";
 import { ApprovalActionDialog } from "./approval-action-dialog";
+import { useAbsenceApprovalMutations } from "./use-absence-approval-mutations";
 
-// Format days display (handle half days)
-function formatDays(days: number): string {
-	if (days === 1) return "1 day";
-	if (days === 0.5) return "0.5 day";
-	if (Number.isInteger(days)) return `${days} days`;
-	return `${days} days`;
+// Filter approvals by search (client-side since typically small list)
+function filterApprovals(approvals: ApprovalWithAbsence[] | undefined, search: string) {
+	if (!approvals) return [];
+	if (!search) return approvals;
+
+	const searchLower = search.toLowerCase();
+	return approvals.filter(
+		(approval) =>
+			approval.requester.user.name.toLowerCase().includes(searchLower) ||
+			approval.requester.user.email.toLowerCase().includes(searchLower) ||
+			approval.absence.category.name.toLowerCase().includes(searchLower),
+	);
+}
+
+function AbsenceApprovalsLoadError({ onRetry }: { onRetry: () => void }) {
+	const { t } = useTranslate();
+
+	return (
+		<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
+			<p className="text-destructive">
+				{t("approvals:approvals.loadError", "Failed to load approvals")}
+			</p>
+			<Button className="mt-4" variant="outline" onClick={onRetry}>
+				<IconRefresh className="mr-2 size-4" />
+				{t("common.retry", "Retry")}
+			</Button>
+		</div>
+	);
 }
 
 export function AbsenceApprovalsTable() {
 	const { t } = useTranslate();
-	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [dialogAction, setDialogAction] = useState<"approve" | "reject">("approve");
@@ -60,79 +68,11 @@ export function AbsenceApprovalsTable() {
 		},
 	});
 
-	// Approve mutation with optimistic update
-	const approveMutation = useMutation({
-		mutationFn: (absenceId: string) => approveAbsence(absenceId),
-		onMutate: async (absenceId) => {
-			await queryClient.cancelQueries({ queryKey: queryKeys.approvals.absences() });
-			const previousApprovals = queryClient.getQueryData<ApprovalWithAbsence[]>(
-				queryKeys.approvals.absences(),
-			);
-			queryClient.setQueryData<ApprovalWithAbsence[]>(queryKeys.approvals.absences(), (old) =>
-				old?.filter((a) => a.absence.id !== absenceId),
-			);
-			return { previousApprovals };
-		},
-		onSuccess: (result) => {
-			if (result.success) {
-				toast.success(t("approvals:approvals.absenceApproved", "Absence request approved"));
-				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.absences() });
-			} else {
-				toast.error(
-					result.error ||
-						t("approvals:approvals.approveFailed", "Failed to approve absence request"),
-				);
-			}
-		},
-		onError: (_error, _absenceId, context) => {
-			if (context?.previousApprovals) {
-				queryClient.setQueryData(queryKeys.approvals.absences(), context.previousApprovals);
-			}
-			toast.error(t("approvals:approvals.approveFailed", "Failed to approve absence request"));
-		},
-	});
+	const { approveMutation, rejectMutation } = useAbsenceApprovalMutations();
 
-	// Reject mutation with optimistic update
-	const rejectMutation = useMutation({
-		mutationFn: ({ absenceId, reason }: { absenceId: string; reason: string }) =>
-			rejectAbsence(absenceId, reason),
-		onMutate: async ({ absenceId }) => {
-			await queryClient.cancelQueries({ queryKey: queryKeys.approvals.absences() });
-			const previousApprovals = queryClient.getQueryData<ApprovalWithAbsence[]>(
-				queryKeys.approvals.absences(),
-			);
-			queryClient.setQueryData<ApprovalWithAbsence[]>(queryKeys.approvals.absences(), (old) =>
-				old?.filter((a) => a.absence.id !== absenceId),
-			);
-			return { previousApprovals };
-		},
-		onSuccess: (result) => {
-			if (result.success) {
-				toast.success(t("approvals:approvals.absenceRejected", "Absence request rejected"));
-				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.absences() });
-			} else {
-				toast.error(
-					result.error || t("approvals:approvals.rejectFailed", "Failed to reject absence request"),
-				);
-			}
-		},
-		onError: (_error, _variables, context) => {
-			if (context?.previousApprovals) {
-				queryClient.setQueryData(queryKeys.approvals.absences(), context.previousApprovals);
-			}
-			toast.error(t("approvals:approvals.rejectFailed", "Failed to reject absence request"));
-		},
-	});
-
-	const handleApprove = (approval: ApprovalWithAbsence) => {
+	const openDialog = (approval: ApprovalWithAbsence, action: "approve" | "reject") => {
 		setSelectedApproval(approval);
-		setDialogAction("approve");
-		setDialogOpen(true);
-	};
-
-	const handleReject = (approval: ApprovalWithAbsence) => {
-		setSelectedApproval(approval);
-		setDialogAction("reject");
+		setDialogAction(action);
 		setDialogOpen(true);
 	};
 
@@ -148,162 +88,21 @@ export function AbsenceApprovalsTable() {
 		}
 	};
 
-	// Filter approvals by search (client-side since typically small list)
-	const filteredApprovals = (() => {
-		if (!approvals) return [];
-		if (!search) return approvals;
+	const filteredApprovals = filterApprovals(approvals, search);
 
-		const searchLower = search.toLowerCase();
-		return approvals.filter(
-			(approval) =>
-				approval.requester.user.name.toLowerCase().includes(searchLower) ||
-				approval.requester.user.email.toLowerCase().includes(searchLower) ||
-				approval.absence.category.name.toLowerCase().includes(searchLower),
-		);
-	})();
-
-	// Column definitions
-	const columns: ColumnDef<DataTableFeatures, ApprovalWithAbsence>[] = [
-		{
-			accessorKey: "requester",
-			header: t("approvals:approvals.employee", "Employee"),
-			cell: ({ row }) => (
-				<div className="flex items-center gap-3">
-					<UserAvatar
-						image={row.original.requester.user.image}
-						seed={row.original.requester.user.id}
-						name={row.original.requester.user.name}
-						size="sm"
-						clockStatus="unknown"
-					/>
-					<div>
-						<div className="font-medium">{row.original.requester.user.name}</div>
-						<div className="text-xs text-muted-foreground">{row.original.requester.user.email}</div>
-					</div>
-				</div>
-			),
-		},
-		{
-			accessorKey: "dates",
-			header: t("approvals:approvals.dates", "Dates"),
-			cell: ({ row }) => (
-				<span className="font-medium">
-					{formatDateRange(row.original.absence.startDate, row.original.absence.endDate)}
-				</span>
-			),
-		},
-		{
-			accessorKey: "type",
-			header: t("approvals:approvals.type", "Type"),
-			cell: ({ row }) => (
-				<div className="flex flex-col items-start gap-1">
-					<CategoryBadge
-						name={row.original.absence.category.name}
-						type={row.original.absence.category.type}
-						color={row.original.absence.category.color}
-					/>
-					{row.original.absence.category.type === "sick" && row.original.absence.sickDetail && (
-						<span className="text-muted-foreground text-xs">
-							{t(
-								getSickDetailLabelKey(row.original.absence.sickDetail),
-								getSickDetailLabel(row.original.absence.sickDetail),
-							)}
-						</span>
-					)}
-					{row.original.absence.sickNotes?.viewable ? (
-						// Only for an approver who may open them through personnel file access (#982).
-						<Link
-							href={personnelFilePath(row.original.absence.employeeId, { category: "sick_note" })}
-							className={SICK_NOTE_MARKER_LINK_CLASS}
-						>
-							<SickNoteMarkerLabel count={row.original.absence.sickNotes.count} />
-						</Link>
-					) : row.original.absence.sickNotes ? (
-						<SickNoteMarker count={row.original.absence.sickNotes.count} />
-					) : null}
-					{row.original.absence.deputy && (
-						// Who covers, so the approver can reject when the cover does not work (#1011).
-						<span className="text-xs">
-							<span className="text-muted-foreground">
-								{t("approvals:approvals.deputy.label", "Deputy")}
-							</span>{" "}
-							<span className="font-medium">{row.original.absence.deputy.name}</span>
-							{!row.original.absence.deputy.canDecideApprovals && (
-								<span className="block text-amber-600 dark:text-amber-400">
-									{t(
-										"approvals:approvals.deputy.contactOnly",
-										"Contact only: cannot decide approvals",
-									)}
-								</span>
-							)}
-						</span>
-					)}
-				</div>
-			),
-		},
-		{
-			accessorKey: "days",
-			header: () => <div className="text-right">{t("approvals:approvals.days", "Days")}</div>,
-			cell: ({ row }) => {
-				return (
-					<div className="text-right tabular-nums">
-						{formatDays(row.original.absence.absenceDays)}
-					</div>
-				);
-			},
-		},
-		{
-			accessorKey: "notes",
-			header: t("approvals:approvals.notes", "Notes"),
-			cell: ({ row }) => (
-				<span className="max-w-[200px] truncate text-muted-foreground block">
-					{row.original.absence.notes || "—"}
-				</span>
-			),
-		},
-		{
-			id: "actions",
-			cell: ({ row }) => (
-				<div className="flex justify-end gap-2">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => handleApprove(row.original)}
-						disabled={approveMutation.isPending || rejectMutation.isPending}
-					>
-						<IconCheck className="mr-1 size-4" />
-						{t("approvals:approvals.approve", "Approve")}
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => handleReject(row.original)}
-						disabled={approveMutation.isPending || rejectMutation.isPending}
-					>
-						<IconX className="mr-1 size-4" />
-						{t("approvals:approvals.reject", "Reject")}
-					</Button>
-				</div>
-			),
-		},
-	];
+	const columns = buildAbsenceApprovalColumns({
+		t,
+		actionsDisabled: approveMutation.isPending || rejectMutation.isPending,
+		onApprove: (approval) => openDialog(approval, "approve"),
+		onReject: (approval) => openDialog(approval, "reject"),
+	});
 
 	if (isLoading) {
 		return <DataTableSkeleton columnCount={6} rowCount={5} />;
 	}
 
 	if (isError) {
-		return (
-			<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
-				<p className="text-destructive">
-					{t("approvals:approvals.loadError", "Failed to load approvals")}
-				</p>
-				<Button className="mt-4" variant="outline" onClick={() => refetch()}>
-					<IconRefresh className="mr-2 size-4" />
-					{t("common.retry", "Retry")}
-				</Button>
-			</div>
-		);
+		return <AbsenceApprovalsLoadError onRetry={() => refetch()} />;
 	}
 
 	return (
@@ -353,7 +152,7 @@ export function AbsenceApprovalsTable() {
 							? t("approvals:approvals.approveTitle", "Approve Absence Request")
 							: t("approvals:approvals.rejectTitle", "Reject Absence Request")
 					}
-					description={`${selectedApproval.requester.user.name} ${t("approvals:approvals.requestingOff", "is requesting")} ${formatDays(selectedApproval.absence.absenceDays)} ${t("approvals:approvals.offFrom", "off from")} ${formatDateRange(selectedApproval.absence.startDate, selectedApproval.absence.endDate)}.`}
+					description={`${selectedApproval.requester.user.name} ${t("approvals:approvals.requestingOff", "is requesting")} ${formatAbsenceDays(selectedApproval.absence.absenceDays)} ${t("approvals:approvals.offFrom", "off from")} ${formatDateRange(selectedApproval.absence.startDate, selectedApproval.absence.endDate)}.`}
 					onConfirm={handleConfirm}
 				/>
 			)}

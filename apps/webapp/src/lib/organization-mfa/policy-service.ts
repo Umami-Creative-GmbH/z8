@@ -97,11 +97,11 @@ export async function updateOrganizationMfaPolicy(
 		)
 			throw new Error("Organization access required");
 		const now = systemClock.nowInstant();
-		const local = await readLocalMfaProof(live);
-		const sso = await organizationSsoVerification(live, input.organizationId);
-		const { canAccessOrganizationWithSso } = await import(
-			"@/lib/enterprise-identity/session-sso-store"
-		);
+		const [local, sso, { canAccessOrganizationWithSso }] = await Promise.all([
+			readLocalMfaProof(live),
+			organizationSsoVerification(live, input.organizationId),
+			import("@/lib/enterprise-identity/session-sso-store"),
+		]);
 		if (
 			!(await canAccessOrganizationWithSso(live, input.organizationId)) ||
 			!(

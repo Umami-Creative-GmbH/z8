@@ -2,14 +2,13 @@
 
 import { useEffect, useEffectEvent, useState } from "react";
 import { useOnlineStatus } from "@/hooks/use-online-status";
-import { kioskFetch, kioskRefusalOf } from "@/lib/time-tracking/kiosk/device";
-import { readOfflineContact, rememberKioskContact } from "@/lib/time-tracking/kiosk/offline-device";
-import { type KioskQueueNotice, kioskOfflineQueue } from "@/lib/time-tracking/kiosk/offline-queue";
+import type { KioskQueueNotice } from "@/lib/time-tracking/kiosk/offline-queue";
 import type {
 	KioskDeviceInfo,
 	KioskOfflineContact,
 	KioskRefusalCode,
 } from "@/lib/time-tracking/kiosk/protocol";
+import { checkInKiosk, type KioskContactSink, rememberOpeningContact } from "./kiosk-contact";
 
 /** How often a paired kiosk checks in, so revocation shows and "last seen" stays current. */
 export const KIOSK_HEARTBEAT_MS = 60_000;
@@ -25,25 +24,13 @@ const KIOSK_NOTICE_MS = 5 * 60_000;
  */
 export type KioskConnection = "online" | "offline" | "queueing";
 
-/** The kiosk as the server describes it now, from the heartbeat; null when unreadable. */
-async function kioskInfoOf(
-	response: Response,
-): Promise<{ kiosk: KioskDeviceInfo; offline?: KioskOfflineContact } | null> {
-	if (!response.ok) return null;
-	const body = (await response.json().catch(() => null)) as {
-		kiosk?: KioskDeviceInfo;
-		offline?: KioskOfflineContact;
-	} | null;
-	if (!body?.kiosk || typeof body.kiosk.boardEnabled !== "boolean") return null;
-	return { kiosk: body.kiosk, ...(body.offline ? { offline: body.offline } : {}) };
-}
-
 /**
  * A paired kiosk's contact with Z8 and its offline mode (#1291, #1292): the
  * heartbeat (and a check-in as soon as the browser is back online), the offline
  * data each contact keeps or deletes (`offline-device.ts`), and the queue of
  * offline clockings sent at each contact, including what a retired token still
- * holds (`kioskOfflineQueue.sendRetired`). Refusals become notices.
+ * holds (`kioskOfflineQueue.sendRetired`). Refusals become notices. The contacts
+ * themselves live in `kiosk-contact.ts`; this hook keeps what they report.
  *
  * One state says whether the last contact reached Z8 and whether the kiosk can
  * queue (`KioskConnection`); `contacts` counts an offline-mode kiosk's reached
@@ -67,46 +54,42 @@ export function useKioskOfflineMode(input: {
 	const [contacts, setContacts] = useState(0);
 	const [notices, setNotices] = useState<KioskQueueNotice[]>([]);
 
-	const reached = () => setLink((prev) => ({ ...prev, reached: true }));
 	const lost = () => setLink((prev) => ({ ...prev, reached: false }));
 
-	/** Whether the kiosk can queue offline: a contact anchor and sealing key are cached. */
-	async function refreshCanQueue(current: KioskDeviceInfo) {
-		const canQueue = current.offlineMode && (await readOfflineContact(current.id)) !== null;
-		setLink((prev) => ({ ...prev, canQueue }));
-	}
+	const sink: KioskContactSink = {
+		reached: () => setLink((prev) => ({ ...prev, reached: true })),
+		lost,
+		// Unchanged answers keep the state as it is, so they cause no render.
+		canQueue: (canQueue) =>
+			setLink((prev) => (prev.canQueue === canQueue ? prev : { ...prev, canQueue })),
+		refused: (refused) => setNotices((shown) => [...shown, ...refused]),
+		counted: () => setContacts((count) => count + 1),
+	};
 
-	/** Sends this kiosk's queue and what retired tokens still hold; answers whether any settled. */
-	async function sendQueue(kioskId: string): Promise<boolean> {
-		const own = await kioskOfflineQueue.send(token, kioskId);
-		const retired = await kioskOfflineQueue.sendRetired(token);
-		const refused = [...own.refused, ...retired.refused];
-		if (refused.length > 0) setNotices((shown) => [...shown, ...refused]);
-		return own.settled + retired.settled > 0;
-	}
+	const checkIn = useEffectEvent(() =>
+		checkInKiosk(
+			{
+				token,
+				locale: input.locale,
+				onKiosk: input.onKiosk,
+				onKioskRefused: input.onKioskRefused,
+			},
+			sink,
+		),
+	);
 
-	const checkIn = useEffectEvent(async () => {
-		const response = await kioskFetch(token, "/api/kiosk/session").catch(() => null);
-		if (!response) return lost();
-		const refusal = await kioskRefusalOf(response);
-		if (refusal) return input.onKioskRefused(refusal);
-		const current = await kioskInfoOf(response);
-		if (!current) return lost();
-		input.onKiosk(current.kiosk);
-		reached();
-		await rememberKioskContact(current.kiosk, input.locale, current.offline);
-		await refreshCanQueue(current.kiosk);
-		const settled = await sendQueue(current.kiosk.id);
-		if (current.kiosk.offlineMode || settled) setContacts((count) => count + 1);
-	});
-
-	// The kiosk the page opened on came from the server: that was a contact too.
-	const rememberOpening = useEffectEvent(async () => {
-		if (!cached) await rememberKioskContact(kiosk, input.locale, input.openingContact);
-		await refreshCanQueue(kiosk);
-		if (cached) return;
-		if (await sendQueue(kiosk.id)) setContacts((count) => count + 1);
-	});
+	const rememberOpening = useEffectEvent(() =>
+		rememberOpeningContact(
+			{
+				token,
+				kiosk,
+				cached,
+				locale: input.locale,
+				openingContact: input.openingContact,
+			},
+			sink,
+		),
+	);
 
 	useEffect(() => {
 		void rememberOpening();

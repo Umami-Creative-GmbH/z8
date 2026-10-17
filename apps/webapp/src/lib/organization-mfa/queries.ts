@@ -90,33 +90,39 @@ export async function getOrganizationMfaCoverage(
 		)
 	)
 		throw new Error("Organization owner or admin required");
-	const [policy] = await db
-		.select()
-		.from(organizationMfaPolicy)
-		.where(eq(organizationMfaPolicy.organizationId, organizationId));
-	const members = await db
-		.select({
-			userId: user.id,
-			name: user.name,
-			email: user.email,
-			status: member.status,
-			twoFactorEnabled: user.twoFactorEnabled,
-			hasPasskey: sql<boolean>`EXISTS (SELECT 1 FROM passkey p WHERE p.user_id=${user.id})`,
-			hasTotp: sql<boolean>`EXISTS (SELECT 1 FROM two_factor t WHERE t.user_id=${user.id} AND t.verified IS DISTINCT FROM false)`,
-			hasEmployeeAccess: sql<boolean>`NOT EXISTS (SELECT 1 FROM employee e WHERE e.organization_id=${organizationId} AND e.user_id=${user.id} AND (NOT e.is_active OR employee_departure_denies_access(e.organization_id,e.id,now())))`,
-			deadline: organizationMfaWindow.deadline,
-			lastQualifyingAccessAt: organizationMfaWindow.lastQualifyingAccessAt,
-		})
-		.from(member)
-		.innerJoin(user, eq(user.id, member.userId))
-		.leftJoin(
-			organizationMfaWindow,
-			and(
-				eq(organizationMfaWindow.organizationId, organizationId),
-				eq(organizationMfaWindow.userId, member.userId),
-			),
-		)
-		.where(eq(member.organizationId, organizationId));
+	const [[policy], members, [scope]] = await Promise.all([
+		db
+			.select()
+			.from(organizationMfaPolicy)
+			.where(eq(organizationMfaPolicy.organizationId, organizationId)),
+		db
+			.select({
+				userId: user.id,
+				name: user.name,
+				email: user.email,
+				status: member.status,
+				twoFactorEnabled: user.twoFactorEnabled,
+				hasPasskey: sql<boolean>`EXISTS (SELECT 1 FROM passkey p WHERE p.user_id=${user.id})`,
+				hasTotp: sql<boolean>`EXISTS (SELECT 1 FROM two_factor t WHERE t.user_id=${user.id} AND t.verified IS DISTINCT FROM false)`,
+				hasEmployeeAccess: sql<boolean>`NOT EXISTS (SELECT 1 FROM employee e WHERE e.organization_id=${organizationId} AND e.user_id=${user.id} AND (NOT e.is_active OR employee_departure_denies_access(e.organization_id,e.id,now())))`,
+				deadline: organizationMfaWindow.deadline,
+				lastQualifyingAccessAt: organizationMfaWindow.lastQualifyingAccessAt,
+			})
+			.from(member)
+			.innerJoin(user, eq(user.id, member.userId))
+			.leftJoin(
+				organizationMfaWindow,
+				and(
+					eq(organizationMfaWindow.organizationId, organizationId),
+					eq(organizationMfaWindow.userId, member.userId),
+				),
+			)
+			.where(eq(member.organizationId, organizationId)),
+		db
+			.select({ timezone: organization.timezone })
+			.from(organization)
+			.where(eq(organization.id, organizationId)),
+	]);
 	const coverage = members.map((row) => {
 		const outsideScope = isReservedEmail(row.email);
 		return {
@@ -145,10 +151,6 @@ export async function getOrganizationMfaCoverage(
 				: null,
 		};
 	});
-	const [scope] = await db
-		.select({ timezone: organization.timezone })
-		.from(organization)
-		.where(eq(organization.id, organizationId));
 	return {
 		enabled: policy?.enabled ?? false,
 		gracePeriodDays: policy?.gracePeriodDays ?? 14,

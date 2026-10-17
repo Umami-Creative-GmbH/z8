@@ -1,6 +1,6 @@
 "use client";
 
-import { IconClock, IconLoader2 } from "@tabler/icons-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
@@ -16,15 +16,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { useRouter } from "@/navigation";
 import { runOnboardingAction } from "../run-onboarding-action";
 import {
@@ -32,55 +23,24 @@ import {
 	setWorkScheduleOnboarding,
 	skipWorkScheduleSetup,
 } from "./actions";
+import {
+	HoursPerWeekField,
+	type WorkClassification,
+	WorkClassificationField,
+	WorkScheduleHeading,
+} from "./work-schedule-fields";
 
 const defaultValues = {
 	hoursPerWeek: 40,
-	workClassification: "weekly" as "daily" | "weekly" | "monthly",
+	workClassification: "weekly" as WorkClassification,
 };
 
-export default function WorkSchedulePage() {
-	const { t } = useTranslate();
-	const { push, replace } = useRouter();
-	const [loading, setLoading] = useState(false);
+/**
+ * Resolves whether the current user may set the organization work schedule.
+ * Non-admins skip the step; failures fall back to the wellness step.
+ */
+function useWorkScheduleAccess(replace: (href: string) => void) {
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-	const [effectiveFrom] = useState(
-		() => new Date(Temporal.Now.instant().toString()),
-	);
-
-	const form = useForm({
-		defaultValues: { ...defaultValues, effectiveFrom },
-		onSubmit: async ({ value }) => {
-			await runOnboardingAction({
-				action: () => setWorkScheduleOnboarding(value),
-				onResult: (result) => {
-					if (!result.success) {
-						toast.error(
-							result.error ||
-								t(
-									"onboarding.workSchedule.error",
-									"Failed to set work schedule",
-								),
-						);
-						return;
-					}
-					toast.success(
-						t(
-							"onboarding.workSchedule.success",
-							"Work schedule set successfully!",
-						),
-					);
-					push(result.data.nextStep);
-					return true;
-				},
-				onRejected: () => {
-					toast.error(
-						t("onboarding.workSchedule.error", "Failed to set work schedule"),
-					);
-				},
-				setLoading,
-			});
-		},
-	});
 
 	useEffect(() => {
 		let cancelled = false;
@@ -127,6 +87,68 @@ export default function WorkSchedulePage() {
 		};
 	}, [replace]);
 
+	return isAdmin;
+}
+
+function WorkScheduleLoading() {
+	const { t } = useTranslate();
+
+	return (
+		<div className="flex min-h-[50vh] items-center justify-center">
+			<div className="text-center">
+				<div className="inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+				<p className="mt-4 text-muted-foreground">
+					{t("common.loading", "Loading...")}
+				</p>
+			</div>
+		</div>
+	);
+}
+
+export default function WorkSchedulePage() {
+	const { t } = useTranslate();
+	const { push, replace } = useRouter();
+	const [loading, setLoading] = useState(false);
+	const isAdmin = useWorkScheduleAccess(replace);
+	const [effectiveFrom] = useState(
+		() => new Date(Temporal.Now.instant().toString()),
+	);
+
+	const form = useForm({
+		defaultValues: { ...defaultValues, effectiveFrom },
+		onSubmit: async ({ value }) => {
+			await runOnboardingAction({
+				action: () => setWorkScheduleOnboarding(value),
+				onResult: (result) => {
+					if (!result.success) {
+						toast.error(
+							result.error ||
+								t(
+									"onboarding.workSchedule.error",
+									"Failed to set work schedule",
+								),
+						);
+						return;
+					}
+					toast.success(
+						t(
+							"onboarding.workSchedule.success",
+							"Work schedule set successfully!",
+						),
+					);
+					push(result.data.nextStep);
+					return true;
+				},
+				onRejected: () => {
+					toast.error(
+						t("onboarding.workSchedule.error", "Failed to set work schedule"),
+					);
+				},
+				setLoading,
+			});
+		},
+	});
+
 	async function handleSkip() {
 		await runOnboardingAction({
 			action: skipWorkScheduleSetup,
@@ -157,16 +179,7 @@ export default function WorkSchedulePage() {
 	}
 
 	if (isAdmin === null) {
-		return (
-			<div className="flex min-h-[50vh] items-center justify-center">
-				<div className="text-center">
-					<div className="inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
-					<p className="mt-4 text-muted-foreground">
-						{t("common.loading", "Loading...")}
-					</p>
-				</div>
-			</div>
-		);
+		return <WorkScheduleLoading />;
 	}
 
 	return (
@@ -174,20 +187,7 @@ export default function WorkSchedulePage() {
 			<ProgressIndicator currentStep="work_schedule" isAdmin={isAdmin} />
 
 			<div className="mx-auto max-w-2xl">
-				<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
-					<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
-						<IconClock className="size-8 text-primary" />
-					</div>
-					<h1 className="mb-4 text-3xl font-bold tracking-tight">
-						{t("onboarding.workSchedule.title", "Set your work schedule")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"onboarding.workSchedule.subtitle",
-							"Define your working hours to help track time and manage absences accurately.",
-						)}
-					</p>
-				</div>
+				<WorkScheduleHeading />
 
 				<Card>
 					<CardHeader>
@@ -231,95 +231,24 @@ export default function WorkSchedulePage() {
 								}}
 							>
 								{(field) => (
-									<div className="space-y-2">
-										<Label htmlFor="work-schedule-hours-per-week">
-											{t(
-												"onboarding.workSchedule.hoursPerWeek",
-												"Hours per Week",
-											)}
-										</Label>
-										<Input
-											id="work-schedule-hours-per-week"
-											type="number"
-											min={0}
-											max={168}
-											placeholder={t(
-												"onboarding.workSchedule.hoursPerWeekPlaceholder",
-												"40",
-											)}
-											disabled={loading}
-											value={field.state.value}
-											onChange={(e) =>
-												field.handleChange(parseFloat(e.target.value) || 0)
-											}
-											onBlur={field.handleBlur}
-										/>
-										<p className="text-sm text-muted-foreground">
-											{t(
-												"onboarding.workSchedule.hoursPerWeekDesc",
-												"Typical full-time is 40 hours per week.",
-											)}
-										</p>
-										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm font-medium text-destructive">
-												{typeof field.state.meta.errors[0] === "string"
-													? field.state.meta.errors[0]
-													: (field.state.meta.errors[0] as any)?.message}
-											</p>
-										)}
-									</div>
+									<HoursPerWeekField
+										value={field.state.value}
+										errors={field.state.meta.errors}
+										disabled={loading}
+										onChange={field.handleChange}
+										onBlur={field.handleBlur}
+									/>
 								)}
 							</form.Field>
 
 							{/* Work Classification */}
 							<form.Field name="workClassification">
 								{(field) => (
-									<div className="space-y-2">
-										<Label htmlFor="work-schedule-classification">
-											{t(
-												"onboarding.workSchedule.classification",
-												"Work Classification",
-											)}
-										</Label>
-										<Select
-											onValueChange={(value) =>
-												field.handleChange(
-													value as "daily" | "weekly" | "monthly",
-												)
-											}
-											value={field.state.value}
-											disabled={loading}
-										>
-											<SelectTrigger
-												id="work-schedule-classification"
-												className="w-full"
-											>
-												<SelectValue
-													placeholder={t(
-														"onboarding.workSchedule.selectClassification",
-														"Select classification",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="daily">
-													{t("onboarding.workSchedule.daily", "Daily")}
-												</SelectItem>
-												<SelectItem value="weekly">
-													{t("onboarding.workSchedule.weekly", "Weekly")}
-												</SelectItem>
-												<SelectItem value="monthly">
-													{t("onboarding.workSchedule.monthly", "Monthly")}
-												</SelectItem>
-											</SelectContent>
-										</Select>
-										<p className="text-sm text-muted-foreground">
-											{t(
-												"onboarding.workSchedule.classificationDesc",
-												"How you want to track your working hours.",
-											)}
-										</p>
-									</div>
+									<WorkClassificationField
+										value={field.state.value}
+										disabled={loading}
+										onChange={field.handleChange}
+									/>
 								)}
 							</form.Field>
 

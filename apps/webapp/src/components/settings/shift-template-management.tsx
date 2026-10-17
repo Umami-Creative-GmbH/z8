@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLoader2, IconMapPin } from "@tabler/icons-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import type { ShiftTemplate } from "@/app/[locale]/(app)/scheduling/types";
@@ -8,10 +8,7 @@ import {
 	ActionPanel,
 	ActionPanelBody,
 	ActionPanelContent,
-	ActionPanelDescription,
 	ActionPanelFooter,
-	ActionPanelHeader,
-	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import {
 	AlertDialog,
@@ -26,14 +23,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { TimeInput } from "@/components/ui/time-input";
+import {
+	getShiftTemplateFormDefaults,
+	useShiftTemplateSubareaOptions,
+} from "./shift-template-dialog-defaults";
+import {
+	ShiftTemplateDialogHeader,
+	ShiftTemplateSubareaField,
+	ShiftTemplateSubmitButton,
+} from "./shift-template-dialog-fields";
 import {
 	type ShiftTemplateLocations,
 	useShiftTemplateManagementController,
@@ -244,20 +243,17 @@ function ShiftTemplateDialog({
 	const formatTime = useFormatTime();
 	const calculateDuration = useCalculateDuration();
 
-	const defaultSubareaId = locations
-		.flatMap((location) => location.subareas)
-		.find((subarea) => subarea.isActive)?.id;
+	const { defaultSubareaId, getSubareaDisplay } =
+		useShiftTemplateSubareaOptions(locations);
+	const getDefaults = () =>
+		getShiftTemplateFormDefaults(
+			template,
+			requireScopedSubareaSelection,
+			defaultSubareaId,
+		);
 
 	const form = useForm({
-		defaultValues: {
-			name: template?.name || "",
-			startTime: template?.startTime || "09:00",
-			endTime: template?.endTime || "17:00",
-			color: template?.color || "#3b82f6",
-			subareaId:
-				template?.subareaId ||
-				(requireScopedSubareaSelection ? defaultSubareaId || "" : ""),
-		},
+		defaultValues: getDefaults(),
 		onSubmit: async ({ value }) => {
 			onSubmit({
 				...value,
@@ -267,38 +263,12 @@ function ShiftTemplateDialog({
 	});
 
 	const resetForm = () => {
-		form.setFieldValue("name", template?.name || "");
-		form.setFieldValue("startTime", template?.startTime || "09:00");
-		form.setFieldValue("endTime", template?.endTime || "17:00");
-		form.setFieldValue("color", template?.color || "#3b82f6");
-		form.setFieldValue(
-			"subareaId",
-			template?.subareaId ||
-				(requireScopedSubareaSelection ? defaultSubareaId || "" : ""),
-		);
-	};
-
-	const subareaDisplayById = new Map<string, string>();
-	for (const location of locations) {
-		for (const subarea of location.subareas) {
-			if (!subareaDisplayById.has(subarea.id)) {
-				subareaDisplayById.set(
-					subarea.id,
-					t(
-						"settings.shiftTemplates.form.subareaFormat",
-						"{location} – {subarea}",
-						{
-							location: location.name,
-							subarea: subarea.name,
-						},
-					),
-				);
-			}
-		}
-	}
-
-	const getSubareaDisplay = (subareaId: string) => {
-		return subareaDisplayById.get(subareaId) ?? "";
+		const defaults = getDefaults();
+		form.setFieldValue("name", defaults.name);
+		form.setFieldValue("startTime", defaults.startTime);
+		form.setFieldValue("endTime", defaults.endTime);
+		form.setFieldValue("color", defaults.color);
+		form.setFieldValue("subareaId", defaults.subareaId);
 	};
 
 	return (
@@ -312,24 +282,7 @@ function ShiftTemplateDialog({
 			}}
 		>
 			<ActionPanelContent>
-				<ActionPanelHeader>
-					<ActionPanelTitle>
-						{template
-							? t("settings.shiftTemplates.edit.title", "Edit Template")
-							: t("settings.shiftTemplates.create.title", "Create Template")}
-					</ActionPanelTitle>
-					<ActionPanelDescription>
-						{template
-							? t(
-									"settings.shiftTemplates.edit.description",
-									"Update the shift template details",
-								)
-							: t(
-									"settings.shiftTemplates.create.description",
-									"Create a new shift template for quick scheduling",
-								)}
-					</ActionPanelDescription>
-				</ActionPanelHeader>
+				<ShiftTemplateDialogHeader isEditing={!!template} />
 
 				<form
 					onSubmit={(e) => {
@@ -409,74 +362,13 @@ function ShiftTemplateDialog({
 						{/* Default Subarea (Optional) */}
 						<form.Field name="subareaId">
 							{(field) => (
-								<div className="space-y-2">
-									<Label className="flex items-center gap-2">
-										<IconMapPin className="size-4" aria-hidden="true" />
-										{t(
-											"settings.shiftTemplates.form.defaultSubarea",
-											"Default Subarea",
-										)}
-										<span className="text-xs text-muted-foreground">
-											({t("common.optional", "Optional")})
-										</span>
-									</Label>
-									<Select
-										value={field.state.value}
-										onValueChange={(value) =>
-											field.handleChange(value === "none" ? "" : value)
-										}
-									>
-										<SelectTrigger>
-											<SelectValue
-												placeholder={t(
-													"settings.shiftTemplates.form.selectSubarea",
-													"Select a subarea…",
-												)}
-											>
-												{field.state.value
-													? getSubareaDisplay(field.state.value)
-													: t(
-															"settings.shiftTemplates.form.noSubarea",
-															"No default subarea",
-														)}
-											</SelectValue>
-										</SelectTrigger>
-										<SelectContent>
-											{!requireScopedSubareaSelection ? (
-												<SelectItem value="none">
-													{t(
-														"settings.shiftTemplates.form.noSubarea",
-														"No default subarea",
-													)}
-												</SelectItem>
-											) : null}
-											{locations.flatMap((location) =>
-												location.subareas.flatMap((subarea) =>
-													subarea.isActive
-														? [
-																<SelectItem key={subarea.id} value={subarea.id}>
-																	{t(
-																		"settings.shiftTemplates.form.subareaFormat",
-																		"{location} – {subarea}",
-																		{
-																			location: location.name,
-																			subarea: subarea.name,
-																		},
-																	)}
-																</SelectItem>,
-															]
-														: [],
-												),
-											)}
-										</SelectContent>
-									</Select>
-									<p className="text-xs text-muted-foreground">
-										{t(
-											"settings.shiftTemplates.form.subareaHelp",
-											"When using this template, shifts will be pre-assigned to this subarea.",
-										)}
-									</p>
-								</div>
+								<ShiftTemplateSubareaField
+									value={field.state.value}
+									onChange={field.handleChange}
+									locations={locations}
+									requireScopedSubareaSelection={requireScopedSubareaSelection}
+									getSubareaDisplay={getSubareaDisplay}
+								/>
 							)}
 						</form.Field>
 
@@ -503,27 +395,14 @@ function ShiftTemplateDialog({
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button
-							type="submit"
+						<ShiftTemplateSubmitButton
+							isSubmitting={isSubmitting}
 							disabled={
 								isSubmitting ||
 								(requireScopedSubareaSelection && !form.state.values.subareaId)
 							}
-						>
-							{isSubmitting ? (
-								<>
-									<IconLoader2
-										className="mr-2 size-4 animate-spin"
-										aria-hidden="true"
-									/>
-									{t("common.saving", "Saving…")}
-								</>
-							) : template ? (
-								t("common.save", "Save")
-							) : (
-								t("common.create", "Create")
-							)}
-						</Button>
+							isEditing={!!template}
+						/>
 					</ActionPanelFooter>
 				</form>
 			</ActionPanelContent>

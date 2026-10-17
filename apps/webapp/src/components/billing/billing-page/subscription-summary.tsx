@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatEuroAmount, seatCost, seatInterval } from "@/lib/billing/seat-prices";
-import { MONTHLY_PRICE, YEARLY_PRICE_PER_MONTH } from "../pricing-cards";
+import { MONTHLY_PRICE, YEARLY_PRICE_PER_MONTH } from "../pricing-cards.constants";
 import type { SubscriptionInfo } from "./types";
 
 interface SubscriptionSummaryProps {

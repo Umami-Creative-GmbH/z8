@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { MfaSignOut } from "@/components/organization-mfa/sign-out";
@@ -15,6 +16,18 @@ import { getOwnMfaRequirements } from "@/lib/organization-mfa/queries";
 import type { SocialProviderId } from "@/lib/social-providers";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { getTranslate } from "@/tolgee/server";
+
+export async function generateMetadata(): Promise<Metadata> {
+	const t = await getTranslate();
+
+	return {
+		title: t("mfa.page.title", "Security verification"),
+		description: t(
+			"mfa.page.description",
+			"Verify an authenticator to keep access to your organizations.",
+		),
+	};
+}
 
 async function SecurityVerification({
 	searchParams,

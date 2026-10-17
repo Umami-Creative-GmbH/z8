@@ -1,42 +1,22 @@
 "use client";
 
-import {
-	IconBeach,
-	IconCalendar,
-	IconCalendarCheck,
-	IconCalendarEvent,
-	IconCalendarTime,
-	IconCash,
-	IconClipboardCheck,
-	IconClock,
-	IconDashboard,
-	IconFileDescription,
-	IconFolder,
-	IconFolders,
-	IconGavel,
-	IconHelp,
-	IconHierarchy,
-	IconMessageCircle,
-	IconReceipt,
-	IconReport,
-	IconReportMoney,
-	IconServerCog,
-	IconSettings,
-	IconShieldCheck,
-	IconUserCheck,
-	IconUsers,
-} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type * as React from "react";
 import { Suspense } from "react";
 import { AppSearch } from "@/components/app-search";
+import {
+	buildPersonalNav,
+	buildSecondaryNav,
+	buildTeamNav,
+	type NavigationCapabilities,
+	toNavUser,
+} from "@/components/app-sidebar-nav";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavTeam } from "@/components/nav-team";
 import { NavUser } from "@/components/nav-user";
 import { OrganizationSwitcher } from "@/components/organization-switcher";
 import type { FeatureFlagState } from "@/components/settings/settings-config";
-import { FinanceNavBadge } from "@/components/travel-expenses/finance/finance-nav-badge";
 import {
 	Sidebar,
 	SidebarContent,
@@ -55,23 +35,7 @@ import { useSession } from "@/lib/auth-client";
 import type { UserOrganization } from "@/lib/auth-helpers";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 
-export interface NavigationCapabilities {
-	scheduling: boolean;
-	compliance: boolean;
-	payroll: boolean;
-	/** Owners, admins and active expense officers (#753). */
-	finance: boolean;
-	worksCouncil: boolean;
-	/** The employee's own shared documents while personnel files are on (#865). */
-	myDocuments?: boolean;
-	/** Owners, admins and active personnel file officers while personnel files are on (#866). */
-	personnelFiles?: boolean;
-	/** Managers and above while the organization collects period submissions (#1075). */
-	periodSubmissions?: boolean;
-	/** Who Is In is useful only while the active organization has active locations. */
-	teamPresence?: boolean;
-	platformAdmin: boolean;
-}
+export type { NavigationCapabilities } from "@/components/app-sidebar-nav";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	organizations?: UserOrganization[];
@@ -128,6 +92,12 @@ function SidebarSecondaryNavigationLoading() {
 	);
 }
 
+function SidebarUser() {
+	const { data: session, isPending } = useSession();
+
+	return <NavUser user={toNavUser(session?.user)} isLoading={isPending} />;
+}
+
 export function AppSidebar({
 	organizations = EMPTY_ORGANIZATIONS,
 	currentOrganization = null,
@@ -141,9 +111,9 @@ export function AppSidebar({
 	...props
 }: AppSidebarProps) {
 	const { t } = useTranslate();
-	const { data: session, isPending } = useSession();
+	const translate = (key: string, defaultValue: string) => t(key, defaultValue);
 	const staticSearchInput: StaticAppSearchInput = {
-		t: (key, defaultValue) => t(key, defaultValue),
+		t: translate,
 		employeeRole,
 		settingsAccessTier,
 		billingEnabled,
@@ -154,192 +124,13 @@ export function AppSidebar({
 	};
 	const staticCommands = buildStaticAppCommands(staticSearchInput);
 	const staticSearchResults = buildStaticAppSearchResults(staticSearchInput);
-
-	// Personal section - visible to ALL users
-	const navPersonal = [
-		{
-			title: t("nav.dashboard", "Dashboard"),
-			url: "/",
-			icon: IconDashboard,
-		},
-		{
-			title: t("nav.time-tracking", "Time Tracking"),
-			url: "/time-tracking",
-			icon: IconClock,
-		},
-		{
-			title: t("nav.calendar", "Calendar"),
-			url: "/calendar",
-			icon: IconCalendarEvent,
-		},
-		// Employees reach their own shifts here; planners keep Scheduling in the Team section.
-		...(navigationCapabilities.scheduling && employeeRole === "employee"
-			? [
-					{
-						title: t("nav.my-schedule", "My Schedule"),
-						url: "/scheduling",
-						icon: IconCalendarTime,
-					},
-				]
-			: []),
-		{
-			title: t("nav.absences", "Absences"),
-			url: "/absences",
-			icon: IconBeach,
-		},
-		{
-			title: t("nav.travel-expenses", "Travel Expenses"),
-			url: "/travel-expenses",
-			icon: IconReceipt,
-		},
-		...(navigationCapabilities.finance
-			? [
-					{
-						title: t("nav.finance", "Finance"),
-						url: "/travel-expenses/finance",
-						icon: IconReportMoney,
-						badge: <FinanceNavBadge />,
-					},
-				]
-			: []),
-		{
-			title: t("nav.my-requests", "My Requests"),
-			url: "/my-requests",
-			icon: IconFileDescription,
-		},
-		...(navigationCapabilities.myDocuments
-			? [
-					{
-						title: t("nav.my-documents", "My Documents"),
-						url: "/my-documents",
-						icon: IconFolder,
-					},
-				]
-			: []),
-		...(navigationCapabilities.personnelFiles
-			? [
-					{
-						title: t("nav.personnel-files", "Personnel Files"),
-						url: "/personnel-files",
-						icon: IconFolders,
-					},
-				]
-			: []),
-		{
-			title: t("nav.reports", "Reports"),
-			url: "/reports",
-			icon: IconReport,
-		},
-		{
-			title: t("nav.org-explorer", "Org Explorer"),
-			url: "/organization",
-			icon: IconHierarchy,
-		},
-		...(navigationCapabilities.payroll
-			? [
-					{
-						title: t("nav.payroll", "Payroll"),
-						url: "/payroll",
-						icon: IconCash,
-					},
-				]
-			: []),
-	];
-
-	// Team section - admin/manager only
-	const navTeam = [
-		{
-			title: t("nav.team", "Team"),
-			url: "/team",
-			icon: IconUsers,
-		},
-		{
-			title: t("nav.teamAbsences", "Team Absences"),
-			url: "/team/absences",
-			icon: IconBeach,
-		},
-		...(navigationCapabilities.teamPresence
-			? [
-					{
-						title: t("nav.teamPresence", "Who Is In"),
-						url: "/team/presence",
-						icon: IconUserCheck,
-					},
-				]
-			: []),
-		// Only while the organization collects period submissions (current or scheduled cadence)
-		...(navigationCapabilities.periodSubmissions
-			? [
-					{
-						title: t("nav.teamPeriodSubmissions", "Period Submissions"),
-						url: "/team/period-submissions",
-						icon: IconCalendarCheck,
-					},
-				]
-			: []),
-		// Only show Scheduling when shifts are enabled for the organization
-		...(navigationCapabilities.scheduling
-			? [
-					{
-						title: t("nav.scheduling", "Scheduling"),
-						url: "/scheduling",
-						icon: IconCalendar,
-					},
-				]
-			: []),
-		{
-			title: t("nav.approvals", "Approvals"),
-			url: "/approvals/inbox",
-			icon: IconClipboardCheck,
-		},
-	];
-
-	const navSecondary = [
-		...(navigationCapabilities.compliance
-			? [
-					{
-						title: t("nav.compliance", "Compliance"),
-						url: "/compliance",
-						icon: IconShieldCheck,
-					},
-				]
-			: []),
-		...(navigationCapabilities.worksCouncil
-			? [
-					{
-						title: t("nav.worksCouncil", "Works Council"),
-						url: "/works-council",
-						icon: IconGavel,
-					},
-				]
-			: []),
-		{
-			title: t("nav.settings", "Settings"),
-			url: "/settings",
-			icon: IconSettings,
-		},
-		{
-			title: t("nav.get-help", "Get Help"),
-			url: "https://docs.z8-time.app/docs",
-			icon: IconHelp,
-			external: true,
-		},
-		{
-			title: t("nav.feedback", "Feedback"),
-			url: "https://github.com/Umami-Creative-GmbH/z8/issues",
-			icon: IconMessageCircle,
-			external: true,
-		},
-		...(navigationCapabilities.platformAdmin
-			? [
-					{
-						title: t("nav.platform-admin", "Platform Admin"),
-						url: "/platform-admin",
-						icon: IconServerCog,
-					},
-				]
-			: []),
-	];
+	const navPersonal = buildPersonalNav(
+		translate,
+		navigationCapabilities,
+		employeeRole,
+	);
+	const navTeam = buildTeamNav(translate, navigationCapabilities);
+	const navSecondary = buildSecondaryNav(translate, navigationCapabilities);
 
 	return (
 		<Sidebar collapsible="offcanvas" {...props}>
@@ -366,15 +157,7 @@ export function AppSidebar({
 				</Suspense>
 			</SidebarContent>
 			<SidebarFooter>
-				<NavUser
-					user={{
-						id: session?.user?.id || "",
-						name: session?.user?.name || "",
-						email: session?.user?.email || "",
-						avatar: session?.user?.image ?? undefined,
-					}}
-					isLoading={isPending}
-				/>
+				<SidebarUser />
 			</SidebarFooter>
 		</Sidebar>
 	);

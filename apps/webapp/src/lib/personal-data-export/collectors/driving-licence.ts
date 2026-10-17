@@ -32,112 +32,194 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 	async collect(database, scope) {
 		await loadSubjectEmployee(database, scope);
 		const { organizationId, employeeId } = scope;
-		const checks = await database
-			.select()
-			.from(drivingLicenceCheck)
-			.where(
-				and(
-					eq(drivingLicenceCheck.organizationId, organizationId),
-					eq(drivingLicenceCheck.employeeId, employeeId),
+		// Independent read-only queries on the shared pool, not one transaction.
+		const [
+			checks,
+			supplements,
+			events,
+			authorizations,
+			participation,
+			suspension,
+			reports,
+			grants,
+			performed,
+			authored,
+			retention,
+			holds,
+			tasks,
+			completedTasks,
+			deliveries,
+		] = await Promise.all([
+			database
+				.select()
+				.from(drivingLicenceCheck)
+				.where(
+					and(
+						eq(drivingLicenceCheck.organizationId, organizationId),
+						eq(drivingLicenceCheck.employeeId, employeeId),
+					),
+				)
+				.orderBy(asc(drivingLicenceCheck.controlledAt)),
+			database
+				.select()
+				.from(drivingLicenceSupplement)
+				.where(
+					and(
+						eq(drivingLicenceSupplement.organizationId, organizationId),
+						eq(drivingLicenceSupplement.employeeId, employeeId),
+					),
+				)
+				.orderBy(asc(drivingLicenceSupplement.recordedAt)),
+			database
+				.select()
+				.from(drivingAuthorizationEvent)
+				.where(
+					and(
+						eq(drivingAuthorizationEvent.organizationId, organizationId),
+						eq(drivingAuthorizationEvent.employeeId, employeeId),
+					),
+				)
+				.orderBy(asc(drivingAuthorizationEvent.effectiveAt)),
+			database
+				.select()
+				.from(drivingAuthorization)
+				.where(
+					and(
+						eq(drivingAuthorization.organizationId, organizationId),
+						eq(drivingAuthorization.employeeId, employeeId),
+					),
 				),
-			)
-			.orderBy(asc(drivingLicenceCheck.controlledAt));
-		const supplements = await database
-			.select()
-			.from(drivingLicenceSupplement)
-			.where(
-				and(
-					eq(drivingLicenceSupplement.organizationId, organizationId),
-					eq(drivingLicenceSupplement.employeeId, employeeId),
+			database
+				.select()
+				.from(drivingLicenceParticipant)
+				.where(
+					and(
+						eq(drivingLicenceParticipant.organizationId, organizationId),
+						eq(drivingLicenceParticipant.employeeId, employeeId),
+					),
 				),
-			)
-			.orderBy(asc(drivingLicenceSupplement.recordedAt));
-		const events = await database
-			.select()
-			.from(drivingAuthorizationEvent)
-			.where(
-				and(
-					eq(drivingAuthorizationEvent.organizationId, organizationId),
-					eq(drivingAuthorizationEvent.employeeId, employeeId),
+			database
+				.select()
+				.from(drivingLicenceSubject)
+				.where(
+					and(
+						eq(drivingLicenceSubject.organizationId, organizationId),
+						eq(drivingLicenceSubject.employeeId, employeeId),
+					),
 				),
-			)
-			.orderBy(asc(drivingAuthorizationEvent.effectiveAt));
-		const authorizations = await database
-			.select()
-			.from(drivingAuthorization)
-			.where(
-				and(
-					eq(drivingAuthorization.organizationId, organizationId),
-					eq(drivingAuthorization.employeeId, employeeId),
+			database
+				.select()
+				.from(drivingImpedimentReport)
+				.where(
+					and(
+						eq(drivingImpedimentReport.organizationId, organizationId),
+						eq(drivingImpedimentReport.employeeId, employeeId),
+					),
+				)
+				.orderBy(asc(drivingImpedimentReport.reportedAt)),
+			database
+				.select()
+				.from(drivingLicenceVerifierGrant)
+				.where(
+					and(
+						eq(drivingLicenceVerifierGrant.organizationId, organizationId),
+						eq(drivingLicenceVerifierGrant.verifierEmployeeId, employeeId),
+					),
 				),
-			);
-		const participation = await database
-			.select()
-			.from(drivingLicenceParticipant)
-			.where(
-				and(
-					eq(drivingLicenceParticipant.organizationId, organizationId),
-					eq(drivingLicenceParticipant.employeeId, employeeId),
+			database
+				.select({
+					id: drivingLicenceCheck.id,
+					employeeId: drivingLicenceCheck.employeeId,
+					controlledAt: drivingLicenceCheck.controlledAt,
+				})
+				.from(drivingLicenceCheck)
+				.where(
+					and(
+						eq(drivingLicenceCheck.organizationId, organizationId),
+						eq(drivingLicenceCheck.verifierEmployeeId, employeeId),
+						ne(drivingLicenceCheck.employeeId, employeeId),
+					),
 				),
-			);
-		const suspension = await database
-			.select()
-			.from(drivingLicenceSubject)
-			.where(
-				and(
-					eq(drivingLicenceSubject.organizationId, organizationId),
-					eq(drivingLicenceSubject.employeeId, employeeId),
+			database
+				.select({
+					id: drivingLicenceSupplement.id,
+					employeeId: drivingLicenceSupplement.employeeId,
+					checkId: drivingLicenceSupplement.checkId,
+					recordedAt: drivingLicenceSupplement.recordedAt,
+					reason: drivingLicenceSupplement.reason,
+				})
+				.from(drivingLicenceSupplement)
+				.where(
+					and(
+						eq(drivingLicenceSupplement.organizationId, organizationId),
+						eq(drivingLicenceSupplement.authorEmployeeId, employeeId),
+						ne(drivingLicenceSupplement.employeeId, employeeId),
+					),
 				),
-			);
-		const reports = await database
-			.select()
-			.from(drivingImpedimentReport)
-			.where(
-				and(
-					eq(drivingImpedimentReport.organizationId, organizationId),
-					eq(drivingImpedimentReport.employeeId, employeeId),
+			database
+				.select({
+					checkId: drivingLicenceRetention.checkId,
+					retentionStartedAt: drivingLicenceRetention.retentionStartedAt,
+				})
+				.from(drivingLicenceRetention)
+				.innerJoin(
+					drivingLicenceCheck,
+					and(
+						eq(drivingLicenceCheck.id, drivingLicenceRetention.checkId),
+						eq(drivingLicenceCheck.organizationId, organizationId),
+						eq(drivingLicenceCheck.employeeId, employeeId),
+					),
+				)
+				.where(eq(drivingLicenceRetention.organizationId, organizationId)),
+			database
+				.select({ hold: drivingLicenceHold })
+				.from(drivingLicenceHold)
+				.innerJoin(
+					drivingLicenceCheck,
+					and(
+						eq(drivingLicenceCheck.id, drivingLicenceHold.checkId),
+						eq(drivingLicenceCheck.organizationId, organizationId),
+						eq(drivingLicenceCheck.employeeId, employeeId),
+					),
+				)
+				.where(eq(drivingLicenceHold.organizationId, organizationId))
+				.orderBy(asc(drivingLicenceHold.placedAt)),
+			database
+				.select()
+				.from(drivingLicenceTask)
+				.where(
+					and(
+						eq(drivingLicenceTask.organizationId, organizationId),
+						eq(drivingLicenceTask.employeeId, employeeId),
+					),
+				)
+				.orderBy(asc(drivingLicenceTask.createdAt)),
+			database
+				.select({
+					id: drivingLicenceTask.id,
+					employeeId: drivingLicenceTask.employeeId,
+					kind: drivingLicenceTask.kind,
+					completedAt: drivingLicenceTask.completedAt,
+				})
+				.from(drivingLicenceTask)
+				.where(
+					and(
+						eq(drivingLicenceTask.organizationId, organizationId),
+						eq(drivingLicenceTask.completedBy, scope.userId),
+						ne(drivingLicenceTask.employeeId, employeeId),
+					),
 				),
-			)
-			.orderBy(asc(drivingImpedimentReport.reportedAt));
-		const grants = await database
-			.select()
-			.from(drivingLicenceVerifierGrant)
-			.where(
-				and(
-					eq(drivingLicenceVerifierGrant.organizationId, organizationId),
-					eq(drivingLicenceVerifierGrant.verifierEmployeeId, employeeId),
-				),
-			);
-		const performed = await database
-			.select({
-				id: drivingLicenceCheck.id,
-				employeeId: drivingLicenceCheck.employeeId,
-				controlledAt: drivingLicenceCheck.controlledAt,
-			})
-			.from(drivingLicenceCheck)
-			.where(
-				and(
-					eq(drivingLicenceCheck.organizationId, organizationId),
-					eq(drivingLicenceCheck.verifierEmployeeId, employeeId),
-					ne(drivingLicenceCheck.employeeId, employeeId),
-				),
-			);
-		const authored = await database
-			.select({
-				id: drivingLicenceSupplement.id,
-				employeeId: drivingLicenceSupplement.employeeId,
-				checkId: drivingLicenceSupplement.checkId,
-				recordedAt: drivingLicenceSupplement.recordedAt,
-				reason: drivingLicenceSupplement.reason,
-			})
-			.from(drivingLicenceSupplement)
-			.where(
-				and(
-					eq(drivingLicenceSupplement.organizationId, organizationId),
-					eq(drivingLicenceSupplement.authorEmployeeId, employeeId),
-					ne(drivingLicenceSupplement.employeeId, employeeId),
-				),
-			);
+			database
+				.select()
+				.from(drivingLicenceReminderDelivery)
+				.where(
+					and(
+						eq(drivingLicenceReminderDelivery.organizationId, organizationId),
+						eq(drivingLicenceReminderDelivery.employeeId, employeeId),
+					),
+				)
+				.orderBy(asc(drivingLicenceReminderDelivery.createdAt)),
+		]);
 		const versions = new Set(checks.map((c) => c.policyVersion));
 		for (const event of events)
 			if (event.reason?.startsWith("policy_version:")) {
@@ -156,69 +238,6 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 					)
 					.orderBy(asc(drivingLicencePolicyRevision.version))
 			: [];
-		const retention = await database
-			.select({
-				checkId: drivingLicenceRetention.checkId,
-				retentionStartedAt: drivingLicenceRetention.retentionStartedAt,
-			})
-			.from(drivingLicenceRetention)
-			.innerJoin(
-				drivingLicenceCheck,
-				and(
-					eq(drivingLicenceCheck.id, drivingLicenceRetention.checkId),
-					eq(drivingLicenceCheck.organizationId, organizationId),
-					eq(drivingLicenceCheck.employeeId, employeeId),
-				),
-			)
-			.where(eq(drivingLicenceRetention.organizationId, organizationId));
-		const holds = await database
-			.select({ hold: drivingLicenceHold })
-			.from(drivingLicenceHold)
-			.innerJoin(
-				drivingLicenceCheck,
-				and(
-					eq(drivingLicenceCheck.id, drivingLicenceHold.checkId),
-					eq(drivingLicenceCheck.organizationId, organizationId),
-					eq(drivingLicenceCheck.employeeId, employeeId),
-				),
-			)
-			.where(eq(drivingLicenceHold.organizationId, organizationId))
-			.orderBy(asc(drivingLicenceHold.placedAt));
-		const tasks = await database
-			.select()
-			.from(drivingLicenceTask)
-			.where(
-				and(
-					eq(drivingLicenceTask.organizationId, organizationId),
-					eq(drivingLicenceTask.employeeId, employeeId),
-				),
-			)
-			.orderBy(asc(drivingLicenceTask.createdAt));
-		const completedTasks = await database
-			.select({
-				id: drivingLicenceTask.id,
-				employeeId: drivingLicenceTask.employeeId,
-				kind: drivingLicenceTask.kind,
-				completedAt: drivingLicenceTask.completedAt,
-			})
-			.from(drivingLicenceTask)
-			.where(
-				and(
-					eq(drivingLicenceTask.organizationId, organizationId),
-					eq(drivingLicenceTask.completedBy, scope.userId),
-					ne(drivingLicenceTask.employeeId, employeeId),
-				),
-			);
-		const deliveries = await database
-			.select()
-			.from(drivingLicenceReminderDelivery)
-			.where(
-				and(
-					eq(drivingLicenceReminderDelivery.organizationId, organizationId),
-					eq(drivingLicenceReminderDelivery.employeeId, employeeId),
-				),
-			)
-			.orderBy(asc(drivingLicenceReminderDelivery.createdAt));
 		const name = await userNameLookup(database, [
 			...holds.flatMap(({ hold }) => [hold.placedBy, hold.releasedBy]),
 			...tasks.map((t) => t.completedBy),
