@@ -1,7 +1,9 @@
 -- #1288: the kiosk PIN lockout is replayed from stored events, so attempts that reach Z8 late
 -- (offline kiosk clocking, ADR 0011) are judged as the lockout stood when they happened. The
 -- counter and lock columns on employee_kiosk_pin go; their current state becomes events: an
--- active lock as five failures at its start, a running count as that many failures now.
+-- active lock as five failures at its start, a running count as that many failures now. A
+-- queued attempt's event names its operation, so a resend of the same command is never judged
+-- (or counted) twice.
 CREATE TABLE IF NOT EXISTS "employee_kiosk_pin_event" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"sequence" bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -9,10 +11,12 @@ CREATE TABLE IF NOT EXISTS "employee_kiosk_pin_event" (
 	"employee_id" uuid NOT NULL,
 	"kind" text NOT NULL,
 	"offline" boolean DEFAULT false NOT NULL,
+	"operation_id" uuid,
 	"occurred_at" timestamp with time zone NOT NULL,
 	"recorded_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "employee_kiosk_pin_event_kind_check" CHECK ("kind" in ('failure', 'success', 'cleared')),
-	CONSTRAINT "employee_kiosk_pin_event_offline_check" CHECK ("kind" <> 'cleared' or not "offline")
+	CONSTRAINT "employee_kiosk_pin_event_offline_check" CHECK ("kind" <> 'cleared' or not "offline"),
+	CONSTRAINT "employee_kiosk_pin_event_operation_check" CHECK ("operation_id" is null or "offline")
 );
 --> statement-breakpoint
 DO $$ BEGIN
@@ -30,6 +34,8 @@ END $$;
 CREATE INDEX IF NOT EXISTS "employeeKioskPinEvent_employee_occurredAt_idx" ON "employee_kiosk_pin_event" USING btree ("employee_id","occurred_at","sequence");
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "employeeKioskPinEvent_occurredAt_idx" ON "employee_kiosk_pin_event" USING btree ("occurred_at");
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "employeeKioskPinEvent_operation_idx" ON "employee_kiosk_pin_event" USING btree ("organization_id","operation_id") WHERE "operation_id" IS NOT NULL;
 --> statement-breakpoint
 INSERT INTO "employee_kiosk_pin_event" ("organization_id", "employee_id", "kind", "occurred_at")
 SELECT "organization_id", "employee_id", 'failure', "locked_until" - interval '15 minutes'

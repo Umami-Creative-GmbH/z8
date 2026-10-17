@@ -16,10 +16,6 @@ import { db } from "@/db";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { integrationAdminPool } from "@/test/integration-database";
 
-const harness = vi.hoisted(() => ({
-	billing: { canAccess: true } as { canAccess: boolean; reason?: string },
-}));
-
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
@@ -28,10 +24,9 @@ vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
 vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: async () => null } } }));
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => harness.billing,
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 const { createClocking } = await import("@/lib/time-tracking/clocking/clocking");
 const { recordingFollowUps } = await import("@/lib/time-tracking/clocking/follow-ups");
@@ -41,7 +36,7 @@ const { setOwnKioskPin } = await import("./pin-store");
 const { hashKioskSecret } = await import("./credentials");
 const { KIOSK_TOKEN_HEADER } = await import("./protocol");
 const { createKioskFrozenCommandService } = await import("./frozen-command-service");
-const { readKioskSession } = await import("./offline-contact");
+const { readKioskSession } = await import("./kiosk-session.server");
 const { sealKioskPin } = await import("./pin-seal");
 const { kioskSealingKey } = await import("./pin-seal.server");
 const { issueKioskPairingCode } = await import("./kiosk-store");
@@ -89,6 +84,8 @@ describe("frozen kiosk clock commands on PostgreSQL", () => {
 	let now: Instant = parseInstant(ARRIVAL);
 	const clock = { nowInstant: () => now };
 	let recorded: KioskFrozenRefusal[] = [];
+	/** How many of the next records are lost (the process dies before the refusal is kept). */
+	let lostRecords = 0;
 	const ledger = {
 		async recall(input: { organizationId: string; kioskId: string; operationId: string }) {
 			const refusal = recorded.find(
@@ -106,6 +103,10 @@ describe("frozen kiosk clock commands on PostgreSQL", () => {
 				: null;
 		},
 		async record(refusal: KioskFrozenRefusal) {
+			if (lostRecords > 0) {
+				lostRecords -= 1;
+				throw new Error("The refusal record was lost");
+			}
 			recorded.push(refusal);
 		},
 	};
@@ -333,9 +334,9 @@ describe("frozen kiosk clock commands on PostgreSQL", () => {
 	}
 
 	beforeEach(async () => {
-		harness.billing = { canAccess: true };
 		now = parseInstant(ARRIVAL);
 		recorded = [];
+		lostRecords = 0;
 		await seed();
 	});
 
@@ -671,6 +672,158 @@ describe("frozen kiosk clock commands on PostgreSQL", () => {
 
 			await expectRefused(response, "month_closed", 409);
 			expect(response.body.month).toBe("2026-07");
+		});
+
+		it("an employee without a kiosk PIN", async () => {
+			await admin.query("delete from employee_kiosk_pin where employee_id = $1", [ids.worker]);
+
+			await expectRefused(await submit({ action: "clock_in" }), "no_pin", 403);
+			expect(await pinEvents()).toEqual([]);
+		});
+
+		it("a PIN reset during the outage: the queued PIN is checked against the current one", async () => {
+			const queuedWithOldPin = command({ action: "clock_in", occurredAt: "2026-08-03T07:00:00Z" });
+			const body = await submission(queuedWithOldPin);
+			await setOwnKioskPin(
+				db,
+				{ organizationId: ids.organization, userId: ids.workerUser, pin: "8642" },
+				{ nowInstant: () => parseInstant("2026-08-03T09:00:00Z") },
+			);
+
+			await expectRefused(await send(body), "wrong_pin", 403);
+			// A command entered with the new PIN after the reset commits.
+			expect(
+				(await submit({ action: "clock_in", occurredAt: "2026-08-03T09:30:00Z" }, { pin: "8642" }))
+					.status,
+			).toBe(201);
+		});
+
+		it("an instant further ahead of arrival than the window allows", async () => {
+			const response = await submit({ action: "clock_in", occurredAt: "2026-08-03T12:06:00Z" });
+
+			await expectRefused(response, "admission_window", 422);
+			expect(response.body.reason).toBe("in_future");
+		});
+
+		it("a command naming another kiosk than the one sending it, recorded for the sender", async () => {
+			const response = await submit({ action: "clock_in", kioskId: ids.revokedKiosk });
+
+			expect(response).toMatchObject({
+				status: 400,
+				body: { outcome: "refused", code: "invalid_command" },
+			});
+			expect(await entries()).toEqual([]);
+			expect(only(recorded)).toMatchObject({ kioskId: ids.kiosk, reason: "invalid_command" });
+		});
+	});
+
+	describe("review fixes (#885)", () => {
+		it("captures the entry in the zone the kiosk recorded, not the kiosk's zone at arrival", async () => {
+			// An admin moved the kiosk to London while it was offline.
+			await admin.query("update kiosk set timezone = 'Europe/London' where id = $1", [ids.kiosk]);
+
+			const response = await submit({ action: "clock_in" });
+
+			expect(response.body).toMatchObject({ outcome: "executed", at: { zone: KIOSK_ZONE } });
+			expect(only(await entries())).toMatchObject({
+				timezone: KIOSK_ZONE,
+				utc_offset_minutes: 120,
+			});
+		});
+
+		it("keeps each break entry's own time source", async () => {
+			await submit({ action: "clock_in", occurredAt: "2026-08-03T07:00:00Z" });
+			await submit({
+				action: "start_break",
+				occurredAt: "2026-08-03T09:00:00Z",
+				timeSource: "device_clock",
+			});
+			const resume = await submit({
+				action: "resume_break",
+				occurredAt: "2026-08-03T09:30:00Z",
+				breakStart: { at: "2026-08-03T09:00:00Z", timezone: KIOSK_ZONE },
+			});
+			await submit({
+				action: "start_break",
+				occurredAt: "2026-08-03T10:00:00Z",
+				timeSource: "device_clock",
+			});
+			// The day ends while on the break: at its start.
+			const endDay = await submit({
+				action: "clock_out",
+				occurredAt: "2026-08-03T11:00:00Z",
+				target: { clockInOperationId: resume.command.operationId },
+			});
+
+			expect(endDay.status).toBe(201);
+			expect(
+				(await entries()).map((entry) => [
+					entry.type,
+					entry.timestamp.toISOString(),
+					entry.device_info,
+				]),
+			).toEqual([
+				["clock_in", "2026-08-03T07:00:00.000Z", `kiosk:${ids.kiosk}:offline:server_anchor`],
+				["clock_out", "2026-08-03T09:00:00.000Z", `kiosk:${ids.kiosk}:offline:device_clock`],
+				["clock_in", "2026-08-03T09:30:00.000Z", `kiosk:${ids.kiosk}:offline:server_anchor`],
+				["clock_out", "2026-08-03T10:00:00.000Z", `kiosk:${ids.kiosk}:offline:device_clock`],
+			]);
+		});
+
+		it("answers other bytes under a committed operation as a collision without recording a refusal", async () => {
+			const frozen = command({ action: "clock_in" });
+			expect((await send(await submission(frozen))).status).toBe(201);
+
+			const other = { ...frozen, occurredAt: "2026-08-03T07:01:00Z" };
+			expect(await send(await submission(other))).toMatchObject({
+				status: 409,
+				body: { outcome: "refused", code: "collision" },
+			});
+			expect(recorded).toEqual([]);
+		});
+
+		it("holds queued PINs once five failures arrived, without a refusal, and commits the resend after the wait", async () => {
+			for (const minute of ["00", "01", "02", "03", "04"]) {
+				const wrong = await submit(
+					{ action: "clock_in", occurredAt: `2026-08-03T07:${minute}:00Z` },
+					{ pin: "9999" },
+				);
+				expect(wrong.body.code).toMatch(/^(wrong_pin|pin_locked)$/);
+			}
+			recorded = [];
+			const frozen = command({ action: "clock_in", occurredAt: "2026-08-03T06:30:00Z" });
+			const body = await submission(frozen);
+
+			expect(await send(body)).toEqual({
+				status: 429,
+				body: {
+					outcome: "retry_later",
+					operationId: frozen.operationId,
+					code: "pin_throttled",
+					retryAfter: 900,
+				},
+			});
+			expect(recorded).toEqual([]);
+			expect(await entries()).toEqual([]);
+			expect(await pinEvents()).toHaveLength(5);
+			expect((await lookUp(frozen.operationId)).body.outcome).toBe("not_committed");
+
+			now = parseInstant("2026-08-03T12:15:00Z");
+			expect(await send(body)).toMatchObject({ status: 201, body: { outcome: "executed" } });
+		});
+
+		it("answers a resend after a lost refusal record with the stored verdict, counting one failure", async () => {
+			lostRecords = 1;
+			const frozen = command({ action: "clock_in" });
+			const body = await submission(frozen, { pin: "9999" });
+
+			expect(await send(body)).toEqual({
+				status: 500,
+				body: { outcome: "unknown", operationId: frozen.operationId },
+			});
+			expect(await send(body)).toMatchObject({ status: 403, body: { code: "wrong_pin" } });
+			expect(await pinEvents()).toHaveLength(1);
+			expect(only(recorded).reason).toBe("wrong_pin");
 		});
 	});
 

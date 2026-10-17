@@ -21,9 +21,10 @@ import { createLogger } from "@/lib/logger";
 import { isEmployeeActivelyAssignedToLocation } from "../assigned-locations/queries";
 import { canonicalJson } from "../canonical-json";
 import { CLOCK_COMMAND_ADMISSION_WINDOWS, CLOCK_COMMAND_OPERATION_ID } from "../clock-command";
+import type { StartBreakRefusal } from "../clocking/break-in-progress";
 import type { Clocking } from "../clocking/clocking";
 import { proveFrozenKioskPin } from "../clocking/kiosk";
-import type { ClockTarget, KioskPinProof } from "../clocking/types";
+import type { ClockRefusal, ClockTarget, KioskPinProof } from "../clocking/types";
 import { readAppendAdmission } from "../work-transaction";
 import {
 	type AuthenticatedKiosk,
@@ -42,13 +43,14 @@ import {
 	type KioskFrozenSubmission,
 	parseKioskFrozenSubmission,
 } from "./frozen-command";
+import { kioskRefusalStatus } from "./frozen-refusal-reasons";
 import {
 	type KioskFrozenRefusal,
 	type KioskFrozenRefusalLedger,
 	unrecordedKioskFrozenRefusals,
 } from "./frozen-refusals";
 import { KioskPinUnsealableError, openSealedKioskPin } from "./pin-seal.server";
-import type { KioskPinAttempt, KioskPinVerification } from "./pin-store";
+import type { KioskPinJudgment, QueuedKioskPinAttempt } from "./pin-store";
 import { KIOSK_TOKEN_HEADER } from "./protocol";
 
 /**
@@ -73,10 +75,18 @@ import { KIOSK_TOKEN_HEADER } from "./protocol";
  *    the organization assigned to the kiosk's location.
  * 8. The sealed PIN, opened only if it will be checked, against the employee's
  *    current PIN as the lockout stood at the command's instant (#1288), in its
- *    own transaction (not counted by the online per-kiosk limit).
+ *    own transaction (not counted by the online per-kiosk limit). The arrival
+ *    throttle answers 429 `retry_later` instead (ADR 0011): neither a refusal nor
+ *    a check, and nothing is recorded; the kiosk resends the same bytes later.
  * 9. Clocking, as the kiosk principal on the kiosk channel at the occurred
- *    instant, in the kiosk's current zone, with the frozen bytes as payload:
+ *    instant, in the zone the kiosk recorded (`command.timezone`, timekeeping:
+ *    captured at the action, not at sync), with the frozen bytes as payload:
  *    replay, admission window, conflicts, closed months and follow-ups as online.
+ *
+ * A command naming another kiosk than the one whose token sends it is refused
+ * `invalid_command` and recorded for the sending kiosk. A submission Z8 cannot
+ * parse (400 `invalid_request`, 422 `unsupported_version`) is not recorded:
+ * nothing in it can be trusted to name an employee, an action or an instant.
  */
 export type KioskFrozenCommandServiceDeps = {
 	clocking: Clocking;
@@ -86,7 +96,7 @@ export type KioskFrozenCommandServiceDeps = {
 	/** Where refusals go (#1290); defaults to keeping none. */
 	refusals?: KioskFrozenRefusalLedger;
 	/** The PIN judgment; defaults to `judgeKioskPinAttempt` in its own transaction. */
-	judgePin?: (attempt: KioskPinAttempt, clock: Clock) => Promise<KioskPinVerification>;
+	judgePin?: (attempt: QueuedKioskPinAttempt, clock: Clock) => Promise<KioskPinJudgment>;
 };
 
 const logger = createLogger("KioskFrozenCommands");
@@ -96,39 +106,16 @@ function json(body: unknown, status = 200) {
 	return Response.json(body, { status, headers: NO_STORE });
 }
 
-/** The HTTP status of each refusal; all are final for the kiosk. */
-function refusalStatus(reason: KioskFrozenRefusalReason): number {
-	switch (reason) {
-		case "kiosk_revoked":
-		case "kiosk_rotated":
-		case "contact_unverifiable":
-		case "employee_not_assigned":
-		case "pin_unsealable":
-		case "no_pin":
-		case "wrong_pin":
-		case "access_denied":
-			return 403;
-		case "pin_locked":
-			return 423;
-		case "admission_window":
-		case "clock_out_of_bounds":
-		case "invalid_interval":
-		case "holiday_blocked":
-			return 422;
-		case "billing_required":
-			return 402;
-		case "invalid_command":
-			return 400;
-		default:
-			return 409;
-	}
-}
+/**
+ * What Clocking can refuse a frozen kiosk command with: its clock commands'
+ * refusals, a break start's and a resume's.
+ */
+type FrozenClockingFailure = ClockRefusal | StartBreakRefusal | { code: "no_break_in_progress" };
 
 /** Clocking's refusal as a frozen kiosk refusal, or null for an unknown outcome. */
-function clockingRefusal(failure: {
-	code: string;
-	[detail: string]: unknown;
-}): { reason: KioskFrozenRefusalReason; detail: Record<string, unknown> } | null {
+function clockingRefusal(
+	failure: FrozenClockingFailure,
+): { reason: KioskFrozenRefusalReason; detail: Record<string, unknown> } | null {
 	switch (failure.code) {
 		case "failed":
 		case "unconfirmed":
@@ -137,13 +124,11 @@ function clockingRefusal(failure: {
 		case "frozen_not_accepted":
 			return { reason: "not_adopted", detail: {} };
 		case "admission_window":
+			return { reason: failure.code, detail: { reason: failure.reason } };
 		case "billing_required":
 			return { reason: failure.code, detail: { reason: failure.reason } };
 		case "already_clocked_in":
-			return {
-				reason: failure.code,
-				detail: { since: instantToCanonicalString(failure.since as Instant) },
-			};
+			return { reason: failure.code, detail: { since: instantToCanonicalString(failure.since) } };
 		case "holiday_blocked":
 			return {
 				reason: failure.code,
@@ -164,10 +149,20 @@ function clockingRefusal(failure: {
 		case "append_review_required":
 		case "collision":
 		case "access_denied":
+		case "invalid_command":
 			return { reason: failure.code, detail: {} };
-		default:
-			// Attribution and shape refusals: a frozen kiosk command preserves attribution.
+		// Attribution and shape refusals: a frozen kiosk command preserves attribution.
+		case "project_not_allowed":
+		case "billable_not_allowed":
+		case "task_not_allowed":
+		case "work_category_not_allowed":
+		case "invalid_work_location":
+		case "invalid_break_duration":
 			return { reason: "invalid_command", detail: {} };
+		default: {
+			const unhandled: never = failure;
+			return unhandled;
+		}
 	}
 }
 
@@ -191,6 +186,9 @@ async function readCommittedOperation(
 	kiosk: AuthenticatedKiosk,
 	operationId: string,
 ): Promise<CommittedOperation | null> {
+	// Receipts and entries are keyed by the global operation ID, so these two reads are by ID
+	// alone: an ID held in another organization must answer as taken (`other`), never as free.
+	// Nothing of that other row is read beyond whether it is this kiosk's own.
 	const [receipt] = await db
 		.select({
 			organizationId: completedWorkOperation.organizationId,
@@ -317,8 +315,8 @@ export function createKioskFrozenCommandService(deps: KioskFrozenCommandServiceD
 			identity: { origin: "client" as const, id: command.operationId },
 			channel: "kiosk" as const,
 			at: { kind: "occurred" as const, instant: parseInstant(command.occurredAt) },
-			// The kiosk's current zone: the device zone of its commands, as online.
-			zone: { device: kiosk.timezone, fallback: kiosk.timezone },
+			// The zone the kiosk recorded when the employee acted, not the kiosk's zone at arrival.
+			zone: { device: command.timezone, fallback: command.timezone },
 			freshness: {
 				earliest: now.subtract({ milliseconds: window.pastMilliseconds }),
 				latest: now.add({ milliseconds: window.futureMilliseconds }),
@@ -372,7 +370,7 @@ export function createKioskFrozenCommandService(deps: KioskFrozenCommandServiceD
 			.limit(1);
 
 		const answer = (reason: KioskFrozenRefusalReason, detail: Record<string, unknown> = {}) => ({
-			status: refusalStatus(reason),
+			status: kioskRefusalStatus(reason),
 			body: { outcome: "refused" as const, operationId, code: reason, ...detail },
 		});
 		/** The one refusal seam: every refused judgment is recorded, then answered. */
@@ -388,6 +386,7 @@ export function createKioskFrozenCommandService(deps: KioskFrozenCommandServiceD
 				employee: subject ?? null,
 				action: command.action,
 				claimedAt,
+				timezone: command.timezone,
 				timeSource: command.timeSource,
 				reason,
 				detail,
@@ -401,7 +400,9 @@ export function createKioskFrozenCommandService(deps: KioskFrozenCommandServiceD
 		// A committed operation, or a recorded refusal, answers before anything is judged.
 		const committed = await readCommittedOperation(kiosk, operationId);
 		if (committed) {
-			if (!isSameCommand(committed, command)) return refuse("collision");
+			// Other bytes under committed work: answered, but nothing was refused that anyone
+			// should be told was not recorded.
+			if (!isSameCommand(committed, command)) return answer("collision");
 			return {
 				status: 200,
 				body: { outcome: "replayed", operationId, action: command.action },
@@ -418,6 +419,8 @@ export function createKioskFrozenCommandService(deps: KioskFrozenCommandServiceD
 				: answer("collision");
 		}
 
+		// A command names the kiosk that queued it; another kiosk's token never sends it.
+		if (command.kioskId !== kiosk.kioskId) return refuse("invalid_command");
 		if (authenticated.status === "revoked") return refuse("kiosk_revoked");
 		if (authenticated.status === "rotated") return refuse("kiosk_rotated");
 
@@ -497,6 +500,16 @@ export function createKioskFrozenCommandService(deps: KioskFrozenCommandServiceD
 			if (error instanceof KioskPinUnsealableError) return refuse("pin_unsealable");
 			throw error;
 		}
+		if (verification.status === "throttled") {
+			const retryAfter = Math.max(
+				1,
+				Math.ceil((verification.retryAfter.epochMilliseconds - now.epochMilliseconds) / 1000),
+			);
+			return {
+				status: 429,
+				body: { outcome: "retry_later", operationId, code: "pin_throttled", retryAfter },
+			};
+		}
 		if (verification.status === "locked") {
 			return refuse("pin_locked", { lockedUntil: instantToCanonicalString(verification.until) });
 		}
@@ -504,10 +517,11 @@ export function createKioskFrozenCommandService(deps: KioskFrozenCommandServiceD
 
 		const outcome = await runCommand(kiosk, command, subject, verification.proof, now);
 		if (outcome.outcome === "refused") {
-			const refusal = clockingRefusal(outcome.failure as { code: string });
+			const { failure } = outcome;
+			const refusal = clockingRefusal(failure);
 			if (!refusal) {
 				logger.error(
-					{ error: (outcome.failure as { cause?: unknown }).cause, operationId },
+					{ error: "cause" in failure ? failure.cause : undefined, operationId },
 					"Frozen kiosk command failed",
 				);
 				return { status: 500, body: { outcome: "unknown", operationId } };
@@ -520,7 +534,7 @@ export function createKioskFrozenCommandService(deps: KioskFrozenCommandServiceD
 				outcome: outcome.outcome,
 				operationId,
 				action: command.action,
-				at: eventTime(outcome.result, kiosk.timezone),
+				at: eventTime(outcome.result, command.timezone),
 			},
 		};
 	}
@@ -544,13 +558,15 @@ export function createKioskFrozenCommandService(deps: KioskFrozenCommandServiceD
 				return json({ code: parsed.code }, parsed.code === "unsupported_version" ? 422 : 400);
 			}
 			const { submission } = parsed;
-			// A command names the kiosk that queued it; another kiosk's token never sends it.
-			if (submission.command.kioskId !== authenticated.kiosk.kioskId) {
-				return json({ code: "invalid_request" }, 400);
-			}
 			const { operationId } = submission.command;
 			try {
 				const { status, body: reply } = await judge(authenticated, submission);
+				if (reply.outcome === "retry_later") {
+					return Response.json(reply, {
+						status,
+						headers: { ...NO_STORE, "Retry-After": String(reply.retryAfter) },
+					});
+				}
 				return json(reply, status);
 			} catch (error) {
 				logger.error({ error, operationId }, "Frozen kiosk command failed");
