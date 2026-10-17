@@ -34,6 +34,18 @@ Owners and admins explicitly enable QR scanning per kiosk; it is off by default.
 
 ## Authorization changes and departure
 
-Each action rechecks current badge authorization. Revocation after identification but before action submission refuses that action. Losing the connection does not create an offline badge command: explain the failure and offer the separate PIN flow where available. A lost response after submission must not be interpreted as proof that no work was recorded.
+Each new action rechecks current badge authorization. Revocation after identification but before action submission refuses that action. Losing the connection does not create an offline badge command. A failure known to have recorded nothing offers the separate PIN flow where available; a lost response after submission instead follows the uncertain-outcome recovery below.
 
 An effective departure permanently revokes the badge at its cutoff, using the existing departure model rather than the time a delayed worker happens to run. Scheduling a future departure does not revoke the badge early. Rehire requires a newly issued badge and never restores an old badge or its copies. PIN fallback and its existing lifecycle rules remain separate.
+
+## Uncertain outcomes
+
+If an action's response is lost, the kiosk shows that it is checking whether the action was recorded and retains the operation identity. While the outcome is unknown, it does not offer a duplicate action. After reconnecting, it resolves that submitted operation: if committed, show the recorded result; if the server confirms it recorded nothing, require a fresh explicit action. It must never silently execute an uncommitted action later. This recovery is distinct from queuing new badge clock commands offline.
+
+Outcome recovery must remain organization- and kiosk-scoped and must not execute a new action as a side effect of checking. Revoking a badge after a committed action does not undo that work or justify reporting that nothing was recorded. The implementation must support recovery in both Clocking admissions; the existing frozen-command lookup is not a general online kiosk lookup.
+
+## Camera activation and images
+
+The employee taps Scan badge to open the camera. Stop camera scanning after a successful scan, cancellation or inactivity timeout. QR decoding happens on the device; camera images are never saved or uploaded. An enabled keyboard-style scanner remains ready only on the home screen.
+
+Camera permission is allowed specifically for kiosk documents, preserving the site's existing restriction elsewhere. Device and browser verification remains an implementation check, including denied permissions, unavailable cameras and the PIN fallback.
