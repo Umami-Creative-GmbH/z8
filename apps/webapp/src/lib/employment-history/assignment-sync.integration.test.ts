@@ -537,4 +537,28 @@ describe("employment terms work-policy assignments", () => {
 			]);
 		}
 	});
+	it("restores coverage when cancelling terms in an unended legacy employment period", async () => {
+		await write("2026-01-01", policyA);
+		await fixture.pool.query("update employee set is_active=false where id=$1", [
+			fixture.employeeId,
+		]);
+		await fixture.pool.query(
+			"update employee_employment_period set status='legacy_unknown' where id=$1",
+			[fixture.employmentPeriodId],
+		);
+		try {
+			const next = await write("2026-05-01", policyB);
+			await fixture.db.transaction((tx) =>
+				cancelEmploymentTerms(tx, { ...scope(), termsId: next.id }),
+			);
+			expect((await effectivePolicy("2026-05-01T00:00:00Z"))?.policyId).toBe(policyA);
+		} finally {
+			await fixture.pool.query("update employee set is_active=true where id=$1", [
+				fixture.employeeId,
+			]);
+			await fixture.pool.query("update employee_employment_period set status='open' where id=$1", [
+				fixture.employmentPeriodId,
+			]);
+		}
+	});
 });

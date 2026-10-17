@@ -4,7 +4,6 @@ import {
 	type EmployeeEmploymentHistory,
 	employee,
 	employeeEmploymentHistory,
-	employeeEmploymentPeriod,
 	workPolicy,
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -12,6 +11,7 @@ import { compareInstants, instantFromDate, type PlainDate } from "@/lib/datetime
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import {
 	EmploymentPeriodError,
+	resolveCurrentEmploymentPeriod,
 	resolveTermsEmploymentPeriod,
 } from "@/lib/employee-lifecycle/employment-periods";
 import type { LifecycleClient } from "@/lib/employee-lifecycle/types";
@@ -444,19 +444,13 @@ export async function cancelEmploymentTerms(
 	if (target.reviewState !== "confirmed") return target;
 
 	await removeTermsPolicy(tx, scope, target);
-	const [period] = target.employmentPeriodId
-		? await tx
-				.select({ status: employeeEmploymentPeriod.status })
-				.from(employeeEmploymentPeriod)
-				.where(
-					and(
-						eq(employeeEmploymentPeriod.id, target.employmentPeriodId),
-						eq(employeeEmploymentPeriod.organizationId, scope.organizationId),
-						eq(employeeEmploymentPeriod.employeeId, scope.employeeId),
-					),
-				)
-		: [];
-	if (target.employmentPeriodId && period?.status !== "open") return target;
+	const period = await resolveCurrentEmploymentPeriod(tx, {
+		organizationId: scope.organizationId,
+		employeeId: scope.employeeId,
+	});
+	if (!period || (target.employmentPeriodId && target.employmentPeriodId !== period.id)) {
+		return target;
+	}
 	const confirmed = existing
 		.filter(
 			(row) =>
