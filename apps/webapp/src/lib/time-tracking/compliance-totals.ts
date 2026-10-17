@@ -4,7 +4,6 @@ import {
 	type InstantRange,
 	localDayRange,
 	localWeekRange,
-	type WeekStartDay,
 } from "@/lib/datetime/temporal-boundaries";
 import {
 	compareInstants,
@@ -81,7 +80,8 @@ export function complianceTotalsOf(
  * organization rather than from a request session, so they hold for on-behalf,
  * bot, API and worker closures alike. The work's own local day and week in its
  * zone are evaluated, not the current ones: a late or retried check still
- * judges the day the work happened.
+ * judges the day the work happened. Compliance weeks start on Monday, independently of display
+ * preferences and submission cadence.
  */
 export async function readComplianceTotals(input: {
 	organizationId: string;
@@ -89,12 +89,10 @@ export async function readComplianceTotals(input: {
 	/** Where the work started; it picks the local day and week. */
 	workStart: Instant;
 	timezone: string;
-	/** The self-service summary's week, which compliance has always used. */
-	weekStartDay?: WeekStartDay;
 }): Promise<ComplianceTotals> {
 	const localDate = input.workStart.toZonedDateTimeISO(input.timezone).toPlainDate().toString();
 	const day = localDayRange(localDate, input.timezone);
-	const week = localWeekRange(localDate, input.timezone, input.weekStartDay ?? "sunday");
+	const week = localWeekRange(localDate, input.timezone, "monday");
 
 	// Imported here so the pure totals above stay usable without a database.
 	const { db } = await import("@/db");

@@ -99,6 +99,7 @@ const NOTIFICATION_CATEGORIES = [
 			"absence_request_submitted",
 			"absence_request_approved",
 			"absence_request_rejected",
+			"approved_absence_cancelled",
 			"absence_deputy_assigned",
 			"absence_deputy_removed",
 			"absence_deputy_dates_changed",
@@ -220,6 +221,7 @@ const NOTIFICATION_CATEGORIES = [
 /** Types whose labels are static `t()` calls in `getTypeLabel` (extractable with their defaults). */
 type StaticallyLabelledType =
 	| ClockingReminderType
+	| "approved_absence_cancelled"
 	| "work_balance_adjustment_recorded"
 	| "work_balance_adjustment_cancelled"
 	| AbsenceDeputyNotificationType
@@ -433,6 +435,11 @@ function useNotificationSettingsViewModel() {
 		);
 	const getTypeLabel = (type: NotificationType) => {
 		switch (type) {
+			case "approved_absence_cancelled":
+				return t(
+					"common:notifications.content.approvedAbsenceCancelled.title",
+					"Approved absence cancelled",
+				);
 			case "missed_clock_in_reminder":
 				return t(
 					"common:notifications.preferences.types.missed_clock_in_reminder",

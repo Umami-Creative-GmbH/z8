@@ -136,6 +136,12 @@ function getNotificationStyle(type: NotificationType): {
 				bgColor: "bg-red-100 dark:bg-red-900/30",
 				iconColor: "text-red-600 dark:text-red-400",
 			};
+		case "approved_absence_cancelled":
+			return {
+				icon: <IconCalendarEvent className="size-4" />,
+				bgColor: "bg-slate-100 dark:bg-slate-900/30",
+				iconColor: "text-slate-600 dark:text-slate-400",
+			};
 		case "absence_deputy_unavailable":
 		// A schedule's owner is no longer an org admin (#988)
 		case "scheduled_export_paused":

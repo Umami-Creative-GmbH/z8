@@ -1847,7 +1847,14 @@
       "idx": 263,
       "version": "7",
       "when": 1807459200000,
-      "tag": "0263_vacation_policy_history",
+      "tag": "0263_approved_absence_cancelled",
+      "breakpoints": true
+    },
+    {
+      "idx": 264,
+      "version": "7",
+      "when": 1807545600000,
+      "tag": "0264_vacation_policy_history",
       "breakpoints": true
     }
   ]
