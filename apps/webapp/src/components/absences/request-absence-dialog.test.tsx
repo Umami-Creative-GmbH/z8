@@ -45,6 +45,12 @@ vi.mock("@/hooks/use-tus-file-upload", () => ({
 	}),
 }));
 
+// The real Better Auth session store schedules its unmount cleanup on a timer that touches
+// window, so the deputy picker's session comes from a stub instead.
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({ data: { session: { activeOrganizationId: "org-1" } } }),
+}));
+
 vi.mock("@/app/[locale]/(app)/absences/deputy-actions", () => ({
 	getDeputyCandidates: vi.fn().mockResolvedValue({
 		success: true,
