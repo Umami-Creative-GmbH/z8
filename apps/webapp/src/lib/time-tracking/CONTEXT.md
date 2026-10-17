@@ -273,7 +273,7 @@ An employee's personal secret that proves at a kiosk which employee is clocking.
 _Avoid_: Password, passcode
 
 **Kiosk badge**:
-An employee's personal QR credential that proves at an online kiosk which employee is clocking, instead of their kiosk PIN; each employee has one active badge without scheduled expiry. Whoever holds a copy can use it until replacement or revocation; it never grants account sign-in.
+An employee's personal QR credential that proves at an online kiosk which employee is clocking, instead of their kiosk PIN; each employee has one active badge without scheduled expiry. Whoever holds a copy can use it until replacement, revocation or the employee's departure; it never grants account sign-in.
 _Avoid_: QR login, access card, pairing code
 
 **Kiosk-only employee**:
