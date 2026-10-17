@@ -1,4 +1,5 @@
 import { env } from "@/env";
+import type { SeatSyncService } from "@/lib/effect/services/billing/seat-sync.service";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("BillingSeatSyncTrigger");
@@ -48,6 +49,40 @@ export async function reconcileBillingSeatsForOrganization(
 	}
 }
 
+/** A committed change that moves billable seats. */
+export type SeatChange = "added" | "removed" | "kiosk_seat_upgraded";
+
+/** Each seat change's seat sync handler and the message logged when it fails. */
+const seatChanges = {
+	added: {
+		handler: "handleMemberAdded",
+		failureMessage: "Failed to sync seats after member added",
+	},
+	removed: {
+		handler: "handleMemberRemoved",
+		failureMessage: "Failed to sync seats after member removed",
+	},
+	kiosk_seat_upgraded: {
+		handler: "handleKioskSeatUpgraded",
+		failureMessage: "Failed to sync seats after a kiosk seat upgrade",
+	},
+} as const satisfies Record<
+	SeatChange,
+	{
+		handler: keyof Pick<
+			typeof SeatSyncService.Service,
+			"handleMemberAdded" | "handleMemberRemoved" | "handleKioskSeatUpgraded"
+		>;
+		failureMessage: string;
+	}
+>;
+
+/**
+ * Best-effort seat sync after a committed change: a member added or removed,
+ * or a kiosk-only employee given a real email (`kiosk_seat_upgraded`, #886),
+ * which moves their seat from kiosk to full. Failures are logged; uncertain
+ * deliveries are reconciled by the billing seat reconciliation job.
+ */
 export async function syncBillingSeatsAfterMemberChange({
 	organizationId,
 	memberId,
@@ -57,7 +92,7 @@ export async function syncBillingSeatsAfterMemberChange({
 	organizationId: string;
 	memberId: string;
 	userId: string;
-	change: "added" | "removed";
+	change: SeatChange;
 }) {
 	if (!BILLING_ENABLED) {
 		return;
@@ -68,30 +103,11 @@ export async function syncBillingSeatsAfterMemberChange({
 
 		const program = Effect.gen(function* () {
 			const seatSyncService = yield* SeatSyncService;
-
-			if (change === "added") {
-				yield* seatSyncService.handleMemberAdded(
-					organizationId,
-					memberId,
-					userId,
-				);
-				return;
-			}
-
-			yield* seatSyncService.handleMemberRemoved(
-				organizationId,
-				memberId,
-				userId,
-			);
+			yield* seatSyncService[seatChanges[change].handler](organizationId, memberId, userId);
 		});
 
 		await runtime.runPromise(program.pipe(Effect.provide(BillingServicesLive)));
 	} catch (error) {
-		logger.error(
-			{ error, organizationId },
-			change === "added"
-				? "Failed to sync seats after member added"
-				: "Failed to sync seats after member removed",
-		);
+		logger.error({ error, organizationId }, seatChanges[change].failureMessage);
 	}
 }

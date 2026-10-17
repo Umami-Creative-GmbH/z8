@@ -249,6 +249,13 @@ test("collectTarget lists traced worker runtime files and packages", async () =>
 			.map((filePath) => filePath.replaceAll("\\", "/"))
 			.includes("src/lib/time-record/migration/attach-missing-work-records.ts"),
 	);
+	// The one-time kiosk seat reconcile runs from the worker image (#1283).
+	assert.ok(result.files.includes("scripts/reconcile-kiosk-seats.ts"));
+	assert.ok(
+		result.files
+			.map((filePath) => filePath.replaceAll("\\", "/"))
+			.includes("src/lib/billing/kiosk-seat-reconcile.ts"),
+	);
 	assert.ok(result.files.includes("tsconfig.json"));
 	assert.ok(result.packages.includes("bullmq"));
 	assert.ok(result.packages.includes("dotenv"));

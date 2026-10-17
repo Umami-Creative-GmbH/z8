@@ -78,7 +78,8 @@ function isUniqueViolation(error: unknown): boolean {
  * Creates a kiosk-only employee (ADR 0006): a real user with a reserved,
  * undeliverable address unique to them and no credential, an approved member
  * of the organization and an ordinary employee profile. The names live on the
- * user, the single name source. The employee is a full billable seat. The
+ * user, the single name source. The employee is a billable seat, billed as a
+ * kiosk seat once kiosk seat prices are configured (#886). The
  * locations picked at creation are assigned in the same transaction, so a
  * location outside the organization creates nothing.
  */
@@ -196,6 +197,10 @@ export async function createKioskOnlyEmployee(
  * address never becomes a verified identity and Better Auth links no social or
  * SSO account to the user before then.
  *
+ * Billing follows the address at once (#886): once it commits, the seat moves
+ * from kiosk to full and billing seats are synced and audited, whether or not
+ * the invitation is delivered or accepted. A refused upgrade changes no seat.
+ *
  * If delivery fails after the address changed, the person can still use
  * "Forgot password" with the new address and then verify it through the
  * ordinary verification email at sign-in; `invitationSent` reports it.
@@ -226,7 +231,7 @@ export async function addEmailToKioskOnlyEmployee(
 		);
 	}
 
-	const userId = await withAuditTrail((audit) =>
+	const upgraded = await withAuditTrail((audit) =>
 		db.transaction(async (tx) => {
 			await acquireEmployeeIdentityLock(tx, {
 				organizationId: input.organizationId,
@@ -234,9 +239,13 @@ export async function addEmailToKioskOnlyEmployee(
 			});
 			const [target] = isUuid(input.employeeId)
 				? await tx
-						.select({ userId: user.id, email: user.email })
+						.select({ userId: user.id, email: user.email, memberId: member.id })
 						.from(employee)
 						.innerJoin(user, eq(user.id, employee.userId))
+						.leftJoin(
+							member,
+							and(eq(member.userId, user.id), eq(member.organizationId, input.organizationId)),
+						)
 						.where(
 							and(
 								eq(employee.id, input.employeeId),
@@ -272,7 +281,7 @@ export async function addEmailToKioskOnlyEmployee(
 				actorUserId: input.actorUserId,
 				employeeId: input.employeeId,
 			});
-			return target.userId;
+			return { userId: target.userId, memberId: target.memberId };
 		}),
 	).catch((error: unknown) => {
 		if (isUniqueViolation(error)) {
@@ -280,6 +289,17 @@ export async function addEmailToKioskOnlyEmployee(
 		}
 		throw error;
 	});
+	const { userId } = upgraded;
+
+	// The seat moves from kiosk to full now, not when the invitation is accepted (#886).
+	if (upgraded.memberId) {
+		await syncBillingSeatsAfterMemberChange({
+			organizationId: input.organizationId,
+			memberId: upgraded.memberId,
+			userId,
+			change: "kiosk_seat_upgraded",
+		});
+	}
 
 	try {
 		const invitationUrl = await deps.createPasswordSetupUrl(input.organizationId, userId);

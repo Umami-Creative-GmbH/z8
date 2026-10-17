@@ -1765,6 +1765,13 @@
       "when": 1806422400000,
       "tag": "20261017_driving_licence_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 252,
+      "version": "7",
+      "when": 1806508800000,
+      "tag": "0252_kiosk_seats",
+      "breakpoints": true
     }
   ]
 }

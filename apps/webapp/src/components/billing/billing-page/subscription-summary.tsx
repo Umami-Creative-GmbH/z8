@@ -5,12 +5,15 @@ import { useLocale } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MONTHLY_PRICE, YEARLY_PRICE_PER_MONTH, YEARLY_PRICE_TOTAL } from "../pricing-cards";
+import { formatEuroAmount, seatCost, seatInterval } from "@/lib/billing/seat-prices";
+import { MONTHLY_PRICE, YEARLY_PRICE_PER_MONTH } from "../pricing-cards";
 import type { SubscriptionInfo } from "./types";
 
 interface SubscriptionSummaryProps {
 	canManageBilling: boolean;
 	isPortalLoading: boolean;
+	/** Whether kiosk seats are on (both kiosk prices configured); off, every seat is a full seat. */
+	kioskSeatsEnabled: boolean;
 	onManageBilling: () => void;
 	subscription: SubscriptionInfo;
 }
@@ -18,11 +21,14 @@ interface SubscriptionSummaryProps {
 export function SubscriptionSummary({
 	canManageBilling,
 	isPortalLoading,
+	kioskSeatsEnabled,
 	onManageBilling,
 	subscription,
 }: SubscriptionSummaryProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
+	// Formatted in the app locale before translation, like the pricing cards ("1,50" in German).
+	const euros = (cents: number) => formatEuroAmount(cents, locale);
 	const formatDate = (dateStr: string | null) => {
 		if (!dateStr) return t("common:common.notApplicable", "N/A");
 		return DateTime.fromISO(dateStr, { zone: "utc" }).setLocale(locale).toLocaleString(DateTime.DATE_MED);
@@ -31,6 +37,13 @@ export function SubscriptionSummary({
 		if (!subscription.trialEnd) return 0;
 		return Math.max(0, Math.ceil(DateTime.fromISO(subscription.trialEnd).diff(DateTime.now(), "days").days));
 	};
+	// Kiosk seats off: every seat is a full seat and only the full seat line shows.
+	const kioskSeats = kioskSeatsEnabled ? (subscription.currentKioskSeats ?? 0) : null;
+	const cost = seatCost({
+		interval: seatInterval(subscription.billingInterval),
+		fullSeats: subscription.currentSeats - (kioskSeats ?? 0),
+		kioskSeats,
+	});
 	const statusBadge = (() => {
 		switch (subscription.status) {
 			case "trialing":
@@ -82,13 +95,15 @@ export function SubscriptionSummary({
 						<div>
 							<p className="text-sm text-muted-foreground">{t("billing.activeSeats", "Active Seats")}</p>
 							<p className="text-2xl font-bold">{subscription.currentSeats}</p>
-							<p className="text-xs text-muted-foreground">
-								{subscription.billingInterval === "year"
-									? t("billing.priceSeatMonthYearly", "€{price}/seat/mo (billed yearly)", {
-											price: YEARLY_PRICE_PER_MONTH,
-										})
-									: t("billing.priceSeatMonth", "€{price}/seat/mo", { price: MONTHLY_PRICE })}
-							</p>
+							{kioskSeats === null ? (
+								<p className="text-xs text-muted-foreground">
+									{subscription.billingInterval === "year"
+										? t("billing.priceSeatMonthYearly", "€{price}/seat/mo (billed yearly)", {
+												price: YEARLY_PRICE_PER_MONTH,
+											})
+										: t("billing.priceSeatMonth", "€{price}/seat/mo", { price: MONTHLY_PRICE })}
+								</p>
+							) : null}
 						</div>
 					</div>
 					<div className="flex items-start gap-3">
@@ -126,21 +141,55 @@ export function SubscriptionSummary({
 						<div>
 							<p className="text-sm text-muted-foreground">{t("billing.monthlyCost", "Monthly Cost")}</p>
 							<p className="text-2xl font-bold">
-								€
-								{subscription.billingInterval === "year"
-									? (subscription.currentSeats * YEARLY_PRICE_PER_MONTH).toFixed(2)
-									: (subscription.currentSeats * MONTHLY_PRICE).toFixed(2)}
+								{t("billing.amount", "€{amount}", { amount: euros(cost.totalPerMonthCents) })}
 							</p>
 							<p className="text-xs text-muted-foreground">
-								{subscription.billingInterval === "year"
+								{cost.totalPerYearCents !== null
 									? t("billing.yearTotal", "€{amount}/year total", {
-											amount: (subscription.currentSeats * YEARLY_PRICE_TOTAL).toFixed(2),
+											amount: euros(cost.totalPerYearCents),
 										})
 									: t("billing.billedMonthly", "billed monthly")}
 							</p>
 						</div>
 					</div>
 				</div>
+				<ul className="mt-6 space-y-1 border-t pt-4 text-sm">
+					{cost.lines.map((line) => (
+						<li
+							key={line.type}
+							data-testid={`seat-line-${line.type}`}
+							className="flex items-center justify-between gap-4"
+						>
+							<span>
+								<span className="font-medium">
+									{line.type === "kiosk"
+										? t("billing.seatLines.kiosk", "Kiosk seats")
+										: t("billing.seatLines.full", "Full seats")}
+								</span>{" "}
+								<span className="text-muted-foreground tabular-nums">
+									{t("billing.seatLines.seatsAtPrice", "{seats} × €{price}/mo", {
+										seats: line.seats,
+										price: euros(line.pricePerMonthCents),
+									})}
+								</span>
+							</span>
+							<span className="tabular-nums">
+								{t("billing.amount", "€{amount}", { amount: euros(line.subtotalPerMonthCents) })}
+							</span>
+						</li>
+					))}
+					<li
+						data-testid="seat-line-total"
+						className="flex items-center justify-between gap-4 font-medium"
+					>
+						<span>{t("billing.seatLines.total", "Total")}</span>
+						<span className="tabular-nums">
+							{t("billing.seatLines.totalPerMonth", "€{amount}/mo", {
+								amount: euros(cost.totalPerMonthCents),
+							})}
+						</span>
+					</li>
+				</ul>
 			</CardContent>
 		</Card>
 	);

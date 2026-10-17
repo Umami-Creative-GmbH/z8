@@ -13,13 +13,22 @@ import { integrationAdminPool } from "@/test/integration-database";
 
 vi.mock("server-only", () => ({}));
 
+// Billing is off in this suite; the seat sync trigger is observed instead (#886).
+const { seatSync } = vi.hoisted(() => ({ seatSync: vi.fn(async (_change: unknown) => {}) }));
+vi.mock("@/lib/billing/seat-sync-trigger", () => ({
+	syncBillingSeatsAfterMemberChange: seatSync,
+	reconcileBillingSeatsForOrganization: vi.fn(),
+}));
+
 const { createKioskOnlyEmployee, addEmailToKioskOnlyEmployee } = await import(
 	"./kiosk-only-employee"
 );
 const { issueKioskPin, verifyEmployeeKioskPin } = await import("./pin-store");
 const { KioskPinRefusal } = await import("./pin-errors");
 const { isReservedEmail } = await import("@/lib/auth/reserved-email");
-const { countBillableSeats } = await import("@/lib/effect/services/billing/billable-seat-count");
+const { countBillableSeats, countBillableSeatsByType } = await import(
+	"@/lib/effect/services/billing/billable-seat-count"
+);
 
 const ids = {
 	organization: "t857-kiosk-org",
@@ -370,5 +379,93 @@ describe("kiosk-only employees on PostgreSQL", () => {
 			"not_kiosk_only",
 		);
 		expect(invitations).toEqual([]);
+	});
+
+	describe("seat type (#886)", () => {
+		const seatsByType = () =>
+			countBillableSeatsByType(db, org, {
+				kioskSeats: true,
+				requireActiveEmployee: true,
+				now: clock.nowInstant(),
+			});
+		const kioskMemberOf = async (userId: string) =>
+			(
+				await pool.query<{ id: string }>(
+					"select id from member where organization_id = $1 and user_id = $2",
+					[org, userId],
+				)
+			).rows[0]?.id;
+
+		it("moves the seat from kiosk to full once the email is committed, even if the invitation fails", async () => {
+			const created = await createKioskOnlyEmployee(db, {
+				organizationId: org,
+				actorUserId: ids.adminUser,
+				firstName: "Jamie",
+			});
+			const before = await seatsByType();
+			seatSync.mockClear();
+			const emailAtSync: string[] = [];
+			seatSync.mockImplementationOnce(async () => {
+				const { rows } = await pool.query<{ email: string }>(
+					'select email from "user" where id = $1',
+					[created.userId],
+				);
+				emailAtSync.push(rows[0]?.email ?? "");
+			});
+
+			const result = await addEmailToKioskOnlyEmployee(
+				db,
+				{
+					organizationId: org,
+					actorUserId: ids.adminUser,
+					employeeId: created.employeeId,
+					email: "jamie@t857.test",
+				},
+				{
+					...deps,
+					sendInvitationEmail: async () => {
+						throw new Error("mail server down");
+					},
+				},
+			);
+
+			expect(result).toEqual({ invitationSent: false });
+			expect(seatSync.mock.calls).toEqual([
+				[
+					{
+						organizationId: org,
+						memberId: await kioskMemberOf(created.userId),
+						userId: created.userId,
+						change: "kiosk_seat_upgraded",
+					},
+				],
+			]);
+			// The sync runs on its own connection, so it must see the committed address.
+			expect(emailAtSync).toEqual(["jamie@t857.test"]);
+			expect(await seatsByType()).toEqual({ full: before.full + 1, kiosk: before.kiosk - 1 });
+		});
+
+		it("leaves seats unchanged when the upgrade is refused", async () => {
+			const created = await createKioskOnlyEmployee(db, {
+				organizationId: org,
+				actorUserId: ids.adminUser,
+				firstName: "Jamie",
+			});
+			const before = await seatsByType();
+			seatSync.mockClear();
+			const add = (email: string, actorUserId: string = ids.adminUser) =>
+				addEmailToKioskOnlyEmployee(
+					db,
+					{ organizationId: org, actorUserId, employeeId: created.employeeId, email },
+					deps,
+				);
+
+			expect(await refusalOf(add("TAKEN@t857.test"))).toBe("email_in_use");
+			expect(await refusalOf(add("kiosk-other@kiosk.invalid"))).toBe("reserved_email");
+			expect(await refusalOf(add("new@t857.test", ids.managerUser))).toBe("not_allowed");
+
+			expect(seatSync).not.toHaveBeenCalled();
+			expect(await seatsByType()).toEqual(before);
+		});
 	});
 });

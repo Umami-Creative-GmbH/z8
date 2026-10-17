@@ -64,6 +64,14 @@ export class BillingError extends Data.TaggedError("BillingError")<{
 	organizationId?: string;
 }> {}
 
+/**
+ * The one-time kiosk seat reconcile refused (#886): billing or either kiosk
+ * seat price is not configured, so nothing was changed.
+ */
+export class KioskSeatsNotConfiguredError extends Data.TaggedError("KioskSeatsNotConfiguredError")<{
+	message: string;
+}> {}
+
 /** A failed job-queue (BullMQ/Redis) call. */
 export class QueueError extends Data.TaggedError("QueueError")<{
 	message: string;
@@ -110,6 +118,7 @@ export type AnyAppError =
 	| ConflictError
 	| StripeError
 	| BillingError
+	| KioskSeatsNotConfiguredError
 	| QueueError
 	| ExternalServiceError
 	| MonthClosedError

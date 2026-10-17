@@ -85,6 +85,14 @@ describe("PlatformAnalyticsCharts", () => {
 		expect(screen.getByText("Commercial summary: 76 seats and €304 estimated MRR.")).toBeTruthy();
 	});
 
+	it("shows cents of an MRR with yearly kiosk seats instead of rounding to whole euros", () => {
+		const data = createAnalyticsData();
+		render(<PlatformAnalyticsCharts data={{ ...data, kpis: { ...data.kpis, mrr: 16.5 } }} />);
+
+		expect(screen.getByText("€16.50")).toBeTruthy();
+		expect(screen.getByText("Commercial summary: 76 seats and €16.50 estimated MRR.")).toBeTruthy();
+	});
+
 	it("hides commercial KPI cards and chart when billing is disabled", () => {
 		render(<PlatformAnalyticsCharts data={createAnalyticsData({ billingEnabled: false })} />);
 

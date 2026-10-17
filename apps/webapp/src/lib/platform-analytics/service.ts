@@ -18,6 +18,7 @@ import { db } from "@/db";
 import { organization, session, user } from "@/db/auth-schema";
 import { billingSeatAudit, subscription, timeRecord } from "@/db/schema";
 import { env } from "@/env";
+import { monthlyRevenueCentsSql } from "./billing-sql";
 import { buildPlatformAnalyticsSeries, getLatestPointKpis } from "./normalize";
 import {
 	buildPlatformAnalyticsBuckets,
@@ -197,7 +198,13 @@ async function getCurrentBillingTotals() {
 	const [row] = await db
 		.select({
 			seats: sql<number>`coalesce(sum(${subscription.currentSeats}), 0)`,
-			mrr: sql<number>`coalesce(sum(${subscription.currentSeats} * case when ${subscription.billingInterval} = 'year' then 3 else 4 end), 0)`,
+			mrr: euros(
+				monthlyRevenueCentsSql({
+					seats: subscription.currentSeats,
+					kioskSeats: subscription.currentKioskSeats,
+					billingInterval: subscription.billingInterval,
+				}),
+			),
 		})
 		.from(subscription)
 		.where(inArray(subscription.status, BILLING_SUBSCRIPTION_STATUSES));
@@ -220,13 +227,19 @@ async function getEstimatedBillingRows(params: ParsedPlatformAnalyticsParams) {
 		select
 			buckets.bucket AT TIME ZONE 'UTC' as bucket,
 			coalesce(sum(coalesce(latest_audit.new_seats, ${subscription.currentSeats})), 0)::int as seats,
-			coalesce(sum(coalesce(latest_audit.new_seats, ${subscription.currentSeats}) * case when ${subscription.billingInterval} = 'year' then 3 else 4 end), 0)::int as mrr
+			${euros(
+				monthlyRevenueCentsSql({
+					seats: sql`coalesce(latest_audit.new_seats, ${subscription.currentSeats})`,
+					kioskSeats: sql`coalesce(latest_audit.new_kiosk_seats, ${subscription.currentKioskSeats})`,
+					billingInterval: subscription.billingInterval,
+				}),
+			)} as mrr
 		from buckets
 		left join ${subscription}
 			on ${subscription.status} in ('active', 'trialing', 'past_due')
 			and ${subscription.createdAt} < (buckets.bucket + ${getIntervalSql(params.bucket)}) AT TIME ZONE 'UTC'
 		left join lateral (
-			select ${billingSeatAudit.newSeats} as new_seats
+			select ${billingSeatAudit.newSeats} as new_seats, ${billingSeatAudit.newKioskSeats} as new_kiosk_seats
 			from ${billingSeatAudit}
 			where ${billingSeatAudit.organizationId} = ${subscription.organizationId}
 				and ${billingSeatAudit.createdAt} < (buckets.bucket + ${getIntervalSql(params.bucket)}) AT TIME ZONE 'UTC'
@@ -254,6 +267,14 @@ function getBucketSql(
 
 	// These source columns are timestamp without time zone, stored and ranged as UTC instants.
 	return sql<Date>`date_trunc(${params.bucket}, ${column})`;
+}
+
+/**
+ * Summed revenue cents as euros with two decimals, so yearly kiosk seats at
+ * €1.50 never round to whole euros (#886).
+ */
+function euros(revenueCents: SQL): SQL<number> {
+	return sql<number>`(coalesce(sum(${revenueCents}), 0) / 100.0)::numeric(14, 2)`;
 }
 
 function getIntervalSql(bucket: PlatformAnalyticsBucket): SQL {

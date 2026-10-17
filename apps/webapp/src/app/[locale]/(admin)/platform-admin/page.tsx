@@ -28,6 +28,7 @@ import { db } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import { organizationSuspension, subscription } from "@/db/schema";
 import { env } from "@/env";
+import { formatEuroAmount, monthlyRecurringRevenueCents } from "@/lib/billing/seat-prices";
 import { parsePlatformAnalyticsParams } from "@/lib/platform-analytics/range";
 import { getPlatformAnalyticsData } from "@/lib/platform-analytics/service";
 import { cn } from "@/lib/utils";
@@ -36,7 +37,8 @@ import { getTranslate } from "@/tolgee/server";
 
 interface StatCardProps {
 	title: string;
-	value: number;
+	/** A count, or an already formatted amount. */
+	value: number | string;
 	description: string;
 	icon: React.ReactNode;
 	href: string;
@@ -98,7 +100,7 @@ function StatCard({
 				</CardHeader>
 				<CardContent className="space-y-1">
 					<div className="text-3xl font-bold tabular-nums tracking-tight">
-						{value.toLocaleString()}
+						{typeof value === "number" ? value.toLocaleString() : value}
 					</div>
 					<div className="text-sm font-medium">{title}</div>
 					<p className="text-xs text-muted-foreground">{description}</p>
@@ -139,6 +141,7 @@ async function DashboardStats() {
 			? db
 					.select({
 						currentSeats: subscription.currentSeats,
+						currentKioskSeats: subscription.currentKioskSeats,
 						billingInterval: subscription.billingInterval,
 						status: subscription.status,
 					})
@@ -153,11 +156,8 @@ async function DashboardStats() {
 	const billingStats = {
 		activeSubscriptions: subscriptions.length,
 		totalSeats: subscriptions.reduce((sum, s) => sum + s.currentSeats, 0),
-		// Calculate MRR: monthly = seats * 4, yearly = seats * 3
-		mrr: subscriptions.reduce((sum, s) => {
-			const pricePerSeat = s.billingInterval === "year" ? 3 : 4;
-			return sum + s.currentSeats * pricePerSeat;
-		}, 0),
+		// Full seats and kiosk seats at their own prices (#886).
+		mrr: formatEuroAmount(monthlyRecurringRevenueCents(subscriptions)),
 	};
 
 	return (
