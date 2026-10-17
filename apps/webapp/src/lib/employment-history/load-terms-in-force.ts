@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, isNull, lt, or } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, lt, or } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { type EmployeeEmploymentHistory, employeeEmploymentHistory } from "@/db/schema";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
@@ -7,6 +7,7 @@ import {
 	type CalendarDateRange,
 	confirmedTermsSpans,
 	type TermsSpan,
+	termsInForceOn,
 	termsSpansOverlapping,
 	utcMidnight,
 } from "./terms-in-force";
@@ -21,6 +22,39 @@ type Reader = Database | Pick<Transaction, "select">;
  * margin and the calendar decides in TypeScript.
  */
 const STORED_DATE_MARGIN_DAYS = 2;
+
+async function loadConfirmedTermsRows(
+	reader: Reader,
+	input: {
+		organizationId: string;
+		employeeIds: readonly string[];
+		range: CalendarDateRange;
+	},
+): Promise<EmployeeEmploymentHistory[]> {
+	if (input.employeeIds.length === 0) return [];
+	return reader
+		.select()
+		.from(employeeEmploymentHistory)
+		.where(
+			and(
+				eq(employeeEmploymentHistory.organizationId, input.organizationId),
+				inArray(employeeEmploymentHistory.employeeId, [...input.employeeIds]),
+				eq(employeeEmploymentHistory.reviewState, "confirmed"),
+				lt(
+					employeeEmploymentHistory.validFrom,
+					utcMidnight(input.range.toExclusive.add({ days: STORED_DATE_MARGIN_DAYS })),
+				),
+				or(
+					isNull(employeeEmploymentHistory.validUntil),
+					gt(
+						employeeEmploymentHistory.validUntil,
+						utcMidnight(input.range.from.subtract({ days: STORED_DATE_MARGIN_DAYS })),
+					),
+				),
+			),
+		)
+		.orderBy(asc(employeeEmploymentHistory.validFrom), asc(employeeEmploymentHistory.createdAt));
+}
 
 /**
  * The employee's confirmed terms overlapping `range`, in date order, read for
@@ -38,28 +72,11 @@ export async function loadConfirmedTermsSpans(
 	},
 ): Promise<TermsSpan<EmployeeEmploymentHistory>[]> {
 	const timezone = input.timezone ?? (await loadOrganizationTimezone(reader, input.organizationId));
-	const rows = await reader
-		.select()
-		.from(employeeEmploymentHistory)
-		.where(
-			and(
-				eq(employeeEmploymentHistory.organizationId, input.organizationId),
-				eq(employeeEmploymentHistory.employeeId, input.employeeId),
-				eq(employeeEmploymentHistory.reviewState, "confirmed"),
-				lt(
-					employeeEmploymentHistory.validFrom,
-					utcMidnight(input.range.toExclusive.add({ days: STORED_DATE_MARGIN_DAYS })),
-				),
-				or(
-					isNull(employeeEmploymentHistory.validUntil),
-					gt(
-						employeeEmploymentHistory.validUntil,
-						utcMidnight(input.range.from.subtract({ days: STORED_DATE_MARGIN_DAYS })),
-					),
-				),
-			),
-		)
-		.orderBy(asc(employeeEmploymentHistory.validFrom), asc(employeeEmploymentHistory.createdAt));
+	const rows = await loadConfirmedTermsRows(reader, {
+		organizationId: input.organizationId,
+		employeeIds: [input.employeeId],
+		range: input.range,
+	});
 
 	return termsSpansOverlapping(confirmedTermsSpans(rows, timezone), input.range);
 }
@@ -76,4 +93,35 @@ export async function loadTermsInForceOn(
 		timezone: input.timezone,
 	});
 	return span?.terms ?? null;
+}
+
+/** Confirmed terms on one calendar date, read in one batch for an organization's employees. */
+export async function loadTermsInForceOnByEmployee(
+	reader: Reader,
+	input: {
+		organizationId: string;
+		employeeIds: readonly string[];
+		date: PlainDate;
+		timezone?: string;
+	},
+): Promise<Map<string, EmployeeEmploymentHistory>> {
+	if (input.employeeIds.length === 0) return new Map();
+	const timezone = input.timezone ?? (await loadOrganizationTimezone(reader, input.organizationId));
+	const rows = await loadConfirmedTermsRows(reader, {
+		organizationId: input.organizationId,
+		employeeIds: input.employeeIds,
+		range: { from: input.date, toExclusive: input.date.add({ days: 1 }) },
+	});
+	const rowsByEmployee = new Map<string, EmployeeEmploymentHistory[]>();
+	for (const row of rows) {
+		const employeeRows = rowsByEmployee.get(row.employeeId) ?? [];
+		employeeRows.push(row);
+		rowsByEmployee.set(row.employeeId, employeeRows);
+	}
+	const terms = new Map<string, EmployeeEmploymentHistory>();
+	for (const [employeeId, employeeRows] of rowsByEmployee) {
+		const current = termsInForceOn(employeeRows, input.date, timezone);
+		if (current) terms.set(employeeId, current);
+	}
+	return terms;
 }

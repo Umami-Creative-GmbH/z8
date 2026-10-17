@@ -310,11 +310,4 @@ describe("getDailyWorkRequirementsForEmployee", () => {
 		expect(source).toContain("if (effectiveStartDate > params.endDate) return {};");
 		expect(source).toContain("startDate: effectiveStartDate");
 	});
-
-	it("uses confirmed employment history as the employee-specific requirement override", () => {
-		expect(source).toContain("getConfirmedEmploymentRequirementSlices");
-		expect(source).toContain('eq(employeeEmploymentHistory.reviewState, "confirmed")');
-		expect(source).toContain("weeklyContractMinutes: slice.weeklyContractMinutes");
-		expect(source).toContain('assignedVia: "Contract override"');
-	});
 });
