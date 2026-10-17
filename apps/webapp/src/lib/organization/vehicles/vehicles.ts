@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { isConstraintViolation } from "@/lib/projects/constraint-violation";
+import { queueVehiclePhotoDeletion } from "./vehicle-photos";
 import {
 	parseVehicleChange,
 	type VehicleChange,
@@ -120,7 +121,10 @@ export async function listOrganizationVehicles(
 							? [
 									{
 										id: driver.employeeId,
-										name: driver.userName?.trim() || driver.employeeNumber || driver.employeeId,
+										name:
+											driver.userName?.trim() ||
+											driver.employeeNumber ||
+											driver.employeeId,
 									},
 								]
 							: [],
@@ -128,7 +132,9 @@ export async function listOrganizationVehicles(
 					.sort(byName),
 				teams: own
 					.flatMap((driver) =>
-						driver.teamId ? [{ id: driver.teamId, name: driver.teamName ?? driver.teamId }] : [],
+						driver.teamId
+							? [{ id: driver.teamId, name: driver.teamName ?? driver.teamId }]
+							: [],
 					)
 					.sort(byName),
 			},
@@ -151,7 +157,10 @@ interface ChangeContext {
 }
 
 type VehicleRow = typeof organizationVehicle.$inferSelect;
-type ChangeOf<K extends VehicleChange["kind"]> = Extract<VehicleChange, { kind: K }>;
+type ChangeOf<K extends VehicleChange["kind"]> = Extract<
+	VehicleChange,
+	{ kind: K }
+>;
 
 async function writeAudit(
 	context: ChangeContext,
@@ -170,7 +179,10 @@ async function writeAudit(
 }
 
 /** The vehicle of the organization, locked for this change. */
-async function loadVehicle(context: ChangeContext, vehicleId: string): Promise<VehicleRow> {
+async function loadVehicle(
+	context: ChangeContext,
+	vehicleId: string,
+): Promise<VehicleRow> {
 	const [row] = await context.tx
 		.select()
 		.from(organizationVehicle)
@@ -185,7 +197,10 @@ async function loadVehicle(context: ChangeContext, vehicleId: string): Promise<V
 	return row ?? refuse("vehicle_not_found");
 }
 
-async function currentDrivers(context: ChangeContext, vehicleId: string): Promise<VehicleDrivers> {
+async function currentDrivers(
+	context: ChangeContext,
+	vehicleId: string,
+): Promise<VehicleDrivers> {
 	const rows = await context.tx
 		.select({
 			employeeId: organizationVehicleDriver.employeeId,
@@ -199,7 +214,9 @@ async function currentDrivers(context: ChangeContext, vehicleId: string): Promis
 			),
 		);
 	return sortedDrivers({
-		employeeIds: rows.flatMap((row) => (row.employeeId ? [row.employeeId] : [])),
+		employeeIds: rows.flatMap((row) =>
+			row.employeeId ? [row.employeeId] : [],
+		),
 		teamIds: rows.flatMap((row) => (row.teamId ? [row.teamId] : [])),
 	});
 }
@@ -212,7 +229,10 @@ function sortedDrivers(drivers: VehicleDrivers): VehicleDrivers {
 }
 
 /** Refuses drivers that are not employees or teams of the organization. */
-async function assertDriversOfOrganization(context: ChangeContext, drivers: VehicleDrivers) {
+async function assertDriversOfOrganization(
+	context: ChangeContext,
+	drivers: VehicleDrivers,
+) {
 	if (drivers.employeeIds.length > 0) {
 		const found = await context.tx
 			.select({ id: employee.id })
@@ -230,13 +250,20 @@ async function assertDriversOfOrganization(context: ChangeContext, drivers: Vehi
 			.select({ id: team.id })
 			.from(team)
 			.where(
-				and(eq(team.organizationId, context.organizationId), inArray(team.id, drivers.teamIds)),
+				and(
+					eq(team.organizationId, context.organizationId),
+					inArray(team.id, drivers.teamIds),
+				),
 			);
 		if (found.length !== drivers.teamIds.length) refuse("driver_not_found");
 	}
 }
 
-async function replaceDrivers(context: ChangeContext, vehicleId: string, drivers: VehicleDrivers) {
+async function replaceDrivers(
+	context: ChangeContext,
+	vehicleId: string,
+	drivers: VehicleDrivers,
+) {
 	await context.tx
 		.delete(organizationVehicleDriver)
 		.where(
@@ -290,7 +317,11 @@ async function update(context: ChangeContext, change: ChangeOf<"update">) {
 		licencePlate: row.licencePlate,
 		drivers: await currentDrivers(context, row.id),
 	};
-	const after = { name: change.name, licencePlate: change.licencePlate, drivers };
+	const after = {
+		name: change.name,
+		licencePlate: change.licencePlate,
+		drivers,
+	};
 	const changedKeys = (Object.keys(after) as (keyof typeof after)[]).filter(
 		(key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]),
 	);
@@ -312,7 +343,8 @@ async function update(context: ChangeContext, change: ChangeOf<"update">) {
 				),
 			);
 	}
-	if (changedKeys.includes("drivers")) await replaceDrivers(context, row.id, drivers);
+	if (changedKeys.includes("drivers"))
+		await replaceDrivers(context, row.id, drivers);
 
 	const pick = (source: typeof after) =>
 		Object.fromEntries(changedKeys.map((key) => [key, source[key]]));
@@ -322,7 +354,11 @@ async function update(context: ChangeContext, change: ChangeOf<"update">) {
 	});
 }
 
-async function setArchived(context: ChangeContext, vehicleId: string, archived: boolean) {
+async function setArchived(
+	context: ChangeContext,
+	vehicleId: string,
+	archived: boolean,
+) {
 	const row = await loadVehicle(context, vehicleId);
 	if ((row.archivedAt !== null) === archived) return;
 	await context.tx
@@ -356,7 +392,10 @@ async function setArchived(context: ChangeContext, vehicleId: string, archived: 
  * vehicle use lives in the pending request's JSON, which no foreign key guards,
  * so deleting the vehicle would make the approval fail with `vehicle_not_found`.
  */
-async function requestedByOpenCorrection(context: ChangeContext, vehicleId: string) {
+async function requestedByOpenCorrection(
+	context: ChangeContext,
+	vehicleId: string,
+) {
 	const mentioned = `%${vehicleId}%`;
 	const [legacy] = await context.tx
 		.select({ id: approvalRequest.id })
@@ -396,6 +435,7 @@ async function remove(context: ChangeContext, vehicleId: string) {
 	const row = await loadVehicle(context, vehicleId);
 	if (await requestedByOpenCorrection(context, row.id)) refuse("vehicle_used");
 	const drivers = await currentDrivers(context, row.id);
+	await queueVehiclePhotoDeletion(context.tx, context.organizationId, row.id);
 	await context.tx
 		.delete(organizationVehicle)
 		.where(
@@ -430,14 +470,30 @@ async function applyChange(context: ChangeContext, change: VehicleChange) {
 }
 
 /** The PostgreSQL error code and constraint of a database error, or of one it wraps. */
-function databaseError(error: unknown): { code: string; constraint?: string } | null {
+function databaseError(
+	error: unknown,
+): { code: string; constraint?: string } | null {
 	let candidate: unknown = error;
-	for (let depth = 0; depth < 4 && candidate && typeof candidate === "object"; depth += 1) {
-		const current = candidate as { code?: unknown; constraint?: unknown; cause?: unknown };
-		if (typeof current.code === "string" && /^[0-9A-Z]{5}$/.test(current.code)) {
+	for (
+		let depth = 0;
+		depth < 4 && candidate && typeof candidate === "object";
+		depth += 1
+	) {
+		const current = candidate as {
+			code?: unknown;
+			constraint?: unknown;
+			cause?: unknown;
+		};
+		if (
+			typeof current.code === "string" &&
+			/^[0-9A-Z]{5}$/.test(current.code)
+		) {
 			return {
 				code: current.code,
-				constraint: typeof current.constraint === "string" ? current.constraint : undefined,
+				constraint:
+					typeof current.constraint === "string"
+						? current.constraint
+						: undefined,
 			};
 		}
 		candidate = current.cause;
@@ -445,15 +501,25 @@ function databaseError(error: unknown): { code: string; constraint?: string } | 
 	return null;
 }
 
-function refusalOfDatabaseError(error: unknown, change: VehicleChange): VehicleRefusal | null {
-	if (isConstraintViolation(error, "23505", "organization_vehicle_licence_plate_key_idx")) {
+function refusalOfDatabaseError(
+	error: unknown,
+	change: VehicleChange,
+): VehicleRefusal | null {
+	if (
+		isConstraintViolation(
+			error,
+			"23505",
+			"organization_vehicle_licence_plate_key_idx",
+		)
+	) {
 		return "licence_plate_taken";
 	}
 	const failure = databaseError(error);
 	if (failure?.code !== "23503") return null;
 	// A driver deleted meanwhile, or (for a delete) any table that records the vehicle:
 	// each references it without a cascade, so a new one refuses without being listed here.
-	if (failure.constraint?.startsWith("organization_vehicle_driver_")) return "driver_not_found";
+	if (failure.constraint?.startsWith("organization_vehicle_driver_"))
+		return "driver_not_found";
 	return change.kind === "delete" ? "vehicle_used" : null;
 }
 
@@ -476,10 +542,17 @@ export async function changeOrganizationVehicles(
 	try {
 		return await database.transaction(async (tx) => {
 			await applyChange(
-				{ tx, organizationId: input.organizationId, actorUserId: input.actorUserId },
+				{
+					tx,
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+				},
 				parsed.change,
 			);
-			return { ok: true, vehicles: await listOrganizationVehicles(tx, input.organizationId) };
+			return {
+				ok: true,
+				vehicles: await listOrganizationVehicles(tx, input.organizationId),
+			};
 		});
 	} catch (error) {
 		// A refusal rolls the whole change back.

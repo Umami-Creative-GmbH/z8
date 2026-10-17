@@ -28,11 +28,13 @@ import type { WorkPeriodPostCommitDescriptor } from "@/lib/approvals/server/work
 import type { BotPlatform } from "@/lib/bot-platform/types";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
+import { readActiveTaskRequirement } from "@/lib/projects/task-requirement-reads";
 import {
 	commitAutomaticBreakIntent,
 	isClosureCarriedByAutomaticBreak,
 } from "./automatic-break-intent";
 import { canonicalJson } from "./canonical-json";
+import type { KioskTimeSource } from "./clocking/types";
 import {
 	ClockingConflictError,
 	ClockingOrganizationError,
@@ -73,6 +75,7 @@ import {
 	orRefuse,
 	readWorkRecord,
 } from "./work-records";
+import { resultingMissingTask } from "./work-records/work-attribution";
 import type { SealedWorkTransactionScope, WorkTransactionAdmission } from "./work-transaction";
 
 // Work records' invariants, which Clocking's receipts share (moved there to break the cycle).
@@ -219,12 +222,18 @@ export const AUTOMATIC_CLOCK_OUT_WRITER = {
 	ipAddress: null,
 } as const satisfies CloseActiveWorkWriter;
 
-/** The receipt writer of a kiosk's clock commands (#860): its entries carry the kiosk. */
-export function kioskClockWriter(kioskId: string): CloseActiveWorkWriter {
+/**
+ * The receipt writer of a kiosk's clock commands (#860): its entries carry the
+ * kiosk, and those of a frozen kiosk command (#1289) also its time source.
+ */
+export function kioskClockWriter(
+	kioskId: string,
+	offlineTimeSource?: KioskTimeSource,
+): CloseActiveWorkWriter {
 	return {
 		writer: "kiosk_clock",
 		writerVersion: KIOSK_CLOCK_WRITER_VERSION,
-		deviceInfo: kioskDeviceInfo(kioskId),
+		deviceInfo: kioskDeviceInfo(kioskId, offlineTimeSource),
 		ipAddress: null,
 		kioskId,
 	};
@@ -302,6 +311,8 @@ export type CloseActiveWorkResult = {
 		isBillable?: boolean;
 		/** Present only when the closure left a task (#873). */
 		taskId?: string;
+		/** Present only when the closure marked the work missing a task (#884). */
+		missingTask?: true;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 	};
@@ -486,6 +497,16 @@ export type CloseActiveWorkInput = {
 	 * under its lock (#1122): undefined keeps the live work's.
 	 */
 	closingVehicleUse?: ClosingVehicleUse;
+	/**
+	 * Whether no task could be picked at this closure (#884, Projects ADR 0002):
+	 * automatic, departure, kiosk, bot, legacy-route and frozen clock-outs, a
+	 * break closing running work, and a clock-out keeping a project its owner
+	 * can no longer book. Such a closure is accepted without a task and marks the
+	 * work missing a task while its project's requirement is active. False where
+	 * someone could pick a task: that writer refused before the transaction.
+	 * Every closure decides it.
+	 */
+	marksMissingTask: boolean;
 };
 
 /** Decides the closed work's vehicle use from the live work's; undefined keeps it. */
@@ -611,6 +632,7 @@ export async function closeActiveWorkGraph(
 		projectId,
 		current: { projectId: period.projectId, taskId: period.taskId },
 	});
+	const missingTask = await closesMissingTask(tx, input, { projectId, taskId });
 	const workCategoryId = await resolveWorkCategory(
 		tx,
 		organizationId,
@@ -644,6 +666,7 @@ export async function closeActiveWorkGraph(
 			billable: isBillable,
 			workCategoryId,
 			...(vehicleUse === undefined ? {} : { vehicleUse }),
+			...(missingTask ? { missingTask } : {}),
 		},
 		recordedBy: input.actorUserId,
 		actorUserId: humanActorUserId(completing),
@@ -707,6 +730,7 @@ export async function closeActiveWorkGraph(
 			projectId,
 			isBillable,
 			...recordedTaskId(taskId),
+			...(missingTask ? { missingTask } : {}),
 			workCategoryId,
 			workLocationType: period.workLocationType ?? null,
 		},
@@ -729,6 +753,35 @@ export async function closeActiveWorkGraph(
 		entry: appended.entry,
 		surchargeSnapshot,
 	};
+}
+
+/**
+ * Whether the closed work is missing a task (#884, Projects ADR 0002): a closure
+ * where nobody could pick a task books its project without one while the
+ * project's task requirement is active. Read under the work transaction; the
+ * decision is made once, as the closure sets the booking's project, and never
+ * revisited when the requirement changes later.
+ *
+ * The project row is read `FOR SHARE`, after the closure's own work rows (a
+ * configuration read in `WORK_RECORD_LOCK_ORDER`). It fences the closure
+ * against turning the requirement off, also for a departure, which holds no
+ * organization guard: the turn-off's update of the row either waits for this
+ * closure and then clears its marker, or this read waits for the turn-off and
+ * reads the requirement as off (`clearProjectMissingTasks`).
+ */
+async function closesMissingTask(
+	tx: WorkTransactionContext["db"],
+	input: Pick<CloseActiveWorkInput, "organizationId" | "marksMissingTask">,
+	booking: { projectId: string | null; taskId: string | null },
+): Promise<boolean> {
+	if (!input.marksMissingTask || !resultingMissingTask(booking, { decided: true })) {
+		return false;
+	}
+	return readActiveTaskRequirement(
+		{ organizationId: input.organizationId, projectId: booking.projectId as string },
+		tx,
+		{ lock: "share" },
+	);
 }
 
 /**

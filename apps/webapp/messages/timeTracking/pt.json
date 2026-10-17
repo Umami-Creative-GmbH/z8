@@ -99,6 +99,7 @@
       "breakPendingCorrection": "Uma aprovação de correção de horas já está pendente para este período de trabalho. Adicione o intervalo assim que for resolvido.",
       "breakRetry": "Falha ao adicionar intervalo. Tente novamente.",
       "breakTooLong": "A duração do intervalo deve ser menor do que a sua sessão atual.",
+      "chooseTaskInClock": "Abra o relógio no topo da página, escolha uma tarefa e registre a saída.",
       "clockAttributionNotAllowed": "O projeto ou categoria selecionado não está disponível",
       "clockCommandRejected": "O servidor não aceitou esta ação de registro de ponto",
       "clockConnectionRequired": "O registro de ponto requer conexão nesta organização. Reconecte-se e tente novamente.",
@@ -135,6 +136,7 @@
       "taskNotFound": "Esta tarefa já não existe",
       "taskOtherProject": "Esta tarefa pertence a outro projeto",
       "taskProjectNotBookable": "Não é mais possível registrar horas no projeto desta tarefa",
+      "taskRequired": "Este projeto requer uma tarefa. Escolha uma e tente novamente.",
       "workCategoryNotAllowed": "Não é possível atribuir a esta categoria de trabalho"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Voltar ao trabalho",
         "returning": "Voltando ao início em {seconds} s",
         "startBreak": "Pausa iniciada",
-        "title": "Concluído"
+        "title": "Concluído",
+        "unconfirmed": "Salvo neste quiosque, ainda não confirmado. Seu PIN será verificado quando o quiosque estiver online novamente."
       },
       "employee": {
+        "asOf": "A partir de {time}",
         "back": "Cancelar",
         "endDayHint": "Encerrar o dia agora encerra seu trabalho no início da sua pausa.",
         "today": "Hoje: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Iniciando quiosque…",
       "offline": {
         "banner": "O quiosque está offline. O registro de ponto não é possível até que a conexão seja restabelecida.",
-        "refused": "O quiosque está offline. Nada foi registrado; o registro de ponto só funciona online."
+        "notSaved": "Não foi possível salvar no quiosque. Nada foi registrado.",
+        "queueBanner": "O quiosque está offline. As marcações são salvas neste quiosque e confirmadas quando a conexão for restabelecida.",
+        "refused": "O quiosque está offline. Nada foi registrado; o registro de ponto só funciona online.",
+        "stateNote": "O quiosque está offline. O que você fizer agora será salvo neste quiosque e ainda não confirmado.",
+        "stateQueued": "O quiosque está offline. Isso inclui marcações salvas neste quiosque que ainda não foram confirmadas."
       },
       "pairing": {
         "codeDescription": "O código funciona apenas uma vez e expira 10 minutos após ser emitido.",
@@ -201,6 +209,20 @@
         "rateLimited": "Muitas tentativas de PIN neste quiosque. Tente novamente em {seconds} segundos.",
         "submit": "OK",
         "wrong": "Esse PIN não está correto. Tente novamente."
+      },
+      "queue": {
+        "dismiss": "Dispensar",
+        "reason": {
+          "contact": "Não foi possível confirmar a última conexão do quiosque.",
+          "kiosk": "O quiosque não estava mais pareado naquele momento.",
+          "locked": "O PIN estava bloqueado.",
+          "notAssigned": "O funcionário não pode registrar ponto neste quiosque.",
+          "other": "Fale com seu gestor.",
+          "pin": "O PIN não foi aceito.",
+          "time": "O horário não pôde ser aceito."
+        },
+        "refused": "{name}: {action} às {time}, salvo enquanto offline, não foi aceito. {reason}",
+        "title": "Marcações offline não aceitas"
       },
       "refusal": {
         "alreadyClockedIn": "Você já registrou a entrada.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Detalhes de condução ausentes",
       "duration": "Duração",
       "emptyState": "Nenhum registro de tempo encontrado para esta semana.",
+      "missingTask": "Tarefa ausente",
+      "missingTaskHint": "Este projeto requer uma tarefa: adicione uma a este registro no calendário.",
       "recordedLocalTime": "Horário local registrado",
       "rowActions": "Ações do registro de horas",
       "title": "Registros de Tempo",
       "viewCalendar": "Ver Calendário"
     },
     "taskPicker": {
+      "choose": "Escolha uma tarefa",
       "doneTask": "{name} (concluída)",
       "empty": "Nenhuma tarefa encontrada",
       "label": "Tarefa",
       "none": "Nenhuma tarefa",
+      "requiredLabel": "Tarefa (obrigatória)",
       "search": "Pesquisar tarefas…"
     },
     "timeline": {

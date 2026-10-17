@@ -19,7 +19,10 @@ const bookedTaskError = "Time is booked to this task, so it cannot be deleted";
 const { sessions } = await vi.hoisted(async () => {
 	const { AsyncLocalStorage } = await import("node:async_hooks");
 	return {
-		sessions: new AsyncLocalStorage<{ userId: string; organizationId: string }>(),
+		sessions: new AsyncLocalStorage<{
+			userId: string;
+			organizationId: string;
+		}>(),
 	};
 });
 
@@ -29,7 +32,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -55,10 +60,15 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/audit-logger")>()),
@@ -67,7 +77,12 @@ vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 
 vi.mock("@/lib/logger", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/logger")>();
-	const quiet = { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} };
+	const quiet = {
+		error: () => {},
+		warn: () => {},
+		info: () => {},
+		debug: () => {},
+	};
 	return {
 		...original,
 		logger: { ...original.logger, ...quiet },
@@ -76,8 +91,12 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 });
 
 const tasks = await import("./task-actions");
-const { findProjectTask, listProjectTasks } = await import("@/lib/projects/project-tasks");
-const { managesProjectTasks } = await import("@/lib/projects/project-task-permission");
+const { findProjectTask, listProjectTasks } = await import(
+	"@/lib/projects/project-tasks"
+);
+const { managesProjectTasks } = await import(
+	"@/lib/projects/project-task-permission"
+);
 
 const ids = {
 	organization: "t872-task-org",
@@ -175,9 +194,21 @@ describe("project tasks on PostgreSQL", () => {
 			[ids.employee, ids.employeeUser, ids.organization, "employee"],
 			[ids.otherEmployee, ids.otherUser, ids.otherOrganization, "admin"],
 			[ids.plainEmployee, ids.plainUser, ids.organization, "employee"],
-			[ids.formerManager, ids.formerManagerUser, ids.organization, "employee", false],
+			[
+				ids.formerManager,
+				ids.formerManagerUser,
+				ids.organization,
+				"employee",
+				false,
+			],
 		];
-		for (const [id, userId, organizationId, role, isActive = true] of employees) {
+		for (const [
+			id,
+			userId,
+			organizationId,
+			role,
+			isActive = true,
+		] of employees) {
 			await admin.query(
 				`insert into employee (id, user_id, organization_id, role, is_active, updated_at)
 				 values ($1, $2, $3, $4, $6, $5)`,
@@ -241,7 +272,9 @@ describe("project tasks on PostgreSQL", () => {
 			);
 			expect(created.success).toBe(true);
 
-			const listed = await actAs(ids.ownerUser, () => tasks.getProjectTasks(ids.project));
+			const listed = await actAs(ids.ownerUser, () =>
+				tasks.getProjectTasks(ids.project),
+			);
 			expect(listed).toMatchObject({
 				success: true,
 				data: [
@@ -259,7 +292,9 @@ describe("project tasks on PostgreSQL", () => {
 		});
 
 		it("renames a task and edits its description and estimate", async () => {
-			const id = await createTask(ids.ownerUser, "Design", { estimateHours: 4 });
+			const id = await createTask(ids.ownerUser, "Design", {
+				estimateHours: 4,
+			});
 
 			const updated = await actAs(ids.ownerUser, () =>
 				tasks.updateProjectTask(id, {
@@ -270,7 +305,12 @@ describe("project tasks on PostgreSQL", () => {
 			);
 			expect(updated).toEqual({ success: true, data: undefined });
 			expect(await taskRows()).toMatchObject([
-				{ id, name: "Visual design", description: "Mockups", estimate_hours: "6.26" },
+				{
+					id,
+					name: "Visual design",
+					description: "Mockups",
+					estimate_hours: "6.26",
+				},
 			]);
 
 			const cleared = await actAs(ids.ownerUser, () =>
@@ -285,15 +325,21 @@ describe("project tasks on PostgreSQL", () => {
 		it("marks a task done, recording who and when, and reopens it", async () => {
 			const id = await createTask(ids.ownerUser, "Design");
 
-			const done = await actAs(ids.ownerUser, () => tasks.markProjectTaskDone(id));
+			const done = await actAs(ids.ownerUser, () =>
+				tasks.markProjectTaskDone(id),
+			);
 			expect(done).toEqual({ success: true, data: undefined });
 			const [doneRow] = await taskRows();
 			expect(doneRow).toMatchObject({ state: "done", done_by: ids.ownerUser });
 			expect(doneRow?.done_at).toBeInstanceOf(Date);
 
-			const reopened = await actAs(ids.ownerUser, () => tasks.reopenProjectTask(id));
+			const reopened = await actAs(ids.ownerUser, () =>
+				tasks.reopenProjectTask(id),
+			);
 			expect(reopened).toEqual({ success: true, data: undefined });
-			expect(await taskRows()).toMatchObject([{ state: "open", done_by: null, done_at: null }]);
+			expect(await taskRows()).toMatchObject([
+				{ state: "open", done_by: null, done_at: null },
+			]);
 		});
 
 		it("keeps who finished a task first when it is marked done again", async () => {
@@ -302,7 +348,9 @@ describe("project tasks on PostgreSQL", () => {
 			const [first] = await taskRows();
 			audit.logAudit.mockClear();
 
-			const again = await actAs(ids.projectManagerUser, () => tasks.markProjectTaskDone(id));
+			const again = await actAs(ids.projectManagerUser, () =>
+				tasks.markProjectTaskDone(id),
+			);
 
 			expect(again).toEqual({ success: true, data: undefined });
 			expect(await taskRows()).toEqual([first]);
@@ -313,7 +361,9 @@ describe("project tasks on PostgreSQL", () => {
 		it("deletes an unbooked task", async () => {
 			const id = await createTask(ids.ownerUser, "Design");
 
-			const deleted = await actAs(ids.ownerUser, () => tasks.deleteProjectTask(id));
+			const deleted = await actAs(ids.ownerUser, () =>
+				tasks.deleteProjectTask(id),
+			);
 
 			expect(deleted).toEqual({ success: true, data: undefined });
 			expect(await taskRows()).toEqual([]);
@@ -323,7 +373,9 @@ describe("project tasks on PostgreSQL", () => {
 			const id = await createTask(ids.ownerUser, "Design");
 			await bookLiveWork(id);
 
-			const deleted = await actAs(ids.ownerUser, () => tasks.deleteProjectTask(id));
+			const deleted = await actAs(ids.ownerUser, () =>
+				tasks.deleteProjectTask(id),
+			);
 
 			expect(deleted).toMatchObject({ success: false, error: bookedTaskError });
 			expect((await taskRows()).map((row) => row.id)).toEqual([id]);
@@ -333,7 +385,9 @@ describe("project tasks on PostgreSQL", () => {
 			const id = await createTask(ids.ownerUser, "Design");
 			await bookCompletedWork(id);
 
-			const deleted = await actAs(ids.ownerUser, () => tasks.deleteProjectTask(id));
+			const deleted = await actAs(ids.ownerUser, () =>
+				tasks.deleteProjectTask(id),
+			);
 
 			expect(deleted).toMatchObject({ success: false, error: bookedTaskError });
 			expect((await taskRows()).map((row) => row.id)).toEqual([id]);
@@ -346,11 +400,16 @@ describe("project tasks on PostgreSQL", () => {
 				await booking.query("begin");
 				await bookLiveWork(id, booking);
 
-				const deleting = actAs(ids.ownerUser, () => tasks.deleteProjectTask(id));
+				const deleting = actAs(ids.ownerUser, () =>
+					tasks.deleteProjectTask(id),
+				);
 				await waitForRowLockWaiter();
 				await booking.query("commit");
 
-				expect(await deleting).toMatchObject({ success: false, error: bookedTaskError });
+				expect(await deleting).toMatchObject({
+					success: false,
+					error: bookedTaskError,
+				});
 			} finally {
 				booking.release();
 			}
@@ -358,12 +417,19 @@ describe("project tasks on PostgreSQL", () => {
 		});
 
 		it("manages tasks of a project they are not a manager of", async () => {
-			const id = await createTask(ids.ownerUser, "Design", {}, ids.unmanagedProject);
+			const id = await createTask(
+				ids.ownerUser,
+				"Design",
+				{},
+				ids.unmanagedProject,
+			);
 			const renamed = await actAs(ids.ownerUser, () =>
 				tasks.updateProjectTask(id, { name: "Build" }),
 			);
 			expect(renamed.success).toBe(true);
-			expect((await taskRows(ids.unmanagedProject)).map((row) => row.name)).toEqual(["Build"]);
+			expect(
+				(await taskRows(ids.unmanagedProject)).map((row) => row.name),
+			).toEqual(["Build"]);
 		});
 	});
 
@@ -387,7 +453,9 @@ describe("project tasks on PostgreSQL", () => {
 				success: false,
 				error: expect.stringMatching(/already exists/i),
 			});
-			expect((await taskRows()).map((row) => row.id).sort()).toEqual([first, second].sort());
+			expect((await taskRows()).map((row) => row.id).sort()).toEqual(
+				[first, second].sort(),
+			);
 		});
 
 		it("keeps names unique ignoring case and surrounding spaces in the database too", async () => {
@@ -399,7 +467,10 @@ describe("project tasks on PostgreSQL", () => {
 					 values ($1, $2, ' DESIGN ', $3, now())`,
 					[ids.organization, ids.project, ids.ownerUser],
 				),
-			).rejects.toMatchObject({ code: "23505", constraint: "projectTask_project_name_unique_idx" });
+			).rejects.toMatchObject({
+				code: "23505",
+				constraint: "projectTask_project_name_unique_idx",
+			});
 		});
 
 		it("allows the same name in two projects", async () => {
@@ -407,19 +478,33 @@ describe("project tasks on PostgreSQL", () => {
 			await createTask(ids.ownerUser, "Design", {}, ids.unmanagedProject);
 
 			expect((await taskRows()).map((row) => row.name)).toEqual(["Design"]);
-			expect((await taskRows(ids.unmanagedProject)).map((row) => row.name)).toEqual(["Design"]);
+			expect(
+				(await taskRows(ids.unmanagedProject)).map((row) => row.name),
+			).toEqual(["Design"]);
 		});
 
 		it("refuses a blank name and a non-positive estimate", async () => {
 			const results = await actAs(ids.ownerUser, () =>
 				Promise.all([
 					tasks.createProjectTask({ projectId: ids.project, name: "   " }),
-					tasks.createProjectTask({ projectId: ids.project, name: "Zero", estimateHours: 0 }),
-					tasks.createProjectTask({ projectId: ids.project, name: "Neg", estimateHours: -2 }),
+					tasks.createProjectTask({
+						projectId: ids.project,
+						name: "Zero",
+						estimateHours: 0,
+					}),
+					tasks.createProjectTask({
+						projectId: ids.project,
+						name: "Neg",
+						estimateHours: -2,
+					}),
 				]),
 			);
 
-			expect(results.map((result) => result.success)).toEqual([false, false, false]);
+			expect(results.map((result) => result.success)).toEqual([
+				false,
+				false,
+				false,
+			]);
 			expect(await taskRows()).toEqual([]);
 		});
 	});
@@ -431,24 +516,45 @@ describe("project tasks on PostgreSQL", () => {
 				await actAs(ids.projectManagerUser, () =>
 					tasks.updateProjectTask(id, { name: "Build", estimateHours: 3 }),
 				),
-				await actAs(ids.projectManagerUser, () => tasks.markProjectTaskDone(id)),
+				await actAs(ids.projectManagerUser, () =>
+					tasks.markProjectTaskDone(id),
+				),
 				await actAs(ids.projectManagerUser, () => tasks.reopenProjectTask(id)),
-				await actAs(ids.projectManagerUser, () => tasks.getProjectTasks(ids.project)),
+				await actAs(ids.projectManagerUser, () =>
+					tasks.getProjectTasks(ids.project),
+				),
 			];
-			expect(results.map((result) => result.success)).toEqual([true, true, true, true]);
-			expect(await taskRows()).toMatchObject([{ id, name: "Build", state: "open" }]);
+			expect(results.map((result) => result.success)).toEqual([
+				true,
+				true,
+				true,
+				true,
+			]);
+			expect(await taskRows()).toMatchObject([
+				{ id, name: "Build", state: "open" },
+			]);
 
-			const deleted = await actAs(ids.projectManagerUser, () => tasks.deleteProjectTask(id));
+			const deleted = await actAs(ids.projectManagerUser, () =>
+				tasks.deleteProjectTask(id),
+			);
 			expect(deleted.success).toBe(true);
 			expect(await taskRows()).toEqual([]);
 		});
 
 		it("is refused every task action on a project they do not manage", async () => {
-			const id = await createTask(ids.ownerUser, "Design", {}, ids.unmanagedProject);
+			const id = await createTask(
+				ids.ownerUser,
+				"Design",
+				{},
+				ids.unmanagedProject,
+			);
 
 			const results = await actAs(ids.projectManagerUser, () =>
 				Promise.all([
-					tasks.createProjectTask({ projectId: ids.unmanagedProject, name: "Build" }),
+					tasks.createProjectTask({
+						projectId: ids.unmanagedProject,
+						name: "Build",
+					}),
 					tasks.updateProjectTask(id, { name: "Renamed" }),
 					tasks.markProjectTaskDone(id),
 					tasks.reopenProjectTask(id),
@@ -475,20 +581,31 @@ describe("project tasks on PostgreSQL", () => {
 		it("manages the tasks of the project they manage", async () => {
 			const id = await createTask(ids.employeeUser, "Design");
 			const results = [
-				await actAs(ids.employeeUser, () => tasks.updateProjectTask(id, { name: "Build" })),
+				await actAs(ids.employeeUser, () =>
+					tasks.updateProjectTask(id, { name: "Build" }),
+				),
 				await actAs(ids.employeeUser, () => tasks.markProjectTaskDone(id)),
 				await actAs(ids.employeeUser, () => tasks.reopenProjectTask(id)),
 				await actAs(ids.employeeUser, () => tasks.getProjectTasks(ids.project)),
 				await actAs(ids.employeeUser, () => tasks.deleteProjectTask(id)),
 			];
 
-			expect(results.map((result) => result.success)).toEqual([true, true, true, true, true]);
+			expect(results.map((result) => result.success)).toEqual([
+				true,
+				true,
+				true,
+				true,
+				true,
+			]);
 			expect(await taskRows()).toEqual([]);
 		});
 
 		it("is refused on a project they do not manage", async () => {
 			const result = await actAs(ids.employeeUser, () =>
-				tasks.createProjectTask({ projectId: ids.unmanagedProject, name: "Build" }),
+				tasks.createProjectTask({
+					projectId: ids.unmanagedProject,
+					name: "Build",
+				}),
 			);
 
 			expect(result.success).toBe(false);
@@ -496,10 +613,17 @@ describe("project tasks on PostgreSQL", () => {
 		});
 
 		it("is offered only the projects they manage", async () => {
-			const managed = await actAs(ids.employeeUser, () => tasks.getProjectsWithManageableTasks());
-			const all = await actAs(ids.ownerUser, () => tasks.getProjectsWithManageableTasks());
+			const managed = await actAs(ids.employeeUser, () =>
+				tasks.getProjectsWithManageableTasks(),
+			);
+			const all = await actAs(ids.ownerUser, () =>
+				tasks.getProjectsWithManageableTasks(),
+			);
 
-			expect(managed).toMatchObject({ success: true, data: [{ id: ids.project }] });
+			expect(managed).toMatchObject({
+				success: true,
+				data: [{ id: ids.project }],
+			});
 			expect(all.success && all.data.map((project) => project.id)).toEqual([
 				ids.project,
 				ids.unmanagedProject,
@@ -530,19 +654,25 @@ describe("project tasks on PostgreSQL", () => {
 					false,
 					false,
 				]);
-				expect(await actAs(userId, () => tasks.getProjectsWithManageableTasks())).toEqual({
+				expect(
+					await actAs(userId, () => tasks.getProjectsWithManageableTasks()),
+				).toEqual({
 					success: true,
 					data: [],
 				});
 			}
-			expect(await taskRows()).toMatchObject([{ id, name: "Design", state: "open" }]);
+			expect(await taskRows()).toMatchObject([
+				{ id, name: "Design", state: "open" },
+			]);
 			expect(audit.logAudit).toHaveBeenCalledTimes(1);
 		});
 	});
 
 	describe("the settings navigation check (#928)", () => {
-		const managesTasks = (userId: string, organizationId: string = ids.organization) =>
-			managesProjectTasks({ userId, organizationId });
+		const managesTasks = (
+			userId: string,
+			organizationId: string = ids.organization,
+		) => managesProjectTasks({ userId, organizationId });
 
 		it("is true for a plain employee who manages a project", async () => {
 			expect(await managesTasks(ids.employeeUser)).toBe(true);
@@ -554,7 +684,9 @@ describe("project tasks on PostgreSQL", () => {
 		});
 
 		it("is false in an organization where the user manages no project", async () => {
-			expect(await managesTasks(ids.employeeUser, ids.otherOrganization)).toBe(false);
+			expect(await managesTasks(ids.employeeUser, ids.otherOrganization)).toBe(
+				false,
+			);
 			expect(await managesTasks(ids.otherUser)).toBe(false);
 		});
 	});
@@ -564,14 +696,23 @@ describe("project tasks on PostgreSQL", () => {
 			const results = await actAs(ids.ownerUser, () =>
 				Promise.all([
 					tasks.getProjectTasks(ids.otherProject),
-					tasks.createProjectTask({ projectId: ids.otherProject, name: "Intrusion" }),
+					tasks.createProjectTask({
+						projectId: ids.otherProject,
+						name: "Intrusion",
+					}),
 					tasks.updateProjectTask(ids.otherTask, { name: "Renamed" }),
 					tasks.markProjectTaskDone(ids.otherTask),
 					tasks.deleteProjectTask(ids.otherTask),
 				]),
 			);
 
-			expect(results.map((result) => result.success)).toEqual([false, false, false, false, false]);
+			expect(results.map((result) => result.success)).toEqual([
+				false,
+				false,
+				false,
+				false,
+				false,
+			]);
 			expect(await taskRows(ids.otherProject)).toMatchObject([
 				{ id: ids.otherTask, name: "Foreign task", state: "open" },
 			]);
@@ -582,10 +723,16 @@ describe("project tasks on PostgreSQL", () => {
 			await createTask(ids.ownerUser, "Design");
 
 			expect(
-				await listProjectTasks({ organizationId: ids.organization, projectId: ids.otherProject }),
+				await listProjectTasks({
+					organizationId: ids.organization,
+					projectId: ids.otherProject,
+				}),
 			).toEqual([]);
 			expect(
-				await findProjectTask({ organizationId: ids.organization, taskId: ids.otherTask }),
+				await findProjectTask({
+					organizationId: ids.organization,
+					taskId: ids.otherTask,
+				}),
 			).toBe(null);
 		});
 	});
@@ -596,23 +743,36 @@ describe("project tasks on PostgreSQL", () => {
 			const alpha = await createTask(ids.ownerUser, "Alpha");
 			const done = await createTask(ids.ownerUser, "Beta");
 			await actAs(ids.ownerUser, () => tasks.markProjectTaskDone(done));
-			const scope = { organizationId: ids.organization, projectId: ids.project };
+			const scope = {
+				organizationId: ids.organization,
+				projectId: ids.project,
+			};
 
-			expect((await listProjectTasks(scope)).map((task) => task.id)).toEqual([alpha, zeta, done]);
-			expect((await listProjectTasks(scope, { state: "open" })).map((task) => task.id)).toEqual([
+			expect((await listProjectTasks(scope)).map((task) => task.id)).toEqual([
 				alpha,
 				zeta,
-			]);
-			expect((await listProjectTasks(scope, { state: "done" })).map((task) => task.id)).toEqual([
 				done,
 			]);
+			expect(
+				(await listProjectTasks(scope, { state: "open" })).map(
+					(task) => task.id,
+				),
+			).toEqual([alpha, zeta]);
+			expect(
+				(await listProjectTasks(scope, { state: "done" })).map(
+					(task) => task.id,
+				),
+			).toEqual([done]);
 		});
 	});
 
 	describe("project lifecycle", () => {
 		it("archiving a project keeps its tasks", async () => {
 			const id = await createTask(ids.ownerUser, "Design");
-			await admin.query("update project set status = 'archived' where id = $1", [ids.project]);
+			await admin.query(
+				"update project set status = 'archived' where id = $1",
+				[ids.project],
+			);
 
 			expect((await taskRows()).map((row) => row.id)).toEqual([id]);
 		});
@@ -652,20 +812,38 @@ describe("project tasks on PostgreSQL", () => {
 	}
 
 	/** Live work of the employee on the project, booked to the task. */
-	async function bookLiveWork(taskId: string, client: Pick<PoolClient, "query"> = admin) {
+	async function bookLiveWork(
+		taskId: string,
+		client: Pick<PoolClient, "query"> = admin,
+	) {
 		const clockIn = randomUUID();
 		const start = new Date("2026-03-02T08:00:00Z");
 		await client.query(
 			`insert into time_entry (id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
 			  timezone, timezone_source, hash, previous_hash, created_by)
 			 values ($1, $2, $3, 'clock_in', $4, 0, 'UTC', 'backfill', $6, null, $5)`,
-			[clockIn, ids.employee, ids.organization, start, ids.employeeUser, `hash-${clockIn}`],
+			[
+				clockIn,
+				ids.employee,
+				ids.organization,
+				start,
+				ids.employeeUser,
+				`hash-${clockIn}`,
+			],
 		);
 		await client.query(
 			`insert into work_period (id, organization_id, employee_id, clock_in_id, project_id, task_id,
 			  start_time, is_active, updated_at)
 			 values ($1, $2, $3, $4, $5, $6, $7, true, $7)`,
-			[randomUUID(), ids.organization, ids.employee, clockIn, ids.project, taskId, start],
+			[
+				randomUUID(),
+				ids.organization,
+				ids.employee,
+				clockIn,
+				ids.project,
+				taskId,
+				start,
+			],
 		);
 	}
 
@@ -700,7 +878,8 @@ describe("project tasks on PostgreSQL", () => {
 		const result = await actAs(userId, () =>
 			tasks.createProjectTask({ projectId, name, ...extra }),
 		);
-		if (!result.success) throw new Error(`Task creation failed: ${result.error}`);
+		if (!result.success)
+			throw new Error(`Task creation failed: ${result.error}`);
 		return result.data.id;
 	}
 });

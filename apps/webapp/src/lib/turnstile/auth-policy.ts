@@ -5,6 +5,8 @@ import {
 	resolvePlatformOrganization,
 } from "@/lib/domain/platform-domain";
 
+import { getDevelopmentTurnstileKeys } from "./development-keys";
+
 /** Resolve only server-known domains. Forwarding and organization headers are not policy inputs. */
 export async function resolveTurnstileAuthPolicy(host: string) {
 	// The general domain classifier is deliberately permissive. Auth must accept only an authority.
@@ -36,7 +38,9 @@ export async function resolveTurnstileAuthPolicy(host: string) {
 	}
 	// Platform organization subdomains display the global widget, just like the main domain.
 	return {
-		enabled: !!env.TURNSTILE_SITE_KEY,
+		enabled: !!(
+			getDevelopmentTurnstileKeys(hostname)?.siteKey ?? env.TURNSTILE_SITE_KEY
+		),
 		organizationId: undefined,
 		isEnterprise: false,
 		hostname: classification.hostname,

@@ -29,6 +29,7 @@ const {
 	loadFinanceActorMock,
 	loadCurrentPersonnelFileAccessMock,
 	loadCollectsPeriodSubmissionsMock,
+	listWhoIsInLocationsMock,
 } = vi.hoisted(() => ({
 	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
@@ -45,6 +46,7 @@ const {
 	loadFinanceActorMock: vi.fn(),
 	loadCurrentPersonnelFileAccessMock: vi.fn(),
 	loadCollectsPeriodSubmissionsMock: vi.fn(),
+	listWhoIsInLocationsMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -78,6 +80,10 @@ vi.mock("@/lib/personnel-file/current-access", () => ({
 
 vi.mock("@/lib/time-tracking/period-submissions/settings", () => ({
 	loadCollectsPeriodSubmissions: loadCollectsPeriodSubmissionsMock,
+}));
+
+vi.mock("@/lib/time-tracking/who-is-in/queries", () => ({
+	listWhoIsInLocations: listWhoIsInLocationsMock,
 }));
 
 vi.mock("@/components/travel-expenses/finance/finance-nav-badge", () => ({
@@ -174,6 +180,8 @@ describe("app sidebar compliance navigation", () => {
 		loadCurrentPersonnelFileAccessMock.mockReset();
 		loadCollectsPeriodSubmissionsMock.mockReset();
 		loadCollectsPeriodSubmissionsMock.mockResolvedValue(false);
+		listWhoIsInLocationsMock.mockReset();
+		listWhoIsInLocationsMock.mockResolvedValue([]);
 		vi.resetModules();
 	});
 
@@ -673,6 +681,107 @@ describe("app sidebar compliance navigation", () => {
 			]),
 		);
 	});
+
+	it.each(["manager", "admin"] as const)(
+		"shows Who Is In for %s only while the active organization has active locations",
+		(role) => {
+			const capabilities = {
+				scheduling: false,
+				compliance: false,
+				payroll: false,
+				finance: false,
+				worksCouncil: false,
+				platformAdmin: false,
+				teamPresence: false,
+			};
+			const { rerender } = render(<AppSidebar employeeRole={role} />);
+			expect(
+				navTeamSpy.mock.lastCall?.[0].map((item) => item.url),
+			).not.toContain("/team/presence");
+			rerender(
+				<AppSidebar
+					employeeRole={role}
+					navigationCapabilities={{ ...capabilities, teamPresence: true }}
+				/>,
+			);
+			expect(navTeamSpy.mock.lastCall?.[0]).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						title: "Who Is In",
+						url: "/team/presence",
+					}),
+				]),
+			);
+			rerender(
+				<AppSidebar
+					employeeRole={role}
+					navigationCapabilities={capabilities}
+				/>,
+			);
+			expect(
+				navTeamSpy.mock.lastCall?.[0].map((item) => item.url),
+			).not.toContain("/team/presence");
+		},
+	);
+
+	it.each([
+		["manager", "org_1", [], false],
+		["manager", "org_1", [{ id: "loc_1", name: "Office" }], true],
+		["admin", "org_1", [{ id: "loc_1", name: "Office" }], true],
+		["employee", "org_1", [{ id: "loc_1", name: "Office" }], false],
+		["manager", null, [{ id: "loc_1", name: "Office" }], false],
+	] as const)(
+		"resolves Who Is In visibility for %s in %s with locations %j",
+		async (role, activeOrganizationId, locations, teamPresence) => {
+			getUserOrganizationsMock.mockResolvedValue([{ id: "org_1" }]);
+			getAuthContextMock.mockResolvedValue({
+				user: { id: "user_1", role: "user" },
+				session: { activeOrganizationId },
+				employee: { id: "emp_1", organizationId: "org_1", role },
+			});
+			getCurrentSettingsAccessTierMock.mockResolvedValue(
+				role === "admin"
+					? "orgAdmin"
+					: role === "manager"
+						? "manager"
+						: "member",
+			);
+			listWhoIsInLocationsMock.mockResolvedValue(locations);
+			vi.doMock("@/lib/auth-helpers", () => ({
+				getUserOrganizations: getUserOrganizationsMock,
+				getAuthContext: getAuthContextMock,
+				getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+				requireAbility: requireAbilityMock,
+			}));
+			vi.doMock("@/lib/organization/creation-policy.server", () => ({
+				canCreateOrganizationsForDeployment:
+					canCreateOrganizationsForDeploymentMock,
+			}));
+			vi.doMock("./app-sidebar", () => ({
+				AppSidebar: (props: Record<string, unknown>) => {
+					appSidebarSpy(props);
+					return <div />;
+				},
+			}));
+			try {
+				const { ServerAppSidebar } = await import("./server-app-sidebar");
+				render(await ServerAppSidebar({}));
+				expect(appSidebarSpy).toHaveBeenCalledWith(
+					expect.objectContaining({
+						navigationCapabilities: expect.objectContaining({ teamPresence }),
+					}),
+				);
+				if (role !== "employee" && activeOrganizationId)
+					expect(listWhoIsInLocationsMock).toHaveBeenCalledWith(
+						expect.anything(),
+						{ organizationId: "org_1" },
+					);
+				else expect(listWhoIsInLocationsMock).not.toHaveBeenCalled();
+			} finally {
+				vi.doUnmock("./app-sidebar");
+			}
+		},
+	);
 
 	it("renders Period Submissions in the Team section only while the organization collects them (#1075)", () => {
 		const { rerender } = render(<AppSidebar employeeRole="manager" />);

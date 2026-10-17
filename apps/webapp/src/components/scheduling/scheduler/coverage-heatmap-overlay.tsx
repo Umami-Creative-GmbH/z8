@@ -196,7 +196,7 @@ export function CoverageSummaryBar({
 	}
 
 	return (
-		<div className="flex items-center gap-4 px-4 py-2 bg-muted/50 rounded-lg text-sm">
+		<div className="flex flex-wrap items-center gap-3 rounded-lg bg-muted/50 px-4 py-2 text-sm">
 			<span className="font-medium">
 				{t("scheduling:scheduling.coverage.summary", "Coverage Summary:")}
 			</span>

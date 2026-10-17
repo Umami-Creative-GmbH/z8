@@ -1,12 +1,14 @@
 /**
  * Integrations category of a personal data export (#811, #1170): calendar
  * connections (provider and account), the employee's own calendar feeds,
- * linked Slack, Teams, Telegram and Discord accounts, and whether a kiosk PIN
- * is set. No withheld data: both kinds of export hold the same rows.
+ * linked Slack, Teams, Telegram and Discord accounts, whether a kiosk PIN is
+ * set, the kiosk PIN attempts and unlocks its lockout is judged from
+ * (#1288), and the employee's offline kiosk clockings Z8 refused (#1290). No
+ * withheld data: both kinds of export hold the same rows.
  *
  * Never exported: calendar tokens and OAuth details, sync errors, synced
- * events, calendar feed secret digests, team feeds, PIN hashes and lockout
- * counters, OAuth state, link codes, chat conversations and bot messages.
+ * events, calendar feed secret digests, team feeds, PIN hashes, OAuth state,
+ * link codes, chat conversations and bot messages.
  */
 
 import { and, asc, eq } from "drizzle-orm";
@@ -14,7 +16,10 @@ import {
 	calendarConnection,
 	discordUserMapping,
 	employeeKioskPin,
+	employeeKioskPinEvent,
 	icsFeed,
+	kiosk,
+	kioskFrozenRefusal,
 	slackUserMapping,
 	teamsUserMapping,
 	telegramUserMapping,
@@ -52,6 +57,17 @@ const ICS_FEED_COLUMNS = [
 	"revoked_at",
 ] as const;
 
+const KIOSK_PIN_EVENT_COLUMNS = ["event", "occurred_at", "offline"] as const;
+
+const KIOSK_REFUSAL_COLUMNS = [
+	"kiosk",
+	"action",
+	"claimed_at",
+	"time_source",
+	"reason",
+	"refused_at",
+] as const;
+
 const CHAT_ACCOUNT_COLUMNS = [
 	"platform",
 	"account_id",
@@ -77,64 +93,80 @@ async function collectIntegrations(
 	const { organizationId, employeeId } = scope;
 	await loadSubjectEmployee(database, scope);
 
-	const [calendars, feeds, { pin, pinSetters }, chatAccounts] = await Promise.all([
-		database
-			.select({
-				provider: calendarConnection.provider,
-				account: calendarConnection.providerAccountId,
-				calendarId: calendarConnection.calendarId,
-				isActive: calendarConnection.isActive,
-				pushEnabled: calendarConnection.pushEnabled,
-				conflictDetectionEnabled: calendarConnection.conflictDetectionEnabled,
-				lastSyncAt: calendarConnection.lastSyncAt,
-				createdAt: calendarConnection.createdAt,
-				updatedAt: calendarConnection.updatedAt,
-			})
-			.from(calendarConnection)
-			.where(
-				and(
-					eq(calendarConnection.organizationId, organizationId),
-					eq(calendarConnection.employeeId, employeeId),
-				),
-			)
-			.orderBy(asc(calendarConnection.createdAt), asc(calendarConnection.id)),
-
-		database
-			.select({
-				includeApproved: icsFeed.includeApproved,
-				includePending: icsFeed.includePending,
-				createdAt: icsFeed.createdAt,
-				lastUsedAt: icsFeed.lastUsedAt,
-				revokedAt: icsFeed.revokedAt,
-			})
-			.from(icsFeed)
-			.where(
-				and(
-					eq(icsFeed.organizationId, organizationId),
-					eq(icsFeed.employeeId, employeeId),
-					eq(icsFeed.feedType, "user"),
-				),
-			)
-			.orderBy(asc(icsFeed.createdAt), asc(icsFeed.id)),
-		(async () => {
-			const [pin] = await database
+	const [calendars, feeds, { pin, pinSetters }, chatAccounts, pinEvents, refusals] =
+		await Promise.all([
+			database
 				.select({
-					updatedAt: employeeKioskPin.updatedAt,
-					setByUserId: employeeKioskPin.setByUserId,
+					provider: calendarConnection.provider,
+					account: calendarConnection.providerAccountId,
+					calendarId: calendarConnection.calendarId,
+					isActive: calendarConnection.isActive,
+					pushEnabled: calendarConnection.pushEnabled,
+					conflictDetectionEnabled: calendarConnection.conflictDetectionEnabled,
+					lastSyncAt: calendarConnection.lastSyncAt,
+					createdAt: calendarConnection.createdAt,
+					updatedAt: calendarConnection.updatedAt,
 				})
-				.from(employeeKioskPin)
+				.from(calendarConnection)
 				.where(
 					and(
-						eq(employeeKioskPin.organizationId, organizationId),
-						eq(employeeKioskPin.employeeId, employeeId),
+						eq(calendarConnection.organizationId, organizationId),
+						eq(calendarConnection.employeeId, employeeId),
 					),
 				)
-				.limit(1);
-			const pinSetters = await loadUserNames(database, [pin?.setByUserId]);
-			return { pin, pinSetters };
-		})(),
-		chatAccountRows(database, scope),
-	]);
+				.orderBy(asc(calendarConnection.createdAt), asc(calendarConnection.id)),
+
+			database
+				.select({
+					includeApproved: icsFeed.includeApproved,
+					includePending: icsFeed.includePending,
+					createdAt: icsFeed.createdAt,
+					lastUsedAt: icsFeed.lastUsedAt,
+					revokedAt: icsFeed.revokedAt,
+				})
+				.from(icsFeed)
+				.where(
+					and(
+						eq(icsFeed.organizationId, organizationId),
+						eq(icsFeed.employeeId, employeeId),
+						eq(icsFeed.feedType, "user"),
+					),
+				)
+				.orderBy(asc(icsFeed.createdAt), asc(icsFeed.id)),
+			(async () => {
+				const [pin] = await database
+					.select({
+						updatedAt: employeeKioskPin.updatedAt,
+						setByUserId: employeeKioskPin.setByUserId,
+					})
+					.from(employeeKioskPin)
+					.where(
+						and(
+							eq(employeeKioskPin.organizationId, organizationId),
+							eq(employeeKioskPin.employeeId, employeeId),
+						),
+					)
+					.limit(1);
+				const pinSetters = await loadUserNames(database, [pin?.setByUserId]);
+				return { pin, pinSetters };
+			})(),
+			chatAccountRows(database, scope),
+			database
+				.select({
+					kind: employeeKioskPinEvent.kind,
+					occurredAt: employeeKioskPinEvent.occurredAt,
+					offline: employeeKioskPinEvent.offline,
+				})
+				.from(employeeKioskPinEvent)
+				.where(
+					and(
+						eq(employeeKioskPinEvent.organizationId, organizationId),
+						eq(employeeKioskPinEvent.employeeId, employeeId),
+					),
+				)
+				.orderBy(asc(employeeKioskPinEvent.occurredAt), asc(employeeKioskPinEvent.sequence)),
+			kioskRefusalRows(database, scope),
+		]);
 
 	return {
 		category: "integrations",
@@ -172,8 +204,57 @@ async function collectIntegrations(
 				set_at: instantText(pin?.updatedAt),
 				set_by: nameOf(pinSetters, pin?.setByUserId),
 			}),
+			tablePart(
+				"kiosk_pin_events",
+				KIOSK_PIN_EVENT_COLUMNS,
+				pinEvents.map((row) => ({
+					event: row.kind,
+					occurred_at: instantText(row.occurredAt),
+					offline: row.offline,
+				})),
+			),
+			tablePart(
+				"kiosk_refused_clockings",
+				KIOSK_REFUSAL_COLUMNS,
+				refusals.map((row) => ({
+					kiosk: row.kiosk,
+					action: row.action,
+					claimed_at: instantText(row.claimedAt),
+					time_source: row.timeSource,
+					reason: row.reason,
+					refused_at: instantText(row.refusedAt),
+				})),
+			),
 		],
 	};
+}
+
+/** The employee's refused offline kiosk clockings (#1290); the frozen command is not exported. */
+function kioskRefusalRows(database: PersonalDataExportDatabase, scope: PersonalDataExportScope) {
+	return database
+		.select({
+			kiosk: kiosk.name,
+			action: kioskFrozenRefusal.action,
+			claimedAt: kioskFrozenRefusal.claimedAt,
+			timeSource: kioskFrozenRefusal.timeSource,
+			reason: kioskFrozenRefusal.reason,
+			refusedAt: kioskFrozenRefusal.refusedAt,
+		})
+		.from(kioskFrozenRefusal)
+		.innerJoin(
+			kiosk,
+			and(
+				eq(kiosk.id, kioskFrozenRefusal.kioskId),
+				eq(kiosk.organizationId, kioskFrozenRefusal.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(kioskFrozenRefusal.organizationId, scope.organizationId),
+				eq(kioskFrozenRefusal.employeeId, scope.employeeId),
+			),
+		)
+		.orderBy(asc(kioskFrozenRefusal.claimedAt), asc(kioskFrozenRefusal.id));
 }
 
 /** The user's linked chat accounts in this organization: Slack, Teams, Telegram, Discord. */

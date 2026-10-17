@@ -59,8 +59,12 @@ export type CreateNewWork = {
 	workPeriodId?: string;
 	start: NewWorkEndpoint;
 	end: NewWorkEndpoint;
-	/** The work's attribution, applied to none; omitted records none. */
-	attribution?: WorkAttributionPatch;
+	/**
+	 * The work's attribution, applied to none; omitted records none. New work is
+	 * never marked missing a task (#884): its writers (manual entry, imports)
+	 * either refuse a missing required task or are accepted without the marker.
+	 */
+	attribution?: Omit<WorkAttributionPatch, "missingTask">;
 	approval: NewWorkApproval;
 	origin: NewWorkOrigin;
 	/** Evidence kept on the canonical work detail (a legacy manual submission's replay evidence). */
@@ -81,6 +85,7 @@ const NO_ATTRIBUTION = WorkAttribution.fromWorkPeriod({
 	projectId: null,
 	taskId: null,
 	isBillable: false,
+	missingTask: false,
 	workCategoryId: null,
 	workLocationType: null,
 	...vehicleUseColumns(null),

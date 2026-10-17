@@ -198,7 +198,6 @@
         "deleteDescription": "¿Está seguro de que desea eliminar \"{domain}\"? Esta acción no se puede deshacer. Los usuarios ya no podrán iniciar sesión a través de este dominio personalizado.",
         "deleteFailed": "Error al eliminar el dominio",
         "deleteTitle": "Eliminar dominio",
-        "description": "Configure el dominio de inicio de sesión personalizado, la marca y los proveedores de SSO de su organización.",
         "dnsPropagation": "Propagación de DNS",
         "dnsPropagationDescription": "Los cambios de DNS pueden tardar hasta 48 horas en propagarse, aunque a menudo se completan en unos pocos minutos. Puede hacer clic en \"Verificar\" una vez que haya agregado el registro TXT.",
         "domain": "Dominio",
@@ -212,8 +211,6 @@
         "empty": "Aún no se ha configurado ningún dominio personalizado.",
         "enabledAuthMethods": "Métodos de autenticación habilitados",
         "guidedSetup": {
-          "action": "Configuración guiada",
-          "description": "Configure SSO, SCIM, política de acceso y comprobaciones de activación en un flujo guiado.",
           "title": "Configuración guiada"
         },
         "keepExistingSecretKey": "Déjelo vacío para mantener la clave secreta existente",
@@ -238,7 +235,6 @@
           "pending": "Verificación pendiente",
           "verified": "Verificado"
         },
-        "title": "Dominio personalizado y marca",
         "tokenExpired": "Token expirado",
         "tokenExpiredDescription": "El token de verificación ha expirado. Por favor, genere un nuevo token.",
         "tokenExpires": "El token expira: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Gestione SSO, aprovisionamiento SCIM, restricciones de dominio, política de invitaciones y roles predeterminados para esta organización.",
-      "title": "Configuración de identidad empresarial"
+      "description": "Gestione SSO, aprovisionamiento SCIM, restricciones de dominio, política de invitaciones y roles predeterminados para esta organización."
     }
   }
 }

@@ -504,7 +504,6 @@
       "title": "ArbZG-Compliance"
     },
     "customDomains": {
-      "description": "Konfigurieren Sie eine benutzerdefinierte Domain, Branding und SSO für Ihre Organisation",
       "title": "Domain & Branding"
     },
     "customers": {
@@ -846,9 +845,38 @@
       },
       "title": "Date-Export"
     },
-    "emailConfig": {
-      "description": "Konfiguriere Sie en benutzerdefinierte E-Mail-Provider für Organisations-E-Mails",
-      "title": "E-Mail-Konfiguration"
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Prüefer-Verantwortig vergeh",
+        "all": "Alli Mitarbeiter i däre Organisation",
+        "allDescription": "D Verantwortig richtet sich nach de aktuelle Organisations-Mitglidschaft. Prüefer chönd sich nie sälber überprüefe.",
+        "attribution": "Vergeh dur {actor} am {time}",
+        "description": "Verantwortig separat vo de Fahreraamäldig, Liniefüehrig und em Zuegriff uf d Personalakte vergää. D Verwaltig vo dene Berächtigunge git kei Erlaubnis zum Prüefprotokoll läse. Sälber überprüefe isch immer verbote.",
+        "editor": "Prüfer-Beriich",
+        "empty": "Kei Prüfer-Verantwortige zuegwise",
+        "expiry": "Lauft ab um {time}",
+        "history": "Verlauf vo de Verantwortig",
+        "historyEntry": "Vergää dur {grantor} am {granted}; widerzoge dur {revoker} am {revoked}",
+        "loadFailed": "Prüfer-Verantwortige händ nöd chönne glade wärde",
+        "myAll": "Du bisch verantwortlich für Überprüefige i dere Organisation. Du chasch dich nöd sälber überprüefe.",
+        "mySelected": "Du bisch verantwortlich für {teams} uswählti Teams und {employees} gnannti Mitarbeiter. Di aktuelli Team-Mitglidschaft bestimmt de Zuegriff. Du chasch dich nöd sälber überprüefe.",
+        "myTitle": "Dini Prüfer-Verantwortig",
+        "none": "Du häsch aktuell kei Verantwortig für d Fahruuswiis-Prüefig.",
+        "noTeams": "Kei Teams verfüegbar",
+        "person": "Prüfer",
+        "revoked": "Prüfer-Verantwortig widerzoge",
+        "revokeDescription": "De Prüfer verlüürt sofort de Zuegriff uf Überprüefige i dem Beriich. Es brucht e neui Zueordnig, zum d Verantwortig widerherzstelle.",
+        "revokeFailed": "Verantwortig hät nöd chönne widerzoge wärde. Probier's nomal.",
+        "revokeTitle": "Prüfer-Verantwortig widerrüefe?",
+        "saved": "Prüfer-Verantwortig gspicheret",
+        "scope": "Verantwortig",
+        "select": "En Mitarbeiter uswähle",
+        "selected": "{teams} Teams, {employees} gnannti Mitarbeiter",
+        "selectEmployees": "Mitarbeiter uswähle",
+        "specific": "Uswählti Teams und Mitarbeiter",
+        "specificDescription": "Umfasst gnannti Mitarbeiter und aktuelli Mitglider vo uswählte Teams. Team-Apassige wärded sofort wirksam.",
+        "title": "Fahruuswiis-Prüfer"
+      }
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1306,8 @@
     },
     "group": {
       "account": "Konto",
-      "administration": "Administration",
       "data": "Date",
-      "enterprise": "Enterprise",
+      "integrations": "Integratione",
       "notifications": "Benachrichtigunge",
       "organization": "Organisation"
     },
@@ -1458,7 +1485,8 @@
         "invalidTimezone": "Wähl e Ziitzone uus.",
         "kioskNotFound": "Dä Kiosk isch nöd gfunde worde.",
         "kioskRevoked": "Dä Kiosk isch widerruefe worde.",
-        "locationNotFound": "Wähl en aktive Standort vo dere Organisation uus."
+        "locationNotFound": "Wähl en aktive Standort vo dere Organisation uus.",
+        "offlineNeedsAdoption": "De Offline-Modus brucht koordinierti Stämpel-Befehl, wo die Organisation no nöd brucht."
       },
       "fields": {
         "board": "«Wer isch da»-Board",
@@ -1468,6 +1496,9 @@
         "locationPlaceholder": "En Standort uswähle",
         "name": "Name",
         "namePlaceholder": "z. B. Personaliigang",
+        "offlineMode": "Offline-Modus",
+        "offlineModeDescription": "De Kiosk stämpflet ohni Verbindig wiiter. Sini Stämpelige wärded bestätigt und d PINs überprüft, sobald er wider verbunde isch.",
+        "offlineModeUnavailable": "De Offline-Modus brucht koordinierti Stämpel-Befehl, wo die Organisation no nöd brucht.",
         "timezone": "Ziitzone",
         "timezoneDescription": "Stämpeleiträg, wo a däm Kiosk erfasst werded, bruched die Ziitzone."
       },
@@ -1477,6 +1508,8 @@
       "loadFailed": "Kiosks händ nöd chönne glade werde.",
       "neverSeen": "Nie",
       "noLocations": "Erstell zerst en Standort: Jede Kiosk ghört zu eim Standort.",
+      "offlineOn": "Offline-Modus ii",
+      "offlineOnNotInEffect": "Offline-Modus ii, gilt nöd für die Organisation",
       "pairAgain": "Nomol kopple",
       "pairFailed": "Es hät kei neue Koppligscode chönne erstellt werde",
       "pairingCodeLabel": "Koppligscode",
@@ -1486,6 +1519,46 @@
       "pairPairedDescription": "De Gräte-Token wird gwächslet: Das kopplete Grät funktioniert sofort nüme und muess mit em neue Code nomol kopplet werde.",
       "pairTitle": "{name} nomol kopple?",
       "pairUnpairedDescription": "En neue Koppligscode ersetzt de bisherig.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Iistämpfle",
+          "clockOut": "Usstämpfle",
+          "resumeBreak": "Wiitermache",
+          "startBreak": "Pause aafange"
+        },
+        "columns": {
+          "action": "Aktion",
+          "claimedAt": "Aagäbeni Ziit",
+          "employee": "Mitarbeiter",
+          "kiosk": "Kiosk",
+          "reason": "Grund",
+          "timeSource": "Ziitquälle"
+        },
+        "description": "Stämpelige, wo uf em Kiosk gspicheret worde sind, während er offline gsi isch, und bim Widerverbinde nöd erfasst worde sind. De Mitarbeiter oder d Vorgesetzte vomene Mitarbeiter ohni Login sind benachrichtigt worde.",
+        "empty": "Kei Offline-Stämpelig isch abglehnt worde.",
+        "reasons": {
+          "clockUntrusted": "Kiosk-Uhr nöd vertrauenswürdig",
+          "conflict": "Kollidiert mit anderne erfasste Ziite",
+          "contactUnverifiable": "Letschti Verbindig hät nöd chönne bestätigt wärde",
+          "holiday": "Fiirtig ohni Ziiterfassig",
+          "kioskRetired": "Kiosk widerzoge oder nomal kopplet",
+          "monthClosed": "Monet abgschlosse",
+          "noPin": "Kei Kiosk-PIN gsetzt",
+          "notAdopted": "Offline-Stämple wird vo de Organisation nöd akzeptiert",
+          "notAssigned": "Em Standort nöd zuegwise",
+          "other": "Hät nöd chönne akzeptiert wärde",
+          "outsideWindow": "Z spaat achoo",
+          "pinLocked": "PIN gsperrt",
+          "pinUnchecked": "PIN hät nöd chönne überprüeft wärde",
+          "wrongPin": "Falsche PIN"
+        },
+        "timeSources": {
+          "deviceClock": "Gräte-Uhr",
+          "serverAnchor": "Serverziit"
+        },
+        "title": "Abglehnti Offline-Stämplige",
+        "unknownEmployee": "Kä Mitarbeiter"
+      },
       "revoke": "Widerruefe",
       "revokeConfirm": "Kiosk widerruefe",
       "revoked": "Kiosk widerruefe",
@@ -1493,6 +1566,7 @@
       "revokeFailed": "De Kiosk hät nöd chönne widerruefe werde",
       "revokeTitle": "{name} widerruefe?",
       "rotateConfirm": "Token rotiere und nomol kopple",
+      "rotateOfflineWarning": "Bi däm Kiosk isch de Offline-Modus aktiv. Stämplige, wo offline gspicheret und no nöd gschickt worde sind, wärded bi de erneute Verbindig abglehnt und under «Abglehnti Offline-Stämplige» ufgfüehrt.",
       "save": "Speichere",
       "saved": "Kiosk gspeicheret",
       "saveFailed": "De Kiosk hät nöd chönne gspeicheret werde",
@@ -1517,6 +1591,7 @@
       "searchPlaceholder": "Pakete oder Lizenzen durchsuchen...",
       "unknown": "Unbekannt"
     },
+    "loading": "Istellige wärded glade",
     "locations": {
       "address": "Adresse",
       "assignEmployee": "Mitarbeiter zuweisen",
@@ -1627,6 +1702,55 @@
       "statusReady": "Parat",
       "title": "Mini Date",
       "unavailable": "Mini Date sind für dis Konto i dere Organisation nöd verfüegbar."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Aktivität",
+        "description": "Aktivitäte überprüefe und signierti Audit-Export konfiguriere",
+        "keysDescription": "D Signaturschlüssel verwalte, wo für Audit-Export bruucht wärded",
+        "packagesDescription": "Signierti Audit-Päckli generiere und überprüefe",
+        "title": "Audit"
+      },
+      "chat-integrations": {
+        "description": "Slack, Microsoft Teams, Telegram und Discord konfiguriere",
+        "title": "Chat-Integratione"
+      },
+      "clocking": {
+        "automaticDescription": "Automatischs Uusstämple für ununterbrochnigs Schaffe konfiguriere",
+        "description": "Ziterfassig, automatischs Uusstämple, Erinnerige und Perioden-Ireichige konfiguriere",
+        "remindersDescription": "Erinnerige für s Iistämple, Uusstämple und Pause konfiguriere",
+        "submissionsDescription": "Konfiguriere, wenn Mitarbeiter iri Arbeitsperiode zur Überprüefig ireiched",
+        "title": "Stämple",
+        "trackingDescription": "S Startdatum für d Ziterfassig vo dinere Organisation festlege"
+      },
+      "developerAccess": {
+        "description": "API-Schlüssel und Webhook-Endpünkt verwalte",
+        "title": "Entwickler-Zuegriff"
+      },
+      "domainBranding": {
+        "description": "Eigni Domain und Branding vo dinere Organisation konfiguriere"
+      },
+      "email": {
+        "delivery": "Zuestellig",
+        "description": "E-Mail-Zuestellig konfiguriere und Nachrichtevorlage aapasse",
+        "title": "E-Mail"
+      },
+      "identityAccess": {
+        "description": "SSO, Social Login, Bereitstellig und Organisationszuegriff konfiguriere",
+        "socialDescription": "D Social-Login-Aabieter konfiguriere, wo für dini Organisation verfüegbar sind",
+        "ssoDescription": "Single-Sign-On-Aabieter für dini Organisation verwalte",
+        "title": "Identität & Zuegriff"
+      },
+      "personnel-files": {
+        "description": "Zuegriff uf Personaldossiers, Ablauf-Erinnerige und Dokumentenufbewahrig verwalte"
+      },
+      "scheduled-exports": {
+        "description": "Regelmässigi Lohn-, Date- und Audit-Export plane"
+      },
+      "shiftPlanning": {
+        "description": "Schichtvorlage und Abdeckigsziel konfiguriere",
+        "title": "Schichtplanig"
+      }
     },
     "notifications": {
       "approvals": "Gnehmigungs-Benachrichtigunge",
@@ -1916,6 +2040,8 @@
         "name": "Name",
         "namePlaceholder": "Projektname iigä",
         "noCustomer": "Kei Chunde",
+        "requiresTask": "En Ufgab verlange",
+        "requiresTaskHelp": "Ziit, wo uf das Projekt buecht wird, muess en Ufgab dervo aagee. Das gilt nur, solang s Projekt en offnigi Ufgab hät.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -1929,6 +2055,7 @@
         "reasonAdminOnly": "Nur Organisations-Admins teiled Projektmanager zue",
         "reasonDeparted": "hät d'Organisation verlaa",
         "reasonRemoved": "git's nümme",
+        "requiresTask": "Bruucht en Ufgab",
         "skipped": "Nöd kopiert: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2074,7 +2201,9 @@
           "name": "Name",
           "namePlaceholder": "z. B. Website-Relaunch",
           "nameRequired": "Vorlagename igeh",
-          "noIcon": "Keis Icon"
+          "noIcon": "Keis Icon",
+          "requiresTask": "En Ufgab verlange",
+          "requiresTaskHelp": "Projekt, wo us dere Vorlag erstellt wärded, startit mit dere Iistellig."
         },
         "icons": {
           "briefcase": "Aktetäsche",
@@ -2716,6 +2845,45 @@
         "title": "Kein steuerliches Fahrtenbuch"
       },
       "noDrivers": "Keine zugewiesenen Fahrer",
+      "photos": {
+        "accessChanged": "Din Zuegriff hät sich gänderet. Mach d Fahrzüüg-Istellige nomal uf, zum dini Berächtigunge z überprüefe.",
+        "action": "Fotos",
+        "add": "Foto hinzuefüege",
+        "archived": "Das Fahrzüüg isch archiviert. Stells wieder her, zum Fotos hinzuezfüege oder z lösche.",
+        "capacityChanged": "D Galerie hät sich gänderet. Es hät no {count} Foto-Plätz frei. Mach si nomal uf und wähl weniger Fotos uus.",
+        "description": "Privati Referenzfotos für das Fahrzüüg. Abgschlosseni Uploads und Löschige wärded sofort gspycheret.",
+        "empty": "No keini Fotos.",
+        "expired": "Dä Upload isch abgloffe. Wähl s Foto nomal uus, zum s ufelade.",
+        "full": "Das Fahrzüüg hät 20 Fotos. Lösch es Foto, bevor du es neus hinzuefüegsch.",
+        "gallery": "Fahrzüüg-Fotos",
+        "imageNamed": "{name}, Foto {number}",
+        "invalid": "Das Bild hät nöd chönne gläse wärde. Wähl es anders JPEG-, PNG- oder WebP-Foto uus.",
+        "limits": "JPEG, PNG oder WebP. Bis zu 10 MB pro Foto, 20 Fotos pro Fahrzüüg.",
+        "loadFailed": "D Fotos händ nöd chönne glade wärde. Schlüüss de Dialog und probiers nomal.",
+        "loading": "Fotos wärded glade…",
+        "named": "Fotos vo {name}",
+        "next": "Nächschts Foto",
+        "position": "Foto {number} vo {count}",
+        "previous": "Vorherigs Foto",
+        "queued": "Warte uf s Ufelade vo {name}…",
+        "remove": "Foto lösche",
+        "removeConfirm": "Foti ändgültig lösche",
+        "removeDescription": "Das Foti wird ändgültig us de Fahrzüüg-Galerii glöscht. Das cha nümme rückgängig gmacht wärde.",
+        "removeFailed": "Das Foti hät nöd chönne glöscht wärde. Probier's namal.",
+        "removeTitle": "Das Foti ändgültig lösche?",
+        "removing": "Foti wird glöscht…",
+        "retry": "Namal probiere",
+        "retryNamed": "{name} namal probiere",
+        "saved": "{name} gspycheret.",
+        "selectionTooLarge": "Die Uswahl isch nöd ufeghlade worde. Es hät no {count} Foti-Plätz übrig, inklusiv de no usstehende Uploads.",
+        "tooLarge": "Wähl es Foti us, wo nöd grösser als 10 MB isch.",
+        "unsupported": "Wähl es JPEG-, PNG- oder WebP-Foti us. HEIC und anderi Format wärdet nöd unterstützt.",
+        "uploadFailed": "Das Foti hät nöd chönne ufeghlade wärde. Probier's namal.",
+        "uploading": "{name} wird ufeghlade…",
+        "uploadResults": "Ergebnis vom Foti-Upload",
+        "vehicleMissing": "Das Fahrzüüg isch i dinere Organisation nümme verfüegbar.",
+        "viewNamed": "Foti {number} vo {name} aaluege"
+      },
       "refusals": {
         "driverNotFound": "Ein zugewiesener Mitarbeiter oder ein zugewiesenes Team existiert nicht mehr. Laden Sie die Seite neu.",
         "invalidChange": "Die Änderung konnte nicht gespeichert werden. Laden Sie die Seite neu und versuchen Sie es erneut.",
@@ -2739,7 +2907,6 @@
       "assignmentRemoved": "Zueordnig glöscht",
       "assignmentSaved": "Zueordnig gspeicheret",
       "assignmentsDescription": "Gfragti Mitarbeiter chönd d'Fahrzügnutzig erfasse, wänn si stämple. Mitarbeiter, bi dene e Fahrzügnutzig erwartet wird, werded jedes Mal gfragt, und iri Arbet wird markiert, bis d'Date vollständig sind. Niemert wird jemals bim Stämple gstoppt. Die spezifischsti Zueordnig zellt: die eigeti vom Mitarbeiter vor dere vom primäre Team, und die vom Team vor dere vo de ganze Organisation.",
-      "description": "Wer gfragt wird, s'gfahrene Fahrzüg und de Kilometerstand z'erfasse",
       "enabled": "Fahrzügnutzig erfasse",
       "enabledDescription": "Wänn das abgschaltet wird, wird nüme nach de Fahrzügnutzig gfragt und fählendi Fahrtdetails werded nüm markiert. Bereits erfassti Fahrzügnutzige bliibed sichtbar und i de Export.",
       "error": {

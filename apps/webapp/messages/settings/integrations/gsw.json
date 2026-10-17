@@ -202,15 +202,12 @@
       }
     },
     "discord": {
-      "description": "Konfiguriere Discord-Benachrichtigunge für dini Organisation",
       "title": "Discord"
     },
     "slack": {
-      "description": "Konfiguriere Slack-Benachrichtigunge für dini Organisation",
       "title": "Slack"
     },
     "teamsNotifications": {
-      "description": "Konfiguriere Microsoft Teams-Benachrichtigunge für dini Organisation",
       "title": "Microsoft Teams"
     },
     "telegram": {

@@ -15,7 +15,15 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -29,7 +37,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -53,15 +63,22 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/auth-helpers")>();
 	const { db } = await import("@/db");
-	const { loadOrganizationPrincipalContext } = await import("@/lib/authorization/principal-loader");
+	const { loadOrganizationPrincipalContext } = await import(
+		"@/lib/authorization/principal-loader"
+	);
 	return {
 		...original,
 		getPrincipalContext: async () =>
@@ -79,16 +96,21 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+	),
 );
 
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOriginal) => ({
-	...(await importOriginal<
-		typeof import("@/app/[locale]/(app)/time-tracking/actions/approvals")
-	>()),
-	sendManualEntryApprovalNotifications: async () => undefined,
-	sendManualEntryApprovedNotification: async () => undefined,
-}));
+vi.mock(
+	"@/app/[locale]/(app)/time-tracking/actions/approvals",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/app/[locale]/(app)/time-tracking/actions/approvals")
+		>()),
+		sendManualEntryApprovalNotifications: async () => undefined,
+		sendManualEntryApprovedNotification: async () => undefined,
+	}),
+);
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
@@ -96,15 +118,27 @@ vi.mock("@/lib/logger", () => ({
 		warn: () => {},
 		info: () => {},
 		debug: () => {},
-		child: () => ({ error: () => {}, warn: () => {}, info: () => {}, debug: () => {} }),
+		child: () => ({
+			error: () => {},
+			warn: () => {},
+			info: () => {},
+			debug: () => {},
+		}),
 	}),
 }));
 
 const { updateOrganizationTimezone } = await import("./actions");
-const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
-const { getEmployeeWorkBalance, getEmployeeWorkBalances, listEmployeesForWorkBalanceBatch } =
-	await import("@/lib/work-balance/service");
-const { processWorkBalanceRebuildIntents } = await import("@/lib/work-balance/rebuild-intents");
+const { createManualTimeEntry } = await import(
+	"@/app/[locale]/(app)/time-tracking/actions"
+);
+const {
+	getEmployeeWorkBalance,
+	getEmployeeWorkBalances,
+	listEmployeesForWorkBalanceBatch,
+} = await import("@/lib/work-balance/service");
+const { processWorkBalanceRebuildIntents } = await import(
+	"@/lib/work-balance/rebuild-intents"
+);
 const { runWorkBalanceRefresh } = await import("@/lib/jobs/work-balance");
 
 const ids = {
@@ -134,7 +168,9 @@ function only<T>(rows: readonly T[]): T {
 }
 
 /** A New York entry on 2026-09-01 (EDT, UTC-4) for the employee, by default. */
-function manualCommand(overrides: Partial<ManualTimeEntryCommand> = {}): ManualTimeEntryCommand {
+function manualCommand(
+	overrides: Partial<ManualTimeEntryCommand> = {},
+): ManualTimeEntryCommand {
 	return {
 		version: 2,
 		submissionId: randomUUID(),
@@ -166,9 +202,10 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 	}
 
 	async function setAppend(mode: "active" | null) {
-		await admin.query("delete from time_entry_append_control where organization_id = $1", [
-			ids.organization,
-		]);
+		await admin.query(
+			"delete from time_entry_append_control where organization_id = $1",
+			[ids.organization],
+		);
 		if (mode) {
 			await admin.query(
 				"insert into time_entry_append_control (organization_id, mode) values ($1, $2)",
@@ -237,7 +274,11 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 	const holdAdvisoryLock = (key: string) =>
 		holdLock("select pg_advisory_xact_lock(hashtextextended($1, 0))", [key]);
 
-	async function waitFor(query: string, parameters: unknown[] = [], label = query) {
+	async function waitFor(
+		query: string,
+		parameters: unknown[] = [],
+		label = query,
+	) {
 		for (let attempt = 0; attempt < 200; attempt += 1) {
 			const { rows } = await admin.query(query, parameters);
 			if (rows.length > 0) return rows;
@@ -367,16 +408,18 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 
 	describe("atomic save and durable intent", () => {
 		it("commits the zone with a durable intent and rebuilds the routed scope separately", async () => {
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: true,
+			});
 
 			expect(await organizationTimezone()).toBe("America/New_York");
 			// The post-commit execution consumed the intent.
 			expect(await intents()).toEqual([]);
 			expect(await resetEmployees()).toEqual(organizationEmployees);
 			// The same user's employee in another organization is not in scope.
-			expect((await balances()).find((row) => row.employee_id === ids.otherEmployee)).toMatchObject(
-				{ computed_from_date: "2026-01-01", is_dirty: false },
-			);
+			expect(
+				(await balances()).find((row) => row.employee_id === ids.otherEmployee),
+			).toMatchObject({ computed_from_date: "2026-01-01", is_dirty: false });
 		});
 
 		it("rolls the zone back when the durable intent cannot be written", async () => {
@@ -387,7 +430,9 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 			);
 			const before = await balances();
 
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: false });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: false,
+			});
 
 			expect(await organizationTimezone()).toBe("Europe/Berlin");
 			expect(await intents()).toEqual([]);
@@ -397,7 +442,9 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 		it("reports a committed save as saved when its rebuild fails and recovers on the worker", async () => {
 			await failRebuilds();
 
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: true,
+			});
 
 			expect(await organizationTimezone()).toBe("America/New_York");
 			const [pending] = await intents();
@@ -412,18 +459,26 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 			await restoreRebuilds();
 			const result = await runWorkBalanceRefresh();
 
-			expect(result.rebuildIntents).toMatchObject({ organizationsRebuilt: 1, failures: [] });
+			expect(result.rebuildIntents).toMatchObject({
+				organizationsRebuilt: 1,
+				failures: [],
+			});
 			expect(await intents()).toEqual([]);
 			// The same run recomputed every reset balance in the committed zone.
 			for (const employeeId of organizationEmployees) {
 				await expect(
-					getEmployeeWorkBalance({ employeeId, organizationId: ids.organization }),
+					getEmployeeWorkBalance({
+						employeeId,
+						organizationId: ids.organization,
+					}),
 				).resolves.toMatchObject({ employeeId, actualMinutes: 0 });
 			}
 		});
 
 		it("keeps the unchanged zone free of rebuild work", async () => {
-			await expect(changeTimezone("Europe/Berlin")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("Europe/Berlin")).resolves.toMatchObject({
+				success: true,
+			});
 
 			expect(await intents()).toEqual([]);
 			expect(await resetEmployees()).toEqual([]);
@@ -434,11 +489,15 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 			await failRebuilds();
 
 			// The legacy reset runs inside the save, so its failure fails the save.
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: false });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: false,
+			});
 			expect(await organizationTimezone()).toBe("Europe/Berlin");
 
 			await restoreRebuilds();
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: true,
+			});
 			expect(await intents()).toEqual([]);
 			expect(await resetEmployees()).toEqual(organizationEmployees);
 		});
@@ -462,9 +521,10 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 		it("makes new manual submissions wait for and use the committed zone immediately", async () => {
 			await failRebuilds();
 			// Park the save after it took exclusive protection, at the organization row.
-			const rowHolder = await holdLock("select 1 from organization where id = $1 for update", [
-				ids.organization,
-			]);
+			const rowHolder = await holdLock(
+				"select 1 from organization where id = $1 for update",
+				[ids.organization],
+			);
 			const save = changeTimezone("America/New_York");
 			await waitFor(
 				"select 1 from pg_locks where not granted and locktype <> 'advisory'",
@@ -473,8 +533,16 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 			);
 			actAs(ids.employeeUser);
 			const berlinCommand = manualCommand({
-				clockIn: { time: "08:00", occurrence: null, displayedOffsetMinutes: 120 },
-				clockOut: { time: "12:30", occurrence: null, displayedOffsetMinutes: 120 },
+				clockIn: {
+					time: "08:00",
+					occurrence: null,
+					displayedOffsetMinutes: 120,
+				},
+				clockOut: {
+					time: "12:30",
+					occurrence: null,
+					displayedOffsetMinutes: 120,
+				},
 				zone: { basis: "target", timezone: "Europe/Berlin" },
 				browserTimezone: "Europe/Berlin",
 			});
@@ -484,16 +552,24 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 			await rowHolder.release();
 			await expect(save).resolves.toMatchObject({ success: true });
 			await expect(submission).resolves.toMatchObject({
-				rejection: { reason: "reconfirmation_required", detail: "zone_changed" },
+				rejection: {
+					reason: "reconfirmation_required",
+					detail: "zone_changed",
+				},
 			});
 
 			// The rebuild is still pending, and the new zone already governs submissions.
 			expect(await intents()).toHaveLength(1);
 			actAs(ids.employeeUser);
-			await expect(createManualTimeEntry(manualCommand())).resolves.toMatchObject({
+			await expect(
+				createManualTimeEntry(manualCommand()),
+			).resolves.toMatchObject({
 				success: true,
 			});
-			const { rows } = await admin.query<{ start_time: Date; utc_offset_minutes: number }>(
+			const { rows } = await admin.query<{
+				start_time: Date;
+				utc_offset_minutes: number;
+			}>(
 				`select period.start_time, entry.utc_offset_minutes from work_period period
 				 join time_entry entry on entry.id = period.clock_in_id
 				 where period.organization_id = $1 and period.employee_id = $2`,
@@ -537,13 +613,17 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 				[ids.organization],
 			);
 
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: true,
+			});
 			await referencingInsert.release();
 			expect(await organizationTimezone()).toBe("America/New_York");
 		});
 
 		it("refuses a non-owner before any change", async () => {
-			await expect(changeTimezone("America/New_York", ids.adminUser)).resolves.toMatchObject({
+			await expect(
+				changeTimezone("America/New_York", ids.adminUser),
+			).resolves.toMatchObject({
 				success: false,
 				code: "AuthorizationError",
 			});
@@ -558,11 +638,18 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 			const save = changeTimezone("America/New_York");
 			await waitForAdvisoryWaiters();
 			// Ownership moves to the admin (the organization must keep an owner).
-			await admin.query("update member set role = 'owner' where id = 't311-m-admin'");
-			await admin.query("update member set role = 'member' where id = 't311-m-owner'");
+			await admin.query(
+				"update member set role = 'owner' where id = 't311-m-admin'",
+			);
+			await admin.query(
+				"update member set role = 'member' where id = 't311-m-owner'",
+			);
 			await accessWriter.release();
 
-			await expect(save).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+			await expect(save).resolves.toMatchObject({
+				success: false,
+				code: "AuthorizationError",
+			});
 			expect(await organizationTimezone()).toBe("Europe/Berlin");
 			expect(await intents()).toEqual([]);
 		});
@@ -571,7 +658,9 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 	describe("separate rebuild execution", () => {
 		it("routes every employee of the organization at execution, and nothing outside it", async () => {
 			await failRebuilds();
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: true,
+			});
 			// Created after the save committed, before the rebuild ran.
 			await admin.query(
 				"insert into employee (id, user_id, organization_id, role, updated_at) values ($1, $2, $3, 'employee', now())",
@@ -585,16 +674,22 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 				failures: [],
 			});
 
-			expect(await resetEmployees()).toEqual([...organizationEmployees, ids.lateEmployee].sort());
+			expect(await resetEmployees()).toEqual(
+				[...organizationEmployees, ids.lateEmployee].sort(),
+			);
 			expect(await intents()).toEqual([]);
 		});
 
 		it("survives worker process loss, is claimed once, and completes on retry", async () => {
 			await failRebuilds();
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: true,
+			});
 			await restoreRebuilds();
 			const [first, second] = organizationEmployees;
-			const holder = await holdAdvisoryLock(`work-balance:${ids.organization}:${second}`);
+			const holder = await holdAdvisoryLock(
+				`work-balance:${ids.organization}:${second}`,
+			);
 
 			const lost = processWorkBalanceRebuildIntents();
 			await waitForAdvisoryWaiters();
@@ -612,7 +707,9 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 
 			expect(lostResult.failures).toHaveLength(1);
 			// The first employee's reset rolled back with the lost transaction.
-			expect((await balances()).find((row) => row.employee_id === first)).toMatchObject({
+			expect(
+				(await balances()).find((row) => row.employee_id === first),
+			).toMatchObject({
 				computed_from_date: "2026-01-01",
 			});
 			expect(await intents()).toMatchObject([{ attempts: 2 }]);
@@ -628,12 +725,17 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 	describe("projection freshness", () => {
 		it("keeps consumers from reading projections as current while the rebuild is pending", async () => {
 			await failRebuilds();
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: true,
+			});
 
 			// The stored rows are still clean, but they were computed in the old zone.
 			expect((await balances()).every((row) => !row.is_dirty)).toBe(true);
 			await expect(
-				getEmployeeWorkBalance({ employeeId: ids.employee, organizationId: ids.organization }),
+				getEmployeeWorkBalance({
+					employeeId: ids.employee,
+					organizationId: ids.organization,
+				}),
 			).resolves.toBeNull();
 			const team = await getEmployeeWorkBalances({
 				employeeIds: organizationEmployees,
@@ -642,7 +744,9 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 			expect(team.size).toBe(0);
 			// Batch refresh leaves the organization to the rebuild.
 			const batch = await listEmployeesForWorkBalanceBatch(1000);
-			expect(batch.some((row) => row.organizationId === ids.organization)).toBe(false);
+			expect(batch.some((row) => row.organizationId === ids.organization)).toBe(
+				false,
+			);
 
 			// Another organization's projection stays current.
 			await expect(
@@ -656,7 +760,10 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 			await processWorkBalanceRebuildIntents();
 			// Reset markers remain not-current until the refresh recomputes them.
 			await expect(
-				getEmployeeWorkBalance({ employeeId: ids.employee, organizationId: ids.organization }),
+				getEmployeeWorkBalance({
+					employeeId: ids.employee,
+					organizationId: ids.organization,
+				}),
 			).resolves.toBeNull();
 		});
 	});

@@ -227,6 +227,7 @@
     "duplicate": "Duplikuj",
     "durationMinutes": "{count} min",
     "edit": "Edytuj",
+    "employees": "Pracownicy",
     "enabled": "Włączone",
     "error": "Błąd",
     "error-occurred": "Wystąpił błąd",
@@ -318,6 +319,7 @@
     "name": "Nazwa",
     "new": "Nowy",
     "next": "Dalej",
+    "no": "Nie",
     "notApplicable": "N/D",
     "not-available": "Niedostępne",
     "notifications": {
@@ -382,6 +384,7 @@
     "removing": "Usuwanie...",
     "reset": "Resetuj",
     "retry": "Ponów",
+    "revoke": "Cofnij",
     "save": "Zapisz",
     "saveChanges": "Zapisz zmiany",
     "saving": "Zapisywanie...",
@@ -407,6 +410,7 @@
         "title": "Dostępna aktualizacja"
       }
     },
+    "teams": "Zespoły",
     "timeInput": {
       "openTimePicker": "Otwórz selektor czasu",
       "switchPeriod": "Przełącz na: {period}"
@@ -533,7 +537,277 @@
         "title": "Użytkowanie pojazdu",
         "vehiclesTitle": "Pojazdy organizacji"
       }
-    }
+    },
+    "yes": "Tak"
+  },
+  "drivingLicence": {
+    "activate": "Aktywuj kontrolę praw jazdy",
+    "activationHelp": "Rejestracja nie nadaje uprawnień do kierowania pojazdami. Upoważniony weryfikator musi najpierw sprawdzić oryginał prawa jazdy.",
+    "applyingInterval": "Stosowanie…",
+    "applyInterval": "Zastosuj zmianę interwału",
+    "check": {
+      "attestations": "Osobista kontrola i oświadczenia",
+      "chooseClasses": "Wybierz kategorie, które faktycznie sprawdzono.",
+      "classes": "Faktycznie sprawdzone kategorie",
+      "classExpiry": "Data ważności kategorii (jeśli dotyczy)",
+      "documentDates": "Daty z oryginalnego dokumentu",
+      "employeeDeclaration": "Pracownik złożył powyższe oświadczenie osobiście podczas tej kontroli; potwierdzam to oświadczenie.",
+      "expiryDate": "Data ważności dokumentu",
+      "failureScope": "Zakres nieudanej lub niejednoznacznej kontroli",
+      "identity": "Potwierdzam, że oryginalny dokument należy do tego pracownika.",
+      "issueDate": "Data wydania dokumentu",
+      "original": "Osobiście sprawdziłem(-am) oryginał prawa jazdy w obecności pracownika.",
+      "privacy": "Wprowadź tylko daty z dokumentu, sprawdzone kategorie i niezbędne ograniczenia w prowadzeniu pojazdów. Nie wprowadzaj numeru prawa jazdy, adresu, informacji medycznych ani danych osobowych.",
+      "restrictions": "Niezbędne ograniczenia w prowadzeniu pojazdów",
+      "result": "Wynik",
+      "saving": "Zapisywanie kontroli…",
+      "scopeClasses": "Tylko sprawdzone kategorie, których to dotyczy",
+      "scopeDocument": "Wszystkie uprawnienia na podstawie dokumentu",
+      "scopePerson": "Wszystkie uprawnienia pracownika do kierowania pojazdami",
+      "submit": "Zarejestruj kontrolę oryginału",
+      "suspensionNotice": "Pomyślna ponowna kontrola nie przywraca automatycznie zawieszonych uprawnień. Wymagana jest nowa kontrola i wyraźna decyzja o ich przywróceniu.",
+      "title": "Sprawdź oryginał prawa jazdy: {name}",
+      "verifier": "Potwierdzam, że zapisane informacje i wyniki poszczególnych kategorii są zgodne z przeprowadzoną kontrolą."
+    },
+    "class": {
+      "active": "Uprawniony",
+      "ended": "Zakończono",
+      "overdue": "Zaległa rutynowa kontrola. Jest to zawieszenie organizacyjne, a nie stwierdzenie cofnięcia prawnych uprawnień do kierowania pojazdami.",
+      "recheck": "Wymagana jest nowa kontrola oryginału oraz wyraźne przywrócenie uprawnień.",
+      "restrictions": "Ograniczenia w prowadzeniu pojazdów: {restrictions}",
+      "suspended": "Zawieszono",
+      "validThrough": "Ważne do {date} ({timezone})"
+    },
+    "declaration": {
+      "text": "Potwierdzam, że żaden znany mi zakaz prowadzenia pojazdów, odebranie uprawnień ani inna przeszkoda nie uniemożliwia planowanego kierowania pojazdem oraz że spełniam obowiązujące ograniczenia."
+    },
+    "delivery": {
+      "uncertain": "Opcjonalne wiadomości e-mail z przypomnieniem mają niepewny status doręczenia ({count}). Nie zostaną wysłane ponownie automatycznie. Przypomnienia w aplikacji pozostają dostępne; doręczenie wiadomości e-mail nie potwierdza jej przeczytania."
+    },
+    "earlierLimit": "Wcześniejszy limit dokumentu/kategorii",
+    "enroll": "Zarejestruj",
+    "enrollError": "Nie udało się zarejestrować pracownika. Najpierw aktywuj zasady i sprawdź swoje uprawnienia dostępu.",
+    "enrollmentHelp": "Zarejestruj pracowników, którzy mają kierować pojazdami. Przypisanie pojazdu ani wcześniejsze korzystanie z niego nigdy nie stanowią upoważnienia.",
+    "enrollmentTitle": "Planowani kierowcy",
+    "enrollName": "Zarejestruj {name}",
+    "evidence": {
+      "confirmation": "Potwierdzenie weryfikatora zarejestrowane dla wersji zasad {version}; terminy obowiązują według strefy {timezone}.",
+      "declarationConfirmed": "Pracownik złożył oświadczenie osobiście; weryfikator poświadczył je w czasie kontroli.",
+      "declarationUnconfirmed": "Nie udało się potwierdzić oświadczenia pracownika.",
+      "document": "Dokument wydany: {issued}; data ważności: {expiry}",
+      "empty": "Nie ukończono kontroli oryginału.",
+      "originalConfirmed": "Oryginał sprawdzono osobiście i potwierdzono tożsamość pracownika.",
+      "originalUnconfirmed": "Nie udało się potwierdzić kontroli oryginału lub tożsamości pracownika.",
+      "title": "Dowód kontroli oryginału",
+      "verifier": "Kontrola oryginału zarejestrowana przez: {name}"
+    },
+    "history": {
+      "allClasses": "Wszystkie kategorie",
+      "apply": "Zastosuj okres",
+      "authorized": "Upoważnienie przyznane",
+      "chooseOutcome": "Wybierz wynik",
+      "class": "Sprawdzona kategoria",
+      "classExpired": "Kategoria wygasła",
+      "classExpiry": "Data ważności kategorii",
+      "classRestrictions": "Ograniczenia w prowadzeniu pojazdów",
+      "classResult": "Wynik sprawdzonej kategorii",
+      "context": "Kontekst poza wybranym okresem",
+      "decision": "Decyzja o upoważnieniu",
+      "declarationConfirmed": "Oświadczenie pracownika potwierdzone podczas kontroli oryginału",
+      "declarationUnconfirmed": "Oświadczenie pracownika niepotwierdzone",
+      "documentExpired": "Dokument wygasł",
+      "documentExpiry": "Data ważności dokumentu",
+      "documentImpediment": "Przeszkoda dotycząca całego dokumentu",
+      "documentIssued": "Data wydania dokumentu",
+      "downloadPdf": "Pobierz dowód w formacie PDF",
+      "employmentEnded": "Zatrudnienie zakończone",
+      "empty": "Brak kontroli lub decyzji o upoważnieniu w tym okresie.",
+      "ended": "Upoważnienie do prowadzenia pojazdów wygasło",
+      "evidenceCorrected": "Poprawiony dowód wymaga nowej kontroli i jednoznacznego przywrócenia uprawnień",
+      "failed": "Sprawdzona kategoria: wynik negatywny",
+      "field": "Poprawione pole",
+      "from": "Od daty (UTC)",
+      "globalSuspension": "Wszystkie upoważnienia do prowadzenia pojazdów zawieszone",
+      "help": "Pierwotne potwierdzenia, uzupełnienia z datą i obowiązujące decyzje o upoważnieniu pozostają oddzielne. Wcześniejsze dowody potrzebne do zrozumienia wybranego okresu są oznaczone jako kontekst. Wszystkie poniższe godziny zdarzeń i granice okresów są podane w czasie UTC.",
+      "impedimentReported": "Zgłoszono przeszkodę w prowadzeniu pojazdów",
+      "impedimentResolved": "Zgłoszona przeszkoda została jednoznacznie rozwiązana",
+      "inconclusive": "Sprawdzona kategoria: wynik nierozstrzygający",
+      "linkedOriginal": "Powiązana kontrola oryginału: {date}",
+      "loading": "Wczytywanie historii…",
+      "minimalEvidence": "Rejestruj wyłącznie niezbędne dowody dotyczące uprawnień do prowadzenia pojazdów. Nie wprowadzaj numerów dokumentów, wyjaśnień medycznych ani informacji o sytuacji osobistej.",
+      "missingDetail": "Brakujący szczegół",
+      "none": "Brak zarejestrowanych",
+      "openSupplement": "Uzupełnij pierwotną weryfikację z dnia {date}",
+      "original": "Pierwotna weryfikacja i potwierdzenie",
+      "originalConfirmed": "Oryginał i tożsamość potwierdzone",
+      "originalUnconfirmed": "Oryginał lub tożsamość niepotwierdzone",
+      "overdue": "Zaległa kontrola rutynowa",
+      "personImpediment": "Przeszkoda dotycząca osoby",
+      "policyContext": "Wersja zasad {version}; interwał: {months} mies.",
+      "policyIntervalChanged": "Termin uprawnień zmieniony przez zasady interwału",
+      "policyRecalculated": "Termin uprawnień przeliczony zgodnie z zasadami",
+      "reason": "Powód uzupełnienia",
+      "recorded": "Zarejestrowano w dniu {date}",
+      "recordingError": "Błąd rejestracji",
+      "reinstated": "Uprawnienie wyraźnie przywrócone po nowej weryfikacji",
+      "save": "Zapisz uzupełnienie",
+      "saveError": "Nie udało się zapisać uzupełnienia. Sprawdź swój bieżący zakres odpowiedzialności i szczegóły korekty.",
+      "snapshot": "Zasady {version}; interwał {months} mies.; strefa czasowa terminu {timezone}",
+      "supplementBy": "Uzupełnienie sporządzone przez: {name}",
+      "supplementHelp": "Spowoduje to dodanie opatrzonej datą korekty z Twoją tożsamością. Pierwotne potwierdzenie pozostaje bez zmian. Wcześniejsze ograniczenia, negatywne wyniki i nowe restrykcje zawieszają odpowiednie bieżące uprawnienia; uzupełnienie nigdy nie odnawia ani nie przywraca uprawnień.",
+      "supplementTitle": "Uzupełnij pierwotną weryfikację z dnia {date}",
+      "suspended": "Uprawnienie zawieszone",
+      "title": "Historia weryfikacji i uprawnień",
+      "to": "Przed datą (UTC)",
+      "unavailable": "Historia jest niedostępna. Sprawdź okres i swoje bieżące uprawnienia dostępu.",
+      "value": "Poprawiona wartość",
+      "verifierConfirmation": "Potwierdzenie weryfikatora zarejestrowane w czasie pierwotnej weryfikacji"
+    },
+    "impediment": {
+      "newCheckRequired": "Przed przywróceniem zarejestruj nową, pomyślną pierwotną weryfikację dla zawieszonych kategorii.",
+      "reinstate": "Przywróć wybrane kategorie",
+      "reinstated": "Wybrane kategorie zostały wyraźnie przywrócone.",
+      "reinstateFailed": "Odmówiono przywrócenia. Odśwież i przejrzyj bieżący wpis, swój zakres odpowiedzialności oraz nową pierwotną weryfikację.",
+      "reinstateHelp": "Najpierw zarejestruj nową osobistą pierwotną weryfikację po zawieszeniu. Ustal, czy każda przeszkoda została usunięta; sprawdź wszelkie niezbędne dowody pomocnicze poza Z8. Sam widok dokumentu prawa jazdy może być niewystarczający. Przywrócone zostaną tylko wybrane kategorie z pomyślną weryfikacją.",
+      "reinstateTitle": "Wyraźnie przywróć uprawnienia do prowadzenia pojazdów",
+      "reinstating": "Zapisywanie przywrócenia…",
+      "report": "Zgłoś brak możliwości prowadzenia pojazdów",
+      "reported": "Wszystkie Twoje uprawnienia dla poszczególnych kategorii zostały zawieszone. Po ustąpieniu przeszkody skontaktuj się z odpowiedzialnym weryfikatorem w celu przeprowadzenia nowej pierwotnej weryfikacji i wyraźnego przywrócenia uprawnień.",
+      "reportFailed": "Nie udało się zapisać zgłoszenia. Spróbuj ponownie lub niezwłocznie skontaktuj się z odpowiedzialnym weryfikatorem.",
+      "reportHelp": "Zgłoś bieżący brak możliwości prowadzenia pojazdów. Uprawnienia dla wszystkich kategorii zostaną natychmiast zawieszone. Nie musisz podawać powodów osobistych.",
+      "reporting": "Zapisywanie zgłoszenia…",
+      "resolutionConfirmation": "Potwierdzam, że wszelkie przeszkody dotyczące osoby, dokumentu oraz zgłoszone zostały usunięte, zweryfikowano niezbędne dowody pomocnicze poza Z8 i wyraźnie ponownie upoważniam wybrane kategorie.",
+      "selectClasses": "Kategorie do przywrócenia z ostatniej pierwotnej weryfikacji",
+      "title": "Brak możliwości prowadzenia pojazdu?",
+      "unresolvedReport": "Przeszkoda dotycząca osoby zgłoszona przez pracownika nadal wymaga rozwiązania."
+    },
+    "interval": "Interwał kontroli rutynowej (w miesiącach)",
+    "intervalAnchorHelp": "Obliczane na podstawie ostatniej pomyślnej weryfikacji dla każdej kategorii.",
+    "intervalApplied": "Zastosowano interwał. Istniejące zawieszenia pozostają w mocy.",
+    "intervalChangeHelp": "Przejrzyj przeliczone daty dla każdej kategorii przed zastosowaniem. Wcześniejsze limity dokumentów i kategorii nadal obowiązują. Wydłużenie interwału nigdy nie przywraca zawieszonego uprawnienia.",
+    "intervalChangeTitle": "Zmień interwał rutynowy",
+    "intervalHelp": "Dla każdej zweryfikowanej kategorii punktem odniesienia kontroli rutynowej jest jej własna ostatnia pomyślna weryfikacja.",
+    "intervalImpact": "Wpływ interwału",
+    "intervalImpactHelp": "Sprawdź nową datę kontroli rutynowej oraz wcześniejszy obowiązujący termin dla każdej kategorii, której to dotyczy. Daty uwzględniają podaną strefę czasową kalendarza.",
+    "intervalPreviewError": "Nie udało się załadować wpływu. Sprawdź swoje uprawnienia dostępu i wybierz interwał od 1 do 120 miesięcy.",
+    "intervalStale": "Zasady lub uprawnienia do prowadzenia pojazdów uległy zmianie albo Twój dostęp jest niedostępny. Wyświetl podgląd bieżącego wpływu przed zastosowaniem.",
+    "justification": "Uzasadnienie okresu przechowywania",
+    "justificationHelp": "Wyjaśnij, dlaczego ten określony czas trwania jest konieczny (co najmniej 10 znaków). Nie podawaj danych prywatnych ani medycznych.",
+    "loadError": "Nie udało się załadować kontroli praw jazdy. Sprawdź swoje uprawnienia w organizacji.",
+    "myDescription": "Wyświetl status weryfikacji prawa jazdy",
+    "myTitle": "Moje uprawnienia do prowadzenia pojazdów",
+    "newInterval": "Nowy interwał rutynowy (miesiące)",
+    "newlyOverdue": "Nowo zaległe — zostanie zawieszone",
+    "newRoutineDate": "Następna kontrola rutynowa",
+    "noEmployeeRecord": "W tej organizacji brak dostępnego wpisu prawa jazdy pracownika.",
+    "noEmployees": "Brak aktywnych pracowników do zarejestrowania.",
+    "noIntervalClasses": "Żadne istniejące uprawnienia kategorii nie wymagają ponownego przeliczenia.",
+    "notChecked": "Jeszcze niesprawdzone — brak uprawnień do prowadzenia pojazdów",
+    "notEnrolled": "Niezarejestrowany — brak uprawnień do prowadzenia pojazdów",
+    "operational": {
+      "advisory": "Uprawnienia do prowadzenia pojazdów",
+      "loading": "Ładowanie uprawnień do prowadzenia pojazdów…",
+      "noEmployees": "Brak pasujących pracowników.",
+      "recordingHelp": "Zawsze możesz rejestrować czas pracy i faktyczne korzystanie z pojazdu. Wybór pojazdu nie nadaje uprawnień do prowadzenia pojazdów; sprawdzone kategorie nie określają przydatności do każdego pojazdu.",
+      "refresh": "Odśwież status uprawnień do prowadzenia pojazdów",
+      "search": "Znajdź pracownika",
+      "searchHelp": "Wyświetlanych jest do 50 pracowników. Zawęź wyszukiwanie, aby znaleźć innego pracownika. Ten widok nie zawiera protokołów kontroli.",
+      "title": "Status uprawnień do prowadzenia pojazdów do planowania",
+      "unavailable": "Status uprawnień do prowadzenia pojazdów jest niedostępny."
+    },
+    "policyIntro": "Weryfikacje oryginalnych praw jazdy w pierwszej kolejności w Niemczech. Przed aktywacją wybierz rutynowy interwał i uzasadnij określony okres przechowywania dowodów.",
+    "policyTitle": "Zasady organizacji",
+    "previewingInterval": "Ładowanie wpływu…",
+    "previewInterval": "Podgląd wpływu interwału",
+    "reminders": "Dni wyprzedzenia przypomnienia",
+    "remindersHelp": "Oddzielone przecinkami pełne dni przed terminem, od 0 do 365. Początkowe sugestie to 30 i 7 dni.",
+    "result": {
+      "inconclusive": "Niejednoznaczny",
+      "successful": "Pomyślny",
+      "unsuccessful": "Niepomyślny"
+    },
+    "retention": "Okres przechowywania (miesiące)",
+    "retention.case": "Odniesienie do konkretnej sprawy prawnej",
+    "retention.check": "Wpis kontroli",
+    "retention.choose": "Wybierz zachowany wpis",
+    "retention.cleaning": "Sprawdzanie wpisów kwalifikujących się do usunięcia…",
+    "retention.cleanup": "Uruchom czyszczenie dowodów kwalifikujących się do usunięcia",
+    "retention.confirmDelete": "Usuń dowody kwalifikujące się do usunięcia",
+    "retention.confirmDescription": "Ta operacja trwale usuwa dowody, których okres przechowywania minął. Bieżące aktywne uprawnienia i blokady procesowe pozostają chronione. Usuniętych oryginałów i uzupełnień nie można odzyskać za pośrednictwem aplikacji.",
+    "retention.confirmTitle": "Usunąć dowody kwalifikujące się do usunięcia?",
+    "retention.deadline": "Okres przechowywania rozpoczął się {start}. Kwalifikuje się do usunięcia od {end}.",
+    "retention.empty": "Brak zachowanych wpisów kontroli.",
+    "retention.error": "Nie udało się ukończyć administrowania przechowywaniem. Odśwież stronę i sprawdź swoje uprawnienia oraz szczegóły sprawy.",
+    "retention.help": "Okres przechowywania rozpoczyna się, gdy weryfikacja nie potwierdza już żadnej aktywnej kategorii. Blokada wymaga konkretnej sprawy prawnej, chroni również powiązane dowody raportowe z tego samego okresu zatrudnienia i musi zostać zwolniona, gdy zachowanie danych nie jest już wymagane. Kontrole te nie dają dostępu do inspekcji. Nie wprowadzaj danych medycznych ani danych osobowych.",
+    "retentionHelp": "Wymagane do aktywacji: 1–120 miesięcy od momentu, gdy dowody przestaną potwierdzać jakiekolwiek aktywne uprawnienia dla danej kategorii. W przypadku wyłączenia kontroli praw jazdy zachowaj uzasadniony, skończony okres; czyszczenie będzie kontynuowane.",
+    "retention.holdDetails": "Sprawa {case}: {reason}. Zastosowane przez: {actor} o {time}.",
+    "retention.loading": "Ładowanie wpisów przechowywania…",
+    "retention.place": "Zastosuj blokadę dla konkretnej sprawy",
+    "retention.protected": "Chronione przez aktywne uprawnienie do kategorii",
+    "retention.reason": "Dlaczego ta sprawa wymaga zabezpieczenia danych",
+    "retention.record": "{employee} · Weryfikacja {date}",
+    "retention.release": "Zwolnij blokadę",
+    "retention.released": "Zwolniono przez: {actor} o {time}: {reason}",
+    "retention.releaseError": "Nie udało się zwolnić blokady. Sprawdź swoje uprawnienia i powód zwolnienia.",
+    "retention.releaseReason": "Dlaczego zabezpieczenie danych nie jest już wymagane",
+    "retention.report": "{employee} · Raport {date}",
+    "retention.reportHeld": "Chronione przez sprawę {case} powiązaną z dowodami weryfikacji z tego okresu zatrudnienia. Zwolnij blokadę tej weryfikacji, gdy zabezpieczenie danych nie będzie już wymagane.",
+    "retention.reportProtected": "Chronione, dopóki bieżące zgłoszenie pozostaje nierozstrzygnięte lub weryfikacja jego rozwiązania potwierdza aktywne uprawnienia.",
+    "retention.reportsTitle": "Retencja zgłoszeń przeszkód",
+    "retentionRequiredError": "Zachowaj skończony, uzasadniony okres retencji w przypadku wyłączania kontroli praw jazdy. Istniejące dowody nadal podlegają czyszczeniu.",
+    "retention.run": "{time}: usunięto {deleted}, objęto blokadą {held}, chronionych {protected}. Wykonawca: {actor}",
+    "retention.runs": "Ostatnie wyniki czyszczenia",
+    "retention.saveError": "Nie udało się zapisać blokady. Sprawdź szczegóły sprawy i swoje uprawnienia.",
+    "retention.scheduled": "Zaplanowane przetwarzanie",
+    "retention.title": "Retencja dowodów i blokady prawne",
+    "save": "Zapisz zasady",
+    "saved": "Zapisano zasady",
+    "saveError": "Nie udało się zapisać zasad. Sprawdź interwał, strefę czasową, przypomnienia i uzasadniony okres retencji.",
+    "saving": "Zapisywanie…",
+    "settingsDescription": "Skonfiguruj weryfikacje oryginałów i zarejestruj planowanych kierowców",
+    "status": {
+      "active": "Uprawnienia do prowadzenia pojazdów aktywne",
+      "ended": "Uprawnienia do prowadzenia pojazdów wygasły",
+      "explanation": "Upoważnienie do prowadzenia pojazdów w organizacji obejmuje wymienione kategorie i ograniczenia. Nie określa ono zdatności do kierowania każdym pojazdem. Możesz nadal rejestrować czas pracy i faktyczne użytkowanie pojazdu.",
+      "partial": "Niektóre kategorie prawa jazdy są zawieszone",
+      "suspended": "Uprawnienia do prowadzenia pojazdów zawieszone"
+    },
+    "staysCurrent": "Pozostaje aktualne",
+    "staysSuspended": "Pozostaje zawieszone",
+    "subtitle": "Skonfiguruj weryfikacje oryginałów i zarejestruj planowanych kierowców. Upoważnienie do prowadzenia pojazdów dotyczy wyłącznie zweryfikowanych kategorii i ograniczeń.",
+    "tasks": {
+      "assign": "Przypisz odpowiedzialność",
+      "assigned": "Przypisano odpowiedzialność",
+      "assignmentBoundary": "To zadanie nie nadaje uprawnień kontrolnych ani nie przedłuża żadnego terminu.",
+      "class": "Kategoria {classCode}",
+      "complete": "Oznacz osobiste przypomnienie jako ukończone",
+      "completeError": "Nie udało się ukończyć tego zadania. Sprawdź swoje bieżące obowiązki weryfikatora.",
+      "completing": "Ukończanie…",
+      "deadline": "Termin weryfikacji oryginału",
+      "directUnavailable": "Bezpośrednie powiadomienie pracownika było niedostępne. Przypomnij temu pracownikowi osobiście.",
+      "initialCheck": "Wymagana wstępna weryfikacja oryginału",
+      "loadError": "Nie udało się załadować zadań dotyczących praw jazdy. Sprawdź swoje uprawnienia w organizacji.",
+      "loading": "Ładowanie zadań dotyczących praw jazdy…",
+      "noDeliveryReceipt": "Ukończenie zadania nie potwierdza bezpośredniego doręczenia ani przeczytania przez pracownika. Żaden termin nie ulega przedłużeniu.",
+      "noVerifier": "Żaden dostępny weryfikator nie jest przypisany do tego pracownika.",
+      "personalCompleted": "Osobiste przypomnienie ukończone",
+      "personalTitle": "Zadania osobistych przypomnień",
+      "reassignmentTitle": "Zadania weryfikatora",
+      "refresh": "Odpowiedzialność za ponowną weryfikację",
+      "suspension": "Uprawnienia do prowadzenia pojazdów zawieszone",
+      "validThrough": "Ważne do {date} w strefie czasowej terminu zapisanej w weryfikacji"
+    },
+    "timezone": "Stała strefa czasowa kalendarza",
+    "title": "Kontrola prawa jazdy",
+    "unnamedEmployee": "Pracownik",
+    "worklist": {
+      "help": "Pojawiają się tutaj tylko zarejestrowani pracownicy objęci Twoją bieżącą odpowiedzialnością weryfikatora.",
+      "open": "Sprawdź {name}",
+      "title": "Twoja lista zadań pierwotnej weryfikacji",
+      "viewEnded": "Wyświetl zakończony rekord dla {name}"
+    },
+    "zoneFixedError": "Strefa czasowa kalendarza jest stała. Istniejące terminy muszą zachować swoje pierwotne znaczenie.",
+    "zoneHelp": "Limity określające tylko datę obejmują cały wyświetlany dzień w tej strefie czasowej. Jest ona ustalana przy pierwszym zapisie; strefa czasowa przeglądającego nigdy nie wpływa na termin."
   },
   "employeeSelect": {
     "countSelected": "Wybrano {count} pracowników",
@@ -617,6 +891,101 @@
     "setup": "Ładowanie konfiguracji",
     "teamAbsences": "Ładowanie tabeli nieobecności zespołu",
     "workerQueue": "Ładowanie kolejki procesów roboczych"
+  },
+  "mfa": {
+    "banner": {
+      "action": "Przejrzyj wymagania i zweryfikuj",
+      "requirement": "Ta organizacja wymaga zweryfikowanego uwierzytelnienia od {deadline}."
+    },
+    "code": {
+      "label": "Kod z aplikacji uwierzytelniającej",
+      "verify": "Zweryfikuj aplikację uwierzytelniającą"
+    },
+    "continue": "Kontynuuj po weryfikacji",
+    "coverage": {
+      "access": "Ostatni kwalifikujący się dostęp do organizacji",
+      "deadline": "Przypisany termin",
+      "enforced": "Wymuszone",
+      "failed": "Nie udało się załadować zakresu uwierzytelniania w organizacji",
+      "kiosk": "Tylko tryb kiosku · poza zakresem",
+      "loading": "Ładowanie uwierzytelniania organizacji…",
+      "member": "Członek",
+      "methods": "Zarejestrowane metody",
+      "none": "Brak",
+      "title": "Rejestracja członków i weryfikacja organizacji",
+      "unproven": "Nie zarejestrowano żadnego kwalifikującego się dostępu"
+    },
+    "deadline": {
+      "enforced": "Aplikacja uwierzytelniająca musi zostać zweryfikowana przed uzyskaniem dostępu do organizacji.",
+      "grace": "Trwa okno rejestracji. Zweryfikuj aplikację uwierzytelniającą przed upływem tego terminu.",
+      "required": "Wymagana natychmiastowa weryfikacja"
+    },
+    "enrollment": {
+      "title": "Zarejestruj lub zastąp aplikację uwierzytelniającą",
+      "warning": "Dodanie lub zastąpienie składnika wymaga weryfikacji w ciągu pięciu minut. Zweryfikuj nowy składnik przed usunięciem starego. Unieważnienie ostatniego składnika jest dozwolone i może zablokować dostęp do wymienionych powyżej organizacji; nie zapewnia ono nowego okna rejestracji."
+    },
+    "organization": {
+      "select": "Wybierz inną organizację"
+    },
+    "page": {
+      "context": "Rejestracja osobista, odzyskiwanie konta i wybór organizacji pozostają dostępne, gdy dostęp do organizacji wymaga weryfikacji.",
+      "title": "Weryfikacja bezpieczeństwa"
+    },
+    "passkey": {
+      "verify": "Zweryfikuj za pomocą klucza dostępu"
+    },
+    "password": {
+      "failed": "Weryfikacja hasła nie powiodła się",
+      "label": "Bieżące hasło",
+      "verified": "Hasło zostało zweryfikowane. Poniżej możesz zarejestrować swoją pierwszą aplikację uwierzytelniającą lub zweryfikować istniejącą aplikację albo kod zapasowy.",
+      "verify": "Zweryfikuj hasło"
+    },
+    "policy": {
+      "activation": "Wprowadzanie zmian wymaga uprawnień właściciela/administratora oraz zaakceptowanego uwierzytelnienia w ciągu pięciu minut. Skonfiguruj opcję odzyskiwania oraz najlepiej wskaż innego administratora z potwierdzoną, działającą ścieżką logowania; sama rejestracja tego nie gwarantuje.",
+      "days": "{days} dni (po 24 godziny)",
+      "description": "Wymagaj hasła wraz z kodem TOTP lub klucza dostępu zweryfikowanego kodem PIN/biometrią dla lokalnego dostępu do organizacji każdego użytkownika. Zsynchronizowane klucze dostępu kwalifikują się. Ta zasada jest dostępna w każdym planie.",
+      "enable": "Wymagaj aplikacji uwierzytelniającej przy logowaniu lokalnym",
+      "failed": "Odrzucono aktualizację zasad",
+      "grace": "Okno rejestracji dla przyszłych przypisań",
+      "lockoutAck": "Jeśli żaden inny administrator nie ma potwierdzonej ścieżki, akceptuję fakt, że utrata wszystkich ścieżek uwierzytelniania i odzyskiwania spowoduje zablokowanie tej organizacji bez możliwości obejścia przez administratora lub pomoc techniczną.",
+      "lockoutLabel": "Zaakceptuj ryzyko utraty wszystkich ścieżek uwierzytelniania administratora",
+      "recoveryAck": "Moja ścieżka logowania została zweryfikowana, a metoda odzyskiwania skonfigurowana.",
+      "save": "Zapisz zasady",
+      "saving": "Zapisywanie…",
+      "sso": "Zweryfikowane logowanie za pośrednictwem bieżącego dostawcy SSO tej organizacji wykracza poza lokalną regułę bazową MFA. Organizacja wymusza MFA u swojego dostawcy tożsamości; Z8 nie weryfikuje zapewnień MFA od dostawcy IdP. Wymóg SSO pozostaje odrębną opcją i nie ma lokalnego mechanizmu awaryjnego.",
+      "tab": "Lokalne MFA",
+      "tabDescription": "Wymagaj zweryfikowanego uwierzytelniania lokalnego z kontrolowanymi terminami rejestracji",
+      "title": "Uwierzytelnianie w organizacji",
+      "verify": "Zweryfikuj swoje uwierzytelnienie przed zmianą tych zasad",
+      "windows": "Istniejące terminy nigdy się nie przesuwają. Wyłączenie zawiesza egzekwowanie; ponowne włączenie przywraca przypisane terminy, w tym te, które upłynęły. Nie ma indywidualnych zwolnień."
+    },
+    "recovery": {
+      "action": "Odzyskaj za pomocą kodu zapasowego",
+      "description": "W celu odzyskania dostępu zweryfikuj powyżej swoje hasło, a następnie wprowadź jeden niewykorzystany kod zapasowy. Spowoduje to wyczyszczenie wcześniejszej weryfikacji lokalnej we wszystkich Twoich organizacjach.",
+      "label": "Kod zapasowy",
+      "lockout": "Jeśli jedyny administrator utraci wszystkie metody uwierzytelniania i odzyskiwania, organizacja pozostanie zablokowana. Nie ma możliwości obejścia przez administratora ani pomoc techniczną.",
+      "success": "Odzyskiwanie pozwala wyłącznie na rejestrację nowego elementu. Zweryfikuj aplikację uwierzytelniającą przed powrotem do organizacji."
+    },
+    "security": {
+      "factorWarning": "Usunięcie składnika może zablokować dostęp do organizacji, które go wymagają. Najpierw zweryfikuj składnik zastępczy; usunięcie ostatniego składnika nie daje nowego okresu prolongaty.",
+      "link": "Zweryfikuj uwierzytelnienie i przejrzyj wymagania organizacji",
+      "policyLink": "Zasady uwierzytelniania w organizacji (właściciele/administratorzy)"
+    },
+    "signout": "Wyloguj się",
+    "social": {
+      "verify": "Zweryfikuj istniejące logowanie za pomocą: {provider}"
+    },
+    "sso": {
+      "failed": "Nie udało się uruchomić logowania jednokrotnego (SSO) organizacji",
+      "verify": "Zweryfikuj za pomocą SSO organizacji"
+    },
+    "verification": {
+      "failed": "Weryfikacja nie powiodła się"
+    },
+    "verify": {
+      "description": "Zweryfikuj aplikację uwierzytelniającą, aby powrócić do organizacji. Sama rejestracja i zaufanie do zapamiętanego urządzenia nie spełniają tego wymagania.",
+      "title": "Zweryfikuj swoje logowanie"
+    }
   },
   "nav": {
     "absences": "Nieobecności",
@@ -812,12 +1181,28 @@
         "message": "{employeeName} poprosił(a) o wyjątek ({exceptionType, select, rest_period {okres odpoczynku} overtime_daily {nadgodziny dobowe} overtime_weekly {nadgodziny tygodniowe} overtime_monthly {nadgodziny miesięczne} other {zgodność}}): \"{reason}\"",
         "title": "Wniosek o wyjątek zgodności"
       },
+      "drivingAuthorizationSuspended": {
+        "message": "Uprawnienie do prowadzenia pojazdów dla {employeeName} ({classes}) zostało zawieszone. Przed rozpoczęciem jazdy wymagane są nowa weryfikacja i wyraźne przywrócenie uprawnień.",
+        "title": "Zawieszono uprawnienia do prowadzenia pojazdów"
+      },
       "drivingDetailsMissingReminderMany": {
         "message": "W {count} okresach pracy z {dates} brakuje pojazdu lub stanu licznika. Dodaj je do okresów pracy."
       },
       "drivingDetailsMissingReminder": {
         "message": "W Twojej pracy w dniu {date} brakuje pojazdu lub stanu licznika. Dodaj je do okresu pracy.",
         "title": "Dodaj szczegóły jazdy"
+      },
+      "drivingLicenceAssignment": {
+        "message": "Zorganizuj dostępnego weryfikatora dla {employeeName}. To zadanie nie nadaje uprawnień do kontroli ani nie przedłuża żadnego terminu.",
+        "title": "Przypisz odpowiedzialność za weryfikację praw jazdy"
+      },
+      "drivingLicencePersonalTask": {
+        "message": "Przypomnij pracownikowi {employeeName} o konieczności umówienia kontroli oryginału prawa jazdy. Bezpośrednie powiadomienie pracownika było niedostępne. Wykonanie zadania nie oznacza bezpośredniego doręczenia ani odczytania.",
+        "title": "Przypomnij pracownikowi osobiście"
+      },
+      "drivingLicenceReminder": {
+        "message": "Zorganizuj kontrolę oryginału prawa jazdy dla {employeeName}, kategoria {classes}, do {deadline}.",
+        "title": "Wymagana kontrola prawa jazdy"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Obowiązki zatwierdzania wymagają zastępstwa (odejście z dniem {cutoff}, {timezone}).",
@@ -830,6 +1215,11 @@
       "forgottenClockOutReminder": {
         "message": "Twoja zmiana zakończyła się o {endTime} ({timezone}). Zarejestruj wyjście, jeśli zakończono pracę.",
         "title": "Nadal masz zarejestrowane wejście"
+      },
+      "kioskCommandRefused": {
+        "forwardedMessage": "Zdarzenie: {action, select, clock_in {rozpoczęcie pracy} clock_out {zakończenie pracy} start_break {rozpoczęcie przerwy} resume_break {powrót z przerwy} other {rejestracja czasu}} pracownika {employeeName} o {time} na terminalu {kioskName} nie zostało zarejestrowane: {reason, select, wrong_pin {błędny kod PIN} pin_locked {kod PIN terminala został zablokowany po zbyt wielu nieudanych próbach} no_pin {brak kodu PIN terminala do weryfikacji} pin_unchecked {nie można było sprawdzić kodu PIN} kiosk_retired {terminal został wycofany lub ponownie sparowany przed ponownym połączeniem} contact_unverifiable {system Z8 nie mógł potwierdzić ostatniego połączenia z terminalem} outside_window {czas był poza oknem akceptowanym przez Z8} clock_untrusted {zegar terminala nie był wystarczająco wiarygodny} not_assigned {pracownik nie jest przypisany do lokalizacji terminala} not_adopted {organizacja nie akceptuje rejestracji offline z terminali} month_closed {miesiąc jest zamknięty} holiday {ten dzień jest świętem bez rejestracji czasu pracy} conflict {występuje konflikt z innym zarejestrowanym czasem} other {system Z8 nie mógł go zaakceptować}}. Zarejestruj czas dla pracownika lub sprawdź to z nim.",
+        "message": "Twoje zdarzenie: {action, select, clock_in {rozpoczęcie pracy} clock_out {zakończenie pracy} start_break {rozpoczęcie przerwy} resume_break {powrót z przerwy} other {rejestracja czasu}} o {time} na terminalu {kioskName} nie zostało zarejestrowane: {reason, select, wrong_pin {błędny kod PIN} pin_locked {kod PIN terminala został zablokowany po zbyt wielu nieudanych próbach} no_pin {brak kodu PIN terminala do weryfikacji} pin_unchecked {nie można było sprawdzić kodu PIN} kiosk_retired {terminal został wycofany lub ponownie sparowany przed ponownym połączeniem} contact_unverifiable {system Z8 nie mógł potwierdzić ostatniego połączenia z terminalem} outside_window {czas był poza oknem akceptowanym przez Z8} clock_untrusted {zegar terminala nie był wystarczająco wiarygodny} not_assigned {pracownik nie jest przypisany do lokalizacji terminala} not_adopted {organizacja nie akceptuje rejestracji offline z terminali} month_closed {miesiąc jest zamknięty} holiday {ten dzień jest świętem bez rejestracji czasu pracy} conflict {występuje konflikt z innym zarejestrowanym czasem} other {system Z8 nie mógł go zaakceptować}}. Zarejestruj swój czas ponownie lub poproś przełożonego o skorygowanie go.",
+        "title": "Rejestracja w terminalu nie została zapisana"
       },
       "manualEntryApproved": {
         "message": "Twoje ręczne zgłoszenie czasu pracy zostało zatwierdzone przez: {approverName}.",
@@ -1250,8 +1640,11 @@
         "approval_cover_return_summary": "Rozpatrzone przez Twojego zastępcę",
         "approval_cover_started": "Rozpoczęto zastępstwo",
         "break_due_reminder": "Czas na przerwę",
+        "driving_authorization_suspended": "Zawieszono uprawnienia do prowadzenia pojazdów",
         "driving_details_missing_reminder": "Brak szczegółów przejazdu",
+        "driving_licence_reminder": "Wymagana kontrola prawa jazdy",
         "forgotten_clock_out_reminder": "Zapomniana rejestracja wyjścia",
+        "kiosk_command_refused": "Rejestracja w terminalu nie została zapisana",
         "missed_clock_in_reminder": "Brak rejestracji wejścia",
         "period_submission_decided": "Przesłany czas pracy zatwierdzony lub odrzucony",
         "period_submission_reminder": "Prześlij czas pracy",
@@ -1344,6 +1737,7 @@
   "personalDataExport": {
     "readme": {
       "accessAdmin": "{name} (administrator)",
+      "accessDrivingLicenceVerifiers": "Weryfikatorzy praw jazdy (Twoje dowody kontroli i eksporty PDF):",
       "accessExpenseExport": "wyeksportuj je",
       "accessExpenseOfficers": "Osoby odpowiedzialne za wydatki (Twoje zatwierdzone raporty kosztów podróży i powiązane rachunki):",
       "accessExpenseRead": "odczyt zatwierdzonych raportów",
@@ -1367,6 +1761,7 @@
         "accountAdmin": "Imię, nazwisko i adres e-mail Twojego konta użytkownika.",
         "approvals": "Twoje własne wnioski i zgłoszenia okresów oraz decyzje podjęte przez Ciebie w sprawie wniosków innych osób.",
         "auditLog": "Wpisy w dzienniku zdarzeń dotyczące Ciebie oraz wykonane przez Ciebie.",
+        "drivingLicence": "Kontrole praw jazdy, potwierdzenia i oświadczenia o okazaniu oryginału, przypisane uzupełnienia, uprawnienia do poszczególnych kategorii i ich historia, rejestracja oraz Twoja odpowiedzialność jako weryfikatora. Wyłącznie zachowany materiał dowodowy; bez skanów praw jazdy, numerów dokumentów czy zaświadczeń lekarskich.",
         "employment": "Twoja kartoteka i profil pracownika, okresy zatrudnienia i odejścia, warunki zatrudnienia wraz ze stawką godzinową i jej historią, zespoły, przełożeni, lokalizacje, umiejętności, przypisania do projektów, role, grupy, centrum kosztów oraz wszelkie przypisane do Ciebie zasady.",
         "integrations": "Twoje połączenia kalendarza, kanał kalendarza, połączone konta czatu i status kodu PIN do kiosku.",
         "notifications": "Twoja historia powiadomień.",
@@ -1386,6 +1781,7 @@
         "payslip": "Paski płacowe",
         "sickNote": "Zwolnienia lekarskie"
       },
+      "drivingLicenceRetention": "Dowody kontroli prawa jazdy podlegają uzasadnionemu okresowi przechowywania obowiązującemu w organizacji, gdy przestają potwierdzać aktywne uprawnienie. Udokumentowana blokada na potrzeby konkretnej sprawy prawnej odracza usunięcie. Zapoznaj się z zasadami driving_licence oraz wpisami dotyczącymi okresu przechowywania i blokad, aby uzyskać właściwy kontekst; wygenerowanie eksportu nie przedłuża okresu przechowywania dowodów w systemie Z8.",
       "fields": {
         "absences": {
           "absences": {
@@ -1696,6 +2092,129 @@
           "updatedAt": "Kiedy rekord został ostatnio zmieniony.",
           "updatedBy": "Kto ostatnio zmienił rekord."
         },
+        "drivingLicence": {
+          "actor_name": "Imię i nazwisko osoby, która wykonała tę czynność; puste w przypadku operacji systemowej lub niedostępnego wykonawcy.",
+          "authorization_events": {
+            "summary": "Historia Twoich uprawnień do prowadzenia pojazdów, w tym zgłoszenia przeszkód, ich rozwiązania oraz wyraźne przywrócenia uprawnień."
+          },
+          "authorizations": {
+            "summary": "Twoje zapisane wpisy uprawnień dla poszczególnych kategorii; historia zdarzeń wyjaśnia zmiany i terminy ich wejścia w życie."
+          },
+          "author_name": "Zarejestrowane imię i nazwisko osoby, która dodała to uzupełnienie.",
+          "caseReference": "Sygnatura konkretnej sprawy prawnej wymagającej zachowania tej kontroli.",
+          "changed_at": "Czas zarejestrowania tej wersji zasad organizacji w formacie UTC.",
+          "checked_classes": {
+            "summary": "Jawnie skontrolowane kategorie oraz ich zarejestrowane wyniki, ograniczenia i daty ważności."
+          },
+          "check_id": "Oryginalna kontrola, do której odwołuje się ta kategoria, uzupełnienie lub uprawnienie.",
+          "checks_performed": {
+            "summary": "Kontrole przeprowadzone przez Ciebie u innych pracowników: wyłącznie anonimowe identyfikatory osób i wpisów oraz czas kontroli."
+          },
+          "checks": {
+            "summary": "Wpisy kontroli oryginału prawa jazdy wraz z dokładnym oświadczeniem i potwierdzeniami kontroli."
+          },
+          "class_code": "Jawnie skontrolowana kategoria prawa jazdy; puste w przypadku zdarzenia dotyczącego całej osoby lub całego dokumentu.",
+          "class_valid_through": "Ostatni dzień kalendarzowy objęty ważnością tej kategorii; puste, gdy nie zarejestrowano daty wygaśnięcia kategorii.",
+          "completedAt": "Czas oznaczenia osobistego przypomnienia jako ukończone przez weryfikatora; puste w przypadku nieukończonego zadania.",
+          "completedBy": "Imię i nazwisko osoby, która oznaczyła przypomnienie jako ukończone; nie stanowi to potwierdzenia bezpośredniego doręczenia ani odczytania.",
+          "controlled_at": "Kiedy oryginał prawa jazdy został osobiście skontrolowany (znacznik czasu UTC).",
+          "createdAt": "Kiedy to zadanie lub doręczenie zostało po raz pierwszy zarejestrowane (znacznik czasu UTC).",
+          "deadline_timezone": "Jawna strefa czasowa kalendarza używana dla terminów określonych w zasadach.",
+          "declaration_text": "Dokładna treść oświadczenia zarejestrowana podczas pierwotnej kontroli.",
+          "document_expires_on": "Data ważności dokumentu, niezależna od dat ważności poszczególnych kategorii.",
+          "document_issued_on": "Data wydania dokumentu, bez godziny i strefy czasowej.",
+          "document_valid_through": "Ostatni dzień kalendarzowy objęty ważnością dokumentu.",
+          "effective_at": "Kiedy zdarzenie autoryzacji weszło w życie (znacznik czasu UTC).",
+          "emailedAtProviderSuccess": "Kiedy odnotowano sukces dostawcy dla tej wiadomości e-mail. Pusta wartość obejmuje również niepewne próby; nie dowodzi, że wiadomość e-mail nie została wysłana ani że została przeczytana.",
+          "emailStateWithUncertainAttempts": "Stan doręczenia wiadomości e-mail: oczekująca, podjęto próbę (niepewny wynik dostawcy; nigdy nie jest wysyłana ponownie automatycznie), wysłana (odnotowano sukces dostawcy), wstrzymana, przestarzała lub niedostępna. Żaden stan nie potwierdza odczytania.",
+          "employee_declaration": "Czy Twoje oświadczenie zostało potwierdzone podczas kontroli.",
+          "employee_id": "Niejawny identyfikator innego pracownika, w odniesieniu do którego podjęto działanie; szczegóły dotyczące jego weryfikacji są wykluczone.",
+          "employee_ids": "Niejawne identyfikatory pracowników w Twoim określonym zakresie weryfikatora, zakodowane jako tablica JSON.",
+          "employment_period_id": "Okres zatrudnienia, do którego należy ten dowód; puste w przypadku wcześniejszego zatrudnienia.",
+          "enabled": "Czy powiązane zasady kontroli w organizacji były włączone.",
+          "enrolled_at": "Kiedy zarejestrowano Cię do kontroli praw jazdy w organizacji.",
+          "expires_at": "Znacznik czasu UTC wygaśnięcia tego upoważnienia lub uprawnienia weryfikatora.",
+          "expiry_date": "Data ważności kategorii zarejestrowana podczas kontroli; puste, jeśli żadnej nie zarejestrowano.",
+          "failure_scope": "Czy niepomyślna kontrola dotyczyła kategorii, dokumentu czy osoby.",
+          "field": "Skorygowane pole dowodu; pierwotna weryfikacja zostaje zachowana.",
+          "granted_at": "Kiedy przyznano Ci uprawnienia weryfikatora (znacznik czasu UTC).",
+          "granted_by": "Imię i nazwisko osoby, która przyznała Ci uprawnienia weryfikatora.",
+          "id": "Identyfikator rekordu w aplikacji, dzięki czemu inne pliki mogą się do niego odwoływać.",
+          "identity_confirmed": "Czy weryfikator potwierdził zgodność oryginału z Twoją tożsamością.",
+          "impedimentReports": {
+            "summary": "Twoje skrócone zgłoszenia przeszkód w prowadzeniu pojazdów i ich jednoznaczne rozstrzygnięcie, bez wyjaśnień medycznych ani powodów osobistych."
+          },
+          "interval_months": "Liczba miesięcy kalendarzowych między rutynowymi kontrolami zgodnie z tymi zasadami.",
+          "kind": "Zdarzenie autoryzacji, zawieszenie lub rodzaj zadania; zadania to personal_reminder lub reassignment.",
+          "last_successful_at": "Kiedy ta kategoria przeszła ostatnią pomyślną kontrolę oryginału.",
+          "legalHolds": {
+            "summary": "Blokady zabezpieczające dotyczące konkretnych przypadków w Twoich zachowanych weryfikacjach, w tym przypisanie, zwolnienie i uzasadnienie."
+          },
+          "notificationId": "Powiadomienie w aplikacji powiązane z tym przypomnieniem; puste, jeśli żadne nie zostało utworzone.",
+          "occasionKey": "Zdarzenie, którego dotyczy to przypomnienie lub zadanie; identyfikuje zatrudnienie, termin kategorii lub zawieszenie bez kopiowania weryfikacji.",
+          "original_inspected": "Czy weryfikator potwierdził osobistą kontrolę oryginalnego dokumentu.",
+          "participation": {
+            "summary": "Twoja rejestracja do kontroli praw jazdy w organizacji."
+          },
+          "placedAt": "Kiedy nałożono tę blokadę prawną (znacznik czasu UTC).",
+          "placedBy": "Imię i nazwisko administratora, który nałożył blokadę na tę sprawę.",
+          "policies": {
+            "summary": "Wersje zasad, do których odwołują się Twoje weryfikacje i historia autoryzacji, w tym ich kontekst retencji. Dowody podlegają tym zasadom retencji; ten eksport nie przedłuża okresu retencji w aplikacji."
+          },
+          "policy_version": "Wersja zasad kontroli praw jazdy w organizacji.",
+          "preservationReason": "Udokumentowany powód, dla którego ten konkretny przypadek wymaga zachowania weryfikacji.",
+          "reason": "Ustrukturyzowany powód uzupełnienia lub zdarzenia autoryzacji; odniesienia do zgłoszeń prowadzą do identyfikatora zdarzenia.",
+          "recipientName": "Imię i nazwisko osoby, do której skierowano to przypomnienie o Twojej weryfikacji.",
+          "recorded_at": "Kiedy zarejestrowano uzupełnienie lub zdarzenie (znacznik czasu UTC).",
+          "releasedAt": "Kiedy zwolniono blokadę tej sprawy; puste, dopóki pozostaje aktywna.",
+          "releasedBy": "Imię i nazwisko administratora, który zwolnił blokadę tej sprawy.",
+          "releaseReason": "Udokumentowany powód zwolnienia blokady tej sprawy; zwolnienie wznawia standardowe usuwanie regulowane zasadami.",
+          "reminderDeliveries": {
+            "summary": "Rejestry doręczeń przypomnień dotyczące Twoich weryfikacji, bez adresów e-mail, ponownych prób przesyłania ani potwierdzeń odczytu."
+          },
+          "reminder_lead_days": "Skonfigurowane czasy wyprzedzenia przypomnień w dniach kalendarzowych, zakodowane jako tablica JSON.",
+          "reminderTasksCompleted": {
+            "summary": "Zadania przypomnień wykonane przez Ciebie dla innych pracowników, ograniczone do niejawnych identyfikatorów, rodzaju zadania i czasu ukończenia."
+          },
+          "reminderTasks": {
+            "summary": "Zadania osobistych przypomnień i ponownego przypisania dotyczące Twoich weryfikacji, w tym zarejestrowane ich ukończenie; ukończenie nie stanowi dowodu bezpośredniego doręczenia ani odczytania."
+          },
+          "reportedAt": "Kiedy zgłoszono przez Ciebie ogólną przeszkodę w prowadzeniu pojazdów (znacznik czasu UTC).",
+          "reporterName": "Imię i nazwisko osoby, która zgłosiła przeszkodę.",
+          "resolvedAt": "Kiedy weryfikator jednoznacznie rozwiązał to zgłoszenie; puste w przypadku nierozwiązanego zgłoszenia.",
+          "resolvedBy": "Imię i nazwisko weryfikatora, który jednoznacznie rozwiązał to zgłoszenie.",
+          "restrictions": "Odpowiednie ograniczenia uprawnień do kierowania pojazdami zarejestrowane dla tej kategorii.",
+          "result": "Wynik dla tej skontrolowanej kategorii: pomyślny, niepomyślny lub nierozstrzygający.",
+          "retention_justification": "Udokumentowane przez organizację uzasadnienie okresu retencji dowodów.",
+          "retention_months": "Uzasadniony okres retencji organizacji w miesiącach od momentu, gdy dowód przestaje wspierać aktywne uprawnienie.",
+          "retentionStartedAtEvidence": "Kiedy dowód weryfikacji przestał wspierać aktywne uprawnienie lub dowód zgłoszenia stał się nieaktywny po rozwiązaniu i ostatecznym wsparciu weryfikacji rozwiązania bądź zakończeniu zatrudnienia. Uzasadniony okres retencji organizacji biegnie od tego momentu UTC; blokada sprawy odracza usunięcie.",
+          "retention": {
+            "summary": "Początek okresu retencji dla każdej zatrzymanej weryfikacji; puste, dopóki weryfikacja nadal wspiera aktywne uprawnienie. Eksportowanie nie wydłuża okresu retencji."
+          },
+          "revoked_at": "Kiedy Twoje uprawnienia weryfikatora zostały odebrane; puste, dopóki nie zostały odebrane.",
+          "revoked_by": "Imię i nazwisko osoby, która odebrała Twoje uprawnienia weryfikatora.",
+          "routine_valid_through": "Ostatni dzień kalendarzowy objęty interwałem rutynowej kontroli.",
+          "scope": "Zakres zgłoszenia obejmującego całą osobę (osoba) lub informacja, czy Twoje uprawnienia weryfikatora obejmują wszystkich pracowników, czy określonych pracowników i zespoły.",
+          "state": "Zapisany stan uprawnienia dla kategorii (aktywne, zawieszone, zakończone) lub stan zadania przypomnienia (oczekujące, ukończone, nieaktualne); historia wyjaśnia zmiany.",
+          "supplements_authored": {
+            "summary": "Uzupełnienia dodane przez Ciebie do wpisów innych pracowników, z wyłączeniem wartości dowodowych tych pracowników."
+          },
+          "supplements": {
+            "summary": "Opatrzone datą, przypisane i skategoryzowane korekty przechowywane wraz z każdą oryginalną kontrolą."
+          },
+          "suspended_at": "Kiedy uprawnienie zostało zawieszone (jako moment UTC).",
+          "suspension": {
+            "summary": "Twój aktualny rekord zawieszenia uprawnień do kierowania pojazdami na poziomie osoby lub dokumentu."
+          },
+          "team_ids": "Niejawne identyfikatory zespołów w Twoim określonym zakresie weryfikatora, zakodowane jako tablica JSON.",
+          "valid_through": "Najwcześniejszy obowiązujący ostatni dzień kalendarzowy zatwierdzenia tej kategorii.",
+          "value": "Wartość podana przez to uzupełnienie; puste oznacza, że opcjonalna data ważności kategorii została wyczyszczona.",
+          "verifier_confirmed": "Czy weryfikator potwierdził wpis z kontroli.",
+          "verifier_grants": {
+            "summary": "Twoje własne uprawnienia weryfikatora, w tym uprawnienia historyczne i odebrane."
+          },
+          "verifier_name": "Zarejestrowane imię i nazwisko osoby, która skontrolowała Twój oryginalny dokument prawa jazdy."
+        },
         "employment": {
           "assignedLocations": {
             "city": "Miasto lokalizacji.",
@@ -1924,11 +2443,26 @@
             "revokedAt": "Kiedy link został wyłączony (UTC).",
             "summary": "Linki do kanałów kalendarza, które umożliwiają aplikacji kalendarza subskrybowanie Twoich nieobecności. Sam tajny link nigdy nie jest dołączany."
           },
+          "kioskPinEvents": {
+            "event": "niepowodzenie w przypadku błędnego kodu PIN, sukces w przypadku poprawnego, wyczyszczone po odblokowaniu, zresetowaniu lub zmianie kodu PIN.",
+            "occurredAt": "Kiedy wprowadzono kod PIN lub zniesiono blokadę (UTC).",
+            "offline": "Czy kod PIN został wprowadzony w kiosku bez połączenia i sprawdzony po ponownym nawiązaniu połączenia.",
+            "summary": "Twoje ostatnie próby wprowadzenia kodu PIN w kiosku i odblokowania kodu PIN, przechowywane przez około tydzień w celu ustalenia, czy nastąpiła blokada po pięciu błędnych kodach PIN z rzędu. Wprowadzane kody PIN nigdy nie są zapisywane."
+          },
           "kioskPin": {
             "pinSet": "Czy ustawiono dla Ciebie kod PIN do kiosku.",
             "setAt": "Kiedy kod PIN został ostatnio ustawiony (UTC).",
             "setBy": "Kto ustawił kod PIN.",
             "summary": "Czy posiadasz kod PIN do rejestrowania czasu pracy w terminalu kiosku. Sam kod PIN nigdy nie jest przechowywany w czytelnej postaci i nie jest dołączany."
+          },
+          "kioskRefusedClockings": {
+            "action": "clock_in, clock_out, start_break lub resume_break.",
+            "claimedAt": "Kiedy zarejestrowano czas pracy w kiosku, według zapisu kiosku (UTC).",
+            "kiosk": "Kiosk, w którym zarejestrowano czas pracy.",
+            "reason": "Dlaczego rejestracja czasu nie została zapisana, na przykład wrong_pin lub kiosk_rotated.",
+            "refusedAt": "Kiedy kiosk ponownie połączył się z siecią, a rejestracja czasu została odrzucona (UTC).",
+            "summary": "Rejestracje czasu dokonane w kiosku bez połączenia, które nie zostały zapisane po ponownym połączeniu kiosku, wraz z przyczyną.",
+            "timeSource": "server_anchor, jeśli kiosk odmierzył czas na podstawie czasu serwera podczas ostatniego połączenia, device_clock, jeśli na podstawie własnego zegara."
           },
           "shared": {
             "isActive": "Czy połączenie jest w użyciu."

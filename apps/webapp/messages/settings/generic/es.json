@@ -504,7 +504,6 @@
       "title": "Cumplimiento de la Ley de Tiempo de Trabajo (ArbZG)"
     },
     "customDomains": {
-      "description": "Configure el dominio personalizado, la imagen de marca y el SSO para su organización",
       "title": "Dominio e imagen de marca"
     },
     "customers": {
@@ -846,9 +845,38 @@
       },
       "title": "Exportación de datos"
     },
-    "emailConfig": {
-      "description": "Configure un proveedor de correo electrónico personalizado para los correos de la organización",
-      "title": "Configuración de correo electrónico"
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Conceder responsabilidad de verificador",
+        "all": "Todos los empleados de esta organización",
+        "allDescription": "La responsabilidad sigue la pertenencia actual a la organización. Los verificadores nunca pueden verificarse a sí mismos.",
+        "attribution": "Concedido por {actor} a las {time}",
+        "description": "Otorgue la responsabilidad de forma independiente a la inscripción de conductores, la gestión jerárquica y el acceso al expediente del personal. La gestión de estas concesiones no permite leer los registros de inspección. La autoverificación está siempre prohibida.",
+        "editor": "Alcance del verificador",
+        "empty": "No hay responsabilidades de verificador asignadas",
+        "expiry": "Caduca a las {time}",
+        "history": "Historial de responsabilidades",
+        "historyEntry": "Otorgado por {grantor} el {granted}; revocado por {revoker} el {revoked}",
+        "loadFailed": "No se pudieron cargar las responsabilidades de verificador",
+        "myAll": "Usted es responsable de las comprobaciones en toda esta organización. No puede verificarse a sí mismo.",
+        "mySelected": "Usted es responsable de {teams} equipos seleccionados y {employees} empleados designados. La pertenencia actual al equipo determina el acceso. No puede verificarse a sí mismo.",
+        "myTitle": "Su responsabilidad de verificador",
+        "none": "Actualmente no tiene ninguna responsabilidad de verificador de permisos de conducir.",
+        "noTeams": "No hay equipos disponibles",
+        "person": "Verificador",
+        "revoked": "Responsabilidad de verificador revocada",
+        "revokeDescription": "El verificador pierde inmediatamente el acceso a las comprobaciones dentro de este alcance. Se requiere una nueva concesión para restaurar la responsabilidad.",
+        "revokeFailed": "No se pudo revocar la responsabilidad. Inténtelo de nuevo.",
+        "revokeTitle": "¿Revocar la responsabilidad de verificador?",
+        "saved": "Responsabilidad de verificador guardada",
+        "scope": "Responsabilidad",
+        "select": "Seleccionar un empleado",
+        "selected": "{teams} equipos, {employees} empleados designados",
+        "selectEmployees": "Seleccionar empleados",
+        "specific": "Equipos y empleados seleccionados",
+        "specificDescription": "Incluye a los empleados designados y a los miembros actuales de los equipos seleccionados. Los cambios en los equipos surten efecto de inmediato.",
+        "title": "Verificadores de permisos de conducir"
+      }
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1306,8 @@
     },
     "group": {
       "account": "Cuenta",
-      "administration": "Administración",
       "data": "Datos",
-      "enterprise": "Empresa",
+      "integrations": "Integraciones",
       "notifications": "Notificaciones",
       "organization": "Organización"
     },
@@ -1458,7 +1485,8 @@
         "invalidTimezone": "Elige una zona horaria.",
         "kioskNotFound": "No se encontró este quiosco.",
         "kioskRevoked": "Este quiosco está revocado.",
-        "locationNotFound": "Elige una ubicación activa de esta organización."
+        "locationNotFound": "Elige una ubicación activa de esta organización.",
+        "offlineNeedsAdoption": "El modo sin conexión requiere comandos de fichaje coordinados, los cuales esta organización aún no utiliza."
       },
       "fields": {
         "board": "Panel de presencia",
@@ -1468,6 +1496,9 @@
         "locationPlaceholder": "Elige una ubicación",
         "name": "Nombre",
         "namePlaceholder": "p. ej., Entrada de personal",
+        "offlineMode": "Modo sin conexión",
+        "offlineModeDescription": "El quiosco sigue registrando fichajes sin conexión. Sus fichajes se confirman y sus PIN se comprueban una vez que vuelve a conectarse.",
+        "offlineModeUnavailable": "El modo sin conexión requiere comandos de fichaje coordinados, los cuales esta organización aún no utiliza.",
         "timezone": "Zona horaria",
         "timezoneDescription": "Los registros de fichaje de este quiosco utilizan esta zona."
       },
@@ -1477,6 +1508,8 @@
       "loadFailed": "No se pudieron cargar los quioscos.",
       "neverSeen": "Nunca",
       "noLocations": "Crea una ubicación primero: cada quiosco pertenece a una ubicación.",
+      "offlineOn": "Modo sin conexión activado",
+      "offlineOnNotInEffect": "Modo sin conexión activado, no aplicable para esta organización",
       "pairAgain": "Vincular de nuevo",
       "pairFailed": "No se pudo emitir un nuevo código de vinculación",
       "pairingCodeLabel": "Código de vinculación",
@@ -1486,6 +1519,46 @@
       "pairPairedDescription": "El token del dispositivo se renovará: el dispositivo vinculado dejará de funcionar inmediatamente y deberá vincularse de nuevo con el nuevo código.",
       "pairTitle": "¿Vincular {name} de nuevo?",
       "pairUnpairedDescription": "Un nuevo código de vinculación sustituye al anterior.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Fichar entrada",
+          "clockOut": "Fichar salida",
+          "resumeBreak": "Reanudar",
+          "startBreak": "Iniciar descanso"
+        },
+        "columns": {
+          "action": "Acción",
+          "claimedAt": "Hora declarada",
+          "employee": "Empleado",
+          "kiosk": "Quiosco",
+          "reason": "Motivo",
+          "timeSource": "Origen de la hora"
+        },
+        "description": "Fichajes guardados en un quiosco mientras estaba sin conexión que no se registraron al volver a conectarse. Se notificó al empleado o a los responsables de un empleado sin inicio de sesión.",
+        "empty": "No se rechazó ningún fichaje sin conexión.",
+        "reasons": {
+          "clockUntrusted": "Reloj del quiosco no fiable",
+          "conflict": "Conflicto con otra hora registrada",
+          "contactUnverifiable": "No se pudo confirmar la última conexión",
+          "holiday": "Festivo sin registro de horas",
+          "kioskRetired": "Quiosco revocado o emparejado de nuevo",
+          "monthClosed": "Mes cerrado",
+          "noPin": "No se ha configurado el PIN del quiosco",
+          "notAdopted": "Fichajes sin conexión no aceptados por la organización",
+          "notAssigned": "No asignado a la ubicación",
+          "other": "No se pudo aceptar",
+          "outsideWindow": "Llegó demasiado tarde",
+          "pinLocked": "PIN bloqueado",
+          "pinUnchecked": "No se pudo verificar el PIN",
+          "wrongPin": "PIN incorrecto"
+        },
+        "timeSources": {
+          "deviceClock": "Reloj del dispositivo",
+          "serverAnchor": "Hora del servidor"
+        },
+        "title": "Fichajes sin conexión rechazados",
+        "unknownEmployee": "No es un empleado"
+      },
       "revoke": "Revocar",
       "revokeConfirm": "Revocar quiosco",
       "revoked": "Quiosco revocado",
@@ -1493,6 +1566,7 @@
       "revokeFailed": "No se pudo revocar el quiosco",
       "revokeTitle": "¿Revocar {name}?",
       "rotateConfirm": "Rotar token y volver a vincular",
+      "rotateOfflineWarning": "Este quiosco tiene activado el modo sin conexión. Los fichajes guardados mientras estaba sin conexión y aún no enviados se rechazarán cuando vuelva a conectarse y aparecerán en la lista de fichajes sin conexión rechazados.",
       "save": "Guardar",
       "saved": "Quiosco guardado",
       "saveFailed": "No se pudo guardar el quiosco",
@@ -1517,6 +1591,7 @@
       "searchPlaceholder": "Buscar paquetes o licencias...",
       "unknown": "Desconocido"
     },
+    "loading": "Cargando configuración",
     "locations": {
       "address": "Dirección",
       "assignEmployee": "Asignar empleado",
@@ -1627,6 +1702,55 @@
       "statusReady": "Listo",
       "title": "Mis datos",
       "unavailable": "Mis datos no está disponible para tu cuenta en esta organización."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Actividad",
+        "description": "Revise la actividad y configure las exportaciones de auditoría firmadas",
+        "keysDescription": "Gestione las claves de firma utilizadas por las exportaciones de auditoría",
+        "packagesDescription": "Genere y revise paquetes de auditoría firmados",
+        "title": "Auditoría"
+      },
+      "chat-integrations": {
+        "description": "Configure Slack, Microsoft Teams, Telegram y Discord",
+        "title": "Integraciones de chat"
+      },
+      "clocking": {
+        "automaticDescription": "Configure la salida automática para trabajo ininterrumpido",
+        "description": "Configure el seguimiento, la salida automática, los recordatorios y el envío de períodos",
+        "remindersDescription": "Configure recordatorios para entradas, salidas y pausas",
+        "submissionsDescription": "Configure cuándo envían los empleados sus períodos de trabajo para su revisión",
+        "title": "Control horario",
+        "trackingDescription": "Establezca la fecha de inicio utilizada para el control horario de su organización"
+      },
+      "developerAccess": {
+        "description": "Gestione las claves de API y los extremos de webhook",
+        "title": "Acceso de desarrollador"
+      },
+      "domainBranding": {
+        "description": "Configure el dominio personalizado y la identidad de marca de su organización"
+      },
+      "email": {
+        "delivery": "Entrega",
+        "description": "Configure la entrega de correos electrónicos y personalice las plantillas de mensajes",
+        "title": "Correo electrónico"
+      },
+      "identityAccess": {
+        "description": "Configure el SSO, el inicio de sesión social, el aprovisionamiento y el acceso a la organización",
+        "socialDescription": "Configure los proveedores de inicio de sesión social disponibles para su organización",
+        "ssoDescription": "Gestione los proveedores de inicio de sesión único para su organización",
+        "title": "Identidad y acceso"
+      },
+      "personnel-files": {
+        "description": "Gestione el acceso al expediente del personal, los recordatorios de vencimiento y la retención de documentos"
+      },
+      "scheduled-exports": {
+        "description": "Programe exportaciones periódicas de nóminas, datos y auditorías"
+      },
+      "shiftPlanning": {
+        "description": "Configure plantillas de turnos y objetivos de cobertura",
+        "title": "Planificación de turnos"
+      }
     },
     "notifications": {
       "approvals": "Notificaciones de aprobación",
@@ -1916,6 +2040,8 @@
         "name": "Nombre",
         "namePlaceholder": "Introducir nombre del proyecto",
         "noCustomer": "Sin cliente",
+        "requiresTask": "Requerir una tarea",
+        "requiresTaskHelp": "El tiempo registrado en este proyecto debe especificar una de sus tareas. Solo se aplica mientras el proyecto tenga una tarea abierta.",
         "status": "Estado"
       },
       "fromTemplate": {
@@ -1929,6 +2055,7 @@
         "reasonAdminOnly": "solo los administradores de la organización asignan responsables de proyecto",
         "reasonDeparted": "abandonó la organización",
         "reasonRemoved": "ya no existe",
+        "requiresTask": "Requiere una tarea",
         "skipped": "No copiado: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2074,7 +2201,9 @@
           "name": "Nombre",
           "namePlaceholder": "p. ej., Relanzamiento del sitio web",
           "nameRequired": "Introduce un nombre de plantilla",
-          "noIcon": "Sin icono"
+          "noIcon": "Sin icono",
+          "requiresTask": "Requerir una tarea",
+          "requiresTaskHelp": "Los proyectos creados a partir de esta plantilla comenzarán con esta configuración."
         },
         "icons": {
           "briefcase": "Maletín",
@@ -2716,6 +2845,45 @@
         "title": "No es un registro fiscal"
       },
       "noDrivers": "Sin conductores asignados",
+      "photos": {
+        "accessChanged": "Su acceso ha cambiado. Vuelva a abrir la configuración del vehículo para comprobar sus permisos.",
+        "action": "Fotos",
+        "add": "Añadir foto",
+        "archived": "Este vehículo está archivado. Restáurelo para añadir o eliminar fotos.",
+        "capacityChanged": "La galería ha cambiado. Quedan {count} espacios para fotos. Vuelva a abrirla y elija menos fotos.",
+        "description": "Fotos de referencia privadas para este vehículo. Las subidas y eliminaciones completadas se guardan de inmediato.",
+        "empty": "Aún no hay fotos.",
+        "expired": "Esta subida ha caducado. Vuelva a seleccionar la foto para subirla.",
+        "full": "Este vehículo tiene 20 fotos. Elimine una foto antes de añadir otra.",
+        "gallery": "Fotos del vehículo",
+        "imageNamed": "{name}, foto {number}",
+        "invalid": "No se pudo leer esta imagen. Elija otra foto JPEG, PNG o WebP.",
+        "limits": "JPEG, PNG o WebP. Hasta 10 MB por foto, 20 fotos por vehículo.",
+        "loadFailed": "No se pudieron cargar las fotos. Cierre el cuadro de diálogo e inténtelo de nuevo.",
+        "loading": "Cargando fotos…",
+        "named": "Fotos de {name}",
+        "next": "Foto siguiente",
+        "position": "Foto {number} de {count}",
+        "previous": "Foto anterior",
+        "queued": "Esperando para subir {name}…",
+        "remove": "Eliminar foto",
+        "removeConfirm": "Eliminar foto permanentemente",
+        "removeDescription": "Esta foto se eliminará permanentemente de la galería del vehículo. Esta acción no se puede deshacer.",
+        "removeFailed": "No se pudo eliminar la foto. Inténtalo de nuevo.",
+        "removeTitle": "¿Eliminar esta foto permanentemente?",
+        "removing": "Eliminando foto…",
+        "retry": "Reintentar",
+        "retryNamed": "Reintentar {name}",
+        "saved": "Se guardó {name}.",
+        "selectionTooLarge": "Esta selección no se subió. Quedan {count} espacios para fotos, incluidas las subidas pendientes.",
+        "tooLarge": "Elige una foto que no supere los 10 MB.",
+        "unsupported": "Elige una foto en formato JPEG, PNG o WebP. HEIC y otros formatos no son compatibles.",
+        "uploadFailed": "No se pudo subir la foto. Inténtalo de nuevo.",
+        "uploading": "Subiendo {name}…",
+        "uploadResults": "Resultados de la subida de fotos",
+        "vehicleMissing": "Este vehículo ya no está disponible en tu organización.",
+        "viewNamed": "Ver foto {number} de {name}"
+      },
       "refusals": {
         "driverNotFound": "Un empleado o equipo asignado ya no existe. Recargue la página.",
         "invalidChange": "No se pudo guardar el cambio. Recargue la página e inténtelo de nuevo.",
@@ -2739,7 +2907,6 @@
       "assignmentRemoved": "Asignación eliminada",
       "assignmentSaved": "Asignación guardada",
       "assignmentsDescription": "A los empleados a los que se les solicita pueden registrar el uso de vehículos cuando fichan. A los empleados que tienen uso de vehículo previsto se les solicita cada vez, y su trabajo se marca hasta que se completen los detalles. A nadie se le impide fichar. Prevalece la asignación más específica: la del propio empleado sobre la de su equipo principal, y la de un equipo sobre la de toda la organización.",
-      "description": "A quién se le solicita registrar el vehículo que condujo y las lecturas de su odómetro",
       "enabled": "Registrar uso del vehículo",
       "enabledDescription": "Al desactivar esto, se dejará de solicitar el uso de vehículos y de marcar los detalles de conducción faltantes. El uso de vehículos ya registrado permanecerá visible y en las exportaciones.",
       "error": {

@@ -15,7 +15,23 @@ export interface StripeConfig {
 	webhookSecret: string;
 	priceMonthlyId: string;
 	priceYearlyId: string;
+	/** Kiosk seat prices (#886). Kiosk seats exist only when both are set (`kioskSeatsEnabled`). */
+	priceKioskMonthlyId?: string;
+	priceKioskYearlyId?: string;
 	enabled: boolean;
+}
+
+/** The Stripe configuration from the environment. */
+export function stripeConfigFromEnv(): StripeConfig {
+	return {
+		secretKey: env.STRIPE_SECRET_KEY || "",
+		webhookSecret: env.STRIPE_WEBHOOK_SECRET || "",
+		priceMonthlyId: env.STRIPE_PRICE_MONTHLY_ID || "",
+		priceYearlyId: env.STRIPE_PRICE_YEARLY_ID || "",
+		priceKioskMonthlyId: env.STRIPE_PRICE_KIOSK_MONTHLY_ID?.trim() || "",
+		priceKioskYearlyId: env.STRIPE_PRICE_KIOSK_YEARLY_ID?.trim() || "",
+		enabled: env.BILLING_ENABLED === "true",
+	};
 }
 
 /**
@@ -42,6 +58,8 @@ export class StripeService extends Context.Service<
 			priceId: string;
 			organizationId: string;
 			quantity: number;
+			/** The kiosk seat line item (#886), sent after the full seat line. Omit it for no kiosk seats. */
+			kiosk?: { priceId: string; quantity: number };
 			successUrl: string;
 			cancelUrl: string;
 			trialPeriodDays?: number;
@@ -98,13 +116,7 @@ function stripeClientFor(secretKey: string): Stripe {
 export const StripeServiceLive = Layer.effect(
 	StripeService,
 	Effect.sync(() => {
-		const config: StripeConfig = {
-			secretKey: env.STRIPE_SECRET_KEY || "",
-			webhookSecret: env.STRIPE_WEBHOOK_SECRET || "",
-			priceMonthlyId: env.STRIPE_PRICE_MONTHLY_ID || "",
-			priceYearlyId: env.STRIPE_PRICE_YEARLY_ID || "",
-			enabled: env.BILLING_ENABLED === "true",
-		};
+		const config = stripeConfigFromEnv();
 
 		const stripe = config.enabled && config.secretKey ? stripeClientFor(config.secretKey) : null;
 
@@ -158,7 +170,8 @@ export const StripeServiceLive = Layer.effect(
 				}),
 
 			createCheckoutSession: (params) =>
-				params.priceId.startsWith("price_")
+				params.priceId.startsWith("price_") &&
+				(!params.kiosk || params.kiosk.priceId.startsWith("price_"))
 					? Effect.tryPromise({
 							try: async () => {
 								if (!stripe) {
@@ -180,6 +193,9 @@ export const StripeServiceLive = Layer.effect(
 											price: params.priceId,
 											quantity: params.quantity,
 										},
+										...(params.kiosk
+											? [{ price: params.kiosk.priceId, quantity: params.kiosk.quantity }]
+											: []),
 									],
 									success_url: params.successUrl,
 									cancel_url: params.cancelUrl,

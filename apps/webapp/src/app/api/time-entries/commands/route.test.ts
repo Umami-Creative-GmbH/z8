@@ -10,7 +10,10 @@ import { parseInstant } from "@/lib/datetime/temporal-core";
 const state = vi.hoisted(() => ({
 	run: vi.fn(),
 	lookup: vi.fn(),
-	session: { user: { id: "user-1" }, session: { activeOrganizationId: "org-1" } } as unknown,
+	session: {
+		user: { id: "user-1" },
+		session: { activeOrganizationId: "org-1" },
+	} as unknown,
 	requireActor: vi.fn(),
 }));
 
@@ -20,7 +23,9 @@ vi.mock("next/server", async (importOriginal) => ({
 }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 vi.mock("@/db", () => ({ db: {} }));
-vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: async () => state.session } } }));
+vi.mock("@/lib/auth", () => ({
+	auth: { api: { getSession: async () => state.session } },
+}));
 vi.mock("@/lib/domain/request-origin", () => ({
 	resolvePublicRequestOrigin: async () => "https://app.test",
 }));
@@ -33,7 +38,10 @@ vi.mock("@/lib/time-tracking/clocking", () => ({
 }));
 vi.mock("@/lib/time-tracking/clocking-service", () => {
 	class ClockingAccessError extends Error {}
-	return { ClockingAccessError, clockingService: { requireActor: state.requireActor } };
+	return {
+		ClockingAccessError,
+		clockingService: { requireActor: state.requireActor },
+	};
 });
 vi.mock("@/lib/time-tracking/work-transaction", () => ({
 	readAppendAdmission: async () => "append",
@@ -151,6 +159,47 @@ describe("POST /api/time-entries/commands", () => {
 		});
 	});
 
+	it("pauses MFA-held clock submission and receipt lookup without running or changing the saved command", async () => {
+		const previous = state.session;
+		const command = breakCommand();
+		const original = JSON.stringify(command);
+		state.session = {
+			user: { id: "user-1" },
+			session: { activeOrganizationId: null },
+			mfaRequired: {
+				organizationId: "org-1",
+				deadline: "2026-09-20T00:00:00Z",
+			},
+		};
+		try {
+			const result = await submit(command);
+			expect(result).toMatchObject({
+				status: 403,
+				body: {
+					code: "access_denied",
+					authenticationRequired: "MFA_REQUIRED",
+					operationId,
+				},
+			});
+			expect(state.run).not.toHaveBeenCalled();
+			const lookup = await lookupRoute.GET(
+				new Request(
+					`https://app.test/api/time-entries/commands/${operationId}`,
+				),
+				{ params: Promise.resolve({ operationId }) },
+			);
+			expect(lookup.status).toBe(403);
+			expect(await lookup.json()).toMatchObject({
+				code: "access_denied",
+				authenticationRequired: "MFA_REQUIRED",
+				operationId,
+			});
+			expect(state.lookup).not.toHaveBeenCalled();
+			expect(JSON.stringify(command)).toBe(original);
+		} finally {
+			state.session = previous;
+		}
+	});
 	it("runs a frozen break with its bytes, named target, observed start and delayed window", async () => {
 		const command = breakCommand();
 		state.run.mockResolvedValue({
@@ -177,7 +226,10 @@ describe("POST /api/time-entries/commands", () => {
 			body: {
 				kind: "break",
 				target: { kind: "started_by", operationId: clockInOperationId },
-				start: { instant: parseInstant("2026-09-20T09:30:00Z"), zone: "Europe/Lisbon" },
+				start: {
+					instant: parseInstant("2026-09-20T09:30:00Z"),
+					zone: "Europe/Lisbon",
+				},
 			},
 		});
 		expect(response).toEqual({
@@ -204,18 +256,27 @@ describe("POST /api/time-entries/commands", () => {
 				},
 				body: {
 					kind: "clock_out",
-					target: { kind: "period", workPeriodId: "a1000000-0000-4000-8000-000000000001" },
+					target: {
+						kind: "period",
+						workPeriodId: "a1000000-0000-4000-8000-000000000001",
+					},
 					project: { kind: "clear" },
 					workCategory: { kind: "preserve" },
 				},
 			}),
 		);
-		expect(response).toEqual({ status: 200, body: { outcome: "replayed", operationId, receipt } });
+		expect(response).toEqual({
+			status: 200,
+			body: { outcome: "replayed", operationId, receipt },
+		});
 	});
 
 	it("passes a named task to the Clocking module with the frozen bytes (#875)", async () => {
 		state.run.mockResolvedValue({ outcome: "executed", result: {} });
-		const task = { kind: "replace", id: "b1000000-0000-4000-8000-000000000001" };
+		const task = {
+			kind: "replace",
+			id: "b1000000-0000-4000-8000-000000000001",
+		};
 		const command = clockOutCommand({
 			project: { kind: "replace", id: "c1000000-0000-4000-8000-000000000001" },
 			task,
@@ -227,7 +288,10 @@ describe("POST /api/time-entries/commands", () => {
 		expect(run.payload).toEqual(command);
 		expect(run.body).toEqual({
 			kind: "clock_out",
-			target: { kind: "period", workPeriodId: "a1000000-0000-4000-8000-000000000001" },
+			target: {
+				kind: "period",
+				workPeriodId: "a1000000-0000-4000-8000-000000000001",
+			},
 			project: { kind: "replace", id: "c1000000-0000-4000-8000-000000000001" },
 			workCategory: { kind: "preserve" },
 			task,
@@ -274,9 +338,16 @@ describe("POST /api/time-entries/commands", () => {
 			422,
 			{ code: "attribution_not_allowed", field: "workCategoryId" },
 		],
-		[{ code: "under_review", review: "approval" }, 409, { code: "review_pending" }],
 		[
-			{ code: "already_clocked_in", since: parseInstant("2026-09-20T08:00:00Z") },
+			{ code: "under_review", review: "approval" },
+			409,
+			{ code: "review_pending" },
+		],
+		[
+			{
+				code: "already_clocked_in",
+				since: parseInstant("2026-09-20T08:00:00Z"),
+			},
 			409,
 			{ code: "already_clocked_in" },
 		],
@@ -294,14 +365,20 @@ describe("POST /api/time-entries/commands", () => {
 		expect(state.lookup).not.toHaveBeenCalled();
 	});
 
-	it.each(["unconfirmed", "failed"])("answers a %s run as an unknown outcome", async (code) => {
-		state.run.mockResolvedValue({ outcome: "refused", failure: { code, cause: new Error("x") } });
+	it.each(["unconfirmed", "failed"])(
+		"answers a %s run as an unknown outcome",
+		async (code) => {
+			state.run.mockResolvedValue({
+				outcome: "refused",
+				failure: { code, cause: new Error("x") },
+			});
 
-		expect(await submit(breakCommand())).toEqual({
-			status: 500,
-			body: { outcome: "unknown", operationId },
-		});
-	});
+			expect(await submit(breakCommand())).toEqual({
+				status: 500,
+				body: { outcome: "unknown", operationId },
+			});
+		},
+	);
 
 	it("runs a stamped version 3 browser command with its position and its frozen bytes", async () => {
 		state.run.mockResolvedValue({ outcome: "executed", result: {} });
@@ -328,7 +405,9 @@ describe("POST /api/time-entries/commands", () => {
 		state.run.mockResolvedValue({ outcome: "executed", result: {} });
 		const command = stampedClockInCommand();
 
-		const response = await submit(command, { authorization: "Bearer desktop-token" });
+		const response = await submit(command, {
+			authorization: "Bearer desktop-token",
+		});
 
 		expect(response.status).toBe(201);
 		const [run] = state.run.mock.calls[0] ?? [];
@@ -345,18 +424,30 @@ describe("POST /api/time-entries/commands", () => {
 	});
 
 	it("refuses a mismatched context and a clock discontinuity without running", async () => {
-		const mismatched = await submit(breakCommand({ context: { ...context, userId: "user-2" } }));
+		const mismatched = await submit(
+			breakCommand({ context: { ...context, userId: "user-2" } }),
+		);
 		const jumped = breakCommand();
 		jumped.observations.idleDetected.utc = "2026-09-20T10:35:00.000Z";
 		const discontinuous = await submit(jumped);
 
 		expect(mismatched).toEqual({
 			status: 409,
-			body: { outcome: "rejected", operationId, code: "context_mismatch", fields: ["userId"] },
+			body: {
+				outcome: "rejected",
+				operationId,
+				code: "context_mismatch",
+				fields: ["userId"],
+			},
 		});
 		expect(discontinuous).toEqual({
 			status: 422,
-			body: { outcome: "rejected", operationId, code: "clock_discontinuity", from: "lastActivity" },
+			body: {
+				outcome: "rejected",
+				operationId,
+				code: "clock_discontinuity",
+				from: "lastActivity",
+			},
 		});
 		expect(state.run).not.toHaveBeenCalled();
 	});
@@ -409,9 +500,15 @@ describe("GET /api/time-entries/commands/{operationId}", () => {
 		});
 	});
 
-	it.each(["not_committed", "conflict"])("answers %s without details", async (outcome) => {
-		state.lookup.mockResolvedValue({ outcome });
+	it.each(["not_committed", "conflict"])(
+		"answers %s without details",
+		async (outcome) => {
+			state.lookup.mockResolvedValue({ outcome });
 
-		expect(await lookup()).toEqual({ status: 200, body: { outcome, operationId } });
-	});
+			expect(await lookup()).toEqual({
+				status: 200,
+				body: { outcome, operationId },
+			});
+		},
+	);
 });

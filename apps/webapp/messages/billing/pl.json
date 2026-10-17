@@ -13,6 +13,7 @@
       "successDescription": "Twoja subskrypcja została aktywowana. Dziękujemy za subskrypcję!",
       "successTitle": "Sukces!"
     },
+    "amount": "€{amount}",
     "bestValue": "Najlepsza oferta",
     "billedMonthly": "płatne miesięcznie",
     "cancelsOn": "Wygasa {date}",
@@ -52,6 +53,8 @@
       "monthlyBilling": "Rozliczenie miesięczne",
       "yearlyBilling": "Rozliczenie roczne"
     },
+    "kioskSeatPriceMonthly": "Miejsca Kiosk (pracownicy tylko w trybie Kiosk): €{price}/miejsce/miesiąc",
+    "kioskSeatPriceYearly": "Miejsca Kiosk (pracownicy tylko w trybie Kiosk): €{price}/miejsce/miesiąc, €{total}/miejsce rozliczane rocznie",
     "manageBilling": "Zarządzaj rozliczeniami",
     "monthlyCost": "Koszt miesięczny",
     "nextBilling": "Następne rozliczenie",
@@ -71,6 +74,13 @@
     "priceSeatMonth": "{price} €/użytkownika/mies.",
     "priceSeatMonthYearly": "{price} €/użytkownika/mies. (płatne rocznie)",
     "seatBilledAnnually": "{price} €/użytkownika płatne rocznie",
+    "seatLines": {
+      "full": "Pełne miejsca",
+      "kiosk": "Miejsca Kiosk",
+      "seatsAtPrice": "{seats} × €{price}/mies.",
+      "total": "Łącznie",
+      "totalPerMonth": "€{amount}/mies."
+    },
     "starting": "Uruchamianie...",
     "startTrial": "Rozpocznij bezpłatny okres próbny",
     "status": {

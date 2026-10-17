@@ -15,7 +15,10 @@ import { integrationAdminPool } from "@/test/integration-database";
 const { sessions } = await vi.hoisted(async () => {
 	const { AsyncLocalStorage } = await import("node:async_hooks");
 	return {
-		sessions: new AsyncLocalStorage<{ userId: string; organizationId: string }>(),
+		sessions: new AsyncLocalStorage<{
+			userId: string;
+			organizationId: string;
+		}>(),
 	};
 });
 
@@ -26,7 +29,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -52,15 +57,22 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/auth-helpers")>();
 	const { db } = await import("@/db");
-	const { loadOrganizationPrincipalContext } = await import("@/lib/authorization/principal-loader");
+	const { loadOrganizationPrincipalContext } = await import(
+		"@/lib/authorization/principal-loader"
+	);
 	return {
 		...original,
 		getPrincipalContext: async () => {
@@ -75,7 +87,9 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+	),
 );
 
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
@@ -85,7 +99,12 @@ vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 
 vi.mock("@/lib/logger", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/logger")>();
-	const quiet = { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} };
+	const quiet = {
+		error: () => {},
+		warn: () => {},
+		info: () => {},
+		debug: () => {},
+	};
 	return {
 		...original,
 		logger: { ...original.logger, ...quiet },
@@ -94,7 +113,9 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 });
 
 const projects = await import("./actions");
-const { getAssignedProjects } = await import("@/app/[locale]/(app)/time-tracking/actions");
+const { getAssignedProjects } = await import(
+	"@/app/[locale]/(app)/time-tracking/actions"
+);
 const { getManualEntryTargetContext } = await import(
 	"@/app/[locale]/(app)/time-tracking/actions/manual-entry-context"
 );
@@ -167,7 +188,9 @@ describe("project membership settings on PostgreSQL", () => {
 	}
 
 	async function assignmentIdFor(target: string) {
-		const assignment = (await assignments()).find((row) => row.target === target);
+		const assignment = (await assignments()).find(
+			(row) => row.target === target,
+		);
 		if (!assignment) throw new Error(`No assignment for ${target}`);
 		return assignment.id;
 	}
@@ -211,17 +234,67 @@ describe("project membership settings on PostgreSQL", () => {
 		await admin.query(
 			`insert into team (id, organization_id, name, updated_at) values
 			 ($1, $3, 'T367 team', $5), ($2, $4, 'T367 foreign team', $5)`,
-			[ids.team, ids.otherTeam, ids.organization, ids.otherOrganization, timestamp],
+			[
+				ids.team,
+				ids.otherTeam,
+				ids.organization,
+				ids.otherOrganization,
+				timestamp,
+			],
 		);
-		const employees: Array<[string, string, string, string | null, string, boolean]> = [
+		const employees: Array<
+			[string, string, string, string | null, string, boolean]
+		> = [
 			[ids.owner, ids.ownerUser, ids.organization, null, "admin", true],
-			[ids.projectManager, ids.projectManagerUser, ids.organization, null, "manager", true],
-			[ids.employee, ids.employeeUser, ids.organization, ids.team, "employee", true],
-			[ids.soloEmployee, ids.soloUser, ids.organization, null, "employee", true],
-			[ids.inactiveEmployee, ids.inactiveUser, ids.organization, null, "employee", false],
-			[ids.otherEmployee, ids.otherUser, ids.otherOrganization, ids.otherTeam, "employee", true],
+			[
+				ids.projectManager,
+				ids.projectManagerUser,
+				ids.organization,
+				null,
+				"manager",
+				true,
+			],
+			[
+				ids.employee,
+				ids.employeeUser,
+				ids.organization,
+				ids.team,
+				"employee",
+				true,
+			],
+			[
+				ids.soloEmployee,
+				ids.soloUser,
+				ids.organization,
+				null,
+				"employee",
+				true,
+			],
+			[
+				ids.inactiveEmployee,
+				ids.inactiveUser,
+				ids.organization,
+				null,
+				"employee",
+				false,
+			],
+			[
+				ids.otherEmployee,
+				ids.otherUser,
+				ids.otherOrganization,
+				ids.otherTeam,
+				"employee",
+				true,
+			],
 		];
-		for (const [id, userId, organizationId, teamId, role, isActive] of employees) {
+		for (const [
+			id,
+			userId,
+			organizationId,
+			teamId,
+			role,
+			isActive,
+		] of employees) {
 			await admin.query(
 				`insert into employee (id, user_id, organization_id, team_id, role, is_active, updated_at)
 				 values ($1, $2, $3, $4, $5, $6, $7)`,
@@ -299,7 +372,9 @@ describe("project membership settings on PostgreSQL", () => {
 				projects.addProjectManager(ids.project, ids.employee),
 			);
 			expect(added).toEqual({ success: true, data: undefined });
-			expect(await managerIds()).toEqual([ids.projectManager, ids.employee].sort());
+			expect(await managerIds()).toEqual(
+				[ids.projectManager, ids.employee].sort(),
+			);
 
 			const removed = await actAs(ids.ownerUser, () =>
 				projects.removeProjectManager(ids.project, ids.projectManager),
@@ -313,7 +388,10 @@ describe("project membership settings on PostgreSQL", () => {
 				projects.removeProjectManager(ids.project, ids.employee),
 			);
 
-			expect(result).toMatchObject({ success: false, error: expect.stringMatching(/not found/i) });
+			expect(result).toMatchObject({
+				success: false,
+				error: expect.stringMatching(/not found/i),
+			});
 			expect(await managerIds()).toEqual([ids.projectManager]);
 			expect(audit.logAudit).not.toHaveBeenCalled();
 		});
@@ -355,7 +433,11 @@ describe("project membership settings on PostgreSQL", () => {
 				projects.addProjectAssignment(ids.project, "team", ids.team),
 			);
 			const employee = await actAs(ids.projectManagerUser, () =>
-				projects.addProjectAssignment(ids.project, "employee", ids.soloEmployee),
+				projects.addProjectAssignment(
+					ids.project,
+					"employee",
+					ids.soloEmployee,
+				),
 			);
 			expect(team).toEqual({ success: true, data: undefined });
 			expect(employee).toEqual({ success: true, data: undefined });
@@ -368,14 +450,23 @@ describe("project membership settings on PostgreSQL", () => {
 				projects.removeProjectAssignment(teamAssignmentId),
 			);
 			expect(removed).toEqual({ success: true, data: undefined });
-			expect((await assignments()).map((row) => row.target)).toEqual([ids.soloEmployee]);
+			expect((await assignments()).map((row) => row.target)).toEqual([
+				ids.soloEmployee,
+			]);
 		});
 
 		it("a manager-tier employee cannot change assignments of a project they do not manage", async () => {
-			const existingId = await seedEmployeeAssignment(ids.unmanagedProject, ids.employee);
+			const existingId = await seedEmployeeAssignment(
+				ids.unmanagedProject,
+				ids.employee,
+			);
 
 			const added = await actAs(ids.projectManagerUser, () =>
-				projects.addProjectAssignment(ids.unmanagedProject, "employee", ids.soloEmployee),
+				projects.addProjectAssignment(
+					ids.unmanagedProject,
+					"employee",
+					ids.soloEmployee,
+				),
 			);
 			const removed = await actAs(ids.projectManagerUser, () =>
 				projects.removeProjectAssignment(existingId),
@@ -383,7 +474,9 @@ describe("project membership settings on PostgreSQL", () => {
 
 			expect(added.success).toBe(false);
 			expect(removed.success).toBe(false);
-			expect((await assignments(ids.unmanagedProject)).map((row) => row.id)).toEqual([existingId]);
+			expect(
+				(await assignments(ids.unmanagedProject)).map((row) => row.id),
+			).toEqual([existingId]);
 		});
 
 		it("a manager-tier project manager cannot assign foreign or inactive targets", async () => {
@@ -402,7 +495,10 @@ describe("project membership settings on PostgreSQL", () => {
 		});
 
 		it("a member-tier employee cannot change assignments or project managers", async () => {
-			const existingId = await seedEmployeeAssignment(ids.project, ids.soloEmployee);
+			const existingId = await seedEmployeeAssignment(
+				ids.project,
+				ids.soloEmployee,
+			);
 
 			const results = await actAs(ids.employeeUser, () =>
 				Promise.all([
@@ -413,7 +509,12 @@ describe("project membership settings on PostgreSQL", () => {
 				]),
 			);
 
-			expect(results.map((result) => result.success)).toEqual([false, false, false, false]);
+			expect(results.map((result) => result.success)).toEqual([
+				false,
+				false,
+				false,
+				false,
+			]);
 			expect((await assignments()).map((row) => row.id)).toEqual([existingId]);
 			expect(await managerIds()).toEqual([ids.projectManager]);
 			expect(audit.logAudit).not.toHaveBeenCalled();
@@ -436,7 +537,11 @@ describe("project membership settings on PostgreSQL", () => {
 
 		it("rejects assignment changes on a foreign project", async () => {
 			const added = await actAs(ids.ownerUser, () =>
-				projects.addProjectAssignment(ids.otherProject, "employee", ids.employee),
+				projects.addProjectAssignment(
+					ids.otherProject,
+					"employee",
+					ids.employee,
+				),
 			);
 			const removed = await actAs(ids.ownerUser, () =>
 				projects.removeProjectAssignment(ids.otherAssignment),
@@ -444,9 +549,9 @@ describe("project membership settings on PostgreSQL", () => {
 
 			expect(added.success).toBe(false);
 			expect(removed.success).toBe(false);
-			expect((await assignments(ids.otherProject)).map((row) => row.id)).toEqual([
-				ids.otherAssignment,
-			]);
+			expect(
+				(await assignments(ids.otherProject)).map((row) => row.id),
+			).toEqual([ids.otherAssignment]);
 		});
 	});
 
@@ -454,7 +559,9 @@ describe("project membership settings on PostgreSQL", () => {
 		/** Project ids offered by the time clock and by manual entry (self and on behalf). */
 		async function offeredProjects(employeeUserId: string, employeeId: string) {
 			const clock = await actAs(employeeUserId, () => getAssignedProjects());
-			const manualSelf = await actAs(employeeUserId, () => getManualEntryTargetContext({}));
+			const manualSelf = await actAs(employeeUserId, () =>
+				getManualEntryTargetContext({}),
+			);
 			const manualOnBehalf = await actAs(ids.ownerUser, () =>
 				getManualEntryTargetContext({ targetEmployeeId: employeeId }),
 			);
@@ -478,30 +585,44 @@ describe("project membership settings on PostgreSQL", () => {
 		};
 
 		it("a team assignment offers the project to the team's employees", async () => {
-			expect(await offeredProjects(ids.employeeUser, ids.employee)).toEqual(none);
+			expect(await offeredProjects(ids.employeeUser, ids.employee)).toEqual(
+				none,
+			);
 
 			const result = await actAs(ids.ownerUser, () =>
 				projects.addProjectAssignment(ids.project, "team", ids.team),
 			);
 			expect(result.success).toBe(true);
 
-			expect(await offeredProjects(ids.employeeUser, ids.employee)).toEqual(onlyProject);
-			expect(await offeredProjects(ids.soloUser, ids.soloEmployee)).toEqual(none);
+			expect(await offeredProjects(ids.employeeUser, ids.employee)).toEqual(
+				onlyProject,
+			);
+			expect(await offeredProjects(ids.soloUser, ids.soloEmployee)).toEqual(
+				none,
+			);
 		});
 
 		it("an employee assignment offers the project to that employee until it is removed", async () => {
 			const result = await actAs(ids.ownerUser, () =>
-				projects.addProjectAssignment(ids.project, "employee", ids.soloEmployee),
+				projects.addProjectAssignment(
+					ids.project,
+					"employee",
+					ids.soloEmployee,
+				),
 			);
 			expect(result.success).toBe(true);
-			expect(await offeredProjects(ids.soloUser, ids.soloEmployee)).toEqual(onlyProject);
+			expect(await offeredProjects(ids.soloUser, ids.soloEmployee)).toEqual(
+				onlyProject,
+			);
 
 			const assignmentId = await assignmentIdFor(ids.soloEmployee);
 			const removed = await actAs(ids.ownerUser, () =>
 				projects.removeProjectAssignment(assignmentId),
 			);
 			expect(removed.success).toBe(true);
-			expect(await offeredProjects(ids.soloUser, ids.soloEmployee)).toEqual(none);
+			expect(await offeredProjects(ids.soloUser, ids.soloEmployee)).toEqual(
+				none,
+			);
 		});
 	});
 });

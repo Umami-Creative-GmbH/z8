@@ -128,6 +128,8 @@ export interface WorkPeriodEvent extends CalendarEvent {
 		taskId?: string;
 		taskName?: string;
 		taskState?: "open" | "done";
+		/** Missing task (#884): accepted without the task its project required; present only then. */
+		missingTask?: true;
 		// Surcharge fields - optional, only present if surcharges are enabled
 		surchargeMinutes?: number;
 		totalCreditedMinutes?: number;

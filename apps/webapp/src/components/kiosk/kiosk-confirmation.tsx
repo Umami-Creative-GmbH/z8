@@ -1,6 +1,6 @@
 "use client";
 
-import { IconAlertTriangle, IconCircleCheck } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCircleCheck, IconCloudUpload } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,11 @@ interface KioskConfirmationProps {
 	note: string | null;
 	/** Something the employee should know went wrong, e.g. vehicle use not recorded (#1123). */
 	warning?: string | null;
+	/**
+	 * Saved on an offline kiosk, not yet confirmed by Z8 (#1292): what to tell the
+	 * employee instead of a plain success. The PIN is checked when the kiosk reconnects.
+	 */
+	unconfirmed?: string | null;
 	/** When the kiosk returns home on its own, in milliseconds from now. */
 	returnsInMs: number;
 	onHome: () => void;
@@ -28,11 +33,12 @@ export function KioskConfirmation({
 	time,
 	note,
 	warning = null,
+	unconfirmed = null,
 	returnsInMs,
 	onHome,
 }: KioskConfirmationProps) {
 	const { t } = useTranslate();
-	const [secondsLeft, setSecondsLeft] = useState(Math.ceil(returnsInMs / 1000));
+	const [secondsLeft, setSecondsLeft] = useState(() => Math.ceil(returnsInMs / 1000));
 
 	// Counted from a deadline, so a throttled timer never lets the countdown drift from the return.
 	useEffect(() => {
@@ -53,14 +59,26 @@ export function KioskConfirmation({
 				aria-label={t("timeTracking.kiosk.done.title", "Done")}
 				className="m-auto flex max-w-xl flex-col items-center gap-5 text-center"
 			>
-				<IconCircleCheck
-					className="size-24 text-emerald-600 dark:text-emerald-400"
-					aria-hidden="true"
-				/>
+				{unconfirmed ? (
+					<IconCloudUpload
+						className="size-24 text-amber-600 dark:text-amber-400"
+						aria-hidden="true"
+					/>
+				) : (
+					<IconCircleCheck
+						className="size-24 text-emerald-600 dark:text-emerald-400"
+						aria-hidden="true"
+					/>
+				)}
 				<span className="text-3xl font-semibold break-words">{name}</span>
 				<span className="text-2xl">{action}</span>
 				<span className="text-5xl font-semibold tabular-nums">{time}</span>
 				{note ? <span className="text-lg text-muted-foreground">{note}</span> : null}
+				{unconfirmed ? (
+					<span role="status" className="text-lg text-amber-900 dark:text-amber-200">
+						{unconfirmed}
+					</span>
+				) : null}
 				{warning ? (
 					<span
 						role="status"

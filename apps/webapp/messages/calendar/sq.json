@@ -329,6 +329,7 @@
       "duration": "Kohëzgjatja",
       "editedBy": "Modifikuar nga",
       "employee": "Punonjësi",
+      "missingTask": "Mungon detyra. Ky projekt kërkon një: modifikoni rezervimin për ta shtuar atë.",
       "notes": "Shënime",
       "pendingApproval": "Në pritje të miratimit",
       "pendingApprovalDescription": "Kjo periudhë pune po pret miratimin e menaxherit. Orët e regjistruara mund të ndryshojnë nëse refuzohet.",
@@ -517,7 +518,9 @@
     },
     "workPeriod": {
       "billable": "E faturueshme",
-      "editedBy": "(redaktuar nga {name} më {date})"
+      "editedBy": "(redaktuar nga {name} më {date})",
+      "missingTask": "Mungon detyra",
+      "missingTaskHint": "Mungon detyra: shtoni një detyrë"
     },
     "workStatus": {
       "overRequirement": "mbi kërkesën",

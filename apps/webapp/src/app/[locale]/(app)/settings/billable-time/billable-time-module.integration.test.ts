@@ -22,7 +22,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -46,10 +48,15 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/billable-time/currency-lock-probes", () => ({
 	BILLABLE_CURRENCY_LOCK_PROBES: [
@@ -67,11 +74,18 @@ vi.mock("@/lib/logger", () => ({
 		warn: () => {},
 		info: () => {},
 		debug: () => {},
-		child: () => ({ error: () => {}, warn: () => {}, info: () => {}, debug: () => {} }),
+		child: () => ({
+			error: () => {},
+			warn: () => {},
+			info: () => {},
+			debug: () => {},
+		}),
 	}),
 }));
 
-const { switchBillableTime, updateBillableCurrency } = await import("./actions");
+const { switchBillableTime, updateBillableCurrency } = await import(
+	"./actions"
+);
 const { toggleOrganizationFeature } = await import("../organizations/actions");
 const { getBillableTimeSettings: readBillableTimeSettings } = await import(
 	"@/lib/billable-time/settings"
@@ -88,7 +102,12 @@ const ids = {
 	memberUser: "t897-member-user",
 	otherOwnerUser: "t897-other-owner-user",
 } as const;
-const users = [ids.ownerUser, ids.adminUser, ids.memberUser, ids.otherOwnerUser];
+const users = [
+	ids.ownerUser,
+	ids.adminUser,
+	ids.memberUser,
+	ids.otherOwnerUser,
+];
 
 describe("Billable Time module switch on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -100,10 +119,10 @@ describe("Billable Time module switch on PostgreSQL", () => {
 	}
 
 	async function setProjects(organizationId: string, enabled: boolean) {
-		await admin.query("update organization set projects_enabled = $2 where id = $1", [
-			organizationId,
-			enabled,
-		]);
+		await admin.query(
+			"update organization set projects_enabled = $2 where id = $1",
+			[organizationId, enabled],
+		);
 	}
 
 	async function cleanup() {
@@ -158,7 +177,9 @@ describe("Billable Time module switch on PostgreSQL", () => {
 		});
 
 		it("lets an owner switch it on with a chosen billable currency", async () => {
-			await expect(switchBillableTime({ enabled: true, currency: "CHF" })).resolves.toMatchObject({
+			await expect(
+				switchBillableTime({ enabled: true, currency: "CHF" }),
+			).resolves.toMatchObject({
 				success: true,
 				data: { enabled: true, currency: "CHF" },
 			});
@@ -171,7 +192,10 @@ describe("Billable Time module switch on PostgreSQL", () => {
 		it("refuses to switch it on while projects are off", async () => {
 			await setProjects(ids.organization, false);
 
-			const result = await switchBillableTime({ enabled: true, currency: "EUR" });
+			const result = await switchBillableTime({
+				enabled: true,
+				currency: "EUR",
+			});
 
 			expect(result).toMatchObject({ success: false, code: "ValidationError" });
 			await expect(getBillableTimeSettings(ids.organization)).resolves.toEqual({
@@ -181,11 +205,15 @@ describe("Billable Time module switch on PostgreSQL", () => {
 		});
 
 		it("asks for a listed billable currency the first time it is switched on", async () => {
-			await expect(switchBillableTime({ enabled: true })).resolves.toMatchObject({
+			await expect(
+				switchBillableTime({ enabled: true }),
+			).resolves.toMatchObject({
 				success: false,
 				code: "ValidationError",
 			});
-			await expect(switchBillableTime({ enabled: true, currency: "JPY" })).resolves.toMatchObject({
+			await expect(
+				switchBillableTime({ enabled: true, currency: "JPY" }),
+			).resolves.toMatchObject({
 				success: false,
 				code: "ValidationError",
 			});
@@ -198,7 +226,9 @@ describe("Billable Time module switch on PostgreSQL", () => {
 		it("keeps the chosen currency when the module is switched off and on again", async () => {
 			await switchBillableTime({ enabled: true, currency: "GBP" });
 
-			await expect(switchBillableTime({ enabled: false })).resolves.toMatchObject({
+			await expect(
+				switchBillableTime({ enabled: false }),
+			).resolves.toMatchObject({
 				success: true,
 				data: { enabled: false, currency: "GBP" },
 			});
@@ -207,7 +237,9 @@ describe("Billable Time module switch on PostgreSQL", () => {
 				currency: "GBP",
 			});
 
-			await expect(switchBillableTime({ enabled: true })).resolves.toMatchObject({
+			await expect(
+				switchBillableTime({ enabled: true }),
+			).resolves.toMatchObject({
 				success: true,
 				data: { enabled: true, currency: "GBP" },
 			});
@@ -216,9 +248,12 @@ describe("Billable Time module switch on PostgreSQL", () => {
 		it("refuses admins and members: like every module switch, it is the owner's", async () => {
 			for (const userId of [ids.adminUser, ids.memberUser]) {
 				actAs(userId);
-				await expect(switchBillableTime({ enabled: true, currency: "EUR" })).resolves.toMatchObject(
-					{ success: false, code: "AuthorizationError" },
-				);
+				await expect(
+					switchBillableTime({ enabled: true, currency: "EUR" }),
+				).resolves.toMatchObject({
+					success: false,
+					code: "AuthorizationError",
+				});
 			}
 			await expect(getBillableTimeSettings(ids.organization)).resolves.toEqual({
 				enabled: false,
@@ -228,7 +263,11 @@ describe("Billable Time module switch on PostgreSQL", () => {
 
 		it("is not writable through the generic feature toggle, which cannot ask for a currency", async () => {
 			await expect(
-				toggleOrganizationFeature(ids.organization, "billableTimeEnabled", true),
+				toggleOrganizationFeature(
+					ids.organization,
+					"billableTimeEnabled",
+					true,
+				),
 			).resolves.toMatchObject({ success: false });
 			await expect(getBillableTimeSettings(ids.organization)).resolves.toEqual({
 				enabled: false,
@@ -249,7 +288,11 @@ describe("Billable Time module switch on PostgreSQL", () => {
 				currency: "USD",
 			});
 
-			await toggleOrganizationFeature(ids.organization, "projectsEnabled", true);
+			await toggleOrganizationFeature(
+				ids.organization,
+				"projectsEnabled",
+				true,
+			);
 			await expect(getBillableTimeSettings(ids.organization)).resolves.toEqual({
 				enabled: false,
 				currency: "USD",
@@ -265,9 +308,10 @@ describe("Billable Time module switch on PostgreSQL", () => {
 		it("never reports the module on while projects are off", async () => {
 			await switchBillableTime({ enabled: true, currency: "EUR" });
 			// A row written outside the toggle, e.g. by an older deployment.
-			await admin.query("update organization set projects_enabled = false where id = $1", [
-				ids.organization,
-			]);
+			await admin.query(
+				"update organization set projects_enabled = false where id = $1",
+				[ids.organization],
+			);
 
 			await expect(getBillableTimeSettings(ids.organization)).resolves.toEqual({
 				enabled: false,
@@ -284,7 +328,9 @@ describe("Billable Time module switch on PostgreSQL", () => {
 		it("lets an org admin change it while no rate uses it", async () => {
 			actAs(ids.adminUser);
 
-			await expect(updateBillableCurrency({ currency: "CHF" })).resolves.toMatchObject({
+			await expect(
+				updateBillableCurrency({ currency: "CHF" }),
+			).resolves.toMatchObject({
 				success: true,
 				data: { enabled: true, currency: "CHF" },
 			});
@@ -297,13 +343,17 @@ describe("Billable Time module switch on PostgreSQL", () => {
 		it("is read-only once a billable rate or cost rate exists", async () => {
 			harness.priced.add(ids.organization);
 
-			await expect(updateBillableCurrency({ currency: "CHF" })).resolves.toMatchObject({
+			await expect(
+				updateBillableCurrency({ currency: "CHF" }),
+			).resolves.toMatchObject({
 				success: false,
 				code: "ConflictError",
 			});
 			// Switching the module on again cannot change it either.
 			await switchBillableTime({ enabled: false });
-			await expect(switchBillableTime({ enabled: true, currency: "CHF" })).resolves.toMatchObject({
+			await expect(
+				switchBillableTime({ enabled: true, currency: "CHF" }),
+			).resolves.toMatchObject({
 				success: false,
 				code: "ConflictError",
 			});
@@ -315,17 +365,23 @@ describe("Billable Time module switch on PostgreSQL", () => {
 
 		it("refuses members and an unlisted currency", async () => {
 			actAs(ids.memberUser);
-			await expect(updateBillableCurrency({ currency: "CHF" })).resolves.toMatchObject({
+			await expect(
+				updateBillableCurrency({ currency: "CHF" }),
+			).resolves.toMatchObject({
 				success: false,
 				code: "AuthorizationError",
 			});
 
 			actAs(ids.adminUser);
-			await expect(updateBillableCurrency({ currency: "XYZ" })).resolves.toMatchObject({
+			await expect(
+				updateBillableCurrency({ currency: "XYZ" }),
+			).resolves.toMatchObject({
 				success: false,
 				code: "ValidationError",
 			});
-			await expect(getBillableTimeSettings(ids.organization)).resolves.toMatchObject({
+			await expect(
+				getBillableTimeSettings(ids.organization),
+			).resolves.toMatchObject({
 				currency: "EUR",
 			});
 		});
@@ -333,13 +389,18 @@ describe("Billable Time module switch on PostgreSQL", () => {
 		it("cannot be changed while the module is off", async () => {
 			await switchBillableTime({ enabled: false });
 
-			await expect(updateBillableCurrency({ currency: "CHF" })).resolves.toMatchObject({
+			await expect(
+				updateBillableCurrency({ currency: "CHF" }),
+			).resolves.toMatchObject({
 				success: false,
 				code: "ValidationError",
 			});
 		});
 
-		async function connectAccountingTool(organizationId: string, providerKind: string) {
+		async function connectAccountingTool(
+			organizationId: string,
+			providerKind: string,
+		) {
 			await admin.query(
 				`insert into accounting_connection
 				 (organization_id, provider_kind, status, account_ref, default_tax_treatment, default_tax_rate)
@@ -352,7 +413,9 @@ describe("Billable Time module switch on PostgreSQL", () => {
 			await connectAccountingTool(ids.organization, "lexware_office");
 			actAs(ids.adminUser);
 
-			await expect(updateBillableCurrency({ currency: "CHF" })).resolves.toMatchObject({
+			await expect(
+				updateBillableCurrency({ currency: "CHF" }),
+			).resolves.toMatchObject({
 				success: false,
 				code: "ConflictError",
 				error: expect.stringContaining("Lexware Office"),
@@ -360,7 +423,9 @@ describe("Billable Time module switch on PostgreSQL", () => {
 			// Switching the module off and on with another currency is the same change.
 			actAs(ids.ownerUser);
 			await switchBillableTime({ enabled: false });
-			await expect(switchBillableTime({ enabled: true, currency: "CHF" })).resolves.toMatchObject({
+			await expect(
+				switchBillableTime({ enabled: true, currency: "CHF" }),
+			).resolves.toMatchObject({
 				success: false,
 				code: "ConflictError",
 			});
@@ -374,7 +439,9 @@ describe("Billable Time module switch on PostgreSQL", () => {
 			await connectAccountingTool(ids.organization, "sevdesk");
 			actAs(ids.adminUser);
 
-			await expect(updateBillableCurrency({ currency: "CHF" })).resolves.toMatchObject({
+			await expect(
+				updateBillableCurrency({ currency: "CHF" }),
+			).resolves.toMatchObject({
 				success: true,
 				data: { currency: "CHF" },
 			});
@@ -384,7 +451,9 @@ describe("Billable Time module switch on PostgreSQL", () => {
 				[ids.organization],
 			);
 			await connectAccountingTool(ids.otherOrganization, "lexware_office");
-			await expect(updateBillableCurrency({ currency: "USD" })).resolves.toMatchObject({
+			await expect(
+				updateBillableCurrency({ currency: "USD" }),
+			).resolves.toMatchObject({
 				success: true,
 				data: { currency: "USD" },
 			});
@@ -395,7 +464,9 @@ describe("Billable Time module switch on PostgreSQL", () => {
 		it("writes only the active organization", async () => {
 			await switchBillableTime({ enabled: true, currency: "CHF" });
 
-			await expect(getBillableTimeSettings(ids.otherOrganization)).resolves.toEqual({
+			await expect(
+				getBillableTimeSettings(ids.otherOrganization),
+			).resolves.toEqual({
 				enabled: false,
 				currency: null,
 			});
@@ -405,11 +476,15 @@ describe("Billable Time module switch on PostgreSQL", () => {
 			// The owner of the first organization is only a member of the other one.
 			actAs(ids.ownerUser, ids.otherOrganization);
 
-			await expect(switchBillableTime({ enabled: true, currency: "CHF" })).resolves.toMatchObject({
+			await expect(
+				switchBillableTime({ enabled: true, currency: "CHF" }),
+			).resolves.toMatchObject({
 				success: false,
 				code: "AuthorizationError",
 			});
-			await expect(getBillableTimeSettings(ids.otherOrganization)).resolves.toEqual({
+			await expect(
+				getBillableTimeSettings(ids.otherOrganization),
+			).resolves.toEqual({
 				enabled: false,
 				currency: null,
 			});
@@ -428,7 +503,9 @@ describe("Billable Time module switch on PostgreSQL", () => {
 				enabled: true,
 				currency: "CHF",
 			});
-			await expect(getBillableTimeSettings(ids.otherOrganization)).resolves.toEqual({
+			await expect(
+				getBillableTimeSettings(ids.otherOrganization),
+			).resolves.toEqual({
 				enabled: true,
 				currency: "GBP",
 			});
@@ -437,10 +514,14 @@ describe("Billable Time module switch on PostgreSQL", () => {
 		it("refuses a session without an active organization", async () => {
 			harness.organizationId = null;
 
-			await expect(switchBillableTime({ enabled: true, currency: "CHF" })).resolves.toMatchObject({
+			await expect(
+				switchBillableTime({ enabled: true, currency: "CHF" }),
+			).resolves.toMatchObject({
 				success: false,
 			});
-			await expect(updateBillableCurrency({ currency: "CHF" })).resolves.toMatchObject({
+			await expect(
+				updateBillableCurrency({ currency: "CHF" }),
+			).resolves.toMatchObject({
 				success: false,
 			});
 		});

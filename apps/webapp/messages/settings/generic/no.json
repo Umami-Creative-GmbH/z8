@@ -504,7 +504,6 @@
       "title": "ArbZG-samsvar"
     },
     "customDomains": {
-      "description": "Konfigurer egendefinert domene, merkevarebygging og SSO for organisasjonen din",
       "title": "Domene og merkevarebygging"
     },
     "customers": {
@@ -846,9 +845,38 @@
       },
       "title": "Dataeksport"
     },
-    "emailConfig": {
-      "description": "Konfigurer en egendefinert e-postleverandør for organisasjonens e-poster",
-      "title": "E-postkonfigurasjon"
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Tildel kontrolløransvar",
+        "all": "Alle ansatte i denne organisasjonen",
+        "allDescription": "Ansvar følger nåværende organisasjonsmedlemskap. Kontrollører kan aldri verifisere seg selv.",
+        "attribution": "Tildelt av {actor} {time}",
+        "description": "Tildel ansvar separat fra sjåførregistrering, linjeledelse og tilgang til personalmapper. Administrasjon av disse tildelingene gir ikke tillatelse til å lese kontrollrapporter. Egenverifisering er alltid forbudt.",
+        "editor": "Kontrolløromfang",
+        "empty": "Ingen kontrolløransvar tildelt",
+        "expiry": "Utløper {time}",
+        "history": "Ansvarshistorikk",
+        "historyEntry": "Tildelt av {grantor} {granted}; tilbakekalt av {revoker} {revoked}",
+        "loadFailed": "Kunne ikke laste inn kontrolløransvar",
+        "myAll": "Du er ansvarlig for kontroller i hele organisasjonen. Du kan ikke verifisere deg selv.",
+        "mySelected": "Du er ansvarlig for {teams} valgte team og {employees} navngitte ansatte. Gjeldende teammedlemskap avgjør tilgangen. Du kan ikke verifisere deg selv.",
+        "myTitle": "Ditt kontrolløransvar",
+        "none": "Du har for øyeblikket ikke ansvar for kontroll av førerkort.",
+        "noTeams": "Ingen team tilgjengelig",
+        "person": "Kontrollør",
+        "revoked": "Kontrolløransvar tilbakekalt",
+        "revokeDescription": "Kontrolløren mister umiddelbart tilgang til kontroller i dette omfanget. En ny tildeling kreves for å gjenopprette ansvaret.",
+        "revokeFailed": "Kunne ikke tilbakekalle ansvar. Prøv igjen.",
+        "revokeTitle": "Tilbakekalle kontrolløransvar?",
+        "saved": "Kontrolløransvar lagret",
+        "scope": "Ansvar",
+        "select": "Velg en ansatt",
+        "selected": "{teams} team, {employees} navngitte ansatte",
+        "selectEmployees": "Velg ansatte",
+        "specific": "Valgte team og ansatte",
+        "specificDescription": "Inkluderer navngitte ansatte og gjeldende medlemmer av valgte team. Teamendringer trer i kraft umiddelbart.",
+        "title": "Førerkortkontrollører"
+      }
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1306,8 @@
     },
     "group": {
       "account": "Konto",
-      "administration": "Administrasjon",
       "data": "Data",
-      "enterprise": "Enterprise",
+      "integrations": "Integrasjoner",
       "notifications": "Varsler",
       "organization": "Organisasjon"
     },
@@ -1458,7 +1485,8 @@
         "invalidTimezone": "Velg en tidssone.",
         "kioskNotFound": "Fant ikke denne kiosken.",
         "kioskRevoked": "Denne kiosken er tilbakekalt.",
-        "locationNotFound": "Velg en aktiv lokasjon for denne organisasjonen."
+        "locationNotFound": "Velg en aktiv lokasjon for denne organisasjonen.",
+        "offlineNeedsAdoption": "Frakoblet modus krever koordinerte stemplingskommandoer, som denne organisasjonen ikke bruker ennå."
       },
       "fields": {
         "board": "Hvem er på jobb-tavle",
@@ -1468,6 +1496,9 @@
         "locationPlaceholder": "Velg en lokasjon",
         "name": "Navn",
         "namePlaceholder": "f.eks. Personalinngang",
+        "offlineMode": "Frakoblet modus",
+        "offlineModeDescription": "Kiosken fortsetter å stemple uten tilkobling. Stemplingene bekreftes, og PIN-kodene deres kontrolleres, så snart den kobles til igjen.",
+        "offlineModeUnavailable": "Frakoblet modus krever koordinerte stemplingskommandoer, som denne organisasjonen ikke bruker ennå.",
         "timezone": "Tidssone",
         "timezoneDescription": "Stemplinger registrert på denne kiosken bruker denne tidssonen."
       },
@@ -1477,6 +1508,8 @@
       "loadFailed": "Kunne ikke laste inn kiosker.",
       "neverSeen": "Aldri",
       "noLocations": "Opprett en lokasjon først: hver kiosk tilhører én lokasjon.",
+      "offlineOn": "Frakoblet modus på",
+      "offlineOnNotInEffect": "Frakoblet modus på, ikke i kraft for denne organisasjonen",
       "pairAgain": "Parkoble på nytt",
       "pairFailed": "Kunne ikke utstede en ny parkoblingskode",
       "pairingCodeLabel": "Sammenkoblingskode",
@@ -1486,6 +1519,46 @@
       "pairPairedDescription": "Enhetstokenet roteres: Den parkoblede enheten slutter å fungere umiddelbart og må parkobles på nytt med den nye koden.",
       "pairTitle": "Parkoble {name} på nytt?",
       "pairUnpairedDescription": "En ny sammenkoblingskode erstatter den forrige.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Stemple inn",
+          "clockOut": "Stemple ut",
+          "resumeBreak": "Gjenoppta",
+          "startBreak": "Start pause"
+        },
+        "columns": {
+          "action": "Handling",
+          "claimedAt": "Oppgitt tid",
+          "employee": "Ansatt",
+          "kiosk": "Kiosk",
+          "reason": "Årsak",
+          "timeSource": "Tidskilde"
+        },
+        "description": "Stemplinger lagret på en kiosk mens den var frakoblet, som ikke ble registrert da den koblet til igjen. Den ansatte, eller lederne til en ansatt uten innlogging, ble varslet.",
+        "empty": "Ingen frakoblede stemplinger ble avvist.",
+        "reasons": {
+          "clockUntrusted": "Kioskens klokke er ikke pålitelig",
+          "conflict": "I konflikt med annen registrert tid",
+          "contactUnverifiable": "Siste tilkobling kunne ikke bekreftes",
+          "holiday": "Helligdag uten tidsregistrering",
+          "kioskRetired": "Kiosk tilbakekalt eller paret på nytt",
+          "monthClosed": "Måned stengt",
+          "noPin": "Ingen kiosk-PIN angitt",
+          "notAdopted": "Frakoblet stempling godtas ikke av organisasjonen",
+          "notAssigned": "Ikke tilordnet lokasjonen",
+          "other": "Kunne ikke godtas",
+          "outsideWindow": "Ankom for sent",
+          "pinLocked": "PIN-kode låst",
+          "pinUnchecked": "PIN-koden kunne ikke kontrolleres",
+          "wrongPin": "Feil PIN-kode"
+        },
+        "timeSources": {
+          "deviceClock": "Enhetsklokke",
+          "serverAnchor": "Servertid"
+        },
+        "title": "Avviste frakoblede stemplinger",
+        "unknownEmployee": "Ikke en ansatt"
+      },
       "revoke": "Tilbakekall",
       "revokeConfirm": "Tilbakekall kiosk",
       "revoked": "Kiosk tilbakekalt",
@@ -1493,6 +1566,7 @@
       "revokeFailed": "Kiosken kunne ikke tilbakekalles",
       "revokeTitle": "Tilbakekalle {name}?",
       "rotateConfirm": "Roter token og koble sammen på nytt",
+      "rotateOfflineWarning": "Denne kiosken har frakoblet modus på. Stemplinger som ble lagret mens den var frakoblet og som ennå ikke er sendt, avvises når den kobler til igjen, og oppføres under avviste frakoblede stemplinger.",
       "save": "Lagre",
       "saved": "Kiosk lagret",
       "saveFailed": "Kiosken kunne ikke lagres",
@@ -1517,6 +1591,7 @@
       "searchPlaceholder": "Søk etter pakker eller lisenser...",
       "unknown": "Ukjent"
     },
+    "loading": "Laster innstillinger",
     "locations": {
       "address": "Adresse",
       "assignEmployee": "Tildel ansatt",
@@ -1627,6 +1702,55 @@
       "statusReady": "Klar",
       "title": "Mine data",
       "unavailable": "Mine data er ikke tilgjengelig for kontoen din i denne organisasjonen."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Aktivitet",
+        "description": "Gjennomgå aktivitet og konfigurer signerte revisjonseksporter",
+        "keysDescription": "Administrer signeringsnøklene som brukes av revisjonseksporter",
+        "packagesDescription": "Generer og gjennomgå signerte revisjonspakker",
+        "title": "Revisjon"
+      },
+      "chat-integrations": {
+        "description": "Konfigurer Slack, Microsoft Teams, Telegram og Discord",
+        "title": "Chat-integrasjoner"
+      },
+      "clocking": {
+        "automaticDescription": "Konfigurer automatisk utstempling for uavbrutt arbeid",
+        "description": "Konfigurer sporing, automatisk utstempling, påminnelser og periodeinnsendinger",
+        "remindersDescription": "Konfigurer påminnelser for innstempling, utstempling og pauser",
+        "submissionsDescription": "Konfigurer når ansatte sender inn arbeidsperiodene sine til godkjenning",
+        "title": "Stempling",
+        "trackingDescription": "Angi startdatoen som brukes for organisasjonens tidssporing"
+      },
+      "developerAccess": {
+        "description": "Administrer API-nøkler og webhook-endepunkter",
+        "title": "Utviklertilgang"
+      },
+      "domainBranding": {
+        "description": "Konfigurer organisasjonens egendefinerte domene og merkevarebygging"
+      },
+      "email": {
+        "delivery": "Levering",
+        "description": "Konfigurer e-postlevering og tilpass meldingsmaler",
+        "title": "E-post"
+      },
+      "identityAccess": {
+        "description": "Konfigurer SSO, sosial pålogging, klargjøring og organisasjonstilgang",
+        "socialDescription": "Konfigurer leverandørene av sosial pålogging som er tilgjengelige for organisasjonen din",
+        "ssoDescription": "Administrer leverandører av enkel pålogging (SSO) for organisasjonen din",
+        "title": "Identitet og tilgang"
+      },
+      "personnel-files": {
+        "description": "Administrer tilgang til personalmapper, utløpspåminnelser og oppbevaring av dokumenter"
+      },
+      "scheduled-exports": {
+        "description": "Planlegg regelmessige lønns-, data- og revisjonseksporter"
+      },
+      "shiftPlanning": {
+        "description": "Konfigurer vaktmaler og bemanningsmål",
+        "title": "Vaktplanlegging"
+      }
     },
     "notifications": {
       "approvals": "Godkjenningsvarsler",
@@ -1916,6 +2040,8 @@
         "name": "Navn",
         "namePlaceholder": "Skriv inn prosjektnavn",
         "noCustomer": "Ingen kunde",
+        "requiresTask": "Krev en oppgave",
+        "requiresTaskHelp": "Tid ført på dette prosjektet må oppgi en av oppgavene. Dette gjelder bare så lenge prosjektet har en åpen oppgave.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -1929,6 +2055,7 @@
         "reasonAdminOnly": "kun organisasjonsadministratorer tildeler prosjektledere",
         "reasonDeparted": "forlot organisasjonen",
         "reasonRemoved": "finnes ikke lenger",
+        "requiresTask": "Krever en oppgave",
         "skipped": "Ikke kopiert: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2074,7 +2201,9 @@
           "name": "Navn",
           "namePlaceholder": "f.eks. relansering av nettside",
           "nameRequired": "Skriv inn et malnavn",
-          "noIcon": "Ingen ikon"
+          "noIcon": "Ingen ikon",
+          "requiresTask": "Krev en oppgave",
+          "requiresTaskHelp": "Prosjekter opprettet fra denne malen starter med denne innstillingen."
         },
         "icons": {
           "briefcase": "Dokumentmappe",
@@ -2716,6 +2845,45 @@
         "title": "Ikke en skattegodkjent kjørebok"
       },
       "noDrivers": "Ingen tilordnede sjåfører",
+      "photos": {
+        "accessChanged": "Tilgangen din ble endret. Åpne kjøretøyinnstillingene på nytt for å sjekke tillatelsene dine.",
+        "action": "Bilder",
+        "add": "Legg til bilde",
+        "archived": "Dette kjøretøyet er arkivert. Gjenopprett det for å legge til eller fjerne bilder.",
+        "capacityChanged": "Galleriet ble endret. {count} bildeplasser gjenstår. Åpne det på nytt og velg færre bilder.",
+        "description": "Private referansebilder for dette kjøretøyet. Fullførte opplastinger og slettinger lagres umiddelbart.",
+        "empty": "Ingen bilder ennå.",
+        "expired": "Denne opplastingen utløp. Velg bildet på nytt for å laste det opp.",
+        "full": "Dette kjøretøyet har 20 bilder. Fjern et bilde før du legger til et nytt.",
+        "gallery": "Kjøretøybilder",
+        "imageNamed": "{name}, bilde {number}",
+        "invalid": "Dette bildet kunne ikke leses. Velg et annet JPEG-, PNG- eller WebP-bilde.",
+        "limits": "JPEG, PNG eller WebP. Opptil 10 MB per bilde, 20 bilder per kjøretøy.",
+        "loadFailed": "Bildene kunne ikke lastes inn. Lukk dialogboksen og prøv igjen.",
+        "loading": "Laster inn bilder…",
+        "named": "Bilder av {name}",
+        "next": "Neste bilde",
+        "position": "Bilde {number} av {count}",
+        "previous": "Forrige bilde",
+        "queued": "Venter på å laste opp {name}…",
+        "remove": "Fjern bilde",
+        "removeConfirm": "Fjern bilde permanent",
+        "removeDescription": "Dette bildet vil bli permanent fjernet fra kjøretøygalleriet. Dette kan ikke angres.",
+        "removeFailed": "Bildet kunne ikke fjernes. Prøv igjen.",
+        "removeTitle": "Fjerne dette bildet permanent?",
+        "removing": "Fjerner bilde…",
+        "retry": "Prøv på nytt",
+        "retryNamed": "Prøv {name} på nytt",
+        "saved": "Lagret {name}.",
+        "selectionTooLarge": "Dette utvalget ble ikke lastet opp. Det gjenstår {count} bildeplasser, inkludert ventende opplastinger.",
+        "tooLarge": "Velg et bilde som ikke er større enn 10 MB.",
+        "unsupported": "Velg et JPEG-, PNG- eller WebP-bilde. HEIC og andre formater støttes ikke.",
+        "uploadFailed": "Bildet kunne ikke lastes opp. Prøv igjen.",
+        "uploading": "Laster opp {name}…",
+        "uploadResults": "Resultater for bildeopplasting",
+        "vehicleMissing": "Dette kjøretøyet er ikke lenger tilgjengelig i organisasjonen din.",
+        "viewNamed": "Vis bilde {number} av {name}"
+      },
       "refusals": {
         "driverNotFound": "En tilordnet ansatt eller et team finnes ikke lenger. Last inn siden på nytt.",
         "invalidChange": "Endringen kunne ikke lagres. Last inn siden på nytt og prøv igjen.",
@@ -2739,7 +2907,6 @@
       "assignmentRemoved": "Tilordning fjernet",
       "assignmentSaved": "Tilordning lagret",
       "assignmentsDescription": "Ansatte som blir spurt, kan registrere kjøretøybruk når de stempler. Ansatte med forventet kjøretøybruk blir spurt hver gang, og arbeidet deres flagges til opplysningene er fullstendige. Ingen blir noensinne hindret i å stemple. Den mest spesifikke tilordningen har forrang: en ansatts egen over primærteamets, og et teams over hele organisasjonens.",
-      "description": "Hvem som blir bedt om å registrere kjøretøyet de kjørte og kilometerstanden",
       "enabled": "Registrer kjøretøybruk",
       "enabledDescription": "Hvis du slår dette av, blir det slutt på å spørre om kjøretøybruk og flagge manglende kjøreopplysninger. Allerede registrert kjøretøybruk forblir synlig og inkludert i eksporter.",
       "error": {

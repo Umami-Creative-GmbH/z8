@@ -169,7 +169,7 @@ function VacationBalanceCard({
 						{t("analytics.common.noDataForPeriod", "No data available for the selected period")}
 					</div>
 				) : (
-					<Table>
+					<Table mobileLayout="stacked">
 						<MetricsTableHeader
 							name={t("analytics.common.employee", "Employee")}
 							metrics={[

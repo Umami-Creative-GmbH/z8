@@ -504,7 +504,6 @@
       "title": "ArbZG usklađenost"
     },
     "customDomains": {
-      "description": "Konfigurišite prilagođenu domenu, brendiranje i SSO za svoju organizaciju",
       "title": "Domena i brendiranje"
     },
     "customers": {
@@ -846,9 +845,38 @@
       },
       "title": "Izvoz podataka"
     },
-    "emailConfig": {
-      "description": "Konfigurišite prilagođenog pružaoca usluga e-pošte za poruke organizacije",
-      "title": "Konfiguracija e-pošte"
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Dodijeli odgovornost verifikatora",
+        "all": "Svi zaposlenici u ovoj organizaciji",
+        "allDescription": "Odgovornost prati trenutno članstvo u organizaciji. Verifikatori nikada ne mogu verificirati sami sebe.",
+        "attribution": "Dodijelio/la {actor} u {time}",
+        "description": "Dodijelite odgovornost odvojeno od upisa vozača, linijskog rukovođenja i pristupa personalnim dosjeima. Upravljanje ovim dodjelama ne dozvoljava pregled inspekcijskih zapisa. Samoverifikacija je uvijek zabranjena.",
+        "editor": "Opseg verifikatora",
+        "empty": "Nema dodijeljenih odgovornosti verifikatora",
+        "expiry": "Ističe u {time}",
+        "history": "Historija odgovornosti",
+        "historyEntry": "Dodijelio {grantor} u {granted}; opozvao {revoker} u {revoked}",
+        "loadFailed": "Nije uspjelo učitavanje odgovornosti verifikatora",
+        "myAll": "Odgovorni ste za provjere u cijeloj organizaciji. Ne možete verifikovati sami sebe.",
+        "mySelected": "Odgovorni ste za {teams} odabranih timova i {employees} imenovanih uposlenika. Trenutno članstvo u timu određuje pristup. Ne možete verifikovati sami sebe.",
+        "myTitle": "Vaša odgovornost verifikatora",
+        "none": "Trenutno nemate odgovornost verifikatora vozačkih dozvola.",
+        "noTeams": "Nema dostupnih timova",
+        "person": "Verifikator",
+        "revoked": "Odgovornost verifikatora je opozvana",
+        "revokeDescription": "Verifikator odmah gubi pristup provjerama u ovom opsegu. Za ponovno uspostavljanje odgovornosti potrebna je nova dodjela.",
+        "revokeFailed": "Opoziv odgovornosti nije uspio. Pokušajte ponovo.",
+        "revokeTitle": "Opozvati odgovornost verifikatora?",
+        "saved": "Odgovornost verifikatora je sačuvana",
+        "scope": "Odgovornost",
+        "select": "Odaberite uposlenika",
+        "selected": "{teams} timova, {employees} imenovanih uposlenika",
+        "selectEmployees": "Odaberite uposlenike",
+        "specific": "Odabrani timovi i uposlenici",
+        "specificDescription": "Uključuje imenovane uposlenike i trenutne članove odabranih timova. Promjene u timu stupaju na snagu odmah.",
+        "title": "Verifikatori vozačkih dozvola"
+      }
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1306,8 @@
     },
     "group": {
       "account": "Račun",
-      "administration": "Administracija",
       "data": "Podaci",
-      "enterprise": "Enterprise",
+      "integrations": "Integracije",
       "notifications": "Obavještenja",
       "organization": "Organizacija"
     },
@@ -1458,7 +1485,8 @@
         "invalidTimezone": "Odaberite vremensku zonu.",
         "kioskNotFound": "Ovaj kiosk nije pronađen.",
         "kioskRevoked": "Ovaj kiosk je opozvan.",
-        "locationNotFound": "Odaberite aktivnu lokaciju ove organizacije."
+        "locationNotFound": "Odaberite aktivnu lokaciju ove organizacije.",
+        "offlineNeedsAdoption": "Offline način rada zahtijeva koordinirane komande za evidenciju radnog vremena, koje ova organizacija još ne koristi."
       },
       "fields": {
         "board": "Pregled prisutnosti",
@@ -1468,6 +1496,9 @@
         "locationPlaceholder": "Odaberite lokaciju",
         "name": "Naziv",
         "namePlaceholder": "npr. Ulaz za osoblje",
+        "offlineMode": "Offline način rada",
+        "offlineModeDescription": "Kiosk nastavlja bilježiti radno vrijeme i bez veze. Njegove registracije se potvrđuju, a PIN-ovi provjeravaju, čim se ponovo poveže.",
+        "offlineModeUnavailable": "Offline način rada zahtijeva koordinirane komande za evidenciju radnog vremena, koje ova organizacija još ne koristi.",
         "timezone": "Vremenska zona",
         "timezoneDescription": "Evidencije radnog vremena zabilježene na ovom kiosku koriste ovu zonu."
       },
@@ -1477,6 +1508,8 @@
       "loadFailed": "Nije uspjelo učitavanje kioska.",
       "neverSeen": "Nikada",
       "noLocations": "Prvo kreirajte lokaciju: svaki kiosk pripada jednoj lokaciji.",
+      "offlineOn": "Offline način rada uključen",
+      "offlineOnNotInEffect": "Offline način rada je uključen, ali se ne primjenjuje na ovu organizaciju",
       "pairAgain": "Ponovo upari",
       "pairFailed": "Nije uspjelo izdavanje novog koda za uparivanje",
       "pairingCodeLabel": "Kod za uparivanje",
@@ -1486,6 +1519,46 @@
       "pairPairedDescription": "Sigurnosni token uređaja se rotira: upareni uređaj odmah prestaje raditi i mora se ponovo upariti s novim kodom.",
       "pairTitle": "Ponovo upariti {name}?",
       "pairUnpairedDescription": "Novi kod za uparivanje zamjenjuje prethodni.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Prijava",
+          "clockOut": "Odjava",
+          "resumeBreak": "Nastavi",
+          "startBreak": "Započni pauzu"
+        },
+        "columns": {
+          "action": "Radnja",
+          "claimedAt": "Prijavljeno vrijeme",
+          "employee": "Uposlenik",
+          "kiosk": "Kiosk",
+          "reason": "Razlog",
+          "timeSource": "Izvor vremena"
+        },
+        "description": "Registracije sačuvane na kiosku dok je bio van mreže koje nisu zabilježene nakon ponovnog povezivanja. Uposlenik ili menadžeri uposlenika bez korisničkog računa su obaviješteni.",
+        "empty": "Nijedna offline registracija nije odbijena.",
+        "reasons": {
+          "clockUntrusted": "Sat na kiosku nije pouzdan",
+          "conflict": "U sukobu s drugim zabilježenim vremenom",
+          "contactUnverifiable": "Posljednje povezivanje nije moglo biti potvrđeno",
+          "holiday": "Praznik bez evidentiranja radnog vremena",
+          "kioskRetired": "Kiosk je opozvan ili ponovo uparen",
+          "monthClosed": "Mjesec zatvoren",
+          "noPin": "PIN za kiosk nije postavljen",
+          "notAdopted": "Organizacija ne prihvata evidentiranje van mreže",
+          "notAssigned": "Nije dodijeljeno lokaciji",
+          "other": "Nije se moglo prihvatiti",
+          "outsideWindow": "Stiglo prekasno",
+          "pinLocked": "PIN je zaključan",
+          "pinUnchecked": "PIN se nije mogao provjeriti",
+          "wrongPin": "Pogrešan PIN"
+        },
+        "timeSources": {
+          "deviceClock": "Sat uređaja",
+          "serverAnchor": "Vrijeme servera"
+        },
+        "title": "Odbijena evidentiranja van mreže",
+        "unknownEmployee": "Nije uposlenik"
+      },
       "revoke": "Opozovi",
       "revokeConfirm": "Opozovi kiosk",
       "revoked": "Kiosk je opozvan",
@@ -1493,6 +1566,7 @@
       "revokeFailed": "Nije bilo moguće opozvati kiosk",
       "revokeTitle": "Opozvati {name}?",
       "rotateConfirm": "Rotiraj token i ponovo upari",
+      "rotateOfflineWarning": "Ovaj kiosk ima uključen način rada van mreže. Evidentiranja koja je sačuvao van mreže, a koja još nisu poslana, odbijaju se kada se ponovo poveže i prikazuju se na listi odbijenih evidentiranja van mreže.",
       "save": "Sačuvaj",
       "saved": "Kiosk je sačuvan",
       "saveFailed": "Nije bilo moguće sačuvati kiosk",
@@ -1517,6 +1591,7 @@
       "searchPlaceholder": "Pretraži pakete ili licence...",
       "unknown": "Nepoznato"
     },
+    "loading": "Učitavanje postavki",
     "locations": {
       "address": "Adresa",
       "assignEmployee": "Dodijeli zaposlenika",
@@ -1627,6 +1702,55 @@
       "statusReady": "Spremno",
       "title": "Moji podaci",
       "unavailable": "Moji podaci nisu dostupni za vaš račun u ovoj organizaciji."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Aktivnost",
+        "description": "Pregledajte aktivnost i konfigurišite potpisane izvoze revizije",
+        "keysDescription": "Upravljajte ključevima za potpisivanje koje koriste izvozi revizije",
+        "packagesDescription": "Generišite i pregledajte potpisane pakete revizije",
+        "title": "Revizija"
+      },
+      "chat-integrations": {
+        "description": "Konfigurišite Slack, Microsoft Teams, Telegram i Discord",
+        "title": "Integracije chata"
+      },
+      "clocking": {
+        "automaticDescription": "Konfigurišite automatsku odjavu za neprekidan rad",
+        "description": "Konfigurišite praćenje, automatsku odjavu, podsjetnike i podnošenje perioda",
+        "remindersDescription": "Konfigurišite podsjetnike za prijavu, odjavu i pauze",
+        "submissionsDescription": "Konfigurišite kada zaposlenici podnose svoje radne periode na pregled",
+        "title": "Evidencija radnog vremena",
+        "trackingDescription": "Postavite datum početka koji se koristi za praćenje radnog vremena vaše organizacije"
+      },
+      "developerAccess": {
+        "description": "Upravljajte API ključevima i krajnjim tačkama webhooka",
+        "title": "Pristup za programere"
+      },
+      "domainBranding": {
+        "description": "Konfigurišite prilagođenu domenu i brendiranje vaše organizacije"
+      },
+      "email": {
+        "delivery": "Isporuka",
+        "description": "Konfigurišite isporuku e-pošte i prilagodite predloške poruka",
+        "title": "E-pošta"
+      },
+      "identityAccess": {
+        "description": "Konfigurišite SSO, prijavu putem društvenih mreža, dodjelu resursa i pristup organizaciji",
+        "socialDescription": "Konfigurišite pružaoce prijave putem društvenih mreža dostupne vašoj organizaciji",
+        "ssoDescription": "Upravljajte pružaocima jedinstvene prijave (SSO) za vašu organizaciju",
+        "title": "Identitet i pristup"
+      },
+      "personnel-files": {
+        "description": "Upravljajte pristupom dosjeima zaposlenika, podsjetnicima o isteku i čuvanjem dokumenata"
+      },
+      "scheduled-exports": {
+        "description": "Zakažite periodične izvoze obračuna plata, podataka i revizije"
+      },
+      "shiftPlanning": {
+        "description": "Konfigurišite predloške smjena i ciljeve pokrivenosti",
+        "title": "Planiranje smjena"
+      }
     },
     "notifications": {
       "approvals": "Obavještenja o odobrenju",
@@ -1916,6 +2040,8 @@
         "name": "Naziv",
         "namePlaceholder": "Unesite naziv projekta",
         "noCustomer": "Nema klijenta",
+        "requiresTask": "Zahtijevaj zadatak",
+        "requiresTaskHelp": "Vrijeme evidentirano na ovom projektu mora navesti jedan od njegovih zadataka. Ovo se primjenjuje samo dok projekt ima otvoren zadatak.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -1929,6 +2055,7 @@
         "reasonAdminOnly": "samo administratori organizacije dodjeljuju voditelje projekata",
         "reasonDeparted": "napustio/la organizaciju",
         "reasonRemoved": "više ne postoji",
+        "requiresTask": "Zahtijeva zadatak",
         "skipped": "Nije kopirano: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2074,7 +2201,9 @@
           "name": "Naziv",
           "namePlaceholder": "npr. Ponovno pokretanje web stranice",
           "nameRequired": "Unesite naziv šablona",
-          "noIcon": "Bez ikone"
+          "noIcon": "Bez ikone",
+          "requiresTask": "Zahtijevaj zadatak",
+          "requiresTaskHelp": "Projekti kreirani iz ovog šablona počinju s ovom postavkom."
         },
         "icons": {
           "briefcase": "Aktovka",
@@ -2716,6 +2845,45 @@
         "title": "Nije porezna evidencija vožnji"
       },
       "noDrivers": "Nema dodijeljenih vozača",
+      "photos": {
+        "accessChanged": "Vaš pristup je promijenjen. Ponovo otvorite postavke vozila kako biste provjerili svoje dozvole.",
+        "action": "Fotografije",
+        "add": "Dodaj fotografiju",
+        "archived": "Ovo vozilo je arhivirano. Vratite ga da biste dodali ili uklonili fotografije.",
+        "capacityChanged": "Galerija se promijenila. Preostalo je još {count} mjesta za fotografije. Ponovo je otvorite i odaberite manje fotografija.",
+        "description": "Privatne referentne fotografije za ovo vozilo. Završena učitavanja i uklanjanja se odmah spremaju.",
+        "empty": "Još nema fotografija.",
+        "expired": "Ovo učitavanje je isteklo. Ponovo odaberite fotografiju da biste je učitali.",
+        "full": "Ovo vozilo ima 20 fotografija. Uklonite fotografiju prije dodavanja nove.",
+        "gallery": "Fotografije vozila",
+        "imageNamed": "{name}, fotografija {number}",
+        "invalid": "Ova slika se nije mogla pročitati. Odaberite drugu JPEG, PNG ili WebP fotografiju.",
+        "limits": "JPEG, PNG ili WebP. Do 10 MB po fotografiji, 20 fotografija po vozilu.",
+        "loadFailed": "Fotografije se nisu mogle učitati. Zatvorite dijaloški okvir i pokušajte ponovo.",
+        "loading": "Učitavanje fotografija…",
+        "named": "Fotografije za {name}",
+        "next": "Sljedeća fotografija",
+        "position": "Fotografija {number} od {count}",
+        "previous": "Prethodna fotografija",
+        "queued": "Čekanje na učitavanje {name}…",
+        "remove": "Ukloni fotografiju",
+        "removeConfirm": "Trajno uklonite fotografiju",
+        "removeDescription": "Ova fotografija će biti trajno uklonjena iz galerije vozila. Ova radnja se ne može poništiti.",
+        "removeFailed": "Fotografija se nije mogla ukloniti. Pokušajte ponovo.",
+        "removeTitle": "Trajno ukloniti ovu fotografiju?",
+        "removing": "Uklanjanje fotografije…",
+        "retry": "Pokušajte ponovo",
+        "retryNamed": "Pokušajte ponovo {name}",
+        "saved": "Sačuvano: {name}.",
+        "selectionTooLarge": "Ovaj odabir nije prenesen. Preostalo je {count} mjesta za fotografije, uključujući prijenose na čekanju.",
+        "tooLarge": "Odaberite fotografiju koja nije veća od 10 MB.",
+        "unsupported": "Odaberite JPEG, PNG ili WebP fotografiju. HEIC i drugi formati nisu podržani.",
+        "uploadFailed": "Fotografija se nije mogla prenijeti. Pokušajte ponovo.",
+        "uploading": "Prijenos {name}…",
+        "uploadResults": "Rezultati prijenosa fotografija",
+        "vehicleMissing": "Ovo vozilo više nije dostupno u vašoj organizaciji.",
+        "viewNamed": "Prikaži fotografiju {number} od {name}"
+      },
       "refusals": {
         "driverNotFound": "Dodijeljeni zaposlenik ili tim više ne postoji. Ponovo učitajte stranicu.",
         "invalidChange": "Promjena se nije mogla sačuvati. Ponovo učitajte stranicu i pokušajte ponovo.",
@@ -2739,7 +2907,6 @@
       "assignmentRemoved": "Dodjela je uklonjena",
       "assignmentSaved": "Dodjela je sačuvana",
       "assignmentsDescription": "Upitani zaposlenici mogu evidentirati korištenje vozila prilikom registracije radnog vremena. Od zaposlenika za koje se očekuje korištenje vozila to se traži svaki put, a njihov rad je označen sve dok detalji ne budu potpuni. Niko nikada nije spriječen da se registruje. Najspecifičnija dodjela ima prednost: lična dodjela zaposlenika nad dodjelom njegovog primarnog tima, a dodjela tima nad dodjelom cijele organizacije.",
-      "description": "Od koga se traži da evidentira vozilo koje je vozio i stanje na brojaču kilometara",
       "enabled": "Evidentiraj korištenje vozila",
       "enabledDescription": "Isključivanjem ove opcije prestaje se tražiti korištenje vozila i prestaje označavanje nedostajućih detalja o vožnji. Već evidentirano korištenje vozila ostaje vidljivo i u izvozima.",
       "error": {

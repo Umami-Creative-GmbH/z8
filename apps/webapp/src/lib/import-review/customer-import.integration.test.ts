@@ -49,7 +49,9 @@ const harness = vi.hoisted(() => ({
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
@@ -72,14 +74,23 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/vault", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/vault")>()),
-	storeOrgSecret: async (organizationId: string, key: string, value: string) => {
+	storeOrgSecret: async (
+		organizationId: string,
+		key: string,
+		value: string,
+	) => {
 		harness.secrets.set(`${organizationId}|${key}`, value);
 	},
 	getOrgSecret: async (organizationId: string, key: string) =>
@@ -90,7 +101,9 @@ vi.mock("@/lib/vault", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/billable-time/accounting/registry", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/billable-time/accounting/registry")>()),
+	...(await importOriginal<
+		typeof import("@/lib/billable-time/accounting/registry")
+	>()),
 	getAccountingProviderRegistry: () => {
 		if (!harness.registry) throw new Error("No registry");
 		return harness.registry;
@@ -120,7 +133,9 @@ const { createAccountingProviderRegistry } = await import(
 const { createLexwareOfficeConnector } = await import(
 	"@/lib/billable-time/accounting/lexware/connector"
 );
-const { createFakeAccountingTool } = await import("@/lib/billable-time/accounting/fake-provider");
+const { createFakeAccountingTool } = await import(
+	"@/lib/billable-time/accounting/fake-provider"
+);
 
 const ids = {
 	organization: "t906-org",
@@ -262,7 +277,9 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 		});
 		if (!started.success) throw new Error(started.error);
 		while (harness.commitJobs.length > 0) {
-			await processImportReviewJob(asJob(harness.commitJobs.shift())).catch(() => undefined);
+			await processImportReviewJob(asJob(harness.commitJobs.shift())).catch(
+				() => undefined,
+			);
 		}
 	}
 
@@ -334,7 +351,9 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 
 		const batchId = await importCustomers();
 		const staged = await rows(batchId);
-		expect(staged.map((row) => [row.provider_source_id, row.row_status])).toEqual([
+		expect(
+			staged.map((row) => [row.provider_source_id, row.row_status]),
+		).toEqual([
 			[PERSON_CONTACT_ID, "staged"],
 			[ACME_CONTACT_ID, "staged"],
 		]);
@@ -342,13 +361,21 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 		expect(person.match_target).toMatchObject({
 			suggestion: { customerId: ids.erika, reason: "name" },
 		});
-		expect(acme.match_target).toMatchObject({ suggestion: null, nameTakenBy: null });
+		expect(acme.match_target).toMatchObject({
+			suggestion: null,
+			nameTakenBy: null,
+		});
 
 		await decide(batchId, acme.id, "accepted");
-		await decide(batchId, person.id, "accepted", { kind: "link", targetId: ids.erika });
+		await decide(batchId, person.id, "accepted", {
+			kind: "link",
+			targetId: ids.erika,
+		});
 		await commit(batchId);
 
-		const created = (await customers()).find((entry) => entry.name !== "ERIKA ACMEIER");
+		const created = (await customers()).find(
+			(entry) => entry.name !== "ERIKA ACMEIER",
+		);
 		expect(await customers()).toHaveLength(2);
 		expect(created).toMatchObject({
 			name: "Acme Consulting & Partner GmbH",
@@ -372,15 +399,24 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 				contact_number: "10308",
 			},
 		]);
-		expect((await rows(batchId)).map((row) => [row.row_status, row.commit_target_id])).toEqual([
+		expect(
+			(await rows(batchId)).map((row) => [
+				row.row_status,
+				row.commit_target_id,
+			]),
+		).toEqual([
 			["committed", ids.erika],
 			["committed", created?.id],
 		]);
-		const { rows: batch } = await admin.query("select status from import_batch where id = $1", [
-			batchId,
-		]);
+		const { rows: batch } = await admin.query(
+			"select status from import_batch where id = $1",
+			[batchId],
+		);
 		expect(batch).toEqual([{ status: "completed" }]);
-		const { rows: audit } = await admin.query<{ action: string; entity_id: string }>(
+		const { rows: audit } = await admin.query<{
+			action: string;
+			entity_id: string;
+		}>(
 			`select action, entity_id from audit_log where organization_id = $1 order by action, entity_id`,
 			[ids.organization],
 		);
@@ -392,7 +428,9 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 			]),
 		);
 		// Z8 never writes back to the tool.
-		expect(lexware.requests().every((request) => request.method === "GET")).toBe(true);
+		expect(
+			lexware.requests().every((request) => request.method === "GET"),
+		).toBe(true);
 		expect(
 			lexware
 				.requests()
@@ -442,10 +480,34 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 	it("never duplicates a customer name: creating over a taken name holds the row without an error", async () => {
 		const tool = createFakeAccountingTool({
 			contacts: [
-				{ id: "f-erika", customerNumber: "1", name: "Erika Acmeier", address: null, vatId: null },
-				{ id: "f-late", customerNumber: "2", name: "Late GmbH", address: null, vatId: null },
-				{ id: "f-twin-1", customerNumber: "3", name: "Twin AG", address: null, vatId: null },
-				{ id: "f-twin-2", customerNumber: "4", name: "TWIN AG", address: null, vatId: null },
+				{
+					id: "f-erika",
+					customerNumber: "1",
+					name: "Erika Acmeier",
+					address: null,
+					vatId: null,
+				},
+				{
+					id: "f-late",
+					customerNumber: "2",
+					name: "Late GmbH",
+					address: null,
+					vatId: null,
+				},
+				{
+					id: "f-twin-1",
+					customerNumber: "3",
+					name: "Twin AG",
+					address: null,
+					vatId: null,
+				},
+				{
+					id: "f-twin-2",
+					customerNumber: "4",
+					name: "TWIN AG",
+					address: null,
+					vatId: null,
+				},
 			] satisfies AccountingContact[],
 		});
 		harness.registry = createAccountingProviderRegistry([tool.connector]);
@@ -456,7 +518,8 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 
 		// The admin chooses "create new" despite the suggestion; a customer named
 		// like another row appears between scan and commit; both twins are created.
-		for (const row of [erika, late, twin1, twin2]) await decide(batchId, row.id, "accepted");
+		for (const row of [erika, late, twin1, twin2])
+			await decide(batchId, row.id, "accepted");
 		await admin.query(
 			`insert into customer (organization_id, name, created_by, updated_at) values ($1, 'late gmbh', $2, now())`,
 			[ids.organization, ids.adminUser],
@@ -473,7 +536,9 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 			["committed", undefined],
 		]);
 		const createdTwin = twins.find((row) => row.row_status === "committed");
-		const names = (await customers()).map((entry) => entry.name.toLowerCase()).sort();
+		const names = (await customers())
+			.map((entry) => entry.name.toLowerCase())
+			.sort();
 		expect(names).toEqual(["erika acmeier", "late gmbh", "twin ag"]);
 		expect((await links()).map((link) => link.contact_id)).toEqual([
 			createdTwin?.provider_source_id,
@@ -483,14 +548,23 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 	it("holds a link onto a customer that got linked to another contact meanwhile", async () => {
 		const tool = createFakeAccountingTool({
 			contacts: [
-				{ id: "f-erika", customerNumber: "1", name: "Erika Acmeier", address: null, vatId: null },
+				{
+					id: "f-erika",
+					customerNumber: "1",
+					name: "Erika Acmeier",
+					address: null,
+					vatId: null,
+				},
 			],
 		});
 		harness.registry = createAccountingProviderRegistry([tool.connector]);
 		await connect();
 		const batchId = await importCustomers();
 		const [erika] = await rows(batchId);
-		await decide(batchId, erika.id, "accepted", { kind: "link", targetId: ids.erika });
+		await decide(batchId, erika.id, "accepted", {
+			kind: "link",
+			targetId: ids.erika,
+		});
 		await admin.query(
 			`insert into accounting_contact_link (organization_id, customer_id, provider_kind, account_ref, contact_id, contact_name)
 			 values ($1, $2, 'lexware_office', 'fake-account', 'someone-else', 'Someone')`,
@@ -506,7 +580,15 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 
 	it("is for org admins and owners of the organization only, and links only its own customers", async () => {
 		const tool = createFakeAccountingTool({
-			contacts: [{ id: "f-1", customerNumber: null, name: "Solo", address: null, vatId: null }],
+			contacts: [
+				{
+					id: "f-1",
+					customerNumber: null,
+					name: "Solo",
+					address: null,
+					vatId: null,
+				},
+			],
 		});
 		harness.registry = createAccountingProviderRegistry([tool.connector]);
 		await connect();
@@ -514,7 +596,9 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 		const [row] = await rows(batchId);
 
 		actAs(ids.memberUser, ids.organization);
-		await expect(startCustomerImport()).resolves.toMatchObject({ success: false });
+		await expect(startCustomerImport()).resolves.toMatchObject({
+			success: false,
+		});
 		await expect(
 			applyImportDecisionAction({
 				organizationId: ids.organization,
@@ -570,7 +654,8 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 			{
 				...tool.connector,
 				open: (input) => {
-					const { listCustomerContacts: _list, ...provider } = tool.connector.open(input);
+					const { listCustomerContacts: _list, ...provider } =
+						tool.connector.open(input);
 					return provider;
 				},
 			},
@@ -592,19 +677,25 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 			status: string;
 			error_message: string | null;
 			date_range: { startDate: string; endDate: string };
-		}>("select status, error_message, date_range from import_batch where organization_id = $1", [
-			organizationId,
-		]);
+		}>(
+			"select status, error_message, date_range from import_batch where organization_id = $1",
+			[organizationId],
+		);
 		return batches;
 	}
 
 	it("records the day the import started in the organization's time zone", async () => {
-		await admin.query("update organization set timezone = 'Pacific/Kiritimati' where id = $1", [
-			ids.organization,
+		await admin.query(
+			"update organization set timezone = 'Pacific/Kiritimati' where id = $1",
+			[ids.organization],
+		);
+		harness.registry = createAccountingProviderRegistry([
+			createFakeAccountingTool().connector,
 		]);
-		harness.registry = createAccountingProviderRegistry([createFakeAccountingTool().connector]);
 		await connect();
-		const today = Temporal.Now.zonedDateTimeISO("Pacific/Kiritimati").toPlainDate().toString();
+		const today = Temporal.Now.zonedDateTimeISO("Pacific/Kiritimati")
+			.toPlainDate()
+			.toString();
 
 		const started = await startCustomerImport();
 
@@ -616,7 +707,9 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 	});
 
 	it("reports a queue failure as such and marks the batch failed", async () => {
-		harness.registry = createAccountingProviderRegistry([createFakeAccountingTool().connector]);
+		harness.registry = createAccountingProviderRegistry([
+			createFakeAccountingTool().connector,
+		]);
 		await connect();
 		harness.failScanQueue = true;
 

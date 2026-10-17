@@ -262,7 +262,7 @@ function DefaultTemplateToggle({
 	t: Translate;
 }) {
 	return (
-		<div className="flex flex-row items-center justify-between gap-4 rounded-lg border p-4">
+		<div className="flex flex-row items-center justify-between gap-4 rounded-lg border bg-white dark:bg-background p-4">
 			<div className="min-w-0 space-y-0.5">
 				<Label htmlFor="work-template-default" className="text-base">
 					{t(
@@ -294,7 +294,7 @@ function WorkTemplateHeader({
 	t: (key: string, defaultValue: string) => string;
 }) {
 	return (
-		<div className="mb-8 text-center">
+		<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
 			<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
 				<IconClock className="size-8 text-primary" />
 			</div>

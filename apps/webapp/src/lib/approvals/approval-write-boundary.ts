@@ -452,7 +452,12 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 	// A break in progress on live work (#861); work records clears it when the work completes.
 	"src/lib/time-tracking/clocking/break-in-progress.ts": [
 		{
-			columns: ["break_started_at", "break_started_operation_id", "break_started_zone"],
+			columns: [
+				"break_started_at",
+				"break_started_operation_id",
+				"break_started_time_source",
+				"break_started_zone",
+			],
 			functionName: "recordBreakInProgress",
 			operation: "update",
 			semantic: "live_work",
@@ -512,6 +517,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"end_time",
 				"graph_revision",
 				"is_billable",
+				"missing_task",
 				"odometer_end_km",
 				"odometer_start_km",
 				"pending_changes",
@@ -611,6 +617,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			columns: [
 				"approval_status",
 				"break_started_at",
+				"break_started_time_source",
 				"break_started_zone",
 				"canonical_record_id",
 				"clock_out_id",
@@ -620,6 +627,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"graph_revision",
 				"is_active",
 				"is_billable",
+				"missing_task",
 				"odometer_end_km",
 				"odometer_start_km",
 				"pending_changes",
@@ -675,6 +683,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"end_time",
 				"graph_revision",
 				"is_billable",
+				"missing_task",
 				"odometer_end_km",
 				"odometer_start_km",
 				"original_duration_minutes",
@@ -750,6 +759,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"graph_revision",
 				"is_active",
 				"is_billable",
+				"missing_task",
 				"odometer_end_km",
 				"odometer_start_km",
 				"organization_id",
@@ -854,6 +864,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"allocation_kind",
 				"cost_center_id",
 				"is_billable",
+				"missing_task",
 				"organization_id",
 				"project_id",
 				"record_id",
@@ -883,6 +894,22 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			columns: [],
 			functionName: "replaceProjectAllocation",
 			operation: "delete",
+			table: "time_record_allocation",
+		},
+	],
+	// Work records ends a project's missing-task markers on both records when its task
+	// requirement is turned off (#884); the marker only, never attribution or revision.
+	"src/lib/time-tracking/work-records/project-missing-tasks.ts": [
+		{
+			columns: ["missing_task"],
+			functionName: "clearProjectMissingTasks",
+			operation: "update",
+			table: "work_period",
+		},
+		{
+			columns: ["missing_task"],
+			functionName: "clearProjectMissingTasks",
+			operation: "update",
 			table: "time_record_allocation",
 		},
 	],
@@ -959,6 +986,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"end_time",
 				"graph_revision",
 				"is_billable",
+				"missing_task",
 				"odometer_end_km",
 				"odometer_start_km",
 				"project_id",

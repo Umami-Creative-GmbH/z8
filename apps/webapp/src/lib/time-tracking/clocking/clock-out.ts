@@ -327,6 +327,8 @@ export type ClockOutTarget = {
 	workLocationType: WorkLocationType | null;
 	/** The work's project when the target was resolved; a task check reads it. */
 	projectId: string | null;
+	/** The work's task when the target was resolved; the task requirement check reads it (#884). */
+	taskId: string | null;
 };
 
 /**
@@ -345,6 +347,14 @@ export async function closeClockOut(
 		capture: TimeEntryTimezoneCapture;
 		/** The closed work's vehicle use, decided from the live work's (#1122). */
 		closingVehicleUse?: ClosingVehicleUse;
+		/** The clock-out entry's source evidence when it ends at a break's start; the writer's by default. */
+		entrySource?: { ipAddress: string | null; deviceInfo: string };
+		/**
+		 * Whether a missing required task is marked, not refused (#884): where
+		 * nobody can pick a task, or where the work's project is no longer
+		 * bookable, so none of its tasks can be picked.
+		 */
+		marksMissingTask: boolean;
 	},
 ): Promise<ClockOutClosure> {
 	const { plan, replayable } = input;
@@ -381,6 +391,8 @@ export async function closeClockOut(
 		eventInstant: input.eventInstant,
 		capture: input.capture,
 		...(input.closingVehicleUse ? { closingVehicleUse: input.closingVehicleUse } : {}),
+		...(input.entrySource ? { entrySource: input.entrySource } : {}),
+		marksMissingTask: input.marksMissingTask,
 	};
 	const closed = legacy
 		? await closeActiveWorkGraph(coordination, closure, plan.command.identity.id, {

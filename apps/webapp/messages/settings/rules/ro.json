@@ -143,7 +143,6 @@
         "title": "Înlocuitori",
         "toggle": "Înlocuitorii pot decide asupra aprobărilor"
       },
-      "description": "Examinați politica de escaladare a organizației, modul în care a fost migrată din setările canalului și condițiile care necesită un manager de aprobare.",
       "dispose": {
         "confirm": "Închideți elementul",
         "description": "Închiderea înregistrează decizia dvs. în jurnalul de audit. Aceasta nu reatribuie aprobarea și nu permite o altă escaladare automată.",
@@ -177,7 +176,6 @@
         "usedNo": "Neutilizat",
         "usedYes": "Utilizat"
       },
-      "navDescription": "Politica de escaladare a organizației și aprobările care necesită atenție",
       "off": "Dezactivat",
       "on": "Activat",
       "ownership": {

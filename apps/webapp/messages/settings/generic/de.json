@@ -504,7 +504,6 @@
       "title": "ArbZG Compliance"
     },
     "customDomains": {
-      "description": "Konfigurieren Sie eine benutzerdefinierte Domain, Branding und SSO für Ihre Organisation",
       "title": "Domain & Branding"
     },
     "customers": {
@@ -846,9 +845,38 @@
       },
       "title": "Datenexport"
     },
-    "emailConfig": {
-      "description": "Konfigurieren Sie einen benutzerdefinierten E-Mail-Anbieter für Organisations-E-Mails",
-      "title": "E-Mail-Konfiguration"
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Prüferzuständigkeit erteilen",
+        "all": "Alle Mitarbeiter in dieser Organisation",
+        "allDescription": "Die Zuständigkeit richtet sich nach der aktuellen Organisationsmitgliedschaft. Prüfer können sich niemals selbst überprüfen.",
+        "attribution": "Erteilt von {actor} am {time}",
+        "description": "Zuständigkeit unabhängig von Fahrerregistrierung, Linienmanagement und Personalaktenzugriff erteilen. Die Verwaltung dieser Zuweisungen berechtigt nicht zur Einsicht in Prüfprotokolle. Eine Selbstprüfung ist grundsätzlich unzulässig.",
+        "editor": "Prüferbereich",
+        "empty": "Keine Prüferzuständigkeiten zugewiesen",
+        "expiry": "Läuft um {time} ab",
+        "history": "Zuständigkeitshistorie",
+        "historyEntry": "Erteilt von {grantor} am {granted}; widerrufen von {revoker} am {revoked}",
+        "loadFailed": "Prüferzuständigkeiten konnten nicht geladen werden",
+        "myAll": "Sie sind für Prüfungen in dieser gesamten Organisation zuständig. Sie können sich nicht selbst prüfen.",
+        "mySelected": "Sie sind für {teams} ausgewählte Teams und {employees} namentlich genannte Mitarbeiter zuständig. Die aktuelle Teamzugehörigkeit bestimmt den Zugriff. Sie können sich nicht selbst prüfen.",
+        "myTitle": "Ihre Prüferzuständigkeit",
+        "none": "Sie haben derzeit keine Zuständigkeit für die Führerscheinprüfung.",
+        "noTeams": "Keine Teams verfügbar",
+        "person": "Prüfer",
+        "revoked": "Prüferzuständigkeit widerrufen",
+        "revokeDescription": "Der Prüfer verliert sofort den Zugriff auf Prüfungen in diesem Bereich. Um die Zuständigkeit wiederherzustellen, ist eine erneute Zuweisung erforderlich.",
+        "revokeFailed": "Zuständigkeit konnte nicht widerrufen werden. Bitte versuchen Sie es erneut.",
+        "revokeTitle": "Prüferzuständigkeit widerrufen?",
+        "saved": "Prüferzuständigkeit gespeichert",
+        "scope": "Zuständigkeit",
+        "select": "Mitarbeiter auswählen",
+        "selected": "{teams} Teams, {employees} namentlich genannte Mitarbeiter",
+        "selectEmployees": "Mitarbeiter auswählen",
+        "specific": "Ausgewählte Teams und Mitarbeiter",
+        "specificDescription": "Umfasst namentlich genannte Mitarbeiter und aktuelle Mitglieder ausgewählter Teams. Teamänderungen werden sofort wirksam.",
+        "title": "Führerscheinprüfer"
+      }
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1306,8 @@
     },
     "group": {
       "account": "Konto",
-      "administration": "Verwaltung",
       "data": "Daten",
-      "enterprise": "Unternehmen",
+      "integrations": "Integrationen",
       "notifications": "Benachrichtigungen",
       "organization": "Organisation"
     },
@@ -1458,7 +1485,8 @@
         "invalidTimezone": "Wählen Sie eine Zeitzone aus.",
         "kioskNotFound": "Dieser Kiosk wurde nicht gefunden.",
         "kioskRevoked": "Dieser Kiosk wurde widerrufen.",
-        "locationNotFound": "Wählen Sie einen aktiven Standort dieser Organisation aus."
+        "locationNotFound": "Wählen Sie einen aktiven Standort dieser Organisation aus.",
+        "offlineNeedsAdoption": "Der Offlinemodus erfordert koordinierte Stempelbefehle, die von dieser Organisation noch nicht verwendet werden."
       },
       "fields": {
         "board": "Anwesenheitsübersicht",
@@ -1468,6 +1496,9 @@
         "locationPlaceholder": "Standort auswählen",
         "name": "Name",
         "namePlaceholder": "z. B. Personaleingang",
+        "offlineMode": "Offlinemodus",
+        "offlineModeDescription": "Der Kiosk erfasst Stempelungen auch ohne Verbindung weiter. Seine Buchungen werden bestätigt und die PINs geprüft, sobald wieder eine Verbindung besteht.",
+        "offlineModeUnavailable": "Der Offlinemodus erfordert koordinierte Stempelbefehle, die von dieser Organisation noch nicht verwendet werden.",
         "timezone": "Zeitzone",
         "timezoneDescription": "An diesem Kiosk erfasste Stempelzeiten verwenden diese Zeitzone."
       },
@@ -1477,6 +1508,8 @@
       "loadFailed": "Kioske konnten nicht geladen werden.",
       "neverSeen": "Nie",
       "noLocations": "Erstellen Sie zuerst einen Standort: Jeder Kiosk gehört zu einem Standort.",
+      "offlineOn": "Offlinemodus ein",
+      "offlineOnNotInEffect": "Offlinemodus ein, für diese Organisation nicht wirksam",
       "pairAgain": "Erneut koppeln",
       "pairFailed": "Es konnte kein neuer Kopplungscode ausgestellt werden",
       "pairingCodeLabel": "Kopplungscode",
@@ -1486,6 +1519,46 @@
       "pairPairedDescription": "Das Geräte-Token wird erneuert: Das gekoppelte Gerät funktioniert ab sofort nicht mehr und muss mit dem neuen Code erneut gekoppelt werden.",
       "pairTitle": "{name} erneut koppeln?",
       "pairUnpairedDescription": "Ein neuer Kopplungscode ersetzt den vorherigen.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Einstempeln",
+          "clockOut": "Ausstempeln",
+          "resumeBreak": "Fortsetzen",
+          "startBreak": "Pause beginnen"
+        },
+        "columns": {
+          "action": "Aktion",
+          "claimedAt": "Angegebene Zeit",
+          "employee": "Mitarbeiter",
+          "kiosk": "Kiosk",
+          "reason": "Grund",
+          "timeSource": "Zeitquelle"
+        },
+        "description": "Auf einem Kiosk im Offlinemodus gespeicherte Stempelungen, die bei erneuter Verbindung nicht erfasst wurden. Der Mitarbeiter oder die Vorgesetzten eines Mitarbeiters ohne Login wurden benachrichtigt.",
+        "empty": "Es wurde keine Offline-Stempelung abgelehnt.",
+        "reasons": {
+          "clockUntrusted": "Kioskuhr nicht vertrauenswürdig",
+          "conflict": "Konflikt mit anderer erfasster Zeit",
+          "contactUnverifiable": "Letzte Verbindung konnte nicht bestätigt werden",
+          "holiday": "Feiertag ohne Zeiterfassung",
+          "kioskRetired": "Kiosk widerrufen oder erneut gekoppelt",
+          "monthClosed": "Monat abgeschlossen",
+          "noPin": "Keine Kiosk-PIN festgelegt",
+          "notAdopted": "Offline-Stempelungen werden von der Organisation nicht akzeptiert",
+          "notAssigned": "Dem Standort nicht zugewiesen",
+          "other": "Konnte nicht akzeptiert werden",
+          "outsideWindow": "Zu spät eingetroffen",
+          "pinLocked": "PIN gesperrt",
+          "pinUnchecked": "PIN konnte nicht überprüft werden",
+          "wrongPin": "Falsche PIN"
+        },
+        "timeSources": {
+          "deviceClock": "Gerätezeit",
+          "serverAnchor": "Serverzeit"
+        },
+        "title": "Abgelehnte Offline-Stempelungen",
+        "unknownEmployee": "Kein Mitarbeiter"
+      },
       "revoke": "Widerrufen",
       "revokeConfirm": "Kiosk widerrufen",
       "revoked": "Kiosk widerrufen",
@@ -1493,6 +1566,7 @@
       "revokeFailed": "Der Kiosk konnte nicht widerrufen werden",
       "revokeTitle": "{name} widerrufen?",
       "rotateConfirm": "Token rotieren und erneut koppeln",
+      "rotateOfflineWarning": "Auf diesem Kiosk ist der Offline-Modus aktiviert. Offline gespeicherte und noch nicht übermittelte Stempelungen werden bei erneuter Verbindung abgelehnt und unter „Abgelehnte Offline-Stempelungen“ aufgeführt.",
       "save": "Speichern",
       "saved": "Kiosk gespeichert",
       "saveFailed": "Der Kiosk konnte nicht gespeichert werden",
@@ -1517,6 +1591,7 @@
       "searchPlaceholder": "Pakete oder Lizenzen suchen...",
       "unknown": "Unbekannt"
     },
+    "loading": "Einstellungen werden geladen",
     "locations": {
       "address": "Adresse",
       "assignEmployee": "Mitarbeiter zuweisen",
@@ -1627,6 +1702,55 @@
       "statusReady": "Bereit",
       "title": "Meine Daten",
       "unavailable": "Meine Daten sind für Ihr Konto in dieser Organisation nicht verfügbar."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Aktivität",
+        "description": "Aktivitäten überprüfen und signierte Audit-Exporte konfigurieren",
+        "keysDescription": "Für Audit-Exporte verwendete Signaturschlüssel verwalten",
+        "packagesDescription": "Signierte Audit-Pakete generieren und überprüfen",
+        "title": "Audit"
+      },
+      "chat-integrations": {
+        "description": "Slack, Microsoft Teams, Telegram und Discord konfigurieren",
+        "title": "Chat-Integrationen"
+      },
+      "clocking": {
+        "automaticDescription": "Automatisches Ausstempeln für unterbrechungsfreies Arbeiten konfigurieren",
+        "description": "Erfassung, automatisches Ausstempeln, Erinnerungen und Periodenübermittlungen konfigurieren",
+        "remindersDescription": "Erinnerungen für Einstempeln, Ausstempeln und Pausen konfigurieren",
+        "submissionsDescription": "Festlegen, wann Mitarbeitende ihre Arbeitsperioden zur Prüfung einreichen",
+        "title": "Zeiterfassung",
+        "trackingDescription": "Startdatum für die Zeiterfassung Ihrer Organisation festlegen"
+      },
+      "developerAccess": {
+        "description": "API-Schlüssel und Webhook-Endpunkte verwalten",
+        "title": "Entwicklerzugriff"
+      },
+      "domainBranding": {
+        "description": "Benutzerdefinierte Domain und Branding Ihrer Organisation konfigurieren"
+      },
+      "email": {
+        "delivery": "Zustellung",
+        "description": "E-Mail-Zustellung konfigurieren und Nachrichtenvorlagen anpassen",
+        "title": "E-Mail"
+      },
+      "identityAccess": {
+        "description": "SSO, Social Login, Bereitstellung und Organisationszugriff konfigurieren",
+        "socialDescription": "Für Ihre Organisation verfügbare Social-Login-Anbieter konfigurieren",
+        "ssoDescription": "Single-Sign-On-Anbieter für Ihre Organisation verwalten",
+        "title": "Identität & Zugriff"
+      },
+      "personnel-files": {
+        "description": "Personalaktenzugriff, Ablauferinnerungen und Dokumentenaufbewahrung verwalten"
+      },
+      "scheduled-exports": {
+        "description": "Wiederkehrende Lohnabrechnungs-, Daten- und Audit-Exporte planen"
+      },
+      "shiftPlanning": {
+        "description": "Schichtvorlagen und Abdeckungsziele konfigurieren",
+        "title": "Schichtplanung"
+      }
     },
     "notifications": {
       "approvals": "Genehmigungsbenachrichtigungen",
@@ -1916,6 +2040,8 @@
         "name": "Name",
         "namePlaceholder": "Projektnamen eingeben",
         "noCustomer": "Kein Kunde",
+        "requiresTask": "Aufgabe voraussetzen",
+        "requiresTaskHelp": "Auf dieses Projekt gebuchte Zeiten müssen einer seiner Aufgaben zugeordnet werden. Dies gilt nur, solange das Projekt eine offene Aufgabe hat.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -1929,6 +2055,7 @@
         "reasonAdminOnly": "nur Organisationsadministratoren weisen Projektmanager zu",
         "reasonDeparted": "hat die Organisation verlassen",
         "reasonRemoved": "existiert nicht mehr",
+        "requiresTask": "Erfordert eine Aufgabe",
         "skipped": "Nicht kopiert: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2074,7 +2201,9 @@
           "name": "Name",
           "namePlaceholder": "z. B. Website-Relaunch",
           "nameRequired": "Vorlagennamen eingeben",
-          "noIcon": "Kein Symbol"
+          "noIcon": "Kein Symbol",
+          "requiresTask": "Aufgabe voraussetzen",
+          "requiresTaskHelp": "Aus dieser Vorlage erstellte Projekte beginnen mit dieser Einstellung."
         },
         "icons": {
           "briefcase": "Aktentasche",
@@ -2716,6 +2845,45 @@
         "title": "Kein steuerliches Fahrtenbuch"
       },
       "noDrivers": "Keine zugewiesenen Fahrer",
+      "photos": {
+        "accessChanged": "Ihr Zugriff hat sich geändert. Öffnen Sie die Fahrzeugeinstellungen erneut, um Ihre Berechtigungen zu überprüfen.",
+        "action": "Fotos",
+        "add": "Foto hinzufügen",
+        "archived": "Dieses Fahrzeug ist archiviert. Stellen Sie es wieder her, um Fotos hinzuzufügen oder zu entfernen.",
+        "capacityChanged": "Die Galerie wurde geändert. Es verbleiben noch {count} Fotoplätze. Öffnen Sie sie erneut und wählen Sie weniger Fotos aus.",
+        "description": "Private Referenzfotos für dieses Fahrzeug. Abgeschlossene Uploads und Löschungen werden sofort gespeichert.",
+        "empty": "Noch keine Fotos.",
+        "expired": "Dieser Upload ist abgelaufen. Wählen Sie das Foto erneut aus, um es hochzuladen.",
+        "full": "Dieses Fahrzeug hat 20 Fotos. Entfernen Sie ein Foto, bevor Sie ein weiteres hinzufügen.",
+        "gallery": "Fahrzeugfotos",
+        "imageNamed": "{name}, Foto {number}",
+        "invalid": "Dieses Bild konnte nicht gelesen werden. Wählen Sie ein anderes JPEG-, PNG- oder WebP-Foto aus.",
+        "limits": "JPEG, PNG oder WebP. Bis zu 10 MB pro Foto, 20 Fotos pro Fahrzeug.",
+        "loadFailed": "Die Fotos konnten nicht geladen werden. Schließen Sie den Dialog und versuchen Sie es erneut.",
+        "loading": "Fotos werden geladen…",
+        "named": "Fotos von {name}",
+        "next": "Nächstes Foto",
+        "position": "Foto {number} von {count}",
+        "previous": "Vorheriges Foto",
+        "queued": "Warten auf Upload von {name}…",
+        "remove": "Foto entfernen",
+        "removeConfirm": "Foto dauerhaft entfernen",
+        "removeDescription": "Dieses Foto wird dauerhaft aus der Fahrzeuggalerie entfernt. Dies kann nicht rückgängig gemacht werden.",
+        "removeFailed": "Das Foto konnte nicht entfernt werden. Versuchen Sie es erneut.",
+        "removeTitle": "Dieses Foto dauerhaft entfernen?",
+        "removing": "Foto wird entfernt…",
+        "retry": "Wiederholen",
+        "retryNamed": "{name} wiederholen",
+        "saved": "{name} gespeichert.",
+        "selectionTooLarge": "Diese Auswahl wurde nicht hochgeladen. Es verbleiben {count} Fotoplätze, einschließlich ausstehender Uploads.",
+        "tooLarge": "Wählen Sie ein Foto aus, das nicht größer als 10 MB ist.",
+        "unsupported": "Wählen Sie ein JPEG-, PNG- oder WebP-Foto. HEIC und andere Formate werden nicht unterstützt.",
+        "uploadFailed": "Das Foto konnte nicht hochgeladen werden. Versuchen Sie es erneut.",
+        "uploading": "{name} wird hochgeladen…",
+        "uploadResults": "Ergebnisse des Foto-Uploads",
+        "vehicleMissing": "Dieses Fahrzeug ist in Ihrer Organisation nicht mehr verfügbar.",
+        "viewNamed": "Foto {number} von {name} ansehen"
+      },
       "refusals": {
         "driverNotFound": "Ein zugewiesener Mitarbeiter oder ein zugewiesenes Team existiert nicht mehr. Laden Sie die Seite neu.",
         "invalidChange": "Die Änderung konnte nicht gespeichert werden. Laden Sie die Seite neu und versuchen Sie es erneut.",
@@ -2739,7 +2907,6 @@
       "assignmentRemoved": "Zuweisung entfernt",
       "assignmentSaved": "Zuweisung gespeichert",
       "assignmentsDescription": "Gefragte Mitarbeiter können die Fahrzeugnutzung beim Stempeln erfassen. Bei Mitarbeitern, von denen eine Fahrzeugnutzung erwartet wird, erfolgt die Abfrage jedes Mal, und ihre Arbeitszeit wird markiert, bis die Angaben vollständig sind. Niemand wird am Stempeln gehindert. Die spezifischste Zuweisung hat Vorrang: die eigene eines Mitarbeiters vor der seines primären Teams und die eines Teams vor der der gesamten Organisation.",
-      "description": "Wer aufgefordert wird, das gefahrene Fahrzeug und den Kilometerstand zu erfassen",
       "enabled": "Fahrzeugnutzung erfassen",
       "enabledDescription": "Wenn Sie dies deaktivieren, wird nicht mehr nach der Fahrzeugnutzung gefragt und fehlende Fahrtdetails werden nicht mehr markiert. Bereits erfasste Fahrzeugnutzungen bleiben sichtbar und in Exporten enthalten.",
       "error": {

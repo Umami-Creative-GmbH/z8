@@ -140,7 +140,6 @@
         "keys": "İmzalama Anahtarları",
         "packages": "Denetim Paketleri"
       },
-      "title": "Denetim Dışa Aktarma",
       "verification": {
         "invalid": "Doğrulama Başarısız",
         "valid": "Doğrulama Başarılı",
@@ -175,7 +174,6 @@
       "search": "Ara",
       "searchPlaceholder": "Eylemleri, kullanıcıları veya üstverileri arayın…",
       "timestamp": "Zaman Damgası",
-      "title": "Denetim Günlüğü",
       "to": "Bitiş",
       "unknown": "Bilinmiyor",
       "user": "Kullanıcı",

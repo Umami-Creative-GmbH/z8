@@ -1,9 +1,5 @@
 import { Suspense } from "react";
-import { ApprovalEscalationManagement } from "@/components/settings/approval-escalation/approval-escalation-management";
-import { DeputyDecisionsSetting } from "@/components/settings/approval-escalation/deputy-decisions-setting";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db } from "@/db";
-import { loadApprovalSettings } from "@/lib/approvals/approval-settings";
 import { getAbility, getAuthContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
@@ -21,16 +17,7 @@ async function ApprovalEscalationSettingsContent() {
 		return redirectWithLocale("/settings");
 	}
 
-	const approvalSettings = await loadApprovalSettings(db, organizationId);
-
-	return (
-		<ApprovalEscalationManagement
-			organizationId={organizationId}
-			approvalSettings={
-				<DeputyDecisionsSetting enabled={approvalSettings.deputyDecisionsEnabled} />
-			}
-		/>
-	);
+	return redirectWithLocale("/settings/approval-policies?tab=escalation");
 }
 
 function ApprovalEscalationSettingsLoading() {

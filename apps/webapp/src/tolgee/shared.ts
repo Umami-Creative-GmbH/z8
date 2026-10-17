@@ -1,8 +1,6 @@
 import { FormatIcu } from "@tolgee/format-icu";
 import type { TolgeeStaticData } from "@tolgee/react";
-import { DevTools, Tolgee } from "@tolgee/web";
-
-const isDevelopment = process.env.NODE_ENV === "development";
+import { Tolgee } from "@tolgee/web";
 
 // Adding a language: extend this list, LANGUAGE_CONFIG, the calendar locale maps and the
 // Tolgee push list; `language-coverage.test.ts` names any that are missing.
@@ -79,7 +77,10 @@ export const APP_NAMESPACES = [
 export const MAILER_NAMESPACES = ["emails"] as const;
 
 /** Every catalog under `messages/`: the app's namespaces and the mailer's. */
-export const CATALOG_NAMESPACES = [...APP_NAMESPACES, ...MAILER_NAMESPACES] as const;
+export const CATALOG_NAMESPACES = [
+	...APP_NAMESPACES,
+	...MAILER_NAMESPACES,
+] as const;
 
 export type Namespace = (typeof CATALOG_NAMESPACES)[number];
 
@@ -112,6 +113,8 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/approvals": ["common", "approvals"],
 	"/my-requests": ["common", "myRequests"],
 	"/my-documents": ["common", "settings/people"],
+	// settings/generic: the verifier responsibility panel (settings.drivingLicence.verifiers).
+	"/driving-licence": ["common", "settings/generic"],
 	"/personnel-files": ["common", "settings/people"],
 	// travelExpenses: confirming a payroll run as paid (#853).
 	// settings/payrollExport: payroll line kind labels in payroll readiness (#854).
@@ -133,41 +136,126 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/settings/billing": ["common", "settings/generic", "billing"],
 	"/settings/billable-time/hand-off": ["common", "settings/generic", "reports"],
 	"/settings": ["common", "settings/generic"],
-	"/settings/approval-escalation": ["common", "settings/generic", "settings/rules"],
-	"/settings/approval-policies": ["common", "settings/generic", "settings/rules"],
-	"/settings/audit-export": ["common", "settings/generic", "settings/auditExport"],
+	"/settings/approval-escalation": [
+		"common",
+		"settings/generic",
+		"settings/rules",
+	],
+	"/settings/approval-policies": [
+		"common",
+		"settings/generic",
+		"settings/rules",
+		"settings/people",
+	],
+	"/settings/audit-export": [
+		"common",
+		"settings/generic",
+		"settings/auditExport",
+	],
 	"/settings/audit-log": ["common", "settings/generic", "settings/auditExport"],
 	"/settings/calendar": ["common", "settings/generic", "settings/integrations"],
 	"/settings/change-policies": ["common", "settings/generic", "settings/rules"],
-	"/settings/clockodo-import": ["common", "settings/generic", "settings/integrations"],
+	"/settings/clockodo-import": [
+		"common",
+		"settings/generic",
+		"settings/integrations",
+	],
 	"/settings/coverage-rules": ["common", "settings/generic", "settings/rules"],
 	"/settings/demo": ["common", "settings/generic", "settings/demo"],
 	"/settings/discord": ["common", "settings/generic", "settings/integrations"],
 	"/settings/employees": ["common", "settings/generic", "settings/people"],
-	"/settings/enterprise": ["common", "settings/generic", "settings/enterprise"],
+	// One boundary (enterprise/layout.tsx) serves every enterprise page; nested
+	// scopes would ship the enterprise catalog twice. webhooks: the API key pages
+	// embed the webhook management client.
+	"/settings/enterprise": [
+		"common",
+		"settings/generic",
+		"settings/enterprise",
+		"webhooks",
+	],
+	// organization: the tracking-date, period-submission, reminder and automatic
+	// clock-out panels moved here from the organization page.
+	"/settings/clocking": [
+		"common",
+		"settings/generic",
+		"settings/enterprise",
+		"settings/workPolicies",
+		"organization",
+	],
+	"/settings/notification-channels": [
+		"common",
+		"settings/generic",
+		"settings/integrations",
+	],
 	"/settings/holidays": ["common", "settings/generic", "settings/holidays"],
 	"/settings/permissions": ["common", "settings/generic", "settings/people"],
 	// `payroll`: the payroll run discard dialog (#852) is shared with the payroll workspace.
-	"/settings/payroll-export": ["common", "settings/generic", "settings/payrollExport", "payroll"],
-	"/settings/personnel-files": ["common", "settings/generic", "settings/people"],
-	"/settings/payroll-readiness": ["common", "settings/generic", "settings/payrollExport"],
-	"/settings/work-diagnostics": ["common", "settings/generic", "settings/payrollExport"],
+	"/settings/payroll-export": [
+		"common",
+		"settings/generic",
+		"settings/payrollExport",
+		"payroll",
+	],
+	"/settings/personnel-files": [
+		"common",
+		"settings/generic",
+		"settings/people",
+	],
+	"/settings/payroll-readiness": [
+		"common",
+		"settings/generic",
+		"settings/payrollExport",
+	],
+	"/settings/work-diagnostics": [
+		"common",
+		"settings/generic",
+		"settings/payrollExport",
+	],
 	"/settings/report-share-links": ["common", "settings/generic", "reports"],
 	"/settings/roles": ["common", "settings/generic", "settings/people"],
-	"/settings/scheduled-exports": ["common", "settings/generic", "settings/scheduledExports"],
+	"/settings/scheduled-exports": [
+		"common",
+		"settings/generic",
+		"settings/scheduledExports",
+	],
 	"/settings/shifts": ["common", "settings/generic", "settings/rules"],
 	"/settings/slack": ["common", "settings/generic", "settings/integrations"],
 	"/settings/surcharges": ["common", "settings/generic", "settings/rules"],
 	"/settings/teams": ["common", "settings/generic", "settings/people"],
-	"/settings/teams-notifications": ["common", "settings/generic", "settings/integrations"],
+	"/settings/teams-notifications": [
+		"common",
+		"settings/generic",
+		"settings/integrations",
+	],
 	"/settings/telegram": ["common", "settings/generic", "settings/integrations"],
 	"/settings/travel-expenses": ["common", "settings/generic", "travelExpenses"],
-	"/settings/vacation": ["common", "settings/generic", "settings/vacation"],
+	"/settings/vacation": [
+		"common",
+		"settings/generic",
+		"settings/vacation",
+		"settings/holidays",
+		"settings/rules",
+		"settings/people",
+	],
 	"/settings/webhooks": ["common", "settings/generic", "webhooks"],
 	"/settings/work-categories": ["common", "settings/generic", "settings/rules"],
-	"/settings/vehicle-use": ["common", "settings/generic", "settings/workPolicies"],
-	"/settings/position-capture": ["common", "settings/generic", "settings/workPolicies"],
-	"/settings/work-policies": ["common", "settings/generic", "settings/workPolicies"],
+	"/settings/vehicles": ["common", "settings/generic", "settings/workPolicies"],
+	"/settings/vehicle-use": [
+		"common",
+		"settings/generic",
+		"settings/workPolicies",
+	],
+	"/settings/position-capture": [
+		"common",
+		"settings/generic",
+		"settings/workPolicies",
+	],
+	"/settings/work-policies": [
+		"common",
+		"settings/generic",
+		"settings/workPolicies",
+		"settings/rules",
+	],
 	"/settings/compliance": ["common", "settings/generic", "compliance"],
 	"/onboarding": ["common", "onboarding"],
 };
@@ -187,7 +275,8 @@ export function getNamespacesForRoute(pathname: string): AppNamespace[] {
 		.sort(([a], [b]) => b.length - a.length);
 
 	for (const [route, namespaces] of prefixRoutes) {
-		const isSegmentBoundaryMatch = pathname === route || pathname.startsWith(`${route}/`);
+		const isSegmentBoundaryMatch =
+			pathname === route || pathname.startsWith(`${route}/`);
 		if (isSegmentBoundaryMatch) {
 			return namespaces;
 		}
@@ -216,7 +305,10 @@ const namespaceImports: Record<
 				ALL_LANGUAGES.map((language) => [
 					language,
 					settingsNamespace
-						? () => import(`../../messages/settings/${settingsNamespace}/${language}.json`)
+						? () =>
+								import(
+									`../../messages/settings/${settingsNamespace}/${language}.json`
+								)
 						: () => import(`../../messages/${namespace}/${language}.json`),
 				]),
 			),
@@ -225,7 +317,9 @@ const namespaceImports: Record<
 ) as Record<Namespace, Record<string, () => Promise<unknown>>>;
 
 // Tolgee's expected translation data type
-export type TreeTranslationsData = { [key: string]: TreeTranslationsData | string };
+export type TreeTranslationsData = {
+	[key: string]: TreeTranslationsData | string;
+};
 
 export type LoadNamespacesOptions = {
 	strict?: boolean;
@@ -240,7 +334,8 @@ export async function loadNamespaceImport(
 	try {
 		const mod = await importFn();
 		const data =
-			(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
+			(mod as { default?: TreeTranslationsData }).default ||
+			(mod as TreeTranslationsData);
 		// Merging shares branches within one load, including its aliases.
 		// Keep those branches separate from the cached imported JSON module.
 		return { ns, data: structuredClone(data) };
@@ -304,7 +399,10 @@ export function mergeTreeTranslations(
 	return merged;
 }
 
-function mergeTreeTranslationInto(target: TreeTranslationsData, source: TreeTranslationsData) {
+function mergeTreeTranslationInto(
+	target: TreeTranslationsData,
+	source: TreeTranslationsData,
+) {
 	for (const [key, value] of Object.entries(source)) {
 		const targetValue = target[key];
 		if (isTreeTranslationsData(targetValue) && isTreeTranslationsData(value)) {
@@ -336,7 +434,9 @@ function addNamespaceKeyAliases(
 /**
  * Load and merge the app's namespaces for a language (never the mailer's)
  */
-async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslationsData> {
+async function loadAllNamespacesForLanguage(
+	lang: string,
+): Promise<TreeTranslationsData> {
 	const loaded = (
 		await Promise.all(
 			APP_NAMESPACES.map(async (ns) => {
@@ -348,7 +448,8 @@ async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslati
 				try {
 					const mod = await importFn();
 					const data =
-						(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
+						(mod as { default?: TreeTranslationsData }).default ||
+						(mod as TreeTranslationsData);
 					return { ns, data: structuredClone(data) };
 				} catch (error) {
 					console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
@@ -356,8 +457,11 @@ async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslati
 				}
 			}),
 		)
-	).filter((namespace): namespace is { ns: AppNamespace; data: TreeTranslationsData } =>
-		Boolean(namespace),
+	).filter(
+		(
+			namespace,
+		): namespace is { ns: AppNamespace; data: TreeTranslationsData } =>
+			Boolean(namespace),
 	);
 	const merged = mergeTreeTranslations(loaded.map(({ data }) => data));
 	for (const { ns, data } of loaded) {
@@ -366,15 +470,14 @@ async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslati
 	return merged;
 }
 
-export function TolgeeBase(options: { loadAllLanguageCatalogs?: boolean } = {}) {
+export function TolgeeBase(
+	options: { loadAllLanguageCatalogs?: boolean } = {},
+) {
 	const tolgee = Tolgee().use(FormatIcu());
 
-	// Only load DevTools in development AND on the client side
-	// Loading DevTools on server causes hydration mismatch (server adds _tolgee attribute,
-	// client adds invisible characters)
-	if (isDevelopment && typeof window !== "undefined") {
-		tolgee.use(DevTools());
-	}
+	// DevTools' observer adds invisible characters once the provider mounts.
+	// Suspense children can hydrate later, so even its SSR adapter's first-render
+	// protection cannot keep those labels consistent with the server markup.
 
 	return tolgee.updateDefaults({
 		// NOTE: apiKey/apiUrl intentionally removed from config.
@@ -382,15 +485,15 @@ export function TolgeeBase(options: { loadAllLanguageCatalogs?: boolean } = {}) 
 		// the default namespace, overriding the complete staticData (all namespaces merged).
 		// This caused non-default-namespace translations (auth, common, etc.) to be lost.
 		// Translations are loaded from local JSON files via staticData instead.
-		// DevTools observer still works for highlighting keys without apiKey.
-
-		// Disable invisible character encoding to prevent broken strings in HTML
-		observerOptions: {
-			fullKeyEncode: false,
-		},
 		// Server/bot callers retain complete fallback; provider instances disable it.
-		staticData: options.loadAllLanguageCatalogs === false ? {} : Object.fromEntries(
-			ALL_LANGUAGES.map((language) => [language, () => loadAllNamespacesForLanguage(language)]),
-		),
+		staticData:
+			options.loadAllLanguageCatalogs === false
+				? {}
+				: Object.fromEntries(
+						ALL_LANGUAGES.map((language) => [
+							language,
+							() => loadAllNamespacesForLanguage(language),
+						]),
+					),
 	});
 }

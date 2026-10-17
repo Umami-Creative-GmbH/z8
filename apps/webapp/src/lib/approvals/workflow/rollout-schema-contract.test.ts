@@ -415,7 +415,7 @@ const EXPECTED_FULL_COLUMN_INVENTORY = {
 		"id|uuid|required|gen_random_uuid()",
 		"organization_id|text|required|none",
 		"entity_type|text|required|none",
-		"entity_id|uuid|required|none",
+		"entity_id|text|required|none",
 		"action|text|required|none",
 		"performed_by|text|required|none",
 		"employee_id|uuid|nullable|none",

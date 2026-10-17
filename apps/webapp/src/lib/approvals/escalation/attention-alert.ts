@@ -1,7 +1,7 @@
 import type { ApprovalEscalationAttentionReason } from "@/db/schema";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 
-export const ESCALATION_MANAGEMENT_PATH = "/settings/approval-escalation";
+export const ESCALATION_MANAGEMENT_PATH = "/settings/approval-policies";
 
 const ALERT_TITLE = {
 	titleKey: "common:notifications.content.approvalEscalationAttention.title",
@@ -58,7 +58,7 @@ export function buildEscalationAttentionAlert(input: {
 		message: copy.messageDefault,
 		entityType: "approval_escalation_attention",
 		entityId: input.attentionId,
-		actionUrl: ESCALATION_MANAGEMENT_PATH,
+		actionUrl: `${ESCALATION_MANAGEMENT_PATH}?tab=attention`,
 		idempotencyKey: `approval-escalation-attention:${input.attentionId}:${input.userId}`,
 		metadata: { i18n: { ...ALERT_TITLE, ...copy } },
 	};

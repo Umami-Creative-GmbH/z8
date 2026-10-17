@@ -202,15 +202,12 @@
       }
     },
     "discord": {
-      "description": "Configurați notificările Discord pentru organizația dvs.",
       "title": "Discord"
     },
     "slack": {
-      "description": "Configurați notificările Slack pentru organizația dvs.",
       "title": "Slack"
     },
     "teamsNotifications": {
-      "description": "Configurați notificările Microsoft Teams pentru organizația dvs.",
       "title": "Microsoft Teams"
     },
     "telegram": {

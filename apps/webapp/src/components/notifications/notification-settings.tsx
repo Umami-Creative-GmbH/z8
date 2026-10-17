@@ -79,6 +79,7 @@ const NOTIFICATION_CATEGORIES = [
 			"time_correction_rejected",
 			"period_submission_decided",
 			"automatic_clock_out",
+			"kiosk_command_refused",
 			"month_closed_automatically",
 			"month_close_blocked",
 			"month_reopened",
@@ -107,7 +108,8 @@ const NOTIFICATION_CATEGORIES = [
 	},
 	{
 		id: "travelExpenses",
-		titleKey: "common:notifications.preferences.categories.travelExpenses.title",
+		titleKey:
+			"common:notifications.preferences.categories.travelExpenses.title",
 		titleFallback: "Travel Expenses",
 		descriptionKey:
 			"common:notifications.preferences.categories.travelExpenses.description",
@@ -126,8 +128,10 @@ const NOTIFICATION_CATEGORIES = [
 		id: "personnelFile",
 		titleKey: "common:notifications.preferences.categories.personnelFile.title",
 		titleFallback: "Personnel File",
-		descriptionKey: "common:notifications.preferences.categories.personnelFile.description",
-		descriptionFallback: "Notifications about documents shared with you in your personnel file",
+		descriptionKey:
+			"common:notifications.preferences.categories.personnelFile.description",
+		descriptionFallback:
+			"Notifications about documents shared with you in your personnel file",
 		icon: IconFileText,
 		types: [
 			"personnel_file_document_shared",
@@ -184,6 +188,8 @@ const NOTIFICATION_CATEGORIES = [
 			"break_due_reminder",
 			"period_submission_reminder",
 			"driving_details_missing_reminder",
+			"driving_licence_reminder",
+			"driving_authorization_suspended",
 			"period_submission_sent_back",
 			"personal_data_export_reminder",
 			"skill_expiry_upcoming",
@@ -224,10 +230,17 @@ type StaticallyLabelledType =
 	| "personal_data_export_ready"
 	| "personal_data_export_admin_exported"
 	| "skill_expiry_upcoming"
-	| "skill_expired_today";
+	| "skill_expired_today"
+	| "driving_licence_reminder"
+	| "driving_authorization_suspended"
+	| "kiosk_command_refused";
 
 // Human-readable labels for the other notification types, looked up by a computed key.
-const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, string> = {
+const TYPE_LABELS: Record<
+	Exclude<NotificationType, StaticallyLabelledType>,
+	string
+> = {
+	organization_mfa_notice: "Required organization authentication",
 	automatic_clock_out: "Automatic clock-out",
 	approval_request_submitted: "Request submitted",
 	approval_request_approved: "Request approved",
@@ -283,7 +296,8 @@ const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, str
 	travel_expense_partially_reimbursed: "Expense partially reimbursed",
 	travel_expense_recovery_recorded: "Expense recovery recorded",
 	// Reimbursement work arriving for expense officers
-	travel_expense_ready_for_reimbursement: "Ready for reimbursement (expense officers)",
+	travel_expense_ready_for_reimbursement:
+		"Ready for reimbursement (expense officers)",
 	travel_expense_payroll_run_awaiting_confirmation:
 		"Payroll run awaiting confirmation (expense officers)",
 	// An employee document became visible to the employee
@@ -294,7 +308,8 @@ const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, str
 	personnel_file_expiry_upcoming: "Document expires soon",
 	personnel_file_expired_today: "Document expires today",
 	// Employee documents newly due for deletion (personnel file officers)
-	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
+	personnel_file_due_for_deletion:
+		"Documents due for deletion (personnel file officers)",
 
 	// Closed months (#762)
 	month_closed_automatically: "Month closed automatically",
@@ -429,11 +444,29 @@ function useNotificationSettingsViewModel() {
 					"Forgotten clock-out",
 				);
 			case "break_due_reminder":
-				return t("common:notifications.preferences.types.break_due_reminder", "Break due");
+				return t(
+					"common:notifications.preferences.types.break_due_reminder",
+					"Break due",
+				);
+			case "driving_licence_reminder":
+				return t(
+					"common:notifications.preferences.types.driving_licence_reminder",
+					"Driving licence check due",
+				);
+			case "driving_authorization_suspended":
+				return t(
+					"common:notifications.preferences.types.driving_authorization_suspended",
+					"Driving authorization suspended",
+				);
 			case "driving_details_missing_reminder":
 				return t(
 					"common:notifications.preferences.types.driving_details_missing_reminder",
 					"Driving details missing",
+				);
+			case "kiosk_command_refused":
+				return t(
+					"common:notifications.preferences.types.kiosk_command_refused",
+					"Kiosk clocking not recorded",
 				);
 			case "period_submission_reminder":
 				return t(
@@ -526,7 +559,10 @@ function useNotificationSettingsViewModel() {
 					"Personal data exported by an administrator",
 				);
 			default:
-				return t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
+				return t(
+					`common:notifications.preferences.types.${type}`,
+					TYPE_LABELS[type],
+				);
 		}
 	};
 
@@ -814,55 +850,66 @@ function NotificationSettingsView({
 										{getTypeLabel(type)}
 									</span>
 									<div className="flex max-w-full flex-wrap items-center gap-3">
-										{visibleChannels.map((channel) => {
-											if (hasMandatoryInbox(type) && channel === "in_app") {
+										{visibleChannels
+											.filter(
+												(channel) =>
+													(type !== "driving_licence_reminder" &&
+														type !== "driving_authorization_suspended") ||
+													channel === "in_app" ||
+													channel === "email",
+											)
+											.map((channel) => {
+												if (hasMandatoryInbox(type) && channel === "in_app") {
+													return (
+														<span
+															key={channel}
+															className="text-xs text-muted-foreground"
+														>
+															{t(
+																"common:notifications.preferences.mandatoryInbox",
+																"Always delivered to your inbox",
+															)}
+														</span>
+													);
+												}
+												const isEnabled = matrix[type]?.[channel] ?? true;
+												const toggleId = `${type}-${channel}`;
+												const isPending = pendingToggle === toggleId;
+												const config = CHANNEL_CONFIG[channel];
+												const channelLabel = getChannelLabel(channel);
+												const typeLabel = getTypeLabel(type);
+
+												const isDisabled =
+													isPending ||
+													isUpdating ||
+													(channel === "push" && !isPushSupported);
+
 												return (
-													<span key={channel} className="text-xs text-muted-foreground">
-														{t(
-															"common:notifications.preferences.mandatoryInbox",
-															"Always delivered to your inbox",
-														)}
-													</span>
+													<div
+														key={channel}
+														className="flex items-center gap-1.5"
+														title={getChannelDescription(channel)}
+													>
+														<config.icon
+															className="size-3.5 text-muted-foreground"
+															aria-hidden="true"
+														/>
+														<Switch
+															checked={isEnabled}
+															onCheckedChange={(checked) =>
+																handleToggle(type, channel, checked)
+															}
+															disabled={isDisabled}
+															aria-label={t(
+																"common:notifications.preferences.toggleAria",
+																"{channel} notifications for {type}",
+																{ channel: channelLabel, type: typeLabel },
+															)}
+															className="data-checked:bg-primary"
+														/>
+													</div>
 												);
-											}
-											const isEnabled = matrix[type]?.[channel] ?? true;
-											const toggleId = `${type}-${channel}`;
-											const isPending = pendingToggle === toggleId;
-											const config = CHANNEL_CONFIG[channel];
-											const channelLabel = getChannelLabel(channel);
-											const typeLabel = getTypeLabel(type);
-
-											const isDisabled =
-												isPending ||
-												isUpdating ||
-												(channel === "push" && !isPushSupported);
-
-											return (
-												<div
-													key={channel}
-													className="flex items-center gap-1.5"
-													title={getChannelDescription(channel)}
-												>
-													<config.icon
-														className="size-3.5 text-muted-foreground"
-														aria-hidden="true"
-													/>
-													<Switch
-														checked={isEnabled}
-														onCheckedChange={(checked) =>
-															handleToggle(type, channel, checked)
-														}
-														disabled={isDisabled}
-														aria-label={t(
-															"common:notifications.preferences.toggleAria",
-															"{channel} notifications for {type}",
-															{ channel: channelLabel, type: typeLabel },
-														)}
-														className="data-checked:bg-primary"
-													/>
-												</div>
-											);
-										})}
+											})}
 									</div>
 								</div>
 							))}

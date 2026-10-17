@@ -22,6 +22,7 @@ import {
 } from "@/lib/domain";
 import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { getCookieConsentScript } from "@/lib/platform-settings";
+import { getDevelopmentTurnstileKeys } from "@/lib/turnstile/development-keys";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
@@ -115,7 +116,10 @@ export async function AuthLayoutContent({
 	// Fetch domain config if on a platform or custom domain, otherwise use global config
 	let domainContext: DomainAuthContext | null = null;
 	const platformDomainContext = await getPlatformDomainConfig(host ?? "");
-	const globalTurnstileSiteKey = env.TURNSTILE_SITE_KEY ?? null;
+	const globalTurnstileSiteKey =
+		getDevelopmentTurnstileKeys(host)?.siteKey ??
+		env.TURNSTILE_SITE_KEY ??
+		null;
 	if (platformDomainContext) {
 		domainContext = {
 			...platformDomainContext,

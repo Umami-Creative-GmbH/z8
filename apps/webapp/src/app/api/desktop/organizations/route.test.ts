@@ -22,11 +22,13 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/app-url", () => ({
 	getDefaultAppBaseUrl: () => "https://app.test",
 }));
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
-	canAccessOrganizationWithSso: async (
-		_session: unknown,
-		organizationId: string,
-	) => organizationId === "open",
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	getOrganizationAccessRequirement: async () => ({
+		allowed: false,
+		reason: "SSO_REQUIRED",
+	}),
+	canAccessOrganization: async (_session: unknown, organizationId: string) =>
+		organizationId === "open",
 }));
 vi.mock("@/db", () => ({
 	db: {

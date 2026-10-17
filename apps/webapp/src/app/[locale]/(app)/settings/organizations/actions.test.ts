@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { isOrganizationFeature } from "./organization-features";
 
 const getSessionMock = vi.fn();
-const canAccessOrganizationWithSsoMock = vi.fn();
+const canAccessOrganizationMock = vi.fn();
 const assertEnterpriseIdentityInvitationAllowedMock = vi.fn();
 const createInvitationMock = vi.fn();
 const cancelInvitationMock = vi.fn();
@@ -69,7 +69,10 @@ vi.mock("next/server", async (importOriginal) => ({
 }));
 
 // Records that role updates run inside the coordinated auth transaction (#314).
-const authCoordination = vi.hoisted(() => ({ inside: false, updatesInside: 0 }));
+const authCoordination = vi.hoisted(() => ({
+	inside: false,
+	updatesInside: 0,
+}));
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		api: {
@@ -115,11 +118,12 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 vi.mock("@/lib/enterprise-identity/enforcement", () => ({
-	assertEnterpriseIdentityInvitationAllowed: assertEnterpriseIdentityInvitationAllowedMock,
+	assertEnterpriseIdentityInvitationAllowed:
+		assertEnterpriseIdentityInvitationAllowedMock,
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
-	canAccessOrganizationWithSso: canAccessOrganizationWithSsoMock,
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	canAccessOrganization: canAccessOrganizationMock,
 }));
 
 vi.mock("@/lib/timezone/organization-timezone-change", () => ({
@@ -198,25 +202,30 @@ describe("organization action authorization inventory", () => {
 		["updateOrganizationDefaultNotificationLanguage", "deleteOrganization"],
 		["deleteOrganization", "recoverOrganization"],
 		["recoverOrganization", null],
-	] as const)("routes %s through the central active-organization gate", (action, next) => {
-		const source = readFileSync(
-			new URL("./actions.ts", import.meta.url),
-			"utf8",
-		);
-		const section = source.slice(
-			source.indexOf(`export async function ${action}(`),
-			next === null ? undefined : source.indexOf(`export async function ${next}(`),
-		);
+	] as const)(
+		"routes %s through the central active-organization gate",
+		(action, next) => {
+			const source = readFileSync(
+				new URL("./actions.ts", import.meta.url),
+				"utf8",
+			);
+			const section = source.slice(
+				source.indexOf(`export async function ${action}(`),
+				next === null
+					? undefined
+					: source.indexOf(`export async function ${next}(`),
+			);
 
-		expect(section).toContain("requireActiveOrganizationActionActor({");
-	});
+			expect(section).toContain("requireActiveOrganizationActionActor({");
+		},
+	);
 });
 
 describe("organization invitation actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		getSessionMock.mockReset();
-		canAccessOrganizationWithSsoMock.mockReset().mockResolvedValue(true);
+		canAccessOrganizationMock.mockReset().mockResolvedValue(true);
 		assertEnterpriseIdentityInvitationAllowedMock
 			.mockReset()
 			.mockResolvedValue(undefined);
@@ -350,32 +359,39 @@ describe("organization invitation actions", () => {
 		["update", "member,owner"],
 		["cancel", "member,admin"],
 		["cancel", "member,owner"],
-	] as const)("allows %s invitation actions for compound role %s", async (action, role) => {
-		memberFindFirstMock.mockResolvedValue({
-			id: "member-actor",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role,
-			status: "approved",
-		});
+	] as const)(
+		"allows %s invitation actions for compound role %s",
+		async (action, role) => {
+			memberFindFirstMock.mockResolvedValue({
+				id: "member-actor",
+				userId: "user-admin",
+				organizationId: "org-1",
+				role,
+				status: "approved",
+			});
 
-		const result = await runInvitationActorAction(action);
+			const result = await runInvitationActorAction(action);
 
-		expect(result).toMatchObject({ success: true });
-		expect(canAccessOrganizationWithSsoMock).toHaveBeenCalledWith(
-			expect.objectContaining({ id: "session-id", userId: "user-admin" }),
-			"org-1",
-		);
-	});
+			expect(result).toMatchObject({ success: true });
+			expect(canAccessOrganizationMock).toHaveBeenCalledWith(
+				expect.objectContaining({ id: "session-id", userId: "user-admin" }),
+				"org-1",
+				expect.objectContaining({ query: expect.anything() }),
+			);
+		},
+	);
 
 	it.each(["send", "resend", "update", "cancel"] as const)(
 		"denies the %s invitation action when SSO access is denied",
 		async (action) => {
-			canAccessOrganizationWithSsoMock.mockResolvedValue(false);
+			canAccessOrganizationMock.mockResolvedValue(false);
 
 			const result = await runInvitationActorAction(action);
 
-			expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+			expect(result).toMatchObject({
+				success: false,
+				code: "AuthorizationError",
+			});
 			expect(createInvitationMock).not.toHaveBeenCalled();
 			expect(cancelInvitationMock).not.toHaveBeenCalled();
 			expect(persistEmployeeInvitationDraftMock).not.toHaveBeenCalled();
@@ -384,27 +400,25 @@ describe("organization invitation actions", () => {
 		},
 	);
 
-	it.each([
-		"send",
-		"resend",
-		"update",
-		"cancel",
-	] as const)("denies a plain member from the %s invitation action", async (action) => {
-		memberFindFirstMock.mockResolvedValue({
-			id: "member-actor",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role: "member",
-			status: "approved",
-		});
+	it.each(["send", "resend", "update", "cancel"] as const)(
+		"denies a plain member from the %s invitation action",
+		async (action) => {
+			memberFindFirstMock.mockResolvedValue({
+				id: "member-actor",
+				userId: "user-admin",
+				organizationId: "org-1",
+				role: "member",
+				status: "approved",
+			});
 
-		const result = await runInvitationActorAction(action);
+			const result = await runInvitationActorAction(action);
 
-		expect(result).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-	});
+			expect(result).toMatchObject({
+				success: false,
+				code: "AuthorizationError",
+			});
+		},
+	);
 
 	it("uses the central tokenized capability gate for every invitation actor check", () => {
 		const source = readFileSync(
@@ -472,53 +486,53 @@ describe("organization invitation actions", () => {
 		});
 	});
 
-	it.each([
-		"pending",
-		"rejected",
-	])("denies a direct role update from a %s owner membership", async (status) => {
-		memberFindFirstMock.mockResolvedValueOnce({
-			id: "actor-member",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role: "owner",
-			status,
-		});
-
-		const result = await updateMemberRole("org-1", "target-member", {
-			role: "admin",
-		});
-
-		expect(result).toMatchObject({ success: false });
-		expect(updateMemberRoleMock).not.toHaveBeenCalled();
-	});
-
-	it.each([
-		"pending",
-		"rejected",
-	])("denies a direct role update for a %s target membership", async (status) => {
-		memberFindFirstMock
-			.mockResolvedValueOnce({
+	it.each(["pending", "rejected"])(
+		"denies a direct role update from a %s owner membership",
+		async (status) => {
+			memberFindFirstMock.mockResolvedValueOnce({
 				id: "actor-member",
 				userId: "user-admin",
 				organizationId: "org-1",
 				role: "owner",
-				status: "approved",
-			})
-			.mockResolvedValueOnce({
-				id: "target-member",
-				userId: "target-user",
-				organizationId: "org-1",
-				role: "member",
 				status,
 			});
 
-		const result = await updateMemberRole("org-1", "target-member", {
-			role: "admin",
-		});
+			const result = await updateMemberRole("org-1", "target-member", {
+				role: "admin",
+			});
 
-		expect(result).toMatchObject({ success: false });
-		expect(updateMemberRoleMock).not.toHaveBeenCalled();
-	});
+			expect(result).toMatchObject({ success: false });
+			expect(updateMemberRoleMock).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(["pending", "rejected"])(
+		"denies a direct role update for a %s target membership",
+		async (status) => {
+			memberFindFirstMock
+				.mockResolvedValueOnce({
+					id: "actor-member",
+					userId: "user-admin",
+					organizationId: "org-1",
+					role: "owner",
+					status: "approved",
+				})
+				.mockResolvedValueOnce({
+					id: "target-member",
+					userId: "target-user",
+					organizationId: "org-1",
+					role: "member",
+					status,
+				});
+
+			const result = await updateMemberRole("org-1", "target-member", {
+				role: "admin",
+			});
+
+			expect(result).toMatchObject({ success: false });
+			expect(updateMemberRoleMock).not.toHaveBeenCalled();
+		},
+	);
 
 	it("rejects a direct self-role update", async () => {
 		memberFindFirstMock
@@ -586,30 +600,33 @@ describe("organization invitation actions", () => {
 			"admin",
 			() => deleteOrganization("org-1", "Organization One"),
 		],
-	] as const)("denies an inactive actor before %s mutations", async (_case, role, action) => {
-		memberFindFirstMock.mockResolvedValue({
-			id: "actor-member",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role,
-			status: "approved",
-		});
-		employeeFindFirstMock.mockResolvedValue({
-			id: "actor-employee",
-			userId: "user-admin",
-			organizationId: "org-1",
-			isActive: false,
-		});
+	] as const)(
+		"denies an inactive actor before %s mutations",
+		async (_case, role, action) => {
+			memberFindFirstMock.mockResolvedValue({
+				id: "actor-member",
+				userId: "user-admin",
+				organizationId: "org-1",
+				role,
+				status: "approved",
+			});
+			employeeFindFirstMock.mockResolvedValue({
+				id: "actor-employee",
+				userId: "user-admin",
+				organizationId: "org-1",
+				isActive: false,
+			});
 
-		const result = await action();
+			const result = await action();
 
-		expect(result).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-		expect(updateSetMock).not.toHaveBeenCalled();
-		expect(updateMemberRoleMock).not.toHaveBeenCalled();
-	});
+			expect(result).toMatchObject({
+				success: false,
+				code: "AuthorizationError",
+			});
+			expect(updateSetMock).not.toHaveBeenCalled();
+			expect(updateMemberRoleMock).not.toHaveBeenCalled();
+		},
+	);
 
 	it("lets an admin switch personnel files (#865)", async () => {
 		memberFindFirstMock.mockResolvedValue({
@@ -621,10 +638,16 @@ describe("organization invitation actions", () => {
 		});
 		updateWhereMock.mockResolvedValue(undefined);
 
-		const result = await toggleOrganizationFeature("org-1", "personnelFilesEnabled", false);
+		const result = await toggleOrganizationFeature(
+			"org-1",
+			"personnelFilesEnabled",
+			false,
+		);
 
 		expect(result).toMatchObject({ success: true });
-		expect(updateSetMock).toHaveBeenCalledWith({ personnelFilesEnabled: false });
+		expect(updateSetMock).toHaveBeenCalledWith({
+			personnelFilesEnabled: false,
+		});
 	});
 
 	it("keeps every other feature owner-only for admins", async () => {
@@ -636,9 +659,16 @@ describe("organization invitation actions", () => {
 			status: "approved",
 		});
 
-		const result = await toggleOrganizationFeature("org-1", "shiftsEnabled", true);
+		const result = await toggleOrganizationFeature(
+			"org-1",
+			"shiftsEnabled",
+			true,
+		);
 
-		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(result).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
 		expect(updateSetMock).not.toHaveBeenCalled();
 	});
 
@@ -1444,30 +1474,29 @@ describe("organization invitation actions", () => {
 		expect(createInvitationMock).not.toHaveBeenCalled();
 	});
 
-	it.each([
-		"canceled",
-		"accepted",
-		"rejected",
-	])("rejects an anomalously linked %s resend source", async (status) => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-old",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			status,
-			expiresAt: new Date("2100-01-01T00:00:00.000Z"),
-			targetTeamId: null,
-			canCreateOrganizations: false,
-		});
+	it.each(["canceled", "accepted", "rejected"])(
+		"rejects an anomalously linked %s resend source",
+		async (status) => {
+			invitationFindFirstMock.mockResolvedValue({
+				id: "invite-old",
+				organizationId: "org-1",
+				email: "invitee@example.com",
+				role: "member",
+				status,
+				expiresAt: new Date("2100-01-01T00:00:00.000Z"),
+				targetTeamId: null,
+				canCreateOrganizations: false,
+			});
 
-		const result = await resendInvitation("org-1", "invite-old");
+			const result = await resendInvitation("org-1", "invite-old");
 
-		expect(result).toMatchObject({
-			success: false,
-			error: "Invitation cannot be resent",
-		});
-		expect(createInvitationMock).not.toHaveBeenCalled();
-	});
+			expect(result).toMatchObject({
+				success: false,
+				error: "Invitation cannot be resent",
+			});
+			expect(createInvitationMock).not.toHaveBeenCalled();
+		},
+	);
 
 	it("allows an expired pending resend source that still owns the stable draft", async () => {
 		invitationFindFirstMock.mockResolvedValue({
@@ -1802,44 +1831,44 @@ describe("organization invitation actions", () => {
 		expect(updateSetMock).not.toHaveBeenCalled();
 	});
 
-	it.each([
-		"pending",
-		"rejected",
-	])("does not update an invitation target team for a %s admin membership", async (status) => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-1",
-			organizationId: "org-1",
-			status: "pending",
-		});
-		memberFindFirstMock.mockImplementation(async ({ where }) => {
-			const query = new PgDialect().sqlToQuery(where);
-			return query.params.includes("approved")
-				? null
-				: {
-						id: "member-admin",
-						userId: "user-admin",
-						organizationId: "org-1",
-						role: "admin",
-						status,
-					};
-		});
+	it.each(["pending", "rejected"])(
+		"does not update an invitation target team for a %s admin membership",
+		async (status) => {
+			invitationFindFirstMock.mockResolvedValue({
+				id: "invite-1",
+				organizationId: "org-1",
+				status: "pending",
+			});
+			memberFindFirstMock.mockImplementation(async ({ where }) => {
+				const query = new PgDialect().sqlToQuery(where);
+				return query.params.includes("approved")
+					? null
+					: {
+							id: "member-admin",
+							userId: "user-admin",
+							organizationId: "org-1",
+							role: "admin",
+							status,
+						};
+			});
 
-		const result = await updateInvitationTargetTeam({
-			invitationId: "invite-1",
-			organizationId: "org-1",
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-		});
+			const result = await updateInvitationTargetTeam({
+				invitationId: "invite-1",
+				organizationId: "org-1",
+				targetTeamId: "11111111-1111-4111-8111-111111111111",
+			});
 
-		expect(result).toMatchObject({ success: false });
-		const predicate = memberFindFirstMock.mock.calls[0]?.[0].where;
-		expect(new PgDialect().sqlToQuery(predicate).params).toEqual([
-			"user-admin",
-			"org-1",
-			"approved",
-		]);
-		expect(updateSetMock).not.toHaveBeenCalled();
-		expect(cancelInvitationMock).not.toHaveBeenCalled();
-	});
+			expect(result).toMatchObject({ success: false });
+			const predicate = memberFindFirstMock.mock.calls[0]?.[0].where;
+			expect(new PgDialect().sqlToQuery(predicate).params).toEqual([
+				"user-admin",
+				"org-1",
+				"approved",
+			]);
+			expect(updateSetMock).not.toHaveBeenCalled();
+			expect(cancelInvitationMock).not.toHaveBeenCalled();
+		},
+	);
 
 	it("allows clearing the target team from a pending invitation", async () => {
 		invitationFindFirstMock.mockResolvedValue({
@@ -1885,40 +1914,40 @@ describe("organization invitation actions", () => {
 		expect(updateSetMock).not.toHaveBeenCalled();
 	});
 
-	it.each([
-		"pending",
-		"rejected",
-	])("does not cancel an invitation for a %s admin membership", async (status) => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-1",
-			organizationId: "org-1",
-			status: "pending",
-		});
-		memberFindFirstMock.mockImplementation(async ({ where }) => {
-			const query = new PgDialect().sqlToQuery(where);
-			return query.params.includes("approved")
-				? null
-				: {
-						id: "member-admin",
-						userId: "user-admin",
-						organizationId: "org-1",
-						role: "admin",
-						status,
-					};
-		});
+	it.each(["pending", "rejected"])(
+		"does not cancel an invitation for a %s admin membership",
+		async (status) => {
+			invitationFindFirstMock.mockResolvedValue({
+				id: "invite-1",
+				organizationId: "org-1",
+				status: "pending",
+			});
+			memberFindFirstMock.mockImplementation(async ({ where }) => {
+				const query = new PgDialect().sqlToQuery(where);
+				return query.params.includes("approved")
+					? null
+					: {
+							id: "member-admin",
+							userId: "user-admin",
+							organizationId: "org-1",
+							role: "admin",
+							status,
+						};
+			});
 
-		const result = await cancelInvitation("invite-1");
+			const result = await cancelInvitation("invite-1");
 
-		expect(result).toMatchObject({ success: false });
-		const predicate = memberFindFirstMock.mock.calls[0]?.[0].where;
-		expect(new PgDialect().sqlToQuery(predicate).params).toEqual([
-			"user-admin",
-			"org-1",
-			"approved",
-		]);
-		expect(updateSetMock).not.toHaveBeenCalled();
-		expect(cancelInvitationMock).not.toHaveBeenCalled();
-	});
+			expect(result).toMatchObject({ success: false });
+			const predicate = memberFindFirstMock.mock.calls[0]?.[0].where;
+			expect(new PgDialect().sqlToQuery(predicate).params).toEqual([
+				"user-admin",
+				"org-1",
+				"approved",
+			]);
+			expect(updateSetMock).not.toHaveBeenCalled();
+			expect(cancelInvitationMock).not.toHaveBeenCalled();
+		},
+	);
 
 	it("rejects cancellation for an inactive employee in the invitation organization", async () => {
 		invitationFindFirstMock.mockResolvedValue({
@@ -2046,45 +2075,41 @@ describe("organization invitation actions", () => {
 		expect(onConflictDoUpdateMock).not.toHaveBeenCalled();
 	});
 
-	it.each([
-		"",
-		" Europe/Berlin",
-		"Europe/Berlin ",
-		"+05:45",
-		"Not/A_Zone",
-	])("rejects invalid organization timezone %j before updating", async (timezone) => {
-		memberFindFirstMock.mockResolvedValue({
-			id: "member-owner",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role: "owner",
-		});
-		const result = await updateOrganizationTimezone("org-1", timezone);
+	it.each(["", " Europe/Berlin", "Europe/Berlin ", "+05:45", "Not/A_Zone"])(
+		"rejects invalid organization timezone %j before updating",
+		async (timezone) => {
+			memberFindFirstMock.mockResolvedValue({
+				id: "member-owner",
+				userId: "user-admin",
+				organizationId: "org-1",
+				role: "owner",
+			});
+			const result = await updateOrganizationTimezone("org-1", timezone);
 
-		expect(result).toMatchObject({
-			success: false,
-			code: "ValidationError",
-			error: "Timezone must be a valid timezone",
-		});
-		expect(changeOrganizationTimezoneMock).not.toHaveBeenCalled();
-	});
+			expect(result).toMatchObject({
+				success: false,
+				code: "ValidationError",
+				error: "Timezone must be a valid timezone",
+			});
+			expect(changeOrganizationTimezoneMock).not.toHaveBeenCalled();
+		},
+	);
 
-	it.each([
-		"UTC",
-		"Europe/Berlin",
-		"America/New_York",
-	])("updates organization timezone %s for an owner", async (timezone) => {
-		memberFindFirstMock.mockResolvedValue({
-			id: "member-owner",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role: "owner",
-		});
-		const result = await updateOrganizationTimezone("org-1", timezone);
+	it.each(["UTC", "Europe/Berlin", "America/New_York"])(
+		"updates organization timezone %s for an owner",
+		async (timezone) => {
+			memberFindFirstMock.mockResolvedValue({
+				id: "member-owner",
+				userId: "user-admin",
+				organizationId: "org-1",
+				role: "owner",
+			});
+			const result = await updateOrganizationTimezone("org-1", timezone);
 
-		expect(result).toMatchObject({ success: true });
-		expect(changeOrganizationTimezoneMock).toHaveBeenCalledWith(
-			expect.objectContaining({ timezone }),
-		);
-	});
+			expect(result).toMatchObject({ success: true });
+			expect(changeOrganizationTimezoneMock).toHaveBeenCalledWith(
+				expect.objectContaining({ timezone }),
+			);
+		},
+	);
 });

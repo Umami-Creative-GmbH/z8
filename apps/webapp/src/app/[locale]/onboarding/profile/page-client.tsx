@@ -116,7 +116,7 @@ function ProfileHeader({
 	t: (key: string, defaultValue: string) => string;
 }) {
 	return (
-		<div className="mb-8 text-center">
+		<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
 			<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
 				<IconUser className="size-8 text-primary" />
 			</div>

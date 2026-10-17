@@ -227,6 +227,7 @@
     "duplicate": "Duplicare",
     "durationMinutes": "{count} min",
     "edit": "Editează",
+    "employees": "Angajați",
     "enabled": "Activat",
     "error": "Eroare",
     "error-occurred": "A apărut o eroare",
@@ -318,6 +319,7 @@
     "name": "Nume",
     "new": "Nou",
     "next": "Următorul",
+    "no": "Nu",
     "notApplicable": "N/A",
     "not-available": "Indisponibil",
     "notifications": {
@@ -382,6 +384,7 @@
     "removing": "Se elimină...",
     "reset": "Resetează",
     "retry": "Reîncearcă",
+    "revoke": "Revocare",
     "save": "Salvează",
     "saveChanges": "Salvează modificările",
     "saving": "Se salvează...",
@@ -407,6 +410,7 @@
         "title": "Actualizare disponibilă"
       }
     },
+    "teams": "Echipe",
     "timeInput": {
       "openTimePicker": "Deschide selectorul de oră",
       "switchPeriod": "Comută la {period}"
@@ -533,7 +537,277 @@
         "title": "Utilizare vehicul",
         "vehiclesTitle": "Vehiculele organizației"
       }
-    }
+    },
+    "yes": "Da"
+  },
+  "drivingLicence": {
+    "activate": "Activează controlul permisului de conducere",
+    "activationHelp": "Înscrierea nu acordă dreptul de a conduce. Un verificator autorizat trebuie mai întâi să verifice permisul în original.",
+    "applyingInterval": "Se aplică…",
+    "applyInterval": "Aplică modificarea intervalului",
+    "check": {
+      "attestations": "Inspectare personală și declarații",
+      "chooseClasses": "Selectați categoriile pe care le-ați inspectat efectiv.",
+      "classes": "Categorii inspectate efectiv",
+      "classExpiry": "Expirarea categoriei (dacă este cazul)",
+      "documentDates": "Datele documentului original",
+      "employeeDeclaration": "Angajatul a dat personal declarația de mai sus în timpul acestei verificări; atest această declarație.",
+      "expiryDate": "Data expirării documentului",
+      "failureScope": "Sfera de aplicare a unei verificări nereușite sau neconcludente",
+      "identity": "Am confirmat că documentul original aparține acestui angajat.",
+      "issueDate": "Data emiterii documentului",
+      "original": "Am inspectat personal permisul de conducere în original în prezența angajatului.",
+      "privacy": "Înregistrați doar datele documentului, categoriile inspectate și restricțiile de conducere necesare. Nu introduceți numărul permisului, adresa, explicații medicale sau antecedente personale.",
+      "restrictions": "Restricții de conducere necesare",
+      "result": "Rezultat",
+      "saving": "Se înregistrează verificarea…",
+      "scopeClasses": "Doar categoriile inspectate afectate",
+      "scopeDocument": "Fiecare autorizație bazată pe document",
+      "scopePerson": "Toate autorizațiile de conducere ale angajatului",
+      "submit": "Înregistrează verificarea originalului",
+      "suspensionNotice": "O reverificare reușită nu reactivează automat o autorizație suspendată. Sunt necesare o nouă verificare și o decizie explicită de reactivare.",
+      "title": "Inspectează permisul în original al lui {name}",
+      "verifier": "Confirm că datele înregistrate și rezultatele individuale ale categoriilor reflectă inspecția mea."
+    },
+    "class": {
+      "active": "Autorizat",
+      "ended": "Încheiat",
+      "overdue": "Verificarea de rutină a depășit termenul. Aceasta este o suspendare organizațională, nu o retragere a dreptului legal de a conduce.",
+      "recheck": "Sunt necesare o nouă verificare a originalului și o reactivare explicită.",
+      "restrictions": "Restricții de conducere: {restrictions}",
+      "suspended": "Suspendat",
+      "validThrough": "Valabil până la {date} ({timezone})"
+    },
+    "declaration": {
+      "text": "Confirm că nicio interdicție de conducere, retragere sau alt impediment cunoscut nu împiedică efectuarea conducerii intenționate și că îndeplinesc restricțiile de conducere aplicabile."
+    },
+    "delivery": {
+      "uncertain": "E-mailurile opționale de memento trimise către dvs. au un rezultat de livrare incert ({count}). Acestea nu vor fi retrimise automat. Mementourile dvs. din aplicație rămân disponibile; livrarea e-mailului nu confirmă citirea."
+    },
+    "earlierLimit": "Limită anterioară pentru document/categorie",
+    "enroll": "Înscriere",
+    "enrollError": "Angajatul nu a putut fi înscris. Activați mai întâi politica și verificați-vă accesul.",
+    "enrollmentHelp": "Înscrieți angajații desemnați să conducă. Alocările de vehicule și utilizarea anterioară a vehiculelor nu acordă niciodată autorizație.",
+    "enrollmentTitle": "Șoferi desemnați",
+    "enrollName": "Înscrieți {name}",
+    "evidence": {
+      "confirmation": "Confirmarea verificatorului a fost înregistrată cu versiunea de politică {version}; termenele limită utilizează {timezone}.",
+      "declarationConfirmed": "Angajatul a dat declarația în persoană; verificatorul a atestat-o în momentul controlului.",
+      "declarationUnconfirmed": "Declarația angajatului nu a putut fi confirmată.",
+      "document": "Document emis la {issued}; expiră la {expiry}",
+      "empty": "Nicio verificare a originalului nu a fost finalizată.",
+      "originalConfirmed": "Originalul a fost inspectat în persoană și identitatea angajatului a fost confirmată.",
+      "originalUnconfirmed": "Inspectarea originalului sau identitatea angajatului nu a putut fi confirmată.",
+      "title": "Dovada verificării originalului",
+      "verifier": "Verificarea originalului a fost înregistrată de {name}"
+    },
+    "history": {
+      "allClasses": "Toate categoriile",
+      "apply": "Aplicați perioada",
+      "authorized": "Autorizație acordată",
+      "chooseOutcome": "Alegeți rezultatul",
+      "class": "Categorie verificată",
+      "classExpired": "Categorie expirată",
+      "classExpiry": "Data expirării categoriei",
+      "classRestrictions": "Restricții de conducere",
+      "classResult": "Rezultatul categoriei inspectate",
+      "context": "Context în afara perioadei selectate",
+      "decision": "Decizie de autorizare",
+      "declarationConfirmed": "Declarația angajatului a fost confirmată la verificarea originalului",
+      "declarationUnconfirmed": "Declarația angajatului nu a fost confirmată",
+      "documentExpired": "Document expirat",
+      "documentExpiry": "Data expirării documentului",
+      "documentImpediment": "Impediment la nivelul întregului document",
+      "documentIssued": "Data emiterii documentului",
+      "downloadPdf": "Descărcați PDF-ul cu dovezi",
+      "employmentEnded": "Angajare încheiată",
+      "empty": "Nicio verificare sau decizie de autorizare în această perioadă.",
+      "ended": "Autorizația de conducere a încetat",
+      "evidenceCorrected": "Dovezile corectate necesită o nouă verificare și o restabilire explicită",
+      "failed": "Categorie inspectată nevalidată",
+      "field": "Câmp corectat",
+      "from": "De la data (UTC)",
+      "globalSuspension": "Toate autorizațiile de conducere sunt suspendate",
+      "help": "Confirmările inițiale, completările datate și deciziile efective de autorizare rămân separate. Dovezile anterioare necesare pentru înțelegerea perioadei selectate sunt etichetate drept context. Toate orele evenimentelor și limitele perioadei de mai jos folosesc UTC.",
+      "impedimentReported": "Impediment la conducere raportat",
+      "impedimentResolved": "Impedimentul raportat a fost soluționat în mod explicit",
+      "inconclusive": "Categorie inspectată neconcludentă",
+      "linkedOriginal": "Verificare a originalului asociată: {date}",
+      "loading": "Se încarcă istoricul…",
+      "minimalEvidence": "Înregistrați doar dovezile de conducere necesare. Nu introduceți numere de documente, explicații medicale sau antecedente personale.",
+      "missingDetail": "Detaliu lipsă",
+      "none": "Nimic înregistrat",
+      "openSupplement": "Suplimentare verificare originală {date}",
+      "original": "Verificare original și confirmare",
+      "originalConfirmed": "Original și identitate confirmate",
+      "originalUnconfirmed": "Original sau identitate neconfirmată",
+      "overdue": "Verificare de rutină restantă",
+      "personImpediment": "Impediment la nivel de persoană",
+      "policyContext": "Versiune politică {version}; interval {months} luni",
+      "policyIntervalChanged": "Termenul-limită de autorizare a fost modificat de politica de interval",
+      "policyRecalculated": "Termenul-limită de autorizare a fost recalculat conform politicii",
+      "reason": "Motivul suplimentării",
+      "recorded": "Înregistrat la {date}",
+      "recordingError": "Eroare de înregistrare",
+      "reinstated": "Autorizare restabilită explicit după o nouă verificare",
+      "save": "Salvați suplimentarea",
+      "saveError": "Suplimentarea nu a putut fi salvată. Verificați responsabilitatea curentă și detaliile corecției.",
+      "snapshot": "Politică {version}; interval {months} luni; fus orar pentru termenul-limită {timezone}",
+      "supplementBy": "Suplimentare de către {name}",
+      "supplementHelp": "Aceasta adaugă o corecție datată cu identitatea dvs. Confirmarea inițială rămâne neschimbată. Limitele anterioare, rezultatele negative și noile restricții suspendă autorizarea curentă afectată; o suplimentare nu reînnoiește și nu restabilește niciodată autorizarea.",
+      "supplementTitle": "Suplimentare verificare originală {date}",
+      "suspended": "Autorizare suspendată",
+      "title": "Istoric verificări și autorizări",
+      "to": "Înainte de data (UTC)",
+      "unavailable": "Istoricul nu este disponibil. Verificați perioada și accesul dvs. curent.",
+      "value": "Valoare corectată",
+      "verifierConfirmation": "Confirmarea verificatorului înregistrată la momentul verificării originale"
+    },
+    "impediment": {
+      "newCheckRequired": "Înregistrați o nouă verificare cu succes a originalului pentru categoriile suspendate înainte de restabilire.",
+      "reinstate": "Restabiliți categoriile selectate",
+      "reinstated": "Categoriile selectate au fost restabilite explicit.",
+      "reinstateFailed": "Restabilirea a fost refuzată. Reîmprospătați și revizuiți înregistrarea curentă, responsabilitatea dvs. și o nouă verificare a originalului.",
+      "reinstateHelp": "Mai întâi înregistrați o nouă verificare personală a originalului după suspendare. Stabiliți că fiecare impediment a fost soluționat; examinați orice dovadă justificativă necesară în afara Z8. Simpla vizualizare a permisului poate fi insuficientă. Vor fi restabilite numai categoriile selectate verificate cu succes.",
+      "reinstateTitle": "Restabiliți explicit autorizația de conducere",
+      "reinstating": "Se salvează restabilirea…",
+      "report": "Raportează că nu pot conduce",
+      "reported": "Toate autorizările dvs. pentru categorii sunt suspendate. Contactați verificatorul responsabil pentru o nouă verificare a originalului și o restabilire explicită după soluționarea impedimentului.",
+      "reportFailed": "Raportul nu a putut fi salvat. Reîncercați sau contactați imediat verificatorul responsabil.",
+      "reportHelp": "Raportați o incapacitate curentă de a conduce. Toate autorizările pentru categorii vor fi suspendate imediat. Nu este necesar să furnizați motive personale.",
+      "reporting": "Se salvează raportul…",
+      "resolutionConfirmation": "Am stabilit că toate impedimentele la nivel de persoană, la nivel de document și cele raportate sunt soluționate, am examinat dovezile justificative necesare în afara Z8 și autorizez din nou explicit categoriile selectate.",
+      "selectClasses": "Categorii de restabilit din ultima verificare a originalului",
+      "title": "Nu puteți conduce?",
+      "unresolvedReport": "Un impediment la nivel de persoană raportat de un angajat necesită încă soluționare."
+    },
+    "interval": "Interval verificare de rutină (luni)",
+    "intervalAnchorHelp": "Calculat de la ultima verificare cu succes a fiecărei categorii.",
+    "intervalApplied": "Interval aplicat. Suspendările existente rămân în vigoare.",
+    "intervalChangeHelp": "Previzualizați datele recalculate ale fiecărei categorii înainte de aplicare. Limitele anterioare pentru documente și categorii se aplică în continuare. Prelungirea intervalului nu restabilește niciodată o autorizare suspendată.",
+    "intervalChangeTitle": "Modificați intervalul de rutină",
+    "intervalHelp": "Fiecare categorie verificată folosește propria sa ultimă verificare cu succes ca punct de referință pentru verificarea de rutină.",
+    "intervalImpact": "Impactul intervalului",
+    "intervalImpactHelp": "Revizuiți noua dată de rutină și limita efectivă anterioară pentru fiecare categorie afectată. Datele utilizează fusul orar specificat în calendar.",
+    "intervalPreviewError": "Impactul nu a putut fi încărcat. Verificați-vă accesul și alegeți un interval cuprins între 1 și 120 de luni.",
+    "intervalStale": "Politica sau autorizația de conducere s-a modificat, ori accesul dvs. nu este disponibil. Previzualizați din nou impactul curent înainte de a aplica.",
+    "justification": "Justificarea păstrării",
+    "justificationHelp": "Explicați de ce este necesară această perioadă determinată (cel puțin 10 caractere). Nu includeți detalii private sau medicale.",
+    "loadError": "Controlul permisului de conducere nu a putut fi încărcat. Verificați accesul la nivel de organizație.",
+    "myDescription": "Vizualizați starea verificării permisului de conducere",
+    "myTitle": "Autorizația mea de conducere",
+    "newInterval": "Interval de rutină nou (luni)",
+    "newlyOverdue": "Depășit recent — va fi suspendat",
+    "newRoutineDate": "Următoarea verificare de rutină",
+    "noEmployeeRecord": "Nu este disponibilă nicio înregistrare privind permisul de conducere al angajaților în această organizație.",
+    "noEmployees": "Nu există angajați activi de înrolat.",
+    "noIntervalClasses": "Nicio autorizație de categorie existentă nu necesită recalculare.",
+    "notChecked": "Neverificat încă — fără autorizație de conducere",
+    "notEnrolled": "Neînrolat — fără autorizație de conducere",
+    "operational": {
+      "advisory": "Autorizație de conducere",
+      "loading": "Se încarcă autorizația de conducere…",
+      "noEmployees": "Nu s-au găsit angajați corespunzători.",
+      "recordingHelp": "Puteți înregistra oricând timpul de lucru și utilizarea efectivă a vehiculului. Selectarea unui vehicul nu acordă autorizație de conducere; categoriile verificate nu stabilesc conformitatea pentru fiecare vehicul.",
+      "refresh": "Reîmprospătați starea de conducere",
+      "search": "Căutare angajat",
+      "searchHelp": "Sunt afișați până la 50 de angajați. Restrângeți căutarea pentru a găsi alt angajat. Această vizualizare nu conține înregistrări de inspecție.",
+      "title": "Starea de conducere pentru planificare",
+      "unavailable": "Starea autorizației de conducere nu este disponibilă."
+    },
+    "policyIntro": "Verificări ale permiselor originale prioritare în Germania. Alegeți intervalul de rutină și justificați o perioadă determinată de păstrare a dovezilor înainte de activare.",
+    "policyTitle": "Politica organizației",
+    "previewingInterval": "Se încarcă impactul…",
+    "previewInterval": "Previzualizați impactul intervalului",
+    "reminders": "Zile de avans pentru memento",
+    "remindersHelp": "Zile întregi separate prin virgulă înainte de termenul limită, de la 0 la 365. Sugestiile inițiale sunt 30 și 7 zile.",
+    "result": {
+      "inconclusive": "Neconcludent",
+      "successful": "Reușit",
+      "unsuccessful": "Nereușit"
+    },
+    "retention": "Perioadă de păstrare (luni)",
+    "retention.case": "Referință la un caz juridic specific",
+    "retention.check": "Înregistrare de verificare",
+    "retention.choose": "Alegeți o înregistrare păstrată",
+    "retention.cleaning": "Se verifică înregistrările scadente…",
+    "retention.cleanup": "Rulați curățarea dovezilor scadente",
+    "retention.confirmDelete": "Ștergeți dovezile scadente",
+    "retention.confirmDescription": "Această acțiune elimină definitiv dovezile a căror perioadă de păstrare a expirat. Autorizațiile active actuale și suspendările din cauze juridice rămân protejate. Originalele și documentele suplimentare șterse nu pot fi recuperate prin intermediul aplicației.",
+    "retention.confirmTitle": "Ștergeți dovezile scadente?",
+    "retention.deadline": "Păstrarea a început la {start}. Eligibil pentru ștergere de la {end}.",
+    "retention.empty": "Nu există înregistrări de verificare păstrate.",
+    "retention.error": "Administrarea păstrării nu a putut fi finalizată. Reîmprospătați și verificați accesul dvs. și detaliile cazului.",
+    "retention.help": "Păstrarea începe atunci când o verificare nu mai acoperă nicio categorie activă. O blocare necesită un caz juridic specific, protejează și dovezile asociate din rapoarte pentru aceeași perioadă de angajare și trebuie ridicată atunci când păstrarea nu mai este necesară. Aceste comenzi nu acordă acces la inspecție. Nu introduceți detalii medicale sau informații de ordin personal.",
+    "retentionHelp": "Necesar pentru activare: 1–120 de luni după ce dovezile nu mai susțin nicio autorizare de categorie activă. Păstrați o perioadă determinată justificată la dezactivarea controlului permisului; curățarea continuă.",
+    "retention.holdDetails": "Cazul {case}: {reason}. Aplicată de {actor} la {time}.",
+    "retention.loading": "Se încarcă înregistrările de păstrare…",
+    "retention.place": "Aplicați o blocare pentru un caz specific",
+    "retention.protected": "Protejat de o autorizație de categorie activă",
+    "retention.reason": "De ce acest caz necesită păstrare",
+    "retention.record": "{employee} · Verificare {date}",
+    "retention.release": "Revocare reținere",
+    "retention.released": "Revocat de {actor} la {time}: {reason}",
+    "retention.releaseError": "Reținerea nu a putut fi revocată. Verificați-vă accesul și motivul revocării.",
+    "retention.releaseReason": "De ce nu mai este necesară păstrarea",
+    "retention.report": "{employee} · Raport {date}",
+    "retention.reportHeld": "Protejat de cazul {case} pentru dovezile de verificare conexe din această perioadă de angajare. Revocați reținerea acelei verificări atunci când păstrarea nu mai este necesară.",
+    "retention.reportProtected": "Protejat atât timp cât raportul curent rămâne nerezolvat sau verificarea rezoluției acestuia susține autorizarea activă.",
+    "retention.reportsTitle": "Păstrarea raportului de impedimente",
+    "retentionRequiredError": "Păstrați o perioadă de retenție determinată și justificată la dezactivarea controlului permisului. Dovezile existente rămân supuse curățării.",
+    "retention.run": "{time}: {deleted} șterse, {held} reținute, {protected} protejate. Autor: {actor}",
+    "retention.runs": "Rezultatele curățării recente",
+    "retention.saveError": "Reținerea nu a putut fi salvată. Verificați detaliile cazului și accesul dvs.",
+    "retention.scheduled": "Procesare programată",
+    "retention.title": "Păstrarea dovezilor și rețineri pentru cauze juridice",
+    "save": "Salvează politica",
+    "saved": "Politică salvată",
+    "saveError": "Politica nu a putut fi salvată. Verificați intervalul, fusul orar, mementourile și perioada de retenție justificată.",
+    "saving": "Se salvează…",
+    "settingsDescription": "Configurați verificările originale și înrolați șoferii vizați",
+    "status": {
+      "active": "Autorizație de conducere activă",
+      "ended": "Autorizație de conducere încheiată",
+      "explanation": "Autorizația de conducere a organizației acoperă categoriile și restricțiile enumerate. Aceasta nu stabilește compatibilitatea pentru fiecare vehicul. Puteți continua înregistrarea timpului de lucru și a utilizării efective a vehiculului.",
+      "partial": "Unele categorii de conducere sunt suspendate",
+      "suspended": "Autorizație de conducere suspendată"
+    },
+    "staysCurrent": "Rămâne valabil",
+    "staysSuspended": "Rămâne suspendat",
+    "subtitle": "Configurați verificările originale și înrolați șoferii vizați. Autorizația de conducere este specifică categoriilor și restricțiilor verificate.",
+    "tasks": {
+      "assign": "Atribuie responsabilitatea",
+      "assigned": "Responsabilitate atribuită",
+      "assignmentBoundary": "Această sarcină nu acordă drepturi de inspecție și nu prelungește niciun termen limită.",
+      "class": "Categoria {classCode}",
+      "complete": "Marchează mementoul personal ca finalizat",
+      "completeError": "Sarcina nu a putut fi finalizată. Verificați responsabilitatea curentă de verificator.",
+      "completing": "Se finalizează…",
+      "deadline": "Verificare originală scadentă",
+      "directUnavailable": "Notificarea directă a angajatului nu a fost disponibilă. Reamintiți-i acestui angajat în persoană.",
+      "initialCheck": "Este necesară verificarea originală inițială",
+      "loadError": "Nu s-au putut încărca sarcinile privind permisele de conducere. Verificați accesul organizației dvs.",
+      "loading": "Se încarcă sarcinile privind permisele de conducere…",
+      "noDeliveryReceipt": "Finalizarea sarcinii nu confirmă livrarea directă sau citirea de către angajat. Niciun termen limită nu este prelungit.",
+      "noVerifier": "Niciun verificator disponibil nu este responsabil pentru acest angajat.",
+      "personalCompleted": "Memento personal finalizat",
+      "personalTitle": "Sarcini de memento personal",
+      "reassignmentTitle": "Sarcini de responsabilitate a verificatorului",
+      "refresh": "Responsabilitate de reverificare",
+      "suspension": "Autorizație de conducere suspendată",
+      "validThrough": "Valabil până la {date} în fusul orar salvat pentru termenul verificării"
+    },
+    "timezone": "Fus orar fix pentru calendar",
+    "title": "Control permis de conducere",
+    "unnamedEmployee": "Angajat",
+    "worklist": {
+      "help": "Aici apar doar angajații înscriși care se află în responsabilitatea dvs. actuală de verificare.",
+      "open": "Verifică {name}",
+      "title": "Lista dvs. de lucru pentru verificarea inițială",
+      "viewEnded": "Vizualizează înregistrarea încheiată pentru {name}"
+    },
+    "zoneFixedError": "Fusul orar al calendarului este fix. Termenele-limită existente trebuie să își păstreze semnificația inițială.",
+    "zoneHelp": "Limitele bazate doar pe dată includ întreaga zi afișată în acest fus orar. Acesta este fixat la prima salvare; fusul orar al vizualizatorului nu schimbă niciodată un termen-limită."
   },
   "employeeSelect": {
     "countSelected": "{count} angajați selectați",
@@ -617,6 +891,101 @@
     "setup": "Se încarcă configurarea",
     "teamAbsences": "Se încarcă tabelul absențelor echipei",
     "workerQueue": "Se încarcă coada de lucru"
+  },
+  "mfa": {
+    "banner": {
+      "action": "Examinați cerințele și verificați",
+      "requirement": "Această organizație solicită autentificare verificată începând cu {deadline}."
+    },
+    "code": {
+      "label": "Cod de autentificare",
+      "verify": "Verifică autentificatorul"
+    },
+    "continue": "Continuă după verificare",
+    "coverage": {
+      "access": "Ultimul acces eligibil la organizație",
+      "deadline": "Termen-limită atribuit",
+      "enforced": "Aplicat",
+      "failed": "Acoperirea de autentificare a organizației nu a putut fi încărcată",
+      "kiosk": "Doar chioșc · în afara domeniului",
+      "loading": "Se încarcă autentificarea organizației…",
+      "member": "Membru",
+      "methods": "Metode înregistrate",
+      "none": "Niciuna",
+      "title": "Înscrierea membrilor și verificarea organizației",
+      "unproven": "Niciun acces eligibil înregistrat"
+    },
+    "deadline": {
+      "enforced": "Un autentificator trebuie verificat înainte de a accesa organizația.",
+      "grace": "Fereastră de înscriere în curs. Verificați un autentificator înainte de acest termen-limită.",
+      "required": "Verificarea este necesară acum"
+    },
+    "enrollment": {
+      "title": "Înscrieți sau înlocuiți un autentificator",
+      "warning": "Adăugarea sau înlocuirea unui factor necesită verificare în termen de cinci minute. Verificați elementul de înlocuire înainte de a elimina vechiul factor. Revocarea ultimului factor este permisă și poate bloca accesul la organizațiile enumerate mai sus; aceasta nu acordă o nouă fereastră de înscriere."
+    },
+    "organization": {
+      "select": "Selectați altă organizație"
+    },
+    "page": {
+      "context": "Înscrierea personală, recuperarea și selectarea organizației rămân disponibile în timp ce accesul la organizație necesită verificare.",
+      "title": "Verificare de securitate"
+    },
+    "passkey": {
+      "verify": "Verificați cu o cheie de acces"
+    },
+    "password": {
+      "failed": "Verificarea parolei a eșuat",
+      "label": "Parola curentă",
+      "verified": "Parolă verificată. Vă puteți înscrie primul autentificator sau puteți verifica un autentificator existent ori un cod de rezervă mai jos.",
+      "verify": "Verifică parola"
+    },
+    "policy": {
+      "activation": "Modificările necesită autoritate de proprietar/administrator și autentificare acceptată în termen de cinci minute. Configurați recuperarea și, de preferință, un alt administrator care a demonstrat o cale de conectare funcțională; înscrierea în sine nu reprezintă o dovadă.",
+      "days": "{days} zile (câte 24 de ore)",
+      "description": "Solicită parolă plus TOTP sau o cheie de acces verificată prin PIN/date biometrice pentru accesul local la organizație al fiecărui membru uman. Cheile de acces sincronizate sunt eligibile. Această politică este disponibilă pentru toate planurile.",
+      "enable": "Solicită un autentificator pentru conectările locale",
+      "failed": "Actualizarea politicii a fost refuzată",
+      "grace": "Fereastră de înscriere pentru atribuirile viitoare",
+      "lockoutAck": "Dacă niciun alt administrator nu are o cale confirmată, accept faptul că pierderea fiecărei căi de autentificare și recuperare lasă această organizație blocată, fără posibilitate de ocolire de către administrator sau asistență.",
+      "lockoutLabel": "Acceptă riscul de a pierde toate căile de autentificare ale administratorilor",
+      "recoveryAck": "Mi-am verificat calea de conectare și am configurat recuperarea.",
+      "save": "Salvează politica",
+      "saving": "Se salvează…",
+      "sso": "Conectarea verificată prin furnizorul SSO actual al acestei organizații este în afara nivelului de referință MFA local. Organizația impune MFA la furnizorul său de identitate; Z8 nu verifică nivelul de asigurare MFA al IdP. Cerința SSO rămâne separată și nu are o soluție de rezervă locală.",
+      "tab": "MFA local",
+      "tabDescription": "Solicită autentificare locală verificată cu termene-limită de înrolare controlate",
+      "title": "Autentificarea organizației",
+      "verify": "Verificați-vă autentificarea înainte de a modifica această politică",
+      "windows": "Termenele-limită existente nu se modifică niciodată. Dezactivarea suspendă aplicarea; reactivarea restabilește termenele atribuite, inclusiv pe cele expirate. Nu există scutiri individuale."
+    },
+    "recovery": {
+      "action": "Recuperare cu cod de rezervă",
+      "description": "Pentru recuperare, verificați parola de mai sus și apoi introduceți un cod de rezervă neutilizat. Aceasta anulează verificarea locală anterioară în cadrul organizațiilor dvs.",
+      "label": "Cod de rezervă",
+      "lockout": "Dacă unicul administrator pierde toate căile de autentificare și recuperare, organizația rămâne blocată. Nu există nicio cale de ocolire pentru administratori sau asistență.",
+      "success": "Recuperarea permite doar o nouă înrolare de înlocuire. Verificați un autentificator înainte de a reveni la organizația dvs."
+    },
+    "security": {
+      "factorWarning": "Eliminarea unui factor poate bloca accesul la organizațiile care îl solicită. Verificați mai întâi un înlocuitor; eliminarea ultimului factor nu acordă o nouă perioadă de grație.",
+      "link": "Verificați autentificarea și examinați cerințele organizației",
+      "policyLink": "Politica de autentificare a organizației (proprietari/administratori)"
+    },
+    "signout": "Deconectare",
+    "social": {
+      "verify": "Verificați conectarea existentă cu {provider}"
+    },
+    "sso": {
+      "failed": "SSO-ul organizației nu a putut fi inițiat",
+      "verify": "Verificați cu SSO-ul organizației"
+    },
+    "verification": {
+      "failed": "Verificarea a eșuat"
+    },
+    "verify": {
+      "description": "Verificați un autentificator pentru a reveni la organizația dvs. Înrolarea și dispozitivele memorate ca de încredere nu sunt suficiente pentru a îndeplini cerința.",
+      "title": "Verificați-vă conectarea"
+    }
   },
   "nav": {
     "absences": "Absențe",
@@ -812,12 +1181,28 @@
         "message": "{employeeName} a solicitat o excepție de {exceptionType, select, rest_period {perioadă de odihnă} overtime_daily {ore suplimentare zilnice} overtime_weekly {ore suplimentare săptămânale} overtime_monthly {ore suplimentare lunare} other {conformitate}}: \"{reason}\"",
         "title": "Excepție de conformitate solicitată"
       },
+      "drivingAuthorizationSuspended": {
+        "message": "Autorizația de conducere pentru {employeeName} ({classes}) este suspendată. Este necesară o nouă verificare și o repunere în drepturi explicită înainte de a conduce.",
+        "title": "Autorizație de conducere suspendată"
+      },
       "drivingDetailsMissingReminderMany": {
         "message": "Pentru {count} perioade de lucru din {dates} lipsește vehiculul sau citirea odometrului. Adăugați-le la perioadele de lucru."
       },
       "drivingDetailsMissingReminder": {
         "message": "Pentru activitatea dvs. din {date} lipsește vehiculul sau citirea odometrului. Adăugați-le la perioada de lucru.",
         "title": "Adăugați detaliile de conducere"
+      },
+      "drivingLicenceAssignment": {
+        "message": "Desemnați un verificator disponibil pentru {employeeName}. Această sarcină nu acordă drepturi de inspecție și nu prelungește niciun termen-limită.",
+        "title": "Atribuie responsabilitatea de verificare a permisului de conducere"
+      },
+      "drivingLicencePersonalTask": {
+        "message": "Amintiți-i lui {employeeName} să programeze o verificare a permisului de conducere în original. Notificarea directă a angajatului nu a fost disponibilă. Finalizarea sarcinii nu reprezintă livrarea directă sau citirea.",
+        "title": "Amintește-i angajatului în persoană"
+      },
+      "drivingLicenceReminder": {
+        "message": "Organizați o verificare a permisului de conducere în original pentru {employeeName}, categoria {classes}, până la {deadline}.",
+        "title": "Verificare a permisului de conducere scadentă"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Sarcinile de aprobare necesită un înlocuitor (plecare în vigoare la {cutoff}, {timezone}).",
@@ -830,6 +1215,11 @@
       "forgottenClockOutReminder": {
         "message": "Tura dvs. s-a încheiat la {endTime} ({timezone}). Înregistrați ieșirea dacă ați terminat programul de lucru.",
         "title": "Sunteți încă pontat(ă)"
+      },
+      "kioskCommandRefused": {
+        "forwardedMessage": "{action, select, clock_in {O pontare la intrare} clock_out {O pontare la ieșire} start_break {Un început de pauză} resume_break {O revenire din pauză} other {O pontare}} efectuată de {employeeName} la {time} la chioșcul {kioskName} nu a fost înregistrată: {reason, select, wrong_pin {PIN-ul a fost incorect} pin_locked {PIN-ul chioșcului a fost blocat după prea multe încercări incorecte} no_pin {nu a existat niciun PIN de chioșc pentru verificare} pin_unchecked {PIN-ul nu a putut fi verificat} kiosk_retired {chioșcul a fost revocat sau asociat din nou înainte de a se reconecta} contact_unverifiable {Z8 nu a putut confirma ultima conexiune a chioșcului} outside_window {ora a fost în afara intervalului acceptat de Z8} clock_untrusted {ceasul chioșcului nu a putut fi considerat de încredere} not_assigned {angajatul nu este alocat la locația chioșcului} not_adopted {organizația nu acceptă pontări offline la chioșc} month_closed {luna este închisă} holiday {ziua este o sărbătoare fără pontare} conflict {se află în conflict cu o altă oră înregistrată} other {Z8 nu a putut să o accepte}}. Înregistrați timpul în locul său sau verificați-l împreună cu acesta.",
+        "message": "{action, select, clock_in {Pontarea dvs. la intrare} clock_out {Pontarea dvs. la ieșire} start_break {Începutul dvs. de pauză} resume_break {Revenirea dvs. din pauză} other {Pontarea dvs.}} de la {time} la chioșcul {kioskName} nu a fost înregistrată: {reason, select, wrong_pin {PIN-ul a fost incorect} pin_locked {PIN-ul chioșcului a fost blocat după prea multe încercări incorecte} no_pin {nu a existat niciun PIN de chioșc pentru verificare} pin_unchecked {PIN-ul nu a putut fi verificat} kiosk_retired {chioșcul a fost revocat sau asociat din nou înainte de a se reconecta} contact_unverifiable {Z8 nu a putut confirma ultima conexiune a chioșcului} outside_window {ora a fost în afara intervalului acceptat de Z8} clock_untrusted {ceasul chioșcului nu a putut fi considerat de încredere} not_assigned {angajatul nu este alocat la locația chioșcului} not_adopted {organizația nu acceptă pontări offline la chioșc} month_closed {luna este închisă} holiday {ziua este o sărbătoare fără pontare} conflict {se află în conflict cu o altă oră înregistrată} other {Z8 nu a putut să o accepte}}. Înregistrați-vă din nou timpul sau solicitați managerului dvs. să îl corecteze.",
+        "title": "Pontare la chioșc neînregistrată"
       },
       "manualEntryApproved": {
         "message": "Înregistrarea dvs. manuală a timpului a fost aprobată de {approverName}.",
@@ -1250,8 +1640,11 @@
         "approval_cover_return_summary": "Decis de înlocuitorul dvs.",
         "approval_cover_started": "Înlocuirea pe perioada absenței a început",
         "break_due_reminder": "Pauză scadentă",
+        "driving_authorization_suspended": "Autorizație de conducere suspendată",
         "driving_details_missing_reminder": "Lipsesc detaliile de conducere",
+        "driving_licence_reminder": "Verificare a permisului de conducere scadentă",
         "forgotten_clock_out_reminder": "Pontare de ieșire omisă",
+        "kiosk_command_refused": "Pontare la chioșc neînregistrată",
         "missed_clock_in_reminder": "Pontare omisă la intrare",
         "period_submission_decided": "Timp trimis aprobat sau respins",
         "period_submission_reminder": "Trimiteți timpul",
@@ -1344,6 +1737,7 @@
   "personalDataExport": {
     "readme": {
       "accessAdmin": "{name} (administrator)",
+      "accessDrivingLicenceVerifiers": "Verificatori permise de conducere (dovezile verificărilor dvs. și exporturile PDF):",
       "accessExpenseExport": "exportarea acestora",
       "accessExpenseOfficers": "Responsabili cu deconturile (rapoartele dumneavoastră aprobate de cheltuieli de deplasare și chitanțele acestora):",
       "accessExpenseRead": "citirea rapoartelor aprobate",
@@ -1367,6 +1761,7 @@
         "accountAdmin": "Numele și adresa de e-mail ale contului dumneavoastră de utilizator.",
         "approvals": "Propriile dumneavoastră cereri și trimiteri de perioade, precum și deciziile pe care le-ați luat cu privire la cererile altor persoane.",
         "auditLog": "Înregistrările din jurnalul de audit despre dumneavoastră și înregistrările efectuate de dumneavoastră.",
+        "drivingLicence": "Verificări ale permiselor de conducere, confirmări și declarații originale, anexe atribuite, autorizații de categorii și istoricul acestora, înrolarea și responsabilitatea dvs. de verificator. Doar dovezile păstrate; fără scanări ale permiselor, numere de documente sau note medicale.",
         "employment": "Dosarul și profilul dumneavoastră de angajat, perioadele de angajare și plecarea, condițiile de angajare cu salariul orar și istoricul acestuia, echipele, managerii, locațiile, competențele, alocările pe proiecte, rolurile, grupurile, centrul de cost și fiecare politică atribuită dumneavoastră.",
         "integrations": "Conexiunile dumneavoastră de calendar, fluxul de calendar, conturile de chat asociate și starea codului PIN pentru chioșc.",
         "notifications": "Istoricul notificărilor dumneavoastră.",
@@ -1386,6 +1781,7 @@
         "payslip": "Fluturași de salariu",
         "sickNote": "Certificate medicale"
       },
+      "drivingLicenceRetention": "Dovezile permisului de conducere respectă perioada justificată de păstrare a verificărilor stabilită de organizație odată ce nu mai susțin o autorizație activă. O suspendare documentată pentru un caz juridic specific amână ștergerea. Consultați politica driving_licence, înregistrările de păstrare și de suspendare pentru contextul aplicabil; generarea unui export nu prelungește păstrarea dovezilor în Z8.",
       "fields": {
         "absences": {
           "absences": {
@@ -1696,6 +2092,129 @@
           "updatedAt": "Când a fost modificată ultima dată înregistrarea.",
           "updatedBy": "Cine a modificat ultima dată înregistrarea."
         },
+        "drivingLicence": {
+          "actor_name": "Numele persoanei care a efectuat această acțiune; necompletat pentru o acțiune de sistem sau un actor indisponibil.",
+          "authorization_events": {
+            "summary": "Istoricul autorizației dvs. de conducere, inclusiv raportările de impedimente, soluționările și repunerile în drepturi explicite."
+          },
+          "authorizations": {
+            "summary": "Înregistrările stocate ale autorizațiilor pe categorii; istoricul evenimentelor explică modificările și datele de intrare în vigoare."
+          },
+          "author_name": "Numele înregistrat al persoanei care a adăugat această anexă.",
+          "caseReference": "Referința cazului juridic specific care impune păstrarea acestei verificări.",
+          "changed_at": "Când a fost înregistrată această versiune a politicii organizației, ca moment UTC.",
+          "checked_classes": {
+            "summary": "Categoriile inspectate în mod explicit și rezultatele, restricțiile și datele de expirare înregistrate ale acestora."
+          },
+          "check_id": "Verificarea originală la care face referire această categorie, anexă sau autorizație.",
+          "checks_performed": {
+            "summary": "Verificările pe care le-ați efectuat pentru alți angajați: doar identificatori opaci de subiect și de înregistrare și ora inspecției."
+          },
+          "checks": {
+            "summary": "Înregistrările verificărilor originale ale permisului de conducere, cu declarația exactă și confirmările de inspecție."
+          },
+          "class_code": "Categoria de permis inspectată în mod explicit; necompletat pentru un eveniment la nivel de persoană sau de document.",
+          "class_valid_through": "Ultima zi calendaristică acoperită de valabilitatea acestei categorii; necompletat dacă nu a fost înregistrată nicio dată de expirare a categoriei.",
+          "completedAt": "Când un verificator a marcat mementoul personal ca finalizat; necompletat pentru o sarcină nefinalizată.",
+          "completedBy": "Numele persoanei care a marcat mementoul ca fiind finalizat; acest lucru nu atestă livrarea directă sau o confirmare de citire.",
+          "controlled_at": "Momentul în care permisul original a fost inspectat în persoană, ca moment UTC.",
+          "createdAt": "Momentul în care această sarcină sau livrare a fost înregistrată pentru prima dată, ca moment UTC.",
+          "deadline_timezone": "Fusul orar calendaristic explicit utilizat pentru datele-limită ale politicii.",
+          "declaration_text": "Textul exact al declarației înregistrat în timpul inspecției inițiale.",
+          "document_expires_on": "Data de expirare a documentului, separată de expirarea categoriilor individuale.",
+          "document_issued_on": "Data emiterii documentului, fără oră sau fus orar.",
+          "document_valid_through": "Ultima zi calendaristică acoperită de valabilitatea documentului.",
+          "effective_at": "Momentul în care evenimentul de autorizare a intrat în vigoare, ca moment UTC.",
+          "emailedAtProviderSuccess": "Momentul în care a fost înregistrat succesul de la furnizor pentru acest e-mail. Dacă este necompletat, acoperă și încercările incerte; nu dovedește că e-mailul nu a fost trimis sau că a fost citit.",
+          "emailStateWithUncertainAttempts": "Starea de livrare a e-mailului: pending (în așteptare), attempted (încercare cu rezultat incert de la furnizor; nu se retrimite niciodată automat), sent (succes înregistrat de la furnizor), suppressed (suprimat), obsolete (învechit) sau unavailable (indisponibil). Nicio stare nu confirmă citirea.",
+          "employee_declaration": "Dacă declarația dumneavoastră a fost confirmată în timpul inspecției.",
+          "employee_id": "ID-ul opac al unui alt angajat asupra înregistrării căruia ați acționat; conținutul verificării acestuia este exclus.",
+          "employee_ids": "ID-urile opace ale angajaților din domeniul dumneavoastră specific de verificare, codificate ca matrice JSON.",
+          "employment_period_id": "Perioada de angajare căreia îi aparține această dovadă; necompletat pentru angajările anterioare.",
+          "enabled": "Dacă politica de verificare a organizației menționată a fost activată.",
+          "enrolled_at": "Momentul în care ați fost înscris în verificările permiselor de conducere ale organizației.",
+          "expires_at": "Momentul UTC în care expiră această autorizare sau acordare de verificare.",
+          "expiry_date": "Data de expirare a categoriei înregistrată la inspecție; necompletat dacă nu a fost înregistrată niciuna.",
+          "failure_scope": "Dacă o inspecție nereușită a vizat categoriile, documentul sau persoana.",
+          "field": "Câmpul de dovezi corectat; verificarea inițială este păstrată.",
+          "granted_at": "Momentul în care vi s-a acordat responsabilitatea de verificator, ca moment UTC.",
+          "granted_by": "Numele persoanei care v-a acordat responsabilitatea de verificator.",
+          "id": "ID-ul înregistrării în aplicație, astfel încât celelalte fișiere să poată face referire la aceasta.",
+          "identity_confirmed": "Dacă verificatorul a confirmat că originalul corespunde identității dumneavoastră.",
+          "impedimentReports": {
+            "summary": "Rapoartele dumneavoastră minime privind impedimentele la conducere și soluționarea lor explicită, fără explicații medicale sau motive private."
+          },
+          "interval_months": "Numărul de luni calendaristice dintre verificările de rutină conform acestei politici.",
+          "kind": "Tipul de eveniment de autorizare, suspendare sau sarcină; sarcinile sunt de tip personal_reminder sau reassignment.",
+          "last_successful_at": "Momentul în care această categorie a trecut ultima dată cu succes de o inspecție a originalului.",
+          "legalHolds": {
+            "summary": "Rețineri pentru conservare în cazuri specifice aplicate verificărilor dumneavoastră păstrate, inclusiv atribuirea, eliberarea și justificarea."
+          },
+          "notificationId": "Notificarea din aplicație asociată acestui memento; necompletat dacă nu a fost creată niciuna.",
+          "occasionKey": "Cazul la care se referă acest memento sau sarcină; identifică angajarea, termenul-limită al categoriei sau suspendarea fără a copia verificarea.",
+          "original_inspected": "Dacă verificatorul a confirmat că a inspectat personal documentul original.",
+          "participation": {
+            "summary": "Înscrierea dumneavoastră în verificările permiselor de conducere ale organizației."
+          },
+          "placedAt": "Momentul în care a fost aplicată această reținere legală, ca moment UTC.",
+          "placedBy": "Numele administratorului care a aplicat această reținere a cazului.",
+          "policies": {
+            "summary": "Versiunile de politică menționate de istoricul verificărilor și autorizărilor dumneavoastră, inclusiv contextul lor de păstrare. Dovezile respectă această politică de păstrare; acest export nu extinde păstrarea în cadrul aplicației."
+          },
+          "policy_version": "Versiunea politicii de verificare a permiselor de conducere a organizației.",
+          "preservationReason": "Motivul documentat pentru care acest caz specific necesită păstrarea verificării.",
+          "reason": "Motivul structurat al suplimentului sau evenimentului de autorizare; trimiterile la rapoarte fac legătura cu un ID de eveniment.",
+          "recipientName": "Numele persoanei căreia i-a fost adresat acest memento privind verificarea dumneavoastră.",
+          "recorded_at": "Momentul în care suplimentul sau evenimentul a fost înregistrat, ca moment UTC.",
+          "releasedAt": "Momentul în care această reținere a cazului a fost ridicată; necompletat cât timp rămâne activă.",
+          "releasedBy": "Numele administratorului care a ridicat această reținere a cazului.",
+          "releaseReason": "Motivul documentat pentru care această reținere a cazului a fost ridicată; ridicarea reia ștergerea obișnuită reglementată de politică.",
+          "reminderDeliveries": {
+            "summary": "Înregistrările de livrare a mementourilor privind verificările dumneavoastră, fără adrese de e-mail, reîncercări de transport sau confirmări de citire."
+          },
+          "reminder_lead_days": "Intervalele de avertizare configurate pentru memento în zile calendaristice, codificate ca matrice JSON.",
+          "reminderTasksCompleted": {
+            "summary": "Sarcinile de memento pe care le-ați finalizat pentru alți angajați, limitate la ID-uri opace, tipul de sarcină și ora finalizării."
+          },
+          "reminderTasks": {
+            "summary": "Sarcinile de memento personal și de reatribuire privind verificările dumneavoastră, inclusiv finalizarea înregistrată a acestora; finalizarea nu atestă livrarea directă sau citirea."
+          },
+          "reportedAt": "Momentul în care ați raportat un impediment general la conducere pentru o persoană, ca moment UTC.",
+          "reporterName": "Numele persoanei care a raportat impedimentul.",
+          "resolvedAt": "Când un verificator a soluționat în mod explicit acest raport; necompletat pentru un raport nesoluționat.",
+          "resolvedBy": "Numele verificatorului care a soluționat în mod explicit acest raport.",
+          "restrictions": "Restricțiile de conducere relevante înregistrate pentru această categorie.",
+          "result": "Rezultatul pentru această categorie inspectată: reușit, nereușit sau neconcludent.",
+          "retention_justification": "Motivul documentat al organizației pentru perioada de păstrare a dovezilor.",
+          "retention_months": "Perioada de păstrare justificată a organizației, în luni, după ce dovezile nu mai susțin autorizarea activă.",
+          "retentionStartedAtEvidence": "Când dovezile de verificare au încetat să susțină autorizarea activă sau dovezile raportului au devenit inactive după soluționare și suportul final de verificare a soluționării sau încetarea raportului de muncă. Perioada de păstrare justificată a organizației începe din acest moment UTC; o reținere legală (case hold) amână ștergerea.",
+          "retention": {
+            "summary": "Punctul de început al păstrării pentru fiecare verificare reținută; necompletat cât timp verificarea încă susține o autorizare activă. Exportul nu prelungește păstrarea."
+          },
+          "revoked_at": "Când v-a fost revocată responsabilitatea de verificator; necompletat dacă nu a fost revocată.",
+          "revoked_by": "Numele persoanei care v-a revocat responsabilitatea de verificator.",
+          "routine_valid_through": "Ultima zi calendaristică acoperită de intervalul de verificare de rutină.",
+          "scope": "Sfera de aplicare a unui raport la nivel de persoană (persoană) sau dacă responsabilitatea dvs. de verificator acoperă toți angajații sau anumiți angajați și echipe.",
+          "state": "Starea stocată a autorizării categoriei (activă, suspendată, încheiată) sau starea sarcinii de memento (în așteptare, finalizată, perimată); istoricul explică modificările.",
+          "supplements_authored": {
+            "summary": "Completări pe care le-ați adăugat la înregistrările altor angajați, fără valorile de dovadă ale acelor angajați."
+          },
+          "supplements": {
+            "summary": "Corecții datate, atribuite și tipizate, păstrate alături de fiecare verificare inițială."
+          },
+          "suspended_at": "Când a fost suspendată autorizarea, ca moment UTC.",
+          "suspension": {
+            "summary": "Înregistrarea dvs. curentă de suspendare a autorizației de conducere la nivel de persoană sau de document."
+          },
+          "team_ids": "ID-urile opace ale echipelor din sfera dvs. specifică de verificator, codificate ca matrice JSON.",
+          "valid_through": "Cea mai timpurie zi calendaristică finală aplicabilă a acestei validări a categoriei.",
+          "value": "Valoarea furnizată de această completare; necompletat înseamnă că expirarea opțională a categoriei a fost ștearsă.",
+          "verifier_confirmed": "Dacă verificatorul a confirmat înregistrarea inspecției.",
+          "verifier_grants": {
+            "summary": "Propriile dvs. atribuiri de verificator, inclusiv responsabilitatea istorică și revocată."
+          },
+          "verifier_name": "Numele înregistrat al persoanei care a inspectat permisul dvs. original."
+        },
         "employment": {
           "assignedLocations": {
             "city": "Orașul locației.",
@@ -1924,11 +2443,26 @@
             "revokedAt": "Când a fost dezactivat linkul (UTC).",
             "summary": "Linkurile fluxurilor dvs. de calendar, care permit unei aplicații de calendar să se aboneze la absențele dvs. Linkul secret în sine nu este niciodată inclus."
           },
+          "kioskPinEvents": {
+            "event": "eșec pentru un PIN greșit, succes pentru unul corect, șters când PIN-ul a fost deblocat, resetat sau schimbat.",
+            "occurredAt": "Când a fost introdus PIN-ul sau când a fost eliminată blocarea (UTC).",
+            "offline": "Dacă PIN-ul a fost introdus la un chioșc fără conexiune și verificat la reconectarea acestuia.",
+            "summary": "Încercările recente de introducere a PIN-ului și deblocările de PIN la chioșc, păstrate timp de aproximativ o săptămână pentru a stabili dacă sunteți blocat după cinci introduceri greșite la rând. PIN-urile introduse nu sunt stocate niciodată."
+          },
           "kioskPin": {
             "pinSet": "Dacă este setat un cod PIN de chioșc pentru dvs.",
             "setAt": "Când a fost setat ultima dată codul PIN (UTC).",
             "setBy": "Cine a setat codul PIN.",
             "summary": "Dacă aveți un cod PIN pentru pontaj la un terminal de tip chioșc. Codul PIN în sine nu este niciodată stocat în format lizibil și nu este inclus."
+          },
+          "kioskRefusedClockings": {
+            "action": "clock_in, clock_out, start_break sau resume_break.",
+            "claimedAt": "Când ați pontat la chioșc, conform înregistrării chioșcului (UTC).",
+            "kiosk": "Chioșcul la care ați pontat.",
+            "reason": "De ce nu a fost înregistrată pontarea, de exemplu wrong_pin sau kiosk_rotated.",
+            "refusedAt": "Când s-a reconectat chioșcul și pontarea a fost refuzată (UTC).",
+            "summary": "Pontările efectuate la un chioșc fără conexiune care nu au fost înregistrate la reconectarea acestuia, precum și motivul.",
+            "timeSource": "server_anchor când chioșcul a sincronizat ora cu cea a serverului la ultima conexiune, device_clock când a folosit propriul ceas."
           },
           "shared": {
             "isActive": "Dacă conexiunea este în uz."

@@ -13,12 +13,16 @@ import { managesAnyDocuments } from "@/lib/personnel-file/access";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import { managesProjectBelowManagerTier } from "@/lib/projects/project-manager-settings-access";
 import { loadCollectsPeriodSubmissions } from "@/lib/time-tracking/period-submissions/settings";
+import { listWhoIsInLocations } from "@/lib/time-tracking/who-is-in/queries";
 import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { AppSidebar } from "./app-sidebar";
 
 interface ServerAppSidebarProps
-	extends Omit<React.ComponentProps<typeof AppSidebar>, "navigationCapabilities"> {
+	extends Omit<
+		React.ComponentProps<typeof AppSidebar>,
+		"navigationCapabilities"
+	> {
 	showWorksCouncilNav?: boolean;
 }
 
@@ -52,6 +56,7 @@ export async function ServerAppSidebar({
 		activeOrganizationId,
 		showPersonnelFilesNav,
 		showPeriodSubmissionsNav,
+		showTeamPresenceNav,
 		managesProject,
 		authContext,
 		canCreateOrganizations,
@@ -71,9 +76,13 @@ export async function ServerAppSidebar({
 				// My documents (#865): the employee's own shared documents, while the feature is on.
 				myDocuments:
 					featureFlags.personnelFilesEnabled &&
-					Boolean(activeEmployee && activeEmployee.organizationId === activeOrganizationId),
+					Boolean(
+						activeEmployee &&
+							activeEmployee.organizationId === activeOrganizationId,
+					),
 				personnelFiles: showPersonnelFilesNav,
 				periodSubmissions: showPeriodSubmissionsNav,
+				teamPresence: showTeamPresenceNav,
 				platformAdmin: authContext?.user.role === "admin",
 			}}
 			settingsAccessTier={settingsAccessTier ?? "member"}
@@ -92,17 +101,23 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		getCurrentSettingsAccessTier(),
 	]);
 
-	const activeOrganizationId = authContext?.session.activeOrganizationId ?? null;
+	const activeOrganizationId =
+		authContext?.session.activeOrganizationId ?? null;
 	const currentOrganization = activeOrganizationId
 		? organizations.find((org) => org.id === activeOrganizationId) || null
 		: null;
 	const activeEmployee = authContext?.employee ?? null;
 	const canCreateOrganizations = canCreateOrganizationsForDeployment(
-		authContext?.user.canCreateOrganizations || authContext?.user.role === "admin",
+		authContext?.user.canCreateOrganizations ||
+			authContext?.user.role === "admin",
 	);
 	const featureFlags = getOrganizationFeatureFlags(currentOrganization);
 	let canShowWorksCouncilNav = false;
-	if (showWorksCouncilNav && currentOrganization?.worksCouncilEnabled && activeOrganizationId) {
+	if (
+		showWorksCouncilNav &&
+		currentOrganization?.worksCouncilEnabled &&
+		activeOrganizationId
+	) {
 		const ability = await requireAbility();
 		canShowWorksCouncilNav = canViewWorksCouncilPortal(
 			ability,
@@ -133,14 +148,24 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 	if (featureFlags.personnelFilesEnabled) {
 		const personnelFileAccess = await loadCurrentPersonnelFileAccess();
 		showPersonnelFilesNav =
-			personnelFileAccess.status === "resolved" && managesAnyDocuments(personnelFileAccess.access);
+			personnelFileAccess.status === "resolved" &&
+			managesAnyDocuments(personnelFileAccess.access);
 	}
 	// Period submissions (#1075): the Team section's overview, only while the active
 	// organization collects them. Members never see the Team section, so skip the read.
-	const showPeriodSubmissionsNav =
+	const canSeeTeamNavigation =
 		activeOrganizationId !== null &&
-		(activeEmployee?.role === "admin" || activeEmployee?.role === "manager") &&
-		(await loadCollectsPeriodSubmissions(db, activeOrganizationId, { clock: systemClock }));
+		(activeEmployee?.role === "admin" || activeEmployee?.role === "manager");
+	const [showPeriodSubmissionsNav, presenceLocations] = await Promise.all([
+		canSeeTeamNavigation &&
+			loadCollectsPeriodSubmissions(db, activeOrganizationId, {
+				clock: systemClock,
+			}),
+		canSeeTeamNavigation
+			? listWhoIsInLocations(db, { organizationId: activeOrganizationId })
+			: [],
+	]);
+	const showTeamPresenceNav = presenceLocations.length > 0;
 	// App search offers project managers below the manager tier their Projects view (#928).
 	const managesProject =
 		featureFlags.projectsEnabled &&
@@ -162,6 +187,7 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		activeOrganizationId,
 		showPersonnelFilesNav,
 		showPeriodSubmissionsNav,
+		showTeamPresenceNav,
 		managesProject,
 		authContext,
 		canCreateOrganizations,

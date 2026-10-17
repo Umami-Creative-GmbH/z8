@@ -140,7 +140,6 @@
         "keys": "Clés de signature",
         "packages": "Packages d'audit"
       },
-      "title": "Exportation d'audit",
       "verification": {
         "invalid": "La vérification a échoué",
         "valid": "La vérification a réussi",
@@ -175,7 +174,6 @@
       "search": "Rechercher",
       "searchPlaceholder": "Rechercher des actions, des utilisateurs ou des métadonnées…",
       "timestamp": "Horodatage",
-      "title": "Journal d'audit",
       "to": "À",
       "unknown": "Inconnu",
       "user": "Utilisateur",

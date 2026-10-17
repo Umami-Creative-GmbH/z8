@@ -121,7 +121,7 @@ async function AnalyticsLayoutContent({
 			{/* Sub-navigation Tabs */}
 			<div className="px-4 lg:px-6">
 				<Tabs defaultValue="overview" className="w-full">
-					<TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+					<TabsList className="max-w-full">
 						<TabsTrigger value="overview" asChild>
 							<Link href="/analytics">
 								<IconChartBar className="mr-2 size-4" />

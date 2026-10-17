@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-import settingsGenericEn from "../../../messages/settings/generic/en.json";
-import settingsPeopleEn from "../../../messages/settings/people/en.json";
 import {
 	type FeatureFlagState,
 	filterSettingsByFeatureFlags,
@@ -10,7 +8,12 @@ import {
 	getVisibleSettings,
 	SETTINGS_ENTRIES,
 } from "@/components/settings/settings-config";
-import { canResolvedTierAccessRoute, resolveSettingsAccessTier } from "@/lib/settings-access";
+import {
+	canResolvedTierAccessRoute,
+	resolveSettingsAccessTier,
+} from "@/lib/settings-access";
+import settingsGenericEn from "../../../messages/settings/generic/en.json";
+import settingsPeopleEn from "../../../messages/settings/people/en.json";
 
 describe("settings visibility tiers", () => {
 	it("shows only member entries for the member tier", () => {
@@ -23,6 +26,7 @@ describe("settings visibility tiers", () => {
 			"wellness",
 			"position-stamps",
 			"my-data",
+			"my-driving-licence",
 		]);
 	});
 
@@ -33,16 +37,16 @@ describe("settings visibility tiers", () => {
 		expect(entries.some((entry) => entry.id === "organizations")).toBe(false);
 		expect(entries.some((entry) => entry.id === "statistics")).toBe(true);
 		expect(entries.some((entry) => entry.id === "calendar")).toBe(true);
-		expect(entries.some((entry) => entry.id === "change-policies")).toBe(true);
+		expect(entries.some((entry) => entry.id === "change-policies")).toBe(false);
 		expect(entries.some((entry) => entry.id === "employees")).toBe(true);
-		expect(entries.some((entry) => entry.id === "holidays")).toBe(true);
+		expect(entries.some((entry) => entry.id === "holidays")).toBe(false);
 		expect(entries.some((entry) => entry.id === "locations")).toBe(true);
 		expect(entries.some((entry) => entry.id === "skills")).toBe(true);
-		expect(entries.some((entry) => entry.id === "vacation")).toBe(true);
+		expect(entries.some((entry) => entry.id === "absences")).toBe(true);
 		expect(entries.some((entry) => entry.id === "work-categories")).toBe(true);
 		expect(entries.some((entry) => entry.id === "work-policies")).toBe(true);
-		expect(entries.some((entry) => entry.id === "shift-templates")).toBe(true);
-		expect(entries.some((entry) => entry.id === "coverage-rules")).toBe(true);
+		expect(entries.some((entry) => entry.id === "shift-planning")).toBe(true);
+		expect(entries.some((entry) => entry.id === "coverage-rules")).toBe(false);
 		expect(entries.some((entry) => entry.id === "projects")).toBe(true);
 		expect(entries.some((entry) => entry.id === "customers")).toBe(true);
 		expect(entries.some((entry) => entry.id === "surcharges")).toBe(true);
@@ -52,11 +56,13 @@ describe("settings visibility tiers", () => {
 	it("shows organization and teams entries for org admins", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 
-		expect(entries.find((entry) => entry.id === "organizations")).toMatchObject({
-			titleDefault: "Organization",
-			href: "/settings/organizations",
-			minimumTier: "orgAdmin",
-		});
+		expect(entries.find((entry) => entry.id === "organizations")).toMatchObject(
+			{
+				titleDefault: "Organization",
+				href: "/settings/organizations",
+				minimumTier: "orgAdmin",
+			},
+		);
 		expect(entries.find((entry) => entry.id === "teams")).toMatchObject({
 			titleDefault: "Teams",
 			href: "/settings/teams",
@@ -66,13 +72,17 @@ describe("settings visibility tiers", () => {
 
 	it("uses people-management copy for employees and configuration copy for organization", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
-		const organizationEntry = entries.find((entry) => entry.id === "organizations");
+		const organizationEntry = entries.find(
+			(entry) => entry.id === "organizations",
+		);
 		const employeesEntry = entries.find((entry) => entry.id === "employees");
 
 		expect(organizationEntry).toMatchObject({
 			descriptionDefault: "Manage organization details and configuration",
 		});
-		expect(organizationEntry?.descriptionDefault).not.toMatch(/member|invitation|invite/i);
+		expect(organizationEntry?.descriptionDefault).not.toMatch(
+			/member|invitation|invite/i,
+		);
 		expect(employeesEntry).toMatchObject({
 			descriptionDefault: "Manage employees, members, and invites",
 		});
@@ -80,7 +90,9 @@ describe("settings visibility tiers", () => {
 
 	it("keeps English settings translations aligned with people-management defaults", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
-		const organizationEntry = entries.find((entry) => entry.id === "organizations");
+		const organizationEntry = entries.find(
+			(entry) => entry.id === "organizations",
+		);
 		const employeesEntry = entries.find((entry) => entry.id === "employees");
 
 		expect(settingsGenericEn.settings.organizations.description).toBe(
@@ -91,28 +103,36 @@ describe("settings visibility tiers", () => {
 		);
 	});
 
-	it("orders organization settings with employees before teams and email templates last", () => {
+	it("orders organization setup from members and teams to configuration", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
-		const organizationEntries = entries.filter((entry) => entry.group === "organization");
+		const organizationEntries = entries.filter(
+			(entry) => entry.group === "organization",
+		);
 
 		expect(organizationEntries.map((entry) => entry.id)).toEqual([
 			"organizations",
 			"employees",
 			"teams",
+			"roles",
+			"identity-access",
+			"locations",
+			"vehicles",
+			"personnel-files",
+			"custom-fields",
+			"custom-domains",
+			"implementation-checklist",
 			"billing",
-			"avv",
-			"email-templates",
 		]);
 	});
 
-	it("shows email templates only for org admins", () => {
+	it("shows combined email settings only for org admins", () => {
 		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
 		const managerEntries = getVisibleSettings("manager", true);
 		const memberEntries = getVisibleSettings("member", true);
 
-		expect(orgAdminEntries.some((entry) => entry.id === "email-templates")).toBe(true);
-		expect(managerEntries.some((entry) => entry.id === "email-templates")).toBe(false);
-		expect(memberEntries.some((entry) => entry.id === "email-templates")).toBe(false);
+		expect(orgAdminEntries.some((entry) => entry.id === "email")).toBe(true);
+		expect(managerEntries.some((entry) => entry.id === "email")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "email")).toBe(false);
 	});
 
 	it("shows implementation checklist only for org admins", () => {
@@ -120,30 +140,42 @@ describe("settings visibility tiers", () => {
 		const managerEntries = getVisibleSettings("manager", true);
 		const memberEntries = getVisibleSettings("member", true);
 
-		expect(orgAdminEntries.find((entry) => entry.id === "implementation-checklist")).toMatchObject({
+		expect(
+			orgAdminEntries.find((entry) => entry.id === "implementation-checklist"),
+		).toMatchObject({
 			titleDefault: "Implementation Checklist",
 			href: "/settings/implementation-checklist",
 			minimumTier: "orgAdmin",
-			group: "administration",
+			group: "organization",
 		});
-		expect(managerEntries.some((entry) => entry.id === "implementation-checklist")).toBe(false);
-		expect(memberEntries.some((entry) => entry.id === "implementation-checklist")).toBe(false);
+		expect(
+			managerEntries.some((entry) => entry.id === "implementation-checklist"),
+		).toBe(false);
+		expect(
+			memberEntries.some((entry) => entry.id === "implementation-checklist"),
+		).toBe(false);
 	});
 
-	it("shows payroll officer settings in administration for org admins", () => {
+	it("shows payroll officer settings in payroll for org admins", () => {
 		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
 		const managerEntries = getVisibleSettings("manager", true);
 		const memberEntries = getVisibleSettings("member", true);
 
-		expect(orgAdminEntries.find((entry) => entry.id === "payroll-access")).toMatchObject({
+		expect(
+			orgAdminEntries.find((entry) => entry.id === "payroll-access"),
+		).toMatchObject({
 			titleDefault: "Payroll Officers",
 			href: "/settings/payroll-access",
 			icon: "user-dollar",
 			minimumTier: "orgAdmin",
-			group: "administration",
+			group: "payroll",
 		});
-		expect(managerEntries.some((entry) => entry.id === "payroll-access")).toBe(false);
-		expect(memberEntries.some((entry) => entry.id === "payroll-access")).toBe(false);
+		expect(managerEntries.some((entry) => entry.id === "payroll-access")).toBe(
+			false,
+		);
+		expect(memberEntries.some((entry) => entry.id === "payroll-access")).toBe(
+			false,
+		);
 	});
 
 	it("shows position capture to org admins and every member's own position stamps", () => {
@@ -151,118 +183,232 @@ describe("settings visibility tiers", () => {
 		const managerEntries = getVisibleSettings("manager", true);
 		const memberEntries = getVisibleSettings("member", true);
 
-		expect(orgAdminEntries.find((entry) => entry.id === "position-capture")).toMatchObject({
+		expect(
+			orgAdminEntries.find((entry) => entry.id === "position-capture"),
+		).toMatchObject({
 			href: "/settings/position-capture",
 			minimumTier: "orgAdmin",
-			group: "administration",
+			group: "time-tracking",
 		});
-		expect(managerEntries.some((entry) => entry.id === "position-capture")).toBe(false);
-		expect(memberEntries.find((entry) => entry.id === "position-stamps")).toMatchObject({
+		expect(
+			managerEntries.some((entry) => entry.id === "position-capture"),
+		).toBe(false);
+		expect(
+			memberEntries.find((entry) => entry.id === "position-stamps"),
+		).toMatchObject({
 			href: "/settings/position-stamps",
 			minimumTier: "member",
 			group: "account",
 		});
 	});
 
-	it("shows vehicle use enablement in administration to org admins only", () => {
-		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
-		const managerEntries = getVisibleSettings("manager", true);
-		const memberEntries = getVisibleSettings("member", true);
-
-		expect(orgAdminEntries.find((entry) => entry.id === "vehicle-use")).toMatchObject({
-			href: "/settings/vehicle-use",
-			icon: "car",
-			minimumTier: "orgAdmin",
-			group: "administration",
-		});
-		expect(managerEntries.some((entry) => entry.id === "vehicle-use")).toBe(false);
-		expect(memberEntries.some((entry) => entry.id === "vehicle-use")).toBe(false);
+	it("has no separate vehicle-use navigation entry", () => {
+		expect(
+			getVisibleSettings("orgAdmin", true).some(
+				(entry) => entry.id === "vehicle-use",
+			),
+		).toBe(false);
 	});
 
-	it("shows kiosks in administration to org admins only", () => {
+	it("shows kiosks in time tracking to org admins only", () => {
 		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
 		const managerEntries = getVisibleSettings("manager", true);
 		const memberEntries = getVisibleSettings("member", true);
 
-		expect(orgAdminEntries.find((entry) => entry.id === "kiosks")).toMatchObject({
+		expect(
+			orgAdminEntries.find((entry) => entry.id === "kiosks"),
+		).toMatchObject({
 			href: "/settings/kiosks",
 			icon: "device-tablet",
 			minimumTier: "orgAdmin",
-			group: "administration",
+			group: "time-tracking",
 		});
 		expect(managerEntries.some((entry) => entry.id === "kiosks")).toBe(false);
 		expect(memberEntries.some((entry) => entry.id === "kiosks")).toBe(false);
 	});
 
-	it("shows vehicles to org admins next to locations", () => {
+	it("shows the combined Vehicles entry next to organization locations", () => {
 		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
 		const managerEntries = getVisibleSettings("manager", true);
 		const memberEntries = getVisibleSettings("member", true);
 
-		expect(orgAdminEntries.find((entry) => entry.id === "vehicles")).toMatchObject({
+		expect(
+			orgAdminEntries.find((entry) => entry.id === "vehicles"),
+		).toMatchObject({
 			href: "/settings/vehicles",
 			icon: "car",
 			minimumTier: "orgAdmin",
-			group: "administration",
+			group: "organization",
 		});
-		const administrationIds = SETTINGS_ENTRIES.filter(
-			(entry) => entry.group === "administration",
+		const organizationIds = SETTINGS_ENTRIES.filter(
+			(entry) => entry.group === "organization",
 		).map((entry) => entry.id);
-		expect(administrationIds.indexOf("vehicles")).toBe(administrationIds.indexOf("locations") + 1);
+		expect(organizationIds.indexOf("vehicles")).toBe(
+			organizationIds.indexOf("locations") + 1,
+		);
 		expect(managerEntries.some((entry) => entry.id === "vehicles")).toBe(false);
 		expect(memberEntries.some((entry) => entry.id === "vehicles")).toBe(false);
-		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/vehicles")).toBe(true);
-		expect(canResolvedTierAccessRoute("manager", "/settings/vehicles")).toBe(false);
+		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/vehicles")).toBe(
+			true,
+		);
+		expect(canResolvedTierAccessRoute("manager", "/settings/vehicles")).toBe(
+			false,
+		);
 	});
 
-	it("shows custom fields to org admins next to customers and projects", () => {
+	it("shows custom fields to org admins after organization vehicles", () => {
 		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
 		const managerEntries = getVisibleSettings("manager", true);
 		const memberEntries = getVisibleSettings("member", true);
 
-		expect(orgAdminEntries.find((entry) => entry.id === "custom-fields")).toMatchObject({
+		expect(
+			orgAdminEntries.find((entry) => entry.id === "custom-fields"),
+		).toMatchObject({
 			href: "/settings/custom-fields",
 			icon: "forms",
 			minimumTier: "orgAdmin",
-			group: "administration",
+			group: "organization",
 		});
-		const administrationIds = SETTINGS_ENTRIES.filter(
-			(entry) => entry.group === "administration",
+		const organizationIds = SETTINGS_ENTRIES.filter(
+			(entry) => entry.group === "organization",
 		).map((entry) => entry.id);
-		expect(administrationIds.indexOf("custom-fields")).toBe(
-			administrationIds.indexOf("projects") + 1,
+		expect(organizationIds.indexOf("custom-fields")).toBe(
+			organizationIds.indexOf("personnel-files") + 1,
 		);
 		expect(
-			filterSettingsByFeatureFlags(orgAdminEntries, { projectsEnabled: false }).some(
-				(entry) => entry.id === "custom-fields",
-			),
+			filterSettingsByFeatureFlags(orgAdminEntries, {
+				projectsEnabled: false,
+			}).some((entry) => entry.id === "custom-fields"),
 		).toBe(true);
-		expect(managerEntries.some((entry) => entry.id === "custom-fields")).toBe(false);
-		expect(memberEntries.some((entry) => entry.id === "custom-fields")).toBe(false);
-		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/custom-fields")).toBe(true);
-		expect(canResolvedTierAccessRoute("manager", "/settings/custom-fields")).toBe(false);
-		expect(canResolvedTierAccessRoute("member", "/settings/custom-fields")).toBe(false);
+		expect(managerEntries.some((entry) => entry.id === "custom-fields")).toBe(
+			false,
+		);
+		expect(memberEntries.some((entry) => entry.id === "custom-fields")).toBe(
+			false,
+		);
+		expect(
+			canResolvedTierAccessRoute("orgAdmin", "/settings/custom-fields"),
+		).toBe(true);
+		expect(
+			canResolvedTierAccessRoute("manager", "/settings/custom-fields"),
+		).toBe(false);
+		expect(
+			canResolvedTierAccessRoute("member", "/settings/custom-fields"),
+		).toBe(false);
 	});
 
-	it("groups notification preferences and channel configuration together", () => {
+	it("groups all policy settings around one Approval entry", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
-		const notificationEntries = entries.filter((entry) => entry.group === "notifications");
-
-		expect(notificationEntries.map((entry) => entry.id)).toEqual([
-			"notifications",
-			"telegram",
-			"slack",
-			"discord",
-			"teams-notifications",
-		]);
-		expect(notificationEntries.find((entry) => entry.id === "notifications")).toMatchObject({
-			minimumTier: "member",
-			href: "/settings/notifications",
-		});
-		expect(notificationEntries.find((entry) => entry.id === "telegram")).toMatchObject({
+		expect(
+			entries
+				.filter((entry) => entry.group === "policies")
+				.map((entry) => entry.id),
+		).toEqual(["work-policies", "absences", "travel-expenses", "approval"]);
+		expect(entries.find((entry) => entry.id === "approval")).toMatchObject({
+			titleDefault: "Approval",
+			href: "/settings/approval-policies",
 			minimumTier: "orgAdmin",
-			href: "/settings/telegram",
 		});
+		expect(
+			entries.some((entry) => entry.href === "/settings/approval-escalation"),
+		).toBe(false);
+	});
+
+	it("uses one Work Policies entry for work and change rules", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
+		expect(entries.find((entry) => entry.id === "work-policies")).toMatchObject(
+			{
+				group: "policies",
+				minimumTier: "manager",
+				href: "/settings/work-policies",
+			},
+		);
+		expect(entries.some((entry) => entry.id === "change-policies")).toBe(false);
+	});
+
+	it("combines holidays and vacation in one Absences entry under Policies", () => {
+		const entries = getVisibleSettings("manager", false);
+		expect(entries.find((entry) => entry.id === "absences")).toMatchObject({
+			group: "policies",
+			titleDefault: "Absences",
+			href: "/settings/vacation",
+			minimumTier: "manager",
+		});
+		expect(
+			entries.some(
+				(entry) => entry.id === "holidays" || entry.id === "vacation",
+			),
+		).toBe(false);
+	});
+
+	it("separates personal notification preferences from organization delivery settings", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
+		expect(
+			entries
+				.filter((entry) => entry.group === "notifications")
+				.map((entry) => entry.id),
+		).toEqual(["email", "chat-integrations"]);
+		expect(entries.find((entry) => entry.id === "notifications")).toMatchObject(
+			{
+				group: "account",
+				minimumTier: "member",
+				href: "/settings/notifications",
+			},
+		);
+		for (const tier of ["member", "manager"] as const)
+			expect(
+				getVisibleSettings(tier, true).some(
+					(entry) => entry.group === "notifications",
+				),
+			).toBe(false);
+	});
+	it("keeps identity, branding and personnel files with organization setup", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
+		expect(
+			entries.find((entry) => entry.id === "identity-access"),
+		).toMatchObject({ group: "organization", minimumTier: "orgAdmin" });
+		expect(entries.find((entry) => entry.id === "custom-domains")?.group).toBe(
+			"organization",
+		);
+		expect(
+			entries
+				.filter((entry) => entry.group === "integrations")
+				.map((entry) => entry.id),
+		).toEqual(["calendar", "developer-access"]);
+		const personnel = entries.find((entry) => entry.id === "personnel-files");
+		expect(personnel).toMatchObject({
+			group: "organization",
+			minimumTier: "orgAdmin",
+			requiredFeature: "personnelFilesEnabled",
+		});
+		expect(
+			filterSettingsByFeatureFlags(entries, { personnelFilesEnabled: false }),
+		).not.toContain(personnel);
+		expect(
+			filterSettingsByFeatureFlags(entries, { personnelFilesEnabled: true }),
+		).toContain(personnel);
+		expect(
+			entries.find((entry) => entry.id === "scheduled-exports"),
+		).toMatchObject({ group: "data", minimumTier: "orgAdmin" });
+		expect(entries.find((entry) => entry.id === "clocking")).toMatchObject({
+			group: "time-tracking",
+			minimumTier: "orgAdmin",
+		});
+		expect(
+			entries.some((entry) =>
+				[
+					"email-templates",
+					"email-config",
+					"slack",
+					"discord",
+					"telegram",
+					"teams-notifications",
+					"webhooks",
+					"audit-log",
+					"coverage-rules",
+				].includes(entry.id),
+			),
+		).toBe(false);
 	});
 
 	it("derives visible groups from the remaining visible entries", () => {
@@ -271,10 +417,13 @@ describe("settings visibility tiers", () => {
 
 		expect(groups.map((group) => group.id)).toEqual([
 			"account",
-			"notifications",
 			"organization",
-			"administration",
-			"enterprise",
+			"policies",
+			"time-tracking",
+			"scheduling",
+			"projects",
+			"payroll",
+			"integrations",
 			"data",
 		]);
 	});
@@ -296,7 +445,9 @@ describe("settings visibility tiers", () => {
 
 	it("shows export operations for org admins with the expected href", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
-		const exportOperationsEntry = entries.find((entry) => entry.id === "export-operations");
+		const exportOperationsEntry = entries.find(
+			(entry) => entry.id === "export-operations",
+		);
 
 		expect(exportOperationsEntry).toMatchObject({
 			id: "export-operations",
@@ -305,10 +456,10 @@ describe("settings visibility tiers", () => {
 	});
 
 	it("filters feature-flagged entries before deriving visible groups", () => {
-		const featureOnlyAdministrationEntries = SETTINGS_ENTRIES.filter(
-			(entry) => entry.group === "administration" && entry.requiredFeature,
+		const featureOnlySchedulingEntries = SETTINGS_ENTRIES.filter(
+			(entry) => entry.group === "scheduling" && entry.requiredFeature,
 		);
-		const entries = filterSettingsByFeatureFlags(featureOnlyAdministrationEntries, {
+		const entries = filterSettingsByFeatureFlags(featureOnlySchedulingEntries, {
 			shiftsEnabled: false,
 			projectsEnabled: false,
 			surchargesEnabled: false,
@@ -320,12 +471,12 @@ describe("settings visibility tiers", () => {
 	});
 
 	it("derives groups from feature-filtered visible entries in one step", () => {
-		const featureOnlyAdministrationEntries = SETTINGS_ENTRIES.filter(
-			(entry) => entry.group === "administration" && entry.requiredFeature,
+		const featureOnlySchedulingEntries = SETTINGS_ENTRIES.filter(
+			(entry) => entry.group === "scheduling" && entry.requiredFeature,
 		);
 
 		expect(
-			getVisibleGroupsForFeatureFlags(featureOnlyAdministrationEntries, {
+			getVisibleGroupsForFeatureFlags(featureOnlySchedulingEntries, {
 				shiftsEnabled: false,
 				projectsEnabled: false,
 				surchargesEnabled: false,
@@ -340,7 +491,9 @@ describe("settings visibility tiers", () => {
 			billingEnabled: true,
 		});
 
-		expect(visibility.visibleSettings).toEqual(getVisibleSettings("orgAdmin", true));
+		expect(visibility.visibleSettings).toEqual(
+			getVisibleSettings("orgAdmin", true),
+		);
 		expect(visibility.visibleGroups).toEqual(
 			getVisibleGroups(getVisibleSettings("orgAdmin", true)),
 		);
@@ -364,7 +517,9 @@ describe("settings visibility tiers", () => {
 		});
 
 		expect(visibility.visibleSettings).toEqual(expectedVisibleSettings);
-		expect(visibility.visibleGroups).toEqual(getVisibleGroups(expectedVisibleSettings));
+		expect(visibility.visibleGroups).toEqual(
+			getVisibleGroups(expectedVisibleSettings),
+		);
 	});
 
 	it("excludes demo data from resolved visible settings when the demo data feature is disabled", () => {
@@ -379,7 +534,9 @@ describe("settings visibility tiers", () => {
 			},
 		});
 
-		expect(visibility.visibleSettings.some((entry) => entry.id === "demo-data")).toBe(false);
+		expect(
+			visibility.visibleSettings.some((entry) => entry.id === "demo-data"),
+		).toBe(false);
 	});
 
 	it("gives owner and admin memberships the same org admin menu", () => {
@@ -400,7 +557,9 @@ describe("settings visibility tiers", () => {
 			true,
 		);
 
-		expect(ownerEntries.map((entry) => entry.id)).toEqual(adminEntries.map((entry) => entry.id));
+		expect(ownerEntries.map((entry) => entry.id)).toEqual(
+			adminEntries.map((entry) => entry.id),
+		);
 	});
 
 	it("hides demo data when the demo data feature is disabled", () => {
@@ -474,14 +633,17 @@ describe("settings visibility tiers", () => {
 			}).visibleSettings.map((entry) => entry.id);
 
 		it("shows a member who manages a project the Projects entry and nothing else new", () => {
-			expect(visibleIds("member", true)).toEqual([...visibleIds("member", false), "projects"]);
+			expect(visibleIds("member", true)).toContain("projects");
+			expect(
+				visibleIds("member", true).filter((id) => id !== "projects"),
+			).toEqual(visibleIds("member", false));
 			expect(
 				getResolvedSettingsVisibility({
 					accessTier: "member",
 					featureFlags: projectsOn,
 					managesProject: true,
 				}).visibleGroups.map((group) => group.id),
-			).toContain("administration");
+			).toContain("projects");
 		});
 
 		it("shows a member who manages no project no Projects entry", () => {
@@ -489,12 +651,16 @@ describe("settings visibility tiers", () => {
 		});
 
 		it("keeps the Projects entry hidden while projects are off", () => {
-			expect(visibleIds("member", true, { projectsEnabled: false })).not.toContain("projects");
+			expect(
+				visibleIds("member", true, { projectsEnabled: false }),
+			).not.toContain("projects");
 		});
 
 		it("changes nothing for managers and org admins", () => {
 			expect(visibleIds("manager", true)).toEqual(visibleIds("manager", false));
-			expect(visibleIds("orgAdmin", true)).toEqual(visibleIds("orgAdmin", false));
+			expect(visibleIds("orgAdmin", true)).toEqual(
+				visibleIds("orgAdmin", false),
+			);
 		});
 	});
 
@@ -505,16 +671,21 @@ describe("settings visibility tiers", () => {
 		};
 		const isVisible = (
 			accessTier: "member" | "manager" | "orgAdmin",
-			featureFlags: Parameters<typeof getResolvedSettingsVisibility>[0]["featureFlags"],
+			featureFlags: Parameters<
+				typeof getResolvedSettingsVisibility
+			>[0]["featureFlags"],
 		) =>
-			getResolvedSettingsVisibility({ accessTier, featureFlags }).visibleSettings.some(
-				(entry) => entry.id === "billable-time",
-			);
+			getResolvedSettingsVisibility({
+				accessTier,
+				featureFlags,
+			}).visibleSettings.some((entry) => entry.id === "billable-time");
 
 		it("shows the area to org admins while the module is on", () => {
 			expect(isVisible("orgAdmin", billableTimeOn)).toBe(true);
 			expect(
-				getVisibleSettings("orgAdmin").find((entry) => entry.id === "billable-time"),
+				getVisibleSettings("orgAdmin").find(
+					(entry) => entry.id === "billable-time",
+				),
 			).toMatchObject({ href: "/settings/billable-time" });
 		});
 
@@ -524,22 +695,34 @@ describe("settings visibility tiers", () => {
 		});
 
 		it("hides the area from everyone while the module is off", () => {
-			expect(isVisible("orgAdmin", { projectsEnabled: true, billableTimeEnabled: false })).toBe(
-				false,
-			);
+			expect(
+				isVisible("orgAdmin", {
+					projectsEnabled: true,
+					billableTimeEnabled: false,
+				}),
+			).toBe(false);
 			expect(isVisible("orgAdmin", { projectsEnabled: true })).toBe(false);
 		});
 
 		it("hides the area while projects are off, even if the module flag is still set", () => {
-			expect(isVisible("orgAdmin", { projectsEnabled: false, billableTimeEnabled: true })).toBe(
-				false,
-			);
+			expect(
+				isVisible("orgAdmin", {
+					projectsEnabled: false,
+					billableTimeEnabled: true,
+				}),
+			).toBe(false);
 		});
 
 		it("guards the area's routes as org admin only", () => {
-			expect(canResolvedTierAccessRoute("orgAdmin", "/settings/billable-time")).toBe(true);
-			expect(canResolvedTierAccessRoute("manager", "/settings/billable-time")).toBe(false);
-			expect(canResolvedTierAccessRoute("member", "/settings/billable-time")).toBe(false);
+			expect(
+				canResolvedTierAccessRoute("orgAdmin", "/settings/billable-time"),
+			).toBe(true);
+			expect(
+				canResolvedTierAccessRoute("manager", "/settings/billable-time"),
+			).toBe(false);
+			expect(
+				canResolvedTierAccessRoute("member", "/settings/billable-time"),
+			).toBe(false);
 		});
 	});
 });

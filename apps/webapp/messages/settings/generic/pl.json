@@ -504,7 +504,6 @@
       "title": "Zgodność z ArbZG"
     },
     "customDomains": {
-      "description": "Skonfiguruj własną domenę, branding i SSO dla swojej organizacji",
       "title": "Domena i branding"
     },
     "customers": {
@@ -846,9 +845,38 @@
       },
       "title": "Eksport danych"
     },
-    "emailConfig": {
-      "description": "Skonfiguruj niestandardowego dostawcę poczty e-mail dla wiadomości organizacji",
-      "title": "Konfiguracja poczty e-mail"
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Nadaj uprawnienia weryfikatora",
+        "all": "Wszyscy pracownicy w tej organizacji",
+        "allDescription": "Uprawnienia zależą od bieżącego członkostwa w organizacji. Weryfikatorzy nigdy nie mogą weryfikować samych siebie.",
+        "attribution": "Nadane przez: {actor} o {time}",
+        "description": "Przyznawaj uprawnienia niezależnie od rejestracji kierowców, zarządzania bezpośredniego i dostępu do akt osobowych. Zarządzanie tymi uprawnieniami nie pozwala na wgląd w protokoły kontroli. Weryfikacja samego siebie jest zawsze zabroniona.",
+        "editor": "Zakres weryfikatora",
+        "empty": "Brak przypisanych uprawnień weryfikatora",
+        "expiry": "Wygasa o {time}",
+        "history": "Historia uprawnień",
+        "historyEntry": "Przyznano przez {grantor} o {granted}; odebrano przez {revoker} o {revoked}",
+        "loadFailed": "Nie udało się załadować uprawnień weryfikatora",
+        "myAll": "Odpowiadasz za kontrole w całej organizacji. Nie możesz weryfikować samego siebie.",
+        "mySelected": "Odpowiadasz za {teams} wybranych zespołów i {employees} wskazanych pracowników. Dostęp zależy od aktualnej przynależności do zespołu. Nie możesz weryfikować samego siebie.",
+        "myTitle": "Twoje uprawnienia weryfikatora",
+        "none": "Nie masz obecnie uprawnień weryfikatora praw jazdy.",
+        "noTeams": "Brak dostępnych zespołów",
+        "person": "Weryfikator",
+        "revoked": "Odebrano uprawnienia weryfikatora",
+        "revokeDescription": "Weryfikator natychmiast traci dostęp do kontroli w tym zakresie. Przywrócenie uprawnień wymaga ich ponownego nadania.",
+        "revokeFailed": "Nie udało się odebrać uprawnień. Spróbuj ponownie.",
+        "revokeTitle": "Odebrać uprawnienia weryfikatora?",
+        "saved": "Zapisano uprawnienia weryfikatora",
+        "scope": "Uprawnienia",
+        "select": "Wybierz pracownika",
+        "selected": "{teams} zespołów, {employees} wskazanych pracowników",
+        "selectEmployees": "Wybierz pracowników",
+        "specific": "Wybrane zespoły i pracownicy",
+        "specificDescription": "Obejmuje wskazanych pracowników oraz bieżących członków wybranych zespołów. Zmiany w zespołach wchodzą w życie natychmiast.",
+        "title": "Weryfikatorzy praw jazdy"
+      }
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1306,8 @@
     },
     "group": {
       "account": "Konto",
-      "administration": "Administracja",
       "data": "Dane",
-      "enterprise": "Przedsiębiorstwo",
+      "integrations": "Integracje",
       "notifications": "Powiadomienia",
       "organization": "Organizacja"
     },
@@ -1458,7 +1485,8 @@
         "invalidTimezone": "Wybierz strefę czasową.",
         "kioskNotFound": "Nie znaleziono tego kiosku.",
         "kioskRevoked": "Ten kiosk jest unieważniony.",
-        "locationNotFound": "Wybierz aktywną lokalizację tej organizacji."
+        "locationNotFound": "Wybierz aktywną lokalizację tej organizacji.",
+        "offlineNeedsAdoption": "Tryb offline wymaga skoordynowanych poleceń zegara, których ta organizacja jeszcze nie używa."
       },
       "fields": {
         "board": "Tablica obecności",
@@ -1468,6 +1496,9 @@
         "locationPlaceholder": "Wybierz lokalizację",
         "name": "Nazwa",
         "namePlaceholder": "np. Wejście dla personelu",
+        "offlineMode": "Tryb offline",
+        "offlineModeDescription": "Kiosk kontynuuje rejestrację czasu pracy bez połączenia. Rejestracje są potwierdzane, a kody PIN sprawdzane po ponownym połączeniu.",
+        "offlineModeUnavailable": "Tryb offline wymaga skoordynowanych poleceń zegara, których ta organizacja jeszcze nie używa.",
         "timezone": "Strefa czasowa",
         "timezoneDescription": "Zdarzenia rejestracji czasu zarejestrowane na tym kiosku korzystają z tej strefy."
       },
@@ -1477,6 +1508,8 @@
       "loadFailed": "Nie udało się załadować kiosków.",
       "neverSeen": "Nigdy",
       "noLocations": "Najpierw utwórz lokalizację: każdy kiosk należy do jednej lokalizacji.",
+      "offlineOn": "Tryb offline włączony",
+      "offlineOnNotInEffect": "Tryb offline włączony, nieaktywny dla tej organizacji",
       "pairAgain": "Sparuj ponownie",
       "pairFailed": "Nie udało się wygenerować nowego kodu parowania",
       "pairingCodeLabel": "Kod parowania",
@@ -1486,6 +1519,46 @@
       "pairPairedDescription": "Token urządzenia zostanie zmieniony: sparowane urządzenie natychmiast przestanie działać i należy je sparować ponownie za pomocą nowego kodu.",
       "pairTitle": "Sparować {name} ponownie?",
       "pairUnpairedDescription": "Nowy kod parowania zastępuje poprzedni.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Rozpocznij pracę",
+          "clockOut": "Zakończ pracę",
+          "resumeBreak": "Wznów",
+          "startBreak": "Rozpocznij przerwę"
+        },
+        "columns": {
+          "action": "Akcja",
+          "claimedAt": "Deklarowany czas",
+          "employee": "Pracownik",
+          "kiosk": "Kiosk",
+          "reason": "Powód",
+          "timeSource": "Źródło czasu"
+        },
+        "description": "Rejestracje czasu zapisane na kiosku w trybie offline, które nie zostały zarejestrowane po ponownym połączeniu. Pracownik lub menedżerowie pracownika bez konta logowania zostali powiadomieni.",
+        "empty": "Żadna rejestracja offline nie została odrzucona.",
+        "reasons": {
+          "clockUntrusted": "Zegar kiosku nie jest zaufany",
+          "conflict": "Konflikt z innym zarejestrowanym czasem",
+          "contactUnverifiable": "Nie udało się potwierdzić ostatniego połączenia",
+          "holiday": "Dzień wolny bez rejestracji czasu",
+          "kioskRetired": "Kiosk unieważniony lub sparowany ponownie",
+          "monthClosed": "Miesiąc zamknięty",
+          "noPin": "Brak ustawionego kodu PIN kiosku",
+          "notAdopted": "Rejestracja w trybie offline nie jest akceptowana przez organizację",
+          "notAssigned": "Nie przypisano do lokalizacji",
+          "other": "Nie udało się zaakceptować",
+          "outsideWindow": "Dotarło zbyt późno",
+          "pinLocked": "PIN zablokowany",
+          "pinUnchecked": "Nie udało się zweryfikować kodu PIN",
+          "wrongPin": "Nieprawidłowy PIN"
+        },
+        "timeSources": {
+          "deviceClock": "Zegar urządzenia",
+          "serverAnchor": "Czas serwera"
+        },
+        "title": "Odrzucone rejestracje w trybie offline",
+        "unknownEmployee": "Nie jest pracownikiem"
+      },
       "revoke": "Unieważnij",
       "revokeConfirm": "Unieważnij kiosk",
       "revoked": "Kiosk został unieważniony",
@@ -1493,6 +1566,7 @@
       "revokeFailed": "Nie udało się unieważnić kiosku",
       "revokeTitle": "Unieważnić {name}?",
       "rotateConfirm": "Wygeneruj nowy token i sparuj ponownie",
+      "rotateOfflineWarning": "Ten kiosk ma włączony tryb offline. Rejestracje zapisane w trybie offline i jeszcze niewysłane zostaną odrzucone po ponownym połączeniu i wyświetlone na liście odrzuconych rejestracji offline.",
       "save": "Zapisz",
       "saved": "Zapisano kiosk",
       "saveFailed": "Nie udało się zapisać kiosku",
@@ -1517,6 +1591,7 @@
       "searchPlaceholder": "Szukaj pakietów lub licencji...",
       "unknown": "Nieznany"
     },
+    "loading": "Wczytywanie ustawień",
     "locations": {
       "address": "Adres",
       "assignEmployee": "Przypisz pracownika",
@@ -1627,6 +1702,55 @@
       "statusReady": "Gotowe",
       "title": "Moje dane",
       "unavailable": "Sekcja „Moje dane” nie jest dostępna dla Twojego konta w tej organizacji."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Aktywność",
+        "description": "Przeglądaj aktywność i konfiguruj podpisane eksporty audytu",
+        "keysDescription": "Zarządzaj kluczami podpisywania używanymi w eksportach audytu",
+        "packagesDescription": "Generuj i przeglądaj podpisane pakiety audytowe",
+        "title": "Audyt"
+      },
+      "chat-integrations": {
+        "description": "Skonfiguruj Slacka, Microsoft Teams, Telegrama i Discorda",
+        "title": "Integracje z komunikatorami"
+      },
+      "clocking": {
+        "automaticDescription": "Skonfiguruj automatyczne rejestrowanie wyjścia przy nieprzerwanej pracy",
+        "description": "Skonfiguruj rejestrację czasu, automatyczne wyjścia, przypomnienia i przesyłanie okresów",
+        "remindersDescription": "Skonfiguruj przypomnienia o rozpoczęciu i zakończeniu pracy oraz przerwach",
+        "submissionsDescription": "Skonfiguruj, kiedy pracownicy przesyłają swoje okresy pracy do zatwierdzenia",
+        "title": "Rejestracja czasu pracy",
+        "trackingDescription": "Ustaw datę początkową używaną do rejestracji czasu pracy w organizacji"
+      },
+      "developerAccess": {
+        "description": "Zarządzaj kluczami API i punktami końcowymi webhooków",
+        "title": "Dostęp programistyczny"
+      },
+      "domainBranding": {
+        "description": "Skonfiguruj niestandardową domenę i identyfikację wizualną organizacji"
+      },
+      "email": {
+        "delivery": "Dostarczanie",
+        "description": "Skonfiguruj dostarczanie wiadomości e-mail i dostosuj szablony wiadomości",
+        "title": "E-mail"
+      },
+      "identityAccess": {
+        "description": "Skonfiguruj logowanie jednokrotne (SSO), logowanie społecznościowe, aprowizację i dostęp do organizacji",
+        "socialDescription": "Skonfiguruj dostawców logowania społecznościowego dostępnych dla Twojej organizacji",
+        "ssoDescription": "Zarządzaj dostawcami logowania jednokrotnego (SSO) dla Twojej organizacji",
+        "title": "Tożsamość i dostęp"
+      },
+      "personnel-files": {
+        "description": "Zarządzaj dostępem do akt osobowych, przypomnieniami o wygaśnięciu i retencją dokumentów"
+      },
+      "scheduled-exports": {
+        "description": "Zaplanuj cykliczny eksport list płac, danych i audytów"
+      },
+      "shiftPlanning": {
+        "description": "Skonfiguruj szablony zmian i cele obsady",
+        "title": "Planowanie zmian"
+      }
     },
     "notifications": {
       "approvals": "Powiadomienia o zatwierdzeniach",
@@ -1916,6 +2040,8 @@
         "name": "Nazwa",
         "namePlaceholder": "Wprowadź nazwę projektu",
         "noCustomer": "Brak klienta",
+        "requiresTask": "Wymagaj zadania",
+        "requiresTaskHelp": "Czas zarejestrowany w tym projekcie musi wskazywać jedno z jego zadań. Ma to zastosowanie tylko wtedy, gdy projekt ma otwarte zadanie.",
         "status": "Status"
       },
       "fromTemplate": {
@@ -1929,6 +2055,7 @@
         "reasonAdminOnly": "tylko administratorzy organizacji przypisują menedżerów projektów",
         "reasonDeparted": "opuścił(a) organizację",
         "reasonRemoved": "już nie istnieje",
+        "requiresTask": "Wymaga zadania",
         "skipped": "Nie skopiowano: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2074,7 +2201,9 @@
           "name": "Nazwa",
           "namePlaceholder": "np. Nowa odsłona strony",
           "nameRequired": "Wprowadź nazwę szablonu",
-          "noIcon": "Brak ikony"
+          "noIcon": "Brak ikony",
+          "requiresTask": "Wymagaj zadania",
+          "requiresTaskHelp": "Projekty utworzone na podstawie tego szablonu domyślnie korzystają z tego ustawienia."
         },
         "icons": {
           "briefcase": "Teczka",
@@ -2716,6 +2845,45 @@
         "title": "To nie jest podatkowa ewidencja przebiegu"
       },
       "noDrivers": "Brak przypisanych kierowców",
+      "photos": {
+        "accessChanged": "Twój dostęp uległ zmianie. Otwórz ponownie ustawienia pojazdu, aby sprawdzić swoje uprawnienia.",
+        "action": "Zdjęcia",
+        "add": "Dodaj zdjęcie",
+        "archived": "Ten pojazd jest zarchiwizowany. Przywróć go, aby dodawać lub usuwać zdjęcia.",
+        "capacityChanged": "Galeria uległa zmianie. Pozostało miejsc na zdjęcia: {count}. Otwórz ją ponownie i wybierz mniej zdjęć.",
+        "description": "Prywatne zdjęcia poglądowe tego pojazdu. Przesłane i usunięte pliki są zapisywane natychmiast.",
+        "empty": "Brak zdjęć.",
+        "expired": "Czas przesyłania minął. Wybierz zdjęcie ponownie, aby je przesłać.",
+        "full": "Ten pojazd ma 20 zdjęć. Usuń zdjęcie przed dodaniem kolejnego.",
+        "gallery": "Zdjęcia pojazdu",
+        "imageNamed": "{name}, zdjęcie {number}",
+        "invalid": "Nie udało się odczytać tego obrazu. Wybierz inne zdjęcie JPEG, PNG lub WebP.",
+        "limits": "JPEG, PNG lub WebP. Do 10 MB na zdjęcie, maksymalnie 20 zdjęć na pojazd.",
+        "loadFailed": "Nie udało się załadować zdjęć. Zamknij okno dialogowe i spróbuj ponownie.",
+        "loading": "Wczytywanie zdjęć…",
+        "named": "Zdjęcia: {name}",
+        "next": "Następne zdjęcie",
+        "position": "Zdjęcie {number} z {count}",
+        "previous": "Poprzednie zdjęcie",
+        "queued": "Oczekiwanie na przesłanie {name}…",
+        "remove": "Usuń zdjęcie",
+        "removeConfirm": "Trwale usuń zdjęcie",
+        "removeDescription": "To zdjęcie zostanie trwale usunięte z galerii pojazdu. Tej operacji nie można cofnąć.",
+        "removeFailed": "Nie udało się usunąć zdjęcia. Spróbuj ponownie.",
+        "removeTitle": "Trwale usunąć to zdjęcie?",
+        "removing": "Usuwanie zdjęcia…",
+        "retry": "Ponów próbę",
+        "retryNamed": "Ponów próbę: {name}",
+        "saved": "Zapisano {name}.",
+        "selectionTooLarge": "Ten wybór nie został przesłany. Pozostało {count} wolnych miejsc na zdjęcia, wliczając oczekujące przesłania.",
+        "tooLarge": "Wybierz zdjęcie o rozmiarze nie większym niż 10 MB.",
+        "unsupported": "Wybierz zdjęcie w formacie JPEG, PNG lub WebP. Format HEIC i inne formaty nie są obsługiwane.",
+        "uploadFailed": "Nie udało się przesłać zdjęcia. Spróbuj ponownie.",
+        "uploading": "Przesyłanie {name}…",
+        "uploadResults": "Wyniki przesyłania zdjęć",
+        "vehicleMissing": "Ten pojazd nie jest już dostępny w Twojej organizacji.",
+        "viewNamed": "Wyświetl zdjęcie {number} z {name}"
+      },
       "refusals": {
         "driverNotFound": "Przypisany pracownik lub zespół już nie istnieje. Odśwież stronę.",
         "invalidChange": "Nie udało się zapisać zmiany. Odśwież stronę i spróbuj ponownie.",
@@ -2739,7 +2907,6 @@
       "assignmentRemoved": "Przypisanie usunięte",
       "assignmentSaved": "Przypisanie zapisane",
       "assignmentsDescription": "Pracownicy objęci zapytaniem mogą rejestrować użycie pojazdu podczas rejestracji czasu pracy. Pracownicy z oczekiwanym użyciem pojazdu są pytani za każdym razem, a ich czas pracy jest oznaczany flagą do momentu uzupełnienia szczegółów. Rejestracja czasu pracy nigdy nie jest blokowana. Pierwszeństwo ma najbardziej szczegółowe przypisanie: pracownika przed jego głównym zespołem, a zespołu przed całą organizacją.",
-      "description": "Kto jest proszony o zarejestrowanie prowadzonego pojazdu i stanu licznika",
       "enabled": "Rejestruj użycie pojazdu",
       "enabledDescription": "Wyłączenie tej opcji powoduje zaprzestanie pytania o użycie pojazdu i oznaczania brakujących szczegółów jazdy. Już zarejestrowane użycie pojazdu pozostaje widoczne i uwzględniane w eksportach.",
       "error": {

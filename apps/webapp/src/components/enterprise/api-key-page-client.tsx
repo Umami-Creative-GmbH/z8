@@ -31,12 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { EditDeleteMenu } from "@/components/ui/edit-delete-menu";
 import {
 	Table,
 	TableBody,
@@ -377,30 +372,10 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 											</Badge>
 										</TableCell>
 										<TableCell className="text-right">
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<Button
-														variant="ghost"
-														size="sm"
-														aria-label={t("common.moreActions", "More actions")}
-													>
-														•••
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end">
-													<DropdownMenuItem
-														onClick={() => setEditingKey(apiKey)}
-													>
-														{t("common.edit", "Edit")}
-													</DropdownMenuItem>
-													<DropdownMenuItem
-														onClick={() => setDeleteDialogKey(apiKey)}
-														className="text-destructive"
-													>
-														{t("common.delete", "Delete")}
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
+											<EditDeleteMenu
+												onEdit={() => setEditingKey(apiKey)}
+												onDelete={() => setDeleteDialogKey(apiKey)}
+											/>
 										</TableCell>
 									</TableRow>
 								);
@@ -497,13 +472,13 @@ function ApiKeyPageView({
 	const { canCreateMore, keyCount, setCreateDialogOpen, t } = viewModel;
 
 	return (
-		<div className="p-6">
+		<div className="min-w-0">
 			<div className="mx-auto max-w-4xl">
 				<div className="mb-6 flex items-start justify-between">
 					<div>
-						<h1 className="text-2xl font-semibold">
+						<h2 className="text-lg font-semibold">
 							{t("settings.apiKeys.title", "API Keys")}
-						</h1>
+						</h2>
 						<p className="text-muted-foreground">
 							{t(
 								"settings.apiKeys.description",

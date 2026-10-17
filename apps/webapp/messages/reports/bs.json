@@ -299,6 +299,8 @@
         "estimateProgress": "{booked} h od {estimate} h ({percent})",
         "hours": "Sati",
         "hoursValue": "{hours} h",
+        "missingTaskCount": "{count} bez zadatka",
+        "missingTaskHint": "Rezervacije na ovom projektu koje su pristigle bez potrebnog zadatka. Dodajte zadatak svakoj rezervaciji u kalendaru.",
         "noTask": "Nema zadatka",
         "noTime": "Nema evidentiranog vremena na ovom projektu u ovom periodu",
         "share": "Podijeli",

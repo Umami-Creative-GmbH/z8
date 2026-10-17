@@ -6,7 +6,15 @@
  * SSO session store, Next cache, translations and logger are replaced.
  */
 import type { PoolClient } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -21,7 +29,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -45,14 +55,20 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/tolgee/server", async () => ({
 	getTranslate: async () =>
-		(await import("@/lib/organization/custom-fields/refusal-messages")).englishDefaults,
+		(await import("@/lib/organization/custom-fields/refusal-messages"))
+			.englishDefaults,
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -61,7 +77,12 @@ vi.mock("@/lib/logger", () => ({
 		warn: () => {},
 		info: () => {},
 		debug: () => {},
-		child: () => ({ error: () => {}, warn: () => {}, info: () => {}, debug: () => {} }),
+		child: () => ({
+			error: () => {},
+			warn: () => {},
+			info: () => {},
+			debug: () => {},
+		}),
 	}),
 }));
 
@@ -81,17 +102,16 @@ describe("personnel number uniqueness on PostgreSQL", () => {
 	let holderId: string;
 
 	async function setNumber(employeeId: string, employeeNumber: string | null) {
-		await fixture.pool.query("update employee set employee_number = $2 where id = $1", [
-			employeeId,
-			employeeNumber,
-		]);
+		await fixture.pool.query(
+			"update employee set employee_number = $2 where id = $1",
+			[employeeId, employeeNumber],
+		);
 	}
 
 	async function numberOf(employeeId: string) {
-		const { rows } = await fixture.pool.query<{ employee_number: string | null }>(
-			"select employee_number from employee where id = $1",
-			[employeeId],
-		);
+		const { rows } = await fixture.pool.query<{
+			employee_number: string | null;
+		}>("select employee_number from employee where id = $1", [employeeId]);
 		return rows[0]?.employee_number;
 	}
 
@@ -103,9 +123,10 @@ describe("personnel number uniqueness on PostgreSQL", () => {
 		fixture = await createLifecycleDatabaseFixture();
 		const holder = await fixture.seedEmployee();
 		holderId = holder.employeeId;
-		await fixture.pool.query(`update "user" set name = 'Ada Holder' where id = $1`, [
-			holder.userId,
-		]);
+		await fixture.pool.query(
+			`update "user" set name = 'Ada Holder' where id = $1`,
+			[holder.userId],
+		);
 		harness.userId = fixture.ownerUserId;
 		harness.organizationId = fixture.organizationId;
 	});
@@ -129,10 +150,14 @@ describe("personnel number uniqueness on PostgreSQL", () => {
 	});
 
 	it("refuses the number of a former employee", async () => {
-		const former = await fixture.seedEmployee({ isActive: false, withPeriod: false });
-		await fixture.pool.query(`update "user" set name = 'Ada Holder' where id = $1`, [
-			former.userId,
-		]);
+		const former = await fixture.seedEmployee({
+			isActive: false,
+			withPeriod: false,
+		});
+		await fixture.pool.query(
+			`update "user" set name = 'Ada Holder' where id = $1`,
+			[former.userId],
+		);
 		await setNumber(former.employeeId, "F-7");
 
 		await expect(save(fixture.employeeId, "F-7")).resolves.toEqual(TAKEN);
@@ -150,17 +175,24 @@ describe("personnel number uniqueness on PostgreSQL", () => {
 
 	it("allows the same number in another organization", async () => {
 		const otherOrganizationId = await fixture.createOrganization();
-		const stranger = await fixture.seedEmployee({ organizationId: otherOrganizationId });
+		const stranger = await fixture.seedEmployee({
+			organizationId: otherOrganizationId,
+		});
 		await setNumber(stranger.employeeId, "E-42");
 
-		await expect(save(fixture.employeeId, "E-42")).resolves.toMatchObject({ success: true });
+		await expect(save(fixture.employeeId, "E-42")).resolves.toMatchObject({
+			success: true,
+		});
 	});
 
 	it("saves an employee whose number is unchanged", async () => {
 		await setNumber(fixture.employeeId, "E-42");
 
 		await expect(
-			updateEmployeeAction(fixture.employeeId, { employeeNumber: "E-42", position: "Lead" }),
+			updateEmployeeAction(fixture.employeeId, {
+				employeeNumber: "E-42",
+				position: "Lead",
+			}),
 		).resolves.toMatchObject({ success: true });
 		expect(await numberOf(fixture.employeeId)).toBe("E-42");
 	});
@@ -169,9 +201,16 @@ describe("personnel number uniqueness on PostgreSQL", () => {
 		await setNumber(fixture.employeeId, "E-1");
 		await setNumber(holderId, "E-2");
 
-		await expect(save(fixture.employeeId, "")).resolves.toMatchObject({ success: true });
-		await expect(save(holderId, "   ")).resolves.toMatchObject({ success: true });
-		expect([await numberOf(fixture.employeeId), await numberOf(holderId)]).toEqual([null, null]);
+		await expect(save(fixture.employeeId, "")).resolves.toMatchObject({
+			success: true,
+		});
+		await expect(save(holderId, "   ")).resolves.toMatchObject({
+			success: true,
+		});
+		expect([
+			await numberOf(fixture.employeeId),
+			await numberOf(holderId),
+		]).toEqual([null, null]);
 	});
 
 	it("gives the save that loses a race on the unique index the same field error", async () => {
@@ -180,9 +219,10 @@ describe("personnel number uniqueness on PostgreSQL", () => {
 		const concurrent: PoolClient = await fixture.pool.connect();
 		try {
 			await concurrent.query("begin");
-			await concurrent.query("update employee set employee_number = 'R-1' where id = $1", [
-				holderId,
-			]);
+			await concurrent.query(
+				"update employee set employee_number = 'R-1' where id = $1",
+				[holderId],
+			);
 
 			const loser = save(fixture.employeeId, "r-1");
 			await vi.waitFor(
@@ -201,15 +241,24 @@ describe("personnel number uniqueness on PostgreSQL", () => {
 		} finally {
 			concurrent.release();
 		}
-		expect([await numberOf(holderId), await numberOf(fixture.employeeId)]).toEqual(["R-1", null]);
+		expect([
+			await numberOf(holderId),
+			await numberOf(fixture.employeeId),
+		]).toEqual(["R-1", null]);
 	});
 
 	it("lets exactly one of two concurrent saves of one number succeed", async () => {
-		const results = await Promise.all([save(holderId, "C-1"), save(fixture.employeeId, "c-1")]);
+		const results = await Promise.all([
+			save(holderId, "C-1"),
+			save(fixture.employeeId, "c-1"),
+		]);
 
 		expect(results.filter((result) => result.success)).toHaveLength(1);
 		expect(results.filter((result) => !result.success)).toEqual([
-			expect.objectContaining({ code: "ValidationError", refusal: "personnel_number_taken" }),
+			expect.objectContaining({
+				code: "ValidationError",
+				refusal: "personnel_number_taken",
+			}),
 		]);
 	});
 });

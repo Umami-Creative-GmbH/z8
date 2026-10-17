@@ -147,7 +147,7 @@ export function PlatformAdminUsersTable({
 						))}
 					</div>
 				) : (
-					<Table>
+					<Table mobileLayout="stacked">
 						<TableHeader>
 							<TableRow>
 								<TableHead>{t("admin:admin.users.table.user", "User")}</TableHead>

@@ -99,6 +99,7 @@
       "breakPendingCorrection": "Ett godkännande av tidskorrigering väntar redan för denna arbetsperiod. Lägg till pausen när den har hanterats.",
       "breakRetry": "Det gick inte att lägga till pausen. Försök igen.",
       "breakTooLong": "Pausens längd måste vara kortare än ditt nuvarande arbetspass.",
+      "chooseTaskInClock": "Öppna klockan högst upp på sidan, välj en uppgift och stämpla sedan ut.",
       "clockAttributionNotAllowed": "Det valda projektet eller den valda kategorin är inte tillgänglig",
       "clockCommandRejected": "Servern accepterade inte denna stämplingsåtgärd",
       "clockConnectionRequired": "Stämpling kräver en anslutning i den här organisationen. Återanslut och försök igen.",
@@ -135,6 +136,7 @@
       "taskNotFound": "Den här uppgiften finns inte längre",
       "taskOtherProject": "Den här uppgiften tillhör ett annat projekt",
       "taskProjectNotBookable": "Tid kan inte längre bokas på den här uppgiftens projekt",
+      "taskRequired": "Det här projektet kräver en uppgift. Välj en och försök igen.",
       "workCategoryNotAllowed": "Kan inte tilldela till den här arbetskategorin"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Tillbaka till arbetet",
         "returning": "Tillbaka till start om {seconds} s",
         "startBreak": "Rast påbörjad",
-        "title": "Klar"
+        "title": "Klar",
+        "unconfirmed": "Sparat på denna kiosk, ännu inte bekräftat. Din PIN-kod kontrolleras när kiosken är online igen."
       },
       "employee": {
+        "asOf": "Per {time}",
         "back": "Avbryt",
         "endDayHint": "Om du avslutar dagen nu avslutas ditt arbete vid rastens början.",
         "today": "Idag: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Startar kiosken…",
       "offline": {
         "banner": "Kiosken är offline. Det går inte att stämpla förrän anslutningen är tillbaka.",
-        "refused": "Kiosken är offline. Inget registrerades; stämpling fungerar endast online."
+        "notSaved": "Detta kunde inte sparas på kiosken. Inget registrerades.",
+        "queueBanner": "Kiosken är offline. Stämplingar sparas på denna kiosk och bekräftas när anslutningen är tillbaka.",
+        "refused": "Kiosken är offline. Inget registrerades; stämpling fungerar endast online.",
+        "stateNote": "Kiosken är offline. Det du gör nu sparas på denna kiosk och är ännu inte bekräftat.",
+        "stateQueued": "Kiosken är offline. Detta inkluderar stämplingar som sparats på denna kiosk och ännu inte bekräftats."
       },
       "pairing": {
         "codeDescription": "Koden fungerar en gång och går ut 10 minuter efter att den utfärdades.",
@@ -201,6 +209,20 @@
         "rateLimited": "För många PIN-försök vid denna kiosk. Försök igen om {seconds} sekunder.",
         "submit": "OK",
         "wrong": "PIN-koden är inte korrekt. Försök igen."
+      },
+      "queue": {
+        "dismiss": "Avfärda",
+        "reason": {
+          "contact": "Kioskens senaste anslutning kunde inte bekräftas.",
+          "kiosk": "Kiosken var inte längre parkopplad vid den tidpunkten.",
+          "locked": "PIN-koden var låst.",
+          "notAssigned": "Den anställde kan inte stämpla på denna kiosk.",
+          "other": "Fråga din chef.",
+          "pin": "PIN-koden accepterades inte.",
+          "time": "Dess tidpunkt kunde inte accepteras."
+        },
+        "refused": "{name}: {action} kl. {time}, sparad offline, accepterades inte. {reason}",
+        "title": "Offline-stämplingar accepteras inte"
       },
       "refusal": {
         "alreadyClockedIn": "Du är redan instämplad.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Körningsuppgifter saknas",
       "duration": "Varaktighet",
       "emptyState": "Inga tidsregistreringar hittades för den här veckan.",
+      "missingTask": "Uppgift saknas",
+      "missingTaskHint": "Det här projektet kräver en uppgift: lägg till en till denna bokning i kalendern.",
       "recordedLocalTime": "Registrerad lokal tid",
       "rowActions": "Åtgärder för tidsregistrering",
       "title": "Tidsregistreringar",
       "viewCalendar": "Visa kalender"
     },
     "taskPicker": {
+      "choose": "Välj en uppgift",
       "doneTask": "{name} (klar)",
       "empty": "Ingen uppgift hittades",
       "label": "Uppgift",
       "none": "Ingen uppgift",
+      "requiredLabel": "Uppgift (obligatorisk)",
       "search": "Sök uppgifter…"
     },
     "timeline": {

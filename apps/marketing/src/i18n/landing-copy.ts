@@ -98,6 +98,8 @@ export type LandingCopy = {
 			trial: string;
 			monthly: string;
 			yearly: string;
+			/** The kiosk seat price (#886), shown under the seat prices. Approved landing fact. */
+			kioskNote: string;
 			taxNote: string;
 			cta: string;
 		};
@@ -298,6 +300,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				trial: "14 Tage kostenlos - keine Kreditkarte erforderlich",
 				monthly: "4 € pro Nutzer / Monat",
 				yearly: "36 € pro Nutzer / Jahr",
+				kioskNote: "Nur-Kiosk-Mitarbeitende: 2 € pro Monat (1,50 € jährlich)",
 				taxNote: "Preise zzgl. MwSt.",
 				cta: "14 Tage testen",
 			},
@@ -605,6 +608,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				trial: "14 days free - no credit card required",
 				monthly: "4€ per user per month",
 				yearly: "36€ per user per year",
+				kioskNote: "Kiosk-only staff: €2 per month (€1.50 yearly)",
 				taxNote: "Prices excluding tax",
 				cta: "Try 14 days",
 			},

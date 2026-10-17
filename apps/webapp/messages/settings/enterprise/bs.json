@@ -198,7 +198,6 @@
         "deleteDescription": "Jeste li sigurni da želite izbrisati \"{domain}\"? Ova radnja se ne može poništiti. Korisnici se više neće moći prijaviti putem ove prilagođene domene.",
         "deleteFailed": "Brisanje domene nije uspjelo",
         "deleteTitle": "Izbriši domenu",
-        "description": "Konfigurišite prilagođenu domenu za prijavu, brendiranje i SSO pružaoce usluga za vašu organizaciju.",
         "dnsPropagation": "DNS propagacija",
         "dnsPropagationDescription": "DNS promjenama može biti potrebno do 48 sati za propagaciju, iako se često završe unutar nekoliko minuta. Možete kliknuti na \"Potvrdi\" nakon što dodate TXT zapis.",
         "domain": "Domena",
@@ -212,8 +211,6 @@
         "empty": "Još nema konfigurisane prilagođene domene.",
         "enabledAuthMethods": "Omogućene metode autentifikacije",
         "guidedSetup": {
-          "action": "Vođeno podešavanje",
-          "description": "Konfigurišite SSO, SCIM, politiku pristupa i provjere aktivacije u jednom zaštićenom toku.",
           "title": "Vođeno podešavanje"
         },
         "keepExistingSecretKey": "Ostavite prazno da biste zadržali postojeći tajni ključ",
@@ -238,7 +235,6 @@
           "pending": "Verifikacija na čekanju",
           "verified": "Verifikovano"
         },
-        "title": "Prilagođena domena i brendiranje",
         "tokenExpired": "Token je istekao",
         "tokenExpiredDescription": "Verifikacijski token je istekao. Molimo generišite novi token.",
         "tokenExpires": "Token ističe: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Vodič za SSO, SCIM dodjelu, ograničenja domene, politiku pozivnica i zadane uloge za ovu organizaciju.",
-      "title": "Podešavanje identiteta preduzeća"
+      "description": "Vodič za SSO, SCIM dodjelu, ograničenja domene, politiku pozivnica i zadane uloge za ovu organizaciju."
     }
   }
 }

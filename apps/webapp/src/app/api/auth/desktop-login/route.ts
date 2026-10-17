@@ -1,3 +1,5 @@
+import { mfaChallengeFromSession } from "@/lib/organization-mfa/http";
+import { resolvePublicRequestOrigin } from "@/lib/domain/request-origin";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
@@ -59,6 +61,22 @@ export async function GET(request: NextRequest) {
 	const session = await auth.api.getSession({ headers: await headers() });
 
 	if (session?.user) {
+		const mfaChallenge = mfaChallengeFromSession(session);
+		if (mfaChallenge) {
+			const destination = new URL(
+				"/mfa",
+				await resolvePublicRequestOrigin(request),
+			);
+			destination.searchParams.set(
+				"organizationId",
+				mfaChallenge.organizationId,
+			);
+			destination.searchParams.set(
+				"callbackUrl",
+				request.nextUrl.pathname + request.nextUrl.search,
+			);
+			return NextResponse.redirect(destination);
+		}
 		const authCode = await createAppAuthCode({
 			app: "desktop",
 			codeChallenge,

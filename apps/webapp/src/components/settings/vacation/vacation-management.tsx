@@ -52,19 +52,7 @@ export function VacationManagement({
 	};
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.vacation.title", "Vacation Management")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.vacation.description",
-						"Manage vacation policies and assignments for your organization",
-					)}
-				</p>
-			</div>
-
+		<div className="flex flex-col gap-4">
 			{notice}
 
 			<Tabs defaultValue="policies" className="space-y-4">

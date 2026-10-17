@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import type { ReactElement, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { SiteHeader } from "./site-header";
 
@@ -22,11 +23,14 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 }));
 
 vi.mock("@/components/header-refresh-button", () => ({
-	HeaderRefreshButton: () => <button type="button">Refresh data</button>,
+	HeaderRefreshButton: ({ children }: { children?: ReactNode }) => (
+		<button type="button">{children ?? "Refresh data"}</button>
+	),
 }));
 
 vi.mock("@/components/header-timezone-control", () => ({
-	HeaderTimezoneControl: () => <button type="button">Timezone</button>,
+	HeaderTimezoneControl: ({ trigger }: { trigger?: ReactElement }) =>
+		trigger ?? <button type="button">Timezone</button>,
 }));
 
 vi.mock("@/components/notifications", () => ({
@@ -42,9 +46,8 @@ vi.mock("@/components/ui/sidebar", () => ({
 }));
 
 vi.mock("@/components/dashboard/dashboard-header-customize", () => ({
-	DashboardHeaderCustomize: () => (
-		<button type="button">Customize dashboard</button>
-	),
+	DashboardHeaderCustomize: ({ trigger }: { trigger?: ReactElement }) =>
+		trigger ?? <button type="button">Customize dashboard</button>,
 }));
 
 describe("SiteHeader", () => {
@@ -63,7 +66,46 @@ describe("SiteHeader", () => {
 			"Clock In",
 			"Refresh data",
 			"Notifications",
+			"More actions",
 		]);
+	});
+
+	it("keeps secondary dashboard controls available as labeled actions in the mobile overflow", async () => {
+		pathname = "/en";
+		render(<SiteHeader />);
+		fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+		const panel = await screen.findByRole("dialog", { name: "More actions" });
+		expect(
+			within(panel).getByRole("button", { name: "Customize dashboard" }),
+		).toBeTruthy();
+		expect(
+			within(panel).getByRole("button", { name: "Saved timezone" }),
+		).toBeTruthy();
+		expect(
+			within(panel).getByRole("button", { name: "Refresh data" }),
+		).toBeTruthy();
+		expect(
+			within(panel).queryByRole("button", { name: "Clock In" }),
+		).toBeNull();
+		expect(
+			within(panel).queryByRole("button", { name: "Notifications" }),
+		).toBeNull();
+	});
+
+	it("keeps mobile overflow actions available outside the dashboard without customization", async () => {
+		pathname = "/en/time-tracking";
+		render(<SiteHeader />);
+		fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+		const panel = await screen.findByRole("dialog", { name: "More actions" });
+		expect(
+			within(panel).queryByRole("button", { name: "Customize dashboard" }),
+		).toBeNull();
+		expect(
+			within(panel).getByRole("button", { name: "Saved timezone" }),
+		).toBeTruthy();
+		expect(
+			within(panel).getByRole("button", { name: "Refresh data" }),
+		).toBeTruthy();
 	});
 
 	it("does not show the dashboard customize trigger outside the dashboard route", () => {

@@ -378,7 +378,7 @@ function BreakdownCard({
 			</CardHeader>
 			<CardContent>
 				{rows.length > 0 ? (
-					<Table>
+					<Table mobileLayout="stacked">
 						<TableHeader>
 							<TableRow>
 								<TableHead>{breakdownLabel}</TableHead>

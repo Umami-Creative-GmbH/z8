@@ -76,7 +76,7 @@ An employee's work within one local day in their timezone: their completed work 
 _Avoid_: Daily sum, actual hours, today's minutes
 
 **Closed month**:
-A calendar month closed for an organization or for a team. For each employee covered, it is that month in the employee's timezone, fixed when the month is closed: a later timezone or team change does not move or lift it. A team close covers the employees whose primary team it was at that moment; an organization close also covers employees added later. Nobody may change work, attribution, absences or balance adjustments that touch a closed month, even in part, whoever or whatever is writing; notes are not frozen, and erasing an employee or organization entirely is not a change. Closing is independent of any payroll export, and is refused while requests about the month are undecided or work that started in it is still live.
+A calendar month closed for an organization, a team or a location. A location close covers the employees assigned there when it is closed, including inactive or departed employees whose assignment remains, and freezes each covered employee's whole month, including work at other locations. Later assignment changes do not move or lift it. For each employee covered, it is that month in the employee's timezone, fixed when the month is closed: a later timezone or team change does not move or lift it. A team close covers the employees whose primary team it was at that moment; an organization close also covers employees added later. Nobody may change work, attribution, absences or balance adjustments that touch a closed month, even in part, whoever or whatever is writing; notes are not frozen, and erasing an employee or organization entirely is not a change. Closing is independent of any payroll export, and is refused while requests about the month are undecided or work that started in it is still live.
 _Avoid_: Locked period, payroll period, frozen month, closed balance period
 
 **Reopening**:
@@ -160,6 +160,10 @@ _Avoid_: Timesheet period, pay period
 **Submission cadence**:
 An organization's choice of week or calendar month as its submission period, with the day its weeks start for a weekly cadence. Organizations without one do not collect period submissions.
 _Avoid_: Submission frequency, timesheet interval
+
+**Submission readiness**:
+Whether an employee's submission period currently meets every precondition for submission, including its timing, submission status, undecided requests, live work and an eligible approver. Being ready does not confirm that the employee's records are complete or correct, and readiness can change before they submit.
+_Avoid_: Completeness check, payroll readiness, period approval
 
 **Sent back after a change**:
 A submitted period whose work, work attribution or absences changed afterwards, or whose work's approval state was decided again, by any writer, even in part; notes do not count. A pending period submission is withdrawn automatically (its approval is cancelled); an approved one goes out of date, and its approval stays as history. Either way the period awaits submission again, and the employee is told once.
@@ -272,6 +276,14 @@ _Avoid_: Password, passcode
 An employee who has no sign-in and clocks only at kiosks.
 _Avoid_: Terminal user, offline employee
 
+**Kiosk seat**:
+A billable seat held by a kiosk-only employee, charged at the cheaper kiosk seat price on the organization's subscription.
+_Avoid_: Kiosk license, terminal seat
+
+**Full seat**:
+A billable seat held by anyone who is not a kiosk-only employee, charged at the ordinary seat price.
+_Avoid_: Normal seat, standard license
+
 **Assigned location**:
 A location an employee works at. A kiosk accepts only employees assigned to its location.
 _Avoid_: Work location (that is office, home or remote), location supervisor
@@ -279,3 +291,7 @@ _Avoid_: Work location (that is office, home or remote), location supervisor
 **Pairing code**:
 A single-use, short-lived code with which an admin enrols a kiosk.
 _Avoid_: Activation code, link code
+
+**Offline kiosk clocking**:
+Kiosk clocking captured while the kiosk cannot reach Z8, kept on the kiosk as frozen clock commands and confirmed only once they reach Z8, where the kiosk PIN is checked. Only kiosks switched to offline mode in adopted organizations clock offline.
+_Avoid_: Offline mode (alone), queued kiosk clocking, offline employee

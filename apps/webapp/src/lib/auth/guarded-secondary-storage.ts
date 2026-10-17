@@ -103,6 +103,17 @@ export function createGuardedAuthSecondaryStorage(
 			const value = await storage.get(key);
 			if (value === null) return null;
 
+			// Password reset and backup-code recovery revoke remembered-device records in
+			// their database transaction. A Redis copy cannot bring that trust back.
+			if (key.startsWith("verification:trust-device-")) {
+				const persisted = await dbClient.query.verification.findFirst({
+					where: eq(
+						authSchema.verification.identifier,
+						key.slice("verification:".length),
+					),
+				});
+				return persisted ? JSON.stringify(persisted) : null;
+			}
 			const parsed = parseSecondaryValue(value);
 			if (parsed.kind === "other") return value;
 			if (parsed.kind === "invalid-session") {

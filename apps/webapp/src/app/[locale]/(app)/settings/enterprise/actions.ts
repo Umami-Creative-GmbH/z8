@@ -761,6 +761,7 @@ export async function registerSSOProviderAction(data: OIDCProviderInput) {
 	}
 
 	revalidatePath("/settings/enterprise/sso");
+	revalidatePath(IDENTITY_SETUP_PATH);
 
 	return normalizeSSOProvider(rawProvider);
 }
@@ -789,6 +790,7 @@ export async function deleteSSOProviderAction(providerId: string) {
 	);
 
 	revalidatePath("/settings/enterprise/sso");
+	revalidatePath(IDENTITY_SETUP_PATH);
 }
 
 export async function requestSSODomainVerificationAction(providerId: string) {
@@ -809,6 +811,7 @@ export async function requestSSODomainVerificationAction(providerId: string) {
 
 	revalidatePath("/settings/enterprise/domains");
 	revalidatePath("/settings/enterprise/sso");
+	revalidatePath(IDENTITY_SETUP_PATH);
 
 	return {
 		domainVerificationToken:
@@ -836,6 +839,7 @@ export async function verifySSODomainAction(providerId: string) {
 
 	revalidatePath("/settings/enterprise/domains");
 	revalidatePath("/settings/enterprise/sso");
+	revalidatePath(IDENTITY_SETUP_PATH);
 
 	return { verified: true };
 }
@@ -853,6 +857,7 @@ export async function updateBrandingAction(
 	const { organizationId } = await requireEnterpriseOrgAdmin();
 	await updateOrganizationBranding(organizationId, branding);
 	revalidatePath("/settings/enterprise/branding");
+	revalidatePath("/settings/enterprise/domains");
 }
 
 // ============ Social OAuth Actions ============
@@ -915,6 +920,7 @@ export async function addSocialOAuthConfigAction(data: AddSocialOAuthInput) {
 	});
 
 	revalidatePath("/settings/enterprise/social-oauth");
+	revalidatePath(IDENTITY_SETUP_PATH);
 
 	return {
 		id: config.id,
@@ -952,6 +958,7 @@ export async function updateSocialOAuthConfigAction(
 	});
 
 	revalidatePath("/settings/enterprise/social-oauth");
+	revalidatePath(IDENTITY_SETUP_PATH);
 
 	return {
 		id: config.id,
@@ -972,6 +979,7 @@ export async function deleteSocialOAuthConfigAction(configId: string) {
 	const { organizationId } = await requireEnterpriseOrgAdmin();
 	await deleteSocialOAuthConfig(configId, organizationId);
 	revalidatePath("/settings/enterprise/social-oauth");
+	revalidatePath(IDENTITY_SETUP_PATH);
 }
 
 export async function checkSocialOAuthConfigurationAction(configId: string) {

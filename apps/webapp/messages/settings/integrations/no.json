@@ -202,15 +202,12 @@
       }
     },
     "discord": {
-      "description": "Konfigurer Discord-varsler for organisasjonen din",
       "title": "Discord"
     },
     "slack": {
-      "description": "Konfigurer Slack-varsler for organisasjonen din",
       "title": "Slack"
     },
     "teamsNotifications": {
-      "description": "Konfigurer Microsoft Teams-varsler for organisasjonen din",
       "title": "Microsoft Teams"
     },
     "telegram": {

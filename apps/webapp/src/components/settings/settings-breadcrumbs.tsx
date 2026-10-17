@@ -11,7 +11,10 @@ interface Breadcrumb {
 	href: string;
 }
 
-function buildSettingsBreadcrumbs(pathname: string, t: ReturnType<typeof useTranslate>["t"]) {
+function buildSettingsBreadcrumbs(
+	pathname: string,
+	t: ReturnType<typeof useTranslate>["t"],
+) {
 	const breadcrumbs: Breadcrumb[] = [
 		{
 			label: t("settings.title", "Settings"),
@@ -36,6 +39,10 @@ function buildSettingsBreadcrumbs(pathname: string, t: ReturnType<typeof useTran
 	let currentPath = "/settings";
 	for (let i = 0; i < segments.length; i++) {
 		const segment = segments[i];
+		if (segment === "enterprise") {
+			currentPath += "/enterprise";
+			continue;
+		}
 		currentPath += `/${segment}`;
 
 		// Get label for this segment
@@ -51,7 +58,7 @@ function buildSettingsBreadcrumbs(pathname: string, t: ReturnType<typeof useTran
 		} else if (segment === "holidays") {
 			label = t("settings.holidays.title", "Holidays");
 		} else if (segment === "vacation") {
-			label = t("settings.vacation.title", "Vacation");
+			label = t("nav.absences", "Absences");
 		} else if (segment === "teams") {
 			label = t("settings.teams.title", "Teams");
 		} else if (segment === "employees") {
@@ -70,9 +77,15 @@ function buildSettingsBreadcrumbs(pathname: string, t: ReturnType<typeof useTran
 			label = t("settings.vacation.history.title", "History");
 		} else if (segment === "rates" && segments[i - 1] === "billable-time") {
 			label = t("settings.billableTime.nav.rates", "Billable rates");
-		} else if (segment === "cost-rates" && segments[i - 1] === "billable-time") {
+		} else if (
+			segment === "cost-rates" &&
+			segments[i - 1] === "billable-time"
+		) {
 			label = t("settings.billableTime.nav.costRates", "Cost rates");
-		} else if (segment === "accounting" && segments[i - 1] === "billable-time") {
+		} else if (
+			segment === "accounting" &&
+			segments[i - 1] === "billable-time"
+		) {
 			label = t("settings.billableTime.nav.accounting", "Accounting");
 		} else if (segment === "hand-off" && segments[i - 1] === "billable-time") {
 			label = t("settings.billableTime.nav.handOff", "Hand-off");
@@ -90,7 +103,9 @@ function buildSettingsBreadcrumbs(pathname: string, t: ReturnType<typeof useTran
 			}
 		} else {
 			// A settings page is named like its navigation entry; otherwise capitalize the segment.
-			const entry = SETTINGS_ENTRIES.find((candidate) => candidate.href === currentPath);
+			const entry = SETTINGS_ENTRIES.find(
+				(candidate) => candidate.href === currentPath,
+			);
 			label = entry
 				? t(entry.titleKey, entry.titleDefault)
 				: segment.charAt(0).toUpperCase() + segment.slice(1);
@@ -128,7 +143,10 @@ export function SettingsBreadcrumbs() {
 						{isLast ? (
 							<span className="text-foreground font-medium">{crumb.label}</span>
 						) : (
-							<Link href={crumb.href} className="hover:text-foreground transition-colors">
+							<Link
+								href={crumb.href}
+								className="hover:text-foreground transition-colors"
+							>
 								{crumb.label}
 							</Link>
 						)}

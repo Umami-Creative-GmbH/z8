@@ -62,19 +62,7 @@ export function ChangePolicyManagement({ organizationId, canManage }: ChangePoli
 	};
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.changePolicies.title", "Change Policies")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.changePolicies.description",
-						"Control when employees can edit their time tracking entries and when manager approval is required",
-					)}
-				</p>
-			</div>
-
+		<div className="flex flex-col gap-4">
 			<Tabs defaultValue="policies" className="space-y-4">
 				<TabsList>
 					<TabsTrigger value="policies">

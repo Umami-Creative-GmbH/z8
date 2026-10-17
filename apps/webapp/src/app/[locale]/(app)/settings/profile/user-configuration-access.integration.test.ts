@@ -19,7 +19,15 @@
 
 import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -40,7 +48,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -75,15 +85,22 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/auth-helpers")>();
 	const { db } = await import("@/db");
-	const { loadOrganizationPrincipalContext } = await import("@/lib/authorization/principal-loader");
+	const { loadOrganizationPrincipalContext } = await import(
+		"@/lib/authorization/principal-loader"
+	);
 	return {
 		...original,
 		getPrincipalContext: async () => {
@@ -103,16 +120,21 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+	),
 );
 
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOriginal) => ({
-	...(await importOriginal<
-		typeof import("@/app/[locale]/(app)/time-tracking/actions/approvals")
-	>()),
-	sendManualEntryApprovalNotifications: async () => undefined,
-	sendManualEntryApprovedNotification: async () => undefined,
-}));
+vi.mock(
+	"@/app/[locale]/(app)/time-tracking/actions/approvals",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/app/[locale]/(app)/time-tracking/actions/approvals")
+		>()),
+		sendManualEntryApprovalNotifications: async () => undefined,
+		sendManualEntryApprovedNotification: async () => undefined,
+	}),
+);
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
@@ -120,20 +142,34 @@ vi.mock("@/lib/logger", () => ({
 		warn: () => {},
 		info: () => {},
 		debug: () => {},
-		child: () => ({ error: () => {}, warn: () => {}, info: () => {}, debug: () => {} }),
+		child: () => ({
+			error: () => {},
+			warn: () => {},
+			info: () => {},
+			debug: () => {},
+		}),
 	}),
 }));
 
 const { updateTimezone, updateWeekStartDay } = await import("./actions");
-const { startOnboarding } = await import("@/app/[locale]/onboarding/welcome/actions");
+const { startOnboarding } = await import(
+	"@/app/[locale]/onboarding/welcome/actions"
+);
 const { banUserAction, unbanUserAction } = await import(
 	"@/app/[locale]/(admin)/platform-admin/users/actions"
 );
-const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
+const { createManualTimeEntry } = await import(
+	"@/app/[locale]/(app)/time-tracking/actions"
+);
 const { setUserLocale } = await import("@/lib/bot-platform/i18n");
-const { getEmployeeWorkBalance, getEmployeeWorkBalances, listEmployeesForWorkBalanceBatch } =
-	await import("@/lib/work-balance/service");
-const { processWorkBalanceRebuildIntents } = await import("@/lib/work-balance/rebuild-intents");
+const {
+	getEmployeeWorkBalance,
+	getEmployeeWorkBalances,
+	listEmployeesForWorkBalanceBatch,
+} = await import("@/lib/work-balance/service");
+const { processWorkBalanceRebuildIntents } = await import(
+	"@/lib/work-balance/rebuild-intents"
+);
 const { runWorkBalanceRefresh } = await import("@/lib/jobs/work-balance");
 
 const ids = {
@@ -151,7 +187,10 @@ const ids = {
 } as const;
 const organizations = [ids.orgA, ids.orgB, ids.orgC];
 const users = [ids.user, ids.colleagueUser, ids.platformAdminUser];
-const employeeOf = { [ids.orgA]: ids.employeeA, [ids.orgB]: ids.employeeB } as const;
+const employeeOf = {
+	[ids.orgA]: ids.employeeA,
+	[ids.orgB]: ids.employeeB,
+} as const;
 const RESET_MARKER_DATE = "0001-01-01";
 const userGuard = JSON.stringify(["work-user-configuration-access", ids.user]);
 
@@ -163,7 +202,11 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-const berlin = (time: string) => ({ time, occurrence: null, displayedOffsetMinutes: 120 });
+const berlin = (time: string) => ({
+	time,
+	occurrence: null,
+	displayedOffsetMinutes: 120,
+});
 
 /** The user's own Berlin summer entry (the organization zone) in the given organization. */
 function manualCommand(
@@ -187,8 +230,16 @@ function manualCommand(
 }
 
 /** The key the manual transaction takes after its protection and employee coordination. */
-const submissionIdentity = (organizationId: string, command: ManualTimeEntryCommand) =>
-	JSON.stringify([organizationId, "manual_time_submission", "time_entry", command.submissionId]);
+const submissionIdentity = (
+	organizationId: string,
+	command: ManualTimeEntryCommand,
+) =>
+	JSON.stringify([
+		organizationId,
+		"manual_time_submission",
+		"time_entry",
+		command.submissionId,
+	]);
 
 describe("user configuration and access mutations on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -210,8 +261,19 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 	const changeTimezone = (timezone: string) =>
 		as(ids.user, ids.orgA, () => updateTimezone(timezone));
 	const ban = () =>
-		as(ids.platformAdminUser, ids.orgA, () => banUserAction(ids.user, "Policy", null), "admin");
-	const unban = () => as(ids.platformAdminUser, ids.orgA, () => unbanUserAction(ids.user), "admin");
+		as(
+			ids.platformAdminUser,
+			ids.orgA,
+			() => banUserAction(ids.user, "Policy", null),
+			"admin",
+		);
+	const unban = () =>
+		as(
+			ids.platformAdminUser,
+			ids.orgA,
+			() => unbanUserAction(ids.user),
+			"admin",
+		);
 
 	const openHolds = new Set<PoolClient>();
 
@@ -269,7 +331,9 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 		organizationId: typeof ids.orgA | typeof ids.orgB,
 		command = manualCommand(organizationId),
 	) {
-		const identity = await holdAdvisoryLock(submissionIdentity(organizationId, command));
+		const identity = await holdAdvisoryLock(
+			submissionIdentity(organizationId, command),
+		);
 		const pending = submit(organizationId, command);
 		await waitForWaiterOn(submissionIdentity(organizationId, command));
 		return { pending, release: () => identity.release() };
@@ -280,12 +344,14 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 	 * insertion takes a key-share lock on the user row, and an existing row's
 	 * upsert or a ban's update locks that row.
 	 */
-	const holdUserRow = () => hold('select 1 from "user" where id = $1 for update', [ids.user]);
+	const holdUserRow = () =>
+		hold('select 1 from "user" where id = $1 for update', [ids.user]);
 
 	async function setAppend(organizationId: string, mode: "active" | null) {
-		await admin.query("delete from time_entry_append_control where organization_id = $1", [
-			organizationId,
-		]);
+		await admin.query(
+			"delete from time_entry_append_control where organization_id = $1",
+			[organizationId],
+		);
 		if (mode) {
 			await admin.query(
 				"insert into time_entry_append_control (organization_id, mode) values ($1, $2)",
@@ -334,9 +400,10 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 	}
 
 	async function workFor(employeeId: string) {
-		const { rows } = await admin.query("select id from work_period where employee_id = $1", [
-			employeeId,
-		]);
+		const { rows } = await admin.query(
+			"select id from work_period where employee_id = $1",
+			[employeeId],
+		);
 		return rows;
 	}
 
@@ -371,10 +438,13 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 	async function cleanup() {
 		await restoreRebuilds();
 		await admin.query("drop function if exists t312_fail_intent() cascade");
-		await admin.query("delete from platform_admin_audit_log where admin_user_id = $1", [
-			ids.platformAdminUser,
+		await admin.query(
+			"delete from platform_admin_audit_log where admin_user_id = $1",
+			[ids.platformAdminUser],
+		);
+		await admin.query("delete from organization where id = any($1::text[])", [
+			organizations,
 		]);
-		await admin.query("delete from organization where id = any($1::text[])", [organizations]);
 		await admin.query('delete from "user" where id = any($1::text[])', [users]);
 	}
 
@@ -449,12 +519,16 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 
 	describe("timezone change and user-scoped rebuild intents", () => {
 		it("commits the zone with one intent per adopted organization and rebuilds only the user's employees", async () => {
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: true,
+			});
 
 			expect(await settings()).toMatchObject({ timezone: "America/New_York" });
 			// The post-commit execution consumed both organizations' intents.
 			expect(await intents()).toEqual([]);
-			expect(await resetEmployees()).toEqual([ids.employeeA, ids.employeeB].sort());
+			expect(await resetEmployees()).toEqual(
+				[ids.employeeA, ids.employeeB].sort(),
+			);
 		});
 
 		it("rolls the zone back in every organization when an intent cannot be written", async () => {
@@ -480,7 +554,9 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 		it("reports a committed change as saved when its rebuild fails and recovers on the worker", async () => {
 			await failRebuilds();
 
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: true,
+			});
 
 			expect(await settings()).toMatchObject({ timezone: "America/New_York" });
 			expect(await intents()).toEqual([
@@ -491,20 +567,29 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 					requested_by: ids.user,
 					attempts: 1,
 				}),
-				expect.objectContaining({ organization_id: ids.orgB, user_id: ids.user, attempts: 1 }),
+				expect.objectContaining({
+					organization_id: ids.orgB,
+					user_id: ids.user,
+					attempts: 1,
+				}),
 			]);
-			expect((await intents())[0]?.last_error).toContain("t312 injected rebuild failure");
+			expect((await intents())[0]?.last_error).toContain(
+				"t312 injected rebuild failure",
+			);
 			expect(await resetEmployees()).toEqual([]);
 
 			await restoreRebuilds();
 			const result = await runWorkBalanceRefresh();
 
-			expect(result.rebuildIntents).toMatchObject({ organizationsRebuilt: 2, failures: [] });
+			expect(result.rebuildIntents).toMatchObject({
+				organizationsRebuilt: 2,
+				failures: [],
+			});
 			expect(await intents()).toEqual([]);
 			for (const [organizationId, employeeId] of Object.entries(employeeOf)) {
-				await expect(getEmployeeWorkBalance({ employeeId, organizationId })).resolves.toMatchObject(
-					{ employeeId, actualMinutes: 0 },
-				);
+				await expect(
+					getEmployeeWorkBalance({ employeeId, organizationId }),
+				).resolves.toMatchObject({ employeeId, actualMinutes: 0 });
 			}
 		});
 
@@ -514,7 +599,9 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 				[ids.user],
 			);
 
-			await expect(changeTimezone("Europe/Berlin")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("Europe/Berlin")).resolves.toMatchObject({
+				success: true,
+			});
 
 			expect(await intents()).toEqual([]);
 			expect(await resetEmployees()).toEqual([]);
@@ -525,14 +612,20 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 			await failRebuilds();
 
 			// Organization B's reset runs inside the save, so its failure fails the whole save.
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: false });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: false,
+			});
 			expect(await settings()).toBeNull();
 			expect(await intents()).toEqual([]);
 
 			await restoreRebuilds();
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: true,
+			});
 			expect(await intents()).toEqual([]);
-			expect(await resetEmployees()).toEqual([ids.employeeA, ids.employeeB].sort());
+			expect(await resetEmployees()).toEqual(
+				[ids.employeeA, ids.employeeB].sort(),
+			);
 		});
 	});
 
@@ -545,7 +638,9 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 			expect(await settings()).toBeNull();
 
 			await submission.release();
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(change).resolves.toMatchObject({ success: true });
 			expect(await settings()).toMatchObject({ timezone: "America/New_York" });
 			expect(await workFor(ids.employeeB)).toHaveLength(1);
@@ -575,7 +670,11 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 			expect(await workFor(ids.employeeB)).toEqual([]);
 
 			// The committed zone governs new submissions immediately.
-			const newYork = (time: string) => ({ time, occurrence: null, displayedOffsetMinutes: -240 });
+			const newYork = (time: string) => ({
+				time,
+				occurrence: null,
+				displayedOffsetMinutes: -240,
+			});
 			await expect(
 				submit(
 					ids.orgB,
@@ -587,7 +686,10 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 					}),
 				),
 			).resolves.toMatchObject({ success: true });
-			const { rows } = await admin.query<{ start_time: Date; utc_offset_minutes: number }>(
+			const { rows } = await admin.query<{
+				start_time: Date;
+				utc_offset_minutes: number;
+			}>(
 				`select period.start_time, entry.utc_offset_minutes from work_period period
 				 join time_entry entry on entry.id = period.clock_in_id where period.employee_id = $1`,
 				[ids.employeeB],
@@ -618,19 +720,28 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 		it("makes a preference's first row wait for an in-flight submission", async () => {
 			const submission = await pausedSubmission(ids.orgA);
 
-			const preference = as(ids.user, ids.orgA, () => updateWeekStartDay("monday"));
+			const preference = as(ids.user, ids.orgA, () =>
+				updateWeekStartDay("monday"),
+			);
 			await waitForWaiterOn(userGuard);
 			expect(await settings()).toBeNull();
 
 			await submission.release();
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(preference).resolves.toMatchObject({ success: true });
-			expect(await settings()).toMatchObject({ week_start_day: "monday", timezone: "UTC" });
+			expect(await settings()).toMatchObject({
+				week_start_day: "monday",
+				timezone: "UTC",
+			});
 		});
 
 		it("orders the UTC fallback a first row introduces before later submissions", async () => {
 			const userRow = await holdUserRow();
-			const preference = as(ids.user, ids.orgA, () => updateWeekStartDay("monday"));
+			const preference = as(ids.user, ids.orgA, () =>
+				updateWeekStartDay("monday"),
+			);
 			await waitForRowWaiter();
 			const submission = submit(ids.orgA, manualCommand(ids.orgA));
 			await waitForWaiterOn(userGuard);
@@ -639,7 +750,11 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 			await expect(preference).resolves.toMatchObject({ success: true });
 			// The schema default replaced the organization fallback with UTC.
 			await expect(submission).resolves.toMatchObject({
-				rejection: { reason: "reconfirmation_required", detail: "zone_changed", timezone: "UTC" },
+				rejection: {
+					reason: "reconfirmation_required",
+					detail: "zone_changed",
+					timezone: "UTC",
+				},
 			});
 			expect(await workFor(ids.employeeA)).toEqual([]);
 		});
@@ -655,18 +770,26 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 				() => as(ids.user, ids.orgB, () => startOnboarding()),
 				{ onboarding_step: "welcome" },
 			],
-		] as const)("protects %s entry point's first row", async (_name, firstRow, expected) => {
-			const submission = await pausedSubmission(ids.orgB);
+		] as const)(
+			"protects %s entry point's first row",
+			async (_name, firstRow, expected) => {
+				const submission = await pausedSubmission(ids.orgB);
 
-			const write = firstRow();
-			await waitForWaiterOn(userGuard);
-			expect(await settings()).toBeNull();
+				const write = firstRow();
+				await waitForWaiterOn(userGuard);
+				expect(await settings()).toBeNull();
 
-			await submission.release();
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
-			await expect(write).resolves.not.toMatchObject({ success: false });
-			expect(await settings()).toMatchObject({ timezone: "UTC", ...expected });
-		});
+				await submission.release();
+				await expect(submission.pending).resolves.toMatchObject({
+					success: true,
+				});
+				await expect(write).resolves.not.toMatchObject({ success: false });
+				expect(await settings()).toMatchObject({
+					timezone: "UTC",
+					...expected,
+				});
+			},
+		);
 	});
 
 	describe("scope restart", () => {
@@ -683,7 +806,9 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 			await seedBalance(ids.employeeC, ids.orgC);
 			await failRebuilds();
 			await submission.release();
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(change).resolves.toMatchObject({ success: true });
 
 			// The restarted attempt gated and recorded organization C as well.
@@ -694,7 +819,9 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 			]);
 			await restoreRebuilds();
 			await processWorkBalanceRebuildIntents();
-			expect(await resetEmployees()).toEqual([ids.employeeA, ids.employeeB, ids.employeeC].sort());
+			expect(await resetEmployees()).toEqual(
+				[ids.employeeA, ids.employeeB, ids.employeeC].sort(),
+			);
 		});
 
 		it("restarts without an organization the user left while the change waited", async () => {
@@ -715,10 +842,14 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 				"create trigger t312_fail_intent before insert on work_balance_rebuild_intent for each row execute function t312_fail_intent()",
 			);
 			await submission.release();
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(change).resolves.toMatchObject({ success: true });
 
-			expect((await intents()).map((row) => row.organization_id)).toEqual([ids.orgA]);
+			expect((await intents()).map((row) => row.organization_id)).toEqual([
+				ids.orgA,
+			]);
 		});
 	});
 
@@ -730,10 +861,14 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 			await waitForWaiterOn(userGuard);
 
 			await submission.release();
-			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(submission.pending).resolves.toMatchObject({
+				success: true,
+			});
 			await expect(banning).resolves.toMatchObject({ success: true });
 
-			await expect(submit(ids.orgA, manualCommand(ids.orgA))).resolves.toMatchObject({
+			await expect(
+				submit(ids.orgA, manualCommand(ids.orgA)),
+			).resolves.toMatchObject({
 				success: false,
 			});
 			expect(await workFor(ids.employeeA)).toEqual([]);
@@ -761,13 +896,17 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 
 			// Lifting the ban restores access.
 			await expect(unban()).resolves.toMatchObject({ success: true });
-			await expect(submit(ids.orgA, manualCommand(ids.orgA))).resolves.toMatchObject({
+			await expect(
+				submit(ids.orgA, manualCommand(ids.orgA)),
+			).resolves.toMatchObject({
 				success: true,
 			});
 		});
 
 		it("makes an unban wait for a submission holding the user's protection", async () => {
-			await admin.query('update "user" set banned = true where id = $1', [ids.user]);
+			await admin.query('update "user" set banned = true where id = $1', [
+				ids.user,
+			]);
 			const guardHolder = await hold(
 				"select pg_advisory_xact_lock_shared(hashtextextended($1, 0))",
 				[userGuard],
@@ -788,14 +927,21 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 	describe("rebuild execution and consumer freshness", () => {
 		it("hides only the changed user's projections while the rebuild is pending", async () => {
 			await failRebuilds();
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: true,
+			});
 
 			for (const [organizationId, employeeId] of Object.entries(employeeOf)) {
-				await expect(getEmployeeWorkBalance({ employeeId, organizationId })).resolves.toBeNull();
+				await expect(
+					getEmployeeWorkBalance({ employeeId, organizationId }),
+				).resolves.toBeNull();
 			}
 			// The colleague in the same organization keeps a current projection.
 			await expect(
-				getEmployeeWorkBalance({ employeeId: ids.colleagueA, organizationId: ids.orgA }),
+				getEmployeeWorkBalance({
+					employeeId: ids.colleagueA,
+					organizationId: ids.orgA,
+				}),
 			).resolves.toMatchObject({ balanceMinutes: 120 });
 			const team = await getEmployeeWorkBalances({
 				employeeIds: [ids.employeeA, ids.colleagueA],
@@ -815,16 +961,23 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 
 			await restoreRebuilds();
 			await processWorkBalanceRebuildIntents();
-			expect(await resetEmployees()).toEqual([ids.employeeA, ids.employeeB].sort());
+			expect(await resetEmployees()).toEqual(
+				[ids.employeeA, ids.employeeB].sort(),
+			);
 			// Reset markers remain not-current until the refresh recomputes them.
 			await expect(
-				getEmployeeWorkBalance({ employeeId: ids.employeeA, organizationId: ids.orgA }),
+				getEmployeeWorkBalance({
+					employeeId: ids.employeeA,
+					organizationId: ids.orgA,
+				}),
 			).resolves.toBeNull();
 		});
 
 		it("widens to the whole organization when an organization intent is also pending", async () => {
 			await failRebuilds();
-			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({
+				success: true,
+			});
 			await admin.query(
 				`insert into work_balance_rebuild_intent (organization_id, reason, requested_at)
 				 values ($1, 'organization_timezone', now())`,
@@ -838,10 +991,15 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 				organizationsRebuilt: 1,
 				failures: [],
 			});
-			expect(await resetEmployees()).toEqual([ids.employeeA, ids.colleagueA].sort());
+			expect(await resetEmployees()).toEqual(
+				[ids.employeeA, ids.colleagueA].sort(),
+			);
 			// Organization B's user intent is still pending and still scoped to the user.
 			expect(await intents()).toEqual([
-				expect.objectContaining({ organization_id: ids.orgB, user_id: ids.user }),
+				expect.objectContaining({
+					organization_id: ids.orgB,
+					user_id: ids.user,
+				}),
 			]);
 		});
 

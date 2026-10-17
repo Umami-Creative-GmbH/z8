@@ -140,7 +140,6 @@
         "keys": "Çelësat e nënshkrimit",
         "packages": "Paketat e auditimit"
       },
-      "title": "Eksporti i auditimit",
       "verification": {
         "invalid": "Verifikimi dështoi",
         "valid": "Verifikimi u krye me sukses",
@@ -175,7 +174,6 @@
       "search": "Kërko",
       "searchPlaceholder": "Kërkoni veprime, përdorues ose metadata…",
       "timestamp": "Vula kohore",
-      "title": "Regjistri i auditimit",
       "to": "Deri",
       "unknown": "I panjohur",
       "user": "Përdoruesi",

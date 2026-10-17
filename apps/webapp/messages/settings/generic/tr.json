@@ -504,7 +504,6 @@
       "title": "ArbZG Uyumluluğu"
     },
     "customDomains": {
-      "description": "Kuruluşunuz için özel alan adı, markalama ve SSO yapılandırın",
       "title": "Alan Adı ve Markalama"
     },
     "customers": {
@@ -846,9 +845,38 @@
       },
       "title": "Veri Dışa Aktarma"
     },
-    "emailConfig": {
-      "description": "Kuruluş e-postaları için özel bir e-posta sağlayıcısı yapılandırın",
-      "title": "E-posta Yapılandırması"
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Doğrulayıcı sorumluluğu ver",
+        "all": "Bu kuruluştaki tüm çalışanlar",
+        "allDescription": "Sorumluluk mevcut kuruluş üyeliğini takip eder. Doğrulayıcılar hiçbir zaman kendilerini doğrulayamaz.",
+        "attribution": "{actor} tarafından {time} tarihinde verildi",
+        "description": "Sorumluluğu; sürücü kaydı, doğrudan yöneticilik ve personel dosyası erişiminden ayrı olarak verin. Bu izinleri yönetmek denetim kayıtlarını okuma yetkisi vermez. Kendi kendini doğrulama her zaman yasaktır.",
+        "editor": "Doğrulayıcı kapsamı",
+        "empty": "Atanmış doğrulayıcı sorumluluğu yok",
+        "expiry": "{time} itibarıyla sona erer",
+        "history": "Sorumluluk geçmişi",
+        "historyEntry": "{grantor} tarafından {granted} tarihinde verildi; {revoker} tarafından {revoked} tarihinde iptal edildi",
+        "loadFailed": "Doğrulayıcı sorumlulukları yüklenemedi",
+        "myAll": "Bu kuruluş genelindeki kontrollerden siz sorumlusunuz. Kendi kendinizi doğrulayamazsınız.",
+        "mySelected": "Seçilen {teams} ekipten ve adı belirtilen {employees} çalışandan sorumlusunuz. Erişimi mevcut ekip üyeliği belirler. Kendi kendinizi doğrulayamazsınız.",
+        "myTitle": "Doğrulayıcı sorumluluğunuz",
+        "none": "Şu anda herhangi bir sürücü belgesi doğrulayıcı sorumluluğunuz yok.",
+        "noTeams": "Kullanılabilir ekip yok",
+        "person": "Doğrulayıcı",
+        "revoked": "Doğrulayıcı sorumluluğu iptal edildi",
+        "revokeDescription": "Doğrulayıcı bu kapsamdaki kontrollere erişimini derhal kaybeder. Sorumluluğu geri yüklemek için yeni bir yetkilendirme gerekir.",
+        "revokeFailed": "Sorumluluk iptal edilemedi. Tekrar deneyin.",
+        "revokeTitle": "Doğrulayıcı sorumluluğu iptal edilsin mi?",
+        "saved": "Doğrulayıcı sorumluluğu kaydedildi",
+        "scope": "Sorumluluk",
+        "select": "Bir çalışan seçin",
+        "selected": "{teams} ekip, adı belirtilen {employees} çalışan",
+        "selectEmployees": "Çalışanları seçin",
+        "specific": "Seçilen ekipler ve çalışanlar",
+        "specificDescription": "Adı belirtilen çalışanları ve seçilen ekiplerin mevcut üyelerini içerir. Ekip değişiklikleri derhal geçerli olur.",
+        "title": "Sürücü belgesi doğrulayıcıları"
+      }
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1306,8 @@
     },
     "group": {
       "account": "Hesap",
-      "administration": "Yönetim",
       "data": "Veri",
-      "enterprise": "Kurumsal",
+      "integrations": "Entegrasyonlar",
       "notifications": "Bildirimler",
       "organization": "Kuruluş"
     },
@@ -1458,7 +1485,8 @@
         "invalidTimezone": "Bir saat dilimi seçin.",
         "kioskNotFound": "Bu kiosk bulunamadı.",
         "kioskRevoked": "Bu kiosk iptal edildi.",
-        "locationNotFound": "Bu kuruluşun etkin bir konumunu seçin."
+        "locationNotFound": "Bu kuruluşun etkin bir konumunu seçin.",
+        "offlineNeedsAdoption": "Çevrimdışı mod, bu kuruluşun henüz kullanmadığı koordineli saat komutlarına ihtiyaç duyar."
       },
       "fields": {
         "board": "Kimler içeride panosu",
@@ -1468,6 +1496,9 @@
         "locationPlaceholder": "Bir konum seçin",
         "name": "Ad",
         "namePlaceholder": "ör. Personel girişi",
+        "offlineMode": "Çevrimdışı mod",
+        "offlineModeDescription": "Kiosk, bağlantı olmadan da giriş-çıkış kaydetmeye devam eder. Yeniden bağlandığında giriş-çıkış kayıtları onaylanır ve PIN'leri kontrol edilir.",
+        "offlineModeUnavailable": "Çevrimdışı mod, bu kuruluşun henüz kullanmadığı koordineli saat komutlarına ihtiyaç duyar.",
         "timezone": "Saat dilimi",
         "timezoneDescription": "Bu kioskta kaydedilen giriş-çıkış kayıtları bu saat dilimini kullanır."
       },
@@ -1477,6 +1508,8 @@
       "loadFailed": "Kiosklar yüklenemedi.",
       "neverSeen": "Hiçbir zaman",
       "noLocations": "Önce bir konum oluşturun: her kiosk tek bir konuma aittir.",
+      "offlineOn": "Çevrimdışı mod açık",
+      "offlineOnNotInEffect": "Çevrimdışı mod açık, bu kuruluş için geçerli değil",
       "pairAgain": "Yeniden eşleştir",
       "pairFailed": "Yeni bir eşleştirme kodu oluşturulamadı",
       "pairingCodeLabel": "Eşleştirme kodu",
@@ -1486,6 +1519,46 @@
       "pairPairedDescription": "Cihaz belirteci yenilenir: eşleştirilmiş cihaz anında çalışmayı durdurur ve yeni kod ile tekrar eşleştirilmesi gerekir.",
       "pairTitle": "{name} yeniden eşleştirilsin mi?",
       "pairUnpairedDescription": "Yeni bir eşleştirme kodu öncekinin yerini alır.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Giriş yap",
+          "clockOut": "Çıkış yap",
+          "resumeBreak": "Devam et",
+          "startBreak": "Molaya başla"
+        },
+        "columns": {
+          "action": "İşlem",
+          "claimedAt": "Beyan edilen zaman",
+          "employee": "Çalışan",
+          "kiosk": "Kiosk",
+          "reason": "Neden",
+          "timeSource": "Zaman kaynağı"
+        },
+        "description": "Kioskun çevrimdışıyken kaydettiği ancak yeniden bağlandığında sisteme işlenmeyen giriş-çıkış kayıtları. Çalışana veya oturum açma hesabı olmayan çalışanların yöneticilerine bildirim gönderildi.",
+        "empty": "Reddedilen çevrimdışı giriş-çıkış kaydı yok.",
+        "reasons": {
+          "clockUntrusted": "Kiosk saatine güvenilmiyor",
+          "conflict": "Kaydedilmiş başka bir zamanla çakışıyor",
+          "contactUnverifiable": "Son bağlantı doğrulanamadı",
+          "holiday": "Zaman kaydı olmayan tatil",
+          "kioskRetired": "Kioskun yetkisi iptal edildi veya yeniden eşleştirildi",
+          "monthClosed": "Ay kapatıldı",
+          "noPin": "Kiosk PIN'i ayarlanmamış",
+          "notAdopted": "Çevrimdışı giriş/çıkış kuruluş tarafından kabul edilmiyor",
+          "notAssigned": "Konuma atanmamış",
+          "other": "Kabul edilemedi",
+          "outsideWindow": "Çok geç ulaştı",
+          "pinLocked": "PIN kilitlendi",
+          "pinUnchecked": "PIN kontrol edilemedi",
+          "wrongPin": "Yanlış PIN"
+        },
+        "timeSources": {
+          "deviceClock": "Cihaz saati",
+          "serverAnchor": "Sunucu saati"
+        },
+        "title": "Reddedilen çevrimdışı giriş/çıkışlar",
+        "unknownEmployee": "Çalışan değil"
+      },
       "revoke": "İptal et",
       "revokeConfirm": "Kiosku iptal et",
       "revoked": "Kiosk iptal edildi",
@@ -1493,6 +1566,7 @@
       "revokeFailed": "Kiosk iptal edilemedi",
       "revokeTitle": "{name} iptal edilsin mi?",
       "rotateConfirm": "Belirteci yenile ve tekrar eşleştir",
+      "rotateOfflineWarning": "Bu kioskun çevrimdışı modu açık. Kioskun çevrimdışıyken kaydettiği ve henüz gönderilmeyen giriş/çıkışlar yeniden bağlandığında reddedilir ve reddedilen çevrimdışı giriş/çıkışlar altında listelenir.",
       "save": "Kaydet",
       "saved": "Kiosk kaydedildi",
       "saveFailed": "Kiosk kaydedilemedi",
@@ -1517,6 +1591,7 @@
       "searchPlaceholder": "Paketleri veya lisansları ara...",
       "unknown": "Bilinmiyor"
     },
+    "loading": "Ayarlar yükleniyor",
     "locations": {
       "address": "Adres",
       "assignEmployee": "Çalışan Ata",
@@ -1627,6 +1702,55 @@
       "statusReady": "Hazır",
       "title": "Verilerim",
       "unavailable": "Bu kuruluştaki hesabınız için verileriniz mevcut değil."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Etkinlik",
+        "description": "Etkinliği inceleyin ve imzalı denetim dışa aktarımlarını yapılandırın",
+        "keysDescription": "Denetim dışa aktarımlarında kullanılan imzalama anahtarlarını yönetin",
+        "packagesDescription": "İmzalı denetim paketleri oluşturun ve inceleyin",
+        "title": "Denetim"
+      },
+      "chat-integrations": {
+        "description": "Slack, Microsoft Teams, Telegram ve Discord'u yapılandırın",
+        "title": "Sohbet Entegrasyonları"
+      },
+      "clocking": {
+        "automaticDescription": "Kesintisiz çalışma için otomatik çıkışı yapılandırın",
+        "description": "Takip, otomatik çıkış, hatırlatıcılar ve dönem gönderimlerini yapılandırın",
+        "remindersDescription": "Girişler, çıkışlar ve molalar için hatırlatıcıları yapılandırın",
+        "submissionsDescription": "Çalışanların çalışma dönemlerini inceleme için ne zaman göndereceğini yapılandırın",
+        "title": "Giriş/Çıkış",
+        "trackingDescription": "Kuruluşunuzun zaman takibi için kullanılan başlangıç tarihini belirleyin"
+      },
+      "developerAccess": {
+        "description": "API anahtarlarını ve webhook uç noktalarını yönetin",
+        "title": "Geliştirici Erişimi"
+      },
+      "domainBranding": {
+        "description": "Kuruluşunuzun özel alan adını ve markalamasını yapılandırın"
+      },
+      "email": {
+        "delivery": "İletim",
+        "description": "E-posta iletimini yapılandırın ve ileti şablonlarını özelleştirin",
+        "title": "E-posta"
+      },
+      "identityAccess": {
+        "description": "SSO, sosyal giriş, kullanıcı sağlama ve kuruluş erişimini yapılandırın",
+        "socialDescription": "Kuruluşunuz için mevcut sosyal giriş sağlayıcılarını yapılandırın",
+        "ssoDescription": "Kuruluşunuz için tek oturum açma sağlayıcılarını yönetin",
+        "title": "Kimlik ve Erişim"
+      },
+      "personnel-files": {
+        "description": "Özlük dosyası erişimini, süre sonu hatırlatıcılarını ve belge saklamayı yönetin"
+      },
+      "scheduled-exports": {
+        "description": "Yinelenen bordro, veri ve denetim dışa aktarımlarını planlayın"
+      },
+      "shiftPlanning": {
+        "description": "Vardiya şablonlarını ve karşılama hedeflerini yapılandırın",
+        "title": "Vardiya Planlama"
+      }
     },
     "notifications": {
       "approvals": "Onay bildirimleri",
@@ -1916,6 +2040,8 @@
         "name": "İsim",
         "namePlaceholder": "Proje adını girin",
         "noCustomer": "Müşteri yok",
+        "requiresTask": "Görev gerektir",
+        "requiresTaskHelp": "Bu projeye kaydedilen süre, projenin görevlerinden birini belirtmelidir. Yalnızca projenin açık bir görevi varken geçerlidir.",
         "status": "Durum"
       },
       "fromTemplate": {
@@ -1929,6 +2055,7 @@
         "reasonAdminOnly": "yalnızca kuruluş yöneticileri proje yöneticisi atayabilir",
         "reasonDeparted": "kuruluştan ayrıldı",
         "reasonRemoved": "artık mevcut değil",
+        "requiresTask": "Görev gerektirir",
         "skipped": "Kopyalanmadı: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2074,7 +2201,9 @@
           "name": "Ad",
           "namePlaceholder": "ör. Web sitesi yenileme",
           "nameRequired": "Bir şablon adı girin",
-          "noIcon": "Simge yok"
+          "noIcon": "Simge yok",
+          "requiresTask": "Görev gerektir",
+          "requiresTaskHelp": "Bu şablondan oluşturulan projeler bu ayarla başlar."
         },
         "icons": {
           "briefcase": "Evrak çantası",
@@ -2716,6 +2845,45 @@
         "title": "Vergi seyir defteri değildir"
       },
       "noDrivers": "Atanan sürücü yok",
+      "photos": {
+        "accessChanged": "Erişiminiz değişti. İzinlerinizi kontrol etmek için araç ayarlarını tekrar açın.",
+        "action": "Fotoğraflar",
+        "add": "Fotoğraf ekle",
+        "archived": "Bu araç arşivlendi. Fotoğraf eklemek veya kaldırmak için aracı geri yükleyin.",
+        "capacityChanged": "Galeri değişti. {count} fotoğraf alanı kaldı. Galeriyi tekrar açın ve daha az fotoğraf seçin.",
+        "description": "Bu araç için özel referans fotoğrafları. Tamamlanan yüklemeler ve kaldırma işlemleri anında kaydedilir.",
+        "empty": "Henüz fotoğraf yok.",
+        "expired": "Bu yüklemenin süresi doldu. Yüklemek için fotoğrafı tekrar seçin.",
+        "full": "Bu aracın 20 fotoğrafı var. Başka bir fotoğraf eklemeden önce bir fotoğrafı kaldırın.",
+        "gallery": "Araç fotoğrafları",
+        "imageNamed": "{name}, fotoğraf {number}",
+        "invalid": "Bu görsel okunamadı. Başka bir JPEG, PNG veya WebP fotoğrafı seçin.",
+        "limits": "JPEG, PNG veya WebP. Fotoğraf başına en fazla 10 MB, araç başına 20 fotoğraf.",
+        "loadFailed": "Fotoğraflar yüklenemedi. İletişim kutusunu kapatıp tekrar deneyin.",
+        "loading": "Fotoğraflar yükleniyor…",
+        "named": "{name} fotoğrafları",
+        "next": "Sonraki fotoğraf",
+        "position": "Fotoğraf {number} / {count}",
+        "previous": "Önceki fotoğraf",
+        "queued": "{name} yüklenmesi bekleniyor…",
+        "remove": "Fotoğrafı kaldır",
+        "removeConfirm": "Fotoğrafı kalıcı olarak kaldır",
+        "removeDescription": "Bu fotoğraf araç galerisinden kalıcı olarak kaldırılacak. Bu işlem geri alınamaz.",
+        "removeFailed": "Fotoğraf kaldırılamadı. Tekrar deneyin.",
+        "removeTitle": "Bu fotoğraf kalıcı olarak kaldırılsın mı?",
+        "removing": "Fotoğraf kaldırılıyor…",
+        "retry": "Tekrar dene",
+        "retryNamed": "{name} yeniden dene",
+        "saved": "{name} kaydedildi.",
+        "selectionTooLarge": "Bu seçim yüklenmedi. Bekleyen yüklemeler dahil {count} fotoğraf alanı kaldı.",
+        "tooLarge": "10 MB'tan büyük olmayan bir fotoğraf seçin.",
+        "unsupported": "JPEG, PNG veya WebP formatında bir fotoğraf seçin. HEIC ve diğer formatlar desteklenmez.",
+        "uploadFailed": "Fotoğraf yüklenemedi. Tekrar deneyin.",
+        "uploading": "{name} yükleniyor…",
+        "uploadResults": "Fotoğraf yükleme sonuçları",
+        "vehicleMissing": "Bu araç artık kuruluşunuzda mevcut değil.",
+        "viewNamed": "{name} için {number}. fotoğrafı görüntüle"
+      },
       "refusals": {
         "driverNotFound": "Atanan bir çalışan veya ekip artık mevcut değil. Sayfayı yeniden yükleyin.",
         "invalidChange": "Değişiklik kaydedilemedi. Sayfayı yeniden yükleyin ve tekrar deneyin.",
@@ -2739,7 +2907,6 @@
       "assignmentRemoved": "Atama kaldırıldı",
       "assignmentSaved": "Atama kaydedildi",
       "assignmentsDescription": "Sorulan çalışanlar mesai kaydı yaparken araç kullanımını kaydedebilir. Araç kullanımı beklenen çalışanlara her seferinde sorulur ve ayrıntılar tamamlanana kadar çalışmaları işaretlenir. Mesai kaydı yapması hiçbir zaman engellenmez. En belirgin atama geçerli olur: bir çalışanın kendi ataması birincil ekibininkine, bir ekibinki ise tüm kuruluşunkine göre önceliklidir.",
-      "description": "Kullandığı aracı ve kilometre sayacı değerlerini kaydetmesi kimden istenir",
       "enabled": "Araç kullanımını kaydet",
       "enabledDescription": "Bunu kapatmak, araç kullanımının sorulmasını ve eksik sürüş ayrıntılarının işaretlenmesini durdurur. Zaten kaydedilmiş olan araç kullanımı görünür kalır ve dışa aktarmalarda yer alır.",
       "error": {

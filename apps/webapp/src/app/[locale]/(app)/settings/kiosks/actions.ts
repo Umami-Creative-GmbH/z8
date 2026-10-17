@@ -6,6 +6,12 @@ import { location } from "@/db/schema";
 import { withAuditTrail } from "@/lib/audit-trail";
 import { requireOrganizationAdmin } from "@/lib/auth/current-organization-actor";
 import { runRefusalAction } from "@/lib/effect/refusal-action";
+import type { KioskTimeSource } from "@/lib/time-tracking/clocking/types";
+import type {
+	KioskFrozenAction,
+	KioskFrozenRefusalReason,
+} from "@/lib/time-tracking/kiosk/frozen-command";
+import { listKioskFrozenRefusals } from "@/lib/time-tracking/kiosk/frozen-refusal-store";
 import {
 	type KioskSettingsActionResult,
 	KioskSettingsRefusal,
@@ -18,6 +24,7 @@ import {
 	revokeKiosk,
 	updateKiosk,
 } from "@/lib/time-tracking/kiosk/kiosk-store";
+import { readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { isUuid } from "@/lib/validations/uuid";
 
@@ -28,6 +35,8 @@ export type KioskData = {
 	locationName: string;
 	timezone: string;
 	boardEnabled: boolean;
+	/** The stored switch (#1287); it takes effect only while the organization is adopted. */
+	offlineModeEnabled: boolean;
 	status: KioskStatus;
 	/** ISO instants. */
 	pairingCodeExpiresAt: string | null;
@@ -43,6 +52,30 @@ export type KioskAdminData = {
 	locations: KioskLocationOption[];
 	/** The organization's zone, the default zone of a new kiosk (locations carry no zone). */
 	organizationTimezone: string;
+	/**
+	 * Whether the organization is adopted (`append` admission, ADR 0002): only
+	 * then can a kiosk's offline mode be switched on (#1287).
+	 */
+	organizationAdopted: boolean;
+	/** Refused offline kiosk commands (#1290), newest first, for owners and admins only. */
+	refusals: KioskRefusalData[];
+};
+
+/** A frozen kiosk clock command Z8 refused on arrival (#1290). */
+export type KioskRefusalData = {
+	id: string;
+	kioskId: string;
+	kioskName: string;
+	/** Null when the command named no employee of the organization. */
+	employeeName: string | null;
+	action: KioskFrozenAction;
+	/** ISO instants. */
+	claimedAt: string;
+	/** The zone the kiosk recorded the command in: the claimed instant is shown in it. */
+	timezone: string;
+	timeSource: KioskTimeSource;
+	reason: KioskFrozenRefusalReason;
+	refusedAt: string;
 };
 
 export type IssuedPairingCodeData = {
@@ -61,6 +94,7 @@ export type UpdateKioskInput = {
 	locationId?: string;
 	timezone?: string;
 	boardEnabled?: boolean;
+	offlineModeEnabled?: boolean;
 };
 
 const SETTINGS_PATH = "/settings/kiosks";
@@ -70,7 +104,7 @@ export async function getKioskAdminDataAction(): Promise<
 > {
 	return runRefusalAction("kiosk.adminData", KioskSettingsRefusal, async (db) => {
 		const { organizationId } = await requireKioskAdmin();
-		const [kiosks, locations, organizationTimezone] = await Promise.all([
+		const [kiosks, locations, organizationTimezone, admission, refusals] = await Promise.all([
 			listKiosks(db, organizationId),
 			db
 				.select({ id: location.id, name: location.name })
@@ -78,6 +112,8 @@ export async function getKioskAdminDataAction(): Promise<
 				.where(and(eq(location.organizationId, organizationId), eq(location.isActive, true)))
 				.orderBy(asc(location.name)),
 			loadOrganizationTimezone(db, organizationId),
+			readAppendAdmission(db, organizationId),
+			listKioskFrozenRefusals(db, { organizationId }),
 		]);
 		return {
 			kiosks: kiosks.map((row) => ({
@@ -87,6 +123,7 @@ export async function getKioskAdminDataAction(): Promise<
 				locationName: row.locationName,
 				timezone: row.timezone,
 				boardEnabled: row.boardEnabled,
+				offlineModeEnabled: row.offlineModeEnabled,
 				status: row.status,
 				pairingCodeExpiresAt: row.pairingCodeExpiresAt?.toISOString() ?? null,
 				pairedAt: row.pairedAt?.toISOString() ?? null,
@@ -95,6 +132,12 @@ export async function getKioskAdminDataAction(): Promise<
 			})),
 			locations,
 			organizationTimezone,
+			organizationAdopted: admission === "append",
+			refusals: refusals.map((row) => ({
+				...row,
+				claimedAt: row.claimedAt.toISOString(),
+				refusedAt: row.refusedAt.toISOString(),
+			})),
 		};
 	});
 }
@@ -138,6 +181,9 @@ export async function updateKioskAction(
 		if (input?.boardEnabled !== undefined && typeof input.boardEnabled !== "boolean") {
 			throw new KioskSettingsRefusal("invalid_selection", "The board switch must be on or off.");
 		}
+		if (input?.offlineModeEnabled !== undefined && typeof input.offlineModeEnabled !== "boolean") {
+			throw new KioskSettingsRefusal("invalid_selection", "Offline mode must be on or off.");
+		}
 		await withAuditTrail((audit) =>
 			db.transaction((tx) =>
 				updateKiosk(tx, audit, {
@@ -149,6 +195,7 @@ export async function updateKioskAction(
 						locationId,
 						timezone: input.timezone,
 						boardEnabled: input.boardEnabled,
+						offlineModeEnabled: input.offlineModeEnabled,
 					},
 				}),
 			),

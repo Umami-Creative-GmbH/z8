@@ -202,15 +202,12 @@
       }
     },
     "discord": {
-      "description": "Konfigurera Discord-aviseringar för din organisation",
       "title": "Discord"
     },
     "slack": {
-      "description": "Konfigurera Slack-aviseringar för din organisation",
       "title": "Slack"
     },
     "teamsNotifications": {
-      "description": "Konfigurera Microsoft Teams-aviseringar för din organisation",
       "title": "Microsoft Teams"
     },
     "telegram": {

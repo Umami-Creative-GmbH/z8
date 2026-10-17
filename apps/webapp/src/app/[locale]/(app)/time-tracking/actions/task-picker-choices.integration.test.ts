@@ -325,6 +325,7 @@ describe("task choices of the web booking surfaces on PostgreSQL", () => {
 						state: "done",
 						projectId: ids.project,
 					},
+					requiresTask: false,
 				},
 			});
 		});
@@ -337,7 +338,7 @@ describe("task choices of the web booking surfaces on PostgreSQL", () => {
 
 			expect(result).toEqual({
 				success: true,
-				data: { projectId: null, tasks: [], currentTask: null },
+				data: { projectId: null, tasks: [], currentTask: null, requiresTask: false },
 			});
 		});
 

@@ -24,6 +24,32 @@ const {
 	updateEnterpriseIdentityProviderActionMock: vi.fn(),
 }));
 
+vi.mock("next/navigation", async () => {
+	const { useSyncExternalStore } = await import("react");
+	const listeners = new Set<() => void>();
+	const replaceState = window.history.replaceState.bind(window.history);
+	window.history.replaceState = (
+		...args: Parameters<History["replaceState"]>
+	) => {
+		replaceState(...args);
+		for (const listener of listeners) listener();
+	};
+	return {
+		useSearchParams: () =>
+			new URLSearchParams(
+				useSyncExternalStore(
+					(listener) => {
+						listeners.add(listener);
+						return () => {
+							listeners.delete(listener);
+						};
+					},
+					() => window.location.search,
+				),
+			),
+	};
+});
+
 const germanCopy: Record<string, string> = {
 	"settings.enterprise.identity.hero.eyebrow": "Unternehmensidentität",
 	"settings.enterprise.identity.hero.title": "Operative Befehlscheckliste",
@@ -236,8 +262,6 @@ function renderDomainsTabs() {
 		<DomainsAndBrandingTabs
 			initialDomains={[]}
 			initialBranding={branding}
-			initialProviders={[]}
-			initialSocialOAuthConfigs={[]}
 			organizationId="org_123"
 			defaultUrls={{
 				canonical: "https://acme.ui.z8-time.app",
@@ -252,6 +276,7 @@ function setInput(label: string, value: string) {
 }
 
 beforeEach(() => {
+	window.history.replaceState(null, "", "/en/settings/enterprise/domains");
 	vi.clearAllMocks();
 	updateEnterpriseIdentityProviderActionMock.mockResolvedValue(
 		configuredSetup(),
@@ -557,23 +582,29 @@ describe("DomainsAndBrandingTabs behavior", () => {
 		expect(screen.getByText("https://org_123.ui.z8-time.app")).toBeTruthy();
 	});
 
-	it("renders a usable guided setup link in the SSO tab", () => {
+	it("offers only domain and branding tabs and preserves the selected view in the URL", async () => {
 		renderDomainsTabs();
-
-		const ssoTab = screen.getByRole("tab", { name: "SSO-Anbieter" });
-		fireEvent.pointerDown(ssoTab, { button: 0, ctrlKey: false });
-		fireEvent.keyDown(ssoTab, { key: "Enter" });
-		fireEvent.click(ssoTab);
-
-		expect(
-			screen
-				.getByRole("link", { name: "Geführte Einrichtung" })
-				.getAttribute("href"),
-		).toBe("/settings/enterprise/identity-setup");
-		expect(
-			screen.getByText(
-				"Configure SSO, SCIM, access policy, and activation checks in one guarded flow.",
-			),
-		).toBeTruthy();
+		expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
+			"Custom Domain",
+			"Branding",
+		]);
+		expect(screen.queryByRole("tab", { name: "SSO-Anbieter" })).toBeNull();
+		fireEvent.click(screen.getByRole("tab", { name: "Branding" }));
+		await waitFor(() =>
+			expect(screen.getByRole("tabpanel").textContent).toBe("Branding form"),
+		);
+		expect(new URLSearchParams(window.location.search).get("tab")).toBe(
+			"branding",
+		);
+	});
+	it("supports a direct link to the branding tab", () => {
+		window.history.replaceState(
+			null,
+			"",
+			"/en/settings/enterprise/domains?tab=branding",
+		);
+		renderDomainsTabs();
+		expect(screen.getByRole("tabpanel").textContent).toBe("Branding form");
+		expect(screen.queryByText("Domain management")).toBeNull();
 	});
 });

@@ -504,7 +504,6 @@
       "title": "Conformità ArbZG"
     },
     "customDomains": {
-      "description": "Configura dominio personalizzato, branding e SSO per la tua organizzazione",
       "title": "Dominio e branding"
     },
     "customers": {
@@ -846,9 +845,38 @@
       },
       "title": "Esportazione dati"
     },
-    "emailConfig": {
-      "description": "Configura un provider email personalizzato per le email dell'organizzazione",
-      "title": "Configurazione email"
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Assegna responsabilità di verificatore",
+        "all": "Tutti i dipendenti di questa organizzazione",
+        "allDescription": "La responsabilità segue l'attuale appartenenza all'organizzazione. I verificatori non possono mai verificare se stessi.",
+        "attribution": "Concessa da {actor} alle {time}",
+        "description": "Assegna la responsabilità separatamente dalla registrazione del conducente, dalla gestione gerarchica e dall'accesso al fascicolo del personale. La gestione di queste assegnazioni non consente la lettura dei registri di ispezione. L'auto-verifica è sempre vietata.",
+        "editor": "Ambito del verificatore",
+        "empty": "Nessuna responsabilità di verifica assegnata",
+        "expiry": "Scade alle {time}",
+        "history": "Cronologia delle responsabilità",
+        "historyEntry": "Assegnata da {grantor} il {granted}; revocata da {revoker} il {revoked}",
+        "loadFailed": "Impossibile caricare le responsabilità del verificatore",
+        "myAll": "Sei responsabile dei controlli nell'intera organizzazione. Non puoi verificare te stesso.",
+        "mySelected": "Sei responsabile di {teams} team selezionati e di {employees} dipendenti specificati. L'appartenenza attuale al team determina l'accesso. Non puoi verificare te stesso.",
+        "myTitle": "La tua responsabilità di verificatore",
+        "none": "Al momento non hai alcuna responsabilità di verifica delle patenti di guida.",
+        "noTeams": "Nessun team disponibile",
+        "person": "Verificatore",
+        "revoked": "Responsabilità del verificatore revocata",
+        "revokeDescription": "Il verificatore perde immediatamente l'accesso ai controlli in questo ambito. Per ripristinare la responsabilità è necessaria una nuova assegnazione.",
+        "revokeFailed": "Impossibile revocare la responsabilità. Riprova.",
+        "revokeTitle": "Revocare la responsabilità del verificatore?",
+        "saved": "Responsabilità del verificatore salvata",
+        "scope": "Responsabilità",
+        "select": "Seleziona un dipendente",
+        "selected": "{teams} team, {employees} dipendenti specificati",
+        "selectEmployees": "Seleziona dipendenti",
+        "specific": "Team e dipendenti selezionati",
+        "specificDescription": "Include i dipendenti specificati e i membri attuali dei team selezionati. Le modifiche ai team hanno effetto immediato.",
+        "title": "Verificatori delle patenti di guida"
+      }
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1306,8 @@
     },
     "group": {
       "account": "Account",
-      "administration": "Amministrazione",
       "data": "Dati",
-      "enterprise": "Enterprise",
+      "integrations": "Integrazioni",
       "notifications": "Notifiche",
       "organization": "Organizzazione"
     },
@@ -1458,7 +1485,8 @@
         "invalidTimezone": "Scegli un fuso orario.",
         "kioskNotFound": "Questo chiosco non è stato trovato.",
         "kioskRevoked": "Questo chiosco è stato revocato.",
-        "locationNotFound": "Scegli una sede attiva di questa organizzazione."
+        "locationNotFound": "Scegli una sede attiva di questa organizzazione.",
+        "offlineNeedsAdoption": "La modalità offline richiede comandi di timbratura coordinati, che questa organizzazione non utilizza ancora."
       },
       "fields": {
         "board": "Tabellone presenze",
@@ -1468,6 +1496,9 @@
         "locationPlaceholder": "Scegli una sede",
         "name": "Nome",
         "namePlaceholder": "es. Ingresso del personale",
+        "offlineMode": "Modalità offline",
+        "offlineModeDescription": "Il chiosco continua a timbrare senza connessione. Le timbrature vengono confermate e i relativi PIN verificati una volta ristabilita la connessione.",
+        "offlineModeUnavailable": "La modalità offline richiede comandi di timbratura coordinati, che questa organizzazione non utilizza ancora.",
         "timezone": "Fuso orario",
         "timezoneDescription": "Le timbrature registrate su questo chiosco utilizzano questo fuso orario."
       },
@@ -1477,6 +1508,8 @@
       "loadFailed": "Impossibile caricare i chioschi.",
       "neverSeen": "Mai",
       "noLocations": "Crea prima una sede: ogni chiosco appartiene a una sede.",
+      "offlineOn": "Modalità offline attiva",
+      "offlineOnNotInEffect": "Modalità offline attiva, non in vigore per questa organizzazione",
       "pairAgain": "Associa di nuovo",
       "pairFailed": "Impossibile generare un nuovo codice di associazione",
       "pairingCodeLabel": "Codice di associazione",
@@ -1486,6 +1519,46 @@
       "pairPairedDescription": "Il token del dispositivo viene rigenerato: il dispositivo associato smette immediatamente di funzionare e deve essere nuovamente associato con il nuovo codice.",
       "pairTitle": "Vuoi associare di nuovo {name}?",
       "pairUnpairedDescription": "Un nuovo codice di associazione sostituisce quello precedente.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Timbra entrata",
+          "clockOut": "Timbra uscita",
+          "resumeBreak": "Riprendi",
+          "startBreak": "Inizia pausa"
+        },
+        "columns": {
+          "action": "Azione",
+          "claimedAt": "Orario dichiarato",
+          "employee": "Dipendente",
+          "kiosk": "Chiosco",
+          "reason": "Motivo",
+          "timeSource": "Origine oraria"
+        },
+        "description": "Timbrature salvate su un chiosco mentre era offline che non sono state registrate dopo la riconnessione. Il dipendente, o i responsabili di un dipendente privo di accesso, sono stati informati.",
+        "empty": "Nessuna timbratura offline è stata rifiutata.",
+        "reasons": {
+          "clockUntrusted": "Orologio del chiosco non attendibile",
+          "conflict": "In conflitto con un altro orario registrato",
+          "contactUnverifiable": "Impossibile confermare l'ultima connessione",
+          "holiday": "Festività senza registrazione dell'orario",
+          "kioskRetired": "Chiosco revocato o associato nuovamente",
+          "monthClosed": "Mese chiuso",
+          "noPin": "Nessun PIN del chiosco impostato",
+          "notAdopted": "Timbratura offline non accettata dall'organizzazione",
+          "notAssigned": "Non assegnato alla sede",
+          "other": "Non è stato possibile accettare",
+          "outsideWindow": "Arrivato troppo tardi",
+          "pinLocked": "PIN bloccato",
+          "pinUnchecked": "Impossibile verificare il PIN",
+          "wrongPin": "PIN errato"
+        },
+        "timeSources": {
+          "deviceClock": "Orologio del dispositivo",
+          "serverAnchor": "Ora del server"
+        },
+        "title": "Timbrature offline rifiutate",
+        "unknownEmployee": "Non è un dipendente"
+      },
       "revoke": "Revoca",
       "revokeConfirm": "Revoca kiosk",
       "revoked": "Kiosk revocato",
@@ -1493,6 +1566,7 @@
       "revokeFailed": "Impossibile revocare il kiosk",
       "revokeTitle": "Revocare {name}?",
       "rotateConfirm": "Ruota il token e associa di nuovo",
+      "rotateOfflineWarning": "Questo chiosco ha la modalità offline attiva. Le timbrature salvate offline e non ancora inviate vengono rifiutate al momento della riconnessione e inserite nell'elenco delle timbrature offline rifiutate.",
       "save": "Salva",
       "saved": "Kiosk salvato",
       "saveFailed": "Impossibile salvare il kiosk",
@@ -1517,6 +1591,7 @@
       "searchPlaceholder": "Cerca pacchetti o licenze...",
       "unknown": "Sconosciuto"
     },
+    "loading": "Caricamento impostazioni",
     "locations": {
       "address": "Indirizzo",
       "assignEmployee": "Assegna dipendente",
@@ -1627,6 +1702,55 @@
       "statusReady": "Pronto",
       "title": "I miei dati",
       "unavailable": "I miei dati non sono disponibili per il tuo account in questa organizzazione."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Attività",
+        "description": "Esamina l'attività e configura le esportazioni di audit firmate",
+        "keysDescription": "Gestisci le chiavi di firma utilizzate dalle esportazioni di audit",
+        "packagesDescription": "Genera ed esamina i pacchetti di audit firmati",
+        "title": "Audit"
+      },
+      "chat-integrations": {
+        "description": "Configura Slack, Microsoft Teams, Telegram e Discord",
+        "title": "Integrazioni chat"
+      },
+      "clocking": {
+        "automaticDescription": "Configura l'uscita automatica per il lavoro ininterrotto",
+        "description": "Configura il monitoraggio, l'uscita automatica, i promemoria e l'invio dei periodi",
+        "remindersDescription": "Configura i promemoria per entrate, uscite e pause",
+        "submissionsDescription": "Configura quando i dipendenti inviano i propri periodi di lavoro per la revisione",
+        "title": "Timbrature",
+        "trackingDescription": "Imposta la data di inizio utilizzata per il monitoraggio del tempo della tua organizzazione"
+      },
+      "developerAccess": {
+        "description": "Gestisci le chiavi API e gli endpoint webhook",
+        "title": "Accesso sviluppatore"
+      },
+      "domainBranding": {
+        "description": "Configura il dominio personalizzato e il branding della tua organizzazione"
+      },
+      "email": {
+        "delivery": "Recapito",
+        "description": "Configura l'invio delle e-mail e personalizza i modelli di messaggio",
+        "title": "E-mail"
+      },
+      "identityAccess": {
+        "description": "Configura SSO, accesso social, provisioning e accesso all'organizzazione",
+        "socialDescription": "Configura i provider di accesso social disponibili per la tua organizzazione",
+        "ssoDescription": "Gestisci i provider di single sign-on per la tua organizzazione",
+        "title": "Identità e accesso"
+      },
+      "personnel-files": {
+        "description": "Gestisci l'accesso ai fascicoli del personale, i promemoria di scadenza e la conservazione dei documenti"
+      },
+      "scheduled-exports": {
+        "description": "Pianifica esportazioni periodiche di buste paga, dati e audit"
+      },
+      "shiftPlanning": {
+        "description": "Configura i modelli di turno e gli obiettivi di copertura",
+        "title": "Pianificazione turni"
+      }
     },
     "notifications": {
       "approvals": "Notifiche di approvazione",
@@ -1916,6 +2040,8 @@
         "name": "Nome",
         "namePlaceholder": "Inserisci il nome del progetto",
         "noCustomer": "Nessun cliente",
+        "requiresTask": "Richiedi un'attività",
+        "requiresTaskHelp": "Le ore registrate per questo progetto devono indicare una delle sue attività. Si applica solo finché il progetto ha un'attività aperta.",
         "status": "Stato"
       },
       "fromTemplate": {
@@ -1929,6 +2055,7 @@
         "reasonAdminOnly": "solo gli amministratori dell'organizzazione assegnano i project manager",
         "reasonDeparted": "ha lasciato l'organizzazione",
         "reasonRemoved": "non esiste più",
+        "requiresTask": "Richiede un'attività",
         "skipped": "Non copiati: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2074,7 +2201,9 @@
           "name": "Nome",
           "namePlaceholder": "ad es., Rilancio del sito web",
           "nameRequired": "Inserisci un nome per il modello",
-          "noIcon": "Nessuna icona"
+          "noIcon": "Nessuna icona",
+          "requiresTask": "Richiedi un'attività",
+          "requiresTaskHelp": "I progetti creati da questo modello partono con questa impostazione."
         },
         "icons": {
           "briefcase": "Valigetta",
@@ -2716,6 +2845,45 @@
         "title": "Non valido come registro fiscale"
       },
       "noDrivers": "Nessun conducente assegnato",
+      "photos": {
+        "accessChanged": "Il tuo accesso è cambiato. Riapri le impostazioni del veicolo per verificare i tuoi permessi.",
+        "action": "Foto",
+        "add": "Aggiungi foto",
+        "archived": "Questo veicolo è archiviato. Ripristinalo per aggiungere o rimuovere foto.",
+        "capacityChanged": "La galleria è cambiata. Rimangono {count} spazi per le foto. Riaprila e scegli meno foto.",
+        "description": "Foto di riferimento private per questo veicolo. I caricamenti e le rimozioni completati vengono salvati immediatamente.",
+        "empty": "Ancora nessuna foto.",
+        "expired": "Questo caricamento è scaduto. Seleziona nuovamente la foto per caricarla.",
+        "full": "Questo veicolo ha 20 foto. Rimuovi una foto prima di aggiungerne un'altra.",
+        "gallery": "Foto del veicolo",
+        "imageNamed": "{name}, foto {number}",
+        "invalid": "Impossibile leggere questa immagine. Scegli un'altra foto in formato JPEG, PNG o WebP.",
+        "limits": "JPEG, PNG o WebP. Fino a 10 MB per foto, 20 foto per veicolo.",
+        "loadFailed": "Impossibile caricare le foto. Chiudi la finestra di dialogo e riprova.",
+        "loading": "Caricamento foto in corso…",
+        "named": "Foto di {name}",
+        "next": "Foto successiva",
+        "position": "Foto {number} di {count}",
+        "previous": "Foto precedente",
+        "queued": "In attesa di caricare {name}…",
+        "remove": "Rimuovi foto",
+        "removeConfirm": "Rimuovi definitivamente la foto",
+        "removeDescription": "Questa foto verrà rimossa definitivamente dalla galleria del veicolo. L'operazione non può essere annullata.",
+        "removeFailed": "Impossibile rimuovere la foto. Riprova.",
+        "removeTitle": "Rimuovere definitivamente questa foto?",
+        "removing": "Rimozione foto…",
+        "retry": "Riprova",
+        "retryNamed": "Riprova {name}",
+        "saved": "{name} salvato.",
+        "selectionTooLarge": "Questa selezione non è stata caricata. Rimangono {count} spazi per le foto, inclusi i caricamenti in sospeso.",
+        "tooLarge": "Scegli una foto non superiore a 10 MB.",
+        "unsupported": "Scegli una foto in formato JPEG, PNG o WebP. Il formato HEIC e altri non sono supportati.",
+        "uploadFailed": "Impossibile caricare la foto. Riprova.",
+        "uploading": "Caricamento di {name}…",
+        "uploadResults": "Risultati del caricamento foto",
+        "vehicleMissing": "Questo veicolo non è più disponibile nella tua organizzazione.",
+        "viewNamed": "Visualizza foto {number} di {name}"
+      },
       "refusals": {
         "driverNotFound": "Un dipendente o team assegnato non esiste più. Ricarica la pagina.",
         "invalidChange": "Impossibile salvare la modifica. Ricarica la pagina e riprova.",
@@ -2739,7 +2907,6 @@
       "assignmentRemoved": "Assegnazione rimossa",
       "assignmentSaved": "Assegnazione salvata",
       "assignmentsDescription": "I dipendenti a cui viene richiesto possono registrare l'uso del veicolo quando timbrano. Ai dipendenti per cui l'uso del veicolo è previsto viene richiesto ogni volta e il loro lavoro viene contrassegnato finché i dettagli non sono completi. A nessuno viene mai impedito di timbrare. L'assegnazione più specifica ha la priorità: quella individuale del dipendente prevale su quella del suo team principale, e quella di un team prevale su quella dell'intera organizzazione.",
-      "description": "A chi viene richiesto di registrare il veicolo guidato e le relative letture del contachilometri",
       "enabled": "Registra uso veicolo",
       "enabledDescription": "Disattivando questa opzione, non verrà più richiesto l'uso del veicolo né verranno contrassegnati i dettagli di guida mancanti. L'uso del veicolo già registrato rimarrà visibile e incluso nelle esportazioni.",
       "error": {

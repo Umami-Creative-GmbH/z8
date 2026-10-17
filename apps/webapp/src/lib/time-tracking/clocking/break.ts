@@ -232,6 +232,8 @@ export async function takeBreak(
 		endpoints: BreakEndpoints;
 		/** The closed work's vehicle use, decided from the live work's (#1122). */
 		closingVehicleUse?: ClosingVehicleUse;
+		/** The source evidence of the entry at the break's start; the writer's by default (#885). */
+		closeEntrySource?: { ipAddress: string | null; deviceInfo: string };
 	},
 ): Promise<BreakClosure> {
 	const { plan, target, endpoints } = input;
@@ -256,6 +258,7 @@ export async function takeBreak(
 		close: endpoints.close,
 		resume: endpoints.resume,
 		...(input.closingVehicleUse ? { closingVehicleUse: input.closingVehicleUse } : {}),
+		...(input.closeEntrySource ? { closeEntrySource: input.closeEntrySource } : {}),
 	});
 	const { close } = executed.result;
 	return {
@@ -346,6 +349,8 @@ async function takeLegacyBreak(
 			capture: endpoints.close.capture,
 			entrySource: { ipAddress: request.ipAddress, deviceInfo: request.userAgent },
 			...(input.closingVehicleUse ? { closingVehicleUse: input.closingVehicleUse } : {}),
+			// A break never asks for a task: it marks a missing required one (#884).
+			marksMissingTask: true,
 		},
 		// The break's clock-out gets a fresh server identity.
 		randomUUID(),

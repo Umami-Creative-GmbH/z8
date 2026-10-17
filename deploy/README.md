@@ -238,6 +238,46 @@ Locally: `pnpm --dir apps/webapp work-records:attach-missing [--organization-id 
 - It is safe to rerun. Until it has run, the payroll export and the payroll workspace attach the
   missing records of their organization on first use.
 
+### After Creating the Kiosk Seat Prices: Reconcile Kiosk Seats (once)
+
+Kiosk-only employees (spec #886) are billed as cheaper kiosk seats on a second Stripe price, but
+only once both kiosk price IDs are configured. Until then every seat is a full seat. To turn kiosk
+seats on:
+
+1. Create the monthly and yearly kiosk seat prices in Stripe (a manual step).
+2. Set `STRIPE_PRICE_KIOSK_MONTHLY_ID` and `STRIPE_PRICE_KIOSK_YEARLY_ID` on the webapp **and**
+   the worker, and restart both. If only one of them has the IDs, the two keep switching
+   subscriptions between kiosk and full seats, and every switch creates prorations. Never unset
+   the IDs after this.
+3. Run the reconcile once, from the worker image of the same release, with the worker's
+   environment:
+
+```bash
+docker run --rm \
+  --entrypoint tsx \
+  --env-file "$PRODUCTION_WORKER_ENV_FILE" \
+  --network "$PRODUCTION_WORKER_NETWORK" \
+  "$WORKER_IMAGE" \
+  --import ./src/worker-preload.mjs scripts/reconcile-kiosk-seats.ts
+```
+
+With compose: `docker compose -f docker-compose.prod.yml run --rm --entrypoint tsx worker --import ./src/worker-preload.mjs scripts/reconcile-kiosk-seats.ts`.
+Locally: `pnpm --dir apps/webapp billing:reconcile-kiosk-seats [--organization-id <org-id>] [--json]`.
+
+- It runs billing seat sync for every organization with a Stripe subscription that has not
+  ended (`canceled` and `incomplete_expired` are left out), one at a time. Kiosk-only
+  employees move from full seats to kiosk seats. The kiosk seat item is added, the full seat
+  quantity drops, and Stripe prorates the credit. The seat audit gets a `kiosk_seat_reconciled`
+  row with the new split, so seat history prices kiosk seats from then on.
+- It refuses, and makes no Stripe call, unless `BILLING_ENABLED=true` and both kiosk price IDs
+  are set.
+- The report lists per organization `updated` or `unchanged` with its full and kiosk seats, or
+  `FAILED` with the reason. One organization's failure does not stop the others; the run then
+  exits non-zero.
+- It is safe to rerun: an organization that is already billed at its split is left alone. Without
+  it, the hourly seat reconciliation moves the subscriptions within the hour, but nobody gets a
+  report.
+
 ## Services
 
 | Service | Port | Description |

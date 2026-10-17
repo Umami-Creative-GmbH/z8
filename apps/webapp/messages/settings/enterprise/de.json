@@ -198,7 +198,6 @@
         "deleteDescription": "Sind Sie sicher, dass Sie \"{domain}\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden. Benutzer können sich dann nicht mehr über diese benutzerdefinierte Domain anmelden.",
         "deleteFailed": "Fehler beim Löschen der Domain",
         "deleteTitle": "Domain löschen",
-        "description": "Konfigurieren Sie die benutzerdefinierte Anmeldedomain, das Branding und die SSO-Anbieter Ihrer Organisation.",
         "dnsPropagation": "DNS-Propagierung",
         "dnsPropagationDescription": "DNS-Änderungen können bis zu 48 Stunden dauern, bis sie vollständig propagiert sind, obwohl dies oft innerhalb weniger Minuten geschieht. Sie können auf \"Überprüfen\" klicken, sobald Sie den TXT-Eintrag hinzugefügt haben.",
         "domain": "Domain",
@@ -212,8 +211,6 @@
         "empty": "Noch keine benutzerdefinierte Domain konfiguriert.",
         "enabledAuthMethods": "Aktivierte Authentifizierungsmethoden",
         "guidedSetup": {
-          "action": "Geführte Einrichtung",
-          "description": "Konfigurieren Sie SSO, SCIM, Zugriffsrichtlinien und Aktivierungsprüfungen in einem geführten Ablauf.",
           "title": "Geführte Einrichtung"
         },
         "keepExistingSecretKey": "Leer lassen, um den vorhandenen geheimen Schlüssel beizubehalten",
@@ -238,7 +235,6 @@
           "pending": "Überprüfung ausstehend",
           "verified": "Verifiziert"
         },
-        "title": "Benutzerdefinierte Domain & Branding",
         "tokenExpired": "Token abgelaufen",
         "tokenExpiredDescription": "Das Verifizierungs-Token ist abgelaufen. Bitte generieren Sie ein neues Token.",
         "tokenExpires": "Token läuft ab: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Verwalten Sie SSO, SCIM-Bereitstellung, Domain-Beschränkungen, Einladungsrichtlinien und Standardrollen für diese Organisation.",
-      "title": "Enterprise-Identitätseinrichtung"
+      "description": "Verwalten Sie SSO, SCIM-Bereitstellung, Domain-Beschränkungen, Einladungsrichtlinien und Standardrollen für diese Organisation."
     }
   }
 }

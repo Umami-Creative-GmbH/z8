@@ -15,6 +15,8 @@ const mocks = vi.hoisted(() => ({
 	skipNotificationsSetup: vi.fn(),
 	toastError: vi.fn(),
 	toastSuccess: vi.fn(),
+	usePushNotifications: vi.fn(),
+	requestPermission: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -28,12 +30,7 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/hooks/use-push-notifications", () => ({
-	usePushNotifications: () => ({
-		isLoading: false,
-		isSupported: false,
-		permission: "default",
-		requestPermission: vi.fn(),
-	}),
+	usePushNotifications: mocks.usePushNotifications,
 }));
 
 vi.mock("@/navigation", () => ({
@@ -62,6 +59,44 @@ function deferred<T>() {
 describe("NotificationsPage busy state", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mocks.usePushNotifications.mockReturnValue({
+			isLoading: false,
+			isSupported: false,
+			permission: "default",
+			requestPermission: mocks.requestPermission,
+		});
+	});
+
+	it("shows granted push permission as a disabled Enabled button", () => {
+		mocks.usePushNotifications.mockReturnValue({
+			isLoading: false,
+			isSupported: true,
+			permission: "granted",
+			requestPermission: mocks.requestPermission,
+		});
+		render(<NotificationsPage />);
+
+		const enabled = screen.getByRole("button", { name: "Enabled" });
+		expect(enabled).toHaveProperty("disabled", true);
+		fireEvent.click(enabled);
+		expect(mocks.requestPermission).not.toHaveBeenCalled();
+		expect(screen.queryByRole("button", { name: "Enable" })).toBeNull();
+	});
+
+	it("keeps the Enable action available before permission is granted", async () => {
+		mocks.usePushNotifications.mockReturnValue({
+			isLoading: false,
+			isSupported: true,
+			permission: "default",
+			requestPermission: mocks.requestPermission,
+		});
+		mocks.requestPermission.mockResolvedValue(true);
+		render(<NotificationsPage />);
+
+		const enable = screen.getByRole("button", { name: "Enable" });
+		expect(enable).toHaveProperty("disabled", false);
+		fireEvent.click(enable);
+		await waitFor(() => expect(mocks.requestPermission).toHaveBeenCalledOnce());
 	});
 
 	it("keeps submit disabled after successful configuration navigation", async () => {

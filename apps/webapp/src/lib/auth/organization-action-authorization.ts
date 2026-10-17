@@ -6,7 +6,8 @@ import { getRequestSession } from "@/lib/auth/request-session";
 import { AuthorizationError } from "@/lib/effect/errors";
 import { runtime } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
+import { withMfaDatabase } from "@/lib/organization-mfa/database-context";
+import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
 import { hasOrganizationRole } from "./organization-role";
 
 export function requireActiveOrganizationActionActor(input: {
@@ -25,21 +26,23 @@ export function requireActiveOrganizationActionActor(input: {
 				resource: input.resource,
 				action: input.action,
 			});
-		const ssoAllowed = yield* Effect.tryPromise({
-			try: async () => {
-				const session = await getRequestSession();
+		const dbService = yield* DatabaseService;
+		const ssoAllowed = yield* dbService
+			.query("organizationAuthentication.check", async () => {
+				const session = await withMfaDatabase(dbService.db, () =>
+					getRequestSession(),
+				);
 				return (
 					session?.user.id === input.userId &&
-					(await canAccessOrganizationWithSso(
+					(await canAccessOrganization(
 						session.session,
 						input.organizationId,
+						dbService.db,
 					))
 				);
-			},
-			catch: authorizationError,
-		});
+			})
+			.pipe(Effect.mapError(authorizationError));
 		if (!ssoAllowed) return yield* Effect.fail(authorizationError());
-		const dbService = yield* DatabaseService;
 		const [membership, employeeRecord] = yield* Effect.all([
 			dbService.query("getOrganizationActionActor:membership", async () => {
 				return await dbService.db.query.member.findFirst({

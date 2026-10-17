@@ -178,6 +178,63 @@ describe("automatic clock-out work transactions", () => {
 				);
 				expect(await commands().close(candidate)).toMatchObject({ status: "replayed" });
 			});
+			// Nobody is present to pick a task (#884, Projects ADR 0002): marked, not refused (#1295).
+			it("closes work without a task on a project that requires one and marks it", async () => {
+				const { candidate, owner } = await seed(admission);
+				const projectId = randomUUID();
+				await fixture.pool.query(
+					`insert into project (id, organization_id, name, status, is_active, requires_task, created_by, updated_at)
+					 values ($1, $2, 'Requires a task', 'active', true, true, $3, now())`,
+					[projectId, candidate.organizationId, owner.userId],
+				);
+				await fixture.pool.query(
+					`insert into project_task (id, organization_id, project_id, name, state, created_by, updated_at)
+					 values ($1, $2, $3, 'Design', 'open', $4, now())`,
+					[randomUUID(), candidate.organizationId, projectId, owner.userId],
+				);
+				await fixture.pool.query("update work_period set project_id = $2 where id = $1", [
+					candidate.workPeriodId,
+					projectId,
+				]);
+
+				expect(await commands().close(candidate)).toMatchObject({ status: "closed" });
+				const state = await snapshot(candidate.organizationId);
+				expect(state.periods).toMatchObject([
+					{
+						id: candidate.workPeriodId,
+						project_id: projectId,
+						task_id: null,
+						is_active: false,
+						missing_task: true,
+					},
+				]);
+				const allocations = await fixture.pool.query(
+					`select a.missing_task from time_record_allocation a
+					 join work_period p on p.canonical_record_id = a.record_id and p.organization_id = a.organization_id
+					 where p.id = $1 and a.allocation_kind = 'project'`,
+					[candidate.workPeriodId],
+				);
+				expect(allocations.rows).toEqual([{ missing_task: true }]);
+			});
+			it("closes work on a requiring project without an open task unmarked (#1295)", async () => {
+				const { candidate, owner } = await seed(admission);
+				const projectId = randomUUID();
+				await fixture.pool.query(
+					`insert into project (id, organization_id, name, status, is_active, requires_task, created_by, updated_at)
+					 values ($1, $2, 'Requirement lapsed', 'active', true, true, $3, now())`,
+					[projectId, candidate.organizationId, owner.userId],
+				);
+				await fixture.pool.query("update work_period set project_id = $2 where id = $1", [
+					candidate.workPeriodId,
+					projectId,
+				]);
+
+				expect(await commands().close(candidate)).toMatchObject({ status: "closed" });
+				const state = await snapshot(candidate.organizationId);
+				expect(state.periods).toMatchObject([
+					{ id: candidate.workPeriodId, project_id: projectId, missing_task: false },
+				]);
+			});
 			it("ends work with a forgotten break in progress at the break's start and clears it (#861)", async () => {
 				const { candidate, person } = await seed(admission);
 				const breakStart = parseInstant("2026-10-24T22:00:00Z");

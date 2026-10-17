@@ -504,7 +504,6 @@
       "title": "Conformitate ArbZG"
     },
     "customDomains": {
-      "description": "Configurați domeniul personalizat, brandingul și SSO pentru organizația dvs.",
       "title": "Domeniu și branding"
     },
     "customers": {
@@ -846,9 +845,38 @@
       },
       "title": "Export de date"
     },
-    "emailConfig": {
-      "description": "Configurați un furnizor de e-mail personalizat pentru e-mailurile organizației",
-      "title": "Configurare e-mail"
+    "drivingLicence": {
+      "verifiers": {
+        "add": "Acordă responsabilitatea de verificator",
+        "all": "Toți angajații din această organizație",
+        "allDescription": "Responsabilitatea urmează calitatea actuală de membru al organizației. Verificatorii nu se pot verifica niciodată pe ei înșiși.",
+        "attribution": "Acordat de {actor} la {time}",
+        "description": "Acordați responsabilitatea separat de înscrierea șoferului, managementul direct și accesul la dosarul de personal. Gestionarea acestor acordări nu permite citirea înregistrărilor de inspecție. Autoverificarea este întotdeauna interzisă.",
+        "editor": "Domeniu de competență al verificatorului",
+        "empty": "Nicio responsabilitate de verificator atribuită",
+        "expiry": "Expiră la {time}",
+        "history": "Istoric responsabilități",
+        "historyEntry": "Acordată de {grantor} la {granted}; revocată de {revoker} la {revoked}",
+        "loadFailed": "Nu s-au putut încărca responsabilitățile de verificator",
+        "myAll": "Sunteți responsabil pentru verificări în întreaga organizație. Nu vă puteți verifica pe dvs. înșivă.",
+        "mySelected": "Sunteți responsabil pentru {teams} echipe selectate și {employees} angajați nominalizați. Apartenența curentă la echipă determină accesul. Nu vă puteți verifica pe dvs. înșivă.",
+        "myTitle": "Responsabilitatea dvs. de verificator",
+        "none": "Nu aveți nicio responsabilitate curentă de verificare a permiselor de conducere.",
+        "noTeams": "Nicio echipă disponibilă",
+        "person": "Verificator",
+        "revoked": "Responsabilitatea de verificator a fost revocată",
+        "revokeDescription": "Verificatorul pierde imediat accesul la verificările din acest domeniu. Este necesară o nouă acordare pentru a restabili responsabilitatea.",
+        "revokeFailed": "Nu s-a putut revoca responsabilitatea. Încercați din nou.",
+        "revokeTitle": "Revocați responsabilitatea de verificator?",
+        "saved": "Responsabilitatea de verificator a fost salvată",
+        "scope": "Responsabilitate",
+        "select": "Selectați un angajat",
+        "selected": "{teams} echipe, {employees} angajați nominalizați",
+        "selectEmployees": "Selectați angajați",
+        "specific": "Echipe și angajați selectați",
+        "specificDescription": "Include angajații nominalizați și membrii actuali ai echipelor selectate. Modificările aduse echipelor intră în vigoare imediat.",
+        "title": "Verificatori permise de conducere"
+      }
     },
     "emailTemplates": {
       "actions": {
@@ -1278,9 +1306,8 @@
     },
     "group": {
       "account": "Cont",
-      "administration": "Administrare",
       "data": "Date",
-      "enterprise": "Enterprise",
+      "integrations": "Integrări",
       "notifications": "Notificări",
       "organization": "Organizație"
     },
@@ -1458,7 +1485,8 @@
         "invalidTimezone": "Alegeți un fus orar.",
         "kioskNotFound": "Acest chioșc nu a fost găsit.",
         "kioskRevoked": "Acest chioșc este revocat.",
-        "locationNotFound": "Alegeți o locație activă a acestei organizații."
+        "locationNotFound": "Alegeți o locație activă a acestei organizații.",
+        "offlineNeedsAdoption": "Modul offline necesită comenzi de pontare coordonate, pe care această organizație nu le utilizează încă."
       },
       "fields": {
         "board": "Panou de prezență",
@@ -1468,6 +1496,9 @@
         "locationPlaceholder": "Alegeți o locație",
         "name": "Nume",
         "namePlaceholder": "de ex. Intrare personal",
+        "offlineMode": "Mod offline",
+        "offlineModeDescription": "Kiosk-ul continuă pontarea fără conexiune. Pontările sale sunt confirmate, iar codurile PIN verificate, odată ce se reconectează.",
+        "offlineModeUnavailable": "Modul offline necesită comenzi de pontare coordonate, pe care această organizație nu le utilizează încă.",
         "timezone": "Fus orar",
         "timezoneDescription": "Evenimentele de pontaj înregistrate la acest chioșc utilizează acest fus orar."
       },
@@ -1477,6 +1508,8 @@
       "loadFailed": "Chioșcurile nu au putut fi încărcate.",
       "neverSeen": "Niciodată",
       "noLocations": "Creați mai întâi o locație: fiecare chioșc aparține unei locații.",
+      "offlineOn": "Mod offline activat",
+      "offlineOnNotInEffect": "Mod offline activat, nu se aplică pentru această organizație",
       "pairAgain": "Asociați din nou",
       "pairFailed": "Nu s-a putut emite un nou cod de asociere",
       "pairingCodeLabel": "Cod de asociere",
@@ -1486,6 +1519,46 @@
       "pairPairedDescription": "Tokenul dispozitivului este rotit: dispozitivul asociat încetează să funcționeze imediat și trebuie asociat din nou cu noul cod.",
       "pairTitle": "Asociați din nou {name}?",
       "pairUnpairedDescription": "Un nou cod de asociere îl înlocuiește pe cel anterior.",
+      "refusals": {
+        "actions": {
+          "clockIn": "Pontare intrare",
+          "clockOut": "Pontare ieșire",
+          "resumeBreak": "Reluare",
+          "startBreak": "Începere pauză"
+        },
+        "columns": {
+          "action": "Acțiune",
+          "claimedAt": "Timp declarat",
+          "employee": "Angajat",
+          "kiosk": "Kiosk",
+          "reason": "Motiv",
+          "timeSource": "Sursă timp"
+        },
+        "description": "Pontări salvate pe un kiosk în timp ce era offline, care nu au fost înregistrate la reconectare. Angajatul sau managerii unui angajat fără autentificare au fost notificați.",
+        "empty": "Nicio pontare offline nu a fost refuzată.",
+        "reasons": {
+          "clockUntrusted": "Ceasul kiosk-ului nu este de încredere",
+          "conflict": "Conflict cu alt timp înregistrat",
+          "contactUnverifiable": "Ultima conexiune nu a putut fi confirmată",
+          "holiday": "Sărbătoare fără înregistrare a timpului",
+          "kioskRetired": "Kiosk revocat sau asociat din nou",
+          "monthClosed": "Lună închisă",
+          "noPin": "Niciun PIN de kiosk setat",
+          "notAdopted": "Pontarea offline nu este acceptată de organizație",
+          "notAssigned": "Neatribuit locației",
+          "other": "Nu a putut fi acceptat",
+          "outsideWindow": "A sosit prea târziu",
+          "pinLocked": "PIN blocat",
+          "pinUnchecked": "PIN-ul nu a putut fi verificat",
+          "wrongPin": "PIN incorect"
+        },
+        "timeSources": {
+          "deviceClock": "Ceasul dispozitivului",
+          "serverAnchor": "Ora serverului"
+        },
+        "title": "Pontări offline refuzate",
+        "unknownEmployee": "Nu este angajat"
+      },
       "revoke": "Revocați",
       "revokeConfirm": "Revocați chioșcul",
       "revoked": "Chioșc revocat",
@@ -1493,6 +1566,7 @@
       "revokeFailed": "Chioșcul nu a putut fi revocat",
       "revokeTitle": "Revocați {name}?",
       "rotateConfirm": "Rotiți tokenul și asociați din nou",
+      "rotateOfflineWarning": "Acest chioșc are modul offline activat. Pontările salvate în modul offline și netrimise încă sunt refuzate la reconectare și listate la pontări offline refuzate.",
       "save": "Salvați",
       "saved": "Chioșc salvat",
       "saveFailed": "Chioșcul nu a putut fi salvat",
@@ -1517,6 +1591,7 @@
       "searchPlaceholder": "Căutați pachete sau licențe...",
       "unknown": "Necunoscut"
     },
+    "loading": "Se încarcă setările",
     "locations": {
       "address": "Adresă",
       "assignEmployee": "Atribuie angajat",
@@ -1627,6 +1702,55 @@
       "statusReady": "Gata",
       "title": "Datele mele",
       "unavailable": "Datele mele nu sunt disponibile pentru contul dvs. în această organizație."
+    },
+    "navigation": {
+      "audit": {
+        "activity": "Activitate",
+        "description": "Examinați activitatea și configurați exporturile de audit semnate",
+        "keysDescription": "Gestionați cheile de semnare utilizate de exporturile de audit",
+        "packagesDescription": "Generați și examinați pachete de audit semnate",
+        "title": "Audit"
+      },
+      "chat-integrations": {
+        "description": "Configurați Slack, Microsoft Teams, Telegram și Discord",
+        "title": "Integrări de chat"
+      },
+      "clocking": {
+        "automaticDescription": "Configurați pontarea automată la ieșire pentru activitatea neîntreruptă",
+        "description": "Configurați monitorizarea, pontarea automată la ieșire, mementourile și trimiterea pontajelor periodice",
+        "remindersDescription": "Configurați mementouri pentru pontările la intrare, la ieșire și pauze",
+        "submissionsDescription": "Configurați când trimit angajații perioadele de lucru spre examinare",
+        "title": "Pontaj",
+        "trackingDescription": "Setați data de început utilizată pentru monitorizarea timpului organizației dvs."
+      },
+      "developerAccess": {
+        "description": "Gestionați cheile API și endpoint-urile webhook",
+        "title": "Acces pentru dezvoltatori"
+      },
+      "domainBranding": {
+        "description": "Configurați domeniul personalizat și elementele de branding ale organizației dvs."
+      },
+      "email": {
+        "delivery": "Livrare",
+        "description": "Configurați livrarea e-mailurilor și personalizați șabloanele de mesaje",
+        "title": "E-mail"
+      },
+      "identityAccess": {
+        "description": "Configurați SSO, autentificarea prin rețele sociale, provizionarea și accesul la organizație",
+        "socialDescription": "Configurați furnizorii de autentificare prin rețele sociale disponibili pentru organizația dvs.",
+        "ssoDescription": "Gestionați furnizorii de autentificare unică (SSO) pentru organizația dvs.",
+        "title": "Identitate și acces"
+      },
+      "personnel-files": {
+        "description": "Gestionați accesul la dosarele de personal, mementourile de expirare și păstrarea documentelor"
+      },
+      "scheduled-exports": {
+        "description": "Programați exporturi recurente pentru salarizare, date și audit"
+      },
+      "shiftPlanning": {
+        "description": "Configurați șabloanele de ture și obiectivele de acoperire",
+        "title": "Planificarea turelor"
+      }
     },
     "notifications": {
       "approvals": "Notificări de aprobare",
@@ -1916,6 +2040,8 @@
         "name": "Nume",
         "namePlaceholder": "Introdu numele proiectului",
         "noCustomer": "Fără client",
+        "requiresTask": "Solicită o sarcină",
+        "requiresTaskHelp": "Timpul înregistrat pentru acest proiect trebuie să indice una dintre sarcinile sale. Se aplică doar cât timp proiectul are o sarcină deschisă.",
         "status": "Stare"
       },
       "fromTemplate": {
@@ -1929,6 +2055,7 @@
         "reasonAdminOnly": "doar administratorii organizației atribuie manageri de proiect",
         "reasonDeparted": "a părăsit organizația",
         "reasonRemoved": "nu mai există",
+        "requiresTask": "Necesită o sarcină",
         "skipped": "Nu s-au copiat: {members}",
         "skippedMember": "{name}: {reason}",
         "skippedMemberReason": "{name} ({reason})",
@@ -2074,7 +2201,9 @@
           "name": "Nume",
           "namePlaceholder": "de ex., Relansare site web",
           "nameRequired": "Introduceți un nume de șablon",
-          "noIcon": "Fără pictogramă"
+          "noIcon": "Fără pictogramă",
+          "requiresTask": "Solicită o sarcină",
+          "requiresTaskHelp": "Proiectele create din acest șablon pornesc cu această setare."
         },
         "icons": {
           "briefcase": "Servietă",
@@ -2716,6 +2845,45 @@
         "title": "Nu este foaie de parcurs fiscală"
       },
       "noDrivers": "Niciun șofer asociat",
+      "photos": {
+        "accessChanged": "Accesul dvs. s-a modificat. Redeschideți setările vehiculului pentru a vă verifica permisiunile.",
+        "action": "Fotografii",
+        "add": "Adăugați o fotografie",
+        "archived": "Acest vehicul este arhivat. Restaurați-l pentru a adăuga sau elimina fotografii.",
+        "capacityChanged": "Galeria s-a modificat. Au mai rămas {count} locuri pentru fotografii. Redeschideți-o și alegeți mai puține fotografii.",
+        "description": "Fotografii de referință private pentru acest vehicul. Încărcările și eliminările finalizate se salvează imediat.",
+        "empty": "Nicio fotografie încă.",
+        "expired": "Această încărcare a expirat. Selectați din nou fotografia pentru a o încărca.",
+        "full": "Acest vehicul are 20 de fotografii. Eliminați o fotografie înainte de a adăuga alta.",
+        "gallery": "Fotografii vehicul",
+        "imageNamed": "{name}, fotografia {number}",
+        "invalid": "Această imagine nu a putut fi citită. Alegeți o altă fotografie JPEG, PNG sau WebP.",
+        "limits": "JPEG, PNG sau WebP. Până la 10 MB per fotografie, 20 de fotografii per vehicul.",
+        "loadFailed": "Fotografiile nu au putut fi încărcate. Închideți caseta de dialog și încercați din nou.",
+        "loading": "Se încarcă fotografiile…",
+        "named": "Fotografii cu {name}",
+        "next": "Fotografia următoare",
+        "position": "Fotografia {number} din {count}",
+        "previous": "Fotografia anterioară",
+        "queued": "Se așteaptă încărcarea {name}…",
+        "remove": "Eliminați fotografia",
+        "removeConfirm": "Elimină definitiv fotografia",
+        "removeDescription": "Această fotografie va fi eliminată definitiv din galeria vehiculului. Această acțiune nu poate fi anulată.",
+        "removeFailed": "Fotografia nu a putut fi eliminată. Încearcă din nou.",
+        "removeTitle": "Elimini definitiv această fotografie?",
+        "removing": "Se elimină fotografia…",
+        "retry": "Reîncearcă",
+        "retryNamed": "Reîncearcă {name}",
+        "saved": "S-a salvat {name}.",
+        "selectionTooLarge": "Această selecție nu a fost încărcată. Au mai rămas {count} locuri pentru fotografii, inclusiv încărcările în așteptare.",
+        "tooLarge": "Alege o fotografie de maximum 10 MB.",
+        "unsupported": "Alege o fotografie JPEG, PNG sau WebP. HEIC și alte formate nu sunt acceptate.",
+        "uploadFailed": "Fotografia nu a putut fi încărcată. Încearcă din nou.",
+        "uploading": "Se încarcă {name}…",
+        "uploadResults": "Rezultate încărcare fotografii",
+        "vehicleMissing": "Acest vehicul nu mai este disponibil în organizația ta.",
+        "viewNamed": "Vizualizează fotografia {number} din {name}"
+      },
       "refusals": {
         "driverNotFound": "Un angajat asociat sau o echipă asociată nu mai există. Reîncărcați pagina.",
         "invalidChange": "Modificarea nu a putut fi salvată. Reîncărcați pagina și încercați din nou.",
@@ -2739,7 +2907,6 @@
       "assignmentRemoved": "Atribuire eliminată",
       "assignmentSaved": "Atribuire salvată",
       "assignmentsDescription": "Angajații întrebați pot înregistra utilizarea vehiculului la pontare. Angajații pentru care este preconizată utilizarea vehiculului sunt întrebați de fiecare dată, iar activitatea lor este marcată până la completarea detaliilor. Nimeni nu este împiedicat vreodată să ponteze. Cea mai specifică atribuire are prioritate: cea a angajatului față de cea a echipei principale, iar cea a echipei față de cea a întregii organizații.",
-      "description": "Cine este întrebat pentru a înregistra vehiculul condus și valorile kilometrajului",
       "enabled": "Înregistrare utilizare vehicul",
       "enabledDescription": "Dezactivarea acestei opțiuni oprește solicitarea utilizării vehiculului și semnalarea detaliilor de conducere lipsă. Utilizarea vehiculelor deja înregistrată rămâne vizibilă și în exporturi.",
       "error": {

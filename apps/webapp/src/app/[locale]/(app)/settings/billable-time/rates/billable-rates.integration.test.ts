@@ -19,7 +19,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -43,10 +45,15 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
@@ -54,13 +61,21 @@ vi.mock("@/lib/logger", () => ({
 		warn: () => {},
 		info: () => {},
 		debug: () => {},
-		child: () => ({ error: () => {}, warn: () => {}, info: () => {}, debug: () => {} }),
+		child: () => ({
+			error: () => {},
+			warn: () => {},
+			info: () => {},
+			debug: () => {},
+		}),
 	}),
 }));
 
-const { endBillableRate, getBillableRateHistory, setBillableRate } = await import("./actions");
+const { endBillableRate, getBillableRateHistory, setBillableRate } =
+	await import("./actions");
 const { updateBillableCurrency } = await import("../actions");
-const { getApplicableRate } = await import("@/lib/billable-time/billable-rates");
+const { getApplicableRate } = await import(
+	"@/lib/billable-time/billable-rates"
+);
 const { db } = await import("@/db");
 
 const ids = {
@@ -79,7 +94,12 @@ const ids = {
 	projectWithoutCustomer: "89800000-0000-4000-8000-000000000022",
 	foreignProject: "89800000-0000-4000-8000-000000000023",
 } as const;
-const users = [ids.ownerUser, ids.adminUser, ids.memberUser, ids.otherOwnerUser];
+const users = [
+	ids.ownerUser,
+	ids.adminUser,
+	ids.memberUser,
+	ids.otherOwnerUser,
+];
 
 const employeeRate = { level: "employee", employeeId: ids.employee } as const;
 const customerRate = { level: "customer", customerId: ids.customer } as const;
@@ -95,7 +115,9 @@ function workOn(day: string, projectId: string | null = ids.project) {
 	return {
 		employeeId: ids.employee,
 		projectId,
-		startedAt: Temporal.PlainDateTime.from(`${day}T09:00`).toZonedDateTime("+02:00").toInstant(),
+		startedAt: Temporal.PlainDateTime.from(`${day}T09:00`)
+			.toZonedDateTime("+02:00")
+			.toInstant(),
 		startOffsetMinutes: 120,
 	};
 }
@@ -219,7 +241,11 @@ describe("billable rates on PostgreSQL", () => {
 
 	describe("rate periods", () => {
 		it("closes the previous open rate when a rate is added from a date", async () => {
-			await setBillableRate({ target: employeeRate, effectiveFrom: "2026-01-01", rate: "80" });
+			await setBillableRate({
+				target: employeeRate,
+				effectiveFrom: "2026-01-01",
+				rate: "80",
+			});
 
 			const result = await setBillableRate({
 				target: employeeRate,
@@ -231,65 +257,124 @@ describe("billable rates on PostgreSQL", () => {
 				success: true,
 				data: {
 					periods: [
-						{ effectiveFrom: "2026-07-01", effectiveTo: null, hourlyRate: "85.50" },
-						{ effectiveFrom: "2026-01-01", effectiveTo: "2026-07-01", hourlyRate: "80.00" },
+						{
+							effectiveFrom: "2026-07-01",
+							effectiveTo: null,
+							hourlyRate: "85.50",
+						},
+						{
+							effectiveFrom: "2026-01-01",
+							effectiveTo: "2026-07-01",
+							hourlyRate: "80.00",
+						},
 					],
 				},
 			});
-			await expect(getBillableRateHistory({ target: employeeRate })).resolves.toMatchObject({
+			await expect(
+				getBillableRateHistory({ target: employeeRate }),
+			).resolves.toMatchObject({
 				success: true,
-				data: { currency: "EUR", periods: [{ hourlyRate: "85.50" }, { hourlyRate: "80.00" }] },
+				data: {
+					currency: "EUR",
+					periods: [{ hourlyRate: "85.50" }, { hourlyRate: "80.00" }],
+				},
 			});
 		});
 
 		it("lets a backdated rate reprice work recorded before it", async () => {
-			await setBillableRate({ target: projectRate, effectiveFrom: "2026-06-01", rate: "100" });
-			await expect(getApplicableRate(db, ids.organization, workOn("2026-03-10"))).resolves.toEqual({
+			await setBillableRate({
+				target: projectRate,
+				effectiveFrom: "2026-06-01",
+				rate: "100",
+			});
+			await expect(
+				getApplicableRate(db, ids.organization, workOn("2026-03-10")),
+			).resolves.toEqual({
 				kind: "unpriced",
 			});
 
-			await setBillableRate({ target: projectRate, effectiveFrom: "2026-03-01", rate: "95" });
+			await setBillableRate({
+				target: projectRate,
+				effectiveFrom: "2026-03-01",
+				rate: "95",
+			});
 
 			await expect(
 				getApplicableRate(db, ids.organization, workOn("2026-03-10")),
-			).resolves.toMatchObject({ kind: "priced", rate: BigInt(9500), level: "project" });
+			).resolves.toMatchObject({
+				kind: "priced",
+				rate: BigInt(9500),
+				level: "project",
+			});
 			await expect(
 				getApplicableRate(db, ids.organization, workOn("2026-06-10")),
 			).resolves.toMatchObject({ rate: BigInt(10000) });
 		});
 
 		it("ends a rate from a date, leaving later work unpriced", async () => {
-			await setBillableRate({ target: employeeRate, effectiveFrom: "2026-01-01", rate: "80" });
+			await setBillableRate({
+				target: employeeRate,
+				effectiveFrom: "2026-01-01",
+				rate: "80",
+			});
 
 			await expect(
 				endBillableRate({ target: employeeRate, effectiveFrom: "2026-05-01" }),
 			).resolves.toMatchObject({
 				success: true,
-				data: { periods: [{ effectiveFrom: "2026-01-01", effectiveTo: "2026-05-01" }] },
+				data: {
+					periods: [{ effectiveFrom: "2026-01-01", effectiveTo: "2026-05-01" }],
+				},
 			});
-			await expect(getApplicableRate(db, ids.organization, workOn("2026-05-02"))).resolves.toEqual({
+			await expect(
+				getApplicableRate(db, ids.organization, workOn("2026-05-02")),
+			).resolves.toEqual({
 				kind: "unpriced",
 			});
 		});
 
 		it("refuses an invalid rate or date", async () => {
 			await expect(
-				setBillableRate({ target: employeeRate, effectiveFrom: "2026-01-01", rate: "0" }),
+				setBillableRate({
+					target: employeeRate,
+					effectiveFrom: "2026-01-01",
+					rate: "0",
+				}),
 			).resolves.toMatchObject({ success: false, code: "ValidationError" });
 			await expect(
-				setBillableRate({ target: employeeRate, effectiveFrom: "2026-02-30", rate: "80" }),
+				setBillableRate({
+					target: employeeRate,
+					effectiveFrom: "2026-02-30",
+					rate: "80",
+				}),
 			).resolves.toMatchObject({ success: false, code: "ValidationError" });
 			await expect(
-				setBillableRate({ target: { level: "employee" }, effectiveFrom: "2026-01-01", rate: "80" }),
+				setBillableRate({
+					target: { level: "employee" },
+					effectiveFrom: "2026-01-01",
+					rate: "80",
+				}),
 			).resolves.toMatchObject({ success: false, code: "ValidationError" });
 		});
 	});
 
 	describe("rate levels", () => {
 		it("resolves the most specific level with a rate in effect", async () => {
-			await setBillableRate({ target: employeeRate, effectiveFrom: "2026-01-01", rate: "80" });
-			await setBillableRate({ target: customerRate, effectiveFrom: "2026-01-01", rate: "90" });
-			await setBillableRate({ target: projectRate, effectiveFrom: "2026-01-01", rate: "100" });
+			await setBillableRate({
+				target: employeeRate,
+				effectiveFrom: "2026-01-01",
+				rate: "80",
+			});
+			await setBillableRate({
+				target: customerRate,
+				effectiveFrom: "2026-01-01",
+				rate: "90",
+			});
+			await setBillableRate({
+				target: projectRate,
+				effectiveFrom: "2026-01-01",
+				rate: "100",
+			});
 			await setBillableRate({
 				target: employeeProjectRate,
 				effectiveFrom: "2026-04-01",
@@ -301,15 +386,30 @@ describe("billable rates on PostgreSQL", () => {
 			).resolves.toMatchObject({ rate: BigInt(10000), level: "project" });
 			await expect(
 				getApplicableRate(db, ids.organization, workOn("2026-04-01")),
-			).resolves.toMatchObject({ rate: BigInt(11000), level: "employee_project" });
+			).resolves.toMatchObject({
+				rate: BigInt(11000),
+				level: "employee_project",
+			});
 		});
 
 		it("never resolves a customer rate for work on a project without a customer", async () => {
-			await setBillableRate({ target: employeeRate, effectiveFrom: "2026-01-01", rate: "80" });
-			await setBillableRate({ target: customerRate, effectiveFrom: "2026-01-01", rate: "90" });
+			await setBillableRate({
+				target: employeeRate,
+				effectiveFrom: "2026-01-01",
+				rate: "80",
+			});
+			await setBillableRate({
+				target: customerRate,
+				effectiveFrom: "2026-01-01",
+				rate: "90",
+			});
 
 			await expect(
-				getApplicableRate(db, ids.organization, workOn("2026-03-10", ids.projectWithoutCustomer)),
+				getApplicableRate(
+					db,
+					ids.organization,
+					workOn("2026-03-10", ids.projectWithoutCustomer),
+				),
 			).resolves.toMatchObject({ rate: BigInt(8000), level: "employee" });
 			await expect(
 				getApplicableRate(db, ids.organization, workOn("2026-03-10")),
@@ -332,13 +432,23 @@ describe("billable rates on PostgreSQL", () => {
 					admin.query(
 						`insert into billable_rate (organization_id, level, employee_id, project_id, customer_id, hourly_rate, effective_from, effective_to)
 					 values ($1, $2, $3, $4, $5, 90, $6, $7)`,
-						[ids.organization, level, employeeId, projectId, customerId, from, to],
+						[
+							ids.organization,
+							level,
+							employeeId,
+							projectId,
+							customerId,
+							from,
+							to,
+						],
 					);
 				await insert("2026-01-01", "2026-06-01");
 				// Adjacent half-open periods are fine.
 				await insert("2026-06-01", null);
 
-				await expect(insert("2026-05-31", "2026-06-01")).rejects.toMatchObject({ code: "23P01" });
+				await expect(insert("2026-05-31", "2026-06-01")).rejects.toMatchObject({
+					code: "23P01",
+				});
 			},
 		);
 
@@ -355,12 +465,31 @@ describe("billable rates on PostgreSQL", () => {
 
 	describe("audit trail", () => {
 		it("records every change with actor, level, target, old and new value and effective date", async () => {
-			await setBillableRate({ target: customerRate, effectiveFrom: "2026-06-01", rate: "90" });
-			await setBillableRate({ target: customerRate, effectiveFrom: "2026-02-01", rate: "85" });
-			await setBillableRate({ target: customerRate, effectiveFrom: "2026-08-01", rate: "95" });
-			await endBillableRate({ target: customerRate, effectiveFrom: "2026-10-01" });
+			await setBillableRate({
+				target: customerRate,
+				effectiveFrom: "2026-06-01",
+				rate: "90",
+			});
+			await setBillableRate({
+				target: customerRate,
+				effectiveFrom: "2026-02-01",
+				rate: "85",
+			});
+			await setBillableRate({
+				target: customerRate,
+				effectiveFrom: "2026-08-01",
+				rate: "95",
+			});
+			await endBillableRate({
+				target: customerRate,
+				effectiveFrom: "2026-10-01",
+			});
 			// No change, no entry.
-			await setBillableRate({ target: customerRate, effectiveFrom: "2026-08-15", rate: "95" });
+			await setBillableRate({
+				target: customerRate,
+				effectiveFrom: "2026-08-15",
+				rate: "95",
+			});
 
 			const entries = await auditEntries();
 			expect(entries).toHaveLength(4);
@@ -403,7 +532,11 @@ describe("billable rates on PostgreSQL", () => {
 		});
 
 		it("links employee rate entries to the employee", async () => {
-			await setBillableRate({ target: employeeRate, effectiveFrom: "2026-01-01", rate: "80" });
+			await setBillableRate({
+				target: employeeRate,
+				effectiveFrom: "2026-01-01",
+				rate: "80",
+			});
 
 			expect(await auditEntries()).toEqual([
 				expect.objectContaining({ employee_id: ids.employee }),
@@ -415,14 +548,24 @@ describe("billable rates on PostgreSQL", () => {
 		it("lets owners and admins read and write, and refuses members", async () => {
 			actAs(ids.ownerUser);
 			await expect(
-				setBillableRate({ target: employeeRate, effectiveFrom: "2026-01-01", rate: "80" }),
+				setBillableRate({
+					target: employeeRate,
+					effectiveFrom: "2026-01-01",
+					rate: "80",
+				}),
 			).resolves.toMatchObject({ success: true });
 
 			actAs(ids.memberUser);
 			await expect(
-				setBillableRate({ target: employeeRate, effectiveFrom: "2026-02-01", rate: "99" }),
+				setBillableRate({
+					target: employeeRate,
+					effectiveFrom: "2026-02-01",
+					rate: "99",
+				}),
 			).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
-			await expect(getBillableRateHistory({ target: employeeRate })).resolves.toMatchObject({
+			await expect(
+				getBillableRateHistory({ target: employeeRate }),
+			).resolves.toMatchObject({
 				success: false,
 				code: "AuthorizationError",
 			});
@@ -436,7 +579,11 @@ describe("billable rates on PostgreSQL", () => {
 				{ level: "employee", employeeId: ids.foreignEmployee },
 				{ level: "project", projectId: ids.foreignProject },
 				{ level: "customer", customerId: ids.foreignCustomer },
-				{ level: "employee_project", employeeId: ids.employee, projectId: ids.foreignProject },
+				{
+					level: "employee_project",
+					employeeId: ids.employee,
+					projectId: ids.foreignProject,
+				},
 			]) {
 				await expect(
 					setBillableRate({ target, effectiveFrom: "2026-01-01", rate: "80" }),
@@ -462,26 +609,41 @@ describe("billable rates on PostgreSQL", () => {
 		});
 
 		it("keeps rates read-only while Billable Time is off", async () => {
-			await admin.query("update organization set billable_time_enabled = false where id = $1", [
-				ids.organization,
-			]);
+			await admin.query(
+				"update organization set billable_time_enabled = false where id = $1",
+				[ids.organization],
+			);
 
 			await expect(
-				setBillableRate({ target: employeeRate, effectiveFrom: "2026-01-01", rate: "80" }),
+				setBillableRate({
+					target: employeeRate,
+					effectiveFrom: "2026-01-01",
+					rate: "80",
+				}),
 			).resolves.toMatchObject({ success: false, code: "ValidationError" });
-			await expect(getBillableRateHistory({ target: employeeRate })).resolves.toMatchObject({
+			await expect(
+				getBillableRateHistory({ target: employeeRate }),
+			).resolves.toMatchObject({
 				success: false,
 			});
 		});
 	});
 
 	it("makes the billable currency read-only once a rate exists", async () => {
-		await expect(updateBillableCurrency({ currency: "CHF" })).resolves.toMatchObject({
+		await expect(
+			updateBillableCurrency({ currency: "CHF" }),
+		).resolves.toMatchObject({
 			success: true,
 		});
-		await setBillableRate({ target: employeeRate, effectiveFrom: "2026-01-01", rate: "80" });
+		await setBillableRate({
+			target: employeeRate,
+			effectiveFrom: "2026-01-01",
+			rate: "80",
+		});
 
-		await expect(updateBillableCurrency({ currency: "EUR" })).resolves.toMatchObject({
+		await expect(
+			updateBillableCurrency({ currency: "EUR" }),
+		).resolves.toMatchObject({
 			success: false,
 			code: "ConflictError",
 		});

@@ -227,6 +227,7 @@
     "duplicate": "Duplicate",
     "durationMinutes": "{count} min",
     "edit": "Edit",
+    "employees": "Employees",
     "enabled": "Enabled",
     "error": "Error",
     "error-occurred": "An error occurred",
@@ -318,6 +319,7 @@
     "name": "Name",
     "new": "New",
     "next": "Next",
+    "no": "No",
     "notApplicable": "N/A",
     "not-available": "Not available",
     "notifications": {
@@ -382,6 +384,7 @@
     "removing": "Removing...",
     "reset": "Reset",
     "retry": "Retry",
+    "revoke": "Revoke",
     "save": "Save",
     "saveChanges": "Save Changes",
     "saving": "Saving...",
@@ -407,6 +410,7 @@
         "title": "Update available"
       }
     },
+    "teams": "Teams",
     "timeInput": {
       "openTimePicker": "Open time picker",
       "switchPeriod": "Switch to {period}"
@@ -533,7 +537,277 @@
         "title": "Vehicle use",
         "vehiclesTitle": "Organization vehicles"
       }
-    }
+    },
+    "yes": "Yes"
+  },
+  "drivingLicence": {
+    "activate": "Activate driving licence control",
+    "activationHelp": "Enrollment does not grant driving authorization. An authorized verifier must first check the original licence.",
+    "applyingInterval": "Applying…",
+    "applyInterval": "Apply interval change",
+    "check": {
+      "attestations": "Personal inspection and declarations",
+      "chooseClasses": "Select the classes you actually inspected.",
+      "classes": "Classes actually inspected",
+      "classExpiry": "Class expiry (if applicable)",
+      "documentDates": "Original document dates",
+      "employeeDeclaration": "The employee personally made the declaration shown above during this check; I attest that declaration.",
+      "expiryDate": "Document expiry date",
+      "failureScope": "Scope of an unsuccessful or inconclusive check",
+      "identity": "I confirmed that the original document belongs to this employee.",
+      "issueDate": "Document issue date",
+      "original": "I personally inspected the original driving licence in the employee's presence.",
+      "privacy": "Record only document dates, inspected classes and necessary driving restrictions. Do not enter a licence number, address, medical explanations or personal background.",
+      "restrictions": "Necessary driving restrictions",
+      "result": "Result",
+      "saving": "Recording check…",
+      "scopeClasses": "Only the affected inspected classes",
+      "scopeDocument": "Every authorization based on the document",
+      "scopePerson": "All driving authorization for the employee",
+      "submit": "Record original check",
+      "suspensionNotice": "A successful recheck does not automatically reinstate a suspended authorization. A new check and an explicit reinstatement decision are required.",
+      "title": "Inspect {name}'s original licence",
+      "verifier": "I confirm that the recorded facts and individual class results reflect my inspection."
+    },
+    "class": {
+      "active": "Authorized",
+      "ended": "Ended",
+      "overdue": "Routine check overdue. This is an organizational suspension, not a statement that legal driving entitlement was withdrawn.",
+      "recheck": "A new original check and explicit reinstatement are required.",
+      "restrictions": "Driving restrictions: {restrictions}",
+      "suspended": "Suspended",
+      "validThrough": "Valid through {date} ({timezone})"
+    },
+    "declaration": {
+      "text": "I confirm that no known driving ban, withdrawal or other impediment prevents the intended driving, and that I meet the applicable driving restrictions."
+    },
+    "delivery": {
+      "uncertain": "Optional reminder emails to you have an uncertain delivery outcome ({count}). They will not be sent again automatically. Your in-app reminders remain available; email delivery does not confirm reading."
+    },
+    "earlierLimit": "Earlier document/class limit",
+    "enroll": "Enroll",
+    "enrollError": "The employee could not be enrolled. Activate the policy first and check your access.",
+    "enrollmentHelp": "Enroll employees who are intended to drive. Vehicle assignments and previous vehicle use never create authorization.",
+    "enrollmentTitle": "Intended drivers",
+    "enrollName": "Enroll {name}",
+    "evidence": {
+      "confirmation": "Verifier confirmation recorded with policy version {version}; deadlines use {timezone}.",
+      "declarationConfirmed": "The employee made the declaration in person; the verifier attested it at the control time.",
+      "declarationUnconfirmed": "The employee declaration could not be confirmed.",
+      "document": "Document issued {issued}; expires {expiry}",
+      "empty": "No original check has been completed.",
+      "originalConfirmed": "Original personally inspected and employee identity confirmed.",
+      "originalUnconfirmed": "Original inspection or employee identity could not be confirmed.",
+      "title": "Original check evidence",
+      "verifier": "Original check recorded by {name}"
+    },
+    "history": {
+      "allClasses": "All classes",
+      "apply": "Apply period",
+      "authorized": "Authorization granted",
+      "chooseOutcome": "Choose outcome",
+      "class": "Checked class",
+      "classExpired": "Class expired",
+      "classExpiry": "Class expiry date",
+      "classRestrictions": "Driving restrictions",
+      "classResult": "Inspected class outcome",
+      "context": "Context outside selected period",
+      "decision": "Authorization decision",
+      "declarationConfirmed": "Employee declaration confirmed at the original check",
+      "declarationUnconfirmed": "Employee declaration not confirmed",
+      "documentExpired": "Document expired",
+      "documentExpiry": "Document expiry date",
+      "documentImpediment": "Document-wide impediment",
+      "documentIssued": "Document issue date",
+      "downloadPdf": "Download evidence PDF",
+      "employmentEnded": "Employment ended",
+      "empty": "No checks or authorization decisions in this period.",
+      "ended": "Driving authorization ended",
+      "evidenceCorrected": "Corrected evidence requires a new check and explicit reinstatement",
+      "failed": "Inspected class unsuccessful",
+      "field": "Corrected field",
+      "from": "From date (UTC)",
+      "globalSuspension": "All driving authorization suspended",
+      "help": "Original confirmations, dated supplements and effective authorization decisions remain separate. Earlier evidence needed to understand the selected period is labeled as context. All event times and period boundaries below use UTC.",
+      "impedimentReported": "Driving impediment reported",
+      "impedimentResolved": "Reported impediment explicitly resolved",
+      "inconclusive": "Inspected class inconclusive",
+      "linkedOriginal": "Linked original check: {date}",
+      "loading": "Loading history…",
+      "minimalEvidence": "Record only necessary driving evidence. Do not enter document numbers, medical explanations or personal background.",
+      "missingDetail": "Missing detail",
+      "none": "None recorded",
+      "openSupplement": "Supplement original check {date}",
+      "original": "Original check and confirmation",
+      "originalConfirmed": "Original and identity confirmed",
+      "originalUnconfirmed": "Original or identity not confirmed",
+      "overdue": "Routine check overdue",
+      "personImpediment": "Person-wide impediment",
+      "policyContext": "Policy version {version}; interval {months} months",
+      "policyIntervalChanged": "Authorization deadline changed by interval policy",
+      "policyRecalculated": "Authorization deadline recalculated by policy",
+      "reason": "Reason for supplement",
+      "recorded": "Recorded at {date}",
+      "recordingError": "Recording error",
+      "reinstated": "Authorization explicitly reinstated after a new check",
+      "save": "Save supplement",
+      "saveError": "The supplement could not be saved. Check your current responsibility and correction details.",
+      "snapshot": "Policy {version}; interval {months} months; deadline timezone {timezone}",
+      "supplementBy": "Supplement by {name}",
+      "supplementHelp": "This adds a dated correction with your identity. The original confirmation stays unchanged. Earlier limits, failed outcomes and new restrictions suspend affected current clearance; a supplement never renews or reinstates authorization.",
+      "supplementTitle": "Supplement original check {date}",
+      "suspended": "Authorization suspended",
+      "title": "Check and authorization history",
+      "to": "Before date (UTC)",
+      "unavailable": "History is unavailable. Check the period and your current access.",
+      "value": "Corrected value",
+      "verifierConfirmation": "Verifier confirmation recorded at the original check time"
+    },
+    "impediment": {
+      "newCheckRequired": "Record a new successful original check for the suspended classes before reinstatement.",
+      "reinstate": "Reinstate selected classes",
+      "reinstated": "The selected classes were explicitly reinstated.",
+      "reinstateFailed": "Reinstatement was refused. Refresh and review the current record, your responsibility and a new original check.",
+      "reinstateHelp": "First record a new personal original check after the suspension. Establish that every impediment has been resolved; inspect any necessary supporting evidence outside Z8. Seeing the licence card alone may be insufficient. Only the selected successfully checked classes will be reinstated.",
+      "reinstateTitle": "Explicitly reinstate driving authorization",
+      "reinstating": "Saving reinstatement…",
+      "report": "Report that I cannot drive",
+      "reported": "All your class authorizations are suspended. Contact your responsible verifier for a new original check and explicit reinstatement after the impediment is resolved.",
+      "reportFailed": "The report could not be saved. Retry or contact your responsible verifier immediately.",
+      "reportHelp": "Report a current inability to drive. All class authorizations will be suspended immediately. You do not need to provide personal reasons.",
+      "reporting": "Saving report…",
+      "resolutionConfirmation": "I have established that all person-wide, document-wide and reported impediments are resolved, examined necessary supporting evidence outside Z8, and explicitly authorize the selected classes again.",
+      "selectClasses": "Classes to reinstate from the latest original check",
+      "title": "Unable to drive?",
+      "unresolvedReport": "An employee-reported person-wide impediment still requires resolution."
+    },
+    "interval": "Routine check interval (months)",
+    "intervalAnchorHelp": "Calculated from each class's last successful check.",
+    "intervalApplied": "Interval applied. Existing suspensions remain in effect.",
+    "intervalChangeHelp": "Preview each class's recalculated dates before applying. Earlier document and class limits still apply. Extending the interval never reinstates a suspended authorization.",
+    "intervalChangeTitle": "Change the routine interval",
+    "intervalHelp": "Each checked class uses its own last successful check as the routine-check anchor.",
+    "intervalImpact": "Interval impact",
+    "intervalImpactHelp": "Review the new routine date and the earlier effective limit for every affected class. Dates use the stated calendar timezone.",
+    "intervalPreviewError": "The impact could not be loaded. Check your access and choose an interval from 1 to 120 months.",
+    "intervalStale": "The policy or driving authorization changed, or your access is unavailable. Preview the current impact again before applying.",
+    "justification": "Retention justification",
+    "justificationHelp": "Explain why this finite period is necessary (at least 10 characters). Do not include private or medical details.",
+    "loadError": "Driving licence control could not be loaded. Check your organization access.",
+    "myDescription": "View your driving licence check status",
+    "myTitle": "My driving authorization",
+    "newInterval": "New routine interval (months)",
+    "newlyOverdue": "Newly overdue — will be suspended",
+    "newRoutineDate": "Next routine check",
+    "noEmployeeRecord": "No employee driving licence record is available in this organization.",
+    "noEmployees": "There are no active employees to enroll.",
+    "noIntervalClasses": "No existing class authorizations need recalculation.",
+    "notChecked": "Not yet checked — no driving authorization",
+    "notEnrolled": "Not enrolled — no driving authorization",
+    "operational": {
+      "advisory": "Driving authorization",
+      "loading": "Loading driving authorization…",
+      "noEmployees": "No matching employees.",
+      "recordingHelp": "You can always record working time and actual vehicle use. Selecting a vehicle grants no driving authorization; checked classes do not establish suitability for every vehicle.",
+      "refresh": "Refresh driving status",
+      "search": "Find employee",
+      "searchHelp": "Up to 50 employees are shown. Narrow the search to find another employee. This view contains no inspection records.",
+      "title": "Driving status for planning",
+      "unavailable": "Driving authorization status is unavailable."
+    },
+    "policyIntro": "Germany-first original licence checks. Choose the routine interval and justify a finite evidence retention period before activation.",
+    "policyTitle": "Organization policy",
+    "previewingInterval": "Loading impact…",
+    "previewInterval": "Preview interval impact",
+    "reminders": "Reminder lead days",
+    "remindersHelp": "Comma-separated whole days before a deadline, from 0 to 365. The initial suggestions are 30 and 7 days.",
+    "result": {
+      "inconclusive": "Inconclusive",
+      "successful": "Successful",
+      "unsuccessful": "Unsuccessful"
+    },
+    "retention": "Retention period (months)",
+    "retention.case": "Specific legal-case reference",
+    "retention.check": "Check record",
+    "retention.choose": "Choose a retained record",
+    "retention.cleaning": "Checking due records…",
+    "retention.cleanup": "Run due evidence cleanup",
+    "retention.confirmDelete": "Delete due evidence",
+    "retention.confirmDescription": "This permanently removes evidence whose retention period has ended. Current active authorizations and legal-case holds remain protected. Deleted originals and supplements cannot be recovered through the application.",
+    "retention.confirmTitle": "Delete due evidence?",
+    "retention.deadline": "Retention began {start}. Eligible for deletion from {end}.",
+    "retention.empty": "No retained check records.",
+    "retention.error": "Retention administration could not be completed. Refresh and check your access and case details.",
+    "retention.help": "Retention starts when a check no longer supports any active class. A hold requires a specific legal case, also protects related report evidence from the same employment period, and must be released when preservation is no longer required. These controls do not grant inspection access. Do not enter medical or personal background details.",
+    "retentionHelp": "Required for activation: 1–120 months after evidence no longer supports any active class authorization. Keep a justified finite period when disabling licence control; cleanup continues.",
+    "retention.holdDetails": "Case {case}: {reason}. Placed by {actor} at {time}.",
+    "retention.loading": "Loading retention records…",
+    "retention.place": "Place a specific-case hold",
+    "retention.protected": "Protected by an active class authorization",
+    "retention.reason": "Why this case requires preservation",
+    "retention.record": "{employee} · Check {date}",
+    "retention.release": "Release hold",
+    "retention.released": "Released by {actor} at {time}: {reason}",
+    "retention.releaseError": "The hold could not be released. Check your access and release reason.",
+    "retention.releaseReason": "Why preservation is no longer required",
+    "retention.report": "{employee} · Report {date}",
+    "retention.reportHeld": "Protected by case {case} on related check evidence from this employment period. Release the hold on that check when preservation is no longer required.",
+    "retention.reportProtected": "Protected while the current report remains unresolved or its resolution check supports active authorization.",
+    "retention.reportsTitle": "Impediment report retention",
+    "retentionRequiredError": "Keep a finite, justified retention period when disabling licence control. Existing evidence remains subject to cleanup.",
+    "retention.run": "{time}: {deleted} deleted, {held} held, {protected} protected. Actor: {actor}",
+    "retention.runs": "Recent cleanup results",
+    "retention.saveError": "The hold could not be saved. Check the case details and your access.",
+    "retention.scheduled": "Scheduled processing",
+    "retention.title": "Evidence retention and legal-case holds",
+    "save": "Save policy",
+    "saved": "Policy saved",
+    "saveError": "The policy could not be saved. Check the interval, timezone, reminders and justified retention period.",
+    "saving": "Saving…",
+    "settingsDescription": "Configure original checks and enroll intended drivers",
+    "status": {
+      "active": "Driving authorization active",
+      "ended": "Driving authorization ended",
+      "explanation": "Organization driving authorization covers the listed classes and restrictions. It does not establish suitability for every vehicle. You can continue recording working time and actual vehicle use.",
+      "partial": "Some driving classes are suspended",
+      "suspended": "Driving authorization suspended"
+    },
+    "staysCurrent": "Remains current",
+    "staysSuspended": "Remains suspended",
+    "subtitle": "Configure original checks and enroll intended drivers. Driving authorization is specific to checked classes and restrictions.",
+    "tasks": {
+      "assign": "Assign responsibility",
+      "assigned": "Responsibility assigned",
+      "assignmentBoundary": "This task grants no inspection rights and does not extend any deadline.",
+      "class": "Class {classCode}",
+      "complete": "Mark personal reminder completed",
+      "completeError": "Could not complete this task. Check your current verifier responsibility.",
+      "completing": "Completing…",
+      "deadline": "Original check due",
+      "directUnavailable": "Direct employee notification was unavailable. Remind this employee in person.",
+      "initialCheck": "Initial original check required",
+      "loadError": "Could not load driving licence tasks. Check your organization access.",
+      "loading": "Loading driving licence tasks…",
+      "noDeliveryReceipt": "Task completion does not confirm direct delivery or employee reading. No deadline is extended.",
+      "noVerifier": "No available verifier is responsible for this employee.",
+      "personalCompleted": "Personal reminder completed",
+      "personalTitle": "Personal reminder tasks",
+      "reassignmentTitle": "Verifier responsibility tasks",
+      "refresh": "Recheck responsibility",
+      "suspension": "Driving authorization suspended",
+      "validThrough": "Valid through {date} in the check’s saved deadline timezone"
+    },
+    "timezone": "Fixed calendar timezone",
+    "title": "Driving licence control",
+    "unnamedEmployee": "Employee",
+    "worklist": {
+      "help": "Only enrolled employees within your current verifier responsibility appear here.",
+      "open": "Check {name}",
+      "title": "Your original-check worklist",
+      "viewEnded": "View ended record for {name}"
+    },
+    "zoneFixedError": "The calendar timezone is fixed. Existing deadlines must keep their original meaning.",
+    "zoneHelp": "Date-only limits include the whole shown day in this timezone. It is fixed when first saved; the viewer's timezone never changes a deadline."
   },
   "employeeSelect": {
     "countSelected": "{count} employees selected",
@@ -617,6 +891,101 @@
     "setup": "Loading setup",
     "teamAbsences": "Loading team absences table",
     "workerQueue": "Loading worker queue"
+  },
+  "mfa": {
+    "banner": {
+      "action": "Review requirements and verify",
+      "requirement": "This organization requires verified authentication from {deadline}."
+    },
+    "code": {
+      "label": "Authenticator code",
+      "verify": "Verify authenticator"
+    },
+    "continue": "Continue after verification",
+    "coverage": {
+      "access": "Last qualifying organization access",
+      "deadline": "Assigned deadline",
+      "enforced": "Enforced",
+      "failed": "Organization authentication coverage could not be loaded",
+      "kiosk": "Kiosk only · outside scope",
+      "loading": "Loading organization authentication…",
+      "member": "Member",
+      "methods": "Enrolled methods",
+      "none": "None",
+      "title": "Member enrollment and organization verification",
+      "unproven": "No qualifying access recorded"
+    },
+    "deadline": {
+      "enforced": "An authenticator must be verified before organization access.",
+      "grace": "Enrollment window in progress. Verify an authenticator before this deadline.",
+      "required": "Verification required now"
+    },
+    "enrollment": {
+      "title": "Enroll or replace an authenticator",
+      "warning": "Adding or replacing a factor needs verification within five minutes. Verify the replacement before removing the old factor. Revoking your last factor is allowed and can block access to the organizations listed above; it does not grant a new enrollment window."
+    },
+    "organization": {
+      "select": "Select another organization"
+    },
+    "page": {
+      "context": "Personal enrollment, recovery and organization selection remain available while organization access needs verification.",
+      "title": "Security verification"
+    },
+    "passkey": {
+      "verify": "Verify with a passkey"
+    },
+    "password": {
+      "failed": "Password verification failed",
+      "label": "Current password",
+      "verified": "Password verified. You can enroll your first authenticator, or verify an existing authenticator or backup code below.",
+      "verify": "Verify password"
+    },
+    "policy": {
+      "activation": "Changes need owner/admin authority and accepted authentication within five minutes. Arrange recovery and preferably another administrator who has demonstrated a working sign-in route; enrollment alone does not prove one.",
+      "days": "{days} days (24 hours each)",
+      "description": "Require password plus TOTP, or a passkey verified with PIN/biometrics, for every human member's local organization access. Synced passkeys qualify. This policy is available on every plan.",
+      "enable": "Require an authenticator for local sign-ins",
+      "failed": "Policy update refused",
+      "grace": "Enrollment window for future assignments",
+      "lockoutAck": "If no other administrator has a confirmed route, I accept that losing every authentication and recovery route leaves this organization locked, without an administrator or support bypass.",
+      "lockoutLabel": "Accept the risk of losing every administrator authentication route",
+      "recoveryAck": "I have verified my sign-in route and arranged recovery.",
+      "save": "Save policy",
+      "saving": "Saving…",
+      "sso": "Verified sign-in through this organization's current SSO provider is outside the local MFA baseline. The organization enforces MFA at its identity provider; Z8 does not verify IdP MFA assurance. Require SSO remains separate and has no local fallback.",
+      "tab": "Local MFA",
+      "tabDescription": "Require verified local authentication with controlled enrollment deadlines",
+      "title": "Organization authentication",
+      "verify": "Verify your authentication before changing this policy",
+      "windows": "Existing deadlines never move. Disabling suspends enforcement; re-enabling restores assigned deadlines, including expired ones. There are no individual exemptions."
+    },
+    "recovery": {
+      "action": "Recover with backup code",
+      "description": "For recovery, verify your password above and then enter one unused backup code. This clears prior local verification across your organizations.",
+      "label": "Backup code",
+      "lockout": "If a sole administrator loses every authentication and recovery route, the organization stays locked. There is no administrator or support bypass.",
+      "success": "Recovery permits replacement enrollment only. Verify an authenticator before returning to your organization."
+    },
+    "security": {
+      "factorWarning": "Removing a factor can block access to organizations that require it. Verify a replacement first; removing the last factor does not grant new grace.",
+      "link": "Verify authentication and review organization requirements",
+      "policyLink": "Organization authentication policy (owners/admins)"
+    },
+    "signout": "Sign out",
+    "social": {
+      "verify": "Verify existing sign-in with {provider}"
+    },
+    "sso": {
+      "failed": "Organization SSO could not be started",
+      "verify": "Verify with organization SSO"
+    },
+    "verification": {
+      "failed": "Verification failed"
+    },
+    "verify": {
+      "description": "Verify an authenticator to return to your organization. Enrollment and remembered-device trust alone do not satisfy the requirement.",
+      "title": "Verify your sign-in"
+    }
   },
   "nav": {
     "absences": "Absences",
@@ -812,12 +1181,28 @@
         "message": "{employeeName} requested a {exceptionType, select, rest_period {rest period} overtime_daily {daily overtime} overtime_weekly {weekly overtime} overtime_monthly {monthly overtime} other {compliance}} exception: \"{reason}\"",
         "title": "Compliance exception requested"
       },
+      "drivingAuthorizationSuspended": {
+        "message": "Driving authorization for {employeeName} ({classes}) is suspended. A new check and explicit reinstatement are required before driving.",
+        "title": "Driving authorization suspended"
+      },
       "drivingDetailsMissingReminderMany": {
         "message": "{count} work periods from {dates} are missing their vehicle or an odometer reading. Add them to the work periods."
       },
       "drivingDetailsMissingReminder": {
         "message": "Your work on {date} is missing its vehicle or an odometer reading. Add them to the work period.",
         "title": "Add your driving details"
+      },
+      "drivingLicenceAssignment": {
+        "message": "Arrange an available verifier for {employeeName}. This task grants no inspection rights and does not extend any deadline.",
+        "title": "Assign driving licence verifier responsibility"
+      },
+      "drivingLicencePersonalTask": {
+        "message": "Remind {employeeName} to arrange an original driving licence check. Direct employee notification was unavailable. Task completion is not direct delivery or reading.",
+        "title": "Remind employee in person"
+      },
+      "drivingLicenceReminder": {
+        "message": "Arrange an original driving licence check for {employeeName}, class {classes}, by {deadline}.",
+        "title": "Driving licence check due"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Approval duties need a replacement (departure effective {cutoff}, {timezone}).",
@@ -830,6 +1215,11 @@
       "forgottenClockOutReminder": {
         "message": "Your shift ended at {endTime} ({timezone}). Clock out if you have finished working.",
         "title": "You are still clocked in"
+      },
+      "kioskCommandRefused": {
+        "forwardedMessage": "A {action, select, clock_in {clock-in} clock_out {clock-out} start_break {break start} resume_break {return from break} other {clocking}} by {employeeName} at {time} on the kiosk {kioskName} was not recorded: {reason, select, wrong_pin {the PIN was wrong} pin_locked {the kiosk PIN was locked after too many wrong attempts} no_pin {there was no kiosk PIN to check it against} pin_unchecked {the PIN could not be checked} kiosk_retired {the kiosk was revoked or paired again before it reconnected} contact_unverifiable {Z8 could not confirm the kiosk's last connection} outside_window {its time was outside the window Z8 accepts} clock_untrusted {the kiosk's clock could not be trusted for it} not_assigned {the employee is not assigned to the kiosk's location} not_adopted {the organization does not accept offline kiosk clockings} month_closed {the month is closed} holiday {the day is a holiday without time recording} conflict {it conflicts with other recorded time} other {Z8 could not accept it}}. Record the time for them or check it with them.",
+        "message": "Your {action, select, clock_in {clock-in} clock_out {clock-out} start_break {break start} resume_break {return from break} other {clocking}} at {time} on the kiosk {kioskName} was not recorded: {reason, select, wrong_pin {the PIN was wrong} pin_locked {the kiosk PIN was locked after too many wrong attempts} no_pin {there was no kiosk PIN to check it against} pin_unchecked {the PIN could not be checked} kiosk_retired {the kiosk was revoked or paired again before it reconnected} contact_unverifiable {Z8 could not confirm the kiosk's last connection} outside_window {its time was outside the window Z8 accepts} clock_untrusted {the kiosk's clock could not be trusted for it} not_assigned {the employee is not assigned to the kiosk's location} not_adopted {the organization does not accept offline kiosk clockings} month_closed {the month is closed} holiday {the day is a holiday without time recording} conflict {it conflicts with other recorded time} other {Z8 could not accept it}}. Record your time again or ask your manager to correct it.",
+        "title": "Kiosk clocking not recorded"
       },
       "manualEntryApproved": {
         "message": "Your manual time submission was approved by {approverName}.",
@@ -1250,8 +1640,11 @@
         "approval_cover_return_summary": "Decided by your deputy",
         "approval_cover_started": "Absence cover started",
         "break_due_reminder": "Break due",
+        "driving_authorization_suspended": "Driving authorization suspended",
         "driving_details_missing_reminder": "Driving details missing",
+        "driving_licence_reminder": "Driving licence check due",
         "forgotten_clock_out_reminder": "Forgotten clock-out",
+        "kiosk_command_refused": "Kiosk clocking not recorded",
         "missed_clock_in_reminder": "Missed clock-in",
         "period_submission_decided": "Submitted time approved or rejected",
         "period_submission_reminder": "Submit your time",
@@ -1344,6 +1737,7 @@
   "personalDataExport": {
     "readme": {
       "accessAdmin": "{name} (administrator)",
+      "accessDrivingLicenceVerifiers": "Driving licence verifiers (your check evidence and PDF exports):",
       "accessExpenseExport": "export them",
       "accessExpenseOfficers": "Expense officers (your approved travel expense reports and their receipts):",
       "accessExpenseRead": "read approved reports",
@@ -1367,6 +1761,7 @@
         "accountAdmin": "The name and email address of your user account.",
         "approvals": "Your own requests and period submissions, and the decisions you made on other people's requests.",
         "auditLog": "Audit log entries about you and entries you performed.",
+        "drivingLicence": "Driving licence checks, original confirmations and declarations, attributed supplements, class authorizations and their history, enrolment and your verifier responsibility. Retained evidence only; no licence scans, document numbers or medical notes.",
         "employment": "Your employee record and profile, employment periods and departure, employment terms with your hourly wage and its history, teams, managers, locations, skills, project assignments, roles, groups, cost centre and every policy assigned to you.",
         "integrations": "Your calendar connections, calendar feed, linked chat accounts and kiosk PIN status.",
         "notifications": "Your notification history.",
@@ -1386,6 +1781,7 @@
         "payslip": "Payslips",
         "sickNote": "Sick notes"
       },
+      "drivingLicenceRetention": "Driving licence evidence follows the organization's justified check-retention period once it no longer supports an active authorization. A documented hold for a specific legal case postpones deletion. Refer to the driving_licence policy, retention and hold records for the applicable context; generating an export does not extend evidence retention in Z8.",
       "fields": {
         "absences": {
           "absences": {
@@ -1696,6 +2092,129 @@
           "updatedAt": "When the record was last changed.",
           "updatedBy": "Who last changed the record."
         },
+        "drivingLicence": {
+          "actor_name": "The name of the person who performed this action; empty for a system action or unavailable actor.",
+          "authorization_events": {
+            "summary": "Your driving authorization history, including impediment reports, resolutions and explicit reinstatements."
+          },
+          "authorizations": {
+            "summary": "Your stored class-specific authorization records; the event history explains changes and effective times."
+          },
+          "author_name": "The recorded name of the person who added this supplement.",
+          "caseReference": "The reference of the specific legal case requiring preservation of this check.",
+          "changed_at": "When this organization policy version was recorded, as a UTC instant.",
+          "checked_classes": {
+            "summary": "The explicitly inspected classes and their recorded outcomes, restrictions and expiry dates."
+          },
+          "check_id": "The original check this class, supplement or authorization references.",
+          "checks_performed": {
+            "summary": "Checks you performed on other employees: only opaque subject and record IDs and the inspection time."
+          },
+          "checks": {
+            "summary": "Driving licence original check records, with the exact declaration and inspection confirmations."
+          },
+          "class_code": "The explicitly inspected licence class; empty for a person-wide or document-wide event.",
+          "class_valid_through": "The last calendar day covered by this class's validity; empty when no class expiry was recorded.",
+          "completedAt": "When a verifier marked the personal reminder completed; empty for an uncompleted task.",
+          "completedBy": "The name of the person who marked the reminder completed; this does not establish direct delivery or a read receipt.",
+          "controlled_at": "When the original licence was personally inspected, as a UTC instant.",
+          "createdAt": "When this task or delivery was first recorded, as a UTC instant.",
+          "deadline_timezone": "The explicit calendar time zone used for the policy's deadline dates.",
+          "declaration_text": "The exact declaration text recorded during the original inspection.",
+          "document_expires_on": "The document's expiry date, separate from expiry of individual classes.",
+          "document_issued_on": "The document's issue date, without a time or time zone.",
+          "document_valid_through": "The last calendar day covered by the document's validity.",
+          "effective_at": "When the authorization event took effect, as a UTC instant.",
+          "emailedAtProviderSuccess": "When provider success was recorded for this email. Empty also covers uncertain attempts; it does not prove the email was not sent or that it was read.",
+          "emailStateWithUncertainAttempts": "Email delivery state: pending, attempted (uncertain provider outcome; never automatically resent), sent (provider success recorded), suppressed, obsolete or unavailable. No state confirms reading.",
+          "employee_declaration": "Whether your declaration was confirmed during the inspection.",
+          "employee_id": "The opaque ID of another employee whose record you acted on; their check contents are excluded.",
+          "employee_ids": "The opaque employee IDs in your specific verifier scope, encoded as a JSON array.",
+          "employment_period_id": "The employment period this evidence belongs to; empty for legacy employment.",
+          "enabled": "Whether the referenced organization check policy was enabled.",
+          "enrolled_at": "When you were enrolled in the organization's driving licence checks.",
+          "expires_at": "The UTC instant when this authorization or verifier grant expires.",
+          "expiry_date": "The class expiry date recorded at inspection; empty if none was recorded.",
+          "failure_scope": "Whether an unsuccessful inspection concerned classes, the document or the person.",
+          "field": "The corrected evidence field; the original check is preserved.",
+          "granted_at": "When your verifier responsibility was granted, as a UTC instant.",
+          "granted_by": "The name of the person who granted your verifier responsibility.",
+          "id": "The record's ID in the app, so the other files can refer to it.",
+          "identity_confirmed": "Whether the verifier confirmed that the original matched your identity.",
+          "impedimentReports": {
+            "summary": "Your minimal driving impediment reports and their explicit resolution, without medical explanations or private reasons."
+          },
+          "interval_months": "The number of calendar months between routine checks under this policy.",
+          "kind": "The authorization event, suspension or task kind; tasks are personal_reminder or reassignment.",
+          "last_successful_at": "When this class last passed a successful original inspection.",
+          "legalHolds": {
+            "summary": "Specific-case preservation holds on your retained checks, including attribution, release and justification."
+          },
+          "notificationId": "The app notification linked to this reminder; empty when none was created.",
+          "occasionKey": "The occurrence this reminder or task concerns; it identifies the employment, class deadline or suspension without copying the check.",
+          "original_inspected": "Whether the verifier confirmed personally inspecting the original document.",
+          "participation": {
+            "summary": "Your enrolment in the organization's driving licence checks."
+          },
+          "placedAt": "When this legal hold was placed, as a UTC instant.",
+          "placedBy": "The name of the administrator who placed this case hold.",
+          "policies": {
+            "summary": "Policy versions referenced by your checks and authorization history, including their retention context. Evidence follows this retention policy; this export does not extend retention in the application."
+          },
+          "policy_version": "The version of the organization's driving licence check policy.",
+          "preservationReason": "The documented reason why this specific case requires preservation of the check.",
+          "reason": "The structured reason for the supplement or authorization event; report references link to an event ID.",
+          "recipientName": "The name of the person to whom this reminder about your check was addressed.",
+          "recorded_at": "When the supplement or event was recorded, as a UTC instant.",
+          "releasedAt": "When this case hold was released; empty while it remains active.",
+          "releasedBy": "The name of the administrator who released this case hold.",
+          "releaseReason": "The documented reason this case hold was released; release resumes ordinary policy-governed deletion.",
+          "reminderDeliveries": {
+            "summary": "The reminder delivery records concerning your checks, without email addresses, transport retries or read receipts."
+          },
+          "reminder_lead_days": "The configured reminder lead times in calendar days, encoded as a JSON array.",
+          "reminderTasksCompleted": {
+            "summary": "Reminder tasks you completed for other employees, limited to opaque IDs, task kind and completion time."
+          },
+          "reminderTasks": {
+            "summary": "Personal-reminder and reassignment tasks concerning your checks, including their recorded completion; completion does not establish direct delivery or reading."
+          },
+          "reportedAt": "When you reported a person-wide driving impediment, as a UTC instant.",
+          "reporterName": "The name of the person who reported the impediment.",
+          "resolvedAt": "When a verifier explicitly resolved this report; empty for an unresolved report.",
+          "resolvedBy": "The name of the verifier who explicitly resolved this report.",
+          "restrictions": "The relevant driving restrictions recorded for this class.",
+          "result": "The outcome for this inspected class: successful, unsuccessful or inconclusive.",
+          "retention_justification": "The organization's documented reason for its evidence retention period.",
+          "retention_months": "The organization's justified retention period in months after evidence no longer supports active authorization.",
+          "retentionStartedAtEvidence": "When check evidence stopped supporting active authorization, or report evidence became inactive after resolution and final resolution-check support or employment end. The organization's justified retention period runs from this UTC instant; a case hold postpones deletion.",
+          "retention": {
+            "summary": "The retention starting point of each retained check; empty while the check still supports active authorization. Exporting does not extend retention."
+          },
+          "revoked_at": "When your verifier responsibility was revoked; empty while it has not been revoked.",
+          "revoked_by": "The name of the person who revoked your verifier responsibility.",
+          "routine_valid_through": "The last calendar day covered by the routine check interval.",
+          "scope": "The scope of a person-wide report (person), or whether your verifier responsibility covers all employees or specific employees and teams.",
+          "state": "The stored class authorization state (active, suspended, ended) or reminder task state (pending, completed, obsolete); history explains the changes.",
+          "supplements_authored": {
+            "summary": "Supplements you authored on other employees' records, without those employees' evidence values."
+          },
+          "supplements": {
+            "summary": "Dated, attributed, typed corrections kept alongside each original check."
+          },
+          "suspended_at": "When the authorization was suspended, as a UTC instant.",
+          "suspension": {
+            "summary": "Your current person-wide or document-wide driving authorization suspension record."
+          },
+          "team_ids": "The opaque team IDs in your specific verifier scope, encoded as a JSON array.",
+          "valid_through": "The earliest applicable final calendar day of this class clearance.",
+          "value": "The value supplied by this supplement; empty means the optional class expiry was cleared.",
+          "verifier_confirmed": "Whether the verifier confirmed the inspection record.",
+          "verifier_grants": {
+            "summary": "Your own verifier grants, including historical and revoked responsibility."
+          },
+          "verifier_name": "The recorded name of the person who inspected your original licence."
+        },
         "employment": {
           "assignedLocations": {
             "city": "The location's city.",
@@ -1924,11 +2443,26 @@
             "revokedAt": "When the link was switched off (UTC).",
             "summary": "Your calendar feed links, which let a calendar app subscribe to your absences. The secret link itself is never included."
           },
+          "kioskPinEvents": {
+            "event": "failure for a wrong PIN, success for a correct one, cleared when your PIN was unlocked, reset or changed.",
+            "occurredAt": "When the PIN was entered or the lockout cleared (UTC).",
+            "offline": "Whether the PIN was entered at a kiosk without a connection and checked when it reconnected.",
+            "summary": "Your recent kiosk PIN attempts and PIN unlocks, kept for about a week to decide whether you are locked out after five wrong PINs in a row. The PINs entered are never stored."
+          },
           "kioskPin": {
             "pinSet": "Whether a kiosk PIN is set for you.",
             "setAt": "When the PIN was last set (UTC).",
             "setBy": "Who set the PIN.",
             "summary": "Whether you have a PIN for clocking in at a kiosk terminal. The PIN itself is never stored readably and is not included."
+          },
+          "kioskRefusedClockings": {
+            "action": "clock_in, clock_out, start_break or resume_break.",
+            "claimedAt": "When you clocked at the kiosk, as the kiosk recorded it (UTC).",
+            "kiosk": "The kiosk you clocked at.",
+            "reason": "Why the clocking was not recorded, for example wrong_pin or kiosk_rotated.",
+            "refusedAt": "When the kiosk reconnected and the clocking was refused (UTC).",
+            "summary": "Clockings you made at a kiosk without a connection that were not recorded when the kiosk reconnected, and why.",
+            "timeSource": "server_anchor when the kiosk timed it from the server's time at its last connection, device_clock when from its own clock."
           },
           "shared": {
             "isActive": "Whether the connection is in use."

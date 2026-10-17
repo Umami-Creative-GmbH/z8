@@ -202,15 +202,12 @@
       }
     },
     "discord": {
-      "description": "Configurer les notifications Discord pour votre organisation",
       "title": "Discord"
     },
     "slack": {
-      "description": "Configurer les notifications Slack pour votre organisation",
       "title": "Slack"
     },
     "teamsNotifications": {
-      "description": "Configurer les notifications Microsoft Teams pour votre organisation",
       "title": "Microsoft Teams"
     },
     "telegram": {

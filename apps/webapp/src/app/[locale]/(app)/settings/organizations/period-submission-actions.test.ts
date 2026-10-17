@@ -11,8 +11,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth/request-session", () => ({
 	getRequestSession: mocks.session,
 }));
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
-	canAccessOrganizationWithSso: mocks.sso,
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	canAccessOrganization: mocks.sso,
 }));
 vi.mock("@/db", () => ({
 	db: {
@@ -28,8 +28,12 @@ vi.mock("@/lib/time-tracking/period-submissions/settings", () => ({
 
 // The shared runtime over the real DatabaseServiceLive, which reads the mocked db.
 vi.mock("@/lib/effect/runtime", async () => {
-	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(DatabaseServiceLive);
+	const { DatabaseServiceLive } = await import(
+		"@/lib/effect/services/database.service"
+	);
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		DatabaseServiceLive,
+	);
 });
 
 import { updatePeriodSubmissionSettings } from "./period-submission-actions";
@@ -42,7 +46,10 @@ const input = {
 const saved = {
 	cadence: { kind: "weekly", weekStartDay: "monday" },
 	inEffect: { kind: "off" },
-	upcoming: { cadence: { kind: "weekly", weekStartDay: "monday" }, fromDate: "2026-03-09" },
+	upcoming: {
+		cadence: { kind: "weekly", weekStartDay: "monday" },
+		fromDate: "2026-03-09",
+	},
 	secondReminderDelayDays: 3,
 	revision: 1,
 };
@@ -64,12 +71,20 @@ describe("updatePeriodSubmissionSettings", () => {
 		"lets an approved %s save the active organization's settings",
 		async (role) => {
 			mocks.member.mockResolvedValue({ role, status: "approved" });
-			expect(await updatePeriodSubmissionSettings(input)).toEqual({ success: true, data: saved });
-			const sql = new PgDialect().sqlToQuery(mocks.member.mock.calls[0][0].where);
+			expect(await updatePeriodSubmissionSettings(input)).toEqual({
+				success: true,
+				data: saved,
+			});
+			const sql = new PgDialect().sqlToQuery(
+				mocks.member.mock.calls[0][0].where,
+			);
 			expect(sql.params).toEqual(["user-1", "org-1", "approved"]);
 			expect(mocks.save).toHaveBeenCalledWith(
 				{ ...input, actorUserId: "user-1" },
-				expect.objectContaining({ database: expect.anything(), clock: expect.anything() }),
+				expect.objectContaining({
+					database: expect.anything(),
+					clock: expect.anything(),
+				}),
 			);
 		},
 	);
@@ -95,24 +110,40 @@ describe("updatePeriodSubmissionSettings", () => {
 
 	it("refuses an organization other than the active one", async () => {
 		expect(
-			(await updatePeriodSubmissionSettings({ ...input, organizationId: "org-other" })).success,
+			(
+				await updatePeriodSubmissionSettings({
+					...input,
+					organizationId: "org-other",
+				})
+			).success,
 		).toBe(false);
 		expect(mocks.member).not.toHaveBeenCalled();
 		expect(mocks.save).not.toHaveBeenCalled();
 	});
 
 	it("saves a monthly cadence and switching off without a week start", async () => {
-		await updatePeriodSubmissionSettings({ ...input, cadence: { kind: "monthly" } });
-		await updatePeriodSubmissionSettings({ ...input, cadence: { kind: "off" } });
-		expect(mocks.save.mock.calls.map(([saveInput]) => saveInput.cadence)).toEqual([
-			{ kind: "monthly" },
-			{ kind: "off" },
-		]);
+		await updatePeriodSubmissionSettings({
+			...input,
+			cadence: { kind: "monthly" },
+		});
+		await updatePeriodSubmissionSettings({
+			...input,
+			cadence: { kind: "off" },
+		});
+		expect(
+			mocks.save.mock.calls.map(([saveInput]) => saveInput.cadence),
+		).toEqual([{ kind: "monthly" }, { kind: "off" }]);
 	});
 
 	it.each([
-		["a weekly cadence without a week start", { ...input, cadence: { kind: "weekly" } }],
-		["an unknown week start", { ...input, cadence: { kind: "weekly", weekStartDay: "someday" } }],
+		[
+			"a weekly cadence without a week start",
+			{ ...input, cadence: { kind: "weekly" } },
+		],
+		[
+			"an unknown week start",
+			{ ...input, cadence: { kind: "weekly", weekStartDay: "someday" } },
+		],
 		["an unknown cadence", { ...input, cadence: { kind: "daily" } }],
 		["a delay of 0 days", { ...input, secondReminderDelayDays: 0 }],
 		["a delay of 31 days", { ...input, secondReminderDelayDays: 31 }],
@@ -121,7 +152,9 @@ describe("updatePeriodSubmissionSettings", () => {
 		expect(
 			(
 				await updatePeriodSubmissionSettings(
-					invalid as unknown as Parameters<typeof updatePeriodSubmissionSettings>[0],
+					invalid as unknown as Parameters<
+						typeof updatePeriodSubmissionSettings
+					>[0],
 				)
 			).success,
 		).toBe(false);

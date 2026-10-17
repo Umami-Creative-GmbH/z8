@@ -23,7 +23,9 @@ const harness = vi.hoisted(() => ({
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
@@ -44,21 +46,37 @@ vi.mock("@/lib/auth", () => ({
 		},
 	},
 }));
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
 vi.mock("@/lib/logger", () => {
 	const noop = () => {};
-	const logger = { error: noop, warn: noop, info: noop, debug: noop, trace: noop, fatal: noop };
+	const logger = {
+		error: noop,
+		warn: noop,
+		info: noop,
+		debug: noop,
+		trace: noop,
+		fatal: noop,
+	};
 	return { createLogger: () => ({ ...logger, child: () => logger }), logger };
 });
 vi.mock("@/lib/vault", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/vault")>()),
-	storeOrgSecret: async (organizationId: string, key: string, value: string) => {
+	storeOrgSecret: async (
+		organizationId: string,
+		key: string,
+		value: string,
+	) => {
 		harness.secrets.set(`${organizationId}|${key}`, value);
 	},
 	getOrgSecret: async (organizationId: string, key: string) =>
@@ -68,7 +86,9 @@ vi.mock("@/lib/vault", async (importOriginal) => ({
 	},
 }));
 vi.mock("@/lib/billable-time/accounting/registry", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/billable-time/accounting/registry")>()),
+	...(await importOriginal<
+		typeof import("@/lib/billable-time/accounting/registry")
+	>()),
 	getAccountingProviderRegistry: () => {
 		if (!harness.registry) throw new Error("No fake registry");
 		return harness.registry;
@@ -85,10 +105,11 @@ const {
 	releaseInvoiceDraftAction,
 	retryHandOffAction,
 } = await import("./actions");
-const { getProjectDetailedReport } = await import("@/app/[locale]/(app)/reports/projects/actions");
-const { createFakeAccountingTool, fakeAccountingProviderRegistry } = await import(
-	"@/lib/billable-time/accounting/fake-provider"
+const { getProjectDetailedReport } = await import(
+	"@/app/[locale]/(app)/reports/projects/actions"
 );
+const { createFakeAccountingTool, fakeAccountingProviderRegistry } =
+	await import("@/lib/billable-time/accounting/fake-provider");
 
 const ids = {
 	organization: "t903b-org",
@@ -127,7 +148,9 @@ function actAs(userId: string, organizationId: string = ids.organization) {
 }
 
 async function unwrap<T>(
-	result: Promise<{ success: true; data: T } | { success: false; error: string }>,
+	result: Promise<
+		{ success: true; data: T } | { success: false; error: string }
+	>,
 ): Promise<T> {
 	const settled = await result;
 	if (!settled.success) throw new Error(settled.error);
@@ -151,12 +174,20 @@ describe("hand-off on PostgreSQL", () => {
 
 	async function cleanup() {
 		for (const organizationId of [ids.organization, ids.otherOrganization]) {
-			await admin.query("delete from approval_request where organization_id = $1", [
+			await admin.query(
+				"delete from approval_request where organization_id = $1",
+				[organizationId],
+			);
+			await admin.query(
+				"delete from invoiced_work where organization_id = $1",
+				[organizationId],
+			);
+			await admin.query("delete from work_period where organization_id = $1", [
 				organizationId,
 			]);
-			await admin.query("delete from invoiced_work where organization_id = $1", [organizationId]);
-			await admin.query("delete from work_period where organization_id = $1", [organizationId]);
-			await admin.query("delete from time_entry where organization_id = $1", [organizationId]);
+			await admin.query("delete from time_entry where organization_id = $1", [
+				organizationId,
+			]);
 		}
 		await admin.query("delete from organization where id = any($1::text[])", [
 			[ids.organization, ids.otherOrganization],
@@ -187,7 +218,15 @@ describe("hand-off on PostgreSQL", () => {
 				`insert into time_entry
 				 (id, employee_id, organization_id, type, timestamp, utc_offset_minutes, timezone, timezone_source, hash, created_by)
 				 values ($1, $2, $3, $4, $5, 0, 'Etc/UTC', 'user_setting', $6, $7)`,
-				[entryId, employeeId, organizationId, type, timestamp, `hash-${entryId}`, ids.ownerUser],
+				[
+					entryId,
+					employeeId,
+					organizationId,
+					type,
+					timestamp,
+					`hash-${entryId}`,
+					ids.ownerUser,
+				],
 			);
 		}
 		const id = randomUUID();
@@ -250,7 +289,11 @@ describe("hand-off on PostgreSQL", () => {
 	}
 
 	async function auditActions() {
-		const { rows } = await admin.query<{ action: string; entity_type: string; changes: string }>(
+		const { rows } = await admin.query<{
+			action: string;
+			entity_type: string;
+			changes: string;
+		}>(
 			`select action, entity_type, changes from audit_log
 			 where organization_id = $1 and action like 'billable_time.invoice%' order by timestamp, id`,
 			[ids.organization],
@@ -263,7 +306,10 @@ describe("hand-off on PostgreSQL", () => {
 	}
 
 	async function confirm(
-		input: Partial<typeof september> & { idempotencyKey?: string; fingerprint?: string } = {},
+		input: Partial<typeof september> & {
+			idempotencyKey?: string;
+			fingerprint?: string;
+		} = {},
 	) {
 		const shown = await preview(input);
 		return confirmHandOffAction({
@@ -277,7 +323,10 @@ describe("hand-off on PostgreSQL", () => {
 	beforeEach(async () => {
 		await cleanup();
 		harness.secrets.clear();
-		tool = createFakeAccountingTool({ apiKey: API_KEY, contacts: [acmeContact] });
+		tool = createFakeAccountingTool({
+			apiKey: API_KEY,
+			contacts: [acmeContact],
+		});
 		harness.registry = fakeAccountingProviderRegistry(tool);
 
 		await admin.query(
@@ -368,7 +417,10 @@ describe("hand-off on PostgreSQL", () => {
 			 values ($1, $2, 'lexware_office', 'active', 'fake-account', 'Fake tool', 'domestic_standard', 19, $3)`,
 			[ids.connection, ids.organization, ids.ownerUser],
 		);
-		harness.secrets.set(`${ids.organization}|accounting/${ids.connection}/api_key`, API_KEY);
+		harness.secrets.set(
+			`${ids.organization}|accounting/${ids.connection}/api_key`,
+			API_KEY,
+		);
 		await admin.query(
 			`insert into accounting_contact_link
 			 (organization_id, customer_id, provider_kind, account_ref, contact_id, contact_name, contact_number, linked_by)
@@ -402,7 +454,10 @@ describe("hand-off on PostgreSQL", () => {
 			minutes: 60,
 			deleted: true,
 		});
-		work.live = await addWork({ projectId: ids.website, start: "2026-09-29T08:00:00Z" });
+		work.live = await addWork({
+			projectId: ids.website,
+			start: "2026-09-29T08:00:00Z",
+		});
 		work.nonBillable = await addWork({
 			projectId: ids.website,
 			start: "2026-09-06T08:00:00Z",
@@ -462,12 +517,24 @@ describe("hand-off on PostgreSQL", () => {
 			},
 		]);
 		expect(shown.netTotal).toBe("237.21");
-		expect(shown.included.map((item) => item.workPeriodId)).toEqual([work.website, work.app]);
-		expect(shown.heldBack.map((item) => item.workPeriodId)).toEqual([work.held]);
+		expect(shown.included.map((item) => item.workPeriodId)).toEqual([
+			work.website,
+			work.app,
+		]);
+		expect(shown.heldBack.map((item) => item.workPeriodId)).toEqual([
+			work.held,
+		]);
 		expect(shown.nonBillable).toEqual({ count: 1, hours: "0.75" });
-		expect(shown.withoutCustomer).toEqual({ count: 1, hours: "0.50", projects: ["Internal"] });
+		expect(shown.withoutCustomer).toEqual({
+			count: 1,
+			hours: "0.50",
+			projects: ["Internal"],
+		});
 		expect(shown.contact).toMatchObject({ contactId: "c-acme" });
-		expect(shown.taxTreatment).toMatchObject({ kind: "domestic_standard", rate: "19.00" });
+		expect(shown.taxTreatment).toMatchObject({
+			kind: "domestic_standard",
+			rate: "19.00",
+		});
 
 		const confirmed = await unwrap(
 			confirmHandOffAction({
@@ -494,7 +561,10 @@ describe("hand-off on PostgreSQL", () => {
 			}),
 		]);
 		// Held-back, deleted, live, non-billable, customerless and out-of-period work never lands in it.
-		expect((await invoiced()).map((row) => row.work_period_id)).toEqual([work.website, work.app]);
+		expect((await invoiced()).map((row) => row.work_period_id)).toEqual([
+			work.website,
+			work.app,
+		]);
 		const audit = await auditActions();
 		expect(audit).toEqual([
 			expect.objectContaining({
@@ -534,7 +604,8 @@ describe("hand-off on PostgreSQL", () => {
 
 		await expect(confirm()).resolves.toEqual({
 			success: false,
-			error: "1 work periods have no billable rate. Add a rate for them before handing off",
+			error:
+				"1 work periods have no billable rate. Add a rate for them before handing off",
 			code: "ValidationError",
 		});
 		expect(tool.createCalls()).toBe(0);
@@ -542,7 +613,9 @@ describe("hand-off on PostgreSQL", () => {
 		expect(await invoiced()).toEqual([]);
 
 		// Handing off only the priced projects works.
-		await expect(confirm({ projectIds: [ids.website, ids.app] })).resolves.toMatchObject({
+		await expect(
+			confirm({ projectIds: [ids.website, ids.app] }),
+		).resolves.toMatchObject({
 			success: true,
 		});
 	});
@@ -560,11 +633,17 @@ describe("hand-off on PostgreSQL", () => {
 			replayed: false,
 			pendingReason: "outcome_unknown",
 		});
-		expect(pending).toMatchObject({ status: "pending", outcome_unknown: true, attempt_count: 1 });
+		expect(pending).toMatchObject({
+			status: "pending",
+			outcome_unknown: true,
+			attempt_count: 1,
+		});
 		// The work is reserved: another hand-off cannot take it meanwhile.
 		expect((await preview()).alreadyInvoiced).toHaveLength(2);
 
-		const retried = await unwrap(retryHandOffAction({ draftId: pending?.id ?? "" }));
+		const retried = await unwrap(
+			retryHandOffAction({ draftId: pending?.id ?? "" }),
+		);
 		expect(retried).toEqual({
 			draftId: pending?.id,
 			status: "created",
@@ -572,13 +651,25 @@ describe("hand-off on PostgreSQL", () => {
 			pendingReason: null,
 		});
 		const replayed = await unwrap(
-			confirmHandOffAction({ ...september, idempotencyKey: key, fingerprint: "stale" }),
+			confirmHandOffAction({
+				...september,
+				idempotencyKey: key,
+				fingerprint: "stale",
+			}),
 		);
-		expect(replayed).toMatchObject({ draftId: pending?.id, status: "created", replayed: true });
+		expect(replayed).toMatchObject({
+			draftId: pending?.id,
+			status: "created",
+			replayed: true,
+		});
 
 		expect(tool.drafts()).toHaveLength(1);
 		expect(await drafts()).toEqual([
-			expect.objectContaining({ status: "created", external_id: "fake-draft-1", attempt_count: 2 }),
+			expect.objectContaining({
+				status: "created",
+				external_id: "fake-draft-1",
+				attempt_count: 2,
+			}),
 		]);
 		expect(await invoiced()).toHaveLength(2);
 	});
@@ -590,13 +681,19 @@ describe("hand-off on PostgreSQL", () => {
 		await held.reached;
 		const [pending] = await drafts();
 
-		await expect(retryHandOffAction({ draftId: pending?.id ?? "" })).resolves.toMatchObject({
+		await expect(
+			retryHandOffAction({ draftId: pending?.id ?? "" }),
+		).resolves.toMatchObject({
 			success: false,
 			code: "ConflictError",
 			error: expect.stringContaining("is being sent to the accounting tool"),
 		});
 		await expect(
-			confirmHandOffAction({ ...september, idempotencyKey: key, fingerprint: "stale" }),
+			confirmHandOffAction({
+				...september,
+				idempotencyKey: key,
+				fingerprint: "stale",
+			}),
 		).resolves.toMatchObject({ success: false, code: "ConflictError" });
 		expect(tool.createCalls()).toBe(1);
 
@@ -621,13 +718,15 @@ describe("hand-off on PostgreSQL", () => {
 
 		const [pending] = await drafts();
 		// The first call may still create the draft: a refusal now must not fail it.
-		await expect(unwrap(retryHandOffAction({ draftId: pending?.id ?? "" }))).resolves.toMatchObject(
-			{ status: "pending" },
-		);
+		await expect(
+			unwrap(retryHandOffAction({ draftId: pending?.id ?? "" })),
+		).resolves.toMatchObject({ status: "pending" });
 		expect(await drafts()).toEqual([
 			expect.objectContaining({ status: "pending", outcome_unknown: true }),
 		]);
-		expect((await invoiced()).every((row) => row.released_at === null)).toBe(true);
+		expect((await invoiced()).every((row) => row.released_at === null)).toBe(
+			true,
+		);
 
 		held.release();
 		await expect(unwrap(first)).resolves.toMatchObject({ status: "created" });
@@ -645,7 +744,9 @@ describe("hand-off on PostgreSQL", () => {
 		try {
 			await expect(confirm()).resolves.toMatchObject({ success: false });
 		} finally {
-			await admin.query("drop trigger if exists trf_refuse_created on invoice_draft");
+			await admin.query(
+				"drop trigger if exists trf_refuse_created on invoice_draft",
+			);
 			await admin.query("drop function if exists trf_refuse_created()");
 		}
 		expect(tool.drafts()).toHaveLength(1);
@@ -653,24 +754,30 @@ describe("hand-off on PostgreSQL", () => {
 		expect(pending).toMatchObject({ status: "pending" });
 
 		tool.failNext("createInvoiceDraft", "rejected");
-		await expect(unwrap(retryHandOffAction({ draftId: pending?.id ?? "" }))).resolves.toMatchObject(
-			{ status: "pending" },
-		);
+		await expect(
+			unwrap(retryHandOffAction({ draftId: pending?.id ?? "" })),
+		).resolves.toMatchObject({ status: "pending" });
 		expect(await drafts()).toEqual([
 			expect.objectContaining({ status: "pending", outcome_unknown: true }),
 		]);
-		expect((await invoiced()).every((row) => row.released_at === null)).toBe(true);
+		expect((await invoiced()).every((row) => row.released_at === null)).toBe(
+			true,
+		);
 
 		// The next retry finds the draft the first call created.
-		await expect(unwrap(retryHandOffAction({ draftId: pending?.id ?? "" }))).resolves.toMatchObject(
-			{ status: "created" },
-		);
+		await expect(
+			unwrap(retryHandOffAction({ draftId: pending?.id ?? "" })),
+		).resolves.toMatchObject({ status: "created" });
 		expect(tool.drafts()).toHaveLength(1);
 	});
 
 	it("refuses a confirm without the preview's fingerprint", async () => {
 		await expect(
-			confirmHandOffAction({ ...september, idempotencyKey: randomUUID(), fingerprint: "" }),
+			confirmHandOffAction({
+				...september,
+				idempotencyKey: randomUUID(),
+				fingerprint: "",
+			}),
 		).resolves.toMatchObject({
 			success: false,
 			error: "Preview the hand-off before confirming it",
@@ -689,7 +796,9 @@ describe("hand-off on PostgreSQL", () => {
 		});
 		harness.registry = fakeAccountingProviderRegistry(tool);
 
-		await expect(retryHandOffAction({ draftId: first.draftId })).resolves.toMatchObject({
+		await expect(
+			retryHandOffAction({ draftId: first.draftId }),
+		).resolves.toMatchObject({
 			success: false,
 			code: "ValidationError",
 			error:
@@ -703,8 +812,12 @@ describe("hand-off on PostgreSQL", () => {
 
 		const refused = await confirm();
 		expect(refused).toMatchObject({ success: false, code: "ValidationError" });
-		expect(await drafts()).toEqual([expect.objectContaining({ status: "failed" })]);
-		expect((await invoiced()).every((row) => row.released_at !== null)).toBe(true);
+		expect(await drafts()).toEqual([
+			expect.objectContaining({ status: "failed" }),
+		]);
+		expect((await invoiced()).every((row) => row.released_at !== null)).toBe(
+			true,
+		);
 		expect((await preview()).included).toHaveLength(2);
 		expect((await auditActions()).map((row) => row.action)).toEqual([
 			"billable_time.invoice_draft_started",
@@ -714,7 +827,10 @@ describe("hand-off on PostgreSQL", () => {
 
 	it("refuses a confirm whose preview is outdated", async () => {
 		const shown = await preview();
-		await admin.query("update work_period set duration_minutes = 80 where id = $1", [work.website]);
+		await admin.query(
+			"update work_period set duration_minutes = 80 where id = $1",
+			[work.website],
+		);
 
 		await expect(
 			confirmHandOffAction({
@@ -731,24 +847,37 @@ describe("hand-off on PostgreSQL", () => {
 		const [created] = tool.drafts();
 		tool.deleteDraft(created?.externalId ?? "");
 
-		await expect(unwrap(checkInvoiceDraftStatusAction({ draftId }))).resolves.toEqual({
+		await expect(
+			unwrap(checkInvoiceDraftStatusAction({ draftId })),
+		).resolves.toEqual({
 			kind: "gone",
 		});
 		// Never released automatically.
-		expect(await drafts()).toEqual([expect.objectContaining({ status: "created" })]);
+		expect(await drafts()).toEqual([
+			expect.objectContaining({ status: "created" }),
+		]);
 
 		await expect(
-			unwrap(releaseInvoiceDraftAction({ draftId, reason: "Deleted in Lexware" })),
+			unwrap(
+				releaseInvoiceDraftAction({ draftId, reason: "Deleted in Lexware" }),
+			),
 		).resolves.toEqual({ workReturned: 2 });
 		expect((await auditActions()).at(-1)).toMatchObject({
 			action: "billable_time.invoice_draft_released",
-			changes: { workReturned: 2, reason: "Deleted in Lexware", toolStatus: "gone" },
+			changes: {
+				workReturned: 2,
+				reason: "Deleted in Lexware",
+				toolStatus: "gone",
+			},
 		});
 		expect((await preview()).included).toHaveLength(2);
 		await expect(confirm()).resolves.toMatchObject({ success: true });
 		expect(await drafts()).toEqual([
 			expect.objectContaining({ status: "released" }),
-			expect.objectContaining({ status: "created", external_id: "fake-draft-2" }),
+			expect.objectContaining({
+				status: "created",
+				external_id: "fake-draft-2",
+			}),
 		]);
 	});
 
@@ -757,7 +886,9 @@ describe("hand-off on PostgreSQL", () => {
 
 		const texts = tool
 			.drafts()[0]
-			?.draft.lines.flatMap((line) => (line.kind === "text" ? [line.text] : []));
+			?.draft.lines.flatMap((line) =>
+				line.kind === "text" ? [line.text] : [],
+			);
 		expect(texts).toEqual([
 			"Timesheet",
 			"2026-09-02 · t903b-member-user · Website · 1.50 h",
@@ -789,35 +920,50 @@ describe("hand-off on PostgreSQL", () => {
 		const { draftId } = await unwrap(confirm());
 
 		// Writes that do not touch times, project or billability leave no mark.
-		await admin.query("update work_period set work_location_type = 'home' where id = $1", [
-			work.website,
-		]);
-		expect((await invoiced()).every((row) => row.changed_after_invoicing_at === null)).toBe(true);
+		await admin.query(
+			"update work_period set work_location_type = 'home' where id = $1",
+			[work.website],
+		);
+		expect(
+			(await invoiced()).every(
+				(row) => row.changed_after_invoicing_at === null,
+			),
+		).toBe(true);
 
 		await admin.query(
 			"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 105 where id = $1",
 			[work.website],
 		);
-		await admin.query("update work_period set is_billable = false where id = $1", [work.app]);
+		await admin.query(
+			"update work_period set is_billable = false where id = $1",
+			[work.app],
+		);
 		const marked = await invoiced();
-		expect(marked.map((row) => row.changed_fields)).toEqual([["times"], ["billability"]]);
+		expect(marked.map((row) => row.changed_fields)).toEqual([
+			["times"],
+			["billability"],
+		]);
 
 		const overview = await unwrap(getHandOffOverview());
-		expect(overview.changedAfterInvoicing.map((row) => row.workPeriodId)).toEqual([
-			work.website,
-			work.app,
-		]);
+		expect(
+			overview.changedAfterInvoicing.map((row) => row.workPeriodId),
+		).toEqual([work.website, work.app]);
 		const detail = await unwrap(getInvoiceDraftAction({ draftId }));
 		expect(detail.changedCount).toBe(2);
 
 		await expect(
 			unwrap(
 				clearChangedAfterInvoicingAction({
-					invoicedWorkIds: [overview.changedAfterInvoicing[0]?.invoicedWorkId ?? ""],
+					invoicedWorkIds: [
+						overview.changedAfterInvoicing[0]?.invoicedWorkId ?? "",
+					],
 				}),
 			),
 		).resolves.toEqual({ cleared: 1 });
-		expect((await invoiced()).map((row) => row.changed_fields)).toEqual([[], ["billability"]]);
+		expect((await invoiced()).map((row) => row.changed_fields)).toEqual([
+			[],
+			["billability"],
+		]);
 		const { rows } = await admin.query<{ entity_id: string; changes: string }>(
 			`select entity_id, changes from audit_log where organization_id = $1
 			 and action = 'billable_time.invoiced_work_mark_cleared'`,
@@ -843,7 +989,9 @@ describe("hand-off on PostgreSQL", () => {
 		);
 
 		actAs(ids.ownerUser);
-		const report = await unwrap(getProjectDetailedReport(ids.website, "2026-09-01", "2026-09-30"));
+		const report = await unwrap(
+			getProjectDetailedReport(ids.website, "2026-09-01", "2026-09-30"),
+		);
 		// Un-invoiced: the new hour and the held-back hour, at the new rate.
 		expect(report.summary.billable).toMatchObject({
 			revenue: "550.00",
@@ -864,7 +1012,9 @@ describe("hand-off on PostgreSQL", () => {
 		expect(detail.netTotal).toBe("87.21");
 
 		actAs(ids.ownerUser);
-		const report = await unwrap(getProjectDetailedReport(ids.app, "2026-09-01", "2026-09-30"));
+		const report = await unwrap(
+			getProjectDetailedReport(ids.app, "2026-09-01", "2026-09-30"),
+		);
 		expect(report.summary.billable).toMatchObject({
 			revenue: "87.21",
 			invoicing: { invoicedRevenue: "87.21", uninvoicedRevenue: "0.00" },
@@ -878,14 +1028,21 @@ describe("hand-off on PostgreSQL", () => {
 		for (const result of [
 			getHandOffOverview(),
 			previewHandOffAction(september),
-			confirmHandOffAction({ ...september, idempotencyKey: randomUUID(), fingerprint: "" }),
+			confirmHandOffAction({
+				...september,
+				idempotencyKey: randomUUID(),
+				fingerprint: "",
+			}),
 			retryHandOffAction({ draftId }),
 			getInvoiceDraftAction({ draftId }),
 			checkInvoiceDraftStatusAction({ draftId }),
 			releaseInvoiceDraftAction({ draftId }),
 			clearChangedAfterInvoicingAction({ invoicedWorkIds: [randomUUID()] }),
 		]) {
-			await expect(result).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+			await expect(result).resolves.toMatchObject({
+				success: false,
+				code: "AuthorizationError",
+			});
 		}
 
 		actAs(ids.otherUser, ids.otherOrganization);
@@ -893,11 +1050,15 @@ describe("hand-off on PostgreSQL", () => {
 			success: false,
 			code: "NotFoundError",
 		});
-		await expect(releaseInvoiceDraftAction({ draftId })).resolves.toMatchObject({
+		await expect(releaseInvoiceDraftAction({ draftId })).resolves.toMatchObject(
+			{
+				success: false,
+				code: "NotFoundError",
+			},
+		);
+		await expect(previewHandOffAction(september)).resolves.toMatchObject({
 			success: false,
-			code: "NotFoundError",
 		});
-		await expect(previewHandOffAction(september)).resolves.toMatchObject({ success: false });
 
 		actAs(ids.ownerUser);
 		await expect(
@@ -905,19 +1066,30 @@ describe("hand-off on PostgreSQL", () => {
 		).resolves.toMatchObject({ success: false, error: "Choose a customer" });
 		await expect(
 			previewHandOffAction({ ...september, projectIds: [ids.foreignProject] }),
-		).resolves.toMatchObject({ success: false, error: "Choose projects of this customer" });
-		expect(await drafts()).toEqual([expect.objectContaining({ status: "created" })]);
+		).resolves.toMatchObject({
+			success: false,
+			error: "Choose projects of this customer",
+		});
+		expect(await drafts()).toEqual([
+			expect.objectContaining({ status: "created" }),
+		]);
 	});
 
 	it("treats a deleted customer's billable work as without customer, never handed off", async () => {
-		await admin.query("update customer set is_active = false where id = $1", [ids.acme]);
+		await admin.query("update customer set is_active = false where id = $1", [
+			ids.acme,
+		]);
 
 		await expect(previewHandOffAction(september)).resolves.toMatchObject({
 			success: false,
 			error: "Choose a customer",
 		});
 		await expect(
-			confirmHandOffAction({ ...september, idempotencyKey: randomUUID(), fingerprint: "x" }),
+			confirmHandOffAction({
+				...september,
+				idempotencyKey: randomUUID(),
+				fingerprint: "x",
+			}),
 		).resolves.toMatchObject({ success: false, error: "Choose a customer" });
 		const other = await preview({ customerId: ids.beta });
 		// Website 1.50 h + held 1.00 h, App 1.02 h (61 min), Internal 0.50 h: no active customer.

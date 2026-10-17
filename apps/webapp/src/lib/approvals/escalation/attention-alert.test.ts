@@ -14,6 +14,7 @@ describe("buildEscalationAttentionAlert", () => {
 			userId: "admin-1",
 			organizationId: "org-1",
 			type: "approval_escalation_attention",
+			actionUrl: "/settings/approval-policies?tab=attention",
 			title: "Approval escalation needs attention",
 			message:
 				"An overdue approval has no eligible backup approver. The current approver keeps the assignment.",

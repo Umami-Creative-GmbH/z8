@@ -59,7 +59,11 @@ export function PricingSection({ copy }: PricingSectionProps) {
 							</div>
 						</div>
 
-						<p className="mt-6 text-[13px]" style={{ color: v("textTertiary") }}>
+						<p className="mt-6 text-[15px] font-semibold" style={{ color: v("textMuted") }}>
+							{copy.offer.kioskNote}
+						</p>
+
+						<p className="mt-2 text-[13px]" style={{ color: v("textTertiary") }}>
 							{copy.offer.taxNote}
 						</p>
 

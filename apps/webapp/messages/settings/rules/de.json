@@ -143,7 +143,6 @@
         "title": "Vertretungen",
         "toggle": "Vertretungen können Genehmigungen entscheiden"
       },
-      "description": "Überprüfen Sie die Eskalationsrichtlinie der Organisation, wie sie aus den Kanaleinstellungen migriert wurde und welche Bedingungen einen Genehmigungsmanager erfordern.",
       "dispose": {
         "confirm": "Eintrag schließen",
         "description": "Durch das Schließen wird Ihre Entscheidung im Audit-Protokoll erfasst. Die Genehmigung wird dadurch weder neu zugewiesen noch wird eine weitere automatische Eskalation ermöglicht.",
@@ -177,7 +176,6 @@
         "usedNo": "Nicht verwendet",
         "usedYes": "Verwendet"
       },
-      "navDescription": "Organisations-Eskalationsrichtlinie und Genehmigungen, die Aufmerksamkeit erfordern",
       "off": "Aus",
       "on": "Ein",
       "ownership": {

@@ -142,6 +142,12 @@ export const workPeriod = pgTable(
 		// Never set without the project.
 		taskId: uuid("task_id"),
 
+		// Missing task (#884, Projects ADR 0002): booked to the project without the
+		// task its active requirement asked for, by a writer where nobody could
+		// pick one. Only on project work without a task; mirrored from the
+		// canonical project allocation. A hint, outside the closed-month guard.
+		missingTask: boolean("missing_task").default(false).notNull(),
+
 		// Work category assignment (optional)
 		// When set, the factor from the category is used to calculate effective working time
 		// e.g., 2h of "Passive Travel" (factor 0.5) = 1h effective working time
@@ -201,6 +207,12 @@ export const workPeriod = pgTable(
 		breakStartedAt: timestamp("break_started_at", { withTimezone: true }),
 		breakStartedZone: text("break_started_zone"),
 		breakStartedOperationId: uuid("break_started_operation_id"),
+		// Where an offline kiosk's queued break start took its instant from (#885):
+		// `server_anchor` or `device_clock`. Null for every other start. The entry the
+		// break's closure writes at its start keeps it as its time source.
+		breakStartedTimeSource: text("break_started_time_source", {
+			enum: ["server_anchor", "device_clock"],
+		}),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
@@ -232,6 +244,10 @@ export const workPeriod = pgTable(
 		check(
 			"workPeriod_task_project_chk",
 			sql`${table.taskId} IS NULL OR ${table.projectId} IS NOT NULL`,
+		),
+		check(
+			"workPeriod_missing_task_chk",
+			sql`NOT ${table.missingTask} OR (${table.projectId} IS NOT NULL AND ${table.taskId} IS NULL)`,
 		),
 		index("workPeriod_workCategoryId_idx").on(table.workCategoryId),
 		index("workPeriod_approvalStatus_idx").on(table.approvalStatus),
@@ -275,6 +291,10 @@ export const workPeriod = pgTable(
 		check(
 			"workPeriod_break_in_progress_chk",
 			sql`(${table.breakStartedAt} IS NULL) = (${table.breakStartedZone} IS NULL) AND (${table.breakStartedAt} IS NULL OR ${table.breakStartedOperationId} IS NOT NULL)`,
+		),
+		check(
+			"workPeriod_break_time_source_chk",
+			sql`${table.breakStartedTimeSource} IS NULL OR (${table.breakStartedAt} IS NOT NULL AND ${table.breakStartedTimeSource} IN ('server_anchor', 'device_clock'))`,
 		),
 		uniqueIndex("workPeriod_org_breakStartedOperation_idx")
 			.on(table.organizationId, table.breakStartedOperationId)

@@ -143,7 +143,6 @@
         "title": "Stellvertretige",
         "toggle": "Stellvertretige chönd über Freigabe entscheide"
       },
-      "description": "Überprüef d Eskalationsrichtlinie vo de Organisation, wie si us de Kanal-Iistellige migriert worde isch, und Bedingige, wo en Gnähmigungs-Manager bruuche.",
       "dispose": {
         "confirm": "Iitrag schlüsse",
         "description": "Bim Schlüsse wird dini Entscheidig im Audit-Log protokolliert. D Gnähmigung wird nöd neu zuegwise und es wird keni wiiteri automatischi Eskalation zueglah.",
@@ -177,7 +176,6 @@
         "usedNo": "Nicht verwendet",
         "usedYes": "Verwendet"
       },
-      "navDescription": "Organisations-Eskalationsrichtlinie und Genehmigungen, die Aufmerksamkeit erfordern",
       "off": "Aus",
       "on": "Ein",
       "ownership": {

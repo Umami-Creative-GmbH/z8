@@ -53,6 +53,7 @@ const NO_ATTRIBUTION = WorkAttribution.fromWorkPeriod({
 	projectId: null,
 	taskId: null,
 	isBillable: false,
+	missingTask: false,
 	workCategoryId: null,
 	workLocationType: null,
 	vehicleKind: null,
@@ -84,7 +85,8 @@ export function diagnoseRecordAgreement(
 			: []),
 	];
 
-	// Only the project, task and billable flag can be unrepresentable. An
+	// Only the project, task (with its missing-task marker) and billable flag
+	// can be unrepresentable. An
 	// unrepresentable side borrows them from the other side (or books no project),
 	// so every facet that can still be compared is judged.
 	const standIn =
@@ -93,9 +95,9 @@ export function diagnoseRecordAgreement(
 			: "value" in canonicalSide
 				? canonicalSide.value
 				: NO_ATTRIBUTION;
-	const { projectId, taskId, isBillable } = standIn.workPeriodColumns();
+	const { projectId, taskId, isBillable, missingTask } = standIn.workPeriodColumns();
 	const comparablePeriod =
-		"value" in periodSide ? period : { ...period, projectId, taskId, isBillable };
+		"value" in periodSide ? period : { ...period, projectId, taskId, isBillable, missingTask };
 	const comparableCanonical: AgreementCanonicalRecord = {
 		record: canonical.record,
 		detail,

@@ -1,0 +1,95 @@
+---
+title: Kiosks
+description: Shared clocking devices at a location, where employees clock with their kiosk PIN
+icon: Clock
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+A kiosk is a shared device, such as a tablet at the staff entrance, where employees clock in and out with a kiosk PIN instead of signing in. Each kiosk belongs to one location and accepts only the employees assigned to that location.
+
+---
+
+## Setting Up a Kiosk
+
+Organization owners and admins manage kiosks in **Settings -> Kiosks**. Create a location first: every kiosk belongs to one.
+
+1. Choose **Add kiosk**.
+2. Enter a **Name** (for example "Staff entrance"), choose the **Location**, and check the **Time zone**. Clock events recorded at the kiosk use this zone.
+3. Optionally switch on the **Who-is-in board**, which shows on the kiosk who is in or on a break, by first name and last initial.
+4. Choose **Create kiosk**. Z8 shows a pairing code and a QR code.
+5. On the kiosk device, scan the QR code, or open the kiosk page and enter the code. The code works once and expires after 10 minutes.
+
+The device stays paired until you pair it again or revoke the kiosk. Changes to a kiosk apply at its next request.
+
+| Action | Effect |
+|--------|--------|
+| **Pair again** | Issues a new pairing code. If a device is paired, its token is rotated: that device stops working at once and must be paired again with the new code. For a kiosk with offline mode on, Z8 warns you first: clockings it saved offline and has not sent yet are refused when it reconnects. |
+| **Revoke** | The kiosk stops working at its next request and cannot be paired again. Create a new kiosk to replace it. |
+
+---
+
+## Who Can Clock at a Kiosk
+
+An employee can clock at a kiosk when they are:
+
+- an active employee of the organization,
+- assigned to the kiosk's location (on the employee or on the location, in **Settings**), and
+- set up with a kiosk PIN of 4 to 6 digits.
+
+Employees with an account choose their own kiosk PIN in their security settings. Managers can create kiosk-only employees, who have no email address, and set, reset or unlock their PIN on the employee's page in **Settings -> Employees**.
+
+After five wrong PINs in a row the employee's PIN is locked for 15 minutes. A kiosk also accepts at most 30 PIN attempts per minute, whoever enters them.
+
+---
+
+## Clocking at a Kiosk
+
+1. The employee taps their name on the kiosk's home screen.
+2. They enter their kiosk PIN.
+3. The kiosk shows their state and today's day total, and only the actions that fit: **Clock in**, or **Start break** and **Clock out**, or **Resume work** and **End day**. Ending the day while on a break ends the work at the start of the break.
+4. When vehicle use is asked or expected for the employee, the kiosk asks for the vehicle and odometer reading before the action (see [Vehicles and Kilometres](/docs/guide/admin-guide/vehicles-and-kilometres)).
+5. A confirmation shows the action and its time, then the kiosk returns to the home screen.
+
+The kiosk keeps an employee's PIN, state and day total only for their turn. It does not show history, corrections, projects or work categories.
+
+---
+
+## Offline Mode
+
+<Callout type="info" title="Not Yet Available">
+  Offline mode is not available yet. It needs your organization to use coordinated clock commands, which no organization does yet. Until then, a kiosk works only while it is online, and a kiosk without a connection says so and records nothing.
+</Callout>
+
+With offline mode, a kiosk keeps clocking when its connection drops, also after a reload or a restart of the device. Owners and admins switch it on per kiosk with **Offline mode** in the kiosk's **Edit** dialog; it is off by default.
+
+### What employees see offline
+
+- The kiosk shows a banner that it is offline and that clockings are saved on the kiosk.
+- After the employee taps their name and enters their PIN, the kiosk shows their state **as of** the time it last heard from Z8, together with what was already saved on this kiosk since. It never shows a day total offline.
+- All actions work as online, including ending the day while on a break and recording vehicle use.
+- The confirmation says the clocking is **saved on this kiosk and not yet confirmed**.
+
+### How offline clockings are confirmed
+
+The kiosk cannot check a PIN offline, and it keeps nothing that could: it seals each entered PIN so that only Z8 can read it. When the connection is back, the kiosk sends its saved clockings in the order they happened. Z8 then checks each PIN against the employee's current kiosk PIN, applies the PIN lockout in the order the attempts happened, and records each clocking at the time it happened. Each clocking is recorded once, even when the kiosk has to send it again.
+
+The kiosk applies its limit of 30 PIN attempts per minute itself while offline. If five saved PINs of the same employee turn out wrong within 15 minutes of arriving, Z8 checks that employee's further saved clockings only after those 15 minutes. The kiosk keeps them and sends them again, so nothing is lost.
+
+### Time of offline clockings
+
+The kiosk takes the time from Z8's clock at its last contact and counts on with a clock the device user cannot change. After a restart without a connection, or after the device was asleep, it uses the device clock instead, and the entry records which time source was used. Clockings are recorded in the time zone the kiosk had when the employee clocked. Z8 accepts offline clockings up to 7 days late.
+
+### Refused offline clockings
+
+Z8 refuses a saved clocking it cannot accept, for example a wrong or locked PIN, an employee no longer assigned to the location, or a time outside the accepted window. If a kiosk is revoked or paired again while offline, Z8 refuses all of its saved clockings.
+
+For each refused clocking:
+
+- the kiosk shows a short notice on its home screen;
+- the employee gets a notification saying what was not recorded and why. For a kiosk-only employee, their managers get it instead;
+- owners and admins see it under **Refused offline clockings** in **Settings -> Kiosks**, with the employee, the action, the time it claimed, the time source and the reason.
+
+### What the kiosk keeps
+
+An offline-mode kiosk keeps the kiosk's details, the assigned employees with their last known state and their vehicle-use details, and its saved clockings with their sealed PINs. It deletes what it no longer needs at its next contact: everything when offline mode is switched off or the kiosk is revoked, and an employee once they are no longer assigned to the location. Saved clockings are still sent and judged.

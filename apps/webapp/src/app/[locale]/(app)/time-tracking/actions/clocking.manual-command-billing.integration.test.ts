@@ -158,23 +158,27 @@ const stripeSubscription = (status: string) => ({
 	},
 });
 
+const stripeLayer = Layer.succeed(
+	StripeService,
+	StripeService.of({
+		// Billing finds the full seat item by its configured price (#1279)
+		config: { priceMonthlyId: "price_t317", priceYearlyId: "price_t317_year" },
+		getCustomer: () => Effect.succeed({ email: null }),
+		getSubscription: () => Effect.succeed(stripeSubscription("active")),
+	} as never),
+);
+
 const billingEventsLayer = BillingEventsServiceLive.pipe(
 	Layer.provide(
 		Layer.mergeAll(
 			SubscriptionServiceLive,
-			Layer.succeed(
-				StripeService,
-				StripeService.of({
-					getCustomer: () => Effect.succeed({ email: null }),
-					getSubscription: () => Effect.succeed(stripeSubscription("active")),
-				} as never),
-			),
 			Layer.succeed(
 				SeatSyncService,
 				SeatSyncService.of({ syncSeatsForOrganization: () => Effect.void } as never),
 			),
 		),
 	),
+	Layer.provideMerge(stripeLayer),
 	Layer.provide(DatabaseServiceLive),
 );
 
@@ -194,6 +198,7 @@ function runSubscriptionService<A, E>(
 	return Effect.runPromise(
 		Effect.flatMap(SubscriptionService, use).pipe(
 			Effect.provide(SubscriptionServiceLive),
+			Effect.provide(stripeLayer),
 			Effect.provide(DatabaseServiceLive),
 		),
 	);

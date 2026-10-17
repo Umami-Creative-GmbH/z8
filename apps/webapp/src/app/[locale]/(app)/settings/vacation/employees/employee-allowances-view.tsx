@@ -232,7 +232,7 @@ function EmployeeAllowancesTable({
 
 	return (
 		<div className="rounded-md border">
-			<Table>
+			<Table mobileLayout="stacked">
 				<TableHeader>
 					<TableRow>
 						{columns.map(([key, fallback, className]) => (

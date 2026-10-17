@@ -99,6 +99,7 @@
       "breakPendingCorrection": "A time correction approval is already pending for this work period. Add the break once it is resolved.",
       "breakRetry": "Failed to add break. Please try again.",
       "breakTooLong": "Break duration must be shorter than your current session.",
+      "chooseTaskInClock": "Open the clock at the top of the page, choose a task, then clock out.",
       "clockAttributionNotAllowed": "The selected project or category is not available",
       "clockCommandRejected": "The server did not accept this clock action",
       "clockConnectionRequired": "Clocking needs a connection in this organization. Reconnect and try again.",
@@ -135,6 +136,7 @@
       "taskNotFound": "This task no longer exists",
       "taskOtherProject": "This task belongs to another project",
       "taskProjectNotBookable": "Time can no longer be booked to this task's project",
+      "taskRequired": "This project requires a task. Choose one and try again.",
       "workCategoryNotAllowed": "Cannot assign to this work category"
     },
     "kiosk": {
@@ -158,9 +160,11 @@
         "resume": "Back to work",
         "returning": "Back to the start in {seconds} s",
         "startBreak": "Break started",
-        "title": "Done"
+        "title": "Done",
+        "unconfirmed": "Saved on this kiosk, not yet confirmed. Your PIN is checked when the kiosk is back online."
       },
       "employee": {
+        "asOf": "As of {time}",
         "back": "Cancel",
         "endDayHint": "Ending the day now ends your work at the start of your break.",
         "today": "Today: {duration}"
@@ -176,7 +180,11 @@
       "loading": "Starting kiosk…",
       "offline": {
         "banner": "The kiosk is offline. Clocking is not possible until the connection is back.",
-        "refused": "The kiosk is offline. Nothing was recorded; clocking works only while online."
+        "notSaved": "This could not be saved on the kiosk. Nothing was recorded.",
+        "queueBanner": "The kiosk is offline. Clockings are saved on this kiosk and confirmed when the connection is back.",
+        "refused": "The kiosk is offline. Nothing was recorded; clocking works only while online.",
+        "stateNote": "The kiosk is offline. What you do now is saved on this kiosk and not yet confirmed.",
+        "stateQueued": "The kiosk is offline. This includes clockings saved on this kiosk that are not yet confirmed."
       },
       "pairing": {
         "codeDescription": "The code works once and expires 10 minutes after it was issued.",
@@ -201,6 +209,20 @@
         "rateLimited": "Too many PIN attempts at this kiosk. Try again in {seconds} seconds.",
         "submit": "OK",
         "wrong": "That PIN is not correct. Try again."
+      },
+      "queue": {
+        "dismiss": "Dismiss",
+        "reason": {
+          "contact": "The kiosk's last connection could not be confirmed.",
+          "kiosk": "The kiosk was no longer paired at that time.",
+          "locked": "The PIN was locked.",
+          "notAssigned": "The employee cannot clock at this kiosk.",
+          "other": "Ask your manager.",
+          "pin": "The PIN was not accepted.",
+          "time": "Its time could not be accepted."
+        },
+        "refused": "{name}: {action} at {time}, saved while offline, was not accepted. {reason}",
+        "title": "Offline clockings not accepted"
       },
       "refusal": {
         "alreadyClockedIn": "You are already clocked in.",
@@ -404,16 +426,20 @@
       "drivingDetailsMissing": "Driving details missing",
       "duration": "Duration",
       "emptyState": "No time entries found for this week.",
+      "missingTask": "Missing task",
+      "missingTaskHint": "This project requires a task: add one to this booking in the calendar.",
       "recordedLocalTime": "Recorded local time",
       "rowActions": "Time entry actions",
       "title": "Time Entries",
       "viewCalendar": "View Calendar"
     },
     "taskPicker": {
+      "choose": "Choose a task",
       "doneTask": "{name} (done)",
       "empty": "No task found",
       "label": "Task",
       "none": "No task",
+      "requiredLabel": "Task (required)",
       "search": "Search tasks…"
     },
     "timeline": {

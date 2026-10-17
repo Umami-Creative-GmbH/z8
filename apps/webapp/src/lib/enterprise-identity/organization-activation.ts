@@ -1,3 +1,4 @@
+import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 /** Shared by the workspace initializer and organization switcher. */
 export async function activateOrganization(
 	organizationId: string,
@@ -5,7 +6,7 @@ export async function activateOrganization(
 	request: typeof fetch = fetch,
 	allowSso = true,
 ): Promise<
-	{ kind: "active"; hasEmployeeRecord: boolean } | { kind: "sso"; url: string }
+	{ kind: "active"; hasEmployeeRecord: boolean } | { kind: "sso" | "mfa"; url: string }
 > {
 	const response = await request("/api/organizations/switch", {
 		method: "POST",
@@ -15,7 +16,11 @@ export async function activateOrganization(
 	const result = await response.json();
 	if (response.ok)
 		return { kind: "active", hasEmployeeRecord: !!result.hasEmployeeRecord };
-	if (result.code !== "SSO_REQUIRED")
+	if(result.code==="MFA_REQUIRED"){
+ const query=new URLSearchParams({organizationId,callbackUrl:sanitizeCallbackUrl(callbackUrl,"/")});
+ return {kind:"mfa",url:`/mfa?${query}`};
+}
+if (result.code !== "SSO_REQUIRED")
 		throw new Error(result.error || "Failed to switch organization");
 	if (!allowSso)
 		throw new Error(

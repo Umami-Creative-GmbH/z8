@@ -56,7 +56,7 @@ function Closing({
 	context: DesktopContext;
 	onClockOut: (attribution: ClosingAttribution) => void;
 }) {
-	const attribution = useClosingAttribution();
+	const attribution = useClosingAttribution(context);
 	return (
 		<>
 			<ClosingAttributionFields
@@ -66,6 +66,7 @@ function Closing({
 			/>
 			<button
 				type="button"
+				disabled={attribution.taskMissing}
 				onClick={() => onClockOut(attribution.value(context))}
 			>
 				Clock out
@@ -325,5 +326,178 @@ describe("task picker in the closing attribution", () => {
 			project: { kind: "replace", id: ALPHA },
 			workCategory: { kind: "preserve" },
 		});
+	});
+});
+
+/** The context with the given projects' task requirement active (#1297). */
+function requiring(
+	projectIds: string[],
+	overrides: Partial<DesktopContext> = {},
+): DesktopContext {
+	const base = context(overrides);
+	return {
+		...base,
+		projects: base.projects.map((project) =>
+			projectIds.includes(project.id)
+				? { ...project, taskRequired: true }
+				: project,
+		),
+	};
+}
+
+function liveOn(
+	projectId: string,
+	currentTask?: { id: string; name: string } | null,
+): Partial<DesktopContext> {
+	return {
+		liveWork: {
+			id: "period-1",
+			projectId,
+			workCategoryId: null,
+			workLocationType: "office",
+			...(currentTask === undefined ? {} : { currentTask }),
+		},
+	};
+}
+
+describe("task picker for a project that requires a task (#1297)", () => {
+	const clockOutButton = () =>
+		screen.getByRole("button", { name: "Clock out" });
+	const isBlocked = () => (clockOutButton() as HTMLButtonElement).disabled;
+
+	it("says a task is required and sends the clock-out only once an open task is picked", async () => {
+		const view = setup(requiring([ALPHA]));
+
+		await userEvent.selectOptions(view.project(), ALPHA);
+		expect(optionLabels(view.requireTask())).toEqual([
+			"Task required",
+			"Build",
+			"design",
+		]);
+		expect(isBlocked()).toBe(true);
+		expect(screen.getByText("Choose a task to clock out.")).toBeDefined();
+		await userEvent.click(clockOutButton());
+		expect(view.onClockOut).not.toHaveBeenCalled();
+
+		await userEvent.selectOptions(view.requireTask(), BUILD);
+		expect(isBlocked()).toBe(false);
+		expect(screen.queryByText("Choose a task to clock out.")).toBeNull();
+		expect(await view.clockOut()).toStrictEqual({
+			project: { kind: "replace", id: ALPHA },
+			workCategory: { kind: "preserve" },
+			task: { kind: "replace", id: BUILD },
+		});
+	});
+
+	it("offers no way to clear the task of running work on such a project", () => {
+		const view = setup(requiring([ALPHA], liveOn(ALPHA, null)));
+
+		expect(optionLabels(view.requireTask())).toEqual([
+			"Task required",
+			"Build",
+			"design",
+		]);
+		expect(isBlocked()).toBe(true);
+	});
+
+	it.each([
+		["open", BUILD, "Build"],
+		["done", REVIEW, "Shipped"],
+	])(
+		"lets the running %s task satisfy the requirement while it is kept",
+		async (_state, id, name) => {
+			const view = setup(
+				requiring([ALPHA, DELTA], liveOn(ALPHA, { id, name })),
+			);
+
+			expect(optionLabels(view.requireTask())).toEqual([
+				`Keep current task: ${name}`,
+				"Build",
+				"design",
+			]);
+			expect(isBlocked()).toBe(false);
+			expect(await view.clockOut()).toStrictEqual({
+				project: { kind: "preserve" },
+				workCategory: { kind: "preserve" },
+			});
+
+			await userEvent.selectOptions(view.project(), DELTA);
+			expect(optionLabels(view.requireTask())).toEqual([
+				"Task required",
+				"Review",
+			]);
+			expect(isBlocked()).toBe(true);
+		},
+	);
+
+	it("requires nothing once the work leaves the project", async () => {
+		const view = setup(requiring([ALPHA], liveOn(ALPHA, null)));
+
+		await userEvent.selectOptions(view.project(), "clear");
+		expect(view.task()).toBeNull();
+		expect(isBlocked()).toBe(false);
+		expect(await view.clockOut()).toStrictEqual({
+			project: { kind: "clear" },
+			workCategory: { kind: "preserve" },
+		});
+	});
+
+	it("still offers no task for a project without an active requirement", async () => {
+		const view = setup(requiring([DELTA], liveOn(ALPHA, null)));
+
+		expect(optionLabels(view.requireTask())).toEqual([
+			"No task",
+			"No task",
+			"Build",
+			"design",
+		]);
+		expect(isBlocked()).toBe(false);
+		await userEvent.selectOptions(view.requireTask(), "clear");
+		expect(isBlocked()).toBe(false);
+		expect(await view.clockOut()).toStrictEqual({
+			project: { kind: "preserve" },
+			workCategory: { kind: "preserve" },
+			task: { kind: "clear" },
+		});
+	});
+
+	it("blocks the clock-out again when the picked task was marked done meanwhile", async () => {
+		const onClockOut = vi.fn<(attribution: ClosingAttribution) => void>();
+		const { rerender } = render(
+			<Closing context={requiring([ALPHA])} onClockOut={onClockOut} />,
+		);
+		await userEvent.selectOptions(
+			screen.getByRole("combobox", { name: "Project" }),
+			ALPHA,
+		);
+		await userEvent.selectOptions(
+			screen.getByRole("combobox", { name: "Task" }),
+			BUILD,
+		);
+		expect(isBlocked()).toBe(false);
+
+		const refreshed = requiring([ALPHA]);
+		refreshed.projects[0].tasks = [{ id: DESIGN, name: "design" }];
+		rerender(<Closing context={refreshed} onClockOut={onClockOut} />);
+
+		expect(isBlocked()).toBe(true);
+	});
+
+	it("says a task is required in German", async () => {
+		render(
+			<LocaleProvider language="de">
+				<Closing context={requiring([ALPHA])} onClockOut={vi.fn()} />
+			</LocaleProvider>,
+		);
+		await userEvent.selectOptions(
+			screen.getByRole("combobox", { name: "Projekt" }),
+			ALPHA,
+		);
+		expect(
+			optionLabels(screen.getByRole("combobox", { name: "Aufgabe" }))[0],
+		).toBe("Aufgabe erforderlich");
+		expect(
+			screen.getByText("Wählen Sie eine Aufgabe, um auszustempeln."),
+		).toBeDefined();
 	});
 });

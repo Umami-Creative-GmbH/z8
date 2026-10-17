@@ -444,7 +444,7 @@ function EmployeeDirectoryTab(props: {
 					) : (
 						<>
 							<div className="overflow-x-auto rounded-md border">
-								<Table>
+								<Table mobileLayout="stacked">
 									<TableHeader>
 										{table.getHeaderGroups().map((headerGroup) => (
 											<TableRow key={headerGroup.id}>

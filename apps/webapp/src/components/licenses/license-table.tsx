@@ -215,7 +215,7 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 			</div>
 
 			<div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-background/60 dark:bg-background/35 [&_[data-slot=table-container]]:min-w-full">
-				<Table>
+				<Table mobileLayout="stacked">
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow key={headerGroup.id}>

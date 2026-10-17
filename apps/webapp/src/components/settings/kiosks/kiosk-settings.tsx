@@ -14,16 +14,6 @@ import {
 	type KioskData,
 	revokeKioskAction,
 } from "@/app/[locale]/(app)/settings/kiosks/actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,15 +26,15 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { type KioskConfirmation, KioskConfirmationDialog } from "./kiosk-confirmation-dialog";
 import { KioskFormDialog } from "./kiosk-form-dialog";
 import { formatKioskInstant, kioskSettingsErrorMessage } from "./kiosk-format";
+import { KioskRefusalList } from "./kiosk-refusals";
 import { PairingCodeDialog } from "./pairing-code-dialog";
 
 interface KioskSettingsProps {
 	data: KioskAdminData;
 }
-
-type Confirmation = { kind: "pair" | "revoke"; kiosk: KioskData } | null;
 
 /** Owner/admin kiosk management (#859): create, pair, configure, rotate and revoke kiosks. */
 export function KioskSettings({ data }: KioskSettingsProps) {
@@ -52,10 +42,11 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 	const router = useRouter();
 	const [creating, setCreating] = useState(false);
 	const [editing, setEditing] = useState<KioskData | null>(null);
-	const [confirmation, setConfirmation] = useState<Confirmation>(null);
-	const [pairing, setPairing] = useState<{ code: IssuedPairingCodeData; kioskName: string } | null>(
-		null,
-	);
+	const [confirmation, setConfirmation] = useState<KioskConfirmation>(null);
+	const [pairing, setPairing] = useState<{
+		code: IssuedPairingCodeData;
+		kioskName: string;
+	} | null>(null);
 	const [pending, setPending] = useState(false);
 
 	async function confirm() {
@@ -131,6 +122,7 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 					) : (
 						<KioskTable
 							kiosks={data.kiosks}
+							organizationAdopted={data.organizationAdopted}
 							onEdit={setEditing}
 							onPair={(kiosk) => setConfirmation({ kind: "pair", kiosk })}
 							onRevoke={(kiosk) => setConfirmation({ kind: "revoke", kiosk })}
@@ -138,6 +130,10 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 					)}
 				</CardContent>
 			</Card>
+
+			{data.refusals.length > 0 || data.kiosks.some((kiosk) => kiosk.offlineModeEnabled) ? (
+				<KioskRefusalList refusals={data.refusals} />
+			) : null}
 
 			<KioskFormDialog
 				mode="create"
@@ -160,6 +156,7 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 					}}
 					locations={data.locations}
 					kiosk={editing}
+					organizationAdopted={data.organizationAdopted}
 					onSaved={() => {
 						setEditing(null);
 						router.refresh();
@@ -171,76 +168,26 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 				kioskName={pairing?.kioskName ?? ""}
 				onClose={() => setPairing(null)}
 			/>
-			<AlertDialog
-				open={confirmation !== null}
-				onOpenChange={(open) => {
-					if (!open && !pending) setConfirmation(null);
-				}}
-			>
-				<AlertDialogContent>
-					{confirmation?.kind === "revoke" ? (
-						<AlertDialogHeader>
-							<AlertDialogTitle>
-								{t("settings.kiosks.revokeTitle", "Revoke {name}?", {
-									name: confirmation.kiosk.name,
-								})}
-							</AlertDialogTitle>
-							<AlertDialogDescription>
-								{t(
-									"settings.kiosks.revokeDescription",
-									"The kiosk stops working on its next request and cannot be paired again. Create a new kiosk to replace it.",
-								)}
-							</AlertDialogDescription>
-						</AlertDialogHeader>
-					) : (
-						<AlertDialogHeader>
-							<AlertDialogTitle>
-								{t("settings.kiosks.pairTitle", "Pair {name} again?", {
-									name: confirmation?.kiosk.name ?? "",
-								})}
-							</AlertDialogTitle>
-							<AlertDialogDescription>
-								{confirmation?.kiosk.status === "paired"
-									? t(
-											"settings.kiosks.pairPairedDescription",
-											"The device token is rotated: the paired device stops working immediately and must be paired again with the new code.",
-										)
-									: t(
-											"settings.kiosks.pairUnpairedDescription",
-											"A new pairing code replaces the previous one.",
-										)}
-							</AlertDialogDescription>
-						</AlertDialogHeader>
-					)}
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={pending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction
-							disabled={pending}
-							onClick={(event) => {
-								event.preventDefault();
-								void confirm();
-							}}
-						>
-							{confirmation?.kind === "revoke"
-								? t("settings.kiosks.revokeConfirm", "Revoke kiosk")
-								: confirmation?.kiosk.status === "paired"
-									? t("settings.kiosks.rotateConfirm", "Rotate token and pair again")
-									: t("settings.kiosks.issueCodeConfirm", "Issue new code")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<KioskConfirmationDialog
+				confirmation={confirmation}
+				pending={pending}
+				organizationAdopted={data.organizationAdopted}
+				onDismiss={() => setConfirmation(null)}
+				onConfirm={() => void confirm()}
+			/>
 		</div>
 	);
 }
 
 function KioskTable({
 	kiosks,
+	organizationAdopted,
 	onEdit,
 	onPair,
 	onRevoke,
 }: {
 	kiosks: KioskData[];
+	organizationAdopted: boolean;
 	onEdit: (kiosk: KioskData) => void;
 	onPair: (kiosk: KioskData) => void;
 	onRevoke: (kiosk: KioskData) => void;
@@ -271,6 +218,16 @@ function KioskTable({
 									{kiosk.timezone}
 									{kiosk.boardEnabled
 										? ` · ${t("settings.kiosks.boardOn", "Who-is-in board on")}`
+										: ""}
+									{kiosk.offlineModeEnabled
+										? ` · ${
+												organizationAdopted
+													? t("settings.kiosks.offlineOn", "Offline mode on")
+													: t(
+															"settings.kiosks.offlineOnNotInEffect",
+															"Offline mode on, not in effect for this organization",
+														)
+											}`
 										: ""}
 								</div>
 							</TableCell>

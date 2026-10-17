@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
+import { type StripeConfig, StripeService } from "./stripe.service";
 import { SubscriptionService, SubscriptionServiceLive } from "./subscription.service";
 
 const {
@@ -22,8 +23,10 @@ const {
 	eqMock,
 	notLikeMock,
 	countBillableSeats,
+	countBillableSeatsByType,
 } = vi.hoisted(() => ({
 	countBillableSeats: vi.fn(),
+	countBillableSeatsByType: vi.fn(),
 	findFirst: vi.fn(),
 	insertValues: vi.fn(),
 	onConflictDoNothing: vi.fn(),
@@ -62,7 +65,10 @@ vi.mock("@/db", () => {
 });
 
 // Seat semantics are covered by billable-seat-count.integration.test.ts.
-vi.mock("@/lib/effect/services/billing/billable-seat-count", () => ({ countBillableSeats }));
+vi.mock("@/lib/effect/services/billing/billable-seat-count", () => ({
+	countBillableSeats,
+	countBillableSeatsByType,
+}));
 
 vi.mock("drizzle-orm", async (importOriginal) => ({
 	...(await importOriginal<typeof import("drizzle-orm")>()),
@@ -70,6 +76,35 @@ vi.mock("drizzle-orm", async (importOriginal) => ({
 	eq: eqMock,
 	notLike: notLikeMock,
 }));
+
+const kioskPrices = {
+	priceKioskMonthlyId: "price_kiosk_monthly_123",
+	priceKioskYearlyId: "price_kiosk_yearly_123",
+};
+
+/** The live service over the mocked database and a Stripe service carrying `config` (kiosk seats off by default). */
+function subscriptionLayer(config: Partial<StripeConfig> = {}) {
+	return SubscriptionServiceLive.pipe(
+		Layer.provide(
+			Layer.mergeAll(
+				DatabaseServiceLive,
+				Layer.succeed(
+					StripeService,
+					StripeService.of({
+						config: {
+							secretKey: "",
+							webhookSecret: "",
+							priceMonthlyId: "price_monthly_123",
+							priceYearlyId: "price_yearly_123",
+							enabled: true,
+							...config,
+						},
+					} as never),
+				),
+			),
+		),
+	);
+}
 
 describe("SubscriptionService", () => {
 	const existingSubscriptionRow = {
@@ -126,7 +161,7 @@ describe("SubscriptionService", () => {
 					currentPeriodEnd: new Date("2026-06-18T00:00:00.000Z"),
 					seats: 5,
 				});
-			}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+			}).pipe(Effect.provide(subscriptionLayer())),
 		);
 
 		expect(setValues).toHaveBeenCalledWith(
@@ -160,7 +195,7 @@ describe("SubscriptionService", () => {
 				const subscriptionService = yield* SubscriptionService;
 
 				return yield* subscriptionService.getByOrganization("org_123");
-			}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+			}).pipe(Effect.provide(subscriptionLayer())),
 		);
 
 		expect(result).toMatchObject({
@@ -168,6 +203,49 @@ describe("SubscriptionService", () => {
 			currentSeats: 3,
 		});
 		expect(countBillableSeats).toHaveBeenCalledWith(expect.anything(), "org_123");
+	});
+
+	it("returns the live kiosk seat part while the Stripe service has both kiosk prices (#886)", async () => {
+		// The environment has no kiosk prices: the injected Stripe configuration decides, as for seat sync.
+		countBillableSeatsByType.mockResolvedValueOnce({ full: 3, kiosk: 5 });
+
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const subscriptionService = yield* SubscriptionService;
+
+				return yield* subscriptionService.getByOrganization("org_123");
+			}).pipe(Effect.provide(subscriptionLayer(kioskPrices))),
+		);
+
+		expect(result).toMatchObject({ currentSeats: 8, currentKioskSeats: 5 });
+		expect(countBillableSeatsByType).toHaveBeenCalledWith(expect.anything(), "org_123", {
+			kioskSeats: true,
+		});
+	});
+
+	it("reports no kiosk seats while the Stripe service misses a kiosk price (#886)", async () => {
+		const kioskEnv = env as {
+			STRIPE_PRICE_KIOSK_MONTHLY_ID?: string;
+			STRIPE_PRICE_KIOSK_YEARLY_ID?: string;
+		};
+		kioskEnv.STRIPE_PRICE_KIOSK_MONTHLY_ID = "price_kiosk_monthly_123";
+		kioskEnv.STRIPE_PRICE_KIOSK_YEARLY_ID = "price_kiosk_yearly_123";
+
+		try {
+			const result = await Effect.runPromise(
+				Effect.gen(function* () {
+					const subscriptionService = yield* SubscriptionService;
+
+					return yield* subscriptionService.getByOrganization("org_123");
+				}).pipe(Effect.provide(subscriptionLayer({ ...kioskPrices, priceKioskYearlyId: "" }))),
+			);
+
+			expect(result).toMatchObject({ currentSeats: 3, currentKioskSeats: 0 });
+			expect(countBillableSeatsByType).not.toHaveBeenCalled();
+		} finally {
+			kioskEnv.STRIPE_PRICE_KIOSK_MONTHLY_ID = undefined;
+			kioskEnv.STRIPE_PRICE_KIOSK_YEARLY_ID = undefined;
+		}
 	});
 
 	it("creates a local trial without a Stripe customer using current organization seats", async () => {
@@ -195,7 +273,7 @@ describe("SubscriptionService", () => {
 					organizationId: "org_123",
 					now,
 				});
-			}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+			}).pipe(Effect.provide(subscriptionLayer())),
 		);
 
 		expect(insertValues).toHaveBeenCalledWith({
@@ -250,7 +328,7 @@ describe("SubscriptionService", () => {
 						organizationId: "org_123",
 						now,
 					});
-				}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+				}).pipe(Effect.provide(subscriptionLayer())),
 			);
 
 			const insertedTrialEnd = insertValues.mock.calls[0]?.[0]?.trialEnd;
@@ -271,7 +349,7 @@ describe("SubscriptionService", () => {
 					organizationId: "org_123",
 					now: new Date("2026-05-20T10:00:00.000Z"),
 				});
-			}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+			}).pipe(Effect.provide(subscriptionLayer())),
 		);
 
 		expect(result).toMatchObject({
@@ -307,7 +385,7 @@ describe("SubscriptionService", () => {
 					organizationId: "org_123",
 					now,
 				});
-			}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+			}).pipe(Effect.provide(subscriptionLayer())),
 		);
 
 		expect(result).toMatchObject({
@@ -333,7 +411,7 @@ describe("SubscriptionService", () => {
 					const subscriptionService = yield* SubscriptionService;
 
 					return yield* subscriptionService.canMutateData("org_123");
-				}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+				}).pipe(Effect.provide(subscriptionLayer())),
 			);
 
 			expect(result).toBe(false);
@@ -358,7 +436,7 @@ describe("SubscriptionService", () => {
 					const subscriptionService = yield* SubscriptionService;
 
 					return yield* subscriptionService.canMutateData("org_123");
-				}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+				}).pipe(Effect.provide(subscriptionLayer())),
 			);
 
 			expect(result).toBe(false);
@@ -383,7 +461,7 @@ describe("SubscriptionService", () => {
 					const subscriptionService = yield* SubscriptionService;
 
 					return yield* subscriptionService.canMutateData("org_123");
-				}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+				}).pipe(Effect.provide(subscriptionLayer())),
 			);
 
 			expect(result).toBe(true);
@@ -406,7 +484,7 @@ describe("SubscriptionService", () => {
 					const subscriptionService = yield* SubscriptionService;
 
 					return yield* subscriptionService.canMutateData("org_123");
-				}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+				}).pipe(Effect.provide(subscriptionLayer())),
 			);
 
 			expect(result).toBe(false);
@@ -421,7 +499,7 @@ describe("SubscriptionService", () => {
 				const subscriptionService = yield* SubscriptionService;
 
 				yield* subscriptionService.setStripeCustomerId("org_123", "cus_test_123");
-			}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+			}).pipe(Effect.provide(subscriptionLayer())),
 		);
 
 		expect(findFirst).not.toHaveBeenCalled();

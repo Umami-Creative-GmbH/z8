@@ -11,7 +11,7 @@ const mockState = vi.hoisted(() => {
 		resolvedHeaders: new Headers(),
 		headers: vi.fn(async () => mockState.resolvedHeaders),
 		getSession: vi.fn(),
-		canAccessOrganizationWithSso: vi.fn(async () => true),
+		canAccessOrganization: vi.fn(async () => true),
 		setActiveOrganization: vi.fn(),
 		ensureEmployeeForOrganizationMember: vi.fn(),
 		select,
@@ -27,7 +27,8 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("next/server", async () => {
-	const actual = await vi.importActual<typeof import("next/server")>("next/server");
+	const actual =
+		await vi.importActual<typeof import("next/server")>("next/server");
 	return {
 		...actual,
 		connection: mockState.connection,
@@ -44,11 +45,12 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/auth/organization-member-provisioning", () => ({
-	ensureEmployeeForOrganizationMember: mockState.ensureEmployeeForOrganizationMember,
+	ensureEmployeeForOrganizationMember:
+		mockState.ensureEmployeeForOrganizationMember,
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
-	canAccessOrganizationWithSso: mockState.canAccessOrganizationWithSso,
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	getOrganizationAccessRequirement: async (...args:unknown[]) => (await mockState.canAccessOrganization(...args)) ? {allowed:true,reason:"disabled"}:{allowed:false,reason:"SSO_REQUIRED"},
 }));
 
 vi.mock("@/db", () => ({
@@ -71,7 +73,11 @@ vi.mock("@/lib/logger", () => ({
 
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...conditions: unknown[]) => ({ type: "and", conditions })),
-	eq: vi.fn((column: unknown, value: unknown) => ({ type: "eq", column, value })),
+	eq: vi.fn((column: unknown, value: unknown) => ({
+		type: "eq",
+		column,
+		value,
+	})),
 }));
 
 vi.mock("@/db/auth-schema", () => ({
@@ -103,22 +109,32 @@ function createRequest(headers: HeadersInit, body: unknown): NextRequest {
 describe("POST /api/organizations/switch bearer access", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.canAccessOrganizationWithSso.mockResolvedValue(true);
+		mockState.canAccessOrganization.mockResolvedValue(true);
 		mockState.resolvedHeaders = new Headers();
 		mockState.limit.mockReset();
 		mockState.limit
-			.mockResolvedValueOnce([{ id: "member-1", role: "member", status: "approved" }])
+			.mockResolvedValueOnce([
+				{ id: "member-1", role: "member", status: "approved" },
+			])
 			.mockResolvedValueOnce([{ id: "emp-1", isActive: true }]);
 	});
 
 	it("rejects an approved member without matching SSO proof before provisioning or switching", async () => {
-		mockState.getSession.mockResolvedValue({ user: { id: "user-1" }, session: { id: "session-1", userId: "user-1" } });
-		mockState.canAccessOrganizationWithSso.mockResolvedValue(false);
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: { id: "session-1", userId: "user-1" },
+		});
+		mockState.canAccessOrganization.mockResolvedValue(false);
 		const response = await POST(createRequest({}, { organizationId: "org-2" }));
 		expect(response.status).toBe(403);
 		expect(await response.json()).toMatchObject({ code: "SSO_REQUIRED" });
-		expect(mockState.canAccessOrganizationWithSso).toHaveBeenCalledWith({ id: "session-1", userId: "user-1" }, "org-2");
-		expect(mockState.ensureEmployeeForOrganizationMember).not.toHaveBeenCalled();
+		expect(mockState.canAccessOrganization).toHaveBeenCalledWith(
+			{ id: "session-1", userId: "user-1" },
+			"org-2",
+		);
+		expect(
+			mockState.ensureEmployeeForOrganizationMember,
+		).not.toHaveBeenCalled();
 		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 	});
 
@@ -144,19 +160,25 @@ describe("POST /api/organizations/switch bearer access", () => {
 		"rejects %s organization membership",
 		async (status) => {
 			mockState.limit.mockReset();
-			mockState.limit.mockResolvedValueOnce([{ id: "member-1", role: "owner", status }]);
+			mockState.limit.mockResolvedValueOnce([
+				{ id: "member-1", role: "owner", status },
+			]);
 			mockState.getSession.mockResolvedValue({
 				user: { id: "user-1" },
 				session: {},
 			});
 
-			const response = await POST(createRequest({}, { organizationId: "org-2" }));
+			const response = await POST(
+				createRequest({}, { organizationId: "org-2" }),
+			);
 
 			expect(response.status).toBe(403);
 			expect(await response.json()).toEqual({
 				error: "You are not a member of this organization",
 			});
-			expect(mockState.ensureEmployeeForOrganizationMember).not.toHaveBeenCalled();
+			expect(
+				mockState.ensureEmployeeForOrganizationMember,
+			).not.toHaveBeenCalled();
 			expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 		},
 	);
@@ -164,17 +186,25 @@ describe("POST /api/organizations/switch bearer access", () => {
 	it("rejects missing organization membership", async () => {
 		mockState.limit.mockReset();
 		mockState.limit.mockResolvedValueOnce([]);
-		mockState.getSession.mockResolvedValue({ user: { id: "user-1" }, session: {} });
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: {},
+		});
 
 		const response = await POST(createRequest({}, { organizationId: "org-2" }));
 
 		expect(response.status).toBe(403);
-		expect(mockState.ensureEmployeeForOrganizationMember).not.toHaveBeenCalled();
+		expect(
+			mockState.ensureEmployeeForOrganizationMember,
+		).not.toHaveBeenCalled();
 		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 	});
 
 	it("loads the organization employee without filtering out inactive rows", async () => {
-		mockState.getSession.mockResolvedValue({ user: { id: "user-1" }, session: {} });
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: {},
+		});
 
 		await POST(createRequest({}, { organizationId: "org-2" }));
 
@@ -194,13 +224,20 @@ describe("POST /api/organizations/switch bearer access", () => {
 				{ id: "member-1", role: "owner", status: "approved" },
 			])
 			.mockResolvedValueOnce([{ id: "emp-1", isActive: false }]);
-		mockState.getSession.mockResolvedValue({ user: { id: "user-1" }, session: {} });
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: {},
+		});
 
 		const response = await POST(createRequest({}, { organizationId: "org-2" }));
 
 		expect(response.status).toBe(403);
-		expect(await response.json()).toEqual({ error: "Organization access is inactive" });
-		expect(mockState.ensureEmployeeForOrganizationMember).not.toHaveBeenCalled();
+		expect(await response.json()).toEqual({
+			error: "Organization access is inactive",
+		});
+		expect(
+			mockState.ensureEmployeeForOrganizationMember,
+		).not.toHaveBeenCalled();
 		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 	});
 
@@ -277,16 +314,22 @@ describe("POST /api/organizations/switch bearer access", () => {
 		const response = await POST(createRequest({}, { organizationId: "org-2" }));
 
 		expect(response.status).toBe(200);
-		expect(mockState.ensureEmployeeForOrganizationMember).toHaveBeenCalledWith(expect.anything(), {
-			mode: "reconcile",
-			userId: "user-1",
-			organizationId: "org-2",
-			memberRole: "member",
-		});
+		expect(mockState.ensureEmployeeForOrganizationMember).toHaveBeenCalledWith(
+			expect.anything(),
+			{
+				mode: "reconcile",
+				userId: "user-1",
+				organizationId: "org-2",
+				memberRole: "member",
+			},
+		);
 	});
 
 	it("switches successfully for an approved member with an active employee", async () => {
-		mockState.getSession.mockResolvedValue({ user: { id: "user-1" }, session: {} });
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: {},
+		});
 
 		const response = await POST(createRequest({}, { organizationId: "org-2" }));
 
@@ -296,7 +339,9 @@ describe("POST /api/organizations/switch bearer access", () => {
 			organizationId: "org-2",
 			hasEmployeeRecord: true,
 		});
-		expect(mockState.ensureEmployeeForOrganizationMember).not.toHaveBeenCalled();
+		expect(
+			mockState.ensureEmployeeForOrganizationMember,
+		).not.toHaveBeenCalled();
 		expect(mockState.setActiveOrganization).toHaveBeenCalledOnce();
 	});
 });

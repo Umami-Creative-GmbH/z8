@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import styles from "./sidebar.module.css";
 
 const SIDEBAR_STORAGE_KEY = "sidebar_state";
 const SIDEBAR_WIDTH = "16rem";
@@ -431,6 +432,7 @@ function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
 		<div
 			className={cn(
 				"flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
+				styles.scrollShadows,
 				className,
 			)}
 			data-sidebar="content"

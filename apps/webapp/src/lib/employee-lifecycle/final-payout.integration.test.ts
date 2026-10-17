@@ -5,7 +5,15 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { createDepartureCommands } from "./commands";
@@ -21,7 +29,9 @@ const harness = vi.hoisted(() => ({
 	released: false,
 }));
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
@@ -50,17 +60,23 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 // The mocked session has no stored SSO provenance to admit.
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
 
 vi.mock("@/lib/employee-lifecycle/release", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/employee-lifecycle/release")>();
+	const original =
+		await importOriginal<typeof import("@/lib/employee-lifecycle/release")>();
 	return {
 		...original,
 		get EMPLOYEE_OFFBOARDING_RELEASE_READY() {
@@ -92,20 +108,26 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
-		await fixture.pool.query(`update organization set timezone = 'UTC' where id = $1`, [
-			fixture.organizationId,
-		]);
+		await fixture.pool.query(
+			`update organization set timezone = 'UTC' where id = $1`,
+			[fixture.organizationId],
+		);
 		admin = await fixture.seedEmployee({ role: "admin" });
 		manager = await fixture.seedEmployee();
 		departing = await fixture.seedEmployee({
-			startDate: new Date(`${today.subtract({ days: 7 }).toString()}T00:00:00Z`),
+			startDate: new Date(
+				`${today.subtract({ days: 7 }).toString()}T00:00:00Z`,
+			),
 		});
 		staying = await fixture.seedEmployee({
-			startDate: new Date(`${today.subtract({ days: 7 }).toString()}T00:00:00Z`),
+			startDate: new Date(
+				`${today.subtract({ days: 7 }).toString()}T00:00:00Z`,
+			),
 		});
-		await fixture.pool.query(`update employee set role = 'manager' where id = $1`, [
-			manager.employeeId,
-		]);
+		await fixture.pool.query(
+			`update employee set role = 'manager' where id = $1`,
+			[manager.employeeId],
+		);
 		for (const subject of [departing, staying]) {
 			await fixture.pool.query(
 				`insert into employee_managers (employee_id, manager_id, is_primary, assigned_by)
@@ -151,7 +173,11 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 		}
 	});
 
-	async function seedCompletedWork(employeeId: string, from: string, to: string) {
+	async function seedCompletedWork(
+		employeeId: string,
+		from: string,
+		to: string,
+	) {
 		const start = `${workDay.toString()}T${from}:00Z`;
 		const end = `${workDay.toString()}T${to}:00Z`;
 		const clockInId = randomUUID();
@@ -193,7 +219,8 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 		const result = await offboardingActions.getEmployeeOffboardingViewAction({
 			employeeId: subject.employeeId,
 		});
-		if (!result.success) throw new Error(`offboarding view failed: ${result.error}`);
+		if (!result.success)
+			throw new Error(`offboarding view failed: ${result.error}`);
 		return result.data;
 	}
 
@@ -202,7 +229,10 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 
 		expect(view.state).toBe("offboarded");
 		expect(view.workBalance).toEqual({
-			balance: { balanceMinutes: 360, computedThroughDate: yesterday.toString() },
+			balance: {
+				balanceMinutes: 360,
+				computedThroughDate: yesterday.toString(),
+			},
 			finalPayout: {
 				defaultDay: yesterday.toString(),
 				defaultMinutes: 360,
@@ -215,7 +245,10 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 		const view = await review(manager.userId);
 
 		expect(view.workBalance).toEqual({
-			balance: { balanceMinutes: 360, computedThroughDate: yesterday.toString() },
+			balance: {
+				balanceMinutes: 360,
+				computedThroughDate: yesterday.toString(),
+			},
 			finalPayout: null,
 		});
 	});
@@ -248,7 +281,10 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 				})
 			).get(departing.employeeId)?.balanceMinutes,
 		).toBe(0);
-		const audit = await fixture.pool.query<{ action: string; performed_by: string }>(
+		const audit = await fixture.pool.query<{
+			action: string;
+			performed_by: string;
+		}>(
 			`select action, performed_by from audit_log
 			 where organization_id = $1 and entity_id = $2 order by timestamp`,
 			[fixture.organizationId, adjustmentId],
@@ -266,9 +302,10 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 
 	it("offers the final payout to a manager whose payroll grant covers the employee who left", async () => {
 		const payrollManager = await fixture.seedEmployee();
-		await fixture.pool.query(`update employee set role = 'manager' where id = $1`, [
-			payrollManager.employeeId,
-		]);
+		await fixture.pool.query(
+			`update employee set role = 'manager' where id = $1`,
+			[payrollManager.employeeId],
+		);
 		await fixture.pool.query(
 			`insert into employee_managers (employee_id, manager_id, is_primary, assigned_by)
 			 values ($1, $2, false, $3)`,
@@ -279,12 +316,22 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 			`insert into payroll_access_grant
 			 (id, organization_id, payroll_employee_id, scope, is_active, created_by, updated_at)
 			 values ($1, $2, $3, 'specific', true, $4, now())`,
-			[grantId, fixture.organizationId, payrollManager.employeeId, fixture.ownerUserId],
+			[
+				grantId,
+				fixture.organizationId,
+				payrollManager.employeeId,
+				fixture.ownerUserId,
+			],
 		);
 		await fixture.pool.query(
 			`insert into payroll_access_employee (organization_id, grant_id, employee_id, created_by)
 			 values ($1, $2, $3, $4)`,
-			[fixture.organizationId, grantId, departing.employeeId, fixture.ownerUserId],
+			[
+				fixture.organizationId,
+				grantId,
+				departing.employeeId,
+				fixture.ownerUserId,
+			],
 		);
 
 		const view = await review(payrollManager.userId);
@@ -311,18 +358,29 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 			reason: "Final payout on leaving",
 		});
 		expect(recorded).toMatchObject({ success: true });
-		const audit = await fixture.pool.query<{ performed_by: string; metadata: unknown }>(
+		const audit = await fixture.pool.query<{
+			performed_by: string;
+			metadata: unknown;
+		}>(
 			`select performed_by, metadata from audit_log where organization_id = $1 and entity_id = $2`,
-			[fixture.organizationId, recorded.success ? recorded.data.adjustmentId : ""],
+			[
+				fixture.organizationId,
+				recorded.success ? recorded.data.adjustmentId : "",
+			],
 		);
 		expect(audit.rows).toHaveLength(1);
 		expect(audit.rows[0]?.performed_by).toBe(payrollManager.userId);
 		const metadata = audit.rows[0]?.metadata;
-		expect(typeof metadata === "string" ? JSON.parse(metadata) : metadata).toMatchObject({
+		expect(
+			typeof metadata === "string" ? JSON.parse(metadata) : metadata,
+		).toMatchObject({
 			via: "payroll_access_grant",
 			grantId,
 		});
-		expect((await review(payrollManager.userId)).workBalance?.balance?.balanceMinutes).toBe(0);
+		expect(
+			(await review(payrollManager.userId)).workBalance?.balance
+				?.balanceMinutes,
+		).toBe(0);
 	});
 
 	it("leaves the review of an employee who is not departing without a work balance", async () => {

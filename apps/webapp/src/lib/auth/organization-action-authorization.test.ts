@@ -14,7 +14,10 @@ const liveDatabase = vi.hoisted(() => ({
 	employeeFindFirst: vi.fn(async (): Promise<unknown> => null),
 }));
 vi.mock("@/lib/effect/services/database.service", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/effect/services/database.service")>();
+	const original =
+		await importOriginal<
+			typeof import("@/lib/effect/services/database.service")
+		>();
 	const { Effect, Layer } = await import("effect");
 	return {
 		...original,
@@ -29,13 +32,24 @@ vi.mock("@/lib/effect/services/database.service", async (importOriginal) => {
 		}),
 	};
 });
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({ canAccessOrganizationWithSso: sso.allowed }));
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	canAccessOrganization: sso.allowed,
+}));
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 vi.mock("next/server", async (importOriginal) => ({
 	...(await importOriginal<typeof import("next/server")>()),
 	connection: async () => undefined,
 }));
-vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: async () => ({ user: { id: "user-1" }, session: { id: "session-1", userId: "user-1" } }) } } }));
+vi.mock("@/lib/auth", () => ({
+	auth: {
+		api: {
+			getSession: async () => ({
+				user: { id: "user-1" },
+				session: { id: "session-1", userId: "user-1" },
+			}),
+		},
+	},
+}));
 
 function runAuthorization({
 	employeeRecord,
@@ -82,7 +96,12 @@ function runAuthorization({
 describe("requireActiveOrganizationActionActor", () => {
 	it("denies even an approved owner when the session lacks the target organization's SSO proof", async () => {
 		sso.allowed.mockResolvedValueOnce(false);
-		await expect(runAuthorization({ membershipRecord: { role: "owner", status: "approved" }, employeeRecord: { isActive: true } }).result).rejects.toThrow("Organization action denied");
+		await expect(
+			runAuthorization({
+				membershipRecord: { role: "owner", status: "approved" },
+				employeeRecord: { isActive: true },
+			}).result,
+		).rejects.toThrow("Organization action denied");
 	});
 	it.each([
 		["missing approved membership", null, { isActive: true }],
@@ -106,11 +125,14 @@ describe("requireActiveOrganizationActionActor", () => {
 			{ role: "member", status: "approved" },
 			{ isActive: true },
 		],
-	] as const)("denies an actor with %s", async (_case, membershipRecord, employeeRecord) => {
-		await expect(
-			runAuthorization({ membershipRecord, employeeRecord }).result,
-		).rejects.toThrow("Organization action denied");
-	});
+	] as const)(
+		"denies an actor with %s",
+		async (_case, membershipRecord, employeeRecord) => {
+			await expect(
+				runAuthorization({ membershipRecord, employeeRecord }).result,
+			).rejects.toThrow("Organization action denied");
+		},
+	);
 
 	it.each([
 		[
@@ -125,14 +147,17 @@ describe("requireActiveOrganizationActionActor", () => {
 		],
 		["bootstrap admin", { role: "admin", status: "approved" }, null],
 		["bootstrap owner", { role: "owner", status: "approved" }, null],
-	] as const)("allows an intentional %s", async (_case, membershipRecord, employeeRecord) => {
-		await expect(
-			runAuthorization({ membershipRecord, employeeRecord }).result,
-		).resolves.toMatchObject({
-			membership: membershipRecord,
-			employee: employeeRecord,
-		});
-	});
+	] as const)(
+		"allows an intentional %s",
+		async (_case, membershipRecord, employeeRecord) => {
+			await expect(
+				runAuthorization({ membershipRecord, employeeRecord }).result,
+			).resolves.toMatchObject({
+				membership: membershipRecord,
+				employee: employeeRecord,
+			});
+		},
+	);
 
 	it("requires an owner token for owner-only actions", async () => {
 		await expect(
@@ -199,7 +224,9 @@ describe("runActiveOrganizationActionActorCheck", () => {
 		});
 		liveDatabase.employeeFindFirst.mockResolvedValueOnce({ isActive: true });
 
-		await expect(runActiveOrganizationActionActorCheck(input)).resolves.toMatchObject({
+		await expect(
+			runActiveOrganizationActionActorCheck(input),
+		).resolves.toMatchObject({
 			membership: { role: "admin" },
 			employee: { isActive: true },
 		});

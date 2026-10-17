@@ -124,7 +124,7 @@ export function LocationManagement({
 			) : (
 				<Card>
 					<CardContent className="p-0">
-						<Table>
+						<Table mobileLayout="stacked">
 							<TableHeader>
 								<TableRow>
 									<TableHead>{t("settings.locations.name", "Name")}</TableHead>

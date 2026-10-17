@@ -12,6 +12,8 @@ import { readTestText } from "@/test/read-test-text";
 const SETTINGS_ROOT = fileURLToPath(new URL("..", import.meta.url));
 
 const ORG_ADMIN_ROUTE_FILES = [
+	"clocking/page.tsx",
+	"notification-channels/page.tsx",
 	"billing/page.tsx",
 	"avv/page.tsx",
 	"roles/page.tsx",
@@ -45,6 +47,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"kiosks/page.tsx",
 	"custom-fields/page.tsx",
 	"vehicles/page.tsx",
+	"driving-licence/page.tsx",
 ] as const;
 
 function stripComments(source: string): string {
@@ -68,20 +71,24 @@ describe("org-admin settings route access", () => {
 		);
 	});
 
-	it("keeps third-party notification settings pages mobile-safe", () => {
-		for (const pagePath of [
-			"slack/page.tsx",
-			"discord/page.tsx",
-			"teams-notifications/page.tsx",
+	it("keeps merged chat settings on the mobile-safe tab layout and redirects legacy URLs", () => {
+		const source = readTestText(
+			join(SETTINGS_ROOT, "notification-channels/page.tsx"),
+			"utf8",
+		);
+		expect(source).toContain("<SettingsTabbedPage");
+		for (const [path, tab] of [
+			["slack", "slack"],
+			["discord", "discord"],
+			["teams-notifications", "teams"],
+			["telegram", "telegram"],
 		]) {
-			const source = stripComments(
-				readTestText(join(SETTINGS_ROOT, pagePath), "utf8"),
+			const legacy = readTestText(
+				join(SETTINGS_ROOT, path, "page.tsx"),
+				"utf8",
 			);
-
-			expect(source).toContain('className="p-4 sm:p-6"');
-			expect(source).toContain(
-				'className="mx-auto min-w-0 max-w-3xl space-y-6"',
-			);
+			expect(legacy).toContain("requireOrgAdminSettingsAccess(");
+			expect(legacy).toContain(`/settings/notification-channels?tab=${tab}`);
 		}
 	});
 
@@ -110,6 +117,8 @@ describe("org-admin settings route access", () => {
 	it("keeps the exported org-admin route list aligned with the approved sweep", () => {
 		expect(ORG_ADMIN_SETTINGS_ROUTES).toEqual([
 			"/settings/organizations",
+			"/settings/clocking",
+			"/settings/notification-channels",
 			"/settings/billing",
 			"/settings/avv",
 			"/settings/roles",
@@ -143,6 +152,7 @@ describe("org-admin settings route access", () => {
 			"/settings/kiosks",
 			"/settings/custom-fields",
 			"/settings/vehicles",
+			"/settings/driving-licence",
 			"/settings/vehicle-use",
 		]);
 	});
@@ -455,7 +465,9 @@ describe("org-admin settings route access", () => {
 		);
 
 		expect(source.includes("getEmployee(")).toBe(true);
-		expect(source.includes('redirectWithLocale("/settings/employees")')).toBe(true);
+		expect(source.includes('redirectWithLocale("/settings/employees")')).toBe(
+			true,
+		);
 	});
 
 	it("keeps the route locale on every localized redirect", () => {
@@ -645,9 +657,11 @@ describe("org-admin settings route access", () => {
 		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(pageSource.includes("requireOrgAdminSettingsAccess(")).toBe(false);
 		expect(pageSource.includes('accessTier === "member"')).toBe(true);
-		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(
-			true,
-		);
+		expect(
+			pageSource.includes(
+				'redirectWithLocale("/settings/work-policies?tab=changes")',
+			),
+		).toBe(true);
 		expect(actionsSource.includes("getEmployeeSettingsActorContext(")).toBe(
 			true,
 		);
@@ -793,13 +807,20 @@ describe("org-admin settings route access", () => {
 		// Travel expense settings share one guard (spec #598 review), built on the org-admin helper.
 		const expenseAdministratorSource = stripComments(
 			readTestText(
-				join(SETTINGS_ROOT, "../../../../lib/travel-expenses/expense-administrator.ts"),
+				join(
+					SETTINGS_ROOT,
+					"../../../../lib/travel-expenses/expense-administrator.ts",
+				),
 				"utf8",
 			),
 		);
-		expect(travelExpensesSource.includes("requireExpenseAdministrator(")).toBe(true);
+		expect(travelExpensesSource.includes("requireExpenseAdministrator(")).toBe(
+			true,
+		);
 		expect(
-			expenseAdministratorSource.includes("canManageCurrentOrganizationSettings("),
+			expenseAdministratorSource.includes(
+				"canManageCurrentOrganizationSettings(",
+			),
 		).toBe(true);
 		expect(expenseAdministratorSource.includes('role !== "admin"')).toBe(false);
 		expect(
@@ -881,9 +902,13 @@ describe("org-admin settings route access", () => {
 			"billable-time/accounting/page.tsx",
 			"billable-time/hand-off/page.tsx",
 		]) {
-			const source = stripComments(readTestText(join(SETTINGS_ROOT, page), "utf8"));
+			const source = stripComments(
+				readTestText(join(SETTINGS_ROOT, page), "utf8"),
+			);
 
-			expect(source.includes("requireBillableTimeSettingsAccess("), page).toBe(true);
+			expect(source.includes("requireBillableTimeSettingsAccess("), page).toBe(
+				true,
+			);
 		}
 	});
 

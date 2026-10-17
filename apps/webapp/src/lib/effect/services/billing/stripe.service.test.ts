@@ -7,7 +7,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { env } from "@/env";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { BillingServicesLive } from "./index";
-import { STRIPE_API_VERSION, StripeService, StripeServiceLive } from "./stripe.service";
+import {
+	STRIPE_API_VERSION,
+	StripeService,
+	StripeServiceLive,
+	stripeConfigFromEnv,
+} from "./stripe.service";
 
 const checkoutSessionsCreate = vi.fn(async (params: Record<string, unknown>) => ({
 	id: "cs_test_123",
@@ -52,6 +57,24 @@ describe("StripeService", () => {
 		(env as { STRIPE_WEBHOOK_SECRET: string }).STRIPE_WEBHOOK_SECRET = "whsec_test_123";
 		(env as { STRIPE_PRICE_MONTHLY_ID: string }).STRIPE_PRICE_MONTHLY_ID = "price_monthly_123";
 		(env as { STRIPE_PRICE_YEARLY_ID: string }).STRIPE_PRICE_YEARLY_ID = "price_yearly_123";
+	});
+
+	it("reads the kiosk seat price IDs from the environment without surrounding whitespace (#886)", () => {
+		const kioskEnv = env as {
+			STRIPE_PRICE_KIOSK_MONTHLY_ID?: string;
+			STRIPE_PRICE_KIOSK_YEARLY_ID?: string;
+		};
+		kioskEnv.STRIPE_PRICE_KIOSK_MONTHLY_ID = " price_kiosk_monthly_123 ";
+		kioskEnv.STRIPE_PRICE_KIOSK_YEARLY_ID = "  ";
+		try {
+			expect(stripeConfigFromEnv()).toMatchObject({
+				priceKioskMonthlyId: "price_kiosk_monthly_123",
+				priceKioskYearlyId: "",
+			});
+		} finally {
+			kioskEnv.STRIPE_PRICE_KIOSK_MONTHLY_ID = undefined;
+			kioskEnv.STRIPE_PRICE_KIOSK_YEARLY_ID = undefined;
+		}
 	});
 
 	it("adds organization metadata to checkout sessions and subscriptions", async () => {
@@ -181,6 +204,59 @@ describe("StripeService", () => {
 		});
 
 		expect(checkoutSessionsCreate).not.toHaveBeenCalled();
+	});
+
+	describe("kiosk seat line item (#886)", () => {
+		const createSession = (kiosk?: { priceId: string; quantity: number }) =>
+			Effect.runPromise(
+				Effect.gen(function* () {
+					const stripeService = yield* StripeService;
+
+					return yield* stripeService.createCheckoutSession({
+						customerId: "cus_test_123",
+						priceId: "price_monthly_123",
+						organizationId: "org_123",
+						quantity: 2,
+						kiosk,
+						successUrl: "https://app.test/settings/billing?success=true",
+						cancelUrl: "https://app.test/settings/billing?canceled=true",
+					});
+				}).pipe(Effect.provide(StripeServiceLive), Effect.result),
+			);
+
+		it("sends the kiosk seat line item after the full seat line item", async () => {
+			await createSession({ priceId: "price_kiosk_monthly_123", quantity: 4 });
+
+			expect(checkoutSessionsCreate).toHaveBeenCalledWith(
+				expect.objectContaining({
+					line_items: [
+						{ price: "price_monthly_123", quantity: 2 },
+						{ price: "price_kiosk_monthly_123", quantity: 4 },
+					],
+				}),
+			);
+		});
+
+		it("sends only the full seat line item without a kiosk line", async () => {
+			await createSession();
+
+			expect(checkoutSessionsCreate).toHaveBeenCalledWith(
+				expect.objectContaining({
+					line_items: [{ price: "price_monthly_123", quantity: 2 }],
+				}),
+			);
+		});
+
+		it("rejects a kiosk product id before creating checkout sessions", async () => {
+			const result = await createSession({ priceId: "prod_kiosk", quantity: 4 });
+
+			expect(result._tag).toBe("Failure");
+			expect(result._tag === "Failure" ? result.failure : null).toMatchObject({
+				message: "Stripe checkout price must be a Price ID starting with price_",
+				operation: "createCheckoutSession",
+			});
+			expect(checkoutSessionsCreate).not.toHaveBeenCalled();
+		});
 	});
 
 	it("checkout route computes remaining trial days instead of starting a fresh trial", () => {

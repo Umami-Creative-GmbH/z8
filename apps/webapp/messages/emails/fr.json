@@ -117,6 +117,17 @@
       "actionFallback": "Si le bouton ne fonctionne pas, ouvrez ce lien :",
       "footer": "Cet e-mail a été envoyé par Z8."
     },
+    "mfa": {
+      "codesChanged": "Code de récupération utilisé ou remplacé",
+      "deadlineMessage": "{organization} exige un authentificateur d'ici le {deadline}. Passé ce délai exact, validez un authentificateur TOTP ou une clé d'accès avec code PIN/biométrie avant d'accéder à cette organisation. L'inscription seule ne suffit pas. Utilisez la Vérification de sécurité pour vous inscrire ou vérifier votre identité ; un mot de passe et un code de secours ne permettent qu'une inscription de remplacement.",
+      "deadlineTitle": "Authentification de l'organisation requise",
+      "factorChanged": "Authentificateur modifié",
+      "factorRemoved": "Authentificateur supprimé",
+      "passwordChanged": "Mot de passe modifié",
+      "securityMessage": "{event} pour {organization}. Une vérification antérieure peut ne plus permettre d'accéder à l'organisation. Vérifiez un authentificateur restant ou de remplacement sous Vérification de sécurité. Si vous n'avez pas effectué cette modification, sécurisez votre compte dès maintenant.",
+      "securityTitle": "Sécurité d'authentification modifiée",
+      "suspended": "L'exigence est actuellement suspendue. Sa réactivation rétablit l'échéance attribuée."
+    },
     "notification": {
       "openAction": "Ouvrir Z8"
     },

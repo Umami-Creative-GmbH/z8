@@ -39,6 +39,12 @@ vi.mock("@/lib/query/use-assigned-projects", () => ({
 		projects: [
 			{ id: "project-1", name: "Website", tasks: [{ id: "task-design", name: "Design" }] },
 			{ id: "project-2", name: "Audit", tasks: [{ id: "task-fieldwork", name: "Fieldwork" }] },
+			{
+				id: "project-3",
+				name: "Payroll",
+				requiresTask: true,
+				tasks: [{ id: "task-export", name: "Export" }],
+			},
 		],
 		isLoading: false,
 		isError: false,
@@ -82,16 +88,17 @@ vi.mock("@/components/time-tracking/task-selector", () => ({
 		currentTask?: { id: string; name: string; projectId: string } | null;
 		onValueChange: (value: string | undefined) => void;
 		projectId: string | undefined;
-		projects: { id: string; tasks: { id: string; name: string }[] }[];
+		projects: { id: string; requiresTask?: boolean; tasks: { id: string; name: string }[] }[];
 		value?: string;
 	}) => {
-		const tasks = [...(projects.find((project) => project.id === projectId)?.tasks ?? [])];
+		const project = projects.find((choice) => choice.id === projectId);
+		const tasks = [...(project?.tasks ?? [])];
 		if (currentTask && currentTask.projectId === projectId && currentTask.id === value) {
 			tasks.unshift(currentTask);
 		}
 		return tasks.length === 0 ? null : (
 			<select
-				aria-label="Task"
+				aria-label={project?.requiresTask ? "Task (required)" : "Task"}
 				onChange={(event) => onValueChange(event.target.value || undefined)}
 				value={value ?? ""}
 			>
@@ -277,6 +284,32 @@ describe("WorkPeriodEditDialog project and task (#874)", () => {
 
 		await waitFor(() =>
 			expect(toastError).toHaveBeenCalledWith("This task is done, so no time can be booked to it"),
+		);
+	});
+
+	it("marks the task required for a project that requires one (#884)", () => {
+		renderDialog();
+
+		fireEvent.change(screen.getByLabelText("Project"), { target: { value: "project-3" } });
+
+		expect(screen.getByLabelText("Task (required)")).toBeTruthy();
+	});
+
+	it("words a project change refused for want of a task (#884)", async () => {
+		updateWorkPeriodProject.mockResolvedValue({
+			success: false,
+			error: "Server wording",
+			code: "task_required",
+		});
+		renderDialog();
+
+		fireEvent.change(screen.getByLabelText("Project"), { target: { value: "project-3" } });
+		save();
+
+		await waitFor(() =>
+			expect(toastError).toHaveBeenCalledWith(
+				"This project requires a task. Choose one and try again.",
+			),
 		);
 	});
 });

@@ -6,7 +6,10 @@ import {
 } from "@/app/[locale]/(app)/settings/employees/employee-action-utils";
 import { getProjectSettingsActorContext } from "@/app/[locale]/(app)/settings/projects/project-scope";
 import { AuthServiceLive } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import {
+	DatabaseService,
+	makeDatabaseService,
+} from "@/lib/effect/services/database.service";
 
 const mocks = vi.hoisted(() => ({
 	query: vi.fn(),
@@ -31,8 +34,8 @@ vi.mock("@/lib/auth", () => ({
 		},
 	},
 }));
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
-	canAccessOrganizationWithSso: mocks.allowed,
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	canAccessOrganization: mocks.allowed,
 }));
 vi.mock("@/db", () => ({
 	db: {
@@ -50,6 +53,7 @@ vi.mock("@/db", () => ({
 		},
 	},
 }));
+
 import { db } from "@/db";
 
 describe("nonactive organization settings authorization", () => {
@@ -61,7 +65,7 @@ describe("nonactive organization settings authorization", () => {
 				db,
 				query: (name, execute) => {
 					mocks.query(name);
-					return Effect.promise(execute);
+					return makeDatabaseService(db).query(name, execute);
 				},
 			});
 			const run = (organizationId: string) =>
@@ -72,7 +76,10 @@ describe("nonactive organization settings authorization", () => {
 					),
 				);
 			await expect(run("locked")).rejects.toThrow("Not authenticated");
-			expect(mocks.query).not.toHaveBeenCalled();
+			expect(mocks.query).toHaveBeenCalledTimes(1);
+			expect(mocks.query).toHaveBeenCalledWith(
+				"organizationAuthentication.session",
+			);
 			await expect(run("open")).resolves.toBeDefined();
 		},
 	);
@@ -83,7 +90,7 @@ describe("nonactive organization settings authorization", () => {
 			db,
 			query: (name, execute) => {
 				mocks.query(name);
-				return Effect.promise(execute);
+				return makeDatabaseService(db).query(name, execute);
 			},
 		});
 		const run = (organizationId: string) =>
@@ -94,7 +101,10 @@ describe("nonactive organization settings authorization", () => {
 				),
 			);
 		await expect(run("locked")).rejects.toThrow("Not authenticated");
-		expect(mocks.query).not.toHaveBeenCalled();
+		expect(mocks.query).toHaveBeenCalledTimes(1);
+		expect(mocks.query).toHaveBeenCalledWith(
+			"organizationAuthentication.session",
+		);
 		await expect(run("open")).resolves.toBeDefined();
 	});
 });

@@ -2,7 +2,10 @@ import type { CatalogSlice } from "./catalog-slices";
 import type { Namespace, TreeTranslationsData } from "./shared";
 
 export type ShellCatalogKey = { namespace: Namespace; path: readonly string[] };
-function keys(namespace: Namespace, paths: readonly string[]): ShellCatalogKey[] {
+function keys(
+	namespace: Namespace,
+	paths: readonly string[],
+): ShellCatalogKey[] {
 	return paths.map((path) => ({ namespace, path: path.split(".") }));
 }
 
@@ -33,6 +36,38 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"user",
 		"userAvatar",
 		"billing.trialBanner",
+		// Minimal driving status is also shown in the header clock on every route.
+		"drivingLicence.operational.advisory",
+		"drivingLicence.operational.loading",
+		"drivingLicence.operational.refresh",
+		"drivingLicence.operational.unavailable",
+		"drivingLicence.operational.recordingHelp",
+		"drivingLicence.status",
+		"drivingLicence.notEnrolled",
+		"drivingLicence.notChecked",
+		"drivingLicence.class.active",
+		"drivingLicence.class.suspended",
+		"drivingLicence.class.ended",
+		// The header clock's status panel, its roster search and class evidence.
+		"drivingLicence.operational.title",
+		"drivingLicence.operational.search",
+		"drivingLicence.operational.searchHelp",
+		"drivingLicence.operational.noEmployees",
+		"drivingLicence.delivery.uncertain",
+		"drivingLicence.class.validThrough",
+		"drivingLicence.class.overdue",
+		"drivingLicence.class.recheck",
+		"drivingLicence.class.restrictions",
+		"drivingLicence.evidence",
+		"drivingLicence.declaration.text",
+		"drivingLicence.result",
+		// The organization MFA requirement banner is shown above every app route.
+		"mfa.banner",
+		// Settings search and navigation entries for driving licence control.
+		"drivingLicence.title",
+		"drivingLicence.settingsDescription",
+		"drivingLicence.myTitle",
+		"drivingLicence.myDescription",
 	]),
 	...keys("timeTracking", [
 		"timeTracking.errors",
@@ -137,6 +172,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.enterpriseIdentitySetup.title",
 	]),
 	...keys("settings/rules", [
+		"settings.changePolicies.tab.policies",
+		"settings.approvalEscalation.attention.approvalType",
 		"settings.approvalEscalation.navDescription",
 		"settings.approvalEscalation.title",
 		"settings.approvalPolicies.description",
@@ -185,6 +222,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.group.administration",
 		"settings.group.data",
 		"settings.group.enterprise",
+		"settings.group.integrations",
 		"settings.group.notifications",
 		"settings.group.organization",
 		"settings.implementationChecklist.description",
@@ -197,6 +235,24 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.locations.title",
 		"settings.myData.description",
 		"settings.myData.title",
+		// Consolidated settings pages (titles and descriptions only, not their tab copy).
+		"settings.navigation.audit.description",
+		"settings.navigation.audit.title",
+		"settings.navigation.chat-integrations.description",
+		"settings.navigation.chat-integrations.title",
+		"settings.navigation.clocking.description",
+		"settings.navigation.clocking.title",
+		"settings.navigation.developerAccess.description",
+		"settings.navigation.developerAccess.title",
+		"settings.navigation.domainBranding.description",
+		"settings.navigation.email.description",
+		"settings.navigation.email.title",
+		"settings.navigation.identityAccess.description",
+		"settings.navigation.identityAccess.title",
+		"settings.navigation.personnel-files.description",
+		"settings.navigation.scheduled-exports.description",
+		"settings.navigation.shiftPlanning.description",
+		"settings.navigation.shiftPlanning.title",
 		"settings.notifications.description",
 		"settings.notifications.title",
 		"settings.organizations.description",
@@ -293,13 +349,17 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.telegram.description",
 		"settings.telegram.title",
 	]),
-	...keys("settings/demo", ["settings.demoData.description", "settings.demoData.title"]),
+	...keys("settings/demo", [
+		"settings.demoData.description",
+		"settings.demoData.title",
+	]),
 	...keys("settings/people", [
 		"settings.permissions.title",
 		"settings.employees.details",
 		"settings.teams.details",
 		"settings.employees.description",
 		"settings.employees.title",
+		"settings.personnelFiles.settings.title",
 		"settings.roles.description",
 		"settings.roles.title",
 		"settings.skills.description",
@@ -307,7 +367,10 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.teams.description",
 		"settings.teams.title",
 	]),
-	...keys("settings/holidays", ["settings.holidays.description", "settings.holidays.title"]),
+	...keys("settings/holidays", [
+		"settings.holidays.description",
+		"settings.holidays.title",
+	]),
 	...keys("settings/payrollExport", [
 		"settings.payrollExport.description",
 		"settings.payrollExport.title",
@@ -316,6 +379,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.workDiagnostics.description",
 		"settings.workDiagnostics.title",
 	]),
+	...keys("settings/scheduledExports", ["settings.scheduledExports.title"]),
 	...keys("settings/vacation", [
 		"settings.vacation.history.title",
 		"settings.vacation.description",
@@ -332,7 +396,8 @@ function readPath(
 	path: readonly string[],
 ): TreeTranslationsData | string | undefined {
 	let value: TreeTranslationsData | string | undefined = tree;
-	for (const key of path) value = typeof value === "object" ? value[key] : undefined;
+	for (const key of path)
+		value = typeof value === "object" ? value[key] : undefined;
 	return value;
 }
 function copyPath(

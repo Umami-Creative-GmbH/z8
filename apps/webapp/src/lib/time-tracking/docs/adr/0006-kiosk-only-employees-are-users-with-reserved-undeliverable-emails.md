@@ -14,5 +14,5 @@ A kiosk-only employee has no sign-in and no email, yet every employee references
 ## Consequences
 
 - The reserved email domain must never be deliverable, must not match SSO or SCIM identities, and must not allow password reset or sign-in.
-- Kiosk-only employees count as billable seats like any other employee until a separate kiosk seat price exists. Seat counting must not exclude them by the demo rule.
+- Kiosk-only employees count as billable seats like any other employee. Seat counting must not exclude them by the demo rule. Once the kiosk seat prices are configured, their seats are kiosk seats charged at the cheaper kiosk seat price; every other seat is a full seat (#886). Because the reserved email decides the seat type, nothing may turn an ordinary employee into a kiosk-only employee.
 - Channels that need the employee to sign in (in-app inbox, push) do not reach kiosk-only employees; their notifications go to their managers.

@@ -32,6 +32,25 @@ vi.mock("@/app/[locale]/(app)/absences/sick-note-actions", () => ({
 	discardStagedSickNoteUploadsAction: vi.fn(),
 }));
 
+// The dialog's sick-note uploader would create a real Uppy instance, whose constructor
+// schedules an online-status check that destroy() never clears; it fires after the
+// environment is torn down. These tests never upload.
+vi.mock("@/hooks/use-tus-file-upload", () => ({
+	useTusFileUpload: () => ({
+		addFile: vi.fn(),
+		progress: 0,
+		isUploading: false,
+		isProcessing: false,
+		reset: vi.fn(),
+	}),
+}));
+
+// The real Better Auth session store schedules its unmount cleanup on a timer that touches
+// window, so the deputy picker's session comes from a stub instead.
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({ data: { session: { activeOrganizationId: "org-1" } } }),
+}));
+
 vi.mock("@/app/[locale]/(app)/absences/deputy-actions", () => ({
 	getDeputyCandidates: vi.fn().mockResolvedValue({
 		success: true,

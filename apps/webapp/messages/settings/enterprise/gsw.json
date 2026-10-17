@@ -198,7 +198,6 @@
         "deleteDescription": "Bisch sicher, dass du \"{domain}\" lösche wotsch? Die Aktion chan nöd rückgängig gmacht werde. Benutzer chönd sich nüm über die eigeti Domain aamälde.",
         "deleteFailed": "Domain konnte nicht gelöscht werden",
         "deleteTitle": "Domain löschen",
-        "description": "Konfiguriere die benutzerdefinierte Login-Domain, das Branding und die SSO-Anbieter deiner Organisation.",
         "dnsPropagation": "DNS-Propagierung",
         "dnsPropagationDescription": "DNS-Änderungen können bis zu 48 Stunden dauern, bis sie vollständig propagiert sind, obwohl dies oft innerhalb weniger Minuten geschieht. Du kannst auf \"Überprüfen\" klicken, sobald du den TXT-Eintrag hinzugefügt hast.",
         "domain": "Domain",
@@ -212,8 +211,6 @@
         "empty": "Noch keine benutzerdefinierte Domain konfiguriert.",
         "enabledAuthMethods": "Aktivierte Authentifizierungsmethoden",
         "guidedSetup": {
-          "action": "Geführte Einrichtung",
-          "description": "Konfiguriere SSO, SCIM, Zugriffsrichtlinien und Aktivierungsprüfungen in einem geführten Ablauf.",
           "title": "Geführte Einrichtung"
         },
         "keepExistingSecretKey": "Leer lassen, um den bestehenden geheimen Schlüssel beizubehalten",
@@ -238,7 +235,6 @@
           "pending": "Ausstehende Überprüfung",
           "verified": "Überprüft"
         },
-        "title": "Benutzerdefinierte Domain & Branding",
         "tokenExpired": "Token abgelaufen",
         "tokenExpiredDescription": "Das Verifizierungstoken ist abgelaufen. Bitte generiere ein neues Token.",
         "tokenExpires": "Token läuft ab am: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Verwalte SSO, SCIM-Provisionierung, Domain-Beschränkungen, Einladungsrichtlinien und Standardrollen für diese Organisation.",
-      "title": "Enterprise-Identitäts-Setup"
+      "description": "Verwalte SSO, SCIM-Provisionierung, Domain-Beschränkungen, Einladungsrichtlinien und Standardrollen für diese Organisation."
     }
   }
 }

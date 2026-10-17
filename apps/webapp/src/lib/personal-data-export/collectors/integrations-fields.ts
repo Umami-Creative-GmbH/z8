@@ -150,5 +150,57 @@ export const integrationsFieldGuide: PersonalDataFieldGuide = (t) => {
 				),
 			},
 		},
+		kiosk_pin_events: {
+			summary: t(
+				"personalDataExport.readme.fields.integrations.kioskPinEvents.summary",
+				"Your recent kiosk PIN attempts and PIN unlocks, kept for about a week to decide whether you are locked out after five wrong PINs in a row. The PINs entered are never stored.",
+			),
+			fields: {
+				event: t(
+					"personalDataExport.readme.fields.integrations.kioskPinEvents.event",
+					"failure for a wrong PIN, success for a correct one, cleared when your PIN was unlocked, reset or changed.",
+				),
+				occurred_at: t(
+					"personalDataExport.readme.fields.integrations.kioskPinEvents.occurredAt",
+					"When the PIN was entered or the lockout cleared (UTC).",
+				),
+				offline: t(
+					"personalDataExport.readme.fields.integrations.kioskPinEvents.offline",
+					"Whether the PIN was entered at a kiosk without a connection and checked when it reconnected.",
+				),
+			},
+		},
+		kiosk_refused_clockings: {
+			summary: t(
+				"personalDataExport.readme.fields.integrations.kioskRefusedClockings.summary",
+				"Clockings you made at a kiosk without a connection that were not recorded when the kiosk reconnected, and why.",
+			),
+			fields: {
+				kiosk: t(
+					"personalDataExport.readme.fields.integrations.kioskRefusedClockings.kiosk",
+					"The kiosk you clocked at.",
+				),
+				action: t(
+					"personalDataExport.readme.fields.integrations.kioskRefusedClockings.action",
+					"clock_in, clock_out, start_break or resume_break.",
+				),
+				claimed_at: t(
+					"personalDataExport.readme.fields.integrations.kioskRefusedClockings.claimedAt",
+					"When you clocked at the kiosk, as the kiosk recorded it (UTC).",
+				),
+				time_source: t(
+					"personalDataExport.readme.fields.integrations.kioskRefusedClockings.timeSource",
+					"server_anchor when the kiosk timed it from the server's time at its last connection, device_clock when from its own clock.",
+				),
+				reason: t(
+					"personalDataExport.readme.fields.integrations.kioskRefusedClockings.reason",
+					"Why the clocking was not recorded, for example wrong_pin or kiosk_rotated.",
+				),
+				refused_at: t(
+					"personalDataExport.readme.fields.integrations.kioskRefusedClockings.refusedAt",
+					"When the kiosk reconnected and the clocking was refused (UTC).",
+				),
+			},
+		},
 	};
 };

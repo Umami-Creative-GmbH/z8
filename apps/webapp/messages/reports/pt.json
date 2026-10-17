@@ -299,6 +299,8 @@
         "estimateProgress": "{booked}h de {estimate}h ({percent})",
         "hours": "Horas",
         "hoursValue": "{hours}h",
+        "missingTaskCount": "{count} sem uma tarefa",
+        "missingTaskHint": "Agendamentos neste projeto que foram recebidos sem a tarefa necessária. Adicione uma tarefa a cada agendamento no calendário.",
         "noTask": "Sem tarefa",
         "noTime": "Nenhum tempo foi registrado neste projeto neste período",
         "share": "Compartilhar",

@@ -231,19 +231,7 @@ export function CoverageRulesManagement({
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-bold">
-					{t("settings.coverageRules.title", "Coverage Targets")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
-						"settings.coverageRules.description",
-						"Define minimum staffing requirements per location, day, and time block.",
-					)}
-				</p>
-			</div>
-
+		<div className="flex flex-col gap-4">
 			{canManageCoverageSettings ? (
 				<CoveragePublishingSettingsCard
 					allowPublishWithGaps={settings?.allowPublishWithGaps ?? true}

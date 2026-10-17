@@ -140,7 +140,6 @@
         "keys": "Chaves de Assinatura",
         "packages": "Pacotes de Auditoria"
       },
-      "title": "Exportação de Auditoria",
       "verification": {
         "invalid": "Verificação Falhou",
         "valid": "Verificação Aprovada",
@@ -175,7 +174,6 @@
       "search": "Pesquisar",
       "searchPlaceholder": "Pesquisar ações, usuários ou metadados...",
       "timestamp": "Carimbo de data/hora",
-      "title": "Log de auditoria",
       "to": "Para",
       "unknown": "Desconhecido",
       "user": "Usuário",

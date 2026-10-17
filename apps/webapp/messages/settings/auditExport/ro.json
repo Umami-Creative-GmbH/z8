@@ -140,7 +140,6 @@
         "keys": "Chei de semnare",
         "packages": "Pachete de audit"
       },
-      "title": "Export audit",
       "verification": {
         "invalid": "Verificarea a eșuat",
         "valid": "Verificarea a reușit",
@@ -175,7 +174,6 @@
       "search": "Căutare",
       "searchPlaceholder": "Căutați acțiuni, utilizatori sau metadate…",
       "timestamp": "Marcaj temporal",
-      "title": "Jurnal de audit",
       "to": "Până la",
       "unknown": "Necunoscut",
       "user": "Utilizator",

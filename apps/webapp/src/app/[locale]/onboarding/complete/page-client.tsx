@@ -118,9 +118,9 @@ export default function CompletePage() {
 
 			<div className="mx-auto max-w-2xl">
 				{/* Success Message */}
-				<div className="mb-8 text-center">
-					<div className="mb-4 inline-flex size-20 items-center justify-center rounded-full bg-green-500/10 transition-transform animate-in zoom-in duration-500">
-						<IconCheck className="size-10 text-green-500" />
+				<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
+					<div className="mb-4 inline-flex size-20 items-center justify-center rounded-full bg-green-100 ring-1 ring-green-200 transition-transform dark:bg-green-950 dark:ring-green-800 animate-in zoom-in duration-500">
+						<IconCheck aria-hidden="true" className="size-10 text-green-700 dark:text-green-300" strokeWidth={2.5} />
 					</div>
 					<h1 className="mb-4 text-3xl font-bold tracking-tight transition-[opacity,transform] animate-in fade-in slide-in-from-bottom-4 duration-700">
 						{t("onboarding.complete.title", "You're all set!")}

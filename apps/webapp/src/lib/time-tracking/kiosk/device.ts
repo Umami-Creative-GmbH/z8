@@ -5,14 +5,16 @@ import {
 	KIOSK_TOKEN_STORAGE_KEY,
 	type KioskClockRefusal,
 	type KioskDeviceInfo,
+	type KioskOfflineContact,
 	type KioskRefusalCode,
 } from "./protocol";
 
 /**
  * The kiosk device's side of the protocol (#859): where it keeps its device
- * token and how it calls kiosk endpoints. The token is the only thing the
- * device stores; storage that throws (private mode, blocked site data) reads
- * as "not paired".
+ * token and how it calls kiosk endpoints. The token is the only thing this
+ * module stores (an offline-mode kiosk keeps its cache and queue in IndexedDB,
+ * `offline-device.ts`); storage that throws (private mode, blocked site data)
+ * reads as "not paired".
  */
 
 export function readKioskToken(): string | null {
@@ -39,7 +41,10 @@ export function forgetKioskToken(): void {
 	}
 }
 
-/** Calls a kiosk endpoint with the device token. Never queued: kiosks work online only. */
+/**
+ * Calls a kiosk endpoint with the device token. Never queued: an offline-mode
+ * kiosk queues frozen commands of its own instead (`offline-queue.ts`, #1292).
+ */
 export function kioskFetch(token: string, path: string, init: RequestInit = {}): Promise<Response> {
 	const headers = new Headers(init.headers);
 	headers.set(KIOSK_TOKEN_HEADER, token);
@@ -57,12 +62,22 @@ export async function kioskRefusalOf(response: Response): Promise<KioskRefusalCo
  * What a kiosk call came back with (#862): the answer, a refusal with its
  * `code`, a refused device token (`kiosk`), or no connection (`offline`). A
  * call made while the browser reports itself offline is never sent.
+ *
+ * A refusal Z8 itself did not give is `unavailable`: a server error (5xx, e.g.
+ * a proxy in front of a server that is down) or an answer that is not a Z8
+ * answer (a captive portal's page). An offline-mode kiosk treats it as being
+ * offline (#885); every other kiosk shows it as a failure, as before.
  */
 export type KioskCallResult<T> =
 	| { kind: "ok"; body: T }
-	| { kind: "refused"; status: number; refusal: KioskClockRefusal }
+	| { kind: "refused"; status: number; refusal: KioskClockRefusal; unavailable: boolean }
 	| { kind: "kiosk"; code: KioskRefusalCode }
 	| { kind: "offline" };
+
+/** Whether a call did not reach Z8 in a way that answered it: offline, or not Z8's answer. */
+export function isKioskCallUnreachable(result: KioskCallResult<unknown>): boolean {
+	return result.kind === "offline" || (result.kind === "refused" && result.unavailable);
+}
 
 export async function kioskCall<T>(
 	token: string,
@@ -80,11 +95,16 @@ export async function kioskCall<T>(
 	if (kioskRefusal) return { kind: "kiosk", code: kioskRefusal };
 	const body = (await response.json().catch(() => null)) as unknown;
 	if (response.ok && body !== null) return { kind: "ok", body: body as T };
-	const refusal =
-		body && typeof body === "object" && typeof (body as { code?: unknown }).code === "string"
-			? (body as KioskClockRefusal)
-			: { code: "failed" };
-	return { kind: "refused", status: response.status, refusal };
+	const answered =
+		body !== null &&
+		typeof body === "object" &&
+		typeof (body as { code?: unknown }).code === "string";
+	return {
+		kind: "refused",
+		status: response.status,
+		refusal: answered ? (body as KioskClockRefusal) : { code: "failed" },
+		unavailable: response.status >= 500 || !answered,
+	};
 }
 
 /** A kiosk call with a JSON body. */
@@ -97,8 +117,12 @@ export function kioskPost<T>(token: string, path: string, body: unknown) {
 }
 
 export type KioskSession =
-	| { state: "paired"; token: string; kiosk: KioskDeviceInfo }
-	| { state: "unpaired" }
+	| { state: "paired"; token: string; kiosk: KioskDeviceInfo; offline?: KioskOfflineContact }
+	/**
+	 * `staleToken`: the stored token Z8 no longer knows (`kiosk_unknown`). It is still
+	 * stored: the kiosk sends its queued commands with it once before forgetting it (#1292).
+	 */
+	| { state: "unpaired"; staleToken?: string }
 	| { state: "revoked" }
 	| { state: "unreachable" };
 
@@ -114,17 +138,23 @@ export async function loadKioskSession(): Promise<KioskSession> {
 	}
 	const refusal = await kioskRefusalOf(response);
 	if (refusal === "kiosk_revoked") return { state: "revoked" };
-	if (refusal === "kiosk_unknown") {
-		forgetKioskToken();
-		return { state: "unpaired" };
-	}
+	if (refusal === "kiosk_unknown") return { state: "unpaired", staleToken: token };
 	if (!response.ok) return { state: "unreachable" };
-	const body = (await response.json().catch(() => null)) as { kiosk?: KioskDeviceInfo } | null;
-	return body?.kiosk ? { state: "paired", token, kiosk: body.kiosk } : { state: "unreachable" };
+	const body = (await response.json().catch(() => null)) as {
+		kiosk?: KioskDeviceInfo;
+		offline?: KioskOfflineContact;
+	} | null;
+	if (!body?.kiosk) return { state: "unreachable" };
+	return {
+		state: "paired",
+		token,
+		kiosk: body.kiosk,
+		...(body.offline ? { offline: body.offline } : {}),
+	};
 }
 
 export type KioskPairingResult =
-	| { status: "paired"; token: string; kiosk: KioskDeviceInfo }
+	| { status: "paired"; token: string; kiosk: KioskDeviceInfo; offline?: KioskOfflineContact }
 	| { status: "invalid_code" | "malformed_code" | "rate_limited" | "unreachable" };
 
 /** Exchanges a pairing code for a device token and stores the token. */
@@ -147,8 +177,14 @@ export async function pairKioskDevice(code: string): Promise<KioskPairingResult>
 	const body = (await response.json().catch(() => null)) as {
 		token?: string;
 		kiosk?: KioskDeviceInfo;
+		offline?: KioskOfflineContact;
 	} | null;
 	if (!body?.token || !body.kiosk) return { status: "unreachable" };
 	storeKioskToken(body.token);
-	return { status: "paired", token: body.token, kiosk: body.kiosk };
+	return {
+		status: "paired",
+		token: body.token,
+		kiosk: body.kiosk,
+		...(body.offline ? { offline: body.offline } : {}),
+	};
 }

@@ -468,7 +468,7 @@ function ReliabilitySection({
 						</p>
 					) : (
 						<div className="overflow-x-auto">
-							<Table>
+							<Table mobileLayout="stacked">
 								<TableHeader>
 									<TableRow>
 										<TableHead>
@@ -584,7 +584,7 @@ function ScheduledJobsSection({
 						</p>
 					) : (
 						<div className="overflow-x-auto">
-							<Table>
+							<Table mobileLayout="stacked">
 								<TableHeaderRow
 									columns={[
 										{ id: "jobName", label: t("settings.workerQueue.table.jobName", "Job Name") },
@@ -676,7 +676,7 @@ function JobMetricsSection({
 			<Card>
 				<CardContent className="pt-6">
 					<div className="overflow-x-auto">
-						<Table>
+						<Table mobileLayout="stacked">
 							<TableHeader>
 								<TableRow>
 									<TableHead>

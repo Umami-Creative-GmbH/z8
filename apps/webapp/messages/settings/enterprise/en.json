@@ -198,7 +198,6 @@
         "deleteDescription": "Are you sure you want to delete \"{domain}\"? This action cannot be undone. Users will no longer be able to sign in via this custom domain.",
         "deleteFailed": "Failed to delete domain",
         "deleteTitle": "Delete Domain",
-        "description": "Configure your organization's custom login domain, branding, and SSO providers.",
         "dnsPropagation": "DNS Propagation",
         "dnsPropagationDescription": "DNS changes can take up to 48 hours to propagate, though they often complete within a few minutes. You can click \"Verify\" once you have added the TXT record.",
         "domain": "Domain",
@@ -212,8 +211,6 @@
         "empty": "No custom domain configured yet.",
         "enabledAuthMethods": "Enabled Auth Methods",
         "guidedSetup": {
-          "action": "Guided setup",
-          "description": "Configure SSO, SCIM, access policy, and activation checks in one guarded flow.",
           "title": "Guided setup"
         },
         "keepExistingSecretKey": "Leave empty to keep existing secret key",
@@ -238,7 +235,6 @@
           "pending": "Pending Verification",
           "verified": "Verified"
         },
-        "title": "Custom Domain & Branding",
         "tokenExpired": "Token Expired",
         "tokenExpiredDescription": "The verification token has expired. Please regenerate a new token.",
         "tokenExpires": "Token expires: {date}",
@@ -674,8 +670,7 @@
       }
     },
     "enterpriseIdentitySetup": {
-      "description": "Guide SSO, SCIM provisioning, domain restrictions, invite policy, and default roles for this organization.",
-      "title": "Enterprise Identity Setup"
+      "description": "Guide SSO, SCIM provisioning, domain restrictions, invite policy, and default roles for this organization."
     }
   }
 }

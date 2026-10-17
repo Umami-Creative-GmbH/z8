@@ -222,6 +222,22 @@ function Companion({
 						onOpenDashboard={() => void openZ8("dashboard")}
 					/>
 					<main className="app-main">
+						{organizations.organizations.some(
+							(org) => org.mfaRequired || org.ssoRequired,
+						) && (
+							<p role="status">
+								{t(
+									"Organization access needs sign-in verification. Saved clock actions stay on this device.",
+								)}{" "}
+								<button
+									type="button"
+									className="clock-recovery-action"
+									onClick={() => void auth.login()}
+								>
+									{t("Verify sign-in")}
+								</button>
+							</p>
+						)}
 						{organizations.error && (
 							<p role="alert">
 								{t("Organization could not be loaded")}: {organizations.error}
@@ -267,10 +283,13 @@ function Companion({
 								});
 							}}
 							onClockOut={async () => {
+								// Desktop's only check for a required task (#1297).
+								if (attribution.taskMissing) return;
 								await timezone.run(async () => {
 									const vehicleUse = vehicleSent(vehicle.clockOut);
 									const done = await present(
-										() => clock.clockOut(attribution.value(context), vehicleUse),
+										() =>
+											clock.clockOut(attribution.value(context), vehicleUse),
 										"Clock out",
 									);
 									if (done) vehicle.reset();
@@ -282,7 +301,8 @@ function Companion({
 									// One reading ends this work and pre-fills the resumed work.
 									const vehicleUse = vehicleSent(vehicle.clockOut);
 									const done = await present(
-										() => clock.startBreak(attribution.value(context), vehicleUse),
+										() =>
+											clock.startBreak(attribution.value(context), vehicleUse),
 										"On break",
 									);
 									if (done) {
@@ -295,6 +315,7 @@ function Companion({
 							onEndDay={endDay}
 							isLoading={busy}
 							disabled={!clock.canClock}
+							clockOutBlocked={attribution.taskMissing}
 						/>
 						{context && clock.isClockedIn && (
 							<ClosingAttributionFields

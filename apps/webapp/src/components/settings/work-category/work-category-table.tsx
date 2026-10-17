@@ -191,7 +191,7 @@ export function WorkCategoryTable({ organizationId, canManage }: WorkCategoryTab
 							</p>
 						</div>
 					) : (
-						<Table>
+						<Table mobileLayout="stacked">
 							<TableHeader>
 								<TableRow>
 									<TableHead className="w-[50px]">

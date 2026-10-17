@@ -5,6 +5,7 @@ import {
 	RestPeriodBlocker,
 } from "@/components/compliance/compliance-alert-banner";
 import { ExceptionRequestDialog } from "@/components/compliance/exception-request-dialog";
+import { DrivingAuthorizationAdvisory } from "@/components/driving-licence/operational-status";
 import { ClockCaptureControls } from "@/components/offline/offline-capture-actions";
 import { BreakInProgressNotice } from "@/components/time-tracking/break-in-progress-notice";
 import { ClockConnectionNotice } from "@/components/time-tracking/clock-connection-notice";
@@ -77,48 +78,188 @@ function ClockComplianceNotices({
 	) : null;
 }
 
+type ClockWidget = ReturnType<typeof useClockInOutWidget>;
+
+function isOnBreak(widget: ClockWidget) {
+	return widget.isClockedIn && !!widget.activeWorkPeriod?.breakStartedAt;
+}
+
+function ClockWidgetDescription({
+	widget,
+	employeeName,
+}: {
+	widget: ClockWidget;
+	employeeName: string;
+}) {
+	if (isOnBreak(widget)) {
+		return widget.t(
+			"timeTracking.breakInProgress.description",
+			"You're on a break",
+		);
+	}
+	if (widget.isClockedIn) {
+		return widget.t(
+			"timeTracking.currentlyClockedIn",
+			"You're currently clocked in",
+		);
+	}
+	return widget.t("timeTracking.welcomeBack", "Welcome back, {name}", {
+		name: employeeName,
+	});
+}
+
+function ClockSessionStatus({
+	widget,
+	timeFormat,
+}: {
+	widget: ClockWidget;
+	timeFormat: TimeFormat;
+}) {
+	const activeWorkPeriod = widget.isClockedIn ? widget.activeWorkPeriod : null;
+	const breakStartedAt = activeWorkPeriod?.breakStartedAt;
+
+	return (
+		<>
+			{activeWorkPeriod ? (
+				<ActiveSessionSummary
+					elapsedSeconds={widget.elapsedSeconds}
+					startTime={activeWorkPeriod.startTime}
+					t={widget.t}
+					timeFormat={timeFormat}
+				/>
+			) : null}
+			{breakStartedAt ? (
+				<BreakInProgressNotice
+					since={breakStartedAt}
+					zone={activeWorkPeriod?.breakStartedZone ?? null}
+					timeFormat={timeFormat}
+				/>
+			) : null}
+		</>
+	);
+}
+
+function ClockBookingChoices({ widget }: { widget: ClockWidget }) {
+	const showsNotes = widget.uiState.showNotesInput;
+	const asksVehicleUse = !showsNotes && widget.captureMode !== "local-review";
+	const VehicleUse = widget.isClockedIn
+		? ClockOutVehicleUse
+		: ClockInVehicleUse;
+
+	return (
+		<>
+			{(widget.captureMode !== "server" || !widget.isClockedIn) &&
+			!showsNotes ? (
+				<WorkLocationSelector
+					value={widget.uiState.workLocationType}
+					onChange={widget.setWorkLocationType}
+					t={widget.t}
+				/>
+			) : null}
+
+			{/* Vehicle use per the employee's mode (#1122); the legacy review queue keeps none. */}
+			{asksVehicleUse ? (
+				<VehicleUse
+					state={widget.vehicleUse}
+					disabled={widget.isMutating}
+					t={widget.t}
+				/>
+			) : null}
+		</>
+	);
+}
+
+function ClockActionRow({ widget }: { widget: ClockWidget }) {
+	const { isClockedIn } = widget;
+
+	return (
+		<div className="flex gap-2">
+			<div className={isClockedIn ? "min-w-0 basis-2/3" : "w-full"}>
+				<ClockActionButton
+					isClockedIn={isClockedIn}
+					isMutating={widget.isMutating}
+					isClockingOut={widget.isClockingOut}
+					onClick={isClockedIn ? widget.handleClockOut : widget.handleClockIn}
+					t={widget.t}
+				/>
+			</div>
+			{/* A break in progress ends only by its resume at a kiosk. */}
+			{isClockedIn && !isOnBreak(widget) ? (
+				<QuickBreakPopover
+					onAddBreak={widget.handleAddBreak}
+					isAddingBreak={widget.isAddingBreak}
+					isDisabled={widget.isMutating}
+					t={widget.t}
+					buttonClassName="min-w-0 basis-1/3 px-3"
+				>
+					<BreakVehicleReading
+						state={widget.vehicleUse}
+						disabled={widget.isAddingBreak}
+						t={widget.t}
+					/>
+				</QuickBreakPopover>
+			) : null}
+		</div>
+	);
+}
+
+function ClockWidgetControls({ widget }: { widget: ClockWidget }) {
+	return (
+		<ClockCaptureControls
+			mode={widget.captureMode}
+			onClockIn={widget.handleClockIn}
+			onClockOut={widget.handleClockOut}
+			disabled={widget.isMutating}
+		>
+			{!widget.uiState.showNotesInput ? (
+				<ClockActionRow widget={widget} />
+			) : (
+				<PostClockOutNotesForm
+					notes={widget.uiState.notesText}
+					onChange={widget.setNotesText}
+					onSave={widget.handleSaveNotes}
+					onSkip={widget.handleDismissNotes}
+					isSaving={widget.isUpdatingNotes}
+					t={widget.t}
+				/>
+			)}
+		</ClockCaptureControls>
+	);
+}
+
+function ClockTimezoneMismatchPrompt({ widget }: { widget: ClockWidget }) {
+	if (!widget.timezoneMismatch) return null;
+
+	return (
+		<TimezoneMismatchDialog
+			open
+			savedTimezone={widget.timezoneMismatch.savedTimezone}
+			browserTimezone={widget.timezoneMismatch.browserTimezone}
+			isPending={widget.isTimezoneContinuationPending}
+			onUpdateAndContinue={widget.handleTimezoneMismatchUpdateAndContinue}
+			onContinueOnce={widget.handleTimezoneMismatchContinueOnce}
+			onCancel={widget.handleTimezoneMismatchCancel}
+		/>
+	);
+}
+
 export function ClockInOutWidget({
 	activeWorkPeriod,
 	employeeName,
 	timeFormat,
 }: Props) {
 	const widget = useClockInOutWidget(activeWorkPeriod);
-	const onBreak = widget.isClockedIn && !!widget.activeWorkPeriod?.breakStartedAt;
-	const asksVehicleUse = !widget.uiState.showNotesInput && widget.captureMode !== "local-review";
 
 	return (
 		<Card className="@container/widget">
 			<CardHeader>
 				<CardTitle>{widget.t("timeTracking.title", "Time Tracking")}</CardTitle>
 				<CardDescription>
-					{onBreak
-						? widget.t("timeTracking.breakInProgress.description", "You're on a break")
-						: widget.isClockedIn
-						? widget.t(
-								"timeTracking.currentlyClockedIn",
-								"You're currently clocked in",
-							)
-						: widget.t("timeTracking.welcomeBack", "Welcome back, {name}", {
-								name: employeeName,
-							})}
+					<ClockWidgetDescription widget={widget} employeeName={employeeName} />
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-4">
-				{widget.isClockedIn && widget.activeWorkPeriod ? (
-					<ActiveSessionSummary
-						elapsedSeconds={widget.elapsedSeconds}
-						startTime={widget.activeWorkPeriod.startTime}
-						t={widget.t}
-						timeFormat={timeFormat}
-					/>
-				) : null}
-				{onBreak && widget.activeWorkPeriod?.breakStartedAt ? (
-					<BreakInProgressNotice
-						since={widget.activeWorkPeriod.breakStartedAt}
-						zone={widget.activeWorkPeriod.breakStartedZone ?? null}
-						timeFormat={timeFormat}
-					/>
-				) : null}
+				<ClockSessionStatus widget={widget} timeFormat={timeFormat} />
 
 				<ClockComplianceNotices widget={widget} />
 
@@ -127,76 +268,12 @@ export function ClockInOutWidget({
 					sessionStartTime={widget.activeWorkPeriod?.startTime ?? null}
 				/>
 
-				{(widget.captureMode !== "server" || !widget.isClockedIn) &&
-				!widget.uiState.showNotesInput ? (
-					<WorkLocationSelector
-						value={widget.uiState.workLocationType}
-						onChange={widget.setWorkLocationType}
-						t={widget.t}
-					/>
-				) : null}
+				<ClockBookingChoices widget={widget} />
 
-				{/* Vehicle use per the employee's mode (#1122); the legacy review queue keeps none. */}
-				{asksVehicleUse && widget.isClockedIn ? (
-					<ClockOutVehicleUse state={widget.vehicleUse} disabled={widget.isMutating} t={widget.t} />
-				) : null}
-				{asksVehicleUse && !widget.isClockedIn ? (
-					<ClockInVehicleUse state={widget.vehicleUse} disabled={widget.isMutating} t={widget.t} />
-				) : null}
-
+				<DrivingAuthorizationAdvisory />
 				<ClockConnectionNotice show={widget.connectionRequired} />
 
-				<ClockCaptureControls
-					mode={widget.captureMode}
-					onClockIn={widget.handleClockIn}
-					onClockOut={widget.handleClockOut}
-					disabled={widget.isMutating}
-				>
-					{!widget.uiState.showNotesInput ? (
-						<div className="flex gap-2">
-							<div
-								className={widget.isClockedIn ? "min-w-0 basis-2/3" : "w-full"}
-							>
-								<ClockActionButton
-									isClockedIn={widget.isClockedIn}
-									isMutating={widget.isMutating}
-									isClockingOut={widget.isClockingOut}
-									onClick={
-										widget.isClockedIn
-											? widget.handleClockOut
-											: widget.handleClockIn
-									}
-									t={widget.t}
-								/>
-							</div>
-							{/* A break in progress ends only by its resume at a kiosk. */}
-							{widget.isClockedIn && !onBreak ? (
-								<QuickBreakPopover
-									onAddBreak={widget.handleAddBreak}
-									isAddingBreak={widget.isAddingBreak}
-									isDisabled={widget.isMutating}
-									t={widget.t}
-									buttonClassName="min-w-0 basis-1/3 px-3"
-								>
-									<BreakVehicleReading
-										state={widget.vehicleUse}
-										disabled={widget.isAddingBreak}
-										t={widget.t}
-									/>
-								</QuickBreakPopover>
-							) : null}
-						</div>
-					) : (
-						<PostClockOutNotesForm
-							notes={widget.uiState.notesText}
-							onChange={widget.setNotesText}
-							onSave={widget.handleSaveNotes}
-							onSkip={widget.handleDismissNotes}
-							isSaving={widget.isUpdatingNotes}
-							t={widget.t}
-						/>
-					)}
-				</ClockCaptureControls>
+				<ClockWidgetControls widget={widget} />
 			</CardContent>
 
 			<ExceptionRequestDialog
@@ -204,17 +281,7 @@ export function ClockInOutWidget({
 				onOpenChange={widget.setExceptionDialogOpen}
 				defaultExceptionType={widget.uiState.exceptionType}
 			/>
-			{widget.timezoneMismatch ? (
-				<TimezoneMismatchDialog
-					open
-					savedTimezone={widget.timezoneMismatch.savedTimezone}
-					browserTimezone={widget.timezoneMismatch.browserTimezone}
-					isPending={widget.isTimezoneContinuationPending}
-					onUpdateAndContinue={widget.handleTimezoneMismatchUpdateAndContinue}
-					onContinueOnce={widget.handleTimezoneMismatchContinueOnce}
-					onCancel={widget.handleTimezoneMismatchCancel}
-				/>
-			) : null}
+			<ClockTimezoneMismatchPrompt widget={widget} />
 		</Card>
 	);
 }

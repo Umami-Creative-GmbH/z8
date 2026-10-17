@@ -25,12 +25,16 @@ const harness = vi.hoisted(() => ({ now: null as Instant | null }));
 const { sessions } = await vi.hoisted(async () => {
 	const { AsyncLocalStorage } = await import("node:async_hooks");
 	return {
-		sessions: new AsyncLocalStorage<{ userId: string; organizationId: string }>(),
+		sessions: new AsyncLocalStorage<{
+			userId: string;
+			organizationId: string;
+		}>(),
 	};
 });
 
 vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/datetime/temporal-core")>();
+	const original =
+		await importOriginal<typeof import("@/lib/datetime/temporal-core")>();
 	return {
 		...original,
 		systemClock: Object.freeze({
@@ -44,7 +48,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -70,15 +76,22 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/auth-helpers")>();
 	const { db } = await import("@/db");
-	const { loadOrganizationPrincipalContext } = await import("@/lib/authorization/principal-loader");
+	const { loadOrganizationPrincipalContext } = await import(
+		"@/lib/authorization/principal-loader"
+	);
 	return {
 		...original,
 		// The real loader on the test database, without Better Auth's session store.
@@ -94,7 +107,9 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+	),
 );
 
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
@@ -125,7 +140,9 @@ vi.mock("./shared", async (importOriginal) => {
 const { createManualTimeEntry } = await import("../actions");
 const { getManualEntryTargetContext } = await import("./manual-entry-context");
 const projects = await import("@/app/[locale]/(app)/settings/projects/actions");
-const categories = await import("@/app/[locale]/(app)/settings/work-categories/actions");
+const categories = await import(
+	"@/app/[locale]/(app)/settings/work-categories/actions"
+);
 
 const ids = {
 	organization: "t315-eligibility-org",
@@ -157,7 +174,9 @@ const at = (time: string, displayedOffsetMinutes: number): Endpoint => ({
 });
 
 /** A Berlin summer entry for the signed-in employee unless overridden. */
-function manualCommand(overrides: Partial<ManualTimeEntryCommand> = {}): ManualTimeEntryCommand {
+function manualCommand(
+	overrides: Partial<ManualTimeEntryCommand> = {},
+): ManualTimeEntryCommand {
 	return {
 		version: 2,
 		submissionId: randomUUID(),
@@ -194,7 +213,9 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 	}
 
 	function submit(command: ManualTimeEntryCommand | Record<string, unknown>) {
-		return actAs(ids.employeeUser, () => createManualTimeEntry(command as ManualTimeEntryCommand));
+		return actAs(ids.employeeUser, () =>
+			createManualTimeEntry(command as ManualTimeEntryCommand),
+		);
 	}
 
 	/** Settings writers run as the organization owner. */
@@ -203,9 +224,10 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 	}
 
 	async function setAppend(mode: "active" | null) {
-		await admin.query("delete from time_entry_append_control where organization_id = $1", [
-			ids.organization,
-		]);
+		await admin.query(
+			"delete from time_entry_append_control where organization_id = $1",
+			[ids.organization],
+		);
 		if (mode) {
 			await admin.query(
 				"insert into time_entry_append_control (organization_id, mode) values ($1, $2)",
@@ -229,7 +251,10 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 	async function holdAdvisoryLock(key: string) {
 		const client = await admin.connect();
 		await client.query("begin");
-		await client.query("select pg_advisory_xact_lock(hashtextextended($1, 0))", [key]);
+		await client.query(
+			"select pg_advisory_xact_lock(hashtextextended($1, 0))",
+			[key],
+		);
 		return {
 			async release() {
 				await client.query("commit");
@@ -302,7 +327,13 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 		await admin.query(
 			`insert into team (id, organization_id, name, updated_at) values
 			 ($1, $3, 'T315 team', $5), ($2, $4, 'T315 other team', $5)`,
-			[ids.team, ids.otherTeam, ids.organization, ids.otherOrganization, timestamp],
+			[
+				ids.team,
+				ids.otherTeam,
+				ids.organization,
+				ids.otherOrganization,
+				timestamp,
+			],
 		);
 		await admin.query(
 			`insert into employee (id, user_id, organization_id, team_id, role, updated_at) values
@@ -336,12 +367,24 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 			`insert into project (id, organization_id, name, status, is_active, created_by, updated_at) values
 			 ($1, $3, 'T315 project', 'active', true, $5, now()),
 			 ($2, $4, 'T315 foreign project', 'active', true, $5, now())`,
-			[ids.project, ids.otherProject, ids.organization, ids.otherOrganization, ids.ownerUser],
+			[
+				ids.project,
+				ids.otherProject,
+				ids.organization,
+				ids.otherOrganization,
+				ids.ownerUser,
+			],
 		);
 		await admin.query(
 			`insert into work_category (id, organization_id, name, created_by, updated_at) values
 			 ($1, $3, 'T315 night', $5, now()), ($2, $4, 'T315 foreign', $5, now())`,
-			[ids.category, ids.otherCategory, ids.organization, ids.otherOrganization, ids.ownerUser],
+			[
+				ids.category,
+				ids.otherCategory,
+				ids.organization,
+				ids.otherOrganization,
+				ids.ownerUser,
+			],
 		);
 		await admin.query(
 			`insert into work_category_set (id, organization_id, name, created_by, updated_at) values
@@ -365,7 +408,13 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 		await admin.query(
 			`insert into project_assignment (id, project_id, organization_id, assignment_type, employee_id, created_by)
 			 values ($1, $2, $3, 'employee', $4, $5)`,
-			[ids.projectAssignment, ids.project, ids.organization, ids.employee, ids.ownerUser],
+			[
+				ids.projectAssignment,
+				ids.project,
+				ids.organization,
+				ids.employee,
+				ids.ownerUser,
+			],
 		);
 	}
 
@@ -374,12 +423,21 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 			`insert into work_category_set_assignment
 			 (id, set_id, organization_id, assignment_type, employee_id, priority, created_by, updated_at)
 			 values ($1, $2, $3, 'employee', $4, 2, $5, now())`,
-			[ids.categorySetAssignment, ids.categorySet, ids.organization, ids.employee, ids.ownerUser],
+			[
+				ids.categorySetAssignment,
+				ids.categorySet,
+				ids.organization,
+				ids.employee,
+				ids.ownerUser,
+			],
 		);
 	}
 
 	const withProject = () => ({ projectId: ids.project, workCategoryId: null });
-	const withCategory = () => ({ projectId: null, workCategoryId: ids.category });
+	const withCategory = () => ({
+		projectId: null,
+		workCategoryId: ids.category,
+	});
 
 	const mutations: Mutation[] = [
 		{
@@ -387,8 +445,14 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 			eligibleBefore: true,
 			arrange: assignProjectToEmployee,
 			selection: withProject,
-			rowLock: () => ["select 1 from project where id = $1 for update", [ids.project]],
-			mutate: () => asOwner(() => projects.updateProject(ids.project, { status: "completed" })),
+			rowLock: () => [
+				"select 1 from project where id = $1 for update",
+				[ids.project],
+			],
+			mutate: () =>
+				asOwner(() =>
+					projects.updateProject(ids.project, { status: "completed" }),
+				),
 		},
 		{
 			name: "a removed project assignment",
@@ -399,24 +463,36 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 				"select 1 from project_assignment where id = $1 for update",
 				[ids.projectAssignment],
 			],
-			mutate: () => asOwner(() => projects.removeProjectAssignment(ids.projectAssignment)),
+			mutate: () =>
+				asOwner(() => projects.removeProjectAssignment(ids.projectAssignment)),
 		},
 		{
 			name: "an inserted team project assignment where none existed",
 			eligibleBefore: false,
 			arrange: async () => {},
 			selection: withProject,
-			rowLock: () => ["select 1 from project where id = $1 for update", [ids.project]],
-			mutate: () => asOwner(() => projects.addProjectAssignment(ids.project, "team", ids.team)),
+			rowLock: () => [
+				"select 1 from project where id = $1 for update",
+				[ids.project],
+			],
+			mutate: () =>
+				asOwner(() =>
+					projects.addProjectAssignment(ids.project, "team", ids.team),
+				),
 		},
 		{
 			name: "an inserted employee project assignment where none existed",
 			eligibleBefore: false,
 			arrange: async () => {},
 			selection: withProject,
-			rowLock: () => ["select 1 from project where id = $1 for update", [ids.project]],
+			rowLock: () => [
+				"select 1 from project where id = $1 for update",
+				[ids.project],
+			],
 			mutate: () =>
-				asOwner(() => projects.addProjectAssignment(ids.project, "employee", ids.employee)),
+				asOwner(() =>
+					projects.addProjectAssignment(ids.project, "employee", ids.employee),
+				),
 		},
 		{
 			name: "a category removed from the set contents",
@@ -427,28 +503,40 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 				"select 1 from work_category_set_category where set_id = $1 and category_id = $2 for update",
 				[ids.categorySet, ids.category],
 			],
-			mutate: () => asOwner(() => categories.updateSetCategories(ids.categorySet, [])),
+			mutate: () =>
+				asOwner(() => categories.updateSetCategories(ids.categorySet, [])),
 		},
 		{
 			name: "a category added to the set contents",
 			eligibleBefore: false,
 			arrange: async () => {
-				await admin.query("delete from work_category_set_category where set_id = $1", [
-					ids.categorySet,
-				]);
+				await admin.query(
+					"delete from work_category_set_category where set_id = $1",
+					[ids.categorySet],
+				);
 				await assignSetToEmployee();
 			},
 			selection: withCategory,
-			rowLock: () => ["select 1 from work_category where id = $1 for update", [ids.category]],
-			mutate: () => asOwner(() => categories.updateSetCategories(ids.categorySet, [ids.category])),
+			rowLock: () => [
+				"select 1 from work_category where id = $1 for update",
+				[ids.category],
+			],
+			mutate: () =>
+				asOwner(() =>
+					categories.updateSetCategories(ids.categorySet, [ids.category]),
+				),
 		},
 		{
 			name: "a deactivated category",
 			eligibleBefore: true,
 			arrange: assignSetToEmployee,
 			selection: withCategory,
-			rowLock: () => ["select 1 from work_category where id = $1 for update", [ids.category]],
-			mutate: () => asOwner(() => categories.deleteOrganizationCategory(ids.category)),
+			rowLock: () => [
+				"select 1 from work_category where id = $1 for update",
+				[ids.category],
+			],
+			mutate: () =>
+				asOwner(() => categories.deleteOrganizationCategory(ids.category)),
 		},
 		{
 			name: "a deactivated category set",
@@ -459,7 +547,8 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 				"select 1 from work_category_set where id = $1 for update",
 				[ids.categorySet],
 			],
-			mutate: () => asOwner(() => categories.deleteWorkCategorySet(ids.categorySet)),
+			mutate: () =>
+				asOwner(() => categories.deleteWorkCategorySet(ids.categorySet)),
 		},
 		{
 			name: "a removed effective set assignment",
@@ -470,7 +559,10 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 				"select 1 from work_category_set_assignment where id = $1 for update",
 				[ids.categorySetAssignment],
 			],
-			mutate: () => asOwner(() => categories.deleteSetAssignment(ids.categorySetAssignment)),
+			mutate: () =>
+				asOwner(() =>
+					categories.deleteSetAssignment(ids.categorySetAssignment),
+				),
 		},
 		{
 			name: "an inserted effective set assignment where none existed",
@@ -538,7 +630,10 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 			await expect(write).resolves.toMatchObject({ success: true });
 
 			// Afterwards a fresh submission sees the committed change.
-			const next = manualCommand({ ...mutation.selection(), date: "2026-09-02" });
+			const next = manualCommand({
+				...mutation.selection(),
+				date: "2026-09-02",
+			});
 			expectOutcome(await submit(next), !mutation.eligibleBefore, next);
 		});
 
@@ -567,20 +662,36 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 	describe("organization references", () => {
 		it("rejects project assignments to another organization's team or employee", async () => {
 			await expect(
-				asOwner(() => projects.addProjectAssignment(ids.project, "team", ids.otherTeam)),
+				asOwner(() =>
+					projects.addProjectAssignment(ids.project, "team", ids.otherTeam),
+				),
 			).resolves.toMatchObject({ success: false });
 			await expect(
-				asOwner(() => projects.addProjectAssignment(ids.project, "employee", ids.otherEmployee)),
+				asOwner(() =>
+					projects.addProjectAssignment(
+						ids.project,
+						"employee",
+						ids.otherEmployee,
+					),
+				),
 			).resolves.toMatchObject({ success: false });
 			await expect(
-				asOwner(() => projects.addProjectAssignment(ids.otherProject, "employee", ids.employee)),
+				asOwner(() =>
+					projects.addProjectAssignment(
+						ids.otherProject,
+						"employee",
+						ids.employee,
+					),
+				),
 			).resolves.toMatchObject({ success: false });
 			const { rows } = await admin.query("select id from project_assignment");
 			expect(rows).toEqual([]);
 		});
 
 		it("rejects set assignments that reference another organization or mismatch their level", async () => {
-			const create = (input: Partial<Parameters<typeof categories.createSetAssignment>[0]>) =>
+			const create = (
+				input: Partial<Parameters<typeof categories.createSetAssignment>[0]>,
+			) =>
 				asOwner(() =>
 					categories.createSetAssignment({
 						setId: ids.categorySet,
@@ -590,7 +701,9 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 					}),
 				);
 
-			await expect(create({ employeeId: ids.otherEmployee })).resolves.toMatchObject({
+			await expect(
+				create({ employeeId: ids.otherEmployee }),
+			).resolves.toMatchObject({
 				success: false,
 			});
 			await expect(
@@ -600,23 +713,35 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 				create({ setId: ids.otherCategorySet, employeeId: ids.employee }),
 			).resolves.toMatchObject({ success: false });
 			// A level without its target, or with a foreign one, is not an assignment.
-			await expect(create({ employeeId: null })).resolves.toMatchObject({ success: false });
+			await expect(create({ employeeId: null })).resolves.toMatchObject({
+				success: false,
+			});
 			await expect(
 				create({ assignmentType: "organization", employeeId: ids.employee }),
 			).resolves.toMatchObject({ success: false });
 			await expect(
-				create({ assignmentType: "team", teamId: ids.team, employeeId: ids.employee }),
+				create({
+					assignmentType: "team",
+					teamId: ids.team,
+					employeeId: ids.employee,
+				}),
 			).resolves.toMatchObject({ success: false });
-			const { rows } = await admin.query("select id from work_category_set_assignment");
+			const { rows } = await admin.query(
+				"select id from work_category_set_assignment",
+			);
 			expect(rows).toEqual([]);
 
-			await expect(create({ employeeId: ids.employee })).resolves.toMatchObject({
-				success: true,
-			});
+			await expect(create({ employeeId: ids.employee })).resolves.toMatchObject(
+				{
+					success: true,
+				},
+			);
 		});
 
 		it("rejects another organization's project and category in a manual command", async () => {
-			await expect(submit(manualCommand({ projectId: ids.otherProject }))).resolves.toMatchObject({
+			await expect(
+				submit(manualCommand({ projectId: ids.otherProject })),
+			).resolves.toMatchObject({
 				success: false,
 				code: "project_ineligible",
 			});
@@ -640,7 +765,11 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 					 values ($1::uuid, $2, $1::text, $3, $4, $5, now())`,
 					[id, organizationId, status, isActive, ids.ownerUser],
 				);
-			const assign = (projectId: string, column: "employee_id" | "team_id", target: string) =>
+			const assign = (
+				projectId: string,
+				column: "employee_id" | "team_id",
+				target: string,
+			) =>
 				admin.query(
 					`insert into project_assignment (id, project_id, organization_id, assignment_type, ${column}, created_by)
 					 values (gen_random_uuid(), $1, $2, $3, $4, $5)`,
@@ -695,7 +824,11 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 			);
 			await admin.query(
 				"insert into work_category_set_category (set_id, category_id) values ($1, $2), ($1, $3)",
-				[ids.categorySet, categoryCandidates.inactiveInSet, categoryCandidates.foreignInSet],
+				[
+					ids.categorySet,
+					categoryCandidates.inactiveInSet,
+					categoryCandidates.foreignInSet,
+				],
 			);
 
 			// One non-overlapping hour per submission, all before the pinned instant.
@@ -719,8 +852,12 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 				);
 				expect(context.success).toBe(true);
 				if (!context.success) return;
-				const offeredProjects = new Set(context.data.projects.map((choice) => choice.id));
-				const offeredCategories = new Set(context.data.categories.map((choice) => choice.id));
+				const offeredProjects = new Set(
+					context.data.projects.map((choice) => choice.id),
+				);
+				const offeredCategories = new Set(
+					context.data.categories.map((choice) => choice.id),
+				);
 				expect([...offeredProjects].sort()).toEqual(
 					[candidates.direct, candidates.team, candidates.paused].sort(),
 				);
@@ -730,11 +867,19 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 					actAs(actor, () => createManualTimeEntry(command));
 				for (const projectId of Object.values(candidates)) {
 					const command = manualCommand({ projectId, ...nextSlot() });
-					expectOutcome(await submitAs(command), offeredProjects.has(projectId), command);
+					expectOutcome(
+						await submitAs(command),
+						offeredProjects.has(projectId),
+						command,
+					);
 				}
 				for (const workCategoryId of Object.values(categoryCandidates)) {
 					const command = manualCommand({ workCategoryId, ...nextSlot() });
-					expectOutcome(await submitAs(command), offeredCategories.has(workCategoryId), command);
+					expectOutcome(
+						await submitAs(command),
+						offeredCategories.has(workCategoryId),
+						command,
+					);
 				}
 			}
 		});
@@ -746,7 +891,8 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 				code: "invalid_command",
 				rejection: { reason: "invalid_command" },
 			});
-			const { workCategoryId: _categoryId, ...missingCategory } = manualCommand();
+			const { workCategoryId: _categoryId, ...missingCategory } =
+				manualCommand();
 			await expect(submit(missingCategory)).resolves.toMatchObject({
 				success: false,
 				code: "invalid_command",
@@ -754,7 +900,9 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 			});
 			expect(await periods()).toEqual([]);
 
-			await expect(submit(manualCommand())).resolves.toMatchObject({ success: true });
+			await expect(submit(manualCommand())).resolves.toMatchObject({
+				success: true,
+			});
 			expect(await periods()).toEqual([
 				expect.objectContaining({ project_id: null, work_category_id: null }),
 			]);
@@ -765,20 +913,30 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 		it("replays a committed version-2 command after its project and category were revoked", async () => {
 			await assignProjectToEmployee();
 			await assignSetToEmployee();
-			const command = manualCommand({ projectId: ids.project, workCategoryId: ids.category });
+			const command = manualCommand({
+				projectId: ids.project,
+				workCategoryId: ids.category,
+			});
 			const committed = await submit(command);
 			expect(committed).toMatchObject({ success: true });
 
 			await expect(
-				asOwner(() => projects.updateProject(ids.project, { status: "archived" })),
+				asOwner(() =>
+					projects.updateProject(ids.project, { status: "archived" }),
+				),
 			).resolves.toMatchObject({ success: true });
 			await expect(
-				asOwner(() => categories.deleteSetAssignment(ids.categorySetAssignment)),
+				asOwner(() =>
+					categories.deleteSetAssignment(ids.categorySetAssignment),
+				),
 			).resolves.toMatchObject({ success: true });
 
 			await expect(submit(structuredClone(command))).resolves.toEqual({
 				...committed,
-				data: { ...(committed as { data: object }).data, disposition: "replayed" },
+				data: {
+					...(committed as { data: object }).data,
+					disposition: "replayed",
+				},
 			});
 			expect(await periods()).toHaveLength(1);
 		});
@@ -810,7 +968,10 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 
 			await expect(submit(legacy)).resolves.toEqual(committed);
 			expect(await periods()).toEqual([
-				expect.objectContaining({ project_id: ids.project, work_category_id: ids.category }),
+				expect.objectContaining({
+					project_id: ids.project,
+					work_category_id: ids.category,
+				}),
 			]);
 		});
 	});

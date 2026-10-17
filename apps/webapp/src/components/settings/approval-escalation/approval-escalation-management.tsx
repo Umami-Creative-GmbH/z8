@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import type { ReactNode } from "react";
 import { toast } from "sonner";
 import {
 	disposeApprovalEscalationAttention,
@@ -33,11 +32,10 @@ const approvalEscalationQueryKey = (organizationId: string) =>
 
 export function ApprovalEscalationManagement({
 	organizationId,
-	approvalSettings,
+	section,
 }: {
 	organizationId: string;
-	/** Organization approval settings, loaded on the server (#1015). */
-	approvalSettings?: ReactNode;
+	section: "escalation" | "attention" | "channels" | "history";
 }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -186,38 +184,26 @@ export function ApprovalEscalationManagement({
 		return true;
 	}
 
-	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.approvalEscalation.title", "Approval Escalation")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
+	if (isLoading) {
+		return <Skeleton className="h-64 w-full" />;
+	}
+	if (!overview) {
+		return (
+			<Alert variant="destructive">
+				<AlertDescription>
 					{t(
-						"settings.approvalEscalation.description",
-						"Review the organization escalation policy, how it was migrated from channel settings, and conditions that need an approval manager.",
+						"settings.approvalEscalation.loadFailed",
+						"Escalation settings could not be loaded.",
 					)}
-				</p>
-			</div>
+				</AlertDescription>
+			</Alert>
+		);
+	}
 
-			{approvalSettings}
-
-			{isLoading ? (
+	switch (section) {
+		case "attention":
+			return (
 				<div className="space-y-4">
-					<Skeleton className="h-48 w-full" />
-					<Skeleton className="h-64 w-full" />
-				</div>
-			) : !overview ? (
-				<Alert variant="destructive">
-					<AlertDescription>
-						{t(
-							"settings.approvalEscalation.loadFailed",
-							"Escalation settings could not be loaded.",
-						)}
-					</AlertDescription>
-				</Alert>
-			) : (
-				<>
 					<EscalationOwnershipNotice control={overview.control} />
 					<EscalationAttentionCard
 						openAttention={overview.openAttention}
@@ -233,24 +219,35 @@ export function ApprovalEscalationManagement({
 							retryDeliveryMutation.mutate({ attentionId })
 						}
 					/>
-					<EscalationPolicyCard
-						key={overview.policy.revision}
-						policy={overview.policy}
-						isSaving={policyMutation.isPending}
-						onSubmit={handlePolicySubmit}
+				</div>
+			);
+		case "channels":
+			return (
+				<div className="space-y-4">
+					<EscalationChannelsCard
+						channels={overview.channels}
+						responseWindowHours={overview.policy.responseWindowHours}
 					/>
 					<EscalationMigrationCard
 						policy={overview.policy}
 						isReviewing={reviewMutation.isPending}
 						onReview={() => reviewMutation.mutate()}
 					/>
-					<EscalationChannelsCard
-						channels={overview.channels}
-						responseWindowHours={overview.policy.responseWindowHours}
+				</div>
+			);
+		case "history":
+			return <EscalationRevisionsCard revisions={overview.revisions} />;
+		case "escalation":
+			return (
+				<div className="space-y-4">
+					<EscalationOwnershipNotice control={overview.control} />
+					<EscalationPolicyCard
+						key={overview.policy.revision}
+						policy={overview.policy}
+						isSaving={policyMutation.isPending}
+						onSubmit={handlePolicySubmit}
 					/>
-					<EscalationRevisionsCard revisions={overview.revisions} />
-				</>
-			)}
-		</div>
-	);
+				</div>
+			);
+	}
 }

@@ -13,28 +13,38 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { seedSuspendedDrivingParticipant } from "@/lib/organization/driving-licence/testing/recording.test.fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
-vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: async () => null } } }));
+vi.mock("@/lib/auth", () => ({
+	auth: { api: { getSession: async () => null } },
+}));
 vi.mock("@/lib/billing/guard", () => ({
 	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
+	isBillingMutationAllowed: (access: { canAccess: boolean }) =>
+		access.canAccess,
 }));
 
 const { createClocking } = await import("./clocking");
 const { recordingFollowUps } = await import("./follow-ups");
 const { coordinatedTransactions } = await import("./transactions");
-const { changeLiveWorkVehicleUse: changeLive } = await import("../vehicle-use/live-vehicle-use");
+const { changeLiveWorkVehicleUse: changeLive } = await import(
+	"../vehicle-use/live-vehicle-use"
+);
 type ClockCommand = import("./types").ClockCommand;
-type ClockVehicleUse = import("../vehicle-use/clock-vehicle-use").ClockVehicleUse;
-type BreakVehicleUse = import("../vehicle-use/clock-vehicle-use").BreakVehicleUse;
+type ClockVehicleUse =
+	import("../vehicle-use/clock-vehicle-use").ClockVehicleUse;
+type BreakVehicleUse =
+	import("../vehicle-use/clock-vehicle-use").BreakVehicleUse;
 
 const ids = {
 	organization: "t1122-clock-org",
@@ -65,7 +75,11 @@ const none: Columns = {
 	driven_distance_km: null,
 };
 
-function van(start: number | null, end: number | null = null, distance: number | null = null) {
+function van(
+	start: number | null,
+	end: number | null = null,
+	distance: number | null = null,
+) {
 	return {
 		vehicle_kind: "organization",
 		vehicle_id: ids.van,
@@ -120,7 +134,10 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 		};
 	}
 
-	function takeBreak(breakMinutes: number, vehicleUse?: BreakVehicleUse): ClockCommand {
+	function takeBreak(
+		breakMinutes: number,
+		vehicleUse?: BreakVehicleUse,
+	): ClockCommand {
 		return {
 			...common(),
 			...(vehicleUse ? { vehicleUse } : {}),
@@ -129,13 +146,19 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 	}
 
 	/** A version 4 frozen clock-in with vehicle use, as the commands route sends it. */
-	function frozenClockIn(at: Instant, vehicleUse: ClockVehicleUse): ClockCommand {
+	function frozenClockIn(
+		at: Instant,
+		vehicleUse: ClockVehicleUse,
+	): ClockCommand {
 		const base = common();
 		return {
 			...base,
 			channel: "api",
 			at: { kind: "occurred", instant: at },
-			freshness: { earliest: now.subtract({ hours: 7 * 24 }), latest: now.add({ minutes: 5 }) },
+			freshness: {
+				earliest: now.subtract({ hours: 7 * 24 }),
+				latest: now.add({ minutes: 5 }),
+			},
 			payload: {
 				version: 4,
 				operationId: base.identity.id,
@@ -184,15 +207,19 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 		);
 	}
 
-	async function setVehicleUse(mode: "off" | "asked" | "expected", enabled = true) {
+	async function setVehicleUse(
+		mode: "off" | "asked" | "expected",
+		enabled = true,
+	) {
 		await admin.query(
 			`insert into vehicle_use_setting (organization_id, enabled) values ($1, $2)
 			 on conflict (organization_id) do update set enabled = excluded.enabled`,
 			[ids.organization, enabled],
 		);
-		await admin.query("delete from vehicle_use_assignment where organization_id = $1", [
-			ids.organization,
-		]);
+		await admin.query(
+			"delete from vehicle_use_assignment where organization_id = $1",
+			[ids.organization],
+		);
 		await admin.query(
 			`insert into vehicle_use_assignment (organization_id, assignment_type, priority, mode, created_by)
 			 values ($1, 'organization', 0, $2, $3)`,
@@ -204,7 +231,9 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 		await admin.query("delete from organization where id = any($1::text[])", [
 			[ids.organization, ids.otherOrganization],
 		]);
-		await admin.query('delete from "user" where id = any($1::text[])', [[ids.user, ids.adminUser]]);
+		await admin.query('delete from "user" where id = any($1::text[])', [
+			[ids.user, ids.adminUser],
+		]);
 	}
 
 	async function seed() {
@@ -239,7 +268,13 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 			await admin.query(
 				`insert into employee (id, user_id, organization_id, role, updated_at)
 				 values ($1, $2, $3, $4, $5)`,
-				[employee, user, ids.organization, role === "admin" ? "admin" : "employee", timestamp],
+				[
+					employee,
+					user,
+					ids.organization,
+					role === "admin" ? "admin" : "employee",
+					timestamp,
+				],
 			);
 			await admin.query(
 				`insert into user_settings (user_id, timezone, updated_at) values ($1, 'UTC', $2)`,
@@ -251,7 +286,13 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 			 ($1, $4, 'Van', 'M-VW 1', null),
 			 ($2, $4, 'Old van', 'M-VW 2', now()),
 			 ($3, $5, 'Foreign van', 'B-XX 1', null)`,
-			[ids.van, ids.archived, ids.foreign, ids.organization, ids.otherOrganization],
+			[
+				ids.van,
+				ids.archived,
+				ids.foreign,
+				ids.organization,
+				ids.otherOrganization,
+			],
 		);
 		await setVehicleUse("asked");
 		await setAdmission("active");
@@ -267,22 +308,65 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 	});
 
 	const vanChoice = { kind: "organization" as const, vehicleId: ids.van };
+	it.each(["absent", "suspended"] as const)(
+		"records clock-in/out and actual vehicle use with %s driving authorization, without granting authorization",
+		async (drivingState) => {
+			if (drivingState === "suspended")
+				await seedSuspendedDrivingParticipant(admin, {
+					organizationId: ids.organization,
+					employeeId: ids.employee,
+					userId: ids.user,
+					at: new Date(startAt.epochMilliseconds),
+				});
+			const clocking = newClocking();
+			expect(
+				await clocking.run(clockIn({ vehicle: vanChoice, startKm: 12000 })),
+			).toMatchObject({ outcome: "executed" });
+			now = now.add({ hours: 1 });
+			expect(await clocking.run(clockOut({ endKm: 12085 }))).toMatchObject({
+				outcome: "executed",
+			});
+			expect(await periods()).toEqual([
+				{
+					active: false,
+					period: van(12000, 12085, 85),
+					record: van(12000, 12085, 85),
+				},
+			]);
+			expect(
+				(
+					await admin.query(
+						`select class_code from driving_authorization where organization_id=$1 and employee_id=$2 and state='active'`,
+						[ids.organization, ids.employee],
+					)
+				).rows,
+			).toEqual([]);
+		},
+	);
 
 	it.each(["active", "inactive"] as const)(
 		"records the clock-in's vehicle and start reading and the clock-out's end reading (admission %s)",
 		async (admission) => {
 			await setAdmission(admission);
 			const clocking = newClocking();
-			const started = await clocking.run(clockIn({ vehicle: vanChoice, startKm: 12_000 }));
+			const started = await clocking.run(
+				clockIn({ vehicle: vanChoice, startKm: 12_000 }),
+			);
 			expect(started.outcome).toBe("executed");
-			expect(await periods()).toEqual([{ active: true, period: van(12_000), record: null }]);
+			expect(await periods()).toEqual([
+				{ active: true, period: van(12_000), record: null },
+			]);
 
 			now = now.add({ hours: 4 });
 			const ended = await clocking.run(clockOut({ endKm: 12_085 }));
 
 			expect(ended.outcome).toBe("executed");
 			expect(await periods()).toEqual([
-				{ active: false, period: van(12_000, 12_085, 85), record: van(12_000, 12_085, 85) },
+				{
+					active: false,
+					period: van(12_000, 12_085, 85),
+					record: van(12_000, 12_085, 85),
+				},
 			]);
 		},
 	);
@@ -299,7 +383,11 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 
 			expect(taken.outcome).toBe("executed");
 			expect(await periods()).toEqual([
-				{ active: false, period: van(12_000, 12_040, 40), record: van(12_000, 12_040, 40) },
+				{
+					active: false,
+					period: van(12_000, 12_040, 40),
+					record: van(12_000, 12_040, 40),
+				},
 				{ active: true, period: van(12_040), record: null },
 			]);
 		},
@@ -339,11 +427,17 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 		await setVehicleUse("expected");
 		const clocking = newClocking();
 
-		await expect(clocking.run(clockIn())).resolves.toMatchObject({ outcome: "executed" });
+		await expect(clocking.run(clockIn())).resolves.toMatchObject({
+			outcome: "executed",
+		});
 		now = now.add({ hours: 1 });
-		await expect(clocking.run(takeBreak(15))).resolves.toMatchObject({ outcome: "executed" });
+		await expect(clocking.run(takeBreak(15))).resolves.toMatchObject({
+			outcome: "executed",
+		});
 		now = now.add({ hours: 1 });
-		await expect(clocking.run(clockOut())).resolves.toMatchObject({ outcome: "executed" });
+		await expect(clocking.run(clockOut())).resolves.toMatchObject({
+			outcome: "executed",
+		});
 		expect((await periods()).map(({ period }) => period)).toEqual([none, none]);
 	});
 
@@ -355,10 +449,14 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 			clocking.run(clockIn({ vehicle: vanChoice, startKm: 12_000 })),
 		).resolves.toMatchObject({ outcome: "executed" });
 		now = now.add({ hours: 1 });
-		await expect(clocking.run(clockOut({ endKm: 12_010 }))).resolves.toMatchObject({
+		await expect(
+			clocking.run(clockOut({ endKm: 12_010 })),
+		).resolves.toMatchObject({
 			outcome: "executed",
 		});
-		expect(await periods()).toEqual([{ active: false, period: none, record: none }]);
+		expect(await periods()).toEqual([
+			{ active: false, period: none, record: none },
+		]);
 	});
 
 	it("drops an end reading below the start reading but still clocks out", async () => {
@@ -366,51 +464,74 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 		await clocking.run(clockIn({ vehicle: vanChoice, startKm: 12_000 }));
 		now = now.add({ hours: 1 });
 
-		await expect(clocking.run(clockOut({ endKm: 11_000 }))).resolves.toMatchObject({
+		await expect(
+			clocking.run(clockOut({ endKm: 11_000 })),
+		).resolves.toMatchObject({
 			outcome: "executed",
 		});
-		expect(await periods()).toEqual([{ active: false, period: van(12_000), record: van(12_000) }]);
+		expect(await periods()).toEqual([
+			{ active: false, period: van(12_000), record: van(12_000) },
+		]);
 	});
 
 	it("never newly records an archived vehicle or another organization's vehicle", async () => {
 		const clocking = newClocking();
-		await clocking.run(clockIn({ vehicle: { kind: "organization", vehicleId: ids.archived } }));
+		await clocking.run(
+			clockIn({ vehicle: { kind: "organization", vehicleId: ids.archived } }),
+		);
 		now = now.add({ hours: 1 });
 		await clocking.run(
-			clockOut({ vehicle: { kind: "organization", vehicleId: ids.foreign }, distanceKm: 5 }),
+			clockOut({
+				vehicle: { kind: "organization", vehicleId: ids.foreign },
+				distanceKm: 5,
+			}),
 		);
 
-		expect(await periods()).toEqual([{ active: false, period: none, record: none }]);
+		expect(await periods()).toEqual([
+			{ active: false, period: none, record: none },
+		]);
 	});
 
-	it("leaves the end reading empty on an on-behalf clock-out, keeping the vehicle", async () => {
-		const clocking = newClocking();
-		await clocking.run(clockIn({ vehicle: vanChoice, startKm: 12_000 }));
-		const [{ id: workPeriodId }] = (
-			await admin.query<{ id: string }>(
-				"select id from work_period where organization_id = $1 and is_active",
-				[ids.organization],
-			)
-		).rows;
-		now = now.add({ hours: 2 });
+	it.each(["absent", "suspended"] as const)(
+		"leaves the end reading empty on an on-behalf clock-out with %s driving authorization, keeping the vehicle",
+		async (drivingState) => {
+			if (drivingState === "suspended")
+				await seedSuspendedDrivingParticipant(admin, {
+					organizationId: ids.organization,
+					employeeId: ids.employee,
+					userId: ids.user,
+					at: new Date(startAt.epochMilliseconds),
+				});
+			const clocking = newClocking();
+			await clocking.run(clockIn({ vehicle: vanChoice, startKm: 12_000 }));
+			const [{ id: workPeriodId }] = (
+				await admin.query<{ id: string }>(
+					"select id from work_period where organization_id = $1 and is_active",
+					[ids.organization],
+				)
+			).rows;
+			now = now.add({ hours: 2 });
 
-		const ended = await clocking.run({
-			...common(),
-			principal: { kind: "user", userId: ids.adminUser },
-			subject: { employeeId: ids.employee, onBehalf: true },
-			// A caller cannot record the employee's end reading on their behalf.
-			vehicleUse: { endKm: 12_100 },
-			body: {
-				kind: "clock_out",
-				target: { kind: "period", workPeriodId },
-				project: { kind: "preserve" },
-				workCategory: { kind: "preserve" },
-			},
-		});
+			const ended = await clocking.run({
+				...common(),
+				principal: { kind: "user", userId: ids.adminUser },
+				subject: { employeeId: ids.employee, onBehalf: true },
+				// A caller cannot record the employee's end reading on their behalf.
+				vehicleUse: { endKm: 12_100 },
+				body: {
+					kind: "clock_out",
+					target: { kind: "period", workPeriodId },
+					project: { kind: "preserve" },
+					workCategory: { kind: "preserve" },
+				},
+			});
 
-		expect(ended.outcome).toBe("executed");
-		expect(await periods()).toEqual([{ active: false, period: van(12_000), record: van(12_000) }]);
-	});
+			expect(ended.outcome).toBe("executed");
+			expect(await periods()).toEqual([
+				{ active: false, period: van(12_000), record: van(12_000) },
+			]);
+		},
+	);
 
 	describe("live amendment while clocked in", () => {
 		async function livePeriodId() {
@@ -464,7 +585,9 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 					odometer_end_km: 80,
 					driven_distance_km: 30,
 				};
-				expect(await periods()).toEqual([{ active: false, period: closed, record: closed }]);
+				expect(await periods()).toEqual([
+					{ active: false, period: closed, record: closed },
+				]);
 			},
 		);
 
@@ -526,6 +649,8 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 		expect(executed.outcome).toBe("executed");
 		expect(replayed).toEqual({ ...executed, outcome: "replayed" });
 		// Replay writes nothing: the later change stands.
-		expect(await periods()).toEqual([{ active: true, period: van(12_001), record: null }]);
+		expect(await periods()).toEqual([
+			{ active: true, period: van(12_001), record: null },
+		]);
 	});
 });

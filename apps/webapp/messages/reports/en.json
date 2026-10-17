@@ -299,6 +299,8 @@
         "estimateProgress": "{booked}h of {estimate}h ({percent})",
         "hours": "Hours",
         "hoursValue": "{hours}h",
+        "missingTaskCount": "{count} missing a task",
+        "missingTaskHint": "Bookings on this project that came in without the task it requires. Add a task to each booking in the calendar.",
         "noTask": "No task",
         "noTime": "No time was booked to this project in this period",
         "share": "Share",

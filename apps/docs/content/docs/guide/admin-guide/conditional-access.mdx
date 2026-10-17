@@ -1,6 +1,6 @@
 ---
 title: Access Controls
-description: Enforce SSO, domain and invite restrictions, and default role templates for an organization
+description: Configure organization MFA enrollment, SSO enforcement, domain restrictions and provisioning roles
 icon: Lock
 ---
 
@@ -9,7 +9,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
 Z8 controls who can access an organization through its enterprise identity setup: SSO enforcement, domain and invite restrictions, and the role template applied to provisioned users. Each user also manages their own sign-in security.
 
 <Callout type="info" title="Not Yet Available">
-  Z8 does not offer IP, location, device, or session access policies. Organizations cannot restrict access by IP address or country, require trusted or managed devices, require MFA or passkeys for all members, or set session duration, idle timeout, or concurrent session limits.
+  Z8 does not offer IP, location, device, or session access policies. Organizations cannot restrict access by IP address or country, require trusted or managed devices, require hardware-only authenticators, or set session duration, idle timeout, or concurrent session limits.
 </Callout>
 
 ---
@@ -36,6 +36,46 @@ The rules take effect only after activation. **Require SSO** also needs the ente
 <Callout type="warn" title="Avoid Locking Yourself Out">
   Before activating **Require SSO**, confirm that your own admin account can sign in through the configured identity provider.
 </Callout>
+
+---
+
+## Required Local Authentication
+
+Organization owners and admins can configure **Settings -> Identity & Access -> Local MFA** on every plan. The policy starts off. An employee-admin role, manager role or custom settings permission does not grant this authority.
+
+Enable the policy and choose **0, 7, 14 or 30 days** for future enrollment windows (14 by default). Each day is exactly 24 elapsed hours. Members see their absolute deadline in the organization's timezone, including the zone name. Changing a window affects future assignments only. Disabling suspends enforcement; re-enabling restores existing deadlines. Removing and re-adding a membership, reactivation and retrying approval do not grant a new window.
+
+At the deadline, every interactive human session, including an owner's or administrator's existing session, needs one of these verified routes:
+
+- Password plus a successful TOTP authenticator verification.
+- A passkey authentication verified with PIN or biometrics. Synced passkeys qualify.
+- A verified sign-in through this organization's currently configured SSO provider. The organization controls MFA at its identity provider; Z8 does not verify the IdP's MFA assurance.
+
+Registration alone, social login, a remembered-device cookie and backup-code recovery do not qualify. Qualifying local verification can be used across organizations in the same session, while each organization's deadline and SSO rules still apply. **Require SSO** remains independent: local verification is never its fallback, including during an IdP outage. Impersonation does not satisfy an enforced MFA requirement.
+
+### Activation and coverage
+
+Every policy change requires owner/admin authority and accepted verification within five minutes. Activation also requires acknowledgment of recovery arrangements. Prepare another administrator who has demonstrated a working route where possible; a registered factor alone does not prove one. A sole administrator may activate after acknowledging the lockout consequence.
+
+The coverage table separates enrolled methods from the last qualifying access to this organization. It shows assigned deadlines and enforcement status. Kiosk-only members are marked outside scope. Coverage never reveals factor secrets, recovery codes, other memberships or activity in other organizations.
+
+### Enrollment and recovery
+
+**Security verification** remains reachable when the organization is blocked. Use it to verify authentication, enroll or replace a factor, sign out or select another permitted organization. First enrollment requires fresh verification of the existing sign-in method. Adding or replacing an existing factor requires accepted verification within five minutes. Passwordless users can use a user-verified passkey; no new password-setup flow is required.
+
+Password plus a valid, unused backup code provides replacement-enrollment access only. Verify a remaining or replacement TOTP authenticator or passkey before returning to the organization. Verify a planned replacement before removing the old method. A lost or compromised last factor can still be revoked: its evidence becomes invalid and no new grace period is granted. Password changes and backup-code recovery clear prior local verification and remembered-device trust.
+
+<Callout type="warn" title="Recovery has limits">
+  If a sole administrator loses every authentication and recovery route, the organization stays locked. Z8 offers no administrator/support bypass, temporary individual exemption or manual global-factor reset. Organization admins cannot reset another member's account-wide factors.
+</Callout>
+
+Deadline assignments, reminders where time permits, and security changes create mandatory email and in-app notices. Notification preferences and tenant email templates cannot remove their required facts. An email delivery failure never extends the deadline. Security events are recorded under the affected organization using the existing audit controls.
+
+### Native apps, offline work and independent credentials
+
+Web, mobile and desktop human sessions use the same organization gate. App-login exchanges preserve the authenticated session's evidence. On reconnect, protected clock synchronization and receipt/capability requests pause for verification. Saved clock commands retain their original identity, captured context and timestamps and can resume after verification. The policy does not erase data already cached on an offline device.
+
+Kiosk-only employees, kiosk device/PIN clocking, organization API keys, calendar subscription secrets and report-share links keep their independent authorization and lifecycle. Factor revocation does not automatically revoke those credentials. Interactive kiosk administration remains subject to the human-session policy.
 
 ---
 

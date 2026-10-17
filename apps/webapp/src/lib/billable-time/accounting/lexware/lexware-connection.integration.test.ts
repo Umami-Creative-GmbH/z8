@@ -18,7 +18,10 @@ import {
 	profileResponse,
 	unauthorizedResponse,
 } from "./__fixtures__/lexware-public-api";
-import { type ScriptedLexware, scriptedLexware } from "./__fixtures__/scripted-lexware";
+import {
+	type ScriptedLexware,
+	scriptedLexware,
+} from "./__fixtures__/scripted-lexware";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -32,7 +35,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -56,10 +61,15 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/enterprise-identity/session-sso-store")>()),
-	canAccessOrganizationWithSso: async () => true,
-}));
+vi.mock(
+	"@/lib/organization-mfa/organization-access",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/organization-mfa/organization-access")
+		>()),
+		canAccessOrganization: async () => true,
+	}),
+);
 
 vi.mock("@/lib/logger", () => {
 	const record =
@@ -88,7 +98,11 @@ vi.mock("@/lib/logger", () => {
 
 vi.mock("@/lib/vault", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/vault")>()),
-	storeOrgSecret: async (organizationId: string, key: string, value: string) => {
+	storeOrgSecret: async (
+		organizationId: string,
+		key: string,
+		value: string,
+	) => {
 		harness.secrets.set(`${organizationId}|${key}`, value);
 	},
 	getOrgSecret: async (organizationId: string, key: string) =>
@@ -99,16 +113,19 @@ vi.mock("@/lib/vault", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/billable-time/accounting/registry", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/billable-time/accounting/registry")>()),
+	...(await importOriginal<
+		typeof import("@/lib/billable-time/accounting/registry")
+	>()),
 	getAccountingProviderRegistry: () => {
 		if (!harness.registry) throw new Error("No registry");
 		return harness.registry;
 	},
 }));
 
-const { connectAccountingTool, linkCustomerContact, searchContacts } = await import(
-	"@/app/[locale]/(app)/settings/billable-time/accounting/actions"
-);
+const { connectAccountingTool, linkCustomerContact, searchContacts } =
+	await import(
+		"@/app/[locale]/(app)/settings/billable-time/accounting/actions"
+	);
 const { createAccountingProviderRegistry } = await import(
 	"@/lib/billable-time/accounting/registry"
 );
@@ -194,7 +211,13 @@ describe("Lexware Office connection on PostgreSQL", () => {
 			`insert into member (id, organization_id, user_id, role, status, created_at) values
 			 ('t904-m-admin', $1, $3, 'admin', 'approved', $5),
 			 ('t904-m-chf-admin', $2, $4, 'admin', 'approved', $5)`,
-			[ids.organization, ids.chfOrganization, ids.adminUser, ids.chfAdminUser, timestamp],
+			[
+				ids.organization,
+				ids.chfOrganization,
+				ids.adminUser,
+				ids.chfAdminUser,
+				timestamp,
+			],
 		);
 		await admin.query(
 			`insert into customer (id, organization_id, name, created_by, updated_at) values
@@ -231,17 +254,28 @@ describe("Lexware Office connection on PostgreSQL", () => {
 		);
 		expect(rows).toEqual([{ account_ref: LEXWARE_ORGANIZATION_ID }]);
 		expect(harness.secrets).toEqual(
-			new Map([[`${ids.organization}|accounting/${result.data.id}/api_key`, LEXWARE_KEY]]),
+			new Map([
+				[
+					`${ids.organization}|accounting/${result.data.id}/api_key`,
+					LEXWARE_KEY,
+				],
+			]),
 		);
-		expect(lexware.requests().map((request) => request.headers.authorization)).toEqual([
-			`Bearer ${LEXWARE_KEY}`,
-		]);
+		expect(
+			lexware.requests().map((request) => request.headers.authorization),
+		).toEqual([`Bearer ${LEXWARE_KEY}`]);
 	});
 
 	it("searches and links a Lexware contact with the stored key; the key reaches no row or log", async () => {
 		lexware.on("GET", "/v1/profile", { status: 200, body: profileResponse });
-		lexware.on("GET", `/v1/contacts/${ACME_CONTACT_ID}`, { status: 200, body: acmeContact });
-		lexware.on("GET", "/v1/contacts", { status: 200, body: contactsPage([acmeContact]) });
+		lexware.on("GET", `/v1/contacts/${ACME_CONTACT_ID}`, {
+			status: 200,
+			body: acmeContact,
+		});
+		lexware.on("GET", "/v1/contacts", {
+			status: 200,
+			body: contactsPage([acmeContact]),
+		});
 		await connectAccountingTool({
 			providerKind: "lexware_office",
 			apiKey: LEXWARE_KEY,
@@ -252,7 +286,11 @@ describe("Lexware Office connection on PostgreSQL", () => {
 			success: true,
 			data: {
 				contacts: [
-					{ id: ACME_CONTACT_ID, customerNumber: "10307", name: "Acme Consulting & Partner GmbH" },
+					{
+						id: ACME_CONTACT_ID,
+						customerNumber: "10307",
+						name: "Acme Consulting & Partner GmbH",
+					},
 				],
 				truncated: false,
 			},
@@ -261,15 +299,23 @@ describe("Lexware Office connection on PostgreSQL", () => {
 			linkCustomerContact({ customerId: ids.acme, contactId: ACME_CONTACT_ID }),
 		).resolves.toMatchObject({ success: true });
 
-		const { rows } = await admin.query<{ contact_id: string; contact_number: string }>(
+		const { rows } = await admin.query<{
+			contact_id: string;
+			contact_number: string;
+		}>(
 			"select contact_id, contact_number from accounting_contact_link where organization_id = $1",
 			[ids.organization],
 		);
-		expect(rows).toEqual([{ contact_id: ACME_CONTACT_ID, contact_number: "10307" }]);
+		expect(rows).toEqual([
+			{ contact_id: ACME_CONTACT_ID, contact_number: "10307" },
+		]);
 		expect(
 			lexware
 				.requests()
-				.every((request) => request.headers.authorization === `Bearer ${LEXWARE_KEY}`),
+				.every(
+					(request) =>
+						request.headers.authorization === `Bearer ${LEXWARE_KEY}`,
+				),
 		).toBe(true);
 		expect(await databaseRowsContaining(LEXWARE_KEY)).toEqual([]);
 		expect(harness.logs.some((line) => line.includes(LEXWARE_KEY))).toBe(false);
@@ -288,7 +334,10 @@ describe("Lexware Office connection on PostgreSQL", () => {
 				apiKey: LEXWARE_KEY,
 				defaultTaxTreatment: standard,
 			}),
-		).resolves.toMatchObject({ success: false, error: expect.stringContaining("EUR") });
+		).resolves.toMatchObject({
+			success: false,
+			error: expect.stringContaining("EUR"),
+		});
 		expect(harness.secrets.size).toBe(0);
 		expect(lexware.requests()).toHaveLength(0);
 		const { rows } = await admin.query(
@@ -299,7 +348,10 @@ describe("Lexware Office connection on PostgreSQL", () => {
 	});
 
 	it("refuses a key Lexware rejects, storing nothing", async () => {
-		lexware.on("GET", "/v1/profile", { status: 401, body: unauthorizedResponse });
+		lexware.on("GET", "/v1/profile", {
+			status: 401,
+			body: unauthorizedResponse,
+		});
 
 		await expect(
 			connectAccountingTool({
@@ -307,7 +359,10 @@ describe("Lexware Office connection on PostgreSQL", () => {
 				apiKey: LEXWARE_KEY,
 				defaultTaxTreatment: standard,
 			}),
-		).resolves.toMatchObject({ success: false, error: "The accounting tool refused this API key" });
+		).resolves.toMatchObject({
+			success: false,
+			error: "The accounting tool refused this API key",
+		});
 		expect(harness.secrets.size).toBe(0);
 		expect(await databaseRowsContaining(LEXWARE_KEY)).toEqual([]);
 	});

@@ -25,6 +25,7 @@ import { db } from "@/db";
 import { member, organization, user } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
+import { formatEuroAmount, monthlyRecurringRevenueCents } from "@/lib/billing/seat-prices";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { cn } from "@/lib/utils";
 import { getTranslate } from "@/tolgee/server";
@@ -166,6 +167,7 @@ async function BillingStats() {
 			.select({
 				status: subscription.status,
 				currentSeats: subscription.currentSeats,
+				currentKioskSeats: subscription.currentKioskSeats,
 				billingInterval: subscription.billingInterval,
 				trialEnd: subscription.trialEnd,
 			})
@@ -185,11 +187,8 @@ async function BillingStats() {
 		0,
 	);
 
-	// MRR calculation: monthly = seats * 4, yearly = seats * 3
-	const mrr = activeSubscriptions.reduce((sum, s) => {
-		const pricePerSeat = s.billingInterval === "year" ? 3 : 4;
-		return sum + s.currentSeats * pricePerSeat;
-	}, 0);
+	// Full seats and kiosk seats at their own prices (#886).
+	const mrrCents = monthlyRecurringRevenueCents(activeSubscriptions);
 
 	// Trialing count
 	const trialingCount = allSubscriptions.filter(
@@ -216,7 +215,7 @@ async function BillingStats() {
 		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 			<StatCard
 				title={t("admin:admin.billing.metrics.mrr", "MRR")}
-				value={`€${mrr.toLocaleString()}`}
+				value={`€${formatEuroAmount(mrrCents)}`}
 				description={t(
 					"admin:admin.billing.metrics.mrrDescription",
 					"Monthly recurring revenue",

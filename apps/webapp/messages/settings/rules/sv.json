@@ -143,7 +143,6 @@
         "title": "Ersättare",
         "toggle": "Ersättare kan besluta om godkännanden"
       },
-      "description": "Granska organisationens eskaleringspolicy, hur den migrerades från kanalinställningar och villkor som kräver en godkännandeansvarig.",
       "dispose": {
         "confirm": "Stäng objekt",
         "description": "När du stänger registreras ditt beslut i granskningsloggen. Det tilldelar inte godkännandet på nytt eller tillåter en ny automatisk eskalering.",
@@ -177,7 +176,6 @@
         "usedNo": "Används inte",
         "usedYes": "Används"
       },
-      "navDescription": "Organisationens eskaleringspolicy och godkännanden som kräver åtgärd",
       "off": "Av",
       "on": "På",
       "ownership": {

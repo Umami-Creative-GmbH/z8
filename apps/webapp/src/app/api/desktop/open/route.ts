@@ -4,8 +4,11 @@ import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { auth } from "@/lib/auth";
 import { resolvePublicRequestOrigin } from "@/lib/domain/request-origin";
-import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
-import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
+import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
+import {
+	ClockingAccessError,
+	clockingService,
+} from "@/lib/time-tracking/clocking-service";
 
 const paths = {
 	dashboard: "/",
@@ -17,7 +20,9 @@ function escapeHtml(value: string) {
 	return value.replace(
 		/[&<>"']/g,
 		(char) =>
-			({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] ?? char,
+			({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+				char
+			] ?? char,
 	);
 }
 async function handoff(request: Request) {
@@ -35,7 +40,10 @@ async function handoff(request: Request) {
 			section !== "preferences")
 	)
 		return {
-			response: NextResponse.json({ error: "Invalid desktop destination" }, { status: 400 }),
+			response: NextResponse.json(
+				{ error: "Invalid desktop destination" },
+				{ status: 400 },
+			),
 		};
 	const [origin, session] = await Promise.all([
 		resolvePublicRequestOrigin(request),
@@ -58,9 +66,12 @@ async function handoff(request: Request) {
 				},
 			),
 		};
-	if (!(await canAccessOrganizationWithSso(session.session, organizationId)))
+	if (!(await canAccessOrganization(session.session, organizationId)))
 		return {
-			response: NextResponse.json({ error: "Organization SSO required" }, { status: 403 }),
+			response: NextResponse.json(
+				{ error: "Organization SSO required" },
+				{ status: 403 },
+			),
 		};
 	await clockingService.requireActor({
 		userId,
@@ -118,14 +129,20 @@ export async function POST(request: Request) {
 		const target = await handoff(request);
 		if (target.response) return target.response;
 		if (request.headers.get("origin") !== target.origin)
-			return NextResponse.json({ error: "Same-origin confirmation required" }, { status: 403 });
+			return NextResponse.json(
+				{ error: "Same-origin confirmation required" },
+				{ status: 403 },
+			);
 		const switched = await auth.api.setActiveOrganization({
 			headers: request.headers,
 			body: { organizationId: target.organizationId },
 			asResponse: true,
 		});
 		if (!switched.ok)
-			return NextResponse.json({ error: "Organization switch refused" }, { status: 403 });
+			return NextResponse.json(
+				{ error: "Organization switch refused" },
+				{ status: 403 },
+			);
 		const response = NextResponse.redirect(
 			new URL(`/${target.language}${target.destination}`, target.origin),
 			303,

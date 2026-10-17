@@ -12,7 +12,7 @@ export const approvalSetting = pgTable("approval_setting", {
 	organizationId: text("organization_id")
 		.primaryKey()
 		.references(() => organization.id, { onDelete: "cascade" }),
-	/** The audit log's target of a change (`audit_log.entity_id` is a uuid). */
+	/** Stable audit target for changes to these approval settings. */
 	id: uuid("id").defaultRandom().notNull().unique("approval_setting_id_unique"),
 	/**
 	 * "Deputies can decide approvals" (Approvals ADR 0002). Off: deputies stay

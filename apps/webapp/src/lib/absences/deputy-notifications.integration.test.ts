@@ -79,7 +79,8 @@ const { db } = await import("@/db");
 const { requestAbsenceEffect } = await import(
 	"@/app/[locale]/(app)/absences/request-absence-effect"
 );
-const { cancelAbsenceRequest } = await import("@/app/[locale]/(app)/absences/mutations");
+const { submitAbsenceChangeAction } = await import("@/app/[locale]/(app)/absences/change-actions");
+const { decideAbsenceChange } = await import("./change-request-service");
 const { recordAbsenceForEmployee } = await import("@/app/[locale]/(app)/team/absences/actions");
 const deputyActions = await import("@/app/[locale]/(app)/absences/deputy-actions");
 const { approveAbsenceEffect } = await import("@/lib/approvals/server/absence-approvals");
@@ -352,8 +353,28 @@ describe.each(["legacy", "canonical"] as const)("deputy notifications (#1013, %s
 		await approve(absenceId);
 		harness.sent.length = 0;
 
+		// An approved absence is cancelled through a reviewed cancellation request (#1190).
 		signIn("anna");
-		expect(await cancelAbsenceRequest(absenceId)).toMatchObject({ success: true });
+		const submitted = await submitAbsenceChangeAction({
+			absenceId,
+			kind: "cancel",
+			reason: "Plans changed",
+		});
+		if (!submitted.success) throw new Error(submitted.error);
+		expect(told()).toEqual([]);
+
+		const { rows } = await admin.query<{ id: string }>(
+			"select id from approval_stage_assignment where organization_id = $1 and workflow_id = $2 and approver_employee_id = $3 and status = 'pending'",
+			[ORG, submitted.data.workflowId, ids.manager],
+		);
+		const assignmentId = rows[0]?.id;
+		if (!assignmentId) throw new Error("cancellation request has no pending manager assignment");
+		await decideAbsenceChange({
+			organizationId: ORG,
+			actorEmployeeId: ids.manager,
+			assignmentId,
+			action: "approve",
+		});
 		expect(told()).toEqual([
 			[userOf("carla"), "absence_deputy_removed", expect.stringContaining("Anna Example")],
 		]);
@@ -488,7 +509,10 @@ describe("deputy day-before reminder (#1013)", () => {
 				"From tomorrow you're covering for Ben Example until 20 Oct 2026.",
 			],
 		]);
-		const reminder = harness.sent.find((params) => params.type === "absence_deputy_reminder");
+		// Rows come back in no particular order: pick Ben's reminder, not the first one sent.
+		const reminder = harness.sent.find(
+			(params) => params.type === "absence_deputy_reminder" && params.userId === userOf("ben"),
+		);
 		expect(reminder?.idempotencyKey).toBe(
 			`absence-deputy-reminder:${annaTomorrow}:${ids.ben}:2026-10-14`,
 		);

@@ -326,6 +326,8 @@ export enum AuditAction {
 	VEHICLE_ARCHIVED = "vehicle.archived",
 	VEHICLE_RESTORED = "vehicle.restored",
 	VEHICLE_DELETED = "vehicle.deleted",
+	VEHICLE_PHOTO_ADDED = "vehicle.photo_added",
+	VEHICLE_PHOTO_REMOVED = "vehicle.photo_removed",
 
 	// Scheduled exports (#988): the schedule lifecycle and one entry per run. Automatic
 	// actions are attributed to the schedule owner.
@@ -357,7 +359,9 @@ function assertNeverDecision(decision: never): never {
 	throw new Error(`Unhandled approval decision: ${String(decision)}`);
 }
 
-export function getApprovalAuditAction(decision: ApprovalAuditDecision): AuditAction {
+export function getApprovalAuditAction(
+	decision: ApprovalAuditDecision,
+): AuditAction {
 	switch (decision) {
 		case "submit":
 			return AuditAction.APPROVAL_SUBMITTED;
@@ -447,7 +451,8 @@ export interface ExternalAuditConfig {
  * Get external audit service configuration from environment
  */
 function getExternalAuditConfig(): ExternalAuditConfig {
-	const service = (env.AUDIT_SERVICE as ExternalAuditConfig["service"]) || "none";
+	const service =
+		(env.AUDIT_SERVICE as ExternalAuditConfig["service"]) || "none";
 	return {
 		service,
 		endpoint: env.AUDIT_ENDPOINT,
@@ -504,7 +509,10 @@ async function sendToExternalService(entry: AuditLogEntry): Promise<void> {
 		});
 	} catch (error) {
 		// Log error but don't fail the operation
-		logger.error({ error, action: entry.action }, "Failed to send audit log to external service");
+		logger.error(
+			{ error, action: entry.action },
+			"Failed to send audit log to external service",
+		);
 	}
 }
 
@@ -520,7 +528,10 @@ export function forwardAuditToExternalService(entry: AuditLogEntry): void {
 			// Already logged in sendToExternalService
 		});
 	} catch (error) {
-		logger.error({ error, action: entry.action }, "Failed to forward audit log");
+		logger.error(
+			{ error, action: entry.action },
+			"Failed to forward audit log",
+		);
 	}
 }
 
@@ -559,7 +570,10 @@ export async function logAudit(entry: AuditLogEntry): Promise<void> {
 		});
 	} catch (error) {
 		// Log error but don't fail the operation - audit logging should not break the app
-		logger.error({ error, action: entry.action }, "Failed to persist audit log to database");
+		logger.error(
+			{ error, action: entry.action },
+			"Failed to persist audit log to database",
+		);
 	}
 
 	// Send to external service (async, fire-and-forget)

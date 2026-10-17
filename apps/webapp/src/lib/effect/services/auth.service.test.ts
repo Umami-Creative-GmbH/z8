@@ -1,6 +1,8 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { db } from "@/db";
 import { AuthService, AuthServiceLive } from "./auth.service";
+import { DatabaseService, makeDatabaseService } from "./database.service";
 
 const mocks = vi.hoisted(() => ({ getSession: vi.fn(), ssoAllowed: vi.fn() }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
@@ -11,15 +13,18 @@ vi.mock("next/server", async (importOriginal) => ({
 vi.mock("@/lib/auth", () => ({
 	auth: { api: { getSession: mocks.getSession } },
 }));
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
-	canAccessOrganizationWithSso: mocks.ssoAllowed,
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	canAccessOrganization: mocks.ssoAllowed,
 }));
 
 const getSession = (organizationId?: string) =>
 	Effect.runPromise(
 		Effect.gen(function* () {
 			return yield* (yield* AuthService).getSession(organizationId);
-		}).pipe(Effect.provide(AuthServiceLive)),
+		}).pipe(
+			Effect.provide(AuthServiceLive),
+			Effect.provideService(DatabaseService, makeDatabaseService(db)),
+		),
 	);
 
 describe("AuthService SSO boundaries", () => {

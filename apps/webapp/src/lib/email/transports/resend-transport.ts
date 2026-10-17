@@ -23,7 +23,10 @@ export class ResendTransport implements EmailTransport {
 	private fromName?: string;
 	private isOrgTransport: boolean;
 
-	constructor(config: Omit<ResendTransportConfig, "type">, isOrgTransport = false) {
+	constructor(
+		config: Omit<ResendTransportConfig, "type">,
+		isOrgTransport = false,
+	) {
 		this.client = new Resend(config.apiKey);
 		this.fromEmail = config.fromEmail;
 		this.fromName = config.fromName;
@@ -45,16 +48,24 @@ export class ResendTransport implements EmailTransport {
 		try {
 			const from = message.from || this.formatFrom();
 
-			const result = await this.client.emails.send({
+			const payload = {
 				from,
 				to: message.to,
 				subject: message.subject,
 				html: message.html,
 				replyTo: message.replyTo,
-			});
+			};
+			const result = message.idempotencyKey
+				? await this.client.emails.send(payload, {
+						idempotencyKey: message.idempotencyKey,
+					})
+				: await this.client.emails.send(payload);
 
 			if (result.error) {
-				logger.error({ error: result.error, to: message.to }, "Resend API error");
+				logger.error(
+					{ error: result.error, to: message.to },
+					"Resend API error",
+				);
 				return {
 					success: false,
 					error: result.error.message,
@@ -71,8 +82,12 @@ export class ResendTransport implements EmailTransport {
 				messageId: result.data?.id,
 			};
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : "Unknown error";
-			logger.error({ error, to: message.to }, "Failed to send email via Resend");
+			const errorMessage =
+				error instanceof Error ? error.message : "Unknown error";
+			logger.error(
+				{ error, to: message.to },
+				"Failed to send email via Resend",
+			);
 			return {
 				success: false,
 				error: errorMessage,

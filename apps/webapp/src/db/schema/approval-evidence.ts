@@ -140,18 +140,22 @@ export const approvalSubmittedRevision = pgTable(
 			)
 			.where(sql`${table.authority} = 'legacy'`),
 		foreignKey({
+			name: "approval_submitted_revision_workflow_fk",
 			columns: [table.workflowId, table.organizationId],
 			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
 		}).onDelete("cascade"),
 		foreignKey({
+			name: "approval_submitted_revision_subject_fk",
 			columns: [table.subjectEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}),
 		foreignKey({
+			name: "approval_submitted_revision_requester_fk",
 			columns: [table.requesterEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}),
 		foreignKey({
+			name: "approval_submitted_revision_submitter_fk",
 			columns: [table.submitterEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}),
@@ -217,7 +221,9 @@ export const approvalReviewBinding = pgTable(
 			table.assignmentId,
 			table.submittedRevisionId,
 		),
-		uniqueIndex("approvalReviewBinding_org_recipient_legacy_request_revision_idx")
+		uniqueIndex(
+			"approvalReviewBinding_org_recipient_legacy_request_revision_idx",
+		)
 			.on(
 				table.organizationId,
 				table.recipientEmployeeId,
@@ -227,6 +233,7 @@ export const approvalReviewBinding = pgTable(
 			.where(sql`${table.authority} = 'legacy'`),
 		// A binding never crosses authorities with the revision it names.
 		foreignKey({
+			name: "approval_review_binding_revision_authority_fk",
 			columns: [
 				table.submittedRevisionId,
 				table.organizationId,
@@ -239,6 +246,7 @@ export const approvalReviewBinding = pgTable(
 			],
 		}).onDelete("cascade"),
 		foreignKey({
+			name: "approval_review_binding_assignment_fk",
 			columns: [
 				table.workflowId,
 				table.stageId,
@@ -253,6 +261,7 @@ export const approvalReviewBinding = pgTable(
 			],
 		}).onDelete("cascade"),
 		foreignKey({
+			name: "approval_review_binding_revision_fk",
 			columns: [
 				table.submittedRevisionId,
 				table.workflowId,
@@ -265,6 +274,7 @@ export const approvalReviewBinding = pgTable(
 			],
 		}).onDelete("cascade"),
 		foreignKey({
+			name: "approval_review_binding_recipient_fk",
 			columns: [table.recipientEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}),
@@ -370,6 +380,7 @@ export const approvalDecisionEvidence = pgTable(
 		// Enforced for both authorities (the workflow-scoped FK is MATCH SIMPLE and
 		// skips rows without a workflow); a decision never crosses authorities.
 		foreignKey({
+			name: "approval_decision_evidence_revision_authority_fk",
 			columns: [
 				table.submittedRevisionId,
 				table.organizationId,
@@ -382,10 +393,12 @@ export const approvalDecisionEvidence = pgTable(
 			],
 		}).onDelete("cascade"),
 		foreignKey({
+			name: "approval_decision_evidence_workflow_fk",
 			columns: [table.workflowId, table.organizationId],
 			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
 		}).onDelete("cascade"),
 		foreignKey({
+			name: "approval_decision_evidence_revision_fk",
 			columns: [
 				table.submittedRevisionId,
 				table.workflowId,
@@ -398,6 +411,7 @@ export const approvalDecisionEvidence = pgTable(
 			],
 		}).onDelete("cascade"),
 		foreignKey({
+			name: "approval_decision_evidence_binding_fk",
 			columns: [table.reviewedBindingId, table.organizationId],
 			foreignColumns: [
 				approvalReviewBinding.id,
@@ -406,6 +420,7 @@ export const approvalDecisionEvidence = pgTable(
 		}),
 		// A decision's binding belongs to the same authority as the decision.
 		foreignKey({
+			name: "approval_decision_evidence_binding_authority_fk",
 			columns: [table.reviewedBindingId, table.organizationId, table.authority],
 			foreignColumns: [
 				approvalReviewBinding.id,
@@ -414,6 +429,7 @@ export const approvalDecisionEvidence = pgTable(
 			],
 		}),
 		foreignKey({
+			name: "approval_decision_evidence_actor_fk",
 			columns: [table.actorEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}),
@@ -485,7 +501,11 @@ export const approvalInvocation = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		scheme: text("scheme")
-			.$type<"telegram_callback_query" | "teams_adaptive_card_action" | "discord_interaction">()
+			.$type<
+				| "telegram_callback_query"
+				| "teams_adaptive_card_action"
+				| "discord_interaction"
+			>()
 			.notNull(),
 		schemeVersion: integer("scheme_version").notNull(),
 		receiverScope: text("receiver_scope").notNull(),
@@ -548,10 +568,12 @@ export const approvalInvocation = pgTable(
 			table.workflowId,
 		),
 		foreignKey({
+			name: "approval_invocation_workflow_fk",
 			columns: [table.workflowId, table.organizationId],
 			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
 		}).onDelete("cascade"),
 		foreignKey({
+			name: "approval_invocation_binding_fk",
 			columns: [table.reviewedBindingId, table.organizationId],
 			foreignColumns: [
 				approvalReviewBinding.id,
@@ -559,6 +581,7 @@ export const approvalInvocation = pgTable(
 			],
 		}).onDelete("cascade"),
 		foreignKey({
+			name: "approval_invocation_decision_fk",
 			columns: [
 				table.decisionEvidenceId,
 				table.workflowId,
@@ -572,6 +595,7 @@ export const approvalInvocation = pgTable(
 		}).onDelete("cascade"),
 		// Enforced for both authorities; the workflow-scoped FKs skip legacy rows.
 		foreignKey({
+			name: "approval_invocation_decision_authority_fk",
 			columns: [
 				table.decisionEvidenceId,
 				table.organizationId,
@@ -584,6 +608,7 @@ export const approvalInvocation = pgTable(
 			],
 		}).onDelete("cascade"),
 		foreignKey({
+			name: "approval_invocation_binding_authority_fk",
 			columns: [table.reviewedBindingId, table.organizationId, table.authority],
 			foreignColumns: [
 				approvalReviewBinding.id,
@@ -592,6 +617,7 @@ export const approvalInvocation = pgTable(
 			],
 		}).onDelete("cascade"),
 		foreignKey({
+			name: "approval_invocation_actor_fk",
 			columns: [table.actorEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}),

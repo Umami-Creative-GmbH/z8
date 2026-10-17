@@ -146,6 +146,7 @@ export async function createCoverageRule(
 	const result = await runServerActionSafe(effect);
 	if (result.success) {
 		revalidatePath("/settings/coverage-rules");
+		revalidatePath("/settings/shifts");
 	}
 	return result;
 }
@@ -199,6 +200,7 @@ export async function updateCoverageRule(
 	const result = await runServerActionSafe(effect);
 	if (result.success) {
 		revalidatePath("/settings/coverage-rules");
+		revalidatePath("/settings/shifts");
 	}
 	return result;
 }
@@ -239,6 +241,7 @@ export async function deleteCoverageRule(ruleId: string): Promise<ServerActionRe
 	const result = await runServerActionSafe(effect);
 	if (result.success) {
 		revalidatePath("/settings/coverage-rules");
+		revalidatePath("/settings/shifts");
 	}
 	return result;
 }
@@ -360,6 +363,7 @@ export async function updateCoverageSettings(settings: {
 	const result = await runServerActionSafe(effect);
 	if (result.success) {
 		revalidatePath("/settings/coverage-rules");
+		revalidatePath("/settings/shifts");
 	}
 	return result;
 }

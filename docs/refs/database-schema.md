@@ -24,7 +24,23 @@
 ## Commands
 
 ```bash
-pnpm --dir apps/webapp drizzle-kit push
+pnpm --dir apps/webapp run db:push
 pnpm --dir apps/webapp run auth:generate
 pnpm --dir apps/webapp run auth:migrate
 ```
+
+`db:push` runs Drizzle's schema push and then installs the employee departure
+access functions from migration `0072`. Direct `drizzle-kit push` only applies the
+TypeScript schema; it does not install SQL functions. Without these functions,
+setup and settings access queries fail with
+`function employee_departure_denies_access(text, uuid, timestamp with time zone) does not exist`.
+
+For a database already pushed, run the repair with the same Phase environment:
+
+```bash
+phase run -- pnpm --dir apps/webapp run db:install-departure-access
+```
+
+The repair is transactional and safe to repeat. It installs both access functions
+without changing tenant rows or the migration ledger. It does not apply other
+custom SQL migrations; production deployments must still use the migration runner.

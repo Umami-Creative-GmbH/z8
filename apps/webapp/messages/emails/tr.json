@@ -117,6 +117,17 @@
       "actionFallback": "Düğme çalışmıyorsa bu bağlantıyı açın:",
       "footer": "Bu e-posta Z8 tarafından gönderildi."
     },
+    "mfa": {
+      "codesChanged": "Kurtarma kodu kullanıldı veya değiştirildi",
+      "deadlineMessage": "{organization}, {deadline} tarihine kadar bir doğrulayıcı gerektiriyor. Bu kesin son tarihten sonra, bu kuruluşa erişmeden önce bir TOTP doğrulayıcısını veya PIN/biyometri içeren bir geçiş anahtarını doğrulayın. Yalnızca kaydolmak yeterli değildir. Kaydolmak veya doğrulamak için Güvenlik doğrulaması'nı kullanın; şifre artı bir yedek kod yalnızca değiştirme kaydına izin verir.",
+      "deadlineTitle": "Kuruluş kimlik doğrulaması gerekli",
+      "factorChanged": "Doğrulayıcı değiştirildi",
+      "factorRemoved": "Doğrulayıcı kaldırıldı",
+      "passwordChanged": "Şifre değiştirildi",
+      "securityMessage": "{organization} için {event}. Önceki doğrulama artık kuruluş erişimine izin vermeyebilir. Güvenlik doğrulaması bölümünde kalan veya yeni bir doğrulayıcıyı doğrulayın. Bu değişikliği siz yapmadıysanız hesabınızı hemen güvene alın.",
+      "securityTitle": "Kimlik doğrulama güvenliği değiştirildi",
+      "suspended": "Gereksinim şu anda askıya alındı. Yeniden etkinleştirmek atanan son tarihi geri yükler."
+    },
     "notification": {
       "openAction": "Z8'i Aç"
     },

@@ -90,7 +90,7 @@ function vehicleUseErrorMessage(
 	}
 }
 
-function VehicleUseSwitch({ initialEnabled }: { initialEnabled: boolean }) {
+export function VehicleUseSwitch({ initialEnabled }: { initialEnabled: boolean }) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [enabled, setEnabled] = useState(initialEnabled);
@@ -167,7 +167,7 @@ function modeOptions(t: Translate): { value: VehicleUseMode; label: string }[] {
 	];
 }
 
-function VehicleUseAssignments({ data }: VehicleUseSettingsProps) {
+export function VehicleUseAssignments({ data }: VehicleUseSettingsProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	return (

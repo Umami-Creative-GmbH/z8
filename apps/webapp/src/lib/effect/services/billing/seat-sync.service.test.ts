@@ -1,8 +1,8 @@
 import { Effect, Exit, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { typedFailureOfCause } from "@/lib/effect/cause-failure";
 import { StripeError } from "@/lib/effect/errors";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { SeatDeliveryUncertainError } from "./seat-delivery";
 import { SeatSyncService, SeatSyncServiceLive } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
@@ -88,7 +88,9 @@ describe("SeatSyncService", () => {
 	});
 
 	describe("Stripe seat delivery", () => {
-		const stripeSubscription = { items: { data: [{ id: "si_123", quantity: 2 }] } };
+		const stripeSubscription = {
+			items: { data: [{ id: "si_123", quantity: 2, price: { id: "price_monthly_123" } }] },
+		};
 
 		function enabledStripeLayer(
 			overrides: Partial<{
@@ -157,6 +159,63 @@ describe("SeatSyncService", () => {
 				{ items: [{ id: "si_123", quantity: 4 }], proration_behavior: "create_prorations" },
 				{ idempotencyKey: "seat-sync:org_123:7" },
 			);
+		});
+
+		it("reads and updates the full seat item found by price, not position", async () => {
+			const stripe = enabledStripeLayer({
+				getSubscription: () =>
+					Effect.succeed({
+						items: {
+							data: [
+								{ id: "si_addon_123", quantity: 9, price: { id: "price_addon_123" } },
+								{ id: "si_seat_123", quantity: 2, price: { id: "price_yearly_123" } },
+							],
+						},
+					}),
+			});
+			let current: unknown;
+			deliverOrganizationSeats.mockImplementation(async ({ stripe: port }) => {
+				current = await port.getQuantity("sub_123");
+				await port.setQuantity({
+					subscriptionId: "sub_123",
+					itemId: (current as { itemId: string }).itemId,
+					quantity: 5,
+					idempotencyKey: "seat-sync:org_123:8",
+				});
+				return { seats: 5, local: "updated", external: "confirmed" };
+			});
+
+			const exit = await syncSeats(stripe.layer);
+
+			expect(exit).toEqual(Exit.succeed(5));
+			expect(current).toEqual({ itemId: "si_seat_123", quantity: 2 });
+			expect(stripe.updateSubscription).toHaveBeenCalledWith(
+				"sub_123",
+				{ items: [{ id: "si_seat_123", quantity: 5 }], proration_behavior: "create_prorations" },
+				{ idempotencyKey: "seat-sync:org_123:8" },
+			);
+		});
+
+		it.each([
+			{ subscription: "has no items", data: [] },
+			{
+				subscription: "has only an item at an unknown price",
+				data: [{ id: "si_addon_123", quantity: 9, price: { id: "price_addon_123" } }],
+			},
+		])("rejects the seat read when the subscription $subscription", async ({ data }) => {
+			const stripe = enabledStripeLayer({
+				getSubscription: () => Effect.succeed({ items: { data } }),
+			});
+			let rejection: unknown;
+			deliverOrganizationSeats.mockImplementation(async ({ stripe: port }) => {
+				rejection = await port.getQuantity("sub_123").catch((error: unknown) => error);
+				throw new SeatDeliveryUncertainError("org_123", 7, rejection);
+			});
+
+			await syncSeats(stripe.layer);
+
+			expect(rejection).toEqual(new Error("Stripe subscription has no seat item"));
+			expect(stripe.updateSubscription).not.toHaveBeenCalled();
 		});
 
 		it("hands a Stripe failure to the delivery as a rejection", async () => {

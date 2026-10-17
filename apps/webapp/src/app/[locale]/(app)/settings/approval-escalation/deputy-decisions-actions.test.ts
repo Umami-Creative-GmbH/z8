@@ -44,7 +44,7 @@ describe("saveDeputyDecisionsEnabledAction", () => {
 			{ marker: "db" },
 			{ organizationId: "org-1", enabled: false, actorUserId: "user-1" },
 		);
-		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/approval-escalation");
+		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/approval-policies");
 	});
 
 	it("refuses users who cannot manage approvals, and signed-out users", async () => {

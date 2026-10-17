@@ -143,7 +143,6 @@
         "title": "Sostituti",
         "toggle": "I sostituti possono decidere sulle approvazioni"
       },
-      "description": "Verifica i criteri di escalation dell'organizzazione, come sono stati migrati dalle impostazioni del canale e le condizioni che richiedono un responsabile dell'approvazione.",
       "dispose": {
         "confirm": "Chiudi elemento",
         "description": "La chiusura registra la decisione nel registro di controllo. Non riassegna l'approvazione né consente un'ulteriore escalation automatica.",
@@ -177,7 +176,6 @@
         "usedNo": "Non utilizzato",
         "usedYes": "Utilizzato"
       },
-      "navDescription": "Criterio di escalation dell'organizzazione e approvazioni che richiedono attenzione",
       "off": "Disattivato",
       "on": "Attivato",
       "ownership": {

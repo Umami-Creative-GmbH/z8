@@ -39,7 +39,7 @@ export type SetVehicleUseAssignmentInput = {
 	mode: VehicleUseMode;
 };
 
-const SETTINGS_PATH = "/settings/vehicle-use";
+const SETTINGS_PATH = "/settings/vehicles";
 
 export async function getVehicleUseAdminDataAction(): Promise<
 	VehicleUseActionResult<VehicleUseAdminData>

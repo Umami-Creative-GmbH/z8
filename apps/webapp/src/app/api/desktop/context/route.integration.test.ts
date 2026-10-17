@@ -41,8 +41,8 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
-	canAccessOrganizationWithSso: async () => true,
+vi.mock("@/lib/organization-mfa/organization-access", () => ({
+	canAccessOrganization: async () => true,
 }));
 
 const route = await import("./route");
@@ -239,7 +239,10 @@ describe("desktop context project tasks on PostgreSQL (#875)", () => {
 	it.each(["planned", "active", "paused"])(
 		"offers each assigned %s project's open tasks by name, and nothing else",
 		async (status) => {
-			await admin.query("update project set status = $1 where id = $2", [status, ids.projectA]);
+			await admin.query("update project set status = $1 where id = $2", [
+				status,
+				ids.projectA,
+			]);
 			const context = await read();
 
 			expect(context.status).toBe(200);
@@ -261,28 +264,38 @@ describe("desktop context project tasks on PostgreSQL (#875)", () => {
 	it.each(["completed", "archived"])(
 		"does not offer an assigned %s project or its open tasks (#929)",
 		async (status) => {
-			await admin.query("update project set status = $1 where id = $2", [status, ids.projectA]);
+			await admin.query("update project set status = $1 where id = $2", [
+				status,
+				ids.projectA,
+			]);
 
 			const context = await read();
 
 			expect(context.status).toBe(200);
-			expect(context.body.projects).toEqual([{ id: ids.projectB, name: "Beta", tasks: [] }]);
+			expect(context.body.projects).toEqual([
+				{ id: ids.projectB, name: "Beta", tasks: [] },
+			]);
 		},
 	);
 
 	it("does not offer an inactive assigned project (#929)", async () => {
-		await admin.query("update project set is_active = false where id = $1", [ids.projectA]);
+		await admin.query("update project set is_active = false where id = $1", [
+			ids.projectA,
+		]);
 
 		const context = await read();
 
 		expect(context.status).toBe(200);
-		expect(context.body.projects).toEqual([{ id: ids.projectB, name: "Beta", tasks: [] }]);
+		expect(context.body.projects).toEqual([
+			{ id: ids.projectB, name: "Beta", tasks: [] },
+		]);
 	});
 
 	it("offers no projects when the organization has projects disabled (#929)", async () => {
-		await admin.query("update organization set projects_enabled = false where id = $1", [
-			ids.organization,
-		]);
+		await admin.query(
+			"update organization set projects_enabled = false where id = $1",
+			[ids.organization],
+		);
 
 		const context = await read();
 
@@ -297,22 +310,25 @@ describe("desktop context project tasks on PostgreSQL (#875)", () => {
 			"insert into team (id, organization_id, name, updated_at) values ($1, $2, 'Desktop team', now())",
 			[teamId, ids.organization],
 		);
-		await admin.query("update employee set team_id = $1 where id = $2", [teamId, ids.employee]);
+		await admin.query("update employee set team_id = $1 where id = $2", [
+			teamId,
+			ids.employee,
+		]);
 		await admin.query(
 			`insert into project_assignment (project_id, organization_id, assignment_type, team_id, created_by)
 			 values ($1, $3, 'team', $4, $5), ($2, $3, 'team', $4, $5)`,
 			[ids.projectA, ids.unassigned, ids.organization, teamId, ids.user],
 		);
-		await admin.query("update project set name = 'Zulu' where id = $1", [ids.projectA]);
+		await admin.query("update project set name = 'Zulu' where id = $1", [
+			ids.projectA,
+		]);
 
 		const context = await read();
 
 		expect(context.status).toBe(200);
-		expect(context.body.projects.map((project: { id: string }) => project.id)).toEqual([
-			ids.projectB,
-			ids.unassigned,
-			ids.projectA,
-		]);
+		expect(
+			context.body.projects.map((project: { id: string }) => project.id),
+		).toEqual([ids.projectB, ids.unassigned, ids.projectA]);
 		expect(context.body.projects[1].tasks).toEqual([
 			{ id: "f8750000-0000-4000-8000-0000000000c2", name: "Hidden" },
 		]);
@@ -333,6 +349,65 @@ describe("desktop context project tasks on PostgreSQL (#875)", () => {
 					{ id: "f8750000-0000-4000-8000-0000000000d2", name: "Foreign task" },
 				],
 			},
+		]);
+	});
+
+	it("flags only the projects whose task requirement is active (#1297)", async () => {
+		// Beta requires a task but has no open task, so its requirement has lapsed.
+		await admin.query(
+			"update project set requires_task = true where id in ($1, $2)",
+			[ids.projectA, ids.projectB],
+		);
+
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		const [alpha, beta] = context.body.projects;
+		expect(alpha).toMatchObject({ id: ids.projectA, taskRequired: true });
+		expect(beta.id).toBe(ids.projectB);
+		expect(beta).not.toHaveProperty("taskRequired");
+	});
+
+	it("leaves the flag off once a requiring project has no open task (#1297)", async () => {
+		await admin.query("update project set requires_task = true where id = $1", [
+			ids.projectA,
+		]);
+		await admin.query(
+			"update project_task set state = 'done', done_at = now(), done_by = $2 where project_id = $1",
+			[ids.projectA, ids.user],
+		);
+
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		for (const project of context.body.projects)
+			expect(project).not.toHaveProperty("taskRequired");
+	});
+
+	it("leaves the flag off for every project that does not require a task (#1297)", async () => {
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		for (const project of context.body.projects)
+			expect(project).not.toHaveProperty("taskRequired");
+	});
+
+	it("reads the requirement in the active organization only (#1297)", async () => {
+		await admin.query("update project set requires_task = true where id = $1", [
+			ids.otherOrganizationProject,
+		]);
+
+		const own = await read();
+		harness.organizationId = ids.otherOrganization;
+		const other = await read();
+
+		for (const project of own.body.projects)
+			expect(project).not.toHaveProperty("taskRequired");
+		expect(other.body.projects).toEqual([
+			expect.objectContaining({
+				id: ids.otherOrganizationProject,
+				taskRequired: true,
+			}),
 		]);
 	});
 });
@@ -539,7 +614,9 @@ describe("desktop context vehicle use on PostgreSQL (#1124)", () => {
 
 		expect(context.body.vehicleUse).toMatchObject({
 			mode: "asked",
-			vehicles: [{ id: vehicles.foreign, name: "Foreign van", licencePlate: "B-FV 4" }],
+			vehicles: [
+				{ id: vehicles.foreign, name: "Foreign van", licencePlate: "B-FV 4" },
+			],
 			suggestedVehicleIds: [],
 		});
 	});

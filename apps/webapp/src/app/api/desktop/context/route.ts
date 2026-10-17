@@ -7,8 +7,9 @@ import { organization } from "@/db/auth-schema";
 import { employee, userSettings, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
+import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
 import { withOpenTasks } from "@/lib/projects/project-tasks";
+import { listActiveTaskRequirements } from "@/lib/projects/task-requirement-reads";
 import { getAvailableCategoriesForEmployee } from "@/lib/query/work-category.queries";
 import {
 	ClockingAccessError,
@@ -33,9 +34,7 @@ export async function GET() {
 				{ error: "Select an organization" },
 				{ status: 400 },
 			);
-		if (
-			!(await canAccessOrganizationWithSso(session.session, organizationId))
-		) {
+		if (!(await canAccessOrganization(session.session, organizationId))) {
 			return NextResponse.json(
 				{ error: "Organization SSO required" },
 				{ status: 403 },
@@ -121,12 +120,25 @@ export async function GET() {
 				...(liveWork ? { excludeWorkPeriodId: liveWork.id } : {}),
 			}),
 		]);
-		// Each listed project's open tasks (#875); older clients ignore the field.
-		const projectsWithTasks = await withOpenTasks(
-			organizationId,
-			projects
-				.map(({ id, name }) => ({ id, name }))
-				.sort((a, b) => a.name.localeCompare(b.name)),
+		// Each listed project's open tasks (#875) and, only where its task
+		// requirement is active, `taskRequired: true` (#1297). Older clients
+		// ignore both fields.
+		const [projectsWithTasks, taskRequired] = await Promise.all([
+			withOpenTasks(
+				organizationId,
+				projects
+					.map(({ id, name }) => ({ id, name }))
+					.sort((a, b) => a.name.localeCompare(b.name)),
+			),
+			listActiveTaskRequirements({
+				organizationId,
+				projectIds: projects.map(({ id }) => id),
+			}),
+		]);
+		const offeredProjects = projectsWithTasks.map((project) =>
+			taskRequired.has(project.id)
+				? { ...project, taskRequired: true as const }
+				: project,
 		);
 		return NextResponse.json(
 			{
@@ -138,7 +150,7 @@ export async function GET() {
 				fetchedAt: systemClock.nowInstant().toString(),
 				dayTotalBasis: summary.dayTotalBasis,
 				projectsEnabled: organizationSettings?.projectsEnabled ?? false,
-				projects: projectsWithTasks,
+				projects: offeredProjects,
 				categories: categories.map(({ id, name }) => ({ id, name })),
 				vehicleUse: {
 					mode: vehicles.mode,

@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { ChangePolicyManagement } from "@/components/settings/change-policy/change-policy-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
@@ -19,12 +18,7 @@ async function ChangePoliciesSettingsPageContent() {
 		return redirectWithLocale("/settings");
 	}
 
-	return (
-		<ChangePolicyManagement
-			organizationId={organizationId}
-			canManage={accessTier === "orgAdmin"}
-		/>
-	);
+	return redirectWithLocale("/settings/work-policies?tab=changes");
 }
 
 function ChangePoliciesSettingsPageLoading() {

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const loggerError = vi.fn();
+const kioskSeatUpgrades = vi.fn();
 
 vi.mock("@/env", () => ({ env: { BILLING_ENABLED: "true" } }));
 vi.mock("@/lib/logger", () => ({
@@ -15,6 +16,11 @@ vi.mock("@/lib/effect/services/billing", async () => {
 		SeatSyncService,
 		{
 			readonly syncSeatsForOrganization: (organizationId: string) => Effect.Effect<number, unknown>;
+			readonly handleKioskSeatUpgraded: (
+				organizationId: string,
+				memberId: string,
+				userId: string,
+			) => Effect.Effect<void>;
 		}
 	>()("SeatSyncService") {}
 
@@ -30,6 +36,8 @@ vi.mock("@/lib/effect/services/billing", async () => {
 							operation: "syncSeatsForOrganization",
 						}),
 					),
+				handleKioskSeatUpgraded: (organizationId, memberId, userId) =>
+					Effect.sync(() => kioskSeatUpgrades(organizationId, memberId, userId)),
 			}),
 		),
 	};
@@ -105,5 +113,25 @@ describe("reconcileBillingSeatsForOrganization", () => {
 		expect(runtimeLoader).toContain('import("effect")');
 		expect(runtimeLoader).toContain('import("@/lib/effect/runtime")');
 		expect(runtimeLoader).toContain('import("@/lib/effect/services/billing")');
+	});
+});
+
+describe("syncBillingSeatsAfterMemberChange", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("moves a kiosk-only employee's seat to a full seat when they gain an email (#886)", async () => {
+		const { syncBillingSeatsAfterMemberChange } = await import("./seat-sync-trigger");
+
+		await syncBillingSeatsAfterMemberChange({
+			organizationId: "org-1",
+			memberId: "member-1",
+			userId: "user-1",
+			change: "kiosk_seat_upgraded",
+		});
+
+		expect(kioskSeatUpgrades).toHaveBeenCalledExactlyOnceWith("org-1", "member-1", "user-1");
+		expect(loggerError).not.toHaveBeenCalled();
 	});
 });

@@ -21,9 +21,9 @@ import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-re
 import type { ClosedMonthAutoCloseJobResult } from "@/lib/jobs/closed-month-auto-close";
 import type { DeputyCoverSummariesJobResult } from "@/lib/jobs/deputy-cover-summaries";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
+import type { PersonalDataExportSweepResult } from "@/lib/jobs/personal-data-export-sweep";
 import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
 import type { PersonnelFileRetentionRemindersJobResult } from "@/lib/jobs/personnel-file-retention-reminders";
-import type { PersonalDataExportSweepResult } from "@/lib/jobs/personal-data-export-sweep";
 import type { PersonnelFileUploadCleanupJobResult } from "@/lib/jobs/personnel-file-upload-cleanup";
 import type { PositionStampPurgeResult } from "@/lib/jobs/position-stamp-purge";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
@@ -254,6 +254,30 @@ export interface SlackEscalationResult {
  * - defaultJobOptions: BullMQ options for retry, priority, etc.
  */
 export const CRON_JOBS = {
+	"cron:driving-licence-retention": {
+		schedule: "15 2 * * *",
+		description:
+			"Delete due driving licence evidence under its dedicated policy and specific-case holds",
+		processor: async () => {
+			const { runDrivingLicenceRetentionJob } = await import(
+				"@/lib/jobs/driving-licence-retention"
+			);
+			return runDrivingLicenceRetentionJob();
+		},
+		defaultJobOptions: { attempts: 3, priority: 5 },
+	},
+	"cron:driving-licence-reminders": {
+		schedule: "*/15 * * * *",
+		description:
+			"Deliver mandatory driving licence deadline and suspension notices to current employees and scoped verifiers",
+		processor: async () => {
+			const { runDrivingLicenceRemindersJob } = await import(
+				"@/lib/jobs/driving-licence-reminders"
+			);
+			return runDrivingLicenceRemindersJob();
+		},
+		defaultJobOptions: { attempts: 3, priority: 5 },
+	},
 	"cron:vacation": {
 		schedule: "0 0 * * *", // Daily at midnight
 		description: "Vacation automation (carryover, expiry, accrual)",
@@ -320,9 +344,12 @@ export const CRON_JOBS = {
 
 	"cron:auto-clock-out": {
 		schedule: "*/5 * * * *",
-		description: "Close overdue uninterrupted work and recover durable automatic clock-out tasks",
+		description:
+			"Close overdue uninterrupted work and recover durable automatic clock-out tasks",
 		processor: async () => {
-			const { runAutoClockOutMaintenance } = await import("@/lib/jobs/auto-clock-out");
+			const { runAutoClockOutMaintenance } = await import(
+				"@/lib/jobs/auto-clock-out"
+			);
 			return runAutoClockOutMaintenance();
 		},
 		defaultJobOptions: { attempts: 1, priority: 8 },
@@ -333,7 +360,9 @@ export const CRON_JOBS = {
 		description:
 			"Remind employees of a missed clock-in, a forgotten clock-out or a break that is about to be due",
 		processor: async () => {
-			const { runClockingReminders } = await import("@/lib/jobs/clocking-reminders");
+			const { runClockingReminders } = await import(
+				"@/lib/jobs/clocking-reminders"
+			);
 			return runClockingReminders();
 		},
 		defaultJobOptions: { attempts: 1, priority: 8 },
@@ -397,8 +426,13 @@ export const CRON_JOBS = {
 		schedule: "*/15 * * * *", // Every 15 minutes
 		description:
 			"Expire report share links and revoke those whose creator lost access, deleting their snapshots",
-		processor: async (): Promise<{ expired: number; creatorLostAccess: number }> => {
-			const { runReportShareLinkSweep } = await import("@/lib/jobs/report-share-links");
+		processor: async (): Promise<{
+			expired: number;
+			creatorLostAccess: number;
+		}> => {
+			const { runReportShareLinkSweep } = await import(
+				"@/lib/jobs/report-share-links"
+			);
 			return runReportShareLinkSweep();
 		},
 		defaultJobOptions: { attempts: 2, priority: 8 },
@@ -409,7 +443,9 @@ export const CRON_JOBS = {
 		description:
 			"Delete personal data exports 7 days after completion, give up stuck builds, and delete the stored files of deleted exports",
 		processor: async (): Promise<PersonalDataExportSweepResult> => {
-			const { runPersonalDataExportSweep } = await import("@/lib/jobs/personal-data-export-sweep");
+			const { runPersonalDataExportSweep } = await import(
+				"@/lib/jobs/personal-data-export-sweep"
+			);
 			return runPersonalDataExportSweep();
 		},
 		defaultJobOptions: { attempts: 2, priority: 8 },
@@ -420,12 +456,24 @@ export const CRON_JOBS = {
 		description:
 			"Delete position stamps past their purge date in every organization; clock events stay",
 		processor: async (): Promise<PositionStampPurgeResult> => {
-			const { runPositionStampPurge } = await import("@/lib/jobs/position-stamp-purge");
+			const { runPositionStampPurge } = await import(
+				"@/lib/jobs/position-stamp-purge"
+			);
 			return runPositionStampPurge();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},
 
+	"cron:vehicle-photo-cleanup": {
+		schedule: "*/15 * * * *",
+		description:
+			"Remove private vehicle photos from failed, abandoned uploads and deleted vehicles",
+		processor: async () =>
+			(
+				await import("@/lib/jobs/vehicle-photo-cleanup")
+			).runVehiclePhotoCleanupJob(),
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
 	"cron:travel-expense-receipt-cleanup": {
 		schedule: "*/15 * * * *", // Every 15 minutes
 		description:
@@ -470,7 +518,9 @@ export const CRON_JOBS = {
 		description:
 			"Remind employees and their managers of employee skills expiring within the lead time or today",
 		processor: async (): Promise<SkillExpiryRemindersJobResult> => {
-			const { runSkillExpiryRemindersJob } = await import("@/lib/jobs/skill-expiry-reminders");
+			const { runSkillExpiryRemindersJob } = await import(
+				"@/lib/jobs/skill-expiry-reminders"
+			);
 			return runSkillExpiryRemindersJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
@@ -481,7 +531,9 @@ export const CRON_JOBS = {
 		description:
 			"Remind deputies the day before an approved absence they cover starts (once per absence and deputy)",
 		processor: async (): Promise<AbsenceDeputyRemindersJobResult> => {
-			const { runAbsenceDeputyRemindersJob } = await import("@/lib/jobs/absence-deputy-reminders");
+			const { runAbsenceDeputyRemindersJob } = await import(
+				"@/lib/jobs/absence-deputy-reminders"
+			);
 			return runAbsenceDeputyRemindersJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
@@ -492,7 +544,9 @@ export const CRON_JOBS = {
 		description:
 			"Tell covering deputies what waits when cover starts, and approvers what their deputy decided when back (once per absence and deputy)",
 		processor: async (): Promise<DeputyCoverSummariesJobResult> => {
-			const { runDeputyCoverSummariesJob } = await import("@/lib/jobs/deputy-cover-summaries");
+			const { runDeputyCoverSummariesJob } = await import(
+				"@/lib/jobs/deputy-cover-summaries"
+			);
 			return runDeputyCoverSummariesJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
@@ -503,7 +557,9 @@ export const CRON_JOBS = {
 		description:
 			"Close the previous month for organizations with automatic close on, N days after it ended (#762)",
 		processor: async (): Promise<ClosedMonthAutoCloseJobResult> => {
-			const { runClosedMonthAutoCloseJob } = await import("@/lib/jobs/closed-month-auto-close");
+			const { runClosedMonthAutoCloseJob } = await import(
+				"@/lib/jobs/closed-month-auto-close"
+			);
 			return runClosedMonthAutoCloseJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
@@ -527,7 +583,9 @@ export const CRON_JOBS = {
 		description:
 			"Tell owners and admins once that the time off in lieu absence category is available",
 		processor: async (): Promise<AbsenceCategoryNoticesJobResult> => {
-			const { runAbsenceCategoryNoticesJob } = await import("@/lib/jobs/absence-category-notices");
+			const { runAbsenceCategoryNoticesJob } = await import(
+				"@/lib/jobs/absence-category-notices"
+			);
 			return runAbsenceCategoryNoticesJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
@@ -551,7 +609,9 @@ export const CRON_JOBS = {
 		description:
 			"Recover committed automatic break adjustments (any date) and check today's legacy work periods",
 		processor: async ({ manualParams }) => {
-			const { runBreakEnforcementCheck } = await import("@/lib/jobs/break-enforcement");
+			const { runBreakEnforcementCheck } = await import(
+				"@/lib/jobs/break-enforcement"
+			);
 			const params = manualParams as
 				| { organizationId?: string; date?: string }
 				| undefined;
@@ -747,6 +807,18 @@ export const CRON_JOBS = {
 			return runSlackEscalationCheckerJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
+	},
+	"cron:organization-mfa-notices": {
+		schedule: "* * * * *",
+		description:
+			"Deliver mandatory organization MFA enrollment, reminder and security notices",
+		processor: async () => {
+			const { deliverMfaNotices } = await import(
+				"@/lib/organization-mfa/delivery"
+			);
+			return deliverMfaNotices();
+		},
+		defaultJobOptions: { attempts: 2, priority: 5 },
 	},
 } as const satisfies Record<string, CronJobDefinition>;
 

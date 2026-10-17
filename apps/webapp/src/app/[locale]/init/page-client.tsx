@@ -81,7 +81,7 @@ function InitPageContent() {
 				fetch,
 				allowSso,
 			);
-			if (result.kind === "sso") {
+			if (result.kind === "sso" || result.kind === "mfa") {
 				window.location.assign(result.url);
 				return;
 			}

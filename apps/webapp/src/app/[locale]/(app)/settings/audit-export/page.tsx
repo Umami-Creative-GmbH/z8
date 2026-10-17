@@ -4,8 +4,9 @@ import { AuditConfigForm } from "@/components/settings/audit-export/audit-config
 import { AuditPackGeneratorCard } from "@/components/settings/audit-export/audit-pack-generator-card";
 import { AuditPackagesTable } from "@/components/settings/audit-export/audit-packages-table";
 import { KeyManagement } from "@/components/settings/audit-export/key-management";
+import { AuditLogViewer } from "@/components/settings/audit-log-viewer";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
@@ -13,7 +14,7 @@ import { getTranslate } from "@/tolgee/server";
 import { getAuditConfigAction, getAuditPackagesAction } from "./actions";
 
 export const metadata = {
-	title: "Audit Export Settings",
+	title: "Audit Settings",
 	description:
 		"Configure GoBD-compliant audit export hardening with cryptographic proofs",
 };
@@ -40,63 +41,80 @@ async function AuditExportSettingsContent() {
 	const packages = packagesResult.success ? packagesResult.data : [];
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold">
-					{t("settings.auditExport.title", "Audit Export")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
+		<SettingsTabbedPage
+			key={organizationId}
+			title={t("settings.navigation.audit.title", "Audit")}
+			defaultTab="activity"
+			tabs={[
+				{
+					value: "activity",
+					label: t("settings.navigation.audit.activity", "Activity"),
+					description: t(
+						"settings.auditLog.description",
+						"View and search all actions performed in your organization",
+					),
+					panel: (
+						<AuditLogViewer
+							organizationId={organizationId}
+							organizationTimezone={organizationTimezone}
+						/>
+					),
+				},
+				{
+					value: "config",
+					label: t("settings.auditExport.tabs.configuration", "Configuration"),
+					description: t(
 						"settings.auditExport.description",
 						"GoBD-compliant export hardening with digital signatures and WORM retention",
-					)}
-				</p>
-			</div>
-
-			<Tabs defaultValue="config" className="w-full">
-				<TabsList>
-					<TabsTrigger value="config">
-						{t("settings.auditExport.tabs.configuration", "Configuration")}
-					</TabsTrigger>
-					<TabsTrigger value="packages">
-						{t("settings.auditExport.tabs.packages", "Audit Packages")}
-					</TabsTrigger>
-					{config && (
-						<TabsTrigger value="keys">
-							{t("settings.auditExport.tabs.keys", "Signing Keys")}
-						</TabsTrigger>
-					)}
-				</TabsList>
-
-				<TabsContent value="config" className="mt-4 space-y-6">
-					<AuditConfigForm
-						organizationId={organizationId}
-						initialConfig={config}
-					/>
-				</TabsContent>
-
-				<TabsContent value="packages" className="mt-4 space-y-6">
-					<AuditPackGeneratorCard
-						organizationId={organizationId}
-						organizationTimezone={organizationTimezone}
-					/>
-					<AuditPackagesTable
-						organizationId={organizationId}
-						packages={packages}
-					/>
-				</TabsContent>
-
-				{config && (
-					<TabsContent value="keys" className="mt-4">
-						<KeyManagement
+					),
+					panel: (
+						<AuditConfigForm
 							organizationId={organizationId}
-							activeKeyFingerprint={config.signingKeyFingerprint}
-							activeKeyVersion={config.signingKeyVersion}
+							initialConfig={config}
 						/>
-					</TabsContent>
-				)}
-			</Tabs>
-		</div>
+					),
+				},
+				{
+					value: "packages",
+					label: t("settings.auditExport.tabs.packages", "Audit Packages"),
+					description: t(
+						"settings.navigation.audit.packagesDescription",
+						"Generate and review signed audit packages",
+					),
+					panel: (
+						<div className="space-y-6">
+							<AuditPackGeneratorCard
+								organizationId={organizationId}
+								organizationTimezone={organizationTimezone}
+							/>
+							<AuditPackagesTable
+								organizationId={organizationId}
+								packages={packages}
+							/>
+						</div>
+					),
+				},
+				...(config
+					? [
+							{
+								value: "keys",
+								label: t("settings.auditExport.tabs.keys", "Signing Keys"),
+								description: t(
+									"settings.navigation.audit.keysDescription",
+									"Manage the signing keys used by audit exports",
+								),
+								panel: (
+									<KeyManagement
+										organizationId={organizationId}
+										activeKeyFingerprint={config.signingKeyFingerprint}
+										activeKeyVersion={config.signingKeyVersion}
+									/>
+								),
+							},
+						]
+					: []),
+			]}
+		/>
 	);
 }
 

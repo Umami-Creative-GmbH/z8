@@ -6,27 +6,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type * as authSchema from "@/db/auth-schema";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
-import type { OrganizationTrackingSettings } from "@/lib/organization/tracking-settings";
-import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
-import type { ClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings-policy";
-import type { PeriodSubmissionSettings } from "@/lib/time-tracking/period-submissions/settings-policy";
 import { CreateOrganizationDialog } from "./create-organization-dialog";
-import { OrganizationAutoClockOutCard } from "./organization-auto-clock-out-card";
-import { OrganizationClockingRemindersCard } from "./organization-clocking-reminders-card";
 import { OrganizationDangerZoneCard } from "./organization-danger-zone-card";
 import { OrganizationDetailsCard } from "./organization-details-card";
 import { OrganizationFeaturesCard } from "./organization-features-card";
 import { OrganizationLanguageCard } from "./organization-language-card";
-import { OrganizationPeriodSubmissionsCard } from "./organization-period-submissions-card";
 import { OrganizationTimezoneCard } from "./organization-timezone-card";
-import { OrganizationTrackingCard } from "./organization-tracking-card";
 
 interface OrganizationTabProps {
-	autoClockOutSettings: AutoClockOutSettings;
-	trackingSettings: OrganizationTrackingSettings;
 	trackingSuggestedAt: string;
-	clockingReminderSettings: ClockingReminderSettings;
-	periodSubmissionSettings: PeriodSubmissionSettings;
 	organization: typeof authSchema.organization.$inferSelect;
 	memberCount: number;
 	currentMemberRole: "owner" | "admin" | "member";
@@ -36,11 +24,7 @@ interface OrganizationTabProps {
 }
 
 export function OrganizationTab({
-	autoClockOutSettings,
-	trackingSettings,
 	trackingSuggestedAt,
-	clockingReminderSettings,
-	periodSubmissionSettings,
 	organization,
 	memberCount,
 	currentMemberRole,
@@ -86,29 +70,6 @@ export function OrganizationTab({
 				personnelFilesEnabled={organization.personnelFilesEnabled ?? false}
 				currentMemberRole={currentMemberRole}
 			/>
-
-			<OrganizationAutoClockOutCard
-				key={organization.id}
-				organizationId={organization.id}
-				settings={autoClockOutSettings}
-				currentMemberRole={currentMemberRole}
-			/>
-
-			<OrganizationClockingRemindersCard
-				key={`clocking-reminders-${organization.id}`}
-				organizationId={organization.id}
-				settings={clockingReminderSettings}
-				currentMemberRole={currentMemberRole}
-			/>
-
-			<OrganizationPeriodSubmissionsCard
-				key={`period-submissions-${organization.id}`}
-				organizationId={organization.id}
-				settings={periodSubmissionSettings}
-				currentMemberRole={currentMemberRole}
-			/>
-
-			<OrganizationTrackingCard key={`tracking-${organization.id}`} settings={trackingSettings} createdAt={organization.createdAt.toISOString()} timezone={organization.timezone ?? "UTC"} />
 
 			{/* Organization Timezone Card */}
 			<OrganizationTimezoneCard

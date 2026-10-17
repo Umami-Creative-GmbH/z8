@@ -18,6 +18,7 @@ import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { createRatelimitRedisAdapter } from "@/lib/rate-limit-redis";
 import { ensureRedisReady, redis as redisClient } from "@/lib/redis";
+import { KIOSK_PIN_ATTEMPT_LIMIT } from "@/lib/time-tracking/kiosk/pin-attempt-limit";
 
 /**
  * Check if rate limiting is disabled
@@ -147,6 +148,13 @@ const icsFeedConfig = { requests: 120, seconds: 3600 };
 const icsFeedMissConfig = { requests: 30, seconds: 600 };
 
 const limiters = {
+	/** Photo decoding per authenticated organization and user: twenty-file batches plus retries. */
+	vehiclePhotoUpload: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(60, "60 s"),
+		prefix: "ratelimit:vehicle-photo-upload",
+		analytics: false,
+	}),
 	/** Auth endpoints: configurable via RATE_LIMIT_AUTH (default: 10 requests per 60 seconds) */
 	auth: new Ratelimit({
 		redis,
@@ -207,7 +215,10 @@ const limiters = {
 	/** Kiosk PIN attempts per kiosk (#860): 30 per minute, every PIN-carrying call counts */
 	kioskPinAttempts: new Ratelimit({
 		redis,
-		limiter: Ratelimit.slidingWindow(30, "60 s"),
+		limiter: Ratelimit.slidingWindow(
+			KIOSK_PIN_ATTEMPT_LIMIT.attempts,
+			`${KIOSK_PIN_ATTEMPT_LIMIT.windowSeconds} s`,
+		),
 		prefix: "ratelimit:kiosk-pin",
 		analytics: false,
 	}),
@@ -264,6 +275,7 @@ export interface RateLimitResult {
 
 // Legacy config export for backwards compatibility (uses env var values)
 export const RATE_LIMIT_CONFIGS = {
+	vehiclePhotoUpload: { maxRequests: 60, windowSeconds: 60 },
 	auth: { maxRequests: authConfig.requests, windowSeconds: authConfig.seconds },
 	signUp: {
 		maxRequests: signUpConfig.requests,
@@ -279,7 +291,10 @@ export const RATE_LIMIT_CONFIGS = {
 		windowSeconds: exportConfig.seconds,
 	},
 	kioskPairing: { maxRequests: 10, windowSeconds: 600 },
-	kioskPinAttempts: { maxRequests: 30, windowSeconds: 60 },
+	kioskPinAttempts: {
+		maxRequests: KIOSK_PIN_ATTEMPT_LIMIT.attempts,
+		windowSeconds: KIOSK_PIN_ATTEMPT_LIMIT.windowSeconds,
+	},
 	icsFeed: {
 		maxRequests: icsFeedConfig.requests,
 		windowSeconds: icsFeedConfig.seconds,

@@ -6,7 +6,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useServerDataState } from "@/hooks/use-server-data-state";
-import type { PublicWebhookEndpoint, WebhookEndpoint } from "@/lib/webhooks/types";
+import type {
+	PublicWebhookEndpoint,
+	WebhookEndpoint,
+} from "@/lib/webhooks/types";
 import { WebhookEndpointCard } from "./webhook-endpoint-card";
 import { WebhookFormDialog } from "./webhook-form-dialog";
 
@@ -20,7 +23,8 @@ export function WebhooksPageClient({
 	webhooks: initialWebhooks,
 }: WebhooksPageClientProps) {
 	const { t } = useTranslate();
-	const [webhooks, setWebhooks] = useServerDataState<PublicWebhookEndpoint[]>(initialWebhooks);
+	const [webhooks, setWebhooks] =
+		useServerDataState<PublicWebhookEndpoint[]>(initialWebhooks);
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
 	const handleWebhookCreated = (webhook: WebhookEndpoint) => {
@@ -30,7 +34,9 @@ export function WebhooksPageClient({
 
 	const handleWebhookUpdated = (webhook: WebhookEndpoint) => {
 		const { secret: _secret, ...publicWebhook } = webhook;
-		setWebhooks((prev) => prev.map((w) => (w.id === webhook.id ? publicWebhook : w)));
+		setWebhooks((prev) =>
+			prev.map((w) => (w.id === webhook.id ? publicWebhook : w)),
+		);
 	};
 
 	const handleWebhookDeleted = (webhookId: string) => {
@@ -38,11 +44,13 @@ export function WebhooksPageClient({
 	};
 
 	return (
-		<div className="p-6">
+		<div className="min-w-0">
 			<div className="mx-auto max-w-4xl">
 				<div className="mb-6 flex items-start justify-between">
 					<div>
-						<h1 className="text-2xl font-semibold">{t("webhooks:webhooks.title", "Webhooks")}</h1>
+						<h2 className="text-lg font-semibold">
+							{t("webhooks:webhooks.title", "Webhooks")}
+						</h2>
 						<p className="text-muted-foreground">
 							{t(
 								"webhooks:webhooks.description",
@@ -59,7 +67,10 @@ export function WebhooksPageClient({
 					<CardContent className="pt-6">
 						{webhooks.length === 0 ? (
 							<div className="flex flex-col items-center justify-center py-12 text-center">
-								<IconWebhook className="size-12 text-muted-foreground/50" aria-hidden="true" />
+								<IconWebhook
+									className="size-12 text-muted-foreground/50"
+									aria-hidden="true"
+								/>
 								<h3 className="mt-4 text-lg font-semibold">
 									{t("webhooks:webhooks.empty.title", "No webhooks configured")}
 								</h3>
@@ -69,7 +80,10 @@ export function WebhooksPageClient({
 										"Create your first webhook to start receiving event notifications.",
 									)}
 								</p>
-								<Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
+								<Button
+									className="mt-4"
+									onClick={() => setIsCreateDialogOpen(true)}
+								>
 									<IconPlus className="mr-2 size-4" aria-hidden="true" />
 									{t("webhooks:webhooks.create", "Add Webhook")}
 								</Button>

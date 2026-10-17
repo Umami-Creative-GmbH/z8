@@ -140,7 +140,6 @@
         "keys": "Signeringsnycklar",
         "packages": "Granskningspaket"
       },
-      "title": "Granskningsexport",
       "verification": {
         "invalid": "Verifieringen misslyckades",
         "valid": "Verifieringen godkändes",
@@ -175,7 +174,6 @@
       "search": "Sök",
       "searchPlaceholder": "Sök efter åtgärder, användare eller metadata…",
       "timestamp": "Tidsstämpel",
-      "title": "Granskningslogg",
       "to": "Till",
       "unknown": "Okänd",
       "user": "Användare",

@@ -248,6 +248,7 @@ async function closeLiveWorkPeriod(
 			projectId: columns.projectId,
 			taskId: columns.taskId,
 			isBillable: columns.isBillable,
+			missingTask: columns.missingTask,
 			workCategoryId: columns.workCategoryId,
 			workLocationType: columns.workLocationType,
 			vehicleKind: columns.vehicleKind,
@@ -262,6 +263,7 @@ async function closeLiveWorkPeriod(
 			// break's start (#861), and its start operation stays for the break's replay.
 			breakStartedAt: null,
 			breakStartedZone: null,
+			breakStartedTimeSource: null,
 			graphRevision: period.graphRevision + 1,
 			updatedAt: new Date(),
 		})
