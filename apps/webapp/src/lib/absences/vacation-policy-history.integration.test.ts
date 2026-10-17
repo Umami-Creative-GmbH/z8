@@ -9,6 +9,8 @@ import {
 	loadEmployeeVacationPolicyPeriods,
 } from "./vacation-policy-history";
 
+import { loadCompanyDefaultVacationPolicy } from "./vacation-policy-store";
+
 const session = vi.hoisted(() => ({ userId: "", organizationId: "" }));
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/server", async (original) =>
@@ -86,6 +88,12 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 			teamId: targetTeam.id,
 			createdBy: fixture.ownerUserId,
 		});
+		expect(
+			await loadCompanyDefaultVacationPolicy(fixture.db, {
+				organizationId: fixture.organizationId,
+				year: 2027,
+			}),
+		).toMatchObject({ id: company.id, defaultAnnualDays: "30" });
 		const result = await loadEmployeeVacationPolicy(fixture.db, {
 			organizationId: fixture.organizationId,
 			employeeId: fixture.employeeId,
@@ -458,6 +466,21 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				date: "2027-01-01",
 			}),
 		).toEqual({ status: "missing" });
+		const [foreignAssignment] = await fixture.db
+			.insert(vacationPolicyAssignment)
+			.values({
+				organizationId: foreignOrg,
+				policyId: foreignPolicy.id,
+				assignmentType: "employee",
+				employeeId: foreignEmployee.employeeId,
+				effectiveStartDate: "2031-01-01",
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
+		expect(await deleteVacationPolicyAssignment(foreignAssignment.id, "2031-07-01")).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+		});
 		const actor = await fixture.seedEmployee();
 		session.userId = actor.userId;
 		try {
@@ -630,5 +653,72 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 		} finally {
 			session.userId = fixture.ownerUserId;
 		}
+	});
+	it("resolves an organization assignment before company default and restores fallback at its exclusive end", async () => {
+		const target = await fixture.seedEmployee();
+		const [policy] = await fixture.db
+			.insert(vacationAllowance)
+			.values({
+				organizationId: fixture.organizationId,
+				name: "Organization assignment",
+				startDate: "2035-01-01",
+				defaultAnnualDays: "28",
+				statutoryMinimumDays: "20",
+				accrualType: "annual",
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
+		const assigned = await createVacationPolicyAssignment({
+			policyId: policy.id,
+			assignmentType: "organization",
+			effectiveFrom: "2035-01-01",
+		});
+		expect(assigned).toMatchObject({ success: true });
+		if (!assigned.success) throw new Error(assigned.error);
+		expect(await previewEmployeeVacationPolicy(target.employeeId, "2034-12-31")).toMatchObject({
+			success: true,
+			data: { status: "resolved", source: "company_default", policy: { defaultAnnualDays: "22" } },
+		});
+		expect(await previewEmployeeVacationPolicy(target.employeeId, "2035-01-01")).toMatchObject({
+			success: true,
+			data: { status: "resolved", source: "organization", policy: { id: policy.id } },
+		});
+		expect(await deleteVacationPolicyAssignment(assigned.data.id, "2035-07-01")).toMatchObject({
+			success: true,
+		});
+		expect(await previewEmployeeVacationPolicy(target.employeeId, "2035-06-30")).toMatchObject({
+			success: true,
+			data: { status: "resolved", source: "organization", policy: { id: policy.id } },
+		});
+		expect(await previewEmployeeVacationPolicy(target.employeeId, "2035-07-01")).toMatchObject({
+			success: true,
+			data: { status: "resolved", source: "company_default", policy: { defaultAnnualDays: "22" } },
+		});
+	});
+	it("applies the same January boundary to the joiner/leaver proration switch", async () => {
+		const target = await fixture.seedEmployee();
+		const [policy] = await fixture.db
+			.insert(vacationAllowance)
+			.values({
+				organizationId: fixture.organizationId,
+				name: "No proration",
+				startDate: "2036-01-01",
+				defaultAnnualDays: "24",
+				statutoryMinimumDays: "20",
+				prorateInStartAndExitYear: false,
+				accrualType: "annual",
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
+		expect(
+			await setEmployeePolicyAssignment(target.employeeId, policy.id, {
+				effectiveFrom: "2036-07-01",
+			}),
+		).toMatchObject({ success: false, error: expect.stringContaining("1 January") });
+		expect(
+			await setEmployeePolicyAssignment(target.employeeId, policy.id, {
+				effectiveFrom: "2036-01-01",
+			}),
+		).toMatchObject({ success: true });
 	});
 });

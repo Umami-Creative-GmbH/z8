@@ -205,6 +205,10 @@ DROP TRIGGER IF EXISTS vacation_validate_rollout_transition ON vacation_policy_r
 CREATE CONSTRAINT TRIGGER vacation_validate_rollout_transition AFTER UPDATE ON vacation_policy_rollout DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION vacation_validate_policy_transition();
 --> statement-breakpoint
 CREATE OR REPLACE FUNCTION vacation_retain_dated_history() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+ -- Preserve the established owning-employee deletion cascade used by demo cleanup.
+ IF TG_TABLE_NAME='vacation_policy_assignment' THEN
+  IF OLD.employee_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM employee WHERE id=OLD.employee_id AND organization_id=OLD.organization_id) THEN RETURN OLD; END IF;
+ END IF;
  IF EXISTS(SELECT 1 FROM organization WHERE id=OLD.organization_id) THEN RAISE EXCEPTION 'Vacation history cannot be deleted; end its effective window instead'; END IF; RETURN OLD;
 END $$;
 DROP TRIGGER IF EXISTS vacation_retain_assignment_history ON vacation_policy_assignment;
@@ -221,13 +225,6 @@ DO $$ BEGIN
  END IF;
 END $$;
 
-
-
-
-
-
-
-
 --> statement-breakpoint
 CREATE OR REPLACE FUNCTION vacation_mark_policy_dirty() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE org text:=coalesce(NEW.organization_id,OLD.organization_id); BEGIN
@@ -242,5 +239,4 @@ DROP TRIGGER IF EXISTS vacation_mark_eligibility_dirty ON vacation_team_eligibil
 CREATE TRIGGER vacation_mark_eligibility_dirty BEFORE INSERT OR UPDATE OR DELETE ON vacation_team_eligibility FOR EACH ROW EXECUTE FUNCTION vacation_mark_policy_dirty();
 DROP TRIGGER IF EXISTS vacation_mark_rollout_dirty ON vacation_policy_rollout;
 CREATE TRIGGER vacation_mark_rollout_dirty BEFORE UPDATE ON vacation_policy_rollout FOR EACH ROW EXECUTE FUNCTION vacation_mark_policy_dirty();
-
 

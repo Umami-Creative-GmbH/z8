@@ -3,12 +3,7 @@ import path from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { organization } from "@/db/auth-schema";
-import {
-	team,
-	teamMembership,
-	vacationAllowance,
-	vacationPolicyAssignment,
-} from "@/db/schema";
+import { team, teamMembership, vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -19,9 +14,7 @@ import {
 } from "./vacation-policy-history";
 
 const session = vi.hoisted(() => ({ userId: "", organizationId: "" }));
-vi.mock("next/headers", async () =>
-	(await import("@/test/integration-harness")).nextHeaders(),
-);
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -132,9 +125,7 @@ describe("vacation policy history compatibility", () => {
 			effectiveStartDate: "2027-01-01",
 		});
 		await fixture.db.transaction(async (tx) => {
-			await tx.execute(
-				sql`select set_config('z8.vacation_effective_date', '2027-10-01', true)`,
-			);
+			await tx.execute(sql`select set_config('z8.vacation_effective_date', '2027-10-01', true)`);
 			await tx
 				.update(vacationAllowance)
 				.set({ name: "Renamed expired policy" })
@@ -204,9 +195,7 @@ describe("vacation policy history compatibility", () => {
 			policy: { id: newer.id },
 		});
 		await fixture.db.transaction(async (tx) => {
-			await tx.execute(
-				sql`select set_config('z8.vacation_effective_date', '2028-10-01', true)`,
-			);
+			await tx.execute(sql`select set_config('z8.vacation_effective_date', '2028-10-01', true)`);
 			await tx
 				.update(vacationAllowance)
 				.set({ name: "Renamed older default" })
@@ -258,9 +247,7 @@ describe("vacation policy history compatibility", () => {
 			effectiveStartDate: "2027-01-01",
 		});
 		const membership = await fixture.db.transaction(async (tx) => {
-			await tx.execute(
-				sql`select set_config('z8.vacation_effective_date', '2027-01-01', true)`,
-			);
+			await tx.execute(sql`select set_config('z8.vacation_effective_date', '2027-01-01', true)`);
 			const [row] = await tx
 				.insert(teamMembership)
 				.values({
@@ -347,9 +334,7 @@ describe("vacation policy history compatibility", () => {
 			effectiveStartDate: "2027-01-01",
 		});
 		const membership = await fixture.db.transaction(async (tx) => {
-			await tx.execute(
-				sql`select set_config('z8.vacation_effective_date', '2027-01-01', true)`,
-			);
+			await tx.execute(sql`select set_config('z8.vacation_effective_date', '2027-01-01', true)`);
 			const [row] = await tx
 				.insert(teamMembership)
 				.values({
@@ -361,12 +346,8 @@ describe("vacation policy history compatibility", () => {
 			return row;
 		});
 		await fixture.db.transaction(async (tx) => {
-			await tx.execute(
-				sql`select set_config('z8.vacation_effective_date', '2027-07-01', true)`,
-			);
-			await tx
-				.delete(teamMembership)
-				.where(eq(teamMembership.id, membership.id));
+			await tx.execute(sql`select set_config('z8.vacation_effective_date', '2027-07-01', true)`);
+			await tx.delete(teamMembership).where(eq(teamMembership.id, membership.id));
 		});
 		const expected = [
 			["2027-01-01", "2027-06-30", policy.id],
@@ -384,9 +365,7 @@ describe("vacation policy history compatibility", () => {
 				?.map(({ startDate, endDate, resolution }) => [
 					startDate,
 					endDate,
-					resolution.status === "resolved"
-						? resolution.policy.id
-						: resolution.status,
+					resolution.status === "resolved" ? resolution.policy.id : resolution.status,
 				]);
 		}
 		expect(await observedPeriods()).toEqual(expected);
@@ -402,9 +381,7 @@ describe("vacation policy history compatibility", () => {
 				),
 			);
 		if (backfills.length === 0)
-			throw new Error(
-				"Vacation history migration must expose its data backfill statements",
-			);
+			throw new Error("Vacation history migration must expose its data backfill statements");
 		for (let attempt = 0; attempt < 2; attempt++) {
 			await fixture.db.transaction(async (tx) => {
 				for (const statement of backfills) await tx.execute(sql.raw(statement));
@@ -436,12 +413,12 @@ describe("vacation policy history compatibility", () => {
 				effectiveStartDate: "2027-01-01",
 			})
 			.returning();
-		expect(
-			await deleteVacationPolicyAssignment(assignment.id, "2027-07-01"),
-		).toMatchObject({ success: true });
-		expect(
-			await deleteVacationPolicyAssignment(assignment.id, "2027-08-01"),
-		).toMatchObject({ success: true });
+		expect(await deleteVacationPolicyAssignment(assignment.id, "2027-07-01")).toMatchObject({
+			success: true,
+		});
+		expect(await deleteVacationPolicyAssignment(assignment.id, "2027-08-01")).toMatchObject({
+			success: true,
+		});
 		expect(
 			await loadEmployeeVacationPolicy(fixture.db, {
 				organizationId: fixture.organizationId,
@@ -456,5 +433,39 @@ describe("vacation policy history compatibility", () => {
 				date: "2027-07-01",
 			}),
 		).toEqual({ status: "missing" });
+	});
+	it("keeps explicit history deletion blocked while allowing existing demo employee cleanup", async () => {
+		const [policy] = await fixture.db
+			.insert(vacationAllowance)
+			.values({
+				organizationId: fixture.organizationId,
+				name: "Demo cleanup policy",
+				startDate: "2027-01-01",
+				defaultAnnualDays: "25",
+				statutoryMinimumDays: "20",
+				accrualType: "annual",
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
+		const [assignment] = await fixture.db
+			.insert(vacationPolicyAssignment)
+			.values({
+				organizationId: fixture.organizationId,
+				policyId: policy.id,
+				assignmentType: "employee",
+				employeeId: fixture.employeeId,
+				createdBy: fixture.ownerUserId,
+				effectiveStartDate: "2027-01-01",
+			})
+			.returning();
+		await expect(
+			fixture.db
+				.delete(vacationPolicyAssignment)
+				.where(eq(vacationPolicyAssignment.id, assignment.id)),
+		).rejects.toThrow();
+		const { deleteNonAdminEmployeesData } = await import("@/lib/demo/delete-non-admin");
+		await expect(
+			deleteNonAdminEmployeesData(fixture.organizationId, fixture.ownerUserId),
+		).resolves.toMatchObject({ employeesDeleted: 1 });
 	});
 });
