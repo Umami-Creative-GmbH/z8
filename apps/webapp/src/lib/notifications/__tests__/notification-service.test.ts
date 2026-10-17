@@ -249,6 +249,41 @@ const outcomeTypes = [
 ] as const;
 
 describe("Notification Service", () => {
+	test("cancellation email preferences are independent of approval email preferences", async () => {
+		const preferences = [
+			createMockPreference({
+				notificationType: "absence_request_approved",
+				channel: "email",
+				enabled: false,
+			}),
+		];
+		// Simulate the database applying the query's user/type predicates.
+		mockFindMany.mockImplementation(async ({ where }) =>
+			preferences.filter((preference) =>
+				where.conditions.every(
+					(condition: { column: keyof typeof preference; value: unknown }) =>
+						preference[condition.column] === condition.value,
+				),
+			),
+		);
+		const { loadNotificationChannelPreferences } = await import("../notification-service");
+		expect(
+			(await loadNotificationChannelPreferences("user-1", "absence_request_approved")).email,
+		).toBe(false);
+		expect(
+			(await loadNotificationChannelPreferences("user-1", "approved_absence_cancelled")).email,
+		).toBe(true);
+		preferences.push(
+			createMockPreference({
+				notificationType: "approved_absence_cancelled",
+				channel: "email",
+				enabled: false,
+			}),
+		);
+		expect(
+			(await loadNotificationChannelPreferences("user-1", "approved_absence_cancelled")).email,
+		).toBe(false);
+	});
 	test("automatic clock-out inbox remains mandatory when its stored preference is muted", async () => {
 		mockFindMany.mockImplementation(async () => [
 			createMockPreference({

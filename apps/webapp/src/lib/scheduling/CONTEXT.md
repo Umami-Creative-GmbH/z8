@@ -22,6 +22,10 @@ _Avoid_: unassigned shift, vacant shift
 An employee's request to be assigned a published open shift, which a planner approves or rejects.
 _Avoid_: claim, shift application
 
+**Swap request**:
+An employee's request to hand their published shift to a named colleague, which a planner approves or rejects. Approving assigns the colleague.
+_Avoid_: shift trade, exchange
+
 **Planner**:
 An employee with the manager or admin role who creates shifts and assigns employees to them.
 _Avoid_: scheduler, shift manager
@@ -53,6 +57,9 @@ Assigning an employee to a shift while a required skill is missing or expired on
 _Avoid_: exception, waiver, skill warning (the warning is what the planner sees before deciding)
 
 ### Staffing
+
+**Compliance week**:
+The calendar interval from Monday midnight up to the following Monday midnight, on the organization's calendar for planned shifts. It shares its Monday start with Time Tracking's compliance check, independently of personal calendar preferences and submission cadence.
 
 **Staffing suggestion**:
 A ranked list of employees who could take one open shift, each shown with the reasons for its place and any warnings. A planner picks from it; it is never applied automatically and never stored.

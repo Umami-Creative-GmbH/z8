@@ -90,6 +90,17 @@ describe("NotificationSettings", () => {
 		});
 	});
 
+	it("offers separate channel switches for approved absence cancellations", () => {
+		render(<NotificationSettings />);
+		for (const channel of ["In-App", "Push", "Email"]) {
+			expect(
+				screen.getByLabelText(`${channel} notifications for Approved absence cancelled`),
+			).toBeTruthy();
+			expect(
+				screen.getAllByLabelText(`${channel} notifications for Request approved`).length,
+			).toBeGreaterThan(0);
+		}
+	});
 	it("renders controls only for available notification channels", () => {
 		render(<NotificationSettings />);
 

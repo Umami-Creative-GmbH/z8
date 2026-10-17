@@ -107,7 +107,7 @@ export function showEmployeeSaveRefusal(
 	form: Pick<EmployeeDetailFormApi, "setFieldMeta">,
 	result: { error: string; refusal?: string },
 ): boolean {
-	if (result.refusal !== PERSONNEL_NUMBER_TAKEN) return false;
+	if (result.refusal !== PERSONNEL_NUMBER_TAKEN && result.refusal !== "personnel_number_managed_by_idp") return false;
 	form.setFieldMeta("employeeNumber", (meta) => ({
 		...meta,
 		errorMap: { ...meta.errorMap, onSubmit: result.error },

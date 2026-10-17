@@ -9,6 +9,7 @@ import {
 	shift,
 	shiftRequest,
 } from "@/db/schema";
+import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -42,6 +43,14 @@ const SAFE_EMPLOYEE_RELATION = {
 		id: true,
 		firstName: true,
 		lastName: true,
+	},
+} as const;
+
+/** What a planner reads to decide a pending request: names come from the user record. */
+const PLANNER_EMPLOYEE_RELATION = {
+	...SAFE_EMPLOYEE_RELATION,
+	with: {
+		user: { columns: { name: true, firstName: true, lastName: true } },
 	},
 } as const;
 
@@ -204,24 +213,26 @@ export interface PickupRequestInput {
 	notes?: string;
 }
 
+interface ShiftRequestEmployee {
+	id: string;
+	firstName: string | null;
+	lastName: string | null;
+	/** Only on pending requests, for the planner: the user's display name fields. */
+	user?: AuthUserDisplayNameInput | null;
+}
+
 export interface ShiftRequestWithRelations extends ShiftRequest {
 	shift: Shift & {
-		employee?: {
+		employee?: ShiftRequestEmployee | null;
+		/** Only on pending requests, for the planner. */
+		subarea?: {
 			id: string;
-			firstName: string | null;
-			lastName: string | null;
+			name: string;
+			location: { id: string; name: string };
 		} | null;
 	};
-	requester: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-	};
-	targetEmployee?: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-	} | null;
+	requester: ShiftRequestEmployee;
+	targetEmployee?: ShiftRequestEmployee | null;
 }
 
 type MutationError = ShiftRequestDomainError | DatabaseError;
@@ -678,9 +689,17 @@ export const ShiftRequestServiceLive = Layer.effect(
 								),
 							),
 							with: {
-								shift: { with: { employee: SAFE_EMPLOYEE_RELATION } },
-								requester: SAFE_EMPLOYEE_RELATION,
-								targetEmployee: SAFE_EMPLOYEE_RELATION,
+								shift: {
+									with: {
+										employee: PLANNER_EMPLOYEE_RELATION,
+										subarea: {
+											columns: { id: true, name: true },
+											with: { location: { columns: { id: true, name: true } } },
+										},
+									},
+								},
+								requester: PLANNER_EMPLOYEE_RELATION,
+								targetEmployee: PLANNER_EMPLOYEE_RELATION,
 							},
 							orderBy: (request, { desc }) => [desc(request.createdAt)],
 						}),

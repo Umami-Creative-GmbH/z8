@@ -1,5 +1,6 @@
 /** Time-tracking tools whose data the reviewed import stages (work, absences, setup). */
-export type ImportProvider = "clockodo" | "clockin";
+export type ImportApiProvider = "clockodo" | "clockin";
+export type ImportProvider = ImportApiProvider | "csv";
 /**
  * Where a batch's rows come from: a time-tracking tool, or the organization's
  * accounting connection (customer import, #906).
@@ -31,6 +32,7 @@ export type ImportIssueType =
 	| "suspicious_gap"
 	| "unmatched_employee"
 	| "unmatched_project"
+	| "unmatched_vehicle"
 	| "validation_error"
 	| "dependency_blocker";
 
@@ -94,7 +96,7 @@ export interface ImportScanJobData {
 	batchId: string;
 	jobId: string;
 	organizationId: string;
-	provider: ImportProvider;
+	provider: ImportApiProvider;
 	entityType: ImportEntityType;
 	dateRange: ImportDateRange;
 	employeeIds: string[];
@@ -126,4 +128,14 @@ export interface ImportCommitJobData {
 	organizationId: string;
 	entityType: ImportEntityType;
 	committedBy: string;
+}
+
+/** CSV scans read the uploaded source retained in the batch, without credentials. */
+export interface CsvWorkScanJobData {
+	type: "import-review-scan";
+	provider: "csv";
+	batchId: string;
+	jobId: string;
+	organizationId: string;
+	entityType: "work_period";
 }

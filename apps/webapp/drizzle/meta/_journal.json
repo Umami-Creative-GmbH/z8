@@ -1840,28 +1840,42 @@
       "idx": 262,
       "version": "7",
       "when": 1807372800000,
-      "tag": "0262_kiosk_clock_attempt",
+      "tag": "0262_scim_personnel_number_ownership",
       "breakpoints": true
     },
     {
       "idx": 263,
       "version": "7",
       "when": 1807459200000,
-      "tag": "0263_employee_kiosk_badge",
+      "tag": "0263_approved_absence_cancelled",
       "breakpoints": true
     },
     {
       "idx": 264,
       "version": "7",
       "when": 1807545600000,
-      "tag": "0264_kiosk_badge_scanner",
+      "tag": "0264_kiosk_clock_attempt",
       "breakpoints": true
     },
     {
       "idx": 265,
       "version": "7",
       "when": 1807632000000,
-      "tag": "0265_kiosk_badge_camera",
+      "tag": "0265_employee_kiosk_badge",
+      "breakpoints": true
+    },
+    {
+      "idx": 266,
+      "version": "7",
+      "when": 1807718400000,
+      "tag": "0266_kiosk_badge_scanner",
+      "breakpoints": true
+    },
+    {
+      "idx": 267,
+      "version": "7",
+      "when": 1807804800000,
+      "tag": "0267_kiosk_badge_camera",
       "breakpoints": true
     }
   ]

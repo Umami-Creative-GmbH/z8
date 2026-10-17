@@ -35,6 +35,7 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	absence_request_submitted: "review",
 	absence_request_approved: "request_update",
 	absence_request_rejected: "request_update",
+	approved_absence_cancelled: "request_update",
 	team_member_added: "team",
 	team_member_removed: "team",
 	organization_mfa_notice: "security",

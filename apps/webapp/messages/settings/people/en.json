@@ -65,6 +65,7 @@
         "managers": "Managers",
         "noScheduleAssigned": "No schedule assigned",
         "personnelNumber": "Personnel number",
+        "personnelNumberManagedByIdp": "Managed by your identity provider. Change the personnel number there.",
         "personnelNumberDescription": "Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.",
         "position": "Position",
         "positionDescription": "Job title or role",

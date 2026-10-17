@@ -146,7 +146,17 @@ describe("createZ8SCIMPlugin", () => {
 			Object.keys(
 				registration.schema[SCIM_MODELS.employee]?.fields ?? {},
 			).sort(),
-		).toEqual(["id", "organizationId", "userId", "role", "isActive"].sort());
+		).toEqual(
+			[
+				"id",
+				"organizationId",
+				"userId",
+				"role",
+				"isActive",
+				"employeeNumber",
+				"personnelNumberManagedByScim",
+			].sort(),
+		);
 		expect(
 			registration.schema[SCIM_MODELS.lifecycleState]?.fields,
 		).toMatchObject({

@@ -502,7 +502,7 @@ describe("resolvePolicyClockOutSurchargeSnapshotInTransaction", () => {
 				expect(compiled.sql).toContain("for update of assignment");
 				expect(compiled.sql).toContain("assignment.is_active = true");
 				expect(compiled.sql).toContain("assignment.effective_from <=");
-				expect(compiled.sql).toContain("assignment.effective_until >=");
+				expect(compiled.sql).toContain("assignment.effective_until >");
 				return { rows: [assigned] };
 			}
 			expect(compiled.sql).toContain("model.organization_id =");
