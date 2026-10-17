@@ -8,7 +8,7 @@ CREATE TABLE "driving_licence_supplement" (
  "author_user_id" text NOT NULL REFERENCES "user"("id"),
  "author_name" text NOT NULL,
  "recorded_at" timestamp with time zone NOT NULL,
- "reason" text NOT NULL CHECK ("reason" IN ('recording_error','missing_detail')),
+ "reason" text NOT NULL CONSTRAINT "driving_supplement_reason" CHECK ("reason" IN ('recording_error','missing_detail')),
  "correction" jsonb NOT NULL,
  CONSTRAINT "driving_supplement_command" UNIQUE ("organization_id", "command_id"),
  CONSTRAINT "driving_supplement_check" FOREIGN KEY ("organization_id", "check_id") REFERENCES "driving_licence_check"("organization_id", "id") ON DELETE CASCADE,
