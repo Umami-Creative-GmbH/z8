@@ -51,6 +51,11 @@ export const project = pgTable(
 		// changes existing work.
 		billableDefault: boolean("billable_default").default(false).notNull(),
 
+		// Task requirement (#884, Projects ADR 0002): time booked to the project
+		// must name one of its tasks. It applies only while the project has an
+		// open task; read it through `lib/projects/task-requirement*`, never alone.
+		requiresTask: boolean("requires_task").default(false).notNull(),
+
 		// Budget tracking (optional)
 		budgetHours: decimal("budget_hours", { precision: 8, scale: 2 }), // null = unlimited
 
@@ -234,6 +239,8 @@ export const projectTemplate = pgTable(
 		// The new project's deadline is its creation date plus this many days
 		// (null = no deadline).
 		deadlineOffsetDays: integer("deadline_offset_days"),
+		// Copied onto the new project's task requirement (#884).
+		requiresTask: boolean("requires_task").default(false).notNull(),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		createdBy: text("created_by")

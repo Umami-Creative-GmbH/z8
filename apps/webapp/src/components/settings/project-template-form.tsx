@@ -16,6 +16,7 @@ import {
 import { ActionPanelBody, ActionPanelFooter } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -23,6 +24,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,6 +75,7 @@ interface TemplateFormValues {
 	color: string;
 	budgetHours: string;
 	deadlineOffsetDays: string;
+	requiresTask: boolean;
 	tasks: TaskFormValues[];
 	managerEmployeeIds: string[];
 	teamIds: string[];
@@ -86,6 +89,7 @@ const EMPTY_TEMPLATE: TemplateFormValues = {
 	color: "",
 	budgetHours: "",
 	deadlineOffsetDays: "",
+	requiresTask: false,
 	tasks: [],
 	managerEmployeeIds: [],
 	teamIds: [],
@@ -104,6 +108,7 @@ function formValuesOf(template: ProjectTemplate): TemplateFormValues {
 		budgetHours: hoursFormText(template.budgetHours),
 		deadlineOffsetDays:
 			template.deadlineOffsetDays === null ? "" : String(template.deadlineOffsetDays),
+		requiresTask: template.requiresTask,
 		tasks: template.tasks.map((task) => ({
 			id: task.id,
 			name: task.name,
@@ -128,6 +133,7 @@ function toInput(values: TemplateFormValues): ProjectTemplateInput {
 		color: values.color || null,
 		budgetHours: hoursFromFormText(values.budgetHours),
 		deadlineOffsetDays: days ? Number(days) : null,
+		requiresTask: values.requiresTask,
 		tasks: values.tasks.map((task) => ({
 			name: task.name.trim(),
 			description: task.description.trim() || null,
@@ -491,6 +497,30 @@ export function ProjectTemplateForm({
 						"Leave empty for an unlimited budget or no deadline.",
 					)}
 				</p>
+
+				<form.Field name="requiresTask">
+					{(field) => (
+						<div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+							<div className="space-y-0.5">
+								<Label htmlFor="templateRequiresTask">
+									{t("settings.projects.templates.field.requiresTask", "Require a task")}
+								</Label>
+								<p id="templateRequiresTaskHelp" className="text-xs text-muted-foreground">
+									{t(
+										"settings.projects.templates.field.requiresTaskHelp",
+										"Projects created from this template start with this setting.",
+									)}
+								</p>
+							</div>
+							<Switch
+								id="templateRequiresTask"
+								aria-describedby="templateRequiresTaskHelp"
+								checked={field.state.value}
+								onCheckedChange={(checked) => field.handleChange(checked)}
+							/>
+						</div>
+					)}
+				</form.Field>
 
 				<TemplateTaskFields form={form} t={t} taskRules={taskRules} />
 

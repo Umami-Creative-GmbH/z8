@@ -28,6 +28,8 @@ export type WorkSegment = {
 		taskId?: string;
 		/** Absent on receipts committed before billability (#900), which were non-billable. */
 		isBillable?: boolean;
+		/** Present only when the work is missing a task (#884). */
+		missingTask?: true;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 		allocations: AllocationEvidence[];
@@ -54,6 +56,7 @@ export function workSegment(values: {
 		projectId: columns.projectId,
 		...recordedTaskId(columns.taskId),
 		isBillable: columns.isBillable,
+		...(columns.missingTask ? { missingTask: true as const } : {}),
 		workCategoryId: columns.workCategoryId,
 		workLocationType: columns.workLocationType,
 		allocations: values.allocations.map((allocation) => ({

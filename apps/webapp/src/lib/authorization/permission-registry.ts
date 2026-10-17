@@ -32,7 +32,10 @@ export interface PermissionDefinition {
 	description: string;
 }
 
-type PermissionDefinitionInput = Omit<PermissionDefinition, "labelKey" | "descriptionKey"> &
+type PermissionDefinitionInput = Omit<
+	PermissionDefinition,
+	"labelKey" | "descriptionKey"
+> &
 	Partial<Pick<PermissionDefinition, "labelKey" | "descriptionKey">>;
 
 function permissionCopy(
@@ -40,7 +43,10 @@ function permissionCopy(
 	subject: Subject,
 	label: string,
 	description: string,
-): Pick<PermissionDefinition, "labelKey" | "descriptionKey" | "label" | "description"> {
+): Pick<
+	PermissionDefinition,
+	"labelKey" | "descriptionKey" | "label" | "description"
+> {
 	return {
 		labelKey: `settings.roles.permissions.${action}.${subject}.label`,
 		descriptionKey: `settings.roles.permissions.${action}.${subject}.description`,
@@ -59,6 +65,14 @@ function permissionCopy(
  */
 const PERMISSION_DEFINITIONS: Record<string, PermissionDefinitionInput> = {
 	// ---- Workforce ----
+	"read:DrivingAuthorization": {
+		action: "read",
+		subject: "DrivingAuthorization",
+		category: "workforce",
+		label: "View Driving Authorization",
+		description:
+			"View only employee driving status, checked classes and necessary restrictions. Does not grant access to inspection records or evidence exports.",
+	},
 	"manage:Employee": {
 		action: "manage",
 		subject: "Employee",
@@ -255,7 +269,8 @@ const PERMISSION_DEFINITIONS: Record<string, PermissionDefinitionInput> = {
 		subject: "PayrollPeriod",
 		category: "reporting",
 		label: "Reopen Months",
-		description: "Reopen a closed month for some or all of its employees, with a reason",
+		description:
+			"Reopen a closed month for some or all of its employees, with a reason",
 	},
 
 	// ---- Works Council ----
@@ -264,7 +279,8 @@ const PERMISSION_DEFINITIONS: Record<string, PermissionDefinitionInput> = {
 		subject: "WorksCouncil",
 		category: "works_council",
 		label: "View Works Council Portal",
-		description: "Read privacy-filtered works council dashboards and review logs",
+		description:
+			"Read privacy-filtered works council dashboards and review logs",
 	},
 	"export:WorksCouncil": {
 		action: "export",
@@ -386,33 +402,43 @@ const PERMISSION_DEFINITIONS: Record<string, PermissionDefinitionInput> = {
 	},
 };
 
-export const PERMISSION_REGISTRY: Record<string, PermissionDefinition> = Object.fromEntries(
-	Object.entries(PERMISSION_DEFINITIONS).map(([key, permission]) => [
-		key,
-		{
-			...permission,
-			labelKey:
-				permission.labelKey ??
-				`settings.roles.permissions.${permission.action}.${permission.subject}.label`,
-			descriptionKey:
-				permission.descriptionKey ??
-				`settings.roles.permissions.${permission.action}.${permission.subject}.description`,
-		},
-	]),
-);
+export const PERMISSION_REGISTRY: Record<string, PermissionDefinition> =
+	Object.fromEntries(
+		Object.entries(PERMISSION_DEFINITIONS).map(([key, permission]) => [
+			key,
+			{
+				...permission,
+				labelKey:
+					permission.labelKey ??
+					`settings.roles.permissions.${permission.action}.${permission.subject}.label`,
+				descriptionKey:
+					permission.descriptionKey ??
+					`settings.roles.permissions.${permission.action}.${permission.subject}.description`,
+			},
+		]),
+	);
 
 // ============================================
 // HELPERS
 // ============================================
 
 // Each key sits next to its English label so the Tolgee extractor reads the label as its default.
-const CATEGORY_LABELS: Record<PermissionCategory, { labelKey: string; label: string }> = {
-	workforce: { labelKey: "settings.roles.permissionCategories.workforce", label: "Workforce" },
+const CATEGORY_LABELS: Record<
+	PermissionCategory,
+	{ labelKey: string; label: string }
+> = {
+	workforce: {
+		labelKey: "settings.roles.permissionCategories.workforce",
+		label: "Workforce",
+	},
 	time_tracking: {
 		labelKey: "settings.roles.permissionCategories.time_tracking",
 		label: "Time Tracking",
 	},
-	approvals: { labelKey: "settings.roles.permissionCategories.approvals", label: "Approvals" },
+	approvals: {
+		labelKey: "settings.roles.permissionCategories.approvals",
+		label: "Approvals",
+	},
 	reporting: {
 		labelKey: "settings.roles.permissionCategories.reporting",
 		label: "Reporting & Exports",
@@ -421,8 +447,14 @@ const CATEGORY_LABELS: Record<PermissionCategory, { labelKey: string; label: str
 		labelKey: "settings.roles.permissionCategories.organization",
 		label: "Organization",
 	},
-	projects: { labelKey: "settings.roles.permissionCategories.projects", label: "Projects" },
-	scheduling: { labelKey: "settings.roles.permissionCategories.scheduling", label: "Scheduling" },
+	projects: {
+		labelKey: "settings.roles.permissionCategories.projects",
+		label: "Projects",
+	},
+	scheduling: {
+		labelKey: "settings.roles.permissionCategories.scheduling",
+		label: "Scheduling",
+	},
 	works_council: {
 		labelKey: "settings.roles.permissionCategories.works_council",
 		label: "Works Council",
@@ -432,7 +464,10 @@ const CATEGORY_LABELS: Record<PermissionCategory, { labelKey: string; label: str
 /**
  * Get all permissions organized by category
  */
-export function getPermissionsByCategory(): Record<PermissionCategory, PermissionDefinition[]> {
+export function getPermissionsByCategory(): Record<
+	PermissionCategory,
+	PermissionDefinition[]
+> {
 	const result = {} as Record<PermissionCategory, PermissionDefinition[]>;
 
 	for (const perm of Object.values(PERMISSION_REGISTRY)) {

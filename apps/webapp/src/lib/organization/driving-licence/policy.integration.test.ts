@@ -1,0 +1,214 @@
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
+
+const session = vi.hoisted(() => ({
+	userId: "t1311-admin",
+	organizationId: "t1311-org",
+}));
+vi.mock("@/lib/auth-helpers", () => ({
+	getAuthContext: async () =>
+		session.userId
+			? {
+					user: { id: session.userId },
+					session: { activeOrganizationId: session.organizationId },
+				}
+			: null,
+}));
+vi.mock("@/lib/datetime/temporal-core", async (original) => {
+	const actual =
+		await original<typeof import("@/lib/datetime/temporal-core")>();
+	const { Temporal } = await import("temporal-polyfill");
+	return {
+		...actual,
+		systemClock: {
+			nowInstant: () => Temporal.Instant.from("2026-10-16T12:00:00Z"),
+		},
+	};
+});
+const actions = await import("./policy-actions");
+const pool = integrationAdminPool();
+const employeeId = "e1311000-0000-4000-8000-000000000001";
+const foreignId = "e1311000-0000-4000-8000-000000000002";
+const validPolicy = {
+	enabled: true,
+	intervalMonths: 6,
+	timezone: "Europe/Berlin",
+	reminderLeadDays: [30, 7],
+	retentionMonths: 24,
+	retentionJustification:
+		"Required for documenting our internal original inspection process.",
+};
+async function clean() {
+	await pool.query("delete from organization where id like 't1311-%'");
+	await pool.query('delete from "user" where id like $1', ["t1311-%"]);
+}
+beforeAll(async () => {
+	await clean();
+	for (const org of ["t1311-org", "t1311-foreign"])
+		await pool.query(
+			"insert into organization (id,name,slug,created_at) values ($1,$1,$1,now())",
+			[org],
+		);
+	for (const [id, org, role] of [
+		["admin", "t1311-org", "admin"],
+		["employee", "t1311-org", "member"],
+		["foreign", "t1311-foreign", "admin"],
+	]) {
+		await pool.query(
+			'insert into "user" (id,name,email,created_at,updated_at) values ($1,$1,$2,now(),now())',
+			[`t1311-${id}`, `${id}@t1311.example.test`],
+		);
+		await pool.query(
+			"insert into member (id,user_id,organization_id,role,status,created_at) values ($1,$1,$2,$3,'approved',now())",
+			[`t1311-${id}`, org, role],
+		);
+	}
+	await pool.query(
+		"insert into employee (id,user_id,organization_id,is_active,updated_at) values ($1,'t1311-employee','t1311-org',true,now()),($2,'t1311-foreign','t1311-foreign',true,now())",
+		[employeeId, foreignId],
+	);
+});
+afterAll(clean);
+beforeEach(async () => {
+	session.userId = "t1311-admin";
+	session.organizationId = "t1311-org";
+	await pool.query(
+		"delete from driving_licence_participant where organization_id='t1311-org'",
+	);
+	await pool.query(
+		"delete from driving_licence_policy_revision where organization_id='t1311-org'",
+	);
+	await pool.query(
+		"delete from driving_licence_policy where organization_id='t1311-org'",
+	);
+});
+describe("driving licence policy and enrollment through public actions", () => {
+	it("persists an explicitly configured policy and enrolls an employee with no authorization", async () => {
+		expect(
+			await actions.saveDrivingLicencePolicyAction(validPolicy),
+		).toMatchObject({ success: true });
+		expect(
+			await actions.enrollDrivingLicenceEmployeeAction({ employeeId }),
+		).toMatchObject({ success: true });
+		const settings = await actions.getDrivingLicenceAdminDataAction();
+		expect(settings).toMatchObject({
+			success: true,
+			data: {
+				policy: validPolicy,
+				participants: [
+					{ employeeId, status: "not_yet_checked", authorizedClasses: [] },
+				],
+			},
+		});
+		session.userId = "t1311-employee";
+		expect(await actions.getOwnDrivingLicenceStatusAction()).toMatchObject({
+			success: true,
+			data: {
+				enrolled: true,
+				status: "not_yet_checked",
+				authorizedClasses: [],
+				timezone: "Europe/Berlin",
+			},
+		});
+	});
+});
+
+it("keeps the explicit calendar zone fixed after activation, including while disabled", async () => {
+	expect(
+		await actions.saveDrivingLicencePolicyAction(validPolicy),
+	).toMatchObject({ success: true });
+	expect(
+		await actions.saveDrivingLicencePolicyAction({
+			...validPolicy,
+			enabled: false,
+		}),
+	).toMatchObject({ success: true });
+	expect(
+		await actions.saveDrivingLicencePolicyAction({
+			...validPolicy,
+			timezone: "America/New_York",
+		}),
+	).toEqual({ success: false, error: "timezone_fixed" });
+});
+it("requires a justified finite retention period before activation and validates all policy limits", async () => {
+	for (const invalid of [
+		{ retentionMonths: null },
+		{ retentionMonths: 0 },
+		{ retentionMonths: 121 },
+		{ retentionJustification: "" },
+		{ intervalMonths: 0 },
+		{ intervalMonths: 1.5 },
+		{ timezone: "viewer" },
+		{ reminderLeadDays: [7, 7] },
+		{ reminderLeadDays: [-1] },
+		{ reminderLeadDays: [1.5] },
+	]) {
+		expect(
+			await actions.saveDrivingLicencePolicyAction({
+				...validPolicy,
+				...invalid,
+			}),
+		).toMatchObject({ success: false, error: "invalid_policy" });
+	}
+	expect(await actions.getDrivingLicenceAdminDataAction()).toMatchObject({
+		success: true,
+		data: { policy: null, participants: [] },
+	});
+});
+it("enforces approved membership and organization administration on every public settings operation", async () => {
+	await actions.saveDrivingLicencePolicyAction(validPolicy);
+	for (const identity of [
+		{ userId: "t1311-employee", organizationId: "t1311-org" },
+		{ userId: "t1311-admin", organizationId: "t1311-foreign" },
+		{ userId: "", organizationId: "t1311-org" },
+	]) {
+		Object.assign(session, identity);
+		expect(await actions.saveDrivingLicencePolicyAction(validPolicy)).toEqual({
+			success: false,
+			error: "forbidden",
+		});
+		expect(
+			await actions.enrollDrivingLicenceEmployeeAction({ employeeId }),
+		).toEqual({ success: false, error: "forbidden" });
+		expect(await actions.getDrivingLicenceAdminDataAction()).toEqual({
+			success: false,
+			error: "forbidden",
+		});
+	}
+});
+it("rejects foreign employees, inactive employees, and enrollment while disabled, with duplicate enrollment remaining safe", async () => {
+	expect(
+		await actions.enrollDrivingLicenceEmployeeAction({ employeeId }),
+	).toEqual({ success: false, error: "not_enabled" });
+	await actions.saveDrivingLicencePolicyAction(validPolicy);
+	expect(
+		await actions.enrollDrivingLicenceEmployeeAction({ employeeId: foreignId }),
+	).toEqual({ success: false, error: "forbidden" });
+	await pool.query("update employee set is_active=false where id=$1", [
+		employeeId,
+	]);
+	expect(
+		await actions.enrollDrivingLicenceEmployeeAction({ employeeId }),
+	).toEqual({ success: false, error: "forbidden" });
+	await pool.query("update employee set is_active=true where id=$1", [
+		employeeId,
+	]);
+	await actions.enrollDrivingLicenceEmployeeAction({ employeeId });
+	await actions.enrollDrivingLicenceEmployeeAction({ employeeId });
+	const result = await actions.getDrivingLicenceAdminDataAction();
+	expect(result.success && result.data.participants).toHaveLength(1);
+	session.userId = "t1311-foreign";
+	session.organizationId = "t1311-foreign";
+	expect(await actions.getOwnDrivingLicenceStatusAction()).toMatchObject({
+		success: true,
+		data: { enrolled: false, status: "not_enrolled", authorizedClasses: [] },
+	});
+});

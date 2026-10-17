@@ -20,7 +20,10 @@ import {
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { getLocalizedNotificationContent } from "@/lib/notifications/localized-notification";
-import type { NotificationType, NotificationWithMeta } from "@/lib/notifications/types";
+import type {
+	NotificationType,
+	NotificationWithMeta,
+} from "@/lib/notifications/types";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 
@@ -46,6 +49,8 @@ function getNotificationStyle(type: NotificationType): {
 		case "break_due_reminder":
 		case "period_submission_reminder":
 		case "period_submission_sent_back":
+		case "driving_licence_reminder":
+		case "driving_authorization_suspended":
 		case "driving_details_missing_reminder":
 		// Approved or rejected: the type covers both outcomes, so it keeps the neutral clock.
 		case "period_submission_decided":
@@ -262,14 +267,24 @@ export function NotificationItem({
 				className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 			>
 				{/* Icon */}
-				<span className={cn("hidden shrink-0 items-center justify-center rounded-full p-2 sm:flex", bgColor)}>
+				<span
+					className={cn(
+						"hidden shrink-0 items-center justify-center rounded-full p-2 sm:flex",
+						bgColor,
+					)}
+				>
 					<span className={iconColor}>{icon}</span>
 				</span>
 
 				{/* Content */}
 				<span className="min-w-0 flex-1">
 					<span className="flex items-start justify-between gap-2">
-						<span className={cn("text-sm line-clamp-2 sm:line-clamp-1", !notification.isRead && "font-medium")}>
+						<span
+							className={cn(
+								"text-sm line-clamp-2 sm:line-clamp-1",
+								!notification.isRead && "font-medium",
+							)}
+						>
 							{localized.title}
 						</span>
 						{!notification.isRead && (
@@ -281,7 +296,9 @@ export function NotificationItem({
 					<span className="mt-0.5 line-clamp-3 text-muted-foreground text-xs sm:line-clamp-2">
 						{localized.message}
 					</span>
-					<span className="text-muted-foreground text-xs mt-1 block">{localized.timeAgo}</span>
+					<span className="text-muted-foreground text-xs mt-1 block">
+						{localized.timeAgo}
+					</span>
 				</span>
 			</button>
 

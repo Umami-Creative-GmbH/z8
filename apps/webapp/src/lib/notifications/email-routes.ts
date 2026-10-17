@@ -1,5 +1,8 @@
 import type { SecurityEventType } from "@/lib/email/templates/security-alert";
-import { EMPLOYEE_PAGES_PATH, MY_DATA_PATH } from "@/lib/personal-data-export/paths";
+import {
+	EMPLOYEE_PAGES_PATH,
+	MY_DATA_PATH,
+} from "@/lib/personal-data-export/paths";
 import type { NotificationType } from "./types";
 
 /**
@@ -52,7 +55,9 @@ function layout(...linkPrefixes: string[]): NotificationEmailRoute {
 }
 
 /** Every notification type must be listed: a new type has to choose its email route. */
-const NOTIFICATION_EMAIL_ROUTES: { readonly [Type in NotificationType]: NotificationEmailRoute } = {
+const NOTIFICATION_EMAIL_ROUTES: {
+	readonly [Type in NotificationType]: NotificationEmailRoute;
+} = {
 	// Overridable notification emails (EMAIL_TEMPLATE_KEYS).
 	absence_request_submitted: template("absenceRequestSubmitted"),
 	absence_request_approved: template("absenceRequestApproved"),
@@ -82,6 +87,8 @@ const NOTIFICATION_EMAIL_ROUTES: { readonly [Type in NotificationType]: Notifica
 	period_submission_sent_back: layout("/time-tracking"),
 	period_submission_decided: layout("/time-tracking"),
 	driving_details_missing_reminder: layout("/time-tracking"),
+	driving_licence_reminder: layout("/driving-licence"),
+	driving_authorization_suspended: layout("/driving-licence"),
 	// Record the refused kiosk clocking again (#1290).
 	kiosk_command_refused: layout("/time-tracking"),
 	personnel_file_document_shared: layout("/my-documents"),
@@ -154,7 +161,9 @@ const NOTIFICATION_EMAIL_ROUTES: { readonly [Type in NotificationType]: Notifica
 	time_off_in_lieu_available: NONE,
 };
 
-export function notificationEmailRoute(type: NotificationType): NotificationEmailRoute {
+export function notificationEmailRoute(
+	type: NotificationType,
+): NotificationEmailRoute {
 	return NOTIFICATION_EMAIL_ROUTES[type];
 }
 

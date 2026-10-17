@@ -5,6 +5,7 @@ import {
 	RestPeriodBlocker,
 } from "@/components/compliance/compliance-alert-banner";
 import { ExceptionRequestDialog } from "@/components/compliance/exception-request-dialog";
+import { DrivingAuthorizationAdvisory } from "@/components/driving-licence/operational-status";
 import { ClockCaptureControls } from "@/components/offline/offline-capture-actions";
 import { BreakInProgressNotice } from "@/components/time-tracking/break-in-progress-notice";
 import { ClockConnectionNotice } from "@/components/time-tracking/clock-connection-notice";
@@ -83,8 +84,10 @@ export function ClockInOutWidget({
 	timeFormat,
 }: Props) {
 	const widget = useClockInOutWidget(activeWorkPeriod);
-	const onBreak = widget.isClockedIn && !!widget.activeWorkPeriod?.breakStartedAt;
-	const asksVehicleUse = !widget.uiState.showNotesInput && widget.captureMode !== "local-review";
+	const onBreak =
+		widget.isClockedIn && !!widget.activeWorkPeriod?.breakStartedAt;
+	const asksVehicleUse =
+		!widget.uiState.showNotesInput && widget.captureMode !== "local-review";
 
 	return (
 		<Card className="@container/widget">
@@ -92,15 +95,18 @@ export function ClockInOutWidget({
 				<CardTitle>{widget.t("timeTracking.title", "Time Tracking")}</CardTitle>
 				<CardDescription>
 					{onBreak
-						? widget.t("timeTracking.breakInProgress.description", "You're on a break")
-						: widget.isClockedIn
 						? widget.t(
-								"timeTracking.currentlyClockedIn",
-								"You're currently clocked in",
+								"timeTracking.breakInProgress.description",
+								"You're on a break",
 							)
-						: widget.t("timeTracking.welcomeBack", "Welcome back, {name}", {
-								name: employeeName,
-							})}
+						: widget.isClockedIn
+							? widget.t(
+									"timeTracking.currentlyClockedIn",
+									"You're currently clocked in",
+								)
+							: widget.t("timeTracking.welcomeBack", "Welcome back, {name}", {
+									name: employeeName,
+								})}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-4">
@@ -138,12 +144,21 @@ export function ClockInOutWidget({
 
 				{/* Vehicle use per the employee's mode (#1122); the legacy review queue keeps none. */}
 				{asksVehicleUse && widget.isClockedIn ? (
-					<ClockOutVehicleUse state={widget.vehicleUse} disabled={widget.isMutating} t={widget.t} />
+					<ClockOutVehicleUse
+						state={widget.vehicleUse}
+						disabled={widget.isMutating}
+						t={widget.t}
+					/>
 				) : null}
 				{asksVehicleUse && !widget.isClockedIn ? (
-					<ClockInVehicleUse state={widget.vehicleUse} disabled={widget.isMutating} t={widget.t} />
+					<ClockInVehicleUse
+						state={widget.vehicleUse}
+						disabled={widget.isMutating}
+						t={widget.t}
+					/>
 				) : null}
 
+				<DrivingAuthorizationAdvisory />
 				<ClockConnectionNotice show={widget.connectionRequired} />
 
 				<ClockCaptureControls

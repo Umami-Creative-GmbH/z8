@@ -75,6 +75,7 @@ import {
 	PROJECT_TASK_INELIGIBILITY_MESSAGES,
 	type ProjectTaskIneligibility,
 	taskBookingIneligibility,
+	taskRequirementIneligibility,
 } from "./project-eligibility";
 import { recordedTaskId } from "./task-attribution";
 import { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
@@ -1064,6 +1065,18 @@ async function assertAttributionEligible(
 			projectId: input.resulting.projectId,
 			taskId: input.resulting.taskId,
 		});
+	}
+	// A project's active task requirement (#884) refuses an edit that sets or keeps
+	// such a project while it changes the project or task and leaves no task. Only
+	// the attribution edit (a calendar edit, where someone picks the task) changes
+	// either; edits that keep both, like time and billability edits, pass.
+	if (input.changes.project || input.changes.task) {
+		const reason = await taskRequirementIneligibility(tx, {
+			organizationId: input.organizationId,
+			projectId: input.resulting.projectId,
+			taskId: input.resulting.taskId,
+		});
+		if (reason) throw taskRefusal(reason);
 	}
 	if (input.changes.workCategory) {
 		await authorizeTimeCorrectionCategoryChange({

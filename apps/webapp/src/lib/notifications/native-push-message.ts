@@ -100,6 +100,8 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	period_submission_sent_back: "request_update",
 	period_submission_decided: "request_update",
 	driving_details_missing_reminder: "reminder",
+	driving_licence_reminder: "reminder",
+	driving_authorization_suspended: "attention",
 	scheduled_export_paused: "attention",
 	personal_data_export_ready: "attention",
 	personal_data_export_admin_exported: "attention",
@@ -110,30 +112,63 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 };
 
 /** One static `t()` default per key, so the extractor can read every default. */
-function categoryTitle(category: NativePushCategory, t: NativePushTranslate): string {
+function categoryTitle(
+	category: NativePushCategory,
+	t: NativePushTranslate,
+): string {
 	switch (category) {
 		case "review":
-			return t("notifications.nativePush.review.title", "You have a request to review");
+			return t(
+				"notifications.nativePush.review.title",
+				"You have a request to review",
+			);
 		case "request_update":
-			return t("notifications.nativePush.requestUpdate.title", "Your request was updated");
+			return t(
+				"notifications.nativePush.requestUpdate.title",
+				"Your request was updated",
+			);
 		case "reminder":
 			return t("notifications.nativePush.reminder.title", "Reminder from Z8");
 		case "schedule":
-			return t("notifications.nativePush.schedule.title", "Your schedule has changed");
+			return t(
+				"notifications.nativePush.schedule.title",
+				"Your schedule has changed",
+			);
 		case "working_time":
-			return t("notifications.nativePush.workingTime.title", "News about your working time");
+			return t(
+				"notifications.nativePush.workingTime.title",
+				"News about your working time",
+			);
 		case "security":
-			return t("notifications.nativePush.security.title", "Security notice for your account");
+			return t(
+				"notifications.nativePush.security.title",
+				"Security notice for your account",
+			);
 		case "team":
-			return t("notifications.nativePush.team.title", "Your teams have changed");
+			return t(
+				"notifications.nativePush.team.title",
+				"Your teams have changed",
+			);
 		case "travel_expense":
-			return t("notifications.nativePush.travelExpense.title", "News about your travel expenses");
+			return t(
+				"notifications.nativePush.travelExpense.title",
+				"News about your travel expenses",
+			);
 		case "document":
-			return t("notifications.nativePush.document.title", "News about your documents");
+			return t(
+				"notifications.nativePush.document.title",
+				"News about your documents",
+			);
 		case "project":
-			return t("notifications.nativePush.project.title", "News about a project");
+			return t(
+				"notifications.nativePush.project.title",
+				"News about a project",
+			);
 		case "attention":
-			return t("notifications.nativePush.attention.title", "Something needs your attention");
+			return t(
+				"notifications.nativePush.attention.title",
+				"Something needs your attention",
+			);
 	}
 }
 

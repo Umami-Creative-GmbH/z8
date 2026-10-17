@@ -115,6 +115,7 @@ import {
 	PROJECT_TASK_INELIGIBILITY_MESSAGES,
 	type ProjectTaskIneligibility,
 	projectTaskIneligibility,
+	taskRequirementIneligibility,
 } from "@/lib/time-tracking/project-eligibility";
 import { namedTaskIntent, recordedTaskId } from "@/lib/time-tracking/task-attribution";
 import { validateProjectAssignment } from "./entry-helpers";
@@ -1098,6 +1099,14 @@ export async function createManualTimeEntry(
 		const taskIneligibility = await projectTaskIneligibility(taskTarget, taskBooking);
 		if (taskIneligibility) return taskRefusal(taskIneligibility);
 	}
+	// A project's active task requirement refuses an entry without a task (#884).
+	const requirementBooking = {
+		organizationId: targetEmployee.organizationId,
+		projectId: data.projectId || null,
+		taskId: data.taskId || null,
+	};
+	const missingTask = await taskRequirementIneligibility(db, requirementBooking);
+	if (missingTask) return taskRefusal(missingTask);
 	if (data.workCategoryId) {
 		const categoryValidation = await validateWorkCategoryAssignment(
 			targetEmployee.id,
@@ -1267,6 +1276,8 @@ export async function createManualTimeEntry(
 					});
 					if (reason) return { disposition: "task_refused" as const, reason };
 				}
+				const requirement = await taskRequirementIneligibility(tx, requirementBooking);
+				if (requirement) return { disposition: "task_refused" as const, reason: requirement };
 				if (vehicleUse) {
 					try {
 						await assertWorkVehicleUseChangeAllowed(tx, {

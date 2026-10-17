@@ -35,6 +35,12 @@ export interface WorkPeriodData {
 	autoAdjustmentReason?: WorkPeriodAutoAdjustmentReason | null;
 	/** Billable Time (#900): whether the work is billable. */
 	isBillable?: boolean;
+	/**
+	 * Missing task (#884): accepted without the task its project required. The
+	 * stored `work_period` column, like `isBillable`; read models built from it
+	 * (calendar, reports) carry `missingTask?: true` instead.
+	 */
+	missingTask?: boolean;
 }
 
 export function getTimeEntriesColumns({
@@ -163,7 +169,8 @@ export function getTimeEntriesColumns({
 				);
 				const billable = showBillable && row.original.isBillable;
 				const drivingDetailsMissing = isDrivingDetailsMissing?.(row.original.id) ?? false;
-				if (!billable && !drivingDetailsMissing) return description;
+				const missingTask = row.original.missingTask === true;
+				if (!billable && !drivingDetailsMissing && !missingTask) return description;
 				return (
 					<div className="flex flex-col gap-1">
 						{description}
@@ -178,6 +185,18 @@ export function getTimeEntriesColumns({
 								className="w-fit border-amber-500/50 text-amber-700 text-xs dark:text-amber-300"
 							>
 								{t("timeTracking.table.drivingDetailsMissing", "Driving details missing")}
+							</Badge>
+						) : null}
+						{missingTask ? (
+							<Badge
+								variant="outline"
+								className="w-fit border-amber-500/50 text-amber-700 text-xs dark:text-amber-300"
+								title={t(
+									"timeTracking.table.missingTaskHint",
+									"This project requires a task: add one to this booking in the calendar.",
+								)}
+							>
+								{t("timeTracking.table.missingTask", "Missing task")}
 							</Badge>
 						) : null}
 					</div>

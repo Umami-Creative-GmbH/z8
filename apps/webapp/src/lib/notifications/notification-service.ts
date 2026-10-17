@@ -82,7 +82,10 @@ export function getTimeAgo(date: Date): string {
 	return `${months} month${months === 1 ? "" : "s"} ago`;
 }
 
-export type NotificationChannelPreferences = Record<NotificationChannel, boolean>;
+export type NotificationChannelPreferences = Record<
+	NotificationChannel,
+	boolean
+>;
 
 /** Use transport owners' organization availability checks before staging optional delivery. */
 export async function loadNotificationChannelAvailability(
@@ -91,11 +94,26 @@ export async function loadNotificationChannelAvailability(
 ): Promise<NotificationChannelPreferences> {
 	const { getTransportName } = await import("@/lib/email/email-service");
 	const [emailTransport, teams, telegram, discord, slack] = await Promise.all([
-		getTransportName(organizationId, options.durable ? { throwOnError: true } : undefined),
-		isTeamsAvailable(organizationId, options.durable ? { throwOnError: true } : undefined),
-		isTelegramAvailable(organizationId, options.durable ? { throwOnError: true } : undefined),
-		isDiscordAvailable(organizationId, options.durable ? { throwOnError: true } : undefined),
-		isSlackAvailable(organizationId, options.durable ? { throwOnError: true } : undefined),
+		getTransportName(
+			organizationId,
+			options.durable ? { throwOnError: true } : undefined,
+		),
+		isTeamsAvailable(
+			organizationId,
+			options.durable ? { throwOnError: true } : undefined,
+		),
+		isTelegramAvailable(
+			organizationId,
+			options.durable ? { throwOnError: true } : undefined,
+		),
+		isDiscordAvailable(
+			organizationId,
+			options.durable ? { throwOnError: true } : undefined,
+		),
+		isSlackAvailable(
+			organizationId,
+			options.durable ? { throwOnError: true } : undefined,
+		),
 	]);
 	return {
 		in_app: true,
@@ -121,7 +139,9 @@ export async function loadNotificationChannelPreferences(
 	});
 	const enabled = (channel: NotificationChannel) => {
 		const preference = preferences.find((p) => p.channel === channel);
-		return preference ? preference.enabled : isChannelEnabledByDefault(type, channel);
+		return preference
+			? preference.enabled
+			: isChannelEnabledByDefault(type, channel);
 	};
 	return {
 		in_app: hasMandatoryInbox(type) || enabled("in_app"),
@@ -145,8 +165,9 @@ export type InAppNotificationResult =
  */
 export async function insertInAppNotification(
 	params: CreateNotificationParams,
+	client: Pick<typeof db, "insert"> = db,
 ): Promise<InAppNotificationResult> {
-	const insert = db.insert(notification).values({
+	const insert = client.insert(notification).values({
 		userId: params.userId,
 		organizationId: params.organizationId,
 		type: params.type,
@@ -166,10 +187,15 @@ export async function insertInAppNotification(
 				})
 				.returning()
 		: await insert.returning();
-	return inserted ? { kind: "created", notification: inserted } : { kind: "duplicate" };
+	return inserted
+		? { kind: "created", notification: inserted }
+		: { kind: "duplicate" };
 }
 
-export type ExternalNotificationChannel = Exclude<NotificationChannel, "in_app">;
+export type ExternalNotificationChannel = Exclude<
+	NotificationChannel,
+	"in_app"
+>;
 
 /**
  * Awaited delivery through one external transport. `unavailable` means the
@@ -231,7 +257,8 @@ export async function deliverNotificationToChannel(
 					...(options.durable ? { throwOnError: true } : {}),
 				},
 			);
-			if (options.durable && result.failed > 0) throw new Error("push_delivery_failed");
+			if (options.durable && result.failed > 0)
+				throw new Error("push_delivery_failed");
 			if (options.durable && result.sent === 0) return "unavailable";
 			return "sent";
 		}
@@ -260,7 +287,11 @@ export async function deliverNotificationToChannel(
 			)
 				return "unavailable";
 			if (options.durable) {
-				if ((await sendTeamsNotification(botChannelPayload, { durable: true })) === "unavailable")
+				if (
+					(await sendTeamsNotification(botChannelPayload, {
+						durable: true,
+					})) === "unavailable"
+				)
 					return "unavailable";
 			} else await sendTeamsNotification(botChannelPayload);
 			return "sent";
@@ -274,7 +305,9 @@ export async function deliverNotificationToChannel(
 				return "unavailable";
 			if (options.durable) {
 				if (
-					(await sendTelegramNotification(botChannelPayload, { durable: true })) === "unavailable"
+					(await sendTelegramNotification(botChannelPayload, {
+						durable: true,
+					})) === "unavailable"
 				)
 					return "unavailable";
 			} else await sendTelegramNotification(botChannelPayload);
@@ -288,7 +321,11 @@ export async function deliverNotificationToChannel(
 			)
 				return "unavailable";
 			if (options.durable) {
-				if ((await sendDiscordNotification(botChannelPayload, { durable: true })) === "unavailable")
+				if (
+					(await sendDiscordNotification(botChannelPayload, {
+						durable: true,
+					})) === "unavailable"
+				)
 					return "unavailable";
 			} else await sendDiscordNotification(botChannelPayload);
 			return "sent";
@@ -301,7 +338,11 @@ export async function deliverNotificationToChannel(
 			)
 				return "unavailable";
 			if (options.durable) {
-				if ((await sendSlackNotification(botChannelPayload, { durable: true })) === "unavailable")
+				if (
+					(await sendSlackNotification(botChannelPayload, {
+						durable: true,
+					})) === "unavailable"
+				)
 					return "unavailable";
 			} else await sendSlackNotification(botChannelPayload);
 			return "sent";
@@ -327,7 +368,10 @@ export async function createNotification(
 		// An unreadable recipient keeps the notification addressed as it was.
 		const recipients = await resolveNotificationRecipients(db, params).catch(
 			(error): NotificationRecipients => {
-				logger.warn({ error, userId: params.userId }, "Could not resolve notification recipients");
+				logger.warn(
+					{ error, userId: params.userId },
+					"Could not resolve notification recipients",
+				);
 				return { kind: "self" };
 			},
 		);
@@ -851,7 +895,9 @@ export async function isChannelEnabled(
 			),
 		});
 
-		return preference ? preference.enabled : isChannelEnabledByDefault(notificationType, channel);
+		return preference
+			? preference.enabled
+			: isChannelEnabledByDefault(notificationType, channel);
 	} catch (error) {
 		logger.error(
 			{ error, userId, notificationType, channel },

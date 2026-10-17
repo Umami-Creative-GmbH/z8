@@ -116,6 +116,8 @@ export const NOTIFICATION_TYPES = [
 	"skill_expired_today",
 	// The morning-after reminder about work lacking its vehicle or a reading (#1127)
 	"driving_details_missing_reminder",
+	"driving_licence_reminder",
+	"driving_authorization_suspended",
 	// A clocking queued on an offline kiosk was refused on arrival (#1290)
 	"kiosk_command_refused",
 ] as const;
@@ -124,7 +126,11 @@ export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 /** System closure evidence is always delivered to the employee's inbox. */
 export function hasMandatoryInbox(type: NotificationType): boolean {
-	return type === "automatic_clock_out";
+	return (
+		type === "automatic_clock_out" ||
+		type === "driving_licence_reminder" ||
+		type === "driving_authorization_suspended"
+	);
 }
 
 /** Types delivered only to the inbox until the user turns on another channel. */
@@ -156,6 +162,11 @@ export function isChannelEnabledByDefault(
 	channel: NotificationChannel,
 ): boolean {
 	if (channel === "in_app") return true;
+	if (
+		type === "driving_licence_reminder" ||
+		type === "driving_authorization_suspended"
+	)
+		return channel === "email";
 	if (IN_APP_AND_PUSH_BY_DEFAULT.has(type)) return channel === "push";
 	return !IN_APP_ONLY_BY_DEFAULT.has(type);
 }

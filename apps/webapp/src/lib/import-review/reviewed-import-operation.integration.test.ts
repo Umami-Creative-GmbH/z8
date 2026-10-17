@@ -87,6 +87,8 @@ type RowSeed = {
 	employeeId?: string;
 	sourcePayload?: Record<string, unknown>;
 	createdAt?: string;
+	/** The staged project attribution (normalized payload), when the row books one. */
+	attribution?: Record<string, unknown>;
 };
 
 function only<T>(rows: readonly T[]): T {
@@ -222,6 +224,7 @@ describe("reviewed imports through the completed-work operation on PostgreSQL", 
 					employeeId: seed.employeeId ?? ids.employee,
 					startsAt: seed.startsAt,
 					endsAt: seed.endsAt,
+					...(seed.attribution ? { attribution: seed.attribution } : {}),
 				},
 				new Date(seed.createdAt ?? Date.UTC(2026, 8, 1, 0, 0, stagedSequence)),
 			],
@@ -534,6 +537,48 @@ describe("reviewed imports through the completed-work operation on PostgreSQL", 
 	describe("adopted organizations", () => {
 		beforeEach(async () => {
 			await setAdmission("active");
+		});
+
+		// Imports are accepted without a task and never marked (#884, Projects ADR 0002).
+		it("never marks an imported booking to a project that requires a task (#1295)", async () => {
+			const projectId = randomUUID();
+			await admin.query(
+				`insert into project (id, organization_id, name, status, is_active, requires_task, created_by, updated_at)
+				 values ($1, $2, 'Requires a task', 'active', true, true, $3, now())`,
+				[projectId, ids.organization, ids.importerUser],
+			);
+			await admin.query(
+				`insert into project_task (id, organization_id, project_id, name, state, created_by, updated_at)
+				 values ($1, $2, $3, 'Design', 'open', $4, now())`,
+				[randomUUID(), ids.organization, projectId, ids.importerUser],
+			);
+			const batch = await createBatch();
+			await stageRow(batch, {
+				sourceId: "requires-task",
+				startsAt: "2021-03-01T08:00:00Z",
+				endsAt: "2021-03-01T09:00:00Z",
+				attribution: { projectId },
+			});
+
+			expect((await runCommit(batch)).error).toBeNull();
+
+			const { rows } = await admin.query(
+				`select p.project_id, p.task_id, p.missing_task, a.missing_task as allocation_missing_task
+				 from work_period p
+				 join time_record_allocation a
+				   on a.record_id = p.canonical_record_id and a.organization_id = p.organization_id
+				  and a.allocation_kind = 'project'
+				 where p.organization_id = $1`,
+				[ids.organization],
+			);
+			expect(rows).toEqual([
+				{
+					project_id: projectId,
+					task_id: null,
+					missing_task: false,
+					allocation_missing_task: false,
+				},
+			]);
 		});
 
 		it("commits an old-dated completed segment as one fresh post-adoption graph", async () => {

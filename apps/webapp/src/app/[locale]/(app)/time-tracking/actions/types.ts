@@ -91,6 +91,11 @@ export interface AssignedProject {
 	billableDefault: boolean;
 	/** The project's open tasks, by name (#874); empty when it has none. */
 	tasks: ProjectTaskChoice[];
+	/**
+	 * The task requirement setting (#884). With open tasks it is active and a
+	 * booking must name one; pickers decide with `isTaskRequirementActive`.
+	 */
+	requiresTask: boolean;
 }
 
 /** Error code returned when the actor may not create entries for the target. */

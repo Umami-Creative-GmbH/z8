@@ -29,9 +29,13 @@ import {
 } from "../close-active-work";
 import { type CloseResumeWorkResult, isCloseResumeStanding } from "../close-resume-work";
 import { monthClosedRefusalOf } from "../closed-months/refusal";
-import { isProjectEligible, projectTaskIneligibility } from "../project-eligibility";
+import {
+	clockOutTaskRequirement,
+	isProjectEligible,
+	projectTaskIneligibility,
+} from "../project-eligibility";
 import { findStandingStart, type StartLiveWorkResult } from "../start-live-work";
-import { attributionAfter } from "../task-attribution";
+import { attributionAfter, taskIdFollowingProject } from "../task-attribution";
 import { TimeEntryAppendReviewRequiredError } from "../time-entry-append";
 import {
 	resolveFallbackTimezoneCapture,
@@ -92,6 +96,7 @@ import { FrozenCommandNotAcceptedError } from "./frozen";
 import { breakStartEntrySource } from "./kiosk";
 import { LegacyCommandNotAcceptedError } from "./legacy-command";
 import { stampExecutedClockEvent } from "./position-stamp";
+import { clockOutCanPickTask } from "./task-choice";
 import type { ClockTransactions } from "./transactions";
 import type {
 	BreakCommand,
@@ -501,6 +506,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				deletedAt: workPeriod.deletedAt,
 				workLocationType: workPeriod.workLocationType,
 				projectId: workPeriod.projectId,
+				taskId: workPeriod.taskId,
 				...breakStartColumns,
 			})
 			.from(workPeriod)
@@ -532,16 +538,23 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			start: instantFromDate(period.startTime),
 			workLocationType: (period.workLocationType as WorkLocationType | null) ?? null,
 			projectId: period.projectId,
+			taskId: period.taskId,
 			// The open break a closure ends at (#861); re-checked under the work transaction.
 			breakInProgress: breakStartOfRow(period),
 		};
 	}
 
+	/**
+	 * The command's attribution checked before the closure: a refusal, or the
+	 * closure's missing-task decision (#884). Where nobody can pick a task the
+	 * closure marks work missing one; where someone can, it marks only work whose
+	 * project they can no longer book, so none of its tasks can be picked.
+	 */
 	async function attributionRefusal(
 		plan: ClockOutPlan,
 		target: ClockOutTarget,
 		eventInstant: Instant,
-	): Promise<ClockOutRefusal | null> {
+	): Promise<{ refusal: ClockOutRefusal } | { marksMissingTask: boolean }> {
 		const { employee: subject, command } = plan;
 		const { project, workCategory, task } = command.body;
 		const eligibilityTarget = {
@@ -550,14 +563,27 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			organizationId: subject.organizationId,
 		};
 		if (project.kind === "replace" && !(await isProjectEligible(eligibilityTarget, project.id))) {
-			return { code: "project_not_allowed" };
+			return { refusal: { code: "project_not_allowed" } };
 		}
 		if (task?.kind === "replace") {
 			const reason = await projectTaskIneligibility(eligibilityTarget, {
 				projectId: attributionAfter(project, target.projectId),
 				taskId: task.id,
 			});
-			if (reason) return { code: "task_not_allowed", reason };
+			if (reason) return { refusal: { code: "task_not_allowed", reason } };
+		}
+		// An active task requirement refuses only where someone can pick a task (#884).
+		let marksMissingTask = !clockOutCanPickTask(command);
+		if (!marksMissingTask) {
+			const projectId = attributionAfter(project, target.projectId);
+			const requirement = await clockOutTaskRequirement(eligibilityTarget, {
+				projectId,
+				taskId: taskIdFollowingProject({ task, projectId, current: target }),
+			});
+			if (requirement === "task_required") {
+				return { refusal: { code: "task_not_allowed", reason: requirement } };
+			}
+			marksMissingTask = requirement === "missing_task";
 		}
 		if (
 			workCategory.kind === "replace" &&
@@ -572,9 +598,9 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				dateFromInstant(eventInstant),
 			)) !== null
 		) {
-			return { code: "work_category_not_allowed" };
+			return { refusal: { code: "work_category_not_allowed" } };
 		}
-		return null;
+		return { marksMissingTask };
 	}
 
 	/** Closure steps after committed replay; any refusal here may race a matching commit. */
@@ -592,7 +618,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		// An open break in progress ends the work at its start (#861).
 		const end = closureEnd(eventInstant, target.breakInProgress);
 		const attribution = await attributionRefusal(plan, target, end.instant);
-		if (attribution) return refused(attribution);
+		if ("refusal" in attribution) return refused(attribution.refusal);
 		// The device's position belongs to the command's instant, not the earlier break start.
 		const stamped = end.atBreakStart ? { ...command, position: undefined } : command;
 		const periodScope = {
@@ -624,6 +650,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						target,
 						eventInstant: end.instant,
 						capture: eventCapture(command, end.instant, end.zone ?? command.zone.device),
+						marksMissingTask: attribution.marksMissingTask,
 						// The end reading belongs to the closed work, also when it ends at a break's start.
 						closingVehicleUse: clockOutClosingVehicleUse(coordination.db, command),
 						// Ended at a break's start, the entry keeps that start's time source (#885).

@@ -671,9 +671,9 @@ describe("kiosk PIN store on PostgreSQL", () => {
 			expect(rows).toEqual([{ operation_id: operationId }]);
 		});
 
-		it("converts the dropped counter and lock columns into events, as migration 0243 does", async () => {
+		it("converts the dropped counter and lock columns into events, as migration 0253 does", async () => {
 			const migration = readFileSync(
-				new URL("../../../../drizzle/0243_kiosk_pin_lockout_events.sql", import.meta.url),
+				new URL("../../../../drizzle/0253_kiosk_pin_lockout_events.sql", import.meta.url),
 				"utf8",
 			);
 			const conversions = migration
@@ -685,7 +685,7 @@ describe("kiosk PIN store on PostgreSQL", () => {
 			const client = await pool.connect();
 			let lockedUntil: Date;
 			try {
-				// The columns as they were before 0243, in a table of their own.
+				// The columns as they were before 0253, in a table of their own.
 				await client.query(
 					`create temporary table legacy_pin
 					 (organization_id text, employee_id uuid, failed_attempts integer, locked_until timestamptz)`,

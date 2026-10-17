@@ -35,6 +35,7 @@ export interface SearchableSelectProps {
 	className?: string;
 	id?: string;
 	"aria-invalid"?: boolean;
+	"aria-required"?: boolean;
 	"aria-label"?: string;
 	"aria-labelledby"?: string;
 	"aria-describedby"?: string;
@@ -57,6 +58,7 @@ export function SearchableSelect({
 	className,
 	id,
 	"aria-invalid": ariaInvalid,
+	"aria-required": ariaRequired,
 	"aria-label": ariaLabel,
 	"aria-labelledby": ariaLabelledBy,
 	"aria-describedby": ariaDescribedBy,
@@ -101,6 +103,7 @@ export function SearchableSelect({
 					aria-expanded={open}
 					aria-controls={listboxId}
 					aria-invalid={ariaInvalid || undefined}
+					aria-required={ariaRequired || undefined}
 					aria-label={ariaLabel}
 					aria-labelledby={ariaLabelledBy}
 					aria-describedby={ariaDescribedBy}

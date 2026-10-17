@@ -75,6 +75,8 @@ export interface ProjectTemplate {
 	budgetHours: string | null;
 	/** The new project's deadline is its creation date plus this many days; null = none. */
 	deadlineOffsetDays: number | null;
+	/** Task requirement (#884) the new project starts with. */
+	requiresTask: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 	/** By name, ignoring case. */
@@ -126,6 +128,8 @@ export interface ProjectTemplateInput {
 	budgetHours?: number | string | null;
 	/** Whole days after the project's creation; null or omitted = no deadline. */
 	deadlineOffsetDays?: number | null;
+	/** Task requirement (#884) the new project starts with; omitted = off. */
+	requiresTask?: boolean;
 	tasks?: ProjectTemplateTaskInput[];
 	managerEmployeeIds?: string[];
 	assignments?: { type: ProjectTemplateAssignmentType; targetId: string }[];
@@ -139,6 +143,7 @@ export interface NormalizedProjectTemplateInput {
 	color: string | null;
 	budgetHours: string | null;
 	deadlineOffsetDays: number | null;
+	requiresTask: boolean;
 	tasks: { name: string; description: string | null; estimateHours: string | null }[];
 	managerEmployeeIds: string[];
 	teamIds: string[];
@@ -157,6 +162,7 @@ export type ProjectTemplateInputProblem =
 	| "descriptionTooLong"
 	| "budgetInvalid"
 	| "deadlineOffsetInvalid"
+	| "requiresTaskInvalid"
 	| "tooManyTasks"
 	| "taskNameRequired"
 	| "taskNameTooLong"
@@ -189,7 +195,8 @@ const TASK_PROBLEMS = {
  * fields are trimmed (blank = none); the budget is positive hours rounded to
  * two decimals; the deadline offset is whole days from 0 to 3650; task names
  * follow the project task rules and are unique within the template, ignoring
- * case; repeated managers and assignments collapse into one.
+ * case; repeated managers and assignments collapse into one. The task
+ * requirement (#884) is a boolean, off when omitted.
  */
 export function normalizeProjectTemplateInput(
 	input: ProjectTemplateInput,
@@ -219,6 +226,9 @@ export function normalizeProjectTemplateInput(
 	) {
 		return { ok: false, problem: "deadlineOffsetInvalid" };
 	}
+
+	const requiresTask = input.requiresTask ?? false;
+	if (typeof requiresTask !== "boolean") return { ok: false, problem: "requiresTaskInvalid" };
 
 	const rawTasks = input.tasks ?? [];
 	if (rawTasks.length > PROJECT_TEMPLATE_MAX_TASKS) return { ok: false, problem: "tooManyTasks" };
@@ -253,6 +263,7 @@ export function normalizeProjectTemplateInput(
 			color,
 			budgetHours,
 			deadlineOffsetDays: offset ?? null,
+			requiresTask,
 			tasks,
 			managerEmployeeIds: unique(input.managerEmployeeIds),
 			teamIds: unique(assignments.filter((a) => a.type === "team").map((a) => a.targetId)),

@@ -139,6 +139,75 @@ describe("buildPlatformAnalyticsSeries", () => {
 			isoSeries.find((point) => point.bucketKey === "2026-05-08"),
 		);
 	});
+
+	it("maps Postgres timestamp text the way node-postgres returns it", () => {
+		const params = parsePlatformAnalyticsParams({ range: "7d", bucket: "day" }, NOW);
+		const buckets = buildPlatformAnalyticsBuckets(params);
+		const series = buildPlatformAnalyticsSeries(
+			buckets,
+			{
+				signups: [{ bucket: "2026-05-08 00:00:00", value: "5" }],
+				organizations: [{ bucket: "2026-05-09 00:00:00.123456", value: 2 }],
+				activeUsers: [],
+				sessions: [],
+				timeRecords: [],
+				seats: [{ bucket: "2026-05-08 00:00:00+00", value: 42 }],
+				// A non-UTC session renders the same instant with its own offset.
+				mrr: [{ bucket: "2026-05-08 02:00:00+02", value: 168 }],
+			},
+			true,
+		);
+
+		expect(series.find((point) => point.bucketKey === "2026-05-08")).toMatchObject({
+			signups: 5,
+			seats: 42,
+			mrr: 168,
+		});
+		expect(series.find((point) => point.bucketKey === "2026-05-09")).toMatchObject({
+			organizations: 2,
+		});
+	});
+
+	it("maps Postgres month starts to yyyy-MM bucket keys", () => {
+		const params = parsePlatformAnalyticsParams({ range: "12m", bucket: "month" }, NOW);
+		const buckets = buildPlatformAnalyticsBuckets(params);
+		const series = buildPlatformAnalyticsSeries(
+			buckets,
+			{
+				signups: [{ bucket: "2026-05-01 00:00:00", value: 6 }],
+				organizations: [],
+				activeUsers: [],
+				sessions: [],
+				timeRecords: [],
+				seats: [{ bucket: "2026-04-01 00:00:00+00", value: 9 }],
+				mrr: [],
+			},
+			true,
+		);
+
+		expect(series.find((point) => point.bucketKey === "2026-05")).toMatchObject({ signups: 6 });
+		expect(series.find((point) => point.bucketKey === "2026-04")).toMatchObject({ seats: 9 });
+	});
+
+	it("drops rows whose bucket is not a date", () => {
+		const params = parsePlatformAnalyticsParams({ range: "7d", bucket: "day" }, NOW);
+		const buckets = buildPlatformAnalyticsBuckets(params);
+		const series = buildPlatformAnalyticsSeries(
+			buckets,
+			{
+				signups: [{ bucket: "not a date", value: 5 }],
+				organizations: [{ bucket: new Date(Number.NaN), value: 2 }],
+				activeUsers: [],
+				sessions: [],
+				timeRecords: [],
+				seats: [],
+				mrr: [],
+			},
+			false,
+		);
+
+		expect(series.every((point) => point.signups === 0 && point.organizations === 0)).toBe(true);
+	});
 });
 
 describe("getLatestPointKpis", () => {

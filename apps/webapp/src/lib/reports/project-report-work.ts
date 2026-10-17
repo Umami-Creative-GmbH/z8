@@ -53,8 +53,11 @@ export function instantWindow(range: ReportDayRange) {
 	return { start: dateFromInstant(start), end: dateFromInstant(end) };
 }
 
-/** Reported work with the project task it is booked to (#876), for the report's task breakdown. */
-export type ReportedProjectWork = ReportedWork & { taskId: string | null };
+/**
+ * Reported work with the project task it is booked to (#876), for the report's
+ * task breakdown, and `missingTask` when it is missing a task (#884; absent otherwise).
+ */
+export type ReportedProjectWork = ReportedWork & { taskId: string | null; missingTask?: true };
 
 /**
  * The work a project report counts (#794, #902): completed, non-deleted work of
@@ -77,6 +80,7 @@ export async function loadReportedProjectWork(
 			employeeId: workPeriod.employeeId,
 			projectId: workPeriod.projectId,
 			taskId: workPeriod.taskId,
+			missingTask: workPeriod.missingTask,
 			// A deleted (inactive) customer counts as no customer.
 			customerId: activeProjectCustomerIdSql(),
 			startTime: workPeriod.startTime,
@@ -127,6 +131,7 @@ export async function loadReportedProjectWork(
 		const item: ReportedProjectWork = {
 			id: row.id,
 			taskId: row.taskId,
+			...(row.missingTask ? { missingTask: true as const } : {}),
 			employeeId: row.employeeId,
 			projectId: row.projectId,
 			customerId: row.customerId,
