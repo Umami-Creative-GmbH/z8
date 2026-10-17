@@ -4,6 +4,7 @@ import { scanAccountingCustomerImport } from "./accounting-customer-adapter";
 import { scanClockinImportPartition } from "./clockin-adapter";
 import { scanClockodoImportPartition } from "./clockodo-adapter";
 import { commitAcceptedRowsForEntity } from "./committers";
+import { scanCsvWorkImport } from "./csv-work-import";
 import { enqueueImportCommitJob } from "./queue";
 import {
 	advanceImportBatchAfterJob,
@@ -13,11 +14,16 @@ import {
 } from "./repository";
 import type {
 	AccountingCustomerScanJobData,
+	CsvWorkScanJobData,
 	ImportCommitJobData,
 	ImportScanJobData,
 } from "./types";
 
-type ImportReviewJobData = ImportScanJobData | AccountingCustomerScanJobData | ImportCommitJobData;
+type ImportReviewJobData =
+	| ImportScanJobData
+	| AccountingCustomerScanJobData
+	| CsvWorkScanJobData
+	| ImportCommitJobData;
 
 interface ImportScanResult {
 	stagedRows: number;
@@ -28,13 +34,17 @@ function formatCommitRowFailure(result: {
 	failedRows: number;
 	errors: Array<{ rowId: string; message: string }>;
 }) {
-	const details = result.errors.map((error) => `${error.rowId}: ${error.message}`).join("; ");
+	const details = result.errors
+		.map((error) => `${error.rowId}: ${error.message}`)
+		.join("; ");
 	return `Import review commit failed for ${result.failedRows} row(s)${details ? `: ${details}` : ""}`;
 }
 
 function isFinalAttempt(job: Job<ImportReviewJobData>): boolean {
 	const maxAttempts =
-		typeof job.opts.attempts === "number" && job.opts.attempts > 0 ? job.opts.attempts : 1;
+		typeof job.opts.attempts === "number" && job.opts.attempts > 0
+			? job.opts.attempts
+			: 1;
 	return job.attemptsMade + 1 >= maxAttempts;
 }
 
@@ -95,7 +105,9 @@ async function enqueueReadyCommitJobs(data: ImportCommitJobData) {
 	);
 }
 
-export async function processImportReviewJob(job: Job<ImportReviewJobData>): Promise<JobResult> {
+export async function processImportReviewJob(
+	job: Job<ImportReviewJobData>,
+): Promise<JobResult> {
 	const { data } = job;
 	let failureAlreadyMarked = false;
 
@@ -106,6 +118,9 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 			case "import-review-scan": {
 				let scanResult: ImportScanResult;
 				switch (data.provider) {
+					case "csv":
+						scanResult = await scanCsvWorkImport(data);
+						break;
 					case "clockin":
 						scanResult = await scanClockinImportPartition(data);
 						break;
@@ -132,7 +147,9 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 
 			case "import-review-commit": {
 				const finalAttempt = isFinalAttempt(job);
-				const commitResult = await commitAcceptedRowsForEntity(data, { finalAttempt });
+				const commitResult = await commitAcceptedRowsForEntity(data, {
+					finalAttempt,
+				});
 				if (commitResult.failedRows > 0 && !finalAttempt) {
 					const errorMessage = formatCommitRowFailure(commitResult);
 					throw new Error(errorMessage);
@@ -184,7 +201,9 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 }
 
 export async function processImportReviewScanJob(
-	job: Job<ImportScanJobData | AccountingCustomerScanJobData>,
+	job: Job<
+		ImportScanJobData | AccountingCustomerScanJobData | CsvWorkScanJobData
+	>,
 ): Promise<JobResult> {
 	return processImportReviewJob(job);
 }

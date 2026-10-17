@@ -11,11 +11,22 @@
  * - Supports job prioritization and rate limiting
  */
 
-import { type ConnectionOptions, type Job, type JobsOptions, Queue, Worker } from "bullmq";
+import {
+	type ConnectionOptions,
+	type Job,
+	type JobsOptions,
+	Queue,
+	Worker,
+} from "bullmq";
 import { env } from "@/env";
-import type { CronJobData, CronJobName, CronJobResult } from "@/lib/cron/registry";
+import type {
+	CronJobData,
+	CronJobName,
+	CronJobResult,
+} from "@/lib/cron/registry";
 import type {
 	AccountingCustomerScanJobData,
+	CsvWorkScanJobData,
 	ImportCommitJobData,
 	ImportScanJobData,
 } from "@/lib/import-review/types";
@@ -26,10 +37,18 @@ const logger = createLogger("JobQueue");
 const queueHealthTimeoutMs = Number(env.QUEUE_HEALTH_TIMEOUT_MS);
 const queueJobAttempts = Number(env.QUEUE_JOB_ATTEMPTS);
 const queueJobBackoffDelayMs = Number(env.QUEUE_JOB_BACKOFF_DELAY_MS);
-const queueCompletedJobRetentionCount = Number(env.QUEUE_COMPLETED_JOB_RETENTION_COUNT);
-const queueCompletedJobRetentionSeconds = Number(env.QUEUE_COMPLETED_JOB_RETENTION_SECONDS);
-const queueFailedJobRetentionCount = Number(env.QUEUE_FAILED_JOB_RETENTION_COUNT);
-const queueFailedJobRetentionSeconds = Number(env.QUEUE_FAILED_JOB_RETENTION_SECONDS);
+const queueCompletedJobRetentionCount = Number(
+	env.QUEUE_COMPLETED_JOB_RETENTION_COUNT,
+);
+const queueCompletedJobRetentionSeconds = Number(
+	env.QUEUE_COMPLETED_JOB_RETENTION_SECONDS,
+);
+const queueFailedJobRetentionCount = Number(
+	env.QUEUE_FAILED_JOB_RETENTION_COUNT,
+);
+const queueFailedJobRetentionSeconds = Number(
+	env.QUEUE_FAILED_JOB_RETENTION_SECONDS,
+);
 
 // Connection configuration for Redis-compatible backend
 const redisConnectionOptions = createRedisConnectionOptions(env);
@@ -155,7 +174,10 @@ export interface EmployeeDepartureJobData {
 	revision: number;
 }
 
-export type ImportReviewScanQueueJobData = ImportScanJobData | AccountingCustomerScanJobData;
+export type ImportReviewScanQueueJobData =
+	| ImportScanJobData
+	| AccountingCustomerScanJobData
+	| CsvWorkScanJobData;
 
 export type ImportReviewCommitQueueJobData = ImportCommitJobData;
 
@@ -211,7 +233,10 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 	return Promise.race([
 		promise,
 		new Promise<T>((_, reject) => {
-			timeout = setTimeout(() => reject(new Error("Queue health check timed out")), timeoutMs);
+			timeout = setTimeout(
+				() => reject(new Error("Queue health check timed out")),
+				timeoutMs,
+			);
 		}),
 	]).finally(() => {
 		if (timeout) {
@@ -296,7 +321,11 @@ export async function addCleanupJob(
 export async function addCalendarSyncJob(
 	data: Omit<CalendarSyncJobData, "type">,
 ): Promise<Job<JobData, JobResult>> {
-	return addJob("calendar-sync", { ...data, type: "calendar-sync" }, { priority: 3 });
+	return addJob(
+		"calendar-sync",
+		{ ...data, type: "calendar-sync" },
+		{ priority: 3 },
+	);
 }
 
 /**
@@ -318,7 +347,11 @@ export async function addOrganizationDeletionNotificationJob(
 export async function addAuditPackJob(
 	data: Omit<AuditPackJobData, "type">,
 ): Promise<Job<JobData, JobResult>> {
-	return addJob("process-audit-pack", { ...data, type: "audit-pack" }, { priority: 4 });
+	return addJob(
+		"process-audit-pack",
+		{ ...data, type: "audit-pack" },
+		{ priority: 4 },
+	);
 }
 
 /**
@@ -397,7 +430,10 @@ export function createWorker(
 	});
 
 	worker.on("failed", (job, err) => {
-		logger.error({ jobId: job?.id, name: job?.name, error: err.message }, "Job failed");
+		logger.error(
+			{ jobId: job?.id, name: job?.name, error: err.message },
+			"Job failed",
+		);
 	});
 
 	worker.on("progress", (job, progress) => {

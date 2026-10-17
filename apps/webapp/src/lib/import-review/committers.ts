@@ -1,5 +1,3 @@
-import { withVacationReconciliation } from "@/lib/absences/vacation-reconciliation";
-import type { PlannedReconciledAbsence } from "@/lib/absences/vacation-reconciliation";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
@@ -17,8 +15,17 @@ import {
 	timeEntry,
 	workCategory,
 } from "@/db/schema";
-import { assertHistoricalVacationNotOverlapping, historicalVacationRefusalOf } from "@/lib/absences/historical-vacation";
-import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	assertHistoricalVacationNotOverlapping,
+	historicalVacationRefusalOf,
+} from "@/lib/absences/historical-vacation";
+import type { PlannedReconciledAbsence } from "@/lib/absences/vacation-reconciliation";
+import { withVacationReconciliation } from "@/lib/absences/vacation-reconciliation";
+import {
+	type Instant,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import {
 	type ClockingStore,
 	createDatabaseClockingStore,
@@ -40,9 +47,19 @@ import {
 	resolveImportedAttribution,
 } from "@/lib/time-tracking/record-imported-work";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
-import { acquireOrganizationConfigurationGuard, acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
-import { type CustomerImportHold, commitCustomerRow } from "./customer-committer";
-import { reviewedImportRowMapping, withReviewedImportTransaction } from "./import-work-transaction";
+import {
+	acquireExclusiveOrganizationConfigurationGuard,
+	acquireOrganizationConfigurationGuard,
+} from "@/lib/time-tracking/work-transaction";
+import { commitCsvWorkRow } from "./csv-work-import";
+import {
+	type CustomerImportHold,
+	commitCustomerRow,
+} from "./customer-committer";
+import {
+	reviewedImportRowMapping,
+	withReviewedImportTransaction,
+} from "./import-work-transaction";
 import { importedWorkProviderEvidence } from "./imported-work-evidence";
 import type { ImportCommitJobData, ImportProvider } from "./types";
 
@@ -356,6 +373,7 @@ async function getPersistedRowStatus(rowId: string, job: ImportCommitJobData) {
 
 async function getCommitSummary(
 	job: ImportCommitJobData,
+	csvReviewHolds = false,
 ): Promise<CommitSummary> {
 	const rows = await db.query.importStagedRow.findMany({
 		where: and(
@@ -373,7 +391,7 @@ async function getCommitSummary(
 			} else if (row.rowStatus === "committed") {
 				summary.totalCommittedRows++;
 			} else if (
-				row.rowStatus === "blocked" ||
+				(!csvReviewHolds && row.rowStatus === "blocked") ||
 				row.rowStatus === "commit_failed"
 			) {
 				summary.terminalFailedRows++;
@@ -411,7 +429,10 @@ function parseUtcInstant(value: string, fieldName: string): Instant {
 			? Temporal.Instant.from(value)
 			: Temporal.PlainDateTime.from(value).toZonedDateTime("UTC").toInstant();
 		// Millisecond precision, as the stored timestamps keep it.
-		return instant.round({ smallestUnit: "millisecond", roundingMode: "trunc" });
+		return instant.round({
+			smallestUnit: "millisecond",
+			roundingMode: "trunc",
+		});
 	} catch {
 		throw new Error(`Invalid ${fieldName}: ${value}`);
 	}
@@ -439,7 +460,11 @@ async function commitLegacyOpenWorkPeriod(
 		timezone: "UTC",
 		timezoneSource: "backfill",
 	});
-	const previous = await getChainHead(database, payload.employeeId, job.organizationId);
+	const previous = await getChainHead(
+		database,
+		payload.employeeId,
+		job.organizationId,
+	);
 	const clockIn = await insertChainedClockIn(
 		store,
 		{
@@ -808,8 +833,13 @@ function commitReviewedWorkRow(
 				if (attribution.kind === "held") {
 					return markHeld(database, claimed.id, job, attribution.hold);
 				}
-				const payload = claimed.normalizedPayload as unknown as WorkPeriodPayload;
-				await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
+				const payload =
+					claimed.normalizedPayload as unknown as WorkPeriodPayload;
+				await assertEmployeeInOrganization(
+					database,
+					payload.employeeId,
+					job.organizationId,
+				);
 				if (!payload.endsAt) {
 					await commitLegacyOpenWorkPeriod(
 						database,
@@ -829,7 +859,8 @@ function commitReviewedWorkRow(
 					end: parseUtcInstant(payload.endsAt, "endsAt"),
 					recorded: attribution.recorded,
 				});
-				if (created.kind === "held") return markHeld(database, claimed.id, job, created.hold);
+				if (created.kind === "held")
+					return markHeld(database, claimed.id, job, created.hold);
 				await markCommitted(
 					database,
 					claimed.id,
@@ -993,7 +1024,9 @@ export async function commitAcceptedRowsForEntity(
 
 		try {
 			const outcome = provider
-				? await commitReviewedWorkRow(row.id, job, provider)
+				? provider === "csv"
+					? await commitCsvWorkRow(row.id, job)
+					: await commitReviewedWorkRow(row.id, job, provider)
 				: await db.transaction(async (tx): Promise<CommitRowOutcome> => {
 						if (MANUAL_DEPENDENCY_SETUP_ENTITIES.has(job.entityType)) {
 							await acquireExclusiveOrganizationConfigurationGuard(
@@ -1101,6 +1134,6 @@ export async function commitAcceptedRowsForEntity(
 		failedRows: errors.length - heldRows,
 		heldRows,
 		errors,
-		summary: await getCommitSummary(job),
+		summary: await getCommitSummary(job, provider === "csv"),
 	};
 }

@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { CsvWorkReview } from "@/components/settings/import/csv-work-review";
 import { HistoricalVacationImportReview } from "@/components/settings/import/historical-vacation-import-review";
 import { ImportReviewPage } from "@/components/settings/import/import-review-page";
 import { LoadingRegion } from "@/components/ui/loading-region";
@@ -10,6 +11,7 @@ import { importBatch } from "@/db/schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { listCustomerAccounting } from "@/lib/billable-time/accounting/customer-accounting";
 import { getBillableTimeSettings } from "@/lib/billable-time/settings";
+import { getCsvWorkReview } from "@/lib/import-review/csv-work-import";
 import { listImportRowBillability } from "@/lib/import-review/import-row-billability";
 import {
 	getImportReviewSummary,
@@ -50,12 +52,13 @@ async function ImportReviewRouteContent({
 	params,
 	searchParams,
 }: ImportReviewRouteProps) {
-	const [{ batchId }, query, { organizationId }] = await Promise.all([
-		params,
-		searchParams ??
-			Promise.resolve({} as Record<string, string | string[] | undefined>),
-		requireOrgAdminSettingsAccess(),
-	]);
+	const [{ batchId }, query, { organizationId, authContext }] =
+		await Promise.all([
+			params,
+			searchParams ??
+				Promise.resolve({} as Record<string, string | string[] | undefined>),
+			requireOrgAdminSettingsAccess(),
+		]);
 	const batch = await db.query.importBatch.findFirst({
 		where: and(
 			eq(importBatch.id, batchId),
@@ -64,6 +67,30 @@ async function ImportReviewRouteContent({
 	});
 
 	if (!batch) notFound();
+	if (batch.provider === "csv") {
+		const view = await getCsvWorkReview({
+			organizationId,
+			batchId: batch.id,
+			actorUserId: authContext.user.id,
+		});
+		const paging = importReviewPage(query.page, view.summary.total);
+		const rows = view.rows.slice(
+			(paging.page - 1) * IMPORT_REVIEW_PAGE_SIZE,
+			paging.page * IMPORT_REVIEW_PAGE_SIZE,
+		);
+		return (
+			<div className="p-6">
+				<div className="mx-auto max-w-6xl">
+					<CsvWorkReview
+						organizationId={organizationId}
+						batchId={batch.id}
+						view={{ ...view, rows }}
+						paging={paging}
+					/>
+				</div>
+			</div>
+		);
+	}
 	// A customer import from the accounting connection (#906) reviews per-contact decisions.
 	const isCustomerImport = batch.provider === "accounting";
 
