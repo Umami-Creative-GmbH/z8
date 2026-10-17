@@ -33,8 +33,13 @@ function snapshotPolicy(row: Record<string, unknown>): VacationPolicy {
 		]),
 	);
 	// JSON timestamps enter the app at the database boundary.
-	for (const key of ["defaultAnnualDays", "statutoryMinimumDays", "maxCarryoverDays"]) {
-		if (value[key] !== null && value[key] !== undefined) value[key] = String(value[key]);
+	for (const key of [
+		"defaultAnnualDays",
+		"statutoryMinimumDays",
+		"maxCarryoverDays",
+	]) {
+		if (value[key] !== null && value[key] !== undefined)
+			value[key] = String(value[key]);
 	}
 	value.createdAt = new Date(String(value.createdAt));
 	value.updatedAt = new Date(String(value.updatedAt));
@@ -103,9 +108,13 @@ export async function loadEmployeeVacationPolicyPeriods(
 	},
 ): Promise<Map<string, EmployeeVacationPolicyPeriod[]>> {
 	const start = Temporal.PlainDate.from(input.startDate).toString();
-	const endExclusive = Temporal.PlainDate.from(input.endDate).add({ days: 1 }).toString();
+	const endExclusive = Temporal.PlainDate.from(input.endDate)
+		.add({ days: 1 })
+		.toString();
 	if (start >= endExclusive)
-		throw new RangeError("Vacation policy range must end on or after its start");
+		throw new RangeError(
+			"Vacation policy range must end on or after its start",
+		);
 	const employeeIds = [...new Set(input.employeeIds)];
 	const result = new Map<string, EmployeeVacationPolicyPeriod[]>();
 	if (!employeeIds.length) return result;
@@ -123,6 +132,7 @@ export async function loadEmployeeVacationPolicyPeriods(
   dates AS(
    SELECT t.id employee_id,${start}::date AS boundary_date FROM targets t
    UNION SELECT t.id,${endExclusive}::date FROM targets t
+   UNION SELECT t.id,y::date FROM targets t CROSS JOIN generate_series(date_trunc('year',${start}::date)::date,date_trunc('year',${endExclusive}::date)::date,interval '1 year') y
    UNION SELECT t.id,v.effective_start_date FROM targets t JOIN vacation_policy_revision v ON v.organization_id=${input.organizationId}
    UNION SELECT t.id,v.effective_end_date FROM targets t JOIN vacation_policy_revision v ON v.organization_id=${input.organizationId}
    UNION SELECT t.id,a.effective_start_date FROM targets t JOIN vacation_policy_assignment a ON a.organization_id=${input.organizationId} AND (a.assignment_type<>'employee' OR a.employee_id=t.id)
@@ -161,7 +171,10 @@ export async function loadEmployeeVacationPolicyPeriods(
 		else resolution = { status: "missing" };
 		const periods = result.get(row.employee_id) ?? [];
 		const previous = periods.at(-1);
-		if (previous && JSON.stringify(previous.resolution) === JSON.stringify(resolution))
+		if (
+			previous &&
+			JSON.stringify(previous.resolution) === JSON.stringify(resolution)
+		)
 			previous.endDate = row.end_date;
 		else
 			periods.push({

@@ -1,5 +1,5 @@
+import { vacationConfigurationProblem } from "./types";
 import "server-only";
-import { isAuthorizedReconciledAbsence } from "./vacation-reconciliation-authorization";
 import { createHash } from "node:crypto";
 import { and, asc, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
@@ -16,19 +16,20 @@ import {
 } from "@/db/schema";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
-import {
-	acquireOrganizationConfigurationGuard,
-	acquireExclusiveOrganizationConfigurationGuard,
-} from "@/lib/time-tracking/work-transaction";
+import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
 import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
 import {
-	loadWorkingDaysForEmployees,
+	acquireExclusiveOrganizationConfigurationGuard,
+	acquireOrganizationConfigurationGuard,
+} from "@/lib/time-tracking/work-transaction";
+import {
 	type AbsenceDaysDatabase,
+	loadWorkingDaysForEmployees,
 } from "./absence-days-resolver";
-import { reconciliationInputSchema } from "./vacation-reconciliation-types";
 import { loadVacationBalances } from "./vacation-balance-store";
+import { isAuthorizedReconciledAbsence } from "./vacation-reconciliation-authorization";
+import { reconciliationInputSchema } from "./vacation-reconciliation-types";
 
 export class HistoricalVacationError extends Error {
 	constructor(
@@ -362,7 +363,9 @@ async function review(
 	if (!before || !after)
 		throw new HistoricalVacationError(
 			"invalid",
-			"Configure a company vacation policy for the selected year first.",
+			vacationConfigurationProblem(
+				beforeResult.configurations.get(input.employeeId),
+			),
 		);
 	const blockers: string[] = [];
 	const unresolvedHistoricalImportIds = historicalRecords

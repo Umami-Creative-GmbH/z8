@@ -1,3 +1,4 @@
+import type { VacationBalanceConfiguration } from "@/lib/absences/types";
 import type { RefusalActionResult } from "@/lib/effect/refusal-action";
 import type { WorkBalanceSnapshot } from "@/lib/work-balance/service";
 
@@ -40,7 +41,12 @@ export interface TrackingEmployeeImpact {
 		closed: boolean;
 	}>;
 	openingBalance: { id: string; day: string; minutes: number } | null;
-	vacation: Array<{ year: number; allowanceDays: number; remainingDays: number }>;
+	vacation: Array<{
+		year: number;
+		allowanceDays: number | null;
+		remainingDays: number | null;
+		configuration?: VacationBalanceConfiguration;
+	}>;
 }
 export interface TrackingDateImpact {
 	kind: "activation" | "date_change";
@@ -50,4 +56,7 @@ export interface TrackingDateImpact {
 	employees: TrackingEmployeeImpact[];
 	blockers: TrackingDateBlocker[];
 }
-export type TrackingDateActionResult<T> = RefusalActionResult<T, TrackingDateRefusalCode>;
+export type TrackingDateActionResult<T> = RefusalActionResult<
+	T,
+	TrackingDateRefusalCode
+>;

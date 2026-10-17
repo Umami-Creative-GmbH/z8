@@ -1,5 +1,6 @@
 "use client";
 import { useTranslate } from "@tolgee/react";
+import { VacationPolicyConfigurationMessage } from "@/components/absences/vacation-policy-configuration-message";
 import { OrganizationTrackingImpact } from "@/components/organization/organization-tracking-impact";
 import {
 	Table,
@@ -136,6 +137,17 @@ export function EmploymentDateUploadReview({ outcome }: { outcome: EmploymentDat
 										{vacation.year} ·{" "}
 										{t("settings.employmentUpload.vacation-days", "Vacation (days)")}
 									</h3>
+								<VacationPolicyConfigurationMessage
+									configuration={vacation.beforeConfiguration}
+									label={t("organization.tracking.before", "Before")}
+									className="mt-1 text-muted-foreground"
+								/>
+								<VacationPolicyConfigurationMessage
+									configuration={vacation.afterConfiguration}
+									label={t("organization.tracking.after", "After")}
+									className="mt-1 text-muted-foreground"
+								/>
+
 									<dl className="mt-2 grid gap-3 sm:grid-cols-3">
 										<div>
 											<dt>{t("settings.employmentUpload.allowance", "Annual allowance")}</dt>

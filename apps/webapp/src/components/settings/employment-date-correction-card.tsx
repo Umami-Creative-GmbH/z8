@@ -8,6 +8,7 @@ import {
 	commitEmploymentDateCorrectionAction,
 	previewEmploymentDateCorrectionAction,
 } from "@/app/[locale]/(app)/settings/employees/employment-date-actions";
+import { VacationPolicyConfigurationMessage } from "@/components/absences/vacation-policy-configuration-message";
 import { OrganizationTrackingImpact } from "@/components/organization/organization-tracking-impact";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -233,6 +234,17 @@ export function EmploymentDateCorrectionCard({
 								<h3 className="font-medium">
 									{row.year} · {t("settings.employmentCorrection.vacation", "Vacation (days)")}
 								</h3>
+								<VacationPolicyConfigurationMessage
+									configuration={row.beforeConfiguration}
+									label={t("organization.tracking.before", "Before")}
+									className="mt-1 text-muted-foreground"
+								/>
+								<VacationPolicyConfigurationMessage
+									configuration={row.afterConfiguration}
+									label={t("organization.tracking.after", "After")}
+									className="mt-1 text-muted-foreground"
+								/>
+
 								<dl className="grid gap-2 sm:grid-cols-3">
 									<div>
 										<dt>{t("settings.employmentCorrection.allowance", "Allowance")}</dt>

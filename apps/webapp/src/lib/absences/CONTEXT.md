@@ -70,6 +70,10 @@ _Avoid_: legal allowance, minimum vacation
 Vacation an employee has already taken beyond their prorated allowance. It is shown but never reclaimed.
 _Avoid_: negative balance, vacation debt
 
+**Weighted annual policy allowance**:
+The annual allowance combined from an employee's effective vacation policy periods. A full calendar month contributes 1/12 of its annual rate; an intra-month change splits that share by the covered calendar days and the month's actual length. Sum at full precision, then round the combined annual rate and statutory minimum once to two decimals. Apply employment proration afterwards, without restarting employment-month or waiting-period clocks. A custom allowance stays final. Working-week conversion is the separate #990 decision and is not implemented by #989.
+_Avoid_: final policy allowance, latest policy for the whole year
+
 **Vacation balance**:
 An employee's vacation allowance plus carryover and adjustments, minus the absence days of their approved and pending vacation in that year. On an accrual policy it starts at 0 instead of the allowance, and the accrual adjustments carry the allowance. The policy applicable to the employee supplies their allowance; a missing policy or conflicting team policies require review.
 _Avoid_: remaining vacation, leave account
@@ -93,3 +97,9 @@ An absence category whose absences must always name a deputy. Sick leave never r
 _Avoid_: mandatory deputy, deputy rule
 
 A deputy is not the escalation **backup manager** (who takes over one overdue approval) and not the offboarding **replacement** (who permanently takes over a departed employee's duties).
+
+## Vacation policy calculation rollout
+
+Dated readers and automated postings share the organization-scoped `vacation_policy_rollout.calculations_enabled` gate. It defaults to false while the posting slice is staged. Admission activates the period contract for 2026 onward; dates before the organization's known/reviewed eligibility baseline retain legacy company-default selection. Earlier years retain the legacy result. Each employee returns an independent resolved, legacy, missing, or conflicting configuration; an unavailable balance is never presented as a zero allowance. Employee, dashboard, manager, admin, reporting and proration-notice readers use the shared balance store.
+
+Stored accrual and carryover are not rewritten by admission or assignment changes. Existing carryover keeps its legacy company-default permission and expiry treatment independently of the weighted annual policy. The posting slice supplies frozen terms for new transfers. Reviewed historical usage, absence reconciliation and employment-date correction keep their preview overrides; configuration gaps require review before a correction that needs an allowance can commit.

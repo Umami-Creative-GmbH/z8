@@ -43,7 +43,7 @@ export async function loadProrationNotice(
 		loadOrganizationTimezone(database, organizationId),
 	]);
 	// The same balances every other reader shows.
-	const { balances } = await loadVacationBalances(database, {
+	const { balances, configurations } = await loadVacationBalances(database, {
 		organizationId,
 		employeeIds: employees.map((row) => row.id),
 		year: PRORATION_NOTICE_YEAR,
@@ -51,7 +51,23 @@ export async function loadProrationNotice(
 	});
 
 	return employees
-		.flatMap((row) => {
+		.flatMap<ProrationNoticeRow>((row) => {
+			const configuration = configurations.get(row.id);
+			if (
+				configuration?.status === "missing" ||
+				configuration?.status === "conflict"
+			)
+				return [
+					{
+						employeeId: row.id,
+						name: row.name,
+						configuration,
+						fullAllowance: null,
+						proratedAllowance: null,
+						overdrawnDays: null,
+						allowance: null,
+					},
+				];
 			const noticeRow = prorationNoticeRow({
 				employeeId: row.id,
 				name: row.name,

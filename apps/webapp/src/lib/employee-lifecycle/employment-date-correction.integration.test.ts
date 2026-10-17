@@ -159,10 +159,11 @@ describe("reviewed actual employment corrections through public admin actions", 
 		).toBe("2026-05-21");
 	});
 	it("recalculates monthly accrual once while preserving custom allowance and unrelated manual adjustments", async () => {
-		await fixture.pool.query(
-			"update vacation_allowance set accrual_type='monthly' where organization_id=$1",
-			[fixture.organizationId],
-		);
+		await fixture.db.transaction(async (tx) => {
+   const { sql } = await import("drizzle-orm");
+   await tx.execute(sql`select set_config('z8.vacation_effective_date','2026-01-01',true)`);
+   await tx.execute(sql`update vacation_allowance set accrual_type='monthly' where organization_id=${fixture.organizationId}`);
+  });
 		await fixture.pool.query(
 			"insert into employee_vacation_allowance(employee_id,year,custom_annual_days,custom_carryover_days,updated_at) values ($1,2026,36,4,now())",
 			[employeeId],
@@ -512,10 +513,11 @@ describe("reviewed actual employment corrections through public admin actions", 
 		},
 	);
 	it("rolls back employment evidence, grants and audit together when audit persistence fails", async () => {
-		await fixture.pool.query(
-			"update vacation_allowance set accrual_type='monthly' where organization_id=$1",
-			[fixture.organizationId],
-		);
+		await fixture.db.transaction(async (tx) => {
+   const { sql } = await import("drizzle-orm");
+   await tx.execute(sql`select set_config('z8.vacation_effective_date','2026-01-01',true)`);
+   await tx.execute(sql`update vacation_allowance set accrual_type='monthly' where organization_id=${fixture.organizationId}`);
+  });
 		const review = await preview();
 		await fixture.pool.query(
 			"create function t1242_refuse_audit() returns trigger language plpgsql as $$ begin if NEW.action='employee.employment_start_corrected' then raise exception 'injected audit refusal'; end if; return NEW; end $$",

@@ -1,7 +1,9 @@
+import { vacationConfigurationProblem } from "./types";
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, or, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
+import type { db } from "@/db";
 import { member, organization, user } from "@/db/auth-schema";
 import {
 	absenceCategory,
@@ -16,46 +18,44 @@ import {
 } from "@/db/schema";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
-import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
+import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
 import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
+import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import {
-	loadWorkingDaysForEmployees,
-	type AbsenceDaysDatabase,
-} from "./absence-days-resolver";
-import {
+	type AbsenceDayRange,
 	clipAbsenceDayRange,
 	mondayToFriday,
-	type AbsenceDayRange,
 } from "./absence-days";
+import {
+	type AbsenceDaysDatabase,
+	loadWorkingDaysForEmployees,
+} from "./absence-days-resolver";
+import {
+	coverageDays,
+	loadCanonicalCoverage,
+	resolveProposedCoverage,
+} from "./change-request-proposal";
+import { originalAbsence } from "./change-request-records";
 import {
 	normalizeAbsenceDurationInput,
 	toAbsenceEntryDurationFields,
 } from "./duration";
 import { HistoricalVacationError } from "./historical-vacation";
 import { getBlockingOverlapMessage } from "./sick-vacation-override";
+import type { AbsenceWithCategory, VacationBalance } from "./types";
 import { loadVacationBalances } from "./vacation-balance-store";
-import { originalAbsence } from "./change-request-records";
-import {
-	loadCanonicalCoverage,
-	resolveProposedCoverage,
-	coverageDays,
-} from "./change-request-proposal";
-import type { db } from "@/db";
-import type { VacationBalance } from "./types";
-import type { AbsenceWithCategory } from "./types";
-import {
-	reconciliationInputSchema,
-	reconciliationProofSchema,
-	reconciledAbsenceSchema,
-	type ReconciliationInput,
-	type ReconciliationProof,
-} from "./vacation-reconciliation-types";
 import {
 	reconciledAbsenceKey,
 	withinReconciledAbsences,
 } from "./vacation-reconciliation-authorization";
+import {
+	type ReconciliationInput,
+	type ReconciliationProof,
+	reconciledAbsenceSchema,
+	reconciliationInputSchema,
+	reconciliationProofSchema,
+} from "./vacation-reconciliation-types";
 
 type Client = AbsenceDaysDatabase;
 export type PlannedReconciledAbsence = {
@@ -759,7 +759,9 @@ async function reviewPlan(
 				after = afterResult.balances.get(candidate.absence.employeeId);
 			if (!before || !after)
 				blockers.push(
-					"Configure a company vacation policy for every affected year.",
+					vacationConfigurationProblem(
+						beforeResult.configurations.get(candidate.absence.employeeId),
+					),
 				);
 			balances.push({
 				employeeId: candidate.absence.employeeId,

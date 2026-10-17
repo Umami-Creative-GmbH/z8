@@ -9,8 +9,12 @@ import {
 	organizationTrackingSettings,
 } from "@/db/schema";
 import type { AbsenceDaysDatabase } from "@/lib/absences/absence-days-resolver";
-import type { VacationBalance } from "@/lib/absences/types";
+import {
+	type VacationBalance,
+	vacationConfigurationProblem,
+} from "@/lib/absences/types";
 import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
+import { vacationPolicyCalculationsEnabled } from "@/lib/absences/vacation-policy-rollout";
 import {
 	applyEmploymentVacationRefresh,
 	planEmploymentVacationRefresh,
@@ -42,7 +46,10 @@ export type EmploymentDateCorrectionScope = {
 	actorUserId: string;
 	now: Instant;
 };
-export type EmploymentDateCorrectionProposal = { employeeId: string; employmentStartDate: string };
+export type EmploymentDateCorrectionProposal = {
+	employeeId: string;
+	employmentStartDate: string;
+};
 export function parseEmploymentDateCorrection(
 	input: EmploymentDateCorrectionProposal,
 ): EmploymentDateCorrectionProposal {
@@ -59,7 +66,9 @@ export function parseEmploymentDateCorrection(
 		);
 	}
 }
-const asBalance = (balance: VacationBalance | undefined): VacationCorrectionBalance | null =>
+const asBalance = (
+	balance: VacationBalance | undefined,
+): VacationCorrectionBalance | null =>
 	balance
 		? {
 				allowanceDays: balance.allowanceDays,
@@ -80,7 +89,10 @@ export async function loadEmploymentDateCorrectionImpact(
 		.select()
 		.from(employee)
 		.where(
-			and(eq(employee.organizationId, input.organizationId), eq(employee.id, proposal.employeeId)),
+			and(
+				eq(employee.organizationId, input.organizationId),
+				eq(employee.id, proposal.employeeId),
+			),
 		);
 	if (!target)
 		throw new TrackingDateRefusal(
@@ -90,7 +102,9 @@ export async function loadEmploymentDateCorrectionImpact(
 	const [settings] = await client
 		.select()
 		.from(organizationTrackingSettings)
-		.where(eq(organizationTrackingSettings.organizationId, input.organizationId));
+		.where(
+			eq(organizationTrackingSettings.organizationId, input.organizationId),
+		);
 	if (!settings?.activatedAt)
 		throw new TrackingDateRefusal(
 			"blocked",
@@ -126,23 +140,29 @@ export async function loadEmploymentDateCorrectionImpact(
 		);
 	const first = periods[0];
 	const next = periods[1];
-	const employmentBlockers: EmploymentDateCorrectionImpact["employmentBlockers"] = [];
+	const employmentBlockers: EmploymentDateCorrectionImpact["employmentBlockers"] =
+		[];
 	const proposedInstant = parsePlainDate(proposal.employmentStartDate)
 		.toZonedDateTime(timezone)
 		.toInstant();
 	if (
 		target.endDate &&
-		proposal.employmentStartDate > plainDateAt(instantFromDate(target.endDate), "UTC").toString() &&
+		proposal.employmentStartDate >
+			plainDateAt(instantFromDate(target.endDate), "UTC").toString() &&
 		periods.length <= 1
 	)
 		employmentBlockers.push({
 			code: "after_departure",
 			message: "The joining date must precede the recorded last working day.",
 		});
-	if (first?.endedAt && proposedInstant.epochMilliseconds >= first.endedAt.getTime())
+	if (
+		first?.endedAt &&
+		proposedInstant.epochMilliseconds >= first.endedAt.getTime()
+	)
 		employmentBlockers.push({
 			code: "after_departure",
-			message: "The joining date must precede the original employment's departure.",
+			message:
+				"The joining date must precede the original employment's departure.",
 		});
 	if (
 		terms.some(
@@ -156,7 +176,10 @@ export async function loadEmploymentDateCorrectionImpact(
 			message:
 				"The joining date would exclude confirmed employment terms. Resolve those terms before correcting the date.",
 		});
-	if (next?.startedAt && proposedInstant.epochMilliseconds >= next.startedAt.getTime()) {
+	if (
+		next?.startedAt &&
+		proposedInstant.epochMilliseconds >= next.startedAt.getTime()
+	) {
 		employmentBlockers.push({
 			code: "rehire_conflict",
 			message:
@@ -184,8 +207,13 @@ export async function loadEmploymentDateCorrectionImpact(
 			),
 		),
 	);
-	const refresh = await planEmploymentVacationRefresh(client, { ...input, ...proposal, timezone });
+	const refresh = await planEmploymentVacationRefresh(client, {
+		...input,
+		...proposal,
+		timezone,
+	});
 	const vacation: EmploymentDateCorrectionImpact["vacation"] = [];
+	const vacationPolicies: unknown[] = [];
 	const years = new Set([
 		...refresh.accrualSums.keys(),
 		...refresh.carryovers.map((row) => row.year),
@@ -205,16 +233,38 @@ export async function loadEmploymentDateCorrectionImpact(
 			employeeEmploymentStartDateOverrides: new Map([
 				[proposal.employeeId, proposal.employmentStartDate],
 			]),
-			carryoverDaysOverrides: refresh.carryovers.some((row) => row.year === year)
+			carryoverDaysOverrides: refresh.carryovers.some(
+				(row) => row.year === year,
+			)
 				? new Map([
-						[proposal.employeeId, refresh.carryovers.find((row) => row.year === year)?.days ?? "0"],
+						[
+							proposal.employeeId,
+							refresh.carryovers.find((row) => row.year === year)?.days ?? "0",
+						],
 					])
 				: undefined,
 			accrualDaysOverrides: refresh.accrualSums.has(year)
 				? new Map([[proposal.employeeId, refresh.accrualSums.get(year) ?? 0]])
 				: undefined,
 		});
+		const beforeConfiguration = before.configurations.get(proposal.employeeId);
+		const afterConfiguration = after.configurations.get(proposal.employeeId);
+		const problem = [beforeConfiguration, afterConfiguration].find(
+			(row) => row?.status === "missing" || row?.status === "conflict",
+		);
+		if (problem && await vacationPolicyCalculationsEnabled(client,input.organizationId,year))
+			employmentBlockers.push({
+				code: "vacation_policy_configuration",
+				message: vacationConfigurationProblem(problem),
+			});
+		vacationPolicies.push({
+			year,
+			before: before.periods.get(proposal.employeeId),
+			after: after.periods.get(proposal.employeeId),
+		});
 		vacation.push({
+			beforeConfiguration,
+			afterConfiguration,
 			year,
 			before: asBalance(before.balances.get(proposal.employeeId)),
 			after: asBalance(after.balances.get(proposal.employeeId)),
@@ -237,7 +287,9 @@ export async function loadEmploymentDateCorrectionImpact(
 			annual &&
 			JSON.stringify(annual.before) !== JSON.stringify(annual.after) &&
 			!work.blockers.some(
-				(row) => row.kind === "month_closed" && row.month === closure.month.slice(0, 7),
+				(row) =>
+					row.kind === "month_closed" &&
+					row.month === closure.month.slice(0, 7),
 			)
 		)
 			work.blockers.push({
@@ -260,6 +312,7 @@ export async function loadEmploymentDateCorrectionImpact(
 		fingerprint: trackingReviewFingerprint({
 			kind: "employment_correction",
 			impact,
+			vacationPolicies,
 			periods,
 			terms,
 			refresh: {
@@ -285,7 +338,8 @@ export async function previewEmploymentDateCorrection(
 }
 export async function validateEmploymentDateCorrectionReview(
 	client: AbsenceDaysDatabase,
-	input: EmploymentDateCorrectionScope & EmploymentDateCorrectionProposal & { fingerprint: string },
+	input: EmploymentDateCorrectionScope &
+		EmploymentDateCorrectionProposal & { fingerprint: string },
 ) {
 	await assertTrackingDateAdministrator(client, input);
 	const impact = await loadEmploymentDateCorrectionImpact(client, input);
@@ -297,7 +351,8 @@ export async function validateEmploymentDateCorrectionReview(
 	if (impact.blockers.length || impact.employmentBlockers.length)
 		throw new TrackingDateRefusal(
 			"blocked",
-			impact.employmentBlockers[0]?.message ?? "Reopen affected closed months before saving.",
+			impact.employmentBlockers[0]?.message ??
+				"Reopen affected closed months before saving.",
 		);
 	return impact;
 }
@@ -313,18 +368,26 @@ export async function applyReviewedEmploymentDateCorrection(
 	await assertTrackingDateAdministrator(client, input);
 	const impact = input.reviewedImpact;
 	if (impact.employmentBlockers.length || impact.blockers.length)
-		throw new TrackingDateRefusal("blocked", "Resolve the reviewed blockers before saving.");
+		throw new TrackingDateRefusal(
+			"blocked",
+			"Resolve the reviewed blockers before saving.",
+		);
 	const timestamp = dateFromInstant(input.now);
 	await client
 		.update(employee)
 		.set({
 			startDate: dateFromInstant(
-				parsePlainDate(impact.employmentStartDate).toZonedDateTime("UTC").toInstant(),
+				parsePlainDate(impact.employmentStartDate)
+					.toZonedDateTime("UTC")
+					.toInstant(),
 			),
 			updatedAt: timestamp,
 		})
 		.where(
-			and(eq(employee.organizationId, input.organizationId), eq(employee.id, impact.employeeId)),
+			and(
+				eq(employee.organizationId, input.organizationId),
+				eq(employee.id, impact.employeeId),
+			),
 		);
 	await client.execute(
 		sql`select employee_employment_period_backfill_legacy(${input.organizationId}, ${impact.employeeId}::uuid)`,
@@ -350,12 +413,16 @@ export async function applyReviewedEmploymentDateCorrection(
 				startedAt: dateFromInstant(
 					parsePlainDate(impact.employmentStartDate)
 						.toZonedDateTime(
-							period?.startProvenance === "recorded" ? (org?.timezone ?? "UTC") : "UTC",
+							period?.startProvenance === "recorded"
+								? (org?.timezone ?? "UTC")
+								: "UTC",
 						)
 						.toInstant(),
 				),
 				startProvenance:
-					period?.startProvenance === "unknown" ? "legacy" : (period?.startProvenance ?? "legacy"),
+					period?.startProvenance === "unknown"
+						? "legacy"
+						: (period?.startProvenance ?? "legacy"),
 			})
 			.where(
 				and(
@@ -408,14 +475,19 @@ export async function commitEmploymentDateCorrection(
 ) {
 	const proposal = parseEmploymentDateCorrection(input);
 	const reason = typeof input.reason === "string" ? input.reason.trim() : "";
-	if (!reason || reason.length > 1000 || !/^[a-f0-9]{64}$/.test(input.fingerprint))
+	if (
+		!reason ||
+		reason.length > 1000 ||
+		!/^[a-f0-9]{64}$/.test(input.fingerprint)
+	)
 		throw new TrackingDateRefusal(
 			"invalid_input",
 			"Review the correction and enter a reason of at most 1,000 characters.",
 		);
 	return commitReviewedTrackingChange(database, {
 		...input,
-		plan: (client) => validateEmploymentDateCorrectionReview(client, { ...input, ...proposal }),
+		plan: (client) =>
+			validateEmploymentDateCorrectionReview(client, { ...input, ...proposal }),
 		write: async (client, reviewed, audit) => {
 			await applyReviewedEmploymentDateCorrection(
 				client,

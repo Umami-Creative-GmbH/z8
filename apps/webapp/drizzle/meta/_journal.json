@@ -1856,6 +1856,13 @@
       "when": 1807545600000,
       "tag": "0264_vacation_policy_history",
       "breakpoints": true
+    },
+    {
+      "idx": 265,
+      "version": "7",
+      "when": 1807632000000,
+      "tag": "0265_vacation_policy_calculation_gate",
+      "breakpoints": true
     }
   ]
 }
