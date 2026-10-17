@@ -344,11 +344,11 @@ async function seed() {
 	);
 	await admin.query(
 		`insert into kiosk_frozen_refusal (organization_id, kiosk_id, operation_id, employee_id, action,
-			claimed_at, time_source, reason, command, refused_at) values
-		 ($1, $2, gen_random_uuid(), $3, 'clock_in', '2026-08-09T06:00:00Z', 'device_clock', 'wrong_pin',
-		  '{"note":"never-t1170"}', '2026-08-09T09:00:00Z'),
-		 ($1, $2, gen_random_uuid(), $4, 'clock_out', '2026-08-09T16:00:00Z', 'server_anchor', 'kiosk_rotated',
-		  '{}', '2026-08-10T09:00:00Z')`,
+			claimed_at, timezone, time_source, reason, command, refused_at) values
+		 ($1, $2, gen_random_uuid(), $3, 'clock_in', '2026-08-09T06:00:00Z', 'Europe/Berlin', 'device_clock',
+		  'wrong_pin', '{"note":"never-t1170"}', '2026-08-09T09:00:00Z'),
+		 ($1, $2, gen_random_uuid(), $4, 'clock_out', '2026-08-09T16:00:00Z', 'Europe/Berlin', 'server_anchor',
+		  'kiosk_rotated', '{}', '2026-08-10T09:00:00Z')`,
 		[ORG, ids.kiosk, ids.ada, ids.bob],
 	);
 }

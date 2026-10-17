@@ -11,9 +11,16 @@ import {
 	kioskClockWriter,
 	liveClockOutWriter,
 } from "../close-active-work";
-import { judgeKioskPinAttempt, type KioskPinAttempt } from "../kiosk/pin-store";
+import {
+	judgeKioskPinAttempt,
+	type KioskPinJudgment,
+	type QueuedKioskPinAttempt,
+} from "../kiosk/pin-store";
 import { type KioskPinVerification, verifyKioskPin } from "../kiosk/verify-kiosk-pin";
+import { kioskDeviceInfo } from "../receipt-actor";
+import { isValidIanaTimezone } from "../timezone-capture";
 import type {
+	BreakStart,
 	ClockCommandAt,
 	ClockCommandFreshness,
 	ClockCommandZone,
@@ -89,18 +96,19 @@ export type FrozenKioskPinAttempt = {
  * whatever Clocking then does: the PIN row's lock is released before any work
  * transaction starts, so it never takes a place in the work transaction's
  * acquisition order. When the PIN is right, issues the proof of that one
- * command. Queued attempts never count toward the online per-kiosk limit.
+ * command. Queued attempts never count toward the online per-kiosk limit; the
+ * arrival throttle answers `throttled` instead of checking (ADR 0011), and a
+ * resend of a judged command gets its stored verdict.
  */
 export async function proveFrozenKioskPin(
 	attempt: FrozenKioskPinAttempt,
 	clock: Clock,
-	judge: (attempt: KioskPinAttempt, clock: Clock) => Promise<KioskPinVerification> = (
+	judge: (attempt: QueuedKioskPinAttempt, clock: Clock) => Promise<KioskPinJudgment> = (
 		input,
 		judgeClock,
 	) => db.transaction((tx) => judgeKioskPinAttempt(tx, input, judgeClock)),
 ): Promise<
-	| { status: "verified"; proof: KioskPinProof }
-	| Exclude<KioskPinVerification, { status: "verified" }>
+	{ status: "verified"; proof: KioskPinProof } | Exclude<KioskPinJudgment, { status: "verified" }>
 > {
 	const verification = await judge(
 		{
@@ -108,6 +116,7 @@ export async function proveFrozenKioskPin(
 			employeeId: attempt.employeeId,
 			at: attempt.occurredAt,
 			offline: true,
+			operationId: attempt.operationId,
 			pin: attempt.pin,
 		},
 		clock,
@@ -146,6 +155,23 @@ export function clockWriterOf(command: {
 	return command.principal.kind === "kiosk"
 		? kioskClockWriter(command.principal.kioskId, command.principal.pin.frozen?.timeSource)
 		: liveClockOutWriter(command.channel);
+}
+
+/**
+ * The source evidence of the entry a kiosk command's closure writes at a break's
+ * start (#885): the kiosk, with that start's own time source (an offline kiosk's
+ * queued start), never the time source of the resume or clock-out that ends it.
+ * Undefined, the entry keeps the writer's evidence.
+ */
+export function breakStartEntrySource(
+	writer: CloseActiveWorkWriter,
+	start: BreakStart | null,
+): { ipAddress: string | null; deviceInfo: string } | undefined {
+	if (!writer.kioskId || !start) return undefined;
+	return {
+		ipAddress: writer.ipAddress ?? null,
+		deviceInfo: kioskDeviceInfo(writer.kioskId, start.timeSource),
+	};
 }
 
 /**
@@ -202,6 +228,22 @@ function isKioskCommandShape(query: KioskAuthorizationQuery, proof: KioskPinProo
 	);
 }
 
+/**
+ * A kiosk command's device zone: an immediate one runs in the kiosk's current
+ * zone; a frozen one (#885) in the zone the kiosk recorded when the employee
+ * acted offline (timekeeping: capture at the action, not at sync time), which
+ * must be a valid IANA zone.
+ */
+function isKioskCommandZone(
+	query: KioskAuthorizationQuery,
+	proof: KioskPinProof,
+	kioskZone: string,
+): boolean {
+	const device = query.zone?.device;
+	if (!device) return false;
+	return proof.frozen ? isValidIanaTimezone(device) : device === kioskZone;
+}
+
 /** Whether a command claims the kiosk channel or principal at all. */
 export function isKioskCommand(query: Pick<KioskAuthorizationQuery, "principal" | "channel">) {
 	return query.principal.kind === "kiosk" || query.channel === "kiosk";
@@ -211,7 +253,8 @@ export function isKioskCommand(query: Pick<KioskAuthorizationQuery, "principal" 
  * The subject of a kiosk command when every kiosk condition holds, else null:
  * the kiosk principal on the kiosk channel, a live PIN proof issued for this
  * kiosk and employee, an active (paired, unrevoked) kiosk of the command's
- * organization whose zone is the command's device zone, and the employee's own
+ * organization whose zone is the command's device zone (a frozen command's:
+ * the zone it was recorded in, `isKioskCommandZone`), and the employee's own
  * record, active and assigned to the kiosk's location.
  */
 export async function authorizedKioskSubject(
@@ -242,7 +285,7 @@ export async function authorizedKioskSubject(
 			),
 		)
 		.limit(1);
-	if (!active || query.zone?.device !== active.timezone) return null;
+	if (!active || !isKioskCommandZone(query, principal.pin, active.timezone)) return null;
 	const assigned = await isEmployeeActivelyAssignedToLocation(db, {
 		organizationId: query.organizationId,
 		employeeId: row.id,

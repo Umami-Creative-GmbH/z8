@@ -27,6 +27,8 @@ export type KioskFrozenRefusal = {
 	action: KioskFrozenAction;
 	/** The instant the command claims. */
 	claimedAt: Instant;
+	/** The zone the kiosk recorded the command in: its claimed time is shown in it. */
+	timezone: string;
 	timeSource: KioskTimeSource;
 	reason: KioskFrozenRefusalReason;
 	/** The reason's details as the kiosk was answered, e.g. `{ lockedUntil }`, `{ month }`, `{ reason }`. */
@@ -36,6 +38,19 @@ export type KioskFrozenRefusal = {
 	/** When Z8 refused it. */
 	refusedAt: Instant;
 };
+
+/** What telling people about a refusal reads of it. */
+export type KioskFrozenRefusalNotice = Pick<
+	KioskFrozenRefusal,
+	| "organizationId"
+	| "kioskId"
+	| "operationId"
+	| "employee"
+	| "action"
+	| "claimedAt"
+	| "timezone"
+	| "reason"
+>;
 
 /** A refusal recorded earlier for this kiosk's operation. */
 export type RecordedKioskFrozenRefusal = {
@@ -48,8 +63,10 @@ export type RecordedKioskFrozenRefusal = {
 /**
  * Where refusals go. `record` is called exactly once for each refused
  * judgment, before the kiosk is answered; if it throws, the kiosk is answered
- * `unknown` and resends. `recall` answers a resend (and the lookup) from the
- * record instead of judging the command, and its PIN, again.
+ * `unknown` and asks again. `recall` answers a resend (and the lookup) from the
+ * record instead of judging the command, and its PIN, again; it may throw too
+ * (e.g. a notification owed for the record still cannot be sent), and the kiosk
+ * then asks again later.
  */
 export type KioskFrozenRefusalLedger = {
 	recall(input: {

@@ -4,7 +4,7 @@ import { systemClock } from "@/lib/datetime/temporal-core";
 import { clocking } from "@/lib/time-tracking/clocking";
 import { createKioskFrozenCommandService } from "./frozen-command-service";
 import { createKioskFrozenRefusalLedger } from "./frozen-refusal-store";
-import { kioskOfflineSecret } from "./offline-contact";
+import { kioskOfflineSecret } from "./kiosk-session.server";
 
 /**
  * The production frozen kiosk command endpoints (#1289): the production Clocking

@@ -24,7 +24,7 @@ The device stays paired until you pair it again or revoke the kiosk. Changes to 
 
 | Action | Effect |
 |--------|--------|
-| **Pair again** | Issues a new pairing code. If a device is paired, its token is rotated: that device stops working at once and must be paired again with the new code. |
+| **Pair again** | Issues a new pairing code. If a device is paired, its token is rotated: that device stops working at once and must be paired again with the new code. For a kiosk with offline mode on, Z8 warns you first: clockings it saved offline and has not sent yet are refused when it reconnects. |
 | **Revoke** | The kiosk stops working at its next request and cannot be paired again. Create a new kiosk to replace it. |
 
 ---
@@ -74,15 +74,21 @@ With offline mode, a kiosk keeps clocking when its connection drops, also after 
 
 The kiosk cannot check a PIN offline, and it keeps nothing that could: it seals each entered PIN so that only Z8 can read it. When the connection is back, the kiosk sends its saved clockings in the order they happened. Z8 then checks each PIN against the employee's current kiosk PIN, applies the PIN lockout in the order the attempts happened, and records each clocking at the time it happened. Each clocking is recorded once, even when the kiosk has to send it again.
 
-The kiosk applies its limit of 30 PIN attempts per minute itself while offline.
+The kiosk applies its limit of 30 PIN attempts per minute itself while offline. If five saved PINs of the same employee turn out wrong within 15 minutes of arriving, Z8 checks that employee's further saved clockings only after those 15 minutes. The kiosk keeps them and sends them again, so nothing is lost.
 
 ### Time of offline clockings
 
-The kiosk takes the time from Z8's clock at its last contact and counts on with a clock the device user cannot change. After a restart without a connection it uses the device clock instead, and the entry records which time source was used. Z8 accepts offline clockings up to 7 days late.
+The kiosk takes the time from Z8's clock at its last contact and counts on with a clock the device user cannot change. After a restart without a connection, or after the device was asleep, it uses the device clock instead, and the entry records which time source was used. Clockings are recorded in the time zone the kiosk had when the employee clocked. Z8 accepts offline clockings up to 7 days late.
 
 ### Refused offline clockings
 
-Z8 refuses a saved clocking it cannot accept, for example a wrong or locked PIN, an employee no longer assigned to the location, or a time outside the accepted window. The kiosk shows a short notice on its home screen. If a kiosk is revoked or paired again while offline, Z8 refuses all of its saved clockings.
+Z8 refuses a saved clocking it cannot accept, for example a wrong or locked PIN, an employee no longer assigned to the location, or a time outside the accepted window. If a kiosk is revoked or paired again while offline, Z8 refuses all of its saved clockings.
+
+For each refused clocking:
+
+- the kiosk shows a short notice on its home screen;
+- the employee gets a notification saying what was not recorded and why. For a kiosk-only employee, their managers get it instead;
+- owners and admins see it under **Refused offline clockings** in **Settings -> Kiosks**, with the employee, the action, the time it claimed, the time source and the reason.
 
 ### What the kiosk keeps
 

@@ -1723,6 +1723,13 @@
       "when": 1805904000000,
       "tag": "0245_kiosk_frozen_refusal",
       "breakpoints": true
+    },
+    {
+      "idx": 246,
+      "version": "7",
+      "when": 1805990400000,
+      "tag": "0246_work_period_break_time_source",
+      "breakpoints": true
     }
   ]
 }

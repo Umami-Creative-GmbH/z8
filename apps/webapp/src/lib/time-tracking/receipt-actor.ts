@@ -1,4 +1,5 @@
 import type { CompletedWorkActorKind } from "@/db/schema";
+import type { KioskTimeSource } from "./clocking/types";
 
 /**
  * Who a completed-work receipt records as acting (#860). A human acts for
@@ -20,16 +21,8 @@ export const KIOSK_CLOCK_WRITER_VERSION = 1;
  * came from, `kiosk:<kioskId>:offline:<timeSource>`. Live kiosk entries keep
  * `kiosk:<kioskId>`.
  */
-export function kioskDeviceInfo(kioskId: string, offlineTimeSource?: string) {
+export function kioskDeviceInfo(kioskId: string, offlineTimeSource?: KioskTimeSource) {
 	return offlineTimeSource ? `kiosk:${kioskId}:offline:${offlineTimeSource}` : `kiosk:${kioskId}`;
-}
-
-/** The kiosk and, for offline kiosk clocking, the time source a kiosk entry's device evidence names. */
-export function parseKioskDeviceInfo(
-	deviceInfo: string | null | undefined,
-): { kioskId: string; offlineTimeSource: string | null } | null {
-	const match = /^kiosk:([0-9a-f-]{36})(?::offline:([a-z_]+))?$/.exec(deviceInfo ?? "");
-	return match ? { kioskId: match[1], offlineTimeSource: match[2] ?? null } : null;
 }
 
 /** The actor a writer's receipt records: a kiosk writer records its kiosk. */

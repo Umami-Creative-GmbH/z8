@@ -68,11 +68,24 @@ export type ClockCommandAdmission = keyof typeof CLOCK_COMMAND_ADMISSION_WINDOWS
 /** The one accepted operation ID representation: a lowercase canonical UUID. */
 export const CLOCK_COMMAND_OPERATION_ID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-const operationId = z.string().regex(CLOCK_COMMAND_OPERATION_ID);
-const utcInstant = z
+/** An operation ID in its one representation; frozen kiosk commands (#1289) use it too. */
+export const clockCommandOperationIdSchema = z.string().regex(CLOCK_COMMAND_OPERATION_ID);
+const operationId = clockCommandOperationIdSchema;
+/** A UTC instant with at most millisecond precision, ending in `Z`, that Temporal can read. */
+export const clockCommandUtcInstantSchema = z
 	.string()
 	.regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/)
-	.refine((value) => !Number.isNaN(Date.parse(value)));
+	.refine(isReadableInstant);
+const utcInstant = clockCommandUtcInstantSchema;
+
+function isReadableInstant(value: string): boolean {
+	try {
+		parseInstant(value);
+		return true;
+	} catch {
+		return false;
+	}
+}
 const origin = z.string().refine((value) => {
 	try {
 		return new URL(value).origin === value;

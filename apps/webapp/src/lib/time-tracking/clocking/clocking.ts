@@ -58,6 +58,8 @@ import {
 	BreakStartCollisionError,
 	type BreakStartWrite,
 	breakInProgressChanged,
+	breakStartColumns,
+	breakStartOfRow,
 	closureEnd,
 	committedResumeStart,
 	findLiveWork,
@@ -87,6 +89,7 @@ import {
 } from "./clock-out";
 import type { ClockFollowUps, ClockOutAdvice, ClosedLiveWork } from "./follow-ups";
 import { FrozenCommandNotAcceptedError } from "./frozen";
+import { breakStartEntrySource } from "./kiosk";
 import { LegacyCommandNotAcceptedError } from "./legacy-command";
 import { stampExecutedClockEvent } from "./position-stamp";
 import type { ClockTransactions } from "./transactions";
@@ -105,6 +108,7 @@ import type {
 	ClockOutRefusal,
 	ClockRefusal,
 	ClockTarget,
+	KioskTimeSource,
 	OperationIdentity,
 } from "./types";
 import {
@@ -497,8 +501,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				deletedAt: workPeriod.deletedAt,
 				workLocationType: workPeriod.workLocationType,
 				projectId: workPeriod.projectId,
-				breakStartedAt: workPeriod.breakStartedAt,
-				breakStartedZone: workPeriod.breakStartedZone,
+				...breakStartColumns,
 			})
 			.from(workPeriod)
 			.where(
@@ -530,10 +533,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			workLocationType: (period.workLocationType as WorkLocationType | null) ?? null,
 			projectId: period.projectId,
 			// The open break a closure ends at (#861); re-checked under the work transaction.
-			breakInProgress:
-				period.breakStartedAt && period.breakStartedZone
-					? { instant: instantFromDate(period.breakStartedAt), zone: period.breakStartedZone }
-					: null,
+			breakInProgress: breakStartOfRow(period),
 		};
 	}
 
@@ -626,6 +626,10 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						capture: eventCapture(command, end.instant, end.zone ?? command.zone.device),
 						// The end reading belongs to the closed work, also when it ends at a break's start.
 						closingVehicleUse: clockOutClosingVehicleUse(coordination.db, command),
+						// Ended at a break's start, the entry keeps that start's time source (#885).
+						entrySource: end.atBreakStart
+							? breakStartEntrySource(plan.writer, target.breakInProgress)
+							: undefined,
 					});
 					if (closed.disposition === "executed" && breakChanged) {
 						throw new BreakInProgressChangedError();
@@ -820,6 +824,8 @@ export function createClocking(ports: ClockingPorts): Clocking {
 							resume: { instant: eventInstant, capture: eventCapture(command, eventInstant) },
 						},
 						closingVehicleUse: vehicle.closing,
+						// The entry at the break's start keeps that start's time source (#885).
+						closeEntrySource: breakStartEntrySource(plan.writer, open),
 					});
 					if (taken.disposition === "executed" && breakChanged) {
 						throw new BreakInProgressChangedError();
@@ -960,6 +966,13 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		return { subject };
 	}
 
+	/** A frozen kiosk start's time source (#885), kept for the entry its closure writes at it. */
+	function frozenTimeSourceOf(command: BreakInProgressCommand): { timeSource?: KioskTimeSource } {
+		const timeSource =
+			command.principal.kind === "kiosk" ? command.principal.pin.frozen?.timeSource : undefined;
+		return timeSource ? { timeSource } : {};
+	}
+
 	/** A frozen start's own instant, which its committed replay must match (#1289). */
 	function frozenStartOf(command: BreakInProgressCommand) {
 		return command.payload && command.at.kind === "occurred" ? command.at.instant : undefined;
@@ -970,7 +983,9 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			return {
 				code: "under_review",
 				review:
-					error.conflictType === "pending_time_correction_approval" ? "time_correction" : "approval",
+					error.conflictType === "pending_time_correction_approval"
+						? "time_correction"
+						: "approval",
 			};
 		}
 		if (error instanceof BreakStartCollisionError) return { code: "collision" };
@@ -1032,7 +1047,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						workPeriodId: live.workPeriodId,
 						operationId: command.identity.id,
 						replayable: isReplayable(command.identity),
-						start: { instant, zone },
+						start: { instant, zone, ...frozenTimeSourceOf(command) },
 						...(command.payload ? { frozen: { admission: coordination.admission } } : {}),
 					}),
 			);

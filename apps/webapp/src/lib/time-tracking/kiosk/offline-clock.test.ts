@@ -24,8 +24,8 @@ describe("kiosk offline clock (#1292)", () => {
 
 		clock.noteContact("2026-10-16T08:00:00Z");
 		clocks.monotonic += 90_500.75;
-		// The device clock is wrong and changing it changes nothing.
-		clocks.device = parseInstant("2030-01-01T00:00:00Z");
+		// The device clock is wrong, and setting it back changes nothing.
+		clocks.device = parseInstant("2020-01-01T00:00:00Z");
 
 		expect(clock.now()).toEqual({
 			occurredAt: "2026-10-16T08:01:30.5Z",
@@ -50,6 +50,37 @@ describe("kiosk offline clock (#1292)", () => {
 		clocks.monotonic = 61_000;
 
 		expect(clock.now().occurredAt).toBe("2026-10-16T08:05:01Z");
+	});
+
+	it("drops the anchor when the device slept, and uses the device clock until the next contact", () => {
+		const { clocks, clock } = fakeClocks({ monotonic: 0, device: "2026-10-16T18:00:00Z" });
+		clock.noteContact("2026-10-16T18:00:00Z");
+		// An offline tablet sleeps overnight: its monotonic clock missed the night.
+		clocks.monotonic += 60 * 60_000;
+		clocks.device = parseInstant("2026-10-17T07:00:00Z");
+
+		expect(clock.now()).toEqual({ occurredAt: "2026-10-17T07:00:00Z", timeSource: "device_clock" });
+		clocks.monotonic += 60_000;
+		clocks.device = parseInstant("2026-10-17T07:01:00Z");
+		expect(clock.now().timeSource).toBe("device_clock");
+
+		clock.noteContact("2026-10-17T07:02:00Z");
+		expect(clock.now()).toEqual({
+			occurredAt: "2026-10-17T07:02:00Z",
+			timeSource: "server_anchor",
+		});
+	});
+
+	it("keeps the anchor while the device clock runs within a few seconds of the monotonic one", () => {
+		const { clocks, clock } = fakeClocks({ monotonic: 0, device: "2026-10-16T18:00:00Z" });
+		clock.noteContact("2026-10-16T08:00:00Z");
+		clocks.monotonic += 600_000;
+		clocks.device = parseInstant("2026-10-16T18:10:04Z");
+
+		expect(clock.now()).toEqual({
+			occurredAt: "2026-10-16T08:10:00Z",
+			timeSource: "server_anchor",
+		});
 	});
 
 	it("ignores a contact time it cannot read", () => {

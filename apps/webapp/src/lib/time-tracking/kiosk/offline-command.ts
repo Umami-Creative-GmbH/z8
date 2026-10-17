@@ -7,7 +7,15 @@ import {
 	clockOutVehicleUse,
 } from "../vehicle-use/clock-vehicle-use";
 import { organizationVehicleIdOf, type WorkVehicleUse } from "../vehicle-use/work-vehicle-use";
-import { KIOSK_FROZEN_COMMAND_VERSION, type KioskFrozenCommand } from "./frozen-command";
+import {
+	KIOSK_FROZEN_COMMAND_VERSION,
+	type KioskContactAnchor,
+	type KioskFrozenCommand,
+	type KioskFrozenSubmission,
+	parseKioskFrozenSubmission,
+	type SealedKioskPin,
+} from "./frozen-command";
+import { allowedFrom, type KioskAction } from "./kiosk-actions";
 import type { CachedKioskEmployee } from "./offline-cache";
 import type { KioskEmployeeState, KioskVehicleUse } from "./protocol";
 
@@ -18,14 +26,6 @@ import type { KioskEmployeeState, KioskVehicleUse } from "./protocol";
  * client-safe.
  */
 
-/** What an employee presses; `end_day` is a clock-out while on a break (it ends at the break's start). */
-export type KioskOfflineAction =
-	| "clock_in"
-	| "start_break"
-	| "clock_out"
-	| "resume_break"
-	| "end_day";
-
 /** The work a clock-out closes: a known period, or the one the kiosk's own queued command started. */
 type CloseTarget = { workPeriodId: string } | { clockInOperationId: string };
 
@@ -35,7 +35,7 @@ export type KioskOfflineEmployeeView = {
 	state: KioskEmployeeState;
 	/** When the server last told the kiosk the employee's state (UTC ISO). */
 	learnedAt: string;
-	/** How many of the employee's commands wait on this kiosk, not yet confirmed. */
+	/** How many of the employee's commands wait on this kiosk, not yet confirmed by Z8. */
 	queued: number;
 	/** The work a clock-out closes; null while clocked out. */
 	closes: CloseTarget | null;
@@ -84,12 +84,17 @@ function isClockVehicleUse(value: unknown): value is ClockVehicleUse {
 	return typeof value === "object" && value !== null && !("readingKm" in value);
 }
 
+/** What the employee pressed for a frozen command, given the state it followed. */
+function pressedFor(command: KioskFrozenCommand, state: KioskEmployeeState): KioskAction {
+	return command.action === "clock_out" && state.status === "on_break" ? "end_day" : command.action;
+}
+
 /** One queued command applied to what the kiosk believes; null when the state does not allow it. */
 function applied(believed: Believed, command: KioskFrozenCommand): Believed | null {
 	const { state } = believed;
+	if (!allowedFrom(state, pressedFor(command, state))) return null;
 	switch (command.action) {
 		case "clock_in":
-			if (state.status !== "clocked_out") return null;
 			return {
 				state: {
 					status: "clocked_in",
@@ -101,6 +106,7 @@ function applied(believed: Believed, command: KioskFrozenCommand): Believed | nu
 				vehicleUse: withLive(believed.vehicleUse, clockInVehicleUse(command.vehicleUse)),
 			};
 		case "start_break":
+			// Always true here (`allowedFrom`); it narrows the state for the spread below.
 			if (state.status !== "clocked_in") return null;
 			return {
 				...believed,
@@ -113,7 +119,6 @@ function applied(believed: Believed, command: KioskFrozenCommand): Believed | nu
 				breakStart: { at: command.occurredAt, timezone: command.timezone },
 			};
 		case "resume_break": {
-			if (state.status !== "on_break") return null;
 			const live = believed.vehicleUse?.live ?? null;
 			const { closed, resumed } = breakVehicleUse(live, command.vehicleUse);
 			return {
@@ -128,7 +133,6 @@ function applied(believed: Believed, command: KioskFrozenCommand): Believed | nu
 			};
 		}
 		case "clock_out": {
-			if (state.status === "clocked_out") return null;
 			const closed = clockOutVehicleUse(believed.vehicleUse?.live ?? null, command.vehicleUse);
 			return {
 				state: { status: "clocked_out" },
@@ -142,12 +146,14 @@ function applied(believed: Believed, command: KioskFrozenCommand): Believed | nu
 
 /**
  * The employee as an offline kiosk shows them: their cached state, then the
- * kiosk's own queued commands for them in queue order. A queued command the
- * state does not allow is skipped (the cache may already show it committed).
+ * kiosk's own commands for them in queue order, those Z8 already confirmed
+ * (until a cached state learned after them arrives) and those still queued. A
+ * command the state does not allow is skipped (the cache may already show it).
  */
 export function kioskOfflineEmployeeView(
 	employee: CachedKioskEmployee,
 	queued: readonly KioskFrozenCommand[],
+	options: { confirmed?: ReadonlySet<string> } = {},
 ): KioskOfflineEmployeeView {
 	let believed = believedFromCache(employee);
 	const own = queued.filter((command) => command.employeeId === employee.id);
@@ -156,7 +162,7 @@ export function kioskOfflineEmployeeView(
 	return {
 		employee: { id: employee.id, name: employee.name },
 		learnedAt: employee.learnedAt,
-		queued: own.length,
+		queued: own.filter((command) => !options.confirmed?.has(command.operationId)).length,
 		...rest,
 		endsDayAt: believed.state.status === "on_break" ? believed.state.breakSince : null,
 		...(vehicleUse ? { vehicleUse } : {}),
@@ -165,7 +171,7 @@ export function kioskOfflineEmployeeView(
 
 export type KioskOfflineCommandInput = {
 	view: KioskOfflineEmployeeView;
-	action: KioskOfflineAction;
+	action: KioskAction;
 	/** Made once, before the PIN is sealed for it. */
 	operationId: string;
 	kioskId: string;
@@ -193,10 +199,9 @@ export function buildKioskOfflineCommand(
 		timeSource: input.timeSource,
 		timezone: input.timezone,
 	};
-	const status = view.state.status;
+	if (!allowedFrom(view.state, action)) return null;
 	switch (action) {
 		case "clock_in": {
-			if (status !== "clocked_out") return null;
 			const use =
 				isClockVehicleUse(vehicleUse) && vehicleUse.vehicle
 					? {
@@ -212,9 +217,9 @@ export function buildKioskOfflineCommand(
 			};
 		}
 		case "start_break":
-			return status === "clocked_in" ? { ...base, action: "start_break" } : null;
+			return { ...base, action: "start_break" };
 		case "resume_break": {
-			if (status !== "on_break" || !view.breakStart) return null;
+			if (!view.breakStart) return null;
 			const use =
 				vehicleUse && "readingKm" in vehicleUse ? { readingKm: vehicleUse.readingKm } : undefined;
 			return {
@@ -226,8 +231,7 @@ export function buildKioskOfflineCommand(
 		}
 		case "clock_out":
 		case "end_day": {
-			const allowed = action === "end_day" ? status === "on_break" : status === "clocked_in";
-			if (!allowed || !view.closes) return null;
+			if (!view.closes) return null;
 			const use =
 				isClockVehicleUse(vehicleUse) && Object.keys(vehicleUse).length > 0
 					? vehicleUse
@@ -242,4 +246,37 @@ export function buildKioskOfflineCommand(
 			};
 		}
 	}
+}
+
+/** What the employee answered at the vehicle step, if it asked (#1123). */
+export type KioskOfflineVehicleAnswer = {
+	vehicleUse?: ClockVehicleUse | BreakVehicleUse;
+	/** Entered vehicle use that cannot be recorded; the action runs without it. */
+	leftOut: boolean;
+};
+
+/**
+ * The submission an offline action freezes (#1292): the frozen command with the
+ * PIN sealed at PIN entry and the contact anchor, exactly as Z8 will parse it.
+ * Vehicle use Z8 would not read is left out (and said so) rather than losing
+ * the clocking. Null when the employee's state does not allow the action.
+ */
+export function freezeKioskOfflineSubmission(
+	input: Omit<KioskOfflineCommandInput, "vehicleUse"> & {
+		pin: SealedKioskPin;
+		contact: KioskContactAnchor;
+		answer?: KioskOfflineVehicleAnswer;
+	},
+): { submission: KioskFrozenSubmission; vehicleUseLeftOut: boolean } | null {
+	const { pin, contact, answer, ...command } = input;
+	const build = (vehicleUse: ClockVehicleUse | BreakVehicleUse | undefined) => {
+		const frozen = buildKioskOfflineCommand({ ...command, ...(vehicleUse ? { vehicleUse } : {}) });
+		if (!frozen) return null;
+		const submission: KioskFrozenSubmission = { command: frozen, pin, contact };
+		return parseKioskFrozenSubmission(submission).ok ? submission : null;
+	};
+	const full = build(answer?.vehicleUse);
+	if (full) return { submission: full, vehicleUseLeftOut: answer?.leftOut ?? false };
+	const without = answer?.vehicleUse ? build(undefined) : null;
+	return without ? { submission: without, vehicleUseLeftOut: true } : null;
 }

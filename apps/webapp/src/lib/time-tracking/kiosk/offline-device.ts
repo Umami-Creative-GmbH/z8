@@ -1,8 +1,9 @@
 import { env } from "@/env";
-import { systemClock } from "@/lib/datetime/temporal-core";
-import { installKioskWorker, removeKioskWorker } from "./kiosk-worker";
+import { parseInstant } from "@/lib/datetime/temporal-core";
+import { installKioskWorker, KIOSK_DEVELOPMENT_BUILD, removeKioskWorker } from "./kiosk-worker";
 import { type CachedKioskEmployee, kioskOfflineCache } from "./offline-cache";
 import { kioskOfflineClock } from "./offline-clock";
+import { kioskOfflineQueue } from "./offline-queue";
 import type { KioskPinAttemptVerdict } from "./pin-attempt-limit";
 import type { KioskDeviceInfo, KioskEmployeesResponse, KioskOfflineContact } from "./protocol";
 
@@ -16,7 +17,7 @@ import type { KioskDeviceInfo, KioskEmployeesResponse, KioskOfflineContact } fro
 
 /** The build the kiosk worker caches for; each deployment caches its own page and assets. */
 function currentBuild(): string {
-	return env.NEXT_PUBLIC_BUILD_HASH || "development";
+	return env.NEXT_PUBLIC_BUILD_HASH || KIOSK_DEVELOPMENT_BUILD;
 }
 
 /**
@@ -44,22 +45,43 @@ export async function rememberKioskContact(
 	}
 }
 
-/** A contact listed the kiosk's employees; with offline mode their states are cached. */
-export function rememberKioskEmployees(
+/**
+ * A contact listed the kiosk's employees; with offline mode their states are
+ * cached, and the commands Z8 confirmed before those states were read are no
+ * longer applied on top of them.
+ */
+export async function rememberKioskEmployees(
 	kiosk: KioskDeviceInfo,
 	listed: KioskEmployeesResponse,
 ): Promise<void> {
-	if (!kiosk.offlineMode) return Promise.resolve();
-	return kioskOfflineCache.rememberEmployees(kiosk.id, listed);
+	if (!kiosk.offlineMode) return;
+	await kioskOfflineCache.rememberEmployees(kiosk.id, listed);
+	if (listed.offline) {
+		await kioskOfflineQueue.forgetConfirmedBefore(kiosk.id, listed.offline.learnedAt);
+	}
 }
 
 /**
  * The kiosk was revoked or its token is no longer known: delete everything it
  * cached. Its queued commands are not cached data: they are sent once with the
- * old token first (`kioskOfflineQueue.sendBeforeForgetting`).
+ * old token first (`retireKioskToken`).
  */
 export async function forgetKioskOfflineData(): Promise<void> {
 	await Promise.all([kioskOfflineCache.forget(), removeKioskWorker().catch(() => undefined)]);
+}
+
+/**
+ * Gives up a device token Z8 no longer accepts for clocking (the kiosk was
+ * revoked, or its token is unknown): sends the commands queued under it once,
+ * so Z8 refuses and lists them for its kiosk, then deletes the kiosk's offline
+ * data. Answers whether Z8 was reached; when it was not, the commands keep the
+ * token and are sent at a later contact, even after the device is paired again
+ * (`kioskOfflineQueue.sendRetired`). The stored token itself is the caller's.
+ */
+export async function retireKioskToken(token: string): Promise<boolean> {
+	const { sent } = await kioskOfflineQueue.sendBeforeForgetting(token);
+	await forgetKioskOfflineData();
+	return sent;
 }
 
 /** The kiosk to open on while the server cannot be reached; only an offline-mode kiosk has one. */
@@ -78,7 +100,11 @@ export function readOfflineContact(kioskId: string): Promise<KioskOfflineContact
 	return kioskOfflineCache.readContact(kioskId);
 }
 
-/** One offline PIN attempt against the per-kiosk attempt limit (#1292). */
+/**
+ * One offline PIN attempt against the per-kiosk attempt limit (#1292), timed by
+ * the kiosk's offline clock (server time plus a monotonic clock since the last
+ * contact), so changing the device clock does not clear the window.
+ */
 export function takeOfflinePinAttempt(): Promise<KioskPinAttemptVerdict> {
-	return kioskOfflineCache.takePinAttempt(systemClock.nowInstant().epochMilliseconds);
+	return kioskOfflineCache.takePinAttempt(parseInstant(kioskOfflineClock.now().occurredAt));
 }

@@ -65,7 +65,10 @@ export const employeeKioskPinEvent = pgTable(
 		kind: text("kind", { enum: ["failure", "success", "cleared"] }).notNull(),
 		// The attempt was entered at a kiosk while offline and judged on arrival.
 		offline: boolean("offline").default(false).notNull(),
+		// The queued command the attempt belongs to: its resend reuses this verdict (#885).
+		operationId: uuid("operation_id"),
 		occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+		// When Z8 judged the attempt: the arrival throttle counts queued failures by it.
 		recordedAt: timestamp("recorded_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 	(table) => [
@@ -80,6 +83,9 @@ export const employeeKioskPinEvent = pgTable(
 			table.sequence,
 		),
 		index("employeeKioskPinEvent_occurredAt_idx").on(table.occurredAt),
+		uniqueIndex("employeeKioskPinEvent_operation_idx")
+			.on(table.organizationId, table.operationId)
+			.where(sql`${table.operationId} IS NOT NULL`),
 		check(
 			"employee_kiosk_pin_event_kind_check",
 			sql`${table.kind} in ('failure', 'success', 'cleared')`,
@@ -87,6 +93,10 @@ export const employeeKioskPinEvent = pgTable(
 		check(
 			"employee_kiosk_pin_event_offline_check",
 			sql`${table.kind} <> 'cleared' or not ${table.offline}`,
+		),
+		check(
+			"employee_kiosk_pin_event_operation_check",
+			sql`${table.operationId} is null or ${table.offline}`,
 		),
 	],
 );

@@ -2,6 +2,10 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { describe, expect, it } from "vitest";
+import {
+	KIOSK_DEVELOPMENT_BUILD,
+	KIOSK_SHELL_CACHE_PREFIX,
+} from "@/lib/time-tracking/kiosk/kiosk-worker";
 
 /**
  * #1291: the kiosk's own service worker (`public/kiosk-sw.js`), loaded into a
@@ -127,6 +131,15 @@ const PAGE = `<html><head><script src="/_next/static/chunks/main.js?dpl=build-2"
 <link rel="stylesheet" href="/_next/static/css/app.css?dpl=build-2&amp;x=1"/></head></html>`;
 
 describe("kiosk service worker (#1291)", () => {
+	it("names its caches and development build as the page side does", () => {
+		const script = readFileSync(path.resolve(__dirname, "../../../public/kiosk-sw.js"), "utf8");
+
+		// The page deletes the worker's caches by this prefix and registers this build in development.
+		expect(script).toContain(`const KIOSK_SHELL_PREFIX = "${KIOSK_SHELL_CACHE_PREFIX}";`);
+		expect(script).toContain(`|| "${KIOSK_DEVELOPMENT_BUILD}")`);
+		expect(KIOSK_SHELL_CACHE_PREFIX.startsWith("z8-")).toBe(false);
+	});
+
 	it("precaches its kiosk page and the page's assets in a cache of this version, then takes over", async () => {
 		const worker = loadKioskWorker({
 			network: (url) => new Response(url.endsWith("/de/kiosk") ? PAGE : "asset"),

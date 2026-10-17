@@ -14,7 +14,13 @@ import type { WorkTransactionClient } from "../web-clock-out-transaction";
 import { assertNoUnresolvedWorkPeriodReview } from "../work-period-review";
 import type { WorkTransactionAdmission } from "../work-transaction";
 import { FrozenCommandNotAcceptedError } from "./frozen";
-import type { BreakCommand, BreakOutcome, BreakStart, ClockCommand } from "./types";
+import type {
+	BreakCommand,
+	BreakOutcome,
+	BreakStart,
+	ClockCommand,
+	KioskTimeSource,
+} from "./types";
 
 /**
  * A break in progress (#861, Time Tracking ADR 0007): a manual break that has
@@ -97,14 +103,25 @@ export class BreakInProgressChangedError extends ClockingConflictError {
 	}
 }
 
-function breakStartOfRow(row: {
+export function breakStartOfRow(row: {
 	breakStartedAt: Date | null;
 	breakStartedZone: string | null;
+	breakStartedTimeSource: KioskTimeSource | null;
 }): BreakStart | null {
-	return row.breakStartedAt && row.breakStartedZone
-		? { instant: instantFromDate(row.breakStartedAt), zone: row.breakStartedZone }
-		: null;
+	if (!row.breakStartedAt || !row.breakStartedZone) return null;
+	return {
+		instant: instantFromDate(row.breakStartedAt),
+		zone: row.breakStartedZone,
+		...(row.breakStartedTimeSource ? { timeSource: row.breakStartedTimeSource } : {}),
+	};
 }
+
+/** The columns `breakStartOfRow` reads. */
+export const breakStartColumns = {
+	breakStartedAt: workPeriod.breakStartedAt,
+	breakStartedZone: workPeriod.breakStartedZone,
+	breakStartedTimeSource: workPeriod.breakStartedTimeSource,
+};
 
 function sameBreak(a: BreakStart | null, b: BreakStart | null) {
 	if (!a || !b) return a === b;
@@ -117,8 +134,7 @@ export async function findLiveWork(client: Reader, scope: EmployeeScope) {
 		.select({
 			id: workPeriod.id,
 			startTime: workPeriod.startTime,
-			breakStartedAt: workPeriod.breakStartedAt,
-			breakStartedZone: workPeriod.breakStartedZone,
+			...breakStartColumns,
 		})
 		.from(workPeriod)
 		.where(
@@ -145,10 +161,7 @@ export async function readBreakInProgress(
 	scope: PeriodScope,
 ): Promise<BreakStart | null> {
 	const [period] = await client
-		.select({
-			breakStartedAt: workPeriod.breakStartedAt,
-			breakStartedZone: workPeriod.breakStartedZone,
-		})
+		.select(breakStartColumns)
 		.from(workPeriod)
 		.where(
 			and(
@@ -314,6 +327,7 @@ export async function recordBreakInProgress(
 			breakStartedAt: dateFromInstant(input.start.instant),
 			breakStartedZone: input.start.zone,
 			breakStartedOperationId: input.operationId,
+			breakStartedTimeSource: input.start.timeSource ?? null,
 		})
 		.where(
 			and(

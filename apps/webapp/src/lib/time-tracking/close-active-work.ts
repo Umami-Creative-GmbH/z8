@@ -33,6 +33,7 @@ import {
 	isClosureCarriedByAutomaticBreak,
 } from "./automatic-break-intent";
 import { canonicalJson } from "./canonical-json";
+import type { KioskTimeSource } from "./clocking/types";
 import {
 	ClockingConflictError,
 	ClockingOrganizationError,
@@ -225,7 +226,7 @@ export const AUTOMATIC_CLOCK_OUT_WRITER = {
  */
 export function kioskClockWriter(
 	kioskId: string,
-	offlineTimeSource?: string,
+	offlineTimeSource?: KioskTimeSource,
 ): CloseActiveWorkWriter {
 	return {
 		writer: "kiosk_clock",

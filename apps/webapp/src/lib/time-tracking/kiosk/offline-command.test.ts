@@ -3,6 +3,7 @@ import { parseKioskFrozenSubmission } from "./frozen-command";
 import type { CachedKioskEmployee } from "./offline-cache";
 import {
 	buildKioskOfflineCommand,
+	freezeKioskOfflineSubmission,
 	type KioskOfflineEmployeeView,
 	kioskOfflineEmployeeView,
 } from "./offline-command";
@@ -250,5 +251,102 @@ describe("offline kiosk turn (#1292)", () => {
 		const view = kioskOfflineEmployeeView(cached({ status: "clocked_out" }), []);
 
 		expect(view.vehicleUse).toBeUndefined();
+	});
+
+	it("counts only unconfirmed commands as queued, while applying confirmed ones to the state", () => {
+		const start = cached({ status: "clocked_out" });
+		const clockIn = act(kioskOfflineEmployeeView(start, []), "clock_in", "2026-10-16T08:00:00Z");
+
+		const view = kioskOfflineEmployeeView(start, [clockIn], {
+			confirmed: new Set([clockIn.operationId]),
+		});
+
+		expect(view.state.status).toBe("clocked_in");
+		expect(view.queued).toBe(0);
+	});
+
+	it("offers, and freezes, only the actions the believed state allows", () => {
+		const view = kioskOfflineEmployeeView(cached({ status: "clocked_out" }), []);
+
+		for (const action of ["start_break", "clock_out", "resume_break", "end_day"] as const) {
+			expect(
+				buildKioskOfflineCommand({
+					view,
+					action,
+					operationId: nextOperationId(),
+					kioskId,
+					timezone: zone,
+					occurredAt: "2026-10-16T08:00:00Z",
+					timeSource: "server_anchor",
+				}),
+			).toBeNull();
+		}
+	});
+});
+
+describe("freezeKioskOfflineSubmission (#885 review)", () => {
+	const sealed = { v: 1 as const, kid: "k1", epk: "AA", iv: "AA", ct: "AA" };
+	const contact = { serverTime: "2026-10-16T07:45:00Z", proof: "AA" };
+	const base = {
+		kioskId,
+		timezone: zone,
+		occurredAt: "2026-10-16T08:00:00Z",
+		timeSource: "device_clock" as const,
+		pin: sealed,
+		contact,
+	};
+
+	it("freezes the action with the sealed PIN and the contact, exactly as Z8 parses it", () => {
+		const operationId = nextOperationId();
+		const frozen = freezeKioskOfflineSubmission({
+			...base,
+			view: kioskOfflineEmployeeView(cached({ status: "clocked_out" }), []),
+			action: "clock_in",
+			operationId,
+		});
+
+		expect(frozen).toEqual({
+			submission: {
+				command: {
+					version: 1,
+					operationId,
+					kioskId,
+					employeeId,
+					occurredAt: "2026-10-16T08:00:00Z",
+					timeSource: "device_clock",
+					timezone: zone,
+					action: "clock_in",
+					workLocationType: "office",
+				},
+				pin: sealed,
+				contact,
+			},
+			vehicleUseLeftOut: false,
+		});
+		expect(frozen && submissionOf(frozen.submission.command).ok).toBe(true);
+	});
+
+	it("leaves out vehicle use Z8 would not read, and says so, rather than losing the clocking", () => {
+		const frozen = freezeKioskOfflineSubmission({
+			...base,
+			view: kioskOfflineEmployeeView(cached({ status: "clocked_out" }, vehicleContext), []),
+			action: "clock_in",
+			operationId: nextOperationId(),
+			answer: { vehicleUse: { vehicle: { kind: "own" }, startKm: -5 }, leftOut: false },
+		});
+
+		expect(frozen?.vehicleUseLeftOut).toBe(true);
+		expect(frozen?.submission.command).not.toHaveProperty("vehicleUse");
+	});
+
+	it("freezes nothing the state does not allow", () => {
+		expect(
+			freezeKioskOfflineSubmission({
+				...base,
+				view: kioskOfflineEmployeeView(cached({ status: "clocked_out" }), []),
+				action: "resume_break",
+				operationId: nextOperationId(),
+			}),
+		).toBeNull();
 	});
 });

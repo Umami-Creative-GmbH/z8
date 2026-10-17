@@ -12,15 +12,11 @@ import { useTranslate } from "@tolgee/react";
 import type { ComponentType, SVGProps } from "react";
 import { Button } from "@/components/ui/button";
 import { formatKioskDuration, formatKioskTime } from "@/lib/time-tracking/kiosk/display";
+import { type KioskAction, kioskActionsFor } from "@/lib/time-tracking/kiosk/kiosk-actions";
 import type { KioskClockAction, KioskEmployeeSnapshot } from "@/lib/time-tracking/kiosk/protocol";
 
-/** What the panel offers; `end_day` is a clock-out while on a break (it ends at the break's start). */
-export type KioskPanelAction =
-	| "clock_in"
-	| "start_break"
-	| "clock_out"
-	| "resume_break"
-	| "end_day";
+/** What the panel offers: the kiosk's one action union (`kiosk-actions.ts`). */
+export type KioskPanelAction = KioskAction;
 
 export const KIOSK_ACTION_REQUEST: Record<KioskPanelAction, KioskClockAction> = {
 	clock_in: "clock_in",
@@ -29,18 +25,6 @@ export const KIOSK_ACTION_REQUEST: Record<KioskPanelAction, KioskClockAction> = 
 	resume_break: "resume_break",
 	end_day: "clock_out",
 };
-
-/** Only the actions valid for the employee's state. */
-function actionsFor(state: KioskEmployeeSnapshot["state"]): KioskPanelAction[] {
-	switch (state.status) {
-		case "clocked_out":
-			return ["clock_in"];
-		case "clocked_in":
-			return ["start_break", "clock_out"];
-		case "on_break":
-			return ["resume_break", "end_day"];
-	}
-}
 
 const ACTION_ICONS: Record<KioskPanelAction, ComponentType<SVGProps<SVGSVGElement>>> = {
 	clock_in: IconLogin2,
@@ -166,7 +150,7 @@ export function KioskEmployeePanel({
 				</p>
 			) : null}
 			<div className="grid gap-4 sm:grid-cols-2">
-				{actionsFor(state).map((action, index) => {
+				{kioskActionsFor(state).map((action, index) => {
 					const Icon = ACTION_ICONS[action];
 					return (
 						<Button

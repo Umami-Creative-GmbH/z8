@@ -7,7 +7,10 @@
  * without service workers the kiosk simply does not boot offline.
  */
 export const KIOSK_WORKER_PATH = "/kiosk-sw.js";
+/** The worker's cache names: never `z8-`, which the root worker deletes. `public/kiosk-sw.js` repeats it. */
 export const KIOSK_SHELL_CACHE_PREFIX = "kiosk-shell-";
+/** The build a development page registers the worker for; `public/kiosk-sw.js` falls back to it. */
+export const KIOSK_DEVELOPMENT_BUILD = "development";
 
 export function kioskWorkerScope(locale: string): string {
 	return `/${locale}/kiosk`;

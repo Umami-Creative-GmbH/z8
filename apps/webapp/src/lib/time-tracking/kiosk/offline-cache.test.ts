@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { createKioskOfflineCache } from "./offline-cache";
 import { memoryKioskCacheStorage } from "./offline-cache.test.fixture";
 import type { KioskDeviceInfo, KioskEmployeesResponse } from "./protocol";
@@ -172,18 +173,37 @@ describe("kiosk offline cache (#1291)", () => {
 		it("holds the per-kiosk PIN attempt limit across reloads", async () => {
 			const { cache: offline, storage } = cache();
 			await offline.rememberKiosk(kiosk);
-			const start = Date.parse("2026-10-16T08:00:00Z");
+			const start = parseInstant("2026-10-16T08:00:00Z");
+			const at = (milliseconds: number) => start.add({ milliseconds });
 
 			for (let attempt = 0; attempt < 30; attempt += 1) {
-				expect(await offline.takePinAttempt(start + attempt * 100)).toEqual({ allowed: true });
+				expect(await offline.takePinAttempt(at(attempt * 100))).toEqual({ allowed: true });
 			}
 			const reloaded = createKioskOfflineCache(() => storage);
-			expect(await reloaded.takePinAttempt(start + 5_000)).toEqual({
+			expect(await reloaded.takePinAttempt(at(5_000))).toEqual({
 				allowed: false,
 				retryAfterSeconds: 55,
 			});
 			// The first attempt leaves the minute's window.
-			expect(await reloaded.takePinAttempt(start + 60_001)).toEqual({ allowed: true });
+			expect(await reloaded.takePinAttempt(at(60_001))).toEqual({ allowed: true });
+		});
+
+		it("keeps the PIN attempt limit when the device clock is set back or forward and back", async () => {
+			const { cache: offline } = cache();
+			await offline.rememberKiosk(kiosk);
+			const start = parseInstant("2026-10-16T08:00:00Z");
+			for (let attempt = 0; attempt < 30; attempt += 1) {
+				await offline.takePinAttempt(start.add({ milliseconds: attempt * 100 }));
+			}
+
+			// Set back an hour: the attempts dated in the future still count.
+			const earlier = start.subtract({ hours: 1 });
+			expect(await offline.takePinAttempt(earlier)).toMatchObject({ allowed: false });
+			// They count as made at the moment the clock was set back, for one window.
+			expect(await offline.takePinAttempt(earlier.add({ seconds: 30 }))).toMatchObject({
+				allowed: false,
+			});
+			expect(await offline.takePinAttempt(earlier.add({ seconds: 61 }))).toEqual({ allowed: true });
 		});
 	});
 

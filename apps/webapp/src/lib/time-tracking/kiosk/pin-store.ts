@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomInt } from "node:crypto";
 import { hashPassword, verifyPassword } from "better-auth/crypto";
-import { and, asc, eq, lt, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gt, lt, lte } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { employee, employeeKioskPin, employeeKioskPinEvent } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
@@ -12,8 +12,10 @@ import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-
 import {
 	type Clock,
 	dateFromInstant,
+	earlierInstant,
 	type Instant,
 	instantFromDate,
+	laterInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
@@ -170,7 +172,11 @@ export async function resetKioskPin(
 		db.transaction(async (tx) => {
 			const updated = await tx
 				.update(employeeKioskPin)
-				.set({ pinHash, setByUserId: input.actorUserId, updatedAt: new Date() })
+				.set({
+					pinHash,
+					setByUserId: input.actorUserId,
+					updatedAt: dateFromInstant(clock.nowInstant()),
+				})
 				.where(employeePin(input.organizationId, input.employeeId))
 				.returning({ id: employeeKioskPin.id });
 			if (updated.length === 0) {
@@ -197,7 +203,7 @@ export async function unlockKioskPin(
 		db.transaction(async (tx) => {
 			const updated = await tx
 				.update(employeeKioskPin)
-				.set({ updatedAt: new Date() })
+				.set({ updatedAt: dateFromInstant(clock.nowInstant()) })
 				.where(employeePin(input.organizationId, input.employeeId))
 				.returning({ id: employeeKioskPin.id });
 			if (updated.length === 0) {
@@ -291,7 +297,11 @@ export async function setOwnKioskPin(
 				})
 				.onConflictDoUpdate({
 					target: employeeKioskPin.employeeId,
-					set: { pinHash, setByUserId: input.userId, updatedAt: new Date() },
+					set: {
+						pinHash,
+						setByUserId: input.userId,
+						updatedAt: dateFromInstant(clock.nowInstant()),
+					},
 				});
 			await recordCleared(tx, { organizationId: input.organizationId, employeeId: own.id }, clock);
 			await auditPin(audit, tx, AuditAction.KIOSK_PIN_CHANGED, {
@@ -304,19 +314,50 @@ export async function setOwnKioskPin(
 }
 
 /**
- * A PIN attempt to judge at the instant it happened. `pin` may be a function,
- * called only when the employee is not locked out at `at`, so a sealed PIN is
- * opened only when it will be checked.
+ * A PIN attempt to judge. `pin` may be a function, called only when the PIN
+ * will be checked, so a sealed PIN is opened only then.
+ *
+ * - Online (`offline: false`): entered now. It is judged at the current instant
+ *   taken under the PIN row's lock, never before the latest stored online event,
+ *   so attempts are ordered as they were judged even across skewed clocks.
+ * - Queued (`offline: true`): entered at a kiosk while offline and judged on
+ *   arrival at the instant its command claims (`at`), but never later than now.
  */
-export type KioskPinAttempt = {
+export type KioskPinAttempt = OnlineKioskPinAttempt | QueuedKioskPinAttempt;
+
+type KioskPinAttemptBase = {
 	organizationId: string;
 	employeeId: string;
-	/** When the PIN was entered: now online, the claimed instant for a queued command. */
-	at: Instant;
-	/** Entered at a kiosk while offline and judged on arrival. */
-	offline: boolean;
 	pin: string | (() => string | Promise<string>);
 };
+
+export type OnlineKioskPinAttempt = KioskPinAttemptBase & { offline: false };
+
+export type QueuedKioskPinAttempt = KioskPinAttemptBase & {
+	offline: true;
+	/** The instant the queued command claims. */
+	at: Instant;
+	/** The queued command: a resend of it gets this attempt's verdict, never a second check. */
+	operationId?: string;
+};
+
+/**
+ * What a judgment answers: a verification, or, for a queued attempt only, that
+ * too many queued attempts for the employee failed on arrival lately
+ * (`KIOSK_PIN_ARRIVAL_THROTTLE`): try again from `retryAfter`, nothing was
+ * checked or stored.
+ */
+export type KioskPinJudgment = KioskPinVerification | { status: "throttled"; retryAfter: Instant };
+
+/**
+ * The arrival throttle (user decision 2026-10-17, ADR 0011): an employee with
+ * this many queued-attempt failures that arrived within the window is not
+ * checked again until the oldest of them leaves it. The lockout replays each
+ * queued attempt at its own instant, so without it a kiosk token could try
+ * PINs at instants it chooses; with it at most five queued PINs per employee
+ * are checked in any 15 minutes of real time.
+ */
+export const KIOSK_PIN_ARRIVAL_THROTTLE = { failures: 5, windowMinutes: 15 } as const;
 
 /** What `judgeKioskPinAttempt` needs: the caller's transaction (or one of its clients). */
 export type KioskPinClient = Pick<Transaction, "select" | "insert" | "delete">;
@@ -340,11 +381,13 @@ function recordCleared(
 	input: { organizationId: string; employeeId: string },
 	clock: Clock,
 ) {
+	const now = dateFromInstant(clock.nowInstant());
 	return tx.insert(employeeKioskPinEvent).values({
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		kind: "cleared",
-		occurredAt: dateFromInstant(clock.nowInstant()),
+		occurredAt: now,
+		recordedAt: now,
 	});
 }
 
@@ -381,21 +424,118 @@ export async function readKioskPinLockout(
 	return kioskPinLockoutAt(await loadLockoutEvents(client, input, at), at);
 }
 
+/** The verdict a queued attempt already got, from its stored event. */
+async function storedVerdict(
+	tx: KioskPinReadClient,
+	attempt: QueuedKioskPinAttempt & { operationId: string },
+): Promise<KioskPinVerification | null> {
+	const [stored] = await tx
+		.select({ kind: employeeKioskPinEvent.kind, occurredAt: employeeKioskPinEvent.occurredAt })
+		.from(employeeKioskPinEvent)
+		.where(
+			and(
+				eq(employeeKioskPinEvent.organizationId, attempt.organizationId),
+				eq(employeeKioskPinEvent.employeeId, attempt.employeeId),
+				eq(employeeKioskPinEvent.operationId, attempt.operationId),
+			),
+		)
+		.limit(1);
+	if (!stored) return null;
+	if (stored.kind === "success") return { status: "verified" };
+	// The failure as it stood when it was stored: the fifth one locked.
+	const { lockedUntil } = await readKioskPinLockout(
+		tx,
+		attempt,
+		instantFromDate(stored.occurredAt),
+	);
+	return lockedUntil ? { status: "locked", until: lockedUntil } : { status: "wrong_pin" };
+}
+
+/** When queued attempts for the employee are checked again, or null when they are now. */
+async function arrivalThrottle(
+	tx: KioskPinReadClient,
+	attempt: KioskPinAttemptBase,
+	now: Instant,
+): Promise<Instant | null> {
+	const { failures, windowMinutes } = KIOSK_PIN_ARRIVAL_THROTTLE;
+	const arrived = await tx
+		.select({ recordedAt: employeeKioskPinEvent.recordedAt })
+		.from(employeeKioskPinEvent)
+		.where(
+			and(
+				eq(employeeKioskPinEvent.organizationId, attempt.organizationId),
+				eq(employeeKioskPinEvent.employeeId, attempt.employeeId),
+				eq(employeeKioskPinEvent.kind, "failure"),
+				eq(employeeKioskPinEvent.offline, true),
+				gt(
+					employeeKioskPinEvent.recordedAt,
+					dateFromInstant(now.subtract({ minutes: windowMinutes })),
+				),
+			),
+		)
+		.orderBy(desc(employeeKioskPinEvent.recordedAt))
+		.limit(failures);
+	const oldest = arrived[failures - 1];
+	return oldest ? instantFromDate(oldest.recordedAt).add({ minutes: windowMinutes }) : null;
+}
+
+/** The latest instant an online event of the employee was stored at, if any. */
+async function latestOnlineEvent(
+	tx: KioskPinReadClient,
+	attempt: KioskPinAttemptBase,
+): Promise<Instant | null> {
+	const [latest] = await tx
+		.select({ occurredAt: employeeKioskPinEvent.occurredAt })
+		.from(employeeKioskPinEvent)
+		.where(
+			and(
+				eq(employeeKioskPinEvent.organizationId, attempt.organizationId),
+				eq(employeeKioskPinEvent.employeeId, attempt.employeeId),
+				eq(employeeKioskPinEvent.offline, false),
+			),
+		)
+		.orderBy(desc(employeeKioskPinEvent.occurredAt))
+		.limit(1);
+	return latest ? instantFromDate(latest.occurredAt) : null;
+}
+
 /**
- * Judges a kiosk PIN attempt at the instant it happened, in the caller's
- * transaction, as the lockout stood then (#1288). Under the PIN row's lock, so
- * attempts from every kiosk, online or arriving late, are judged one at a
- * time: if the employee was locked out at `at`, answers `locked` without
- * reading or checking the PIN and stores nothing; otherwise checks the PIN
- * against the employee's current one, stores the outcome at `at` and answers
- * how the lockout stands with it (the fifth failure answers `locked`). Prunes
- * the employee's events that can no longer affect a check.
+ * Judges a kiosk PIN attempt in the caller's transaction, as the lockout stood
+ * at the attempt's instant (#1288). Under the PIN row's lock, so attempts from
+ * every kiosk, online or arriving late, are judged one at a time:
+ *
+ * - A queued attempt whose command was judged before answers that verdict again
+ *   (a resend after a lost answer), without a second check or event.
+ * - A queued attempt for an employee with five queued failures that arrived in
+ *   the last 15 minutes answers `throttled` (`KIOSK_PIN_ARRIVAL_THROTTLE`).
+ * - If the employee was locked out at the attempt's instant, answers `locked`
+ *   without reading or checking the PIN and stores nothing.
+ * - Otherwise checks the PIN against the employee's current one, stores the
+ *   outcome at the attempt's instant and answers how the lockout stands with it
+ *   (the fifth failure answers `locked`).
+ *
+ * Prunes the employee's events that can no longer affect a check.
  */
+export async function judgeKioskPinAttempt(
+	tx: KioskPinClient,
+	attempt: OnlineKioskPinAttempt,
+	clock?: Clock,
+): Promise<KioskPinVerification>;
+export async function judgeKioskPinAttempt(
+	tx: KioskPinClient,
+	attempt: QueuedKioskPinAttempt,
+	clock?: Clock,
+): Promise<KioskPinJudgment>;
+export async function judgeKioskPinAttempt(
+	tx: KioskPinClient,
+	attempt: KioskPinAttempt,
+	clock?: Clock,
+): Promise<KioskPinJudgment>;
 export async function judgeKioskPinAttempt(
 	tx: KioskPinClient,
 	attempt: KioskPinAttempt,
 	clock: Clock = systemClock,
-): Promise<KioskPinVerification> {
+): Promise<KioskPinJudgment> {
 	if (!isUuid(attempt.employeeId)) return { status: "no_pin" };
 	const [row] = await tx
 		.select({ pinHash: employeeKioskPin.pinHash })
@@ -403,6 +543,8 @@ export async function judgeKioskPinAttempt(
 		.where(employeePin(attempt.organizationId, attempt.employeeId))
 		.for("update");
 	if (!row) return { status: "no_pin" };
+	// Read under the lock: an attempt is judged at or after the one judged before it.
+	const now = clock.nowInstant();
 
 	const employeeEvents = and(
 		eq(employeeKioskPinEvent.organizationId, attempt.organizationId),
@@ -410,11 +552,24 @@ export async function judgeKioskPinAttempt(
 	);
 	await tx
 		.delete(employeeKioskPinEvent)
-		.where(
-			and(employeeEvents, lt(employeeKioskPinEvent.occurredAt, pruneHorizon(clock.nowInstant()))),
-		);
+		.where(and(employeeEvents, lt(employeeKioskPinEvent.occurredAt, pruneHorizon(now))));
 
-	const before = await readKioskPinLockout(tx, attempt, attempt.at);
+	let at: Instant;
+	if (attempt.offline) {
+		if (attempt.operationId) {
+			const verdict = await storedVerdict(tx, { ...attempt, operationId: attempt.operationId });
+			if (verdict) return verdict;
+		}
+		const retryAfter = await arrivalThrottle(tx, attempt, now);
+		if (retryAfter) return { status: "throttled", retryAfter };
+		// A queued attempt claiming the future is judged now: no lock starts after arrival.
+		at = earlierInstant(attempt.at, now);
+	} else {
+		const latest = await latestOnlineEvent(tx, attempt);
+		at = latest ? laterInstant(now, latest) : now;
+	}
+
+	const before = await readKioskPinLockout(tx, attempt, at);
 	if (before.lockedUntil) return { status: "locked", until: before.lockedUntil };
 
 	const pin = typeof attempt.pin === "function" ? await attempt.pin() : attempt.pin;
@@ -425,20 +580,22 @@ export async function judgeKioskPinAttempt(
 		employeeId: attempt.employeeId,
 		kind: matches ? "success" : "failure",
 		offline: attempt.offline,
-		occurredAt: dateFromInstant(attempt.at),
+		operationId: attempt.offline ? (attempt.operationId ?? null) : null,
+		occurredAt: dateFromInstant(at),
+		recordedAt: dateFromInstant(now),
 	});
 	if (matches) return { status: "verified" };
 
-	const after = await readKioskPinLockout(tx, attempt, attempt.at);
+	const after = await readKioskPinLockout(tx, attempt, at);
 	return after.lockedUntil
 		? { status: "locked", until: after.lockedUntil }
 		: { status: "wrong_pin" };
 }
 
 /**
- * Verifies a PIN entered at a kiosk now (#857): `judgeKioskPinAttempt` at the
- * current instant in its own transaction. Five consecutive failures across all
- * kiosks lock the employee for 15 minutes; while locked, the PIN is not checked.
+ * Verifies a PIN entered at a kiosk now (#857): `judgeKioskPinAttempt` online,
+ * in its own transaction. Five consecutive failures across all kiosks lock the
+ * employee for 15 minutes; while locked, the PIN is not checked.
  */
 export async function verifyEmployeeKioskPin(
 	db: Database,
@@ -446,9 +603,7 @@ export async function verifyEmployeeKioskPin(
 	clock: Clock = systemClock,
 ): Promise<KioskPinVerification> {
 	if (!isUuid(input.employeeId)) return { status: "no_pin" };
-	return db.transaction((tx) =>
-		judgeKioskPinAttempt(tx, { ...input, at: clock.nowInstant(), offline: false }, clock),
-	);
+	return db.transaction((tx) => judgeKioskPinAttempt(tx, { ...input, offline: false }, clock));
 }
 
 /**

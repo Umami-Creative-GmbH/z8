@@ -56,8 +56,10 @@ const { setOwnKioskPin } = await import("./pin-store");
 const { hashKioskSecret } = await import("./credentials");
 const { KIOSK_TOKEN_HEADER } = await import("./protocol");
 const { createKioskFrozenCommandService } = await import("./frozen-command-service");
-const { createKioskFrozenRefusalLedger } = await import("./frozen-refusal-store");
-const { readKioskSession } = await import("./offline-contact");
+const { createKioskFrozenRefusalLedger, notifyKioskFrozenRefusal } = await import(
+	"./frozen-refusal-store"
+);
+const { readKioskSession } = await import("./kiosk-session.server");
 const { sealKioskPin } = await import("./pin-seal");
 const { kioskSealingKey } = await import("./pin-seal.server");
 const settings = await import("@/app/[locale]/(app)/settings/kiosks/actions");
@@ -98,6 +100,9 @@ describe("refused frozen kiosk commands on PostgreSQL", () => {
 	let now: Instant = parseInstant(ARRIVAL);
 	const clock = { nowInstant: () => now };
 
+	/** How many of the next notifications fail to be handed over. */
+	let failedNotifications = 0;
+
 	function newService() {
 		return createKioskFrozenCommandService({
 			clocking: createClocking({
@@ -107,7 +112,16 @@ describe("refused frozen kiosk commands on PostgreSQL", () => {
 			}),
 			clock,
 			secret: () => SECRET,
-			refusals: createKioskFrozenRefusalLedger(),
+			refusals: createKioskFrozenRefusalLedger({
+				clock,
+				notify: async (refusal) => {
+					if (failedNotifications > 0) {
+						failedNotifications -= 1;
+						throw new Error("The notification service is down");
+					}
+					await notifyKioskFrozenRefusal(refusal);
+				},
+			}),
 		});
 	}
 
@@ -186,12 +200,13 @@ describe("refused frozen kiosk commands on PostgreSQL", () => {
 			employee_id: string | null;
 			action: string;
 			claimed_at: Date;
+			timezone: string;
 			time_source: string;
 			reason: string;
 			detail: Record<string, unknown>;
 			command: Record<string, unknown>;
 		}>(
-			`select organization_id, kiosk_id, operation_id, employee_id, action, claimed_at, time_source,
+			`select organization_id, kiosk_id, operation_id, employee_id, action, claimed_at, timezone, time_source,
 			        reason, detail, command
 			 from kiosk_frozen_refusal where organization_id = $1 order by refused_at, operation_id`,
 			[ids.organization],
@@ -351,6 +366,7 @@ describe("refused frozen kiosk commands on PostgreSQL", () => {
 
 	beforeEach(async () => {
 		now = parseInstant(ARRIVAL);
+		failedNotifications = 0;
 		actAs(null);
 		await seed();
 	});
@@ -373,6 +389,7 @@ describe("refused frozen kiosk commands on PostgreSQL", () => {
 					employee_id: ids.worker,
 					action: "clock_in",
 					claimed_at: new Date("2026-08-03T07:00:00Z"),
+					timezone: KIOSK_ZONE,
 					time_source: "server_anchor",
 					reason: "wrong_pin",
 					detail: {},
@@ -479,6 +496,45 @@ describe("refused frozen kiosk commands on PostgreSQL", () => {
 			});
 		});
 
+		it("are sent again when the kiosk asks about the command, until one was handed over", async () => {
+			failedNotifications = 2;
+			const frozen = command();
+			const body = await submission(frozen, "9999");
+
+			// The refusal is kept, but the kiosk learns nothing final while nobody was told.
+			expect(await send(body)).toEqual({
+				status: 500,
+				body: { outcome: "unknown", operationId: frozen.operationId },
+			});
+			expect(await refusalRows()).toHaveLength(1);
+			expect(await inbox(ids.workerUser)).toEqual([]);
+			expect((await lookUp(frozen.operationId)).status).toBe(500);
+
+			expect(await lookUp(frozen.operationId)).toMatchObject({
+				status: 200,
+				body: { outcome: "refused", code: "wrong_pin" },
+			});
+			expect(await inbox(ids.workerUser)).toHaveLength(1);
+			const { rows } = await admin.query(
+				"select notified_at from kiosk_frozen_refusal where operation_id = $1",
+				[frozen.operationId],
+			);
+			expect(rows).toEqual([{ notified_at: new Date(ARRIVAL) }]);
+			// Told once: later questions send nothing more, and the PIN was checked once.
+			expect((await send(body)).body).toMatchObject({ outcome: "refused", code: "wrong_pin" });
+			expect(await inbox(ids.workerUser)).toHaveLength(1);
+			expect(await pinFailures()).toHaveLength(1);
+		});
+
+		it("show the claimed time in the zone the kiosk recorded it in", async () => {
+			await admin.query("update kiosk set timezone = 'Europe/London' where id = $1", [ids.kiosk]);
+			await send(await submission(command(), "9999"));
+
+			const [notification] = await inbox(ids.workerUser);
+			expect(notification?.message).toContain("at Aug 3, 2026, 9:00 AM (Europe/Berlin)");
+			expect(await refusalRows()).toMatchObject([{ timezone: KIOSK_ZONE }]);
+		});
+
 		it("go to nobody for a command naming no employee of the organization", async () => {
 			await send(await submission(command({ employeeId: randomUUID() })));
 
@@ -502,8 +558,8 @@ describe("refused frozen kiosk commands on PostgreSQL", () => {
 			await send(await submission(late, "9999"));
 			await admin.query(
 				`insert into kiosk_frozen_refusal (organization_id, kiosk_id, operation_id, action, claimed_at,
-				                                   time_source, reason, command, refused_at)
-				 values ($1, $2, $3, 'clock_in', $4, 'server_anchor', 'kiosk_rotated', '{}', $4)`,
+				                                   timezone, time_source, reason, command, refused_at)
+				 values ($1, $2, $3, 'clock_in', $4, 'UTC', 'server_anchor', 'kiosk_rotated', '{}', $4)`,
 				[ids.otherOrganization, ids.foreignKiosk, randomUUID(), new Date("2026-08-03T11:00:00Z")],
 			);
 
@@ -515,10 +571,10 @@ describe("refused frozen kiosk commands on PostgreSQL", () => {
 					id: expect.any(String),
 					kioskId: ids.kiosk,
 					kioskName: "Store kiosk",
-					kioskTimezone: KIOSK_ZONE,
 					employeeName: "Kim Kiosk",
 					action: "start_break",
 					claimedAt: "2026-08-03T07:00:00.000Z",
+					timezone: KIOSK_ZONE,
 					timeSource: "server_anchor",
 					reason: "wrong_pin",
 					refusedAt: "2026-08-03T12:05:00.000Z",
@@ -527,10 +583,10 @@ describe("refused frozen kiosk commands on PostgreSQL", () => {
 					id: expect.any(String),
 					kioskId: ids.kiosk,
 					kioskName: "Store kiosk",
-					kioskTimezone: KIOSK_ZONE,
 					employeeName: "Wanda Worker",
 					action: "clock_in",
 					claimedAt: "2026-08-03T07:00:00.000Z",
+					timezone: KIOSK_ZONE,
 					timeSource: "server_anchor",
 					reason: "wrong_pin",
 					refusedAt: "2026-08-03T12:00:00.000Z",

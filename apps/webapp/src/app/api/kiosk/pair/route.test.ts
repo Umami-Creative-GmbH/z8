@@ -24,7 +24,7 @@ vi.mock("@/lib/time-tracking/kiosk/kiosk-store", () => ({
 	readKioskDeviceInfo: vi.fn(),
 }));
 
-vi.mock("@/lib/time-tracking/kiosk/offline-contact", () => ({
+vi.mock("@/lib/time-tracking/kiosk/kiosk-session.server", () => ({
 	readKioskSession: vi.fn(),
 }));
 

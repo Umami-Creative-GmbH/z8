@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { KioskFrozenCommand, KioskFrozenSubmission } from "./frozen-command";
 import { createKioskOfflineQueue } from "./offline-queue";
 import { memoryKioskQueueStorage } from "./offline-queue.test.fixture";
@@ -82,24 +83,44 @@ const lookupSays =
 	() =>
 		Response.json({ outcome, operationId: "x", action: "clock_in" });
 
+/** The kiosk's offline clock and the device clock, as the tests set them. */
+const clocks = { kiosk: "2026-10-16T08:30:00Z", device: "2026-10-16T08:30:00Z" };
+
 function queueWith(fetch: typeof globalThis.fetch) {
 	const storage = memoryKioskQueueStorage();
-	return { storage, queue: createKioskOfflineQueue({ storage: () => storage, fetch }) };
+	return {
+		storage,
+		queue: createKioskOfflineQueue({
+			storage: () => storage,
+			fetch,
+			now: () => clocks.kiosk,
+			device: { nowInstant: () => parseInstant(clocks.device) },
+		}),
+	};
 }
 
 async function enqueue(
 	queue: ReturnType<typeof createKioskOfflineQueue>,
 	employee: { id: string; name: string },
 	occurredAt?: string,
+	options: { token?: string; kioskId?: string } = {},
 ) {
 	const frozen = submission(employee, occurredAt);
-	await queue.enqueue({ submission: frozen, employeeName: employee.name, action: "clock_in" });
+	if (options.kioskId) frozen.command = { ...frozen.command, kioskId: options.kioskId };
+	await queue.enqueue({
+		submission: frozen,
+		employeeName: employee.name,
+		action: "clock_in",
+		...(options.token ? { token: options.token } : {}),
+	});
 	return frozen;
 }
 
 describe("offline kiosk queue (#1292)", () => {
 	afterEach(() => {
 		vi.unstubAllGlobals();
+		clocks.kiosk = "2026-10-16T08:30:00Z";
+		clocks.device = "2026-10-16T08:30:00Z";
 	});
 
 	it("keeps queued commands in order, with their frozen bytes and no plaintext PIN", async () => {
@@ -261,6 +282,92 @@ describe("offline kiosk queue (#1292)", () => {
 
 		expect((await queue.sendBeforeForgetting("z8k_old-token")).sent).toBe(false);
 		expect(await queue.commands()).toHaveLength(1);
+	});
+
+	it("keeps a confirmed command for the offline view until a state learned after it arrives", async () => {
+		const { fetch } = server({ submit: [executed] });
+		const { queue } = queueWith(fetch);
+		const frozen = await enqueue(queue, anna);
+		clocks.kiosk = "2026-10-16T08:31:00Z";
+
+		expect(await queue.send("z8k_token")).toMatchObject({ settled: 1, waiting: 0 });
+
+		expect(await queue.commands()).toEqual([]);
+		expect((await queue.confirmed()).map((record) => record.operationId)).toEqual([
+			frozen.command.operationId,
+		]);
+		// A cached state read before the confirmation does not show it yet.
+		await queue.forgetConfirmedBefore(kioskId, "2026-10-16T08:30:59Z");
+		expect(await queue.confirmed()).toHaveLength(1);
+		await queue.forgetConfirmedBefore(kioskId, "2026-10-16T08:32:00Z");
+		expect(await queue.confirmed()).toEqual([]);
+	});
+
+	it("keeps a throttled command and resends the same bytes only after the wait", async () => {
+		const throttled: Answer = (sent) =>
+			Response.json(
+				{
+					outcome: "retry_later",
+					operationId: JSON.parse(sent.body ?? "{}").command.operationId,
+					code: "pin_throttled",
+					retryAfter: 900,
+				},
+				{ status: 429 },
+			);
+		const { sent, fetch } = server({ submit: [throttled, executed, executed] });
+		const { queue, storage } = queueWith(fetch);
+		await enqueue(queue, anna, "2026-10-16T08:00:00Z");
+		await enqueue(queue, anna, "2026-10-16T08:05:00Z");
+		const bens = await enqueue(queue, ben, "2026-10-16T08:10:00Z");
+
+		expect(await queue.send("z8k_token")).toMatchObject({ refused: [], settled: 1, waiting: 2 });
+		// Anna's later command waits behind the throttled one; Ben's goes on.
+		expect(sent.map((request) => request.body)).toEqual([sent[0]?.body, JSON.stringify(bens)]);
+		expect((await storage.list())[0]).toMatchObject({
+			uncertain: false,
+			notBefore: "2026-10-16T08:45:00Z",
+		});
+
+		clocks.device = "2026-10-16T08:40:00Z";
+		expect(await queue.send("z8k_token")).toMatchObject({ waiting: 2 });
+		expect(sent).toHaveLength(2);
+
+		clocks.device = "2026-10-16T08:45:00Z";
+		expect(await queue.send("z8k_token")).toMatchObject({ waiting: 1 });
+		expect(sent[2]?.body).toBe(sent[0]?.body);
+	});
+
+	it("sends each command only with the token it was queued under, and a retired token's once", async () => {
+		const otherKiosk = "33333333-3333-4333-8333-333333333333";
+		const { sent, fetch } = server({ submit: [executed, refused("kiosk_revoked")] });
+		const { queue } = queueWith(fetch);
+		// Queued on a kiosk that was revoked, then the device was paired as another kiosk.
+		const old = await enqueue(queue, anna, "2026-10-16T08:00:00Z", {
+			token: "z8k_old",
+			kioskId: otherKiosk,
+		});
+		const current = await enqueue(queue, ben, "2026-10-16T08:10:00Z", { token: "z8k_new" });
+
+		const report = await queue.send("z8k_new", kioskId);
+		expect(report).toMatchObject({ settled: 1, waiting: 0 });
+		expect(sent.map((request) => [request.token, request.body])).toEqual([
+			["z8k_new", JSON.stringify(current)],
+		]);
+
+		const retired = await queue.sendRetired("z8k_new");
+		expect(sent.at(-1)).toMatchObject({ token: "z8k_old", body: JSON.stringify(old) });
+		expect(retired.refused.map((notice) => notice.code)).toEqual(["kiosk_revoked"]);
+		expect(await queue.commands()).toEqual([]);
+		expect(await queue.sendRetired("z8k_new")).toMatchObject({ settled: 0, refused: [] });
+	});
+
+	it("keeps a retired token's commands while Z8 cannot be reached, for a later contact", async () => {
+		const { fetch } = server({ submit: [networkDown] });
+		const { queue } = queueWith(fetch);
+		await enqueue(queue, anna, undefined, { token: "z8k_old" });
+
+		expect(await queue.sendRetired("z8k_new")).toMatchObject({ unreachable: true });
+		expect((await queue.commands()).map((record) => record.token)).toEqual(["z8k_old"]);
 	});
 
 	it("answers an empty queue without any request", async () => {

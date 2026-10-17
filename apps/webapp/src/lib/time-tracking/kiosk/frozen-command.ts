@@ -22,6 +22,7 @@
  * clock (`device_clock`), which Z8 accepts only between the anchor and arrival.
  */
 import { z } from "zod";
+import { clockCommandOperationIdSchema, clockCommandUtcInstantSchema } from "../clock-command";
 import type { KioskTimeSource } from "../clocking/types";
 import { isValidIanaTimezone } from "../timezone-capture";
 import {
@@ -52,16 +53,11 @@ export const KIOSK_FROZEN_ACTIONS = [
 ] as const;
 export type KioskFrozenAction = (typeof KIOSK_FROZEN_ACTIONS)[number];
 
-/** The one operation ID representation: a lowercase canonical UUID. */
-const operationId = z
-	.string()
-	.regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+/** The one operation ID representation (a lowercase canonical UUID), as every frozen clock command's. */
+const operationId = clockCommandOperationIdSchema;
 const uuid = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 /** A UTC instant with at most millisecond precision, ending in `Z`. */
-const utcInstant = z
-	.string()
-	.regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/)
-	.refine((value) => !Number.isNaN(Date.parse(value)));
+const utcInstant = clockCommandUtcInstantSchema;
 const ianaZone = z.string().refine((value) => isValidIanaTimezone(value));
 const base64url = z.string().regex(/^[A-Za-z0-9_-]+$/);
 const preserve = z.strictObject({ kind: z.literal("preserve") });
@@ -75,7 +71,7 @@ const commandFields = {
 	/** UTC instant the employee acted at. */
 	occurredAt: utcInstant,
 	timeSource: z.enum(KIOSK_TIME_SOURCES),
-	/** The kiosk's zone as the kiosk knew it; Z8 captures the entry in the kiosk's current zone. */
+	/** The kiosk's zone as the kiosk knew it when the employee acted: the entry is captured in it. */
 	timezone: ianaZone,
 };
 
@@ -199,7 +195,10 @@ export function parseKioskFrozenSubmission(body: unknown): ParsedKioskFrozenSubm
  * `invalid_interval`, `under_review` (`review`), `holiday_blocked` (`holidayName`),
  * `month_closed` (`month`), `append_review_required`, `billing_required` (`reason`),
  * `collision` (the operation ID names other work), `access_denied` (the kiosk's or the employee's
- * standing changed while the command was judged), `invalid_command`.
+ * standing changed while the command was judged), `invalid_command` (Clocking could not take the
+ * command as it is, or it names another kiosk than the one whose token sends it).
+ * Each reason's HTTP status and how it reads to people: `KIOSK_FROZEN_REFUSALS`
+ * (`frozen-refusal-reasons.ts`).
  */
 export const KIOSK_FROZEN_REFUSAL_REASONS = [
 	"kiosk_revoked",
@@ -240,6 +239,9 @@ export type KioskFrozenRefusalReason = (typeof KIOSK_FROZEN_REFUSAL_REASONS)[num
  *   answered from the stored outcome.
  * - 4xx `refused` with `code` (`KioskFrozenRefusalReason`) and its details; never
  *   resend it.
+ * - 429 `retry_later` (`pin_throttled`): too many queued PINs of the employee
+ *   failed on arrival lately (ADR 0011); nothing was checked or recorded. Keep it
+ *   and resend the same bytes after `retryAfter` seconds.
  * - 500 `unknown`: it may or may not have committed; look it up, then resend the
  *   same bytes.
  * - 400 `invalid_request` / 422 `unsupported_version` (no `outcome`): malformed;
@@ -256,6 +258,7 @@ export type KioskFrozenCommandReply =
 			string,
 			unknown
 	  >)
+	| { outcome: "retry_later"; operationId: string; code: "pin_throttled"; retryAfter: number }
 	| { outcome: "unknown"; operationId: string };
 
 /**

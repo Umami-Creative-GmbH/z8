@@ -169,8 +169,12 @@ export type ClockInBody = {
 	workLocationType: WorkLocationType;
 };
 
-/** Where a break closed the work: its instant and the zone observed there. */
-export type BreakStart = { instant: Instant; zone: string };
+/**
+ * Where a break closed the work: its instant and the zone observed there, and,
+ * for a break start an offline kiosk queued (#885), where its instant came from:
+ * the entry the closure writes at the start records it as its time source.
+ */
+export type BreakStart = { instant: Instant; zone: string; timeSource?: KioskTimeSource };
 
 /**
  * A break on the target: it closes the work at the break start and resumes it at
