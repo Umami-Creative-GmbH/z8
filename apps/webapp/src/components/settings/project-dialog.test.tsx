@@ -107,6 +107,7 @@ const relaunchPreview: ProjectTemplatePreviewData = {
 	color: "#3b82f6",
 	budgetHours: "120.00",
 	deadlineOffsetDays: 30,
+	requiresTask: false,
 	createdAt: new Date("2026-01-01T00:00:00Z"),
 	updatedAt: new Date("2026-01-01T00:00:00Z"),
 	tasks: [
@@ -150,6 +151,7 @@ function editedProject(overrides: Partial<ProjectWithDetails> = {}): ProjectWith
 		customerName: null,
 		deletedCustomerName: null,
 		billableDefault: false,
+		requiresTask: false,
 		isActive: true,
 		createdAt: new Date("2026-01-01T00:00:00Z"),
 		createdBy: "user-1",
@@ -350,6 +352,104 @@ describe("ProjectDialog, starting from a template", () => {
 			expect.objectContaining({ organizationId: "org-1", name: "Blank one" }),
 		);
 		expect(fromTemplateActions.createProjectFromTemplate).not.toHaveBeenCalled();
+	});
+});
+
+describe("ProjectDialog, task requirement (#884)", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		customerActions.getCustomersForSelection.mockResolvedValue({ success: true, data: [] });
+		fromTemplateActions.getProjectTemplateChoices.mockResolvedValue({
+			success: true,
+			data: [relaunchSummary],
+		});
+		fromTemplateActions.getProjectTemplatePreview.mockResolvedValue({
+			success: true,
+			data: { ...relaunchPreview, requiresTask: true },
+		});
+		projectActions.updateProject.mockResolvedValue({ success: true, data: undefined });
+		projectActions.createProject.mockResolvedValue({ success: true, data: { id: "p" } });
+		fromTemplateActions.createProjectFromTemplate.mockResolvedValue({
+			success: true,
+			data: { id: "project-1", skipped: [] },
+		});
+	});
+
+	it("turns the requirement on for an edited project, off by default", async () => {
+		const user = userEvent.setup();
+		renderDialog(editedProject());
+
+		const requirement = await screen.findByRole("switch", { name: "Require a task" });
+		expect(requirement.getAttribute("aria-checked")).toBe("false");
+		await user.click(requirement);
+		await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+		expect(projectActions.updateProject).toHaveBeenCalledWith(
+			"project-1",
+			expect.objectContaining({ requiresTask: true }),
+		);
+	});
+
+	it("shows a project's requirement and turns it off", async () => {
+		const user = userEvent.setup();
+		renderDialog(editedProject({ requiresTask: true }));
+
+		const requirement = await screen.findByRole("switch", { name: "Require a task" });
+		expect(requirement.getAttribute("aria-checked")).toBe("true");
+		await user.click(requirement);
+		await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+		expect(projectActions.updateProject).toHaveBeenCalledWith(
+			"project-1",
+			expect.objectContaining({ requiresTask: false }),
+		);
+	});
+
+	it("leaves the requirement out of a save that did not change it", async () => {
+		// A dialog opened before someone else turned the requirement on must not turn it off.
+		const user = userEvent.setup();
+		renderDialog(editedProject());
+
+		await screen.findByRole("switch", { name: "Require a task" });
+		await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+		expect(projectActions.updateProject).toHaveBeenCalledWith(
+			"project-1",
+			expect.not.objectContaining({ requiresTask: expect.anything() }),
+		);
+	});
+
+	it("creates a blank project that requires a task", async () => {
+		const user = userEvent.setup();
+		renderDialog();
+
+		await screen.findByRole("combobox", { name: "Start from" });
+		await user.type(screen.getByLabelText(/^Name/), "Strict one");
+		await user.click(screen.getByRole("switch", { name: "Require a task" }));
+		await user.click(screen.getByRole("button", { name: "Create Project" }));
+
+		expect(projectActions.createProject).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "Strict one", requiresTask: true }),
+		);
+	});
+
+	it("takes the requirement from the template instead of offering the switch", async () => {
+		const user = userEvent.setup();
+		renderDialog();
+
+		const startFrom = await screen.findByRole("combobox", { name: "Start from" });
+		await within(startFrom).findByRole("option", { name: "Website relaunch" });
+		await user.selectOptions(startFrom, "template-1");
+
+		const preview = await screen.findByRole("region", { name: "From Website relaunch" });
+		expect(within(preview).getByText("Requires a task")).toBeTruthy();
+		expect(screen.queryByRole("switch", { name: "Require a task" })).toBeNull();
+
+		await user.type(screen.getByLabelText(/^Name/), "From strict");
+		await user.click(screen.getByRole("button", { name: "Create Project" }));
+		expect(fromTemplateActions.createProjectFromTemplate).toHaveBeenCalledWith(
+			expect.not.objectContaining({ requiresTask: expect.anything() }),
+		);
 	});
 });
 

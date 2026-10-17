@@ -141,6 +141,7 @@ export async function insertAllocations(
 				costCenterId: allocation.costCenterId,
 				weightPercent: allocation.weightPercent,
 				isBillable: allocation.isBillable,
+				missingTask: allocation.missingTask,
 			})
 			.returning();
 		if (!row) throw new CompletedWorkIntegrityError("Canonical allocation insert failed");
@@ -260,6 +261,7 @@ function sameAllocations(
 			allocation.costCenterId,
 			allocation.weightPercent,
 			allocation.isBillable,
+			allocation.missingTask,
 		].join("|");
 	const left = stored.map(key).sort();
 	const right = planned.map(key).sort();

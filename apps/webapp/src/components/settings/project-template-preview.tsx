@@ -98,6 +98,9 @@ export function ProjectTemplatePreview({ template }: { template: ProjectTemplate
 						{ count: template.tasks.length },
 					)}
 				</li>
+				{template.requiresTask && (
+					<li>{t("settings.projects.fromTemplate.requiresTask", "Requires a task")}</li>
+				)}
 				{template.budgetHours && (
 					<li>
 						{t("settings.projects.fromTemplate.budget", "{hours} h budget", {

@@ -154,6 +154,50 @@ describe("TaskSelectorView", () => {
 		expect(screen.getByRole("combobox", { name: "Task" }).textContent).toContain("Retro");
 	});
 
+	describe("for a project that requires a task (#884)", () => {
+		const requiring = [
+			{
+				id: "project-website",
+				requiresTask: true,
+				tasks: [
+					{ id: "task-design", name: "Design" },
+					{ id: "task-launch", name: "Launch" },
+				],
+			},
+			{ id: "project-internal", requiresTask: true, tasks: [] },
+		];
+
+		function RequiredPicker({ projectId }: { projectId: string }) {
+			const [value, setValue] = useState<string | undefined>();
+			return (
+				<TaskSelectorView
+					projectId={projectId}
+					projects={requiring}
+					value={value}
+					onValueChange={setValue}
+				/>
+			);
+		}
+
+		it("marks the task required and offers no 'No task'", async () => {
+			render(<RequiredPicker projectId="project-website" />);
+
+			const picker = screen.getByRole("combobox", { name: "Task (required)" });
+			expect(picker.getAttribute("aria-required")).toBe("true");
+			expect(picker.textContent).toContain("Choose a task");
+			const user = userEvent.setup();
+			await user.click(picker);
+			const listbox = await screen.findByRole("listbox");
+			expect(optionNames(listbox)).toEqual(["Design", "Launch"]);
+		});
+
+		it("is hidden while the requirement has lapsed for want of open tasks", () => {
+			render(<RequiredPicker projectId="project-internal" />);
+
+			expect(screen.queryByRole("combobox")).toBeNull();
+		});
+	});
+
 	it("never offers a booking's task under another project", async () => {
 		const current: BookingTask = {
 			id: "task-design",

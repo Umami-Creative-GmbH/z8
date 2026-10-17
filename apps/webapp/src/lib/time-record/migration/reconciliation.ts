@@ -107,6 +107,7 @@ export async function reconcileLegacyToCanonical(
 				projectId: true,
 				taskId: true,
 				isBillable: true,
+				missingTask: true,
 				workCategoryId: true,
 				workLocationType: true,
 				...vehicleColumns,
@@ -194,6 +195,7 @@ export async function reconcileLegacyToCanonical(
 				costCenterId: true,
 				weightPercent: true,
 				isBillable: true,
+				missingTask: true,
 			},
 			// A stable order: the record agreement rule reads the first project allocation.
 			orderBy: [asc(timeRecordAllocation.createdAt), asc(timeRecordAllocation.id)],

@@ -40,6 +40,8 @@ export type WorkPeriodAttributionColumns = WorkVehicleUseColumns & {
 	projectId: string | null;
 	taskId: string | null;
 	isBillable: boolean;
+	/** Missing task (#884, Projects ADR 0002): booked without the task its project required. */
+	missingTask: boolean;
 	workCategoryId: string | null;
 	workLocationType: WorkLocationType | null;
 };
@@ -58,6 +60,8 @@ export type CanonicalAllocationShape = {
 	costCenterId: string | null;
 	weightPercent: number;
 	isBillable: boolean;
+	/** Missing task (#884); only on a project allocation without a task. */
+	missingTask: boolean;
 };
 
 /** The weight of a work period's single project allocation. */
@@ -92,24 +96,39 @@ export type WorkAttributionPatch = {
 	workCategoryId?: string | null;
 	workLocationType?: WorkLocationType | null;
 	vehicleUse?: WorkVehicleUse | null;
+	/**
+	 * Marks the work as missing a task (#884): decided only where the booking's
+	 * project is set without a task while its task requirement is active. Left
+	 * out, the marker stays while the project stays and no task is booked.
+	 * Work with a task or without a project is never marked.
+	 */
+	missingTask?: boolean;
 };
 
 /** Why stored or requested parts cannot form a work attribution. */
-export type UnrepresentableWorkAttribution = "billable_without_project" | "task_without_project";
+export type UnrepresentableWorkAttribution =
+	| "billable_without_project"
+	| "task_without_project"
+	| "missing_task_without_project"
+	| "missing_task_with_task";
+
+const UNREPRESENTABLE_MESSAGES: Record<UnrepresentableWorkAttribution, string> = {
+	billable_without_project: "Work without a project cannot be billable",
+	task_without_project: "Work without a project cannot be booked to a task",
+	missing_task_without_project: "Work without a project cannot be missing a task",
+	missing_task_with_task: "Work booked to a task cannot be missing a task",
+};
 
 export class UnrepresentableWorkAttributionError extends Error {
 	constructor(readonly reason: UnrepresentableWorkAttribution) {
-		super(
-			reason === "billable_without_project"
-				? "Work without a project cannot be billable"
-				: "Work without a project cannot be booked to a task",
-		);
+		super(UNREPRESENTABLE_MESSAGES[reason]);
 		this.name = "UnrepresentableWorkAttributionError";
 	}
 }
 
 type Parts = {
 	project: WorkAttributionProject | null;
+	missingTask: boolean;
 	workCategoryId: string | null;
 	workLocationType: WorkLocationType | null;
 	vehicleUse: WorkVehicleUse | null;
@@ -117,12 +136,19 @@ type Parts = {
 
 export class WorkAttribution {
 	readonly project: WorkAttributionProject | null;
+	/**
+	 * Missing task (#884): the work was booked to its project without the task
+	 * the project's active requirement asked for. Only on project work without a
+	 * task; it travels with the task, so the record agreement compares it there.
+	 */
+	readonly missingTask: boolean;
 	readonly workCategoryId: string | null;
 	readonly workLocationType: WorkLocationType | null;
 	readonly vehicleUse: WorkVehicleUse | null;
 
 	private constructor(parts: Parts) {
 		this.project = parts.project ? Object.freeze({ ...parts.project }) : null;
+		this.missingTask = parts.missingTask;
 		this.workCategoryId = parts.workCategoryId;
 		this.workLocationType = parts.workLocationType;
 		this.vehicleUse = parts.vehicleUse;
@@ -131,8 +157,10 @@ export class WorkAttribution {
 
 	/** The attribution a work period's columns record. */
 	static fromWorkPeriod(columns: WorkPeriodAttributionColumns): WorkAttribution {
+		const project = projectOf(columns.projectId, columns.taskId, columns.isBillable);
 		return new WorkAttribution({
-			project: projectOf(columns.projectId, columns.taskId, columns.isBillable),
+			project,
+			missingTask: storedMissingTask(project, columns.missingTask),
 			workCategoryId: columns.workCategoryId,
 			workLocationType: columns.workLocationType,
 			vehicleUse: vehicleUseFromColumns(columns),
@@ -150,10 +178,12 @@ export class WorkAttribution {
 		allocations: readonly CanonicalAllocationShape[],
 	): WorkAttribution {
 		const allocation = allocations.find(({ allocationKind }) => allocationKind === "project");
+		const project = allocation
+			? projectOf(allocation.projectId, allocation.taskId, allocation.isBillable)
+			: projectOf(null, null, false);
 		return new WorkAttribution({
-			project: allocation
-				? projectOf(allocation.projectId, allocation.taskId, allocation.isBillable)
-				: projectOf(null, null, false),
+			project,
+			missingTask: storedMissingTask(project, allocation?.missingTask ?? false),
 			workCategoryId: detail.workCategoryId,
 			workLocationType: detail.workLocationType,
 			vehicleUse: vehicleUseFromColumns(detail),
@@ -166,7 +196,13 @@ export class WorkAttribution {
 		if ((this.project?.projectId ?? null) !== (other.project?.projectId ?? null)) {
 			parts.push("project");
 		}
-		if ((this.project?.taskId ?? null) !== (other.project?.taskId ?? null)) parts.push("task");
+		// The marker is the task's state (#884): disagreeing on it is a task difference.
+		if (
+			(this.project?.taskId ?? null) !== (other.project?.taskId ?? null) ||
+			this.missingTask !== other.missingTask
+		) {
+			parts.push("task");
+		}
 		if ((this.project?.billable ?? false) !== (other.project?.billable ?? false)) {
 			parts.push("billable");
 		}
@@ -188,6 +224,9 @@ export class WorkAttribution {
 	 * - A changed project takes its billable default unless `billable` is given;
 	 *   the same project keeps its billability (#900).
 	 * - A billable flag or a task without a project is refused.
+	 * - The missing-task marker (#884) is set only by the patch. Left out, it
+	 *   stays while the project stays and no task is booked; it ends when a task
+	 *   is booked or the project changes or clears.
 	 */
 	apply(patch: WorkAttributionPatch): WorkAttribution {
 		const currentProjectId = this.project?.projectId ?? null;
@@ -206,6 +245,10 @@ export class WorkAttribution {
 				: (this.project?.billable ?? false));
 		return new WorkAttribution({
 			project: projectOf(projectId, taskId, billable),
+			missingTask: resultingMissingTask(
+				{ projectId, taskId },
+				{ decided: patch.missingTask, current: this.missingTask, projectStays: !projectChanged },
+			),
 			workCategoryId:
 				patch.workCategoryId === undefined ? this.workCategoryId : patch.workCategoryId,
 			workLocationType:
@@ -220,6 +263,7 @@ export class WorkAttribution {
 			projectId: this.project?.projectId ?? null,
 			taskId: this.project?.taskId ?? null,
 			isBillable: this.project?.billable ?? false,
+			missingTask: this.missingTask,
 			workCategoryId: this.workCategoryId,
 			workLocationType: this.workLocationType,
 			...vehicleUseColumns(this.vehicleUse),
@@ -255,9 +299,36 @@ export class WorkAttribution {
 				costCenterId: null,
 				weightPercent: WHOLE_ALLOCATION_WEIGHT,
 				isBillable: this.project.billable,
+				missingTask: this.missingTask,
 			},
 		];
 	}
+}
+
+/**
+ * The missing-task marker rule (#884, Projects ADR 0002), the one place it is
+ * stated: only work booked to a project without a task carries the marker. A
+ * decision (`decided`) sets or clears it; left undecided, the current marker
+ * survives only while the project stays.
+ */
+export function resultingMissingTask(
+	booking: { projectId: string | null; taskId: string | null },
+	marker: { decided?: boolean; current?: boolean; projectStays?: boolean },
+): boolean {
+	if (booking.projectId === null || booking.taskId !== null) return false;
+	return marker.decided ?? ((marker.projectStays ?? false) && (marker.current ?? false));
+}
+
+/** A stored marker, refused where it cannot be: without a project or with a task. */
+function storedMissingTask(project: WorkAttributionProject | null, missingTask: boolean): boolean {
+	if (!missingTask) return false;
+	const booking = { projectId: project?.projectId ?? null, taskId: project?.taskId ?? null };
+	if (!resultingMissingTask(booking, { decided: true })) {
+		throw new UnrepresentableWorkAttributionError(
+			project === null ? "missing_task_without_project" : "missing_task_with_task",
+		);
+	}
+	return true;
 }
 
 function projectOf(

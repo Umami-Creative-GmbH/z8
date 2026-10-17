@@ -207,5 +207,6 @@ function allocationShape(allocation: CanonicalAllocationShape): CanonicalAllocat
 		costCenterId: allocation.costCenterId,
 		weightPercent: allocation.weightPercent,
 		isBillable: allocation.isBillable,
+		missingTask: allocation.missingTask,
 	};
 }
