@@ -43,6 +43,30 @@ After five wrong PINs in a row the employee's PIN is locked for 15 minutes. A ki
 
 ---
 
+## Kiosk Badges
+
+A kiosk badge is a printed QR code that identifies an employee at a kiosk instead of their PIN. It never signs anyone in to Z8, and the employee's kiosk PIN keeps working alongside it.
+
+<Callout type="info" title="Scanning Not Yet Available">
+Kiosks cannot scan badges yet. You can already issue and print them; they start working once badge scanning is available and switched on for a kiosk.
+</Callout>
+
+Owners, admins and the employee's direct manager manage badges in the **Kiosk access** card on the employee's page in **Settings -> Employees**, one employee at a time. Only active employees, including kiosk-only employees, can receive a badge.
+
+| Action | Effect |
+|--------|--------|
+| **Issue badge** | Creates the employee's badge and offers it as a PDF with their name, the organization and the QR code. An employee has at most one active badge, and it does not expire. |
+| **Replace badge** | Creates a new badge and PDF. Every copy of the old badge stops working at once. |
+| **Revoke badge** | Every copy of the badge stops working for good. The employee's kiosk PIN is not changed. |
+
+<Callout type="warn" title="Save the PDF when you issue the badge">
+Z8 keeps only a fingerprint of the badge, never the badge itself, so it cannot show or download the same badge again. Save the PDF (**Download PDF**) or print it (**Open to print**) before you choose **Done** or leave the page. You can reprint a saved PDF as often as you need. If the file or a printed badge is lost, replace the badge.
+</Callout>
+
+Whoever holds a copy of a badge can use it, so treat it like a key. Cut it out along the dashed line; it fits a standard card sleeve.
+
+---
+
 ## Clocking at a Kiosk
 
 1. The employee taps their name on the kiosk's home screen.

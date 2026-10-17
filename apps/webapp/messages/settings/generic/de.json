@@ -1439,6 +1439,17 @@
       },
       "title": "Daten importieren"
     },
+    "kioskBadge": {
+      "errors": {
+        "badgeExists": "Dieser Mitarbeiter hat bereits einen Kiosk-Ausweis. Ersetzen Sie ihn stattdessen.",
+        "employeeInactive": "Nur aktive Mitarbeiter können einen Kiosk-Ausweis erhalten.",
+        "employeeNotFound": "Dieser Mitarbeiter wurde nicht gefunden.",
+        "failed": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+        "noBadge": "Dieser Mitarbeiter hat keinen Kiosk-Ausweis.",
+        "notAllowed": "Sie sind nicht berechtigt, dies zu tun.",
+        "signInRequired": "Melden Sie sich an, um fortzufahren."
+      }
+    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Diese Adresse wird bereits von einem anderen Konto verwendet.",

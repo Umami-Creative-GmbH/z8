@@ -1828,6 +1828,13 @@
       "when": 1807200000000,
       "tag": "0260_kiosk_clock_attempt",
       "breakpoints": true
+    },
+    {
+      "idx": 261,
+      "version": "7",
+      "when": 1807286400000,
+      "tag": "0261_employee_kiosk_badge",
+      "breakpoints": true
     }
   ]
 }
