@@ -118,6 +118,33 @@ export type KioskClockResult = KioskEmployeeSnapshot & {
 };
 
 /**
+ * Resolving an uncertain online action (#1363, spec #889). Every explicit
+ * action gets one `operationId`, made before it is sent and never replaced for
+ * that action. When its reply is lost (no answer, a 5xx, an answer that is not
+ * Z8's), the device must not act again or claim that nothing was recorded; it
+ * asks `POST /api/kiosk/clock/outcome` with `{ operationId, employeeId, action }`
+ * (the action as it was sent) and only the device token, no PIN or badge:
+ *
+ * - `committed`: the action was recorded; `at` is its original event time, as
+ *   its own reply would have said. Show it once.
+ * - `not_recorded`: nothing was recorded, and the attempt is now closed for
+ *   good: the original request can never commit later. Only a fresh, explicit
+ *   action (under current authorization) may follow; never resend the old one.
+ * - `conflict`: the operation was recorded for another employee or action.
+ *   Nothing about it is disclosed.
+ *
+ * Any other answer (401, 5xx, no connection) settles nothing: keep the turn
+ * unresolved and ask again. The lookup never runs, retries or queues an action.
+ * Asking while the original is still in flight can close it as not recorded
+ * (safe, never false), so the device waits a few seconds before it asks.
+ * A refused original then answers 409 `attempt_closed`.
+ */
+export type KioskClockAttemptOutcome =
+	| { outcome: "committed"; action: KioskClockAction; at: KioskEventTime }
+	| { outcome: "not_recorded" }
+	| { outcome: "conflict" };
+
+/**
  * Why a kiosk call did nothing. HTTP status: 400 `invalid_request` (and Clocking's
  * `invalid_command`, `invalid_break_duration`), 401
  * `kiosk_unknown`/`kiosk_revoked`, 403 `employee_not_assigned`, `wrong_pin`,
@@ -125,7 +152,9 @@ export type KioskClockResult = KioskEmployeeSnapshot & {
  * `billing_required`, 503 `failed`/`unconfirmed` (only `unconfirmed` may have
  * saved work), and 409 for every other Clocking refusal (for example
  * `already_clocked_in`, `not_clocked_in`, `already_on_break`, `on_break`,
- * `no_break_in_progress`, `holiday_blocked`), which also carries the state.
+ * `no_break_in_progress`, `holiday_blocked`, and `attempt_closed`: the kiosk's
+ * outcome lookup already closed this operation as not recorded), which also
+ * carries the state.
  */
 export type KioskClockRefusal =
 	| {

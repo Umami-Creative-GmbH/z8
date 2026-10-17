@@ -276,6 +276,10 @@ _Avoid_: Password, passcode
 An employee's personal QR credential that proves at an online kiosk which employee is clocking, instead of their kiosk PIN; each employee has one active badge without scheduled expiry. Whoever holds a copy can use it until replacement, revocation or the employee's departure; it never grants account sign-in.
 _Avoid_: QR login, access card, pairing code
 
+**Kiosk clock attempt**:
+One explicit online action at a kiosk, named by the operation identity the kiosk gave it before sending it. It ends exactly once: committed with its work, or closed as not recorded by the kiosk's outcome lookup, after which it can never commit. A lost reply leaves it unresolved until then.
+_Avoid_: Retry, pending action
+
 **Kiosk-only employee**:
 An employee who has no sign-in and clocks only at kiosks.
 _Avoid_: Terminal user, offline employee

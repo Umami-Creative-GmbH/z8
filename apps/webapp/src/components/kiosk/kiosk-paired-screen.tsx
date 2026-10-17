@@ -7,6 +7,7 @@ import { kioskPost } from "@/lib/time-tracking/kiosk/device";
 import { formatKioskTime } from "@/lib/time-tracking/kiosk/display";
 import type { KioskOfflineEmployeeView } from "@/lib/time-tracking/kiosk/offline-command";
 import type {
+	KioskClockAttemptOutcome,
 	KioskClockResult,
 	KioskDeviceInfo,
 	KioskEmployeeListing,
@@ -14,6 +15,12 @@ import type {
 	KioskOfflineContact,
 	KioskRefusalCode,
 } from "@/lib/time-tracking/kiosk/protocol";
+import {
+	forgetUncertainAction,
+	type KioskUncertainAction,
+	readUncertainAction,
+	rememberUncertainAction,
+} from "@/lib/time-tracking/kiosk/uncertain-action";
 import { KIOSK_ACTION_REQUEST } from "./kiosk-action-request";
 import { KioskConfirmation } from "./kiosk-confirmation";
 import {
@@ -36,9 +43,11 @@ import {
 	type OfflineTurn,
 	pinCheckedFlow,
 	queueOfflineAction,
+	resolvedFlow,
 	type VehicleAnswer,
 	vehicleAskOf,
 } from "./kiosk-turn-flow";
+import { KioskUncertainScreen } from "./kiosk-uncertain-screen";
 import { KioskVehicleUseStep } from "./kiosk-vehicle-use-step";
 import { useKioskOfflineMode } from "./use-kiosk-offline-mode";
 
@@ -46,6 +55,12 @@ import { useKioskOfflineMode } from "./use-kiosk-offline-mode";
 export const KIOSK_CONFIRMATION_MS = 10_000;
 /** A PIN pad or employee screen nobody touches returns home after this long. */
 export const KIOSK_IDLE_MS = 30_000;
+/** An online action (or outcome question) without an answer after this long is uncertain (#1363). */
+export const KIOSK_ACTION_TIMEOUT_MS = 20_000;
+/** The first question about an uncertain action waits this long (#1363). */
+export const KIOSK_OUTCOME_FIRST_CHECK_MS = 3_000;
+/** While Z8 cannot answer, the kiosk asks again this often (#1363). */
+export const KIOSK_OUTCOME_RETRY_MS = 5_000;
 
 interface KioskPairedScreenProps {
 	token: string;
@@ -87,7 +102,11 @@ export function KioskPairedScreen({
 	// without reloading the page.
 	const [kiosk, setKiosk] = useState(initialKiosk);
 	const language = useKioskLanguage(kiosk.language);
-	const [flow, setFlow] = useState<KioskFlow>({ step: "home" });
+	// An action whose reply was lost before a reload or remount is still being resolved (#1363).
+	const [flow, setFlow] = useState<KioskFlow>(() => {
+		const attempt = readUncertainAction(initialKiosk.id);
+		return attempt ? { step: "uncertain", attempt, check: "checking" } : { step: "home" };
+	});
 	const [activity, setActivity] = useState(0);
 
 	function kioskRefused(code: KioskRefusalCode) {
@@ -149,16 +168,76 @@ export function KioskPairedScreen({
 	) {
 		setFlow(actingFlow(pin, snapshot, action, vehicle));
 		const vehicleUse = vehicle?.answer.vehicleUse;
-		const result = await kioskPost<KioskClockResult>(token, "/api/kiosk/clock", {
-			employeeId: snapshot.employee.id,
-			pin,
-			action: KIOSK_ACTION_REQUEST[action],
+		// One identity per explicit action, kept before it is sent, so a lost reply
+		// resolves this action instead of making a second one (#1363).
+		const attempt: KioskUncertainAction = {
+			version: 1,
+			kioskId: kiosk.id,
 			operationId: crypto.randomUUID(),
-			...(vehicleUse ? { vehicleUse } : {}),
-		});
-		if (result.kind === "kiosk") return kioskRefused(result.code);
-		setFlow(actedFlow({ pin, snapshot, action, vehicle, result }));
+			employee: { id: snapshot.employee.id, name: snapshot.employee.name },
+			action,
+			request: KIOSK_ACTION_REQUEST[action],
+			submittedAt: new Date().toISOString(),
+		};
+		rememberUncertainAction(attempt);
+		const result = await kioskPost<KioskClockResult>(
+			token,
+			"/api/kiosk/clock",
+			{
+				employeeId: snapshot.employee.id,
+				pin,
+				action: attempt.request,
+				operationId: attempt.operationId,
+				...(vehicleUse ? { vehicleUse } : {}),
+			},
+			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
+		);
+		if (result.kind === "kiosk") {
+			// Refused with the device token: the action never ran.
+			forgetUncertainAction(attempt.operationId);
+			return kioskRefused(result.code);
+		}
+		const next = actedFlow({ pin, snapshot, action, attempt, vehicle, result });
+		if (next.step !== "uncertain") forgetUncertainAction(attempt.operationId);
+		setFlow(next);
 	}
+
+	/** Asks Z8 once what became of the uncertain action (#1363); never sends the action again. */
+	const checkUncertain = useEffectEvent(async (attempt: KioskUncertainAction) => {
+		const result = await kioskPost<KioskClockAttemptOutcome>(
+			token,
+			"/api/kiosk/clock/outcome",
+			{
+				operationId: attempt.operationId,
+				employeeId: attempt.employee.id,
+				action: attempt.request,
+			},
+			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
+		);
+		// The device token was refused: the action stays unresolved for after pairing again.
+		if (result.kind === "kiosk") return kioskRefused(result.code);
+		const next = resolvedFlow(attempt, result);
+		if (next.step !== "uncertain" || next.check === "conflict") {
+			forgetUncertainAction(attempt.operationId);
+		}
+		setFlow((current) =>
+			current.step === "uncertain" && current.attempt.operationId === attempt.operationId
+				? next
+				: current,
+		);
+	});
+
+	const uncertain = flow.step === "uncertain" && flow.check !== "conflict" ? flow : null;
+	// Waits a little before the first question, so a slow original can still answer itself,
+	// then asks again while Z8 cannot answer, and as soon as the kiosk is back online.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: coming back online restarts the wait
+	useEffect(() => {
+		if (!uncertain) return;
+		const delay =
+			uncertain.check === "checking" ? KIOSK_OUTCOME_FIRST_CHECK_MS : KIOSK_OUTCOME_RETRY_MS;
+		const timer = window.setTimeout(() => void checkUncertain(uncertain.attempt), delay);
+		return () => window.clearTimeout(timer);
+	}, [uncertain, contact.online]);
 
 	/** An offline action (#1292): frozen and queued on this kiosk, confirmed by Z8 later. */
 	async function actOffline(turn: OfflineTurn, action: KioskPanelAction, vehicle?: VehicleAnswer) {
@@ -409,6 +488,16 @@ function KioskTurnScreen({
 							error: null,
 						})
 					}
+				/>
+			);
+		case "uncertain":
+			return (
+				<KioskUncertainScreen
+					key="uncertain"
+					attempt={flow.attempt}
+					actionLabel={labels.buttons[flow.attempt.action]}
+					check={flow.check}
+					onHome={onHome}
 				/>
 			);
 		case "done":

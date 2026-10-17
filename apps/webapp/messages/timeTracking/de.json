@@ -226,12 +226,14 @@
       },
       "refusal": {
         "alreadyClockedIn": "Sie sind bereits eingestempelt.",
+        "attemptClosed": "Diese Aktion wurde nicht erfasst. Wählen Sie sie erneut, wenn Sie sie noch möchten.",
         "billing": "Das Einstempeln ist für Ihre Organisation derzeit nicht verfügbar. Wenden Sie sich an Ihre Administration.",
         "generic": "Das hat nicht funktioniert. Es wurde nichts erfasst. Versuchen Sie es erneut oder wenden Sie sich an Ihre Führungskraft.",
         "holiday": "Das Einstempeln ist heute aufgrund eines Feiertags gesperrt. Wenden Sie sich an Ihre Führungskraft.",
         "monthClosed": "Diese Zeit liegt in einem abgeschlossenen Monat und kann nicht geändert werden. Wenden Sie sich an Ihre Führungskraft.",
         "noBreak": "Sie befinden sich nicht in einer Pause.",
         "notClockedIn": "Sie sind nicht eingestempelt.",
+        "notRecorded": "Ihre Aktion wurde nicht erfasst. Geben Sie Ihre PIN ein, um sie erneut zu wählen.",
         "onBreak": "Sie befinden sich bereits in einer Pause.",
         "unconfirmed": "Der Kiosk konnte nicht bestätigen, ob dies gespeichert wurde. Überprüfen Sie Ihren Status, bevor Sie es erneut versuchen.",
         "underReview": "Ihre Arbeitszeit für heute wird überprüft. Wenden Sie sich an Ihre Führungskraft."
@@ -246,6 +248,14 @@
         "clockedIn": "Eingestempelt seit {time}",
         "clockedOut": "Nicht eingestempelt",
         "onBreak": "In Pause seit {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Zurück",
+        "conflict": "Diese Aktion konnte an diesem Kiosk nicht geprüft werden. Klären Sie Ihren Status mit Ihrer Führungskraft, bevor Sie erneut stempeln.",
+        "title": "Es wird geprüft, ob Ihre Aktion erfasst wurde",
+        "unavailable": "Z8 ist gerade nicht erreichbar. Der Kiosk prüft weiter.",
+        "wait": "Bitte warten Sie. Stempeln Sie nicht erneut: Der Kiosk zeigt das Ergebnis, sobald Z8 antwortet."
       },
       "unreachableDescription": "Der Kiosk kann den Server nicht erreichen. Überprüfen Sie die Netzwerkverbindung; Stempeln funktioniert nur im Online-Modus.",
       "unreachableTitle": "Kiosk offline",

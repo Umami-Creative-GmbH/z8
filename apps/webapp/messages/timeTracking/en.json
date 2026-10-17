@@ -226,12 +226,14 @@
       },
       "refusal": {
         "alreadyClockedIn": "You are already clocked in.",
+        "attemptClosed": "This action was not recorded. Choose it again if you still want it.",
         "billing": "Clocking is not available for your organization right now. Contact your admin.",
         "generic": "That did not work. Nothing was recorded. Try again or ask your manager.",
         "holiday": "Clocking is blocked today because of a holiday. Ask your manager.",
         "monthClosed": "This time is in a closed month and cannot be changed. Ask your manager.",
         "noBreak": "You are not on a break.",
         "notClockedIn": "You are not clocked in.",
+        "notRecorded": "Your action was not recorded. Enter your PIN to choose it again.",
         "onBreak": "You are already on a break.",
         "unconfirmed": "The kiosk could not confirm whether this was saved. Check your status before you try again.",
         "underReview": "Your time for today is under review. Ask your manager."
@@ -246,6 +248,14 @@
         "clockedIn": "Clocked in since {time}",
         "clockedOut": "Not clocked in",
         "onBreak": "On break since {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Back",
+        "conflict": "This action could not be checked on this kiosk. Check your status with your manager before you clock again.",
+        "title": "Checking whether your action was recorded",
+        "unavailable": "Z8 cannot be reached right now. The kiosk keeps checking.",
+        "wait": "Please wait. Do not clock again: the kiosk shows the result as soon as Z8 answers."
       },
       "unreachableDescription": "The kiosk cannot reach the server. Check the network connection; clocking works only while online.",
       "unreachableTitle": "Kiosk offline",

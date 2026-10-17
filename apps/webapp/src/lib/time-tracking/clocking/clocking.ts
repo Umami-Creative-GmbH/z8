@@ -29,6 +29,7 @@ import {
 } from "../close-active-work";
 import { type CloseResumeWorkResult, isCloseResumeStanding } from "../close-resume-work";
 import { monthClosedRefusalOf } from "../closed-months/refusal";
+import { KioskAttemptClosedError } from "../kiosk/clock-attempt";
 import {
 	clockOutTaskRequirement,
 	isProjectEligible,
@@ -93,7 +94,7 @@ import {
 } from "./clock-out";
 import type { ClockFollowUps, ClockOutAdvice, ClosedLiveWork } from "./follow-ups";
 import { FrozenCommandNotAcceptedError } from "./frozen";
-import { breakStartEntrySource } from "./kiosk";
+import { breakStartEntrySource, claimExecutedKioskAttempt } from "./kiosk";
 import { LegacyCommandNotAcceptedError } from "./legacy-command";
 import { stampExecutedClockEvent } from "./position-stamp";
 import { clockOutCanPickTask } from "./task-choice";
@@ -235,12 +236,19 @@ function targetChanged(command: ClockOutCommand | BreakCommand) {
 	return target.kind === "active" ? "not_clocked_in" : "target_not_active";
 }
 
+/** When an executed entry's clock event took effect, in the zone the entry captured. */
+function entryEventTime(entry: { timestamp: Date; timezone: string | null }) {
+	return { instant: instantFromDate(entry.timestamp), zone: entry.timezone };
+}
+
 /** Refusals of the shared work-transaction errors, for every kind. */
 function transactionRefusal(error: unknown) {
 	// A receipt the module cannot interpret counts as one: never resend under this identity.
+	// A kiosk attempt its kiosk already resolved as not recorded is closed for good (#1363).
 	if (
 		error instanceof CompletedWorkCollisionError ||
-		error instanceof CompletedWorkIntegrityError
+		error instanceof CompletedWorkIntegrityError ||
+		error instanceof KioskAttemptClosedError
 	) {
 		return { code: "collision" as const, cause: error };
 	}
@@ -661,10 +669,15 @@ export function createClocking(ports: ClockingPorts): Clocking {
 					if (closed.disposition === "executed" && breakChanged) {
 						throw new BreakInProgressChangedError();
 					}
-					return stampExecutedClockEvent(coordination.db, stamped, closed, {
-						eventInstant,
-						entryIdOf: (executed) => executed.entry.id,
-					});
+					return claimExecutedKioskAttempt(
+						coordination.db,
+						command,
+						await stampExecutedClockEvent(coordination.db, stamped, closed, {
+							eventInstant,
+							entryIdOf: (executed) => executed.entry.id,
+						}),
+						{ action: "clock_out", at: (executed) => entryEventTime(executed.entry) },
+					);
 				},
 			);
 		} catch (error) {
@@ -755,21 +768,26 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		let start: ClockInStart;
 		try {
 			start = await transactions.start(transactionScope(plan), async (scope) =>
-				recordClockInVehicleUse(
+				claimExecutedKioskAttempt(
 					scope.db,
 					command,
-					await stampExecutedClockEvent(
+					await recordClockInVehicleUse(
 						scope.db,
 						command,
-						await startClockIn(scope, {
-							plan,
-							replayable,
-							eventInstant,
-							capture: eventCapture(command, eventInstant),
-						}),
-						{ eventInstant, entryIdOf: (started) => started.entry.id },
+						await stampExecutedClockEvent(
+							scope.db,
+							command,
+							await startClockIn(scope, {
+								plan,
+								replayable,
+								eventInstant,
+								capture: eventCapture(command, eventInstant),
+							}),
+							{ eventInstant, entryIdOf: (started) => started.entry.id },
+						),
+						(started) => started.entry.id,
 					),
-					(started) => started.entry.id,
+					{ action: "clock_in", at: (started) => entryEventTime(started.entry) },
 				),
 			);
 		} catch (error) {
@@ -863,7 +881,16 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						eventInstant,
 						entryIdOf: (executed) => executed.resumeEntryId,
 					});
-					return vehicle.recordResumed(stampedBreak);
+					return claimExecutedKioskAttempt(
+						coordination.db,
+						command,
+						await vehicle.recordResumed(stampedBreak),
+						{
+							action: command.resumesBreakInProgress ? "resume_break" : "break",
+							// The break ends where the work resumes, in the zone of the device.
+							at: (executed) => ({ instant: executed.result.start, zone: null }),
+						},
+					);
 				},
 			);
 		} catch (error) {
@@ -1016,6 +1043,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			};
 		}
 		if (error instanceof BreakStartCollisionError) return { code: "collision" };
+		if (error instanceof KioskAttemptClosedError) return { code: "collision", cause: error };
 		if (error instanceof FrozenCommandNotAcceptedError) return { code: "frozen_not_accepted" };
 		if (error instanceof ClockingConflictError) return { code: "not_clocked_in" };
 		return { code: "unconfirmed", cause: error };
@@ -1068,15 +1096,23 @@ export function createClocking(ports: ClockingPorts): Clocking {
 					workPeriodId: live.workPeriodId,
 					endTime: instant,
 				},
-				(coordination) =>
-					recordBreakInProgress(coordination.db, {
-						...scope,
-						workPeriodId: live.workPeriodId,
-						operationId: command.identity.id,
-						replayable: isReplayable(command.identity),
-						start: { instant, zone, ...frozenTimeSourceOf(command) },
-						...(command.payload ? { frozen: { admission: coordination.admission } } : {}),
-					}),
+				async (coordination) =>
+					claimExecutedKioskAttempt(
+						coordination.db,
+						command,
+						await recordBreakInProgress(coordination.db, {
+							...scope,
+							workPeriodId: live.workPeriodId,
+							operationId: command.identity.id,
+							replayable: isReplayable(command.identity),
+							start: { instant, zone, ...frozenTimeSourceOf(command) },
+							...(command.payload ? { frozen: { admission: coordination.admission } } : {}),
+						}),
+						{
+							action: "start_break",
+							at: (executed) => ({ instant: executed.result.start, zone: null }),
+						},
+					),
 			);
 		} catch (error) {
 			return refused(startBreakRefusal(error));
