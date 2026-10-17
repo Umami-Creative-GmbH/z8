@@ -1826,7 +1826,14 @@
       "idx": 260,
       "version": "7",
       "when": 1807200000000,
-      "tag": "0260_skill_override_assignment_context",
+      "tag": "0260_closed_month_location_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 261,
+      "version": "7",
+      "when": 1807286400000,
+      "tag": "0261_skill_override_assignment_context",
       "breakpoints": true
     }
   ]

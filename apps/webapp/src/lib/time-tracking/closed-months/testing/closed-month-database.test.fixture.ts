@@ -22,8 +22,25 @@ export type ClosedMonthDatabaseFixture = LifecycleDatabaseFixture & {
 		organizationId: string;
 		teamId?: string | null;
 		timezone?: string | null;
+		/** Seeds a departed employee: inactive, with an end date. */
+		departed?: boolean;
 	}): Promise<{ employeeId: string; userId: string }>;
 	setEmployeeTeam(employeeId: string, teamId: string | null): Promise<void>;
+	/** A location (#836) of the organization, created by its owner. */
+	location(input: { organizationId: string; createdBy: string; name?: string }): Promise<string>;
+	/** Assigns the employee to the location (#858 assigned locations). */
+	assignLocation(input: {
+		organizationId: string;
+		employeeId: string;
+		locationId: string;
+	}): Promise<void>;
+	unassignLocation(input: { employeeId: string; locationId: string }): Promise<void>;
+	/** Makes the employee a supervisor of the location, which is not an assignment. */
+	superviseLocation(input: {
+		employeeId: string;
+		locationId: string;
+		createdBy: string;
+	}): Promise<void>;
 	setUserTimezone(userId: string, timezone: string): Promise<void>;
 	work(input: {
 		organizationId: string;
@@ -149,10 +166,45 @@ export async function createClosedMonthDatabaseFixture(): Promise<ClosedMonthDat
 					input.teamId,
 				]);
 			}
+			if (input.departed) {
+				await pool.query(
+					"update employee set is_active = false, end_date = '2026-02-15' where id = $1",
+					[seeded.employeeId],
+				);
+			}
 			return { employeeId: seeded.employeeId, userId: seeded.userId };
 		},
 		async setEmployeeTeam(employeeId, teamId) {
 			await pool.query("update employee set team_id = $2 where id = $1", [employeeId, teamId]);
+		},
+		async location(input) {
+			const id = randomUUID();
+			await pool.query(
+				`insert into location (id, organization_id, name, created_by, updated_at)
+				 values ($1, $2, $3, $4, now())`,
+				[id, input.organizationId, `${input.name ?? "Site"} ${id.slice(0, 8)}`, input.createdBy],
+			);
+			return id;
+		},
+		async assignLocation(input) {
+			await pool.query(
+				`insert into employee_assigned_location (organization_id, employee_id, location_id)
+				 values ($1, $2, $3)`,
+				[input.organizationId, input.employeeId, input.locationId],
+			);
+		},
+		async unassignLocation(input) {
+			await pool.query(
+				"delete from employee_assigned_location where employee_id = $1 and location_id = $2",
+				[input.employeeId, input.locationId],
+			);
+		},
+		async superviseLocation(input) {
+			await pool.query(
+				`insert into location_employee (id, location_id, employee_id, created_by)
+				 values ($1, $2, $3, $4)`,
+				[randomUUID(), input.locationId, input.employeeId, input.createdBy],
+			);
 		},
 		setUserTimezone,
 		async work(input) {

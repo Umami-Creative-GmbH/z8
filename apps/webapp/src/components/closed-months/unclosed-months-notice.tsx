@@ -34,7 +34,7 @@ export function UnclosedMonthsNotice({
 		queryKey: ["closed-months", "close-context"],
 		queryFn: async () => {
 			const result = await getMonthCloseContext();
-			return result.success ? result.data : { canClose: false, teams: [] };
+			return result.success ? result.data : { canClose: false, teams: [], locations: [] };
 		},
 		staleTime: 5 * 60_000,
 	});
@@ -78,6 +78,7 @@ export function UnclosedMonthsNotice({
 					open={closing !== null}
 					month={closing}
 					teams={context.teams}
+					locations={context.locations}
 					onOpenChange={(open) => !open && setClosing(null)}
 					onClosed={() =>
 						void queryClient.invalidateQueries({ queryKey: MONTH_CLOSURE_STATUSES_KEY })
