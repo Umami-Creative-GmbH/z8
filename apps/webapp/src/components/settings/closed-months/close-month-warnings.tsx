@@ -6,6 +6,7 @@ import { useTranslate } from "@tolgee/react";
 import { getMonthCloseWarningsAction } from "@/app/[locale]/(app)/settings/closed-months/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { queryKeys } from "@/lib/query/keys";
+import { closeScopeValue } from "@/lib/time-tracking/closed-months/close-scope";
 import type { CloseMonthWarning } from "@/lib/time-tracking/closed-months/close-warnings";
 import type { CloseMonthScope } from "@/lib/time-tracking/closed-months/store";
 
@@ -23,9 +24,8 @@ export function CloseMonthWarnings({
 	month: string | null;
 	scope: CloseMonthScope;
 }) {
-	const scopeKey = scope.kind === "team" ? scope.teamId : scope.kind;
 	const { data } = useQuery({
-		queryKey: queryKeys.closedMonths.closeWarnings(month ?? "", scopeKey),
+		queryKey: queryKeys.closedMonths.closeWarnings(month ?? "", closeScopeValue(scope)),
 		queryFn: async () => {
 			if (!month) return [];
 			const result = await getMonthCloseWarningsAction({ month, scope });
