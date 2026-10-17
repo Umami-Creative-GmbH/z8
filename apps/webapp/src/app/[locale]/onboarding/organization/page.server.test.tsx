@@ -1,12 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("next/server", () => ({
+	connection: async () => {},
+}));
+
 vi.mock("./organization-page-client", () => ({
 	default: ({ canCreateOrganizations }: { canCreateOrganizations: boolean }) => (
 		<div data-can-create-organizations={String(canCreateOrganizations)} />
 	),
 }));
 
-async function renderPageWithOrganizationCreationFlag(flag: "true" | "false" | undefined) {
+async function renderPageWithOrganizationCreationFlag(
+	flag: "true" | "false" | undefined,
+) {
 	vi.resetModules();
 
 	if (flag === undefined) {
