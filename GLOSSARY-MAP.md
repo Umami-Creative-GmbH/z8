@@ -7,6 +7,7 @@
 - [Absences](./apps/webapp/src/lib/absences/CONTEXT.md): counts the working days employees take off, draws vacation from their allowance, and records who covers for them while they are away
 - [Approvals](./apps/webapp/src/lib/approvals/CONTEXT.md): decides approval requests and delivers their cards while each approval kind moves from legacy requests to canonical workflows
 - [Billable Time](./apps/webapp/src/lib/billable-time/CONTEXT.md): prices customer-chargeable work, reports its revenue and margin, and hands it to accounting tools as invoice drafts
+- [Payroll Exports](./apps/webapp/src/lib/payroll-export/GLOSSARY.md): prepares payroll data for a target and compares a period with what was previously exported
 - [Organization](./apps/webapp/src/lib/organization/CONTEXT.md): holds an organization's master data about its employees, customers and vehicles, and the custom fields it defines on employees, projects and customers
 - [Time Tracking](./apps/webapp/src/lib/time-tracking/CONTEXT.md): starts, ends and records employees' working time, and coordinates every writer of it
 - [Travel Expenses](./apps/webapp/src/lib/travel-expenses/CONTEXT.md): collects employees' expense reports for trips and single expenses, and reimburses them
