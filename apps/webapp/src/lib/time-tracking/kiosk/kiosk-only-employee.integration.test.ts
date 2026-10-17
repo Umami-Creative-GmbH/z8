@@ -284,7 +284,7 @@ describe("kiosk-only employees on PostgreSQL", () => {
 		});
 		await pool.query(
 			`insert into audit_log (organization_id, entity_type, entity_id, action, performed_by, employee_id, timestamp)
-			 values ($1, 'employee', $2, 'history.marker', $3, $2, now())`,
+			 values ($1, 'employee', $2::text, 'history.marker', $3, $2::uuid, now())`,
 			[org, created.employeeId, ids.adminUser],
 		);
 

@@ -1905,6 +1905,13 @@
       "when": 1808150400000,
       "tag": "0271_kiosk_badge_camera",
       "breakpoints": true
+    },
+    {
+      "idx": 272,
+      "version": "7",
+      "when": 1808236800000,
+      "tag": "0272_organization_mfa_grace_check_names",
+      "breakpoints": true
     }
   ]
 }
