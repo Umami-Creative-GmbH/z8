@@ -239,4 +239,3 @@ DROP TRIGGER IF EXISTS vacation_mark_eligibility_dirty ON vacation_team_eligibil
 CREATE TRIGGER vacation_mark_eligibility_dirty BEFORE INSERT OR UPDATE OR DELETE ON vacation_team_eligibility FOR EACH ROW EXECUTE FUNCTION vacation_mark_policy_dirty();
 DROP TRIGGER IF EXISTS vacation_mark_rollout_dirty ON vacation_policy_rollout;
 CREATE TRIGGER vacation_mark_rollout_dirty BEFORE UPDATE ON vacation_policy_rollout FOR EACH ROW EXECUTE FUNCTION vacation_mark_policy_dirty();
-
