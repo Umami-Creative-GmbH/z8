@@ -25,8 +25,7 @@ export interface DrivingLicenceSettingsData {
 	policy: DrivingLicencePolicyInput | null;
 	employees: {
 		id: string;
-		firstName: string | null;
-		lastName: string | null;
+		name: string;
 	}[];
 	participants: { employeeId: string; status?: AuthorizationStatus }[];
 }
@@ -394,9 +393,8 @@ function DriverEnrollment({
 				<ul className="mt-5 divide-y">
 					{data.employees.map((employee) => {
 						const name =
-							[employee.firstName, employee.lastName]
-								.filter(Boolean)
-								.join(" ") || t("drivingLicence.unnamedEmployee", "Employee");
+							employee.name.trim() ||
+							t("drivingLicence.unnamedEmployee", "Employee");
 						return (
 							<li
 								key={employee.id}

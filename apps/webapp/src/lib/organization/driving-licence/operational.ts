@@ -156,8 +156,8 @@ export async function readOperationalDrivingEmployees(
 					search
 						? or(
 								ilike(user.name, term),
-								ilike(employee.firstName, term),
-								ilike(employee.lastName, term),
+								ilike(user.firstName, term),
+								ilike(user.lastName, term),
 							)
 						: undefined,
 				),

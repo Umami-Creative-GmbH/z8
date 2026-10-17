@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NotificationSettings } from "@/components/notifications/notification-settings";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
@@ -59,7 +59,8 @@ function mockNotificationPreferences(availableChannels: Record<NotificationChann
 describe("NotificationSettings", () => {
 	it("explains mandatory automatic clock-out inbox delivery without a disable switch", () => {
 		render(<NotificationSettings />);
-		expect(screen.getByText("Always delivered to your inbox")).toBeTruthy();
+		const row = screen.getByText("Automatic clock-out").parentElement as HTMLElement;
+		expect(within(row).getByText("Always delivered to your inbox")).toBeTruthy();
 		expect(screen.queryByLabelText("In-App notifications for Automatic clock-out")).toBeNull();
 		expect(screen.getByLabelText("Email notifications for Automatic clock-out")).toBeTruthy();
 	});
