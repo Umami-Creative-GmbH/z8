@@ -207,8 +207,11 @@ _Avoid_: Automatic break, manual break
 A clock-out whose subject is another employee's named live work, performed by an organization owner, an admin or the employee's direct manager; never by the employee themselves.
 _Avoid_: Manager clock-out, forced clock-out
 
+**Compliance week**:
+The local calendar interval from Monday midnight up to the following Monday midnight, used by the compliance check and Scheduling. Personal calendar preferences and an organization's submission cadence do not change it.
+
 **Compliance check**:
-The clock-out follow-up that judges closed work against the employee's working-time rules and records its violations. It applies the work policy assigned as of the instant the work ended, the instant the policy clock-out break snapshot also reads. It counts the totals of the local day and week in which the work started, and dates each violation at the work's start, so a violation falls on the day and in the week whose total broke the rule. When the check runs never matters, and recorded violations are never re-evaluated.
+The clock-out follow-up that judges closed work against the employee's working-time rules and records its violations. It applies the work policy assigned as of the instant the work ended, the instant the policy clock-out break snapshot also reads. It counts the totals of the local day and compliance week in which the work started, and dates each violation at the work's start, so a violation falls on the day and in the week whose total broke the rule. When the check runs never matters, and recorded violations are never re-evaluated.
 
 **Position stamp**:
 The device-reported position (coordinates, accuracy and fix time) recorded as evidence with one of an employee's own clock commands, captured on their device when the event happened. It is never added, edited or moved afterwards, and a clock command without one is accepted unchanged.

@@ -234,3 +234,36 @@ describe("evaluateScheduleCompliance", () => {
 		});
 	});
 });
+
+it("keeps Sunday in the preceding Monday compliance week and excludes next Monday", () => {
+	const result = evaluateScheduleCompliance({
+		timezone: "UTC",
+		window: windowOf("2026-07-12", "2026-07-13"),
+		regulation: { overtimeWeeklyThresholdMinutes: 2880 },
+		employees: [
+			{
+				employeeId: "emp_1",
+				actualMinutesByDay: {
+					"2026-07-06": 480,
+					"2026-07-07": 480,
+					"2026-07-08": 480,
+					"2026-07-09": 480,
+					"2026-07-10": 480,
+					"2026-07-11": 480,
+				},
+				scheduledMinutesByDay: { "2026-07-12": 480, "2026-07-13": 480 },
+				restTransitions: [],
+			},
+		],
+	});
+	expect(result.findings).toEqual([
+		{
+			type: "overtime",
+			employeeId: "emp_1",
+			period: "weekly",
+			periodKey: "2026-07-06",
+			totalMinutes: 3360,
+			thresholdMinutes: 2880,
+		},
+	]);
+});
