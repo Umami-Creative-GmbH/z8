@@ -7,7 +7,10 @@ import { cleanup, render, screen } from "@testing-library/react";
 import type React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
-import { EmployeeEditFormCard, EmployeeOverviewCard } from "./[employeeId]/page-sections";
+import {
+	EmployeeEditFormCard,
+	EmployeeOverviewCard,
+} from "./[employeeId]/page-sections";
 import { createEmployeeColumns } from "./columns";
 import type { EmployeeDirectoryRow } from "./employee-action-types";
 import type { EmployeeTableFeatures } from "./employee-table-features";
@@ -22,7 +25,10 @@ const catalogs: Record<Locale, Catalog> = {
 
 function readCatalog(locale: Locale): Catalog {
 	return JSON.parse(
-		readFileSync(join(process.cwd(), "messages/settings/people", `${locale}.json`), "utf8"),
+		readFileSync(
+			join(process.cwd(), "messages/settings/people", `${locale}.json`),
+			"utf8",
+		),
 	) as Catalog;
 }
 
@@ -36,7 +42,8 @@ function lookup(catalog: Catalog, key: string): string | undefined {
 }
 
 function translatorFor(locale: Locale) {
-	return (key: string, fallback?: string) => lookup(catalogs[locale], key) ?? fallback ?? key;
+	return (key: string, fallback?: string) =>
+		lookup(catalogs[locale], key) ?? fallback ?? key;
 }
 
 vi.mock("@tolgee/react", () => ({
@@ -120,7 +127,10 @@ function createForm() {
 				isSubmitting: boolean;
 			}) => unknown;
 			children: (value: unknown) => React.ReactNode;
-		}) => children(selector({ values: formValues, isDirty: false, isSubmitting: false })),
+		}) =>
+			children(
+				selector({ values: formValues, isDirty: false, isSubmitting: false }),
+			),
 	};
 }
 
@@ -159,8 +169,38 @@ describe.each(["en", "de"] as const)("personnel number copy (%s)", (locale) => {
 		expect(screen.getByText(expected[locale].description)).toBeTruthy();
 	});
 
+	it("shows an IdP-owned personnel number read-only with an explanation", () => {
+		render(
+			<EmployeeEditFormCard
+				form={createForm() as never}
+				canEditManagerFields
+				canEditOrgAdminFields
+				contract={{ kind: "terms", contractTypeToday: "fixed" }}
+				isUpdating={false}
+				onCancel={vi.fn()}
+				personnelNumberManagedByScim
+				t={translatorFor(locale)}
+			/>,
+		);
+		expect(
+			screen.getByDisplayValue("P-0042").getAttribute("readonly"),
+		).not.toBeNull();
+		expect(
+			screen.getByText(
+				locale === "en"
+					? "Managed by your identity provider. Change the personnel number there."
+					: "Wird von Ihrem Identitätsanbieter verwaltet. Ändern Sie die Personalnummer dort.",
+			),
+		).toBeTruthy();
+	});
 	it("labels the number on the overview card", () => {
-		render(<EmployeeOverviewCard employee={employee} schedule={null} t={translatorFor(locale)} />);
+		render(
+			<EmployeeOverviewCard
+				employee={employee}
+				schedule={null}
+				t={translatorFor(locale)}
+			/>,
+		);
 
 		expect(screen.getByText(expected[locale].label)).toBeTruthy();
 		expect(screen.getByText("P-0042")).toBeTruthy();
@@ -176,12 +216,17 @@ describe("personnel number directory column", () => {
 			onOptimisticStatusChange: vi.fn(),
 			onRemoved: vi.fn(),
 		}).find(
-			(candidate) => "accessorKey" in candidate && candidate.accessorKey === "employeeNumber",
+			(candidate) =>
+				"accessorKey" in candidate &&
+				candidate.accessorKey === "employeeNumber",
 		) as ColumnDef<EmployeeTableFeatures, EmployeeDirectoryRow>;
 		const header = column.header;
-		if (typeof header !== "function") throw new Error("Header is not renderable");
+		if (typeof header !== "function")
+			throw new Error("Header is not renderable");
 
-		const element = header({} as Parameters<typeof header>[0]) as React.ReactElement<{
+		const element = header(
+			{} as Parameters<typeof header>[0],
+		) as React.ReactElement<{
 			nameKey: string;
 			fallback: string;
 		}>;

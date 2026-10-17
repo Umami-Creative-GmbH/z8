@@ -1,10 +1,9 @@
 "use client";
 
 import { IconExternalLink, IconLoader2, IconTrash } from "@tabler/icons-react";
-import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	type DueDocument,
@@ -27,8 +26,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatDateOnly } from "@/components/ui/date-picker-utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TFormControl, TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
-import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query/keys";
 import { formatPayPeriod, personnelDocumentUrl, usePersonnelFileLabels } from "./document-labels";
 
@@ -46,10 +43,10 @@ function PurgeDialog({
 	onPurged: () => void;
 }) {
 	const { t } = useTranslate();
-	const form = useForm({
-		defaultValues: { reason: "" },
-		onSubmit: async ({ value }) => {
-			const result = await purgeDueDocumentsAction({ documentIds, reason: value.reason });
+	const [isPurging, startPurging] = useTransition();
+	const purge = () =>
+		startPurging(async () => {
+			const result = await purgeDueDocumentsAction({ documentIds });
 			if (!result.success) {
 				toast.error(result.error);
 				return;
@@ -73,73 +70,35 @@ function PurgeDialog({
 					),
 				);
 			}
-			form.reset();
 			onOpenChange(false);
 			onPurged();
-		},
-	});
+		});
 
 	return (
-		<AlertDialog
-			open={open}
-			onOpenChange={(next) => {
-				if (!next) form.reset();
-				onOpenChange(next);
-			}}
-		>
+		<AlertDialog open={open} onOpenChange={onOpenChange}>
 			<AlertDialogContent>
-				<form
-					action={() => {
-						void form.handleSubmit();
-					}}
-					className="grid gap-4"
-				>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t(
-								"settings.personnelFiles.due.confirmTitle",
-								"{count, plural, one {Purge # document?} other {Purge # documents?}}",
-								{ count: documentIds.length },
-							)}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.personnelFiles.due.confirmDescription",
-								"The documents and their files are deleted for good. The audit log keeps who purged them, the employee, category, document date and pay period, and your reason.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<form.Field name="reason">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel>
-									{t("settings.personnelFiles.due.reason", "Reason (optional)")}
-								</TFormLabel>
-								<TFormControl>
-									<Textarea
-										value={field.state.value}
-										maxLength={1000}
-										onChange={(event) => field.handleChange(event.target.value)}
-										onBlur={field.handleBlur}
-									/>
-								</TFormControl>
-							</TFormItem>
+				<AlertDialogHeader>
+					<AlertDialogTitle>
+						{t(
+							"settings.personnelFiles.due.confirmTitle",
+							"{count, plural, one {Purge # document?} other {Purge # documents?}}",
+							{ count: documentIds.length },
 						)}
-					</form.Field>
-					<AlertDialogFooter>
-						<AlertDialogCancel type="button">{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<form.Subscribe selector={(state) => state.isSubmitting}>
-							{(isSubmitting) => (
-								<Button type="submit" variant="destructive" disabled={isSubmitting}>
-									{isSubmitting ? (
-										<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
-									) : null}
-									{t("settings.personnelFiles.due.confirm", "Purge")}
-								</Button>
-							)}
-						</form.Subscribe>
-					</AlertDialogFooter>
-				</form>
+					</AlertDialogTitle>
+					<AlertDialogDescription>
+						{t(
+							"settings.personnelFiles.due.purgeAuditDescription",
+							"The documents and their files are deleted for good. The audit log keeps who purged them, the employee, category, document date and pay period. Titles and file names are also removed from the documents' earlier audit records.",
+						)}
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel type="button">{t("common.cancel", "Cancel")}</AlertDialogCancel>
+					<Button type="button" variant="destructive" disabled={isPurging} onClick={purge}>
+						{isPurging ? <IconLoader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+						{t("settings.personnelFiles.due.confirm", "Purge")}
+					</Button>
+				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>
 	);

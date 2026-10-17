@@ -11,6 +11,7 @@ import {
 } from "@/app/[locale]/(app)/scheduling/actions";
 import type { DateRange } from "@/app/[locale]/(app)/scheduling/types";
 import { queryKeys } from "@/lib/query/keys";
+import { SKILL_OVERRIDE_REASON_REQUIRED } from "@/lib/scheduling/skill-override-refusal";
 import { filterShiftsForEmployee, shiftToEvent } from "./shift-scheduler-utils";
 
 interface UseShiftSchedulerDataOptions {
@@ -88,7 +89,18 @@ export function useShiftSchedulerData({
 				startTime: data.startTime,
 				endTime: data.endTime,
 			});
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) {
+				// Moving the shift needs a skill override reason, which only the shift dialog asks for (#893).
+				if (result.refusal === SKILL_OVERRIDE_REASON_REQUIRED) {
+					throw new Error(
+						t(
+							"scheduling.scheduler.shiftUpdate.skillOverrideReasonRequired",
+							"The employee lacks a required skill on this day. Open the shift to give a reason.",
+						),
+					);
+				}
+				throw new Error(result.error);
+			}
 			return result.data;
 		},
 		onSuccess: (result) => {

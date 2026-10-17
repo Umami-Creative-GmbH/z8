@@ -57,7 +57,6 @@ export async function getDueForDeletionAction(): Promise<ServerActionResult<DueD
  */
 export async function purgeDueDocumentsAction(input: {
 	documentIds: string[];
-	reason?: string | null;
 }): Promise<ServerActionResult<PurgeResult>> {
 	try {
 		const current = await loadCurrentPersonnelFileAccess();
@@ -76,8 +75,7 @@ export async function purgeDueDocumentsAction(input: {
 				error: `Purge at most ${MAX_PURGE_BATCH} documents at once.`,
 			};
 		}
-		const reason = typeof input.reason === "string" ? input.reason : null;
-		const result = await purgeDueDocuments(db, current.access, { documentIds, reason });
+		const result = await purgeDueDocuments(db, current.access, { documentIds });
 		await mapConcurrently(result.purged, 4, (documentId) =>
 			runPersonnelFileCleanup(db, {
 				deleteObject: deletePersonnelDocumentObject,

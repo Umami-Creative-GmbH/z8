@@ -43,6 +43,8 @@ interface ShiftDialogSectionsProps {
 		isLoading: boolean;
 		isError: boolean;
 	} | null;
+	/** The server refused the save for want of a skill override reason (#893). */
+	skillOverrideReasonRequested?: boolean;
 }
 
 interface ShiftDialogFooterBaseProps {
@@ -113,6 +115,7 @@ export function ShiftDialogSections({
 	isEditing,
 	shift,
 	staffing,
+	skillOverrideReasonRequested = false,
 }: ShiftDialogSectionsProps) {
 	const { t } = useTranslate();
 
@@ -343,6 +346,49 @@ export function ShiftDialogSections({
 			{isManager && formValues.employeeId && formValues.subareaId && (
 				<SkillWarningAlert validation={skillValidation} isLoading={isValidatingSkills} />
 			)}
+
+			{isManager &&
+				formValues.employeeId &&
+				(skillOverrideReasonRequested || (skillValidation && !skillValidation.isQualified)) && (
+					<form.Field name="skillOverrideReason">
+						{(field) => {
+							// The server decides whether a reason is needed (#893); it asked and got none.
+							const missing = skillOverrideReasonRequested && !field.state.value.trim();
+							return (
+								<div className="flex flex-col gap-y-2">
+									<Label htmlFor="shift-dialog-skill-override-reason">
+										{t(
+											"scheduling:scheduling.skills.overrideReason",
+											"Reason for the skill override",
+										)}
+									</Label>
+									<Textarea
+										id="shift-dialog-skill-override-reason"
+										className="resize-none"
+										value={field.state.value}
+										onChange={(event) => field.handleChange(event.target.value)}
+										onBlur={field.handleBlur}
+										aria-invalid={missing || undefined}
+										aria-describedby={
+											missing ? "shift-dialog-skill-override-reason-error" : undefined
+										}
+									/>
+									{missing && (
+										<p
+											id="shift-dialog-skill-override-reason-error"
+											className="text-sm font-medium text-destructive"
+										>
+											{t(
+												"scheduling:scheduling.skills.overrideReasonRequired",
+												"Give a reason to assign an employee without every required skill.",
+											)}
+										</p>
+									)}
+								</div>
+							);
+						}}
+					</form.Field>
+				)}
 
 			{isManager && (
 				<form.Field name="notes">

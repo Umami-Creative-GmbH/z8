@@ -440,7 +440,7 @@ describe("due for deletion", () => {
 		const result = await purgeDueDocuments(
 			db,
 			await accessOf("officer", now),
-			{ documentIds: [docs.ben2026, docs.annaSickNote], reason: null },
+			{ documentIds: [docs.ben2026, docs.annaSickNote] },
 			now,
 		);
 		expect(result).toEqual({ purged: [], skipped: [docs.ben2026, docs.annaSickNote] });
@@ -455,7 +455,7 @@ describe("due for deletion", () => {
 		const result = await purgeDueDocuments(
 			db,
 			await accessOf("owner", now),
-			{ documentIds: [docs.anna2026, docs.carla2010], reason: "too early" },
+			{ documentIds: [docs.anna2026, docs.carla2010] },
 			now,
 		);
 		expect(result.purged).toEqual([]);
@@ -478,7 +478,6 @@ describe("purge", () => {
 
 		const result = await retentionActions.purgeDueDocumentsAction({
 			documentIds: [docs.dora2018],
-			reason: "Retention period passed",
 		});
 		expect(result).toEqual({ success: true, data: { purged: [docs.dora2018], skipped: [] } });
 
@@ -509,8 +508,9 @@ describe("purge", () => {
 				documentDate: "2018-12-31",
 				payPeriod: { year: 2018, month: 12 },
 			},
-			reason: "Retention period passed",
 		});
+		// No free-text reason is kept (#923).
+		expect(metadata).not.toHaveProperty("reason");
 		expect(JSON.stringify(metadata)).not.toContain("Payslip 2018-12 Dora");
 		expect(JSON.stringify(metadata)).not.toContain("document.pdf");
 	});
@@ -519,7 +519,6 @@ describe("purge", () => {
 		signIn("anna");
 		const result = await retentionActions.purgeDueDocumentsAction({
 			documentIds: [docs.anna2026],
-			reason: null,
 		});
 		expect(result.success).toBe(false);
 	});
@@ -535,12 +534,7 @@ describe("rehire", () => {
 		await employed("anna", "2029-03-01");
 		const due = await listDueDocuments(db, owner, now);
 		expect(due.filter((document) => document.employeeId === ids.anna)).toEqual([]);
-		const purge = await purgeDueDocuments(
-			db,
-			owner,
-			{ documentIds: [docs.anna2026], reason: null },
-			now,
-		);
+		const purge = await purgeDueDocuments(db, owner, { documentIds: [docs.anna2026] }, now);
 		expect(purge.purged).toEqual([]);
 	});
 });
@@ -679,7 +673,6 @@ describe("retention start unknown (decision B)", () => {
 		signIn("officer");
 		const outOfScope = await retentionActions.purgeDueDocumentsAction({
 			documentIds: [docs.finn2016],
-			reason: null,
 		});
 		expect(outOfScope).toEqual({ success: true, data: { purged: [], skipped: [docs.finn2016] } });
 
@@ -687,7 +680,6 @@ describe("retention start unknown (decision B)", () => {
 		expect(harness.objects.has(key)).toBe(true);
 		const result = await retentionActions.purgeDueDocumentsAction({
 			documentIds: [docs.eva2015],
-			reason: "Legacy employee, left in 2015",
 		});
 		expect(result).toEqual({ success: true, data: { purged: [docs.eva2015], skipped: [] } });
 		expect(harness.objects.has(key)).toBe(false);
@@ -701,7 +693,6 @@ describe("retention start unknown (decision B)", () => {
 		expect(audit[0].performed_by).toBe(userOf("officer"));
 		expect(audit[0].employee_id).toBe(ids.eva);
 		expect(JSON.parse(audit[0].metadata)).toMatchObject({
-			reason: "Legacy employee, left in 2015",
 			retentionStartUnknown: true,
 			retentionStart: null,
 			dueOn: null,
@@ -712,7 +703,6 @@ describe("retention start unknown (decision B)", () => {
 		signIn("owner");
 		const current = await retentionActions.purgeDueDocumentsAction({
 			documentIds: [docs.gina2010],
-			reason: null,
 		});
 		expect(current).toEqual({ success: true, data: { purged: [], skipped: [docs.gina2010] } });
 	});

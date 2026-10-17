@@ -113,10 +113,23 @@ function isSerializationFailure(error: unknown): boolean {
 	return false;
 }
 
+class PersonnelNumberManagedByIdp extends Error {}
+
+/** Call under the employee's configuration guard, so SCIM cannot claim ownership mid-save. */
+export async function assertPersonnelNumberLocallyEditable(
+	reader: PersonnelNumberReader,
+	input: { organizationId: string; employeeId: string; personnelNumber: string | null | undefined },
+): Promise<void> {
+	if (input.personnelNumber === undefined) return;
+	const [current] = await reader.select({ number: employee.employeeNumber, managed: employee.personnelNumberManagedByScim })
+		.from(employee).where(and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)));
+	if (current?.managed && current.number !== input.personnelNumber) throw new PersonnelNumberManagedByIdp();
+}
 type HolderLookup<E, R> = () => Effect.Effect<Pick<PersonnelNumberHolder, "name"> | null, E, R>;
 
 function refusalNaming(
 	holder: Pick<PersonnelNumberHolder, "name"> | null,
+	managedByIdp = false,
 ): Effect.Effect<never, ValidationError> {
 	return Effect.promise(async () => {
 		const { getTranslate } = await import("@/tolgee/server");
@@ -125,9 +138,9 @@ function refusalNaming(
 		Effect.flatMap((t) =>
 			Effect.fail(
 				new ValidationError({
-					message: personnelNumberTakenMessage(t, holder?.name ?? null),
+					message: managedByIdp ? t("settings.employees.detailView.personnelNumberManagedByIdp", "Managed by your identity provider. Change the personnel number there.") : personnelNumberTakenMessage(t, holder?.name ?? null),
 					field: "employeeNumber",
-					refusal: PERSONNEL_NUMBER_TAKEN,
+					refusal: managedByIdp ? "personnel_number_managed_by_idp" : PERSONNEL_NUMBER_TAKEN,
 				}),
 			),
 		),
@@ -153,6 +166,7 @@ export function keepPersonnelNumberRefusal<E2, R2>(findHolder: HolderLookup<E2, 
 			Effect.catch((error: E): Effect.Effect<never, E | E2 | ValidationError, R2> => {
 				// The check throws inside the query, which wraps it once in a `DatabaseError`.
 				const cause = error instanceof DatabaseError ? error.cause : error;
+				if (cause instanceof PersonnelNumberManagedByIdp) return refusalNaming(null, true);
 				if (cause instanceof PersonnelNumberTaken) return refusalNaming(cause.holder);
 				if (isPersonnelNumberConflict(error)) {
 					return findHolder().pipe(Effect.flatMap(refusalNaming));

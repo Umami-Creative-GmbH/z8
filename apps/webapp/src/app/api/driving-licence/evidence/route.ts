@@ -8,7 +8,6 @@ import {
 } from "@/lib/organization/driving-licence/history";
 import { loadUserNames } from "@/lib/personal-data-export/values";
 
-export const runtime = "nodejs";
 const privateHeaders = {
 	"Cache-Control": "private, no-store, max-age=0",
 	"X-Content-Type-Options": "nosniff",

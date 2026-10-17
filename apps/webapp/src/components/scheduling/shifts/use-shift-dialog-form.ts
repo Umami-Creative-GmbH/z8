@@ -17,6 +17,8 @@ export interface ShiftDialogFormValues {
 	endTime: string;
 	notes: string;
 	color: string | undefined;
+	/** Why the employee is assigned without every required skill (#893); cleared on reassignment. */
+	skillOverrideReason: string;
 }
 
 interface UseShiftDialogFormOptions {
@@ -47,6 +49,7 @@ export function getDefaultShiftDialogValues(
 		endTime: DEFAULT_END_TIME,
 		notes: "",
 		color: undefined,
+		skillOverrideReason: "",
 	};
 }
 
@@ -66,6 +69,7 @@ export function getShiftDialogValues(
 		endTime: shift.endTime,
 		notes: shift.notes || "",
 		color: shift.color || undefined,
+		skillOverrideReason: "",
 	};
 }
 
@@ -124,8 +128,26 @@ export function useShiftDialogForm({
 			form.setFieldValue("endTime", nextValues.endTime);
 			form.setFieldValue("notes", nextValues.notes);
 			form.setFieldValue("color", nextValues.color);
+			form.setFieldValue("skillOverrideReason", nextValues.skillOverrideReason);
 		},
 	});
+
+	// A reason covers one assignment context: another employee, date, subarea or template
+	// needs its own (#893).
+	const assignmentContext = [
+		formValues.employeeId,
+		formValues.date,
+		formValues.subareaId,
+		formValues.templateId,
+	].join("|");
+	const reasonContext = useRef(assignmentContext);
+	useEffect(() => {
+		if (reasonContext.current === assignmentContext) return;
+		reasonContext.current = assignmentContext;
+		if (form.store.state.values.skillOverrideReason) {
+			form.setFieldValue("skillOverrideReason", "");
+		}
+	}, [assignmentContext, form]);
 
 	useEffect(() => {
 		const selectedTemplateId = formValues.templateId;

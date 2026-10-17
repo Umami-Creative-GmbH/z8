@@ -55,25 +55,7 @@ export interface ShiftWithRelations extends Shift {
 	recurrence?: ShiftRecurrence | null;
 }
 
-export interface ShiftRequestWithRelations extends ShiftRequest {
-	shift: Shift & {
-		employee?: {
-			id: string;
-			firstName: string | null;
-			lastName: string | null;
-		} | null;
-	};
-	requester: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-	};
-	targetEmployee?: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-	} | null;
-}
+export type { ShiftRequestWithRelations } from "@/lib/effect/services/shift-request.service";
 
 /** The shift save warning, the same skill check scheduling shows elsewhere. */
 export type SkillWarningInfo = SkillValidationResult;
@@ -121,6 +103,16 @@ export interface UpsertShiftInput {
 	endTime: string;
 	notes?: string;
 	color?: string;
+	/**
+	 * Why the employee is assigned without every required skill (#893). The server decides
+	 * whether one is needed and refuses with `skill_override_reason_required` when it is.
+	 */
+	skillOverrideReason?: string;
+}
+
+export interface ApproveShiftRequestInput {
+	/** Why the employee is assigned without every required skill (#893). */
+	skillOverrideReason?: string;
 }
 
 export interface ShiftQuery {
