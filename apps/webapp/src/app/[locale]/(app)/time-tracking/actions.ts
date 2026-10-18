@@ -76,6 +76,10 @@ import {
 	clockIn as clockInAction,
 	clockOut as clockOutAction,
 	createManualTimeEntry as createManualTimeEntryModular,
+	type ResumeBreakActionContext,
+	resumeBreakInProgress as resumeBreakInProgressAction,
+	type StartBreakActionContext,
+	startBreakInProgress as startBreakInProgressAction,
 } from "./actions/clocking";
 import {
 	editSameDayTimeEntry as editModularSameDayTimeEntry,
@@ -120,6 +124,16 @@ export async function addBreakToActiveSession(
 	actionContext?: AddBreakActionContext,
 ) {
 	return addBreakToActiveSessionAction(breakMinutes, actionContext);
+}
+
+/** The clock's Start Break (#888); the Clocking module checks billing and access. */
+export async function startBreakInProgress(context: StartBreakActionContext) {
+	return startBreakInProgressAction(context);
+}
+
+/** The clock's Resume (#888); the Clocking module checks billing and access. */
+export async function resumeBreakInProgress(context: ResumeBreakActionContext) {
+	return resumeBreakInProgressAction(context);
 }
 
 const logger = createLogger("TimeTrackingActionsEffect");
