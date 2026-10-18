@@ -416,7 +416,7 @@ describe("employment periods", () => {
 		}
 	}
 
-	async function rehireAt(at: string) {
+	async function offboardAndRehireAt(at: string) {
 		const target = await fixture.seedEmployee();
 		const policyId = await createWorkPolicy();
 		await offboardNowAt(target.employeeId, "2026-09-14T09:30:00Z");
@@ -444,7 +444,7 @@ describe("employment periods", () => {
 		"starts rehire terms on the org-local rehire date and the period at the rehire instant ($zone)",
 		async ({ zone, rehiredAt }) => {
 			await withOrganizationTimezone(zone, async () => {
-				const rehire = await rehireAt(rehiredAt);
+				const rehire = await offboardAndRehireAt(rehiredAt);
 
 				expect(
 					await row(`select started_at from employee_employment_period where id = $1`, [
@@ -497,7 +497,7 @@ describe("employment periods", () => {
 		"lets confirmed terms dated on the rehire day replace the rehire's terms ($zone)",
 		async ({ zone, rehiredAt }) => {
 			await withOrganizationTimezone(zone, async () => {
-				const rehire = await rehireAt(rehiredAt);
+				const rehire = await offboardAndRehireAt(rehiredAt);
 
 				const written = await writeTerms(rehire.employeeId, termsDated("2026-11-02", "confirmed"));
 
@@ -514,7 +514,7 @@ describe("employment periods", () => {
 		"lets draft terms dated on the rehire day be written and confirmed ($zone)",
 		async ({ zone, rehiredAt }) => {
 			await withOrganizationTimezone(zone, async () => {
-				const rehire = await rehireAt(rehiredAt);
+				const rehire = await offboardAndRehireAt(rehiredAt);
 				const draft = await writeTerms(rehire.employeeId, termsDated("2026-11-02", "draft"));
 
 				const confirmed = await fixture.db.transaction((tx) =>
@@ -537,7 +537,7 @@ describe("employment periods", () => {
 		"still refuses terms dated before the rehire day ($zone)",
 		async ({ zone, rehiredAt }) => {
 			await withOrganizationTimezone(zone, async () => {
-				const rehire = await rehireAt(rehiredAt);
+				const rehire = await offboardAndRehireAt(rehiredAt);
 
 				await expect(
 					writeTerms(rehire.employeeId, termsDated("2026-11-01", "confirmed")),
@@ -547,6 +547,34 @@ describe("employment periods", () => {
 			});
 		},
 	);
+
+	it("keeps the previous stint's work policy cutoff after a same-day rehire", async () => {
+		const target = await fixture.seedEmployee();
+		const previousPolicyId = await createWorkPolicy();
+		const previousAssignment = await insertAssignment({
+			employeeId: target.employeeId,
+			policyId: previousPolicyId,
+			from: "2026-06-01",
+		});
+		const policyId = await createWorkPolicy();
+		await offboardNowAt(target.employeeId, "2026-11-02T09:00:00Z");
+		now = parseInstant("2026-11-02T10:00:00Z");
+
+		await commands().rehireEmployee(
+			owner(),
+			await rehireInput({
+				employeeId: target.employeeId,
+				previousEmploymentPeriodId: target.employmentPeriodId,
+				workPolicyId: policyId,
+			}),
+		);
+
+		expect(
+			await row(`select effective_until, is_active from work_policy_assignment where id = $1`, [
+				previousAssignment,
+			]),
+		).toEqual({ effective_until: new Date("2026-11-02T09:00:00Z"), is_active: true });
+	});
 
 	it("replays a repeated rehire request and refuses a second rehire", async () => {
 		const target = await fixture.seedEmployee();

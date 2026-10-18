@@ -5,7 +5,10 @@
 -- employee work policy assignment they projected with them. The period start
 -- stays the rehire instant. A row is skipped when another terms row of its
 -- period already starts on that calendar date. valid_from and effective_from
--- are timestamps without time zone holding UTC wall time.
+-- are timestamps without time zone holding UTC wall time. The calendar rules
+-- mirror utcMidnight and termsCalendarDate (lib/employment-history/
+-- terms-in-force.ts); an unknown zone falls back to UTC like
+-- resolveOrganizationTimezone.
 WITH "rehire_terms" AS (
 	SELECT
 		h."id",
