@@ -281,7 +281,11 @@ beforeEach(() => {
 	);
 });
 
+/** The inserts of the caller transactions `configureAbsenceCallerTransaction` opened. */
+const callerTransactionInserts: ReturnType<typeof vi.fn>[] = [];
+
 function configureAbsenceCallerTransaction() {
+	callerTransactionInserts.length = 0;
 	callerMocks.transaction.mockImplementation(async (callback) => {
 		const insert = vi
 			.fn()
@@ -297,14 +301,23 @@ function configureAbsenceCallerTransaction() {
 			)
 			.mockReturnValueOnce(createInsertBuilder([{ id: "canonical-1" }]))
 			.mockReturnValueOnce(createVoidInsertBuilder());
+		callerTransactionInserts.push(insert);
 		return callback({
 			execute: async () => [],
+			query: { absenceEntry: { findMany: callerMocks.absenceEntryFindMany } },
 			insert,
 			update: vi.fn(() => createUpdateBuilder()),
 		});
 	});
 	return createLegacyApprovalLifecycle(callerMocks.transaction);
 }
+
+/** The admission inputs the caller reads before the transaction (#1396). */
+const testAdmission = {
+	isWorkingDay: mondayToFriday,
+	now: parseInstant("2026-07-19T10:00:00Z"),
+	hasDefaultApprover: true,
+};
 
 const absenceRequest = {
 	categoryId: "category-1",
@@ -565,7 +578,12 @@ describe("requestAbsenceForEmployeeEffect vacation balance (#1340)", () => {
 			code: "ValidationError",
 			refusal: "insufficient_balance",
 		});
-		expect(callerMocks.transaction).not.toHaveBeenCalled();
+		// Judged inside the guarded submission transaction (#1396), before its first insert.
+		expect(callerMocks.findYearsExceedingBalance).toHaveBeenCalledWith(
+			expect.objectContaining({ insert: callerTransactionInserts[0] }),
+			expect.anything(),
+		);
+		expect(callerTransactionInserts[0]).not.toHaveBeenCalled();
 		expect(callerMocks.createAbsenceApprovalWorkflow).not.toHaveBeenCalled();
 	});
 
@@ -854,6 +872,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			}),
 			query: {
 				absenceEntry: {
+					findMany: vi.fn().mockResolvedValue([]),
 					findFirst: vi.fn().mockResolvedValue({
 						id: "absence-1",
 						organizationId: "org-1",
@@ -1100,6 +1119,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					type: "vacation",
 				},
 				createdBy: "user-1",
+				admission: testAdmission,
 				hasManagerApprovalWorkflow: true,
 				approvalWorkflow: {
 					categoryId: "category-1",
@@ -1112,14 +1132,14 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 	}
 
 	it.each([
-		["legacy", ["transaction", "source", "canonical", "gate", "legacy-create"]],
+		["legacy", ["transaction", "gate", "source", "canonical", "legacy-create"]],
 		[
 			"shadow",
 			[
 				"transaction",
+				"gate",
 				"source",
 				"canonical",
-				"gate",
 				"capture-before",
 				"legacy-create",
 				"capture-after",
@@ -1131,9 +1151,9 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			"ready",
 			[
 				"transaction",
+				"gate",
 				"source",
 				"canonical",
-				"gate",
 				"capture-before",
 				"legacy-create",
 				"capture-after",
@@ -1145,9 +1165,9 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			"canonical",
 			[
 				"transaction",
+				"gate",
 				"source",
 				"canonical",
-				"gate",
 				"start",
 				"bind",
 				"evidence-capture",
@@ -1156,7 +1176,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		],
 		[
 			"complete",
-			["transaction", "source", "canonical", "gate", "start", "bind", "evidence-capture"],
+			["transaction", "gate", "source", "canonical", "start", "bind", "evidence-capture"],
 		],
 	] as const)("routes %s submissions in one approval-owned transaction", async (mode, expected) => {
 		const harness = createModeRoutingHarness(mode);
@@ -1186,6 +1206,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					type: "vacation",
 				},
 				createdBy: "user-1",
+				admission: testAdmission,
 				hasManagerApprovalWorkflow: true,
 				approvalWorkflow: {
 					categoryId: "category-1",
@@ -1309,6 +1330,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					type: "vacation",
 				},
 				createdBy: "user-1",
+				admission: testAdmission,
 				hasManagerApprovalWorkflow: true,
 				approvalWorkflow: {
 					categoryId: "category-1",
@@ -1770,6 +1792,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					type: "vacation",
 				},
 				createdBy: "user-1",
+				admission: testAdmission,
 				hasManagerApprovalWorkflow: true,
 				approvalWorkflow: {
 					categoryId: "category-1",
@@ -1782,9 +1805,9 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 
 		expect(harness.calls).toEqual([
 			"transaction",
+			"gate",
 			"source",
 			"canonical",
-			"gate",
 			"start",
 			"bind",
 			"auto-finalizer",
@@ -1946,6 +1969,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					type: "vacation",
 				},
 				createdBy: "user-1",
+				admission: testAdmission,
 				hasManagerApprovalWorkflow: true,
 				approvalWorkflow: {
 					categoryId: "category-1",
@@ -2046,6 +2070,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		const tx = {
 			// The real historical-overlap read is empty in these existing submission fixtures.
 			execute: async () => [],
+			query: { absenceEntry: { findMany: callerMocks.absenceEntryFindMany } },
 			insert,
 			update: vi.fn(() => createUpdateBuilder()),
 		};
@@ -2082,6 +2107,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 						type: "vacation",
 					},
 					createdBy: "user-1",
+					admission: testAdmission,
 					hasManagerApprovalWorkflow: true,
 					approvalWorkflow: {
 						categoryId: "category-1",
@@ -2117,6 +2143,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		const tx = {
 			// The real historical-overlap read is empty in these existing submission fixtures.
 			execute: async () => [],
+			query: { absenceEntry: { findMany: callerMocks.absenceEntryFindMany } },
 			insert,
 			update: vi.fn(() => createUpdateBuilder()),
 		};
@@ -2168,6 +2195,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					type: "vacation",
 				},
 				createdBy: "user-1",
+				admission: testAdmission,
 				hasManagerApprovalWorkflow: true,
 				approvalWorkflow: {
 					categoryId: "category-1",
