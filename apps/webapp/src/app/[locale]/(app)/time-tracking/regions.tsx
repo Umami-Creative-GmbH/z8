@@ -183,7 +183,11 @@ export async function PeriodsRegion({
 	if (!data || data.periods.length === 0) return null;
 	return (
 		<div className="px-4 lg:px-6">
-			<PeriodSubmissionsCard periods={data.periods} />
+			<PeriodSubmissionsCard
+				periods={data.periods}
+				organizationId={context.employee.organizationId}
+				employeeId={context.employee.id}
+			/>
 		</div>
 	);
 }
