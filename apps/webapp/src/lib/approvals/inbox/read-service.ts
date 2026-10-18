@@ -951,7 +951,9 @@ export async function getApprovalInboxDetail({
 				organizationId,
 				undefined,
 				triagePolicy ??
-					(await getEffectiveApprovalTriagePolicy({ organizationId })),
+					(isEvidenceAwareRead(read)
+						? await getEffectiveApprovalTriagePolicy({ organizationId })
+						: DEFAULT_APPROVAL_TRIAGE_POLICY),
 				loadTriageEvidence ?? loadCurrentApprovalTriageEvidence,
 			);
 			const item = markCoveringFor(
