@@ -179,8 +179,11 @@ async function seed() {
 	await seedPerson("contractOfficer", "member");
 	await seedPerson("anna", "member", { personnelNumber: "0042", teamId: ids.berlin });
 	await seedPerson("ben", "member", { personnelNumber: "00421", teamId: ids.berlin });
-	await seedPerson("carla", "member", { personnelNumber: "7777", teamId: ids.berlin });
-	await seedPerson("dora", "member", { personnelNumber: " 7777 ", teamId: ids.berlin });
+	// Distinct under the unique index (PostgreSQL lower() keeps σ and ς apart),
+	// but one personnel number key in JavaScript, which lowercases a final Σ to ς
+	// (#881): the only way two employees still share a number.
+	await seedPerson("carla", "member", { personnelNumber: "ΟΣ", teamId: ids.berlin });
+	await seedPerson("dora", "member", { personnelNumber: " Ος ", teamId: ids.berlin });
 	// Outside the officer's team.
 	await seedPerson("eve", "member", { personnelNumber: "0500" });
 	await seedPerson("nina", "member", { personnelNumber: null, teamId: ids.berlin });
@@ -369,7 +372,7 @@ describe("payslip batches matched by personnel number (#868)", () => {
 		it("makes a number two employees share ambiguous, to be assigned by hand", async () => {
 			signIn("officer");
 			const batchId = await startBatch();
-			const fileId = await stageOk(batchId, "7777.pdf");
+			const fileId = await stageOk(batchId, "ΟΣ.pdf");
 			expect(await fileOf(batchId, fileId)).toMatchObject({
 				matchKind: "ambiguous",
 				matchedEmployeeIds: [ids.carla, ids.dora].sort(),

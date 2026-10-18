@@ -214,8 +214,10 @@ describe("bulk opening balance upload on PostgreSQL", () => {
 
 	it("lists every row's errors and commits nothing while any row has one", async () => {
 		const valid = await seedNumbered("C-1");
-		const sharedA = await seedNumbered("C-2");
-		const sharedB = await seedNumbered("c-2");
+		// Distinct under the unique index (PostgreSQL lower() keeps σ and ς apart),
+		// but one personnel number key in JavaScript (#881).
+		const sharedA = await seedNumbered("C-ΟΣ");
+		const sharedB = await seedNumbered("C-Ος");
 		const twice = await seedNumbered("C-3");
 		const future = await seedNumbered("C-4");
 		const paidOut = await seedNumbered("C-5");
@@ -225,7 +227,7 @@ describe("bulk opening balance upload on PostgreSQL", () => {
 		const file = csv(
 			`C-1,${openingDay},10:00,Carried over`,
 			`C-404,${openingDay},10:00,Carried over`,
-			`C-2,${openingDay},10:00,Carried over`,
+			`C-ΟΣ,${openingDay},10:00,Carried over`,
 			`C-3,${openingDay},10:00,Carried over`,
 			`C-3,${openingDay},-1:00,Carried over again`,
 			`C-4,${tomorrow},10:00,Carried over`,
