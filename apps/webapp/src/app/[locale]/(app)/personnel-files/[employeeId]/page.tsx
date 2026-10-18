@@ -1,6 +1,7 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { DocumentRequestsSection } from "@/components/personnel-file/document-requests-section";
 import { EmployeeSickLeaveCard } from "@/components/personnel-file/employee-sick-leave-card";
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,8 @@ interface PersonnelFilePageProps {
  * One employee's personnel file in the officer area (#866), for whoever
  * manages at least one of its categories. Not found for everyone else.
  * `?category=` opens it filtered, e.g. from a sick note notification (#982).
+ * Its requests section (#1401) shows to whoever covers certificates or other
+ * documents of the employee.
  */
 async function PersonnelFileContent({ params, searchParams }: PersonnelFilePageProps) {
 	const [t, current, { employeeId }, { category }] = await Promise.all([
@@ -64,6 +67,7 @@ async function PersonnelFileContent({ params, searchParams }: PersonnelFilePageP
 					isDocumentCategory(category) && capability.categories.includes(category) ? category : null
 				}
 			/>
+			<DocumentRequestsSection capability={capability} />
 			{capability.categories.includes("sick_note") ? (
 				<EmployeeSickLeaveCard employeeId={capability.employeeId} />
 			) : null}

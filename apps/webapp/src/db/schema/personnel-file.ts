@@ -6,6 +6,7 @@ import {
 	foreignKey,
 	index,
 	integer,
+	jsonb,
 	pgTable,
 	text,
 	timestamp,
@@ -20,6 +21,13 @@ import type {
 	PersonnelFileCleanupReason,
 	PersonnelFileUploadStatus,
 } from "@/lib/personnel-file/document.types";
+import type {
+	DocumentRequestCategory,
+	DocumentRequestEventChanges,
+	DocumentRequestEventKind,
+	DocumentRequestReasonCode,
+	DocumentRequestStatus,
+} from "@/lib/personnel-file/document-request.types";
 import type {
 	PayslipBatchStatus,
 	PayslipFileFailure,
@@ -564,5 +572,217 @@ export const payslipBatchFile = pgTable(
 			sql`${table.failure} IS NULL OR ${table.failure} IN ('expired', 'out_of_scope', 'error')`,
 		),
 		check("payslip_batch_file_size_check", sql`${table.sizeBytes} > 0`),
+	],
+);
+
+/**
+ * Document requests (#1307, CONTEXT.md "Document request", ADR 0003): an
+ * officer asks one employee for employee documents of one category
+ * (certificate or other) by a deadline, a plain calendar day. Overdue is
+ * derived, never stored. `version` is bumped by every event, so a decision
+ * taken on a stale view conflicts instead of overwriting the first one.
+ * Free text (`note`, event reasons, submission notes) counts as document
+ * descriptions (#1408).
+ */
+export const employeeDocumentRequest = pgTable(
+	"employee_document_request",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		category: text("category").$type<DocumentRequestCategory>().notNull(),
+		title: text("title").notNull(),
+		note: text("note"),
+		deadline: date("deadline", { mode: "string" }).notNull(),
+		/**
+		 * The expiring document the request replaces (#1404); same employee and
+		 * category. Deleting the document clears only this column (migration 0276).
+		 */
+		renewedDocumentId: uuid("renewed_document_id"),
+		status: text("status").$type<DocumentRequestStatus>().default("open").notNull(),
+		version: integer("version").default(1).notNull(),
+		createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		unique("employeeDocumentRequest_id_organizationId_idx").on(table.id, table.organizationId),
+		foreignKey({
+			name: "employee_document_request_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "employee_document_request_renewed_document_fk",
+			columns: [table.renewedDocumentId, table.organizationId],
+			foreignColumns: [employeeDocument.id, employeeDocument.organizationId],
+		}).onDelete("set null"),
+		index("employeeDocumentRequest_org_employee_status_idx").on(
+			table.organizationId,
+			table.employeeId,
+			table.status,
+		),
+		index("employeeDocumentRequest_org_status_deadline_idx").on(
+			table.organizationId,
+			table.status,
+			table.deadline,
+		),
+		index("employeeDocumentRequest_renewedDocument_idx")
+			.on(table.renewedDocumentId)
+			.where(sql`renewed_document_id IS NOT NULL`),
+		// At most one open or submitted request per renewed document.
+		uniqueIndex("employeeDocumentRequest_active_renewedDocument_idx")
+			.on(table.organizationId, table.renewedDocumentId)
+			.where(sql`renewed_document_id IS NOT NULL AND status IN ('open', 'submitted')`),
+		check(
+			"employee_document_request_category_check",
+			sql`${table.category} IN ('certificate', 'other')`,
+		),
+		check(
+			"employee_document_request_status_check",
+			sql`${table.status} IN ('open', 'submitted', 'accepted', 'cancelled')`,
+		),
+		check(
+			"employee_document_request_title_check",
+			sql`char_length(btrim(${table.title})) BETWEEN 1 AND 200`,
+		),
+		check(
+			"employee_document_request_note_check",
+			sql`${table.note} IS NULL OR char_length(${table.note}) <= 2000`,
+		),
+		check("employee_document_request_version_check", sql`${table.version} >= 1`),
+	],
+);
+
+/** One handing-in of documents for a request (CONTEXT.md "Submission"), with its optional note. */
+export const employeeDocumentRequestSubmission = pgTable(
+	"employee_document_request_submission",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		requestId: uuid("request_id").notNull(),
+		note: text("note"),
+		submittedBy: text("submitted_by").references(() => user.id, { onDelete: "set null" }),
+		submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull(),
+	},
+	(table) => [
+		unique("employeeDocumentRequestSubmission_id_organizationId_idx").on(
+			table.id,
+			table.organizationId,
+		),
+		foreignKey({
+			name: "employee_document_request_submission_request_fk",
+			columns: [table.requestId, table.organizationId],
+			foreignColumns: [employeeDocumentRequest.id, employeeDocumentRequest.organizationId],
+		}).onDelete("cascade"),
+		index("employeeDocumentRequestSubmission_request_idx").on(table.requestId),
+		check(
+			"employee_document_request_submission_note_check",
+			sql`${table.note} IS NULL OR char_length(${table.note}) <= 2000`,
+		),
+	],
+);
+
+/**
+ * The employee documents uploaded from a request (ADR 0003: they are in the
+ * file at once). Each document belongs to at most one request; `submission_id`
+ * stays null until the employee hands it in, so a submission contains only
+ * documents uploaded from that request since the previous one.
+ */
+export const employeeDocumentRequestDocument = pgTable(
+	"employee_document_request_document",
+	{
+		documentId: uuid("document_id").primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		requestId: uuid("request_id").notNull(),
+		submissionId: uuid("submission_id"),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		foreignKey({
+			name: "employee_document_request_document_document_fk",
+			columns: [table.documentId, table.organizationId],
+			foreignColumns: [employeeDocument.id, employeeDocument.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "employee_document_request_document_request_fk",
+			columns: [table.requestId, table.organizationId],
+			foreignColumns: [employeeDocumentRequest.id, employeeDocumentRequest.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "employee_document_request_document_submission_fk",
+			columns: [table.submissionId, table.organizationId],
+			foreignColumns: [
+				employeeDocumentRequestSubmission.id,
+				employeeDocumentRequestSubmission.organizationId,
+			],
+		}).onDelete("cascade"),
+		index("employeeDocumentRequestDocument_request_idx").on(table.requestId),
+		index("employeeDocumentRequestDocument_submission_idx")
+			.on(table.submissionId)
+			.where(sql`submission_id IS NOT NULL`),
+	],
+);
+
+/**
+ * The history of a request: every transition and edit with actor and time,
+ * readable by the employee and the covering officers. A return or cancel keeps
+ * its typed reason, or a system `reason_code` (#1408: 'employment_ended').
+ */
+export const employeeDocumentRequestEvent = pgTable(
+	"employee_document_request_event",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		requestId: uuid("request_id").notNull(),
+		kind: text("kind").$type<DocumentRequestEventKind>().notNull(),
+		actorUserId: text("actor_user_id").references(() => user.id, { onDelete: "set null" }),
+		reason: text("reason"),
+		reasonCode: text("reason_code").$type<DocumentRequestReasonCode>(),
+		submissionId: uuid("submission_id"),
+		changes: jsonb("changes").$type<DocumentRequestEventChanges>(),
+		occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+	},
+	(table) => [
+		foreignKey({
+			name: "employee_document_request_event_request_fk",
+			columns: [table.requestId, table.organizationId],
+			foreignColumns: [employeeDocumentRequest.id, employeeDocumentRequest.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "employee_document_request_event_submission_fk",
+			columns: [table.submissionId, table.organizationId],
+			foreignColumns: [
+				employeeDocumentRequestSubmission.id,
+				employeeDocumentRequestSubmission.organizationId,
+			],
+		}).onDelete("cascade"),
+		index("employeeDocumentRequestEvent_request_occurredAt_idx").on(
+			table.requestId,
+			table.occurredAt,
+		),
+		check(
+			"employee_document_request_event_kind_check",
+			sql`${table.kind} IN ('created', 'edited', 'submitted', 'returned', 'accepted', 'cancelled')`,
+		),
+		check(
+			"employee_document_request_event_reason_code_check",
+			sql`${table.reasonCode} IS NULL OR ${table.reasonCode} IN ('employment_ended')`,
+		),
+		check(
+			"employee_document_request_event_reason_check",
+			sql`${table.reason} IS NULL OR char_length(${table.reason}) <= 2000`,
+		),
 	],
 );
