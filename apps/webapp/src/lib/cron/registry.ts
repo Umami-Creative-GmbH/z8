@@ -257,11 +257,15 @@ export const CRON_JOBS = {
 	"cron:payroll-baseline-cleanup": {
 		schedule: "17 * * * *",
 		description:
-			"Remove expired payroll comparison evidence after 24 calendar months",
+			"Remove expired payroll comparison evidence and short-lived reviewed results",
 		processor: async (): Promise<{ expired: number }> => {
 			const { cleanupExpiredPayrollBaselines } = await import(
 				"@/lib/payroll-export/baseline-evidence"
 			);
+			const { cleanupExpiredPayrollComparisons } = await import(
+				"@/lib/payroll-export/comparison-service"
+			);
+			await cleanupExpiredPayrollComparisons();
 			return { expired: await cleanupExpiredPayrollBaselines() };
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },

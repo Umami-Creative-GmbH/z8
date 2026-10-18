@@ -502,28 +502,73 @@ function ExportedRow({
 	row: SupportedPayrollOutputRow;
 	t: Translate;
 }) {
+	const [open, setOpen] = useState(false);
+	const [page, setPage] = useState(0);
+	const pageSize = 50;
 	return (
 		<TableRow>
-			<TableCell className="font-mono">{row.personnelNumber}</TableCell>
-			<TableCell className="font-mono">{row.wageTypeCode}</TableCell>
-			<TableCell>{row.date}</TableCell>
-			<TableCell className="text-right tabular-nums">{row.quantity}</TableCell>
-			<TableCell className="whitespace-normal">{row.note}</TableCell>
+			<TableCell className="align-top font-mono">
+				{row.personnelNumber}
+			</TableCell>
+			<TableCell className="align-top font-mono">{row.wageTypeCode}</TableCell>
+			<TableCell className="align-top">{row.date}</TableCell>
+			<TableCell className="text-right align-top tabular-nums">
+				{row.quantity}
+			</TableCell>
+			<TableCell className="whitespace-normal align-top">{row.note}</TableCell>
 			<TableCell className="min-w-60 whitespace-normal align-top">
-				<details>
+				<details onToggle={(event) => setOpen(event.currentTarget.open)}>
 					<summary className="min-h-11 cursor-pointer text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">
 						{t("payroll.baselines.contributions", "Source contributions")}
 					</summary>
-					<ul className="space-y-3">
-						{row.contributions.map((contribution) => (
-							<li
-								key={JSON.stringify([contribution.kind, contribution.sourceId])}
-								className="rounded-md border p-3"
-							>
-								<RetainedContribution contribution={contribution} t={t} />
-							</li>
-						))}
-					</ul>
+					{open ? (
+						<>
+							<ul className="space-y-3">
+								{row.contributions
+									.slice(page * pageSize, (page + 1) * pageSize)
+									.map((contribution) => (
+										<li
+											key={JSON.stringify([
+												contribution.kind,
+												contribution.sourceId,
+											])}
+											className="rounded-md border p-3"
+										>
+											<RetainedContribution contribution={contribution} t={t} />
+										</li>
+									))}
+							</ul>
+							{row.contributions.length > pageSize ? (
+								<div className="mt-3 flex flex-wrap items-center gap-3">
+									<Button
+										variant="outline"
+										disabled={page === 0}
+										onClick={() => setPage((current) => current - 1)}
+									>
+										{t(
+											"payroll.baselines.previousSources",
+											"Previous source contributions",
+										)}
+									</Button>
+									<p role="status" className="text-sm tabular-nums">
+										{page * pageSize + 1}–
+										{Math.min((page + 1) * pageSize, row.contributions.length)}{" "}
+										/ {row.contributions.length}
+									</p>
+									<Button
+										variant="outline"
+										disabled={(page + 1) * pageSize >= row.contributions.length}
+										onClick={() => setPage((current) => current + 1)}
+									>
+										{t(
+											"payroll.baselines.nextSources",
+											"Next source contributions",
+										)}
+									</Button>
+								</div>
+							) : null}
+						</>
+					) : null}
 				</details>
 			</TableCell>
 		</TableRow>

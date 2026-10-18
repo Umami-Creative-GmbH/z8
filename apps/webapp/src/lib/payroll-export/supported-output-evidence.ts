@@ -1,7 +1,7 @@
 /** Historical supported output, captured by the formatter that emits the file. */
 export interface SupportedPayrollOutputEvidence {
 	version: 1;
-	formatId: "datev_lohn";
+	formatId: "datev_lohn" | "lexware_lohn" | "sage_lohn";
 	formatterVersion: string;
 	excludedLineKinds: ["expense"];
 	rows: SupportedPayrollOutputRow[];

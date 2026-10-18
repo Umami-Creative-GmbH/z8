@@ -97,7 +97,9 @@ export * from "./organization-time-tracking-settings";
 export * from "./organization-tracking-settings";
 // Payroll export
 export * from "./payroll-access";
+export * from "./payroll-baseline";
 export * from "./payroll-blocker";
+export * from "./payroll-comparison";
 export * from "./payroll-export";
 export * from "./period-submission";
 // Personal data exports: one employee's data as a ZIP (#811)
@@ -165,4 +167,3 @@ export * from "./wellness";
 export * from "./work-category";
 export * from "./work-policy";
 export * from "./works-council";
-export * from "./payroll-baseline";
