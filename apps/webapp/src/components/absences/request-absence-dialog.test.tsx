@@ -192,8 +192,7 @@ const riskyPreview: AbsencePlanPreview = {
 	holidays: [],
 	overlaps: [],
 	affectedShifts: [],
-	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
-	approvalSignal: "risky",
+	coverage: { risks: [], status: "complete", gaps: [] },
 	warnings: ["Coverage may be tight for this request."],
 	reasons: ["Request follows the normal approval path."],
 };

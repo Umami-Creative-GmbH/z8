@@ -3,7 +3,7 @@ import { mondayToFriday } from "./absence-days";
 import {
 	type AbsencePlanPreviewInput,
 	buildAbsencePlanPreview,
-	type CoverageEvaluationInput,
+	type CoverageEvaluation,
 } from "./absence-plan-preview";
 import { workingDaysFrom } from "./working-days";
 
@@ -32,7 +32,7 @@ const baseInput: AbsencePlanPreviewInput = {
 	isWorkingDay: mondayToFriday,
 	existingAbsences: [],
 	affectedShifts: [],
-	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
+	coverage: { status: "complete", gaps: [], risks: [] },
 	hasManager: true,
 };
 
@@ -64,7 +64,6 @@ describe("buildAbsencePlanPreview for time off in lieu", () => {
 		expect(preview.workBalance).toEqual(workBalance);
 		expect(preview.balance?.remainingAfterRequest).toBe(14);
 		expect(preview.warnings).toEqual([]);
-		expect(preview.approvalSignal).toBe("likely");
 	});
 
 	it("warns, without refusing, when the work balance would be negative", () => {
@@ -79,7 +78,6 @@ describe("buildAbsencePlanPreview for time off in lieu", () => {
 		});
 
 		expect(preview.warnings).toContain("Work balance would be negative after this request.");
-		expect(preview.approvalSignal).toBe("risky");
 	});
 
 	it("has no work balance projection for other categories", () => {
@@ -93,7 +91,6 @@ describe("buildAbsencePlanPreview", () => {
 
 		expect(preview.requestedAbsenceDays).toBe(2);
 		expect(preview.balance?.remainingAfterRequest).toBe(12);
-		expect(preview.approvalSignal).toBe("likely");
 		expect(preview.reasons).toContain("Request follows the normal approval path.");
 	});
 
@@ -177,8 +174,6 @@ describe("buildAbsencePlanPreview", () => {
 				remainingDays: 1,
 			},
 		});
-
-		expect(preview.approvalSignal).toBe("risky");
 		expect(preview.warnings).toContain("Vacation balance would be negative after this request.");
 	});
 
@@ -220,8 +215,6 @@ describe("buildAbsencePlanPreview", () => {
 				},
 			],
 		});
-
-		expect(preview.approvalSignal).toBe("risky");
 		expect(preview.overlaps).toHaveLength(1);
 		expect(preview.warnings).toContain("Request overlaps an existing pending absence.");
 	});
@@ -231,65 +224,75 @@ describe("buildAbsencePlanPreview", () => {
 			...baseInput,
 			vacationBalance: null,
 		});
-
-		expect(preview.approvalSignal).toBe("needs_review");
 		expect(preview.reasons).toContain("Vacation balance is unavailable for this year.");
 	});
 
-	it("marks coverage risks as risky", () => {
-		const coverage: CoverageEvaluationInput = {
-			risks: [
-				{
-					date: "2026-05-04",
-					subareaId: "subarea-1",
-					subareaName: "Front Desk",
-					startTime: "09:00",
-					endTime: "17:00",
-					minimumStaffCount: 2,
-					staffCountAfterAbsence: 1,
-				},
-			],
-			hasConfiguredRulesForAffectedShifts: true,
+	const coverageRisk = {
+		date: "2026-05-04",
+		subareaId: "subarea-1",
+		subareaName: "Front Desk",
+		startTime: "09:00",
+		endTime: "17:00",
+		minimumStaffCount: 2,
+		staffCountAfterAbsence: 1,
+	};
+
+	it("passes coverage warnings through as structured evidence, not server-built text", () => {
+		const coverage: CoverageEvaluation = { status: "complete", gaps: [], risks: [coverageRisk] };
+
+		const preview = buildAbsencePlanPreview({ ...baseInput, coverage });
+
+		expect(preview.coverage).toEqual(coverage);
+		expect(preview.warnings).toEqual([]);
+		expect(preview.reasons).not.toContain("Request follows the normal approval path.");
+	});
+
+	it("keeps incomplete coverage evidence visible without describing the normal approval path", () => {
+		const coverage: CoverageEvaluation = {
+			status: "incomplete",
+			gaps: ["rules_missing"],
+			risks: [],
 		};
 
 		const preview = buildAbsencePlanPreview({ ...baseInput, coverage });
 
-		expect(preview.approvalSignal).toBe("risky");
-		expect(preview.coverage.risks[0]?.subareaName).toBe("Front Desk");
-		expect(preview.warnings).toContain(
-			"Published coverage would drop below the configured minimum.",
-		);
+		expect(preview.coverage).toEqual(coverage);
+		expect(preview.reasons).not.toContain("Request follows the normal approval path.");
+		expect(preview.reasons.join(" ")).not.toMatch(/coverage/i);
 	});
 
-	it("marks missing coverage rules for affected shifts as needs_review", () => {
-		const preview = buildAbsencePlanPreview({
-			...baseInput,
-			affectedShifts: [{ id: "shift-1" }],
-			coverage: { risks: [], hasConfiguredRulesForAffectedShifts: false },
-		});
+	it("follows the normal approval path when coverage evidence is complete without warnings", () => {
+		const preview = buildAbsencePlanPreview(baseInput);
 
-		expect(preview.approvalSignal).toBe("needs_review");
-		expect(preview.reasons).toEqual(expect.arrayContaining([expect.stringMatching(/coverage/i)]));
-	});
-
-	it("does not require coverage review when no shifts are affected and no rules exist", () => {
-		const preview = buildAbsencePlanPreview({
-			...baseInput,
-			affectedShifts: [],
-			coverage: { risks: [], hasConfiguredRulesForAffectedShifts: false },
-		});
-
-		expect(preview.approvalSignal).toBe("likely");
 		expect(preview.reasons).toContain("Request follows the normal approval path.");
-		expect(preview.reasons).not.toContain(
-			"Coverage rules are not configured for the affected scheduled work.",
-		);
+	});
+
+	it("does not predict approval", () => {
+		expect(buildAbsencePlanPreview(baseInput)).not.toHaveProperty("approvalSignal");
+	});
+
+	it("exposes only the requester's own affected shift fields", () => {
+		const affectedShift = {
+			id: "shift-1",
+			subareaId: "subarea-1",
+			subareaName: "Front Desk",
+			date: "2026-05-04",
+			startTime: "22:00",
+			endTime: "06:00",
+			affectedStartTime: "22:00",
+			affectedEndTime: "00:00",
+		};
+
+		const preview = buildAbsencePlanPreview({
+			...baseInput,
+			affectedShifts: [{ ...affectedShift, employeeId: "emp-1" } as typeof affectedShift],
+		});
+
+		expect(preview.affectedShifts).toEqual([affectedShift]);
 	});
 
 	it("explains manager-less approval behavior when approval is required", () => {
 		const preview = buildAbsencePlanPreview({ ...baseInput, hasManager: false });
-
-		expect(preview.approvalSignal).toBe("likely");
 		expect(preview.reasons).toContain(
 			"No manager is assigned, so this request follows the current auto-approval behavior.",
 		);
@@ -300,8 +303,6 @@ describe("buildAbsencePlanPreview", () => {
 			...baseInput,
 			category: { ...baseInput.category, requiresApproval: false },
 		});
-
-		expect(preview.approvalSignal).toBe("likely");
 		expect(preview.reasons).toContain("This absence type does not require approval.");
 		expect(preview.reasons).not.toContain("Request follows the normal approval path.");
 	});
@@ -319,37 +320,18 @@ describe("buildAbsencePlanPreview", () => {
 				},
 			],
 		});
-
-		expect(preview.approvalSignal).toBe("likely");
 		expect(preview.overlaps).toHaveLength(0);
 		expect(preview.warnings).not.toContain("Request overlaps an existing rejected absence.");
 	});
 
-	it("uses risky signal when warnings and review reasons both exist", () => {
+	it("keeps the balance reason alongside coverage warnings", () => {
 		const preview = buildAbsencePlanPreview({
 			...baseInput,
 			vacationBalance: null,
-			coverage: {
-				risks: [
-					{
-						date: "2026-05-04",
-						subareaId: "subarea-1",
-						subareaName: "Front Desk",
-						startTime: "09:00",
-						endTime: "17:00",
-						minimumStaffCount: 2,
-						staffCountAfterAbsence: 1,
-					},
-				],
-				hasConfiguredRulesForAffectedShifts: true,
-			},
+			coverage: { status: "complete", gaps: [], risks: [coverageRisk] },
 		});
-
-		expect(preview.approvalSignal).toBe("risky");
 		expect(preview.reasons).toContain("Vacation balance is unavailable for this year.");
-		expect(preview.warnings).toContain(
-			"Published coverage would drop below the configured minimum.",
-		);
+		expect(preview.coverage.risks).toEqual([coverageRisk]);
 	});
 
 	it("counts only the employee's working days", () => {
@@ -373,7 +355,6 @@ describe("buildAbsencePlanPreview", () => {
 
 		expect(preview.requestedAbsenceDays).toBe(0);
 		expect(preview.refusal).toBe("no_working_days");
-		expect(preview.approvalSignal).toBe("risky");
 	});
 
 	it("accepts a category that does not count against vacation on no working day", () => {
