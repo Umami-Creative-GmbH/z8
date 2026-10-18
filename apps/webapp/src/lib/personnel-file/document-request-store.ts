@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNotNull, lt, type SQL, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, lt, or, type SQL, sql } from "drizzle-orm";
 import type { Temporal } from "temporal-polyfill";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -10,6 +10,8 @@ import {
 	employeeDocumentRequestDocument,
 	employeeDocumentRequestEvent,
 	employeeDocumentRequestSubmission,
+	team,
+	teamMembership,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
@@ -19,17 +21,23 @@ import {
 	type EmployeeRef,
 	isOwnDocument,
 	managedCategoriesFor,
+	managesCategory,
 	managesDocumentRequests,
 	type PersonnelFileAccess,
 } from "./access";
 import {
 	loadEmployeeRef,
+	loadEmployeeRefsInScope,
 	managedDocumentRequestsCondition,
+	managedEmployeesCondition,
 	visibleDocumentsCondition,
 } from "./access-store";
 import {
 	ACTIVE_DOCUMENT_REQUEST_STATUSES,
+	DOCUMENT_REQUEST_BULK_MAX_RECIPIENTS,
+	DOCUMENT_REQUEST_BULK_MAX_TEAMS,
 	DOCUMENT_REQUEST_CATEGORIES,
+	type DocumentRequestBulkSkipReason,
 	type DocumentRequestEventChanges,
 	type DocumentRequestEventKind,
 	type DocumentRequestFollowUpEventKind,
@@ -41,6 +49,7 @@ import {
 } from "./document-request.types";
 import type {
 	DocumentRequestOverviewFilters,
+	DocumentRequestRecipientOptions,
 	ManagedDocumentRequestView,
 } from "./document-request-overview";
 import {
@@ -93,17 +102,25 @@ const EVENT_AUDIT_ACTIONS: Readonly<Record<DocumentRequestEventKind, AuditAction
  */
 async function writeDocumentRequestAudit(
 	tx: Pick<Transaction, "insert">,
-	input: {
-		kind: DocumentRequestEventKind;
-		actorUserId: string;
-		request: DocumentRequestRow;
-		eventId: string;
-		at: Date;
-		metadata?: Record<string, unknown>;
-	},
+	input: DocumentRequestAuditInput,
 ): Promise<void> {
+	await tx.insert(auditLog).values(documentRequestAuditValues(input));
+}
+
+interface DocumentRequestAuditInput {
+	kind: DocumentRequestEventKind;
+	actorUserId: string;
+	request: DocumentRequestRow;
+	eventId: string;
+	at: Date;
+	metadata?: Record<string, unknown>;
+}
+
+function documentRequestAuditValues(
+	input: DocumentRequestAuditInput,
+): typeof auditLog.$inferInsert {
 	const { request } = input;
-	await tx.insert(auditLog).values({
+	return {
 		organizationId: request.organizationId,
 		entityType: DOCUMENT_REQUEST_AUDIT_ENTITY_TYPE,
 		entityId: request.id,
@@ -122,7 +139,7 @@ async function writeDocumentRequestAudit(
 			...input.metadata,
 		}),
 		timestamp: input.at,
-	});
+	};
 }
 
 /** The request of the organization, locked for the rest of the transaction. */
@@ -396,6 +413,261 @@ export async function createDocumentRequest(
 		if (!view) throw new Error("Failed to read the document request");
 		return { kind: "created", request: view, eventId: event.id };
 	});
+}
+
+export type CreateDocumentRequestsInBulkResult =
+	| {
+			kind: "created";
+			/** One per created request, with its `created` event (for the notifications). */
+			created: Array<{ request: DocumentRequestRow; eventId: string }>;
+			skippedBy: Record<DocumentRequestBulkSkipReason, number>;
+	  }
+	/** The actor covers no requestable category at all. */
+	| { kind: "not_found" }
+	| { kind: "refused"; reason: DocumentRequestRefusal };
+
+/**
+ * Creates the same request (category, title, note, deadline) for every
+ * employee the named employees and teams reach (#1407), one request each, in
+ * one transaction. Each employee is checked as for a single request: whoever
+ * the actor does not cover for the category, the actor themself and former
+ * employees are skipped, and so is anyone with an active request of the same
+ * category and title. Bulk requests never name a renewed document. The
+ * employees' request locks serialize concurrent bulk creates, so of two
+ * identical batches only the first creates each request.
+ */
+export async function createDocumentRequestsInBulk(
+	database: Database,
+	access: PersonnelFileAccess,
+	input: {
+		employeeIds: readonly string[];
+		teamIds: readonly string[];
+		category: unknown;
+		title: unknown;
+		note: unknown;
+		deadline: unknown;
+	},
+	now: Instant = systemClock.nowInstant(),
+): Promise<CreateDocumentRequestsInBulkResult> {
+	if (!managesDocumentRequests(access)) return { kind: "not_found" };
+	const employeeIds = [...new Set(input.employeeIds)];
+	const teamIds = [...new Set(input.teamIds)];
+	if (employeeIds.length === 0 && teamIds.length === 0) {
+		return { kind: "refused", reason: "no_recipients" };
+	}
+	if (
+		employeeIds.length > DOCUMENT_REQUEST_BULK_MAX_RECIPIENTS ||
+		teamIds.length > DOCUMENT_REQUEST_BULK_MAX_TEAMS
+	) {
+		return { kind: "refused", reason: "too_many_recipients" };
+	}
+	const at = dateFromInstant(now);
+	const { organizationId } = access;
+	const { today } = await loadOrganizationDay(database, { organizationId, now });
+	const validated = validateDocumentRequestInput(input, today);
+	if (!validated.ok) return { kind: "refused", reason: validated.reason };
+	const value = validated.value;
+
+	return database.transaction(async (tx): Promise<CreateDocumentRequestsInBulkResult> => {
+		const skippedBy: Record<DocumentRequestBulkSkipReason, number> = {
+			not_covered: 0,
+			own_file: 0,
+			former_employee: 0,
+			already_requested: 0,
+		};
+		const reached = await loadEmployeeRefsInScope(tx, {
+			organizationId,
+			scope: { kind: "specific", employeeIds, teamIds },
+			now,
+		});
+		const eligible: string[] = [];
+		for (const employeeRef of reached) {
+			if (isOwnDocument(access, employeeRef.id)) skippedBy.own_file += 1;
+			else if (!canManageDocumentRequest(access, employeeRef, value.category)) {
+				skippedBy.not_covered += 1;
+			} else if (!employeeRef.hasAccess) skippedBy.former_employee += 1;
+			else eligible.push(employeeRef.id);
+		}
+		if (eligible.length > DOCUMENT_REQUEST_BULK_MAX_RECIPIENTS) {
+			return { kind: "refused", reason: "too_many_recipients" };
+		}
+		if (eligible.length === 0) return { kind: "created", created: [], skippedBy };
+
+		await lockEmployeesDocumentRequests(tx, eligible);
+		const duplicates = await tx
+			.selectDistinct({ employeeId: employeeDocumentRequest.employeeId })
+			.from(employeeDocumentRequest)
+			.where(
+				and(
+					eq(employeeDocumentRequest.organizationId, organizationId),
+					inArray(employeeDocumentRequest.employeeId, eligible),
+					eq(employeeDocumentRequest.category, value.category),
+					eq(employeeDocumentRequest.title, value.title),
+					inArray(employeeDocumentRequest.status, [...ACTIVE_DOCUMENT_REQUEST_STATUSES]),
+				),
+			);
+		const alreadyRequested = new Set(duplicates.map((row) => row.employeeId));
+		skippedBy.already_requested = alreadyRequested.size;
+		const recipients = eligible.filter((employeeId) => !alreadyRequested.has(employeeId));
+		if (recipients.length === 0) return { kind: "created", created: [], skippedBy };
+
+		const rows = await tx
+			.insert(employeeDocumentRequest)
+			.values(
+				recipients.map((employeeId) => ({
+					organizationId,
+					employeeId,
+					category: value.category,
+					title: value.title,
+					note: value.note,
+					deadline: value.deadline,
+					renewedDocumentId: null,
+					status: "open" as const,
+					version: 1,
+					createdBy: access.userId,
+					createdAt: at,
+					updatedAt: at,
+				})),
+			)
+			.returning();
+		const events = await tx
+			.insert(employeeDocumentRequestEvent)
+			.values(
+				rows.map((row) => ({
+					organizationId,
+					requestId: row.id,
+					kind: "created" as const,
+					actorUserId: access.userId,
+					occurredAt: at,
+				})),
+			)
+			.returning({
+				id: employeeDocumentRequestEvent.id,
+				requestId: employeeDocumentRequestEvent.requestId,
+			});
+		const eventOf = new Map(events.map((event) => [event.requestId, event.id]));
+		const created = rows.map((request) => {
+			const eventId = eventOf.get(request.id);
+			if (!eventId) throw new Error("Failed to record the document request event");
+			return { request, eventId };
+		});
+		await tx.insert(auditLog).values(
+			created.map(({ request, eventId }) =>
+				documentRequestAuditValues({
+					kind: "created",
+					actorUserId: access.userId,
+					request,
+					eventId,
+					at,
+					metadata: { bulk: true },
+				}),
+			),
+		);
+		return { kind: "created", created, skippedBy };
+	});
+}
+
+/**
+ * The employees and teams the bulk create offers (#1407), per requestable
+ * category: the current employees (not former, never the viewer) whose
+ * documents of the category the viewer manages, and the teams they belong to
+ * (primary team or membership). The server re-checks every employee anyway.
+ */
+export async function listDocumentRequestRecipientOptions(
+	database: Reader,
+	access: PersonnelFileAccess,
+	now: Instant = systemClock.nowInstant(),
+): Promise<DocumentRequestRecipientOptions> {
+	const { organizationId } = access;
+	const entries = await Promise.all(
+		DOCUMENT_REQUEST_CATEGORIES.map(async (category) => {
+			if (!managesCategory(access, category)) {
+				return [category, { employees: [], teams: [] }] as const;
+			}
+			const rows = await database
+				.select({ id: employee.id, userName: user.name, employeeNumber: employee.employeeNumber })
+				.from(employee)
+				.leftJoin(user, eq(user.id, employee.userId))
+				.where(
+					and(
+						eq(employee.organizationId, organizationId),
+						managedEmployeesCondition(access, category, employee.id),
+						employeeHasOrganizationAccess(now),
+					),
+				)
+				.orderBy(asc(user.name), asc(employee.employeeNumber), asc(employee.id));
+			const employeeIds = rows.map((row) => row.id);
+			const teams =
+				employeeIds.length === 0
+					? []
+					: await database
+							.select({ id: team.id, name: team.name })
+							.from(team)
+							.where(
+								and(
+									eq(team.organizationId, organizationId),
+									or(
+										inArray(
+											team.id,
+											database
+												.select({ teamId: employee.teamId })
+												.from(employee)
+												.where(
+													and(
+														eq(employee.organizationId, organizationId),
+														inArray(employee.id, employeeIds),
+													),
+												),
+										),
+										inArray(
+											team.id,
+											database
+												.select({ teamId: teamMembership.teamId })
+												.from(teamMembership)
+												.where(
+													and(
+														eq(teamMembership.organizationId, organizationId),
+														inArray(teamMembership.employeeId, employeeIds),
+													),
+												),
+										),
+									),
+								),
+							)
+							.orderBy(asc(team.name), asc(team.id));
+			return [
+				category,
+				{
+					employees: rows.map((row) => ({
+						id: row.id,
+						name: row.userName?.trim() || row.employeeNumber || row.id,
+					})),
+					teams,
+				},
+			] as const;
+		}),
+	);
+	return Object.fromEntries(entries) as DocumentRequestRecipientOptions;
+}
+
+/**
+ * Serializes request creation per employee for the rest of the transaction
+ * (transaction-scoped advisory locks, taken in id order so two batches never
+ * wait on each other crosswise).
+ */
+async function lockEmployeesDocumentRequests(
+	tx: Transaction,
+	employeeIds: readonly string[],
+): Promise<void> {
+	const keys = [...employeeIds].toSorted().map((id) => `employee_document_request:${id}`);
+	await tx.execute(sql`
+		select pg_advisory_xact_lock(hashtextextended(locked.key, 0))
+		from (
+			select key from unnest(array[${sql.join(
+				keys.map((key) => sql`${key}`),
+				sql`, `,
+			)}]::text[]) as keys(key) order by key
+		) as locked`);
 }
 
 export type CancelDocumentRequestResult =

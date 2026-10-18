@@ -125,6 +125,55 @@ export async function loadEmployeeRef(
 }
 
 /**
+ * The employees of the organization in a scope, each with their current teams
+ * (as `loadEmployeeRef`) and whether they still have organization access (not
+ * former). Two queries, however many employees the scope reaches (#1407).
+ */
+export async function loadEmployeeRefsInScope(
+	database: Reader,
+	input: { organizationId: string; scope: EmployeeScope; now: Instant },
+): Promise<Array<EmployeeRef & { hasAccess: boolean }>> {
+	const rows = await database
+		.select({
+			id: employee.id,
+			teamId: employee.teamId,
+			hasAccess: employeeHasOrganizationAccess(input.now),
+		})
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, input.organizationId),
+				employeeInScope(input.organizationId, input.scope, employee.id),
+			),
+		)
+		.orderBy(asc(employee.id));
+	if (rows.length === 0) return [];
+	const memberships = await database
+		.select({ employeeId: teamMembership.employeeId, teamId: teamMembership.teamId })
+		.from(teamMembership)
+		.where(
+			and(
+				eq(teamMembership.organizationId, input.organizationId),
+				inArray(
+					teamMembership.employeeId,
+					rows.map((row) => row.id),
+				),
+			),
+		);
+	const teamsOf = new Map<string, Set<string>>();
+	for (const membership of memberships) {
+		const teams = teamsOf.get(membership.employeeId) ?? new Set<string>();
+		teams.add(membership.teamId);
+		teamsOf.set(membership.employeeId, teams);
+	}
+	return rows.map((row) => {
+		const teams = teamsOf.get(row.id) ?? new Set<string>();
+		if (row.teamId) teams.add(row.teamId);
+		return { id: row.id, teamIds: [...teams], hasAccess: row.hasAccess };
+	});
+}
+
+/**
  * The employees of a scope as a condition on an employee id column: the named
  * employees plus everyone currently in the named teams (primary team or team
  * membership) of the organization.
