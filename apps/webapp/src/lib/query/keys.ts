@@ -162,6 +162,10 @@ export const queryKeys = {
 
 	// Payroll workspace
 	payroll: {
+		baselines: (request: { startDate: string; endDate: string }) =>
+			["payroll", "baselines", request.startDate, request.endDate] as const,
+		baselineDetails: () => ["payroll", "baseline"] as const,
+		baseline: (baselineId: string) => ["payroll", "baseline", baselineId] as const,
 		/** How many employees an export of the period would cover (#1001). */
 		exportScope: (request: { startDate: string; endDate: string }) =>
 			["payroll", "export-scope", request.startDate, request.endDate] as const,

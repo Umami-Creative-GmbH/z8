@@ -80,6 +80,7 @@ import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payrol
 import { queryKeys } from "@/lib/query/keys";
 import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
 import { OvertimePayoutReadinessAlert } from "./overtime-payout-readiness-alert";
+import { PayrollBaselinesCard } from "./payroll-baselines-card";
 import { PayrollRunReadinessCard } from "./payroll-run-readiness-card";
 import { PayrollRunsCard } from "./payroll-runs-card";
 
@@ -723,6 +724,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				<PayrollRunReadinessCard request={{ ...request, formatId }} />
 			)}
 			<PayrollRunsCard />
+			<PayrollBaselinesCard startDate={summary.period.start} endDate={summary.period.end} />
 			<EmployeeTotalsCard employees={displayedEmployees} t={t} />
 		</div>
 	);
