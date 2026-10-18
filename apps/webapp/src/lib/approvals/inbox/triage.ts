@@ -1,3 +1,5 @@
+import { assessApprovalTriage, type ApprovalTriageContext, type ApprovalTriageEvidence, type ApprovalTriageRequestKind } from "../triage-assessment";
+import { DEFAULT_APPROVAL_TRIAGE_POLICY, type ApprovalTriagePolicy } from "../triage-policy";
 import { getAgeDays } from "./serialization";
 import type {
 	ApprovalInboxPriority,
@@ -12,6 +14,11 @@ const SMALL_TIME_CORRECTION_MINUTES = 15;
 
 export interface BuildInboxTriageInput {
 	type: ApprovalInboxType;
+	requestKind?: ApprovalTriageRequestKind;
+	context?: ApprovalTriageContext;
+	evidence?: readonly ApprovalTriageEvidence[];
+	policy?: ApprovalTriagePolicy;
+	riskReasons?: readonly string[];
 	priority: ApprovalInboxPriority;
 	status: ApprovalInboxStatus;
 	createdAt: Date | string;
@@ -22,7 +29,9 @@ export interface BuildInboxTriageInput {
 }
 
 export function buildInboxTriage(input: BuildInboxTriageInput): ApprovalInboxTriage {
-	const ageDays = getAgeDays({ createdAt: input.createdAt, now: input.now });
+	const requestKind = input.requestKind ?? (input.type === "absence_entry" ? "absence" : input.type === "absence_change_request" ? "absence_change" : "other");
+ if (requestKind !== "other") return { priority: input.priority, ...assessApprovalTriage({ ...input, requestKind, policy: input.policy ?? DEFAULT_APPROVAL_TRIAGE_POLICY }) };
+ const ageDays = getAgeDays({ createdAt: input.createdAt, now: input.now });
 	const isPayrollRelevant = input.isPayrollRelevant === true;
 
 	if (isPayrollRelevant) {
@@ -82,3 +91,4 @@ export function buildInboxTriage(input: BuildInboxTriageInput): ApprovalInboxTri
 		explanation: "Needs manual review.",
 	};
 }
+

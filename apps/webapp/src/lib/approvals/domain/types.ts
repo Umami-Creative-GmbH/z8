@@ -1,3 +1,4 @@
+import type { ApprovalTriageContext, ApprovalTriageEvidence, ApprovalTriageRequestKind } from "../triage-assessment";
 /**
  * Unified Approval Center - Domain Types
  *
@@ -24,7 +25,8 @@ export type ApprovalRiskReason =
 	| "stale_pending"
 	| "payroll_relevant"
 	| "policy_exception"
-	| "needs_review";
+	| "needs_review"
+	| (string & {});
 
 export type ApprovalFastLaneGroupKey =
 	| "low_risk_absence"
@@ -33,6 +35,9 @@ export type ApprovalFastLaneGroupKey =
 	| "payroll_blocker";
 
 export interface ApprovalTriageMetadata {
+	requestKind?: ApprovalTriageRequestKind;
+	context?: ApprovalTriageContext;
+	evidence?: ApprovalTriageEvidence[];
 	riskLevel?: ApprovalRiskLevel;
 	riskReasons?: ApprovalRiskReason[];
 	fastLaneGroup?: ApprovalFastLaneGroupKey | null;
@@ -444,3 +449,4 @@ export interface BulkApproveResult {
 		error: string;
 	}>;
 }
+
