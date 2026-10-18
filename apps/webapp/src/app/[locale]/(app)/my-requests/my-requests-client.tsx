@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
 import type {
 	SelfServiceRequestItem,
 	SelfServiceRequestResult,
@@ -563,6 +564,7 @@ function RequestAction({
 	const { t } = useTranslate();
 	const [isCancelPending, startCancelTransition] = useTransition();
 	const [cancelError, setCancelError] = useState<string | null>(null);
+	const invalidateReadiness = useInvalidatePeriodSubmissionReadiness();
 	const canCancel =
 		allowCancel &&
 		(item.sourceType === "absence" || item.sourceType === "time_correction") &&
@@ -600,6 +602,8 @@ function RequestAction({
 					: await cancelMyAbsenceRequest(item.sourceId);
 			if (result.success) {
 				setCancelError(null);
+				// A pending request keeps its submission period open (#1350).
+				void invalidateReadiness();
 				return;
 			}
 

@@ -52,6 +52,7 @@ import type {
 	SickDetail,
 } from "@/lib/absences/types";
 import { queryKeys } from "@/lib/query/keys";
+import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
 import { useRouter } from "@/navigation";
 import { AbsencePlanPreviewPanel, noWorkingDaysMessage } from "./absence-plan-preview-panel";
 import { CategoryBadge } from "./category-badge";
@@ -127,6 +128,7 @@ function useRequestAbsenceDialogController({
 }) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
+	const invalidateReadiness = useInvalidatePeriodSubmissionReadiness();
 	const [internalOpen, setInternalOpen] = useState(false);
 	const isControlled = controlledOpen !== undefined;
 	const open = isControlled ? controlledOpen : internalOpen;
@@ -250,6 +252,8 @@ function useRequestAbsenceDialogController({
 				setOpen(false);
 				form.reset();
 				refresh();
+				// A pending absence request keeps its submission period open (#1350).
+				void invalidateReadiness();
 				onSuccess?.();
 			} else if (result.code === "AbsenceDaysRefusedError") {
 				toast.error(noWorkingDaysMessage(t));

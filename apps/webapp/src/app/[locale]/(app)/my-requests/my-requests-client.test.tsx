@@ -14,6 +14,11 @@ import type { SelfServiceRequestResult } from "@/lib/self-service-requests/types
 
 const cancelMyAbsenceRequestMock = vi.hoisted(() => vi.fn());
 const cancelMyTimeCorrectionRequestMock = vi.hoisted(() => vi.fn());
+const invalidateReadinessMock = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/query/period-submission-readiness", () => ({
+	useInvalidatePeriodSubmissionReadiness: () => invalidateReadinessMock,
+}));
 
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -385,6 +390,8 @@ describe("MyRequestsClient", () => {
 			);
 		});
 		expect(cancelMyAbsenceRequestMock).toHaveBeenCalledOnce();
+		// Each cancelled request can reopen a period for submission (#1350).
+		await waitFor(() => expect(invalidateReadinessMock).toHaveBeenCalledTimes(2));
 	});
 
 	it("does not cancel when confirmation is declined", () => {

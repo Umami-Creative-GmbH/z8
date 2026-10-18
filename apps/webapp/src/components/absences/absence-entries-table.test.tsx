@@ -22,6 +22,11 @@ vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	cancelAbsenceRequest: vi.fn(),
 }));
 
+const invalidateReadiness = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/query/period-submission-readiness", () => ({
+	useInvalidatePeriodSubmissionReadiness: () => invalidateReadiness,
+}));
+
 const sickNotes = vi.hoisted(() => ({
 	canAttach: false,
 	markers: {} as Record<string, { count: number; viewable: boolean }>,
@@ -268,6 +273,8 @@ describe("AbsenceEntriesTable", () => {
 		await waitFor(() => {
 			expect(onUpdate).toHaveBeenCalledTimes(1);
 		});
+		// The cancelled request no longer keeps its submission period open (#1350).
+		expect(invalidateReadiness).toHaveBeenCalledTimes(1);
 	});
 
 	it("shows translated tooltip copy for the cancel button", async () => {
