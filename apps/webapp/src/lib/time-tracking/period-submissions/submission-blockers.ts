@@ -1,6 +1,7 @@
 import { and, asc, eq, gt, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { absenceEntry, approvalRequest, approvalWorkflow, workPeriod } from "@/db/schema";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { findTimeCorrectionsListedInMyRequests } from "@/lib/self-service-requests/get-self-service-requests";
 import { workTouchesInstantRange } from "@/lib/time-tracking/closed-months/rules";
 import type { PeriodSubmissionDatabase } from "./submission-store";
 
@@ -14,16 +15,26 @@ import type { PeriodSubmissionDatabase } from "./submission-store";
  *
  * Plain data; crosses to the client in a refusal.
  */
+interface WorkBlockerFields {
+	workPeriodId: string;
+	/** ISO instants of the work period's current interval. */
+	startTime: string;
+	endTime: string | null;
+	/** The period's zone, to show the times in. */
+	timezone: string;
+}
+
 export type PeriodSubmissionBlocker =
-	| {
-			kind: "live_work" | "time_correction" | "manual_work";
-			workPeriodId: string;
-			/** ISO instants of the work period's current interval. */
-			startTime: string;
-			endTime: string | null;
-			/** The period's zone, to show the times in. */
-			timezone: string;
-	  }
+	| ({ kind: "live_work" | "manual_work" } & WorkBlockerFields)
+	| ({
+			kind: "time_correction";
+			/**
+			 * My Requests lists the pending correction, where the employee can cancel it. False for a
+			 * request it cannot show (such as unclassifiable legacy data): it still keeps the period
+			 * open, and only an approver can decide it.
+			 */
+			listedInMyRequests: boolean;
+	  } & WorkBlockerFields)
 	| { kind: "absence_request"; absenceId: string; startDate: string; endDate: string };
 
 export interface SubmissionPeriodBounds {
@@ -97,7 +108,9 @@ export async function findPeriodSubmissionBlockers(
 		)
 		.orderBy(asc(workPeriod.startTime), asc(workPeriod.id));
 
-	const blockers: PeriodSubmissionBlocker[] = [];
+	const workBlockers: Array<
+		{ kind: "live_work" | "manual_work" | "time_correction" } & WorkBlockerFields
+	> = [];
 	const touchRange = { start: period.range.start, endExclusive: period.range.end };
 	for (const row of work) {
 		const base = {
@@ -108,7 +121,8 @@ export async function findPeriodSubmissionBlockers(
 		};
 		if (row.endTime === null) {
 			// Only live work that started in the period holds it open.
-			if (row.startTime.getTime() >= start.getTime()) blockers.push({ kind: "live_work", ...base });
+			if (row.startTime.getTime() >= start.getTime())
+				workBlockers.push({ kind: "live_work", ...base });
 			continue;
 		}
 		const touched = workTouchesInstantRange(
@@ -121,8 +135,24 @@ export async function findPeriodSubmissionBlockers(
 			pendingWorkflowType: row.pendingWorkflowType,
 			hasPendingLegacyRequest: row.hasPendingLegacyRequest,
 		});
-		if (kind) blockers.push({ kind, ...base });
+		if (kind) workBlockers.push({ kind, ...base });
 	}
+
+	const corrections = workBlockers.filter((blocker) => blocker.kind === "time_correction");
+	const listed = await findTimeCorrectionsListedInMyRequests(database, {
+		organizationId: period.organizationId,
+		employeeId: period.employeeId,
+		workPeriodIds: corrections.map((blocker) => blocker.workPeriodId),
+	});
+	const blockers: PeriodSubmissionBlocker[] = workBlockers.map((blocker) =>
+		blocker.kind === "time_correction"
+			? {
+					...blocker,
+					kind: "time_correction",
+					listedInMyRequests: listed.has(blocker.workPeriodId),
+				}
+			: { ...blocker, kind: blocker.kind },
+	);
 
 	const absences = await database
 		.select({

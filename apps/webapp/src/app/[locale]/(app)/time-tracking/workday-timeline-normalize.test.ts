@@ -75,7 +75,8 @@ describe("normalizeWorkdayTimeline", () => {
 					startTime: new Date("2026-05-03T07:00:00.000Z"),
 					endTime: null,
 					durationMinutes: null,
-					approvalStatus: "pending",
+					// A requested change on work that already counts: My Requests holds its request.
+					approvalStatus: "approved",
 					pendingChanges: '{"reason":"corrected clock out"}',
 					wasAutoAdjusted: true,
 					autoAdjustmentReason: {
@@ -99,6 +100,96 @@ describe("normalizeWorkdayTimeline", () => {
 			label: "Review request",
 			href: "/my-requests",
 		});
+	});
+
+	it("does not send pending manual work or a pending policy clock-out to My Requests, which has no request for them", () => {
+		// The shapes the manual entry and policy clock-out writers store (as text).
+		const manualEntry = JSON.stringify({
+			ordinarySubmission: {
+				submissionId: "10000000-0000-4000-8000-000000000001",
+				kind: "manual_time_submission",
+			},
+			originalStartTime: "2026-05-03T07:00:00.000Z",
+			originalEndTime: "2026-05-03T11:00:00.000Z",
+			originalDurationMinutes: 240,
+			requestedAt: "2026-05-03T11:05:00.000Z",
+			requestedBy: "user-1",
+			reason: "Forgot to clock in",
+			isManualEntry: true,
+		});
+		const policyClockOut = JSON.stringify({
+			originalStartTime: "2026-05-03T12:00:00.000Z",
+			originalEndTime: "2026-05-03T15:00:00.000Z",
+			originalDurationMinutes: 180,
+			requestedAt: "2026-05-03T15:00:00.000Z",
+			requestedBy: "user-1",
+			isNewClockOut: true,
+			ordinarySubmission: {
+				submissionId: "10000000-0000-4000-8000-000000000002",
+				kind: "policy_clock_out",
+			},
+		});
+		const result = normalizeWorkdayTimeline({
+			selectedDate,
+			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
+			workPeriods: [
+				{
+					id: "period-manual",
+					startTime: new Date("2026-05-03T07:00:00.000Z"),
+					endTime: new Date("2026-05-03T11:00:00.000Z"),
+					durationMinutes: 240,
+					approvalStatus: "pending",
+					pendingChanges: manualEntry,
+					wasAutoAdjusted: false,
+					autoAdjustmentReason: null,
+				},
+				{
+					id: "period-clock-out",
+					startTime: new Date("2026-05-03T12:00:00.000Z"),
+					endTime: new Date("2026-05-03T15:00:00.000Z"),
+					durationMinutes: 180,
+					approvalStatus: "pending",
+					pendingChanges: policyClockOut,
+					wasAutoAdjusted: false,
+					autoAdjustmentReason: null,
+				},
+			],
+			shifts: [],
+			absences: [],
+			pendingRequests: [],
+		});
+
+		expect(result.dayWarnings.map((warning) => warning.id)).toEqual([
+			"warning:pending-edit:period-manual",
+			"warning:pending-edit:period-clock-out",
+		]);
+		expect(result.dayWarnings.map((warning) => warning.link)).toEqual([undefined, undefined]);
+	});
+
+	it("carries each work entry's own work period id", () => {
+		const result = normalizeWorkdayTimeline({
+			selectedDate,
+			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
+			workPeriods: [
+				{
+					id: "period-1",
+					startTime: new Date("2026-05-03T07:00:00.000Z"),
+					endTime: new Date("2026-05-03T11:00:00.000Z"),
+					durationMinutes: 240,
+					approvalStatus: "approved",
+					pendingChanges: null,
+					wasAutoAdjusted: false,
+					autoAdjustmentReason: null,
+				},
+			],
+			shifts: [],
+			absences: [],
+			pendingRequests: [],
+		});
+
+		expect(result.items).toMatchObject([{ type: "work-period", workPeriodId: "period-1" }]);
 	});
 
 	it("keeps day warning summaries out of timeline items", () => {

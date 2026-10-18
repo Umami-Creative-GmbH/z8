@@ -419,6 +419,33 @@ describe("useTimeClock presence invalidation", () => {
 		});
 	});
 
+	it("checks period submission readiness again after each confirmed clocking (#1350)", async () => {
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const invalidateSpy = vi.spyOn(client, "invalidateQueries");
+		const readinessInvalidations = () =>
+			invalidateSpy.mock.calls.filter(
+				([filters]) => filters?.queryKey === queryKeys.periodSubmissions.all,
+			).length;
+		mocks.clockIn.mockResolvedValue({ success: true });
+		mocks.clockOut.mockResolvedValue({ success: true });
+		mocks.addBreakToActiveSession.mockResolvedValue({ success: true });
+
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
+		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+		expect(readinessInvalidations()).toBe(0);
+
+		await result.current.clockIn({ browserTimezone: null });
+		await waitFor(() => expect(readinessInvalidations()).toBe(1));
+		await result.current.addBreak({ breakMinutes: 30 });
+		await waitFor(() => expect(readinessInvalidations()).toBe(2));
+		await result.current.clockOut({ browserTimezone: null });
+		await waitFor(() => expect(readinessInvalidations()).toBe(3));
+	});
+
 	it("stores browser timezone at click time when queuing offline clock-in", async () => {
 		const client = new QueryClient({
 			defaultOptions: { queries: { retry: false } },

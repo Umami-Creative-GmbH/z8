@@ -134,6 +134,39 @@ export async function readApprovalAuthoritySnapshot(
 	return resolveApprovalKindAuthority(input.workflowType, row?.mode);
 }
 
+/**
+ * Whether the gated read would let a write of the kind through right now, read as a snapshot: no
+ * lock, no row inserted. It answers as `acquireApprovalWriteGate` would (no row is the kind's
+ * initial mode; a canonical-only kind passes only in `complete` mode; the authority must be
+ * canonical). Advisory only, for a read-only precheck such as period submission readiness; the
+ * writer still acquires the gate.
+ */
+export async function readApprovalWriteGateOpenSnapshot(
+	database: ApprovalDatabase,
+	input: ApprovalAuthorityScope,
+): Promise<boolean> {
+	const [row] = await database
+		.select({ mode: approvalWorkflowRollout.lifecycleMode })
+		.from(approvalWorkflowRollout)
+		.where(
+			and(
+				eq(approvalWorkflowRollout.organizationId, input.organizationId),
+				eq(approvalWorkflowRollout.workflowType, input.workflowType),
+			),
+		)
+		.limit(1);
+	let mode: ReturnType<typeof parseGatedApprovalLifecycleMode>;
+	try {
+		mode = parseGatedApprovalLifecycleMode(
+			input.workflowType,
+			row?.mode ?? initialApprovalLifecycleMode(input.workflowType),
+		);
+	} catch {
+		return false;
+	}
+	return resolveApprovalKindAuthority(input.workflowType, mode).authority === "canonical";
+}
+
 /** Snapshot reads of several kinds of one organization in one query. */
 export async function readApprovalAuthoritySnapshots<T extends ApprovalWorkflowType>(
 	database: ApprovalDatabase,

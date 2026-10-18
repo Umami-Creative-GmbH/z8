@@ -193,6 +193,15 @@ export const queryKeys = {
 			["closed-months", "close-warnings", month, scope] as const,
 	},
 
+	// Period submissions (#1348)
+	periodSubmissions: {
+		/** Every period submission read; invalidate it after a change that can affect readiness. */
+		all: ["period-submissions"] as const,
+		/** The employee's period view with readiness, for the organization and employee shown. */
+		readiness: (orgId: string, employeeId: string) =>
+			["period-submissions", "readiness", orgId, employeeId] as const,
+	},
+
 	// Employees
 	employees: {
 		all: ["employees"] as const,
