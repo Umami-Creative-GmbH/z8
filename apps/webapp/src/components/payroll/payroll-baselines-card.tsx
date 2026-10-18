@@ -29,6 +29,10 @@ import type {
 	PayrollBaselineDetail,
 	PayrollBaselineSummary,
 } from "@/lib/payroll-export/baseline-types";
+import {
+	payrollDestinationLabel,
+	payrollFormatLabel,
+} from "@/lib/payroll-export/supported-format";
 import type {
 	SupportedPayrollContribution,
 	SupportedPayrollOutputRow,
@@ -169,10 +173,9 @@ function BaselineBrowser({
 				>
 					{sorted.map((item) => (
 						<option key={item.id} value={item.id}>
-							{item.formatId} · {utcTime(item.completedAt)} ·{" "}
-							{item.destination.mandantennummer} /{" "}
-							{item.destination.beraternummer} · {item.id} ·{" "}
-							{availabilityLabel(item.availability, t)}
+							{payrollFormatLabel(item.formatId)} · {utcTime(item.completedAt)}{" "}
+							· {payrollDestinationLabel(item.formatId, item.destination)} ·{" "}
+							{item.id} · {availabilityLabel(item.availability, t)}
 						</option>
 					))}
 				</select>
@@ -288,7 +291,7 @@ function BaselineDetail({
 				</div>
 				<div>
 					<dt className="text-muted-foreground">
-						{t("payroll.baselines.destination", "Payroll destination")}
+						{t("payroll.baselines.payrollDestination", "Payroll destination")}
 					</dt>
 					<dd>
 						{summary.formatId === "datev_lohn"

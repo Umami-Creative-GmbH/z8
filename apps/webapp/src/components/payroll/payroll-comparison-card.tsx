@@ -39,6 +39,10 @@ import type {
 	PayrollRowChange,
 	ReviewedPayrollComparison,
 } from "@/lib/payroll-export/comparison-types";
+import {
+	payrollDestinationLabel,
+	payrollFormatLabel,
+} from "@/lib/payroll-export/supported-format";
 import type {
 	SupportedPayrollContribution,
 	SupportedPayrollOutputRow,
@@ -167,9 +171,10 @@ function ComparisonWorkspace({ scope }: { scope: ComparisonScope }) {
 								<SelectContent>
 									{sorted.filter(eligible).map((item) => (
 										<SelectItem key={item.id} value={item.id}>
-											{item.formatId} · {utcTime(item.completedAt)} ·{" "}
-											{item.destination.mandantennummer} /{" "}
-											{item.destination.beraternummer} · {item.id}
+											{payrollFormatLabel(item.formatId)} ·{" "}
+											{utcTime(item.completedAt)} ·{" "}
+											{payrollDestinationLabel(item.formatId, item.destination)}{" "}
+											· {item.id}
 										</SelectItem>
 									))}
 								</SelectContent>
@@ -264,14 +269,17 @@ function ComparisonSelection({
 			<dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
 				<Fact
 					label={t("payroll.comparison.format", "Payroll format")}
-					value={baseline.formatId}
+					value={payrollFormatLabel(baseline.formatId)}
 				/>
 				<Fact
 					label={t("payroll.comparison.baselineId", "Baseline ID")}
 					value={baseline.id}
 				/>
 				<Fact
-					label={t("payroll.comparison.destination", "Payroll destination")}
+					label={t(
+						"payroll.comparison.payrollDestination",
+						"Payroll destination",
+					)}
 					value={
 						baseline.formatId === "datev_lohn"
 							? `${baseline.destination.mandantennummer} / ${baseline.destination.beraternummer}`
@@ -1169,8 +1177,8 @@ function compatibilityReason(reason: string, t: Translate) {
 			);
 		case "destination_changed":
 			return t(
-				"payroll.comparison.destinationChanged",
-				"The DATEV client or consultant number differs from the baseline.",
+				"payroll.comparison.payrollDestinationChanged",
+				"The payroll destination differs from the baseline.",
 			);
 		case "employee_windows_changed":
 			return t(
