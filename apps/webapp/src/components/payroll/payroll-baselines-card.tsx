@@ -38,9 +38,11 @@ import { queryKeys } from "@/lib/query/keys";
 type Translate = ReturnType<typeof useTranslate>["t"];
 
 export function PayrollBaselinesCard({
+	formatId,
 	startDate,
 	endDate,
 }: {
+	formatId?: string;
 	startDate: string;
 	endDate: string;
 }) {
@@ -48,9 +50,16 @@ export function PayrollBaselinesCard({
 	const selectorId = useId();
 	const queryClient = useQueryClient();
 	const baselines = useQuery({
-		queryKey: queryKeys.payroll.baselines({ startDate, endDate }),
+		queryKey: [
+			...queryKeys.payroll.baselines({ startDate, endDate }),
+			formatId,
+		],
 		queryFn: async () => {
-			const result = await listPayrollBaselinesAction({ startDate, endDate });
+			const result = await listPayrollBaselinesAction({
+				startDate,
+				endDate,
+				...(formatId ? { formatId } : {}),
+			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -61,7 +70,7 @@ export function PayrollBaselinesCard({
 			<CardHeader>
 				<CardTitle>
 					<h2 id={`${selectorId}-title`}>
-						{t("payroll.baselines.title", "DATEV baseline exports")}
+						{t("payroll.baselines.title", "Payroll baseline exports")}
 					</h2>
 				</CardTitle>
 				<CardDescription>
@@ -75,7 +84,7 @@ export function PayrollBaselinesCard({
 				<p className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-950 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-100">
 					{t(
 						"payroll.baselines.exclusions",
-						"Expense reimbursements are excluded. Only DATEV work, absence and overtime payout hours are shown.",
+						"Expense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.",
 					)}
 				</p>
 				<Button
@@ -141,7 +150,7 @@ function BaselineBrowser({
 			<p role="status">
 				{t(
 					"payroll.baselines.none",
-					"No successful DATEV baseline exports are available for this period.",
+					"No successful Payroll baseline exports are available for this period.",
 				)}
 			</p>
 		);
@@ -160,7 +169,8 @@ function BaselineBrowser({
 				>
 					{sorted.map((item) => (
 						<option key={item.id} value={item.id}>
-							{utcTime(item.completedAt)} · {item.destination.mandantennummer} /{" "}
+							{item.formatId} · {utcTime(item.completedAt)} ·{" "}
+							{item.destination.mandantennummer} /{" "}
 							{item.destination.beraternummer} · {item.id} ·{" "}
 							{availabilityLabel(item.availability, t)}
 						</option>
@@ -278,14 +288,12 @@ function BaselineDetail({
 				</div>
 				<div>
 					<dt className="text-muted-foreground">
-						{t(
-							"payroll.baselines.destination",
-							"Destination: client / consultant",
-						)}
+						{t("payroll.baselines.destination", "Payroll destination")}
 					</dt>
 					<dd>
-						{summary.destination.mandantennummer} /{" "}
-						{summary.destination.beraternummer}
+						{summary.formatId === "datev_lohn"
+							? `${summary.destination.mandantennummer} / ${summary.destination.beraternummer}`
+							: summary.destination.configId}
 					</dd>
 				</div>
 				<div>
@@ -415,7 +423,7 @@ function RetainedEvidence({
 					{JSON.stringify(evidence.filters, null, 2)}
 				</pre>
 				<h4 className="mt-3 text-sm font-medium">
-					{t("payroll.baselines.config", "Historical DATEV configuration")}
+					{t("payroll.baselines.config", "Historical payroll configuration")}
 				</h4>
 				<pre className="mt-1 overflow-x-auto whitespace-pre-wrap break-all text-xs">
 					{JSON.stringify(evidence.config, null, 2)}
@@ -514,6 +522,14 @@ function ExportedRow({
 			<TableCell className="align-top">{row.date}</TableCell>
 			<TableCell className="text-right align-top tabular-nums">
 				{row.quantity}
+				{Object.entries(row.renderedColumns ?? {}).map(([column, value]) => (
+					<div
+						key={column}
+						className="whitespace-nowrap text-xs text-muted-foreground"
+					>
+						{column}: {value || "—"}
+					</div>
+				))}
 			</TableCell>
 			<TableCell className="whitespace-normal align-top">{row.note}</TableCell>
 			<TableCell className="min-w-60 whitespace-normal align-top">

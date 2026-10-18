@@ -87,7 +87,7 @@ describe("Payroll workspace baseline inspection", () => {
 		);
 		expect(
 			screen.getByText(
-				"Expense reimbursements are excluded. Only DATEV work, absence and overtime payout hours are shown.",
+				"Expense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.",
 			),
 		).toBeTruthy();
 		expect(screen.getByText("12345 / 67890")).toBeTruthy();
@@ -289,7 +289,7 @@ it("distinguishes no successful baselines from a valid empty export", async () =
 	renderBaselines();
 	expect(
 		await screen.findByText(
-			"No successful DATEV baseline exports are available for this period.",
+			"No successful Payroll baseline exports are available for this period.",
 		),
 	).toBeTruthy();
 	expect(screen.queryByRole("combobox")).toBeNull();

@@ -118,6 +118,7 @@ export async function insertPayrollBaseline(
 			organizationId: input.organizationId,
 			descriptor: {
 				destination: evidence.destination,
+				formatId: evidence.output.formatId,
 				period: evidence.period,
 			},
 			version: BASELINE_EVIDENCE_VERSION,
@@ -191,14 +192,27 @@ const retainedUtc = z.string().refine((value) => {
 });
 const retainedDestination = z.object({
 	configId: retainedId,
-	mandantennummer: retainedId,
-	beraternummer: retainedId,
+	mandantennummer: z.string(),
+	beraternummer: z.string(),
 });
 const retainedPeriod = z.object({
 	startDate: retainedDay,
 	endDate: retainedDay,
 });
+const retainedFormat = z.enum(["datev_lohn", "lexware_lohn", "sage_lohn"]);
+const retainedMonth = z
+	.string()
+	.regex(/^\d{4}-\d{2}$/)
+	.refine((value) => {
+		try {
+			Temporal.PlainYearMonth.from(value);
+			return true;
+		} catch {
+			return false;
+		}
+	});
 const retainedDescriptor = z.object({
+	formatId: retainedFormat.optional(),
 	destination: retainedDestination,
 	period: retainedPeriod,
 });
@@ -273,17 +287,18 @@ const retainedEvidence = z.object({
 	),
 	output: z.object({
 		version: z.literal(1),
-		formatId: z.literal("datev_lohn"),
+		formatId: retainedFormat,
 		formatterVersion: retainedId,
 		excludedLineKinds: z.tuple([z.literal("expense")]),
 		rows: z.array(
 			z.object({
 				personnelNumber: z.string(),
 				wageTypeCode: z.string(),
-				date: retainedDay,
+				date: z.union([retainedDay, retainedMonth]),
 				quantity: z.string().regex(/^-?\d+\.\d{2}$/),
 				unit: z.literal("hours"),
 				note: z.string(),
+				renderedColumns: z.record(z.string(), z.string()).optional(),
 				contributions: z.array(retainedContribution).min(1),
 			}),
 		),
@@ -364,12 +379,33 @@ function retainedAvailability(
 			return "corrupt";
 		const evidence = parsed.data;
 		if (
-			canonicalJson(descriptor.data) !==
+			canonicalJson({
+				destination: descriptor.data.destination,
+				period: descriptor.data.period,
+			}) !==
 				canonicalJson({
 					destination: evidence.destination,
 					period: evidence.period,
 				}) ||
 			!sameUniqueScope(scope.data, evidence.employeeIds)
+		)
+			return "corrupt";
+		if (
+			(descriptor.data.formatId ?? "datev_lohn") !== evidence.output.formatId ||
+			evidence.output.rows.some(
+				(line) =>
+					!(
+						evidence.output.formatId === "lexware_lohn"
+							? retainedMonth
+							: retainedDay
+					).safeParse(line.date).success,
+			)
+		)
+			return "corrupt";
+		if (
+			evidence.output.formatId === "datev_lohn" &&
+			(!evidence.destination.mandantennummer ||
+				!evidence.destination.beraternummer)
 		)
 			return "corrupt";
 		const employees = new Set(evidence.employeeIds);
@@ -425,7 +461,9 @@ export function payrollBaselineDetail(
 		summary: {
 			id: row.id,
 			jobId: row.jobId,
-			formatId: "datev_lohn",
+			formatId: descriptor.success
+				? (descriptor.data.formatId ?? "datev_lohn")
+				: "datev_lohn",
 			destination: descriptor.success
 				? descriptor.data.destination
 				: { configId: "", mandantennummer: "", beraternummer: "" },

@@ -1,3 +1,4 @@
+import { isSupportedPayrollFormat } from "./supported-format";
 import "server-only";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
@@ -134,7 +135,7 @@ function validatePeriod(request: { startDate?: string; endDate?: string }) {
 		throw new ValidationError({ message: "Invalid payroll period" });
 }
 export async function listPayrollBaselines(
-	request: { startDate?: string; endDate?: string } = {},
+	request: { startDate?: string; endDate?: string; formatId?: string } = {},
 ): Promise<PayrollBaselineSummary[]> {
 	const actor = await requireBaselineActor();
 	validatePeriod(request);
@@ -149,6 +150,8 @@ export async function listPayrollBaselines(
 	for (const row of rows) {
 		const detail = payrollBaselineDetail(row, systemClock.nowInstant());
 		const period = detail.summary.period;
+		if (request.formatId && request.formatId !== detail.summary.formatId)
+			continue;
 		if (
 			(request.startDate && request.startDate !== period.startDate) ||
 			(request.endDate && request.endDate !== period.endDate)
@@ -173,7 +176,9 @@ export async function listPayrollBaselines(
 	for (const job of jobs) {
 		if (
 			capturedJobs.has(job.id) ||
-			job.config.formatId !== "datev_lohn" ||
+			!isSupportedPayrollFormat(job.config.formatId) ||
+			(request.formatId !== undefined &&
+				request.formatId !== job.config.formatId) ||
 			!job.completedAt
 		)
 			continue;
@@ -192,7 +197,7 @@ export async function listPayrollBaselines(
 		summaries.push({
 			id: job.id,
 			jobId: job.id,
-			formatId: "datev_lohn",
+			formatId: job.config.formatId,
 			destination: {
 				configId: job.configId,
 				mandantennummer: "",

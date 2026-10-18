@@ -199,11 +199,18 @@ it("validates optional explanations and source-only rows as deeply as output cha
 	expect(isReviewedPayrollComparison(value)).toBe(false);
 });
 
-it("accepts the shared supported-format contract without enabling format eligibility", () => {
+it("accepts format-specific row periods for each supported format", () => {
 	for (const formatId of ["lexware_lohn", "sage_lohn"]) {
 		const value = reviewed();
 		Reflect.set(value.baseline, "formatId", formatId);
 		Reflect.set(value.comparison, "formatId", formatId);
+		if (formatId === "lexware_lohn")
+			for (const change of [
+				...value.comparison.rows,
+				...value.comparison.sourceOnlyChanges,
+			])
+				for (const row of [change.oldRow, change.newRow])
+					if (row) row.date = "2026-09";
 		expect(isReviewedPayrollComparison(value)).toBe(true);
 	}
 });

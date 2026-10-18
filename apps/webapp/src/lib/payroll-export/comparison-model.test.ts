@@ -60,6 +60,44 @@ function output(
 }
 
 describe("payroll rendered output comparison", () => {
+	it("reports configured rendered-column changes with zero net hours and counts duplicate hours columns once", () => {
+		const before = {
+			...output([
+				row({
+					date: "2026-09",
+					renderedColumns: { Wert: "8,00", Stunden: "8,00" },
+				}),
+			]),
+			formatId: "lexware_lohn" as const,
+		};
+		const after = structuredClone(before);
+		after.rows[0].renderedColumns = { Wert: "8,00", Stundensatz: "" };
+		const result = comparePayrollOutput(before, after);
+		expect(result.rows).toMatchObject([
+			{ status: "changed", delta: "0.00", changedFields: ["renderedColumns"] },
+		]);
+		expect(result.totals).toEqual([
+			{
+				wageTypeCode: "1000",
+				unit: "hours",
+				oldQuantity: "8.00",
+				newQuantity: "8.00",
+				delta: "0.00",
+				hasPayrollImpact: true,
+			},
+		]);
+		expect(
+			comparePayrollOutput(before, {
+				...before,
+				rows: [
+					{
+						...before.rows[0],
+						renderedColumns: { Stunden: "8,00", Wert: "8,00" },
+					},
+				],
+			}).hasPayrollImpact,
+		).toBe(false);
+	});
 	it("reports the emitted quantity difference once for a row with mixed source kinds", () => {
 		const absence: SupportedPayrollContribution = {
 			kind: "absence",

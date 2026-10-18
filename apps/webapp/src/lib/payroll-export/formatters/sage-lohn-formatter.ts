@@ -13,6 +13,10 @@ import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import { personnelNumberTypeError } from "../personnel-identifier";
 import type {
+	SupportedPayrollContribution,
+	SupportedPayrollOutputRow,
+} from "../supported-output-evidence";
+import type {
 	AbsenceData,
 	ExpenseLineData,
 	ExportResult,
@@ -30,7 +34,6 @@ import {
 	germanPersonnelNumber,
 } from "./expense-lines";
 import {
-	addOvertimePayoutHours,
 	GERMAN_OVERTIME_PAYOUT_NOTE,
 	overtimePayoutsForFormat,
 	widenDateRangeByPayouts,
@@ -48,6 +51,13 @@ const DEFAULT_WAGE_TYPE_CODE = "1000";
  */
 const SYNC_THRESHOLD = 500;
 
+type AggregatedEntry = {
+	hours: number;
+	note: string;
+	contributions: SupportedPayrollContribution[];
+};
+type AggregatedRows = Map<string, Map<string, Map<string, AggregatedEntry>>>;
+
 /**
  * Sage Lohn CSV formatter
  */
@@ -60,7 +70,10 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		return SYNC_THRESHOLD;
 	}
 
-	validateConfig(config: Record<string, unknown>): { valid: boolean; errors?: string[] } {
+	validateConfig(config: Record<string, unknown>): {
+		valid: boolean;
+		errors?: string[];
+	} {
 		const errors: string[] = [];
 		const sageConfig = config as Partial<SageLohnConfig>;
 
@@ -109,24 +122,56 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		}
 
 		// Group work periods by employee and date
-		const aggregatedData = this.aggregateWorkPeriods(workPeriods, workCategoryMappings, sageConfig);
+		const aggregatedData = this.aggregateWorkPeriods(
+			workPeriods,
+			workCategoryMappings,
+			sageConfig,
+		);
 
 		// Add absence data
-		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, sageConfig);
+		this.addAbsenceData(
+			absences,
+			absenceCategoryMappings,
+			aggregatedData,
+			sageConfig,
+		);
 
 		// Overtime payouts (#1001): hours on the payout's day under the "overtime" wage type.
 		const payouts = overtimePayoutsForFormat(overtimePayouts, mappings, "sage");
-		addOvertimePayoutHours(aggregatedData, payouts.mapped, {
-			personnelNumber: (payout) => this.personnelNumber(payout, sageConfig),
-			period: (payout) => payout.day,
-			add: (existing, hours) => ({
+		const overtimeMapping = mappings.find(
+			(mapping) => mapping.specialCategory === "overtime",
+		);
+		for (const { payout, wageTypeCode, hours } of payouts.mapped) {
+			const personnelNumber = this.personnelNumber(payout, sageConfig);
+			const employeeData =
+				aggregatedData.get(personnelNumber) ??
+				new Map<string, Map<string, AggregatedEntry>>();
+			aggregatedData.set(personnelNumber, employeeData);
+			const dateData =
+				employeeData.get(payout.day) ?? new Map<string, AggregatedEntry>();
+			employeeData.set(payout.day, dateData);
+			const existing = dateData.get(wageTypeCode);
+			dateData.set(wageTypeCode, {
 				hours: (existing?.hours ?? 0) + hours,
 				note: existing?.note || GERMAN_OVERTIME_PAYOUT_NOTE,
-			}),
-		});
+				contributions: [
+					...(existing?.contributions ?? []),
+					{
+						...this.contributionIdentity(payout, hours),
+						kind: "overtime_payout",
+						facts: {
+							day: payout.day,
+							minutes: payout.minutes,
+							mappingId: overtimeMapping?.id ?? null,
+						},
+					},
+				],
+			});
+		}
 
 		// Generate CSV content based on output format
 		const lines: string[] = [];
+		const supportedRows: SupportedPayrollOutputRow[] = [];
 
 		// Header row
 		lines.push(this.generateHeaderRow(sageConfig));
@@ -145,27 +190,40 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 
 				for (const [wageTypeCode, data] of sortedWageTypes) {
 					if (data.hours > 0 || sageConfig.includeZeroHours) {
+						const renderedQuantity = this.formatHours(data.hours, sageConfig);
 						lines.push(
 							this.generateDataRow(
 								personnelNumber,
 								wageTypeCode,
-								data.hours,
+								renderedQuantity,
 								dateStr,
 								data.note,
-								sageConfig,
 							),
 						);
+						supportedRows.push({
+							personnelNumber,
+							wageTypeCode,
+							date: dateStr,
+							quantity: renderedQuantity.replace(",", "."),
+							renderedColumns: { Betrag: renderedQuantity },
+							unit: "hours",
+							note: data.note,
+							contributions: data.contributions,
+						});
 					}
 				}
 			}
 		}
 
 		// Expense money lines (#852): a euro Betrag on the period's last day, labeled as money.
-		for (const { personnelNumber, line } of expenseLinesInFileOrder(expenseLines, (line) =>
-			germanPersonnelNumber(line, sageConfig),
+		for (const { personnelNumber, line } of expenseLinesInFileOrder(
+			expenseLines,
+			(line) => germanPersonnelNumber(line, sageConfig),
 		)) {
 			const amount =
-				sageConfig.outputFormat === "sage_native" ? commaDecimalAmount(line.amount) : line.amount;
+				sageConfig.outputFormat === "sage_native"
+					? commaDecimalAmount(line.amount)
+					: line.amount;
 			lines.push(
 				[
 					this.escapeCSV(personnelNumber),
@@ -179,9 +237,12 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 
 		// Calculate metadata
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
-		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
+		absences.forEach((a) => {
+			uniqueEmployees.add(a.employeeId);
+		});
 		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
-		for (const { payout } of payouts.mapped) uniqueEmployees.add(payout.employeeId);
+		for (const { payout } of payouts.mapped)
+			uniqueEmployees.add(payout.employeeId);
 
 		const dateRange = widenDateRangeByPayouts(
 			this.getDateRange(workPeriods, absences),
@@ -204,6 +265,13 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		const csvContent = lines.join("\r\n");
 
 		return {
+			supportedOutputEvidence: {
+				version: 1,
+				formatId: "sage_lohn",
+				formatterVersion: this.version,
+				excludedLineKinds: ["expense"],
+				rows: supportedRows,
+			},
 			fileName,
 			content: csvContent,
 			mimeType: "text/csv",
@@ -228,8 +296,8 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		workPeriods: WorkPeriodData[],
 		workCategoryMappings: Map<string, WageTypeMapping>,
 		config: SageLohnConfig,
-	): Map<string, Map<string, Map<string, { hours: number; note: string }>>> {
-		const result = new Map<string, Map<string, Map<string, { hours: number; note: string }>>>();
+	): AggregatedRows {
+		const result: AggregatedRows = new Map();
 
 		for (const period of workPeriods) {
 			if (!period.durationMinutes || !period.endTime) continue;
@@ -270,10 +338,33 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 			const dateData = employeeData.get(dateStr)!;
 
 			// Aggregate hours
-			const existing = dateData.get(wageTypeCode) || { hours: 0, note: "" };
+			const existing = dateData.get(wageTypeCode) || {
+				hours: 0,
+				note: "",
+				contributions: [],
+			};
 			dateData.set(wageTypeCode, {
 				hours: existing.hours + hours,
 				note: note || existing.note,
+				contributions: [
+					...existing.contributions,
+					{
+						...this.contributionIdentity(period, hours),
+						kind: "work",
+						facts: {
+							startAt: period.startTime.toUTC().toISO(),
+							endAt: period.endTime.toUTC().toISO(),
+							durationMinutes: period.durationMinutes,
+							workCategoryId: period.workCategoryId,
+							workCategoryName: period.workCategoryName,
+							projectId: period.projectId,
+							projectName: period.projectName,
+							mappingId: period.workCategoryId
+								? (workCategoryMappings.get(period.workCategoryId)?.id ?? null)
+								: null,
+						},
+					},
+				],
 			});
 		}
 
@@ -286,7 +377,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	private addAbsenceData(
 		absences: AbsenceData[],
 		absenceCategoryMappings: Map<string, WageTypeMapping>,
-		aggregatedData: Map<string, Map<string, Map<string, { hours: number; note: string }>>>,
+		aggregatedData: AggregatedRows,
 		config: SageLohnConfig,
 	): void {
 		for (const absence of absences) {
@@ -296,9 +387,10 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 
 			const personnelNumber = this.personnelNumber(absence, config);
 			const wageTypeCode = mappedCode;
-			const note = mapping.sageWageTypeName || absence.absenceCategoryName || "";
+			const note =
+				mapping.sageWageTypeName || absence.absenceCategoryName || "";
 
-			// Calculate days
+			// Preserve the existing eight hours for each included absence calendar day.
 			const startDate = DateTime.fromISO(absence.startDate).startOf("day");
 			const endDate = DateTime.fromISO(absence.endDate).startOf("day");
 			const days = Math.floor(endDate.diff(startDate, "days").days) + 1;
@@ -320,13 +412,49 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 				const dateData = employeeData.get(dateStr)!;
 
 				// For absences, we typically record 8 hours (full day)
-				const existing = dateData.get(wageTypeCode) || { hours: 0, note: "" };
+				const existing = dateData.get(wageTypeCode) || {
+					hours: 0,
+					note: "",
+					contributions: [],
+				};
 				dateData.set(wageTypeCode, {
 					hours: existing.hours + 8, // Full day
 					note: note || existing.note,
+					contributions: [
+						...existing.contributions,
+						{
+							...this.contributionIdentity(absence, 8),
+							kind: "absence",
+							facts: {
+								startDate: absence.startDate,
+								endDate: absence.endDate,
+								absenceCategoryId: absence.absenceCategoryId,
+								absenceCategoryName: absence.absenceCategoryName,
+								absenceType: absence.absenceType,
+								status: absence.status,
+								mappingId: mapping.id,
+							},
+						},
+					],
 				});
 			}
 		}
+	}
+
+	private contributionIdentity(
+		row: WorkPeriodData | AbsenceData | OvertimePayoutData,
+		hours: number,
+	) {
+		return {
+			sourceId: row.id,
+			sourceRevision: row.sourceRevision ?? null,
+			employeeId: row.employeeId,
+			firstName: row.firstName,
+			lastName: row.lastName,
+			hours,
+			reason: row.sourceReason ?? null,
+			sourceActorId: row.sourceActorId ?? null,
+		};
 	}
 
 	/**
@@ -337,7 +465,10 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		row: WorkPeriodData | AbsenceData | OvertimePayoutData,
 		config: SageLohnConfig,
 	): string {
-		if (config.personnelNumberType === "employeeNumber" && !row.employeeNumber) {
+		if (
+			config.personnelNumberType === "employeeNumber" &&
+			!row.employeeNumber
+		) {
 			logger.warn(
 				{ employeeId: row.employeeId, rowId: row.id },
 				"Employee number not set, falling back to employeeId",
@@ -345,7 +476,6 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		}
 		return germanPersonnelNumber(row, config);
 	}
-
 
 	/**
 	 * Generate CSV header row
@@ -363,15 +493,14 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	private generateDataRow(
 		personnelNumber: string,
 		wageTypeCode: string,
-		hours: number,
+		quantity: string,
 		dateStr: string,
 		note: string,
-		config: SageLohnConfig,
 	): string {
 		return [
 			this.escapeCSV(personnelNumber),
 			this.escapeCSV(wageTypeCode),
-			this.escapeCSV(this.formatHours(hours, config)), // Quote the hours value to handle comma decimal separator
+			this.escapeCSV(quantity), // Quote the hours value to handle comma decimal separator
 			this.escapeCSV(dateStr),
 			this.escapeCSV(note),
 		].join(";");
@@ -436,9 +565,14 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Generate file name based on date range
 	 */
-	private generateFileName(dateRange: { start: DateTime | null; end: DateTime | null }): string {
+	private generateFileName(dateRange: {
+		start: DateTime | null;
+		end: DateTime | null;
+	}): string {
 		const now = DateTime.now();
-		const dateStr = dateRange.start ? dateRange.start.toFormat("yyyy-MM") : now.toFormat("yyyy-MM");
+		const dateStr = dateRange.start
+			? dateRange.start.toFormat("yyyy-MM")
+			: now.toFormat("yyyy-MM");
 		return `sage_lohn_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
 	}
 }

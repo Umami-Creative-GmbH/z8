@@ -10,6 +10,13 @@ import type {
 	SupportedPayrollOutputRow,
 } from "./supported-output-evidence";
 
+function renderedSignature(row: SupportedPayrollOutputRow): string {
+	return JSON.stringify(
+		Object.entries(row.renderedColumns ?? {}).sort(([a], [b]) =>
+			a.localeCompare(b),
+		),
+	);
+}
 function rowKey(row: SupportedPayrollOutputRow): string {
 	return JSON.stringify([
 		row.personnelNumber,
@@ -138,10 +145,12 @@ export function comparePayrollOutput(
 		const newRow = newIndex.get(key) ?? null;
 		const changedFields =
 			oldRow && newRow
-				? ["quantity", "note"].filter((field) =>
+				? ["quantity", "note", "renderedColumns"].filter((field) =>
 						field === "quantity"
 							? oldRow.quantity !== newRow.quantity
-							: oldRow.note !== newRow.note,
+							: field === "note"
+								? oldRow.note !== newRow.note
+								: renderedSignature(oldRow) !== renderedSignature(newRow),
 					)
 				: ["row"];
 		if (!changedFields.length) {

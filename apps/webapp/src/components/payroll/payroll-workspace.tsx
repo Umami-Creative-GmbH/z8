@@ -1,4 +1,5 @@
 "use client";
+import { isSupportedPayrollFormat } from "@/lib/payroll-export/supported-format";
 
 import {
 	IconAlertTriangle,
@@ -34,9 +35,19 @@ import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -72,7 +83,10 @@ import {
 	type PayrollBlockerIdentity,
 	payrollBlockerIdentity,
 } from "@/lib/payroll-workspace/blocker-identity";
-import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
+import type {
+	PayrollDateRangeMode,
+	PayrollWorkspaceSummary,
+} from "@/lib/payroll-workspace/types";
 import { queryKeys } from "@/lib/query/keys";
 import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
 import { OvertimePayoutReadinessAlert } from "./overtime-payout-readiness-alert";
@@ -196,7 +210,8 @@ function usePayrollSummaryLoader({
 			const result = await getPayrollWorkspaceSummaryAction(nextRequest);
 
 			if (!isMountedRef.current) return { status: "unmounted" };
-			if (requestGeneration !== requestGenerationRef.current) return { status: "stale" };
+			if (requestGeneration !== requestGenerationRef.current)
+				return { status: "stale" };
 
 			if (!result.success) {
 				options.onError(result.error);
@@ -204,14 +219,17 @@ function usePayrollSummaryLoader({
 			}
 
 			dispatch({
-				type: options.preserveDraft ? "summaryDataRefreshed" : "summaryRefreshed",
+				type: options.preserveDraft
+					? "summaryDataRefreshed"
+					: "summaryRefreshed",
 				summary: result.data,
 			});
 			options.onSuccess?.();
 			return { status: "applied", summary: result.data };
 		} catch {
 			if (!isMountedRef.current) return { status: "unmounted" };
-			if (requestGeneration !== requestGenerationRef.current) return { status: "stale" };
+			if (requestGeneration !== requestGenerationRef.current)
+				return { status: "stale" };
 
 			options.onError();
 			return { status: "failed" };
@@ -281,7 +299,8 @@ async function clearPayrollBlockerAndRefresh({
 		if (
 			refreshResult.status === "applied" &&
 			!refreshResult.summary.blockers.some(
-				(currentBlocker) => payrollBlockerIdentity(currentBlocker) === blockerKey,
+				(currentBlocker) =>
+					payrollBlockerIdentity(currentBlocker) === blockerKey,
 			)
 		) {
 			onRemoved(refreshResult.summary);
@@ -294,7 +313,10 @@ async function clearPayrollBlockerAndRefresh({
 							"payroll.blockers.refreshAfterClearFailed",
 							"Blocker cleared, but payroll could not be refreshed",
 						)
-					: t("payroll.blockers.clearFailed", "Could not clear payroll blocker"),
+					: t(
+							"payroll.blockers.clearFailed",
+							"Could not clear payroll blocker",
+						),
 			);
 		}
 	} finally {
@@ -323,7 +345,9 @@ function usePayrollBlockerClearing({
 	const clearingBlockerKeysRef = useRef(new Set<PayrollBlockerIdentity>());
 	const clearBlockerQueueRef = useRef<Promise<void> | null>(null);
 	const focusRequestIdRef = useRef(0);
-	const [focusRequest, setFocusRequest] = useState<BlockerFocusRequest | null>(null);
+	const [focusRequest, setFocusRequest] = useState<BlockerFocusRequest | null>(
+		null,
+	);
 
 	function clearPayrollBlocker(
 		blocker: DismissiblePayrollBlocker,
@@ -334,11 +358,15 @@ function usePayrollBlockerClearing({
 		if (clearingBlockerKeysRef.current.has(blockerKey)) return;
 
 		clearingBlockerKeysRef.current.add(blockerKey);
-		setClearingBlockerKeys((currentKeys) => new Set(currentKeys).add(blockerKey));
+		setClearingBlockerKeys((currentKeys) =>
+			new Set(currentKeys).add(blockerKey),
+		);
 		const currentClickRequest = clickRequest;
 		const blockerOrder = blockers.map(payrollBlockerIdentity);
 
-		clearBlockerQueueRef.current = (clearBlockerQueueRef.current ?? Promise.resolve()).then(() =>
+		clearBlockerQueueRef.current = (
+			clearBlockerQueueRef.current ?? Promise.resolve()
+		).then(() =>
 			isMountedRef.current
 				? clearPayrollBlockerAndRefresh({
 						blocker,
@@ -361,11 +389,15 @@ function usePayrollBlockerClearing({
 							);
 							const nextBlockerKey = blockerOrder
 								.slice(removedIndex + 1)
-								.find((currentBlockerKey) => remainingBlockerKeys.has(currentBlockerKey));
+								.find((currentBlockerKey) =>
+									remainingBlockerKeys.has(currentBlockerKey),
+								);
 							const previousBlockerKey = blockerOrder
 								.slice(0, removedIndex)
 								.reverse()
-								.find((currentBlockerKey) => remainingBlockerKeys.has(currentBlockerKey));
+								.find((currentBlockerKey) =>
+									remainingBlockerKeys.has(currentBlockerKey),
+								);
 							focusRequestIdRef.current += 1;
 							setFocusRequest({
 								id: focusRequestIdRef.current,
@@ -382,7 +414,10 @@ function usePayrollBlockerClearing({
 	return { clearingBlockerKeys, clearPayrollBlocker, focusRequest };
 }
 
-export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
+export function PayrollWorkspace({
+	initialSummary,
+	exportFormats,
+}: PayrollWorkspaceProps) {
 	const { t } = useTranslate();
 	const [state, dispatch] = useReducer(payrollWorkspaceReducer, {
 		summary: initialSummary,
@@ -421,7 +456,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 	const displayedTotals = filtersHaveNoMatches
 		? { employeeCount: 0, totalWorkedHours: 0, blockerCount: 0 }
 		: summary.totals;
-	const readyEmployeeCount = displayedEmployees.filter((employee) => !employee.hasBlockers).length;
+	const readyEmployeeCount = displayedEmployees.filter(
+		(employee) => !employee.hasBlockers,
+	).length;
 	const request = {
 		startDate: summary.period.start,
 		endDate: summary.period.end,
@@ -429,8 +466,12 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		employeeIds: filteredEmployeeIds,
 	};
 	// The period's months and the selection, for the closed-month status (#762).
-	const periodMonths = monthsOfDateRange(summary.period.start, summary.period.end);
-	const closureEmployeeIds = filteredEmployeeIds ?? scopedEmployees.map((employee) => employee.id);
+	const periodMonths = monthsOfDateRange(
+		summary.period.start,
+		summary.period.end,
+	);
+	const closureEmployeeIds =
+		filteredEmployeeIds ?? scopedEmployees.map((employee) => employee.id);
 	const { loadSummary, refreshLatestSummary } = usePayrollSummaryLoader({
 		dispatch,
 		initialRequest: request,
@@ -440,16 +481,20 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		refreshLatestSummary({
 			preserveDraft: true,
 			onError: (error) =>
-				toast.error(error ?? t("payroll.errors.actionFailed", "Payroll workspace action failed")),
+				toast.error(
+					error ??
+						t("payroll.errors.actionFailed", "Payroll workspace action failed"),
+				),
 		}),
 	);
-	const { clearingBlockerKeys, clearPayrollBlocker, focusRequest } = usePayrollBlockerClearing({
-		blockers: displayedBlockers,
-		clickRequest: request,
-		isMountedRef,
-		refreshLatestSummary,
-		t,
-	});
+	const { clearingBlockerKeys, clearPayrollBlocker, focusRequest } =
+		usePayrollBlockerClearing({
+			blockers: displayedBlockers,
+			clickRequest: request,
+			isMountedRef,
+			refreshLatestSummary,
+			t,
+		});
 
 	function refreshSummary(
 		nextRequest: PayrollPeriodRequest,
@@ -472,7 +517,11 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				{
 					onError: (error) =>
 						toast.error(
-							error ?? t("payroll.errors.actionFailed", "Payroll workspace action failed"),
+							error ??
+								t(
+									"payroll.errors.actionFailed",
+									"Payroll workspace action failed",
+								),
 						),
 					onSuccess,
 				},
@@ -480,7 +529,10 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		});
 	}
 
-	function applyEmployeeFilter(nextEmployeeIds: string[], onSuccess?: () => void) {
+	function applyEmployeeFilter(
+		nextEmployeeIds: string[],
+		onSuccess?: () => void,
+	) {
 		const nextFilteredEmployeeIds = getFilteredEmployeeIds(
 			scopedEmployees,
 			nextEmployeeIds,
@@ -540,7 +592,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			zone: "utc",
 		});
 		const amount = direction === "previous" ? -1 : 1;
-		const nextStart = currentStart.plus({ [dateMode]: amount }).startOf(dateMode);
+		const nextStart = currentStart
+			.plus({ [dateMode]: amount })
+			.startOf(dateMode);
 
 		refreshSummary(buildPeriodRequest(nextStart, dateMode));
 	}
@@ -548,7 +602,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 	function returnToCurrentPeriod() {
 		if (dateMode === "custom") return;
 
-		refreshSummary(buildPeriodRequest(DateTime.utc().startOf(dateMode), dateMode));
+		refreshSummary(
+			buildPeriodRequest(DateTime.utc().startOf(dateMode), dateMode),
+		);
 	}
 
 	function applyCustomRange() {
@@ -712,8 +768,14 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			{filtersHaveNoMatches ? null : (
 				// Whether the period's months are closed for this selection (#762).
 				<>
-					<MonthClosureStrip months={periodMonths} employeeIds={closureEmployeeIds} />
-					<UnclosedMonthsNotice months={periodMonths} employeeIds={closureEmployeeIds} />
+					<MonthClosureStrip
+						months={periodMonths}
+						employeeIds={closureEmployeeIds}
+					/>
+					<UnclosedMonthsNotice
+						months={periodMonths}
+						employeeIds={closureEmployeeIds}
+					/>
 				</>
 			)}
 			<PayrollBlockersAlert
@@ -728,11 +790,19 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			{filtersHaveNoMatches ? null : (
 				<OvertimePayoutReadinessAlert request={{ ...request, formatId }} />
 			)}
-			{filtersHaveNoMatches ? null : <PayrollRunReadinessCard request={{ ...request, formatId }} />}
+			{filtersHaveNoMatches ? null : (
+				<PayrollRunReadinessCard request={{ ...request, formatId }} />
+			)}
 			<PayrollRunsCard />
-			<PayrollBaselinesCard startDate={summary.period.start} endDate={summary.period.end} />
-			{formatId === "datev_lohn" ? (
+			<PayrollBaselinesCard
+				key={formatId}
+				formatId={formatId}
+				startDate={summary.period.start}
+				endDate={summary.period.end}
+			/>
+			{isSupportedPayrollFormat(formatId) ? (
 				<PayrollComparisonCard
+					formatId={formatId}
 					startDate={summary.period.start}
 					endDate={summary.period.end}
 					employeeIds={filteredEmployeeIds}
@@ -747,7 +817,9 @@ function PayrollHeader({ t }: { t: PayrollTranslate }) {
 	return (
 		<header className="flex flex-wrap items-start justify-between gap-3">
 			<div className="space-y-1">
-				<h1 className="text-3xl font-semibold tracking-tight">{t("payroll.title", "Payroll")}</h1>
+				<h1 className="text-3xl font-semibold tracking-tight">
+					{t("payroll.title", "Payroll")}
+				</h1>
 				<p className="text-muted-foreground">
 					{t(
 						"payroll.description",
@@ -815,7 +887,12 @@ function PayrollPeriodCard({
 					</div>
 					<div>
 						<CardTitle aria-level={2} className="text-2xl" role="heading">
-							{formatDisplayedPeriod(summary.period.start, summary.period.end, dateMode, locale)}
+							{formatDisplayedPeriod(
+								summary.period.start,
+								summary.period.end,
+								dateMode,
+								locale,
+							)}
 						</CardTitle>
 						<CardDescription>
 							{t("payroll.period.dateRange", "{start} to {end}", {
@@ -825,9 +902,13 @@ function PayrollPeriodCard({
 						</CardDescription>
 					</div>
 					<p className="text-muted-foreground text-sm">
-						{t("payroll.period.employeesInScope", "{count} employees in scope", {
-							count: displayedTotals.employeeCount,
-						})}
+						{t(
+							"payroll.period.employeesInScope",
+							"{count} employees in scope",
+							{
+								count: displayedTotals.employeeCount,
+							},
+						)}
 					</p>
 					{filtersHaveNoMatches ? (
 						<p className="text-destructive text-sm">
@@ -944,7 +1025,9 @@ function PayrollDateControls({
 
 			<div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
 				<div className="space-y-1">
-					<Label htmlFor="payroll-start-date">{t("payroll.period.start", "Start")}</Label>
+					<Label htmlFor="payroll-start-date">
+						{t("payroll.period.start", "Start")}
+					</Label>
 					<Input
 						id="payroll-start-date"
 						name="payroll-start-date"
@@ -952,11 +1035,15 @@ function PayrollDateControls({
 						type="date"
 						value={startDate}
 						disabled={dateMode !== "custom" || isPending}
-						onChange={(event) => dispatch({ type: "startDateChanged", value: event.target.value })}
+						onChange={(event) =>
+							dispatch({ type: "startDateChanged", value: event.target.value })
+						}
 					/>
 				</div>
 				<div className="space-y-1">
-					<Label htmlFor="payroll-end-date">{t("payroll.period.end", "End")}</Label>
+					<Label htmlFor="payroll-end-date">
+						{t("payroll.period.end", "End")}
+					</Label>
 					<Input
 						id="payroll-end-date"
 						name="payroll-end-date"
@@ -964,7 +1051,9 @@ function PayrollDateControls({
 						type="date"
 						value={endDate}
 						disabled={dateMode !== "custom" || isPending}
-						onChange={(event) => dispatch({ type: "endDateChanged", value: event.target.value })}
+						onChange={(event) =>
+							dispatch({ type: "endDateChanged", value: event.target.value })
+						}
 					/>
 				</div>
 				<Button
@@ -1017,11 +1106,15 @@ function PayrollExportControls({
 				</Label>
 				<Select
 					value={formatId}
-					onValueChange={(formatId) => dispatch({ type: "formatChanged", formatId })}
+					onValueChange={(formatId) =>
+						dispatch({ type: "formatChanged", formatId })
+					}
 					disabled={!hasExportFormats || isPending}
 				>
 					<SelectTrigger id="payroll-export-target" className="w-full">
-						<SelectValue placeholder={t("payroll.export.selectFormat", "Select format")} />
+						<SelectValue
+							placeholder={t("payroll.export.selectFormat", "Select format")}
+						/>
 					</SelectTrigger>
 					<SelectContent>
 						{exportFormats.map((format) => (
@@ -1033,7 +1126,10 @@ function PayrollExportControls({
 				</Select>
 				{!hasExportFormats ? (
 					<p className="text-muted-foreground text-sm">
-						{t("payroll.export.noConfiguredTarget", "No configured payroll export target")}
+						{t(
+							"payroll.export.noConfiguredTarget",
+							"No configured payroll export target",
+						)}
 					</p>
 				) : null}
 			</div>
@@ -1121,7 +1217,9 @@ function PayrollScopeCard({
 		setDraftTeamNames((currentTeamNames) =>
 			checked
 				? [...currentTeamNames, teamName]
-				: currentTeamNames.filter((currentTeamName) => currentTeamName !== teamName),
+				: currentTeamNames.filter(
+						(currentTeamName) => currentTeamName !== teamName,
+					),
 		);
 	}
 
@@ -1151,7 +1249,9 @@ function PayrollScopeCard({
 		const selectedEmployeeIdSet = new Set(selectedEmployeeIds);
 		const employeeDraftChanged =
 			draftEmployeeIds.length !== selectedEmployeeIds.length ||
-			draftEmployeeIds.some((employeeId) => !selectedEmployeeIdSet.has(employeeId));
+			draftEmployeeIds.some(
+				(employeeId) => !selectedEmployeeIdSet.has(employeeId),
+			);
 
 		if (employeeDraftChanged) {
 			onApplyEmployees(draftEmployeeIds, () => setEmployeeSheetOpen(false));
@@ -1192,7 +1292,9 @@ function PayrollScopeCard({
 						</SheetTrigger>
 						<SheetContent className="overflow-y-auto">
 							<SheetHeader>
-								<SheetTitle>{t("payroll.scope.specificTeams", "Specific teams")}</SheetTitle>
+								<SheetTitle>
+									{t("payroll.scope.specificTeams", "Specific teams")}
+								</SheetTitle>
 								<SheetDescription>
 									{t(
 										"payroll.scope.specificTeamsDescription",
@@ -1210,9 +1312,14 @@ function PayrollScopeCard({
 												checked={draftTeamNameSet.has(teamName)}
 												disabled={isPending}
 												id={checkboxId}
-												onCheckedChange={(checked) => toggleDraftTeam(teamName, checked === true)}
+												onCheckedChange={(checked) =>
+													toggleDraftTeam(teamName, checked === true)
+												}
 											/>
-											<label className="cursor-pointer font-medium text-sm" htmlFor={checkboxId}>
+											<label
+												className="cursor-pointer font-medium text-sm"
+												htmlFor={checkboxId}
+											>
 												{teamName}
 											</label>
 										</div>
@@ -1220,12 +1327,19 @@ function PayrollScopeCard({
 								})}
 								{teamOptions.length > 0 ? null : (
 									<p className="text-muted-foreground text-sm">
-										{t("payroll.scope.noAssignedTeams", "No assigned teams in this payroll scope.")}
+										{t(
+											"payroll.scope.noAssignedTeams",
+											"No assigned teams in this payroll scope.",
+										)}
 									</p>
 								)}
 							</div>
 							<SheetFooter>
-								<Button disabled={isPending} type="button" onClick={applyTeamDraft}>
+								<Button
+									disabled={isPending}
+									type="button"
+									onClick={applyTeamDraft}
+								>
 									{t("payroll.scope.apply", "Apply")}
 								</Button>
 								<SheetClose asChild>
@@ -1269,7 +1383,10 @@ function PayrollScopeCard({
 													toggleDraftEmployee(employee.id, checked === true)
 												}
 											/>
-											<label className="cursor-pointer font-medium text-sm" htmlFor={checkboxId}>
+											<label
+												className="cursor-pointer font-medium text-sm"
+												htmlFor={checkboxId}
+											>
 												{employee.name}
 											</label>
 										</div>
@@ -1285,7 +1402,11 @@ function PayrollScopeCard({
 								)}
 							</div>
 							<SheetFooter>
-								<Button disabled={isPending} type="button" onClick={applyEmployeeDraft}>
+								<Button
+									disabled={isPending}
+									type="button"
+									onClick={applyEmployeeDraft}
+								>
 									{t("payroll.scope.apply", "Apply")}
 								</Button>
 								<SheetClose asChild>
@@ -1361,7 +1482,10 @@ function PayrollBlockersAlert({
 	employees: PayrollWorkspaceSummary["employees"];
 	fallbackFocusRef: React.RefObject<HTMLDivElement | null>;
 	focusRequest: BlockerFocusRequest | null;
-	onClearBlocker: (blocker: DismissiblePayrollBlocker, activatedControl: HTMLButtonElement) => void;
+	onClearBlocker: (
+		blocker: DismissiblePayrollBlocker,
+		activatedControl: HTMLButtonElement,
+	) => void;
 	t: PayrollTranslate;
 }) {
 	const locale = useLocale();
@@ -1373,21 +1497,31 @@ function PayrollBlockersAlert({
 			{ action: HTMLAnchorElement | null; clear: HTMLButtonElement | null }
 		>(),
 	);
-	const employeeNames = new Map(employees.map((employee) => [employee.id, employee.name]));
-	const title = t("payroll.blockers.needReview", "{count} payroll blockers need review", {
-		count: blockers.length,
-	});
+	const employeeNames = new Map(
+		employees.map((employee) => [employee.id, employee.name]),
+	);
+	const title = t(
+		"payroll.blockers.needReview",
+		"{count} payroll blockers need review",
+		{
+			count: blockers.length,
+		},
+	);
 
 	useEffect(() => {
-		if (!focusRequest || handledFocusRequestIdRef.current === focusRequest.id) return;
+		if (!focusRequest || handledFocusRequestIdRef.current === focusRequest.id)
+			return;
 
 		handledFocusRequestIdRef.current = focusRequest.id;
 		const controls = focusRequest.targetBlockerKey
 			? blockerControlRefs.current.get(focusRequest.targetBlockerKey)
 			: undefined;
 		const targetControl =
-			controls?.clear && !controls.clear.disabled ? controls.clear : controls?.action;
-		const fallbackTarget = blockers.length === 0 ? fallbackFocusRef.current : triggerRef.current;
+			controls?.clear && !controls.clear.disabled
+				? controls.clear
+				: controls?.action;
+		const fallbackTarget =
+			blockers.length === 0 ? fallbackFocusRef.current : triggerRef.current;
 		(targetControl ?? fallbackTarget)?.focus();
 	}, [blockers.length, fallbackFocusRef, focusRequest]);
 
@@ -1403,7 +1537,8 @@ function PayrollBlockersAlert({
 		if (control === "action") refs.action = node as HTMLAnchorElement | null;
 		else refs.clear = node as HTMLButtonElement | null;
 
-		if (!refs.action && !refs.clear) blockerControlRefs.current.delete(blockerKey);
+		if (!refs.action && !refs.clear)
+			blockerControlRefs.current.delete(blockerKey);
 		else blockerControlRefs.current.set(blockerKey, refs);
 	}
 
@@ -1423,7 +1558,10 @@ function PayrollBlockersAlert({
 								ref={triggerRef}
 								type="button"
 							>
-								<IconAlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+								<IconAlertTriangle
+									aria-hidden="true"
+									className="mt-0.5 size-4 shrink-0"
+								/>
 								<span className="min-w-0 flex-1">{title}</span>
 								<IconChevronDown
 									aria-hidden="true"
@@ -1440,10 +1578,14 @@ function PayrollBlockersAlert({
 							const isClearing = clearingBlockerKeys.has(blockerKey);
 							const summaryEmployeeName = employeeNames.get(blocker.employeeId);
 							const employeeName =
-								summaryEmployeeName && summaryEmployeeName !== blocker.employeeId
+								summaryEmployeeName &&
+								summaryEmployeeName !== blocker.employeeId
 									? summaryEmployeeName
 									: t("payroll.blockers.unknownEmployee", "Unknown employee");
-							const formattedDate = formatPayrollBlockerDate(blocker.date, locale);
+							const formattedDate = formatPayrollBlockerDate(
+								blocker.date,
+								locale,
+							);
 							const metadata = formattedDate
 								? [formattedDate, blocker.time].filter(Boolean).join(", ")
 								: t("payroll.blockers.dateUnavailable", "Date unavailable");
@@ -1456,11 +1598,22 @@ function PayrollBlockersAlert({
 								case "unresolved_work_minutes":
 									blockerType =
 										blocker.type === "missing_clock_out"
-											? t("payroll.blockers.missingClockOut", "Missing clock-out")
-											: t("payroll.blockers.unresolvedWorkMinutes", "Work minutes need review");
-									actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
+											? t(
+													"payroll.blockers.missingClockOut",
+													"Missing clock-out",
+												)
+											: t(
+													"payroll.blockers.unresolvedWorkMinutes",
+													"Work minutes need review",
+												);
+									actionLabel = t(
+										"payroll.blockers.openCalendar",
+										"Open calendar",
+									);
 									href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-										formattedDate && blocker.date ? `?date=${encodeURIComponent(blocker.date)}` : ""
+										formattedDate && blocker.date
+											? `?date=${encodeURIComponent(blocker.date)}`
+											: ""
 									}`;
 									break;
 								case "offboarding_clock_repair":
@@ -1469,25 +1622,47 @@ function PayrollBlockersAlert({
 										"payroll.blockers.offboardingClockRepair",
 										"Offboarding clock-out needs repair",
 									);
-									actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
+									actionLabel = t(
+										"payroll.blockers.openCalendar",
+										"Open calendar",
+									);
 									href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-										formattedDate && blocker.date ? `?date=${encodeURIComponent(blocker.date)}` : ""
+										formattedDate && blocker.date
+											? `?date=${encodeURIComponent(blocker.date)}`
+											: ""
 									}`;
 									break;
 								case "open_work":
-									blockerType = t("payroll.blockers.openWork", "Work without clock-out");
-									actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
+									blockerType = t(
+										"payroll.blockers.openWork",
+										"Work without clock-out",
+									);
+									actionLabel = t(
+										"payroll.blockers.openCalendar",
+										"Open calendar",
+									);
 									href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-										formattedDate && blocker.date ? `?date=${encodeURIComponent(blocker.date)}` : ""
+										formattedDate && blocker.date
+											? `?date=${encodeURIComponent(blocker.date)}`
+											: ""
 									}`;
 									break;
 								case "pending_work_approval":
 								case "pending_work_correction":
 									blockerType =
 										blocker.type === "pending_work_approval"
-											? t("payroll.blockers.pendingWorkApproval", "Work awaiting approval")
-											: t("payroll.blockers.pendingTimeCorrection", "Pending time correction");
-									actionLabel = t("payroll.blockers.openApprovals", "Open approvals");
+											? t(
+													"payroll.blockers.pendingWorkApproval",
+													"Work awaiting approval",
+												)
+											: t(
+													"payroll.blockers.pendingTimeCorrection",
+													"Pending time correction",
+												);
+									actionLabel = t(
+										"payroll.blockers.openApprovals",
+										"Open approvals",
+									);
 									href = "/approvals/inbox?types=time_entry";
 									break;
 								case "uncertain_historical_work":
@@ -1495,7 +1670,10 @@ function PayrollBlockersAlert({
 										"payroll.blockers.uncertainHistoricalWork",
 										"Historical work needs review",
 									);
-									actionLabel = t("payroll.blockers.openWorkDiagnostics", "Open work diagnostics");
+									actionLabel = t(
+										"payroll.blockers.openWorkDiagnostics",
+										"Open work diagnostics",
+									);
 									href = "/settings/work-diagnostics";
 									break;
 								case "pending_time_correction":
@@ -1503,18 +1681,33 @@ function PayrollBlockersAlert({
 										"payroll.blockers.pendingTimeCorrection",
 										"Pending time correction",
 									);
-									actionLabel = t("payroll.blockers.openApprovals", "Open approvals");
+									actionLabel = t(
+										"payroll.blockers.openApprovals",
+										"Open approvals",
+									);
 									href = "/approvals/inbox?types=time_entry";
 									break;
 								case "pending_absence":
-									blockerType = t("payroll.blockers.pendingAbsence", "Pending absence");
-									actionLabel = t("payroll.blockers.openApprovals", "Open approvals");
+									blockerType = t(
+										"payroll.blockers.pendingAbsence",
+										"Pending absence",
+									);
+									actionLabel = t(
+										"payroll.blockers.openApprovals",
+										"Open approvals",
+									);
 									href = "/approvals/inbox?types=absence_entry";
 									break;
 								case "missing_identifier":
 									// The configured custom field identifier has no value (#821).
-									blockerType = t("payroll.blockers.missingIdentifier", "Missing identifier");
-									actionLabel = t("payroll.blockers.openEmployee", "Open employee");
+									blockerType = t(
+										"payroll.blockers.missingIdentifier",
+										"Missing identifier",
+									);
+									actionLabel = t(
+										"payroll.blockers.openEmployee",
+										"Open employee",
+									);
 									href = `/settings/employees/${encodeURIComponent(blocker.employeeId)}`;
 									break;
 							}
@@ -1526,7 +1719,9 @@ function PayrollBlockersAlert({
 									key={blockerKey}
 								>
 									<div className="grid min-w-0 gap-1 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,auto)] lg:items-center lg:gap-4">
-										<span className="min-w-0 break-words font-medium">{employeeName}</span>
+										<span className="min-w-0 break-words font-medium">
+											{employeeName}
+										</span>
 										<span className="min-w-0 break-words">{blockerType}</span>
 										{formattedDate && blocker.date ? (
 											<time
@@ -1536,19 +1731,30 @@ function PayrollBlockersAlert({
 												{metadata}
 											</time>
 										) : (
-											<span className="text-muted-foreground text-xs">{metadata}</span>
+											<span className="text-muted-foreground text-xs">
+												{metadata}
+											</span>
 										)}
 									</div>
 									<div
 										className={`grid gap-1 lg:flex lg:items-center lg:justify-end ${
-											isDismissiblePayrollBlocker(blocker) ? "sm:grid-cols-2" : ""
+											isDismissiblePayrollBlocker(blocker)
+												? "sm:grid-cols-2"
+												: ""
 										}`}
 									>
-										<Button asChild className="w-full lg:w-auto" size="sm" variant="outline">
+										<Button
+											asChild
+											className="w-full lg:w-auto"
+											size="sm"
+											variant="outline"
+										>
 											<Link
 												aria-label={`${actionLabel}: ${employeeName}, ${blockerType}, ${metadata}`}
 												href={href}
-												ref={(node) => setBlockerControlRef(blockerKey, "action", node)}
+												ref={(node) =>
+													setBlockerControlRef(blockerKey, "action", node)
+												}
 											>
 												{actionLabel}
 											</Link>
@@ -1557,21 +1763,37 @@ function PayrollBlockersAlert({
 											<Button
 												aria-label={`${
 													isClearing
-														? t("payroll.blockers.clearingFalsePositive", "Clearing false positive")
-														: t("payroll.blockers.clearFalsePositive", "Clear false positive")
+														? t(
+																"payroll.blockers.clearingFalsePositive",
+																"Clearing false positive",
+															)
+														: t(
+																"payroll.blockers.clearFalsePositive",
+																"Clear false positive",
+															)
 												}: ${employeeName}, ${blockerType}, ${metadata}`}
 												aria-busy={isClearing}
 												className="w-full lg:w-auto"
 												disabled={isClearing}
-												onClick={(event) => onClearBlocker(blocker, event.currentTarget)}
-												ref={(node) => setBlockerControlRef(blockerKey, "clear", node)}
+												onClick={(event) =>
+													onClearBlocker(blocker, event.currentTarget)
+												}
+												ref={(node) =>
+													setBlockerControlRef(blockerKey, "clear", node)
+												}
 												size="sm"
 												type="button"
 												variant="ghost"
 											>
 												{isClearing
-													? t("payroll.blockers.clearingFalsePositive", "Clearing false positive")
-													: t("payroll.blockers.clearFalsePositive", "Clear false positive")}
+													? t(
+															"payroll.blockers.clearingFalsePositive",
+															"Clearing false positive",
+														)
+													: t(
+															"payroll.blockers.clearFalsePositive",
+															"Clear false positive",
+														)}
 											</Button>
 										) : null}
 									</div>
@@ -1585,7 +1807,10 @@ function PayrollBlockersAlert({
 	);
 }
 
-function formatPayrollBlockerDate(date: string | null, locale: string): string | null {
+function formatPayrollBlockerDate(
+	date: string | null,
+	locale: string,
+): string | null {
 	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date ?? "");
 	if (!match) return null;
 
@@ -1620,7 +1845,9 @@ function EmployeeTotalsCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("payroll.employeeTotals.title", "Employee totals")}</CardTitle>
+				<CardTitle>
+					{t("payroll.employeeTotals.title", "Employee totals")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"payroll.employeeTotals.description",
@@ -1633,14 +1860,24 @@ function EmployeeTotalsCard({
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t("payroll.employeeTotals.employee", "Employee")}</TableHead>
-								<TableHead>{t("payroll.employeeTotals.team", "Team")}</TableHead>
-								<TableHead>{t("payroll.employeeTotals.contract", "Contract")}</TableHead>
+								<TableHead>
+									{t("payroll.employeeTotals.employee", "Employee")}
+								</TableHead>
+								<TableHead>
+									{t("payroll.employeeTotals.team", "Team")}
+								</TableHead>
+								<TableHead>
+									{t("payroll.employeeTotals.contract", "Contract")}
+								</TableHead>
 								<TableHead className="text-right">
 									{t("payroll.employeeTotals.hours", "Hours")}
 								</TableHead>
-								<TableHead>{t("payroll.employeeTotals.absences", "Absences")}</TableHead>
-								<TableHead>{t("payroll.employeeTotals.status", "Status")}</TableHead>
+								<TableHead>
+									{t("payroll.employeeTotals.absences", "Absences")}
+								</TableHead>
+								<TableHead>
+									{t("payroll.employeeTotals.status", "Status")}
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -1651,14 +1888,24 @@ function EmployeeTotalsCard({
 											<div className="font-medium">{employee.name}</div>
 											<div className="text-muted-foreground text-xs">
 												{employee.employeeNumber ??
-													t("payroll.employeeTotals.noEmployeeNumber", "No employee number")}
+													t(
+														"payroll.employeeTotals.noEmployeeNumber",
+														"No employee number",
+													)}
 											</div>
 										</TableCell>
 										<TableCell>
-											{employee.teamName ?? t("payroll.employeeTotals.noTeam", "No team")}
+											{employee.teamName ??
+												t("payroll.employeeTotals.noTeam", "No team")}
 										</TableCell>
 										<TableCell>
-											<Badge variant={employee.contractType === "hourly" ? "default" : "secondary"}>
+											<Badge
+												variant={
+													employee.contractType === "hourly"
+														? "default"
+														: "secondary"
+												}
+											>
 												{employee.contractType === "hourly"
 													? t("payroll.employeeTotals.contractHourly", "Hourly")
 													: t("payroll.employeeTotals.contractFixed", "Fixed")}
@@ -1667,19 +1914,31 @@ function EmployeeTotalsCard({
 										<TableCell className="text-right tabular-nums">
 											{formatTableHours(employee.workedHours)}
 										</TableCell>
-										<TableCell>{formatAbsences(t, employee.absenceDaysByCategory)}</TableCell>
 										<TableCell>
-											<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
+											{formatAbsences(t, employee.absenceDaysByCategory)}
+										</TableCell>
+										<TableCell>
+											<Badge
+												variant={
+													employee.hasBlockers ? "destructive" : "secondary"
+												}
+											>
 												{employee.hasBlockers
 													? t("payroll.employeeTotals.blocked", "Blocked")
-													: t("payroll.employeeTotals.readyForPayroll", "Ready for payroll")}
+													: t(
+															"payroll.employeeTotals.readyForPayroll",
+															"Ready for payroll",
+														)}
 											</Badge>
 										</TableCell>
 									</TableRow>
 								))
 							) : (
 								<TableRow>
-									<TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+									<TableCell
+										colSpan={6}
+										className="py-8 text-center text-muted-foreground"
+									>
 										{t(
 											"payroll.filters.noMatchingEmployees",
 											"No employees match the selected payroll filters.",
@@ -1746,9 +2005,12 @@ function formatAbsences(
 	t: PayrollTranslate,
 	absences: PayrollWorkspaceSummary["employees"][number]["absenceDaysByCategory"],
 ) {
-	if (absences.length === 0) return t("payroll.employeeTotals.noAbsences", "None");
+	if (absences.length === 0)
+		return t("payroll.employeeTotals.noAbsences", "None");
 
-	return absences.map((absence) => `${absence.categoryName}: ${absence.days}`).join(", ");
+	return absences
+		.map((absence) => `${absence.categoryName}: ${absence.days}`)
+		.join(", ");
 }
 
 function getDateModeLabel(t: PayrollTranslate, mode: PayrollDateRangeMode) {
@@ -1758,7 +2020,9 @@ function getDateModeLabel(t: PayrollTranslate, mode: PayrollDateRangeMode) {
 	return t("payroll.period.mode.custom", "Custom");
 }
 
-function basePeriodRequest(summary: PayrollWorkspaceSummary): PayrollPeriodRequest {
+function basePeriodRequest(
+	summary: PayrollWorkspaceSummary,
+): PayrollPeriodRequest {
 	return {
 		startDate: summary.period.start,
 		endDate: summary.period.end,
@@ -1766,7 +2030,10 @@ function basePeriodRequest(summary: PayrollWorkspaceSummary): PayrollPeriodReque
 	};
 }
 
-function buildPeriodRequest(start: DateTime, mode: Exclude<PayrollDateRangeMode, "custom">) {
+function buildPeriodRequest(
+	start: DateTime,
+	mode: Exclude<PayrollDateRangeMode, "custom">,
+) {
 	const normalizedStart = start.startOf(mode);
 	const end = normalizedStart.endOf(mode);
 
@@ -1777,9 +2044,15 @@ function buildPeriodRequest(start: DateTime, mode: Exclude<PayrollDateRangeMode,
 	};
 }
 
-function getTeamOptions(employees: PayrollWorkspaceSummary["employees"]): string[] {
+function getTeamOptions(
+	employees: PayrollWorkspaceSummary["employees"],
+): string[] {
 	return Array.from(
-		new Set(employees.flatMap((employee) => (employee.teamName ? [employee.teamName] : []))),
+		new Set(
+			employees.flatMap((employee) =>
+				employee.teamName ? [employee.teamName] : [],
+			),
+		),
 	).toSorted() as string[];
 }
 
@@ -1788,7 +2061,8 @@ function getFilteredEmployeeIds(
 	selectedEmployeeIds: string[],
 	selectedTeamNames: string[],
 ): string[] | undefined {
-	if (selectedEmployeeIds.length === 0 && selectedTeamNames.length === 0) return undefined;
+	if (selectedEmployeeIds.length === 0 && selectedTeamNames.length === 0)
+		return undefined;
 
 	const selectedEmployeeIdSet = new Set(selectedEmployeeIds);
 	const selectedTeamNameSet = new Set(selectedTeamNames);
@@ -1796,10 +2070,12 @@ function getFilteredEmployeeIds(
 
 	for (const employee of employees) {
 		const matchesEmployee =
-			selectedEmployeeIds.length === 0 || selectedEmployeeIdSet.has(employee.id);
+			selectedEmployeeIds.length === 0 ||
+			selectedEmployeeIdSet.has(employee.id);
 		const matchesTeam =
 			selectedTeamNames.length === 0 ||
-			(employee.teamName !== null && selectedTeamNameSet.has(employee.teamName));
+			(employee.teamName !== null &&
+				selectedTeamNameSet.has(employee.teamName));
 
 		if (matchesEmployee && matchesTeam) {
 			employeeIds.push(employee.id);
@@ -1809,9 +2085,14 @@ function getFilteredEmployeeIds(
 	return employeeIds;
 }
 
-function formatPeriodLabel(start: DateTime, end: DateTime, mode: PayrollDateRangeMode) {
+function formatPeriodLabel(
+	start: DateTime,
+	end: DateTime,
+	mode: PayrollDateRangeMode,
+) {
 	if (mode === "month") return start.toFormat("LLLL yyyy");
-	if (mode === "week") return `${start.toFormat("LLL d")} - ${end.toFormat("LLL d, yyyy")}`;
+	if (mode === "week")
+		return `${start.toFormat("LLL d")} - ${end.toFormat("LLL d, yyyy")}`;
 
 	return `${start.toISODate()} - ${end.toISODate()}`;
 }
@@ -1824,7 +2105,8 @@ function formatDisplayedPeriod(
 ) {
 	const startDate = Temporal.PlainDate.from(start);
 	const endDate = Temporal.PlainDate.from(end);
-	if (mode === "month") return startDate.toLocaleString(locale, { month: "long", year: "numeric" });
+	if (mode === "month")
+		return startDate.toLocaleString(locale, { month: "long", year: "numeric" });
 	if (mode === "week")
 		return `${startDate.toLocaleString(locale, { month: "short", day: "numeric" })} - ${endDate.toLocaleString(locale, { month: "short", day: "numeric", year: "numeric" })}`;
 	return `${startDate.toLocaleString(locale)} - ${endDate.toLocaleString(locale)}`;

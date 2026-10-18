@@ -77,6 +77,30 @@ function reviewed(): ReviewedPayrollComparison {
 }
 
 describe("reviewed payroll comparison CSV", () => {
+	it("includes exact old and new rendered columns in the immutable report", () => {
+		const report = reviewed();
+		report.comparison.rows[0].oldRow!.renderedColumns = {
+			Wert: "8,00",
+			Stunden: "8,00",
+		};
+		report.comparison.rows[0].newRow!.renderedColumns = {
+			Wert: "7,50",
+			Stundensatz: "",
+		};
+		const parsed = Papa.parse<Record<string, string>>(
+			payrollComparisonCsv(report),
+			{ header: true, skipEmptyLines: true },
+		);
+		const row = parsed.data.find((row) => row.record_type === "row")!;
+		expect(JSON.parse(row.old_rendered_columns)).toEqual({
+			Wert: "8,00",
+			Stunden: "8,00",
+		});
+		expect(JSON.parse(row.new_rendered_columns)).toEqual({
+			Wert: "7,50",
+			Stundensatz: "",
+		});
+	});
 	it("exports reviewed metadata, escaped evidence and safe text while retaining signed decimal cells", () => {
 		const report = reviewed();
 		const csv = payrollComparisonCsv(report);
