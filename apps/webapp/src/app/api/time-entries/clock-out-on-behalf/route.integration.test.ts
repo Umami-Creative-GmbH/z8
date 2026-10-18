@@ -536,16 +536,18 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 	}
 
 	it("checks the target's compliance on the closed work's own day in the target's zone (#524)", async () => {
-		const running = await clockInAs(ids.targetUser);
-		// The running work starts at 04:00 on Sunday 2026-09-20 in New York, the
-		// first day of a Sunday week.
+		// The running work starts at 04:00 on Monday 2026-09-21 in New York, the
+		// first day of a compliance week (Monday weeks, ADR 0012).
+		const start = parseInstant("2026-09-21T08:00:00Z");
+		harness.now = start.add({ hours: 8, seconds: 40 });
+		const running = await clockInAs(ids.targetUser, ids.organization, start);
 		await seedWorkingTimeLimits({ daily: 500, weekly: 600 });
 		// Same New York day: counts toward both totals.
-		await seedEarlierWork("2026-09-20T05:00:00Z", 60);
-		// Same UTC day but Saturday evening in New York: the previous day and week.
-		await seedEarlierWork("2026-09-20T01:00:00Z", 120);
+		await seedEarlierWork("2026-09-21T05:00:00Z", 60);
+		// Same UTC day but Sunday evening in New York: the previous day and week.
+		await seedEarlierWork("2026-09-21T01:00:00Z", 120);
 		// Deleted work never counts.
-		await seedEarlierWork("2026-09-20T06:30:00Z", 300, true);
+		await seedEarlierWork("2026-09-21T06:30:00Z", 300, true);
 
 		// The manager's session is not the target's: totals must not depend on it.
 		const executed = await closeAs(ids.managerUser, {
@@ -560,7 +562,7 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 			[ids.organization],
 		);
 		// 60 + 481 minutes that day exceed the daily limit; the week (541) stays
-		// within its limit, which the Saturday work would have broken.
+		// within its limit, which the Sunday work would have broken.
 		expect(rows).toHaveLength(1);
 		expect(only(rows)).toMatchObject({
 			employee_id: ids.target,

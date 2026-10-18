@@ -421,9 +421,17 @@ describe("deputy decisions (PostgreSQL)", () => {
 		});
 		actAs(null);
 		if (!result.success) throw new Error(`Absence submission failed: ${result.error}`);
-		const { rows } = await admin.query<{ id: string; workflow_id: string | null }>(
-			`select r.id, a.approval_workflow_id as workflow_id
+		// The inbox lists a canonical absence by its stage assignment, not by its
+		// compatibility approval request (#1305); `id` is the one the inbox shows.
+		const { rows } = await admin.query<{
+			id: string;
+			request_id: string;
+			workflow_id: string | null;
+		}>(
+			`select coalesce(s.id, r.id) as id, r.id as request_id, a.approval_workflow_id as workflow_id
 			 from approval_request r join absence_entry a on a.id = r.entity_id
+			 left join approval_stage_assignment s
+			   on s.workflow_id = a.approval_workflow_id and s.status = 'pending'
 			 where r.organization_id = $1 and r.entity_id = $2 and r.status = 'pending'`,
 			[ids.organization, result.data.absenceId],
 		);
@@ -593,7 +601,8 @@ describe("deputy decisions (PostgreSQL)", () => {
 			expect((await detailAs(ids.deputyUser, submitted.id)).status).toBe(200);
 			// Someone who neither covers nor manages sees nothing of X's.
 			expect((await inboxAs(ids.otherUser)).items).toHaveLength(0);
-			expect((await detailAs(ids.otherUser, submitted.id)).status).toBe(403);
+			// A canonical assignment outside the viewer's reach reads as not found.
+			expect((await detailAs(ids.otherUser, submitted.id)).status).toBe(404);
 
 			const decided = await decideAs(ids.deputyUser, submitted.id, "approve");
 			expect(decided).toMatchObject({ status: 200, body: { success: true } });
@@ -631,12 +640,12 @@ describe("deputy decisions (PostgreSQL)", () => {
 					authority: "canonical",
 					entity_type: "absence_entry",
 					entity_id: submitted.absenceId,
-					approval_request_id: submitted.id,
+					approval_request_id: submitted.request_id,
 					has_workflow: true,
 					decision: "approved",
 				},
 			]);
-			expect(await auditFor(submitted.id)).toEqual([
+			expect(await auditFor(submitted.request_id)).toEqual([
 				expect.objectContaining({
 					performed_by: ids.deputyUser,
 					action: "approve",
@@ -647,9 +656,11 @@ describe("deputy decisions (PostgreSQL)", () => {
 					}),
 				}),
 			]);
-			// After deciding, Y keeps read-only access; X's decision comes too late.
-			expect((await detailAs(ids.deputyUser, submitted.id)).status).toBe(200);
-			expect((await decideAs(ids.approverUser, submitted.id, "approve")).status).toBe(409);
+			// Decided, the approval lives on under its compatibility request, which
+			// history lists; the canonical reads only open pending assignments (#1305).
+			// Y keeps read-only access there; X's decision comes too late.
+			expect((await detailAs(ids.deputyUser, submitted.request_id)).status).toBe(200);
+			expect((await decideAs(ids.approverUser, submitted.request_id, "approve")).status).toBe(409);
 		});
 
 		it("refuses the deputy when the switch is off, after the absence, and for their own request", async () => {

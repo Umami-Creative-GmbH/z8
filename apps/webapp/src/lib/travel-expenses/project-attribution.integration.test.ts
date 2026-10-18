@@ -627,10 +627,13 @@ describe("expense project attribution (#605)", () => {
 			"insert into team (id, organization_id, name, updated_at) values ($1, 't605-foreign', 'Foreign team', now())",
 			["e6051000-0000-4000-8000-000000000002"],
 		);
-		await admin.query("update employee set team_id = $2 where id = $1", [
-			ids.requester,
-			"e6051000-0000-4000-8000-000000000002",
-		]);
+		// Since 0264 the vacation eligibility trigger refuses the foreign team outright.
+		await expect(
+			admin.query("update employee set team_id = $2 where id = $1", [
+				ids.requester,
+				"e6051000-0000-4000-8000-000000000002",
+			]),
+		).rejects.toThrow("Vacation team must belong to the active organization");
 		const { rows } = await admin.query(
 			"select team_id from employee_team_history where employee_id = $1",
 			[ids.requester],
