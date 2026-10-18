@@ -11,7 +11,6 @@ import type { TFnType } from "@tolgee/react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { BreakInProgressClientResult } from "@/lib/query/use-time-clock";
-import { cn } from "@/lib/utils";
 
 /**
  * Start Break, Resume and End Day for the employee's own clock (#888, Time
@@ -68,7 +67,8 @@ function toastBreakRefusal(
 	);
 }
 
-export function useBreakInProgressHandlers(commands: BreakCommands, t: TFnType) {
+/** The clock surfaces' Start Break and Resume, with their feedback. */
+export function breakInProgressHandlers(commands: BreakCommands, t: TFnType) {
 	return {
 		handleStartBreak: async () => {
 			const result = await commands.startBreak();
@@ -92,25 +92,20 @@ export function StartBreakButton({
 	onClick,
 	disabled,
 	pending,
-	size = "default",
-	className,
 	t,
 }: {
 	onClick: () => void;
 	disabled: boolean;
 	pending: boolean;
-	size?: "default" | "lg";
-	className?: string;
 	t: TFnType;
 }) {
 	return (
 		<Button
 			type="button"
 			variant="outline"
-			size={size}
 			onClick={onClick}
 			disabled={disabled}
-			className={cn("w-full", className)}
+			className="w-full"
 		>
 			{pending ? (
 				<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />

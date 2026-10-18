@@ -95,6 +95,20 @@ describe("web start break adapter (#888)", () => {
 		expect(state.revalidatePath).toHaveBeenCalledTimes(revalidations);
 	});
 
+	it("answers a live start, taken at the server clock's precision, in milliseconds", async () => {
+		state.startBreak.mockResolvedValue({
+			outcome: "executed",
+			result: { workPeriodId, start: parseInstant("2026-07-22T09:45:00.123456789Z") },
+		});
+
+		await expect(
+			startBreakInProgress({ submissionId, workPeriodId, browserTimezone: null }),
+		).resolves.toEqual({
+			success: true,
+			data: { workPeriodId, at: "2026-07-22T09:45:00.123Z" },
+		});
+	});
+
 	it.each([
 		[
 			{ code: "not_clocked_in" },

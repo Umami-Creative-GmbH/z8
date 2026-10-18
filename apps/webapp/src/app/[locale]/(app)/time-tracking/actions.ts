@@ -78,7 +78,7 @@ import {
 	createManualTimeEntry as createManualTimeEntryModular,
 	type ResumeBreakActionContext,
 	resumeBreakInProgress as resumeBreakInProgressAction,
-	type StartBreakActionContext,
+	type BreakActionContext,
 	startBreakInProgress as startBreakInProgressAction,
 } from "./actions/clocking";
 import {
@@ -127,7 +127,7 @@ export async function addBreakToActiveSession(
 }
 
 /** The clock's Start Break (#888); the Clocking module checks billing and access. */
-export async function startBreakInProgress(context: StartBreakActionContext) {
+export async function startBreakInProgress(context: BreakActionContext) {
 	return startBreakInProgressAction(context);
 }
 

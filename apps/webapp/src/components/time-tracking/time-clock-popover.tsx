@@ -48,7 +48,7 @@ import {
 	BreakConnectionNote,
 	OnBreakActions,
 	StartBreakButton,
-	useBreakInProgressHandlers,
+	breakInProgressHandlers,
 } from "./break-in-progress-actions";
 import { BreakInProgressNotice } from "./break-in-progress-notice";
 import { toastClockCommandError } from "./clock-command-error-toast";
@@ -407,7 +407,7 @@ function useTimeClockPopoverController({
 		useTimeClockPopoverState({ employeeId, isClockedIn });
 	const vehicleUse = useClockVehicleUse({ enabled: hasEmployee });
 	const handleAddBreak = useQuickBreakHandler(addBreak, t, vehicleUse);
-	const { handleStartBreak, handleResumeBreak } = useBreakInProgressHandlers(
+	const { handleStartBreak, handleResumeBreak } = breakInProgressHandlers(
 		{ startBreak, resumeBreak },
 		t,
 	);

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState, useSyncExternalStore } from "react";
+import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useSyncExternalStore } from "react";
 import {
 	addBreakToActiveSession,
 	getTimeClockStatus,
@@ -13,6 +13,7 @@ import type { PositionConsentQuestion } from "@/components/position-capture/posi
 import { useOfflineClock } from "@/hooks/use-offline-clock";
 import { useSession } from "@/lib/auth-client";
 import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import { serializeInstant } from "@/lib/datetime/temporal-wire";
 import type { BookedProjectTask } from "@/lib/projects/project-task-model";
 import {
 	clockConnectionRequired,
@@ -60,6 +61,23 @@ export type BreakInProgressClientResult =
 
 /** Codes after which the same attempt may be sent again under its identity. */
 const RETRYABLE_BREAK_CODES = new Set(["unconfirmed", "failed"]);
+
+type BreakCommandState = {
+	attempt: { target: string; id: string } | null;
+	inFlight: Promise<BreakInProgressClientResult> | null;
+};
+
+/** One break attempt per page, shared by the full clock and the compact one (#888). */
+const breakCommandStates = new WeakMap<QueryClient, BreakCommandState>();
+
+function breakCommandState(client: QueryClient): BreakCommandState {
+	let state = breakCommandStates.get(client);
+	if (!state) {
+		state = { attempt: null, inFlight: null };
+		breakCommandStates.set(client, state);
+	}
+	return state;
+}
 
 function subscribeToSecondTick(onStoreChange: () => void) {
 	const interval = window.setInterval(onStoreChange, 1000);
@@ -157,6 +175,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		isOnline,
 		isOffline,
 		pendingCount,
+		waitingCount,
 		isSyncing,
 		queueClockEvent,
 		commandCapabilities,
@@ -517,12 +536,13 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	/**
 	 * A break in progress started or resumed from this clock (#888, Time Tracking
 	 * ADR 0007): online only, on the confirmed server state shown, one request at a
-	 * time. An attempt keeps its identity until its outcome is known, so a retry
-	 * after an uncertain answer replays instead of acting twice. Every answer
-	 * refreshes the clock, which is how a refusal or a lost answer reconciles.
+	 * time across the page's clock surfaces. An attempt keeps its identity until its
+	 * outcome is known, so a retry after an uncertain answer replays instead of
+	 * acting twice. Every answer refreshes the clock, which is how a refusal or a
+	 * lost answer reconciles.
 	 */
-	const breakAttempt = useRef<{ key: string; id: string } | null>(null);
-	const breakInFlight = useRef<Promise<BreakInProgressClientResult> | null>(null);
+	const breakCommands = breakCommandState(queryClient);
+	const liveWork = status?.isClockedIn ? status.activeWorkPeriod : null;
 
 	function refreshAfterBreakCommand(confirmed: boolean) {
 		void queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
@@ -534,23 +554,24 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		void invalidatePeriodSubmissionReadiness(queryClient);
 	}
 
+	/** `target` names what the attempt acts on; another target is another attempt. */
 	async function sendBreakCommand(
-		key: string,
+		target: string,
 		send: (submissionId: string) => Promise<BreakInProgressClientResult>,
 	): Promise<BreakInProgressClientResult> {
-		if (breakAttempt.current?.key !== key) {
-			breakAttempt.current = { key, id: crypto.randomUUID() };
+		if (breakCommands.attempt?.target !== target) {
+			breakCommands.attempt = { target, id: crypto.randomUUID() };
 		}
-		const attempt = breakAttempt.current;
+		const attempt = breakCommands.attempt;
 		let result: BreakInProgressClientResult;
 		try {
 			result = await send(attempt.id);
 		} catch {
 			// The answer was lost: the break may or may not be recorded.
-			result = { success: false, code: "unconfirmed", uncertain: true };
+			result = { success: false, code: "unconfirmed" };
 		}
 		const settled = result.success || !RETRYABLE_BREAK_CODES.has(result.code);
-		if (settled && breakAttempt.current === attempt) breakAttempt.current = null;
+		if (settled && breakCommands.attempt === attempt) breakCommands.attempt = null;
 		refreshAfterBreakCommand(result.success);
 		if (!result.success && result.code === "unconfirmed") return { ...result, uncertain: true };
 		return result;
@@ -558,15 +579,18 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	function breakCommandRefusal(): BreakInProgressClientResult | null {
 		if (isOffline) return { success: false, code: "connection_required" };
-		// A saved clock action may change the work this command would act on.
-		if (pendingCount > 0 || isSyncing) return { success: false, code: "pending_clock_actions" };
+		// A frozen clock action still being sent may change the work this command
+		// acts on. Records held for review change nothing on their own.
+		if (waitingCount > 0 || isSyncing) {
+			return { success: false, code: "pending_clock_actions" };
+		}
 		return null;
 	}
 
 	async function startBreakInProgressCommand(): Promise<BreakInProgressClientResult> {
 		const refused = breakCommandRefusal();
 		if (refused) return refused;
-		const live = status?.isClockedIn ? status.activeWorkPeriod : null;
+		const live = liveWork;
 		if (!live) return { success: false, code: "not_clocked_in" };
 		if (live.breakStartedAt) return { success: false, code: "already_on_break" };
 		return sendBreakCommand(`start:${live.id}`, (submissionId) =>
@@ -581,9 +605,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	async function resumeBreakInProgressCommand(): Promise<BreakInProgressClientResult> {
 		const refused = breakCommandRefusal();
 		if (refused) return refused;
-		const live = status?.isClockedIn ? status.activeWorkPeriod : null;
+		const live = liveWork;
 		if (!live?.breakStartedAt) return { success: false, code: "no_break_in_progress" };
-		const breakStart = new Date(live.breakStartedAt).toISOString();
+		const breakStart = serializeInstant(instantFromDate(new Date(live.breakStartedAt)));
 		return sendBreakCommand(`resume:${live.id}:${breakStart}`, async (submissionId) => {
 			// The one fix is taken where the work resumes and stamps the resumed work (#826).
 			const event = await captureClockEvent(true);
@@ -598,13 +622,13 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		});
 	}
 
-	/** Clicks sent together share the one request in flight. */
+	/** Clicks sent together, from either clock surface, share the one request in flight. */
 	function serializedBreakCommand(run: () => Promise<BreakInProgressClientResult>) {
-		if (breakInFlight.current) return breakInFlight.current;
+		if (breakCommands.inFlight) return breakCommands.inFlight;
 		const pending = run().finally(() => {
-			breakInFlight.current = null;
+			breakCommands.inFlight = null;
 		});
-		breakInFlight.current = pending;
+		breakCommands.inFlight = pending;
 		return pending;
 	}
 

@@ -16,7 +16,7 @@ import {
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
 import { showAppendReviewRequiredToast } from "./append-review-toast";
-import { useBreakInProgressHandlers } from "./break-in-progress-actions";
+import { breakInProgressHandlers } from "./break-in-progress-actions";
 import { toastClockCommandError } from "./clock-command-error-toast";
 import { useClockVehicleUse } from "./clock-vehicle-use";
 import { warnVehicleUseLeftOut } from "./clock-vehicle-use-notice";
@@ -137,7 +137,7 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 	const elapsedSeconds = useElapsedTimer(timeClock.activeWorkPeriod?.startTime ?? null);
 	const vehicleUse = useClockVehicleUse({ enabled: true });
 	const handleAddBreak = useQuickBreakHandler(timeClock.addBreak, t, vehicleUse);
-	const { handleStartBreak, handleResumeBreak } = useBreakInProgressHandlers(timeClock, t);
+	const { handleStartBreak, handleResumeBreak } = breakInProgressHandlers(timeClock, t);
 
 	useEffect(() => {
 		localStorage.setItem("z8-work-location-type", uiState.workLocationType);

@@ -158,7 +158,7 @@ describe("useTimeClock break in progress (#888)", () => {
 	});
 
 	it("waits until saved clock actions are sent before acting on the clock", async () => {
-		online({ pendingCount: 1 });
+		online({ pendingCount: 1, waitingCount: 1 });
 		const { result } = await renderClock(working);
 
 		await expect(result.current.startBreak()).resolves.toMatchObject({
@@ -166,6 +166,43 @@ describe("useTimeClock break in progress (#888)", () => {
 			code: "pending_clock_actions",
 		});
 		expect(mocks.startBreakInProgress).not.toHaveBeenCalled();
+	});
+
+	it("is not held up by saved records waiting for review, which change nothing", async () => {
+		online({ pendingCount: 2, reviewCount: 2, waitingCount: 0 });
+		const { result } = await renderClock(working);
+
+		await expect(result.current.startBreak()).resolves.toEqual(confirmed);
+	});
+
+	it("shares one attempt between the page's clock surfaces", async () => {
+		let answer: (value: unknown) => void = () => {};
+		mocks.startBreakInProgress
+			.mockReturnValueOnce(
+				new Promise((resolve) => {
+					answer = resolve;
+				}),
+			)
+			.mockResolvedValueOnce(confirmed);
+		mocks.getTimeClockStatus.mockResolvedValue(working);
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const wrapper = ({ children }: { children: React.ReactNode }) => (
+			<QueryClientProvider client={client}>{children}</QueryClientProvider>
+		);
+		const widget = renderHook(() => useTimeClock(), { wrapper });
+		const header = renderHook(() => useTimeClock(), { wrapper });
+		await waitFor(() => expect(header.result.current.employeeId).toBe("emp-1"));
+
+		const fromWidget = widget.result.current.startBreak();
+		const fromHeader = header.result.current.startBreak();
+		answer({ success: false, error: "worded", code: "unconfirmed" });
+		await Promise.all([fromWidget, fromHeader]);
+		// The retry from the other surface keeps the uncertain attempt's identity.
+		await header.result.current.startBreak();
+
+		const [first, retry] = sentIdentities(mocks.startBreakInProgress);
+		expect(mocks.startBreakInProgress).toHaveBeenCalledTimes(2);
+		expect(retry).toBe(first);
 	});
 
 	it("sends nothing without live work or without a break", async () => {
