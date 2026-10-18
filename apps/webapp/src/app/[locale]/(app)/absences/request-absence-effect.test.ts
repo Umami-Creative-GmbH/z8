@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { mondayToFriday } from "@/lib/absences/absence-days";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import type { ApprovalCompatibilityWriter } from "@/lib/approvals/workflow/compatibility-writer";
@@ -19,8 +20,8 @@ const callerMocks = vi.hoisted(() => ({
 	absenceEntryFindMany: vi.fn(),
 	createAbsenceApprovalWorkflow: vi.fn(),
 	employeeFindFirst: vi.fn(),
-	getAbsenceDays: vi.fn(),
-	findOverdrawnVacationYears: vi.fn(),
+	loadWorkingDays: vi.fn(),
+	findYearsExceedingBalance: vi.fn(),
 	notificationPreferenceFindMany: vi.fn(),
 	notificationInsert: vi.fn(),
 	userFindFirst: vi.fn(),
@@ -65,12 +66,12 @@ vi.mock("@/db", () => ({
 
 // Absence days (#979): absences/absence-days-resolver.integration.test.ts.
 vi.mock("@/lib/absences/absence-days-resolver", () => ({
-	getAbsenceDays: callerMocks.getAbsenceDays,
+	loadWorkingDays: callerMocks.loadWorkingDays,
 }));
 
 // Per-year vacation balances (#1340): vacation-year-balance-store.test.ts and plan-preview.integration.test.ts.
 vi.mock("@/lib/absences/vacation-year-balance-store", () => ({
-	findOverdrawnVacationYears: callerMocks.findOverdrawnVacationYears,
+	findYearsExceedingBalance: callerMocks.findYearsExceedingBalance,
 }));
 
 // Legacy submission intents (#384): legacy-bound-approval.integration.test.ts.
@@ -223,7 +224,7 @@ function createLegacyApprovalLifecycle(
 		startCanonicalWorkflow: vi.fn(),
 		captureCanonicalEvidence: vi.fn(async () => null),
 		captureLegacyEvidence: vi.fn(async () => null),
-		nowInstant: vi.fn(() => ({ toString: () => "2026-07-19T10:00:00Z" })),
+		nowInstant: vi.fn(() => parseInstant("2026-07-19T10:00:00Z")),
 	};
 }
 
@@ -253,8 +254,8 @@ beforeEach(() => {
 		requiresApproval: true,
 	});
 	callerMocks.absenceEntryFindMany.mockResolvedValue([]);
-	callerMocks.getAbsenceDays.mockResolvedValue(2);
-	callerMocks.findOverdrawnVacationYears.mockResolvedValue([]);
+	callerMocks.loadWorkingDays.mockResolvedValue(mondayToFriday);
+	callerMocks.findYearsExceedingBalance.mockResolvedValue([]);
 	callerMocks.notificationPreferenceFindMany.mockResolvedValue([]);
 	callerMocks.userFindFirst.mockResolvedValue({
 		name: "Avery Employee",
@@ -445,21 +446,18 @@ describe("requestAbsenceForEmployeeEffect absence days (#979)", () => {
 			approvalLifecycle as never,
 		);
 
-		expect(callerMocks.getAbsenceDays).toHaveBeenCalledWith(expect.anything(), {
+		expect(callerMocks.loadWorkingDays).toHaveBeenCalledTimes(1);
+		expect(callerMocks.loadWorkingDays).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-1",
 			employeeId: "employee-1",
-			absence: {
-				startDate: "2026-05-11",
-				startPeriod: "full_day",
-				endDate: "2026-05-12",
-				endPeriod: "full_day",
-			},
+			startDate: "2026-05-11",
+			endDate: "2026-05-12",
 		});
 	});
 
 	it("refuses vacation that covers no working day before recording anything", async () => {
 		const approvalLifecycle = configureAbsenceCallerTransaction();
-		callerMocks.getAbsenceDays.mockResolvedValue(0);
+		callerMocks.loadWorkingDays.mockResolvedValue(() => false);
 
 		const result = await requestAbsenceForEmployeeEffect(
 			absenceRequest,
@@ -479,7 +477,7 @@ describe("requestAbsenceForEmployeeEffect absence days (#979)", () => {
 
 	it("accepts sick leave that covers no working day", async () => {
 		const approvalLifecycle = configureAbsenceCallerTransaction();
-		callerMocks.getAbsenceDays.mockResolvedValue(0);
+		callerMocks.loadWorkingDays.mockResolvedValue(() => false);
 		callerMocks.absenceCategoryFindFirst.mockResolvedValue({
 			id: "category-1",
 			name: "Sick leave",
@@ -525,7 +523,9 @@ describe("requestAbsenceForEmployeeEffect vacation balance (#1340)", () => {
 			approvalLifecycle as never,
 		);
 
-		expect(callerMocks.findOverdrawnVacationYears).toHaveBeenCalledWith(expect.anything(), {
+		// The working days read once for the absence days are reused, at the flow's clock.
+		expect(callerMocks.loadWorkingDays).toHaveBeenCalledTimes(1);
+		expect(callerMocks.findYearsExceedingBalance).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-1",
 			employeeId: "employee-1",
 			absence: {
@@ -534,13 +534,14 @@ describe("requestAbsenceForEmployeeEffect vacation balance (#1340)", () => {
 				endDate: "2026-05-12",
 				endPeriod: "full_day",
 			},
-			currentDate: expect.any(Date),
+			isWorkingDay: mondayToFriday,
+			currentDate: new Date("2026-07-19T10:00:00Z"),
 		});
 	});
 
 	it("refuses vacation that exceeds a year's recorded balance before recording anything", async () => {
 		const approvalLifecycle = configureAbsenceCallerTransaction();
-		callerMocks.findOverdrawnVacationYears.mockResolvedValue([
+		callerMocks.findYearsExceedingBalance.mockResolvedValue([
 			{
 				year: 2026,
 				chargedAbsenceDays: 2,
@@ -570,7 +571,7 @@ describe("requestAbsenceForEmployeeEffect vacation balance (#1340)", () => {
 
 	it("explains that a future year's carryover and accrual are not counted yet", async () => {
 		const approvalLifecycle = configureAbsenceCallerTransaction();
-		callerMocks.findOverdrawnVacationYears.mockResolvedValue([
+		callerMocks.findYearsExceedingBalance.mockResolvedValue([
 			{
 				year: 2027,
 				chargedAbsenceDays: 1,
@@ -613,7 +614,7 @@ describe("requestAbsenceForEmployeeEffect vacation balance (#1340)", () => {
 			approvalLifecycle as never,
 		);
 
-		expect(callerMocks.findOverdrawnVacationYears).not.toHaveBeenCalled();
+		expect(callerMocks.findYearsExceedingBalance).not.toHaveBeenCalled();
 	});
 });
 

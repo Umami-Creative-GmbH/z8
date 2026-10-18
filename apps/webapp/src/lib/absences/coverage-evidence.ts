@@ -1,4 +1,5 @@
-import type { DayOfWeek } from "@/lib/coverage/domain/entities/coverage-rule";
+import { Temporal } from "temporal-polyfill";
+import { type DayOfWeek, dayOfWeekOf } from "@/lib/coverage/domain/entities/coverage-rule";
 import { localDayRange, resolveScheduledWallClock } from "@/lib/datetime/temporal-boundaries";
 import {
 	compareInstants,
@@ -14,8 +15,8 @@ import { type ShiftInterval, shiftInterval } from "@/lib/scheduling/shift-occasi
 import { intervalsOverlap } from "@/lib/scheduling/staffing/staffing-blockers";
 import {
 	type AbsenceDurationInput,
+	findAbsenceDurationIssue,
 	normalizeAbsenceDurationInput,
-	validateAbsenceDurationInput,
 } from "./duration";
 
 /**
@@ -92,21 +93,11 @@ export interface CoverageShiftEvidence {
 export interface CoverageRuleEvidence {
 	subareaId: string;
 	subareaName: string | null;
-	dayOfWeek: DayOfWeek | string;
+	dayOfWeek: DayOfWeek;
 	startTime: string;
 	endTime: string;
 	minimumStaffCount: number;
 }
-
-const DAY_OF_WEEK_BY_NUMBER: Record<number, DayOfWeek> = {
-	1: "monday",
-	2: "tuesday",
-	3: "wednesday",
-	4: "thursday",
-	5: "friday",
-	6: "saturday",
-	7: "sunday",
-};
 
 const NOON = "12:00";
 
@@ -119,7 +110,7 @@ export function absenceInterval(
 	request: AbsenceDurationInput,
 	timezone: string,
 ): ShiftInterval | null {
-	if (validateAbsenceDurationInput({ ...request, categoryId: "preview" }) !== null) return null;
+	if (findAbsenceDurationIssue(request) !== null) return null;
 	const normalized = normalizeAbsenceDurationInput(request);
 
 	try {
@@ -314,14 +305,17 @@ function ruleInstancesWithin(
 		comparePlainDates(date, lastDate) <= 0;
 		date = date.add({ days: 1 })
 	) {
-		const dayOfWeek = DAY_OF_WEEK_BY_NUMBER[date.dayOfWeek];
+		const dayOfWeek = dayOfWeekOf(date);
 		for (const rule of rules) {
 			if (rule.subareaId !== subareaId || rule.dayOfWeek !== dayOfWeek) continue;
 			let interval: ShiftInterval;
 			try {
 				interval = {
 					start: wallClock(date.toString(), rule.startTime, timezone),
-					end: wallClock(date.toString(), rule.endTime, timezone),
+					// Rule times stop at 23:59; a rule ending then runs to the end of its day.
+					end: endsAtLastMinute(rule.endTime)
+						? localDayRange(date.toString(), timezone).endExclusive
+						: wallClock(date.toString(), rule.endTime, timezone),
 				};
 			} catch {
 				gaps.add("unsupported");
@@ -449,6 +443,12 @@ function uniqueSortedInstants(instants: readonly Instant[]): Instant[] {
 	return sorted.filter(
 		(instant, index) => index === 0 || compareInstants(instant, sorted[index - 1] as Instant) !== 0,
 	);
+}
+
+/** Whether a wall-clock time is 23:59, the latest end a coverage rule can name. */
+function endsAtLastMinute(time: string): boolean {
+	const plainTime = Temporal.PlainTime.from(time);
+	return plainTime.hour === 23 && plainTime.minute === 59;
 }
 
 function wallClock(date: string, time: string, timezone: string): Instant {

@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, gte, inArray, lt } from "drizzle-orm";
 import { db } from "@/db";
 import { coverageRule, shift } from "@/db/schema";
+import { createLogger } from "@/lib/logger";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import {
 	type AffectedShiftEvidence,
@@ -15,6 +16,8 @@ import {
 } from "./coverage-evidence";
 import type { AbsenceDurationInput } from "./duration";
 
+const logger = createLogger("AbsenceCoverageEvidence");
+
 export interface AbsenceCoverageEvidence {
 	affectedShifts: AffectedShiftEvidence[];
 	coverage: CoverageEvaluation;
@@ -27,15 +30,6 @@ interface ShiftRow {
 	date: Date;
 	startTime: string;
 	endTime: string;
-	subarea?: { name: string } | null;
-}
-
-interface RuleRow {
-	subareaId: string;
-	dayOfWeek: string;
-	startTime: string;
-	endTime: string;
-	minimumStaffCount: number;
 	subarea?: { name: string } | null;
 }
 
@@ -68,8 +62,12 @@ export async function loadAbsenceCoverageEvidence(input: {
 			),
 			with: { subarea: { columns: { name: true } } },
 		});
-		requesterShifts = toShiftEvidence(rows as ShiftRow[], timezone);
-	} catch {
+		requesterShifts = toShiftEvidence(rows, timezone);
+	} catch (error) {
+		logger.error(
+			{ error, organizationId, employeeId },
+			"Failed to read the requester's published shifts for coverage evidence",
+		);
 		return { affectedShifts: [], coverage: incomplete(["read_failed"]) };
 	}
 
@@ -104,7 +102,7 @@ export async function loadAbsenceCoverageEvidence(input: {
 				),
 			}),
 		]);
-		rules = (ruleRows as RuleRow[]).map((rule) => ({
+		rules = ruleRows.map((rule) => ({
 			subareaId: rule.subareaId,
 			subareaName: rule.subarea?.name ?? null,
 			dayOfWeek: rule.dayOfWeek,
@@ -112,8 +110,12 @@ export async function loadAbsenceCoverageEvidence(input: {
 			endTime: rule.endTime,
 			minimumStaffCount: rule.minimumStaffCount,
 		}));
-		publishedShifts = toShiftEvidence(shiftRows as ShiftRow[], timezone);
-	} catch {
+		publishedShifts = toShiftEvidence(shiftRows, timezone);
+	} catch (error) {
+		logger.error(
+			{ error, organizationId, employeeId, subareaIds },
+			"Failed to read coverage rules or published shifts for coverage evidence",
+		);
 		return { affectedShifts: affected, coverage: incomplete([...knownGaps, "read_failed"]) };
 	}
 

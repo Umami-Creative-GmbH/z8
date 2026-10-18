@@ -1,11 +1,19 @@
 "use client";
 
-import { IconAlertTriangle, IconCheck, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
+import { IconAlertTriangle, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import type { ReactNode } from "react";
+import { Temporal } from "temporal-polyfill";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
-import type { AbsencePlanPreview, CoverageEvidenceGap } from "@/lib/absences/absence-plan-preview";
+import type {
+	AbsencePlanNote,
+	AbsencePlanPreview,
+	CoverageEvidenceGap,
+} from "@/lib/absences/absence-plan-preview";
 import { formatDays } from "@/lib/absences/date-utils";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate, formatPlainDateRange } from "@/lib/datetime/temporal-format";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 import { VacationYearBalances } from "./vacation-year-balances";
 
@@ -82,10 +90,20 @@ export function AbsencePlanPreviewPanel({
  */
 export function AbsencePlanPreviewSections({ preview }: { preview: AbsencePlanPreview }) {
 	const { t } = useTranslate();
-	const approvalReasons =
-		preview.reasons.length > 0
-			? preview.reasons
-			: ["Planner checked the available request signals."];
+	const locale = useLocale();
+	const formatDate = (date: string) => formatPlainDate(parsePlainDate(date), locale, "dateMedium");
+	const approvalNotes =
+		preview.notes.length > 0
+			? preview.notes.map((note) => planNoteMessage(note, t))
+			: [
+					t(
+						"absences.planPreview.checkedSignals",
+						"Planner checked the available request signals.",
+					),
+				];
+	const workBalanceNegative = preview.workBalance?.wouldBeNegative === true;
+	const hasApprovalWarnings =
+		preview.refusal !== null || preview.overlaps.length > 0 || workBalanceNegative;
 	const coverageRiskCount = preview.coverage.risks.length;
 	const hasAffectedShifts = preview.affectedShifts.length > 0;
 	const isCoverageIncomplete = preview.coverage.status === "incomplete";
@@ -175,7 +193,7 @@ export function AbsencePlanPreviewSections({ preview }: { preview: AbsencePlanPr
 										key={getCoverageRiskKey(risk)}
 									>
 										<div className="min-w-0 break-words font-medium">
-											{risk.date} · {risk.subareaName ?? unknownSubarea(t)}
+											{formatDate(risk.date)} · {risk.subareaName ?? unknownSubarea(t)}
 										</div>
 										<div className="text-muted-foreground text-xs tabular-nums">
 											{risk.startTime}-{risk.endTime} ·{" "}
@@ -235,7 +253,7 @@ export function AbsencePlanPreviewSections({ preview }: { preview: AbsencePlanPr
 									key={getAffectedShiftKey(shift)}
 								>
 									<div className="min-w-0 break-words font-medium">
-										{shift.date} · {shift.subareaName ?? unknownSubarea(t)}
+										{formatDate(shift.date)} · {shift.subareaName ?? unknownSubarea(t)}
 									</div>
 									<div className="text-muted-foreground text-xs tabular-nums">
 										{affectedShiftDescription(shift, t)}
@@ -254,14 +272,15 @@ export function AbsencePlanPreviewSections({ preview }: { preview: AbsencePlanPr
 			</PreviewSection>
 			<PreviewSection title={t("absences.planPreview.approval", "Approval")}>
 				<div className="space-y-2">
+					{/* Process information only: never an approval prediction. */}
 					<ul className="space-y-1 text-sm">
-						{approvalReasons.map((reason) => (
-							<li className="break-words" key={reason}>
-								{reason}
+						{approvalNotes.map((note) => (
+							<li className="break-words" key={note}>
+								{note}
 							</li>
 						))}
 					</ul>
-					{preview.refusal || preview.warnings.length > 0 ? (
+					{hasApprovalWarnings ? (
 						<ul className="space-y-1 text-sm">
 							{preview.refusal === "no_working_days" && (
 								<li className="flex items-start gap-2 text-destructive" role="alert">
@@ -269,17 +288,33 @@ export function AbsencePlanPreviewSections({ preview }: { preview: AbsencePlanPr
 									<span className="min-w-0 break-words">{noWorkingDaysMessage(t)}</span>
 								</li>
 							)}
-							{preview.warnings.map((warning) => (
-								<li className="flex items-start gap-2 text-destructive" key={warning}>
+							{preview.overlaps.map((overlap) => (
+								<li className="flex items-start gap-2 text-destructive" key={overlap.id}>
 									<IconAlertTriangle className="mt-0.5 size-4" aria-hidden="true" />
-									<span className="min-w-0 break-words">{warning}</span>
+									<span className="min-w-0 break-words">{overlapMessage(overlap, locale, t)}</span>
 								</li>
 							))}
+							{workBalanceNegative && (
+								<li className="flex items-start gap-2 text-destructive">
+									<IconAlertTriangle className="mt-0.5 size-4" aria-hidden="true" />
+									<span className="min-w-0 break-words">
+										{t(
+											"absences.planPreview.workBalanceNegativeWarning",
+											"Work balance would be negative after this request.",
+										)}
+									</span>
+								</li>
+							)}
 						</ul>
 					) : (
-						<p className="flex items-center gap-2 text-muted-foreground text-sm">
-							<IconCheck className="size-4" aria-hidden="true" />
-							{t("absences.planPreview.noApprovalWarnings", "No approval warnings")}
+						<p className="flex items-start gap-2 text-muted-foreground text-sm">
+							<IconInfoCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+							<span>
+								{t(
+									"absences.planPreview.noWarningsInEvidence",
+									"No warnings found in the available evidence.",
+								)}
+							</span>
 						</p>
 					)}
 				</div>
@@ -351,21 +386,92 @@ function affectedShiftDescription(
 	shift: AbsencePlanPreview["affectedShifts"][number],
 	t: TranslateFn,
 ) {
-	const times = `${shift.startTime}-${shift.endTime}`;
 	// A shift that ends at or before its start ends the next day.
 	const endsNextDay =
-		shift.endTime <= shift.startTime
-			? ` ${t("absences.planPreview.shiftEndsNextDay", "(ends next day)")}`
-			: "";
+		Temporal.PlainTime.compare(
+			Temporal.PlainTime.from(shift.endTime),
+			Temporal.PlainTime.from(shift.startTime),
+		) <= 0;
 	const isWholeShift =
 		shift.affectedStartTime === shift.startTime && shift.affectedEndTime === shift.endTime;
-	const part = isWholeShift
-		? t("absences.planPreview.wholeShiftAffected", "whole shift affected")
-		: t("absences.planPreview.shiftPartAffected", "away {start}-{end}", {
-				start: shift.affectedStartTime,
-				end: shift.affectedEndTime,
+	const times = { start: shift.startTime, end: shift.endTime };
+	if (isWholeShift) {
+		return endsNextDay
+			? t(
+					"absences.planPreview.affectedShiftWholeOvernight",
+					"{start}-{end} (ends next day) · whole shift affected",
+					times,
+				)
+			: t("absences.planPreview.affectedShiftWhole", "{start}-{end} · whole shift affected", times);
+	}
+	const away = { ...times, awayStart: shift.affectedStartTime, awayEnd: shift.affectedEndTime };
+	return endsNextDay
+		? t(
+				"absences.planPreview.affectedShiftPartOvernight",
+				"{start}-{end} (ends next day) · away {awayStart}-{awayEnd}",
+				away,
+			)
+		: t(
+				"absences.planPreview.affectedShiftPart",
+				"{start}-{end} · away {awayStart}-{awayEnd}",
+				away,
+			);
+}
+
+function planNoteMessage(note: AbsencePlanNote, t: TranslateFn) {
+	switch (note) {
+		case "does_not_reduce_vacation":
+			return t(
+				"absences.planPreview.note.doesNotReduceVacation",
+				"This absence type does not reduce vacation balance.",
+			);
+		case "draws_on_work_balance":
+			return t(
+				"absences.planPreview.note.drawsOnWorkBalance",
+				"This absence draws on the work balance.",
+			);
+		case "work_balance_unavailable":
+			return t(
+				"absences.planPreview.note.workBalanceUnavailable",
+				"Work balance is unavailable right now.",
+			);
+		case "no_approval_required":
+			return t(
+				"absences.planPreview.note.noApprovalRequired",
+				"This absence type does not require approval.",
+			);
+		case "no_manager_auto_approval":
+			return t(
+				"absences.planPreview.note.noManagerAutoApproval",
+				"No manager is assigned, so this request follows the current auto-approval behavior.",
+			);
+		case "normal_approval_path":
+			return t(
+				"absences.planPreview.note.normalApprovalPath",
+				"Request follows the normal approval path.",
+			);
+	}
+}
+
+/** One of the employee's own absences the request overlaps, with its dates and status. */
+function overlapMessage(
+	overlap: AbsencePlanPreview["overlaps"][number],
+	locale: string,
+	t: TranslateFn,
+) {
+	const dates = formatPlainDateRange(
+		parsePlainDate(overlap.startDate),
+		parsePlainDate(overlap.endDate),
+		locale,
+		"dateMedium",
+	);
+	return overlap.status === "approved"
+		? t("absences.planPreview.overlapApproved", "Overlaps your approved absence ({dates}).", {
+				dates,
+			})
+		: t("absences.planPreview.overlapPending", "Overlaps your pending absence ({dates}).", {
+				dates,
 			});
-	return `${times}${endsNextDay} · ${part}`;
 }
 
 function getCoverageRiskKey(risk: AbsencePlanPreview["coverage"]["risks"][number]) {

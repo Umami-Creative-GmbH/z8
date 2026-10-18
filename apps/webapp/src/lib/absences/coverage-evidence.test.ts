@@ -194,12 +194,20 @@ describe("evaluateAbsenceCoverage", () => {
 		expect(result.affectedShifts).toEqual([
 			expect.objectContaining({ affectedStartTime: "20:00", affectedEndTime: "02:00" }),
 		]);
-		expect(result.coverage.risks).toEqual([
-			expect.objectContaining({ date: "2026-05-04", startTime: "23:00", endTime: "23:59" }),
-			expect.objectContaining({ date: "2026-05-05", startTime: "00:00", endTime: "02:00" }),
-		]);
-		// 23:59-00:00 has no rule.
-		expect(result.coverage).toMatchObject({ status: "incomplete", gaps: ["rules_partial"] });
+		// The Monday rule ending 23:59 runs to midnight, so the rules cover the night without a gap
+		// and the equal understaffing on both sides of midnight is one interval.
+		expect(result.coverage).toEqual({
+			status: "complete",
+			gaps: [],
+			risks: [
+				expect.objectContaining({
+					date: "2026-05-04",
+					startTime: "23:00",
+					endTime: "02:00",
+					staffCountAfterAbsence: 0,
+				}),
+			],
+		});
 	});
 
 	it("reports each change of staffing inside a shift separately", () => {
@@ -354,5 +362,48 @@ describe("findAffectedShifts", () => {
 
 		expect(affected.map((item) => item.id)).toEqual(["night", "day"]);
 		expect(unsupported).toBe(false);
+	});
+});
+
+describe("evaluateAbsenceCoverage at midnight", () => {
+	// Rule times stop at 23:59; such a rule runs to the end of its day.
+	it("treats a rule ending at 23:59 as covering a shift that ends at midnight", () => {
+		const result = evaluate({
+			requesterShifts: [shift({ id: "own", startTime: "16:00", endTime: "00:00" })],
+			colleagueShifts: [
+				shift({ id: "peer", employeeId: "emp-peer", startTime: "16:00", endTime: "00:00" }),
+			],
+			rules: [rule({ startTime: "16:00", endTime: "23:59", minimumStaffCount: 1 })],
+		});
+
+		expect(result.coverage).toEqual({ status: "complete", gaps: [], risks: [] });
+	});
+
+	it("covers an overnight shift with rules for each side of midnight", () => {
+		const result = evaluate({
+			request: { ...fullDay, endDate: "2026-05-05" },
+			requesterShifts: [shift({ id: "own", startTime: "22:00", endTime: "06:00" })],
+			colleagueShifts: [
+				shift({ id: "peer", employeeId: "emp-peer", startTime: "22:00", endTime: "06:00" }),
+			],
+			rules: [
+				rule({ startTime: "22:00", endTime: "23:59", minimumStaffCount: 1 }),
+				rule({ dayOfWeek: "tuesday", startTime: "00:00", endTime: "06:00", minimumStaffCount: 1 }),
+			],
+		});
+
+		expect(result.coverage).toEqual({ status: "complete", gaps: [], risks: [] });
+	});
+
+	it("reports understaffing up to midnight under a rule ending at 23:59", () => {
+		const result = evaluate({
+			requesterShifts: [shift({ id: "own", startTime: "16:00", endTime: "00:00" })],
+			rules: [rule({ startTime: "16:00", endTime: "23:59", minimumStaffCount: 1 })],
+		});
+
+		expect(result.coverage.status).toBe("complete");
+		expect(result.coverage.risks).toEqual([
+			expect.objectContaining({ startTime: "16:00", endTime: "00:00", staffCountAfterAbsence: 0 }),
+		]);
 	});
 });

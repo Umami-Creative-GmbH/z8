@@ -1,6 +1,5 @@
 import { and, eq, gte, lte, ne, or } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
-import { organization } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, timeRecord } from "@/db/schema";
 import {
 	dateFromInstant,
@@ -8,12 +7,14 @@ import {
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
 import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
 	type AbsenceDayRange,
-	clipAbsenceDayRange,
+	absenceDaysByYear,
+	countAbsenceDays,
 	refusalForAbsenceDays,
 } from "./absence-days";
-import { getAbsenceDays } from "./absence-days-resolver";
+import { loadWorkingDays } from "./absence-days-resolver";
 import { hasExactAbsenceHours } from "./change-request-coverage";
 import type { AbsenceChangeDatabase } from "./change-request-store";
 import {
@@ -299,10 +300,20 @@ export async function validateAbsenceProposal(
 			days: displaced,
 		});
 	if (category.countsAgainstVacation) {
-		const proposedDays = await getAbsenceDays(database, {
-			...input,
-			absence: proposed,
+		// One read of the working days over both ranges serves the whole check.
+		const isWorkingDay = await loadWorkingDays(database, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			startDate:
+				input.original.startDate < proposed.startDate
+					? input.original.startDate
+					: proposed.startDate,
+			endDate:
+				input.original.endDate > proposed.endDate
+					? input.original.endDate
+					: proposed.endDate,
 		});
+		const proposedDays = countAbsenceDays(proposed, isWorkingDay);
 		if (
 			refusalForAbsenceDays({
 				countsAgainstVacation: true,
@@ -313,33 +324,28 @@ export async function validateAbsenceProposal(
 				"no_working_days",
 				"This range contains no working days.",
 			);
-		const [org] = await database
-			.select({ timezone: organization.timezone })
-			.from(organization)
-			.where(eq(organization.id, input.organizationId));
-		for (
-			let year = Temporal.PlainDate.from(proposed.startDate).year;
-			year <= Temporal.PlainDate.from(proposed.endDate).year;
-			year++
-		) {
-			const window = { startDate: `${year}-01-01`, endDate: `${year}-12-31` };
-			const oldRange = clipAbsenceDayRange(input.original, window);
-			const newRange = clipAbsenceDayRange(proposed, window);
-			if (!newRange) continue;
-			const oldDays = oldRange
-				? await getAbsenceDays(database, { ...input, absence: oldRange })
-				: 0;
-			const newDays = await getAbsenceDays(database, {
-				...input,
-				absence: newRange,
-			});
+		const timezone = await loadOrganizationTimezone(
+			database,
+			input.organizationId,
+		);
+		const originalDaysByYear = new Map(
+			absenceDaysByYear(input.original, isWorkingDay).map((charge) => [
+				charge.year,
+				charge.absenceDays,
+			]),
+		);
+		for (const { year, absenceDays: newDays } of absenceDaysByYear(
+			proposed,
+			isWorkingDay,
+		)) {
+			const oldDays = originalDaysByYear.get(year) ?? 0;
 			const { balances, configurations } = await loadVacationBalances(
 				database,
 				{
 					organizationId: input.organizationId,
 					employeeIds: [input.employeeId],
 					year,
-					timezone: org?.timezone ?? "UTC",
+					timezone,
 					currentDate: dateFromInstant(input.at),
 				},
 			);

@@ -1,18 +1,16 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
-import { organization } from "@/db/auth-schema";
 import { calendarYearAt, instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
-import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
-import { type AbsenceDayRange, absenceDaysByYear } from "./absence-days";
-import { type AbsenceDaysDatabase, loadWorkingDays } from "./absence-days-resolver";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { type AbsenceDayRange, absenceDaysByYear, type IsWorkingDay } from "./absence-days";
+import type { AbsenceDaysDatabase } from "./absence-days-resolver";
 import { loadVacationBalances } from "./vacation-balance-store";
 import {
-	overdrawnVacationYears,
 	type VacationYearBalanceEvidence,
 	type VacationYearImpact,
 	vacationYearImpacts,
+	yearsExceedingBalance,
 } from "./vacation-year-balance";
 
 const logger = createLogger("VacationYearBalances");
@@ -70,30 +68,23 @@ export async function loadVacationYearBalances(
  * calendar year on the employee's working days. Years with unavailable balance evidence, and years
  * the absence charges nothing, never block.
  */
-export async function findOverdrawnVacationYears(
+export async function findYearsExceedingBalance(
 	database: AbsenceDaysDatabase,
 	input: {
 		organizationId: string;
 		employeeId: string;
 		/** The absence as stored: an explicit partial day is its start day only. */
 		absence: AbsenceDayRange;
-		/** The organization's zone; read from the organization when omitted. */
-		timezone?: string;
+		/** The employee's working days over the absence, as the caller already read them. */
+		isWorkingDay: IsWorkingDay;
 		currentDate: Date;
 	},
 ): Promise<VacationYearImpact[]> {
-	const isWorkingDay = await loadWorkingDays(database, {
-		organizationId: input.organizationId,
-		employeeId: input.employeeId,
-		startDate: input.absence.startDate,
-		endDate: input.absence.endDate,
-	});
-	const charges = absenceDaysByYear(input.absence, isWorkingDay).filter(
+	const charges = absenceDaysByYear(input.absence, input.isWorkingDay).filter(
 		(charge) => charge.absenceDays > 0,
 	);
 	if (charges.length === 0) return [];
-	const timezone =
-		input.timezone ?? (await loadOrganizationTimezone(database, input.organizationId));
+	const timezone = await loadOrganizationTimezone(database, input.organizationId);
 	const evidence = await loadVacationYearBalances(database, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
@@ -101,22 +92,11 @@ export async function findOverdrawnVacationYears(
 		timezone,
 		currentDate: input.currentDate,
 	});
-	return overdrawnVacationYears(
+	return yearsExceedingBalance(
 		vacationYearImpacts({
 			charges,
 			evidence,
 			currentYear: calendarYearAt(instantFromDate(input.currentDate), timezone),
 		}),
 	);
-}
-
-async function loadOrganizationTimezone(
-	database: AbsenceDaysDatabase,
-	organizationId: string,
-): Promise<string> {
-	const [row] = await database
-		.select({ timezone: organization.timezone })
-		.from(organization)
-		.where(eq(organization.id, organizationId));
-	return resolveOrganizationTimezone(row?.timezone).timezone;
 }

@@ -77,7 +77,6 @@ describe("buildAbsencePlanPreview for time off in lieu", () => {
 		expect(preview.workBalance).toEqual(workBalance);
 		expect(preview.countsAgainstVacation).toBe(false);
 		expect(preview.balances).toEqual([]);
-		expect(preview.warnings).toEqual([]);
 	});
 
 	it("warns, without refusing, when the work balance would be negative", () => {
@@ -91,7 +90,8 @@ describe("buildAbsencePlanPreview for time off in lieu", () => {
 			},
 		});
 
-		expect(preview.warnings).toContain("Work balance would be negative after this request.");
+		expect(preview.workBalance?.wouldBeNegative).toBe(true);
+		expect(preview.notes).not.toContain("normal_approval_path");
 	});
 
 	it("has no work balance projection for other categories", () => {
@@ -116,7 +116,7 @@ describe("buildAbsencePlanPreview", () => {
 				remainingAfterRequest: 12,
 			},
 		]);
-		expect(preview.reasons).toContain("Request follows the normal approval path.");
+		expect(preview.notes).toContain("normal_approval_path");
 	});
 
 	it("counts explicit partial-day time requests as half a vacation day", () => {
@@ -172,7 +172,9 @@ describe("buildAbsencePlanPreview", () => {
 		});
 
 		expect(preview.requestedAbsenceDays).toBe(0);
-		expect(preview.balances[0]).toMatchObject({ chargedAbsenceDays: 0, remainingAfterRequest: 10 });
+		expect(preview.refusal).toBe("no_working_days");
+		// A year charged nothing is left out.
+		expect(preview.balances).toEqual([]);
 	});
 
 	it("does not reduce balance for non-vacation categories", () => {
@@ -186,7 +188,7 @@ describe("buildAbsencePlanPreview", () => {
 
 		expect(preview.countsAgainstVacation).toBe(false);
 		expect(preview.balances).toEqual([]);
-		expect(preview.reasons).toContain("This absence type does not reduce vacation balance.");
+		expect(preview.notes).toContain("does_not_reduce_vacation");
 	});
 
 	it("marks insufficient balance as risky", () => {
@@ -196,8 +198,7 @@ describe("buildAbsencePlanPreview", () => {
 		});
 
 		expect(preview.balances[0]).toMatchObject({ status: "available", remainingAfterRequest: -1 });
-		expect(preview.warnings).toEqual([]);
-		expect(preview.reasons).not.toContain("Request follows the normal approval path.");
+		expect(preview.notes).not.toContain("normal_approval_path");
 	});
 
 	it("includes holidays inside the request range", () => {
@@ -239,7 +240,8 @@ describe("buildAbsencePlanPreview", () => {
 			],
 		});
 		expect(preview.overlaps).toHaveLength(1);
-		expect(preview.warnings).toContain("Request overlaps an existing pending absence.");
+		expect(preview.overlaps[0]).toMatchObject({ startDate: "2026-05-05", status: "pending" });
+		expect(preview.notes).not.toContain("normal_approval_path");
 	});
 
 	it("marks missing balance as needs_review", () => {
@@ -248,7 +250,7 @@ describe("buildAbsencePlanPreview", () => {
 			vacationBalances: [{ year: 2026, status: "unavailable", reason: "missing_policy" }],
 		});
 
-		expect(preview.reasons).not.toContain("Request follows the normal approval path.");
+		expect(preview.notes).not.toContain("normal_approval_path");
 		expect(preview.balances).toEqual([
 			{
 				year: 2026,
@@ -276,8 +278,7 @@ describe("buildAbsencePlanPreview", () => {
 		const preview = buildAbsencePlanPreview({ ...baseInput, coverage });
 
 		expect(preview.coverage).toEqual(coverage);
-		expect(preview.warnings).toEqual([]);
-		expect(preview.reasons).not.toContain("Request follows the normal approval path.");
+		expect(preview.notes).not.toContain("normal_approval_path");
 	});
 
 	it("keeps incomplete coverage evidence visible without describing the normal approval path", () => {
@@ -290,18 +291,28 @@ describe("buildAbsencePlanPreview", () => {
 		const preview = buildAbsencePlanPreview({ ...baseInput, coverage });
 
 		expect(preview.coverage).toEqual(coverage);
-		expect(preview.reasons).not.toContain("Request follows the normal approval path.");
-		expect(preview.reasons.join(" ")).not.toMatch(/coverage/i);
+		expect(preview.notes).not.toContain("normal_approval_path");
 	});
 
 	it("follows the normal approval path when coverage evidence is complete without warnings", () => {
 		const preview = buildAbsencePlanPreview(baseInput);
 
-		expect(preview.reasons).toContain("Request follows the normal approval path.");
+		expect(preview.notes).toContain("normal_approval_path");
 	});
 
 	it("does not predict approval", () => {
 		expect(buildAbsencePlanPreview(baseInput)).not.toHaveProperty("approvalSignal");
+	});
+
+	it("returns structured notes for the viewer to translate, never server-built text", () => {
+		const preview = buildAbsencePlanPreview({
+			...baseInput,
+			category: { ...baseInput.category, countsAgainstVacation: false, requiresApproval: false },
+		});
+
+		expect(preview.notes).toEqual(["does_not_reduce_vacation", "no_approval_required"]);
+		expect(preview).not.toHaveProperty("reasons");
+		expect(preview).not.toHaveProperty("warnings");
 	});
 
 	it("exposes only the requester's own affected shift fields", () => {
@@ -326,9 +337,7 @@ describe("buildAbsencePlanPreview", () => {
 
 	it("explains manager-less approval behavior when approval is required", () => {
 		const preview = buildAbsencePlanPreview({ ...baseInput, hasManager: false });
-		expect(preview.reasons).toContain(
-			"No manager is assigned, so this request follows the current auto-approval behavior.",
-		);
+		expect(preview.notes).toContain("no_manager_auto_approval");
 	});
 
 	it("explains when approval is not required", () => {
@@ -336,8 +345,8 @@ describe("buildAbsencePlanPreview", () => {
 			...baseInput,
 			category: { ...baseInput.category, requiresApproval: false },
 		});
-		expect(preview.reasons).toContain("This absence type does not require approval.");
-		expect(preview.reasons).not.toContain("Request follows the normal approval path.");
+		expect(preview.notes).toContain("no_approval_required");
+		expect(preview.notes).not.toContain("normal_approval_path");
 	});
 
 	it("excludes rejected absences from overlap warnings", () => {
@@ -354,7 +363,7 @@ describe("buildAbsencePlanPreview", () => {
 			],
 		});
 		expect(preview.overlaps).toHaveLength(0);
-		expect(preview.warnings).not.toContain("Request overlaps an existing rejected absence.");
+		expect(preview.notes).toContain("normal_approval_path");
 	});
 
 	it("keeps the balance reason alongside coverage warnings", () => {
@@ -366,7 +375,7 @@ describe("buildAbsencePlanPreview", () => {
 
 		expect(preview.balances[0]).toMatchObject({ status: "unavailable", reason: "read_failed" });
 		expect(preview.coverage.risks).toEqual([coverageRisk]);
-		expect(preview.reasons).not.toContain("Request follows the normal approval path.");
+		expect(preview.notes).not.toContain("normal_approval_path");
 	});
 
 	it("follows the normal approval path only when neither balance nor coverage needs attention", () => {
@@ -388,11 +397,9 @@ describe("buildAbsencePlanPreview", () => {
 			unavailableWithCompleteCoverage,
 			availableWithIncompleteCoverage,
 		]) {
-			expect(preview.reasons).not.toContain("Request follows the normal approval path.");
+			expect(preview.notes).not.toContain("normal_approval_path");
 		}
-		expect(buildAbsencePlanPreview(baseInput).reasons).toContain(
-			"Request follows the normal approval path.",
-		);
+		expect(buildAbsencePlanPreview(baseInput).notes).toContain("normal_approval_path");
 	});
 
 	it("counts only the employee's working days", () => {
@@ -466,7 +473,7 @@ describe("buildAbsencePlanPreview across calendar years", () => {
 				remainingAfterRequest: 19,
 			},
 		]);
-		expect(preview.reasons).toContain("Request follows the normal approval path.");
+		expect(preview.notes).toContain("normal_approval_path");
 	});
 
 	it("does not take the whole request from a single year's balance", () => {
@@ -479,7 +486,7 @@ describe("buildAbsencePlanPreview across calendar years", () => {
 		expect(
 			preview.balances.map((year) => year.status === "available" && year.remainingAfterRequest),
 		).toEqual([0, 0]);
-		expect(preview.reasons).toContain("Request follows the normal approval path.");
+		expect(preview.notes).toContain("normal_approval_path");
 	});
 
 	it("respects holidays and part-time schedules in each year", () => {
@@ -488,7 +495,10 @@ describe("buildAbsencePlanPreview across calendar years", () => {
 			isWorkingDay: (day) => day.dayOfWeek <= 4 && day.toString() !== "2026-12-31",
 		});
 
-		expect(preview.balances.map((year) => year.chargedAbsenceDays)).toEqual([1, 0]);
+		// 2027 is charged nothing, so it is left out.
+		expect(preview.balances.map((year) => [year.year, year.chargedAbsenceDays])).toEqual([
+			[2026, 1],
+		]);
 	});
 
 	it("marks a year short on balance as risky, keeping the other year's numbers", () => {
@@ -499,7 +509,7 @@ describe("buildAbsencePlanPreview across calendar years", () => {
 
 		expect(preview.balances[1]).toMatchObject({ year: 2027, remainingAfterRequest: -0.5 });
 		expect(preview.balances[0]).toMatchObject({ year: 2026, remainingAfterRequest: 3 });
-		expect(preview.reasons).not.toContain("Request follows the normal approval path.");
+		expect(preview.notes).not.toContain("normal_approval_path");
 	});
 
 	it("shows a year without balance evidence as unavailable, not zero", () => {
@@ -521,7 +531,7 @@ describe("buildAbsencePlanPreview across calendar years", () => {
 				reason: "missing_policy",
 			},
 		]);
-		expect(preview.reasons).not.toContain("Request follows the normal approval path.");
+		expect(preview.notes).not.toContain("normal_approval_path");
 	});
 
 	it("treats a year whose evidence was never loaded as a failed read", () => {
@@ -585,9 +595,24 @@ describe("buildAbsencePlanPreview across calendar years", () => {
 			expect.objectContaining({ year: 2026, chargedAbsenceDays: 0.5, remainingAfterRequest: 4.5 }),
 		]);
 		expect(onHoliday.requestedAbsenceDays).toBe(0);
-		expect(onHoliday.balances).toEqual([
-			expect.objectContaining({ year: 2026, chargedAbsenceDays: 0, remainingAfterRequest: 5 }),
+		expect(onHoliday.balances).toEqual([]);
+	});
+
+	it("leaves out a year the request charges nothing, even without balance evidence", () => {
+		// Fri 2027-12-31 to Sat 2028-01-01: the Saturday charges 2028 nothing, and 2028 has no policy.
+		const preview = buildAbsencePlanPreview({
+			...acrossNewYear,
+			request: { ...acrossNewYear.request, startDate: "2027-12-31", endDate: "2028-01-01" },
+			vacationBalances: [
+				available(2027, 10),
+				{ year: 2028, status: "unavailable", reason: "missing_policy" },
+			],
+		});
+
+		expect(preview.balances).toEqual([
+			expect.objectContaining({ year: 2027, chargedAbsenceDays: 1, remainingAfterRequest: 9 }),
 		]);
+		expect(preview.notes).toContain("normal_approval_path");
 	});
 
 	it("judges a future year by the evaluation time in the organization's zone", () => {

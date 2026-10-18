@@ -13,25 +13,15 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useEffect, useId, useRef } from "react";
 import { getAbsenceComparisonPreview } from "@/app/[locale]/(app)/absences/actions";
+import type { AbsenceComparisonRefusal } from "@/app/[locale]/(app)/absences/plan-preview";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import type { AbsencePlanPreview } from "@/lib/absences/absence-plan-preview";
-import type { AbsenceDurationKind } from "@/lib/absences/types";
 import {
 	addComparisonAlternative,
 	type ComparisonDates,
 	type ComparisonOption,
-	type ComparisonOptionIssue,
 	canAddComparisonAlternative,
+	comparisonDatesOf,
 	comparisonOptionIssue,
 	comparisonOptions,
 	comparisonPreviewRequest,
@@ -43,23 +33,23 @@ import {
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDateRange } from "@/lib/datetime/temporal-format";
 import { queryKeys } from "@/lib/query/keys";
+import {
+	ABSENCE_DURATION_FIELDS,
+	AbsenceDurationFields,
+	durationIssueMessage,
+	useAbsenceForm,
+} from "./absence-duration-fields";
 import { AbsencePlanPreviewSections, noWorkingDaysMessage } from "./absence-plan-preview-panel";
 
 type TranslateFn = ReturnType<typeof useTranslate>["t"];
 
 type OptionQuery = UseQueryResult<AbsencePlanPreview, Error>;
 
-const PLAIN_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
-function isPlainDate(value: string): boolean {
-	return PLAIN_DATE_PATTERN.test(value);
-}
-
 /** A refused or failed comparison evaluation; `code` set when the server refused the option. */
 class ComparisonPreviewError extends Error {
 	constructor(
 		message: string,
-		readonly code: string | undefined,
+		readonly code: AbsenceComparisonRefusal | undefined,
 	) {
 		super(message);
 	}
@@ -101,6 +91,8 @@ export function VacationComparisonView({
 					return result.data;
 				},
 				enabled: comparisonOptionIssue(option) === null,
+				// Opening the comparison always evaluates every option again.
+				staleTime: 0,
 				// A refusal does not change on retry; a failed read is retried once.
 				retry: (failureCount: number, error: Error) =>
 					!(error instanceof ComparisonPreviewError && error.code) && failureCount < 1,
@@ -257,16 +249,18 @@ function ComparisonOptionCard({
 			{issue === "start_date_required" ? (
 				// A new alternative has no dates yet: a prompt, not an error.
 				<p className="rounded-md border border-dashed px-3 py-2 text-muted-foreground text-sm">
-					{issueMessage(issue, t)}
+					{durationIssueMessage(issue, t)}
 				</p>
 			) : issue !== null ? (
-				<p
-					aria-live="polite"
-					className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-destructive text-sm"
-					role="alert"
-				>
-					{issueMessage(issue, t)}
-				</p>
+				// An alternative's editor shows the issue at the field it concerns.
+				option.kind === "original" && (
+					<p
+						aria-live="polite"
+						className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-destructive text-sm"
+					>
+						{durationIssueMessage(issue, t)}
+					</p>
+				)
 			) : (
 				<OptionResult query={query} />
 			)}
@@ -290,12 +284,14 @@ function ComparisonOptionCard({
 	);
 }
 
-/** The option's exact dates and, for a partial day, its wall-clock times in the organization. */
+/**
+ * The option's exact dates and, for a partial day, its wall-clock times in the organization.
+ * Rendered only for a valid option, whose dates parse.
+ */
 function OptionDates({ option }: { option: ComparisonOption }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const endDate = option.endDate || option.startDate;
-	if (!isPlainDate(option.startDate) || !isPlainDate(endDate)) return null;
 	const dates = formatPlainDateRange(
 		parsePlainDate(option.startDate),
 		parsePlainDate(endDate),
@@ -327,6 +323,7 @@ function OptionDates({ option }: { option: ComparisonOption }) {
 	);
 }
 
+/** An alternative's dates, duration and times: the request form's fields in a form of its own. */
 function AlternativeEditor({
 	option,
 	onUpdate,
@@ -335,80 +332,25 @@ function AlternativeEditor({
 	onUpdate: (patch: Partial<ComparisonDates>) => void;
 }) {
 	const { t } = useTranslate();
-	const idPrefix = useId();
-	const startLabel = t("absences.comparison.startDate", "Start date");
-	const endLabel = t("absences.comparison.endDate", "End date");
-	const durationLabel = t("absences.comparison.duration", "Duration");
-	const startTimeLabel = t("absences.comparison.startTime", "Start time");
-	const endTimeLabel = t("absences.comparison.endTime", "End time");
+	const form = useAbsenceForm({
+		defaultValues: comparisonDatesOf(option),
+		listeners: {
+			// The comparison holds the option; each edit re-evaluates only this option.
+			onChange: ({ formApi }) => onUpdate(formApi.state.values),
+		},
+	});
 	return (
-		<div className="grid gap-3 sm:grid-cols-2">
-			<div className="space-y-1.5">
-				<Label htmlFor={`${idPrefix}-start`}>{startLabel}</Label>
-				<DatePicker
-					id={`${idPrefix}-start`}
-					aria-label={startLabel}
-					value={option.startDate}
-					onChange={(startDate) => onUpdate({ startDate })}
-				/>
-			</div>
-			<div className="space-y-1.5">
-				<Label htmlFor={`${idPrefix}-end`}>{endLabel}</Label>
-				<DatePicker
-					id={`${idPrefix}-end`}
-					aria-label={endLabel}
-					value={option.endDate}
-					min={option.startDate || undefined}
-					onChange={(endDate) => onUpdate({ endDate })}
-				/>
-				<p className="text-muted-foreground text-xs">
-					{t("absences.form.endDateHelper", "Leave empty for a same-day absence.")}
-				</p>
-			</div>
-			<div className="space-y-1.5 sm:col-span-2">
-				<Label>{durationLabel}</Label>
-				<Select
-					value={option.durationKind}
-					onValueChange={(value) => onUpdate({ durationKind: value as AbsenceDurationKind })}
-				>
-					<SelectTrigger aria-label={durationLabel} className="w-full sm:w-60">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="full_day">
-							{t("absences.form.duration.fullDay", "Full day")}
-						</SelectItem>
-						<SelectItem value="partial_day">
-							{t("absences.form.duration.partialDay", "Partial day")}
-						</SelectItem>
-					</SelectContent>
-				</Select>
-			</div>
-			{option.durationKind === "partial_day" && (
-				<>
-					<div className="space-y-1.5">
-						<Label htmlFor={`${idPrefix}-start-time`}>{startTimeLabel}</Label>
-						<Input
-							id={`${idPrefix}-start-time`}
-							aria-label={startTimeLabel}
-							type="time"
-							value={option.startTime}
-							onChange={(event) => onUpdate({ startTime: event.target.value })}
-						/>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor={`${idPrefix}-end-time`}>{endTimeLabel}</Label>
-						<Input
-							id={`${idPrefix}-end-time`}
-							aria-label={endTimeLabel}
-							type="time"
-							value={option.endTime}
-							onChange={(event) => onUpdate({ endTime: event.target.value })}
-						/>
-					</div>
-				</>
-			)}
-		</div>
+		<AbsenceDurationFields
+			form={form}
+			fields={ABSENCE_DURATION_FIELDS}
+			labels={{
+				startDate: t("absences.comparison.startDate", "Start date"),
+				endDate: t("absences.comparison.endDate", "End date"),
+				duration: t("absences.comparison.duration", "Duration"),
+				startTime: t("absences.comparison.startTime", "Start time"),
+				endTime: t("absences.comparison.endTime", "End time"),
+			}}
+		/>
 	);
 }
 
@@ -426,8 +368,7 @@ function OptionResult({ query }: { query: OptionQuery | undefined }) {
 		);
 	}
 	if (query.isError && !query.data) {
-		const ineligible =
-			query.error instanceof ComparisonPreviewError && query.error.code === "comparison_ineligible";
+		const refusal = query.error instanceof ComparisonPreviewError ? query.error.code : undefined;
 		return (
 			<div
 				className="flex flex-col gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
@@ -435,17 +376,9 @@ function OptionResult({ query }: { query: OptionQuery | undefined }) {
 			>
 				<span className="flex items-start gap-2 text-muted-foreground">
 					<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-					{ineligible
-						? t(
-								"absences.comparison.ineligible",
-								"Only vacation that uses your vacation balance can be compared.",
-							)
-						: t(
-								"absences.comparison.failed",
-								"This option could not be checked. Your other options are not affected.",
-							)}
+					{refusalMessage(refusal, t)}
 				</span>
-				{!ineligible && (
+				{!refusal && (
 					<Button type="button" variant="outline" size="sm" onClick={() => query.refetch()}>
 						{t("absences.comparison.retry", "Try again")}
 					</Button>
@@ -488,35 +421,25 @@ function OptionResult({ query }: { query: OptionQuery | undefined }) {
 	);
 }
 
-function issueMessage(issue: ComparisonOptionIssue, t: TranslateFn) {
-	switch (issue) {
-		case "start_date_required":
-			return t("absences.comparison.issue.startDateRequired", "Choose a start date.");
-		case "invalid_date":
-			return t("absences.comparison.issue.invalidDate", "Enter valid dates.");
-		case "end_before_start":
+/** Why an option was not evaluated: a refusal, which a retry would not change, or a failed read. */
+function refusalMessage(refusal: AbsenceComparisonRefusal | undefined, t: TranslateFn) {
+	switch (refusal) {
+		case "comparison_ineligible":
 			return t(
-				"absences.comparison.issue.endBeforeStart",
-				"The end date can't be before the start date.",
+				"absences.comparison.ineligible",
+				"Only vacation that uses your vacation balance can be compared.",
 			);
-		case "times_required":
+		case "category_unavailable":
 			return t(
-				"absences.comparison.issue.timesRequired",
-				"Enter a start time and end time for a partial day.",
+				"absences.comparison.categoryUnavailable",
+				"This absence type is no longer available. Go back and choose another type.",
 			);
-		case "invalid_time":
-			return t("absences.comparison.issue.invalidTime", "Enter times as hours and minutes.");
-		case "partial_day_span":
+		case "invalid_option":
+			return t("absences.comparison.invalidOption", "These dates can't be checked.");
+		case undefined:
 			return t(
-				"absences.comparison.issue.partialDaySpan",
-				"A partial day can only be same-day or overnight.",
+				"absences.comparison.failed",
+				"This option could not be checked. Your other options are not affected.",
 			);
-		case "end_time_before_start":
-			return t(
-				"absences.comparison.issue.endTimeBeforeStart",
-				"End after the start time, or end on the next day for an overnight absence.",
-			);
-		case "invalid":
-			return t("absences.comparison.issue.invalid", "These dates can't be checked.");
 	}
 }

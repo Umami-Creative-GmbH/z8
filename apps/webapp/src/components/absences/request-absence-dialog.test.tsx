@@ -200,11 +200,18 @@ const riskyPreview: AbsencePlanPreview = {
 	evaluatedAt: "2026-10-18T08:30:00Z",
 	workBalance: null,
 	holidays: [],
-	overlaps: [],
+	overlaps: [
+		{
+			id: "absence-earlier",
+			startDate: "2026-05-11",
+			endDate: "2026-05-11",
+			status: "pending",
+			categoryName: "Vacation",
+		},
+	],
 	affectedShifts: [],
 	coverage: { risks: [], status: "complete", gaps: [] },
-	warnings: ["Coverage may be tight for this request."],
-	reasons: ["Request follows the normal approval path."],
+	notes: [],
 };
 
 // Wed 2026-12-30 to Sat 2027-01-02: 2 days in 2026, 1 in 2027.
@@ -348,7 +355,7 @@ describe("RequestAbsenceDialog", () => {
 			}),
 		).toBeTruthy();
 		expect(await screen.findByRole("heading", { name: "Smart planner" })).toBeTruthy();
-		expect(screen.getByText("Coverage may be tight for this request.")).toBeTruthy();
+		expect(screen.getByText(/^Overlaps your pending absence/)).toBeTruthy();
 	});
 
 	it("shows the sick detail field when the sick category is selected", () => {
@@ -418,7 +425,7 @@ describe("RequestAbsenceDialog", () => {
 		renderDialog();
 
 		fillRequiredFields();
-		expect(await screen.findByText("Coverage may be tight for this request.")).toBeTruthy();
+		expect(await screen.findByText(/^Overlaps your pending absence/)).toBeTruthy();
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
@@ -437,9 +444,13 @@ describe("RequestAbsenceDialog", () => {
 
 		const validationError = screen.getByRole("alert");
 		expect(validationError.getAttribute("aria-live")).toBe("polite");
-		expect(validationError.textContent).toContain(
-			"Enter an end time after the start time, or choose the next end date for an overnight absence.",
+		expect(validationError.textContent).toBe(
+			"End after the start time, or end on the next day for an overnight absence.",
 		);
+		// The message belongs to the end time and is tied to its input.
+		const endTime = screen.getByLabelText("End Time *");
+		expect(endTime.getAttribute("aria-invalid")).toBe("true");
+		expect(endTime.getAttribute("aria-describedby")).toContain(validationError.id);
 		expect(screen.getByRole("button", { name: "Submit Request" }).hasAttribute("disabled")).toBe(
 			true,
 		);
@@ -459,7 +470,7 @@ describe("RequestAbsenceDialog", () => {
 		fireEvent.change(screen.getByLabelText("Start Time *"), { target: { value: "09:00" } });
 		fireEvent.change(screen.getByLabelText("End Time *"), { target: { value: "13:00" } });
 		// Vacation waits for the plan preview's absence days.
-		await screen.findByText("Coverage may be tight for this request.");
+		await screen.findByText(/^Overlaps your pending absence/);
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
@@ -571,7 +582,7 @@ describe("RequestAbsenceDialog", () => {
 		renderDialog();
 
 		fillRequiredFields();
-		await screen.findByText("Coverage may be tight for this request.");
+		await screen.findByText(/^Overlaps your pending absence/);
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
 		await waitFor(() =>
@@ -656,7 +667,7 @@ describe("RequestAbsenceDialog", () => {
 		renderDialog({ onOpenChange });
 
 		fillRequiredFields();
-		await screen.findByText("Coverage may be tight for this request.");
+		await screen.findByText(/^Overlaps your pending absence/);
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
 		await waitFor(() =>

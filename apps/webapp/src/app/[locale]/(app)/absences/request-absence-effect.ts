@@ -10,8 +10,14 @@ import {
 	timeRecord,
 	timeRecordAbsence,
 } from "@/db/schema";
-import { NO_WORKING_DAYS_MESSAGE, refusalForAbsenceDays } from "@/lib/absences/absence-days";
-import { getAbsenceDays } from "@/lib/absences/absence-days-resolver";
+import {
+	type AbsenceDayRange,
+	countAbsenceDays,
+	type IsWorkingDay,
+	NO_WORKING_DAYS_MESSAGE,
+	refusalForAbsenceDays,
+} from "@/lib/absences/absence-days";
+import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { dateRangesOverlap } from "@/lib/absences/date-utils";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
 import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
@@ -33,7 +39,7 @@ import {
 	type VacationOverrideSummary,
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceRequest } from "@/lib/absences/types";
-import { findOverdrawnVacationYears } from "@/lib/absences/vacation-year-balance-store";
+import { findYearsExceedingBalance } from "@/lib/absences/vacation-year-balance-store";
 import { captureAbsenceLegacyApprovalState } from "@/lib/approvals/domain-adapters/absence-legacy-state";
 import {
 	createLegacyApprovalWriteCoordinator,
@@ -1018,31 +1024,41 @@ export const INSUFFICIENT_VACATION_BALANCE_REFUSAL = "insufficient_balance";
 /**
  * Refuses vacation whose absence days in a calendar year exceed that year's recorded remaining
  * balance (#1340). A year whose balance is unavailable warns in the preview but never blocks.
+ *
+ * Known limitation: like the overlap check before it, this runs before the write transaction and
+ * takes no per-employee lock, so two submissions at the same moment can both pass. Moving it after
+ * a lock would need a new per-employee guard in the shared lock order (#1306 review, S3).
  */
 function checkVacationBalanceByYear(
 	dbService: typeof DatabaseService.Service,
 	currentEmployee: RequestAbsenceEmployeeContext,
-	data: NormalizedAbsenceDurationInput,
-	category: { countsAgainstVacation: boolean },
+	input: {
+		absence: AbsenceDayRange;
+		/** The working days already read for the absence days. */
+		isWorkingDay: IsWorkingDay;
+		category: { countsAgainstVacation: boolean };
+		now: Instant;
+	},
 ) {
-	if (!category.countsAgainstVacation) return Effect.void;
+	if (!input.category.countsAgainstVacation) return Effect.void;
 	return dbService
 		.query("absences.checkVacationBalanceByYear", () =>
-			findOverdrawnVacationYears(dbService.db, {
+			findYearsExceedingBalance(dbService.db, {
 				organizationId: currentEmployee.organizationId,
 				employeeId: currentEmployee.id,
-				absence: toAbsenceEntryDurationFields(data),
-				currentDate: dateFromInstant(systemClock.nowInstant()),
+				absence: input.absence,
+				isWorkingDay: input.isWorkingDay,
+				currentDate: dateFromInstant(input.now),
 			}),
 		)
 		.pipe(
-			Effect.flatMap(([overdrawn]) =>
-				overdrawn
+			Effect.flatMap(([exceeded]) =>
+				exceeded
 					? Effect.fail(
 							new ValidationError({
-								message: overdrawn.futureYear
-									? `The requested dates exceed your available vacation balance for ${overdrawn.year}. Carryover and accrual for future years are not counted yet.`
-									: `The requested dates exceed your available vacation balance for ${overdrawn.year}.`,
+								message: exceeded.futureYear
+									? `The requested dates exceed your available vacation balance for ${exceeded.year}. Carryover and accrual for future years are not counted yet.`
+									: `The requested dates exceed your available vacation balance for ${exceeded.year}.`,
 								field: "endDate",
 								refusal: INSUFFICIENT_VACATION_BALANCE_REFUSAL,
 							}),
@@ -1129,13 +1145,16 @@ function requestAbsenceWithResolverEffect(
 					);
 				}
 
-				const absenceDays = yield* dbService.query("getRequestedAbsenceDays", () =>
-					getAbsenceDays(dbService.db, {
+				const absenceDayRange = toAbsenceEntryDurationFields(normalizedData);
+				const isWorkingDay = yield* dbService.query("getRequestedAbsenceDays", () =>
+					loadWorkingDays(dbService.db, {
 						organizationId: currentEmployee.organizationId,
 						employeeId: currentEmployee.id,
-						absence: toAbsenceEntryDurationFields(normalizedData),
+						startDate: absenceDayRange.startDate,
+						endDate: absenceDayRange.endDate,
 					}),
 				);
+				const absenceDays = countAbsenceDays(absenceDayRange, isWorkingDay);
 				span.setAttribute("absence.absence_days", absenceDays);
 				const refusal = refusalForAbsenceDays({
 					countsAgainstVacation: category.countsAgainstVacation,
@@ -1160,7 +1179,12 @@ function requestAbsenceWithResolverEffect(
 					category,
 					Boolean(defaultApproverId),
 				);
-				yield* checkVacationBalanceByYear(dbService, currentEmployee, normalizedData, category);
+				yield* checkVacationBalanceByYear(dbService, currentEmployee, {
+					absence: absenceDayRange,
+					isWorkingDay,
+					category,
+					now: approvalLifecycle ? approvalLifecycle.nowInstant() : systemClock.nowInstant(),
+				});
 
 				span.setAttribute("absence.category_name", category.name);
 				span.setAttribute("absence.requires_approval", category.requiresApproval);

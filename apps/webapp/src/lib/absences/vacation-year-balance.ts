@@ -31,7 +31,8 @@ export type VacationYearImpact = VacationYearCharge &
 	);
 
 /**
- * Each charged year's impact, ascending. A year without evidence is unavailable as a failed read.
+ * Each charged year's impact, ascending. A year the request charges nothing is left out, so its
+ * balance evidence never matters; a charged year without evidence is unavailable as a failed read.
  */
 export function vacationYearImpacts(input: {
 	charges: readonly AbsenceDaysInYear[];
@@ -39,29 +40,36 @@ export function vacationYearImpacts(input: {
 	/** The calendar year of the evaluation time in the organization's zone. */
 	currentYear: number;
 }): VacationYearImpact[] {
-	return input.charges.map(({ year, absenceDays }) => {
+	return input.charges.flatMap(({ year, absenceDays }): VacationYearImpact[] => {
+		if (absenceDays <= 0) return [];
 		const charge = { year, chargedAbsenceDays: absenceDays, futureYear: year > input.currentYear };
 		const evidence = input.evidence.find((entry) => entry.year === year);
-		if (!evidence) return { ...charge, status: "unavailable", reason: "read_failed" };
+		if (!evidence) return [{ ...charge, status: "unavailable", reason: "read_failed" }];
 		if (evidence.status === "unavailable")
-			return { ...charge, status: "unavailable", reason: evidence.reason };
-		return {
-			...charge,
-			status: "available",
-			remainingDays: evidence.balance.remainingDays,
-			remainingAfterRequest: evidence.balance.remainingDays - absenceDays,
-		};
+			return [{ ...charge, status: "unavailable", reason: evidence.reason }];
+		return [
+			{
+				...charge,
+				status: "available",
+				remainingDays: evidence.balance.remainingDays,
+				remainingAfterRequest: evidence.balance.remainingDays - absenceDays,
+			},
+		];
 	});
 }
 
 /**
- * The years whose recorded balance the request exceeds. A year with unavailable evidence is never
- * among them: it warns without blocking.
+ * Whether the request takes more from this year than its recorded remaining balance. A year with
+ * unavailable evidence never does: it warns without blocking. (Not "overdrawn vacation", which is
+ * vacation already taken beyond the allowance.)
  */
-export function overdrawnVacationYears(
+export function exceedsYearBalance(impact: VacationYearImpact): boolean {
+	return impact.status === "available" && impact.remainingAfterRequest < 0;
+}
+
+/** The years whose recorded remaining balance the request exceeds. */
+export function yearsExceedingBalance(
 	impacts: readonly VacationYearImpact[],
 ): VacationYearImpact[] {
-	return impacts.filter(
-		(impact) => impact.status === "available" && impact.remainingAfterRequest < 0,
-	);
+	return impacts.filter(exceedsYearBalance);
 }

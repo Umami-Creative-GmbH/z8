@@ -13,10 +13,10 @@ import { normalizeAbsenceDurationInput, toAbsenceEntryDurationFields } from "./d
 import type { TimeOffInLieuPreview } from "./time-off-in-lieu-preview";
 import type { AbsenceRequest, Holiday } from "./types";
 import {
-	overdrawnVacationYears,
 	type VacationYearBalanceEvidence,
 	type VacationYearImpact,
 	vacationYearImpacts,
+	yearsExceedingBalance,
 } from "./vacation-year-balance";
 
 export type {
@@ -81,6 +81,18 @@ export type AbsencePlanBalancePreview = VacationYearImpact;
 /** One of the requester's own published shifts, with the part the absence takes. */
 export type AbsencePlanAffectedShiftPreview = AffectedShiftEvidence;
 
+/**
+ * What the request means for its approval and its balances, as codes the viewer translates
+ * (decision 6). A note never predicts approval; "normal_approval_path" is process information only.
+ */
+export type AbsencePlanNote =
+	| "does_not_reduce_vacation"
+	| "draws_on_work_balance"
+	| "work_balance_unavailable"
+	| "no_approval_required"
+	| "no_manager_auto_approval"
+	| "normal_approval_path";
+
 export interface AbsencePlanPreview {
 	requestedAbsenceDays: number;
 	/** Set when the request would be refused on submission. */
@@ -93,11 +105,11 @@ export interface AbsencePlanPreview {
 	/** Set only for a category that draws on the work balance. */
 	workBalance: TimeOffInLieuPreview | null;
 	holidays: AbsencePlanHolidayPreview[];
+	/** The employee's own pending or approved absences the request overlaps. */
 	overlaps: ExistingAbsenceInput[];
 	affectedShifts: AbsencePlanAffectedShiftPreview[];
 	coverage: CoverageEvaluation;
-	warnings: string[];
-	reasons: string[];
+	notes: AbsencePlanNote[];
 }
 
 export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): AbsencePlanPreview {
@@ -114,8 +126,7 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 		absenceDays: requestedAbsenceDays,
 	});
 	const overlaps = findAbsenceOverlaps(normalizedRequest, input.existingAbsences);
-	const warnings: string[] = [];
-	const reasons: string[] = [];
+	const notes: AbsencePlanNote[] = [];
 	let hasRisk = false;
 	let needsReview = false;
 
@@ -138,29 +149,24 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 	}
 
 	if (!input.category.countsAgainstVacation) {
-		reasons.push("This absence type does not reduce vacation balance.");
+		notes.push("does_not_reduce_vacation");
 	}
 
-	if (overdrawnVacationYears(balances).length > 0) {
+	if (yearsExceedingBalance(balances).length > 0) {
 		hasRisk = true;
 	}
 
 	const workBalance = input.category.drawsOnWorkBalance ? (input.workBalance ?? null) : null;
 	if (input.category.drawsOnWorkBalance) {
-		reasons.push(
-			workBalance
-				? "This absence draws on the work balance."
-				: "Work balance is unavailable right now.",
-		);
+		notes.push(workBalance ? "draws_on_work_balance" : "work_balance_unavailable");
 	}
+	// The panel shows the negative work balance and each overlap from the structured fields.
 	if (workBalance?.wouldBeNegative) {
 		hasRisk = true;
-		warnings.push("Work balance would be negative after this request.");
 	}
 
-	for (const overlap of overlaps) {
+	if (overlaps.length > 0) {
 		hasRisk = true;
-		warnings.push(`Request overlaps an existing ${overlap.status} absence.`);
 	}
 
 	// The panel explains coverage from the structured evidence, in the viewer's language (#1341).
@@ -173,13 +179,11 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 	}
 
 	if (!input.category.requiresApproval) {
-		reasons.push("This absence type does not require approval.");
+		notes.push("no_approval_required");
 	} else if (!input.hasManager) {
-		reasons.push(
-			"No manager is assigned, so this request follows the current auto-approval behavior.",
-		);
+		notes.push("no_manager_auto_approval");
 	} else if (!hasRisk && !needsReview) {
-		reasons.push("Request follows the normal approval path.");
+		notes.push("normal_approval_path");
 	}
 
 	return {
@@ -198,8 +202,7 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 		overlaps,
 		affectedShifts: normalizeAffectedShifts(input.affectedShifts),
 		coverage: input.coverage,
-		warnings,
-		reasons,
+		notes,
 	};
 }
 

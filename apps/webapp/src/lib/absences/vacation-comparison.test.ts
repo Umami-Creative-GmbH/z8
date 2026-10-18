@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
 	addComparisonAlternative,
-	appliedDraftFields,
 	canAddComparisonAlternative,
+	comparisonDatesOf,
 	comparisonOptionIssue,
 	comparisonOptions,
 	comparisonPreviewRequest,
@@ -191,6 +191,16 @@ describe("comparisonOptionIssue", () => {
 				endTime: "13:00",
 			}),
 		).toBe("partial_day_span");
+		expect(comparisonOptionIssue({ ...option, endDate: "2026-13-01" })).toBe("invalid_date");
+		expect(
+			comparisonOptionIssue({
+				...option,
+				durationKind: "partial_day",
+				endDate: "",
+				startTime: "9",
+				endTime: "13:00",
+			}),
+		).toBe("invalid_time");
 	});
 });
 
@@ -228,9 +238,9 @@ describe("comparisonPreviewRequest", () => {
 	});
 });
 
-describe("appliedDraftFields", () => {
-	it("copies only the dates, duration and exact times", () => {
-		const fields = appliedDraftFields({
+describe("comparisonDatesOf", () => {
+	it("copies only the dates, duration and exact times an option chooses", () => {
+		const fields = comparisonDatesOf({
 			id: "alternative-1",
 			kind: "alternative",
 			position: 1,

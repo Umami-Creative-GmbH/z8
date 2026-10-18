@@ -6,8 +6,7 @@ import {
 	IconInfoCircle,
 	IconLoader2,
 } from "@tabler/icons-react";
-import { useForm } from "@tanstack/react-form";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
@@ -28,8 +27,6 @@ import {
 	ActionPanelTrigger,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -57,18 +54,18 @@ import type {
 	SickDetail,
 } from "@/lib/absences/types";
 import {
-	appliedDraftFields,
 	type ComparisonDates,
-	type ComparisonOption,
 	isComparisonEligibleCategory,
-	resumeVacationComparison,
-	startVacationComparison,
-	type VacationComparison,
 } from "@/lib/absences/vacation-comparison";
-import { overdrawnVacationYears } from "@/lib/absences/vacation-year-balance";
+import { exceedsYearBalance, yearsExceedingBalance } from "@/lib/absences/vacation-year-balance";
 import { useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
 import { useRouter } from "@/navigation";
+import {
+	ABSENCE_DURATION_FIELDS,
+	AbsenceDurationFields,
+	useAbsenceForm,
+} from "./absence-duration-fields";
 import { AbsencePlanPreviewPanel, noWorkingDaysMessage } from "./absence-plan-preview-panel";
 import { CategoryBadge } from "./category-badge";
 import { DeputyPicker, deputyRefusalText, deputyRequiredText } from "./deputy-picker";
@@ -78,6 +75,7 @@ import {
 	StagedSickNotesSection,
 	useStagedSickNotes,
 } from "./sick-notes/staged-sick-notes-section";
+import { useVacationComparisonDraft } from "./use-vacation-comparison-draft";
 import { VacationComparisonView } from "./vacation-comparison-view";
 
 interface RequestAbsenceDialogProps {
@@ -118,12 +116,6 @@ const createDefaultValues = (initialDate?: string) => ({
 
 type RequestAbsenceFormValues = ReturnType<typeof createDefaultValues>;
 
-const PARTIAL_DAY_TIME_ERRORS = new Set([
-	"Enter a start time and end time for a partial-day absence.",
-	"Enter times in HH:mm format.",
-	"Enter an end time after the start time, or choose the next end date for an overnight absence.",
-]);
-
 function useRequestAbsenceDialogController({
 	categories,
 	controlledOnOpenChange,
@@ -141,31 +133,14 @@ function useRequestAbsenceDialogController({
 }) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
+	const queryClient = useQueryClient();
 	const [internalOpen, setInternalOpen] = useState(false);
 	const isControlled = controlledOpen !== undefined;
 	const open = isControlled ? controlledOpen : internalOpen;
-	// Comparing vacation dates (#1342): ephemeral, scoped to this organization and user.
 	const { data: session } = useSession();
 	const userId = session?.user?.id ?? "";
-	const comparisonContextKey = `${organizationId}:${userId}`;
-	const [comparison, setComparison] = useState<VacationComparison | null>(null);
-	const [isComparing, setIsComparing] = useState(false);
-	const [appliedOptionLabel, setAppliedOptionLabel] = useState<string | null>(null);
-	// Focus returns to Compare dates when the person comes back from the comparison.
-	const [returnedFromComparison, setReturnedFromComparison] = useState(false);
-	if (comparison && comparison.contextKey !== comparisonContextKey) {
-		// Another organization or user: the comparison is discarded, never shown there.
-		setComparison(null);
-		setIsComparing(false);
-		setAppliedOptionLabel(null);
-	}
-	const clearComparison = () => {
-		setComparison(null);
-		setIsComparing(false);
-		setAppliedOptionLabel(null);
-	};
 	const setOpen = (nextOpen: boolean) => {
-		clearComparison();
+		comparisonDraft.clear();
 		if (nextOpen) {
 			form.reset(createDefaultValues(initialDate));
 		} else {
@@ -177,8 +152,14 @@ function useRequestAbsenceDialogController({
 		}
 		setInternalOpen(nextOpen);
 	};
-	const form = useForm({
+	const form = useAbsenceForm({
 		defaultValues: createDefaultValues(initialDate),
+		listeners: {
+			// Editing the draft's dates by hand makes an "applied" notice stale.
+			onChange: ({ fieldApi }) => {
+				if (fieldApi.name in ABSENCE_DURATION_FIELDS) comparisonDraft.dismissAppliedNotice();
+			},
+		},
 		onSubmit: async ({ value }) => {
 			const validationError = validateAbsenceDurationInput(value);
 			if (validationError) {
@@ -268,6 +249,8 @@ function useRequestAbsenceDialogController({
 						"Absence request submitted successfully",
 					),
 				);
+				// Every preview, compared options included, now has to count this request.
+				void queryClient.invalidateQueries({ queryKey: queryKeys.absencePlanPreview.all });
 				const failedFiles = failedSickNoteNames(result);
 				if (failedFiles) {
 					toast.warning(
@@ -350,66 +333,44 @@ function useRequestAbsenceDialogController({
 		},
 		enabled: canLoadPlanPreview,
 	});
-	const activeComparison =
-		comparison && comparison.categoryId === selectedCategoryId ? comparison : null;
-	const openComparison = () => {
-		const values = form.state.values;
-		const draft: ComparisonDates = {
-			startDate: values.startDate,
-			endDate: values.endDate,
-			startPeriod: values.startPeriod,
-			endPeriod: values.endPeriod,
-			durationKind: values.durationKind,
-			startTime: values.startTime,
-			endTime: values.endTime,
-		};
-		setComparison(
-			activeComparison
-				? resumeVacationComparison(activeComparison, draft)
-				: startVacationComparison({
-						contextKey: comparisonContextKey,
-						categoryId: values.categoryId,
-						draft,
-					}),
-		);
-		setAppliedOptionLabel(null);
-		setReturnedFromComparison(false);
-		setIsComparing(true);
-	};
-	const applyComparisonOption = (option: ComparisonOption, label: string) => {
-		// Only dates, duration and times change; category, notes and deputy stay.
-		const fields = appliedDraftFields(option);
-		for (const name of Object.keys(fields) as Array<keyof ComparisonDates>) {
-			form.setFieldValue(name, fields[name]);
-		}
-		// The deputy is checked again for the new dates, here and on submission.
-		if (form.getFieldMeta("deputyEmployeeId")?.errorMap?.onServer) {
-			form.setFieldMeta("deputyEmployeeId", (meta) => ({
-				...meta,
-				errorMap: { ...meta.errorMap, onServer: undefined },
-			}));
-		}
-		clearComparison();
-		setAppliedOptionLabel(label);
-		setReturnedFromComparison(true);
-	};
-	return {
-		activeComparison: isComparing ? activeComparison : null,
-		applyComparisonOption,
-		appliedOptionLabel,
-		canLoadPlanPreview,
-		clearComparison,
-		returnedFromComparison,
-		closeComparison: () => {
-			setIsComparing(false);
-			setReturnedFromComparison(true);
+	// Comparing vacation dates (#1342): ephemeral, scoped to this organization and user.
+	const comparisonDraft = useVacationComparisonDraft({
+		contextKey: `${organizationId}:${userId}`,
+		categoryId: selectedCategoryId,
+		readDraft: () => {
+			const values = form.state.values;
+			return {
+				categoryId: values.categoryId,
+				startDate: values.startDate,
+				endDate: values.endDate,
+				startPeriod: values.startPeriod,
+				endPeriod: values.endPeriod,
+				durationKind: values.durationKind,
+				startTime: values.startTime,
+				endTime: values.endTime,
+			};
 		},
+		applyToDraft: (dates) => {
+			// Only dates, duration and times change; category, notes and deputy stay.
+			for (const name of Object.keys(dates) as Array<keyof ComparisonDates>) {
+				form.setFieldValue(name, dates[name]);
+			}
+			// The deputy is checked again for the new dates, here and on submission.
+			if (form.getFieldMeta("deputyEmployeeId")?.errorMap?.onServer) {
+				form.setFieldMeta("deputyEmployeeId", (meta) => ({
+					...meta,
+					errorMap: { ...meta.errorMap, onServer: undefined },
+				}));
+			}
+		},
+	});
+	return {
+		canLoadPlanPreview,
+		comparisonDraft,
 		form,
 		isControlled,
 		open,
-		openComparison,
 		planPreviewQuery,
-		setComparison,
 		setOpen,
 		userId,
 		showSickDetail: selectedCategory?.type === "sick",
@@ -434,19 +395,12 @@ export function RequestAbsenceDialog({
 	initialDate,
 }: RequestAbsenceDialogProps) {
 	const {
-		activeComparison,
-		applyComparisonOption,
-		appliedOptionLabel,
 		canLoadPlanPreview,
-		clearComparison,
-		returnedFromComparison,
-		closeComparison,
+		comparisonDraft,
 		form,
 		isControlled,
 		open,
-		openComparison,
 		planPreviewQuery,
-		setComparison,
 		setOpen,
 		showSickDetail,
 		showSickNotes,
@@ -464,6 +418,7 @@ export function RequestAbsenceDialog({
 	});
 
 	const showTrigger = !isControlled || trigger;
+	const { activeComparison } = comparisonDraft;
 
 	return (
 		<ActionPanel open={open} onOpenChange={setOpen}>
@@ -491,14 +446,14 @@ export function RequestAbsenceDialog({
 						<ActionPanelBody>
 							<VacationComparisonView
 								comparison={activeComparison}
-								onApply={applyComparisonOption}
-								onChange={setComparison}
+								onApply={comparisonDraft.apply}
+								onChange={comparisonDraft.change}
 								organizationId={organizationId}
 								userId={userId}
 							/>
 						</ActionPanelBody>
 						<ActionPanelFooter>
-							<Button type="button" variant="outline" onClick={closeComparison}>
+							<Button type="button" variant="outline" onClick={comparisonDraft.back}>
 								<IconArrowLeft className="size-4" aria-hidden="true" />
 								{t("absences.comparison.back", "Back to request")}
 							</Button>
@@ -530,16 +485,27 @@ export function RequestAbsenceDialog({
 							<RequestAbsenceCategoryFields
 								categories={categories}
 								form={form}
-								onCategoryChange={clearComparison}
+								onCategoryChange={comparisonDraft.clear}
 								showSickDetail={showSickDetail}
 							/>
-							<RequestAbsenceDurationFields form={form} />
-							<RequestAbsenceCompareDates
-								appliedOptionLabel={appliedOptionLabel}
-								categories={categories}
-								focusOnMount={returnedFromComparison}
+							<AbsenceDurationFields
 								form={form}
-								onCompare={openComparison}
+								fields={ABSENCE_DURATION_FIELDS}
+								labels={{
+									startDate: t("absences.form.startDate", "Start Date *"),
+									endDate: t("absences.form.endDate", "End Date"),
+									duration: t("absences.form.duration", "Absence Duration"),
+									startTime: t("absences.form.startTime", "Start Time *"),
+									endTime: t("absences.form.endTime", "End Time *"),
+								}}
+							/>
+							<RequestAbsenceCompareDates
+								appliedOptionLabel={comparisonDraft.appliedOptionLabel}
+								categories={categories}
+								focusOnMount={comparisonDraft.focusCompareOnReturn}
+								form={form}
+								onCompare={comparisonDraft.open}
+								onFocused={comparisonDraft.focusReturned}
 							/>
 							{showSickNotes && (
 								<RequestAbsenceSickNotes
@@ -627,12 +593,14 @@ function RequestAbsenceCompareDates({
 	focusOnMount,
 	form,
 	onCompare,
+	onFocused,
 }: {
 	appliedOptionLabel: string | null;
 	categories: RequestAbsenceDialogProps["categories"];
 	focusOnMount: boolean;
 	form: RequestAbsenceFormApi;
 	onCompare: () => void;
+	onFocused: () => void;
 }) {
 	const values = useStore(form.store, (state) => state.values);
 	const category = categories.find((candidate) => candidate.id === values.categoryId);
@@ -644,6 +612,7 @@ function RequestAbsenceCompareDates({
 			disabled={!hasValidDates}
 			focusOnMount={focusOnMount}
 			onCompare={onCompare}
+			onFocused={onFocused}
 		/>
 	);
 }
@@ -653,17 +622,22 @@ function CompareDatesControls({
 	disabled,
 	focusOnMount,
 	onCompare,
+	onFocused,
 }: {
 	appliedOptionLabel: string | null;
 	disabled: boolean;
+	/** Set only right after leaving the comparison; consumed once focus has moved. */
 	focusOnMount: boolean;
 	onCompare: () => void;
+	onFocused: () => void;
 }) {
 	const { t } = useTranslate();
 	const compareRef = useRef<HTMLButtonElement>(null);
 	useEffect(() => {
-		if (focusOnMount) compareRef.current?.focus();
-	}, [focusOnMount]);
+		if (!focusOnMount) return;
+		compareRef.current?.focus();
+		onFocused();
+	}, [focusOnMount, onFocused]);
 	return (
 		<div className="space-y-2">
 			<div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
@@ -853,142 +827,6 @@ function RequestAbsenceSickNotes({
 	);
 }
 
-function RequestAbsenceDurationFields({
-	form,
-}: {
-	form: RequestAbsenceFormApi;
-}) {
-	const { t } = useTranslate();
-	const durationOptions = [
-		{
-			value: "full_day",
-			label: t("absences.form.duration.fullDay", "Full day"),
-		},
-		{
-			value: "partial_day",
-			label: t("absences.form.duration.partialDay", "Partial day"),
-		},
-	];
-	return (
-		<>
-			<div className="grid gap-4 sm:grid-cols-2">
-				<form.Field name="startDate">
-					{(field) => (
-						<TFormItem>
-							<TFormLabel hasError={field.state.meta.errors.length > 0}>
-								{t("absences.form.startDate", "Start Date *")}
-							</TFormLabel>
-							<TFormControl hasError={field.state.meta.errors.length > 0}>
-								<DatePicker
-									aria-label={t("absences.form.startDate", "Start Date *")}
-									value={field.state.value}
-									onChange={field.handleChange}
-									onBlur={field.handleBlur}
-									required
-								/>
-							</TFormControl>
-							<TFormMessage field={field} />
-						</TFormItem>
-					)}
-				</form.Field>
-				<form.Subscribe<RequestAbsenceFormValues["startDate"]>
-					selector={(state) => state.values.startDate}
-				>
-					{(startDate: RequestAbsenceFormValues["startDate"]) => (
-						<form.Field name="endDate">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={field.state.meta.errors.length > 0}>
-										{t("absences.form.endDate", "End Date")}
-									</TFormLabel>
-									<TFormControl hasError={field.state.meta.errors.length > 0}>
-										<DatePicker
-											aria-label={t("absences.form.endDate", "End Date")}
-											value={field.state.value}
-											min={startDate}
-											onChange={field.handleChange}
-											onBlur={field.handleBlur}
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-					)}
-				</form.Subscribe>
-				<p className="-mt-2 text-xs text-muted-foreground sm:col-start-2">
-					{t(
-						"absences.form.endDateHelper",
-						"Leave empty for a same-day absence.",
-					)}
-				</p>
-			</div>
-			<form.Field name="durationKind">
-				{(field) => (
-					<TFormItem>
-						<TFormLabel>
-							{t("absences.form.duration", "Absence Duration")}
-						</TFormLabel>
-						<Select
-							value={field.state.value}
-							onValueChange={(value) =>
-								field.handleChange(value as AbsenceDurationKind)
-							}
-						>
-							<TFormControl>
-								<SelectTrigger
-									aria-label={t("absences.form.duration", "Absence Duration")}
-								>
-									<SelectValue />
-								</SelectTrigger>
-							</TFormControl>
-							<SelectContent>
-								{durationOptions.map((option) => (
-									<SelectItem key={option.value} value={option.value}>
-										{option.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-						<TFormMessage field={field} />
-					</TFormItem>
-				)}
-			</form.Field>
-			<form.Subscribe<RequestAbsenceFormValues["durationKind"]>
-				selector={(state) => state.values.durationKind}
-			>
-				{(durationKind: RequestAbsenceFormValues["durationKind"]) =>
-					durationKind === "partial_day" ? (
-						<PartialDayTimeFields form={form} />
-					) : null
-				}
-			</form.Subscribe>
-			<form.Subscribe<RequestAbsenceFormValues>
-				selector={(state) => state.values}
-			>
-				{(values: RequestAbsenceFormValues) => {
-					const validationError = validateAbsenceDurationInput(values);
-					if (
-						values.durationKind !== "partial_day" ||
-						!validationError ||
-						!PARTIAL_DAY_TIME_ERRORS.has(validationError)
-					)
-						return null;
-					return (
-						<p
-							aria-live="polite"
-							className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-destructive text-sm"
-							role="alert"
-						>
-							{validationError}
-						</p>
-					);
-				}}
-			</form.Subscribe>
-		</>
-	);
-}
-
 function RequestAbsenceDeputyField({
 	categories,
 	form,
@@ -1045,42 +883,6 @@ function RequestAbsenceDeputyField({
 				</TFormItem>
 			)}
 		</form.Field>
-	);
-}
-
-function PartialDayTimeFields({ form }: { form: RequestAbsenceFormApi }) {
-	const { t } = useTranslate();
-	return (
-		<div className="grid gap-4 sm:grid-cols-2">
-			{(["startTime", "endTime"] as const).map((name) => (
-				<form.Field key={name} name={name}>
-					{(field) => {
-						const label =
-							name === "startTime"
-								? t("absences.form.startTime", "Start Time *")
-								: t("absences.form.endTime", "End Time *");
-						return (
-							<TFormItem>
-								<TFormLabel hasError={field.state.meta.errors.length > 0}>
-									{label}
-								</TFormLabel>
-								<TFormControl hasError={field.state.meta.errors.length > 0}>
-									<Input
-										aria-label={label}
-										type="time"
-										value={field.state.value}
-										onChange={(event) => field.handleChange(event.target.value)}
-										onBlur={field.handleBlur}
-										required
-									/>
-								</TFormControl>
-								<TFormMessage field={field} />
-							</TFormItem>
-						);
-					}}
-				</form.Field>
-			))}
-		</div>
 	);
 }
 
@@ -1142,9 +944,7 @@ function RequestAbsenceSummaryAndNotes({
 													: t("absences.form.balanceUnavailable", "Unavailable")
 											}
 											valueClassName={`font-bold ${
-												balance.status === "available" && balance.remainingAfterRequest < 0
-													? "text-destructive"
-													: ""
+												exceedsYearBalance(balance) ? "text-destructive" : ""
 											}`}
 										/>
 									))}
@@ -1199,7 +999,7 @@ function RequestAbsenceSummaryAndNotes({
 
 /** Whether the preview finds a year whose recorded balance the request exceeds (#1340). */
 function exceedsVacationBalance(preview: AbsencePlanPreview | undefined): boolean {
-	return Boolean(preview && overdrawnVacationYears(preview.balances).length > 0);
+	return Boolean(preview && yearsExceedingBalance(preview.balances).length > 0);
 }
 
 function BalanceRow({

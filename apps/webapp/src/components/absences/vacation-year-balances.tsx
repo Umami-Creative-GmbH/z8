@@ -6,6 +6,7 @@ import { useId } from "react";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import type { AbsencePlanBalancePreview } from "@/lib/absences/absence-plan-preview";
 import { formatDays } from "@/lib/absences/date-utils";
+import { exceedsYearBalance } from "@/lib/absences/vacation-year-balance";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
 import { cn } from "@/lib/utils";
@@ -54,7 +55,7 @@ function VacationYearBalanceRow({
 	const yearId = useId();
 	// A string, so the message format doesn't group the year's digits.
 	const year = String(balance.year);
-	const exceeded = balance.status === "available" && balance.remainingAfterRequest < 0;
+	const exceeded = exceedsYearBalance(balance);
 	return (
 		<li aria-labelledby={yearId} className="rounded-md border bg-muted/30 px-2 py-1.5 text-sm">
 			<div className="flex items-baseline justify-between gap-3">
