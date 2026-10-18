@@ -29,6 +29,7 @@ import type {
 } from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { queryKeys } from "./keys";
+import { invalidatePeriodSubmissionReadiness } from "./period-submission-readiness";
 
 export interface TimeClockState {
 	hasEmployee: boolean;
@@ -333,6 +334,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.calendar.allEvents,
 				});
+				// Live work keeps its submission period open (#1350).
+				void invalidatePeriodSubmissionReadiness(queryClient);
 				if (status?.employeeId) {
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
@@ -420,6 +423,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.calendar.allEvents,
 				});
+				// Live work keeps its submission period open (#1350).
+				void invalidatePeriodSubmissionReadiness(queryClient);
 				if (status?.employeeId) {
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
@@ -488,6 +493,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.calendar.allEvents,
 				});
+				// Live work keeps its submission period open (#1350).
+				void invalidatePeriodSubmissionReadiness(queryClient);
 			}
 		},
 	});

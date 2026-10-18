@@ -195,12 +195,24 @@ function cloneJson(value: unknown, ancestors = new Set<object>()): unknown {
 	}
 }
 
-function validateInput(input: StartApprovalWorkflowInput): void {
+type PlanningInput = Pick<
+	StartApprovalWorkflowInput,
+	| "organizationId"
+	| "workflowType"
+	| "sourceIdentity"
+	| "requesterEmployeeId"
+	| "submissionKey"
+	| "defaultApproverEmployeeId"
+	| "routingContext"
+	| "contextSnapshot"
+>;
+
+/** Whether the fields a start is planned from have their shapes; identities are checked next. */
+function hasPlanningShape(input: PlanningInput): boolean {
 	const source = input.sourceIdentity;
 	const routing = input.routingContext;
 	const routingSource = routing?.source;
-	const display = input.displayProjection;
-	if (
+	return !(
 		!isRecord(input) ||
 		!nonEmpty(input.organizationId) ||
 		!WORKFLOW_TYPES.has(input.workflowType) ||
@@ -247,16 +259,15 @@ function validateInput(input: StartApprovalWorkflowInput): void {
 		(routing.overtimeRisk !== null &&
 			routing.overtimeRisk !== "none" &&
 			routing.overtimeRisk !== "warning" &&
-			routing.overtimeRisk !== "violation") ||
-		!isRecord(display) ||
-		!exactKeys(display, ["displayPayload", "searchText"]) ||
-		!isRecord(display.displayPayload) ||
-		typeof display.searchText !== "string" ||
-		typeof input.bindSourceWorkflow !== "function" ||
-		typeof input.verifySourceWorkflow !== "function"
-	) {
-		fail("INVALID_INPUT");
-	}
+			routing.overtimeRisk !== "violation")
+	);
+}
+
+/** The planning fields' identities agree, and their JSON is plain. */
+function validatePlanningIdentity(input: PlanningInput): void {
+	const source = input.sourceIdentity;
+	const routing = input.routingContext;
+	const routingSource = routing.source;
 	if (
 		source.organizationId !== input.organizationId ||
 		source.workflowType !== input.workflowType ||
@@ -275,6 +286,28 @@ function validateInput(input: StartApprovalWorkflowInput): void {
 		}
 		cloneJson(input.contextSnapshot);
 	}
+}
+
+/** The input a start is planned from, validated as a start validates it. */
+function validatePlanningInput(input: PlanningInput): void {
+	if (!hasPlanningShape(input)) fail("INVALID_INPUT");
+	validatePlanningIdentity(input);
+}
+
+function validateInput(input: StartApprovalWorkflowInput): void {
+	const display = input.displayProjection;
+	if (
+		!hasPlanningShape(input) ||
+		!isRecord(display) ||
+		!exactKeys(display, ["displayPayload", "searchText"]) ||
+		!isRecord(display.displayPayload) ||
+		typeof display.searchText !== "string" ||
+		typeof input.bindSourceWorkflow !== "function" ||
+		typeof input.verifySourceWorkflow !== "function"
+	) {
+		fail("INVALID_INPUT");
+	}
+	validatePlanningIdentity(input);
 	cloneJson(display.displayPayload);
 	const actor = input.actor;
 	if (
@@ -539,7 +572,9 @@ function decodePolicies(
 	return policies;
 }
 
-function defaultStages(input: StartApprovalWorkflowInput): StartStageDraft[] {
+function defaultStages(input: {
+	defaultApproverEmployeeId: string | null;
+}): StartStageDraft[] {
 	if (input.defaultApproverEmployeeId === null) fail("NO_DEFAULT_APPROVER");
 	return [
 		{
@@ -746,6 +781,130 @@ export async function startApprovalWorkflow(
 			outboxResults: [],
 		};
 	}
+	const now = (input.nowInstant ?? (() => systemClock.nowInstant()))();
+	const planned = await planApprovalWorkflowStart({
+		context: input.context,
+		organizationId: input.organizationId,
+		workflowType: input.workflowType,
+		sourceIdentity: input.sourceIdentity,
+		requesterEmployeeId: input.requesterEmployeeId,
+		submissionKey: input.submissionKey,
+		defaultApproverEmployeeId: input.defaultApproverEmployeeId,
+		routingContext: input.routingContext,
+		contextSnapshot: submissionContextSnapshot,
+		displaySnapshot: submissionDisplaySnapshot,
+		now,
+	});
+	let snapshot = planned.snapshot;
+	const events = planned.events;
+	const workflowId = planned.snapshot.id;
+	if (input.finalizeContextSnapshot) {
+		snapshot = {
+			...snapshot,
+			contextSnapshot: finalizeWorkflowContext(
+				input.finalizeContextSnapshot,
+				snapshot,
+				submissionContextSnapshot,
+			),
+		};
+	}
+	const persisted = await input.context.repository.createInitialWorkflow({
+		snapshot,
+		events,
+		submissionKey: input.submissionKey,
+	});
+	if (persisted.kind === "source_conflict") return fail("SOURCE_CONFLICT");
+	const currentSnapshot = persisted.snapshot;
+	const updatedAt = events.at(-1)?.occurredAt ?? now;
+	const projection = buildProjection(
+		currentSnapshot,
+		input.displayProjection,
+		updatedAt
+	);
+	const outbox: ApprovalOutboxWriteInput[] = events.map((event) => ({
+		organizationId: input.organizationId,
+		workflowId,
+		eventId: event.id,
+		eventType: event.eventType,
+		dedupeKey: `observe:${event.id}`,
+		payload: {
+			organizationId: input.organizationId,
+			workflowId,
+			sourceType: input.sourceIdentity.sourceType,
+			sourceId: input.sourceIdentity.sourceId,
+			requesterEmployeeId: input.requesterEmployeeId,
+			eventId: event.id,
+			eventType: event.eventType,
+		},
+		disposition: "observe",
+		createdAt: event.occurredAt,
+	}));
+	if (persisted.kind === "existing") {
+		const evidence = await input.verifySourceWorkflow(currentSnapshot.id);
+		if (!sourceLinkMatches(evidence, input, currentSnapshot.id)) {
+			return fail("SOURCE_BINDING_MISMATCH");
+		}
+		return {
+			kind: "existing",
+			status: currentSnapshot.status,
+			terminal: currentSnapshot.status !== "pending",
+			snapshot: currentSnapshot,
+			events,
+			projection,
+			outbox,
+			outboxResults: [],
+		};
+	}
+	const evidence = await input.bindSourceWorkflow(currentSnapshot.id);
+	if (!sourceLinkMatches(evidence, input, currentSnapshot.id)) {
+		return fail("SOURCE_BINDING_MISMATCH");
+	}
+	await input.context.projectionWriter.write(projection);
+	const outboxResults: ApprovalOutboxWriteResult[] = await mapSequentially(
+		outbox,
+		(item) => input.context.outboxWriter.write(item),
+	);
+	return {
+		kind: "created",
+		status: currentSnapshot.status,
+		terminal: currentSnapshot.status !== "pending",
+		snapshot: currentSnapshot,
+		events,
+		projection,
+		outbox,
+		outboxResults,
+	};
+}
+
+export type PlanApprovalWorkflowStartInput = Pick<
+	StartApprovalWorkflowInput,
+	| "organizationId"
+	| "workflowType"
+	| "sourceIdentity"
+	| "requesterEmployeeId"
+	| "submissionKey"
+	| "defaultApproverEmployeeId"
+	| "routingContext"
+> & {
+	context: Pick<ApprovalWorkflowTransactionContext, "dbService" | "activationResolver">;
+	/** The normalized context and display snapshots the workflow is planned with. */
+	contextSnapshot: JsonObject;
+	displaySnapshot: JsonObject;
+	now: Instant;
+};
+
+/**
+ * Plans a new workflow's start without persisting anything: reads the organization's active
+ * policies, matches one (else the default approver) and activates the first stages with the
+ * stage activation resolver. Throws `ApprovalWorkflowStartError` as `startApprovalWorkflow` does
+ * (`NO_DEFAULT_APPROVER`, `ACTIVATION_FAILED`, ...). `startApprovalWorkflow` persists the plan; a
+ * read-only caller (period submission readiness, #1348) asks whether a start would route.
+ */
+export async function planApprovalWorkflowStart(
+	input: PlanApprovalWorkflowStartInput,
+): Promise<{ snapshot: ApprovalWorkflowSnapshot; events: ApprovalWorkflowEventSnapshot[] }> {
+	// A read-only caller plans without a start's own validation in front of it.
+	validatePlanningInput(input);
 	const policyResult = await input.context.dbService.db.execute(sql`
 		select coalesce(json_agg(policy_row.value order by policy_row.priority, policy_row.id), '[]'::json) as policies
 		from (
@@ -855,7 +1014,6 @@ export async function startApprovalWorkflow(
 		sourceId: input.sourceIdentity.sourceId,
 		allocationKey: input.submissionKey,
 	});
-	const now = (input.nowInstant ?? (() => systemClock.nowInstant()))();
 	let snapshot: ApprovalWorkflowSnapshot = {
 		id: workflowId,
 		organizationId: input.organizationId,
@@ -872,9 +1030,9 @@ export async function startApprovalWorkflow(
 					kind: "default",
 					defaultApproverEmployeeId: input.defaultApproverEmployeeId,
 				},
-		contextSnapshot: cloneJson(submissionContextSnapshot) as JsonObject,
-		displaySnapshot: cloneJson(submissionDisplaySnapshot) as JsonObject,
-		submittedAt: now,
+		contextSnapshot: cloneJson(input.contextSnapshot) as JsonObject,
+		displaySnapshot: cloneJson(input.displaySnapshot) as JsonObject,
+		submittedAt: input.now,
 		completedAt: null,
 		cancelledAt: null,
 		decisionReason: null,
@@ -939,7 +1097,7 @@ export async function startApprovalWorkflow(
 		}
 		let plan: ApprovalTransitionPlan;
 		try {
-			plan = planStageActivation(snapshot, resolved, now);
+			plan = planStageActivation(snapshot, resolved, input.now);
 		} catch {
 			return fail("ACTIVATION_FAILED", {
 				activationCode: "invalid_activation_plan",
@@ -997,80 +1155,5 @@ export async function startApprovalWorkflow(
 	) {
 		return fail("ACTIVATION_LIMIT");
 	}
-	if (input.finalizeContextSnapshot) {
-		snapshot = {
-			...snapshot,
-			contextSnapshot: finalizeWorkflowContext(
-				input.finalizeContextSnapshot,
-				snapshot,
-				submissionContextSnapshot,
-			),
-		};
-	}
-	const persisted = await input.context.repository.createInitialWorkflow({
-		snapshot,
-		events,
-		submissionKey: input.submissionKey,
-	});
-	if (persisted.kind === "source_conflict") return fail("SOURCE_CONFLICT");
-	const currentSnapshot = persisted.snapshot;
-	const updatedAt = events.at(-1)?.occurredAt ?? now;
-	const projection = buildProjection(
-		currentSnapshot,
-		input.displayProjection,
-		updatedAt
-	);
-	const outbox: ApprovalOutboxWriteInput[] = events.map((event) => ({
-		organizationId: input.organizationId,
-		workflowId,
-		eventId: event.id,
-		eventType: event.eventType,
-		dedupeKey: `observe:${event.id}`,
-		payload: {
-			organizationId: input.organizationId,
-			workflowId,
-			sourceType: input.sourceIdentity.sourceType,
-			sourceId: input.sourceIdentity.sourceId,
-			requesterEmployeeId: input.requesterEmployeeId,
-			eventId: event.id,
-			eventType: event.eventType,
-		},
-		disposition: "observe",
-		createdAt: event.occurredAt,
-	}));
-	if (persisted.kind === "existing") {
-		const evidence = await input.verifySourceWorkflow(currentSnapshot.id);
-		if (!sourceLinkMatches(evidence, input, currentSnapshot.id)) {
-			return fail("SOURCE_BINDING_MISMATCH");
-		}
-		return {
-			kind: "existing",
-			status: currentSnapshot.status,
-			terminal: currentSnapshot.status !== "pending",
-			snapshot: currentSnapshot,
-			events,
-			projection,
-			outbox,
-			outboxResults: [],
-		};
-	}
-	const evidence = await input.bindSourceWorkflow(currentSnapshot.id);
-	if (!sourceLinkMatches(evidence, input, currentSnapshot.id)) {
-		return fail("SOURCE_BINDING_MISMATCH");
-	}
-	await input.context.projectionWriter.write(projection);
-	const outboxResults: ApprovalOutboxWriteResult[] = await mapSequentially(
-		outbox,
-		(item) => input.context.outboxWriter.write(item),
-	);
-	return {
-		kind: "created",
-		status: currentSnapshot.status,
-		terminal: currentSnapshot.status !== "pending",
-		snapshot: currentSnapshot,
-		events,
-		projection,
-		outbox,
-		outboxResults,
-	};
+	return { snapshot, events };
 }

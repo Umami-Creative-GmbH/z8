@@ -33,6 +33,7 @@ import { formatDateRange, formatDays } from "@/lib/absences/date-utils";
 import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
 import type { AbsenceWithCategory, AbsenceWithDays, DayPeriod } from "@/lib/absences/types";
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
 import { useRouter } from "@/navigation";
 import { AbsenceChangeDialog } from "./absence-change-dialog";
 import { AbsenceChangeHistory } from "./absence-change-history";
@@ -71,6 +72,8 @@ function takesSickNotes(absence: AbsenceWithDays): boolean {
 export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: AbsenceEntriesTableProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
+	// Pending absence requests keep their submission periods open (#1350).
+	const invalidateReadiness = useInvalidatePeriodSubmissionReadiness();
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
 	const sickNotes = useOwnAbsenceSickNotes(absences);
@@ -85,6 +88,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 	const changed = () => {
 		void changes.refetch();
 		refresh();
+		void invalidateReadiness();
 		onUpdate?.();
 	};
 
@@ -130,6 +134,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 			toast.success(t("absences.toast.requestCancelled", "Absence cancelled"));
 			// Revalidate the page data to reflect the cancelled absence
 			refresh();
+			void invalidateReadiness();
 			onUpdate?.();
 		} else {
 			toast.error(

@@ -93,11 +93,14 @@ export async function hasActivePayrollAccessGrant(input: {
 	return Boolean(grant);
 }
 
-export async function resolvePayrollAccessibleEmployeeIds(input: {
-	organizationId: string;
-	payrollEmployeeId: string;
-}): Promise<string[]> {
-	const { db } = await import("@/db");
+export async function resolvePayrollAccessibleEmployeeIds(
+	input: {
+		organizationId: string;
+		payrollEmployeeId: string;
+	},
+	reader?: Pick<typeof import("@/db").db, "select">,
+): Promise<string[]> {
+	const db = reader ?? (await import("@/db")).db;
 	const [grant] = await db
 		.select({
 			id: payrollAccessGrant.id,

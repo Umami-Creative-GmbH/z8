@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
 import { DrivingDetailsMissingNotice } from "@/components/time-tracking/driving-details-missing-notice";
+import { PeriodBlockerFocus } from "@/components/time-tracking/period-blocker-focus";
 import { PeriodSubmissionsCard } from "@/components/time-tracking/period-submissions-card";
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
@@ -36,6 +37,7 @@ import {
 	ClockRegion,
 	DrivingRegion,
 	HistoryRegion,
+	PeriodBlockerFocusRegion,
 	PeriodsRegion,
 	SummaryRegion,
 	TimelineRegion,
@@ -81,6 +83,9 @@ vi.mock("./region-data", () => ({
 }));
 vi.mock("@/components/time-tracking/period-submissions-card", () => ({
 	PeriodSubmissionsCard: () => null,
+}));
+vi.mock("@/components/time-tracking/period-blocker-focus", () => ({
+	PeriodBlockerFocus: () => null,
 }));
 vi.mock("./workday-timeline-data", () => ({ getWorkdayTimelineData: vi.fn() }));
 vi.mock("@/components/errors/no-employee-error", () => ({
@@ -234,13 +239,18 @@ describe("independent time tracking region components", () => {
 		expect(content.props.className).toBe(
 			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
 		);
-		const boundaries = content.props.children as ReactElement<{
+		const [focus, ...boundaries] = content.props.children as ReactElement<{
 			children: ReactElement<{
 				context: EmployeeRenderContext;
 				searchParams?: Promise<TimeTrackingPageSearchParams>;
 			}>;
 			fallback: ReactElement;
 		}>[];
+		// The period blocker focus (#1349) comes first, so its notice sits at the top.
+		expect(focus?.type).toBe(Suspense);
+		expect(focus?.props.fallback).toBeNull();
+		expect(focus?.props.children.type).toBe(PeriodBlockerFocusRegion);
+		expect(focus?.props.children.props).toEqual({ context, searchParams: date.promise });
 		expect(boundaries).toHaveLength(6);
 		expect(boundaries.map((boundary) => boundary.type)).toEqual([
 			Suspense,
@@ -276,6 +286,45 @@ describe("independent time tracking region components", () => {
 		expect(readSummaryRegion).not.toHaveBeenCalled();
 		expect(readHistoryRegion).not.toHaveBeenCalled();
 		expect(getWorkdayTimelineData).not.toHaveBeenCalled();
+	});
+
+	it("passes a period blocker focus to the page's focus handler", async () => {
+		const focus = element(
+			await PeriodBlockerFocusRegion({
+				context,
+				searchParams: Promise.resolve({ date: "2026-10-02", focus: "manual_work:w-1" }),
+			}),
+		);
+		expect(focus.type).toBe(PeriodBlockerFocus);
+		expect(focus.props).toEqual({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			focus: "manual_work:w-1",
+		});
+		const repeated = element(
+			await PeriodBlockerFocusRegion({
+				context,
+				searchParams: Promise.resolve({ focus: ["manual_work:w-1", "live_work:w-2"] }),
+			}),
+		);
+		expect(repeated.props.focus).toBeUndefined();
+	});
+
+	it("gives the clock controls a focus target for live work links", async () => {
+		const region = element(await ClockRegion({ context }));
+		expect(region.props.id).toBe("time-clock");
+		expect(region.props.tabIndex).toBe(-1);
+	});
+
+	it("marks the timeline and the clock as rendered, loaded or failed, for a blocker focus", async () => {
+		const loaded = element(await TimelineRegion({ context, searchParams: searchParams() }));
+		expect(loaded.props.id).toBe("workday-timeline-region");
+		vi.mocked(getWorkdayTimelineData).mockRejectedValue(new Error("timeline unavailable"));
+		const failed = element(await TimelineRegion({ context, searchParams: searchParams() }));
+		expect(failed.props.id).toBe("workday-timeline-region");
+		vi.mocked(readActiveWorkPeriod).mockRejectedValue(new Error("clock unavailable"));
+		const clockFailed = element(await ClockRegion({ context }));
+		expect(clockFailed.props.id).toBe("time-clock-region");
 	});
 
 	it("keeps the translated employee label and known clocked-out status", async () => {
@@ -343,7 +392,8 @@ describe("independent time tracking region components", () => {
 		vi.mocked(readPeriodsRegion).mockResolvedValue({ timezone: "Europe/Berlin", periods });
 		const view = leaf(await PeriodsRegion({ context }));
 		expect(view.type).toBe(PeriodSubmissionsCard);
-		expect(view.props).toEqual({ periods });
+		// The card checks readiness for the organization and employee it was rendered for (#1348).
+		expect(view.props).toEqual({ periods, organizationId: "org-1", employeeId: "employee-1" });
 	});
 
 	const regions = [

@@ -13,6 +13,7 @@ import { TimeCorrectionDialog } from "./time-correction-dialog";
 
 const mocks = vi.hoisted(() => ({
 	editSameDayTimeEntry: vi.fn(),
+	invalidateReadiness: vi.fn(),
 	refresh: vi.fn(),
 	requestTimeCorrection: vi.fn(),
 	randomUUID: vi.fn(),
@@ -41,6 +42,10 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/corrections", () => ({
 
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: mocks.refresh }),
+}));
+
+vi.mock("@/lib/query/period-submission-readiness", () => ({
+	useInvalidatePeriodSubmissionReadiness: () => mocks.invalidateReadiness,
 }));
 
 vi.mock("@/components/time-tracking/work-category-selector", () => ({
@@ -464,6 +469,7 @@ describe("TimeCorrectionDialog approval presentation", () => {
 			);
 		});
 		expect(mocks.refresh).toHaveBeenCalledOnce();
+		expect(mocks.invalidateReadiness).toHaveBeenCalledOnce();
 	});
 
 	it("keeps the pending manager-approval presentation for human approval", async () => {
@@ -480,5 +486,7 @@ describe("TimeCorrectionDialog approval presentation", () => {
 			);
 		});
 		expect(mocks.refresh).not.toHaveBeenCalled();
+		// The pending request keeps its submission period open (#1350).
+		expect(mocks.invalidateReadiness).toHaveBeenCalledOnce();
 	});
 });

@@ -37,6 +37,8 @@ export interface WorkdayTimelineShiftItem extends WorkdayTimelineBaseItem {
 
 export interface WorkdayTimelineWorkPeriodItem extends WorkdayTimelineBaseItem {
 	type: "work-period";
+	/** The work period the entry shows. */
+	workPeriodId: string;
 	isActive: boolean;
 	durationMinutes: number | null;
 	approvalStatus: "approved" | "pending" | "rejected";

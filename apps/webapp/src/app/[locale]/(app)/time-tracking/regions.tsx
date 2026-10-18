@@ -7,10 +7,16 @@ import { type ReactNode, Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
 import { DrivingDetailsMissingNotice } from "@/components/time-tracking/driving-details-missing-notice";
+import { PeriodBlockerFocus } from "@/components/time-tracking/period-blocker-focus";
 import { PeriodSubmissionsCard } from "@/components/time-tracking/period-submissions-card";
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
+import {
+	CLOCK_FOCUS_TARGET_ID,
+	CLOCK_REGION_ID,
+	TIMELINE_REGION_ID,
+} from "@/lib/time-tracking/period-submissions/blocker-navigation";
 import { getTranslate } from "@/tolgee/server";
 import type { TimeTrackingPageSearchParams } from "./page-data";
 import { readActiveWorkPeriod } from "./read-queries";
@@ -55,13 +61,19 @@ export async function ClockRegion({
 		unstable_rethrow(error);
 		const t = await getTranslate();
 		return (
-			<div className="px-4 lg:px-6">
+			// Rendered, if without the clock: a live-work focus stops waiting for it (#1302).
+			<div id={CLOCK_REGION_ID} className="px-4 lg:px-6">
 				<RegionLoadError label={t("timeTracking.title", "Time Tracking")} />
 			</div>
 		);
 	}
 	return (
-		<div className="px-4 lg:px-6">
+		// The focus target of a live-work period blocker link (#1349); focusing never clocks out.
+		<div
+			id={CLOCK_FOCUS_TARGET_ID}
+			tabIndex={-1}
+			className="scroll-mt-4 px-4 outline-none focus:*:ring-2 focus:*:ring-ring lg:px-6"
+		>
 			<ClockInOutWidget
 				activeWorkPeriod={activeWorkPeriod}
 				employeeName={employeeName}
@@ -121,7 +133,7 @@ export async function TimelineRegion({
 		unstable_rethrow(error);
 		const t = await getTranslate();
 		return (
-			<div className="px-4 lg:px-6">
+			<div id={TIMELINE_REGION_ID} className="px-4 lg:px-6">
 				<RegionLoadError
 					label={t("timeTracking.timeline.title", "Workday timeline")}
 				/>
@@ -129,7 +141,8 @@ export async function TimelineRegion({
 		);
 	}
 	return (
-		<div className="px-4 lg:px-6">
+		// Once rendered, a period blocker focus waits only briefly for its row (#1302).
+		<div id={TIMELINE_REGION_ID} className="px-4 lg:px-6">
 			<PersonalWorkdayTimeline
 				result={serializeWorkdayTimelineResult(result)}
 			/>
@@ -183,7 +196,11 @@ export async function PeriodsRegion({
 	if (!data || data.periods.length === 0) return null;
 	return (
 		<div className="px-4 lg:px-6">
-			<PeriodSubmissionsCard periods={data.periods} />
+			<PeriodSubmissionsCard
+				periods={data.periods}
+				organizationId={context.employee.organizationId}
+				employeeId={context.employee.id}
+			/>
 		</div>
 	);
 }
@@ -222,6 +239,24 @@ export async function HistoryRegion({
 	);
 }
 
+/** Focuses the work a period blocker link opened, or explains why it cannot (#1349). */
+export async function PeriodBlockerFocusRegion({
+	context,
+	searchParams,
+}: {
+	context: EmployeeRenderContext;
+	searchParams: Promise<TimeTrackingPageSearchParams>;
+}): Promise<ReactNode> {
+	const { focus } = await searchParams;
+	return (
+		<PeriodBlockerFocus
+			organizationId={context.employee.organizationId}
+			employeeId={context.employee.id}
+			focus={typeof focus === "string" ? focus : undefined}
+		/>
+	);
+}
+
 export async function TimeTrackingPageContent({
 	searchParams,
 }: {
@@ -245,6 +280,9 @@ export async function TimeTrackingPageContent({
 	}
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+			<Suspense fallback={null}>
+				<PeriodBlockerFocusRegion context={context} searchParams={searchParams} />
+			</Suspense>
 			<Suspense fallback={<ClockLoading />}>
 				<ClockRegion context={context} />
 			</Suspense>

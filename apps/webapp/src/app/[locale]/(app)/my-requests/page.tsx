@@ -3,12 +3,18 @@ import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MY_REQUESTS_FOCUS_PARAM } from "@/lib/time-tracking/period-submissions/blocker-navigation";
 import { getTranslate } from "@/tolgee/server";
 import { getMyRequests } from "./actions";
 import { MyRequestsClient } from "./my-requests-client";
 
-async function MyRequestsPageContent() {
-	const [t, result] = await Promise.all([getTranslate(), getMyRequests()]);
+interface MyRequestsPageProps {
+	searchParams: Promise<{ [MY_REQUESTS_FOCUS_PARAM]?: string | string[] }>;
+}
+
+async function MyRequestsPageContent({ searchParams }: MyRequestsPageProps) {
+	const [t, result, params] = await Promise.all([getTranslate(), getMyRequests(), searchParams]);
+	const focusRequest = params[MY_REQUESTS_FOCUS_PARAM];
 
 	if (!result.success && result.error === "Employee profile not found") {
 		return (
@@ -36,7 +42,12 @@ async function MyRequestsPageContent() {
 		);
 	}
 
-	return <MyRequestsClient initialResult={result.data} />;
+	return (
+		<MyRequestsClient
+			initialResult={result.data}
+			focusRequest={typeof focusRequest === "string" ? focusRequest : undefined}
+		/>
+	);
 }
 
 function MyRequestsPageLoading() {
@@ -65,10 +76,10 @@ function MyRequestsPageLoading() {
 	);
 }
 
-export default function MyRequestsPage() {
+export default function MyRequestsPage(props: MyRequestsPageProps) {
 	return (
 		<Suspense fallback={<MyRequestsPageLoading />}>
-			<MyRequestsPageContent />
+			<MyRequestsPageContent {...props} />
 		</Suspense>
 	);
 }

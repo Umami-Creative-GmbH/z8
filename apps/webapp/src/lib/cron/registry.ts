@@ -254,6 +254,22 @@ export interface SlackEscalationResult {
  * - defaultJobOptions: BullMQ options for retry, priority, etc.
  */
 export const CRON_JOBS = {
+	"cron:payroll-baseline-cleanup": {
+		schedule: "17 * * * *",
+		description:
+			"Remove expired payroll comparison evidence and short-lived reviewed results",
+		processor: async (): Promise<{ expired: number }> => {
+			const { cleanupExpiredPayrollBaselines } = await import(
+				"@/lib/payroll-export/baseline-evidence"
+			);
+			const { cleanupExpiredPayrollComparisons } = await import(
+				"@/lib/payroll-export/comparison-service"
+			);
+			await cleanupExpiredPayrollComparisons();
+			return { expired: await cleanupExpiredPayrollBaselines() };
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
 	"cron:driving-licence-retention": {
 		schedule: "15 2 * * *",
 		description:
