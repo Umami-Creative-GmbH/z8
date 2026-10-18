@@ -1,7 +1,7 @@
 import { and, asc, eq, inArray, ne, or, type SQL, type SQLWrapper, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { member, organization, user } from "@/db/auth-schema";
-import { employee, employeeDocument, teamMembership } from "@/db/schema";
+import { employee, employeeDocument, employeeDocumentRequest, teamMembership } from "@/db/schema";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
@@ -13,6 +13,7 @@ import {
 	type PersonnelFileAccess,
 } from "./access";
 import type { DocumentCategory } from "./document.types";
+import { DOCUMENT_REQUEST_CATEGORIES } from "./document-request.types";
 import { manageGrantOf } from "./officer-grant";
 import { loadActivePersonnelFileOfficerGrant } from "./officer-grant-store";
 
@@ -234,6 +235,32 @@ export function managedEmployeesCondition(
 		.filter((grant) => grant.categories.has(category))
 		.map((grant) => managedEmployeeCondition(access, grant.scope, employeeIdColumn));
 	return scopes.length > 0 ? (or(...scopes) as SQL) : sql`false`;
+}
+
+/**
+ * The document requests the actor may see and act on as an officer (#1307),
+ * as a condition on `employee_document_request`: requests of the requestable
+ * categories each grant covers, for the employees in its scope, never the
+ * actor's own. Coverage is checked live, so an officer who loses it loses
+ * sight of the request. Always scoped to the actor's organization.
+ */
+export function managedDocumentRequestsCondition(access: PersonnelFileAccess): SQL {
+	const managed = access.grants.flatMap((grant) => {
+		const categories = DOCUMENT_REQUEST_CATEGORIES.filter((category) =>
+			grant.categories.has(category),
+		);
+		if (categories.length === 0) return [];
+		return [
+			and(
+				managedEmployeeCondition(access, grant.scope, employeeDocumentRequest.employeeId),
+				inArray(employeeDocumentRequest.category, categories),
+			) as SQL,
+		];
+	});
+	return and(
+		eq(employeeDocumentRequest.organizationId, access.organizationId),
+		managed.length > 0 ? (or(...managed) as SQL) : sql`false`,
+	) as SQL;
 }
 
 function grantConditions(access: PersonnelFileAccess): SQL[] {

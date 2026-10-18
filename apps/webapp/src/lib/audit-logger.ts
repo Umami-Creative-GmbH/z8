@@ -188,6 +188,13 @@ export enum AuditAction {
 	// A certificate naming (or changing) the employee skill it proves, or no longer naming one (#1144)
 	PERSONNEL_FILE_SKILL_CERTIFICATE_LINKED = "personnel_file.skill_certificate_linked",
 	PERSONNEL_FILE_SKILL_CERTIFICATE_UNLINKED = "personnel_file.skill_certificate_unlinked",
+	// Document requests: one record per history event (#1307)
+	PERSONNEL_FILE_DOCUMENT_REQUEST_CREATED = "personnel_file.document_request_created",
+	PERSONNEL_FILE_DOCUMENT_REQUEST_EDITED = "personnel_file.document_request_edited",
+	PERSONNEL_FILE_DOCUMENT_REQUEST_SUBMITTED = "personnel_file.document_request_submitted",
+	PERSONNEL_FILE_DOCUMENT_REQUEST_RETURNED = "personnel_file.document_request_returned",
+	PERSONNEL_FILE_DOCUMENT_REQUEST_ACCEPTED = "personnel_file.document_request_accepted",
+	PERSONNEL_FILE_DOCUMENT_REQUEST_CANCELLED = "personnel_file.document_request_cancelled",
 
 	// ICS Feed Operations (#991)
 	ICS_FEED_CREATED = "ics_feed.created",
