@@ -1,16 +1,15 @@
-import type { DocumentCategory } from "./document.types";
-
 /**
  * Dependency-free vocabulary of document requests (#1307, CONTEXT.md
  * "Document request", "Deadline", "Submission", "Renewed document"; ADR 0003).
  * The schema, server code and client components all import it.
  */
 
-/** The categories a document request may ask for. */
-export const DOCUMENT_REQUEST_CATEGORIES = [
-	"certificate",
-	"other",
-] as const satisfies readonly DocumentCategory[];
+/**
+ * The categories a document request may ask for: a subset of the document
+ * categories. This module imports nothing (the schema reaches it), so the
+ * subset is checked where the access code passes these to `DocumentCategory`.
+ */
+export const DOCUMENT_REQUEST_CATEGORIES = ["certificate", "other"] as const;
 export type DocumentRequestCategory = (typeof DOCUMENT_REQUEST_CATEGORIES)[number];
 
 export function isDocumentRequestCategory(value: unknown): value is DocumentRequestCategory {
