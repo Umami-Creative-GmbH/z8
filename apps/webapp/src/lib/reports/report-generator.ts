@@ -322,25 +322,27 @@ export async function aggregateAbsences(
 		calendarRange?.startDate ?? format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
 	const rangeEndStr = calendarRange?.endDate ?? format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
 
-	// Fetch all absences in date range
-	const absences = await db.query.absenceEntry.findMany({
-		where: and(
-			eq(absenceEntry.employeeId, employeeId),
-			eq(absenceEntry.organizationId, organizationId),
-			lte(absenceEntry.startDate, rangeEndStr),
-			gte(absenceEntry.endDate, rangeStartStr),
-		),
-		with: {
-			category: true,
-		},
-		orderBy: (absences, { asc }) => [asc(absences.startDate)],
-	});
-	const isWorkingDay = await loadWorkingDays(db, {
-		organizationId,
-		employeeId,
-		startDate: rangeStartStr,
-		endDate: rangeEndStr,
-	});
+	// Fetch all absences in date range and the working days that count them
+	const [absences, isWorkingDay] = await Promise.all([
+		db.query.absenceEntry.findMany({
+			where: and(
+				eq(absenceEntry.employeeId, employeeId),
+				eq(absenceEntry.organizationId, organizationId),
+				lte(absenceEntry.startDate, rangeEndStr),
+				gte(absenceEntry.endDate, rangeStartStr),
+			),
+			with: {
+				category: true,
+			},
+			orderBy: (absences, { asc }) => [asc(absences.startDate)],
+		}),
+		loadWorkingDays(db, {
+			organizationId,
+			employeeId,
+			startDate: rangeStartStr,
+			endDate: rangeEndStr,
+		}),
+	]);
 
 	const byCategory = new Map<string, AbsenceSummary>();
 	let totalDays = 0;

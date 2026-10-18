@@ -365,22 +365,24 @@ export async function getManagerAbsenceCalendar(params: {
 			? await notEndedAt(listedRows, actor.organizationId, deputyCover.at)
 			: listedRows;
 
-		// Only that sick notes exist (#982, ADR 0002); opening them is not offered here.
-		const sickNotes = await countSickNotesForAbsences(db, {
-			organizationId: actor.organizationId,
-			absenceIds: rows
-				.filter((row) => row.categoryType === "sick")
-				.map((row) => row.id),
-			access: null,
-		});
-		const deputyMissing = await findDeputyMissingAbsenceIds(db, {
-			organizationId: actor.organizationId,
-			at: systemClock.nowInstant(),
-			absences: rows,
-		});
-		// Every listed absence is one the actor manages; its deputy can change
-		// until it has ended on the absent employee's own day (#1012).
-		const { deputies, todays } = await loadCalendarDeputies(actor, rows);
+		const [sickNotes, deputyMissing, { deputies, todays }] = await Promise.all([
+			// Only that sick notes exist (#982, ADR 0002); opening them is not offered here.
+			countSickNotesForAbsences(db, {
+				organizationId: actor.organizationId,
+				absenceIds: rows
+					.filter((row) => row.categoryType === "sick")
+					.map((row) => row.id),
+				access: null,
+			}),
+			findDeputyMissingAbsenceIds(db, {
+				organizationId: actor.organizationId,
+				at: systemClock.nowInstant(),
+				absences: rows,
+			}),
+			// Every listed absence is one the actor manages; its deputy can change
+			// until it has ended on the absent employee's own day (#1012).
+			loadCalendarDeputies(actor, rows),
+		]);
 
 		return {
 			success: true,

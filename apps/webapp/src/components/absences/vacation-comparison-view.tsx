@@ -39,7 +39,8 @@ import {
 	durationIssueMessage,
 	useAbsenceForm,
 } from "./absence-duration-fields";
-import { AbsencePlanPreviewSections, noWorkingDaysMessage } from "./absence-plan-preview-panel";
+import { noWorkingDaysMessage } from "./absence-plan-preview-messages";
+import { AbsencePlanPreviewSections } from "./absence-plan-preview-panel";
 
 type TranslateFn = ReturnType<typeof useTranslate>["t"];
 

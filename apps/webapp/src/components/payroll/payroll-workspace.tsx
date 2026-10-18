@@ -414,6 +414,226 @@ function usePayrollBlockerClearing({
 	return { clearingBlockerKeys, clearPayrollBlocker, focusRequest };
 }
 
+/** Switching the date mode, stepping between periods and applying a custom range. */
+function payrollPeriodActions({
+	dateMode,
+	dispatch,
+	endDate,
+	filteredEmployeeIds,
+	refreshSummary,
+	startDate,
+	summary,
+}: {
+	dateMode: PayrollDateRangeMode;
+	dispatch: React.Dispatch<PayrollWorkspaceAction>;
+	endDate: string;
+	filteredEmployeeIds: string[] | undefined;
+	refreshSummary: (
+		nextRequest: PayrollPeriodRequest,
+		employeeIds?: string[],
+		onSuccess?: () => void,
+	) => void;
+	startDate: string;
+	summary: PayrollWorkspaceSummary;
+}) {
+	function applyDateMode(nextMode: PayrollDateRangeMode) {
+		if (nextMode === "custom") {
+			dispatch({ type: "dateModeChanged", dateMode: nextMode });
+			return;
+		}
+
+		refreshSummary(
+			buildPeriodRequest(DateTime.utc().startOf(nextMode), nextMode),
+			filteredEmployeeIds,
+			() => dispatch({ type: "dateModeChanged", dateMode: nextMode }),
+		);
+	}
+
+	function navigatePeriod(direction: "previous" | "next") {
+		if (dateMode === "custom") return;
+
+		const currentStart = DateTime.fromISO(summary.period.start, {
+			zone: "utc",
+		});
+		const amount = direction === "previous" ? -1 : 1;
+		const nextStart = currentStart
+			.plus({ [dateMode]: amount })
+			.startOf(dateMode);
+
+		refreshSummary(buildPeriodRequest(nextStart, dateMode));
+	}
+
+	function returnToCurrentPeriod() {
+		if (dateMode === "custom") return;
+
+		refreshSummary(
+			buildPeriodRequest(DateTime.utc().startOf(dateMode), dateMode),
+		);
+	}
+
+	function applyCustomRange() {
+		const start = DateTime.fromISO(startDate);
+		const end = DateTime.fromISO(endDate);
+
+		refreshSummary({
+			startDate,
+			endDate,
+			label: formatPeriodLabel(start, end, "custom"),
+		});
+	}
+
+	return {
+		applyCustomRange,
+		applyDateMode,
+		navigatePeriod,
+		returnToCurrentPeriod,
+	};
+}
+
+/** The PDF download and the payroll export for the current request. */
+function usePayrollExportActions({
+	filtersHaveNoMatches,
+	formatId,
+	request,
+	startTransition,
+	t,
+}: {
+	filtersHaveNoMatches: boolean;
+	formatId: string;
+	request: PayrollPeriodRequest;
+	startTransition: React.TransitionStartFunction;
+	t: PayrollTranslate;
+}) {
+	const queryClient = useQueryClient();
+
+	function downloadPdf() {
+		if (filtersHaveNoMatches) {
+			toast.error(
+				t(
+					"payroll.filters.noMatchingEmployees",
+					"No employees match the selected payroll filters.",
+				),
+			);
+			return;
+		}
+
+		startTransition(async () => {
+			const result = await exportPayrollPdfAction(request);
+
+			if (!result.success) {
+				toast.error(result.error);
+				return;
+			}
+
+			const blob = new Blob([new Uint8Array(result.data.data)], {
+				type: "application/pdf",
+			});
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = result.data.filename;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(url);
+		});
+	}
+
+	function triggerExport() {
+		if (!formatId) return;
+		if (filtersHaveNoMatches) {
+			toast.error(
+				t(
+					"payroll.filters.noMatchingEmployees",
+					"No employees match the selected payroll filters.",
+				),
+			);
+			return;
+		}
+
+		startTransition(async () => {
+			const result = await startScopedPayrollExportAction({
+				...request,
+				formatId,
+			});
+
+			if (!result.success) {
+				toast.error(result.error);
+				return;
+			}
+
+			toast.success(
+				result.data.isAsync
+					? t("payroll.export.queued", "Payroll export queued")
+					: t("payroll.export.completed", "Payroll export completed"),
+			);
+			if (result.data.unmappedOvertimePayoutCount) {
+				toast.warning(
+					t(
+						"payroll.export.unmappedOvertimePayouts",
+						"{count, plural, one {# overtime payout was} other {# overtime payouts were}} not exported",
+						{ count: result.data.unmappedOvertimePayoutCount },
+					),
+					{
+						description: t(
+							"payroll.export.unmappedOvertimePayoutsDescription",
+							"No wage type is mapped to Overtime for this format. Ask an organization administrator to map one, or pay these hours out another way.",
+						),
+					},
+				);
+			}
+			void queryClient.invalidateQueries({
+				queryKey: ["payroll", "baselines"],
+			});
+			void queryClient.invalidateQueries({
+				queryKey: ["payroll", "comparisonBaselines"],
+			});
+			// A payroll run may now include expense reports (#852), which changes readiness (#854).
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.travelExpenses.payrollRuns(),
+			});
+		});
+	}
+
+	return { downloadPdf, triggerExport };
+}
+
+function PayrollSummaryCards({
+	blockersSummaryRef,
+	displayedTotals,
+	readyEmployeeCount,
+	t,
+}: {
+	blockersSummaryRef: React.RefObject<HTMLDivElement | null>;
+	displayedTotals: PayrollWorkspaceSummary["totals"];
+	readyEmployeeCount: number;
+	t: PayrollTranslate;
+}) {
+	return (
+		<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+			<SummaryCard
+				icon={<IconUsers aria-hidden="true" className="size-5" />}
+				label={t("payroll.summary.employees", "Employees")}
+				value={displayedTotals.employeeCount.toString()}
+			/>
+			<SummaryCard
+				label={t("payroll.summary.workedHours", "Worked hours")}
+				value={formatHours(displayedTotals.totalWorkedHours)}
+			/>
+			<SummaryCard
+				label={t("payroll.summary.ready", "Ready")}
+				value={readyEmployeeCount.toString()}
+			/>
+			<SummaryCard
+				focusRef={blockersSummaryRef}
+				label={t("payroll.summary.blockers", "Blockers")}
+				value={displayedTotals.blockerCount.toString()}
+				tone={displayedTotals.blockerCount > 0 ? "warning" : "default"}
+			/>
+		</section>
+	);
+}
+
 export function PayrollWorkspace({
 	initialSummary,
 	exportFormats,
@@ -438,7 +658,6 @@ export function PayrollWorkspace({
 		formatId,
 	} = state;
 	const [isPending, startTransition] = useTransition();
-	const queryClient = useQueryClient();
 	const isMountedRef = useMountedRef();
 	const blockersSummaryRef = useRef<HTMLDivElement | null>(null);
 
@@ -572,140 +791,27 @@ export function PayrollWorkspace({
 		});
 	}
 
-	function applyDateMode(nextMode: PayrollDateRangeMode) {
-		if (nextMode === "custom") {
-			dispatch({ type: "dateModeChanged", dateMode: nextMode });
-			return;
-		}
-
-		refreshSummary(
-			buildPeriodRequest(DateTime.utc().startOf(nextMode), nextMode),
-			filteredEmployeeIds,
-			() => dispatch({ type: "dateModeChanged", dateMode: nextMode }),
-		);
-	}
-
-	function navigatePeriod(direction: "previous" | "next") {
-		if (dateMode === "custom") return;
-
-		const currentStart = DateTime.fromISO(summary.period.start, {
-			zone: "utc",
-		});
-		const amount = direction === "previous" ? -1 : 1;
-		const nextStart = currentStart
-			.plus({ [dateMode]: amount })
-			.startOf(dateMode);
-
-		refreshSummary(buildPeriodRequest(nextStart, dateMode));
-	}
-
-	function returnToCurrentPeriod() {
-		if (dateMode === "custom") return;
-
-		refreshSummary(
-			buildPeriodRequest(DateTime.utc().startOf(dateMode), dateMode),
-		);
-	}
-
-	function applyCustomRange() {
-		const start = DateTime.fromISO(startDate);
-		const end = DateTime.fromISO(endDate);
-
-		refreshSummary({
-			startDate,
-			endDate,
-			label: formatPeriodLabel(start, end, "custom"),
-		});
-	}
-
-	function downloadPdf() {
-		if (filtersHaveNoMatches) {
-			toast.error(
-				t(
-					"payroll.filters.noMatchingEmployees",
-					"No employees match the selected payroll filters.",
-				),
-			);
-			return;
-		}
-
-		startTransition(async () => {
-			const result = await exportPayrollPdfAction(request);
-
-			if (!result.success) {
-				toast.error(result.error);
-				return;
-			}
-
-			const blob = new Blob([new Uint8Array(result.data.data)], {
-				type: "application/pdf",
-			});
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = result.data.filename;
-			document.body.appendChild(link);
-			link.click();
-			link.remove();
-			URL.revokeObjectURL(url);
-		});
-	}
-
-	function triggerExport() {
-		if (!formatId) return;
-		if (filtersHaveNoMatches) {
-			toast.error(
-				t(
-					"payroll.filters.noMatchingEmployees",
-					"No employees match the selected payroll filters.",
-				),
-			);
-			return;
-		}
-
-		startTransition(async () => {
-			const result = await startScopedPayrollExportAction({
-				...request,
-				formatId,
-			});
-
-			if (!result.success) {
-				toast.error(result.error);
-				return;
-			}
-
-			toast.success(
-				result.data.isAsync
-					? t("payroll.export.queued", "Payroll export queued")
-					: t("payroll.export.completed", "Payroll export completed"),
-			);
-			if (result.data.unmappedOvertimePayoutCount) {
-				toast.warning(
-					t(
-						"payroll.export.unmappedOvertimePayouts",
-						"{count, plural, one {# overtime payout was} other {# overtime payouts were}} not exported",
-						{ count: result.data.unmappedOvertimePayoutCount },
-					),
-					{
-						description: t(
-							"payroll.export.unmappedOvertimePayoutsDescription",
-							"No wage type is mapped to Overtime for this format. Ask an organization administrator to map one, or pay these hours out another way.",
-						),
-					},
-				);
-			}
-			void queryClient.invalidateQueries({
-				queryKey: ["payroll", "baselines"],
-			});
-			void queryClient.invalidateQueries({
-				queryKey: ["payroll", "comparisonBaselines"],
-			});
-			// A payroll run may now include expense reports (#852), which changes readiness (#854).
-			void queryClient.invalidateQueries({
-				queryKey: queryKeys.travelExpenses.payrollRuns(),
-			});
-		});
-	}
+	const {
+		applyCustomRange,
+		applyDateMode,
+		navigatePeriod,
+		returnToCurrentPeriod,
+	} = payrollPeriodActions({
+		dateMode,
+		dispatch,
+		endDate,
+		filteredEmployeeIds,
+		refreshSummary,
+		startDate,
+		summary,
+	});
+	const { downloadPdf, triggerExport } = usePayrollExportActions({
+		filtersHaveNoMatches,
+		formatId,
+		request,
+		startTransition,
+		t,
+	});
 
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -731,27 +837,12 @@ export function PayrollWorkspace({
 				t={t}
 			/>
 
-			<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				<SummaryCard
-					icon={<IconUsers aria-hidden="true" className="size-5" />}
-					label={t("payroll.summary.employees", "Employees")}
-					value={displayedTotals.employeeCount.toString()}
-				/>
-				<SummaryCard
-					label={t("payroll.summary.workedHours", "Worked hours")}
-					value={formatHours(displayedTotals.totalWorkedHours)}
-				/>
-				<SummaryCard
-					label={t("payroll.summary.ready", "Ready")}
-					value={readyEmployeeCount.toString()}
-				/>
-				<SummaryCard
-					focusRef={blockersSummaryRef}
-					label={t("payroll.summary.blockers", "Blockers")}
-					value={displayedTotals.blockerCount.toString()}
-					tone={displayedTotals.blockerCount > 0 ? "warning" : "default"}
-				/>
-			</section>
+			<PayrollSummaryCards
+				blockersSummaryRef={blockersSummaryRef}
+				displayedTotals={displayedTotals}
+				readyEmployeeCount={readyEmployeeCount}
+				t={t}
+			/>
 
 			<PayrollScopeCard
 				filtersHaveNoMatches={filtersHaveNoMatches}

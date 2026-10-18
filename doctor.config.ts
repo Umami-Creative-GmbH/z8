@@ -22,6 +22,10 @@ export default {
 					// API key and audit package tables share a 7-column header shape, not columns or domain.
 					"**/components/enterprise/api-key-page-client.tsx",
 					"**/components/settings/audit-export/audit-packages-table.tsx",
+					// Kiosk devices and missing driving details share a 5-column header with a hidden
+					// actions column, not columns or domain.
+					"**/components/settings/kiosks/kiosk-settings.tsx",
+					"**/team/driving/driving-details-list.tsx",
 				],
 				rules: ["react-doctor/duplicate-jsx-subtree"],
 			},
@@ -58,6 +62,7 @@ export default {
 					"**/components/billable-time/billable-currency-form.tsx",
 					"**/components/calendar/work-period-mileage-action.tsx",
 					"**/components/settings/vacation/vacation-assignment-dialog.tsx",
+					"**/components/scheduling/shifts/shift-dialog.tsx",
 				],
 				rules: ["react-doctor/no-prevent-default"],
 			},
@@ -296,6 +301,58 @@ export default {
 				],
 			},
 			{
+				// Vacation history reviews and corrections run on one transaction under the org
+				// configuration guard: previously-taken vacation (admin check, totals, tracking context,
+				// before/after balances), reconciliation (actor FOR SHARE, operation FOR UPDATE, blockers
+				// collected in fingerprinted order, stale-revision checks before each total update), and
+				// employment-date correction impacts (after the tracking-date administrator check, years
+				// in order).
+				files: [
+					"**/src/lib/absences/historical-vacation.ts",
+					"**/src/lib/absences/vacation-reconciliation.ts",
+					"**/src/lib/employee-lifecycle/employment-date-correction.ts",
+				],
+				rules: [
+					"react-doctor/async-await-in-loop",
+					"react-doctor/async-parallel",
+					"react-doctor/server-sequential-independent-await",
+				],
+			},
+			{
+				// More single-transaction flows: historical reconciliation claims and commits each reviewed
+				// row in order and aborts on the first changed or refused row; submitting a period locks,
+				// checks, inserts, then reads content and routing on the same tx; the tracking-date impact
+				// plan reads one repeatable-read snapshot. The kiosk clock reply's state snapshot must read
+				// the action's committed result.
+				files: [
+					"**/src/lib/import-review/committers.ts",
+					"**/src/lib/time-tracking/period-submissions/submission-service.ts",
+					"**/src/lib/time-tracking/tracking-date-review.ts",
+					"**/src/lib/time-tracking/kiosk/clock-service.ts",
+				],
+				rules: [
+					"react-doctor/async-await-in-loop",
+					"react-doctor/async-parallel",
+					"react-doctor/server-sequential-independent-await",
+				],
+			},
+			{
+				// The reconciliation receipt is normalised to its jsonb shape (Dates to strings, undefined
+				// dropped) before it is stored and audited; structuredClone would keep Dates.
+				files: ["**/src/lib/absences/vacation-reconciliation.ts"],
+				rules: ["react-doctor/no-json-parse-stringify-clone"],
+			},
+			{
+				// Accrual rows go in sequential 500-row chunks to stay under the bind-parameter limit, each
+				// chunk's conflict count adding to the totals. Monthly carryover processes one organization
+				// at a time, each in its own try/catch, and the first org sets the reported month.
+				files: [
+					"**/src/lib/absences/vacation-accrual.ts",
+					"**/src/lib/jobs/carryover-automation.ts",
+				],
+				rules: ["react-doctor/async-await-in-loop"],
+			},
+			{
 				// Payroll baseline rows share a scope reader memoized per start date: one departed-coverage
 				// query per period, reused by every later row; parallel rows would miss that cache.
 				// SCIM personnel numbers are projected on the Better Auth adapter inside the coordinated
@@ -325,6 +382,20 @@ export default {
 				// nothing); its result lives only in `mutation.data`, so no cached query goes stale.
 				files: ["**/components/payroll/payroll-comparison-card.tsx"],
 				rules: ["react-doctor/query-mutation-missing-invalidation"],
+			},
+			{
+				// Adding a kiosk-only employee's email refreshes the kiosk state in the form's `onSubmit`:
+				// after a successful result it awaits `onAdded`, which invalidates the employee's kiosk
+				// state. A refused result changes nothing, so an `onSuccess` refetch would be wasted.
+				files: ["**/components/settings/kiosk/employee-kiosk-card.tsx"],
+				rules: ["react-doctor/query-mutation-missing-invalidation"],
+			},
+			{
+				// The selected year is the user's calendar navigation, seeded once from the server's
+				// current year. It must not follow a new-year prop refresh: the year calendar keeps its
+				// own year state, and resetting here would show that year's data under the old calendar.
+				files: ["**/components/absences/absences-view-container.tsx"],
+				rules: ["react-doctor/no-derived-useState"],
 			},
 			{
 				// The guard after `decoder.read()` checks `over`, which `stop()` can set while the read is

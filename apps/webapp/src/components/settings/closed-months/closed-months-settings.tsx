@@ -223,11 +223,7 @@ function AutomaticCloseCard({ settings }: { settings: ClosedMonthsOverview["sett
 function HistoryCard({ overview }: { overview: ClosedMonthsOverview }) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
-	const timestamp = new Intl.DateTimeFormat(locale, {
-		dateStyle: "medium",
-		timeStyle: "short",
-		timeZone: overview.timezone,
-	});
+	const timestamp = getHistoryTimestampFormatter(locale, overview.timezone);
 
 	return (
 		<Card>
@@ -275,6 +271,23 @@ function HistoryCard({ overview }: { overview: ClosedMonthsOverview }) {
 			</CardContent>
 		</Card>
 	);
+}
+
+const historyTimestampFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/** History timestamps in the viewer's language and the organization's timezone. */
+function getHistoryTimestampFormatter(locale: string, timeZone: string) {
+	const cacheKey = `${locale}\u0000${timeZone}`;
+	let formatter = historyTimestampFormatters.get(cacheKey);
+	if (!formatter) {
+		formatter = new Intl.DateTimeFormat(locale, {
+			dateStyle: "medium",
+			timeStyle: "short",
+			timeZone,
+		});
+		historyTimestampFormatters.set(cacheKey, formatter);
+	}
+	return formatter;
 }
 
 function historyScope(
