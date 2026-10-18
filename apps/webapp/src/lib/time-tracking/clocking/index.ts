@@ -13,6 +13,7 @@ import { afterCommitFollowUps, type ClockOutFollowUpEffects } from "./follow-ups
 import { coordinatedTransactions } from "./transactions";
 
 export type {
+	BreakExpectation,
 	BreakInProgressCommand,
 	ResumeBreakCommand,
 	ResumeBreakOutcome,

@@ -68,6 +68,7 @@ import {
 	closureEnd,
 	committedResumeStart,
 	findLiveWork,
+	meetsExpectation,
 	type ResumeBreakCommand,
 	type ResumeBreakOutcome,
 	recordBreakInProgress,
@@ -1096,7 +1097,10 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		if (stale) return refused(stale);
 		const scope = { organizationId: subject.organizationId, employeeId: subject.id };
 		const live = await findLiveWork(db, scope);
-		if (!live) return refused({ code: "not_clocked_in" });
+		// Other live work than the employee saw is not theirs to break (#888).
+		if (!live || !meetsExpectation(live, command.expected)) {
+			return refused({ code: "not_clocked_in" });
+		}
 		if (live.breakInProgress) return refused({ code: "already_on_break" });
 		if (compareInstants(instant, live.start) <= 0) return refused({ code: "invalid_interval" });
 		// The zone the break's closure will be captured in when it ends.
@@ -1166,15 +1170,18 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		const { subject } = admitted;
 		const scope = { organizationId: subject.organizationId, employeeId: subject.id };
 		const live = await findLiveWork(db, scope);
+		const { expected, ...resumeCommand } = command;
 		const resume = (target: ClockTarget, start: BreakStart) => {
 			const breakCommand: BreakCommand = {
-				...command,
+				...resumeCommand,
 				body: { kind: "break", target, start },
 				resumesBreakInProgress: true,
 			};
 			return (run as Clocking["run"])(breakCommand);
 		};
-		if (live?.breakInProgress) {
+		// Only the break the employee saw (#888); the break command resumes exactly
+		// that start, so one started in between is refused too.
+		if (live?.breakInProgress && meetsExpectation(live, expected)) {
 			return resume({ kind: "period", workPeriodId: live.workPeriodId }, live.breakInProgress);
 		}
 		// A retried resume that committed rebuilds its break command and replays it;
