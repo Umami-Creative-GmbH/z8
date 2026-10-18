@@ -98,9 +98,9 @@ export async function insertPayrollBaseline(
 		evidence: PayrollBaselineEvidence;
 	},
 ): Promise<void> {
-	const evidence: PayrollBaselineEvidence = JSON.parse(
-		JSON.stringify(input.evidence),
-	);
+	// Normalize to the JSONB wire representation before hashing: optional undefined keys are omitted by storage.
+	const serializedEvidence = JSON.stringify(input.evidence);
+	const evidence: PayrollBaselineEvidence = JSON.parse(serializedEvidence);
 	const expiresAt = dateFromInstant(
 		payrollBaselineExpiry(instantFromDate(input.completedAt)),
 	);

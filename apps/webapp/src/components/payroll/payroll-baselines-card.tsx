@@ -38,6 +38,11 @@ import type {
 	SupportedPayrollOutputRow,
 } from "@/lib/payroll-export/supported-output-evidence";
 import { queryKeys } from "@/lib/query/keys";
+import { payrollUtcTime as utcTime } from "./payroll-evidence-format";
+import {
+	EvidenceFact as Fact,
+	PayrollSourceFacts as RetainedSourceFacts,
+} from "./payroll-evidence-presentation";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -231,9 +236,6 @@ function BaselineInspection({
 	return (
 		<BaselineDetail key={detail.data.summary.id} detail={detail.data} t={t} />
 	);
-}
-function utcTime(value: string): string {
-	return `${Temporal.Instant.from(value).toZonedDateTimeISO("UTC").toPlainDateTime().toString({ smallestUnit: "second" }).replace("T", " ")} UTC`;
 }
 
 function availabilityLabel(
@@ -682,120 +684,6 @@ function contributionKind(
 		case "overtime_payout":
 			return t("payroll.baselines.payout", "Overtime payout");
 	}
-}
-
-function RetainedSourceFacts({
-	contribution,
-	t,
-}: {
-	contribution: SupportedPayrollContribution;
-	t: Translate;
-}) {
-	if (contribution.kind === "work")
-		return (
-			<>
-				<Fact
-					label={t("payroll.baselines.workStart", "Work start (UTC)")}
-					value={
-						contribution.facts.startAt
-							? utcTime(contribution.facts.startAt)
-							: t("payroll.baselines.notRetained", "Not retained")
-					}
-				/>
-				<Fact
-					label={t("payroll.baselines.workEnd", "Work end (UTC)")}
-					value={
-						contribution.facts.endAt
-							? utcTime(contribution.facts.endAt)
-							: t("payroll.baselines.notRetained", "Not retained")
-					}
-				/>
-				<Fact
-					label={t("payroll.baselines.duration", "Duration (minutes)")}
-					value={String(contribution.facts.durationMinutes)}
-				/>
-				<Fact
-					label={t(
-						"payroll.baselines.workCategory",
-						"Historical work category",
-					)}
-					value={
-						[
-							contribution.facts.workCategoryName,
-							contribution.facts.workCategoryId,
-						]
-							.filter(Boolean)
-							.join(" · ") || t("payroll.baselines.notRetained", "Not retained")
-					}
-				/>
-				<Fact
-					label={t("payroll.baselines.project", "Historical project")}
-					value={
-						[contribution.facts.projectName, contribution.facts.projectId]
-							.filter(Boolean)
-							.join(" · ") || t("payroll.baselines.notRetained", "Not retained")
-					}
-				/>
-			</>
-		);
-	if (contribution.kind === "absence")
-		return (
-			<>
-				<Fact
-					label={t(
-						"payroll.baselines.absencePeriod",
-						"Historical absence period",
-					)}
-					value={`${contribution.facts.startDate} – ${contribution.facts.endDate}`}
-				/>
-				<Fact
-					label={t(
-						"payroll.baselines.absenceCategory",
-						"Historical absence category",
-					)}
-					value={[
-						contribution.facts.absenceCategoryName,
-						contribution.facts.absenceCategoryId,
-					]
-						.filter(Boolean)
-						.join(" · ")}
-				/>
-				<Fact
-					label={t("payroll.baselines.absenceType", "Historical absence type")}
-					value={
-						contribution.facts.absenceType ??
-						t("payroll.baselines.notRetained", "Not retained")
-					}
-				/>
-				<Fact
-					label={t(
-						"payroll.baselines.absenceStatus",
-						"Historical absence status",
-					)}
-					value={contribution.facts.status}
-				/>
-			</>
-		);
-	return (
-		<>
-			<Fact
-				label={t("payroll.baselines.payoutDay", "Historical payout day")}
-				value={contribution.facts.day}
-			/>
-			<Fact
-				label={t("payroll.baselines.payoutMinutes", "Payout (minutes)")}
-				value={String(contribution.facts.minutes)}
-			/>
-		</>
-	);
-}
-function Fact({ label, value }: { label: string; value: string }) {
-	return (
-		<div>
-			<dt className="text-muted-foreground">{label}</dt>
-			<dd className="break-all">{value}</dd>
-		</div>
-	);
 }
 
 function availabilityExplanation(

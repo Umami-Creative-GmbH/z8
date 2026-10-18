@@ -30,7 +30,13 @@ export type {
 	PayrollBaselineSummary,
 } from "./baseline-types";
 
-export async function requireBaselineActor() {
+export type PayrollBaselineAccessDatabase = Pick<
+	typeof db,
+	"query" | "select" | "insert" | "execute"
+>;
+export async function requireBaselineActor(
+	database: PayrollBaselineAccessDatabase = db,
+) {
 	const auth = await getAuthContext();
 	if (!auth)
 		throw new AuthenticationError({ message: "Authentication required" });
@@ -42,7 +48,7 @@ export async function requireBaselineActor() {
 	)
 		throw denied(auth.user.id);
 	const [actor, grant] = await Promise.all([
-		db.query.employee.findFirst({
+		database.query.employee.findFirst({
 			where: and(
 				eq(employee.id, auth.employee.id),
 				eq(employee.organizationId, organizationId),
@@ -51,7 +57,7 @@ export async function requireBaselineActor() {
 			),
 			columns: { id: true },
 		}),
-		db.query.payrollAccessGrant.findFirst({
+		database.query.payrollAccessGrant.findFirst({
 			where: and(
 				eq(payrollAccessGrant.organizationId, organizationId),
 				eq(payrollAccessGrant.payrollEmployeeId, auth.employee.id),
@@ -60,10 +66,13 @@ export async function requireBaselineActor() {
 		}),
 	]);
 	if (!actor || !grant) throw denied(auth.user.id);
-	const activeScope = await resolvePayrollAccessibleEmployeeIds({
-		organizationId,
-		payrollEmployeeId: actor.id,
-	});
+	const activeScope = await resolvePayrollAccessibleEmployeeIds(
+		{
+			organizationId,
+			payrollEmployeeId: actor.id,
+		},
+		database,
+	);
 	return {
 		organizationId,
 		userId: auth.user.id,
@@ -83,33 +92,51 @@ export async function canReadScope(
 	actor: Awaited<ReturnType<typeof requireBaselineActor>>,
 	employeeIds: string[],
 	startDate: string,
+	database: PayrollBaselineAccessDatabase = db,
 ): Promise<boolean> {
-	if (
-		!Array.isArray(employeeIds) ||
-		employeeIds.some((id) => typeof id !== "string" || id.length === 0)
-	)
-		return false;
-	if (actor.all) return true;
-	if (employeeIds.every((id) => actor.activeScope.includes(id))) return true;
-	try {
-		parsePlainDate(startDate);
-	} catch {
-		return false;
-	}
-	const departed = await listDepartedEmployeesCoveredForExport(db, {
-		organizationId: actor.organizationId,
-		actorUserId: actor.userId,
-		fromDate: startDate,
-	});
-	const allowed = new Set([...actor.activeScope, ...departed]);
-	return employeeIds.every((id) => allowed.has(id));
+	return createScopeReader(actor, database)(employeeIds, startDate);
 }
+/** Coverage is cached only within this authorized listing, separately for each logical period. */
+function createScopeReader(
+	actor: Awaited<ReturnType<typeof requireBaselineActor>>,
+	database: PayrollBaselineAccessDatabase,
+) {
+	const activeScope = new Set(actor.activeScope);
+	const departedByStartDate = new Map<string, Set<string>>();
+	return async (employeeIds: string[], startDate: string): Promise<boolean> => {
+		if (
+			!Array.isArray(employeeIds) ||
+			employeeIds.some((id) => typeof id !== "string" || id.length === 0)
+		)
+			return false;
+		if (actor.all || employeeIds.every((id) => activeScope.has(id)))
+			return true;
+		try {
+			parsePlainDate(startDate);
+		} catch {
+			return false;
+		}
+		let allowed = departedByStartDate.get(startDate);
+		if (!allowed) {
+			const departed = await listDepartedEmployeesCoveredForExport(database, {
+				organizationId: actor.organizationId,
+				actorUserId: actor.userId,
+				fromDate: startDate,
+			});
+			allowed = new Set([...actor.activeScope, ...departed]);
+			departedByStartDate.set(startDate, allowed);
+		}
+		return employeeIds.every((id) => allowed.has(id));
+	};
+}
+
 async function audit(
 	actor: Awaited<ReturnType<typeof requireBaselineActor>>,
 	action: "list" | "inspect",
 	ids: string[],
+	database: PayrollBaselineAccessDatabase,
 ) {
-	await db.insert(auditLog).values({
+	await database.insert(auditLog).values({
 		organizationId: actor.organizationId,
 		performedBy: actor.userId,
 		entityType: "payroll_baseline",
@@ -136,10 +163,12 @@ function validatePeriod(request: { startDate?: string; endDate?: string }) {
 }
 export async function listPayrollBaselines(
 	request: { startDate?: string; endDate?: string; formatId?: string } = {},
+	database: PayrollBaselineAccessDatabase = db,
 ): Promise<PayrollBaselineSummary[]> {
-	const actor = await requireBaselineActor();
+	const actor = await requireBaselineActor(database);
+	const canRead = createScopeReader(actor, database);
 	validatePeriod(request);
-	const rows = await db.query.payrollExportBaseline.findMany({
+	const rows = await database.query.payrollExportBaseline.findMany({
 		where: eq(payrollExportBaseline.organizationId, actor.organizationId),
 		orderBy: [
 			desc(payrollExportBaseline.completedAt),
@@ -157,14 +186,13 @@ export async function listPayrollBaselines(
 			(request.endDate && request.endDate !== period.endDate)
 		)
 			continue;
-		if (!(await canReadScope(actor, row.scopeEmployeeIds, period.startDate)))
-			continue;
+		if (!(await canRead(row.scopeEmployeeIds, period.startDate))) continue;
 		summaries.push(
 			payrollBaselineDetail(row, systemClock.nowInstant()).summary,
 		);
 	}
 	// Legacy jobs are only identifiable as unavailable. Never reconstruct scope or output from current data.
-	const jobs = await db.query.payrollExportJob.findMany({
+	const jobs = await database.query.payrollExportJob.findMany({
 		where: and(
 			eq(payrollExportJob.organizationId, actor.organizationId),
 			eq(payrollExportJob.status, "completed"),
@@ -193,7 +221,7 @@ export async function listPayrollBaselines(
 			continue;
 		const ids = job.filters.employeeIds;
 		if (ids === undefined && !actor.all) continue;
-		if (ids && !(await canReadScope(actor, ids, period.startDate))) continue;
+		if (ids && !(await canRead(ids, period.startDate))) continue;
 		summaries.push({
 			id: job.id,
 			jobId: job.id,
@@ -219,27 +247,29 @@ export async function listPayrollBaselines(
 		actor,
 		"list",
 		summaries.map((row) => row.id),
+		database,
 	);
 	return summaries;
 }
 export async function inspectPayrollBaseline(
 	baselineId: string,
+	database: PayrollBaselineAccessDatabase = db,
 ): Promise<PayrollBaselineDetail | null> {
-	const actor = await requireBaselineActor();
+	const actor = await requireBaselineActor(database);
 	if (
 		!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
 			baselineId,
 		)
 	)
 		return null;
-	const row = await db.query.payrollExportBaseline.findFirst({
+	const row = await database.query.payrollExportBaseline.findFirst({
 		where: and(
 			eq(payrollExportBaseline.organizationId, actor.organizationId),
 			eq(payrollExportBaseline.id, baselineId),
 		),
 	});
 	if (!row) {
-		const legacy = (await listPayrollBaselines()).find(
+		const legacy = (await listPayrollBaselines({}, database)).find(
 			(summary) =>
 				summary.id === baselineId && summary.availability === "legacy",
 		);
@@ -251,10 +281,11 @@ export async function inspectPayrollBaseline(
 			row.scopeEmployeeIds,
 			payrollBaselineDetail(row, systemClock.nowInstant()).summary.period
 				.startDate,
+			database,
 		))
 	)
 		return null;
 	const detail = payrollBaselineDetail(row, systemClock.nowInstant());
-	await audit(actor, "inspect", [row.id]);
+	await audit(actor, "inspect", [row.id], database);
 	return detail;
 }
