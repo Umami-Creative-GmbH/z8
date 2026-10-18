@@ -46,14 +46,11 @@ const riskyPreview: AbsencePlanPreview = {
 				staffCountAfterAbsence: 1,
 			},
 		],
-		hasConfiguredRulesForAffectedShifts: true,
+		status: "complete",
+		gaps: [],
 	},
-	approvalSignal: "risky",
 	warnings: ["Vacation balance would be negative after this request."],
-	reasons: [
-		"Coverage rules are not configured for the affected scheduled work.",
-		"Request follows the normal approval path.",
-	],
+	reasons: ["Vacation balance is unavailable for this year.", "This absence type needs approval."],
 };
 
 const nonVacationPreview: AbsencePlanPreview = {
@@ -64,8 +61,7 @@ const nonVacationPreview: AbsencePlanPreview = {
 		remainingAfterRequest: 4,
 		countsAgainstVacation: false,
 	},
-	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
-	approvalSignal: "likely",
+	coverage: { risks: [], status: "complete", gaps: [] },
 	warnings: [],
 	reasons: ["Policy check passed without using vacation-specific copy."],
 };
@@ -75,14 +71,16 @@ const affectedShiftPreview: AbsencePlanPreview = {
 	affectedShifts: [
 		{
 			id: "shift-1",
-			subareaId: "kitchen",
+			subareaId: "kitchen-id",
+			subareaName: "Kitchen",
 			date: "2026-05-16",
 			startTime: "12:00",
 			endTime: "18:00",
+			affectedStartTime: "12:00",
+			affectedEndTime: "18:00",
 		},
 	],
-	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
-	approvalSignal: "likely",
+	coverage: { risks: [], status: "complete", gaps: [] },
 	warnings: [],
 	reasons: ["Request follows the normal approval path."],
 };
@@ -94,18 +92,55 @@ const affectedShiftWithRiskPreview: AbsencePlanPreview = {
 
 const affectedShiftWithoutRulesPreview: AbsencePlanPreview = {
 	...affectedShiftPreview,
-	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: false },
-	approvalSignal: "needs_review",
-	reasons: ["Coverage rules are not configured for the affected scheduled work."],
+	coverage: { risks: [], status: "incomplete", gaps: ["rules_missing", "rules_partial"] },
+};
+
+const partialOvernightShiftPreview: AbsencePlanPreview = {
+	...affectedShiftPreview,
+	affectedShifts: [
+		{
+			id: "shift-night",
+			subareaId: "kitchen-id",
+			subareaName: null,
+			date: "2026-05-15",
+			startTime: "22:00",
+			endTime: "06:00",
+			affectedStartTime: "00:00",
+			affectedEndTime: "02:00",
+		},
+	],
+};
+
+const unreadableCoveragePreview: AbsencePlanPreview = {
+	...nonVacationPreview,
+	coverage: { risks: [], status: "incomplete", gaps: ["read_failed"] },
 };
 
 describe("AbsencePlanPreviewPanel", () => {
-	it("renders risky advisory preview with a warning", () => {
+	it("renders an advisory preview with a warning and no approval prediction", () => {
 		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
 
 		expect(screen.getByRole("heading", { name: "Smart planner" })).toBeTruthy();
-		expect(screen.getByText("Risky")).toBeTruthy();
 		expect(screen.getByText("Vacation balance would be negative after this request.")).toBeTruthy();
+		for (const prediction of ["Risky", "Likely", "Needs review"]) {
+			expect(screen.queryByText(prediction)).toBeNull();
+		}
+		expect(screen.getByText(/It does not predict approval\./)).toBeTruthy();
+	});
+
+	it("explains the published-schedule limits of coverage evidence", () => {
+		render(<AbsencePlanPreviewPanel preview={nonVacationPreview} />);
+
+		const coverage = screen.getByRole("region", { name: "Coverage" });
+		expect(coverage.textContent).toContain(
+			"Based on published shifts and configured coverage rules. Colleagues' absences and unpublished schedule changes are not considered, so no warning does not guarantee staffing or approval.",
+		);
+	});
+
+	it("says when none of the requester's published shifts overlap the absence", () => {
+		render(<AbsencePlanPreviewPanel preview={nonVacationPreview} />);
+
+		expect(screen.getByText("None of your published shifts overlap this absence.")).toBeTruthy();
 	});
 
 	it("shows vacation balance impact for the selected category", () => {
@@ -131,17 +166,54 @@ describe("AbsencePlanPreviewPanel", () => {
 	it("renders affected published shifts without coverage risk", () => {
 		render(<AbsencePlanPreviewPanel preview={affectedShiftPreview} />);
 
-		expect(screen.getByText("No published coverage risk")).toBeTruthy();
-		expect(screen.getByText("2026-05-16 · kitchen")).toBeTruthy();
-		expect(screen.getByText("12:00-18:00 affected shift")).toBeTruthy();
+		expect(screen.getByText("No coverage warnings in the published schedule.")).toBeTruthy();
+		expect(screen.getByText("2026-05-16 · Kitchen")).toBeTruthy();
+		expect(screen.getByText("12:00-18:00 · whole shift affected")).toBeTruthy();
+		expect(screen.queryByText(/kitchen-id/)).toBeNull();
 	});
 
-	it("renders missing coverage rules for affected published shifts", () => {
+	it("shows the affected part of an overnight shift", () => {
+		render(<AbsencePlanPreviewPanel preview={partialOvernightShiftPreview} />);
+
+		expect(screen.getByText("2026-05-15 · Unknown subarea")).toBeTruthy();
+		expect(screen.getByText("22:00-06:00 (ends next day) · away 00:00-02:00")).toBeTruthy();
+	});
+
+	it("keeps missing and partial coverage rules visibly incomplete", () => {
 		render(<AbsencePlanPreviewPanel preview={affectedShiftWithoutRulesPreview} />);
 
-		expect(screen.getByText("No coverage rules configured for affected shifts")).toBeTruthy();
-		expect(screen.queryByText("No published coverage risk")).toBeNull();
-		expect(screen.getByText("2026-05-16 · kitchen")).toBeTruthy();
+		expect(
+			screen.getByText(
+				"Coverage evidence is incomplete, so missing warnings don't mean staffing is adequate.",
+			),
+		).toBeTruthy();
+		expect(screen.getByText("No coverage rules apply to some of your affected work.")).toBeTruthy();
+		expect(
+			screen.getByText("Coverage rules apply to only part of your affected work."),
+		).toBeTruthy();
+		expect(screen.queryByText("No coverage warnings in the published schedule.")).toBeNull();
+		expect(screen.getByText("2026-05-16 · Kitchen")).toBeTruthy();
+	});
+
+	it("shows unreadable coverage evidence instead of an all-clear", () => {
+		render(<AbsencePlanPreviewPanel preview={unreadableCoveragePreview} />);
+
+		expect(screen.getByText("Published shifts or coverage rules could not be read.")).toBeTruthy();
+		expect(screen.queryByText("None of your published shifts overlap this absence.")).toBeNull();
+	});
+
+	it("keeps known coverage warnings alongside incomplete evidence", () => {
+		render(
+			<AbsencePlanPreviewPanel
+				preview={{
+					...riskyPreview,
+					coverage: { ...riskyPreview.coverage, status: "incomplete", gaps: ["unsupported"] },
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("09:00-17:00 · 1/2 staff after request")).toBeTruthy();
+		expect(screen.getByText("Some request or schedule times could not be evaluated.")).toBeTruthy();
 	});
 
 	it("renders affected published shifts with coverage risk details", () => {
@@ -149,17 +221,15 @@ describe("AbsencePlanPreviewPanel", () => {
 
 		expect(screen.getByText("2026-05-15 · Front desk")).toBeTruthy();
 		expect(screen.getByText("09:00-17:00 · 1/2 staff after request")).toBeTruthy();
-		expect(screen.getByText("2026-05-16 · kitchen")).toBeTruthy();
-		expect(screen.getByText("12:00-18:00 affected shift")).toBeTruthy();
+		expect(screen.getByText("2026-05-16 · Kitchen")).toBeTruthy();
+		expect(screen.getByText("12:00-18:00 · whole shift affected")).toBeTruthy();
 	});
 
 	it("renders all explainable approval reasons", () => {
 		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
 
-		expect(
-			screen.getByText("Coverage rules are not configured for the affected scheduled work."),
-		).toBeTruthy();
-		expect(screen.getByText("Request follows the normal approval path.")).toBeTruthy();
+		expect(screen.getByText("Vacation balance is unavailable for this year.")).toBeTruthy();
+		expect(screen.getByText("This absence type needs approval.")).toBeTruthy();
 	});
 
 	it("renders non-blocking unavailable copy for an error", () => {

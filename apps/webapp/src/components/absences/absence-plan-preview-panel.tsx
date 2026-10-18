@@ -3,11 +3,9 @@
 import { IconAlertTriangle, IconCheck, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
-import type { AbsencePlanPreview, ApprovalSignal } from "@/lib/absences/absence-plan-preview";
+import type { AbsencePlanPreview, CoverageEvidenceGap } from "@/lib/absences/absence-plan-preview";
 import { formatDays } from "@/lib/absences/date-utils";
-import { cn } from "@/lib/utils";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 
 interface AbsencePlanPreviewPanelProps {
@@ -15,21 +13,6 @@ interface AbsencePlanPreviewPanelProps {
 	isLoading?: boolean;
 	error?: string | null;
 }
-
-const APPROVAL_SIGNAL_LABELS: Record<ApprovalSignal, string> = {
-	likely: "Likely",
-	needs_review: "Needs review",
-	risky: "Risky",
-};
-
-const APPROVAL_SIGNAL_CLASSES: Record<ApprovalSignal, string> = {
-	likely:
-		"border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
-	needs_review:
-		"border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300",
-	risky:
-		"border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/40 dark:bg-destructive/15",
-};
 
 type TranslateFn = Parameters<typeof formatDays>[1];
 
@@ -75,30 +58,21 @@ export function AbsencePlanPreviewPanel({
 			: ["Planner checked the available request signals."];
 	const coverageRiskCount = preview.coverage.risks.length;
 	const hasAffectedShifts = preview.affectedShifts.length > 0;
-	const hasMissingCoverageRules =
-		hasAffectedShifts && !preview.coverage.hasConfiguredRulesForAffectedShifts;
+	const isCoverageIncomplete = preview.coverage.status === "incomplete";
 
 	return (
 		<Card className="gap-4 border-primary/15 bg-primary/5 shadow-none">
 			<CardHeader className="gap-3">
-				<div className="flex flex-wrap items-start justify-between gap-3">
-					<div className="space-y-1">
-						<h3 className="text-pretty font-semibold leading-none">
-							{t("absences.planPreview.title", "Smart planner")}
-						</h3>
-						<CardDescription>
-							{t(
-								"absences.planPreview.description",
-								"A non-blocking check of balance, holidays, coverage, and approval signals before you submit.",
-							)}
-						</CardDescription>
-					</div>
-					<Badge
-						className={cn("border", APPROVAL_SIGNAL_CLASSES[preview.approvalSignal])}
-						variant="outline"
-					>
-						{APPROVAL_SIGNAL_LABELS[preview.approvalSignal]}
-					</Badge>
+				<div className="space-y-1">
+					<h3 className="text-pretty font-semibold leading-none">
+						{t("absences.planPreview.title", "Smart planner")}
+					</h3>
+					<CardDescription>
+						{t(
+							"absences.planPreview.descriptionEvidence",
+							"A non-blocking check of balance, holidays, and published-schedule coverage before you submit. It does not predict approval.",
+						)}
+					</CardDescription>
 				</div>
 			</CardHeader>
 			<CardContent className="grid gap-3 sm:grid-cols-2">
@@ -192,7 +166,7 @@ export function AbsencePlanPreviewPanel({
 											key={getCoverageRiskKey(risk)}
 										>
 											<div className="min-w-0 break-words font-medium">
-												{risk.date} · {risk.subareaName}
+												{risk.date} · {risk.subareaName ?? unknownSubarea(t)}
 											</div>
 											<div className="text-muted-foreground text-xs tabular-nums">
 												{risk.startTime}-{risk.endTime} ·{" "}
@@ -209,17 +183,40 @@ export function AbsencePlanPreviewPanel({
 									))}
 								</ul>
 							</>
-						) : hasMissingCoverageRules ? (
+						) : isCoverageIncomplete ? null : hasAffectedShifts ? (
 							<p className="text-muted-foreground text-sm">
 								{t(
-									"absences.planPreview.noCoverageRulesConfigured",
-									"No coverage rules configured for affected shifts",
+									"absences.planPreview.coverageNoWarnings",
+									"No coverage warnings in the published schedule.",
 								)}
 							</p>
 						) : (
 							<p className="text-muted-foreground text-sm">
-								{t("absences.planPreview.noCoverageRisk", "No published coverage risk")}
+								{t(
+									"absences.planPreview.noAffectedShifts",
+									"None of your published shifts overlap this absence.",
+								)}
 							</p>
+						)}
+						{isCoverageIncomplete && (
+							<div className="space-y-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-amber-800 text-sm dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
+								<p className="flex items-start gap-2 font-medium">
+									<IconInfoCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+									<span className="min-w-0 break-words">
+										{t(
+											"absences.planPreview.coverageIncomplete",
+											"Coverage evidence is incomplete, so missing warnings don't mean staffing is adequate.",
+										)}
+									</span>
+								</p>
+								<ul className="space-y-0.5 ps-6">
+									{preview.coverage.gaps.map((gap) => (
+										<li className="break-words" key={gap}>
+											{coverageGapMessage(gap, t)}
+										</li>
+									))}
+								</ul>
+							</div>
 						)}
 						{hasAffectedShifts && (
 							<ul className="space-y-1 text-sm">
@@ -229,19 +226,23 @@ export function AbsencePlanPreviewPanel({
 										key={getAffectedShiftKey(shift)}
 									>
 										<div className="min-w-0 break-words font-medium">
-											{shift.date} · {shift.subareaId}
+											{shift.date} · {shift.subareaName ?? unknownSubarea(t)}
 										</div>
 										<div className="text-muted-foreground text-xs tabular-nums">
-											{shift.startTime}-{shift.endTime}{" "}
-											{t("absences.planPreview.affectedShift", "affected shift")}
+											{affectedShiftDescription(shift, t)}
 										</div>
 									</li>
 								))}
 							</ul>
 						)}
+						<p className="text-muted-foreground text-xs">
+							{t(
+								"absences.planPreview.coverageLimits",
+								"Based on published shifts and configured coverage rules. Colleagues' absences and unpublished schedule changes are not considered, so no warning does not guarantee staffing or approval.",
+							)}
+						</p>
 					</div>
 				</PreviewSection>
-
 				<PreviewSection title={t("absences.planPreview.approval", "Approval")}>
 					<div className="space-y-2">
 						<ul className="space-y-1 text-sm">
@@ -306,6 +307,57 @@ function getVacationImpact(balance: NonNullable<AbsencePlanPreview["balance"]>, 
 	return balance.countsAgainstVacation
 		? t("absences.planPreview.countsAgainstVacationBalance", "Counts against vacation balance")
 		: t("absences.planPreview.doesNotReduceVacationBalance", "Does not reduce vacation balance");
+}
+
+function unknownSubarea(t: TranslateFn) {
+	return t("absences.planPreview.unknownSubarea", "Unknown subarea");
+}
+
+function coverageGapMessage(gap: CoverageEvidenceGap, t: TranslateFn) {
+	switch (gap) {
+		case "rules_missing":
+			return t(
+				"absences.planPreview.coverageGap.rulesMissing",
+				"No coverage rules apply to some of your affected work.",
+			);
+		case "rules_partial":
+			return t(
+				"absences.planPreview.coverageGap.rulesPartial",
+				"Coverage rules apply to only part of your affected work.",
+			);
+		case "read_failed":
+			return t(
+				"absences.planPreview.coverageGap.readFailed",
+				"Published shifts or coverage rules could not be read.",
+			);
+		case "unsupported":
+			return t(
+				"absences.planPreview.coverageGap.unsupported",
+				"Some request or schedule times could not be evaluated.",
+			);
+	}
+}
+
+/** The shift's times and the part the absence takes, e.g. "22:00-06:00 (ends next day) · away 00:00-02:00". */
+function affectedShiftDescription(
+	shift: AbsencePlanPreview["affectedShifts"][number],
+	t: TranslateFn,
+) {
+	const times = `${shift.startTime}-${shift.endTime}`;
+	// A shift that ends at or before its start ends the next day.
+	const endsNextDay =
+		shift.endTime <= shift.startTime
+			? ` ${t("absences.planPreview.shiftEndsNextDay", "(ends next day)")}`
+			: "";
+	const isWholeShift =
+		shift.affectedStartTime === shift.startTime && shift.affectedEndTime === shift.endTime;
+	const part = isWholeShift
+		? t("absences.planPreview.wholeShiftAffected", "whole shift affected")
+		: t("absences.planPreview.shiftPartAffected", "away {start}-{end}", {
+				start: shift.affectedStartTime,
+				end: shift.affectedEndTime,
+			});
+	return `${times}${endsNextDay} · ${part}`;
 }
 
 function getCoverageRiskKey(risk: AbsencePlanPreview["coverage"]["risks"][number]) {

@@ -106,7 +106,6 @@ describe("getAbsencePlanPreview", () => {
 		if (result.success) {
 			expect(result.data.requestedAbsenceDays).toBe(2);
 			expect(result.data.balance?.remainingAfterRequest).toBe(12);
-			expect(result.data.approvalSignal).toBe("likely");
 		}
 	});
 
@@ -221,7 +220,10 @@ describe("getAbsencePlanPreview", () => {
 			where: expect.anything(),
 			with: { category: true },
 		});
-		expect(mockState.shiftFindMany).toHaveBeenCalledWith({ where: expect.anything() });
+		expect(mockState.shiftFindMany).toHaveBeenCalledWith({
+			where: expect.anything(),
+			with: { subarea: { columns: { name: true } } },
+		});
 		expect(mockState.eq).toHaveBeenCalledWith(
 			expect.objectContaining({ name: "employee_id" }),
 			"emp-current",
@@ -291,7 +293,8 @@ describe("getAbsencePlanPreview", () => {
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(result.data.coverage).toEqual({
-				hasConfiguredRulesForAffectedShifts: true,
+				status: "complete",
+				gaps: [],
 				risks: [
 					{
 						date: "2026-05-04",
@@ -304,7 +307,6 @@ describe("getAbsencePlanPreview", () => {
 					},
 				],
 			});
-			expect(result.data.approvalSignal).toBe("risky");
 		}
 	});
 
@@ -368,7 +370,8 @@ describe("getAbsencePlanPreview", () => {
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(result.data.coverage).toEqual({
-				hasConfiguredRulesForAffectedShifts: true,
+				status: "complete",
+				gaps: [],
 				risks: [
 					{
 						date: "2026-05-04",
@@ -381,7 +384,6 @@ describe("getAbsencePlanPreview", () => {
 					},
 				],
 			});
-			expect(result.data.approvalSignal).toBe("risky");
 		}
 	});
 
@@ -445,7 +447,8 @@ describe("getAbsencePlanPreview", () => {
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(result.data.coverage).toEqual({
-				hasConfiguredRulesForAffectedShifts: true,
+				status: "complete",
+				gaps: [],
 				risks: [
 					{
 						date: "2026-05-04",
@@ -458,7 +461,6 @@ describe("getAbsencePlanPreview", () => {
 					},
 				],
 			});
-			expect(result.data.approvalSignal).toBe("risky");
 		}
 	});
 
@@ -522,10 +524,10 @@ describe("getAbsencePlanPreview", () => {
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(result.data.coverage).toEqual({
-				hasConfiguredRulesForAffectedShifts: true,
+				status: "complete",
+				gaps: [],
 				risks: [],
 			});
-			expect(result.data.approvalSignal).toBe("likely");
 		}
 	});
 
@@ -589,10 +591,10 @@ describe("getAbsencePlanPreview", () => {
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(result.data.coverage).toEqual({
-				hasConfiguredRulesForAffectedShifts: true,
+				status: "complete",
+				gaps: [],
 				risks: [],
 			});
-			expect(result.data.approvalSignal).toBe("likely");
 		}
 	});
 
@@ -638,14 +640,132 @@ describe("getAbsencePlanPreview", () => {
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(result.data.coverage).toEqual({
-				hasConfiguredRulesForAffectedShifts: false,
+				status: "incomplete",
+				gaps: ["rules_missing"],
 				risks: [],
 			});
-			expect(result.data.approvalSignal).toBe("needs_review");
-			expect(result.data.reasons).toContain(
-				"Coverage rules are not configured for the affected scheduled work.",
-			);
 		}
+	});
+
+	it("loads shifts from the day before, so an overnight shift into the absence counts", async () => {
+		mockState.shiftFindMany
+			.mockResolvedValueOnce([
+				{
+					id: "shift-night",
+					employeeId: "emp-current",
+					subareaId: "subarea-1",
+					// Sunday 2026-05-03 in Berlin, 22:00-06:00.
+					date: new Date("2026-05-02T22:00:00.000Z"),
+					startTime: "22:00",
+					endTime: "06:00",
+					status: "published",
+					subarea: { name: "Front Desk" },
+				},
+			])
+			.mockResolvedValueOnce([
+				{
+					id: "shift-night",
+					employeeId: "emp-current",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-02T22:00:00.000Z"),
+					startTime: "22:00",
+					endTime: "06:00",
+					status: "published",
+				},
+			]);
+		mockState.coverageRuleFindMany.mockResolvedValue([
+			{
+				id: "rule-1",
+				organizationId: "org-current",
+				subareaId: "subarea-1",
+				dayOfWeek: "monday",
+				startTime: "00:00",
+				endTime: "06:00",
+				minimumStaffCount: 1,
+				subarea: { id: "subarea-1", name: "Front Desk" },
+			},
+		]);
+
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(mockState.gte).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "date" }),
+			new Date("2026-05-02T22:00:00.000Z"),
+		);
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data.affectedShifts).toEqual([
+			{
+				id: "shift-night",
+				subareaId: "subarea-1",
+				subareaName: "Front Desk",
+				date: "2026-05-03",
+				startTime: "22:00",
+				endTime: "06:00",
+				affectedStartTime: "00:00",
+				affectedEndTime: "06:00",
+			},
+		]);
+		expect(result.data.coverage).toEqual({
+			status: "complete",
+			gaps: [],
+			risks: [
+				{
+					date: "2026-05-04",
+					subareaId: "subarea-1",
+					subareaName: "Front Desk",
+					startTime: "00:00",
+					endTime: "06:00",
+					minimumStaffCount: 1,
+					staffCountAfterAbsence: 0,
+				},
+			],
+		});
+	});
+
+	it("keeps the rest of the preview when coverage evidence cannot be read", async () => {
+		mockState.shiftFindMany
+			.mockResolvedValueOnce([
+				{
+					id: "shift-current",
+					employeeId: "emp-current",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "09:00",
+					endTime: "17:00",
+					status: "published",
+					subarea: { name: "Front Desk" },
+				},
+			])
+			.mockRejectedValueOnce(new Error("database unavailable"));
+
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data.requestedAbsenceDays).toBe(2);
+		expect(result.data.affectedShifts).toHaveLength(1);
+		expect(result.data.coverage).toEqual({
+			status: "incomplete",
+			gaps: ["read_failed"],
+			risks: [],
+		});
+	});
+
+	it("marks coverage unavailable when the requester's own shifts cannot be read", async () => {
+		mockState.shiftFindMany.mockRejectedValueOnce(new Error("database unavailable"));
+
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data.affectedShifts).toEqual([]);
+		expect(result.data.coverage).toEqual({
+			status: "incomplete",
+			gaps: ["read_failed"],
+			risks: [],
+		});
+		expect(mockState.coverageRuleFindMany).not.toHaveBeenCalled();
 	});
 
 	it("returns a generic failure when advisory planner dependencies reject", async () => {

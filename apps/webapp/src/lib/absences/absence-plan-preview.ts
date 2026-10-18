@@ -1,11 +1,16 @@
 import { DateTime } from "luxon";
 import { dateRangesOverlap, fromJSDate, toDateKey } from "@/lib/datetime/luxon-utils";
 import { type AbsenceDaysRefusal, type IsWorkingDay, refusalForAbsenceDays } from "./absence-days";
+import type { AffectedShiftEvidence, CoverageEvaluation } from "./coverage-evidence";
 import { countRequestedAbsenceDays, normalizeAbsenceDurationInput } from "./duration";
 import type { TimeOffInLieuPreview } from "./time-off-in-lieu-preview";
 import type { AbsenceRequest, Holiday, VacationBalance } from "./types";
 
-export type ApprovalSignal = "likely" | "needs_review" | "risky";
+export type {
+	CoverageEvaluation,
+	CoverageEvidenceGap,
+	CoverageRisk,
+} from "./coverage-evidence";
 
 export interface AbsencePlanCategoryInput {
 	id: string;
@@ -24,21 +29,6 @@ export interface ExistingAbsenceInput {
 	categoryName: string;
 }
 
-export interface CoverageRiskInput {
-	date: string;
-	subareaId: string;
-	subareaName: string;
-	startTime: string;
-	endTime: string;
-	minimumStaffCount: number;
-	staffCountAfterAbsence: number;
-}
-
-export interface CoverageEvaluationInput {
-	risks: CoverageRiskInput[];
-	hasConfiguredRulesForAffectedShifts: boolean;
-}
-
 export interface AbsencePlanPreviewInput {
 	category: AbsencePlanCategoryInput;
 	request: AbsenceRequest;
@@ -48,8 +38,10 @@ export interface AbsencePlanPreviewInput {
 	/** The employee's working days, which already exclude their holidays. */
 	isWorkingDay: IsWorkingDay;
 	existingAbsences: ExistingAbsenceInput[];
-	affectedShifts: unknown[];
-	coverage: CoverageEvaluationInput;
+	/** The requester's own published shifts the absence overlaps (#1341). */
+	affectedShifts: AbsencePlanAffectedShiftPreview[];
+	/** Published-schedule coverage evidence; colleagues' absences are not considered. */
+	coverage: CoverageEvaluation;
 	hasManager: boolean;
 	/** The projected work balance, for a category that draws on it. */
 	workBalance?: TimeOffInLieuPreview | null;
@@ -69,13 +61,8 @@ export interface AbsencePlanBalancePreview {
 	countsAgainstVacation: boolean;
 }
 
-export interface AbsencePlanAffectedShiftPreview {
-	id: string;
-	subareaId: string;
-	date: string;
-	startTime: string;
-	endTime: string;
-}
+/** One of the requester's own published shifts, with the part the absence takes. */
+export type AbsencePlanAffectedShiftPreview = AffectedShiftEvidence;
 
 export interface AbsencePlanPreview {
 	requestedAbsenceDays: number;
@@ -87,8 +74,7 @@ export interface AbsencePlanPreview {
 	holidays: AbsencePlanHolidayPreview[];
 	overlaps: ExistingAbsenceInput[];
 	affectedShifts: AbsencePlanAffectedShiftPreview[];
-	coverage: CoverageEvaluationInput;
-	approvalSignal: ApprovalSignal;
+	coverage: CoverageEvaluation;
 	warnings: string[];
 	reasons: string[];
 }
@@ -158,14 +144,13 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 		warnings.push(`Request overlaps an existing ${overlap.status} absence.`);
 	}
 
+	// The panel explains coverage from the structured evidence, in the viewer's language (#1341).
 	if (input.coverage.risks.length > 0) {
 		hasRisk = true;
-		warnings.push("Published coverage would drop below the configured minimum.");
 	}
 
-	if (input.affectedShifts.length > 0 && !input.coverage.hasConfiguredRulesForAffectedShifts) {
+	if (input.coverage.status === "incomplete") {
 		needsReview = true;
-		reasons.push("Coverage rules are not configured for the affected scheduled work.");
 	}
 
 	if (!input.category.requiresApproval) {
@@ -192,85 +177,26 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 		overlaps,
 		affectedShifts: normalizeAffectedShifts(input.affectedShifts),
 		coverage: input.coverage,
-		approvalSignal: determineApprovalSignal({ hasRisk, needsReview }),
 		warnings,
 		reasons,
 	};
 }
 
-function normalizeAffectedShifts(affectedShifts: unknown[]): AbsencePlanAffectedShiftPreview[] {
-	return affectedShifts.flatMap((affectedShift) => {
-		if (!isAffectedShiftLike(affectedShift)) {
-			return [];
-		}
-
-		const date = normalizeAffectedShiftDate(affectedShift.date);
-		if (!date) {
-			return [];
-		}
-
-		return [
-			{
-				id: affectedShift.id,
-				subareaId: affectedShift.subareaId,
-				date,
-				startTime: affectedShift.startTime,
-				endTime: affectedShift.endTime,
-			},
-		];
-	});
+/** Picks the requester's own shift fields, so no other data reaches the response. */
+function normalizeAffectedShifts(
+	affectedShifts: readonly AbsencePlanAffectedShiftPreview[],
+): AbsencePlanAffectedShiftPreview[] {
+	return affectedShifts.map((affectedShift) => ({
+		id: affectedShift.id,
+		subareaId: affectedShift.subareaId,
+		subareaName: affectedShift.subareaName,
+		date: affectedShift.date,
+		startTime: affectedShift.startTime,
+		endTime: affectedShift.endTime,
+		affectedStartTime: affectedShift.affectedStartTime,
+		affectedEndTime: affectedShift.affectedEndTime,
+	}));
 }
-
-function isAffectedShiftLike(affectedShift: unknown): affectedShift is {
-	id: string;
-	subareaId: string;
-	date: Date | string;
-	startTime: string;
-	endTime: string;
-} {
-	return (
-		typeof affectedShift === "object" &&
-		affectedShift !== null &&
-		"id" in affectedShift &&
-		"subareaId" in affectedShift &&
-		"date" in affectedShift &&
-		"startTime" in affectedShift &&
-		"endTime" in affectedShift &&
-		typeof affectedShift.id === "string" &&
-		typeof affectedShift.subareaId === "string" &&
-		(typeof affectedShift.date === "string" || affectedShift.date instanceof Date) &&
-		typeof affectedShift.startTime === "string" &&
-		typeof affectedShift.endTime === "string"
-	);
-}
-
-function normalizeAffectedShiftDate(date: Date | string): string | null {
-	if (date instanceof Date) {
-		return toDateKey(fromJSDate(date, "utc"));
-	}
-
-	const parsedDate = DateTime.fromISO(date, { zone: "utc" });
-	return parsedDate.isValid ? toDateKey(parsedDate) : null;
-}
-
-function determineApprovalSignal({
-	hasRisk,
-	needsReview,
-}: {
-	hasRisk: boolean;
-	needsReview: boolean;
-}): ApprovalSignal {
-	if (hasRisk) {
-		return "risky";
-	}
-
-	if (needsReview) {
-		return "needs_review";
-	}
-
-	return "likely";
-}
-
 function findHolidaysInRequestRange(
 	request: Pick<AbsenceRequest, "startDate" | "endDate">,
 	holidays: Holiday[],
