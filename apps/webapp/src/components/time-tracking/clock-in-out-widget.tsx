@@ -7,6 +7,11 @@ import {
 import { ExceptionRequestDialog } from "@/components/compliance/exception-request-dialog";
 import { DrivingAuthorizationAdvisory } from "@/components/driving-licence/operational-status";
 import { ClockCaptureControls } from "@/components/offline/offline-capture-actions";
+import {
+	BreakConnectionNote,
+	OnBreakActions,
+	StartBreakButton,
+} from "@/components/time-tracking/break-in-progress-actions";
 import { BreakInProgressNotice } from "@/components/time-tracking/break-in-progress-notice";
 import { ClockConnectionNotice } from "@/components/time-tracking/clock-connection-notice";
 import {
@@ -172,32 +177,63 @@ function ClockBookingChoices({ widget }: { widget: ClockWidget }) {
 function ClockActionRow({ widget }: { widget: ClockWidget }) {
 	const { isClockedIn } = widget;
 
+	// A break in progress ends by its resume, here or anywhere else, or by ending
+	// the day at its start (#888); no other break runs meanwhile.
+	if (isOnBreak(widget)) {
+		return (
+			<OnBreakActions
+				onResume={() => void widget.handleResumeBreak()}
+				onEndDay={() => void widget.handleClockOut()}
+				disabled={widget.isMutating}
+				resumeDisabled={widget.isOffline}
+				isResuming={widget.isResumingBreak}
+				isEndingDay={widget.isClockingOut}
+				size="lg"
+				t={widget.t}
+			/>
+		);
+	}
+
+	// Clock Out beside the icon-only quick break for a break already taken; below
+	// them, Start break across the whole card, so its label always fits.
 	return (
-		<div className="flex gap-2">
-			<div className={isClockedIn ? "min-w-0 basis-2/3" : "w-full"}>
-				<ClockActionButton
-					isClockedIn={isClockedIn}
-					isMutating={widget.isMutating}
-					isClockingOut={widget.isClockingOut}
-					onClick={isClockedIn ? widget.handleClockOut : widget.handleClockIn}
-					t={widget.t}
-				/>
-			</div>
-			{/* A break in progress ends only by its resume at a kiosk. */}
-			{isClockedIn && !isOnBreak(widget) ? (
-				<QuickBreakPopover
-					onAddBreak={widget.handleAddBreak}
-					isAddingBreak={widget.isAddingBreak}
-					isDisabled={widget.isMutating}
-					t={widget.t}
-					buttonClassName="min-w-0 basis-1/3 px-3"
-				>
-					<BreakVehicleReading
-						state={widget.vehicleUse}
-						disabled={widget.isAddingBreak}
+		<div className="flex flex-col gap-2">
+			<div className="flex gap-2">
+				<div className="min-w-0 flex-1">
+					<ClockActionButton
+						isClockedIn={isClockedIn}
+						isMutating={widget.isMutating}
+						isClockingOut={widget.isClockingOut}
+						isClocking={widget.isMutating && !widget.isStartingBreak && !widget.isAddingBreak}
+						onClick={isClockedIn ? widget.handleClockOut : widget.handleClockIn}
 						t={widget.t}
 					/>
-				</QuickBreakPopover>
+				</div>
+				{isClockedIn ? (
+					<QuickBreakPopover
+						onAddBreak={widget.handleAddBreak}
+						isAddingBreak={widget.isAddingBreak}
+						isDisabled={widget.isMutating}
+						t={widget.t}
+						buttonClassName="shrink-0 px-3"
+						iconOnly
+					>
+						<BreakVehicleReading
+							state={widget.vehicleUse}
+							disabled={widget.isAddingBreak}
+							t={widget.t}
+						/>
+					</QuickBreakPopover>
+				) : null}
+			</div>
+			{isClockedIn ? (
+				<StartBreakButton
+					onClick={() => void widget.handleStartBreak()}
+					disabled={widget.isMutating || widget.isOffline}
+					pending={widget.isStartingBreak}
+					size="lg"
+					t={widget.t}
+				/>
 			) : null}
 		</div>
 	);
@@ -274,6 +310,7 @@ export function ClockInOutWidget({
 				<ClockConnectionNotice show={widget.connectionRequired} />
 
 				<ClockWidgetControls widget={widget} />
+				<BreakConnectionNote show={widget.isOffline && widget.isClockedIn} t={widget.t} />
 			</CardContent>
 
 			<ExceptionRequestDialog

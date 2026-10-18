@@ -23,6 +23,7 @@ import {
 	instantFromDate,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
+import { deserializeInstant, serializeInstant } from "@/lib/datetime/temporal-wire";
 import { ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { WorkCategoryReader } from "@/lib/query/work-category.queries";
@@ -69,6 +70,7 @@ import {
 	validateCommonEvidence,
 } from "@/lib/time-tracking/ordinary-submission-evidence";
 import {
+	type BreakInProgressCommand,
 	type BreakRefusal,
 	type ClockActor,
 	type ClockInFailure,
@@ -80,6 +82,7 @@ import {
 	type ClockPosition,
 	clocking,
 	type OperationIdentity,
+	type ResumeBreakOutcome,
 } from "@/lib/time-tracking/clocking";
 import { readClockPosition } from "@/lib/time-tracking/position-capture/clock-position";
 import {
@@ -99,6 +102,8 @@ import {
 	breakFailureMessage,
 	clockInFailureMessage,
 	clockOutFailureMessage,
+	resumeBreakFailureMessage,
+	startBreakFailureMessage,
 } from "./clock-failure-messages";
 import {
 	sendManualEntryApprovalNotifications,
@@ -854,6 +859,171 @@ export async function addBreakToActiveSession(
 		success: true,
 		data: { id: outcome.result.workPeriodId, startTime: dateFromInstant(outcome.result.start) },
 	};
+}
+
+/** A start or resume of a break in progress from the employee's web clock (#888). */
+export type BreakActionContext = {
+	/** Identity of this attempt; its retry replays a committed command. */
+	submissionId: string;
+	/** The live work the employee saw: the command changes only that work. */
+	workPeriodId: string;
+	browserTimezone: string | null;
+};
+
+export type ResumeBreakActionContext = BreakActionContext & {
+	/** The recorded start of the break the employee saw, as an ISO instant. */
+	breakStart: string;
+} & Pick<WebClockPositionContext, "position">;
+
+/**
+ * `at`: where the break started, or where the work resumed. A refusal keeps its
+ * code: `unconfirmed` is the only one where something may have been saved.
+ */
+export type BreakInProgressActionResult =
+	| { success: true; data: { workPeriodId: string; at: string } }
+	| { success: false; error: string; code: string };
+
+/** The employee's own self-service command, or why there is none. */
+async function webBreakScope(
+	context: BreakActionContext,
+): Promise<
+	| { ok: false; refusal: "not_authenticated" | "employee_not_found" }
+	| { ok: true; command: BreakInProgressCommand }
+> {
+	const session = await getCurrentSession();
+	if (!session?.user) return { ok: false, refusal: "not_authenticated" };
+	const currentEmployee = await getCurrentEmployee();
+	if (!currentEmployee) return { ok: false, refusal: "employee_not_found" };
+	return {
+		ok: true,
+		command: {
+			organizationId: currentEmployee.organizationId,
+			principal: { kind: "user", userId: session.user.id },
+			subject: { employeeId: currentEmployee.id },
+			identity: { origin: "client", id: context.submissionId },
+			channel: "web",
+			at: { kind: "now" },
+			zone: {
+				device: context.browserTimezone ?? null,
+				fallback: await getUserTimezone(session.user.id),
+			},
+		},
+	};
+}
+
+function isBreakRequest(context: BreakActionContext) {
+	return typeof context?.submissionId === "string" && typeof context.workPeriodId === "string";
+}
+
+function readBreakStart(value: unknown): Instant | null {
+	if (typeof value !== "string") return null;
+	try {
+		return deserializeInstant(value);
+	} catch {
+		return null;
+	}
+}
+
+/** The response to a start's or resume's outcome; only a committed one refreshes the page. */
+async function breakInProgressResponse<Failure extends { code: string; cause?: unknown }>(
+	organizationId: string,
+	outcome:
+		| { outcome: "executed" | "replayed"; result: { workPeriodId: string; start: Instant } }
+		| { outcome: "refused"; failure: Failure },
+	word: (failure: Exclude<Failure, { code: "billing_required" }>) => Promise<string>,
+	operatorMessage: string,
+): Promise<BreakInProgressActionResult> {
+	if (outcome.outcome === "refused") {
+		const { failure } = outcome;
+		if (failure.code === "billing_required" && "reason" in failure) {
+			return { success: false, error: "billing_required", code: String(failure.reason) };
+		}
+		if (failure.code === "unconfirmed" || failure.code === "failed") {
+			logger.error({ error: failure.cause }, operatorMessage);
+		}
+		return {
+			success: false,
+			// Billing answered above; a generic code does not narrow on its own.
+			error: await word(failure as Exclude<Failure, { code: "billing_required" }>),
+			code: failure.code,
+		};
+	}
+	if (outcome.outcome === "executed") {
+		// The same page refresh as after a clock-out: the live work changed.
+		await revalidateAfterClockOut({ organizationId, workPeriodId: outcome.result.workPeriodId });
+	}
+	return {
+		success: true,
+		data: {
+			workPeriodId: outcome.result.workPeriodId,
+			// A live start keeps the server clock's precision; the wire carries milliseconds.
+			at: serializeInstant(
+				outcome.result.start.round({ smallestUnit: "millisecond", roundingMode: "trunc" }),
+			),
+		},
+	};
+}
+
+/**
+ * Web start of a break in progress (#888, Time Tracking ADR 0007): online only,
+ * on the live work the employee saw. Every refusal is worded in the
+ * `timeTracking` namespace and keeps its code, so the clock can reconcile.
+ */
+export async function startBreakInProgress(
+	context: BreakActionContext,
+): Promise<BreakInProgressActionResult> {
+	if (!isBreakRequest(context)) {
+		const code = "invalid_command";
+		return { success: false, error: await startBreakFailureMessage({ code }), code };
+	}
+	const scope = await webBreakScope(context);
+	if (!scope.ok) {
+		const code = scope.refusal;
+		return { success: false, error: await startBreakFailureMessage({ code }), code };
+	}
+	const outcome = await clocking.startBreak({
+		...scope.command,
+		expected: { workPeriodId: context.workPeriodId },
+	});
+	return breakInProgressResponse(
+		scope.command.organizationId,
+		outcome,
+		startBreakFailureMessage,
+		"Start break error",
+	);
+}
+
+/**
+ * Web resume of the break in progress the employee saw (#888): it closes the
+ * interrupted work at the recorded start and resumes it now. Online only.
+ */
+export async function resumeBreakInProgress(
+	context: ResumeBreakActionContext,
+): Promise<BreakInProgressActionResult> {
+	const breakStart = isBreakRequest(context) ? readBreakStart(context.breakStart) : null;
+	if (!breakStart) {
+		const code = "invalid_command";
+		return { success: false, error: await resumeBreakFailureMessage({ code }), code };
+	}
+	const scope = await webBreakScope(context);
+	if (!scope.ok) {
+		const code = scope.refusal;
+		return { success: false, error: await resumeBreakFailureMessage({ code }), code };
+	}
+	// The one fix is taken where the work resumes: it stamps only the resumed work (#826).
+	const position = readClockPosition(context.position);
+	const outcome = await clocking.resumeBreak({
+		...scope.command,
+		expected: { workPeriodId: context.workPeriodId, breakStart },
+		request: await getRequestMetadata(),
+		...(position ? { position } : {}),
+	});
+	return breakInProgressResponse<Extract<ResumeBreakOutcome, { outcome: "refused" }>["failure"]>(
+		scope.command.organizationId,
+		outcome,
+		resumeBreakFailureMessage,
+		"Resume break error",
+	);
 }
 
 function adjustManualEntryForOverlaps(

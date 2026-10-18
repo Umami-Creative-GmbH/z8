@@ -8,11 +8,15 @@ const toastMocks = vi.hoisted(() => ({
 	success: vi.fn(),
 	info: vi.fn(),
 	error: vi.fn(),
+	warning: vi.fn(),
 }));
 
 const clockInMock = vi.fn();
 const clockOutMock = vi.fn();
 const addBreakMock = vi.fn();
+const startBreakMock = vi.fn();
+const resumeBreakMock = vi.fn();
+let isOfflineMock = false;
 const updateNotesMock = vi.fn();
 const useElapsedTimerMock = vi.fn();
 
@@ -22,6 +26,8 @@ let captureMode: "local-queue" | "local-review" | "server" = "server";
 let connectionRequiredMock = false;
 let activeWorkPeriodMock: {
 	startTime: string;
+	breakStartedAt?: Date | null;
+	breakStartedZone?: string | null;
 	currentTask?: {
 		id: string;
 		name: string;
@@ -57,6 +63,11 @@ vi.mock("@/lib/query", () => ({
 		clockIn: clockInMock,
 		clockOut: clockOutMock,
 		addBreak: addBreakMock,
+		startBreak: startBreakMock,
+		resumeBreak: resumeBreakMock,
+		isStartingBreak: false,
+		isResumingBreak: false,
+		isOffline: isOfflineMock,
 		updateNotes: updateNotesMock,
 		isClockingOut: false,
 		isAddingBreak: false,
@@ -76,6 +87,7 @@ vi.mock("@/lib/query/use-assigned-projects", () => ({
 }));
 
 vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "en" }),
 	useTranslate: () => ({
 		t: (
 			_key: string,
@@ -108,6 +120,7 @@ vi.mock("sonner", () => ({
 		success: toastMocks.success,
 		info: toastMocks.info,
 		error: toastMocks.error,
+		warning: toastMocks.warning,
 	},
 }));
 
@@ -171,6 +184,7 @@ describe("TimeClockPopover", () => {
 		captureMode = "server";
 		connectionRequiredMock = false;
 		activeWorkPeriodMock = null;
+		isOfflineMock = false;
 		billableTimeEnabledMock = false;
 		projectsMock = defaultProjects();
 		clockInMock.mockResolvedValue({ success: true });
@@ -214,6 +228,82 @@ describe("TimeClockPopover", () => {
 			expect(screen.getByRole("alert").textContent).toBe(
 				"Clocking needs a connection in this organization. Reconnect and try again.",
 			);
+		});
+	});
+
+	describe("break in progress (#888)", () => {
+		const breakSince = new Date("2026-10-10T09:45:00Z");
+
+		function onBreak() {
+			isClockedInMock = true;
+			activeWorkPeriodMock = {
+				startTime: "2026-10-10T06:00:00Z",
+				breakStartedAt: breakSince,
+				breakStartedZone: "UTC",
+			};
+		}
+
+		it("starts a break from the clock while working", async () => {
+			isClockedInMock = true;
+			activeWorkPeriodMock = { startTime: "2026-10-10T06:00:00Z" };
+			startBreakMock.mockResolvedValue({ success: true, data: {} });
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+
+			fireEvent.click(screen.getByRole("button", { name: "Start break" }));
+
+			await waitFor(() => expect(startBreakMock).toHaveBeenCalledOnce());
+			expect(toastMocks.success).toHaveBeenCalledWith("Break started", expect.anything());
+		});
+
+		it("offers Resume and End day while on break, and no other break", async () => {
+			onBreak();
+			resumeBreakMock.mockResolvedValue({ success: true, data: {} });
+			clockOutMock.mockResolvedValue({ success: true });
+			render(<TimeClockPopover />);
+			expect(screen.queryByRole("button", { name: "Add break" })).toBeNull();
+
+			fireEvent.click(screen.getByRole("button", { name: "On break" }));
+			expect(screen.getByText("On break since 09:45")).toBeTruthy();
+			expect(screen.queryByRole("button", { name: "Start break" })).toBeNull();
+			fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+			await waitFor(() => expect(resumeBreakMock).toHaveBeenCalledOnce());
+			expect(toastMocks.success).toHaveBeenCalledWith("Work resumed");
+
+			fireEvent.click(screen.getByRole("button", { name: "End day" }));
+			await waitFor(() => expect(clockOutMock).toHaveBeenCalledOnce());
+		});
+
+		it("says when a break could not be confirmed instead of reporting success", async () => {
+			onBreak();
+			resumeBreakMock.mockResolvedValue({ success: false, code: "unconfirmed", uncertain: true });
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: "On break" }));
+
+			fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+
+			await waitFor(() =>
+				expect(toastMocks.warning).toHaveBeenCalledWith(
+					"Your break could not be confirmed",
+					expect.anything(),
+				),
+			);
+			expect(toastMocks.success).not.toHaveBeenCalled();
+		});
+
+		it("explains that breaks need a connection while offline", () => {
+			isOfflineMock = true;
+			isClockedInMock = true;
+			activeWorkPeriodMock = { startTime: "2026-10-10T06:00:00Z" };
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+
+			expect(
+				(screen.getByRole("button", { name: "Start break" }) as HTMLButtonElement).disabled,
+			).toBe(true);
+			expect(
+				screen.getByText("Starting or resuming a break needs a connection."),
+			).toBeTruthy();
 		});
 	});
 
