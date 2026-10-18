@@ -32,6 +32,8 @@ export interface CoverageAbsence {
 	requiresWorkTime: boolean;
 }
 export interface AbsenceCoverageInput {
+	/** Full-day dates on which an approved change restores the subject to staffing. */
+	subjectPresentOn?: readonly string[];
 	organizationId: string;
 	employeeId: string;
 	coverage: AbsenceSubmittedCoverage;
@@ -149,7 +151,8 @@ export function evaluateAbsenceCoverage(
 			(row) =>
 				row.organizationId === input.organizationId &&
 				row.employeeId &&
-				row.employeeId !== input.employeeId &&
+				(row.employeeId !== input.employeeId ||
+					input.subjectPresentOn?.includes(own.date)) &&
 				row.date === own.date &&
 				row.subareaId === own.subareaId,
 		);
