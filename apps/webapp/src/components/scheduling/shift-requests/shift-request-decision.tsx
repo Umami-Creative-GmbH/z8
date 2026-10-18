@@ -22,17 +22,13 @@ import { queryKeys } from "@/lib/query/keys";
 import { useSkillValidation } from "@/lib/query/use-skills";
 import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
 import { SKILL_OVERRIDE_REASON_REQUIRED } from "@/lib/scheduling/skill-override-refusal";
+import { assignedEmployeeIdOf } from "./shift-request-assignee";
 
 /** The server wants a skill override reason for this approval (#893). */
 class SkillOverrideReasonRequired extends Error {
 	constructor() {
 		super("Skill override reason required");
 	}
-}
-
-/** Who the shift goes to on approval: the requester of a pickup, the named colleague of a swap. */
-export function assignedEmployeeIdOf(request: ShiftRequestWithRelations): string | null {
-	return request.type === "pickup" ? request.requesterId : request.targetEmployeeId;
 }
 
 interface ShiftRequestDecisionProps {

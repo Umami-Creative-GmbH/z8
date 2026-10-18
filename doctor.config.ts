@@ -57,6 +57,7 @@ export default {
 				files: [
 					"**/components/billable-time/billable-currency-form.tsx",
 					"**/components/calendar/work-period-mileage-action.tsx",
+					"**/components/settings/vacation/vacation-assignment-dialog.tsx",
 				],
 				rules: ["react-doctor/no-prevent-default"],
 			},
@@ -271,6 +272,77 @@ export default {
 					"react-doctor/async-await-in-loop",
 					"react-doctor/server-sequential-independent-await",
 				],
+			},
+			{
+				// One transaction or snapshot connection again: the employment-date correction (plan and
+				// apply on `database.transaction`, years carrying accrual sums and carryover overrides),
+				// the CSV import's scan/commit work transaction (chunked staged inserts, per-row issue
+				// re-resolution that needs the previous rows' overlap state), the payroll comparison
+				// snapshot reader, the purge's minimisation of audit rows locked FOR UPDATE in id order,
+				// the departure's badge audits on its work transaction, and period readiness checks
+				// inside `readOnly(...)` sharing their `once()` checks.
+				files: [
+					"**/src/lib/absences/vacation-employment-refresh.ts",
+					"**/src/lib/import-review/csv-work-import.ts",
+					"**/src/lib/payroll-export/comparison-service.ts",
+					"**/src/lib/personnel-file/audit.ts",
+					"**/src/lib/time-tracking/kiosk/badge-store.ts",
+					"**/src/lib/time-tracking/period-submissions/submission-readiness.ts",
+				],
+				rules: [
+					"react-doctor/async-await-in-loop",
+					"react-doctor/async-parallel",
+					"react-doctor/server-sequential-independent-await",
+				],
+			},
+			{
+				// Payroll baseline rows share a scope reader memoized per start date: one departed-coverage
+				// query per period, reused by every later row; parallel rows would miss that cache.
+				// SCIM personnel numbers are projected on the Better Auth adapter inside the coordinated
+				// mutation and must read back the number just saved, one provisioning org at a time.
+				files: [
+					"**/src/lib/payroll-export/baseline-access.ts",
+					"**/src/lib/scim/personnel-number-endpoints.ts",
+				],
+				rules: ["react-doctor/async-await-in-loop"],
+			},
+			{
+				// aria-live switches from off to polite only after the first readiness result is in the
+				// DOM, so that first result is not announced (#1302). Setting it during render would
+				// announce it; "announces no row summary for the first result, only later changes" pins it.
+				files: ["**/components/time-tracking/period-submissions-card.tsx"],
+				rules: ["react-hooks-js/set-state-in-effect", "react-doctor/no-adjust-state-on-prop-change"],
+			},
+			{
+				// Break mutations update the cache inside `mutationFn`: `sendBreakCommand` calls
+				// `refreshAfterBreakCommand` on every outcome, refusals and lost answers included, which an
+				// `onSuccess` would miss.
+				files: ["**/src/lib/query/use-time-clock.ts"],
+				rules: ["react-doctor/query-mutation-missing-invalidation"],
+			},
+			{
+				// Preparing a payroll comparison is read-only (a repeatable-read snapshot that writes
+				// nothing); its result lives only in `mutation.data`, so no cached query goes stale.
+				files: ["**/components/payroll/payroll-comparison-card.tsx"],
+				rules: ["react-doctor/query-mutation-missing-invalidation"],
+			},
+			{
+				// The guard after `decoder.read()` checks `over`, which `stop()` can set while the read is
+				// pending, so it must run after the await.
+				files: ["**/components/kiosk/kiosk-camera-scan.tsx"],
+				rules: ["react-doctor/async-defer-await"],
+			},
+			{
+				// The badge PDF's object URL is kept in state and revoked by the effect cleanup when it
+				// changes or unmounts (employee-kiosk-badge.test.tsx); the rule cannot follow it through state.
+				files: ["**/components/settings/kiosk/employee-kiosk-badge-section.tsx"],
+				rules: ["react-doctor/no-create-object-url-without-revoke"],
+			},
+			{
+				// Server-only badge PDF renderer (`import "server-only"`), used only by the "use server"
+				// kiosk actions; @react-pdf/renderer never ships to clients.
+				files: ["**/src/lib/time-tracking/kiosk/badge-pdf.tsx"],
+				rules: ["react-doctor/prefer-dynamic-import"],
 			},
 		],
 	},

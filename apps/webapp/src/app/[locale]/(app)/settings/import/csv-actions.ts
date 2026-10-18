@@ -16,14 +16,12 @@ import {
 import { updateImportBatchStatus } from "@/lib/import-review/repository";
 import { requireImportAdmin } from "./review-actions";
 
-const uploadSchema = z
-	.object({
-		organizationId: z.string().min(1).max(128),
-		csv: z.string().min(1).max(CSV_WORK_MAX_BYTES),
-		timezone: z.string().max(100).optional(),
-		fileName: z.string().min(1).max(200),
-	})
-	.strict();
+const uploadSchema = z.strictObject({
+	organizationId: z.string().min(1).max(128),
+	csv: z.string().min(1).max(CSV_WORK_MAX_BYTES),
+	timezone: z.string().max(100).optional(),
+	fileName: z.string().min(1).max(200),
+});
 
 export async function uploadCsvWorkAction(input: unknown) {
 	try {
@@ -56,9 +54,10 @@ export async function uploadCsvWorkAction(input: unknown) {
 	}
 }
 
-const batchSchema = z
-	.object({ organizationId: z.string().min(1).max(128), batchId: z.uuid() })
-	.strict();
+const batchSchema = z.strictObject({
+	organizationId: z.string().min(1).max(128),
+	batchId: z.uuid(),
+});
 
 export async function commitCsvWorkAction(input: unknown) {
 	try {

@@ -9,7 +9,8 @@ import {
 	TIMELINE_REGION_ID,
 } from "@/lib/time-tracking/period-submissions/blocker-navigation";
 import type { PeriodSubmissionBlocker } from "@/lib/time-tracking/period-submissions/submission-blockers";
-import { announcePeriodBlockerArrival, PeriodBlockerFocus } from "./period-blocker-focus";
+import { announcePeriodBlockerArrival } from "./period-blocker-arrival";
+import { PeriodBlockerFocus } from "./period-blocker-focus";
 
 const state = vi.hoisted(() => ({ readPeriodReadiness: vi.fn() }));
 

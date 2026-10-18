@@ -1468,6 +1468,138 @@ function getPayrollScopeSummary({
 	});
 }
 
+/** The blocker's type label and the action that resolves it. */
+function payrollBlockerAction(
+	blocker: PayrollWorkspaceSummary["blockers"][number],
+	formattedDate: string | null,
+	t: PayrollTranslate,
+) {
+	let blockerType: string;
+	let actionLabel: string;
+	let href: string;
+
+	switch (blocker.type) {
+		case "missing_clock_out":
+		case "unresolved_work_minutes":
+			blockerType =
+				blocker.type === "missing_clock_out"
+					? t(
+							"payroll.blockers.missingClockOut",
+							"Missing clock-out",
+						)
+					: t(
+							"payroll.blockers.unresolvedWorkMinutes",
+							"Work minutes need review",
+						);
+			actionLabel = t(
+				"payroll.blockers.openCalendar",
+				"Open calendar",
+			);
+			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
+				formattedDate && blocker.date
+					? `?date=${encodeURIComponent(blocker.date)}`
+					: ""
+			}`;
+			break;
+		case "offboarding_clock_repair":
+			// Fixed through the existing time correction flow on the calendar.
+			blockerType = t(
+				"payroll.blockers.offboardingClockRepair",
+				"Offboarding clock-out needs repair",
+			);
+			actionLabel = t(
+				"payroll.blockers.openCalendar",
+				"Open calendar",
+			);
+			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
+				formattedDate && blocker.date
+					? `?date=${encodeURIComponent(blocker.date)}`
+					: ""
+			}`;
+			break;
+		case "open_work":
+			blockerType = t(
+				"payroll.blockers.openWork",
+				"Work without clock-out",
+			);
+			actionLabel = t(
+				"payroll.blockers.openCalendar",
+				"Open calendar",
+			);
+			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
+				formattedDate && blocker.date
+					? `?date=${encodeURIComponent(blocker.date)}`
+					: ""
+			}`;
+			break;
+		case "pending_work_approval":
+		case "pending_work_correction":
+			blockerType =
+				blocker.type === "pending_work_approval"
+					? t(
+							"payroll.blockers.pendingWorkApproval",
+							"Work awaiting approval",
+						)
+					: t(
+							"payroll.blockers.pendingTimeCorrection",
+							"Pending time correction",
+						);
+			actionLabel = t(
+				"payroll.blockers.openApprovals",
+				"Open approvals",
+			);
+			href = "/approvals/inbox?types=time_entry";
+			break;
+		case "uncertain_historical_work":
+			blockerType = t(
+				"payroll.blockers.uncertainHistoricalWork",
+				"Historical work needs review",
+			);
+			actionLabel = t(
+				"payroll.blockers.openWorkDiagnostics",
+				"Open work diagnostics",
+			);
+			href = "/settings/work-diagnostics";
+			break;
+		case "pending_time_correction":
+			blockerType = t(
+				"payroll.blockers.pendingTimeCorrection",
+				"Pending time correction",
+			);
+			actionLabel = t(
+				"payroll.blockers.openApprovals",
+				"Open approvals",
+			);
+			href = "/approvals/inbox?types=time_entry";
+			break;
+		case "pending_absence":
+			blockerType = t(
+				"payroll.blockers.pendingAbsence",
+				"Pending absence",
+			);
+			actionLabel = t(
+				"payroll.blockers.openApprovals",
+				"Open approvals",
+			);
+			href = "/approvals/inbox?types=absence_entry";
+			break;
+		case "missing_identifier":
+			// The configured custom field identifier has no value (#821).
+			blockerType = t(
+				"payroll.blockers.missingIdentifier",
+				"Missing identifier",
+			);
+			actionLabel = t(
+				"payroll.blockers.openEmployee",
+				"Open employee",
+			);
+			href = `/settings/employees/${encodeURIComponent(blocker.employeeId)}`;
+			break;
+	}
+
+	return { blockerType, actionLabel, href };
+}
+
 function PayrollBlockersAlert({
 	blockers,
 	clearingBlockerKeys,
@@ -1589,128 +1721,11 @@ function PayrollBlockersAlert({
 							const metadata = formattedDate
 								? [formattedDate, blocker.time].filter(Boolean).join(", ")
 								: t("payroll.blockers.dateUnavailable", "Date unavailable");
-							let blockerType: string;
-							let actionLabel: string;
-							let href: string;
-
-							switch (blocker.type) {
-								case "missing_clock_out":
-								case "unresolved_work_minutes":
-									blockerType =
-										blocker.type === "missing_clock_out"
-											? t(
-													"payroll.blockers.missingClockOut",
-													"Missing clock-out",
-												)
-											: t(
-													"payroll.blockers.unresolvedWorkMinutes",
-													"Work minutes need review",
-												);
-									actionLabel = t(
-										"payroll.blockers.openCalendar",
-										"Open calendar",
-									);
-									href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-										formattedDate && blocker.date
-											? `?date=${encodeURIComponent(blocker.date)}`
-											: ""
-									}`;
-									break;
-								case "offboarding_clock_repair":
-									// Fixed through the existing time correction flow on the calendar.
-									blockerType = t(
-										"payroll.blockers.offboardingClockRepair",
-										"Offboarding clock-out needs repair",
-									);
-									actionLabel = t(
-										"payroll.blockers.openCalendar",
-										"Open calendar",
-									);
-									href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-										formattedDate && blocker.date
-											? `?date=${encodeURIComponent(blocker.date)}`
-											: ""
-									}`;
-									break;
-								case "open_work":
-									blockerType = t(
-										"payroll.blockers.openWork",
-										"Work without clock-out",
-									);
-									actionLabel = t(
-										"payroll.blockers.openCalendar",
-										"Open calendar",
-									);
-									href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-										formattedDate && blocker.date
-											? `?date=${encodeURIComponent(blocker.date)}`
-											: ""
-									}`;
-									break;
-								case "pending_work_approval":
-								case "pending_work_correction":
-									blockerType =
-										blocker.type === "pending_work_approval"
-											? t(
-													"payroll.blockers.pendingWorkApproval",
-													"Work awaiting approval",
-												)
-											: t(
-													"payroll.blockers.pendingTimeCorrection",
-													"Pending time correction",
-												);
-									actionLabel = t(
-										"payroll.blockers.openApprovals",
-										"Open approvals",
-									);
-									href = "/approvals/inbox?types=time_entry";
-									break;
-								case "uncertain_historical_work":
-									blockerType = t(
-										"payroll.blockers.uncertainHistoricalWork",
-										"Historical work needs review",
-									);
-									actionLabel = t(
-										"payroll.blockers.openWorkDiagnostics",
-										"Open work diagnostics",
-									);
-									href = "/settings/work-diagnostics";
-									break;
-								case "pending_time_correction":
-									blockerType = t(
-										"payroll.blockers.pendingTimeCorrection",
-										"Pending time correction",
-									);
-									actionLabel = t(
-										"payroll.blockers.openApprovals",
-										"Open approvals",
-									);
-									href = "/approvals/inbox?types=time_entry";
-									break;
-								case "pending_absence":
-									blockerType = t(
-										"payroll.blockers.pendingAbsence",
-										"Pending absence",
-									);
-									actionLabel = t(
-										"payroll.blockers.openApprovals",
-										"Open approvals",
-									);
-									href = "/approvals/inbox?types=absence_entry";
-									break;
-								case "missing_identifier":
-									// The configured custom field identifier has no value (#821).
-									blockerType = t(
-										"payroll.blockers.missingIdentifier",
-										"Missing identifier",
-									);
-									actionLabel = t(
-										"payroll.blockers.openEmployee",
-										"Open employee",
-									);
-									href = `/settings/employees/${encodeURIComponent(blocker.employeeId)}`;
-									break;
-							}
+							const { blockerType, actionLabel, href } = payrollBlockerAction(
+								blocker,
+								formattedDate,
+								t,
+							);
 
 							return (
 								<li

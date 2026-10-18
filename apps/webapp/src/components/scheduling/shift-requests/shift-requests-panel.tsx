@@ -17,11 +17,8 @@ import { Button } from "@/components/ui/button";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
-import {
-	ApproveShiftRequestForm,
-	assignedEmployeeIdOf,
-	RejectShiftRequestForm,
-} from "./shift-request-decision";
+import { assignedEmployeeIdOf } from "./shift-request-assignee";
+import { ApproveShiftRequestForm, RejectShiftRequestForm } from "./shift-request-decision";
 import { usePendingShiftRequests } from "./use-pending-shift-requests";
 
 type RequestEmployee = ShiftRequestWithRelations["requester"];

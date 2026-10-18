@@ -11,7 +11,9 @@ import {
 	type TimeTrackingFocus,
 	workPeriodFocusTargetId,
 } from "@/lib/time-tracking/period-submissions/blocker-navigation";
-import { ArrivalNotice, focusArrivalTarget } from "./arrival-focus";
+import { ArrivalNotice } from "./arrival-focus";
+import { focusArrivalTarget } from "./arrival-focus-target";
+import { PERIOD_BLOCKER_ARRIVAL_EVENT } from "./period-blocker-arrival";
 import {
 	type PeriodReadinessScope,
 	usePeriodSubmissionReadiness,
@@ -22,17 +24,6 @@ interface Props extends PeriodReadinessScope {
 	focus: string | undefined;
 	/** How long to wait for the target once its region has rendered. */
 	waitForTargetMs?: number;
-}
-
-const ARRIVAL_EVENT = "period-blocker-arrival";
-
-/**
- * Says that a period blocker link with this focus value (`periodSubmissionBlockerKey`) was just
- * followed. Following a link to the page already shown changes no URL, so the focus on
- * `/time-tracking` would not otherwise notice it arrived again.
- */
-export function announcePeriodBlockerArrival(key: string): void {
-	window.dispatchEvent(new CustomEvent<string>(ARRIVAL_EVENT, { detail: key }));
 }
 
 /**
@@ -56,8 +47,8 @@ export function PeriodBlockerFocus({ focus, ...props }: Props) {
 		const onArrival = (event: Event) => {
 			if ((event as CustomEvent<string>).detail === targetKey) setArrivals((count) => count + 1);
 		};
-		window.addEventListener(ARRIVAL_EVENT, onArrival);
-		return () => window.removeEventListener(ARRIVAL_EVENT, onArrival);
+		window.addEventListener(PERIOD_BLOCKER_ARRIVAL_EVENT, onArrival);
+		return () => window.removeEventListener(PERIOD_BLOCKER_ARRIVAL_EVENT, onArrival);
 	}, [targetKey]);
 
 	if (!target) return null;
@@ -91,12 +82,12 @@ function BlockerFocusArrival({
 	const targetId = live ? CLOCK_FOCUS_TARGET_ID : workPeriodFocusTargetId(target.workPeriodId);
 	const regionId = live ? CLOCK_REGION_ID : TIMELINE_REGION_ID;
 
+	// A settled check that no longer lists the blocker decides the arrival during render; the
+	// outcome then stays, whatever later checks say.
+	if (settled && outcome === null && stillBlocks === false) setOutcome("resolved");
+
 	useEffect(() => {
-		if (!settled || outcome !== null) return;
-		if (stillBlocks === false) {
-			setOutcome("resolved");
-			return;
-		}
+		if (!settled || outcome !== null || stillBlocks === false) return;
 		// The wait for the target starts once its region has streamed in, never before.
 		let stopTarget = () => {};
 		// The clock region is itself the clock target when it loaded.

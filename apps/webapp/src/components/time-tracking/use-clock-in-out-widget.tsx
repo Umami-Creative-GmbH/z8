@@ -16,7 +16,7 @@ import {
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
 import { showAppendReviewRequiredToast } from "./append-review-toast";
-import { breakInProgressHandlers } from "./break-in-progress-actions";
+import { breakInProgressHandlers } from "./break-in-progress-handlers";
 import { toastClockCommandError } from "./clock-command-error-toast";
 import { useClockVehicleUse } from "./clock-vehicle-use";
 import { warnVehicleUseLeftOut } from "./clock-vehicle-use-notice";

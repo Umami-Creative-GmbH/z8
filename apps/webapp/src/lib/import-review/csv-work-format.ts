@@ -181,8 +181,9 @@ export function parseCsvWorkUpload(text: string, selectedTimezone?: string) {
 		throw new Error("Malformed CSV: check quotes and comma separators");
 	const [rawHeaders = [], ...records] = parsed.data;
 	const headers = rawHeaders.map((value) => value.trim());
+	const headerSet = new Set(headers);
 	if (
-		new Set(headers).size !== headers.length ||
+		headerSet.size !== headers.length ||
 		headers.some(
 			(value) => !CSV_WORK_COLUMNS.some((column) => column === value),
 		)
@@ -190,7 +191,7 @@ export function parseCsvWorkUpload(text: string, selectedTimezone?: string) {
 		throw new Error(
 			"CSV headers must be unique and use the Z8 template columns",
 		);
-	if (CSV_WORK_COLUMNS.slice(0, 3).some((key) => !headers.includes(key)))
+	if (CSV_WORK_COLUMNS.slice(0, 3).some((key) => !headerSet.has(key)))
 		throw new Error(
 			"Required CSV columns: personnel_number, starts_at, ends_at",
 		);
