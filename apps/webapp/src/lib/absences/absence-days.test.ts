@@ -1,6 +1,7 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import {
+	absenceDaysByYear,
 	clipAbsenceDayRange,
 	countAbsenceDays,
 	type IsWorkingDay,
@@ -130,5 +131,69 @@ describe("clipAbsenceDayRange", () => {
 		expect(
 			clipAbsenceDayRange(range("2026-11-02", "full_day", "2026-11-03", "full_day"), october),
 		).toBeNull();
+	});
+});
+
+describe("absenceDaysByYear", () => {
+	// Wed 2026-12-30, Thu 12-31, Fri 2027-01-01, Sat 01-02.
+	it("charges each calendar year only the working days that fall in it", () => {
+		expect(
+			absenceDaysByYear(range("2026-12-30", "full_day", "2027-01-02", "full_day"), mondayToFriday),
+		).toEqual([
+			{ year: 2026, absenceDays: 2 },
+			{ year: 2027, absenceDays: 1 },
+		]);
+	});
+
+	it("leaves a year at zero when its days are holidays or not worked", () => {
+		const newYear = {
+			...closure,
+			id: "new-year",
+			startDate: new Date("2027-01-01T00:00:00Z"),
+			endDate: new Date("2027-01-01T00:00:00Z"),
+		};
+
+		expect(
+			absenceDaysByYear(
+				range("2026-12-30", "full_day", "2027-01-02", "full_day"),
+				withHolidays(newYear),
+			),
+		).toEqual([
+			{ year: 2026, absenceDays: 2 },
+			{ year: 2027, absenceDays: 0 },
+		]);
+		expect(
+			absenceDaysByYear(
+				range("2026-12-30", "full_day", "2027-01-01", "full_day"),
+				mondayToThursday,
+			),
+		).toEqual([
+			{ year: 2026, absenceDays: 2 },
+			{ year: 2027, absenceDays: 0 },
+		]);
+	});
+
+	it("splits legacy half-day endpoints across New Year", () => {
+		expect(
+			absenceDaysByYear(range("2026-12-31", "pm", "2027-01-01", "am"), mondayToFriday),
+		).toEqual([
+			{ year: 2026, absenceDays: 0.5 },
+			{ year: 2027, absenceDays: 0.5 },
+		]);
+	});
+
+	it("keeps a range inside one year in that year, halves included", () => {
+		expect(
+			absenceDaysByYear(range("2026-10-12", "pm", "2026-10-16", "am"), mondayToFriday),
+		).toEqual([{ year: 2026, absenceDays: 4 }]);
+	});
+
+	it("covers every year of a range spanning more than one New Year", () => {
+		expect(
+			absenceDaysByYear(
+				range("2026-12-31", "full_day", "2028-01-03", "full_day"),
+				mondayToFriday,
+			).map(({ year }) => year),
+		).toEqual([2026, 2027, 2028]);
 	});
 });

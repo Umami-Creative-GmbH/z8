@@ -134,7 +134,6 @@ async function AbsencesPageContent() {
 					holidays={holidays}
 					categories={categories}
 					organizationId={employee.organizationId}
-					remainingDays={vacationBalance.remainingDays}
 					currentYear={calendarYear}
 					currentDate={currentDate}
 				/>
