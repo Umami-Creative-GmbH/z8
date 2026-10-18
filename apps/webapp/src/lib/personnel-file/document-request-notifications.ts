@@ -11,15 +11,20 @@ import {
 } from "@/lib/notifications/notification-params";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
-import type { DocumentRequestCategory } from "./document-request.types";
+import type {
+	DocumentRequestCategory,
+	DocumentRequestReminderKind,
+} from "./document-request.types";
 import { MY_DOCUMENTS_PATH } from "./notifications";
+import { personnelFilePath } from "./paths";
 
 /**
  * Notifications of document requests (#1307), in the personnelFile
  * preference group. The employee hears of a new request and of every
- * decision (accepted, returned, cancelled); later slices add the submission
- * (officers, #1402) and the deadline reminders (#1406). One notification per
- * history event and recipient: the event id is the idempotency key.
+ * decision (accepted, returned, cancelled), and of its deadline (#1406); the
+ * officers of an overdue request, and later of a submission (#1402). One
+ * notification per history event and recipient: the event id is the
+ * idempotency key; a deadline reminder's key is its request, kind and deadline.
  */
 
 const logger = createLogger("PersonnelFileDocumentRequestNotifications");
@@ -134,6 +139,84 @@ export function buildDocumentRequestDecidedNotification(input: {
 		metadata: {
 			category: input.request.category,
 			decision: input.decision,
+			i18n: { ...copy, params },
+		},
+	};
+}
+
+const dueSoonCopy = {
+	titleKey: "common:notifications.content.personnelFileDocumentRequestDueSoon.title",
+	titleDefault: "Document due soon",
+	messageKey: "common:notifications.content.personnelFileDocumentRequestDueSoon.message",
+	messageDefault: 'Please upload "{title}" by {deadline}.',
+} as const;
+
+const dueTodayCopy = {
+	titleKey: "common:notifications.content.personnelFileDocumentRequestDueToday.title",
+	titleDefault: "Document due today",
+	messageKey: "common:notifications.content.personnelFileDocumentRequestDueToday.message",
+	messageDefault: 'Please upload "{title}" today.',
+} as const;
+
+const overdueCopy = {
+	titleKey: "common:notifications.content.personnelFileDocumentRequestOverdue.title",
+	titleDefault: "Document overdue",
+	messageKey: "common:notifications.content.personnelFileDocumentRequestOverdue.message",
+	messageDefault: '"{title}" was due on {deadline}. Please upload it.',
+} as const;
+
+const officerOverdueCopy = {
+	titleKey: "common:notifications.content.personnelFileDocumentRequestOverdue.officerTitle",
+	titleDefault: "Requested document overdue",
+	messageKey: "common:notifications.content.personnelFileDocumentRequestOverdue.officerMessage",
+	messageDefault: '{employee} has not handed in "{title}", due on {deadline}.',
+} as const;
+
+const EMPLOYEE_REMINDER_COPY = {
+	three_days_before: dueSoonCopy,
+	deadline_day: dueTodayCopy,
+	overdue: overdueCopy,
+} as const satisfies Record<DocumentRequestReminderKind, unknown>;
+
+/**
+ * A deadline reminder (#1406): to the employee 3 days before the deadline, on
+ * the deadline day and when overdue; to the covering officers (or owners and
+ * admins) only when overdue. One per request, kind, deadline and recipient, so
+ * a moved deadline reminds again.
+ */
+export function buildDocumentRequestReminderNotification(
+	input: {
+		organizationId: string;
+		recipientUserId: string;
+		request: NotifiedRequest & { employeeName: string };
+	} & (
+		| { audience: "employee"; kind: DocumentRequestReminderKind }
+		| { audience: "officer"; kind: "overdue" }
+	),
+): CreateNotificationParams {
+	const { request } = input;
+	const officer = input.audience === "officer";
+	const copy = officer ? officerOverdueCopy : EMPLOYEE_REMINDER_COPY[input.kind];
+	const params = officer
+		? { ...requestParams(request), employee: request.employeeName }
+		: requestParams(request);
+	return {
+		userId: input.recipientUserId,
+		organizationId: input.organizationId,
+		type:
+			input.kind === "overdue"
+				? "personnel_file_document_request_overdue"
+				: "personnel_file_document_request_reminder",
+		title: copy.titleDefault,
+		message: fillNotificationTemplate(copy.messageDefault, params),
+		entityType: DOCUMENT_REQUEST_NOTIFICATION_ENTITY_TYPE,
+		entityId: request.id,
+		actionUrl: officer ? personnelFilePath(request.employeeId) : MY_DOCUMENTS_PATH,
+		idempotencyKey: `personnel-file-document-request-reminder:${request.id}:${input.kind}:${request.deadline}:${input.recipientUserId}`,
+		metadata: {
+			category: request.category,
+			reminder: input.kind,
+			deadline: request.deadline,
 			i18n: { ...copy, params },
 		},
 	};
