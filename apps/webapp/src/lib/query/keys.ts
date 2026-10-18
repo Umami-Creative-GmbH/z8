@@ -162,6 +162,10 @@ export const queryKeys = {
 
 	// Payroll workspace
 	payroll: {
+		baselines: (request: { startDate: string; endDate: string }) =>
+			["payroll", "baselines", request.startDate, request.endDate] as const,
+		baselineDetails: () => ["payroll", "baseline"] as const,
+		baseline: (baselineId: string) => ["payroll", "baseline", baselineId] as const,
 		/** How many employees an export of the period would cover (#1001). */
 		exportScope: (request: { startDate: string; endDate: string }) =>
 			["payroll", "export-scope", request.startDate, request.endDate] as const,
@@ -187,6 +191,15 @@ export const queryKeys = {
 		/** What a close of the month for the scope would warn about (#1065). */
 		closeWarnings: (month: string, scope: string) =>
 			["closed-months", "close-warnings", month, scope] as const,
+	},
+
+	// Period submissions (#1348)
+	periodSubmissions: {
+		/** Every period submission read; invalidate it after a change that can affect readiness. */
+		all: ["period-submissions"] as const,
+		/** The employee's period view with readiness, for the organization and employee shown. */
+		readiness: (orgId: string, employeeId: string) =>
+			["period-submissions", "readiness", orgId, employeeId] as const,
 	},
 
 	// Employees

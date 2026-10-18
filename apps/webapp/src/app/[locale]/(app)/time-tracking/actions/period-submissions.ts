@@ -4,10 +4,14 @@ import { Effect } from "effect";
 import { z } from "zod";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { AuthenticationError, ValidationError } from "@/lib/effect/errors";
+import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { PeriodSubmissionBlocker } from "@/lib/time-tracking/period-submissions/submission-blockers";
+import {
+	type EmployeePeriodReadinessView,
+	loadEmployeePeriodReadinessView,
+} from "@/lib/time-tracking/period-submissions/submission-readiness";
 import {
 	type PeriodSubmissionRefusal,
 	submitPeriodSubmission,
@@ -66,6 +70,46 @@ export async function submitPeriod(input: {
 			return result.reason === "period_open"
 				? ({ kind: "refused", reason: result.reason, blockers: result.blockers } as const)
 				: ({ kind: "refused", reason: result.reason } as const);
+		}),
+	);
+}
+
+const readinessSchema = z.object({
+	organizationId: z.string().min(1),
+	employeeId: z.string().min(1),
+});
+
+/**
+ * The signed-in employee's period view with each period's submission readiness (#1348). Read-only:
+ * nothing is submitted, started, audited or notified. The organization and employee come from the
+ * session; the page passes the ones it was rendered for only so a read never answers for another
+ * organization or employee (an organization switched in another tab refuses instead).
+ */
+export async function readPeriodReadiness(input: {
+	organizationId: string;
+	employeeId: string;
+}): Promise<ServerActionResult<EmployeePeriodReadinessView | null>> {
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			const parsed = readinessSchema.safeParse(input);
+			if (!parsed.success) {
+				return yield* Effect.fail(new ValidationError({ message: "Choose whose periods to read" }));
+			}
+			const { organizationId, userId } = yield* signedInOrganization;
+			// The organization or the employee changed since the page was rendered.
+			const changed = new AuthorizationError({
+				message: "This page no longer matches your signed-in employee or active organization",
+			});
+			if (organizationId !== parsed.data.organizationId) return yield* Effect.fail(changed);
+			const dbService = yield* DatabaseService;
+			const view = yield* dbService.query("periodSubmissions.readiness", () =>
+				loadEmployeePeriodReadinessView(
+					{ organizationId, userId },
+					{ database: dbService.db, clock: systemClock },
+				),
+			);
+			if (view && view.employeeId !== parsed.data.employeeId) return yield* Effect.fail(changed);
+			return view;
 		}),
 	);
 }

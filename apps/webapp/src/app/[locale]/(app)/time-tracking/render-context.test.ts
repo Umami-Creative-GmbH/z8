@@ -82,6 +82,9 @@ vi.mock("@/components/time-tracking/time-entries-table", () => ({
 vi.mock("@/components/time-tracking/period-submissions-card", () => ({
 	PeriodSubmissionsCard: () => null,
 }));
+vi.mock("@/components/time-tracking/period-blocker-focus", () => ({
+	PeriodBlockerFocus: () => null,
+}));
 vi.mock("@/components/time-tracking/weekly-summary-cards", () => ({
 	WeeklySummaryCards: () => null,
 }));
@@ -166,9 +169,11 @@ describe("getTimeTrackingRenderContext", () => {
 				children: ReactElement<{ context: unknown }>;
 			}>[];
 		}>;
-		const clock = content.props.children[0].props.children;
-		expect(clock.type).toBe(ClockRegion);
-		expect(clock.props.context).toMatchObject({
+		const clock = content.props.children
+			.map((region) => region.props.children)
+			.find((child) => child.type === ClockRegion);
+		expect(clock?.type).toBe(ClockRegion);
+		expect(clock?.props.context).toMatchObject({
 			employee: { id: "employee-1", organizationId: "org-1" },
 		});
 	});

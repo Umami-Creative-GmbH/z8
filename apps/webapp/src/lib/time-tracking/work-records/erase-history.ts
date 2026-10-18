@@ -28,6 +28,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { eraseEmployeePayrollBaselines } from "@/lib/payroll-export/baseline-evidence";
 import type { SealedWorkTransactionScope } from "../work-transaction";
 import { applyWrittenWorkEffects, sendBackChangedWork } from "./effects";
 import { CompletedWorkIntegrityError } from "./integrity";
@@ -42,11 +43,16 @@ export type EmployeeWorkHistoryErasure = {
 
 export async function eraseEmployeeWorkHistory(
 	scope: SealedWorkTransactionScope,
-	input: { organizationId: string; employeeId: string; actorUserId: string | null },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		actorUserId: string | null;
+	},
 ): Promise<EmployeeWorkHistoryErasure> {
 	const { organizationId, employeeId } = input;
 	scope.assertEmployee(organizationId, employeeId);
 	const tx = scope.db;
+	await eraseEmployeePayrollBaselines(tx, { organizationId, employeeId });
 	const ofEmployee = and(
 		eq(workPeriod.organizationId, organizationId),
 		eq(workPeriod.employeeId, employeeId),
@@ -62,7 +68,10 @@ export async function eraseEmployeeWorkHistory(
 		.from(workPeriod)
 		.leftJoin(
 			timeEntry,
-			and(eq(timeEntry.id, workPeriod.clockInId), eq(timeEntry.organizationId, organizationId)),
+			and(
+				eq(timeEntry.id, workPeriod.clockInId),
+				eq(timeEntry.organizationId, organizationId),
+			),
 		)
 		.where(ofEmployee)
 		.orderBy(asc(workPeriod.id))
@@ -121,7 +130,12 @@ export async function eraseEmployeeWorkHistory(
 	}
 	const entries = await tx
 		.delete(timeEntry)
-		.where(and(eq(timeEntry.organizationId, organizationId), eq(timeEntry.employeeId, employeeId)))
+		.where(
+			and(
+				eq(timeEntry.organizationId, organizationId),
+				eq(timeEntry.employeeId, employeeId),
+			),
+		)
 		.returning({ id: timeEntry.id });
 
 	const effects =
@@ -133,7 +147,9 @@ export async function eraseEmployeeWorkHistory(
 					writtenStarts: periods.map((period) => {
 						// The refresh date needs the start's own offset; inventing one could start too late.
 						if (period.clockInOffset === null) {
-							throw new CompletedWorkIntegrityError("Erased work has no clock-in entry");
+							throw new CompletedWorkIntegrityError(
+								"Erased work has no clock-in entry",
+							);
 						}
 						return {
 							at: instantFromDate(period.startTime),
@@ -143,7 +159,9 @@ export async function eraseEmployeeWorkHistory(
 				});
 	return {
 		workPeriodsDeleted: deleted.length,
-		workPeriodsWithCategory: deleted.filter(({ workCategoryId }) => workCategoryId !== null).length,
+		workPeriodsWithCategory: deleted.filter(
+			({ workCategoryId }) => workCategoryId !== null,
+		).length,
 		timeEntriesDeleted: entries.length,
 		effects,
 	};

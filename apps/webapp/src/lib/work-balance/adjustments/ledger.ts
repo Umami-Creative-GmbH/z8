@@ -29,7 +29,9 @@ export async function sumBalanceAdjustmentMinutes(
 	},
 ): Promise<number> {
 	const [row] = await client
-		.select({ minutes: sql<number>`coalesce(sum(${balanceAdjustment.minutes}), 0)` })
+		.select({
+			minutes: sql<number>`coalesce(sum(${balanceAdjustment.minutes}), 0)`,
+		})
 		.from(balanceAdjustment)
 		.where(
 			and(
@@ -137,12 +139,16 @@ export async function readWorkBalanceAdjustments(
 	countFrom: string | null;
 	adjustmentMinutes: number;
 }> {
-	const scope = { organizationId: input.organizationId, employeeId: input.employeeId };
+	const scope = {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+	};
 	const inEffect = await readOpeningBalanceInEffect(client, scope);
 	const openingBalance =
 		inEffect &&
 		(!input.fromDate || inEffect.day >= input.fromDate) &&
-		(inEffect.day <= input.throughDate || input.openingBalanceDatedLater === "count")
+		(inEffect.day <= input.throughDate ||
+			input.openingBalanceDatedLater === "count")
 			? inEffect
 			: null;
 	const countFrom = openingBalance ? dayAfter(openingBalance.day) : null;
@@ -174,7 +180,17 @@ export async function listOvertimePayouts(
 		fromDate: string;
 		throughDate: string;
 	},
-): Promise<Array<{ id: string; employeeId: string; day: string; minutes: number }>> {
+): Promise<
+	Array<{
+		id: string;
+		employeeId: string;
+		day: string;
+		minutes: number;
+		reason: string;
+		recordedAt: Date;
+		recordedBy: string | null;
+	}>
+> {
 	if (input.employeeIds.length === 0) return [];
 	return client
 		.select({
@@ -182,6 +198,9 @@ export async function listOvertimePayouts(
 			employeeId: balanceAdjustment.employeeId,
 			day: balanceAdjustment.day,
 			minutes: balanceAdjustment.minutes,
+			reason: balanceAdjustment.reason,
+			recordedAt: balanceAdjustment.recordedAt,
+			recordedBy: balanceAdjustment.recordedBy,
 		})
 		.from(balanceAdjustment)
 		.where(

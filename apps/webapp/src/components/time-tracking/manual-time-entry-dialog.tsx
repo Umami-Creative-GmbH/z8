@@ -72,6 +72,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
 import { projectTaskRefusalMessage } from "@/lib/projects/project-task-model";
 import { queryKeys } from "@/lib/query/keys";
+import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
 import {
 	describeManualWallTime,
 	interpretManualInterval,
@@ -1695,6 +1696,7 @@ export function ManualTimeEntryDialog({
 	const isTimezoneContinuationPendingRef = useRef(false);
 	const wasOpenRef = useRef(false);
 	const router = useRouter();
+	const invalidateReadiness = useInvalidatePeriodSubmissionReadiness();
 	const timeFormat = useTimeFormat();
 	const open = controlledOpen ?? internalOpen;
 	const targetContext = useManualEntryTargetContext(targetEmployeeId, open);
@@ -1780,6 +1782,8 @@ export function ManualTimeEntryDialog({
 			announceCreatedEntry(result, timezone, timeFormat, t);
 			handleOpenChange(false);
 			router.refresh();
+			// Manual work can keep its submission period open (#1350).
+			void invalidateReadiness();
 			onSuccess?.();
 			return true;
 		}
@@ -1908,6 +1912,7 @@ export function ManualTimeEntryDialog({
 							form={form}
 							onCommitted={() => {
 								router.refresh();
+								void invalidateReadiness();
 								onSuccess?.();
 							}}
 							recovery={recovery}

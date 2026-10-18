@@ -140,20 +140,29 @@ export function readPayrollWorkCollection(
 	filters: PayrollCollectionFilters,
 	options: Pick<PayrollCollectionRequest, "personnelIdentifier"> = {},
 ): Promise<PayrollWorkCollection> {
-	return withAppendEvidenceSnapshot(db, async (reader) => {
-		const employeeIds = await resolveScopeEmployeeIds(reader, organizationId, filters);
-		const request: PayrollCollectionRequest = {
-			organizationId,
-			startDate: filters.startDate,
-			endDate: filters.endDate,
-			employeeIds,
-			teamIds: filters.teamIds ?? null,
-			projectIds: filters.projectIds ?? null,
-			personnelIdentifier: options.personnelIdentifier ?? null,
-		};
-		const snapshot = await readPayrollCollectionSnapshot(reader, request);
-		return assessPayrollWorkCollection(snapshot, request);
-	});
+	return withAppendEvidenceSnapshot(db, (reader) =>
+		readPayrollWorkCollectionFromSnapshot(reader, organizationId, filters, options),
+	);
+}
+
+/** Caller-owned read-only snapshot, shared with payroll preview inputs. */
+export async function readPayrollWorkCollectionFromSnapshot(
+	reader: Reader,
+	organizationId: string,
+	filters: PayrollCollectionFilters,
+	options: Pick<PayrollCollectionRequest, "personnelIdentifier"> = {},
+): Promise<PayrollWorkCollection> {
+	const employeeIds = await resolveScopeEmployeeIds(reader, organizationId, filters);
+	const request: PayrollCollectionRequest = {
+		organizationId,
+		startDate: filters.startDate,
+		endDate: filters.endDate,
+		employeeIds,
+		teamIds: filters.teamIds ?? null,
+		projectIds: filters.projectIds ?? null,
+		personnelIdentifier: options.personnelIdentifier ?? null,
+	};
+	return assessPayrollWorkCollection(await readPayrollCollectionSnapshot(reader, request), request);
 }
 
 async function repairEligibleGaps(
@@ -173,7 +182,10 @@ async function repairEligibleGaps(
 	const employeeIds = await resolveScopeEmployeeIds(db, organizationId, filters);
 	if (employeeIds.length === 0) return { status: "nothing_eligible" };
 	const range = calendarDateEnvelope(filters.startDate, filters.endDate);
-	const { repair } = await readHistoricalGapRepairPlan(db, organizationId, { employeeIds, range });
+	const { repair } = await readHistoricalGapRepairPlan(db, organizationId, {
+		employeeIds,
+		range,
+	});
 	if (!repair.authorized) return { status: "not_authorized" };
 	const expected = repair.plan.employees
 		.filter((plan) => plan.units.length > 0)
@@ -191,7 +203,10 @@ async function repairEligibleGaps(
 		logger.info(
 			{
 				organizationId,
-				outcomes: outcomes.map(({ employeeId, status }) => ({ employeeId, status })),
+				outcomes: outcomes.map(({ employeeId, status }) => ({
+					employeeId,
+					status,
+				})),
 			},
 			"Eligible historical gaps repaired before payroll collection",
 		);
@@ -232,7 +247,10 @@ async function readPayrollCollectionSnapshot(
 		return {
 			employees: [],
 			records: [],
-			diagnostics: { completeness: { status: "complete", widenedTo: "requested" }, findings: [] },
+			diagnostics: {
+				completeness: { status: "complete", widenedTo: "requested" },
+				findings: [],
+			},
 			departureRepairs: [],
 			personnelIdentifiers: {},
 		};
@@ -398,7 +416,11 @@ async function readPayrollCollectionSnapshot(
 	for (const row of allocations) {
 		projectsByRecord.set(row.recordId, [
 			...(projectsByRecord.get(row.recordId) ?? []),
-			{ projectId: row.projectId, name: row.projectName, weightPercent: row.weightPercent },
+			{
+				projectId: row.projectId,
+				name: row.projectName,
+				weightPercent: row.weightPercent,
+			},
 		]);
 	}
 
@@ -425,7 +447,11 @@ async function readPayrollCollectionSnapshot(
 				pendingCorrection: correctedRecordIds.has(row.id),
 				workCategory:
 					detail?.categoryId && detail.categoryName
-						? { id: detail.categoryId, name: detail.categoryName, factor: detail.categoryFactor }
+						? {
+								id: detail.categoryId,
+								name: detail.categoryName,
+								factor: detail.categoryFactor,
+							}
 						: null,
 				projects: projectsByRecord.get(row.id) ?? [],
 			};
