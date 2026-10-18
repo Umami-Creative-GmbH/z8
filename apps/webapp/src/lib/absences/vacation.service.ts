@@ -263,7 +263,8 @@ export async function calculateAnnualCarryover(
 
 	for (const emp of employees) {
 		if (!allowances.has(emp.id)) {
-			// A work schedule without working days leaves the allowance unknown (Absences ADR 0003).
+			// With a shared policy, every employee of the organization gets an allowance unless their
+			// work schedule has no working days, which leaves it unknown (Absences ADR 0003).
 			errors.push({
 				employeeId: emp.id,
 				error: vacationConfigurationProblem({

@@ -338,8 +338,23 @@ function allowanceRatesOf(
 }
 
 /**
- * The converted annual allowance and statutory minimum averaged over the given dates: each day
- * weighs 1/12 of its month's actual length, as in the weighted policy (#989), and the weights are
+ * The share of a year the days `[from, until)` weigh: a full calendar month is 1/12, and each day
+ * 1/12 of its month's actual length (#989, Absences ADR 0003).
+ */
+export function yearShare(from: PlainDate, until: PlainDate): number {
+	let share = 0;
+	for (let date = from; comparePlainDates(date, until) < 0; ) {
+		const nextMonth = date.with({ day: 1 }).add({ months: 1 });
+		const next = comparePlainDates(nextMonth, until) < 0 ? nextMonth : until;
+		share += date.until(next).days / date.daysInMonth / MONTHS_PER_YEAR;
+		date = next;
+	}
+	return share;
+}
+
+/**
+ * The converted annual allowance and statutory minimum averaged over the given dates, each day
+ * weighted by `yearShare` as in the weighted policy (#989), and the weights are
  * normalized over the dates, so days not employed never reduce the rate. Rounded once to two
  * decimals.
  */
@@ -359,17 +374,11 @@ function averageRate(
 			const from = latestDate(parsePlainDate(rate.startDate), rangeFrom);
 			const through = earliestDate(parsePlainDate(rate.endDate), rangeThrough);
 			if (comparePlainDates(from, through) > 0) continue;
-			const until = through.add({ days: 1 });
-			for (let date = from; comparePlainDates(date, until) < 0; ) {
-				const nextMonth = date.with({ day: 1 }).add({ months: 1 });
-				const next = comparePlainDates(nextMonth, until) < 0 ? nextMonth : until;
-				const share = date.until(next).days / date.daysInMonth / MONTHS_PER_YEAR;
-				weight += share;
-				annual += rate.referenceAnnualDays * factor * share;
-				minimum += rate.referenceStatutoryMinimumDays * factor * share;
-				reference += rate.referenceAnnualDays * share;
-				date = next;
-			}
+			const share = yearShare(from, through.add({ days: 1 }));
+			weight += share;
+			annual += rate.referenceAnnualDays * factor * share;
+			minimum += rate.referenceStatutoryMinimumDays * factor * share;
+			reference += rate.referenceAnnualDays * share;
 			weeks.push({
 				startDate: from.toString(),
 				endDate: through.toString(),

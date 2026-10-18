@@ -4,6 +4,7 @@ import {
 	type AllowanceRate,
 	FIRST_WORKING_WEEK_YEAR,
 	REFERENCE_WORKING_DAYS_PER_WEEK,
+	yearShare,
 } from "./prorated-allowance";
 import type {
 	VacationBalanceConfiguration,
@@ -96,16 +97,10 @@ export function resolveWeightedVacationPolicy(
 			continue;
 		}
 		selected = policy;
-		for (let date = from; Temporal.PlainDate.compare(date, until) < 0; ) {
-			const nextMonth = date.with({ day: 1 }).add({ months: 1 });
-			const next =
-				Temporal.PlainDate.compare(nextMonth, until) < 0 ? nextMonth : until;
-			const share = date.until(next).days / date.daysInMonth / 12;
-			annual += Number(policy.defaultAnnualDays) * share;
-			minimum += Number(policy.statutoryMinimumDays) * share;
-			date = next;
-		}
-		for (const rate of workingWeekRates(workingWeeks, { from, until })) {
+		const share = yearShare(from, until);
+		annual += Number(policy.defaultAnnualDays) * share;
+		minimum += Number(policy.statutoryMinimumDays) * share;
+		for (const rate of workingWeekPeriodsBetween(workingWeeks, { from, until })) {
 			if (rate.workingDaysPerWeek === 0) {
 				conflicts.push({
 					startDate: rate.startDate,
@@ -155,7 +150,7 @@ export function workingWeeksWithin(
 ): WorkingWeekPeriod[] {
 	const from = Temporal.PlainDate.from(range.startDate);
 	const until = Temporal.PlainDate.from(range.endDate).add({ days: 1 });
-	return workingWeekRates(from.year >= FIRST_WORKING_WEEK_YEAR ? workingWeeks : [], {
+	return workingWeekPeriodsBetween(from.year >= FIRST_WORKING_WEEK_YEAR ? workingWeeks : [], {
 		from,
 		until,
 	});
@@ -165,7 +160,7 @@ export function workingWeeksWithin(
  * The working days per week over `[from, until)`, split where the working week changes. Days the
  * working weeks do not cover count five days.
  */
-function workingWeekRates(
+function workingWeekPeriodsBetween(
 	workingWeeks: readonly WorkingWeekPeriod[],
 	range: { from: Temporal.PlainDate; until: Temporal.PlainDate },
 ): WorkingWeekPeriod[] {
