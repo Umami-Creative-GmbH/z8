@@ -56,6 +56,7 @@ import {
 	fetchAbsencesForExport,
 	fetchOvertimePayoutsForExport,
 	getWageTypeMappings,
+	resolvePayrollRunEmployeeIds,
 } from "./data-fetcher";
 import { exportedPersonnelIdentifier } from "./exported-personnel-identifier";
 import { datevLohnFormatter } from "./formatters/datev-lohn-formatter";
@@ -67,6 +68,7 @@ import {
 	payrollIdentifierCustomFieldId,
 	withPersonnelIdentifiers,
 } from "./personnel-identifier";
+import { readPersonnelIdentifierValues } from "./personnel-identifier-store";
 import {
 	isSupportedPayrollFormat,
 	payrollDestination,
@@ -84,6 +86,16 @@ export interface PayrollComparisonRequest {
 	teamIds?: string[];
 	projectIds?: string[];
 }
+export type PayrollComparisonDatabase = Pick<
+	typeof db,
+	| "query"
+	| "select"
+	| "insert"
+	| "update"
+	| "delete"
+	| "execute"
+	| "transaction"
+>;
 type Reader = Parameters<Parameters<typeof db.transaction>[0]>[0];
 function sameSet(
 	a: readonly string[] | undefined,
@@ -113,6 +125,7 @@ function validRequest(input: Omit<PayrollComparisonRequest, "baselineId">) {
 async function requestScope(
 	actor: Awaited<ReturnType<typeof requireBaselineActor>>,
 	request: Omit<PayrollComparisonRequest, "baselineId">,
+	database: PayrollComparisonDatabase = db,
 ) {
 	validRequest(request);
 	if (
@@ -122,22 +135,36 @@ async function requestScope(
 		throw new ValidationError({ message: "Invalid payroll format" });
 	let selected: string[];
 	if (request.employeeIds !== undefined) {
-		if (!(await canReadScope(actor, request.employeeIds, request.startDate)))
+		if (
+			!(await canReadScope(
+				actor,
+				request.employeeIds,
+				request.startDate,
+				database,
+			))
+		)
 			return null;
 		selected = [...new Set(request.employeeIds)].sort();
 	} else
 		selected = [
 			...new Set([
 				...actor.activeScope,
-				...(await listDepartedEmployeesCoveredForExport(db, {
+				...(await listDepartedEmployeesCoveredForExport(database, {
 					organizationId: actor.organizationId,
 					actorUserId: actor.userId,
 					fromDate: request.startDate,
 				})),
 			]),
 		].sort();
-	if (!selected.length || !request.teamIds?.length) return selected;
-	const rows = await db
+	// Explicit employee selection takes precedence for the export run. Work rows
+	// still apply the team and project filters independently in collection.
+	if (
+		request.employeeIds !== undefined ||
+		!selected.length ||
+		!request.teamIds?.length
+	)
+		return selected;
+	const rows = await database
 		.select({ id: employee.id })
 		.from(employee)
 		.where(
@@ -152,11 +179,12 @@ async function requestScope(
 /** Metadata listing never defaults to another destination, period or scope. */
 export async function listCompatiblePayrollBaselines(
 	request: Omit<PayrollComparisonRequest, "baselineId">,
+	database: PayrollComparisonDatabase = db,
 ): Promise<PayrollBaselineSummary[]> {
-	const actor = await requireBaselineActor();
-	const scope = await requestScope(actor, request);
+	const actor = await requireBaselineActor(database);
+	const scope = await requestScope(actor, request, database);
 	if (!scope) return [];
-	const rows = await listPayrollBaselines(request);
+	const rows = await listPayrollBaselines(request, database);
 	const selected: PayrollBaselineSummary[] = [];
 	for (const summary of rows) {
 		if (
@@ -164,7 +192,7 @@ export async function listCompatiblePayrollBaselines(
 			!["available", "empty"].includes(summary.availability)
 		)
 			continue;
-		const detail = await inspectPayrollBaseline(summary.id);
+		const detail = await inspectPayrollBaseline(summary.id, database);
 		if (!detail?.evidence) continue;
 		const historical = detail.evidence;
 		if (
@@ -172,7 +200,7 @@ export async function listCompatiblePayrollBaselines(
 			!sameSet(request.projectIds, historical.filters.projectIds)
 		)
 			continue;
-		const compatible = await db.transaction(
+		const compatible = await database.transaction(
 			(tx) => checkCompatibility(tx, actor.organizationId, historical, scope),
 			{ isolationLevel: "repeatable read", accessMode: "read only" },
 		);
@@ -187,6 +215,21 @@ async function checkCompatibility(
 	scope: string[],
 ): Promise<string | null> {
 	if (!sameSet(evidence.employeeIds, scope)) return "employee_scope_changed";
+	const currentExportScope = await resolvePayrollRunEmployeeIds(
+		organizationId,
+		{
+			dateRange: {
+				start: parseISO(evidence.period.startDate, "utc"),
+				end: parseISO(evidence.period.endDate, "utc"),
+			},
+			employeeIds: evidence.filters.employeeIds,
+			teamIds: evidence.filters.teamIds,
+			projectIds: evidence.filters.projectIds,
+		},
+		reader,
+	);
+	if (!sameSet(currentExportScope, evidence.employeeIds))
+		return "employee_scope_changed";
 	const current = await reader.query.payrollExportConfig.findFirst({
 		where: and(
 			eq(payrollExportConfig.organizationId, organizationId),
@@ -227,12 +270,13 @@ async function checkCompatibility(
 /** Prepares every live input in one read-only repeatable-read snapshot. */
 export async function preparePayrollComparison(
 	request: PayrollComparisonRequest,
+	database: PayrollComparisonDatabase = db,
 ): Promise<PayrollComparisonPreparation> {
-	const actor = await requireBaselineActor();
-	const scope = await requestScope(actor, request);
+	const actor = await requireBaselineActor(database);
+	const scope = await requestScope(actor, request, database);
 	if (!scope || !z.uuid().safeParse(request.baselineId).success)
 		return { status: "unavailable" };
-	const baseline = await inspectPayrollBaseline(request.baselineId);
+	const baseline = await inspectPayrollBaseline(request.baselineId, database);
 	if (!baseline?.evidence) return { status: "unavailable" };
 	const evidence = baseline.evidence;
 	if (request.formatId && request.formatId !== evidence.output.formatId)
@@ -252,7 +296,7 @@ export async function preparePayrollComparison(
 		request.endDate !== evidence.period.endDate
 	)
 		return { status: "incompatible", reason: "period_changed" };
-	const preview = await db
+	const preview = await database
 		.transaction(
 			async (reader) => {
 				// Establish snapshot before recording its preparation time.
@@ -332,23 +376,8 @@ export async function preparePayrollComparison(
 						teamIds: evidence.filters.teamIds,
 						projectIds: evidence.filters.projectIds,
 					},
-					{
-						personnelIdentifier:
-							identifier === null
-								? null
-								: {
-										customFieldId: identifier,
-										employeesWithOtherRows: [...absences, ...payouts].map(
-											(row) => row.employeeId,
-										),
-									},
-					},
+					{ personnelIdentifier: null },
 				);
-				if (!sameSet(collection.input.scope.employeeIds, scope))
-					return {
-						status: "incompatible",
-						reason: "effective_filters_changed",
-					} as const;
 				if (collection.blockers.length)
 					return {
 						status: "blocked",
@@ -357,7 +386,15 @@ export async function preparePayrollComparison(
 							reason: blocker.reason ?? blocker.kind,
 						})),
 					} as const;
-				const values = collection.input.personnelIdentifier?.values ?? {};
+				const values =
+					identifier === null
+						? {}
+						: await readPersonnelIdentifierValues(reader, {
+								organizationId: actor.organizationId,
+								customFieldId: identifier,
+								employeeIds: scope,
+								asOf: parsePlainDate(evidence.period.endDate),
+							});
 				const work = workPeriodsFromCollectedInput(collection.input);
 				const rows = [...work, ...absences, ...payouts];
 				const missing =
@@ -460,13 +497,18 @@ export async function preparePayrollComparison(
 		explanations: preview.explanations,
 	};
 	// Serialize retention with explicit erasure and recheck actor access after preparation.
-	const freshActor = await requireBaselineActor();
+	const freshActor = await requireBaselineActor(database);
 	if (
 		freshActor.organizationId !== actor.organizationId ||
-		!(await canReadScope(freshActor, scope, evidence.period.startDate))
+		!(await canReadScope(
+			freshActor,
+			scope,
+			evidence.period.startDate,
+			database,
+		))
 	)
 		return { status: "unavailable" };
-	const retained = await db.transaction(async (tx) => {
+	const retained = await database.transaction(async (tx) => {
 		await comparisonErasureLock(tx, actor.organizationId);
 		const row = await tx.query.payrollExportBaseline.findFirst({
 			where: and(
@@ -499,10 +541,11 @@ export async function preparePayrollComparison(
 async function readReviewedPayrollComparison(
 	id: string,
 	action: "view" | "download",
+	database: PayrollComparisonDatabase,
 ): Promise<ReviewedPayrollComparison | null> {
-	const actor = await requireBaselineActor();
+	const actor = await requireBaselineActor(database);
 	if (!z.uuid().safeParse(id).success) return null;
-	const row = await db.query.payrollComparisonResult.findFirst({
+	const row = await database.query.payrollComparisonResult.findFirst({
 		where: and(
 			eq(payrollComparisonResult.organizationId, actor.organizationId),
 			eq(payrollComparisonResult.id, id),
@@ -516,7 +559,7 @@ async function readReviewedPayrollComparison(
 		) <= 0
 	)
 		return null;
-	const baseline = await inspectPayrollBaseline(row.baselineId);
+	const baseline = await inspectPayrollBaseline(row.baselineId, database);
 	if (!baseline?.evidence) return null;
 	if (
 		!isReviewedPayrollComparison(row.result) ||
@@ -526,7 +569,7 @@ async function readReviewedPayrollComparison(
 		!sameSet(row.result.baseline.employeeIds, baseline.evidence.employeeIds)
 	)
 		return null;
-	await db.insert(auditLog).values({
+	await database.insert(auditLog).values({
 		organizationId: actor.organizationId,
 		performedBy: actor.userId,
 		entityType: "payroll_comparison",
@@ -537,21 +580,25 @@ async function readReviewedPayrollComparison(
 }
 export async function getPayrollComparison(
 	id: string,
+	database: PayrollComparisonDatabase = db,
 ): Promise<ReviewedPayrollComparison | null> {
-	return readReviewedPayrollComparison(id, "view");
+	return readReviewedPayrollComparison(id, "view", database);
 }
 export async function downloadPayrollComparison(
 	id: string,
+	database: PayrollComparisonDatabase = db,
 ): Promise<{ fileName: string; content: string } | null> {
-	const result = await readReviewedPayrollComparison(id, "download");
+	const result = await readReviewedPayrollComparison(id, "download", database);
 	if (!result) return null;
 	return {
 		fileName: `payroll-comparison-${id}.csv`,
 		content: payrollComparisonCsv(result),
 	};
 }
-export async function cleanupExpiredPayrollComparisons() {
-	return db
+export async function cleanupExpiredPayrollComparisons(
+	database: PayrollComparisonDatabase = db,
+) {
+	return database
 		.delete(payrollComparisonResult)
 		.where(
 			lte(

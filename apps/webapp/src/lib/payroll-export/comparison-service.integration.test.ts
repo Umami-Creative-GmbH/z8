@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { db } from "@/db";
+import { db, payrollAccessGrant } from "@/db";
 import { integrationAdminPool } from "@/test/integration-database";
+import { listPayrollBaselines } from "./baseline-access";
 import {
 	eraseEmployeePayrollBaselines,
 	insertPayrollBaseline,
@@ -12,6 +14,7 @@ import type { PayrollBaselineEvidence } from "./baseline-types";
 
 const concurrent = vi.hoisted(() => ({
 	afterSnapshot: null as null | (() => Promise<void>),
+	departedScopeReads: 0,
 }));
 // Instrument only the real database driver: production still runs its complete prepare path.
 vi.mock("@/db", async () => {
@@ -32,6 +35,11 @@ vi.mock("@/db", async () => {
 						: config && typeof config === "object" && "text" in config
 							? String(config.text)
 							: "";
+				if (
+					text.includes("from holder_grant hg") &&
+					text.includes("e.is_active = false")
+				)
+					concurrent.departedScopeReads++;
 				if (
 					concurrent.afterSnapshot &&
 					text.startsWith(
@@ -642,5 +650,105 @@ describe("authorized read-only reviewed payroll comparisons", () => {
 		expect(await getPayrollComparison(prepared.result.id)).toEqual(
 			prepared.result,
 		);
+	});
+	it("preserves explicit employee scope for absence and payout rows when a team filter narrows work", async () => {
+		const teamId = randomUUID();
+		await admin.query(
+			"insert into team(id,organization_id,name,updated_at) values($1,$2,'Selected team',now())",
+			[teamId, ORG],
+		);
+		await admin.query("update employee set team_id=$1 where id=$2", [
+			teamId,
+			OWNER,
+		]);
+		for (const employeeId of [OWNER, WORKER])
+			await admin.query(
+				"insert into balance_adjustment(organization_id,employee_id,kind,day,minutes,reason,recorded_by) values($1,$2,'overtime_payout','2026-07-15',-60,'Approved payout','t1344-owner')",
+				[ORG, employeeId],
+			);
+		await admin.query(
+			"insert into payroll_wage_type_mapping(organization_id,special_category,wage_type_code,datev_wage_type_code,created_by,updated_at) values($1,'overtime','1900','1900','t1344-owner',now())",
+			[ORG],
+		);
+		const retained = await readPayrollBaseline({
+			organizationId: ORG,
+			baselineId,
+		});
+		if (!retained?.evidence) throw new Error("Missing baseline");
+		const historical = retained.evidence,
+			id = randomUUID();
+		await insertPayrollBaseline(db, {
+			id,
+			jobId: randomUUID(),
+			organizationId: ORG,
+			createdAt: new Date(),
+			completedAt: new Date(),
+			evidence: {
+				...historical,
+				employeeIds: [OWNER, WORKER],
+				filters: {
+					...historical.filters,
+					employeeIds: [OWNER, WORKER],
+					teamIds: [teamId],
+				},
+				employeeWindows: [
+					...historical.employeeWindows,
+					{ ...historical.employeeWindows[0], employeeId: OWNER },
+				],
+			},
+		});
+		const result = await preparePayrollComparison({
+			baselineId: id,
+			...period,
+			employeeIds: [WORKER, OWNER],
+			teamIds: [teamId],
+		});
+		expect(result.status).toBe("ready");
+		if (result.status !== "ready") throw new Error("Expected complete preview");
+		expect(
+			result.result.comparison.employees.map((row) => row.employeeId).sort(),
+		).toEqual([OWNER, WORKER]);
+		expect(result.result.comparison.totals).toMatchObject([
+			{ wageTypeCode: "1900", newQuantity: "2.00" },
+		]);
+	});
+	it("uses a caller-bound transaction for baseline access and comparison scope", async () => {
+		await db.transaction(async (tx) => {
+			await tx
+				.update(payrollAccessGrant)
+				.set({ scope: "specific" })
+				.where(eq(payrollAccessGrant.organizationId, ORG));
+			expect(await listPayrollBaselines(period, tx)).toEqual([]);
+			expect(
+				await preparePayrollComparison(
+					{ baselineId, ...period, employeeIds: [WORKER] },
+					tx,
+				),
+			).toEqual({ status: "unavailable" });
+		});
+	});
+	it("loads departed coverage once per period in a baseline list and rechecks it on the next request", async () => {
+		const retained = await readPayrollBaseline({
+			organizationId: ORG,
+			baselineId,
+		});
+		if (!retained?.evidence) throw new Error("Missing baseline");
+		await insertPayrollBaseline(db, {
+			id: randomUUID(),
+			jobId: randomUUID(),
+			organizationId: ORG,
+			createdAt: new Date(),
+			completedAt: new Date(),
+			evidence: retained.evidence,
+		});
+		await admin.query(
+			"update payroll_access_grant set scope='specific' where organization_id=$1",
+			[ORG],
+		);
+		concurrent.departedScopeReads = 0;
+		expect(await listPayrollBaselines(period)).toEqual([]);
+		expect(concurrent.departedScopeReads).toBe(1);
+		expect(await listPayrollBaselines(period)).toEqual([]);
+		expect(concurrent.departedScopeReads).toBe(2);
 	});
 });

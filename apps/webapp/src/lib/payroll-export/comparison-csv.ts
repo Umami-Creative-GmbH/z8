@@ -143,21 +143,23 @@ export function payrollComparisonCsv(
 			field: explanation.kind,
 			value: JSON.stringify(explanation),
 		});
-	for (const employee of comparison.employees) {
+	for (const employeeChange of comparison.employees) {
 		records.push({
 			record_type: "employee",
-			status: employee.status,
-			employee_ids: JSON.stringify([employee.employeeId]),
-			old_personnel_number: JSON.stringify(employee.oldPersonnelNumbers),
-			new_personnel_number: JSON.stringify(employee.newPersonnelNumbers),
+			status: employeeChange.status,
+			employee_ids: JSON.stringify([employeeChange.employeeId]),
+			old_personnel_number: JSON.stringify(employeeChange.oldPersonnelNumbers),
+			new_personnel_number: JSON.stringify(employeeChange.newPersonnelNumbers),
 			field: "name",
-			value: [employee.firstName, employee.lastName].filter(Boolean).join(" "),
+			value: [employeeChange.firstName, employeeChange.lastName]
+				.filter(Boolean)
+				.join(" "),
 		});
-		for (const total of employee.totals)
+		for (const total of employeeChange.totals)
 			records.push({
 				record_type: "employee_total",
 				status: total.hasPayrollImpact ? "changed" : "unchanged",
-				employee_ids: JSON.stringify([employee.employeeId]),
+				employee_ids: JSON.stringify([employeeChange.employeeId]),
 				wage_type_code: total.wageTypeCode,
 				unit: total.unit,
 				old_quantity: numeric(total.oldQuantity),

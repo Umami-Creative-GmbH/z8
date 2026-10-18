@@ -1,10 +1,13 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Temporal } from "temporal-polyfill";
-import { inspectPayrollBaselineAction } from "@/app/[locale]/(app)/payroll/baseline-actions";
+import {
+	inspectPayrollBaselineAction,
+	listPayrollBaselinesAction,
+} from "@/app/[locale]/(app)/payroll/baseline-actions";
 import {
 	listCompatiblePayrollBaselinesAction,
 	preparePayrollComparisonAction,
@@ -33,7 +36,10 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type { PayrollBaselineSummary } from "@/lib/payroll-export/baseline-types";
+import type {
+	PayrollBaselineEvidence,
+	PayrollBaselineSummary,
+} from "@/lib/payroll-export/baseline-types";
 import type {
 	PayrollCodeTotal,
 	PayrollRowChange,
@@ -47,6 +53,11 @@ import type {
 	SupportedPayrollContribution,
 	SupportedPayrollOutputRow,
 } from "@/lib/payroll-export/supported-output-evidence";
+import { payrollUtcTime as utcTime } from "./payroll-evidence-format";
+import {
+	EvidenceFact as Fact,
+	PayrollSourceFacts,
+} from "./payroll-evidence-presentation";
 
 type Preparation = Extract<
 	Awaited<ReturnType<typeof preparePayrollComparisonAction>>,
@@ -74,14 +85,21 @@ function ComparisonWorkspace({ scope }: { scope: ComparisonScope }) {
 	const { t } = useTranslate();
 	const id = useId();
 	const [selectedId, setSelectedId] = useState<string | null>(null);
+	const [useRetainedFilters, setUseRetainedFilters] = useState(false);
 	const queryClient = useQueryClient();
 	const baselines = useQuery({
-		queryKey: ["payroll", "comparisonBaselines", scope],
+		queryKey: ["payroll", "comparisonBaselines", scope, useRetainedFilters],
 		queryFn: async () => {
-			const response = await listCompatiblePayrollBaselinesAction({
-				...scope,
-				formatId: scope.formatId ?? "datev_lohn",
-			});
+			const response = useRetainedFilters
+				? await listPayrollBaselinesAction({
+						startDate: scope.startDate,
+						endDate: scope.endDate,
+						formatId: scope.formatId ?? "datev_lohn",
+					})
+				: await listCompatiblePayrollBaselinesAction({
+						...scope,
+						formatId: scope.formatId ?? "datev_lohn",
+					});
 			if (!response.success) throw new Error(response.error);
 			return response.data;
 		},
@@ -137,6 +155,32 @@ function ComparisonWorkspace({ scope }: { scope: ComparisonScope }) {
 						"Refresh compatible baselines",
 					)}
 				</Button>
+				<Button
+					variant="outline"
+					aria-pressed={useRetainedFilters}
+					onClick={() => {
+						setSelectedId(null);
+						setUseRetainedFilters(!useRetainedFilters);
+					}}
+				>
+					{useRetainedFilters
+						? t(
+								"payroll.comparison.useWorkspaceScope",
+								"Use current workspace filters",
+							)
+						: t(
+								"payroll.comparison.chooseRetainedFilters",
+								"Choose retained export filters",
+							)}
+				</Button>
+				{useRetainedFilters ? (
+					<p role="status" className="text-sm text-muted-foreground">
+						{t(
+							"payroll.comparison.retainedFiltersNotice",
+							"Choose a retained export to use its complete employee, team and project filters. Review the scope below before preparing.",
+						)}
+					</p>
+				) : null}
 				{baselines.isPending ? (
 					<p role="status">
 						{t(
@@ -181,8 +225,9 @@ function ComparisonWorkspace({ scope }: { scope: ComparisonScope }) {
 							</Select>
 						</div>
 						<ComparisonSelection
-							key={selection.id}
+							key={`${selection.id}:${useRetainedFilters}`}
 							baseline={selection}
+							useRetainedFilters={useRetainedFilters}
 							scope={scope}
 							t={t}
 						/>
@@ -197,39 +242,13 @@ function ComparisonSelection({
 	baseline,
 	scope,
 	t,
+	useRetainedFilters = false,
 }: {
+	useRetainedFilters?: boolean;
 	baseline: PayrollBaselineSummary;
 	scope: ComparisonScope;
 	t: Translate;
 }) {
-	const [preparation, setPreparation] = useState<Preparation | null>(null);
-	const [pending, setPending] = useState(false);
-	const [failed, setFailed] = useState(false);
-	const mounted = useRef(true);
-	useEffect(() => {
-		mounted.current = true;
-		return () => {
-			mounted.current = false;
-		};
-	}, []);
-	async function prepare() {
-		setPending(true);
-		setFailed(false);
-		setPreparation(null);
-		try {
-			const response = await preparePayrollComparisonAction({
-				...scope,
-				baselineId: baseline.id,
-			});
-			if (!mounted.current) return;
-			if (response.success) setPreparation(response.data);
-			else setFailed(true);
-		} catch {
-			if (mounted.current) setFailed(true);
-		} finally {
-			if (mounted.current) setPending(false);
-		}
-	}
 	const detail = useQuery({
 		queryKey: ["payroll", "baseline", baseline.id],
 		queryFn: async () => {
@@ -239,23 +258,7 @@ function ComparisonSelection({
 		},
 		refetchOnWindowFocus: false,
 	});
-	const retainedRows = detail.data?.evidence?.output?.rows;
-	const retainedNames = useMemo(() => {
-		const names = new Map<string, Set<string>>();
-		for (const row of retainedRows ?? []) {
-			for (const contribution of row.contributions) {
-				const name = [contribution.firstName, contribution.lastName]
-					.filter(Boolean)
-					.join(" ");
-				if (!name) continue;
-				const employeeNames =
-					names.get(contribution.employeeId) ?? new Set<string>();
-				employeeNames.add(name);
-				names.set(contribution.employeeId, employeeNames);
-			}
-		}
-		return names;
-	}, [retainedRows]);
+
 	return (
 		<div className="space-y-4">
 			{baseline.availability === "empty" ? (
@@ -303,30 +306,12 @@ function ComparisonSelection({
 					value={utcTime(baseline.completedAt)}
 				/>
 			</dl>
-			<div>
-				<h3 className="text-sm font-medium">
-					{t("payroll.comparison.scope", "Complete retained employee scope")}
-				</h3>
-				<ul className="mt-2 space-y-1 text-sm">
-					{baseline.employeeIds.map((employeeId) => (
-						<li
-							key={employeeId}
-							className="break-all font-mono [content-visibility:auto]"
-							translate="no"
-						>
-							<span className="block font-sans">
-								{retainedNames.get(employeeId)?.size
-									? [...(retainedNames.get(employeeId) ?? [])].join(" / ")
-									: t(
-											"payroll.comparison.retainedNameUnavailable",
-											"Retained name unavailable",
-										)}
-							</span>
-							{employeeId}
-						</li>
-					))}
-				</ul>
-			</div>
+			<RetainedEmployeeScope
+				employeeIds={baseline.employeeIds}
+				rows={detail.data?.evidence?.output?.rows}
+				t={t}
+			/>
+
 			{detail.isPending ? (
 				<p role="status">
 					{t("payroll.comparison.loadingMetadata", "Loading baseline filters…")}
@@ -340,7 +325,10 @@ function ComparisonSelection({
 				</p>
 			) : (
 				<>
-					<details className="rounded-md border p-3">
+					<details
+						open={useRetainedFilters || undefined}
+						className="rounded-md border p-3"
+					>
 						<summary className="min-h-11 cursor-pointer text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">
 							{t("payroll.comparison.filters", "Effective baseline filters")}
 						</summary>
@@ -348,41 +336,169 @@ function ComparisonSelection({
 							{JSON.stringify(detail.data.evidence.filters, null, 2)}
 						</pre>
 					</details>
-					<Button
-						disabled={pending}
-						onClick={() => {
-							void prepare();
-						}}
-					>
-						{pending
-							? t("payroll.comparison.preparing", "Preparing comparison…")
-							: preparation?.status === "ready"
-								? t("payroll.comparison.refresh", "Refresh comparison")
-								: t("payroll.comparison.prepare", "Prepare comparison")}
-					</Button>
-					{pending ? (
-						<p role="status">
-							{t(
-								"payroll.comparison.preparingStatus",
-								"Collecting current payroll data. Wait for the reviewed result…",
-							)}
-						</p>
-					) : null}
-					{failed ? (
-						<p role="alert">
-							{t(
-								"payroll.comparison.prepareFailed",
-								"The comparison could not be prepared. Try preparing it again.",
-							)}
-						</p>
-					) : null}
-					{preparation?.status === "ready" ? (
-						<ReviewedComparison result={preparation.result} t={t} />
-					) : preparation ? (
-						<PreparationIssue preparation={preparation} t={t} />
-					) : null}
+					<PrepareComparison
+						baseline={baseline}
+						scope={scope}
+						filters={detail.data.evidence.filters}
+						useRetainedFilters={useRetainedFilters}
+						t={t}
+					/>
 				</>
 			)}
+		</div>
+	);
+}
+
+function comparisonRequest(
+	baseline: PayrollBaselineSummary,
+	scope: ComparisonScope,
+	filters: PayrollBaselineEvidence["filters"],
+	useRetainedFilters: boolean,
+) {
+	const retainedFilters = useRetainedFilters ? filters : undefined;
+	return {
+		...scope,
+		baselineId: baseline.id,
+		...(retainedFilters
+			? {
+					formatId: baseline.formatId,
+					employeeIds: baseline.employeeIds,
+					...(retainedFilters.teamIds
+						? { teamIds: retainedFilters.teamIds }
+						: {}),
+					...(retainedFilters.projectIds
+						? { projectIds: retainedFilters.projectIds }
+						: {}),
+				}
+			: {}),
+	};
+}
+
+function PrepareComparison({
+	baseline,
+	scope,
+	filters,
+	useRetainedFilters,
+	t,
+}: {
+	baseline: PayrollBaselineSummary;
+	scope: ComparisonScope;
+	filters: PayrollBaselineEvidence["filters"];
+	useRetainedFilters: boolean;
+	t: Translate;
+}) {
+	const request = comparisonRequest(
+		baseline,
+		scope,
+		filters,
+		useRetainedFilters,
+	);
+	// Each preparation owns a new immutable result in mutation.data. It does not alter cached baseline or source data.
+	const mutation = useMutation({
+		mutationFn: async () => {
+			const response = await preparePayrollComparisonAction(request);
+			if (!response.success) throw new Error(response.error);
+			return response.data;
+		},
+	});
+	const preparation = mutation.data ?? null;
+	const pending = mutation.isPending;
+	const failed = mutation.isError;
+
+	return (
+		<>
+			<Button
+				disabled={pending}
+				onClick={() => {
+					mutation.mutate();
+				}}
+			>
+				{pending
+					? t("payroll.comparison.preparing", "Preparing comparison…")
+					: preparation?.status === "ready"
+						? t("payroll.comparison.refresh", "Refresh comparison")
+						: useRetainedFilters
+							? t(
+									"payroll.comparison.prepareRetained",
+									"Prepare with retained filters",
+								)
+							: t("payroll.comparison.prepare", "Prepare comparison")}
+			</Button>
+			{pending ? (
+				<p role="status">
+					{t(
+						"payroll.comparison.preparingStatus",
+						"Collecting current payroll data. Wait for the reviewed result…",
+					)}
+				</p>
+			) : null}
+			{failed ? (
+				<p role="alert">
+					{t(
+						"payroll.comparison.prepareFailed",
+						"The comparison could not be prepared. Try preparing it again.",
+					)}
+				</p>
+			) : null}
+			{preparation?.status === "ready" ? (
+				<ReviewedComparison result={preparation.result} t={t} />
+			) : preparation ? (
+				<PreparationIssue preparation={preparation} t={t} />
+			) : null}
+		</>
+	);
+}
+
+function RetainedEmployeeScope({
+	employeeIds,
+	rows,
+	t,
+}: {
+	employeeIds: string[];
+	rows?: SupportedPayrollOutputRow[];
+	t: Translate;
+}) {
+	const retainedRows = rows;
+	const retainedNames = useMemo(() => {
+		const names = new Map<string, Set<string>>();
+		for (const row of retainedRows ?? []) {
+			for (const contribution of row.contributions) {
+				const name = [contribution.firstName, contribution.lastName]
+					.filter(Boolean)
+					.join(" ");
+				if (!name) continue;
+				const employeeNames =
+					names.get(contribution.employeeId) ?? new Set<string>();
+				employeeNames.add(name);
+				names.set(contribution.employeeId, employeeNames);
+			}
+		}
+		return names;
+	}, [retainedRows]);
+	return (
+		<div>
+			<h3 className="text-sm font-medium">
+				{t("payroll.comparison.scope", "Complete retained employee scope")}
+			</h3>
+			<ul className="mt-2 space-y-1 text-sm">
+				{employeeIds.map((employeeId) => (
+					<li
+						key={employeeId}
+						className="break-all font-mono [content-visibility:auto]"
+						translate="no"
+					>
+						<span className="block font-sans">
+							{retainedNames.get(employeeId)?.size
+								? [...(retainedNames.get(employeeId) ?? [])].join(" / ")
+								: t(
+										"payroll.comparison.retainedNameUnavailable",
+										"Retained name unavailable",
+									)}
+						</span>
+						{employeeId}
+					</li>
+				))}
+			</ul>
 		</div>
 	);
 }
@@ -390,17 +506,6 @@ function ComparisonSelection({
 function eligible(baseline: PayrollBaselineSummary) {
 	return (
 		baseline.availability === "available" || baseline.availability === "empty"
-	);
-}
-function utcTime(value: string) {
-	return `${Temporal.Instant.from(value).toZonedDateTimeISO("UTC").toPlainDateTime().toString({ smallestUnit: "second" }).replace("T", " ")} UTC`;
-}
-function Fact({ label, value }: { label: string; value: string }) {
-	return (
-		<div>
-			<dt className="text-muted-foreground">{label}</dt>
-			<dd className="break-all tabular-nums">{value}</dd>
-		</div>
 	);
 }
 
@@ -583,37 +688,37 @@ function ReviewedComparison({
 						)}
 					</summary>
 					<ul className="space-y-4">
-						{comparison.employees.map((employee) => (
+						{comparison.employees.map((employeeChange) => (
 							<li
-								key={employee.employeeId}
+								key={employeeChange.employeeId}
 								className="space-y-2 border-t pt-3 text-sm [content-visibility:auto]"
 							>
 								<h4 className="font-medium">
-									{[employee.firstName, employee.lastName]
+									{[employeeChange.firstName, employeeChange.lastName]
 										.filter(Boolean)
-										.join(" ") || employee.employeeId}
+										.join(" ") || employeeChange.employeeId}
 								</h4>
 								<p className="break-all font-mono" translate="no">
-									{employee.employeeId}
+									{employeeChange.employeeId}
 								</p>
-								<p>{changeLabel(employee.status, t)}</p>
+								<p>{changeLabel(employeeChange.status, t)}</p>
 								<dl className="grid gap-2 sm:grid-cols-2">
 									<Fact
 										label={t(
 											"payroll.comparison.oldPersonnel",
 											"Baseline personnel numbers",
 										)}
-										value={employee.oldPersonnelNumbers.join(", ") || "—"}
+										value={employeeChange.oldPersonnelNumbers.join(", ") || "—"}
 									/>
 									<Fact
 										label={t(
 											"payroll.comparison.newPersonnel",
 											"Current personnel numbers",
 										)}
-										value={employee.newPersonnelNumbers.join(", ") || "—"}
+										value={employeeChange.newPersonnelNumbers.join(", ") || "—"}
 									/>
 								</dl>
-								<CodeTotals totals={employee.totals} t={t} />
+								<CodeTotals totals={employeeChange.totals} t={t} />
 							</li>
 						))}
 					</ul>
@@ -936,70 +1041,7 @@ function ContributionList({
 											)
 										}
 									/>
-									{contribution.kind === "work" ? (
-										<>
-											<Fact
-												label={t("payroll.comparison.startUtc", "Start (UTC)")}
-												value={
-													contribution.facts.startAt
-														? utcTime(contribution.facts.startAt)
-														: "—"
-												}
-											/>
-											<Fact
-												label={t("payroll.comparison.endUtc", "End (UTC)")}
-												value={
-													contribution.facts.endAt
-														? utcTime(contribution.facts.endAt)
-														: "—"
-												}
-											/>
-											<Fact
-												label={t(
-													"payroll.comparison.category",
-													"Work category",
-												)}
-												value={
-													contribution.facts.workCategoryName ??
-													contribution.facts.workCategoryId ??
-													"—"
-												}
-											/>
-											<Fact
-												label={t("payroll.comparison.project", "Project")}
-												value={
-													contribution.facts.projectName ??
-													contribution.facts.projectId ??
-													"—"
-												}
-											/>
-										</>
-									) : contribution.kind === "absence" ? (
-										<>
-											<Fact
-												label={t(
-													"payroll.comparison.absencePeriod",
-													"Absence period",
-												)}
-												value={`${contribution.facts.startDate} – ${contribution.facts.endDate}`}
-											/>
-											<Fact
-												label={t(
-													"payroll.comparison.absenceCategory",
-													"Absence category",
-												)}
-												value={
-													contribution.facts.absenceCategoryName ??
-													contribution.facts.absenceCategoryId
-												}
-											/>
-										</>
-									) : (
-										<Fact
-											label={t("payroll.comparison.payoutDay", "Payout day")}
-											value={contribution.facts.day}
-										/>
-									)}
+									<PayrollSourceFacts contribution={contribution} t={t} />
 									<Fact
 										label={t("payroll.comparison.mapping", "Wage mapping ID")}
 										value={contribution.facts.mappingId ?? "—"}
@@ -1139,7 +1181,7 @@ function blockerReason(reason: string, t: Translate) {
 		case "duplicate_personnel_identifier":
 			return t(
 				"payroll.comparison.duplicateIdentifier",
-				"Duplicate personnel identifier. Assign a unique payroll identifier to each employee.",
+				"Duplicate personnel identifier. Assign a unique payroll identifier to each employeeChange.",
 			);
 		case "invalid_configuration":
 			return t(

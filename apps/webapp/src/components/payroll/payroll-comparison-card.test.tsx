@@ -15,6 +15,7 @@ const actions = vi.hoisted(() => ({
 	listCompatiblePayrollBaselinesAction: vi.fn(),
 	preparePayrollComparisonAction: vi.fn(),
 	inspectPayrollBaselineAction: vi.fn(),
+	listPayrollBaselinesAction: vi.fn(),
 }));
 vi.mock("@/app/[locale]/(app)/payroll/comparison-actions", () => actions);
 vi.mock("@/app/[locale]/(app)/payroll/baseline-actions", () => actions);
@@ -62,6 +63,10 @@ function setup(employeeIds?: string[]) {
 }
 beforeEach(() => {
 	vi.clearAllMocks();
+	actions.listPayrollBaselinesAction.mockResolvedValue({
+		success: true,
+		data: [baseline],
+	});
 	actions.listCompatiblePayrollBaselinesAction.mockResolvedValue({
 		success: true,
 		data: [baseline],
@@ -221,6 +226,8 @@ it("prepares once and downloads the exact reviewed result with before/current ou
 	);
 	expect(within(row).getAllByText("Original request note").length).toBe(2);
 	expect(within(row).getByText(/Original source notes describe/)).toBeTruthy();
+	expect(within(row).getAllByText("Payout (minutes)")).toHaveLength(2);
+	expect(within(row).getAllByText("480")).toHaveLength(2);
 	expect(
 		screen
 			.getByRole("link", { name: "Download reviewed comparison (CSV)" })
@@ -598,4 +605,51 @@ it("uses only selected Lexware target despite newer DATEV baseline and shows exa
 		startDate: "2026-09-01",
 		endDate: "2026-09-30",
 	});
+});
+
+it("explicitly adopts a project-filtered baseline's full retained scope before preparing", async () => {
+	const filtered = { ...filters, projectIds: ["project-retained"] };
+	actions.listCompatiblePayrollBaselinesAction.mockResolvedValue({
+		success: true,
+		data: [],
+	});
+	actions.inspectPayrollBaselineAction.mockResolvedValue({
+		success: true,
+		data: {
+			summary: baseline,
+			evidence: { filters: filtered, employeeIds: baseline.employeeIds },
+		},
+	});
+	actions.preparePayrollComparisonAction.mockResolvedValue({
+		success: true,
+		data: { status: "ready", result: reviewed },
+	});
+	setup(["employee-current"]);
+	await screen.findByText(
+		"No compatible payroll baseline is available for this period and employee selection.",
+	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "Choose retained export filters" }),
+	);
+	await screen.findByText("baseline-a", { selector: "dd" });
+	expect(
+		screen.getByText("employee-departed", { selector: "li" }),
+	).toBeTruthy();
+	expect(
+		(await screen.findByText(/project-retained/)).closest("details")?.open,
+	).toBe(true);
+	expect(actions.preparePayrollComparisonAction).not.toHaveBeenCalled();
+	fireEvent.click(
+		screen.getByRole("button", { name: "Prepare with retained filters" }),
+	);
+	await waitFor(() =>
+		expect(actions.preparePayrollComparisonAction).toHaveBeenCalledWith({
+			baselineId: baseline.id,
+			formatId: "datev_lohn",
+			startDate: "2026-09-01",
+			endDate: "2026-09-30",
+			employeeIds: baseline.employeeIds,
+			projectIds: ["project-retained"],
+		}),
+	);
 });

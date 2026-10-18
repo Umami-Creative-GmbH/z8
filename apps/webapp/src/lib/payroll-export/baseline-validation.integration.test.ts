@@ -132,6 +132,30 @@ describe("DATEV baseline validation through retained reads", () => {
 		expect((await read())?.summary.availability).toBe("available");
 		expect((await read())?.evidence).toEqual(evidence());
 	});
+	it("normalizes optional undefined fields to the retained JSONB wire shape before digesting", async () => {
+		const payload = evidence();
+		payload.config.includeZeroHours = undefined;
+		payload.filters.teamIds = undefined;
+		const id = "d1343000-0000-4000-8000-000000000103";
+		await insertPayrollBaseline(db, {
+			id,
+			jobId: id,
+			organizationId: ORG,
+			createdAt: new Date("2026-10-18T00:00:00Z"),
+			completedAt: new Date("2026-10-18T00:01:00Z"),
+			evidence: payload,
+		});
+		const retained = await readPayrollBaseline({
+			organizationId: ORG,
+			baselineId: id,
+			now,
+		});
+		expect(retained?.summary.availability).toBe("available");
+		expect(retained?.evidence?.config).not.toHaveProperty("includeZeroHours");
+		expect(retained?.evidence?.filters).not.toHaveProperty("teamIds");
+		expect(Object.hasOwn(payload.config, "includeZeroHours")).toBe(true);
+	});
+
 	it("denies malformed output instead of throwing even if its digest matches", async () => {
 		await corrupt({ ...evidence(), output: null });
 		expect(await read()).toMatchObject({

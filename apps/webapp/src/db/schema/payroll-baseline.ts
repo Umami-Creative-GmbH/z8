@@ -19,7 +19,7 @@ export const payrollExportBaseline = pgTable(
 		jobId: uuid("job_id").notNull(),
 		descriptor: jsonb("descriptor")
 			.$type<{
- formatId?:import("@/lib/payroll-export/supported-format").SupportedPayrollFormatId;
+				formatId?: import("@/lib/payroll-export/supported-format").SupportedPayrollFormatId;
 				destination: import("@/lib/payroll-export/baseline-types").PayrollBaselineDestination;
 				period: { startDate: string; endDate: string };
 			}>()

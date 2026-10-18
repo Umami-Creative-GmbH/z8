@@ -775,9 +775,10 @@ function serializeFilters(filters: PayrollExportFilters) {
 export async function resolvePayrollRunEmployeeIds(
 	organizationId: string,
 	filters: PayrollExportFilters,
+	reader: Pick<typeof db, "query"> = db,
 ): Promise<string[]> {
 	if (hasEmptyEmployeeScope(filters)) return [];
-	return resolveExportEmployeeIds(organizationId, filters);
+	return resolveExportEmployeeIds(organizationId, filters, reader);
 }
 
 /** Employees an export covers: the explicit selection, else the organization (optionally by team). */
