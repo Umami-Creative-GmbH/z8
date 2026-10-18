@@ -2,12 +2,14 @@ import { eq } from "drizzle-orm";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { ProrationNotice } from "@/components/settings/vacation/proration-notice";
+import { WorkingWeekNotice } from "@/components/settings/vacation/working-week-notice";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { loadProrationNoticeForPage } from "@/lib/absences/proration-notice-store";
+import { loadWorkingWeekNoticeForPage } from "@/lib/absences/working-week-notice-store";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { calendarYearAt, systemClock } from "@/lib/datetime/temporal-core";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
@@ -40,11 +42,13 @@ async function EmployeeAllowancesContent() {
 		policyResult,
 		policyAssignmentsResult,
 		prorationNotice,
+		workingWeekNotice,
 	] = await Promise.all([
 		getEmployeesWithAllowances(organizationId, currentYear),
 		getCompanyDefaultVacationPolicy(organizationId),
 		getVacationPolicyAssignments(organizationId),
 		loadProrationNoticeForPage(db, { organizationId }),
+		loadWorkingWeekNoticeForPage(db, { organizationId }),
 	]);
 
 	const employees = employeesResult.success ? employeesResult.data : [];
@@ -61,8 +65,15 @@ async function EmployeeAllowancesContent() {
 			employees={employees}
 			hasOrganizationPolicy={Boolean(orgPolicy)}
 			notice={
-				prorationNotice?.length ? (
-					<ProrationNotice rows={prorationNotice} />
+				prorationNotice?.length || workingWeekNotice?.length ? (
+					<>
+						{prorationNotice?.length ? (
+							<ProrationNotice rows={prorationNotice} />
+						) : null}
+						{workingWeekNotice?.length ? (
+							<WorkingWeekNotice rows={workingWeekNotice} />
+						) : null}
+					</>
 				) : null
 			}
 			policyAssignments={policyAssignments}

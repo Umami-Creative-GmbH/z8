@@ -27,10 +27,46 @@ export interface EmploymentStint {
 
 /** The fields of a vacation policy (`vacation_allowance`) proration reads. */
 export interface ProrationPolicy {
+	/** The reference allowance for a five-day working week. */
 	defaultAnnualDays: string;
 	accrualType: VacationAccrualType;
 	prorateInStartAndExitYear: boolean;
+	/** The statutory minimum for a five-day working week. */
 	statutoryMinimumDays: string;
+	/**
+	 * The combined policy/working-week periods of the year (Absences ADR 0003). Without them, the
+	 * policy's reference amounts apply to the whole year on a five-day week.
+	 */
+	allowanceRates?: readonly AllowanceRate[];
+}
+
+/** The first year whose allowances convert to the working week (Absences ADR 0003). */
+export const FIRST_WORKING_WEEK_YEAR = 2026;
+
+/** The working week policy amounts are stated for. */
+export const REFERENCE_WORKING_DAYS_PER_WEEK = 5;
+
+/**
+ * One period of a year with the same vacation policy amounts and working days per week. The
+ * vacation allowance converts the reference amounts by working days per week ÷ 5.
+ */
+export interface AllowanceRate {
+	/** First day, `YYYY-MM-DD`. */
+	startDate: string;
+	/** Last day (inclusive), `YYYY-MM-DD`. */
+	endDate: string;
+	referenceAnnualDays: number;
+	referenceStatutoryMinimumDays: number;
+	/** At least 1: a schedule without working days is a configuration error, not a rate. */
+	workingDaysPerWeek: number;
+}
+
+/** How the full allowance was converted from the reference allowance (Absences ADR 0003). */
+export interface WorkingWeekConversion {
+	/** The policy's reference allowance over the employed dates of the year. */
+	referenceAllowance: number;
+	/** The working days per week over the employed dates of the year, oldest first. */
+	periods: Array<{ startDate: string; endDate: string; workingDaysPerWeek: number }>;
 }
 
 /** Why the full allowance applies. */
@@ -77,11 +113,16 @@ export type ProrationReason =
 	| { kind: "not_employed" };
 
 export interface ProratedAllowance {
-	/** The policy's allowance for a full year, or the custom allowance. */
+	/**
+	 * The policy's allowance for a full year, converted to the employee's working week over the
+	 * dates they are employed in the year; or the custom allowance.
+	 */
 	fullAllowance: number;
 	/** The days of the vacation allowance of the year: the prorated allowance, or the full one. */
 	days: number;
 	reason: ProrationReason;
+	/** Present when the working week is not five days on some employed date of the year. */
+	workingWeek?: WorkingWeekConversion;
 }
 
 /** An `employee_employment_period` row. */
@@ -202,10 +243,9 @@ export function resolveVacationAllowance(input: {
 		return full(custom, "custom_allowance");
 	}
 
-	const fullAllowance = Number.parseFloat(input.policy.defaultAnnualDays);
-	if (input.year < FIRST_PRORATED_YEAR) return full(fullAllowance, "before_rollout");
-	if (isAccrualPolicy(input.policy)) return full(fullAllowance, "accrual_policy");
-	if (!input.policy.prorateInStartAndExitYear) return full(fullAllowance, "proration_off");
+	if (input.year < FIRST_PRORATED_YEAR) {
+		return full(Number.parseFloat(input.policy.defaultAnnualDays), "before_rollout");
+	}
 
 	const yearStart = Temporal.PlainDate.from({ year: input.year, month: 1, day: 1 });
 	const yearEnd = Temporal.PlainDate.from({ year: input.year, month: 12, day: 31 });
@@ -215,41 +255,166 @@ export function resolveVacationAllowance(input: {
 				comparePlainDates(employment.lastWorkingDay, yearStart) >= 0) &&
 			(employment.startDate === null || comparePlainDates(employment.startDate, yearEnd) <= 0),
 	);
+	// The converted rates average over the dates employed in the year (Absences ADR 0003).
+	const rates = allowanceRatesOf(input.policy, yearStart, yearEnd);
+	const employedDates = inYear.map((employment) => employedRange(employment, yearStart, yearEnd));
+	const yearRate = averageRate(rates, employedDates.length ? employedDates : [[yearStart, yearEnd]]);
+	const fullAllowance = yearRate.annual;
+	const withConversion = (allowance: ProratedAllowance): ProratedAllowance =>
+		yearRate.workingWeek ? { ...allowance, workingWeek: yearRate.workingWeek } : allowance;
+
+	if (isAccrualPolicy(input.policy)) return withConversion(full(fullAllowance, "accrual_policy"));
+	if (!input.policy.prorateInStartAndExitYear) {
+		return withConversion(full(fullAllowance, "proration_off"));
+	}
 	if (inYear.some((employment) => employment.startDate === null)) {
-		return full(fullAllowance, "no_known_start");
+		return withConversion(full(fullAllowance, "no_known_start"));
 	}
 	if (inYear.length === 0) {
-		return { fullAllowance, days: 0, reason: { kind: "not_employed" } };
+		return withConversion({ fullAllowance, days: 0, reason: { kind: "not_employed" } });
 	}
 
-	const statutoryMinimum = Number.parseFloat(input.policy.statutoryMinimumDays);
 	const employments = (inYear as Array<EmploymentStint & { startDate: PlainDate }>)
 		.toSorted((left, right) => comparePlainDates(left.startDate, right.startDate))
-		.map((employment) =>
-			prorateEmployment({
+		.map((employment) => {
+			const stintRate = averageRate(rates, [employedRange(employment, yearStart, yearEnd)]);
+			return prorateEmployment({
 				employment,
 				year: input.year,
 				yearStart,
 				yearEnd,
-				fullAllowance,
-				statutoryMinimum,
-			}),
-		);
+				fullAllowance: stintRate.annual,
+				statutoryMinimum: stintRate.minimum,
+			});
+		});
 	if (employments.every((employment) => employment === null)) {
-		return full(fullAllowance, "full_year");
+		return withConversion(full(fullAllowance, "full_year"));
 	}
 
 	const prorated = employments.filter((employment) => employment !== null);
 	const sum = roundDays(prorated.reduce((total, employment) => total + employment.days, 0));
-	return {
+	return withConversion({
 		fullAllowance,
 		days: Math.min(sum, fullAllowance),
 		reason: { kind: "prorated", employments: prorated, cappedAtFullAllowance: sum > fullAllowance },
-	};
+	});
 }
 
 function full(fullAllowance: number, cause: FullAllowanceCause): ProratedAllowance {
 	return { fullAllowance, days: fullAllowance, reason: { kind: "none", cause } };
+}
+
+type DateRange = readonly [from: PlainDate, through: PlainDate];
+
+/** The days of an employment in the year; an unknown start counts from 1 January. */
+function employedRange(employment: EmploymentStint, yearStart: PlainDate, yearEnd: PlainDate) {
+	const from =
+		employment.startDate && comparePlainDates(employment.startDate, yearStart) > 0
+			? employment.startDate
+			: yearStart;
+	const through =
+		employment.lastWorkingDay && comparePlainDates(employment.lastWorkingDay, yearEnd) < 0
+			? employment.lastWorkingDay
+			: yearEnd;
+	return [from, through] as const satisfies DateRange;
+}
+
+function allowanceRatesOf(
+	policy: ProrationPolicy,
+	yearStart: PlainDate,
+	yearEnd: PlainDate,
+): readonly AllowanceRate[] {
+	return policy.allowanceRates?.length
+		? policy.allowanceRates
+		: [
+				{
+					startDate: yearStart.toString(),
+					endDate: yearEnd.toString(),
+					referenceAnnualDays: Number.parseFloat(policy.defaultAnnualDays),
+					referenceStatutoryMinimumDays: Number.parseFloat(policy.statutoryMinimumDays),
+					workingDaysPerWeek: REFERENCE_WORKING_DAYS_PER_WEEK,
+				},
+			];
+}
+
+/**
+ * The converted annual allowance and statutory minimum averaged over the given dates: each day
+ * weighs 1/12 of its month's actual length, as in the weighted policy (#989), and the weights are
+ * normalized over the dates, so days not employed never reduce the rate. Rounded once to two
+ * decimals.
+ */
+function averageRate(
+	rates: readonly AllowanceRate[],
+	ranges: readonly DateRange[],
+): { annual: number; minimum: number; workingWeek?: WorkingWeekConversion } {
+	let weight = 0;
+	let annual = 0;
+	let minimum = 0;
+	let reference = 0;
+	const weeks: WorkingWeekConversion["periods"] = [];
+	const sortedRanges = ranges.toSorted((left, right) => comparePlainDates(left[0], right[0]));
+	for (const rate of rates) {
+		const factor = rate.workingDaysPerWeek / REFERENCE_WORKING_DAYS_PER_WEEK;
+		for (const [rangeFrom, rangeThrough] of sortedRanges) {
+			const from = latestDate(parsePlainDate(rate.startDate), rangeFrom);
+			const through = earliestDate(parsePlainDate(rate.endDate), rangeThrough);
+			if (comparePlainDates(from, through) > 0) continue;
+			const until = through.add({ days: 1 });
+			for (let date = from; comparePlainDates(date, until) < 0; ) {
+				const nextMonth = date.with({ day: 1 }).add({ months: 1 });
+				const next = comparePlainDates(nextMonth, until) < 0 ? nextMonth : until;
+				const share = date.until(next).days / date.daysInMonth / MONTHS_PER_YEAR;
+				weight += share;
+				annual += rate.referenceAnnualDays * factor * share;
+				minimum += rate.referenceStatutoryMinimumDays * factor * share;
+				reference += rate.referenceAnnualDays * share;
+				date = next;
+			}
+			weeks.push({
+				startDate: from.toString(),
+				endDate: through.toString(),
+				workingDaysPerWeek: rate.workingDaysPerWeek,
+			});
+		}
+	}
+	if (weight === 0) return { annual: 0, minimum: 0 };
+	const converted = weeks.some(
+		(week) => week.workingDaysPerWeek !== REFERENCE_WORKING_DAYS_PER_WEEK,
+	);
+	return {
+		annual: roundDays(annual / weight),
+		minimum: roundDays(minimum / weight),
+		workingWeek: converted
+			? { referenceAllowance: roundDays(reference / weight), periods: mergeWeeks(weeks) }
+			: undefined,
+	};
+}
+
+/** Oldest first, adjacent periods with the same working days per week joined. */
+function mergeWeeks(weeks: WorkingWeekConversion["periods"]): WorkingWeekConversion["periods"] {
+	const merged: WorkingWeekConversion["periods"] = [];
+	for (const week of weeks.toSorted((left, right) =>
+		left.startDate.localeCompare(right.startDate),
+	)) {
+		const last = merged.at(-1);
+		if (
+			last?.workingDaysPerWeek === week.workingDaysPerWeek &&
+			parsePlainDate(last.endDate).add({ days: 1 }).toString() === week.startDate
+		) {
+			last.endDate = week.endDate;
+		} else {
+			merged.push({ ...week });
+		}
+	}
+	return merged;
+}
+
+function latestDate(left: PlainDate, right: PlainDate): PlainDate {
+	return comparePlainDates(left, right) >= 0 ? left : right;
+}
+
+function earliestDate(left: PlainDate, right: PlainDate): PlainDate {
+	return comparePlainDates(left, right) <= 0 ? left : right;
 }
 
 /** One employment's share of the year, or null when it covers the whole year. */
@@ -258,7 +423,9 @@ function prorateEmployment(input: {
 	year: number;
 	yearStart: PlainDate;
 	yearEnd: PlainDate;
+	/** The employment's converted annual allowance. */
 	fullAllowance: number;
+	/** The employment's converted statutory minimum. */
 	statutoryMinimum: number;
 }): ProratedEmployment | null {
 	const { employment, yearStart, yearEnd } = input;

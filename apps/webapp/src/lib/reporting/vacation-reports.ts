@@ -289,7 +289,8 @@ export async function generateAccrualProjectionResult(
 	const stints = employment ? accruingEmployments(employment) : [];
 	const customAnnualDays = overrides.get(employeeId)?.customAnnualDays;
 	const annualDays = accrual
-		? Number(customAnnualDays ?? policy.defaultAnnualDays)
+		? (balance.allowance?.fullAllowance ??
+			Number(customAnnualDays ?? policy.defaultAnnualDays))
 		: configuration?.status === "legacy"
 			? balance.totalDays
 			: balance.allowanceDays;
@@ -308,6 +309,7 @@ export async function generateAccrualProjectionResult(
 						: annualDays / 12
 					: (policyPeriodMonthlyAccrualDays({
 							periods: result.periods.get(employeeId) ?? [],
+							workingWeeks: result.workingWeeks.get(employeeId),
 							customAnnualDays,
 							year,
 							month,

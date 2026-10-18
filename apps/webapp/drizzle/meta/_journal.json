@@ -1933,6 +1933,13 @@
       "when": 1808496000000,
       "tag": "0275_approval_triage_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 276,
+      "version": "7",
+      "when": 1808582400000,
+      "tag": "0276_absence_setting_working_week_notice",
+      "breakpoints": true
     }
   ]
 }
