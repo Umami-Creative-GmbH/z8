@@ -6,6 +6,7 @@ const {
 	buildDocumentRequestDecidedNotification,
 	buildDocumentRequestedNotification,
 	buildDocumentRequestReminderNotification,
+	buildDocumentRequestSubmittedNotification,
 } = await import("./document-request-notifications");
 
 const request = {
@@ -181,5 +182,36 @@ describe("buildDocumentRequestDecidedNotification", () => {
 		});
 		expect(accepted.title).toBe("Documents accepted");
 		expect(accepted.message).toBe('Your documents for "First aid refresher" were accepted.');
+	});
+});
+
+describe("buildDocumentRequestSubmittedNotification", () => {
+	it("tells an officer who submitted for which request, leading to the employee's file", () => {
+		const notification = buildDocumentRequestSubmittedNotification({
+			organizationId: "org",
+			recipientUserId: "otto",
+			eventId: "event-5",
+			employeeName: "Anna Example",
+			request,
+		});
+		expect(notification).toMatchObject({
+			userId: "otto",
+			type: "personnel_file_document_request_submitted",
+			title: "Documents submitted",
+			message: 'Anna Example submitted documents for "First aid refresher". Please review them.',
+			entityType: "employee_document_request",
+			entityId: request.id,
+			actionUrl: `/personnel-files/${request.employeeId}`,
+			idempotencyKey: "personnel-file-document-request:event-5:otto",
+			metadata: {
+				category: "certificate",
+				employeeId: request.employeeId,
+				i18n: {
+					titleKey: "common:notifications.content.personnelFileDocumentRequestSubmitted.title",
+					messageKey: "common:notifications.content.personnelFileDocumentRequestSubmitted.message",
+					params: { name: "Anna Example", title: "First aid refresher" },
+				},
+			},
+		});
 	});
 });
