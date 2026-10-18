@@ -15,6 +15,7 @@ import {
 import {
 	cancelDocumentRequest,
 	createDocumentRequest,
+	editDocumentRequest,
 	listEmployeeDocumentRequests,
 	listOwnDocumentRequests,
 } from "@/lib/personnel-file/document-request-store";
@@ -48,6 +49,8 @@ const REFUSAL_MESSAGES: Readonly<Record<DocumentRequestRefusal, string>> = {
 	renewed_document_mismatch:
 		"The renewed document must be a document of the same employee and category.",
 	renewal_already_requested: "This document already has an open request for its renewal.",
+	not_editable:
+		"Only the deadline and note can be changed. Cancel the request and create a new one instead.",
 };
 
 function refused(reason: DocumentRequestRefusal): { success: false; error: string; code: string } {
@@ -151,6 +154,64 @@ export async function cancelDocumentRequestAction(input: {
 	} catch (error) {
 		return failure(error, "Failed to cancel the document request");
 	}
+}
+
+export interface EditDocumentRequestInput {
+	requestId: string;
+	/** The new deadline (`YYYY-MM-DD`); left out, it stays. */
+	deadline?: string;
+	/** The new note; empty clears it; left out, it stays. */
+	note?: string | null;
+	/** The `version` the officer saw; a changed request conflicts. */
+	expectedVersion?: number | null;
+}
+
+const EDITABLE_FIELDS: ReadonlySet<string> = new Set<keyof EditDocumentRequestInput>([
+	"requestId",
+	"deadline",
+	"note",
+	"expectedVersion",
+]);
+
+/**
+ * Changes the deadline and note of an open or submitted request (#1403).
+ * Anything else (employee, category, title, renewed document, status) is
+ * refused with `not_editable`: cancel and create a new request instead.
+ */
+export async function editDocumentRequestAction(
+	input: EditDocumentRequestInput,
+): Promise<ServerActionResult<DocumentRequestView>> {
+	try {
+		const current = await loadCurrentPersonnelFileAccess();
+		if (current.status !== "resolved" || !isCanonicalUuid(input?.requestId)) {
+			return { success: false, error: NOT_FOUND };
+		}
+		if (Object.keys(input).some((field) => !EDITABLE_FIELDS.has(field))) {
+			return refused("not_editable");
+		}
+		const result = await editDocumentRequest(db, current.access, {
+			requestId: input.requestId,
+			deadline: input.deadline,
+			note: input.note,
+			expectedVersion: safeVersion(input.expectedVersion),
+		});
+		switch (result.kind) {
+			case "not_found":
+				return { success: false, error: NOT_FOUND };
+			case "refused":
+				return refused(result.reason);
+			case "conflict":
+				return { success: false, error: CONFLICT_MESSAGE, code: "conflict" };
+			case "edited":
+				return { success: true, data: result.request };
+		}
+	} catch (error) {
+		return failure(error, "Failed to change the document request");
+	}
+}
+
+function safeVersion(value: unknown): number | null {
+	return typeof value === "number" && Number.isSafeInteger(value) ? value : null;
 }
 
 /** One employee's requests the actor covers (the requests section of their file). */

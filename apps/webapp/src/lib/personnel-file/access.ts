@@ -5,7 +5,7 @@ import {
 	type DocumentVisibility,
 	EMPLOYEE_UPLOAD_CATEGORIES,
 } from "./document.types";
-import { isDocumentRequestCategory } from "./document-request.types";
+import { DOCUMENT_REQUEST_CATEGORIES, isDocumentRequestCategory } from "./document-request.types";
 
 /**
  * Who may see and manage which employee documents (ADR 0001). One resolver
@@ -241,6 +241,14 @@ export function canManageDocumentRequest(
 	category: DocumentCategory,
 ): boolean {
 	return isDocumentRequestCategory(category) && canManageDocument(access, employee, category);
+}
+
+/**
+ * Whether the actor covers a requestable category for at least one employee:
+ * the gate of the officer "Document requests" page (#1403).
+ */
+export function managesDocumentRequests(access: PersonnelFileAccess): boolean {
+	return DOCUMENT_REQUEST_CATEGORIES.some((category) => managesCategory(access, category));
 }
 
 /** Whether the actor manages documents of the category for at least one employee. */

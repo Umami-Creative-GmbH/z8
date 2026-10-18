@@ -90,7 +90,9 @@ export type DocumentRequestRefusal =
 	/** The renewed document is not a document of the same employee and category. */
 	| "renewed_document_mismatch"
 	/** Another open or submitted request already names the renewed document. */
-	| "renewal_already_requested";
+	| "renewal_already_requested"
+	/** An edit tried to change something other than the deadline and note (#1403). */
+	| "not_editable";
 
 /** One entry of a request's history. */
 export interface DocumentRequestEventView {
