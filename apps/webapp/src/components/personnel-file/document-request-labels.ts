@@ -80,6 +80,10 @@ export function useDocumentRequestErrorMessage() {
 			"settings.personnelFiles.requests.error.renewalAlreadyRequested",
 			"This document already has an open request for its renewal.",
 		),
+		not_editable: t(
+			"settings.personnelFiles.requests.error.notEditable",
+			"Only the deadline and note can be changed. Cancel the request and create a new one instead.",
+		),
 		conflict: t(
 			"settings.personnelFiles.requests.error.conflict",
 			"Someone else changed this request in the meantime. Reload it and try again.",

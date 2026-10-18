@@ -106,6 +106,48 @@ export function nextDocumentRequestStatus(
 	}
 }
 
+/** What an edit changes (#1403); a field it leaves out stays as it is. */
+export interface DocumentRequestEditPatch {
+	/** `YYYY-MM-DD` */
+	deadline?: string;
+	note?: string | null;
+}
+
+/**
+ * Validates an officer's edit of a request's deadline and note (#1403) and
+ * returns only what actually changes. A new deadline is a real day, not
+ * before the organization's `today`; an unchanged deadline is kept even when
+ * it has passed, so the note of an overdue request can still be changed. A
+ * field left `undefined` is not edited.
+ */
+export function validateDocumentRequestEdit(
+	current: { deadline: string; note: string | null },
+	input: { deadline?: unknown; note?: unknown },
+	today: Temporal.PlainDate,
+): Validated<DocumentRequestEditPatch> {
+	const patch: DocumentRequestEditPatch = {};
+	if (input.deadline !== undefined) {
+		if (typeof input.deadline !== "string") return { ok: false, reason: "invalid_deadline" };
+		let deadline: string;
+		try {
+			deadline = parsePlainDate(input.deadline).toString();
+		} catch {
+			return { ok: false, reason: "invalid_deadline" };
+		}
+		if (deadline !== current.deadline) {
+			const validated = validateDocumentRequestDeadline(deadline, today);
+			if (!validated.ok) return validated;
+			patch.deadline = validated.value;
+		}
+	}
+	if (input.note !== undefined) {
+		const note = optionalDocumentRequestText(input.note);
+		if (!note.ok) return note;
+		if (note.value !== current.note) patch.note = note.value;
+	}
+	return { ok: true, value: patch };
+}
+
 /** Open after its deadline day, in the organization's calendar (`today`). */
 export function isDocumentRequestOverdue(
 	request: { status: DocumentRequestStatus; deadline: string },
