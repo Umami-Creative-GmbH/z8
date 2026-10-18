@@ -7,6 +7,10 @@ import {
 	timeEntry,
 	workPeriod,
 } from "@/db/schema";
+import {
+	isDeputyDecisionEntityType,
+	isDeputyDecisionRefusal,
+} from "@/lib/approvals/deputy/deputy-decision";
 import type {
 	ApprovalActionOptions,
 	ApprovalHandlerServices,
@@ -18,20 +22,23 @@ import {
 	ownRequestDecisionError,
 } from "@/lib/approvals/policies/self-decision";
 import {
-	isDeputyDecisionEntityType,
-	isDeputyDecisionRefusal,
-} from "@/lib/approvals/deputy/deputy-decision";
-import {
 	classifyTimeApprovalRequest,
 	type TimeApprovalKind,
 } from "@/lib/approvals/time-request-kind";
+import type { ApprovalWorkflowType } from "@/lib/approvals/workflow/types";
 import { failureOfCause } from "@/lib/effect/cause-failure";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runtime } from "@/lib/effect/runtime";
 import { createLogger } from "@/lib/logger";
-import type { ApprovalWorkflowType } from "@/lib/approvals/workflow/types";
+import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
+import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
 import type { CanonicalInboxRead } from "./canonical-inbox-read";
 import { CANONICAL_INBOX_READS } from "./canonical-inbox-reads";
+import {
+	type ApprovalFastLaneReview,
+	type FastLaneDecisionItem,
+	matchesFastLaneReview,
+} from "./fast-lane-review";
 import {
 	getSupportedInboxHandler,
 	isSupportedInboxType,
@@ -42,8 +49,6 @@ import type {
 	ApprovalInboxDecisionSuccess,
 	ApprovalInboxStatus,
 } from "./types";
-import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
-import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
 
 type InboxDecisionAction = "approve" | "reject";
 // Runs a handler's approve/reject effect, providing the services it declares.
@@ -137,7 +142,8 @@ function assertDecisionAttempt({
 	return trimmedReason;
 }
 
-type CanonicalDecider = CanonicalInboxRead & Required<Pick<CanonicalInboxRead, "decide">>;
+type CanonicalDecider = CanonicalInboxRead &
+	Required<Pick<CanonicalInboxRead, "decide">>;
 
 /**
  * The registered canonical read that decides this target itself (#1058), or
@@ -147,7 +153,8 @@ function canonicalDeciderOf(
 	request: PersistedApprovalRequestForDecision,
 	reads: readonly CanonicalInboxRead[] = CANONICAL_INBOX_READS,
 ): CanonicalDecider | null {
-	if (request.targetType !== "canonical_assignment" || !request.workflowKind) return null;
+	if (request.targetType !== "canonical_assignment" || !request.workflowKind)
+		return null;
 	const kind = request.workflowKind;
 	const read = reads.find(
 		(candidate) =>
@@ -176,7 +183,12 @@ async function decideCanonicalInboxItem({
 	if (!isSupportedInboxType(request.entityType)) {
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
 	}
-	const trimmedReason = assertDecisionAttempt({ request, actorEmployeeId, action, reason });
+	const trimmedReason = assertDecisionAttempt({
+		request,
+		actorEmployeeId,
+		action,
+		reason,
+	});
 	await read.decide({
 		target: {
 			...request,
@@ -220,7 +232,12 @@ export async function decideApprovalInboxItemFromRequest({
 	if (!isSupportedInboxType(requestType) || handler.type !== requestType) {
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
 	}
-	const trimmedReason = assertDecisionAttempt({ request, actorEmployeeId, action, reason });
+	const trimmedReason = assertDecisionAttempt({
+		request,
+		actorEmployeeId,
+		action,
+		reason,
+	});
 	const actionOptions: ApprovalActionOptions =
 		actorEmployeeId === request.approverId
 			? { approvalRequestId: request.id }
@@ -265,6 +282,8 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 	includeAllApprovers,
 	eligibleApprovalScopes,
 	coveredApproverIds,
+	fastLane,
+	loadCurrentFastLaneItem = loadCurrentFastLaneDecisionItem,
 	resolveHandler = getSupportedInboxHandler,
 	runEffect = defaultDecisionEffectRunner,
 }: {
@@ -275,6 +294,13 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 	includeAllApprovers?: boolean;
 	eligibleApprovalScopes?: EligibleApprovalScope[];
 	coveredApproverIds?: string[];
+	fastLane?: ApprovalFastLaneReview;
+	loadCurrentFastLaneItem?: (
+		input: {
+			request: PersistedApprovalRequestForDecision;
+			actorEmployeeId: string;
+		} & DecisionVisibilityInput,
+	) => Promise<FastLaneDecisionItem>;
 	resolveHandler?: (type: string) => ApprovalTypeHandler | null;
 	runEffect?: DecisionEffectRunner;
 }): Promise<ApprovalInboxBulkDecisionResult> {
@@ -301,6 +327,41 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 				};
 			}
 
+			if (fastLane) {
+				try {
+					const item = await loadCurrentFastLaneItem({
+						request,
+						actorEmployeeId,
+						includeAllApprovers,
+						eligibleApprovalScopes,
+						coveredApproverIds,
+					});
+					const capable =
+						action === "approve"
+							? item.capabilities.canApprove &&
+								item.capabilities.canBulkApprove &&
+								!item.capabilities.requiresDetailReview
+							: item.capabilities.canReject;
+					if (
+						item.id !== request.id ||
+						item.entityId !== request.entityId ||
+						item.type !== request.entityType ||
+						!capable ||
+						!matchesFastLaneReview(item, fastLane)
+					)
+						throw new Error("Fast-lane assessment changed");
+				} catch {
+					return {
+						status: "failed",
+						failure: {
+							id: request.id,
+							code: "stale",
+							message:
+								"This fast-lane assessment changed. Refresh or open the request for manual review.",
+						},
+					};
+				}
+			}
 			const canonicalDecider = canonicalDeciderOf(request);
 			if (canonicalDecider) {
 				try {
@@ -431,7 +492,9 @@ export async function approveApprovalInboxItem({
 		action: "approve",
 		handler,
 		allowOrganizationWideApprover: includeAllApprovers === true,
-		...(acceptedReceiptExceptionItemIds ? { acceptedReceiptExceptionItemIds } : {}),
+		...(acceptedReceiptExceptionItemIds
+			? { acceptedReceiptExceptionItemIds }
+			: {}),
 	});
 }
 
@@ -493,10 +556,12 @@ export async function bulkApproveApprovalInboxItems({
 	includeAllApprovers,
 	eligibleApprovalScopes,
 	coveredApproverIds,
+	fastLane,
 }: {
 	approvalIds: string[];
 	actorEmployeeId: string;
 	organizationId: string;
+	fastLane?: ApprovalFastLaneReview;
 } & DecisionVisibilityInput): Promise<ApprovalInboxBulkDecisionResult> {
 	const requests = await loadApprovalInboxDecisionTargets({
 		approvalIds,
@@ -506,6 +571,7 @@ export async function bulkApproveApprovalInboxItems({
 		requests,
 		actorEmployeeId,
 		action: "approve",
+		fastLane,
 		includeAllApprovers,
 		eligibleApprovalScopes,
 		coveredApproverIds,
@@ -522,11 +588,13 @@ export async function bulkRejectApprovalInboxItems({
 	includeAllApprovers,
 	eligibleApprovalScopes,
 	coveredApproverIds,
+	fastLane,
 }: {
 	approvalIds: string[];
 	actorEmployeeId: string;
 	organizationId: string;
 	reason: string;
+	fastLane?: ApprovalFastLaneReview;
 } & DecisionVisibilityInput): Promise<ApprovalInboxBulkDecisionResult> {
 	const requests = await loadApprovalInboxDecisionTargets({
 		approvalIds,
@@ -536,6 +604,7 @@ export async function bulkRejectApprovalInboxItems({
 		requests,
 		actorEmployeeId,
 		action: "reject",
+		fastLane,
 		reason,
 		includeAllApprovers,
 		eligibleApprovalScopes,
@@ -543,6 +612,31 @@ export async function bulkRejectApprovalInboxItems({
 	});
 
 	return withMissingApprovalFailures(approvalIds, requests, result);
+}
+
+async function loadCurrentFastLaneDecisionItem({
+	request,
+	actorEmployeeId,
+	includeAllApprovers,
+	eligibleApprovalScopes,
+	coveredApproverIds,
+}: {
+	request: PersistedApprovalRequestForDecision;
+	actorEmployeeId: string;
+} & DecisionVisibilityInput): Promise<FastLaneDecisionItem> {
+	const { getApprovalInboxDetail } = await import("./read-service");
+	const detail = await getApprovalInboxDetail({
+		approvalId: request.id,
+		organizationId: request.organizationId,
+		approverId: actorEmployeeId,
+		includeAllApprovers,
+		eligibleApprovalScopes,
+		covering: coveredApproverIds?.map((approverId) => ({
+			approverId,
+			approverName: "",
+		})),
+	});
+	return detail.item;
 }
 
 function withMissingApprovalFailures(

@@ -3,12 +3,26 @@
 import { IconCheck, IconChevronDown, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import { summaryField, useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
+import {
+	summaryField,
+	useApprovalInboxText,
+} from "@/components/approvals/use-approval-inbox-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
+import type { ApprovalFastLaneReview } from "@/lib/approvals/inbox/fast-lane-review";
 import type {
 	ApprovalInboxFastLaneGroup,
 	ApprovalInboxItem,
@@ -23,8 +37,15 @@ type ApprovalFastLaneGroupView = {
 interface ApprovalFastLanesProps {
 	groups: ApprovalFastLaneGroupView[];
 	isBusy: boolean;
-	onBulkApprove: (approvalIds: string[]) => void;
-	onBulkReject: (approvalIds: string[], reason: string) => void;
+	onBulkApprove: (
+		approvalIds: string[],
+		review: ApprovalFastLaneReview,
+	) => void;
+	onBulkReject: (
+		approvalIds: string[],
+		reason: string,
+		review: ApprovalFastLaneReview,
+	) => void;
 }
 
 const RISK_RANK: Record<ApprovalInboxRiskLevel, number> = {
@@ -33,12 +54,14 @@ const RISK_RANK: Record<ApprovalInboxRiskLevel, number> = {
 	high: 3,
 };
 
-const RISK_BADGE_VARIANTS: Record<ApprovalInboxRiskLevel, "secondary" | "outline" | "destructive"> =
-	{
-		low: "secondary",
-		medium: "outline",
-		high: "destructive",
-	};
+const RISK_BADGE_VARIANTS: Record<
+	ApprovalInboxRiskLevel,
+	"secondary" | "outline" | "destructive"
+> = {
+	low: "secondary",
+	medium: "outline",
+	high: "destructive",
+};
 
 export function ApprovalFastLanes({
 	groups,
@@ -48,7 +71,9 @@ export function ApprovalFastLanes({
 }: ApprovalFastLanesProps) {
 	const { t } = useTranslate();
 	const text = useApprovalInboxText();
-	const [rejectingGroupKey, setRejectingGroupKey] = useState<string | null>(null);
+	const [rejectingGroupKey, setRejectingGroupKey] = useState<string | null>(
+		null,
+	);
 	const [rejectReason, setRejectReason] = useState("");
 
 	if (groups.length === 0) {
@@ -65,7 +90,10 @@ export function ApprovalFastLanes({
 					{t("approvals:fastLanes.title", "Fast lanes")}
 				</h2>
 				<p className="text-sm text-muted-foreground">
-					{t("approvals:fastLanes.description", "Review similar low-friction requests in batches.")}
+					{t(
+						"approvals:fastLanes.description",
+						"Review similar low-friction requests in batches.",
+					)}
 				</p>
 			</div>
 
@@ -74,7 +102,9 @@ export function ApprovalFastLanes({
 					const label = getGroupLabel(t, group.key);
 					const actionLabel = label.toLowerCase();
 					const approvableIds = group.items.flatMap((item) =>
-						item.capabilities.canBulkApprove && item.capabilities.canApprove ? [item.id] : [],
+						item.capabilities.canBulkApprove && item.capabilities.canApprove
+							? [item.id]
+							: [],
 					);
 					const rejectableIds = group.items.flatMap((item) =>
 						item.capabilities.canReject ? [item.id] : [],
@@ -87,6 +117,15 @@ export function ApprovalFastLanes({
 					const riskLevel = getHighestRiskLevel(group);
 					const isRejecting = rejectingGroupKey === group.key;
 					const trimmedReason = rejectReason.trim();
+					const contextsById = new Map(
+						group.items.map((item) => [item.id, item.triage.context ?? null]),
+					);
+					const reviewFor = (ids: string[]): ApprovalFastLaneReview => ({
+						group: group.key,
+						reviewedContexts: Object.fromEntries(
+							ids.map((id) => [id, contextsById.get(id) ?? null]),
+						),
+					});
 
 					return (
 						<article key={group.key}>
@@ -95,7 +134,9 @@ export function ApprovalFastLanes({
 									<div className="flex items-start justify-between gap-3">
 										<div className="min-w-0 space-y-1">
 											<CardTitle className="text-base">{label}</CardTitle>
-											<CardDescription>{getGroupDescription(t, group.key)}</CardDescription>
+											<CardDescription>
+												{getGroupDescription(t, group.key)}
+											</CardDescription>
 										</div>
 										<Badge variant={RISK_BADGE_VARIANTS[riskLevel]}>
 											{getRiskLabel(t, riskLevel)}
@@ -113,7 +154,10 @@ export function ApprovalFastLanes({
 								<CardContent className="space-y-4">
 									<div className="space-y-2 rounded-lg border bg-muted/30 p-3 text-sm">
 										{explanations.map((explanation) => (
-											<p key={explanation} className="break-words text-muted-foreground">
+											<p
+												key={explanation}
+												className="break-words text-muted-foreground"
+											>
 												{explanation}
 											</p>
 										))}
@@ -139,11 +183,17 @@ export function ApprovalFastLanes({
 									<div className="flex flex-wrap gap-2">
 										<Button
 											size="sm"
-											onClick={() => onBulkApprove(approvableIds)}
+											onClick={() =>
+												onBulkApprove(approvableIds, reviewFor(approvableIds))
+											}
 											disabled={isBusy || approvableIds.length === 0}
-											aria-label={t("approvals:fastLanes.approveGroup", "Approve {label}", {
-												label: actionLabel,
-											})}
+											aria-label={t(
+												"approvals:fastLanes.approveGroup",
+												"Approve {label}",
+												{
+													label: actionLabel,
+												},
+											)}
 										>
 											<IconCheck aria-hidden="true" />
 											{t("approvals:fastLanes.approve", "Approve")}
@@ -157,9 +207,13 @@ export function ApprovalFastLanes({
 												setRejectReason("");
 											}}
 											disabled={isBusy || rejectableIds.length === 0}
-											aria-label={t("approvals:fastLanes.rejectGroup", "Reject {label}", {
-												label: actionLabel,
-											})}
+											aria-label={t(
+												"approvals:fastLanes.rejectGroup",
+												"Reject {label}",
+												{
+													label: actionLabel,
+												},
+											)}
 										>
 											<IconX aria-hidden="true" />
 											{t("approvals:fastLanes.reject", "Reject")}
@@ -168,21 +222,35 @@ export function ApprovalFastLanes({
 
 									{isRejecting ? (
 										<div className="space-y-2 rounded-lg border bg-muted/30 p-3">
-											<label className="text-sm font-medium" htmlFor={`reject-${group.key}`}>
-												{t("approvals:fastLanes.rejectReason", "Bulk reject reason")}
+											<label
+												className="text-sm font-medium"
+												htmlFor={`reject-${group.key}`}
+											>
+												{t(
+													"approvals:fastLanes.rejectReason",
+													"Bulk reject reason",
+												)}
 											</label>
 											<Textarea
 												id={`reject-${group.key}`}
 												name={`bulk-reject-reason-${group.key}`}
 												autoComplete="off"
 												value={rejectReason}
-												onChange={(event) => setRejectReason(event.target.value)}
+												onChange={(event) =>
+													setRejectReason(event.target.value)
+												}
 												disabled={isBusy}
 											/>
 											<Button
 												size="sm"
 												variant="destructive"
-												onClick={() => onBulkReject(rejectableIds, trimmedReason)}
+												onClick={() =>
+													onBulkReject(
+														rejectableIds,
+														trimmedReason,
+														reviewFor(rejectableIds),
+													)
+												}
 												disabled={isBusy || trimmedReason.length === 0}
 												aria-label={t(
 													"approvals:fastLanes.confirmRejectGroup",
@@ -192,7 +260,10 @@ export function ApprovalFastLanes({
 													},
 												)}
 											>
-												{t("approvals:fastLanes.confirmReject", "Confirm reject")}
+												{t(
+													"approvals:fastLanes.confirmReject",
+													"Confirm reject",
+												)}
 											</Button>
 										</div>
 									) : null}
@@ -203,17 +274,26 @@ export function ApprovalFastLanes({
 												variant="ghost"
 												size="sm"
 												className="px-0 text-muted-foreground"
-												aria-label={t("approvals:fastLanes.expandGroup", "Expand {label}", {
-													label,
-												})}
+												aria-label={t(
+													"approvals:fastLanes.expandGroup",
+													"Expand {label}",
+													{
+														label,
+													},
+												)}
 											>
 												<IconChevronDown aria-hidden="true" />
-												{t("approvals:fastLanes.showGroup", "Show {label}", { label })}
+												{t("approvals:fastLanes.showGroup", "Show {label}", {
+													label,
+												})}
 											</Button>
 										</CollapsibleTrigger>
 										<CollapsibleContent className="space-y-2 pt-2">
 											{group.items.map((item) => (
-												<div key={item.id} className="rounded-lg border bg-background px-3 py-2">
+												<div
+													key={item.id}
+													className="rounded-lg border bg-background px-3 py-2"
+												>
 													<div className="break-words font-medium text-sm">
 														{item.requester.name}
 													</div>
@@ -234,22 +314,41 @@ export function ApprovalFastLanes({
 	);
 }
 
-function getHighestRiskLevel(group: ApprovalFastLaneGroupView): ApprovalInboxRiskLevel {
+function getHighestRiskLevel(
+	group: ApprovalFastLaneGroupView,
+): ApprovalInboxRiskLevel {
 	return group.items.reduce<ApprovalInboxRiskLevel>((highest, item) => {
-		return RISK_RANK[item.triage.riskLevel] > RISK_RANK[highest] ? item.triage.riskLevel : highest;
+		return RISK_RANK[item.triage.riskLevel] > RISK_RANK[highest]
+			? item.triage.riskLevel
+			: highest;
 	}, "low");
 }
 
-function getGroupLabel(t: ReturnType<typeof useTranslate>["t"], key: ApprovalInboxFastLaneGroup) {
+function getGroupLabel(
+	t: ReturnType<typeof useTranslate>["t"],
+	key: ApprovalInboxFastLaneGroup,
+) {
 	switch (key) {
 		case "low_risk_absence":
-			return t("approvals:fastLanes.groups.lowRiskAbsence.label", "Low-risk absences");
+			return t(
+				"approvals:fastLanes.groups.lowRiskAbsence.label",
+				"Low-risk absences",
+			);
 		case "small_time_correction":
-			return t("approvals:fastLanes.groups.smallTimeCorrection.label", "Small time corrections");
+			return t(
+				"approvals:fastLanes.groups.smallTimeCorrection.label",
+				"Small time corrections",
+			);
 		case "stale_pending":
-			return t("approvals:fastLanes.groups.stalePending.label", "Stale requests");
+			return t(
+				"approvals:fastLanes.groups.stalePending.label",
+				"Stale requests",
+			);
 		case "payroll_blocker":
-			return t("approvals:fastLanes.groups.payrollBlocker.label", "Payroll blockers");
+			return t(
+				"approvals:fastLanes.groups.payrollBlocker.label",
+				"Payroll blockers",
+			);
 	}
 }
 
@@ -281,7 +380,10 @@ function getGroupDescription(
 	}
 }
 
-function getRiskLabel(t: ReturnType<typeof useTranslate>["t"], riskLevel: ApprovalInboxRiskLevel) {
+function getRiskLabel(
+	t: ReturnType<typeof useTranslate>["t"],
+	riskLevel: ApprovalInboxRiskLevel,
+) {
 	switch (riskLevel) {
 		case "low":
 			return t("approvals:fastLanes.risk.low", "Low risk");
