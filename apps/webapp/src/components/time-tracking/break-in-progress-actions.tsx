@@ -1,10 +1,10 @@
 "use client";
 
 import {
-	IconCoffee,
-	IconDoorExit,
 	IconLoader2,
+	IconPlayerPause,
 	IconPlayerPlay,
+	IconPlayerStop,
 	IconWifiOff,
 } from "@tabler/icons-react";
 import type { TFnType } from "@tolgee/react";
@@ -92,25 +92,29 @@ export function StartBreakButton({
 	onClick,
 	disabled,
 	pending,
+	size = "default",
 	t,
 }: {
 	onClick: () => void;
 	disabled: boolean;
 	pending: boolean;
+	size?: "default" | "lg";
 	t: TFnType;
 }) {
 	return (
 		<Button
 			type="button"
 			variant="outline"
+			size={size}
 			onClick={onClick}
 			disabled={disabled}
-			className="w-full"
+			className="min-w-0 flex-1"
 		>
+			{/* A break pauses the work; Resume plays it again and End day stops it. */}
 			{pending ? (
 				<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 			) : (
-				<IconCoffee aria-hidden="true" className="size-4" />
+				<IconPlayerPause aria-hidden="true" className="size-4" />
 			)}
 			{t("timeTracking.breakInProgress.start", "Start break")}
 		</Button>
@@ -142,13 +146,14 @@ export function OnBreakActions({
 	t: TFnType;
 }) {
 	return (
-		<div className="flex gap-2">
+		// Side by side where they fit, stacked in a narrow clock; never clipped.
+		<div className="flex flex-wrap gap-2">
 			<Button
 				type="button"
 				size={size}
 				onClick={onResume}
 				disabled={disabled || resumeDisabled}
-				className="min-w-0 basis-3/5"
+				className="min-w-0 flex-[3_1_7rem]"
 			>
 				{isResuming ? (
 					<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
@@ -163,12 +168,12 @@ export function OnBreakActions({
 				variant="destructive"
 				onClick={onEndDay}
 				disabled={disabled || endDayDisabled}
-				className="min-w-0 basis-2/5"
+				className="min-w-0 flex-[2_1_6rem]"
 			>
 				{isEndingDay ? (
 					<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 				) : (
-					<IconDoorExit aria-hidden="true" className="size-4" />
+					<IconPlayerStop aria-hidden="true" className="size-4" />
 				)}
 				{t("timeTracking.breakInProgress.endDay", "End day")}
 			</Button>

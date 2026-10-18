@@ -6,6 +6,7 @@ import { type ReactNode, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { cn } from "@/lib/utils";
 
@@ -93,21 +94,33 @@ export function QuickBreakPopover({
 		});
 	};
 
+	const trigger = (
+		<PopoverTrigger asChild>
+			<Button
+				type="button"
+				variant="outline"
+				size="lg"
+				className={buttonClassName}
+				disabled={isDisabled}
+				aria-label={addBreakLabel}
+			>
+				<IconCoffee className="size-4" aria-hidden="true" />
+				{iconOnly ? null : <span className="hidden sm:inline">{addBreakLabel}</span>}
+			</Button>
+		</PopoverTrigger>
+	);
+
 	return (
 		<Popover open={open} onOpenChange={handleOpenChange}>
-			<PopoverTrigger asChild>
-				<Button
-					type="button"
-					variant="outline"
-					size="lg"
-					className={buttonClassName}
-					disabled={isDisabled}
-					aria-label={addBreakLabel}
-				>
-					<IconCoffee className="size-4" aria-hidden="true" />
-					{iconOnly ? null : <span className="hidden sm:inline">{addBreakLabel}</span>}
-				</Button>
-			</PopoverTrigger>
+			{/* The icon alone names the break on hover and focus, as its label does for screen readers. */}
+			{iconOnly ? (
+				<Tooltip>
+					<TooltipTrigger asChild>{trigger}</TooltipTrigger>
+					<TooltipContent>{addBreakLabel}</TooltipContent>
+				</Tooltip>
+			) : (
+				trigger
+			)}
 			<PopoverContent className="w-80" align="end">
 				<div className="flex flex-col gap-4">
 					<div className="space-y-1">

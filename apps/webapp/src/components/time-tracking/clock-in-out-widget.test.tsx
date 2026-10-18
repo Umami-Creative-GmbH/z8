@@ -101,7 +101,8 @@ describe("ClockInOutWidget break in progress (#888)", () => {
 	it("starts a break while working, beside the retrospective quick break", async () => {
 		const { startBreak } = clock();
 		renderWidget();
-		expect(screen.getByRole("button", { name: /Add break/ })).toBeTruthy();
+		// The quick break is icon-only, so long translations never overflow it.
+		expect(screen.getByRole("button", { name: "Add break" }).textContent).toBe("");
 
 		fireEvent.click(screen.getByRole("button", { name: "Start break" }));
 

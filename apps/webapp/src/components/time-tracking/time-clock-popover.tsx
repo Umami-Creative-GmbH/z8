@@ -2,9 +2,10 @@
 
 import {
 	IconCheck,
-	IconClock,
-	IconClockPause,
 	IconLoader2,
+	IconPlayerPause,
+	IconPlayerPlay,
+	IconPlayerStop,
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -663,19 +664,19 @@ function TimeClockLoadingButton({ t }: { t: Translate }) {
 function TimeClockTriggerContent({
 	elapsedSeconds,
 	isClockedIn,
+	isOnBreak,
 	label,
 }: {
 	elapsedSeconds: number;
 	isClockedIn: boolean;
+	isOnBreak: boolean;
 	label: string;
 }) {
+	// The clock's state as a player: stopped, playing, or paused for a break (#888).
+	const Icon = isOnBreak ? IconPlayerPause : isClockedIn ? IconPlayerStop : IconPlayerPlay;
 	return (
 		<>
-			{isClockedIn ? (
-				<IconClockPause className="size-4" />
-			) : (
-				<IconClock className="size-4" />
-			)}
+			<Icon aria-hidden="true" className="size-4" />
 			<span className="hidden sm:inline">{label}</span>
 			{isClockedIn && (
 				<span className="hidden md:inline text-xs tabular-nums opacity-80">
@@ -845,6 +846,7 @@ export function TimeClockPopover({
 						<TimeClockTriggerContent
 							elapsedSeconds={elapsedSeconds}
 							isClockedIn={isClockedIn}
+							isOnBreak={isOnBreak}
 							label={triggerLabel}
 						/>
 					</Button>
@@ -952,12 +954,12 @@ function ClockActionButtons({
 							</>
 						) : isClockedIn ? (
 							<>
-								<IconClockPause className="size-4" />
+								<IconPlayerStop aria-hidden="true" className="size-4" />
 								{t("timeTracking.clockOut", "Clock Out")}
 							</>
 						) : (
 							<>
-								<IconClock className="size-4" />
+								<IconPlayerPlay aria-hidden="true" className="size-4" />
 								{t("timeTracking.clockIn", "Clock In")}
 							</>
 						)}

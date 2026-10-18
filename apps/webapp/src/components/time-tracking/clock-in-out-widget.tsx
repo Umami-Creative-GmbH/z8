@@ -194,25 +194,34 @@ function ClockActionRow({ widget }: { widget: ClockWidget }) {
 		);
 	}
 
+	// Clock Out on its own row; below it the two breaks: one starting now, and an
+	// icon-only quick break for one already taken.
 	return (
 		<div className="flex flex-col gap-2">
-			<div className="flex gap-2">
-				<div className={isClockedIn ? "min-w-0 basis-2/3" : "w-full"}>
-					<ClockActionButton
-						isClockedIn={isClockedIn}
-						isMutating={widget.isMutating}
-						isClockingOut={widget.isClockingOut}
-						onClick={isClockedIn ? widget.handleClockOut : widget.handleClockIn}
+			<ClockActionButton
+				isClockedIn={isClockedIn}
+				isMutating={widget.isMutating}
+				isClockingOut={widget.isClockingOut}
+				isClocking={widget.isMutating && !widget.isStartingBreak && !widget.isAddingBreak}
+				onClick={isClockedIn ? widget.handleClockOut : widget.handleClockIn}
+				t={widget.t}
+			/>
+			{isClockedIn ? (
+				<div className="flex gap-2">
+					<StartBreakButton
+						onClick={() => void widget.handleStartBreak()}
+						disabled={widget.isMutating || widget.isOffline}
+						pending={widget.isStartingBreak}
+						size="lg"
 						t={widget.t}
 					/>
-				</div>
-				{isClockedIn ? (
 					<QuickBreakPopover
 						onAddBreak={widget.handleAddBreak}
 						isAddingBreak={widget.isAddingBreak}
 						isDisabled={widget.isMutating}
 						t={widget.t}
-						buttonClassName="min-w-0 basis-1/3 px-3"
+						buttonClassName="shrink-0 px-3"
+						iconOnly
 					>
 						<BreakVehicleReading
 							state={widget.vehicleUse}
@@ -220,15 +229,7 @@ function ClockActionRow({ widget }: { widget: ClockWidget }) {
 							t={widget.t}
 						/>
 					</QuickBreakPopover>
-				) : null}
-			</div>
-			{isClockedIn ? (
-				<StartBreakButton
-					onClick={() => void widget.handleStartBreak()}
-					disabled={widget.isMutating || widget.isOffline}
-					pending={widget.isStartingBreak}
-					t={widget.t}
-				/>
+				</div>
 			) : null}
 		</div>
 	);
