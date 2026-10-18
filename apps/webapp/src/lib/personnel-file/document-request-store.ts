@@ -221,7 +221,8 @@ export type ApplyDocumentRequestEventResult =
  * it read as well, so a decision can never overwrite a concurrent one.
  */
 export async function applyDocumentRequestEvent(
-	tx: Transaction,
+	// Narrow, so the departure's lifecycle client (no nested transactions) can use it.
+	tx: Pick<Transaction, "insert" | "update">,
 	input: {
 		request: DocumentRequestRow;
 		event: DocumentRequestEventInput;
@@ -708,6 +709,61 @@ export async function cancelDocumentRequest(
 		if (!view) throw new Error("Failed to read the document request");
 		return { kind: "cancelled", request: view, eventId: applied.eventId };
 	});
+}
+
+/**
+ * The departure's side of document requests (#1408): inside the departure
+ * transaction, every open and submitted request of the departing employee is
+ * cancelled with the system reason 'employment_ended', audited under the
+ * departure's initiator and naming the departure. Nobody is notified. A rehire
+ * never reopens them; documents already uploaded stay in the file under
+ * retention. Returns the cancelled request ids.
+ */
+export async function cancelDocumentRequestsForDeparture(
+	tx: Pick<Transaction, "select" | "insert" | "update">,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		actorUserId: string;
+		departureId: string;
+		employmentPeriodId: string;
+		now: Instant;
+	},
+): Promise<string[]> {
+	const active = await tx
+		.select()
+		.from(employeeDocumentRequest)
+		.where(
+			and(
+				eq(employeeDocumentRequest.organizationId, input.organizationId),
+				eq(employeeDocumentRequest.employeeId, input.employeeId),
+				inArray(employeeDocumentRequest.status, [...ACTIVE_DOCUMENT_REQUEST_STATUSES]),
+			),
+		)
+		.orderBy(asc(employeeDocumentRequest.id))
+		.for("update");
+	const cancelled: string[] = [];
+	// One event per request, in id order under the locks taken above.
+	// react-doctor-disable-next-line react-doctor/async-await-in-loop
+	for (const request of active) {
+		const applied = await applyDocumentRequestEvent(tx, {
+			request,
+			event: {
+				kind: "cancelled",
+				actorUserId: input.actorUserId,
+				reasonCode: "employment_ended",
+				auditMetadata: {
+					departureId: input.departureId,
+					employmentPeriodId: input.employmentPeriodId,
+				},
+			},
+			now: input.now,
+		});
+		// Locked and active above: only a bug gets here.
+		if (applied.kind === "conflict") throw new Error("Document request moved on under its lock");
+		cancelled.push(request.id);
+	}
+	return cancelled;
 }
 
 export type SubmitDocumentRequestResult =

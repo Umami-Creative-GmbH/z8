@@ -195,6 +195,8 @@ export enum AuditAction {
 	PERSONNEL_FILE_DOCUMENT_REQUEST_RETURNED = "personnel_file.document_request_returned",
 	PERSONNEL_FILE_DOCUMENT_REQUEST_ACCEPTED = "personnel_file.document_request_accepted",
 	PERSONNEL_FILE_DOCUMENT_REQUEST_CANCELLED = "personnel_file.document_request_cancelled",
+	// A purge removed the request's last document (#1408)
+	PERSONNEL_FILE_DOCUMENT_REQUEST_DELETED = "personnel_file.document_request_deleted",
 
 	// ICS Feed Operations (#991)
 	ICS_FEED_CREATED = "ics_feed.created",

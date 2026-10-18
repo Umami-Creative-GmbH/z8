@@ -133,6 +133,31 @@ export function minimiseDocumentAudit(record: StoredAuditFields): AuditMinimisat
 	};
 }
 
+/**
+ * Document requests (#1408): the request's note (kept in the created record's
+ * `request` snapshot), a typed return or cancel `reason` and a submission's
+ * `submissionNote` are document descriptions. Title, deadline, category,
+ * status, ids and system reason codes stay.
+ */
+const REQUEST_SNAPSHOT_DESCRIPTIONS = ["note"] as const;
+const REQUEST_METADATA_DESCRIPTIONS = ["reason", "submissionNote"] as const;
+
+/** A stored audit record of a document request (entity `employee_document_request`), minimised. */
+export function minimiseDocumentRequestAudit(record: StoredAuditFields): AuditMinimisation {
+	const metadata = parseFields(record.metadata);
+	if (metadata === undefined) return UNPROCESSABLE;
+	if (metadata === null) return { kind: "unchanged" };
+	const minimised = structuredClone(metadata);
+	let removed = false;
+	if (isFields(minimised.request)) {
+		removed = dropDescriptions(minimised.request, REQUEST_SNAPSHOT_DESCRIPTIONS) || removed;
+	}
+	removed = dropDescriptions(minimised, REQUEST_METADATA_DESCRIPTIONS) || removed;
+	if (!removed) return { kind: "unchanged" };
+	minimised[DESCRIPTIONS_REMOVED] = true;
+	return { kind: "minimised", changes: record.changes, metadata: JSON.stringify(minimised) };
+}
+
 /** A stored personnel file ZIP record, minimised for the purged documents. */
 export function minimiseZipAudit(
 	record: StoredAuditFields,
