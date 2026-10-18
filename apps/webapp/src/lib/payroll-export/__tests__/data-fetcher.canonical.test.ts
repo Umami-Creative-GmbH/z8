@@ -89,7 +89,9 @@ vi.mock("@/db/schema", () => ({
 }));
 
 const dataFetcher = await import("../data-fetcher");
-const { PayrollWorkAllocationBlockedError } = await import("../work-allocation-blocked-error");
+const { PayrollWorkAllocationBlockedError } = await import(
+	"../work-allocation-blocked-error"
+);
 
 describe("payroll export canonical data fetching", () => {
 	beforeEach(() => {
@@ -127,7 +129,9 @@ describe("payroll export canonical data fetching", () => {
 
 	it("rejects payroll export reads when canonical cutover is incomplete", async () => {
 		mockAssertCanonicalCutoverReady.mockRejectedValue(
-			new Error("Canonical time-record backfill is incomplete for organization org-1"),
+			new Error(
+				"Canonical time-record backfill is incomplete for organization org-1",
+			),
 		);
 
 		await expect(
@@ -137,13 +141,17 @@ describe("payroll export canonical data fetching", () => {
 					end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
 				},
 			}),
-		).rejects.toThrow("Canonical time-record backfill is incomplete for organization org-1");
+		).rejects.toThrow(
+			"Canonical time-record backfill is incomplete for organization org-1",
+		);
 	});
 
 	it("fetches work export rows from canonical time records", async () => {
 		mockState.timeRecordFindMany.mockResolvedValue([
 			{
 				id: "record-1",
+				updatedAt: new Date("2026-01-14T12:00:00.000Z"),
+				updatedBy: "source-operator",
 				employeeId: "emp-1",
 				startAt: new Date("2026-01-10T08:00:00.000Z"),
 				endAt: new Date("2026-01-10T16:00:00.000Z"),
@@ -191,12 +199,16 @@ describe("payroll export canonical data fetching", () => {
 		expect(results).toEqual([
 			{
 				id: "record-1",
+				sourceRevision: "2026-01-14T12:00:00Z",
+				sourceActorId: "source-operator",
 				employeeId: "emp-1",
 				employeeNumber: "E-001",
 				firstName: "Ada",
 				lastName: "Lovelace",
 				email: "ada@example.com",
-				startTime: DateTime.fromISO("2026-01-10T08:00:00.000Z", { zone: "utc" }),
+				startTime: DateTime.fromISO("2026-01-10T08:00:00.000Z", {
+					zone: "utc",
+				}),
 				endTime: DateTime.fromISO("2026-01-10T16:00:00.000Z", { zone: "utc" }),
 				durationMinutes: 480,
 				workCategoryId: "wc-1",
@@ -238,9 +250,9 @@ describe("payroll export canonical data fetching", () => {
 			employeeIds: ["emp-1"],
 		});
 
-		expect(JSON.stringify(mockState.timeRecordFindMany.mock.calls[0]?.[0].where)).toContain(
-			"timeRecord.endAt",
-		);
+		expect(
+			JSON.stringify(mockState.timeRecordFindMany.mock.calls[0]?.[0].where),
+		).toContain("timeRecord.endAt");
 		expect(results[0]).toMatchObject({
 			id: "record-1",
 			startTime: DateTime.fromISO("2026-02-01T00:00:00.000Z", { zone: "utc" }),
@@ -290,7 +302,11 @@ describe("payroll export canonical data fetching", () => {
 				employee: {
 					employeeNumber: "BER-1",
 					teamId: null,
-					user: { firstName: "Berlin", lastName: "Worker", email: "berlin@example.com" },
+					user: {
+						firstName: "Berlin",
+						lastName: "Worker",
+						email: "berlin@example.com",
+					},
 					userSettings: { timezone: "Europe/Berlin" },
 				},
 				work: null,
@@ -305,7 +321,11 @@ describe("payroll export canonical data fetching", () => {
 				employee: {
 					employeeNumber: "UTC-1",
 					teamId: null,
-					user: { firstName: "UTC", lastName: "Worker", email: "utc@example.com" },
+					user: {
+						firstName: "UTC",
+						lastName: "Worker",
+						email: "utc@example.com",
+					},
 					userSettings: { timezone: "UTC" },
 				},
 				work: null,
@@ -320,7 +340,11 @@ describe("payroll export canonical data fetching", () => {
 				employee: {
 					employeeNumber: "UTC-1",
 					teamId: null,
-					user: { firstName: "UTC", lastName: "Worker", email: "utc@example.com" },
+					user: {
+						firstName: "UTC",
+						lastName: "Worker",
+						email: "utc@example.com",
+					},
 					userSettings: { timezone: "UTC" },
 				},
 				work: null,
@@ -334,21 +358,31 @@ describe("payroll export canonical data fetching", () => {
 				end: DateTime.fromISO("2026-05-31", { zone: "utc" }),
 			},
 		};
-		const results = await dataFetcher.fetchWorkPeriodsForExport("org-1", filters);
+		const results = await dataFetcher.fetchWorkPeriodsForExport(
+			"org-1",
+			filters,
+		);
 
-		expect(results.map((result) => result.id)).toEqual(["new-york-may", "berlin-may"]);
+		expect(results.map((result) => result.id)).toEqual([
+			"new-york-may",
+			"berlin-may",
+		]);
 		expect(results.find((result) => result.id === "berlin-may")).toMatchObject({
 			startTime: DateTime.fromISO("2026-04-30T22:30:00.000Z", { zone: "utc" }),
 			endTime: DateTime.fromISO("2026-04-30T23:30:00.000Z", { zone: "utc" }),
 			durationMinutes: 60,
 		});
-		expect(results.find((result) => result.id === "new-york-may")).toMatchObject({
+		expect(
+			results.find((result) => result.id === "new-york-may"),
+		).toMatchObject({
 			startTime: DateTime.fromISO("2026-05-31T22:00:00.000Z", { zone: "utc" }),
 			endTime: DateTime.fromISO("2026-06-01T02:00:00.000Z", { zone: "utc" }),
 			durationMinutes: 240,
 		});
 
-		await expect(dataFetcher.countWorkPeriods("org-1", filters)).resolves.toBe(2);
+		await expect(dataFetcher.countWorkPeriods("org-1", filters)).resolves.toBe(
+			2,
+		);
 	});
 
 	it("exports protected stored minutes for a fully included segment", async () => {
@@ -372,7 +406,10 @@ describe("payroll export canonical data fetching", () => {
 			},
 		});
 
-		expect(results[0]).toMatchObject({ id: "record-protected", durationMinutes: 60 });
+		expect(results[0]).toMatchObject({
+			id: "record-protected",
+			durationMinutes: 60,
+		});
 	});
 
 	it("conserves stored minutes across adjacent export windows", async () => {
@@ -411,8 +448,12 @@ describe("payroll export canonical data fetching", () => {
 			startTime: DateTime.fromISO("2026-01-31T21:07:13.000Z", { zone: "utc" }),
 			endTime: DateTime.fromISO("2026-01-31T23:00:00.000Z", { zone: "utc" }),
 		});
-		expect(february?.startTime).toEqual(DateTime.fromISO("2026-01-31T23:00:00.000Z", { zone: "utc" }));
-		expect((january?.durationMinutes ?? 0) + (february?.durationMinutes ?? 0)).toBe(346);
+		expect(february?.startTime).toEqual(
+			DateTime.fromISO("2026-01-31T23:00:00.000Z", { zone: "utc" }),
+		);
+		expect(
+			(january?.durationMinutes ?? 0) + (february?.durationMinutes ?? 0),
+		).toBe(346);
 	});
 
 	it("blocks the whole export when in-scope work has an unlocated break across the boundary", async () => {
@@ -445,8 +486,13 @@ describe("payroll export canonical data fetching", () => {
 			},
 		};
 
-		const exportAttempt = dataFetcher.fetchWorkPeriodsForExport("org-1", filters);
-		await expect(exportAttempt).rejects.toBeInstanceOf(PayrollWorkAllocationBlockedError);
+		const exportAttempt = dataFetcher.fetchWorkPeriodsForExport(
+			"org-1",
+			filters,
+		);
+		await expect(exportAttempt).rejects.toBeInstanceOf(
+			PayrollWorkAllocationBlockedError,
+		);
 		await expect(exportAttempt).rejects.toMatchObject({
 			organizationId: "org-1",
 			blockedRecords: [
@@ -457,9 +503,9 @@ describe("payroll export canonical data fetching", () => {
 				},
 			],
 		});
-		await expect(dataFetcher.countWorkPeriods("org-1", filters)).rejects.toBeInstanceOf(
-			PayrollWorkAllocationBlockedError,
-		);
+		await expect(
+			dataFetcher.countWorkPeriods("org-1", filters),
+		).rejects.toBeInstanceOf(PayrollWorkAllocationBlockedError);
 	});
 
 	it("blocks completed work without stored minutes instead of exporting zero", async () => {
@@ -484,7 +530,9 @@ describe("payroll export canonical data fetching", () => {
 				},
 			}),
 		).rejects.toMatchObject({
-			blockedRecords: [expect.objectContaining({ reason: "missing_stored_minutes" })],
+			blockedRecords: [
+				expect.objectContaining({ reason: "missing_stored_minutes" }),
+			],
 		});
 	});
 
@@ -518,6 +566,8 @@ describe("payroll export canonical data fetching", () => {
 		mockState.timeRecordFindMany.mockResolvedValue([
 			{
 				id: "record-2",
+				updatedAt: new Date("2026-01-14T12:00:00.000Z"),
+				updatedBy: "source-operator",
 				employeeId: "emp-2",
 				startAt: new Date("2026-01-12T00:00:00.000Z"),
 				endAt: new Date("2026-01-13T23:59:59.000Z"),
@@ -553,6 +603,8 @@ describe("payroll export canonical data fetching", () => {
 		expect(results).toEqual([
 			{
 				id: "record-2",
+				sourceRevision: "2026-01-14T12:00:00Z",
+				sourceActorId: "source-operator",
 				employeeId: "emp-2",
 				employeeNumber: "E-002",
 				firstName: "Grace",

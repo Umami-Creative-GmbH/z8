@@ -1,5 +1,6 @@
 /* @vitest-environment jsdom */
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	fireEvent,
 	render,
@@ -14,6 +15,24 @@ import type { SelfServiceRequestResult } from "@/lib/self-service-requests/types
 
 const cancelMyAbsenceRequestMock = vi.hoisted(() => vi.fn());
 const cancelMyTimeCorrectionRequestMock = vi.hoisted(() => vi.fn());
+const invalidateReadinessMock = vi.hoisted(() => vi.fn());
+
+// Counts readiness invalidations; still invalidates for real when a query client is provided.
+vi.mock("@/lib/query/period-submission-readiness", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/query/period-submission-readiness")>();
+	const { QueryClientContext } = await import("@tanstack/react-query");
+	const { use } = await import("react");
+	return {
+		...actual,
+		useInvalidatePeriodSubmissionReadiness: () => {
+			const client = use(QueryClientContext);
+			return () => {
+				invalidateReadinessMock();
+				return client ? actual.invalidatePeriodSubmissionReadiness(client) : Promise.resolve();
+			};
+		},
+	};
+});
 
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -36,6 +55,11 @@ vi.mock("@tabler/icons-react", () => ({
 	IconCheck: () => <span aria-hidden="true" />,
 	IconClock: () => <span aria-hidden="true" />,
 	IconFileDescription: () => <span aria-hidden="true" />,
+	IconInfoCircle: () => <span aria-hidden="true" />,
+}));
+
+vi.mock("@/app/[locale]/(app)/time-tracking/actions/period-submissions", () => ({
+	readPeriodReadiness: vi.fn(),
 }));
 
 vi.mock("./actions", () => ({
@@ -385,6 +409,8 @@ describe("MyRequestsClient", () => {
 			);
 		});
 		expect(cancelMyAbsenceRequestMock).toHaveBeenCalledOnce();
+		// Each cancelled request can reopen a period for submission (#1350).
+		await waitFor(() => expect(invalidateReadinessMock).toHaveBeenCalledTimes(2));
 	});
 
 	it("does not cancel when confirmation is declined", () => {
@@ -417,6 +443,140 @@ describe("MyRequestsClient", () => {
 
 		expect(window.confirm).toHaveBeenCalledWith("Cancel this request?");
 		expect(cancelMyAbsenceRequestMock).not.toHaveBeenCalled();
+	});
+
+	describe("focused request from a period blocker", () => {
+		const PENDING_ABSENCE = {
+			id: "absence:absence-pending",
+			sourceType: "absence" as const,
+			sourceId: "absence-pending",
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			status: "pending" as const,
+			submittedAt: new Date("2026-04-25T08:00:00.000Z"),
+			resolvedAt: null,
+			title: "Pending vacation",
+			subtitle: "2026-05-01 - 2026-05-02",
+			decisionReason: null,
+			availableActions: ["view" as const, "cancel" as const],
+			sourceHref: "/absences",
+		};
+
+		function renderFocused(focusRequest: string | undefined, result = createResult()) {
+			const client = new QueryClient();
+			const invalidate = vi.spyOn(client, "invalidateQueries");
+			const view = render(
+				<QueryClientProvider client={client}>
+					<MyRequestsClient initialResult={result} focusRequest={focusRequest} />
+				</QueryClientProvider>,
+			);
+			const rerender = (next: string | undefined) =>
+				view.rerender(
+					<QueryClientProvider client={client}>
+						<MyRequestsClient initialResult={result} focusRequest={next} />
+					</QueryClientProvider>,
+				);
+			return { invalidate, rerender };
+		}
+
+		it("focuses the pending correction in review", async () => {
+			const { invalidate } = renderFocused("time_correction:period-1");
+
+			const inReview = screen.getByRole("region", { name: "In review" });
+			const card = within(inReview).getByText("Time correction request").closest("article");
+			await waitFor(() => expect(document.activeElement).toBe(card));
+			expect(screen.queryByRole("status")).toBeNull();
+			expect(invalidate).not.toHaveBeenCalled();
+		});
+
+		it("focuses the pending absence, with its existing cancel action", async () => {
+			renderFocused(
+				"absence:absence-pending",
+				createResult({ items: [...createResult().items, PENDING_ABSENCE] }),
+			);
+
+			const inReview = screen.getByRole("region", { name: "In review" });
+			const card = within(inReview).getByText("Pending vacation").closest("article");
+			await waitFor(() => expect(document.activeElement).toBe(card));
+			expect(within(card as HTMLElement).getByRole("button", { name: "Cancel" })).toBeTruthy();
+		});
+
+		it("selects the filters needed to reveal the focused request", async () => {
+			const { rerender } = renderFocused(undefined);
+			fireEvent.change(screen.getByLabelText("Status"), { target: { value: "rejected" } });
+			fireEvent.change(screen.getByLabelText("Type"), { target: { value: "absence" } });
+			fireEvent.change(screen.getByLabelText("Search"), { target: { value: "Vacation" } });
+			expect(screen.queryByRole("region", { name: "In review" })).toBeNull();
+
+			rerender("time_correction:period-1");
+
+			const inReview = await screen.findByRole("region", { name: "In review" });
+			const card = within(inReview).getByText("Time correction request").closest("article");
+			await waitFor(() => expect(document.activeElement).toBe(card));
+			expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe("pending");
+			expect((screen.getByLabelText("Type") as HTMLSelectElement).value).toBe("time_correction");
+			expect((screen.getByLabelText("Search") as HTMLInputElement).value).toBe("");
+		});
+
+		it.each([
+			["a request that is no longer pending", "absence:absence-1"],
+			["a missing or cancelled request", "absence:absence-gone"],
+			["another employee's or organization's request", "time_correction:foreign-period"],
+		])("explains %s without disclosing anything and re-checks readiness", async (_name, focus) => {
+			const { invalidate } = renderFocused(focus);
+
+			const notice = await screen.findByRole("status");
+			expect(notice.textContent).toBe(
+				"This request is no longer pending, or it can't be shown here. Period readiness is being checked again.",
+			);
+			await waitFor(() => expect(document.activeElement).toBe(notice));
+			await waitFor(() =>
+				expect(invalidate).toHaveBeenCalledWith({ queryKey: ["period-submissions"] }),
+			);
+			// Only the employee's own list renders, unchanged; no card is focused or marked.
+			expect(screen.getAllByRole("article")).toHaveLength(7);
+			expect(document.activeElement?.closest("article")).toBeNull();
+		});
+
+		it("does not take focus to the notice when the employee cancels the focused request here", async () => {
+			const client = new QueryClient();
+			const page = (result: SelfServiceRequestResult) => (
+				<QueryClientProvider client={client}>
+					<MyRequestsClient initialResult={result} focusRequest="absence:absence-pending" />
+				</QueryClientProvider>
+			);
+			const pending = createResult({ items: [...createResult().items, PENDING_ABSENCE] });
+			const view = render(page(pending));
+			const card = within(screen.getByRole("region", { name: "In review" }))
+				.getByText("Pending vacation")
+				.closest("article");
+			await waitFor(() => expect(document.activeElement).toBe(card));
+
+			// The page refreshes after the cancel: the request is no longer pending.
+			view.rerender(
+				page(
+					createResult({
+						items: [
+							...createResult().items,
+							{
+								...PENDING_ABSENCE,
+								status: "cancelled" as const,
+								availableActions: ["view" as const],
+							},
+						],
+					}),
+				),
+			);
+
+			await new Promise((resolve) => setTimeout(resolve, 20));
+			expect(screen.queryByRole("status")).toBeNull();
+		});
+
+		it("ignores a malformed focus value", () => {
+			const { invalidate } = renderFocused("absence:<script>");
+			expect(screen.queryByRole("status")).toBeNull();
+			expect(invalidate).not.toHaveBeenCalled();
+		});
 	});
 
 	it("shows cancellation errors returned by the action", async () => {

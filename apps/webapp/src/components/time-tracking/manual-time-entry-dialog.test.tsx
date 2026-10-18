@@ -379,6 +379,28 @@ describe("ManualTimeEntryDialog layout", () => {
 		},
 	);
 
+	it("checks period submission readiness again after a manual entry is created (#1350)", async () => {
+		const { queryClient } = renderDialog(
+			{
+				open: true,
+				hideTrigger: true,
+				targetEmployeeId: "employee-2",
+				defaultDate: "2026-05-12",
+				defaultClockInTime: "10:15",
+				defaultClockOutTime: "15:45",
+			},
+			{ manualCommandVersion: 1 },
+		);
+		const readinessKey = queryKeys.periodSubmissions.readiness("org-1", "employee-current");
+		queryClient.setQueryData(readinessKey, null);
+		fireEvent.change(screen.getByLabelText("Reason"), {
+			target: { value: "Forgot to clock out" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+		await waitFor(() => expect(refresh).toHaveBeenCalled());
+		expect(queryClient.getQueryState(readinessKey)?.isInvalidated).toBe(true);
+	});
+
 	it("keeps the form body naturally sized and preserves footer action spacing", () => {
 		const source = readFileSync(
 			join(

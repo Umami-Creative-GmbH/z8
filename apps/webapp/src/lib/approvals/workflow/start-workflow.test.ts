@@ -12,6 +12,7 @@ import { validateInitialApprovalWorkflowPersistenceInput } from "./repository";
 import {
 	APPROVAL_WORKFLOW_START_POLICY_LIMITS,
 	ApprovalWorkflowStartError,
+	planApprovalWorkflowStart,
 	type StartApprovalWorkflowInput,
 	startApprovalWorkflow,
 } from "./start-workflow";
@@ -1658,5 +1659,55 @@ describe("startApprovalWorkflow", () => {
 		expect(second.outbox.map((item) => item.dedupeKey)).toEqual(
 			first.outbox.map((item) => item.dedupeKey),
 		);
+	});
+});
+
+describe("planApprovalWorkflowStart", () => {
+	function planInput() {
+		const fixture = input();
+		const { value } = fixture;
+		return {
+			fixture,
+			value: {
+				context: value.context,
+				organizationId: value.organizationId,
+				workflowType: value.workflowType,
+				sourceIdentity: value.sourceIdentity,
+				requesterEmployeeId: value.requesterEmployeeId,
+				submissionKey: value.submissionKey,
+				defaultApproverEmployeeId: value.defaultApproverEmployeeId,
+				routingContext: value.routingContext,
+				contextSnapshot: {},
+				displaySnapshot: {},
+				now: Temporal.Instant.from("2026-03-08T12:00:00Z"),
+			},
+		};
+	}
+
+	it("plans a valid start without persisting it", async () => {
+		const { fixture, value } = planInput();
+		await expect(planApprovalWorkflowStart(value)).resolves.toMatchObject({
+			snapshot: { status: "pending" },
+		});
+		expect(fixture.createInitialWorkflow).not.toHaveBeenCalled();
+	});
+
+	it("validates its input as a start does, before reading policies", async () => {
+		const { fixture, value } = planInput();
+		const malformed = [
+			{ ...value, requesterEmployeeId: "not-a-uuid" },
+			{
+				...value,
+				routingContext: { ...value.routingContext, requesterEmployeeId: approverEmployeeId },
+			},
+			{ ...value, sourceIdentity: { ...value.sourceIdentity, sourceId: "not-a-uuid" } },
+			{ ...value, contextSnapshot: [] as never },
+		];
+		for (const candidate of malformed) {
+			await expect(planApprovalWorkflowStart(candidate)).rejects.toMatchObject({
+				code: "INVALID_INPUT",
+			});
+		}
+		expect(fixture.execute).not.toHaveBeenCalled();
 	});
 });

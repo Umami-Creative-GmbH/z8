@@ -82,6 +82,33 @@ describe("PersonalWorkdayTimeline", () => {
 		expect(screen.getByText("08:00 - 16:00")).toBeTruthy();
 	});
 
+	it("lets a period blocker link focus a work entry's row", () => {
+		render(
+			<PersonalWorkdayTimeline
+				result={success({
+					items: [
+						{ id: "shift:1", type: "shift", title: "Scheduled shift" },
+						{
+							id: "work-period:w-1",
+							type: "work-period",
+							workPeriodId: "w-1",
+							title: "Recorded work",
+							startLabel: "08:00",
+							endLabel: "12:00",
+						},
+					],
+				})}
+			/>,
+		);
+
+		const row = document.getElementById("work-period-w-1") as HTMLElement;
+		expect(row.textContent).toContain("Recorded work");
+		expect(row.tabIndex).toBe(-1);
+		row.focus();
+		expect(document.activeElement).toBe(row);
+		expect(document.getElementById("shift-1")).toBeNull();
+	});
+
 	it("renders a useful empty state", () => {
 		render(<PersonalWorkdayTimeline result={success({})} />);
 

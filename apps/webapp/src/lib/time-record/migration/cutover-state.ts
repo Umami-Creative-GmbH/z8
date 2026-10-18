@@ -8,13 +8,8 @@ export class CanonicalCutoverNotReadyError extends Error {
 	readonly organizationId: string;
 	readonly reconciliation: LegacyCanonicalReconciliation;
 
-	constructor(
-		organizationId: string,
-		reconciliation: LegacyCanonicalReconciliation,
-	) {
-		super(
-			`Canonical time-record backfill is incomplete for organization ${organizationId}`,
-		);
+	constructor(organizationId: string, reconciliation: LegacyCanonicalReconciliation) {
+		super(`Canonical time-record backfill is incomplete for organization ${organizationId}`);
 		this.name = "CanonicalCutoverNotReadyError";
 		this.organizationId = organizationId;
 		this.reconciliation = reconciliation;
@@ -61,8 +56,11 @@ const ABSENCE_RECONCILIATION_KEYS = [
  * the organization-wide backfill must not run and rewrite work lineage; absences
  * keep this organization-wide check until they get a scoped one.
  */
-export async function assertCanonicalAbsencesReady(organizationId: string) {
-	const reconciliation = await reconcileLegacyToCanonical(organizationId);
+export async function assertCanonicalAbsencesReady(
+	organizationId: string,
+	reader: Pick<typeof db, "query"> = db,
+) {
+	const reconciliation = await reconcileLegacyToCanonical(organizationId, reader);
 	if (ABSENCE_RECONCILIATION_KEYS.some((key) => reconciliation[key] > 0)) {
 		throw new CanonicalCutoverNotReadyError(organizationId, reconciliation);
 	}

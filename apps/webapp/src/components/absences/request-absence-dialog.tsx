@@ -60,6 +60,7 @@ import {
 import { exceedsYearBalance, yearsExceedingBalance } from "@/lib/absences/vacation-year-balance";
 import { useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
+import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
 import { useRouter } from "@/navigation";
 import {
 	ABSENCE_DURATION_FIELDS,
@@ -134,6 +135,7 @@ function useRequestAbsenceDialogController({
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const queryClient = useQueryClient();
+	const invalidateReadiness = useInvalidatePeriodSubmissionReadiness();
 	const [internalOpen, setInternalOpen] = useState(false);
 	const isControlled = controlledOpen !== undefined;
 	const open = isControlled ? controlledOpen : internalOpen;
@@ -264,6 +266,8 @@ function useRequestAbsenceDialogController({
 				setOpen(false);
 				form.reset();
 				refresh();
+				// A pending absence request keeps its submission period open (#1350).
+				void invalidateReadiness();
 				onSuccess?.();
 			} else if (result.code === "AbsenceDaysRefusedError") {
 				toast.error(noWorkingDaysMessage(t));

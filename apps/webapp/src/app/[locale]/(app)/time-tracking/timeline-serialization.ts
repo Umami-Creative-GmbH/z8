@@ -42,17 +42,8 @@ function serializeSelectedDate({
 	return { dateKey, todayDateKey, previousDateKey, nextDateKey, label };
 }
 
-function serializeTimelineItem({
-	id,
-	type,
-	title,
-	subtitle,
-	startLabel,
-	endLabel,
-	badge,
-	severity,
-	link,
-}: WorkdayTimelineItem): SerializableWorkdayTimelineItem {
+function serializeTimelineItem(item: WorkdayTimelineItem): SerializableWorkdayTimelineItem {
+	const { id, type, title, subtitle, startLabel, endLabel, badge, severity, link } = item;
 	return {
 		id,
 		type,
@@ -63,5 +54,6 @@ function serializeTimelineItem({
 		badge,
 		severity,
 		link,
+		...(item.type === "work-period" ? { workPeriodId: item.workPeriodId } : {}),
 	};
 }

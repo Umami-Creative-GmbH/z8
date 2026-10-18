@@ -432,6 +432,18 @@ describe("RequestAbsenceDialog", () => {
 		await waitFor(() => expect(requestAbsenceMock).toHaveBeenCalledTimes(1));
 	});
 
+	it("checks period submission readiness again after a request is submitted (#1350)", async () => {
+		const { queryClient } = renderDialog();
+		const readinessKey = ["period-submissions", "readiness", "org-1", "employee-1"];
+		queryClient.setQueryData(readinessKey, null);
+
+		fillRequiredFields();
+		expect(await screen.findByText("Coverage may be tight for this request.")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() => expect(queryClient.getQueryState(readinessKey)?.isInvalidated).toBe(true));
+	});
+
 	it("blocks invalid same-day partial-day times before submission", async () => {
 		renderDialog();
 
