@@ -82,6 +82,7 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 			`insert into work_policy_schedule (id,policy_id,schedule_cycle,schedule_type,working_days_preset,updated_at) values ($1,$2,'weekly','detailed','custom',now())`,
 			[schedule, policy],
 		);
+		// One working day a week converts the 30-day allowance to 6 (Absences ADR 0003).
 		await fixture.pool.query(
 			`insert into work_policy_schedule_day (schedule_id,day_of_week,hours_per_day,is_work_day) values ($1,'monday','1.00',true)`,
 			[schedule],
@@ -153,7 +154,7 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 		expect(preview.data.employees.find((row) => row.employeeId === employeeId)).toMatchObject({
 			before: { balanceMinutes: -1260 },
 			after: { balanceMinutes: -60, requiredMinutes: 60 },
-			vacation: [{ year: 2026, allowanceDays: 30 }],
+			vacation: [{ year: 2026, allowanceDays: 6 }],
 		});
 		expect(await currentBalance()).toBe(-1260);
 		expect(await loadOrganizationTrackingSettings(fixture.db, fixture.organizationId)).toEqual({
@@ -177,7 +178,7 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 			year: 2026,
 			timezone: "Europe/Berlin",
 		});
-		expect(vacation.balances.get(employeeId)).toMatchObject({ allowanceDays: 30 });
+		expect(vacation.balances.get(employeeId)).toMatchObject({ allowanceDays: 6 });
 	});
 	it("reviews subsequent date edits and records the actor and reason without changing vacation choices", async () => {
 		expect(await commitPreview(await previewDate())).toMatchObject({ success: true });
