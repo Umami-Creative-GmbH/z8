@@ -438,7 +438,7 @@ describe("RequestAbsenceDialog", () => {
 		queryClient.setQueryData(readinessKey, null);
 
 		fillRequiredFields();
-		expect(await screen.findByText("Coverage may be tight for this request.")).toBeTruthy();
+		expect(await screen.findByText(/^Overlaps your pending absence/)).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
 		await waitFor(() => expect(queryClient.getQueryState(readinessKey)?.isInvalidated).toBe(true));
