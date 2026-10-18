@@ -23,6 +23,13 @@ import {
 	rememberUncertainAction,
 } from "@/lib/time-tracking/kiosk/uncertain-action";
 import { KIOSK_ACTION_REQUEST } from "./kiosk-action-request";
+import {
+	type AttributionAnswer,
+	attributionAskOf,
+	KEEP_ATTRIBUTION,
+	kioskAttributionRequest,
+} from "./kiosk-attribution";
+import { KioskAttributionStep } from "./kiosk-attribution-step";
 import { KioskBadgeCheck } from "./kiosk-badge-check";
 import { KioskCameraScan } from "./kiosk-camera-scan";
 import { KioskConfirmation } from "./kiosk-confirmation";
@@ -40,6 +47,7 @@ import {
 	actedFlow,
 	actingFlow,
 	actingOfflineFlow,
+	attributionFlow,
 	badgeCheckedFlow,
 	heldFlow,
 	isKioskFlowBusy,
@@ -54,6 +62,7 @@ import {
 	resolvedFlow,
 	type VehicleAnswer,
 	vehicleAskOf,
+	vehicleBackFlow,
 } from "./kiosk-turn-flow";
 import { KioskUncertainScreen } from "./kiosk-uncertain-screen";
 import { KioskVehicleUseStep } from "./kiosk-vehicle-use-step";
@@ -280,8 +289,9 @@ export function KioskPairedScreen({
 		snapshot: KioskEmployeeSnapshot,
 		action: KioskPanelAction,
 		vehicle?: VehicleAnswer,
+		attribution?: AttributionAnswer,
 	) {
-		setFlow(actingFlow(proof, snapshot, action, vehicle));
+		setFlow(actingFlow(proof, snapshot, action, vehicle, attribution));
 		const vehicleUse = vehicle?.answer.vehicleUse;
 		// One identity per explicit action, kept before it is sent, so a lost reply
 		// resolves this action instead of making a second one (#1363).
@@ -306,6 +316,8 @@ export function KioskPairedScreen({
 				action: attempt.request,
 				operationId: attempt.operationId,
 				...(vehicleUse ? { vehicleUse } : {}),
+				// The clock-out's project and work category (#887); a kept one is left out.
+				...(attribution ? kioskAttributionRequest(attribution.values) : {}),
 			},
 			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
 		);
@@ -314,7 +326,7 @@ export function KioskPairedScreen({
 			forgetUncertainAction(attempt.operationId);
 			return kioskRefused(result.code);
 		}
-		const acted = actedFlow({ proof, snapshot, action, attempt, vehicle, result });
+		const acted = actedFlow({ proof, snapshot, action, attempt, vehicle, attribution, result });
 		if (acted.step === "uncertain") {
 			setPending((entries) => [
 				...entries.filter((entry) => entry.attempt.operationId !== attempt.operationId),
@@ -416,18 +428,45 @@ export function KioskPairedScreen({
 		setFlow(await queueOfflineAction({ token, kiosk, turn, action, vehicle, failed }));
 	}
 
-	/** An action's button: the vehicle step first when the action asks vehicle use (#1123). */
+	/**
+	 * An action's button: first the project and work category when an online
+	 * clock-out asks them (#887), then the vehicle step when the action asks
+	 * vehicle use (#1123).
+	 */
 	function choose(
 		proof: KioskTurnProof,
 		snapshot: KioskEmployeeSnapshot,
 		action: KioskPanelAction,
 	) {
-		const ask = vehicleAskOf(action, snapshot.vehicleUse);
+		const ask = attributionAskOf(action, snapshot.attribution);
 		if (ask) {
-			setFlow({ step: "vehicle", proof, snapshot, action, ask, pending: false });
+			setFlow(attributionFlow(proof, snapshot, action, { ask, values: KEEP_ATTRIBUTION }));
 			return;
 		}
-		void act(proof, snapshot, action);
+		proceed(proof, snapshot, action);
+	}
+
+	/** After the project and work category, if asked: the vehicle step, or the action. */
+	function proceed(
+		proof: KioskTurnProof,
+		snapshot: KioskEmployeeSnapshot,
+		action: KioskPanelAction,
+		attribution?: AttributionAnswer,
+	) {
+		const ask = vehicleAskOf(action, snapshot.vehicleUse);
+		if (ask) {
+			setFlow({
+				step: "vehicle",
+				proof,
+				snapshot,
+				action,
+				ask,
+				...(attribution ? { attribution } : {}),
+				pending: false,
+			});
+			return;
+		}
+		void act(proof, snapshot, action, undefined, attribution);
 	}
 
 	function chooseOffline(turn: OfflineTurn, action: KioskPanelAction) {
@@ -489,7 +528,10 @@ export function KioskPairedScreen({
 					onCameraBadge={(badge) => void identifyBadge(badge, "camera")}
 					onVerifyPin={(employee, attempt, pin) => void verifyPin(employee, attempt, pin)}
 					onChoose={choose}
-					onAct={(proof, snapshot, action, vehicle) => void act(proof, snapshot, action, vehicle)}
+					onProceed={proceed}
+					onAct={(proof, snapshot, action, vehicle, attribution) =>
+						void act(proof, snapshot, action, vehicle, attribution)
+					}
 					onChooseOffline={chooseOffline}
 					onActOffline={(turn, action, vehicle) => void actOffline(turn, action, vehicle)}
 				/>
@@ -531,6 +573,7 @@ function KioskTurnScreen({
 	onCameraBadge,
 	onVerifyPin,
 	onChoose,
+	onProceed,
 	onAct,
 	onChooseOffline,
 	onActOffline,
@@ -549,11 +592,19 @@ function KioskTurnScreen({
 		snapshot: KioskEmployeeSnapshot,
 		action: KioskPanelAction,
 	) => void;
+	/** The project and work category were answered (#887): what the action asks next. */
+	onProceed: (
+		proof: KioskTurnProof,
+		snapshot: KioskEmployeeSnapshot,
+		action: KioskPanelAction,
+		attribution: AttributionAnswer,
+	) => void;
 	onAct: (
 		proof: KioskTurnProof,
 		snapshot: KioskEmployeeSnapshot,
 		action: KioskPanelAction,
 		vehicle: VehicleAnswer,
+		attribution?: AttributionAnswer,
 	) => void;
 	onChooseOffline: (turn: OfflineTurn, action: KioskPanelAction) => void;
 	onActOffline: (turn: OfflineTurn, action: KioskPanelAction, vehicle: VehicleAnswer) => void;
@@ -600,6 +651,31 @@ function KioskTurnScreen({
 					onBack={onHome}
 				/>
 			);
+		case "attribution":
+			return (
+				<KioskAttributionStep
+					key="attribution"
+					name={flow.snapshot.employee.name}
+					attribution={flow.ask}
+					values={flow.values}
+					actionLabel={labels.buttons[flow.action]}
+					pending={flow.pending}
+					disabled={!online}
+					error={flow.error ? message(flow.error) : null}
+					onConfirm={(values) =>
+						onProceed(flow.proof, flow.snapshot, flow.action, { ask: flow.ask, values })
+					}
+					onBack={() =>
+						onFlow({
+							step: "employee",
+							proof: flow.proof,
+							snapshot: flow.snapshot,
+							pending: null,
+							error: null,
+						})
+					}
+				/>
+			);
 		case "vehicle":
 			return (
 				<KioskVehicleUseStep
@@ -611,20 +687,15 @@ function KioskTurnScreen({
 					pending={flow.pending}
 					disabled={!online}
 					onConfirm={(answer) =>
-						onAct(flow.proof, flow.snapshot, flow.action, {
-							ask: flow.ask,
-							answer,
-						})
+						onAct(
+							flow.proof,
+							flow.snapshot,
+							flow.action,
+							{ ask: flow.ask, answer },
+							flow.attribution,
+						)
 					}
-					onBack={() =>
-						onFlow({
-							step: "employee",
-							proof: flow.proof,
-							snapshot: flow.snapshot,
-							pending: null,
-							error: null,
-						})
-					}
+					onBack={() => onFlow(vehicleBackFlow(flow))}
 				/>
 			);
 		case "cached":

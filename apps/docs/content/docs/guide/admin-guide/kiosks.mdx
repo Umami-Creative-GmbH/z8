@@ -74,10 +74,21 @@ A rehire never brings an old badge back: every copy of it stays invalid. To let 
 1. The employee taps their name on the kiosk's home screen.
 2. They enter their kiosk PIN.
 3. The kiosk shows their state and today's day total, and only the actions that fit: **Clock in**, or **Start break** and **Clock out**, or **Resume work** and **End day**. Ending the day while on a break ends the work at the start of the break.
-4. When vehicle use is asked or expected for the employee, the kiosk asks for the vehicle and odometer reading before the action (see [Vehicles and Kilometres](/docs/guide/admin-guide/vehicles-and-kilometres)).
-5. A confirmation shows the action and its time, then the kiosk returns to the home screen.
+4. On **Clock out**, the kiosk asks which project and work category the work was for (see [Projects and Work Categories at Clock-Out](#projects-and-work-categories-at-clock-out)).
+5. When vehicle use is asked or expected for the employee, the kiosk asks for the vehicle and odometer reading before the action (see [Vehicles and Kilometres](/docs/guide/admin-guide/vehicles-and-kilometres)).
+6. A confirmation shows the action and its time, then the kiosk returns to the home screen.
 
-The kiosk keeps an employee's PIN, state and day total only for their turn. It does not show history, corrections, projects or work categories.
+The kiosk keeps an employee's PIN, state, day total and project choices only for their turn. It does not show history or corrections.
+
+### Projects and Work Categories at Clock-Out
+
+When an employee clocks out while connected, the kiosk shows the project and work category the work is booked to. The employee can keep them (the default), choose another one, or choose **No project** or **No work category**. The choice applies only to the work that ends now, not to earlier work that day.
+
+- The kiosk offers the same choices as the web clock: projects the employee may book (assigned to them or their team, in a bookable status, while projects are on for the organization), and the active work categories of their category set. Kiosk-only employees get their own choices.
+- Nothing is required. An employee with nothing to choose clocks out at once, and keeping a project or category that is no longer offered still works.
+- Z8 checks the choice again when the work ends. If the project or category can no longer be booked, nothing is recorded; the kiosk says so and keeps the choice, so the employee can choose again or keep the current one.
+- The kiosk asks for no task and no billability. Changing the project follows the usual rules: the task is cleared and the project's billable default applies. A project that requires a task is booked without one, and the work is marked as missing a task.
+- Clocking in, breaks, **End day** on a break and offline clocking ask nothing and keep the work's project and category.
 
 ### Clocking with a Badge
 
