@@ -16,9 +16,11 @@ import { loadAbsenceCoverageEvidence } from "@/lib/absences/coverage-evidence.se
 import {
 	normalizeAbsenceDurationInput,
 	toAbsenceEntryDurationFields,
+	validateAbsenceDurationInput,
 } from "@/lib/absences/duration";
 import { loadTimeOffInLieuPreview } from "@/lib/absences/time-off-in-lieu-preview.server";
 import type { AbsenceRequest } from "@/lib/absences/types";
+import { isComparisonEligibleCategory } from "@/lib/absences/vacation-comparison";
 import { loadVacationYearBalances } from "@/lib/absences/vacation-year-balance-store";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import {
@@ -32,9 +34,12 @@ import { getHolidays } from "./queries";
 
 export type AbsencePlanPreviewRequest = AbsenceRequest;
 
+/** Why a comparison option was refused rather than evaluated (#1342). */
+export type AbsenceComparisonRefusal = "comparison_ineligible" | "invalid_option";
+
 type PlanPreviewResult =
 	| { success: true; data: AbsencePlanPreview }
-	| { success: false; error: string };
+	| { success: false; error: string; code?: AbsenceComparisonRefusal };
 
 type ExistingAbsenceRow = Pick<
 	typeof absenceEntry.$inferSelect,
@@ -45,6 +50,28 @@ type ExistingAbsenceRow = Pick<
 
 export async function getAbsencePlanPreview(
 	request: AbsencePlanPreviewRequest,
+): Promise<PlanPreviewResult> {
+	return evaluateAbsencePlanPreview(request, { comparison: false });
+}
+
+/**
+ * One option of a vacation comparison (#1342): the ordinary preview of a hypothetical request,
+ * refused unless its category is an active vacation category that consumes the vacation balance
+ * and its dates pass the ordinary request rules. Read-only, like the ordinary preview.
+ */
+export async function getAbsenceComparisonPreview(
+	request: AbsencePlanPreviewRequest,
+): Promise<PlanPreviewResult> {
+	const invalidOption = validateAbsenceDurationInput(request);
+	if (invalidOption) {
+		return { success: false, error: invalidOption, code: "invalid_option" };
+	}
+	return evaluateAbsencePlanPreview(request, { comparison: true });
+}
+
+async function evaluateAbsencePlanPreview(
+	request: AbsencePlanPreviewRequest,
+	{ comparison }: { comparison: boolean },
 ): Promise<PlanPreviewResult> {
 	const range = parsePreviewRange(request);
 	if (!range) {
@@ -67,6 +94,14 @@ export async function getAbsencePlanPreview(
 
 		if (!category) {
 			return { success: false, error: "Absence category not found" };
+		}
+
+		if (comparison && !isComparisonEligibleCategory(category)) {
+			return {
+				success: false,
+				error: "This absence type cannot be compared",
+				code: "comparison_ineligible",
+			};
 		}
 
 		const org = await db.query.organization.findFirst({

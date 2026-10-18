@@ -10,7 +10,10 @@ import type {
 } from "@/lib/personnel-file/sick-note-upload";
 import { getCurrentEmployee as getCurrentEmployeeAction } from "./current-employee";
 import { cancelAbsenceRequest as cancelAbsenceRequestAction } from "./mutations";
-import { getAbsencePlanPreview as getAbsencePlanPreviewAction } from "./plan-preview";
+import {
+	getAbsenceComparisonPreview as getAbsenceComparisonPreviewAction,
+	getAbsencePlanPreview as getAbsencePlanPreviewAction,
+} from "./plan-preview";
 import {
 	getAbsenceEntries as getAbsenceEntriesAction,
 	getHolidays as getHolidaysAction,
@@ -130,6 +133,13 @@ export async function getAbsencePlanPreview(
 	...args: Parameters<typeof getAbsencePlanPreviewAction>
 ) {
 	return getAbsencePlanPreviewAction(...args);
+}
+
+/** One option of a vacation comparison, refused for ineligible categories (#1342). */
+export async function getAbsenceComparisonPreview(
+	...args: Parameters<typeof getAbsenceComparisonPreviewAction>
+) {
+	return getAbsenceComparisonPreviewAction(...args);
 }
 
 /**
