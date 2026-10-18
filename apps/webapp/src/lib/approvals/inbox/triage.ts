@@ -1,5 +1,5 @@
 import { assessApprovalTriage, type ApprovalTriageContext, type ApprovalTriageEvidence, type ApprovalTriageRequestKind } from "../triage-assessment";
-import { DEFAULT_APPROVAL_TRIAGE_POLICY, type ApprovalTriagePolicy } from "../triage-policy";
+import { DEFAULT_APPROVAL_TRIAGE_POLICY, type ApprovalTriagePolicy } from "../triage-policy-config";
 import { getAgeDays } from "./serialization";
 import type {
 	ApprovalInboxPriority,

@@ -110,6 +110,7 @@ export enum AuditAction {
 	APPROVAL_ESCALATION_TRANSFERRED = "approval_escalation.transferred",
 	// "Deputies can decide approvals" turned on or off (#1015)
 	APPROVAL_SETTING_DEPUTY_DECISIONS_CHANGED = "approval_setting.deputy_decisions_changed",
+	APPROVAL_SETTING_TRIAGE_CHANGED = "approval_setting.triage_changed",
 
 	// Vacation Operations
 	VACATION_CARRYOVER_APPLIED = "vacation.carryover_applied",
