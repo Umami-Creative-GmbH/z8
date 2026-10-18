@@ -2,8 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-const { buildDocumentRequestDecidedNotification, buildDocumentRequestedNotification } =
-	await import("./document-request-notifications");
+const {
+	buildDocumentRequestDecidedNotification,
+	buildDocumentRequestedNotification,
+	buildDocumentRequestReminderNotification,
+} = await import("./document-request-notifications");
 
 const request = {
 	id: "c0000000-0000-4000-8000-000000000001",
@@ -40,6 +43,95 @@ describe("buildDocumentRequestedNotification", () => {
 						title: "First aid refresher",
 						deadline: { kind: "plainDate", date: "2026-11-30" },
 					},
+				},
+			},
+		});
+	});
+});
+
+describe("buildDocumentRequestReminderNotification", () => {
+	const reminded = { ...request, employeeName: "Anna Example" };
+
+	it("reminds the employee 3 days before and on the deadline day, once per deadline", () => {
+		const soon = buildDocumentRequestReminderNotification({
+			organizationId: "org",
+			recipientUserId: "anna",
+			audience: "employee",
+			kind: "three_days_before",
+			request: reminded,
+		});
+		expect(soon).toMatchObject({
+			userId: "anna",
+			organizationId: "org",
+			type: "personnel_file_document_request_reminder",
+			title: "Document due soon",
+			message: 'Please upload "First aid refresher" by Nov 30, 2026.',
+			entityType: "employee_document_request",
+			entityId: request.id,
+			actionUrl: "/my-documents",
+			idempotencyKey: `personnel-file-document-request-reminder:${request.id}:three_days_before:2026-11-30:anna`,
+			metadata: {
+				category: "certificate",
+				reminder: "three_days_before",
+				deadline: "2026-11-30",
+				i18n: {
+					titleKey: "common:notifications.content.personnelFileDocumentRequestDueSoon.title",
+					messageKey: "common:notifications.content.personnelFileDocumentRequestDueSoon.message",
+					params: {
+						title: "First aid refresher",
+						deadline: { kind: "plainDate", date: "2026-11-30" },
+					},
+				},
+			},
+		});
+		const today = buildDocumentRequestReminderNotification({
+			organizationId: "org",
+			recipientUserId: "anna",
+			audience: "employee",
+			kind: "deadline_day",
+			request: reminded,
+		});
+		expect(today).toMatchObject({
+			type: "personnel_file_document_request_reminder",
+			title: "Document due today",
+			message: 'Please upload "First aid refresher" today.',
+			idempotencyKey: `personnel-file-document-request-reminder:${request.id}:deadline_day:2026-11-30:anna`,
+		});
+	});
+
+	it("tells the employee and the officers that a request is overdue", () => {
+		const employee = buildDocumentRequestReminderNotification({
+			organizationId: "org",
+			recipientUserId: "anna",
+			audience: "employee",
+			kind: "overdue",
+			request: reminded,
+		});
+		expect(employee).toMatchObject({
+			type: "personnel_file_document_request_overdue",
+			title: "Document overdue",
+			message: '"First aid refresher" was due on Nov 30, 2026. Please upload it.',
+			actionUrl: "/my-documents",
+		});
+		const officer = buildDocumentRequestReminderNotification({
+			organizationId: "org",
+			recipientUserId: "otto",
+			audience: "officer",
+			kind: "overdue",
+			request: reminded,
+		});
+		expect(officer).toMatchObject({
+			userId: "otto",
+			type: "personnel_file_document_request_overdue",
+			title: "Requested document overdue",
+			message: 'Anna Example has not handed in "First aid refresher", due on Nov 30, 2026.',
+			actionUrl: `/personnel-files/${request.employeeId}`,
+			idempotencyKey: `personnel-file-document-request-reminder:${request.id}:overdue:2026-11-30:otto`,
+			metadata: {
+				i18n: {
+					messageKey:
+						"common:notifications.content.personnelFileDocumentRequestOverdue.officerMessage",
+					params: { employee: "Anna Example" },
 				},
 			},
 		});

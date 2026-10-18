@@ -54,6 +54,19 @@ export type DocumentRequestFollowUpEventKind = Exclude<DocumentRequestEventKind,
 export const DOCUMENT_REQUEST_REASON_CODES = ["employment_ended"] as const;
 export type DocumentRequestReasonCode = (typeof DOCUMENT_REQUEST_REASON_CODES)[number];
 
+/**
+ * The deadline reminders of an open request (#1406): to the employee 3 days
+ * before the deadline and on the deadline day; on the first overdue day to the
+ * employee and the covering officers. Each is sent at most once per request
+ * and deadline.
+ */
+export const DOCUMENT_REQUEST_REMINDER_KINDS = [
+	"three_days_before",
+	"deadline_day",
+	"overdue",
+] as const;
+export type DocumentRequestReminderKind = (typeof DOCUMENT_REQUEST_REMINDER_KINDS)[number];
+
 export const DOCUMENT_REQUEST_TITLE_MAX_LENGTH = 200;
 /** Notes, reasons and submission notes. */
 export const DOCUMENT_REQUEST_TEXT_MAX_LENGTH = 2000;

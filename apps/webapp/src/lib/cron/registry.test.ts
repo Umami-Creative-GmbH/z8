@@ -72,6 +72,14 @@ vi.mock("@/lib/jobs/skill-expiry-reminders", () => {
 	skillExpiryReminders.imported();
 	return { runSkillExpiryRemindersJob: skillExpiryReminders.run };
 });
+const documentRequestReminders = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({ organizationsChecked: 2, remindersSent: 1 })),
+}));
+vi.mock("@/lib/jobs/personnel-file-document-request-reminders", () => {
+	documentRequestReminders.imported();
+	return { runPersonnelFileDocumentRequestRemindersJob: documentRequestReminders.run };
+});
 const deputyCoverSummaries = vi.hoisted(() => ({
 	imported: vi.fn(),
 	run: vi.fn(async () => ({
@@ -425,6 +433,19 @@ describe("skill expiry reminders cron (#1143)", () => {
 			}),
 		).toEqual({ organizationsChecked: 2, remindersSent: 1 });
 		expect(skillExpiryReminders.run).toHaveBeenCalledOnce();
+	});
+});
+
+describe("document request reminders cron (#1406)", () => {
+	it("loads the reminder job lazily and runs hourly, so each organization's day starts soon after midnight", async () => {
+		expect(documentRequestReminders.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:personnel-file-document-request-reminders"].schedule).toBe("0 * * * *");
+		expect(
+			await CRON_JOBS["cron:personnel-file-document-request-reminders"].processor({
+				triggeredAt: "2026-11-10T23:00:00Z",
+			}),
+		).toEqual({ organizationsChecked: 2, remindersSent: 1 });
+		expect(documentRequestReminders.run).toHaveBeenCalledOnce();
 	});
 });
 
