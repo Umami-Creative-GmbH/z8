@@ -61,6 +61,10 @@ vi.mock("./queries", () => ({
 	getHolidays: mockState.getHolidays,
 }));
 
+vi.mock("@/lib/logger", () => ({
+	createLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }),
+}));
+
 const { getAbsenceComparisonPreview, getAbsencePlanPreview } = await import("./plan-preview");
 
 const previewRequest = {
@@ -120,7 +124,7 @@ describe("getAbsencePlanPreview", () => {
 			expect(result.data.balances).toEqual([
 				expect.objectContaining({ year: 2026, chargedAbsenceDays: 2, remainingAfterRequest: 12 }),
 			]);
-			expect(result.data.reasons).toContain("Request follows the normal approval path.");
+			expect(result.data.notes).toContain("normal_approval_path");
 		}
 	});
 
@@ -135,10 +139,8 @@ describe("getAbsencePlanPreview", () => {
 		);
 		expect(result.success).toBe(true);
 		if (result.success) {
-			expect(result.data.reasons).toContain("Request follows the normal approval path.");
-			expect(result.data.reasons).not.toContain(
-				"No manager is assigned, so this request follows the current auto-approval behavior.",
-			);
+			expect(result.data.notes).toContain("normal_approval_path");
+			expect(result.data.notes).not.toContain("no_manager_auto_approval");
 		}
 	});
 
@@ -949,7 +951,12 @@ describe("getAbsenceComparisonPreview (#1342)", () => {
 
 		const result = await getAbsenceComparisonPreview(previewRequest);
 
-		expect(result).toEqual({ success: false, error: "Absence category not found" });
+		// A refusal, not a failed read: the client does not retry it.
+		expect(result).toEqual({
+			success: false,
+			error: "Absence category not found",
+			code: "category_unavailable",
+		});
 		expect(mockState.eq).toHaveBeenCalledWith(
 			expect.objectContaining({ name: "organization_id" }),
 			"org-current",
@@ -957,7 +964,7 @@ describe("getAbsenceComparisonPreview (#1342)", () => {
 		expect(mockState.eq).toHaveBeenCalledWith(expect.objectContaining({ name: "is_active" }), true);
 	});
 
-	it("refuses an option the ordinary request rules reject, before reading anything", async () => {
+	it("refuses an option the ordinary request rules reject, before reading any evidence", async () => {
 		const result = await getAbsenceComparisonPreview({
 			...previewRequest,
 			durationKind: "partial_day",
@@ -972,7 +979,16 @@ describe("getAbsenceComparisonPreview (#1342)", () => {
 				"Enter an end time after the start time, or choose the next end date for an overnight absence.",
 			code: "invalid_option",
 		});
-		expect(mockState.getCurrentEmployee).not.toHaveBeenCalled();
+		expect(mockState.categoryFindFirst).not.toHaveBeenCalled();
+		expect(mockState.loadVacationYearBalances).not.toHaveBeenCalled();
+	});
+
+	it("checks the session before validating the option", async () => {
+		mockState.getCurrentEmployee.mockResolvedValue(null);
+
+		const result = await getAbsenceComparisonPreview({ ...previewRequest, startDate: "" });
+
+		expect(result).toEqual({ success: false, error: "No active employee found" });
 	});
 
 	it("refuses without an active employee in the session", async () => {

@@ -309,7 +309,7 @@ describe("absence plan preview shifts", () => {
 			projectedBalanceMinutes: -240,
 			wouldBeNegative: true,
 		});
-		expect(result.data.warnings).toContain("Work balance would be negative after this request.");
+		expect(result.data.notes).not.toContain("normal_approval_path");
 	});
 });
 

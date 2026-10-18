@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { mondayToFriday } from "./absence-days";
 import {
 	countRequestedAbsenceDays,
+	findAbsenceDurationIssue,
 	mapAbsenceDurationToCanonicalTimestamps,
 	normalizeAbsenceDurationInput,
 	toAbsenceEntryDurationFields,
@@ -325,5 +326,38 @@ describe("absence duration helpers", () => {
 				notes: "",
 			}),
 		).toThrow("Enter a start time and end time for a partial-day absence.");
+	});
+});
+
+describe("findAbsenceDurationIssue", () => {
+	const partialDay = {
+		startDate: "2026-05-15",
+		endDate: "2026-05-15",
+		durationKind: "partial_day" as const,
+		startTime: "09:00",
+		endTime: "13:00",
+	};
+
+	it("checks dates and times without a category", () => {
+		expect(findAbsenceDurationIssue(partialDay)).toBeNull();
+		expect(validateAbsenceDurationInput(partialDay)).toBe("Category is required");
+	});
+
+	it.each([
+		[{ ...partialDay, startDate: "" }, "start_date_required"],
+		[{ ...partialDay, startDate: "2026-02-30" }, "invalid_date"],
+		[{ ...partialDay, endDate: "2026-05-14" }, "end_before_start"],
+		[{ ...partialDay, endTime: "" }, "times_required"],
+		[{ ...partialDay, endTime: "1300" }, "invalid_time"],
+		[{ ...partialDay, endDate: "2026-05-17" }, "partial_day_span"],
+		[{ ...partialDay, endTime: "08:00" }, "end_time_before_start"],
+		[
+			{ startDate: "2026-05-15", startPeriod: "pm" as const, endPeriod: "am" as const },
+			"afternoon_start_morning_end",
+		],
+	])("names the issue with a code and keeps the English message (%#)", (input, code) => {
+		const issue = findAbsenceDurationIssue(input);
+		expect(issue?.code).toBe(code);
+		expect(validateAbsenceDurationInput({ ...input, categoryId: "cat" })).toBe(issue?.message);
 	});
 });

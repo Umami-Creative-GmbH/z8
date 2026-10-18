@@ -206,14 +206,16 @@ function previewFor(request: AbsenceRequest, overrides: Partial<AbsencePlanPrevi
 		overlaps: [],
 		affectedShifts: [],
 		coverage: { risks: [], status: "complete" as const, gaps: [] },
-		warnings: [],
-		reasons: ["Request follows the normal approval path."],
+		notes: ["normal_approval_path"],
 		...overrides,
 	} satisfies AbsencePlanPreview;
 }
 
 function renderDialog({ organizationId = "org-1" }: { organizationId?: string } = {}) {
-	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	// The app keeps query results fresh for a minute (lib/query/provider.tsx).
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false, staleTime: 60_000 } },
+	});
 	const onOpenChange = vi.fn();
 	const ui = (orgId: string) => (
 		<QueryClientProvider client={queryClient}>
@@ -385,11 +387,13 @@ describe("RequestAbsenceDialog vacation comparison (#1342)", () => {
 			target: { value: "09:00" },
 		});
 
-		expect(
-			within(alternative).getByText(
-				"End after the start time, or end on the next day for an overnight absence.",
-			),
-		).toBeTruthy();
+		const issue = within(alternative).getByText(
+			"End after the start time, or end on the next day for an overnight absence.",
+		);
+		// The issue is tied to the input it concerns.
+		const endTime = within(alternative).getByLabelText("End time");
+		expect(endTime.getAttribute("aria-invalid")).toBe("true");
+		expect(endTime.getAttribute("aria-describedby")).toContain(issue.id);
 		expect(
 			within(alternative)
 				.getByRole("button", { name: "Apply Alternative 1 to request" })
@@ -431,6 +435,27 @@ describe("RequestAbsenceDialog vacation comparison (#1342)", () => {
 				.getByRole("button", { name: "Apply Alternative 1 to request" })
 				.hasAttribute("disabled"),
 		).toBe(false);
+	});
+
+	it("explains, without retrying, a category that is no longer available", async () => {
+		comparisonPreviewMock.mockResolvedValue({
+			success: false,
+			error: "Absence category not found",
+			code: "category_unavailable",
+		});
+		renderDialog();
+		fillDraft();
+		openComparison();
+
+		expect(
+			await within(option("Original request")).findByText(
+				"This absence type is no longer available. Go back and choose another type.",
+			),
+		).toBeTruthy();
+		expect(comparisonCallsFor("2026-12-28")).toHaveLength(1);
+		expect(
+			within(option("Original request")).queryByRole("button", { name: "Try again" }),
+		).toBeNull();
 	});
 
 	it("re-evaluates every option on Refresh all", async () => {
@@ -662,6 +687,108 @@ describe("RequestAbsenceDialog vacation comparison (#1342)", () => {
 
 		expect(screen.queryByRole("region", { name: "Original request" })).toBeNull();
 		expect(screen.getByLabelText("Start Date *")).toBeTruthy();
+	});
+
+	it("keeps the alternatives after applying one and resumes with the applied dates", async () => {
+		renderDialog();
+		fillDraft();
+		openComparison();
+		fireEvent.click(screen.getByRole("button", { name: "Add alternative" }));
+		fireEvent.change(within(option("Alternative 1")).getByLabelText("Start date"), {
+			target: { value: "2027-02-01" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Apply Alternative 1 to request" }));
+		expect((screen.getByLabelText("Start Date *") as HTMLInputElement).value).toBe("2027-02-01");
+
+		openComparison();
+
+		expect(
+			(within(option("Alternative 1")).getByLabelText("Start date") as HTMLInputElement).value,
+		).toBe("2027-02-01");
+		await waitFor(() =>
+			expect(comparisonPreviewMock).toHaveBeenCalledWith(
+				expect.objectContaining({ startDate: "2027-02-01", endDate: "2027-02-01" }),
+			),
+		);
+	});
+
+	it("re-evaluates every option each time the comparison opens", async () => {
+		renderDialog();
+		fillDraft();
+		openComparison();
+		await within(option("Original request")).findByText("3 days");
+		fireEvent.click(screen.getByRole("button", { name: "Back to request" }));
+
+		openComparison();
+
+		await waitFor(() => expect(comparisonCallsFor("2026-12-28")).toHaveLength(2));
+	});
+
+	it("drops the applied notice once the draft's dates are edited by hand", async () => {
+		renderDialog();
+		fillDraft();
+		openComparison();
+		fireEvent.click(screen.getByRole("button", { name: "Add alternative" }));
+		fireEvent.change(within(option("Alternative 1")).getByLabelText("Start date"), {
+			target: { value: "2027-02-01" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Apply Alternative 1 to request" }));
+		expect(screen.getByText(/^Alternative 1 applied to your request\./)).toBeTruthy();
+
+		fireEvent.change(screen.getByLabelText("End Date"), { target: { value: "2027-02-03" } });
+
+		expect(screen.queryByText(/^Alternative 1 applied to your request\./)).toBeNull();
+	});
+
+	it("returns focus to Compare dates only right after leaving the comparison", () => {
+		const view = renderDialog();
+		fillDraft();
+		openComparison();
+		fireEvent.click(screen.getByRole("button", { name: "Back to request" }));
+		expect(document.activeElement).toBe(screen.getByRole("button", { name: "Compare dates" }));
+
+		const notes = screen.getByLabelText("Notes (Optional)") as HTMLTextAreaElement;
+		notes.focus();
+		fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "sick" } });
+		fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "vacation" } });
+		expect(document.activeElement).toBe(notes);
+
+		// Closing and reopening the form does not move focus to Compare dates either.
+		view.rerender(
+			<QueryClientProvider client={view.queryClient}>
+				<RequestAbsenceDialog
+					open={false}
+					onOpenChange={view.onOpenChange}
+					organizationId="org-1"
+					categories={categories}
+				/>
+			</QueryClientProvider>,
+		);
+		view.rerender(
+			<QueryClientProvider client={view.queryClient}>
+				<RequestAbsenceDialog
+					open
+					onOpenChange={view.onOpenChange}
+					organizationId="org-1"
+					categories={categories}
+				/>
+			</QueryClientProvider>,
+		);
+		fillDraft();
+		expect(document.activeElement).not.toBe(screen.getByRole("button", { name: "Compare dates" }));
+	});
+
+	it("re-reads every preview after a successful submission", async () => {
+		const view = renderDialog();
+		const invalidate = vi.spyOn(view.queryClient, "invalidateQueries");
+		fillDraft();
+		await screen.findByText("Estimated balance after request (2026):");
+
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() =>
+			expect(invalidate).toHaveBeenCalledWith({ queryKey: ["absence-plan-preview"] }),
+		);
 	});
 
 	it("clears the comparison after a successful submission", async () => {

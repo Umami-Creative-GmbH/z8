@@ -2,16 +2,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	loadVacationBalances: vi.fn(),
-	loadWorkingDays: vi.fn(),
+	loadOrganizationTimezone: vi.fn(),
 }));
 
 vi.mock("./vacation-balance-store", () => ({ loadVacationBalances: mocks.loadVacationBalances }));
-vi.mock("./absence-days-resolver", () => ({ loadWorkingDays: mocks.loadWorkingDays }));
+vi.mock("@/lib/timezone/load-organization-timezone", () => ({
+	loadOrganizationTimezone: mocks.loadOrganizationTimezone,
+}));
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }),
 }));
 
-const { findOverdrawnVacationYears, loadVacationYearBalances } = await import(
+const { findYearsExceedingBalance, loadVacationYearBalances } = await import(
 	"./vacation-year-balance-store"
 );
 
@@ -95,11 +97,13 @@ describe("loadVacationYearBalances", () => {
 	});
 });
 
-describe("findOverdrawnVacationYears", () => {
+describe("findYearsExceedingBalance", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.loadWorkingDays.mockResolvedValue((day: { dayOfWeek: number }) => day.dayOfWeek <= 5);
+		mocks.loadOrganizationTimezone.mockResolvedValue("Europe/Berlin");
 	});
+
+	const isWorkingDay = (day: { dayOfWeek: number }) => day.dayOfWeek <= 5;
 
 	// Wed 2026-12-30 to Sat 2027-01-02: 2 days in 2026, 1 in 2027.
 	const acrossNewYear = {
@@ -112,54 +116,50 @@ describe("findOverdrawnVacationYears", () => {
 	it("returns the years whose recorded balance the request exceeds", async () => {
 		balancesFor({ 2026: balance(2026, 2), 2027: balance(2027, 0.5) });
 
-		const overdrawn = await findOverdrawnVacationYears(database, {
+		const exceeded = await findYearsExceedingBalance(database, {
 			organizationId: "org-1",
 			employeeId: "emp-1",
 			absence: acrossNewYear,
-			timezone: "Europe/Berlin",
+			isWorkingDay,
 			currentDate,
 		});
 
-		expect(overdrawn).toEqual([
+		expect(exceeded).toEqual([
 			expect.objectContaining({ year: 2027, chargedAbsenceDays: 1, remainingAfterRequest: -0.5 }),
 		]);
-		expect(mocks.loadWorkingDays).toHaveBeenCalledWith(database, {
-			organizationId: "org-1",
-			employeeId: "emp-1",
-			startDate: "2026-12-30",
-			endDate: "2027-01-02",
-		});
+		expect(mocks.loadOrganizationTimezone).toHaveBeenCalledWith(database, "org-1");
+		expect(mocks.loadVacationBalances).toHaveBeenCalledWith(
+			database,
+			expect.objectContaining({ organizationId: "org-1", timezone: "Europe/Berlin", currentDate }),
+		);
 	});
 
 	it("does not block on a year whose balance is unavailable", async () => {
 		balancesFor({ 2026: balance(2026, 2), 2027: "missing" });
 
-		const overdrawn = await findOverdrawnVacationYears(database, {
+		const exceeded = await findYearsExceedingBalance(database, {
 			organizationId: "org-1",
 			employeeId: "emp-1",
 			absence: acrossNewYear,
-			timezone: "Europe/Berlin",
+			isWorkingDay,
 			currentDate,
 		});
 
-		expect(overdrawn).toEqual([]);
+		expect(exceeded).toEqual([]);
 	});
 
 	it("does not read the balance of a year the request charges nothing", async () => {
 		balancesFor({ 2026: balance(2026, 2) });
-		mocks.loadWorkingDays.mockResolvedValue(
-			(day: { dayOfWeek: number; year: number }) => day.dayOfWeek <= 5 && day.year === 2026,
-		);
 
-		const overdrawn = await findOverdrawnVacationYears(database, {
+		const exceeded = await findYearsExceedingBalance(database, {
 			organizationId: "org-1",
 			employeeId: "emp-1",
 			absence: acrossNewYear,
-			timezone: "Europe/Berlin",
+			isWorkingDay: (day) => day.dayOfWeek <= 5 && day.year === 2026,
 			currentDate,
 		});
 
-		expect(overdrawn).toEqual([]);
+		expect(exceeded).toEqual([]);
 		expect(mocks.loadVacationBalances).toHaveBeenCalledTimes(1);
 	});
 });

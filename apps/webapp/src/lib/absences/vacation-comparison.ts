@@ -3,7 +3,11 @@
  * chosen alternatives, each previewed as its own hypothetical request. Comparison is ephemeral
  * client state; it never deducts, reserves or records anything.
  */
-import { normalizeAbsenceDurationInput, validateAbsenceDurationInput } from "./duration";
+import {
+	type AbsenceDurationIssueCode,
+	findAbsenceDurationIssue,
+	normalizeAbsenceDurationInput,
+} from "./duration";
 import type { AbsenceDurationKind, AbsenceRequest, DayPeriod } from "./types";
 
 /** At most two alternatives besides the original. */
@@ -42,16 +46,8 @@ export interface ComparisonOption extends ComparisonDates {
 	position: number;
 }
 
-/** Why an option cannot be evaluated or applied, translated by the viewer. */
-export type ComparisonOptionIssue =
-	| "start_date_required"
-	| "invalid_date"
-	| "end_before_start"
-	| "times_required"
-	| "invalid_time"
-	| "partial_day_span"
-	| "end_time_before_start"
-	| "invalid";
+/** Why an option cannot be evaluated or applied: the ordinary rule it breaks, translated by the viewer. */
+export type ComparisonOptionIssue = AbsenceDurationIssueCode;
 
 /**
  * Only an active vacation-type category that consumes vacation balance can be compared; the
@@ -75,7 +71,7 @@ export function startVacationComparison({
 	return {
 		contextKey,
 		categoryId,
-		original: { id: "original", ...pickDates(draft) },
+		original: { id: "original", ...comparisonDatesOf(draft) },
 		alternatives: [],
 		nextAlternative: 1,
 	};
@@ -86,7 +82,7 @@ export function resumeVacationComparison(
 	comparison: VacationComparison,
 	draft: ComparisonDates,
 ): VacationComparison {
-	return { ...comparison, original: { id: comparison.original.id, ...pickDates(draft) } };
+	return { ...comparison, original: { id: comparison.original.id, ...comparisonDatesOf(draft) } };
 }
 
 /** The original first, then the alternatives in order. */
@@ -126,7 +122,7 @@ export function duplicateComparisonOption(
 	const source = [comparison.original, ...comparison.alternatives].find(
 		(option) => option.id === optionId,
 	);
-	return source ? withAlternative(comparison, pickDates(source)) : comparison;
+	return source ? withAlternative(comparison, comparisonDatesOf(source)) : comparison;
 }
 
 export function updateComparisonAlternative(
@@ -141,7 +137,7 @@ export function updateComparisonAlternative(
 		...comparison,
 		alternatives: comparison.alternatives.map((alternative) =>
 			alternative.id === alternativeId
-				? { ...alternative, ...pickDates({ ...alternative, ...patch }) }
+				? { ...alternative, ...comparisonDatesOf({ ...alternative, ...patch }) }
 				: alternative,
 		),
 	};
@@ -157,26 +153,13 @@ export function removeComparisonAlternative(
 	};
 }
 
-/** The ordinary request rules decide whether an option is valid; null when it is. */
+/**
+ * The ordinary request rules for dates, duration and times decide whether an option is valid; null
+ * when it is. The category is shared and checked separately.
+ */
 export function comparisonOptionIssue(option: ComparisonDates): ComparisonOptionIssue | null {
-	// The category is shared and checked separately; any id satisfies the ordinary rule here.
-	const error = validateAbsenceDurationInput({ ...option, categoryId: "comparison" });
-	if (!error) return null;
-	return DURATION_ERROR_ISSUES.get(error) ?? "invalid";
+	return findAbsenceDurationIssue(option)?.code ?? null;
 }
-
-const DURATION_ERROR_ISSUES = new Map<string, ComparisonOptionIssue>([
-	["Start date is required", "start_date_required"],
-	["Invalid date format", "invalid_date"],
-	["Start date must be before end date", "end_before_start"],
-	["Enter a start time and end time for a partial-day absence.", "times_required"],
-	["Enter times in HH:mm format.", "invalid_time"],
-	["Partial-day absences can only be same-day or overnight.", "partial_day_span"],
-	[
-		"Enter an end time after the start time, or choose the next end date for an overnight absence.",
-		"end_time_before_start",
-	],
-]);
 
 /** The request the preview evaluates for an option, normalized exactly like the ordinary draft's. */
 export function comparisonPreviewRequest(
@@ -196,11 +179,6 @@ export function comparisonPreviewRequest(
 	};
 }
 
-/** The draft fields applying an option sets; category, notes, deputy and the rest stay. */
-export function appliedDraftFields(option: ComparisonDates): ComparisonDates {
-	return pickDates(option);
-}
-
 function withAlternative(
 	comparison: VacationComparison,
 	dates: ComparisonDates,
@@ -216,7 +194,11 @@ function withAlternative(
 	};
 }
 
-function pickDates(option: ComparisonDates): ComparisonDates {
+/**
+ * Only the fields an option chooses: its dates, duration and times. Applying an option sets exactly
+ * these on the draft; category, notes, deputy and the rest stay.
+ */
+export function comparisonDatesOf(option: ComparisonDates): ComparisonDates {
 	return {
 		startDate: option.startDate,
 		endDate: option.endDate,

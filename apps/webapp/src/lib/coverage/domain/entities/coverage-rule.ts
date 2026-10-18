@@ -42,17 +42,21 @@ export function toCoverageRuleEntity(input: {
 	};
 }
 
-export function getDayOfWeek(date: Date): DayOfWeek {
-	const weekday = DateTime.fromJSDate(date).weekday;
-	const days: Record<number, DayOfWeek> = {
-		1: "monday",
-		2: "tuesday",
-		3: "wednesday",
-		4: "thursday",
-		5: "friday",
-		6: "saturday",
-		7: "sunday",
-	};
+const DAY_OF_WEEK_BY_ISO_WEEKDAY: Record<number, DayOfWeek> = {
+	1: "monday",
+	2: "tuesday",
+	3: "wednesday",
+	4: "thursday",
+	5: "friday",
+	6: "saturday",
+	7: "sunday",
+};
 
-	return days[weekday] ?? "monday";
+/** The rule weekday of an ISO weekday number (1 = Monday … 7 = Sunday), e.g. a `PlainDate`'s. */
+export function dayOfWeekOf(date: { dayOfWeek: number }): DayOfWeek {
+	return DAY_OF_WEEK_BY_ISO_WEEKDAY[date.dayOfWeek] ?? "monday";
+}
+
+export function getDayOfWeek(date: Date): DayOfWeek {
+	return dayOfWeekOf({ dayOfWeek: DateTime.fromJSDate(date).weekday });
 }

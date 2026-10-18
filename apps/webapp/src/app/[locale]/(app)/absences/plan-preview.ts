@@ -14,9 +14,9 @@ import {
 } from "@/lib/absences/absence-plan-preview";
 import { loadAbsenceCoverageEvidence } from "@/lib/absences/coverage-evidence.server";
 import {
+	findAbsenceDurationIssue,
 	normalizeAbsenceDurationInput,
 	toAbsenceEntryDurationFields,
-	validateAbsenceDurationInput,
 } from "@/lib/absences/duration";
 import { loadTimeOffInLieuPreview } from "@/lib/absences/time-off-in-lieu-preview.server";
 import type { AbsenceRequest } from "@/lib/absences/types";
@@ -34,8 +34,15 @@ import { getHolidays } from "./queries";
 
 export type AbsencePlanPreviewRequest = AbsenceRequest;
 
-/** Why a comparison option was refused rather than evaluated (#1342). */
-export type AbsenceComparisonRefusal = "comparison_ineligible" | "invalid_option";
+/**
+ * Why a comparison option was refused rather than evaluated (#1342). A refusal does not change on
+ * retry; the client explains it instead of retrying.
+ */
+export type AbsenceComparisonRefusal =
+	| "comparison_ineligible"
+	| "invalid_option"
+	/** The category is not an active category of the employee's organization. */
+	| "category_unavailable";
 
 type PlanPreviewResult =
 	| { success: true; data: AbsencePlanPreview }
@@ -48,10 +55,36 @@ type ExistingAbsenceRow = Pick<
 	category: Pick<typeof absenceCategory.$inferSelect, "name">;
 };
 
+type CurrentEmployee = NonNullable<Awaited<ReturnType<typeof getCurrentEmployee>>>;
+type ActiveCategory = NonNullable<Awaited<ReturnType<typeof findActiveCategory>>>;
+type PreviewRange = NonNullable<ReturnType<typeof parsePreviewRange>>;
+
+const NO_ACTIVE_EMPLOYEE = { success: false, error: "No active employee found" } as const;
+const CATEGORY_NOT_FOUND = "Absence category not found";
+const PREVIEW_FAILED = { success: false, error: "Unable to build absence plan preview" } as const;
+
 export async function getAbsencePlanPreview(
 	request: AbsencePlanPreviewRequest,
 ): Promise<PlanPreviewResult> {
-	return evaluateAbsencePlanPreview(request, { comparison: false });
+	const range = parsePreviewRange(request);
+	if (!range) {
+		return { success: false, error: "Invalid preview date range" };
+	}
+
+	try {
+		const currentEmployee = await getCurrentEmployee();
+		if (!currentEmployee) return NO_ACTIVE_EMPLOYEE;
+
+		const category = await findActiveCategory(request.categoryId, currentEmployee.organizationId);
+		if (!category) return { success: false, error: CATEGORY_NOT_FOUND };
+
+		return {
+			success: true,
+			data: await evaluateAbsencePlanPreview(request, range, currentEmployee, category),
+		};
+	} catch {
+		return PREVIEW_FAILED;
+	}
 }
 
 /**
@@ -62,41 +95,25 @@ export async function getAbsencePlanPreview(
 export async function getAbsenceComparisonPreview(
 	request: AbsencePlanPreviewRequest,
 ): Promise<PlanPreviewResult> {
-	const invalidOption = validateAbsenceDurationInput(request);
-	if (invalidOption) {
-		return { success: false, error: invalidOption, code: "invalid_option" };
-	}
-	return evaluateAbsencePlanPreview(request, { comparison: true });
-}
-
-async function evaluateAbsencePlanPreview(
-	request: AbsencePlanPreviewRequest,
-	{ comparison }: { comparison: boolean },
-): Promise<PlanPreviewResult> {
-	const range = parsePreviewRange(request);
-	if (!range) {
-		return { success: false, error: "Invalid preview date range" };
-	}
-
 	try {
 		const currentEmployee = await getCurrentEmployee();
-		if (!currentEmployee) {
-			return { success: false, error: "No active employee found" };
+		if (!currentEmployee) return NO_ACTIVE_EMPLOYEE;
+
+		const invalidOption = findAbsenceDurationIssue(request);
+		const range = parsePreviewRange(request);
+		if (invalidOption || !range) {
+			return {
+				success: false,
+				error: invalidOption?.message ?? "Invalid preview date range",
+				code: "invalid_option",
+			};
 		}
 
-		const category = await db.query.absenceCategory.findFirst({
-			where: and(
-				eq(absenceCategory.id, request.categoryId),
-				eq(absenceCategory.organizationId, currentEmployee.organizationId),
-				eq(absenceCategory.isActive, true),
-			),
-		});
-
+		const category = await findActiveCategory(request.categoryId, currentEmployee.organizationId);
 		if (!category) {
-			return { success: false, error: "Absence category not found" };
+			return { success: false, error: CATEGORY_NOT_FOUND, code: "category_unavailable" };
 		}
-
-		if (comparison && !isComparisonEligibleCategory(category)) {
+		if (!isComparisonEligibleCategory(category)) {
 			return {
 				success: false,
 				error: "This absence type cannot be compared",
@@ -104,21 +121,42 @@ async function evaluateAbsencePlanPreview(
 			};
 		}
 
-		const org = await db.query.organization.findFirst({
-			where: eq(organization.id, currentEmployee.organizationId),
-			columns: { timezone: true },
-		});
-		const timezone = resolveOrganizationTimezone(org?.timezone).timezone;
+		return {
+			success: true,
+			data: await evaluateAbsencePlanPreview(request, range, currentEmployee, category),
+		};
+	} catch {
+		return PREVIEW_FAILED;
+	}
+}
 
-		const evaluatedAt = systemClock.nowInstant();
-		const [
-			vacationBalances,
-			holidays,
-			isWorkingDay,
-			existingAbsences,
-			coverageEvidence,
-			managerId,
-		] = await Promise.all([
+/** An active category of the organization; another organization's is never found. */
+function findActiveCategory(categoryId: string, organizationId: string) {
+	return db.query.absenceCategory.findFirst({
+		where: and(
+			eq(absenceCategory.id, categoryId),
+			eq(absenceCategory.organizationId, organizationId),
+			eq(absenceCategory.isActive, true),
+		),
+	});
+}
+
+/** The shared evaluator of both entry points; throws on a failed read outside isolated evidence. */
+async function evaluateAbsencePlanPreview(
+	request: AbsencePlanPreviewRequest,
+	range: PreviewRange,
+	currentEmployee: CurrentEmployee,
+	category: ActiveCategory,
+): Promise<AbsencePlanPreview> {
+	const org = await db.query.organization.findFirst({
+		where: eq(organization.id, currentEmployee.organizationId),
+		columns: { timezone: true },
+	});
+	const timezone = resolveOrganizationTimezone(org?.timezone).timezone;
+
+	const evaluatedAt = systemClock.nowInstant();
+	const [vacationBalances, holidays, isWorkingDay, existingAbsences, coverageEvidence, managerId] =
+		await Promise.all([
 			// Every year the request touches, read at one evaluation time; each year fails alone.
 			category.countsAgainstVacation
 				? loadVacationYearBalances(db, {
@@ -161,51 +199,46 @@ async function evaluateAbsencePlanPreview(
 			}),
 		]);
 
-		const workBalance = category.drawsOnWorkBalance
-			? await loadTimeOffInLieuPreview({
-					organizationId: currentEmployee.organizationId,
-					employeeId: currentEmployee.id,
-					absence: {
-						startDate: request.startDate,
-						startPeriod: request.startPeriod,
-						endDate: request.endDate,
-						endPeriod: request.endPeriod,
-					},
-				}).catch(() => null)
-			: null;
-		const typedExistingAbsences = existingAbsences as unknown as ExistingAbsenceRow[];
+	const workBalance = category.drawsOnWorkBalance
+		? await loadTimeOffInLieuPreview({
+				organizationId: currentEmployee.organizationId,
+				employeeId: currentEmployee.id,
+				absence: {
+					startDate: request.startDate,
+					startPeriod: request.startPeriod,
+					endDate: request.endDate,
+					endPeriod: request.endPeriod,
+				},
+			}).catch(() => null)
+		: null;
+	const typedExistingAbsences = existingAbsences as unknown as ExistingAbsenceRow[];
 
-		const data = buildAbsencePlanPreview({
-			category: {
-				id: category.id,
-				name: category.name,
-				requiresApproval: category.requiresApproval,
-				countsAgainstVacation: category.countsAgainstVacation,
-				drawsOnWorkBalance: category.drawsOnWorkBalance,
-			},
-			request,
-			vacationBalances,
-			evaluatedAt: instantToCanonicalString(evaluatedAt),
-			timezone,
-			holidays,
-			isWorkingDay,
-			existingAbsences: typedExistingAbsences.map((absence) => ({
-				id: absence.id,
-				startDate: absence.startDate,
-				endDate: absence.endDate,
-				status: absence.status,
-				categoryName: absence.category.name,
-			})) satisfies ExistingAbsenceInput[],
-			affectedShifts: coverageEvidence.affectedShifts,
-			coverage: coverageEvidence.coverage,
-			hasManager: Boolean(managerId),
-			workBalance,
-		});
-
-		return { success: true, data };
-	} catch {
-		return { success: false, error: "Unable to build absence plan preview" };
-	}
+	return buildAbsencePlanPreview({
+		category: {
+			id: category.id,
+			name: category.name,
+			requiresApproval: category.requiresApproval,
+			countsAgainstVacation: category.countsAgainstVacation,
+			drawsOnWorkBalance: category.drawsOnWorkBalance,
+		},
+		request,
+		vacationBalances,
+		evaluatedAt: instantToCanonicalString(evaluatedAt),
+		timezone,
+		holidays,
+		isWorkingDay,
+		existingAbsences: typedExistingAbsences.map((absence) => ({
+			id: absence.id,
+			startDate: absence.startDate,
+			endDate: absence.endDate,
+			status: absence.status,
+			categoryName: absence.category.name,
+		})) satisfies ExistingAbsenceInput[],
+		affectedShifts: coverageEvidence.affectedShifts,
+		coverage: coverageEvidence.coverage,
+		hasManager: Boolean(managerId),
+		workBalance,
+	});
 }
 
 function parsePreviewRange(request: AbsencePlanPreviewRequest) {

@@ -43,7 +43,15 @@ const riskyPreview: AbsencePlanPreview = {
 			endDate: "2026-05-14",
 		},
 	],
-	overlaps: [],
+	overlaps: [
+		{
+			id: "absence-1",
+			startDate: "2026-05-14",
+			endDate: "2026-05-15",
+			status: "pending",
+			categoryName: "Vacation",
+		},
+	],
 	affectedShifts: [],
 	coverage: {
 		risks: [
@@ -60,20 +68,16 @@ const riskyPreview: AbsencePlanPreview = {
 		status: "complete",
 		gaps: [],
 	},
-	warnings: ["Request overlaps an existing pending absence."],
-	reasons: [
-		"No manager is assigned, so this request follows the current auto-approval behavior.",
-		"This absence type needs approval.",
-	],
+	notes: ["no_manager_auto_approval"],
 };
 
 const nonVacationPreview: AbsencePlanPreview = {
 	...riskyPreview,
 	countsAgainstVacation: false,
 	balances: [],
+	overlaps: [],
 	coverage: { risks: [], status: "complete", gaps: [] },
-	warnings: [],
-	reasons: ["Policy check passed without using vacation-specific copy."],
+	notes: ["does_not_reduce_vacation", "no_approval_required"],
 };
 
 const affectedShiftPreview: AbsencePlanPreview = {
@@ -90,9 +94,9 @@ const affectedShiftPreview: AbsencePlanPreview = {
 			affectedEndTime: "18:00",
 		},
 	],
+	overlaps: [],
 	coverage: { risks: [], status: "complete", gaps: [] },
-	warnings: [],
-	reasons: ["Request follows the normal approval path."],
+	notes: ["normal_approval_path"],
 };
 
 const affectedShiftWithRiskPreview: AbsencePlanPreview = {
@@ -131,7 +135,10 @@ describe("AbsencePlanPreviewPanel", () => {
 		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
 
 		expect(screen.getByRole("heading", { name: "Smart planner" })).toBeTruthy();
-		expect(screen.getByText("Request overlaps an existing pending absence.")).toBeTruthy();
+		// The employee's own overlap, with its dates and status in the viewer's language.
+		expect(
+			screen.getByText(/^Overlaps your pending absence \(14\s?–\s?15 May 2026\)\.$/),
+		).toBeTruthy();
 		for (const prediction of ["Risky", "Likely", "Needs review"]) {
 			expect(screen.queryByText(prediction)).toBeNull();
 		}
@@ -169,7 +176,7 @@ describe("AbsencePlanPreviewPanel", () => {
 	it("renders compact coverage risk details by day and subarea", () => {
 		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
 
-		expect(screen.getByText("2026-05-15 · Front desk")).toBeTruthy();
+		expect(screen.getByText("15 May 2026 · Front desk")).toBeTruthy();
 		expect(screen.getByText("09:00-17:00 · 1/2 staff after request")).toBeTruthy();
 	});
 
@@ -177,7 +184,7 @@ describe("AbsencePlanPreviewPanel", () => {
 		render(<AbsencePlanPreviewPanel preview={affectedShiftPreview} />);
 
 		expect(screen.getByText("No coverage warnings in the published schedule.")).toBeTruthy();
-		expect(screen.getByText("2026-05-16 · Kitchen")).toBeTruthy();
+		expect(screen.getByText("16 May 2026 · Kitchen")).toBeTruthy();
 		expect(screen.getByText("12:00-18:00 · whole shift affected")).toBeTruthy();
 		expect(screen.queryByText(/kitchen-id/)).toBeNull();
 	});
@@ -185,7 +192,7 @@ describe("AbsencePlanPreviewPanel", () => {
 	it("shows the affected part of an overnight shift", () => {
 		render(<AbsencePlanPreviewPanel preview={partialOvernightShiftPreview} />);
 
-		expect(screen.getByText("2026-05-15 · Unknown subarea")).toBeTruthy();
+		expect(screen.getByText("15 May 2026 · Unknown subarea")).toBeTruthy();
 		expect(screen.getByText("22:00-06:00 (ends next day) · away 00:00-02:00")).toBeTruthy();
 	});
 
@@ -202,7 +209,7 @@ describe("AbsencePlanPreviewPanel", () => {
 			screen.getByText("Coverage rules apply to only part of your affected work."),
 		).toBeTruthy();
 		expect(screen.queryByText("No coverage warnings in the published schedule.")).toBeNull();
-		expect(screen.getByText("2026-05-16 · Kitchen")).toBeTruthy();
+		expect(screen.getByText("16 May 2026 · Kitchen")).toBeTruthy();
 	});
 
 	it("shows unreadable coverage evidence instead of an all-clear", () => {
@@ -229,13 +236,13 @@ describe("AbsencePlanPreviewPanel", () => {
 	it("renders affected published shifts with coverage risk details", () => {
 		render(<AbsencePlanPreviewPanel preview={affectedShiftWithRiskPreview} />);
 
-		expect(screen.getByText("2026-05-15 · Front desk")).toBeTruthy();
+		expect(screen.getByText("15 May 2026 · Front desk")).toBeTruthy();
 		expect(screen.getByText("09:00-17:00 · 1/2 staff after request")).toBeTruthy();
-		expect(screen.getByText("2026-05-16 · Kitchen")).toBeTruthy();
+		expect(screen.getByText("16 May 2026 · Kitchen")).toBeTruthy();
 		expect(screen.getByText("12:00-18:00 · whole shift affected")).toBeTruthy();
 	});
 
-	it("renders all explainable approval reasons", () => {
+	it("explains each structured note in the viewer's language", () => {
 		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
 
 		expect(
@@ -243,7 +250,45 @@ describe("AbsencePlanPreviewPanel", () => {
 				"No manager is assigned, so this request follows the current auto-approval behavior.",
 			),
 		).toBeTruthy();
-		expect(screen.getByText("This absence type needs approval.")).toBeTruthy();
+		render(<AbsencePlanPreviewPanel preview={nonVacationPreview} />);
+		expect(screen.getByText("This absence type does not reduce vacation balance.")).toBeTruthy();
+		expect(screen.getByText("This absence type does not require approval.")).toBeTruthy();
+	});
+
+	it("falls back to a localized line when there are no notes", () => {
+		render(<AbsencePlanPreviewPanel preview={{ ...riskyPreview, notes: [] }} />);
+
+		expect(screen.getByText("Planner checked the available request signals.")).toBeTruthy();
+	});
+
+	it("keeps the approval section neutral when nothing is flagged", () => {
+		const { container } = render(<AbsencePlanPreviewPanel preview={affectedShiftPreview} />);
+
+		const approval = screen.getByRole("region", { name: "Approval" });
+		expect(approval.textContent).toContain("Request follows the normal approval path.");
+		expect(approval.textContent).toContain("No warnings found in the available evidence.");
+		expect(approval.textContent).not.toContain("No approval warnings");
+		expect(container.querySelector(".tabler-icon-check")).toBeNull();
+	});
+
+	it("lists a negative work balance among the approval warnings", () => {
+		render(
+			<AbsencePlanPreviewPanel
+				preview={{
+					...nonVacationPreview,
+					workBalance: {
+						currentBalanceMinutes: 0,
+						drawnMinutes: 60,
+						projectedBalanceMinutes: -60,
+						wouldBeNegative: true,
+					},
+				}}
+			/>,
+		);
+
+		const approval = screen.getByRole("region", { name: "Approval" });
+		expect(approval.textContent).toContain("Work balance would be negative after this request.");
+		expect(approval.textContent).not.toContain("No warnings found in the available evidence.");
 	});
 
 	it("renders non-blocking unavailable copy for an error", () => {

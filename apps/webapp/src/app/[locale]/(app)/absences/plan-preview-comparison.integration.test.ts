@@ -197,7 +197,11 @@ describe("vacation comparison options", () => {
 
 		const result = await getAbsenceComparisonPreview({ categoryId, ...acrossNewYear });
 
-		expect(result).toEqual({ success: false, error: "Absence category not found" });
+		expect(result).toEqual({
+			success: false,
+			error: "Absence category not found",
+			code: "category_unavailable",
+		});
 	});
 
 	it("refuses another organization's vacation category", async () => {
@@ -210,7 +214,11 @@ describe("vacation comparison options", () => {
 		});
 
 		expect(currentEmployee.value?.organizationId).toBe(org.organizationId);
-		expect(result).toEqual({ success: false, error: "Absence category not found" });
+		expect(result).toEqual({
+			success: false,
+			error: "Absence category not found",
+			code: "category_unavailable",
+		});
 	});
 
 	it("shows the requester's own overlaps but nothing about colleagues", async () => {
