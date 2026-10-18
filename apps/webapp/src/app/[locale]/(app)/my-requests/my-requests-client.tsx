@@ -3,7 +3,8 @@
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useLocale } from "next-intl";
-import { useId, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { useInvalidatePeriodSubmissionReadiness } from "@/components/time-tracking/use-period-submission-readiness";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,11 +16,17 @@ import type {
 	SelfServiceRequestSourceType,
 	SelfServiceRequestStatus,
 } from "@/lib/self-service-requests/types";
+import {
+	myRequestFocusTargetId,
+	parseMyRequestsFocus,
+} from "@/lib/time-tracking/period-submissions/blocker-navigation";
 import { Link } from "@/navigation";
 import { cancelMyAbsenceRequest, cancelMyTimeCorrectionRequest } from "./actions";
 
 interface MyRequestsClientProps {
 	initialResult: SelfServiceRequestResult;
+	/** The `request` query parameter: the pending request a period blocker link opens (#1349). */
+	focusRequest?: string;
 }
 
 type StatusFilter = SelfServiceRequestStatus | "all";
@@ -181,28 +188,73 @@ function groupRequestItems(items: SelfServiceRequestItem[], now: Date) {
 	};
 }
 
-export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
+function matchesSearch(item: SelfServiceRequestItem, search: string, locale: string, t: Translate) {
+	const searchableText = [
+		requestTitle(item, t),
+		requestSubtitle(item, locale, t),
+		item.decisionReason ?? "",
+		t(sourceTypeLabelKeys[item.sourceType].key, sourceTypeLabelKeys[item.sourceType].fallback),
+		t(statusLabelKeys[item.status].key, statusLabelKeys[item.status].fallback),
+	]
+		.join(" ")
+		.toLowerCase();
+
+	return searchableText.includes(search.trim().toLowerCase());
+}
+
+/**
+ * The pending request a period blocker link asks to focus (#1349), picked from the requests this
+ * page already loaded for the signed-in employee. The link's identity is never looked up anywhere
+ * else, so a forged, foreign, decided or unloaded identity finds nothing.
+ */
+function findFocusedRequest(items: SelfServiceRequestItem[], focusRequest: string | undefined) {
+	const focus = parseMyRequestsFocus(focusRequest);
+	if (!focus) return { requested: false, item: null } as const;
+	const item =
+		items.find(
+			(candidate) =>
+				candidate.status === "pending" &&
+				candidate.sourceType === focus.sourceType &&
+				candidate.sourceId === focus.sourceId,
+		) ?? null;
+	return { requested: true, item } as const;
+}
+
+export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClientProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 	const [sourceTypeFilter, setSourceTypeFilter] = useState<SourceTypeFilter>("all");
 	const [search, setSearch] = useState("");
+	const focused = findFocusedRequest(initialResult.items, focusRequest);
+	const focusedItem = focused.item;
 
-	const normalizedSearch = search.trim().toLowerCase();
+	// A newly focused request is revealed: any filter hiding it is set to show it.
+	const [revealedFocus, setRevealedFocus] = useState<string | undefined>(undefined);
+	if (focusedItem && revealedFocus !== focusRequest) {
+		setRevealedFocus(focusRequest);
+		if (statusFilter !== "all" && statusFilter !== focusedItem.status) {
+			setStatusFilter(focusedItem.status);
+		}
+		if (sourceTypeFilter !== "all" && sourceTypeFilter !== focusedItem.sourceType) {
+			setSourceTypeFilter(focusedItem.sourceType);
+		}
+		if (!matchesSearch(focusedItem, search, locale, t)) setSearch("");
+	}
+
+	const focusedItemId = focusedItem?.id ?? null;
+	useEffect(() => {
+		if (!focusedItemId || revealedFocus !== focusRequest) return;
+		const target = document.getElementById(myRequestFocusTargetId(focusedItemId));
+		target?.scrollIntoView?.({ block: "center" });
+		target?.focus({ preventScroll: true });
+	}, [focusedItemId, focusRequest, revealedFocus]);
+
 	const filteredItems = initialResult.items.filter((item) => {
 		const matchesStatus = statusFilter === "all" || item.status === statusFilter;
 		const matchesSourceType = sourceTypeFilter === "all" || item.sourceType === sourceTypeFilter;
-		const searchableText = [
-			requestTitle(item, t),
-			requestSubtitle(item, locale, t),
-			item.decisionReason ?? "",
-			t(sourceTypeLabelKeys[item.sourceType].key, sourceTypeLabelKeys[item.sourceType].fallback),
-			t(statusLabelKeys[item.status].key, statusLabelKeys[item.status].fallback),
-		]
-			.join(" ")
-			.toLowerCase();
 
-		return matchesStatus && matchesSourceType && searchableText.includes(normalizedSearch);
+		return matchesStatus && matchesSourceType && matchesSearch(item, search, locale, t);
 	});
 	const groupedItems = groupRequestItems(filteredItems, new Date());
 
@@ -219,6 +271,12 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 					)}
 				</p>
 			</header>
+
+			{focused.requested && !focusedItem ? (
+				<section className="px-4 lg:px-6">
+					<FocusedRequestUnavailable key={focusRequest} />
+				</section>
+			) : null}
 
 			<section
 				aria-label={t("myRequests:myRequests.summary.ariaLabel", "Request summary")}
@@ -380,6 +438,7 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 							"Requests waiting for approval or processing.",
 						)}
 						items={groupedItems.inReview}
+						focusTargets
 					/>
 					<RequestSection
 						title={t("myRequests:myRequests.recentlyDecided.title", "Recently decided")}
@@ -411,6 +470,7 @@ function RequestSection({
 	allowCancel = true,
 	preferFix = false,
 	tone = "default",
+	focusTargets = false,
 }: {
 	title: string;
 	description: string;
@@ -418,6 +478,8 @@ function RequestSection({
 	allowCancel?: boolean;
 	preferFix?: boolean;
 	tone?: "default" | "attention";
+	/** Whether a period blocker link can focus this section's cards (one section only: ids are unique). */
+	focusTargets?: boolean;
 }) {
 	const titleId = useId();
 
@@ -441,6 +503,7 @@ function RequestSection({
 							item={item}
 							allowCancel={allowCancel}
 							preferFix={preferFix}
+							targetId={focusTargets ? myRequestFocusTargetId(item.id) : undefined}
 						/>
 					))}
 				</CardContent>
@@ -453,16 +516,24 @@ function RequestCard({
 	item,
 	allowCancel = true,
 	preferFix = false,
+	targetId,
 }: {
 	item: SelfServiceRequestItem;
 	allowCancel?: boolean;
 	preferFix?: boolean;
+	targetId?: string;
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
+	const titleId = useId();
 
 	return (
-		<article className="rounded-lg border bg-background p-4 shadow-xs">
+		<article
+			id={targetId}
+			aria-labelledby={titleId}
+			tabIndex={targetId ? -1 : undefined}
+			className="rounded-lg border bg-background p-4 shadow-xs outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+		>
 			<div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
 				<div className="min-w-0 space-y-3">
 					<div className="flex flex-wrap items-center gap-2">
@@ -475,7 +546,9 @@ function RequestCard({
 						<StatusBadge status={item.status} />
 					</div>
 					<div className="space-y-1">
-						<h3 className="font-medium text-base leading-tight">{requestTitle(item, t)}</h3>
+						<h3 id={titleId} className="font-medium text-base leading-tight">
+							{requestTitle(item, t)}
+						</h3>
 						<p className="break-words text-muted-foreground text-sm">
 							{requestSubtitle(item, locale, t)}
 						</p>
@@ -637,6 +710,36 @@ function RequestAction({
 					{cancelError}
 				</p>
 			) : null}
+		</div>
+	);
+}
+
+/**
+ * Shown when a period blocker link's request is not pending among the loaded requests: decided,
+ * cancelled, older than what is loaded, or not the employee's at all. It says nothing about which,
+ * and re-checks period readiness so the blocker does not stay misleadingly actionable.
+ */
+function FocusedRequestUnavailable() {
+	const { t } = useTranslate();
+	const invalidateReadiness = useInvalidatePeriodSubmissionReadiness();
+	const noticeRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		noticeRef.current?.focus();
+		void invalidateReadiness();
+	}, [invalidateReadiness]);
+
+	return (
+		<div
+			ref={noticeRef}
+			role="status"
+			tabIndex={-1}
+			className="rounded-lg border border-dashed p-4 text-sm outline-none focus:ring-2 focus:ring-ring"
+		>
+			{t(
+				"myRequests:myRequests.focus.unavailable",
+				"This request is no longer pending, or it can't be shown here. Period readiness is being checked again.",
+			)}
 		</div>
 	);
 }
