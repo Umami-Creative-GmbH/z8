@@ -77,7 +77,9 @@ export type DocumentRequestRefusal =
 	/** The renewed document is not a document of the same employee and category. */
 	| "renewed_document_mismatch"
 	/** Another open or submitted request already names the renewed document. */
-	| "renewal_already_requested";
+	| "renewal_already_requested"
+	/** A submission needs at least one document uploaded from the request since the last one. */
+	| "no_documents";
 
 /** One entry of a request's history. */
 export interface DocumentRequestEventView {
@@ -143,4 +145,9 @@ export interface DocumentRequestView {
 	history: DocumentRequestEventView[];
 	/** Oldest first. */
 	submissions: DocumentRequestSubmissionView[];
+	/**
+	 * Documents uploaded from the request and not handed in yet (#1402): the
+	 * next submission. They are in the file already (ADR 0003). Oldest first.
+	 */
+	pendingDocuments: DocumentRequestDocumentView[];
 }

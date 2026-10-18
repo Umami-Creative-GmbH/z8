@@ -17,6 +17,7 @@ import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { queryKeys } from "@/lib/query/keys";
 import { CancelDocumentRequestDialog } from "./cancel-document-request-dialog";
 import { CreateDocumentRequestDialog } from "./create-document-request-dialog";
+import { DocumentRequestDecisionActions } from "./document-request-decision";
 import { DocumentRequestList } from "./document-request-list";
 
 /**
@@ -102,18 +103,25 @@ function DocumentRequestsCard({
 						timezone={capability.timezone}
 						actions={(request) =>
 							isActiveDocumentRequestStatus(request.status) ? (
-								<Button
-									type="button"
-									variant="ghost"
-									size="sm"
-									onClick={() => setCancelling(request)}
-									aria-label={t("settings.personnelFiles.requests.cancel.open", "Cancel {title}", {
-										title: request.title,
-									})}
-								>
-									<IconX aria-hidden="true" className="size-4" />
-									{t("settings.personnelFiles.requests.cancel.button", "Cancel")}
-								</Button>
+								<>
+									<DocumentRequestDecisionActions request={request} onDecided={refresh} />
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() => setCancelling(request)}
+										aria-label={t(
+											"settings.personnelFiles.requests.cancel.open",
+											"Cancel {title}",
+											{
+												title: request.title,
+											},
+										)}
+									>
+										<IconX aria-hidden="true" className="size-4" />
+										{t("settings.personnelFiles.requests.cancel.button", "Cancel")}
+									</Button>
+								</>
 							) : null
 						}
 					/>

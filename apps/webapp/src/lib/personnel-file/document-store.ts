@@ -19,6 +19,10 @@ import { canDeleteOwnSickNote, canManageDocument, type PersonnelFileAccess } fro
 import { loadEmployeeRef, visibleDocumentsCondition } from "./access-store";
 import { writeDocumentAudit } from "./audit";
 import type { DocumentCategory, DocumentVisibility, PayPeriod } from "./document.types";
+import {
+	linkDocumentRequestUpload,
+	lockDocumentRequestForUpload,
+} from "./document-request-uploads";
 import { type DocumentMetadata, validateDocumentMetadata } from "./document-rules";
 import {
 	lockSickNoteAbsence,
@@ -201,7 +205,9 @@ export type FinalizePersonnelDocumentResult =
 	  }
 	| { kind: "not_pending" }
 	/** The absence can no longer take the sick note (cancelled, rejected, setting off). */
-	| { kind: "absence_unavailable" };
+	| { kind: "absence_unavailable" }
+	/** Not the uploader's own open request of the document's category (any more, #1402). */
+	| { kind: "request_unavailable" };
 
 /**
  * Records a stored object as an employee document and releases its staging
@@ -230,11 +236,21 @@ export async function finalizePersonnelDocumentUpload(
 			access: PersonnelFileAccess;
 			authority: SickNoteAttachAuthority;
 		};
+		/** The employee uploads it from their own open document request (#1402). */
+		documentRequest?: { requestId: string; access: PersonnelFileAccess };
 	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<FinalizePersonnelDocumentResult> {
 	const at = dateFromInstant(now);
 	return database.transaction(async (tx) => {
+		const documentRequest = input.documentRequest
+			? await lockDocumentRequestForUpload(tx, input.documentRequest.access, {
+					requestId: input.documentRequest.requestId,
+					employeeId: input.employeeId,
+					category: input.metadata.category,
+				})
+			: null;
+		if (input.documentRequest && !documentRequest) return { kind: "request_unavailable" };
 		let absence: SickNoteAbsence | null = null;
 		if (input.sickNote) {
 			absence = await lockSickNoteAbsence(tx, input.sickNote.access, {
@@ -289,8 +305,17 @@ export async function finalizePersonnelDocumentUpload(
 				sizeBytes: row.sizeBytes,
 				...(input.source ? { source: input.source } : {}),
 				...(absence ? { absenceId: absence.id } : {}),
+				...(documentRequest ? { documentRequestId: documentRequest.id } : {}),
 			},
 		});
+		if (documentRequest) {
+			await linkDocumentRequestUpload(tx, {
+				organizationId: input.organizationId,
+				requestId: documentRequest.id,
+				documentId: row.id,
+				at,
+			});
+		}
 		if (absence) {
 			await markAbsenceWithCertificate(tx, {
 				organizationId: input.organizationId,

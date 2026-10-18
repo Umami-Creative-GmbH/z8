@@ -80,6 +80,10 @@ export function useDocumentRequestErrorMessage() {
 			"settings.personnelFiles.requests.error.renewalAlreadyRequested",
 			"This document already has an open request for its renewal.",
 		),
+		no_documents: t(
+			"settings.personnelFiles.requests.error.noDocuments",
+			"Upload at least one document before you submit.",
+		),
 		conflict: t(
 			"settings.personnelFiles.requests.error.conflict",
 			"Someone else changed this request in the meantime. Reload it and try again.",
