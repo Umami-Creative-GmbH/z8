@@ -1947,6 +1947,13 @@
       "when": 1808668800000,
       "tag": "0277_rehire_terms_calendar_date",
       "breakpoints": true
+    },
+    {
+      "idx": 278,
+      "version": "7",
+      "when": 1808755200000,
+      "tag": "0278_drop_employee_rate_history",
+      "breakpoints": true
     }
   ]
 }
