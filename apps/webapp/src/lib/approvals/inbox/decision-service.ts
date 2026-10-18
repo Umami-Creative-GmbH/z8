@@ -34,9 +34,11 @@ import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal"
 import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
 import type { CanonicalInboxRead } from "./canonical-inbox-read";
 import { CANONICAL_INBOX_READS } from "./canonical-inbox-reads";
+import { createFastLaneDecisionGuard } from "./fast-lane-decision-guard";
 import {
 	type ApprovalFastLaneReview,
 	type FastLaneDecisionItem,
+	fastLaneDecisionItemOf,
 	matchesFastLaneReview,
 } from "./fast-lane-review";
 import {
@@ -166,6 +168,7 @@ function canonicalDeciderOf(
 
 /** Decides a registered canonical kind's assignment through its own read. */
 async function decideCanonicalInboxItem({
+	shortcutGuard,
 	request,
 	read,
 	actorEmployeeId,
@@ -175,6 +178,7 @@ async function decideCanonicalInboxItem({
 }: {
 	request: PersistedApprovalRequestForDecision;
 	read: CanonicalDecider;
+	shortcutGuard?: ApprovalActionOptions["shortcutGuard"];
 	actorEmployeeId: string;
 	action: InboxDecisionAction;
 	reason?: string;
@@ -190,6 +194,7 @@ async function decideCanonicalInboxItem({
 		reason,
 	});
 	await read.decide({
+		...(shortcutGuard ? { shortcutGuard } : {}),
 		target: {
 			...request,
 			targetType: "canonical_assignment",
@@ -209,6 +214,7 @@ async function decideCanonicalInboxItem({
 }
 
 export async function decideApprovalInboxItemFromRequest({
+	shortcutGuard,
 	request,
 	actorEmployeeId,
 	action,
@@ -223,6 +229,7 @@ export async function decideApprovalInboxItemFromRequest({
 	action: InboxDecisionAction;
 	reason?: string;
 	handler: ApprovalTypeHandler;
+	shortcutGuard?: ApprovalActionOptions["shortcutGuard"];
 	allowOrganizationWideApprover?: boolean;
 	/** Expense reports (#604): missing-receipt exceptions the approver accepts. */
 	acceptedReceiptExceptionItemIds?: readonly string[];
@@ -238,13 +245,17 @@ export async function decideApprovalInboxItemFromRequest({
 		action,
 		reason,
 	});
-	const actionOptions: ApprovalActionOptions =
+	const identityOptions: ApprovalActionOptions =
 		actorEmployeeId === request.approverId
 			? { approvalRequestId: request.id }
 			: allowOrganizationWideApprover
 				? { approvalRequestId: request.id, allowOrganizationWideApprover: true }
 				: { approvalRequestId: request.id, allowAnyApprover: true };
 
+	const actionOptions = {
+		...identityOptions,
+		...(shortcutGuard ? { shortcutGuard } : {}),
+	};
 	const effect =
 		action === "approve"
 			? handler.approve(
@@ -362,6 +373,18 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 					};
 				}
 			}
+			const shortcutGuard =
+				fastLane &&
+				["absence", "absence_change", "time_correction"].includes(
+					request.workflowKind ?? "",
+				)
+					? createFastLaneDecisionGuard({
+							request,
+							actorEmployeeId,
+							action,
+							review: fastLane,
+						})
+					: undefined;
 			const canonicalDecider = canonicalDeciderOf(request);
 			if (canonicalDecider) {
 				try {
@@ -370,6 +393,7 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 						success: await decideCanonicalInboxItem({
 							request,
 							read: canonicalDecider,
+							shortcutGuard,
 							actorEmployeeId,
 							action,
 							reason,
@@ -421,6 +445,7 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 						action,
 						reason,
 						handler,
+						shortcutGuard,
 						allowOrganizationWideApprover: includeAllApprovers === true,
 						runEffect,
 					}),
@@ -636,7 +661,7 @@ async function loadCurrentFastLaneDecisionItem({
 			approverName: "",
 		})),
 	});
-	return detail.item;
+	return fastLaneDecisionItemOf(detail);
 }
 
 function withMissingApprovalFailures(
@@ -935,7 +960,8 @@ async function toPersistedDecisionRequest(
 	},
 	database: typeof db,
 ): Promise<PersistedApprovalRequestForDecision> {
-	let workflowKind: TimeApprovalKind | null = null;
+	let workflowKind: PersistedApprovalRequestForDecision["workflowKind"] =
+		request.entityType === "absence_entry" ? "absence" : null;
 	if (request.entityType === "time_entry") {
 		const period = await database.query.workPeriod.findFirst({
 			where: and(

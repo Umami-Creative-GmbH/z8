@@ -1,3 +1,4 @@
+import type { ApprovalFastLaneReview } from "@/lib/approvals/inbox/fast-lane-review";
 /* @vitest-environment jsdom */
 
 import {
@@ -116,15 +117,34 @@ vi.mock("./components/approval-fast-lanes", () => ({
 		groups,
 		onBulkApprove,
 	}: {
-		groups: Array<{ key: string; items: ApprovalInboxItem[] }>;
-		onBulkApprove: (approvalIds: string[]) => void;
+		groups: Array<{
+			key: ApprovalInboxFastLaneGroup;
+			items: ApprovalInboxItem[];
+		}>;
+		onBulkApprove: (
+			approvalIds: string[],
+			review: ApprovalFastLaneReview,
+		) => void;
 	}) => (
 		<div>
 			{groups.map((group) => (
 				<button
 					key={group.key}
 					type="button"
-					onClick={() => onBulkApprove(group.items.map((item) => item.id))}
+					onClick={() =>
+						onBulkApprove(
+							group.items.map((item) => item.id),
+							{
+								group: group.key,
+								reviewedContexts: Object.fromEntries(
+									group.items.map((item) => [
+										item.id,
+										item.triage.context ?? null,
+									]),
+								),
+							},
+						)
+					}
 				>
 					Approve Low-risk absences
 				</button>
@@ -238,6 +258,14 @@ function makeApprovalInboxItem(
 			ageDays: 1,
 		},
 		triage: {
+			requestKind: "absence",
+			context: {
+				organizationId: "org-1",
+				requestId: "approval-1",
+				entityId: "absence-1",
+				revision: "revision-1",
+				scope: "submitted_request",
+			},
 			priority: "normal",
 			riskLevel: "low",
 			riskReasons: ["no_conflicts_detected"],
@@ -797,7 +825,21 @@ describe("ApprovalInboxPage", () => {
 		);
 
 		await waitFor(() => {
-			expect(bulkApproveMutateAsyncMock).toHaveBeenCalledWith(["approval-1"]);
+			expect(bulkApproveMutateAsyncMock).toHaveBeenCalledWith({
+				approvalIds: ["approval-1"],
+				fastLane: {
+					group: "low_risk_absence",
+					reviewedContexts: {
+						"approval-1": {
+							organizationId: "org-1",
+							requestId: "approval-1",
+							entityId: "absence-1",
+							revision: "revision-1",
+							scope: "submitted_request",
+						},
+					},
+				},
+			});
 			expect(
 				screen.queryByRole("button", { name: /Approve Selected/ }),
 			).toBeNull();

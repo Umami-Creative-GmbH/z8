@@ -94,6 +94,7 @@ export type CanonicalInboxApprovalBatch = CanonicalInboxApproval[] & {
 
 /** One inbox decision on a listed assignment, after the inbox's own checks. */
 export interface CanonicalInboxDecisionInput {
+	shortcutGuard?: import("../domain/types").ApprovalActionOptions["shortcutGuard"];
 	target: CanonicalInboxDecisionTarget;
 	actorEmployeeId: string;
 	action: "approve" | "reject";

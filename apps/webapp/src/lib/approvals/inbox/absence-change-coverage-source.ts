@@ -1,30 +1,22 @@
 import { createHash } from "node:crypto";
-import { and, eq, gte, inArray, lt, lte } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
-	absenceCategory,
 	absenceChangeRequest,
 	absenceEntry,
 	approvalStageAssignment,
 	approvalWorkflow,
 	approvalWorkflowStage,
 	auditLog,
-	coverageRule,
 	employee,
-	location,
-	locationSubarea,
-	shift,
 	timeRecord,
 } from "@/db/schema";
 import { originalAbsence } from "@/lib/absences/change-request-records";
-import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
-import {
-	shiftCalendarDate,
-	shiftDateRangeBounds,
-} from "@/lib/scheduling/shift-date";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { readApprovalAuthoritySnapshot } from "../authority";
 import { canonicalJson } from "../evidence/absence-facts";
 import type { ApprovalDatabase } from "../server/types";
 import type { AbsenceChangeCoverageSnapshot } from "./absence-change-coverage-evidence";
+import { readOrganizationStaffingEvidence } from "./staffing-evidence-source";
 import type { ApprovalInboxTriageTarget } from "./triage-evidence";
 /** Re-reads canonical identity, captured submission and the effective absence within one organization. */
 export async function readAbsenceChangeCoverageSnapshot(
@@ -214,112 +206,15 @@ export async function readAbsenceChangeCoverageSnapshot(
 		.sort()
 		.at(-1);
 	if (!startDate || !endDate) return snapshot;
-	const timezone = snapshot.timezone;
-	const bounds = shiftDateRangeBounds(
-		parsePlainDate(startDate).subtract({ days: 1 }),
-		parsePlainDate(endDate).add({ days: 1 }),
-		timezone,
-	);
-	const ownShifts = await database.query.shift.findMany({
-		where: and(
-			eq(shift.organizationId, organizationId),
-			eq(shift.employeeId, row.employeeId),
-			eq(shift.status, "published"),
-			gte(shift.date, bounds.start),
-			lt(shift.date, bounds.endExclusive),
-		),
-	});
-	const subareas = [...new Set(ownShifts.map((own) => own.subareaId))];
-	if (!subareas.length) return snapshot;
-	const allowedAreas = await database
-		.select({ id: locationSubarea.id })
-		.from(locationSubarea)
-		.innerJoin(
-			location,
-			and(
-				eq(location.id, locationSubarea.locationId),
-				eq(location.organizationId, organizationId),
-			),
-		)
-		.where(inArray(locationSubarea.id, subareas));
-	if (allowedAreas.length !== subareas.length) return snapshot;
-	const [rules, published] = await Promise.all([
-		database.query.coverageRule.findMany({
-			with: { subarea: true },
-			where: and(
-				eq(coverageRule.organizationId, organizationId),
-				inArray(coverageRule.subareaId, subareas),
-			),
+	Object.assign(
+		snapshot,
+		await readOrganizationStaffingEvidence(database, {
+			organizationId,
+			employeeId: row.employeeId,
+			startDate,
+			endDate,
+			timezone: snapshot.timezone,
 		}),
-		database
-			.select({
-				id: shift.id,
-				organizationId: shift.organizationId,
-				employeeId: shift.employeeId,
-				subareaId: shift.subareaId,
-				date: shift.date,
-				startTime: shift.startTime,
-				endTime: shift.endTime,
-			})
-			.from(shift)
-			.innerJoin(
-				employee,
-				and(
-					eq(employee.id, shift.employeeId),
-					eq(employee.organizationId, organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(shift.organizationId, organizationId),
-					eq(shift.status, "published"),
-					inArray(shift.subareaId, subareas),
-					gte(shift.date, bounds.start),
-					lt(shift.date, bounds.endExclusive),
-				),
-			),
-	]);
-	snapshot.shifts = published.map((own) => ({
-		...own,
-		date: shiftCalendarDate(own.date, timezone).toString(),
-	}));
-	snapshot.rules = rules.map((rule) => ({
-		...rule,
-		subareaName: rule.subarea.name,
-	}));
-	const employeeIds = [
-		...new Set(
-			published.flatMap((own) => (own.employeeId ? [own.employeeId] : [])),
-		),
-	];
-	if (employeeIds.length)
-		snapshot.absences = await database
-			.select({
-				id: absenceEntry.id,
-				organizationId: absenceCategory.organizationId,
-				employeeId: absenceEntry.employeeId,
-				status: absenceEntry.status,
-				startDate: absenceEntry.startDate,
-				endDate: absenceEntry.endDate,
-				startPeriod: absenceEntry.startPeriod,
-				endPeriod: absenceEntry.endPeriod,
-				requiresWorkTime: absenceCategory.requiresWorkTime,
-			})
-			.from(absenceEntry)
-			.innerJoin(
-				absenceCategory,
-				and(
-					eq(absenceCategory.id, absenceEntry.categoryId),
-					eq(absenceCategory.organizationId, organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(absenceEntry.organizationId, organizationId),
-					inArray(absenceEntry.employeeId, employeeIds),
-					lte(absenceEntry.startDate, endDate),
-					gte(absenceEntry.endDate, startDate),
-				),
-			);
+	);
 	return snapshot;
 }

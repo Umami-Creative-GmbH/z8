@@ -724,4 +724,3 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		).rejects.toThrow("Approval detail mismatch");
 	});
 });
-

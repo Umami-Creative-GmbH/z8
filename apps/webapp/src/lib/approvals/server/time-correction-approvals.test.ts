@@ -1383,6 +1383,7 @@ describe("time correction transaction boundaries", () => {
 				approvalRequestId: string,
 				action: "approve" | "reject" = "approve",
 				reason?: string,
+				shortcutGuard?: (database: unknown) => Promise<void>,
 			) {
 				decisionReads = true;
 				decisionApprovalRequestId = approvalRequestId;
@@ -1397,6 +1398,7 @@ describe("time correction transaction boundaries", () => {
 						actorEmployeeId: ids.manager,
 						actorUserId: "user-manager",
 						approvalRequestId,
+						shortcutGuard,
 						action,
 						reason,
 						processLegacy: async () => {
@@ -1497,6 +1499,25 @@ describe("time correction transaction boundaries", () => {
 		};
 	}
 
+	it("executes the shortcut guard inside the coordinated correction transaction before changing work", async () => {
+		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
+		await fixture.execute();
+		const snapshot = requiredValue([...fixture.snapshots.values()][0]);
+		const assignment = requiredValue(
+			requiredValue(snapshot.stages[0]).assignments[0],
+		);
+		const before = fixture.durableSnapshot();
+		const refusal = new Error("Shortcut became stale");
+		const guard = vi.fn(async (database: unknown) => {
+			expect(database).toHaveProperty("query.workPeriod");
+			throw refusal;
+		});
+		await expect(
+			fixture.decide(assignment.id, "approve", undefined, guard),
+		).rejects.toBe(refusal);
+		expect(guard).toHaveBeenCalledOnce();
+		expect(fixture.durableSnapshot()).toEqual(before);
+	});
 	it("locks the requester then exact work period before submission lifecycle reads", async () => {
 		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
 

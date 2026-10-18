@@ -272,4 +272,3 @@ export interface ApprovalInboxBulkDecisionResult {
 	succeeded: ApprovalInboxDecisionSuccess[];
 	failed: ApprovalInboxDecisionFailure[];
 }
-

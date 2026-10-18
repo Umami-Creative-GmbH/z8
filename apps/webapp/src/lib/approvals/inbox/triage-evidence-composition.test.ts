@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
+import { db } from "@/db";
 
 const loaders = vi.hoisted(() => ({
 	absence: vi.fn(),
@@ -67,8 +68,13 @@ beforeEach(() => {
 });
 it("composes correction evidence with payroll evidence bound to its current submitted revision", async () => {
 	const result = await loadCurrentApprovalTriageEvidence(target);
-	expect(loaders.correction).toHaveBeenCalledWith(target);
-	expect(loaders.payroll).toHaveBeenCalledWith({ ...target, context });
+	expect(loaders.correction).toHaveBeenCalledWith(target, {
+		database: undefined,
+	});
+	expect(loaders.payroll).toHaveBeenCalledWith(
+		{ ...target, context },
+		{ database: undefined },
+	);
 	expect(result.evidence.map((item) => item.check)).toEqual([
 		"correction",
 		"payroll",
@@ -107,3 +113,13 @@ it.each(["absence", "absence_change"] as const)(
 		expect(loaders.payroll).toHaveBeenCalledOnce();
 	},
 );
+
+it("uses the committing transaction for both request and revision-bound payroll evidence", async () => {
+	const database = db;
+	await loadCurrentApprovalTriageEvidence(target, database);
+	expect(loaders.correction).toHaveBeenCalledWith(target, { database });
+	expect(loaders.payroll).toHaveBeenCalledWith(
+		{ ...target, context },
+		{ database },
+	);
+});

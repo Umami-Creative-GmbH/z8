@@ -15,4 +15,3 @@ it("keeps manual review available and labels unavailable evidence when an adapte
  expect(result.evidence?.every(item => item.state === "unknown" && item.limitation === "unavailable")).toBe(true);
  expect(result.fastLaneGroup).toBeNull();
 });
-

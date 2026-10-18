@@ -164,6 +164,26 @@ describe("approval inbox decision service", () => {
 		loadOrdinaryCanonicalApprovalsMock.mockReset().mockResolvedValue([]);
 	});
 
+	it("classifies a compatibility absence for the transaction-bound shortcut guard", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue({
+			id: "legacy-absence",
+			entityType: "absence_entry",
+			entityId: "absence-1",
+			organizationId: "org-1",
+			approverId: "manager-1",
+			requestedBy: "employee-1",
+			status: "pending",
+		});
+		expect(
+			await loadApprovalInboxDecisionTarget({
+				approvalId: "legacy-absence",
+				organizationId: "org-1",
+			}),
+		).toMatchObject({
+			workflowKind: "absence",
+			targetType: "compatibility_request",
+		});
+	});
 	it("fails closed for unexpected statuses even with an ordinary kind", () => {
 		expect(
 			canAttemptApprovalInboxDecisionTarget({

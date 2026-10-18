@@ -3,6 +3,7 @@ import type { db as appDb } from "@/db";
 import { approvalSetting } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { withAuditTrail } from "@/lib/audit-trail";
+import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import {
 	type ApprovalTriagePolicy,
 	DEFAULT_APPROVAL_TRIAGE_POLICY,
@@ -34,6 +35,10 @@ export async function saveApprovalTriageSettings(
 ): Promise<ApprovalTriagePolicy> {
 	return withAuditTrail((audit) =>
 		database.transaction(async (tx) => {
+			await acquireExclusiveOrganizationConfigurationGuard(
+				tx,
+				input.organizationId,
+			);
 			await tx
 				.insert(approvalSetting)
 				.values({ organizationId: input.organizationId })

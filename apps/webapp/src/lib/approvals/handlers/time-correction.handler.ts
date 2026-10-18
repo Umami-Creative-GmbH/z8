@@ -1283,4 +1283,3 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 			return displayMetadataForKind(entity, "time_correction");
 		},
 	};
-

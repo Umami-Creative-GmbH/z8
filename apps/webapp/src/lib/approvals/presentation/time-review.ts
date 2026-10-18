@@ -4,6 +4,8 @@ import {
 	approvalChainStageInstance,
 	approvalSubmittedRevision,
 	approvalWorkflowStage,
+	approvalStageAssignment,
+	approvalWorkflow,
 } from "@/db/schema";
 import { instantToCanonicalString, parseInstant } from "@/lib/datetime/temporal-core";
 import { formatUtcOffset, offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
@@ -517,7 +519,7 @@ function correctionResultRows(terminal: Record<string, unknown>): Row[] {
  */
 async function findTimeRevisionLifecycle(
 	database: ApprovalDatabase,
-	input: { organizationId: string; approvalRequestId: string; workPeriodId: string },
+	input: { organizationId: string; approvalRequestId: string; workPeriodId: string; canonicalAssignmentId?: string },
 ): Promise<
 	| { authority: "canonical"; workflowId: string; kind: TimeApprovalWorkflowType }
 	| {
@@ -527,6 +529,49 @@ async function findTimeRevisionLifecycle(
 	  }
 	| null
 > {
+	if (input.canonicalAssignmentId) {
+		const assignments = await database
+			.select({
+				workflowId: approvalWorkflow.id,
+				kind: approvalWorkflow.workflowType,
+			})
+			.from(approvalStageAssignment)
+			.innerJoin(
+				approvalWorkflowStage,
+				and(
+					eq(approvalWorkflowStage.id, approvalStageAssignment.stageId),
+					eq(
+						approvalWorkflowStage.workflowId,
+						approvalStageAssignment.workflowId,
+					),
+					eq(approvalWorkflowStage.organizationId, input.organizationId),
+				),
+			)
+			.innerJoin(
+				approvalWorkflow,
+				and(
+					eq(approvalWorkflow.id, approvalStageAssignment.workflowId),
+					eq(approvalWorkflow.organizationId, input.organizationId),
+					eq(approvalWorkflow.sourceType, "time_entry"),
+					eq(approvalWorkflow.sourceId, input.workPeriodId),
+				),
+			)
+			.where(
+				and(
+					eq(approvalStageAssignment.id, input.canonicalAssignmentId),
+					eq(approvalStageAssignment.organizationId, input.organizationId),
+				),
+			)
+			.limit(2);
+		const assignment = assignments.length === 1 ? assignments[0] : null;
+		return assignment && isTimeApprovalWorkflowType(assignment.kind)
+			? {
+					authority: "canonical",
+					workflowId: assignment.workflowId,
+					kind: assignment.kind,
+				}
+			: null;
+	}
 	const [stages, chainStages] = await Promise.all([
 		database
 			.select({ workflowId: approvalWorkflowStage.workflowId })
@@ -600,6 +645,7 @@ async function findTimeRevisionLifecycle(
  */
 export async function prepareTimeReviewEvidence(
 	input: {
+		canonicalAssignmentId?: string;
 		organizationId: string;
 		approvalRequestId: string;
 		workPeriodId: string;
@@ -643,7 +689,7 @@ export async function prepareTimeReviewEvidence(
 						workflowId: lifecycle.workflowId,
 					})
 				: await loadLegacyTimeCorrectionSubmittedRevision(database, legacyScope);
-		if (!revision) return { status: "not_captured", held: false };
+		if (!revision) return { status: "not_captured", held: input.requestPending && await readApprovalEvidenceMode(database, { organizationId: input.organizationId, workflowType: lifecycle.kind }) === "capture" };
 		const [comparison, decisions, categoryNames, vehicleUseWarnings] = await Promise.all([
 			input.requestPending ? compareTimeCorrectionWithSubmittedRevision(database, revision) : null,
 			decisionsFor(revision.id),
@@ -667,7 +713,7 @@ export async function prepareTimeReviewEvidence(
 					workflowId: lifecycle.workflowId,
 				})
 			: await loadLegacyWorkPeriodSubmittedRevision(database, legacyScope);
-	if (!revision) return { status: "not_captured", held: false };
+	if (!revision) return { status: "not_captured", held: input.requestPending && await readApprovalEvidenceMode(database, { organizationId: input.organizationId, workflowType: lifecycle.kind }) === "capture" };
 	const [comparison, decisions] = await Promise.all([
 		input.requestPending ? compareWorkPeriodWithSubmittedRevision(database, revision) : null,
 		decisionsFor(revision.id),

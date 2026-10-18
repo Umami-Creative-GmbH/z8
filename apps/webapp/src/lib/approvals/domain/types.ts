@@ -295,6 +295,8 @@ export interface ApprovalTimelineEvent {
 }
 
 export interface ApprovalActionOptions {
+	/** Internal trusted-server requirement; supporting owners run it inside their transaction. */
+	shortcutGuard?: (database: import("../server/types").ApprovalDatabase) => Promise<void>;
 	transactional?: boolean;
 	approvalRequestId?: string;
 	allowAnyApprover?: boolean;
@@ -449,4 +451,3 @@ export interface BulkApproveResult {
 		error: string;
 	}>;
 }
-

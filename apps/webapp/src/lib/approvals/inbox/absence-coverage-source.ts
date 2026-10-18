@@ -1,21 +1,13 @@
-import { and, eq, gte, inArray, lt, lte } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
-	absenceCategory,
 	absenceEntry,
 	approvalChainStageInstance,
 	approvalRequest,
 	approvalStageAssignment,
 	approvalWorkflow,
 	approvalWorkflowStage,
-	coverageRule,
 	employee,
-	shift,
 } from "@/db/schema";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
-import {
-	shiftCalendarDate,
-	shiftDateRangeBounds,
-} from "@/lib/scheduling/shift-date";
 import { readApprovalAuthoritySnapshot } from "../authority";
 import {
 	loadCurrentAbsenceSubmittedRevision,
@@ -23,6 +15,7 @@ import {
 } from "../evidence/store";
 import type { ApprovalDatabase } from "../server/types";
 import type { AbsenceCoverageSnapshot } from "./absence-coverage-evidence";
+import { readOrganizationStaffingEvidence } from "./staffing-evidence-source";
 import type { ApprovalInboxTriageTarget } from "./triage-evidence";
 
 /** Reads source identity and staffing afresh; never accepts a previously computed assessment. */
@@ -191,100 +184,15 @@ export async function readAbsenceCoverageSnapshot(
 	)
 		return snapshot;
 	const range = snapshot.revision.facts.coverage;
-	const timezone = snapshot.timezone;
-	const bounds = shiftDateRangeBounds(
-		parsePlainDate(range.startDate).subtract({ days: 1 }),
-		parsePlainDate(range.endDate).add({ days: 1 }),
-		snapshot.timezone,
-	);
-	const ownShifts = await database.query.shift.findMany({
-		where: and(
-			eq(shift.organizationId, organizationId),
-			eq(shift.employeeId, live.employeeId),
-			eq(shift.status, "published"),
-			gte(shift.date, bounds.start),
-			lt(shift.date, bounds.endExclusive),
-		),
-	});
-	const subareas = [...new Set(ownShifts.map((row) => row.subareaId))];
-	if (!subareas.length) return snapshot;
-	const [rules, published] = await Promise.all([
-		database.query.coverageRule.findMany({
-			with: { subarea: true },
-			where: and(
-				eq(coverageRule.organizationId, organizationId),
-				inArray(coverageRule.subareaId, subareas),
-			),
+	Object.assign(
+		snapshot,
+		await readOrganizationStaffingEvidence(database, {
+			organizationId,
+			employeeId: live.employeeId,
+			startDate: range.startDate,
+			endDate: range.endDate,
+			timezone: snapshot.timezone,
 		}),
-		database
-			.select({
-				id: shift.id,
-				organizationId: shift.organizationId,
-				employeeId: shift.employeeId,
-				subareaId: shift.subareaId,
-				date: shift.date,
-				startTime: shift.startTime,
-				endTime: shift.endTime,
-			})
-			.from(shift)
-			.innerJoin(
-				employee,
-				and(
-					eq(employee.id, shift.employeeId),
-					eq(employee.organizationId, organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(shift.organizationId, organizationId),
-					eq(shift.status, "published"),
-					inArray(shift.subareaId, subareas),
-					gte(shift.date, bounds.start),
-					lt(shift.date, bounds.endExclusive),
-				),
-			),
-	]);
-	snapshot.shifts = published.map((row) => ({
-		...row,
-		date: shiftCalendarDate(row.date, timezone).toString(),
-	}));
-	snapshot.rules = rules.map((rule) => ({
-		...rule,
-		subareaName: rule.subarea.name,
-	}));
-	const employeeIds = [
-		...new Set(
-			published.flatMap((row) => (row.employeeId ? [row.employeeId] : [])),
-		),
-	];
-	if (employeeIds.length)
-		snapshot.absences = await database
-			.select({
-				id: absenceEntry.id,
-				organizationId: absenceCategory.organizationId,
-				employeeId: absenceEntry.employeeId,
-				status: absenceEntry.status,
-				startDate: absenceEntry.startDate,
-				endDate: absenceEntry.endDate,
-				startPeriod: absenceEntry.startPeriod,
-				endPeriod: absenceEntry.endPeriod,
-				requiresWorkTime: absenceCategory.requiresWorkTime,
-			})
-			.from(absenceEntry)
-			.innerJoin(
-				absenceCategory,
-				and(
-					eq(absenceCategory.id, absenceEntry.categoryId),
-					eq(absenceCategory.organizationId, organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(absenceEntry.organizationId, organizationId),
-					inArray(absenceEntry.employeeId, employeeIds),
-					lte(absenceEntry.startDate, range.endDate),
-					gte(absenceEntry.endDate, range.startDate),
-				),
-			);
+	);
 	return snapshot;
 }

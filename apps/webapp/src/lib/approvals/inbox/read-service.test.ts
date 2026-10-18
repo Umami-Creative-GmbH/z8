@@ -1015,5 +1015,3 @@ it("does not omit mixed-kind rows sharing an identity suffix at a page boundary"
  expect([first.items[0]?.type, second.items[0]?.type]).toEqual(["absence_entry", "travel_expense_claim"]);
  expect(second.hasMore).toBe(false);
 });
-
-

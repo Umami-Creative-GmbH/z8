@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import {
+	approvalInboxProjection,
 	approvalRequest,
 	approvalStageAssignment,
 	approvalWorkflow,
@@ -318,6 +319,100 @@ it("loads a real pending correction, rejects changed proposal and isolates organ
 		(await loadTimeCorrectionTriageEvidence(target, { database: fixture.db }))
 			.evidence,
 	).toMatchObject([{ state: "unknown" }]);
+	const { prepareTimeReviewEvidence, buildTimeReviewSections } = await import(
+		"../presentation/time-review"
+	);
+	const review = await prepareTimeReviewEvidence(
+		{
+			organizationId,
+			approvalRequestId: assignment.id,
+			canonicalAssignmentId: assignment.id,
+			workPeriodId: period.id,
+			requestPending: true,
+			kind: "time_correction",
+		},
+		fixture.db,
+	);
+	expect(review.status).toBe("evidenced");
+	expect(buildTimeReviewSections(review).decisionsBlocked).toBe(false);
+	await fixture.db
+		.update(approvalWorkflowRollout)
+		.set({ evidenceMode: "capture" })
+		.where(eq(approvalWorkflowRollout.organizationId, organizationId));
+	await fixture.db
+		.insert(approvalInboxProjection)
+		.values({
+			organizationId,
+			workflowId: workflow.id,
+			activeStageId: stage.id,
+			sourceType: "time_entry",
+			sourceId: period.id,
+			status: "pending",
+			displayPayload: {},
+			searchText: "correction",
+		});
+	const { timeCorrectionInboxRead } = await import("./v1-canonical-read");
+	const [actionable] = await timeCorrectionInboxRead.load({
+		organizationId,
+		approverId: fixture.ownerEmployeeId,
+		database: fixture.db,
+	});
+	expect(actionable?.item.capabilities.canApprove).toBe(true);
+	expect(actionable?.detail.actions.canApprove).toBe(true);
+
+	const { createFastLaneDecisionGuard } = await import(
+		"./fast-lane-decision-guard"
+	);
+	const { resolveApprovalInboxTriage } = await import("./triage-evidence");
+	const { saveApprovalTriageSettings } = await import("../triage-settings");
+	const at = new Date("2026-10-22T09:00:00Z");
+	const current = await resolveApprovalInboxTriage({
+		target: {
+			...canonical,
+			context: { ...canonical.context, scope: "submitted_request" },
+		},
+		now: at,
+		policy: { staleAfterHours: 72, smallCorrectionMinutes: 15 },
+		loadEvidence: (t) =>
+			loadTimeCorrectionTriageEvidence(t, { database: fixture.db }),
+	});
+	expect(current.fastLaneGroup).toBe("stale_pending");
+	const guard = createFastLaneDecisionGuard({
+		request: {
+			id: assignment.id,
+			targetType: "canonical_assignment",
+			entityType: "time_entry",
+			entityId: period.id,
+			organizationId,
+			approverId: fixture.ownerEmployeeId,
+			requesterEmployeeId: employeeId,
+			status: "pending",
+			workflowKind: "time_correction",
+		},
+		actorEmployeeId: fixture.ownerEmployeeId,
+		action: "approve",
+		now: at,
+		review: {
+			group: "stale_pending",
+			reviewedContexts: { [assignment.id]: current.context ?? null },
+		},
+	});
+	await saveApprovalTriageSettings(fixture.db, {
+		organizationId,
+		actorUserId: fixture.ownerUserId,
+		staleAfterHours: 720,
+		smallCorrectionMinutes: 15,
+	});
+	await expect(fixture.db.transaction((tx) => guard(tx))).rejects.toMatchObject(
+		{ _tag: "ConflictError" },
+	);
+	await saveApprovalTriageSettings(fixture.db, {
+		organizationId,
+		actorUserId: fixture.ownerUserId,
+		staleAfterHours: 72,
+		smallCorrectionMinutes: 15,
+	});
+
 	await fixture.db
 		.update(workPeriod)
 		.set({ durationMinutes: 479 })
@@ -329,4 +424,26 @@ it("loads a real pending correction, rejects changed proposal and isolates organ
 			})
 		).evidence,
 	).toMatchObject([{ state: "unknown", validity: "stale" }]);
+	const [held] = await timeCorrectionInboxRead.load({
+		organizationId,
+		approverId: fixture.ownerEmployeeId,
+		database: fixture.db,
+	});
+	expect(held?.item.capabilities.canApprove).toBe(false);
+	expect(held?.detail.actions.canApprove).toBe(false);
+	expect(
+		buildTimeReviewSections(
+			await prepareTimeReviewEvidence(
+				{
+					organizationId,
+					approvalRequestId: assignment.id,
+					canonicalAssignmentId: assignment.id,
+					workPeriodId: period.id,
+					requestPending: true,
+					kind: "time_correction",
+				},
+				fixture.db,
+			),
+		).decisionsBlocked,
+	).toBe(true);
 });

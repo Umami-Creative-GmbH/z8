@@ -1,4 +1,5 @@
 import type { ApprovalTriageMetadata } from "../domain/types";
+import type { ApprovalDatabase } from "../server/types";
 import type {
 	ApprovalTriageContext,
 	ApprovalTriageEvidence,
@@ -107,20 +108,21 @@ export async function resolveApprovalInboxTriage(input: {
 /** Request evidence is resolved first so payroll can bind to the same submitted revision. */
 async function loadRequestTriageEvidence(
 	target: ApprovalInboxTriageTarget,
+	database?: ApprovalDatabase,
 ): Promise<ApprovalInboxTriageEvidenceResult> {
 	switch (target.requestKind) {
 		case "absence":
 			return (
 				await import("./absence-coverage-evidence")
-			).loadAbsenceCoverageTriageEvidence(target);
+			).loadAbsenceCoverageTriageEvidence(target, { database });
 		case "absence_change":
 			return (
 				await import("./absence-change-coverage-evidence")
-			).loadAbsenceChangeCoverageTriageEvidence(target);
+			).loadAbsenceChangeCoverageTriageEvidence(target, { database });
 		case "time_correction":
 			return (
 				await import("./time-correction-evidence")
-			).loadTimeCorrectionTriageEvidence(target);
+			).loadTimeCorrectionTriageEvidence(target, { database });
 		default:
 			return { context: target.context, evidence: [] };
 	}
@@ -145,10 +147,11 @@ function unavailableTriageEvidence(
 /** Compose current adapters independently: an unavailable check cannot erase a known finding. */
 export async function loadCurrentApprovalTriageEvidence(
 	target: ApprovalInboxTriageTarget,
+	database?: ApprovalDatabase,
 ): Promise<ApprovalInboxTriageEvidenceResult> {
 	if (target.requestKind === "other")
 		return { context: target.context, evidence: [] };
-	const request = await loadRequestTriageEvidence(target).catch(() =>
+	const request = await loadRequestTriageEvidence(target, database).catch(() =>
 		unavailableTriageEvidence(
 			target,
 			target.requestKind === "time_correction" ? "correction" : "coverage",
@@ -156,7 +159,9 @@ export async function loadCurrentApprovalTriageEvidence(
 	);
 	const payrollTarget = { ...target, context: request.context };
 	const payroll = await import("./payroll-triage-evidence")
-		.then((adapter) => adapter.loadPayrollTriageEvidence(payrollTarget))
+		.then((adapter) =>
+			adapter.loadPayrollTriageEvidence(payrollTarget, { database }),
+		)
 		.catch(() => unavailableTriageEvidence(payrollTarget, "payroll"));
 	return {
 		context: request.context.revision ? request.context : payroll.context,

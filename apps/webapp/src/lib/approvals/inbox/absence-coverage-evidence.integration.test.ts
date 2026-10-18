@@ -152,7 +152,7 @@ it("assesses real legacy submitted coverage, subtracts other approved absence an
 			requestId: required(request).id,
 			entityId: required(absence).id,
 			revision: null,
-			scope: "inbox",
+			scope: "submitted_request",
 		},
 		requestKind: "absence",
 		type: "absence_entry",
@@ -165,6 +165,57 @@ it("assesses real legacy submitted coverage, subtracts other approved absence an
 		(await loadAbsenceCoverageTriageEvidence(target, { database: fixture.db }))
 			.evidence,
 	).toMatchObject([{ state: "clear", validity: "current" }]);
+	const { resolveApprovalInboxTriage } = await import("./triage-evidence");
+	const { createFastLaneDecisionGuard } = await import(
+		"./fast-lane-decision-guard"
+	);
+	const { saveApprovalTriageSettings } = await import("../triage-settings");
+	const at = new Date("2026-10-22T09:00:00Z");
+	const reviewed = await resolveApprovalInboxTriage({
+		target,
+		now: at,
+		policy: { staleAfterHours: 72, smallCorrectionMinutes: 15 },
+		loadEvidence: (t) =>
+			loadAbsenceCoverageTriageEvidence(t, { database: fixture.db }),
+	});
+	expect(reviewed.fastLaneGroup).toBe("stale_pending");
+	const guard = createFastLaneDecisionGuard({
+		request: {
+			id: target.context.requestId,
+			targetType: "compatibility_request",
+			entityType: "absence_entry",
+			entityId: target.context.entityId,
+			organizationId: org,
+			approverId: fixture.ownerEmployeeId,
+			requesterEmployeeId: fixture.employeeId,
+			status: "pending",
+			workflowKind: "absence",
+		},
+		actorEmployeeId: fixture.ownerEmployeeId,
+		action: "approve",
+		now: at,
+		review: {
+			group: "stale_pending",
+			reviewedContexts: {
+				[target.context.requestId]: reviewed.context ?? null,
+			},
+		},
+	});
+	await saveApprovalTriageSettings(fixture.db, {
+		organizationId: org,
+		actorUserId: fixture.ownerUserId,
+		staleAfterHours: 720,
+		smallCorrectionMinutes: 15,
+	});
+	await expect(fixture.db.transaction((tx) => guard(tx))).rejects.toMatchObject(
+		{ _tag: "ConflictError" },
+	);
+	await saveApprovalTriageSettings(fixture.db, {
+		organizationId: org,
+		actorUserId: fixture.ownerUserId,
+		staleAfterHours: 72,
+		smallCorrectionMinutes: 15,
+	});
 	await fixture.db.insert(absenceEntry).values({
 		organizationId: org,
 		employeeId: peer.employeeId,
@@ -185,6 +236,29 @@ it("assesses real legacy submitted coverage, subtracts other approved absence an
 	]);
 	const foreign = await fixture.createOrganization();
 	const outsider = await fixture.seedEmployee({ organizationId: foreign });
+	const [foreignSite] = await fixture.db
+		.insert(location)
+		.values({
+			organizationId: foreign,
+			name: "Private foreign workplace",
+			createdBy: fixture.ownerUserId,
+		})
+		.returning();
+	await fixture.db
+		.update(locationSubarea)
+		.set({ locationId: required(foreignSite).id, name: "Private foreign area" })
+		.where(eq(locationSubarea.id, required(area).id));
+	const foreignAreaResult = await loadAbsenceCoverageTriageEvidence(target, {
+		database: fixture.db,
+	});
+	expect(foreignAreaResult.evidence).toMatchObject([{ state: "unknown" }]);
+	expect(JSON.stringify(foreignAreaResult)).not.toContain(
+		"Private foreign area",
+	);
+	await fixture.db
+		.update(locationSubarea)
+		.set({ locationId: required(site).id, name: "Desk" })
+		.where(eq(locationSubarea.id, required(area).id));
 	await fixture.db
 		.update(shift)
 		.set({ employeeId: outsider.employeeId })

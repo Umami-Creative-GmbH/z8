@@ -1,3 +1,4 @@
+import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { Effect, Exit } from "effect";
@@ -239,6 +240,7 @@ export interface AbsenceInvocationOutcome {
 }
 
 interface ExecuteAbsenceDecisionInput {
+	shortcutGuard?: ApprovalActionOptions["shortcutGuard"];
 	runtime: AbsenceDecisionRuntime;
 	organizationId: string;
 	actorEmployeeId: string;
@@ -421,6 +423,13 @@ export async function executeAbsenceDecisionInTransaction(
 			organizationId: input.organizationId,
 			workflowType: "absence",
 		});
+		if (input.shortcutGuard) {
+			await acquireExclusiveOrganizationConfigurationGuard(
+				transactionDb,
+				input.organizationId,
+			);
+			await input.shortcutGuard(transactionDb);
+		}
 		// The legacy coordinator and the transition engine rebind the
 		// compatibility writer to this gate themselves.
 		const pinnedGate = pinApprovalWriteGate({
@@ -1809,6 +1818,7 @@ function authenticatedAbsenceDecisionEffect(
 					actorUserId: session.user.id,
 					absenceId,
 					approvalRequestId: options?.approvalRequestId,
+					shortcutGuard: options?.shortcutGuard,
 					action,
 					reason,
 					...(options?.reviewedBindingId === undefined

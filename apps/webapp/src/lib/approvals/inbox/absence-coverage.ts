@@ -74,6 +74,7 @@ const WEEKDAYS = [
 export function evaluateAbsenceCoverage(
 	input: AbsenceCoverageInput,
 ): AbsenceCoverageResult {
+	const subjectPresentOn = new Set(input.subjectPresentOn);
 	const result: AbsenceCoverageResult = {
 		complete: true,
 		shortfalls: [],
@@ -152,7 +153,7 @@ export function evaluateAbsenceCoverage(
 				row.organizationId === input.organizationId &&
 				row.employeeId &&
 				(row.employeeId !== input.employeeId ||
-					input.subjectPresentOn?.includes(own.date)) &&
+					subjectPresentOn.has(own.date)) &&
 				row.date === own.date &&
 				row.subareaId === own.subareaId,
 		);

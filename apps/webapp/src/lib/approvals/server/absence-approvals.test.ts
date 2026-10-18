@@ -2633,6 +2633,23 @@ describe("legacy absence decision evidence routing", () => {
 		};
 	}
 
+	it("executes the shortcut guard on the borrowed transaction before a legacy absence mutation", async () => {
+		const harness = legacyDecisionContext("legacy");
+		const refusal = new Error("Shortcut became stale");
+		const guard = vi.fn(async (database: unknown) => {
+			expect(database).toHaveProperty("query.absenceEntry");
+			throw refusal;
+		});
+		await expect(
+			executeAbsenceDecisionInTransaction({
+				...harness.input,
+				shortcutGuard: guard,
+			} as never),
+		).rejects.toBe(refusal);
+		expect(guard).toHaveBeenCalledOnce();
+		expect(harness.input.processLegacy).not.toHaveBeenCalled();
+		expect(harness.committed()).toEqual({ sourceStatus: "pending" });
+	});
 	it("checks the receipt, then fresh evidence, then commits the mutation, observation and evidence", async () => {
 		const harness = legacyDecisionContext("shadow");
 

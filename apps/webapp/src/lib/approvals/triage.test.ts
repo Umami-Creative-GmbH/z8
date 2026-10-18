@@ -150,8 +150,8 @@ describe("approval triage", () => {
 		);
 
 		expect(groups).toHaveLength(0);
-		
-		
+
+
 	});
 
 	it("does not elevate payroll relevance without verified blocker evidence", () => {
@@ -198,4 +198,3 @@ it("orders equal-risk sprint items by priority, oldest submission and stable ide
  const approvals = [item({ id: "new", priority: "urgent", createdAt: new Date("2026-05-21T07:00:00Z") }), item({ id: "z", priority: "normal" }), item({ id: "a", priority: "normal" }), item({ id: "old", priority: "low", createdAt: new Date("2026-05-19T08:00:00Z") })];
  expect(sortSprintApprovals(approvals, { now: new Date("2026-05-21T08:00:00Z") }).map(row => row.id)).toEqual(["new", "a", "z", "old"]);
 });
-

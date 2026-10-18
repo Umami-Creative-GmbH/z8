@@ -92,4 +92,3 @@ it("requires explicit payroll-period context before accepting a clear payroll re
  expect(result.riskReasons).toContain("payroll_unverified");
  expect(result.fastLaneGroup).toBeNull();
 });
-

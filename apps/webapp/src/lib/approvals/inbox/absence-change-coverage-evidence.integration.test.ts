@@ -17,18 +17,24 @@ import { readAbsenceChangeCoverageSnapshot } from "./absence-change-coverage-sou
 import type { ApprovalInboxTriageTarget } from "./triage-evidence";
 import { resolveApprovalInboxTriage } from "./triage-evidence";
 
-vi.mock("@/lib/notifications/notification-service", () => ({
-	createNotification: vi.fn(async () => null),
-}));
+vi.mock("@/lib/notifications/notification-service", async (importOriginal) =>
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+		["createNotification"],
+	),
+);
 vi.mock("@/lib/approvals/delivery/kick", async () =>
 	(await import("@/test/integration-harness")).deliveryKick(),
 );
 vi.mock("@/lib/queue", async (original) =>
 	(await import("@/test/integration-harness")).calendarSyncQueue(original),
 );
-vi.mock("@/lib/absences/deputy-notifier", () => ({
-	notifyAbsenceDeputies: vi.fn(async () => undefined),
-}));
+vi.mock("@/lib/absences/deputy-notifier", async (importOriginal) =>
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+		["notifyAbsenceDeputies"],
+	),
+);
 let fixture: ClosedMonthDatabaseFixture;
 beforeAll(async () => {
 	fixture = await createClosedMonthDatabaseFixture();
@@ -361,4 +367,119 @@ it("never reuses captured facts for another organization, replaced proposal or r
 			})
 		).evidence,
 	).toMatchObject([{ state: "unknown" }]);
+});
+
+it.each(["settings", "evidence"] as const)(
+	"rechecks %s changed after assessment inside the actual decision transaction",
+	async (changed) => {
+		const { org, employee, manager, target, assignmentId, submitted } =
+			await submittedChange();
+		const now = new Date("2026-10-22T09:00:00Z");
+		const initial = await resolveApprovalInboxTriage({
+			target,
+			now,
+			policy: { staleAfterHours: 72, smallCorrectionMinutes: 15 },
+		});
+		expect(initial.fastLaneGroup).toBe("stale_pending");
+		const { createFastLaneDecisionGuard } = await import(
+			"./fast-lane-decision-guard"
+		);
+		const guard = createFastLaneDecisionGuard({
+			request: {
+				id: assignmentId,
+				targetType: "canonical_assignment",
+				entityType: "absence_change_request",
+				entityId: submitted.id,
+				organizationId: org.organizationId,
+				approverId: manager.employeeId,
+				requesterEmployeeId: employee.employeeId,
+				status: "pending",
+				workflowKind: "absence_change",
+			},
+			actorEmployeeId: manager.employeeId,
+			action: "approve",
+			now,
+			review: {
+				group: "stale_pending",
+				reviewedContexts: { [assignmentId]: initial.context ?? null },
+			},
+		});
+		if (changed === "settings") {
+			const { saveApprovalTriageSettings } = await import("../triage-settings");
+			await saveApprovalTriageSettings(fixture.db, {
+				organizationId: org.organizationId,
+				actorUserId: org.ownerUserId,
+				staleAfterHours: 720,
+				smallCorrectionMinutes: 15,
+			});
+		} else {
+			await fixture.pool.query(
+				"update absence_change_request set reason='Changed after review' where id=$1 and organization_id=$2",
+				[submitted.id, org.organizationId],
+			);
+		}
+		await expect(
+			decideAbsenceChange(
+				{
+					organizationId: org.organizationId,
+					actorEmployeeId: manager.employeeId,
+					assignmentId,
+					action: "approve",
+					shortcutGuard: guard,
+				},
+				{ database: fixture.db, clock },
+			),
+		).rejects.toMatchObject({ _tag: "ConflictError" });
+		expect(
+			(
+				await listOwnAbsenceChanges(
+					{ organizationId: org.organizationId, userId: employee.userId },
+					{ database: fixture.db, clock },
+				)
+			)[0]?.status,
+		).toBe("pending");
+	},
+);
+
+it("allows the current stale lane with revision-bound unavailable staffing context", async () => {
+	const { org, employee, manager, target, assignmentId, submitted } =
+		await submittedChange();
+	await fixture.pool.query(
+		"update absence_category set requires_work_time=true where organization_id=$1",
+		[org.organizationId],
+	);
+	const now = new Date("2026-10-22T09:00:00Z");
+	const initial = await resolveApprovalInboxTriage({
+		target,
+		now,
+		policy: { staleAfterHours: 72, smallCorrectionMinutes: 15 },
+	});
+	expect(initial.fastLaneGroup).toBe("stale_pending");
+	expect(initial.riskReasons).toContain("coverage_unverified");
+	const { createFastLaneDecisionGuard } = await import(
+		"./fast-lane-decision-guard"
+	);
+	const guard = createFastLaneDecisionGuard({
+		request: {
+			id: assignmentId,
+			targetType: "canonical_assignment",
+			entityType: "absence_change_request",
+			entityId: submitted.id,
+			organizationId: org.organizationId,
+			approverId: manager.employeeId,
+			requesterEmployeeId: employee.employeeId,
+			status: "pending",
+			workflowKind: "absence_change",
+		},
+		actorEmployeeId: manager.employeeId,
+		action: "approve",
+		now,
+		review: {
+			group: "stale_pending",
+			reviewedContexts: { [assignmentId]: initial.context ?? null },
+		},
+	});
+	await expect(
+		fixture.db.transaction((tx) => guard(tx)),
+	).resolves.toBeUndefined();
 });

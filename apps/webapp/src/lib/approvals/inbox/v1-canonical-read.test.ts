@@ -1,4 +1,24 @@
-import { expect, it } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
+
+const { reviewHeld } = vi.hoisted(() => ({ reviewHeld: { value: false } }));
+vi.mock("../presentation/absence-review", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../presentation/absence-review")>()),
+	prepareAbsenceReviewEvidence: async () => ({
+		status: "not_captured",
+		held: reviewHeld.value,
+	}),
+}));
+vi.mock("../presentation/time-review", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../presentation/time-review")>()),
+	prepareTimeReviewEvidence: async () => ({
+		status: "not_captured",
+		held: reviewHeld.value,
+	}),
+}));
+beforeEach(() => {
+	reviewHeld.value = false;
+});
+
 import { absenceInboxRead, timeCorrectionInboxRead } from "./v1-canonical-read";
 
 const row = {
@@ -133,4 +153,49 @@ it("renders captured partial-day wall clocks without interpreting lossy AM marke
 	expect(JSON.stringify(result[0]?.detail.sections)).not.toContain(
 		'"fallback":"Morning"',
 	);
+});
+
+it.each(["absence", "time_correction"] as const)(
+	"retains an existing capture hold on canonical %s list and detail capabilities",
+	async (kind) => {
+		reviewHeld.value = true;
+		const read =
+			kind === "absence" ? absenceInboxRead : timeCorrectionInboxRead;
+		const current =
+			kind === "absence"
+				? row
+				: { ...row, workflowType: kind, correction: { action: "delete" } };
+		const [approval] = await read.load({
+			organizationId: "org-1",
+			approverId: "manager-1",
+			database: { execute: async () => ({ rows: [current] }) },
+		});
+		expect(approval?.item.capabilities).toMatchObject({
+			canApprove: false,
+			canReject: false,
+			canBulkApprove: false,
+		});
+		expect(approval?.detail.actions).toMatchObject({
+			canApprove: false,
+			canReject: false,
+			canBulkApprove: false,
+		});
+		expect(approval?.detail.sections).toEqual(
+			expect.arrayContaining([expect.objectContaining({ type: "callout" })]),
+		);
+	},
+);
+it("marks the requester's canonical projection as their own request", async () => {
+	const [approval] = await absenceInboxRead.load({
+		organizationId: "org-1",
+		approverId: "employee-1",
+		includeAllApprovers: true,
+		database: { execute: async () => ({ rows: [row] }) },
+	});
+	expect(approval?.item.capabilities).toMatchObject({
+		ownRequest: true,
+		canApprove: false,
+		canReject: false,
+		canBulkApprove: false,
+	});
 });

@@ -3,6 +3,15 @@ import { db } from "@/db";
 import { decodeApprovalDatabaseTimestamptz } from "../approval-database-row";
 import { approvalAuthoritySql } from "../authority";
 import {
+	buildAbsenceReviewSections,
+	prepareAbsenceReviewEvidence,
+} from "../presentation/absence-review";
+import {
+	buildTimeReviewSections,
+	prepareTimeReviewEvidence,
+} from "../presentation/time-review";
+import type { ApprovalDatabase } from "../server/types";
+import {
 	canonicalInboxFilters,
 	canonicalInboxPriority,
 	canonicalInboxTarget,
@@ -237,15 +246,88 @@ function coverageText(value: unknown): ApprovalInboxLocalizedText {
 	};
 }
 
+async function applyCurrentReview(
+	approval: CanonicalInboxApproval,
+	row: Record<string, unknown>,
+	input: CanonicalInboxLoadInput,
+): Promise<CanonicalInboxApproval> {
+	const database = (input.database ?? db) as ApprovalDatabase;
+	let review: {
+		sections: ApprovalInboxDetailSection[];
+		decisionsBlocked: boolean;
+	} | null = null;
+	if (approval.item.type === "absence_entry") {
+		const source = record(row.source);
+		const evidence = await prepareAbsenceReviewEvidence(
+			{
+				organizationId: input.organizationId,
+				entity: source
+					? {
+							id: source.id,
+							organizationId: source.organization_id,
+							employeeId: source.employee_id,
+							categoryId: source.category_id,
+							approvalWorkflowId: source.approval_workflow_id,
+							startDate: source.start_date,
+							endDate: source.end_date,
+							startPeriod: source.start_period,
+							endPeriod: source.end_period,
+							category: { name: row.categoryName },
+						}
+					: null,
+			},
+			database,
+		);
+		if (evidence) review = buildAbsenceReviewSections(evidence);
+	} else {
+		review = buildTimeReviewSections(
+			await prepareTimeReviewEvidence(
+				{
+					organizationId: input.organizationId,
+					approvalRequestId: approval.item.id,
+					canonicalAssignmentId: approval.item.id,
+					workPeriodId: approval.item.entityId,
+					requestPending: true,
+					kind: "time_correction",
+				},
+				database,
+			),
+		);
+	}
+	const ownRequest = input.approverId === approval.item.requester.id;
+	const blocked = ownRequest || review?.decisionsBlocked;
+	const capabilities = {
+		...approval.item.capabilities,
+		...(ownRequest ? { ownRequest: true } : {}),
+		...(blocked
+			? { canApprove: false, canReject: false, canBulkApprove: false }
+			: {}),
+	};
+	return {
+		...approval,
+		item: { ...approval.item, capabilities },
+		detail: {
+			...approval.detail,
+			item: { ...approval.item, capabilities },
+			actions: capabilities,
+			sections: [...approval.detail.sections, ...(review?.sections ?? [])],
+		},
+	};
+}
+
 async function loadAbsenceCanonicalApprovals(input: CanonicalInboxLoadInput) {
 	const now = input.now ?? new Date();
 	const rows = resultRows(
 		await (input.database ?? db).execute(absenceCandidates(input, now)),
 	);
-	const approvals = rows.flatMap((row) => {
-		const approval = absenceApproval(row, input, now);
-		return approval ? [approval] : [];
-	});
+	const approvals = (
+		await Promise.all(
+			rows.map(async (row) => {
+				const approval = absenceApproval(row, input, now);
+				return approval ? applyCurrentReview(approval, row, input) : null;
+			}),
+		)
+	).filter((approval) => approval !== null);
 	return Object.assign(approvals, { totalCount: approvals.length });
 }
 
@@ -538,10 +620,14 @@ async function loadTimeCorrectionCanonicalApprovals(
 	const rows = resultRows(
 		await (input.database ?? db).execute(correctionCandidates(input, now)),
 	);
-	const approvals = rows.flatMap((row) => {
-		const approval = correctionApproval(row, input, now);
-		return approval ? [approval] : [];
-	});
+	const approvals = (
+		await Promise.all(
+			rows.map(async (row) => {
+				const approval = correctionApproval(row, input, now);
+				return approval ? applyCurrentReview(approval, row, input) : null;
+			}),
+		)
+	).filter((approval) => approval !== null);
 	return Object.assign(approvals, { totalCount: approvals.length });
 }
 
