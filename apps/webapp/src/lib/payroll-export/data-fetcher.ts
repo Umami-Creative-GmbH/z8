@@ -2,7 +2,17 @@
  * Data fetcher for payroll export
  * Fetches work periods, absences, and configuration from database
  */
-import { and, asc, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
+import {
+	and,
+	asc,
+	eq,
+	gte,
+	inArray,
+	isNotNull,
+	isNull,
+	lte,
+	or,
+} from "drizzle-orm";
 import { DateTime } from "luxon";
 import {
 	absenceCategory,
@@ -72,7 +82,10 @@ export async function fetchWorkPeriodsForExport(
 	await assertNoOpenDepartureClockRepairs({
 		organizationId,
 		employeeIds: await resolveExportEmployeeIds(organizationId, filters),
-		range: { start: queryEnvelope.start.toJSDate(), endExclusive: queryEnvelope.end.toJSDate() },
+		range: {
+			start: queryEnvelope.start.toJSDate(),
+			endExclusive: queryEnvelope.end.toJSDate(),
+		},
 		findRepairs: (query) => findOpenDepartureClockRepairs(db, query),
 	});
 
@@ -150,7 +163,9 @@ export async function fetchWorkPeriodsForExport(
 	let filteredPeriods = periods;
 	if (filters.teamIds && filters.teamIds.length > 0) {
 		const teamIdSet = new Set(filters.teamIds);
-		filteredPeriods = periods.filter((p) => p.employee?.teamId && teamIdSet.has(p.employee.teamId));
+		filteredPeriods = periods.filter(
+			(p) => p.employee?.teamId && teamIdSet.has(p.employee.teamId),
+		);
 	}
 
 	if (filters.projectIds && filters.projectIds.length > 0) {
@@ -162,7 +177,10 @@ export async function fetchWorkPeriodsForExport(
 		);
 	}
 
-	logger.info({ count: filteredPeriods.length }, "Fetched work periods for payroll export");
+	logger.info(
+		{ count: filteredPeriods.length },
+		"Fetched work periods for payroll export",
+	);
 
 	const credited = creditExportWorkPeriods(organizationId, filteredPeriods, {
 		startDate,
@@ -172,6 +190,10 @@ export async function fetchWorkPeriodsForExport(
 
 	return credited.map(({ record: p, minutes, overlap }) => ({
 		id: p.id,
+		sourceActorId: p.updatedBy ?? null,
+		sourceRevision: p.updatedAt
+			? instantFromDate(p.updatedAt).toString()
+			: null,
 		employeeId: p.employeeId,
 		employeeNumber: p.employee?.employeeNumber || null,
 		email: p.employee?.user?.email || null,
@@ -205,19 +227,23 @@ export async function fetchAbsencesForExport(
 	options: {
 		/** `absences`: read-only absence check for jobs with collected work input (#322). */
 		canonicalReadiness?: "cutover" | "absences";
+		reader?: Pick<typeof db, "query">;
 	} = {},
 ): Promise<AbsenceData[]> {
+	const reader = options.reader ?? db;
 	if (hasEmptyEmployeeScope(filters)) {
 		return [];
 	}
 
 	if (options.canonicalReadiness === "absences") {
-		await assertCanonicalAbsencesReady(organizationId);
+		await assertCanonicalAbsencesReady(organizationId, reader);
 	} else {
 		await assertCanonicalCutoverReady(organizationId);
 	}
 	const { startDate, endDate } = getLogicalDateRange(filters);
-	const logicalStart = DateTime.fromISO(startDate, { zone: "utc" }).startOf("day");
+	const logicalStart = DateTime.fromISO(startDate, { zone: "utc" }).startOf(
+		"day",
+	);
 	const logicalEnd = DateTime.fromISO(endDate, { zone: "utc" }).endOf("day");
 
 	logger.info(
@@ -232,7 +258,7 @@ export async function fetchAbsencesForExport(
 		employeeIds = filters.employeeIds;
 	} else if (filters.teamIds && filters.teamIds.length > 0) {
 		// Get employees in specified teams
-		const teamEmployees = await db.query.employee.findMany({
+		const teamEmployees = await reader.query.employee.findMany({
 			where: and(
 				eq(employee.organizationId, organizationId),
 				inArray(employee.teamId, filters.teamIds),
@@ -242,7 +268,7 @@ export async function fetchAbsencesForExport(
 		employeeIds = teamEmployees.map((e) => e.id);
 	} else {
 		// Get all employees for org
-		const orgEmployees = await db.query.employee.findMany({
+		const orgEmployees = await reader.query.employee.findMany({
 			where: eq(employee.organizationId, organizationId),
 			columns: { id: true },
 		});
@@ -253,14 +279,17 @@ export async function fetchAbsencesForExport(
 		return [];
 	}
 
-	const absences = await db.query.timeRecord.findMany({
+	const absences = await reader.query.timeRecord.findMany({
 		where: and(
 			eq(timeRecord.organizationId, organizationId),
 			eq(timeRecord.recordKind, "absence"),
 			eq(timeRecord.approvalState, "approved"),
 			inArray(timeRecord.employeeId, employeeIds),
 			lte(timeRecord.startAt, logicalEnd.toJSDate()),
-			or(gte(timeRecord.endAt, logicalStart.toJSDate()), isNull(timeRecord.endAt)),
+			or(
+				gte(timeRecord.endAt, logicalStart.toJSDate()),
+				isNull(timeRecord.endAt),
+			),
 		),
 		with: {
 			employee: {
@@ -296,17 +325,27 @@ export async function fetchAbsencesForExport(
 		orderBy: [asc(timeRecord.startAt)],
 	});
 
-	logger.info({ count: absences.length }, "Fetched absences for payroll export");
+	logger.info(
+		{ count: absences.length },
+		"Fetched absences for payroll export",
+	);
 
 	return absences.map((a) => ({
 		id: a.id,
+		sourceActorId: a.updatedBy ?? null,
+		sourceRevision: a.updatedAt
+			? instantFromDate(a.updatedAt).toString()
+			: null,
 		employeeId: a.employeeId,
 		employeeNumber: a.employee?.employeeNumber || null,
 		email: a.employee?.user?.email || null,
 		firstName: a.employee?.user?.firstName || null,
 		lastName: a.employee?.user?.lastName || null,
-		startDate: DateTime.fromJSDate(a.startAt, { zone: "utc" }).toISODate() || "",
-		endDate: DateTime.fromJSDate(a.endAt || a.startAt, { zone: "utc" }).toISODate() || "",
+		startDate:
+			DateTime.fromJSDate(a.startAt, { zone: "utc" }).toISODate() || "",
+		endDate:
+			DateTime.fromJSDate(a.endAt || a.startAt, { zone: "utc" }).toISODate() ||
+			"",
 		absenceCategoryId: a.absence?.absenceCategoryId || "",
 		absenceCategoryName: a.absence?.absenceCategory?.name || null,
 		absenceType: a.absence?.absenceCategory?.type || null,
@@ -324,15 +363,20 @@ export async function fetchAbsencesForExport(
 export async function fetchOvertimePayoutsForExport(
 	organizationId: string,
 	filters: PayrollExportFilters,
+	reader: Pick<typeof db, "select" | "query"> = db,
 ): Promise<OvertimePayoutData[]> {
 	if (hasEmptyEmployeeScope(filters)) {
 		return [];
 	}
 
 	const { startDate, endDate } = getLogicalDateRange(filters);
-	const payouts = await listOvertimePayouts(db, {
+	const payouts = await listOvertimePayouts(reader, {
 		organizationId,
-		employeeIds: await resolveExportEmployeeIds(organizationId, filters),
+		employeeIds: await resolveExportEmployeeIds(
+			organizationId,
+			filters,
+			reader,
+		),
 		fromDate: startDate,
 		throughDate: endDate,
 	});
@@ -340,22 +384,34 @@ export async function fetchOvertimePayoutsForExport(
 		return [];
 	}
 
-	const people = await db.query.employee.findMany({
+	const people = await reader.query.employee.findMany({
 		where: and(
 			eq(employee.organizationId, organizationId),
-			inArray(employee.id, [...new Set(payouts.map((payout) => payout.employeeId))]),
+			inArray(employee.id, [
+				...new Set(payouts.map((payout) => payout.employeeId)),
+			]),
 		),
 		columns: { id: true, employeeNumber: true },
-		with: { user: { columns: { firstName: true, lastName: true, email: true } } },
+		with: {
+			user: { columns: { firstName: true, lastName: true, email: true } },
+		},
 	});
 	const byId = new Map(people.map((person) => [person.id, person]));
 
-	logger.info({ organizationId, count: payouts.length }, "Fetched overtime payouts for payroll export");
+	logger.info(
+		{ organizationId, count: payouts.length },
+		"Fetched overtime payouts for payroll export",
+	);
 
 	return payouts.map((payout) => {
 		const person = byId.get(payout.employeeId);
 		return {
 			id: payout.id,
+			sourceRevision: payout.recordedAt
+				? instantFromDate(payout.recordedAt).toString()
+				: null,
+			sourceReason: payout.reason ?? null,
+			sourceActorId: payout.recordedBy ?? null,
 			employeeId: payout.employeeId,
 			employeeNumber: person?.employeeNumber || null,
 			email: person?.user?.email || null,
@@ -403,8 +459,11 @@ export async function getPayrollExportConfig(
  * Get an organization's wage type mappings. One set serves every export format;
  * each format reads its own code column (`wageTypeCodeFor`).
  */
-export async function getWageTypeMappings(organizationId: string): Promise<WageTypeMapping[]> {
-	const mappings = await db.query.payrollWageTypeMapping.findMany({
+export async function getWageTypeMappings(
+	organizationId: string,
+	reader: Pick<typeof db, "query"> = db,
+): Promise<WageTypeMapping[]> {
+	const mappings = await reader.query.payrollWageTypeMapping.findMany({
 		where: and(
 			eq(payrollWageTypeMapping.organizationId, organizationId),
 			eq(payrollWageTypeMapping.isActive, true),
@@ -453,7 +512,10 @@ export async function getWageTypeMappings(organizationId: string): Promise<WageT
  */
 export async function getWorkCategories(organizationId: string) {
 	return db.query.workCategory.findMany({
-		where: and(eq(workCategory.organizationId, organizationId), eq(workCategory.isActive, true)),
+		where: and(
+			eq(workCategory.organizationId, organizationId),
+			eq(workCategory.isActive, true),
+		),
 		columns: {
 			id: true,
 			name: true,
@@ -494,7 +556,12 @@ export async function getEmployeesForFilter(organizationId: string) {
 		})
 		.from(employee)
 		.innerJoin(user, eq(employee.userId, user.id))
-		.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
+		.where(
+			and(
+				eq(employee.organizationId, organizationId),
+				eq(employee.isActive, true),
+			),
+		)
 		.orderBy(asc(user.lastName), asc(user.firstName));
 }
 
@@ -519,7 +586,10 @@ export async function getTeamsForFilter(organizationId: string) {
 export async function getProjectsForFilter(organizationId: string) {
 	const { project } = await import("@/db");
 	return db.query.project.findMany({
-		where: and(eq(project.organizationId, organizationId), eq(project.isActive, true)),
+		where: and(
+			eq(project.organizationId, organizationId),
+			eq(project.isActive, true),
+		),
 		columns: {
 			id: true,
 			name: true,
@@ -560,7 +630,13 @@ export async function countWorkPeriods(
 
 	const result = await db.query.timeRecord.findMany({
 		where: and(...whereConditions),
-		columns: { id: true, employeeId: true, startAt: true, endAt: true, durationMinutes: true },
+		columns: {
+			id: true,
+			employeeId: true,
+			startAt: true,
+			endAt: true,
+			durationMinutes: true,
+		},
 		with: {
 			employee: {
 				columns: {
@@ -583,7 +659,8 @@ export async function countWorkPeriods(
 	if (filters.teamIds && filters.teamIds.length > 0) {
 		const teamIdSet = new Set(filters.teamIds);
 		filteredRecords = filteredRecords.filter(
-			(record) => record.employee?.teamId && teamIdSet.has(record.employee.teamId),
+			(record) =>
+				record.employee?.teamId && teamIdSet.has(record.employee.teamId),
 		);
 	}
 
@@ -622,7 +699,11 @@ function creditExportWorkPeriods<TRecord extends ExportWorkRecord>(
 	records: TRecord[],
 	range: { startDate: string; endDate: string; organizationTimezone: string },
 ): Array<{ record: TRecord; minutes: number; overlap: InstantRange }> {
-	const credited: Array<{ record: TRecord; minutes: number; overlap: InstantRange }> = [];
+	const credited: Array<{
+		record: TRecord;
+		minutes: number;
+		overlap: InstantRange;
+	}> = [];
 	const blocked: BlockedPayrollWorkRecord[] = [];
 
 	for (const record of records) {
@@ -694,18 +775,21 @@ function serializeFilters(filters: PayrollExportFilters) {
 export async function resolvePayrollRunEmployeeIds(
 	organizationId: string,
 	filters: PayrollExportFilters,
+	reader: Pick<typeof db, "query"> = db,
 ): Promise<string[]> {
 	if (hasEmptyEmployeeScope(filters)) return [];
-	return resolveExportEmployeeIds(organizationId, filters);
+	return resolveExportEmployeeIds(organizationId, filters, reader);
 }
 
 /** Employees an export covers: the explicit selection, else the organization (optionally by team). */
 async function resolveExportEmployeeIds(
 	organizationId: string,
 	filters: PayrollExportFilters,
+	reader: Pick<typeof db, "query"> = db,
 ): Promise<string[]> {
-	if (filters.employeeIds && filters.employeeIds.length > 0) return filters.employeeIds;
-	const rows = await db.query.employee.findMany({
+	if (filters.employeeIds && filters.employeeIds.length > 0)
+		return filters.employeeIds;
+	const rows = await reader.query.employee.findMany({
 		where:
 			filters.teamIds && filters.teamIds.length > 0
 				? and(

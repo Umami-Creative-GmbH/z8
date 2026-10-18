@@ -79,6 +79,7 @@ const vehicleColumns = {
 
 export async function reconcileLegacyToCanonical(
 	organizationId: string,
+	reader: Pick<typeof db, "query"> = db,
 ): Promise<LegacyCanonicalReconciliation> {
 	const [
 		allLegacyWork,
@@ -92,7 +93,7 @@ export async function reconcileLegacyToCanonical(
 		canonicalAbsenceDetails,
 		canonicalWorkAllocations,
 	] = await Promise.all([
-		db.query.workPeriod.findMany({
+		reader.query.workPeriod.findMany({
 			where: eq(workPeriod.organizationId, organizationId),
 			columns: {
 				id: true,
@@ -121,7 +122,7 @@ export async function reconcileLegacyToCanonical(
 				),
 			}),
 		}),
-		db.query.absenceEntry.findMany({
+		reader.query.absenceEntry.findMany({
 			where: eq(absenceEntry.organizationId, organizationId),
 			columns: {
 				id: true,
@@ -133,7 +134,7 @@ export async function reconcileLegacyToCanonical(
 				status: true,
 			},
 		}),
-		db.query.timeRecord.findMany({
+		reader.query.timeRecord.findMany({
 			where: and(eq(timeRecord.organizationId, organizationId), eq(timeRecord.recordKind, "work")),
 			columns: {
 				id: true,
@@ -143,18 +144,18 @@ export async function reconcileLegacyToCanonical(
 				approvalState: true,
 			},
 		}),
-		db.query.timeRecord.findMany({
+		reader.query.timeRecord.findMany({
 			where: and(
 				eq(timeRecord.organizationId, organizationId),
 				eq(timeRecord.recordKind, "absence"),
 			),
 			columns: { id: true, durationMinutes: true, approvalState: true },
 		}),
-		db.query.absenceEntry.findMany({
+		reader.query.absenceEntry.findMany({
 			where: eq(absenceEntry.organizationId, organizationId),
 			columns: { id: true, canonicalRecordId: true },
 		}),
-		db.query.absenceEntry.findMany({
+		reader.query.absenceEntry.findMany({
 			where: isNull(absenceEntry.organizationId),
 			columns: {
 				id: true,
@@ -168,11 +169,11 @@ export async function reconcileLegacyToCanonical(
 				status: true,
 			},
 		}),
-		db.query.employee.findMany({
+		reader.query.employee.findMany({
 			where: eq(employee.organizationId, organizationId),
 			columns: { id: true },
 		}),
-		db.query.timeRecordWork.findMany({
+		reader.query.timeRecordWork.findMany({
 			where: eq(timeRecordWork.organizationId, organizationId),
 			columns: {
 				recordId: true,
@@ -181,11 +182,11 @@ export async function reconcileLegacyToCanonical(
 				...vehicleColumns,
 			},
 		}),
-		db.query.timeRecordAbsence.findMany({
+		reader.query.timeRecordAbsence.findMany({
 			where: eq(timeRecordAbsence.organizationId, organizationId),
 			columns: { recordId: true },
 		}),
-		db.query.timeRecordAllocation.findMany({
+		reader.query.timeRecordAllocation.findMany({
 			where: eq(timeRecordAllocation.organizationId, organizationId),
 			columns: {
 				recordId: true,

@@ -6,9 +6,16 @@ import type { WorkPeriodData } from "./types";
  * Formatter lines from collected payroll work (#322). Each line is the credited part
  * of one work record, with its protected minutes; nothing is recomputed or reread.
  */
-export function workPeriodsFromCollectedInput(input: StoredPayrollWorkInput): WorkPeriodData[] {
+export function workPeriodsFromCollectedInput(
+	input: StoredPayrollWorkInput,
+): WorkPeriodData[] {
 	return input.work.map((line) => ({
 		id: line.recordId,
+		sourceRevision: JSON.stringify({
+			recordUpdatedAt: line.source.recordUpdatedAt,
+			workPeriodId: line.source.workPeriodId,
+			graphRevision: line.source.graphRevision,
+		}),
 		employeeId: line.employeeId,
 		employeeNumber: line.person.employeeNumber || null,
 		email: line.person.email || null,

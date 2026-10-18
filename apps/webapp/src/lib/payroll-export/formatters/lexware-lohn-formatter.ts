@@ -12,6 +12,10 @@ import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import { personnelNumberTypeError } from "../personnel-identifier";
 import type {
+	SupportedPayrollContribution,
+	SupportedPayrollOutputRow,
+} from "../supported-output-evidence";
+import type {
 	AbsenceData,
 	ExpenseLineData,
 	ExportResult,
@@ -28,7 +32,6 @@ import {
 	germanPersonnelNumber,
 } from "./expense-lines";
 import {
-	addOvertimePayoutHours,
 	overtimePayoutsForFormat,
 	widenDateRangeByPayouts,
 } from "./overtime-payouts";
@@ -44,6 +47,12 @@ const DEFAULT_WAGE_TYPE_CODE = "100";
  * Maximum work periods for synchronous export
  */
 const SYNC_THRESHOLD = 500;
+type AggregatedEntry = {
+	value: number;
+	hours: number;
+	hourlyRate: number | null;
+	contributions: SupportedPayrollContribution[];
+};
 
 /**
  * Lexware lohn+gehalt CSV formatter
@@ -57,7 +66,10 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		return SYNC_THRESHOLD;
 	}
 
-	validateConfig(config: Record<string, unknown>): { valid: boolean; errors?: string[] } {
+	validateConfig(config: Record<string, unknown>): {
+		valid: boolean;
+		errors?: string[];
+	} {
 		const errors: string[] = [];
 		const personnelNumberError = personnelNumberTypeError(config);
 		if (personnelNumberError) errors.push(personnelNumberError);
@@ -104,22 +116,55 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		);
 
 		// Add absence data
-		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, lexwareConfig);
+		this.addAbsenceData(
+			absences,
+			absenceCategoryMappings,
+			aggregatedData,
+			lexwareConfig,
+		);
 
 		// Overtime payouts (#1001): hours in the payout day's month under the "overtime" wage type.
-		const payouts = overtimePayoutsForFormat(overtimePayouts, mappings, "lexware");
-		addOvertimePayoutHours(aggregatedData, payouts.mapped, {
-			personnelNumber: (payout) => this.personnelNumber(payout, lexwareConfig),
-			period: (payout) => payout.day.slice(0, 7),
-			add: (existing, hours) => ({
+		const payouts = overtimePayoutsForFormat(
+			overtimePayouts,
+			mappings,
+			"lexware",
+		);
+		const overtimeMapping = mappings.find(
+			(m) => m.specialCategory === "overtime",
+		);
+		for (const { payout, wageTypeCode, hours } of payouts.mapped) {
+			const personnelNumber = this.personnelNumber(payout, lexwareConfig);
+			const employeeData =
+				aggregatedData.get(personnelNumber) ??
+				new Map<string, Map<string, AggregatedEntry>>();
+			aggregatedData.set(personnelNumber, employeeData);
+			const month = payout.day.slice(0, 7);
+			const monthData =
+				employeeData.get(month) ?? new Map<string, AggregatedEntry>();
+			employeeData.set(month, monthData);
+			const existing = monthData.get(wageTypeCode);
+			monthData.set(wageTypeCode, {
 				value: (existing?.value ?? 0) + hours,
 				hours: (existing?.hours ?? 0) + hours,
 				hourlyRate: existing?.hourlyRate ?? null,
-			}),
-		});
+				contributions: [
+					...(existing?.contributions ?? []),
+					{
+						...this.contributionIdentity(payout, hours),
+						kind: "overtime_payout",
+						facts: {
+							day: payout.day,
+							minutes: payout.minutes,
+							mappingId: overtimeMapping?.id ?? null,
+						},
+					},
+				],
+			});
+		}
 
 		// Generate CSV content
 		const lines: string[] = [];
+		const supportedRows: SupportedPayrollOutputRow[] = [];
 
 		// Header row
 		lines.push(this.generateHeaderRow(lexwareConfig));
@@ -139,6 +184,26 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 
 				for (const [wageTypeCode, data] of sortedWageTypes) {
 					if (data.value > 0 || lexwareConfig.includeZeroHours) {
+						const renderedColumns: Record<string, string> = {
+							Wert: this.formatDecimal(data.value),
+						};
+						if (lexwareConfig.includeStunden)
+							renderedColumns.Stunden = this.formatDecimal(data.hours);
+						if (lexwareConfig.includeStundensatz)
+							renderedColumns.Stundensatz =
+								data.hourlyRate !== null
+									? this.formatDecimal(data.hourlyRate)
+									: "";
+						supportedRows.push({
+							personnelNumber,
+							wageTypeCode,
+							date: key,
+							quantity: renderedColumns.Wert.replace(",", "."),
+							unit: "hours",
+							note: "",
+							renderedColumns,
+							contributions: data.contributions,
+						});
 						lines.push(
 							this.generateDataRow(
 								personnelNumber,
@@ -157,8 +222,9 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		}
 
 		// Expense money lines (#852): the euro amount is the Wert, with no hours or rate.
-		for (const { personnelNumber, line } of expenseLinesInFileOrder(expenseLines, (line) =>
-			germanPersonnelNumber(line, lexwareConfig),
+		for (const { personnelNumber, line } of expenseLinesInFileOrder(
+			expenseLines,
+			(line) => germanPersonnelNumber(line, lexwareConfig),
 		)) {
 			const [year, month] = line.date.split("-");
 			const fields = [
@@ -175,9 +241,10 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 
 		// Calculate metadata
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
-		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
+		for (const absence of absences) uniqueEmployees.add(absence.employeeId);
 		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
-		for (const { payout } of payouts.mapped) uniqueEmployees.add(payout.employeeId);
+		for (const { payout } of payouts.mapped)
+			uniqueEmployees.add(payout.employeeId);
 
 		const dateRange = widenDateRangeByPayouts(
 			this.getDateRange(workPeriods, absences),
@@ -199,6 +266,13 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		const csvContent = lines.join("\r\n");
 
 		return {
+			supportedOutputEvidence: {
+				version: 1,
+				formatId: "lexware_lohn",
+				formatterVersion: this.version,
+				excludedLineKinds: ["expense"],
+				rows: supportedRows,
+			},
 			fileName,
 			content: csvContent,
 			mimeType: "text/csv",
@@ -223,14 +297,8 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		workPeriods: WorkPeriodData[],
 		workCategoryMappings: Map<string, WageTypeMapping>,
 		config: LexwareLohnConfig,
-	): Map<
-		string,
-		Map<string, Map<string, { value: number; hours: number; hourlyRate: number | null }>>
-	> {
-		const result = new Map<
-			string,
-			Map<string, Map<string, { value: number; hours: number; hourlyRate: number | null }>>
-		>();
+	): Map<string, Map<string, Map<string, AggregatedEntry>>> {
+		const result = new Map<string, Map<string, Map<string, AggregatedEntry>>>();
 
 		for (const period of workPeriods) {
 			if (!period.durationMinutes || !period.endTime) continue;
@@ -264,11 +332,35 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 			const monthData = employeeData.get(yearMonth)!;
 
 			// Aggregate hours and value (Wert = hours for time-based entries)
-			const existing = monthData.get(wageTypeCode) || { value: 0, hours: 0, hourlyRate: null };
+			const existing = monthData.get(wageTypeCode) || {
+				value: 0,
+				hours: 0,
+				hourlyRate: null,
+				contributions: [],
+			};
 			monthData.set(wageTypeCode, {
 				value: existing.value + hours,
 				hours: existing.hours + hours,
-				hourlyRate: existing.hourlyRate, // Could be derived from employee rate
+				hourlyRate: existing.hourlyRate,
+				contributions: [
+					...existing.contributions,
+					{
+						...this.contributionIdentity(period, hours),
+						kind: "work",
+						facts: {
+							startAt: period.startTime.toUTC().toISO(),
+							endAt: period.endTime.toUTC().toISO(),
+							durationMinutes: period.durationMinutes,
+							workCategoryId: period.workCategoryId,
+							workCategoryName: period.workCategoryName,
+							projectId: period.projectId,
+							projectName: period.projectName,
+							mappingId: period.workCategoryId
+								? (workCategoryMappings.get(period.workCategoryId)?.id ?? null)
+								: null,
+						},
+					},
+				],
 			});
 		}
 
@@ -281,10 +373,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	private addAbsenceData(
 		absences: AbsenceData[],
 		absenceCategoryMappings: Map<string, WageTypeMapping>,
-		aggregatedData: Map<
-			string,
-			Map<string, Map<string, { value: number; hours: number; hourlyRate: number | null }>>
-		>,
+		aggregatedData: Map<string, Map<string, Map<string, AggregatedEntry>>>,
 		config: LexwareLohnConfig,
 	): void {
 		for (const absence of absences) {
@@ -319,14 +408,63 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 				const monthData = employeeData.get(yearMonth)!;
 
 				// For absences, we typically record 8 hours (full day)
-				const existing = monthData.get(wageTypeCode) || { value: 0, hours: 0, hourlyRate: null };
+				const existing = monthData.get(wageTypeCode) || {
+					value: 0,
+					hours: 0,
+					hourlyRate: null,
+					contributions: [],
+				};
+				const previousSource = existing.contributions.find(
+					(contribution) =>
+						contribution.kind === "absence" &&
+						contribution.sourceId === absence.id &&
+						contribution.employeeId === absence.employeeId,
+				);
 				monthData.set(wageTypeCode, {
 					value: existing.value + 8, // Full day = 8 hours
 					hours: existing.hours + 8,
 					hourlyRate: existing.hourlyRate,
+					contributions: previousSource
+						? existing.contributions.map((contribution) =>
+								contribution === previousSource
+									? { ...contribution, hours: contribution.hours + 8 }
+									: contribution,
+							)
+						: [
+								...existing.contributions,
+								{
+									...this.contributionIdentity(absence, 8),
+									kind: "absence",
+									facts: {
+										startDate: absence.startDate,
+										endDate: absence.endDate,
+										absenceCategoryId: absence.absenceCategoryId,
+										absenceCategoryName: absence.absenceCategoryName,
+										absenceType: absence.absenceType,
+										status: absence.status,
+										mappingId: mapping.id,
+									},
+								},
+							],
 				});
 			}
 		}
+	}
+
+	private contributionIdentity(
+		row: WorkPeriodData | AbsenceData | OvertimePayoutData,
+		hours: number,
+	) {
+		return {
+			sourceId: row.id,
+			sourceRevision: row.sourceRevision ?? null,
+			sourceActorId: row.sourceActorId ?? null,
+			employeeId: row.employeeId,
+			firstName: row.firstName,
+			lastName: row.lastName,
+			hours,
+			reason: row.sourceReason ?? null,
+		};
 	}
 
 	/**
@@ -337,7 +475,10 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		row: WorkPeriodData | AbsenceData | OvertimePayoutData,
 		config: LexwareLohnConfig,
 	): string {
-		if (config.personnelNumberType === "employeeNumber" && !row.employeeNumber) {
+		if (
+			config.personnelNumberType === "employeeNumber" &&
+			!row.employeeNumber
+		) {
 			logger.warn(
 				{ employeeId: row.employeeId, rowId: row.id },
 				"Employee number not set, falling back to employeeId",
@@ -346,12 +487,17 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		return germanPersonnelNumber(row, config);
 	}
 
-
 	/**
 	 * Generate CSV header row
 	 */
 	private generateHeaderRow(config: LexwareLohnConfig): string {
-		const headers = ["Jahr", "Monat", "Personalnummer", "Lohnartennummer", "Wert"];
+		const headers = [
+			"Jahr",
+			"Monat",
+			"Personalnummer",
+			"Lohnartennummer",
+			"Wert",
+		];
 
 		if (config.includeStunden) {
 			headers.push("Stunden");
@@ -452,9 +598,14 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Generate file name based on date range
 	 */
-	private generateFileName(dateRange: { start: DateTime | null; end: DateTime | null }): string {
+	private generateFileName(dateRange: {
+		start: DateTime | null;
+		end: DateTime | null;
+	}): string {
 		const now = DateTime.now();
-		const dateStr = dateRange.start ? dateRange.start.toFormat("yyyy-MM") : now.toFormat("yyyy-MM");
+		const dateStr = dateRange.start
+			? dateRange.start.toFormat("yyyy-MM")
+			: now.toFormat("yyyy-MM");
 		return `lexware_lohn_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
 	}
 }

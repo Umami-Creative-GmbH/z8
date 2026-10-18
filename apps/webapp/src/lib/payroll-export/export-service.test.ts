@@ -10,51 +10,82 @@ const mockState = vi.hoisted(() => ({
 	insertInput: vi.fn(),
 	readInput: vi.fn(),
 	transform: vi.fn(),
+	update: vi.fn(),
 }));
+
+// Baseline persistence is covered through real formatters and PostgreSQL in its integration suites.
+vi.mock("./baseline-evidence", () => ({
+	collectPayrollBaselineWindows: vi.fn(async () => []),
+	insertPayrollBaseline: vi.fn(async () => undefined),
+}));
+vi.mock("./baseline-window-input", () => ({
+	payrollWindowsFromCollection: vi.fn(() => []),
+	insertPayrollBaselineWindowInput: vi.fn(async () => undefined),
+	readPayrollBaselineWindowInput: vi.fn(async () => null),
+}));
+const supportedOutputEvidence = {
+	version: 1,
+	formatId: "datev_lohn",
+	formatterVersion: "2024.1",
+	excludedLineKinds: ["expense"],
+	rows: [],
+};
 
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...conditions: unknown[]) => ({ operator: "and", conditions })),
-	eq: vi.fn((column: unknown, value: unknown) => ({ operator: "eq", column, value })),
+	eq: vi.fn((column: unknown, value: unknown) => ({
+		operator: "eq",
+		column,
+		value,
+	})),
 }));
 
-vi.mock("@/db", () => ({
-	db: {
-		query: {
-			payrollExportJob: {
-				findFirst: mockState.findFirst,
-			},
-		},
-		transaction: vi.fn(async (run: (tx: unknown) => Promise<unknown>) =>
-			run({
-				insert: vi.fn((table: unknown) => ({
-					values: vi.fn((values: unknown) => {
-						mockState.inserts.push({ table, values });
-						return { returning: async () => [{ id: "job-new", ...(values as object) }] };
+vi.mock("@/db", () => {
+	mockState.update.mockImplementation(() => {
+		const update: { set?: unknown; where?: unknown } = {};
+		mockState.updates.push(update);
+		return {
+			set: vi.fn((values: unknown) => {
+				update.set = values;
+				return {
+					where: vi.fn(async (predicate: unknown) => {
+						update.where = predicate;
 					}),
-				})),
+				};
 			}),
-		),
-		update: vi.fn(() => {
-			const update: { set?: unknown; where?: unknown } = {};
-			mockState.updates.push(update);
-			return {
-				set: vi.fn((values: unknown) => {
-					update.set = values;
-					return {
-						where: vi.fn(async (predicate: unknown) => {
-							update.where = predicate;
+		};
+	});
+	return {
+		db: {
+			query: {
+				payrollExportJob: {
+					findFirst: mockState.findFirst,
+				},
+			},
+			transaction: vi.fn(async (run: (tx: unknown) => Promise<unknown>) =>
+				run({
+					update: mockState.update,
+					insert: vi.fn((table: unknown) => ({
+						values: vi.fn((values: unknown) => {
+							mockState.inserts.push({ table, values });
+							return {
+								returning: async () => [
+									{ id: "job-new", ...(values as object) },
+								],
+							};
 						}),
-					};
+					})),
 				}),
-			};
-		}),
-	},
-	payrollExportJob: {
-		id: "payroll_export_job.id",
-		organizationId: "payroll_export_job.organization_id",
-	},
-	payrollExportSyncRecord: {},
-}));
+			),
+			update: mockState.update,
+		},
+		payrollExportJob: {
+			id: "payroll_export_job.id",
+			organizationId: "payroll_export_job.organization_id",
+		},
+		payrollExportSyncRecord: {},
+	};
+});
 
 vi.mock("@/lib/payroll-collection/payroll-work-collection-reader", () => ({
 	isPayrollWorkCollectionActive: mockState.collectionActive,
@@ -95,8 +126,12 @@ vi.mock("@/lib/travel-expenses/payroll-run-notifications", () => ({
 }));
 
 vi.mock("./connectors/personio-connector", () => ({ personioConnector: {} }));
-vi.mock("./connectors/successfactors-connector", () => ({ successFactorsConnector: {} }));
-vi.mock("./exporters/workday/workday-connector", () => ({ workdayConnector: {} }));
+vi.mock("./connectors/successfactors-connector", () => ({
+	successFactorsConnector: {},
+}));
+vi.mock("./exporters/workday/workday-connector", () => ({
+	workdayConnector: {},
+}));
 vi.mock("./exporters/successfactors/successfactors-formatter", () => ({
 	successFactorsFormatter: { formatId: "successfactors" },
 }));
@@ -137,6 +172,7 @@ vi.mock("./formatters/sage-lohn-formatter", () => ({
 
 vi.mock("./data-fetcher", () => ({
 	countWorkPeriods: vi.fn(),
+	resolvePayrollRunEmployeeIds: vi.fn(async () => []),
 	fetchAbsencesForExport: vi.fn(),
 	fetchOvertimePayoutsForExport: vi.fn(async () => []),
 	fetchWorkPeriodsForExport: vi.fn(),
@@ -144,9 +180,8 @@ vi.mock("./data-fetcher", () => ({
 	getWageTypeMappings: vi.fn(),
 }));
 
-const { createExportJob, markPayrollExportJobFailed, processExportJob } = await import(
-	"./export-service"
-);
+const { createExportJob, markPayrollExportJobFailed, processExportJob } =
+	await import("./export-service");
 const dataFetcher = await import("./data-fetcher");
 const { PayrollWorkCollectionBlockedError } = await import(
 	"@/lib/payroll-collection/payroll-work-collection-blocked-error"
@@ -180,11 +215,17 @@ describe("payroll export job transitions", () => {
 		);
 
 		expect(mockState.updates).toHaveLength(2);
-		expect(mockState.updates[0]?.where).toEqual(scopedPredicate(jobId, organizationId));
-		expect(mockState.findFirst).toHaveBeenCalledWith(
-			expect.objectContaining({ where: scopedPredicate(jobId, organizationId) }),
+		expect(mockState.updates[0]?.where).toEqual(
+			scopedPredicate(jobId, organizationId),
 		);
-		expect(mockState.updates[1]?.where).toEqual(scopedPredicate(jobId, organizationId));
+		expect(mockState.findFirst).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: scopedPredicate(jobId, organizationId),
+			}),
+		);
+		expect(mockState.updates[1]?.where).toEqual(
+			scopedPredicate(jobId, organizationId),
+		);
 	});
 
 	it("marks a payroll export job failed with a generic message and tenant scope", async () => {
@@ -235,13 +276,22 @@ describe("payroll export under scoped work collection (#322)", () => {
 			{
 				recordId: "record-1",
 				employeeId: "employee-1",
-				person: { employeeNumber: "E-1", firstName: "Ada", lastName: "L", email: null },
+				person: {
+					employeeNumber: "E-1",
+					firstName: "Ada",
+					lastName: "L",
+					email: null,
+				},
 				startAt: "2026-07-10T07:00:00Z",
 				endExclusive: "2026-07-10T09:00:40Z",
 				minutes: 120,
 				workCategory: null,
 				project: null,
-				source: { recordUpdatedAt: "2026-07-10T09:01:00Z", workPeriodId: null, graphRevision: null },
+				source: {
+					recordUpdatedAt: "2026-07-10T09:01:00Z",
+					workPeriodId: null,
+					graphRevision: null,
+				},
 			},
 		],
 		excluded: [],
@@ -261,7 +311,11 @@ describe("payroll export under scoped work collection (#322)", () => {
 
 	it("collects before the job exists and stores the input with it", async () => {
 		mockState.collectPayrollWork.mockResolvedValue({
-			collection: { input: collectedInput, blockers: [], employeeTimezones: {} },
+			collection: {
+				input: collectedInput,
+				blockers: [],
+				employeeTimezones: {},
+			},
 			repair: { status: "not_authorized" },
 		});
 
@@ -273,29 +327,40 @@ describe("payroll export under scoped work collection (#322)", () => {
 			repairActorUserId: "user-1",
 		});
 
-		expect(mockState.collectPayrollWork).toHaveBeenCalledWith(expect.anything(), {
-			organizationId: "org-1",
-			filters: {
-				startDate: "2026-07-01",
-				endDate: "2026-07-31",
-				employeeIds: ["employee-1"],
-				teamIds: undefined,
-				projectIds: undefined,
+		expect(mockState.collectPayrollWork).toHaveBeenCalledWith(
+			expect.anything(),
+			{
+				organizationId: "org-1",
+				filters: {
+					startDate: "2026-07-01",
+					endDate: "2026-07-31",
+					employeeIds: ["employee-1"],
+					teamIds: undefined,
+					projectIds: undefined,
+				},
+				repairActorUserId: "user-1",
+				// The configuration names no custom field identifier (#821).
+				personnelIdentifier: null,
 			},
-			repairActorUserId: "user-1",
-			// The configuration names no custom field identifier (#821).
-			personnelIdentifier: null,
-		});
+		);
 		expect(dataFetcher.countWorkPeriods).not.toHaveBeenCalled();
 		expect(mockState.inserts).toHaveLength(1);
-		expect(mockState.insertInput).toHaveBeenCalledWith(expect.anything(), "job-new", collectedInput);
+		expect(mockState.insertInput).toHaveBeenCalledWith(
+			expect.anything(),
+			"job-new",
+			collectedInput,
+		);
 		// One collected line against a threshold of one: processed inline.
 		expect(result).toEqual({ jobId: "job-new", isAsync: false });
 	});
 
 	it("collects without repair when no administrator is present", async () => {
 		mockState.collectPayrollWork.mockResolvedValue({
-			collection: { input: collectedInput, blockers: [], employeeTimezones: {} },
+			collection: {
+				input: collectedInput,
+				blockers: [],
+				employeeTimezones: {},
+			},
 			repair: { status: "not_requested" },
 		});
 
@@ -337,7 +402,9 @@ describe("payroll export under scoped work collection (#322)", () => {
 			filters,
 		});
 
-		await expect(refusal).rejects.toBeInstanceOf(PayrollWorkCollectionBlockedError);
+		await expect(refusal).rejects.toBeInstanceOf(
+			PayrollWorkCollectionBlockedError,
+		);
 		await expect(refusal).rejects.toMatchObject({
 			blockers: [expect.objectContaining({ kind: "pending_work_approval" })],
 		});
@@ -378,6 +445,7 @@ describe("payroll export under scoped work collection (#322)", () => {
 		vi.mocked(dataFetcher.getWageTypeMappings).mockResolvedValue([]);
 		mockState.transform.mockReturnValue({
 			fileName: "export.csv",
+			supportedOutputEvidence,
 			content: "csv",
 			encoding: "utf-8",
 			mimeType: "text/csv",
@@ -389,13 +457,19 @@ describe("payroll export under scoped work collection (#322)", () => {
 		await processExportJob({ jobId: "job-1", organizationId: "org-1" });
 
 		expect(dataFetcher.fetchWorkPeriodsForExport).not.toHaveBeenCalled();
-		expect(mockState.readInput).toHaveBeenCalledWith(expect.anything(), "org-1", "job-1");
+		expect(mockState.readInput).toHaveBeenCalledWith(
+			expect.anything(),
+			"org-1",
+			"job-1",
+		);
 		expect(dataFetcher.fetchAbsencesForExport).toHaveBeenCalledWith(
 			"org-1",
 			expect.anything(),
 			{ canonicalReadiness: "absences" },
 		);
-		const [firstLines, secondLines] = mockState.transform.mock.calls.map(([lines]) => lines);
+		const [firstLines, secondLines] = mockState.transform.mock.calls.map(
+			([lines]) => lines,
+		);
 		expect(secondLines).toEqual(firstLines);
 		expect(firstLines).toEqual([
 			expect.objectContaining({
@@ -421,6 +495,7 @@ describe("stored payroll export files (#1008)", () => {
 	};
 	const exported = {
 		fileName: "export.csv",
+		supportedOutputEvidence,
 		content: "csv",
 		encoding: "utf-8",
 		mimeType: "text/csv",
@@ -436,7 +511,9 @@ describe("stored payroll export files (#1008)", () => {
 		vi.mocked(dataFetcher.getWageTypeMappings).mockResolvedValue([]);
 		mockState.transform.mockReturnValue(exported);
 		const storage = await import("@/lib/storage/export-s3-client");
-		vi.mocked(storage.getPresignedUrl).mockResolvedValue("https://s3.example/signed");
+		vi.mocked(storage.getPresignedUrl).mockResolvedValue(
+			"https://s3.example/signed",
+		);
 	});
 
 	it("uploads a run under the sync threshold when asked to store it and returns its key", async () => {
@@ -448,7 +525,10 @@ describe("stored payroll export files (#1008)", () => {
 			{ storeFile: true },
 		);
 
-		const s3Key = "payroll-exports/org-1/job-1/export.csv";
+		const s3Key = outcome.s3Key;
+		expect(s3Key).toMatch(
+			/^payroll-exports\/org-1\/job-1\/[0-9a-f-]{36}\/export\.csv$/,
+		);
 		expect(storage.uploadExport).toHaveBeenCalledWith(
 			"org-1",
 			s3Key,
@@ -456,7 +536,10 @@ describe("stored payroll export files (#1008)", () => {
 			"text/csv",
 		);
 		expect(outcome).toMatchObject({ s3Key, result: exported });
-		expect(mockState.updates.at(-1)?.set).toMatchObject({ status: "completed", s3Key });
+		expect(mockState.updates.at(-1)?.set).toMatchObject({
+			status: "completed",
+			s3Key,
+		});
 	});
 
 	it("returns the stored key of a run over the threshold, not a key parsed from its URL", async () => {
@@ -472,14 +555,23 @@ describe("stored payroll export files (#1008)", () => {
 			{ storeFile: true },
 		);
 
-		expect(outcome.s3Key).toBe("payroll-exports/org-1/job-1/export.csv");
+		expect(outcome.s3Key).toMatch(
+			/^payroll-exports\/org-1\/job-1\/[0-9a-f-]{36}\/export\.csv$/,
+		);
+		expect(storage.getPresignedUrl).toHaveBeenCalledWith(
+			"org-1",
+			outcome.s3Key,
+		);
 	});
 
 	it("keeps an interactive run under the threshold inline, without an upload", async () => {
 		mockState.findFirst.mockResolvedValue(syncJob);
 		const storage = await import("@/lib/storage/export-s3-client");
 
-		const outcome = await processExportJob({ jobId: "job-1", organizationId: "org-1" });
+		const outcome = await processExportJob({
+			jobId: "job-1",
+			organizationId: "org-1",
+		});
 
 		expect(storage.uploadExport).not.toHaveBeenCalled();
 		expect(outcome).toEqual({ result: exported });
