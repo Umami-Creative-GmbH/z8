@@ -31,7 +31,14 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/period-submissions", () => (
 	withdrawPeriod: state.withdrawPeriod,
 	readPeriodReadiness: state.readPeriodReadiness,
 }));
-vi.mock("@/navigation", () => ({ useRouter: () => ({ refresh: state.refresh }) }));
+vi.mock("@/navigation", () => ({
+	useRouter: () => ({ refresh: state.refresh }),
+	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
+}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: state.viewRefresh }) }));
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 vi.mock("sonner", () => ({ toast: { success: state.toastSuccess, error: state.toastError } }));
@@ -213,11 +220,90 @@ describe("PeriodSubmissionsCard", () => {
 		fireEvent.click(toggle);
 		expect(toggle.getAttribute("aria-expanded")).toBe("true");
 		const list = document.getElementById(toggle.getAttribute("aria-controls") ?? "");
-		expect(Array.from(list?.querySelectorAll("li") ?? []).map((item) => item.textContent)).toEqual([
+		expect(
+			Array.from(list?.querySelectorAll("li") ?? []).map(
+				(item) => item.querySelector("[data-blocker-source]")?.textContent,
+			),
+		).toEqual([
 			expect.stringMatching(/^Work started .*8:00.* is still running\.$/),
 			expect.stringMatching(/^An absence request for .*8.*10.* is undecided\.$/),
 		]);
 		expect(screen.getByRole("button", { name: "Hide details" })).toBe(toggle);
+	});
+
+	it("explains each blocker's next action and links to where it is handled", async () => {
+		const correction: PeriodSubmissionBlocker = {
+			kind: "time_correction",
+			workPeriodId: "w2",
+			startTime: "2026-03-03T08:00:00.000Z",
+			endTime: "2026-03-03T16:00:00.000Z",
+			timezone: "Europe/Berlin",
+		};
+		// Work that started before the period, on Sunday evening in Berlin.
+		const manual: PeriodSubmissionBlocker = {
+			kind: "manual_work",
+			workPeriodId: "w3",
+			startTime: "2026-03-01T21:00:00.000Z",
+			endTime: "2026-03-02T02:00:00.000Z",
+			timezone: "Europe/Berlin",
+		};
+		state.readPeriodReadiness.mockResolvedValue(
+			view(
+				assessed(period(), {
+					ready: false,
+					refusals: ["period_open"],
+					blockers: [manual, correction, LIVE, ABSENCE],
+				}),
+			),
+		);
+		renderCard([period()]);
+		fireEvent.click(await screen.findByRole("button", { name: "Show details" }));
+
+		const items = within(
+			document.getElementById(
+				screen.getByRole("button", { name: "Hide details" }).getAttribute("aria-controls") ?? "",
+			) as HTMLElement,
+		).getAllByRole("listitem");
+		const [manualItem, correctionItem, liveItem, absenceItem] = items as HTMLElement[];
+
+		expect(manualItem?.textContent).toContain("An approver decides this work.");
+		const manualLink = within(manualItem as HTMLElement).getByRole("link", {
+			name: "Show on timeline",
+		});
+		expect(manualLink.getAttribute("href")).toBe(
+			"/time-tracking?date=2026-03-02&focus=manual_work%3Aw3",
+		);
+		expect(manualItem?.textContent).not.toMatch(/cancel|withdraw/i);
+
+		expect(correctionItem?.textContent).toContain(
+			"An approver decides this correction. While it waits, you can cancel it in My Requests.",
+		);
+		expect(
+			within(correctionItem as HTMLElement)
+				.getByRole("link", { name: "Open request" })
+				.getAttribute("href"),
+		).toBe("/my-requests?request=time_correction%3Aw2");
+
+		expect(liveItem?.textContent).toContain("Clock out when this work ends.");
+		expect(
+			within(liveItem as HTMLElement)
+				.getByRole("link", { name: "Go to the clock" })
+				.getAttribute("href"),
+		).toBe("/time-tracking?focus=live_work%3Aw1");
+
+		expect(absenceItem?.textContent).toContain(
+			"An approver decides this absence. While it waits, you can cancel it in My Requests.",
+		);
+		const absenceLink = within(absenceItem as HTMLElement).getByRole("link", {
+			name: "Open request",
+		});
+		expect(absenceLink.getAttribute("href")).toBe("/my-requests?request=absence%3Aa1");
+
+		// Each link is described by the blocker it opens, for screen readers.
+		const describedBy = document.getElementById(absenceLink.getAttribute("aria-describedby") ?? "");
+		expect(describedBy?.textContent).toMatch(/^An absence request for .* is undecided\.$/);
+		// Nothing here acts on the source itself.
+		expect(within(absenceItem as HTMLElement).queryByRole("button")).toBeNull();
 	});
 
 	it("explains a period without an approver", async () => {

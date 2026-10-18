@@ -167,7 +167,8 @@ function getWorkPeriodWarnings(period: WorkdayWorkPeriodSource): WorkdayTimeline
 			title: "Pending edit request",
 			subtitle: "This work period has changes awaiting approval.",
 			severity: "info",
-			link: { label: "Review request", href: "/my-requests" },
+			// Only a requested change has a request in My Requests; pending manual work has none.
+			...(period.pendingChanges ? { link: { label: "Review request", href: "/my-requests" } } : {}),
 		});
 	}
 
