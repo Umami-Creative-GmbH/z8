@@ -22,6 +22,7 @@ import type { ClosedMonthAutoCloseJobResult } from "@/lib/jobs/closed-month-auto
 import type { DeputyCoverSummariesJobResult } from "@/lib/jobs/deputy-cover-summaries";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonalDataExportSweepResult } from "@/lib/jobs/personal-data-export-sweep";
+import type { PersonnelFileDocumentRequestRemindersJobResult } from "@/lib/jobs/personnel-file-document-request-reminders";
 import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
 import type { PersonnelFileRetentionRemindersJobResult } from "@/lib/jobs/personnel-file-retention-reminders";
 import type { PersonnelFileUploadCleanupJobResult } from "@/lib/jobs/personnel-file-upload-cleanup";
@@ -525,6 +526,19 @@ export const CRON_JOBS = {
 				"@/lib/jobs/personnel-file-expiry-reminders"
 			);
 			return runPersonnelFileExpiryRemindersJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
+	"cron:personnel-file-document-request-reminders": {
+		schedule: "0 * * * *", // Hourly, so each organization's day starts soon after its midnight
+		description:
+			"Remind employees of open document requests 3 days before and on the deadline, and tell them and the officers on the first overdue day",
+		processor: async (): Promise<PersonnelFileDocumentRequestRemindersJobResult> => {
+			const { runPersonnelFileDocumentRequestRemindersJob } = await import(
+				"@/lib/jobs/personnel-file-document-request-reminders"
+			);
+			return runPersonnelFileDocumentRequestRemindersJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
 	},

@@ -26,6 +26,7 @@ import type {
 	DocumentRequestEventChanges,
 	DocumentRequestEventKind,
 	DocumentRequestReasonCode,
+	DocumentRequestReminderKind,
 	DocumentRequestStatus,
 } from "@/lib/personnel-file/document-request.types";
 import type {
@@ -784,5 +785,43 @@ export const employeeDocumentRequestEvent = pgTable(
 			"employee_document_request_event_reason_check",
 			sql`${table.reason} IS NULL OR char_length(${table.reason}) <= 2000`,
 		),
+	],
+);
+
+/**
+ * Sent marker of the document request deadline reminders (#1406): one row per
+ * request, kind and deadline, claimed before notifying, so each reminder is
+ * sent at most once and job reruns never resend. Keying on the deadline
+ * re-arms the reminders when it moves; the job also drops markers of a
+ * deadline the request no longer has, so moving it back re-arms too.
+ */
+export const employeeDocumentRequestReminder = pgTable(
+	"employee_document_request_reminder",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		requestId: uuid("request_id").notNull(),
+		kind: text("kind").$type<DocumentRequestReminderKind>().notNull(),
+		deadline: date("deadline", { mode: "string" }).notNull(),
+		sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		uniqueIndex("employeeDocumentRequestReminder_request_kind_deadline_idx").on(
+			table.requestId,
+			table.kind,
+			table.deadline,
+		),
+		index("employeeDocumentRequestReminder_organizationId_idx").on(table.organizationId),
+		check(
+			"employee_document_request_reminder_kind_check",
+			sql`${table.kind} IN ('three_days_before', 'deadline_day', 'overdue')`,
+		),
+		foreignKey({
+			name: "employee_document_request_reminder_request_fk",
+			columns: [table.requestId, table.organizationId],
+			foreignColumns: [employeeDocumentRequest.id, employeeDocumentRequest.organizationId],
+		}).onDelete("cascade"),
 	],
 );

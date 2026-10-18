@@ -6,6 +6,7 @@ import {
 	type DocumentRequestCategory,
 	type DocumentRequestFollowUpEventKind,
 	type DocumentRequestRefusal,
+	type DocumentRequestReminderKind,
 	type DocumentRequestStatus,
 	isDocumentRequestCategory,
 } from "./document-request.types";
@@ -146,6 +147,37 @@ export function validateDocumentRequestEdit(
 		if (note.value !== current.note) patch.note = note.value;
 	}
 	return { ok: true, value: patch };
+}
+
+/** Days before the deadline of the employee's first deadline reminder. */
+export const DOCUMENT_REQUEST_REMINDER_LEAD_DAYS = 3;
+
+/**
+ * The deadline reminder an open request is due for today (#1406), if any. All
+ * days are the organization's calendar days.
+ * - `three_days_before` and `deadline_day` fire on exactly that day, and only
+ *   when the request was already open before it began: the creation and the
+ *   return notifications name the deadline, so the day a request was created
+ *   or returned (`openedOn`) brings no extra reminder.
+ * - `overdue` fires on any day after the deadline: the ledger keeps it to the
+ *   first, and a request returned after its deadline is overdue at once.
+ * Submitted, accepted and cancelled requests get none.
+ */
+export function dueDocumentRequestReminder(input: {
+	status: DocumentRequestStatus;
+	/** `YYYY-MM-DD` */
+	deadline: string;
+	/** The day the request was created or last returned. */
+	openedOn: Temporal.PlainDate;
+	today: Temporal.PlainDate;
+}): DocumentRequestReminderKind | null {
+	if (input.status !== "open") return null;
+	const daysLeft = input.today.until(parsePlainDate(input.deadline), { largestUnit: "days" }).days;
+	if (daysLeft < 0) return "overdue";
+	if (comparePlainDates(input.openedOn, input.today) >= 0) return null;
+	if (daysLeft === DOCUMENT_REQUEST_REMINDER_LEAD_DAYS) return "three_days_before";
+	if (daysLeft === 0) return "deadline_day";
+	return null;
 }
 
 /** Open after its deadline day, in the organization's calendar (`today`). */
