@@ -31,7 +31,8 @@ import {
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
-import { getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
+import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
+import { getTimezoneAbbreviation } from"@/lib/time-tracking/timezone-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { useRouter } from "@/navigation";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
@@ -139,6 +140,7 @@ async function submitTimeCorrection({
 	employeeTimezone,
 	isSameDay,
 	onClose,
+	onReadinessChange,
 	onRefresh,
 	submissionIdRef,
 	t,
@@ -148,6 +150,8 @@ async function submitTimeCorrection({
 	employeeTimezone: string;
 	isSameDay: boolean;
 	onClose: () => void;
+	/** Any recorded correction can change a period's submission readiness (#1350). */
+	onReadinessChange: () => void;
 	onRefresh: () => void;
 	submissionIdRef: { current: string | null };
 	t: Translate;
@@ -218,6 +222,7 @@ async function submitTimeCorrection({
 			);
 			onClose();
 			onRefresh();
+			onReadinessChange();
 		} else {
 			toast.error(
 				result.error ||
@@ -260,6 +265,7 @@ async function submitTimeCorrection({
 		);
 		onClose();
 		if (result.data.status === "approved") onRefresh();
+		onReadinessChange();
 	} else {
 		toast.error(
 			result.error ||
@@ -281,6 +287,7 @@ export function TimeCorrectionDialog({
 	const [open, setOpen] = useState(false);
 	const submissionIdRef = useRef<string | null>(null);
 	const router = useRouter();
+	const invalidateReadiness = useInvalidatePeriodSubmissionReadiness();
 	const timezoneAbbr = getTimezoneAbbreviation(employeeTimezone);
 
 	const getDefaultValues = (): TimeCorrectionFormValues =>
@@ -293,6 +300,7 @@ export function TimeCorrectionDialog({
 				employeeTimezone,
 				isSameDay,
 				onClose: () => setOpen(false),
+				onReadinessChange: () => void invalidateReadiness(),
 				onRefresh: router.refresh,
 				submissionIdRef,
 				t,

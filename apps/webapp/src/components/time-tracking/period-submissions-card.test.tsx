@@ -1,14 +1,19 @@
 // @vitest-environment jsdom
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	useViewRefreshAction,
+	ViewRefreshProvider,
+} from "@/components/providers/view-refresh-provider";
 import type { EmployeePeriodViewRow } from "@/lib/time-tracking/period-submissions/employee-period-view";
 import type { PeriodSubmissionBlocker } from "@/lib/time-tracking/period-submissions/submission-blockers";
 import type {
 	EmployeePeriodReadinessRow,
 	PeriodSubmissionReadiness,
 } from "@/lib/time-tracking/period-submissions/submission-readiness";
+import { invalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
 import { PeriodSubmissionsCard } from "./period-submissions-card";
 
 const state = vi.hoisted(() => ({
@@ -16,6 +21,7 @@ const state = vi.hoisted(() => ({
 	withdrawPeriod: vi.fn(),
 	readPeriodReadiness: vi.fn(),
 	refresh: vi.fn(),
+	viewRefresh: vi.fn(),
 	toastSuccess: vi.fn(),
 	toastError: vi.fn(),
 }));
@@ -33,6 +39,7 @@ vi.mock("@/navigation", () => ({
 		</a>
 	),
 }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: state.viewRefresh }) }));
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 vi.mock("sonner", () => ({ toast: { success: state.toastSuccess, error: state.toastError } }));
 vi.mock("@tolgee/react", () => ({
@@ -98,14 +105,39 @@ function view(...periods: EmployeePeriodReadinessRow[]) {
 	};
 }
 
-function renderCard(periods: EmployeePeriodViewRow[]) {
+function renderCard(periods: EmployeePeriodViewRow[], scope = SCOPE) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	render(
+	const card = (cardScope: typeof SCOPE) => (
 		<QueryClientProvider client={client}>
-			<PeriodSubmissionsCard periods={periods} {...SCOPE} />
-		</QueryClientProvider>,
+			<ViewRefreshProvider>
+				<PeriodSubmissionsCard periods={periods} {...cardScope} />
+				<HeaderRefresh />
+			</ViewRefreshProvider>
+		</QueryClientProvider>
 	);
-	return client;
+	const rendered = render(card(scope));
+	return Object.assign(client, {
+		rerenderWith: (next: typeof SCOPE) => rendered.rerender(card(next)),
+		unmountCard: rendered.unmount,
+	});
+}
+
+/** The page header's view-refresh control. */
+function HeaderRefresh() {
+	const { refresh } = useViewRefreshAction();
+	return (
+		<button type="button" onClick={refresh}>
+			Refresh view
+		</button>
+	);
+}
+
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((done) => {
+		resolve = done;
+	});
+	return { promise, resolve };
 }
 
 const submitButton = () => screen.getByRole("button", { name: "Submit" }) as HTMLButtonElement;
@@ -405,5 +437,286 @@ describe("PeriodSubmissionsCard", () => {
 			),
 		);
 		expect(state.refresh).toHaveBeenCalled();
+	});
+});
+
+describe("PeriodSubmissionsCard keeps readiness current (#1350)", () => {
+	const BLOCKED = view(
+		assessed(period(), { ready: false, refusals: ["period_open"], blockers: [LIVE] }),
+	);
+	const READY_VIEW = view(assessed(period()));
+
+	beforeEach(() => {
+		vi.resetAllMocks();
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+	});
+
+	afterEach(() => {
+		focusManager.setFocused(undefined);
+		vi.useRealTimers();
+	});
+
+	const tick = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
+
+	it("checks again every 30 seconds while visible, keeping Submit usable during the check", async () => {
+		state.readPeriodReadiness.mockResolvedValueOnce(READY_VIEW);
+		renderCard([period()]);
+		await waitFor(() => expect(submitButton().disabled).toBe(false));
+
+		const next = deferred<ReturnType<typeof view>>();
+		state.readPeriodReadiness.mockReturnValueOnce(next.promise);
+		await tick(29_000);
+		expect(state.readPeriodReadiness).toHaveBeenCalledTimes(1);
+		await tick(1_000);
+		expect(state.readPeriodReadiness).toHaveBeenCalledTimes(2);
+		// The background check keeps the last successful result and its Submit.
+		expect(submitButton().disabled).toBe(false);
+		expect(screen.queryByText("Checking whether this period is ready…")).toBeNull();
+
+		await act(async () => next.resolve(BLOCKED));
+		expect(await screen.findByText("1 item keeps this period open.")).toBeTruthy();
+		expect(submitButton().disabled).toBe(true);
+		expect(screen.getByText("Submit is available once this period is ready.")).toBeTruthy();
+	});
+
+	it("shows another person's decision at the next check without any navigation", async () => {
+		const submitted = period({ status: "submitted", canSubmit: false });
+		state.readPeriodReadiness.mockResolvedValueOnce(
+			view(
+				assessed(submitted, { ready: false, refusals: ["already_submitted"] }),
+				assessed(period({ startDate: "2026-02-23", endDate: "2026-03-01" }), {
+					ready: false,
+					refusals: ["period_open"],
+					blockers: [ABSENCE],
+				}),
+			),
+		);
+		renderCard([submitted]);
+		expect(await screen.findByText("Submitted")).toBeTruthy();
+		expect(screen.getByText("1 item keeps this period open.")).toBeTruthy();
+
+		// The approver approved the submission and decided the absence request meanwhile.
+		state.readPeriodReadiness.mockResolvedValue(
+			view(
+				assessed(period({ status: "approved", canSubmit: false }), {
+					ready: false,
+					refusals: ["already_submitted"],
+				}),
+				assessed(period({ startDate: "2026-02-23", endDate: "2026-03-01" })),
+			),
+		);
+		await tick(30_000);
+		expect(await screen.findByText("Approved")).toBeTruthy();
+		expect(screen.queryByText("Submitted")).toBeNull();
+		expect(screen.getByText("Ready to submit")).toBeTruthy();
+		expect(screen.queryByText("1 item keeps this period open.")).toBeNull();
+		expect(submitButton().disabled).toBe(false);
+		expect(screen.queryByRole("button", { name: "Withdraw" })).toBeNull();
+		// Status and readiness sit in polite live regions, announced only when they change.
+		expect(screen.getByText("Approved").closest("[aria-live]")?.getAttribute("aria-live")).toBe(
+			"polite",
+		);
+	});
+
+	it("opens Submit at the check after the period's last day begins", async () => {
+		const ending = period({ canSubmit: false, opensOn: "2026-03-08" });
+		state.readPeriodReadiness.mockResolvedValueOnce(
+			view(assessed(ending, { ready: false, refusals: ["period_not_ended"] })),
+		);
+		renderCard([ending]);
+		expect(await screen.findByText(/Submitting opens on Mar 8, 2026\./)).toBeTruthy();
+		expect(submitButton().disabled).toBe(true);
+
+		// The employee's local day turned over on the server's assessment.
+		state.readPeriodReadiness.mockResolvedValue(READY_VIEW);
+		await tick(30_000);
+		expect(await screen.findByText("Ready to submit")).toBeTruthy();
+		expect(submitButton().disabled).toBe(false);
+	});
+
+	it("does not check while the page is hidden, and checks when it is shown again", async () => {
+		state.readPeriodReadiness.mockResolvedValue(READY_VIEW);
+		renderCard([period()]);
+		await screen.findByText("Ready to submit");
+
+		act(() => focusManager.setFocused(false));
+		await tick(95_000);
+		expect(state.readPeriodReadiness).toHaveBeenCalledTimes(1);
+
+		state.readPeriodReadiness.mockResolvedValue(BLOCKED);
+		act(() => focusManager.setFocused(true));
+		expect(await screen.findByText("1 item keeps this period open.")).toBeTruthy();
+		expect(state.readPeriodReadiness).toHaveBeenCalledTimes(2);
+	});
+
+	it("checks when the window regains focus", async () => {
+		state.readPeriodReadiness.mockResolvedValue(READY_VIEW);
+		renderCard([period()]);
+		await screen.findByText("Ready to submit");
+
+		state.readPeriodReadiness.mockResolvedValue(BLOCKED);
+		act(() => {
+			window.dispatchEvent(new Event("focus"));
+		});
+		expect(await screen.findByText("1 item keeps this period open.")).toBeTruthy();
+		expect(state.readPeriodReadiness).toHaveBeenCalledTimes(2);
+	});
+
+	it("stops checking once the card has left the view", async () => {
+		state.readPeriodReadiness.mockResolvedValue(READY_VIEW);
+		const client = renderCard([period()]);
+		await screen.findByText("Ready to submit");
+
+		client.unmountCard();
+		await tick(95_000);
+		act(() => {
+			window.dispatchEvent(new Event("focus"));
+		});
+		expect(state.readPeriodReadiness).toHaveBeenCalledTimes(1);
+	});
+
+	it("checks again when the view's Refresh control is used", async () => {
+		state.readPeriodReadiness.mockResolvedValue(READY_VIEW);
+		renderCard([period()]);
+		await screen.findByText("Ready to submit");
+
+		state.readPeriodReadiness.mockResolvedValue(BLOCKED);
+		fireEvent.click(screen.getByRole("button", { name: "Refresh view" }));
+		expect(await screen.findByText("1 item keeps this period open.")).toBeTruthy();
+		expect(state.readPeriodReadiness).toHaveBeenCalledTimes(2);
+		await waitFor(() => expect(state.viewRefresh).toHaveBeenCalled());
+	});
+
+	it("checks again after the employee's own change elsewhere invalidates readiness", async () => {
+		state.readPeriodReadiness.mockResolvedValue(READY_VIEW);
+		const client = renderCard([period()]);
+		await screen.findByText("Ready to submit");
+
+		// Clocking in elsewhere on the page starts live work.
+		state.readPeriodReadiness.mockResolvedValue(BLOCKED);
+		await act(() => invalidatePeriodSubmissionReadiness(client));
+		expect(await screen.findByText("1 item keeps this period open.")).toBeTruthy();
+		expect(submitButton().disabled).toBe(true);
+	});
+
+	it("never lets a late answer from an earlier check overwrite a newer one", async () => {
+		state.readPeriodReadiness.mockResolvedValueOnce(BLOCKED);
+		const client = renderCard([period()]);
+		await screen.findByText("1 item keeps this period open.");
+
+		const earlier = deferred<ReturnType<typeof view>>();
+		const newer = deferred<ReturnType<typeof view>>();
+		state.readPeriodReadiness.mockReturnValueOnce(earlier.promise);
+		state.readPeriodReadiness.mockReturnValueOnce(newer.promise);
+		await tick(30_000);
+		await act(() => {
+			void invalidatePeriodSubmissionReadiness(client);
+		});
+		expect(state.readPeriodReadiness).toHaveBeenCalledTimes(3);
+
+		await act(async () => newer.resolve(READY_VIEW));
+		expect(await screen.findByText("Ready to submit")).toBeTruthy();
+		// The earlier check still says the live work is running.
+		await act(async () => earlier.resolve(BLOCKED));
+		await tick(0);
+		expect(screen.getByText("Ready to submit")).toBeTruthy();
+		expect(screen.queryByText("1 item keeps this period open.")).toBeNull();
+		expect(submitButton().disabled).toBe(false);
+	});
+
+	it("never shows another organization's readiness after an organization switch", async () => {
+		state.readPeriodReadiness.mockResolvedValueOnce(READY_VIEW);
+		const client = renderCard([period()]);
+		await screen.findByText("Ready to submit");
+
+		const other = { organizationId: "org-2", employeeId: "employee-9" };
+		const answer = deferred<ReturnType<typeof view>>();
+		state.readPeriodReadiness.mockReturnValueOnce(answer.promise);
+		client.rerenderWith(other);
+		expect(state.readPeriodReadiness).toHaveBeenLastCalledWith(other);
+		expect(screen.queryByText("Ready to submit")).toBeNull();
+		expect(submitButton().disabled).toBe(true);
+		expect(screen.getByText("Checking whether this period is ready…")).toBeTruthy();
+
+		await act(async () => answer.resolve(BLOCKED));
+		expect(await screen.findByText("1 item keeps this period open.")).toBeTruthy();
+		expect(screen.queryByText("Ready to submit")).toBeNull();
+	});
+
+	it("disables Submit when a check fails, keeps one alert through failing checks, and recovers", async () => {
+		state.readPeriodReadiness.mockResolvedValueOnce(READY_VIEW);
+		renderCard([period()]);
+		await screen.findByText("Ready to submit");
+
+		state.readPeriodReadiness.mockResolvedValue({ success: false, error: "boom" });
+		await tick(30_000);
+		await tick(1_000); // the one retry
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toContain("Submission readiness is unavailable");
+		expect(screen.queryByText("Ready to submit")).toBeNull();
+		expect(submitButton().disabled).toBe(true);
+		expect(screen.getByText("Submit is unavailable until readiness can be checked.")).toBeTruthy();
+
+		// A background check that fails again changes nothing, so nothing is announced again.
+		const calls = state.readPeriodReadiness.mock.calls.length;
+		await tick(31_000);
+		expect(state.readPeriodReadiness.mock.calls.length).toBeGreaterThan(calls);
+		expect(screen.getByRole("alert")).toBe(alert);
+		expect(submitButton().disabled).toBe(true);
+
+		// Retry checks (Submit says so) and recovers.
+		const answer = deferred<ReturnType<typeof view>>();
+		state.readPeriodReadiness.mockReturnValueOnce(answer.promise);
+		fireEvent.click(within(alert).getByRole("button", { name: "Retry" }));
+		await waitFor(() =>
+			expect(screen.getByText("Checking whether this period is ready…")).toBeTruthy(),
+		);
+		expect(submitButton().disabled).toBe(true);
+		await act(async () => answer.resolve(READY_VIEW));
+		expect(await screen.findByText("Ready to submit")).toBeTruthy();
+		await waitFor(() => expect(submitButton().disabled).toBe(false));
+		expect(screen.queryByRole("alert")).toBeNull();
+	});
+
+	it("checks before offering Submit again after the employee's own refused attempt", async () => {
+		state.readPeriodReadiness.mockResolvedValueOnce(READY_VIEW);
+		state.submitPeriod.mockResolvedValue({
+			success: true,
+			data: { kind: "refused", reason: "no_approver" },
+		});
+		renderCard([period()]);
+		await waitFor(() => expect(submitButton().disabled).toBe(false));
+
+		const answer = deferred<ReturnType<typeof view>>();
+		state.readPeriodReadiness.mockReturnValueOnce(answer.promise);
+		fireEvent.click(submitButton());
+		await waitFor(() => expect(state.readPeriodReadiness).toHaveBeenCalledTimes(2));
+		// The ready result predates the refusal, so it no longer offers Submit.
+		expect(submitButton().disabled).toBe(true);
+		expect(screen.getByText("Checking whether this period is ready…")).toBeTruthy();
+
+		await act(async () =>
+			answer.resolve(view(assessed(period(), { ready: false, refusals: ["no_approver"] }))),
+		);
+		await waitFor(() =>
+			expect(screen.getByText("Submit is available once this period is ready.")).toBeTruthy(),
+		);
+		expect(submitButton().disabled).toBe(true);
+	});
+
+	it("keeps an unchanged period's details open and its focus across checks", async () => {
+		state.readPeriodReadiness.mockResolvedValue(BLOCKED);
+		renderCard([period()]);
+		const toggle = await screen.findByRole("button", { name: "Show details" });
+		fireEvent.click(toggle);
+		toggle.focus();
+
+		await tick(30_000);
+		await waitFor(() => expect(state.readPeriodReadiness).toHaveBeenCalledTimes(2));
+		await tick(0);
+		const after = screen.getByRole("button", { name: "Hide details" });
+		expect(after).toBe(toggle);
+		expect(after.getAttribute("aria-expanded")).toBe("true");
+		expect(document.activeElement).toBe(toggle);
 	});
 });

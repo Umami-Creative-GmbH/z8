@@ -44,9 +44,11 @@ import { Link, useRouter } from "@/navigation";
 import {
 	type PeriodReadinessState,
 	periodReadinessState,
-	useInvalidatePeriodSubmissionReadiness,
+	usePeriodReadinessRecheck,
 	usePeriodSubmissionReadiness,
 } from "./use-period-submission-readiness";
+
+const CHECKING: PeriodReadinessState = { kind: "checking" };
 
 interface Props {
 	/** The rows the page was rendered with; shown until the first readiness read answers. */
@@ -74,6 +76,10 @@ export { periodSubmissionBlockerKey };
  * Every displayed period is checked for submission readiness (#1348) as the card opens; Submit is
  * enabled only while the current check says the period is ready. A pending submission can be
  * withdrawn. A refusal is explained and readiness is checked again.
+ *
+ * Readiness stays current (#1350): after the employee's own changes, on return or focus, through
+ * the view's Refresh, and every 30 seconds while visible. A background check keeps the last
+ * successful result; a failed one disables Submit until a check succeeds.
  */
 export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: Props) {
 	const { t } = useTranslate();
@@ -82,7 +88,7 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 	const { refresh } = useRouter();
 	const idPrefix = useId();
 	const readinessQuery = usePeriodSubmissionReadiness({ organizationId, employeeId });
-	const invalidateReadiness = useInvalidatePeriodSubmissionReadiness();
+	const { rechecking, recheck } = usePeriodReadinessRecheck();
 	const [submitting, setSubmitting] = useState<string | null>(null);
 	const [refusal, setRefusal] = useState<{
 		startDate: string;
@@ -94,7 +100,8 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 	// The rows of the latest successful read (statuses included), else the rendered ones.
 	const rows: EmployeePeriodViewRow[] =
 		readinessQuery.data === undefined ? periods : (readinessQuery.data?.periods ?? []);
-	const unavailable = readinessQuery.isError && !readinessQuery.isFetching;
+	// Kept while a background check runs after a failure, so the alert is not announced again.
+	const unavailable = readinessQuery.isError;
 
 	const statusLabel = (status: PeriodSubmissionViewStatus) => {
 		switch (status) {
@@ -290,7 +297,8 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 			.finally(() => {
 				inFlight.current = false;
 				setSubmitting(null);
-				void invalidateReadiness();
+				// The shown result predates this attempt: Submit checks until the new one arrives.
+				void recheck();
 			});
 	}
 
@@ -327,7 +335,7 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 			.finally(() => {
 				inFlight.current = false;
 				setSubmitting(null);
-				void invalidateReadiness();
+				void recheck();
 			});
 	}
 
@@ -370,13 +378,8 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 					"timeTracking.periodSubmissions.readiness.submitUnavailable",
 					"Submit is unavailable until readiness can be checked.",
 				);
+			// A background check keeps the last successful result's Submit (#1350, decision 1).
 			case "assessed":
-				if (state.refreshing) {
-					return t(
-						"timeTracking.periodSubmissions.readiness.checking",
-						"Checking whether this period is ready…",
-					);
-				}
 				return state.readiness.ready
 					? null
 					: t(
@@ -413,8 +416,19 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 								"Submission readiness is unavailable right now, so Submit is disabled.",
 							)}
 						</span>
-						<Button size="sm" variant="outline" onClick={() => void readinessQuery.refetch()}>
-							<IconRefresh className="size-4" aria-hidden="true" />
+						<Button
+							size="sm"
+							variant="outline"
+							aria-busy={rechecking}
+							onClick={() => {
+								if (!rechecking) void recheck();
+							}}
+						>
+							{rechecking ? (
+								<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+							) : (
+								<IconRefresh className="size-4" aria-hidden="true" />
+							)}
 							{t("timeTracking.periodSubmissions.readiness.retry", "Retry")}
 						</Button>
 					</div>
@@ -422,10 +436,13 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 				<ul className="divide-y">
 					{rows.map((period) => {
 						const state = periodReadinessState(readinessQuery, period.startDate);
+						// The shown result is known stale (own submit or withdraw, Retry): Submit
+						// checks while the result stays visible until the new one replaces it.
+						const submitState: PeriodReadinessState = rechecking ? CHECKING : state;
 						const submittable =
 							isPeriodSubmittable(period.status) &&
 							!(state.kind === "assessed" && state.readiness.refusals.includes("not_expected"));
-						const reason = disabledReason(state);
+						const reason = disabledReason(submitState);
 						const blockers = state.kind === "assessed" ? state.readiness.blockers : [];
 						const isExpanded = expanded.has(period.startDate);
 						const detailsId = `${idPrefix}-details-${period.startDate}`;
@@ -508,9 +525,12 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 								</div>
 								<div className="flex flex-col items-start gap-1 sm:items-end">
 									<div className="flex items-center gap-3">
-										<Badge variant={STATUS_VARIANTS[period.status]}>
-											{statusLabel(period.status)}
-										</Badge>
+										{/* A status another person changed is announced once, when it changes. */}
+										<span aria-live="polite">
+											<Badge variant={STATUS_VARIANTS[period.status]}>
+												{statusLabel(period.status)}
+											</Badge>
+										</span>
 										{submittable ? (
 											<Button
 												size="sm"
@@ -518,7 +538,7 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 												disabled={reason !== null || submitting !== null}
 												aria-describedby={reason ? reasonId : undefined}
 											>
-												{state.kind === "checking" ? (
+												{submitState.kind === "checking" ? (
 													<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 												) : (
 													<IconSend className="size-4" aria-hidden="true" />

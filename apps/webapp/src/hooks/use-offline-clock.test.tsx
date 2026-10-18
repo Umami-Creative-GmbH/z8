@@ -226,6 +226,31 @@ describe("offline clock caller outcomes", () => {
 		);
 	});
 
+	it("checks period submission readiness again once a synced clock event commits (#1350)", async () => {
+		const readiness = vi.fn(async () => ({ ready: true }));
+		const { result } = renderHook(
+			() => {
+				useQuery({
+					queryKey: queryKeys.periodSubmissions.readiness("org-1", "employee-1"),
+					queryFn: readiness,
+				});
+				return useOfflineClock();
+			},
+			{ wrapper },
+		);
+		await waitFor(() => expect(result.current.swReady).toBe(true));
+		await waitFor(() => expect(readiness).toHaveBeenCalledTimes(1));
+		act(() =>
+			broadcast({
+				type: "SYNC_SUCCESS",
+				userId: "user-1",
+				organizationId: "org-1",
+				serverId: "committed-entry",
+			}),
+		);
+		await waitFor(() => expect(readiness).toHaveBeenCalledTimes(2));
+	});
+
 	describe("frozen clock commands (#279)", () => {
 		function stubCapabilities() {
 			const fetch = vi.fn(async () =>

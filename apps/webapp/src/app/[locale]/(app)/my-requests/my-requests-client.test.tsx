@@ -15,6 +15,24 @@ import type { SelfServiceRequestResult } from "@/lib/self-service-requests/types
 
 const cancelMyAbsenceRequestMock = vi.hoisted(() => vi.fn());
 const cancelMyTimeCorrectionRequestMock = vi.hoisted(() => vi.fn());
+const invalidateReadinessMock = vi.hoisted(() => vi.fn());
+
+// Counts readiness invalidations; still invalidates for real when a query client is provided.
+vi.mock("@/lib/query/period-submission-readiness", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/query/period-submission-readiness")>();
+	const { QueryClientContext } = await import("@tanstack/react-query");
+	const { use } = await import("react");
+	return {
+		...actual,
+		useInvalidatePeriodSubmissionReadiness: () => {
+			const client = use(QueryClientContext);
+			return () => {
+				invalidateReadinessMock();
+				return client ? actual.invalidatePeriodSubmissionReadiness(client) : Promise.resolve();
+			};
+		},
+	};
+});
 
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -390,6 +408,8 @@ describe("MyRequestsClient", () => {
 			);
 		});
 		expect(cancelMyAbsenceRequestMock).toHaveBeenCalledOnce();
+		// Each cancelled request can reopen a period for submission (#1350).
+		await waitFor(() => expect(invalidateReadinessMock).toHaveBeenCalledTimes(2));
 	});
 
 	it("does not cancel when confirmation is declined", () => {
