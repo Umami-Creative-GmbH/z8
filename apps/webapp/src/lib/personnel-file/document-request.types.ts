@@ -92,7 +92,9 @@ export type DocumentRequestRefusal =
 	/** Another open or submitted request already names the renewed document. */
 	| "renewal_already_requested"
 	/** A submission needs at least one document uploaded from the request since the last one. */
-	| "no_documents";
+	| "no_documents"
+	/** An edit tried to change something other than the deadline and note (#1403). */
+	| "not_editable";
 
 /** One entry of a request's history. */
 export interface DocumentRequestEventView {

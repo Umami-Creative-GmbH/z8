@@ -1,4 +1,5 @@
 import {
+	IconClipboardList,
 	IconFileStack,
 	IconFirstAidKit,
 	IconSettings,
@@ -16,6 +17,7 @@ import { systemClock } from "@/lib/datetime/temporal-core";
 import {
 	managesAnyDocuments,
 	managesCategory,
+	managesDocumentRequests,
 } from "@/lib/personnel-file/access";
 import { listManagedEmployees } from "@/lib/personnel-file/access-store";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
@@ -75,6 +77,14 @@ async function PersonnelFilesContent() {
 									"settings.personnelFiles.area.payslipBatch",
 									"Payslip batch",
 								)}
+							</Link>
+						</Button>
+					) : null}
+					{managesDocumentRequests(current.access) ? (
+						<Button asChild variant="outline">
+							<Link href="/personnel-files/document-requests">
+								<IconClipboardList aria-hidden="true" className="size-4" />
+								{t("settings.personnelFiles.area.documentRequests", "Document requests")}
 							</Link>
 						</Button>
 					) : null}

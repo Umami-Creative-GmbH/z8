@@ -1,6 +1,6 @@
 "use client";
 
-import { IconFilePlus, IconX } from "@tabler/icons-react";
+import { IconFilePlus } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -8,22 +8,18 @@ import { listEmployeeDocumentRequestsAction } from "@/app/[locale]/(app)/personn
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	DOCUMENT_REQUEST_CATEGORIES,
-	type DocumentRequestView,
-	isActiveDocumentRequestStatus,
-} from "@/lib/personnel-file/document-request.types";
+import { DOCUMENT_REQUEST_CATEGORIES } from "@/lib/personnel-file/document-request.types";
 import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { queryKeys } from "@/lib/query/keys";
-import { CancelDocumentRequestDialog } from "./cancel-document-request-dialog";
 import { CreateDocumentRequestDialog } from "./create-document-request-dialog";
-import { DocumentRequestDecisionActions } from "./document-request-decision";
 import { DocumentRequestList } from "./document-request-list";
+import { DocumentRequestOfficerActions } from "./document-request-officer-actions";
 
 /**
  * The requests section of one employee's personnel file (#1401), for whoever
  * covers the employee's certificates or other documents: their requests with
- * status and history, and create and cancel. Nothing for anyone else; the
+ * status and history, create, and edit and cancel (#1403,
+ * `DocumentRequestOfficerActions`). Nothing for anyone else; the
  * server decides what is listed.
  */
 export function DocumentRequestsSection({
@@ -48,7 +44,6 @@ function DocumentRequestsCard({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [creating, setCreating] = useState(false);
-	const [cancelling, setCancelling] = useState<DocumentRequestView | null>(null);
 	const employeeId = capability.employeeId;
 
 	const query = useQuery({
@@ -101,29 +96,13 @@ function DocumentRequestsCard({
 					<DocumentRequestList
 						requests={query.data}
 						timezone={capability.timezone}
-						actions={(request) =>
-							isActiveDocumentRequestStatus(request.status) ? (
-								<>
-									<DocumentRequestDecisionActions request={request} onDecided={refresh} />
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										onClick={() => setCancelling(request)}
-										aria-label={t(
-											"settings.personnelFiles.requests.cancel.open",
-											"Cancel {title}",
-											{
-												title: request.title,
-											},
-										)}
-									>
-										<IconX aria-hidden="true" className="size-4" />
-										{t("settings.personnelFiles.requests.cancel.button", "Cancel")}
-									</Button>
-								</>
-							) : null
-						}
+						actions={(request) => (
+							<DocumentRequestOfficerActions
+								request={request}
+								today={capability.today}
+								onChanged={refresh}
+							/>
+						)}
 					/>
 				)}
 			</CardContent>
@@ -134,13 +113,6 @@ function DocumentRequestsCard({
 				categories={categories}
 				today={capability.today}
 				onCreated={refresh}
-			/>
-			<CancelDocumentRequestDialog
-				request={cancelling}
-				onOpenChange={(open) => {
-					if (!open) setCancelling(null);
-				}}
-				onCancelled={refresh}
 			/>
 		</Card>
 	);

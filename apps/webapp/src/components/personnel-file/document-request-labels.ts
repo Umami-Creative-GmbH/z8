@@ -84,6 +84,10 @@ export function useDocumentRequestErrorMessage() {
 			"settings.personnelFiles.requests.error.noDocuments",
 			"Upload at least one document before you submit.",
 		),
+		not_editable: t(
+			"settings.personnelFiles.requests.error.notEditable",
+			"Only the deadline and note can be changed. Cancel the request and create a new one instead.",
+		),
 		conflict: t(
 			"settings.personnelFiles.requests.error.conflict",
 			"Someone else changed this request in the meantime. Reload it and try again.",

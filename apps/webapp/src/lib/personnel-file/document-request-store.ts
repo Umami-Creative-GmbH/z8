@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, type SQL, sql } from "drizzle-orm";
 import type { Temporal } from "temporal-polyfill";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -19,6 +19,7 @@ import {
 	type EmployeeRef,
 	isOwnDocument,
 	managedCategoriesFor,
+	managesDocumentRequests,
 	type PersonnelFileAccess,
 } from "./access";
 import {
@@ -37,11 +38,17 @@ import {
 	type DocumentRequestRefusal,
 	type DocumentRequestStatus,
 	type DocumentRequestView,
+	isActiveDocumentRequestStatus,
 } from "./document-request.types";
+import type {
+	DocumentRequestOverviewFilters,
+	ManagedDocumentRequestView,
+} from "./document-request-overview";
 import {
 	isDocumentRequestOverdue,
 	nextDocumentRequestStatus,
 	optionalDocumentRequestText,
+	validateDocumentRequestEdit,
 	validateDocumentRequestInput,
 	validateDocumentRequestReason,
 } from "./document-request-rules";
@@ -617,6 +624,178 @@ export async function acceptDocumentRequest(
 		},
 		now,
 	);
+}
+
+export type EditDocumentRequestResult =
+	/** `eventId` is null when nothing changed: then no history event is recorded. */
+	| { kind: "edited"; request: DocumentRequestView; eventId: string | null }
+	| { kind: "not_found" }
+	| { kind: "conflict" }
+	| { kind: "refused"; reason: DocumentRequestRefusal };
+
+/**
+ * Changes the deadline and note of an open or submitted request (#1403), by
+ * whoever covers it now, never on their own file. Employee, category, title
+ * and renewed document never change. Each edit is a history event and an
+ * audit record with what changed; a new deadline re-arms the deadline
+ * reminders (their ledger is keyed by the deadline, #1406). A closed request
+ * or a stale `expectedVersion` conflicts.
+ */
+export async function editDocumentRequest(
+	database: Database,
+	access: PersonnelFileAccess,
+	input: {
+		requestId: string;
+		deadline?: unknown;
+		note?: unknown;
+		expectedVersion?: number | null;
+	},
+	now: Instant = systemClock.nowInstant(),
+): Promise<EditDocumentRequestResult> {
+	const { today } = await loadOrganizationDay(database, {
+		organizationId: access.organizationId,
+		now,
+	});
+	return database.transaction(async (tx): Promise<EditDocumentRequestResult> => {
+		const lookup = await lockManagedDocumentRequest(tx, access, input.requestId);
+		if (lookup.kind !== "managed") return lookup;
+		const { request } = lookup;
+		if (
+			!isActiveDocumentRequestStatus(request.status) ||
+			(input.expectedVersion !== undefined &&
+				input.expectedVersion !== null &&
+				input.expectedVersion !== request.version)
+		) {
+			return { kind: "conflict" };
+		}
+		const validated = validateDocumentRequestEdit(request, input, today);
+		if (!validated.ok) return { kind: "refused", reason: validated.reason };
+		if (Object.keys(validated.value).length === 0) {
+			const [view] = await toDocumentRequestViews(tx, access, [request], today);
+			if (!view) throw new Error("Failed to read the document request");
+			return { kind: "edited", request: view, eventId: null };
+		}
+		const applied = await applyDocumentRequestEvent(tx, {
+			request,
+			event: { kind: "edited", actorUserId: access.userId, patch: validated.value },
+			expectedVersion: input.expectedVersion,
+			now,
+		});
+		if (applied.kind === "conflict") return { kind: "conflict" };
+		const [view] = await toDocumentRequestViews(tx, access, [applied.request], today);
+		if (!view) throw new Error("Failed to read the document request");
+		return { kind: "edited", request: view, eventId: applied.eventId };
+	});
+}
+
+export type ManagedDocumentRequestsResult =
+	/** The viewer covers no requestable category: the server refuses the list. */
+	| { kind: "refused" }
+	| {
+			kind: "ok";
+			rows: ManagedDocumentRequestView[];
+			total: number;
+			page: number;
+			pageSize: number;
+			pageCount: number;
+	  };
+
+function statusFilterCondition(filters: DocumentRequestOverviewFilters): SQL | undefined {
+	switch (filters.status) {
+		case "all":
+			return undefined;
+		case "active":
+			return inArray(employeeDocumentRequest.status, [...ACTIVE_DOCUMENT_REQUEST_STATUSES]);
+		default:
+			return eq(employeeDocumentRequest.status, filters.status);
+	}
+}
+
+const isActiveRequest = () => sql`${employeeDocumentRequest.status} in ('open', 'submitted')`;
+
+/**
+ * One page of the requests the viewer covers as an officer, across employees
+ * (the "Document requests" page, #1403): the requestable categories each
+ * grant covers, for the employees in its scope; everything for owners and
+ * admins; never the viewer's own file (`managedDocumentRequestsCondition`).
+ * Overdue is open and past the deadline in the organization's calendar.
+ * Active requests come first, the nearest deadline first; closed ones follow,
+ * most recently changed first. Former employees' requests stay listed.
+ */
+export async function listManagedDocumentRequests(
+	database: Database,
+	access: PersonnelFileAccess,
+	filters: DocumentRequestOverviewFilters,
+	now: Instant = systemClock.nowInstant(),
+): Promise<ManagedDocumentRequestsResult> {
+	if (!managesDocumentRequests(access)) return { kind: "refused" };
+	const { organizationId } = access;
+	const { today } = await loadOrganizationDay(database, { organizationId, now });
+	const where = and(
+		managedDocumentRequestsCondition(access),
+		statusFilterCondition(filters),
+		filters.overdue
+			? and(
+					eq(employeeDocumentRequest.status, "open"),
+					lt(employeeDocumentRequest.deadline, today.toString()),
+				)
+			: undefined,
+	) as SQL;
+	const ofEmployee = and(
+		eq(employee.id, employeeDocumentRequest.employeeId),
+		eq(employee.organizationId, organizationId),
+	);
+
+	const [countRow] = await database
+		.select({ total: sql<number>`count(*)::int` })
+		.from(employeeDocumentRequest)
+		.innerJoin(employee, ofEmployee)
+		.where(where);
+	const total = countRow?.total ?? 0;
+	const pageCount = Math.max(1, Math.ceil(total / filters.pageSize));
+	const page = Math.min(filters.page, pageCount);
+	const rows = await database
+		.select({
+			request: employeeDocumentRequest,
+			userName: user.name,
+			employeeNumber: employee.employeeNumber,
+			isActive: employee.isActive,
+		})
+		.from(employeeDocumentRequest)
+		.innerJoin(employee, ofEmployee)
+		.leftJoin(user, eq(user.id, employee.userId))
+		.where(where)
+		.orderBy(
+			sql`case when ${isActiveRequest()} then 0 else 1 end`,
+			sql`case when ${isActiveRequest()} then ${employeeDocumentRequest.deadline} end asc`,
+			desc(employeeDocumentRequest.updatedAt),
+			asc(employeeDocumentRequest.id),
+		)
+		.limit(filters.pageSize)
+		.offset((page - 1) * filters.pageSize);
+
+	const views = await toDocumentRequestViews(
+		database,
+		access,
+		rows.map((row) => row.request),
+		today,
+	);
+	return {
+		kind: "ok",
+		rows: views.map((view, index) => {
+			const row = rows[index];
+			return {
+				...view,
+				employeeName: row?.userName?.trim() || row?.employeeNumber || view.employeeId,
+				employeeNumber: row?.employeeNumber ?? null,
+				isFormer: row ? !row.isActive : false,
+			};
+		}),
+		total,
+		page,
+		pageSize: filters.pageSize,
+		pageCount,
+	};
 }
 
 const NEWEST_FIRST = [

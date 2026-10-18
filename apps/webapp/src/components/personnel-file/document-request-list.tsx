@@ -99,11 +99,14 @@ export function DocumentRequestList({
 	requests,
 	timezone,
 	actions,
+	subject,
 }: {
 	requests: readonly DocumentRequestView[];
 	/** The organization's timezone: history times are shown in it. */
 	timezone: string;
 	actions?: (request: DocumentRequestView) => ReactNode;
+	/** Whose request it is, above its title (the officer page across employees, #1403). */
+	subject?: (request: DocumentRequestView) => ReactNode;
 }) {
 	const { t } = useTranslate();
 	const locale = useAppLocale();
@@ -116,6 +119,7 @@ export function DocumentRequestList({
 				<li key={request.id} className="space-y-2 p-3">
 					<div className="flex flex-wrap items-start justify-between gap-2">
 						<div className="min-w-0 space-y-1">
+							{subject ? subject(request) : null}
 							<div className="flex flex-wrap items-center gap-2">
 								<span className="font-medium">{request.title}</span>
 								<Badge variant="secondary">{fileLabels.categories[request.category]}</Badge>
