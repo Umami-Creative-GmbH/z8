@@ -332,7 +332,8 @@ function correctionComparison(
 ): ApprovalInboxTimeComparison {
 	const facts = record(row.submittedFacts);
 	const captured =
-		facts?.organizationId === row.organizationId &&
+		facts !== null &&
+		facts.organizationId === row.organizationId &&
 		facts.workPeriodId === row.sourceId &&
 		facts.kind === "time_correction";
 	const baseline = captured && facts ? record(facts.baseline) : null;

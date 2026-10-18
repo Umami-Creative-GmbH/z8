@@ -8,7 +8,9 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 		and: vi.fn((...args: unknown[]) => ({ and: args })),
 		desc: vi.fn((value: unknown) => ({ desc: value })),
 		eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-		inArray: vi.fn((left: unknown, right: unknown) => ({ inArray: [left, right] })),
+		inArray: vi.fn((left: unknown, right: unknown) => ({
+			inArray: [left, right],
+		})),
 		lte: vi.fn((left: unknown, right: unknown) => ({ lte: [left, right] })),
 		or: vi.fn((...args: unknown[]) => ({ or: args })),
 	};
@@ -30,7 +32,8 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 		DatabaseServiceLive: Layer.succeed(
 			DatabaseService,
 			DatabaseService.of({
-				query: (_label: string, query: () => Promise<unknown>) => Effect.promise(query),
+				query: (_label: string, query: () => Promise<unknown>) =>
+					Effect.promise(query),
 				db: {
 					query: {
 						approvalRequest: {
@@ -146,7 +149,9 @@ describe("fetchApprovals", () => {
 			approverId: "manager-1",
 			organizationId: "org-1",
 			status: "pending",
-			createdAt: new Date(`2026-04-${String(11 - index).padStart(2, "0")}T09:00:00.000Z`),
+			createdAt: new Date(
+				`2026-04-${String(11 - index).padStart(2, "0")}T09:00:00.000Z`,
+			),
 			approvedAt: null,
 			rejectionReason: null,
 			requester: {
@@ -266,7 +271,11 @@ describe("fetchApprovals", () => {
 			}).pipe(Effect.provide(DatabaseServiceLive)),
 		);
 
-		expect(result.map((item) => item.id)).toEqual(["approval-a", "approval-b", "approval-c"]);
+		expect(result.map((item) => item.id)).toEqual([
+			"approval-a",
+			"approval-b",
+			"approval-c",
+		]);
 	});
 
 	it("does not apply a handler-level createdAt cursor filter that hides newer lower-priority items", () => {
@@ -282,7 +291,7 @@ describe("fetchApprovals", () => {
 			}),
 		});
 
-		expect(conditions).toHaveLength(4);
+		expect(conditions).toHaveLength(5);
 	});
 
 	it("keeps approvals scoped to the current approver by default", () => {
@@ -293,7 +302,7 @@ describe("fetchApprovals", () => {
 			limit: 20,
 		});
 
-		expect(conditions).toHaveLength(4);
+		expect(conditions).toHaveLength(5);
 	});
 
 	it("includes the authorization predicate in approval request conditions", () => {
@@ -317,7 +326,10 @@ describe("fetchApprovals", () => {
 			status: "pending",
 			limit: 20,
 			eligibleApprovalScopes: [
-				{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["manager-1", "manager-2"] },
+				{
+					requesterEmployeeId: "employee-2",
+					eligibleApproverIds: ["manager-1", "manager-2"],
+				},
 			],
 		});
 
@@ -376,14 +388,17 @@ describe("fetchApprovals", () => {
 			includeAllApprovers: true,
 		});
 
-		expect(conditions).toHaveLength(3);
+		expect(conditions).toHaveLength(4);
 	});
 
 	it("counts assigned approver or manager-routed eligible requester approvals", async () => {
 		const result = await Effect.runPromise(
 			getApprovalCount("absence_entry", "manager-1", "org-1", {
 				eligibleApprovalScopes: [
-					{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["manager-1", "manager-2"] },
+					{
+						requesterEmployeeId: "employee-2",
+						eligibleApproverIds: ["manager-1", "manager-2"],
+					},
 				],
 			}).pipe(Effect.provide(DatabaseServiceLive)),
 		);
@@ -421,6 +436,7 @@ describe("fetchApprovals", () => {
 					{ eq: [expect.anything(), "absence_entry"] },
 					{ eq: [expect.anything(), "org-1"] },
 					{ eq: [expect.anything(), "pending"] },
+					expect.objectContaining({ queryChunks: expect.any(Array) }),
 				],
 			}),
 		);

@@ -110,24 +110,6 @@ export function buildBaseConditions(
 		eq(approvalRequest.status, params.status || "pending"),
 	];
 
-	// A legacy row linked to a canonical lifecycle is only a compatibility alias.
-	// List and count share this predicate so the assignment is represented once.
-	if (
-		(params.status ?? "pending") === "pending" &&
-		(entityType === "absence_entry" || entityType === "time_entry")
-	) {
-		const sourceTable =
-			entityType === "absence_entry" ? sql`absence_entry` : sql`work_period`;
-		const workflowType =
-			entityType === "absence_entry" ? "absence" : "time_correction";
-		conditions.push(sql`not exists (
-			select 1 from ${sourceTable} source
-			join approval_workflow workflow on source.approval_workflow_id = workflow.id and workflow.organization_id = source.organization_id and workflow.source_id = source.id and workflow.source_type = ${entityType} and workflow.workflow_type = ${workflowType}
-			join approval_workflow_rollout rollout on rollout.organization_id = workflow.organization_id and rollout.workflow_type = workflow.workflow_type
-			where source.id = ${approvalRequest.entityId} and source.organization_id = ${approvalRequest.organizationId}
-			and ${approvalAuthoritySql(sql`rollout.lifecycle_mode`, "canonical")}
-		)`);
-	}
 	if (params.authorizationPredicate) {
 		conditions.push(params.authorizationPredicate);
 	}
@@ -174,6 +156,25 @@ export function buildBaseConditions(
 			.minus({ days: params.minAgeDays })
 			.toJSDate();
 		conditions.push(lte(approvalRequest.createdAt, cutoffDate));
+	}
+
+	// A legacy row linked to a canonical lifecycle is only a compatibility alias.
+	// List and count share this predicate so the assignment is represented once.
+	if (
+		(params.status ?? "pending") === "pending" &&
+		(entityType === "absence_entry" || entityType === "time_entry")
+	) {
+		const sourceTable =
+			entityType === "absence_entry" ? sql`absence_entry` : sql`work_period`;
+		const workflowType =
+			entityType === "absence_entry" ? "absence" : "time_correction";
+		conditions.push(sql`not exists (
+			select 1 from ${sourceTable} source
+			join approval_workflow workflow on source.approval_workflow_id = workflow.id and workflow.organization_id = source.organization_id and workflow.source_id = source.id and workflow.source_type = ${entityType} and workflow.workflow_type = ${workflowType}
+			join approval_workflow_rollout rollout on rollout.organization_id = workflow.organization_id and rollout.workflow_type = workflow.workflow_type
+			where source.id = ${approvalRequest.entityId} and source.organization_id = ${approvalRequest.organizationId}
+			and ${approvalAuthoritySql(sql`rollout.lifecycle_mode`, "canonical")}
+		)`);
 	}
 
 	return conditions;

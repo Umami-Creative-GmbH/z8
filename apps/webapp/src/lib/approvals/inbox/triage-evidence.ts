@@ -104,21 +104,65 @@ export async function resolveApprovalInboxTriage(input: {
 	};
 }
 
-/** Composition point for the current organization-scoped evidence adapters. */
+/** Request evidence is resolved first so payroll can bind to the same submitted revision. */
+async function loadRequestTriageEvidence(
+	target: ApprovalInboxTriageTarget,
+): Promise<ApprovalInboxTriageEvidenceResult> {
+	switch (target.requestKind) {
+		case "absence":
+			return (
+				await import("./absence-coverage-evidence")
+			).loadAbsenceCoverageTriageEvidence(target);
+		case "absence_change":
+			return (
+				await import("./absence-change-coverage-evidence")
+			).loadAbsenceChangeCoverageTriageEvidence(target);
+		case "time_correction":
+			return (
+				await import("./time-correction-evidence")
+			).loadTimeCorrectionTriageEvidence(target);
+		default:
+			return { context: target.context, evidence: [] };
+	}
+}
+function unavailableTriageEvidence(
+	target: ApprovalInboxTriageTarget,
+	check: ApprovalTriageEvidence["check"],
+): ApprovalInboxTriageEvidenceResult {
+	return {
+		context: target.context,
+		evidence: [
+			{
+				check,
+				state: "unknown",
+				validity: "unverifiable",
+				context: target.context,
+				limitation: "unavailable",
+			},
+		],
+	};
+}
+/** Compose current adapters independently: an unavailable check cannot erase a known finding. */
 export async function loadCurrentApprovalTriageEvidence(
 	target: ApprovalInboxTriageTarget,
 ): Promise<ApprovalInboxTriageEvidenceResult> {
-	if (target.requestKind === "absence")
-		return (
-			await import("./absence-coverage-evidence")
-		).loadAbsenceCoverageTriageEvidence(target);
-	if (target.requestKind === "absence_change")
-		return (
-			await import("./absence-change-coverage-evidence")
-		).loadAbsenceChangeCoverageTriageEvidence(target);
-	return { context: target.context, evidence: [] };
+	if (target.requestKind === "other")
+		return { context: target.context, evidence: [] };
+	const request = await loadRequestTriageEvidence(target).catch(() =>
+		unavailableTriageEvidence(
+			target,
+			target.requestKind === "time_correction" ? "correction" : "coverage",
+		),
+	);
+	const payrollTarget = { ...target, context: request.context };
+	const payroll = await import("./payroll-triage-evidence")
+		.then((adapter) => adapter.loadPayrollTriageEvidence(payrollTarget))
+		.catch(() => unavailableTriageEvidence(payrollTarget, "payroll"));
+	return {
+		context: request.context.revision ? request.context : payroll.context,
+		evidence: [...request.evidence, ...payroll.evidence],
+	};
 }
-
 /** A database-free read adapter default; production callers select the current loader. */
 export async function unknownApprovalInboxTriageEvidence(
 	target: ApprovalInboxTriageTarget,

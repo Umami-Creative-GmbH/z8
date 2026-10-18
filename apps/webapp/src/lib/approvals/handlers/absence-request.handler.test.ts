@@ -181,10 +181,13 @@ describe("absence approval handler tenant scope", () => {
 			collectColumnNames(absenceFindMany.mock.calls[0]?.[0]?.where),
 		).toEqual(expect.arrayContaining(["id", "organization_id"]));
 		// The summary shows the absence days resolved for the requester (#979).
-		expect(absenceDaysMocks.getAbsenceDaysByAbsenceId).toHaveBeenCalledWith(expect.anything(), {
-			organizationId: "org-1",
-			absences: [expect.objectContaining({ id: "absence-1" })],
-		});
+		expect(absenceDaysMocks.getAbsenceDaysByAbsenceId).toHaveBeenCalledWith(
+			expect.anything(),
+			{
+				organizationId: "org-1",
+				absences: [expect.objectContaining({ id: "absence-1" })],
+			},
+		);
 		expect(result[0]?.display.summary).toMatch(/^4 days off - /);
 	});
 
@@ -271,6 +274,8 @@ describe("absence approval handler tenant scope", () => {
 			"employee-2",
 			"employee-3",
 			"employee-4",
+			"absence_entry",
+			"absence",
 			"pending",
 		]);
 		expect(whereQuery.sql).toContain(
@@ -316,6 +321,8 @@ describe("absence approval handler tenant scope", () => {
 			"absence_entry",
 			"org-1",
 			"pending",
+			"absence_entry",
+			"absence",
 			"pending",
 		]);
 	});
@@ -341,11 +348,14 @@ describe("absence approval handler tenant scope", () => {
 		);
 
 		expect(result.approval.organizationId).toBe("org-1");
-		expect(absenceDaysMocks.getAbsenceDays).toHaveBeenCalledWith(expect.anything(), {
-			organizationId: "org-1",
-			employeeId: "employee-1",
-			absence: expect.objectContaining({ id: "absence-1" }),
-		});
+		expect(absenceDaysMocks.getAbsenceDays).toHaveBeenCalledWith(
+			expect.anything(),
+			{
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				absence: expect.objectContaining({ id: "absence-1" }),
+			},
+		);
 		expect(result.entity.absenceDays).toBe(4);
 		expect(result.approval.display.summary).toMatch(/^4 days off - /);
 		expect(
