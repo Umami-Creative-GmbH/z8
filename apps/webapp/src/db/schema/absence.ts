@@ -201,6 +201,17 @@ export const absenceSetting = pgTable("absence_setting", {
 	prorationNoticeDismissedBy: text("proration_notice_dismissed_by").references(() => user.id, {
 		onDelete: "set null",
 	}),
+	/**
+	 * When an owner or admin dismissed the one-time list of employees whose 2026 allowance the
+	 * working-week conversion reduces (Absences ADR 0003). Once set, it never comes back.
+	 */
+	workingWeekNoticeDismissedAt: timestamp("working_week_notice_dismissed_at", {
+		withTimezone: true,
+	}),
+	workingWeekNoticeDismissedBy: text("working_week_notice_dismissed_by").references(
+		() => user.id,
+		{ onDelete: "set null" },
+	),
 	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
 		.$onUpdate(() => currentTimestamp())

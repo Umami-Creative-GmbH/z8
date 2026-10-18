@@ -7,7 +7,9 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
 	type AbsenceDaysDatabase,
 	loadWorkingDaysForEmployees,
+	loadWorkingWeekPeriodsForEmployees,
 } from "./absence-days-resolver";
+import { FIRST_WORKING_WEEK_YEAR } from "./prorated-allowance";
 import {
 	loadEmployeeVacationOverrides,
 	loadProratedVacationAllowances,
@@ -33,12 +35,22 @@ import {
 	loadCompanyDefaultVacationPolicy,
 	type VacationPolicy,
 } from "./vacation-policy-store";
-import { resolveWeightedVacationPolicy } from "./weighted-vacation-policy";
+import {
+	resolveWeightedVacationPolicy,
+	type WeightedVacationPolicy,
+} from "./weighted-vacation-policy";
+import type { WorkingWeekPeriod } from "./working-days";
 
 export interface VacationBalances {
-	policies: Map<string, VacationPolicy>;
+	/**
+	 * Each employee's policy for the year: reference amounts weighted by month, with the combined
+	 * policy/working-week rates the allowance converts (Absences ADR 0003).
+	 */
+	policies: Map<string, WeightedVacationPolicy>;
 	configurations: Map<string, VacationBalanceConfiguration>;
 	periods: Map<string, EmployeeVacationPolicyPeriod[]>;
+	/** Each employee's working days per week over the year, for accrual postings. */
+	workingWeeks: Map<string, WorkingWeekPeriod[]>;
 	/** The organization's company default policy for the year; undefined when there is none. */
 	policy: VacationPolicy | undefined;
 	/** Only employees with complete policy coverage receive a numeric balance. */
@@ -102,6 +114,7 @@ export async function loadVacationBalances(
 			policies: new Map(),
 			configurations: new Map(),
 			periods: new Map(),
+			workingWeeks: new Map(),
 			balances: new Map(),
 			adjustments: new Map(),
 		};
@@ -117,11 +130,18 @@ export async function loadVacationBalances(
 		month: 12,
 		day: 31,
 	}).toString();
-	const periods = (await vacationPolicyCalculationsEnabled(
-		database,
-		organizationId,
-		year,
-	))
+	const [policyCalculationsEnabled, workingWeeks] = await Promise.all([
+		vacationPolicyCalculationsEnabled(database, organizationId, year),
+		year >= FIRST_WORKING_WEEK_YEAR
+			? loadWorkingWeekPeriodsForEmployees(database, {
+					organizationId,
+					employeeIds,
+					startDate: startOfYear,
+					endDate: endOfYear,
+				})
+			: new Map<string, WorkingWeekPeriod[]>(),
+	]);
+	const periods = policyCalculationsEnabled
 		? await loadEmployeeVacationPolicyPeriods(database, {
 				organizationId,
 				employeeIds,
@@ -140,10 +160,13 @@ export async function loadVacationBalances(
 					],
 				]),
 			);
-	const policies = new Map<string, VacationPolicy>();
+	const policies = new Map<string, WeightedVacationPolicy>();
 	const configurations = new Map<string, VacationBalanceConfiguration>();
 	for (const [employeeId, employeePeriods] of periods) {
-		const result = resolveWeightedVacationPolicy(employeePeriods, { year });
+		const result = resolveWeightedVacationPolicy(employeePeriods, {
+			year,
+			workingWeeks: workingWeeks.get(employeeId),
+		});
 		configurations.set(employeeId, result.configuration);
 		if (result.policy) policies.set(employeeId, result.policy);
 	}
@@ -153,6 +176,7 @@ export async function loadVacationBalances(
 			policies,
 			configurations,
 			periods,
+			workingWeeks,
 			balances: new Map(),
 			adjustments: new Map(),
 		};
@@ -261,5 +285,13 @@ export async function loadVacationBalances(
 			}),
 		);
 	}
-	return { policy, policies, configurations, periods, balances, adjustments };
+	return {
+		policy,
+		policies,
+		configurations,
+		periods,
+		workingWeeks,
+		balances,
+		adjustments,
+	};
 }

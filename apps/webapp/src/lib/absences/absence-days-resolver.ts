@@ -12,7 +12,12 @@ import {
 	mondayToFriday,
 } from "./absence-days";
 import { getVacationHolidays } from "./vacation-holidays";
-import { type WorkingDayPolicyAssignment, workingDaysFrom } from "./working-days";
+import {
+	type WorkingDayPolicyAssignment,
+	type WorkingWeekPeriod,
+	workingDaysFrom,
+	workingWeekPeriodsFrom,
+} from "./working-days";
 
 /** The caller's client: the global `db`, its `DatabaseService`'s, or a transaction. */
 export type AbsenceDaysDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -38,6 +43,59 @@ export async function loadWorkingDaysForEmployees(
 	database: AbsenceDaysDatabase,
 	input: WorkingDaysRange & { organizationId: string; employeeIds: readonly string[] },
 ): Promise<Map<string, IsWorkingDay>> {
+	const assignments = await loadWorkPolicyAssignments(database, input);
+	return new Map(
+		await Promise.all(
+			[...assignments].map(
+				async ([employeeId, employeeAssignments]) =>
+					[
+						employeeId,
+						workingDaysFrom({
+							assignments: employeeAssignments,
+							holidays: await getVacationHolidays({
+								database,
+								organizationId: input.organizationId,
+								employeeId,
+								startDate: input.startDate,
+								endDate: input.endDate,
+							}),
+						}),
+					] as const,
+			),
+		),
+	);
+}
+
+/**
+ * The working days per week of each employee in the organization over a range (Absences ADR
+ * 0003), from the same work policy assignments as their working days, but without holidays.
+ * An employee outside the organization gets no entry.
+ */
+export async function loadWorkingWeekPeriodsForEmployees(
+	database: AbsenceDaysDatabase,
+	input: WorkingDaysRange & { organizationId: string; employeeIds: readonly string[] },
+): Promise<Map<string, WorkingWeekPeriod[]>> {
+	const assignments = await loadWorkPolicyAssignments(database, input);
+	return new Map(
+		[...assignments].map(([employeeId, employeeAssignments]) => [
+			employeeId,
+			workingWeekPeriodsFrom({
+				assignments: employeeAssignments,
+				startDate: input.startDate,
+				endDate: input.endDate,
+			}),
+		]),
+	);
+}
+
+/**
+ * Every active work policy assignment that can reach each employee of the organization inside the
+ * range, in two queries however many employees. An employee outside the organization gets no entry.
+ */
+async function loadWorkPolicyAssignments(
+	database: AbsenceDaysDatabase,
+	input: WorkingDaysRange & { organizationId: string; employeeIds: readonly string[] },
+): Promise<Map<string, WorkingDayPolicyAssignment[]>> {
 	const employeeIds = [...new Set(input.employeeIds)];
 	if (employeeIds.length === 0) return new Map();
 
@@ -71,60 +129,49 @@ export async function loadWorkingDaysForEmployees(
 		);
 	}
 
-	const [assignments, holidays] = await Promise.all([
-		database.query.workPolicyAssignment.findMany({
-			where: and(
-				eq(workPolicyAssignment.organizationId, input.organizationId),
-				eq(workPolicyAssignment.isActive, true),
-				or(...reachableAssignments),
-				or(
-					isNull(workPolicyAssignment.effectiveFrom),
-					lt(workPolicyAssignment.effectiveFrom, rangeEndExclusive),
-				),
-				or(
-					isNull(workPolicyAssignment.effectiveUntil),
-					gt(workPolicyAssignment.effectiveUntil, rangeStart),
-				),
+	const assignments = await database.query.workPolicyAssignment.findMany({
+		where: and(
+			eq(workPolicyAssignment.organizationId, input.organizationId),
+			eq(workPolicyAssignment.isActive, true),
+			or(...reachableAssignments),
+			or(
+				isNull(workPolicyAssignment.effectiveFrom),
+				lt(workPolicyAssignment.effectiveFrom, rangeEndExclusive),
 			),
-			columns: {
-				id: true,
-				assignmentType: true,
-				teamId: true,
-				employeeId: true,
-				effectiveFrom: true,
-				effectiveUntil: true,
-				createdAt: true,
-			},
-			with: {
-				policy: {
-					columns: { organizationId: true, isActive: true, scheduleEnabled: true },
-					with: {
-						schedule: {
-							columns: { scheduleType: true, workingDaysPreset: true },
-							with: { days: { columns: { dayOfWeek: true, isWorkDay: true } } },
-						},
+			or(
+				isNull(workPolicyAssignment.effectiveUntil),
+				gt(workPolicyAssignment.effectiveUntil, rangeStart),
+			),
+		),
+		columns: {
+			id: true,
+			policyId: true,
+			assignmentType: true,
+			teamId: true,
+			employeeId: true,
+			effectiveFrom: true,
+			effectiveUntil: true,
+			createdAt: true,
+		},
+		with: {
+			policy: {
+				columns: { organizationId: true, isActive: true, scheduleEnabled: true },
+				with: {
+					schedule: {
+						columns: { scheduleType: true, workingDaysPreset: true },
+						with: { days: { columns: { dayOfWeek: true, isWorkDay: true } } },
 					},
 				},
 			},
-		}),
-		Promise.all(
-			employees.map((row) =>
-				getVacationHolidays({
-					database,
-					organizationId: input.organizationId,
-					employeeId: row.id,
-					startDate: input.startDate,
-					endDate: input.endDate,
-				}),
-			),
-		),
-	]);
+		},
+	});
 
 	const policyAssignments = assignments.flatMap((assignment) => {
 		const policy = assignment.policy;
 		if (!policy?.isActive || policy.organizationId !== input.organizationId) return [];
 		const workingDayAssignment: WorkingDayPolicyAssignment = {
 			id: assignment.id,
+			policyId: assignment.policyId,
 			assignmentType: assignment.assignmentType,
 			effectiveFrom: assignment.effectiveFrom ? instantFromDate(assignment.effectiveFrom) : null,
 			effectiveUntil: assignment.effectiveUntil ? instantFromDate(assignment.effectiveUntil) : null,
@@ -137,17 +184,14 @@ export async function loadWorkingDaysForEmployees(
 	});
 
 	return new Map(
-		employees.map((row, index) => [
+		employees.map((row) => [
 			row.id,
-			workingDaysFrom({
-				assignments: policyAssignments.filter(
-					(assignment) =>
-						assignment.assignmentType === "organization" ||
-						(assignment.assignmentType === "team" && assignment.teamId === row.teamId) ||
-						(assignment.assignmentType === "employee" && assignment.employeeId === row.id),
-				),
-				holidays: holidays[index] ?? [],
-			}),
+			policyAssignments.filter(
+				(assignment) =>
+					assignment.assignmentType === "organization" ||
+					(assignment.assignmentType === "team" && assignment.teamId === row.teamId) ||
+					(assignment.assignmentType === "employee" && assignment.employeeId === row.id),
+			),
 		]),
 	);
 }

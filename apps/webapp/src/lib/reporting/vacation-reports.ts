@@ -300,14 +300,21 @@ export async function generateAccrualProjectionResult(
 		const monthStart = Temporal.PlainDate.from({ year, month, day: 1 });
 		let accrued = annualDays / 12;
 		if (accrual) {
-			// Before rollout, preserve the existing full-month projection; the custom allowance still applies.
+			// Before rollout, preserve the existing full-month projection; the custom allowance still
+			// applies, and each month converts to the working week in effect in it (Absences ADR 0003).
 			accrued =
 				configuration?.status === "legacy"
-					? policy.accrualType === "biweekly"
-						? (annualDays / 26) * 2
-						: annualDays / 12
+					? (policyPeriodMonthlyAccrualDays({
+							periods: result.periods.get(employeeId) ?? [],
+							workingWeeks: result.workingWeeks.get(employeeId),
+							customAnnualDays,
+							year,
+							month,
+							employments: [{ startDate: null, lastWorkingDay: null }],
+						}) ?? 0)
 					: (policyPeriodMonthlyAccrualDays({
 							periods: result.periods.get(employeeId) ?? [],
+							workingWeeks: result.workingWeeks.get(employeeId),
 							customAnnualDays,
 							year,
 							month,

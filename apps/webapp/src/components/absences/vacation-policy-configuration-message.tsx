@@ -1,7 +1,10 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import type { VacationBalanceConfiguration } from "@/lib/absences/types";
+import {
+	hasZeroWorkingDaysSchedule,
+	type VacationBalanceConfiguration,
+} from "@/lib/absences/types";
 
 /** Explain why a reliable balance is unavailable without displaying invented days. */
 export function VacationPolicyConfigurationMessage({
@@ -22,12 +25,17 @@ export function VacationPolicyConfigurationMessage({
 	return (
 		<p className={className}>
 			{label ? `${label}: ` : null}
-			{configuration.status === "conflict"
+			{hasZeroWorkingDaysSchedule(configuration)
 				? t(
-						"common:vacationBalance.conflictingPolicies",
-						"Conflicting vacation policies",
+						"common:vacationBalance.zeroWorkingDays",
+						"Work schedule without working days",
 					)
-				: t("common:vacationBalance.missingPolicy", "Missing vacation policy")}
+				: configuration.status === "conflict"
+					? t(
+							"common:vacationBalance.conflictingPolicies",
+							"Conflicting vacation policies",
+						)
+					: t("common:vacationBalance.missingPolicy", "Missing vacation policy")}
 		</p>
 	);
 }
