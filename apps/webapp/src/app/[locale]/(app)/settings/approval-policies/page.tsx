@@ -6,10 +6,12 @@ import {
 	type ApprovalSettingsTab,
 	ApprovalSettingsTabs,
 } from "@/components/settings/approval-settings/approval-settings-tabs";
+import { ApprovalTriageSettingsForm } from "@/components/settings/approval-settings/triage-settings-form";
 import { EmployeeGroupManagement } from "@/components/settings/employee-group-management";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { loadApprovalSettings } from "@/lib/approvals/approval-settings";
+import { getEffectiveApprovalTriagePolicy } from "@/lib/approvals/triage-policy";
 import { getAbility, getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
@@ -31,6 +33,15 @@ async function ApprovalPoliciesSettingsContent() {
 			<ApprovalPolicyManagement organizationId={organizationId} />
 		);
 		panels.groups = <EmployeeGroupManagement organizationId={organizationId} />;
+		const triagePolicy = await getEffectiveApprovalTriagePolicy({
+			organizationId,
+		});
+		panels.triage = (
+			<ApprovalTriageSettingsForm
+				key={`${organizationId}:${triagePolicy.staleAfterHours}:${triagePolicy.smallCorrectionMinutes}`}
+				policy={triagePolicy}
+			/>
+		);
 	}
 	if (canManageEscalation) {
 		const settings = await loadApprovalSettings(db, organizationId);

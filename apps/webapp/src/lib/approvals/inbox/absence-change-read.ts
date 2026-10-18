@@ -361,6 +361,7 @@ export const absenceChangeInboxRead: CanonicalInboxRead = {
 				organizationId: input.target.organizationId,
 				actorEmployeeId: input.actorEmployeeId,
 				assignmentId: input.target.id,
+				shortcutGuard: input.shortcutGuard,
 				action: input.action,
 				reason: input.reason,
 				allowOrganizationWideApprover: input.allowOrganizationWideApprover,

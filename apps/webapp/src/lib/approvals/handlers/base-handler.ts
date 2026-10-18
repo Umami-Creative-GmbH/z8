@@ -5,12 +5,23 @@
  * and optimize database queries.
  */
 
-import { and, count, desc, eq, inArray, lte, or, type SQL } from "drizzle-orm";
+import {
+	and,
+	count,
+	desc,
+	eq,
+	inArray,
+	lte,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { approvalRequest } from "@/db/schema";
 import type { AnyAppError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { approvalAuthoritySql } from "../authority";
 import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
 import { calculateSLAStatus } from "../domain/sla-calculator";
 import type {
@@ -44,7 +55,11 @@ interface ApprovalQueryConfig<TEntity, TRequestContext = never> {
 	/** Load request-specific display context in one organization-scoped batch. */
 	fetchRequestContexts?: (
 		requests: ApprovalRequestRow[],
-	) => Effect.Effect<Map<string, TRequestContext>, AnyAppError, DatabaseService>;
+	) => Effect.Effect<
+		Map<string, TRequestContext>,
+		AnyAppError,
+		DatabaseService
+	>;
 	/**
 	 * Optional filter to apply after fetching entities
 	 */
@@ -123,7 +138,10 @@ export function buildBaseConditions(
 			(params.status || "pending") === "pending"
 				? [inArray(approvalRequest.approverId, params.coveredApproverIds)]
 				: [];
-		const widening = [...(eligibleApprovalScopeConditions ?? []), ...coveringCondition];
+		const widening = [
+			...(eligibleApprovalScopeConditions ?? []),
+			...coveringCondition,
+		];
 		const approverCondition =
 			widening.length > 0
 				? or(assignedApproverCondition, ...widening)
@@ -138,6 +156,25 @@ export function buildBaseConditions(
 			.minus({ days: params.minAgeDays })
 			.toJSDate();
 		conditions.push(lte(approvalRequest.createdAt, cutoffDate));
+	}
+
+	// A legacy row linked to a canonical lifecycle is only a compatibility alias.
+	// List and count share this predicate so the assignment is represented once.
+	if (
+		(params.status ?? "pending") === "pending" &&
+		(entityType === "absence_entry" || entityType === "time_entry")
+	) {
+		const sourceTable =
+			entityType === "absence_entry" ? sql`absence_entry` : sql`work_period`;
+		const workflowType =
+			entityType === "absence_entry" ? "absence" : "time_correction";
+		conditions.push(sql`not exists (
+			select 1 from ${sourceTable} source
+			join approval_workflow workflow on source.approval_workflow_id = workflow.id and workflow.organization_id = source.organization_id and workflow.source_id = source.id and workflow.source_type = ${entityType} and workflow.workflow_type = ${workflowType}
+			join approval_workflow_rollout rollout on rollout.organization_id = workflow.organization_id and rollout.workflow_type = workflow.workflow_type
+			where source.id = ${approvalRequest.entityId} and source.organization_id = ${approvalRequest.organizationId}
+			and ${approvalAuthoritySql(sql`rollout.lifecycle_mode`, "canonical")}
+		)`);
 	}
 
 	return conditions;

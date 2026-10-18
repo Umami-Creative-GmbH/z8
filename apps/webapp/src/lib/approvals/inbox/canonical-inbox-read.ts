@@ -50,6 +50,8 @@ export interface CanonicalInboxCountInput {
 }
 
 export interface CanonicalInboxLoadInput extends CanonicalInboxCountInput {
+	/** Evaluate current evidence centrally before risk ordering and pagination. */
+	evaluateBeforePagination?: boolean;
 	/** One assignment, for the detail view and decision discovery. */
 	assignmentId?: string;
 	assignmentIds?: string[];
@@ -86,10 +88,13 @@ export interface CanonicalInboxApproval {
 }
 
 /** A page of approvals; `totalCount` is every match before the limit, when known. */
-export type CanonicalInboxApprovalBatch = CanonicalInboxApproval[] & { totalCount?: number };
+export type CanonicalInboxApprovalBatch = CanonicalInboxApproval[] & {
+	totalCount?: number;
+};
 
 /** One inbox decision on a listed assignment, after the inbox's own checks. */
 export interface CanonicalInboxDecisionInput {
+	shortcutGuard?: import("../domain/types").ApprovalActionOptions["shortcutGuard"];
 	target: CanonicalInboxDecisionTarget;
 	actorEmployeeId: string;
 	action: "approve" | "reject";

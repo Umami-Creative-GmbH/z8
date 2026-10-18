@@ -38,7 +38,7 @@ describe("buildInboxTriage", () => {
 		});
 	});
 
-	it("marks small time corrections as low risk only with a safe delta", () => {
+	it("does not infer a safe correction from presentation type and duration delta", () => {
 		expect(
 			buildInboxTriage({
 				type: "time_entry",
@@ -49,9 +49,9 @@ describe("buildInboxTriage", () => {
 				timeDeltaMinutes: 10,
 			}),
 		).toMatchObject({
-			riskLevel: "low",
-			riskReasons: ["small_time_delta"],
-			fastLaneGroup: "small_time_correction",
+			riskLevel: "medium",
+			riskReasons: ["needs_review"],
+			fastLaneGroup: null,
 		});
 	});
 
@@ -71,7 +71,7 @@ describe("buildInboxTriage", () => {
 		});
 	});
 
-	it("marks absence entries without high risk as low risk", () => {
+	it("keeps absence evidence explicitly unknown until verified", () => {
 		expect(
 			buildInboxTriage({
 				type: "absence_entry",
@@ -81,10 +81,10 @@ describe("buildInboxTriage", () => {
 				now: new Date("2026-05-31T09:00:00.000Z"),
 			}),
 		).toMatchObject({
-			riskLevel: "low",
-			riskReasons: ["no_conflicts_detected"],
-			fastLaneGroup: "low_risk_absence",
-			explanation: "No conflicts detected.",
+			riskLevel: "medium",
+			riskReasons: ["payroll_unverified", "coverage_unverified"],
+			fastLaneGroup: null,
+			explanation: "Payroll impact unverified. Coverage not verified.",
 		});
 	});
 

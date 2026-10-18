@@ -5081,6 +5081,7 @@ export async function completeTimeCorrectionDecisionAfterCommit<
 }
 
 export interface ExecuteTimeCorrectionDecisionInput {
+	shortcutGuard?: ApprovalActionOptions["shortcutGuard"];
 	/** Builds the runtime over the database it is handed: the borrowed work transaction. */
 	createRuntime(database: ApprovalWorkflowDatabase): TimeCorrectionDecisionRuntime;
 	/** The caller's database, which opens the transaction; defaults to the application database. */
@@ -5454,6 +5455,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					field: "approvalRequest.metadata.timeRequest.kind",
 				});
 			}
+			if (input.shortcutGuard) await input.shortcutGuard(transactionDb);
 			if (input.bound && kind !== "time_correction") {
 				// A time-correction binding decides only a time correction.
 				throw new ApprovalEvidenceError("binding_mismatch");
@@ -6003,6 +6005,7 @@ export function decideTimeCorrectionWithStableTargetEffect(
 							actorEmployeeId: currentEmployee.id,
 							actorUserId: currentEmployee.userId,
 							approvalRequestId,
+							shortcutGuard: options?.shortcutGuard,
 							action,
 							reason,
 							query: dbService.query,

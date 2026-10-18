@@ -1,3 +1,13 @@
+import {
+	type ApprovalTriageContext,
+	type ApprovalTriageEvidence,
+	type ApprovalTriageRequestKind,
+	assessApprovalTriage,
+} from "../triage-assessment";
+import {
+	type ApprovalTriagePolicy,
+	DEFAULT_APPROVAL_TRIAGE_POLICY,
+} from "../triage-policy-config";
 import { getAgeDays } from "./serialization";
 import type {
 	ApprovalInboxPriority,
@@ -8,10 +18,14 @@ import type {
 } from "./types";
 
 const STALE_AFTER_DAYS = 3;
-const SMALL_TIME_CORRECTION_MINUTES = 15;
 
 export interface BuildInboxTriageInput {
 	type: ApprovalInboxType;
+	requestKind?: ApprovalTriageRequestKind;
+	context?: ApprovalTriageContext;
+	evidence?: readonly ApprovalTriageEvidence[];
+	policy?: ApprovalTriagePolicy;
+	riskReasons?: readonly string[];
 	priority: ApprovalInboxPriority;
 	status: ApprovalInboxStatus;
 	createdAt: Date | string;
@@ -21,7 +35,25 @@ export interface BuildInboxTriageInput {
 	timeDeltaMinutes?: number;
 }
 
-export function buildInboxTriage(input: BuildInboxTriageInput): ApprovalInboxTriage {
+export function buildInboxTriage(
+	input: BuildInboxTriageInput,
+): ApprovalInboxTriage {
+	const requestKind =
+		input.requestKind ??
+		(input.type === "absence_entry"
+			? "absence"
+			: input.type === "absence_change_request"
+				? "absence_change"
+				: "other");
+	if (requestKind !== "other")
+		return {
+			priority: input.priority,
+			...assessApprovalTriage({
+				...input,
+				requestKind,
+				policy: input.policy ?? DEFAULT_APPROVAL_TRIAGE_POLICY,
+			}),
+		};
 	const ageDays = getAgeDays({ createdAt: input.createdAt, now: input.now });
 	const isPayrollRelevant = input.isPayrollRelevant === true;
 
@@ -44,32 +76,6 @@ export function buildInboxTriage(input: BuildInboxTriageInput): ApprovalInboxTri
 			fastLaneGroup: "stale_pending",
 			isPayrollRelevant: false,
 			explanation: `Pending longer than ${STALE_AFTER_DAYS} days.`,
-		};
-	}
-
-	if (
-		input.type === "time_entry" &&
-		typeof input.timeDeltaMinutes === "number" &&
-		Math.abs(input.timeDeltaMinutes) <= SMALL_TIME_CORRECTION_MINUTES
-	) {
-		return {
-			priority: input.priority,
-			riskLevel: "low",
-			riskReasons: ["small_time_delta"],
-			fastLaneGroup: "small_time_correction",
-			isPayrollRelevant: false,
-			explanation: `Time delta is within ${SMALL_TIME_CORRECTION_MINUTES} minutes.`,
-		};
-	}
-
-	if (input.type === "absence_entry" && input.riskLevel !== "high") {
-		return {
-			priority: input.priority,
-			riskLevel: "low",
-			riskReasons: ["no_conflicts_detected"],
-			fastLaneGroup: "low_risk_absence",
-			isPayrollRelevant: false,
-			explanation: "No conflicts detected.",
 		};
 	}
 

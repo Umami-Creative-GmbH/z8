@@ -766,3 +766,9 @@ describe("ApprovalDetailPanel", () => {
 		).toBe("/travel-expenses/expense-1");
 	});
 });
+it("shows every assessment reason in detail review", () => {
+ mockState.detailItem = { ...approvalItem, triage: { ...approvalItem.triage, reasons: [{ code: "work_category_changed", riskLevel: "high", text: { key: "approvals:triage.test.category", fallback: "Work category changes." } }, { code: "coverage_unverified", riskLevel: "medium", text: { key: "approvals:triage.test.coverage", fallback: "Coverage not verified." } }] } };
+ render(<ApprovalDetailPanel approval={approvalItem} open={true} onOpenChange={vi.fn()} onActioned={vi.fn()} />);
+ expect(screen.getByText("Work category changes.")).toBeTruthy();
+ expect(screen.getByText("Coverage not verified.")).toBeTruthy();
+});

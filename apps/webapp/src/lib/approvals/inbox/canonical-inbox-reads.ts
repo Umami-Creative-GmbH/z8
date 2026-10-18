@@ -5,6 +5,7 @@ import {
 	loadOrdinaryCanonicalApprovals,
 } from "./ordinary-canonical-read";
 import { periodSubmissionInboxRead } from "./period-submission-read";
+import { absenceInboxRead, timeCorrectionInboxRead } from "./v1-canonical-read";
 
 /** Manual time submissions and policy clock-outs, listed as time entries. */
 export const ordinaryWorkPeriodInboxRead: CanonicalInboxRead = {
@@ -23,6 +24,8 @@ export const ordinaryWorkPeriodInboxRead: CanonicalInboxRead = {
  */
 export const CANONICAL_INBOX_READS: readonly CanonicalInboxRead[] = [
 	ordinaryWorkPeriodInboxRead,
+	absenceInboxRead,
+	timeCorrectionInboxRead,
 	periodSubmissionInboxRead,
 	absenceChangeInboxRead,
 ];

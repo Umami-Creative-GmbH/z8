@@ -50,14 +50,14 @@ describe("approval triage", () => {
 		expect(triage.ageDays).toBe(1);
 	});
 
-	it("marks normal absence requests as low-risk absence fast-lane items", () => {
+	it("keeps absences with missing evidence out of low-risk lanes", () => {
 		const triage = buildApprovalTriage(item({ approvalType: "absence_entry" }), {
 			now: new Date("2026-05-21T08:00:00.000Z"),
 		});
 
-		expect(triage.riskLevel).toBe("low");
-		expect(triage.riskReasons).toEqual(["no_conflicts_detected"]);
-		expect(triage.fastLaneGroup).toBe("low_risk_absence");
+		expect(triage.riskLevel).toBe("medium");
+		expect(triage.riskReasons).toEqual(["payroll_unverified", "coverage_unverified"]);
+		expect(triage.fastLaneGroup).toBeNull();
 	});
 
 	it("does not mark high-risk absence policy exceptions as low-risk fast-lane items", () => {
@@ -70,11 +70,11 @@ describe("approval triage", () => {
 		);
 
 		expect(triage.riskLevel).toBe("high");
-		expect(triage.riskReasons).toEqual(["policy_exception"]);
+		expect(triage.riskReasons).toEqual(["policy_exception", "payroll_unverified", "coverage_unverified"]);
 		expect(triage.fastLaneGroup).toBeNull();
 	});
 
-	it("marks small time corrections as a fast lane when metadata includes a minute delta", () => {
+	it("does not certify small corrections using a minute delta alone", () => {
 		const triage = buildApprovalTriage(
 			item({
 				approvalType: "time_entry",
@@ -88,9 +88,9 @@ describe("approval triage", () => {
 			{ now: new Date("2026-05-21T08:00:00.000Z") },
 		);
 
-		expect(triage.riskLevel).toBe("low");
-		expect(triage.fastLaneGroup).toBe("small_time_correction");
-		expect(triage.riskReasons).toContain("small_time_delta");
+		expect(triage.riskLevel).toBe("medium");
+		expect(triage.fastLaneGroup).toBeNull();
+		expect(triage.riskReasons).not.toContain("small_time_delta");
 	});
 
 	it("does not mark non-time-entry approvals as small time corrections", () => {
@@ -130,17 +130,17 @@ describe("approval triage", () => {
 		expect(triage.ageDays).toBe(3);
 	});
 
-	it("keeps payroll-relevant approvals in the payroll blocker group", () => {
+	it("requires exact evidence before treating relevance as a payroll blocker", () => {
 		const triage = buildApprovalTriage(item({ triage: { isPayrollRelevant: true } }), {
 			now: new Date("2026-05-21T08:00:00.000Z"),
 		});
 
-		expect(triage.riskLevel).toBe("high");
-		expect(triage.fastLaneGroup).toBe("payroll_blocker");
+		expect(triage.riskLevel).toBe("medium");
+		expect(triage.fastLaneGroup).toBeNull();
 		expect(triage.isPayrollRelevant).toBe(true);
 	});
 
-	it("groups triaged approvals by fast lane", () => {
+	it("excludes unverifiable evidence from low-risk groups", () => {
 		const groups = groupApprovalFastLanes(
 			[
 				item({ id: "absence-1", approvalType: "absence_entry" }),
@@ -149,12 +149,12 @@ describe("approval triage", () => {
 			{ now: new Date("2026-05-21T08:00:00.000Z") },
 		);
 
-		expect(groups).toHaveLength(1);
-		expect(groups[0]?.key).toBe("low_risk_absence");
-		expect(groups[0]?.items.map((approval) => approval.id)).toEqual(["absence-1"]);
+		expect(groups).toHaveLength(0);
+
+
 	});
 
-	it("sorts sprint approvals by high risk first and then oldest first", () => {
+	it("does not elevate payroll relevance without verified blocker evidence", () => {
 		const sorted = sortSprintApprovals(
 			[
 				item({ id: "new-low", createdAt: new Date("2026-05-24T08:00:00.000Z") }),
@@ -168,7 +168,7 @@ describe("approval triage", () => {
 			{ now: new Date("2026-05-25T08:00:00.000Z"), staleAfterDays: 99 },
 		);
 
-		expect(sorted.map((approval) => approval.id)).toEqual(["payroll", "old-low", "new-low"]);
+		expect(sorted.map((approval) => approval.id)).toEqual(["old-low", "new-low", "payroll"]);
 	});
 
 	it("sorts API-serialized createdAt values oldest first without throwing", () => {
@@ -188,4 +188,13 @@ describe("approval triage", () => {
 
 		expect(sorted.map((approval) => approval.id)).toEqual(["old-low", "new-low"]);
 	});
+});
+it("uses the same conservative evidence policy in retained alternate consumers", () => {
+ const result = buildApprovalTriage(item({ triage: { requestKind: "time_correction", timeDeltaMinutes: 1, riskLevel: "high", riskReasons: ["policy_exception"] } }), { now: new Date("2026-05-21T08:00:00Z") });
+ expect(result.riskLevel).toBe("high");
+ expect(result.riskReasons).toEqual(["policy_exception", "payroll_unverified", "correction_unverified"]);
+});
+it("orders equal-risk sprint items by priority, oldest submission and stable identity", () => {
+ const approvals = [item({ id: "new", priority: "urgent", createdAt: new Date("2026-05-21T07:00:00Z") }), item({ id: "z", priority: "normal" }), item({ id: "a", priority: "normal" }), item({ id: "old", priority: "low", createdAt: new Date("2026-05-19T08:00:00Z") })];
+ expect(sortSprintApprovals(approvals, { now: new Date("2026-05-21T08:00:00Z") }).map(row => row.id)).toEqual(["new", "a", "z", "old"]);
 });

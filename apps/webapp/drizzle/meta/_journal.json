@@ -1926,6 +1926,13 @@
       "when": 1808409600000,
       "tag": "0274_payroll_comparison_results",
       "breakpoints": true
+    },
+    {
+      "idx": 275,
+      "version": "7",
+      "when": 1808496000000,
+      "tag": "0275_approval_triage_settings",
+      "breakpoints": true
     }
   ]
 }

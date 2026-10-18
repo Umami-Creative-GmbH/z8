@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
 	getCurrentSettingsRouteContext: vi.fn(),
 	getAbility: vi.fn(),
 	loadApprovalSettings: vi.fn(),
+	getEffectiveApprovalTriagePolicy: vi.fn(),
 	redirectWithLocale: vi.fn((href: string) => {
 		throw new Error(`redirect:${href}`);
 	}),
@@ -14,6 +15,12 @@ vi.mock("@/lib/auth-helpers", () => ({
 }));
 vi.mock("@/lib/approvals/approval-settings", () => ({
 	loadApprovalSettings: mocks.loadApprovalSettings,
+}));
+vi.mock("@/lib/approvals/triage-policy", () => ({
+	getEffectiveApprovalTriagePolicy: mocks.getEffectiveApprovalTriagePolicy,
+}));
+vi.mock("@/components/settings/approval-settings/triage-settings-form", () => ({
+	ApprovalTriageSettingsForm: () => null,
 }));
 vi.mock("@/lib/navigation/locale-redirect", () => ({
 	redirectWithLocale: mocks.redirectWithLocale,
@@ -55,6 +62,10 @@ async function content(page: ReturnType<typeof ApprovalSettingsPage>) {
 }
 beforeEach(() => {
 	vi.clearAllMocks();
+	mocks.getEffectiveApprovalTriagePolicy.mockResolvedValue({
+		staleAfterHours: 72,
+		smallCorrectionMinutes: 15,
+	});
 	mocks.getCurrentSettingsRouteContext.mockResolvedValue(context());
 	mocks.getAbility.mockResolvedValue({ can: () => true });
 	mocks.loadApprovalSettings.mockResolvedValue({
@@ -63,11 +74,12 @@ beforeEach(() => {
 });
 
 describe("combined Approval settings access", () => {
-	it("composes all six panels for an org admin who manages approvals", async () => {
+	it("composes all seven panels for an org admin who manages approvals", async () => {
 		const page = await content(ApprovalSettingsPage());
 		expect(Object.keys(page.props.panels)).toEqual([
 			"policies",
 			"groups",
+			"triage",
 			"escalation",
 			"attention",
 			"channels",
@@ -92,10 +104,14 @@ describe("combined Approval settings access", () => {
 	it("withholds escalation panels and data from admins without approval management permission", async () => {
 		mocks.getAbility.mockResolvedValue({ can: () => false });
 		const page = await content(ApprovalSettingsPage());
-		expect(Object.keys(page.props.panels)).toEqual(["policies", "groups"]);
+		expect(Object.keys(page.props.panels)).toEqual([
+			"policies",
+			"groups",
+			"triage",
+		]);
 		expect(mocks.loadApprovalSettings).not.toHaveBeenCalled();
 	});
-	it("preserves escalation access through custom permissions without exposing org-admin policies", async () => {
+	it("preserves escalation access through custom permissions without exposing org-admin triage settings", async () => {
 		mocks.getCurrentSettingsRouteContext.mockResolvedValue(context("member"));
 		const page = await content(ApprovalSettingsPage());
 		expect(Object.keys(page.props.panels)).toEqual([
@@ -104,6 +120,7 @@ describe("combined Approval settings access", () => {
 			"channels",
 			"history",
 		]);
+		expect(mocks.getEffectiveApprovalTriagePolicy).not.toHaveBeenCalled();
 	});
 	it("redirects callers without either permission", async () => {
 		mocks.getCurrentSettingsRouteContext.mockResolvedValue(context("member"));

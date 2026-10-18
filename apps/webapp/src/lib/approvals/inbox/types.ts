@@ -1,3 +1,4 @@
+import type { ApprovalTriageRequestKind, ApprovalTriageReason, ApprovalTriageEvidence, ApprovalTriageContext } from "../triage-assessment";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import type { PerDiemDayLocation } from "@/lib/travel-expenses/per-diem";
 import type {
@@ -56,6 +57,10 @@ export interface ApprovalInboxTiming {
 }
 
 export interface ApprovalInboxTriage {
+	requestKind?: ApprovalTriageRequestKind;
+	reasons?: ApprovalTriageReason[];
+	evidence?: ApprovalTriageEvidence[];
+	context?: ApprovalTriageContext;
 	priority: ApprovalInboxPriority;
 	riskLevel: ApprovalInboxRiskLevel;
 	riskReasons: string[];
