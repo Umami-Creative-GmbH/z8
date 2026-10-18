@@ -23,7 +23,7 @@ import { listManagedEmployees } from "@/lib/personnel-file/access-store";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import {
 	listExpiringDocuments,
-	loadExpiryReminderLeadDays,
+	loadExpiryReminderWindow,
 } from "@/lib/personnel-file/expiry-store";
 import { canRunPayslipBatches } from "@/lib/personnel-file/payslip-batch-store";
 import { Link } from "@/navigation";
@@ -43,12 +43,14 @@ async function PersonnelFilesContent() {
 	]);
 	if (current.status !== "resolved" || !managesAnyDocuments(current.access))
 		notFound();
-	const [employees, expiring, leadDays] = await Promise.all([
+	const now = systemClock.nowInstant();
+	const [employees, expiring, expiryWindow] = await Promise.all([
 		listManagedEmployees(db, current.access),
-		listExpiringDocuments(db, current.access, {
-			now: systemClock.nowInstant(),
+		listExpiringDocuments(db, current.access, { now }),
+		loadExpiryReminderWindow(db, {
+			organizationId: current.access.organizationId,
+			now,
 		}),
-		loadExpiryReminderLeadDays(db, current.access.organizationId),
 	]);
 	const isOrganizationAdmin = current.access.grants.some(
 		(grant) => grant.source === "organization_admin",
@@ -118,7 +120,11 @@ async function PersonnelFilesContent() {
 					) : null}
 				</div>
 			</header>
-			<ExpiringDocumentsCard documents={expiring} leadDays={leadDays} />
+			<ExpiringDocumentsCard
+				documents={expiring}
+				leadDays={expiryWindow.leadDays}
+				today={expiryWindow.today}
+			/>
 			{employees.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
 					{t(

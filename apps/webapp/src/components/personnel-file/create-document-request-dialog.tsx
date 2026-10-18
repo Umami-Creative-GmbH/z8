@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
+import type { DocumentVisibility } from "@/lib/personnel-file/document.types";
 import {
 	DOCUMENT_REQUEST_TEXT_MAX_LENGTH,
 	DOCUMENT_REQUEST_TITLE_MAX_LENGTH,
@@ -48,9 +49,21 @@ interface CreateDocumentRequestValues {
 	deadline: string;
 }
 
+/** The expiring document a 'Request renewal' request replaces (#1404). */
+export interface RenewedDocumentPrefill {
+	documentId: string;
+	title: string;
+	category: DocumentRequestCategory;
+	visibility: DocumentVisibility;
+}
+
 /**
  * Asks the employee for documents of one category by a deadline (#1401). The
- * server re-checks coverage, the category and the deadline.
+ * server re-checks coverage, the category and the deadline. With `renewal`
+ * (#1404, 'Request renewal' on Expiring documents) the request names that
+ * document as its renewed document; its category is fixed. The title is not
+ * taken from the renewed document: the employee sees the request's title, but
+ * never an HR-only document's.
  */
 export function CreateDocumentRequestDialog({
 	open,
@@ -58,6 +71,7 @@ export function CreateDocumentRequestDialog({
 	employeeId,
 	categories,
 	today,
+	renewal = null,
 	onCreated,
 }: {
 	open: boolean;
@@ -67,13 +81,15 @@ export function CreateDocumentRequestDialog({
 	categories: readonly DocumentRequestCategory[];
 	/** The organization's today: the earliest deadline. */
 	today: string;
+	renewal?: RenewedDocumentPrefill | null;
+	/** After a create, and after a renewal another request took first (the list is stale). */
 	onCreated: () => void;
 }) {
 	const { t } = useTranslate();
 	const labels = usePersonnelFileLabels();
 	const errorMessage = useDocumentRequestErrorMessage();
 	const defaultValues: CreateDocumentRequestValues = {
-		category: categories[0] ?? "certificate",
+		category: renewal?.category ?? categories[0] ?? "certificate",
 		title: "",
 		note: "",
 		deadline: "",
@@ -90,9 +106,14 @@ export function CreateDocumentRequestDialog({
 				title: value.title,
 				note: value.note,
 				deadline: value.deadline,
+				...(renewal ? { renewedDocumentId: renewal.documentId } : {}),
 			});
 			if (!result.success) {
 				toast.error(errorMessage(result));
+				if (renewal && result.code === "renewal_already_requested") {
+					close();
+					onCreated();
+				}
 				return;
 			}
 			toast.success(t("settings.personnelFiles.requests.create.success", "Document requested"));
@@ -120,7 +141,9 @@ export function CreateDocumentRequestDialog({
 				>
 					<ActionPanelHeader>
 						<ActionPanelTitle>
-							{t("settings.personnelFiles.requests.create.title", "Request a document")}
+							{renewal
+								? t("settings.personnelFiles.requests.renewal.title", "Request a renewal")
+								: t("settings.personnelFiles.requests.create.title", "Request a document")}
 						</ActionPanelTitle>
 						<ActionPanelDescription>
 							{t(
@@ -130,6 +153,29 @@ export function CreateDocumentRequestDialog({
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody className="space-y-5">
+						{renewal ? (
+							<div className="space-y-1 rounded-md border bg-muted/40 p-3 text-sm">
+								<p className="font-medium">
+									{t("settings.personnelFiles.requests.renews", "Renews {title}", {
+										title: renewal.title,
+									})}
+								</p>
+								<p className="text-muted-foreground">
+									{t(
+										"settings.personnelFiles.requests.renewal.hint",
+										"Once you accept the request, this document no longer counts as expiring. Until then, its expiry reminders go to officers only.",
+									)}
+								</p>
+								{renewal.visibility === "hr_only" ? (
+									<p className="text-muted-foreground">
+										{t(
+											"settings.personnelFiles.requests.renewal.hrOnly",
+											"This document is HR-only. The employee does not see it, only this request's title, note, category and deadline.",
+										)}
+									</p>
+								) : null}
+							</div>
+						) : null}
 						<form.Field name="category">
 							{(field) => (
 								<TFormItem>
@@ -139,6 +185,7 @@ export function CreateDocumentRequestDialog({
 									<Select
 										value={field.state.value}
 										onValueChange={(value) => field.handleChange(value as DocumentRequestCategory)}
+										disabled={renewal !== null}
 									>
 										<TFormControl>
 											<SelectTrigger className="w-full" onBlur={field.handleBlur}>
