@@ -41,6 +41,7 @@ vi.mock("@tanstack/react-query", () => ({
 	useQueryClient: () => ({ invalidateQueries: async () => undefined }),
 }));
 vi.mock("./payroll-runs-card", () => ({ PayrollRunsCard: () => null }));
+vi.mock("./payroll-baselines-card", () => ({ PayrollBaselinesCard: () => null }));
 vi.mock("@/components/closed-months/month-closure-strip", () => ({
 	MonthClosureStrip: () => null,
 }));
