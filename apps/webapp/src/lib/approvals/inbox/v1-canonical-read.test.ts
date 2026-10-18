@@ -89,3 +89,48 @@ it("lists canonical corrections while their effective work remains approved", as
 		decisionTarget: { workflowKind: "time_correction" },
 	});
 });
+
+it("renders captured partial-day wall clocks without interpreting lossy AM markers as full days", async () => {
+	const partial = {
+		...row,
+		source: { ...row.source, start_period: "am", end_period: "am" },
+		submittedFacts: {
+			kind: "absence",
+			organizationId: "org-1",
+			absenceId: "absence-1",
+			coverage: {
+				kind: "explicit_partial",
+				startDate: "2026-10-20",
+				startTime: "09:00",
+				endDate: "2026-10-20",
+				endTime: "11:00",
+				wallClockZone: "not_captured",
+			},
+		},
+	};
+	const result = await absenceInboxRead.load({
+		organizationId: "org-1",
+		approverId: "manager-1",
+		database: { execute: async () => ({ rows: [partial] }) },
+	});
+	expect(result[0]?.detail.sections).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				type: "key_value",
+				rows: expect.arrayContaining([
+					expect.objectContaining({
+						value: expect.objectContaining({
+							params: expect.objectContaining({
+								startTime: "09:00",
+								endTime: "11:00",
+							}),
+						}),
+					}),
+				]),
+			}),
+		]),
+	);
+	expect(JSON.stringify(result[0]?.detail.sections)).not.toContain(
+		'"fallback":"Morning"',
+	);
+});

@@ -29,7 +29,7 @@ function absenceCandidates(
 ) {
 	const selection = countOnly
 		? sql`count(*)::integer as "totalCount"`
-		: sql`assignment.id as "assignmentId", assignment.approver_employee_id as "approverId", workflow.id as "workflowId", workflow.organization_id as "organizationId", workflow.source_id as "sourceId", workflow.workflow_type as "workflowType", workflow.requester_employee_id as "requesterId", workflow.submitted_at as "submittedAt", stage.label as "stageLabel", stage.stage_order as "stageOrder", requester.team_id as "teamId", requester_user.name as "userName", requester_user.email as "userEmail", requester_user.image as "userImage", to_jsonb(source) as source, category.name as "categoryName", count(*) over()::integer as "totalCount"`;
+		: sql`assignment.id as "assignmentId", assignment.approver_employee_id as "approverId", workflow.id as "workflowId", workflow.organization_id as "organizationId", workflow.source_id as "sourceId", workflow.workflow_type as "workflowType", workflow.requester_employee_id as "requesterId", workflow.submitted_at as "submittedAt", stage.label as "stageLabel", stage.stage_order as "stageOrder", requester.team_id as "teamId", requester_user.name as "userName", requester_user.email as "userEmail", requester_user.image as "userImage", to_jsonb(source) as source, category.name as "categoryName", submitted.facts as "submittedFacts", count(*) over()::integer as "totalCount"`;
 	return sql`select ${selection}
 		from approval_inbox_projection projection
 		join approval_workflow workflow on workflow.id = projection.workflow_id and workflow.organization_id = projection.organization_id and workflow.source_id = projection.source_id
@@ -41,6 +41,7 @@ function absenceCandidates(
 		join absence_entry source on source.id = workflow.source_id and source.organization_id = workflow.organization_id and source.approval_workflow_id = workflow.id
 		join employee subject on subject.id = source.employee_id and subject.organization_id = workflow.organization_id
 		join absence_category category on category.id = source.category_id and category.organization_id = workflow.organization_id
+		left join lateral (select revision.facts from approval_submitted_revision revision where revision.organization_id = workflow.organization_id and revision.workflow_id = workflow.id and revision.source_id = source.id and revision.workflow_type = 'absence' and revision.authority = 'canonical' order by revision.revision desc limit 1) submitted on true
 		where projection.organization_id = ${input.organizationId} and projection.source_type = 'absence_entry' and workflow.source_type = 'absence_entry' and workflow.workflow_type = 'absence'
 		and projection.status = 'pending' and workflow.status = 'pending' and stage.status = 'pending' and assignment.status = 'pending' and source.status = 'pending'
 		and ${approvalAuthoritySql(sql`rollout.lifecycle_mode`, "canonical")} and ${canonicalInboxVisibility(input)} ${canonicalInboxTarget(input)} ${canonicalInboxFilters(input.filters, now)}
@@ -157,14 +158,14 @@ function absenceApproval(
 						key: "approvals:approvals.absenceChange.originalStartCoverage",
 						fallback: "Recorded start day",
 					},
-					value: coverageText(source.start_period),
+					value: submittedCoverage(row, source, "start"),
 				},
 				{
 					label: {
 						key: "approvals:approvals.absenceChange.originalEndCoverage",
 						fallback: "Recorded end day",
 					},
-					value: coverageText(source.end_period),
+					value: submittedCoverage(row, source, "end"),
 				},
 			],
 		},
@@ -183,6 +184,39 @@ function absenceApproval(
 			status: "pending",
 			workflowKind: "absence",
 		},
+	};
+}
+
+function submittedCoverage(
+	row: Record<string, unknown>,
+	source: Record<string, unknown>,
+	endpoint: "start" | "end",
+): ApprovalInboxLocalizedText {
+	const facts = record(row.submittedFacts);
+	const coverage =
+		facts?.kind === "absence" &&
+		facts.organizationId === row.organizationId &&
+		facts.absenceId === source.id
+			? record(facts.coverage)
+			: null;
+	if (
+		coverage?.kind === "explicit_partial" &&
+		typeof coverage.startTime === "string" &&
+		typeof coverage.endTime === "string"
+	)
+		return {
+			key: "approvals:approvals.canonicalAbsencePartialHours",
+			fallback: "{startTime}–{endTime} (wall-clock zone not recorded)",
+			params: { startTime: coverage.startTime, endTime: coverage.endTime },
+		};
+	if (coverage?.kind === "full_day") return coverageText("full_day");
+	if (coverage?.kind === "half_day_periods")
+		return coverageText(
+			endpoint === "start" ? coverage.startPeriod : coverage.endPeriod,
+		);
+	return {
+		key: "approvals:approvals.canonicalAbsenceCoverageUnknown",
+		fallback: "Submitted day coverage is unavailable",
 	};
 }
 
@@ -301,8 +335,8 @@ function correctionComparison(
 		facts?.organizationId === row.organizationId &&
 		facts.workPeriodId === row.sourceId &&
 		facts.kind === "time_correction";
-	const baseline = captured ? record(facts.baseline) : null;
-	const requested = captured ? record(facts.requested) : null;
+	const baseline = captured && facts ? record(facts.baseline) : null;
+	const requested = captured && facts ? record(facts.requested) : null;
 	const start = record(baseline?.clockIn);
 	const end = record(baseline?.clockOut);
 	const requestedStart = record(requested?.clockIn);
@@ -388,7 +422,15 @@ function correctionApproval(
 			detail: title.fallback,
 			badge: null,
 			stage: { name: String(row.stageLabel), order: Number(row.stageOrder) },
-			localized: { title, detail: title },
+			localized: {
+				title,
+				subtitle: {
+					key: "approvals:approvals.canonicalRequester",
+					fallback: "{name}",
+					params: { name: String(row.userName) },
+				},
+				detail: title,
+			},
 		},
 		timing: {
 			createdAt: submittedAt.toISOString(),
