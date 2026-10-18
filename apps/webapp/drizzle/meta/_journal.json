@@ -1940,6 +1940,13 @@
       "when": 1808582400000,
       "tag": "0276_absence_setting_working_week_notice",
       "breakpoints": true
+    },
+    {
+      "idx": 277,
+      "version": "7",
+      "when": 1808668800000,
+      "tag": "0277_rehire_terms_calendar_date",
+      "breakpoints": true
     }
   ]
 }

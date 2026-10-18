@@ -1,8 +1,30 @@
 import { and, eq, gt, gte, isNull, lt, or } from "drizzle-orm";
 import { type EmployeeEmploymentHistory, workPolicy, workPolicyAssignment } from "@/db/schema";
+import { employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
 import { compareInstants, instantFromDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import type { TermsWriteClient, TermsWriteScope } from "./write-terms";
+
+/** The recorded (rehire) start of the terms' employment period, or null. */
+async function recordedPeriodStart(
+	tx: TermsWriteClient,
+	scope: TermsWriteScope,
+	terms: EmployeeEmploymentHistory,
+): Promise<Date | null> {
+	if (!terms.employmentPeriodId) return null;
+	const [period] = await tx
+		.select({ startedAt: employeeEmploymentPeriod.startedAt })
+		.from(employeeEmploymentPeriod)
+		.where(
+			and(
+				eq(employeeEmploymentPeriod.id, terms.employmentPeriodId),
+				eq(employeeEmploymentPeriod.organizationId, scope.organizationId),
+				eq(employeeEmploymentPeriod.employeeId, scope.employeeId),
+				eq(employeeEmploymentPeriod.startProvenance, "recorded"),
+			),
+		);
+	return period?.startedAt ?? null;
+}
 
 /** Called under the terms command's employee lock, in the same transaction. */
 export async function syncTermsPolicy(
@@ -56,12 +78,21 @@ export async function syncTermsPolicy(
 			.where(matchingScope);
 		return;
 	}
+	// Terms on a rehire day start before the rehire instant; an assignment the
+	// departure ended before that instant belongs to the previous stint and
+	// keeps its cutoff (#1162).
+	const periodStart = await recordedPeriodStart(tx, scope, terms);
+	const overlapFloor =
+		periodStart &&
+		compareInstants(instantFromDate(periodStart), instantFromDate(terms.validFrom)) > 0
+			? periodStart
+			: terms.validFrom;
 	const overlaps = and(
 		employeeScope,
 		eq(workPolicyAssignment.isActive, true),
 		or(
 			isNull(workPolicyAssignment.effectiveUntil),
-			gt(workPolicyAssignment.effectiveUntil, terms.validFrom),
+			gt(workPolicyAssignment.effectiveUntil, overlapFloor),
 		),
 		terms.validUntil
 			? or(

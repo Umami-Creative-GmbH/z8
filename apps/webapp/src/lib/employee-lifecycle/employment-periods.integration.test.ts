@@ -4,7 +4,14 @@
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { type Instant, parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { loadTermsInForceOn } from "@/lib/employment-history/load-terms-in-force";
+import { utcMidnight } from "@/lib/employment-history/terms-in-force";
+import {
+	confirmEmploymentTerms,
+	type EmploymentTermsInput,
+	writeEmploymentTerms,
+} from "@/lib/employment-history/write-terms";
 import { createDepartureCommands } from "./commands";
 import { isDateKeyEmployed } from "./employment-coverage";
 import { loadEmploymentCoverage, resolveTermsEmploymentPeriod } from "./employment-periods";
@@ -325,6 +332,7 @@ describe("employment periods", () => {
 		);
 
 		const rehiredAt = new Date("2026-11-02T08:00:00Z");
+		const rehireDay = new Date("2026-11-02T00:00:00Z");
 		expect(
 			await row(
 				`select status, started_at, start_provenance from employee_employment_period where id = $1`,
@@ -349,7 +357,7 @@ describe("employment periods", () => {
 				[result.employmentPeriodId],
 			),
 		).toEqual({
-			valid_from: rehiredAt,
+			valid_from: rehireDay,
 			valid_until: null,
 			review_state: "confirmed",
 			weekly_contract_minutes: 1200,
@@ -361,7 +369,7 @@ describe("employment periods", () => {
 				 where employee_id = $1 and is_active = true and policy_id = $2`,
 				[target.employeeId, policyId],
 			),
-		).toEqual({ effective_from: rehiredAt, effective_until: null });
+		).toEqual({ effective_from: rehireDay, effective_until: null });
 		expect(
       await row(
         `select count(*)::int as count from work_policy_assignment
@@ -392,6 +400,180 @@ describe("employment periods", () => {
 			false,
 			true,
 		]);
+	});
+
+	async function withOrganizationTimezone<T>(timezone: string, run: () => Promise<T>) {
+		await fixture.pool.query(`update organization set timezone = $1 where id = $2`, [
+			timezone,
+			fixture.organizationId,
+		]);
+		try {
+			return await run();
+		} finally {
+			await fixture.pool.query(`update organization set timezone = 'UTC' where id = $1`, [
+				fixture.organizationId,
+			]);
+		}
+	}
+
+	async function offboardAndRehireAt(at: string) {
+		const target = await fixture.seedEmployee();
+		const policyId = await createWorkPolicy();
+		await offboardNowAt(target.employeeId, "2026-09-14T09:30:00Z");
+		now = parseInstant(at);
+		const { employmentPeriodId } = await commands().rehireEmployee(
+			owner(),
+			await rehireInput({
+				employeeId: target.employeeId,
+				previousEmploymentPeriodId: target.employmentPeriodId,
+				workPolicyId: policyId,
+			}),
+		);
+		// Admins edit terms after the rehire; same-day rows resolve by creation order.
+		now = now.add({ minutes: 10 });
+		return { employeeId: target.employeeId, employmentPeriodId, policyId };
+	}
+
+	// Both rehires fall on org-local 2 November while their UTC date differs.
+	const rehiresNearLocalMidnight = [
+		{ zone: "Europe/Berlin", rehiredAt: "2026-11-01T23:30:00Z" },
+		{ zone: "America/New_York", rehiredAt: "2026-11-03T03:00:00Z" },
+	];
+
+	it.each(rehiresNearLocalMidnight)(
+		"starts rehire terms on the org-local rehire date and the period at the rehire instant ($zone)",
+		async ({ zone, rehiredAt }) => {
+			await withOrganizationTimezone(zone, async () => {
+				const rehire = await offboardAndRehireAt(rehiredAt);
+
+				expect(
+					await row(`select started_at from employee_employment_period where id = $1`, [
+						rehire.employmentPeriodId,
+					]),
+				).toEqual({ started_at: new Date(rehiredAt) });
+				expect(
+					await row(
+						`select valid_from from employee_employment_history where employment_period_id = $1`,
+						[rehire.employmentPeriodId],
+					),
+				).toEqual({ valid_from: new Date("2026-11-02T00:00:00Z") });
+			});
+		},
+	);
+
+	const termsDated = (
+		validFrom: string,
+		reviewState: EmploymentTermsInput["reviewState"],
+	): EmploymentTermsInput => ({
+		validFrom: utcMidnight(parsePlainDate(validFrom)),
+		status: "active",
+		contractType: "fixed",
+		weeklyContractMinutes: 2400,
+		workModel: "onsite",
+		hourlyRate: null,
+		currency: "EUR",
+		reviewState,
+	});
+
+	const writeTerms = (employeeId: string, terms: EmploymentTermsInput) =>
+		fixture.db.transaction((tx) =>
+			writeEmploymentTerms(tx, {
+				organizationId: fixture.organizationId,
+				employeeId,
+				actorUserId: fixture.ownerUserId,
+				now: new Date(now.toString()),
+				terms,
+			}),
+		);
+
+	const termsInForceOnRehireDay = (employeeId: string) =>
+		loadTermsInForceOn(fixture.db, {
+			organizationId: fixture.organizationId,
+			employeeId,
+			date: parsePlainDate("2026-11-02"),
+		});
+
+	it.each(rehiresNearLocalMidnight)(
+		"lets confirmed terms dated on the rehire day replace the rehire's terms ($zone)",
+		async ({ zone, rehiredAt }) => {
+			await withOrganizationTimezone(zone, async () => {
+				const rehire = await offboardAndRehireAt(rehiredAt);
+
+				const written = await writeTerms(rehire.employeeId, termsDated("2026-11-02", "confirmed"));
+
+				expect(written.employmentPeriodId).toBe(rehire.employmentPeriodId);
+				expect((await termsInForceOnRehireDay(rehire.employeeId))?.id).toBe(written.id);
+				expect((await termsInForceOnRehireDay(rehire.employeeId))?.weeklyContractMinutes).toBe(
+					2400,
+				);
+			});
+		},
+	);
+
+	it.each(rehiresNearLocalMidnight)(
+		"lets draft terms dated on the rehire day be written and confirmed ($zone)",
+		async ({ zone, rehiredAt }) => {
+			await withOrganizationTimezone(zone, async () => {
+				const rehire = await offboardAndRehireAt(rehiredAt);
+				const draft = await writeTerms(rehire.employeeId, termsDated("2026-11-02", "draft"));
+
+				const confirmed = await fixture.db.transaction((tx) =>
+					confirmEmploymentTerms(tx, {
+						organizationId: fixture.organizationId,
+						employeeId: rehire.employeeId,
+						actorUserId: fixture.ownerUserId,
+						now: new Date(now.toString()),
+						termsId: draft.id,
+					}),
+				);
+
+				expect(confirmed.reviewState).toBe("confirmed");
+				expect((await termsInForceOnRehireDay(rehire.employeeId))?.id).toBe(draft.id);
+			});
+		},
+	);
+
+	it.each(rehiresNearLocalMidnight)(
+		"still refuses terms dated before the rehire day ($zone)",
+		async ({ zone, rehiredAt }) => {
+			await withOrganizationTimezone(zone, async () => {
+				const rehire = await offboardAndRehireAt(rehiredAt);
+
+				await expect(
+					writeTerms(rehire.employeeId, termsDated("2026-11-01", "confirmed")),
+				).rejects.toMatchObject({
+					message: "Employment terms cannot start before the current employment period.",
+				});
+			});
+		},
+	);
+
+	it("keeps the previous stint's work policy cutoff after a same-day rehire", async () => {
+		const target = await fixture.seedEmployee();
+		const previousPolicyId = await createWorkPolicy();
+		const previousAssignment = await insertAssignment({
+			employeeId: target.employeeId,
+			policyId: previousPolicyId,
+			from: "2026-06-01",
+		});
+		const policyId = await createWorkPolicy();
+		await offboardNowAt(target.employeeId, "2026-11-02T09:00:00Z");
+		now = parseInstant("2026-11-02T10:00:00Z");
+
+		await commands().rehireEmployee(
+			owner(),
+			await rehireInput({
+				employeeId: target.employeeId,
+				previousEmploymentPeriodId: target.employmentPeriodId,
+				workPolicyId: policyId,
+			}),
+		);
+
+		expect(
+			await row(`select effective_until, is_active from work_policy_assignment where id = $1`, [
+				previousAssignment,
+			]),
+		).toEqual({ effective_until: new Date("2026-11-02T09:00:00Z"), is_active: true });
 	});
 
 	it("replays a repeated rehire request and refuses a second rehire", async () => {
