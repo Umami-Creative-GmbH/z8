@@ -22,6 +22,8 @@ const columns = [
 	"old_sources",
 	"new_sources",
 	"changed_fields",
+	"old_rendered_columns",
+	"new_rendered_columns",
 ] as const;
 type Column = (typeof columns)[number];
 
@@ -110,6 +112,8 @@ export function payrollComparisonCsv(
 			old_sources: JSON.stringify(oldRow?.contributions ?? []),
 			new_sources: JSON.stringify(newRow?.contributions ?? []),
 			changed_fields: JSON.stringify(changedFields),
+			old_rendered_columns: JSON.stringify(oldRow?.renderedColumns ?? {}),
+			new_rendered_columns: JSON.stringify(newRow?.renderedColumns ?? {}),
 		});
 	}
 	for (const change of comparison.rows)

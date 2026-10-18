@@ -1,3 +1,4 @@
+import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { ReviewedPayrollComparison } from "./comparison-types";
@@ -12,6 +13,17 @@ const day = z.string().refine((value) => {
 		return false;
 	}
 });
+const month = z
+	.string()
+	.regex(/^\d{4}-\d{2}$/)
+	.refine((value) => {
+		try {
+			Temporal.PlainYearMonth.from(value);
+			return true;
+		} catch {
+			return false;
+		}
+	});
 const instant = z.string().refine((value) => {
 	try {
 		parseInstant(value);
@@ -73,10 +85,11 @@ const contribution = z.discriminatedUnion("kind", [
 const outputRow = z.object({
 	personnelNumber: z.string(),
 	wageTypeCode: z.string(),
-	date: day,
+	date: z.union([day, month]),
 	quantity,
 	unit: z.literal("hours"),
 	note: z.string(),
+	renderedColumns: z.record(z.string(), z.string()).optional(),
 	contributions: z.array(contribution).min(1),
 });
 const total = z.object({
@@ -133,8 +146,8 @@ const reviewed = z
 			formatId: format,
 			destination: z.object({
 				configId: id,
-				mandantennummer: id,
-				beraternummer: id,
+				mandantennummer: z.string(),
+				beraternummer: z.string(),
 			}),
 			period,
 			employeeIds: z.array(id),
@@ -203,6 +216,18 @@ const reviewed = z
 		)
 			return false;
 		const rows = [...comparison.rows, ...comparison.sourceOnlyChanges];
+		if (
+			rows.some((change) =>
+				[change.oldRow, change.newRow].some(
+					(row) =>
+						row &&
+						!(comparison.formatId === "lexware_lohn" ? month : day).safeParse(
+							row.date,
+						).success,
+				),
+			)
+		)
+			return false;
 		if (
 			rows.some(
 				(row) =>

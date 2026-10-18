@@ -15,7 +15,7 @@ import { getTranslate } from "@/tolgee/server";
 import { mapPayrollWorkspaceActionError } from "./action-errors";
 
 export async function listPayrollBaselinesAction(
-	request: { startDate?: string; endDate?: string } = {},
+	request: { startDate?: string; endDate?: string;formatId?:string } = {},
 ): Promise<ServerActionResult<PayrollBaselineSummary[]>> {
 	return runBaselineAction(() => listPayrollBaselines(request));
 }

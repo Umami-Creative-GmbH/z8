@@ -1,3 +1,7 @@
+import {
+	isSupportedPayrollFormat,
+	payrollDestination,
+} from "./supported-format";
 /**
  * Payroll Export Service
  * Orchestrates the export process: data fetching, transformation, and file generation
@@ -308,7 +312,11 @@ export async function createExportJob(params: {
 			.returning();
 		if (collectedInput)
 			await insertPayrollExportWorkInput(tx, created.id, collectedInput);
-		if (collectedInput && params.formatId === "datev_lohn" && collectedRead)
+		if (
+			collectedInput &&
+			isSupportedPayrollFormat(params.formatId) &&
+			collectedRead
+		)
 			await insertPayrollBaselineWindowInput(tx, {
 				jobId: created.id,
 				organizationId: params.organizationId,
@@ -412,21 +420,20 @@ export async function processExportJob(
 		}
 
 		// Frozen work keeps the employee windows that actually governed collection.
-		const baselineEmployeeIds =
-			job.config.formatId === "datev_lohn"
-				? [
-						...new Set([
-							...(storedInput?.scope.employeeIds ?? []),
-							...(await resolvePayrollRunEmployeeIds(
-								job.organizationId,
-								filters,
-							)),
-						]),
-					].sort()
-				: [];
+		const baselineEmployeeIds = isSupportedPayrollFormat(job.config.formatId)
+			? [
+					...new Set([
+						...(storedInput?.scope.employeeIds ?? []),
+						...(await resolvePayrollRunEmployeeIds(
+							job.organizationId,
+							filters,
+						)),
+					]),
+				].sort()
+			: [];
 		let baselineWindows: PayrollBaselineEvidence["employeeWindows"] | undefined;
 		let employeeWindowsUnavailable: true | undefined;
-		if (job.config.formatId === "datev_lohn") {
+		if (isSupportedPayrollFormat(job.config.formatId)) {
 			const frozen = storedInput
 				? await readPayrollBaselineWindowInput({
 						organizationId: job.organizationId,
@@ -732,9 +739,9 @@ async function writeFileExport(
 	const completedAt = new Date();
 	// Atomic completion binds each retained baseline to this attempt's exact bytes and output.
 	await database.transaction(async (tx) => {
-		if (job.config.formatId === "datev_lohn") {
+		if (isSupportedPayrollFormat(job.config.formatId)) {
 			if (!exportResult.supportedOutputEvidence || !baselineWindows)
-				throw new Error("DATEV output evidence is unavailable");
+				throw new Error("Payroll output evidence is unavailable");
 			const config = job.config.config;
 			await insertPayrollBaseline(tx, {
 				id: attemptId,
@@ -746,16 +753,19 @@ async function writeFileExport(
 					version: 1,
 					attemptId,
 					fileDigest: createHash("sha256").update(contentBuffer).digest("hex"),
-					destination: {
-						configId: job.config.id,
-						mandantennummer: String(config.mandantennummer ?? ""),
-						beraternummer: String(config.beraternummer ?? ""),
-					},
+					destination: payrollDestination(
+						job.config.formatId,
+						job.config.id,
+						config,
+					),
 					config: {
 						mandantennummer: config.mandantennummer,
 						beraternummer: config.beraternummer,
 						personnelNumberType: config.personnelNumberType,
 						includeZeroHours: config.includeZeroHours,
+						includeStunden: config.includeStunden,
+						includeStundensatz: config.includeStundensatz,
+						outputFormat: config.outputFormat,
 						...(config.personnelNumberCustomFieldId
 							? {
 									personnelNumberCustomFieldId:

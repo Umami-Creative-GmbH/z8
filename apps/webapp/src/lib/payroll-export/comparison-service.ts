@@ -58,6 +58,14 @@ import {
 	getWageTypeMappings,
 } from "./data-fetcher";
 import { exportedPersonnelIdentifier } from "./exported-personnel-identifier";
+import { lexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
+import { sageLohnFormatter } from "./formatters/sage-lohn-formatter";
+import {
+	isSupportedPayrollFormat,
+	payrollDestination,
+	samePayrollDestination,
+	type SupportedPayrollFormatId,
+} from "./supported-format";
 import { datevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import {
 	employeesWithoutIdentifier,
@@ -69,6 +77,7 @@ import type { PayrollExportFilters } from "./types";
 
 export interface PayrollComparisonRequest {
 	baselineId: string;
+	formatId?: SupportedPayrollFormatId;
 	startDate: string;
 	endDate: string;
 	employeeIds?: string[];
@@ -106,6 +115,11 @@ async function requestScope(
 	request: Omit<PayrollComparisonRequest, "baselineId">,
 ) {
 	validRequest(request);
+	if (
+		request.formatId !== undefined &&
+		!isSupportedPayrollFormat(request.formatId)
+	)
+		throw new ValidationError({ message: "Invalid payroll format" });
 	let selected: string[];
 	if (request.employeeIds !== undefined) {
 		if (!(await canReadScope(actor, request.employeeIds, request.startDate)))
@@ -176,15 +190,18 @@ async function checkCompatibility(
 	const current = await reader.query.payrollExportConfig.findFirst({
 		where: and(
 			eq(payrollExportConfig.organizationId, organizationId),
-			eq(payrollExportConfig.formatId, "datev_lohn"),
+			eq(payrollExportConfig.formatId, evidence.output.formatId),
 			eq(payrollExportConfig.isActive, true),
 		),
 	});
 	if (!current) return "destination_unavailable";
 	const config = current.config as Record<string, unknown>;
 	if (
-		config.mandantennummer !== evidence.destination.mandantennummer ||
-		config.beraternummer !== evidence.destination.beraternummer
+		!samePayrollDestination(
+			evidence.output.formatId,
+			payrollDestination(evidence.output.formatId, current.id, config),
+			evidence.destination,
+		)
 	)
 		return "destination_changed";
 	const windows = await collectPayrollBaselineWindows(reader, {
@@ -218,6 +235,13 @@ export async function preparePayrollComparison(
 	const baseline = await inspectPayrollBaseline(request.baselineId);
 	if (!baseline?.evidence) return { status: "unavailable" };
 	const evidence = baseline.evidence;
+	if (request.formatId && request.formatId !== evidence.output.formatId)
+		return { status: "incompatible", reason: "format_changed" };
+	const formatter = {
+		datev_lohn: datevLohnFormatter,
+		lexware_lohn: lexwareLohnFormatter,
+		sage_lohn: sageLohnFormatter,
+	}[evidence.output.formatId];
 	if (
 		!sameSet(request.teamIds, evidence.filters.teamIds) ||
 		!sameSet(request.projectIds, evidence.filters.projectIds)
@@ -249,7 +273,7 @@ export async function preparePayrollComparison(
 				const current = await reader.query.payrollExportConfig.findFirst({
 					where: and(
 						eq(payrollExportConfig.organizationId, actor.organizationId),
-						eq(payrollExportConfig.formatId, "datev_lohn"),
+						eq(payrollExportConfig.formatId, evidence.output.formatId),
 						eq(payrollExportConfig.isActive, true),
 					),
 				});
@@ -259,7 +283,7 @@ export async function preparePayrollComparison(
 						reason: "destination_unavailable",
 					} as const;
 				const config = current.config as Record<string, unknown>;
-				const validity = datevLohnFormatter.validateConfig(config);
+				const validity = formatter.validateConfig(config);
 				if (!validity.valid)
 					return {
 						status: "blocked",
@@ -348,7 +372,10 @@ export async function preparePayrollComparison(
 					} as const;
 				const apply = <T extends { employeeId: string }>(rows: T[]) =>
 					identifier === null ? rows : withPersonnelIdentifiers(rows, values);
-				const identifierOf = exportedPersonnelIdentifier("datev_lohn", config);
+				const identifierOf = exportedPersonnelIdentifier(
+					evidence.output.formatId,
+					config,
+				);
 				if (!identifierOf)
 					throw new Error("Payroll identifier rule unavailable");
 				const clashes = findDuplicatePersonnelIdentifiers(
@@ -369,7 +396,7 @@ export async function preparePayrollComparison(
 					actor.organizationId,
 					reader,
 				);
-				const formatted = datevLohnFormatter.transform(
+				const formatted = formatter.transform(
 					apply(work),
 					apply(absences),
 					[],

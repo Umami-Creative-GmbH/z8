@@ -11,10 +11,12 @@ export interface SupportedPayrollOutputRow {
 	personnelNumber: string;
 	wageTypeCode: string;
 	date: string;
-	/** The exact decimal text emitted in the file, after aggregation and rounding. */
+	/** Canonical decimal value after the formatter aggregates and rounds. */
 	quantity: string;
 	unit: "hours";
 	note: string;
+	/** Exact rendered file cells, including configured empty optional columns. */
+	renderedColumns?: Record<string, string>;
 	contributions: SupportedPayrollContribution[];
 }
 

@@ -206,7 +206,7 @@ it("prepares once and downloads the exact reviewed result with before/current ou
 	);
 	await screen.findByText("2026-10-18 09:10:00 UTC");
 	const row = within(
-		screen.getByRole("table", { name: "Changed DATEV output rows" }),
+		screen.getByRole("table", { name: "Changed payroll output rows" }),
 	)
 		.getByText("9.00")
 		.closest("tr");
@@ -333,7 +333,7 @@ it("separates source-only changes from supported payroll impact, including empty
 		screen.getByText("Source changes only; no payroll output impact"),
 	).toBeTruthy();
 	expect(
-		screen.queryByRole("table", { name: "Changed DATEV output rows" }),
+		screen.queryByRole("table", { name: "Changed payroll output rows" }),
 	).toBeNull();
 });
 
@@ -381,6 +381,7 @@ it("keeps reviewed data stable until an explicit refresh and discards a response
 	expect(screen.queryByText("stale-response")).toBeNull();
 	expect(actions.listCompatiblePayrollBaselinesAction).toHaveBeenLastCalledWith(
 		{
+ formatId:"datev_lohn",
 			startDate: "2026-09-01",
 			endDate: "2026-09-30",
 			employeeIds: ["employee-new"],
@@ -426,7 +427,7 @@ it("lets the preparer retry when no compatible baseline is available", async () 
 	setup();
 	expect(
 		await screen.findByText(
-			"No compatible DATEV baseline is available for this period and employee selection.",
+			"No compatible payroll baseline is available for this period and employee selection.",
 		),
 	).toBeTruthy();
 	fireEvent.click(
@@ -465,7 +466,7 @@ it("mounts source details only on expansion and bounds each side to 50 contribut
 	fireEvent.click(
 		await screen.findByRole("button", { name: "Prepare comparison" }),
 	);
-	await screen.findByRole("table", { name: "Changed DATEV output rows" });
+	await screen.findByRole("table", { name: "Changed payroll output rows" });
 	expect(screen.queryByText("bounded-source-0")).toBeNull();
 	fireEvent.click(
 		screen.getByText("Source contributions", { selector: "summary" }),

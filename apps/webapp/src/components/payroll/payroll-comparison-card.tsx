@@ -50,6 +50,7 @@ type Preparation = Extract<
 >["data"];
 type Translate = ReturnType<typeof useTranslate>["t"];
 interface ComparisonScope {
+	formatId?: PayrollBaselineSummary["formatId"];
 	startDate: string;
 	endDate: string;
 	employeeIds?: string[];
@@ -57,6 +58,7 @@ interface ComparisonScope {
 
 export function PayrollComparisonCard(scope: ComparisonScope) {
 	const scopeKey = JSON.stringify([
+		scope.formatId ?? "datev_lohn",
 		scope.startDate,
 		scope.endDate,
 		scope.employeeIds?.toSorted(),
@@ -72,13 +74,20 @@ function ComparisonWorkspace({ scope }: { scope: ComparisonScope }) {
 	const baselines = useQuery({
 		queryKey: ["payroll", "comparisonBaselines", scope],
 		queryFn: async () => {
-			const response = await listCompatiblePayrollBaselinesAction(scope);
+			const response = await listCompatiblePayrollBaselinesAction({
+				...scope,
+				formatId: scope.formatId ?? "datev_lohn",
+			});
 			if (!response.success) throw new Error(response.error);
 			return response.data;
 		},
 		refetchOnWindowFocus: false,
 	});
-	const sorted = [...(baselines.data ?? [])].sort(
+	const sorted = [
+		...(baselines.data ?? []).filter(
+			(item) => item.formatId === (scope.formatId ?? "datev_lohn"),
+		),
+	].sort(
 		(a, b) =>
 			Temporal.Instant.compare(b.completedAt, a.completedAt) ||
 			b.id.localeCompare(a.id),
@@ -91,7 +100,7 @@ function ComparisonWorkspace({ scope }: { scope: ComparisonScope }) {
 			<CardHeader>
 				<CardTitle>
 					<h2 id={`${id}-title`}>
-						{t("payroll.comparison.title", "Compare DATEV payroll")}
+						{t("payroll.comparison.title", "Compare payroll")}
 					</h2>
 				</CardTitle>
 				<CardDescription>
@@ -105,7 +114,7 @@ function ComparisonWorkspace({ scope }: { scope: ComparisonScope }) {
 				<p className="rounded-md border bg-muted/50 p-3 text-sm">
 					{t(
 						"payroll.comparison.exclusions",
-						"Expense reimbursements are excluded. This comparison covers DATEV work, absence and overtime payout hours only.",
+						"Expense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.",
 					)}
 				</p>
 				<Button
@@ -142,7 +151,7 @@ function ComparisonWorkspace({ scope }: { scope: ComparisonScope }) {
 					<p role="status">
 						{t(
 							"payroll.comparison.none",
-							"No compatible DATEV baseline is available for this period and employee selection.",
+							"No compatible payroll baseline is available for this period and employee selection.",
 						)}
 					</p>
 				) : (
@@ -158,7 +167,7 @@ function ComparisonWorkspace({ scope }: { scope: ComparisonScope }) {
 								<SelectContent>
 									{sorted.filter(eligible).map((item) => (
 										<SelectItem key={item.id} value={item.id}>
-											{utcTime(item.completedAt)} ·{" "}
+											{item.formatId} · {utcTime(item.completedAt)} ·{" "}
 											{item.destination.mandantennummer} /{" "}
 											{item.destination.beraternummer} · {item.id}
 										</SelectItem>
@@ -254,15 +263,20 @@ function ComparisonSelection({
 			) : null}
 			<dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
 				<Fact
+					label={t("payroll.comparison.format", "Payroll format")}
+					value={baseline.formatId}
+				/>
+				<Fact
 					label={t("payroll.comparison.baselineId", "Baseline ID")}
 					value={baseline.id}
 				/>
 				<Fact
-					label={t(
-						"payroll.comparison.destination",
-						"Destination: client / consultant",
-					)}
-					value={`${baseline.destination.mandantennummer} / ${baseline.destination.beraternummer}`}
+					label={t("payroll.comparison.destination", "Payroll destination")}
+					value={
+						baseline.formatId === "datev_lohn"
+							? `${baseline.destination.mandantennummer} / ${baseline.destination.beraternummer}`
+							: baseline.destination.configId
+					}
 				/>
 				<Fact
 					label={t("payroll.comparison.configId", "Export configuration ID")}
@@ -530,7 +544,7 @@ function ReviewedComparison({
 					<p className="mb-3 text-sm text-muted-foreground">
 						{t(
 							"payroll.comparison.sourceOnlyDescription",
-							"Source records changed, but the supported DATEV output values are identical.",
+							"Source records changed, but the supported payroll output values are identical.",
 						)}
 					</p>
 					<ul className="space-y-4">
@@ -601,7 +615,10 @@ function ReviewedComparison({
 				<>
 					<Table>
 						<caption className="p-2 text-left text-sm font-medium">
-							{t("payroll.comparison.outputRows", "Changed DATEV output rows")}
+							{t(
+								"payroll.comparison.outputRows",
+								"Changed payroll output rows",
+							)}
 						</caption>
 						<TableHeader>
 							<TableRow>
@@ -768,6 +785,9 @@ function OutputRow({
 				label={t("payroll.comparison.hours", "Hours")}
 				value={row.quantity}
 			/>
+			{Object.entries(row.renderedColumns ?? {}).map(([column, value]) => (
+				<Fact key={column} label={column} value={value || "—"} />
+			))}
 			<Fact
 				label={t("payroll.comparison.note", "Exported note")}
 				value={row.note || "—"}
@@ -1116,7 +1136,7 @@ function blockerReason(reason: string, t: Translate) {
 		case "invalid_configuration":
 			return t(
 				"payroll.comparison.invalidConfiguration",
-				"DATEV configuration is invalid. Review the payroll export settings.",
+				"Payroll configuration is invalid. Review the payroll export settings.",
 			);
 		case "unmapped_overtime_payout":
 			return t(
@@ -1145,7 +1165,7 @@ function compatibilityReason(reason: string, t: Translate) {
 		case "destination_unavailable":
 			return t(
 				"payroll.comparison.destinationUnavailable",
-				"The original DATEV destination is unavailable.",
+				"The original payroll destination is unavailable.",
 			);
 		case "destination_changed":
 			return t(
