@@ -292,6 +292,10 @@ describe("RequestAbsenceDialog vacation comparison (#1342)", () => {
 
 		const original = option("Original request");
 		expect(within(original).getByText("Your current draft, kept as the baseline.")).toBeTruthy();
+		// Keyboard and screen-reader focus moves into the comparison.
+		expect(
+			document.activeElement?.textContent?.startsWith("Compare your request with up to two"),
+		).toBe(true);
 		await waitFor(() =>
 			expect(comparisonPreviewMock).toHaveBeenCalledWith({
 				categoryId: "vacation",
@@ -448,6 +452,28 @@ describe("RequestAbsenceDialog vacation comparison (#1342)", () => {
 		});
 	});
 
+	it("keeps an option's earlier result and says so when Refresh all fails for it", async () => {
+		renderDialog();
+		fillDraft();
+		openComparison();
+		await within(option("Original request")).findByText("3 days");
+		comparisonPreviewMock.mockResolvedValue({
+			success: false,
+			error: "Unable to build absence plan preview",
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Refresh all" }));
+
+		expect(
+			await within(option("Original request")).findByText(
+				"This option could not be refreshed. It shows the earlier check below.",
+				{},
+				{ timeout: 4000 },
+			),
+		).toBeTruthy();
+		expect(within(option("Original request")).getByText("3 days")).toBeTruthy();
+	});
+
 	it("never shows a response for an earlier input of an option", async () => {
 		const pending: Array<{ request: AbsenceRequest; resolve: () => void }> = [];
 		comparisonPreviewMock.mockImplementation(
@@ -598,6 +624,7 @@ describe("RequestAbsenceDialog vacation comparison (#1342)", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Back to request" }));
 
+		expect(document.activeElement).toBe(screen.getByRole("button", { name: "Compare dates" }));
 		expect((screen.getByLabelText("Start Date *") as HTMLInputElement).value).toBe("2026-12-28");
 		expect((screen.getByLabelText("End Date") as HTMLInputElement).value).toBe("2026-12-30");
 		expect((screen.getByLabelText("Notes (Optional)") as HTMLTextAreaElement).value).toBe(

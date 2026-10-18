@@ -11,7 +11,7 @@ import {
 import { type UseQueryResult, useQueries } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { getAbsenceComparisonPreview } from "@/app/[locale]/(app)/absences/actions";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -108,6 +108,11 @@ export function VacationComparisonView({
 		}),
 	});
 	const canAdd = canAddComparisonAlternative(comparison);
+	const containerRef = useRef<HTMLDivElement>(null);
+	// Keyboard and screen-reader users land on the comparison, not on the panel edge.
+	useEffect(() => {
+		containerRef.current?.focus();
+	}, []);
 	const isRefreshing = queries.some((query) => query.isFetching);
 
 	const refreshAll = () => {
@@ -117,7 +122,7 @@ export function VacationComparisonView({
 	};
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-4 outline-none" ref={containerRef} tabIndex={-1}>
 			<p className="text-muted-foreground text-sm">
 				{t(
 					"absences.comparison.description",
@@ -249,7 +254,12 @@ function ComparisonOptionCard({
 
 			{option.kind === "alternative" && <AlternativeEditor option={option} onUpdate={update} />}
 
-			{issue !== null ? (
+			{issue === "start_date_required" ? (
+				// A new alternative has no dates yet: a prompt, not an error.
+				<p className="rounded-md border border-dashed px-3 py-2 text-muted-foreground text-sm">
+					{issueMessage(issue, t)}
+				</p>
+			) : issue !== null ? (
 				<p
 					aria-live="polite"
 					className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-destructive text-sm"
@@ -455,6 +465,15 @@ function OptionResult({ query }: { query: OptionQuery | undefined }) {
 					<IconLoader2 className="size-3.5 motion-safe:animate-spin" aria-hidden="true" />
 					{t("absences.comparison.refreshing", "Refreshing…")}
 				</output>
+			)}
+			{query.isError && !query.isFetching && (
+				<p className="flex items-start gap-2 text-muted-foreground text-xs" role="status">
+					<IconAlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+					{t(
+						"absences.comparison.refreshFailed",
+						"This option could not be refreshed. It shows the earlier check below.",
+					)}
+				</p>
 			)}
 			{preview.refusal === "no_working_days" && (
 				<p className="flex items-start gap-2 text-destructive text-sm" role="alert">

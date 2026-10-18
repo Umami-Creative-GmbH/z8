@@ -10,7 +10,7 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	getAbsencePlanPreview,
@@ -151,6 +151,8 @@ function useRequestAbsenceDialogController({
 	const [comparison, setComparison] = useState<VacationComparison | null>(null);
 	const [isComparing, setIsComparing] = useState(false);
 	const [appliedOptionLabel, setAppliedOptionLabel] = useState<string | null>(null);
+	// Focus returns to Compare dates when the person comes back from the comparison.
+	const [returnedFromComparison, setReturnedFromComparison] = useState(false);
 	if (comparison && comparison.contextKey !== comparisonContextKey) {
 		// Another organization or user: the comparison is discarded, never shown there.
 		setComparison(null);
@@ -371,6 +373,7 @@ function useRequestAbsenceDialogController({
 					}),
 		);
 		setAppliedOptionLabel(null);
+		setReturnedFromComparison(false);
 		setIsComparing(true);
 	};
 	const applyComparisonOption = (option: ComparisonOption, label: string) => {
@@ -388,6 +391,7 @@ function useRequestAbsenceDialogController({
 		}
 		clearComparison();
 		setAppliedOptionLabel(label);
+		setReturnedFromComparison(true);
 	};
 	return {
 		activeComparison: isComparing ? activeComparison : null,
@@ -395,7 +399,11 @@ function useRequestAbsenceDialogController({
 		appliedOptionLabel,
 		canLoadPlanPreview,
 		clearComparison,
-		closeComparison: () => setIsComparing(false),
+		returnedFromComparison,
+		closeComparison: () => {
+			setIsComparing(false);
+			setReturnedFromComparison(true);
+		},
 		form,
 		isControlled,
 		open,
@@ -431,6 +439,7 @@ export function RequestAbsenceDialog({
 		appliedOptionLabel,
 		canLoadPlanPreview,
 		clearComparison,
+		returnedFromComparison,
 		closeComparison,
 		form,
 		isControlled,
@@ -528,6 +537,7 @@ export function RequestAbsenceDialog({
 							<RequestAbsenceCompareDates
 								appliedOptionLabel={appliedOptionLabel}
 								categories={categories}
+								focusOnMount={returnedFromComparison}
 								form={form}
 								onCompare={openComparison}
 							/>
@@ -614,23 +624,56 @@ export function RequestAbsenceDialog({
 function RequestAbsenceCompareDates({
 	appliedOptionLabel,
 	categories,
+	focusOnMount,
 	form,
 	onCompare,
 }: {
 	appliedOptionLabel: string | null;
 	categories: RequestAbsenceDialogProps["categories"];
+	focusOnMount: boolean;
 	form: RequestAbsenceFormApi;
 	onCompare: () => void;
 }) {
-	const { t } = useTranslate();
 	const values = useStore(form.store, (state) => state.values);
 	const category = categories.find((candidate) => candidate.id === values.categoryId);
 	if (!isComparisonEligibleCategory(category)) return null;
 	const hasValidDates = validateAbsenceDurationInput(values) === null;
 	return (
+		<CompareDatesControls
+			appliedOptionLabel={appliedOptionLabel}
+			disabled={!hasValidDates}
+			focusOnMount={focusOnMount}
+			onCompare={onCompare}
+		/>
+	);
+}
+
+function CompareDatesControls({
+	appliedOptionLabel,
+	disabled,
+	focusOnMount,
+	onCompare,
+}: {
+	appliedOptionLabel: string | null;
+	disabled: boolean;
+	focusOnMount: boolean;
+	onCompare: () => void;
+}) {
+	const { t } = useTranslate();
+	const compareRef = useRef<HTMLButtonElement>(null);
+	useEffect(() => {
+		if (focusOnMount) compareRef.current?.focus();
+	}, [focusOnMount]);
+	return (
 		<div className="space-y-2">
 			<div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
-				<Button type="button" variant="outline" onClick={onCompare} disabled={!hasValidDates}>
+				<Button
+					ref={compareRef}
+					type="button"
+					variant="outline"
+					onClick={onCompare}
+					disabled={disabled}
+				>
 					<IconArrowsLeftRight className="size-4" aria-hidden="true" />
 					{t("absences.comparison.open", "Compare dates")}
 				</Button>
