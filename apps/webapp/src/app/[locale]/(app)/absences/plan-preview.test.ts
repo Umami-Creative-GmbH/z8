@@ -61,7 +61,7 @@ vi.mock("./queries", () => ({
 	getHolidays: mockState.getHolidays,
 }));
 
-const { getAbsencePlanPreview } = await import("./plan-preview");
+const { getAbsenceComparisonPreview, getAbsencePlanPreview } = await import("./plan-preview");
 
 const previewRequest = {
 	categoryId: "cat-vacation",
@@ -860,5 +860,142 @@ describe("getAbsencePlanPreview", () => {
 			success: false,
 			error: "Unable to build absence plan preview",
 		});
+	});
+});
+
+describe("getAbsenceComparisonPreview (#1342)", () => {
+	const vacationCategory = {
+		id: "cat-vacation",
+		name: "Vacation",
+		type: "vacation",
+		requiresApproval: true,
+		countsAgainstVacation: true,
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.getCurrentEmployee.mockResolvedValue({
+			id: "emp-current",
+			organizationId: "org-current",
+		});
+		mockState.getPrimaryEligibleManagerIdForRequester.mockResolvedValue("manager-1");
+		mockState.categoryFindFirst.mockResolvedValue(vacationCategory);
+		mockState.organizationFindFirst.mockResolvedValue({ timezone: "Europe/Berlin" });
+		mockState.loadVacationYearBalances.mockImplementation(
+			async (_database: unknown, input: { years: number[] }) =>
+				input.years.map((year) => ({
+					year,
+					status: "available",
+					balance: {
+						year,
+						totalDays: 20,
+						allowanceDays: 20,
+						usedDays: 4,
+						pendingDays: 2,
+						remainingDays: 14,
+						overdrawnDays: 0,
+					},
+				})),
+		);
+		mockState.getHolidays.mockResolvedValue([]);
+		mockState.loadWorkingDays.mockResolvedValue((day: { dayOfWeek: number }) => day.dayOfWeek <= 5);
+		mockState.absenceFindMany.mockResolvedValue([]);
+		mockState.shiftFindMany.mockResolvedValue([]);
+		mockState.coverageRuleFindMany.mockResolvedValue([]);
+	});
+
+	it("evaluates an option exactly like the ordinary preview", async () => {
+		const request = { ...previewRequest, startDate: "2026-12-30", endDate: "2027-01-02" };
+
+		const ordinary = await getAbsencePlanPreview(request);
+		const comparison = await getAbsenceComparisonPreview(request);
+
+		expect(comparison.success && ordinary.success).toBe(true);
+		if (!comparison.success || !ordinary.success) return;
+		expect({ ...comparison.data, evaluatedAt: "" }).toEqual({
+			...ordinary.data,
+			evaluatedAt: "",
+		});
+		expect(comparison.data.balances).toEqual([
+			expect.objectContaining({ year: 2026, chargedAbsenceDays: 2 }),
+			expect.objectContaining({ year: 2027, chargedAbsenceDays: 1 }),
+		]);
+	});
+
+	it.each([
+		["sick leave", { type: "sick", countsAgainstVacation: false }],
+		["time off in lieu", { type: "time_off_in_lieu", countsAgainstVacation: false }],
+		["another type that counts against vacation", { type: "custom", countsAgainstVacation: true }],
+		[
+			"vacation that does not consume the balance",
+			{ type: "vacation", countsAgainstVacation: false },
+		],
+	])("refuses to compare %s", async (_label, category) => {
+		mockState.categoryFindFirst.mockResolvedValue({ ...vacationCategory, ...category });
+
+		const result = await getAbsenceComparisonPreview(previewRequest);
+
+		expect(result).toEqual({
+			success: false,
+			error: "This absence type cannot be compared",
+			code: "comparison_ineligible",
+		});
+		expect(mockState.loadVacationYearBalances).not.toHaveBeenCalled();
+		expect(mockState.shiftFindMany).not.toHaveBeenCalled();
+	});
+
+	it("refuses a category outside the current organization or no longer active", async () => {
+		mockState.categoryFindFirst.mockResolvedValue(undefined);
+
+		const result = await getAbsenceComparisonPreview(previewRequest);
+
+		expect(result).toEqual({ success: false, error: "Absence category not found" });
+		expect(mockState.eq).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "organization_id" }),
+			"org-current",
+		);
+		expect(mockState.eq).toHaveBeenCalledWith(expect.objectContaining({ name: "is_active" }), true);
+	});
+
+	it("refuses an option the ordinary request rules reject, before reading anything", async () => {
+		const result = await getAbsenceComparisonPreview({
+			...previewRequest,
+			durationKind: "partial_day",
+			startTime: "13:00",
+			endTime: "09:00",
+			endDate: "2026-05-04",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error:
+				"Enter an end time after the start time, or choose the next end date for an overnight absence.",
+			code: "invalid_option",
+		});
+		expect(mockState.getCurrentEmployee).not.toHaveBeenCalled();
+	});
+
+	it("refuses without an active employee in the session", async () => {
+		mockState.getCurrentEmployee.mockResolvedValue(null);
+
+		const result = await getAbsenceComparisonPreview(previewRequest);
+
+		expect(result).toEqual({ success: false, error: "No active employee found" });
+		expect(mockState.categoryFindFirst).not.toHaveBeenCalled();
+	});
+
+	it("derives employee and organization from the session, not the client input", async () => {
+		await getAbsenceComparisonPreview({
+			...previewRequest,
+			employeeId: "emp-client",
+			organizationId: "org-client",
+		} as typeof previewRequest & { employeeId: string; organizationId: string });
+
+		expect(mockState.loadVacationYearBalances).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ organizationId: "org-current", employeeId: "emp-current" }),
+		);
+		expect(mockState.eq).not.toHaveBeenCalledWith(expect.anything(), "emp-client");
+		expect(mockState.eq).not.toHaveBeenCalledWith(expect.anything(), "org-client");
 	});
 });

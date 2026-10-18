@@ -71,6 +71,9 @@ export const queryKeys = {
 		all: ["absence-plan-preview"] as const,
 		detail: <T extends object>(orgId: string, input: T) =>
 			["absence-plan-preview", orgId, input] as const,
+		/** One vacation comparison option (#1342), keyed by context and input. */
+		comparison: <T extends object>(orgId: string, userId: string, input: T) =>
+			["absence-plan-preview", orgId, "comparison", userId, input] as const,
 	},
 
 	// Deputies on absences (#1011)
