@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CRON_JOBS } from "./registry";
+import { isHighRiskCronJob } from "./schedules";
 
 const autoClockOut = vi.hoisted(() => ({
 	imported: vi.fn(),
@@ -79,6 +80,14 @@ const documentRequestReminders = vi.hoisted(() => ({
 vi.mock("@/lib/jobs/personnel-file-document-request-reminders", () => {
 	documentRequestReminders.imported();
 	return { runPersonnelFileDocumentRequestRemindersJob: documentRequestReminders.run };
+});
+const documentRequestRetention = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({ organizations: 2, deleted: 1, failed: 0 })),
+}));
+vi.mock("@/lib/jobs/personnel-file-document-request-retention", () => {
+	documentRequestRetention.imported();
+	return { runPersonnelFileDocumentRequestRetentionJob: documentRequestRetention.run };
 });
 const deputyCoverSummaries = vi.hoisted(() => ({
 	imported: vi.fn(),
@@ -446,6 +455,22 @@ describe("document request reminders cron (#1406)", () => {
 			}),
 		).toEqual({ organizationsChecked: 2, remindersSent: 1 });
 		expect(documentRequestReminders.run).toHaveBeenCalledOnce();
+	});
+});
+
+describe("document request retention cron (#1408)", () => {
+	it("loads the deletion job lazily, runs hourly and is a high-risk schedule because it deletes data", async () => {
+		expect(documentRequestRetention.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:personnel-file-document-request-retention"].schedule).toBe(
+			"15 * * * *",
+		);
+		expect(isHighRiskCronJob("cron:personnel-file-document-request-retention")).toBe(true);
+		expect(
+			await CRON_JOBS["cron:personnel-file-document-request-retention"].processor({
+				triggeredAt: "2028-01-01T00:15:00Z",
+			}),
+		).toEqual({ organizations: 2, deleted: 1, failed: 0 });
+		expect(documentRequestRetention.run).toHaveBeenCalledOnce();
 	});
 });
 

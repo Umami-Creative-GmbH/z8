@@ -19,6 +19,7 @@ import { createLogger } from "@/lib/logger";
 import { lockDrivingLicenceOrganization } from "@/lib/organization/driving-licence/checks";
 import { endDrivingLicenceEmployment } from "@/lib/organization/driving-licence/lifecycle";
 import { revokePayrollAccessGrantHeldBy } from "@/lib/payroll-access/grant-store";
+import { cancelDocumentRequestsForDeparture } from "@/lib/personnel-file/document-request-store";
 import { revokePersonnelFileOfficerGrantHeldBy } from "@/lib/personnel-file/officer-grant-store";
 import { revokeKioskBadgesForDeparture } from "@/lib/time-tracking/kiosk/badge-store";
 import { WorkTransactionProtocolViolation } from "@/lib/time-tracking/work-transaction";
@@ -150,6 +151,15 @@ export async function executeDepartureInTransaction(
 			AND is_active = true
 	`);
 	await revokeHeldAccessGrants(tx, identity, departure.createdBy);
+	// Open and submitted document requests end with the employment (#1408), silently.
+	await cancelDocumentRequestsForDeparture(tx, {
+		organizationId: identity.organizationId,
+		employeeId: identity.employeeId,
+		actorUserId: departure.createdBy,
+		departureId: identity.departureId,
+		employmentPeriodId: identity.employmentPeriodId,
+		now,
+	});
 	await revokeKioskBadgesForDeparture(tx, new AuditTrail(), {
 		...identity,
 		actorUserId: departure.createdBy,
