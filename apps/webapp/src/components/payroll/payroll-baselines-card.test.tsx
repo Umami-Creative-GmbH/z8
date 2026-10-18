@@ -203,7 +203,7 @@ it("shows exact exported quantities and retained mixed source contributions with
 	expect(within(row).getByText("10.33")).toBeTruthy();
 	expect(within(row).getByText("Retained payroll note")).toBeTruthy();
 	fireEvent.click(within(row).getByText("Source contributions"));
-	expect(screen.getByText("deleted-work")).toBeTruthy();
+	expect(await screen.findByText("deleted-work")).toBeTruthy();
 	expect(screen.getByText("deleted-absence")).toBeTruthy();
 	expect(screen.getByText("cancelled-payout")).toBeTruthy();
 	expect(screen.getAllByText("Historical Person").length).toBe(3);
@@ -442,4 +442,64 @@ it("retains the full employee scope and each explicit UTC window even for employ
 	expect(screen.getByText("America/New_York")).toBeTruthy();
 	expect(screen.getByText("2026-09-01 04:00:00 UTC")).toBeTruthy();
 	expect(screen.getByText("2026-10-01 04:00:00 UTC")).toBeTruthy();
+});
+
+it("mounts retained sources only when requested and pages large contribution lists", async () => {
+	const contributions = Array.from({ length: 51 }, (_, index) => ({
+		kind: "overtime_payout",
+		sourceId: `source-${index}`,
+		sourceRevision: null,
+		employeeId: "historical-employee",
+		firstName: null,
+		lastName: null,
+		hours: 1,
+		reason: null,
+		facts: { day: "2026-09-03", minutes: 60, mappingId: null },
+	}));
+	actions.listPayrollBaselinesAction.mockResolvedValue({
+		success: true,
+		data: [summary],
+	});
+	actions.inspectPayrollBaselineAction.mockResolvedValue({
+		success: true,
+		data: {
+			summary,
+			evidence: {
+				...evidenceMetadata,
+				config: {},
+				filters: {},
+				employeeWindows: [],
+				output: {
+					version: 1,
+					formatId: "datev_lohn",
+					formatterVersion: "2024.1",
+					excludedLineKinds: ["expense"],
+					rows: [
+						{
+							personnelNumber: "BOUNDED",
+							wageTypeCode: "100",
+							date: "2026-09-03",
+							quantity: "51.00",
+							unit: "hours",
+							note: "",
+							contributions,
+						},
+					],
+				},
+			},
+		},
+	});
+	renderBaselines();
+	await screen.findByText("BOUNDED");
+	expect(screen.queryByText("source-0")).toBeNull();
+	fireEvent.click(
+		screen.getByText("Source contributions", { selector: "summary" }),
+	);
+	expect(await screen.findByText("source-0")).toBeTruthy();
+	expect(screen.queryByText("source-50")).toBeNull();
+	fireEvent.click(
+		screen.getByRole("button", { name: "Next source contributions" }),
+	);
+	expect(screen.getByText("source-50")).toBeTruthy();
+	expect(screen.queryByText("source-0")).toBeNull();
 });

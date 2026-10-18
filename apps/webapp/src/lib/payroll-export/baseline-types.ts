@@ -35,7 +35,7 @@ export type PayrollBaselineAvailability =
 export interface PayrollBaselineSummary {
 	id: string;
 	jobId: string;
-	formatId: "datev_lohn";
+	formatId: "datev_lohn" | "lexware_lohn" | "sage_lohn";
 	destination: PayrollBaselineDestination;
 	period: { startDate: string; endDate: string };
 	employeeIds: string[];

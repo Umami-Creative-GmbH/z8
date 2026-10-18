@@ -227,14 +227,16 @@ export async function fetchAbsencesForExport(
 	options: {
 		/** `absences`: read-only absence check for jobs with collected work input (#322). */
 		canonicalReadiness?: "cutover" | "absences";
+		reader?: Pick<typeof db, "query">;
 	} = {},
 ): Promise<AbsenceData[]> {
+	const reader = options.reader ?? db;
 	if (hasEmptyEmployeeScope(filters)) {
 		return [];
 	}
 
 	if (options.canonicalReadiness === "absences") {
-		await assertCanonicalAbsencesReady(organizationId);
+		await assertCanonicalAbsencesReady(organizationId, reader);
 	} else {
 		await assertCanonicalCutoverReady(organizationId);
 	}
@@ -256,7 +258,7 @@ export async function fetchAbsencesForExport(
 		employeeIds = filters.employeeIds;
 	} else if (filters.teamIds && filters.teamIds.length > 0) {
 		// Get employees in specified teams
-		const teamEmployees = await db.query.employee.findMany({
+		const teamEmployees = await reader.query.employee.findMany({
 			where: and(
 				eq(employee.organizationId, organizationId),
 				inArray(employee.teamId, filters.teamIds),
@@ -266,7 +268,7 @@ export async function fetchAbsencesForExport(
 		employeeIds = teamEmployees.map((e) => e.id);
 	} else {
 		// Get all employees for org
-		const orgEmployees = await db.query.employee.findMany({
+		const orgEmployees = await reader.query.employee.findMany({
 			where: eq(employee.organizationId, organizationId),
 			columns: { id: true },
 		});
@@ -277,7 +279,7 @@ export async function fetchAbsencesForExport(
 		return [];
 	}
 
-	const absences = await db.query.timeRecord.findMany({
+	const absences = await reader.query.timeRecord.findMany({
 		where: and(
 			eq(timeRecord.organizationId, organizationId),
 			eq(timeRecord.recordKind, "absence"),
@@ -361,15 +363,20 @@ export async function fetchAbsencesForExport(
 export async function fetchOvertimePayoutsForExport(
 	organizationId: string,
 	filters: PayrollExportFilters,
+	reader: Pick<typeof db, "select" | "query"> = db,
 ): Promise<OvertimePayoutData[]> {
 	if (hasEmptyEmployeeScope(filters)) {
 		return [];
 	}
 
 	const { startDate, endDate } = getLogicalDateRange(filters);
-	const payouts = await listOvertimePayouts(db, {
+	const payouts = await listOvertimePayouts(reader, {
 		organizationId,
-		employeeIds: await resolveExportEmployeeIds(organizationId, filters),
+		employeeIds: await resolveExportEmployeeIds(
+			organizationId,
+			filters,
+			reader,
+		),
 		fromDate: startDate,
 		throughDate: endDate,
 	});
@@ -377,7 +384,7 @@ export async function fetchOvertimePayoutsForExport(
 		return [];
 	}
 
-	const people = await db.query.employee.findMany({
+	const people = await reader.query.employee.findMany({
 		where: and(
 			eq(employee.organizationId, organizationId),
 			inArray(employee.id, [
@@ -454,8 +461,9 @@ export async function getPayrollExportConfig(
  */
 export async function getWageTypeMappings(
 	organizationId: string,
+	reader: Pick<typeof db, "query"> = db,
 ): Promise<WageTypeMapping[]> {
-	const mappings = await db.query.payrollWageTypeMapping.findMany({
+	const mappings = await reader.query.payrollWageTypeMapping.findMany({
 		where: and(
 			eq(payrollWageTypeMapping.organizationId, organizationId),
 			eq(payrollWageTypeMapping.isActive, true),
@@ -776,10 +784,11 @@ export async function resolvePayrollRunEmployeeIds(
 async function resolveExportEmployeeIds(
 	organizationId: string,
 	filters: PayrollExportFilters,
+	reader: Pick<typeof db, "query"> = db,
 ): Promise<string[]> {
 	if (filters.employeeIds && filters.employeeIds.length > 0)
 		return filters.employeeIds;
-	const rows = await db.query.employee.findMany({
+	const rows = await reader.query.employee.findMany({
 		where:
 			filters.teamIds && filters.teamIds.length > 0
 				? and(

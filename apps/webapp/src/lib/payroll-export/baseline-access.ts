@@ -29,7 +29,7 @@ export type {
 	PayrollBaselineSummary,
 } from "./baseline-types";
 
-async function requireBaselineActor() {
+export async function requireBaselineActor() {
 	const auth = await getAuthContext();
 	if (!auth)
 		throw new AuthenticationError({ message: "Authentication required" });
@@ -78,7 +78,7 @@ function denied(userId: string) {
 		action: "read",
 	});
 }
-async function canReadScope(
+export async function canReadScope(
 	actor: Awaited<ReturnType<typeof requireBaselineActor>>,
 	employeeIds: string[],
 	startDate: string,

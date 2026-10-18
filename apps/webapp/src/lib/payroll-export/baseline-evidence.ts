@@ -8,6 +8,7 @@ import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import {
 	employee,
+	payrollComparisonResult,
 	payrollExportBaseline,
 	payrollExportBaselineWindowInput,
 	payrollExportComparisonErasure,
@@ -132,7 +133,7 @@ export async function insertPayrollBaseline(
 }
 
 /** Serializes completion with explicit erasure so an in-flight attempt cannot resurrect its payload. */
-async function comparisonErasureLock(
+export async function comparisonErasureLock(
 	database: Pick<BaselineDatabase, "execute">,
 	organizationId: string,
 ) {
@@ -540,6 +541,16 @@ async function eraseEmployeePayrollBaselinesInTransaction(
 					inArray(payrollExportBaselineWindowInput.jobId, jobIds),
 				),
 			);
+	if (affected.length)
+		await tx.delete(payrollComparisonResult).where(
+			and(
+				eq(payrollComparisonResult.organizationId, input.organizationId),
+				inArray(
+					payrollComparisonResult.baselineId,
+					affected.map((row) => row.id),
+				),
+			),
+		);
 	const ids = affected.filter((row) => row.evidence).map((row) => row.id);
 	if (!ids.length) return 0;
 	const rows = await tx
