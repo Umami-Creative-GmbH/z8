@@ -2,7 +2,7 @@
  * #1164: the #814 merge was checked in production, so migration 0278 retires the old rate
  * history (Organization ADR 0002): `employee_rate_history`, the operator-only merge report and
  * the eight `employee_rate_history_merge_*` functions of 0229. The one-time merge note keeps
- * its own table (D6). Asserts the migrated chain, then reruns the migration file against
+ * its own table. Asserts the migrated chain, then reruns the migration file against
  * stand-ins in a scratch schema: as on a database that already ran the merge, and again.
  */
 import { readFileSync } from "node:fs";
@@ -17,7 +17,7 @@ const migration = readFileSync(
 	"utf8",
 );
 
-async function relation(schema: string, name: string) {
+async function existingRelation(schema: string, name: string) {
 	const result = await admin.query<{ relation: string | null }>(
 		`select to_regclass($1)::text as relation`,
 		[`${schema}.${name}`],
@@ -42,13 +42,13 @@ describe("0278 drop employee rate history", () => {
 	});
 
 	it("leaves no rate history, merge report or merge function after the chain", async () => {
-		expect(await relation("public", "employee_rate_history")).toBeNull();
-		expect(await relation("public", "employee_rate_history_merge_report")).toBeNull();
+		expect(await existingRelation("public", "employee_rate_history")).toBeNull();
+		expect(await existingRelation("public", "employee_rate_history_merge_report")).toBeNull();
 		expect(await mergeFunctions("public")).toEqual([]);
 	});
 
 	it("keeps the wage history merge note", async () => {
-		expect(await relation("public", "employee_wage_history_merge_note")).toBe(
+		expect(await existingRelation("public", "employee_wage_history_merge_note")).toBe(
 			"employee_wage_history_merge_note",
 		);
 	});
@@ -111,8 +111,8 @@ describe("0278 drop employee rate history", () => {
 			await client.query(migration);
 			await client.query(migration);
 
-			expect(await relation(SCHEMA, "employee_rate_history")).toBeNull();
-			expect(await relation(SCHEMA, "employee_rate_history_merge_report")).toBeNull();
+			expect(await existingRelation(SCHEMA, "employee_rate_history")).toBeNull();
+			expect(await existingRelation(SCHEMA, "employee_rate_history_merge_report")).toBeNull();
 			expect(await mergeFunctions(SCHEMA)).toEqual([]);
 			const notes = await client.query<{ id: string; adjusted_count: number }>(
 				`select id, adjusted_count from employee_wage_history_merge_note`,

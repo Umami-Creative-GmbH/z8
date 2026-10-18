@@ -2,7 +2,7 @@
 -- into confirmed employment terms, and the merge was checked in production, so the rate history,
 -- the operator-only merge report and the merge functions go. Operators archive both tables with
 -- pg_dump before this runs; the migration itself archives nothing. The one-time merge note keeps
--- its own table, employee_wage_history_merge_note (D6). IF EXISTS lets the migration run on a
+-- its own table, employee_wage_history_merge_note, and stays. IF EXISTS lets the migration run on a
 -- database built from scratch and run again. Callers are dropped before their callees.
 DROP FUNCTION IF EXISTS "employee_rate_history_merge_into_terms"(text);
 --> statement-breakpoint
