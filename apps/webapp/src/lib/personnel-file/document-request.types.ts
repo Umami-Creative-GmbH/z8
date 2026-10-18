@@ -100,7 +100,12 @@ export type DocumentRequestRefusal =
 	/** A bulk create named or reached more employees than one batch may hold (#1407). */
 	| "too_many_recipients"
 	/** Bulk requests never name a renewed document (#1407). */
-	| "renewal_not_in_bulk";
+	| "renewal_not_in_bulk"
+	/**
+	 * Accepting a skill certificate renewal: the skill requires an expiry date
+	 * and no submitted certificate has one (#1405).
+	 */
+	| "renewal_expiry_date_required";
 
 /**
  * The most employees one bulk create may name, and the most requests it may

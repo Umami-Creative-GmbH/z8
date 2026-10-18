@@ -102,6 +102,10 @@ export function useDocumentRequestErrorMessage() {
 			"settings.personnelFiles.requests.error.renewalNotInBulk",
 			"Requests for several employees cannot name a renewed document.",
 		),
+		renewal_expiry_date_required: t(
+			"settings.personnelFiles.requests.error.renewalExpiryDateRequired",
+			"The renewed skill requires an expiry date. Add the expiry date to a submitted certificate, then accept.",
+		),
 		conflict: t(
 			"settings.personnelFiles.requests.error.conflict",
 			"Someone else changed this request in the meantime. Reload it and try again.",

@@ -62,6 +62,8 @@ const REFUSAL_MESSAGES: Readonly<Record<DocumentRequestRefusal, string>> = {
 	no_recipients: "Choose at least one employee or team.",
 	too_many_recipients: `Request documents from at most ${DOCUMENT_REQUEST_BULK_MAX_RECIPIENTS} employees at once.`,
 	renewal_not_in_bulk: "Requests for several employees cannot name a renewed document.",
+	renewal_expiry_date_required:
+		"The renewed skill requires an expiry date. Add the expiry date to a submitted certificate, then accept.",
 };
 
 function refused(reason: DocumentRequestRefusal): { success: false; error: string; code: string } {

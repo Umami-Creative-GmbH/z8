@@ -63,6 +63,11 @@ import {
 } from "./document-request-rules";
 import { lockDocument } from "./document-store";
 import { loadOrganizationDay } from "./organization-day";
+import {
+	applyRenewalSkillLink,
+	planRenewalSkillLink,
+	type RenewalSkillLinkPlan,
+} from "./renewal-skill-link";
 
 /**
  * The one store of document requests (#1307, ADR 0003). Every write runs in
@@ -895,13 +900,43 @@ async function decideDocumentRequest<Kind extends "returned" | "accepted">(
 	return database.transaction(async (tx): Promise<DecideDocumentRequestResult<Kind>> => {
 		const lookup = await lockManagedDocumentRequest(tx, access, input.requestId);
 		if (lookup.kind !== "managed") return lookup;
+		const { request } = lookup;
+		// A decided request or a stale view conflicts before anything else is read.
+		if (
+			nextDocumentRequestStatus(request.status, input.kind) === null ||
+			(input.expectedVersion != null && input.expectedVersion !== request.version)
+		) {
+			return { kind: "conflict" };
+		}
+		// Accepting a skill certificate renewal links its employee skill (#1405),
+		// planned under the documents' locks before anything is written.
+		const skillLink: RenewalSkillLinkPlan =
+			input.kind === "accepted" ? await planRenewalSkillLink(tx, request) : { kind: "none" };
+		if (skillLink.kind === "refused") return { kind: "refused", reason: skillLink.reason };
 		const applied = await applyDocumentRequestEvent(tx, {
-			request: lookup.request,
-			event: { kind: input.kind, actorUserId: access.userId, reason: input.reason },
+			request,
+			event: {
+				kind: input.kind,
+				actorUserId: access.userId,
+				reason: input.reason,
+				...(skillLink.kind === "link"
+					? {
+							auditMetadata: {
+								skillLink: {
+									employeeSkillId: skillLink.employeeSkillId,
+									documentIds: skillLink.documentIds,
+								},
+							},
+						}
+					: {}),
+			},
 			expectedVersion: input.expectedVersion,
 			now,
 		});
 		if (applied.kind === "conflict") return { kind: "conflict" };
+		if (skillLink.kind === "link") {
+			await applyRenewalSkillLink(tx, access, skillLink, { requestId: request.id, now });
+		}
 		const [view] = await toDocumentRequestViews(tx, access, [applied.request], today);
 		if (!view) throw new Error("Failed to read the document request");
 		return { kind: input.kind, request: view, eventId: applied.eventId };
@@ -934,7 +969,13 @@ export async function returnDocumentRequest(
 	);
 }
 
-/** Accepts a submitted request (#1402); the renewal side follows in #1405. */
+/**
+ * Accepts a submitted request (#1402). When its renewed document is a skill
+ * certificate, the accepted submission's certificates are linked to the same
+ * employee skill in the same transaction (#1405, `renewal-skill-link.ts`);
+ * refused (`renewal_expiry_date_required`) when the skill requires an expiry
+ * date and none of them has one.
+ */
 export async function acceptDocumentRequest(
 	database: Database,
 	access: PersonnelFileAccess,
