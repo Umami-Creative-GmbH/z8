@@ -23,7 +23,11 @@ import {
 } from "@/lib/query/vacation.queries";
 import { calculateCarryoverExpiryDate } from "./date-utils";
 import { loadProratedVacationAllowances } from "./prorated-allowance-store";
-import type { VacationBalance, VacationBalanceConfiguration } from "./types";
+import {
+	type VacationBalance,
+	type VacationBalanceConfiguration,
+	vacationConfigurationProblem,
+} from "./types";
 import {
 	loadVacationAdjustmentSums,
 	type VacationAdjustmentSums,
@@ -258,6 +262,24 @@ export async function calculateAnnualCarryover(
 	]);
 
 	for (const emp of employees) {
+		if (!allowances.has(emp.id)) {
+			// With a shared policy, every employee of the organization gets an allowance unless their
+			// work schedule has no working days, which leaves it unknown (Absences ADR 0003).
+			errors.push({
+				employeeId: emp.id,
+				error: vacationConfigurationProblem({
+					status: "conflict",
+					periods: [
+						{
+							startDate: `${fromYear}-01-01`,
+							endDate: `${fromYear}-12-31`,
+							reason: "zero_working_days",
+						},
+					],
+				}),
+			});
+			continue;
+		}
 		try {
 			// Get vacation taken in fromYear
 			const vacationTaken = await getVacationTakenInYear(emp.id, fromYear);

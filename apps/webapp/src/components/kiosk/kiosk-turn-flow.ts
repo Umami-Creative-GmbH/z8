@@ -19,6 +19,7 @@ import {
 import { frozenCommandsOf, kioskOfflineQueue } from "@/lib/time-tracking/kiosk/offline-queue";
 import { sealKioskPin } from "@/lib/time-tracking/kiosk/pin-seal";
 import type {
+	KioskAttribution,
 	KioskClockAttemptOutcome,
 	KioskClockRefusal,
 	KioskClockResult,
@@ -28,6 +29,7 @@ import type {
 	KioskVehicleUse,
 } from "@/lib/time-tracking/kiosk/protocol";
 import type { KioskUncertainAction } from "@/lib/time-tracking/kiosk/uncertain-action";
+import type { AttributionAnswer, KioskAttributionValues } from "./kiosk-attribution";
 import type { KioskPanelAction } from "./kiosk-employee-panel";
 import { KIOSK_PIN_REFUSALS } from "./kiosk-messages";
 import { type KioskVehicleQuestion, kioskVehicleQuestion } from "./kiosk-vehicle-use";
@@ -176,12 +178,29 @@ export type KioskFlow =
 			error: KioskClockRefusal | "offline" | null;
 	  }
 	| {
+			/**
+			 * Project and work category asked between "Clock out" and the clock-out
+			 * (#887), online only. A refusal, or a call never sent, returns here with
+			 * the choices kept, so the employee can change them or keep and retry.
+			 */
+			step: "attribution";
+			proof: KioskTurnProof;
+			snapshot: KioskEmployeeSnapshot;
+			action: KioskPanelAction;
+			ask: KioskAttribution;
+			values: KioskAttributionValues;
+			pending: boolean;
+			error: KioskClockRefusal | "offline" | null;
+	  }
+	| {
 			/** Vehicle use asked between the action's button and the action (#1123). */
 			step: "vehicle";
 			proof: KioskTurnProof;
 			snapshot: KioskEmployeeSnapshot;
 			action: KioskPanelAction;
 			ask: VehicleAsk;
+			/** The project and work category chosen before (#887). */
+			attribution?: AttributionAnswer;
 			pending: boolean;
 	  }
 	| {
@@ -234,6 +253,7 @@ export function isKioskFlowBusy(flow: KioskFlow): boolean {
 		case "employee":
 		case "offline":
 			return flow.pending !== null;
+		case "attribution":
 		case "vehicle":
 		case "offline-vehicle":
 			return flow.pending;
@@ -406,23 +426,58 @@ export function badgeCheckedFlow(input: {
 	};
 }
 
-/** The screen while an online action is sent: the vehicle step or the employee panel, pending. */
+/** The project and work-category step (#887) with its choices, idle unless `pending` or refused. */
+export function attributionFlow(
+	proof: KioskTurnProof,
+	snapshot: KioskEmployeeSnapshot,
+	action: KioskPanelAction,
+	answer: AttributionAnswer,
+	status: { pending?: boolean; error?: KioskClockRefusal | "offline" } = {},
+): KioskFlow {
+	return {
+		step: "attribution",
+		proof,
+		snapshot,
+		action,
+		ask: answer.ask,
+		values: answer.values,
+		pending: status.pending ?? false,
+		error: status.error ?? null,
+	};
+}
+
+/** Back from the vehicle step: to the choices it followed (#887), with them kept, or the panel. */
+export function vehicleBackFlow(flow: Extract<KioskFlow, { step: "vehicle" }>): KioskFlow {
+	const { proof, snapshot } = flow;
+	return flow.attribution
+		? attributionFlow(proof, snapshot, flow.action, flow.attribution)
+		: { step: "employee", proof, snapshot, pending: null, error: null };
+}
+
+/**
+ * The screen while an online action is sent: the step that asked last (vehicle
+ * use, or project and work category) or the employee panel, pending.
+ */
 export function actingFlow(
 	proof: KioskTurnProof,
 	snapshot: KioskEmployeeSnapshot,
 	action: KioskPanelAction,
 	vehicle?: VehicleAnswer,
+	attribution?: AttributionAnswer,
 ): KioskFlow {
-	return vehicle
-		? {
-				step: "vehicle",
-				proof,
-				snapshot,
-				action,
-				ask: vehicle.ask,
-				pending: true,
-			}
-		: { step: "employee", proof, snapshot, pending: action, error: null };
+	if (vehicle) {
+		return {
+			step: "vehicle",
+			proof,
+			snapshot,
+			action,
+			ask: vehicle.ask,
+			...(attribution ? { attribution } : {}),
+			pending: true,
+		};
+	}
+	if (attribution) return attributionFlow(proof, snapshot, action, attribution, { pending: true });
+	return { step: "employee", proof, snapshot, pending: action, error: null };
 }
 
 /**
@@ -431,6 +486,8 @@ export function actingFlow(
  * Z8 refused the PIN, the home screen with why when Z8 no longer accepts the
  * badge (#1366), or the employee panel with the refusal (and the state Z8
  * reported with it). Only a call that was never sent says the kiosk is offline.
+ * A clock-out that chose a project or work category (#887) returns to that step
+ * instead, with the choices kept, while the employee is still clocked in.
  */
 export function actedFlow(input: {
 	proof: KioskTurnProof;
@@ -438,6 +495,7 @@ export function actedFlow(input: {
 	action: KioskPanelAction;
 	attempt: KioskUncertainAction;
 	vehicle?: VehicleAnswer;
+	attribution?: AttributionAnswer;
 	result: AnsweredCall<KioskClockResult>;
 }): KioskFlow {
 	const { proof, snapshot, action, result } = input;
@@ -469,6 +527,9 @@ export function actedFlow(input: {
 		refusal !== "offline" && "state" in refusal && refusal.state && refusal.dayTotal
 			? { ...snapshot, state: refusal.state, dayTotal: refusal.dayTotal }
 			: snapshot;
+	if (input.attribution && after.state.status === "clocked_in") {
+		return attributionFlow(proof, after, action, input.attribution, { error: refusal });
+	}
 	return {
 		step: "employee",
 		proof,

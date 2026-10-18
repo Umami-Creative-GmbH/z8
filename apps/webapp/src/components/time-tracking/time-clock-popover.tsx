@@ -2,9 +2,10 @@
 
 import {
 	IconCheck,
-	IconClock,
-	IconClockPause,
 	IconLoader2,
+	IconPlayerPause,
+	IconPlayerPlay,
+	IconPlayerStop,
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -44,6 +45,12 @@ import {
 import { showAppendReviewRequiredToast } from "./append-review-toast";
 import { billableChoice } from "./billable-choice";
 import { BillableWorkSwitch } from "./billable-work-switch";
+import {
+	BreakConnectionNote,
+	OnBreakActions,
+	StartBreakButton,
+	breakInProgressHandlers,
+} from "./break-in-progress-actions";
 import { BreakInProgressNotice } from "./break-in-progress-notice";
 import { toastClockCommandError } from "./clock-command-error-toast";
 import { ClockConnectionNotice } from "./clock-connection-notice";
@@ -175,6 +182,12 @@ interface ClockControlsViewProps {
 	vehicleUse: ClockVehicleUseState;
 	/** The chosen project requires a task and none is chosen or kept (#884). */
 	clockOutNeedsTask: boolean;
+	/** Start Break and Resume (#888); online only. */
+	onStartBreak: () => void;
+	onResumeBreak: () => void;
+	isStartingBreak: boolean;
+	isResumingBreak: boolean;
+	isOffline: boolean;
 }
 
 function ActiveClockSummary({
@@ -329,9 +342,11 @@ function ClockControlsView(props: ClockControlsViewProps) {
 	return (
 		<>
 			<div className="font-medium">
-				{isClockedIn
-					? t("timeTracking.currentlyClockedIn", "You're currently clocked in")
-					: t("timeTracking.readyToClockIn", "Ready to start working?")}
+				{props.breakInProgress
+					? t("timeTracking.breakInProgress.description", "You're on a break")
+					: isClockedIn
+						? t("timeTracking.currentlyClockedIn", "You're currently clocked in")
+						: t("timeTracking.readyToClockIn", "Ready to start working?")}
 			</div>
 			{isClockedIn && activeStartTime && (
 				<ActiveClockSummary {...props} activeStartTime={activeStartTime} />
@@ -348,6 +363,7 @@ function ClockControlsView(props: ClockControlsViewProps) {
 			<DrivingAuthorizationAdvisory />
 			<ClockConnectionNotice show={connectionRequired} />
 			<ClockActionButtons {...props} />
+			<BreakConnectionNote show={props.isOffline && isClockedIn} t={t} />
 		</>
 	);
 }
@@ -375,11 +391,16 @@ function useTimeClockPopoverController({
 		clockIn,
 		clockOut,
 		addBreak,
+		startBreak,
+		resumeBreak,
 		updateNotes,
 		isClockingOut,
 		isAddingBreak,
+		isStartingBreak,
+		isResumingBreak,
 		isUpdatingNotes,
 		isMutating,
+		isOffline,
 		captureMode,
 		connectionRequired,
 	} = useTimeClock();
@@ -387,6 +408,11 @@ function useTimeClockPopoverController({
 		useTimeClockPopoverState({ employeeId, isClockedIn });
 	const vehicleUse = useClockVehicleUse({ enabled: hasEmployee });
 	const handleAddBreak = useQuickBreakHandler(addBreak, t, vehicleUse);
+	const { handleStartBreak, handleResumeBreak } = breakInProgressHandlers(
+		{ startBreak, resumeBreak },
+		t,
+	);
+	const isOnBreak = isClockedIn && Boolean(activeWorkPeriod?.breakStartedAt);
 
 	// The running work's task shows while its project is chosen and no other choice
 	// was made; the clock-out then keeps it (#874).
@@ -611,6 +637,12 @@ function useTimeClockPopoverController({
 		isAddingBreak,
 		vehicleUse,
 		clockOutNeedsTask,
+		handleStartBreak,
+		handleResumeBreak,
+		isStartingBreak,
+		isResumingBreak,
+		isOffline,
+		isOnBreak,
 	};
 }
 
@@ -632,19 +664,19 @@ function TimeClockLoadingButton({ t }: { t: Translate }) {
 function TimeClockTriggerContent({
 	elapsedSeconds,
 	isClockedIn,
+	isOnBreak,
 	label,
 }: {
 	elapsedSeconds: number;
 	isClockedIn: boolean;
+	isOnBreak: boolean;
 	label: string;
 }) {
+	// The clock's state as a player: stopped, playing, or paused for a break (#888).
+	const Icon = isOnBreak ? IconPlayerPause : isClockedIn ? IconPlayerStop : IconPlayerPlay;
 	return (
 		<>
-			{isClockedIn ? (
-				<IconClockPause className="size-4" />
-			) : (
-				<IconClock className="size-4" />
-			)}
+			<Icon aria-hidden="true" className="size-4" />
 			<span className="hidden sm:inline">{label}</span>
 			{isClockedIn && (
 				<span className="hidden md:inline text-xs tabular-nums opacity-80">
@@ -686,6 +718,11 @@ function TimeClockPopoverPanel({
 		availableWorkCategories,
 		vehicleUse,
 		clockOutNeedsTask,
+		handleStartBreak,
+		handleResumeBreak,
+		isStartingBreak,
+		isResumingBreak,
+		isOffline,
 	} = controller;
 
 	if (uiState.showNotesInput) {
@@ -752,6 +789,11 @@ function TimeClockPopoverPanel({
 			workLocationType={uiState.workLocationType}
 			vehicleUse={vehicleUse}
 			clockOutNeedsTask={clockOutNeedsTask}
+			onStartBreak={() => void handleStartBreak()}
+			onResumeBreak={() => void handleResumeBreak()}
+			isStartingBreak={isStartingBreak}
+			isResumingBreak={isResumingBreak}
+			isOffline={isOffline}
 		/>
 	);
 }
@@ -770,11 +812,11 @@ export function TimeClockPopover({
 		setOpen,
 		isClockedIn,
 		elapsedSeconds,
-		activeWorkPeriod,
 		isMutating,
 		handleAddBreak,
 		isAddingBreak,
 		vehicleUse,
+		isOnBreak,
 	} = controller;
 	if (isLoading) {
 		return <TimeClockLoadingButton t={t} />;
@@ -785,9 +827,11 @@ export function TimeClockPopover({
 		return null;
 	}
 
-	const triggerLabel = isClockedIn
-		? t("header.clock-out", "Clock Out")
-		: t("header.clock-in", "Clock In");
+	const triggerLabel = isOnBreak
+		? t("timeTracking.breakInProgress.trigger", "On break")
+		: isClockedIn
+			? t("header.clock-out", "Clock Out")
+			: t("header.clock-in", "Clock In");
 
 	return (
 		<div className="flex items-center gap-2">
@@ -802,6 +846,7 @@ export function TimeClockPopover({
 						<TimeClockTriggerContent
 							elapsedSeconds={elapsedSeconds}
 							isClockedIn={isClockedIn}
+							isOnBreak={isOnBreak}
 							label={triggerLabel}
 						/>
 					</Button>
@@ -815,8 +860,8 @@ export function TimeClockPopover({
 					</div>
 				</PopoverContent>
 			</Popover>
-			{/* A break in progress ends only by its resume at a kiosk (#861). */}
-			{isClockedIn && !activeWorkPeriod?.breakStartedAt ? (
+			{/* No other break runs while a break is in progress (#861). */}
+			{isClockedIn && !isOnBreak ? (
 				<QuickBreakPopover
 					onAddBreak={handleAddBreak}
 					isAddingBreak={isAddingBreak}
@@ -845,6 +890,12 @@ function ClockActionButtons({
 	onClockAction,
 	isClockingOut,
 	clockOutNeedsTask,
+	breakInProgress,
+	onStartBreak,
+	onResumeBreak,
+	isStartingBreak,
+	isResumingBreak,
+	isOffline,
 	t,
 }: Pick<
 	Parameters<typeof ClockControlsView>[0],
@@ -856,8 +907,16 @@ function ClockActionButtons({
 	| "onClockAction"
 	| "isClockingOut"
 	| "clockOutNeedsTask"
+	| "breakInProgress"
+	| "onStartBreak"
+	| "onResumeBreak"
+	| "isStartingBreak"
+	| "isResumingBreak"
+	| "isOffline"
 	| "t"
 >) {
+	// The clock button's own progress; a break command shows its own.
+	const isClocking = isMutating && !isStartingBreak && !isResumingBreak;
 	return (
 		<ClockCaptureControls
 			mode={captureMode}
@@ -865,34 +924,56 @@ function ClockActionButtons({
 			onClockOut={onClockOut}
 			disabled={isMutating}
 		>
-			<div className="flex gap-2">
-				<Button
-					size="default"
-					variant={isClockedIn ? "destructive" : "default"}
-					onClick={onClockAction}
-					disabled={isMutating || clockOutNeedsTask}
-					className="w-full"
-				>
-					{isMutating ? (
-						<>
-							<IconLoader2 className="size-4 animate-spin" />
-							{isClockingOut
-								? t("timeTracking.clockingOut", "Clocking Out…")
-								: t("timeTracking.clockingIn", "Clocking In…")}
-						</>
-					) : isClockedIn ? (
-						<>
-							<IconClockPause className="size-4" />
-							{t("timeTracking.clockOut", "Clock Out")}
-						</>
-					) : (
-						<>
-							<IconClock className="size-4" />
-							{t("timeTracking.clockIn", "Clock In")}
-						</>
-					)}
-				</Button>
-			</div>
+			{/* Resume, or end the day at the break's start (#888). */}
+			{breakInProgress ? (
+				<OnBreakActions
+					onResume={onResumeBreak}
+					onEndDay={onClockOut}
+					disabled={isMutating}
+					resumeDisabled={isOffline}
+					endDayDisabled={clockOutNeedsTask}
+					isResuming={isResumingBreak}
+					isEndingDay={isClockingOut}
+					t={t}
+				/>
+			) : (
+				<div className="flex flex-col gap-2">
+					<Button
+						size="default"
+						variant={isClockedIn ? "destructive" : "default"}
+						onClick={onClockAction}
+						disabled={isMutating || clockOutNeedsTask}
+						className="w-full"
+					>
+						{isClocking ? (
+							<>
+								<IconLoader2 className="size-4 animate-spin" />
+								{isClockingOut
+									? t("timeTracking.clockingOut", "Clocking Out…")
+									: t("timeTracking.clockingIn", "Clocking In…")}
+							</>
+						) : isClockedIn ? (
+							<>
+								<IconPlayerStop aria-hidden="true" className="size-4" />
+								{t("timeTracking.clockOut", "Clock Out")}
+							</>
+						) : (
+							<>
+								<IconPlayerPlay aria-hidden="true" className="size-4" />
+								{t("timeTracking.clockIn", "Clock In")}
+							</>
+						)}
+					</Button>
+					{isClockedIn ? (
+						<StartBreakButton
+							onClick={onStartBreak}
+							disabled={isMutating || isOffline}
+							pending={isStartingBreak}
+							t={t}
+						/>
+					) : null}
+				</div>
+			)}
 		</ClockCaptureControls>
 	);
 }

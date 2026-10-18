@@ -1,5 +1,5 @@
 /**
- * #1162: migration 0276 moves the terms a rehire wrote at its instant to UTC
+ * #1162: migration 0277 moves the terms a rehire wrote at its instant to UTC
  * midnight of the org-local rehire date, with the work policy assignment they
  * projected. Runs the migration file against minimal tables in a scratch
  * schema.
@@ -13,7 +13,7 @@ import { integrationAdminPool } from "@/test/integration-database";
 const SCHEMA = "t1162_migration";
 const admin = integrationAdminPool();
 const migration = readFileSync(
-	join(process.cwd(), "drizzle/0276_rehire_terms_calendar_date.sql"),
+	join(process.cwd(), "drizzle/0277_rehire_terms_calendar_date.sql"),
 	"utf8",
 );
 
@@ -102,7 +102,7 @@ async function effectiveFroms(client: PoolClient) {
 	return Object.fromEntries(rows.map((row) => [row.id, row.effective_from]));
 }
 
-describe("0276 rehire terms calendar date migration", () => {
+describe("0277 rehire terms calendar date migration", () => {
 	afterAll(async () => {
 		await admin.query(`drop schema if exists ${SCHEMA} cascade`);
 	});

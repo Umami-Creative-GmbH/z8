@@ -138,6 +138,7 @@ export async function planEmploymentVacationRefresh(
 		for (const month of [...months].sort((a, b) => a - b)) {
 			const share = policyPeriodMonthlyAccrualDays({
 				periods,
+				workingWeeks: resolved.workingWeeks.get(input.employeeId),
 				customAnnualDays: overrides.get(input.employeeId)?.customAnnualDays,
 				year,
 				month,

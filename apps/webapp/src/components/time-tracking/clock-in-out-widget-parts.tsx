@@ -1,9 +1,9 @@
 import {
 	IconAlertTriangle,
 	IconCheck,
-	IconClock,
-	IconClockPause,
 	IconLoader2,
+	IconPlayerPlay,
+	IconPlayerStop,
 	IconX,
 } from "@tabler/icons-react";
 import type { TFnType } from "@tolgee/react";
@@ -118,16 +118,20 @@ export function WorkLocationSelector({
 	);
 }
 
+/** Clock In plays, Clock Out stops: the same marks the break controls use (#888). */
 export function ClockActionButton({
 	isClockedIn,
 	isMutating,
 	isClockingOut,
+	isClocking = isMutating,
 	onClick,
 	t,
 }: {
 	isClockedIn: boolean;
 	isMutating: boolean;
 	isClockingOut: boolean;
+	/** This button's own progress; another clock action only disables it. */
+	isClocking?: boolean;
 	onClick: () => void;
 	t: TFnType;
 }) {
@@ -139,7 +143,7 @@ export function ClockActionButton({
 			disabled={isMutating}
 			className="w-full"
 		>
-			{isMutating ? (
+			{isClocking ? (
 				<>
 					<IconLoader2 className="size-5 animate-spin" />
 					{isClockingOut
@@ -148,12 +152,12 @@ export function ClockActionButton({
 				</>
 			) : isClockedIn ? (
 				<>
-					<IconClockPause className="size-5" />
+					<IconPlayerStop aria-hidden="true" className="size-5" />
 					{t("timeTracking.clockOut", "Clock Out")}
 				</>
 			) : (
 				<>
-					<IconClock className="size-5" />
+					<IconPlayerPlay aria-hidden="true" className="size-5" />
 					{t("timeTracking.clockIn", "Clock In")}
 				</>
 			)}

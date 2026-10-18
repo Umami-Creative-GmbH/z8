@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { AbsencesViewContainer } from "@/components/absences/absences-view-container";
 import { VacationBalanceCard } from "@/components/absences/vacation-balance-card";
+import { hasZeroWorkingDaysSchedule } from "@/lib/absences/types";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -79,15 +80,20 @@ async function AbsencesPageContent() {
 			<div className="flex flex-1 items-center justify-center p-6">
 				<div className="text-center">
 					<h2 className="text-2xl font-semibold mb-2">
-						{configuration?.status === "conflict"
+						{hasZeroWorkingDaysSchedule(configuration)
 							? t(
-									"common:vacationBalance.conflictingPolicies",
-									"Conflicting vacation policies",
+									"common:vacationBalance.zeroWorkingDays",
+									"Work schedule without working days",
 								)
-							: t(
-									"common:vacationBalance.missingPolicy",
-									"Missing vacation policy",
-								)}
+							: configuration?.status === "conflict"
+								? t(
+										"common:vacationBalance.conflictingPolicies",
+										"Conflicting vacation policies",
+									)
+								: t(
+										"common:vacationBalance.missingPolicy",
+										"Missing vacation policy",
+									)}
 					</h2>
 					<p className="text-muted-foreground">
 						{t(

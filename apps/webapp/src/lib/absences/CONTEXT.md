@@ -71,7 +71,7 @@ Vacation an employee has already taken beyond their prorated allowance. It is sh
 _Avoid_: negative balance, vacation debt
 
 **Weighted annual policy allowance**:
-The annual allowance combined from an employee's effective vacation policy periods. A full calendar month contributes 1/12 of its annual rate; an intra-month change splits that share by the covered calendar days and the month's actual length. Sum at full precision, then round the combined annual rate and statutory minimum once to two decimals. Apply employment proration afterwards, without restarting employment-month or waiting-period clocks. A custom allowance stays final. Working-week conversion is the separate #990 decision and is not implemented by #989.
+The annual allowance combined from an employee's effective vacation policy periods. A full calendar month contributes 1/12 of its annual rate; an intra-month change splits that share by the covered calendar days and the month's actual length. Sum at full precision, then round the combined annual rate and statutory minimum once to two decimals. Apply employment proration afterwards, without restarting employment-month or waiting-period clocks. A custom allowance stays final. Working-week conversion (ADR 0003, #990) converts each combined policy and working-week period by its working days per week ÷ 5, and each employment averages those rates over its own employed dates.
 _Avoid_: final policy allowance, latest policy for the whole year
 
 **Vacation balance**:

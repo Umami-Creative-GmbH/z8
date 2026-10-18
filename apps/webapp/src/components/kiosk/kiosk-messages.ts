@@ -170,6 +170,18 @@ export function useKioskRefusalMessage(zone: string, locale: string) {
 					"timeTracking.kiosk.refusal.billing",
 					"Clocking is not available for your organization right now. Contact your admin.",
 				);
+			// A clock-out's choice Clocking refused (#887): nothing was recorded.
+			case "project_not_allowed":
+			case "billable_not_allowed":
+				return t(
+					"timeTracking.kiosk.refusal.projectNotAllowed",
+					"This project can no longer be booked. Nothing was recorded. Choose another one, or keep the current one, and try again.",
+				);
+			case "work_category_not_allowed":
+				return t(
+					"timeTracking.kiosk.refusal.workCategoryNotAllowed",
+					"This work category can no longer be booked. Nothing was recorded. Choose another one, or keep the current one, and try again.",
+				);
 			case "not_recorded":
 				// Z8 closed the earlier action as not recorded (#1363): only a fresh one may follow.
 				return t(

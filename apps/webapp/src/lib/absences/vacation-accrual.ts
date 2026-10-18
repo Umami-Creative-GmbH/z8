@@ -14,16 +14,24 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
-import type { EmploymentStint } from "./prorated-allowance";
+import {
+	type EmploymentStint,
+	REFERENCE_WORKING_DAYS_PER_WEEK,
+} from "./prorated-allowance";
 import {
 	type EmployeeEmployments,
 	loadEmployeeEmployments,
 	loadEmployeeVacationOverrides,
 } from "./prorated-allowance-store";
-import type { VacationBalanceConfiguration } from "./types";
+import type {
+	VacationBalanceConfiguration,
+	VacationConfigurationProblemPeriod,
+} from "./types";
 import { loadVacationBalances } from "./vacation-balance-store";
 import type { EmployeeVacationPolicyPeriod } from "./vacation-policy-history";
 import { isAccrualPolicy } from "./vacation-policy-settings";
+import { workingWeeksWithin } from "./weighted-vacation-policy";
+import type { WorkingWeekPeriod } from "./working-days";
 
 const logger = createLogger("vacation-accrual");
 
@@ -109,9 +117,13 @@ export function monthlyAccrualDays(input: {
 }
 
 /** Existing monthly/biweekly cadence, intersected with dated policy and employment coverage.
- * Callers require resolved configuration before using this numeric calculation. */
+ * The reference allowance converts to the working week in effect on each day of the month
+ * (Absences ADR 0003); a custom annual allowance is final. Callers require resolved
+ * configuration before using this numeric calculation. */
 export function policyPeriodMonthlyAccrualDays(input: {
 	periods: readonly EmployeeVacationPolicyPeriod[];
+	/** The employee's working days per week; days without a period count five days. */
+	workingWeeks?: readonly WorkingWeekPeriod[];
 	customAnnualDays?: string | null;
 	year: number;
 	month: number;
@@ -119,44 +131,62 @@ export function policyPeriodMonthlyAccrualDays(input: {
 }): number | null {
 	let total = 0;
 	let covered = false;
+	const custom =
+		input.customAnnualDays != null && input.customAnnualDays !== ""
+			? Number(input.customAnnualDays)
+			: null;
 	for (const period of input.periods) {
 		const resolution = period.resolution;
 		if (resolution.status !== "resolved" && resolution.status !== "legacy")
 			continue;
 		const policy = resolution.policy;
 		if (!policy || !isAccrualPolicy(policy)) continue;
-		const employments = input.employments.map((employment) => ({
-			startDate: latest(
-				employment.startDate ?? Temporal.PlainDate.from(period.startDate),
-				Temporal.PlainDate.from(period.startDate),
-			),
-			lastWorkingDay: earliest(
-				employment.lastWorkingDay ?? Temporal.PlainDate.from(period.endDate),
-				Temporal.PlainDate.from(period.endDate),
-			),
-		}));
-		const days = monthlyAccrualDays({
-			accrualType: policy.accrualType,
-			annualDays: Number(input.customAnnualDays ?? policy.defaultAnnualDays),
-			year: input.year,
-			month: input.month,
-			employments,
-		});
-		if (days !== null) {
-			total += days;
-			covered = true;
+		const weeks =
+			custom === null
+				? workingWeeksWithin(input.workingWeeks ?? [], period)
+				: [{ ...period, workingDaysPerWeek: REFERENCE_WORKING_DAYS_PER_WEEK }];
+		for (const week of weeks) {
+			const employments = input.employments.map((employment) => ({
+				startDate: latest(
+					employment.startDate ?? Temporal.PlainDate.from(week.startDate),
+					Temporal.PlainDate.from(week.startDate),
+				),
+				lastWorkingDay: earliest(
+					employment.lastWorkingDay ?? Temporal.PlainDate.from(week.endDate),
+					Temporal.PlainDate.from(week.endDate),
+				),
+			}));
+			const days = monthlyAccrualDays({
+				accrualType: policy.accrualType,
+				annualDays:
+					custom ??
+					(Number(policy.defaultAnnualDays) * week.workingDaysPerWeek) /
+						REFERENCE_WORKING_DAYS_PER_WEEK,
+				year: input.year,
+				month: input.month,
+				employments,
+			});
+			if (days !== null) {
+				total += days;
+				covered = true;
+			}
 		}
 	}
 	return covered ? total : null;
 }
 
-/** Only due, unposted employment coverage needs a policy; unrelated annual gaps stay visible in balances. */
-function requiredAccrualConfiguration(
+/**
+ * Only due, unposted employment coverage needs a policy and a working week; unrelated annual
+ * gaps stay visible in balances. A schedule without working days blocks the month even with a
+ * custom allowance, which never repairs the schedule.
+ */
+export function requiredAccrualConfiguration(
 	periods: readonly EmployeeVacationPolicyPeriod[],
 	input: {
 		year: number;
 		month: number;
 		employments: readonly EmploymentStint[];
+		workingWeeks?: readonly WorkingWeekPeriod[];
 	},
 ): VacationBalanceConfiguration {
 	const monthStart = Temporal.PlainDate.from({
@@ -165,17 +195,25 @@ function requiredAccrualConfiguration(
 		day: 1,
 	});
 	const monthEnd = monthStart.with({ day: monthStart.daysInMonth });
-	const problems: Array<{
-		startDate: string;
-		endDate: string;
-		policyIds?: string[];
-		reason?: "incompatible_transition";
-	}> = [];
+	const problems: VacationConfigurationProblemPeriod[] = [];
 	let conflict = false;
 	for (const employment of input.employments) {
 		const from = latest(employment.startDate ?? monthStart, monthStart);
 		const through = earliest(employment.lastWorkingDay ?? monthEnd, monthEnd);
 		if (Temporal.PlainDate.compare(from, through) > 0) continue;
+		for (const week of workingWeeksWithin(input.workingWeeks ?? [], {
+			startDate: from.toString(),
+			endDate: through.toString(),
+		})) {
+			if (week.workingDaysPerWeek !== 0) continue;
+			conflict = true;
+			problems.push({
+				startDate: week.startDate,
+				endDate: week.endDate,
+				reason: "zero_working_days",
+				workPolicyId: week.workPolicyId,
+			});
+		}
 		let cursor = from;
 		for (const period of periods) {
 			const start = latest(Temporal.PlainDate.from(period.startDate), from);
@@ -300,7 +338,12 @@ export async function accrueVacationPeriods(
 			if (accruedKeys.has(`${emp.id}:${month}`)) continue;
 			const configuration = requiredAccrualConfiguration(
 				resolved.periods.get(emp.id) ?? [],
-				{ year: input.year, month, employments: emp.employments },
+				{
+					year: input.year,
+					month,
+					employments: emp.employments,
+					workingWeeks: resolved.workingWeeks.get(emp.id),
+				},
 			);
 			if (
 				configuration.status === "missing" ||
@@ -330,6 +373,7 @@ export async function accrueVacationPeriods(
 			}
 			const share = policyPeriodMonthlyAccrualDays({
 				periods: resolved.periods.get(emp.id) ?? [],
+				workingWeeks: resolved.workingWeeks.get(emp.id),
 				customAnnualDays,
 				year: input.year,
 				month,
