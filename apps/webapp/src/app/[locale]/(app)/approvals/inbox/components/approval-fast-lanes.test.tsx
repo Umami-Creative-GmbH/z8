@@ -337,3 +337,10 @@ describe("ApprovalFastLanes", () => {
 		expect(onBulkReject).not.toHaveBeenCalled();
 	});
 });
+it("retains all current risk reasons in the fast-lane explanation", () => {
+ const item = createApproval("triage-fast", "Avery", "Correction", "high");
+ item.triage.reasons = [{ code: "payroll_blocker", riskLevel: "high", text: { key: "approvals:triage.test.payroll", fallback: "Current payroll period is blocked." } }, { code: "coverage_unverified", riskLevel: "medium", text: { key: "approvals:triage.test.coverage", fallback: "Coverage not verified." } }];
+ render(<ApprovalFastLanes groups={[{ key: "payroll_blocker", items: [item] }]} isBusy={false} onBulkApprove={vi.fn()} onBulkReject={vi.fn()} />);
+ expect(screen.getByText("Current payroll period is blocked.")).toBeTruthy();
+ expect(screen.getByText("Coverage not verified.")).toBeTruthy();
+});

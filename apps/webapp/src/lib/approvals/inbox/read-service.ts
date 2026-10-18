@@ -3,16 +3,21 @@ import { Exit } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest } from "@/db/schema";
+import type { AbsenceDeputyView } from "@/lib/absences/deputy";
 import type {
 	ApprovalDetail,
 	ApprovalQueryParams,
 	ApprovalTypeHandler,
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
-import type { AbsenceDeputyView } from "@/lib/absences/deputy";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
-import { vehicleUseWarningReviewText } from "../presentation/vehicle-use-warning-text";
+import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
+import {
+	type DeputyDecisionView,
+	loadDeputyDecidedEarlierStages,
+	loadDeputyDecisionsForEntities,
+} from "../deputy/deputy-decision-store";
 import { buildAbsenceDeputySection } from "../presentation/absence-deputy";
 import {
 	buildAbsenceReviewSections,
@@ -27,15 +32,22 @@ import {
 	prepareTimeReviewEvidence,
 } from "../presentation/time-review";
 import {
-	buildTravelExpenseReviewSections,
-	prepareTravelExpenseReviewEvidence,
-} from "../presentation/travel-expense-review";
-import {
 	buildTravelExpenseReportReviewSections,
 	prepareTravelExpenseReportReviewEvidence,
 } from "../presentation/travel-expense-report-review";
+import {
+	buildTravelExpenseReviewSections,
+	prepareTravelExpenseReviewEvidence,
+} from "../presentation/travel-expense-review";
+import { vehicleUseWarningReviewText } from "../presentation/vehicle-use-warning-text";
 import type { TimeCorrectionMetadataChanges } from "../server/time-correction-review-metadata";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
+import {
+	type ApprovalTriagePolicy,
+	DEFAULT_APPROVAL_TRIAGE_POLICY,
+	getEffectiveApprovalTriagePolicy,
+} from "../triage-policy";
+import type { ApprovalWorkflowType } from "../workflow/types";
 import type {
 	CanonicalInboxApproval,
 	CanonicalInboxApprovalBatch,
@@ -43,7 +55,16 @@ import type {
 	CanonicalInboxLoadInput,
 	CanonicalInboxRead,
 } from "./canonical-inbox-read";
-import { CANONICAL_INBOX_READS, ordinaryWorkPeriodInboxRead } from "./canonical-inbox-reads";
+import {
+	CANONICAL_INBOX_READS,
+	ordinaryWorkPeriodInboxRead,
+} from "./canonical-inbox-reads";
+import {
+	coversByApprover,
+	markCoveringFor,
+	markDecidedEarlierStage,
+	viewerHasOwnRight,
+} from "./covering-marks";
 import { ApprovalInboxBadRequestError } from "./current-actor";
 import type {
 	countOrdinaryCanonicalApprovals,
@@ -51,18 +72,6 @@ import type {
 	OrdinaryCanonicalApproval,
 	OrdinaryCanonicalListFilters,
 } from "./ordinary-canonical-read";
-import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
-import {
-	type DeputyDecisionView,
-	loadDeputyDecidedEarlierStages,
-	loadDeputyDecisionsForEntities,
-} from "../deputy/deputy-decision-store";
-import {
-	coversByApprover,
-	markCoveringFor,
-	markDecidedEarlierStage,
-	viewerHasOwnRight,
-} from "./covering-marks";
 import { markOwnRequest } from "./own-request";
 import { getAgeDays, serializeDate } from "./serialization";
 import {
@@ -71,7 +80,13 @@ import {
 	getSupportedInboxSources,
 	isSupportedInboxType,
 } from "./source-adapters";
-import { buildInboxTriage } from "./triage";
+import {
+	type ApprovalInboxTriageEvidenceLoader,
+	loadCurrentApprovalTriageEvidence,
+	resolveApprovalInboxTriage,
+	unknownApprovalInboxTriageEvidence,
+} from "./triage-evidence";
+
 import type {
 	ApprovalInboxCover,
 	ApprovalInboxCoveringSection,
@@ -94,6 +109,8 @@ export interface ApprovalInboxListParams extends ApprovalQueryParams {
 }
 
 interface GetApprovalInboxListFromSourcesInput {
+	triagePolicy?: ApprovalTriagePolicy;
+	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
 	sources: ApprovalInboxSource[];
 	params: ApprovalInboxListParams;
 	now?: Date;
@@ -116,6 +133,7 @@ interface GetApprovalInboxListFromSourcesInput {
 }
 
 interface ApprovalInboxCursor {
+	type?: ApprovalInboxType;
 	riskLevel: ApprovalInboxRiskLevel;
 	priority: UnifiedApprovalItem["priority"];
 	createdAt: string;
@@ -123,6 +141,9 @@ interface ApprovalInboxCursor {
 }
 
 interface GetApprovalInboxDetailFromRequestInput {
+	now?: Date;
+	triagePolicy?: ApprovalTriagePolicy;
+	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
 	request: {
 		id: string;
 		entityType: string;
@@ -164,7 +185,11 @@ async function loadDeputyDecisionOfRequest(input: {
 		organizationId: input.organizationId,
 		entityIds: [input.entityId],
 	});
-	return decisions.find((decision) => decision.approvalRequestId === input.approvalRequestId) ?? null;
+	return (
+		decisions.find(
+			(decision) => decision.approvalRequestId === input.approvalRequestId,
+		) ?? null
+	);
 }
 
 /** The decision event reads "by Y (deputy for X)" when a covering deputy decided it. */
@@ -173,14 +198,18 @@ function withDeputyDecider(
 	decision: DeputyDecisionView | null,
 ): ApprovalDetail {
 	if (!decision) return detail;
-	const decidedType = decision.decision === "approved" ? "approved" : "rejected";
+	const decidedType =
+		decision.decision === "approved" ? "approved" : "rejected";
 	return {
 		...detail,
 		timeline: detail.timeline.map((event) =>
 			event.type === decidedType
 				? {
 						...event,
-						performedBy: { name: decision.deputy.name, image: event.performedBy?.image ?? null },
+						performedBy: {
+							name: decision.deputy.name,
+							image: event.performedBy?.image ?? null,
+						},
 						actingFor: { name: decision.actingFor.name },
 					}
 				: event,
@@ -193,8 +222,11 @@ function withDeputyDecider(
  * the loaded batch's `totalCount` (a stand-in list given without a count).
  */
 interface InboxCanonicalRead {
+	workflowTypes?: readonly ApprovalWorkflowType[];
 	type: ApprovalInboxType;
-	load: (input: CanonicalInboxLoadInput) => Promise<CanonicalInboxApprovalBatch>;
+	load: (
+		input: CanonicalInboxLoadInput,
+	) => Promise<CanonicalInboxApprovalBatch>;
 	count?: (input: CanonicalInboxCountInput) => Promise<number>;
 }
 
@@ -205,7 +237,9 @@ interface InboxCanonicalRead {
 function canonicalReadsWithOrdinaryStandIns(
 	reads: readonly CanonicalInboxRead[],
 	standIns: {
-		load?: (input: CanonicalInboxLoadInput) => Promise<CanonicalInboxApproval[]>;
+		load?: (
+			input: CanonicalInboxLoadInput,
+		) => Promise<CanonicalInboxApproval[]>;
 		count?: (input: CanonicalInboxCountInput) => Promise<number>;
 	},
 ): InboxCanonicalRead[] {
@@ -217,6 +251,18 @@ function canonicalReadsWithOrdinaryStandIns(
 	];
 }
 
+function isEvidenceAwareRead(read: InboxCanonicalRead): boolean {
+	return (
+		read.type === "absence_entry" ||
+		read.type === "absence_change_request" ||
+		read.workflowTypes?.some(
+			(kind) =>
+				kind === "absence" ||
+				kind === "absence_change" ||
+				kind === "time_correction",
+		) === true
+	);
+}
 const DEFAULT_LIMIT = 50;
 
 const riskRank: Record<ApprovalInboxRiskLevel, number> = {
@@ -239,7 +285,10 @@ export async function getApprovalInboxListFromSources({
 	canonicalReads = [],
 	loadCanonicalOrdinaryApprovals,
 	countCanonicalOrdinaryApprovals,
-	loadDeputyDecidedEarlierStages: loadDecidedEarlier = async () => new Set<string>(),
+	loadDeputyDecidedEarlierStages: loadDecidedEarlier = async () =>
+		new Set<string>(),
+	triagePolicy = DEFAULT_APPROVAL_TRIAGE_POLICY,
+	loadTriageEvidence = unknownApprovalInboxTriageEvidence,
 }: GetApprovalInboxListFromSourcesInput): Promise<ApprovalInboxListResult> {
 	// Covered approvals are listed in their "Covering for" sections, not here.
 	const covers = coversByApprover(params.covering, params.approverId);
@@ -268,7 +317,9 @@ export async function getApprovalInboxListFromSources({
 	const approvalResults = await Promise.all(
 		selectedSources.map(async (source) => ({
 			source,
-			approvalsExit: await runtime.runPromiseExit(source.handler.getApprovals(params)),
+			approvalsExit: await runtime.runPromiseExit(
+				source.handler.getApprovals(params),
+			),
 		})),
 	);
 	for (const { source, approvalsExit } of approvalResults) {
@@ -279,7 +330,18 @@ export async function getApprovalInboxListFromSources({
 			});
 		} else {
 			items.push(
-				...approvalsExit.value.map((approval) => toInboxItem(source, approval, effectiveNow)),
+				...(await Promise.all(
+					approvalsExit.value
+						.filter(
+							(approval) => approval.organizationId === params.organizationId,
+						)
+						.map((approval) =>
+							toInboxItem(source, approval, effectiveNow, {
+								triagePolicy,
+								loadTriageEvidence,
+							}),
+						),
+				)),
 			);
 		}
 	}
@@ -291,7 +353,6 @@ export async function getApprovalInboxListFromSources({
 				source.handler.getCount(params.approverId, params.organizationId, {
 					eligibleApprovalScopes: params.eligibleApprovalScopes,
 					includeAllApprovers: params.includeAllApprovers,
-
 				}),
 			),
 		})),
@@ -316,7 +377,12 @@ export async function getApprovalInboxListFromSources({
 						includeAllApprovers: params.includeAllApprovers,
 						filters: canonicalFilters,
 						limit: limit + 1,
-						cursor: cursor ?? undefined,
+						...(isEvidenceAwareRead(read)
+							? { evaluateBeforePagination: true }
+							: {}),
+						cursor: isEvidenceAwareRead(read)
+							? undefined
+							: (cursor ?? undefined),
 						now: effectiveNow,
 					})
 				: [];
@@ -335,7 +401,19 @@ export async function getApprovalInboxListFromSources({
 	);
 	for (const { read, approvals, total } of canonicalResults) {
 		counts[read.type] = (counts[read.type] ?? 0) + total;
-		items.push(...approvals.map((approval) => approval.item));
+		items.push(
+			...(await Promise.all(
+				approvals.map((approval) =>
+					evaluateCanonicalInboxItem(
+						approval,
+						params.organizationId,
+						effectiveNow,
+						triagePolicy,
+						loadTriageEvidence,
+					),
+				),
+			)),
+		);
 	}
 
 	const sortedItems = items
@@ -356,6 +434,8 @@ export async function getApprovalInboxListFromSources({
 					canonicalReads: selectedReads,
 					loadDecidedEarlier,
 					now: effectiveNow,
+					triagePolicy,
+					loadTriageEvidence,
 				})
 			: undefined;
 
@@ -369,12 +449,15 @@ export async function getApprovalInboxListFromSources({
 						priority: lastItem.triage.priority,
 						createdAt: lastItem.timing.createdAt,
 						id: lastItem.id,
+						type: lastItem.type,
 					})
 				: null,
 		hasMore,
 		total: Object.values(counts).reduce((total, count) => total + count, 0),
 		counts,
-		supportedTypes: [...new Set([...sources, ...reads].map((source) => source.type))],
+		supportedTypes: [
+			...new Set([...sources, ...reads].map((source) => source.type)),
+		],
 		warnings,
 	};
 }
@@ -399,11 +482,19 @@ async function loadCoveringSections(input: {
 		GetApprovalInboxListFromSourcesInput["loadDeputyDecidedEarlierStages"]
 	>;
 	now: Date;
+	triagePolicy: ApprovalTriagePolicy;
+	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
 }): Promise<ApprovalInboxCoveringSection[]> {
 	const { params } = input;
-	const deputySources = input.sources.filter((source) => isDeputyDecisionEntityType(source.type));
-	const deputyReads = input.canonicalReads.filter((read) => isDeputyDecisionEntityType(read.type));
-	const covers = new Map(input.covers.map((cover) => [cover.approverId, cover]));
+	const deputySources = input.sources.filter((source) =>
+		isDeputyDecisionEntityType(source.type),
+	);
+	const deputyReads = input.canonicalReads.filter((read) =>
+		isDeputyDecisionEntityType(read.type),
+	);
+	const covers = new Map(
+		input.covers.map((cover) => [cover.approverId, cover]),
+	);
 	return await Promise.all(
 		input.covers.map(async (cover) => {
 			const sectionParams: ApprovalInboxListParams = {
@@ -419,31 +510,56 @@ async function loadCoveringSections(input: {
 			};
 			const loaded = await Promise.all(
 				deputySources.map(async (source) => {
-					const exit = await runtime.runPromiseExit(source.handler.getApprovals(sectionParams));
+					const exit = await runtime.runPromiseExit(
+						source.handler.getApprovals(sectionParams),
+					);
 					return Exit.isSuccess(exit)
-						? exit.value.map((approval) => ({
-								item: toInboxItem(source, approval, input.now),
-								approverId: approval.approverId,
-								requesterEmployeeId: approval.requester.id,
-							}))
+						? await Promise.all(
+								exit.value
+									.filter(
+										(approval) =>
+											approval.organizationId === params.organizationId,
+									)
+									.map(async (approval) => ({
+										item: await toInboxItem(source, approval, input.now, {
+											triagePolicy: input.triagePolicy,
+											loadTriageEvidence: input.loadTriageEvidence,
+										}),
+										approverId: approval.approverId,
+										requesterEmployeeId: approval.requester.id,
+									})),
+							)
 						: [];
 				}),
 			);
 			const canonicalBatches = await Promise.all(
-				deputyReads.map(async (read) =>
-					(
-						await read.load({
-							approverId: cover.approverId,
-							organizationId: params.organizationId,
-							filters: normalizeCanonicalFilters(params),
-							limit: COVERING_SECTION_LIMIT + 1,
-							now: input.now,
-						})
-					).map((approval) => ({
-						item: approval.item,
-						approverId: approval.decisionTarget?.approverId,
-						requesterEmployeeId: approval.decisionTarget?.requesterEmployeeId,
-					})),
+				deputyReads.map(
+					async (read) =>
+						await Promise.all(
+							(
+								await read.load({
+									approverId: cover.approverId,
+									organizationId: params.organizationId,
+									filters: normalizeCanonicalFilters(params),
+									limit: COVERING_SECTION_LIMIT + 1,
+									...(isEvidenceAwareRead(read)
+										? { evaluateBeforePagination: true }
+										: {}),
+									now: input.now,
+								})
+							).map(async (approval) => ({
+								item: await evaluateCanonicalInboxItem(
+									approval,
+									params.organizationId,
+									input.now,
+									input.triagePolicy,
+									input.loadTriageEvidence,
+								),
+								approverId: approval.decisionTarget?.approverId,
+								requesterEmployeeId:
+									approval.decisionTarget?.requesterEmployeeId,
+							})),
+						),
 				),
 			);
 			const candidates = [...loaded.flat(), ...canonicalBatches.flat()];
@@ -452,8 +568,14 @@ async function loadCoveringSections(input: {
 			);
 			const rows = candidates.flatMap((candidate) => {
 				if (viewerHasOwnRight(params, candidate)) return [];
-				const item = markCoveringFor(candidate.item, candidate.approverId, covers);
-				return item.coveringFor ? [markOwnRequest(item, params.approverId)] : [];
+				const item = markCoveringFor(
+					candidate.item,
+					candidate.approverId,
+					covers,
+				);
+				return item.coveringFor
+					? [markOwnRequest(item, params.approverId)]
+					: [];
 			});
 			const decidedEarlier =
 				rows.length > 0
@@ -464,7 +586,9 @@ async function loadCoveringSections(input: {
 						})
 					: new Set<string>();
 			const sorted = rows
-				.map((row) => (decidedEarlier.has(row.id) ? markDecidedEarlierStage(row) : row))
+				.map((row) =>
+					decidedEarlier.has(row.id) ? markDecidedEarlierStage(row) : row,
+				)
 				.sort(compareInboxItems);
 			const shown = sorted.slice(0, COVERING_SECTION_LIMIT);
 			const hasMore = truncated || sorted.length > COVERING_SECTION_LIMIT;
@@ -495,8 +619,12 @@ async function countCoveringSections(input: {
 	canonicalReads: readonly InboxCanonicalRead[];
 	now: Date;
 }): Promise<Array<ApprovalInboxCover & { count: number }>> {
-	const deputySources = input.sources.filter((source) => isDeputyDecisionEntityType(source.type));
-	const deputyReads = input.canonicalReads.filter((read) => isDeputyDecisionEntityType(read.type));
+	const deputySources = input.sources.filter((source) =>
+		isDeputyDecisionEntityType(source.type),
+	);
+	const deputyReads = input.canonicalReads.filter((read) =>
+		isDeputyDecisionEntityType(read.type),
+	);
 	return await Promise.all(
 		input.covers.map(async (cover) => {
 			const counts = await Promise.all(
@@ -548,14 +676,19 @@ export async function countCoveredApproverPending(input: {
 	return section?.count ?? 0;
 }
 
-export function getApprovalInboxList(
+export async function getApprovalInboxList(
 	params: ApprovalInboxListParams,
 ): Promise<ApprovalInboxListResult> {
 	return getApprovalInboxListFromSources({
 		sources: getSupportedInboxSources(),
 		params,
 		canonicalReads: CANONICAL_INBOX_READS,
-		loadDeputyDecidedEarlierStages: (input) => loadDeputyDecidedEarlierStages(db, input),
+		triagePolicy: await getEffectiveApprovalTriagePolicy({
+			organizationId: params.organizationId,
+		}),
+		loadTriageEvidence: loadCurrentApprovalTriageEvidence,
+		loadDeputyDecidedEarlierStages: (input) =>
+			loadDeputyDecidedEarlierStages(db, input),
 	});
 }
 
@@ -588,7 +721,9 @@ function normalizeCanonicalFilters(
 export async function getApprovalInboxCounts(
 	params: ApprovalInboxListParams,
 ): Promise<ApprovalInboxListResult["counts"]> {
-	return countsWithCoveringSections(await getApprovalInboxList({ ...params, limit: 1 }));
+	return countsWithCoveringSections(
+		await getApprovalInboxList({ ...params, limit: 1 }),
+	);
 }
 
 /**
@@ -599,7 +734,9 @@ export function countsWithCoveringSections(
 	result: Pick<ApprovalInboxListResult, "counts" | "covering">,
 ): ApprovalInboxListResult["counts"] {
 	const counts = { ...result.counts };
-	for (const row of (result.covering ?? []).flatMap((section) => section.rows)) {
+	for (const row of (result.covering ?? []).flatMap(
+		(section) => section.rows,
+	)) {
 		counts[row.type] = (counts[row.type] ?? 0) + 1;
 	}
 	return counts;
@@ -615,6 +752,9 @@ export async function getApprovalInboxDetailFromRequest({
 		prepareTravelExpenseReportReviewEvidence(input),
 	loadTimeReviewEvidence = prepareTimeReviewEvidence,
 	loadDeputyDecision = loadDeputyDecisionOfRequest,
+	now,
+	triagePolicy = DEFAULT_APPROVAL_TRIAGE_POLICY,
+	loadTriageEvidence = unknownApprovalInboxTriageEvidence,
 }: GetApprovalInboxDetailFromRequestInput): Promise<ApprovalInboxDetailResult> {
 	if (!isSupportedInboxType(request.entityType)) {
 		throw new ApprovalInboxBadRequestError("Unsupported approval type");
@@ -648,12 +788,18 @@ export async function getApprovalInboxDetailFromRequest({
 		supportsBulkApprove: handler.supportsBulkApprove,
 		handler,
 	};
-	const item = toInboxItem(source, detail.approval, undefined, { inDetail: true });
+	const item = await toInboxItem(source, detail.approval, now, {
+		inDetail: true,
+		triagePolicy,
+		loadTriageEvidence,
+	});
 	let actions = isOrphanedTimeCorrectionDetail(detail)
 		? { ...item.capabilities, canApprove: false, canBulkApprove: false }
 		: item.capabilities;
-	let review: { sections: ApprovalInboxDetailSection[]; decisionsBlocked: boolean } | null =
-		null;
+	let review: {
+		sections: ApprovalInboxDetailSection[];
+		decisionsBlocked: boolean;
+	} | null = null;
 	// The request's submitted revision and committed results (#325). With
 	// evidence, the live correction reconstruction (UTC clock times from current
 	// rows) would contradict the submitted proposal and is not built.
@@ -668,7 +814,10 @@ export async function getApprovalInboxDetailFromRequest({
 				})
 			: null;
 	const sections = buildDetailSections(detail, {
-		liveCorrection: !(timeEvidence?.status === "evidenced" && timeEvidence.kind === "time_correction"),
+		liveCorrection: !(
+			timeEvidence?.status === "evidenced" &&
+			timeEvidence.kind === "time_correction"
+		),
 	});
 
 	if (request.entityType === "absence_entry") {
@@ -711,7 +860,11 @@ export async function getApprovalInboxDetailFromRequest({
 	}
 	if (request.entityType === "absence_entry") {
 		// Who covers during the absence (#1011), after what was submitted.
-		sections.splice(1, 0, buildAbsenceDeputySection(absenceDeputyOf(detail.entity)));
+		sections.splice(
+			1,
+			0,
+			buildAbsenceDeputySection(absenceDeputyOf(detail.entity)),
+		);
 	}
 	if (review) {
 		sections.splice(1, 0, ...review.sections);
@@ -743,9 +896,13 @@ export async function getApprovalInboxDetail({
 	database = db,
 	canonicalReads = CANONICAL_INBOX_READS,
 	loadCanonicalOrdinaryApprovals,
+	triagePolicy,
+	loadTriageEvidence,
 }: {
 	approvalId: string;
 	organizationId: string;
+	triagePolicy?: ApprovalTriagePolicy;
+	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
 	approverId?: string;
 	includeAllApprovers?: boolean;
 	eligibleApprovalScopes?: ApprovalQueryParams["eligibleApprovalScopes"];
@@ -785,10 +942,20 @@ export async function getApprovalInboxDetail({
 				assignmentId: approvalId,
 				limit: 1,
 			});
-			const approval = canonical.find((candidate) => candidate.item.id === approvalId);
+			const approval = canonical.find(
+				(candidate) => candidate.item.id === approvalId,
+			);
 			if (!approval) continue;
+			const evaluated = await evaluateCanonicalInboxItem(
+				{ ...approval, item: approval.detail.item },
+				organizationId,
+				undefined,
+				triagePolicy ??
+					(await getEffectiveApprovalTriagePolicy({ organizationId })),
+				loadTriageEvidence ?? loadCurrentApprovalTriageEvidence,
+			);
 			const item = markCoveringFor(
-				approval.detail.item,
+				evaluated,
 				approval.decisionTarget?.approverId,
 				covers,
 				viewerHasOwnRight(
@@ -799,7 +966,9 @@ export async function getApprovalInboxDetail({
 					},
 				),
 			);
-			return item === approval.detail.item ? approval.detail : { ...approval.detail, item };
+			return item === approval.detail.item
+				? approval.detail
+				: { ...approval.detail, item };
 		}
 		throw new ApprovalInboxBadRequestError("Approval not found");
 	}
@@ -824,7 +993,14 @@ export async function getApprovalInboxDetail({
 		throw new ApprovalInboxBadRequestError("Unsupported approval type");
 	}
 
-	return getApprovalInboxDetailFromRequest({ request, handler });
+	return getApprovalInboxDetailFromRequest({
+		request,
+		handler,
+		triagePolicy:
+			triagePolicy ??
+			(await getEffectiveApprovalTriagePolicy({ organizationId })),
+		loadTriageEvidence: loadTriageEvidence ?? loadCurrentApprovalTriageEvidence,
+	});
 }
 
 function validateDetailMatchesRequest(
@@ -843,23 +1019,47 @@ function validateDetailMatchesRequest(
 	}
 }
 
-function toInboxItem(
+async function toInboxItem(
 	source: ApprovalInboxSource,
 	approval: UnifiedApprovalItem,
 	now: Date | undefined,
-	options: { inDetail?: boolean } = {},
-): ApprovalInboxItem {
+	options: {
+		inDetail?: boolean;
+		triagePolicy?: ApprovalTriagePolicy;
+		loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
+	} = {},
+): Promise<ApprovalInboxItem> {
 	// Outside the detail view, an approval needing its acceptances is not offered (#604).
-	const quickApproveBlocked = approval.requiresDetailReview === true && !options.inDetail;
-	const triage = buildInboxTriage({
-		type: source.type,
-		priority: approval.priority,
-		status: approval.status,
-		createdAt: approval.createdAt,
+	const quickApproveBlocked =
+		approval.requiresDetailReview === true && !options.inDetail;
+	const context = {
+		organizationId: approval.organizationId,
+		requestId: approval.id,
+		entityId: approval.entityId,
+		revision: null,
+		scope: "submitted_request",
+	};
+	const triage = await resolveApprovalInboxTriage({
+		target: {
+			context,
+			requestKind:
+				approval.triage?.requestKind ??
+				(source.type === "absence_entry"
+					? "absence"
+					: source.type === "absence_change_request"
+						? "absence_change"
+						: "other"),
+			type: source.type,
+			priority: approval.priority,
+			status: approval.status,
+			createdAt: approval.createdAt,
+			requesterEmployeeId: approval.requester.id,
+			authority: "compatibility_request",
+			sourceTriage: approval.triage,
+		},
 		now,
-		isPayrollRelevant: approval.triage?.isPayrollRelevant,
-		riskLevel: approval.triage?.riskLevel,
-		timeDeltaMinutes: approval.triage?.timeDeltaMinutes,
+		policy: options.triagePolicy ?? DEFAULT_APPROVAL_TRIAGE_POLICY,
+		loadEvidence: options.loadTriageEvidence,
 	});
 
 	return {
@@ -948,7 +1148,9 @@ function absenceDeputyOf(entity: unknown): AbsenceDeputyView | null {
 	const deputy = (entity as { deputy?: unknown }).deputy;
 	if (typeof deputy !== "object" || deputy === null) return null;
 	const { id, name, canDecideApprovals } = deputy as Record<string, unknown>;
-	return typeof id === "string" && typeof name === "string" && typeof canDecideApprovals === "boolean"
+	return typeof id === "string" &&
+		typeof name === "string" &&
+		typeof canDecideApprovals === "boolean"
 		? { id, name, canDecideApprovals }
 		: null;
 }
@@ -978,7 +1180,10 @@ function buildDetailSections(
 					value: localized?.summary ?? detail.approval.display.summary,
 				},
 				{
-					label: { key: "approvals:approvals.requestStatus", fallback: "Status" },
+					label: {
+						key: "approvals:approvals.requestStatus",
+						fallback: "Status",
+					},
 					// A returned or withdrawn report cycle is not a rejection (#603).
 					value:
 						REQUEST_STATUS_TEXT[
@@ -1009,7 +1214,8 @@ function buildDetailSections(
 		});
 	}
 
-	if (options.liveCorrection) sections.push(...buildTimeCorrectionDetailSections(detail));
+	if (options.liveCorrection)
+		sections.push(...buildTimeCorrectionDetailSections(detail));
 
 	if (detail.timeline.length > 0) {
 		sections.push({
@@ -1265,7 +1471,8 @@ function compareInboxItems(
 		riskRank[left.triage.riskLevel] - riskRank[right.triage.riskLevel] ||
 		priorityRank[left.triage.priority] - priorityRank[right.triage.priority] ||
 		left.timing.createdAt.localeCompare(right.timing.createdAt) ||
-		left.id.localeCompare(right.id)
+		left.id.localeCompare(right.id) ||
+		left.type.localeCompare(right.type)
 	);
 }
 
@@ -1277,7 +1484,8 @@ function compareInboxItemToCursor(
 		riskRank[item.triage.riskLevel] - riskRank[cursor.riskLevel] ||
 		priorityRank[item.triage.priority] - priorityRank[cursor.priority] ||
 		item.timing.createdAt.localeCompare(cursor.createdAt) ||
-		item.id.localeCompare(cursor.id)
+		item.id.localeCompare(cursor.id) ||
+		(cursor.type ? item.type.localeCompare(cursor.type) : 0)
 	);
 }
 
@@ -1307,6 +1515,9 @@ function parseCursor(cursor: string | undefined): ApprovalInboxCursor | null {
 				priority: parsed.priority,
 				createdAt: parsed.createdAt,
 				id: parsed.id,
+				...(parsed.type && isSupportedInboxType(parsed.type)
+					? { type: parsed.type }
+					: {}),
 			};
 		}
 	} catch {
@@ -1314,4 +1525,47 @@ function parseCursor(cursor: string | undefined): ApprovalInboxCursor | null {
 	}
 
 	return null;
+}
+
+/** Canonical kind and source identity, independently of its presentation type. */
+async function evaluateCanonicalInboxItem(
+	approval: CanonicalInboxApproval,
+	organizationId: string,
+	now: Date | undefined,
+	policy: ApprovalTriagePolicy,
+	loadEvidence?: ApprovalInboxTriageEvidenceLoader,
+): Promise<ApprovalInboxItem> {
+	const { item } = approval;
+	const kind = approval.decisionTarget?.workflowKind;
+	const requestKind =
+		kind === "time_correction"
+			? "time_correction"
+			: kind === "absence"
+				? "absence"
+				: kind === "absence_change" || item.type === "absence_change_request"
+					? "absence_change"
+					: "other";
+	if (requestKind === "other") return item;
+	const triage = await resolveApprovalInboxTriage({
+		target: {
+			context: {
+				organizationId,
+				requestId: item.id,
+				entityId: item.entityId,
+				revision: null,
+				scope: "submitted_request",
+			},
+			requestKind,
+			type: item.type,
+			priority: item.triage.priority,
+			status: item.status,
+			createdAt: item.timing.createdAt,
+			requesterEmployeeId: item.requester.id,
+			authority: "canonical_assignment",
+		},
+		now,
+		policy,
+		loadEvidence,
+	});
+	return { ...item, triage };
 }

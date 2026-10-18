@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
 import type {
 	ApprovalFastLaneGroupKey,
 	ApprovalRiskLevel,
@@ -6,12 +6,13 @@ import type {
 	ApprovalTriageMetadata,
 	UnifiedApprovalItem,
 } from "./domain/types";
-
-const DEFAULT_STALE_AFTER_DAYS = 3;
-const DEFAULT_SMALL_TIME_CORRECTION_MINUTES = 15;
+import { getAgeDays as inboxAgeDays } from "./inbox/serialization";
+import { buildInboxTriage } from "./inbox/triage";
+import type { ApprovalTriagePolicy } from "./triage-policy";
 
 export interface ApprovalTriageOptions {
 	now?: Date;
+	policy?: ApprovalTriagePolicy;
 	staleAfterDays?: number;
 	smallTimeCorrectionMinutes?: number;
 }
@@ -37,58 +38,32 @@ export function buildApprovalTriage(
 	approval: UnifiedApprovalItem,
 	options: ApprovalTriageOptions = {},
 ): ComputedApprovalTriageMetadata {
-	const hasValidCreatedAt = getCreatedAtDateTime(approval.createdAt).isValid;
-	const ageDays = getAgeDays(approval.createdAt, options.now ?? new Date());
-	const staleAfterDays = options.staleAfterDays ?? DEFAULT_STALE_AFTER_DAYS;
-	const smallTimeCorrectionMinutes =
-		options.smallTimeCorrectionMinutes ?? DEFAULT_SMALL_TIME_CORRECTION_MINUTES;
-	const isPayrollRelevant = approval.triage?.isPayrollRelevant === true;
-	const hasWarningMetadata =
-		approval.triage?.riskLevel === "high" ||
-		approval.triage?.riskReasons?.some(
-			(reason) => reason !== "no_conflicts_detected" && reason !== "small_time_delta",
-		) === true;
-	const timeDeltaMinutes = approval.triage?.timeDeltaMinutes;
-
-	let riskLevel: ApprovalRiskLevel = "medium";
-	let riskReasons: ApprovalRiskReason[] = ["needs_review"];
-	let fastLaneGroup: ApprovalFastLaneGroupKey | null = null;
-
-	if (isPayrollRelevant) {
-		riskLevel = "high";
-		riskReasons = ["payroll_relevant"];
-		fastLaneGroup = "payroll_blocker";
-	} else if (approval.status === "pending" && ageDays >= staleAfterDays) {
-		riskLevel = "high";
-		riskReasons = ["stale_pending"];
-		fastLaneGroup = "stale_pending";
-	} else if (hasWarningMetadata) {
-		riskLevel = approval.triage?.riskLevel ?? "medium";
-		riskReasons = approval.triage?.riskReasons ?? ["needs_review"];
-	} else if (
-		hasValidCreatedAt &&
-		approval.approvalType === "time_entry" &&
-		isSmallTimeCorrection(timeDeltaMinutes, smallTimeCorrectionMinutes)
-	) {
-		riskLevel = "low";
-		riskReasons = ["small_time_delta"];
-		fastLaneGroup = "small_time_correction";
-	} else if (hasValidCreatedAt && approval.approvalType === "absence_entry") {
-		riskLevel = "low";
-		riskReasons = ["no_conflicts_detected"];
-		fastLaneGroup = "low_risk_absence";
-	}
-
+	const triage = buildInboxTriage({
+		type:
+			approval.approvalType === "shift_request"
+				? "period_submission"
+				: approval.approvalType,
+		requestKind: approval.triage?.requestKind,
+		context: approval.triage?.context,
+		evidence: approval.triage?.evidence,
+		priority: approval.priority,
+		status: approval.status,
+		createdAt: approval.createdAt,
+		now: options.now,
+		policy: options.policy ?? {
+			staleAfterHours: (options.staleAfterDays ?? 3) * 24,
+			smallCorrectionMinutes: options.smallTimeCorrectionMinutes ?? 15,
+		},
+		riskLevel: approval.triage?.riskLevel,
+		riskReasons: approval.triage?.riskReasons,
+		isPayrollRelevant: approval.triage?.isPayrollRelevant,
+	});
 	return {
 		...approval.triage,
-		riskLevel,
-		riskReasons,
-		fastLaneGroup,
-		isPayrollRelevant,
-		ageDays,
+		...triage,
+		ageDays: inboxAgeDays({ createdAt: approval.createdAt, now: options.now }),
 	};
 }
-
 export function withApprovalTriage(
 	approval: UnifiedApprovalItem,
 	options: ApprovalTriageOptions = {},
@@ -107,13 +82,21 @@ export function sortSprintApprovals(
 		.map((approval) => withApprovalTriage(approval, options))
 		.sort((first, second) => {
 			const riskDifference =
-				getRiskRank(second.triage.riskLevel) - getRiskRank(first.triage.riskLevel);
+				getRiskRank(second.triage.riskLevel) -
+				getRiskRank(first.triage.riskLevel);
 
 			if (riskDifference !== 0) {
 				return riskDifference;
 			}
 
-			return getSortTimestamp(first.createdAt) - getSortTimestamp(second.createdAt);
+			const priorityRank = { urgent: 0, high: 1, normal: 2, low: 3 };
+			return (
+				priorityRank[first.priority] - priorityRank[second.priority] ||
+				getSortTimestamp(first.createdAt) -
+					getSortTimestamp(second.createdAt) ||
+				first.id.localeCompare(second.id) ||
+				first.approvalType.localeCompare(second.approvalType)
+			);
 		});
 }
 
@@ -131,47 +114,26 @@ export function groupApprovalFastLanes(
 			continue;
 		}
 
-		groups.set(fastLaneGroup, [...(groups.get(fastLaneGroup) ?? []), triagedApproval]);
+		groups.set(fastLaneGroup, [
+			...(groups.get(fastLaneGroup) ?? []),
+			triagedApproval,
+		]);
 	}
 
 	return Array.from(groups, ([key, items]) => ({ key, items }));
 }
 
-function getAgeDays(createdAt: Date | string, now: Date): number {
-	const createdAtDateTime = getCreatedAtDateTime(createdAt);
-
-	if (!createdAtDateTime.isValid) {
-		return 0;
-	}
-
-	const days = DateTime.fromJSDate(now).diff(createdAtDateTime, "days").days;
-
-	return Math.max(0, Math.floor(days));
-}
-
 function getSortTimestamp(createdAt: Date | string): number {
-	const createdAtDateTime = getCreatedAtDateTime(createdAt);
-
-	if (!createdAtDateTime.isValid) {
+	try {
+		return (
+			typeof createdAt === "string"
+				? parseInstant(createdAt)
+				: instantFromDate(createdAt)
+		).epochMilliseconds;
+	} catch {
 		return Number.MAX_SAFE_INTEGER;
 	}
-
-	return createdAtDateTime.toMillis();
 }
-
-function getCreatedAtDateTime(createdAt: Date | string): DateTime {
-	return typeof createdAt === "string"
-		? DateTime.fromISO(createdAt)
-		: DateTime.fromJSDate(createdAt);
-}
-
-function isSmallTimeCorrection(
-	timeDeltaMinutes: number | undefined,
-	thresholdMinutes: number,
-): boolean {
-	return typeof timeDeltaMinutes === "number" && Math.abs(timeDeltaMinutes) <= thresholdMinutes;
-}
-
 function getRiskRank(riskLevel: ApprovalRiskLevel): number {
 	switch (riskLevel) {
 		case "high":
