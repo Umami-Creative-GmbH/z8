@@ -14,6 +14,7 @@ import {
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
 import { isEmployeeActivelyAssignedToLocation } from "@/lib/time-tracking/assigned-locations/queries";
+import { attributionIntent } from "@/lib/time-tracking/close-active-work";
 import type { Clocking } from "@/lib/time-tracking/clocking/clocking";
 import { proveKioskBadge, proveKioskPin } from "@/lib/time-tracking/clocking/kiosk";
 import type { ClockPrincipal } from "@/lib/time-tracking/clocking/types";
@@ -30,6 +31,7 @@ import {
 	kioskRefusalResponse,
 	resolveKioskFromRequest,
 } from "./authenticate";
+import { readKioskAttribution } from "./attribution-context";
 import { kioskAcceptsBadgeInput } from "./badge-input";
 import {
 	KioskAttemptClosedError,
@@ -133,7 +135,18 @@ const actionFields = {
 		.optional(),
 	/** Read leniently per action (#1123): a malformed one is dropped, never refused. */
 	vehicleUse: z.unknown().optional(),
+	/** A clock-out's choices (#887): absent keeps, null clears, an ID replaces. */
+	project: z.string().uuid().nullable().optional(),
+	workCategory: z.string().uuid().nullable().optional(),
 };
+
+/** Whether the request's fields fit its action: a break's duration, a clock-out's choices (#887). */
+function fitsAction(body: ClockRequest) {
+	if ((body.action === "break") !== (body.breakMinutes !== undefined)) return false;
+	return (
+		body.action === "clock_out" || (body.project === undefined && body.workCategory === undefined)
+	);
+}
 
 const employeeRequest = z.union([z.object(pinProofFields), z.object(badgeProofFields)]);
 
@@ -406,10 +419,11 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 				return deps.clocking.run({
 					...command,
 					...clockVehicleUseOf(body.vehicleUse),
+					// No task or billability is chosen here: Clocking's own rules follow the project.
 					body: {
 						kind: "clock_out",
-						project: { kind: "preserve" },
-						workCategory: { kind: "preserve" },
+						project: attributionIntent(body.project),
+						workCategory: attributionIntent(body.workCategory),
 					},
 				});
 			case "break":
@@ -443,7 +457,21 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 					employeeId: admitted.employee.id,
 				}),
 			]);
-			return json(vehicleUse ? { ...current, vehicleUse } : current);
+			// Asked only at a clock-out of live work, never while on a break (#887).
+			const attribution =
+				current.state.status === "clocked_in"
+					? await readKioskAttribution(db, {
+							organizationId: kiosk.organizationId,
+							employeeId: admitted.employee.id,
+							workPeriodId: current.state.workPeriodId,
+							now: deps.clock.nowInstant(),
+						})
+					: null;
+			return json({
+				...current,
+				...(vehicleUse ? { vehicleUse } : {}),
+				...(attribution ? { attribution } : {}),
+			});
 		},
 
 		/** `POST /api/kiosk/clock`: one action, when it took effect, then the state and day total. */
@@ -452,7 +480,7 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			if (!authentication.ok) return kioskRefusalResponse(authentication.reason);
 			const { kiosk } = authentication;
 			const body = await readBody(request, clockRequest);
-			if (!body || (body.action === "break") !== (body.breakMinutes !== undefined)) {
+			if (!body || !fitsAction(body)) {
 				return json({ code: "invalid_request" }, 400);
 			}
 			const admitted = await admit(body, kiosk);

@@ -40,6 +40,12 @@ export type KioskRefusalCode = "kiosk_unknown" | "kiosk_revoked";
  *   vehicle use when the work records none), on `resume_break` and `break` one
  *   `{ readingKm }`. It never refuses the action: what cannot be recorded is
  *   dropped. `start_break` carries none; the break's reading is asked on resume.
+ * - Project and work category (#887): `clock_out` may carry `project` and
+ *   `workCategory` (`KioskAttributionValue`): absent keeps the work's, `null`
+ *   clears it, an ID replaces it. Every other action refuses them (400
+ *   `invalid_request`). Clocking checks a replacement against the employee's
+ *   booking eligibility before anything is written: 409 `project_not_allowed`
+ *   or `work_category_not_allowed`, with the state, records nothing.
  *
  * Refusals are `{ code, ... }` (`KioskClockRefusal`). A wrong or locked PIN is
  * answered without clocking.
@@ -117,6 +123,36 @@ export type KioskVehicleUse = {
 	live: WorkVehicleUse | null;
 };
 
+/** A project or work category as the kiosk shows it (#887). */
+export type KioskAttributionOption = { id: string; name: string };
+
+/**
+ * One attribution field at an online clock-out (#887): what the live work is
+ * booked to now (`current`, null for none; it may no longer be offered) and the
+ * choices the employee's booking eligibility offers, the shared rule Clocking
+ * checks again when the work ends.
+ */
+export type KioskAttributionField = {
+	current: KioskAttributionOption | null;
+	options: KioskAttributionOption[];
+};
+
+/**
+ * What the kiosk asks at an online clock-out (#887): each field only while there
+ * is something to decide (a choice, or a current value to clear). `project` is
+ * absent while the organization has projects off.
+ */
+export type KioskAttribution = {
+	project?: KioskAttributionField;
+	workCategory?: KioskAttributionField;
+};
+
+/**
+ * The clock-out's choice for one field (#887), sent beside `action: "clock_out"`
+ * only: absent keeps the work's attribution, `null` clears it, an ID replaces it.
+ */
+export type KioskAttributionValue = string | null;
+
 export type KioskEmployeeSnapshot = {
 	employee: { id: string; name: string };
 	state: KioskEmployeeState;
@@ -126,6 +162,12 @@ export type KioskEmployeeSnapshot = {
 	 * use is asked or expected for the employee: without it the kiosk asks nothing.
 	 */
 	vehicleUse?: KioskVehicleUse;
+	/**
+	 * Only `POST /api/kiosk/employee-status` answers it, only while the employee
+	 * is clocked in (not on a break) and has something to decide (#887): without
+	 * it the clock-out asks nothing. Never cached for offline use.
+	 */
+	attribution?: KioskAttribution;
 };
 
 /**
