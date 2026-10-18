@@ -5,6 +5,11 @@ import { describe, expect, it, vi } from "vitest";
 import type { AbsencePlanPreview } from "@/lib/absences/absence-plan-preview";
 import { AbsencePlanPreviewPanel } from "./absence-plan-preview-panel";
 
+vi.mock("next-intl", () => ({ useLocale: () => "en-GB" }));
+vi.mock("@/hooks/use-display-context", () => ({
+	useDisplayContext: () => ({ locale: "en-GB", timezone: "Europe/Berlin", timeFormat: "24h" }),
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
@@ -17,12 +22,18 @@ vi.mock("@tolgee/react", () => ({
 const riskyPreview: AbsencePlanPreview = {
 	requestedAbsenceDays: 6,
 	refusal: null,
-	balance: {
-		year: 2026,
-		remainingDays: 4,
-		remainingAfterRequest: -2,
-		countsAgainstVacation: true,
-	},
+	countsAgainstVacation: true,
+	balances: [
+		{
+			year: 2026,
+			chargedAbsenceDays: 6,
+			futureYear: false,
+			status: "available",
+			remainingDays: 4,
+			remainingAfterRequest: -2,
+		},
+	],
+	evaluatedAt: "2026-10-18T08:30:00Z",
 	workBalance: null,
 	holidays: [
 		{
@@ -49,7 +60,7 @@ const riskyPreview: AbsencePlanPreview = {
 		hasConfiguredRulesForAffectedShifts: true,
 	},
 	approvalSignal: "risky",
-	warnings: ["Vacation balance would be negative after this request."],
+	warnings: ["Request overlaps an existing pending absence."],
 	reasons: [
 		"Coverage rules are not configured for the affected scheduled work.",
 		"Request follows the normal approval path.",
@@ -58,12 +69,8 @@ const riskyPreview: AbsencePlanPreview = {
 
 const nonVacationPreview: AbsencePlanPreview = {
 	...riskyPreview,
-	balance: {
-		year: 2026,
-		remainingDays: 4,
-		remainingAfterRequest: 4,
-		countsAgainstVacation: false,
-	},
+	countsAgainstVacation: false,
+	balances: [],
 	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
 	approvalSignal: "likely",
 	warnings: [],
@@ -105,7 +112,7 @@ describe("AbsencePlanPreviewPanel", () => {
 
 		expect(screen.getByRole("heading", { name: "Smart planner" })).toBeTruthy();
 		expect(screen.getByText("Risky")).toBeTruthy();
-		expect(screen.getByText("Vacation balance would be negative after this request.")).toBeTruthy();
+		expect(screen.getByText("Request overlaps an existing pending absence.")).toBeTruthy();
 	});
 
 	it("shows vacation balance impact for the selected category", () => {
@@ -191,6 +198,124 @@ describe("AbsencePlanPreviewPanel", () => {
 		);
 
 		expect(screen.getByRole("alert").textContent).toBe("This range contains no working days.");
+	});
+});
+
+describe("AbsencePlanPreviewPanel vacation balance by year (#1340)", () => {
+	const acrossNewYear: AbsencePlanPreview = {
+		...riskyPreview,
+		requestedAbsenceDays: 3,
+		balances: [
+			{
+				year: 2026,
+				chargedAbsenceDays: 2,
+				futureYear: false,
+				status: "available",
+				remainingDays: 5,
+				remainingAfterRequest: 3,
+			},
+			{
+				year: 2027,
+				chargedAbsenceDays: 1,
+				futureYear: true,
+				status: "available",
+				remainingDays: 0.5,
+				remainingAfterRequest: -0.5,
+			},
+		],
+	};
+
+	function yearRow(year: number) {
+		return screen.getByRole("listitem", { name: String(year) });
+	}
+
+	it("shows each year's charged days, recorded balance and estimate after the request", () => {
+		render(<AbsencePlanPreviewPanel preview={acrossNewYear} />);
+
+		expect(yearRow(2026).textContent).toContain("2 days charged");
+		expect(yearRow(2026).textContent).toContain("Current recorded balance5 days");
+		expect(yearRow(2026).textContent).toContain("Estimated after request3 days");
+		expect(yearRow(2027).textContent).toContain("1 day charged");
+		expect(yearRow(2027).textContent).toContain("Estimated after request-0.5 days");
+	});
+
+	it("warns about a year the request exceeds, noting uncounted future carryover and accrual", () => {
+		render(<AbsencePlanPreviewPanel preview={acrossNewYear} />);
+
+		expect(yearRow(2027).textContent).toContain(
+			"This request exceeds your recorded balance for 2027.",
+		);
+		expect(yearRow(2027).textContent).toContain(
+			"Carryover and accrual for 2027 are not counted yet.",
+		);
+		expect(yearRow(2026).textContent).not.toContain("exceeds");
+	});
+
+	it("names when the balances were read and that they are estimates", () => {
+		render(<AbsencePlanPreviewPanel preview={acrossNewYear} />);
+
+		const balance = screen.getByRole("region", { name: "Balance" });
+		expect(balance.textContent).toContain("Recorded balances as of 18 Oct 2026, 10:30");
+		expect(balance.textContent).toContain("Estimates, not guaranteed future balances.");
+	});
+
+	it("shows a year without balance evidence as unavailable, never as zero", () => {
+		render(
+			<AbsencePlanPreviewPanel
+				preview={{
+					...acrossNewYear,
+					balances: [
+						acrossNewYear.balances[0],
+						{
+							year: 2027,
+							chargedAbsenceDays: 1,
+							futureYear: true,
+							status: "unavailable",
+							reason: "missing_policy",
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(yearRow(2026).textContent).toContain("Estimated after request3 days");
+		expect(yearRow(2027).textContent).toContain(
+			"Balance unavailable: no vacation policy covers 2027 yet. You can still submit.",
+		);
+		expect(yearRow(2027).textContent).not.toContain("0 days");
+	});
+
+	it("explains a conflicting policy and a failed read", () => {
+		render(
+			<AbsencePlanPreviewPanel
+				preview={{
+					...acrossNewYear,
+					balances: [
+						{
+							year: 2026,
+							chargedAbsenceDays: 2,
+							futureYear: false,
+							status: "unavailable",
+							reason: "conflicting_policy",
+						},
+						{
+							year: 2027,
+							chargedAbsenceDays: 1,
+							futureYear: true,
+							status: "unavailable",
+							reason: "read_failed",
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(yearRow(2026).textContent).toContain(
+			"Balance unavailable: conflicting vacation policies for 2026 need review. You can still submit.",
+		);
+		expect(yearRow(2027).textContent).toContain(
+			"Balance unavailable: the 2027 balance could not be read. You can still submit.",
+		);
 	});
 });
 

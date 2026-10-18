@@ -164,7 +164,6 @@ function renderDialog() {
 				open
 				onOpenChange={vi.fn()}
 				organizationId="org-1"
-				remainingDays={10}
 				categories={categories}
 			/>
 		</QueryClientProvider>,

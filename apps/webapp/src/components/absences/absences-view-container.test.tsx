@@ -76,7 +76,6 @@ describe("AbsencesViewContainer", () => {
 				currentYear={2026}
 				holidays={[]}
 				organizationId="org-1"
-				remainingDays={10}
 				currentDate="2026-05-20"
 			/>,
 		);
@@ -112,7 +111,6 @@ describe("AbsencesViewContainer", () => {
 				currentYear={2026}
 				holidays={[]}
 				organizationId="org-1"
-				remainingDays={10}
 				currentDate="2026-05-20"
 			/>,
 		);
@@ -147,7 +145,6 @@ describe("AbsencesViewContainer", () => {
 			currentYear: 2026,
 			currentDate: "2026-05-20",
 			organizationId: "org-1",
-			remainingDays: 10,
 		};
 		const { rerender } = render(<AbsencesViewContainer {...props} />);
 		fireEvent.click(screen.getByRole("button", { name: "Next year" }));
@@ -181,7 +178,6 @@ describe("AbsencesViewContainer", () => {
 				currentYear={2026}
 				holidays={[]}
 				organizationId="org-1"
-				remainingDays={10}
 				currentDate="2026-05-20"
 			/>,
 		);

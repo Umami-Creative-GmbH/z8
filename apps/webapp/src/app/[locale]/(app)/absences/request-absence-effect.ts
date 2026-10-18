@@ -33,6 +33,7 @@ import {
 	type VacationOverrideSummary,
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceRequest } from "@/lib/absences/types";
+import { findOverdrawnVacationYears } from "@/lib/absences/vacation-year-balance-store";
 import { captureAbsenceLegacyApprovalState } from "@/lib/approvals/domain-adapters/absence-legacy-state";
 import {
 	createLegacyApprovalWriteCoordinator,
@@ -68,7 +69,7 @@ import {
 } from "@/lib/approvals/workflow/start-workflow";
 import { getAbility } from "@/lib/auth-helpers";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	AbsenceDaysRefusedError,
 	type AnyAppError,
@@ -1011,6 +1012,46 @@ export async function requestAbsenceForEmployeeEffect(
 	);
 }
 
+/** The machine-readable refusal of vacation beyond a year's recorded balance (#1340). */
+export const INSUFFICIENT_VACATION_BALANCE_REFUSAL = "insufficient_balance";
+
+/**
+ * Refuses vacation whose absence days in a calendar year exceed that year's recorded remaining
+ * balance (#1340). A year whose balance is unavailable warns in the preview but never blocks.
+ */
+function checkVacationBalanceByYear(
+	dbService: typeof DatabaseService.Service,
+	currentEmployee: RequestAbsenceEmployeeContext,
+	data: NormalizedAbsenceDurationInput,
+	category: { countsAgainstVacation: boolean },
+) {
+	if (!category.countsAgainstVacation) return Effect.void;
+	return dbService
+		.query("absences.checkVacationBalanceByYear", () =>
+			findOverdrawnVacationYears(dbService.db, {
+				organizationId: currentEmployee.organizationId,
+				employeeId: currentEmployee.id,
+				absence: toAbsenceEntryDurationFields(data),
+				currentDate: dateFromInstant(systemClock.nowInstant()),
+			}),
+		)
+		.pipe(
+			Effect.flatMap(([overdrawn]) =>
+				overdrawn
+					? Effect.fail(
+							new ValidationError({
+								message: overdrawn.futureYear
+									? `The requested dates exceed your available vacation balance for ${overdrawn.year}. Carryover and accrual for future years are not counted yet.`
+									: `The requested dates exceed your available vacation balance for ${overdrawn.year}.`,
+								field: "endDate",
+								refusal: INSUFFICIENT_VACATION_BALANCE_REFUSAL,
+							}),
+						)
+					: Effect.void,
+			),
+		);
+}
+
 function requestAbsenceWithResolverEffect(
 	data: AbsenceRequest,
 	resolveRequester: Effect.Effect<
@@ -1119,6 +1160,7 @@ function requestAbsenceWithResolverEffect(
 					category,
 					Boolean(defaultApproverId),
 				);
+				yield* checkVacationBalanceByYear(dbService, currentEmployee, normalizedData, category);
 
 				span.setAttribute("absence.category_name", category.name);
 				span.setAttribute("absence.requires_approval", category.requiresApproval);

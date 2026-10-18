@@ -11,16 +11,27 @@ import {
 	type CoverageEvaluationInput,
 	type ExistingAbsenceInput,
 } from "@/lib/absences/absence-plan-preview";
+import { calendarYearsOf } from "@/lib/absences/absence-days";
 import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
+import {
+	normalizeAbsenceDurationInput,
+	toAbsenceEntryDurationFields,
+} from "@/lib/absences/duration";
 import { loadTimeOffInLieuPreview } from "@/lib/absences/time-off-in-lieu-preview.server";
 import type { AbsenceRequest } from "@/lib/absences/types";
+import { loadVacationYearBalances } from "@/lib/absences/vacation-year-balance-store";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import type { DayOfWeek } from "@/lib/coverage/domain/entities/coverage-rule";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	dateFromInstant,
+	instantToCanonicalString,
+	parsePlainDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { getCurrentEmployee } from "./current-employee";
-import { getHolidays, getVacationBalance } from "./queries";
+import { getHolidays } from "./queries";
 
 export type AbsencePlanPreviewRequest = AbsenceRequest;
 
@@ -104,15 +115,27 @@ export async function getAbsencePlanPreview(
 			timezone,
 		);
 
+		const evaluatedAt = systemClock.nowInstant();
 		const [
-			vacationBalance,
+			vacationBalances,
 			holidays,
 			isWorkingDay,
 			existingAbsences,
 			affectedShiftRows,
 			managerId,
 		] = await Promise.all([
-			getVacationBalance(currentEmployee.id, range.start.year, timezone),
+			// Every year the request touches, read at one evaluation time; each year fails alone.
+			category.countsAgainstVacation
+				? loadVacationYearBalances(db, {
+						organizationId: currentEmployee.organizationId,
+						employeeId: currentEmployee.id,
+						years: calendarYearsOf(
+							toAbsenceEntryDurationFields(normalizeAbsenceDurationInput(request)),
+						),
+						timezone,
+						currentDate: dateFromInstant(evaluatedAt),
+					})
+				: [],
 			getHolidays(currentEmployee.id, range.startDate, range.endDate),
 			loadWorkingDays(db, {
 				organizationId: currentEmployee.organizationId,
@@ -176,7 +199,9 @@ export async function getAbsencePlanPreview(
 				drawsOnWorkBalance: category.drawsOnWorkBalance,
 			},
 			request,
-			vacationBalance,
+			vacationBalances,
+			evaluatedAt: instantToCanonicalString(evaluatedAt),
+			timezone,
 			holidays,
 			isWorkingDay,
 			existingAbsences: typedExistingAbsences.map((absence) => ({
