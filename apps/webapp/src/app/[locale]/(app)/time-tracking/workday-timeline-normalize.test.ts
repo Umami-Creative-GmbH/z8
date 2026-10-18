@@ -101,6 +101,34 @@ describe("normalizeWorkdayTimeline", () => {
 		});
 	});
 
+	it("does not send pending manual work to My Requests, which has no request for it", () => {
+		const result = normalizeWorkdayTimeline({
+			selectedDate,
+			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
+			workPeriods: [
+				{
+					id: "period-manual",
+					startTime: new Date("2026-05-03T07:00:00.000Z"),
+					endTime: new Date("2026-05-03T11:00:00.000Z"),
+					durationMinutes: 240,
+					approvalStatus: "pending",
+					pendingChanges: null,
+					wasAutoAdjusted: false,
+					autoAdjustmentReason: null,
+				},
+			],
+			shifts: [],
+			absences: [],
+			pendingRequests: [],
+		});
+
+		expect(result.dayWarnings.map((warning) => warning.id)).toEqual([
+			"warning:pending-edit:period-manual",
+		]);
+		expect(result.dayWarnings[0].link).toBeUndefined();
+	});
+
 	it("keeps day warning summaries out of timeline items", () => {
 		const result = normalizeWorkdayTimeline({
 			selectedDate,

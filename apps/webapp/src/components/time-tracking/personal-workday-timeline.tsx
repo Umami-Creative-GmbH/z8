@@ -19,6 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { workPeriodFocusTargetId } from "@/lib/time-tracking/period-submissions/blocker-navigation";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 
@@ -172,12 +173,27 @@ function WarningAlert({ warning }: { warning: SerializableWorkdayTimelineItem })
 	);
 }
 
+const WORK_PERIOD_ITEM_PREFIX = "work-period:";
+
 function TimelineRow({ item }: { item: SerializableWorkdayTimelineItem }) {
 	const timeRange = getTimeRange(item);
 	const content = <TimelineRowContent item={item} timeRange={timeRange} />;
+	// A work entry's row is where a period blocker link focuses it (#1349).
+	const focusTargetId =
+		item.type === "work-period" && item.id.startsWith(WORK_PERIOD_ITEM_PREFIX)
+			? workPeriodFocusTargetId(item.id.slice(WORK_PERIOD_ITEM_PREFIX.length))
+			: undefined;
 
 	return (
-		<li>
+		<li
+			id={focusTargetId}
+			tabIndex={focusTargetId ? -1 : undefined}
+			className={
+				focusTargetId
+					? "outline-none focus:bg-muted/50 focus:ring-2 focus:ring-ring focus:ring-inset"
+					: undefined
+			}
+		>
 			{item.link ? (
 				<Link
 					className="block transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

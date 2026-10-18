@@ -28,6 +28,10 @@ import {
 	formatPlainDate,
 	formatPlainDateRange,
 } from "@/lib/datetime/temporal-format";
+import {
+	periodBlockerHref,
+	periodSubmissionBlockerKey,
+} from "@/lib/time-tracking/period-submissions/blocker-navigation";
 import type { EmployeePeriodViewRow } from "@/lib/time-tracking/period-submissions/employee-period-view";
 import type { PeriodSubmissionBlocker } from "@/lib/time-tracking/period-submissions/submission-blockers";
 import type { PeriodSubmissionReadiness } from "@/lib/time-tracking/period-submissions/submission-readiness";
@@ -36,7 +40,7 @@ import {
 	isPeriodSubmittable,
 	type PeriodSubmissionViewStatus,
 } from "@/lib/time-tracking/period-submissions/submission-status";
-import { useRouter } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
 import {
 	type PeriodReadinessState,
 	periodReadinessState,
@@ -63,11 +67,7 @@ const STATUS_VARIANTS: Record<
 };
 
 /** The stable React key and DOM id part of a blocker: its kind and source identity. */
-export function periodSubmissionBlockerKey(blocker: PeriodSubmissionBlocker): string {
-	return blocker.kind === "absence_request"
-		? `absence:${blocker.absenceId}`
-		: `${blocker.kind}:${blocker.workPeriodId}`;
-}
+export { periodSubmissionBlockerKey };
 
 /**
  * The employee's period view (#1059): their recent submission periods with each one's status.
@@ -144,6 +144,49 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 					"An absence request for {dates} is undecided.",
 					{ dates: days(blocker.startDate, blocker.endDate) },
 				);
+		}
+	};
+
+	/**
+	 * What the employee can do about a blocker, or that an approver decides, and the label of the
+	 * link to where that happens. The actions named are the ones those views offer today: cancelling
+	 * a pending correction or absence in My Requests, clocking out at the clock. Manual work (and a
+	 * pending policy clock-out) has no request view and no withdrawal, so only an approver acts.
+	 */
+	const blockerNextAction = (blocker: PeriodSubmissionBlocker) => {
+		switch (blocker.kind) {
+			case "live_work":
+				return {
+					explanation: t(
+						"timeTracking.periodSubmissions.blocker.liveWorkAction",
+						"Clock out when this work ends.",
+					),
+					link: t("timeTracking.periodSubmissions.blocker.openClock", "Go to the clock"),
+				};
+			case "time_correction":
+				return {
+					explanation: t(
+						"timeTracking.periodSubmissions.blocker.timeCorrectionAction",
+						"An approver decides this correction. While it waits, you can cancel it in My Requests.",
+					),
+					link: t("timeTracking.periodSubmissions.blocker.openRequest", "Open request"),
+				};
+			case "manual_work":
+				return {
+					explanation: t(
+						"timeTracking.periodSubmissions.blocker.manualWorkAction",
+						"An approver decides this work. You don't need to do anything.",
+					),
+					link: t("timeTracking.periodSubmissions.blocker.openTimeline", "Show on timeline"),
+				};
+			case "absence_request":
+				return {
+					explanation: t(
+						"timeTracking.periodSubmissions.blocker.absenceRequestAction",
+						"An approver decides this absence. While it waits, you can cancel it in My Requests.",
+					),
+					link: t("timeTracking.periodSubmissions.blocker.openRequest", "Open request"),
+				};
 		}
 	};
 
@@ -434,12 +477,31 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 															"Show details",
 														)}
 											</Button>
-											<ul id={detailsId} hidden={!isExpanded} className="list-disc ps-5 text-sm">
-												{blockers.map((blocker) => (
-													<li key={periodSubmissionBlockerKey(blocker)}>
-														{blockerMessage(blocker)}
-													</li>
-												))}
+											<ul
+												id={detailsId}
+												hidden={!isExpanded}
+												className="flex list-disc flex-col gap-2 ps-5 text-sm"
+											>
+												{blockers.map((blocker) => {
+													const key = periodSubmissionBlockerKey(blocker);
+													const sourceId = `${detailsId}-${key}`;
+													const next = blockerNextAction(blocker);
+													return (
+														<li key={key}>
+															<span id={sourceId} data-blocker-source="">
+																{blockerMessage(blocker)}
+															</span>{" "}
+															<span className="text-muted-foreground">{next.explanation}</span>{" "}
+															<Link
+																href={periodBlockerHref(blocker, period)}
+																aria-describedby={sourceId}
+																className="font-medium underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+															>
+																{next.link}
+															</Link>
+														</li>
+													);
+												})}
 											</ul>
 										</div>
 									) : null}
