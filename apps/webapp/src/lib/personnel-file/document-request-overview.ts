@@ -1,5 +1,6 @@
 import {
 	DOCUMENT_REQUEST_STATUSES,
+	type DocumentRequestCategory,
 	type DocumentRequestStatus,
 	type DocumentRequestView,
 } from "./document-request.types";
@@ -38,6 +39,22 @@ export interface ManagedDocumentRequestView extends DocumentRequestView {
 	/** A former employee: their requests stay listed. */
 	isFormer: boolean;
 }
+
+/** An employee or team a bulk create may name (#1407). */
+export interface DocumentRequestRecipientOption {
+	id: string;
+	name: string;
+}
+
+/**
+ * What the bulk create offers per requestable category (#1407): the current
+ * employees whose documents of that category the viewer manages, and the
+ * teams they belong to. Empty for a category the viewer does not cover.
+ */
+export type DocumentRequestRecipientOptions = Record<
+	DocumentRequestCategory,
+	{ employees: DocumentRequestRecipientOption[]; teams: DocumentRequestRecipientOption[] }
+>;
 
 type RawParams = Record<string, string | string[] | undefined>;
 

@@ -94,7 +94,41 @@ export type DocumentRequestRefusal =
 	/** A submission needs at least one document uploaded from the request since the last one. */
 	| "no_documents"
 	/** An edit tried to change something other than the deadline and note (#1403). */
-	| "not_editable";
+	| "not_editable"
+	/** A bulk create named neither employees nor teams (#1407). */
+	| "no_recipients"
+	/** A bulk create named or reached more employees than one batch may hold (#1407). */
+	| "too_many_recipients"
+	/** Bulk requests never name a renewed document (#1407). */
+	| "renewal_not_in_bulk";
+
+/**
+ * The most employees one bulk create may name, and the most requests it may
+ * create (#1407). A larger batch is refused as a whole.
+ */
+export const DOCUMENT_REQUEST_BULK_MAX_RECIPIENTS = 500;
+/** The most teams one bulk create may name (#1407). */
+export const DOCUMENT_REQUEST_BULK_MAX_TEAMS = 200;
+
+/**
+ * Why a bulk create skipped an employee it reached (#1407): not covered by the
+ * actor for the category, the actor's own file, a former employee, or an
+ * identical active request (same category and title) already exists.
+ */
+export const DOCUMENT_REQUEST_BULK_SKIP_REASONS = [
+	"not_covered",
+	"own_file",
+	"former_employee",
+	"already_requested",
+] as const;
+export type DocumentRequestBulkSkipReason = (typeof DOCUMENT_REQUEST_BULK_SKIP_REASONS)[number];
+
+/** What a bulk create did: how many requests it created and whom it skipped, by reason. */
+export interface DocumentRequestBulkSummary {
+	created: number;
+	skipped: number;
+	skippedBy: Record<DocumentRequestBulkSkipReason, number>;
+}
 
 /** One entry of a request's history. */
 export interface DocumentRequestEventView {

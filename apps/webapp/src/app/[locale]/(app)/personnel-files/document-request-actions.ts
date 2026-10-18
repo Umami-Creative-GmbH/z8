@@ -4,9 +4,11 @@ import { db } from "@/db";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
-import type {
-	DocumentRequestRefusal,
-	DocumentRequestView,
+import {
+	DOCUMENT_REQUEST_BULK_MAX_RECIPIENTS,
+	type DocumentRequestBulkSummary,
+	type DocumentRequestRefusal,
+	type DocumentRequestView,
 } from "@/lib/personnel-file/document-request.types";
 import {
 	notifyDocumentRequestDecided,
@@ -17,6 +19,7 @@ import {
 	acceptDocumentRequest,
 	cancelDocumentRequest,
 	createDocumentRequest,
+	createDocumentRequestsInBulk,
 	editDocumentRequest,
 	listEmployeeDocumentRequests,
 	listOwnDocumentRequests,
@@ -56,6 +59,9 @@ const REFUSAL_MESSAGES: Readonly<Record<DocumentRequestRefusal, string>> = {
 	no_documents: "Upload at least one document before you submit.",
 	not_editable:
 		"Only the deadline and note can be changed. Cancel the request and create a new one instead.",
+	no_recipients: "Choose at least one employee or team.",
+	too_many_recipients: `Request documents from at most ${DOCUMENT_REQUEST_BULK_MAX_RECIPIENTS} employees at once.`,
+	renewal_not_in_bulk: "Requests for several employees cannot name a renewed document.",
 };
 
 function refused(reason: DocumentRequestRefusal): { success: false; error: string; code: string } {
@@ -115,6 +121,82 @@ export async function createDocumentRequestAction(
 		}
 	} catch (error) {
 		return failure(error, "Failed to create the document request");
+	}
+}
+
+export interface CreateDocumentRequestsInBulkInput {
+	/** Employees named one by one. */
+	employeeIds: string[];
+	/** Teams whose current members (primary team or membership) are included. */
+	teamIds: string[];
+	category: "certificate" | "other";
+	title: string;
+	note?: string | null;
+	/** `YYYY-MM-DD` */
+	deadline: string;
+}
+
+/** Notifications sent at once while a bulk create notifies its employees. */
+const BULK_NOTIFY_CONCURRENCY = 10;
+
+/**
+ * Creates the same request for several employees and teams at once (#1407)
+ * and notifies each employee as for a single request. The store re-checks
+ * coverage for every employee; whom it skips comes back as counts. Bulk
+ * requests never name a renewed document (`renewal_not_in_bulk`).
+ */
+export async function createDocumentRequestsInBulkAction(
+	input: CreateDocumentRequestsInBulkInput,
+): Promise<ServerActionResult<DocumentRequestBulkSummary>> {
+	try {
+		const current = await loadCurrentPersonnelFileAccess();
+		if (current.status !== "resolved" || !input || typeof input !== "object") {
+			return { success: false, error: NOT_FOUND };
+		}
+		if ("renewedDocumentId" in input) return refused("renewal_not_in_bulk");
+		const employeeIds = Array.isArray(input.employeeIds) ? input.employeeIds : null;
+		const teamIds = Array.isArray(input.teamIds) ? input.teamIds : null;
+		if (
+			!employeeIds ||
+			!teamIds ||
+			!employeeIds.every(isCanonicalUuid) ||
+			!teamIds.every(isCanonicalUuid)
+		) {
+			return { success: false, error: NOT_FOUND };
+		}
+		const result = await createDocumentRequestsInBulk(db, current.access, {
+			employeeIds,
+			teamIds,
+			category: input.category,
+			title: input.title,
+			note: input.note ?? null,
+			deadline: input.deadline,
+		});
+		switch (result.kind) {
+			case "not_found":
+				return { success: false, error: NOT_FOUND };
+			case "refused":
+				return refused(result.reason);
+			case "created": {
+				const { organizationId } = current.access;
+				for (let start = 0; start < result.created.length; start += BULK_NOTIFY_CONCURRENCY) {
+					await Promise.all(
+						result.created
+							.slice(start, start + BULK_NOTIFY_CONCURRENCY)
+							.map(({ request, eventId }) =>
+								notifyDocumentRequested(db, { organizationId, eventId, request }),
+							),
+					);
+				}
+				const skipped = Object.values(result.skippedBy).reduce((sum, count) => sum + count, 0);
+				return {
+					success: true,
+					data: { created: result.created.length, skipped, skippedBy: result.skippedBy },
+				};
+			}
+		}
+	} catch (error) {
+		return failure(error, "Failed to create the document requests");
 	}
 }
 
