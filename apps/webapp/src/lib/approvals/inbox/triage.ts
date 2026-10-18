@@ -7,7 +7,7 @@ import {
 import {
 	type ApprovalTriagePolicy,
 	DEFAULT_APPROVAL_TRIAGE_POLICY,
-} from "../triage-policy";
+} from "../triage-policy-config";
 import { getAgeDays } from "./serialization";
 import type {
 	ApprovalInboxPriority,

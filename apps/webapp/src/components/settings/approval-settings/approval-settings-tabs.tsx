@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const TABS = [
 	"policies",
 	"groups",
+	"triage",
 	"escalation",
 	"attention",
 	"channels",
@@ -42,6 +43,7 @@ export function ApprovalSettingsTabs({
 	const labels: Record<ApprovalSettingsTab, string> = {
 		policies: t("settings.approvalPolicies.title", "Approval Policies"),
 		groups: t("settings.employeeGroups.title", "Employee Groups"),
+		triage: t("settings.approvalTriage.title", "Approval triage"),
 		escalation: t("settings.approvalEscalation.title", "Approval Escalation"),
 		attention: t(
 			"settings.approvalEscalation.attention.title",

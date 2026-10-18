@@ -108,6 +108,10 @@ export async function resolveApprovalInboxTriage(input: {
 export async function loadCurrentApprovalTriageEvidence(
 	target: ApprovalInboxTriageTarget,
 ): Promise<ApprovalInboxTriageEvidenceResult> {
+	if (target.requestKind === "absence")
+		return (
+			await import("./absence-coverage-evidence")
+		).loadAbsenceCoverageTriageEvidence(target);
 	return { context: target.context, evidence: [] };
 }
 

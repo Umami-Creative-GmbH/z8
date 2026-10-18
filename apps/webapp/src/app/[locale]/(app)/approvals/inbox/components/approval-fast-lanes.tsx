@@ -22,6 +22,7 @@ import {
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
+import type { ApprovalFastLaneReview } from "@/lib/approvals/inbox/fast-lane-review";
 import type {
 	ApprovalInboxFastLaneGroup,
 	ApprovalInboxItem,
@@ -38,8 +39,15 @@ type ApprovalFastLaneGroupView = {
 interface ApprovalFastLanesProps {
 	groups: ApprovalFastLaneGroupView[];
 	isBusy: boolean;
-	onBulkApprove: (approvalIds: string[]) => void;
-	onBulkReject: (approvalIds: string[], reason: string) => void;
+	onBulkApprove: (
+		approvalIds: string[],
+		review: ApprovalFastLaneReview,
+	) => void;
+	onBulkReject: (
+		approvalIds: string[],
+		reason: string,
+		review: ApprovalFastLaneReview,
+	) => void;
 }
 
 const RISK_RANK: Record<ApprovalInboxRiskLevel, number> = {
@@ -116,6 +124,15 @@ export function ApprovalFastLanes({
 					const riskLevel = getHighestRiskLevel(group);
 					const isRejecting = rejectingGroupKey === group.key;
 					const trimmedReason = rejectReason.trim();
+					const contextsById = new Map(
+						group.items.map((item) => [item.id, item.triage.context ?? null]),
+					);
+					const reviewFor = (ids: string[]): ApprovalFastLaneReview => ({
+						group: group.key,
+						reviewedContexts: Object.fromEntries(
+							ids.map((id) => [id, contextsById.get(id) ?? null]),
+						),
+					});
 
 					return (
 						<article key={group.key}>
@@ -171,7 +188,9 @@ export function ApprovalFastLanes({
 									<div className="flex flex-wrap gap-2">
 										<Button
 											size="sm"
-											onClick={() => onBulkApprove(approvableIds)}
+											onClick={() =>
+												onBulkApprove(approvableIds, reviewFor(approvableIds))
+											}
 											disabled={isBusy || approvableIds.length === 0}
 											aria-label={t(
 												"approvals:fastLanes.approveGroup",
@@ -231,7 +250,11 @@ export function ApprovalFastLanes({
 												size="sm"
 												variant="destructive"
 												onClick={() =>
-													onBulkReject(rejectableIds, trimmedReason)
+													onBulkReject(
+														rejectableIds,
+														trimmedReason,
+														reviewFor(rejectableIds),
+													)
 												}
 												disabled={isBusy || trimmedReason.length === 0}
 												aria-label={t(
