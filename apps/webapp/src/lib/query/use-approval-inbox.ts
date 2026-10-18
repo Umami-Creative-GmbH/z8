@@ -13,6 +13,7 @@ import {
 	useQuery,
 	useQueryClient,
 } from "@tanstack/react-query";
+import type { ApprovalFastLaneReview } from "@/lib/approvals/inbox/fast-lane-review";
 import type {
 	ApprovalInboxBulkDecisionResult,
 	ApprovalInboxDecisionSuccess,
@@ -236,7 +237,8 @@ export async function dispatchApprovalDecision(
 						? {
 								headers: { "Content-Type": "application/json" },
 								body: JSON.stringify({
-									acceptedReceiptExceptionItemIds: input.acceptedReceiptExceptionItemIds,
+									acceptedReceiptExceptionItemIds:
+										input.acceptedReceiptExceptionItemIds,
 								}),
 							}
 						: {}),
@@ -328,12 +330,13 @@ function isBulkDecisionFailure(value: unknown): boolean {
 }
 
 async function bulkApproveApprovals(
-	approvalIds: string[],
+	input: string[] | { approvalIds: string[]; fastLane: ApprovalFastLaneReview },
 ): Promise<ApprovalInboxBulkDecisionResult> {
+	const payload = Array.isArray(input) ? { approvalIds: input } : input;
 	const response = await fetch("/api/approvals/inbox/bulk-approve", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ approvalIds }),
+		body: JSON.stringify(payload),
 	});
 	return readBulkDecisionResult(response, "approve");
 }
@@ -341,11 +344,16 @@ async function bulkApproveApprovals(
 async function bulkRejectApprovals(
 	approvalIds: string[],
 	reason: string,
+	fastLane?: ApprovalFastLaneReview,
 ): Promise<ApprovalInboxBulkDecisionResult> {
 	const response = await fetch("/api/approvals/inbox/bulk-reject", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ approvalIds, reason }),
+		body: JSON.stringify({
+			approvalIds,
+			reason,
+			...(fastLane ? { fastLane } : {}),
+		}),
 	});
 	return readBulkDecisionResult(response, "reject");
 }
@@ -408,7 +416,10 @@ export function useApproveApproval() {
 		mutationFn: (
 			input:
 				| string
-				| { approvalId: string; acceptedReceiptExceptionItemIds?: readonly string[] },
+				| {
+						approvalId: string;
+						acceptedReceiptExceptionItemIds?: readonly string[];
+				  },
 		) =>
 			dispatchApprovalDecision(
 				typeof input === "string"
@@ -469,10 +480,12 @@ export function useBulkReject() {
 		mutationFn: ({
 			approvalIds,
 			reason,
+			fastLane,
 		}: {
 			approvalIds: string[];
 			reason: string;
-		}) => bulkRejectApprovals(approvalIds, reason),
+			fastLane?: ApprovalFastLaneReview;
+		}) => bulkRejectApprovals(approvalIds, reason, fastLane),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
 		},

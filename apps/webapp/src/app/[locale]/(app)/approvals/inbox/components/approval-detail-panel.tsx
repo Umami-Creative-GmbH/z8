@@ -41,6 +41,7 @@ import {
 } from "@/lib/query/use-approval-inbox";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { ApprovalTriageReasons } from "./approval-triage-reasons";
 import {
 	getCoveringForTitle,
 	getDecidedEarlierStageNote,
@@ -595,6 +596,9 @@ export function ApprovalDetailPanel({
 					<TravelExpenseDetails item={panelItem} />
 					{sections.length > 0 && <Separator />}
 
+					{item?.triage.reasons?.length ? (
+						<ApprovalTriageReasons triage={item.triage} />
+					) : null}
 					{sections.map((section) =>
 						section.type === "receipt_exception_acceptance" ? (
 							<ReceiptExceptionAcceptance

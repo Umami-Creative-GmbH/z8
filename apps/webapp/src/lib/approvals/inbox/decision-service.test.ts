@@ -93,6 +93,65 @@ import {
 } from "@/lib/approvals/inbox/decision-service";
 
 describe("approval inbox decision service", () => {
+	it("refuses a fast-lane decision after the submitted revision changes", async () => {
+		const context = {
+			organizationId: "org-1",
+			requestId: "approval-1",
+			entityId: "period-1",
+			revision: "reviewed-revision",
+			scope: "web_inbox",
+		};
+		const result = await bulkDecideApprovalInboxItemsFromRequests({
+			requests: [
+				{
+					id: "approval-1",
+					targetType: "compatibility_request",
+					entityType: "time_entry",
+					entityId: "period-1",
+					organizationId: "org-1",
+					approverId: "manager-1",
+					requesterEmployeeId: "employee-1",
+					status: "pending",
+					workflowKind: "time_correction",
+				},
+			],
+			actorEmployeeId: "manager-1",
+			action: "approve",
+			fastLane: {
+				group: "small_time_correction",
+				reviewedContexts: { "approval-1": context },
+			},
+			loadCurrentFastLaneItem: async () => ({
+				id: "approval-1",
+				type: "time_entry",
+				entityId: "period-1",
+				status: "pending",
+				triage: {
+					priority: "normal",
+					riskLevel: "low",
+					riskReasons: [],
+					fastLaneGroup: "small_time_correction",
+					isPayrollRelevant: false,
+					explanation: "",
+					requestKind: "time_correction",
+					context: { ...context, revision: "new-revision" },
+				},
+				capabilities: {
+					canApprove: true,
+					canReject: true,
+					canBulkApprove: true,
+					requiresRejectReason: true,
+				},
+			}),
+			resolveHandler: () =>
+				({ type: "time_entry", approve: () => Effect.void }) as never,
+		});
+		expect(result).toMatchObject({
+			succeeded: [],
+			failed: [{ id: "approval-1", code: "stale" }],
+		});
+	});
+
 	beforeEach(() => {
 		approvalRequestFindFirstMock.mockReset();
 		approvalRequestFindManyMock.mockReset();
@@ -172,8 +231,7 @@ describe("approval inbox decision service", () => {
 		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
 			"period-1",
 			"manager-1",
-			{ approvalRequestId: "assignment-1",
-		}
+			{ approvalRequestId: "assignment-1" },
 		);
 		expect(loadOrdinaryCanonicalApprovalsMock).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -257,8 +315,7 @@ describe("approval inbox decision service", () => {
 		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
 			"period-1",
 			"manager-1",
-			{ approvalRequestId: "assignment-1",
-		}
+			{ approvalRequestId: "assignment-1" },
 		);
 	});
 
@@ -449,8 +506,7 @@ describe("approval inbox decision service", () => {
 		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
 			"period-1",
 			"manager-1",
-			{ approvalRequestId: "assignment-1",
-		}
+			{ approvalRequestId: "assignment-1" },
 		);
 	});
 	it("returns the same generic not-found error for missing and inaccessible single IDs", async () => {
@@ -474,7 +530,7 @@ describe("approval inbox decision service", () => {
 
 		const missing = await decide("approval-missing").catch((error) => error);
 		const inaccessible = await decide("approval-inaccessible").catch(
-			(error) => error
+			(error) => error,
 		);
 
 		expect(missing).toBeInstanceOf(NotFoundError);
@@ -681,7 +737,7 @@ describe("approval inbox decision service", () => {
 			"Missing documentation",
 			{
 				approvalRequestId: "approval-1",
-			}
+			},
 		);
 	});
 
@@ -715,7 +771,7 @@ describe("approval inbox decision service", () => {
 			{
 				approvalRequestId: "approval-1",
 				allowAnyApprover: true,
-			}
+			},
 		);
 	});
 
@@ -967,12 +1023,17 @@ describe("approval inbox decision service", () => {
 			const result = await bulkDecideApprovalInboxItemsFromRequests({
 				requests: [
 					absentApproversRequest,
-					{ ...absentApproversRequest, id: "claim-1", entityType: "travel_expense_claim", },
+					{
+						...absentApproversRequest,
+						id: "claim-1",
+						entityType: "travel_expense_claim",
+					},
 				],
 				actorEmployeeId: "deputy-1",
 				action: "approve",
 				coveredApproverIds: ["absent-1"],
-				resolveHandler: () => ({ type: "absence_entry", approve, reject: vi.fn() }) as never,
+				resolveHandler: () =>
+					({ type: "absence_entry", approve, reject: vi.fn() }) as never,
 			});
 
 			expect(result.succeeded).toEqual([
@@ -1013,7 +1074,9 @@ describe("approval inbox decision service", () => {
 					}) as never,
 			});
 
-			expect(result.failed).toEqual([{ id: "approval-1", code: "forbidden", message: fourEyes }]);
+			expect(result.failed).toEqual([
+				{ id: "approval-1", code: "forbidden", message: fourEyes },
+			]);
 		});
 	});
 
@@ -1051,7 +1114,7 @@ describe("approval inbox decision service", () => {
 			{
 				approvalRequestId: "approval-1",
 				allowOrganizationWideApprover: true,
-			}
+			},
 		);
 	});
 
@@ -1187,8 +1250,7 @@ describe("approval inbox decision service", () => {
 				actorEmployeeId: "admin-1",
 				action: "approve",
 				includeAllApprovers: true,
-				resolveHandler: (type) =>
-					({ type, approve, reject: vi.fn() }) as never,
+				resolveHandler: (type) => ({ type, approve, reject: vi.fn() }) as never,
 			});
 
 			expect(result.succeeded).toEqual(
@@ -1398,7 +1460,7 @@ describe("approval inbox decision service", () => {
 					type: "absence_entry",
 					approve: vi.fn(() =>
 						Effect.fail(
-							new Error("database password connection string leaked")
+							new Error("database password connection string leaked"),
 						),
 					),
 					reject: vi.fn(),
@@ -1452,41 +1514,40 @@ describe("approval inbox decision service", () => {
 			expectedCode: "validation_failed",
 			expectedMessage: "Approval workflow decision is invalid",
 		},
-	])("maps translated canonical $code errors to a specific bulk failure", async ({
-		error,
-		expectedCode,
-		expectedMessage
-	}) => {
-		const result = await bulkDecideApprovalInboxItemsFromRequests({
-			requests: [
-				{
-					id: "approval-1",
-					entityType: "absence_entry",
-					entityId: "absence-1",
-					organizationId: "org-1",
-					approverId: "manager-1",
-					status: "pending",
-				},
-			],
-			actorEmployeeId: "manager-1",
-			action: "approve",
-			resolveHandler: () =>
-				({
-					type: "absence_entry",
-					approve: vi.fn(() => Effect.fail(error)),
-					reject: vi.fn(),
-				}) as never,
-		});
+	])(
+		"maps translated canonical $code errors to a specific bulk failure",
+		async ({ error, expectedCode, expectedMessage }) => {
+			const result = await bulkDecideApprovalInboxItemsFromRequests({
+				requests: [
+					{
+						id: "approval-1",
+						entityType: "absence_entry",
+						entityId: "absence-1",
+						organizationId: "org-1",
+						approverId: "manager-1",
+						status: "pending",
+					},
+				],
+				actorEmployeeId: "manager-1",
+				action: "approve",
+				resolveHandler: () =>
+					({
+						type: "absence_entry",
+						approve: vi.fn(() => Effect.fail(error)),
+						reject: vi.fn(),
+					}) as never,
+			});
 
-		expect(result).toEqual({
-			succeeded: [],
-			failed: [
-				{
-					id: "approval-1",
-					code: expectedCode,
-					message: expectedMessage,
-				},
-			],
-		});
-	},);
+			expect(result).toEqual({
+				succeeded: [],
+				failed: [
+					{
+						id: "approval-1",
+						code: expectedCode,
+						message: expectedMessage,
+					},
+				],
+			});
+		},
+	);
 });

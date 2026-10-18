@@ -2,7 +2,10 @@
 
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { ApprovalInboxFastLaneGroup, ApprovalInboxItem } from "@/lib/approvals/inbox/types";
+import type {
+	ApprovalInboxFastLaneGroup,
+	ApprovalInboxItem,
+} from "@/lib/approvals/inbox/types";
 import { ApprovalFastLanes } from "./approval-fast-lanes";
 
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
@@ -11,8 +14,12 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback?: string, values?: Record<string, unknown>) =>
 			(fallback ?? _key)
-				.replace(/\{count, plural, one \{# (\w+)\} other \{# (\w+)\}\}/, (_m, one, other) =>
-					values?.count === 1 ? `1 ${one}` : `${String(values?.count)} ${other}`,
+				.replace(
+					/\{count, plural, one \{# (\w+)\} other \{# (\w+)\}\}/,
+					(_m, one, other) =>
+						values?.count === 1
+							? `1 ${one}`
+							: `${String(values?.count)} ${other}`,
 				)
 				.replace(/\{(\w+)\}/g, (match, name: string) =>
 					values?.[name] === undefined ? match : String(values[name]),
@@ -54,10 +61,15 @@ function createApproval(
 		triage: {
 			priority: "normal",
 			riskLevel,
-			riskReasons: [riskLevel === "low" ? "no_conflicts_detected" : "needs_review"],
+			riskReasons: [
+				riskLevel === "low" ? "no_conflicts_detected" : "needs_review",
+			],
 			fastLaneGroup: "low_risk_absence",
 			isPayrollRelevant: false,
-			explanation: riskLevel === "low" ? "No conflicts detected." : "Needs manager review.",
+			explanation:
+				riskLevel === "low"
+					? "No conflicts detected."
+					: "Needs manager review.",
 		},
 		capabilities: {
 			canApprove: true,
@@ -69,7 +81,10 @@ function createApproval(
 	};
 }
 
-const groups: Array<{ key: ApprovalInboxFastLaneGroup; items: ApprovalInboxItem[] }> = [
+const groups: Array<{
+	key: ApprovalInboxFastLaneGroup;
+	items: ApprovalInboxItem[];
+}> = [
 	{
 		key: "low_risk_absence",
 		items: [
@@ -79,11 +94,47 @@ const groups: Array<{ key: ApprovalInboxFastLaneGroup; items: ApprovalInboxItem[
 	},
 	{
 		key: "payroll_blocker",
-		items: [createApproval("approval-3", "Katherine Johnson", "Payroll correction", "high")],
+		items: [
+			createApproval(
+				"approval-3",
+				"Katherine Johnson",
+				"Payroll correction",
+				"high",
+			),
+		],
 	},
 ];
 
 describe("ApprovalFastLanes", () => {
+	it("binds a lane action to the submitted assessment the reviewer saw", () => {
+		const item = createApproval("approval-reviewed", "Ada", "Vacation");
+		const context = {
+			organizationId: "org-1",
+			requestId: item.id,
+			entityId: item.entityId,
+			revision: "submitted-v1",
+			scope: "web_inbox",
+		};
+		item.triage.requestKind = "absence";
+		item.triage.context = context;
+		const onBulkApprove = vi.fn();
+		render(
+			<ApprovalFastLanes
+				groups={[{ key: "low_risk_absence", items: [item] }]}
+				isBusy={false}
+				onBulkApprove={onBulkApprove}
+				onBulkReject={vi.fn()}
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Approve low-risk absences" }),
+		);
+		expect(onBulkApprove).toHaveBeenCalledWith(["approval-reviewed"], {
+			group: "low_risk_absence",
+			reviewedContexts: { "approval-reviewed": context },
+		});
+	});
+
 	it("renders nothing when there are no groups", () => {
 		const { container } = render(
 			<ApprovalFastLanes
@@ -108,15 +159,21 @@ describe("ApprovalFastLanes", () => {
 		);
 
 		expect(screen.getByRole("heading", { name: "Fast lanes" })).toBeTruthy();
-		expect(screen.getByText("Review similar low-friction requests in batches.")).toBeTruthy();
+		expect(
+			screen.getByText("Review similar low-friction requests in batches."),
+		).toBeTruthy();
 		expect(screen.getByText("Low-risk absences")).toBeTruthy();
 		expect(screen.getByText("2 requests")).toBeTruthy();
-		expect(screen.getByText("Absences with no detected conflicts.")).toBeTruthy();
+		expect(
+			screen.getByText("Absences with no detected conflicts."),
+		).toBeTruthy();
 		expect(screen.getByText("No conflicts detected.")).toBeTruthy();
 		expect(screen.getByText("Low risk")).toBeTruthy();
 		expect(screen.getByText("Payroll blockers")).toBeTruthy();
 		expect(screen.getByText("1 request")).toBeTruthy();
-		expect(screen.getByText("Payroll-relevant requests that need priority review.")).toBeTruthy();
+		expect(
+			screen.getByText("Payroll-relevant requests that need priority review."),
+		).toBeTruthy();
 		expect(screen.getByText("High risk")).toBeTruthy();
 	});
 
@@ -132,7 +189,9 @@ describe("ApprovalFastLanes", () => {
 
 		expect(screen.queryByText("Ada Lovelace")).toBeNull();
 
-		fireEvent.click(screen.getByRole("button", { name: /expand low-risk absences/i }));
+		fireEvent.click(
+			screen.getByRole("button", { name: /expand low-risk absences/i }),
+		);
 
 		expect(screen.getByText("Ada Lovelace")).toBeTruthy();
 		expect(screen.getByText("Vacation, May 18")).toBeTruthy();
@@ -156,12 +215,21 @@ describe("ApprovalFastLanes", () => {
 		expect(groupCard).not.toBeNull();
 
 		expect(
-			within(groupCard!).getByRole("button", { name: /Approve low-risk absences/ }),
+			within(groupCard!).getByRole("button", {
+				name: /Approve low-risk absences/,
+			}),
 		).toBeTruthy();
 
-		fireEvent.click(within(groupCard!).getByRole("button", { name: "Approve low-risk absences" }));
+		fireEvent.click(
+			within(groupCard!).getByRole("button", {
+				name: "Approve low-risk absences",
+			}),
+		);
 
-		expect(onBulkApprove).toHaveBeenCalledWith(["approval-1", "approval-2"]);
+		expect(onBulkApprove).toHaveBeenCalledWith(
+			["approval-1", "approval-2"],
+			expect.objectContaining({ group: "low_risk_absence" }),
+		);
 	});
 
 	it("excludes items that cannot be bulk approved or approved from group approve", () => {
@@ -171,12 +239,24 @@ describe("ApprovalFastLanes", () => {
 				key: "low_risk_absence" as const,
 				items: [
 					createApproval("approval-1", "Ada Lovelace", "Vacation, May 18"),
-					createApproval("approval-2", "Grace Hopper", "Remote work, May 19", "low", {
-						canBulkApprove: false,
-					}),
-					createApproval("approval-3", "Katherine Johnson", "Training, May 20", "low", {
-						canApprove: false,
-					}),
+					createApproval(
+						"approval-2",
+						"Grace Hopper",
+						"Remote work, May 19",
+						"low",
+						{
+							canBulkApprove: false,
+						},
+					),
+					createApproval(
+						"approval-3",
+						"Katherine Johnson",
+						"Training, May 20",
+						"low",
+						{
+							canApprove: false,
+						},
+					),
 				],
 			},
 		];
@@ -192,11 +272,20 @@ describe("ApprovalFastLanes", () => {
 
 		const groupCard = screen.getByText("Low-risk absences").closest("article");
 		expect(groupCard).not.toBeNull();
-		expect(within(groupCard!).getByText("2 not eligible for bulk approve")).toBeTruthy();
+		expect(
+			within(groupCard!).getByText("2 not eligible for bulk approve"),
+		).toBeTruthy();
 
-		fireEvent.click(within(groupCard!).getByRole("button", { name: "Approve low-risk absences" }));
+		fireEvent.click(
+			within(groupCard!).getByRole("button", {
+				name: "Approve low-risk absences",
+			}),
+		);
 
-		expect(onBulkApprove).toHaveBeenCalledWith(["approval-1"]);
+		expect(onBulkApprove).toHaveBeenCalledWith(
+			["approval-1"],
+			expect.objectContaining({ group: "low_risk_absence" }),
+		);
 	});
 
 	it("disables group approve when no items are eligible", () => {
@@ -205,12 +294,24 @@ describe("ApprovalFastLanes", () => {
 			{
 				key: "low_risk_absence" as const,
 				items: [
-					createApproval("approval-1", "Ada Lovelace", "Vacation, May 18", "low", {
-						canBulkApprove: false,
-					}),
-					createApproval("approval-2", "Grace Hopper", "Remote work, May 19", "low", {
-						canApprove: false,
-					}),
+					createApproval(
+						"approval-1",
+						"Ada Lovelace",
+						"Vacation, May 18",
+						"low",
+						{
+							canBulkApprove: false,
+						},
+					),
+					createApproval(
+						"approval-2",
+						"Grace Hopper",
+						"Remote work, May 19",
+						"low",
+						{
+							canApprove: false,
+						},
+					),
 				],
 			},
 		];
@@ -224,7 +325,9 @@ describe("ApprovalFastLanes", () => {
 			/>,
 		);
 
-		const approveButton = screen.getByRole("button", { name: "Approve low-risk absences" });
+		const approveButton = screen.getByRole("button", {
+			name: "Approve low-risk absences",
+		});
 		expect(approveButton).toHaveProperty("disabled", true);
 
 		fireEvent.click(approveButton);
@@ -248,9 +351,13 @@ describe("ApprovalFastLanes", () => {
 		expect(groupCard).not.toBeNull();
 		const card = within(groupCard!);
 
-		fireEvent.click(card.getByRole("button", { name: "Reject low-risk absences" }));
+		fireEvent.click(
+			card.getByRole("button", { name: "Reject low-risk absences" }),
+		);
 
-		const confirmButton = card.getByRole("button", { name: "Confirm reject low-risk absences" });
+		const confirmButton = card.getByRole("button", {
+			name: "Confirm reject low-risk absences",
+		});
 		expect(card.getByLabelText("Bulk reject reason")).toBeTruthy();
 		expect(confirmButton).toHaveProperty("disabled", true);
 
@@ -266,7 +373,11 @@ describe("ApprovalFastLanes", () => {
 
 		fireEvent.click(confirmButton);
 
-		expect(onBulkReject).toHaveBeenCalledWith(["approval-1", "approval-2"], "Needs documentation");
+		expect(onBulkReject).toHaveBeenCalledWith(
+			["approval-1", "approval-2"],
+			"Needs documentation",
+			expect.objectContaining({ group: "low_risk_absence" }),
+		);
 	});
 
 	it("excludes items that cannot be rejected from group reject", () => {
@@ -276,9 +387,15 @@ describe("ApprovalFastLanes", () => {
 				key: "low_risk_absence" as const,
 				items: [
 					createApproval("approval-1", "Ada Lovelace", "Vacation, May 18"),
-					createApproval("approval-2", "Grace Hopper", "Remote work, May 19", "low", {
-						canReject: false,
-					}),
+					createApproval(
+						"approval-2",
+						"Grace Hopper",
+						"Remote work, May 19",
+						"low",
+						{
+							canReject: false,
+						},
+					),
 				],
 			},
 		];
@@ -297,13 +414,21 @@ describe("ApprovalFastLanes", () => {
 		const card = within(groupCard!);
 		expect(card.getByText("1 not eligible for bulk reject")).toBeTruthy();
 
-		fireEvent.click(card.getByRole("button", { name: "Reject low-risk absences" }));
+		fireEvent.click(
+			card.getByRole("button", { name: "Reject low-risk absences" }),
+		);
 		fireEvent.change(card.getByLabelText("Bulk reject reason"), {
 			target: { value: "Needs documentation" },
 		});
-		fireEvent.click(card.getByRole("button", { name: "Confirm reject low-risk absences" }));
+		fireEvent.click(
+			card.getByRole("button", { name: "Confirm reject low-risk absences" }),
+		);
 
-		expect(onBulkReject).toHaveBeenCalledWith(["approval-1"], "Needs documentation");
+		expect(onBulkReject).toHaveBeenCalledWith(
+			["approval-1"],
+			"Needs documentation",
+			expect.objectContaining({ group: "low_risk_absence" }),
+		);
 	});
 
 	it("disables group reject when no items are eligible", () => {
@@ -312,9 +437,15 @@ describe("ApprovalFastLanes", () => {
 			{
 				key: "low_risk_absence" as const,
 				items: [
-					createApproval("approval-1", "Ada Lovelace", "Vacation, May 18", "low", {
-						canReject: false,
-					}),
+					createApproval(
+						"approval-1",
+						"Ada Lovelace",
+						"Vacation, May 18",
+						"low",
+						{
+							canReject: false,
+						},
+					),
 				],
 			},
 		];
@@ -328,7 +459,9 @@ describe("ApprovalFastLanes", () => {
 			/>,
 		);
 
-		const rejectButton = screen.getByRole("button", { name: "Reject low-risk absences" });
+		const rejectButton = screen.getByRole("button", {
+			name: "Reject low-risk absences",
+		});
 		expect(rejectButton).toHaveProperty("disabled", true);
 
 		fireEvent.click(rejectButton);
@@ -336,4 +469,11 @@ describe("ApprovalFastLanes", () => {
 		expect(screen.queryByLabelText("Bulk reject reason")).toBeNull();
 		expect(onBulkReject).not.toHaveBeenCalled();
 	});
+});
+it("retains all current risk reasons in the fast-lane explanation", () => {
+ const item = createApproval("triage-fast", "Avery", "Correction", "high");
+ item.triage.reasons = [{ code: "payroll_blocker", riskLevel: "high", text: { key: "approvals:triage.test.payroll", fallback: "Current payroll period is blocked." } }, { code: "coverage_unverified", riskLevel: "medium", text: { key: "approvals:triage.test.coverage", fallback: "Coverage not verified." } }];
+ render(<ApprovalFastLanes groups={[{ key: "payroll_blocker", items: [item] }]} isBusy={false} onBulkApprove={vi.fn()} onBulkReject={vi.fn()} />);
+ expect(screen.getByText("Current payroll period is blocked.")).toBeTruthy();
+ expect(screen.getByText("Coverage not verified.")).toBeTruthy();
 });

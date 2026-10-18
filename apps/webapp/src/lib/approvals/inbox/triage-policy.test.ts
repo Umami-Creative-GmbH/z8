@@ -40,7 +40,7 @@ it("applies the supplied organization policy and retains every reason on a stale
  expect(result.fastLaneGroup).toBe("payroll_blocker");
 });
 it("permits an absence-change low lane only with current complete evidence for the same revision", () => {
- const evidence = (["payroll", "coverage"] as const).map(check => ({ check, state: "clear" as const, validity: "current" as const, context }));
+ const evidence = (["payroll", "coverage"] as const).map(check => ({ check, state: "clear" as const, validity: "current" as const, context, payrollPeriod: { startDate: "2026-10-01", endDate: "2026-10-31" } }));
  const clear = buildInboxTriage({ ...base, type: "absence_change_request", evidence });
  expect(clear.riskLevel).toBe("low");
  expect(clear.fastLaneGroup).toBe("low_risk_absence");
@@ -58,7 +58,7 @@ it.each([
  ["2026-10-16T08:00:00Z", "2026-10-16T16:00:00Z", 0, "medium"],
 ])("checks exact endpoint movement and duration, including disabled threshold (%s)", (proposedStart, proposedEnd, limit, riskLevel) => {
  const result = buildInboxTriage({ ...base, type: "time_entry", requestKind: "time_correction", policy: { staleAfterHours: 72, smallCorrectionMinutes: limit }, evidence: [
-  { check: "payroll", state: "clear", validity: "current", context },
+  { check: "payroll", state: "clear", validity: "current", context, payrollPeriod: { startDate: "2026-10-01", endDate: "2026-10-31" } },
   { check: "correction", state: "clear", validity: "current", context, correction: { plainTimeEdit: true, originalStart: "2026-10-16T08:00:00Z", originalEnd: "2026-10-16T16:00:00Z", proposedStart, proposedEnd } },
  ] });
  expect(result.riskLevel).toBe(riskLevel);
@@ -67,6 +67,28 @@ it.each([
 it("never treats payroll relevance or a prior blocker label as current blocker evidence", () => {
  const result = buildInboxTriage({ ...base, isPayrollRelevant: true, riskLevel: "high", riskReasons: ["payroll_blocker"] });
  expect(result.riskReasons).not.toContain("payroll_blocker");
+ expect(result.riskReasons).toContain("payroll_unverified");
+ expect(result.fastLaneGroup).toBeNull();
+});
+
+it("deduplicates findings without losing the supporting facts for distinct segments", () => {
+ const result = buildInboxTriage({ ...base, evidence: [
+  { check: "coverage", state: "finding", validity: "current", context, reason: "staffing_shortfall", facts: { segment: "morning", available: 1, required: 2 } },
+  { check: "coverage", state: "finding", validity: "current", context, reason: "staffing_shortfall", facts: { segment: "afternoon", available: 2, required: 3 } },
+ ] });
+ const findings = result.reasons?.filter(reason => reason.code === "staffing_shortfall");
+ expect(findings).toHaveLength(1);
+ expect(findings?.[0].supportingFacts).toEqual([{ segment: "morning", available: 1, required: 2 }, { segment: "afternoon", available: 2, required: 3 }]);
+});
+it("shows the precise evidence limitation while never presenting a stale finding as current", () => {
+ const unsupported = buildInboxTriage({ ...base, evidence: [{ check: "coverage", state: "unknown", validity: "unverifiable", text: { key: "approvals:triage.test.partial", fallback: "Partial-day staffing could not be verified." } }] });
+ expect(unsupported.reasons?.find(reason => reason.code === "coverage_unverified")?.text.fallback).toBe("Partial-day staffing could not be verified.");
+ const stale = buildInboxTriage({ ...base, evidence: [{ check: "coverage", state: "finding", validity: "stale", context, reason: "staffing_shortfall", text: { key: "approvals:triage.test.previous", fallback: "A staffing shortfall is proven." } }] });
+ expect(stale.reasons?.find(reason => reason.code === "coverage_unverified")?.text.fallback).toBe("Coverage not verified.");
+ expect(stale.riskLevel).toBe("medium");
+});
+it("requires explicit payroll-period context before accepting a clear payroll result", () => {
+ const result = buildInboxTriage({ ...base, evidence: (["payroll", "coverage"] as const).map(check => ({ check, state: "clear", validity: "current", context })) });
  expect(result.riskReasons).toContain("payroll_unverified");
  expect(result.fastLaneGroup).toBeNull();
 });

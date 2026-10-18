@@ -182,3 +182,15 @@ describe("ApprovalInboxTable", () => {
 		).toBeTruthy();
 	});
 });
+it("renders every localized triage reason and supporting fact in the inbox row", () => {
+ const item = makeApprovalInboxItem();
+ item.triage.reasons = [
+  { code: "payroll_blocker", riskLevel: "high", text: { key: "approvals:triage.test.payroll", fallback: "Payroll period is blocked." } },
+  { code: "coverage_unverified", riskLevel: "medium", text: { key: "approvals:triage.test.coverage", fallback: "Coverage is unverified for {count} segments.", params: { count: 2 } }, facts: { available: 2, required: 3 } },
+ ];
+ render(<ApprovalInboxTable items={[item]} selectedIds={new Set()} onSelectItem={vi.fn()} onRowClick={vi.fn()} isFetching={false} />);
+ expect(screen.getByText("Payroll period is blocked.")).toBeTruthy();
+ expect(screen.getByText("Coverage is unverified for 2 segments.")).toBeTruthy();
+ expect(screen.getByText("Available: 2")).toBeTruthy();
+ expect(screen.queryByText("coverage_unverified")).toBeNull();
+});

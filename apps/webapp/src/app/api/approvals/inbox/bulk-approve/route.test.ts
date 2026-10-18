@@ -14,7 +14,9 @@ const mockState = vi.hoisted(() => ({
 	findEmployee: vi.fn(),
 	getEligibleApprovalScopesForManager: vi.fn(),
 	bulkApproveApprovalInboxItems: vi.fn(),
-	loadInboxCovers: vi.fn(async (): Promise<Array<{ approverId: string }>> => []),
+	loadInboxCovers: vi.fn(
+		async (): Promise<Array<{ approverId: string }>> => [],
+	),
 	logger: {
 		info: vi.fn(),
 		error: vi.fn(),
@@ -63,7 +65,8 @@ vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
 }));
 
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
-	getEligibleApprovalScopesForManager: mockState.getEligibleApprovalScopesForManager,
+	getEligibleApprovalScopesForManager:
+		mockState.getEligibleApprovalScopesForManager,
 }));
 
 vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
@@ -126,7 +129,11 @@ function createManagerAbility() {
 		userId: "user-1",
 		isPlatformAdmin: false,
 		activeOrganizationId: "org-1",
-		orgMembership: { organizationId: "org-1", role: "member", status: "active" },
+		orgMembership: {
+			organizationId: "org-1",
+			role: "member",
+			status: "active",
+		},
 		employee: {
 			id: "employee-1",
 			organizationId: "org-1",
@@ -162,6 +169,15 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 		});
 	});
 
+	it("rejects a malformed fast-lane review instead of treating it as manual bulk approval", async () => {
+		const response = await POST(
+			createRequest({
+				approvalIds: ["approval-1"],
+				fastLane: { group: "invented_lane", reviewedContexts: {} },
+			}),
+		);
+		expect(response.status).toBe(400);
+	});
 	it("delegates bulk approval to the DB-backed inbox decision service", async () => {
 		const response = await POST(createRequest({ approvalIds: ["approval-1"] }));
 
@@ -179,10 +195,15 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 
 	it("passes team-primary scopes for a manager with no direct reports", async () => {
 		const eligibleApprovalScopes = [
-			{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1", "employee-3"] },
+			{
+				requesterEmployeeId: "employee-2",
+				eligibleApproverIds: ["employee-1", "employee-3"],
+			},
 		];
 		mockState.getAbility.mockResolvedValue(createManagerAbility());
-		mockState.getEligibleApprovalScopesForManager.mockResolvedValue(eligibleApprovalScopes);
+		mockState.getEligibleApprovalScopesForManager.mockResolvedValue(
+			eligibleApprovalScopes,
+		);
 
 		const response = await POST(createRequest({ approvalIds: ["approval-1"] }));
 
@@ -208,7 +229,9 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 		const response = await POST(createRequest({ approvalIds: ["approval-1"] }));
 
 		expect(response.status).toBe(403);
-		expect(mockState.getEligibleApprovalScopesForManager).not.toHaveBeenCalled();
+		expect(
+			mockState.getEligibleApprovalScopesForManager,
+		).not.toHaveBeenCalled();
 		expect(mockState.bulkApproveApprovalInboxItems).not.toHaveBeenCalled();
 	});
 

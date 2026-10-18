@@ -83,7 +83,7 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		const loadCanonicalOrdinaryApprovals = vi.fn(async () => [canonical]);
 
 		await expect(
-			getApprovalInboxDetail({
+			getApprovalInboxDetail({ triagePolicy: { staleAfterHours: 72, smallCorrectionMinutes: 15 },
 				approvalId: "assignment-1",
 				organizationId: "org-1",
 				approverId: "manager-1",
@@ -724,3 +724,4 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		).rejects.toThrow("Approval detail mismatch");
 	});
 });
+
