@@ -539,7 +539,9 @@ function decodePolicies(
 	return policies;
 }
 
-function defaultStages(input: StartApprovalWorkflowInput): StartStageDraft[] {
+function defaultStages(input: {
+	defaultApproverEmployeeId: string | null;
+}): StartStageDraft[] {
 	if (input.defaultApproverEmployeeId === null) fail("NO_DEFAULT_APPROVER");
 	return [
 		{
@@ -746,6 +748,126 @@ export async function startApprovalWorkflow(
 			outboxResults: [],
 		};
 	}
+	const now = (input.nowInstant ?? (() => systemClock.nowInstant()))();
+	const planned = await planApprovalWorkflowStart({
+		context: input.context,
+		organizationId: input.organizationId,
+		workflowType: input.workflowType,
+		sourceIdentity: input.sourceIdentity,
+		requesterEmployeeId: input.requesterEmployeeId,
+		submissionKey: input.submissionKey,
+		defaultApproverEmployeeId: input.defaultApproverEmployeeId,
+		routingContext: input.routingContext,
+		contextSnapshot: submissionContextSnapshot,
+		displaySnapshot: submissionDisplaySnapshot,
+		now,
+	});
+	let snapshot = planned.snapshot;
+	const events = planned.events;
+	const workflowId = planned.snapshot.id;
+	if (input.finalizeContextSnapshot) {
+		snapshot = {
+			...snapshot,
+			contextSnapshot: finalizeWorkflowContext(
+				input.finalizeContextSnapshot,
+				snapshot,
+				submissionContextSnapshot,
+			),
+		};
+	}
+	const persisted = await input.context.repository.createInitialWorkflow({
+		snapshot,
+		events,
+		submissionKey: input.submissionKey,
+	});
+	if (persisted.kind === "source_conflict") return fail("SOURCE_CONFLICT");
+	const currentSnapshot = persisted.snapshot;
+	const updatedAt = events.at(-1)?.occurredAt ?? now;
+	const projection = buildProjection(
+		currentSnapshot,
+		input.displayProjection,
+		updatedAt
+	);
+	const outbox: ApprovalOutboxWriteInput[] = events.map((event) => ({
+		organizationId: input.organizationId,
+		workflowId,
+		eventId: event.id,
+		eventType: event.eventType,
+		dedupeKey: `observe:${event.id}`,
+		payload: {
+			organizationId: input.organizationId,
+			workflowId,
+			sourceType: input.sourceIdentity.sourceType,
+			sourceId: input.sourceIdentity.sourceId,
+			requesterEmployeeId: input.requesterEmployeeId,
+			eventId: event.id,
+			eventType: event.eventType,
+		},
+		disposition: "observe",
+		createdAt: event.occurredAt,
+	}));
+	if (persisted.kind === "existing") {
+		const evidence = await input.verifySourceWorkflow(currentSnapshot.id);
+		if (!sourceLinkMatches(evidence, input, currentSnapshot.id)) {
+			return fail("SOURCE_BINDING_MISMATCH");
+		}
+		return {
+			kind: "existing",
+			status: currentSnapshot.status,
+			terminal: currentSnapshot.status !== "pending",
+			snapshot: currentSnapshot,
+			events,
+			projection,
+			outbox,
+			outboxResults: [],
+		};
+	}
+	const evidence = await input.bindSourceWorkflow(currentSnapshot.id);
+	if (!sourceLinkMatches(evidence, input, currentSnapshot.id)) {
+		return fail("SOURCE_BINDING_MISMATCH");
+	}
+	await input.context.projectionWriter.write(projection);
+	const outboxResults: ApprovalOutboxWriteResult[] = await mapSequentially(
+		outbox,
+		(item) => input.context.outboxWriter.write(item),
+	);
+	return {
+		kind: "created",
+		status: currentSnapshot.status,
+		terminal: currentSnapshot.status !== "pending",
+		snapshot: currentSnapshot,
+		events,
+		projection,
+		outbox,
+		outboxResults,
+	};
+}
+
+export interface PlanApprovalWorkflowStartInput {
+	context: Pick<ApprovalWorkflowTransactionContext, "dbService" | "activationResolver">;
+	organizationId: string;
+	workflowType: ApprovalWorkflowType;
+	sourceIdentity: ApprovalSourceIdentity;
+	requesterEmployeeId: string;
+	submissionKey: string;
+	defaultApproverEmployeeId: string | null;
+	routingContext: ApprovalRoutingContext;
+	/** The normalized context and display snapshots the workflow is planned with. */
+	contextSnapshot: JsonObject;
+	displaySnapshot: JsonObject;
+	now: Instant;
+}
+
+/**
+ * Plans a new workflow's start without persisting anything: reads the organization's active
+ * policies, matches one (else the default approver) and activates the first stages with the
+ * stage activation resolver. Throws `ApprovalWorkflowStartError` as `startApprovalWorkflow` does
+ * (`NO_DEFAULT_APPROVER`, `ACTIVATION_FAILED`, ...). `startApprovalWorkflow` persists the plan; a
+ * read-only caller (period submission readiness, #1348) asks whether a start would route.
+ */
+export async function planApprovalWorkflowStart(
+	input: PlanApprovalWorkflowStartInput,
+): Promise<{ snapshot: ApprovalWorkflowSnapshot; events: ApprovalWorkflowEventSnapshot[] }> {
 	const policyResult = await input.context.dbService.db.execute(sql`
 		select coalesce(json_agg(policy_row.value order by policy_row.priority, policy_row.id), '[]'::json) as policies
 		from (
@@ -855,7 +977,7 @@ export async function startApprovalWorkflow(
 		sourceId: input.sourceIdentity.sourceId,
 		allocationKey: input.submissionKey,
 	});
-	const now = (input.nowInstant ?? (() => systemClock.nowInstant()))();
+	const now = input.now;
 	let snapshot: ApprovalWorkflowSnapshot = {
 		id: workflowId,
 		organizationId: input.organizationId,
@@ -872,8 +994,8 @@ export async function startApprovalWorkflow(
 					kind: "default",
 					defaultApproverEmployeeId: input.defaultApproverEmployeeId,
 				},
-		contextSnapshot: cloneJson(submissionContextSnapshot) as JsonObject,
-		displaySnapshot: cloneJson(submissionDisplaySnapshot) as JsonObject,
+		contextSnapshot: cloneJson(input.contextSnapshot) as JsonObject,
+		displaySnapshot: cloneJson(input.displaySnapshot) as JsonObject,
 		submittedAt: now,
 		completedAt: null,
 		cancelledAt: null,
@@ -997,80 +1119,5 @@ export async function startApprovalWorkflow(
 	) {
 		return fail("ACTIVATION_LIMIT");
 	}
-	if (input.finalizeContextSnapshot) {
-		snapshot = {
-			...snapshot,
-			contextSnapshot: finalizeWorkflowContext(
-				input.finalizeContextSnapshot,
-				snapshot,
-				submissionContextSnapshot,
-			),
-		};
-	}
-	const persisted = await input.context.repository.createInitialWorkflow({
-		snapshot,
-		events,
-		submissionKey: input.submissionKey,
-	});
-	if (persisted.kind === "source_conflict") return fail("SOURCE_CONFLICT");
-	const currentSnapshot = persisted.snapshot;
-	const updatedAt = events.at(-1)?.occurredAt ?? now;
-	const projection = buildProjection(
-		currentSnapshot,
-		input.displayProjection,
-		updatedAt
-	);
-	const outbox: ApprovalOutboxWriteInput[] = events.map((event) => ({
-		organizationId: input.organizationId,
-		workflowId,
-		eventId: event.id,
-		eventType: event.eventType,
-		dedupeKey: `observe:${event.id}`,
-		payload: {
-			organizationId: input.organizationId,
-			workflowId,
-			sourceType: input.sourceIdentity.sourceType,
-			sourceId: input.sourceIdentity.sourceId,
-			requesterEmployeeId: input.requesterEmployeeId,
-			eventId: event.id,
-			eventType: event.eventType,
-		},
-		disposition: "observe",
-		createdAt: event.occurredAt,
-	}));
-	if (persisted.kind === "existing") {
-		const evidence = await input.verifySourceWorkflow(currentSnapshot.id);
-		if (!sourceLinkMatches(evidence, input, currentSnapshot.id)) {
-			return fail("SOURCE_BINDING_MISMATCH");
-		}
-		return {
-			kind: "existing",
-			status: currentSnapshot.status,
-			terminal: currentSnapshot.status !== "pending",
-			snapshot: currentSnapshot,
-			events,
-			projection,
-			outbox,
-			outboxResults: [],
-		};
-	}
-	const evidence = await input.bindSourceWorkflow(currentSnapshot.id);
-	if (!sourceLinkMatches(evidence, input, currentSnapshot.id)) {
-		return fail("SOURCE_BINDING_MISMATCH");
-	}
-	await input.context.projectionWriter.write(projection);
-	const outboxResults: ApprovalOutboxWriteResult[] = await mapSequentially(
-		outbox,
-		(item) => input.context.outboxWriter.write(item),
-	);
-	return {
-		kind: "created",
-		status: currentSnapshot.status,
-		terminal: currentSnapshot.status !== "pending",
-		snapshot: currentSnapshot,
-		events,
-		projection,
-		outbox,
-		outboxResults,
-	};
+	return { snapshot, events };
 }

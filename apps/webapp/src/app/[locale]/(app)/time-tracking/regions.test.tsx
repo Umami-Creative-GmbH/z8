@@ -343,7 +343,8 @@ describe("independent time tracking region components", () => {
 		vi.mocked(readPeriodsRegion).mockResolvedValue({ timezone: "Europe/Berlin", periods });
 		const view = leaf(await PeriodsRegion({ context }));
 		expect(view.type).toBe(PeriodSubmissionsCard);
-		expect(view.props).toEqual({ periods });
+		// The card checks readiness for the organization and employee it was rendered for (#1348).
+		expect(view.props).toEqual({ periods, organizationId: "org-1", employeeId: "employee-1" });
 	});
 
 	const regions = [

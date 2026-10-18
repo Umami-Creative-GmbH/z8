@@ -3,7 +3,7 @@ import { type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import { daysAroundForEveryZone } from "./cadence";
 import { loadExpectedSubmissionPeriodFacts } from "./employee-expected-periods";
 import { buildEmployeePeriodView, type EmployeePeriodViewRow } from "./employee-period-view";
-import { deriveExpectedSubmissionPeriods } from "./expected-periods";
+import { deriveExpectedSubmissionPeriods, type ExpectedSubmissionPeriod } from "./expected-periods";
 import { listEmployeePeriodSubmissions } from "./submission-store";
 
 /** How far back the view looks, and how many periods it shows. */
@@ -24,6 +24,18 @@ export async function loadEmployeePeriodView(
 	database: typeof db,
 	input: { organizationId: string; employeeId: string; now: Instant },
 ): Promise<EmployeePeriodView | null> {
+	const view = await loadEmployeePeriodViewWithPeriods(database, input);
+	return view ? { timezone: view.timezone, periods: view.periods } : null;
+}
+
+/**
+ * The employee's period view with the expected periods it was built from, so readiness (#1348)
+ * assesses each displayed row against the same period submitting would read.
+ */
+export async function loadEmployeePeriodViewWithPeriods(
+	database: typeof db,
+	input: { organizationId: string; employeeId: string; now: Instant },
+): Promise<(EmployeePeriodView & { expected: ExpectedSubmissionPeriod[] }) | null> {
 	// The employee's zone is read with the facts.
 	const window = daysAroundForEveryZone(input.now, { before: VIEW_LOOKBACK_DAYS, after: 0 });
 	const facts = await loadExpectedSubmissionPeriodFacts(database, {
@@ -47,5 +59,5 @@ export async function loadEmployeePeriodView(
 		submissions,
 		today: plainDateAt(input.now, facts.timezone),
 	});
-	return { timezone: facts.timezone, periods: rows.slice(0, VIEW_PERIOD_LIMIT) };
+	return { timezone: facts.timezone, periods: rows.slice(0, VIEW_PERIOD_LIMIT), expected: periods };
 }

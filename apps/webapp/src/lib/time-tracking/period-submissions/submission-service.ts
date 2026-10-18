@@ -4,19 +4,14 @@ import { db as applicationDatabase } from "@/db";
 import { user } from "@/db/auth-schema";
 import { approvalStageAssignment, employee } from "@/db/schema";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
-import { periodSubmissionRoutingContext } from "@/lib/approvals/domain-adapters/period-submission.adapter";
 import {
 	PERIOD_SUBMISSION_SOURCE_TYPE,
 	PERIOD_SUBMISSION_WORKFLOW_TYPE,
 } from "@/lib/approvals/domain-adapters/period-submission-contract";
 import { PERIOD_SUBMISSION_EVIDENCE_SCHEMA_VERSION } from "@/lib/approvals/evidence/period-submission-facts";
 import { capturePeriodSubmissionSubmittedRevision } from "@/lib/approvals/evidence/store";
-import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { createPeriodSubmissionApprovalRuntime } from "@/lib/approvals/server/period-submission-runtime";
-import {
-	ApprovalWorkflowStartError,
-	startApprovalWorkflow,
-} from "@/lib/approvals/workflow/start-workflow";
+import { startApprovalWorkflow } from "@/lib/approvals/workflow/start-workflow";
 import { AuditAction } from "@/lib/audit-logger";
 import {
 	type Clock,
@@ -29,7 +24,16 @@ import {
 import { isUuid } from "@/lib/validations/uuid";
 import { loadExpectedSubmissionPeriods } from "./employee-expected-periods";
 import type { ExpectedSubmissionPeriod } from "./expected-periods";
-import { findPeriodSubmissionBlockers, type PeriodSubmissionBlocker } from "./submission-blockers";
+import {
+	findPeriodSubmissionBlockers,
+	type PeriodSubmissionBlocker,
+	type SubmissionPeriodBounds,
+} from "./submission-blockers";
+import {
+	isNoApproverStartError,
+	type PeriodSubmitter,
+	periodSubmissionRouting,
+} from "./submission-routing";
 import {
 	bindPeriodSubmissionWorkflow,
 	countPeriodSubmissionsOfWorkflow,
@@ -86,11 +90,90 @@ class PeriodOpen extends Error {
 	}
 }
 
-function rangeOf(period: ExpectedSubmissionPeriod): { start: Instant; end: Instant } {
+/** The period's fixed `[start, end)` instants in its zone. */
+export function periodSubmissionRange(period: ExpectedSubmissionPeriod): {
+	start: Instant;
+	end: Instant;
+} {
 	return {
 		start: period.startDate.toZonedDateTime(period.timezone).toInstant(),
 		end: period.endDate.add({ days: 1 }).toZonedDateTime(period.timezone).toInstant(),
 	};
+}
+
+/** The content-blocker bounds of one employee's expected period. */
+export function periodSubmissionBounds(
+	organizationId: string,
+	employeeId: string,
+	period: ExpectedSubmissionPeriod,
+): SubmissionPeriodBounds {
+	return {
+		organizationId,
+		employeeId,
+		timezone: period.timezone,
+		startDate: period.startDate.toString(),
+		endDate: period.endDate.toString(),
+		range: periodSubmissionRange(period),
+	};
+}
+
+/** Whether submitting the period has opened: from its last day in its zone. */
+export function hasPeriodSubmissionOpened(period: ExpectedSubmissionPeriod, now: Instant): boolean {
+	return comparePlainDates(plainDateAt(now, period.timezone), period.endDate) >= 0;
+}
+
+/**
+ * The user's active employee in the organization: the only one who submits (or assesses) their
+ * periods. Null refuses as `not_employee`.
+ */
+export async function findPeriodSubmitter(
+	database: Database,
+	input: { organizationId: string; userId: string },
+): Promise<(PeriodSubmitter & { name: string }) | null> {
+	const [submitter] = await database
+		.select({ id: employee.id, teamId: employee.teamId, name: user.name })
+		.from(employee)
+		.innerJoin(user, eq(user.id, employee.userId))
+		.where(
+			and(
+				eq(employee.organizationId, input.organizationId),
+				eq(employee.userId, input.userId),
+				eq(employee.isActive, true),
+			),
+		)
+		.limit(1);
+	return submitter
+		? {
+				organizationId: input.organizationId,
+				employeeId: submitter.id,
+				teamId: submitter.teamId,
+				name: submitter.name,
+			}
+		: null;
+}
+
+/**
+ * The expected period of the employee named by the first date of its (clipped) range, as
+ * `deriveExpectedSubmissionPeriods` gives it. Null refuses as `not_expected`.
+ */
+export async function findExpectedSubmissionPeriod(
+	database: Database,
+	input: { organizationId: string; employeeId: string; periodStartDate: string },
+): Promise<ExpectedSubmissionPeriod | null> {
+	let startDate: ReturnType<typeof parsePlainDate>;
+	try {
+		startDate = parsePlainDate(input.periodStartDate);
+	} catch {
+		return null;
+	}
+	const periods = await loadExpectedSubmissionPeriods(database, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		window: { from: startDate, to: startDate },
+	});
+	return (
+		periods.find((candidate) => comparePlainDates(candidate.startDate, startDate) === 0) ?? null
+	);
 }
 
 /**
@@ -107,38 +190,25 @@ export async function submitPeriodSubmission(
 ): Promise<SubmitPeriodSubmissionResult> {
 	const database = dependencies.database ?? applicationDatabase;
 	const clock = dependencies.clock ?? systemClock;
-	let startDate: ReturnType<typeof parsePlainDate>;
 	try {
-		startDate = parsePlainDate(input.periodStartDate);
+		parsePlainDate(input.periodStartDate);
 	} catch {
 		return { kind: "refused", reason: "not_expected" };
 	}
-	const [submitter] = await database
-		.select({ id: employee.id, teamId: employee.teamId, name: user.name })
-		.from(employee)
-		.innerJoin(user, eq(user.id, employee.userId))
-		.where(
-			and(
-				eq(employee.organizationId, input.organizationId),
-				eq(employee.userId, input.userId),
-				eq(employee.isActive, true),
-			),
-		)
-		.limit(1);
-	if (!submitter) return { kind: "refused", reason: "not_employee" };
-	const period = (
-		await loadExpectedSubmissionPeriods(database, {
-			organizationId: input.organizationId,
-			employeeId: submitter.id,
-			window: { from: startDate, to: startDate },
-		})
-	).find((candidate) => comparePlainDates(candidate.startDate, startDate) === 0);
+	const found = await findPeriodSubmitter(database, input);
+	if (!found) return { kind: "refused", reason: "not_employee" };
+	const submitter = { ...found, id: found.employeeId };
+	const period = await findExpectedSubmissionPeriod(database, {
+		organizationId: input.organizationId,
+		employeeId: submitter.id,
+		periodStartDate: input.periodStartDate,
+	});
 	if (!period) return { kind: "refused", reason: "not_expected" };
 	const now = clock.nowInstant();
-	if (comparePlainDates(plainDateAt(now, period.timezone), period.endDate) < 0) {
+	if (!hasPeriodSubmissionOpened(period, now)) {
 		return { kind: "refused", reason: "period_not_ended" };
 	}
-	const range = rangeOf(period);
+	const range = periodSubmissionRange(period);
 	const runtime = createPeriodSubmissionApprovalRuntime(database, { clock });
 	try {
 		const submitted = await runtime.repository.withTransaction(async (context) => {
@@ -153,14 +223,10 @@ export async function submitPeriodSubmission(
 				startDate: period.startDate.toString(),
 			});
 			if (live) throw new SubmissionRefused("already_submitted");
-			const blockers = await findPeriodSubmissionBlockers(tx, {
-				organizationId: input.organizationId,
-				employeeId: submitter.id,
-				timezone: period.timezone,
-				startDate: period.startDate.toString(),
-				endDate: period.endDate.toString(),
-				range,
-			});
+			const blockers = await findPeriodSubmissionBlockers(
+				tx,
+				periodSubmissionBounds(input.organizationId, submitter.id, period),
+			);
 			if (blockers.length > 0) throw new PeriodOpen(blockers);
 			const row = await insertPendingPeriodSubmission(tx, {
 				organizationId: input.organizationId,
@@ -186,12 +252,10 @@ export async function submitPeriodSubmission(
 				range,
 			});
 			const { work } = content;
-			const teamIds = submitter.teamId ? [submitter.teamId] : [];
-			const defaultApproverEmployeeId = await getPrimaryEligibleManagerIdForRequester({
-				db: tx as never,
-				requesterEmployeeId: submitter.id,
-				organizationId: input.organizationId,
-			});
+			const { teamIds, defaultApproverEmployeeId, routingContext } = await periodSubmissionRouting(
+				tx,
+				{ ...submitter, submissionId: row.id },
+			);
 			const sourceIdentity = {
 				organizationId: input.organizationId,
 				workflowType: PERIOD_SUBMISSION_WORKFLOW_TYPE,
@@ -218,12 +282,7 @@ export async function submitPeriodSubmission(
 					actor: { kind: "employee", employeeId: submitter.id, userId: input.userId },
 					submissionKey,
 					defaultApproverEmployeeId,
-					routingContext: periodSubmissionRoutingContext({
-						organizationId: input.organizationId,
-						submissionId: row.id,
-						requesterEmployeeId: submitter.id,
-						teamIds,
-					}),
+					routingContext,
 					contextSnapshot: {
 						teamIds,
 						periodSubmission: {
@@ -265,12 +324,7 @@ export async function submitPeriodSubmission(
 						),
 				});
 			} catch (error) {
-				if (
-					error instanceof ApprovalWorkflowStartError &&
-					(error.code === "NO_DEFAULT_APPROVER" || error.code === "ACTIVATION_FAILED")
-				) {
-					throw new SubmissionRefused("no_approver");
-				}
+				if (isNoApproverStartError(error)) throw new SubmissionRefused("no_approver");
 				throw error;
 			}
 			// The resolver never lets a period submission complete itself (#1059).
