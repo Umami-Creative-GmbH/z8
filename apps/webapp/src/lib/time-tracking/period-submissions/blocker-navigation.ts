@@ -14,7 +14,9 @@ import type { PeriodSubmissionBlocker } from "./submission-blockers";
  * organization. The identity in a link is never a lookup key: it only picks one of the records the
  * destination loaded anyway, so a forged, foreign or stale identity simply matches nothing.
  *
- * - Corrections and absences: the employee's own requests, focused on the pending request.
+ * - Corrections and absences: the employee's own requests, focused on the pending request. A
+ *   correction My Requests cannot show (legacy data it cannot classify) opens on the dated work
+ *   view instead, focused on the corrected work.
  * - Manual work (including a pending policy clock-out): the dated work view, focused on the
  *   entry. Never My Requests: manual work has no request view and no withdrawal.
  * - Live work: the clock controls. Navigating never clocks out.
@@ -26,6 +28,12 @@ export const MY_REQUESTS_FOCUS_PARAM = "request";
 export const TIME_TRACKING_FOCUS_PARAM = "focus";
 /** The DOM id of the clock controls on `/time-tracking`. */
 export const CLOCK_FOCUS_TARGET_ID = "time-clock";
+/**
+ * The DOM ids the clock and timeline regions of `/time-tracking` carry once they have streamed in,
+ * loaded or not: until then, a focus target in them is not yet missing.
+ */
+export const CLOCK_REGION_ID = "time-clock-region";
+export const TIMELINE_REGION_ID = "workday-timeline-region";
 
 /** The DOM id of a work period's row on the workday timeline. */
 export function workPeriodFocusTargetId(workPeriodId: string): string {
@@ -37,11 +45,16 @@ export function myRequestFocusTargetId(requestId: string): string {
 	return `request-${requestId}`;
 }
 
+/** The one `<kind>:<id>` format of blocker keys and focus values. */
+function blockerKey(kind: string, id: string): string {
+	return `${kind}:${id}`;
+}
+
 /** The stable key of a blocker: its kind and source identity. React keys, DOM ids, focus values. */
 export function periodSubmissionBlockerKey(blocker: PeriodSubmissionBlocker): string {
 	return blocker.kind === "absence_request"
-		? `absence:${blocker.absenceId}`
-		: `${blocker.kind}:${blocker.workPeriodId}`;
+		? blockerKey("absence", blocker.absenceId)
+		: blockerKey(blocker.kind, blocker.workPeriodId);
 }
 
 type WorkBlocker = Extract<PeriodSubmissionBlocker, { workPeriodId: string }>;
@@ -68,15 +81,20 @@ export function periodBlockerHref(
 	period: { startDate: string; endDate: string },
 ): string {
 	const focus = periodSubmissionBlockerKey(blocker);
+	const inMyRequests = () =>
+		`/my-requests?${new URLSearchParams({ [MY_REQUESTS_FOCUS_PARAM]: focus })}`;
+	const onTimeline = (work: WorkBlocker) =>
+		`/time-tracking?${new URLSearchParams({
+			date: periodBlockerWorkDate(work, period),
+			[TIME_TRACKING_FOCUS_PARAM]: focus,
+		})}`;
 	switch (blocker.kind) {
 		case "time_correction":
+			return blocker.listedInMyRequests ? inMyRequests() : onTimeline(blocker);
 		case "absence_request":
-			return `/my-requests?${new URLSearchParams({ [MY_REQUESTS_FOCUS_PARAM]: focus })}`;
+			return inMyRequests();
 		case "manual_work":
-			return `/time-tracking?${new URLSearchParams({
-				date: periodBlockerWorkDate(blocker, period),
-				[TIME_TRACKING_FOCUS_PARAM]: focus,
-			})}`;
+			return onTimeline(blocker);
 		case "live_work":
 			return `/time-tracking?${new URLSearchParams({ [TIME_TRACKING_FOCUS_PARAM]: focus })}`;
 	}
@@ -104,7 +122,8 @@ export function parseMyRequestsFocus(value: unknown): MyRequestsFocus | null {
 }
 
 export interface TimeTrackingFocus {
-	kind: "manual_work" | "live_work";
+	/** A correction is focused here only when My Requests cannot show it. */
+	kind: "manual_work" | "live_work" | "time_correction";
 	workPeriodId: string;
 	/** The `periodSubmissionBlockerKey` of the blocker it came from. */
 	key: string;
@@ -114,6 +133,12 @@ export interface TimeTrackingFocus {
 export function parseTimeTrackingFocus(value: unknown): TimeTrackingFocus | null {
 	const parsed = parseFocusValue(value);
 	if (!parsed) return null;
-	if (parsed.kind !== "manual_work" && parsed.kind !== "live_work") return null;
-	return { kind: parsed.kind, workPeriodId: parsed.id, key: `${parsed.kind}:${parsed.id}` };
+	if (
+		parsed.kind !== "manual_work" &&
+		parsed.kind !== "live_work" &&
+		parsed.kind !== "time_correction"
+	) {
+		return null;
+	}
+	return { kind: parsed.kind, workPeriodId: parsed.id, key: blockerKey(parsed.kind, parsed.id) };
 }

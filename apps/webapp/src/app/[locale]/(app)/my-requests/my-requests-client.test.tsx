@@ -55,6 +55,7 @@ vi.mock("@tabler/icons-react", () => ({
 	IconCheck: () => <span aria-hidden="true" />,
 	IconClock: () => <span aria-hidden="true" />,
 	IconFileDescription: () => <span aria-hidden="true" />,
+	IconInfoCircle: () => <span aria-hidden="true" />,
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/period-submissions", () => ({
@@ -535,6 +536,40 @@ describe("MyRequestsClient", () => {
 			// Only the employee's own list renders, unchanged; no card is focused or marked.
 			expect(screen.getAllByRole("article")).toHaveLength(7);
 			expect(document.activeElement?.closest("article")).toBeNull();
+		});
+
+		it("does not take focus to the notice when the employee cancels the focused request here", async () => {
+			const client = new QueryClient();
+			const page = (result: SelfServiceRequestResult) => (
+				<QueryClientProvider client={client}>
+					<MyRequestsClient initialResult={result} focusRequest="absence:absence-pending" />
+				</QueryClientProvider>
+			);
+			const pending = createResult({ items: [...createResult().items, PENDING_ABSENCE] });
+			const view = render(page(pending));
+			const card = within(screen.getByRole("region", { name: "In review" }))
+				.getByText("Pending vacation")
+				.closest("article");
+			await waitFor(() => expect(document.activeElement).toBe(card));
+
+			// The page refreshes after the cancel: the request is no longer pending.
+			view.rerender(
+				page(
+					createResult({
+						items: [
+							...createResult().items,
+							{
+								...PENDING_ABSENCE,
+								status: "cancelled" as const,
+								availableActions: ["view" as const],
+							},
+						],
+					}),
+				),
+			);
+
+			await new Promise((resolve) => setTimeout(resolve, 20));
+			expect(screen.queryByRole("status")).toBeNull();
 		});
 
 		it("ignores a malformed focus value", () => {

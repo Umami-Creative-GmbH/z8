@@ -1,12 +1,15 @@
-import { db as applicationDatabase } from "@/db";
+import type { db } from "@/db";
 import { type Clock, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import type { EmployeePeriodViewRow } from "./employee-period-view";
 import { loadEmployeePeriodViewWithPeriods } from "./employee-period-view-store";
 import type { ExpectedSubmissionPeriod } from "./expected-periods";
 import { findPeriodSubmissionBlockers, type PeriodSubmissionBlocker } from "./submission-blockers";
-import { canRoutePeriodSubmission, type PeriodSubmitter } from "./submission-routing";
 import {
-	findExpectedSubmissionPeriod,
+	canRoutePeriodSubmission,
+	isPeriodSubmissionWriteGateOpen,
+	type PeriodSubmitter,
+} from "./submission-routing";
+import {
 	findPeriodSubmitter,
 	hasPeriodSubmissionOpened,
 	type PeriodSubmissionRefusal,
@@ -14,7 +17,7 @@ import {
 } from "./submission-service";
 import { findLivePeriodSubmission } from "./submission-store";
 
-type Database = typeof applicationDatabase;
+type Database = typeof db;
 
 /**
  * Period submission readiness (#1348): whether the employee's period currently meets every
@@ -30,7 +33,8 @@ export interface PeriodSubmissionReadiness {
 	/**
 	 * Every refusal submitting now would meet, in the order submitting checks them (the first is
 	 * the one it would give); empty when ready. A period that has not opened yet still lists its
-	 * content and routing refusals. A submitted or approved period stops at `already_submitted`.
+	 * content, write gate and routing refusals. A submitted or approved period stops at
+	 * `already_submitted`.
 	 */
 	refusals: PeriodSubmissionRefusal[];
 	/** What keeps the period open (`period_open`), in submission's order and identities. */
@@ -51,17 +55,12 @@ export interface EmployeePeriodReadinessView {
 	periods: EmployeePeriodReadinessRow[];
 }
 
-const refused = (refusal: PeriodSubmissionRefusal): PeriodSubmissionReadiness => ({
+const NOT_EXPECTED: PeriodSubmissionReadiness = {
 	ready: false,
-	refusals: [refusal],
+	refusals: ["not_expected"],
 	blockers: [],
 	opensOn: null,
-});
-
-interface Dependencies {
-	database?: Database;
-	clock?: Clock;
-}
+};
 
 /**
  * Reads in one read-only transaction: one snapshot for every period, and PostgreSQL itself
@@ -75,13 +74,20 @@ function readOnly<T>(database: Database, read: (reader: Database) => Promise<T>)
 	});
 }
 
-/** Routing is the employee's, not the period's: planned once per read, when first needed. */
-function routingOnce(reader: Database, submitter: PeriodSubmitter, now: Instant) {
-	let routable: Promise<boolean> | null = null;
+/** Asked once per read, when first needed: the answer is the same for every period. */
+function once<T>(ask: () => Promise<T>): () => Promise<T> {
+	let answer: Promise<T> | null = null;
 	return () => {
-		routable ??= canRoutePeriodSubmission(reader, { ...submitter, now });
-		return routable;
+		answer ??= ask();
+		return answer;
 	};
+}
+
+interface EmployeeChecks {
+	/** The write gate is the organization's, not the period's. */
+	writeGateOpen: () => Promise<boolean>;
+	/** Routing is the employee's, not the period's. */
+	routable: () => Promise<boolean>;
 }
 
 async function assessExpectedPeriod(
@@ -90,7 +96,7 @@ async function assessExpectedPeriod(
 		submitter: PeriodSubmitter;
 		period: ExpectedSubmissionPeriod;
 		now: Instant;
-		routable: () => Promise<boolean>;
+		checks: EmployeeChecks;
 	},
 ): Promise<PeriodSubmissionReadiness> {
 	const { submitter, period } = input;
@@ -109,50 +115,24 @@ async function assessExpectedPeriod(
 		periodSubmissionBounds(submitter.organizationId, submitter.employeeId, period),
 	);
 	if (blockers.length > 0) refusals.push("period_open");
-	if (!(await input.routable())) refusals.push("no_approver");
+	// Submitting starts its workflow through the write gate before routing it.
+	if (!(await input.checks.writeGateOpen())) refusals.push("write_gate_closed");
+	if (!(await input.checks.routable())) refusals.push("no_approver");
 	return { ready: refusals.length === 0, refusals, blockers, opensOn };
 }
 
 /**
- * The readiness of one of the user's own periods, named as `submitPeriodSubmission` names it.
- * The employee is the user's active employee in the organization (else `not_employee`); a period
- * they are not expected to submit is `not_expected`.
- */
-export async function assessPeriodSubmissionReadiness(
-	input: { organizationId: string; userId: string; periodStartDate: string },
-	dependencies: Dependencies = {},
-): Promise<PeriodSubmissionReadiness> {
-	const database = dependencies.database ?? applicationDatabase;
-	const now = (dependencies.clock ?? systemClock).nowInstant();
-	return readOnly(database, async (reader) => {
-		const submitter = await findPeriodSubmitter(reader, input);
-		if (!submitter) return refused("not_employee");
-		const period = await findExpectedSubmissionPeriod(reader, {
-			organizationId: input.organizationId,
-			employeeId: submitter.employeeId,
-			periodStartDate: input.periodStartDate,
-		});
-		if (!period) return refused("not_expected");
-		return assessExpectedPeriod(reader, {
-			submitter,
-			period,
-			now,
-			routable: routingOnce(reader, submitter, now),
-		});
-	});
-}
-
-/**
- * The user's period view (#1059) with every displayed period assessed. Null when they have no
- * active employee in the organization, or the organization collects no periods from them.
+ * The user's period view (#1059) with every displayed period assessed, as
+ * `submitPeriodSubmission` would check it. The employee is the user's active employee in the
+ * organization. Null when they have none, or the organization collects no periods from them; a
+ * displayed period they are not expected to submit is `not_expected`.
  */
 export async function loadEmployeePeriodReadinessView(
 	input: { organizationId: string; userId: string },
-	dependencies: Dependencies = {},
+	dependencies: { database: Database; clock?: Clock },
 ): Promise<EmployeePeriodReadinessView | null> {
-	const database = dependencies.database ?? applicationDatabase;
 	const now = (dependencies.clock ?? systemClock).nowInstant();
-	return readOnly(database, async (reader) => {
+	return readOnly(dependencies.database, async (reader) => {
 		const submitter = await findPeriodSubmitter(reader, input);
 		if (!submitter) return null;
 		const view = await loadEmployeePeriodViewWithPeriods(reader, {
@@ -161,7 +141,10 @@ export async function loadEmployeePeriodReadinessView(
 			now,
 		});
 		if (!view) return null;
-		const routable = routingOnce(reader, submitter, now);
+		const checks: EmployeeChecks = {
+			writeGateOpen: once(() => isPeriodSubmissionWriteGateOpen(reader, input.organizationId)),
+			routable: once(() => canRoutePeriodSubmission(reader, { ...submitter, now })),
+		};
 		const periods: EmployeePeriodReadinessRow[] = [];
 		// One at a time: the reads share the transaction's connection.
 		for (const row of view.periods) {
@@ -169,8 +152,8 @@ export async function loadEmployeePeriodReadinessView(
 				(candidate) => candidate.startDate.toString() === row.startDate,
 			);
 			const readiness = period
-				? await assessExpectedPeriod(reader, { submitter, period, now, routable })
-				: refused("not_expected");
+				? await assessExpectedPeriod(reader, { submitter, period, now, checks })
+				: NOT_EXPECTED;
 			periods.push({ ...row, readiness });
 		}
 		return { employeeId: submitter.employeeId, timezone: view.timezone, periods };

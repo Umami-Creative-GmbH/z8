@@ -1,12 +1,35 @@
 /**
  * #1348 runtime evidence: period submission readiness reads the same preconditions as submitting,
- * on real rows, and writes nothing. Each case assesses a period, then submits it, and expects the
- * submission to agree with the assessment.
+ * on real rows, and writes nothing. Each case reads the employee's period view with readiness (the
+ * read the period card makes), then submits the period, and expects the submission to agree with
+ * what the view said.
  *
  * Local contract: pnpm --filter webapp test:integration
  */
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Pass-through, except where a case makes the stage resolver throw as a lost connection would.
+const resolverFailure = vi.hoisted(() => ({ throws: false }));
+vi.mock("@/lib/approvals/routing/stage-activation-resolver", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@/lib/approvals/routing/stage-activation-resolver")>();
+	return {
+		...actual,
+		createDatabaseStageActivationResolver: (
+			...args: Parameters<typeof actual.createDatabaseStageActivationResolver>
+		) => {
+			const resolver = actual.createDatabaseStageActivationResolver(...args);
+			return {
+				resolve: async (input: Parameters<typeof resolver.resolve>[0]) => {
+					if (resolverFailure.throws) throw new Error("connection terminated");
+					return resolver.resolve(input);
+				},
+			};
+		},
+	};
+});
+
 import { db } from "@/db";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import {
@@ -14,7 +37,6 @@ import {
 	createClosedMonthDatabaseFixture,
 } from "@/lib/time-tracking/closed-months/testing/closed-month-database.test.fixture";
 import {
-	assessPeriodSubmissionReadiness,
 	loadEmployeePeriodReadinessView,
 	type PeriodSubmissionReadiness,
 } from "./submission-readiness";
@@ -24,6 +46,8 @@ import { withdrawOwnPeriodSubmission } from "./submission-withdrawal";
 // A Monday-week cadence since January; Europe/Berlin, so the week 2026-03-02..08 is
 // [2026-03-01T23:00Z, 2026-03-08T23:00Z).
 const WEEK_START = "2026-03-02";
+const PERIOD_START = "2026-03-01T23:00:00Z";
+const PERIOD_END = "2026-03-08T23:00:00Z";
 const LAST_DAY = parseInstant("2026-03-08T12:00:00Z");
 const DAY_BEFORE = parseInstant("2026-03-07T12:00:00Z");
 const TZ = "Europe/Berlin";
@@ -45,17 +69,14 @@ describe("period submission readiness on PostgreSQL", () => {
 	});
 
 	beforeEach(async () => {
+		resolverFailure.throws = false;
 		({ organizationId, ownerUserId } = await fixture.organization(TZ));
 		employee = await fixture.employee({ organizationId });
 		manager = await fixture.employee({ organizationId });
 		await fixture.pool.query("update employee set role = 'manager' where id = $1", [
 			manager.employeeId,
 		]);
-		await fixture.pool.query(
-			`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by)
-			 values ($1, $2, $3, true, $4)`,
-			[randomUUID(), employee.employeeId, manager.employeeId, ownerUserId],
-		);
+		await managedBy(manager.employeeId);
 		await fixture.pool.query(
 			`insert into period_submission_cadence_change
 			 (id, organization_id, cadence, week_start_day, changed_at)
@@ -64,18 +85,35 @@ describe("period submission readiness on PostgreSQL", () => {
 		);
 	});
 
-	const assess = (
-		instant = LAST_DAY,
-		input: { organizationId?: string; userId?: string; periodStartDate?: string } = {},
-	) =>
-		assessPeriodSubmissionReadiness(
+	async function managedBy(managerEmployeeId: string) {
+		await fixture.pool.query("delete from employee_managers where employee_id = $1", [
+			employee.employeeId,
+		]);
+		await fixture.pool.query(
+			`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by)
+			 values ($1, $2, $3, true, $4)`,
+			[randomUUID(), employee.employeeId, managerEmployeeId, ownerUserId],
+		);
+	}
+
+	/** The read the period card makes: the signed-in user's period view with readiness. */
+	const readView = (instant = LAST_DAY, input: { organizationId?: string; userId?: string } = {}) =>
+		loadEmployeePeriodReadinessView(
 			{
 				organizationId: input.organizationId ?? organizationId,
 				userId: input.userId ?? employee.userId,
-				periodStartDate: input.periodStartDate ?? WEEK_START,
 			},
 			{ database: db, clock: at(instant) },
 		);
+
+	/** One period's readiness as the view shows it; null when the view does not show the period. */
+	async function assess(
+		instant = LAST_DAY,
+		periodStartDate = WEEK_START,
+	): Promise<PeriodSubmissionReadiness | null> {
+		const view = await readView(instant);
+		return view?.periods.find((period) => period.startDate === periodStartDate)?.readiness ?? null;
+	}
 
 	const submit = (instant = LAST_DAY, periodStartDate = WEEK_START) =>
 		submitPeriodSubmission(
@@ -83,14 +121,20 @@ describe("period submission readiness on PostgreSQL", () => {
 			{ database: db, clock: at(instant) },
 		);
 
-	/** Assesses, then submits, and expects submitting to do what the assessment said. */
+	/**
+	 * Reads the view, then submits, and expects submitting to do what the view said: submitted when
+	 * it said ready, else refused with its first refusal (and the same blockers). A period the view
+	 * does not show is one submitting does not expect.
+	 */
 	async function expectAgreement(
 		instant = LAST_DAY,
 		periodStartDate = WEEK_START,
-	): Promise<PeriodSubmissionReadiness> {
-		const readiness = await assess(instant, { periodStartDate });
+	): Promise<PeriodSubmissionReadiness | null> {
+		const readiness = await assess(instant, periodStartDate);
 		const result = await submit(instant, periodStartDate);
-		if (readiness.ready) {
+		if (!readiness) {
+			expect(result).toEqual({ kind: "refused", reason: "not_expected" });
+		} else if (readiness.ready) {
 			expect(result).toMatchObject({ kind: "submitted" });
 		} else {
 			expect(result).toMatchObject({ kind: "refused", reason: readiness.refusals[0] });
@@ -110,6 +154,12 @@ describe("period submission readiness on PostgreSQL", () => {
 			end,
 			approvalStatus,
 		});
+
+	const blockerIds = (readiness: PeriodSubmissionReadiness | null) =>
+		readiness?.blockers.map((blocker) => [
+			blocker.kind,
+			"workPeriodId" in blocker && blocker.workPeriodId,
+		]);
 
 	async function pendingWorkflowOn(workPeriodId: string, workflowType: string) {
 		await fixture.pool.query(
@@ -158,6 +208,34 @@ describe("period submission readiness on PostgreSQL", () => {
 		);
 	}
 
+	/** The approver left; their effective departure names `replacementEmployeeId`, if any. */
+	async function departed(approverEmployeeId: string, replacementEmployeeId: string | null) {
+		await fixture.pool.query(
+			"update employee set is_active = false, end_date = '2026-02-27' where id = $1",
+			[approverEmployeeId],
+		);
+		const { rows } = await fixture.pool.query<{ id: string }>(
+			"select id from employee_employment_period where employee_id = $1 limit 1",
+			[approverEmployeeId],
+		);
+		await fixture.pool.query(
+			`insert into employee_departure
+			 (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
+			  cutoff_at, replacement_employee_id, revision, status, created_by, request_id,
+			  request_fingerprint, effective_at)
+			 values ($1, $2, $3, 'scheduled', '2026-02-27', 'Europe/Berlin', '2026-02-27T23:00:00Z',
+			  $4, 1, 'effective', $5, $6, 'fingerprint', '2026-02-27T23:00:00Z')`,
+			[
+				organizationId,
+				approverEmployeeId,
+				rows[0]?.id,
+				replacementEmployeeId,
+				ownerUserId,
+				randomUUID(),
+			],
+		);
+	}
+
 	/** Every row a submission, a workflow start, an audit entry or a notification would write. */
 	async function sideEffectCounts() {
 		const counts: Record<string, number> = {};
@@ -202,12 +280,8 @@ describe("period submission readiness on PostgreSQL", () => {
 			status: "pending",
 		});
 		const before = await sideEffectCounts();
-		await assess();
-		await assess(DAY_BEFORE);
-		await loadEmployeePeriodReadinessView(
-			{ organizationId, userId: employee.userId },
-			{ database: db, clock: at(LAST_DAY) },
-		);
+		await readView();
+		await readView(DAY_BEFORE);
 		expect(await sideEffectCounts()).toEqual(before);
 	});
 
@@ -247,8 +321,8 @@ describe("period submission readiness on PostgreSQL", () => {
 	it("lists live work that started in the period, but not live work that started before it", async () => {
 		const live = await work("2026-03-08T08:00:00Z", null);
 		const readiness = await expectAgreement();
-		expect(readiness.refusals).toEqual(["period_open"]);
-		expect(readiness.blockers).toEqual([
+		expect(readiness?.refusals).toEqual(["period_open"]);
+		expect(readiness?.blockers).toEqual([
 			{
 				kind: "live_work",
 				workPeriodId: live.workPeriodId,
@@ -264,25 +338,45 @@ describe("period submission readiness on PostgreSQL", () => {
 		await expect(expectAgreement()).resolves.toMatchObject({ ready: true });
 	});
 
+	it("counts live work started exactly at the period's first instant", async () => {
+		const live = await work(PERIOD_START, null);
+		const readiness = await expectAgreement();
+		expect(blockerIds(readiness)).toEqual([["live_work", live.workPeriodId]]);
+	});
+
+	it("does not count live work started exactly at the period's end instant", async () => {
+		await work(PERIOD_END, null);
+		await expect(expectAgreement()).resolves.toMatchObject({ ready: true, blockers: [] });
+	});
+
 	it("lists undecided manual work in both lifecycles, even in part, at the period boundary", async () => {
 		// Starts on Sunday evening before the week (Berlin) and runs into Monday.
 		const legacy = await work("2026-03-01T22:30:00Z", "2026-03-02T01:00:00Z", "pending");
 		const canonical = await work("2026-03-04T08:00:00Z", "2026-03-04T12:00:00Z");
 		await pendingWorkflowOn(canonical.workPeriodId, "manual_time_submission");
 		// Ends exactly where the week starts: outside.
-		await work("2026-03-01T20:00:00Z", "2026-03-01T23:00:00Z", "pending");
+		await work("2026-03-01T20:00:00Z", PERIOD_START, "pending");
 		// Starts exactly where the week ends: outside.
-		await work("2026-03-08T23:00:00Z", "2026-03-09T01:00:00Z", "pending");
+		await work(PERIOD_END, "2026-03-09T01:00:00Z", "pending");
 
 		const readiness = await expectAgreement();
-		expect(
-			readiness.blockers.map((blocker) => [
-				blocker.kind,
-				"workPeriodId" in blocker && blocker.workPeriodId,
-			]),
-		).toEqual([
+		expect(blockerIds(readiness)).toEqual([
 			["manual_work", legacy.workPeriodId],
 			["manual_work", canonical.workPeriodId],
+		]);
+	});
+
+	it("bounds a period that crosses a daylight saving change by its own local midnights", async () => {
+		// Berlin moves to summer time on 2026-03-29: the week 03-23..29 is
+		// [2026-03-22T23:00Z, 2026-03-29T22:00Z).
+		const crossesStart = await work("2026-03-22T22:30:00Z", "2026-03-22T23:30:00Z", "pending");
+		const endsAtEnd = await work("2026-03-29T21:00:00Z", "2026-03-29T22:00:00Z", "pending");
+		await work("2026-03-29T22:00:00Z", "2026-03-29T23:00:00Z", "pending");
+		const readiness = await expectAgreement(parseInstant("2026-03-29T12:00:00Z"), "2026-03-23");
+		expect(readiness).toMatchObject({ ready: false, opensOn: "2026-03-29" });
+		expect(blockerIds(readiness)).toEqual([
+			["manual_work", crossesStart.workPeriodId],
+			["manual_work", endsAtEnd.workPeriodId],
 		]);
 	});
 
@@ -296,14 +390,31 @@ describe("period submission readiness on PostgreSQL", () => {
 			[organizationId, legacy.workPeriodId, employee.employeeId, manager.employeeId],
 		);
 		const readiness = await expectAgreement();
-		expect(
-			readiness.blockers.map((blocker) => [
-				blocker.kind,
-				"workPeriodId" in blocker && blocker.workPeriodId,
-			]),
-		).toEqual([
+		expect(blockerIds(readiness)).toEqual([
 			["time_correction", corrected.workPeriodId],
 			["time_correction", legacy.workPeriodId],
+		]);
+	});
+
+	it("says whether My Requests lists a pending correction, which keeps the period open either way", async () => {
+		const listed = await work("2026-03-03T08:00:00Z", "2026-03-03T16:00:00Z");
+		const unlisted = await work("2026-03-04T08:00:00Z", "2026-03-04T16:00:00Z");
+		const insertRequest = (workPeriodId: string, metadata: unknown) =>
+			fixture.pool.query(
+				`insert into approval_request (organization_id, entity_type, entity_id, requested_by, approver_id, status, metadata, updated_at)
+				 values ($1, 'time_entry', $2, $3, $4, 'pending', $5, now())`,
+				[organizationId, workPeriodId, employee.employeeId, manager.employeeId, metadata],
+			);
+		// A correction My Requests shows (and lets the employee cancel)...
+		await insertRequest(listed.workPeriodId, {
+			timeCorrection: { action: "edit", workLocationType: "home", workCategoryId: null },
+		});
+		// ...and a legacy request it cannot classify, so it never shows it.
+		await insertRequest(unlisted.workPeriodId, null);
+		const readiness = await expectAgreement();
+		expect(readiness?.blockers).toMatchObject([
+			{ kind: "time_correction", workPeriodId: listed.workPeriodId, listedInMyRequests: true },
+			{ kind: "time_correction", workPeriodId: unlisted.workPeriodId, listedInMyRequests: false },
 		]);
 	});
 
@@ -330,7 +441,7 @@ describe("period submission readiness on PostgreSQL", () => {
 			status: "approved",
 		});
 		const readiness = await expectAgreement();
-		expect(readiness.blockers).toEqual([
+		expect(readiness?.blockers).toEqual([
 			{
 				kind: "absence_request",
 				absenceId: pending,
@@ -377,7 +488,6 @@ describe("period submission readiness on PostgreSQL", () => {
 			},
 			{ database: db, clock: at(parseInstant("2026-03-09T09:00:00Z")) },
 		);
-		await expect(assess()).resolves.toMatchObject({ ready: true });
 		await expect(expectAgreement()).resolves.toMatchObject({ ready: true });
 		await withdrawOwnPeriodSubmission(
 			{ organizationId, userId: employee.userId, periodStartDate: WEEK_START },
@@ -419,6 +529,40 @@ describe("period submission readiness on PostgreSQL", () => {
 		await expect(expectAgreement()).resolves.toMatchObject({ ready: true });
 	});
 
+	it("is not ready when a direct-manager policy finds only the employee as their own manager", async () => {
+		await managedBy(employee.employeeId);
+		await policy({ approverType: "direct_manager", fallback: "fail" });
+		await expect(expectAgreement()).resolves.toMatchObject({
+			ready: false,
+			refusals: ["no_approver"],
+		});
+	});
+
+	it("routes a policy naming a departed approver to their replacement", async () => {
+		const approver = await fixture.employee({ organizationId });
+		await departed(approver.employeeId, manager.employeeId);
+		await policy({
+			approverType: "specific_employee",
+			approverEmployeeId: approver.employeeId,
+			fallback: "fail",
+		});
+		await expect(expectAgreement()).resolves.toMatchObject({ ready: true });
+	});
+
+	it("is not ready when a policy names a departed approver without a replacement", async () => {
+		const approver = await fixture.employee({ organizationId });
+		await departed(approver.employeeId, null);
+		await policy({
+			approverType: "specific_employee",
+			approverEmployeeId: approver.employeeId,
+			fallback: "fail",
+		});
+		await expect(expectAgreement()).resolves.toMatchObject({
+			ready: false,
+			refusals: ["no_approver"],
+		});
+	});
+
 	it("is not ready without a manager or a matching policy", async () => {
 		await fixture.pool.query("delete from employee_managers where employee_id = $1", [
 			employee.employeeId,
@@ -439,6 +583,32 @@ describe("period submission readiness on PostgreSQL", () => {
 		});
 	});
 
+	it("fails the read when the approver could not be resolved, rather than claim there is none", async () => {
+		resolverFailure.throws = true;
+		await expect(readView()).rejects.toThrow();
+		// Submitting keeps its own answer: a failed activation refuses as no approver.
+		await expect(submit()).resolves.toEqual({ kind: "refused", reason: "no_approver" });
+	});
+
+	it("is not ready while the write gate refuses period submissions, and submitting refuses the same", async () => {
+		await fixture.pool.query(
+			`insert into approval_workflow_rollout
+			 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
+			 values ($1, 'period_submission', 'legacy', 'legacy', now(), now())
+			 on conflict (organization_id, workflow_type)
+			 do update set lifecycle_mode = 'legacy', side_effect_mode = 'legacy'`,
+			[organizationId],
+		);
+		const before = await sideEffectCounts();
+		await expect(expectAgreement()).resolves.toEqual({
+			ready: false,
+			refusals: ["write_gate_closed"],
+			blockers: [],
+			opensOn: "2026-03-08",
+		});
+		expect(await sideEffectCounts()).toEqual(before);
+	});
+
 	it("reports every obstacle together: not ended, open and without an approver", async () => {
 		await fixture.pool.query("delete from employee_managers where employee_id = $1", [
 			employee.employeeId,
@@ -450,29 +620,23 @@ describe("period submission readiness on PostgreSQL", () => {
 		});
 	});
 
-	it("refuses a period the employee is not expected to submit", async () => {
-		await expect(assess(LAST_DAY, { periodStartDate: "2026-03-03" })).resolves.toEqual({
-			ready: false,
-			refusals: ["not_expected"],
-			blockers: [],
-			opensOn: null,
-		});
-		await expect(assess(LAST_DAY, { periodStartDate: "not-a-date" })).resolves.toMatchObject({
-			refusals: ["not_expected"],
-		});
-		await expect(expectAgreement(LAST_DAY, "2026-03-03")).resolves.toMatchObject({
-			ready: false,
-		});
+	it("shows no period the employee is not expected to submit, and submitting refuses it", async () => {
+		await expect(expectAgreement(LAST_DAY, "2026-03-03")).resolves.toBeNull();
 	});
 
 	it("is scoped to the organization and the signed-in user's own employee", async () => {
 		const other = await fixture.organization(TZ);
-		await expect(assess(LAST_DAY, { organizationId: other.organizationId })).resolves.toEqual({
-			ready: false,
-			refusals: ["not_employee"],
-			blockers: [],
-			opensOn: null,
-		});
+		await expect(readView(LAST_DAY, { organizationId: other.organizationId })).resolves.toBeNull();
+		await expect(
+			submitPeriodSubmission(
+				{
+					organizationId: other.organizationId,
+					userId: employee.userId,
+					periodStartDate: WEEK_START,
+				},
+				{ database: db, clock: at(LAST_DAY) },
+			),
+		).resolves.toEqual({ kind: "refused", reason: "not_employee" });
 		// Another employee's open work never shows in, or blocks, this employee's period.
 		await fixture.work({
 			organizationId,
@@ -482,11 +646,12 @@ describe("period submission readiness on PostgreSQL", () => {
 			end: null,
 		});
 		await expect(assess()).resolves.toMatchObject({ ready: true, blockers: [] });
-		// An inactive employee has nothing to assess.
+		// An inactive employee has nothing to assess, and cannot submit.
 		await fixture.pool.query("update employee set is_active = false where id = $1", [
 			employee.employeeId,
 		]);
-		await expect(assess()).resolves.toMatchObject({ refusals: ["not_employee"] });
+		await expect(readView()).resolves.toBeNull();
+		await expect(submit()).resolves.toEqual({ kind: "refused", reason: "not_employee" });
 	});
 
 	it("does not stop submitting from refusing an obstacle that appears after a ready result", async () => {
@@ -509,10 +674,7 @@ describe("period submission readiness on PostgreSQL", () => {
 		const submitted = await submit(LAST_DAY, "2026-02-23");
 		expect(submitted).toMatchObject({ kind: "submitted" });
 		await work("2026-03-04T08:00:00Z", null);
-		const view = await loadEmployeePeriodReadinessView(
-			{ organizationId, userId: employee.userId },
-			{ database: db, clock: at(parseInstant("2026-03-10T09:00:00Z")) },
-		);
+		const view = await readView(parseInstant("2026-03-10T09:00:00Z"));
 		expect(view?.timezone).toBe(TZ);
 		const byStart = new Map(view?.periods.map((period) => [period.startDate, period]));
 		expect(byStart.get("2026-03-09")).toMatchObject({
@@ -532,15 +694,5 @@ describe("period submission readiness on PostgreSQL", () => {
 			status: "awaiting_submission",
 			readiness: { ready: true },
 		});
-	});
-
-	it("has no view for a user without an employee in the organization", async () => {
-		const other = await fixture.organization(TZ);
-		await expect(
-			loadEmployeePeriodReadinessView(
-				{ organizationId: other.organizationId, userId: employee.userId },
-				{ database: db, clock: at(LAST_DAY) },
-			),
-		).resolves.toBeNull();
 	});
 });

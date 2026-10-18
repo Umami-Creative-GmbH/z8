@@ -31,6 +31,7 @@ import {
 } from "./submission-blockers";
 import {
 	isNoApproverStartError,
+	isWriteGateRefusal,
 	type PeriodSubmitter,
 	periodSubmissionRouting,
 } from "./submission-routing";
@@ -63,6 +64,11 @@ export type PeriodSubmissionRefusal =
 	| "period_not_ended"
 	/** The period has a pending or approved submission. */
 	| "already_submitted"
+	/**
+	 * The approval write gate refuses period submissions in the organization: its stored rollout
+	 * no longer gives canonical workflows authority, so no workflow may start.
+	 */
+	| "write_gate_closed"
 	/** Nobody other than the employee can decide it. */
 	| "no_approver"
 	/** Live work started in the period is running, or a request touching it is undecided (#1060). */
@@ -324,6 +330,7 @@ export async function submitPeriodSubmission(
 						),
 				});
 			} catch (error) {
+				if (isWriteGateRefusal(error)) throw new SubmissionRefused("write_gate_closed");
 				if (isNoApproverStartError(error)) throw new SubmissionRefused("no_approver");
 				throw error;
 			}

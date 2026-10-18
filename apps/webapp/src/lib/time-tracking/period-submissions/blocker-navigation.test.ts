@@ -14,13 +14,30 @@ function work(
 	startTime: string,
 	timezone = "Europe/Berlin",
 ): PeriodSubmissionBlocker {
-	return { kind, workPeriodId: "w-1", startTime, endTime: null, timezone };
+	const base = { workPeriodId: "w-1", startTime, endTime: null, timezone };
+	return kind === "time_correction"
+		? { kind, listedInMyRequests: true, ...base }
+		: { kind, ...base };
 }
 
 describe("periodBlockerHref", () => {
 	it("opens a time correction in the employee's own requests", () => {
 		expect(periodBlockerHref(work("time_correction", "2026-03-04T08:00:00Z"), PERIOD)).toBe(
 			"/my-requests?request=time_correction%3Aw-1",
+		);
+	});
+
+	it("opens a correction My Requests cannot show on its day of the timeline instead", () => {
+		const unlisted: PeriodSubmissionBlocker = {
+			kind: "time_correction",
+			listedInMyRequests: false,
+			workPeriodId: "w-1",
+			startTime: "2026-03-03T23:30:00Z",
+			endTime: "2026-03-04T02:00:00Z",
+			timezone: "Europe/Berlin",
+		};
+		expect(periodBlockerHref(unlisted, PERIOD)).toBe(
+			"/time-tracking?date=2026-03-04&focus=time_correction%3Aw-1",
 		);
 	});
 
@@ -85,7 +102,7 @@ describe("focus parameters", () => {
 		expect(parseMyRequestsFocus("manual_work:w-1")).toBeNull();
 	});
 
-	it("reads a time-tracking focus for manual and live work only", () => {
+	it("reads a time-tracking focus for work only", () => {
 		expect(parseTimeTrackingFocus("manual_work:w-1")).toEqual({
 			kind: "manual_work",
 			workPeriodId: "w-1",
@@ -96,7 +113,12 @@ describe("focus parameters", () => {
 			workPeriodId: "w-1",
 			key: "live_work:w-1",
 		});
-		expect(parseTimeTrackingFocus("time_correction:w-1")).toBeNull();
+		expect(parseTimeTrackingFocus("time_correction:w-1")).toEqual({
+			kind: "time_correction",
+			workPeriodId: "w-1",
+			key: "time_correction:w-1",
+		});
+		expect(parseTimeTrackingFocus("absence:a-1")).toBeNull();
 	});
 
 	it("ignores missing and malformed values", () => {

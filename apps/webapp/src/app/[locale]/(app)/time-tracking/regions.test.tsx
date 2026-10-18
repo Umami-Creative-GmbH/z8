@@ -316,6 +316,17 @@ describe("independent time tracking region components", () => {
 		expect(region.props.tabIndex).toBe(-1);
 	});
 
+	it("marks the timeline and the clock as rendered, loaded or failed, for a blocker focus", async () => {
+		const loaded = element(await TimelineRegion({ context, searchParams: searchParams() }));
+		expect(loaded.props.id).toBe("workday-timeline-region");
+		vi.mocked(getWorkdayTimelineData).mockRejectedValue(new Error("timeline unavailable"));
+		const failed = element(await TimelineRegion({ context, searchParams: searchParams() }));
+		expect(failed.props.id).toBe("workday-timeline-region");
+		vi.mocked(readActiveWorkPeriod).mockRejectedValue(new Error("clock unavailable"));
+		const clockFailed = element(await ClockRegion({ context }));
+		expect(clockFailed.props.id).toBe("time-clock-region");
+	});
+
 	it("keeps the translated employee label and known clocked-out status", async () => {
 		vi.mocked(readActiveWorkPeriod).mockResolvedValue(null);
 		const result = leaf(

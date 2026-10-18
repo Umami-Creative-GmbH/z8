@@ -3,7 +3,8 @@
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useLocale } from "next-intl";
-import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useState, useTransition } from "react";
+import { ArrivalNotice, focusArrivalTarget } from "@/components/time-tracking/arrival-focus";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -246,9 +247,11 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 	useEffect(() => {
 		if (!focusedItemId || revealedFocus !== focusRequest) return;
 		const target = document.getElementById(myRequestFocusTargetId(focusedItemId));
-		target?.scrollIntoView?.({ block: "center" });
-		target?.focus({ preventScroll: true });
+		if (target) focusArrivalTarget(target);
 	}, [focusedItemId, focusRequest, revealedFocus]);
+	// The notice is for an arrival only: a focused request the employee then cancels (or that is
+	// decided) while they stay here leaves no notice and takes no focus.
+	const arrivedUnavailable = focused.requested && !focusedItem && revealedFocus !== focusRequest;
 
 	const filteredItems = initialResult.items.filter((item) => {
 		const matchesStatus = statusFilter === "all" || item.status === statusFilter;
@@ -272,7 +275,7 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 				</p>
 			</header>
 
-			{focused.requested && !focusedItem ? (
+			{arrivedUnavailable ? (
 				<section className="px-4 lg:px-6">
 					<FocusedRequestUnavailable key={focusRequest} />
 				</section>
@@ -725,25 +728,18 @@ function RequestAction({
 function FocusedRequestUnavailable() {
 	const { t } = useTranslate();
 	const invalidateReadiness = useInvalidatePeriodSubmissionReadiness();
-	const noticeRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		noticeRef.current?.focus();
 		void invalidateReadiness();
 	}, [invalidateReadiness]);
 
 	return (
-		<div
-			ref={noticeRef}
-			role="status"
-			tabIndex={-1}
-			className="rounded-lg border border-dashed p-4 text-sm outline-none focus:ring-2 focus:ring-ring"
-		>
+		<ArrivalNotice>
 			{t(
 				"myRequests:myRequests.focus.unavailable",
 				"This request is no longer pending, or it can't be shown here. Period readiness is being checked again.",
 			)}
-		</div>
+		</ArrivalNotice>
 	);
 }
 

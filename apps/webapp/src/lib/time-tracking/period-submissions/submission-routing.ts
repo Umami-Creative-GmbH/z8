@@ -1,3 +1,7 @@
+import {
+	CANONICAL_ONLY_MODE_UNAVAILABLE,
+	readApprovalWriteGateOpenSnapshot,
+} from "@/lib/approvals/authority";
 import { periodSubmissionRoutingContext } from "@/lib/approvals/domain-adapters/period-submission.adapter";
 import {
 	PERIOD_SUBMISSION_SOURCE_TYPE,
@@ -57,6 +61,46 @@ export function isNoApproverStartError(error: unknown): boolean {
 	);
 }
 
+/**
+ * Whether the stage resolver itself failed (a thrown error, such as a lost connection), rather
+ * than finding nobody: submitting still refuses that as no approver, but readiness cannot say so.
+ */
+function isResolverFailure(error: unknown): boolean {
+	return (
+		error instanceof ApprovalWorkflowStartError &&
+		error.code === "ACTIVATION_FAILED" &&
+		error.details.activationCode === "resolver_failure"
+	);
+}
+
+/**
+ * Whether a workflow start was refused by the approval write gate: the gate gave the kind no
+ * canonical authority (`WRITE_GATE_REJECTED`), or, for a canonical-only kind such as period
+ * submissions, found its stored rollout outside `complete` mode.
+ */
+export function isWriteGateRefusal(error: unknown): boolean {
+	return (
+		(error instanceof ApprovalWorkflowStartError && error.code === "WRITE_GATE_REJECTED") ||
+		(error instanceof Error && error.message === CANONICAL_ONLY_MODE_UNAVAILABLE)
+	);
+}
+
+/**
+ * Whether the approval write gate would let a period submission start now, read as a snapshot:
+ * no lock, no rollout row inserted. It answers as the gated read does (a missing row is the kind's
+ * initial `complete` mode; a canonical-only kind passes only in `complete` mode). Advisory:
+ * submitting acquires the gate itself.
+ */
+export function isPeriodSubmissionWriteGateOpen(
+	database: PeriodSubmissionDatabase,
+	organizationId: string,
+): Promise<boolean> {
+	return readApprovalWriteGateOpenSnapshot(database as never, {
+		organizationId,
+		workflowType: PERIOD_SUBMISSION_WORKFLOW_TYPE,
+	});
+}
+
 /** Stands in for the submission row a real start binds; nothing is written under it. */
 const READINESS_SOURCE_ID = "00000000-0000-4000-8000-000000000000";
 
@@ -101,6 +145,8 @@ export async function canRoutePeriodSubmission(
 		}
 		return true;
 	} catch (error) {
+		// A resolver that failed has not found nobody: the read fails instead (#1302 review).
+		if (isResolverFailure(error)) throw error;
 		if (isNoApproverStartError(error)) return false;
 		throw error;
 	}

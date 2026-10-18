@@ -195,12 +195,24 @@ function cloneJson(value: unknown, ancestors = new Set<object>()): unknown {
 	}
 }
 
-function validateInput(input: StartApprovalWorkflowInput): void {
+type PlanningInput = Pick<
+	StartApprovalWorkflowInput,
+	| "organizationId"
+	| "workflowType"
+	| "sourceIdentity"
+	| "requesterEmployeeId"
+	| "submissionKey"
+	| "defaultApproverEmployeeId"
+	| "routingContext"
+	| "contextSnapshot"
+>;
+
+/** Whether the fields a start is planned from have their shapes; identities are checked next. */
+function hasPlanningShape(input: PlanningInput): boolean {
 	const source = input.sourceIdentity;
 	const routing = input.routingContext;
 	const routingSource = routing?.source;
-	const display = input.displayProjection;
-	if (
+	return !(
 		!isRecord(input) ||
 		!nonEmpty(input.organizationId) ||
 		!WORKFLOW_TYPES.has(input.workflowType) ||
@@ -247,16 +259,15 @@ function validateInput(input: StartApprovalWorkflowInput): void {
 		(routing.overtimeRisk !== null &&
 			routing.overtimeRisk !== "none" &&
 			routing.overtimeRisk !== "warning" &&
-			routing.overtimeRisk !== "violation") ||
-		!isRecord(display) ||
-		!exactKeys(display, ["displayPayload", "searchText"]) ||
-		!isRecord(display.displayPayload) ||
-		typeof display.searchText !== "string" ||
-		typeof input.bindSourceWorkflow !== "function" ||
-		typeof input.verifySourceWorkflow !== "function"
-	) {
-		fail("INVALID_INPUT");
-	}
+			routing.overtimeRisk !== "violation")
+	);
+}
+
+/** The planning fields' identities agree, and their JSON is plain. */
+function validatePlanningIdentity(input: PlanningInput): void {
+	const source = input.sourceIdentity;
+	const routing = input.routingContext;
+	const routingSource = routing.source;
 	if (
 		source.organizationId !== input.organizationId ||
 		source.workflowType !== input.workflowType ||
@@ -275,6 +286,28 @@ function validateInput(input: StartApprovalWorkflowInput): void {
 		}
 		cloneJson(input.contextSnapshot);
 	}
+}
+
+/** The input a start is planned from, validated as a start validates it. */
+function validatePlanningInput(input: PlanningInput): void {
+	if (!hasPlanningShape(input)) fail("INVALID_INPUT");
+	validatePlanningIdentity(input);
+}
+
+function validateInput(input: StartApprovalWorkflowInput): void {
+	const display = input.displayProjection;
+	if (
+		!hasPlanningShape(input) ||
+		!isRecord(display) ||
+		!exactKeys(display, ["displayPayload", "searchText"]) ||
+		!isRecord(display.displayPayload) ||
+		typeof display.searchText !== "string" ||
+		typeof input.bindSourceWorkflow !== "function" ||
+		typeof input.verifySourceWorkflow !== "function"
+	) {
+		fail("INVALID_INPUT");
+	}
+	validatePlanningIdentity(input);
 	cloneJson(display.displayPayload);
 	const actor = input.actor;
 	if (
@@ -843,20 +876,22 @@ export async function startApprovalWorkflow(
 	};
 }
 
-export interface PlanApprovalWorkflowStartInput {
+export type PlanApprovalWorkflowStartInput = Pick<
+	StartApprovalWorkflowInput,
+	| "organizationId"
+	| "workflowType"
+	| "sourceIdentity"
+	| "requesterEmployeeId"
+	| "submissionKey"
+	| "defaultApproverEmployeeId"
+	| "routingContext"
+> & {
 	context: Pick<ApprovalWorkflowTransactionContext, "dbService" | "activationResolver">;
-	organizationId: string;
-	workflowType: ApprovalWorkflowType;
-	sourceIdentity: ApprovalSourceIdentity;
-	requesterEmployeeId: string;
-	submissionKey: string;
-	defaultApproverEmployeeId: string | null;
-	routingContext: ApprovalRoutingContext;
 	/** The normalized context and display snapshots the workflow is planned with. */
 	contextSnapshot: JsonObject;
 	displaySnapshot: JsonObject;
 	now: Instant;
-}
+};
 
 /**
  * Plans a new workflow's start without persisting anything: reads the organization's active
@@ -868,6 +903,8 @@ export interface PlanApprovalWorkflowStartInput {
 export async function planApprovalWorkflowStart(
 	input: PlanApprovalWorkflowStartInput,
 ): Promise<{ snapshot: ApprovalWorkflowSnapshot; events: ApprovalWorkflowEventSnapshot[] }> {
+	// A read-only caller plans without a start's own validation in front of it.
+	validatePlanningInput(input);
 	const policyResult = await input.context.dbService.db.execute(sql`
 		select coalesce(json_agg(policy_row.value order by policy_row.priority, policy_row.id), '[]'::json) as policies
 		from (
@@ -977,7 +1014,6 @@ export async function planApprovalWorkflowStart(
 		sourceId: input.sourceIdentity.sourceId,
 		allocationKey: input.submissionKey,
 	});
-	const now = input.now;
 	let snapshot: ApprovalWorkflowSnapshot = {
 		id: workflowId,
 		organizationId: input.organizationId,
@@ -996,7 +1032,7 @@ export async function planApprovalWorkflowStart(
 				},
 		contextSnapshot: cloneJson(input.contextSnapshot) as JsonObject,
 		displaySnapshot: cloneJson(input.displaySnapshot) as JsonObject,
-		submittedAt: now,
+		submittedAt: input.now,
 		completedAt: null,
 		cancelledAt: null,
 		decisionReason: null,
@@ -1061,7 +1097,7 @@ export async function planApprovalWorkflowStart(
 		}
 		let plan: ApprovalTransitionPlan;
 		try {
-			plan = planStageActivation(snapshot, resolved, now);
+			plan = planStageActivation(snapshot, resolved, input.now);
 		} catch {
 			return fail("ACTIVATION_FAILED", {
 				activationCode: "invalid_activation_plan",

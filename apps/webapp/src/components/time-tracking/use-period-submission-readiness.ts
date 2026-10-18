@@ -10,11 +10,6 @@ import type {
 	PeriodSubmissionReadiness,
 } from "@/lib/time-tracking/period-submissions/submission-readiness";
 
-export {
-	invalidatePeriodSubmissionReadiness,
-	useInvalidatePeriodSubmissionReadiness,
-} from "@/lib/query/period-submission-readiness";
-
 /** The organization and employee the period card was rendered for. */
 export interface PeriodReadinessScope {
 	organizationId: string;
@@ -95,8 +90,8 @@ export function usePeriodReadinessRecheck(): { rechecking: boolean; recheck: () 
 export type PeriodReadinessState =
 	| { kind: "checking" }
 	| { kind: "unavailable" }
-	/** `refreshing`: a newer check is running; the result shown is the last successful one. */
-	| { kind: "assessed"; readiness: PeriodSubmissionReadiness; refreshing: boolean };
+	/** The last successful result, also while a newer check runs. */
+	| { kind: "assessed"; readiness: PeriodSubmissionReadiness };
 
 /**
  * The readiness state of the period starting on `startDate` from the query's state.
@@ -119,5 +114,5 @@ export function periodReadinessState(
 	if (query.data === undefined) return { kind: "checking" };
 	const row = query.data?.periods.find((period) => period.startDate === startDate);
 	if (!row) return query.isFetching ? { kind: "checking" } : { kind: "unavailable" };
-	return { kind: "assessed", readiness: row.readiness, refreshing: query.isFetching };
+	return { kind: "assessed", readiness: row.readiness };
 }

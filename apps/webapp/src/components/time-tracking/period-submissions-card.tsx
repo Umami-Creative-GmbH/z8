@@ -12,7 +12,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { startTransition, useId, useRef, useState } from "react";
+import { startTransition, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	submitPeriod,
@@ -41,7 +41,9 @@ import {
 	type PeriodSubmissionViewStatus,
 } from "@/lib/time-tracking/period-submissions/submission-status";
 import { Link, useRouter } from "@/navigation";
+import { announcePeriodBlockerArrival } from "./period-blocker-focus";
 import {
+	type PeriodReadinessScope,
 	type PeriodReadinessState,
 	periodReadinessState,
 	usePeriodReadinessRecheck,
@@ -50,11 +52,9 @@ import {
 
 const CHECKING: PeriodReadinessState = { kind: "checking" };
 
-interface Props {
+interface Props extends PeriodReadinessScope {
 	/** The rows the page was rendered with; shown until the first readiness read answers. */
 	periods: EmployeePeriodViewRow[];
-	organizationId: string;
-	employeeId: string;
 }
 
 const STATUS_VARIANTS: Record<
@@ -67,9 +67,6 @@ const STATUS_VARIANTS: Record<
 	rejected: "destructive",
 	sent_back_after_change: "destructive",
 };
-
-/** The stable React key and DOM id part of a blocker: its kind and source identity. */
-export { periodSubmissionBlockerKey };
 
 /**
  * The employee's period view (#1059): their recent submission periods with each one's status.
@@ -96,6 +93,13 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 	} | null>(null);
 	const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
 	const inFlight = useRef(false);
+	// Row summaries and statuses are announced only when a later check changes them: the first
+	// result fills every row at once and is not read out (#1302 review).
+	const [announcing, setAnnouncing] = useState(false);
+	useEffect(() => {
+		if (readinessQuery.isSuccess) setAnnouncing(true);
+	}, [readinessQuery.isSuccess]);
+	const liveRegion = announcing ? "polite" : "off";
 
 	// The rows of the latest successful read (statuses included), else the rendered ones.
 	const rows: EmployeePeriodViewRow[] =
@@ -158,7 +162,8 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 	 * What the employee can do about a blocker, or that an approver decides, and the label of the
 	 * link to where that happens. The actions named are the ones those views offer today: cancelling
 	 * a pending correction or absence in My Requests, clocking out at the clock. Manual work (and a
-	 * pending policy clock-out) has no request view and no withdrawal, so only an approver acts.
+	 * pending policy clock-out) has no request view and no withdrawal, so only an approver acts; so
+	 * too for a correction My Requests cannot show.
 	 */
 	const blockerNextAction = (blocker: PeriodSubmissionBlocker) => {
 		switch (blocker.kind) {
@@ -171,6 +176,15 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 					link: t("timeTracking.periodSubmissions.blocker.openClock", "Go to the clock"),
 				};
 			case "time_correction":
+				if (!blocker.listedInMyRequests) {
+					return {
+						explanation: t(
+							"timeTracking.periodSubmissions.blocker.timeCorrectionWaitAction",
+							"An approver decides this correction. You can only wait for their decision.",
+						),
+						link: t("timeTracking.periodSubmissions.blocker.openTimeline", "Show on timeline"),
+					};
+				}
 				return {
 					explanation: t(
 						"timeTracking.periodSubmissions.blocker.timeCorrectionAction",
@@ -215,6 +229,11 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 				return t(
 					"timeTracking.periodSubmissions.refusal.noApprover",
 					"No one can approve this period yet. Ask an administrator to assign you a manager.",
+				);
+			case "write_gate_closed":
+				return t(
+					"timeTracking.periodSubmissions.refusal.writeGateClosed",
+					"Period submissions are paused in your organization right now. Try again later, or ask an administrator.",
 				);
 			case "not_expected":
 			case "not_employee":
@@ -281,12 +300,12 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 					return;
 				}
 				if (result.data.kind === "refused") {
-					// Submitting repeats every check: explain, show what blocks, and check again.
+					// Submitting repeats every check: explain (the row's alert says it, so no toast
+					// repeats it), show what blocks, and check again.
 					setRefusal({ startDate, reason: result.data.reason });
 					if (result.data.reason === "period_open") {
 						setExpanded((current) => new Set(current).add(startDate));
 					}
-					toast.error(refusalMessage(result.data.reason));
 					return;
 				}
 				toast.success(
@@ -339,13 +358,16 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 			});
 	}
 
-	function summary(state: PeriodReadinessState, status: PeriodSubmissionViewStatus) {
+	function readinessSummary(state: PeriodReadinessState, status: PeriodSubmissionViewStatus) {
 		if (state.kind !== "assessed" || !isPeriodSubmittable(status)) return null;
 		const { readiness } = state;
 		if (readiness.ready) {
 			return (
 				<span className="flex items-center gap-1.5 text-sm">
-					<IconCircleCheck className="size-4 text-emerald-600" aria-hidden="true" />
+					<IconCircleCheck
+						className="size-4 text-emerald-600 dark:text-emerald-400"
+						aria-hidden="true"
+					/>
 					{t("timeTracking.periodSubmissions.readiness.ready", "Ready to submit")}
 				</span>
 			);
@@ -463,7 +485,7 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 											})}
 										</span>
 									) : null}
-									<div aria-live="polite">{summary(state, period.status)}</div>
+									<div aria-live={liveRegion}>{readinessSummary(state, period.status)}</div>
 									{refusal?.startDate === period.startDate &&
 									!(state.kind === "assessed" && state.readiness.ready) ? (
 										<p role="alert" className="text-sm text-destructive">
@@ -511,6 +533,8 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 															<span className="text-muted-foreground">{next.explanation}</span>{" "}
 															<Link
 																href={periodBlockerHref(blocker, period)}
+																// The page it opens may be this one, at the same URL.
+																onClick={() => announcePeriodBlockerArrival(key)}
 																aria-describedby={sourceId}
 																className="font-medium underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 															>
@@ -526,7 +550,7 @@ export function PeriodSubmissionsCard({ periods, organizationId, employeeId }: P
 								<div className="flex flex-col items-start gap-1 sm:items-end">
 									<div className="flex items-center gap-3">
 										{/* A status another person changed is announced once, when it changes. */}
-										<span aria-live="polite">
+										<span aria-live={liveRegion}>
 											<Badge variant={STATUS_VARIANTS[period.status]}>
 												{statusLabel(period.status)}
 											</Badge>

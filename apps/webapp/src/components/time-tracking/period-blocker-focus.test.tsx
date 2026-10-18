@@ -1,11 +1,15 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { queryKeys } from "@/lib/query/keys";
+import {
+	CLOCK_REGION_ID,
+	TIMELINE_REGION_ID,
+} from "@/lib/time-tracking/period-submissions/blocker-navigation";
 import type { PeriodSubmissionBlocker } from "@/lib/time-tracking/period-submissions/submission-blockers";
-import { PeriodBlockerFocus } from "./period-blocker-focus";
+import { announcePeriodBlockerArrival, PeriodBlockerFocus } from "./period-blocker-focus";
 
 const state = vi.hoisted(() => ({ readPeriodReadiness: vi.fn() }));
 
@@ -30,6 +34,14 @@ const LIVE: PeriodSubmissionBlocker = {
 	workPeriodId: "w-2",
 	startTime: "2026-03-04T08:00:00.000Z",
 	endTime: null,
+	timezone: "Europe/Berlin",
+};
+const UNLISTED_CORRECTION: PeriodSubmissionBlocker = {
+	kind: "time_correction",
+	listedInMyRequests: false,
+	workPeriodId: "w-3",
+	startTime: "2026-03-05T08:00:00.000Z",
+	endTime: "2026-03-05T12:00:00.000Z",
 	timezone: "Europe/Berlin",
 };
 
@@ -60,27 +72,55 @@ function readinessWith(...blockers: PeriodSubmissionBlocker[]) {
 	};
 }
 
-/** The page around the focus: the destinations' targets as the regions render them. */
-function Page({ focus, targets }: { focus: string | undefined; targets: string[] }) {
+/**
+ * The page around the focus: the destinations' targets as the regions render them, once the
+ * regions have streamed in (`streamed`).
+ */
+function Page({
+	focus,
+	targets,
+	streamed = true,
+}: {
+	focus: string | undefined;
+	targets: string[];
+	streamed?: boolean;
+}) {
 	return (
 		<>
 			<PeriodBlockerFocus {...SCOPE} focus={focus} waitForTargetMs={50} />
-			{targets.map((id) => (
-				<div key={id} id={id} tabIndex={-1}>
-					{id}
-				</div>
-			))}
+			{streamed ? (
+				<>
+					<div id={CLOCK_REGION_ID}>
+						{targets
+							.filter((id) => id === "time-clock")
+							.map((id) => (
+								<div key={id} id={id} tabIndex={-1}>
+									{id}
+								</div>
+							))}
+					</div>
+					<div id={TIMELINE_REGION_ID}>
+						{targets
+							.filter((id) => id !== "time-clock")
+							.map((id) => (
+								<div key={id} id={id} tabIndex={-1}>
+									{id}
+								</div>
+							))}
+					</div>
+				</>
+			) : null}
 		</>
 	);
 }
 
 function renderPage(focus: string | undefined, targets: string[], client = new QueryClient()) {
-	render(
+	const view = render(
 		<QueryClientProvider client={client}>
 			<Page focus={focus} targets={targets} />
 		</QueryClientProvider>,
 	);
-	return client;
+	return { client, view };
 }
 
 describe("PeriodBlockerFocus", () => {
@@ -162,8 +202,66 @@ describe("PeriodBlockerFocus", () => {
 		);
 	});
 
+	it("focuses the corrected work of a correction My Requests cannot show", async () => {
+		state.readPeriodReadiness.mockResolvedValue(readinessWith(UNLISTED_CORRECTION));
+		renderPage("time_correction:w-3", ["work-period-w-3"]);
+
+		await waitFor(() =>
+			expect(document.activeElement).toBe(document.getElementById("work-period-w-3")),
+		);
+	});
+
+	it("waits for the timeline to stream in before saying the work can't be shown", async () => {
+		state.readPeriodReadiness.mockResolvedValue(readinessWith(MANUAL));
+		const client = new QueryClient();
+		const tree = (streamed: boolean) => (
+			<QueryClientProvider client={client}>
+				<Page focus="manual_work:w-1" targets={["work-period-w-1"]} streamed={streamed} />
+			</QueryClientProvider>
+		);
+		const view = render(tree(false));
+		await waitFor(() => expect(state.readPeriodReadiness).toHaveBeenCalled());
+		// Well past the wait for the target: the region itself has not rendered yet.
+		await new Promise((resolve) => setTimeout(resolve, 150));
+		expect(screen.queryByRole("status")).toBeNull();
+
+		view.rerender(tree(true));
+		await waitFor(() =>
+			expect(document.activeElement).toBe(document.getElementById("work-period-w-1")),
+		);
+		expect(screen.queryByRole("status")).toBeNull();
+	});
+
+	it("checks readiness and moves focus again when the same blocker link is followed again", async () => {
+		state.readPeriodReadiness.mockResolvedValue(readinessWith(MANUAL));
+		renderPage("manual_work:w-1", ["work-period-w-1"]);
+		const target = document.getElementById("work-period-w-1") as HTMLElement;
+		await waitFor(() => expect(document.activeElement).toBe(target));
+		target.blur();
+		expect(state.readPeriodReadiness).toHaveBeenCalledTimes(1);
+
+		// The link points at the page already shown: the URL does not change.
+		act(() => announcePeriodBlockerArrival("manual_work:w-1"));
+
+		await waitFor(() => expect(state.readPeriodReadiness).toHaveBeenCalledTimes(2));
+		await waitFor(() => expect(document.activeElement).toBe(target));
+	});
+
+	it("ignores a followed link for other work", async () => {
+		state.readPeriodReadiness.mockResolvedValue(readinessWith(MANUAL));
+		renderPage("manual_work:w-1", ["work-period-w-1"]);
+		await waitFor(() =>
+			expect(document.activeElement).toBe(document.getElementById("work-period-w-1")),
+		);
+
+		act(() => announcePeriodBlockerArrival("live_work:w-2"));
+
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(state.readPeriodReadiness).toHaveBeenCalledTimes(1);
+	});
+
 	it("does nothing without a valid focus", () => {
-		renderPage("time_correction:w-1", ["work-period-w-1"]);
+		renderPage("absence:a-1", ["work-period-w-1"]);
 		renderPage(undefined, []);
 		expect(state.readPeriodReadiness).not.toHaveBeenCalled();
 		expect(screen.queryByRole("status")).toBeNull();

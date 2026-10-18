@@ -170,41 +170,20 @@ async function loadTimeCorrections(
 			offset,
 		})) as TimeCorrectionRow[];
 		if (rows.length === 0) break;
-		const verifiedCorrectionEvidenceByPeriod =
-			await loadVerifiedCorrectionEvidenceByPeriod(input, rows);
+		const verifiedCorrectionEvidenceByPeriod = await loadVerifiedCorrectionEvidenceByPeriod(
+			db,
+			input,
+			rows,
+		);
 
 		for (const row of rows) {
-			const evidence = verifiedCorrectionEvidenceByPeriod.get(row.entityId);
-			if (
-				classifyTimeApprovalRequest({
-					metadata: row.metadata,
-					reason: row.reason,
-					verifiedRelationalCorrectionIds: evidence?.ids ?? [],
-					verifiedRelationalCorrectionIdsByEndpoint: {
-						clockIn: evidence?.clockInIds ?? [],
-						clockOut: evidence?.clockOutIds ?? [],
-					},
-				}) !== "time_correction"
-			) {
-				continue;
-			}
-			let metadata: ReturnType<typeof parseLegacyTimeCorrectionMetadata>;
-			try {
-				metadata = parseLegacyTimeCorrectionMetadata(row);
-				if (metadata.workflowId) legacyWorkflowIds.add(metadata.workflowId);
-			} catch {
-				continue;
-			}
-			const status: SelfServiceRequestStatus =
-				metadata.cancellationState === "requester"
-					? "cancelled"
-					: metadata.cancellationState === "invalid"
-						? "rejected"
-						: row.status;
-			const availableActions: SelfServiceRequestAction[] =
-				metadata.cancellationState === "invalid"
-					? ["view"]
-					: actionsFor(status, "time_correction");
+			const listing = listLegacyTimeCorrection(
+				row,
+				verifiedCorrectionEvidenceByPeriod.get(row.entityId),
+			);
+			if (!listing) continue;
+			if (listing.workflowId) legacyWorkflowIds.add(listing.workflowId);
+			const { status, availableActions } = listing;
 			legacyItems.push({
 				id: row.id,
 				sourceType: "time_correction",
@@ -254,6 +233,106 @@ async function loadTimeCorrections(
 	];
 }
 
+/**
+ * The work periods, among `workPeriodIds`, with a pending time correction that My Requests lists
+ * as pending, where the employee can cancel it. Classified exactly as `getSelfServiceRequests`
+ * classifies corrections, so a request it drops (unclassifiable or malformed legacy data, raised
+ * by someone else, or a canonical one it cannot show) is not listed. Its newest-requests limit is
+ * not applied. Period submission readiness uses it so a blocker promises My Requests only where
+ * the request can be found (#1302).
+ */
+export async function findTimeCorrectionsListedInMyRequests(
+	database: SelfServiceDatabase,
+	input: { organizationId: string; employeeId: string; workPeriodIds: readonly string[] },
+): Promise<Set<string>> {
+	const listed = new Set<string>();
+	if (input.workPeriodIds.length === 0) return listed;
+	const workPeriodIds = [...input.workPeriodIds];
+	const rollout = await readApprovalAuthoritySnapshot(database, {
+		organizationId: input.organizationId,
+		workflowType: "time_correction",
+	});
+	const rows = (await database.query.approvalRequest.findMany({
+		where: and(
+			eq(approvalRequest.organizationId, input.organizationId),
+			eq(approvalRequest.requestedBy, input.employeeId),
+			eq(approvalRequest.entityType, "time_entry"),
+			inArray(approvalRequest.entityId, workPeriodIds),
+		),
+	})) as TimeCorrectionRow[];
+	const evidenceByPeriod = await loadVerifiedCorrectionEvidenceByPeriod(database, input, rows);
+	const legacyWorkflowIds = new Set<string>();
+	for (const row of rows) {
+		const listing = listLegacyTimeCorrection(row, evidenceByPeriod.get(row.entityId));
+		if (!listing) continue;
+		if (listing.workflowId) legacyWorkflowIds.add(listing.workflowId);
+		if (listing.status === "pending") listed.add(row.entityId);
+	}
+	if (rollout.authority === "legacy" || rollout.compatibilityWriting) {
+		return listed;
+	}
+	const canonicalRows = (await database.query.approvalWorkflow.findMany({
+		where: and(
+			eq(approvalWorkflow.organizationId, input.organizationId),
+			eq(approvalWorkflow.requesterEmployeeId, input.employeeId),
+			eq(approvalWorkflow.workflowType, "time_correction"),
+			eq(approvalWorkflow.sourceType, "time_entry"),
+			eq(approvalWorkflow.status, "pending"),
+			inArray(approvalWorkflow.sourceId, workPeriodIds),
+		),
+	})) as CanonicalTimeCorrectionRow[];
+	for (const row of canonicalRows) {
+		if (legacyWorkflowIds.has(row.id)) continue;
+		const [item] = mapCanonicalTimeCorrection(row, input);
+		if (item?.status === "pending") listed.add(row.sourceId);
+	}
+	return listed;
+}
+
+type SelfServiceDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * How My Requests lists one legacy correction request: its status and actions, and the canonical
+ * workflow it mirrors. Null when My Requests drops it (not a correction, or malformed).
+ */
+function listLegacyTimeCorrection(
+	row: TimeCorrectionRow,
+	evidence: VerifiedCorrectionEvidence | undefined,
+): {
+	workflowId: string | null;
+	status: SelfServiceRequestStatus;
+	availableActions: SelfServiceRequestAction[];
+} | null {
+	if (
+		classifyTimeApprovalRequest({
+			metadata: row.metadata,
+			reason: row.reason,
+			verifiedRelationalCorrectionIds: evidence?.ids ?? [],
+			verifiedRelationalCorrectionIdsByEndpoint: {
+				clockIn: evidence?.clockInIds ?? [],
+				clockOut: evidence?.clockOutIds ?? [],
+			},
+		}) !== "time_correction"
+	) {
+		return null;
+	}
+	let metadata: ReturnType<typeof parseLegacyTimeCorrectionMetadata>;
+	try {
+		metadata = parseLegacyTimeCorrectionMetadata(row);
+	} catch {
+		return null;
+	}
+	const status: SelfServiceRequestStatus =
+		metadata.cancellationState === "requester"
+			? "cancelled"
+			: metadata.cancellationState === "invalid"
+				? "rejected"
+				: row.status;
+	const availableActions: SelfServiceRequestAction[] =
+		metadata.cancellationState === "invalid" ? ["view"] : actionsFor(status, "time_correction");
+	return { workflowId: metadata.workflowId, status, availableActions };
+}
+
 interface VerifiedCorrectionEvidence {
 	ids: string[];
 	clockInIds: string[];
@@ -261,11 +340,12 @@ interface VerifiedCorrectionEvidence {
 }
 
 async function loadVerifiedCorrectionEvidenceByPeriod(
-	input: GetSelfServiceRequestsInput,
+	database: SelfServiceDatabase,
+	input: { organizationId: string; employeeId: string },
 	rows: TimeCorrectionRow[],
 ): Promise<Map<string, VerifiedCorrectionEvidence>> {
 	if (rows.length === 0) return new Map();
-	const periods = await db.query.workPeriod.findMany({
+	const periods = await database.query.workPeriod.findMany({
 		where: and(
 			eq(workPeriod.organizationId, input.organizationId),
 			eq(workPeriod.employeeId, input.employeeId),
@@ -294,7 +374,7 @@ async function loadVerifiedCorrectionEvidenceByPeriod(
 	}
 	const endpointIds = [...endpointToPeriod.keys()];
 	if (endpointIds.length === 0) return new Map();
-	const corrections = await db.query.timeEntry.findMany({
+	const corrections = await database.query.timeEntry.findMany({
 		where: and(
 			eq(timeEntry.organizationId, input.organizationId),
 			eq(timeEntry.employeeId, input.employeeId),

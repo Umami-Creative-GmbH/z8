@@ -12,7 +12,11 @@ import { PeriodSubmissionsCard } from "@/components/time-tracking/period-submiss
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
-import { CLOCK_FOCUS_TARGET_ID } from "@/lib/time-tracking/period-submissions/blocker-navigation";
+import {
+	CLOCK_FOCUS_TARGET_ID,
+	CLOCK_REGION_ID,
+	TIMELINE_REGION_ID,
+} from "@/lib/time-tracking/period-submissions/blocker-navigation";
 import { getTranslate } from "@/tolgee/server";
 import type { TimeTrackingPageSearchParams } from "./page-data";
 import { readActiveWorkPeriod } from "./read-queries";
@@ -57,7 +61,8 @@ export async function ClockRegion({
 		unstable_rethrow(error);
 		const t = await getTranslate();
 		return (
-			<div className="px-4 lg:px-6">
+			// Rendered, if without the clock: a live-work focus stops waiting for it (#1302).
+			<div id={CLOCK_REGION_ID} className="px-4 lg:px-6">
 				<RegionLoadError label={t("timeTracking.title", "Time Tracking")} />
 			</div>
 		);
@@ -128,7 +133,7 @@ export async function TimelineRegion({
 		unstable_rethrow(error);
 		const t = await getTranslate();
 		return (
-			<div className="px-4 lg:px-6">
+			<div id={TIMELINE_REGION_ID} className="px-4 lg:px-6">
 				<RegionLoadError
 					label={t("timeTracking.timeline.title", "Workday timeline")}
 				/>
@@ -136,7 +141,8 @@ export async function TimelineRegion({
 		);
 	}
 	return (
-		<div className="px-4 lg:px-6">
+		// Once rendered, a period blocker focus waits only briefly for its row (#1302).
+		<div id={TIMELINE_REGION_ID} className="px-4 lg:px-6">
 			<PersonalWorkdayTimeline
 				result={serializeWorkdayTimelineResult(result)}
 			/>

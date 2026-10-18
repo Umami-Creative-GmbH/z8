@@ -32,7 +32,7 @@ import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
 import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
-import { getTimezoneAbbreviation } from"@/lib/time-tracking/timezone-utils";
+import { getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { useRouter } from "@/navigation";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";

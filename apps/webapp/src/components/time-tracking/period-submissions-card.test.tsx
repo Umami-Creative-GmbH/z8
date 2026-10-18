@@ -24,6 +24,11 @@ const state = vi.hoisted(() => ({
 	viewRefresh: vi.fn(),
 	toastSuccess: vi.fn(),
 	toastError: vi.fn(),
+	announceArrival: vi.fn(),
+}));
+
+vi.mock("./period-blocker-focus", () => ({
+	announcePeriodBlockerArrival: state.announceArrival,
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/period-submissions", () => ({
@@ -234,6 +239,7 @@ describe("PeriodSubmissionsCard", () => {
 	it("explains each blocker's next action and links to where it is handled", async () => {
 		const correction: PeriodSubmissionBlocker = {
 			kind: "time_correction",
+			listedInMyRequests: true,
 			workPeriodId: "w2",
 			startTime: "2026-03-03T08:00:00.000Z",
 			endTime: "2026-03-03T16:00:00.000Z",
@@ -304,6 +310,119 @@ describe("PeriodSubmissionsCard", () => {
 		expect(describedBy?.textContent).toMatch(/^An absence request for .* is undecided\.$/);
 		// Nothing here acts on the source itself.
 		expect(within(absenceItem as HTMLElement).queryByRole("button")).toBeNull();
+
+		// Following a link says so, so the page it opens can focus again even at the same URL.
+		fireEvent.click(within(liveItem as HTMLElement).getByRole("link", { name: "Go to the clock" }));
+		expect(state.announceArrival).toHaveBeenCalledWith("live_work:w1");
+	});
+
+	it("never promises My Requests for a correction it cannot show", async () => {
+		const unlisted: PeriodSubmissionBlocker = {
+			kind: "time_correction",
+			listedInMyRequests: false,
+			workPeriodId: "w4",
+			startTime: "2026-03-04T08:00:00.000Z",
+			endTime: "2026-03-04T16:00:00.000Z",
+			timezone: "Europe/Berlin",
+		};
+		state.readPeriodReadiness.mockResolvedValue(
+			view(assessed(period(), { ready: false, refusals: ["period_open"], blockers: [unlisted] })),
+		);
+		renderCard([period()]);
+		fireEvent.click(await screen.findByRole("button", { name: "Show details" }));
+
+		const [item] = within(
+			document.getElementById(
+				screen.getByRole("button", { name: "Hide details" }).getAttribute("aria-controls") ?? "",
+			) as HTMLElement,
+		).getAllByRole("listitem");
+		expect(item?.textContent).toContain(
+			"An approver decides this correction. You can only wait for their decision.",
+		);
+		expect(item?.textContent).not.toMatch(/My Requests|cancel/i);
+		expect(
+			within(item as HTMLElement)
+				.getByRole("link", { name: "Show on timeline" })
+				.getAttribute("href"),
+		).toBe("/time-tracking?date=2026-03-04&focus=time_correction%3Aw4");
+	});
+
+	it("explains a period submissions cannot start for while the write gate is closed", async () => {
+		state.readPeriodReadiness.mockResolvedValue(
+			view(assessed(period(), { ready: false, refusals: ["write_gate_closed"] })),
+		);
+		renderCard([period()]);
+		expect(
+			await screen.findByText(
+				"Period submissions are paused in your organization right now. Try again later, or ask an administrator.",
+			),
+		).toBeTruthy();
+		expect(submitButton().disabled).toBe(true);
+	});
+
+	it("explains a submission the write gate refused, without a generic failure, and checks again", async () => {
+		state.readPeriodReadiness.mockResolvedValue(view(assessed(period())));
+		state.submitPeriod.mockResolvedValue({
+			success: true,
+			data: { kind: "refused", reason: "write_gate_closed" },
+		});
+		renderCard([period()]);
+		await waitFor(() => expect(submitButton().disabled).toBe(false));
+
+		state.readPeriodReadiness.mockResolvedValue(
+			view(assessed(period(), { ready: false, refusals: ["write_gate_closed"] })),
+		);
+		fireEvent.click(submitButton());
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toBe(
+			"Period submissions are paused in your organization right now. Try again later, or ask an administrator.",
+		);
+		expect(state.toastError).not.toHaveBeenCalled();
+		await waitFor(() => expect(state.readPeriodReadiness).toHaveBeenCalledTimes(2));
+		await waitFor(() => expect(submitButton().disabled).toBe(true));
+	});
+
+	it("announces no row summary for the first result, only later changes", async () => {
+		const first = deferred<ReturnType<typeof view>>();
+		state.readPeriodReadiness.mockReturnValueOnce(first.promise);
+		const client = renderCard([period()]);
+		const mutations: MutationRecord[] = [];
+		const observer = new MutationObserver((records) => mutations.push(...records));
+		observer.observe(document.body, {
+			subtree: true,
+			childList: true,
+			attributes: true,
+			attributeFilter: ["aria-live"],
+			attributeOldValue: true,
+		});
+
+		await act(async () => first.resolve(view(assessed(period()))));
+		const summary = await screen.findByText("Ready to submit");
+		const region = summary.closest("[aria-live]") as HTMLElement;
+		await waitFor(() => expect(region.getAttribute("aria-live")).toBe("polite"));
+		observer.disconnect();
+		// The first summary went in while its region was silent, and only then did it start announcing.
+		const inserted = mutations.findIndex(
+			(record) => record.type === "childList" && region.contains(record.target),
+		);
+		const enabled = mutations.findIndex(
+			(record) => record.type === "attributes" && record.target === region,
+		);
+		expect(inserted).toBeGreaterThanOrEqual(0);
+		expect(mutations[enabled]?.oldValue).toBe("off");
+		expect(enabled).toBeGreaterThan(inserted);
+
+		// A later change is announced.
+		state.readPeriodReadiness.mockResolvedValue(
+			view(assessed(period(), { ready: false, refusals: ["no_approver"] })),
+		);
+		await act(() => client.invalidateQueries());
+		expect(
+			await screen.findByText(
+				"No one can approve this period yet. Ask an administrator to assign you a manager.",
+			),
+		).toBeTruthy();
+		expect(region.getAttribute("aria-live")).toBe("polite");
 	});
 
 	it("explains a period without an approver", async () => {
@@ -396,7 +515,8 @@ describe("PeriodSubmissionsCard", () => {
 		fireEvent.click(submitButton());
 		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toContain("This period is still open");
-		expect(state.toastError).toHaveBeenCalledWith("This period is still open");
+		// The alert says it; a toast would announce it twice.
+		expect(state.toastError).not.toHaveBeenCalled();
 		expect(await screen.findByText(/An absence request for .* is undecided\./)).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Hide details" })).toBeTruthy();
 		expect(submitButton().disabled).toBe(true);

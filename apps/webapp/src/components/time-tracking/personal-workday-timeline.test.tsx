@@ -91,6 +91,7 @@ describe("PersonalWorkdayTimeline", () => {
 						{
 							id: "work-period:w-1",
 							type: "work-period",
+							workPeriodId: "w-1",
 							title: "Recorded work",
 							startLabel: "08:00",
 							endLabel: "12:00",

@@ -96,8 +96,9 @@ export async function readPeriodReadiness(input: {
 				return yield* Effect.fail(new ValidationError({ message: "Choose whose periods to read" }));
 			}
 			const { organizationId, userId } = yield* signedInOrganization;
+			// The organization or the employee changed since the page was rendered.
 			const changed = new AuthorizationError({
-				message: "This page no longer matches your active organization",
+				message: "This page no longer matches your signed-in employee or active organization",
 			});
 			if (organizationId !== parsed.data.organizationId) return yield* Effect.fail(changed);
 			const dbService = yield* DatabaseService;
