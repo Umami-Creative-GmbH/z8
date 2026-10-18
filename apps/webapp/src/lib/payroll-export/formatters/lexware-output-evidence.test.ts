@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
+import { comparePayrollOutput } from "../comparison-model";
 import type {
 	AbsenceData,
 	OvertimePayoutData,
@@ -155,5 +156,104 @@ describe("Lexware supported output evidence", () => {
 		expect(result.supportedOutputEvidence?.rows[0].renderedColumns).toEqual({
 			Wert: "0,00",
 		});
+	});
+	it("compares monthly precision and net-zero mapping/personnel changes without inventing daily rows", () => {
+		const formatter = new LexwareLohnFormatter();
+		const baseline = formatter.transform(
+			[work({ durationMinutes: 60 })],
+			[],
+			[],
+			[mapping({ workCategoryId: "work-category" })],
+			config,
+		).supportedOutputEvidence!;
+		const moved = formatter.transform(
+			[work({ durationMinutes: 60, personnelIdentifier: "NEW-9" })],
+			[],
+			[],
+			[
+				mapping({
+					workCategoryId: "work-category",
+					lexwareWageTypeCode: "290",
+				}),
+			],
+			config,
+		).supportedOutputEvidence!;
+		const diff = comparePayrollOutput(baseline, moved);
+		expect(diff.rows).toMatchObject([
+			{
+				status: "removed",
+				delta: "-1.00",
+				oldRow: {
+					date: "2026-09",
+					wageTypeCode: "190",
+					personnelNumber: "CUSTOM-7",
+				},
+			},
+			{
+				status: "added",
+				delta: "+1.00",
+				newRow: {
+					date: "2026-09",
+					wageTypeCode: "290",
+					personnelNumber: "NEW-9",
+				},
+			},
+		]);
+		expect(diff.employees).toMatchObject([
+			{
+				employeeId: "employee-1",
+				status: "changed",
+				oldPersonnelNumbers: ["CUSTOM-7"],
+				newPersonnelNumbers: ["NEW-9"],
+			},
+		]);
+		const subprecision = formatter.transform(
+			[work({ durationMinutes: 60.01 })],
+			[],
+			[],
+			[mapping({ workCategoryId: "work-category" })],
+			config,
+		).supportedOutputEvidence!;
+		expect(comparePayrollOutput(baseline, subprecision)).toMatchObject({
+			hasPayrollImpact: false,
+			sourceOnlyChanges: [{ outputImpact: "none" }],
+		});
+	});
+	it("splits cross-month absences while preserving eight hours per calendar day", () => {
+		const output = new LexwareLohnFormatter().transform(
+			[],
+			[{ ...absence, startDate: "2026-09-30", endDate: "2026-10-01" }],
+			[],
+			[mapping({ absenceCategoryId: "absence-category" })],
+			config,
+		);
+		expect(String(output.content).split("\r\n").slice(1)).toEqual([
+			"2026;09;CUSTOM-7;190;8,00;8,00;",
+			"2026;10;CUSTOM-7;190;8,00;8,00;",
+		]);
+		expect(output.supportedOutputEvidence?.rows).toMatchObject([
+			{ date: "2026-09", quantity: "8.00" },
+			{ date: "2026-10", quantity: "8.00" },
+		]);
+	});
+
+	it("attributes multiple absence days in a shared month once to their stable source", () => {
+		const result = new LexwareLohnFormatter().transform(
+			[],
+			[{ ...absence, endDate: "2026-09-16" }],
+			[],
+			[mapping({ absenceCategoryId: "absence-category" })],
+			config,
+		);
+		expect(result.supportedOutputEvidence?.rows).toMatchObject([
+			{
+				date: "2026-09",
+				quantity: "16.00",
+				contributions: [{ sourceId: "absence-1", hours: 16 }],
+			},
+		]);
+		expect(result.supportedOutputEvidence?.rows[0].contributions).toHaveLength(
+			1,
+		);
 	});
 });

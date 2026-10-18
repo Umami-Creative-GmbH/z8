@@ -1,9 +1,19 @@
 // @vitest-environment jsdom
 
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { payrollBlockerIdentity } from "@/lib/payroll-workspace/blocker-identity";
-import type { PayrollBlockerType, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
+import type {
+	PayrollBlockerType,
+	PayrollWorkspaceSummary,
+} from "@/lib/payroll-workspace/types";
 import { PayrollWorkspace } from "./payroll-workspace";
 
 const actionMocks = vi.hoisted(() => ({
@@ -20,11 +30,16 @@ let activeLocale = "en";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (key: string, fallback: string, params?: Record<string, string | number>) => {
+		t: (
+			key: string,
+			fallback: string,
+			params?: Record<string, string | number>,
+		) => {
 			const template = translateOverrides[key] ?? fallback;
 
 			return Object.entries(params ?? {}).reduce(
-				(message, [paramKey, value]) => message.replaceAll(`{${paramKey}}`, String(value)),
+				(message, [paramKey, value]) =>
+					message.replaceAll(`{${paramKey}}`, String(value)),
 				template,
 			);
 		},
@@ -61,7 +76,8 @@ vi.mock("./overtime-payout-readiness-alert", () => ({
 vi.mock("@/app/[locale]/(app)/payroll/actions", () => ({
 	dismissPayrollBlockerAction: actionMocks.dismissPayrollBlockerAction,
 	exportPayrollPdfAction: actionMocks.exportPayrollPdfAction,
-	getPayrollWorkspaceSummaryAction: actionMocks.getPayrollWorkspaceSummaryAction,
+	getPayrollWorkspaceSummaryAction:
+		actionMocks.getPayrollWorkspaceSummaryAction,
 	startScopedPayrollExportAction: actionMocks.startScopedPayrollExportAction,
 }));
 
@@ -114,7 +130,9 @@ const baseSummary: PayrollWorkspaceSummary = {
 	],
 };
 
-function buildSummary(overrides: Partial<PayrollWorkspaceSummary> = {}): PayrollWorkspaceSummary {
+function buildSummary(
+	overrides: Partial<PayrollWorkspaceSummary> = {},
+): PayrollWorkspaceSummary {
 	return {
 		...baseSummary,
 		...overrides,
@@ -130,10 +148,13 @@ function blockerSelector(type: PayrollBlockerType, id: string) {
 	return `[data-payroll-blocker-key="${payrollBlockerIdentity({ id, type })}"]`;
 }
 
-function expandPayrollBlockers(name: string | RegExp = /payroll blockers need review/) {
+function expandPayrollBlockers(
+	name: string | RegExp = /payroll blockers need review/,
+) {
 	const region = screen.getByRole("region", { name });
 	const trigger = within(region).getByRole("button", { name });
-	if (trigger.getAttribute("aria-expanded") === "false") fireEvent.click(trigger);
+	if (trigger.getAttribute("aria-expanded") === "false")
+		fireEvent.click(trigger);
 	return region;
 }
 
@@ -202,8 +223,12 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("Translated payroll")).toBeTruthy();
 		expect(screen.getByText("Translated payroll description")).toBeTruthy();
 		expect(screen.getByText("Translated selected period")).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Translated download PDF" })).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Translated trigger export" })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Translated download PDF" }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Translated trigger export" }),
+		).toBeTruthy();
 	});
 
 	it("collapses blocker rows by default", () => {
@@ -242,10 +267,14 @@ describe("PayrollWorkspace", () => {
 		expandPayrollBlockers();
 		expect(screen.getByText("Payroll")).toBeTruthy();
 		expect(
-			screen.getByText("Review payroll totals, readiness, and exports for the selected period."),
+			screen.getByText(
+				"Review payroll totals, readiness, and exports for the selected period.",
+			),
 		).toBeTruthy();
 		expect(screen.getByRole("heading", { name: "June 2026" })).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Previous period" })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Previous period" }),
+		).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Next period" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Current period" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Month" })).toBeTruthy();
@@ -258,7 +287,9 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("Worked hours")).toBeTruthy();
 		expect(screen.getByText("8.00 h")).toBeTruthy();
 		expect(screen.getByText("Ready")).toBeTruthy();
-		const readySummaryCard = screen.getByText("Ready").closest('[data-slot="card"]');
+		const readySummaryCard = screen
+			.getByText("Ready")
+			.closest('[data-slot="card"]');
 		expect(readySummaryCard).toBeTruthy();
 		expect(within(readySummaryCard as HTMLElement).getByText("1")).toBeTruthy();
 		expect(screen.getByText("Blockers")).toBeTruthy();
@@ -266,12 +297,16 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("Payroll scope")).toBeTruthy();
 		expect(screen.getByText("All employees and teams I manage")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Specific teams" })).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Specific employees" })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Specific employees" }),
+		).toBeTruthy();
 		expect(screen.queryByLabelText("Ada Lovelace")).toBeNull();
 		expect(screen.queryByLabelText("Grace Hopper")).toBeNull();
 		expect(screen.queryByLabelText("Ops")).toBeNull();
 		expect(screen.queryByLabelText("Engineering")).toBeNull();
-		expect(screen.getAllByText("Ada Lovelace").length).toBeGreaterThanOrEqual(1);
+		expect(screen.getAllByText("Ada Lovelace").length).toBeGreaterThanOrEqual(
+			1,
+		);
 		expect(screen.getByText("Missing clock-out")).toBeTruthy();
 		expect(screen.getByText("Download PDF")).toBeTruthy();
 		expect(screen.getByText("Trigger export")).toBeTruthy();
@@ -339,11 +374,19 @@ describe("PayrollWorkspace", () => {
 			blockerSelector("missing_clock_out", "missing-ada"),
 		);
 		expect(adaMissingRow).toBeTruthy();
-		expect(adaMissingRow?.className).toContain("lg:grid-cols-[minmax(0,1fr)_auto]");
+		expect(adaMissingRow?.className).toContain(
+			"lg:grid-cols-[minmax(0,1fr)_auto]",
+		);
 		expect(adaMissingRow?.className).not.toContain("sm:grid-cols");
-		expect(within(adaMissingRow as HTMLElement).getByText("Ada Lovelace")).toBeTruthy();
-		expect(within(adaMissingRow as HTMLElement).getByText("Fehlende Ausstempelung")).toBeTruthy();
-		expect(within(adaMissingRow as HTMLElement).getByText("03.06.2026, 09:00")).toBeTruthy();
+		expect(
+			within(adaMissingRow as HTMLElement).getByText("Ada Lovelace"),
+		).toBeTruthy();
+		expect(
+			within(adaMissingRow as HTMLElement).getByText("Fehlende Ausstempelung"),
+		).toBeTruthy();
+		expect(
+			within(adaMissingRow as HTMLElement).getByText("03.06.2026, 09:00"),
+		).toBeTruthy();
 		expect(
 			within(adaMissingRow as HTMLElement)
 				.getByRole("link", {
@@ -356,9 +399,17 @@ describe("PayrollWorkspace", () => {
 			blockerSelector("missing_clock_out", "missing-grace"),
 		);
 		expect(graceMissingRow).toBeTruthy();
-		expect(within(graceMissingRow as HTMLElement).getByText("Grace Hopper")).toBeTruthy();
-		expect(within(graceMissingRow as HTMLElement).getByText("Fehlende Ausstempelung")).toBeTruthy();
-		expect(within(graceMissingRow as HTMLElement).getByText("05.06.2026, 17:30")).toBeTruthy();
+		expect(
+			within(graceMissingRow as HTMLElement).getByText("Grace Hopper"),
+		).toBeTruthy();
+		expect(
+			within(graceMissingRow as HTMLElement).getByText(
+				"Fehlende Ausstempelung",
+			),
+		).toBeTruthy();
+		expect(
+			within(graceMissingRow as HTMLElement).getByText("05.06.2026, 17:30"),
+		).toBeTruthy();
 		expect(
 			within(graceMissingRow as HTMLElement)
 				.getByRole("link", {
@@ -371,11 +422,17 @@ describe("PayrollWorkspace", () => {
 			blockerSelector("pending_time_correction", "correction-ada"),
 		);
 		expect(correctionRow).toBeTruthy();
-		expect(within(correctionRow as HTMLElement).getByText("Ada Lovelace")).toBeTruthy();
 		expect(
-			within(correctionRow as HTMLElement).getByText("Ausstehende Zeitkorrektur"),
+			within(correctionRow as HTMLElement).getByText("Ada Lovelace"),
 		).toBeTruthy();
-		expect(within(correctionRow as HTMLElement).getByText("07.06.2026, 14:15")).toBeTruthy();
+		expect(
+			within(correctionRow as HTMLElement).getByText(
+				"Ausstehende Zeitkorrektur",
+			),
+		).toBeTruthy();
+		expect(
+			within(correctionRow as HTMLElement).getByText("07.06.2026, 14:15"),
+		).toBeTruthy();
 		expect(
 			within(correctionRow as HTMLElement)
 				.getByRole("link", {
@@ -388,9 +445,15 @@ describe("PayrollWorkspace", () => {
 			blockerSelector("pending_absence", "absence-grace"),
 		);
 		expect(absenceRow).toBeTruthy();
-		expect(within(absenceRow as HTMLElement).getByText("Grace Hopper")).toBeTruthy();
-		expect(within(absenceRow as HTMLElement).getByText("Ausstehende Abwesenheit")).toBeTruthy();
-		expect(within(absenceRow as HTMLElement).getByText("08.06.2026")).toBeTruthy();
+		expect(
+			within(absenceRow as HTMLElement).getByText("Grace Hopper"),
+		).toBeTruthy();
+		expect(
+			within(absenceRow as HTMLElement).getByText("Ausstehende Abwesenheit"),
+		).toBeTruthy();
+		expect(
+			within(absenceRow as HTMLElement).getByText("08.06.2026"),
+		).toBeTruthy();
 		expect(
 			within(absenceRow as HTMLElement)
 				.getByRole("link", {
@@ -399,10 +462,18 @@ describe("PayrollWorkspace", () => {
 				.getAttribute("href"),
 		).toBe("/approvals/inbox?types=absence_entry");
 
-		expect(within(blockersRegion).queryByText("Backend label must not be displayed")).toBeNull();
-		expect(within(blockersRegion).queryByText("Another backend label")).toBeNull();
-		expect(within(blockersRegion).queryByText("Correction backend label")).toBeNull();
-		expect(within(blockersRegion).queryByText("Absence backend label")).toBeNull();
+		expect(
+			within(blockersRegion).queryByText("Backend label must not be displayed"),
+		).toBeNull();
+		expect(
+			within(blockersRegion).queryByText("Another backend label"),
+		).toBeNull();
+		expect(
+			within(blockersRegion).queryByText("Correction backend label"),
+		).toBeNull();
+		expect(
+			within(blockersRegion).queryByText("Absence backend label"),
+		).toBeNull();
 	});
 
 	it("renders a distinguishable clear control beside every blocker workflow link", () => {
@@ -414,8 +485,12 @@ describe("PayrollWorkspace", () => {
 		);
 		expandPayrollBlockers();
 
-		const missingRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
-		const absenceRow = document.querySelector(blockerSelector("pending_absence", "blocker-2"));
+		const missingRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
+		const absenceRow = document.querySelector(
+			blockerSelector("pending_absence", "blocker-2"),
+		);
 		expect(missingRow).toBeTruthy();
 		expect(absenceRow).toBeTruthy();
 		expect(
@@ -460,9 +535,13 @@ describe("PayrollWorkspace", () => {
 		);
 		expandPayrollBlockers();
 
-		const row = document.querySelector(blockerSelector("unresolved_work_minutes", "record-1"));
+		const row = document.querySelector(
+			blockerSelector("unresolved_work_minutes", "record-1"),
+		);
 		expect(row).toBeTruthy();
-		expect(within(row as HTMLElement).getByText("Work minutes need review")).toBeTruthy();
+		expect(
+			within(row as HTMLElement).getByText("Work minutes need review"),
+		).toBeTruthy();
 		expect(
 			within(row as HTMLElement)
 				.getByRole("link", { name: /Open calendar/ })
@@ -482,12 +561,18 @@ describe("PayrollWorkspace", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 		const sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
+		fireEvent.click(
+			within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }),
+		);
 		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
-		await waitFor(() => expect(screen.getByText("1 employees selected")).toBeTruthy());
+		await waitFor(() =>
+			expect(screen.getByText("1 employees selected")).toBeTruthy(),
+		);
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 
-		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+		const blockerRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
 		fireEvent.click(
 			within(blockerRow as HTMLElement).getByRole("button", {
 				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
@@ -504,7 +589,11 @@ describe("PayrollWorkspace", () => {
 				employeeIds: ["employee-1"],
 			});
 		});
-		expect(Object.keys(actionMocks.dismissPayrollBlockerAction.mock.calls[0][0]).sort()).toEqual([
+		expect(
+			Object.keys(
+				actionMocks.dismissPayrollBlockerAction.mock.calls[0][0],
+			).sort(),
+		).toEqual([
 			"blockerId",
 			"blockerType",
 			"employeeIds",
@@ -516,7 +605,9 @@ describe("PayrollWorkspace", () => {
 
 	it("keeps pending state on only the clicked blocker and prevents a duplicate click", async () => {
 		const dismissal = deferred<{ success: true; data: { dismissed: true } }>();
-		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
+		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(
+			dismissal.promise,
+		);
 
 		render(
 			<PayrollWorkspace
@@ -526,11 +617,18 @@ describe("PayrollWorkspace", () => {
 		);
 		expandPayrollBlockers();
 
-		const missingRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
-		const absenceRow = document.querySelector(blockerSelector("pending_absence", "blocker-2"));
-		const clickedButton = within(missingRow as HTMLElement).getByRole("button", {
-			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
-		}) as HTMLButtonElement;
+		const missingRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
+		const absenceRow = document.querySelector(
+			blockerSelector("pending_absence", "blocker-2"),
+		);
+		const clickedButton = within(missingRow as HTMLElement).getByRole(
+			"button",
+			{
+				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+			},
+		) as HTMLButtonElement;
 		fireEvent.click(clickedButton);
 
 		await waitFor(() => {
@@ -540,20 +638,27 @@ describe("PayrollWorkspace", () => {
 				}),
 			).toBeTruthy();
 		});
-		const pendingButton = within(missingRow as HTMLElement).getByRole("button", {
-			name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
-		}) as HTMLButtonElement;
+		const pendingButton = within(missingRow as HTMLElement).getByRole(
+			"button",
+			{
+				name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
+			},
+		) as HTMLButtonElement;
 		const otherButton = within(absenceRow as HTMLElement).getByRole("button", {
 			name: /Clear false positive.*Ada Lovelace.*Pending absence/,
 		}) as HTMLButtonElement;
 		expect(pendingButton.disabled).toBe(true);
 		expect(otherButton.disabled).toBe(false);
-		expect(document.querySelector(blockerSelector("missing_clock_out", "blocker-1"))).toBeTruthy();
+		expect(
+			document.querySelector(blockerSelector("missing_clock_out", "blocker-1")),
+		).toBeTruthy();
 		fireEvent.click(pendingButton);
 		expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(1);
 
 		dismissal.resolve({ success: true, data: { dismissed: true } });
-		await waitFor(() => expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalled());
+		await waitFor(() =>
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalled(),
+		);
 	});
 
 	it("tracks same-source blockers of different types independently", async () => {
@@ -609,8 +714,12 @@ describe("PayrollWorkspace", () => {
 		);
 		expandPayrollBlockers();
 
-		const missingRow = document.querySelector(blockerSelector("missing_clock_out", sharedId));
-		const absenceRow = document.querySelector(blockerSelector("pending_absence", sharedId));
+		const missingRow = document.querySelector(
+			blockerSelector("missing_clock_out", sharedId),
+		);
+		const absenceRow = document.querySelector(
+			blockerSelector("pending_absence", sharedId),
+		);
 		expect(missingRow).toBeTruthy();
 		expect(absenceRow).toBeTruthy();
 		expect(missingRow).not.toBe(absenceRow);
@@ -654,14 +763,18 @@ describe("PayrollWorkspace", () => {
 
 		firstDismissal.resolve({ success: true, data: { dismissed: true } });
 		await waitFor(() =>
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenCalledTimes(1),
 		);
 		expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(1);
 
 		firstRefresh.resolve({ success: true, data: afterFirstRefresh });
 		await waitFor(() => {
 			expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(2);
-			expect(document.querySelector(blockerSelector("missing_clock_out", sharedId))).toBeNull();
+			expect(
+				document.querySelector(blockerSelector("missing_clock_out", sharedId)),
+			).toBeNull();
 		});
 		expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenNthCalledWith(
 			2,
@@ -670,7 +783,9 @@ describe("PayrollWorkspace", () => {
 				blockerType: "pending_absence",
 			}),
 		);
-		const pendingAbsenceRow = document.querySelector(blockerSelector("pending_absence", sharedId));
+		const pendingAbsenceRow = document.querySelector(
+			blockerSelector("pending_absence", sharedId),
+		);
 		expect(
 			(
 				within(pendingAbsenceRow as HTMLElement).getByRole("button", {
@@ -678,11 +793,15 @@ describe("PayrollWorkspace", () => {
 				}) as HTMLButtonElement
 			).disabled,
 		).toBe(true);
-		expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1);
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(
+			1,
+		);
 
 		secondDismissal.resolve({ success: true, data: { dismissed: true } });
 		await waitFor(() =>
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(2),
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenCalledTimes(2),
 		);
 		expect(
 			(
@@ -694,11 +813,19 @@ describe("PayrollWorkspace", () => {
 
 		secondRefresh.resolve({ success: true, data: finalSummary });
 		await waitFor(() => {
-			expect(document.querySelector(blockerSelector("pending_absence", sharedId))).toBeNull();
-			expect(screen.queryByRole("heading", { name: /payroll blockers need review/ })).toBeNull();
+			expect(
+				document.querySelector(blockerSelector("pending_absence", sharedId)),
+			).toBeNull();
+			expect(
+				screen.queryByRole("heading", { name: /payroll blockers need review/ }),
+			).toBeNull();
 		});
-		const blockerSummaryCard = screen.getByText("Blockers").closest('[data-slot="card"]');
-		expect(within(blockerSummaryCard as HTMLElement).getByText("0")).toBeTruthy();
+		const blockerSummaryCard = screen
+			.getByText("Blockers")
+			.closest('[data-slot="card"]');
+		expect(
+			within(blockerSummaryCard as HTMLElement).getByText("0"),
+		).toBeTruthy();
 	});
 
 	it("keeps concurrent rows pending independently and finishes with the last server refresh", async () => {
@@ -742,8 +869,11 @@ describe("PayrollWorkspace", () => {
 			})),
 			blockers: [thirdBlocker],
 		});
-		actionMocks.dismissPayrollBlockerAction.mockImplementation((request: { blockerId: string }) =>
-			request.blockerId === "blocker-1" ? firstDismissal.promise : secondDismissal.promise,
+		actionMocks.dismissPayrollBlockerAction.mockImplementation(
+			(request: { blockerId: string }) =>
+				request.blockerId === "blocker-1"
+					? firstDismissal.promise
+					: secondDismissal.promise,
 		);
 		actionMocks.getPayrollWorkspaceSummaryAction
 			.mockReturnValueOnce(firstRefresh.promise)
@@ -757,8 +887,12 @@ describe("PayrollWorkspace", () => {
 		);
 		expandPayrollBlockers();
 
-		const firstRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
-		const secondRow = document.querySelector(blockerSelector("pending_absence", "blocker-2"));
+		const firstRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
+		const secondRow = document.querySelector(
+			blockerSelector("pending_absence", "blocker-2"),
+		);
 		const untouchedRow = document.querySelector(
 			blockerSelector("pending_time_correction", "blocker-3"),
 		);
@@ -796,14 +930,20 @@ describe("PayrollWorkspace", () => {
 
 		firstDismissal.resolve({ success: true, data: { dismissed: true } });
 		await waitFor(() =>
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenCalledTimes(1),
 		);
 		expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(1);
 		firstRefresh.resolve({ success: true, data: afterFirstRefresh });
 
 		await waitFor(() => {
 			expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(2);
-			expect(document.querySelector(blockerSelector("missing_clock_out", "blocker-1"))).toBeNull();
+			expect(
+				document.querySelector(
+					blockerSelector("missing_clock_out", "blocker-1"),
+				),
+			).toBeNull();
 		});
 		const stillPendingSecondRow = document.querySelector(
 			blockerSelector("pending_absence", "blocker-2"),
@@ -827,17 +967,27 @@ describe("PayrollWorkspace", () => {
 
 		secondDismissal.resolve({ success: true, data: { dismissed: true } });
 		await waitFor(() =>
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(2),
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenCalledTimes(2),
 		);
 		secondRefresh.resolve({ success: true, data: finalSummary });
 
 		await waitFor(() => {
-			expect(document.querySelector(blockerSelector("pending_absence", "blocker-2"))).toBeNull();
+			expect(
+				document.querySelector(blockerSelector("pending_absence", "blocker-2")),
+			).toBeNull();
 		});
-		const blockerSummaryCard = screen.getByText("Blockers").closest('[data-slot="card"]');
-		expect(within(blockerSummaryCard as HTMLElement).getByText("1")).toBeTruthy();
+		const blockerSummaryCard = screen
+			.getByText("Blockers")
+			.closest('[data-slot="card"]');
 		expect(
-			document.querySelector(blockerSelector("pending_time_correction", "blocker-3")),
+			within(blockerSummaryCard as HTMLElement).getByText("1"),
+		).toBeTruthy();
+		expect(
+			document.querySelector(
+				blockerSelector("pending_time_correction", "blocker-3"),
+			),
 		).toBeTruthy();
 	});
 
@@ -862,7 +1012,9 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expandPayrollBlockers();
-		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+		const blockerRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
 		fireEvent.click(
 			within(blockerRow as HTMLElement).getByRole("button", {
 				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
@@ -870,18 +1022,26 @@ describe("PayrollWorkspace", () => {
 		);
 
 		await waitFor(() => {
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith({
-				startDate: "2026-06-01",
-				endDate: "2026-06-30",
-				label: "June 2026",
-				employeeIds: undefined,
-			});
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
+				{
+					startDate: "2026-06-01",
+					endDate: "2026-06-30",
+					label: "June 2026",
+					employeeIds: undefined,
+				},
+			);
 		});
 		await waitFor(() => {
-			expect(screen.queryByRole("region", { name: /payroll blockers need review/ })).toBeNull();
+			expect(
+				screen.queryByRole("region", { name: /payroll blockers need review/ }),
+			).toBeNull();
 		});
-		const blockerSummaryCard = screen.getByText("Blockers").closest('[data-slot="card"]');
-		expect(within(blockerSummaryCard as HTMLElement).getByText("0")).toBeTruthy();
+		const blockerSummaryCard = screen
+			.getByText("Blockers")
+			.closest('[data-slot="card"]');
+		expect(
+			within(blockerSummaryCard as HTMLElement).getByText("0"),
+		).toBeTruthy();
 		expect(screen.getAllByText("Ready for payroll")).toHaveLength(2);
 	});
 
@@ -903,7 +1063,9 @@ describe("PayrollWorkspace", () => {
 			totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 1 },
 			blockers: [baseSummary.blockers[1]],
 		});
-		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
+		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(
+			dismissal.promise,
+		);
 		actionMocks.getPayrollWorkspaceSummaryAction
 			.mockReturnValueOnce(navigation.promise)
 			.mockReturnValueOnce(dismissalRefresh.promise);
@@ -915,7 +1077,9 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expandPayrollBlockers();
-		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+		const blockerRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
 		fireEvent.click(
 			within(blockerRow as HTMLElement).getByRole("button", {
 				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
@@ -923,12 +1087,16 @@ describe("PayrollWorkspace", () => {
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next period" }));
 		await waitFor(() =>
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenCalledTimes(1),
 		);
 
 		dismissal.resolve({ success: true, data: { dismissed: true } });
 		await waitFor(() =>
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(2),
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenCalledTimes(2),
 		);
 		expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledWith({
 			blockerId: "blocker-1",
@@ -938,7 +1106,9 @@ describe("PayrollWorkspace", () => {
 			label: "June 2026",
 			employeeIds: undefined,
 		});
-		expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenLastCalledWith({
+		expect(
+			actionMocks.getPayrollWorkspaceSummaryAction,
+		).toHaveBeenLastCalledWith({
 			startDate: "2026-07-01",
 			endDate: "2026-07-31",
 			label: "July 2026",
@@ -947,14 +1117,20 @@ describe("PayrollWorkspace", () => {
 
 		dismissalRefresh.resolve({ success: true, data: currentJulySummary });
 		await waitFor(() =>
-			expect(document.querySelector(blockerSelector("missing_clock_out", "blocker-1"))).toBeNull(),
+			expect(
+				document.querySelector(
+					blockerSelector("missing_clock_out", "blocker-1"),
+				),
+			).toBeNull(),
 		);
 		await act(async () => {
 			navigation.resolve({ success: true, data: staleJulySummary });
 			await navigation.promise;
 		});
 		expect(screen.getByRole("heading", { name: "July 2026" })).toBeTruthy();
-		expect(document.querySelector(blockerSelector("missing_clock_out", "blocker-1"))).toBeNull();
+		expect(
+			document.querySelector(blockerSelector("missing_clock_out", "blocker-1")),
+		).toBeNull();
 	});
 
 	it("does not let an older dismissal refresh overwrite navigation started afterward", async () => {
@@ -986,22 +1162,30 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expandPayrollBlockers();
-		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+		const blockerRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
 		fireEvent.click(
 			within(blockerRow as HTMLElement).getByRole("button", {
 				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
 			}),
 		);
 		await waitFor(() =>
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenCalledTimes(1),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next period" }));
 		await waitFor(() =>
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(2),
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenCalledTimes(2),
 		);
 
 		navigation.resolve({ success: true, data: julySummary });
-		await waitFor(() => expect(screen.getByRole("heading", { name: "July 2026" })).toBeTruthy());
+		await waitFor(() =>
+			expect(screen.getByRole("heading", { name: "July 2026" })).toBeTruthy(),
+		);
 		await act(async () => {
 			dismissalRefresh.resolve({ success: true, data: juneAfterDismissal });
 			await dismissalRefresh.promise;
@@ -1039,10 +1223,14 @@ describe("PayrollWorkspace", () => {
 			fireEvent.click(screen.getByRole("button", { name: "Next period" }));
 			fireEvent.click(screen.getByRole("button", { name: "Previous period" }));
 		});
-		expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(2);
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(
+			2,
+		);
 
 		previousPeriod.resolve({ success: true, data: maySummary });
-		await waitFor(() => expect(screen.getByRole("heading", { name: "May 2026" })).toBeTruthy());
+		await waitFor(() =>
+			expect(screen.getByRole("heading", { name: "May 2026" })).toBeTruthy(),
+		);
 		await act(async () => {
 			nextPeriod.resolve({ success: true, data: julySummary });
 			await nextPeriod.promise;
@@ -1057,7 +1245,9 @@ describe("PayrollWorkspace", () => {
 			success: true;
 			data: { dismissed: true };
 		}>();
-		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(firstDismissal.promise);
+		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(
+			firstDismissal.promise,
+		);
 		const view = render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -1065,8 +1255,12 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expandPayrollBlockers();
-		const firstRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
-		const secondRow = document.querySelector(blockerSelector("pending_absence", "blocker-2"));
+		const firstRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
+		const secondRow = document.querySelector(
+			blockerSelector("pending_absence", "blocker-2"),
+		);
 		fireEvent.click(
 			within(firstRow as HTMLElement).getByRole("button", {
 				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
@@ -1077,7 +1271,9 @@ describe("PayrollWorkspace", () => {
 				name: /Clear false positive.*Ada Lovelace.*Pending absence/,
 			}),
 		);
-		await waitFor(() => expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(1));
+		await waitFor(() =>
+			expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(1),
+		);
 
 		view.unmount();
 		await act(async () => {
@@ -1092,7 +1288,9 @@ describe("PayrollWorkspace", () => {
 
 	it("suppresses refresh result effects after unmount", async () => {
 		const refresh = deferred<{ success: false; error: string }>();
-		actionMocks.getPayrollWorkspaceSummaryAction.mockReturnValueOnce(refresh.promise);
+		actionMocks.getPayrollWorkspaceSummaryAction.mockReturnValueOnce(
+			refresh.promise,
+		);
 		const view = render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -1100,14 +1298,18 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expandPayrollBlockers();
-		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+		const blockerRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
 		fireEvent.click(
 			within(blockerRow as HTMLElement).getByRole("button", {
 				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
 			}),
 		);
 		await waitFor(() =>
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenCalledTimes(1),
 		);
 
 		view.unmount();
@@ -1116,7 +1318,9 @@ describe("PayrollWorkspace", () => {
 			await refresh.promise;
 		});
 
-		expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1);
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(
+			1,
+		);
 		expect(toastMocks.error).not.toHaveBeenCalled();
 	});
 
@@ -1135,7 +1339,9 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expandPayrollBlockers();
-		const firstRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+		const firstRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
 		const clearButton = within(firstRow as HTMLElement).getByRole("button", {
 			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
 		}) as HTMLButtonElement;
@@ -1143,7 +1349,9 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(clearButton);
 
 		await waitFor(() => {
-			const nextRow = document.querySelector(blockerSelector("pending_absence", "blocker-2"));
+			const nextRow = document.querySelector(
+				blockerSelector("pending_absence", "blocker-2"),
+			);
 			expect(document.activeElement).toBe(
 				within(nextRow as HTMLElement).getByRole("button", {
 					name: /Clear false positive.*Ada Lovelace.*Pending absence/,
@@ -1173,7 +1381,9 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expandPayrollBlockers();
-		const missingRow = document.querySelector(blockerSelector("missing_clock_out", sharedId));
+		const missingRow = document.querySelector(
+			blockerSelector("missing_clock_out", sharedId),
+		);
 		const clearButton = within(missingRow as HTMLElement).getByRole("button", {
 			name: /Clear false positive.*Missing clock-out/,
 		}) as HTMLButtonElement;
@@ -1181,8 +1391,12 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(clearButton);
 
 		await waitFor(() => {
-			const absenceRow = document.querySelector(blockerSelector("pending_absence", sharedId));
-			expect(document.querySelector(blockerSelector("missing_clock_out", sharedId))).toBeNull();
+			const absenceRow = document.querySelector(
+				blockerSelector("pending_absence", sharedId),
+			);
+			expect(
+				document.querySelector(blockerSelector("missing_clock_out", sharedId)),
+			).toBeNull();
 			expect(document.activeElement).toBe(
 				within(absenceRow as HTMLElement).getByRole("button", {
 					name: /Clear false positive.*Pending absence/,
@@ -1196,7 +1410,9 @@ describe("PayrollWorkspace", () => {
 			success: true;
 			data: PayrollWorkspaceSummary;
 		}>();
-		actionMocks.getPayrollWorkspaceSummaryAction.mockReturnValueOnce(refresh.promise);
+		actionMocks.getPayrollWorkspaceSummaryAction.mockReturnValueOnce(
+			refresh.promise,
+		);
 		render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -1204,14 +1420,18 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expandPayrollBlockers();
-		const firstRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+		const firstRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
 		const clearButton = within(firstRow as HTMLElement).getByRole("button", {
 			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
 		}) as HTMLButtonElement;
 		clearButton.focus();
 		fireEvent.click(clearButton);
 		await waitFor(() =>
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenCalledTimes(1),
 		);
 		const chosenControl = screen.getByRole("button", { name: "Download PDF" });
 		chosenControl.focus();
@@ -1228,7 +1448,11 @@ describe("PayrollWorkspace", () => {
 			await refresh.promise;
 		});
 		await waitFor(() =>
-			expect(document.querySelector(blockerSelector("missing_clock_out", "blocker-1"))).toBeNull(),
+			expect(
+				document.querySelector(
+					blockerSelector("missing_clock_out", "blocker-1"),
+				),
+			).toBeNull(),
 		);
 		expect(document.activeElement).toBe(chosenControl);
 	});
@@ -1248,7 +1472,9 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expandPayrollBlockers();
-		const secondRow = document.querySelector(blockerSelector("pending_absence", "blocker-2"));
+		const secondRow = document.querySelector(
+			blockerSelector("pending_absence", "blocker-2"),
+		);
 		const clearButton = within(secondRow as HTMLElement).getByRole("button", {
 			name: /Clear false positive.*Ada Lovelace.*Pending absence/,
 		}) as HTMLButtonElement;
@@ -1256,7 +1482,9 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(clearButton);
 
 		await waitFor(() => {
-			const previousRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+			const previousRow = document.querySelector(
+				blockerSelector("missing_clock_out", "blocker-1"),
+			);
 			expect(document.activeElement).toBe(
 				within(previousRow as HTMLElement).getByRole("button", {
 					name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
@@ -1284,7 +1512,9 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expandPayrollBlockers();
-		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+		const blockerRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
 		const clearButton = within(blockerRow as HTMLElement).getByRole("button", {
 			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
 		}) as HTMLButtonElement;
@@ -1292,17 +1522,23 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(clearButton);
 
 		await waitFor(() => {
-			const blockerSummaryCard = screen.getByText("Blockers").closest('[data-slot="card"]');
+			const blockerSummaryCard = screen
+				.getByText("Blockers")
+				.closest('[data-slot="card"]');
 			expect(document.activeElement).toBe(blockerSummaryCard);
 			expect(blockerSummaryCard?.getAttribute("tabindex")).toBe("-1");
 			expect(blockerSummaryCard?.className).toContain("focus-visible:ring");
 		});
-		expect(screen.queryByRole("heading", { name: "0 payroll blockers need review" })).toBeNull();
+		expect(
+			screen.queryByRole("heading", { name: "0 payroll blockers need review" }),
+		).toBeNull();
 	});
 
 	it("keeps focus on the activated clear control when dismissal fails", async () => {
 		const dismissal = deferred<{ success: false; error: string }>();
-		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
+		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(
+			dismissal.promise,
+		);
 		render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -1310,7 +1546,9 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expandPayrollBlockers();
-		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+		const blockerRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
 		const clearButton = within(blockerRow as HTMLElement).getByRole("button", {
 			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
 		}) as HTMLButtonElement;
@@ -1329,7 +1567,9 @@ describe("PayrollWorkspace", () => {
 
 	it("keeps the blocker and shows the safe dismissal error when clearing fails", async () => {
 		const dismissal = deferred<{ success: false; error: string }>();
-		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
+		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(
+			dismissal.promise,
+		);
 		render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -1338,7 +1578,9 @@ describe("PayrollWorkspace", () => {
 		);
 		expandPayrollBlockers();
 
-		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+		const blockerRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
 		fireEvent.click(
 			within(blockerRow as HTMLElement).getByRole("button", {
 				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
@@ -1356,24 +1598,33 @@ describe("PayrollWorkspace", () => {
 		});
 
 		await waitFor(() =>
-			expect(toastMocks.error).toHaveBeenCalledWith("This blocker can no longer be cleared"),
+			expect(toastMocks.error).toHaveBeenCalledWith(
+				"This blocker can no longer be cleared",
+			),
 		);
-		const resetButton = await within(blockerRow as HTMLElement).findByRole("button", {
-			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
-		});
+		const resetButton = await within(blockerRow as HTMLElement).findByRole(
+			"button",
+			{
+				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+			},
+		);
 		expect((resetButton as HTMLButtonElement).disabled).toBe(false);
 		expect(
 			within(blockerRow as HTMLElement).queryByRole("button", {
 				name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
 			}),
 		).toBeNull();
-		expect(document.querySelector(blockerSelector("missing_clock_out", "blocker-1"))).toBeTruthy();
+		expect(
+			document.querySelector(blockerSelector("missing_clock_out", "blocker-1")),
+		).toBeTruthy();
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 	});
 
 	it("keeps the blocker, clears pending state, and shows a localized error on dismissal rejection", async () => {
 		const dismissal = deferred<never>();
-		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
+		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(
+			dismissal.promise,
+		);
 		render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -1382,34 +1633,50 @@ describe("PayrollWorkspace", () => {
 		);
 		expandPayrollBlockers();
 
-		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+		const blockerRow = document.querySelector(
+			blockerSelector("missing_clock_out", "blocker-1"),
+		);
 		fireEvent.click(
 			within(blockerRow as HTMLElement).getByRole("button", {
 				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
 			}),
 		);
-		const pendingButton = await within(blockerRow as HTMLElement).findByRole("button", {
-			name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
-		});
+		const pendingButton = await within(blockerRow as HTMLElement).findByRole(
+			"button",
+			{
+				name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
+			},
+		);
 		expect((pendingButton as HTMLButtonElement).disabled).toBe(true);
 
 		dismissal.reject(new Error("network detail"));
 
 		await waitFor(() =>
-			expect(toastMocks.error).toHaveBeenCalledWith("Could not clear payroll blocker"),
+			expect(toastMocks.error).toHaveBeenCalledWith(
+				"Could not clear payroll blocker",
+			),
 		);
-		const resetButton = await within(blockerRow as HTMLElement).findByRole("button", {
-			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
-		});
+		const resetButton = await within(blockerRow as HTMLElement).findByRole(
+			"button",
+			{
+				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+			},
+		);
 		expect((resetButton as HTMLButtonElement).disabled).toBe(false);
 		expect(
 			within(blockerRow as HTMLElement).queryByRole("button", {
 				name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
 			}),
 		).toBeNull();
-		expect(document.querySelector(blockerSelector("missing_clock_out", "blocker-1"))).toBeTruthy();
-		const blockerSummaryCard = screen.getByText("Blockers").closest('[data-slot="card"]');
-		expect(within(blockerSummaryCard as HTMLElement).getByText("2")).toBeTruthy();
+		expect(
+			document.querySelector(blockerSelector("missing_clock_out", "blocker-1")),
+		).toBeTruthy();
+		const blockerSummaryCard = screen
+			.getByText("Blockers")
+			.closest('[data-slot="card"]');
+		expect(
+			within(blockerSummaryCard as HTMLElement).getByText("2"),
+		).toBeTruthy();
 	});
 
 	it.each([
@@ -1419,7 +1686,9 @@ describe("PayrollWorkspace", () => {
 		"preserves the summary and uses the refresh-specific error after dismissal on %s",
 		async (_case, refreshOutcome) => {
 			const refresh = deferred<{ success: false; error: string }>();
-			actionMocks.getPayrollWorkspaceSummaryAction.mockReturnValueOnce(refresh.promise);
+			actionMocks.getPayrollWorkspaceSummaryAction.mockReturnValueOnce(
+				refresh.promise,
+			);
 			render(
 				<PayrollWorkspace
 					initialSummary={summary}
@@ -1428,7 +1697,9 @@ describe("PayrollWorkspace", () => {
 			);
 			expandPayrollBlockers();
 
-			const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
+			const blockerRow = document.querySelector(
+				blockerSelector("missing_clock_out", "blocker-1"),
+			);
 			fireEvent.click(
 				within(blockerRow as HTMLElement).getByRole("button", {
 					name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
@@ -1440,7 +1711,9 @@ describe("PayrollWorkspace", () => {
 				}),
 			).toBeTruthy();
 			await waitFor(() =>
-				expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+				expect(
+					actionMocks.getPayrollWorkspaceSummaryAction,
+				).toHaveBeenCalledTimes(1),
 			);
 
 			if (refreshOutcome instanceof Error) {
@@ -1455,7 +1728,9 @@ describe("PayrollWorkspace", () => {
 				),
 			);
 			expect(
-				document.querySelector(blockerSelector("missing_clock_out", "blocker-1")),
+				document.querySelector(
+					blockerSelector("missing_clock_out", "blocker-1"),
+				),
 			).toBeTruthy();
 			expect(
 				within(blockerRow as HTMLElement).getByRole("button", {
@@ -1493,15 +1768,25 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 
-		const blockersRegion = expandPayrollBlockers("1 payroll blockers need review");
+		const blockersRegion = expandPayrollBlockers(
+			"1 payroll blockers need review",
+		);
 		const blockerRow = blockersRegion.querySelector(
 			blockerSelector("missing_clock_out", "missing-unknown"),
 		);
 		expect(blockerRow).toBeTruthy();
-		expect(within(blockerRow as HTMLElement).getByText("Unbekannter Mitarbeiter")).toBeTruthy();
-		expect(within(blockerRow as HTMLElement).getByText("Fehlende Ausstempelung")).toBeTruthy();
-		expect(within(blockerRow as HTMLElement).getByText("Datum nicht verfügbar")).toBeTruthy();
-		expect(within(blockerRow as HTMLElement).queryByText("Backend label")).toBeNull();
+		expect(
+			within(blockerRow as HTMLElement).getByText("Unbekannter Mitarbeiter"),
+		).toBeTruthy();
+		expect(
+			within(blockerRow as HTMLElement).getByText("Fehlende Ausstempelung"),
+		).toBeTruthy();
+		expect(
+			within(blockerRow as HTMLElement).getByText("Datum nicht verfügbar"),
+		).toBeTruthy();
+		expect(
+			within(blockerRow as HTMLElement).queryByText("Backend label"),
+		).toBeNull();
 		expect(
 			within(blockerRow as HTMLElement)
 				.getByRole("link", {
@@ -1543,12 +1828,16 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 
-		const blockersRegion = expandPayrollBlockers("1 payroll blockers need review");
+		const blockersRegion = expandPayrollBlockers(
+			"1 payroll blockers need review",
+		);
 		const blockerRow = blockersRegion.querySelector(
 			blockerSelector("missing_clock_out", "uuid-name-blocker"),
 		);
 		expect(blockerRow).toBeTruthy();
-		expect(within(blockerRow as HTMLElement).getByText("Unbekannter Mitarbeiter")).toBeTruthy();
+		expect(
+			within(blockerRow as HTMLElement).getByText("Unbekannter Mitarbeiter"),
+		).toBeTruthy();
 		expect(blockerRow?.textContent).not.toContain(employeeId);
 	});
 
@@ -1560,18 +1849,26 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 
-		const periodCard = screen.getByText("Selected period").closest('[data-slot="card"]');
+		const periodCard = screen
+			.getByText("Selected period")
+			.closest('[data-slot="card"]');
 		expect(periodCard).toBeTruthy();
 
 		const controlsRail = (periodCard as HTMLElement).querySelector(
 			"[data-payroll-period-controls]",
 		);
 		expect(controlsRail).toBeTruthy();
-		expect(controlsRail?.className).toContain("lg:grid-cols-[minmax(0,1fr)_minmax(22rem,auto)]");
+		expect(controlsRail?.className).toContain(
+			"lg:grid-cols-[minmax(0,1fr)_minmax(22rem,auto)]",
+		);
 
-		const dateControls = (periodCard as HTMLElement).querySelector("[data-payroll-date-controls]");
+		const dateControls = (periodCard as HTMLElement).querySelector(
+			"[data-payroll-date-controls]",
+		);
 		expect(dateControls).toBeTruthy();
-		expect(dateControls?.className).toContain("lg:grid-cols-[auto_minmax(0,1fr)]");
+		expect(dateControls?.className).toContain(
+			"lg:grid-cols-[auto_minmax(0,1fr)]",
+		);
 
 		const exportControls = (periodCard as HTMLElement).querySelector(
 			"[data-payroll-export-controls]",
@@ -1584,7 +1881,9 @@ describe("PayrollWorkspace", () => {
 		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
 
 		const exportLabel = screen.getByText("Payroll export target");
-		const exportTarget = screen.getByLabelText("Payroll export target") as HTMLButtonElement;
+		const exportTarget = screen.getByLabelText(
+			"Payroll export target",
+		) as HTMLButtonElement;
 		const triggerExportButton = screen.getByRole("button", {
 			name: "Trigger export",
 		}) as HTMLButtonElement;
@@ -1593,7 +1892,9 @@ describe("PayrollWorkspace", () => {
 		expect(exportTarget.id).toBe("payroll-export-target");
 		expect(exportTarget.disabled).toBe(true);
 		expect(triggerExportButton.disabled).toBe(true);
-		expect(screen.getByText("No configured payroll export target")).toBeTruthy();
+		expect(
+			screen.getByText("No configured payroll export target"),
+		).toBeTruthy();
 	});
 
 	it("keeps payroll actions available at the default managed scope", () => {
@@ -1606,7 +1907,9 @@ describe("PayrollWorkspace", () => {
 
 		expect(screen.getByText("All employees and teams I manage")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Specific teams" })).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Specific employees" })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Specific employees" }),
+		).toBeTruthy();
 		expect(screen.queryByLabelText("Ada Lovelace")).toBeNull();
 		expect(screen.queryByLabelText("Engineering")).toBeNull();
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
@@ -1636,27 +1939,40 @@ describe("PayrollWorkspace", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Specific teams" }));
 
-		expect(screen.getAllByText("Specific teams").length).toBeGreaterThanOrEqual(2);
-		expect(screen.getByText("Choose teams to include in this payroll scope.")).toBeTruthy();
+		expect(screen.getAllByText("Specific teams").length).toBeGreaterThanOrEqual(
+			2,
+		);
+		expect(
+			screen.getByText("Choose teams to include in this payroll scope."),
+		).toBeTruthy();
 		expect(screen.getByRole("checkbox", { name: "Ops" })).toBeTruthy();
 		expect(screen.getByRole("checkbox", { name: "Engineering" })).toBeTruthy();
-		expect((screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled).toBe(
-			false,
-		);
+		expect(
+			(screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement)
+				.disabled,
+		).toBe(false);
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 		await waitFor(() => {
-			expect(screen.queryByRole("dialog", { name: "Specific teams" })).toBeNull();
+			expect(
+				screen.queryByRole("dialog", { name: "Specific teams" }),
+			).toBeNull();
 		});
 
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
-		expect(screen.getAllByText("Specific employees").length).toBeGreaterThanOrEqual(2);
-		expect(screen.getByText("Choose employees to include in this payroll scope.")).toBeTruthy();
+		expect(
+			screen.getAllByText("Specific employees").length,
+		).toBeGreaterThanOrEqual(2);
+		expect(
+			screen.getByText("Choose employees to include in this payroll scope."),
+		).toBeTruthy();
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 		await waitFor(() => {
-			expect(screen.queryByRole("dialog", { name: "Specific employees" })).toBeNull();
+			expect(
+				screen.queryByRole("dialog", { name: "Specific employees" }),
+			).toBeNull();
 		});
 	});
 
@@ -1696,7 +2012,9 @@ describe("PayrollWorkspace", () => {
 
 		const sheet = await screen.findByRole("dialog");
 		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ops" }));
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Engineering" }));
+		fireEvent.click(
+			within(sheet).getByRole("checkbox", { name: "Engineering" }),
+		);
 
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 
@@ -1771,8 +2089,12 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
 		const sheet = await screen.findByRole("dialog");
-		expect(within(sheet).getByRole("heading", { name: "Specific employees" })).toBeTruthy();
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
+		expect(
+			within(sheet).getByRole("heading", { name: "Specific employees" }),
+		).toBeTruthy();
+		fireEvent.click(
+			within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }),
+		);
 
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 
@@ -1797,8 +2119,12 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
 		const sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Grace Hopper" }));
+		fireEvent.click(
+			within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }),
+		);
+		fireEvent.click(
+			within(sheet).getByRole("checkbox", { name: "Grace Hopper" }),
+		);
 
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 
@@ -1822,7 +2148,9 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
 		const sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
+		fireEvent.click(
+			within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }),
+		);
 		fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
 
 		await waitFor(() => {
@@ -1843,7 +2171,9 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
 		let sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
+		fireEvent.click(
+			within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }),
+		);
 		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
 
 		await waitFor(() => {
@@ -1856,18 +2186,25 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific teams" }));
 
 		sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Engineering" }));
+		fireEvent.click(
+			within(sheet).getByRole("checkbox", { name: "Engineering" }),
+		);
 		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
 
 		await waitFor(() => {
 			expect(screen.queryByRole("dialog")).toBeNull();
 		});
 		expect(
-			screen.getAllByText("No employees match the selected payroll filters.").length,
+			screen.getAllByText("No employees match the selected payroll filters.")
+				.length,
 		).toBeGreaterThan(0);
-		const employeeSummaryCard = screen.getByText("Employees").closest('[data-slot="card"]');
+		const employeeSummaryCard = screen
+			.getByText("Employees")
+			.closest('[data-slot="card"]');
 		expect(employeeSummaryCard).toBeTruthy();
-		expect(within(employeeSummaryCard as HTMLElement).getByText("0")).toBeTruthy();
+		expect(
+			within(employeeSummaryCard as HTMLElement).getByText("0"),
+		).toBeTruthy();
 		expect(screen.queryByText("E-1")).toBeNull();
 		expect(
 			(
@@ -1892,11 +2229,15 @@ describe("PayrollWorkspace", () => {
 			blockers: [],
 		});
 
-		render(<PayrollWorkspace initialSummary={emptySummary} exportFormats={[]} />);
+		render(
+			<PayrollWorkspace initialSummary={emptySummary} exportFormats={[]} />,
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Specific teams" }));
 		let sheet = await screen.findByRole("dialog");
-		expect(within(sheet).getByText("No assigned teams in this payroll scope.")).toBeTruthy();
+		expect(
+			within(sheet).getByText("No assigned teams in this payroll scope."),
+		).toBeTruthy();
 		fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
 
 		await waitFor(() => {
@@ -1905,7 +2246,9 @@ describe("PayrollWorkspace", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 		sheet = await screen.findByRole("dialog");
-		expect(within(sheet).getByText("No assigned employees in this payroll scope.")).toBeTruthy();
+		expect(
+			within(sheet).getByText("No assigned employees in this payroll scope."),
+		).toBeTruthy();
 		fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
 
 		await waitFor(() => {
@@ -2001,7 +2344,9 @@ describe("PayrollWorkspace", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Week" }));
 		await waitFor(() =>
-			expect(screen.getAllByText("Jun 1 - Jun 7, 2026").length).toBeGreaterThan(0),
+			expect(screen.getAllByText("Jun 1 - Jun 7, 2026").length).toBeGreaterThan(
+				0,
+			),
 		);
 		await waitFor(() =>
 			expect(
@@ -2016,7 +2361,9 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Previous period" }));
 
 		await waitFor(() => {
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenLastCalledWith(
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenLastCalledWith(
 				expect.objectContaining({
 					startDate: "2026-05-25",
 					endDate: "2026-05-31",
@@ -2048,7 +2395,9 @@ describe("PayrollWorkspace", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Week" }));
 		await waitFor(() =>
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenCalledTimes(1),
 		);
 		await waitFor(() =>
 			expect(
@@ -2063,7 +2412,9 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Previous period" }));
 
 		await waitFor(() => {
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenLastCalledWith(
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenLastCalledWith(
 				expect.objectContaining({
 					startDate: "2026-05-01",
 					endDate: "2026-05-31",
@@ -2105,7 +2456,9 @@ describe("PayrollWorkspace", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Week" }));
 		await waitFor(() =>
-			expect(screen.getAllByText("Jun 1 - Jun 7, 2026").length).toBeGreaterThan(0),
+			expect(screen.getAllByText("Jun 1 - Jun 7, 2026").length).toBeGreaterThan(
+				0,
+			),
 		);
 		await waitFor(() =>
 			expect(
@@ -2120,7 +2473,9 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Next period" }));
 
 		await waitFor(() => {
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenLastCalledWith(
+			expect(
+				actionMocks.getPayrollWorkspaceSummaryAction,
+			).toHaveBeenLastCalledWith(
 				expect.objectContaining({
 					startDate: "2026-06-08",
 					endDate: "2026-06-14",
@@ -2156,7 +2511,9 @@ describe("PayrollWorkspace", () => {
 			fireEvent.click(screen.getByRole("button", { name: "Current period" }));
 
 			await waitFor(() => {
-				expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
+				expect(
+					actionMocks.getPayrollWorkspaceSummaryAction,
+				).toHaveBeenCalledWith(
 					expect.objectContaining({
 						startDate: "2026-08-01",
 						endDate: "2026-08-31",
@@ -2172,19 +2529,26 @@ describe("PayrollWorkspace", () => {
 
 it.each([
 	["datev_lohn", true],
+	["lexware_lohn", true],
+	["sage_lohn", true],
+	["successfactors_csv", false],
 	["sage", false],
-])("shows the comparison workspace only for DATEV (%s)", (formatId, visible) => {
-	render(
-		<PayrollWorkspace
-			initialSummary={summary}
-			exportFormats={[{ id: formatId, label: formatId }]}
-		/>,
-	);
-	const comparison = screen.queryByLabelText("Comparison selection");
-	expect(Boolean(comparison)).toBe(visible);
-	if (comparison)
-		expect(JSON.parse(comparison.textContent ?? "{}")).toEqual({
-			startDate: "2026-06-01",
-			endDate: "2026-06-30",
-		});
-});
+])(
+	"shows the comparison workspace for supported formats (%s)",
+	(formatId, visible) => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: formatId, label: formatId }]}
+			/>,
+		);
+		const comparison = screen.queryByLabelText("Comparison selection");
+		expect(Boolean(comparison)).toBe(visible);
+		if (comparison)
+			expect(JSON.parse(comparison.textContent ?? "{}")).toEqual({
+				formatId,
+				startDate: "2026-06-01",
+				endDate: "2026-06-30",
+			});
+	},
+);

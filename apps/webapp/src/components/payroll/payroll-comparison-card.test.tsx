@@ -381,7 +381,7 @@ it("keeps reviewed data stable until an explicit refresh and discards a response
 	expect(screen.queryByText("stale-response")).toBeNull();
 	expect(actions.listCompatiblePayrollBaselinesAction).toHaveBeenLastCalledWith(
 		{
- formatId:"datev_lohn",
+			formatId: "datev_lohn",
 			startDate: "2026-09-01",
 			endDate: "2026-09-30",
 			employeeIds: ["employee-new"],
@@ -519,4 +519,83 @@ it.each([
 		await screen.findByRole("button", { name: "Prepare comparison" }),
 	);
 	expect(await screen.findByText(message)).toBeTruthy();
+});
+
+it("uses only selected Lexware target despite newer DATEV baseline and shows exact monthly columns", async () => {
+	const lexware = {
+		...baseline,
+		id: "lexware-baseline",
+		formatId: "lexware_lohn",
+		destination: {
+			configId: "lexware-target",
+			mandantennummer: "",
+			beraternummer: "",
+		},
+	};
+	actions.listCompatiblePayrollBaselinesAction.mockResolvedValue({
+		success: true,
+		data: [{ ...baseline, completedAt: "2026-10-10T00:00:00Z" }, lexware],
+	});
+	const monthly = {
+		...reviewed,
+		id: "lexware-reviewed",
+		baseline: lexware,
+		comparison: {
+			...reviewed.comparison,
+			formatId: "lexware_lohn",
+			rows: [
+				{
+					...reviewed.comparison.rows[0],
+					oldRow: {
+						...oldRow,
+						date: "2026-09",
+						renderedColumns: { Wert: "8,00", Stunden: "8,00" },
+					},
+					newRow: {
+						...newRow,
+						date: "2026-09",
+						renderedColumns: { Wert: "9,00", Stundensatz: "" },
+					},
+				},
+			],
+		},
+	};
+	actions.preparePayrollComparisonAction.mockResolvedValue({
+		success: true,
+		data: { status: "ready", result: monthly },
+	});
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false, gcTime: 0 } },
+	});
+	render(
+		<QueryClientProvider client={client}>
+			<PayrollComparisonCard
+				formatId="lexware_lohn"
+				startDate="2026-09-01"
+				endDate="2026-09-30"
+			/>
+		</QueryClientProvider>,
+	);
+	await screen.findByText("lexware-baseline", { selector: "dd" });
+	expect(actions.listCompatiblePayrollBaselinesAction).toHaveBeenCalledWith({
+		formatId: "lexware_lohn",
+		startDate: "2026-09-01",
+		endDate: "2026-09-30",
+	});
+	fireEvent.click(
+		await screen.findByRole("button", { name: "Prepare comparison" }),
+	);
+	await screen.findByRole("link", {
+		name: "Download reviewed comparison (CSV)",
+	});
+	expect(screen.getAllByText("2026-09").length).toBe(2);
+	expect(screen.getAllByText("8,00").length).toBe(2);
+	expect(screen.getByText("9,00")).toBeTruthy();
+	expect(screen.getByText("Stundensatz")).toBeTruthy();
+	expect(actions.preparePayrollComparisonAction).toHaveBeenCalledWith({
+		baselineId: "lexware-baseline",
+		formatId: "lexware_lohn",
+		startDate: "2026-09-01",
+		endDate: "2026-09-30",
+	});
 });

@@ -34,3 +34,22 @@ export function samePayrollDestination(
 				current.beraternummer === historical.beraternummer
 		: current.configId === historical.configId;
 }
+
+export function payrollFormatLabel(formatId: SupportedPayrollFormatId): string {
+	switch (formatId) {
+		case "datev_lohn":
+			return "DATEV Lohn & Gehalt";
+		case "lexware_lohn":
+			return "Lexware lohn+gehalt";
+		case "sage_lohn":
+			return "Sage Lohn";
+	}
+}
+export function payrollDestinationLabel(
+	formatId: SupportedPayrollFormatId,
+	destination: PayrollBaselineDestination,
+): string {
+	return formatId === "datev_lohn"
+		? `${destination.mandantennummer} / ${destination.beraternummer}`
+		: destination.configId;
+}

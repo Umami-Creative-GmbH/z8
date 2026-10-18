@@ -58,21 +58,21 @@ import {
 	getWageTypeMappings,
 } from "./data-fetcher";
 import { exportedPersonnelIdentifier } from "./exported-personnel-identifier";
+import { datevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { lexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
 import { sageLohnFormatter } from "./formatters/sage-lohn-formatter";
-import {
-	isSupportedPayrollFormat,
-	payrollDestination,
-	samePayrollDestination,
-	type SupportedPayrollFormatId,
-} from "./supported-format";
-import { datevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import {
 	employeesWithoutIdentifier,
 	findDuplicatePersonnelIdentifiers,
 	payrollIdentifierCustomFieldId,
 	withPersonnelIdentifiers,
 } from "./personnel-identifier";
+import {
+	isSupportedPayrollFormat,
+	payrollDestination,
+	type SupportedPayrollFormatId,
+	samePayrollDestination,
+} from "./supported-format";
 import type { PayrollExportFilters } from "./types";
 
 export interface PayrollComparisonRequest {

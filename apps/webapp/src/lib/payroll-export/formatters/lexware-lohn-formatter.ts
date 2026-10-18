@@ -10,11 +10,11 @@
  */
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
+import { personnelNumberTypeError } from "../personnel-identifier";
 import type {
 	SupportedPayrollContribution,
 	SupportedPayrollOutputRow,
 } from "../supported-output-evidence";
-import { personnelNumberTypeError } from "../personnel-identifier";
 import type {
 	AbsenceData,
 	ExpenseLineData,
@@ -241,7 +241,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 
 		// Calculate metadata
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
-		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
+		for (const absence of absences) uniqueEmployees.add(absence.employeeId);
 		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
 		for (const { payout } of payouts.mapped)
 			uniqueEmployees.add(payout.employeeId);
@@ -414,26 +414,38 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 					hourlyRate: null,
 					contributions: [],
 				};
+				const previousSource = existing.contributions.find(
+					(contribution) =>
+						contribution.kind === "absence" &&
+						contribution.sourceId === absence.id &&
+						contribution.employeeId === absence.employeeId,
+				);
 				monthData.set(wageTypeCode, {
 					value: existing.value + 8, // Full day = 8 hours
 					hours: existing.hours + 8,
 					hourlyRate: existing.hourlyRate,
-					contributions: [
-						...existing.contributions,
-						{
-							...this.contributionIdentity(absence, 8),
-							kind: "absence",
-							facts: {
-								startDate: absence.startDate,
-								endDate: absence.endDate,
-								absenceCategoryId: absence.absenceCategoryId,
-								absenceCategoryName: absence.absenceCategoryName,
-								absenceType: absence.absenceType,
-								status: absence.status,
-								mappingId: mapping.id,
-							},
-						},
-					],
+					contributions: previousSource
+						? existing.contributions.map((contribution) =>
+								contribution === previousSource
+									? { ...contribution, hours: contribution.hours + 8 }
+									: contribution,
+							)
+						: [
+								...existing.contributions,
+								{
+									...this.contributionIdentity(absence, 8),
+									kind: "absence",
+									facts: {
+										startDate: absence.startDate,
+										endDate: absence.endDate,
+										absenceCategoryId: absence.absenceCategoryId,
+										absenceCategoryName: absence.absenceCategoryName,
+										absenceType: absence.absenceType,
+										status: absence.status,
+										mappingId: mapping.id,
+									},
+								},
+							],
 				});
 			}
 		}
