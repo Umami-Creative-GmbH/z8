@@ -1,11 +1,12 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import type {
-	DocumentRequestEventKind,
-	DocumentRequestReasonCode,
-	DocumentRequestRefusal,
-	DocumentRequestStatus,
+import {
+	DOCUMENT_REQUEST_BULK_MAX_RECIPIENTS,
+	type DocumentRequestEventKind,
+	type DocumentRequestReasonCode,
+	type DocumentRequestRefusal,
+	type DocumentRequestStatus,
 } from "@/lib/personnel-file/document-request.types";
 
 /** Translated names of request statuses, history events and system reasons (#1307). */
@@ -87,6 +88,19 @@ export function useDocumentRequestErrorMessage() {
 		not_editable: t(
 			"settings.personnelFiles.requests.error.notEditable",
 			"Only the deadline and note can be changed. Cancel the request and create a new one instead.",
+		),
+		no_recipients: t(
+			"settings.personnelFiles.requests.error.noRecipients",
+			"Choose at least one employee or team.",
+		),
+		too_many_recipients: t(
+			"settings.personnelFiles.requests.error.tooManyRecipients",
+			"Request documents from at most {max} employees at once.",
+			{ max: DOCUMENT_REQUEST_BULK_MAX_RECIPIENTS },
+		),
+		renewal_not_in_bulk: t(
+			"settings.personnelFiles.requests.error.renewalNotInBulk",
+			"Requests for several employees cannot name a renewed document.",
 		),
 		conflict: t(
 			"settings.personnelFiles.requests.error.conflict",

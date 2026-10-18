@@ -189,6 +189,60 @@ export interface GrantScopeCopy {
 	departedNotice: string | null;
 }
 
+/** One switch per team; also used by the bulk document request (#1407). */
+export function TeamSwitches({
+	teams,
+	teamIds,
+	onTeamIdsChange,
+	disabled,
+	testIdPrefix,
+}: {
+	teams: GrantTeamOption[];
+	teamIds: string[];
+	onTeamIdsChange: (teamIds: string[]) => void;
+	disabled: boolean;
+	testIdPrefix: string;
+}) {
+	return (
+		<div className="grid gap-2 sm:grid-cols-2" data-testid={`${testIdPrefix}-grid`}>
+			{teams.map((team) => {
+				const isSelected = teamIds.includes(team.id);
+				return (
+					<button
+						key={team.id}
+						type="button"
+						role="switch"
+						aria-checked={isSelected}
+						aria-label={team.name}
+						data-testid={`${testIdPrefix}-${team.id}`}
+						onClick={() => onTeamIdsChange(toggleId(teamIds, team.id, !isSelected))}
+						disabled={disabled}
+						className={`flex items-center justify-between gap-4 rounded-md border p-3 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+							isSelected ? "border-primary/60 bg-primary/5" : "hover:bg-accent/50"
+						}`}
+					>
+						<span>{team.name}</span>
+						<span
+							aria-hidden="true"
+							className={`inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-colors ${
+								isSelected ? "bg-primary" : "bg-input dark:bg-input/80"
+							}`}
+						>
+							<span
+								className={`block size-4 rounded-full bg-background ring-0 transition-transform dark:bg-foreground ${
+									isSelected
+									? "translate-x-[calc(100%-2px)] dark:bg-primary-foreground"
+									: "translate-x-0"
+								}`}
+							/>
+						</span>
+					</button>
+				);
+			})}
+		</div>
+	);
+}
+
 /** The scope toggle and, for a specific scope, the team switches and the employee picker. */
 export function GrantScopeFields({
 	scope,
@@ -248,42 +302,13 @@ export function GrantScopeFields({
 						{teams.length === 0 ? (
 							<p className="text-muted-foreground text-sm">{copy.noTeams}</p>
 						) : (
-							<div className="grid gap-2 sm:grid-cols-2" data-testid={`${testIdPrefix}-grid`}>
-								{teams.map((team) => {
-									const isSelected = teamIds.includes(team.id);
-									return (
-										<button
-											key={team.id}
-											type="button"
-											role="switch"
-											aria-checked={isSelected}
-											aria-label={team.name}
-											data-testid={`${testIdPrefix}-${team.id}`}
-											onClick={() => onTeamIdsChange(toggleId(teamIds, team.id, !isSelected))}
-											disabled={disabled}
-											className={`flex items-center justify-between gap-4 rounded-md border p-3 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-												isSelected ? "border-primary/60 bg-primary/5" : "hover:bg-accent/50"
-											}`}
-										>
-											<span>{team.name}</span>
-											<span
-												aria-hidden="true"
-												className={`inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-colors ${
-													isSelected ? "bg-primary" : "bg-input dark:bg-input/80"
-												}`}
-											>
-												<span
-													className={`block size-4 rounded-full bg-background ring-0 transition-transform dark:bg-foreground ${
-														isSelected
-															? "translate-x-[calc(100%-2px)] dark:bg-primary-foreground"
-															: "translate-x-0"
-													}`}
-												/>
-											</span>
-										</button>
-									);
-								})}
-							</div>
+							<TeamSwitches
+								teams={teams}
+								teamIds={teamIds}
+								onTeamIdsChange={onTeamIdsChange}
+								disabled={disabled}
+								testIdPrefix={testIdPrefix}
+							/>
 						)}
 					</fieldset>
 

@@ -1,6 +1,7 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { BulkDocumentRequestsButton } from "@/components/personnel-file/bulk-document-requests-dialog";
 import { DocumentRequestsOverview } from "@/components/personnel-file/document-requests-overview";
 import { Button } from "@/components/ui/button";
 import { LoadingRegion } from "@/components/ui/loading-region";
@@ -10,7 +11,10 @@ import { systemClock } from "@/lib/datetime/temporal-core";
 import { managesDocumentRequests } from "@/lib/personnel-file/access";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import { parseDocumentRequestOverviewParams } from "@/lib/personnel-file/document-request-overview";
-import { listManagedDocumentRequests } from "@/lib/personnel-file/document-request-store";
+import {
+	listDocumentRequestRecipientOptions,
+	listManagedDocumentRequests,
+} from "@/lib/personnel-file/document-request-store";
 import { loadOrganizationDay } from "@/lib/personnel-file/organization-day";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
@@ -24,7 +28,8 @@ type DocumentRequestsPageProps = {
  * across employees (owners and admins: all, except on their own file), with
  * status and overdue filters; overdue is read in the organization's calendar.
  * Not found without coverage of certificates or other documents and while
- * personnel files are off. Bulk create (#1407) belongs in the header.
+ * personnel files are off. The header's bulk create (#1407) asks several
+ * employees and teams for the same document at once.
  */
 async function DocumentRequestsContent({ searchParams }: DocumentRequestsPageProps) {
 	const [t, current, params] = await Promise.all([
@@ -36,9 +41,10 @@ async function DocumentRequestsContent({ searchParams }: DocumentRequestsPagePro
 	const { access } = current;
 	const now = systemClock.nowInstant();
 	const filters = parseDocumentRequestOverviewParams(params);
-	const [result, { today, timezone }] = await Promise.all([
+	const [result, { today, timezone }, recipientOptions] = await Promise.all([
 		listManagedDocumentRequests(db, access, filters, now),
 		loadOrganizationDay(db, { organizationId: access.organizationId, now }),
+		listDocumentRequestRecipientOptions(db, access, now),
 	]);
 	if (result.kind !== "ok") notFound();
 
@@ -51,9 +57,12 @@ async function DocumentRequestsContent({ searchParams }: DocumentRequestsPagePro
 						{t("settings.personnelFiles.area.title", "Personnel Files")}
 					</Link>
 				</Button>
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.personnelFiles.requests.page.title", "Document requests")}
-				</h1>
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<h1 className="text-2xl font-semibold tracking-tight">
+						{t("settings.personnelFiles.requests.page.title", "Document requests")}
+					</h1>
+					<BulkDocumentRequestsButton options={recipientOptions} today={today.toString()} />
+				</div>
 				<p className="max-w-prose text-muted-foreground">
 					{t(
 						"settings.personnelFiles.requests.page.description",
