@@ -194,27 +194,22 @@ function ClockActionRow({ widget }: { widget: ClockWidget }) {
 		);
 	}
 
-	// Clock Out on its own row; below it the two breaks: one starting now, and an
-	// icon-only quick break for one already taken.
+	// Clock Out beside the icon-only quick break for a break already taken; below
+	// them, Start break across the whole card, so its label always fits.
 	return (
 		<div className="flex flex-col gap-2">
-			<ClockActionButton
-				isClockedIn={isClockedIn}
-				isMutating={widget.isMutating}
-				isClockingOut={widget.isClockingOut}
-				isClocking={widget.isMutating && !widget.isStartingBreak && !widget.isAddingBreak}
-				onClick={isClockedIn ? widget.handleClockOut : widget.handleClockIn}
-				t={widget.t}
-			/>
-			{isClockedIn ? (
-				<div className="flex gap-2">
-					<StartBreakButton
-						onClick={() => void widget.handleStartBreak()}
-						disabled={widget.isMutating || widget.isOffline}
-						pending={widget.isStartingBreak}
-						size="lg"
+			<div className="flex gap-2">
+				<div className="min-w-0 flex-1">
+					<ClockActionButton
+						isClockedIn={isClockedIn}
+						isMutating={widget.isMutating}
+						isClockingOut={widget.isClockingOut}
+						isClocking={widget.isMutating && !widget.isStartingBreak && !widget.isAddingBreak}
+						onClick={isClockedIn ? widget.handleClockOut : widget.handleClockIn}
 						t={widget.t}
 					/>
+				</div>
+				{isClockedIn ? (
 					<QuickBreakPopover
 						onAddBreak={widget.handleAddBreak}
 						isAddingBreak={widget.isAddingBreak}
@@ -229,7 +224,16 @@ function ClockActionRow({ widget }: { widget: ClockWidget }) {
 							t={widget.t}
 						/>
 					</QuickBreakPopover>
-				</div>
+				) : null}
+			</div>
+			{isClockedIn ? (
+				<StartBreakButton
+					onClick={() => void widget.handleStartBreak()}
+					disabled={widget.isMutating || widget.isOffline}
+					pending={widget.isStartingBreak}
+					size="lg"
+					t={widget.t}
+				/>
 			) : null}
 		</div>
 	);

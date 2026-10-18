@@ -108,7 +108,7 @@ export function StartBreakButton({
 			size={size}
 			onClick={onClick}
 			disabled={disabled}
-			className="min-w-0 flex-1"
+			className="w-full"
 		>
 			{/* A break pauses the work; Resume plays it again and End day stops it. */}
 			{pending ? (
