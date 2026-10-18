@@ -79,7 +79,6 @@ import {
 import {
 	employee,
 	employeeManagers,
-	employeeRateHistory,
 	location,
 	locationEmployee,
 	locationSubarea,
@@ -877,7 +876,6 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	primaryManagedTeams: many(team, {
 		relationName: "team_primary_manager",
 	}),
-	rateHistory: many(employeeRateHistory),
 	employmentHistory: many(employeeEmploymentHistory),
 	// Multiple managers support
 	managers: many(employeeManagers, {
@@ -977,22 +975,6 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	skillOverrides: many(skillRequirementOverride),
 	// Custom roles
 	employeeCustomRoles: many(employeeCustomRole),
-}));
-
-// Employee Rate History
-export const employeeRateHistoryRelations = relations(employeeRateHistory, ({ one }) => ({
-	employee: one(employee, {
-		fields: [employeeRateHistory.employeeId],
-		references: [employee.id],
-	}),
-	organization: one(organization, {
-		fields: [employeeRateHistory.organizationId],
-		references: [organization.id],
-	}),
-	creator: one(user, {
-		fields: [employeeRateHistory.createdBy],
-		references: [user.id],
-	}),
 }));
 
 export const employeeEmploymentHistoryRelations = relations(

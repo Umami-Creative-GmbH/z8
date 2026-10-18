@@ -1952,14 +1952,21 @@
       "idx": 278,
       "version": "7",
       "when": 1808755200000,
-      "tag": "0278_personnel_file_document_requests",
+      "tag": "0278_drop_employee_rate_history",
       "breakpoints": true
     },
     {
       "idx": 279,
       "version": "7",
       "when": 1808841600000,
-      "tag": "0279_personnel_file_document_request_reminders",
+      "tag": "0279_personnel_file_document_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 280,
+      "version": "7",
+      "when": 1808928000000,
+      "tag": "0280_personnel_file_document_request_reminders",
       "breakpoints": true
     }
   ]

@@ -2,7 +2,6 @@ import { sql } from "drizzle-orm";
 import {
 	type AnyPgColumn,
 	boolean,
-	decimal,
 	foreignKey,
 	index,
 	pgTable,
@@ -187,45 +186,6 @@ export const employee = pgTable(
 				sql`btrim(${table.employeeNumber}, ${sql.raw(PERSONNEL_NUMBER_WHITESPACE_SQL)}) <> ''`,
 			),
 		unique("employee_id_organizationId_idx").on(table.id, table.organizationId),
-	],
-);
-
-// ============================================
-// EMPLOYEE RATE HISTORY
-// ============================================
-
-// Tracks historical hourly rates for employees
-export const employeeRateHistory = pgTable(
-	"employee_rate_history",
-	{
-		id: uuid("id").defaultRandom().primaryKey(),
-		employeeId: uuid("employee_id")
-			.notNull()
-			.references(() => employee.id, { onDelete: "cascade" }),
-		organizationId: text("organization_id")
-			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" }),
-
-		hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }).notNull(),
-		currency: text("currency").default("EUR").notNull(),
-
-		effectiveFrom: timestamp("effective_from").notNull(),
-		effectiveTo: timestamp("effective_to"), // null = currently active rate
-
-		reason: text("reason"), // optional note explaining rate change
-
-		createdBy: text("created_by")
-			.notNull()
-			.references(() => user.id),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-	},
-	(table) => [
-		index("employeeRateHistory_employeeId_idx").on(table.employeeId),
-		index("employeeRateHistory_organizationId_idx").on(table.organizationId),
-		index("employeeRateHistory_employeeId_effectiveFrom_idx").on(
-			table.employeeId,
-			table.effectiveFrom,
-		),
 	],
 );
 
