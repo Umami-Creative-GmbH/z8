@@ -109,6 +109,7 @@ import {
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
 import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
+import { acquireEmployeeCoordination } from "@/lib/time-tracking/work-transaction";
 import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 
 const logger = createLogger("AbsenceActionsEffect");
@@ -220,58 +221,56 @@ function validateRequestDates(data: AbsenceRequest) {
 	return Effect.void;
 }
 
-function checkForOverlappingAbsences(
-	dbService: typeof DatabaseService.Service,
+/**
+ * Refuses a request that overlaps the employee's approved or pending absences in a blocking way.
+ * Called only inside the submission transaction, after the employee coordination guard (#1396).
+ */
+async function assertNoBlockingOverlap(
+	tx: ApprovalDbService["db"],
 	currentEmployee: RequestAbsenceEmployeeContext,
-	data: AbsenceRequest,
+	data: Pick<AbsenceRequest, "startDate" | "startPeriod" | "endDate" | "endPeriod">,
 	category: { type: string; requiresApproval: boolean },
 	hasManagerApprovalWorkflow: boolean,
 ) {
-	return Effect.gen(function* () {
-		const overlappingAbsences = yield* dbService.query("checkAbsenceOverlaps", async () => {
-			return await dbService.db.query.absenceEntry.findMany({
-				where: and(
-					eq(absenceEntry.employeeId, currentEmployee.id),
-					eq(absenceEntry.organizationId, currentEmployee.organizationId),
-					or(eq(absenceEntry.status, "approved"), eq(absenceEntry.status, "pending")),
-				),
-				with: { category: true },
-			});
+	const overlappingAbsences = await tx.query.absenceEntry.findMany({
+		where: and(
+			eq(absenceEntry.employeeId, currentEmployee.id),
+			eq(absenceEntry.organizationId, currentEmployee.organizationId),
+			or(eq(absenceEntry.status, "approved"), eq(absenceEntry.status, "pending")),
+		),
+		with: { category: true },
+	});
+
+	for (const existing of overlappingAbsences) {
+		if (!dateRangesOverlap(data.startDate, data.endDate, existing.startDate, existing.endDate)) {
+			continue;
+		}
+
+		const message = getBlockingOverlapMessage({
+			newCategoryType: category.type,
+			newStartPeriod: data.startPeriod,
+			newEndPeriod: data.endPeriod,
+			existingStartPeriod: existing.startPeriod,
+			existingEndPeriod: existing.endPeriod,
+			existingStatus: existing.status,
+			existingCountsAgainstVacation: existing.category.countsAgainstVacation,
+			incomingRequiresApproval: category.requiresApproval,
+			hasManagerApprovalWorkflow,
 		});
 
-		for (const existing of overlappingAbsences) {
-			if (!dateRangesOverlap(data.startDate, data.endDate, existing.startDate, existing.endDate)) {
-				continue;
-			}
-
-			const message = getBlockingOverlapMessage({
-				newCategoryType: category.type,
-				newStartPeriod: data.startPeriod,
-				newEndPeriod: data.endPeriod,
-				existingStartPeriod: existing.startPeriod,
-				existingEndPeriod: existing.endPeriod,
-				existingStatus: existing.status,
-				existingCountsAgainstVacation: existing.category.countsAgainstVacation,
-				incomingRequiresApproval: category.requiresApproval,
-				hasManagerApprovalWorkflow,
+		if (message) {
+			throw new ConflictError({
+				message,
+				conflictType: "absence_overlap",
+				details: {
+					existingAbsenceId: existing.id,
+					existingStart: existing.startDate,
+					existingEnd: existing.endDate,
+					existingStatus: existing.status,
+				},
 			});
-
-			if (message) {
-				yield* Effect.fail(
-					new ConflictError({
-						message,
-						conflictType: "absence_overlap",
-						details: {
-							existingAbsenceId: existing.id,
-							existingStart: existing.startDate,
-							existingEnd: existing.endDate,
-							existingStatus: existing.status,
-						},
-					}),
-				);
-			}
 		}
-	});
+	}
 }
 
 function getAbsenceCategory(
@@ -350,6 +349,15 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 	createdBy: string;
 	/** The deputy named on the request (#1011), already checked. */
 	deputyEmployeeId?: string | null;
+	/** What the overlap and balance checks need inside the transaction (#1396). */
+	admission: {
+		/** The employee's working days over the absence, already read for its absence days. */
+		isWorkingDay: IsWorkingDay;
+		/** The evaluation time of the per-year balance. */
+		now: Instant;
+		/** Whether a default approver was found; the overlap rules depend on it. */
+		hasDefaultApprover: boolean;
+	};
 	hasManagerApprovalWorkflow: boolean;
 	approvalWorkflow?: {
 		categoryId: string;
@@ -373,11 +381,36 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 				tx: ApprovalDbService["db"],
 				approvalContext?: ApprovalWorkflowTransactionContext,
 			) => {
+				// Guards in protocol order: the approval write gate (rank 2), the shared
+				// organization configuration guard the closed-month check takes (rank 3),
+				// then the employee coordination key (rank 5).
+				const gate = params.approvalWorkflow
+					? await approvalContext?.writeGate.acquire({
+							organizationId: currentEmployee.organizationId,
+							workflowType: "absence",
+						})
+					: undefined;
 				// Refused before any write when its days touch a closed month (#762).
 				await assertAbsenceDaysOpen(tx, {
 					organizationId: currentEmployee.organizationId,
 					employeeId: currentEmployee.id,
 					days: [{ startDate: data.startDate, endDate: data.endDate }],
+				});
+				// One submission per employee at a time (#1396): a concurrent one waits
+				// here, then the checks below see its committed pending absence.
+				await acquireEmployeeCoordination(tx, [currentEmployee.id]);
+				await assertNoBlockingOverlap(
+					tx,
+					currentEmployee,
+					data,
+					category,
+					params.admission.hasDefaultApprover,
+				);
+				await assertVacationBalanceByYear(tx, currentEmployee, {
+					absence: toAbsenceEntryDurationFields(data),
+					isWorkingDay: params.admission.isWorkingDay,
+					category,
+					now: params.admission.now,
 				});
 				await assertHistoricalVacationNotOverlapping(tx, {
 					organizationId: currentEmployee.organizationId,
@@ -489,7 +522,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 				let autoCompletion: ApprovedAbsenceResult | undefined;
 				let legacyDeliveryIntent = false;
 				if (params.approvalWorkflow) {
-					if (!approvalContext || !approvalLifecycle) {
+					if (!approvalContext || !approvalLifecycle || !gate) {
 						throw new Error("Approval transaction context is required");
 					}
 					const sourceIdentity = {
@@ -504,10 +537,6 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 						userId: createdBy,
 					};
 					const submissionKey = `absence:${newAbsence.id}:submission`;
-					const gate = await approvalContext.writeGate.acquire({
-						organizationId: currentEmployee.organizationId,
-						workflowType: "absence",
-					});
 					// The legacy coordinator and the transition engine rebind the
 					// compatibility writer to this gate themselves.
 					const pinnedGate = pinApprovalWriteGate({
@@ -796,6 +825,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 				if (historical)
 					return new ValidationError({ message: historical.message, refusal: historical.refusal });
 				if (error.cause instanceof ValidationError) return error.cause;
+				if (error.cause instanceof ConflictError) return error.cause;
 				if (
 					error.cause instanceof ApprovalWorkflowStartError &&
 					error.cause.code === "NO_DEFAULT_APPROVER"
@@ -1024,13 +1054,11 @@ export const INSUFFICIENT_VACATION_BALANCE_REFUSAL = "insufficient_balance";
 /**
  * Refuses vacation whose absence days in a calendar year exceed that year's recorded remaining
  * balance (#1340). A year whose balance is unavailable warns in the preview but never blocks.
- *
- * Known limitation: like the overlap check before it, this runs before the write transaction and
- * takes no per-employee lock, so two submissions at the same moment can both pass. Moving it after
- * a lock would need a new per-employee guard in the shared lock order (#1306 review, S3).
+ * Called only inside the submission transaction, after the employee coordination guard, so a
+ * concurrent submission's pending vacation is already charged (#1396).
  */
-function checkVacationBalanceByYear(
-	dbService: typeof DatabaseService.Service,
+async function assertVacationBalanceByYear(
+	tx: ApprovalDbService["db"],
 	currentEmployee: RequestAbsenceEmployeeContext,
 	input: {
 		absence: AbsenceDayRange;
@@ -1040,32 +1068,22 @@ function checkVacationBalanceByYear(
 		now: Instant;
 	},
 ) {
-	if (!input.category.countsAgainstVacation) return Effect.void;
-	return dbService
-		.query("absences.checkVacationBalanceByYear", () =>
-			findYearsExceedingBalance(dbService.db, {
-				organizationId: currentEmployee.organizationId,
-				employeeId: currentEmployee.id,
-				absence: input.absence,
-				isWorkingDay: input.isWorkingDay,
-				currentDate: dateFromInstant(input.now),
-			}),
-		)
-		.pipe(
-			Effect.flatMap(([exceeded]) =>
-				exceeded
-					? Effect.fail(
-							new ValidationError({
-								message: exceeded.futureYear
-									? `The requested dates exceed your available vacation balance for ${exceeded.year}. Carryover and accrual for future years are not counted yet.`
-									: `The requested dates exceed your available vacation balance for ${exceeded.year}.`,
-								field: "endDate",
-								refusal: INSUFFICIENT_VACATION_BALANCE_REFUSAL,
-							}),
-						)
-					: Effect.void,
-			),
-		);
+	if (!input.category.countsAgainstVacation) return;
+	const [exceeded] = await findYearsExceedingBalance(tx, {
+		organizationId: currentEmployee.organizationId,
+		employeeId: currentEmployee.id,
+		absence: input.absence,
+		isWorkingDay: input.isWorkingDay,
+		currentDate: dateFromInstant(input.now),
+	});
+	if (!exceeded) return;
+	throw new ValidationError({
+		message: exceeded.futureYear
+			? `The requested dates exceed your available vacation balance for ${exceeded.year}. Carryover and accrual for future years are not counted yet.`
+			: `The requested dates exceed your available vacation balance for ${exceeded.year}.`,
+		field: "endDate",
+		refusal: INSUFFICIENT_VACATION_BALANCE_REFUSAL,
+	});
 }
 
 function requestAbsenceWithResolverEffect(
@@ -1172,20 +1190,6 @@ function requestAbsenceWithResolverEffect(
 				const defaultApproverId = category.requiresApproval
 					? yield* getAbsenceDefaultApproverId(dbService, currentEmployee)
 					: null;
-				yield* checkForOverlappingAbsences(
-					dbService,
-					currentEmployee,
-					requestData,
-					category,
-					Boolean(defaultApproverId),
-				);
-				yield* checkVacationBalanceByYear(dbService, currentEmployee, {
-					absence: absenceDayRange,
-					isWorkingDay,
-					category,
-					now: approvalLifecycle ? approvalLifecycle.nowInstant() : systemClock.nowInstant(),
-				});
-
 				span.setAttribute("absence.category_name", category.name);
 				span.setAttribute("absence.requires_approval", category.requiresApproval);
 
@@ -1207,6 +1211,11 @@ function requestAbsenceWithResolverEffect(
 					createdBy: userId,
 					deputyEmployeeId: data.deputyEmployeeId ?? null,
 					submittedInput: data,
+					admission: {
+						isWorkingDay,
+						now: approvalLifecycle ? approvalLifecycle.nowInstant() : systemClock.nowInstant(),
+						hasDefaultApprover: Boolean(defaultApproverId),
+					},
 					hasManagerApprovalWorkflow: category.requiresApproval,
 					approvalWorkflow: category.requiresApproval
 						? {
