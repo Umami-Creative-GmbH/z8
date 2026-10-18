@@ -1,10 +1,23 @@
 import { DateTime } from "luxon";
 import { dateRangesOverlap, fromJSDate, toDateKey } from "@/lib/datetime/luxon-utils";
-import { type AbsenceDaysRefusal, type IsWorkingDay, refusalForAbsenceDays } from "./absence-days";
+import { calendarYearAt, parseInstant } from "@/lib/datetime/temporal-core";
+import {
+	type AbsenceDaysRefusal,
+	absenceDaysByYear,
+	countAbsenceDays,
+	type IsWorkingDay,
+	refusalForAbsenceDays,
+} from "./absence-days";
 import type { AffectedShiftEvidence, CoverageEvaluation } from "./coverage-evidence";
-import { countRequestedAbsenceDays, normalizeAbsenceDurationInput } from "./duration";
+import { normalizeAbsenceDurationInput, toAbsenceEntryDurationFields } from "./duration";
 import type { TimeOffInLieuPreview } from "./time-off-in-lieu-preview";
-import type { AbsenceRequest, Holiday, VacationBalance } from "./types";
+import type { AbsenceRequest, Holiday } from "./types";
+import {
+	overdrawnVacationYears,
+	type VacationYearBalanceEvidence,
+	type VacationYearImpact,
+	vacationYearImpacts,
+} from "./vacation-year-balance";
 
 export type {
 	CoverageEvaluation,
@@ -32,7 +45,15 @@ export interface ExistingAbsenceInput {
 export interface AbsencePlanPreviewInput {
 	category: AbsencePlanCategoryInput;
 	request: AbsenceRequest;
-	vacationBalance: VacationBalance | null;
+	/**
+	 * The recorded vacation balance of each calendar year the request touches; empty for a category
+	 * that does not count against vacation.
+	 */
+	vacationBalances: readonly VacationYearBalanceEvidence[];
+	/** When the evidence was read, an ISO instant; the balances are estimates as of then. */
+	evaluatedAt: string;
+	/** The organization's zone, which decides the evaluation time's calendar year. */
+	timezone: string;
 	/** The employee's assigned holidays, listed in the preview. */
 	holidays: Holiday[];
 	/** The employee's working days, which already exclude their holidays. */
@@ -54,12 +75,8 @@ export interface AbsencePlanHolidayPreview {
 	endDate: string;
 }
 
-export interface AbsencePlanBalancePreview {
-	year: number;
-	remainingDays: number;
-	remainingAfterRequest: number;
-	countsAgainstVacation: boolean;
-}
+/** One calendar year's charged absence days and estimated vacation balance after the request. */
+export type AbsencePlanBalancePreview = VacationYearImpact;
 
 /** One of the requester's own published shifts, with the part the absence takes. */
 export type AbsencePlanAffectedShiftPreview = AffectedShiftEvidence;
@@ -68,7 +85,11 @@ export interface AbsencePlanPreview {
 	requestedAbsenceDays: number;
 	/** Set when the request would be refused on submission. */
 	refusal: AbsenceDaysRefusal | null;
-	balance: AbsencePlanBalancePreview | null;
+	countsAgainstVacation: boolean;
+	/** Each calendar year the request touches, ascending; empty when it doesn't count against vacation. */
+	balances: AbsencePlanBalancePreview[];
+	/** When the evidence was read, an ISO instant. */
+	evaluatedAt: string;
 	/** Set only for a category that draws on the work balance. */
 	workBalance: TimeOffInLieuPreview | null;
 	holidays: AbsencePlanHolidayPreview[];
@@ -85,7 +106,9 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 		...holiday,
 		endDate: fromJSDate(holiday.endDate, "utc").endOf("day").toJSDate(),
 	}));
-	const requestedAbsenceDays = countRequestedAbsenceDays(normalizedRequest, input.isWorkingDay);
+	// Counted from the request once normalized: normalizing it again would drop legacy half days.
+	const absenceDayRange = toAbsenceEntryDurationFields(normalizedRequest);
+	const requestedAbsenceDays = countAbsenceDays(absenceDayRange, input.isWorkingDay);
 	const refusal = refusalForAbsenceDays({
 		countsAgainstVacation: input.category.countsAgainstVacation,
 		absenceDays: requestedAbsenceDays,
@@ -96,34 +119,30 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 	let hasRisk = false;
 	let needsReview = false;
 
-	const balance = input.vacationBalance
-		? {
-				year: input.vacationBalance.year,
-				remainingDays: input.vacationBalance.remainingDays,
-				remainingAfterRequest:
-					input.vacationBalance.remainingDays -
-					(input.category.countsAgainstVacation ? requestedAbsenceDays : 0),
-				countsAgainstVacation: input.category.countsAgainstVacation,
-			}
-		: null;
+	const balances = input.category.countsAgainstVacation
+		? vacationYearImpacts({
+				charges: absenceDaysByYear(absenceDayRange, input.isWorkingDay),
+				evidence: input.vacationBalances,
+				currentYear: calendarYearAt(parseInstant(input.evaluatedAt), input.timezone),
+			})
+		: [];
 
 	// The dialog shows the refusal itself, in the viewer's language.
 	if (refusal) {
 		hasRisk = true;
 	}
 
-	if (input.category.countsAgainstVacation && !balance) {
+	// The panel names each year's balance and its availability in the viewer's language.
+	if (balances.some((year) => year.status === "unavailable")) {
 		needsReview = true;
-		reasons.push("Vacation balance is unavailable for this year.");
 	}
 
 	if (!input.category.countsAgainstVacation) {
 		reasons.push("This absence type does not reduce vacation balance.");
 	}
 
-	if (balance && input.category.countsAgainstVacation && balance.remainingAfterRequest < 0) {
+	if (overdrawnVacationYears(balances).length > 0) {
 		hasRisk = true;
-		warnings.push("Vacation balance would be negative after this request.");
 	}
 
 	const workBalance = input.category.drawsOnWorkBalance ? (input.workBalance ?? null) : null;
@@ -166,7 +185,9 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 	return {
 		requestedAbsenceDays,
 		refusal,
-		balance,
+		countsAgainstVacation: input.category.countsAgainstVacation,
+		balances,
+		evaluatedAt: input.evaluatedAt,
 		workBalance,
 		holidays: holidays.map((holiday) => ({
 			id: holiday.id,

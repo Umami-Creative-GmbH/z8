@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry } from "@/db/schema";
+import { calendarYearsOf } from "@/lib/absences/absence-days";
 import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import {
 	type AbsencePlanPreview,
@@ -12,12 +13,22 @@ import {
 	type ExistingAbsenceInput,
 } from "@/lib/absences/absence-plan-preview";
 import { loadAbsenceCoverageEvidence } from "@/lib/absences/coverage-evidence.server";
+import {
+	normalizeAbsenceDurationInput,
+	toAbsenceEntryDurationFields,
+} from "@/lib/absences/duration";
 import { loadTimeOffInLieuPreview } from "@/lib/absences/time-off-in-lieu-preview.server";
 import type { AbsenceRequest } from "@/lib/absences/types";
+import { loadVacationYearBalances } from "@/lib/absences/vacation-year-balance-store";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import {
+	dateFromInstant,
+	instantToCanonicalString,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { getCurrentEmployee } from "./current-employee";
-import { getHolidays, getVacationBalance } from "./queries";
+import { getHolidays } from "./queries";
 
 export type AbsencePlanPreviewRequest = AbsenceRequest;
 
@@ -64,38 +75,56 @@ export async function getAbsencePlanPreview(
 		});
 		const timezone = resolveOrganizationTimezone(org?.timezone).timezone;
 
-		const [vacationBalance, holidays, isWorkingDay, existingAbsences, coverageEvidence, managerId] =
-			await Promise.all([
-				getVacationBalance(currentEmployee.id, range.start.year, timezone),
-				getHolidays(currentEmployee.id, range.startDate, range.endDate),
-				loadWorkingDays(db, {
-					organizationId: currentEmployee.organizationId,
-					employeeId: currentEmployee.id,
-					startDate: request.startDate,
-					endDate: request.endDate,
-				}),
-				db.query.absenceEntry.findMany({
-					where: and(
-						eq(absenceEntry.employeeId, currentEmployee.id),
-						eq(absenceEntry.organizationId, currentEmployee.organizationId),
-						lte(absenceEntry.startDate, request.endDate),
-						gte(absenceEntry.endDate, request.startDate),
-					),
-					with: { category: true },
-				}),
-				// Isolated: failed coverage reads become incomplete evidence (#1341).
-				loadAbsenceCoverageEvidence({
-					organizationId: currentEmployee.organizationId,
-					employeeId: currentEmployee.id,
-					timezone,
-					request,
-				}),
-				getPrimaryEligibleManagerIdForRequester({
-					db,
-					requesterEmployeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-				}),
-			]);
+		const evaluatedAt = systemClock.nowInstant();
+		const [
+			vacationBalances,
+			holidays,
+			isWorkingDay,
+			existingAbsences,
+			coverageEvidence,
+			managerId,
+		] = await Promise.all([
+			// Every year the request touches, read at one evaluation time; each year fails alone.
+			category.countsAgainstVacation
+				? loadVacationYearBalances(db, {
+						organizationId: currentEmployee.organizationId,
+						employeeId: currentEmployee.id,
+						years: calendarYearsOf(
+							toAbsenceEntryDurationFields(normalizeAbsenceDurationInput(request)),
+						),
+						timezone,
+						currentDate: dateFromInstant(evaluatedAt),
+					})
+				: [],
+			getHolidays(currentEmployee.id, range.startDate, range.endDate),
+			loadWorkingDays(db, {
+				organizationId: currentEmployee.organizationId,
+				employeeId: currentEmployee.id,
+				startDate: request.startDate,
+				endDate: request.endDate,
+			}),
+			db.query.absenceEntry.findMany({
+				where: and(
+					eq(absenceEntry.employeeId, currentEmployee.id),
+					eq(absenceEntry.organizationId, currentEmployee.organizationId),
+					lte(absenceEntry.startDate, request.endDate),
+					gte(absenceEntry.endDate, request.startDate),
+				),
+				with: { category: true },
+			}),
+			// Isolated: failed coverage reads become incomplete evidence (#1341).
+			loadAbsenceCoverageEvidence({
+				organizationId: currentEmployee.organizationId,
+				employeeId: currentEmployee.id,
+				timezone,
+				request,
+			}),
+			getPrimaryEligibleManagerIdForRequester({
+				db,
+				requesterEmployeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+			}),
+		]);
 
 		const workBalance = category.drawsOnWorkBalance
 			? await loadTimeOffInLieuPreview({
@@ -120,7 +149,9 @@ export async function getAbsencePlanPreview(
 				drawsOnWorkBalance: category.drawsOnWorkBalance,
 			},
 			request,
-			vacationBalance,
+			vacationBalances,
+			evaluatedAt: instantToCanonicalString(evaluatedAt),
+			timezone,
 			holidays,
 			isWorkingDay,
 			existingAbsences: typedExistingAbsences.map((absence) => ({

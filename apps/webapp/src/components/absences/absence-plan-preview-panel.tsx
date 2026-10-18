@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/
 import type { AbsencePlanPreview, CoverageEvidenceGap } from "@/lib/absences/absence-plan-preview";
 import { formatDays } from "@/lib/absences/date-utils";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
+import { VacationYearBalances } from "./vacation-year-balances";
 
 interface AbsencePlanPreviewPanelProps {
 	preview?: AbsencePlanPreview;
@@ -77,25 +78,18 @@ export function AbsencePlanPreviewPanel({
 			</CardHeader>
 			<CardContent className="grid gap-3 sm:grid-cols-2">
 				<PreviewSection title={t("absences.planPreview.balance", "Balance")}>
-					{preview.balance ? (
-						<div className="space-y-2">
-							<p className="text-muted-foreground text-sm">
-								{getVacationImpact(preview.balance, t)}
-							</p>
-							<MetricRow
-								label={t("absences.planPreview.requested", "Requested")}
-								value={formatDays(preview.requestedAbsenceDays, t)}
-							/>
-							<MetricRow
-								label={t("absences.planPreview.remainingAfter", "Remaining after request")}
-								value={formatDays(preview.balance.remainingAfterRequest, t)}
-							/>
-						</div>
-					) : (
+					<div className="space-y-2">
 						<p className="text-muted-foreground text-sm">
-							{t("absences.planPreview.balanceUnavailable", "Balance unavailable")}
+							{getVacationImpact(preview.countsAgainstVacation, t)}
 						</p>
-					)}
+						<MetricRow
+							label={t("absences.planPreview.requested", "Requested")}
+							value={formatDays(preview.requestedAbsenceDays, t)}
+						/>
+						{preview.countsAgainstVacation ? (
+							<VacationYearBalances balances={preview.balances} evaluatedAt={preview.evaluatedAt} />
+						) : null}
+					</div>
 				</PreviewSection>
 
 				{preview.workBalance ? (
@@ -303,8 +297,8 @@ function MetricRow({ label, value }: { label: string; value: string }) {
 	);
 }
 
-function getVacationImpact(balance: NonNullable<AbsencePlanPreview["balance"]>, t: TranslateFn) {
-	return balance.countsAgainstVacation
+function getVacationImpact(countsAgainstVacation: boolean, t: TranslateFn) {
+	return countsAgainstVacation
 		? t("absences.planPreview.countsAgainstVacationBalance", "Counts against vacation balance")
 		: t("absences.planPreview.doesNotReduceVacationBalance", "Does not reduce vacation balance");
 }

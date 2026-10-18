@@ -4,7 +4,7 @@ const mockState = vi.hoisted(() => ({
 	getCurrentEmployee: vi.fn(),
 	getHolidays: vi.fn(),
 	loadWorkingDays: vi.fn(),
-	getVacationBalance: vi.fn(),
+	loadVacationYearBalances: vi.fn(),
 	categoryFindFirst: vi.fn(),
 	organizationFindFirst: vi.fn(),
 	absenceFindMany: vi.fn(),
@@ -49,13 +49,16 @@ vi.mock("@/lib/absences/absence-days-resolver", () => ({
 	loadWorkingDays: mockState.loadWorkingDays,
 }));
 
+vi.mock("@/lib/absences/vacation-year-balance-store", () => ({
+	loadVacationYearBalances: mockState.loadVacationYearBalances,
+}));
+
 vi.mock("./current-employee", () => ({
 	getCurrentEmployee: mockState.getCurrentEmployee,
 }));
 
 vi.mock("./queries", () => ({
 	getHolidays: mockState.getHolidays,
-	getVacationBalance: mockState.getVacationBalance,
 }));
 
 const { getAbsencePlanPreview } = await import("./plan-preview");
@@ -83,13 +86,22 @@ describe("getAbsencePlanPreview", () => {
 			countsAgainstVacation: true,
 		});
 		mockState.organizationFindFirst.mockResolvedValue({ timezone: "Europe/Berlin" });
-		mockState.getVacationBalance.mockResolvedValue({
-			year: 2026,
-			totalDays: 20,
-			usedDays: 4,
-			pendingDays: 2,
-			remainingDays: 14,
-		});
+		mockState.loadVacationYearBalances.mockImplementation(
+			async (_database: unknown, input: { years: number[] }) =>
+				input.years.map((year) => ({
+					year,
+					status: "available",
+					balance: {
+						year,
+						totalDays: 20,
+						allowanceDays: 20,
+						usedDays: 4,
+						pendingDays: 2,
+						remainingDays: 14,
+						overdrawnDays: 0,
+					},
+				})),
+		);
 		mockState.getHolidays.mockResolvedValue([]);
 		mockState.loadWorkingDays.mockResolvedValue(
 			(day: { dayOfWeek: number }) => day.dayOfWeek <= 5,
@@ -105,7 +117,10 @@ describe("getAbsencePlanPreview", () => {
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(result.data.requestedAbsenceDays).toBe(2);
-			expect(result.data.balance?.remainingAfterRequest).toBe(12);
+			expect(result.data.balances).toEqual([
+				expect.objectContaining({ year: 2026, chargedAbsenceDays: 2, remainingAfterRequest: 12 }),
+			]);
+			expect(result.data.reasons).toContain("Request follows the normal approval path.");
 		}
 	});
 
@@ -153,20 +168,63 @@ describe("getAbsencePlanPreview", () => {
 		expect(friday.success && friday.data.refusal).toBe("no_working_days");
 	});
 
-	it("calls getVacationBalance with the current employee id and calendar year", async () => {
-		await getAbsencePlanPreview(previewRequest);
+	it("reads the current employee's balance for the request's year at the evaluation time", async () => {
+		const result = await getAbsencePlanPreview(previewRequest);
 
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026, "Europe/Berlin");
+		expect(result.success).toBe(true);
+		const evaluatedAt = result.success ? result.data.evaluatedAt : "";
+		expect(evaluatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+		expect(mockState.loadVacationYearBalances).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-current",
+			employeeId: "emp-current",
+			years: [2026],
+			timezone: "Europe/Berlin",
+			currentDate: new Date(evaluatedAt),
+		});
 	});
 
-	it("uses the request start date calendar year for vacation balance", async () => {
-		await getAbsencePlanPreview({
+	it("reads every calendar year a request across New Year touches", async () => {
+		// Wed 2026-12-30 to Sat 2027-01-02.
+		const result = await getAbsencePlanPreview({
 			...previewRequest,
-			startDate: "2026-03-04",
-			endDate: "2026-03-05",
+			startDate: "2026-12-30",
+			endDate: "2027-01-02",
 		});
 
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026, "Europe/Berlin");
+		expect(mockState.loadVacationYearBalances).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ years: [2026, 2027] }),
+		);
+		expect(result.success && result.data.balances).toEqual([
+			expect.objectContaining({ year: 2026, chargedAbsenceDays: 2, remainingAfterRequest: 12 }),
+			expect.objectContaining({ year: 2027, chargedAbsenceDays: 1, remainingAfterRequest: 13 }),
+		]);
+	});
+
+	it("keeps the preview when one year's balance is unavailable", async () => {
+		mockState.loadVacationYearBalances.mockResolvedValue([
+			{ year: 2026, status: "unavailable", reason: "read_failed" },
+		]);
+
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(result.success && result.data.balances).toEqual([
+			expect.objectContaining({ year: 2026, status: "unavailable", reason: "read_failed" }),
+		]);
+	});
+
+	it("reads no vacation balance for a category that does not count against it", async () => {
+		mockState.categoryFindFirst.mockResolvedValue({
+			id: "cat-sick",
+			name: "Sick leave",
+			requiresApproval: false,
+			countsAgainstVacation: false,
+		});
+
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(mockState.loadVacationYearBalances).not.toHaveBeenCalled();
+		expect(result.success && result.data.balances).toEqual([]);
 	});
 
 	it("returns an error when no active employee exists", async () => {
@@ -185,7 +243,10 @@ describe("getAbsencePlanPreview", () => {
 			organizationId: "org-client",
 		} as typeof previewRequest & { employeeId: string; organizationId: string });
 
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026, "Europe/Berlin");
+		expect(mockState.loadVacationYearBalances).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ organizationId: "org-current", employeeId: "emp-current" }),
+		);
 		expect(mockState.getHolidays).toHaveBeenCalledWith(
 			"emp-current",
 			expect.any(Date),
@@ -239,7 +300,7 @@ describe("getAbsencePlanPreview", () => {
 
 		expect(result).toEqual({ success: false, error: "Invalid preview date range" });
 		expect(mockState.categoryFindFirst).not.toHaveBeenCalled();
-		expect(mockState.getVacationBalance).not.toHaveBeenCalled();
+		expect(mockState.loadVacationYearBalances).not.toHaveBeenCalled();
 	});
 
 	it("adds a coverage risk when the employee absence would drop published staff below minimum", async () => {
@@ -769,7 +830,7 @@ describe("getAbsencePlanPreview", () => {
 	});
 
 	it("returns a generic failure when advisory planner dependencies reject", async () => {
-		mockState.getVacationBalance.mockRejectedValue(new Error("database unavailable"));
+		mockState.getHolidays.mockRejectedValue(new Error("database unavailable"));
 
 		const result = await getAbsencePlanPreview(previewRequest);
 

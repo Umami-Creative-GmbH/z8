@@ -20,6 +20,7 @@ const callerMocks = vi.hoisted(() => ({
 	createAbsenceApprovalWorkflow: vi.fn(),
 	employeeFindFirst: vi.fn(),
 	getAbsenceDays: vi.fn(),
+	findOverdrawnVacationYears: vi.fn(),
 	notificationPreferenceFindMany: vi.fn(),
 	notificationInsert: vi.fn(),
 	userFindFirst: vi.fn(),
@@ -65,6 +66,11 @@ vi.mock("@/db", () => ({
 // Absence days (#979): absences/absence-days-resolver.integration.test.ts.
 vi.mock("@/lib/absences/absence-days-resolver", () => ({
 	getAbsenceDays: callerMocks.getAbsenceDays,
+}));
+
+// Per-year vacation balances (#1340): vacation-year-balance-store.test.ts and plan-preview.integration.test.ts.
+vi.mock("@/lib/absences/vacation-year-balance-store", () => ({
+	findOverdrawnVacationYears: callerMocks.findOverdrawnVacationYears,
 }));
 
 // Legacy submission intents (#384): legacy-bound-approval.integration.test.ts.
@@ -248,6 +254,7 @@ beforeEach(() => {
 	});
 	callerMocks.absenceEntryFindMany.mockResolvedValue([]);
 	callerMocks.getAbsenceDays.mockResolvedValue(2);
+	callerMocks.findOverdrawnVacationYears.mockResolvedValue([]);
 	callerMocks.notificationPreferenceFindMany.mockResolvedValue([]);
 	callerMocks.userFindFirst.mockResolvedValue({
 		name: "Avery Employee",
@@ -502,6 +509,111 @@ describe("requestAbsenceForEmployeeEffect absence days (#979)", () => {
 		);
 
 		expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
+	});
+});
+
+describe("requestAbsenceForEmployeeEffect vacation balance (#1340)", () => {
+	const employeeContext = { id: "employee-1", organizationId: "org-1", teamId: "team-1" };
+
+	it("checks each year's balance for the employee in their organization", async () => {
+		const approvalLifecycle = configureAbsenceCallerTransaction();
+
+		await requestAbsenceForEmployeeEffect(
+			absenceRequest,
+			employeeContext,
+			"user-1",
+			approvalLifecycle as never,
+		);
+
+		expect(callerMocks.findOverdrawnVacationYears).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			absence: {
+				startDate: "2026-05-11",
+				startPeriod: "full_day",
+				endDate: "2026-05-12",
+				endPeriod: "full_day",
+			},
+			currentDate: expect.any(Date),
+		});
+	});
+
+	it("refuses vacation that exceeds a year's recorded balance before recording anything", async () => {
+		const approvalLifecycle = configureAbsenceCallerTransaction();
+		callerMocks.findOverdrawnVacationYears.mockResolvedValue([
+			{
+				year: 2026,
+				chargedAbsenceDays: 2,
+				futureYear: false,
+				status: "available",
+				remainingDays: 1,
+				remainingAfterRequest: -1,
+			},
+		]);
+
+		const result = await requestAbsenceForEmployeeEffect(
+			absenceRequest,
+			employeeContext,
+			"user-1",
+			approvalLifecycle as never,
+		);
+
+		expect(result).toEqual({
+			success: false,
+			error: "The requested dates exceed your available vacation balance for 2026.",
+			code: "ValidationError",
+			refusal: "insufficient_balance",
+		});
+		expect(callerMocks.transaction).not.toHaveBeenCalled();
+		expect(callerMocks.createAbsenceApprovalWorkflow).not.toHaveBeenCalled();
+	});
+
+	it("explains that a future year's carryover and accrual are not counted yet", async () => {
+		const approvalLifecycle = configureAbsenceCallerTransaction();
+		callerMocks.findOverdrawnVacationYears.mockResolvedValue([
+			{
+				year: 2027,
+				chargedAbsenceDays: 1,
+				futureYear: true,
+				status: "available",
+				remainingDays: 0,
+				remainingAfterRequest: -1,
+			},
+		]);
+
+		const result = await requestAbsenceForEmployeeEffect(
+			absenceRequest,
+			employeeContext,
+			"user-1",
+			approvalLifecycle as never,
+		);
+
+		expect(result).toMatchObject({
+			success: false,
+			refusal: "insufficient_balance",
+			error:
+				"The requested dates exceed your available vacation balance for 2027. Carryover and accrual for future years are not counted yet.",
+		});
+	});
+
+	it("does not check the balance of a category that does not count against vacation", async () => {
+		const approvalLifecycle = configureAbsenceCallerTransaction();
+		callerMocks.absenceCategoryFindFirst.mockResolvedValue({
+			id: "category-1",
+			name: "Sick leave",
+			type: "sick",
+			countsAgainstVacation: false,
+			requiresApproval: true,
+		});
+
+		await requestAbsenceForEmployeeEffect(
+			{ ...absenceRequest, sickDetail: "with_certificate" },
+			employeeContext,
+			"user-1",
+			approvalLifecycle as never,
+		);
+
+		expect(callerMocks.findOverdrawnVacationYears).not.toHaveBeenCalled();
 	});
 });
 

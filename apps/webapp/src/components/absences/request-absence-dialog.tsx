@@ -46,6 +46,7 @@ import {
 	validateAbsenceDurationInput,
 } from "@/lib/absences/duration";
 import { sickDetailOptions } from "@/lib/absences/sick-details";
+import { overdrawnVacationYears } from "@/lib/absences/vacation-year-balance";
 import type {
 	AbsenceDurationKind,
 	DayPeriod,
@@ -75,7 +76,6 @@ interface RequestAbsenceDialogProps {
 		deputyRequired?: boolean;
 	}>;
 	organizationId: string;
-	remainingDays: number;
 	trigger?: React.ReactNode;
 	onSuccess?: () => void;
 	open?: boolean;
@@ -115,7 +115,6 @@ function useRequestAbsenceDialogController({
 	initialDate,
 	onSuccess,
 	organizationId,
-	remainingDays,
 }: {
 	categories: RequestAbsenceDialogProps["categories"];
 	controlledOnOpenChange: RequestAbsenceDialogProps["onOpenChange"];
@@ -123,7 +122,6 @@ function useRequestAbsenceDialogController({
 	initialDate: RequestAbsenceDialogProps["initialDate"];
 	onSuccess: RequestAbsenceDialogProps["onSuccess"];
 	organizationId: string;
-	remainingDays: number;
 }) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
@@ -178,11 +176,7 @@ function useRequestAbsenceDialogController({
 				toast.error(noWorkingDaysMessage(t));
 				return;
 			}
-			if (
-				selectedCategory?.countsAgainstVacation &&
-				preview &&
-				remainingDays - preview.requestedAbsenceDays < 0
-			) {
+			if (selectedCategory?.countsAgainstVacation && exceedsVacationBalance(preview)) {
 				toast.error(
 					t(
 						"absences.form.errors.insufficientBalance",
@@ -253,6 +247,14 @@ function useRequestAbsenceDialogController({
 				onSuccess?.();
 			} else if (result.code === "AbsenceDaysRefusedError") {
 				toast.error(noWorkingDaysMessage(t));
+			} else if (result.refusal === "insufficient_balance") {
+				// The balance changed since the preview; the draft stays for editing.
+				toast.error(
+					t(
+						"absences.form.errors.insufficientBalanceRefused",
+						"Your vacation balance changed and no longer covers these dates. Your request was not submitted.",
+					),
+				);
 			} else {
 				toast.error(result.error || failureMessage);
 			}
@@ -333,7 +335,6 @@ type RequestAbsenceFormApi = ReturnType<
 export function RequestAbsenceDialog({
 	categories,
 	organizationId,
-	remainingDays,
 	trigger,
 	onSuccess,
 	open: controlledOpen,
@@ -359,7 +360,6 @@ export function RequestAbsenceDialog({
 		initialDate,
 		onSuccess,
 		organizationId,
-		remainingDays,
 	});
 
 	const showTrigger = !isControlled || trigger;
@@ -415,7 +415,6 @@ export function RequestAbsenceDialog({
 							categories={categories}
 							form={form}
 							planPreviewQuery={planPreviewQuery}
-							remainingDays={remainingDays}
 						/>
 					</ActionPanelBody>
 
@@ -438,17 +437,11 @@ export function RequestAbsenceDialog({
 							const normalizedValues = normalizeAbsenceDurationInput(values);
 							const validationError = validateAbsenceDurationInput(values);
 							const preview = validationError ? undefined : planPreviewQuery.data;
-							const requestedAbsenceDays = preview?.requestedAbsenceDays ?? 0;
 							const selectedCategory = categories.find(
 								(c) => c.id === normalizedValues.categoryId,
 							);
-							const balanceAfterRequest =
-								selectedCategory?.countsAgainstVacation
-									? remainingDays - requestedAbsenceDays
-									: remainingDays;
 							const insufficientBalance =
-								selectedCategory?.countsAgainstVacation &&
-								balanceAfterRequest < 0;
+								selectedCategory?.countsAgainstVacation && exceedsVacationBalance(preview);
 							return (
 								<ActionPanelFooter>
 									<Button
@@ -866,7 +859,6 @@ function RequestAbsenceSummaryAndNotes({
 	categories,
 	form,
 	planPreviewQuery,
-	remainingDays,
 }: {
 	canLoadPlanPreview: boolean;
 	categories: RequestAbsenceDialogProps["categories"];
@@ -874,7 +866,6 @@ function RequestAbsenceSummaryAndNotes({
 	planPreviewQuery: ReturnType<
 		typeof useRequestAbsenceDialogController
 	>["planPreviewQuery"];
-	remainingDays: number;
 }) {
 	const { t } = useTranslate();
 	return (
@@ -892,11 +883,10 @@ function RequestAbsenceSummaryAndNotes({
 						(category) => category.id === normalized.categoryId,
 					);
 					if (requestedAbsenceDays <= 0) return null;
-					const balanceAfterRequest = selectedCategory?.countsAgainstVacation
-						? remainingDays - requestedAbsenceDays
-						: remainingDays;
-					const insufficientBalance =
-						selectedCategory?.countsAgainstVacation && balanceAfterRequest < 0;
+					const countsAgainstVacation = Boolean(
+						selectedCategory?.countsAgainstVacation && preview?.countsAgainstVacation,
+					);
+					const insufficientBalance = countsAgainstVacation && exceedsVacationBalance(preview);
 					return (
 						<div className="rounded-md border p-3 text-sm">
 							<BalanceRow
@@ -904,22 +894,30 @@ function RequestAbsenceSummaryAndNotes({
 								label={t("absences.form.absenceDays", "Absence days:")}
 								value={formatDays(requestedAbsenceDays, t)}
 							/>
-							{selectedCategory?.countsAgainstVacation && (
+							{countsAgainstVacation && preview && (
 								<>
-									<BalanceRow
-										label={t("absences.form.daysRemaining", "Days remaining:")}
-										value={formatDays(remainingDays, t)}
-									/>
-									<BalanceRow
-										className="mt-1 pt-2 border-t"
-										label={t(
-											"absences.form.balanceAfterRequest",
-											"Balance after request:",
-										)}
-										labelClassName="font-medium"
-										value={formatDays(balanceAfterRequest, t)}
-										valueClassName={`font-bold ${insufficientBalance ? "text-destructive" : ""}`}
-									/>
+									{preview.balances.map((balance, index) => (
+										<BalanceRow
+											className={index === 0 ? "mt-1 pt-2 border-t" : undefined}
+											key={balance.year}
+											label={t(
+												"absences.form.balanceAfterRequestInYear",
+												"Estimated balance after request ({year}):",
+												{ year: String(balance.year) },
+											)}
+											labelClassName="font-medium"
+											value={
+												balance.status === "available"
+													? formatDays(balance.remainingAfterRequest, t)
+													: t("absences.form.balanceUnavailable", "Unavailable")
+											}
+											valueClassName={`font-bold ${
+												balance.status === "available" && balance.remainingAfterRequest < 0
+													? "text-destructive"
+													: ""
+											}`}
+										/>
+									))}
 									{insufficientBalance && (
 										<div className="mt-2 text-xs text-destructive">
 											{t(
@@ -967,6 +965,11 @@ function RequestAbsenceSummaryAndNotes({
 			</form.Field>
 		</>
 	);
+}
+
+/** Whether the preview finds a year whose recorded balance the request exceeds (#1340). */
+function exceedsVacationBalance(preview: AbsencePlanPreview | undefined): boolean {
+	return Boolean(preview && overdrawnVacationYears(preview.balances).length > 0);
 }
 
 function BalanceRow({
