@@ -29,6 +29,9 @@ vi.mock("@/lib/absences/default-absence-categories", () => ({
 vi.mock("@/lib/absences/proration-notice-store", () => ({
 	loadProrationNoticeForPage: mocks.notice,
 }));
+vi.mock("@/lib/absences/working-week-notice-store", () => ({
+	loadWorkingWeekNoticeForPage: mocks.notice,
+}));
 vi.mock("@/lib/personnel-file/access-store", () => ({
 	isPersonnelFilesEnabled: mocks.personnel,
 }));
@@ -46,6 +49,9 @@ vi.mock("@/components/settings/vacation/employee-sick-note-setting", () => ({
 }));
 vi.mock("@/components/settings/vacation/proration-notice", () => ({
 	ProrationNotice: () => null,
+}));
+vi.mock("@/components/settings/vacation/working-week-notice", () => ({
+	WorkingWeekNotice: () => null,
 }));
 vi.mock("@/components/settings/vacation/absence-settings-tabs", () => ({
 	AbsenceSettingsTabs: () => null,

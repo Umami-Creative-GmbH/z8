@@ -4,6 +4,7 @@ import {
 	type WorkingDayPolicyAssignment,
 	type WorkingDaySchedule,
 	workingDaysFrom,
+	workingWeekPeriodsFrom,
 } from "./working-days";
 
 const WEEK = [
@@ -259,5 +260,100 @@ describe("workingDaysFrom", () => {
 			holidays: [],
 		});
 		expect(isWorkingDay(Temporal.PlainDate.from("2026-10-12"))).toBe(true);
+	});
+});
+
+describe("workingWeekPeriodsFrom", () => {
+	const year = { startDate: "2026-01-01", endDate: "2026-12-31" };
+
+	it("splits the range where the effective schedule's working days per week change", () => {
+		const before = assignment({
+			policyId: "five",
+			schedule: mondayToFridaySchedule,
+			effectiveUntil: Temporal.Instant.from("2026-07-01T00:00:00Z"),
+		});
+		const after = assignment({
+			policyId: "four",
+			schedule: mondayToThursday,
+			effectiveFrom: Temporal.Instant.from("2026-07-01T00:00:00Z"),
+		});
+
+		expect(workingWeekPeriodsFrom({ assignments: [before, after], ...year })).toEqual([
+			{
+				startDate: "2026-01-01",
+				endDate: "2026-06-30",
+				workingDaysPerWeek: 5,
+				workPolicyId: "five",
+			},
+			{
+				startDate: "2026-07-01",
+				endDate: "2026-12-31",
+				workingDaysPerWeek: 4,
+				workPolicyId: "four",
+			},
+		]);
+	});
+
+	it("counts five days without a policy or with a policy without a schedule", () => {
+		expect(workingWeekPeriodsFrom({ assignments: [], ...year })).toEqual([
+			{ ...year, workingDaysPerWeek: 5, workPolicyId: null },
+		]);
+		expect(
+			workingWeekPeriodsFrom({
+				assignments: [assignment({ policyId: "unscheduled", schedule: null })],
+				...year,
+			}),
+		).toEqual([{ ...year, workingDaysPerWeek: 5, workPolicyId: "unscheduled" }]);
+	});
+
+	it.each([
+		["weekends", 2],
+		["all_days", 7],
+	] as const)("counts the days of the simple %s preset, weekend work included", (preset, days) => {
+		const schedule: WorkingDaySchedule = {
+			scheduleType: "simple",
+			workingDaysPreset: preset,
+			days: [],
+		};
+		expect(
+			workingWeekPeriodsFrom({ assignments: [assignment({ policyId: "p", schedule })], ...year }),
+		).toEqual([{ ...year, workingDaysPerWeek: days, workPolicyId: "p" }]);
+	});
+
+	it("reports an explicitly configured schedule without working days as zero days", () => {
+		const schedule: WorkingDaySchedule = {
+			scheduleType: "detailed",
+			workingDaysPreset: "custom",
+			days: scheduleDays([]),
+		};
+		expect(
+			workingWeekPeriodsFrom({ assignments: [assignment({ policyId: "empty", schedule })], ...year }),
+		).toEqual([{ ...year, workingDaysPerWeek: 0, workPolicyId: "empty" }]);
+	});
+
+	it("follows the employee, team, organization precedence of absence counting", () => {
+		const organization = assignment({
+			assignmentType: "organization",
+			policyId: "org",
+			schedule: { ...mondayToFridaySchedule, workingDaysPreset: "all_days" },
+		});
+		const employee = assignment({
+			policyId: "employee",
+			schedule: mondayToThursday,
+			effectiveFrom: Temporal.Instant.from("2026-03-16T12:00:00Z"),
+			effectiveUntil: Temporal.Instant.from("2026-04-01T00:00:00Z"),
+		});
+		expect(
+			workingWeekPeriodsFrom({ assignments: [organization, employee], ...year }),
+		).toEqual([
+			{ startDate: "2026-01-01", endDate: "2026-03-15", workingDaysPerWeek: 7, workPolicyId: "org" },
+			{
+				startDate: "2026-03-16",
+				endDate: "2026-03-31",
+				workingDaysPerWeek: 4,
+				workPolicyId: "employee",
+			},
+			{ startDate: "2026-04-01", endDate: "2026-12-31", workingDaysPerWeek: 7, workPolicyId: "org" },
+		]);
 	});
 });

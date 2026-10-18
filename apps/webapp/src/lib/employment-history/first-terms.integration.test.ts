@@ -539,14 +539,14 @@ describe("first employment terms", () => {
 
 			const rehired = await rehire();
 
-			// Rehire terms start at the rehire instant (#1162 keeps it an instant).
+			// Rehire terms start on the org-local rehire date (#1162).
 			expect(
 				(await termsOf(target.employeeId)).filter(
 					(row) => row.employment_period_id === rehired.employmentPeriodId,
 				),
 			).toMatchObject([
 				{
-					valid_from: new Date(REHIRED_AT.epochMilliseconds),
+					valid_from: new Date("2026-10-05T00:00:00Z"),
 					contract_type: "hourly",
 					hourly_rate: "25.00",
 					review_state: "confirmed",

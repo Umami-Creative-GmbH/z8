@@ -212,12 +212,14 @@ skipped, because their notifications would go to their managers.
 
 *Rehire employee* is offered after an effective departure. It requires approved
 membership; otherwise re-invite first. Confirm role, team, primary manager, work
-policy and all contract terms. The new period starts at the server's instant;
-the gap between periods is shown in the employment history, which is grouped by
-stint (legacy periods without a recorded start show *Date not recorded*). A
-rehire never restores expense officer, payroll access or personnel file officer
-grants; an admin must grant them again. Nor does it revive a kiosk badge: issue
-a new one.
+policy and all contract terms. The new period starts at the server's instant,
+and its terms start on the organization-local date of that instant, so terms
+dated on the rehire day replace them (#1162). Terms dated before the rehire day
+are refused. The gap between periods is shown in the employment history, which
+is grouped by stint (legacy periods without a recorded start show *Date not
+recorded*). A rehire never restores expense officer, payroll access or
+personnel file officer grants; an admin must grant them again. Nor does it
+revive a kiosk badge: issue a new one.
 
 ## Personnel file retention
 

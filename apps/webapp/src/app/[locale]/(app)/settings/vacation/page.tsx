@@ -5,6 +5,7 @@ import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { AbsenceSettingsTabs } from "@/components/settings/vacation/absence-settings-tabs";
 import { EmployeeSickNoteSetting } from "@/components/settings/vacation/employee-sick-note-setting";
 import { ProrationNotice } from "@/components/settings/vacation/proration-notice";
+import { WorkingWeekNotice } from "@/components/settings/vacation/working-week-notice";
 import { VacationManagement } from "@/components/settings/vacation/vacation-management";
 import { VacationPoliciesTable } from "@/components/settings/vacation/vacation-policies-table";
 import {
@@ -18,6 +19,7 @@ import { db } from "@/db";
 import { loadAbsenceSettings } from "@/lib/absences/absence-settings";
 import { ensureDefaultAbsenceCategoriesForOrganization } from "@/lib/absences/default-absence-categories";
 import { loadProrationNoticeForPage } from "@/lib/absences/proration-notice-store";
+import { loadWorkingWeekNoticeForPage } from "@/lib/absences/working-week-notice-store";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { isPersonnelFilesEnabled } from "@/lib/personnel-file/access-store";
@@ -43,15 +45,21 @@ async function VacationSettingsContent() {
 	const canManagePolicies = settingsRouteContext.accessTier === "orgAdmin";
 
 	// Owners and admins only: managers can open this page too (#1112).
-	const [absenceSettings, personnelFilesEnabled, , prorationNotice] =
-		canManagePolicies
-			? await Promise.all([
-					loadAbsenceSettings(db, organizationId),
-					isPersonnelFilesEnabled(db, organizationId),
-					ensureDefaultAbsenceCategoriesForOrganization(organizationId),
-					loadProrationNoticeForPage(db, { organizationId }),
-				])
-			: [null, false, undefined, null];
+	const [
+		absenceSettings,
+		personnelFilesEnabled,
+		,
+		prorationNotice,
+		workingWeekNotice,
+	] = canManagePolicies
+		? await Promise.all([
+				loadAbsenceSettings(db, organizationId),
+				isPersonnelFilesEnabled(db, organizationId),
+				ensureDefaultAbsenceCategoriesForOrganization(organizationId),
+				loadProrationNoticeForPage(db, { organizationId }),
+				loadWorkingWeekNoticeForPage(db, { organizationId }),
+			])
+		: [null, false, undefined, null, null];
 
 	const allowedAssignmentTypes = canManagePolicies
 		? (["team", "employee"] as const)
@@ -67,8 +75,15 @@ async function VacationSettingsContent() {
 						allowedAssignmentTypes={allowedAssignmentTypes}
 						canManageCategories={canManagePolicies}
 						notice={
-							prorationNotice?.length ? (
-								<ProrationNotice rows={prorationNotice} />
+							prorationNotice?.length || workingWeekNotice?.length ? (
+								<>
+									{prorationNotice?.length ? (
+										<ProrationNotice rows={prorationNotice} />
+									) : null}
+									{workingWeekNotice?.length ? (
+										<WorkingWeekNotice rows={workingWeekNotice} />
+									) : null}
+								</>
 							) : null
 						}
 						absenceSettings={

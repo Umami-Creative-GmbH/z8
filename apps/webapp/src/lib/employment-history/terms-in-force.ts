@@ -42,8 +42,8 @@ export type CalendarDateRange = {
  *
  * Forms store a calendar date as UTC midnight of that date, so a timestamp at
  * exactly 00:00:00.000 UTC is that UTC date. Any other timestamp is an instant
- * (a rehire, or a departure cutoff at org-local midnight) and means its
- * org-local calendar date.
+ * (a departure cutoff at org-local midnight, or rehire terms that migration
+ * 0277 had to skip) and means its org-local calendar date.
  */
 export function termsCalendarDate(stored: Date, timezone: string): PlainDate {
 	const instant = instantFromDate(stored);
