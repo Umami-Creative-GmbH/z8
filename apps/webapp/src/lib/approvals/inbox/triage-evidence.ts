@@ -112,6 +112,10 @@ export async function loadCurrentApprovalTriageEvidence(
 		return (
 			await import("./absence-coverage-evidence")
 		).loadAbsenceCoverageTriageEvidence(target);
+	if (target.requestKind === "absence_change")
+		return (
+			await import("./absence-change-coverage-evidence")
+		).loadAbsenceChangeCoverageTriageEvidence(target);
 	return { context: target.context, evidence: [] };
 }
 
