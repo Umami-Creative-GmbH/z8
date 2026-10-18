@@ -1,6 +1,7 @@
 import "server-only";
 import { and, eq } from "drizzle-orm";
 import type { db as appDb } from "@/db";
+import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
@@ -15,6 +16,7 @@ import type {
 	DocumentRequestCategory,
 	DocumentRequestReminderKind,
 } from "./document-request.types";
+import { listPersonnelFileNotificationRecipients } from "./notification-recipients";
 import { MY_DOCUMENTS_PATH } from "./notifications";
 import { personnelFilePath } from "./paths";
 
@@ -22,7 +24,7 @@ import { personnelFilePath } from "./paths";
  * Notifications of document requests (#1307), in the personnelFile
  * preference group. The employee hears of a new request and of every
  * decision (accepted, returned, cancelled), and of its deadline (#1406); the
- * officers of an overdue request, and later of a submission (#1402). One
+ * covering officers of an overdue request and of each submission (#1402). One
  * notification per history event and recipient: the event id is the
  * idempotency key; a deadline reminder's key is its request, kind and deadline.
  */
@@ -268,6 +270,85 @@ export function notifyDocumentRequested(
 		request: input.request,
 		build: (recipientUserId) => buildDocumentRequestedNotification({ ...input, recipientUserId }),
 	});
+}
+
+const submittedCopy = {
+	titleKey: "common:notifications.content.personnelFileDocumentRequestSubmitted.title",
+	titleDefault: "Documents submitted",
+	messageKey: "common:notifications.content.personnelFileDocumentRequestSubmitted.message",
+	messageDefault: '{name} submitted documents for "{title}". Please review them.',
+} as const;
+
+/** To an officer (or owner/admin): the employee submitted documents for a request (#1402). */
+export function buildDocumentRequestSubmittedNotification(input: {
+	organizationId: string;
+	recipientUserId: string;
+	/** The request's `submitted` history event. */
+	eventId: string;
+	employeeName: string;
+	request: NotifiedRequest;
+}): CreateNotificationParams {
+	const params = { ...requestParams(input.request), name: input.employeeName };
+	return {
+		userId: input.recipientUserId,
+		organizationId: input.organizationId,
+		type: "personnel_file_document_request_submitted",
+		title: submittedCopy.titleDefault,
+		message: fillNotificationTemplate(submittedCopy.messageDefault, params),
+		entityType: DOCUMENT_REQUEST_NOTIFICATION_ENTITY_TYPE,
+		entityId: input.request.id,
+		actionUrl: personnelFilePath(input.request.employeeId),
+		idempotencyKey: idempotencyKey(input.eventId, input.recipientUserId),
+		metadata: {
+			category: input.request.category,
+			employeeId: input.request.employeeId,
+			i18n: { ...submittedCopy, params },
+		},
+	};
+}
+
+/**
+ * Tells the officers covering the request's employee and category that the
+ * employee submitted, or the owners and admins when no officer covers them
+ * (the employee-upload rule). Call after the submission committed. Never throws.
+ */
+export async function notifyDocumentRequestSubmitted(
+	database: Database,
+	input: { organizationId: string; eventId: string; request: NotifiedRequest },
+): Promise<void> {
+	try {
+		const [recipients, [subject]] = await Promise.all([
+			listPersonnelFileNotificationRecipients(database, {
+				organizationId: input.organizationId,
+				employeeId: input.request.employeeId,
+				category: input.request.category,
+			}),
+			database
+				.select({ name: user.name, employeeNumber: employee.employeeNumber })
+				.from(employee)
+				.innerJoin(user, eq(user.id, employee.userId))
+				.where(
+					and(
+						eq(employee.id, input.request.employeeId),
+						eq(employee.organizationId, input.organizationId),
+					),
+				)
+				.limit(1),
+		]);
+		const employeeName = subject?.name?.trim() || subject?.employeeNumber || "An employee";
+		await Promise.all(
+			recipients.map((recipientUserId) =>
+				createNotification(
+					buildDocumentRequestSubmittedNotification({ ...input, recipientUserId, employeeName }),
+				),
+			),
+		);
+	} catch (error) {
+		logger.error(
+			{ error, requestId: input.request.id, organizationId: input.organizationId },
+			"Failed to notify officers of a document request submission",
+		);
+	}
 }
 
 /** Tells the employee about an officer's decision on their request. */

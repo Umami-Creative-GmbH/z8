@@ -11,13 +11,17 @@ import type {
 import {
 	notifyDocumentRequestDecided,
 	notifyDocumentRequested,
+	notifyDocumentRequestSubmitted,
 } from "@/lib/personnel-file/document-request-notifications";
 import {
+	acceptDocumentRequest,
 	cancelDocumentRequest,
 	createDocumentRequest,
 	editDocumentRequest,
 	listEmployeeDocumentRequests,
 	listOwnDocumentRequests,
+	returnDocumentRequest,
+	submitDocumentRequest,
 } from "@/lib/personnel-file/document-request-store";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 
@@ -49,6 +53,7 @@ const REFUSAL_MESSAGES: Readonly<Record<DocumentRequestRefusal, string>> = {
 	renewed_document_mismatch:
 		"The renewed document must be a document of the same employee and category.",
 	renewal_already_requested: "This document already has an open request for its renewal.",
+	no_documents: "Upload at least one document before you submit.",
 	not_editable:
 		"Only the deadline and note can be changed. Cancel the request and create a new one instead.",
 };
@@ -153,6 +158,124 @@ export async function cancelDocumentRequestAction(input: {
 		}
 	} catch (error) {
 		return failure(error, "Failed to cancel the document request");
+	}
+}
+
+/**
+ * The employee submits what they uploaded from their open request since the
+ * last submission, with an optional note (#1402); the covering officers are
+ * notified. Nobody else submits.
+ */
+export async function submitDocumentRequestAction(input: {
+	requestId: string;
+	note?: string | null;
+	/** The `version` the employee saw; a changed request conflicts. */
+	expectedVersion?: number | null;
+}): Promise<ServerActionResult<DocumentRequestView>> {
+	try {
+		const current = await loadCurrentPersonnelFileAccess();
+		if (current.status !== "resolved" || !isCanonicalUuid(input?.requestId)) {
+			return { success: false, error: NOT_FOUND };
+		}
+		const result = await submitDocumentRequest(db, current.access, {
+			requestId: input.requestId,
+			note: input.note ?? null,
+			expectedVersion: safeVersion(input.expectedVersion),
+		});
+		switch (result.kind) {
+			case "not_found":
+				return { success: false, error: NOT_FOUND };
+			case "refused":
+				return refused(result.reason);
+			case "conflict":
+				return { success: false, error: CONFLICT_MESSAGE, code: "conflict" };
+			case "submitted":
+				await notifyDocumentRequestSubmitted(db, {
+					organizationId: current.access.organizationId,
+					eventId: result.eventId,
+					request: result.request,
+				});
+				return { success: true, data: result.request };
+		}
+	} catch (error) {
+		return failure(error, "Failed to submit the documents");
+	}
+}
+
+/**
+ * Returns a submitted request to the employee with a required reason
+ * (#1402): open again, documents kept; the employee is notified.
+ */
+export async function returnDocumentRequestAction(input: {
+	requestId: string;
+	reason: string;
+	expectedVersion?: number | null;
+}): Promise<ServerActionResult<DocumentRequestView>> {
+	try {
+		const current = await loadCurrentPersonnelFileAccess();
+		if (current.status !== "resolved" || !isCanonicalUuid(input?.requestId)) {
+			return { success: false, error: NOT_FOUND };
+		}
+		const result = await returnDocumentRequest(db, current.access, {
+			requestId: input.requestId,
+			reason: input.reason,
+			expectedVersion: safeVersion(input.expectedVersion),
+		});
+		switch (result.kind) {
+			case "not_found":
+				return { success: false, error: NOT_FOUND };
+			case "refused":
+				return refused(result.reason);
+			case "conflict":
+				return { success: false, error: CONFLICT_MESSAGE, code: "conflict" };
+			case "returned":
+				await notifyDocumentRequestDecided(db, {
+					organizationId: current.access.organizationId,
+					eventId: result.eventId,
+					request: result.request,
+					decision: "returned",
+					reason: result.request.history.at(-1)?.reason ?? null,
+				});
+				return { success: true, data: result.request };
+		}
+	} catch (error) {
+		return failure(error, "Failed to return the document request");
+	}
+}
+
+/** Accepts a submitted request (#1402) and notifies the employee. */
+export async function acceptDocumentRequestAction(input: {
+	requestId: string;
+	expectedVersion?: number | null;
+}): Promise<ServerActionResult<DocumentRequestView>> {
+	try {
+		const current = await loadCurrentPersonnelFileAccess();
+		if (current.status !== "resolved" || !isCanonicalUuid(input?.requestId)) {
+			return { success: false, error: NOT_FOUND };
+		}
+		const result = await acceptDocumentRequest(db, current.access, {
+			requestId: input.requestId,
+			expectedVersion: safeVersion(input.expectedVersion),
+		});
+		switch (result.kind) {
+			case "not_found":
+				return { success: false, error: NOT_FOUND };
+			case "refused":
+				return refused(result.reason);
+			case "conflict":
+				return { success: false, error: CONFLICT_MESSAGE, code: "conflict" };
+			case "accepted":
+				await notifyDocumentRequestDecided(db, {
+					organizationId: current.access.organizationId,
+					eventId: result.eventId,
+					request: result.request,
+					decision: "accepted",
+					reason: null,
+				});
+				return { success: true, data: result.request };
+		}
+	} catch (error) {
+		return failure(error, "Failed to accept the document request");
 	}
 }
 

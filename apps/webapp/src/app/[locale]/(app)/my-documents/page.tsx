@@ -43,7 +43,7 @@ async function MyDocumentsContent() {
 				{uploadCapability ? <MyDocumentsUpload capability={uploadCapability} /> : null}
 			</header>
 			{requests.success && uploadCapability ? (
-				<RequestedDocuments requests={requests.data} timezone={uploadCapability.timezone} />
+				<RequestedDocuments requests={requests.data} capability={uploadCapability} />
 			) : null}
 			<MyDocumentsList documents={result.data} />
 		</div>

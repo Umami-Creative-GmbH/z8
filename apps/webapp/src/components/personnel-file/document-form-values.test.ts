@@ -3,6 +3,7 @@ import {
 	applyCategoryChange,
 	defaultUploadValues,
 	ownUploadValues,
+	requestUploadValues,
 	toDocumentMetadata,
 	valuesFromDocument,
 } from "./document-form-values";
@@ -17,6 +18,24 @@ describe("personnel document form values", () => {
 			payPeriodMonth: "",
 			visibility: "shared",
 			visibilityChosen: false,
+			expiryDate: "",
+		});
+	});
+
+	it("starts an upload for a request in its category, titled like it, shared (#1402)", () => {
+		expect(
+			requestUploadValues({
+				today: "2026-10-18",
+				request: { category: "other", title: "Driving record" },
+			}),
+		).toEqual({
+			category: "other",
+			title: "Driving record",
+			documentDate: "2026-10-18",
+			payPeriodYear: "",
+			payPeriodMonth: "",
+			visibility: "shared",
+			visibilityChosen: true,
 			expiryDate: "",
 		});
 	});

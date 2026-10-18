@@ -51,6 +51,7 @@ function request(overrides: Partial<ManagedDocumentRequestView>): ManagedDocumen
 		createdAt: "2026-10-01T08:00:00Z",
 		history: [],
 		submissions: [],
+		pendingDocuments: [],
 		...overrides,
 	};
 }

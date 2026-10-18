@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNotNull, lt, type SQL, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, type SQL, sql } from "drizzle-orm";
 import type { Temporal } from "temporal-polyfill";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -30,6 +30,7 @@ import {
 import {
 	ACTIVE_DOCUMENT_REQUEST_STATUSES,
 	DOCUMENT_REQUEST_CATEGORIES,
+	type DocumentRequestDocumentView,
 	type DocumentRequestEventChanges,
 	type DocumentRequestEventKind,
 	type DocumentRequestFollowUpEventKind,
@@ -46,6 +47,7 @@ import type {
 import {
 	isDocumentRequestOverdue,
 	nextDocumentRequestStatus,
+	optionalDocumentRequestText,
 	validateDocumentRequestEdit,
 	validateDocumentRequestInput,
 	validateDocumentRequestReason,
@@ -436,6 +438,194 @@ export async function cancelDocumentRequest(
 	});
 }
 
+export type SubmitDocumentRequestResult =
+	| { kind: "submitted"; request: DocumentRequestView; eventId: string; submissionId: string }
+	/** Not the actor's own request, or not in the organization. */
+	| { kind: "not_found" }
+	/** The request is no longer open, or the employee's view is stale. */
+	| { kind: "conflict" }
+	| { kind: "refused"; reason: DocumentRequestRefusal };
+
+/**
+ * The employee hands in what they uploaded from their open request since the
+ * last submission (#1402), with an optional note. The documents are in the
+ * file already (ADR 0003); the request becomes `submitted`. Only the
+ * request's own employee submits.
+ */
+export async function submitDocumentRequest(
+	database: Database,
+	access: PersonnelFileAccess,
+	input: { requestId: string; note: unknown; expectedVersion?: number | null },
+	now: Instant = systemClock.nowInstant(),
+): Promise<SubmitDocumentRequestResult> {
+	const note = optionalDocumentRequestText(input.note);
+	if (!note.ok) return { kind: "refused", reason: note.reason };
+	const at = dateFromInstant(now);
+	const { today } = await loadOrganizationDay(database, {
+		organizationId: access.organizationId,
+		now,
+	});
+	return database.transaction(async (tx): Promise<SubmitDocumentRequestResult> => {
+		const request = await lockDocumentRequest(tx, access.organizationId, input.requestId);
+		if (!request || !isOwnDocument(access, request.employeeId)) return { kind: "not_found" };
+		if (
+			nextDocumentRequestStatus(request.status, "submitted") === null ||
+			(input.expectedVersion != null && input.expectedVersion !== request.version)
+		) {
+			return { kind: "conflict" };
+		}
+		const pending = await tx
+			.select({ documentId: employeeDocumentRequestDocument.documentId })
+			.from(employeeDocumentRequestDocument)
+			.where(
+				and(
+					eq(employeeDocumentRequestDocument.organizationId, access.organizationId),
+					eq(employeeDocumentRequestDocument.requestId, request.id),
+					isNull(employeeDocumentRequestDocument.submissionId),
+				),
+			)
+			.orderBy(asc(employeeDocumentRequestDocument.createdAt))
+			.for("update");
+		if (pending.length === 0) return { kind: "refused", reason: "no_documents" };
+		const documentIds = pending.map((row) => row.documentId);
+
+		const [submission] = await tx
+			.insert(employeeDocumentRequestSubmission)
+			.values({
+				organizationId: access.organizationId,
+				requestId: request.id,
+				note: note.value,
+				submittedBy: access.userId,
+				submittedAt: at,
+			})
+			.returning({ id: employeeDocumentRequestSubmission.id });
+		if (!submission) throw new Error("Failed to record the submission");
+		await tx
+			.update(employeeDocumentRequestDocument)
+			.set({ submissionId: submission.id })
+			.where(
+				and(
+					eq(employeeDocumentRequestDocument.organizationId, access.organizationId),
+					eq(employeeDocumentRequestDocument.requestId, request.id),
+					inArray(employeeDocumentRequestDocument.documentId, documentIds),
+				),
+			);
+		const applied = await applyDocumentRequestEvent(tx, {
+			request,
+			event: {
+				kind: "submitted",
+				actorUserId: access.userId,
+				submissionId: submission.id,
+				auditMetadata: {
+					documentIds,
+					...(note.value ? { submissionNote: note.value } : {}),
+				},
+			},
+			expectedVersion: input.expectedVersion,
+			now,
+		});
+		// Locked and checked above: only a bug gets here.
+		if (applied.kind === "conflict") throw new Error("Document request moved on under its lock");
+		const [view] = await toDocumentRequestViews(tx, access, [applied.request], today);
+		if (!view) throw new Error("Failed to read the document request");
+		return {
+			kind: "submitted",
+			request: view,
+			eventId: applied.eventId,
+			submissionId: submission.id,
+		};
+	});
+}
+
+export type DecideDocumentRequestResult<Kind extends "returned" | "accepted"> =
+	| { kind: Kind; request: DocumentRequestView; eventId: string }
+	| { kind: "not_found" }
+	/** Not submitted (any more): another decision won, or the officer's view is stale. */
+	| { kind: "conflict" }
+	| { kind: "refused"; reason: DocumentRequestRefusal };
+
+/**
+ * An officer's decision on a submitted request, by whoever covers it now and
+ * never on their own file. Of two concurrent decisions the first wins: the
+ * second waits for the request's lock and then finds it decided (conflict).
+ */
+async function decideDocumentRequest<Kind extends "returned" | "accepted">(
+	database: Database,
+	access: PersonnelFileAccess,
+	input: {
+		requestId: string;
+		kind: Kind;
+		reason: string | null;
+		expectedVersion?: number | null;
+	},
+	now: Instant,
+): Promise<DecideDocumentRequestResult<Kind>> {
+	const { today } = await loadOrganizationDay(database, {
+		organizationId: access.organizationId,
+		now,
+	});
+	return database.transaction(async (tx): Promise<DecideDocumentRequestResult<Kind>> => {
+		const lookup = await lockManagedDocumentRequest(tx, access, input.requestId);
+		if (lookup.kind !== "managed") return lookup;
+		const applied = await applyDocumentRequestEvent(tx, {
+			request: lookup.request,
+			event: { kind: input.kind, actorUserId: access.userId, reason: input.reason },
+			expectedVersion: input.expectedVersion,
+			now,
+		});
+		if (applied.kind === "conflict") return { kind: "conflict" };
+		const [view] = await toDocumentRequestViews(tx, access, [applied.request], today);
+		if (!view) throw new Error("Failed to read the document request");
+		return { kind: input.kind, request: view, eventId: applied.eventId };
+	});
+}
+
+/**
+ * Returns a submitted request to the employee with a required reason (#1402):
+ * it is open again, its documents stay in the file, and the next submission
+ * adds new ones.
+ */
+export async function returnDocumentRequest(
+	database: Database,
+	access: PersonnelFileAccess,
+	input: { requestId: string; reason: unknown; expectedVersion?: number | null },
+	now: Instant = systemClock.nowInstant(),
+): Promise<DecideDocumentRequestResult<"returned">> {
+	const reason = validateDocumentRequestReason(input.reason);
+	if (!reason.ok) return { kind: "refused", reason: reason.reason };
+	return decideDocumentRequest(
+		database,
+		access,
+		{
+			requestId: input.requestId,
+			kind: "returned",
+			reason: reason.value,
+			expectedVersion: input.expectedVersion,
+		},
+		now,
+	);
+}
+
+/** Accepts a submitted request (#1402); the renewal side follows in #1405. */
+export async function acceptDocumentRequest(
+	database: Database,
+	access: PersonnelFileAccess,
+	input: { requestId: string; expectedVersion?: number | null },
+	now: Instant = systemClock.nowInstant(),
+): Promise<DecideDocumentRequestResult<"accepted">> {
+	return decideDocumentRequest(
+		database,
+		access,
+		{
+			requestId: input.requestId,
+			kind: "accepted",
+			reason: null,
+			expectedVersion: input.expectedVersion,
+		},
+		now,
+	);
+}
+
 export type EditDocumentRequestResult =
 	/** `eventId` is null when nothing changed: then no history event is recorded. */
 	| { kind: "edited"; request: DocumentRequestView; eventId: string | null }
@@ -731,6 +921,7 @@ export async function toDocumentRequestViews(
 			),
 		database
 			.select({
+				requestId: employeeDocumentRequestDocument.requestId,
 				submissionId: employeeDocumentRequestDocument.submissionId,
 				id: employeeDocument.id,
 				title: employeeDocument.title,
@@ -749,7 +940,6 @@ export async function toDocumentRequestViews(
 				and(
 					eq(employeeDocumentRequestDocument.organizationId, organizationId),
 					inArray(employeeDocumentRequestDocument.requestId, requestIds),
-					isNotNull(employeeDocumentRequestDocument.submissionId),
 					visibleDocumentsCondition(access),
 				),
 			)
@@ -769,20 +959,20 @@ export async function toDocumentRequestViews(
 	]);
 	const renewedById = new Map(renewed.map((document) => [document.id, document]));
 	const creatorNames = new Map(creators.map((creator) => [creator.id, creator.name]));
-	const documentsBySubmission = new Map<
-		string,
-		DocumentRequestView["submissions"][number]["documents"]
-	>();
+	const documentsBySubmission = new Map<string, DocumentRequestDocumentView[]>();
+	// Uploaded from a request, not handed in yet (#1402), by request.
+	const pendingByRequest = new Map<string, DocumentRequestDocumentView[]>();
 	for (const document of linkedDocuments) {
-		if (!document.submissionId) continue;
-		const list = documentsBySubmission.get(document.submissionId) ?? [];
+		const groups = document.submissionId ? documentsBySubmission : pendingByRequest;
+		const key = document.submissionId ?? document.requestId;
+		const list = groups.get(key) ?? [];
 		list.push({
 			id: document.id,
 			title: document.title,
 			fileName: document.fileName,
 			mimeType: document.mimeType,
 		});
-		documentsBySubmission.set(document.submissionId, list);
+		groups.set(key, list);
 	}
 	return rows.map((row) => {
 		const renewedDocument = row.renewedDocumentId ? renewedById.get(row.renewedDocumentId) : null;
@@ -821,6 +1011,7 @@ export async function toDocumentRequestViews(
 					note: submission.note,
 					documents: documentsBySubmission.get(submission.id) ?? [],
 				})),
+			pendingDocuments: pendingByRequest.get(row.id) ?? [],
 		};
 	});
 }

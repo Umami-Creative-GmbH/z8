@@ -9,16 +9,15 @@ import {
 	isActiveDocumentRequestStatus,
 } from "@/lib/personnel-file/document-request.types";
 import { CancelDocumentRequestDialog } from "./cancel-document-request-dialog";
+import { DocumentRequestDecisionActions } from "./document-request-decision";
 import { EditDocumentRequestDialog } from "./edit-document-request-dialog";
 
 /**
  * What a covering officer can do with one request, wherever requests are
  * listed for officers (the "Document requests" page and the requests section
  * of an employee's file, #1403): edit the deadline and note and cancel, while
- * the request is open or submitted. The server re-checks coverage for each.
- *
- * Deciding a submission (accept, return; #1402) belongs here as well, for
- * submitted requests, so both lists get it at once.
+ * the request is open or submitted, and accept or return a submitted one
+ * (#1402). The server re-checks coverage for each.
  */
 export function DocumentRequestOfficerActions({
 	request,
@@ -37,6 +36,7 @@ export function DocumentRequestOfficerActions({
 
 	return (
 		<>
+			<DocumentRequestDecisionActions request={request} onDecided={onChanged} />
 			<Button
 				type="button"
 				variant="ghost"

@@ -9,6 +9,7 @@ import { formatDateOnly } from "@/components/ui/date-picker-utils";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { formatInstant, localeDefaultTimeFormat } from "@/lib/datetime/temporal-format";
 import type {
+	DocumentRequestDocumentView,
 	DocumentRequestEventView,
 	DocumentRequestView,
 } from "@/lib/personnel-file/document-request.types";
@@ -65,6 +66,26 @@ function HistoryEntry({
 			) : null}
 			{reason ? <p className="whitespace-pre-line text-muted-foreground">{reason}</p> : null}
 		</li>
+	);
+}
+
+function DocumentLinks({ documents }: { documents: readonly DocumentRequestDocumentView[] }) {
+	return (
+		<ul className="mt-1 space-y-0.5">
+			{documents.map((document) => (
+				<li key={document.id}>
+					<a
+						href={personnelDocumentUrl(document.id)}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="inline-flex items-center gap-1 underline-offset-2 hover:underline"
+					>
+						<IconExternalLink aria-hidden="true" className="size-3.5" />
+						{document.title}
+					</a>
+				</li>
+			))}
+		</ul>
 	);
 }
 
@@ -130,6 +151,17 @@ export function DocumentRequestList({
 						{actions ? <div className="flex items-center gap-1">{actions(request)}</div> : null}
 					</div>
 					{request.note ? <p className="whitespace-pre-line text-sm">{request.note}</p> : null}
+					{request.pendingDocuments.length > 0 ? (
+						<div className="rounded-md border border-dashed p-2 text-sm">
+							<p className="font-medium">
+								{t(
+									"settings.personnelFiles.requests.pendingDocuments",
+									"Uploaded, not submitted yet",
+								)}
+							</p>
+							<DocumentLinks documents={request.pendingDocuments} />
+						</div>
+					) : null}
 					{request.submissions.length > 0 ? (
 						<div className="space-y-1">
 							{request.submissions.map((submission) => (
@@ -146,21 +178,7 @@ export function DocumentRequestList({
 									{submission.note ? (
 										<p className="whitespace-pre-line text-muted-foreground">{submission.note}</p>
 									) : null}
-									<ul className="mt-1 space-y-0.5">
-										{submission.documents.map((document) => (
-											<li key={document.id}>
-												<a
-													href={personnelDocumentUrl(document.id)}
-													target="_blank"
-													rel="noopener noreferrer"
-													className="inline-flex items-center gap-1 underline-offset-2 hover:underline"
-												>
-													<IconExternalLink aria-hidden="true" className="size-3.5" />
-													{document.title}
-												</a>
-											</li>
-										))}
-									</ul>
+									<DocumentLinks documents={submission.documents} />
 								</div>
 							))}
 						</div>

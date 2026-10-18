@@ -53,6 +53,7 @@ import {
 	type DocumentMetadataPayload,
 	defaultUploadValues,
 	ownUploadValues,
+	requestUploadValues,
 	toDocumentMetadata,
 	valuesFromDocument,
 } from "./document-form-values";
@@ -73,6 +74,11 @@ type DocumentDialogProps = {
 			mode: "upload";
 			/** "employee": the employee uploads into their own file, always shared (#867). */
 			uploadAs?: "employee";
+			/**
+			 * With "employee": the upload is for this open document request of theirs
+			 * (#1402), in the request's category, titled like it by default.
+			 */
+			documentRequest?: { id: string; category: DocumentCategory; title: string };
 	  }
 	| { mode: "edit"; document: EmployeeDocumentView }
 );
@@ -82,6 +88,7 @@ async function finalizeUpload(input: {
 	fileName: string | undefined;
 	employeeId: string;
 	source?: "own";
+	documentRequestId?: string;
 	metadata: DocumentMetadataPayload;
 }): Promise<void> {
 	const response = await fetch("/api/upload/personnel-file", {
@@ -104,13 +111,16 @@ function useDocumentDialog(props: DocumentDialogProps) {
 	const [fileError, setFileError] = useState<string | null>(null);
 	const pendingMetadata = useRef<DocumentMetadataPayload | null>(null);
 	const asEmployee = props.mode === "upload" && props.uploadAs === "employee";
+	const documentRequest = (asEmployee && props.mode === "upload" && props.documentRequest) || null;
 	const fileProblemMessages = usePersonnelFileProblemMessages();
 	const initialValues: DocumentFormValues =
 		props.mode === "edit"
 			? valuesFromDocument(props.document)
-			: asEmployee
-				? ownUploadValues({ today })
-				: defaultUploadValues({ today, category: categories[0] ?? "other" });
+			: documentRequest
+				? requestUploadValues({ today, request: documentRequest })
+				: asEmployee
+					? ownUploadValues({ today })
+					: defaultUploadValues({ today, category: categories[0] ?? "other" });
 
 	const upload = useTusFileUpload({
 		maxFileSize: PERSONNEL_DOCUMENT_MAX_BYTES,
@@ -124,6 +134,7 @@ function useDocumentDialog(props: DocumentDialogProps) {
 				fileName,
 				employeeId,
 				...(asEmployee ? { source: "own" as const } : {}),
+				...(documentRequest ? { documentRequestId: documentRequest.id } : {}),
 				metadata,
 			});
 		},
@@ -212,10 +223,12 @@ function useDocumentDialog(props: DocumentDialogProps) {
 		fileError,
 		handleFileChange,
 		changeCategory,
-		categories,
+		// An upload for a request is of the request's category only.
+		categories: documentRequest ? [documentRequest.category] : categories,
 		labels,
 		required,
 		upload,
+		documentRequest,
 	};
 }
 
@@ -235,6 +248,7 @@ export function DocumentDialog(props: DocumentDialogProps) {
 		labels,
 		required,
 		upload,
+		documentRequest,
 	} = useDocumentDialog(props);
 	return (
 		<ActionPanel open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
@@ -270,6 +284,15 @@ export function DocumentDialog(props: DocumentDialogProps) {
 											"Change the document's details. To replace the file, delete the document and upload it again.",
 										)}
 						</ActionPanelDescription>
+						{documentRequest ? (
+							<ActionPanelDescription>
+								{t(
+									"settings.personnelFiles.myDocuments.requested.upload.description",
+									'For the request "{title}". Submit the request once all its documents are uploaded.',
+									{ title: documentRequest.title },
+								)}
+							</ActionPanelDescription>
+						) : null}
 					</ActionPanelHeader>
 
 					<DocumentMetadataFields

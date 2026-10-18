@@ -91,6 +91,8 @@ export type DocumentRequestRefusal =
 	| "renewed_document_mismatch"
 	/** Another open or submitted request already names the renewed document. */
 	| "renewal_already_requested"
+	/** A submission needs at least one document uploaded from the request since the last one. */
+	| "no_documents"
 	/** An edit tried to change something other than the deadline and note (#1403). */
 	| "not_editable";
 
@@ -158,4 +160,9 @@ export interface DocumentRequestView {
 	history: DocumentRequestEventView[];
 	/** Oldest first. */
 	submissions: DocumentRequestSubmissionView[];
+	/**
+	 * Documents uploaded from the request and not handed in yet (#1402): the
+	 * next submission. They are in the file already (ADR 0003). Oldest first.
+	 */
+	pendingDocuments: DocumentRequestDocumentView[];
 }
