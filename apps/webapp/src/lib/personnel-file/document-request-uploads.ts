@@ -28,7 +28,9 @@ export async function lockDocumentRequestForUpload(
 	tx: Transaction,
 	access: PersonnelFileAccess,
 	input: { requestId: string; employeeId: string; category: DocumentCategory },
-): Promise<{ kind: "locked"; id: string } | { kind: "unavailable" } | { kind: "category_mismatch" }> {
+): Promise<
+	{ kind: "locked"; id: string } | { kind: "unavailable" } | { kind: "category_mismatch" }
+> {
 	const [request] = await tx
 		.select({
 			id: employeeDocumentRequest.id,

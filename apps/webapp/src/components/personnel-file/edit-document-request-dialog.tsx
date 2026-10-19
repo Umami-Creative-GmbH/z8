@@ -108,10 +108,9 @@ export function EditDocumentRequestDialog({
 								onSubmit: ({ value }) =>
 									value
 										? undefined
-										: t(
-												"settings.personnelFiles.requests.error.invalidDeadline",
-												"Choose a deadline.",
-											),
+										: t("settings.personnelFiles.form.required", "{label} is required", {
+												label: t("settings.personnelFiles.requests.create.deadline", "Deadline"),
+											}),
 							}}
 						>
 							{(field) => (

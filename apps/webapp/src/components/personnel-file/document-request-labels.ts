@@ -3,6 +3,8 @@
 import { useTranslate } from "@tolgee/react";
 import {
 	DOCUMENT_REQUEST_BULK_MAX_RECIPIENTS,
+	DOCUMENT_REQUEST_TEXT_MAX_LENGTH,
+	DOCUMENT_REQUEST_TITLE_MAX_LENGTH,
 	type DocumentRequestEventKind,
 	type DocumentRequestReasonCode,
 	type DocumentRequestRefusal,
@@ -46,11 +48,13 @@ export function useDocumentRequestErrorMessage() {
 		),
 		invalid_title: t(
 			"settings.personnelFiles.requests.error.invalidTitle",
-			"Enter a title of at most 200 characters.",
+			"Enter a title of at most {max} characters.",
+			{ max: DOCUMENT_REQUEST_TITLE_MAX_LENGTH },
 		),
 		invalid_note: t(
 			"settings.personnelFiles.requests.error.invalidNote",
-			"The note can be at most 2000 characters.",
+			"The note can be at most {max} characters.",
+			{ max: DOCUMENT_REQUEST_TEXT_MAX_LENGTH },
 		),
 		invalid_deadline: t(
 			"settings.personnelFiles.requests.error.invalidDeadline",
@@ -63,7 +67,8 @@ export function useDocumentRequestErrorMessage() {
 		reason_required: t("settings.personnelFiles.requests.error.reasonRequired", "Enter a reason."),
 		invalid_reason: t(
 			"settings.personnelFiles.requests.error.invalidReason",
-			"The reason can be at most 2000 characters.",
+			"The reason can be at most {max} characters.",
+			{ max: DOCUMENT_REQUEST_TEXT_MAX_LENGTH },
 		),
 		own_file: t(
 			"settings.personnelFiles.requests.error.ownFile",

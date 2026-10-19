@@ -3,7 +3,7 @@
 import { IconSend, IconUpload } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { DocumentRequestView } from "@/lib/personnel-file/document-request.types";
 import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
@@ -30,11 +30,12 @@ export function RequestedDocuments({
 	const router = useRouter();
 	const [uploading, setUploading] = useState<DocumentRequestView | null>(null);
 	const [submitting, setSubmitting] = useState<DocumentRequestView | null>(null);
+	const headingId = useId();
 	if (requests.length === 0) return null;
 	return (
-		<section aria-labelledby="requested-documents-title" className="space-y-3">
+		<section aria-labelledby={headingId} className="space-y-3">
 			<div className="space-y-1">
-				<h2 id="requested-documents-title" className="text-lg font-semibold tracking-tight">
+				<h2 id={headingId} className="text-lg font-semibold tracking-tight">
 					{t("settings.personnelFiles.myDocuments.requested.title", "Requested documents")}
 				</h2>
 				<p className="text-sm text-muted-foreground">

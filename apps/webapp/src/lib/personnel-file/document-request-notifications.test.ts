@@ -248,9 +248,9 @@ describe("redactDocumentRequestNotification", () => {
 			},
 		});
 		expect(redacted.metadata).not.toContain("unreadable");
-		expect(
-			redactDocumentRequestNotification({ title: "Documents returned", ...redacted }),
-		).toEqual({ kind: "unchanged" });
+		expect(redactDocumentRequestNotification({ title: "Documents returned", ...redacted })).toEqual(
+			{ kind: "unchanged" },
+		);
 	});
 
 	it("removes a cancel's reason and leaves an accept as it is", () => {

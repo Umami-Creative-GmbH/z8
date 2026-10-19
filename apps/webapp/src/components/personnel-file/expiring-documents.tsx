@@ -142,6 +142,11 @@ export function ExpiringDocumentsCard({
 											type="button"
 											variant="outline"
 											size="sm"
+											aria-label={t(
+												"settings.personnelFiles.expiring.requestRenewalFor",
+												"Request a renewal of {title} ({employee})",
+												{ title: document.title, employee: document.employeeName },
+											)}
 											onClick={() => setRenewing({ employeeId: document.employeeId, renewal })}
 										>
 											<IconFileImport aria-hidden="true" className="size-4" />

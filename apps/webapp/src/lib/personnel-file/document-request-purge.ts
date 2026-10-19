@@ -340,9 +340,7 @@ export async function purgeDocumentRequestsOfDocuments(
 			// Reached only as a renewal: it goes with its renewed document once accepted.
 			(uploadedFrom.has(request.id) || request.status === "accepted"),
 	);
-	const notStripped = deletable
-		.map((request) => request.id)
-		.filter((id) => !uploadedFrom.has(id));
+	const notStripped = deletable.map((request) => request.id).filter((id) => !uploadedFrom.has(id));
 	if (notStripped.length > 0) {
 		result.unprocessable.push(
 			...(await minimiseDocumentRequestAudits(tx, { organizationId, requestIds: notStripped })),

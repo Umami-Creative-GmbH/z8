@@ -73,8 +73,6 @@ async function DocumentRequestsContent({ searchParams }: DocumentRequestsPagePro
 			<DocumentRequestsOverview
 				filters={{ ...filters, page: result.page }}
 				rows={result.rows}
-				total={result.total}
-				page={result.page}
 				pageCount={result.pageCount}
 				today={today.toString()}
 				timezone={timezone}

@@ -117,10 +117,14 @@ describe("requesting a renewal from Expiring documents", () => {
 			"href",
 			expect.stringContaining("/personnel-files/employee-1"),
 		);
-		expect(within(first).getByRole("button", { name: "Request renewal" })).toBeTruthy();
+		expect(
+			within(first).getByRole("button", {
+				name: "Request a renewal of First aid card 2024 (Anna Example)",
+			}),
+		).toBeTruthy();
 
 		const requested = rowOf("Language course");
-		expect(within(requested).queryByRole("button", { name: "Request renewal" })).toBeNull();
+		expect(within(requested).queryByRole("button", { name: /^Request a renewal of / })).toBeNull();
 		expect(within(requested).getByText("Renewal requested")).toBeTruthy();
 	});
 
@@ -131,7 +135,7 @@ describe("requesting a renewal from Expiring documents", () => {
 		});
 		renderCard();
 		fireEvent.click(
-			within(rowOf("First aid card 2024")).getByRole("button", { name: "Request renewal" }),
+			within(rowOf("First aid card 2024")).getByRole("button", { name: /^Request a renewal of / }),
 		);
 		const dialog = screen.getByRole("dialog");
 		expect(within(dialog).getByText("Request a renewal")).toBeTruthy();
@@ -159,7 +163,7 @@ describe("requesting a renewal from Expiring documents", () => {
 	it("warns that the employee never sees an HR-only renewed document", () => {
 		renderCard();
 		fireEvent.click(
-			within(rowOf("Medical fitness")).getByRole("button", { name: "Request renewal" }),
+			within(rowOf("Medical fitness")).getByRole("button", { name: /^Request a renewal of / }),
 		);
 		expect(
 			within(screen.getByRole("dialog")).getByText(
@@ -176,7 +180,7 @@ describe("requesting a renewal from Expiring documents", () => {
 		});
 		renderCard();
 		fireEvent.click(
-			within(rowOf("First aid card 2024")).getByRole("button", { name: "Request renewal" }),
+			within(rowOf("First aid card 2024")).getByRole("button", { name: /^Request a renewal of / }),
 		);
 		const dialog = screen.getByRole("dialog");
 		fireEvent.change(within(dialog).getByRole("textbox", { name: /^Title/ }), {

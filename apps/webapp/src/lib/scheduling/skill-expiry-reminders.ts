@@ -8,8 +8,8 @@ import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { dueExpiryReminder, type ExpiryReminderKind } from "@/lib/expiry-reminders/expiry";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
-import { employeeSkillHasActiveRenewalRequest } from "@/lib/personnel-file/renewed-documents";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
+import { employeeSkillHasActiveRenewalRequest } from "@/lib/personnel-file/renewed-documents";
 import {
 	buildSkillExpiryReminderNotification,
 	type ExpiringEmployeeSkillRef,

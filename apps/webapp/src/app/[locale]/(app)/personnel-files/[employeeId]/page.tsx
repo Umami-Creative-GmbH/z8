@@ -67,7 +67,7 @@ async function PersonnelFileContent({ params, searchParams }: PersonnelFilePageP
 					isDocumentCategory(category) && capability.categories.includes(category) ? category : null
 				}
 			/>
-			<DocumentRequestsSection capability={capability} />
+			<DocumentRequestsSection capability={capability} former={!employee.isActive} />
 			{capability.categories.includes("sick_note") ? (
 				<EmployeeSickLeaveCard employeeId={capability.employeeId} />
 			) : null}

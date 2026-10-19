@@ -600,7 +600,7 @@ export const employeeDocumentRequest = pgTable(
 		/**
 		 * The expiring document the request replaces (#1404); same employee and
 		 * category. Deleting the document clears only this column (migration 0279;
-	 * Drizzle cannot declare the column list).
+		 * Drizzle cannot declare the column list).
 		 */
 		renewedDocumentId: uuid("renewed_document_id"),
 		status: text("status").$type<DocumentRequestStatus>().default("open").notNull(),

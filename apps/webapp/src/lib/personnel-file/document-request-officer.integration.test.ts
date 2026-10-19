@@ -488,7 +488,11 @@ describe("the officer Document requests page (#1403)", () => {
 					expectedVersion: 5,
 				}),
 			).toMatchObject({ success: false, code: "conflict" });
-			await actions.cancelDocumentRequestAction({ requestId, reason: "Not needed", expectedVersion: 1 });
+			await actions.cancelDocumentRequestAction({
+				requestId,
+				reason: "Not needed",
+				expectedVersion: 1,
+			});
 			expect(
 				await actions.editDocumentRequestAction({
 					requestId,
@@ -505,19 +509,35 @@ describe("the officer Document requests page (#1403)", () => {
 			const bens = await create("admin", { employeeId: ids.ben, title: "Ben's" });
 			signIn("anna");
 			expect(
-				await actions.editDocumentRequestAction({ requestId: annas, note: "Mine", expectedVersion: 1 }),
+				await actions.editDocumentRequestAction({
+					requestId: annas,
+					note: "Mine",
+					expectedVersion: 1,
+				}),
 			).toMatchObject({ success: false });
 			signIn("officer");
 			expect(
-				await actions.editDocumentRequestAction({ requestId: bens, note: "Not covered", expectedVersion: 1 }),
+				await actions.editDocumentRequestAction({
+					requestId: bens,
+					note: "Not covered",
+					expectedVersion: 1,
+				}),
 			).toMatchObject({ success: false });
 			signIn("admin");
 			expect(
-				await actions.editDocumentRequestAction({ requestId: adams, note: "My own", expectedVersion: 1 }),
+				await actions.editDocumentRequestAction({
+					requestId: adams,
+					note: "My own",
+					expectedVersion: 1,
+				}),
 			).toMatchObject({ success: false, code: "own_file" });
 			signIn("stranger", OTHER_ORG);
 			expect(
-				await actions.editDocumentRequestAction({ requestId: annas, note: "Foreign", expectedVersion: 1 }),
+				await actions.editDocumentRequestAction({
+					requestId: annas,
+					note: "Foreign",
+					expectedVersion: 1,
+				}),
 			).toMatchObject({ success: false });
 			for (const requestId of [annas, adams, bens]) {
 				expect((await rowOf(requestId))?.version).toBe(1);
@@ -546,7 +566,11 @@ describe("the officer Document requests page (#1403)", () => {
 				}),
 			).toMatchObject({ success: false, error: "Document request not found" });
 			expect(
-				await actions.cancelDocumentRequestAction({ requestId, reason: "Still mine?", expectedVersion: 1 }),
+				await actions.cancelDocumentRequestAction({
+					requestId,
+					reason: "Still mine?",
+					expectedVersion: 1,
+				}),
 			).toMatchObject({ success: false, error: "Document request not found" });
 			// Deciding (#1402) starts from the same lookup.
 			const access = await accessOf("officer");

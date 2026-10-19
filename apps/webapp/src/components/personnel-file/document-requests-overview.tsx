@@ -29,10 +29,9 @@ const PATH = "/personnel-files/document-requests";
 const DEFAULT_STATUS: DocumentRequestStatusFilter = "active";
 
 export interface DocumentRequestsOverviewProps {
+	/** The filters, with the page the server actually returned. */
 	filters: DocumentRequestOverviewFilters;
 	rows: ManagedDocumentRequestView[];
-	total: number;
-	page: number;
 	pageCount: number;
 	/** The organization's today (`YYYY-MM-DD`): the earliest new deadline. */
 	today: string;
@@ -54,6 +53,7 @@ export function DocumentRequestsOverview(props: DocumentRequestsOverviewProps) {
 	const labels = useDocumentRequestLabels();
 	const statusId = useId();
 	const { filters } = props;
+	const { page } = filters;
 
 	const statusLabels: Record<DocumentRequestStatusFilter, string> = {
 		active: t("settings.personnelFiles.requests.page.filters.active", "Open and submitted"),
@@ -123,24 +123,21 @@ export function DocumentRequestsOverview(props: DocumentRequestsOverviewProps) {
 				<DocumentRequestList
 					requests={props.rows}
 					timezone={props.timezone}
-					subject={(request) => {
-						const row = props.rows.find((entry) => entry.id === request.id);
-						return (
-							<div className="flex flex-wrap items-center gap-2 text-sm">
-								<Link
-									href={personnelFilePath(request.employeeId)}
-									className="font-medium underline-offset-4 hover:underline"
-								>
-									{row?.employeeName ?? request.employeeId}
-								</Link>
-								{row?.isFormer ? (
-									<Badge variant="secondary">
-										{t("settings.personnelFiles.area.former", "Former employee")}
-									</Badge>
-								) : null}
-							</div>
-						);
-					}}
+					subject={(request) => (
+						<div className="flex flex-wrap items-center gap-2 text-sm">
+							<Link
+								href={personnelFilePath(request.employeeId)}
+								className="font-medium underline-offset-4 hover:underline"
+							>
+								{request.employeeName}
+							</Link>
+							{request.isFormer ? (
+								<Badge variant="secondary">
+									{t("settings.personnelFiles.area.former", "Former employee")}
+								</Badge>
+							) : null}
+						</div>
+					)}
 					actions={(request) => (
 						<DocumentRequestOfficerActions
 							request={request}
@@ -155,7 +152,7 @@ export function DocumentRequestsOverview(props: DocumentRequestsOverviewProps) {
 				<div className="flex flex-wrap items-center justify-end gap-2 text-sm">
 					<span className="tabular-nums">
 						{t("settings.personnelFiles.requests.page.pagination", "Page {page} of {pageCount}", {
-							page: props.page,
+							page,
 							pageCount: props.pageCount,
 						})}
 					</span>
@@ -163,8 +160,8 @@ export function DocumentRequestsOverview(props: DocumentRequestsOverviewProps) {
 						type="button"
 						variant="outline"
 						size="icon"
-						disabled={isPending || props.page <= 1}
-						onClick={() => update({ page: props.page - 1 })}
+						disabled={isPending || page <= 1}
+						onClick={() => update({ page: page - 1 })}
 						aria-label={t("settings.personnelFiles.requests.page.previous", "Previous page")}
 					>
 						<IconChevronLeft aria-hidden="true" className="size-4" />
@@ -173,8 +170,8 @@ export function DocumentRequestsOverview(props: DocumentRequestsOverviewProps) {
 						type="button"
 						variant="outline"
 						size="icon"
-						disabled={isPending || props.page >= props.pageCount}
-						onClick={() => update({ page: props.page + 1 })}
+						disabled={isPending || page >= props.pageCount}
+						onClick={() => update({ page: page + 1 })}
 						aria-label={t("settings.personnelFiles.requests.page.next", "Next page")}
 					>
 						<IconChevronRight aria-hidden="true" className="size-4" />

@@ -408,7 +408,10 @@ describe("document requests: submit, return and accept (#1402)", () => {
 			signIn("anna");
 			await uploadForRequest({ requestId, category: "other", title: "Driving record 2026" });
 			harness.notifications.length = 0;
-			const result = await requestActions.submitDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) });
+			const result = await requestActions.submitDocumentRequestAction({
+				requestId,
+				expectedVersion: await versionOf(requestId),
+			});
 			expect(result).toMatchObject({ success: true });
 			expect(notified().map((entry) => [entry.userId, entry.type])).toEqual([
 				[userOf("admin"), "personnel_file_document_request_submitted"],
@@ -419,15 +422,30 @@ describe("document requests: submit, return and accept (#1402)", () => {
 		it("refuses a submission without new documents, and a second submission", async () => {
 			const requestId = await createRequest("officer");
 			signIn("anna");
-			expect(await requestActions.submitDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+			expect(
+				await requestActions.submitDocumentRequestAction({
+					requestId,
+					expectedVersion: await versionOf(requestId),
+				}),
+			).toMatchObject({
 				success: false,
 				code: "no_documents",
 			});
 			await uploadedId(requestId);
-			expect(await requestActions.submitDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+			expect(
+				await requestActions.submitDocumentRequestAction({
+					requestId,
+					expectedVersion: await versionOf(requestId),
+				}),
+			).toMatchObject({
 				success: true,
 			});
-			expect(await requestActions.submitDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+			expect(
+				await requestActions.submitDocumentRequestAction({
+					requestId,
+					expectedVersion: await versionOf(requestId),
+				}),
+			).toMatchObject({
 				success: false,
 				code: "conflict",
 			});
@@ -437,7 +455,12 @@ describe("document requests: submit, return and accept (#1402)", () => {
 			const requestId = await createRequest("officer");
 			for (const person of ["ben", "officer", "admin"] as const) {
 				signIn(person);
-				expect(await requestActions.submitDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+				expect(
+					await requestActions.submitDocumentRequestAction({
+						requestId,
+						expectedVersion: await versionOf(requestId),
+					}),
+				).toMatchObject({
 					success: false,
 				});
 				const response = await uploadForRequest({ requestId });
@@ -461,7 +484,10 @@ describe("document requests: submit, return and accept (#1402)", () => {
 				error: "This document request asks for documents of another category.",
 			});
 			await uploadedId(requestId);
-			await requestActions.submitDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) });
+			await requestActions.submitDocumentRequestAction({
+				requestId,
+				expectedVersion: await versionOf(requestId),
+			});
 			expect((await uploadForRequest({ requestId })).status).toBe(409);
 			expect(await documentCount(ids.anna)).toBe(1);
 		});
@@ -485,7 +511,12 @@ describe("document requests: submit, return and accept (#1402)", () => {
 				}) as unknown as NextRequest,
 			);
 			expect(response.status).toBe(200);
-			expect(await requestActions.submitDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+			expect(
+				await requestActions.submitDocumentRequestAction({
+					requestId,
+					expectedVersion: await versionOf(requestId),
+				}),
+			).toMatchObject({
 				success: false,
 				code: "no_documents",
 			});
@@ -538,7 +569,10 @@ describe("document requests: submit, return and accept (#1402)", () => {
 
 			signIn("anna");
 			const newer = await uploadedId(requestId, "First aid card, scanned again");
-			const resubmitted = await requestActions.submitDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) });
+			const resubmitted = await requestActions.submitDocumentRequestAction({
+				requestId,
+				expectedVersion: await versionOf(requestId),
+			});
 			if (!resubmitted.success) throw new Error(resubmitted.error);
 			expect(resubmitted.data.status).toBe("submitted");
 			expect(
@@ -585,7 +619,12 @@ describe("document requests: submit, return and accept (#1402)", () => {
 		it("cannot accept or return an open request", async () => {
 			const requestId = await createRequest("officer");
 			signIn("officer");
-			expect(await requestActions.acceptDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+			expect(
+				await requestActions.acceptDocumentRequestAction({
+					requestId,
+					expectedVersion: await versionOf(requestId),
+				}),
+			).toMatchObject({
 				success: false,
 				code: "conflict",
 			});
@@ -643,7 +682,12 @@ describe("document requests: submit, return and accept (#1402)", () => {
 		it("refuses the employee, colleagues and other organizations; the employee cannot cancel", async () => {
 			const { requestId } = await submittedRequest();
 			signIn("anna");
-			expect(await requestActions.acceptDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+			expect(
+				await requestActions.acceptDocumentRequestAction({
+					requestId,
+					expectedVersion: await versionOf(requestId),
+				}),
+			).toMatchObject({
 				success: false,
 				code: "own_file",
 			});
@@ -662,11 +706,21 @@ describe("document requests: submit, return and accept (#1402)", () => {
 				}),
 			).toMatchObject({ success: false });
 			signIn("ben");
-			expect(await requestActions.acceptDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+			expect(
+				await requestActions.acceptDocumentRequestAction({
+					requestId,
+					expectedVersion: await versionOf(requestId),
+				}),
+			).toMatchObject({
 				success: false,
 			});
 			signIn("stranger", OTHER_ORG);
-			expect(await requestActions.acceptDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+			expect(
+				await requestActions.acceptDocumentRequestAction({
+					requestId,
+					expectedVersion: await versionOf(requestId),
+				}),
+			).toMatchObject({
 				success: false,
 			});
 			expect(await statusOf(requestId)).toBe("submitted");
@@ -677,15 +731,30 @@ describe("document requests: submit, return and accept (#1402)", () => {
 			signIn("admin");
 			const response = await uploadForRequest({ requestId, employeeId: ids.admin });
 			expect(response.status).toBe(200);
-			expect(await requestActions.submitDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+			expect(
+				await requestActions.submitDocumentRequestAction({
+					requestId,
+					expectedVersion: await versionOf(requestId),
+				}),
+			).toMatchObject({
 				success: true,
 			});
-			expect(await requestActions.acceptDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+			expect(
+				await requestActions.acceptDocumentRequestAction({
+					requestId,
+					expectedVersion: await versionOf(requestId),
+				}),
+			).toMatchObject({
 				success: false,
 				code: "own_file",
 			});
 			signIn("owner");
-			expect(await requestActions.acceptDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+			expect(
+				await requestActions.acceptDocumentRequestAction({
+					requestId,
+					expectedVersion: await versionOf(requestId),
+				}),
+			).toMatchObject({
 				success: true,
 			});
 		});
@@ -694,7 +763,12 @@ describe("document requests: submit, return and accept (#1402)", () => {
 			const { requestId } = await submittedRequest();
 			await deactivateSeededPersonnelFileOfficerGrant(admin, officerGrantId);
 			signIn("officer");
-			expect(await requestActions.acceptDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) })).toMatchObject({
+			expect(
+				await requestActions.acceptDocumentRequestAction({
+					requestId,
+					expectedVersion: await versionOf(requestId),
+				}),
+			).toMatchObject({
 				success: false,
 			});
 			expect(await statusOf(requestId)).toBe("submitted");

@@ -634,7 +634,12 @@ describe("stored notifications of a purged or deleted request (#1307 review, use
 		expect(JSON.stringify(redacted?.i18n)).not.toContain("unreadable");
 		expect((await storedNotification(foreignNotice))?.message).toContain("unreadable");
 
-		expect(await runDocumentRequestRetention(db, { now: PURGE_DAY, organizationIds: [fixture.organizationId] })).toMatchObject({
+		expect(
+			await runDocumentRequestRetention(db, {
+				now: PURGE_DAY,
+				organizationIds: [fixture.organizationId],
+			}),
+		).toMatchObject({
 			deleted: expect.any(Number),
 		});
 		expect(await requestRow(deleted)).toBeNull();
@@ -668,7 +673,10 @@ describe("accepted renewals at purge and retention (#1307 review)", () => {
 		expect(kept.rows).toEqual([{ status: "accepted", note: null, renewed: old }]);
 		expect(await submissionNotes(renewal)).toEqual([null]);
 		// Nor does the retention job delete it while the renewed document exists.
-		await runDocumentRequestRetention(db, { now: PURGE_DAY, organizationIds: [fixture.organizationId] });
+		await runDocumentRequestRetention(db, {
+			now: PURGE_DAY,
+			organizationIds: [fixture.organizationId],
+		});
 		expect(await requestRow(renewal)).not.toBeNull();
 
 		// The renewed document goes too: so does the request.

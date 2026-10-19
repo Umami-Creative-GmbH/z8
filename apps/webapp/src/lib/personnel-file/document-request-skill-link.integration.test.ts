@@ -483,7 +483,9 @@ describe("document requests: skill link on accept (#1405)", () => {
 
 			harness.userId = userOf("officer");
 			harness.organizationId = ORG;
-			expect(await requestActions.acceptDocumentRequestAction({ requestId, expectedVersion: version })).toMatchObject({
+			expect(
+				await requestActions.acceptDocumentRequestAction({ requestId, expectedVersion: version }),
+			).toMatchObject({
 				success: false,
 				code: "renewal_expiry_date_required",
 			});

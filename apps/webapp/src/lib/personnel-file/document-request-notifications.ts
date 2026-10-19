@@ -91,7 +91,8 @@ const cancelledWithoutReasonCopy = {
 const returnedWithoutReasonCopy = {
 	titleKey: returnedCopy.titleKey,
 	titleDefault: returnedCopy.titleDefault,
-	messageKey: "common:notifications.content.personnelFileDocumentRequestReturned.messageWithoutReason",
+	messageKey:
+		"common:notifications.content.personnelFileDocumentRequestReturned.messageWithoutReason",
 	messageDefault: 'Please upload "{title}" again by {deadline}.',
 } as const;
 

@@ -53,11 +53,8 @@ vi.setConfig({ testTimeout: 60_000 });
 const actions = await import("@/app/[locale]/(app)/personnel-files/document-request-actions");
 const { db } = await import("@/db");
 const { resolvePersonnelFileAccess } = await import("./access-store");
-const {
-	createDocumentRequest,
-	createDocumentRequestsInBulk,
-	listDocumentRequestRecipientOptions,
-} = await import("./document-request-store");
+const { createDocumentRequest, createDocumentRequestsInBulk, listDocumentRequestRecipientOptions } =
+	await import("./document-request-store");
 const { seedPersonnelFileOfficerGrant } = await import("./testing/officer-grant.test.fixture");
 
 const ORG = "t1407-org";
